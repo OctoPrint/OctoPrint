@@ -139,6 +139,7 @@ default_settings = {
 		"swallowOkAfterResend": True,
 		"repetierTargetTemp": False,
 		"externalHeatupDetection": True,
+		"supportWait": True,
 		"keyboardControl": True
 	},
 	"folder": {
@@ -266,7 +267,9 @@ default_settings = {
 			"waitOnLongMoves": False,
 			"rxBuffer": 64,
 			"txBuffer": 40,
-			"commandBuffer": 4
+			"commandBuffer": 4,
+			"sendWait": True,
+			"waitInterval": 1.0
 		}
 	}
 }

@@ -797,6 +797,7 @@ class MachineCom(object):
 
 		startSeen = False
 		supportRepetierTargetTemp = settings().getBoolean(["feature", "repetierTargetTemp"])
+		supportWait = settings().getBoolean(["feature", "supportWait"])
 
 		connection_timeout = settings().getFloat(["serial", "timeout", "connection"])
 		detection_timeout = settings().getFloat(["serial", "timeout", "detection"])
@@ -868,7 +869,7 @@ class MachineCom(object):
 						continue
 
 				##~~ process oks
-				if line.strip().startswith("ok"):
+				if line.strip().startswith("ok") or (supportWait and line.strip().startswith("wait")):
 					self._clear_to_send.set()
 					self._blocking_command = False
 
@@ -1082,7 +1083,9 @@ class MachineCom(object):
 						else:
 							self._logger.debug("Ran into a communication timeout, but a blocking command is currently active")
 
-					if "ok" in line:
+					if "ok" in line or (supportWait and "wait" in line):
+						# a wait while printing means our printer's buffer ran out, probably due to some ok getting
+						# swallowed, so we treat it the same as an ok here teo take up communication again
 						if self._resendSwallowNextOk:
 							self._resendSwallowNextOk = False
 
@@ -1530,7 +1533,7 @@ class MachineCom(object):
 					else:
 						self._doSendWithoutChecksum(command)
 
-				use_up_clear = not self._unknownCommandsNeedAck
+				use_up_clear = self._unknownCommandsNeedAck
 				if is_gcode:
 					# trigger "sent" phase and use up one "ok"
 					self._process_command_phase("sent", command, gcode=gcode_match.group(1))

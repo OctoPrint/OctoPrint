@@ -319,9 +319,11 @@ The following settings are only relevant to you if you want to do OctoPrint deve
        # Forced pause for retrieving from the outgoing buffer
        throttle: 0.01
 
-       # Whether to send "wait" responses while waiting for long moves to finish
-       # or not
-       waitOnLongMoves: false
+       # Whether to send "wait" responses every "waitInterval" seconds when serial rx buffer is empty
+       sendWait: false
+
+       # Interval in which to send "wait" lines when rx buffer is empty
+       waitInterval: 1
 
        # Size of the simulated RX buffer in bytes, when it's full a send from OctoPrint's
        # side will block

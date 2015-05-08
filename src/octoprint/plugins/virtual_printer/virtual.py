@@ -63,6 +63,9 @@ class VirtualPrinter():
 
 		self._okBeforeCommandOutput = settings().getBoolean(["devel", "virtualPrinter", "okBeforeCommandOutput"])
 
+		self._sendWait = settings().getBoolean(["devel", "virtualPrinter", "sendWait"])
+		self._waitInterval = settings().getFloat(["devel", "virtualPrinter", "waitInterval"])
+
 		self.currentLine = 0
 		self.lastN = 0
 
@@ -99,13 +102,19 @@ class VirtualPrinter():
 			pass
 
 	def _processIncoming(self):
+		next_wait_timeout = time.time() + self._waitInterval
 		while self.incoming is not None:
 			self._simulateTemps()
 
 			try:
 				data = self.incoming.get(timeout=0.01)
 			except Queue.Empty:
+				if self._sendWait and time.time() > next_wait_timeout:
+					self.outgoing.put("wait")
+					next_wait_timeout = time.time() + self._waitInterval
 				continue
+
+			next_wait_timeout = time.time() + self._waitInterval
 
 			if data is None:
 				continue
@@ -137,7 +146,7 @@ class VirtualPrinter():
 				if linenumber != expected:
 					self._triggerResend(actual=linenumber)
 					continue
-				elif self.currentLine == 100:
+				elif self.currentLine == 101:
 					# simulate a resend at line 100
 					self._triggerResend(expected=100)
 					continue
