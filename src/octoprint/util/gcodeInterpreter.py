@@ -55,6 +55,9 @@ class gcode(object):
 		scale = 1.0
 		posAbs = True
 		feedRateXY = min(printer_profile["axes"]["x"]["speed"], printer_profile["axes"]["y"]["speed"])
+		if feedRateXY == 0:
+			# some somewhat sane default if axes speeds are insane...
+			feedRateXY = 2000
 		offsets = printer_profile["extruder"]["offsets"]
 
 		for line in gcodeFile:
@@ -128,7 +131,7 @@ class gcode(object):
 							pos[1] += y * scale
 						if z is not None:
 							pos[2] += z * scale
-					if f is not None:
+					if f is not None and f != 0:
 						feedRateXY = f
 
 					moveType = 'move'
