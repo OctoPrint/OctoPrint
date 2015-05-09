@@ -46,7 +46,7 @@ $(function() {
                 };
                 self._sendData(data, function() {
                     // if the user indeed disables access control, we'll need to reload the page for this to take effect
-                    location.reload();
+                    //location.reload(true); // TODO: clear cache doesn't work properly, needs a better way, same issue with reloading plugins
                 });
             });
             $("#confirmation_dialog").modal("show");
