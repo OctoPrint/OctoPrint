@@ -20,6 +20,8 @@
 
     var SOCKJS_URI = "{{ url_for('index') }}" + "sockjs";
     var SOCKJS_DEBUG = CONFIG_DEBUG;
+    // sockjs should define CLOSE_NORMAL for us, but they don't (from ws spec)
+    var SOCKJS_CLOSE_NORMAL = 1000
 
     var UI_API_KEY = "{{ uiApiKey }}";
     var VERSION = "{{ version }}";

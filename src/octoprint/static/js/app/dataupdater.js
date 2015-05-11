@@ -22,6 +22,7 @@ function DataUpdater(allViewModels) {
     };
 
     self.reconnect = function() {
+        self._socket.close();
         delete self._socket;
         self.connect();
     };
@@ -31,7 +32,10 @@ function DataUpdater(allViewModels) {
         self._autoReconnectTrial = 0;
     };
 
-    self._onclose = function() {
+    self._onclose = function(e) {
+        if (e.code == SOCKJS_CLOSE_NORMAL) {
+            return;
+        }
         if (self._autoReconnectTrial >= self._autoReconnectDialogIndex) {
             // Only consider it a real disconnect if the trial number has exceeded our threshold.
 
