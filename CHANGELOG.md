@@ -111,9 +111,9 @@
   NTP server on a Raspberry Pi image. Achieved through monkey patching Tornado with
   [this PR](https://github.com/tornadoweb/tornado/pull/1290).
 * Serial ports matching ``/dev/ttyAMA*`` are not anymore listed by default (this was the reason for a lot of people
-  attempting to connect to their printer on their Raspberry Pis, on which ``/dev/ttyAMA0`` is the OS's serial console
-  by default). Added configuration of additional ports to the Serial Connection section in the Settings to make it easier
-  for those people who do indeed have their printer connected to ``/dev/ttyAMA0``.
+  running into problems while attempting to connect to their printer on their Raspberry Pis, on which ``/dev/ttyAMA0`` 
+  is the OS's serial console by default). Added configuration of additional ports to the Serial Connection section in 
+  the Settings to make it easier for those people who do indeed have their printer connected to ``/dev/ttyAMA0``.
 * Better behaviour of the settings dialog on low-width devices, navigation and content also now scroll independently 
   from each other (see also [#823](https://github.com/foosel/OctoPrint/pull/823))
 * Renamed "Temperature Timeout" and "SD Status Timeout" in Settings to "Temperature Interval" and "SD Status Interval"
@@ -128,7 +128,8 @@
 * Cut off of the temperature graph is now not based on the number of data points any more but on the actual time of the
   data points. Anything older than ``n`` minutes will be cut off, with ``n`` defaulting to 30min. This value can be
   changed under "Temperatures" in the Settings ([#343](https://github.com/foosel/OctoPrint/issues/343)).
-* High-DPI support for the GCode viewer ([#837](https://github.com/foosel/OctoPrint/issues/837))
+* High-DPI support for the GCode viewer ([#837](https://github.com/foosel/OctoPrint/issues/837)).
+* Stop websocket connections from multiplying([#888](https://github.com/foosel/OctoPrint/pull/888)).
 
 ### Bug Fixes
 
