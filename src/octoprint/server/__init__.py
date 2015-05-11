@@ -59,6 +59,7 @@ import octoprint.slicing
 
 from . import util
 util.tornado.fix_ioloop_scheduling()
+util.flask.enable_plugin_translations()
 
 
 UI_API_KEY = ''.join('%02X' % ord(z) for z in uuid.uuid4().bytes)

@@ -24,6 +24,59 @@ import octoprint.users
 from werkzeug.contrib.cache import SimpleCache
 
 
+#~~ monkey patching
+
+def enable_plugin_translations():
+	import os
+	from flask import _request_ctx_stack
+	from babel import support
+	import flask.ext.babel
+
+	import octoprint.plugin
+
+	def fixed_get_translations():
+		"""Returns the correct gettext translations that should be used for
+		this request.  This will never fail and return a dummy translation
+		object if used outside of the request or if a translation cannot be
+		found.
+		"""
+		logger = logging.getLogger(__name__)
+
+		ctx = _request_ctx_stack.top
+		if ctx is None:
+			return None
+		translations = getattr(ctx, 'babel_translations', None)
+		if translations is None:
+			locale = flask.ext.babel.get_locale()
+
+			plugins = octoprint.plugin.plugin_manager().enabled_plugins
+			for name, plugin in plugins.items():
+				dirname = os.path.join(plugin.location, 'translations')
+				if not os.path.isdir(dirname):
+					continue
+
+				try:
+					plugin_translations = support.Translations.load(dirname, [locale])
+				except:
+					logger.exception("Error while trying to load translations for plugin {name}".format(**locals()))
+				else:
+					if translations is None:
+						translations = plugin_translations
+					else:
+						translations = translations.merge(plugin_translations)
+
+			dirname = os.path.join(ctx.app.root_path, 'translations')
+			core_translations = support.Translations.load(dirname, [locale])
+			if translations is None:
+				translations = core_translations
+			else:
+				translations = translations.merge(core_translations)
+
+			ctx.babel_translations = translations
+		return translations
+
+	flask.ext.babel.get_translations = fixed_get_translations
+
 #~~ passive login helper
 
 def passive_login():
