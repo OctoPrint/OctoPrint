@@ -62,7 +62,7 @@ class FileManagerTest(unittest.TestCase):
 		file_path = self.file_manager.add_file(octoprint.filemanager.FileDestinations.LOCAL, "test.file", wrapper)
 
 		self.assertEquals(("", "test.file"), file_path)
-		self.local_storage.add_file.assert_called_once_with("test.file", wrapper, printer_profile=test_profile, allow_overwrite=False, links=None)
+		self.local_storage.add_file.assert_called_once_with("test.file", wrapper, printer_profile=test_profile, allow_overwrite=False, links=None, callback=None)
 		self.fire_event.assert_called_once_with(octoprint.filemanager.Events.UPDATED_FILES, dict(type="printables"))
 
 	def test_remove_file(self):
@@ -150,7 +150,7 @@ class FileManagerTest(unittest.TestCase):
 		self.local_storage.split_path.side_effect = split_path
 
 		# mock add_file method on local storage
-		def add_file(path, file_obj, printer_profile=None, links=None, allow_overwrite=False):
+		def add_file(path, file_obj, printer_profile=None, links=None, allow_overwrite=False, callback=None):
 			file_obj.save("prefix/" + path)
 			return "", path
 		self.local_storage.add_file.side_effect = add_file
@@ -184,7 +184,7 @@ class FileManagerTest(unittest.TestCase):
 
 		# assert that model links were added
 		expected_links = [("model", dict(name="source.file"))]
-		self.local_storage.add_file.assert_called_once_with("dest.file", mock.ANY, printer_profile=expected_printer_profile, allow_overwrite=True, links=expected_links)
+		self.local_storage.add_file.assert_called_once_with("dest.file", mock.ANY, printer_profile=expected_printer_profile, allow_overwrite=True, links=expected_links, callback=None)
 
 		# assert that the generated gcode was manipulated as required
 		expected_open_calls = [mock.call("prefix/dest.file", "wb")]
