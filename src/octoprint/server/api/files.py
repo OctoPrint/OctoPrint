@@ -54,74 +54,54 @@ def _getFileDetails(origin, filename):
 
 
 def _getFileList(origin, filter=None):
-	if origin == FileDestinations.SDCARD:
-		sdFileList = printer.get_sd_files()
+	filter_func = None
+	if filter:
+		filter_func = lambda entry, entry_data: octoprint.filemanager.valid_file_type(entry, type=filter)
+	files = fileManager.list_files(origin, filter=filter_func, recursive=False)[origin].values()
+	for file in files:
+		file["origin"] = origin
 
-		files = []
-		if sdFileList is not None:
-			for sdFile, sdSize in sdFileList:
-				file = {
-					"type": "machinecode",
-					"name": sdFile,
-					"origin": FileDestinations.SDCARD,
-					"refs": {
-						"resource": url_for(".readGcodeFile", target=FileDestinations.SDCARD, filename=sdFile, _external=True)
-					}
-				}
-				if sdSize is not None:
-					file.update({"size": sdSize})
-				files.append(file)
-	else:
-		filter_func = None
-		if filter:
-			filter_func = lambda entry, entry_data: octoprint.filemanager.valid_file_type(entry, type=filter)
-		files = fileManager.list_files(origin, filter=filter_func, recursive=False)[origin].values()
-		for file in files:
-			file["origin"] = FileDestinations.LOCAL
+		if "analysis" in file and octoprint.filemanager.valid_file_type(file["name"], type="gcode"):
+			file["gcodeAnalysis"] = file["analysis"]
+			del file["analysis"]
 
-			if "analysis" in file and octoprint.filemanager.valid_file_type(file["name"], type="gcode"):
-				file["gcodeAnalysis"] = file["analysis"]
-				del file["analysis"]
-
-			if "history" in file and octoprint.filemanager.valid_file_type(file["name"], type="gcode"):
-				# convert print log
-				history = file["history"]
-				del file["history"]
-				success = 0
-				failure = 0
-				last = None
-				for entry in history:
-					success += 1 if "success" in entry and entry["success"] else 0
-					failure += 1 if "success" in entry and not entry["success"] else 0
-					if not last or ("timestamp" in entry and "timestamp" in last and entry["timestamp"] > last["timestamp"]):
-						last = entry
-				if last:
-					prints = dict(
-						success=success,
-						failure=failure,
-						last=dict(
-							success=last["success"],
-							date=last["timestamp"]
-						)
+		if "history" in file and octoprint.filemanager.valid_file_type(file["name"], type="gcode"):
+			# convert print log
+			history = file["history"]
+			del file["history"]
+			success = 0
+			failure = 0
+			last = None
+			for entry in history:
+				success += 1 if "success" in entry and entry["success"] else 0
+				failure += 1 if "success" in entry and not entry["success"] else 0
+				if not last or ("timestamp" in entry and "timestamp" in last and entry["timestamp"] > last["timestamp"]):
+					last = entry
+			if last:
+				prints = dict(
+					success=success,
+					failure=failure,
+					last=dict(
+						success=last["success"],
+						date=last["timestamp"]
 					)
-					if "printTime" in last:
-						prints["last"]["printTime"] = last["printTime"]
-					file["prints"] = prints
+				)
+				if "printTime" in last:
+					prints["last"]["printTime"] = last["printTime"]
+				file["prints"] = prints
 
-			file.update({
-				"refs": {
-					"resource": url_for(".readGcodeFile", target=FileDestinations.LOCAL, filename=file["name"], _external=True),
-					"download": url_for("index", _external=True) + "downloads/files/" + FileDestinations.LOCAL + "/" + file["name"]
-				}
-			})
+		file.update({
+			"refs": {
+				"resource": url_for(".readGcodeFile", target=origin, filename=file["name"], _external=True)
+			}
+		})
+		if origin == FileDestinations.LOCAL:
+			file["refs"]["download"] = url_for("index", _external=True) + "downloads/files/" + FileDestinations.LOCAL + "/" + file["name"]
 	return files
 
 
 def _verifyFileExists(origin, filename):
-	if origin == FileDestinations.SDCARD:
-		return filename in map(lambda x: x[0], printer.get_sd_files())
-	else:
-		return fileManager.file_exists(origin, filename)
+	return fileManager.file_exists(origin, filename)
 
 
 @api.route("/files/<string:target>", methods=["POST"])
@@ -183,20 +163,6 @@ def uploadGcodeFile(target):
 	if futureFilename == currentFilename and target == currentOrigin and printer.is_printing() or printer.is_paused():
 		return make_response("Trying to overwrite file that is currently being printed: %s" % currentFilename, 409)
 
-	def fileProcessingFinished(filename, absFilename, destination):
-		"""
-		Callback for when the file processing (upload, optional slicing, addition to analysis queue) has
-		finished.
-
-		Depending on the file's destination triggers either streaming to SD card or directly calls selectAndOrPrint.
-		"""
-
-		if destination == FileDestinations.SDCARD and octoprint.filemanager.valid_file_type(filename, "gcode"):
-			return filename, printer.add_sd_file(filename, absFilename, selectAndOrPrint)
-		else:
-			selectAndOrPrint(filename, absFilename, destination)
-			return filename
-
 	def selectAndOrPrint(filename, absFilename, destination):
 		"""
 		Callback for when the file is ready to be selected and optionally printed. For SD file uploads this is only
@@ -209,15 +175,11 @@ def uploadGcodeFile(target):
 		if octoprint.filemanager.valid_file_type(added_file, "gcode") and (selectAfterUpload or printAfterSelect or (currentFilename == filename and currentOrigin == destination)):
 			printer.select_file(absFilename, destination == FileDestinations.SDCARD, printAfterSelect)
 
-	added_file = fileManager.add_file(FileDestinations.LOCAL, upload.filename, upload, allow_overwrite=True)
+	callback = selectAndOrPrint if not octoprint.filemanager.valid_file_type(added_file, "stl") else None
+	filename = fileManager.add_file(FileDestinations.LOCAL, upload.filename, upload, allow_overwrite=True, callback=callback)
 	if added_file is None:
 		return make_response("Could not upload the file %s" % upload.filename, 500)
-	if octoprint.filemanager.valid_file_type(added_file, "stl"):
-		filename = added_file
-		done = True
-	else:
-		filename = fileProcessingFinished(added_file, fileManager.path_on_disk(FileDestinations.LOCAL, added_file), target)
-		done = True
+	done = True
 
 	if userdata is not None:
 		# upload included userdata, add this now to the metadata
@@ -438,10 +400,7 @@ def deleteGcodeFile(filename, target):
 		printer.unselect_file()
 
 	# delete it
-	if target == FileDestinations.SDCARD:
-		printer.delete_sd_file(filename)
-	else:
-		fileManager.remove_file(target, filename)
+	fileManager.remove_file(target, filename)
 
 	return NO_CONTENT
 

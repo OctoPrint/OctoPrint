@@ -299,7 +299,7 @@ class FileManager(object):
 			result[dst] = self._storage_managers[dst].list_files(path=path, filter=filter, recursive=recursive)
 		return result
 
-	def add_file(self, destination, path, file_object, links=None, allow_overwrite=False, printer_profile=None, analysis=None):
+	def add_file(self, destination, path, file_object, links=None, allow_overwrite=False, printer_profile=None, analysis=None, callback=None):
 		if printer_profile is None:
 			printer_profile = self._printer_profile_manager.get_current_or_default()
 
@@ -307,7 +307,7 @@ class FileManager(object):
 			hook_file_object = hook(path, file_object, links=links, printer_profile=printer_profile, allow_overwrite=allow_overwrite)
 			if hook_file_object is not None:
 				file_object = hook_file_object
-		file_path = self._storage(destination).add_file(path, file_object, links=links, printer_profile=printer_profile, allow_overwrite=allow_overwrite)
+		file_path = self._storage(destination).add_file(path, file_object, links=links, printer_profile=printer_profile, allow_overwrite=allow_overwrite, callback=callback)
 		absolute_path = self._storage(destination).path_on_disk(file_path)
 
 		if analysis is None:

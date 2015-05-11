@@ -590,6 +590,7 @@ class Server():
 		storage_managers[octoprint.filemanager.FileDestinations.LOCAL] = octoprint.filemanager.storage.LocalFileStorage(settings().getBaseFolder("uploads"))
 		fileManager = octoprint.filemanager.FileManager(analysisQueue, slicingManager, printerProfileManager, initial_storage_managers=storage_managers)
 		printer = Printer(fileManager, analysisQueue, printerProfileManager)
+		fileManager.add_storage(octoprint.filemanager.FileDestinations.SDCARD, octoprint.filemanager.storage.SDCardFileStorage(printer, fileManager))
 		appSessionManager = util.flask.AppSessionManager()
 		pluginLifecycleManager = LifecycleManager(pluginManager)
 

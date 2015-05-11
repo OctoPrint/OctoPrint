@@ -112,7 +112,7 @@ class StorageInterface(object):
 		"""
 		raise NotImplementedError()
 
-	def add_file(self, path, file_object, printer_profile=None, links=None, allow_overwrite=False):
+	def add_file(self, path, file_object, printer_profile=None, links=None, allow_overwrite=False, callback=None):
 		"""
 		Adds the file ``file_object`` as ``path``
 
@@ -123,6 +123,7 @@ class StorageInterface(object):
 		:param list links:             any links to add with the file
 		:param bool allow_overwrite:   if set to True no error will be raised if the file already exists and the existing file
 		                               and its metadata will just be silently overwritten
+		:param function callback:      a callback function to be called when the add_file is complete
 		:return: the sanitized name of the file to be used for future references to it
 		"""
 		raise NotImplementedError()
@@ -379,7 +380,7 @@ class LocalFileStorage(StorageInterface):
 		import shutil
 		shutil.rmtree(folder_path)
 
-	def add_file(self, path, file_object, printer_profile=None, links=None, allow_overwrite=False):
+	def add_file(self, path, file_object, printer_profile=None, links=None, allow_overwrite=False, callback=None):
 		path, name = self.sanitize(path)
 		if not octoprint.filemanager.valid_file_type(name):
 			raise RuntimeError("{name} is an unrecognized file type".format(**locals()))
@@ -420,7 +421,10 @@ class LocalFileStorage(StorageInterface):
 
 		self._add_links(name, path, links)
 
-		return self.path_in_storage((path, name))
+		added_file = self.path_in_storage((path, name))
+		if callback is not None:
+			callback(added_file, self.path_on_disk(added_file), FileDestinations.LOCAL)
+		return added_file
 
 	def remove_file(self, path):
 		path, name = self.sanitize(path)
@@ -1007,3 +1011,150 @@ class LocalFileStorage(StorageInterface):
 				self._logger.exception("Error while writing .metadata.yaml to {path}".format(**locals()))
 			else:
 				self._metadata_cache[path] = metadata
+
+
+class SDCardFileStorage(StorageInterface):
+	def __init__(self, printer, fileManager):
+		self.printer = printer;
+		self.fileManager = fileManager;
+
+	def file_exists(self, path):
+		return path in map(lambda x: x[0], self.printer.get_sd_files())
+
+	def list_files(self, path=None, filter=None, recursive=True):
+		if path is not None and path is not '/':
+			return []
+		fileList = self.printer.get_sd_files()
+		result = dict()
+		if fileList is not None:
+			for name, size in fileList:
+				if not filter or filter(name, entry_data):
+					# only add files passing the optional filter
+					entry_data = {
+						"links": [],
+						"notes": [],
+						"name": name,
+						"type": "machinecode"
+					}
+					if size is not None:
+						entry_data.update({"size": size})
+					result[name] = entry_data
+		return result
+
+	def add_folder(self, path, ignore_existing=True):
+		raise io.UnsupportedOperation()
+
+	def remove_folder(self, path, recursive=True):
+		raise io.UnsupportedOperation()
+
+	def add_file(self, path, file_object, printer_profile=None, links=None, allow_overwrite=False, callback=None):
+		added_file = fileManager.add_file(FileDestinations.LOCAL, path, file_object, allow_overwrite=allow_overwrite)
+		if added_file is None:
+			return None
+		return added_file, self.printer.add_sd_file(added_file, fileManager.path_on_disk(FileDestinations.LOCAL, added_file), callback)
+
+	def remove_file(self, path):
+		return self.printer.delete_sd_file(path)
+
+	def get_metadata(self, path):
+		"""
+		Retrieves the metadata for the file ``path``.
+
+		:param path: virtual path to the file for which to retrieve the metadata
+		:return: the metadata associated with the file
+		"""
+		raise NotImplementedError()
+
+	def add_link(self, path, rel, data):
+		"""
+		Adds a link of relation ``rel`` to file ``path`` with the given ``data``.
+
+		The following relation types are currently supported:
+
+		  * ``model``: adds a link to a model from which the file was created/sliced, expected additional data is the ``name``
+		    and optionally the ``hash`` of the file to link to. If the link can be resolved against another file on the
+		    current ``path``, not only will it be added to the links of ``name`` but a reverse link of type ``machinecode``
+		    refering to ``name`` and its hash will also be added to the linked ``model`` file
+		  * ``machinecode``: adds a link to a file containing machine code created from the current file (model), expected
+		    additional data is the ``name`` and optionally the ``hash`` of the file to link to. If the link can be resolved
+		    against another file on the current ``path``, not only will it be added to the links of ``name`` but a reverse
+		    link of type ``model`` refering to ``name`` and its hash will also be added to the linked ``model`` file.
+		  * ``web``: adds a location on the web associated with this file (e.g. a website where to download a model),
+		    expected additional data is a ``href`` attribute holding the website's URL and optionally a ``retrieved``
+		    attribute describing when the content was retrieved
+
+		Note that adding ``model`` links to files identifying as models or ``machinecode`` links to files identifying
+		as machine code will be refused.
+
+		:param path: path of the file for which to add a link
+		:param rel: type of relation of the link to add (currently ``model``, ``machinecode`` and ``web`` are supported)
+		:param data: additional data of the link to add
+		"""
+		raise NotImplementedError()
+
+	def remove_link(self, path, rel, data):
+		"""
+		Removes the link consisting of ``rel`` and ``data`` from file ``name`` on ``path``.
+
+		:param path: path of the file from which to remove the link
+		:param rel: type of relation of the link to remove (currently ``model``, ``machinecode`` and ``web`` are supported)
+		:param data: additional data of the link to remove, must match existing link
+		"""
+		raise NotImplementedError()
+
+	def add_history(self, path, data):
+		"""
+		Not part of StorageInterface, but fileManager expects it?
+		"""
+		return
+
+	def set_additional_metadata(self, path, key, data, overwrite=False, merge=False):
+		"""
+		Adds additional metadata to the metadata of ``path``. Metadata in ``data`` will be saved under ``key``.
+
+		If ``overwrite`` is set and ``key`` already exists in ``name``'s metadata, the current value will be overwritten.
+
+		If ``merge`` is set and ``key`` already exists and both ``data`` and the existing data under ``key`` are dictionaries,
+		the two dictionaries will be merged recursively.
+
+		:param path: the virtual path to the file for which to add additional metadata
+		:param key: key of metadata to add
+		:param data: metadata to add
+		:param overwrite: if True and ``key`` already exists, it will be overwritten
+		:param merge: if True and ``key`` already exists and both ``data`` and the existing data are dictionaries, they
+		              will be merged
+		"""
+		raise NotImplementedError()
+
+	def remove_additional_metadata(self, path, key):
+		"""
+		Removes additional metadata under ``key`` for ``name`` on ``path``
+
+		:param path: the virtual path to the file for which to remove the metadata under ``key``
+		:param key: the key to remove
+		"""
+		raise NotImplementedError()
+
+	def sanitize(self, path):
+		return "", self.sanitize_name
+
+	def sanitize_path(self, path):
+		if path is not "" and path is not "/":
+			raise ValueError("only root path names supported")
+		return path
+
+	def sanitize_name(self, name):
+		fileList = self.printer.get_sd_files()
+		return util.get_dos_filename(filename, existing_filenames=fileList, extension="gco")
+
+	def split_path(self, path):
+		raise io.UnsupportedOperation()
+
+	def join_path(self, *path):
+		raise io.UnsupportedOperation()
+
+	def path_on_disk(self, path):
+		raise io.UnsupportedOperation()
+
+	def path_in_storage(self, path):
+		raise io.UnsupportedOperation()
