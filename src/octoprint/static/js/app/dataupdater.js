@@ -33,8 +33,7 @@ function DataUpdater(allViewModels) {
     };
 
     self._onclose = function(e) {
-        if (e.code == 1000) {
-            // it was us calling close
+        if (e.code == SOCKJS_CLOSE_NORMAL) {
             return;
         }
         if (self._autoReconnectTrial >= self._autoReconnectDialogIndex) {
