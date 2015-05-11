@@ -356,7 +356,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		self._setCurrentZ(None)
 
 	def unselect_file(self):
-		if self._comm is not None and (self._comm.isBusy() or self._comm.isStreaming()):
+		if self._comm is None or (self._comm.isBusy() or self._comm.isStreaming()):
 			return
 
 		self._comm.unselectFile()

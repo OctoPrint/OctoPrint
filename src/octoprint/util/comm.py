@@ -236,6 +236,9 @@ class MachineCom(object):
 		if self._state == newState:
 			return
 
+		if self._currentFile is not None and (newState == self.STATE_CLOSED or newState == self.STATE_ERROR or newState == self.STATE_CLOSED_WITH_ERROR):
+			self._currentFile.close()
+
 		if newState == self.STATE_CLOSED or newState == self.STATE_CLOSED_WITH_ERROR:
 			if settings().get(["feature", "sdSupport"]):
 				self._sdFileList = False
@@ -1784,6 +1787,9 @@ class PrintingFileInformation(object):
 	def getFileLocation(self):
 		return FileDestinations.LOCAL
 
+	def close(self):
+		pass
+
 	def getProgress(self):
 		"""
 		The current progress of the file, calculated as relation between file position and absolute size. Returns -1
@@ -1896,6 +1902,11 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 			self.close()
 			self._logger.exception("Exception while processing line")
 			raise e
+
+	def close(self):
+		if self._handle is not None:
+			self._handle.close()
+			self._handle = None
 
 class StreamingGcodeFileInformation(PrintingGcodeFileInformation):
 	def __init__(self, path, localFilename, remoteFilename):
