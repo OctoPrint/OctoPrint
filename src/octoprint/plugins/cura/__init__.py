@@ -66,7 +66,7 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 				profile_dict = Profile.from_cura_ini(flask.request.values[input_upload_path])
 			except Exception as e:
 				self._logger.exception("Error while converting the imported profile")
-				return flask.make_response("Something went wrong while converting imported profile: {message}".format(str(e)), 500)
+				return flask.make_response("Something went wrong while converting imported profile: {message}".format(message=str(e)), 500)
 
 		else:
 			self._logger.warn("No profile file included for importing, aborting")
