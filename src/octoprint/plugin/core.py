@@ -419,7 +419,7 @@ class PluginManager(object):
 	It is able to discover plugins both through possible file system locations as well as customizable entry points.
 	"""
 
-	def __init__(self, plugin_folders, plugin_types, plugin_entry_points, logging_prefix=None, plugin_disabled_list=None):
+	def __init__(self, plugin_folders, plugin_types, plugin_entry_points, logging_prefix=None, plugin_disabled_list=None, plugin_restart_needing_hooks=None):
 		self.logger = logging.getLogger(__name__)
 
 		if logging_prefix is None:
@@ -431,6 +431,7 @@ class PluginManager(object):
 		self.plugin_types = plugin_types
 		self.plugin_entry_points = plugin_entry_points
 		self.plugin_disabled_list = plugin_disabled_list
+		self.plugin_restart_needing_hooks = plugin_restart_needing_hooks
 		self.logging_prefix = logging_prefix
 
 		self.enabled_plugins = dict()
@@ -675,7 +676,7 @@ class PluginManager(object):
 		if plugin is None:
 			plugin = self.disabled_plugins[name]
 
-		if not startup and plugin.implementation and isinstance(plugin.implementation, RestartNeedingPlugin):
+		if not startup and self.is_restart_needing_plugin(plugin):
 			raise PluginNeedsRestart(name)
 
 		try:
@@ -711,7 +712,7 @@ class PluginManager(object):
 		if plugin is None:
 			plugin = self.enabled_plugins[name]
 
-		if plugin.implementation and isinstance(plugin.implementation, RestartNeedingPlugin):
+		if self.is_restart_needing_plugin(plugin):
 			raise PluginNeedsRestart(name)
 
 		try:
@@ -737,15 +738,14 @@ class PluginManager(object):
 		return True
 
 	def _activate_plugin(self, name, plugin):
+		plugin.hotchangeable = self.is_restart_needing_plugin(plugin)
+
 		# evaluate registered hooks
 		for hook, callback in plugin.hooks.items():
 			self.plugin_hooks[hook].append((name, callback))
 
 		# evaluate registered implementation
 		if plugin.implementation:
-			if isinstance(plugin.implementation, RestartNeedingPlugin):
-				plugin.hotchangeable = False
-
 			for plugin_type in self.plugin_types:
 				if isinstance(plugin.implementation, plugin_type):
 					self.plugin_implementations_by_type[plugin_type].append((name, plugin.implementation))
@@ -770,6 +770,35 @@ class PluginManager(object):
 				except ValueError:
 					# that's ok, the plugin was just not registered for the type
 					pass
+
+	def is_restart_needing_plugin(self, plugin):
+		return self.has_restart_needing_implementation(plugin) or self.has_restart_needing_hooks(plugin)
+
+	def has_restart_needing_implementation(self, plugin):
+		if not plugin.implementation:
+			return False
+
+		return isinstance(plugin.implementation, RestartNeedingPlugin)
+
+	def has_restart_needing_hooks(self, plugin):
+		if not plugin.hooks:
+			return False
+
+		hooks = plugin.hooks.keys()
+		for hook in hooks:
+			if self.is_restart_needing_hook(hook):
+				return True
+		return False
+
+	def is_restart_needing_hook(self, hook):
+		if self.plugin_restart_needing_hooks is None:
+			return False
+
+		for h in self.plugin_restart_needing_hooks:
+			if hook.startswith(h):
+				return True
+
+		return False
 
 	def initialize_implementations(self, additional_injects=None, additional_inject_factories=None):
 		for name, plugin in self.enabled_plugins.items():

@@ -721,6 +721,26 @@ class Server():
 		max_body_sizes = [
 			("POST", r"/api/files/([^/]*)", settings().getInt(["server", "uploads", "maxSize"]))
 		]
+
+		# allow plugins to extend allowed maximum body sizes
+		for name, hook in pluginManager.get_hooks("octoprint.server.http.bodysize").items():
+			try:
+				result = hook(list(max_body_sizes))
+			except:
+				self._logger.exception("There was an error while retrieving additional upload sizes from plugin hook {name}".format(**locals()))
+			else:
+				if isinstance(result, (list, tuple)):
+					for entry in result:
+						if not isinstance(entry, tuple) or not len(entry) == 3:
+							continue
+						if not entry[0] in util.tornado.UploadStorageFallbackHandler.BODY_METHODS:
+							continue
+						if not isinstance(entry[2], int):
+							continue
+
+						self._logger.debug("Adding maximum body size of {size}B for {method} requests to {path} (Plugin: {name})".format(method=entry[0], path=entry[1], size=entry[2], name=name))
+						max_body_sizes.append(entry)
+
 		self._server = util.tornado.CustomHTTPServer(self._tornado_app, max_body_sizes=max_body_sizes, default_max_body_size=settings().getInt(["server", "maxSize"]))
 		self._server.listen(self._port, address=self._host)
 
@@ -836,7 +856,10 @@ class Server():
 					"propagate": False
 				},
 				"tornado.application": {
-					"level": "ERROR"
+					"level": "INFO"
+				},
+				"tornado.general": {
+					"level": "INFO"
 				}
 			},
 			"root": {

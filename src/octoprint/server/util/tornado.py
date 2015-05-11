@@ -652,7 +652,7 @@ class CustomHTTP1Connection(tornado.http1connection.HTTP1Connection):
 		tornado.http1connection.HTTP1Connection.__init__(self, stream, is_client, params=params, context=context)
 
 		import re
-		self._max_body_sizes = map(lambda x: (x[0], re.compile(x[1]), x[2]), self.params.max_body_sizes or dict())
+		self._max_body_sizes = map(lambda x: (x[0], re.compile(x[1]), x[2]), self.params.max_body_sizes or list())
 		self._default_max_body_size = self.params.default_max_body_size or self.stream.max_buffer_size
 
 	def _read_body(self, code, headers, delegate):
@@ -680,7 +680,7 @@ class CustomHTTP1Connection(tornado.http1connection.HTTP1Connection):
 
 			content_length = int(content_length)
 			max_content_length = self._get_max_content_length(self._request_start_line.method, self._request_start_line.path)
-			if 0 <= max_content_length < content_length:
+			if max_content_length is not None and 0 <= max_content_length < content_length:
 				raise tornado.httputil.HTTPInputError("Content-Length too long")
 		else:
 			content_length = None
@@ -731,8 +731,8 @@ class CustomHTTP1ConnectionParameters(tornado.http1connection.HTTP1ConnectionPar
 
 	def __init__(self, *args, **kwargs):
 		tornado.http1connection.HTTP1ConnectionParameters.__init__(self, args, kwargs)
-		self.max_body_sizes = kwargs["max_body_sizes"] if "max_body_sizes" in kwargs else dict()
-		self.default_max_body_size = kwargs["default_max_body_size"] if "default_max_body_size" in kwargs else dict()
+		self.max_body_sizes = kwargs["max_body_sizes"] if "max_body_sizes" in kwargs else list()
+		self.default_max_body_size = kwargs["default_max_body_size"] if "default_max_body_size" in kwargs else None
 
 #~~ customized large response handler
 

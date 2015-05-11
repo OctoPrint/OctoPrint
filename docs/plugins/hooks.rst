@@ -264,3 +264,38 @@ octoprint.filemanager.preprocessor
    :param boolean allow_overwrite: Whether to allow overwriting an existing file named the same or not.
    :return: The `file_object` as passed in or None, or a replaced version to use instead for further processing.
    :rtype: AbstractFileWrapper or None
+
+.. _sec-plugins-hook-server-http-bodysize:
+
+octoprint.server.http.bodysize
+------------------------------
+
+.. py:function:: hook(current_max_body_sizes, *args, **kwargs)
+
+   Allows extending the list of custom maximum body sizes on the web server per path and HTTP method with custom entries
+   from plugins.
+
+   Your plugin might need this if you want to allow uploading files larger than 100KB (the default maximum upload size
+   for anything but the ``/api/files`` endpoint).
+
+   ``current_max_body_sizes`` will be a (read-only) list of the currently configured maximum body sizes, in case you
+   want to check from your plugin if you need to even add a new entry.
+
+   The hook must return a list of 3-tuples (the list's length can be 0). Each 3-tuple should have the HTTP method
+   against which to match as first, a regular expression for the path to match against and the maximum body size as
+   an integer as the third entry.
+
+   **Example**
+
+   The following plugin example sets the maximum body size for ``POST`` requests against four custom URLs to 100, 200,
+   500 and 1024KB. To test its functionality try uploading files larger or smaller than an endpoint's configured maximum
+   size (as multipart request with the file upload residing in request parameter ``file``) and observe the behaviour.
+
+   .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/increase_bodysize.py
+      :linenos:
+      :tab-width: 4
+      :caption: `increase_bodysize.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/increase_bodysize.py>`_
+
+   :param list current_max_body_sizes: read-only list of the currently configured maximum body sizes
+   :return: A list of 3-tuples with additional request specific maximum body sizes as defined above
+   :rtype: list
