@@ -869,7 +869,7 @@ class MachineCom(object):
 						continue
 
 				##~~ process oks
-				if line.strip().startswith("ok") or (supportWait and line.strip().startswith("wait")):
+				if line.strip().startswith("ok") or (self.isPrinting() and supportWait and line.strip().startswith("wait")):
 					self._clear_to_send.set()
 					self._blocking_command = False
 
