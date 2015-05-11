@@ -242,6 +242,9 @@ class MachineCom(object):
 				self._sdFiles = []
 				self._callback.on_comm_sd_files([])
 
+			if self._currentFile is not None:
+				self._currentFile.close()
+
 		oldState = self.getStateString()
 		self._state = newState
 		self._log('Changing monitoring state from \'%s\' to \'%s\'' % (oldState, self.getStateString()))
@@ -1802,6 +1805,12 @@ class PrintingFileInformation(object):
 		"""
 		self._start_time = time.time()
 
+	def close(self):
+		"""
+		Closes the print job.
+		"""
+		pass
+
 class PrintingSdFileInformation(PrintingFileInformation):
 	"""
 	Encapsulates information regarding an ongoing print from SD.
@@ -1843,10 +1852,22 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 
 	def start(self):
 		"""
-		Opens the file for reading and determines the file size. Start time won't be recorded until 100 lines in
+		Opens the file for reading and determines the file size.
 		"""
 		PrintingFileInformation.start(self)
 		self._handle = open(self._filename, "r")
+
+	def close(self):
+		"""
+		Closes the file if it's still open.
+		"""
+		PrintingFileInformation.close(self)
+		if self._handle is not None:
+			try:
+				self._handle.close()
+			except:
+				pass
+		self._handle = None
 
 	def getNext(self):
 		"""
@@ -1855,10 +1876,10 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 		if self._handle is None:
 			raise ValueError("File %s is not open for reading" % self._filename)
 
-		offsets = self._offsets_callback() if self._offsets_callback is not None else None
-		current_tool = self._current_tool_callback() if self._current_tool_callback is not None else None
-
 		try:
+			offsets = self._offsets_callback() if self._offsets_callback is not None else None
+			current_tool = self._current_tool_callback() if self._current_tool_callback is not None else None
+
 			processed = None
 			while processed is None:
 				if self._handle is None:
@@ -1866,16 +1887,13 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 					return None
 				line = self._handle.readline()
 				if not line:
-					self._handle.close()
-					self._handle = None
+					self.close()
 				processed = process_gcode_line(line, offsets=offsets, current_tool=current_tool)
 			self._pos = self._handle.tell()
 
 			return processed
 		except Exception as e:
-			if self._handle is not None:
-				self._handle.close()
-				self._handle = None
+			self.close()
 			self._logger.exception("Exception while processing line")
 			raise e
 
