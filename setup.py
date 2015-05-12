@@ -31,8 +31,9 @@ INSTALL_REQUIRES = [
 	"pkginfo"
 ]
 
-# Requirements for developing etc
+# Additional requirements for optional install options
 EXTRA_REQUIRES = dict(
+	# Dependencies for developing OctoPrint
 	develop=[
 		# Testing dependencies
 		"mock>=1.0.1",
@@ -43,6 +44,11 @@ EXTRA_REQUIRES = dict(
 		"sphinx>=1.3",
 		"sphinxcontrib-httpdomain",
 		"sphinx_rtd_theme"
+	],
+
+	# Dependencies for developing OctoPrint plugins
+	plugins=[
+		"cookiecutter"
 	]
 )
 
