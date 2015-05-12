@@ -9,14 +9,14 @@
 
     <div class="row-fluid">
         <div class="span7">
-            <h1>Model info</h1>
+            <h1>{{ _('Model info') }}</h1>
             <p data-bind="html: ui_modelInfo"></p>
 
             <h1>Layer info</h1>
             <p data-bind="html: ui_layerInfo"></p>
         </div>
         <div class="span5">
-            <h1>Renderer options</h1>
+            <h1>{{ _('Renderer options') }}</h1>
 
             <p>
                 <label class="checkbox">
@@ -57,9 +57,8 @@
     </div>
 </div>
 <div data-bind="visible: waitForApproval">
-    <h1>Warning</h1>
-
-    <p>
+    <h1>{{ _('Warning') }}</h1>
+    {% trans %}<p>
         You've selected <strong data-bind="text: selectedFile.name"></strong> for printing which has a size of
         <strong data-bind="text: formatSize(selectedFile.size())"></strong>. Depending on your machine this
         might be too large for rendering and cause your browser to become unresponsive or crash.
@@ -67,9 +66,9 @@
 
     <p>
         Are you sure you want to visualize this file nevertheless?
-    </p>
+    </p>{% endtrans %}
 
     <button class="btn btn-warning btn-block" data-bind="click: approveLargeFile">
-        Yes, please visualize <span data-bind="text: selectedFile.name"></span> regardless of its size
+        {{ _('Yes, please visualize %(name)s regardless of its size', name='<span data-bind="text: selectedFile.name"></span>') }}
     </button>
 </div>
