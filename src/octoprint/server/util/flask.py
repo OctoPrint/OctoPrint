@@ -121,12 +121,12 @@ def cached(timeout=5 * 60, key=lambda: "view/%s" % flask.request.path, unless=No
 
 			# bypass the cache if "unless" condition is true
 			if callable(unless) and unless():
-				logger.debug("Cache bypassed, calling wrapped function")
+				logger.debug("Cache for {path} bypassed, calling wrapped function".format(path=flask.request.path))
 				return f(*args, **kwargs)
 
 			# also bypass the cache if it's disabled completely
 			if not settings().getBoolean(["devel", "cache", "enabled"]):
-				logger.debug("Cache disabled, calling wrapped function")
+				logger.debug("Cache for {path} disabled, calling wrapped function".format(path=flask.request.path))
 				return f(*args, **kwargs)
 
 			cache_key = key()
@@ -135,11 +135,11 @@ def cached(timeout=5 * 60, key=lambda: "view/%s" % flask.request.path, unless=No
 			if not callable(refreshif) or not refreshif():
 				rv = _cache.get(cache_key)
 				if rv is not None:
-					logger.debug("Serving entry from cache")
+					logger.debug("Serving entry for {path} from cache".format(path=flask.request.path))
 					return rv
 
 			# get value from wrapped function
-			logger.debug("No cache entry or refreshing cache, calling wrapped function")
+			logger.debug("No cache entry or refreshing cache for {path}, calling wrapped function".format(path=flask.request.path))
 			rv = f(*args, **kwargs)
 
 			# store it in the cache
