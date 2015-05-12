@@ -48,6 +48,7 @@ def enable_plugin_translations():
 		translations = getattr(ctx, 'babel_translations', None)
 		if translations is None:
 			locale = flask.ext.babel.get_locale()
+			translations = support.Translations()
 
 			plugins = octoprint.plugin.plugin_manager().enabled_plugins
 			for name, plugin in plugins.items():
@@ -60,17 +61,11 @@ def enable_plugin_translations():
 				except:
 					logger.exception("Error while trying to load translations for plugin {name}".format(**locals()))
 				else:
-					if translations is None:
-						translations = plugin_translations
-					else:
-						translations = translations.merge(plugin_translations)
+					translations = translations.merge(plugin_translations)
 
 			dirname = os.path.join(ctx.app.root_path, 'translations')
 			core_translations = support.Translations.load(dirname, [locale])
-			if translations is None:
-				translations = core_translations
-			else:
-				translations = translations.merge(core_translations)
+			translations = translations.merge(core_translations)
 
 			ctx.babel_translations = translations
 		return translations

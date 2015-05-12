@@ -478,6 +478,57 @@ def robotsTxt():
 	return send_from_directory(app.static_folder, "robots.txt")
 
 
+@app.route("/i18n/<string:locale>/<string:domain>.js")
+@util.flask.cached(refreshif=lambda: util.flask.cache_check_headers() or "_refresh" in request.values, key=lambda: "view/%s/%s" % (request.path, g.locale))
+def localeJs(locale, domain):
+	from flask import _request_ctx_stack
+	from babel.messages.pofile import read_po
+
+	def messages_from_po(base_path, locale, domain):
+		path = os.path.join(base_path, locale)
+		if not os.path.isdir(path):
+			return dict(), None
+
+		path = os.path.join(path, "LC_MESSAGES", "{domain}.po".format(**locals()))
+		if not os.path.isfile(path):
+			return dict(), None
+
+		messages = dict()
+		with file(path) as f:
+			catalog = read_po(f, locale=locale, domain=domain)
+
+			for message in catalog:
+				message_id = message.id
+				if isinstance(message_id, (list, tuple)):
+					message_id = message_id[0]
+				messages[message_id] = message.string
+
+		return messages, catalog.plural_expr
+
+	messages = dict()
+
+	ctx = _request_ctx_stack.top
+	base_path = os.path.join(ctx.app.root_path, "translations")
+
+	plugins = octoprint.plugin.plugin_manager().enabled_plugins
+	for name, plugin in plugins.items():
+		base_path = os.path.join(plugin.location, 'translations')
+		plugin_messages, _ = messages_from_po(base_path, locale, domain)
+		messages = octoprint.util.dict_merge(messages, plugin_messages)
+
+	core_messages, plural_expr = messages_from_po(base_path, locale, domain)
+	messages = octoprint.util.dict_merge(messages, core_messages)
+
+	catalog = dict(
+		messages=messages,
+		plural_expr=plural_expr,
+		locale=locale,
+		domain=domain
+	)
+
+	return render_template("i18n.js.jinja2", catalog=catalog)
+
+
 @app.route("/plugin_assets/<string:name>/<path:filename>")
 def plugin_assets(name, filename):
 	asset_plugins = pluginManager.get_filtered_implementations(lambda p: p._identifier == name, octoprint.plugin.AssetPlugin)

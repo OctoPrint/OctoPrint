@@ -40,12 +40,8 @@
 <script type="text/javascript" src="{{ url_for('static', filename='js/app/main.js') }}"></script>
 <!-- /Include OctoPrint files -->
 
-<!-- Include i18n language files -->
-{% if g.locale != 'en' %}
-    <script type="text/javascript" src="{{ url_for('static', filename='js/i18n/%s.js' % g.locale) }}"></script>
-{% endif %}
-<!-- /Include i18n language files -->
-
 <script type="text/javascript" src="{{ url_for('static', filename='gcodeviewer/js/ui.js') }}"></script>
 <script type="text/javascript" src="{{ url_for('static', filename='gcodeviewer/js/gCodeReader.js') }}"></script>
 <script type="text/javascript" src="{{ url_for('static', filename='gcodeviewer/js/renderer.js') }}"></script>
+
+<script type="text/javascript" src="{{ url_for('localeJs', locale=g.locale, domain='messages') }}"></script>
