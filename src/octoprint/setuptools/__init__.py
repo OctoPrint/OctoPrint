@@ -29,7 +29,7 @@ def package_data_dirs(source, sub_folders):
 	return dirs
 
 
-def recursively_handle_files(directory, file_matcher, folder_handler=None, file_handler=None):
+def recursively_handle_files(directory, file_matcher, folder_matcher=None, folder_handler=None, file_handler=None):
 	applied_handler = False
 
 	for filename in os.listdir(directory):
@@ -39,7 +39,7 @@ def recursively_handle_files(directory, file_matcher, folder_handler=None, file_
 			file_handler(path)
 			applied_handler = True
 
-		elif os.path.isdir(path):
+		elif os.path.isdir(path) and (folder_matcher is None or folder_matcher(directory, filename, path)):
 			sub_applied_handler = recursively_handle_files(path, file_matcher, folder_handler=folder_handler, file_handler=file_handler)
 			if sub_applied_handler:
 				applied_handler = True
@@ -104,6 +104,7 @@ class CleanCommand(Command):
 		recursively_handle_files(
 			os.path.abspath(self.__class__.source_folder),
 			lambda name: fnmatch.fnmatch(name.lower(), "*.pyc"),
+			folder_matcher=lambda dir, name, path: name != ".git",
 			folder_handler=delete_folder_if_empty,
 			file_handler=delete_file
 		)
@@ -302,7 +303,9 @@ def get_babel_commandclasses(pot_file=None, mapping_file="babel.cfg", input_dirs
 
 def create_plugin_setup_parameters(identifier="todo", name="TODO", version="0.1", description="TODO", author="TODO",
                                    mail="todo@example.com", url="TODO", license="AGPLv3", additional_data=None,
-                                   requires=None, extra_requires=None, cmdclass=None):
+                                   requires=None, extra_requires=None, cmdclass=None, eggs=None):
+	import pkg_resources
+
 	package = "octoprint_{identifier}".format(**locals())
 
 	if additional_data is None:
@@ -310,8 +313,8 @@ def create_plugin_setup_parameters(identifier="todo", name="TODO", version="0.1"
 
 	if requires is None:
 		requires = ["OctoPrint"]
-	if not isinstance(requires, (list, tuple)):
-		raise ValueError("requires must be a list or a tuple")
+	if not isinstance(requires, list):
+		raise ValueError("requires must be a list")
 	if "OctoPrint" not in requires:
 		requires = ["OctoPrint"] + list(requires)
 
@@ -325,8 +328,17 @@ def create_plugin_setup_parameters(identifier="todo", name="TODO", version="0.1"
 	if not isinstance(cmdclass, dict):
 		raise ValueError("cmdclass must be a dict")
 
+	if eggs is None:
+		eggs = []
+	if not isinstance(eggs, list):
+		raise ValueError("eggs must be a list")
+
+	egg = "{name}*.egg-info".format(name=pkg_resources.to_filename(pkg_resources.safe_name(name)))
+	if egg not in eggs:
+		eggs = [egg] + eggs
+
 	cmdclass.update(dict(
-		clean=CleanCommand.for_options(source_folder=package)
+		clean=CleanCommand.for_options(source_folder=package, eggs=eggs)
 	))
 
 	translation_dir = os.path.join(package, "translations")

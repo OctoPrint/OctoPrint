@@ -49,12 +49,6 @@ EXTRA_REQUIRES = dict(
 # Dependency links for any of the aforementioned dependencies
 DEPENDENCY_LINKS = []
 
-# I18N setup
-I18N_MAPPING_FILE = "babel.cfg"
-I18N_INPUT_DIRS = "."
-I18N_OUTPUT_DIR = os.path.join("src", "octoprint", "translations")
-I18N_POT_FILE = os.path.join(I18N_OUTPUT_DIR, "messages.pot")
-
 # Versioneer configuration
 versioneer.VCS = 'git'
 versioneer.versionfile_source = 'src/octoprint/_version.py'
