@@ -44,4 +44,6 @@
 <script type="text/javascript" src="{{ url_for('static', filename='gcodeviewer/js/gCodeReader.js') }}"></script>
 <script type="text/javascript" src="{{ url_for('static', filename='gcodeviewer/js/renderer.js') }}"></script>
 
-<script type="text/javascript" src="{{ url_for('localeJs', locale=g.locale, domain='messages') }}"></script>
+{% if g.locale %}
+    <script type="text/javascript" src="{{ url_for('localeJs', locale=g.locale, domain='messages') }}"></script>
+{% endif %}
