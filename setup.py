@@ -7,7 +7,7 @@ import versioneer
 
 import sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "src"))
-import octoprint.setuptools
+import octoprint_setuptools
 
 #-----------------------------------------------------------------------------------------------------------------------
 
@@ -64,12 +64,12 @@ def get_cmdclass():
 	cmdclass = versioneer.get_cmdclass()
 
 	# add clean command
-	cmdclass.update(dict(clean=octoprint.setuptools.CleanCommand.for_options(source_folder="src", eggs=["OctoPrint*.egg-info"])))
+	cmdclass.update(dict(clean=octoprint_setuptools.CleanCommand.for_options(source_folder="src", eggs=["OctoPrint*.egg-info"])))
 
 	# add translation commands
 	translation_dir = os.path.join("src", "octoprint", "translations")
 	pot_file = os.path.join(translation_dir, "messages.pot")
-	cmdclass.update(octoprint.setuptools.get_babel_commandclasses(pot_file=pot_file, output_dir=translation_dir))
+	cmdclass.update(octoprint_setuptools.get_babel_commandclasses(pot_file=pot_file, output_dir=translation_dir))
 
 	return cmdclass
 
@@ -111,7 +111,7 @@ def params():
 		"octoprint_setuptools": "src/octoprint_setuptools"
 	}
 	package_data = {
-		"octoprint": octoprint.setuptools.package_data_dirs('src/octoprint', ['static', 'templates', 'plugins', 'translations'])
+		"octoprint": octoprint_setuptools.package_data_dirs('src/octoprint', ['static', 'templates', 'plugins', 'translations'])
 	}
 
 	include_package_data = True
