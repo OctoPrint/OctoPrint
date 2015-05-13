@@ -113,8 +113,7 @@ def params():
 
 	packages = find_packages(where="src")
 	package_dir = {
-		"octoprint": "src/octoprint",
-		"octoprint_setuptools": "src/octoprint_setuptools"
+		"": "src"
 	}
 	package_data = {
 		"octoprint": octoprint_setuptools.package_data_dirs('src/octoprint', ['static', 'templates', 'plugins', 'translations'])
