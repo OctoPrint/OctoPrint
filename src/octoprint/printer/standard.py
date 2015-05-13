@@ -762,9 +762,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		# forward relevant state changes to gcode manager
 		if oldState == comm.MachineCom.STATE_PRINTING:
 			if self._selectedFile is not None:
-				if state == comm.MachineCom.STATE_OPERATIONAL:
-					self._fileManager.log_print(FileDestinations.SDCARD if self._selectedFile["sd"] else FileDestinations.LOCAL, self._selectedFile["filename"], time.time(), self._comm.getPrintTime(), True, self._printerProfileManager.get_current_or_default()["id"])
-				elif state == comm.MachineCom.STATE_CLOSED or state == comm.MachineCom.STATE_ERROR or state == comm.MachineCom.STATE_CLOSED_WITH_ERROR:
+				if state == comm.MachineCom.STATE_CLOSED or state == comm.MachineCom.STATE_ERROR or state == comm.MachineCom.STATE_CLOSED_WITH_ERROR:
 					self._fileManager.log_print(FileDestinations.SDCARD if self._selectedFile["sd"] else FileDestinations.LOCAL, self._selectedFile["filename"], time.time(), self._comm.getPrintTime(), False, self._printerProfileManager.get_current_or_default()["id"])
 			self._analysisQueue.resume() # printing done, put those cpu cycles to good use
 		elif state == comm.MachineCom.STATE_PRINTING:
@@ -821,6 +819,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			self.start_print()
 
 	def on_comm_print_job_done(self):
+		self._fileManager.log_print(FileDestinations.SDCARD if self._selectedFile["sd"] else FileDestinations.LOCAL, self._selectedFile["filename"], time.time(), self._comm.getPrintTime(), True, self._printerProfileManager.get_current_or_default()["id"])
 		self._setProgressData(1.0, self._selectedFile["filesize"], self._comm.getPrintTime(), 0)
 		self._stateMonitor.set_state({"text": self.get_state_string(), "flags": self._getStateFlags()})
 

@@ -198,6 +198,7 @@
   * Made initial connection to printer a bit more responsive: Having to wait for the first serial timeout before sending 
     the first ``M105`` even when not waiting for seeing a "start" caused unnecessary wait times for reaching the 
     "Operational" state.
+  * Log cancelled prints only once (thanks to @imrahil for the headsup)
 
 ([Commits](https://github.com/foosel/OctoPrint/compare/master...devel))
 
