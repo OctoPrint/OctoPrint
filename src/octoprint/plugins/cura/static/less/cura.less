@@ -1,0 +1,29 @@
+table {
+  th, td {
+    &.settings_plugin_cura_profiles_key {
+      text-overflow: ellipsis;
+      text-align: left;
+      width: 200px;
+    }
+
+    &.settings_plugin_cura_profiles_name {
+      text-overflow: ellipsis;
+      text-align: left;
+    }
+
+    &.settings_plugin_cura_profiles_actions {
+      text-align: center;
+      width: 100px;
+
+      a {
+        text-decoration: none;
+        color: #000;
+
+        &.disabled {
+          color: #ccc;
+          cursor: default;
+        }
+      }
+    }
+  }
+}

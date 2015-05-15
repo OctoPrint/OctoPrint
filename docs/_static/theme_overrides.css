@@ -1,0 +1,54 @@
+/* override table width restrictions */
+.wy-table-responsive table td, .wy-table-responsive table th {
+    /* !important prevents the common CSS stylesheets from
+       overriding this as on RTD they are loaded after this stylesheet */
+    white-space: normal !important;
+}
+
+.wy-table-responsive {
+    overflow: visible !important;
+}
+
+/* style headlink for code block captions like other headlinks */
+.code-block-caption .headerlink {
+    display: none;
+    visibility: hidden;
+    font-size: 14px;
+    font-family: inherit;
+    font-style: normal;
+    font-weight: normal;
+    line-height: 1;
+    -webkit-font-smoothing: antialiased;
+}
+
+.code-block-caption:hover .headerlink {
+    display: inline-block;
+}
+
+.code-block-caption .headerlink:after {
+    visibility: visible;
+    content: "\f0c1";
+    font-family: FontAwesome;
+    display: inline-block;
+}
+
+/* make whitespace visualization in code listings not appear on same vertical position as dashes */
+.highlight .w {
+    vertical-align: 10%;
+}
+
+/* make code tags non-red again */
+code,
+.rst-content tt {
+    color: #000 !important;
+}
+
+a code,
+.rst-content a tt {
+    color: #2980B9 !important;
+}
+
+a:visited code,
+.rst-content a:visited tt {
+    color: #9B59B6 !important;
+}

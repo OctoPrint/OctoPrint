@@ -1,0 +1,197 @@
+<h3>{{ _('Printer Profiles') }}</h3>
+<table class="table table-striped table-hover table-condensed table-hover" id="settings_printerProfiles_profiles">
+    <thead>
+    <tr>
+        <th class="settings_printerProfiles_profiles_name">{{ _('Name') }}</th>
+        <th class="settings_printerProfiles_profiles_model">{{ _('Model') }}</th>
+        <th class="settings_printerProfiles_profiles_action">{{ _('Action') }}</th>
+    </tr>
+    </thead>
+    <tbody data-bind="foreach: printerProfiles.profiles.paginatedItems">
+    <tr data-bind="attr: {title: name}">
+        <td class="settings_printerProfiles_profiles_name"><span class="icon-star" data-bind="invisible: !isdefault()"></span> <span data-bind="text: name"></span></td>
+        <td class="settings_printerProfiles_profiles_model" data-bind="text: model"></td>
+        <td class="settings_printerProfiles_profiles_action">
+            <a href="#" class="icon-star" title="{{ _('Set as default profile') }}" data-bind="click: function() { $root.printerProfiles.makeDefault($data); }, css: {disabled: $root.printerProfiles.requestInProgress()}, enabled: !$root.printerProfiles.requestInProgress()"></a>&nbsp;|&nbsp;<a href="#" class="icon-pencil" title="{{ _('Edit Profile') }}" data-bind="click: function() { $root.printerProfiles.showEditProfileDialog($data); }, css: {disabled: $root.printerProfiles.requestInProgress()}, enabled: !$root.printerProfiles.requestInProgress()"></a>&nbsp;|&nbsp;<a href="#" class="icon-trash" title="{{ _('Delete Profile') }}" data-bind="click: function() { $root.printerProfiles.removeProfile($data); }, css: {disabled: $root.printerProfiles.requestInProgress()}, enabled: !$root.printerProfiles.requestInProgress()"></a>
+        </td>
+    </tr>
+    </tbody>
+</table>
+
+<div class="pagination pagination-mini pagination-centered">
+    <ul>
+        <li data-bind="css: {disabled: printerProfiles.profiles.currentPage() === 0}"><a href="#" data-bind="click: printerProfiles.profiles.prevPage">«</a></li>
+    </ul>
+    <ul data-bind="foreach: printerProfiles.profiles.pages">
+        <li data-bind="css: { active: $data.number === $root.printerProfiles.profiles.currentPage(), disabled: $data.number === -1 }"><a href="#" data-bind="text: $data.text, click: function() { $root.printerProfiles.profiles.changePage($data.number); }"></a></li>
+    </ul>
+    <ul>
+        <li data-bind="css: {disabled: printerProfiles.profiles.currentPage() === printerProfiles.profiles.lastPage()}"><a href="#" data-bind="click: printerProfiles.profiles.nextPage">»</a></li>
+    </ul>
+</div>
+
+
+<button class="btn pull-right" data-bind="click: function() { $root.printerProfiles.showEditProfileDialog(); }">{{ _('Add Profile...') }}</button>
+
+<div id="settings_printerProfiles_editDialog" class="modal hide fade">
+    <div class="modal-header">
+        <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
+        <h3 class="modal-title"></h3>
+    </div>
+    <div class="modal-body">
+        <form class="form-horizontal">
+            <div class="control-group" data-bind="css: {error: printerProfiles.editorNameInvalid()}">
+                <label class="control-label">{{ _('Name') }}</label>
+                <div class="controls">
+                    <input type="text" data-bind="value: printerProfiles.editorName, valueUpdate: 'afterkeydown'">
+                    <span data-bind="visible: printerProfiles.editorNameInvalid()"><br><span class="help-inline">{{ _('Name must be set') }}</span></span>
+                </div>
+            </div>
+            <div class="control-group" data-bind="css: {error: printerProfiles.editorIdentifierInvalid()}">
+                <label class="control-label">{{ _('Identifier') }}</label>
+                <div class="controls">
+                    <input type="text" data-bind="value: printerProfiles.editorIdentifier, valueUpdate: 'afterkeydown', enable: printerProfiles.editorNew, css: {disabled: !printerProfiles.editorNew()}, attr: {placeholder: printerProfiles.editorIdentifierPlaceholder}">
+                    <span data-bind="visible: printerProfiles.editorIdentifierInvalid()"><br><span class="help-inline" data-bind="text: printerProfiles.editorIdentifierInvalidText()"></span></span>
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">{{ _('Model') }}</label>
+                <div class="controls">
+                    <input type="text" data-bind="value: printerProfiles.editorModel">
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">{{ _('Color') }}</label>
+                <div class="controls">
+                    <select data-bind="value: printerProfiles.editorColor, options: printerProfiles.availableColors, optionsText: 'name', optionsValue: 'key'">
+                    </select>
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">{{ _('Form Factor') }}</label>
+                <div class="controls">
+                    <label class="radio"><input type="radio" name="printerProfileFormFactorGroup" value="rectangular" data-bind="checked: printerProfiles.editorVolumeFormFactor"> {{ _('Rectangular') }}</label>
+                </div>
+                <div class="controls">
+                    <label class="radio"><input type="radio" name="printerProfileFormFactorGroup" value="circular" data-bind="checked: printerProfiles.editorVolumeFormFactor"> {{ _('Circular') }}</label>
+                </div>
+            </div>
+            <div class="control-group">
+                <div class="control-group">
+                    <label class="control-label">{{ _('Origin') }}</label>
+                    <div class="controls">
+                        <select data-bind="value: printerProfiles.editorVolumeOrigin, options: printerProfiles.availableOrigins, optionsText: 'name', optionsValue: 'key'">
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">{{ _('Volume') }}</label>
+                <div class="controls form-inline">
+                    <label>{{ _('X') }}</label>
+                    <div class="input-append">
+                        <input type="number" step="0.01" class="input-mini text-right" data-bind="value: printerProfiles.editorVolumeWidth">
+                        <span class="add-on">mm</span>
+                    </div>
+                </div>
+                <div class="controls form-inline">
+                    <label>{{ _('Y') }}</label>
+                    <div class="input-append">
+                        <input type="number" step="0.01" class="input-mini text-right" data-bind="value: printerProfiles.editorVolumeDepth">
+                        <span class="add-on">mm</span>
+                    </div>
+                </div>
+                <div class="controls form-inline">
+                    <label>{{ _('Z') }}</label>
+                    <div class="input-append">
+                        <input type="number" step="0.01" class="input-mini text-right" data-bind="value: printerProfiles.editorVolumeHeight">
+                        <span class="add-on">mm</span>
+                    </div>
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">{{ _('Heated Bed') }}</label>
+                <div class="controls">
+                    <input type="checkbox" data-bind="checked: printerProfiles.editorHeatedBed">
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">{{ _('Axis') }}</label>
+                <div class="controls form-inline">
+                    <label>{{ _('X') }}</label>
+                    <div class="input-append">
+                        <input type="number" class="input-mini text-right" data-bind="value: printerProfiles.editorAxisXSpeed">
+                        <span class="add-on">mm/min</span>
+                    </div>
+                    <label class="checkbox">
+                        <input type="checkbox" data-bind="checked: printerProfiles.editorAxisXInverted"> {{ _('Invert control') }}
+                    </label>
+                </div>
+                <div class="controls form-inline">
+                    <label>{{ _('Y') }}</label>
+                    <div class="input-append">
+                        <input type="number" class="input-mini text-right" data-bind="value: printerProfiles.editorAxisYSpeed">
+                        <span class="add-on">mm/min</span>
+                    </div>
+                    <label class="checkbox">
+                        <input type="checkbox" data-bind="checked: printerProfiles.editorAxisYInverted"> {{ _('Invert control') }}
+                    </label>
+                </div>
+                <div class="controls form-inline">
+                    <label>{{ _('Z') }}</label>
+                    <div class="input-append">
+                        <input type="number" class="input-mini text-right" data-bind="value: printerProfiles.editorAxisZSpeed">
+                        <span class="add-on">mm/min</span>
+                    </div>
+                    <label class="checkbox">
+                        <input type="checkbox" data-bind="checked: printerProfiles.editorAxisZInverted"> {{ _('Invert control') }}
+                    </label>
+                </div>
+                <div class="controls form-inline">
+                    <label>{{ _('E') }}</label>
+                    <div class="input-append">
+                        <input type="number" class="input-mini text-right" data-bind="value: printerProfiles.editorAxisESpeed">
+                        <span class="add-on">mm/min</span>
+                    </div>
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">{{ _('Nozzle Diameter') }}</label>
+                <div class="controls">
+                    <div class="input-append">
+                        <input type="number" step="0.01" class="input-mini text-right" data-bind="value: printerProfiles.editorNozzleDiameter">
+                        <span class="add-on">mm</span>
+                    </div>
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">{{ _('Number of Extruders') }}</label>
+                <div class="controls">
+                    <input type="number" class="input-mini text-right" min="1" max="10" data-bind="value: printerProfiles.editorExtruders">
+                </div>
+            </div>
+            <div class="control-group" data-bind="visible: printerProfiles.editorExtruders() > 1">
+                <label class="control-label">{{ _('Nozzle Offsets (relative to first nozzle T0)') }}</label>
+                <!-- ko foreach: printerProfiles.koEditorExtruderOffsets -->
+                <div class="controls form-inline">
+                    <label>T<span data-bind="text: idx"></span>:</label>
+                    <label>X</label>
+                    <div class="input-append">
+                        <input type="number" step="0.01" class="input-mini text-right" data-bind="value: x">
+                        <span class="add-on">mm</span>
+                    </div>
+                    <label>Y</label>
+                    <div class="input-append">
+                        <input type="number" step="0.01" class="input-mini text-right" data-bind="value: y">
+                        <span class="add-on">mm</span>
+                    </div>
+                </div>
+                <!-- /ko -->
+            </div>
+        </form>
+    </div>
+    <div class="modal-footer">
+        <button class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Abort') }}</button>
+        <button class="btn btn-primary btn-confirm" data-bind="enabled: printerProfiles.enableEditorSubmitButton, css: {disabled: !printerProfiles.enableEditorSubmitButton()}"><i class="icon-spinner icon-spin" data-bind="visible: printerProfiles.requestInProgress()"></i> {{ _('Confirm') }}</button>
+    </div>
+</div>

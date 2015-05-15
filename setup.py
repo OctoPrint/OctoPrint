@@ -1,7 +1,61 @@
-# coding=utf-8
 #!/usr/bin/env python
+# coding=utf-8
 
+from setuptools import setup, find_packages
+import os
 import versioneer
+
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.realpath(__file__)), "src"))
+import octoprint_setuptools
+
+#-----------------------------------------------------------------------------------------------------------------------
+
+# Requirements for our application
+INSTALL_REQUIRES = [
+	"flask>=0.9,<0.11",
+	"werkzeug==0.8.3",
+	"tornado==4.0.1",
+	"sockjs-tornado>=1.0.0",
+	"PyYAML==3.10",
+	"Flask-Login==0.2.2",
+	"Flask-Principal==0.3.5",
+	"Flask-Babel==0.9",
+	"pyserial",
+	"netaddr",
+	"watchdog",
+	"sarge>=0.1.4",
+	"netifaces",
+	"pylru",
+	"rsa",
+	"pkginfo"
+]
+
+# Additional requirements for optional install options
+EXTRA_REQUIRES = dict(
+	# Dependencies for developing OctoPrint
+	develop=[
+		# Testing dependencies
+		"mock>=1.0.1",
+		"nose>=1.3.0",
+		"ddt",
+
+		# Documentation dependencies
+		"sphinx>=1.3",
+		"sphinxcontrib-httpdomain",
+		"sphinx_rtd_theme"
+	],
+
+	# Dependencies for developing OctoPrint plugins
+	plugins=[
+		"cookiecutter"
+	]
+)
+
+# Dependency links for any of the aforementioned dependencies
+DEPENDENCY_LINKS = []
+
+# Versioneer configuration
 versioneer.VCS = 'git'
 versioneer.versionfile_source = 'src/octoprint/_version.py'
 versioneer.versionfile_build = 'octoprint/_version.py'
@@ -9,93 +63,20 @@ versioneer.tag_prefix = ''
 versioneer.parentdir_prefix = ''
 versioneer.lookupfile = '.versioneer-lookup'
 
-from setuptools import setup, find_packages, Command
-import os
-import shutil
-import glob
-
-
-def package_data_dirs(source, sub_folders):
-	dirs = []
-
-	for d in sub_folders:
-		for dirname, _, files in os.walk(os.path.join(source, d)):
-			dirname = os.path.relpath(dirname, source)
-			for f in files:
-				dirs.append(os.path.join(dirname, f))
-
-	return dirs
-
-
-def _recursively_handle_files(directory, file_matcher, folder_handler=None, file_handler=None):
-	applied_handler = False
-
-	for filename in os.listdir(directory):
-		path = os.path.join(directory, filename)
-
-		if file_handler is not None and file_matcher(filename):
-			file_handler(path)
-			applied_handler = True
-
-		elif os.path.isdir(path):
-			sub_applied_handler = _recursively_handle_files(path, file_matcher, folder_handler=folder_handler, file_handler=file_handler)
-			if sub_applied_handler:
-				applied_handler = True
-
-			if folder_handler is not None:
-				folder_handler(path, sub_applied_handler)
-
-	return applied_handler
-
-class CleanCommand(Command):
-	description = "clean build artifacts"
-	user_options = []
-	boolean_options = []
-
-	def initialize_options(self):
-		pass
-
-	def finalize_options(self):
-		pass
-
-	def run(self):
-		# build folder
-		if os.path.exists('build'):
-			print "Deleting build directory"
-			shutil.rmtree('build')
-
-		# eggs
-		eggs = glob.glob('OctoPrint*.egg-info')
-		for egg in eggs:
-			print "Deleting %s directory" % egg
-			shutil.rmtree(egg)
-
-		# pyc files
-		def delete_folder_if_empty(path, applied_handler):
-			if not applied_handler:
-				return
-			if len(os.listdir(path)) == 0:
-				shutil.rmtree(path)
-				print "Deleted %s since it was empty" % path
-
-		def delete_file(path):
-			os.remove(path)
-			print "Deleted %s" % path
-
-		import fnmatch
-		_recursively_handle_files(
-			os.path.abspath("src"),
-			lambda name: fnmatch.fnmatch(name.lower(), "*.pyc"),
-			folder_handler=delete_folder_if_empty,
-			file_handler=delete_file
-		)
-
+#-----------------------------------------------------------------------------------------------------------------------
+# Anything below here is just command setup and general setup configuration
 
 def get_cmdclass():
 	cmdclass = versioneer.get_cmdclass()
-	cmdclass.update({
-		'clean': CleanCommand
-	})
+
+	# add clean command
+	cmdclass.update(dict(clean=octoprint_setuptools.CleanCommand.for_options(source_folder="src", eggs=["OctoPrint*.egg-info"])))
+
+	# add translation commands
+	translation_dir = os.path.join("src", "octoprint", "translations")
+	pot_file = os.path.join(translation_dir, "messages.pot")
+	cmdclass.update(octoprint_setuptools.get_babel_commandclasses(pot_file=pot_file, output_dir=translation_dir))
+
 	return cmdclass
 
 
@@ -131,22 +112,30 @@ def params():
 	license = "AGPLv3"
 
 	packages = find_packages(where="src")
-	package_dir = {"octoprint": "src/octoprint"}
-	package_data = {"octoprint": package_data_dirs('src/octoprint', ['static', 'templates'])}
+	package_dir = {
+		"": "src"
+	}
+	package_data = {
+		"octoprint": octoprint_setuptools.package_data_dirs('src/octoprint', ['static', 'templates', 'plugins', 'translations'])
+	}
 
 	include_package_data = True
 	zip_safe = False
-	install_requires = open("requirements.txt").read().split("\n")
+	install_requires = INSTALL_REQUIRES
+	extras_require = EXTRA_REQUIRES
+	dependency_links = DEPENDENCY_LINKS
+
+	if os.environ.get('READTHEDOCS', None) == 'True':
+		# we can't tell read the docs to please perform a pip install -e .[develop], so we help
+		# it a bit here by explicitly adding the development dependencies, which include our
+		# documentation dependencies
+		install_requires = install_requires + extras_require['develop']
 
 	entry_points = {
 		"console_scripts": [
 			"octoprint = octoprint:main"
 		]
 	}
-
-	#scripts = {
-	#	"scripts/octoprint.init": "/etc/init.d/octoprint"
-	#}
 
 	return locals()
 

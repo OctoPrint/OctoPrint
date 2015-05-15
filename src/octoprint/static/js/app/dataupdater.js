@@ -1,21 +1,13 @@
-function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewModel, temperatureViewModel, controlViewModel, terminalViewModel, gcodeFilesViewModel, timelapseViewModel, gcodeViewModel, logViewModel) {
+function DataUpdater(allViewModels) {
     var self = this;
 
-    self.loginStateViewModel = loginStateViewModel;
-    self.connectionViewModel = connectionViewModel;
-    self.printerStateViewModel = printerStateViewModel;
-    self.temperatureViewModel = temperatureViewModel;
-    self.controlViewModel = controlViewModel;
-    self.terminalViewModel = terminalViewModel;
-    self.gcodeFilesViewModel = gcodeFilesViewModel;
-    self.timelapseViewModel = timelapseViewModel;
-    self.gcodeViewModel = gcodeViewModel;
-    self.logViewModel = logViewModel;
+    self.allViewModels = allViewModels;
 
     self._socket = undefined;
     self._autoReconnecting = false;
     self._autoReconnectTrial = 0;
-    self._autoReconnectTimeouts = [1, 1, 2, 3, 5, 8, 13, 20, 40, 100];
+    self._autoReconnectTimeouts = [0, 1, 1, 2, 3, 5, 8, 13, 20, 40, 100];
+    self._autoReconnectDialogIndex = 1;
 
     self.connect = function() {
         var options = {};
@@ -27,140 +19,250 @@ function DataUpdater(loginStateViewModel, connectionViewModel, printerStateViewM
         self._socket.onopen = self._onconnect;
         self._socket.onclose = self._onclose;
         self._socket.onmessage = self._onmessage;
-    }
+    };
 
     self.reconnect = function() {
+        self._socket.close();
         delete self._socket;
         self.connect();
-    }
+    };
 
     self._onconnect = function() {
         self._autoReconnecting = false;
         self._autoReconnectTrial = 0;
+    };
 
-        if ($("#offline_overlay").is(":visible")) {
-        	$("#offline_overlay").hide();
-        	self.logViewModel.requestData();
-            self.timelapseViewModel.requestData();
-            $("#webcam_image").attr("src", CONFIG_WEBCAM_STREAM + "?" + new Date().getTime());
-            self.loginStateViewModel.requestData();
-            self.gcodeFilesViewModel.requestData();
-            self.gcodeViewModel.reset();
-
-            if ($('#tabs li[class="active"] a').attr("href") == "#control") {
-                $("#webcam_image").attr("src", CONFIG_WEBCAM_STREAM + "?" + new Date().getTime());
-            }
+    self._onclose = function(e) {
+        if (e.code == SOCKJS_CLOSE_NORMAL) {
+            return;
         }
-    }
+        if (self._autoReconnectTrial >= self._autoReconnectDialogIndex) {
+            // Only consider it a real disconnect if the trial number has exceeded our threshold.
 
-    self._onclose = function() {
-        $("#offline_overlay_message").html(
-            "The server appears to be offline, at least I'm not getting any response from it. I'll try to reconnect " +
-                "automatically <strong>over the next couple of minutes</strong>, however you are welcome to try a manual reconnect " +
-                "anytime using the button below."
-        );
-        if (!$("#offline_overlay").is(":visible"))
-            $("#offline_overlay").show();
+            var handled = false;
+            _.each(self.allViewModels, function(viewModel) {
+                if (handled == true) {
+                    return;
+                }
+
+                if (viewModel.hasOwnProperty("onServerDisconnect")) {
+                    if (!viewModel.onServerDisconnect()) {
+                        handled = true;
+                    }
+                }
+            });
+
+            if (handled) {
+                return;
+            }
+
+            showOfflineOverlay(
+                gettext("Server is offline"),
+                gettext("The server appears to be offline, at least I'm not getting any response from it. I'll try to reconnect automatically <strong>over the next couple of minutes</strong>, however you are welcome to try a manual reconnect anytime using the button below."),
+                self.reconnect
+            );
+        }
 
         if (self._autoReconnectTrial < self._autoReconnectTimeouts.length) {
             var timeout = self._autoReconnectTimeouts[self._autoReconnectTrial];
-            console.log("Reconnect trial #" + self._autoReconnectTrial + ", waiting " + timeout + "s");
+            log.info("Reconnect trial #" + self._autoReconnectTrial + ", waiting " + timeout + "s");
             setTimeout(self.reconnect, timeout * 1000);
             self._autoReconnectTrial++;
         } else {
             self._onreconnectfailed();
         }
-    }
+    };
 
     self._onreconnectfailed = function() {
-        $("#offline_overlay_message").html(
-            "The server appears to be offline, at least I'm not getting any response from it. I <strong>could not reconnect automatically</strong>, " +
-                "but you may try a manual reconnect using the button below."
-        );
-    }
+        var handled = false;
+        _.each(self.allViewModels, function(viewModel) {
+            if (handled == true) {
+                return;
+            }
+
+            if (viewModel.hasOwnProperty("onServerDisconnect")) {
+                if (!viewModel.onServerDisconnect()) {
+                    handled = true;
+                }
+            }
+        });
+
+        if (handled) {
+            return;
+        }
+
+        $("#offline_overlay_title").text(gettext("Server is offline"));
+        $("#offline_overlay_message").html(gettext("The server appears to be offline, at least I'm not getting any response from it. I <strong>could not reconnect automatically</strong>, but you may try a manual reconnect using the button below."));
+    };
 
     self._onmessage = function(e) {
         for (var prop in e.data) {
+            if (!e.data.hasOwnProperty(prop)) {
+                continue;
+            }
+
             var data = e.data[prop];
 
+            var gcodeUploadProgress = $("#gcode_upload_progress");
+            var gcodeUploadProgressBar = $(".bar", gcodeUploadProgress);
+
             switch (prop) {
+                case "connected": {
+                    // update the current UI API key and send it with any request
+                    UI_API_KEY = data["apikey"];
+                    $.ajaxSetup({
+                        headers: {"X-Api-Key": UI_API_KEY}
+                    });
+
+                    var oldVersion = VERSION;
+                    VERSION = data["version"];
+                    DISPLAY_VERSION = data["display_version"];
+                    $("span.version").text(DISPLAY_VERSION);
+
+                    if ($("#offline_overlay").is(":visible")) {
+                        hideOfflineOverlay();
+                        _.each(self.allViewModels, function(viewModel) {
+                            if (viewModel.hasOwnProperty("onDataUpdaterReconnect")) {
+                                viewModel.onDataUpdaterReconnect();
+                            }
+                        });
+
+                        if ($('#tabs li[class="active"] a').attr("href") == "#control") {
+                            $("#webcam_image").attr("src", CONFIG_WEBCAM_STREAM + "?" + new Date().getTime());
+                        }
+                    }
+
+                    if (oldVersion != VERSION) {
+                        // version change detected, force reloading UI - use randomized delay to reduce server load in
+                        // the case of multiple clients
+                        var delay = 5 + Math.floor(Math.random() * 5) + 1;
+                        setTimeout(function() {location.reload(true);}, delay * 1000);
+
+                        // TODO notify about that, or show confirmation
+                    }
+
+                    break;
+                }
                 case "history": {
-                    self.connectionViewModel.fromHistoryData(data);
-                    self.printerStateViewModel.fromHistoryData(data);
-                    self.temperatureViewModel.fromHistoryData(data);
-                    self.controlViewModel.fromHistoryData(data);
-                    self.terminalViewModel.fromHistoryData(data);
-                    self.timelapseViewModel.fromHistoryData(data);
-                    self.gcodeViewModel.fromHistoryData(data);
-                    self.gcodeFilesViewModel.fromCurrentData(data);
+                    _.each(self.allViewModels, function(viewModel) {
+                        if (viewModel.hasOwnProperty("fromHistoryData")) {
+                            viewModel.fromHistoryData(data);
+                        }
+                    });
                     break;
                 }
                 case "current": {
-                    self.connectionViewModel.fromCurrentData(data);
-                    self.printerStateViewModel.fromCurrentData(data);
-                    self.temperatureViewModel.fromCurrentData(data);
-                    self.controlViewModel.fromCurrentData(data);
-                    self.terminalViewModel.fromCurrentData(data);
-                    self.timelapseViewModel.fromCurrentData(data);
-                    self.gcodeViewModel.fromCurrentData(data);
-                    self.gcodeFilesViewModel.fromCurrentData(data);
+                    _.each(self.allViewModels, function(viewModel) {
+                        if (viewModel.hasOwnProperty("fromCurrentData")) {
+                            viewModel.fromCurrentData(data);
+                        }
+                    });
+                    break;
+                }
+                case "slicingProgress": {
+                    gcodeUploadProgressBar.text(_.sprintf(gettext("Slicing ... (%(percentage)d%%)"), {percentage: Math.round(data["progress"])}));
+
+                    _.each(self.allViewModels, function(viewModel) {
+                        if (viewModel.hasOwnProperty("onSlicingProgress")) {
+                            viewModel.onSlicingProgress(data["slicer"], data["model_path"], data["machinecode_path"], data["progress"]);
+                        }
+                    });
                     break;
                 }
                 case "event": {
                     var type = data["type"];
                     var payload = data["payload"];
+                    var html = "";
 
-                    var gcodeUploadProgress = $("#gcode_upload_progress");
-                    var gcodeUploadProgressBar = $(".bar", gcodeUploadProgress);
+                    log.debug("Got event " + type + " with payload: " + JSON.stringify(payload));
 
-                    if ((type == "UpdatedFiles" && payload.type == "gcode") || type == "MetadataAnalysisFinished") {
-                        gcodeFilesViewModel.requestData();
-                    } else if (type == "MovieRendering") {
-                        $.pnotify({title: "Rendering timelapse", text: "Now rendering timelapse " + payload.movie_basename});
+                    if (type == "MovieRendering") {
+                        new PNotify({title: gettext("Rendering timelapse"), text: _.sprintf(gettext("Now rendering timelapse %(movie_basename)s"), payload)});
                     } else if (type == "MovieDone") {
-                        $.pnotify({title: "Timelapse ready", text: "New timelapse " + payload.movie_basename + " is done rendering."});
-                        timelapseViewModel.requestData();
+                        new PNotify({title: gettext("Timelapse ready"), text: _.sprintf(gettext("New timelapse %(movie_basename)s is done rendering."), payload)});
                     } else if (type == "MovieFailed") {
-                        $.pnotify({title: "Rendering failed", text: "Rendering of timelapse " + payload.movie_basename + " failed, return code " + payload.returncode, type: "error"});
+                        html = "<p>" + _.sprintf(gettext("Rendering of timelapse %(movie_basename)s failed with return code %(returncode)s"), payload) + "</p>";
+                        html += pnotifyAdditionalInfo('<pre style="overflow: auto">' + payload.error + '</pre>');
+                        new PNotify({title: gettext("Rendering failed"), text: html, type: "error", hide: false});
                     } else if (type == "SlicingStarted") {
                         gcodeUploadProgress.addClass("progress-striped").addClass("active");
                         gcodeUploadProgressBar.css("width", "100%");
-                        gcodeUploadProgressBar.text("Slicing ...");
+                        if (payload.progressAvailable) {
+                            gcodeUploadProgressBar.text(_.sprintf(gettext("Slicing ... (%(percentage)d%%)"), {percentage: 0}));
+                        } else {
+                            gcodeUploadProgressBar.text(gettext("Slicing ..."));
+                        }
                     } else if (type == "SlicingDone") {
                         gcodeUploadProgress.removeClass("progress-striped").removeClass("active");
                         gcodeUploadProgressBar.css("width", "0%");
                         gcodeUploadProgressBar.text("");
-                        $.pnotify({title: "Slicing done", text: "Sliced " + payload.stl + " to " + payload.gcode + ", took " + _.sprintf("%.2f", payload.time) + " seconds"});
-                        gcodeFilesViewModel.requestData(payload.gcode);
+                        new PNotify({title: gettext("Slicing done"), text: _.sprintf(gettext("Sliced %(stl)s to %(gcode)s, took %(time).2f seconds"), payload), type: "success"});
+                    } else if (type == "SlicingCancelled") {
+                        gcodeUploadProgress.removeClass("progress-striped").removeClass("active");
+                        gcodeUploadProgressBar.css("width", "0%");
+                        gcodeUploadProgressBar.text("");
                     } else if (type == "SlicingFailed") {
                         gcodeUploadProgress.removeClass("progress-striped").removeClass("active");
                         gcodeUploadProgressBar.css("width", "0%");
                         gcodeUploadProgressBar.text("");
-                        $.pnotify({title: "Slicing failed", text: "Could not slice " + payload.stl + " to " + payload.gcode + ": " + payload.reason, type: "error"});
+
+                        html = _.sprintf(gettext("Could not slice %(stl)s to %(gcode)s: %(reason)s"), payload);
+                        new PNotify({title: gettext("Slicing failed"), text: html, type: "error", hide: false});
                     } else if (type == "TransferStarted") {
                         gcodeUploadProgress.addClass("progress-striped").addClass("active");
                         gcodeUploadProgressBar.css("width", "100%");
-                        gcodeUploadProgressBar.text("Streaming ...");
+                        gcodeUploadProgressBar.text(gettext("Streaming ..."));
                     } else if (type == "TransferDone") {
                         gcodeUploadProgress.removeClass("progress-striped").removeClass("active");
                         gcodeUploadProgressBar.css("width", "0%");
                         gcodeUploadProgressBar.text("");
-                        $.pnotify({title: "Streaming done", text: "Streamed " + payload.local + " to " + payload.remote + " on SD, took " + _.sprintf("%.2f", payload.time) + " seconds"});
+                        new PNotify({
+                            title: gettext("Streaming done"),
+                            text: _.sprintf(gettext("Streamed %(local)s to %(remote)s on SD, took %(time).2f seconds"), payload),
+                            type: "success"
+                        });
                         gcodeFilesViewModel.requestData(payload.remote, "sdcard");
                     }
-                    break;
-                }
-                case "feedbackCommandOutput": {
-                    self.controlViewModel.fromFeedbackCommandData(data);
+
+                    var legacyEventHandlers = {
+                        "UpdatedFiles": "onUpdatedFiles",
+                        "MetadataStatisticsUpdated": "onMetadataStatisticsUpdated",
+                        "MetadataAnalysisFinished": "onMetadataAnalysisFinished",
+                        "SlicingDone": "onSlicingDone",
+                        "SlicingCancelled": "onSlicingCancelled",
+                        "SlicingFailed": "onSlicingFailed"
+                    };
+                    _.each(self.allViewModels, function(viewModel) {
+                        if (viewModel.hasOwnProperty("onEvent" + type)) {
+                            viewModel["onEvent" + type](payload);
+                        } else if (legacyEventHandlers.hasOwnProperty(type) && viewModel.hasOwnProperty(legacyEventHandlers[type])) {
+                            // there might still be code that uses the old callbacks, make sure those still get called
+                            // but log a warning
+                            log.warn("View model " + viewModel.name + " is using legacy event handler " + legacyEventHandlers[type] + ", new handler is called " + legacyEventHandlers[type]);
+                            viewModel[legacyEventHandlers[type]](payload);
+                        }
+                    });
+
                     break;
                 }
                 case "timelapse": {
-                    self.printerStateViewModel.fromTimelapseData(data);
+                    _.each(self.allViewModels, function(viewModel) {
+                        if (viewModel.hasOwnProperty("fromTimelapseData")) {
+                            viewModel.fromTimelapseData(data);
+                        }
+                    });
                     break;
+                }
+                case "plugin": {
+                    _.each(self.allViewModels, function(viewModel) {
+                        if (viewModel.hasOwnProperty("onDataUpdaterPluginMessage")) {
+                            viewModel.onDataUpdaterPluginMessage(data.plugin, data.data);
+                        }
+                    })
                 }
             }
         }
-    }
+    };
 
     self.connect();
 }

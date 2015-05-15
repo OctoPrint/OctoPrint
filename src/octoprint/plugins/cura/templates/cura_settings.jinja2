@@ -1,0 +1,242 @@
+<h4>{{ _('General') }}</h4>
+
+<form class="form-horizontal">
+    <div class="control-group">
+        <label class="control-label" for="settings-cura-path">{{ _('Path to CuraEngine') }}</label>
+        <div class="controls">
+            <input type="text" class="input-block-level" data-bind="value: settings.plugins.cura.cura_engine">
+        </div>
+    </div>
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
+                <input type="checkbox" data-bind="checked: settings.plugins.cura.debug_logging"> {{ _('Log the output of CuraEngine to plugin_cura_engine.log') }}
+            </label>
+        </div>
+    </div>
+</form>
+
+<h4>{{ _('Profiles') }}</h4>
+
+<div class="pull-right">
+    <small>{{ _('Sort by') }}: <a href="#" data-bind="click: function() { profiles.changeSorting('id'); }">{{ _('Identifier') }} ({{ _('ascending') }})</a> | <a href="#" data-bind="click: function() { profiles.changeSorting('name'); }">{{ _('Name') }} ({{ _('ascending') }})</a></small>
+</div>
+<table class="table table-striped table-hover table-condensed table-hover">
+    <thead>
+    <tr>
+        <th class="settings_plugin_cura_profiles_key">{{ _('Identifier') }}</th>
+        <th class="settings_plugin_cura_profiles_name">{{ _('Name') }}</th>
+        <th class="settings_plugin_cura_profiles_actions">{{ _('Actions') }}</th>
+    </tr>
+    </thead>
+    <tbody data-bind="foreach: profiles.paginatedItems">
+        <tr data-bind="attr: {title: description}">
+            <td class="settings_plugin_cura_profiles_key"><span class="icon-star" data-bind="invisible: !isdefault()"></span> <span data-bind="text: key"></span></td>
+            <td class="settings_plugin_cura_profiles_name" data-bind="text: name"></td>
+            <td class="settings_plugin_cura_profiles_actions">
+                <a href="#" class="icon-star" title="{{ _('Make default') }}" data-bind="enable: !isdefault(), css: {disabled: isdefault()}, click: function() { if (!$data.isdefault()) { $root.makeProfileDefault($data); } }"></a>&nbsp;|&nbsp;<a href="#" class="icon-trash" title="{{ _('Delete Profile') }}" data-bind="enable: !isdefault(), css: {disabled: isdefault()}, click: function() { if (!$data.isdefault()) { $root.removeProfile($data); } }"></a>
+            </td>
+        </tr>
+    </tbody>
+</table>
+<div class="pagination pagination-mini pagination-centered">
+    <ul>
+        <li data-bind="css: {disabled: profiles.currentPage() === 0}"><a href="#" data-bind="click: profiles.prevPage">«</a></li>
+    </ul>
+    <ul data-bind="foreach: profiles.pages">
+        <li data-bind="css: { active: $data.number === $root.profiles.currentPage(), disabled: $data.number === -1 }"><a href="#" data-bind="text: $data.text, click: function() { $root.profiles.changePage($data.number); }"></a></li>
+    </ul>
+    <ul>
+        <li data-bind="css: {disabled: profiles.currentPage() === profiles.lastPage()}"><a href="#" data-bind="click: profiles.nextPage">»</a></li>
+    </ul>
+</div>
+
+<button class="btn pull-right" data-bind="click: function() { $root.showImportProfileDialog() }">{{ _('Import Profile...') }}</button>
+
+<div id="settings_plugin_cura_import" class="modal hide fade">
+    <div class="modal-header">
+        <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
+        <h3>{{ _('Import Existing Cura Profile') }}</h3>
+    </div>
+    <div class="modal-body">
+        <form class="form-horizontal">
+            <div class="control-group">
+                <label class="control-label">{{ _('Profile ini file') }}</label>
+                <div class="controls">
+                    <div class="input-prepend">
+                <span class="btn fileinput-button">
+                    <span>{{ _('Browse...') }}</span>
+                    <input id="settings-cura-import" type="file" name="file" data-url="{{ url_for("plugin.cura.import_cura_profile") }}">
+                </span>
+                        <span class="add-on" data-bind="text: fileName"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">{{ _('Identifier') }}</label>
+                <div class="controls">
+                    <input type="text" class="input-block-level" data-bind="value: profileName, attr: {placeholder: placeholderName}">
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">{{ _('Name') }}</label>
+                <div class="controls">
+                    <input type="text" class="input-block-level" data-bind="value: profileDisplayName, attr: {placeholder: placeholderDisplayName}">
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">{{ _('Description') }}</label>
+                <div class="controls">
+                    <input type="text" class="input-block-level" data-bind="value: profileDescription, attr: {placeholder: placeholderDescription}">
+                </div>
+            </div>
+            <div class="control-group">
+                <div class="controls">
+                    <label class="checkbox">
+                        <input type="checkbox" data-bind="checked: profileAllowOverwrite"> {{ _('Overwrite existing file') }}
+                    </label>
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="modal-footer">
+        <button class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Abort') }}</button>
+        <button class="btn btn-primary" id="settings-cura-import-start">{{ _('Confirm') }}</button>
+    </div>
+</div>
+
+<div id="settings_plugin_cura_edit" class="modal hide fade">
+    <div class="modal-header">
+        <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
+        <h3>{{ _('Edit Cura Profile') }}</h3>
+    </div>
+    <div class="modal-body">
+        <div class="tabbable">
+            <ul class="nav nav-tabs">
+                <li class="active"><a href="#settings_plugin_cura_edit_general" data-toggle="tab">{{ _('General') }}</a></li>
+                <li><a href="#settings_plugin_cura_edit_basic" data-toggle="tab">{{ _('Basic') }}</a></li>
+                <li><a href="#settings_plugin_cura_edit_advanced" data-toggle="tab">{{ _('Advanced') }}</a></li>
+                <li><a href="#settings_plugin_cura_edit_expert" data-toggle="tab">{{ _('Expert') }}</a></li>
+            </ul>
+
+            <div class="tab-content">
+                <div class="tab-pane active" id="settings_plugin_cura_edit_general">
+                    <form class="form-horizontal">
+                        <div class="control-group">
+                            <label class="control-label">{{ _('Identifier') }}</label>
+                            <div class="controls">
+                                <input type="text" class="input-block-level">
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label">{{ _('Name') }}</label>
+                            <div class="controls">
+                                <input type="text" class="input-block-level">
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <label class="control-label">{{ _('Descripton') }}</label>
+                            <div class="controls">
+                                <input type="text" class="input-block-level">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="tab-pane" id="settings_plugin_cura_edit_basic">
+                    <form class="form-horizontal">
+                        <fieldset>
+                            <legend>{{ _('Quality') }}</legend>
+                            <div class="control-group">
+                                <label class="control-label">{{ _('Layer height (mm)') }}</label>
+                                <div class="controls">
+                                    <input type="text" class="input-block-level">
+                                </div>
+                            </div>
+                            <div class="control-group">
+                                <label class="control-label">{{ _('Shell thickness (mm)') }}</label>
+                                <div class="controls">
+                                    <input type="text" class="input-block-level">
+                                </div>
+                            </div>
+                            <div class="controls">
+                                <label class="checkbox">
+                                    <input type="checkbox"> {{ _('Enable retraction') }}
+                                </label>
+                            </div>
+                        </fieldset>
+                        <fieldset>
+                            <legend>{{ _('Fill') }}</legend>
+                            <div class="control-group">
+                                <label class="control-label">{{ _('Bottom/top thickness (mm)') }}</label>
+                                <div class="controls">
+                                    <input type="text" class="input-block-level">
+                                </div>
+                            </div>
+                            <div class="control-group">
+                                <label class="control-label">{{ _('Fill density (%%)') }}</label>
+                                <div class="controls">
+                                    <input type="text" class="input-block-level">
+                                </div>
+                            </div>
+                        </fieldset>
+                        <fieldset>
+                            <legend>{{ _('Speed and Temperature') }}</legend>
+                            <div class="control-group">
+                                <label class="control-label">{{ _('Print speed (mm/s)') }}</label>
+                                <div class="controls">
+                                    <input type="text" class="input-block-level">
+                                </div>
+                            </div>
+                            <div class="control-group">
+                                <label class="control-label">{{ _('Print temperature (°C)') }}</label>
+                                <div class="controls">
+                                    <input type="text" class="input-block-level">
+                                </div>
+                            </div>
+                        </fieldset>
+                        <fieldset>
+                            <legend>{{ _('Support') }}</legend>
+                            <div class="control-group">
+                                <label class="control-label">{{ _('Support type') }}</label>
+                                <select>
+                                    <option value="none">{{ _('None') }}</option>
+                                    <option value="buildplate">{{ _('Touching buildplate') }}</option>
+                                    <option value="everywhere">{{ _('Everywhere') }}</option>
+                                </select>
+                            </div>
+                            <div class="control-group">
+                                <label class="control-label">{{ _('Platform adhesion type') }}</label>
+                                <select>
+                                    <option value="none">{{ _('None') }}</option>
+                                    <option value="brim">{{ _('Brim') }}</option>
+                                    <option value="raft">{{ _('Raft') }}</option>
+                                </select>
+                            </div>
+                        </fieldset>
+                        <fieldset>
+                            <legend>{{ _('Filament') }}</legend>
+                            <div class="control-group">
+                                <label class="control-label">{{ _('Diameter (mm)') }}</label>
+                                <div class="controls">
+                                    <input type="text" class="input-block-level">
+                                </div>
+                            </div>
+                            <div class="control-group">
+                                <label class="control-label">{{ _('Flow (%%)') }}</label>
+                                <div class="controls">
+                                    <input type="text" class="input-block-level">
+                                </div>
+                            </div>
+                        </fieldset>
+                    </form>
+                </div>
+                <div class="tab-pane" id="settings_plugin_cura_edit_advanced"></div>
+                <div class="tab-pane" id="settings_plugin_cura_edit_expert"></div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Abort') }}</button>
+        <button class="btn btn-primary" data-bind="click: function() { $root.confirmEditProfile() }">{{ _('Confirm') }}</button>
+    </div>
+</div>

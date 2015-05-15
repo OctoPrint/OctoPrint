@@ -199,8 +199,13 @@ Issue a print head command
 
      * ``axes``: A list of axes which to home, valid values are one or more of ``x``, ``y``, ``z``.
 
-   All of these commands may only be sent if the printer is currently operational and not printing. Otherwise a
-   :http:statuscode:`409` is returned.
+   feedrate
+     Changes the feedrate factor to apply to the movement's of the axes.
+
+     * ``factor``: The new factor, percentage as integer or float (percentage divided by 100) between 50 and 200%.
+
+   All of these commands except ``feedrate`` may only be sent if the printer is currently operational and not printing.
+   Otherwise a :http:statuscode:`409` is returned.
 
    Upon success, a status code of :http:statuscode:`204` and an empty body is returned.
 
@@ -246,13 +251,34 @@ Issue a print head command
 
       HTTP/1.1 204 No Content
 
+   **Example feed rate request**
+
+   Set the feed rate factor to 105%.
+
+   .. sourcecode:: http
+
+      POST /api/printer/printhead HTTP/1.1
+      Host: example.com
+      Content-Type: application/json
+      X-Api-Key: abcdef...
+
+      {
+        "command": "feedrate",
+        "factor": 105
+      }
+
+   .. sourcecode:: http
+
+      HTTP/1.1 204 No Content
+
    :json string command: The command to issue, either ``jog`` or ``home``.
    :json number x:       ``jog`` command: The amount to travel on the X axis in mm.
    :json number y:       ``jog`` command: The amount to travel on the Y axis in mm.
    :json number z:       ``jog`` command: The amount to travel on the Z axis in mm.
    :json array axes:     ``home`` command: The axes which to home, valid values are one or more of ``x``, ``y`` and ``z``.
+   :json number factor:  ``feedrate`` command: The factor to apply to the feed rate, percentage between 50 and 200% as integer or float.
    :statuscode 204: No error
-   :statuscode 400: Invalid axis specified, invalid value for travel amount for a jog command or otherwise invalid
+   :statuscode 400: Invalid axis specified, invalid value for travel amount for a jog command or factor for feed rate or otherwise invalid
                     request.
    :statuscode 409: If the printer is not operational or currently printing.
 
@@ -287,6 +313,14 @@ Issue a tool command
      Extrudes the given amount of filament from the currently selected tool. Additional parameters:
 
      * ``amount``: The amount of filament to extrude in mm. May be negative to retract.
+
+   flowrate
+     Changes the flow rate factor to apply to extrusion of the tool.
+
+     * ``factor``: The new factor, percentage as integer or float (percentage divided by 100) between 75 and 125%.
+
+   All of these commands may only be sent if the printer is currently operational and -- in case of ``select`` and
+   ``extrude`` -- not printing. Otherwise a :http:statuscode:`409` is returned.
 
    Upon success, a status code of :http:statuscode:`204` and an empty body is returned.
 
@@ -396,6 +430,26 @@ Issue a tool command
 
       HTTP/1.1 204 No Content
 
+   **Example flow rate request**
+
+   Set the flow rate factor to 95%.
+
+   .. sourcecode:: http
+
+      POST /api/printer/tool HTTP/1.1
+      Host: example.com
+      Content-Type: application/json
+      X-Api-Key: abcdef...
+
+      {
+        "command": "flowrate",
+        "factor": 95
+      }
+
+   .. sourcecode:: http
+
+      HTTP/1.1 204 No Content
+
    :json string command: The command to issue, either ``target``, ``offset``, ``select`` or ``extrude``.
    :json object targets: ``target`` command: The target temperatures to set. Valid properties have to match the format ``tool{n}``.
    :json object offsets: ``offset`` command: The offset temperature to set. Valid properties have to match the format ``tool{n}``.
@@ -403,8 +457,10 @@ Issue a tool command
    :json object amount:  ``extrude`` command: The amount of filament to extrude from the currently selected tool.
    :json number factor:  ``flowrate`` command: The factor to apply to the flow rate, percentage between 75 and 125% as integer or float.
    :statuscode 204: No error
-   :statuscode 400: If the value given for `amount` is not a valid number or the request is otherwise invalid.
-   :statuscode 409: If the printer is not operational or currently printing.
+   :statuscode 400: If ``targets`` or ``offsets`` contains a property or ``tool`` contains a value not matching the format
+                    ``tool{n}``, the target/offset temperature, extrusion amount or flow rate factor is not a valid number or outside of
+                    the supported range, or if the request is otherwise invalid.
+   :statuscode 409: If the printer is not operational or -- in case of ``select`` or ``extrude`` -- currently printing.
 
 .. _sec-api-printer-toolstate:
 
@@ -654,6 +710,8 @@ Issue an SD command
 
    **Example Init Request**
 
+   Initialize the SD card.
+
    .. sourcecode:: http
 
       POST /api/printer/sd HTTP/1.1
@@ -671,6 +729,8 @@ Issue an SD command
 
    **Example Refresh Request**
 
+   Refresh the file list of the SD card
+
    .. sourcecode:: http
 
       POST /api/printer/sd HTTP/1.1
@@ -687,6 +747,8 @@ Issue an SD command
       HTTP/1.1 204 No Content
 
    **Example Release Request**
+
+   Release the SD card
 
    .. sourcecode:: http
 
@@ -794,7 +856,7 @@ Send an arbitrary command to the printer
    .. sourcecode:: http
 
       HTTP/1.1 204 No Content
-
+   
    :json string command:  Single command to send to the printer, mutually exclusive with ``commands``.
    :json string commands: List of commands to send to the printer, mutually exclusive with ``command``.
    :statuscode 204:       No error

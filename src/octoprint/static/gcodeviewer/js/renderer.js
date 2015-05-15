@@ -14,6 +14,7 @@ GCODE.renderer = (function(){
     var gridStep=10;
     var ctxHeight, ctxWidth;
     var prevX=0, prevY=0;
+    var pixelRatio = window.devicePixelRatio || 1;
 
     var layerNumStore, progressStore={from: 0, to: -1};
     var lastX, lastY;
@@ -32,9 +33,9 @@ GCODE.renderer = (function(){
 
         showMoves: true,
         showRetracts: true,
-        extrusionWidth: 1,
+        extrusionWidth: 1 * pixelRatio,
         // #000000", "#45c7ba",  "#a9533a", "#ff44cc", "#dd1177", "#eeee22", "#ffbb55", "#ff5511", "#777788"
-        sizeRetractSpot: 2,
+        sizeRetractSpot: 2 * pixelRatio,
         modelCenter: {x: 0, y: 0},
         differentiateColors: true,
         showNextLayer: false,
@@ -136,6 +137,10 @@ GCODE.renderer = (function(){
         canvas = jqueryCanvas[0];
 
         ctx = canvas.getContext('2d');
+        canvas.style.height = canvas.height + "px";
+        canvas.style.width = canvas.width + "px";
+        canvas.height = canvas.height * pixelRatio;
+        canvas.width = canvas.width * pixelRatio;
         ctxHeight = canvas.height;
         ctxWidth = canvas.width;
         lastX = ctxWidth/2;
@@ -149,8 +154,8 @@ GCODE.renderer = (function(){
             document.body.style.mozUserSelect = document.body.style.webkitUserSelect = document.body.style.userSelect = 'none';
 
             // remember starting point of dragging gesture
-            lastX = event.offsetX || (event.pageX - canvas.offsetLeft);
-            lastY = event.offsetY || (event.pageY - canvas.offsetTop);
+            lastX = (event.offsetX || (event.pageX - canvas.offsetLeft)) * pixelRatio;
+            lastY = (event.offsetY || (event.pageY - canvas.offsetTop)) * pixelRatio;
             dragStart = ctx.transformedPoint(lastX, lastY);
 
             // not yet dragged anything
@@ -159,8 +164,8 @@ GCODE.renderer = (function(){
 
         canvas.addEventListener('mousemove', function(event){
             // save current mouse coordinates
-            lastX = event.offsetX || (event.pageX - canvas.offsetLeft);
-            lastY = event.offsetY || (event.pageY - canvas.offsetTop);
+            lastX = (event.offsetX || (event.pageX - canvas.offsetLeft)) * pixelRatio;
+            lastY = (event.offsetY || (event.pageY - canvas.offsetTop)) * pixelRatio;
 
             // mouse movement => dragged
             dragged = true;
@@ -248,43 +253,129 @@ GCODE.renderer = (function(){
     };
 
     var drawGrid = function() {
-        console.log("Drawing grid");
-
         ctx.translate(offsetBedX, offsetBedY);
+        if(renderOptions["bed"]["circular"]) {
+            drawCircularGrid();
+        } else {
+            drawRectangularGrid();
+        }
+        ctx.translate(-offsetBedX, -offsetBedY);
+    };
 
+    var drawRectangularGrid = function() {
+        var x, y;
+        var width = renderOptions["bed"]["x"];
+        var height = renderOptions["bed"]["y"];
+
+        var minX, maxX, minY, maxY;
+        if (renderOptions["bed"]["centeredOrigin"]) {
+            var halfWidth = width / 2;
+            var halfHeight = height / 2;
+
+            minX = -halfWidth;
+            maxX = halfWidth;
+            minY = -halfHeight;
+            maxY = halfHeight;
+        } else {
+            minX = 0;
+            maxX = width;
+            minY = 0;
+            maxY = height;
+        }
+
+        //~ bed outline and origin
         ctx.beginPath();
-        var width = renderOptions["bed"]["x"] * zoomFactor;
-        var height = renderOptions["bed"]["y"] * zoomFactor;
-        var origin = {
-            x: 0,
-            y: -1 * renderOptions["bed"]["y"] * zoomFactor
-        };
         ctx.strokeStyle = renderOptions["colorGrid"];
         ctx.fillStyle = "#ffffff";
         ctx.lineWidth = 2;
-        ctx.rect(origin.x, origin.y, width, height);
+
+        // outline
+        ctx.rect(minX * zoomFactor, -1 * minY * zoomFactor, width * zoomFactor, -1 * height * zoomFactor);
+
+        // origin
+        ctx.moveTo(minX * zoomFactor, 0);
+        ctx.lineTo(maxX * zoomFactor, 0);
+        ctx.moveTo(0, -1 * minY * zoomFactor);
+        ctx.lineTo(0, -1 * maxY * zoomFactor);
+
+        // draw
         ctx.fill();
         ctx.stroke();
 
-        var i;
         ctx.strokeStyle = renderOptions["colorGrid"];
         ctx.lineWidth = 1;
 
+        //~~ grid starting from origin
         ctx.beginPath();
-        for (i = 0; i <= renderOptions["bed"]["x"]; i += gridStep) {
-            ctx.moveTo(i * zoomFactor, 0);
-            ctx.lineTo(i * zoomFactor, -1 * renderOptions["bed"]["y"] * zoomFactor);
+        for (x = 0; x <= maxX; x += gridStep) {
+            ctx.moveTo(x * zoomFactor, -1 * minY * zoomFactor);
+            ctx.lineTo(x * zoomFactor, -1 * maxY * zoomFactor);
+
+            if (renderOptions["bed"]["centeredOrigin"]) {
+                ctx.moveTo(-1 * x * zoomFactor, -1 * minY * zoomFactor);
+                ctx.lineTo(-1 * x * zoomFactor, -1 * maxY * zoomFactor);
+            }
         }
         ctx.stroke();
 
         ctx.beginPath();
-        for (i = 0; i <= renderOptions["bed"]["y"]; i += gridStep) {
-            ctx.moveTo(0, -1 * i * zoomFactor);
-            ctx.lineTo(renderOptions["bed"]["x"] * zoomFactor, -1 * i * zoomFactor);
+        for (y = 0; y <= maxY; y += gridStep) {
+            ctx.moveTo(minX * zoomFactor, -1 * y * zoomFactor);
+            ctx.lineTo(maxX * zoomFactor, -1 * y * zoomFactor);
+
+            if (renderOptions["bed"]["centeredOrigin"]) {
+                ctx.moveTo(minX * zoomFactor, y * zoomFactor);
+                ctx.lineTo(maxX * zoomFactor, y * zoomFactor);
+            }
         }
         ctx.stroke();
+    };
 
-        ctx.translate(-offsetBedX, -offsetBedY);
+    var drawCircularGrid = function() {
+        var i;
+
+        ctx.strokeStyle = renderOptions["colorGrid"];
+        ctx.fillStyle = "#ffffff";
+        ctx.lineWidth = 2;
+
+        //~~ bed outline & origin
+        ctx.beginPath();
+
+        // outline
+        ctx.arc(0, 0, renderOptions["bed"]["r"] * zoomFactor, 0, Math.PI * 2, true);
+
+        // origin
+        ctx.moveTo(-1 * renderOptions["bed"]["r"] * zoomFactor, 0);
+        ctx.lineTo(renderOptions["bed"]["r"] * zoomFactor, 0);
+        ctx.moveTo(0, -1 * renderOptions["bed"]["r"] * zoomFactor);
+        ctx.lineTo(0, renderOptions["bed"]["r"] * zoomFactor);
+
+        // draw
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.strokeStyle = renderOptions["colorGrid"];
+        ctx.lineWidth = 1;
+
+        //~~ grid starting from origin
+        ctx.beginPath();
+        for (i = 0; i <= renderOptions["bed"]["r"]; i += gridStep) {
+            var x = i;
+            var y = Math.sqrt(Math.pow(renderOptions["bed"]["r"], 2) - Math.pow(x, 2));
+
+            ctx.moveTo(x * zoomFactor, y * zoomFactor);
+            ctx.lineTo(x * zoomFactor, -1 * y * zoomFactor);
+
+            ctx.moveTo(y * zoomFactor, x * zoomFactor);
+            ctx.lineTo(-1 * y * zoomFactor, x * zoomFactor);
+
+            ctx.moveTo(-1 * x * zoomFactor, y * zoomFactor);
+            ctx.lineTo(-1 * x * zoomFactor, -1 * y * zoomFactor);
+
+            ctx.moveTo(y * zoomFactor, -1 * x * zoomFactor);
+            ctx.lineTo(-1 * y * zoomFactor, -1 * x * zoomFactor);
+        }
+        ctx.stroke();
     };
 
     var drawLayer = function(layerNum, fromProgress, toProgress, isNotCurrentLayer){
@@ -422,10 +513,12 @@ GCODE.renderer = (function(){
     };
 
     var applyOffsets = function(mdlInfo) {
+        var canvasCenter;
+
         // determine bed and model offsets
         if (ctx) ctx.translate(-offsetModelX, -offsetModelY);
         if (renderOptions["centerViewport"] || renderOptions["zoomInOnModel"]) {
-            var canvasCenter = ctx.transformedPoint(canvas.width / 2, canvas.height / 2);
+            canvasCenter = ctx.transformedPoint(canvas.width / 2, canvas.height / 2);
             if (mdlInfo) {
                 offsetModelX = canvasCenter.x - (mdlInfo.min.x + mdlInfo.modelSize.x / 2) * zoomFactor;
                 offsetModelY = canvasCenter.y + (mdlInfo.min.y + mdlInfo.modelSize.y / 2) * zoomFactor;
@@ -440,6 +533,12 @@ GCODE.renderer = (function(){
             offsetModelY = -1 * (renderOptions["bed"]["y"] / 2 - (mdlInfo.min.y + mdlInfo.modelSize.y / 2)) * zoomFactor;
             offsetBedX = -1 * (renderOptions["bed"]["x"] / 2 - (mdlInfo.min.x + mdlInfo.modelSize.x / 2)) * zoomFactor;
             offsetBedY = (renderOptions["bed"]["y"] / 2 - (mdlInfo.min.y + mdlInfo.modelSize.y / 2)) * zoomFactor;
+        } else if (renderOptions["bed"]["circular"] || renderOptions["bed"]["centeredOrigin"]) {
+            canvasCenter = ctx.transformedPoint(canvas.width / 2, canvas.height / 2);
+            offsetModelX = canvasCenter.x;
+            offsetModelY = canvasCenter.y;
+            offsetBedX = 0;
+            offsetBedY = 0;
         } else {
             offsetModelX = 0;
             offsetModelY = 0;
@@ -486,18 +585,23 @@ GCODE.renderer = (function(){
         var width = canvas.width - 10;
         var height = canvas.height - 10;
 
+        // de-invert
         if (currentInvertX || currentInvertY) {
             ctx.scale(currentInvertX ? -1 : 1, currentInvertY ? -1 : 1);
             ctx.translate(currentInvertX ? -width : 0, currentInvertY ? height : 0);
         }
 
+        // get settings
         var invertX = renderOptions["invertAxes"]["x"];
         var invertY = renderOptions["invertAxes"]["y"];
+
+        // invert
         if (invertX || invertY) {
             ctx.translate(invertX ? width : 0, invertY ? -height : 0);
             ctx.scale(invertX ? -1 : 1, invertY ? -1 : 1);
         }
 
+        // save for later
         currentInvertX = invertX;
         currentInvertY = invertY;
     };

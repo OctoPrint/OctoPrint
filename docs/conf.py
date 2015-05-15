@@ -17,6 +17,7 @@ import sys, os
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath('../src/'))
+sys.path.append(os.path.abspath('sphinxext'))
 
 import octoprint._version
 from datetime import date
@@ -24,19 +25,15 @@ from datetime import date
 year_since = 2013
 year_current = date.today().year
 
-# If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
-#sys.path.insert(0, os.path.abspath('.'))
-
 # -- General configuration -----------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
-#needs_sphinx = '1.0'
+needs_sphinx = '1.3'
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.todo', 'sphinxcontrib.httpdomain']
+extensions = ['codeblockext', 'onlineinclude', 'sphinx.ext.todo', 'sphinx.ext.autodoc', 'sphinxcontrib.httpdomain',
+              'sphinx.ext.napoleon']
 todo_include_todos = True
 
 # Add any paths that contain templates here, relative to this directory.
@@ -101,6 +98,7 @@ pygments_style = 'sphinx'
 # If true, keep warnings as "system message" paragraphs in the built documents.
 #keep_warnings = False
 
+numfig = True
 
 # -- Options for HTML output ---------------------------------------------------
 
@@ -108,9 +106,9 @@ pygments_style = 'sphinx'
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 
 if not on_rtd:  # only import and set the theme if we're building docs locally
-	import sphinx_rtd_theme
-	html_theme = 'sphinx_rtd_theme'
-	html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+    import sphinx_rtd_theme
+    html_theme = 'sphinx_rtd_theme'
+    html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
@@ -144,6 +142,9 @@ if not on_rtd:  # only import and set the theme if we're building docs locally
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
+
+def setup(app):
+    app.add_stylesheet("theme_overrides.css")
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
@@ -192,7 +193,7 @@ htmlhelp_basename = 'OctoPrintdoc'
 
 # -- Options for LaTeX output --------------------------------------------------
 
-latex_elements = {
+#latex_elements = {
 # The paper size ('letterpaper' or 'a4paper').
 #'papersize': 'letterpaper',
 
@@ -201,14 +202,14 @@ latex_elements = {
 
 # Additional stuff for the LaTeX preamble.
 #'preamble': '',
-}
+#}
 
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
-latex_documents = [
-  ('index', 'OctoPrint.tex', u'OctoPrint Documentation',
-   u'Gina Häußge', 'manual'),
-]
+#latex_documents = [
+#  ('index', 'OctoPrint.tex', u'OctoPrint Documentation',
+#   u'Gina Häußge', 'manual'),
+#]
 
 # The name of an image file (relative to this directory) to place at the top of
 # the title page.

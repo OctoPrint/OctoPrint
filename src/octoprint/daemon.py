@@ -4,7 +4,7 @@ Generic linux daemon base class for python 3.x
 Originally from http://www.jejik.com/articles/2007/02/a_simple_unix_linux_daemon_in_python/#c35
 """
 
-import sys, os, time, atexit, signal
+import sys, os, time, signal
 
 class Daemon:
 	"""A generic daemon class.
@@ -53,14 +53,16 @@ class Daemon:
 		os.dup2(se.fileno(), sys.stderr.fileno())
 	
 		# write pidfile
-		atexit.register(self.delpid)
-
 		pid = str(os.getpid())
 		with open(self.pidfile,'w+') as f:
 			f.write(pid + '\n')
-	
-	def delpid(self):
+
+		# register listener for SIGTERM
+		signal.signal(signal.SIGTERM, self.term)
+
+	def term(self, _signo, _stack_frame):
 		os.remove(self.pidfile)
+		sys.exit(0)
 
 	def start(self):
 		"""Start the daemon."""

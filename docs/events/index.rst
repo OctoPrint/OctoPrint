@@ -1,16 +1,19 @@
 .. _sec-events:
 
-####################
-Events Documentation
-####################
+######
+Events
+######
 
 .. contents::
 
-With release of OctoPrint 1.1.0, the payload data has been harmonized, it is now a key-value-map for all events.
-Additionally, the format of the placeholders in both system command and gcode command triggers has been changed to
-accommodate for this new format. Last but not least, the way of specifying event hooks has changed, OctoPrint no longer
-separates hooks into two sections (gcodeCommandTrigger and systemCommandTrigger) but instead event hooks are now typed
-to indicate what to do with the command contained.
+
+.. note::
+
+   With release of OctoPrint 1.1.0, the payload data has been harmonized, it is now a key-value-map for all events.
+   Additionally, the format of the placeholders in both system command and gcode command triggers has been changed to
+   accommodate for this new format. Last but not least, the way of specifying event hooks has changed, OctoPrint no longer
+   separates hooks into two sections (gcodeCommandTrigger and systemCommandTrigger) but instead event hooks are now typed
+   to indicate what to do with the command contained.
 
 .. _sec-events-configuration:
 
@@ -56,7 +59,7 @@ Example
 Placeholders
 ============
 
-You can use the following generic placeholders in your events:
+You can use the following generic placeholders in your event hooks:
 
   * ``{__currentZ}``: the current Z position of the head if known, -1 if not available
   * ``{__filename}``: filename of the currently selected file, "NO FILE" if not available
@@ -96,6 +99,10 @@ ClientOpened
 ClientClosed
    A client has disconnected from the webserver
 
+   Payload:
+
+     * ``remoteAddress``: the remote address (IP) of the client that disconnected
+
 Printer communication
 ---------------------
 
@@ -132,7 +139,14 @@ UpdatedFiles
 
    Payload:
 
-     * ``type``: the type of file list that was modified, currently only ``gcode`` is supported here
+     * ``type``: the type of file list that was modified. Currently only ``printables`` and ``gcode`` (DEPRECATED) are supported here.
+
+       .. note::
+
+          The type ``gcode`` has been renamed to ``printables`` with the introduction of a new file management layer that
+          supports STL files as first class citizens as well. For reasons of backwards compatibility the ``UpdatedFiles``
+          event for printable files will be fired twice, once with ``type`` set to ``gcode``, once set to ``printables``.
+          Support for the ``gcode`` type will be removed in the next release after version 1.2.0.
 
 MetadataAnalysisStarted
    The metadata analysis of a GCODE file has started.
@@ -154,7 +168,8 @@ FileSelected
 
    Payload:
 
-     * ``file``: the file's name
+     * ``file``: the full path to the file
+     * ``filename``: the file's name
      * ``origin``: the origin of the file, either ``local`` or ``sdcard``
 
 FileDeselected
@@ -321,6 +336,7 @@ SlicingStarted
 
      * ``stl``: the STL's filename
      * ``gcode``: the sliced GCODE's filename
+     * ``progressAvailable``: true if progress information via the ``slicingProgress`` push update will be available, false if not
 
 SlicingDone
    The slicing of a file has completed.
@@ -331,6 +347,15 @@ SlicingDone
      * ``gcode``: the sliced GCODE's filename
      * ``time``: the time needed for slicing, in seconds (float)
 
+SlicingCancelled
+   The slicing of a file has been cancelled. This will happen if a second slicing job
+   targeting the same GCODE file has been started by the user.
+
+   Payload:
+
+     * ``stl``: the STL's filename
+     * ``gcode``: the sliced GCODE's filename
+
 SlicingFailed
    The slicing of a file has failed.
 
@@ -339,3 +364,9 @@ SlicingFailed
      * ``stl``: the STL's filename
      * ``gcode``: the sliced GCODE's filename
      * ``reason``: the reason for the slicing having failed
+
+Settings
+--------
+
+SettingsUpdated
+   The internal settings were updated.
