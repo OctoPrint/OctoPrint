@@ -614,7 +614,7 @@ class Server():
 		global debug
 
 		from tornado.ioloop import IOLoop
-		from tornado.web import Application
+		from tornado.web import Application, RequestHandler
 
 		import sys
 
@@ -763,13 +763,34 @@ class Server():
 		self._router = SockJSRouter(self._create_socket_connection, "/sockjs")
 
 		upload_suffixes = dict(name=settings().get(["server", "uploads", "nameSuffix"]), path=settings().get(["server", "uploads", "pathSuffix"]))
-		self._tornado_app = Application(self._router.urls + [
+
+		server_routes = self._router.urls + [
 			(r"/downloads/timelapse/([^/]*\.mpg)", util.tornado.LargeResponseHandler, dict(path=settings().getBaseFolder("timelapse"), as_attachment=True)),
 			(r"/downloads/files/local/([^/]*\.(gco|gcode|g|stl))", util.tornado.LargeResponseHandler, dict(path=settings().getBaseFolder("uploads"), as_attachment=True)),
 			(r"/downloads/logs/([^/]*)", util.tornado.LargeResponseHandler, dict(path=settings().getBaseFolder("logs"), as_attachment=True, access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.admin_validator))),
 			(r"/downloads/camera/current", util.tornado.UrlForwardHandler, dict(url=settings().get(["webcam", "snapshot"]), as_attachment=True, access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.user_validator))),
-			(r".*", util.tornado.UploadStorageFallbackHandler, dict(fallback=util.tornado.WsgiInputContainer(app.wsgi_app), file_prefix="octoprint-file-upload-", file_suffix=".tmp", suffixes=upload_suffixes))
-		])
+		]
+		for name, hook in pluginManager.get_hooks("octoprint.server.http.routes").items():
+			try:
+				result = hook(list(server_routes))
+			except:
+				self._logger.exception("There was an error while retrieving additional server routes from plugin hook {name}".format(**locals()))
+			else:
+				if isinstance(result, (list, tuple)):
+					for entry in result:
+						if not isinstance(entry, tuple) or not len(entry) == 3:
+							continue
+						if not isinstance(entry[0], basestring):
+							continue
+						if not isinstance(entry[2], dict):
+							continue
+
+						self._logger.debug("Adding additional route {route} handled by handler {handler} and with additional arguments {args!r}".format(route=entry[0], handler=entry[1], args=entry[2]))
+						server_routes.append(entry)
+
+		server_routes.append((r".*", util.tornado.UploadStorageFallbackHandler, dict(fallback=util.tornado.WsgiInputContainer(app.wsgi_app), file_prefix="octoprint-file-upload-", file_suffix=".tmp", suffixes=upload_suffixes)))
+
+		self._tornado_app = Application(server_routes)
 		max_body_sizes = [
 			("POST", r"/api/files/([^/]*)", settings().getInt(["server", "uploads", "maxSize"]))
 		]
