@@ -1287,7 +1287,7 @@ class MachineCom(object):
 				self._lastCommError = line[6:] if line.startswith("Error:") else line[2:]
 				pass
 			elif not self.isError():
-				self._errorValue = line[6:]
+				self._errorValue = line[6:] if line.startswith("Error:") else line[2:]
 				self._changeState(self.STATE_ERROR)
 				eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
 		return line
