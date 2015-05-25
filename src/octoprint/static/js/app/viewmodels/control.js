@@ -396,6 +396,24 @@ $(function() {
             self.requestData();
         };
 
+        self.updateRotatorWidth = function() {
+            var webcamImage = $("#webcam_image");
+            if (self.settings.webcam_rotate90()) {
+                if (webcamImage.width() > 0) {
+                    $("#webcam_rotator").css("height", webcamImage.width());
+                } else {
+                    webcamImage.on("load", function() {
+                        $("#webcam_rotator").css("height", webcamImage.width());
+                        webcamImage.off("load");
+                    });
+                }
+            } else {
+                $("#webcam_rotator").css("height", "");
+            }
+        }
+
+        self.onSettingsBeforeSave = self.updateRotatorWidth;
+
         self.onTabChange = function (current, previous) {
             if (current == "#control") {
                 if (self.webcamDisableTimeout != undefined) {
@@ -412,6 +430,7 @@ $(function() {
                     }
                     newSrc += new Date().getTime();
 
+                    self.updateRotatorWidth();
                     webcamImage.attr("src", newSrc);
                 }
             } else if (previous == "#control") {

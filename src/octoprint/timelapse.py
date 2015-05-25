@@ -281,6 +281,8 @@ class Timelapse(object):
 		filters = []
 
 		# flip video if configured
+		if settings().getBoolean(["webcam", "rotate90"]):
+			filters.append('transpose=1')
 		if settings().getBoolean(["webcam", "flipH"]):
 			filters.append('hflip')
 		if settings().getBoolean(["webcam", "flipV"]):
