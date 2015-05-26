@@ -1612,7 +1612,7 @@ class MachineCom(object):
 				except ValueError:
 					pass
 		return cmd
-	_gcode_G0_sent = _gcode_G0_sent
+	_gcode_G1_sent = _gcode_G0_sent
 
 	def _gcode_M0_queue(self, cmd):
 		self.setPause(True)

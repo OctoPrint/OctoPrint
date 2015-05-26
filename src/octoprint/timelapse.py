@@ -349,7 +349,7 @@ class ZTimelapse(Timelapse):
 
 	def eventSubscriptions(self):
 		return [
-			("ZChange", self._onZChange)
+			(Events.Z_CHANGE, self._onZChange)
 		]
 
 	def configData(self):

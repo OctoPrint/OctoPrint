@@ -183,6 +183,7 @@
   * [#809](https://github.com/foosel/OctoPrint/issues/809) - Added proper form validation to printer profile editor
   * [#824](https://github.com/foosel/OctoPrint/issues/824) - Settings getting lost when switching between panes in
     the settings dialog (fix provided by [#879](https://github.com/foosel/OctoPrint/pull/879))
+  * [#909](https://github.com/foosel/OctoPrint/issues/909) - Fixed Z-Timelapse for Z changes on ``G1`` moves.
 * Various fixes without tickets:
   * GCODE viewer now doesn't stumble over completely extrusionless GCODE files
   * Do not deliver the API key on settings API unless user has admin rights
