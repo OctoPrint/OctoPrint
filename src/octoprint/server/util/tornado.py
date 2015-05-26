@@ -746,7 +746,8 @@ class CustomHTTP1ConnectionParameters(tornado.http1connection.HTTP1ConnectionPar
 class LargeResponseHandler(tornado.web.StaticFileHandler):
 	"""
 	Customized `tornado.web.StaticFileHandler <http://tornado.readthedocs.org/en/branch4.0/web.html#tornado.web.StaticFileHandler>`_
-	that allows delivery of the requested resource as attachment and access validation through an optional callback.
+	that allows delivery of the requested resource as attachment and access and request path validation through
+	optional callbacks. Note that access validation takes place before path validation.
 
 	Arguments:
 	   path (str): The system path from which to serve files (this will be forwarded to the ``initialize`` method of
@@ -760,16 +761,23 @@ class LargeResponseHandler(tornado.web.StaticFileHandler):
 	       be called with ``self.request`` as parameter which contains the full tornado request object. Should raise
 	       a ``tornado.web.HTTPError`` if access is not allowed in which case the request will not be further processed.
 	       Defaults to ``None`` and hence no access validation being performed.
+	   path_validation (function): Callback to call in the ``get`` method to validate the requested path. Will be called
+	       with the requested path as parameter. Should raise a ``tornado.web.HTTPError`` (e.g. an 404) if the requested
+	       path does not pass validation in which case the request will not be further processed.
+	       Defaults to ``None`` and hence no path validation being performed.
 	"""
 
-	def initialize(self, path, default_filename=None, as_attachment=False, access_validation=None):
+	def initialize(self, path, default_filename=None, as_attachment=False, access_validation=None, path_validation=None):
 		tornado.web.StaticFileHandler.initialize(self, os.path.abspath(path), default_filename)
 		self._as_attachment = as_attachment
 		self._access_validation = access_validation
+		self._path_validation = path_validation
 
 	def get(self, path, include_body=True):
 		if self._access_validation is not None:
 			self._access_validation(self.request)
+		if self._path_validation is not None:
+			self._path_validation(path)
 		result = tornado.web.StaticFileHandler.get(self, path, include_body=include_body)
 		return result
 
@@ -887,7 +895,7 @@ def access_validation_factory(app, login_manager, validator):
 	Creates an access validation wrapper using the supplied validator.
 
 	:param validator: the access validator to use inside the validation wrapper
-	:return: an access validation wrapper taking a request as parameter and performing the request validation
+	:return: an access validator taking a request as parameter and performing the request validation
 	"""
 	def f(request):
 		"""
@@ -903,4 +911,17 @@ def access_validation_factory(app, login_manager, validator):
 			app.session_interface.open_session(app, flask.request)
 			login_manager.reload_user()
 			validator(flask.request)
+	return f
+
+def path_validation_factory(path_filter, status_code=404):
+	"""
+	Creates a request path validation wrapper returning the defined status code if the supplied path_filter returns False.
+
+	:param path_filter: the path filter to use on the requested path, should return False for requests that should
+	   be responded with the provided error code.
+	:return: a request path validator taking a request path as parameter and performing the request validation
+	"""
+	def f(path):
+		if not path_filter(path):
+			raise tornado.web.HTTPError(status_code)
 	return f
