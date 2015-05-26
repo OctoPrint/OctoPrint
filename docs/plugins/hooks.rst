@@ -299,3 +299,38 @@ octoprint.server.http.bodysize
    :param list current_max_body_sizes: read-only list of the currently configured maximum body sizes
    :return: A list of 3-tuples with additional request specific maximum body sizes as defined above
    :rtype: list
+
+.. _sec-plugins-hook-server-http-routes:
+
+octoprint.server.http.routes
+----------------------------
+
+.. py:function:: hook(server_routes, *args, **kwargs)
+
+   Allows extending the list of routes registered on the web server.
+
+   This is interesting for plugins which want to provide their own download URLs which will then be delivered statically
+   following the same path structure as regular downloads.
+
+   ``server_routes`` will be a (read-only) list of the currently defined server routes, in case you want to check from
+   your plugin against that.
+
+   The hook must return a list of 3-tuples (the list's length can be 0). Each 3-tuple should have the path of the route
+   (a string defining its regular expression) as the first, the `RequestHandler <http://tornado.readthedocs.org/en/branch4.0/web.html#request-handlers>`_
+   class to use for the route as the second and a dictionary with keywords parameters for the defined request handler as
+   the third entry.
+
+   **Example**
+
+   .. seealso::
+
+      :class:`~octoprint.server.util.tornado.LargeResponseHandler`
+         Customized `tornado.web.StaticFileHandler <http://tornado.readthedocs.org/en/branch4.0/web.html#tornado.web.StaticFileHandler>`_
+         that allows delivery of the requested resource as attachment and access validation through an optional callback.
+      :class:`~octoprint.server.util.tornado.UrlForwardHandler`
+         `tornado.web.RequestHandler <http://tornado.readthedocs.org/en/branch4.0/web.html#request-handlers>`_ that proxies
+         requests to a preconfigured url and returns the response.
+
+   :param list server_routes: read-only list of the currently configured server routes
+   :return: a list of 3-tuples with additional routes as defined above
+   :rtype: list
