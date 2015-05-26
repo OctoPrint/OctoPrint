@@ -322,6 +322,14 @@ octoprint.server.http.routes
 
    **Example**
 
+   The following example registers two new routes ``/plugin/add_tornado_route/download`` and ``/plugin/add_tornado_route/forward``
+   in the webserver which roughly replicate the functionality of ``/downloads/files/local`` and ``/downloads/camera/current``.
+
+   .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/add_tornado_route.py
+      :linenos:
+      :tab-width: 4
+      :caption: `add_tornado_route.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/add_tornado_route.py>`_
+
    .. seealso::
 
       :class:`~octoprint.server.util.tornado.LargeResponseHandler`
