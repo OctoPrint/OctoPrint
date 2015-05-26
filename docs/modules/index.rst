@@ -10,6 +10,7 @@ Internal Modules
    filemanager.rst
    plugin.rst
    printer.rst
+   server.rst
    settings.rst
    slicing.rst
    util.rst
