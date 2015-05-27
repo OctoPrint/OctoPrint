@@ -949,3 +949,18 @@ textarea.block {
   overflow: auto;
   -webkit-overflow-scrolling: touch;
 }
+
+.input-append, .input-prepend {
+  .add-on {
+    &.add-on-limited {
+      overflow-x: hidden;
+      text-overflow: ellipsis;
+      width: inherit;
+    }
+  }
+}
+
+.control-group.error .input-prepend .fileinput-button,
+.control-group.error .input-append .fileinput-button {
+  border-color: #b94a48;
+}
