@@ -285,6 +285,9 @@ octoprint.server.http.bodysize
    against which to match as first, a regular expression for the path to match against and the maximum body size as
    an integer as the third entry.
 
+   The path of the route will be prefixed by OctoPrint with ``/plugin/<plugin identifier>/`` (if the path already begins
+   with a ``/`` that will be stripped first).
+
    **Example**
 
    The following plugin example sets the maximum body size for ``POST`` requests against four custom URLs to 100, 200,
@@ -319,6 +322,18 @@ octoprint.server.http.routes
    (a string defining its regular expression) as the first, the `RequestHandler <http://tornado.readthedocs.org/en/branch4.0/web.html#request-handlers>`_
    class to use for the route as the second and a dictionary with keywords parameters for the defined request handler as
    the third entry.
+
+   The path of the route will be prefixed by OctoPrint with ``/plugin/<plugin identifier>/`` (if the path already begins
+   with a ``/`` that will be stripped first).
+
+   .. note::
+
+      Static routes provided through this hook take precedence over routes defined through blueprints.
+
+      If your plugin also implements the :class:`~octoprint.plugin.BlueprintPlugin` mixin and has defined a route for a
+      view on that which matches one of the paths provided via its ``octoprint.server.http.routes`` hook handler, the
+      view of the blueprint will thus not be reachable since processing of the request will directly be handed over
+      to your defined handler class.
 
    **Example**
 

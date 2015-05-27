@@ -785,8 +785,11 @@ class Server():
 						if not isinstance(entry[2], dict):
 							continue
 
-						self._logger.debug("Adding additional route {route} handled by handler {handler} and with additional arguments {args!r}".format(route=entry[0], handler=entry[1], args=entry[2]))
-						server_routes.append(entry)
+						route, handler, kwargs = entry
+						route = r"/plugin/{name}/{route}".format(name=name, route=route if not route.startswith("/") else route[1:])
+
+						self._logger.debug("Adding additional route {route} handled by handler {handler} and with additional arguments {kwargs!r}".format(**locals()))
+						server_routes.append((route, handler, kwargs))
 
 		server_routes.append((r".*", util.tornado.UploadStorageFallbackHandler, dict(fallback=util.tornado.WsgiInputContainer(app.wsgi_app), file_prefix="octoprint-file-upload-", file_suffix=".tmp", suffixes=upload_suffixes)))
 
@@ -811,8 +814,11 @@ class Server():
 						if not isinstance(entry[2], int):
 							continue
 
-						self._logger.debug("Adding maximum body size of {size}B for {method} requests to {path} (Plugin: {name})".format(method=entry[0], path=entry[1], size=entry[2], name=name))
-						max_body_sizes.append(entry)
+						method, route, size = entry
+						route = r"/plugin/{name}/{route}".format(name=name, route=route if not route.startswith("/") else route[1:])
+
+						self._logger.debug("Adding maximum body size of {size}B for {method} requests to {route})".format(**locals()))
+						max_body_sizes.append((method, route, size))
 
 		self._server = util.tornado.CustomHTTPServer(self._tornado_app, max_body_sizes=max_body_sizes, default_max_body_size=settings().getInt(["server", "maxSize"]))
 		self._server.listen(self._port, address=self._host)
