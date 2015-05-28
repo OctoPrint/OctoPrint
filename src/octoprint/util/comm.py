@@ -213,7 +213,7 @@ class MachineCom(object):
 
 		# multithreading locks
 		self._sendNextLock = threading.Lock()
-		self._sendingLock = threading.Lock()
+		self._sendingLock = threading.RLock()
 
 		# monitoring thread
 		self._monitoring_active = True
