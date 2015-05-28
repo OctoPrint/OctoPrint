@@ -419,7 +419,7 @@ class PluginManager(object):
 	It is able to discover plugins both through possible file system locations as well as customizable entry points.
 	"""
 
-	def __init__(self, plugin_folders, plugin_types, plugin_entry_points, logging_prefix=None, plugin_disabled_list=None, plugin_restart_needing_hooks=None):
+	def __init__(self, plugin_folders, plugin_types, plugin_entry_points, logging_prefix=None, plugin_disabled_list=None, plugin_restart_needing_hooks=None, plugin_obsolete_hooks=None):
 		self.logger = logging.getLogger(__name__)
 
 		if logging_prefix is None:
@@ -432,6 +432,7 @@ class PluginManager(object):
 		self.plugin_entry_points = plugin_entry_points
 		self.plugin_disabled_list = plugin_disabled_list
 		self.plugin_restart_needing_hooks = plugin_restart_needing_hooks
+		self.plugin_obsolete_hooks = plugin_obsolete_hooks
 		self.logging_prefix = logging_prefix
 
 		self.enabled_plugins = dict()
@@ -601,8 +602,10 @@ class PluginManager(object):
 				self.load_plugin(name, plugin, startup=startup, initialize_implementation=initialize_implementations)
 				if not self._is_plugin_disabled(name):
 					self.enable_plugin(name, plugin=plugin, initialize_implementation=initialize_implementations, startup=startup)
-			except (PluginLifecycleException, PluginNeedsRestart):
+			except PluginNeedsRestart:
 				pass
+			except PluginLifecycleException as e:
+				self.logger.info(str(e))
 
 		if len(self.enabled_plugins) <= 0:
 			self.logger.info("No plugins found")
@@ -678,6 +681,9 @@ class PluginManager(object):
 
 		if not startup and self.is_restart_needing_plugin(plugin):
 			raise PluginNeedsRestart(name)
+
+		if self.has_obsolete_hooks(plugin):
+			raise PluginCantEnable(name, "Dependency on obsolete hooks detected, full functionality cannot be guaranteed")
 
 		try:
 			plugin.enable()
@@ -790,6 +796,16 @@ class PluginManager(object):
 				return True
 		return False
 
+	def has_obsolete_hooks(self, plugin):
+		if not plugin.hooks:
+			return False
+
+		hooks = plugin.hooks.keys()
+		for hook in hooks:
+			if self.is_obsolete_hook(hook):
+				return True
+		return False
+
 	def is_restart_needing_hook(self, hook):
 		if self.plugin_restart_needing_hooks is None:
 			return False
@@ -799,6 +815,11 @@ class PluginManager(object):
 				return True
 
 		return False
+
+	def is_obsolete_hook(self, hook):
+		if self.plugin_obsolete_hooks is None:
+			return False
+		return hook in self.plugin_obsolete_hooks
 
 	def initialize_implementations(self, additional_injects=None, additional_inject_factories=None):
 		for name, plugin in self.enabled_plugins.items():
@@ -1152,14 +1173,17 @@ class PluginLifecycleException(BaseException):
 
 		self.message = message.format(**locals())
 
+	def __str__(self):
+		return self.message
+
 class PluginCantInitialize(PluginLifecycleException):
 	def __init__(self, name, reason):
-		super(PluginLifecycleException, self).__init__(name, reason, "Plugin {name} cannot be initialized: {message}")
+		super(PluginLifecycleException, self).__init__(name, reason, "Plugin {name} cannot be initialized: {reason}")
 
 class PluginCantEnable(PluginLifecycleException):
 	def __init__(self, name, reason):
-		super(PluginLifecycleException, self).__init__(name, reason, "Plugin {name} cannot be enabled: {message}")
+		PluginLifecycleException.__init__(self, name, reason, "Plugin {name} cannot be enabled: {reason}")
 
 class PluginCantDisable(PluginLifecycleException):
 	def __init__(self, name, reason):
-		super(PluginLifecycleException, self).__init__(name, reason, "Plugin {name} cannot be disabled: {message}")
+		super(PluginLifecycleException, self).__init__(name, reason, "Plugin {name} cannot be disabled: {reason}")
