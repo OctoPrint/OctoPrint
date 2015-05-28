@@ -1425,7 +1425,7 @@ class MachineCom(object):
 			if self._serial is None:
 				return
 
-			gcode = False
+			gcode = None
 			if not self.isStreaming():
 				# trigger the "queuing" phase only if we are not streaming to sd right now
 				cmd, cmd_type, gcode = self._process_command_phase("queuing", cmd, cmd_type, gcode=gcode)
@@ -1557,7 +1557,7 @@ class MachineCom(object):
 		# send it through the phase specific handlers provided by plugins
 		for name, hook in self._gcode_hooks[phase].items():
 			try:
-				hook_result = hook(self, phase, command, command_type, gcode if gcode is not False else None)
+				hook_result = hook(self, phase, command, command_type, gcode)
 			except:
 				self._logger.exception("Error while processing hook {name} for phase {phase} and command {command}:".format(**locals()))
 			else:
@@ -1576,7 +1576,7 @@ class MachineCom(object):
 		# send it through the phase specific command handler if it exists
 		commandPhaseHandler = "_command_phase_" + phase
 		if hasattr(self, commandPhaseHandler):
-			handler_result = getattr(self, commandPhaseHandler)(command, cmd_type=command_type, gcode=gcode if gcode is not False else None)
+			handler_result = getattr(self, commandPhaseHandler)(command, cmd_type=command_type, gcode=gcode)
 			command, command_type, gcode = self._handle_command_handler_result(command, command_type, gcode, handler_result)
 
 		# finally return whatever we resulted on
