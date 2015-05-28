@@ -32,7 +32,7 @@ from octoprint.util import deprecated
 _instance = None
 
 def plugin_manager(init=False, plugin_folders=None, plugin_types=None, plugin_entry_points=None, plugin_disabled_list=None,
-                   plugin_restart_needing_hooks=None):
+                   plugin_restart_needing_hooks=None, plugin_obsolete_hooks=None):
 	"""
 	Factory method for initially constructing and consecutively retrieving the :class:`~octoprint.plugin.core.PluginManager`
 	singleton.
@@ -55,6 +55,8 @@ def plugin_manager(init=False, plugin_folders=None, plugin_types=None, plugin_en
 	    plugin_restart_needing_hooks (list): A list of hook namespaces which cause a plugin to need a restart in order
 	        be enabled/disabled. Does not have to contain full hook identifiers, will be matched with startswith similar
 	        to logging handlers
+	    plugin_obsolete_hooks (list): A list of hooks that have been declared obsolete. Plugins implementing them will
+	        not be enabled since they might depend on functionality that is no longer available.
 
 	Returns:
 	    PluginManager: A fully initialized :class:`~octoprint.plugin.core.PluginManager` instance to be used for plugin
@@ -97,8 +99,18 @@ def plugin_manager(init=False, plugin_folders=None, plugin_types=None, plugin_en
 				plugin_restart_needing_hooks = [
 					"octoprint.server.http"
 				]
+			if plugin_obsolete_hooks is None:
+				plugin_obsolete_hooks = [
+					"octoprint.comm.protocol.gcode"
+				]
 
-			_instance = PluginManager(plugin_folders, plugin_types, plugin_entry_points, logging_prefix="octoprint.plugins.", plugin_disabled_list=plugin_disabled_list, plugin_restart_needing_hooks=plugin_restart_needing_hooks)
+			_instance = PluginManager(plugin_folders,
+			                          plugin_types,
+			                          plugin_entry_points,
+			                          logging_prefix="octoprint.plugins.",
+			                          plugin_disabled_list=plugin_disabled_list,
+			                          plugin_restart_needing_hooks=plugin_restart_needing_hooks,
+			                          plugin_obsolete_hooks=plugin_obsolete_hooks)
 		else:
 			raise ValueError("Plugin Manager not initialized yet")
 	return _instance

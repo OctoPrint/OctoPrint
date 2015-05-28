@@ -40,37 +40,84 @@ octoprint.comm.protocol.action
    :param str action: The parsed out action command, so for a ``line`` like ``// action:some_command`` this will be
        ``some_command``
 
-.. _sec-plugins-hook-comm-protocol-gcode:
+.. _sec-plugins-hook-comm-protocol-gcode-phase:
 
-octoprint.comm.protocol.gcode
------------------------------
+octoprint.comm.protocol.gcode.<phase>
+-------------------------------------
 
-.. py:function:: hook(comm_instance, cmd, cmd_type=None, *args, **kwargs)
+This describes actually four hooks:
 
-   Preprocess and optionally suppress a GCODE command before it is being sent to the printer.
+  * ``octoprint.comm.protocol.gcode.queuing``
+  * ``octoprint.comm.protocol.gcode.queued``
+  * ``octoprint.comm.protocol.gcode.sending``
+  * ``octoprint.comm.protocol.gcode.sent``
+
+.. py:function:: hook(comm_instance, phase, cmd, cmd_type, gcode, *args, **kwargs)
+
+   Pre- and postprocess commands as they progress through the various phases of being sent to the printer. The phases
+   are the following:
+
+     * ``queuing``: This phase is triggered just before the command is added to the send queue of the communication layer. This
+       corresponds to the moment a command is being read from a file that is currently being printed. Handlers
+       may suppress or change commands or their command type here.
+     * ``queued``: This phase is triggered just after the command was added to the send queue of the communication layer.
+       No manipulation is possible here anymore (returned values will be ignored).
+     * ``sending``: This phase is triggered just before the command is actually being sent to the printer. Right afterwards
+       a line number will be assigned and the command will be sent. Handlers may suppress or change commands here. The
+       command type is not taken into account anymore.
+     * ``sent``: This phase is triggered just after the command was handed over to the serial connection to the printer.
+       No manipulation is possible here anymore (returned values will be ignored). A command that reaches the sent phase
+       must not necessarily have reached the printer yet and it might also still run into communication problems and a
+       resend might be triggered for it.
 
    Hook handlers may use this to rewrite or completely suppress certain commands before they enter the send queue of
-   the communication layer. The hook handler will be called with the ``cmd`` to be sent to the printer as well as
-   the ``cmd_type`` parameter.
-
-   If the handler does not wish to handle the command, it should simply perform a ``return cmd`` as early as possible,
-   that will ensure that no changes are applied to the command.
-
-   If the handler wishes to suppress sending of the command altogether, it should return None instead. That will tell
-   OctoPrint that the ``cmd`` has been scraped altogether and not send anything.
-
-   More granular manipulation of the sending logic is possible by not just returning ``cmd`` (be it the original, a
-   rewritten variant or a None value) but also a 2-tuple ``(cmd, cmd_type)``. This
-   allows to also rewrite the ``cmd_type`` parameter used for sending.
+   the communication layer or before they are actually sent over the serial port, or to react to the queuing or sending
+   of commands after the fact. The hook handler will be called with the processing ``phase``, the ``cmd`` to be sent to
+   the printer as well as the ``cmd_type`` parameter used for enqueuing (OctoPrint will make sure that the send queue
+   will never contain more than one line with the same ``cmd_type``) and the detected gcode command (if it is one).
 
    Defining a ``cmd_type`` other than None will make sure OctoPrint takes care of only having one command of that type
    in its sending queue. Predefined types are ``temperature_poll`` for temperature polling via ``M105`` and
    ``sd_status_poll`` for polling the SD printing status via ``M27``.
 
+   ``phase`` will always match the ``<phase>`` part of the implemented hook (e.g. ``octoprint.comm.protocol.gcode.queued``
+   handlers will always be called with ``phase`` set to ``queued``). This parameter is provided so that plugins may
+   utilize the same hook for mulitple phases if required.
+
+   Handlers are expected to return one of the following result variants:
+
+     * ``None``: Don't change anything. Note that Python functions will also automatically return ``None`` if
+       an empty ``return`` statement is used or just nothing is returned explicitely from the handler. Hence, the following
+       examples are all falling into this category:
+
+       .. code-block:: python
+
+          def one(*args, **kwargs):
+              print("I return None explicitly")
+              return None
+
+          def two(*args, **kwargs):
+              print("I just return without any values")
+              return
+
+          def three(*args, **kwargs):
+              print("I don't explicitly return anything at all")
+
+       Handlers which do not wish to modify (or suppress) ``cmd`` or ``cmd_type`` at all should use this option.
+     * A string with the rewritten version of the ``cmd``, e.g. ``return "M110"``. To avoid situations which will be
+       difficult to debug should the returned command be later changed to ``None`` (with the intent to suppress the
+       command instead but actually causing ``cmd`` and ``cmd_type`` to just staying as-is), this variant should be
+       entirely avoided by handlers.
+     * A 1-tuple consisting of a rewritten version of the ``cmd``, e.g. ``return "M110",``, or ``None`` in order to
+       suppress the command, e.g. ``return None,``. Handlers which wish to rewrite the command or to suppress it completely
+       should use this option.
+     * A 2-tuple consisting of a rewritten version of the ``cmd`` and the ``cmd_type``, e.g. ``return "M105", "temperature_poll"``.
+       Handlers which wish to rewrite both the command and the command type should use this option.
+
    **Example**
 
    The following hook handler replaces all ``M107`` ("Fan Off", deprecated) with an ``M106 S0`` ("Fan On" with speed
-   parameter)
+   parameter) upon queuing and logs all sent ``M106``.
 
    .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/rewrite_m107.py
       :linenos:
@@ -78,12 +125,14 @@ octoprint.comm.protocol.gcode
       :caption: `rewrite_m107.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/rewrite_m107.py>`_
 
    :param object comm_instance: The :class:`~octoprint.util.comm.MachineCom` instance which triggered the hook.
+   :param str phase: The current phase in the command progression, either ``queuing``, ``queued``, ``sending`` or
+       ``sent``. Will always match the ``<phase>`` of the hook.
    :param str cmd: The GCODE command for which the hook was triggered. This is the full command as taken either
        from the currently streamed GCODE file or via other means (e.g. user input our status polling).
-   :param str cmd_type: Type of command, ``temperature_poll`` for temperature polling or ``sd_status_poll`` for SD
+   :param str cmd_type: Type of command, e.g. ``temperature_poll`` for temperature polling or ``sd_status_poll`` for SD
        printing status polling.
-   :return: A rewritten ``cmd``, a tuple of ``cmd`` and ``cmd_type``
-       or None to suppress sending of the ``cmd`` to the printer. See above for details.
+   :param str gcode: Parsed GCODE command, e.g. ``G0`` or ``M110``, may also be None if no known command could be parsed
+   :return: None, 1-tuple, 2-tuple or string, see the description above for details.
 
 .. _sec-plugins-hook-comm-protocol-scripts:
 
