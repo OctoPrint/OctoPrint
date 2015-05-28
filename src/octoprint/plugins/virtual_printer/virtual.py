@@ -24,6 +24,9 @@ class VirtualPrinter():
 	custom_action_regex = re.compile("action_custom ([a-zA-Z0-9_]+)(\s+.*)?")
 
 	def __init__(self, read_timeout=5.0, write_timeout=10.0):
+		import logging
+		self._logger = logging.getLogger("octoprint.plugin.virtual_printer.VirtualPrinter")
+
 		self._read_timeout = read_timeout
 		self._write_timeout = write_timeout
 
@@ -653,8 +656,8 @@ class VirtualPrinter():
 
 	def write(self, data):
 		if self._debug_drop_connection:
+			self._logger.info("Debug drop of connection requested, raising SerialTimeoutException")
 			raise SerialTimeoutException()
-			return
 
 		with self._incoming_lock:
 			if self.incoming is None or self.outgoing is None:
@@ -662,6 +665,7 @@ class VirtualPrinter():
 			try:
 				self.incoming.put(data, timeout=self._write_timeout)
 			except Queue.Full:
+				self._logger.info("Incoming queue is full, raising SerialTimeoutException")
 				raise SerialTimeoutException()
 
 	def readline(self):
