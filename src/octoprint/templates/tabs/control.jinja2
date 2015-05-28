@@ -1,6 +1,8 @@
 {% if webcamStream %}
     <div id="webcam_container" tabindex="0" data-bind="event: { keydown: onKeyDown, mouseover: onMouseOver, mouseout: onMouseOut, focus: onFocus }">
-        <img id="webcam_image" data-bind="css: { flipH: settings.webcam_flipH(), flipV: settings.webcam_flipV() }">
+        <div id="webcam_rotator" data-bind="css: { rotate90: settings.webcam_rotate90() }">
+            <img id="webcam_image" data-bind="css: { flipH: settings.webcam_flipH(), flipV: settings.webcam_flipV() }">
+        </div>
         <div class="keycontrol_overlay" data-bind="visible: showKeycontrols">
             <div class="keycontrol_overlay_heading">{{ _("Keyboard controls active") }} <a href="#" data-bind="click: toggleKeycontrolHelp"><i data-bind="css: { 'icon-chevron-down': !keycontrolHelpActive(), 'icon-chevron-up': keycontrolHelpActive() }"></i></a></div>
             <div data-bind="visible: keycontrolHelpActive">
