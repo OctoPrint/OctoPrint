@@ -15,5 +15,9 @@ DAEMON_ARGS="--port=$PORT"
 # Umask of files octoprint generates, Change this to 000 if running octoprint as its own, separate user
 UMASK=022
 
+# Process priority, 0 here will result in a priority 20 process.
+# -2 ensures Octoprint has a slight priority over user processes.
+NICELEVEL=-2
+
 # Should we run at startup?
 START=yes
