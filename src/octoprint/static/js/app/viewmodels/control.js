@@ -402,9 +402,10 @@ $(function() {
                 if (webcamImage.width() > 0) {
                     $("#webcam_rotator").css("height", webcamImage.width());
                 } else {
-                    webcamImage.on("load", function() {
+                    webcamImage.off("load.rotator");
+                    webcamImage.on("load.rotator", function() {
                         $("#webcam_rotator").css("height", webcamImage.width());
-                        webcamImage.off("load");
+                        webcamImage.off("load.rotator");
                     });
                 }
             } else {
