@@ -26,13 +26,42 @@ from werkzeug.contrib.cache import SimpleCache
 
 #~~ monkey patching
 
-def enable_plugin_translations():
+def enable_additional_translations(additional_folders=None):
 	import os
 	from flask import _request_ctx_stack
-	from babel import support
+	from babel import support, Locale
 	import flask.ext.babel
 
 	import octoprint.plugin
+
+	if additional_folders is None:
+		additional_folders = []
+
+	def fixed_list_translations(self):
+		"""Returns a list of all the locales translations exist for.  The
+		list returned will be filled with actual locale objects and not just
+		strings.
+		"""
+		def list_translations(dirname):
+			if not os.path.isdir(dirname):
+				return []
+			result = []
+			for folder in os.listdir(dirname):
+				locale_dir = os.path.join(dirname, folder, 'LC_MESSAGES')
+				if not os.path.isdir(locale_dir):
+					continue
+				if filter(lambda x: x.endswith('.mo'), os.listdir(locale_dir)):
+					result.append(Locale.parse(folder))
+			if not result:
+				result.append(Locale.parse(self._default_locale))
+			return result
+
+		dirs = [os.path.join(self.app.root_path, 'translations')] + additional_folders
+
+		result = []
+		for dir in dirs:
+			result += list_translations(dir)
+		return result
 
 	def fixed_get_translations():
 		"""Returns the correct gettext translations that should be used for
@@ -63,13 +92,17 @@ def enable_plugin_translations():
 				else:
 					translations = translations.merge(plugin_translations)
 
-			dirname = os.path.join(ctx.app.root_path, 'translations')
-			core_translations = support.Translations.load(dirname, [locale])
+			dirs = [os.path.join(ctx.app.root_path, 'translations')] + additional_folders
+			for dirname in dirs:
+				core_translations = support.Translations.load(dirname, [locale])
+				if not isinstance(core_translations, support.NullTranslations):
+					break
 			translations = translations.merge(core_translations)
 
 			ctx.babel_translations = translations
 		return translations
 
+	flask.ext.babel.Babel.list_translations = fixed_list_translations
 	flask.ext.babel.get_translations = fixed_get_translations
 
 #~~ passive login helper
