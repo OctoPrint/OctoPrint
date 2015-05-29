@@ -28,7 +28,8 @@ INSTALL_REQUIRES = [
 	"netifaces",
 	"pylru",
 	"rsa",
-	"pkginfo"
+	"pkginfo",
+	"requests"
 ]
 
 # Additional requirements for optional install options

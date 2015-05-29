@@ -183,7 +183,7 @@ default_settings = {
 				"settings": [
 					"section_printer", "serial", "printerprofiles", "temperatures", "terminalfilters", "gcodescripts",
 					"section_features", "features", "webcam", "accesscontrol", "api",
-					"section_octoprint", "folders", "appearance", "logs"
+					"section_octoprint", "folders", "appearance", "logs", "plugin_pluginmanager"
 				],
 				"usersettings": ["access", "interface"],
 				"generic": []

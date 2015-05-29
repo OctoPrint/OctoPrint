@@ -17,7 +17,9 @@
 * You can now define a folder (default: `~/.octoprint/watched`) to be watched for newly added GCODE (or -- if slicing
   support is enabled -- STL) files to automatically add.
 * OctoPrint now has a [plugin system](http://docs.octoprint.org/en/devel/plugins/index.html) which allows extending its
-  core functionality.
+  core functionality. Plugins may be installed through the new Plugin Manager available in OctoPrint's settings. This
+  Plugin Manager also allows browsing and easy installation of plugins registered on the official
+  [OctoPrint Plugin Repository](http://plugins.octoprint.org).
 * New type of API key: [App Session Keys](http://docs.octoprint.org/en/devel/api/apps.html) for trusted applications
 * Printer Profiles: Printer properties like print volume, extruder offsets etc are now managed via Printer Profiles. A
   connection to a printer will always have a printer profile associated.

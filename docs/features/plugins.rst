@@ -26,11 +26,17 @@ and on the `OctoPrint organization Github page <https://github.com/OctoPrint>`_.
 Installing Plugins
 ==================
 
-Plugins can be installed either by unpacking them into one of the configured plugin folders (regularly those are
-``<octoprint source root>/plugins`` and ``<octoprint config folder>/plugins`` [#f1]_ or by installing them as regular python
-modules via ``pip`` [#f2]_.
+Plugins can be installed through the bundled Plugin Manager, which allows installing plugins available in the
+`OctoPrint Plugin Repository <http://plugins.octoprint.org>`_, from a web address or from an uploaded file archive.
 
-Please refer to the documentation of the plugin for installations instructions.
+Please refer to the documentation of the plugin for additional installations instructions.
+
+Manual Installation
+-------------------
+
+If you don't want or can't use the Plugin Manager, plugins may also be installed manually either by copying and
+unpacking them into one of the configured plugin folders (regularly those are ``<octoprint source root>/plugins`` and
+``<octoprint config folder>/plugins`` [#f1]_ or by installing them as regular python modules via ``pip`` [#f2]_.
 
 For a plugin available on the Python Package Index (PyPi), the process is as simple as issuing a
 
