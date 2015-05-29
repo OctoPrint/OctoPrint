@@ -452,6 +452,8 @@ class PluginManager(object):
 
 		self.registered_clients = []
 
+		self.marked_plugins = defaultdict(list)
+
 		self.reload_plugins(startup=True, initialize_implementations=False)
 
 	@property
@@ -460,18 +462,18 @@ class PluginManager(object):
 		plugins.update(self.disabled_plugins)
 		return plugins
 
-	def find_plugins(self, existing=None):
+	def find_plugins(self, existing=None, ignore_uninstalled=True):
 		if existing is None:
 			existing = self.plugins
 
 		result = dict()
 		if self.plugin_folders:
-			result.update(self._find_plugins_from_folders(self.plugin_folders, existing))
+			result.update(self._find_plugins_from_folders(self.plugin_folders, existing, ignored_uninstalled=ignore_uninstalled))
 		if self.plugin_entry_points:
-			result.update(self._find_plugins_from_entry_points(self.plugin_entry_points, existing))
+			result.update(self._find_plugins_from_entry_points(self.plugin_entry_points, existing, ignore_uninstalled=ignore_uninstalled))
 		return result
 
-	def _find_plugins_from_folders(self, folders, existing):
+	def _find_plugins_from_folders(self, folders, existing, ignored_uninstalled=True):
 		result = dict()
 
 		for folder in folders:
@@ -496,7 +498,7 @@ class PluginManager(object):
 				else:
 					continue
 
-				if key in existing or key in result:
+				if key in existing or key in result or (ignored_uninstalled and key in self.marked_plugins["uninstalled"]):
 					# plugin is already defined, ignore it
 					continue
 
@@ -512,7 +514,7 @@ class PluginManager(object):
 
 		return result
 
-	def _find_plugins_from_entry_points(self, groups, existing):
+	def _find_plugins_from_entry_points(self, groups, existing, ignore_uninstalled=True):
 		result = dict()
 
 		# let's make sure we have a current working set
@@ -527,11 +529,12 @@ class PluginManager(object):
 				module_name = entry_point.module_name
 				version = entry_point.dist.version
 
-				if key in existing or key in result:
-					# plugin is already defined, ignore it
+				if key in existing or key in result or (ignore_uninstalled and key in self.marked_plugins["uninstalled"]):
+					# plugin is already defined or marked as uninstalled, ignore it
 					continue
 
 				kwargs = dict(module_name=module_name, version=version)
+				package_name = None
 				try:
 					module_pkginfo = InstalledEntryPoint(entry_point)
 				except:
@@ -589,12 +592,15 @@ class PluginManager(object):
 	def _is_plugin_disabled(self, key):
 		return key in self.plugin_disabled_list or key.endswith('disabled')
 
-	def reload_plugins(self, startup=False, initialize_implementations=True):
+	def reload_plugins(self, startup=False, initialize_implementations=True, force_reload=None):
 		self.logger.info("Loading plugins from {folders} and installed plugin packages...".format(
 			folders=", ".join(map(lambda x: x[0] if isinstance(x, tuple) else str(x), self.plugin_folders))
 		))
 
-		plugins = self.find_plugins()
+		if force_reload is None:
+			force_reload = []
+
+		plugins = self.find_plugins(existing=dict((k, v) for k, v in self.plugins.items() if not k in force_reload))
 		self.disabled_plugins.update(plugins)
 
 		for name, plugin in plugins.items():
@@ -615,6 +621,16 @@ class PluginManager(object):
 				implementations=len(self.plugin_implementations),
 				hooks=sum(map(lambda x: len(x), self.plugin_hooks.values()))
 			))
+
+	def mark_plugin(self, name, uninstalled=None):
+		if not name in self.plugins:
+			self.logger.warn("Trying to mark an unknown plugin {name}".format(**locals()))
+
+		if uninstalled is not None:
+			if uninstalled and not name in self.marked_plugins["uninstalled"]:
+				self.marked_plugins["uninstalled"].append(name)
+			elif not uninstalled and name in self.marked_plugins["uninstalled"]:
+				self.marked_plugins["uninstalled"].remove(name)
 
 	def load_plugin(self, name, plugin=None, startup=False, initialize_implementation=True):
 		if not name in self.plugins:
