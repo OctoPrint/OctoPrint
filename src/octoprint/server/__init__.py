@@ -512,8 +512,8 @@ def localeJs(locale, domain):
 
 	plugins = octoprint.plugin.plugin_manager().enabled_plugins
 	for name, plugin in plugins.items():
-		base_path = os.path.join(plugin.location, 'translations')
-		plugin_messages, _ = messages_from_po(base_path, locale, domain)
+		plugin_path = os.path.join(plugin.location, 'translations')
+		plugin_messages, _ = messages_from_po(plugin_path, locale, domain)
 		messages = octoprint.util.dict_merge(messages, plugin_messages)
 
 	core_messages, plural_expr = messages_from_po(base_path, locale, domain)
