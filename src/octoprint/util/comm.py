@@ -1239,7 +1239,7 @@ class MachineCom(object):
 			if port is None or port == 'AUTO':
 				# no known port, try auto detection
 				self._changeState(self.STATE_DETECT_SERIAL)
-				serial_obj = self._detectPort(False)
+				serial_obj = self._detectPort(True)
 				if serial_obj is None:
 					self._log("Failed to autodetect serial port")
 					self._errorValue = 'Failed to autodetect serial port.'
@@ -1247,17 +1247,18 @@ class MachineCom(object):
 					eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
 					return None
 
+				port = serial_obj.port
+
+			# connect to regular serial port
+			self._log("Connecting to: %s" % port)
+			if baudrate == 0:
+				baudrates = baudrateList()
+				serial_obj = serial.Serial(str(port), 115200 if 115200 in baudrates else baudrates[0], timeout=read_timeout, writeTimeout=10000, parity=serial.PARITY_ODD)
 			else:
-				# connect to regular serial port
-				self._log("Connecting to: %s" % port)
-				if baudrate == 0:
-					baudrates = baudrateList()
-					serial_obj = serial.Serial(str(port), 115200 if 115200 in baudrates else baudrates[0], timeout=read_timeout, writeTimeout=10000, parity=serial.PARITY_ODD)
-				else:
-					serial_obj = serial.Serial(str(port), baudrate, timeout=read_timeout, writeTimeout=10000, parity=serial.PARITY_ODD)
-				serial_obj.close()
-				serial_obj.parity = serial.PARITY_NONE
-				serial_obj.open()
+				serial_obj = serial.Serial(str(port), baudrate, timeout=read_timeout, writeTimeout=10000, parity=serial.PARITY_ODD)
+			serial_obj.close()
+			serial_obj.parity = serial.PARITY_NONE
+			serial_obj.open()
 
 			return serial_obj
 
