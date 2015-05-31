@@ -29,7 +29,8 @@ INSTALL_REQUIRES = [
 	"pylru",
 	"rsa",
 	"pkginfo",
-	"requests"
+	"requests",
+	"semantic_version"
 ]
 
 # Additional requirements for optional install options
