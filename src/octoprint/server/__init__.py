@@ -135,7 +135,7 @@ def index():
 	preferred_stylesheet = settings().get(["devel", "stylesheet"])
 	locales = dict((l.language, dict(language=l.language, display=l.display_name, english=l.english_name)) for l in LOCALES)
 
-#~~ prepare assets
+	#~~ prepare assets
 
 	supported_stylesheets = ("css", "less")
 	assets = dict(
@@ -198,15 +198,67 @@ def index():
 
 	##~~ prepare templates
 
-	templates = dict(
-		navbar=dict(order=[], entries=dict()),
-		sidebar=dict(order=[], entries=dict()),
-		tab=dict(order=[], entries=dict()),
-		settings=dict(order=[], entries=dict()),
-		usersettings=dict(order=[], entries=dict()),
-		generic=dict(order=[], entries=dict())
+	templates = defaultdict(lambda: dict(order=[], entries=dict()))
+
+	# rules for transforming template configs to template entries
+	template_rules = dict(
+		navbar=dict(div=lambda x: "navbar_plugin_" + x, template=lambda x: x + "_navbar.jinja2", to_entry=lambda data: data),
+		sidebar=dict(div=lambda x: "sidebar_plugin_" + x, template=lambda x: x + "_sidebar.jinja2", to_entry=lambda data: (data["name"], data)),
+		tab=dict(div=lambda x: "tab_plugin_" + x, template=lambda x: x + "_tab.jinja2", to_entry=lambda data: (data["name"], data)),
+		settings=dict(div=lambda x: "settings_plugin_" + x, template=lambda x: x + "_settings.jinja2", to_entry=lambda data: (data["name"], data)),
+		usersettings=dict(div=lambda x: "usersettings_plugin_" + x, template=lambda x: x + "_usersettings.jinja2", to_entry=lambda data: (data["name"], data)),
+		generic=dict(template=lambda x: x + ".jinja2", to_entry=lambda data: data)
 	)
-	template_types = templates.keys()
+
+	# sorting orders
+	template_sorting = dict(
+		navbar=dict(add="prepend", key=None),
+		sidebar=dict(add="append", key="name"),
+		tab=dict(add="append", key="name"),
+		settings=dict(add="custom_append", key="name", custom_add_entries=lambda missing: dict(section_plugins=(gettext("Plugins"), None)), custom_add_order=lambda missing: ["section_plugins"] + missing),
+		usersettings=dict(add="append", key="name"),
+		generic=dict(add="append", key=None)
+	)
+
+	hooks = pluginManager.get_hooks("octoprint.ui.web.templatetypes")
+	for name, hook in hooks.items():
+		try:
+			result = hook(dict(template_rules))
+		except:
+			# TODO
+			pass
+		else:
+			if not isinstance(result, list):
+				continue
+
+			for entry in result:
+				if not isinstance(entry, tuple) or not len(entry) == 3:
+					continue
+
+				key, order, rule = entry
+
+				# order defaults
+				if "add" not in order:
+					order["add"] = "prepend"
+				if "key" not in order:
+					order["key"] = "name"
+
+				# rule defaults
+				if "div" not in rule:
+					# default div name: <hook plugin>_<template_key>_plugin_<plugin>
+					div = "{name}_{key}_plugin_".format(**locals())
+					rule["div"] = lambda x: div + x
+				if "template" not in rule:
+					# default template name: <plugin>_plugin_<hook plugin>_<template key>.jinja2
+					template = "_plugin_{name}_{key}.jinja2".format(**locals())
+					rule["template"] = lambda x: x + template
+				if "to_entry" not in rule:
+					# default to_entry assumes existing "name" property to be used as label for 2-tuple entry data structure (<name>, <properties>)
+					rule["to_entry"] = lambda data: (data["name"], data)
+
+				template_rules["plugin_" + name + "_" + key] = rule
+				template_sorting["plugin_" + name + "_" + key] = order
+	template_types = template_rules.keys()
 
 	# navbar
 
@@ -276,16 +328,6 @@ def index():
 
 	template_plugins = pluginManager.get_implementations(octoprint.plugin.TemplatePlugin)
 
-	# rules for transforming template configs to template entries
-	rules = dict(
-		navbar=dict(div=lambda x: "navbar_plugin_" + x, template=lambda x: x + "_navbar.jinja2", to_entry=lambda data: data),
-		sidebar=dict(div=lambda x: "sidebar_plugin_" + x, template=lambda x: x + "_sidebar.jinja2", to_entry=lambda data: (data["name"], data)),
-		tab=dict(div=lambda x: "tab_plugin_" + x, template=lambda x: x + "_tab.jinja2", to_entry=lambda data: (data["name"], data)),
-		settings=dict(div=lambda x: "settings_plugin_" + x, template=lambda x: x + "_settings.jinja2", to_entry=lambda data: (data["name"], data)),
-		usersettings=dict(div=lambda x: "usersettings_plugin_" + x, template=lambda x: x + "_usersettings.jinja2", to_entry=lambda data: (data["name"], data)),
-		generic=dict(template=lambda x: x + ".jinja2", to_entry=lambda data: data)
-	)
-
 	plugin_vars = dict()
 	plugin_names = set()
 	for implementation in template_plugins:
@@ -303,7 +345,7 @@ def index():
 		if not isinstance(configs, (list, tuple)):
 			configs = []
 
-		includes = _process_template_configs(name, implementation, configs, rules)
+		includes = _process_template_configs(name, implementation, configs, template_rules)
 
 		for t in template_types:
 			for include in includes[t]:
@@ -324,9 +366,9 @@ def index():
 	# 2) we have all entries located somewhere within the order
 
 	for t in template_types:
-		default_order = settings().get(["appearance", "components", "order", t], merged=True, config=dict())
-		configured_order = settings().get(["appearance", "components", "order", t], merged=True)
-		configured_disabled = settings().get(["appearance", "components", "disabled", t])
+		default_order = settings().get(["appearance", "components", "order", t], merged=True, config=dict()) or []
+		configured_order = settings().get(["appearance", "components", "order", t], merged=True) or []
+		configured_disabled = settings().get(["appearance", "components", "disabled", t]) or []
 
 		# first create the ordered list of all component ids according to the configured order
 		templates[t]["order"] = [x for x in configured_order if x in templates[t]["entries"] and not x in configured_disabled]
@@ -344,20 +386,21 @@ def index():
 
 		# finally add anything that's not included in our order yet
 		sorted_missing = list(missing_in_order)
-		if not t == "navbar" and not t == "generic":
+		if template_sorting[t]["key"] is not None:
 			# anything but navbar and generic components get sorted by their name
-			sorted_missing = sorted(missing_in_order, key=lambda x: templates[t]["entries"][x][0])
+			if template_sorting[t]["key"] == "name":
+				sorted_missing = sorted(missing_in_order, key=lambda x: templates[t]["entries"][x][0])
 
-		if t == "navbar":
-			# additional navbar components are prepended
+		if template_sorting[t]["add"] == "prepend":
 			templates[t]["order"] = sorted_missing + templates[t]["order"]
-		elif t == "sidebar" or t == "tab" or t == "generic" or t == "usersettings":
-			# additional sidebar, generic or usersettings components are appended
+		elif template_sorting[t]["add"] == "append":
 			templates[t]["order"] += sorted_missing
-		elif t == "settings":
-			# additional settings items are added to the plugin section
-			templates[t]["entries"]["section_plugins"] = (gettext("Plugins"), None)
-			templates[t]["order"] += ["section_plugins"] + sorted_missing
+		elif template_sorting[t]["add"] == "custom_prepend" and "custom_add_entries" in template_sorting[t] and "custom_add_order" in template_sorting[t]:
+			templates[t]["entries"].update(template_sorting[t]["custom_add_entries"](sorted_missing))
+			templates[t]["order"] = template_sorting[t]["custom_add_order"](sorted_missing) + templates[t]["order"]
+		elif template_sorting[t]["add"] == "custom_append" and "custom_add_entries" in template_sorting[t] and "custom_add_order" in template_sorting[t]:
+			templates[t]["entries"].update(template_sorting[t]["custom_add_entries"](sorted_missing))
+			templates[t]["order"] += template_sorting[t]["custom_add_order"](sorted_missing)
 
 	#~~ prepare full set of template vars for rendering
 
@@ -391,13 +434,7 @@ def index():
 def _process_template_configs(name, implementation, configs, rules):
 	from jinja2.exceptions import TemplateNotFound
 
-	counters = dict(
-		navbar=1,
-		sidebar=1,
-		tab=1,
-		settings=1,
-		generic=1
-	)
+	counters = defaultdict(lambda: 1)
 	includes = defaultdict(list)
 
 	for config in configs:
