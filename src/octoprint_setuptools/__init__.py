@@ -292,13 +292,148 @@ class CompileTranslation(Command):
 		self.babel_compile_messages.run()
 
 
-def get_babel_commandclasses(pot_file=None, mapping_file="babel.cfg", input_dirs=".", output_dir=None, mail_address="i18n@octoprint.org", copyright_holder="The OctoPrint Project"):
-	return dict(
+class BundleTranslation(Command):
+	description = "bundles translations"
+	user_options = [
+		('locale=', 'l', 'locale for the translation to bundle')
+	]
+	boolean_options = []
+
+	source_dir = None
+	target_dir = None
+
+	@classmethod
+	def for_options(cls, source_dir=None, target_dir=None):
+		if source_dir is None:
+			raise ValueError("source_dir must not be None")
+		if target_dir is None:
+			raise ValueError("target_dir must not be None")
+
+		return type(cls)(cls.__name__, (cls,), dict(
+			source_dir=source_dir,
+			target_dir=target_dir
+		))
+
+	def initialize_options(self):
+		self.locale = None
+
+	def finalize_options(self):
+		pass
+
+	def run(self):
+		locale = self.locale
+		source_path = os.path.join(self.__class__.source_dir, locale)
+		target_path = os.path.join(self.__class__.target_dir, locale)
+
+		if not os.path.exists(source_path):
+			raise RuntimeError("source path " + source_path + " does not exist")
+
+		if os.path.exists(target_path):
+			if not os.path.isdir(target_path):
+				raise RuntimeError("target path " + target_path + " exists and is not a directory")
+			shutil.rmtree(target_path)
+
+		print("Copying translations for locale {locale} from {source_path} to {target_path}...".format(**locals()))
+		shutil.copytree(source_path, target_path)
+
+
+class PackTranslation(Command):
+	description = "bundles translations"
+	user_options = [
+		('locale=', 'l', 'locale for the translation to bundle'),
+		('author=', 'a', 'author of the translation')
+	]
+	boolean_options = []
+
+	source_dir = None
+	pack_name_prefix = None
+	pack_path_prefix = None
+
+	@classmethod
+	def for_options(cls, source_dir=None, pack_name_prefix=None, pack_path_prefix=None):
+		if source_dir is None:
+			raise ValueError("source_dir must not be None")
+		if pack_name_prefix is None:
+			raise ValueError("pack_name_prefix must not be None")
+		if pack_path_prefix is None:
+			raise ValueError("pack_path_prefix must not be None")
+
+		return type(cls)(cls.__name__, (cls,), dict(
+			source_dir=source_dir,
+			pack_name_prefix=pack_name_prefix,
+			pack_path_prefix=pack_path_prefix
+		))
+
+	def initialize_options(self):
+		self.locale = None
+		self.author = None
+
+	def finalize_options(self):
+		if self.locale is None:
+			raise ValueError("locale must be provided")
+
+	def run(self):
+		locale = self.locale
+		locale_dir = os.path.join(self.__class__.source_dir, locale)
+
+		if not os.path.isdir(locale_dir):
+			raise RuntimeError("translation does not exist, please create it first")
+
+		import datetime
+
+		now = datetime.datetime.utcnow().replace(microsecond=0)
+
+		zip_path = os.path.join(self.__class__.source_dir, "{prefix}{locale}_{date}.zip".format(prefix=self.__class__.pack_name_prefix, locale=locale, date=now.strftime("%Y%m%d%H%M%S")))
+		print("Packing translation to {zip_path}".format(**locals()))
+
+		def add_recursively(zip, path, prefix):
+			if not os.path.isdir(path):
+				return
+
+			for entry in os.listdir(path):
+				entry_path = os.path.join(path, entry)
+				new_prefix = prefix + "/" + entry
+				if os.path.isdir(entry_path):
+					add_recursively(zip, entry_path, new_prefix)
+				elif os.path.isfile(entry_path):
+					print("Adding {entry_path} as {new_prefix}".format(**locals()))
+					zip.write(entry_path, new_prefix)
+
+		meta_str = "last_update: {date}\n".format(date=now.isoformat())
+		if self.author:
+			meta_str += "author: {author}\n".format(author=self.author)
+
+		zip_locale_root = self.__class__.pack_path_prefix + locale
+
+		import zipfile
+		with zipfile.ZipFile(zip_path, "w") as zip:
+			add_recursively(zip, locale_dir, zip_locale_root)
+
+			print("Adding meta.yaml as {zip_locale_root}/meta.yaml".format(**locals()))
+			zip.writestr(zip_locale_root + "/meta.yaml", meta_str)
+
+
+def get_babel_commandclasses(pot_file=None,
+                             mapping_file="babel.cfg",
+                             input_dirs=".",
+                             output_dir=None,
+                             pack_name_prefix=None,
+                             pack_path_prefix=None,
+                             bundled_dir=None,
+                             mail_address="i18n@octoprint.org",
+                             copyright_holder="The OctoPrint Project"):
+	result = dict(
 		babel_new=NewTranslation.for_options(pot_file=pot_file, output_dir=output_dir),
 		babel_extract=ExtractTranslation.for_options(mapping_file=mapping_file, pot_file=pot_file, input_dirs=input_dirs, mail_address=mail_address, copyright_holder=copyright_holder),
 		babel_refresh=RefreshTranslation.for_options(mapping_file=mapping_file, pot_file=pot_file, input_dirs=input_dirs, output_dir=output_dir, mail_address=mail_address, copyright_holder=copyright_holder),
-		babel_compile=CompileTranslation.for_options(output_dir=output_dir)
+		babel_compile=CompileTranslation.for_options(output_dir=output_dir),
+		babel_pack=PackTranslation.for_options(source_dir=output_dir, pack_name_prefix=pack_name_prefix, pack_path_prefix=pack_path_prefix)
 	)
+
+	if bundled_dir is not None:
+		result["babel_bundle"] = BundleTranslation.for_options(source_dir=output_dir, target_dir=bundled_dir)
+
+	return result
 
 
 def create_plugin_setup_parameters(identifier="todo", name="TODO", version="0.1", description="TODO", author="TODO",
@@ -341,10 +476,11 @@ def create_plugin_setup_parameters(identifier="todo", name="TODO", version="0.1"
 		clean=CleanCommand.for_options(source_folder=package, eggs=eggs)
 	))
 
-	translation_dir = os.path.join(package, "translations")
+	translation_dir = os.path.join("translations")
 	pot_file = os.path.join(translation_dir, "messages.pot")
+	bundled_dir = os.path.join(package, "translations")
 	if os.path.isdir(translation_dir) and os.path.isfile(pot_file):
-		cmdclass.update(get_babel_commandclasses(pot_file=pot_file, output_dir=translation_dir))
+		cmdclass.update(get_babel_commandclasses(pot_file=pot_file, output_dir=translation_dir, bundled_dir=bundled_dir, pack_name_prefix="{name}-i18n-".format(**locals()), pack_path_prefix="_plugins/{identifier}/".format(**locals())))
 
 	return dict(
 		name=name,
