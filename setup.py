@@ -75,9 +75,10 @@ def get_cmdclass():
 	cmdclass.update(dict(clean=octoprint_setuptools.CleanCommand.for_options(source_folder="src", eggs=["OctoPrint*.egg-info"])))
 
 	# add translation commands
-	translation_dir = os.path.join("src", "octoprint", "translations")
+	translation_dir = "translations"
 	pot_file = os.path.join(translation_dir, "messages.pot")
-	cmdclass.update(octoprint_setuptools.get_babel_commandclasses(pot_file=pot_file, output_dir=translation_dir))
+	bundled_dir = os.path.join("src", "octoprint", "translations")
+	cmdclass.update(octoprint_setuptools.get_babel_commandclasses(pot_file=pot_file, output_dir=translation_dir, pack_name_prefix="OctoPrint-i18n-", pack_path_prefix="", bundled_dir=bundled_dir))
 
 	return cmdclass
 
