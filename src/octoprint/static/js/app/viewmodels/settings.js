@@ -316,6 +316,10 @@ $(function() {
             return item.display + ((item.english != undefined) ? ' (' + item.english + ')' : '');
         };
 
+        self.languagePacksAvailable = ko.computed(function() {
+            return self.translations.allSize() > 0;
+        });
+
         self.deleteLanguagePack = function(locale, pack) {
             $.ajax({
                 url: API_BASEURL + "languages/" + locale + "/" + pack,

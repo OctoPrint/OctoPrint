@@ -11,6 +11,7 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
     self.searchFunction = undefined;
 
     self.allItems = [];
+    self.allSize = ko.observable(0);
 
     self.items = ko.observableArray([]);
     self.pageSize = ko.observable(filesPerPage);
@@ -27,6 +28,7 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
 
     self.updateItems = function(items) {
         self.allItems = items;
+        self.allSize(items.length);
         self._updateItems();
     };
 
