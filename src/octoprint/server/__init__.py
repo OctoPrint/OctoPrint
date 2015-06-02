@@ -331,7 +331,8 @@ class Server():
 
 		self._tornado_app = Application(server_routes)
 		max_body_sizes = [
-			("POST", r"/api/files/([^/]*)", s.getInt(["server", "uploads", "maxSize"]))
+			("POST", r"/api/files/([^/]*)", s.getInt(["server", "uploads", "maxSize"])),
+			("POST", r"/api/languages", 5 * 1024 * 1024)
 		]
 
 		# allow plugins to extend allowed maximum body sizes

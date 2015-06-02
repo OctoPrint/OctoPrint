@@ -16,6 +16,37 @@ $(function() {
         self.appearance_defaultLanguage = ko.observable();
 
         self.settingsDialog = undefined;
+        self.translationManagerDialog = undefined;
+        self.translationUploadElement = $("#settings_appearance_managelanguagesdialog_upload");
+        self.translationUploadButton = $("#settings_appearance_managelanguagesdialog_upload_start");
+
+        self.translationUploadFilename = ko.observable();
+        self.invalidTranslationArchive = ko.computed(function() {
+            var name = self.translationUploadFilename();
+            return name !== undefined && !(_.endsWith(name.toLocaleLowerCase(), ".zip") || _.endsWith(name.toLocaleLowerCase(), ".tar.gz") || _.endsWith(name.toLocaleLowerCase(), ".tgz") || _.endsWith(name.toLocaleLowerCase(), ".tar"));
+        });
+        self.enableTranslationUpload = ko.computed(function() {
+            var name = self.translationUploadFilename();
+            return name !== undefined && name.trim() != "" && !self.invalidTranslationArchive();
+        });
+
+        self.translations = new ItemListHelper(
+            "settings.translations",
+            {
+                "locale": function (a, b) {
+                    // sorts ascending
+                    if (a["locale"].toLocaleLowerCase() < b["locale"].toLocaleLowerCase()) return -1;
+                    if (a["locale"].toLocaleLowerCase() > b["locale"].toLocaleLowerCase()) return 1;
+                    return 0;
+                }
+            },
+            {
+            },
+            "locale",
+            [],
+            [],
+            0
+        );
 
         self.appearance_available_colors = ko.observable([
             {key: "default", name: gettext("default")},
@@ -108,7 +139,7 @@ $(function() {
         self.scripts_gcode_afterPrintPaused = ko.observable(undefined);
         self.scripts_gcode_beforePrintResumed = ko.observable(undefined);
         self.scripts_gcode_afterPrinterConnected = ko.observable(undefined);
-    
+
         self.temperature_profiles = ko.observableArray(undefined);
         self.temperature_cutoff = ko.observable(undefined);
 
@@ -140,11 +171,43 @@ $(function() {
 
         self.onStartup = function() {
             self.settingsDialog = $('#settings_dialog');
+            self.translationManagerDialog = $('#settings_appearance_managelanguagesdialog');
+            self.translationUploadElement = $("#settings_appearance_managelanguagesdialog_upload");
+            self.translationUploadButton = $("#settings_appearance_managelanguagesdialog_upload_start");
+
+            self.translationUploadElement.fileupload({
+                dataType: "json",
+                maxNumberOfFiles: 1,
+                autoUpload: false,
+                add: function(e, data) {
+                    if (data.files.length == 0) {
+                        return false;
+                    }
+
+                    self.translationUploadFilename(data.files[0].name);
+
+                    self.translationUploadButton.unbind("click");
+                    self.translationUploadButton.bind("click", function() {
+                        data.submit();
+                        return false;
+                    });
+                },
+                done: function(e, data) {
+                    self.translationUploadButton.unbind("click");
+                    self.translationUploadFilename(undefined);
+                    self.fromTranslationResponse(data.result);
+                },
+                fail: function(e, data) {
+                    self.translationUploadButton.unbind("click");
+                    self.translationUploadFilename(undefined);
+                }
+            });
         };
 
         self.onAllBound = function(allViewModels) {
             self.settingsDialog.on('show', function(event) {
                 if (event.target.id == "settings_dialog") {
+                    self.requestTranslationData();
                     _.each(allViewModels, function(viewModel) {
                         if (viewModel.hasOwnProperty("onSettingsShown")) {
                             viewModel.onSettingsShown();
@@ -182,6 +245,11 @@ $(function() {
             return false;
         };
 
+        self.showTranslationManager = function() {
+            self.translationManagerDialog.modal();
+            return false;
+        };
+
         self.requestData = function(callback) {
             $.ajax({
                 url: API_BASEURL + "settings",
@@ -192,6 +260,71 @@ $(function() {
                     if (callback) callback();
                 }
             });
+        };
+
+        self.requestTranslationData = function(callback) {
+            $.ajax({
+                url: API_BASEURL + "languages",
+                type: "GET",
+                dataType: "json",
+                success: function(response) {
+                    self.fromTranslationResponse(response);
+                    if (callback) callback();
+                }
+            })
+        };
+
+        self.fromTranslationResponse = function(response) {
+            var translationsByLocale = {};
+            _.each(response.language_packs, function(item, key) {
+                _.each(item.languages, function(pack) {
+                    var locale = pack.locale;
+                    if (!_.has(translationsByLocale, locale)) {
+                        translationsByLocale[locale] = {
+                            locale: locale,
+                            display: pack.locale_display,
+                            english: pack.locale_english,
+                            packs: []
+                        };
+                    }
+
+                    translationsByLocale[locale]["packs"].push({
+                        identifier: key,
+                        display: item.display,
+                        pack: pack
+                    });
+                });
+            });
+
+            var translations = [];
+            _.each(translationsByLocale, function(item) {
+                item["packs"].sort(function(a, b) {
+                    if (a.identifier == "_core") return -1;
+                    if (b.identifier == "_core") return 1;
+
+                    if (a.display < b.display) return -1;
+                    if (a.display > b.display) return 1;
+                    return 0;
+                });
+                translations.push(item);
+            });
+
+            self.translations.updateItems(translations);
+        };
+
+        self.languagePackDisplay = function(item) {
+            return item.display + ((item.english != undefined) ? ' (' + item.english + ')' : '');
+        };
+
+        self.deleteLanguagePack = function(locale, pack) {
+            $.ajax({
+                url: API_BASEURL + "languages/" + locale + "/" + pack,
+                type: "DELETE",
+                dataType: "json",
+                success: function(response) {
+                    self.fromTranslationResponse(response);
+                }
+            })
         };
 
         self.fromResponse = function(response) {
@@ -263,7 +396,7 @@ $(function() {
             self.scripts_gcode_afterPrintPaused(response.scripts.gcode.afterPrintPaused);
             self.scripts_gcode_beforePrintResumed(response.scripts.gcode.beforePrintResumed);
             self.scripts_gcode_afterPrinterConnected(response.scripts.gcode.afterPrinterConnected);
-    
+
             self.temperature_profiles(response.temperature.profiles);
             self.temperature_cutoff(response.temperature.cutoff);
 
