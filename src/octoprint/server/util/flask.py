@@ -61,6 +61,7 @@ def enable_additional_translations(default_locale="en", additional_folders=None)
 		dirs = additional_folders + [os.path.join(self.app.root_path, 'translations')]
 
 		result = [Locale.parse(default_locale)]
+
 		for dir in dirs:
 			result += list_translations(dir)
 		return result

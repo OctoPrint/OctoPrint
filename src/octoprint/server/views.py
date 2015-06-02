@@ -20,7 +20,6 @@ from . import util
 import logging
 _logger = logging.getLogger(__name__)
 
-
 @app.route("/")
 @util.flask.cached(refreshif=lambda: util.flask.cache_check_headers() or "_refresh" in request.values, key=lambda: "view/%s/%s" % (request.path, g.locale))
 def index():
