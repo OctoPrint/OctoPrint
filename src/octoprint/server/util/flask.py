@@ -431,10 +431,34 @@ class PluginAssetResolver(flask.ext.assets.FlaskResolver):
 		return flask.ext.assets.FlaskResolver.split_prefix(self, item)
 
 	def resolve_output_to_path(self, target, bundle):
-		if target.startswith("webassets/"):
-			import os
-			return os.path.normpath(os.path.join(settings().getBaseFolder("webassets"), target[len("webassets/"):]))
-		return flask.ext.assets.FlaskResolver.resolve_output_to_path(self, target, bundle)
+		import os
+		return os.path.normpath(os.path.join(self.env.directory, target))
+
+	def resolve_source_to_url(self, filepath, item):
+		if item.startswith("plugin/"):
+			try:
+				prefix, plugin, name = item.split('/', 2)
+				blueprint = prefix + "." + plugin
+
+				self.env._app.blueprints[blueprint]  # keyerror if no module
+				endpoint = '%s.static' % blueprint
+				filename = name
+			except (ValueError, KeyError):
+				endpoint = 'static'
+				filename = item
+
+			ctx = None
+			if not flask._request_ctx_stack.top:
+				ctx = self.env._app.test_request_context()
+				ctx.push()
+			try:
+				return flask.url_for(endpoint, filename=filename)
+			finally:
+				if ctx:
+					ctx.pop()
+
+		return flask.ext.assets.FlaskResolver.resolve_source_to_url(self, filepath, item)
+
 
 ##~~ plugin assets collector
 
@@ -442,7 +466,8 @@ def collect_plugin_assets(enable_gcodeviewer=True, enable_timelapse=True, prefer
 	supported_stylesheets = ("css", "less")
 	assets = dict(
 		js=[],
-		stylesheets=[]
+		css=[],
+		less=[]
 	)
 	assets["js"] = [
 		'js/app/viewmodels/appearance.js',
@@ -473,9 +498,9 @@ def collect_plugin_assets(enable_gcodeviewer=True, enable_timelapse=True, prefer
 		assets["js"].append('js/app/viewmodels/timelapse.js')
 
 	if preferred_stylesheet == "less":
-		assets["stylesheets"].append(("less", 'less/octoprint.less'))
+		assets["less"].append('less/octoprint.less')
 	elif preferred_stylesheet == "css":
-		assets["stylesheets"].append(("css", 'css/octoprint.css'))
+		assets["css"].append('css/octoprint.css')
 
 	asset_plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.AssetPlugin)
 	for implementation in asset_plugins:
@@ -488,14 +513,14 @@ def collect_plugin_assets(enable_gcodeviewer=True, enable_timelapse=True, prefer
 
 		if preferred_stylesheet in all_assets:
 			for asset in all_assets[preferred_stylesheet]:
-				assets["stylesheets"].append((preferred_stylesheet, 'plugin/{name}/{asset}'.format(**locals())))
+				assets[preferred_stylesheet].append('plugin/{name}/{asset}'.format(**locals()))
 		else:
 			for stylesheet in supported_stylesheets:
 				if not stylesheet in all_assets:
 					continue
 
 				for asset in all_assets[stylesheet]:
-					assets["stylesheets"].append((stylesheet, 'plugin/{name}/{asset}'.format(**locals())))
+					assets[stylesheet].append('plugin/{name}/{asset}'.format(**locals()))
 				break
 
 	return assets

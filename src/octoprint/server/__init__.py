@@ -290,11 +290,6 @@ class Server():
 
 		# register API blueprint
 		self._setup_blueprints()
-		def blueprint_enabled(name, plugin):
-			if plugin.implementation is None or not isinstance(plugin.implementation, octoprint.plugin.BlueprintPlugin):
-				return
-			self._register_blueprint_plugin(plugin.implementation)
-		pluginLifecycleManager.add_callback(["enabled"], blueprint_enabled)
 
 		## Tornado initialization starts here
 
@@ -313,7 +308,7 @@ class Server():
 			# camera snapshot
 			(r"/downloads/camera/current", util.tornado.UrlForwardHandler, dict(url=s.get(["webcam", "snapshot"]), as_attachment=True, access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.user_validator))),
 			# generated webassets
-			(r"/static/webassets/(.*)", util.tornado.LargeResponseHandler, dict(path=s.getBaseFolder("webassets")))
+			(r"/static/webassets/(.*)", util.tornado.LargeResponseHandler, dict(path=os.path.join(s.getBaseFolder("generated"), "webassets")))
 		]
 		for name, hook in pluginManager.get_hooks("octoprint.server.http.routes").items():
 			try:
@@ -667,12 +662,28 @@ class Server():
 		global assets
 		global pluginManager
 
+		base_folder = settings().getBaseFolder("generated")
+
 		AdjustedEnvironment = type(Environment)(Environment.__name__, (Environment,), dict(
 			resolver_class=util.flask.PluginAssetResolver
 		))
-		assets = AdjustedEnvironment(app)
+		class CustomDirectoryEnvironment(AdjustedEnvironment):
+			@property
+			def directory(self):
+				return base_folder
 
-		dynamic_assets = util.flask.collect_plugin_assets()
+		assets = CustomDirectoryEnvironment(app)
+		assets.debug = not settings().getBoolean(["devel", "webassets", "bundle"])
+
+		enable_gcodeviewer = settings().getBoolean(["gcodeViewer", "enabled"])
+		enable_timelapse = (settings().get(["webcam", "snapshot"]) and settings().get(["webcam", "ffmpeg"]))
+		preferred_stylesheet = settings().get(["devel", "stylesheet"])
+
+		dynamic_assets = util.flask.collect_plugin_assets(
+			enable_gcodeviewer=enable_gcodeviewer,
+			enable_timelapse=enable_timelapse,
+			preferred_stylesheet=preferred_stylesheet
+		)
 
 		js_libs = [
 			"js/lib/jquery/jquery.min.js",
@@ -696,16 +707,15 @@ class Server():
 			"js/lib/jquery/jquery.fileupload.js",
 			"js/lib/jquery/jquery.slimscroll.min.js",
 			"js/lib/jquery/jquery.qrcode.min.js",
-			"js/lib/sockjs-0.3.4.min.js",
 			"js/lib/moment-with-locales.min.js",
 			"js/lib/pusher.color.min.js",
 			"js/lib/detectmobilebrowser.js",
 			"js/lib/md5.min.js",
 			"js/lib/pnotify.min.js",
 			"js/lib/bootstrap-slider-knockout-binding.js",
-			"js/lib/loglevel.min.js"
+			"js/lib/loglevel.min.js",
+			"js/lib/sockjs-0.3.4.min.js"
 		]
-
 		js_app = dynamic_assets["js"] + [
 			"js/app/dataupdater.js",
 			"js/app/helpers.js",
@@ -721,29 +731,24 @@ class Server():
 			"css/jquery.fileupload-ui.css",
 			"css/pnotify.min.css"
 		]
-
-		css_app =  []
-		less_app = []
-		for sheet, path in dynamic_assets["stylesheets"]:
-			if sheet == "css":
-				css_app.append(path)
-			elif sheet == "less":
-				less_app.append(path)
+		css_app = ["empty"] + dynamic_assets["css"]
+		less_app = ["empty"] + dynamic_assets["less"]
 
 		js_libs_bundle = Bundle(*js_libs, output="webassets/packed_libs.js")
-		js_app_bundle = Bundle(*js_app, output="webassets/package_app.js")
+		if settings().getBoolean(["devel", "webassets", "minify"]):
+			js_app_bundle = Bundle(*js_app, output="webassets/package_app.js", filters="rjsmin")
+		else:
+			js_app_bundle = Bundle(*js_app, output="webassets/package_app.js")
+		all_js_bundle = Bundle(js_libs_bundle, js_app_bundle, output="webassets/packed.js")
+
 		css_libs_bundle = Bundle(*css_libs, output="webassets/packed_libs.css")
+		css_app_bundle = Bundle(*css_app, output="webassets/packed_app.css")
+		all_css_bundle = Bundle(css_libs_bundle, css_app_bundle, output="webassets/packed.css")
+		all_less_bundle = Bundle(*less_app, output="webassets/packed_app.less")
 
-		assets.register("js_libs", js_libs_bundle)
-		assets.register("js_app", js_app_bundle)
-		assets.register("css_libs", css_libs_bundle)
-
-		if len(css_app):
-			css_app_bundle = Bundle(*css_app, output="webassets/packed_app.css")
-			assets.register("css_app", css_app_bundle)
-		if len(less_app):
-			less_app_bundle = Bundle(*less_app, output="webassets/packed_app.less")
-			assets.register("less_app", less_app_bundle)
+		assets.register("all_js", all_js_bundle)
+		assets.register("all_css", all_css_bundle)
+		assets.register("less_app", all_less_bundle)
 
 
 class LifecycleManager(object):

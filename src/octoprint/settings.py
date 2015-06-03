@@ -156,7 +156,7 @@ default_settings = {
 		"printerProfiles": None,
 		"scripts": None,
 		"translations": None,
-		"webassets": None
+		"generated": None
 	},
 	"temperature": {
 		"profiles": [
@@ -248,6 +248,10 @@ default_settings = {
 		"stylesheet": "css",
 		"cache": {
 			"enabled": True
+		},
+		"webassets": {
+			"minify": True,
+			"bundle": True
 		},
 		"virtualPrinter": {
 			"enabled": False,
