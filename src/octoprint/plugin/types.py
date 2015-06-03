@@ -118,7 +118,7 @@ class ShutdownPlugin(OctoPrintPlugin):
 		pass
 
 
-class AssetPlugin(OctoPrintPlugin, ReloadNeedingPlugin):
+class AssetPlugin(OctoPrintPlugin, RestartNeedingPlugin):
 	"""
 	The ``AssetPlugin`` mixin allows plugins to define additional static assets such as Javascript or CSS files to
 	be automatically embedded into the pages delivered by the server to be used within the client sided part of
