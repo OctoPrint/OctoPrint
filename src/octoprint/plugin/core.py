@@ -29,6 +29,9 @@ import logging
 import pkg_resources
 import pkginfo
 
+EntryPointOrigin = namedtuple("EntryPointOrigin", "type, entry_point, module_name, package_name, package_version")
+FolderOrigin = namedtuple("FolderOrigin", "type, folder")
+
 class PluginInfo(object):
 	"""
 	The :class:`PluginInfo` class wraps all available information about a registered plugin.
@@ -504,7 +507,7 @@ class PluginManager(object):
 
 				plugin = self._import_plugin_from_module(key, folder=folder)
 				if plugin:
-					plugin.origin = ("folder", folder)
+					plugin.origin = FolderOrigin("folder", folder)
 					if readonly:
 						plugin.bundled = True
 
@@ -551,7 +554,7 @@ class PluginManager(object):
 
 				plugin = self._import_plugin_from_module(key, **kwargs)
 				if plugin:
-					plugin.origin = ("entry_point", group, module_name, package_name)
+					plugin.origin = EntryPointOrigin("entry_point", group, module_name, package_name, version)
 					plugin.enabled = False
 					result[key] = plugin
 
