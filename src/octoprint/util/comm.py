@@ -149,7 +149,7 @@ class MachineCom(object):
 		self._pauseWaitTimeLost = 0.0
 		self._currentTool = 0
 
-		self._blocking_command = False
+		self._long_running_command = False
 		self._heating = False
 
 		self._timeout = None
@@ -218,7 +218,7 @@ class MachineCom(object):
 		self._regex_repetierTempExtr = re.compile("TargetExtr([0-9]+):(%s)" % positiveFloatPattern)
 		self._regex_repetierTempBed = re.compile("TargetBed:(%s)" % positiveFloatPattern)
 
-		self._blocking_commands = ("G28", "G29", "G30", "G32")
+		self._long_running_commands = settings().get(["serial", "longRunningCommands"])
 
 		# multithreading locks
 		self._sendNextLock = threading.Lock()
@@ -883,7 +883,7 @@ class MachineCom(object):
 				##~~ process oks
 				if line.strip().startswith("ok") or (self.isPrinting() and supportWait and line.strip().startswith("wait")):
 					self._clear_to_send.set()
-					self._blocking_command = False
+					self._long_running_command = False
 
 				##~~ Temperature processing
 				if ' T:' in line or line.startswith('T:') or ' T0:' in line or line.startswith('T0:') or ' B:' in line or line.startswith('B:'):
@@ -1088,12 +1088,12 @@ class MachineCom(object):
 				### Printing
 				elif self._state == self.STATE_PRINTING:
 					if line == "" and time.time() > self._timeout:
-						if not self._blocking_command:
+						if not self._long_running_command:
 							self._log("Communication timeout during printing, forcing a line")
 							self._sendCommand("M105")
 							self._clear_to_send.set()
 						else:
-							self._logger.debug("Ran into a communication timeout, but a blocking command is currently active")
+							self._logger.debug("Ran into a communication timeout, but a command known to be a long runner is currently active")
 
 					if "ok" in line or (supportWait and "wait" in line):
 						# a wait while printing means our printer's buffer ran out, probably due to some ok getting
@@ -1161,22 +1161,22 @@ class MachineCom(object):
 		"""
 		Polls the temperature after the temperature timeout, re-enqueues itself.
 
-		If the printer is not operational, not printing from sd, busy with a blocking command or heating, no poll
+		If the printer is not operational, not printing from sd, busy with a long running command or heating, no poll
 		will be done.
 		"""
 
-		if self.isOperational() and not self.isStreaming() and not self._blocking_command and not self._heating:
+		if self.isOperational() and not self.isStreaming() and not self._long_running_command and not self._heating:
 			self.sendCommand("M105", cmd_type="temperature_poll")
 
 	def _poll_sd_status(self):
 		"""
 		Polls the sd printing status after the sd status timeout, re-enqueues itself.
 
-		If the printer is not operational, not printing from sd, busy with a blocking command or heating, no poll
+		If the printer is not operational, not printing from sd, busy with a long running command or heating, no poll
 		will be done.
 		"""
 
-		if self.isOperational() and self.isSdPrinting() and not self._blocking_command and not self._heating:
+		if self.isOperational() and self.isSdPrinting() and not self._long_running_command and not self._heating:
 			self.sendCommand("M27", cmd_type="sd_status_poll")
 
 	def _onConnected(self):
@@ -1693,13 +1693,13 @@ class MachineCom(object):
 
 	def _gcode_M109_sent(self, cmd, cmd_type=None):
 		self._heatupWaitStartTime = time.time()
-		self._blocking_command = True
+		self._long_running_command = True
 		self._heating = True
 		self._gcode_M104_sent(cmd, cmd_type)
 
 	def _gcode_M190_sent(self, cmd, cmd_type=None):
 		self._heatupWaitStartTime = time.time()
-		self._blocking_command = True
+		self._long_running_command = True
 		self._heating = True
 		self._gcode_M140_sent(cmd, cmd_type)
 
@@ -1737,13 +1737,12 @@ class MachineCom(object):
 			# dwell time is specified in seconds
 			_timeout = float(cmd[s_idx+1:])
 		self._timeout = get_new_timeout("communication") + _timeout
-		self._blocking_command = True
 
 	##~~ command phase handlers
 
 	def _command_phase_sending(self, cmd, cmd_type=None, gcode=None):
-		if gcode is not None and gcode in self._blocking_commands:
-			self._blocking_command = True
+		if gcode is not None and gcode in self._long_running_commands:
+			self._long_running_command = True
 
 ### MachineCom callback ################################################################################################
 

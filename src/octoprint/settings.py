@@ -82,7 +82,8 @@ default_settings = {
 			"temperature": 5,
 			"sdStatus": 1
 		},
-		"additionalPorts": []
+		"additionalPorts": [],
+		"longRunningCommands": ["G4", "G28", "G29", "G30", "G32"]
 	},
 	"server": {
 		"host": "0.0.0.0",

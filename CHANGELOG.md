@@ -153,7 +153,8 @@
   ``python setup.py sdist``
 * [#330](https://github.com/foosel/OctoPrint/issues/330) - Ping pong sending to fix potential acknowledgement errors.
   Also affects [#166](https://github.com/foosel/OctoPrint/issues/166), [#470](https://github.com/foosel/OctoPrint/issues/470)
-  and [#490](https://github.com/foosel/OctoPrint/issues/490).
+  and [#490](https://github.com/foosel/OctoPrint/issues/490). A big thank you to all people involved in these tickets
+  in getting to the ground of this.
 * [#825](https://github.com/foosel/OctoPrint/issues/825) - Fixed "please visualize" button of large GCODE files
 * Various fixes of bugs in newly introduced features and improvements:
   * [#625](https://github.com/foosel/OctoPrint/pull/625) - Newly added GCODE files were not being added to the analysis

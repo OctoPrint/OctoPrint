@@ -80,7 +80,8 @@ def getSettings():
 			"timeoutTemperature": s.getFloat(["serial", "timeout", "temperature"]),
 			"timeoutSdStatus": s.getFloat(["serial", "timeout", "sdStatus"]),
 			"log": s.getBoolean(["serial", "log"]),
-			"additionalPorts": s.get(["serial", "additionalPorts"])
+			"additionalPorts": s.get(["serial", "additionalPorts"]),
+			"longRunningCommands": s.get(["serial", "longRunningCommands"])
 		},
 		"folder": {
 			"uploads": s.getBaseFolder("uploads"),
@@ -192,6 +193,7 @@ def setSettings():
 		if "timeoutTemperature" in data["serial"].keys(): s.setFloat(["serial", "timeout", "temperature"], data["serial"]["timeoutTemperature"])
 		if "timeoutSdStatus" in data["serial"].keys(): s.setFloat(["serial", "timeout", "sdStatus"], data["serial"]["timeoutSdStatus"])
 		if "additionalPorts" in data["serial"] and isinstance(data["serial"]["additionalPorts"], (list, tuple)): s.set(["serial", "additionalPorts"], data["serial"]["additionalPorts"])
+		if "longRunningCommands" in data["serial"] and isinstance(data["serial"]["longRunningCommands"], (list, tuple)): s.set(["serial", "longRunningCommands"], data["serial"]["longRunningCommands"])
 
 		oldLog = s.getBoolean(["serial", "log"])
 		if "log" in data["serial"].keys(): s.setBoolean(["serial", "log"], data["serial"]["log"])

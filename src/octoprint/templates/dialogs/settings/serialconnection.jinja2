@@ -71,6 +71,13 @@
         </div>
     </div>
     <div class="control-group">
+        <label class="control-label" for="settings-serialLongRunningCommands">{{ _('Long running commands') }}</label>
+        <div class="controls">
+            <input type="text" class="input-block-level" id="settings-serialLongRunningCommands" data-bind="value: serial_longRunningCommands">
+            <span class="help-inline">{{ _('Use this to specify the commands known to take a long time to complete without output from your printer and hence might cause timeout issues. Just the G or M code, comma separated.')|format(glob_url="http://docs.python.org/2/library/glob.html") }}</span>
+        </div>
+    </div>
+    <div class="control-group">
         <label class="control-label" for="settings-serialAdditionalPorts">{{ _('Additional serial ports') }}</label>
         <div class="controls">
             <textarea rows="4" class="block" id="settings-serialAdditionalPorts" data-bind="value: serial_additionalPorts"></textarea>

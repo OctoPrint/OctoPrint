@@ -126,6 +126,7 @@ $(function() {
         self.serial_timeoutSdStatus = ko.observable(undefined);
         self.serial_log = ko.observable(undefined);
         self.serial_additionalPorts = ko.observable(undefined);
+        self.serial_longRunningCommands = ko.observable(undefined);
 
         self.folder_uploads = ko.observable(undefined);
         self.folder_timelapse = ko.observable(undefined);
@@ -385,6 +386,7 @@ $(function() {
             self.serial_timeoutSdStatus(response.serial.timeoutSdStatus);
             self.serial_log(response.serial.log);
             self.serial_additionalPorts(response.serial.additionalPorts.join("\n"));
+            self.serial_longRunningCommands(response.serial.longRunningCommands.join(", "));
 
             self.folder_uploads(response.folder.uploads);
             self.folder_timelapse(response.folder.timelapse);
@@ -462,13 +464,8 @@ $(function() {
                     "timeoutTemperature": self.serial_timeoutTemperature(),
                     "timeoutSdStatus": self.serial_timeoutSdStatus(),
                     "log": self.serial_log(),
-                    "additionalPorts": _.filter(
-                        _.map(
-                            self.serial_additionalPorts().split("\n"),
-                            function(item) { return (item) ? item.trim() : ""; }
-                        ),
-                        function(item) { return item && !_.startsWith(item, "#"); }
-                    )
+                    "additionalPorts": commentableLinesToArray(self.serial_additionalPorts()),
+                    "longRunningCommands": splitTextToArray(self.serial_longRunningCommands(), ",", true)
                 },
                 "folder": {
                     "uploads": self.folder_uploads(),
