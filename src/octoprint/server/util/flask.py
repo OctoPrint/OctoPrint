@@ -10,6 +10,7 @@ import tornado.web
 import flask
 import flask.ext.login
 import flask.ext.principal
+import flask.ext.assets
 import functools
 import time
 import uuid
@@ -20,6 +21,7 @@ import netaddr
 from octoprint.settings import settings
 import octoprint.server
 import octoprint.users
+import octoprint.plugin
 
 from werkzeug.contrib.cache import SimpleCache
 
@@ -31,8 +33,6 @@ def enable_additional_translations(default_locale="en", additional_folders=None)
 	from flask import _request_ctx_stack
 	from babel import support, Locale
 	import flask.ext.babel
-
-	import octoprint.plugin
 
 	if additional_folders is None:
 		additional_folders = []
@@ -411,3 +411,91 @@ def get_json_command_from_request(request, valid_commands):
 			return None, None, make_response("Mandatory parameter %s missing for command %s" % (parameter, command), 400)
 
 	return command, data, None
+
+##~~ Flask-Assets resolver with plugin asset support
+
+class PluginAssetResolver(flask.ext.assets.FlaskResolver):
+
+	def split_prefix(self, item):
+		if item.startswith("plugin/"):
+			try:
+				prefix, plugin, name = item.split("/", 2)
+				blueprint = prefix + "." + plugin
+
+				directory = flask.ext.assets.get_static_folder(self.env._app.blueprints[blueprint])
+				item = name
+				return directory, item
+			except (ValueError, KeyError):
+				pass
+
+		return flask.ext.assets.FlaskResolver.split_prefix(self, item)
+
+	def resolve_output_to_path(self, target, bundle):
+		if target.startswith("webassets/"):
+			import os
+			return os.path.normpath(os.path.join(settings().getBaseFolder("webassets"), target[len("webassets/"):]))
+		return flask.ext.assets.FlaskResolver.resolve_output_to_path(self, target, bundle)
+
+##~~ plugin assets collector
+
+def collect_plugin_assets(enable_gcodeviewer=True, enable_timelapse=True, preferred_stylesheet="css"):
+	supported_stylesheets = ("css", "less")
+	assets = dict(
+		js=[],
+		stylesheets=[]
+	)
+	assets["js"] = [
+		'js/app/viewmodels/appearance.js',
+		'js/app/viewmodels/connection.js',
+		'js/app/viewmodels/control.js',
+		'js/app/viewmodels/firstrun.js',
+		'js/app/viewmodels/files.js',
+		'js/app/viewmodels/loginstate.js',
+		'js/app/viewmodels/navigation.js',
+		'js/app/viewmodels/printerstate.js',
+		'js/app/viewmodels/printerprofiles.js',
+		'js/app/viewmodels/settings.js',
+		'js/app/viewmodels/slicing.js',
+		'js/app/viewmodels/temperature.js',
+		'js/app/viewmodels/terminal.js',
+		'js/app/viewmodels/users.js',
+		'js/app/viewmodels/log.js',
+		'js/app/viewmodels/usersettings.js'
+	]
+	if enable_gcodeviewer:
+		assets["js"] += [
+			'js/app/viewmodels/gcode.js',
+			'gcodeviewer/js/ui.js',
+			'gcodeviewer/js/gCodeReader.js',
+			'gcodeviewer/js/renderer.js'
+		]
+	if enable_timelapse:
+		assets["js"].append('js/app/viewmodels/timelapse.js')
+
+	if preferred_stylesheet == "less":
+		assets["stylesheets"].append(("less", 'less/octoprint.less'))
+	elif preferred_stylesheet == "css":
+		assets["stylesheets"].append(("css", 'css/octoprint.css'))
+
+	asset_plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.AssetPlugin)
+	for implementation in asset_plugins:
+		name = implementation._identifier
+		all_assets = implementation.get_assets()
+
+		if "js" in all_assets:
+			for asset in all_assets["js"]:
+				assets["js"].append('plugin/{name}/{asset}'.format(**locals()))
+
+		if preferred_stylesheet in all_assets:
+			for asset in all_assets[preferred_stylesheet]:
+				assets["stylesheets"].append((preferred_stylesheet, 'plugin/{name}/{asset}'.format(**locals())))
+		else:
+			for stylesheet in supported_stylesheets:
+				if not stylesheet in all_assets:
+					continue
+
+				for asset in all_assets[stylesheet]:
+					assets["stylesheets"].append((stylesheet, 'plugin/{name}/{asset}'.format(**locals())))
+				break
+
+	return assets

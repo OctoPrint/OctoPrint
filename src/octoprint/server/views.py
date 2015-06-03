@@ -8,7 +8,7 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 import os
 
 from collections import defaultdict
-from flask import request, g, url_for, make_response, render_template, send_from_directory
+from flask import request, g, url_for, make_response, render_template, send_from_directory, redirect
 
 import octoprint.plugin
 
@@ -491,19 +491,6 @@ def localeJs(locale, domain):
 
 @app.route("/plugin_assets/<string:name>/<path:filename>")
 def plugin_assets(name, filename):
-	asset_plugins = pluginManager.get_filtered_implementations(lambda p: p._identifier == name, octoprint.plugin.AssetPlugin)
-
-	if not asset_plugins:
-		return make_response("Asset not found", 404)
-
-	if len(asset_plugins) > 1:
-		return make_response("More than one asset provider for {name}, can't proceed".format(name=name), 500)
-
-	asset_plugin = asset_plugins[0]
-	asset_folder = asset_plugin.get_asset_folder()
-	if asset_folder is None:
-		return make_response("Asset not found", 404)
-
-	return send_from_directory(asset_folder, filename)
+	return redirect(url_for("plugin." + name + ".static", filename=filename))
 
 

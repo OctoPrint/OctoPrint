@@ -21,6 +21,7 @@ INSTALL_REQUIRES = [
 	"Flask-Login==0.2.2",
 	"Flask-Principal==0.3.5",
 	"Flask-Babel==0.9",
+	"Flask-Assets",
 	"pyserial",
 	"netaddr",
 	"watchdog",

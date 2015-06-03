@@ -7,10 +7,11 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import uuid
 from sockjs.tornado import SockJSRouter
-from flask import Flask, g, request, session
+from flask import Flask, g, request, session, Blueprint
 from flask.ext.login import LoginManager, current_user
 from flask.ext.principal import Principal, Permission, RoleNeed, identity_loaded, UserNeed
 from flask.ext.babel import Babel, gettext, ngettext
+from flask.ext.assets import Environment, Bundle
 from babel import Locale
 from watchdog.observers import Observer
 from collections import defaultdict
@@ -24,6 +25,7 @@ SUCCESS = {}
 NO_CONTENT = ("", 204)
 
 app = Flask("octoprint")
+assets = None
 babel = None
 debug = False
 
@@ -232,6 +234,9 @@ class Server():
 		pluginLifecycleManager.add_callback("enabled", template_enabled)
 		pluginLifecycleManager.add_callback("disabled", template_disabled)
 
+		# setup assets
+		self._setup_assets()
+
 		# configure timelapse
 		octoprint.timelapse.configureTimelapse()
 
@@ -240,6 +245,7 @@ class Server():
 		if self._debug:
 			events.DebugEventListener()
 
+		# setup access control
 		if s.getBoolean(["accessControl", "enabled"]):
 			userManagerName = s.get(["accessControl", "userManager"])
 			try:
@@ -300,10 +306,14 @@ class Server():
 		upload_suffixes = dict(name=s.get(["server", "uploads", "nameSuffix"]), path=s.get(["server", "uploads", "pathSuffix"]))
 
 		server_routes = self._router.urls + [
+			# various downloads
 			(r"/downloads/timelapse/([^/]*\.mpg)", util.tornado.LargeResponseHandler, dict(path=s.getBaseFolder("timelapse"), as_attachment=True)),
 			(r"/downloads/files/local/(.*)", util.tornado.LargeResponseHandler, dict(path=s.getBaseFolder("uploads"), as_attachment=True, path_validation=util.tornado.path_validation_factory(lambda path: not os.path.basename(path).startswith("."), status_code=404))),
 			(r"/downloads/logs/([^/]*)", util.tornado.LargeResponseHandler, dict(path=s.getBaseFolder("logs"), as_attachment=True, access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.admin_validator))),
+			# camera snapshot
 			(r"/downloads/camera/current", util.tornado.UrlForwardHandler, dict(url=s.get(["webcam", "snapshot"]), as_attachment=True, access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.user_validator))),
+			# generated webassets
+			(r"/static/webassets/(.*)", util.tornado.LargeResponseHandler, dict(path=s.getBaseFolder("webassets")))
 		]
 		for name, hook in pluginManager.get_hooks("octoprint.server.http.routes").items():
 			try:
@@ -610,10 +620,20 @@ class Server():
 		# also register any blueprints defined in BlueprintPlugins
 		self._register_blueprint_plugins()
 
+		# and register a blueprint for serving the static files of asset plugins which are not blueprint plugins themselves
+		self._register_asset_plugins()
+
 	def _register_blueprint_plugins(self):
 		blueprint_plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.BlueprintPlugin)
 		for plugin in blueprint_plugins:
 			self._register_blueprint_plugin(plugin)
+
+	def _register_asset_plugins(self):
+		asset_plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.AssetPlugin)
+		for plugin in asset_plugins:
+			if isinstance(plugin, octoprint.plugin.BlueprintPlugin):
+				continue
+			self._register_asset_plugin(plugin)
 
 	def _register_blueprint_plugin(self, plugin):
 		name = plugin._identifier
@@ -631,6 +651,100 @@ class Server():
 
 		if self._logger:
 			self._logger.debug("Registered API of plugin {name} under URL prefix {url_prefix}".format(name=name, url_prefix=url_prefix))
+
+	def _register_asset_plugin(self, plugin):
+		name = plugin._identifier
+
+		url_prefix = "/plugin/{name}".format(name=name)
+		blueprint = Blueprint("plugin." + name, name, static_folder=plugin.get_asset_folder())
+		app.register_blueprint(blueprint, url_prefix=url_prefix)
+
+		if self._logger:
+			self._logger.debug("Registered assets of plugin {name} under URL prefix {url_prefix}".format(name=name, url_prefix=url_prefix))
+
+	def _setup_assets(self):
+		global app
+		global assets
+		global pluginManager
+
+		AdjustedEnvironment = type(Environment)(Environment.__name__, (Environment,), dict(
+			resolver_class=util.flask.PluginAssetResolver
+		))
+		assets = AdjustedEnvironment(app)
+
+		dynamic_assets = util.flask.collect_plugin_assets()
+
+		js_libs = [
+			"js/lib/jquery/jquery.min.js",
+			"js/lib/modernizr.custom.js",
+			"js/lib/lodash.min.js",
+			"js/lib/sprintf.min.js",
+			"js/lib/knockout.js",
+			"js/lib/knockout.mapping-latest.js",
+			"js/lib/babel.js",
+			"js/lib/avltree.js",
+			"js/lib/bootstrap/bootstrap.js",
+			"js/lib/bootstrap/bootstrap-modalmanager.js",
+			"js/lib/bootstrap/bootstrap-modal.js",
+			"js/lib/bootstrap/bootstrap-slider.js",
+			"js/lib/bootstrap/bootstrap-tabdrop.js",
+			"js/lib/jquery/jquery.ui.core.js",
+			"js/lib/jquery/jquery.ui.widget.js",
+			"js/lib/jquery/jquery.ui.mouse.js",
+			"js/lib/jquery/jquery.flot.js",
+			"js/lib/jquery/jquery.iframe-transport.js",
+			"js/lib/jquery/jquery.fileupload.js",
+			"js/lib/jquery/jquery.slimscroll.min.js",
+			"js/lib/jquery/jquery.qrcode.min.js",
+			"js/lib/sockjs-0.3.4.min.js",
+			"js/lib/moment-with-locales.min.js",
+			"js/lib/pusher.color.min.js",
+			"js/lib/detectmobilebrowser.js",
+			"js/lib/md5.min.js",
+			"js/lib/pnotify.min.js",
+			"js/lib/bootstrap-slider-knockout-binding.js",
+			"js/lib/loglevel.min.js"
+		]
+
+		js_app = dynamic_assets["js"] + [
+			"js/app/dataupdater.js",
+			"js/app/helpers.js",
+			"js/app/main.js",
+		]
+
+		css_libs = [
+			"css/bootstrap.min.css",
+			"css/bootstrap-modal.css",
+			"css/bootstrap-slider.css",
+			"css/bootstrap-tabdrop.css",
+			"css/font-awesome.min.css",
+			"css/jquery.fileupload-ui.css",
+			"css/pnotify.min.css"
+		]
+
+		css_app =  []
+		less_app = []
+		for sheet, path in dynamic_assets["stylesheets"]:
+			if sheet == "css":
+				css_app.append(path)
+			elif sheet == "less":
+				less_app.append(path)
+
+		js_libs_bundle = Bundle(*js_libs, output="webassets/packed_libs.js")
+		js_app_bundle = Bundle(*js_app, output="webassets/package_app.js")
+		css_libs_bundle = Bundle(*css_libs, output="webassets/packed_libs.css")
+
+		assets.register("js_libs", js_libs_bundle)
+		assets.register("js_app", js_app_bundle)
+		assets.register("css_libs", css_libs_bundle)
+
+		if len(css_app):
+			css_app_bundle = Bundle(*css_app, output="webassets/packed_app.css")
+			assets.register("css_app", css_app_bundle)
+		if len(less_app):
+			less_app_bundle = Bundle(*less_app, output="webassets/packed_app.less")
+			assets.register("less_app", less_app_bundle)
+
 
 class LifecycleManager(object):
 	def __init__(self, plugin_manager):

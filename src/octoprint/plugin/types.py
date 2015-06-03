@@ -648,12 +648,24 @@ class BlueprintPlugin(OctoPrintPlugin, RestartNeedingPlugin):
 		``template_folder``, etc.
 
 		Defaults to the blueprint's ``static_folder`` and ``template_folder`` to be set to the plugin's basefolder
-		plus ``/static`` or respectively ``/templates``.
+		plus ``/static`` or respectively ``/templates``, or -- if the plugin also implements :class:`AssetPlugin` and/or
+		:class:`TemplatePlugin` -- the paths provided by ``get_asset_folder`` and ``get_template_folder`` respectively.
 		"""
 		import os
+
+		if isinstance(self, AssetPlugin):
+			static_folder = self.get_asset_folder()
+		else:
+			static_folder = os.path.join(self._basefolder, "static")
+
+		if isinstance(self, TemplatePlugin):
+			template_folder = self.get_template_folder()
+		else:
+			template_folder = os.path.join(self._basefolder, "templates")
+
 		return dict(
-			static_folder=os.path.join(self._basefolder, "static"),
-			template_folder=os.path.join(self._basefolder, "templates")
+			static_folder=static_folder,
+			template_folder=template_folder
 		)
 
 	def is_blueprint_protected(self):

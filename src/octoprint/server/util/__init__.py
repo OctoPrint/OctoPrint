@@ -32,6 +32,9 @@ def apiKeyRequestHandler():
 	if _flask.request.method == 'OPTIONS' and settings().getBoolean(["api", "allowCrossOrigin"]):
 		return optionsAllowOrigin(_flask.request)
 
+	if _flask.request.endpoint == "static" or _flask.request.endpoint.endswith(".static"):
+		return
+
 	apikey = get_api_key(_flask.request)
 	if apikey is None:
 		# no api key => 401

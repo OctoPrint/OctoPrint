@@ -155,7 +155,8 @@ default_settings = {
 		"slicingProfiles": None,
 		"printerProfiles": None,
 		"scripts": None,
-		"translations": None
+		"translations": None,
+		"webassets": None
 	},
 	"temperature": {
 		"profiles": [
