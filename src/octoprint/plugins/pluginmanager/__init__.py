@@ -174,7 +174,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 		all_plugins_before = self._plugin_manager.find_plugins()
 
-		success_string = "Successfully installed "
+		success_string = "Successfully installed"
+		failure_string = "Could not install"
 		try:
 			returncode, stdout, stderr = self._call_pip(pip_args)
 		except:
@@ -190,39 +191,49 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 					return make_response("Could not install plugin from url, see the log for more details", 500)
 
 		try:
-			last_line = filter(lambda x: x.startswith(success_string) or x.startswith("Could not install"), stdout)[-1]
+			result_line = filter(lambda x: x.startswith(success_string) or x.startswith(failure_string), stdout)[-1]
 		except IndexError:
 			result = dict(result=False, reason="Could not parse output from pip")
 			self._send_result_notification("install", result)
 			return jsonify(result)
 
-		# The success line of a pip install command looks something like this:
+		# The final output of a pip install command looks something like this:
 		#
 		#   Successfully installed OctoPrint-Plugin-1.0 Dependency-One-0.1 Dependency-Two-9.3
 		#
-		# So we'll first strip the first part, then split by whitespace and remove the version to get the name of
-		# the installed package. By then matching up the package names stored for all our entry point plugins against
-		# the list of installed packages from our pip install run, we'll find the plugin that was installed.
+		# or this:
+		#
+		#   Successfully installed OctoPrint-Plugin Dependency-One Dependency-Two
+		#   Cleaning up...
+		#
+		# So we'll need to fetch the "Successfully installed" line, strip the "Successfully" part, then split by whitespace
+		# and strip to get all installed packages.
+		#
+		# We then need to iterate over all known plugins and see if either the package name or the package name plus
+		# version number matches one of our installed packages. If it does, that's our installed plugin.
+		#
+		# Known issue: This might return the wrong plugin if more than one plugin was installed through this
+		# command (e.g. due to pulling in another plugin as dependency). It should be safe for now though to
+		# consider this a rare corner case. Once it becomes a real problem we'll just extend the plugin manager
+		# so that it can report on more than one installed plugin.
 
-		last_line = last_line.strip()
-		if not last_line.startswith(success_string):
+		result_line = result_line.strip()
+		if not result_line.startswith(success_string):
 			result = dict(result=False, reason="Pip did not report successful installation")
 			self._send_result_notification("install", result)
 			return jsonify(result)
 
-		def strip_version(s):
-			l = s.strip().split("-")
-			if len(l) > 0 and s[-1][:1].isdigit():
-				del l[-1]
-			return "-".join(l)
-
-		installed = map(strip_version, last_line[len(success_string):].split(" "))
+		installed = map(lambda x: x.strip(), result_line[len(success_string):].split(" "))
 		all_plugins_after = self._plugin_manager.find_plugins(existing=dict(), ignore_uninstalled=False)
+
 		for key, plugin in all_plugins_after.items():
-			if plugin.origin is None or plugin.origin[0] != "entry_point":
+			if plugin.origin is None or plugin.origin.type != "entry_point":
 				continue
 
-			if plugin.origin[3] in installed:
+			package_name = plugin.origin.package_name
+			package_version = plugin.origin.package_version
+			versioned_package = "{package_name}-{package_version}".format(**locals())
+			if package_name in installed or versioned_package in installed:
 				new_plugin_key = key
 				new_plugin = plugin
 				break
@@ -248,7 +259,11 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		if plugin.bundled:
 			return make_response("Bundled plugins cannot be uninstalled", 400)
 
-		if plugin.origin[0] == "entry_point":
+		if plugin.origin is None:
+			self._logger.warn(u"Trying to uninstall plugin {plugin} but origin is unknown".format(**locals()))
+			return make_response("Could not uninstall plugin, its origin is unknown")
+
+		if plugin.origin.type == "entry_point":
 			# plugin is installed through entry point, need to use pip to uninstall it
 			origin = plugin.origin[3]
 			if origin is None:
@@ -261,7 +276,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 				self._logger.exception(u"Could not uninstall plugin via pip")
 				return make_response("Could not uninstall plugin via pip, see the log for more details", 500)
 
-		elif plugin.origin[0] == "folder":
+		elif plugin.origin.type == "folder":
 			import os
 			import shutil
 			full_path = os.path.realpath(plugin.location)
@@ -278,6 +293,10 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 					pyc_file = "{full_path}c".format(**locals())
 					if os.path.isfile(pyc_file):
 						os.remove(pyc_file)
+
+		else:
+			self._logger.warn(u"Trying to uninstall plugin {plugin} but origin is unknown ({plugin.origin.type})".format(**locals()))
+			return make_response("Could not uninstall plugin, its origin is unknown")
 
 		needs_restart = self._plugin_manager.is_restart_needing_plugin(plugin)
 		needs_refresh = plugin.implementation and isinstance(plugin.implementation, octoprint.plugin.ReloadNeedingPlugin)
