@@ -416,49 +416,25 @@ def get_json_command_from_request(request, valid_commands):
 
 class PluginAssetResolver(flask.ext.assets.FlaskResolver):
 
-	def split_prefix(self, item):
+	def split_prefix(self, ctx, item):
+		app = ctx.environment._app
 		if item.startswith("plugin/"):
 			try:
 				prefix, plugin, name = item.split("/", 2)
 				blueprint = prefix + "." + plugin
 
-				directory = flask.ext.assets.get_static_folder(self.env._app.blueprints[blueprint])
+				directory = flask.ext.assets.get_static_folder(app.blueprints[blueprint])
 				item = name
-				return directory, item
+				endpoint = blueprint + ".static"
+				return directory, item, endpoint
 			except (ValueError, KeyError):
 				pass
 
-		return flask.ext.assets.FlaskResolver.split_prefix(self, item)
+		return flask.ext.assets.FlaskResolver.split_prefix(self, ctx, item)
 
-	def resolve_output_to_path(self, target, bundle):
+	def resolve_output_to_path(self, ctx, target, bundle):
 		import os
-		return os.path.normpath(os.path.join(self.env.directory, target))
-
-	def resolve_source_to_url(self, filepath, item):
-		if item.startswith("plugin/"):
-			try:
-				prefix, plugin, name = item.split('/', 2)
-				blueprint = prefix + "." + plugin
-
-				self.env._app.blueprints[blueprint]  # keyerror if no module
-				endpoint = '%s.static' % blueprint
-				filename = name
-			except (ValueError, KeyError):
-				endpoint = 'static'
-				filename = item
-
-			ctx = None
-			if not flask._request_ctx_stack.top:
-				ctx = self.env._app.test_request_context()
-				ctx.push()
-			try:
-				return flask.url_for(endpoint, filename=filename)
-			finally:
-				if ctx:
-					ctx.pop()
-
-		return flask.ext.assets.FlaskResolver.resolve_source_to_url(self, filepath, item)
-
+		return os.path.normpath(os.path.join(ctx.environment.directory, target))
 
 ##~~ plugin assets collector
 

@@ -731,8 +731,13 @@ class Server():
 			"css/jquery.fileupload-ui.css",
 			"css/pnotify.min.css"
 		]
-		css_app = ["empty"] + dynamic_assets["css"]
-		less_app = ["empty"] + dynamic_assets["less"]
+		css_app = list(dynamic_assets["css"])
+		if len(css_app) == 0:
+			css_app = ["empty"]
+
+		less_app = list(dynamic_assets["less"])
+		if len(less_app) == 0:
+			less_app = ["empty"]
 
 		js_libs_bundle = Bundle(*js_libs, output="webassets/packed_libs.js")
 		if settings().getBoolean(["devel", "webassets", "minify"]):
