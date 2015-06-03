@@ -754,8 +754,21 @@ a reference to our CSS file:
    __plugin_name__ = "Hello World"
    __plugin_implementation__ = HelloWorldPlugin()
 
+OctoPrint by default bundles all CSS, JavaScript and LESS files to reduce the amount of requests necessary to fully
+load the page. But in order to fully be able to see how what we just did changes how our plugin interacts with OctoPrint
+we want to disable that behaviour for now. Open up OctoPrint's ``config.yaml`` and disable bundling of the webassets:
+
+.. code-block:: yaml
+   :emphasize-lines: 2-4
+
+       # [...]
+       devel:
+         webassets:
+           bundle: false
+       # [...]
+
 Restart OctoPrint, shift-reload your browser and take a look. Everything should still look like before, but now
-OctoPrint linked to our stylesheet and the style information for the ``iframe`` is taken from that instead of
+OctoPrint included our stylesheet and the style information for the ``iframe`` is taken from that instead of
 hardcoded in our template. Way better!
 
 Now, if you had something more complicated than just the couple of line of CSS we used here, you might want to use
@@ -828,11 +841,13 @@ Then adjust our returned assets to include our LESS file as well:
 and enable LESS mode by adjusting one of OctoPrint's ``devel`` flags via the ``config.yaml`` file:
 
 .. code-block:: yaml
-   :emphasize-lines: 2-3
+   :emphasize-lines: 3
 
    # [...]
    devel:
      stylesheet: less
+     webassets:
+       bundle: false
    # [...]
 
 Restart OctoPrint and shift-reload. Your "Hello World" tab should still look like before. Take a look at the site's
@@ -841,18 +856,14 @@ embedded the ``helloworld.less`` file instead:
 
 .. code-block:: html
    :linenos:
-   :emphasize-lines: 7
+   :emphasize-lines: 5
 
    <head>
        <!-- [...] -->
        <link href="/static/less/octoprint.less" rel="stylesheet/less" type="text/css" media="screen">
-
-       <!-- Plugin files -->
-           <!-- [...] -->
-           <link href="/plugin_assets/helloworld/less/helloworld.less" rel="stylesheet/less" type="text/css" media="screen">
-           <!-- [...] -->
-       <!-- /Plugin files -->
-
+       <!-- [...] -->
+       <link href="/plugin/helloworld/static/less/helloworld.less" rel="stylesheet/less" type="text/css" media="screen">
+       <!-- [...] -->
        <script src="/static/js/lib/less.min.js" type="text/javascript"></script>
        <!-- [...] -->
    </head>
@@ -866,29 +877,55 @@ setting it to ``css``, e.g.
    # [...]
    devel:
      stylesheet: css
+     webassets:
+       bundle: false
    # [...]
 
 Restart and shift-reload and take another look at the ``head``:
 
 .. code-block:: html
    :linenos:
-   :emphasize-lines: 7
+   :emphasize-lines: 5
 
    <head>
        <!-- [...] -->
        <link href="/static/css/octoprint.css" rel="stylesheet" type="text/css" media="screen">
-
-       <!-- Plugin files -->
-           <!-- [...] -->
-           <link href="/plugin_assets/helloworld/css/helloworld.css" rel="stylesheet" type="text/css" media="screen">
-           <!-- [...] -->
-       <!-- /Plugin files -->
+       <!-- [...] -->
+       <link href="/plugin/helloworld/static/css/helloworld.css" rel="stylesheet" type="text/css" media="screen">
+       <!-- [...] -->
+       <script src="/static/js/lib/less.min.js" type="text/javascript"></script>
        <!-- [...] -->
    </head>
 
 Now the CSS file is linked and no trace of the LESS links is left in the source. This should help to speed up your development
 tremendously when you have to work with complex stylesheets, just don't forgot to check the generated CSS file in with
 the rest of your plugin or people will miss it when trying to run your plugin!
+
+Remember when I mentioned that OctoPrint by default bundles all our assets for us? We adjusted our ``config.yaml`` to
+stop it from doing that at the start of this section, we should switch this back now:
+
+.. code-block:: yaml
+
+   # [...]
+   devel:
+     stylesheet: css
+   # [...]
+
+Just out of curiousity, restart, shift-reload and take a final look at the ``head``:
+
+.. code-block:: html
+   :linenos:
+   :emphasize-lines: 3-5
+
+   <head>
+       <!-- [...] -->
+       <link href="/static/webassets/packed.css?85a134" rel="stylesheet" type="text/css" media="screen">
+       <link href="/static/webassets/packed.less?85a134" rel="stylesheet/less" type="text/css" media="screen">
+       <script src="/static/js/lib/less.min.js" type="text/javascript"></script>
+       <!-- [...] -->
+   </head>
+
+Way more compact, isn't it?
 
 .. note::
 
@@ -897,8 +934,8 @@ the rest of your plugin or people will miss it when trying to run your plugin!
    as soon as you need it just switch over.
 
    The same thing works the other way around too btw. If your plugin only provides LESS files, OctoPrint will link to
-   those and add lessjs to the page as well. Please keep in mind though that also providing CSS files is the cleaner
-   way.
+   those, lessjs will take care of the compilation. Please keep in mind though that also providing CSS files is the
+   cleaner way.
 
 Where do we go from here?
 -------------------------

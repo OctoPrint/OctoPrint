@@ -163,8 +163,11 @@ class AssetPlugin(OctoPrintPlugin, RestartNeedingPlugin):
 		           less=['less/my_styles.less']
 		        )
 
-		The assets will be made available by OctoPrint under the URL ``/plugin_assets/<plugin identifier>/<path>``, with
+		The assets will be made available by OctoPrint under the URL ``/plugin/<plugin identifier>/static/<path>``, with
 		``plugin identifier`` being the plugin's identifier and ``path`` being the path as defined in the asset dictionary.
+
+		Assets of the types ``js``, ``css`` and ``less`` will be automatically bundled by OctoPrint using
+		`Flask-Assets <http://flask-assets.readthedocs.org/en/latest/>`_.
 
 		:return dict: a dictionary describing the static assets to publish for the plugin
 		"""
@@ -670,7 +673,8 @@ class BlueprintPlugin(OctoPrintPlugin, RestartNeedingPlugin):
 
 	def is_blueprint_protected(self):
 		"""
-		Whether a valid API key is needed to access the blueprint (the default) or not.
+		Whether a valid API key is needed to access the blueprint (the default) or not. Note that this only restricts
+		access to the blueprint's dynamic methods, static files are always accessible without API key.
 		"""
 
 		return True

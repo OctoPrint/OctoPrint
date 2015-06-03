@@ -748,8 +748,9 @@ class Server():
 
 		css_libs_bundle = Bundle(*css_libs, output="webassets/packed_libs.css")
 		css_app_bundle = Bundle(*css_app, output="webassets/packed_app.css")
+
 		all_css_bundle = Bundle(css_libs_bundle, css_app_bundle, output="webassets/packed.css")
-		all_less_bundle = Bundle(*less_app, output="webassets/packed_app.less")
+		all_less_bundle = Bundle(*less_app, output="webassets/packed.less")
 
 		assets.register("all_js", all_js_bundle)
 		assets.register("all_css", all_css_bundle)
