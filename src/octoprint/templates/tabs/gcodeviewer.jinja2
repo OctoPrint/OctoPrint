@@ -1,7 +1,9 @@
 <div data-bind="visible: !waitForApproval()">
-    <input id="gcode_slider_layers" type="text">
-    <canvas id="gcode_canvas" width="568" height="568"></canvas>
-    <input id="gcode_slider_commands" type="text" style="width: 554px">
+    <div class="canvas_container">
+        <input id="gcode_slider_layers" type="text">
+        <canvas id="gcode_canvas" width="568" height="568"></canvas>
+        <input id="gcode_slider_commands" type="text" style="width: 554px">
+    </div>
 
     <div class="progress" >
         <div class="bar" style="width: 0%;" data-bind="text: ui_progress_text, style: { width: ui_progress_percentage() + '%' }"></div>

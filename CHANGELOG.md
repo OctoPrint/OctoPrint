@@ -137,6 +137,7 @@
 * [#516](https://github.com/foosel/OctoPrint/issues/516) - Also require API key even if ACL is disabled.
 * [#556](https://github.com/foosel/OctoPrint/issues/556) - Allow login of the same user from multiple browsers without
   side effects
+* [#612](https://github.com/foosel/OctoPrint/issues/612) - Fixed GCODE viewer in zoomed out browsers
 * [#633](https://github.com/foosel/OctoPrint/issues/633) - Correctly interpret temperature lines from multi extruder
   setups under Smoothieware
 * [#680](https://github.com/foosel/OctoPrint/issues/680) - Don't accidentally include a newline from the MIME headers
