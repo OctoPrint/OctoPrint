@@ -174,6 +174,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 		all_plugins_before = self._plugin_manager.find_plugins()
 
+		success_string = "Successfully installed "
 		try:
 			returncode, stdout, stderr = self._call_pip(pip_args)
 		except:
@@ -189,13 +190,13 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 					return make_response("Could not install plugin from url, see the log for more details", 500)
 
 		try:
-			last_line = filter(lambda x: x.strip() != "", stdout)[-1]
+			last_line = filter(lambda x: x.startswith(success_string) or x.startswith("Could not install"), stdout)[-1]
 		except IndexError:
 			result = dict(result=False, reason="Could not parse output from pip")
 			self._send_result_notification("install", result)
 			return jsonify(result)
 
-		# The last line of a pip install command looks something like this:
+		# The success line of a pip install command looks something like this:
 		#
 		#   Successfully installed OctoPrint-Plugin-1.0 Dependency-One-0.1 Dependency-Two-9.3
 		#
@@ -204,12 +205,18 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		# the list of installed packages from our pip install run, we'll find the plugin that was installed.
 
 		last_line = last_line.strip()
-		if not last_line.startswith("Successfully installed "):
+		if not last_line.startswith(success_string):
 			result = dict(result=False, reason="Pip did not report successful installation")
 			self._send_result_notification("install", result)
 			return jsonify(result)
 
-		installed = map(lambda x: x.strip().rsplit("-", 1)[0], last_line[len("Successfully installed "):].split(" "))
+		def strip_version(s):
+			l = s.strip().split("-")
+			if len(l) > 0 and s[-1][:1].isdigit():
+				del l[-1]
+			return "-".join(l)
+
+		installed = map(strip_version, last_line[len(success_string):].split(" "))
 		all_plugins_after = self._plugin_manager.find_plugins(existing=dict(), ignore_uninstalled=False)
 		for key, plugin in all_plugins_after.items():
 			if plugin.origin is None or plugin.origin[0] != "entry_point":
