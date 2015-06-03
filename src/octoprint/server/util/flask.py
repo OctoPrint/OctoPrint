@@ -276,7 +276,7 @@ def redirect_to_tornado(request, target, code=302):
 	return flask.redirect(redirectUrl, code=code)
 
 
-def restricted_access(func, api_enabled=True):
+def restricted_access(func):
 	"""
 	If you decorate a view with this, it will ensure that first setup has been
 	done for OctoPrint's Access Control plus that any conditions of the
@@ -288,11 +288,12 @@ def restricted_access(func, api_enabled=True):
 	that it's user database has been customized from default), the decorator
 	will cause a HTTP 403 status code to be returned by the decorated resource.
 
-	If an API key is provided and it matches a known key, the user will be logged in and
-	the view will be called directly. If the provided key doesn't match any known key,
-	a HTTP 403 status code will be returned by the decorated resource.
+	If the API key matches the UI API key, the result of calling login_required for the
+	view will be returned (browser session mode).
 
-	Otherwise the result of calling login_required will be returned.
+	Otherwise the API key will be attempted to be resolved to a user. If that is
+	successful the user will be logged in and the view will be called directly.
+	Otherwise a HTTP 401 status code will be returned.
 	"""
 	@functools.wraps(func)
 	def decorated_view(*args, **kwargs):
@@ -300,19 +301,24 @@ def restricted_access(func, api_enabled=True):
 		if settings().getBoolean(["server", "firstRun"]) and (octoprint.server.userManager is None or not octoprint.server.userManager.hasBeenCustomized()):
 			return flask.make_response("OctoPrint isn't setup yet", 403)
 
-		# if API is globally enabled, enabled for this request and an api key is provided that is not the current UI API key, try to use that
 		apikey = octoprint.server.util.get_api_key(flask.request)
-		if settings().get(["api", "enabled"]) and api_enabled and apikey is not None and apikey != octoprint.server.UI_API_KEY:
-			user = octoprint.server.util.get_user_for_apikey(apikey)
+		if apikey == octoprint.server.UI_API_KEY:
+			# UI API key => call regular login_required decorator, we are using browser sessions here
+			return flask.ext.login.login_required(func)(*args, **kwargs)
 
-			if user is None:
-				return flask.make_response("Invalid API key", 401)
-			if flask.ext.login.login_user(user, remember=False):
-				flask.ext.principal.identity_changed.send(flask.current_app._get_current_object(), identity=flask.ext.principal.Identity(user.get_id()))
-				return func(*args, **kwargs)
+		# try to determine user for key
+		user = octoprint.server.util.get_user_for_apikey(apikey)
+		if user is None:
+			# no user or no key => go away
+			return flask.make_response("Invalid API key", 401)
 
-		# call regular login_required decorator
-		return flask.ext.login.login_required(func)(*args, **kwargs)
+		if not flask.ext.login.login_user(user, remember=False):
+			# user for API key could not be logged in => go away
+			return flask.make_response("Invalid API key", 401)
+
+		flask.ext.principal.identity_changed.send(flask.current_app._get_current_object(), identity=flask.ext.principal.Identity(user.get_id()))
+		return func(*args, **kwargs)
+
 	return decorated_view
 
 

@@ -5,13 +5,8 @@
 ### New Features
 
 * Added internationalization of UI. Translations of OctoPrint are being crowd sourced via [Transifex](https://www.transifex.com/projects/p/octoprint/).
-  The following translations are already available with more in the works:
-  - Dutch (nl)
-  - German (de)
-  - French (fr)
-  - Hebrew (he)
-  - Norwegian (no)
-  - Romanian (ro)
+  Language Packs for both the core application as well as installed plugins can be uploaded through a new management
+  dialog in Settings > Appearance > Language Packs.
 * New file list: Pagination is gone, no more (mobile incompatible) pop overs, instead scrollable and with instant
   search
 * You can now define a folder (default: `~/.octoprint/watched`) to be watched for newly added GCODE (or -- if slicing
@@ -139,10 +134,11 @@
 
 * [#435](https://github.com/foosel/OctoPrint/issues/435) - Always interpret negative duration (e.g. for print time left)
   as 0
-* [#633](https://github.com/foosel/OctoPrint/issues/633) - Correctly interpret temperature lines from multi extruder
-  setups under Smoothieware
+* [#516](https://github.com/foosel/OctoPrint/issues/516) - Also require API key even if ACL is disabled.
 * [#556](https://github.com/foosel/OctoPrint/issues/556) - Allow login of the same user from multiple browsers without
   side effects
+* [#633](https://github.com/foosel/OctoPrint/issues/633) - Correctly interpret temperature lines from multi extruder
+  setups under Smoothieware
 * [#680](https://github.com/foosel/OctoPrint/issues/680) - Don't accidentally include a newline from the MIME headers
   in the parsed multipart data from file uploads
 * [#709](https://github.com/foosel/OctoPrint/issues/709) - Properly initialize time estimation for SD card transfers too
