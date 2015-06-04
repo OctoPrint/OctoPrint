@@ -751,8 +751,29 @@ class Server():
 		css_libs_bundle = Bundle(*css_libs, output="webassets/packed_libs.css")
 		css_app_bundle = Bundle(*css_app, output="webassets/packed_app.css")
 
+		from webassets.filter import register_filter
+		from webassets.filter.cssrewrite.base import PatternRewriter
+		import re
+		class LessImportRewrite(PatternRewriter):
+			name = "less_importrewrite"
+
+			patterns = {
+				"import_rewrite": re.compile("(@import(\s+\(.*\))?\s+)\"(.*)\";")
+			}
+
+			def import_rewrite(self, m):
+				import_with_options = m.group(1)
+				import_url = m.group(3)
+
+				if not import_url.startswith("http:") and not import_url.startswith("https:") and not import_url.startswith("/"):
+					import_url = "../less/" + import_url
+
+				return "{import_with_options}\"{import_url}\";".format(**locals())
+
+		register_filter(LessImportRewrite)
+
 		all_css_bundle = Bundle(css_libs_bundle, css_app_bundle, output="webassets/packed.css")
-		all_less_bundle = Bundle(*less_app, output="webassets/packed.less")
+		all_less_bundle = Bundle(*less_app, output="webassets/packed.less", filters="less_importrewrite")
 
 		assets.register("all_js", all_js_bundle)
 		assets.register("all_css", all_css_bundle)
