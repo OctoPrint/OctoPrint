@@ -118,6 +118,29 @@ def enable_additional_translations(default_locale="en", additional_folders=None)
 	flask.ext.babel.Babel.list_translations = fixed_list_translations
 	flask.ext.babel.get_translations = fixed_get_translations
 
+def fix_webassets_cache():
+	from webassets import cache
+	import os
+	import tempfile
+	import pickle
+	import shutil
+
+	def fixed_set(self, key, data):
+		md5 = '%s' % cache.make_md5(self.V, key)
+		filename = os.path.join(self.directory, md5)
+		fd, temp_filename = tempfile.mkstemp(prefix='.' + md5,
+		                                     dir=self.directory)
+		try:
+			with os.fdopen(fd, 'wb') as f:
+				pickle.dump(data, f)
+				f.flush()
+			shutil.move(temp_filename, filename)
+		except:
+			os.remove(temp_filename)
+			raise
+
+	cache.FilesystemCache.set = fixed_set
+
 #~~ passive login helper
 
 def passive_login():

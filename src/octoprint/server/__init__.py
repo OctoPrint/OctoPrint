@@ -662,6 +662,8 @@ class Server():
 		global assets
 		global pluginManager
 
+		util.flask.fix_webassets_cache()
+
 		base_folder = settings().getBaseFolder("generated")
 
 		AdjustedEnvironment = type(Environment)(Environment.__name__, (Environment,), dict(
