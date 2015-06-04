@@ -3,5 +3,10 @@
     <b class="caret"></b>
 </a>
 <ul class="dropdown-menu" data-bind="foreach: systemActions">
+    <!-- ko ifnot: action.startsWith("divider") -->
     <li><a href="#" data-bind="click: $root.triggerAction, text: name"></a></li>
+    <!-- /ko -->
+    <!-- ko if: action.startsWith("divider") -->
+    <li class="divider" />
+    <!-- /ko -->
 </ul>
