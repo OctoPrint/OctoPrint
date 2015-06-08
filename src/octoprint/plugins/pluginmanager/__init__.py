@@ -14,6 +14,7 @@ from octoprint.server.util.flask import restricted_access
 from octoprint.server import admin_permission
 
 from flask import jsonify, make_response
+from flask.ext.babel import gettext
 
 import logging
 import sarge
@@ -74,7 +75,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 	def get_template_configs(self):
 		return [
-			dict(type="settings", template="pluginmanager_settings.jinja2", custom_bindings=True)
+			dict(type="settings", name=gettext("Plugin Manager"), template="pluginmanager_settings.jinja2", custom_bindings=True)
 		]
 
 	##~~ BlueprintPlugin
