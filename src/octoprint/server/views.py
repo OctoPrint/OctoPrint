@@ -33,67 +33,6 @@ def index():
 	preferred_stylesheet = settings().get(["devel", "stylesheet"])
 	locales = dict((l.language, dict(language=l.language, display=l.display_name, english=l.english_name)) for l in LOCALES)
 
-	#~~ prepare assets
-
-	supported_stylesheets = ("css", "less")
-	assets = dict(
-		js=[],
-		stylesheets=[]
-	)
-	assets["js"] = [
-		url_for('static', filename='js/app/viewmodels/appearance.js'),
-		url_for('static', filename='js/app/viewmodels/connection.js'),
-		url_for('static', filename='js/app/viewmodels/control.js'),
-		url_for('static', filename='js/app/viewmodels/firstrun.js'),
-		url_for('static', filename='js/app/viewmodels/files.js'),
-		url_for('static', filename='js/app/viewmodels/loginstate.js'),
-		url_for('static', filename='js/app/viewmodels/navigation.js'),
-		url_for('static', filename='js/app/viewmodels/printerstate.js'),
-		url_for('static', filename='js/app/viewmodels/printerprofiles.js'),
-		url_for('static', filename='js/app/viewmodels/settings.js'),
-		url_for('static', filename='js/app/viewmodels/slicing.js'),
-		url_for('static', filename='js/app/viewmodels/temperature.js'),
-		url_for('static', filename='js/app/viewmodels/terminal.js'),
-		url_for('static', filename='js/app/viewmodels/users.js'),
-		url_for('static', filename='js/app/viewmodels/log.js'),
-		url_for('static', filename='js/app/viewmodels/usersettings.js')
-	]
-	if enable_gcodeviewer:
-		assets["js"] += [
-			url_for('static', filename='js/app/viewmodels/gcode.js'),
-			url_for('static', filename='gcodeviewer/js/ui.js'),
-			url_for('static', filename='gcodeviewer/js/gCodeReader.js'),
-			url_for('static', filename='gcodeviewer/js/renderer.js')
-		]
-	if enable_timelapse:
-		assets["js"].append(url_for('static', filename='js/app/viewmodels/timelapse.js'))
-
-	if preferred_stylesheet == "less":
-		assets["stylesheets"].append(("less", url_for('static', filename='less/octoprint.less')))
-	elif preferred_stylesheet == "css":
-		assets["stylesheets"].append(("css", url_for('static', filename='css/octoprint.css')))
-
-	asset_plugins = pluginManager.get_implementations(octoprint.plugin.AssetPlugin)
-	for implementation in asset_plugins:
-		name = implementation._identifier
-		all_assets = implementation.get_assets()
-
-		if "js" in all_assets:
-			for asset in all_assets["js"]:
-				assets["js"].append(url_for('plugin_assets', name=name, filename=asset))
-
-		if preferred_stylesheet in all_assets:
-			for asset in all_assets[preferred_stylesheet]:
-				assets["stylesheets"].append((preferred_stylesheet, url_for('plugin_assets', name=name, filename=asset)))
-		else:
-			for stylesheet in supported_stylesheets:
-				if not stylesheet in all_assets:
-					continue
-
-				for asset in all_assets[stylesheet]:
-					assets["stylesheets"].append((stylesheet, url_for('plugin_assets', name=name, filename=asset)))
-				break
-
 	##~~ prepare templates
 
 	templates = defaultdict(lambda: dict(order=[], entries=dict()))
@@ -315,7 +254,6 @@ def index():
 		gcodeThreshold=settings().get(["gcodeViewer", "sizeThreshold"]),
 		uiApiKey=UI_API_KEY,
 		templates=templates,
-		assets=assets,
 		pluginNames=plugin_names,
 		locales=locales
 	)
