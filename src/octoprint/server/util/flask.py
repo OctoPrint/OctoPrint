@@ -11,6 +11,8 @@ import flask
 import flask.ext.login
 import flask.ext.principal
 import flask.ext.assets
+import webassets.updater
+import webassets.utils
 import functools
 import time
 import uuid
@@ -458,6 +460,46 @@ class PluginAssetResolver(flask.ext.assets.FlaskResolver):
 	def resolve_output_to_path(self, ctx, target, bundle):
 		import os
 		return os.path.normpath(os.path.join(ctx.environment.directory, target))
+
+##~~ Webassets updater that takes changes in the configuration into account
+
+class SettingsCheckUpdater(webassets.updater.BaseUpdater):
+
+	updater = "always"
+
+	def __init__(self):
+		self._delegate = webassets.updater.get_updater(self.__class__.updater)
+
+	def needs_rebuild(self, bundle, ctx):
+		return self._delegate.needs_rebuild(bundle, ctx) or self.changed_settings(ctx)
+
+	def changed_settings(self, ctx):
+		import json
+
+		if not ctx.cache:
+			return False
+
+		cache_key = ('octo', 'settings')
+		current_hash = webassets.utils.hash_func(json.dumps(settings().effective_yaml))
+		cached_hash = ctx.cache.get(cache_key)
+		# This may seem counter-intuitive, but if no cache entry is found
+		# then we actually return "no update needed". This is because
+		# otherwise if no cache / a dummy cache is used, then we would be
+		# rebuilding every single time.
+		if not cached_hash is None:
+			return cached_hash != current_hash
+		return False
+
+	def build_done(self, bundle, ctx):
+		import json
+
+		self._delegate.build_done(bundle, ctx)
+		if not ctx.cache:
+			return
+
+		cache_key = ('octo', 'settings')
+		cache_value = webassets.utils.hash_func(json.dumps(settings().effective_yaml))
+		ctx.cache.set(cache_key, cache_value)
 
 ##~~ plugin assets collector
 

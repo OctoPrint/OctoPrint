@@ -677,6 +677,11 @@ class Server():
 		assets = CustomDirectoryEnvironment(app)
 		assets.debug = not settings().getBoolean(["devel", "webassets", "bundle"])
 
+		UpdaterType = type(util.flask.SettingsCheckUpdater)(util.flask.SettingsCheckUpdater.__name__, (util.flask.SettingsCheckUpdater,), dict(
+			updater=assets.updater
+		))
+		assets.updater = UpdaterType
+
 		enable_gcodeviewer = settings().getBoolean(["gcodeViewer", "enabled"])
 		enable_timelapse = (settings().get(["webcam", "snapshot"]) and settings().get(["webcam", "ffmpeg"]))
 		preferred_stylesheet = settings().get(["devel", "stylesheet"])

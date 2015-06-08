@@ -250,7 +250,7 @@ default_settings = {
 			"enabled": True
 		},
 		"webassets": {
-			"minify": True,
+			"minify": False,
 			"bundle": True
 		},
 		"virtualPrinter": {
@@ -415,7 +415,7 @@ class Settings(object):
 				if source is None:
 					raise TemplateNotFound(template)
 				mtime = self._settings._mtime
-				return source, None, lambda: mtime == self._settings._last_modified
+				return source, None, lambda: mtime == self._settings.last_modified
 
 			def list_templates(self):
 				scripts = self._settings.get(["scripts"], merged=True)
@@ -523,13 +523,23 @@ class Settings(object):
 
 		return map(process_control, controls)
 
+	@property
+	def effective(self):
+		import octoprint.util
+		return octoprint.util.dict_merge(default_settings, self._config)
+
+	@property
+	def effective_yaml(self):
+		import yaml
+		return yaml.safe_dump(self.effective)
+
 	#~~ load and save
 
 	def load(self, migrate=False):
 		if os.path.exists(self._configfile) and os.path.isfile(self._configfile):
 			with open(self._configfile, "r") as f:
 				self._config = yaml.safe_load(f)
-				self._mtime = self._last_modified
+				self._mtime = self.last_modified
 		# changed from else to handle cases where the file exists, but is empty / 0 bytes
 		if not self._config:
 			self._config = {}
@@ -768,7 +778,7 @@ class Settings(object):
 		return True
 
 	@property
-	def _last_modified(self):
+	def last_modified(self):
 		"""
 		Returns:
 		    int: The last modification time of the configuration file.
@@ -924,7 +934,7 @@ class Settings(object):
 		if len(path) == 0:
 			return
 
-		if self._mtime is not None and self._last_modified != self._mtime:
+		if self._mtime is not None and self.last_modified != self._mtime:
 			self.load()
 
 		config = self._config
