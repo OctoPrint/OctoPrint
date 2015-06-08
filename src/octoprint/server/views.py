@@ -60,10 +60,9 @@ def index():
 	hooks = pluginManager.get_hooks("octoprint.ui.web.templatetypes")
 	for name, hook in hooks.items():
 		try:
-			result = hook(dict(template_rules))
+			result = hook(dict(template_sorting), dict(template_rules))
 		except:
-			# TODO
-			pass
+			_logger.exception("Error while retrieving custom template type definitions from plugin {name}".format(**locals()))
 		else:
 			if not isinstance(result, list):
 				continue

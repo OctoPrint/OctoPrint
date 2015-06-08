@@ -406,3 +406,116 @@ octoprint.server.http.routes
    :param list server_routes: read-only list of the currently configured server routes
    :return: a list of 3-tuples with additional routes as defined above
    :rtype: list
+
+.. _sec-plugins-hook-ui-web-templatetypes:
+
+octoprint.ui.web.templatetypes
+------------------------------
+
+.. py:function:: hook(template_sorting, template_rules, *args, **kwargs)
+
+   Allows extending the set of supported template types in the web interface. This is interesting for plugins which want
+   to offer other plugins to hook into their own offered UIs. Handlers must return a list of additional template
+   specifications in form of 3-tuples.
+
+   The first entry of the tuple must be the name of the template type and will be automatically prefixed with
+   ``plugin_<identifier>_``.
+
+   The second entry must be a sorting specification that defines how OctoPrint should sort multiple templates injected
+   through plugins of this template type. The sorting specification should be a dict with the following possible
+   entries:
+
+   .. list-table::
+      :widths: 5 95
+
+      * - **Key**
+        - **Description**
+      * - key
+        - The sorting key within the template config to use for sorting the list of template injections. This may be
+          ``None`` in which case no sorting will be taking place. Defaults to ``name``.
+      * - add
+        - Usually irrelevant for custom template types, only listed for the sake of completeness. The method of adding
+          the sorted list of template injections from plugins to the template injections from the
+          core. May be ``append`` to append the list, ``prepend`` to prepend the list, or ``custom_append`` or
+          ``custom_prepend`` to append respectively prepend but going so after preprocessing the entries and order data
+          with custom functions (e.g. to inject additional entries such as the "Plugins" section header in the settings
+          dialog). For custom template types this defaults to ``append``.
+      * - custom_add_entries
+        - Usually irrelevant for custom template types, only listed for the sake of completeness. Custom preprocessor
+          for the entries provided through plugins, before they are added to the general template entries
+          context variable for the current template type.
+      * - custom_add_order
+        - Usually irrelevant for custom template types, only listed for the sake of completeness. Custom preprocessor
+          for the template order provided through plugins, before they are added to the general template order
+          context variable for the current template type.
+
+   The third entry must be a rule specification in form of a dict which tells OctoPrint how to process the template
+   configuration entries provided by :func:`~octoprint.plugin.TemplatePlugin.get_template_configs` by providing
+   transformation functions of various kinds:
+
+   .. list-table::
+      :widths: 5 95
+
+      * - **Key**
+        - **Description**
+      * - div
+        - Function that returns the id of the container for template content if not explicitely provided by the template
+          config, input parameter is the name of the plugin providing the currently processed template config. If not
+          provided this defaults to a lambda function of the form ``lambda x: "<plugin identifier>_<template type>_plugin_" + x``
+          with ``plugin identifier`` being the identifier of the plugin providing the additional template type.
+      * - template
+        - Function that returns the default template filename for a template type to attempt to include in case no
+          template name is explicitly provided by the template config, input parameter is the name of the plugin provifing
+          the current processed template config. If not provided this defaults to a lambda function of the form
+          ``lambda x: x + "_plugin_<plugin identifier>_<template type>.jinja2"`` with ``plugin identifier`` being the
+          identifier of the plugin providing the additional template type.
+      * - to_entry
+        - Function to transform a template config to the data structure stored in the Jinja context for the injected
+          template. If not provided this defaults to a lambda function returning a 2-tuple of the ``name`` value of
+          the template config and the template config itself (``lambda data: (data["name"], data)``)
+      * - mandatory
+        - A list of keys that must be included in the template config for this template type. Template configs not containing
+          all of the keys in this list will be ignored. Defaults to an empty list.
+
+   OctoPrint will provide all template configs for custom template types in the Jinja rendering context in the same way
+   as it provides the template configs for core template types, through the ``templates`` context variable which is a
+   dict mapping from the template type name (``plugin_<plugin identifier>_<template type>`` for custom ones) to a dict
+   with ``entries`` and ``order`` values, the first containing a dict of all registered template configs, the latter
+   an ordered list of all registered template keys of the type in the order they should be rendered. Plugins should
+   iterate over the ``order`` list and then render each entry utilizing the template entry as provided for the key in
+   the ``entries`` dict (note that this entry will have the format specified through the ``to_entry`` section in the
+   template rule).
+
+   **Example**
+
+   The example consists of two plugins, one providing a custom template type and the other consuming it.
+
+   First the provider:
+
+   .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/custom_template_provider/__init__.py
+      :linenos:
+      :tab-width: 4
+      :caption: `custom_template_provider/__init__.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/custom_template_provider/__init__.py>`_
+
+   .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/custom_template_provider/templates/custom_template_provider_settings.jinja2
+      :linenos:
+      :tab-width: 4
+      :caption: `custom_template_provider/templates/custom_template_provider_settings.jinja2 <https://github.com/OctoPrint/Plugin-Examples/blob/master/custom_template_provider/templates/custom_template_provider_settings.jinja2>`_
+
+   Then the consumer:
+
+   .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/custom_template_consumer/__init__.py
+      :linenos:
+      :tab-width: 4
+      :caption: `custom_template_consumer/__init__.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/custom_template_consumer/__init__.py>`_
+
+   .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/custom_template_consumer/templates/custom_template_consumer_awesometemplate.jinja2
+      :linenos:
+      :tab-width: 4
+      :caption: `custom_template_consumer/templates/custom_template_consumer_awesometemplate.jinja2 <https://github.com/OctoPrint/Plugin-Examples/blob/master/custom_template_consumer/templates/custom_template_consumer_awesometemplate.jinja2>`_
+
+
+   :param dict template_rules: read-only dictionary of currently configured template rules
+   :param dict template_sorting: read-only dictionary of currentl configured template sorting specifications
+   :return: a list of 3-tuples (template type, rule, sorting spec)
+   :rtype: list

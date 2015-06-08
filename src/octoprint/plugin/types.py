@@ -178,7 +178,7 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 	"""
 	Using the ``TemplatePlugin`` mixin plugins may inject their own components into the OctoPrint web interface.
 
-	Currently OctoPrint supports the following types of injections:
+	Currently OctoPrint supports the following types of injections out of the box:
 
 	Navbar
 	   The right part of the navigation bar located at the top of the UI can be enriched with additional links. Note that
@@ -248,13 +248,16 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 	Plugins may replace existing components, see the ``replaces`` keyword in the template configurations returned by
 	:meth:`.get_template_configs` below. Note that if a plugin replaces a core component, it is the plugin's
 	responsibility to ensure that all core functionality is still maintained.
+
+	Plugins can also add additional template types by implementing the :ref:`octoprint.ui.web.templatetypes <sec-plugins-hook-ui-web-templatetypes>` hook.
 	"""
 
 	def get_template_configs(self):
 		"""
-		Allows configuration of injected navbar, sidebar, tab and settings templates. Should be a list containing one
-		configuration object per template to inject. Each configuration object is represented by a dictionary which
-		may contain the following keys:
+		Allows configuration of injected navbar, sidebar, tab and settings templates (and also additional templates of
+		types specified by plugins through the :ref:`octoprint.ui.web.templatetypes <sec-plugins-hook-ui-web-templatetypes>` hook).
+		Should be a list containing one configuration object per template to inject. Each configuration object is
+		represented by a dictionary which may contain the following keys:
 
 		.. list-table::
 		   :widths: 5 95
