@@ -54,7 +54,7 @@ Context
 
 All GCODE scripts have access to the following template variables through the template context:
 
-  * ``printer_profile``: The currently selected :ref:`Printer Profile <>`, including
+  * ``printer_profile``: The currently selected Printer Profile, including
     information such as the extruder count, the build volume size, the filament diameter etc.
   * ``script``: An object wrapping the script's type (``gcode``) and name (e.g. ``afterPrintCancelled``) as ``script.type``
     and ``script.name`` respectively.
