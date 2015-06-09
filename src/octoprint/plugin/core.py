@@ -467,12 +467,13 @@ class PluginManager(object):
 
 	def find_plugins(self, existing=None, ignore_uninstalled=True):
 		if existing is None:
-			existing = self.plugins
+			existing = dict(self.plugins)
 
 		result = dict()
 		if self.plugin_folders:
 			result.update(self._find_plugins_from_folders(self.plugin_folders, existing, ignored_uninstalled=ignore_uninstalled))
 		if self.plugin_entry_points:
+			existing.update(result)
 			result.update(self._find_plugins_from_entry_points(self.plugin_entry_points, existing, ignore_uninstalled=ignore_uninstalled))
 		return result
 
