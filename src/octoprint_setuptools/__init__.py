@@ -437,14 +437,22 @@ def get_babel_commandclasses(pot_file=None,
 
 
 def create_plugin_setup_parameters(identifier="todo", name="TODO", version="0.1", description="TODO", author="TODO",
-                                   mail="todo@example.com", url="TODO", license="AGPLv3", additional_data=None,
-                                   requires=None, extra_requires=None, cmdclass=None, eggs=None):
+                                   mail="todo@example.com", url="TODO", license="AGPLv3", source_folder=".", additional_data=None,
+                                   additional_packages=None, ignored_packages=None, requires=None, extra_requires=None,
+                                   cmdclass=None, eggs=None, package=None):
 	import pkg_resources
 
-	package = "octoprint_{identifier}".format(**locals())
+	if package is None:
+		package = "octoprint_{identifier}".format(**locals())
 
 	if additional_data is None:
 		additional_data = list()
+
+	if additional_packages is None:
+		additional_packages = list()
+
+	if ignored_packages is None:
+		ignored_packages = list()
 
 	if requires is None:
 		requires = ["OctoPrint"]
@@ -473,14 +481,17 @@ def create_plugin_setup_parameters(identifier="todo", name="TODO", version="0.1"
 		eggs = [egg] + eggs
 
 	cmdclass.update(dict(
-		clean=CleanCommand.for_options(source_folder=package, eggs=eggs)
+		clean=CleanCommand.for_options(source_folder=os.path.join(source_folder, package), eggs=eggs)
 	))
 
-	translation_dir = os.path.join("translations")
+	translation_dir = os.path.join(source_folder, "translations")
 	pot_file = os.path.join(translation_dir, "messages.pot")
-	bundled_dir = os.path.join(package, "translations")
+	bundled_dir = os.path.join(source_folder, package, "translations")
 	if os.path.isdir(translation_dir) and os.path.isfile(pot_file):
 		cmdclass.update(get_babel_commandclasses(pot_file=pot_file, output_dir=translation_dir, bundled_dir=bundled_dir, pack_name_prefix="{name}-i18n-".format(**locals()), pack_path_prefix="_plugins/{identifier}/".format(**locals())))
+
+	from setuptools import find_packages
+	packages = find_packages(where=source_folder, exclude=ignored_packages, include=[package, "{package}.*".format(**locals())] + additional_packages)
 
 	return dict(
 		name=name,
@@ -495,10 +506,10 @@ def create_plugin_setup_parameters(identifier="todo", name="TODO", version="0.1"
 		cmdclass=cmdclass,
 
 		# we only have our plugin package to install
-		packages=[package],
+		packages=packages,
 
 		# we might have additional data files in sub folders that need to be installed too
-		package_data={package: package_data_dirs(package, ["static", "templates", "translations"] + additional_data)},
+		package_data={package: package_data_dirs(os.path.join(source_folder, package), ["static", "templates", "translations"] + additional_data)},
 		include_package_data=True,
 
 		# If you have any package data that needs to be accessible on the file system, such as templates or static assets
