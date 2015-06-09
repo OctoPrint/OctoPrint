@@ -24,7 +24,7 @@ def perform_update(target, check, target_version):
 	install_arg = check["pip"].format(target_version=target_version)
 
 	logger.debug("Target: %s, executing pip install %s" % (target, install_arg))
-	pip_args = ["install", check["pip"].format(target_version=target_version)]
+	pip_args = ["install", check["pip"].format(target_version=target_version, target=target_version)]
 	_pip.main(pip_args)
 
 	if "force_reinstall" in check and check["force_reinstall"]:
