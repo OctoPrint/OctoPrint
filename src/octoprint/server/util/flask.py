@@ -141,7 +141,38 @@ def fix_webassets_cache():
 			os.remove(temp_filename)
 			raise
 
+	def fixed_get(self, key):
+		import os
+		import errno
+		import warnings
+		from webassets.cache import make_md5
+
+		try:
+			hash = make_md5(self.V, key)
+		except IOError as e:
+			if e.errno != errno.ENOENT:
+				raise
+			return None
+
+		filename = os.path.join(self.directory, '%s' % hash)
+		try:
+			f = open(filename, 'rb')
+		except IOError as e:
+			if e.errno != errno.ENOENT:
+				raise
+			return None
+		try:
+			result = f.read()
+		finally:
+			f.close()
+
+		unpickled = webassets.cache.safe_unpickle(result)
+		if unpickled is None:
+			warnings.warn('Ignoring corrupted cache file %s' % filename)
+		return unpickled
+
 	cache.FilesystemCache.set = fixed_set
+	cache.FilesystemCache.get = fixed_get
 
 #~~ passive login helper
 
