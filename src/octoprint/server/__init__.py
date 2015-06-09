@@ -39,6 +39,7 @@ eventManager = None
 loginManager = None
 pluginManager = None
 appSessionManager = None
+pluginLifecycleManager = None
 
 principals = Principal(app)
 admin_permission = Permission(RoleNeed("admin"))
@@ -138,6 +139,7 @@ class Server():
 		global loginManager
 		global pluginManager
 		global appSessionManager
+		global pluginLifecycleManager
 		global debug
 
 		from tornado.ioloop import IOLoop
@@ -606,7 +608,7 @@ class Server():
 
 	def _setup_blueprints(self):
 		from octoprint.server.api import api
-		from octoprint.server.apps import apps
+		from octoprint.server.apps import apps, clear_registered_app
 		import octoprint.server.views
 
 		app.register_blueprint(api, url_prefix="/api")
@@ -617,6 +619,12 @@ class Server():
 
 		# and register a blueprint for serving the static files of asset plugins which are not blueprint plugins themselves
 		self._register_asset_plugins()
+
+		global pluginLifecycleManager
+		def clear_apps(name, plugin):
+			clear_registered_app()
+		pluginLifecycleManager.add_callback("enabled", clear_apps)
+		pluginLifecycleManager.add_callback("disabled", clear_apps)
 
 	def _register_blueprint_plugins(self):
 		blueprint_plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.BlueprintPlugin)

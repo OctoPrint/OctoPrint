@@ -1038,25 +1038,13 @@ class AppPlugin(OctoPrintPlugin):
 	"""
 	Using the :class:`AppPlugin mixin` plugins may register additional :ref:`App session key providers <sec-api-apps-sessionkey>`
 	within the system.
+
+	.. deprecated:: 1.2.0
+
+	   Refer to the :ref:`octoprint.accesscontrol.appkey hook <sec-plugins-hook-accesscontrol-appkey>` instead.
+
 	"""
 
 	def get_additional_apps(self):
-		"""
-		Overrides this to return your additional app information to be used for validating app session keys. You'll
-		need to return a :class:`list` of 3-tuples of the format (id, version, public key).
-
-		The ``id`` should be the (unique) identifier of the app. Using a domain prefix might make sense here, e.g.
-		``org.octoprint.example.MyApp``.
-
-		``version`` should be a string specifying the version of the app for which the public key is valid. You can
-		provide the string ``any`` here, in which case the provided public key will be valid for all versions of the
-		app for which no specific public key is defined.
-
-		Finally, the public key is expected to be provided as a PKCS1 string without newlines.
-
-		Returns:
-		    list: A list of 3-tuples as described above.
-		"""
-
 		return []
 

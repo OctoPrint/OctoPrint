@@ -91,11 +91,3 @@ SlicerPlugin
 .. autoclass:: octoprint.plugin.SlicerPlugin
    :members:
 
-.. _sec-plugins-mixins-appplugin:
-
-AppPlugin
----------
-
-.. autoclass:: octoprint.plugin.AppPlugin
-   :members:
-

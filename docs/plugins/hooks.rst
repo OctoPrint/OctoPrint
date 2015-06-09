@@ -12,6 +12,31 @@ Available plugin hooks
 .. contents::
    :local:
 
+.. _sec-plugins-hook-accesscontrol-appkey:
+
+octoprint.accesscontrol.appkey
+------------------------------
+
+.. py:function:: hook(*args, **kwargs)
+
+   By handling this hook plugins may register additional :ref:`App session key providers <sec-api-apps-sessionkey>`
+   within the system.
+
+   Overrides this to return your additional app information to be used for validating app session keys. You'll
+   need to return a list of 3-tuples of the format (id, version, public key).
+
+   The ``id`` should be the (unique) identifier of the app. Using a domain prefix might make sense here, e.g.
+   ``org.octoprint.example.MyApp``.
+
+   ``version`` should be a string specifying the version of the app for which the public key is valid. You can
+   provide the string ``any`` here, in which case the provided public key will be valid for all versions of the
+   app for which no specific public key is defined.
+
+   Finally, the public key is expected to be provided as a PKCS1 string without newlines.
+
+   :return: A list of 3-tuples as described above
+   :rtype: list
+
 .. _sec-plugins-hook-comm-protocol-action:
 
 octoprint.comm.protocol.action

@@ -135,36 +135,42 @@ class PluginInfo(object):
 		self._url = url
 		self._license = license
 
-	def validate(self):
-		# if the plugin still uses __plugin_implementations__, log a deprecation warning and put the first
-		# item into __plugin_implementation__
-		if hasattr(self.instance, self.__class__.attr_implementations):
-			if not hasattr(self.instance, self.__class__.attr_implementation):
-				# deprecation warning
-				import warnings
-				warnings.warn("{name} uses deprecated control property __plugin_implementations__, use __plugin_implementation__ instead - only the first implementation of {name} will be recognized".format(name=self.key), DeprecationWarning)
+	def validate(self, phase, additional_validators=None):
+		if phase == "before_load":
+			# if the plugin still uses __plugin_init__, log a deprecation warning and move it to __plugin_load__
+			if hasattr(self.instance, self.__class__.attr_init):
+				if not hasattr(self.instance, self.__class__.attr_load):
+					# deprecation warning
+					import warnings
+					warnings.warn("{name} uses deprecated control property __plugin_init__, use __plugin_load__ instead".format(name=self.key), DeprecationWarning)
 
-				# put first item into __plugin_implementation__
-				implementations = getattr(self.instance, self.__class__.attr_implementations)
-				if len(implementations) > 0:
-					setattr(self.instance, self.__class__.attr_implementation, implementations[0])
+					# move it
+					init = getattr(self.instance, self.__class__.attr_init)
+					setattr(self.instance, self.__class__.attr_load, init)
 
-			# delete __plugin_implementations__
-			delattr(self.instance, self.__class__.attr_implementations)
+				# delete __plugin_init__
+				delattr(self.instance, self.__class__.attr_init)
 
-		# if the plugin still uses __plugin_init__, log a deprecation warning and move it to __plugin_load__
-		if hasattr(self.instance, self.__class__.attr_init):
-			if not hasattr(self.instance, self.__class__.attr_load):
-				# deprecation warning
-				import warnings
-				warnings.warn("{name} uses deprecated control property __plugin_init__, use __plugin_load__ instead".format(name=self.key), DeprecationWarning)
+		elif phase == "after_load":
+			# if the plugin still uses __plugin_implementations__, log a deprecation warning and put the first
+			# item into __plugin_implementation__
+			if hasattr(self.instance, self.__class__.attr_implementations):
+				if not hasattr(self.instance, self.__class__.attr_implementation):
+					# deprecation warning
+					import warnings
+					warnings.warn("{name} uses deprecated control property __plugin_implementations__, use __plugin_implementation__ instead - only the first implementation of {name} will be recognized".format(name=self.key), DeprecationWarning)
 
-				# move it
-				init = getattr(self.instance, self.__class__.attr_init)
-				setattr(self.instance, self.__class__.attr_load, init)
+					# put first item into __plugin_implementation__
+					implementations = getattr(self.instance, self.__class__.attr_implementations)
+					if len(implementations) > 0:
+						setattr(self.instance, self.__class__.attr_implementation, implementations[0])
 
-			# delete __plugin_init__
-			delattr(self.instance, self.__class__.attr_init)
+				# delete __plugin_implementations__
+				delattr(self.instance, self.__class__.attr_implementations)
+
+		if additional_validators is not None:
+			for validator in additional_validators:
+				validator(phase, self)
 
 	def __str__(self):
 		if self.version:
@@ -422,7 +428,7 @@ class PluginManager(object):
 	It is able to discover plugins both through possible file system locations as well as customizable entry points.
 	"""
 
-	def __init__(self, plugin_folders, plugin_types, plugin_entry_points, logging_prefix=None, plugin_disabled_list=None, plugin_restart_needing_hooks=None, plugin_obsolete_hooks=None):
+	def __init__(self, plugin_folders, plugin_types, plugin_entry_points, logging_prefix=None, plugin_disabled_list=None, plugin_restart_needing_hooks=None, plugin_obsolete_hooks=None, plugin_validators=None):
 		self.logger = logging.getLogger(__name__)
 
 		if logging_prefix is None:
@@ -436,6 +442,7 @@ class PluginManager(object):
 		self.plugin_disabled_list = plugin_disabled_list
 		self.plugin_restart_needing_hooks = plugin_restart_needing_hooks
 		self.plugin_obsolete_hooks = plugin_obsolete_hooks
+		self.plugin_validators = plugin_validators
 		self.logging_prefix = logging_prefix
 
 		self.enabled_plugins = dict()
@@ -645,8 +652,9 @@ class PluginManager(object):
 			plugin = self.plugins[name]
 
 		try:
+			plugin.validate("before_load", additional_validators=self.plugin_validators)
 			plugin.load()
-			plugin.validate()
+			plugin.validate("after_load", additional_validators=self.plugin_validators)
 			self.on_plugin_loaded(name, plugin)
 
 			plugin.loaded = True
