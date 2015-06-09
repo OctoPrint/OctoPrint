@@ -49,6 +49,6 @@
     </div>
     <div class="modal-footer">
         <button class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Cancel') }}</button>
-        <button class="btn btn-primary" data-bind="click: saveData">{{ _('Save') }}</button>
+        <button class="btn btn-primary" data-bind="click: function() { saveData(undefined, $root.hide) }">{{ _('Save') }}</button>
     </div>
 </div>

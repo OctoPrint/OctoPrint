@@ -246,6 +246,10 @@ $(function() {
             return false;
         };
 
+        self.hide = function() {
+            self.settingsDialog.modal("hide");
+        };
+
         self.showTranslationManager = function() {
             self.translationManagerDialog.modal();
             return false;
@@ -411,88 +415,90 @@ $(function() {
             self.terminalFilters(response.terminalFilters);
         };
 
-        self.saveData = function () {
+        self.saveData = function (data, successCallback) {
             self.settingsDialog.trigger("beforeSave");
 
-            var data = ko.mapping.toJS(self.settings);
+            if (data == undefined) {
+                data = ko.mapping.toJS(self.settings);
 
-            data = _.extend(data, {
-                "api" : {
-                    "enabled": self.api_enabled(),
-                    "key": self.api_key(),
-                    "allowCrossOrigin": self.api_allowCrossOrigin()
-                },
-                "appearance" : {
-                    "name": self.appearance_name(),
-                    "color": self.appearance_color(),
-                    "colorTransparent": self.appearance_colorTransparent(),
-                    "defaultLanguage": self.appearance_defaultLanguage()
-                },
-                "printer": {
-                    "defaultExtrusionLength": self.printer_defaultExtrusionLength()
-                },
-                "webcam": {
-                    "streamUrl": self.webcam_streamUrl(),
-                    "snapshotUrl": self.webcam_snapshotUrl(),
-                    "ffmpegPath": self.webcam_ffmpegPath(),
-                    "bitrate": self.webcam_bitrate(),
-                    "ffmpegThreads": self.webcam_ffmpegThreads(),
-                    "watermark": self.webcam_watermark(),
-                    "flipH": self.webcam_flipH(),
-                    "flipV": self.webcam_flipV(),
-                    "rotate90": self.webcam_rotate90()
-                },
-                "feature": {
-                    "gcodeViewer": self.feature_gcodeViewer(),
-                    "temperatureGraph": self.feature_temperatureGraph(),
-                    "waitForStart": self.feature_waitForStart(),
-                    "alwaysSendChecksum": self.feature_alwaysSendChecksum(),
-                    "sdSupport": self.feature_sdSupport(),
-                    "sdAlwaysAvailable": self.feature_sdAlwaysAvailable(),
-                    "swallowOkAfterResend": self.feature_swallowOkAfterResend(),
-                    "repetierTargetTemp": self.feature_repetierTargetTemp(),
-                    "externalHeatupDetection": !self.feature_disableExternalHeatupDetection(),
-                    "keyboardControl": self.feature_keyboardControl()
-                },
-                "serial": {
-                    "port": self.serial_port(),
-                    "baudrate": self.serial_baudrate(),
-                    "autoconnect": self.serial_autoconnect(),
-                    "timeoutConnection": self.serial_timeoutConnection(),
-                    "timeoutDetection": self.serial_timeoutDetection(),
-                    "timeoutCommunication": self.serial_timeoutCommunication(),
-                    "timeoutTemperature": self.serial_timeoutTemperature(),
-                    "timeoutSdStatus": self.serial_timeoutSdStatus(),
-                    "log": self.serial_log(),
-                    "additionalPorts": commentableLinesToArray(self.serial_additionalPorts()),
-                    "longRunningCommands": splitTextToArray(self.serial_longRunningCommands(), ",", true)
-                },
-                "folder": {
-                    "uploads": self.folder_uploads(),
-                    "timelapse": self.folder_timelapse(),
-                    "timelapseTmp": self.folder_timelapseTmp(),
-                    "logs": self.folder_logs(),
-                    "watched": self.folder_watched()
-                },
-                "temperature": {
-                    "profiles": self.temperature_profiles(),
-                    "cutoff": self.temperature_cutoff()
-                },
-                "system": {
-                    "actions": self.system_actions()
-                },
-                "terminalFilters": self.terminalFilters(),
-                "scripts": {
-                    "gcode": {
-                        "beforePrintStarted": self.scripts_gcode_beforePrintStarted(),
-                        "afterPrintDone": self.scripts_gcode_afterPrintDone(),
-                        "afterPrintCancelled": self.scripts_gcode_afterPrintCancelled(),
-                        "afterPrintPaused": self.scripts_gcode_afterPrintPaused(),
-                        "beforePrintResumed": self.scripts_gcode_beforePrintResumed(),
-                        "afterPrinterConnected": self.scripts_gcode_afterPrinterConnected()
+                data = _.extend(data, {
+                    "api" : {
+                        "enabled": self.api_enabled(),
+                        "key": self.api_key(),
+                        "allowCrossOrigin": self.api_allowCrossOrigin()
+                    },
+                    "appearance" : {
+                        "name": self.appearance_name(),
+                        "color": self.appearance_color(),
+                        "colorTransparent": self.appearance_colorTransparent(),
+                        "defaultLanguage": self.appearance_defaultLanguage()
+                    },
+                    "printer": {
+                        "defaultExtrusionLength": self.printer_defaultExtrusionLength()
+                    },
+                    "webcam": {
+                        "streamUrl": self.webcam_streamUrl(),
+                        "snapshotUrl": self.webcam_snapshotUrl(),
+                        "ffmpegPath": self.webcam_ffmpegPath(),
+                        "bitrate": self.webcam_bitrate(),
+                        "ffmpegThreads": self.webcam_ffmpegThreads(),
+                        "watermark": self.webcam_watermark(),
+                        "flipH": self.webcam_flipH(),
+                        "flipV": self.webcam_flipV(),
+                        "rotate90": self.webcam_rotate90()
+                    },
+                    "feature": {
+                        "gcodeViewer": self.feature_gcodeViewer(),
+                        "temperatureGraph": self.feature_temperatureGraph(),
+                        "waitForStart": self.feature_waitForStart(),
+                        "alwaysSendChecksum": self.feature_alwaysSendChecksum(),
+                        "sdSupport": self.feature_sdSupport(),
+                        "sdAlwaysAvailable": self.feature_sdAlwaysAvailable(),
+                        "swallowOkAfterResend": self.feature_swallowOkAfterResend(),
+                        "repetierTargetTemp": self.feature_repetierTargetTemp(),
+                        "externalHeatupDetection": !self.feature_disableExternalHeatupDetection(),
+                        "keyboardControl": self.feature_keyboardControl()
+                    },
+                    "serial": {
+                        "port": self.serial_port(),
+                        "baudrate": self.serial_baudrate(),
+                        "autoconnect": self.serial_autoconnect(),
+                        "timeoutConnection": self.serial_timeoutConnection(),
+                        "timeoutDetection": self.serial_timeoutDetection(),
+                        "timeoutCommunication": self.serial_timeoutCommunication(),
+                        "timeoutTemperature": self.serial_timeoutTemperature(),
+                        "timeoutSdStatus": self.serial_timeoutSdStatus(),
+                        "log": self.serial_log(),
+                        "additionalPorts": commentableLinesToArray(self.serial_additionalPorts()),
+                        "longRunningCommands": splitTextToArray(self.serial_longRunningCommands(), ",", true)
+                    },
+                    "folder": {
+                        "uploads": self.folder_uploads(),
+                        "timelapse": self.folder_timelapse(),
+                        "timelapseTmp": self.folder_timelapseTmp(),
+                        "logs": self.folder_logs(),
+                        "watched": self.folder_watched()
+                    },
+                    "temperature": {
+                        "profiles": self.temperature_profiles(),
+                        "cutoff": self.temperature_cutoff()
+                    },
+                    "system": {
+                        "actions": self.system_actions()
+                    },
+                    "terminalFilters": self.terminalFilters(),
+                    "scripts": {
+                        "gcode": {
+                            "beforePrintStarted": self.scripts_gcode_beforePrintStarted(),
+                            "afterPrintDone": self.scripts_gcode_afterPrintDone(),
+                            "afterPrintCancelled": self.scripts_gcode_afterPrintCancelled(),
+                            "afterPrintPaused": self.scripts_gcode_afterPrintPaused(),
+                            "beforePrintResumed": self.scripts_gcode_beforePrintResumed(),
+                            "afterPrinterConnected": self.scripts_gcode_afterPrinterConnected()
+                        }
                     }
-                }
-            });
+                });
+            }
 
             $.ajax({
                 url: API_BASEURL + "settings",
@@ -502,7 +508,7 @@ $(function() {
                 data: JSON.stringify(data),
                 success: function(response) {
                     self.fromResponse(response);
-                    self.settingsDialog.modal("hide");
+                    if (successCallback) successCallback(response);
                 }
             });
         };
