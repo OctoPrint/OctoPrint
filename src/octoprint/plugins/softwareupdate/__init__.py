@@ -33,6 +33,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		self._update_in_progress = False
 		self._configured_checks_mutex = threading.Lock()
 		self._configured_checks = None
+		self._refresh_configured_checks = False
 
 		self._version_cache = dict()
 		self._version_cache_ttl = 0
@@ -40,9 +41,15 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 	def initialize(self):
 		self._version_cache_ttl = self._settings.get_int(["cache_ttl"]) * 60
 
+		def refresh_checks(name, plugin):
+			self._refresh_configured_checks = True
+		self._plugin_lifecycle_manager.add_callback("enabled", refresh_checks)
+		self._plugin_lifecycle_manager.add_callback("disabled", refresh_checks)
+
 	def _get_configured_checks(self):
 		with self._configured_checks_mutex:
-			if self._configured_checks is None:
+			if self._refresh_configured_checks or self._configured_checks is None:
+				self._refresh_configured_checks = False
 				self._configured_checks = self._settings.get(["checks"], merged=True)
 				update_check_hooks = self._plugin_manager.get_hooks("octoprint.plugin.softwareupdate.check_config")
 				for name, hook in update_check_hooks.items():
