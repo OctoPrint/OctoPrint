@@ -59,7 +59,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 	def get_settings_defaults(self):
 		return dict(
 			repository="http://plugins.octoprint.org/plugins.json",
-			pip=None
+			pip=None,
+			dependency_links=False
 		)
 
 	##~~ AssetPlugin
@@ -143,7 +144,10 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		if command == "install":
 			url = data["url"]
 			plugin_name = data["plugin"] if "plugin" in data else None
-			return self.command_install(url=url, force="force" in data and data["force"] in valid_boolean_trues, reinstall=plugin_name)
+			return self.command_install(url=url,
+			                            force="force" in data and data["force"] in valid_boolean_trues,
+			                            dependency_links="dependency_links" in data and data["dependency_links"] in valid_boolean_trues,
+			                            reinstall=plugin_name)
 
 		elif command == "uninstall":
 			plugin_name = data["plugin"]
@@ -165,13 +169,16 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			self._repository_available = self._refresh_repository()
 			return jsonify(repository=dict(available=self._repository_available, plugins=self._repository_plugins))
 
-	def command_install(self, url=None, path=None, force=False, reinstall=None):
+	def command_install(self, url=None, path=None, force=False, reinstall=None, dependency_links=False):
 		if url is not None:
 			pip_args = ["install", sarge.shell_quote(url)]
 		elif path is not None:
 			pip_args = ["install", path]
 		else:
 			raise ValueError("Either url or path must be provided")
+
+		if dependency_links or self._settings.get_boolean(["dependency_links"]):
+			pip_args.append("--process-dependency-links")
 
 		all_plugins_before = self._plugin_manager.find_plugins()
 
@@ -489,6 +496,10 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 		def map_repository_entry(entry):
 			result = dict(entry)
+
+			if not "follow_dependency_links" in result:
+				result["follow_dependency_links"] = False
+
 			result["is_compatible"] = dict(
 				octoprint=True,
 				os=True
