@@ -13,6 +13,7 @@ import octoprint_setuptools
 
 # Requirements for our application
 INSTALL_REQUIRES = [
+	"setuptools==7.0",
 	"flask>=0.9,<0.11",
 	"werkzeug==0.8.3",
 	"tornado==4.0.1",
