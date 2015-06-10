@@ -211,7 +211,7 @@
     "Operational" state.
   * Log cancelled prints only once (thanks to @imrahil for the headsup)
 
-([Commits](https://github.com/foosel/OctoPrint/compare/master...devel))
+([Commits](https://github.com/foosel/OctoPrint/compare/1.1.2...master))
 
 ## 1.1.2 (2015-03-23)
 
