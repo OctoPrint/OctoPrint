@@ -445,7 +445,7 @@ class PluginSettings(object):
 
 	##~~ deprecated methods follow
 
-	# TODO: Remove with release of 1.2.0
+	# TODO: Remove with release of 1.3.0
 
 	globalGet            = deprecated("globalGet has been renamed to global_get",
 	                                  includedoc="Replaced by :func:`global_get`",
