@@ -423,7 +423,8 @@ def localeJs(locale, domain):
 		domain=domain
 	)
 
-	return render_template("i18n.js.jinja2", catalog=catalog)
+	from flask import Response
+	return Response(render_template("i18n.js.jinja2", catalog=catalog), content_type="application/x-javascript; charset=utf-8")
 
 
 @app.route("/plugin_assets/<string:name>/<path:filename>")
