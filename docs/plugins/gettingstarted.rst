@@ -19,7 +19,7 @@ We'll start at the most basic form a plugin can take - just a couple of simple l
    from __future__ import absolute_import
 
    __plugin_name__ = "Hello World"
-   __plugin_version__ = "1.0"
+   __plugin_version__ = "1.0.0"
    __plugin_description__ = "A quick \"Hello World\" example plugin for OctoPrint"
 
 Saving this as ``helloworld.py`` in ``~/.octoprint/plugins`` yields you something resembling these log entries upon server startup::
@@ -31,7 +31,7 @@ Saving this as ``helloworld.py`` in ``~/.octoprint/plugins`` yields you somethin
    2015-01-27 11:14:36,135 - octoprint.plugin.core - INFO - 3 plugin(s) registered with the system:
    | CuraEngine (bundled) = /home/pi/OctoPrint/src/octoprint/plugins/cura
    | Discovery (bundled) = /home/pi/OctoPrint/src/octoprint/plugins/discovery
-   | Hello World (1.0) = /home/pi/.octoprint/plugins/helloworld.py
+   | Hello World (1.0.0) = /home/pi/.octoprint/plugins/helloworld.py
 
 OctoPrint found that plugin in the folder and took a look into it. The name and the version it displays in that log
 entry it got from the ``__plugin_name__`` and ``__plugin_version__`` lines. It also read the description from
@@ -59,7 +59,7 @@ Apart from being discovered by OctoPrint, our plugin does nothing yet. We want t
            self._logger.info("Hello World!")
 
    __plugin_name__ = "Hello World"
-   __plugin_version__ = "1.0"
+   __plugin_version__ = "1.0.0"
    __plugin_description__ = "A quick \"Hello World\" example plugin for OctoPrint"
    __plugin_implementation__ = HelloWorldPlugin()
 
@@ -95,33 +95,101 @@ as a simple python file following the naming convention ``<plugin identifier>.py
 that can be done in one file. Distributing multiple files and getting your users to install them in the right way
 so that OctoPrint will be able to actually find and load them is certainly not impossible, but we want to do it in the
 best way possible, meaning we want to make our plugin a fully installable python module that your users will be able to
-install directly via Python's standard package manager ``pip`` or alternatively via `OctoPrint's own plugin manager <https://github.com/OctoPrint/OctoPrint-PluginManager>`_.
+install directly via `OctoPrint's built-in Plugin Manager <https://github.com/foosel/OctoPrint/wiki/Plugin:-Plugin-Manager>`_
+or alternatively manually utilizing Python's standard package manager ``pip`` directly.
 
-So let's begin. First checkout the `Plugin Skeleton <https://github.com/OctoPrint/OctoPrint-PluginSkeleton>`_ and rename
-the ``octoprint_skeleton`` folder to something better suited to our "Hello World" plugin::
+So let's begin. We'll use the `cookiecutter <https://github.com/audreyr/cookiecutter>`_ template for OctoPrint plugins here,
+so we'll first need to install that::
 
-   $ git clone https://github.com/OctoPrint/OctoPrint-PluginSkeleton.git OctoPrint-HelloWorld
-   Cloning into 'OctoPrint-HelloWorld'...
-   [...]
+   $ pip install cookiecutter
+
+Then we can use the ``cookiecutter`` command to generate a new OctoPrint plugin skeleton for us::
+
+   $ cookiecutter gh:OctoPrint/cookiecutter-octoprint-plugin
+   Cloning into 'cookiecutter-octoprint-plugin'...
+   remote: Counting objects: 70, done.
+   remote: Compressing objects: 100% (17/17), done.
+   emote: Total 70 (delta 0), reused 0 (delta 0), pack-reused 51
+   Unpacking objects: 100% (70/70), done.
+   Checking connectivity... done.
+   plugin_identifier (default is "skeleton")? helloworld
+   plugin_package (default is "octoprint_helloworld")?
+   plugin_name (default is "OctoPrint-Helloworld")?
+   repo_name (default is "OctoPrint-Helloworld")?
+   full_name (default is "You")? Your Name
+   email (default is "you@example.com")? you@somewhere.net
+   github_username (default is "you")? yourGithubName
+   plugin_version (default is "0.1.0")? 1.0.0
+   plugin_description (default is "TODO")? A quick "Hello World" example plugin for OctoPrint
+   plugin_license (default is "AGPLv3")?
+   plugin_homepage (default is "https://github.com/yourGithubName/OctoPrint-Helloworld")?
+   plugin_source (default is "https://github.com/yourGithubName/OctoPrint-Helloworld")?
+   plugin_installurl (default is "https://github.com/yourGithubName/OctoPrint-Helloworld/archive/master.zip")?
    $ cd OctoPrint-HelloWorld
-   $ mv octoprint_skeleton octoprint_helloworld
 
-Then edit the configuration in the ``setup.py`` file to mirror our own "Hello World" plugin. The configuration should
-look something like this:
+This will create a project structure in the ``OctoPrint-HelloWorld`` folder we just changed to that looks like this::
+
+   extras/
+       README.txt
+       helloworld.md
+   octoprint_helloworld/
+       static/
+           css/
+               README.txt
+           js/
+               README.txt
+           less/
+               README.txt
+       templates/
+           README.txt
+       __init__.py
+   translations/
+       README.txt
+   .editorconfig
+   .gitignore
+   babel.cfg
+   MANIFEST.in
+   README.md
+   requirements.txt
+   setup.py
+
+While we'll need some of those folders later on, we'll now delete everything that we don't need right now first, that
+will make it easier to understand what folder does what later on. Delete the following folders and anything in them:
+
+  * ``extras``
+  * ``translations``
+  * ``octoprint_helloworld/static``
+  * ``octoprint_helloworld/templates``
+
+The final project structure should look like this for now::
+
+   octoprint_helloworld/
+       __init__.py
+   .editorconfig
+   .gitignore
+   babel.cfg
+   MANIFEST.in
+   README.md
+   requirements.txt
+   setup.py
+
+Out of curiosity, take a look into the ``setup.py`` file. The cookiecutter template should have prefilled all the
+configuration parameters for you:
 
 .. code-block:: python
-   :linenos:
 
    plugin_identifier = "helloworld"
-   plugin_name = "OctoPrint-HelloWorld"
-   plugin_version = "1.0"
-   plugin_description = "A quick \"Hello World\" example plugin for OctoPrint"
-   plugin_author = "You"
+   plugin_package = "octoprint_helloworld"
+   plugin_name = "OctoPrint-Helloworld"
+   plugin_version = "1.0.0"
+   plugin_description = """A quick "Hello World" example plugin for OctoPrint"""
+   plugin_author = "Your Name"
    plugin_author_email = "you@somewhere.net"
-   plugin_url = "https://github.com/you/OctoPrint-HelloWorld"
+   plugin_url = "https://github.com/yourGithubName/OctoPrint-Helloworld"
+   plugin_license = "AGPLv3"
 
 Now all that's left to do is to move our ``helloworld.py`` into the ``octoprint_helloworld`` folder and renaming it to
-``__init__.py``. Make sure to delete the copy under ``~/.octoprint/plugins`` in the process, including the `.pyc` file!
+``__init__.py``. Make sure to delete the copy under ``~/.octoprint/plugins`` in the process, including the ``.pyc`` file!
 
 The plugin is now ready to be installed via ``python setup.py install``. However, since we are still
 working on our plugin, it makes more sense to use ``python setup.py develop`` for now -- this way the plugin becomes
@@ -132,7 +200,7 @@ discoverable by OctoPrint, however we don't have to reinstall it after any chang
    running egg_info
    creating OctoPrint_HelloWorld.egg-info
    [...]
-   Finished processing dependencies for OctoPrint-HelloWorld==1.0
+   Finished processing dependencies for OctoPrint-HelloWorld==1.0.0
 
 Restart OctoPrint. Your plugin should still be properly discovered and the log line should be printed::
 
@@ -143,7 +211,7 @@ Restart OctoPrint. Your plugin should still be properly discovered and the log l
    2015-01-27 13:43:34,818 - octoprint.plugin.core - INFO - 3 plugin(s) registered with the system:
    | CuraEngine (bundled) = /home/pi/OctoPrint/src/octoprint/plugins/cura
    | Discovery (bundled) = /home/pi/OctoPrint/src/octoprint/plugins/discovery
-   | Hello World (1.0) = /home/pi/OctoPrint-HelloWorld/octoprint_helloworld
+   | Hello World (1.0.0) = /home/pi/OctoPrint-HelloWorld/octoprint_helloworld
    [...]
    2015-01-27 13:43:38,997 - octoprint.plugins.helloworld - INFO - Hello World!
 
@@ -157,7 +225,7 @@ of information now defined twice:
    :caption: __init__.py
 
    __plugin_name__ = "Hello World"
-   __plugin_version__ = "1.0"
+   __plugin_version__ = "1.0.0"
    __plugin_description__ = "A quick \"Hello World\" example plugin for OctoPrint"
 
 .. code-block:: python
@@ -165,7 +233,7 @@ of information now defined twice:
    :caption: setup.py
 
    plugin_name = "OctoPrint-HelloWorld"
-   plugin_version = "1.0"
+   plugin_version = "1.0.0"
    plugin_description = "A quick \"Hello World\" example plugin for OctoPrint"
 
 The nice thing about our plugin now being a proper python package is that OctoPrint can and will access the metadata defined
@@ -191,7 +259,7 @@ and restart OctoPrint::
    2015-01-27 13:46:33,786 - octoprint.plugin.core - INFO - 3 plugin(s) registered with the system:
    | CuraEngine (bundled) = /home/pi/OctoPrint/src/octoprint/plugins/cura
    | Discovery (bundled) = /home/pi/OctoPrint/src/octoprint/plugins/discovery
-   | OctoPrint-HelloWorld (1.0) = /home/pi/OctoPrint-HelloWorld/octoprint_helloworld
+   | OctoPrint-HelloWorld (1.0.0) = /home/pi/OctoPrint-HelloWorld/octoprint_helloworld
 
 Our "Hello World" Plugin still gets detected fine, but it's now listed under the same name it's installed under,
 "OctoPrint-HelloWorld". That's a bit redundant and squashed, so we'll override that bit via ``__plugin_name__`` again:
@@ -218,7 +286,7 @@ Restart OctoPrint again::
    2015-01-27 13:48:54,122 - octoprint.plugin.core - INFO - 3 plugin(s) registered with the system:
    | CuraEngine (bundled) = /home/pi/OctoPrint/src/octoprint/plugins/cura
    | Discovery (bundled) = /home/pi/OctoPrint/src/octoprint/plugins/discovery
-   | Hello World (1.0) = /home/pi/OctoPrint-HelloWorld/octoprint_helloworld
+   | Hello World (1.0.0) = /home/pi/OctoPrint-HelloWorld/octoprint_helloworld
 
 Much better! You can override pretty much all of the metadata defined within ``setup.py`` from within your Plugin itself --
 take a look at :ref:`the available control properties <sec-plugin-concepts-controlproperties>` for all available
@@ -227,7 +295,7 @@ overrides.
 Following the README of the `Plugin Skeleton <https://github.com/OctoPrint/OctoPrint-PluginSkeleton>`_ you could now
 already publish your plugin on Github and it would be directly installable by others using pip::
 
-   pip install https://github.com/you/OctoPrint-HelloWorld/archive/master.zip
+   pip install https://github.com/yourGithubName/OctoPrint-HelloWorld/archive/master.zip
 
 But let's add some more features instead.
 
@@ -275,6 +343,10 @@ Our plugin's directory structure should now look like this::
        templates/
            helloworld_navbar.jinja2
        __init__.py
+   .editorconfig
+   .gitignore
+   babel.cfg
+   MANIFEST.in
    README.md
    requirements.txt
    setup.py
@@ -532,6 +604,10 @@ look like this::
            helloworld_settings.jinja2
            helloworld_tab.jinja2
        __init__.py
+   .editorconfig
+   .gitignore
+   babel.cfg
+   MANIFEST.in
    README.md
    requirements.txt
    setup.py
@@ -685,10 +761,13 @@ First we'll create a new folder within our plugin's ``static`` folder called ``c
            helloworld_settings.jinja2
            helloworld_tab.jinja2
        __init__.py
+   .editorconfig
+   .gitignore
+   babel.cfg
+   MANIFEST.in
    README.md
    requirements.txt
    setup.py
-
 
 Put something like the following into ``helloworld.css``:
 
@@ -794,10 +873,13 @@ in the process. The folder structure of our plugin should now look like this::
            helloworld_settings.jinja2
            helloworld_tab.jinja2
        __init__.py
+   .editorconfig
+   .gitignore
+   babel.cfg
+   MANIFEST.in
    README.md
    requirements.txt
    setup.py
-
 
 Then adjust our returned assets to include our LESS file as well:
 
