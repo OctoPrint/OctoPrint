@@ -496,7 +496,8 @@ def create_plugin_setup_parameters(identifier="todo", name="TODO", version="0.1"
 		cmdclass.update(get_babel_commandclasses(pot_file=pot_file, output_dir=translation_dir, bundled_dir=bundled_dir, pack_name_prefix="{name}-i18n-".format(**locals()), pack_path_prefix="_plugins/{identifier}/".format(**locals())))
 
 	from setuptools import find_packages
-	packages = find_packages(where=source_folder, exclude=ignored_packages, include=[package, "{package}.*".format(**locals())] + additional_packages)
+	packages = list(set([package] + filter(lambda x: x.startswith("{package}.".format(package=package)), find_packages(where=source_folder, exclude=ignored_packages)) + additional_packages))
+	print("Found packages: {packages!r}".format(**locals()))
 
 	return dict(
 		name=name,
