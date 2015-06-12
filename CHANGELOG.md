@@ -2,6 +2,13 @@
 
 ## 1.2.0 (Unreleased)
 
+### Note for Upgraders
+
+  * The [Cura integration](https://github.com/daid/Cura) has changed in such a way that OctoPrint now calls the
+    [CuraEngine](https://github.com/Ultimaker/CuraEngine) directly instead of depending on the full Cura installation. See
+    [the wiki](https://github.com/foosel/OctoPrint/wiki/Plugin:-Cura) for instructions on how to change your setup to
+    accommodate the new integration.
+
 ### New Features
 
 * Added internationalization of UI. Translations of OctoPrint are being crowd sourced via [Transifex](https://www.transifex.com/projects/p/octoprint/).
@@ -29,7 +36,7 @@
 * Mousing over the webcam image in the control tab enables key control mode, allowing you to quickly move the axis of your
   printer with your computer's keyboard ([#610](https://github.com/foosel/OctoPrint/pull/610)):
   - arrow keys: X and Y axes
-  - W, S / PageUp, PageDown: Y axes
+  - W, S / PageUp, PageDown: Z axes
   - Home: Home X and Y axes
   - End: Home Z axes
   - 1, 2, 3, 4: change step size used (0.1, 1, 10, 100mm)
@@ -38,9 +45,9 @@
 * Custom controls now support a row layout
 * Users can now define custom GCODE scripts to run upon starting/pausing/resuming/success/failure of a print or for
   custom controls ([#457](https://github.com/foosel/OctoPrint/issues/457), [#347](https://github.com/foosel/OctoPrint/issues/347))
-* Bundled [Software Update Plugin](https://github.com/foosel/OctoPrint/wiki/Plugin:-Software-Update) takes care of notifying about new OctoPrint releases and also allows
-  updating if configured as such. Plugins may register themselves with the update notification and application process
-  through a new hook ["octoprint.plugin.softwareupdate.check_config"]().
+* Bundled [Software Update Plugin](https://github.com/foosel/OctoPrint/wiki/Plugin:-Software-Update) takes care of notifying
+  about new OctoPrint releases and also allows updating if configured as such. Plugins may register themselves with the
+  update notification and application process through a new hook ["octoprint.plugin.softwareupdate.check_config"]().
 
 ### Improvements
 
@@ -60,10 +67,6 @@
     as well). This dialog also allows specifying which action to take after slicing has been completed (none, selecting the
     sliced GCODE for printing or starting to print it directly)
   * Slicers themselves are integrated into the system via ``SlicingPlugins``.
-  * The [Cura integration](https://github.com/daid/Cura) has changed in such a way that OctoPrint now calls the
-    [CuraEngine](https://github.com/Ultimaker/CuraEngine) directly instead of depending on the full Cura installation. See
-    [the wiki](https://github.com/foosel/OctoPrint/wiki/Plugin:-Cura) for instructions on how to change your setup to
-    accommodate the new integration.
   * The "Slicing done" notification is now colored green ([#558](https://github.com/foosel/OctoPrint/issues/558)).
   * The slicing API allows positioning the model to slice on the print bed (Note: this is not yet available in the UI).
 * File management now supports STL files as first class citizens (including UI adjustments to allow management of
