@@ -29,8 +29,6 @@ matrix_elbow_lengths = (10, 8)
 Ag_elbow_lengths = (10, 8)
 Ag_speed = 15*60
 travel_speed = 100*60
-gcode_path = r"C:\Users\Voxel8\Downloads\Capping Mechanism Quadcopter 3.gcode"
-mod_gcode = r"C:\Users\Voxel8\Desktop\mod_gcode_1.gcode"
 
 
 class AlignmentAutomator(object):
@@ -376,10 +374,10 @@ class AlignmentAutomator(object):
         g.write('M218 T0 X0 Y0 Z0')
         g.write(offsets)
 
+
 class AutoAlignmentPlugin(octoprint.plugin.EventHandlerPlugin):
 
     def __init__(self):
-        self.printing = False
         self.aligning = False
 
         self.event = Event()
@@ -391,7 +389,6 @@ class AutoAlignmentPlugin(octoprint.plugin.EventHandlerPlugin):
 
     def on_event(self, event, payload):
         if event == 'PrintDone':
-            self.printing = False
             self.aligning = False
         if event == 'PrintCancelled':
             self.g._p.reset_linenumber()
@@ -404,13 +401,12 @@ class AutoAlignmentPlugin(octoprint.plugin.EventHandlerPlugin):
         if event == 'PrintResumed':
             self.g._p.paused = False
 
-    def print_started_sentinel(self, comm, cmd, cmd_type=None, *args, **kwargs):
+    def print_started_sentinel(self, comm, phase, cmd, cmd_type, gcode, *args, **kwargs):
         if 'M900' in cmd:
             self.event.clear()
-            self.printing = True
             self.aligning = True
             self._align_thread = Thread(target=self.align, name='Align')
-            sleep(5)
+            sleep(3)
             self._align_thread.start()
             return None
         return cmd
@@ -464,7 +460,7 @@ class AutoAlignmentPlugin(octoprint.plugin.EventHandlerPlugin):
 
     def readline(self, *args, **kwargs):
         out = True
-        if self.printing and self.aligning:
+        if self.aligning:
             out = self.event.wait(2)
         if out:
             if self._fake_ok:
@@ -472,14 +468,14 @@ class AutoAlignmentPlugin(octoprint.plugin.EventHandlerPlugin):
                 return 'ok\n'
             resp = self.s.readline(*args, **kwargs)
         else:
-            resp = 'echo: Hold your horses'
+            resp = 'echo: Alignment script is running'
         return resp
 
     def write(self, data):
-        if self.printing and self.aligning:
-            pass
-        else:
+        if not self.aligning:
             return self.s.write(data)
+        else:
+            self._logger.info('Write called when Mecode has control: ' + str(data))
 
     def close(self):
         return self.s.close()
@@ -520,5 +516,5 @@ def __plugin_load__():
     __plugin_implementation__ = plugin
     __plugin_hooks__ = {
         "octoprint.comm.transport.serial.factory": plugin.serial_factory,
-        "octoprint.comm.protocol.gcode": plugin.print_started_sentinel,
+        "octoprint.comm.protocol.gcode.queuing": plugin.print_started_sentinel,
     }
