@@ -25,6 +25,10 @@ def perform_update(target, check, target_version):
 
 	logger.debug("Target: %s, executing pip install %s" % (target, install_arg))
 	pip_args = ["install", check["pip"].format(target_version=target_version, target=target_version)]
+
+	if "dependency_links" in check and check["dependency_links"]:
+		pip_args += "--process-dependency-links"
+
 	_pip.main(pip_args)
 
 	if "force_reinstall" in check and check["force_reinstall"]:
