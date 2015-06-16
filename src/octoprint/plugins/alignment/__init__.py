@@ -46,6 +46,7 @@ class AlignmentAutomator(object):
         self.Ag_x = Ag_x
         self.Ag_y = Ag_y
         self.fudge = fudge
+        self.offsetstring = None
 
         g.write('G1 Z10 X-2 F1000')
         g.write('G28 Y')
@@ -371,6 +372,7 @@ class AlignmentAutomator(object):
         self.locate_all_traces()
         g.move(Z=10)
         offsets = self.calculate_offsets()
+        self.offsetstring = offsets
         g.write('M218 T0 X0 Y0 Z0')
         g.write(offsets)
 
@@ -421,7 +423,7 @@ class AutoAlignmentPlugin(octoprint.plugin.EventHandlerPlugin):
         g._p.start()
 
 
-        AA = AlignmentAutomator(g)
+        self.AA = AA = AlignmentAutomator(g)
         AA.full_alignment()
 
 
@@ -462,7 +464,7 @@ class AutoAlignmentPlugin(octoprint.plugin.EventHandlerPlugin):
                 self._temp_resp_len = len(self.g._p.temp_readings)
                 resp = self.g._p.temp_readings[-1]
             else:
-                resp = 'echo: Alignment script is running'
+                resp = 'echo: Alignment script is running' if self.AA.offsetstring is None else self.AA.offsetstring
         return resp
 
     def write(self, data):
