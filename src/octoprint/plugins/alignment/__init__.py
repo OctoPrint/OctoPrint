@@ -379,23 +379,15 @@ class AutoAlignmentPlugin(octoprint.plugin.EventHandlerPlugin):
 
     def __init__(self):
         self.aligning = False
-
         self.event = Event()
         self.event.set()
-
         self._write_buffer = []
-
         self._fake_ok = False
+        self._temp_resp_len = 0
 
     def on_event(self, event, payload):
-        if event == 'PrintDone':
-            self.aligning = False
         if event == 'PrintCancelled':
-            self.g._p.reset_linenumber()
-            self.g.teardown()
-            self.aligning = False
-            self._fake_ok = True
-            self.event.set()
+            self.relinquish_control()
         if event == 'PrintPaused':
             self.g._p.paused = True
         if event == 'PrintResumed':
@@ -406,12 +398,13 @@ class AutoAlignmentPlugin(octoprint.plugin.EventHandlerPlugin):
             self.event.clear()
             self.aligning = True
             self._align_thread = Thread(target=self.align, name='Align')
-            sleep(3)
+            sleep(1)
             self._align_thread.start()
             return None
         return cmd
 
     def align(self):
+        self._logger.info('Alignment started')
         self.g = g = G(
             print_lines=False,
             aerotech_include=False,
@@ -443,20 +436,17 @@ class AutoAlignmentPlugin(octoprint.plugin.EventHandlerPlugin):
         #g.move(10)
         #g.feed(6000)
 
+        self.relinquish_control()
 
-        self._logger.info('Resetting Line Number')
-        g._p.reset_linenumber()
-
-        self._logger.info('Waiting for buffer to empty')
-        while len(g._p.sentlines) == 0 or len(g._p._buffer) != len(g._p.responses):
-            sleep(0.01)
-        self._logger.info('About to call G.teardown()')
-        g.teardown()
+    def relinquish_control(self):
+        self._logger.info('Resetting Line Number to 0')
+        self.g._p.reset_linenumber()
+        self._logger.info('Tearing down, waiting for buffer to clear.')
+        self.g.teardown()
+        self._logger.info('teardown called, returning control to OctoPrint')
         self.aligning = False
         self._fake_ok = True
-        self._logger.info('Setting event')
         self.event.set()
-        self._logger.info('Returning from thread')
 
     def readline(self, *args, **kwargs):
         out = True
@@ -468,14 +458,18 @@ class AutoAlignmentPlugin(octoprint.plugin.EventHandlerPlugin):
                 return 'ok\n'
             resp = self.s.readline(*args, **kwargs)
         else:
-            resp = 'echo: Alignment script is running'
+            if len(self.g._p.temp_readings) > self._temp_resp_len:
+                self._temp_resp_len = len(self.g._p.temp_readings)
+                resp = self.g._p.temp_readings[-1]
+            else:
+                resp = 'echo: Alignment script is running'
         return resp
 
     def write(self, data):
         if not self.aligning:
             return self.s.write(data)
         else:
-            self._logger.info('Write called when Mecode has control: ' + str(data))
+            self._logger.warn('Write called when Mecode has control: ' + str(data))
 
     def close(self):
         return self.s.close()
