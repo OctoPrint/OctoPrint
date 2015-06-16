@@ -36,7 +36,7 @@ class AlignmentAutomator(object):
     def __init__(self, g, matrix_x=[0.00000, 0.00000], matrix_y=[0.00000, 0.00000],
                  Ag_x=[0.00000, 0.00000], Ag_y=[0.00000, 0.00000],
                  nozzle_offset=[37.50000, 0.0000, -4.90000],
-                 laser_offset=[18.4500, -44.52500, -19.0000, -44.52500], fudge = [0,0,0]
+                 laser_offset=[18.4500, -44.52500, -19.0000, -44.52500], fudge = [0,0,-2]
                 ):
         self.g = g
         self.nozzle_offset = nozzle_offset
