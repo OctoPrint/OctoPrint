@@ -1,4 +1,8 @@
-{% assets "all_css" %}
+{% assets "css_libs" %}
+    <link href="{{ ASSET_URL }}" rel="stylesheet" media="screen">
+{% endassets %}
+
+{% assets "css_app" %}
     <link href="{{ ASSET_URL }}" rel="stylesheet" media="screen">
 {% endassets %}
 

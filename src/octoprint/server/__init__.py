@@ -756,10 +756,9 @@ class Server():
 
 		js_libs_bundle = Bundle(*js_libs, output="webassets/packed_libs.js")
 		if settings().getBoolean(["devel", "webassets", "minify"]):
-			js_app_bundle = Bundle(*js_app, output="webassets/package_app.js", filters="rjsmin")
+			js_app_bundle = Bundle(*js_app, output="webassets/packed_app.js", filters="rjsmin")
 		else:
-			js_app_bundle = Bundle(*js_app, output="webassets/package_app.js")
-		all_js_bundle = Bundle(js_libs_bundle, js_app_bundle, output="webassets/packed.js")
+			js_app_bundle = Bundle(*js_app, output="webassets/packed_app.js")
 
 		css_libs_bundle = Bundle(*css_libs, output="webassets/packed_libs.css")
 		css_app_bundle = Bundle(*css_app, output="webassets/packed_app.css")
@@ -785,11 +784,12 @@ class Server():
 
 		register_filter(LessImportRewrite)
 
-		all_css_bundle = Bundle(css_libs_bundle, css_app_bundle, output="webassets/packed.css")
-		all_less_bundle = Bundle(*less_app, output="webassets/packed.less", filters="less_importrewrite")
+		all_less_bundle = Bundle(*less_app, output="webassets/packed_app.less", filters="less_importrewrite")
 
-		assets.register("all_js", all_js_bundle)
-		assets.register("all_css", all_css_bundle)
+		assets.register("js_libs", js_libs_bundle)
+		assets.register("js_app", js_app_bundle)
+		assets.register("css_libs", css_libs_bundle)
+		assets.register("css_app", css_app_bundle)
 		assets.register("less_app", all_less_bundle)
 
 
