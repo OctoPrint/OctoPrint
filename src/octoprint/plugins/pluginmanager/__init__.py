@@ -506,7 +506,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			)
 
 			if "compatibility" in entry:
-				if "octoprint" in entry["compatibility"]:
+				if "octoprint" in entry["compatibility"] and entry["compatibility"]["octoprint"] is not None and len(entry["compatibility"]["octoprint"]):
 					import semantic_version
 					for octo_compat in entry["compatibility"]["octoprint"]:
 						s = semantic_version.Spec("=={}".format(octo_compat))
@@ -515,7 +515,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 					else:
 						result["is_compatible"]["octoprint"] = False
 
-				if "os" in entry["compatibility"]:
+				if "os" in entry["compatibility"] and entry["compatibility"]["os"] is not None and len(entry["compatibility"]["os"]):
 					result["is_compatible"]["os"] = current_os in entry["compatibility"]["os"]
 
 			return result
