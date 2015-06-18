@@ -798,7 +798,10 @@ class Server():
 		register_filter(JsDelimiterBundle)
 
 		js_libs_bundle = Bundle(*js_libs, output="webassets/packed_libs.js", filters="js_delimiter_bundler")
-		js_app_bundle = Bundle(*js_app, output="webassets/packed_app.js", filters="js_delimiter_bundler")
+		if settings().getBoolean(["devel", "webassets", "minify"]):
+			js_app_bundle = Bundle(*js_app, output="webassets/packed_app.js", filters="rjsmin, js_delimiter_bundler")
+		else:
+			js_app_bundle = Bundle(*js_app, output="webassets/packed_app.js", filters="js_delimiter_bundler")
 
 		css_libs_bundle = Bundle(*css_libs, output="webassets/packed_libs.css")
 		css_app_bundle = Bundle(*css_app, output="webassets/packed_app.css")
