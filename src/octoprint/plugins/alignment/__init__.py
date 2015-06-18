@@ -463,20 +463,25 @@ class AutoAlignmentPlugin(octoprint.plugin.EventHandlerPlugin):
         self.event.set()
 
     def readline(self, *args, **kwargs):
-        out = True
         if self.aligning:
-            out = self.event.wait(2)
-        if out:
-            if self._fake_ok:
-                self._fake_ok = False
-                return 'ok\n'
+            self.event.wait(2)
+        if self._fake_ok:
+            # Just finished aligning, and need to send fake ok.
+            self._fake_ok = False
+            resp = 'ok\n'
+        elif not self.aligning:
             resp = self.s.readline(*args, **kwargs)
         else:
+            # We are aligning.
             if len(self.g._p.temp_readings) > self._temp_resp_len:
+                # We have a new temp reading.  Respond with that.
                 self._temp_resp_len = len(self.g._p.temp_readings)
                 resp = self.g._p.temp_readings[-1]
+            elif self.AA.offsetstring is not None:
+                # Display the offset so users can use it later.
+                resp = self.AA.offsetstring
             else:
-                resp = 'echo: Alignment script is running' if self.AA.offsetstring is None else self.AA.offsetstring
+                resp = 'echo: Alignment script is running'
         return resp
 
     def write(self, data):
