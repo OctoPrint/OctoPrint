@@ -116,10 +116,10 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 	def perform_update(self):
 		if self._printer.is_printing() or self._printer.is_paused():
 			# do not update while a print job is running
-			flask.make_response("Printer is currently printing or paused", 409)
+			return flask.make_response("Printer is currently printing or paused", 409)
 
 		if not "application/json" in flask.request.headers["Content-Type"]:
-			flask.make_response("Expected content-type JSON", 400)
+			return flask.make_response("Expected content-type JSON", 400)
 
 		json_data = flask.request.json
 

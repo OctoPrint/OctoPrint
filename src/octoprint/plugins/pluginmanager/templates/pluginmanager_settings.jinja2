@@ -1,3 +1,11 @@
+{% macro pluginmanager_printing() %}
+<div class="alert" data-bind="visible: !enableManagement()">
+  {{ _('Take note that all plugin management functionality is disabled while your printer is printing.') }}
+</div>
+{% endmacro %}
+
+{{ pluginmanager_printing() }}
+
 <h3>{{ _('Installed Plugins') }}</h3>
 
 <table class="table table-striped table-hover table-condensed table-hover">
@@ -20,7 +28,7 @@
             </div>
         </td>
         <td class="settings_plugin_plugin_manager_plugins_actions">
-            <a href="#" data-bind="css: $root.toggleButtonCss($data), attr: {title: $root.toggleButtonTitle($data)}, enable: key != 'pluginmanager', click: function() { $root.togglePlugin($data) }"></a>&nbsp;|&nbsp;<a href="#" class="icon-trash" title="{{ _('Uninstall Plugin') }}" data-bind="css: {disabled: bundled || key == 'pluginmanager' || pending_uninstall}, enable: !bundled && key != 'pluginmanager' && !pending_uninstall, click: function() { $root.uninstallPlugin($data) }"></a>
+            <a href="#" data-bind="css: $root.toggleButtonCss($data), attr: {title: $root.toggleButtonTitle($data)}, enable: $root.enableToggle($data), click: function() { $root.togglePlugin($data) }"></a>&nbsp;|&nbsp;<a href="#" class="icon-trash" title="{{ _('Uninstall Plugin') }}" data-bind="css: {disabled: !$root.enableUninstall($data)}, enable: $root.enableUninstall($data), click: function() { $root.uninstallPlugin($data) }"></a>
         </td>
     </tr>
     </tbody>
@@ -58,6 +66,7 @@
         <h3>{{ _('Install new Plugins...') }}</h3>
     </div>
     <div class="modal-body">
+        {{ pluginmanager_printing() }}
         <h4 style="position: relative">
             {{ _('... from the <a href="%(url)s" target="_blank">Plugin Repository</a>', url='http://plugins.octoprint.org') }}
             <a class="dropdown-toggle pull-right" data-toggle="dropdown" href="#">
@@ -94,7 +103,7 @@
                             </div>
                         </div>
                         <div class="span3">
-                            <button class="btn btn-primary btn-block" data-bind="enable: $root.isCompatible($data), css: {disabled: !$root.isCompatible($data)}, click: function() { if ($root.isCompatible($data)) { $root.installFromRepository($data); } else { return false; } }"><i class="icon-add"></i> <span data-bind="text: $root.installButtonText($data)"></span></button>
+                            <button class="btn btn-primary btn-block" data-bind="enable: $root.enableRepoInstall($data), css: {disabled: !$root.enableRepoInstall($data)}, click: function() { if ($root.enableRepoInstall($data)) { $root.installFromRepository($data); } else { return false; } }"><i class="icon-add"></i> <span data-bind="text: $root.installButtonText($data)"></span></button>
                         </div>
                     </div>
                 </div>

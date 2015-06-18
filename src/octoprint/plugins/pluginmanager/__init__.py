@@ -141,6 +141,10 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		if not admin_permission.can():
 			return make_response("Insufficient rights", 403)
 
+		if self._printer.is_printing() or self._printer.is_paused():
+			# do not update while a print job is running
+			return make_response("Printer is currently printing or paused", 409)
+
 		if command == "install":
 			url = data["url"]
 			plugin_name = data["plugin"] if "plugin" in data else None
@@ -164,10 +168,6 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 			plugin = self._plugin_manager.plugins[plugin_name]
 			return self.command_toggle(plugin, command)
-
-		elif command == "refresh_repository":
-			self._repository_available = self._refresh_repository()
-			return jsonify(repository=dict(available=self._repository_available, plugins=self._repository_plugins))
 
 	def command_install(self, url=None, path=None, force=False, reinstall=None, dependency_links=False):
 		if url is not None:
