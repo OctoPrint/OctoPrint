@@ -89,6 +89,82 @@ $(function() {
             self.config_cacheTtl(self.settings.settings.plugins.softwareupdate.cache_ttl());
         };
 
+        self.fromCheckResponse = function(data) {
+            var versions = [];
+            _.each(data.information, function(value, key) {
+                value["key"] = key;
+
+                if (!value.hasOwnProperty("displayName") || value.displayName == "") {
+                    value.displayName = value.key;
+                }
+                if (!value.hasOwnProperty("displayVersion") || value.displayVersion == "") {
+                    value.displayVersion = value.information.local.name;
+                }
+
+                versions.push(value);
+            });
+            self.versions.updateItems(versions);
+
+            if (data.status == "updateAvailable" || data.status == "updatePossible") {
+                var text = gettext("There are updates available for the following components:");
+
+                text += "<ul>";
+                _.each(self.versions.items(), function(update_info) {
+                    if (update_info.updateAvailable) {
+                        var displayName = update_info.key;
+                        if (update_info.hasOwnProperty("displayName")) {
+                            displayName = update_info.displayName;
+                        }
+                        text += "<li>" + displayName + (update_info.updatePossible ? " <i class=\"icon-ok\"></i>" : "") + "</li>";
+                    }
+                });
+                text += "</ul>";
+
+                text += "<small>" + gettext("Those components marked with <i class=\"icon-ok\"></i> can be updated directly.") + "</small>";
+
+                var options = {
+                    title: gettext("Update Available"),
+                    text: text,
+                    hide: false
+                };
+                var eventListeners = {};
+
+                if (data.status == "updatePossible" && self.loginState.isAdmin()) {
+                    // if user is admin, add action buttons
+                    options["confirm"] = {
+                        confirm: true,
+                        buttons: [{
+                            text: gettext("Ignore"),
+                            click: function() {
+                                self._markNotificationAsSeen(data.information);
+                                self._showPopup({
+                                    text: gettext("You can make this message display again via \"Settings\" > \"SoftwareUpdate\" > \"Check for update now\"")
+                                });
+                            }
+                        }, {
+                            text: gettext("Update now"),
+                            addClass: "btn-primary",
+                            click: self.update
+                        }]
+                    };
+                    options["buttons"] = {
+                        closer: false,
+                        sticker: false
+                    };
+                }
+
+                if (ignoreSeen || !self._hasNotificationBeenSeen(data.information)) {
+                    self._showPopup(options, eventListeners);
+                }
+            } else if (data.status == "current" && showIfNothingNew) {
+                self._showPopup({
+                    title: gettext("Everything is up-to-date"),
+                    hide: false,
+                    type: "success"
+                });
+            }
+        };
+
         self.performCheck = function(showIfNothingNew, force, ignoreSeen) {
             if (!self.loginState.isUser()) return;
 
@@ -101,81 +177,7 @@ $(function() {
                 url: url,
                 type: "GET",
                 dataType: "json",
-                success: function(data) {
-                    var versions = [];
-                    _.each(data.information, function(value, key) {
-                        value["key"] = key;
-
-                        if (!value.hasOwnProperty("displayName") || value.displayName == "") {
-                            value.displayName = value.key;
-                        }
-                        if (!value.hasOwnProperty("displayVersion") || value.displayVersion == "") {
-                            value.displayVersion = value.information.local.name;
-                        }
-
-                        versions.push(value);
-                    });
-                    self.versions.updateItems(versions);
-
-                    if (data.status == "updateAvailable" || data.status == "updatePossible") {
-                        var text = gettext("There are updates available for the following components:");
-
-                        text += "<ul>";
-                        _.each(self.versions.items(), function(update_info) {
-                            if (update_info.updateAvailable) {
-                                var displayName = update_info.key;
-                                if (update_info.hasOwnProperty("displayName")) {
-                                    displayName = update_info.displayName;
-                                }
-                                text += "<li>" + displayName + (update_info.updatePossible ? " <i class=\"icon-ok\"></i>" : "") + "</li>";
-                            }
-                        });
-                        text += "</ul>";
-
-                        text += "<small>" + gettext("Those components marked with <i class=\"icon-ok\"></i> can be updated directly.") + "</small>";
-
-                        var options = {
-                            title: gettext("Update Available"),
-                            text: text,
-                            hide: false
-                        };
-                        var eventListeners = {};
-
-                        if (data.status == "updatePossible" && self.loginState.isAdmin()) {
-                            // if user is admin, add action buttons
-                            options["confirm"] = {
-                                confirm: true,
-                                buttons: [{
-                                    text: gettext("Ignore"),
-                                    click: function() {
-                                        self._markNotificationAsSeen(data.information);
-                                        self._showPopup({
-                                            text: gettext("You can make this message display again via \"Settings\" > \"SoftwareUpdate\" > \"Check for update now\"")
-                                        });
-                                    }
-                                }, {
-                                    text: gettext("Update now"),
-                                    addClass: "btn-primary",
-                                    click: self.update
-                                }]
-                            };
-                            options["buttons"] = {
-                                closer: false,
-                                sticker: false
-                            };
-                        }
-
-                        if (ignoreSeen || !self._hasNotificationBeenSeen(data.information)) {
-                            self._showPopup(options, eventListeners);
-                        }
-                    } else if (data.status == "current" && showIfNothingNew) {
-                        self._showPopup({
-                            title: gettext("Everything is up-to-date"),
-                            hide: false,
-                            type: "success"
-                        });
-                    }
-                }
+                success: self.fromCheckResponse
             });
         };
 
@@ -419,6 +421,10 @@ $(function() {
                         }
                     });
                     self.updateInProgress = false;
+                    break;
+                }
+                case "update_versions": {
+                    self.performCheck();
                     break;
                 }
             }
