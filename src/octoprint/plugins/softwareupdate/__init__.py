@@ -43,6 +43,8 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 		def refresh_checks(name, plugin):
 			self._refresh_configured_checks = True
+			self._send_client_message("update_versions")
+
 		self._plugin_lifecycle_manager.add_callback("enabled", refresh_checks)
 		self._plugin_lifecycle_manager.add_callback("disabled", refresh_checks)
 
@@ -92,6 +94,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 	#~~ BluePrint API
 
 	@octoprint.plugin.BlueprintPlugin.route("/check", methods=["GET"])
+	@restricted_access
 	def check_for_update(self):
 		if "check" in flask.request.values:
 			check_targets = map(str.strip, flask.request.values["check"].split(","))
@@ -101,7 +104,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		if "force" in flask.request.values and flask.request.values["force"] in octoprint.settings.valid_boolean_trues:
 			force = True
 		else:
-			force=False
+			force = False
 
 		try:
 			information, update_available, update_possible = self.get_current_versions(check_targets=check_targets, force=force)
@@ -128,9 +131,8 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		else:
 			check_targets = None
 
-		if "force" in json_data:
-			from octoprint.settings import valid_boolean_trues
-			force = (json_data["force"] in valid_boolean_trues)
+		if "force" in json_data and json_data["force"] in octoprint.settings.valid_boolean_trues:
+			force = True
 		else:
 			force = False
 
