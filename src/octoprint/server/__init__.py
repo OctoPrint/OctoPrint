@@ -674,6 +674,20 @@ class Server():
 
 		base_folder = settings().getBaseFolder("generated")
 
+		# clean the folder
+		if settings().getBoolean(["devel", "webassets", "clean_on_startup"]):
+			import shutil
+			for entry in ("webassets", ".webassets-cache"):
+				path = os.path.join(base_folder, entry)
+				self._logger.debug("Deleting {path}...".format(**locals()))
+				if os.path.isdir(path):
+					shutil.rmtree(path, ignore_errors=True)
+				elif os.path.isfile(path):
+					try:
+						os.remove(path)
+					except:
+						self._logger.exception("Exception while trying to delete {entry} from {base_folder}".format(**locals()))
+
 		AdjustedEnvironment = type(Environment)(Environment.__name__, (Environment,), dict(
 			resolver_class=util.flask.PluginAssetResolver
 		))
@@ -754,16 +768,7 @@ class Server():
 		if len(less_app) == 0:
 			less_app = ["empty"]
 
-		js_libs_bundle = Bundle(*js_libs, output="webassets/packed_libs.js")
-		if settings().getBoolean(["devel", "webassets", "minify"]):
-			js_app_bundle = Bundle(*js_app, output="webassets/packed_app.js", filters="rjsmin")
-		else:
-			js_app_bundle = Bundle(*js_app, output="webassets/packed_app.js")
-
-		css_libs_bundle = Bundle(*css_libs, output="webassets/packed_libs.css")
-		css_app_bundle = Bundle(*css_app, output="webassets/packed_app.css")
-
-		from webassets.filter import register_filter
+		from webassets.filter import register_filter, Filter
 		from webassets.filter.cssrewrite.base import PatternRewriter
 		import re
 		class LessImportRewrite(PatternRewriter):
@@ -782,7 +787,21 @@ class Server():
 
 				return "{import_with_options}\"{import_url}\";".format(**locals())
 
+		class JsDelimiterBundle(Filter):
+			name = "js_delimiter_bundler"
+			options = {}
+			def input(self, _in, out, **kwargs):
+				out.write(_in.read())
+				out.write("\n;\n")
+
 		register_filter(LessImportRewrite)
+		register_filter(JsDelimiterBundle)
+
+		js_libs_bundle = Bundle(*js_libs, output="webassets/packed_libs.js", filters="js_delimiter_bundler")
+		js_app_bundle = Bundle(*js_app, output="webassets/packed_app.js", filters="js_delimiter_bundler")
+
+		css_libs_bundle = Bundle(*css_libs, output="webassets/packed_libs.css")
+		css_app_bundle = Bundle(*css_app, output="webassets/packed_app.css")
 
 		all_less_bundle = Bundle(*less_app, output="webassets/packed_app.less", filters="less_importrewrite")
 

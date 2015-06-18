@@ -251,7 +251,8 @@ default_settings = {
 		},
 		"webassets": {
 			"minify": False,
-			"bundle": True
+			"bundle": True,
+			"clean_on_startup": True
 		},
 		"virtualPrinter": {
 			"enabled": False,
