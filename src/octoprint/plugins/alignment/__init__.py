@@ -409,11 +409,20 @@ class AutoAlignmentPlugin(octoprint.plugin.EventHandlerPlugin):
         if 'M900' in cmd:
             self.event.clear()
             self.aligning = True
-            self._align_thread = Thread(target=self.align, name='Align')
+            self._align_thread = Thread(target=self.align_entrypoint, name='Align')
             sleep(1)
             self._align_thread.start()
             return None
         return cmd
+
+    def align_entrypoint(self):
+        """
+        Entrypoint for the alignment thread.  All exceptions are caught and logged.
+        """
+        try:
+            self.align()
+        except:
+            self._logger.exception('Error while running alignment')
 
     def align(self):
         self._logger.info('Alignment started')
