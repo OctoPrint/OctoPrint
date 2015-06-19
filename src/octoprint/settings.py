@@ -931,7 +931,7 @@ class Settings(object):
 
 	#~~ setter
 
-	def set(self, path, value, config=None, force=False, defaults=None, preprocessors=None):
+	def set(self, path, value, force=False, defaults=None, config=None, preprocessors=None):
 		if len(path) == 0:
 			return
 
@@ -975,7 +975,7 @@ class Settings(object):
 				config[key] = value
 			self._dirty = True
 
-	def setInt(self, path, value, config=None, force=False, defaults=None, preprocessors=None):
+	def setInt(self, path, value, force=False, defaults=None, config=None, preprocessors=None):
 		if value is None:
 			self.set(path, None, config=config, force=force, defaults=defaults, preprocessors=preprocessors)
 			return
@@ -988,7 +988,7 @@ class Settings(object):
 
 		self.set(path, intValue, config=config, force=force, defaults=defaults, preprocessors=preprocessors)
 
-	def setFloat(self, path, value, config=None, force=False, defaults=None, preprocessors=None):
+	def setFloat(self, path, value, force=False, defaults=None, config=None, preprocessors=None):
 		if value is None:
 			self.set(path, None, config=config, force=force, defaults=defaults, preprocessors=preprocessors)
 			return
@@ -1001,7 +1001,7 @@ class Settings(object):
 
 		self.set(path, floatValue, config=config, force=force, defaults=defaults, preprocessors=preprocessors)
 
-	def setBoolean(self, path, value, config=None, force=False, defaults=None, preprocessors=None):
+	def setBoolean(self, path, value, force=False, defaults=None, config=None, preprocessors=None):
 		if value is None or isinstance(value, bool):
 			self.set(path, value, config=config, force=force, defaults=defaults, preprocessors=preprocessors)
 		elif value.lower() in valid_boolean_trues:
