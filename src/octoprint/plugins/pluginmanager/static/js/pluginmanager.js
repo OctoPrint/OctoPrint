@@ -4,6 +4,7 @@ $(function() {
 
         self.loginState = parameters[0];
         self.settingsViewModel = parameters[1];
+        self.printerState = parameters[2];
 
         self.plugins = new ItemListHelper(
             "plugin.pluginmanager.installedplugins",
@@ -76,6 +77,22 @@ $(function() {
         self.workingDialog = undefined;
         self.workingOutput = undefined;
 
+        self.enableManagement = ko.computed(function() {
+            return !self.printerState.isPrinting();
+        });
+
+        self.enableToggle = function(data) {
+            return self.enableManagement() && data.key != 'pluginmanager';
+        };
+
+        self.enableUninstall = function(data) {
+            return self.enableManagement() && !data.bundled && data.key != 'pluginmanager' && !data.pending_uninstall;
+        };
+
+        self.enableRepoInstall = function(data) {
+            return self.enableManagement() && self.isCompatible(data);
+        };
+
         self.invalidUrl = ko.computed(function() {
             var url = self.installUrl();
             return url !== undefined && url.trim() != "" && !(_.startsWith(url.toLocaleLowerCase(), "http://") || _.startsWith(url.toLocaleLowerCase(), "https://"));
@@ -83,7 +100,7 @@ $(function() {
 
         self.enableUrlInstall = ko.computed(function() {
             var url = self.installUrl();
-            return url !== undefined && url.trim() != "" && !self.invalidUrl();
+            return self.enableManagement() && url !== undefined && url.trim() != "" && !self.invalidUrl();
         });
 
         self.invalidArchive = ko.computed(function() {
@@ -93,7 +110,7 @@ $(function() {
 
         self.enableArchiveInstall = ko.computed(function() {
             var name = self.uploadFilename();
-            return name !== undefined && name.trim() != "" && !self.invalidArchive();
+            return self.enableManagement() && name !== undefined && name.trim() != "" && !self.invalidArchive();
         });
 
         self.uploadElement.fileupload({
@@ -187,6 +204,10 @@ $(function() {
                 return;
             }
 
+            if (!self.enableManagement()) {
+                return;
+            }
+
             if (data.key == "pluginmanager") return;
 
             var command = self._getToggleCommand(data);
@@ -217,6 +238,10 @@ $(function() {
                 return;
             }
 
+            if (!self.enableManagement()) {
+                return;
+            }
+
             if (self.installed(data)) {
                 self.installPlugin(data.archive, data.title, data.id, data.follow_dependency_links || self.followDependencyLinks());
             } else {
@@ -226,6 +251,10 @@ $(function() {
 
         self.installPlugin = function(url, name, reinstall, followDependencyLinks) {
             if (!self.loginState.isAdmin()) {
+                return;
+            }
+
+            if (!self.enableManagement()) {
                 return;
             }
 
@@ -279,6 +308,10 @@ $(function() {
                 return;
             }
 
+            if (!self.enableManagement()) {
+                return;
+            }
+
             if (data.bundled) return;
             if (data.key == "pluginmanager") return;
 
@@ -305,9 +338,7 @@ $(function() {
                 return;
             }
 
-            self._postCommand("refresh_repository", {}, function(data) {
-                self._fromRepositoryResponse(data.repository);
-            })
+            self.requestData(true);
         };
 
         self.installed = function(data) {
@@ -420,7 +451,7 @@ $(function() {
 
         self.toggleButtonCss = function(data) {
             var icon = self._getToggleCommand(data) == "enable" ? "icon-circle-blank" : "icon-circle";
-            var disabled = (data.key == "pluginmanager") ? " disabled" : "";
+            var disabled = (self.enableToggle(data)) ? "" : " disabled";
 
             return icon + disabled;
         };
@@ -578,5 +609,5 @@ $(function() {
     }
 
     // view model class, parameters for constructor, container to bind to
-    ADDITIONAL_VIEWMODELS.push([PluginManagerViewModel, ["loginStateViewModel", "settingsViewModel"], "#settings_plugin_pluginmanager"]);
+    ADDITIONAL_VIEWMODELS.push([PluginManagerViewModel, ["loginStateViewModel", "settingsViewModel", "printerStateViewModel"], "#settings_plugin_pluginmanager"]);
 });

@@ -43,6 +43,8 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 		def refresh_checks(name, plugin):
 			self._refresh_configured_checks = True
+			self._send_client_message("update_versions")
+
 		self._plugin_lifecycle_manager.add_callback("enabled", refresh_checks)
 		self._plugin_lifecycle_manager.add_callback("disabled", refresh_checks)
 
@@ -86,12 +88,76 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		}
 
 	def on_settings_save(self, data):
-		super(SoftwareUpdatePlugin, self).on_settings_save(data)
+		octoprint.plugin.SettingsPlugin.on_settings_save(self, data)
 		self._version_cache_ttl = self._settings.get_int(["cache_ttl"]) * 60
+
+	def get_settings_version(self):
+		return 1
+
+	def on_settings_migrate(self, target, current=None):
+		if current is None:
+			# there might be some left over data from the time we still persisted everything to settings,
+			# even the stuff that shouldn't be persisted but always provided by the hook - let's
+			# clean up
+
+			# take care of the octoprint entry
+			configured_checks = self._settings.get(["checks"], merged=True)
+			octoprint_check = dict(configured_checks["octoprint"])
+			if "type" in octoprint_check and not octoprint_check["type"] == "github_commit":
+				deletables=["current"]
+			else:
+				deletables=[]
+			octoprint_check = self._clean_settings_check("octoprint", octoprint_check, self.get_settings_defaults()["checks"]["octoprint"], delete=deletables, save=False)
+			configured_checks["octoprint"] = octoprint_check
+
+			# and the hooks
+			update_check_hooks = self._plugin_manager.get_hooks("octoprint.plugin.softwareupdate.check_config")
+			for name, hook in update_check_hooks.items():
+				try:
+					hook_checks = hook()
+				except:
+					self._logger.exception("Error while retrieving update information from plugin {name}".format(**locals()))
+				else:
+					for key, data in hook_checks.items():
+						if key in configured_checks:
+							settings_check = dict(configured_checks[key])
+							merged = dict_merge(data, settings_check)
+							if "type" in merged and not merged["type"] == "github_commit":
+								deletables = ["current", "displayVersion"]
+							else:
+								deletables = []
+
+							self._clean_settings_check(key, settings_check, data, delete=deletables, save=False)
+
+	def _clean_settings_check(self, key, data, defaults, delete=None, save=True):
+		if delete is None:
+			delete = []
+
+		for k, v in data.items():
+			if k in defaults and defaults[k] == data[k]:
+				del data[k]
+
+		for k in delete:
+			if k in data:
+				del data[k]
+
+		dummy_defaults = dict(plugins=dict())
+		dummy_defaults["plugins"][self._identifier] = dict(checks=dict())
+		dummy_defaults["plugins"][self._identifier]["checks"][key] = defaults
+		if len(data):
+			self._settings.set(["checks", key], data, defaults=dummy_defaults)
+		else:
+			self._settings.set(["checks", key], None, defaults=dummy_defaults)
+
+		if save:
+			self._settings.save()
+
+		return data
 
 	#~~ BluePrint API
 
 	@octoprint.plugin.BlueprintPlugin.route("/check", methods=["GET"])
+	@restricted_access
 	def check_for_update(self):
 		if "check" in flask.request.values:
 			check_targets = map(str.strip, flask.request.values["check"].split(","))
@@ -101,7 +167,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		if "force" in flask.request.values and flask.request.values["force"] in octoprint.settings.valid_boolean_trues:
 			force = True
 		else:
-			force=False
+			force = False
 
 		try:
 			information, update_available, update_possible = self.get_current_versions(check_targets=check_targets, force=force)
@@ -116,10 +182,10 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 	def perform_update(self):
 		if self._printer.is_printing() or self._printer.is_paused():
 			# do not update while a print job is running
-			flask.make_response("Printer is currently printing or paused", 409)
+			return flask.make_response("Printer is currently printing or paused", 409)
 
 		if not "application/json" in flask.request.headers["Content-Type"]:
-			flask.make_response("Expected content-type JSON", 400)
+			return flask.make_response("Expected content-type JSON", 400)
 
 		json_data = flask.request.json
 
@@ -128,9 +194,8 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		else:
 			check_targets = None
 
-		if "force" in json_data:
-			from octoprint.settings import valid_boolean_trues
-			force = (json_data["force"] in valid_boolean_trues)
+		if "force" in json_data and json_data["force"] in octoprint.settings.valid_boolean_trues:
+			force = True
 		else:
 			force = False
 
@@ -378,15 +443,14 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 			# persist the new version if necessary for check type
 			if check["type"] == "github_commit":
-				checks = self._settings.get(["checks"], merged=True)
-				if target in checks:
-					# TODO make this cleaner, right now it saves too much to disk
-					checks[target]["current"] = target_version
-					self._settings.set(["checks"], checks)
+				dummy_default = dict(plugins=dict())
+				dummy_default["plugins"][self._identifier] = dict(checks=dict())
+				dummy_default["plugins"][self._identifier]["checks"][target] = dict(current=None)
+				self._settings.set(["checks", target, "current"], target_version, defaults=dummy_default)
 
-					# we have to save here (even though that makes us save quite often) since otherwise the next
-					# load will overwrite our changes we just made
-					self._settings.save()
+				# we have to save here (even though that makes us save quite often) since otherwise the next
+				# load will overwrite our changes we just made
+				self._settings.save()
 
 		return target_error, target_result
 

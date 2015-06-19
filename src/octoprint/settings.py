@@ -251,7 +251,8 @@ default_settings = {
 		},
 		"webassets": {
 			"minify": False,
-			"bundle": True
+			"bundle": True,
+			"clean_on_startup": True
 		},
 		"virtualPrinter": {
 			"enabled": False,
@@ -853,7 +854,7 @@ class Settings(object):
 			return results
 
 	def getInt(self, path, config=None, defaults=None, preprocessors=None):
-		value = self.get(path, defaults=defaults, preprocessors=preprocessors)
+		value = self.get(path, config=config, defaults=defaults, preprocessors=preprocessors)
 		if value is None:
 			return None
 
@@ -930,14 +931,15 @@ class Settings(object):
 
 	#~~ setter
 
-	def set(self, path, value, force=False, defaults=None, preprocessors=None):
+	def set(self, path, value, force=False, defaults=None, config=None, preprocessors=None):
 		if len(path) == 0:
 			return
 
 		if self._mtime is not None and self.last_modified != self._mtime:
 			self.load()
 
-		config = self._config
+		if config is None:
+			config = self._config
 		if defaults is None:
 			defaults = default_settings
 		if preprocessors is None:
@@ -973,9 +975,9 @@ class Settings(object):
 				config[key] = value
 			self._dirty = True
 
-	def setInt(self, path, value, force=False, defaults=None, preprocessors=None):
+	def setInt(self, path, value, force=False, defaults=None, config=None, preprocessors=None):
 		if value is None:
-			self.set(path, None, force=force, defaults=defaults, preprocessors=preprocessors)
+			self.set(path, None, config=config, force=force, defaults=defaults, preprocessors=preprocessors)
 			return
 
 		try:
@@ -984,11 +986,11 @@ class Settings(object):
 			self._logger.warn("Could not convert %r to a valid integer when setting option %r" % (value, path))
 			return
 
-		self.set(path, intValue, force)
+		self.set(path, intValue, config=config, force=force, defaults=defaults, preprocessors=preprocessors)
 
-	def setFloat(self, path, value, force=False, defaults=None, preprocessors=None):
+	def setFloat(self, path, value, force=False, defaults=None, config=None, preprocessors=None):
 		if value is None:
-			self.set(path, None, force=force, defaults=defaults, preprocessors=preprocessors)
+			self.set(path, None, config=config, force=force, defaults=defaults, preprocessors=preprocessors)
 			return
 
 		try:
@@ -997,15 +999,15 @@ class Settings(object):
 			self._logger.warn("Could not convert %r to a valid integer when setting option %r" % (value, path))
 			return
 
-		self.set(path, floatValue, force)
+		self.set(path, floatValue, config=config, force=force, defaults=defaults, preprocessors=preprocessors)
 
-	def setBoolean(self, path, value, force=False, defaults=None, preprocessors=None):
+	def setBoolean(self, path, value, force=False, defaults=None, config=None, preprocessors=None):
 		if value is None or isinstance(value, bool):
-			self.set(path, value, force=force, defaults=defaults, preprocessors=preprocessors)
+			self.set(path, value, config=config, force=force, defaults=defaults, preprocessors=preprocessors)
 		elif value.lower() in valid_boolean_trues:
-			self.set(path, True, force=force, defaults=defaults, preprocessors=preprocessors)
+			self.set(path, True, config=config, force=force, defaults=defaults, preprocessors=preprocessors)
 		else:
-			self.set(path, False, force=force, defaults=defaults, preprocessors=preprocessors)
+			self.set(path, False, config=config, force=force, defaults=defaults, preprocessors=preprocessors)
 
 	def setBaseFolder(self, type, path, force=False):
 		if type not in default_settings["folder"].keys():

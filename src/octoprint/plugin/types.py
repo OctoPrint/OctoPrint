@@ -718,7 +718,7 @@ class SettingsPlugin(OctoPrintPlugin):
 	       def on_settings_save(self, data):
 	           old_flag = self._settings.get_boolean(["sub", "some_flag"])
 
-	           super(MySettingsPlugin, self).on_settings_save(data)
+	           octoprint.plugin.SettingsPlugin.on_settings_save(self, data)
 
 	           new_flag = self._settings.get_boolean(["sub", "some_flag"])
 	           if old_flag != new_flag:
@@ -829,6 +829,41 @@ class SettingsPlugin(OctoPrintPlugin):
 		        getters, the second the preprocessors for setters
 		"""
 		return dict(), dict()
+
+	def get_settings_version(self):
+		"""
+		Retrieves the settings format version of the plugin.
+
+		Use this to have OctoPrint trigger your migration function if it detects an outdated settings version in
+		config.yaml.
+
+		Returns:
+		    int or None: an int signifying the current settings format, should be incremented by plugins whenever there
+		                 are backwards incompatible changes. Returning None here disables the version tracking for the
+		                 plugin's configuration.
+		"""
+		return None
+
+	def on_settings_migrate(self, target, current):
+		"""
+		Called by OctoPrint if it detects that the installed version of the plugin necessitates a higher settings version
+		than the one currently stored in _config.yaml. Will also be called if the settings data stored in config.yaml
+		doesn't have version information, in which case the ``current`` parameter will be None.
+
+		Your plugin's implementation should take care of migrating any data by utilizing self._settings. OctoPrint
+		will take care of saving any changes to disk by calling `self._settings.save()` after returning from this method.
+
+		This method will be called before your plugin's :func:`initialize` method, but with all injections already
+		having taken place. You can therefore depend on the configuration having been migrated by the time :func:`initialize`
+		is called.
+
+		Arguments:
+		    target (int): The settings format version the plugin requires, this should always be the same value as
+		                  returned by :func:`get_settings_version`.
+		    current (int or None): The settings format version as currently stored in config.yaml. May be None if
+		                  no version information can be found.
+		"""
+		pass
 
 
 class EventHandlerPlugin(OctoPrintPlugin):

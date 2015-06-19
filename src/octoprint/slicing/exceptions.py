@@ -54,7 +54,7 @@ class SlicerException(SlicingException):
 	   Identifier of the slicer for which the exception was raised.
 	"""
 	def __init__(self, slicer, *args, **kwargs):
-		super(SlicingException, self).__init__(*args, **kwargs)
+		SlicingException.__init__(self, *args, **kwargs)
 		self.slicer = slicer
 
 class SlicerNotConfigured(SlicerException):
@@ -62,7 +62,7 @@ class SlicerNotConfigured(SlicerException):
 	Raised if a slicer is not yet configured but must be configured to proceed.
 	"""
 	def __init__(self, slicer, *args, **kwargs):
-		super(SlicerException, self).__init__(slicer, *args, **kwargs)
+		SlicerException.__init__(self, slicer, *args, **kwargs)
 		self.message = "Slicer not configured: {slicer}".format(slicer=slicer)
 
 class UnknownSlicer(SlicerException):
@@ -70,7 +70,7 @@ class UnknownSlicer(SlicerException):
 	Raised if a slicer is unknown.
 	"""
 	def __init__(self, slicer, *args, **kwargs):
-		super(SlicerException, self).__init__(slicer, *args, **kwargs)
+		SlicerException.__init__(self, slicer, *args, **kwargs)
 		self.message = "No such slicer: {slicer}".format(slicer=slicer)
 
 class ProfileException(BaseException):
@@ -86,7 +86,7 @@ class ProfileException(BaseException):
 	   Identifier of the profile for which the exception was raised.
 	"""
 	def __init__(self, slicer, profile, *args, **kwargs):
-		super(BaseException, self).__init__(*args, **kwargs)
+		BaseException.__init__(self, *args, **kwargs)
 		self.slicer = slicer
 		self.profile = profile
 
@@ -95,7 +95,7 @@ class UnknownProfile(ProfileException):
 	Raised if a slicing profile does not exist but must exist to proceed.
 	"""
 	def __init__(self, slicer, profile, *args, **kwargs):
-		super(ProfileException, self).__init__(slicer, profile, *args, **kwargs)
+		ProfileException.__init__(self, slicer, profile, *args, **kwargs)
 		self.message = "Profile {profile} for slicer {slicer} does not exist".format(profile=profile, slicer=slicer)
 
 class ProfileAlreadyExists(ProfileException):
@@ -103,5 +103,5 @@ class ProfileAlreadyExists(ProfileException):
 	Raised if a slicing profile already exists and must not be overwritten.
 	"""
 	def __init__(self, slicer, profile, *args, **kwargs):
-		super(ProfileException, self).__init__(slicer, profile, *args, **kwargs)
+		ProfileException.__init__(self, slicer, profile, *args, **kwargs)
 		self.message = "Profile {profile} for slicer {slicer} already exists".format(profile=profile, slicer=slicer)

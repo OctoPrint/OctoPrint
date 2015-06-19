@@ -129,7 +129,7 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 	def on_settings_save(self, data):
 		old_debug_logging = self._settings.get_boolean(["debug_logging"])
 
-		super(CuraPlugin, self).on_settings_save(data)
+		octoprint.plugin.SettingsPlugin.on_settings_save(self, data)
 
 		new_debug_logging = self._settings.get_boolean(["debug_logging"])
 		if old_debug_logging != new_debug_logging:

@@ -133,13 +133,17 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			result.append(self._to_external_representation(plugin))
 
 		if "refresh_repository" in request.values and request.values["refresh_repository"] in valid_boolean_trues:
-			self._refresh_repository()
+			self._repository_available = self._refresh_repository()
 
 		return jsonify(plugins=result, repository=dict(available=self._repository_available, plugins=self._repository_plugins), os=self._get_os(), octoprint=self._get_octoprint_version())
 
 	def on_api_command(self, command, data):
 		if not admin_permission.can():
 			return make_response("Insufficient rights", 403)
+
+		if self._printer.is_printing() or self._printer.is_paused():
+			# do not update while a print job is running
+			return make_response("Printer is currently printing or paused", 409)
 
 		if command == "install":
 			url = data["url"]
@@ -164,10 +168,6 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 			plugin = self._plugin_manager.plugins[plugin_name]
 			return self.command_toggle(plugin, command)
-
-		elif command == "refresh_repository":
-			self._repository_available = self._refresh_repository()
-			return jsonify(repository=dict(available=self._repository_available, plugins=self._repository_plugins))
 
 	def command_install(self, url=None, path=None, force=False, reinstall=None, dependency_links=False):
 		if url is not None:

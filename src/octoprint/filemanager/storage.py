@@ -309,6 +309,41 @@ class LocalFileStorage(StorageInterface):
 
 		self._metadata_cache = pylru.lrucache(10)
 
+		self._old_metadata = None
+		self._initialize_metadata()
+
+	def _initialize_metadata(self):
+		self._logger.info("Initializing the file metadata for {}...".format(self.basefolder))
+
+		old_metadata_path = os.path.join(self.basefolder, "metadata.yaml")
+		backup_path = os.path.join(self.basefolder, "metadata.yaml.backup")
+
+		if os.path.exists(old_metadata_path):
+			# load the old metadata file
+			try:
+				with open(old_metadata_path) as f:
+					import yaml
+					self._old_metadata = yaml.safe_load(f)
+			except:
+				self._logger.exception("Error while loading old metadata file")
+
+			# make sure the metadata is initialized as far as possible
+			self._list_folder(self.basefolder)
+
+			# rename the old metadata file
+			self._old_metadata = None
+			try:
+				import shutil
+				shutil.move(old_metadata_path, backup_path)
+			except:
+				self._logger.exception("Could not rename old metadata.yaml file")
+
+		else:
+			# make sure the metadata is initialized as far as possible
+			self._list_folder(self.basefolder)
+
+		self._logger.info("... file metadata for {} initialized successfully.".format(self.basefolder))
+
 	@property
 	def analysis_backlog(self):
 		for entry in self._analysis_backlog_generator():
@@ -919,12 +954,7 @@ class LocalFileStorage(StorageInterface):
 				if entry in metadata and isinstance(metadata[entry], dict):
 					entry_data = metadata[entry]
 				else:
-					entry_data = dict(
-						hash=self._create_hash(entry_path),
-						links=[],
-						notes=[]
-					)
-					metadata[entry] = entry_data
+					entry_data = self._add_basic_metadata(path, entry, save=False, metadata=metadata)
 					metadata_dirty = True
 
 				# TODO extract model hash from source if possible to recreate link
@@ -958,6 +988,31 @@ class LocalFileStorage(StorageInterface):
 			self._save_metadata(path, metadata)
 
 		return result
+
+	def _add_basic_metadata(self, path, entry, additional_metadata=None, save=True, metadata=None):
+		if additional_metadata is None:
+			additional_metadata = dict()
+
+		if metadata is None:
+			metadata = self._get_metadata(path)
+
+		entry_data = dict(
+			hash=self._create_hash(os.path.join(path, entry)),
+			links=[],
+			notes=[]
+		)
+
+		if path == self.basefolder and self._old_metadata is not None and entry in self._old_metadata and "gcodeAnalysis" in self._old_metadata[entry]:
+			# if there is still old metadata available and that contains an analysis for this file, use it!
+			entry_data["analysis"] = self._old_metadata[entry]["gcodeAnalysis"]
+
+		entry_data.update(additional_metadata)
+		metadata[entry] = entry_data
+
+		if save:
+			self._save_metadata(path, metadata)
+
+		return entry_data
 
 	def _create_hash(self, path):
 		import hashlib
@@ -993,16 +1048,22 @@ class LocalFileStorage(StorageInterface):
 	def _save_metadata(self, path, metadata):
 		metadata_path = os.path.join(path, ".metadata.yaml")
 
-		fh, metadata_temporary_path = tempfile.mkstemp()
-		os.close(fh)
-
 		with self._metadata_lock:
 			try:
-				with open(metadata_temporary_path, "w") as f:
-					import yaml
-					yaml.safe_dump(metadata, stream=f, default_flow_style=False, indent="  ", allow_unicode=True)
+				import yaml
 				import shutil
-				shutil.move(metadata_temporary_path, metadata_path)
+
+				file_obj = tempfile.NamedTemporaryFile(delete=False)
+				try:
+					yaml.safe_dump(metadata, stream=file_obj, default_flow_style=False, indent="  ", allow_unicode=True)
+					file_obj.close()
+					shutil.move(file_obj.name, metadata_path)
+				finally:
+					try:
+						if os.path.exists(file_obj.name):
+							os.remove(file_obj.name)
+					except Exception as e:
+						self._logger.warn("Could not delete file {}: {}".format(file_obj.name, str(e)))
 			except:
 				self._logger.exception("Error while writing .metadata.yaml to {path}".format(**locals()))
 			else:
