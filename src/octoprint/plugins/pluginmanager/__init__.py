@@ -241,12 +241,31 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			package_name = plugin.origin.package_name
 			package_version = plugin.origin.package_version
 			versioned_package = "{package_name}-{package_version}".format(**locals())
+
 			if package_name in installed or versioned_package in installed:
+				# exact match, we are done here
 				new_plugin_key = key
 				new_plugin = plugin
 				break
+
+			else:
+				# it might still be a version that got stripped by python's package resources, e.g. 1.4.5a0 => 1.4.5a
+				found = False
+
+				for inst in installed:
+					if inst.startswith(versioned_package):
+						found = True
+						break
+
+				if found:
+					new_plugin_key = key
+					new_plugin = plugin
+					break
 		else:
-			return make_response("Could not find plugin that was installed", 500)
+			self._logger.warn("The plugin was installed successfully, but couldn't be found afterwards to initialize properly during runtime. Please restart OctoPrint.")
+			result = dict(result=True, url=url, needs_restart=True, needs_refresh=True, was_reinstalled=False, plugin="unknown")
+			self._send_result_notification("install", result)
+			return jsonify(result)
 
 		self._plugin_manager.mark_plugin(new_plugin_key, uninstalled=False)
 		self._plugin_manager.reload_plugins()
