@@ -718,7 +718,7 @@ class SettingsPlugin(OctoPrintPlugin):
 	       def on_settings_save(self, data):
 	           old_flag = self._settings.get_boolean(["sub", "some_flag"])
 
-	           super(MySettingsPlugin, self).on_settings_save(data)
+	           octoprint.plugin.SettingsPlugin.on_settings_save(self, data)
 
 	           new_flag = self._settings.get_boolean(["sub", "some_flag"])
 	           if old_flag != new_flag:
