@@ -309,11 +309,17 @@ class PluginSettings(object):
 			return result
 
 		def add_getter_kwargs(kwargs):
-			kwargs.update(defaults=self.defaults, preprocessors=self.get_preprocessors)
+			if not "defaults" in kwargs:
+				kwargs.update(defaults=self.defaults)
+			if not "preprocessors" in kwargs:
+				kwargs.update(preprocessors=self.get_preprocessors)
 			return kwargs
 
 		def add_setter_kwargs(kwargs):
-			kwargs.update(defaults=self.defaults, preprocessors=self.set_preprocessors)
+			if not "defaults" in kwargs:
+				kwargs.update(defaults=self.defaults)
+			if not "preprocessors" in kwargs:
+				kwargs.update(preprocessors=self.set_preprocessors)
 			return kwargs
 
 		self.access_methods = dict(
