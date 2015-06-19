@@ -88,7 +88,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		}
 
 	def on_settings_save(self, data):
-		super(SoftwareUpdatePlugin, self).on_settings_save(data)
+		octoprint.plugin.SettingsPlugin.on_settings_save(self, data)
 		self._version_cache_ttl = self._settings.get_int(["cache_ttl"]) * 60
 
 	def get_settings_version(self):
