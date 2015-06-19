@@ -11,6 +11,7 @@ import Queue as queue
 import os
 import threading
 import collections
+import time
 
 from octoprint.events import Events, eventManager
 
@@ -100,6 +101,9 @@ class AbstractAnalysisQueue(object):
 	.. automethod:: _do_abort
 	"""
 
+	LOW_PRIO = 0
+	HIGH_PRIO = 100
+
 	def __init__(self, finished_callback):
 		self._logger = logging.getLogger(__name__)
 
@@ -133,10 +137,10 @@ class AbstractAnalysisQueue(object):
 
 		if high_priority:
 			self._logger.debug("Adding entry {entry} to analysis queue with high priority".format(entry=entry))
-			prio = 0
+			prio = self.__class__.HIGH_PRIO
 		else:
 			self._logger.debug("Adding entry {entry} to analysis queue with low priority".format(entry=entry))
-			prio = 100
+			prio = self.__class__.LOW_PRIO
 
 		self._queue.put((prio, entry))
 
@@ -173,13 +177,15 @@ class AbstractAnalysisQueue(object):
 			self._active.wait()
 
 			try:
-				self._analyze(entry)
+				self._analyze(entry, high_priority=(priority == self.__class__.HIGH_PRIO))
 				self._queue.task_done()
 			except gcodeInterpreter.AnalysisAborted:
 				aborted = entry
 				self._logger.debug("Running analysis of entry {entry} aborted".format(**locals()))
+			else:
+				time.sleep(1.0)
 
-	def _analyze(self, entry):
+	def _analyze(self, entry, high_priority=False):
 		path = entry.absolute_path
 		if path is None or not os.path.exists(path):
 			return
@@ -190,17 +196,23 @@ class AbstractAnalysisQueue(object):
 		try:
 			self._logger.debug("Starting analysis of {entry}".format(**locals()))
 			eventManager().fire(Events.METADATA_ANALYSIS_STARTED, {"file": entry.path, "type": entry.type})
-			result = self._do_analysis()
+			try:
+				result = self._do_analysis(high_priority=high_priority)
+			except TypeError:
+				result = self._do_analysis()
 			self._logger.debug("Analysis of entry {entry} finished, notifying callback".format(**locals()))
 			self._finished_callback(self._current, result)
 		finally:
 			self._current = None
 			self._current_progress = None
 
-	def _do_analysis(self):
+	def _do_analysis(self, high_priority=False):
 		"""
 		Performs the actual analysis of the current entry which can be accessed via ``self._current``. Needs to be
 		overridden by sub classes.
+
+		Arguments:
+		    high_priority (bool): Whether the current entry has high priority or not.
 
 		Returns:
 		    object: The result of the analysis which will be forwarded to the ``finished_callback`` provided during
@@ -235,10 +247,17 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
 	     * The extruded volume in cm³
 	"""
 
-	def _do_analysis(self):
+	def _do_analysis(self, high_priority=False):
 		try:
+			def throttle():
+				time.sleep(0.01)
+
+			throttle_callback = throttle
+			if high_priority:
+				throttle_callback = None
+
 			self._gcode = gcodeInterpreter.gcode()
-			self._gcode.load(self._current.absolute_path, self._current.printer_profile)
+			self._gcode.load(self._current.absolute_path, self._current.printer_profile, throttle=throttle_callback)
 
 			result = dict()
 			if self._gcode.totalMoveTimeMinute:
