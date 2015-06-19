@@ -194,7 +194,7 @@ class AbstractAnalysisQueue(object):
 		self._current_progress = 0
 
 		try:
-			self._logger.debug("Starting analysis of {entry}".format(**locals()))
+			self._logger.info("Starting analysis of {entry}".format(**locals()))
 			eventManager().fire(Events.METADATA_ANALYSIS_STARTED, {"file": entry.path, "type": entry.type})
 			try:
 				result = self._do_analysis(high_priority=high_priority)
