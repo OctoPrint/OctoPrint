@@ -216,6 +216,10 @@ Progress information
 File related
 ============
 
+.. todo::
+
+   Update to reflect enhanced data now available.
+
 .. _sec-api-datamodel-files-file:
 
 File information
@@ -233,10 +237,51 @@ File information
      - 1
      - String
      - The name of the file
+   * - ``type``
+     - 1
+     - String
+     - Type of file. ``model`` or ``machinecode``. Or ``folder`` if it's a folder, in which case the ``children``
+       node will be populated
+
+Additional properties depend on ``type``. For a ``type`` value of ``folder``, see "Folders". For any other value
+see "Files".
+
+Folders
+'''''''
+
+.. list-table::
+   :widths: 15 5 10 30
+   :header-rows: 1
+
+   * - Name
+     - Multiplicity
+     - Type
+     - Description
+   * - ``children``
+     - 0..*
+     - Array of :ref:`File information items <sec-api-datamodel-files-file>`
+     - Contained children for entries of type ``folder``
+
+Files
+'''''
+
+.. list-table::
+   :widths: 15 5 10 30
+   :header-rows: 1
+
+   * - Name
+     - Multiplicity
+     - Type
+     - Description
+   * - ``hash``
+     - 1
+     - String
+     - MD5 hash of the file
    * - ``size``
      - 0..1
      - Number
-     - The size of the file in bytes. Only available for ``local`` files.
+     - The size of the file in bytes. Only available for ``local`` files or ``sdcard`` files if the printer
+       supports file sizes for sd card files.
    * - ``date``
      - 0..1
      - Unix timestamp
@@ -254,10 +299,6 @@ File information
      - 0..1
      - :ref:`GCODE analysis information <sec-api-datamodel-files-gcodeanalysis>`
      - Information from the analysis of the GCODE file, if available. Left out in abridged version.
-   * - ``prints``
-     - 0..1
-     - :ref:`Print history <sec-api-datamodel-files-prints>`
-     - Information regarding prints of this file, if available. Left out in abridged version.
 
 .. _sec-api-datamodel-files-gcodeanalysis:
 
@@ -289,40 +330,6 @@ GCODE analysis information
      - Float
      - The volume of filament used, in cm³
 
-
-.. _sec-api-datamodel-files-prints:
-
-Print history
--------------
-
-.. list-table::
-   :widths: 15 5 10 30
-   :header-rows: 1
-
-   * - Name
-     - Multiplicity
-     - Type
-     - Description
-   * - ``failure``
-     - 1
-     - Number
-     - The number of failed prints on record for the file
-   * - ``success``
-     - 1
-     - Number
-     - The number of successful prints on record for the file
-   * - ``last``
-     - 0..1
-     - Object
-     - Information regarding the last print on record for the file
-   * - ``last.date``
-     - 1
-     - Unix timestamp
-     - Timestamp when this file was printed last
-   * - ``last.success``
-     - 1
-     - Boolean
-     - Whether the last print on record was a success (``true``) or not (``false``)
 
 .. _sec-api-datamodel-files-ref:
 
