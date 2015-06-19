@@ -210,7 +210,22 @@ class Server():
 			                                                   set_preprocessors=set_preprocessors)
 			return dict(settings=plugin_settings)
 
+		def settings_plugin_pre_init(name, implementation):
+			if not isinstance(implementation, octoprint.plugin.SettingsPlugin):
+				return
+
+			settings_version = implementation.get_settings_version()
+			settings_migrator = implementation.on_settings_migrate
+
+			if settings_version is not None and settings_migrator is not None:
+				stored_version = implementation._settings.get_int(["_config_version"])
+				if stored_version is None or stored_version < settings_version:
+					settings_migrator(settings_version, stored_version)
+					implementation._settings.set_int(["_config_version"], settings_version)
+					implementation._settings.save()
+
 		pluginManager.implementation_inject_factories=[octoprint_plugin_inject_factory, settings_plugin_inject_factory]
+		pluginManager.implementation_pre_inits=[settings_plugin_pre_init]
 		pluginManager.initialize_implementations()
 
 		pluginManager.log_all_plugins()

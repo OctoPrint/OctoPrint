@@ -281,6 +281,7 @@ class PluginSettings(object):
 			defaults = dict()
 		self.defaults = dict(plugins=dict())
 		self.defaults["plugins"][plugin_key] = defaults
+		self.defaults["plugins"][plugin_key]["_config_version"] = None
 
 		if get_preprocessors is None:
 			get_preprocessors = dict()
