@@ -969,7 +969,7 @@ class Settings(object):
 			del config[key]
 			self._dirty = True
 		elif force or (not key in config and defaults[key] != value) or (key in config and config[key] != value):
-			if value is None:
+			if value is None and key in config:
 				del config[key]
 			else:
 				config[key] = value
