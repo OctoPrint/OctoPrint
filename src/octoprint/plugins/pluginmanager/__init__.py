@@ -133,7 +133,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			result.append(self._to_external_representation(plugin))
 
 		if "refresh_repository" in request.values and request.values["refresh_repository"] in valid_boolean_trues:
-			self._refresh_repository()
+			self._repository_available = self._refresh_repository()
 
 		return jsonify(plugins=result, repository=dict(available=self._repository_available, plugins=self._repository_plugins), os=self._get_os(), octoprint=self._get_octoprint_version())
 
