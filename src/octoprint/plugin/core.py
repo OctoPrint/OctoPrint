@@ -1215,13 +1215,13 @@ class RestartNeedingPlugin(Plugin):
 
 class PluginNeedsRestart(BaseException):
 	def __init__(self, name):
-		super(BaseException, self).__init__()
+		BaseException.__init__(self)
 		self.name = name
 		self.message = "Plugin {name} cannot be enabled or disabled after system startup".format(**locals())
 
 class PluginLifecycleException(BaseException):
 	def __init__(self, name, reason, message):
-		super(BaseException, self).__init__()
+		BaseException.__init__(self)
 		self.name = name
 		self.reason = reason
 
@@ -1232,7 +1232,7 @@ class PluginLifecycleException(BaseException):
 
 class PluginCantInitialize(PluginLifecycleException):
 	def __init__(self, name, reason):
-		super(PluginLifecycleException, self).__init__(name, reason, "Plugin {name} cannot be initialized: {reason}")
+		PluginLifecycleException.__init__(self, name, reason, "Plugin {name} cannot be initialized: {reason}")
 
 class PluginCantEnable(PluginLifecycleException):
 	def __init__(self, name, reason):
@@ -1240,4 +1240,4 @@ class PluginCantEnable(PluginLifecycleException):
 
 class PluginCantDisable(PluginLifecycleException):
 	def __init__(self, name, reason):
-		super(PluginLifecycleException, self).__init__(name, reason, "Plugin {name} cannot be disabled: {reason}")
+		PluginLifecycleException.__init__(self, name, reason, "Plugin {name} cannot be disabled: {reason}")
