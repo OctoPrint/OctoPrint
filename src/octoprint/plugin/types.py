@@ -853,15 +853,24 @@ class SettingsPlugin(OctoPrintPlugin):
 		Your plugin's implementation should take care of migrating any data by utilizing self._settings. OctoPrint
 		will take care of saving any changes to disk by calling `self._settings.save()` after returning from this method.
 
-		This method will be called before your plugin's :func:`initialize` method, but with all injections already
-		having taken place. You can therefore depend on the configuration having been migrated by the time :func:`initialize`
-		is called.
+		This method will be called before your plugin's :func:`on_settings_initialized` method, with all injections already
+		having taken place. You can therefore depend on the configuration having been migrated by the time
+		:func:`on_settings_initialized` is called.
 
 		Arguments:
 		    target (int): The settings format version the plugin requires, this should always be the same value as
 		                  returned by :func:`get_settings_version`.
 		    current (int or None): The settings format version as currently stored in config.yaml. May be None if
 		                  no version information can be found.
+		"""
+		pass
+
+	def on_settings_initialized(self):
+		"""
+		Called after the settings have been initialized and - if necessary - also been migrated through a call to
+		func:`on_settings_migrate`.
+
+		This method will always be called after the `initialize` method.
 		"""
 		pass
 
