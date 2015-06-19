@@ -136,8 +136,16 @@ class FileManager(object):
 
 	def initialize(self):
 		self.reload_plugins()
-		for storage_type, storage_manager in self._storage_managers.items():
-			self._determine_analysis_backlog(storage_type, storage_manager)
+
+		def worker():
+			self._logger.info("Adding backlog items from all storage types to analysis queue...".format(**locals()))
+			for storage_type, storage_manager in self._storage_managers.items():
+				self._determine_analysis_backlog(storage_type, storage_manager)
+
+		import threading
+		thread = threading.Thread(target=worker)
+		thread.daemon = True
+		thread.start()
 
 	def reload_plugins(self):
 		self._progress_plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.ProgressPlugin)
@@ -150,13 +158,15 @@ class FileManager(object):
 		self._slicing_progress_callbacks.remove(callback)
 
 	def _determine_analysis_backlog(self, storage_type, storage_manager):
-		self._logger.info("Adding backlog items from {storage_type} to analysis queue".format(**locals()))
+		counter = 0
 		for entry, path, printer_profile in storage_manager.analysis_backlog:
 			file_type = get_file_type(path)[-1]
 
 			# we'll use the default printer profile for the backlog since we don't know better
 			queue_entry = QueueEntry(entry, file_type, storage_type, path, self._printer_profile_manager.get_default())
 			self._analysis_queue.enqueue(queue_entry, high_priority=False)
+			counter += 1
+		self._logger.info("Added {counter} items from storage type \"{storage_type}\" to analysis queue".format(**locals()))
 
 	def add_storage(self, storage_type, storage_manager):
 		self._storage_managers[storage_type] = storage_manager
