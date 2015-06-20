@@ -122,6 +122,11 @@ def getSettings():
 
 	def process_plugin_result(name, result):
 		if result:
+			try:
+				jsonify(test=result)
+			except:
+				logger.exception("Error while jsonifying settings from plugin {}, please contact the plugin author about this".format(name))
+
 			if not "plugins" in data:
 				data["plugins"] = dict()
 			if "__enabled" in result:
