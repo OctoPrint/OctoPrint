@@ -387,19 +387,21 @@ ul.dropdown-menu li a {
   width: 100%;
 }
 
-/** Offline overlay */
+/** Offline & Reload overlay */
 
-#offline_overlay {
+#offline_overlay,
+#reloadui_overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  z-index: 10000;
+  z-index: 10001;
   display: none;
 }
 
-#offline_overlay_background {
+#offline_overlay_background,
+#reloadui_overlay_background {
   position: fixed;
   top: 0;
   left: 0;
@@ -412,7 +414,8 @@ ul.dropdown-menu li a {
   opacity: 0.5;
 }
 
-#offline_overlay_wrapper {
+#offline_overlay_wrapper,
+#reloadui_overlay_wrapper {
   position: absolute;
   top: 0;
   bottom: 0;

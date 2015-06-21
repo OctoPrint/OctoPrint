@@ -9,6 +9,11 @@ function DataUpdater(allViewModels) {
     self._autoReconnectTimeouts = [0, 1, 1, 2, 3, 5, 8, 13, 20, 40, 100];
     self._autoReconnectDialogIndex = 1;
 
+    self._pluginHash = undefined;
+
+    self.reloadOverlay = $("#reloadui_overlay");
+    $("#reloadui_overlay_reload").click(function() { location.reload(true); });
+
     self.connect = function() {
         var options = {};
         if (SOCKJS_DEBUG) {
@@ -119,6 +124,9 @@ function DataUpdater(allViewModels) {
                     DISPLAY_VERSION = data["display_version"];
                     $("span.version").text(DISPLAY_VERSION);
 
+                    var oldPluginHash = self._pluginHash;
+                    self._pluginHash = data["plugin_hash"];
+
                     if ($("#offline_overlay").is(":visible")) {
                         hideOfflineOverlay();
                         _.each(self.allViewModels, function(viewModel) {
@@ -132,13 +140,8 @@ function DataUpdater(allViewModels) {
                         }
                     }
 
-                    if (oldVersion != VERSION) {
-                        // version change detected, force reloading UI - use randomized delay to reduce server load in
-                        // the case of multiple clients
-                        var delay = 5 + Math.floor(Math.random() * 5) + 1;
-                        setTimeout(function() {location.reload(true);}, delay * 1000);
-
-                        // TODO notify about that, or show confirmation
+                    if (oldVersion != VERSION || (oldPluginHash != undefined && oldPluginHash != self._pluginHash)) {
+                        self.reloadOverlay.show();
                     }
 
                     break;
