@@ -92,7 +92,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		self._version_cache_ttl = self._settings.get_int(["cache_ttl"]) * 60
 
 	def get_settings_version(self):
-		return 1
+		return 2
 
 	def on_settings_migrate(self, target, current=None):
 		if current is None:
@@ -111,7 +111,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 					deletables=["current"]
 				else:
 					deletables=[]
-				octoprint_check = self._clean_settings_check("octoprint", configured_checks, self.get_settings_defaults()["checks"]["octoprint"], delete=deletables, save=False)
+				octoprint_check = self._clean_settings_check("octoprint", octoprint_check, self.get_settings_defaults()["checks"]["octoprint"], delete=deletables, save=False)
 
 			# and the hooks
 			update_check_hooks = self._plugin_manager.get_hooks("octoprint.plugin.softwareupdate.check_config")
@@ -131,6 +131,19 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 								deletables = []
 
 							self._clean_settings_check(key, settings_check, data, delete=deletables, save=False)
+
+		elif current == 1:
+			configured_checks = self._settings.get(["checks"], incl_defaults=False)
+			if configured_checks is None:
+				return
+
+			if "octoprint" in configured_checks and "octoprint" in configured_checks["octoprint"]:
+				# that's a circular reference, back to defaults
+				dummy_defaults = dict(plugins=dict())
+				dummy_defaults["plugins"][self._identifier] = dict(checks=dict())
+				dummy_defaults["plugins"][self._identifier]["checks"]["octoprint"] = None
+				self._settings.set(["checks", "octoprint"], None, defaults=dummy_defaults)
+				self._settings.save()
 
 	def _clean_settings_check(self, key, data, defaults, delete=None, save=True):
 		if delete is None:
