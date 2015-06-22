@@ -122,6 +122,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 			"octoprint_restart_command": None,
 			"environment_restart_command": None,
+			"pip_command": None,
 
 			"cache_ttl": 24 * 60,
 		}
@@ -571,6 +572,8 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		if "update_script" in check:
 			return updaters.update_script
 		elif "pip" in check:
+			if not "pip_command" in check and self._settings.get(["pip_command"]) is not None:
+				check["pip_command"] = self._settings.get(["pip_command"])
 			return updaters.pip
 		elif "python_updater" in check:
 			return updaters.python_updater
