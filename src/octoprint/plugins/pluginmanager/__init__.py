@@ -21,6 +21,7 @@ import sarge
 import sys
 import requests
 import re
+import os
 
 class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
                           octoprint.plugin.TemplatePlugin,
@@ -37,9 +38,13 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 		self._repository_available = False
 		self._repository_plugins = []
+		self._repository_cache_path = None
+		self._repository_cache_ttl = 0
 
 	def initialize(self):
 		self._console_logger = logging.getLogger("octoprint.plugins.pluginmanager.console")
+		self._repository_cache_path = os.path.join(self._settings.get_plugin_data_folder(), "plugins.json")
+		self._repository_cache_ttl = self._settings.get_int(["repository_ttl"]) * 60
 
 	##~~ StartupPlugin
 
@@ -52,16 +57,21 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		self._console_logger.setLevel(logging.DEBUG)
 		self._console_logger.propagate = False
 
-		self._repository_available = self._refresh_repository()
+		self._repository_available = self._fetch_repository_from_disk()
 
 	##~~ SettingsPlugin
 
 	def get_settings_defaults(self):
 		return dict(
 			repository="http://plugins.octoprint.org/plugins.json",
+			repository_ttl=24*60,
 			pip=None,
 			dependency_links=False
 		)
+
+	def on_settings_save(self, data):
+		octoprint.plugin.SettingsPlugin.on_settings_save(self, data)
+		self._repository_cache_ttl = self._settings.get_int(["repository_ttl"]) * 60
 
 	##~~ AssetPlugin
 
@@ -499,14 +509,48 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			elif plugin.enabled and plugin.key not in self._pending_disable:
 				self._pending_disable.add(plugin.key)
 
-	def _refresh_repository(self):
+	def _fetch_repository_from_disk(self):
+		repo_data = None
+		if os.path.isfile(self._repository_cache_path):
+			import time
+			mtime = os.path.getmtime(self._repository_cache_path)
+			if mtime + self._repository_cache_ttl >= time.time() > mtime:
+				try:
+					import json
+					with open(self._repository_cache_path) as f:
+						repo_data = json.load(f)
+					self._logger.info("Loaded plugin repository data from disk, was still valid")
+				except:
+					self._logger.exception("Error while loading repository data from {}".format(self._repository_cache_path))
+
+		return self._refresh_repository(repo_data=repo_data)
+
+	def _fetch_repository_from_url(self):
 		import requests
 		repository_url = self._settings.get(["repository"])
 		try:
 			r = requests.get(repository_url)
+			self._logger.info("Loaded plugin repository data from {}".format(repository_url))
 		except Exception as e:
-			self._logger.warn("Could not fetch plugins from repository at {repository_url}: {message}".format(repository_url=repository_url, message=str(e)))
-			return False
+			self._logger.exception("Could not fetch plugins from repository at {repository_url}: {message}".format(repository_url=repository_url, message=str(e)))
+			return None
+
+		repo_data = r.json()
+
+		try:
+			import json
+			with open(self._repository_cache_path, "w+b") as f:
+				json.dump(repo_data, f)
+		except Exception as e:
+			self._logger.exception("Error while saving repository data to {}: {}".format(self._repository_cache_path, str(e)))
+
+		return repo_data
+
+	def _refresh_repository(self, repo_data=None):
+		if repo_data is None:
+			repo_data = self._fetch_repository_from_url()
+			if repo_data is None:
+				return False
 
 		current_os = self._get_os()
 		octoprint_version = self._get_octoprint_version()
@@ -539,7 +583,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 			return result
 
-		self._repository_plugins = map(map_repository_entry, r.json())
+		self._repository_plugins = map(map_repository_entry, repo_data)
 		return True
 
 	def _get_os(self):
