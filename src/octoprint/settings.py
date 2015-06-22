@@ -156,7 +156,8 @@ default_settings = {
 		"printerProfiles": None,
 		"scripts": None,
 		"translations": None,
-		"generated": None
+		"generated": None,
+		"data": None
 	},
 	"temperature": {
 		"profiles": [
@@ -789,7 +790,7 @@ class Settings(object):
 
 	#~~ getter
 
-	def get(self, path, asdict=False, config=None, defaults=None, preprocessors=None, merged=False):
+	def get(self, path, asdict=False, config=None, defaults=None, preprocessors=None, merged=False, incl_defaults=True):
 		import octoprint.util as util
 
 		if len(path) == 0:
@@ -807,7 +808,7 @@ class Settings(object):
 			if key in config and key in defaults:
 				config = config[key]
 				defaults = defaults[key]
-			elif key in defaults:
+			elif incl_defaults and key in defaults:
 				config = {}
 				defaults = defaults[key]
 			else:
@@ -832,7 +833,7 @@ class Settings(object):
 				value = config[key]
 				if merged and key in defaults:
 					value = util.dict_merge(defaults[key], value)
-			elif key in defaults:
+			elif incl_defaults and key in defaults:
 				value = defaults[key]
 			else:
 				value = None
@@ -853,8 +854,8 @@ class Settings(object):
 		else:
 			return results
 
-	def getInt(self, path, config=None, defaults=None, preprocessors=None):
-		value = self.get(path, config=config, defaults=defaults, preprocessors=preprocessors)
+	def getInt(self, path, config=None, defaults=None, preprocessors=None, incl_defaults=True):
+		value = self.get(path, config=config, defaults=defaults, preprocessors=preprocessors, incl_defaults=incl_defaults)
 		if value is None:
 			return None
 
@@ -864,8 +865,8 @@ class Settings(object):
 			self._logger.warn("Could not convert %r to a valid integer when getting option %r" % (value, path))
 			return None
 
-	def getFloat(self, path, config=None, defaults=None, preprocessors=None):
-		value = self.get(path, config=config, defaults=defaults, preprocessors=preprocessors)
+	def getFloat(self, path, config=None, defaults=None, preprocessors=None, incl_defaults=True):
+		value = self.get(path, config=config, defaults=defaults, preprocessors=preprocessors, incl_defaults=incl_defaults)
 		if value is None:
 			return None
 
@@ -875,8 +876,8 @@ class Settings(object):
 			self._logger.warn("Could not convert %r to a valid integer when getting option %r" % (value, path))
 			return None
 
-	def getBoolean(self, path, config=None, defaults=None, preprocessors=None):
-		value = self.get(path, config=config, defaults=defaults, preprocessors=preprocessors)
+	def getBoolean(self, path, config=None, defaults=None, preprocessors=None, incl_defaults=True):
+		value = self.get(path, config=config, defaults=defaults, preprocessors=preprocessors, incl_defaults=incl_defaults)
 		if value is None:
 			return None
 		if isinstance(value, bool):
@@ -969,7 +970,7 @@ class Settings(object):
 			del config[key]
 			self._dirty = True
 		elif force or (not key in config and defaults[key] != value) or (key in config and config[key] != value):
-			if value is None:
+			if value is None and key in config:
 				del config[key]
 			else:
 				config[key] = value

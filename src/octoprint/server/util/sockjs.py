@@ -49,8 +49,17 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection, octoprint.printer.
 		self._remoteAddress = self._getRemoteAddress(info)
 		self._logger.info("New connection from client: %s" % self._remoteAddress)
 
+		plugin_signature = lambda impl: "{}:{}".format(impl._identifier, impl._plugin_version)
+		template_plugins = map(plugin_signature, self._pluginManager.get_implementations(octoprint.plugin.TemplatePlugin))
+		asset_plugins = map(plugin_signature, self._pluginManager.get_implementations(octoprint.plugin.AssetPlugin))
+		ui_plugins = sorted(set(template_plugins + asset_plugins))
+
+		import hashlib
+		plugin_hash = hashlib.md5()
+		plugin_hash.update(",".join(ui_plugins))
+
 		# connected => update the API key, might be necessary if the client was left open while the server restarted
-		self._emit("connected", {"apikey": octoprint.server.UI_API_KEY, "version": octoprint.server.VERSION, "display_version": octoprint.server.DISPLAY_VERSION})
+		self._emit("connected", {"apikey": octoprint.server.UI_API_KEY, "version": octoprint.server.VERSION, "display_version": octoprint.server.DISPLAY_VERSION, "plugin_hash": plugin_hash.hexdigest()})
 
 		self._printer.register_callback(self)
 		self._fileManager.register_slicingprogress_callback(self)

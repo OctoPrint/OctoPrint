@@ -30,18 +30,18 @@ class gcode(object):
 		self.progressCallback = None
 		self._abort = False
 		self._filamentDiameter = 0
-	
-	def load(self, filename, printer_profile):
+
+	def load(self, filename, printer_profile, throttle=None):
 		if os.path.isfile(filename):
 			self.filename = filename
 			self._fileSize = os.stat(filename).st_size
 			with open(filename, "r") as f:
-				self._load(f, printer_profile)
+				self._load(f, printer_profile, throttle=throttle)
 
 	def abort(self):
 		self._abort = True
 
-	def _load(self, gcodeFile, printer_profile):
+	def _load(self, gcodeFile, printer_profile, throttle=None):
 		filePos = 0
 		readBytes = 0
 		pos = [0.0, 0.0, 0.0]
@@ -236,6 +236,9 @@ class gcode(object):
 					if len(totalExtrusion) <= currentExtruder:
 						for i in range(len(totalExtrusion), currentExtruder + 1):
 							totalExtrusion.append(0.0)
+
+			if throttle is not None:
+				throttle()
 
 		if self.progressCallback is not None:
 			self.progressCallback(100.0)

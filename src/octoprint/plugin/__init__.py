@@ -426,6 +426,17 @@ class PluginSettings(object):
 		filename += ".log"
 		return os.path.join(self.settings.getBaseFolder("logs"), filename)
 
+	def get_plugin_data_folder(self):
+		"""
+		Retrieves the path to a data folder specifically for the plugin.
+
+		Plugins may use this for storing additional data.
+		"""
+		path = os.path.join(self.settings.getBaseFolder("data"), self.plugin_key)
+		if not os.path.isdir(path):
+			os.makedirs(path)
+		return path
+
 	def __getattr__(self, item):
 		all_access_methods = self.access_methods.keys() + self.deprecated_access_methods.keys()
 		if item in all_access_methods:
