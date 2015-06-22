@@ -37,9 +37,13 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 		self._version_cache = dict()
 		self._version_cache_ttl = 0
+		self._version_cache_path = None
+		self._version_cache_dirty = False
 
 	def initialize(self):
 		self._version_cache_ttl = self._settings.get_int(["cache_ttl"]) * 60
+		self._version_cache_path = os.path.join(self._settings.get_plugin_data_folder(), "versioncache.yaml")
+		self._load_version_cache()
 
 		def refresh_checks(name, plugin):
 			self._refresh_configured_checks = True
@@ -67,6 +71,41 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 			return self._configured_checks
 
+	def _load_version_cache(self):
+		if not os.path.isfile(self._version_cache_path):
+			return
+
+		import yaml
+		try:
+			with open(self._version_cache_path) as f:
+				data = yaml.safe_load(f)
+		except:
+			self._logger.exception("Error while loading version cache from disk")
+		else:
+			self._version_cache = data
+			self._version_cache_dirty = False
+			self._logger.info("Loaded version cache from disk")
+
+	def _save_version_cache(self):
+		import tempfile
+		import yaml
+		import shutil
+
+		file_obj = tempfile.NamedTemporaryFile(delete=False)
+		try:
+			yaml.safe_dump(self._version_cache, stream=file_obj, default_flow_style=False, indent="  ", allow_unicode=True)
+			file_obj.close()
+			shutil.move(file_obj.name, self._version_cache_path)
+
+			self._version_cache_dirty = False
+			self._logger.info("Saved version cache to disk")
+		finally:
+			try:
+				if os.path.exists(file_obj.name):
+					os.remove(file_obj.name)
+			except Exception as e:
+				self._logger.warn("Could not delete file {}: {}".format(file_obj.name, str(e)))
+
 	#~~ SettingsPlugin API
 
 	def get_settings_defaults(self):
@@ -84,7 +123,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			"octoprint_restart_command": None,
 			"environment_restart_command": None,
 
-			"cache_ttl": 60,
+			"cache_ttl": 24 * 60,
 		}
 
 	def on_settings_save(self, data):
@@ -280,6 +319,8 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				local_value = target_information["local"]["value"]
 				information[target]["displayVersion"] = check["displayVersion"].format(octoprint_version=octoprint_version, local_name=local_name, local_value=local_value)
 
+		if self._version_cache_dirty:
+			self._save_version_cache()
 		return information, update_available, update_possible
 
 	def _get_current_version(self, target, check, force=False):
@@ -289,7 +330,8 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 		if target in self._version_cache and not force:
 			timestamp, information, update_available, update_possible = self._version_cache[target]
-			if timestamp + self._version_cache_ttl >= time.time():
+			if timestamp + self._version_cache_ttl >= time.time() > timestamp:
+				# we also check that timestamp < now to not get confused too much by clock changes
 				return information, update_available, update_possible
 
 		information = dict()
@@ -314,6 +356,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				update_possible = False
 
 		self._version_cache[target] = (time.time(), information, update_available, update_possible)
+		self._version_cache_dirty = True
 		return information, update_available, update_possible
 
 	def _send_client_message(self, message_type, data=None):
@@ -390,6 +433,8 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			self._send_client_message("error", dict(results=target_results))
 
 		else:
+			self._save_version_cache()
+
 			# otherwise the update process was a success, but we might still have to restart
 			if restart_type is not None and restart_type in ("octoprint", "environment"):
 				# one of our updates requires a restart of either type "octoprint" or "environment". Let's see if
@@ -467,6 +512,9 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				# we have to save here (even though that makes us save quite often) since otherwise the next
 				# load will overwrite our changes we just made
 				self._settings.save()
+
+			del self._version_cache[target]
+			self._version_cache_dirty = True
 
 		return target_error, target_result
 
