@@ -48,11 +48,19 @@ def _is_current(release_information, compare_type, custom=None):
 	if release_information["remote"]["value"] is None:
 		return True
 
-	if not compare_type in ("semantic", "unequal", "custom") or compare_type == "custom" and custom is None:
-		compare_type = "semantic"
+	if not compare_type in ("python", "semantic", "unequal", "custom") or compare_type == "custom" and custom is None:
+		compare_type = "python"
 
 	try:
-		if compare_type == "semantic":
+		if compare_type == "python":
+			import pkg_resources
+
+			local_version = pkg_resources.parse_version(release_information["local"]["value"])
+			remote_version = pkg_resources.parse_version(release_information["remote"]["value"])
+
+			return local_version >= remote_version
+
+		elif compare_type == "semantic":
 			import semantic_version
 
 			local_version = semantic_version.Version(release_information["local"]["value"])
@@ -79,7 +87,7 @@ def get_latest(target, check, custom_compare=None):
 		current = check["current"]
 
 	remote_name, remote_tag = _get_latest_release(check["user"], check["repo"], include_prerelease=check["prerelease"] == True if "prerelease" in check else False)
-	compare_type = check["release_compare"] if "release_compare" in check else "semantic"
+	compare_type = check["release_compare"] if "release_compare" in check else "python"
 
 	information =dict(
 		local=dict(name=current, value=current),
