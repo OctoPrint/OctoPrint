@@ -156,7 +156,8 @@ default_settings = {
 		"printerProfiles": None,
 		"scripts": None,
 		"translations": None,
-		"generated": None
+		"generated": None,
+		"data": None
 	},
 	"temperature": {
 		"profiles": [
