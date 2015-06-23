@@ -53,7 +53,7 @@
         <h3 data-bind="text: workingTitle"></h3>
     </div>
     <div class="modal-body">
-        <pre id="settings_plugin_pluginmanager_workingdialog_output" class="terminal pre-scrollable" style="height: 170px" data-bind="foreach: loglines"><span data-bind="text: line, css: {stdout: stream == 'stdout', stderr: stream == 'stderr'}"></span><br></pre>
+        <pre id="settings_plugin_pluginmanager_workingdialog_output" class="terminal pre-scrollable" style="height: 170px" data-bind="foreach: loglines"><span data-bind="text: line, css: {stdout: stream == 'stdout', stderr: stream == 'stderr', call: stream == 'call', message: stream == 'message'}"></span><br></pre>
     </div>
     <div class="modal-footer">
         <button class="btn" data-dismiss="modal" data-bind="enable: !$root.working()" aria-hidden="true">{{ _('Close') }}</button>
