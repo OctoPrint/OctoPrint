@@ -7,7 +7,6 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 
 import logging
-import pkg_resources
 
 from octoprint.util.pip import PipCaller, UnknownPip
 
@@ -15,7 +14,6 @@ logger = logging.getLogger("octoprint.plugins.softwareupdate.updaters.pip")
 console_logger = logging.getLogger("octoprint.plugins.softwareupdate.updaters.pip.console")
 
 _pip_callers = dict()
-_pip_version_dependency_links = pkg_resources.parse_version("1.5")
 
 def can_perform_update(target, check):
 	pip_caller = _get_pip_caller(command=check["pip_command"] if "pip_command" in check else None)
@@ -51,12 +49,9 @@ def perform_update(target, check, target_version):
 	logger.debug("Target: %s, executing pip install %s" % (target, install_arg))
 	pip_args = ["install", check["pip"].format(target_version=target_version, target=target_version)]
 
-	if "dependency_links" in check and check["dependency_links"] and pip_caller >= _pip_version_dependency_links:
-		pip_args += ["--process-dependency-links"]
-
 	pip_caller.execute(*pip_args)
 
-	logger.debug("Target. %s, executing pip install %s --ignore-reinstalled --force-reinstall --no-deps" % (target, install_arg))
+	logger.debug("Target: %s, executing pip install %s --ignore-reinstalled --force-reinstall --no-deps" % (target, install_arg))
 	pip_args += ["--ignore-installed", "--force-reinstall", "--no-deps"]
 
 	pip_caller.execute(*pip_args)
