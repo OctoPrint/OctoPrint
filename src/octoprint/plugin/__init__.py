@@ -426,12 +426,10 @@ class PluginSettings(object):
 		filename += ".log"
 		return os.path.join(self.settings.getBaseFolder("logs"), filename)
 
+	@deprecated("PluginSettings.get_plugin_data_folder has been replaced by OctoPrintPlugin.get_plugin_data_folder",
+	            includedoc="Replaced by :func:`~octoprint.plugin.types.OctoPrintPlugin.get_plugin_data_folder`",
+	            since="1.2.0")
 	def get_plugin_data_folder(self):
-		"""
-		Retrieves the path to a data folder specifically for the plugin.
-
-		Plugins may use this for storing additional data.
-		"""
 		path = os.path.join(self.settings.getBaseFolder("data"), self.plugin_key)
 		if not os.path.isdir(path):
 			os.makedirs(path)
