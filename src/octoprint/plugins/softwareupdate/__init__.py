@@ -42,7 +42,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 	def initialize(self):
 		self._version_cache_ttl = self._settings.get_int(["cache_ttl"]) * 60
-		self._version_cache_path = os.path.join(self._settings.get_plugin_data_folder(), "versioncache.yaml")
+		self._version_cache_path = os.path.join(self.get_plugin_data_folder(), "versioncache.yaml")
 		self._load_version_cache()
 
 		def refresh_checks(name, plugin):

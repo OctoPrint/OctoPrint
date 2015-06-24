@@ -47,7 +47,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 	def initialize(self):
 		self._console_logger = logging.getLogger("octoprint.plugins.pluginmanager.console")
-		self._repository_cache_path = os.path.join(self._settings.get_plugin_data_folder(), "plugins.json")
+		self._repository_cache_path = os.path.join(self.get_plugin_data_folder(), "plugins.json")
 		self._repository_cache_ttl = self._settings.get_int(["repository_ttl"]) * 60
 
 		self._pip_caller = PipCaller(configured=self._settings.get(["pip"]))
