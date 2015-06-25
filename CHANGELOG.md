@@ -1,6 +1,6 @@
 # OctoPrint Changelog
 
-## 1.2.0 (Unreleased)
+## 1.2.0 (2015-06-25)
 
 ### Note for Upgraders
 
