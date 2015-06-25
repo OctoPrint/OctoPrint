@@ -1,5 +1,12 @@
 # OctoPrint Changelog
 
+## 1.2.1 (unreleased)
+
+### Bug Fixes
+
+* [IRC] - OctoPrint will now exit cleanly on `SIGTERM`, calling the shutdown functions provided by plugins.
+  Thanks @Salandora for the heads-up.
+
 ## 1.2.0 (2015-06-25)
 
 ### Note for Upgraders

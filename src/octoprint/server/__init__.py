@@ -20,6 +20,7 @@ import os
 import logging
 import logging.config
 import atexit
+import signal
 
 SUCCESS = {}
 NO_CONTENT = ("", 204)
@@ -440,16 +441,27 @@ class Server():
 
 		# prepare our shutdown function
 		def on_shutdown():
-			self._logger.info("Goodbye!")
+			# will be called on clean system exit and shutdown the watchdog observer and call the on_shutdown methods
+			# on all registered ShutdownPlugins
+			self._logger.info("Shutting down...")
 			observer.stop()
 			observer.join()
 			octoprint.plugin.call_plugin(octoprint.plugin.ShutdownPlugin,
 			                             "on_shutdown")
+			self._logger.info("Goodbye!")
 		atexit.register(on_shutdown)
 
+		def sigterm_handler(*args, **kwargs):
+			# will stop tornado on SIGTERM, making the program exit cleanly
+			def shutdown_tornado():
+				ioloop.stop()
+			ioloop.add_callback_from_signal(shutdown_tornado)
+		signal.signal(signal.SIGTERM, sigterm_handler)
+
 		try:
+			# this is the main loop - as long as tornado is running, OctoPrint is running
 			ioloop.start()
-		except KeyboardInterrupt:
+		except (KeyboardInterrupt, SystemExit):
 			pass
 		except:
 			self._logger.fatal("Now that is embarrassing... Something really really went wrong here. Please report this including the stacktrace below in OctoPrint's bugtracker. Thanks!")
