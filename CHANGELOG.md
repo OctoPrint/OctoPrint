@@ -253,7 +253,7 @@
 
 ### More information
 
-  * [Commits](https://github.com/foosel/OctoPrint/compare/1.1.2...master)
+  * [Commits](https://github.com/foosel/OctoPrint/compare/1.1.2...1.2.0)
   * Release Candidates:
     * [RC1](https://github.com/foosel/OctoPrint/releases/tag/1.2.0-rc1)
     * [RC2](https://github.com/foosel/OctoPrint/releases/tag/1.2.0-rc2)
