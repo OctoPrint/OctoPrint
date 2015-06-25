@@ -196,7 +196,8 @@ class Server():
 				file_manager=fileManager,
 				printer=printer,
 				app_session_manager=appSessionManager,
-				plugin_lifecycle_manager=pluginLifecycleManager
+				plugin_lifecycle_manager=pluginLifecycleManager,
+				data_folder=os.path.join(settings().getBaseFolder("data"), name)
 			)
 
 		def settings_plugin_inject_factory(name, implementation):

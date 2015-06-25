@@ -257,7 +257,7 @@ them as (hopefully) documented.
    :emphasize-lines: 6-8,20
    :caption: Excerpt from the Growl Plugin showing utilization of the helpers published by the Discovery Plugin.
    :name: sec-plugin-concepts-helpers-example-usage
-   
+
    def on_after_startup(self):
        host = self._settings.get(["hostname"])
        port = self._settings.getInt(["port"])
@@ -270,7 +270,7 @@ them as (hopefully) documented.
        self.growl, _ = self._register_growl(host, port, password=password)
 
    # ...
-   
+
    def on_api_get(self, request):
        if not self.zeroconf_browse:
            return flask.jsonify(dict(
@@ -302,6 +302,10 @@ An overview of these properties follows.
 ``self._basefolder``
   The plugin's base folder where it's installed. Can be used to refer to files relative to the plugin's installation
   location, e.g. included scripts, templates or assets.
+``self._datafolder``
+  The plugin's additional data folder path. Can be used to store additional files needed for the plugin's operation (cache,
+  data files etc). Plugins should not access this property directly but instead utilize :func:`~octoprint.plugin.types.OctoPrintPlugin.get_plugin_data_folder`
+  which will make sure the path actually does exist and if not create it before returning it.
 ``self._logger``
   A `python logger instance <https://docs.python.org/2/library/logging.html>`_ logging to the log target
   ``octoprint.plugin.<plugin identifier>``.

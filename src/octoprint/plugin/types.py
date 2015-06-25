@@ -69,9 +69,32 @@ class OctoPrintPlugin(Plugin):
 
 	   The :class:`~octoprint.server.LifecycleManager` instance. Injected by the plugin core system upon initialization
 	   of the implementation.
+
+	.. attribute:: _data_folder
+
+	   Path to the data folder for the plugin to use for any data it might have to persist. Should always be accessed
+	   through :meth:`get_plugin_data_folder` since that function will also ensure that the data folder actually exists
+	   and if not creating it before returning it. Injected by the plugin core system upon initialization of the
+	   implementation.
+
+    .. automethod:: get_plugin_data_folder
 	"""
 
-	pass
+	def get_plugin_data_folder(self):
+		"""
+		Retrieves the path to a data folder specifically for the plugin, ensuring it exists and if not creating it
+		before returning it.
+
+		Plugins may use this folder for storing additional data they need for their operation.
+		"""
+		if self._data_folder is None:
+			raise RuntimeError("self._plugin_data_folder is None, has the plugin been initialized yet?")
+
+		import os
+		if not os.path.isdir(self._data_folder):
+			os.makedirs(self._data_folder)
+		return self._data_folder
+
 
 class ReloadNeedingPlugin(Plugin):
 	pass

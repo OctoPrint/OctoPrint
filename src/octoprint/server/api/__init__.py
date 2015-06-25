@@ -152,6 +152,8 @@ def performSystemAction():
 		available_actions = s().get(["system", "actions"])
 		for availableAction in available_actions:
 			if availableAction["action"] == action:
+				async = availableAction["async"] if "async" in availableAction else False
+				ignore = availableAction["ignore"] if "ignore" in availableAction else False
 				logger.info("Performing command: %s" % availableAction["command"])
 				try:
 					# Note: we put the command in brackets since sarge (up to the most recently released version) has
@@ -159,15 +161,18 @@ def performSystemAction():
 					# workaround again
 					#
 					# See https://bitbucket.org/vinay.sajip/sarge/issue/21/behavior-is-not-like-popen-using-shell
-					p = sarge.run([availableAction["command"]], stderr=sarge.Capture(), shell=True)
-					if p.returncode != 0:
-						returncode = p.returncode
-						stderr_text = p.stderr.text
-						logger.warn("Command failed with return code %i: %s" % (returncode, stderr_text))
-						return make_response(("Command failed with return code %i: %s" % (returncode, stderr_text), 500, []))
+					p = sarge.run([availableAction["command"]], stderr=sarge.Capture(), shell=True, async=async)
+					if not async:
+						if not ignore and p.returncode != 0:
+							returncode = p.returncode
+							stderr_text = p.stderr.text
+							logger.warn("Command failed with return code %i: %s" % (returncode, stderr_text))
+							return make_response(("Command failed with return code %i: %s" % (returncode, stderr_text), 500, []))
 				except Exception, e:
-					logger.warn("Command failed: %s" % e)
-					return make_response(("Command failed: %s" % e, 500, []))
+					if not ignore:
+						logger.warn("Command failed: %s" % e)
+						return make_response(("Command failed: %s" % e, 500, []))
+				break
 	return NO_CONTENT
 
 

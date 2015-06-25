@@ -1241,10 +1241,10 @@ class MachineCom(object):
 				self._changeState(self.STATE_DETECT_SERIAL)
 				serial_obj = self._detectPort(True)
 				if serial_obj is None:
-					self._log("Failed to autodetect serial port")
-					self._errorValue = 'Failed to autodetect serial port.'
+					self._errorValue = 'Failed to autodetect serial port, please set it manually.'
 					self._changeState(self.STATE_ERROR)
 					eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
+					self._log("Failed to autodetect serial port, please set it manually.")
 					return None
 
 				port = serial_obj.port
@@ -1266,11 +1266,17 @@ class MachineCom(object):
 		for name, factory in serial_factories:
 			try:
 				serial_obj = factory(self, self._port, self._baudrate, settings().getFloat(["serial", "timeout", "connection"]))
-			except Exception:
-				self._log("Unexpected error while connecting to serial port: %s %s (hook %s)" % (self._port, get_exception_string(), name))
-				self._errorValue = "Failed to open serial port, permissions correct?"
+			except:
+				exception_string = get_exception_string()
+				self._errorValue = "Connection error, see Terminal tab"
 				self._changeState(self.STATE_ERROR)
 				eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
+
+				self._log("Unexpected error while connecting to serial port: %s %s (hook %s)" % (self._port, exception_string, name))
+
+				if "failed to set custom baud rate" in exception_string.lower():
+					self._log("Your installation does not support custom baudrates (e.g. 250000) for connecting to your printer. This is a problem of the pyserial library that OctoPrint depends on. Please update to a pyserial version that supports your baudrate or switch your printer's firmware to a standard baudrate (e.g. 115200). See https://github.com/foosel/OctoPrint/wiki/OctoPrint-support-for-250000-baud-rate-on-Raspbian")
+
 				return False
 
 			if serial_obj is not None:
