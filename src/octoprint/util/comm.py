@@ -1298,9 +1298,13 @@ class MachineCom(object):
 			if self._regex_minMaxError.match(line):
 				line = line.rstrip() + self._readline()
 
-			#Skip the communication errors, as those get corrected.
 			if 'line number' in line.lower() or 'checksum' in line.lower() or 'expected line' in line.lower():
+				#Skip the communication errors, as those get corrected.
 				self._lastCommError = line[6:] if line.startswith("Error:") else line[2:]
+				pass
+			elif 'volume.init' in line.lower() or "openroot" in line.lower() or 'workdir' in line.lower()\
+					or "error writing to file" in line.lower():
+				#Also skip errors with the SD card
 				pass
 			elif not self.isError():
 				self._errorValue = line[6:] if line.startswith("Error:") else line[2:]
