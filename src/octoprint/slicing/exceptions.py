@@ -33,7 +33,7 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
-class SlicingException(BaseException):
+class SlicingException(Exception):
 	"""
 	Base exception of all slicing related exceptions.
 	"""
@@ -73,7 +73,7 @@ class UnknownSlicer(SlicerException):
 		SlicerException.__init__(self, slicer, *args, **kwargs)
 		self.message = "No such slicer: {slicer}".format(slicer=slicer)
 
-class ProfileException(BaseException):
+class ProfileException(Exception):
 	"""
 	Base exception of all slicing profile related exceptions.
 
@@ -86,7 +86,7 @@ class ProfileException(BaseException):
 	   Identifier of the profile for which the exception was raised.
 	"""
 	def __init__(self, slicer, profile, *args, **kwargs):
-		BaseException.__init__(self, *args, **kwargs)
+		Exception.__init__(self, *args, **kwargs)
 		self.slicer = slicer
 		self.profile = profile
 
