@@ -57,7 +57,7 @@ def slicingListSlicerProfiles(slicer):
 @api.route("/slicing/<string:slicer>/profiles/<string:name>", methods=["GET"])
 def slicingGetSlicerProfile(slicer, name):
 	try:
-		profile = slicingManager.load_profile(slicer, name)
+		profile = slicingManager.load_profile(slicer, name, require_configured=False)
 	except UnknownSlicer:
 		return make_response("Unknown slicer {slicer}".format(**locals()), 404)
 	except UnknownProfile:
@@ -106,7 +106,7 @@ def slicingPatchSlicerProfile(slicer, name):
 		return make_response("Expected content-type JSON", 400)
 
 	try:
-		profile = slicingManager.load_profile(slicer, name)
+		profile = slicingManager.load_profile(slicer, name, require_configured=False)
 	except UnknownSlicer:
 		return make_response("Unknown slicer {slicer}".format(**locals()), 404)
 	except UnknownProfile:
