@@ -1213,15 +1213,15 @@ class Plugin(object):
 class RestartNeedingPlugin(Plugin):
 	pass
 
-class PluginNeedsRestart(BaseException):
+class PluginNeedsRestart(Exception):
 	def __init__(self, name):
-		BaseException.__init__(self)
+		Exception.__init__(self)
 		self.name = name
 		self.message = "Plugin {name} cannot be enabled or disabled after system startup".format(**locals())
 
-class PluginLifecycleException(BaseException):
+class PluginLifecycleException(Exception):
 	def __init__(self, name, reason, message):
-		BaseException.__init__(self)
+		Exception.__init__(self)
 		self.name = name
 		self.reason = reason
 

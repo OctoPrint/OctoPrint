@@ -467,6 +467,6 @@ class PrinterCallback(object):
 		"""
 		pass
 
-class UnknownScript(BaseException):
+class UnknownScript(Exception):
 	def __init__(self, name, *args, **kwargs):
 		self.name = name

@@ -1982,9 +1982,9 @@ class TypedQueue(queue.Queue):
 		return item
 
 
-class TypeAlreadyInQueue(BaseException):
+class TypeAlreadyInQueue(Exception):
 	def __init__(self, t, *args, **kwargs):
-		BaseException.__init__(self, *args, **kwargs)
+		Exception.__init__(self, *args, **kwargs)
 		self.type = t
 
 

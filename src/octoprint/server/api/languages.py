@@ -143,5 +143,5 @@ def _validate_archive_name(name):
 		raise InvalidLanguagePack("Provided language pack contains invalid name {name}".format(**locals()))
 
 
-class InvalidLanguagePack(BaseException):
+class InvalidLanguagePack(Exception):
 	pass
