@@ -510,21 +510,45 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 			if "compatibility" in entry:
 				if "octoprint" in entry["compatibility"] and entry["compatibility"]["octoprint"] is not None and len(entry["compatibility"]["octoprint"]):
-					import semantic_version
-					for octo_compat in entry["compatibility"]["octoprint"]:
-						s = semantic_version.Spec("=={}".format(octo_compat))
-						if semantic_version.Version(octoprint_version) in s:
-							break
-					else:
-						result["is_compatible"]["octoprint"] = False
+					result["is_compatible"]["octoprint"] = self._is_octoprint_compatible(octoprint_version, entry["compatibility"]["octoprint"])
 
 				if "os" in entry["compatibility"] and entry["compatibility"]["os"] is not None and len(entry["compatibility"]["os"]):
-					result["is_compatible"]["os"] = current_os in entry["compatibility"]["os"]
+					result["is_compatible"]["os"] = self._is_os_compatible(current_os, entry["compatibility"]["os"])
 
 			return result
 
 		self._repository_plugins = map(map_repository_entry, repo_data)
 		return True
+
+	def _is_octoprint_compatible(self, octoprint_version, compatibility_entries):
+		"""
+		Tests if the current ``octoprint_version`` is compatible to any of the provided ``compatibility_entries``.
+		"""
+		import semantic_version
+
+		for octo_compat in compatibility_entries:
+			for version_string in (octo_compat, ">={}".format(octo_compat)):
+				try:
+					s = semantic_version.Spec(version_string)
+					if semantic_version.Version(octoprint_version) in s:
+						break
+				except ValueError:
+					# that just means that octo_compat directly wasn't a valid version spec string, so we try
+					# prefixing that with ">=" next and check again
+					pass
+			else:
+				continue
+			break
+		else:
+			return False
+
+		return True
+
+	def _is_os_compatible(self, current_os, compatibility_entries):
+		"""
+		Tests if the ``current_os`` matches any of the provided ``compatibility_entries``.
+		"""
+		return current_os in compatibility_entries
 
 	def _get_os(self):
 		if sys.platform == "win32":
