@@ -83,7 +83,7 @@
             </a>
         </h4>
 
-        <form class="form-search">
+        <form class="form-search" data-bind="submit: performRepositorySearch">
             <input type="text" class="input-block search-query" data-bind="value: repositorySearchQuery, valueUpdate: 'input'" placeholder="{{ _('Search...') }}">
         </form>
 

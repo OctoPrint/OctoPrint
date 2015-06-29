@@ -308,7 +308,11 @@ $(function() {
             return output;
         };
 
-        self.performSearch = function() {
+        self.performSearch = function(e) {
+            if (e !== undefined) {
+                e.preventDefault();
+            }
+
             var query = self.searchQuery();
             if (query !== undefined && query.trim() != "") {
                 self.listHelper.changeSearchFunction(function(entry) {

@@ -147,7 +147,11 @@ $(function() {
             }
         });
 
-        self.performRepositorySearch = function() {
+        self.performRepositorySearch = function(e) {
+            if (e !== undefined) {
+                e.preventDefault();
+            }
+
             var query = self.repositorySearchQuery();
             if (query !== undefined && query.trim() != "") {
                 self.repositoryplugins.changeSearchFunction(function(entry) {
