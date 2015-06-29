@@ -455,6 +455,9 @@ class LocalFileStorage(StorageInterface):
 
 		self._add_links(name, path, links)
 
+		# touch the file to set last access and modification time to now
+		os.utime(file_path, None)
+
 		return self.path_in_storage((path, name))
 
 	def remove_file(self, path):
