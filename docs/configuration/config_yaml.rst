@@ -366,6 +366,27 @@ Use the following settings to add shell/gcode commands to be executed on certain
          type: gcode
          enabled: False
 
+.. note::
+
+   For debugging purposes, you can also add an additional property ``debug`` to your event subscription definitions
+   that if set to true will make the event handler print a log line with your subscription's command after performing
+   all placeholder replacements. Example:
+
+   .. code-block:: yaml
+
+      events:
+        subscriptions:
+        - event: Startup
+          command: "logger 'OctoPrint started up'"
+          type: system
+          debug: true
+
+   This will be logged in OctoPrint's logfile as
+
+   .. code-block:: none
+
+      Executing System Command: logger 'OctoPrint started up'
+
 .. _sec-configuration-config_yaml-feature:
 
 Feature
