@@ -55,6 +55,12 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		self._pip_caller.on_log_stdout = self._log_stdout
 		self._pip_caller.on_log_stderr = self._log_stderr
 
+	##~~ Body size hook
+
+	def increase_upload_bodysize(self, current_max_body_sizes, *args, **kwargs):
+		# set a maximum body size of 50 MB for plugin archive uploads
+		return [("POST", r"/upload_archive", 50 * 1024 * 1024)]
+
 	##~~ StartupPlugin
 
 	def on_startup(self, host, port):
@@ -580,4 +586,12 @@ __plugin_author__ = "Gina Häußge"
 __plugin_url__ = "https://github.com/foosel/OctoPrint/wiki/Plugin:-Plugin-Manager"
 __plugin_description__ = "Allows installing and managing OctoPrint plugins"
 __plugin_license__ = "AGPLv3"
-__plugin_implementation__ = PluginManagerPlugin()
+
+def __plugin_load__():
+	global __plugin_implementation__
+	__plugin_implementation__ = PluginManagerPlugin()
+
+	global __plugin_hooks__
+	__plugin_hooks__ = {
+		"octoprint.server.http.bodysize": __plugin_implementation__.increase_upload_bodysize
+	}
