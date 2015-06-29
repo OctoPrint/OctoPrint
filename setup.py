@@ -59,14 +59,6 @@ EXTRA_REQUIRES = dict(
 # Dependency links for any of the aforementioned dependencies
 DEPENDENCY_LINKS = []
 
-# Versioneer configuration
-versioneer.VCS = 'git'
-versioneer.versionfile_source = 'src/octoprint/_version.py'
-versioneer.versionfile_build = 'octoprint/_version.py'
-versioneer.tag_prefix = ''
-versioneer.parentdir_prefix = ''
-versioneer.lookupfile = '.versioneer-lookup'
-
 #-----------------------------------------------------------------------------------------------------------------------
 # Anything below here is just command setup and general setup configuration
 
