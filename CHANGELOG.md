@@ -2,10 +2,26 @@
 
 ## 1.2.1 (unreleased)
 
+### Improvements
+
+* More flexibility when interpreting compatibility data from plugin repository. If compatibility information is provided
+  only as a version number it's prefixed with `>=` for the check (so stating a compatibility of only
+  `1.2.0` will now make the plugin compatible to OctoPrint 1.2.0+, not only 1.2.0). Alternatively the compatibility
+  information may now contain stuff like `>=1.2,<1.3` in which case the plugin will only be shown as compatible
+  to OctoPrint versions 1.2.0 and up but not 1.3.0 or anything above that. See also
+  [the requirement specification format of the `semantic_version` package](http://python-semanticversion.readthedocs.org/en/latest/#requirement-specification).
+
 ### Bug Fixes
 
-* [IRC] - OctoPrint will now exit cleanly on `SIGTERM`, calling the shutdown functions provided by plugins.
-  Thanks @Salandora for the heads-up.
+* [#956](https://github.com/foosel/OctoPrint/issues/956) - Fixed server crash when trying to configure a default
+  slicing profile for a still unconfigured slicer.
+* [IRC] - Clean exit on `SIGTERM`, calling the shutdown functions provided by plugins.
+* [IRC] - No longer reloading the page when the return key is pressed in either the file or the plugin search field.
+* Don't disconnect on `volume.init` errors from the firmware.
+* `touch` uploaded files on local file storage to ensure proper "uploaded date" even for files that are just moved from
+  other locations of the file system (e.g. when being added from the `watched` folder).
+
+([Commits](https://github.com/foosel/OctoPrint/compare/1.2.0...1.2.1))
 
 ## 1.2.0 (2015-06-25)
 
