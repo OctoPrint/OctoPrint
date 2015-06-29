@@ -520,25 +520,19 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		self._repository_plugins = map(map_repository_entry, repo_data)
 		return True
 
-	def _is_octoprint_compatible(self, octoprint_version, compatibility_entries):
+	def _is_octoprint_compatible(self, octoprint_version_string, compatibility_entries):
 		"""
 		Tests if the current ``octoprint_version`` is compatible to any of the provided ``compatibility_entries``.
 		"""
-		import semantic_version
 
+		octoprint_version = pkg_resources.parse_version(octoprint_version_string)
 		for octo_compat in compatibility_entries:
-			for version_string in (octo_compat, ">={}".format(octo_compat)):
-				try:
-					s = semantic_version.Spec(version_string)
-					if semantic_version.Version(octoprint_version) in s:
-						break
-				except ValueError:
-					# that just means that octo_compat directly wasn't a valid version spec string, so we try
-					# prefixing that with ">=" next and check again
-					pass
-			else:
-				continue
-			break
+			if not any(octo_compat.startswith(c) for c in ("<", "<=", "!=", "==", ">=", ">", "~=", "===")):
+				octo_compat = ">={}".format(octo_compat)
+
+			s = next(pkg_resources.parse_requirements("OctoPrint" + octo_compat))
+			if octoprint_version in s:
+				break
 		else:
 			return False
 
