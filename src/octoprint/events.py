@@ -298,6 +298,9 @@ class CommandTrigger(GenericEventListener):
 		def commandExecutioner(command):
 			if debug:
 				self._logger.info("Executing system command: %s" % command)
+			# we run this with shell=True since we have to trust whatever
+			# our admin configured as command and since we want to allow
+			# shell-alike handling here...
 			subprocess.Popen(command, shell=True)
 
 		try:

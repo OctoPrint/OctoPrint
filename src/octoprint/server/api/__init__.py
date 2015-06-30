@@ -156,12 +156,10 @@ def performSystemAction():
 				ignore = availableAction["ignore"] if "ignore" in availableAction else False
 				logger.info("Performing command: %s" % availableAction["command"])
 				try:
-					# Note: we put the command in brackets since sarge (up to the most recently released version) has
-					# a bug concerning shell=True commands. Once sarge 0.1.4 we can upgrade to that and remove this
-					# workaround again
-					#
-					# See https://bitbucket.org/vinay.sajip/sarge/issue/21/behavior-is-not-like-popen-using-shell
-					p = sarge.run([availableAction["command"]], stderr=sarge.Capture(), shell=True, async=async)
+					# we run this with shell=True since we have to trust whatever
+					# our admin configured as command and since we want to allow
+					# shell-alike handling here...
+					p = sarge.run(availableAction["command"], stderr=sarge.Capture(), shell=True, async=async)
 					if not async:
 						if not ignore and p.returncode != 0:
 							returncode = p.returncode
