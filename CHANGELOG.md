@@ -1,5 +1,13 @@
 # OctoPrint Changelog
 
+## 1.2.2 (2015-06-30)
+
+### Bug Fixes
+
+* Fixed an admin-only security issue introduced in 1.2.0, updating is strongly advised.
+
+([Commits](https://github.com/foosel/OctoPrint/compare/1.2.1...1.2.2))
+
 ## 1.2.1 (2015-06-30)
 
 ### Improvements
@@ -168,7 +176,7 @@
   changed under "Temperatures" in the Settings ([#343](https://github.com/foosel/OctoPrint/issues/343)).
 * High-DPI support for the GCode viewer ([#837](https://github.com/foosel/OctoPrint/issues/837)).
 * Stop websocket connections from multiplying ([#888](https://github.com/foosel/OctoPrint/pull/888)).
-* New setting to rotate webcam by 90° counter clockwise ([#895](https://github.com/foosel/OctoPrint/issues/895) and
+* New setting to rotate webcam by 90Â° counter clockwise ([#895](https://github.com/foosel/OctoPrint/issues/895) and
   [#906](https://github.com/foosel/OctoPrint/pull/906))
 * System commands now be set to a) run asynchronized by setting their `async` property to `true` and b) to ignore their
   result by setting their `ignore` property to `true`.
