@@ -65,11 +65,10 @@ class PipCaller(object):
 		command = [self._command] + list(args)
 
 		joined_command = " ".join(command)
-
 		self._logger.debug(u"Calling: {}".format(joined_command))
 		self.on_log_call(joined_command)
 
-		p = sarge.run(joined_command, shell=True, async=True, stdout=sarge.Capture(), stderr=sarge.Capture())
+		p = sarge.run(command, async=True, stdout=sarge.Capture(), stderr=sarge.Capture())
 		p.wait_events()
 
 		all_stdout = []
@@ -140,8 +139,7 @@ class PipCaller(object):
 
 		if pip_command is not None:
 			self._logger.debug("Found pip at {}, going to figure out its version".format(pip_command))
-			command = [pip_command, "--version"]
-			p = sarge.run(" ".join(command), shell=True, stdout=sarge.Capture(), stderr=sarge.Capture())
+			p = sarge.run([pip_command, "--version"], stdout=sarge.Capture(), stderr=sarge.Capture())
 
 			if p.returncode != 0:
 				self._logger.warn("Error while trying to run pip --version: {}".format(p.stderr.text))
