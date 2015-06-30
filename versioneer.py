@@ -235,12 +235,19 @@ information:
   useful to throw an exception in setup.py if this is set, to avoid e.g.
   creating tarballs with a version string of "unknown".
 
+If the underlying VCS supports it and that information is available, this will
+also be included:
+
+* `['branch']`: A string with the VCS branch name the version was built on.
+
 Some variants are more useful than others. Including `full-revisionid` in a
 bug report should allow developers to reconstruct the exact code being tested
 (or indicate the presence of local changes that should be shared with the
 developers). `version` is suitable for display in an "about" box or a CLI
 `--version` output: it can be easily compared against release notes and lists
-of bugs fixed in various releases.
+of bugs fixed in various releases. Augmenting that with the `branch`
+information if it is available will give additional hints during bug reporting
+what kind of setup a user was running.
 
 The installer adds the following text to your `__init__.py` to place a basic
 version in `YOURPROJECT.__version__`:
@@ -644,7 +651,8 @@ def git_versions_from_keywords(keywords, tag_prefix, verbose):
         if verbose:
             print("discarding '%%s', no digits" %% ",".join(refs-tags))
 
-    branches = [r for r in refs if not r.startswith(TAG) and r != "HEAD" and not r.startswith("refs/")]
+    branches = [r for r in refs if not r.startswith(TAG)
+                and r != "HEAD" and not r.startswith("refs/")]
     if verbose:
         print("likely branches: %%s" %% ",".join(sorted(branches)))
     branch = None
@@ -661,9 +669,8 @@ def git_versions_from_keywords(keywords, tag_prefix, verbose):
                 print("picking %%s" %% r)
 
             result = {"version": r,
-                "full-revisionid": keywords["full"].strip(),
-                "dirty": False, "error": None
-            }
+                      "full-revisionid": keywords["full"].strip(),
+                      "dirty": False, "error": None}
             if branch is not None:
                 result["branch"] = branch
             return result
@@ -722,7 +729,9 @@ def git_pieces_from_vcs(tag_prefix, root, verbose, run_command=run_command):
         git_describe = git_describe[:git_describe.rindex("-dirty")]
 
     # figure out our branch
-    abbrev_ref_out = run_command(GITS, ["rev-parse", "--abbrev-ref", "HEAD"], cwd=root)
+    abbrev_ref_out = run_command(GITS,
+                                 ["rev-parse", "--abbrev-ref", "HEAD"],
+                                 cwd=root)
     if abbrev_ref_out is not None:
         pieces["branch"] = abbrev_ref_out.strip()
 
@@ -766,6 +775,11 @@ def git_pieces_from_vcs(tag_prefix, root, verbose, run_command=run_command):
 
 @register_vcs_handler("git", "parse_lookup_file")
 def git_parse_lookup_file(path):
+    """Parse a versioneer lookup file.
+
+    This file allows definition of branch specific data like virtual tags or
+    custom styles to use for version rendering.
+    """
     if not os.path.exists(path):
         return []
 
@@ -776,22 +790,39 @@ def git_parse_lookup_file(path):
             if '#' in line:
                 line = line[:line.rindex("#")]
             line = line.strip()
+            if not line:
+                continue
+
             try:
-                split_line = line.split()
-                if len(split_line) == 3:
-                    pattern, tag, ref_commit = split_line
-                    lookup.append([re.compile(pattern), tag, ref_commit, None])
+                split_line = map(lambda x: x.strip(), line.split())
+                if not len(split_line):
+                    continue
+
+                matcher = re.compile(split_line[0])
+
+                if len(split_line) == 1:
+                    entry = [matcher, None, None, None]
+                elif len(split_line) == 2:
+                    render = split_line[1]
+                    entry = [matcher, render, None, None]
+                elif len(split_line) == 3:
+                    tag, ref_commit = split_line[1:]
+                    entry = [matcher, None, tag, ref_commit]
                 elif len(split_line) == 4:
-                    pattern, tag, ref_commit, render = split_line
-                    lookup.append([re.compile(pattern), tag, ref_commit, render])
-                elif len(split_line) >= 1:
-                    lookup.append([re.compile(split_line[0]), None, None, None])
+                    tag, ref_commit, render = split_line[1:]
+                    entry = [matcher, render, tag, ref_commit]
+                else:
+                    continue
+
+                lookup.append(entry)
             except:
                 break
     return lookup
 
+
 @register_vcs_handler("git", "pieces_from_lookup")
 def git_pieces_from_lookup(lookup, root, verbose, run_command=run_command):
+    """Extract version information based on provided lookup data."""
     GITS = ["git"]
     if sys.platform == "win32":
         GITS = ["git.cmd", "git.exe"]
@@ -802,27 +833,40 @@ def git_pieces_from_lookup(lookup, root, verbose, run_command=run_command):
         raise NotThisMethod("git rev-parse --abbrev-ref HEAD failed")
 
     current_branch = stdout.strip()
-    for matcher, tag, ref_commit, render in lookup:
+    for matcher, render, tag, ref_commit in lookup:
         if matcher.match(current_branch):
             if tag is None or ref_commit is None:
-                raise NotThisMethod("tag or ref_commit is unset for this branch")
+                raise NotThisMethod("tag or ref_commit is unset for "
+                                    "this branch")
 
-            stdout = run_command(GITS, ["rev-list", "%%s..HEAD" %% ref_commit, "--count"], cwd=root)
+            stdout = run_command(GITS,
+                                 ["rev-list", "%%s..HEAD" %% ref_commit,
+                                  "--count"],
+                                 cwd=root)
             if stdout is None:
-                raise NotThisMethod("git rev-list %%s..HEAD --count failed" %% ref_commit)
+                raise NotThisMethod("git rev-list %%s..HEAD "
+                                    "--count failed" %% ref_commit)
             try:
                 num_commits = int(stdout.strip())
             except ValueError:
-                raise NotThisMethod("git rev-list %%s..HEAD --count didn't return a valid number" %% ref_commit)
+                raise NotThisMethod("git rev-list %%s..HEAD --count didn't "
+                                    "return a valid number" %% ref_commit)
 
-            stdout =run_command(GITS, ["rev-parse", "--short", "HEAD"], cwd=root)
+            stdout = run_command(GITS,
+                                 ["rev-parse", "--short", "HEAD"],
+                                 cwd=root)
             if stdout is None:
-                raise NotThisMethod("git describe rev-parse --short HEAD failed")
+                raise NotThisMethod("git describe rev-parse "
+                                    "--short HEAD failed")
             short_hash = stdout.strip()
 
-            stdout = run_command(GITS, ["describe", "--tags", "--dirty", "--always"], cwd=root)
+            stdout = run_command(GITS,
+                                 ["describe", "--tags",
+                                  "--dirty", "--always"],
+                                 cwd=root)
             if stdout is None:
-                raise NotThisMethod("git describe --tags --dirty --always failed")
+                raise NotThisMethod("git describe --tags --dirty "
+                                    "--always failed")
             dirty = stdout.strip().endswith("-dirty")
 
             stdout = run_command(GITS, ["rev-parse", "HEAD"], cwd=root)
@@ -920,7 +964,7 @@ def render_pep440_post(pieces):
 
 
 def render_pep440_dev(pieces):
-    """ TAG.dev[DISTANCE]+gHEX[.dirty]
+    """TAG[.devDISTANCE]+gHEX[.dirty] .
 
     Exceptions:
     1: no tags. 0.devDISTANCE+gHEX[.dirty]
@@ -929,8 +973,6 @@ def render_pep440_dev(pieces):
         rendered = pieces["closest-tag"]
         if pieces["distance"]:
             rendered += ".dev%%d" %% pieces["distance"]
-        else:
-            rendered += ".dev"
         rendered += plus_or_dot(pieces)
     else:
         # exception #1
@@ -940,6 +982,7 @@ def render_pep440_dev(pieces):
     if pieces["dirty"]:
         rendered += ".dirty"
     return rendered
+
 
 def render_pep440_old(pieces):
     """TAG[.postDISTANCE[.dev0]] .
@@ -1035,7 +1078,7 @@ def render(pieces, style):
         raise ValueError("unknown style '%%s'" %% style)
 
     result = {"version": rendered, "full-revisionid": pieces["long"],
-            "dirty": pieces["dirty"], "error": None}
+              "dirty": pieces["dirty"], "error": None}
     if "branch" in pieces and pieces["branch"] is not None:
         result["branch"] = pieces["branch"]
     return result
@@ -1069,10 +1112,12 @@ def get_versions():
                 "dirty": None,
                 "error": "unable to find root of source tree"}
 
-    lookupfile = os.path.join(root, cfg.lookupfile if cfg.lookupfile is not None else ".versioneer-lookup")
-    if os.path.exists(lookupfile):
+    lookupfile = cfg.lookupfile if cfg.lookupfile is not None \
+        else ".versioneer-lookup"
+    lookuppath = os.path.join(root, lookupfile)
+    if os.path.exists(lookuppath):
         try:
-            lookup_data = git_parse_lookup_file(lookupfile)
+            lookup_data = git_parse_lookup_file(lookuppath)
             pieces = git_pieces_from_lookup(lookup_data, root, verbose)
             return render(pieces, cfg.style)
         except NotThisMethod:
@@ -1148,7 +1193,8 @@ def git_versions_from_keywords(keywords, tag_prefix, verbose):
         if verbose:
             print("discarding '%s', no digits" % ",".join(refs-tags))
 
-    branches = [r for r in refs if not r.startswith(TAG) and r != "HEAD" and not r.startswith("refs/")]
+    branches = [r for r in refs if not r.startswith(TAG)
+                and r != "HEAD" and not r.startswith("refs/")]
     if verbose:
         print("likely branches: %s" % ",".join(sorted(branches)))
     branch = None
@@ -1165,9 +1211,8 @@ def git_versions_from_keywords(keywords, tag_prefix, verbose):
                 print("picking %s" % r)
 
             result = {"version": r,
-                "full-revisionid": keywords["full"].strip(),
-                "dirty": False, "error": None
-            }
+                      "full-revisionid": keywords["full"].strip(),
+                      "dirty": False, "error": None}
             if branch is not None:
                 result["branch"] = branch
             return result
@@ -1226,7 +1271,9 @@ def git_pieces_from_vcs(tag_prefix, root, verbose, run_command=run_command):
         git_describe = git_describe[:git_describe.rindex("-dirty")]
 
     # figure out our branch
-    abbrev_ref_out = run_command(GITS, ["rev-parse", "--abbrev-ref", "HEAD"], cwd=root)
+    abbrev_ref_out = run_command(GITS,
+                                 ["rev-parse", "--abbrev-ref", "HEAD"],
+                                 cwd=root)
     if abbrev_ref_out is not None:
         pieces["branch"] = abbrev_ref_out.strip()
 
@@ -1270,6 +1317,11 @@ def git_pieces_from_vcs(tag_prefix, root, verbose, run_command=run_command):
 
 @register_vcs_handler("git", "parse_lookup_file")
 def git_parse_lookup_file(path):
+    """Parse a versioneer lookup file.
+
+    This file allows definition of branch specific data like virtual tags or
+    custom styles to use for version rendering.
+    """
     if not os.path.exists(path):
         return []
 
@@ -1280,22 +1332,39 @@ def git_parse_lookup_file(path):
             if '#' in line:
                 line = line[:line.rindex("#")]
             line = line.strip()
+            if not line:
+                continue
+
             try:
-                split_line = line.split()
-                if len(split_line) == 3:
-                    pattern, tag, ref_commit = split_line
-                    lookup.append([re.compile(pattern), tag, ref_commit, None])
+                split_line = map(lambda x: x.strip(), line.split())
+                if not len(split_line):
+                    continue
+
+                matcher = re.compile(split_line[0])
+
+                if len(split_line) == 1:
+                    entry = [matcher, None, None, None]
+                elif len(split_line) == 2:
+                    render = split_line[1]
+                    entry = [matcher, render, None, None]
+                elif len(split_line) == 3:
+                    tag, ref_commit = split_line[1:]
+                    entry = [matcher, None, tag, ref_commit]
                 elif len(split_line) == 4:
-                    pattern, tag, ref_commit, render = split_line
-                    lookup.append([re.compile(pattern), tag, ref_commit, render])
-                elif len(split_line) >= 1:
-                    lookup.append([re.compile(split_line[0]), None, None, None])
+                    tag, ref_commit, render = split_line[1:]
+                    entry = [matcher, render, tag, ref_commit]
+                else:
+                    continue
+
+                lookup.append(entry)
             except:
                 break
     return lookup
 
+
 @register_vcs_handler("git", "pieces_from_lookup")
 def git_pieces_from_lookup(lookup, root, verbose, run_command=run_command):
+    """Extract version information based on provided lookup data."""
     GITS = ["git"]
     if sys.platform == "win32":
         GITS = ["git.cmd", "git.exe"]
@@ -1306,27 +1375,40 @@ def git_pieces_from_lookup(lookup, root, verbose, run_command=run_command):
         raise NotThisMethod("git rev-parse --abbrev-ref HEAD failed")
 
     current_branch = stdout.strip()
-    for matcher, tag, ref_commit, render in lookup:
+    for matcher, render, tag, ref_commit in lookup:
         if matcher.match(current_branch):
             if tag is None or ref_commit is None:
-                raise NotThisMethod("tag or ref_commit is unset for this branch")
+                raise NotThisMethod("tag or ref_commit is unset for "
+                                    "this branch")
 
-            stdout = run_command(GITS, ["rev-list", "%s..HEAD" % ref_commit, "--count"], cwd=root)
+            stdout = run_command(GITS,
+                                 ["rev-list", "%s..HEAD" % ref_commit,
+                                  "--count"],
+                                 cwd=root)
             if stdout is None:
-                raise NotThisMethod("git rev-list %s..HEAD --count failed" % ref_commit)
+                raise NotThisMethod("git rev-list %s..HEAD "
+                                    "--count failed" % ref_commit)
             try:
                 num_commits = int(stdout.strip())
             except ValueError:
-                raise NotThisMethod("git rev-list %s..HEAD --count didn't return a valid number" % ref_commit)
+                raise NotThisMethod("git rev-list %s..HEAD --count didn't "
+                                    "return a valid number" % ref_commit)
 
-            stdout =run_command(GITS, ["rev-parse", "--short", "HEAD"], cwd=root)
+            stdout = run_command(GITS,
+                                 ["rev-parse", "--short", "HEAD"],
+                                 cwd=root)
             if stdout is None:
-                raise NotThisMethod("git describe rev-parse --short HEAD failed")
+                raise NotThisMethod("git describe rev-parse "
+                                    "--short HEAD failed")
             short_hash = stdout.strip()
 
-            stdout = run_command(GITS, ["describe", "--tags", "--dirty", "--always"], cwd=root)
+            stdout = run_command(GITS,
+                                 ["describe", "--tags",
+                                  "--dirty", "--always"],
+                                 cwd=root)
             if stdout is None:
-                raise NotThisMethod("git describe --tags --dirty --always failed")
+                raise NotThisMethod("git describe --tags --dirty "
+                                    "--always failed")
             dirty = stdout.strip().endswith("-dirty")
 
             stdout = run_command(GITS, ["rev-parse", "HEAD"], cwd=root)
@@ -1515,7 +1597,7 @@ def render_pep440_post(pieces):
 
 
 def render_pep440_dev(pieces):
-    """ TAG.dev[DISTANCE]+gHEX[.dirty]
+    """TAG[.devDISTANCE]+gHEX[.dirty] .
 
     Exceptions:
     1: no tags. 0.devDISTANCE+gHEX[.dirty]
@@ -1524,8 +1606,6 @@ def render_pep440_dev(pieces):
         rendered = pieces["closest-tag"]
         if pieces["distance"]:
             rendered += ".dev%d" % pieces["distance"]
-        else:
-            rendered += ".dev"
         rendered += plus_or_dot(pieces)
     else:
         # exception #1
@@ -1535,6 +1615,7 @@ def render_pep440_dev(pieces):
     if pieces["dirty"]:
         rendered += ".dirty"
     return rendered
+
 
 def render_pep440_old(pieces):
     """TAG[.postDISTANCE[.dev0]] .
@@ -1630,7 +1711,7 @@ def render(pieces, style):
         raise ValueError("unknown style '%s'" % style)
 
     result = {"version": rendered, "full-revisionid": pieces["long"],
-            "dirty": pieces["dirty"], "error": None}
+              "dirty": pieces["dirty"], "error": None}
     if "branch" in pieces and pieces["branch"] is not None:
         result["branch"] = pieces["branch"]
     return result
@@ -1686,13 +1767,15 @@ def get_versions(verbose=False):
     except NotThisMethod:
         pass
 
-    lookupfile = os.path.join(root, cfg.lookupfile if cfg.lookupfile is not None else ".versioneer-lookup")
-    if os.path.exists(lookupfile):
+    lookupfile = cfg.lookupfile if cfg.lookupfile is not None \
+        else ".versioneer-lookup"
+    lookuppath = os.path.join(root, lookupfile)
+    if os.path.exists(lookuppath):
         parse_lookup_file_f = handlers.get("parse_lookup_file")
         versions_from_lookup_f = handlers.get("pieces_from_lookup")
         if parse_lookup_file_f and versions_from_lookup_f:
             try:
-                lookup_data = parse_lookup_file_f(lookupfile)
+                lookup_data = parse_lookup_file_f(lookuppath)
                 pieces = versions_from_lookup_f(lookup_data, root, verbose)
                 ver = render(pieces, cfg.style)
                 if verbose:
