@@ -121,11 +121,17 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		upload_path = flask.request.values[input_upload_path]
 		upload_name = flask.request.values[input_upload_name]
 
+		exts = filter(lambda x: upload_name.endswith(x), (".zip", ".tar.gz", ".tgz", ".tar"))
+		if not len(exts):
+			return flask.make_response("File doesn't have a valid extension for a plugin archive", 400)
+
+		ext = exts[0]
+
 		import tempfile
 		import shutil
 		import os
 
-		archive = tempfile.NamedTemporaryFile(delete=False, suffix="-{upload_name}".format(**locals()))
+		archive = tempfile.NamedTemporaryFile(delete=False, suffix="{ext}".format(**locals()))
 		try:
 			archive.close()
 			shutil.copy(upload_path, archive.name)
@@ -197,7 +203,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		if url is not None:
 			pip_args = ["install", sarge.shell_quote(url)]
 		elif path is not None:
-			pip_args = ["install", path]
+			pip_args = ["install", sarge.shell_quote(path)]
 		else:
 			raise ValueError("Either url or path must be provided")
 
