@@ -919,6 +919,28 @@ def render_pep440_post(pieces):
     return rendered
 
 
+def render_pep440_dev(pieces):
+    """ TAG.dev[DISTANCE]+gHEX[.dirty]
+
+    Exceptions:
+    1: no tags. 0.devDISTANCE+gHEX[.dirty]
+    """
+    if pieces["closest-tag"]:
+        rendered = pieces["closest-tag"]
+        if pieces["distance"]:
+            rendered += ".dev%%d" %% pieces["distance"]
+        else:
+            rendered += ".dev"
+        rendered += plus_or_dot(pieces)
+    else:
+        # exception #1
+        rendered = "0.dev%%d" %% pieces["distance"]
+        rendered += "+"
+    rendered += "g%%s" %% pieces["short"]
+    if pieces["dirty"]:
+        rendered += ".dirty"
+    return rendered
+
 def render_pep440_old(pieces):
     """TAG[.postDISTANCE[.dev0]] .
 
@@ -1003,6 +1025,8 @@ def render(pieces, style):
         rendered = render_pep440_post(pieces)
     elif style == "pep440-old":
         rendered = render_pep440_old(pieces)
+    elif style == "pep440-dev":
+        rendered = render_pep440_dev(pieces)
     elif style == "git-describe":
         rendered = render_git_describe(pieces)
     elif style == "git-describe-long":
@@ -1490,6 +1514,28 @@ def render_pep440_post(pieces):
     return rendered
 
 
+def render_pep440_dev(pieces):
+    """ TAG.dev[DISTANCE]+gHEX[.dirty]
+
+    Exceptions:
+    1: no tags. 0.devDISTANCE+gHEX[.dirty]
+    """
+    if pieces["closest-tag"]:
+        rendered = pieces["closest-tag"]
+        if pieces["distance"]:
+            rendered += ".dev%d" % pieces["distance"]
+        else:
+            rendered += ".dev"
+        rendered += plus_or_dot(pieces)
+    else:
+        # exception #1
+        rendered = "0.dev%d" % pieces["distance"]
+        rendered += "+"
+    rendered += "g%s" % pieces["short"]
+    if pieces["dirty"]:
+        rendered += ".dirty"
+    return rendered
+
 def render_pep440_old(pieces):
     """TAG[.postDISTANCE[.dev0]] .
 
@@ -1574,6 +1620,8 @@ def render(pieces, style):
         rendered = render_pep440_post(pieces)
     elif style == "pep440-old":
         rendered = render_pep440_old(pieces)
+    elif style == "pep440-dev":
+        rendered = render_pep440_dev(pieces)
     elif style == "git-describe":
         rendered = render_git_describe(pieces)
     elif style == "git-describe-long":
@@ -1722,6 +1770,8 @@ def get_cmdclass():
             vers = get_versions(verbose=True)
             print("Version: %s" % vers["version"])
             print(" full-revisionid: %s" % vers.get("full-revisionid"))
+            if "branch" in vers:
+                print(" branch: %s" % vers["branch"])
             print(" dirty: %s" % vers.get("dirty"))
             if vers["error"]:
                 print(" error: %s" % vers["error"])
