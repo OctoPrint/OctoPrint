@@ -82,9 +82,24 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		except:
 			self._logger.exception("Error while loading version cache from disk")
 		else:
-			self._version_cache = data
-			self._version_cache_dirty = False
-			self._logger.info("Loaded version cache from disk")
+			try:
+				if "octoprint" in data and len(data["octoprint"]) == 4 and "local" in data["octoprint"][1] and "value" in data["octoprint"][1]["local"]:
+					data_version = data["octoprint"][1]["local"]["value"]
+				else:
+					self._logger.info("Can't determine version of OctoPrint version cache was created for, not using it")
+					return
+
+				from octoprint._version import get_versions
+				octoprint_version = get_versions()["version"]
+				if data_version != octoprint_version:
+					self._logger.info("Version cache was created for another version of OctoPrint, not using it")
+					return
+
+				self._version_cache = data
+				self._version_cache_dirty = False
+				self._logger.info("Loaded version cache from disk")
+			except:
+				self._logger.exception("Error parsing in version cache data")
 
 	def _save_version_cache(self):
 		import tempfile
