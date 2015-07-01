@@ -166,7 +166,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		if "refresh_repository" in request.values and request.values["refresh_repository"] in valid_boolean_trues:
 			self._repository_available = self._refresh_repository()
 
-		return jsonify(plugins=result, repository=dict(available=self._repository_available, plugins=self._repository_plugins), os=self._get_os(), octoprint=self._get_octoprint_version())
+		return jsonify(plugins=result, repository=dict(available=self._repository_available, plugins=self._repository_plugins), os=self._get_os(), octoprint=self._get_octoprint_version_string())
 
 	def on_api_command(self, command, data):
 		if not admin_permission.can():
@@ -508,9 +508,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 				return False
 
 		current_os = self._get_os()
-		octoprint_version = self._get_octoprint_version()
-		if "-" in octoprint_version:
-			octoprint_version = octoprint_version[:octoprint_version.find("-")]
+		octoprint_version = self._get_octoprint_version(base=True)
 
 		def map_repository_entry(entry):
 			result = dict(entry)
@@ -532,12 +530,11 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		self._repository_plugins = map(map_repository_entry, repo_data)
 		return True
 
-	def _is_octoprint_compatible(self, octoprint_version_string, compatibility_entries):
+	def _is_octoprint_compatible(self, octoprint_version, compatibility_entries):
 		"""
 		Tests if the current ``octoprint_version`` is compatible to any of the provided ``compatibility_entries``.
 		"""
 
-		octoprint_version = pkg_resources.parse_version(octoprint_version_string)
 		for octo_compat in compatibility_entries:
 			if not any(octo_compat.startswith(c) for c in ("<", "<=", "!=", "==", ">=", ">", "~=", "===")):
 				octo_compat = ">={}".format(octo_compat)
@@ -566,9 +563,20 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		else:
 			return "unknown"
 
-	def _get_octoprint_version(self):
+	def _get_octoprint_version_string(self):
 		from octoprint._version import get_versions
 		return get_versions()["version"]
+
+	def _get_octoprint_version(self, base=False):
+		octoprint_version_string = self._get_octoprint_version_string()
+
+		if "-" in octoprint_version_string:
+			octoprint_version_string = octoprint_version_string[:octoprint_version_string.find("-")]
+
+		octoprint_version = pkg_resources.parse_version(octoprint_version_string)
+		if base:
+			octoprint_version = pkg_resources.parse_version(octoprint_version.base_version)
+		return octoprint_version
 
 	def _to_external_representation(self, plugin):
 		return dict(
