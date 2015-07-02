@@ -418,13 +418,13 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		return self._pip_caller.execute(*args)
 
 	def _log_call(self, *lines):
-		self._log(lines, prefix=" ", stream="call")
+		self._log(lines, prefix=u" ", stream="call")
 
 	def _log_stdout(self, *lines):
-		self._log(lines, prefix=">", stream="stdout")
+		self._log(lines, prefix=u">", stream="stdout")
 
 	def _log_stderr(self, *lines):
-		self._log(lines, prefix="!", stream="stderr")
+		self._log(lines, prefix=u"!", stream="stderr")
 
 	def _log(self, lines, prefix=None, stream=None, strip=True):
 		if strip:

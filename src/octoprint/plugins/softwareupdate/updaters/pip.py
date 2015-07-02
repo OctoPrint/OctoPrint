@@ -46,12 +46,12 @@ def perform_update(target, check, target_version):
 
 	install_arg = check["pip"].format(target_version=target_version)
 
-	logger.debug("Target: %s, executing pip install %s" % (target, install_arg))
+	logger.debug(u"Target: %s, executing pip install %s" % (target, install_arg))
 	pip_args = ["install", check["pip"].format(target_version=target_version, target=target_version)]
 
 	pip_caller.execute(*pip_args)
 
-	logger.debug("Target: %s, executing pip install %s --ignore-reinstalled --force-reinstall --no-deps" % (target, install_arg))
+	logger.debug(u"Target: %s, executing pip install %s --ignore-reinstalled --force-reinstall --no-deps" % (target, install_arg))
 	pip_args += ["--ignore-installed", "--force-reinstall", "--no-deps"]
 
 	pip_caller.execute(*pip_args)
@@ -59,13 +59,13 @@ def perform_update(target, check, target_version):
 	return "ok"
 
 def _log_call(*lines):
-	_log(lines, prefix=" ")
+	_log(lines, prefix=u" ")
 
 def _log_stdout(*lines):
-	_log(lines, prefix=">")
+	_log(lines, prefix=u">")
 
 def _log_stderr(*lines):
-	_log(lines, prefix="!")
+	_log(lines, prefix=u"!")
 
 def _log(lines, prefix=None):
 	lines = map(lambda x: x.strip(), lines)

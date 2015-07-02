@@ -11,6 +11,9 @@ import sys
 import logging
 
 
+from octoprint.util import to_unicode
+
+
 class UnknownPip(Exception):
 	pass
 
@@ -77,11 +80,13 @@ class PipCaller(object):
 			while p.returncode is None:
 				line = p.stderr.readline(timeout=0.5)
 				if line:
+					line = to_unicode(line, errors="replace")
 					self._log_stderr(line)
 					all_stderr.append(line)
 
 				line = p.stdout.readline(timeout=0.5)
 				if line:
+					line = to_unicode(line, errors="replace")
 					self._log_stdout(line)
 					all_stdout.append(line)
 
