@@ -142,15 +142,29 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			"cache_ttl": 24 * 60,
 		}
 
+	def on_settings_load(self):
+		data = dict(octoprint.plugin.SettingsPlugin.on_settings_load(self))
+		if "checks" in data:
+			del data["checks"]
+		return data
+
 	def on_settings_save(self, data):
-		octoprint.plugin.SettingsPlugin.on_settings_save(self, data)
+		for key in self.get_settings_defaults():
+			if key == "checks" or key == "cache_ttl":
+				continue
+			if key in data:
+				self._settings.set([key], data[key])
+
+		if "cache_ttl" in data:
+			self._settings.set_int(["cache_ttl"], data["cache_ttl"])
+
 		self._version_cache_ttl = self._settings.get_int(["cache_ttl"]) * 60
 
 	def get_settings_version(self):
-		return 2
+		return 3
 
 	def on_settings_migrate(self, target, current=None):
-		if current is None:
+		if current is None or current == 2:
 			# there might be some left over data from the time we still persisted everything to settings,
 			# even the stuff that shouldn't be persisted but always provided by the hook - let's
 			# clean up
@@ -159,14 +173,17 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			if configured_checks is None:
 				configured_checks = dict()
 
+			check_keys = configured_checks.keys()
+
 			# take care of the octoprint entry
 			if "octoprint" in configured_checks:
 				octoprint_check = dict(configured_checks["octoprint"])
-				if "type" in octoprint_check and not octoprint_check["type"] == "github_commit":
-					deletables=["current"]
+				if "type" not in octoprint_check or octoprint_check["type"] != "github_commit":
+					deletables=["current", "displayName", "displayVersion"]
 				else:
 					deletables=[]
 				octoprint_check = self._clean_settings_check("octoprint", octoprint_check, self.get_settings_defaults()["checks"]["octoprint"], delete=deletables, save=False)
+				check_keys.remove("octoprint")
 
 			# and the hooks
 			update_check_hooks = self._plugin_manager.get_hooks("octoprint.plugin.softwareupdate.check_config")
@@ -180,12 +197,20 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 						if key in configured_checks:
 							settings_check = dict(configured_checks[key])
 							merged = dict_merge(data, settings_check)
-							if "type" in merged and not merged["type"] == "github_commit":
+							if "type" not in merged or merged["type"] != "github_commit":
 								deletables = ["current", "displayVersion"]
 							else:
 								deletables = []
 
 							self._clean_settings_check(key, settings_check, data, delete=deletables, save=False)
+							check_keys.remove(key)
+
+			# and anything that's left over we'll just remove now
+			for key in check_keys:
+				dummy_defaults = dict(plugins=dict())
+				dummy_defaults["plugins"][self._identifier] = dict(checks=dict())
+				dummy_defaults["plugins"][self._identifier]["checks"][key] = None
+				self._settings.set(["checks", key], None, defaults=dummy_defaults)
 
 		elif current == 1:
 			configured_checks = self._settings.get(["checks"], incl_defaults=False)
