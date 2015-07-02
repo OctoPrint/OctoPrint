@@ -781,7 +781,10 @@ class SettingsPlugin(OctoPrintPlugin):
 
 		:return: the current settings of the plugin, as a dictionary
 		"""
-		return self._settings.get([], asdict=True, merged=True)
+		data = self._settings.get([], asdict=True, merged=True)
+		if "_config_version" in data:
+			del data["_config_version"]
+		return data
 
 	def on_settings_save(self, data):
 		"""
@@ -803,9 +806,12 @@ class SettingsPlugin(OctoPrintPlugin):
 		"""
 		import octoprint.util
 
+		if "_config_version" in data:
+			del data["_config_version"]
+
 		current = self._settings.get([], asdict=True, merged=True)
-		data = octoprint.util.dict_merge(current, data)
-		self._settings.set([], data)
+		merged = octoprint.util.dict_merge(current, data)
+		self._settings.set([], merged)
 
 	def get_settings_defaults(self):
 		"""
