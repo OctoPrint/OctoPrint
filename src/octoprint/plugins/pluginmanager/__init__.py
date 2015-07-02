@@ -575,7 +575,17 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 		octoprint_version = pkg_resources.parse_version(octoprint_version_string)
 		if base:
-			octoprint_version = pkg_resources.parse_version(octoprint_version.base_version)
+			if isinstance(octoprint_version, tuple):
+				# old setuptools
+				base_version = []
+				for part in octoprint_version:
+					if part.startswith("*"):
+						break
+					base_version.append(part)
+				octoprint_version = tuple(base_version)
+			else:
+				# new setuptools
+				octoprint_version = pkg_resources.parse_version(octoprint_version.base_version)
 		return octoprint_version
 
 	def _to_external_representation(self, plugin):
