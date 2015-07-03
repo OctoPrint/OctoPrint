@@ -388,12 +388,7 @@ $(function() {
                         self._markWorking(gettext("Updating..."), gettext("Updating, please wait."));
                     }
 
-                    var name = self.currentlyBeingUpdated[messageData.target];
-                    if (name == undefined) {
-                        name = messageData.target;
-                    }
-
-                    text = _.sprintf(gettext("Now updating %(name)s to %(version)s"), {name: name, version: messageData.version});
+                    text = _.sprintf(gettext("Now updating %(name)s to %(version)s"), {name: messageData.name, version: messageData.version});
                     self.loglines.push({line: "", stream: "separator"});
                     self.loglines.push({line: _.repeat("+", text.length), stream: "separator"});
                     self.loglines.push({line: text, stream: "message"});
