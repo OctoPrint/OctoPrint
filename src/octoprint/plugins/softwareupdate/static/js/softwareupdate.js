@@ -13,6 +13,12 @@ $(function() {
 
         self.currentlyBeingUpdated = [];
 
+        self.working = ko.observable(false);
+        self.workingTitle = ko.observable();
+        self.workingDialog = undefined;
+        self.workingOutput = undefined;
+        self.loglines = ko.observableArray([]);
+
         self.config_restartCommand = ko.observable();
         self.config_rebootCommand = ko.observable();
         self.config_cacheTtl = ko.observable();
@@ -259,6 +265,7 @@ $(function() {
                 },
                 success: function(data) {
                     self.currentlyBeingUpdated = data.checks;
+                    self._markWorking(gettext("Updating..."), gettext("Updating, please wait."));
                 }
             });
         };
@@ -276,16 +283,53 @@ $(function() {
                     type: "error"
                 });
             } else {
-                $("#confirmation_dialog .confirmation_dialog_message").text(gettext("This will update your OctoPrint installation and restart the server."));
-                $("#confirmation_dialog .confirmation_dialog_acknowledge").unbind("click");
-                $("#confirmation_dialog .confirmation_dialog_acknowledge").click(function(e) {
+                showConfirmationDialog(gettext("This will update your OctoPrint installation and restart the server."), function(e) {
                     e.preventDefault();
                     $("#confirmation_dialog").modal("hide");
                     self.performUpdate(force);
                 });
-                $("#confirmation_dialog").modal("show");
             }
 
+        };
+
+        self._showWorkingDialog = function(title) {
+            if (!self.loginState.isAdmin()) {
+                return;
+            }
+
+            self.working(true);
+            self.workingTitle(title);
+            self.workingDialog.modal("show");
+        };
+
+        self._markWorking = function(title, line, stream) {
+            if (stream === undefined) {
+                stream = "message";
+            }
+
+            self.loglines.removeAll();
+            self.loglines.push({line: line, stream: stream});
+            self._showWorkingDialog(title);
+        };
+
+        self._markDone = function(line, stream) {
+            if (stream === undefined) {
+                stream = "message";
+            }
+
+            self.working(false);
+            self.loglines.push({line: "", stream: stream});
+            self.loglines.push({line: line, stream: stream});
+            self._scrollWorkingOutputToEnd();
+        };
+
+        self._scrollWorkingOutputToEnd = function() {
+            self.workingOutput.scrollTop(self.workingOutput[0].scrollHeight - self.workingOutput.height());
+        };
+
+        self.onStartup = function() {
+            self.workingDialog = $("#settings_plugin_softwareupdate_workingdialog");
+            self.workingOutput = $("#settings_plugin_softwareupdate_workingdialog_output");
         };
 
         self.onServerDisconnect = function() {
@@ -323,15 +367,37 @@ $(function() {
 
             var options = undefined;
 
+            var restartType = undefined;
+            var title = undefined;
+            var text = undefined;
+
             switch (messageType) {
+                case "loglines": {
+                    if (self.working()) {
+                        _.each(messageData.loglines, function(line) {
+                            self.loglines.push(line);
+                        });
+                        self._scrollWorkingOutputToEnd();
+                    }
+                    break;
+                }
                 case "updating": {
                     console.log(JSON.stringify(messageData));
+
+                    if (!self.working()) {
+                        self._markWorking(gettext("Updating..."), gettext("Updating, please wait."));
+                    }
 
                     var name = self.currentlyBeingUpdated[messageData.target];
                     if (name == undefined) {
                         name = messageData.target;
                     }
 
+                    text = _.sprintf(gettext("Now updating %(name)s to %(version)s"), {name: name, version: messageData.version});
+                    self.loglines.push({line: "", stream: "separator"});
+                    self.loglines.push({line: _.repeat("+", text.length), stream: "separator"});
+                    self.loglines.push({line: text, stream: "message"});
+                    self.loglines.push({line: _.repeat("+", text.length), stream: "separator"});
                     self._updatePopup({
                         text: text,
                         hide: false,
@@ -339,14 +405,18 @@ $(function() {
                             sticker: false
                         }
                     });
+
                     break;
                 }
                 case "restarting": {
                     console.log(JSON.stringify(messageData));
 
+                    title = gettext("Update successful, restarting!");
+                    text = gettext("The update finished successfully and the server will now be restarted.");
+
                     options = {
-                        title: gettext("Update successful, restarting!"),
-                        text: gettext("The update finished successfully and the server will now be restarted."),
+                        title: title,
+                        text: text,
                         type: "success",
                         hide: false,
                         buttons: {
@@ -354,11 +424,16 @@ $(function() {
                         }
                     };
 
+                    self.loglines.push({line: text, stream: "message"});
+
                     self.waitingForRestart = true;
                     self.restartTimeout = setTimeout(function() {
+                        title = gettext("Restart failed");
+                        text = gettext("The server apparently did not restart by itself, you'll have to do it manually. Please consult the log file on what went wrong.");
+
                         self._showPopup({
-                            title: gettext("Restart failed"),
-                            text: gettext("The server apparently did not restart by itself, you'll have to do it manually. Please consult the log file on what went wrong."),
+                            title: title,
+                            text: text,
                             type: "error",
                             hide: false,
                             buttons: {
@@ -366,21 +441,24 @@ $(function() {
                             }
                         });
                         self.waitingForRestart = false;
-                    }, 20000);
+
+                        self._markDone(text, "message_error");
+                    }, 30000);
 
                     break;
                 }
                 case "restart_manually": {
                     console.log(JSON.stringify(messageData));
 
-                    var restartType = messageData.restart_type;
-                    var text = gettext("The update finished successfully, please restart OctoPrint now.");
+                    restartType = messageData.restart_type;
+                    text = gettext("The update finished successfully, please restart OctoPrint now.");
                     if (restartType == "environment") {
                         text = gettext("The update finished successfully, please reboot the server now.");
                     }
 
+                    title = gettext("Update successful, restart required!");
                     options = {
-                        title: gettext("Update successful, restart required!"),
+                        title: title,
                         text: text,
                         type: "success",
                         hide: false,
@@ -389,18 +467,20 @@ $(function() {
                         }
                     };
                     self.updateInProgress = false;
+                    self._markDone(text);
                     break;
                 }
                 case "restart_failed": {
-                    var restartType = messageData.restart_type;
-                    var text = gettext("Restarting OctoPrint failed, please restart it manually. You might also want to consult the log file on what went wrong here.");
+                    restartType = messageData.restart_type;
+                    text = gettext("Restarting OctoPrint failed, please restart it manually. You might also want to consult the log file on what went wrong here.");
                     if (restartType == "environment") {
                         text = gettext("Rebooting the server failed, please reboot it manually. You might also want to consult the log file on what went wrong here.");
                     }
 
+                    title = gettext("Restart failed");
                     options = {
-                        title: gettext("Restart failed"),
-                        test: gettext("The server apparently did not restart by itself, you'll have to do it manually. Please consult the log file on what went wrong."),
+                        title: title,
+                        test: text,
                         type: "error",
                         hide: false,
                         buttons: {
@@ -409,12 +489,15 @@ $(function() {
                     };
                     self.waitingForRestart = false;
                     self.updateInProgress = false;
+                    self._markDone(text, "message_error");
                     break;
                 }
                 case "success": {
+                    title = gettext("Update successful!");
+                    text = gettext("The update finished successfully.");
                     options = {
-                        title: gettext("Update successful!"),
-                        text: gettext("The update finished successfully."),
+                        title: title,
+                        text: text,
                         type: "success",
                         hide: false,
                         buttons: {
@@ -422,12 +505,15 @@ $(function() {
                         }
                     };
                     self.updateInProgress = false;
+                    self._markDone(text);
                     break;
                 }
                 case "error": {
+                    title = gettext("Update failed!");
+                    text = gettext("The update did not finish successfully. Please consult the log for details.");
                     self._showPopup({
-                        title: gettext("Update failed!"),
-                        text: gettext("The update did not finish successfully. Please consult the log for details."),
+                        title: title,
+                        text: text,
                         type: "error",
                         hide: false,
                         buttons: {
@@ -435,6 +521,7 @@ $(function() {
                         }
                     });
                     self.updateInProgress = false;
+                    self._markDone(text, "message_error");
                     break;
                 }
                 case "update_versions": {
