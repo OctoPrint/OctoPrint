@@ -3,19 +3,22 @@ from __future__ import absolute_import
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
-__copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
+__copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
 import sarge
 import sys
 import logging
 
+from .commandline import CommandlineCaller
+
 
 class UnknownPip(Exception):
 	pass
 
-class PipCaller(object):
+class PipCaller(CommandlineCaller):
 	def __init__(self, configured=None):
+		CommandlineCaller.__init__(self)
 		self._logger = logging.getLogger(__name__)
 
 		self._configured = configured
@@ -26,9 +29,6 @@ class PipCaller(object):
 		self._command, self._version = self._find_pip()
 
 		self.refresh = False
-		self.on_log_call = lambda *args, **kwargs: None
-		self.on_log_stdout = lambda *args, **kwargs: None
-		self.on_log_stderr = lambda *args, **kwargs: None
 
 	def __le__(self, other):
 		return self.version is not None and self.version <= other
@@ -63,47 +63,7 @@ class PipCaller(object):
 			raise UnknownPip()
 
 		command = [self._command] + list(args)
-
-		joined_command = " ".join(command)
-		self._logger.debug(u"Calling: {}".format(joined_command))
-		self.on_log_call(joined_command)
-
-		p = sarge.run(command, async=True, stdout=sarge.Capture(), stderr=sarge.Capture())
-		p.wait_events()
-
-		all_stdout = []
-		all_stderr = []
-		try:
-			while p.returncode is None:
-				line = p.stderr.readline(timeout=0.5)
-				if line:
-					self._log_stderr(line)
-					all_stderr.append(line)
-
-				line = p.stdout.readline(timeout=0.5)
-				if line:
-					self._log_stdout(line)
-					all_stdout.append(line)
-
-				p.commands[0].poll()
-
-		finally:
-			p.close()
-
-		stderr = p.stderr.text
-		if stderr:
-			split_lines = stderr.split("\n")
-			self._log_stderr(*split_lines)
-			all_stderr += split_lines
-
-		stdout = p.stdout.text
-		if stdout:
-			split_lines = stdout.split("\n")
-			self._log_stdout(*split_lines)
-			all_stdout += split_lines
-
-		return p.returncode, all_stdout, all_stderr
-
+		return self.call(command)
 
 	def _find_pip(self):
 		pip_command = self._configured
@@ -170,9 +130,3 @@ class PipCaller(object):
 				self._logger.info("Found pip at {}, version is {}".format(pip_command, version_segment))
 
 		return pip_command, pip_version
-
-	def _log_stdout(self, *lines):
-		self.on_log_stdout(*lines)
-
-	def _log_stderr(self, *lines):
-		self.on_log_stderr(*lines)
