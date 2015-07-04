@@ -10,7 +10,7 @@ buttons which trigger sending of one or more lines of GCODE to the printer over 
 parameterization of these commands with values entered by the user to full blown GCODE script templates backed by
 `Jinja2 <http://jinja.pocoo.org/>`_.
 
-Custom controls are configured within :ref:`config.yaml <sec-configuration-config_yaml>` in a ``controls`` section which
+Custom controls are configured within :ref:`config.yaml <sec-configuration-config_yaml>` [#f1]_  in a ``controls`` section which
 basically represents a hierarchical structure of all configured custom controls of various types.
 
 .. note::
@@ -93,6 +93,13 @@ As you can see you have two basic types of control definitions here: controls th
 button that sends one or more commands to the printer when clicked, displaying output received from the printer) and
 controls that just serve as *container* for other controls, the latter being identified by having a ``children``
 attribute wrapping more controls.
+
+.. hint::
+
+   Take a look at the `Custom Control Editor plugin <http://plugins.octoprint.org/plugins/customControl/>`_
+   which allows you configuring your Custom Controls through OctoPrint's
+   settings interface without the need to manually edit the configuration
+   file.
 
 .. _sec-features-custom_controls-types:
 
@@ -279,3 +286,8 @@ Parameterized GCODE Script
 
 Note the usage of the ``parameters.repetitions`` template variable in the GCODE script template, which will contain
 the value selected by the user for the "Go arounds" slider.
+
+.. rubric:: Footnotes
+
+.. [#f1] For Linux that will be ``~/.octoprint/config.yaml``, for Windows it will be ``%APPDATA%/OctoPrint/config.yaml`` and for
+         Mac ``~/Library/Application Support/OctoPrint/config.yaml``
