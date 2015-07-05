@@ -56,6 +56,11 @@ class GcodeWatchdogHandler(watchdog.events.PatternMatchingEventHandler):
 		                            file_wrapper.filename,
 		                            file_wrapper,
 		                            allow_overwrite=True)
+		if os.path.exists(path):
+			try:
+				os.remove(path)
+			except:
+				self._logger.exception("Error while trying to clear a file from the watched folder")
 
 	def on_created(self, event):
 		self._upload(event.src_path)
