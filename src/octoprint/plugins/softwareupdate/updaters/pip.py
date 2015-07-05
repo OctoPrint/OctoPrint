@@ -62,12 +62,12 @@ def perform_update(target, check, target_version, log_cb=None):
 
 	install_arg = check["pip"].format(target_version=target_version)
 
-	logger.debug("Target: %s, executing pip install %s" % (target, install_arg))
+	logger.debug(u"Target: %s, executing pip install %s" % (target, install_arg))
 	pip_args = ["install", check["pip"].format(target_version=target_version, target=target_version)]
 
 	pip_caller.execute(*pip_args)
 
-	logger.debug("Target: %s, executing pip install %s --ignore-reinstalled --force-reinstall --no-deps" % (target, install_arg))
+	logger.debug(u"Target: %s, executing pip install %s --ignore-reinstalled --force-reinstall --no-deps" % (target, install_arg))
 	pip_args += ["--ignore-installed", "--force-reinstall", "--no-deps"]
 
 	pip_caller.execute(*pip_args)

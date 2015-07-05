@@ -64,7 +64,7 @@ See :ref:`Developing Plugins <sec-plugins>`.
 .. rubric:: Footnotes
 
 .. [#f1] For Linux that will be ``~/.octoprint/plugins``, for Windows it will be ``%APPDATA%/OctoPrint/plugins`` and for
-         Mac ``~/Library/Application Support/OctoPrint``
+         Mac ``~/Library/Application Support/OctoPrint/plugins``
 .. [#f2] Make sure to use the exact same Python installation for installing the plugin that you also used for
          installing & running OctoPrint. For OctoPi this means using ``~/oprint/bin/pip`` for installing plugins
          instead of just ``pip``.
