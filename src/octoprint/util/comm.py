@@ -529,7 +529,7 @@ class MachineCom(object):
 
 				self.sendCommand("M24")
 
-				self._sd_status_timer = RepeatedTimer(lambda: get_interval("sdStatus"), self._poll_sd_status, run_first=True)
+				self._sd_status_timer = RepeatedTimer(lambda: get_interval("sdStatus", default_value=1.0), self._poll_sd_status, run_first=True)
 				self._sd_status_timer.start()
 			else:
 				line = self._getNext()
@@ -1181,7 +1181,7 @@ class MachineCom(object):
 
 	def _onConnected(self):
 		self._serial.timeout = settings().getFloat(["serial", "timeout", "communication"])
-		self._temperature_timer = RepeatedTimer(lambda: get_interval("temperature"), self._poll_temperature, run_first=True)
+		self._temperature_timer = RepeatedTimer(lambda: get_interval("temperature", default_value=4.0), self._poll_temperature, run_first=True)
 		self._temperature_timer.start()
 
 		self._changeState(self.STATE_OPERATIONAL)
@@ -1997,11 +1997,15 @@ def get_new_timeout(type):
 	return now + get_interval(type)
 
 
-def get_interval(type):
+def get_interval(type, default_value=0.0):
 	if type not in default_settings["serial"]["timeout"]:
-		return 0
+		return default_value
 	else:
-		return settings().getFloat(["serial", "timeout", type])
+		value = settings().getFloat(["serial", "timeout", type])
+		if not value:
+			return default_value
+		else:
+			return value
 
 _temp_command_regex = re.compile("^M(?P<command>104|109|140|190)(\s+T(?P<tool>\d+)|\s+S(?P<temperature>[-+]?\d*\.?\d*))+")
 
