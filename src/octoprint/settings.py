@@ -142,7 +142,8 @@ default_settings = {
 		"repetierTargetTemp": False,
 		"externalHeatupDetection": True,
 		"supportWait": True,
-		"keyboardControl": True
+		"keyboardControl": True,
+		"pollWatched": False
 	},
 	"folder": {
 		"uploads": None,
