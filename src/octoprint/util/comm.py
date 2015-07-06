@@ -246,7 +246,7 @@ class MachineCom(object):
 			return
 
 		if newState == self.STATE_CLOSED or newState == self.STATE_CLOSED_WITH_ERROR:
-			if settings().get(["feature", "sdSupport"]):
+			if settings().getBoolean(["feature", "sdSupport"]):
 				self._sdFileList = False
 				self._sdFiles = []
 				self._callback.on_comm_sd_files([])
@@ -407,7 +407,7 @@ class MachineCom(object):
 			self._serial.close()
 		self._serial = None
 
-		if settings().get(["feature", "sdSupport"]):
+		if settings().getBoolean(["feature", "sdSupport"]):
 			self._sdFileList = []
 
 		if printing:
