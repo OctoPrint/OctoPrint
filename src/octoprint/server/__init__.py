@@ -14,6 +14,7 @@ from flask.ext.babel import Babel, gettext, ngettext
 from flask.ext.assets import Environment, Bundle
 from babel import Locale
 from watchdog.observers import Observer
+from watchdog.observers.polling import PollingObserver
 from collections import defaultdict
 
 import os
@@ -399,7 +400,12 @@ class Server():
 				printer.connect(port=port, baudrate=baudrate, profile=printer_profile["id"] if "id" in printer_profile else "_default")
 
 		# start up watchdogs
-		observer = Observer()
+		if s.getBoolean(["feature", "pollWatched"]):
+			# use less performant polling observer if explicitely configured
+			observer = PollingObserver()
+		else:
+			# use os default
+			observer = Observer()
 		observer.schedule(util.watchdog.GcodeWatchdogHandler(fileManager, printer), s.getBaseFolder("watched"))
 		observer.start()
 
