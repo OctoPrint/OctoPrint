@@ -29,4 +29,11 @@
             <input type="text" class="input-block-level" data-bind="value: folder_watched" id="settings-folderWatched">
         </div>
     </div>
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
+                <input type="checkbox" data-bind="checked: feature_pollWatched" id="settings-featurePollWatched"> {{ _('Actively poll the watched folder. Check this if files in your watched folder aren\'t automatically added otherwise.') }}
+            </label>
+        </div>
+    </div>
 </form>
