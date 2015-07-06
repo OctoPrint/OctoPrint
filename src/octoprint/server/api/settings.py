@@ -68,7 +68,8 @@ def getSettings():
 			"swallowOkAfterResend": s.getBoolean(["feature", "swallowOkAfterResend"]),
 			"repetierTargetTemp": s.getBoolean(["feature", "repetierTargetTemp"]),
 			"externalHeatupDetection": s.getBoolean(["feature", "externalHeatupDetection"]),
-			"keyboardControl": s.getBoolean(["feature", "keyboardControl"])
+			"keyboardControl": s.getBoolean(["feature", "keyboardControl"]),
+			"pollWatched": s.getBoolean(["feature", "pollWatched"])
 		},
 		"serial": {
 			"port": connectionOptions["portPreference"],
@@ -199,6 +200,7 @@ def setSettings():
 		if "repetierTargetTemp" in data["feature"].keys(): s.setBoolean(["feature", "repetierTargetTemp"], data["feature"]["repetierTargetTemp"])
 		if "externalHeatupDetection" in data["feature"].keys(): s.setBoolean(["feature", "externalHeatupDetection"], data["feature"]["externalHeatupDetection"])
 		if "keyboardControl" in data["feature"].keys(): s.setBoolean(["feature", "keyboardControl"], data["feature"]["keyboardControl"])
+		if "pollWatched" in data["feature"]: s.setBoolean(["feature", "pollWatched"], data["feature"]["pollWatched"])
 
 	if "serial" in data.keys():
 		if "autoconnect" in data["serial"].keys(): s.setBoolean(["serial", "autoconnect"], data["serial"]["autoconnect"])

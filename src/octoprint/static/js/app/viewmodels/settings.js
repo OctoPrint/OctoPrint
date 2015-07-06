@@ -113,6 +113,7 @@ $(function() {
         self.feature_repetierTargetTemp = ko.observable(undefined);
         self.feature_disableExternalHeatupDetection = ko.observable(undefined);
         self.feature_keyboardControl = ko.observable(undefined);
+        self.feature_pollWatched = ko.observable(undefined);
 
         self.serial_port = ko.observable();
         self.serial_baudrate = ko.observable();
@@ -377,6 +378,7 @@ $(function() {
             self.feature_repetierTargetTemp(response.feature.repetierTargetTemp);
             self.feature_disableExternalHeatupDetection(!response.feature.externalHeatupDetection);
             self.feature_keyboardControl(response.feature.keyboardControl);
+            self.feature_pollWatched(response.feature.pollWatched);
 
             self.serial_port(response.serial.port);
             self.serial_baudrate(response.serial.baudrate);
@@ -457,7 +459,8 @@ $(function() {
                         "swallowOkAfterResend": self.feature_swallowOkAfterResend(),
                         "repetierTargetTemp": self.feature_repetierTargetTemp(),
                         "externalHeatupDetection": !self.feature_disableExternalHeatupDetection(),
-                        "keyboardControl": self.feature_keyboardControl()
+                        "keyboardControl": self.feature_keyboardControl(),
+                        "pollWatched": self.feature_pollWatched()
                     },
                     "serial": {
                         "port": self.serial_port(),
