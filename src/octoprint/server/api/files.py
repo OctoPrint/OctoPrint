@@ -292,6 +292,9 @@ def gcodeFileCommand(filename, target):
 
 	if command == "select":
 		# selects/loads a file
+		if not octoprint.filemanager.valid_file_type(filename, type="machinecode"):
+			return make_response("Cannot select {filename} for printing, not a machinecode file".format(**locals()), 415)
+
 		printAfterLoading = False
 		if "print" in data.keys() and data["print"] in valid_boolean_trues:
 			if not printer.is_operational():

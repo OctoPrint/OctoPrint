@@ -10,6 +10,11 @@
   Will now log the update commands and their output similar to the Plugin
   Manager install and uninstall dialog.
 
+### Bug Fixes
+
+* It's not possible anymore to select files that are not machinecode files (e.g.
+  GCODE) for printing on the file API.
+
 ## 1.2.2 (2015-06-30)
 
 ### Bug Fixes
