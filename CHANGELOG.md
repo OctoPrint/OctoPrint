@@ -1,5 +1,15 @@
 # OctoPrint Changelog
 
+## 1.3.0 (unreleased)
+
+### Improvements
+
+* Upgraded versioneer, generated version numbers are now PEP440 compatible (relevant
+  for setup)
+* More verbose output for Software Update plugin for logged in administrators.
+  Will now log the update commands and their output similar to the Plugin
+  Manager install and uninstall dialog.
+
 ## 1.2.2 (2015-06-30)
 
 ### Bug Fixes
@@ -176,7 +186,7 @@
   changed under "Temperatures" in the Settings ([#343](https://github.com/foosel/OctoPrint/issues/343)).
 * High-DPI support for the GCode viewer ([#837](https://github.com/foosel/OctoPrint/issues/837)).
 * Stop websocket connections from multiplying ([#888](https://github.com/foosel/OctoPrint/pull/888)).
-* New setting to rotate webcam by 90Â° counter clockwise ([#895](https://github.com/foosel/OctoPrint/issues/895) and
+* New setting to rotate webcam by 90° counter clockwise ([#895](https://github.com/foosel/OctoPrint/issues/895) and
   [#906](https://github.com/foosel/OctoPrint/pull/906))
 * System commands now be set to a) run asynchronized by setting their `async` property to `true` and b) to ignore their
   result by setting their `ignore` property to `true`.
