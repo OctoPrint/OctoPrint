@@ -1,0 +1,58 @@
+# Authors
+
+The following people have contributed to OctoPrint's code base (ordered by
+date of first contribution):
+
+  * [Gina Häußge](https://github.com/foosel)
+  * [Thomas Sanladerer](https://github.com/imitation)
+  * [Alex Ustyantsev](https://github.com/hudbrog)
+  * [Andrew Dalgleish](https://github.com/ajd4096)
+  * [Dale Price](https://github.com/daprice)
+  * [Václav "ax" Hůla](https://github.com/AxTheB)
+  * [Tom Perry](https://github.com/daftscience)
+  * [Andreas Gohr](https://github.com/splitbrain)
+  * [Lars Norpchen](https://github.com/norpchen)
+  * [Marlon Wünnemann](https://github.com/marwue)
+  * ["algspd"](https://github.com/algspd)
+  * [Peter Uithoven](https://github.com/peteruithoven)
+  * [Bryan Mayland](https://github.com/CapnBry)
+  * [Ross Hendrickson](https://github.com/savorywatt)
+  * [Dan Lipsitt](https://github.com/DanLipsitt)
+  * [James Gao](https://github.com/jamesgao)
+  * [Tonnerre Lombard](https://github.com/tonnerre)
+  * [Marc Hannappel](https://github.com/Salandora)
+  * [Brad Pitcher](https://github.com/brad)
+  * [Gabe Rosenhouse](https://github.com/rosenhouse)
+  * [chriskoz](https://github.com/chriskoz)
+  * [Ilya Novoselov](https://github.com/nullie)
+  * [Corey C](https://github.com/C-o-r-E)
+  * [Jarek Szczepanski](https://github.com/imrahil)
+  * [Jon Nordby](https://github.com/jonnor)
+  * [Aaron Bieber](https://github.com/qbit)
+  * [Guy Sheffer](https://github.com/guysoft)
+  * [Dattas Moonchaser](https://github.com/dattas)
+  * [Pim Rutgers](https://github.com/Booli)
+  * [Koen Kooi](https://github.com/koenkooi)
+  * [Colin Wallace](https://github.com/Wallacoloo)
+  * [Michael Ang](https://github.com/mangtronix)
+  * [Philipp Engel](https://github.com/nosyjoe)
+  * [Giles Hall](https://github.com/vishnubob)
+  * [Bevaz](https://github.com/Bevaz)
+  * [Bortek](https://github.com/bortek)
+  * [Rob Speed](https://github.com/rspeed)
+  * [Renha](https://github.com/Renha)
+  * [Antoine Bertin](https://github.com/Diaoul)
+  * [Teja Philipp](https://github.com/hungerpirat)
+  * ["matobago"](https://github.com/matobago)
+  * ["nophead"](https://github.com/nophead)
+  * [Bob Clough](https://github.com/thinkl33t)
+  * [Mikk Kiilaspää](https://github.com/Mikk36)
+  * [Jack Minardi](https://github.com/jminardi)
+  * [Mark Walker](https://github.com/markwal)
+  * [Lucas Clemente](https://github.com/lucas-clemente)
+  * [Andrew Erickson](https://github.com/aerickson)
+
+OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
+[Daid Braam](https://github.com/daid). Parts of its communication layer and
+the server side GCODE interpreter are still based on Cura's code base from
+December 2012 and hence on the work of its authors up until then.
