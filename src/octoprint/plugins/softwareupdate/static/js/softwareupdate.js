@@ -142,7 +142,7 @@ $(function() {
                             click: function() {
                                 self._markNotificationAsSeen(data.information);
                                 self._showPopup({
-                                    text: gettext("You can make this message display again via \"Settings\" > \"SoftwareUpdate\" > \"Check for update now\"")
+                                    text: gettext("You can make this message display again via \"Settings\" > \"Software Update\" > \"Check for update now\"")
                                 });
                             }
                         }, {
