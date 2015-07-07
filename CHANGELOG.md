@@ -9,6 +9,7 @@
 * More verbose output for Software Update plugin for logged in administrators.
   Will now log the update commands and their output similar to the Plugin
   Manager install and uninstall dialog.
+* Allow hiding plugins from Plugin Manager via ``config.yaml``.
 
 ### Bug Fixes
 

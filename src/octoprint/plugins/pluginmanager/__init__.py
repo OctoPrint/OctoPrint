@@ -82,7 +82,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		return dict(
 			repository="http://plugins.octoprint.org/plugins.json",
 			repository_ttl=24*60,
-			pip=None
+			pip=None,
+			hidden=[]
 		)
 
 	def on_settings_save(self, data):
@@ -161,8 +162,11 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 		plugins = self._plugin_manager.plugins
 
+		hidden = self._settings.get(["hidden"])
 		result = []
 		for name, plugin in plugins.items():
+			if name in hidden:
+				continue
 			result.append(self._to_external_representation(plugin))
 
 		if "refresh_repository" in request.values and request.values["refresh_repository"] in valid_boolean_trues:
