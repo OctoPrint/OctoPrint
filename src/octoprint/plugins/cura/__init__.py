@@ -35,6 +35,14 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 		self._cancelled_jobs = []
 		self._job_mutex = threading.Lock()
 
+	##~~ TemplatePlugin API
+
+	def get_template_configs(self):
+		from flask.ext.babel import gettext
+		return [
+			dict(type="settings", name=gettext("CuraEngine"))
+		]
+
 	##~~ StartupPlugin API
 
 	def on_startup(self, host, port):

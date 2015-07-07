@@ -326,8 +326,9 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 	##~~ TemplatePlugin API
 
 	def get_template_configs(self):
+		from flask.ext.babel import gettext
 		return [
-			dict(type="settings", name="Software Update")
+			dict(type="settings", name=gettext("Software Update"))
 		]
 
 	#~~ Updater
