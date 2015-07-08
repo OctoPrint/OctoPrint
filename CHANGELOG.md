@@ -1,5 +1,37 @@
 # OctoPrint Changelog
 
+## 1.2.3 (2015-07-09)
+
+### Improvements
+
+  * New option to actively poll the watched folder. This should make it work also
+    if it is mounted on a filesystem that doesn't allow getting notifications
+    about added files through notification by the operating system (e.g.
+    network shares).
+  * Better resilience against senseless temperature/SD-status-polling intervals
+    (such as 0).
+  * Log exceptions during writing to the serial port to `octoprint.log`.
+
+### Bug Fixes
+
+  * [#961](https://github.com/foosel/OctoPrint/pull/961) - Fixed a JavaScript error that caused an error to be logged when "enter" was pressed in file or plugin search.
+  * [#962](https://github.com/foosel/OctoPrint/pull/962) - ``url(...)``s in packed CSS and LESS files should now be rewritten properly too to refer to correct paths
+  * Update notifications were not vanishing properly after updating:
+    * Only use version cache for update notifications if the OctoPrint version still is the same to make sure the cache gets invalidated after an external update of OctoPrint.
+    * Do not persist version information when saving settings of the Software Update plugin
+  * Always delete files from the ``watched`` folder after importing then. Using file preprocessor plugins could lead to the files staying there.
+  * Fixed an encoding problem causing OctoPrint's Plugin Manager and Software Update plugins to choke on UTF-8 characters in the update output.
+  * Fixed sorting by file size in file list
+  * More resilience against missing plugin assets:
+    * Asset existence will now be checked before they get included
+      in the assets to bundle by webassets, logging a warning if a
+      file isn't present.
+    * Monkey-patched webassets filter chain to not die when a file
+      doesn't exist, but to log an error instead and just return
+      an empty file instead.
+
+([Commits](https://github.com/foosel/OctoPrint/compare/1.2.2...1.2.3))
+
 ## 1.2.2 (2015-06-30)
 
 ### Bug Fixes
