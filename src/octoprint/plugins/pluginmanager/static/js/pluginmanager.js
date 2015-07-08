@@ -147,10 +147,10 @@ $(function() {
             }
         });
 
-        self.performRepositorySearch = function(formElement) {
+        self.performRepositorySearch = function() {
             var query = self.repositorySearchQuery();
             if (query !== undefined && query.trim() != "") {
-                query = query.toLocaleLowerCase()
+                query = query.toLocaleLowerCase();
                 self.repositoryplugins.changeSearchFunction(function(entry) {
                     return entry && (entry["title"].toLocaleLowerCase().indexOf(query) > -1 || entry["description"].toLocaleLowerCase().indexOf(query) > -1);
                 });
