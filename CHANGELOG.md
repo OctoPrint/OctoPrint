@@ -10,6 +10,7 @@
   Will now log the update commands and their output similar to the Plugin
   Manager install and uninstall dialog.
 * Allow hiding plugins from Plugin Manager via ``config.yaml``.
+* Cura Plugin: "Test" button to check if path to cura engine is valid.
 
 ### Bug Fixes
 
