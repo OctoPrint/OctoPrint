@@ -6,6 +6,13 @@ $(function() {
         self.settingsViewModel = parameters[1];
         self.slicingViewModel = parameters[2];
 
+        self.pathBroken = ko.observable(false);
+        self.pathOk = ko.observable(false);
+        self.pathText = ko.observable();
+        self.pathHelpVisible = ko.computed(function() {
+            return self.pathBroken() || self.pathOk();
+        });
+
         self.fileName = ko.observable();
 
         self.placeholderName = ko.observable();
@@ -157,6 +164,36 @@ $(function() {
             $("#settings_plugin_cura_import").modal("show");
         };
 
+        self.testEnginePath = function() {
+            $.ajax({
+                url: API_BASEURL + "util/test",
+                type: "POST",
+                dataType: "json",
+                data: JSON.stringify({
+                    command: "path",
+                    path: self.settings.plugins.cura.cura_engine(),
+                    check_type: "file",
+                    check_access: "x"
+                }),
+                contentType: "application/json; charset=UTF-8",
+                success: function(response) {
+                    if (!response.result) {
+                        if (!response.exists) {
+                            self.pathText(gettext("The path doesn't exist"));
+                        } else if (!response.typeok) {
+                            self.pathText(gettext("The path is not a file"));
+                        } else if (!response.access) {
+                            self.pathText(gettext("The path is not an executable"));
+                        }
+                    } else {
+                        self.pathText(gettext("The path is valid"));
+                    }
+                    self.pathOk(response.result);
+                    self.pathBroken(!response.result);
+                }
+            })
+        };
+
         self.requestData = function() {
             $.ajax({
                 url: API_BASEURL + "slicing/cura/profiles",
@@ -183,6 +220,12 @@ $(function() {
         self.onBeforeBinding = function () {
             self.settings = self.settingsViewModel.settings;
             self.requestData();
+        };
+
+        self.onSettingsHidden = function() {
+            self.pathBroken(false);
+            self.pathOk(false);
+            self.pathText("");
         };
     }
 

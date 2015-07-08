@@ -16,6 +16,8 @@ import octoprint.util
 import octoprint.slicing
 import octoprint.settings
 
+from octoprint.util.paths import normalize as normalize_path
+
 from .profile import Profile
 
 class CuraPlugin(octoprint.plugin.SlicerPlugin,
@@ -156,7 +158,7 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 	##~~ SlicerPlugin API
 
 	def is_slicer_configured(self):
-		cura_engine = self._settings.get(["cura_engine"])
+		cura_engine = normalize_path(self._settings.get(["cura_engine"]))
 		if cura_engine is not None and os.path.exists(cura_engine):
 			return True
 		else:
@@ -230,7 +232,7 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 
 				engine_settings = self._convert_to_engine(profile_path, printer_profile, posX, posY)
 
-				executable = self._settings.get(["cura_engine"])
+				executable = normalize_path(self._settings.get(["cura_engine"]))
 				if not executable:
 					return False, "Path to CuraEngine is not configured "
 
