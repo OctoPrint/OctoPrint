@@ -19,6 +19,7 @@ import uuid
 import threading
 import logging
 import netaddr
+import os
 
 from octoprint.settings import settings
 import octoprint.server
@@ -173,6 +174,34 @@ def fix_webassets_cache():
 
 	cache.FilesystemCache.set = fixed_set
 	cache.FilesystemCache.get = fixed_get
+
+def fix_webassets_filtertool():
+	from webassets.merge import FilterTool, log, MemoryHunk
+
+	error_logger = logging.getLogger(__name__ + ".fix_webassets_filtertool")
+
+	def fixed_wrap_cache(self, key, func):
+		"""Return cache value ``key``, or run ``func``.
+		"""
+		if self.cache:
+			if not self.no_cache_read:
+				log.debug('Checking cache for key %s', key)
+				content = self.cache.get(key)
+				if not content in (False, None):
+					log.debug('Using cached result for %s', key)
+					return MemoryHunk(content)
+
+		try:
+			content = func().getvalue()
+			if self.cache:
+				log.debug('Storing result in cache with key %s', key,)
+				self.cache.set(key, content)
+			return MemoryHunk(content)
+		except:
+			error_logger.exception("Got an exception while trying to apply filter, ignoring file")
+			return MemoryHunk("")
+
+	FilterTool._wrap_cache = fixed_wrap_cache
 
 #~~ passive login helper
 
@@ -535,6 +564,8 @@ class SettingsCheckUpdater(webassets.updater.BaseUpdater):
 ##~~ plugin assets collector
 
 def collect_plugin_assets(enable_gcodeviewer=True, enable_timelapse=True, preferred_stylesheet="css"):
+	logger = logging.getLogger(__name__ + ".collect_plugin_assets")
+
 	supported_stylesheets = ("css", "less")
 	assets = dict(
 		js=[],
@@ -578,13 +609,24 @@ def collect_plugin_assets(enable_gcodeviewer=True, enable_timelapse=True, prefer
 	for implementation in asset_plugins:
 		name = implementation._identifier
 		all_assets = implementation.get_assets()
+		basefolder = implementation.get_asset_folder()
+
+		def asset_exists(category, asset):
+			exists = os.path.exists(os.path.join(basefolder, asset))
+			if not exists:
+				logger.warn("Plugin {} is referring to non existing {} asset {}".format(name, category, asset))
+			return exists
 
 		if "js" in all_assets:
 			for asset in all_assets["js"]:
+				if not asset_exists("js", asset):
+					continue
 				assets["js"].append('plugin/{name}/{asset}'.format(**locals()))
 
 		if preferred_stylesheet in all_assets:
 			for asset in all_assets[preferred_stylesheet]:
+				if not asset_exists(preferred_stylesheet, asset):
+					continue
 				assets[preferred_stylesheet].append('plugin/{name}/{asset}'.format(**locals()))
 		else:
 			for stylesheet in supported_stylesheets:
@@ -592,6 +634,8 @@ def collect_plugin_assets(enable_gcodeviewer=True, enable_timelapse=True, prefer
 					continue
 
 				for asset in all_assets[stylesheet]:
+					if not asset_exists(stylesheet, asset):
+						continue
 					assets[stylesheet].append('plugin/{name}/{asset}'.format(**locals()))
 				break
 

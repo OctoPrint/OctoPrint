@@ -544,6 +544,9 @@ class Server():
 				},
 				"tornado.general": {
 					"level": "INFO"
+				},
+				"octoprint.server.util.flask": {
+					"level": "WARN"
 				}
 			},
 			"root": {
@@ -712,6 +715,7 @@ class Server():
 		global pluginManager
 
 		util.flask.fix_webassets_cache()
+		util.flask.fix_webassets_filtertool()
 
 		base_folder = settings().getBaseFolder("generated")
 
