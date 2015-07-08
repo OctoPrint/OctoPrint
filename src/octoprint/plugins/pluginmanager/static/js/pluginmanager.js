@@ -147,19 +147,17 @@ $(function() {
             }
         });
 
-        self.performRepositorySearch = function(e) {
-            if (e !== undefined) {
-                e.preventDefault();
-            }
-
+        self.performRepositorySearch = function(formElement) {
             var query = self.repositorySearchQuery();
             if (query !== undefined && query.trim() != "") {
+                query = query.toLocaleLowerCase()
                 self.repositoryplugins.changeSearchFunction(function(entry) {
                     return entry && (entry["title"].toLocaleLowerCase().indexOf(query) > -1 || entry["description"].toLocaleLowerCase().indexOf(query) > -1);
                 });
             } else {
                 self.repositoryplugins.resetSearch();
             }
+            return false;
         };
 
         self.fromResponse = function(data) {
