@@ -309,18 +309,17 @@ $(function() {
         };
 
         self.performSearch = function(e) {
-            if (e !== undefined) {
-                e.preventDefault();
-            }
-
             var query = self.searchQuery();
             if (query !== undefined && query.trim() != "") {
+                query = query.toLocaleLowerCase();
                 self.listHelper.changeSearchFunction(function(entry) {
                     return entry && entry["name"].toLocaleLowerCase().indexOf(query) > -1;
                 });
             } else {
                 self.listHelper.resetSearch();
             }
+
+            return false;
         };
 
         self.onDataUpdaterReconnect = function() {
