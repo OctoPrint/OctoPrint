@@ -1,0 +1,28 @@
+---
+layout: post
+author: foosel
+title: 'New release (candidate): 1.2.0-RC1'
+date: 2015-06-10 08:35:04 +0000
+
+originalUrl: https://plus.google.com/+OctoprintOrg/posts/czVKSZa39TB
+---
+I just tagged and pushed 1.2.0-rc1 to the master branch. This is the first release candidate of the 1.2.0 release that&#39;s been in the works for the last couple of months.<br />
+<!-- more -->
+<br />
+Probably the most important change with this release is the introduction of the <b>plugin system</b> which a couple of early adopters :) are already using to make awesome stuff, just take a look at the plugin repository at <a href="http://plugins.octoprint.org">http://plugins.octoprint.org</a> for a taste of it. The release candidate also ships with the <b>Plugin Manager</b> now bundled, so you can even browse and install the plugins from there from within your OctoPrint installation :)<br />
+<br />
+The slicing support via Cura is now also provided through a plugin and utilizes the CuraEngine directly. Multiple slicing and printer profiles can be managed through the UI, and yes, I plan on making the (recallable) slicing dialog more sophisticated with regards to adjustable parameters - the API in fact already allows this :)<br />
+<br />
+Another big change is that the UI is now <b>fully translateable</b>, with a full german translation being included. More translations can be added through so called language packs, about which I&#39;ll write some documentation in the coming days. You might wonder what came of my plans to include crowdsourced translations - I finally decided against that for the simple reason of not being able to guarantee the completeness and correctness of the other translations. I&#39;ll instead make them downloadable via a central language pack repository just like the plugins, but thought I&#39;d rather get a release candidate out now instead of having that stalled longer ;)<br />
+<br />
+I also bundled the <b>Software Update plugin</b>, which out of the box will at least notify you of new releases in the future, and if configured correctly also will allow you to update OctoPrint and any plugins which register themselves with that mechanism as well, including automatic restarting if necessary. Don&#39;t worry, the configuration will be more user friendly in the very near future too, but again, I thought you&#39;d welcome a release more than waiting for my perfectionism to be satisfied ;)<br />
+<br />
+The full list of changes is way too long to include here. 1.2.0 is the biggest release OctoPrint has ever seen so far since I&#39;m now able to concentrate on this full time thanks to <span class="proflinkWrapper"><span class="proflinkPrefix">+</span><a class="proflink" href="https://plus.google.com/101489582165235848044" oid="101489582165235848044">BQ</a></span> being awesome, and if the RC works out for you people, I hope I can release it for good next week. So please provide feedback! :)<br />
+<br />
+Finally, some interesting links:<br />
+<br />
+<b> *Changelog</b>: <a href="https://github.com/foosel/OctoPrint/blob/1.2.0-rc1/CHANGELOG.md#120-unreleased">https://github.com/foosel/OctoPrint/blob/1.2.0-rc1/CHANGELOG.md#120-unreleased</a><br />
+* <b>Plugin Manager docs</b>: <a href="https://github.com/foosel/OctoPrint/wiki/Plugin:-Plugin-Manager">https://github.com/foosel/OctoPrint/wiki/Plugin:-Plugin-Manager</a><br />
+* <b>Software Update docs</b>: <a href="https://github.com/foosel/OctoPrint/wiki/Plugin:-Software-Update">https://github.com/foosel/OctoPrint/wiki/Plugin:-Software-Update</a><br />
+* <b>CuraEngine Plugin docs</b>: <a href="https://github.com/foosel/OctoPrint/wiki/Plugin:-Cura">https://github.com/foosel/OctoPrint/wiki/Plugin:-Cura</a><br />
+* <b>Plugin Tutorial</b>: <a href="http://docs.octoprint.org/en/master/plugins/gettingstarted.html">http://docs.octoprint.org/en/master/plugins/gettingstarted.html</a>﻿

@@ -1,0 +1,1 @@
+{% if include.categories %}{% for category in include.categories %}{% if site.data.categories[category] %}{{ site.data.categories[category].title }}{% endif %}{% endfor %}{% endif %}

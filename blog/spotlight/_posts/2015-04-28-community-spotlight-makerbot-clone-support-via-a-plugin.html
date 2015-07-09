@@ -1,0 +1,23 @@
+---
+layout: post
+author: foosel
+title: 'Community spotlight: Makerbot(clone) support via a plugin'
+date: 2015-04-28 11:47:52 +0000
+links:
+- title: GPX
+  excerpt: "Use OctoPrint with s3g/x3g printers (like FlashForge and older MakerBot)"
+  url: http://plugins.octoprint.org/plugins/gpx
+  image: https://markwal.github.io/OctoPrint/gpx.png
+originalUrl: https://plus.google.com/+OctoprintOrg/posts/RXXvdxR7c14
+---
+It&#39;s not a secret that OctoPrint so far lacked support for Makerbot printers and their clones (e.g. Flashforge) and that I wasn&#39;t going to do anything about that due to various reasons (the most prominent one being no access to a machine to test with, but admittedly also some other reservations). With the arrival of the plugin system in OctoPrint&#39;s development branch <span class="proflinkWrapper"><span class="proflinkPrefix">+</span><a class="proflink" href="https://plus.google.com/118024220644837840366" oid="118024220644837840366">Mark Walker</a></span> took it upon himself to change that and with &quot;GPX&quot; [1] developed a plugin around the &quot;gpx&quot; tool, which converts GCODE to the x3g format used by these printers. Mark has the plugin do this on the fly, basically having it act as a translation layer between OctoPrint itself and the serial port connected to the printer and thus allowing FlashForge and Makerbot printers up until Gen5 (read: Replicator 2 being the last one) to work together with OctoPrint.<br />
+<!-- more -->
+<br />
+Mark himself has it working with his FlashForge Creator Pro running Sailfish 7.7. While the plugin should still be considered alpha stage, he is still looking for feedback and input from other people who dare try it out. The README on the plugin&#39;s Github repository [2] (also linked from the plugin repository) contains setup instructions and an overview of current known issues/caveats plus a small roadmap, so be sure to check it out if you want to give this a try.<br />
+<br />
+The plugin requires a very current devel build of OctoPrint (since it depends on a couple of hooks newly introduced) and Linux as underlying operating system.<br />
+<br />
+Big thanks to Mark, this is truly a remarkable use of the still young plugin system!<br />
+<br />
+[1] <a href="http://plugins.octoprint.org/plugins/gpx/">http://plugins.octoprint.org/plugins/gpx/</a><br />
+[2] <a href="https://github.com/markwal/OctoPrint-GPX/blob/master/README.md">https://github.com/markwal/OctoPrint-GPX/blob/master/README.md</a>﻿

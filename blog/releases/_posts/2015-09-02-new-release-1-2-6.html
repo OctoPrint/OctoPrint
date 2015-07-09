@@ -1,0 +1,29 @@
+---
+layout: post
+author: foosel
+title: 'New release: 1.2.6'
+date: 2015-09-02 18:16:24 +0000
+
+originalUrl: https://plus.google.com/+OctoprintOrg/posts/bTWFwLjkm8B
+---
+<i>Whoa, another one?</i> Yup. I forgot to pin the version of a library OctoPrint now depends on since 1.2.5. A new version of that library was released today which apparently has a bug that causes the <i>install</i> of OctoPrint to crash when it tries to pull in that new library version (&quot;pip install .&quot; works, &quot;python setup.py install&quot; does not). If you tried to update today and ran into errors, read further below on how to solve this manually.<br />
+<!-- more -->
+<br />
+OctoPrint 1.2.6 pins the version number of the offending library (and a bunch of others, to prevent this from happening again) and also includes a tiny improvement with regards to handling version reporting in detached checkouts, courtesy of <span class="proflinkWrapper"><span class="proflinkPrefix">+</span><a class="proflink" href="https://plus.google.com/100242854243155306943" oid="100242854243155306943">Koen Kooi</a></span>.<br />
+<br />
+Find the full changelog here: <a href="https://github.com/foosel/OctoPrint/releases/tag/1.2.6">https://github.com/foosel/OctoPrint/releases/tag/1.2.6</a><br />
+<br />
+If you don&#39;t get an &quot;Update Now&quot; button with your update notification, read this: <a href="https://github.com/foosel/OctoPrint/wiki/Plugin:-Software-Update#making-octoprint-updateable-on-existing-installations">https://github.com/foosel/OctoPrint/wiki/Plugin:-Software-Update#making-octoprint-updateable-on-existing-installations</a>﻿<br />
+<br />
+<b>Updating woes earlier today? Read on</b><br />
+<br />
+If you tried updating from 1.2.4 (or older) to 1.2.5 today (2015-09-02), your &quot;python setup.py install&quot; call might have failed, causing OctoPrint 1.2.5 to not install correctly. If your server is currently not starting up properly, try updating your OctoPrint installation manually via the &quot;good old fashioned way&quot; described on the Wiki, that will get you 1.2.6 which doesn&#39;t have that issue anymore: <a href="https://github.com/foosel/OctoPrint/wiki/FAQ#how-can-i-update-the-octoprint-installation-on-my-octopi-image">https://github.com/foosel/OctoPrint/wiki/FAQ#how-can-i-update-the-octoprint-installation-on-my-octopi-image</a><br />
+<br />
+Alternatively, manually install psutil in version 3.1.1, then run OctoPrint&#39;s &quot;python setup.py install&quot; again. For OctoPi:<br />
+<br />
+cd ~/OctoPrint<br />
+~/oprint/bin/pip install psutil==3.1.1<br />
+~/oprint/bin/python setup.py install<br />
+sudo service octoprint restart<br />
+<br />
+Adjust the OctoPrint checkout folder and the paths to pip and python to match your individual installation if your are not running OctoPi.﻿

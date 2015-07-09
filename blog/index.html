@@ -1,0 +1,37 @@
+---
+layout: default
+title: OctoBlog
+---
+
+{% include pageheader.html %}
+
+<div class="container blogindex">
+    <div class="row-fluid">
+        {% include pagination.html %}
+    </div>
+    <div class="row-fluid">
+        <div class="span12 content">
+            {% for post in paginator.posts %}
+            <article class="post">
+                {% if post.categories %}
+                <div class="categories">{% include post_category categories=post.categories %}</div>
+                {% endif %}
+                <h1><a href="{{ site.baseurl }}{{ post.url }}">{{ post.title }}</a></h1>
+                
+                <div class="postmeta muted">
+                    <span class="author">by {{ site.data.authors[post.author].name }}</span> &middot; <span class="date">{{ post.date | date_to_string }}</span>
+                </div>
+                
+                <div class="excerpt">
+                    {{ post.excerpt }}
+                </div>
+                
+                {% if post.excerpt != post.content %}<a href="{{ site.baseurl }}{{ post.url }}" class="read-more">Read More...</a>{% endif %}
+            </article>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="row-fluid">
+        {% include pagination.html %}
+    </div>
+</div>

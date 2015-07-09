@@ -1,0 +1,82 @@
+---
+layout: default
+---
+{% include pageheader.html %}
+
+<div class="container blogpost">
+    <div class="row-fluid pagination">
+        <div class="span12">
+            {% if page.next.url %}
+                <small><a class="newer-posts" href="{{ page.next.url }}" title="Next Page">&laquo; {{ page.next.title }}</a></small>
+            {% endif %}
+            &nbsp;
+            {% if page.previous.url %}
+                <small><a class="older-posts" href="{{ page.previous.url }}" title="Previous Page">{{ page.previous.title }} &raquo;</a></small>
+            {% endif %}
+        </div>
+    </div>
+    <div class="row-fluid content">
+        <div class="span8 text">
+            {{ content }}
+
+            {% if page.links %}
+                <h2>Links</h2>
+                {% for link in page.links %}
+                <div class="postlink container">
+                    {% if link.image %}
+                    <div class="row-fluid">
+                        <div class="span2"><img src="{{ link.image }}"></div>
+                        <div class="span6">
+                            <strong>{{ link.title }}</strong>
+                            <p>{{ link.excerpt }}</p>
+                            <p><a href="{{ link.url }}">{{ link.url }}</a></p>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="row-fluid">
+                        <div class="span8">
+                            <strong>{{ link.title }}</strong>
+                            <p>{{ link.excerpt }}</p>
+                            <p><a href="{{ link.url }}">{{ link.url }}</a></p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            {% endif %}
+            {% if page.images %}
+                <h2>Images</h2>
+                {% for image in page.images %}
+                <figure>
+                    <a href="{{ image }}" data-lightbox="{{ page.id }}"><img src="{{ image }}"></a>
+                </figure>
+                {% endfor %}
+            {% endif %}
+        </div>
+        <div class="span4">
+            <dl class="author">
+                <dt>Author</dt>
+                <dd>
+                    <a href="{{ site.data.authors[page.author].link }}" target="_blank">{{ site.data.authors[page.author].name }}</a>
+                </dd>
+            </dl>
+            <dl class="published">
+                <dt>Published</dt>
+                <dd>{{ page.date | date_to_string }}</dd>
+            </dl>
+            {% assign thecategories = page.categories | shift %}
+            {% if thecategories %}
+            <dl class="category">
+                <dt>Category</dt>
+                <dd>{% include post_category categories=thecategories %}</dd>
+            </dl>
+            {% endif %}
+            {% if page.originalUrl %}
+            <dl class="originalUrl">
+                <dt>Original URL</dt>
+                <dd>This post was originally published at <a href="{{ page.originalUrl }}" target="_blank">{{ page.originalUrl }}</a></dd>
+            </dl>
+            {% endif %}
+        </div>
+    </div>
+</div>

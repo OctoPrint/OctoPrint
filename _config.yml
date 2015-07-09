@@ -10,6 +10,12 @@ title : OctoPrint.org
 tagline: The snappy web interface for your 3D printer.
 description: OctoPrint is the snappy web interface for your 3D printer that allows you to control and monitor all aspects of your printer and print jobs, right from your browser.
 
+paginate: 10
+paginate_path: "/blog/page:num/"
+
+permalink: /blog/:year/:month/:day/:title/
+excerpt_separator: <!-- more -->
+
 author:
   name: Gina Häußge
   twitter: foosel
@@ -25,3 +31,5 @@ gplus: OctoPrintOrg
 twitterlink: https://twitter.com/OctoPrint3D
 facebooklink: https://facebook.com/OctoPrint
 gpluslink: https://plus.google.com/+OctoprintOrg/posts
+
+gems: [jekyll-paginate]

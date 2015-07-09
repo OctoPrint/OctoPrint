@@ -186,6 +186,12 @@ ol.slick-dots {
     color: mix(@white, @octoLight, 50%);
     text-shadow: none;
   }
+
+  .pageheader {
+    h1 {
+      font-size: 60px;
+    }
+  }
 }
 
 .page-header {
@@ -366,6 +372,51 @@ ol.slick-dots {
       margin-bottom: 1em;
     }
   }
+
+  .blogindex {
+    h1 {
+      margin-bottom: 0;
+    }
+    .postmeta {
+      text-align: center;
+      margin-bottom: 1em;
+      margin-top: 1em;
+    }
+
+    .content {
+      padding-top: 10px;
+      padding-bottom: 10px;
+    }
+
+    .pagination {
+      margin: 0;
+    }
+
+    .categories {
+      text-transform: uppercase;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    .post {
+      margin-bottom: 2em;
+    }
+  }
+
+  .blogpost {
+    .originalUrl {
+      overflow-wrap: break-word;
+    }
+
+    .content {
+      padding-top: 10px;
+      padding-bottom: 10px;
+    }
+
+    .pagination {
+      margin: 0;
+    }
+  }
 }
 
 footer {
@@ -446,4 +497,17 @@ footer {
 
 address {
   text-align: center;
+}
+
+
+.pagination {
+  .newer-posts {
+    float: left;
+    text-align: left;
+  }
+
+  .older-posts {
+    float: right;
+    text-align: right;
+  }
 }

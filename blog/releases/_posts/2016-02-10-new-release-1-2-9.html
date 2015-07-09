@@ -1,0 +1,39 @@
+---
+layout: post
+author: foosel
+title: 'New release: 1.2.9'
+date: 2016-02-10 14:29:58 +0000
+
+originalUrl: https://plus.google.com/+OctoprintOrg/posts/C3jJ3oQrT7A
+---
+The first release of 2016 brings you a whole basket full of fixes of bugs and little annoyances and of course also a couple of improvements of existing functionality, for example:<br />
+<!-- more -->
+<br />
+  * OctoPrint now displays a link to the release notes of an updated component in the update notification, the update confirmation and the version overview in the settings dialog. Please always make sure to at least skim over the release notes for new OctoPrint releases, they might contain important information that you need to know before updating.<br />
+  * Snapshots for timelapses are now named in a non-colliding, job-based way, allowing a new timelapse to start while the other is still being rendered (although printing with an active timelapse rendering job is not recommended and will be solved with a proper render job queue in a later version). Timelapses that were not successfully rendered are kept for 7 days (configurable, although not via the UI so far) and can be manually rendered or deleted through a new UI component within the timelapse tab that shows up if unrendered timelapses are detected.<br />
+  * OctoPrint now serves an intermediary page upon start that informs the user about the server still starting up. Once the server is detected as running, the page automatically switches to the standard interface.<br />
+  * Added option to ignore any unhandled errors reported by the firmware and another option to only cancel ongoing prints on unhandled errors from the firmware (instead of instant disconnect that so far was the default).<br />
+  * The file upload dialog will now only display files having an extension that&#39;s supported for upload.<br />
+<br />
+... and many other things. Find the full changelog and release notes here: <a href="https://github.com/foosel/OctoPrint/releases/tag/1.2.9">https://github.com/foosel/OctoPrint/releases/tag/1.2.9</a><br />
+<br />
+If you don&#39;t get an &quot;Update Now&quot; button with your update notification, read this: <a href="https://github.com/foosel/OctoPrint/wiki/Plugin:-Software-Update#making-octoprint-updateable-on-existing-installations">https://github.com/foosel/OctoPrint/wiki/Plugin:-Software-Update#making-octoprint-updateable-on-existing-installations</a> or - even more specifically - this: <a href="https://github.com/foosel/OctoPrint/wiki/Plugin:-Software-Update#octoprint--125">https://github.com/foosel/OctoPrint/wiki/Plugin:-Software-Update#octoprint--125</a><br />
+<br />
+If you do get an &quot;Update Now&quot; button but the update is immediately reported to be successful without any changes, read this: <a href="https://github.com/foosel/OctoPrint/wiki/FAQ#im-running-127-i-tried-to-update-to-a-newer-version-via-the-software-update-plugin-but-im-still-on-127-after-restart">https://github.com/foosel/OctoPrint/wiki/FAQ#im-running-127-i-tried-to-update-to-a-newer-version-via-the-software-update-plugin-but-im-still-on-127-after-restart</a><br />
+<br />
+If you have any problems with your OctoPrint installation, please seek support in the G+ Community or the Mailinglist (see the links below). The comments here are not a good place for that, neither are Twitter or private mails :)<br />
+<br />
+<b>Further Information &amp; Links:</b><br />
+<br />
+FAQ: <a href="https://github.com/foosel/OctoPrint/wiki/FAQ">https://github.com/foosel/OctoPrint/wiki/FAQ</a><br />
+<br />
+Docs: <a href="http://docs.octoprint.org/">http://docs.octoprint.org/</a><br />
+<br />
+Contribution Guidelines: <a href="https://github.com/foosel/OctoPrint/blob/master/CONTRIBUTING.md">https://github.com/foosel/OctoPrint/blob/master/CONTRIBUTING.md</a><br />
+<br />
+How to file a bug report: <a href="https://github.com/foosel/OctoPrint/blob/master/CONTRIBUTING.md#how-to-file-a-bug-report">https://github.com/foosel/OctoPrint/blob/master/CONTRIBUTING.md#how-to-file-a-bug-report</a><br />
+<br />
+G+ Community: <a href="https://plus.google.com/communities/102771308349328485741">https://plus.google.com/communities/102771308349328485741</a><br />
+<br />
+Mailinglist: <a href="https://groups.google.com/group/octoprint">https://groups.google.com/group/octoprint</a>﻿<br />
+﻿

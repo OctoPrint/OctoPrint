@@ -12,8 +12,13 @@
                           <li><i class="icon-comments-alt"></i> IRC: <a href="irc://chat.freenode.net/octoprint" target="_blank">#octoprint on freenode</a></li>
                       </ul>
                   </div>
-                  <div class="span4 footer-center-column hidden-phone">
-                      <img src="/assets/img/logo-footer.png">
+                  <div class="span4">
+                      <h2>Recent Posts</h2>
+                      <ul>
+                          {% for post in site.posts limit: 5 %}
+                          <li><a class="post-link" href="{{ post.url | prepend: site.baseurl }}">{{ post.title }}</a> ({{ post.date | date_to_string }})</li>
+                          {% endfor %}
+                      </ul>
                   </div>
                   <div class="span4 footer-right-column">
                       <h2>Big Thanks</h2>

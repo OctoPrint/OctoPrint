@@ -1,0 +1,16 @@
+---
+layout: post
+author: foosel
+title: 'New release: 1.2.4'
+date: 2015-07-23 10:10:25 +0000
+
+originalUrl: https://plus.google.com/+OctoprintOrg/posts/XCKp3G6eFwg
+---
+Again mostly fixes of minor bugs and annoyances ;)<br />
+<!-- more -->
+<br />
+Find the changelog here: <a href="https://github.com/foosel/OctoPrint/releases/tag/1.2.4">https://github.com/foosel/OctoPrint/releases/tag/1.2.4</a><br />
+<br />
+If you don&#39;t get an &quot;Update Now&quot; button with your update notification, read this: <a href="https://github.com/foosel/OctoPrint/wiki/Plugin:-Software-Update#making-octoprint-updateable-on-existing-installations">https://github.com/foosel/OctoPrint/wiki/Plugin:-Software-Update#making-octoprint-updateable-on-existing-installations</a>﻿<br />
+<br />
+<i>Plugin authors, please read this</i>: This release also makes OctoPrint compatible with plugins that require external dependencies that are not available on PyPI (e.g. unreleased fixed versions of 3rd party libraries). Please use this sparingly and only if absolutely necessary, e.g. if you don&#39;t want to wait for a specific bug fixed version of one of your dependencies to become publicly released. If you depend on a lib you wrote yourself, preferably make it available on PyPI instead of depending on the dependency_links functionality for plugins - it is a bit tricky to get to work right due to very different behaviour across pip versions and so the less plugins depend on it, the better.﻿

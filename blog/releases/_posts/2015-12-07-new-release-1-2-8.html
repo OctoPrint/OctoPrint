@@ -1,0 +1,48 @@
+---
+layout: post
+author: foosel
+title: 'New release: 1.2.8'
+date: 2015-12-07 13:46:20 +0000
+images:
+- https://lh3.googleusercontent.com/-zI5fL-UkNCk/VmWNrMGW3UI/AAAAAAAABHA/bBFRrMqO050/w580-h744/OctoPrint_2015-12-07_14-19-48.png
+
+originalUrl: https://plus.google.com/+OctoprintOrg/posts/VAttLfxezFN
+---
+The most important thing right at the beginning: <b>If you are currently running version 1.2.7 you&#39;ll need to install the &quot;Updatefix 1.2.7&quot; plugin from the plugin repository before you can update your OctoPrint installation.</b><br />
+<!-- more -->
+<br />
+Version 1.2.7 sadly contains a bug that breaks updating OctoPrint. When attempting to update, you&#39;ll simply get presented with an &quot;update successful&quot; message, but nothing was actually updated. Version 1.2.8 contains a fix, but naturally we have a hen-egg-problem here. To allow you updating to 1.2.8, a plugin was made available that basically backports the needed fix to 1.2.7 by monkey patching your existing installation during runtime: &quot;Updatefix 1.2.7&quot;. It can be found in the plugin repository and can be installed directly through your plugin manager - just refresh the plugin list from the repository (via the little wrench icon in the plugin manager install dialog) if it doesn&#39;t show up immediately when you search for &quot;update&quot;.<br />
+<br />
+The section &quot;A bug in 1.2.7 prevents directly updating to 1.2.8, here&#39;s what to do&quot; in the release notes explains everything and also offers you a work around if you can&#39;t or don&#39;t want to install the plugin. The FAQ has been updated as well.<br />
+<br />
+Another thing you might stumble over <i>after</i> updating to 1.2.8 is the fact that <b>OctoPrint no longer displays the bed temperature graph and controls unless your printer profile has the &quot;Heated Bed&quot; option checked</b>. So if you suddenly find yourself without access to your printer&#39;s bed temperature, make sure to check that checkbox. The release notes also have a heads-up regarding this under the section &quot;Bed temperatures are now only displayed if printer profile has a heated bed configured&quot;.<br />
+<br />
+Besides those two gotchas, this release again contains mostly fixes of bugs and annoyances, but also a couple of improvements:<br />
+<br />
+  * The web interface and translation files are now cached indefinitely on the server side (instead of only 5min so far). That should improve performance upon reloads.<br />
+  * Firmware error responses containing the strings &quot;unknown command&quot;, &quot;cannot open&quot; and &quot;cannot enter&quot; are now recognized as non-critical errors and no longer cause a disconnect.<br />
+  * The browser tab visibility is now tracked by the web interface, disabling the webcam and the GCODE viewer if the tab containing OctoPrint is not active. That should reduce client-side resource usage.<br />
+  * The printer log in the terminal tab will now be cut off after 3000 lines even if autoscroll is disabled. That should prevent your browser from running out of memory if you accidentally leave that off.<br />
+<br />
+Find the full changelog and release notes here: <a href="https://github.com/foosel/OctoPrint/releases/tag/1.2.8">https://github.com/foosel/OctoPrint/releases/tag/1.2.8</a><br />
+<br />
+If you don&#39;t get an &quot;Update Now&quot; button with your update notification, read this: <a href="https://github.com/foosel/OctoPrint/wiki/Plugin:-Software-Update#making-octoprint-updateable-on-existing-installations">https://github.com/foosel/OctoPrint/wiki/Plugin:-Software-Update#making-octoprint-updateable-on-existing-installations</a> or - even more specifically - this: <a href="https://github.com/foosel/OctoPrint/wiki/Plugin:-Software-Update#octoprint--125">https://github.com/foosel/OctoPrint/wiki/Plugin:-Software-Update#octoprint--125</a><br />
+<br />
+If you do get an &quot;Update Now&quot; button but the update is immediately reported to be successful without any changes, read this: <a href="https://github.com/foosel/OctoPrint/wiki/FAQ#im-running-127-i-tried-to-update-to-a-newer-version-via-the-software-update-plugin-but-im-still-on-127-after-restart">https://github.com/foosel/OctoPrint/wiki/FAQ#im-running-127-i-tried-to-update-to-a-newer-version-via-the-software-update-plugin-but-im-still-on-127-after-restart</a><br />
+<br />
+If you have any problems with your OctoPrint installation, please seek support in the G+ Community or the Mailinglist (see the links below). The comments here are not a good place for that, neither are Twitter or private mails :)<br />
+<br />
+<b>Further Information &amp; Links:</b><br />
+<br />
+FAQ: <a href="https://github.com/foosel/OctoPrint/wiki/FAQ">https://github.com/foosel/OctoPrint/wiki/FAQ</a><br />
+<br />
+Docs: <a href="http://docs.octoprint.org/">http://docs.octoprint.org/</a><br />
+<br />
+Contribution Guidelines: <a href="https://github.com/foosel/OctoPrint/blob/master/CONTRIBUTING.md">https://github.com/foosel/OctoPrint/blob/master/CONTRIBUTING.md</a><br />
+<br />
+How to file a bug report: <a href="https://github.com/foosel/OctoPrint/blob/master/CONTRIBUTING.md#how-to-file-a-bug-report">https://github.com/foosel/OctoPrint/blob/master/CONTRIBUTING.md#how-to-file-a-bug-report</a><br />
+<br />
+G+ Community: <a href="https://plus.google.com/communities/102771308349328485741">https://plus.google.com/communities/102771308349328485741</a><br />
+<br />
+Mailinglist: <a href="https://groups.google.com/group/octoprint">https://groups.google.com/group/octoprint</a>﻿<br />
+﻿

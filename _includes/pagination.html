@@ -1,0 +1,13 @@
+<nav class="pagination" role="pagination">
+    {% if paginator.previous_page %}
+        {% if paginator.previous_page == 1 %}
+            <small><a class="newer-posts" href="/blog/" title="Previous Page">&laquo; Newer Posts</a></small>
+        {% else %}
+            <small><a class="newer-posts" href="/blog/page{{ paginator.previous_page }}/" title="Previous Page">&laquo; Newer Posts</a></small>
+      {% endif %}
+    {% endif %}
+    &nbsp;
+    {% if paginator.next_page %}
+        <small><a class="older-posts" href="/blog/page{{ paginator.next_page }}/" title="Next Page">Older Posts &raquo;</a></small>
+    {% endif %}
+</nav>

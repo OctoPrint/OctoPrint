@@ -1,0 +1,20 @@
+---
+layout: post
+author: foosel
+title: 'Trouble updating OctoPrint to 1.2.0 on OctoPi? Read this'
+date: 2015-06-26 13:42:25 +0000
+
+originalUrl: https://plus.google.com/+OctoprintOrg/posts/EbBzVStQUbj
+---
+It has come to my attention that apparently the last release of OctoPi 0.11.0 from February (the one that introduced RPi2 compatibility and which is based on the Raspbian release from 2015-01-31) contains a little issue with the shipped OctoPrint checkout that prevents updates of OctoPrint on this image to run smoothly.<br />
+<!-- more -->
+<br />
+If you are running this version and/or are getting a message along the lines of &quot;timeout for <a href="http://gnet.homelinux.com">gnet.homelinux.com</a>&quot; when performing the &quot;git pull&quot; step, please just do this (after cd&#39;ing to ~/OctoPrint):<br />
+<br />
+    git remote set-url origin <a href="https://github.com/foosel/OctoPrint.git">https://github.com/foosel/OctoPrint.git</a><br />
+<br />
+With this in place &quot;git pull&quot; should work again. The update instructions contains in OctoPrint&#39;s FAQ have been adjusted accordingly too.<br />
+<br />
+Background: OctoPi builds are done from a mirrored version of OctoPrint for performance reasons. Usually, the repository URL will be set to the public/official one however during the build process. Apparently for that specific build there was a bug present that caused that &quot;reset&quot; to not take place, causing the image to ship with the wrong repository URL. The above command simply does fix that URL again.<br />
+<br />
+Sorry for not including this information in the release announcement, I only just today learnt that this is an issue with OctoPi 0.11.0 (I so far thought it was only an issue with some of the nightlies put out a while ago). And if you are wondering why I wasn&#39;t aware of that before today, a quick reminder since people tend to forget or not know this: I maintain Octo*Print*, not Octo*Pi* (and I usually do my own builds of the latter, especially when testing around with experimental stuff). I try to support <span class="proflinkWrapper"><span class="proflinkPrefix">+</span><a class="proflink" href="https://plus.google.com/100346828637989638992" oid="100346828637989638992">Guy Sheffer</a></span> every way I can, but this one slipped by me (and a lot of you too when testing the RC of OctoPi 0.11.0 ;))﻿

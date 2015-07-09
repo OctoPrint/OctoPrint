@@ -36,6 +36,9 @@
     <link rel="apple-touch-icon" sizes="114x114" href="{{ BASE_PATH }}/assets/img/apple-touch-icon-114x114.png">
     <link rel="apple-touch-icon" sizes="144x144" href="{{ BASE_PATH }}/assets/img/apple-touch-icon-144x144.png">
 
+    <!-- Le RSS feed -->
+    <link rel="alternate" type="application/rss+xml" title="OctoPrint.org: OctoBlog" href="{{ '/feeds/all.xml' | prepend: site.baseurl }}">
+
     <!-- Le social media meta data -->
     {% capture thetitle %}{% if page.title %}{{ page.title }}{% else %}{{ site.title }}{% endif %}{% endcapture %}
     {% capture thedescription %}{% if page.description %}{{ page.description }}{% else %}{{ site.description }}{% endif %}{% endcapture %}
