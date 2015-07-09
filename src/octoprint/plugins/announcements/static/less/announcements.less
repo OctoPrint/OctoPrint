@@ -1,0 +1,37 @@
+table {
+  th, td {
+    &.settings_plugin_announcements_channels_name {
+      text-overflow: ellipsis;
+      text-align: left;
+    }
+
+    &.settings_plugin_announcements_channels_actions {
+      text-align: center;
+      width: 80px;
+
+      a {
+        text-decoration: none;
+        color: #000;
+
+        &.disabled {
+          color: #ccc;
+          cursor: default;
+        }
+      }
+    }
+  }
+}
+
+#plugin_announcements_dialog {
+  .unread {
+    font-weight: bold;
+  }
+
+  .actions {
+    text-align: right;
+
+    a {
+      color: black;
+    }
+  }
+}

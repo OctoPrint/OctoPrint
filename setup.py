@@ -35,7 +35,8 @@ INSTALL_REQUIRES = [
 	"requests==2.7.0",
 	"semantic_version==2.4.2",
 	"psutil==3.2.1",
-	"awesome-slugify>=1.6.5,<1.7"
+	"awesome-slugify>=1.6.5,<1.7",
+	"feedparser>=5.2.1,<5.3"
 ]
 
 # Additional requirements for optional install options

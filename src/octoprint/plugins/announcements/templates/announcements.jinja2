@@ -1,0 +1,44 @@
+<div id="plugin_announcements_dialog" class="modal hide fade large" tabindex="-1" role="dialog" aria-labelledby="announcements_dialog_label" aria-hidden="true">
+    <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal">&times;</button>
+        <h3 id="announcements_dialog_label">{{ _('Announcements') }}</h3>
+    </div>
+    <div class="modal-body">
+        <div class="full-sized-box">
+            <div class="tabbable row-fluid">
+                <div class="span3 scrollable" id="plugin_announcements_dialog_menu">
+                    <ul class="nav nav-list" id="plugin_announcements_dialog_tabs">
+                        <!-- ko foreach: {data: channels.items, afterAdd: setupTabLink} -->
+                        <!-- ko if: $data.enabled || $data.forced -->
+                        <li data-bind="css: {active: $index() == 0}">
+                            <a data-toggle="tab" target="_blank" data-bind="text: $data.channel + ' (' + $data.unread + ')', attr: {href: '#plugin_announcements_dialog_channel_' + $data.key}, css: {unread: $data.unread}"></a>
+                        </li>
+                        <!-- /ko -->
+                        <!-- /ko -->
+                    </ul>
+                </div>
+                <div class="tab-content span9 scrollable" id="plugin_announcements_dialog_content">
+                    <!-- ko foreach: channels.items -->
+                    <!-- ko if: $data.enabled || $data.forced -->
+                    <div class="tab-pane" data-bind="css: {active: $index() == 0}, attr: {id: 'plugin_announcements_dialog_channel_' + $data.key}">
+                        <!-- ko foreach: $data.data -->
+                        <hr data-bind="visible: $index() > 0">
+                        <article data-bind="css: {muted: $data.read}">
+                            <h3><a data-bind="text: $data.title, attr: {href: $data.url}"></a> <small data-bind="text: formatTimeAgo($data.published)"></small></h3>
+                            <div data-bind="html: $data.summary"></div>
+                            <div class="actions">
+                                <small><a data-bind="click: function() { $root.markRead($parent.key, $data.published) }"><i class="icon-eye-open"></i> {{ _('Last read') }}</a></small>
+                            </div>
+                        </article>
+                        <!-- /ko -->
+                    </div>
+                    <!-- /ko -->
+                    <!-- /ko -->
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-block" data-dismiss="modal" aria-hidden="true">{{ _('Close') }}</button>
+    </div>
+</div>
