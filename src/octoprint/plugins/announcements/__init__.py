@@ -8,8 +8,8 @@ __copyright__ = "Copyright (C) 2016 The OctoPrint Project - Released under terms
 
 import octoprint.plugin
 
+import calendar
 import codecs
-import datetime
 import os
 import re
 import time
@@ -44,27 +44,27 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 		                                          priority=1,
 		                                          type="rss",
 		                                          url="http://octoprint.org/feeds/important.xml",
-		                                          read_until=1449442800),
+		                                          read_until=1449446400),
 		                          _releases=dict(name="OctoPrint Release Announcements",
 		                                         priority=2,
 		                                         type="rss",
 		                                         url="http://octoprint.org/feeds/releases.xml",
-		                                         read_until=1458117576),
+		                                         read_until=1458121176),
 		                          _spotlight=dict(name="OctoPrint Community Spotlights",
 		                                          priority=2,
 		                                          type="rss",
 		                                          url="http://octoprint.org/feeds/spotlight.xml",
-		                                          read_until=1447950371),
+		                                          read_until=1447953971),
 		                          _octopi=dict(name="OctoPi Announcements",
 		                                       priority=2,
 		                                       type="rss",
 		                                       url="http://octoprint.org/feeds/octopi.xml",
-		                                       read_until=1462197000),
+		                                       read_until=1462200600),
 		                          _plugins=dict(name="New Plugins in the Repository",
 		                                        priority=2,
 		                                        type="rss",
 		                                        url="http://plugins.octoprint.org/feed.xml",
-		                                        read_until=1461625200)),
+		                                        read_until=1461628800)),
 		            enabled_channels=[],
 		            forced_channels=["_important"],
 		            ttl=6*60,
@@ -229,7 +229,7 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 		return result
 
 	def _to_internal_entry(self, entry, read_until=None):
-		published = time.mktime(entry["published_parsed"])
+		published = calendar.timegm(entry["published_parsed"])
 
 		read = False
 		if read_until is not None:
