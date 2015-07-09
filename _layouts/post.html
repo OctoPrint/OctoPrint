@@ -20,6 +20,7 @@ layout: default
             {{ content }}
 
             {% if page.links %}
+            <div class="postlinks">
                 <h2>Links</h2>
                 {% for link in page.links %}
                 <div class="postlink container">
@@ -43,14 +44,17 @@ layout: default
                     {% endif %}
                 </div>
                 {% endfor %}
+            </div>
             {% endif %}
             {% if page.images %}
+            <div class="postimages">
                 <h2>Images</h2>
                 {% for image in page.images %}
                 <figure>
                     <a href="{{ image }}" data-lightbox="{{ page.id }}"><img src="{{ image }}"></a>
                 </figure>
                 {% endfor %}
+            </div>
             {% endif %}
         </div>
         <div class="span4">
