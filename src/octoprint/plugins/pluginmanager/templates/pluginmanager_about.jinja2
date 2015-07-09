@@ -2,7 +2,7 @@
 
 <ul>
     {% for plugin in plugin_pluginmanager_thirdparty %}
-        <li><a href="{{ plugin.url }}">{{ plugin.name }}</a>: {{ plugin.license }}</li>
+        <li><a href="{{ plugin.url }}">{{ plugin.name }}</a>: {% if plugin.license %}{{ plugin.license }}{% else %}-{% endif %}</li>
     {% endfor %}
 </ul>
 
