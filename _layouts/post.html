@@ -77,6 +77,10 @@ layout: default
                 <dd>This post was originally published at <a href="{{ page.originalUrl }}" target="_blank">{{ page.originalUrl }}</a></dd>
             </dl>
             {% endif %}
+            <dl class="share">
+                <dt>Share this</dt>
+                <dd>{% include share_snippet %}</dd>
+            </dl>
         </div>
     </div>
 </div>

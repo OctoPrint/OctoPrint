@@ -1,0 +1,5 @@
+<ul class="sharebuttons">
+    <li><a title="Twitter" href="http://twitter.com/share?text=%22{{ page.title }}%22&url={{ page.url | prepend: site.baseurl | prepend: site.external }}&via={{ site.twitter }}&related={{ site.twitter }}" rel="nofollow" target="_blank"><span class="fa-stack fa-lg"><i class="fa fa-circle fa-stack-2x"></i><i class="fa fa-twitter fa-stack-1x fa-inverse"></i></span></a></li>
+    <li><a title="Google+" href="https://plus.google.com/share?url={{ page.url | prepend: site.baseurl | prepend: site.external }}" rel="nofollow" target="_blank"><span class="fa-stack fa-lg"><i class="fa fa-circle fa-stack-2x"></i><i class="fa fa-google-plus fa-stack-1x fa-inverse"></i></span></a></li>
+    <li><a title="Facebook" href="http://www.facebook.com/sharer.php?u={{ page.url | prepend: site.baseurl | prepend: site.external }}&p[title]={{ page.title }}" rel="nofollow" target="_blank"><span class="fa-stack fa-lg"><i class="fa fa-circle fa-stack-2x"></i><i class="fa fa-facebook fa-stack-1x fa-inverse"></i></span></a></li>
+</ul>
