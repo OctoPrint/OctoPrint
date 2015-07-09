@@ -765,6 +765,9 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
 		"""
 		return None
 
+	def get_ui_additional_unless(self):
+		return False
+
 class WizardPlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 	"""
 	The ``WizardPlugin`` mixin allows plugins to report to OctoPrint whether

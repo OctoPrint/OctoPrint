@@ -51,7 +51,7 @@ def index():
 	now = datetime.datetime.utcnow()
 	render_kwargs = _get_render_kwargs(_templates, _plugin_names, _plugin_vars, now)
 
-	def get_preemptively_cached_view(key, view, data=None, additional_request_data=None):
+	def get_preemptively_cached_view(key, view, data=None, additional_request_data=None, additional_unless=None):
 		if (data is None and additional_request_data is None) or g.locale is None:
 			return view
 
@@ -85,10 +85,17 @@ def index():
 			except:
 				_logger.exception("Error retrieving additional data for preemptive cache from plugin {}".format(key))
 
+		def unless():
+			disabled_for_root = request.url_root in settings().get(["server", "preemptiveCache", "exceptions"])
+			if callable(additional_unless):
+				return disabled_for_root or additional_unless()
+			else:
+				return disabled_for_root
+
 		# finally decorate our view
 		return util.flask.preemptively_cached(cache=preemptiveCache,
 		                                      data=d,
-		                                      unless=lambda: request.url_root in settings().get(["server", "preemptiveCache", "exceptions"]))(view)
+		                                      unless=unless)(view)
 
 	def get_cached_view(key, view, additional_key_data=None, additional_files=None, custom_files=None, custom_etag=None, custom_lastmodified=None):
 		def cache_key():
@@ -206,7 +213,8 @@ def index():
 			preemptively_cached = get_preemptively_cached_view(plugin._identifier,
 			                                                   cached,
 			                                                   plugin.get_ui_data_for_preemptive_caching,
-			                                                   plugin.get_ui_additional_request_data_for_preemptive_caching)
+			                                                   plugin.get_ui_additional_request_data_for_preemptive_caching,
+			                                                   plugin.get_ui_additional_unless)
 
 			response = preemptively_cached(now, request, render_kwargs)
 			if response is not None:
