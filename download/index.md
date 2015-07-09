@@ -21,11 +21,11 @@ that already includes OctoPrint plus everything you need to run it:
 
 You can download the latest version via the following button:
 
-<a class="btn btn-primary btn-large" href="https://octopi.octoprint.org/latest"><i class="icon-download-alt icon-large"></i>&nbsp;&nbsp;Download&nbsp;OctoPi&nbsp;0.12</a>
+<a class="btn btn-primary btn-large" href="https://octopi.octoprint.org/latest"><i class="icon-download-alt icon-large"></i>&nbsp;&nbsp;Download&nbsp;OctoPi&nbsp;0.13</a>
 
-<small>MD5Sum: <code>a6db7912bc4cf429865a05253cbe017b</code></small>
+<small>MD5Sum: <code>d0191958de7ffe0f0a62c9313b7a3fc9</code></small>
 
-Compatible with Raspberry Pi A, B, A+, B+, B2. For Raspberry Pi 3 and Zero please use a [nightly build](http://docstech.net/OctoPiMirror/nightly/) for now.
+Compatible with Raspberry Pi A, B, A+, B+, B2, 3 and Zero.
 
 ##  Getting Started with OctoPi
 
