@@ -6,12 +6,13 @@
 <html lang="en" xmlns="http://www.w3.org/1999/html"> <!--<![endif]-->
 <head>
     <meta charset="utf-8" />
-    <title>{{ page.title }}</title>
-    {% if page.description %}<meta name="description" content="{{ page.description }}">{% endif %}
+
+    <title>{% if page.title %}{{ site.title }} - {{ page.title }}{% else %}{{ site.title }}{% endif %}</title>
+    <meta name="description" content="{% if page.description %}{{ page.description }}{% else %}{{ site.description }}{% endif %}">
     <meta name="author" content="{{ site.author.name }}">
 
     <!--[if lt IE 9]>
-    <script src="//html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <script src="{{ BASE_PATH }}/assets/js/html5shim.js"></script>
     <![endif]-->
 
     <!-- Enable responsive viewport -->
@@ -22,10 +23,10 @@
     <link rel="stylesheet" href="{{ BASE_PATH }}/assets/css/bootstrap-responsive.css">
     <link rel="stylesheet" href="{{ BASE_PATH }}/assets/css/prettify.css">
     <link rel="stylesheet" href="{{ BASE_PATH }}/assets/css/lightbox.css">
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="{{ BASE_PATH }}/assets/css/font-awesome-4.6.1.min.css">
 
-    <link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/jquery.slick/1.5.9/slick.css"/>
-    <link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/jquery.slick/1.5.9/slick-theme.css"/>
+    <link rel="stylesheet" type="text/css" href="{{ BASE_PATH }}/assets/vendor/slick-1.5.9/slick.css"/>
+    <link rel="stylesheet" type="text/css" href="{{ BASE_PATH }}/assets/vendor/slick-1.5.9/slick-theme.css"/>
 
 
     <!-- Le fav and touch icons -->
@@ -35,6 +36,26 @@
     <link rel="apple-touch-icon" sizes="114x114" href="{{ BASE_PATH }}/assets/img/apple-touch-icon-114x114.png">
     <link rel="apple-touch-icon" sizes="144x144" href="{{ BASE_PATH }}/assets/img/apple-touch-icon-144x144.png">
 
+    <!-- Le social media meta data -->
+    {% capture thetitle %}{% if page.title %}{{ page.title }}{% else %}{{ site.title }}{% endif %}{% endcapture %}
+    {% capture thedescription %}{% if page.description %}{{ page.description }}{% else %}{{ site.description }}{% endif %}{% endcapture %}
+    {% capture theimage %}{{ BASE_PATH }}/assets/img/octoprint-avatar-240x240.png{% endcapture %}
+
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:site" content="@{{ site.twitter }}" />
+    <meta name="twitter:title" content="{{ thetitle }}" />
+    <meta name="description" content="{{ thedescription }}" />
+    <meta name="twitter:image" content="{{ theimage }}" />
+    <meta name="twitter:image:alt" content="The OctoPrint logo" />
+
+    <meta property="og:title" content="{{ thetitle }}" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="{{ theimage }}" />
+    <meta property="og:image:type" content="image/png" />
+    <meta property="og:image:width" content="240" />
+    <meta property="og:image:height" content="240" />
+    <meta property="og:description" content="{{ thedescription }}" />
+    <meta property="og:site_name" content="{{ site.title }}" />
 </head>
 
 <body>
@@ -53,11 +74,11 @@
 
 <a href="#top" class="to-top" title="Back to top" data-scroll><i class="fa fa-arrow-up fa-2x"></i></a>
 
-<script src="//cdnjs.cloudflare.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.4.4/underscore-min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/prettify/r224/prettify.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/holder/2.9.3/holder.min.js"></script>
-<script src="//cdn.jsdelivr.net/jquery.slick/1.5.9/slick.min.js"></script>
+<script src="{{ BASE_PATH }}/assets/js/jquery-1.9.1.min.js"></script>
+<script src="{{ BASE_PATH }}/assets/js/underscore-1.4.4.min.js"></script>
+<script src="{{ BASE_PATH }}/assets/js/prettify-r224.js"></script>
+<script src="{{ BASE_PATH }}/assets/js/holder-2.9.3.min.js"></script>
+<script src="{{ BASE_PATH }}/assets/vendor/slick-1.5.9/slick.min.js"></script>
 <script src="{{ BASE_PATH }}/assets/js/bootstrap.min.js"></script>
 <script src="{{ BASE_PATH }}/assets/js/lightbox.min.js"></script>
 <script src="{{ BASE_PATH }}/assets/js/smooth-scroll.min.js"></script>
@@ -72,14 +93,6 @@
     ga('create', 'UA-62479257-1', 'auto');
     ga('send', 'pageview');
 </script>
-
-<script>(function(d, s, id) {
-  var js, fjs = d.getElementsByTagName(s)[0];
-  if (d.getElementById(id)) return;
-  js = d.createElement(s); js.id = id;
-  js.src = "//connect.facebook.net/en_US/sdk.js#xfbml=1&version=v2.5&appId=261043007362874";
-  fjs.parentNode.insertBefore(js, fjs);
-}(document, 'script', 'facebook-jssdk'));</script>
 
 </body>
 </html>

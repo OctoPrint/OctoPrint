@@ -1,6 +1,7 @@
 ---
 layout: page
-title: Slides & Talks
+title: Slides & Talks about OctoPrint
+description: Interested in some presentation of the project? Here you can find some slide decks and recordings of past talks about OctoPrint.
 ---
 
 Here you can find the slide decks of past talks about OctoPrint:
