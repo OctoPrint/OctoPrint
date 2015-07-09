@@ -2,6 +2,7 @@
 # coding=utf-8
 
 from setuptools import setup, find_packages
+from distutils.command.build_py import build_py as _build_py
 import os
 import versioneer
 
@@ -22,6 +23,7 @@ INSTALL_REQUIRES = [
 	"Flask-Principal==0.3.5",
 	"Flask-Babel==0.9",
 	"Flask-Assets==0.10",
+	"Flask-Markdown==0.3",
 	"pyserial==2.7",
 	"netaddr==0.7.17",
 	"watchdog==0.8.3",
@@ -69,6 +71,32 @@ DEPENDENCY_LINKS = []
 #-----------------------------------------------------------------------------------------------------------------------
 # Anything below here is just command setup and general setup configuration
 
+def data_copy_build_py_factory(files, baseclass):
+	class data_copy_build_py(baseclass):
+		files = dict()
+
+		def run(self):
+			import shutil
+			if not self.dry_run:
+				for directory, files in self.__class__.files.items():
+					target_dir = os.path.join(self.build_lib, directory)
+					self.mkpath(target_dir)
+
+					for entry in files:
+						if isinstance(entry, tuple):
+							if len(entry) != 2:
+								continue
+							source, dest = entry
+						else:
+							source = dest = entry
+						shutil.copy(source, os.path.join(target_dir, dest))
+
+			baseclass.run(self)
+
+	return type(data_copy_build_py)(data_copy_build_py.__name__,
+	                                (data_copy_build_py,),
+	                                dict(files=files))
+
 def get_cmdclass():
 	cmdclass = versioneer.get_cmdclass()
 
@@ -80,6 +108,14 @@ def get_cmdclass():
 	pot_file = os.path.join(translation_dir, "messages.pot")
 	bundled_dir = os.path.join("src", "octoprint", "translations")
 	cmdclass.update(octoprint_setuptools.get_babel_commandclasses(pot_file=pot_file, output_dir=translation_dir, pack_name_prefix="OctoPrint-i18n-", pack_path_prefix="", bundled_dir=bundled_dir))
+
+	cmdclass["build_py"] = data_copy_build_py_factory({
+		"octoprint/templates/_data": [
+			"AUTHORS.md",
+			"CHANGELOG.md",
+			"THIRDPARTYLICENSES.md",
+		]
+	}, cmdclass["build_py"] if "build_py" in cmdclass else _build_py)
 
 	return cmdclass
 
@@ -131,7 +167,7 @@ def params():
 
 	packages = find_packages(where="src")
 	package_dir = {
-		"": "src"
+		"": "src",
 	}
 	package_data = {
 		"octoprint": octoprint_setuptools.package_data_dirs('src/octoprint', ['static', 'templates', 'plugins', 'translations'])
