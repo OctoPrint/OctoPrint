@@ -27,11 +27,28 @@ table {
     font-weight: bold;
   }
 
-  .actions {
-    text-align: right;
+  article {
+    &.read {
+      opacity: 0.5;
+    }
 
-    a {
-      color: black;
+    &.read:hover {
+      opacity: 1;
+    }
+
+    .actions {
+      background-color: #f5f5f5;
+      border-radius: 2px;
+      padding: 2px 5px;
+      margin-top: 5px;
+
+      .markread {
+        float: right;
+      }
+
+      a {
+        color: black;
+      }
     }
   }
 }

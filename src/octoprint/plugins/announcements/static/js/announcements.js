@@ -116,11 +116,14 @@ $(function() {
         };
 
         self.fromResponse = function(data) {
+            var currentTab = $("li.active a", self.announcementDialogTabs).attr("href");
+
             var unread = 0;
             var channels = [];
             _.each(data, function(value, key) {
                 value.key = key;
                 value.last = value.data.length ? value.data[0].published : undefined;
+                value.count = value.data.length;
                 unread += value.unread;
                 channels.push(value);
             });
@@ -128,22 +131,40 @@ $(function() {
             self.unread(unread);
 
             self.displayAnnouncements(channels);
+
+            self.selectTab(currentTab);
         };
 
-        self.showAnnouncementDialog = function() {
-            //self.aboutContent.scrollTop(0);
-            self.announcementDialog.modal({
-                minHeight: function() { return Math.max($.fn.modal.defaults.maxHeight() - 80, 250); }
-            }).css({
-                width: 'auto',
-                'margin-left': function() { return -($(this).width() /2); }
-            });
+        self.showAnnouncementDialog = function(channel) {
+            self.announcementDialogContent.scrollTop(0);
+
+            if (!self.announcementDialog.hasClass("in")) {
+                self.announcementDialog.modal({
+                    minHeight: function() { return Math.max($.fn.modal.defaults.maxHeight() - 80, 250); }
+                }).css({
+                    width: 'auto',
+                    'margin-left': function() { return -($(this).width() /2); }
+                });
+            }
+
+            var tab = undefined;
+            if (channel) {
+                tab = "#plugin_announcements_dialog_channel_" + channel;
+            }
+            self.selectTab(tab);
+
             return false;
         };
 
-        self.showChannel = function(channel) {
-            self.showAnnouncementDialog();
-            $("a[href=#plugin_announcements_dialog_channel_" + channel + "]", self.announcementDialogTabs).tab("show");
+        self.selectTab = function(tab) {
+            if (tab != undefined) {
+                if (!_.startsWith(tab, "#")) {
+                    tab = "#" + tab;
+                }
+                $('a[href="' + tab + '"]', self.announcementDialogTabs).tab("show");
+            } else {
+                $('a:first', self.announcementDialogTabs).tab("show");
+            }
         };
 
         self.displayAnnouncements = function(channels) {
@@ -225,7 +246,7 @@ $(function() {
                             text: gettext("Read..."),
                             addClass: "btn-primary",
                             click: function(notice) {
-                                self.showChannel(key);
+                                self.showAnnouncementDialog(key);
                                 self.markRead(key, value.last);
                                 notice.remove();
                             }

@@ -10,8 +10,8 @@
                     <ul class="nav nav-list" id="plugin_announcements_dialog_tabs">
                         <!-- ko foreach: {data: channels.items, afterAdd: setupTabLink} -->
                         <!-- ko if: $data.enabled || $data.forced -->
-                        <li data-bind="css: {active: $index() == 0}">
-                            <a data-toggle="tab" target="_blank" data-bind="text: $data.channel + ' (' + $data.unread + ')', attr: {href: '#plugin_announcements_dialog_channel_' + $data.key}, css: {unread: $data.unread}"></a>
+                        <li>
+                            <a data-toggle="tab" target="_blank" data-bind="text: $data.channel + ' (' + $data.unread + '/' + $data.count + ')', attr: {href: '#plugin_announcements_dialog_channel_' + $data.key}, css: {unread: $data.unread}"></a>
                         </li>
                         <!-- /ko -->
                         <!-- /ko -->
@@ -20,14 +20,15 @@
                 <div class="tab-content span9 scrollable" id="plugin_announcements_dialog_content">
                     <!-- ko foreach: channels.items -->
                     <!-- ko if: $data.enabled || $data.forced -->
-                    <div class="tab-pane" data-bind="css: {active: $index() == 0}, attr: {id: 'plugin_announcements_dialog_channel_' + $data.key}">
+                    <div class="tab-pane" data-bind="attr: {id: 'plugin_announcements_dialog_channel_' + $data.key}">
                         <!-- ko foreach: $data.data -->
                         <hr data-bind="visible: $index() > 0">
-                        <article data-bind="css: {muted: $data.read}">
-                            <h3><a data-bind="text: $data.title, attr: {href: $data.link}" target="_blank" rel="noreferrer noopener"></a> <small data-bind="text: formatTimeAgo($data.published)"></small></h3>
+                        <article data-bind="css: {read: $data.read}">
+                            <h3><a data-bind="text: $data.title, attr: {href: $data.link}" target="_blank" rel="noreferrer noopener"></a> <small data-bind="text: formatTimeAgo($data.published), attr: {title: formatDate($data.published)}"></small></h3>
                             <div data-bind="html: $data.summary"></div>
                             <div class="actions">
-                                <small><a data-bind="click: function() { $root.markRead($parent.key, $data.published) }"><i class="icon-eye-open"></i> {{ _('Last read') }}</a></small>
+                                <span class="articlelink"><small><a data-bind="text: $data.link, attr: {href: $data.link}" target="_blank" rel="noreferrer noopener"></a></small></span>
+                                <span class="markread"><small><a href="javascript:void(0)" data-bind="click: function() { $root.markRead($parent.key, $data.published) }"><i class="icon-eye-open"></i> {{ _('Mark as last read') }}</a></small></span>
                             </div>
                         </article>
                         <!-- /ko -->
@@ -40,5 +41,5 @@
     </div>
     <div class="modal-footer">
         <button class="btn btn-block" data-dismiss="modal" aria-hidden="true">{{ _('Close') }}</button>
-    </div>
+    </div>k
 </div>
