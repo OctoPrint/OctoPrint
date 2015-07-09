@@ -2,7 +2,7 @@
 layout: post
 author: foosel
 title: "New OctoPi Release: 0.13.0"
-date: 2016-05-02 17:00:00 +0200
+date: 2016-05-02 16:50:00 +0200
 images:
 - https://raw.githubusercontent.com/guysoft/OctoPi/devel/media/OctoPi.png
 ---
