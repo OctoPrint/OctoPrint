@@ -182,6 +182,17 @@ $(function() {
                 return text;
             };
 
+            var stripParagraphs = function(text) {
+                if (_.startsWith(text, "<p>")) {
+                    text = text.substr("<p>".length);
+                }
+                if (_.endsWith(text, "</p>")) {
+                    text = text.substr(0, text.length - "</p>".length);
+                }
+
+                return text.replace(/<\/p>\s*<p>/ig, "<br>");
+            };
+
             _.each(channels, function(value) {
                 var key = value.key;
                 var channel = value.channel;
@@ -209,7 +220,7 @@ $(function() {
 
                 var text = "<ul>";
                 _.each(displayedItems, function(item) {
-                    var limitedSummary = item.summary_without_images.trim();
+                    var limitedSummary = stripParagraphs(item.summary_without_images.trim());
                     if (limitedSummary.length > maxLength) {
                         limitedSummary = limitedSummary.substr(0, maxLength);
                         limitedSummary = limitedSummary.substr(0, Math.min(limitedSummary.length, limitedSummary.lastIndexOf(" ")));
