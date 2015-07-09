@@ -4,6 +4,8 @@ exclude: [".rvmrc", ".rbenv-version", "README.md", "Rakefile", "changelog.md", "
 highlighter: rouge
 markdown: kramdown
 
+publicbase: http://octoprint.org
+
 title : OctoPrint.org
 tagline: The snappy web interface for your 3D printer.
 description: OctoPrint is the snappy web interface for your 3D printer that allows you to control and monitor all aspects of your printer and print jobs, right from within any browser on your network.

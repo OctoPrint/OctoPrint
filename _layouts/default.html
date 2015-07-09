@@ -39,12 +39,12 @@
     <!-- Le social media meta data -->
     {% capture thetitle %}{% if page.title %}{{ page.title }}{% else %}{{ site.title }}{% endif %}{% endcapture %}
     {% capture thedescription %}{% if page.description %}{{ page.description }}{% else %}{{ site.description }}{% endif %}{% endcapture %}
-    {% capture theimage %}{{ BASE_PATH }}/assets/img/octoprint-avatar-240x240.png{% endcapture %}
+    {% capture theimage %}{{ site.publicbase }}{{ BASE_PATH }}/assets/img/octoprint-avatar-240x240.png{% endcapture %}
 
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:site" content="@{{ site.twitter }}" />
     <meta name="twitter:title" content="{{ thetitle }}" />
-    <meta name="description" content="{{ thedescription }}" />
+    <meta name="twitter:description" content="{{ thedescription }}" />
     <meta name="twitter:image" content="{{ theimage }}" />
     <meta name="twitter:image:alt" content="The OctoPrint logo" />
 
