@@ -45,7 +45,7 @@
             <div data-bind="css: {muted: !enabled}"><span data-bind="text: name"></span> <span data-bind="visible: version">(<span data-bind="text: version"></span>)</span> <i title="{{ _('Bundled') }}" class="icon-th-large" data-bind="visible: bundled"></i> <i title="Restart needed" class="icon-refresh" data-bind="visible: pending_enable || pending_disable || pending_uninstall"></i> <i title="Uninstalled" class="icon-remove" data-bind="visible: pending_uninstall"></i></div>
             <div><small class="muted" data-bind="text: description">&nbsp;</small></div>
             <div data-bind="css: {muted: !enabled}">
-                <small data-bind="visible: url"><i class="icon-home"></i> <a data-bind="attr: {href: url}">{{ _('Homepage') }}</a></small>
+                <small data-bind="visible: url"><i class="icon-home"></i> <a data-bind="attr: {href: url}" target="_blank" rel="noreferrer noopener">{{ _('Homepage') }}</a></small>
                 <small data-bind="visible: license"><i class="icon-legal"></i> <span data-bind="text: license"></span></small>
                 <small data-bind="visible: author"><i class="icon-user"></i> <span data-bind="text: author"></span></small>
                 <small>&nbsp;</small>
