@@ -244,7 +244,7 @@ def passive_login():
 
 _cache = SimpleCache()
 
-def cached(timeout=5 * 60, key=lambda: "view/%s" % flask.request.path, unless=None, refreshif=None):
+def cached(timeout=5 * 60, key=lambda: "view/%s" % flask.request.path, unless=None, refreshif=None, unless_response=None):
 	def decorator(f):
 		@functools.wraps(f)
 		def decorated_function(*args, **kwargs):
@@ -273,6 +273,11 @@ def cached(timeout=5 * 60, key=lambda: "view/%s" % flask.request.path, unless=No
 			logger.debug("No cache entry or refreshing cache for {path}, calling wrapped function".format(path=flask.request.path))
 			rv = f(*args, **kwargs)
 
+			# do not store if the "unless_response" condition is true
+			if callable(unless_response) and unless_response(rv):
+				logger.debug("Not caching result for {path}, bypassed".format(path=flask.request.path))
+				return rv
+
 			# store it in the cache
 			_cache.set(cache_key, rv, timeout=timeout)
 
@@ -284,6 +289,23 @@ def cached(timeout=5 * 60, key=lambda: "view/%s" % flask.request.path, unless=No
 
 def cache_check_headers():
 	return "no-cache" in flask.request.cache_control or "no-cache" in flask.request.pragma
+
+def cache_check_response_headers(response):
+	if not isinstance(response, flask.Response):
+		return False
+
+	headers = response.headers
+
+	if "Cache-Control" in headers and "no-cache" in headers["Cache-Control"]:
+		return True
+
+	if "Pragma" in headers and "no-cache" in headers["Pragma"]:
+		return True
+
+	if "Expires" in headers and headers["Expires"] in ("0", "-1"):
+		return True
+
+	return False
 
 #~~ access validators for use with tornado
 
