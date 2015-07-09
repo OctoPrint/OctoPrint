@@ -6,6 +6,7 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import os
+import datetime
 
 from collections import defaultdict
 from flask import request, g, url_for, make_response, render_template, send_from_directory, redirect
@@ -49,6 +50,7 @@ def index():
 		settings=dict(div=lambda x: "settings_plugin_" + x, template=lambda x: x + "_settings.jinja2", to_entry=lambda data: (data["name"], data)),
 		usersettings=dict(div=lambda x: "usersettings_plugin_" + x, template=lambda x: x + "_usersettings.jinja2", to_entry=lambda data: (data["name"], data)),
 		wizard=dict(div=lambda x: "wizard_plugin_" + x, template=lambda x: x + "_wizard.jinja2", to_entry=lambda data: (data["name"], data)),
+		about=dict(div=lambda x: "about_plugin_" + x, template=lambda x: x + "_about.jinja2", to_entry=lambda data: (data["name"], data)),
 		generic=dict(template=lambda x: x + ".jinja2", to_entry=lambda data: data)
 	)
 
@@ -60,6 +62,7 @@ def index():
 		settings=dict(add="custom_append", key="name", custom_add_entries=lambda missing: dict(section_plugins=(gettext("Plugins"), None)), custom_add_order=lambda missing: ["section_plugins"] + missing),
 		usersettings=dict(add="append", key="name"),
 		wizard=dict(add="append", key="name", key_extractor=lambda d, k: "0:{}".format(d[0]) if "mandatory" in d[1] and d[1]["mandatory"] else "1:{}".format(d[0])),
+		about=dict(add="append", key="name"),
 		generic=dict(add="append", key=None)
 	)
 
@@ -184,6 +187,16 @@ def index():
 			firstrunend=(gettext("Finish"), dict(template="dialogs/wizard/firstrun_end.jinja2", _div="wizard_firstrun_end")),
 		)
 
+	# about dialog
+
+	templates["about"]["entries"] = dict(
+		about=(gettext("About OctoPrint"), dict(template="dialogs/about/about.jinja2", _div="about_about", custom_bindings=False)),
+		license=(gettext("OctoPrint License"), dict(template="dialogs/about/license.jinja2", _div="about_license", custom_bindings=False)),
+		thirdparty=(gettext("Third Party Licenses"), dict(template="dialogs/about/thirdparty.jinja2", _div="about_thirdparty", custom_bindings=False)),
+		authors=(gettext("Authors"), dict(template="dialogs/about/authors.jinja2", _div="about_authors", custom_bindings=False)),
+		changelog=(gettext("Changelog"), dict(template="dialogs/about/changelog.jinja2", _div="about_changelog", custom_bindings=False))
+	)
+
 	# extract data from template plugins
 
 	template_plugins = pluginManager.get_implementations(octoprint.plugin.TemplatePlugin)
@@ -302,6 +315,7 @@ def index():
 	#~~ prepare full set of template vars for rendering
 
 	wizard = bool(templates["wizard"]["order"])
+	now = datetime.datetime.utcnow()
 	render_kwargs = dict(
 		webcamStream=settings().get(["webcam", "stream"]),
 		enableTemperatureGraph=settings().get(["feature", "temperatureGraph"]),
@@ -318,19 +332,18 @@ def index():
 		templates=templates,
 		pluginNames=plugin_names,
 		locales=locales,
-		wizard=wizard
+		wizard=wizard,
+		now=now
 	)
 	render_kwargs.update(plugin_vars)
 
 	#~~ render!
 
-	import datetime
-
 	response = make_response(render_template(
 		"index.jinja2",
 		**render_kwargs
 	))
-	response.headers["Last-Modified"] = datetime.datetime.now()
+	response.headers["Last-Modified"] = now
 
 	if wizard:
 		response = util.flask.add_non_caching_response_headers(response)
@@ -418,6 +431,7 @@ def _process_template_config(name, implementation, rule, config=None, counter=1)
 		data["_key"] += data["suffix"]
 
 	return data
+
 
 @app.route("/robots.txt")
 def robotsTxt():

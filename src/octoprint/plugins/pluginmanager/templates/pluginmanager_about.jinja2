@@ -1,0 +1,18 @@
+<h3>Plugin Licenses</h3>
+
+<ul>
+    {% for plugin in plugin_pluginmanager_thirdparty %}
+        <li><a href="{{ plugin.url }}">{{ plugin.name }}</a>: {{ plugin.license }}</li>
+    {% endfor %}
+</ul>
+
+{% if templates.plugin_pluginmanager_about_thirdparty.order %}
+    <h3>Licenses of Plugin Dependencies</h3>
+
+    {% for key in templates.plugin_pluginmanager_about_thirdparty.order %}
+        {% set heading, config = templates.plugin_pluginmanager_about_thirdparty.entries[key] %}
+        <h4>{{ heading }}</h4>
+
+        {% include config.template ignore missing %}
+    {% endfor %}
+{% endif %}

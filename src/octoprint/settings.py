@@ -208,6 +208,7 @@ default_settings = {
 				],
 				"usersettings": ["access", "interface"],
 				"wizard": ["access"],
+				"about": ["about", "license", "thirdparty", "plugin_pluginmanager", "authors", "changelog"],
 				"generic": []
 			},
 			"disabled": {

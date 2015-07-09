@@ -105,7 +105,20 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 	def get_template_configs(self):
 		return [
-			dict(type="settings", name=gettext("Plugin Manager"), template="pluginmanager_settings.jinja2", custom_bindings=True)
+			dict(type="settings", name=gettext("Plugin Manager"), template="pluginmanager_settings.jinja2", custom_bindings=True),
+			dict(type="about", name=gettext("Plugin Licenses"), template="pluginmanager_about.jinja2")
+		]
+
+	def get_template_vars(self):
+		plugins = sorted(self._get_plugins(), key=lambda x: x["name"].lower())
+		return dict(
+			all=plugins,
+			thirdparty=filter(lambda p: not p["bundled"], plugins)
+		)
+
+	def get_template_types(self, template_sorting, template_rules, *args, **kwargs):
+		return [
+			("about_thirdparty", dict(), dict(template=lambda x: x + "_about_thirdparty.jinja2"))
 		]
 
 	##~~ BlueprintPlugin
@@ -161,19 +174,13 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		if not admin_permission.can():
 			return make_response("Insufficient rights", 403)
 
-		plugins = self._plugin_manager.plugins
-
-		hidden = self._settings.get(["hidden"])
-		result = []
-		for name, plugin in plugins.items():
-			if name in hidden:
-				continue
-			result.append(self._to_external_representation(plugin))
-
 		if "refresh_repository" in request.values and request.values["refresh_repository"] in valid_boolean_trues:
 			self._repository_available = self._refresh_repository()
 
-		return jsonify(plugins=result, repository=dict(available=self._repository_available, plugins=self._repository_plugins), os=self._get_os(), octoprint=self._get_octoprint_version_string())
+		return jsonify(plugins=self._get_plugins(),
+		               repository=dict(available=self._repository_available, plugins=self._repository_plugins),
+		               os=self._get_os(),
+		               octoprint=self._get_octoprint_version_string())
 
 	def on_api_command(self, command, data):
 		if not admin_permission.can():
@@ -612,6 +619,18 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 				octoprint_version = pkg_resources.parse_version(octoprint_version.base_version)
 		return octoprint_version
 
+	def _get_plugins(self):
+		plugins = self._plugin_manager.plugins
+
+		hidden = self._settings.get(["hidden"])
+		result = []
+		for name, plugin in plugins.items():
+			if name in hidden:
+				continue
+			result.append(self._to_external_representation(plugin))
+
+		return result
+
 	def _to_external_representation(self, plugin):
 		return dict(
 			key=plugin.key,
@@ -641,5 +660,6 @@ def __plugin_load__():
 
 	global __plugin_hooks__
 	__plugin_hooks__ = {
-		"octoprint.server.http.bodysize": __plugin_implementation__.increase_upload_bodysize
+		"octoprint.server.http.bodysize": __plugin_implementation__.increase_upload_bodysize,
+		"octoprint.ui.web.templatetypes": __plugin_implementation__.get_template_types
 	}
