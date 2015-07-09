@@ -195,7 +195,7 @@ $(function() {
                         limitedSummary += "...";
                     }
 
-                    text += "<li><a href='" + item.link + "' target='_blank'>" + cutAfterNewline(item.title) + "</a><br><small>" + formatTimeAgo(item.published) + "</small><p>" + limitedSummary + "</p></li>";
+                    text += "<li><a href='" + item.link + "' target='_blank' rel='noreferrer noopener'>" + cutAfterNewline(item.title) + "</a><br><small>" + formatTimeAgo(item.published) + "</small><p>" + limitedSummary + "</p></li>";
                 });
                 text += "</ul>";
 
