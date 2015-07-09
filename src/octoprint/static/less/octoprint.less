@@ -975,6 +975,20 @@ textarea.block {
   }
 }
 
+// Special delivery for Safari browsers... because Safari >= 8 sometimes just
+// shows us white panes on the settings dialog when the full-sized-box has
+// an absolute position (which it needs for both scrollbars to work), at least
+// until the page is resized or otherwise a rerender is triggered, we'll have
+// our styling resolve to static positioning on that browser for now.
+//
+// This btw also means that the dialog will change in size. Yay.
+//
+// Better use something else if you have the option, that thing is really
+// weird.
+_::-webkit-full-page-media, _:future, :root .full-sized-box {
+  position: static;
+}
+
 .scrollable {
   height: 100%;
   overflow: auto;
