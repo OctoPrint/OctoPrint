@@ -717,7 +717,7 @@ class Server(object):
 		loaders = [app.jinja_loader, filesystem_loader]
 		if octoprint.util.is_running_from_source():
 			root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
-			allowed = ["AUTHORS.md", "CHANGELOG.md", "SPONSORS.md", "THIRDPARTYLICENSES.md"]
+			allowed = ["AUTHORS.md", "CHANGELOG.md", "SUPPORTERS.md", "THIRDPARTYLICENSES.md"]
 
 			class SourceRootFilesystemLoader(jinja2.FileSystemLoader):
 				def __init__(self, template_filter, prefix, *args, **kwargs):

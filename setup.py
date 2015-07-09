@@ -113,7 +113,7 @@ def get_cmdclass():
 		"octoprint/templates/_data": [
 			"AUTHORS.md",
 			"CHANGELOG.md",
-			"SPONSORS.md",
+			"SUPPORTERS.md",
 			"THIRDPARTYLICENSES.md",
 		]
 	}, cmdclass["build_py"] if "build_py" in cmdclass else _build_py)

@@ -1,4 +1,4 @@
-# Sponsors
+# Supporters
 
 Development of this version of OctoPrint wouldn't have been possible without
 [financial support by the community](http://octoprint.org/support-octoprint/) -
@@ -14,8 +14,8 @@ thanks to everyone who contributed!
   * E3D BigBox
   * Erik de Bruijn
   * Ernesto Martinez
-  * Exovite 
-  * georgeroblesjr 
+  * Exovite
+  * georgeroblesjr
   * Gregor Luetolf
   * Kale Stedman
   * Makespace Madrid
@@ -26,6 +26,6 @@ thanks to everyone who contributed!
   * Samer Najia
   * Stefan Krister
   * Sven Mueller
-  * Tom 
+  * Tom
 
 and 321 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!
