@@ -10,10 +10,10 @@
 # master shall not use the lookup table, only tags
 master
 
-# maintenance is currently the branch for preparation of maintenance release 1.2.3
+# maintenance is currently the branch for preparation of maintenance release 1.2.4
 # so are any fix/... branches
-maintenance 1.2.3-dev 1c6b0554c796f03ed539397daa4b13c44d05a99d
-fix/.* 1.2.3-dev 1c6b0554c796f03ed539397daa4b13c44d05a99d
+maintenance 1.2.4-dev 3761995aff94acf32495556730f133a1626245b3
+fix/.* 1.2.4-dev 3761995aff94acf32495556730f133a1626245b3
 
 # every other branch is a development branch and thus gets resolved to 1.3.0-dev for now
 .* 1.3.0-dev 198d3450d94be1a2
