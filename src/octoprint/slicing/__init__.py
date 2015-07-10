@@ -24,6 +24,8 @@ import octoprint.plugin
 import octoprint.events
 from octoprint.settings import settings
 
+import logging
+
 from .exceptions import *
 
 
@@ -102,6 +104,8 @@ class SlicingManager(object):
 	"""
 
 	def __init__(self, profile_path, printer_profile_manager):
+		self._logger = logging.getLogger(__name__)
+
 		self._profile_path = profile_path
 		self._printer_profile_manager = printer_profile_manager
 
@@ -123,7 +127,11 @@ class SlicingManager(object):
 		plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.SlicerPlugin)
 		slicers = dict()
 		for plugin in plugins:
-			slicers[plugin.get_slicer_properties()["type"]] = plugin
+			try:
+				slicers[plugin.get_slicer_properties()["type"]] = plugin
+			except:
+				self._logger.exception("Error while getting properties from slicer {}, ignoring it".format(plugin._identifier))
+				continue
 		self._slicers = slicers
 
 	@property

@@ -234,7 +234,10 @@ class Server():
 
 		settingsPlugins = pluginManager.get_implementations(octoprint.plugin.SettingsPlugin)
 		for implementation in settingsPlugins:
-			settings_plugin_config_migration(implementation._identifier, implementation)
+			try:
+				settings_plugin_config_migration(implementation._identifier, implementation)
+			except:
+				self._logger.exception("Error while trying to migrate settings for plugin {}, ignoring it".format(implementation._identifier))
 
 		pluginManager.implementation_post_inits=[settings_plugin_config_migration]
 
@@ -638,7 +641,10 @@ class Server():
 	def _register_template_plugins(self):
 		template_plugins = pluginManager.get_implementations(octoprint.plugin.TemplatePlugin)
 		for plugin in template_plugins:
-			self._register_additional_template_plugin(plugin)
+			try:
+				self._register_additional_template_plugin(plugin)
+			except:
+				self._logger.exception("Error while trying to register templates of plugin {}, ignoring it".format(plugin._identifier))
 
 	def _register_additional_template_plugin(self, plugin):
 		folder = plugin.get_template_folder()
@@ -673,14 +679,22 @@ class Server():
 	def _register_blueprint_plugins(self):
 		blueprint_plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.BlueprintPlugin)
 		for plugin in blueprint_plugins:
-			self._register_blueprint_plugin(plugin)
+			try:
+				self._register_blueprint_plugin(plugin)
+			except:
+				self._logger.exception("Error while registering blueprint of plugin {}, ignoring it".format(plugin._identifier))
+				continue
 
 	def _register_asset_plugins(self):
 		asset_plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.AssetPlugin)
 		for plugin in asset_plugins:
 			if isinstance(plugin, octoprint.plugin.BlueprintPlugin):
 				continue
-			self._register_asset_plugin(plugin)
+			try:
+				self._register_asset_plugin(plugin)
+			except:
+				self._logger.exception("Error while registering assets of plugin {}, ignoring it".format(plugin._identifier))
+				continue
 
 	def _register_blueprint_plugin(self, plugin):
 		name = plugin._identifier
