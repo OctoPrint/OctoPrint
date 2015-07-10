@@ -630,8 +630,12 @@ def collect_plugin_assets(enable_gcodeviewer=True, enable_timelapse=True, prefer
 	asset_plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.AssetPlugin)
 	for implementation in asset_plugins:
 		name = implementation._identifier
-		all_assets = implementation.get_assets()
-		basefolder = implementation.get_asset_folder()
+		try:
+			all_assets = implementation.get_assets()
+			basefolder = implementation.get_asset_folder()
+		except:
+			logger.exception("Got an error while trying to collect assets from {}, ignoring assets from the plugin".format(name))
+			continue
 
 		def asset_exists(category, asset):
 			exists = os.path.exists(os.path.join(basefolder, asset))

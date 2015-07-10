@@ -844,7 +844,11 @@ class MachineCom(object):
 							self._callback.on_comm_force_disconnect()
 						else:
 							for hook in self._printer_action_hooks:
-								self._printer_action_hooks[hook](self, line, action_command)
+								try:
+									self._printer_action_hooks[hook](self, line, action_command)
+								except:
+									self._logger.exception("Error while calling hook {} with action command {}".format(self._printer_action_hooks[hook], action_command))
+									continue
 					else:
 						continue
 

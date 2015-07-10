@@ -172,16 +172,20 @@ def index():
 		name = implementation._identifier
 		plugin_names.add(name)
 
-		vars = implementation.get_template_vars()
+		try:
+			vars = implementation.get_template_vars()
+			configs = implementation.get_template_configs()
+		except:
+			_logger.exception("Error while retrieving template data for plugin {}, ignoring it".format(name))
+			continue
+
 		if not isinstance(vars, dict):
 			vars = dict()
+		if not isinstance(configs, (list, tuple)):
+			configs = []
 
 		for var_name, var_value in vars.items():
 			plugin_vars["plugin_" + name + "_" + var_name] = var_value
-
-		configs = implementation.get_template_configs()
-		if not isinstance(configs, (list, tuple)):
-			configs = []
 
 		includes = _process_template_configs(name, implementation, configs, template_rules)
 
