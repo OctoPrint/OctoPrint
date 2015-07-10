@@ -21,6 +21,11 @@ Installation instructions for installing from source for different operating sys
 If you want to run OctoPrint on a Raspberry Pi you might want to take a look at [OctoPi](https://github.com/guysoft/OctoPi)
 which is a custom SD card image that includes OctoPrint plus dependencies.
 
+After installation, please make sure you follow the first-run wizard and set up
+access control as necessary. If you want to not only be notified about new
+releases but also be able to automatically upgrade to them from within
+OctoPrint, take a look [at the documentation of the Software Update Plugin](https://github.com/foosel/OctoPrint/wiki/Plugin:-Software-Update#making-octoprint-updateable-on-existing-installations).
+
 Dependencies
 ------------
 
@@ -36,7 +41,11 @@ OctoPrint currently only supports Python 2.7.
 Usage
 -----
 
-Running the `setup.py` script installs the `octoprint` script in your Python installation's scripts folder
+Running the `setup.py` script via
+
+    python setup.py install
+
+installs the `octoprint` script in your Python installation's scripts folder
 (which depending on whether you installed OctoPrint globally or into a virtual env will be on your `PATH` or not). The
 following usage examples assume that said `octoprint` script is on your `PATH`.
 
@@ -77,5 +86,12 @@ which is located at `~/.octoprint` on Linux, at `%APPDATA%/OctoPrint` on Windows
 at `~/Library/Application Support/OctoPrint` on MacOS.
 
 A comprehensive overview of all available configuration settings can be found
-[on the wiki](https://github.com/foosel/OctoPrint/wiki/Configuration). Please note that the most commonly used
-configuration settings can also easily be edited from OctoPrint's settings dialog.
+[in the docs](http://docs.octoprint.org/en/master/configuration/config_yaml.html).
+Please note that the most commonly used configuration settings can also easily
+be edited from OctoPrint's settings dialog.
+
+Special Thanks
+--------------
+
+The development of OctoPrint is sponsored and maintained by [BQ](http://www.bq.com/).
+Cross-browser testing services are kindly provided by [BrowserStack](http://www.browserstack.com/).
