@@ -191,6 +191,7 @@ default_settings = {
 					"section_octoprint", "folders", "appearance", "logs", "plugin_pluginmanager", "plugin_softwareupdate"
 				],
 				"usersettings": ["access", "interface"],
+				"wizard": ["access"],
 				"generic": []
 			},
 			"disabled": {

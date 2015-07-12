@@ -610,7 +610,8 @@ def collect_plugin_assets(enable_gcodeviewer=True, enable_timelapse=True, prefer
 		'js/app/viewmodels/terminal.js',
 		'js/app/viewmodels/users.js',
 		'js/app/viewmodels/log.js',
-		'js/app/viewmodels/usersettings.js'
+		'js/app/viewmodels/usersettings.js',
+		'js/app/viewmodels/wizard.js'
 	]
 	if enable_gcodeviewer:
 		assets["js"] += [

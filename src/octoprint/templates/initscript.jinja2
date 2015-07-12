@@ -17,6 +17,7 @@
     var CONFIG_TEMPERATURE_GRAPH = {%  if enableTemperatureGraph -%} true; {% else %} false; {%- endif %}
     var CONFIG_GCODE_SIZE_THRESHOLD = {{ gcodeThreshold }};
     var CONFIG_GCODE_MOBILE_SIZE_THRESHOLD = {{ gcodeMobileThreshold }};
+    var CONFIG_WIZARD = {% if wizard -%} true; {% else %} false; {%- endif %}
 
     var SOCKJS_URI = "{{ url_for('index') }}" + "sockjs";
     var SOCKJS_DEBUG = CONFIG_DEBUG;

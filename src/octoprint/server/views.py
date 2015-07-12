@@ -34,6 +34,7 @@ def index():
 	enable_accesscontrol = userManager is not None
 	preferred_stylesheet = settings().get(["devel", "stylesheet"])
 	locales = dict((l.language, dict(language=l.language, display=l.display_name, english=l.english_name)) for l in LOCALES)
+	first_run = settings().getBoolean(["server", "firstRun"])# and (userManager is None or not userManager.hasBeenCustomized())
 
 	##~~ prepare templates
 
@@ -46,6 +47,7 @@ def index():
 		tab=dict(div=lambda x: "tab_plugin_" + x, template=lambda x: x + "_tab.jinja2", to_entry=lambda data: (data["name"], data)),
 		settings=dict(div=lambda x: "settings_plugin_" + x, template=lambda x: x + "_settings.jinja2", to_entry=lambda data: (data["name"], data)),
 		usersettings=dict(div=lambda x: "usersettings_plugin_" + x, template=lambda x: x + "_usersettings.jinja2", to_entry=lambda data: (data["name"], data)),
+		wizard=dict(div=lambda x: "wizard_plugin_" + x, template=lambda x: x + "_wizard.jinja2", to_entry=lambda data: (data["name"], data)),
 		generic=dict(template=lambda x: x + ".jinja2", to_entry=lambda data: data)
 	)
 
@@ -56,6 +58,7 @@ def index():
 		tab=dict(add="append", key="name"),
 		settings=dict(add="custom_append", key="name", custom_add_entries=lambda missing: dict(section_plugins=(gettext("Plugins"), None)), custom_add_order=lambda missing: ["section_plugins"] + missing),
 		usersettings=dict(add="append", key="name"),
+		wizard=dict(add="append", key="name"),
 		generic=dict(add="append", key=None)
 	)
 
@@ -162,6 +165,24 @@ def index():
 			interface=(gettext("Interface"), dict(template="dialogs/usersettings/interface.jinja2", _div="usersettings_interface", custom_bindings=False)),
 		)
 
+	# wizard
+
+	if first_run:
+		def custom_insert_order(existing, missing):
+			if "firstrunstart" in missing:
+				missing.remove("firstrunstart")
+			if "firstrunend" in missing:
+				missing.remove("firstrunend")
+
+			return ["firstrunstart"] + existing + missing + ["firstrunend"]
+
+		template_sorting["wizard"] = dict(add="custom_insert", key="name", custom_insert_entries=lambda missing: dict(), custom_insert_order=custom_insert_order)
+		templates["wizard"]["entries"] = dict(
+			firstrunstart=(gettext("Start"), dict(template="dialogs/wizard/firstrunstart.jinja2", _div="firstrun_start")),
+			firstrunend=(gettext("Finish"), dict(template="dialogs/wizard/firstrunend.jinja2", _div="firstrun_end")),
+			access=(gettext("Access Control"), dict(template="dialogs/wizard/accesscontrol.jinja2", _div="firstrun_dialog", custom_bindings=True))
+		)
+
 	# extract data from template plugins
 
 	template_plugins = pluginManager.get_implementations(octoprint.plugin.TemplatePlugin)
@@ -243,10 +264,13 @@ def index():
 		elif template_sorting[t]["add"] == "custom_append" and "custom_add_entries" in template_sorting[t] and "custom_add_order" in template_sorting[t]:
 			templates[t]["entries"].update(template_sorting[t]["custom_add_entries"](sorted_missing))
 			templates[t]["order"] += template_sorting[t]["custom_add_order"](sorted_missing)
+		elif template_sorting[t]["add"] == "custom_insert" and "custom_insert_entries" in template_sorting[t] and "custom_insert_order" in template_sorting[t]:
+			templates[t]["entries"].update(template_sorting[t]["custom_insert_entries"](sorted_missing))
+			templates[t]["order"] = template_sorting[t]["custom_insert_order"](templates[t]["order"], sorted_missing)
 
 	#~~ prepare full set of template vars for rendering
 
-	first_run = settings().getBoolean(["server", "firstRun"]) and (userManager is None or not userManager.hasBeenCustomized())
+	wizard = bool(templates["wizard"]["order"])
 	render_kwargs = dict(
 		webcamStream=settings().get(["webcam", "stream"]),
 		enableTemperatureGraph=settings().get(["feature", "temperatureGraph"]),
@@ -261,7 +285,8 @@ def index():
 		uiApiKey=UI_API_KEY,
 		templates=templates,
 		pluginNames=plugin_names,
-		locales=locales
+		locales=locales,
+		wizard=wizard
 	)
 	render_kwargs.update(plugin_vars)
 
@@ -275,7 +300,7 @@ def index():
 	))
 	response.headers["Last-Modified"] = datetime.datetime.now()
 
-	if first_run:
+	if wizard:
 		response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0"
 		response.headers["Pragma"] = "no-cache"
 		response.headers["Expires"] = "-1"

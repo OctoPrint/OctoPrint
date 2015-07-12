@@ -795,6 +795,7 @@ class Server():
 			"js/lib/jquery/jquery.fileupload.js",
 			"js/lib/jquery/jquery.slimscroll.min.js",
 			"js/lib/jquery/jquery.qrcode.min.js",
+			"js/lib/jquery/jquery.bootstrap.wizard.min.js",
 			"js/lib/moment-with-locales.min.js",
 			"js/lib/pusher.color.min.js",
 			"js/lib/detectmobilebrowser.js",
