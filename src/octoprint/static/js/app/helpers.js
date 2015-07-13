@@ -434,11 +434,38 @@ function hideOfflineOverlay() {
     $("#offline_overlay").hide();
 }
 
-function showConfirmationDialog(message, onacknowledge) {
+function showMessageDialog(message, options) {
+    options = options || {};
+
+    var messageDialog = $("#message_dialog");
+
+    var title = options.title || "";
+    var close = options.close || gettext("Close");
+
+    $(".message_dialog_title", messageDialog).text(title);
+    $(".message_dialog_message", messageDialog).text(message);
+    $(".message_dialog_close", messageDialog).text(close);
+
+    messageDialog.modal("show");
+}
+
+function showConfirmationDialog(message, onacknowledge, options) {
+    options = options || {};
+
     var confirmationDialog = $("#confirmation_dialog");
-    var confirmationDialogAck = $(".confirmation_dialog_acknowledge", confirmationDialog);
+
+    var title = options.title || gettext("Are you sure?");
+    var question = options.question || gettext("Are you sure you want to proceed?");
+    var cancel = options.cancel || gettext("Cancel");
+    var proceed = options.proceed || gettext("Proceed");
 
     $(".confirmation_dialog_message", confirmationDialog).text(message);
+    $(".confirmation_dialog_title", confirmationDialog).text(title);
+    $(".confirmation_dialog_question", confirmationDialog).text(question);
+    $(".confirmation_dialog_cancel", confirmationDialog).text(cancel);
+
+    var confirmationDialogAck = $(".confirmation_dialog_acknowledge", confirmationDialog);
+    confirmationDialogAck.text(proceed);
     confirmationDialogAck.unbind("click");
     confirmationDialogAck.bind("click", function (e) {
         e.preventDefault();

@@ -18,19 +18,19 @@
     <div class="control-group" data-bind="css: {success: validUsername()}">
         <label class="control-label" for="first_run_username">{{ _('Username') }}</label>
         <div class="controls">
-            <input type="text" class="input-medium" data-bind="value: username, valueUpdate: 'afterkeydown'">
+            <input type="text" class="input-medium" data-bind="value: username, valueUpdate: 'afterkeydown', enable: !setup(), css: {disabled: setup()}">
         </div>
     </div>
     <div class="control-group" data-bind="css: {success: validPassword()}">
         <label class="control-label" for="first_run_username">{{ _('Password') }}</label>
         <div class="controls">
-            <input type="password" class="input-medium" data-bind="value: password, valueUpdate: 'afterkeydown'">
+            <input type="password" class="input-medium" data-bind="value: password, valueUpdate: 'afterkeydown', enable: !setup(), css: {disabled: setup()}">
         </div>
     </div>
     <div class="control-group" data-bind="css: {error: passwordMismatch(), success: validPassword() && !passwordMismatch()}">
         <label class="control-label" for="first_run_username">{{ _('Confirm Password') }}</label>
         <div class="controls">
-            <input type="password" class="input-medium" data-bind="value: confirmedPassword, valueUpdate: 'afterkeydown'">
+            <input type="password" class="input-medium" data-bind="value: confirmedPassword, valueUpdate: 'afterkeydown', enable: !setup(), css: {disabled: setup()}">
             <span class="help-inline" data-bind="visible: passwordMismatch()">{{ _('Passwords do not match') }}</span>
         </div>
     </div>
@@ -45,6 +45,15 @@
 </p>{% endtrans %}
 
 <div class="row-fluid">
-    <a href="#" class="btn btn-danger span6" data-bind="click: disableAccessControl">{{ _('Disable Access Control') }}</a>
-    <a href="#" class="btn btn-primary span6" data-bind="click: keepAccessControl, enable: validData(), css: {disabled: !validData()}">{{ _('Keep Access Control Enabled') }}</a>
+    <a href="#" class="btn btn-danger span6" data-bind="click: function() { if(!setup()){disableAccessControl()}}, enable: !setup(), css: {disabled: setup()}">{{ _('Disable Access Control') }}</a>
+    <a href="#" class="btn btn-primary span6" data-bind="click: function() { if(!setup()){keepAccessControl()}}, enable: !setup() && validData(), css: {disabled: !validData() || setup()}">{{ _('Keep Access Control Enabled') }}</a>
+</div>
+
+<div class="acl_decision" style="display: none" data-bind="visible: setup()">
+    <div class="text-center" style="display: none" data-bind="visible: decision()">{% trans %}
+        Access control is <strong class="text-success">enabled</strong>.
+    {% endtrans %}</div>
+    <div class="text-center" style="display: none" data-bind="visible: !decision()">{% trans %}
+        Access control is <strong class="text-danger">disabled</strong>.
+    {% endtrans %}</div>
 </div>

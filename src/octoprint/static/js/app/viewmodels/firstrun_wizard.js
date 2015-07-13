@@ -1,10 +1,13 @@
 $(function() {
-    function FirstRunViewModel() {
+    function AclWizardViewModel() {
         var self = this;
 
         self.username = ko.observable(undefined);
         self.password = ko.observable(undefined);
         self.confirmedPassword = ko.observable(undefined);
+
+        self.setup = ko.observable(false);
+        self.decision = ko.observable();
 
         self.passwordMismatch = ko.computed(function() {
             return self.password() != self.confirmedPassword();
@@ -35,21 +38,13 @@ $(function() {
         };
 
         self.disableAccessControl = function() {
-            $("#confirmation_dialog .confirmation_dialog_message").html(gettext("If you disable Access Control <strong>and</strong> your OctoPrint installation is accessible from the internet, your printer <strong>will be accessible by everyone - that also includes the bad guys!</strong>"));
-            $("#confirmation_dialog .confirmation_dialog_acknowledge").unbind("click");
-            $("#confirmation_dialog .confirmation_dialog_acknowledge").click(function(e) {
-                e.preventDefault();
-                $("#confirmation_dialog").modal("hide");
-
+            var message = gettext("If you disable Access Control <strong>and</strong> your OctoPrint installation is accessible from the internet, your printer <strong>will be accessible by everyone - that also includes the bad guys!</strong>");
+            showConfirmationDialog(message, function(e) {
                 var data = {
                     "ac": false
                 };
-                self._sendData(data, function() {
-                    // if the user indeed disables access control, we'll need to reload the page for this to take effect
-                    //location.reload(true); // TODO: clear cache doesn't work properly, needs a better way, same issue with reloading plugins
-                });
+                self._sendData(data);
             });
-            $("#confirmation_dialog").modal("show");
         };
 
         self._sendData = function(data, callback) {
@@ -59,30 +54,31 @@ $(function() {
                 dataType: "json",
                 data: data,
                 success: function() {
-                    self.closeDialog();
+                    self.setup(true);
+                    self.decision(data.ac);
                     if (callback) callback();
                 }
             });
         };
 
-        self.showDialog = function() {
-            $("#first_run_dialog").modal("show");
-        };
-
-        self.closeDialog = function() {
-            $("#first_run_dialog").modal("hide");
-        };
-
-        self.onAllBound = function(allViewModels) {
-            if (CONFIG_FIRST_RUN) {
-                self.showDialog();
+        self.onWizardTabChange = function(current, next) {
+            if (!current || !_.startsWith(current, "wizard_firstrun_acl") || self.setup()) {
+                return true;
             }
-        }
+            showMessageDialog(gettext("You haven't yet set up access control. You need to either setup a username and password and click \"Keep Access Control Enabled\" or click \"Disable Access Control\" before continuing"), {title: "Please set up Access Control"});
+            return false;
+        };
+
+        self.onWizardFinished = function() {
+            if (!self.decision()) {
+                return "reload";
+            }
+        };
     }
 
     OCTOPRINT_VIEWMODELS.push([
-        FirstRunViewModel,
+        AclWizardViewModel,
         [],
-        "#first_run_dialog"
+        "#wizard_firstrun_acl"
     ]);
 });

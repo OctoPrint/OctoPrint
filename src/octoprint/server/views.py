@@ -178,9 +178,9 @@ def index():
 
 		template_sorting["wizard"] = dict(add="custom_insert", key="name", custom_insert_entries=lambda missing: dict(), custom_insert_order=custom_insert_order)
 		templates["wizard"]["entries"] = dict(
-			firstrunstart=(gettext("Start"), dict(template="dialogs/wizard/firstrunstart.jinja2", _div="firstrun_start")),
-			firstrunend=(gettext("Finish"), dict(template="dialogs/wizard/firstrunend.jinja2", _div="firstrun_end")),
-			access=(gettext("Access Control"), dict(template="dialogs/wizard/accesscontrol.jinja2", _div="firstrun_dialog", custom_bindings=True))
+			firstrunstart=(gettext("Start"), dict(template="dialogs/wizard/firstrun_start.jinja2", _div="wizard_firstrun_start")),
+			firstrunend=(gettext("Finish"), dict(template="dialogs/wizard/firstrun_end.jinja2", _div="wizard_firstrun_end")),
+			access=(gettext("Access Control"), dict(template="dialogs/wizard/firstrun_acl.jinja2", _div="wizard_firstrun_acl", custom_bindings=True))
 		)
 
 	# extract data from template plugins
