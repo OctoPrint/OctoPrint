@@ -468,8 +468,6 @@ class PluginManager(object):
 
 		self.marked_plugins = defaultdict(list)
 
-		self.reload_plugins(startup=True, initialize_implementations=False)
-
 	@property
 	def plugins(self):
 		plugins = dict(self.enabled_plugins)
@@ -955,16 +953,14 @@ class PluginManager(object):
 			self.logger.info("No plugins available")
 		else:
 			self.logger.info("{count} plugin(s) registered with the system:\n{plugins}".format(count=len(all_plugins), plugins="\n".join(
-				sorted(
-					map(lambda x: "| " + x.long_str(show_bundled=show_bundled,
-					                                bundled_strs=bundled_str,
-					                                show_location=show_location,
-					                                location_str=location_str,
-					                                show_enabled=show_enabled,
-					                                enabled_strs=enabled_str),
-					    self.enabled_plugins.values())
-				)
-			)))
+				map(lambda x: "| " + x.long_str(show_bundled=show_bundled,
+				                                bundled_strs=bundled_str,
+				                                show_location=show_location,
+				                                location_str=location_str,
+				                                show_enabled=show_enabled,
+				                                enabled_strs=enabled_str),
+				    sorted(self.enabled_plugins.values(), key=lambda x: x.name.lower()),
+			))))
 
 	def get_plugin(self, identifier, require_enabled=True):
 		"""

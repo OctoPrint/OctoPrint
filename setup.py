@@ -31,7 +31,8 @@ INSTALL_REQUIRES = [
 	"rsa",
 	"pkginfo",
 	"requests",
-	"semantic_version"
+	"semantic_version",
+	"Click"
 ]
 
 # Additional requirements for optional install options
