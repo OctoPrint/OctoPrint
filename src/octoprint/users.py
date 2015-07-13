@@ -106,7 +106,7 @@ class UserManager(object):
 				# old hash doesn't match either, wrong password
 				return False
 
-	def addUser(self, username, password, active, roles):
+	def addUser(self, username, password, active, roles, overwrite=False):
 		pass
 
 	def changeUserActivation(self, username, active):
@@ -214,11 +214,11 @@ class FilebasedUserManager(UserManager):
 			self._dirty = False
 		self._load()
 
-	def addUser(self, username, password, active=False, roles=None, apikey=None):
+	def addUser(self, username, password, active=False, roles=None, apikey=None, overwrite=False):
 		if not roles:
 			roles = ["user"]
 
-		if username in self._users.keys():
+		if username in self._users.keys() and not overwrite:
 			raise UserAlreadyExists(username)
 
 		self._users[username] = User(username, UserManager.createPasswordHash(password), active, roles, apikey=apikey)

@@ -109,7 +109,7 @@ def firstRunSetup():
 					"pass2" in request.values.keys() and request.values["pass1"] == request.values["pass2"]:
 		# configure access control
 		s().setBoolean(["accessControl", "enabled"], True)
-		octoprint.server.userManager.addUser(request.values["user"], request.values["pass1"], True, ["user", "admin"])
+		octoprint.server.userManager.addUser(request.values["user"], request.values["pass1"], True, ["user", "admin"], overwrite=True)
 		s().setBoolean(["server", "firstRun"], False)
 	elif "ac" in request.values.keys() and not request.values["ac"] in valid_boolean_trues:
 		# disable access control
