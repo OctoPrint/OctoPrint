@@ -570,9 +570,10 @@ class RepeatedTimer(threading.Thread):
 	    run_first (boolean): If set to True, the function will be run for the first time *before* the first wait period.
 	        If set to False (the default), the function will be run for the first time *after* the first wait period.
 	    condition (callable): Condition that needs to be True for loop to continue. Defaults to ``lambda: True``.
+	    daemon (bool): daemon flag to set on underlying thread.
 	"""
 
-	def __init__(self, interval, function, args=None, kwargs=None, run_first=False, condition=None):
+	def __init__(self, interval, function, args=None, kwargs=None, run_first=False, condition=None, daemon=True):
 		threading.Thread.__init__(self)
 
 		if args is None:
@@ -593,6 +594,7 @@ class RepeatedTimer(threading.Thread):
 		self.kwargs = kwargs
 		self.run_first = run_first
 		self.condition = condition
+		self.daemon = daemon
 
 	def cancel(self):
 		self.finished.set()
