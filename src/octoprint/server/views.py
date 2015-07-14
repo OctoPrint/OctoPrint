@@ -12,7 +12,8 @@ from flask import request, g, url_for, make_response, render_template, send_from
 
 import octoprint.plugin
 
-from octoprint.server import app, userManager, pluginManager, gettext, debug, LOCALES, VERSION, DISPLAY_VERSION, UI_API_KEY
+from octoprint.server import app, userManager, pluginManager, gettext, \
+	debug, LOCALES, VERSION, DISPLAY_VERSION, UI_API_KEY
 from octoprint.settings import settings
 
 from . import util
@@ -192,10 +193,13 @@ def index():
 	for implementation in template_plugins:
 		name = implementation._identifier
 		plugin_names.add(name)
+		wizard_required = False
 
 		try:
 			vars = implementation.get_template_vars()
 			configs = implementation.get_template_configs()
+			if isinstance(implementation, octoprint.plugin.WizardPlugin):
+				wizard_required = implementation.is_wizard_required()
 		except:
 			_logger.exception("Error while retrieving template data for plugin {}, ignoring it".format(name))
 			continue
@@ -209,6 +213,9 @@ def index():
 			plugin_vars["plugin_" + name + "_" + var_name] = var_value
 
 		includes = _process_template_configs(name, implementation, configs, template_rules)
+
+		if not wizard_required:
+			includes["wizard"] = list()
 
 		for t in template_types:
 			for include in includes[t]:
