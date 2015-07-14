@@ -24,6 +24,9 @@ $(function() {
         self.profileDescription = ko.observable();
         self.profileAllowOverwrite = ko.observable(true);
 
+        self.unconfiguredCuraEngine = ko.observable();
+        self.unconfiguredSlicingProfile = ko.observable();
+
         self.uploadElement = $("#settings-cura-import");
         self.uploadButton = $("#settings-cura-import-start");
 
@@ -215,6 +218,13 @@ $(function() {
                 });
             });
             self.profiles.updateItems(profiles);
+
+            if (self.unconfiguredCuraEngine() === undefined) {
+                self.unconfiguredCuraEngine(self.settings.plugins.cura.cura_engine() == false);
+            }
+            if (self.unconfiguredSlicingProfile() === undefined) {
+                self.unconfiguredSlicingProfile(profiles.length == 0);
+            }
         };
 
         self.onBeforeBinding = function () {
@@ -233,6 +243,6 @@ $(function() {
     OCTOPRINT_VIEWMODELS.push([
         CuraViewModel,
         ["loginStateViewModel", "settingsViewModel", "slicingViewModel"],
-        "#settings_plugin_cura"
+        ["#settings_plugin_cura", "#wizard_plugin_cura"]
     ]);
 });

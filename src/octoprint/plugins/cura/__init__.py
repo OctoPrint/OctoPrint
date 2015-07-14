@@ -25,7 +25,8 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
                  octoprint.plugin.TemplatePlugin,
                  octoprint.plugin.AssetPlugin,
                  octoprint.plugin.BlueprintPlugin,
-                 octoprint.plugin.StartupPlugin):
+                 octoprint.plugin.StartupPlugin,
+                 octoprint.plugin.WizardPlugin):
 
 	def __init__(self):
 		self._logger = logging.getLogger("octoprint.plugins.cura")
@@ -37,13 +38,27 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 		self._cancelled_jobs = []
 		self._job_mutex = threading.Lock()
 
+	def _is_engine_configured(self, cura_engine=None):
+		if cura_engine is None:
+			cura_engine = normalize_path(self._settings.get(["cura_engine"]))
+		return cura_engine is not None and os.path.exists(cura_engine)
+
+	def _is_profile_available(self):
+		return bool(self._slicing_manager.all_profiles("cura", require_configured=False))
+
 	##~~ TemplatePlugin API
 
 	def get_template_configs(self):
 		from flask.ext.babel import gettext
 		return [
-			dict(type="settings", name=gettext("CuraEngine"))
+			dict(type="settings", name=gettext("CuraEngine")),
+			dict(type="wizard", name=gettext("CuraEngine"))
 		]
+
+	##~~ WizardPlugin API
+
+	def is_wizard_required(self):
+		return not self._is_engine_configured() or not self._is_profile_available()
 
 	##~~ StartupPlugin API
 
@@ -62,9 +77,6 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 	@octoprint.plugin.BlueprintPlugin.route("/import", methods=["POST"])
 	def import_cura_profile(self):
 		import datetime
-		import tempfile
-
-		from octoprint.server import slicingManager
 
 		input_name = "file"
 		input_upload_name = input_name + "." + self._settings.global_get(["server", "uploads", "nameSuffix"])
@@ -106,12 +118,12 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 			profile_allow_overwrite = flask.request.values["allowOverwrite"] in valid_boolean_trues
 
 		try:
-			slicingManager.save_profile("cura",
-			                            profile_name,
-			                            profile_dict,
-			                            allow_overwrite=profile_allow_overwrite,
-			                            display_name=profile_display_name,
-			                            description=profile_description)
+			self._slicing_manager.save_profile("cura",
+			                                   profile_name,
+			                                   profile_dict,
+			                                   allow_overwrite=profile_allow_overwrite,
+			                                   display_name=profile_display_name,
+			                                   description=profile_description)
 		except octoprint.slicing.ProfileAlreadyExists:
 			self._logger.warn("Profile {profile_name} already exists, aborting".format(**locals()))
 			return flask.make_response("A profile named {profile_name} already exists for slicer cura".format(**locals()), 409)
@@ -159,10 +171,11 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 
 	def is_slicer_configured(self):
 		cura_engine = normalize_path(self._settings.get(["cura_engine"]))
-		if cura_engine is not None and os.path.exists(cura_engine):
+		if self._is_engine_configured(cura_engine=cura_engine):
 			return True
 		else:
 			self._logger.info("Path to CuraEngine has not been configured yet or does not exist (currently set to %r), Cura will not be selectable for slicing" % cura_engine)
+			return False
 
 	def get_slicer_properties(self):
 		return dict(
