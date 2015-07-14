@@ -450,6 +450,12 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 		return os.path.join(self._basefolder, "templates")
 
 
+class WizardPlugin(OctoPrintPlugin, ReloadNeedingPlugin):
+
+	def is_wizard_required(self):
+		return False
+
+
 class SimpleApiPlugin(OctoPrintPlugin):
 	"""
 	Utilizing the ``SimpleApiPlugin`` mixin plugins may implement a simple API based around one GET resource and one
