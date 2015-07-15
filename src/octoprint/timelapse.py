@@ -281,12 +281,12 @@ class Timelapse(object):
 		filters = []
 
 		# flip video if configured
-		if settings().getBoolean(["webcam", "rotate90"]):
-			filters.append('transpose=1')
 		if settings().getBoolean(["webcam", "flipH"]):
 			filters.append('hflip')
 		if settings().getBoolean(["webcam", "flipV"]):
 			filters.append('vflip')
+		if settings().getBoolean(["webcam", "rotate90"]):
+			filters.append('transpose=2')
 
 		# add watermark if configured
 		watermarkFilter = None
