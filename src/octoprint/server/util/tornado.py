@@ -245,7 +245,7 @@ class UploadStorageFallbackHandler(tornado.web.RequestHandler):
 			self._on_part_header(self._buffer[delimiter_len+2:end_of_header])
 			self._buffer = self._buffer[end_of_header + 4:]
 
-		if delimiter_loc != -1 and self._buffer[delimiter_len:delimiter_len+2] == "--":
+		if delimiter_loc != -1 and self._buffer.strip() == delimiter + "--":
 			# we saw the last boundary and are at the end of our request
 			if self._current_part:
 				self._on_part_finish(self._current_part)
