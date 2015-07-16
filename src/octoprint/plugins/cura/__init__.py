@@ -41,7 +41,7 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 	def _is_engine_configured(self, cura_engine=None):
 		if cura_engine is None:
 			cura_engine = normalize_path(self._settings.get(["cura_engine"]))
-		return cura_engine is not None and os.path.exists(cura_engine)
+		return cura_engine is not None and os.path.isfile(cura_engine) and os.access(cura_engine, os.X_OK)
 
 	def _is_profile_available(self):
 		return bool(self._slicing_manager.all_profiles("cura", require_configured=False))
@@ -59,6 +59,12 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 
 	def is_wizard_required(self):
 		return not self._is_engine_configured() or not self._is_profile_available()
+
+	def get_wizard_details(self):
+		return dict(
+			engine=self._is_engine_configured(),
+			profile=self._is_profile_available()
+		)
 
 	##~~ StartupPlugin API
 

@@ -167,19 +167,13 @@ $(function() {
             $("#settings_plugin_cura_import").modal("show");
         };
 
-        self.testEnginePath = function() {
-            $.ajax({
-                url: API_BASEURL + "util/test",
-                type: "POST",
-                dataType: "json",
-                data: JSON.stringify({
-                    command: "path",
-                    path: self.settings.plugins.cura.cura_engine(),
-                    check_type: "file",
-                    check_access: "x"
-                }),
-                contentType: "application/json; charset=UTF-8",
-                success: function(response) {
+        self.testEnginePath = function(successCallback) {
+            self.sendTestRequest(self.settings.plugins.cura.cura_engine());
+        };
+
+        self.sendTestRequest = function(enginePath, successCallback) {
+            if (successCallback == undefined) {
+                successCallback = function(response) {
                     if (!response.result) {
                         if (!response.exists) {
                             self.pathText(gettext("The path doesn't exist"));
@@ -194,6 +188,20 @@ $(function() {
                     self.pathOk(response.result);
                     self.pathBroken(!response.result);
                 }
+            }
+
+            $.ajax({
+                url: API_BASEURL + "util/test",
+                type: "POST",
+                dataType: "json",
+                data: JSON.stringify({
+                    command: "path",
+                    path: enginePath,
+                    check_type: "file",
+                    check_access: "x"
+                }),
+                contentType: "application/json; charset=UTF-8",
+                success: successCallback
             })
         };
 
@@ -218,13 +226,6 @@ $(function() {
                 });
             });
             self.profiles.updateItems(profiles);
-
-            if (self.unconfiguredCuraEngine() === undefined) {
-                self.unconfiguredCuraEngine(self.settings.plugins.cura.cura_engine() == false);
-            }
-            if (self.unconfiguredSlicingProfile() === undefined) {
-                self.unconfiguredSlicingProfile(profiles.length == 0);
-            }
         };
 
         self.onBeforeBinding = function () {
@@ -233,9 +234,37 @@ $(function() {
         };
 
         self.onSettingsHidden = function() {
+            self.resetPathTest();
+        };
+
+        self.resetPathTest = function() {
             self.pathBroken(false);
             self.pathOk(false);
             self.pathText("");
+        };
+
+        self.onWizardDetails = function(response) {
+            if (!response.hasOwnProperty("cura") || !response.cura.required) return;
+
+            if (response.cura.details.hasOwnProperty("engine")) {
+                self.unconfiguredCuraEngine(!response.cura.details.engine);
+            }
+            if (response.cura.details.hasOwnProperty("profile")) {
+                self.unconfiguredSlicingProfile(!response.cura.details.profile);
+            }
+        };
+
+        self.onWizardFinish = function() {
+            self.settingsViewModel.enqueueForSaving({
+                plugins: {
+                    cura: {
+                        cura_engine: self.settings.plugins.cura.cura_engine(),
+                        default_profile: self.settings.plugins.cura.default_profile(),
+                        debug_logging: self.settings.plugins.cura.debug_logging()
+                    }
+                }
+            });
+            self.resetPathTest();
         };
     }
 
