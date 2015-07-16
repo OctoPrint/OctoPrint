@@ -154,6 +154,10 @@ $(function() {
 
         self.terminalFilters = ko.observableArray([]);
 
+        self.server_commands_systemShutdownCommand = ko.observable(undefined);
+        self.server_commands_systemRestartCommand = ko.observable(undefined);
+        self.server_commands_serverRestartCommand = ko.observable(undefined);
+
         self.settings = undefined;
 
         self.addTemperatureProfile = function() {
@@ -449,6 +453,10 @@ $(function() {
             self.system_actions(response.system.actions);
 
             self.terminalFilters(response.terminalFilters);
+
+            self.server_commands_systemShutdownCommand(response.server.commands.systemShutdownCommand);
+            self.server_commands_systemRestartCommand(response.server.commands.systemRestartCommand);
+            self.server_commands_serverRestartCommand(response.server.commands.serverRestartCommand);
         };
 
         self.saveData = function (data, successCallback) {
@@ -534,6 +542,13 @@ $(function() {
                             "afterPrintPaused": self.scripts_gcode_afterPrintPaused(),
                             "beforePrintResumed": self.scripts_gcode_beforePrintResumed(),
                             "afterPrinterConnected": self.scripts_gcode_afterPrinterConnected()
+                        }
+                    },
+                    "server": {
+                        "commands": {
+                            "systemShutdownCommand": self.server_commands_systemShutdownCommand(),
+                            "systemRestartCommand": self.server_commands_systemRestartCommand(),
+                            "serverRestartCommand": self.server_commands_serverRestartCommand()
                         }
                     }
                 });

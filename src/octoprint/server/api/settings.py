@@ -113,6 +113,13 @@ def getSettings():
 				"afterPrintResumed": None,
 				"snippets": dict()
 			}
+		},
+		"server": {
+			"commands": {
+				"systemShutdownCommand": s.get(["server", "commands", "systemShutdownCommand"]),
+				"systemRestartCommand": s.get(["server", "commands", "systemRestartCommand"]),
+				"serverRestartCommand": s.get(["server", "commands", "serverRestartCommand"])
+			}
 		}
 	}
 
@@ -251,6 +258,12 @@ def setSettings():
 				if name == "snippets":
 					continue
 				s.saveScript("gcode", name, script.replace("\r\n", "\n").replace("\r", "\n"))
+
+	if "server" in data:
+		if "commands" in data["server"]:
+			if "systemShutdownCommand" in data["server"]["commands"].keys(): s.set(["server", "commands", "systemShutdownCommand"], data["server"]["commands"]["systemShutdownCommand"])
+			if "systemRestartCommand" in data["server"]["commands"].keys(): s.set(["server", "commands", "systemRestartCommand"], data["server"]["commands"]["systemRestartCommand"])
+			if "serverRestartCommand" in data["server"]["commands"].keys(): s.set(["server", "commands", "serverRestartCommand"], data["server"]["commands"]["serverRestartCommand"])
 
 	if "plugins" in data:
 		for plugin in octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.SettingsPlugin):
