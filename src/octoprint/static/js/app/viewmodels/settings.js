@@ -6,6 +6,8 @@ $(function() {
         self.users = parameters[1];
         self.printerProfiles = parameters[2];
 
+        self.enqueuedForSaving = undefined;
+
         self.api_enabled = ko.observable(undefined);
         self.api_key = ko.observable(undefined);
         self.api_allowCrossOrigin = ko.observable(undefined);
@@ -515,6 +517,25 @@ $(function() {
                 }
             });
         };
+
+        self.enqueueForSaving = function(data) {
+            if (self.enqueuedForSaving == undefined) {
+                self.enqueuedForSaving = data;
+            } else {
+                _.extend(self.enqueuedForSaving, data);
+            }
+        };
+
+        self.saveEnqueued = function(callback) {
+            var data = self.enqueuedForSaving;
+            self.enqueuedForSaving = undefined;
+
+            if (data == undefined) {
+                return;
+            }
+
+            self.saveData(data, callback);
+        }
     }
 
     OCTOPRINT_VIEWMODELS.push([
