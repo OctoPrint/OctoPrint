@@ -3,8 +3,11 @@ $(function() {
         var self = this;
 
         self.loginState = parameters[0];
+        self.settingsViewModel = parameters[1];
 
         self.wizardDialog = undefined;
+
+        self.allViewModels = undefined;
 
         self.isDialogActive = function() {
             return self.wizardDialog.is(":visible");
@@ -13,11 +16,19 @@ $(function() {
         self.showDialog = function() {
             if (!CONFIG_WIZARD || !(CONFIG_FIRST_RUN || self.loginState.isAdmin())) return;
 
-            self.wizardDialog.modal({
-                minHeight: function() { return Math.max($.fn.modal.defaults.maxHeight() - 80, 250); }
-            }).css({
-                width: 'auto',
-                'margin-left': function() { return -($(this).width() /2); }
+            self.getWizardDetails(function(response) {
+                _.each(self.allViewModels, function(viewModel) {
+                    if (viewModel.hasOwnProperty("onWizardDetails")) {
+                        viewModel.onWizardDetails(response);
+                    }
+                });
+
+                self.wizardDialog.modal({
+                    minHeight: function() { return Math.max($.fn.modal.defaults.maxHeight() - 80, 250); }
+                }).css({
+                    width: 'auto',
+                    'margin-left': function() { return -($(this).width() /2); }
+                });
             });
         };
 
@@ -34,6 +45,7 @@ $(function() {
         };
 
         self.onAllBound = function(allViewModels) {
+            self.allViewModels = allViewModels;
             self.wizardDialog.bootstrapWizard({
                 tabClass: "nav nav-list",
                 nextSelector: ".button-next",
@@ -94,23 +106,40 @@ $(function() {
                 onFinish: function(tab, navigation, index) {
                     var closeDialog = true;
                     _.each(allViewModels, function(viewModel) {
-                        if (viewModel.hasOwnProperty("onWizardFinish")) {
-                            closeDialog = closeDialog && (viewModel.onWizardFinish() !== false);
+                        if (viewModel.hasOwnProperty("onBeforeWizardFinish")) {
+                            closeDialog = closeDialog && (viewModel.onBeforeWizardFinish() !== false);
                         }
                     });
 
                     if (closeDialog) {
+                        _.each(allViewModels, function(viewModel) {
+                            if (viewModel.hasOwnProperty("onWizardFinish")) {
+                                viewModel.onWizardFinish();
+                            }
+                        });
+                        self.settingsViewModel.saveEnqueued();
                         self.closeDialog();
                     }
                 }
             });
             self.showDialog();
         };
+
+        self.getWizardDetails = function(callback) {
+            if (!callback) return;
+
+            $.ajax({
+                url: API_BASEURL + "setup/wizard",
+                type: "GET",
+                dataType: "json",
+                success: callback
+            });
+        }
     }
 
     OCTOPRINT_VIEWMODELS.push([
         WizardViewModel,
-        ["loginStateViewModel"],
+        ["loginStateViewModel", "settingsViewModel"],
         "#wizard_dialog"
     ]);
 });
