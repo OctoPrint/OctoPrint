@@ -98,6 +98,24 @@ def pluginCommand(name):
 
 #~~ first run setup
 
+@api.route("/setup/wizard", methods=["GET"])
+def wizardState():
+	if not s().getBoolean(["server", "firstRun"]) and not admin_permission.can():
+		abort(403)
+
+	result = dict()
+	wizard_plugins = octoprint.server.pluginManager.get_implementations(octoprint.plugin.WizardPlugin)
+	for implementation in wizard_plugins:
+		name = implementation._identifier
+		try:
+			required = implementation.is_wizard_required()
+			details = implementation.get_wizard_details()
+		except:
+			logging.getLogger(__name__).exception("There was an error fetching wizard details for {}, ignoring".format(name))
+		else:
+			result[name] = dict(required=required, details=details)
+
+	return jsonify(result)
 
 @api.route("/setup", methods=["POST"])
 def firstRunSetup():

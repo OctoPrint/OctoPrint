@@ -455,6 +455,9 @@ class WizardPlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 	def is_wizard_required(self):
 		return False
 
+	def get_wizard_details(self):
+		return dict()
+
 
 class SimpleApiPlugin(OctoPrintPlugin):
 	"""
