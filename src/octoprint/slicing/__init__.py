@@ -39,14 +39,16 @@ class SlicingProfile(object):
 	    data (object): Profile data, actual structure depends on individual slicer implementation.
 	    display_name (str): Displayable name for this slicing profile.
 	    description (str): Description of this slicing profile.
+	    default (bool): Whether this is the default slicing profile for the slicer.
 	"""
 
-	def __init__(self, slicer, name, data, display_name=None, description=None):
+	def __init__(self, slicer, name, data, display_name=None, description=None, default=False):
 		self.slicer = slicer
 		self.name = name
 		self.data = data
 		self.display_name = display_name
 		self.description = description
+		self.default = default
 
 
 class TemporaryProfile(object):
@@ -449,6 +451,50 @@ class SlicingManager(object):
 			return
 		os.remove(path)
 
+	def set_default_profile(self, slicer, name, require_configured=False,
+	                        require_exists=True):
+		"""
+		Sets the given profile as default profile for the slicer.
+
+		Arguments:
+		    slicer (str): Identifier of the slicer for which to set the default
+		        profile.
+		    name (str): Identifier of the profile to set as default.
+		    require_configured (bool): Whether the slicer needs to be configured
+		        for the action to succeed. Defaults to false. Will raise a
+		        SlicerNotConfigured error if true and the slicer has not been
+		        configured yet.
+		    require_exists (bool): Whether the profile is required to exist in
+		        order to be set as default. Defaults to true. Will raise a
+		        UnknownProfile error if true and the profile is unknown.
+
+		Raises:
+		    ~octoprint.slicing.exceptions.UnknownSlicer: The slicer ``slicer``
+		        is unknown
+		    ~octoprint.slicing.exceptions.SlicerNotConfigured: The slicer ``slicer``
+		        has not yet been configured and ``require_configured`` was true.
+		    ~octoprint.slicing.exceptions.UnknownProfile: The profile ``name``
+		        was unknown for slicer ``slicer`` and ``require_exists`` was
+		        true.
+		"""
+		if not slicer in self.registered_slicers:
+			raise UnknownSlicer(slicer)
+		if require_configured and not slicer in self.configured_slicers:
+			raise SlicerNotConfigured(slicer)
+
+		if not name:
+			raise ValueError("name must be set")
+
+		if require_exists and not name in self.all_profiles(slicer, require_configured=require_configured):
+			raise UnknownProfile(slicer, name)
+
+		default_profiles = settings().get(["slicing", "defaultProfiles"])
+		if not default_profiles:
+			default_profiles = dict()
+		default_profiles[slicer] = name
+		settings().set(["slicing", "defaultProfiles"], default_profiles)
+		settings().save(force=True)
+
 	def all_profiles(self, slicer, require_configured=False):
 		"""
 		Retrieves all profiles for slicer ``slicer``.
@@ -463,7 +509,7 @@ class SlicingManager(object):
 		        exception will be raised.
 
 		Returns:
-		    list of SlicingProfile: A list of all :class:`SlicingProfile` instances available for the slicer ``slicer``.
+		    dict of SlicingProfile: A dict of all :class:`SlicingProfile` instances available for the slicer ``slicer``, mapped by the identifier.
 
 		Raises:
 		    ~octoprint.slicing.exceptions.UnknownSlicer: The slicer ``slicer`` is unknown.
@@ -559,7 +605,11 @@ class SlicingManager(object):
 		return sanitized_name
 
 	def _load_profile_from_path(self, slicer, path, require_configured=False):
-		return self.get_slicer(slicer, require_configured=require_configured).get_slicer_profile(path)
+		profile = self.get_slicer(slicer, require_configured=require_configured).get_slicer_profile(path)
+		default_profiles = settings().get(["slicing", "defaultProfiles"])
+		if default_profiles and slicer in default_profiles:
+			profile.default = default_profiles[slicer] == profile.name
+		return profile
 
 	def _save_profile_to_path(self, slicer, path, profile, allow_overwrite=True, overrides=None, require_configured=False):
 		self.get_slicer(slicer, require_configured=require_configured).save_slicer_profile(path, profile, allow_overwrite=allow_overwrite, overrides=overrides)
