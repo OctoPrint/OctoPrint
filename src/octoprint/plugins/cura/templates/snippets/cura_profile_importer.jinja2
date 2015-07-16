@@ -38,6 +38,13 @@
             <div class="control-group">
                 <div class="controls">
                     <label class="checkbox">
+                        <input type="checkbox" data-bind="checked: profileMakeDefault"> {{ _('Make default profile') }}
+                    </label>
+                </div>
+            </div>
+            <div class="control-group">
+                <div class="controls">
+                    <label class="checkbox">
                         <input type="checkbox" data-bind="checked: profileAllowOverwrite"> {{ _('Overwrite existing file') }}
                     </label>
                 </div>

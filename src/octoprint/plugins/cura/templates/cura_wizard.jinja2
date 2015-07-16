@@ -1,3 +1,9 @@
+<div class="alert alert-info">{% trans %}
+    <strong>Note:</strong> OctoPrint currently only supports slicing with
+    CuraEngine up to 15.04 and importing Cura profiles from Cura versions
+    <em>up to 15.04</em>.
+{% endtrans %}</div>
+
 <div data-bind="visible: unconfiguredCuraEngine">
     <h3>{{ _('Configure CuraEngine') }}</h3>
     <p>{% trans %}
@@ -12,23 +18,21 @@
 
 <div data-bind="visible: unconfiguredSlicingProfile">
     <h3>{{ _('Set up a slicing profile') }}</h3>
-    <p>{% trans %}You don't have imported a slicing profile to use for slicing with CuraEngine
+    <p>{% trans %}You haven't imported a slicing profile to use for slicing with CuraEngine
     yet. You should do this now.{% endtrans %}</p>
 
-    {% include "snippets/cura_profiles.jinja2" %}
+    <div>
+        {% include "snippets/cura_profiles.jinja2" %}
+    </div>
 
-    <p style="clear: both">{% trans %}
-        <strong>Don't know where to get a profile?</strong> In order to export
-        a slicing profile from the Cura desktop UI, open it, set up your
-        profile, then click on "File" and there on "Save Profile". You can
-        import the .ini-file this creates via the "Import Profile" button.
-    {% endtrans %}</p>
+    <button class="btn btn-block" data-bind="click: function() { $root.showImportProfileDialog() }">{{ _('Import Profile...') }}</button>
+
+    <div style="clear: both; margin-top: 20px;">
+        <small>{% trans %}
+            <strong>Don't know where to get a profile?</strong> In order to export
+            a slicing profile from the Cura desktop UI, open it, set up your
+            profile, then click on "File" and there on "Save Profile". You can
+            import the .ini-file this creates via the "Import Profile" button.
+        {% endtrans %}</small>
+    </div>
 </div>
-
-<p>{% trans %}
-    <strong>Note:</strong> OctoPrint currently only supports slicing with
-    CuraEngine up to 15.04 and importing Cura profiles from Cura versions
-    up to 15.04. Newer Cura releases (e.g. 15.06) do not allow to
-    export the slicing profile anymore and also use a different internal format
-    that will <em>not</em> work with the current version of the Cura Plugin.
-{% endtrans %}</p>

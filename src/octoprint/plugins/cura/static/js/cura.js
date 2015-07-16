@@ -23,6 +23,7 @@ $(function() {
         self.profileDisplayName = ko.observable();
         self.profileDescription = ko.observable();
         self.profileAllowOverwrite = ko.observable(true);
+        self.profileMakeDefault = ko.observable(false);
 
         self.unconfiguredCuraEngine = ko.observable();
         self.unconfiguredSlicingProfile = ko.observable();
@@ -96,6 +97,9 @@ $(function() {
                     if (self.profileDescription() !== undefined) {
                         form["description"] = self.profileDescription();
                     }
+                    if (self.profileMakeDefault()) {
+                        form["default"] = true;
+                    }
 
                     data.formData = form;
                     data.submit();
@@ -110,6 +114,7 @@ $(function() {
                 self.profileDisplayName(undefined);
                 self.profileDescription(undefined);
                 self.profileAllowOverwrite(true);
+                self.profileMakeDefault(false);
 
                 $("#settings_plugin_cura_import").modal("hide");
                 self.requestData();
@@ -163,7 +168,11 @@ $(function() {
             });
         };
 
-        self.showImportProfileDialog = function() {
+        self.showImportProfileDialog = function(makeDefault) {
+            if (makeDefault == undefined) {
+                makeDefault = _.filter(self.profiles.items(), function(profile) { profile.isdefault() }).length == 0;
+            }
+            self.profileMakeDefault(makeDefault);
             $("#settings_plugin_cura_import").modal("show");
         };
 

@@ -111,8 +111,10 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 		profile_display_name = name
 		profile_description = "Imported from {filename} on {date}".format(filename=filename, date=octoprint.util.get_formatted_datetime(datetime.datetime.now()))
 		profile_allow_overwrite = False
+		profile_make_default = False
 
 		# overrides
+		from octoprint.server.api import valid_boolean_trues
 		if "name" in flask.request.values:
 			profile_name = flask.request.values["name"]
 		if "displayName" in flask.request.values:
@@ -120,8 +122,9 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 		if "description" in flask.request.values:
 			profile_description = flask.request.values["description"]
 		if "allowOverwrite" in flask.request.values:
-			from octoprint.server.api import valid_boolean_trues
 			profile_allow_overwrite = flask.request.values["allowOverwrite"] in valid_boolean_trues
+		if "default" in flask.request.values:
+			profile_make_default = flask.request.values["default"] in valid_boolean_trues
 
 		try:
 			self._slicing_manager.save_profile("cura",
@@ -134,8 +137,16 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 			self._logger.warn("Profile {profile_name} already exists, aborting".format(**locals()))
 			return flask.make_response("A profile named {profile_name} already exists for slicer cura".format(**locals()), 409)
 
+		if profile_make_default:
+			try:
+				self._slicing_manager.set_default_profile("cura", profile_name)
+			except octoprint.slicing.UnknownProfile:
+				self._logger.warn("Profile {profile_name} could not be set as default, aborting".format(**locals()))
+				return flask.make_response("The profile {profile_name} for slicer cura could not be set as default".format(**locals()), 500)
+
 		result = dict(
 			resource=flask.url_for("api.slicingGetSlicerProfile", slicer="cura", name=profile_name, _external=True),
+			name=profile_name,
 			displayName=profile_display_name,
 			description=profile_description
 		)
