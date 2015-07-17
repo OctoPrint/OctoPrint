@@ -11,6 +11,7 @@
   Manager install and uninstall dialog.
 * Allow hiding plugins from Plugin Manager via ``config.yaml``.
 * Cura Plugin: "Test" button to check if path to cura engine is valid.
+* Cura Plugin: Now also supports 15.06 version of CuraEngine.
 
 ### Bug Fixes
 
