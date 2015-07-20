@@ -74,6 +74,9 @@ class Events(object):
 	# Timelapse
 	CAPTURE_START = "CaptureStart"
 	CAPTURE_DONE = "CaptureDone"
+	CAPTURE_FAILED = "CaptureFailed"
+	POSTROLL_START = "PostRollStart"
+	POSTROLL_END = "PostRollEnd"
 	MOVIE_RENDERING = "MovieRendering"
 	MOVIE_DONE = "MovieDone"
 	MOVIE_FAILED = "MovieFailed"

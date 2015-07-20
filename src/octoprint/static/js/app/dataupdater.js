@@ -176,6 +176,7 @@ function DataUpdater(allViewModels) {
                     var type = data["type"];
                     var payload = data["payload"];
                     var html = "";
+                    var format = {};
 
                     log.debug("Got event " + type + " with payload: " + JSON.stringify(payload));
 
@@ -186,7 +187,23 @@ function DataUpdater(allViewModels) {
                     } else if (type == "MovieFailed") {
                         html = "<p>" + _.sprintf(gettext("Rendering of timelapse %(movie_basename)s failed with return code %(returncode)s"), payload) + "</p>";
                         html += pnotifyAdditionalInfo('<pre style="overflow: auto">' + payload.error + '</pre>');
-                        new PNotify({title: gettext("Rendering failed"), text: html, type: "error", hide: false});
+                        new PNotify({
+                            title: gettext("Rendering failed"),
+                            text: html,
+                            type: "error",
+                            hide: false
+                        });
+                    } else if (type == "PostRollStart") {
+                        if (payload.postroll_duration > 60) {
+                            format = {duration: _.sprintf(gettext("%(minutes)d min"), {minutes: payload.postroll_duration / 60})};
+                        } else {
+                            format = {duration: _.sprintf(gettext("%(seconds)d sec"), {seconds: payload.postroll_duration})};
+                        }
+
+                        new PNotify({
+                            title: gettext("Capturing timelapse postroll"),
+                            text: _.sprintf(gettext("Now capturing timelapse post roll, this will take approximately %(duration)s..."), format)
+                        });
                     } else if (type == "SlicingStarted") {
                         gcodeUploadProgress.addClass("progress-striped").addClass("active");
                         gcodeUploadProgressBar.css("width", "100%");
