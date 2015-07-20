@@ -150,9 +150,6 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 					"restart": "octoprint"
 				},
 			},
-
-			"octoprint_restart_command": None,
-			"environment_restart_command": None,
 			"pip_command": None,
 
 			"cache_ttl": 24 * 60,
@@ -177,10 +174,19 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		self._version_cache_ttl = self._settings.get_int(["cache_ttl"]) * 60
 
 	def get_settings_version(self):
-		return 3
+		return 4
 
 	def on_settings_migrate(self, target, current=None):
-		if current is None or current == 2:
+
+		if current is None or current == 3:
+			self._settings.global_set(["server", "commands", "systemRestartCommand"], self._settings.get(["environment_restart_command"]))
+			self._settings.global_set(["server", "commands", "serverRestartCommand"], self._settings.get(["octoprint_restart_command"]))
+
+			self._settings.set(["environment_restart_command"], None)
+			self._settings.set(["octoprint_restart_command"], None)
+			self._settings.save()
+
+		elif current == 2:
 			# there might be some left over data from the time we still persisted everything to settings,
 			# even the stuff that shouldn't be persisted but always provided by the hook - let's
 			# clean up
@@ -496,7 +502,11 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			if restart_type is not None and restart_type in ("octoprint", "environment"):
 				# one of our updates requires a restart of either type "octoprint" or "environment". Let's see if
 				# we can actually perform that
-				restart_command = self._settings.get(["%s_restart_command" % restart_type])
+
+				if restart_type == "octoprint":
+					restart_command = self._settings.global_get(["server", "commands", "systemRestartCommand"])
+				elif restart_type == "environment":
+					restart_command = self._settings.global_get(["server", "commands", "serverRestartCommand"])
 
 				if restart_command is not None:
 					self._send_client_message("restarting", dict(restart_type=restart_type, results=target_results))
