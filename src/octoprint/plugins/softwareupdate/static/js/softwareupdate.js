@@ -78,8 +78,6 @@ $(function() {
             var data = {
                 plugins: {
                     softwareupdate: {
-                        octoprint_restart_command: self.config_restartCommand(),
-                        environment_restart_command: self.config_rebootCommand(),
                         cache_ttl: parseInt(self.config_cacheTtl())
                     }
                 }
@@ -88,8 +86,6 @@ $(function() {
         };
 
         self._copyConfig = function() {
-            self.config_restartCommand(self.settings.settings.plugins.softwareupdate.octoprint_restart_command());
-            self.config_rebootCommand(self.settings.settings.plugins.softwareupdate.environment_restart_command());
             self.config_cacheTtl(self.settings.settings.plugins.softwareupdate.cache_ttl());
         };
 
