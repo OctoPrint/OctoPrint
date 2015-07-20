@@ -474,7 +474,7 @@ class User(UserMixin):
 
 class SessionUser(User):
 	def __init__(self, user):
-		User.__init__(self, user._username, user._passwordHash, user._active, user._roles, user._apikey)
+		User.__init__(self, user._username, user._passwordHash, user._active, user._roles, user._apikey, user._settings)
 
 		import string
 		import random
