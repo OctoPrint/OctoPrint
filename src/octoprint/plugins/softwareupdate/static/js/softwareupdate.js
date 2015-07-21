@@ -13,8 +13,6 @@ $(function() {
 
         self.currentlyBeingUpdated = [];
 
-        self.config_restartCommand = ko.observable();
-        self.config_rebootCommand = ko.observable();
         self.config_cacheTtl = ko.observable();
 
         self.configurationDialog = $("#settings_plugin_softwareupdate_configurationdialog");
