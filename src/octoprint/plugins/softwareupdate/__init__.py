@@ -507,9 +507,9 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				# we can actually perform that
 
 				if restart_type == "octoprint":
-					restart_command = self._settings.global_get(["server", "commands", "systemRestartCommand"])
-				elif restart_type == "environment":
 					restart_command = self._settings.global_get(["server", "commands", "serverRestartCommand"])
+				elif restart_type == "environment":
+					restart_command = self._settings.global_get(["server", "commands", "systemRestartCommand"])
 
 				if restart_command is not None:
 					self._send_client_message("restarting", dict(restart_type=restart_type, results=target_results))
