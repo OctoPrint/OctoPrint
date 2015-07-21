@@ -766,6 +766,7 @@ class Server():
 		enable_gcodeviewer = settings().getBoolean(["gcodeViewer", "enabled"])
 		enable_timelapse = (settings().get(["webcam", "snapshot"]) and settings().get(["webcam", "ffmpeg"]))
 		preferred_stylesheet = settings().get(["devel", "stylesheet"])
+		minify = settings().getBoolean(["devel", "webassets", "minify"])
 
 		dynamic_assets = util.flask.collect_plugin_assets(
 			enable_gcodeviewer=enable_gcodeviewer,
@@ -774,7 +775,7 @@ class Server():
 		)
 
 		js_libs = [
-			"js/lib/jquery/jquery.min.js",
+			"js/lib/jquery/jquery-2.1.4.min.js" if minify else "js/lib/jquery/jquery-2.1.4.js",
 			"js/lib/modernizr.custom.js",
 			"js/lib/lodash.min.js",
 			"js/lib/sprintf.min.js",
@@ -782,7 +783,7 @@ class Server():
 			"js/lib/knockout.mapping-latest.js",
 			"js/lib/babel.js",
 			"js/lib/avltree.js",
-			"js/lib/bootstrap/bootstrap.js",
+			"js/lib/bootstrap/bootstrap.min.js" if minify else "js/lib/bootstrap/bootstrap.js",
 			"js/lib/bootstrap/bootstrap-modalmanager.js",
 			"js/lib/bootstrap/bootstrap-modal.js",
 			"js/lib/bootstrap/bootstrap-slider.js",
@@ -857,7 +858,7 @@ class Server():
 		register_filter(JsDelimiterBundle)
 
 		js_libs_bundle = Bundle(*js_libs, output="webassets/packed_libs.js", filters="js_delimiter_bundler")
-		if settings().getBoolean(["devel", "webassets", "minify"]):
+		if minify:
 			js_app_bundle = Bundle(*js_app, output="webassets/packed_app.js", filters="rjsmin, js_delimiter_bundler")
 		else:
 			js_app_bundle = Bundle(*js_app, output="webassets/packed_app.js", filters="js_delimiter_bundler")
