@@ -783,7 +783,7 @@ class Server():
 			"js/lib/knockout.mapping-latest.js",
 			"js/lib/babel.js",
 			"js/lib/avltree.js",
-			"js/lib/bootstrap/bootstrap.min.js" if minify else "js/lib/bootstrap/bootstrap.js",
+			"js/lib/bootstrap/bootstrap.js",
 			"js/lib/bootstrap/bootstrap-modalmanager.js",
 			"js/lib/bootstrap/bootstrap-modal.js",
 			"js/lib/bootstrap/bootstrap-slider.js",
