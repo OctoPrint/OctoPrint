@@ -439,7 +439,7 @@ def get_babel_commandclasses(pot_file=None,
 def create_plugin_setup_parameters(identifier="todo", name="TODO", version="0.1", description="TODO", author="TODO",
                                    mail="todo@example.com", url="TODO", license="AGPLv3", source_folder=".", additional_data=None,
                                    additional_packages=None, ignored_packages=None, requires=None, extra_requires=None,
-                                   cmdclass=None, eggs=None, package=None):
+                                   cmdclass=None, eggs=None, package=None, dependency_links=None):
 	import pkg_resources
 
 	if package is None:
@@ -453,6 +453,9 @@ def create_plugin_setup_parameters(identifier="todo", name="TODO", version="0.1"
 
 	if ignored_packages is None:
 		ignored_packages = list()
+
+	if dependency_links is None:
+		dependency_links = list()
 
 	if requires is None:
 		requires = ["OctoPrint"]
@@ -519,6 +522,7 @@ def create_plugin_setup_parameters(identifier="todo", name="TODO", version="0.1"
 
 		install_requires=requires,
 		extras_require=extra_requires,
+		dependency_links=dependency_links,
 
 		# Hook the plugin into the "octoprint.plugin" entry point, mapping the plugin_identifier to the plugin_package.
 		# That way OctoPrint will be able to find the plugin and load it.
