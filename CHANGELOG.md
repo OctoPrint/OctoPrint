@@ -12,6 +12,11 @@
 * Allow hiding plugins from Plugin Manager via ``config.yaml``.
 * Cura Plugin: "Test" button to check if path to cura engine is valid.
 * Cura Plugin: Now also supports 15.06 version of CuraEngine.
+* New central configuration option for commands to restart OctoPrint and to
+  restart and shut down the system OctoPrint is running on. This allows plugins
+  (like the Software Update Plugin or the Plugin Manager) and core functionality
+  to perform these common administrative tasks without the user needing to define
+  everything redundantly.
 
 ### Bug Fixes
 
