@@ -39,6 +39,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		self._pending_uninstall = set()
 
 		self._pip_caller = None
+		self._pip_version_dependency_links = pkg_resources.parse_version("1.5")
 
 		self._repository_available = False
 		self._repository_plugins = []
@@ -80,7 +81,9 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		return dict(
 			repository="http://plugins.octoprint.org/plugins.json",
 			repository_ttl=24*60,
-			pip=None
+			pip=None,
+			dependency_links=False,
+			hidden=[]
 		)
 
 	def on_settings_save(self, data):
@@ -181,6 +184,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			plugin_name = data["plugin"] if "plugin" in data else None
 			return self.command_install(url=url,
 			                            force="force" in data and data["force"] in valid_boolean_trues,
+			                            dependency_links="dependency_links" in data and data["dependency_links"] in valid_boolean_trues,
 			                            reinstall=plugin_name)
 
 		elif command == "uninstall":
@@ -199,13 +203,16 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			plugin = self._plugin_manager.plugins[plugin_name]
 			return self.command_toggle(plugin, command)
 
-	def command_install(self, url=None, path=None, force=False, reinstall=None):
+	def command_install(self, url=None, path=None, force=False, reinstall=None, dependency_links=False):
 		if url is not None:
 			pip_args = ["install", sarge.shell_quote(url)]
 		elif path is not None:
 			pip_args = ["install", sarge.shell_quote(path)]
 		else:
 			raise ValueError("Either url or path must be provided")
+
+		if dependency_links or self._settings.get_boolean(["dependency_links"]):
+			pip_args.append("--process-dependency-links")
 
 		all_plugins_before = self._plugin_manager.find_plugins()
 
@@ -415,6 +422,10 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 	def _call_pip(self, args):
 		if self._pip_caller is None or not self._pip_caller.available:
 			raise RuntimeError(u"No pip available, can't operate".format(**locals()))
+
+		if "--process-dependency-links" in args and self._pip_caller < self._pip_version_dependency_links:
+			args.remove("--process-dependency-links")
+
 		return self._pip_caller.execute(*args)
 
 	def _log_call(self, *lines):
@@ -514,6 +525,9 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 		def map_repository_entry(entry):
 			result = dict(entry)
+
+			if not "follow_dependency_links" in result:
+				result["follow_dependency_links"] = False
 
 			result["is_compatible"] = dict(
 				octoprint=True,

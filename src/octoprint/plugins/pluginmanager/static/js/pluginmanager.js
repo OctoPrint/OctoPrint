@@ -70,6 +70,8 @@ $(function() {
         self.loglines = ko.observableArray([]);
         self.installedPlugins = ko.observableArray([]);
 
+        self.followDependencyLinks = ko.observable(false);
+
         self.working = ko.observable(false);
         self.workingTitle = ko.observable();
         self.workingDialog = undefined;
@@ -125,6 +127,9 @@ $(function() {
                 self.uploadButton.unbind("click");
                 self.uploadButton.bind("click", function() {
                     self._markWorking(gettext("Installing plugin..."), gettext("Installing plugin from uploaded archive..."));
+                    data.formData = {
+                        dependency_links: self.followDependencyLinks()
+                    };
                     data.submit();
                     return false;
                 });
@@ -240,13 +245,13 @@ $(function() {
             }
 
             if (self.installed(data)) {
-                self.installPlugin(data.archive, data.title, data.id);
+                self.installPlugin(data.archive, data.title, data.id, data.follow_dependency_links || self.followDependencyLinks());
             } else {
-                self.installPlugin(data.archive, data.title, undefined);
+                self.installPlugin(data.archive, data.title, undefined, data.follow_dependency_links || self.followDependencyLinks());
             }
         };
 
-        self.installPlugin = function(url, name, reinstall) {
+        self.installPlugin = function(url, name, reinstall, followDependencyLinks) {
             if (!self.loginState.isAdmin()) {
                 return;
             }
@@ -259,6 +264,10 @@ $(function() {
                 url = self.installUrl();
             }
             if (!url) return;
+
+            if (followDependencyLinks === undefined) {
+                followDependencyLinks = self.followDependencyLinks();
+            }
 
             var workTitle, workText;
             if (!reinstall) {
@@ -275,7 +284,7 @@ $(function() {
             self._markWorking(workTitle, workText);
 
             var command = "install";
-            var payload = {url: url};
+            var payload = {url: url, dependency_links: followDependencyLinks};
             if (reinstall) {
                 payload["plugin"] = reinstall;
                 payload["force"] = true;

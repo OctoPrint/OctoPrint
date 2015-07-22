@@ -147,6 +147,21 @@
             </div>
             <span class="help-block" data-bind="visible: invalidArchive">{{ _('This does not look like a valid plugin archive. Valid plugin archives should be either zip files or tarballs and have the extension ".zip", ".tar.gz", ".tgz" or ".tar"') }}</span>
         </form>
+
+        <div>
+            <div><small><a href="#" class="muted" onclick="$(this).children().toggleClass('icon-caret-right icon-caret-down').parent().parent().parent().next().slideToggle('fast')"><i class="icon-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
+            <div class="hide">
+                <form class="form-horizontal">
+                    <div class="control-group">
+                        <div class="controls">
+                            <label class="checkbox">
+                                <input type="checkbox" data-bind="checked: followDependencyLinks"> {{ _('Use <code>--process-dependency-links</code> with <code>pip install</code>') }}
+                            </label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
     <div class="modal-footer">
         <button class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Close') }}</button>
