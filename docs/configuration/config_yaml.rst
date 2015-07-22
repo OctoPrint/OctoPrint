@@ -621,7 +621,8 @@ Use the following settings to configure the server:
 .. code-block:: yaml
 
    server:
-     # Use this option to define the host to which to bind the server, defaults to "0.0.0.0" (= all interfaces)
+     # Use this option to define the host to which to bind the server, defaults to "0.0.0.0" (= all
+     # interfaces)
      host: 0.0.0.0
 
      # Use this option to define the port to which to bind the server, defaults to 5000
@@ -690,6 +691,18 @@ Use the following settings to configure the server:
 
      # Maximum size of requests other than file uploads in bytes, defaults to 100KB.
      maxSize: 102400
+
+     # Commands to restart/shutdown octoprint or the system it's running on
+     commands:
+
+       # Command to restart OctoPrint, defaults to being unset
+       serverRestartCommand: sudo service octoprint restart
+
+       # Command to restart the system OctoPrint is running on, defaults to being unset
+       systemRestartCommand: sudo shutdown -r now
+
+       # Command to shut down the system OctoPrint is running on, defaults to being unset
+       systemShutdownCommand: sudo shutdown -h now
 
 
 .. note::
