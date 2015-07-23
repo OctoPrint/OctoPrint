@@ -423,10 +423,15 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		if self._pip_caller is None or not self._pip_caller.available:
 			raise RuntimeError(u"No pip available, can't operate".format(**locals()))
 
-		if "--process-dependency-links" in args and self._pip_caller < self._pip_version_dependency_links:
-			args.remove("--process-dependency-links")
+		if "--process-dependency-links" in args:
+			self._log_message(u"Installation needs to process external dependencies, that might make it take a bit longer than usual depending on the pip version")
+			if self._pip_caller < self._pip_version_dependency_links:
+				args.remove("--process-dependency-links")
 
 		return self._pip_caller.execute(*args)
+
+	def _log_message(self, *lines):
+		self._log(lines, prefix=u"*", stream="message")
 
 	def _log_call(self, *lines):
 		self._log(lines, prefix=u" ", stream="call")
