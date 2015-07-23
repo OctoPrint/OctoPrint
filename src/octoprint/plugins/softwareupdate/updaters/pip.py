@@ -67,7 +67,7 @@ def perform_update(target, check, target_version, log_cb=None):
 	logger.debug(u"Target: %s, executing pip install %s" % (target, install_arg))
 	pip_args = ["install", check["pip"].format(target_version=target_version, target=target_version)]
 
-	if "dependency_links" in check and check["dependency_links"] and pip_caller >= _pip_version_dependency_links:
+	if "dependency_links" in check and check["dependency_links"]:
 		pip_args += ["--process-dependency-links"]
 
 	pip_caller.execute(*pip_args)

@@ -39,7 +39,6 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		self._pending_uninstall = set()
 
 		self._pip_caller = None
-		self._pip_version_dependency_links = pkg_resources.parse_version("1.5")
 
 		self._repository_available = False
 		self._repository_plugins = []
@@ -430,8 +429,6 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 		if "--process-dependency-links" in args:
 			self._log_message(u"Installation needs to process external dependencies, that might make it take a bit longer than usual depending on the pip version")
-			if self._pip_caller < self._pip_version_dependency_links:
-				args.remove("--process-dependency-links")
 
 		return self._pip_caller.execute(*args)
 
