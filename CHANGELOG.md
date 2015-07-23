@@ -23,6 +23,38 @@
 * It's not possible anymore to select files that are not machinecode files (e.g.
   GCODE) for printing on the file API.
 
+## 1.2.4 (2015-07-23)
+
+### Improvements
+
+  * `RepeatedTimer` now defaults to `daemon` set to `True`. This makes sure
+    plugins using it don't have to remember to set that flag themselves in
+    order for the server to properly shut down when timers are still active.
+  * Fixed a typo in the docs about `logging.yaml` (top level element is
+    `loggers`, not `logger`).
+  * Support for plugins with external dependencies (`dependency_links` in
+    setuptools), interesting for plugin authors who need to depend on Python
+    libraries that are (not yet) available on PyPI.
+  * Better resilience against errors within plugins.
+
+### Bug Fixes
+
+  * Do not cache web page when running for the first time, to avoid caching
+    the first run dialog popup along side with it. This should solve issues
+    people were having when configuring OctoPrint for the first time, then
+    reloading the page without clearing the cache, being again prompted with
+    the dialog with no chance to clear it.
+  * Fix/workaround for occasional white panes in settings dialog on Safari 8,
+    which appears to have an issue with fixed positioning.
+  * Fixed form field truncation in upload requests that could lead to problems
+    when trying to import Cura profiles with names longer than 28 characters.
+  * Fixed webcam rotation for timelapse rendering.
+  * Fixed user settings not reaching the editor in the frontend.
+  * Notifications that are in process of being closed don't open again on
+    mouse over (that was actually more of an unwanted feature).
+
+([Commits](https://github.com/foosel/OctoPrint/compare/1.2.3...1.2.4))
+
 ## 1.2.3 (2015-07-09)
 
 ### Improvements
@@ -231,7 +263,7 @@
   changed under "Temperatures" in the Settings ([#343](https://github.com/foosel/OctoPrint/issues/343)).
 * High-DPI support for the GCode viewer ([#837](https://github.com/foosel/OctoPrint/issues/837)).
 * Stop websocket connections from multiplying ([#888](https://github.com/foosel/OctoPrint/pull/888)).
-* New setting to rotate webcam by 90° counter clockwise ([#895](https://github.com/foosel/OctoPrint/issues/895) and
+* New setting to rotate webcam by 90Â° counter clockwise ([#895](https://github.com/foosel/OctoPrint/issues/895) and
   [#906](https://github.com/foosel/OctoPrint/pull/906))
 * System commands now be set to a) run asynchronized by setting their `async` property to `true` and b) to ignore their
   result by setting their `ignore` property to `true`.
