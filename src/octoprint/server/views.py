@@ -319,6 +319,8 @@ def _process_template_configs(name, implementation, configs, rules):
 					app.jinja_env.get_or_select_template(data["template"])
 				except TemplateNotFound:
 					pass
+				except:
+					_logger.exception("Error in template {}, not going to include it".format(data["template"]))
 				else:
 					includes[template_type].append(rule["to_entry"](data))
 
