@@ -6,6 +6,10 @@ $(function() {
         self.users = parameters[1];
         self.printerProfiles = parameters[2];
 
+        self.receiving = ko.observable(false);
+        self.sending = ko.observable(false);
+        self.callbacks = [];
+
         self.api_enabled = ko.observable(undefined);
         self.api_key = ko.observable(undefined);
         self.api_allowCrossOrigin = ko.observable(undefined);
@@ -261,13 +265,37 @@ $(function() {
         };
 
         self.requestData = function(callback) {
+            if (self.receiving()) {
+                if (callback) {
+                    self.callbacks.push(callback);
+                }
+                return;
+            }
+
+            self.receiving(true);
             $.ajax({
                 url: API_BASEURL + "settings",
                 type: "GET",
                 dataType: "json",
                 success: function(response) {
-                    self.fromResponse(response);
-                    if (callback) callback();
+                    var callbacks = self.callbacks;
+                    self.callbacks = [];
+
+                    if (callback) {
+                        callbacks.push(callback);
+                    }
+
+                    try {
+                        self.fromResponse(response);
+                        _.each(callbacks, function(cb) {
+                            cb();
+                        });
+                    } finally {
+                        self.receiving(false);
+                    }
+                },
+                error: function(xhr) {
+                    self.receiving(false);
                 }
             });
         };
@@ -429,6 +457,8 @@ $(function() {
             self.settingsDialog.trigger("beforeSave");
 
             if (data == undefined) {
+                // we only set sending to true when we didn't include data
+                self.sending(true);
                 data = ko.mapping.toJS(self.settings);
 
                 data = _.extend(data, {
@@ -525,10 +555,23 @@ $(function() {
                 contentType: "application/json; charset=UTF-8",
                 data: JSON.stringify(data),
                 success: function(response) {
-                    self.fromResponse(response);
-                    if (successCallback) successCallback(response);
+                    self.receiving(true);
+                    self.sending(false);
+                    try {
+                        self.fromResponse(response);
+                        if (successCallback) successCallback(response);
+                    } finally {
+                        self.receiving(false);
+                    }
+                },
+                error: function(xhr) {
+                    self.sending(false);
                 }
             });
+        };
+
+        self.onEventSettingsUpdated = function() {
+            self.requestData();
         };
     }
 
