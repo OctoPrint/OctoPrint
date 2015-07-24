@@ -623,6 +623,7 @@ class Server():
 
 	def _setup_jinja2(self):
 		app.jinja_env.add_extension("jinja2.ext.do")
+		app.jinja_env.add_extension("octoprint.server.util.jinja.trycatch")
 
 		# configure additional template folders for jinja2
 		import jinja2
