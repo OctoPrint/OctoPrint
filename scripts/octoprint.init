@@ -116,6 +116,9 @@ case "$1" in
       2) [ "$VERBOSE" != no ] && log_end_msg 1 ;;
    esac
    ;;
+  status)
+   status_of_proc -p $PIDFILE $DAEMON $NAME && exit 0 || exit $?
+   ;;
   restart)
    log_daemon_msg "Restarting $DESC" "$NAME"
    do_stop
@@ -135,8 +138,7 @@ case "$1" in
    esac
    ;;
   *)
-   echo "Usage: $SCRIPTNAME {start|stop|restart}" >&2
+   echo "Usage: $SCRIPTNAME {start|stop|status|restart}" >&2
    exit 3
    ;;
 esac
-
