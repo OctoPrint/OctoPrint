@@ -116,6 +116,14 @@ case "$1" in
       2) [ "$VERBOSE" != no ] && log_end_msg 1 ;;
    esac
    ;;
+  status)
+   if is_alive $PIDFILE; then
+     echo "Running"
+   else
+     echo "Stopped"
+     exit 1
+   fi
+   ;;
   restart)
    log_daemon_msg "Restarting $DESC" "$NAME"
    do_stop
@@ -135,7 +143,7 @@ case "$1" in
    esac
    ;;
   *)
-   echo "Usage: $SCRIPTNAME {start|stop|restart}" >&2
+   echo "Usage: $SCRIPTNAME {start|stop|status|restart}" >&2
    exit 3
    ;;
 esac
