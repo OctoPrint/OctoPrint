@@ -389,6 +389,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		self._timeEstimationData = TimeEstimationHelper(rolling_window=rolling_window, threshold=threshold, countdown=countdown)
 
 		self._lastProgressReport = None
+		self._setProgressData(0, None, None, None)
 		self._setCurrentZ(None)
 		self._comm.startPrint()
 
