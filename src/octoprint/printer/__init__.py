@@ -23,7 +23,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import re
 
-import octoprint.util.comm as comm
+from octoprint.util import comm_helpers
 from octoprint.settings import settings
 
 def get_connection_options():
@@ -42,8 +42,8 @@ def get_connection_options():
 	    (dict): A dictionary holding the connection options in the structure specified above
 	"""
 	return {
-		"ports": comm.serialList(),
-		"baudrates": comm.baudrateList(),
+		"ports": comm_helpers.serialList(),
+		"baudrates": comm_helpers.baudrateList(),
 		"portPreference": settings().get(["serial", "port"]),
 		"baudratePreference": settings().getInt(["serial", "baudrate"]),
 		"autoconnect": settings().getBoolean(["serial", "autoconnect"])
