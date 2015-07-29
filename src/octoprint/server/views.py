@@ -231,8 +231,7 @@ def index():
 		sorted_missing = list(missing_in_order)
 		if template_sorting[t]["key"] is not None:
 			# anything but navbar and generic components get sorted by their name
-			if template_sorting[t]["key"] == "name":
-				sorted_missing = sorted(missing_in_order, key=lambda x: templates[t]["entries"][x][0])
+			sorted_missing = sorted(missing_in_order, key=lambda x: templates[t]["entries"][x][1][template_sorting[t]["key"]])
 
 		if template_sorting[t]["add"] == "prepend":
 			templates[t]["order"] = sorted_missing + templates[t]["order"]
