@@ -1121,3 +1121,150 @@ class AppPlugin(OctoPrintPlugin):
 	def get_additional_apps(self):
 		return []
 
+
+class MachineComPlugin(OctoPrintPlugin):
+	STATE_NONE = 0
+	STATE_OPEN_SERIAL = 1
+	STATE_DETECT_SERIAL = 2
+	STATE_DETECT_BAUDRATE = 3
+	STATE_CONNECTING = 4
+	STATE_OPERATIONAL = 5
+	STATE_PRINTING = 6
+	STATE_PAUSED = 7
+	STATE_CLOSED = 8
+	STATE_ERROR = 9
+	STATE_CLOSED_WITH_ERROR = 10
+	STATE_TRANSFERING_FILE = 11
+
+	def startup(self, port = None, baudrate=None, callbackObject=None, printerProfileManager=None):
+		raise NotImplementedError
+
+	def __del__(self):
+		self.close()
+
+	##~~ getters
+
+	def getState(self):
+		raise NotImplementedError
+
+	def getStateString(self):
+		raise NotImplementedError
+
+	def getErrorString(self):
+		raise NotImplementedError
+
+	def isClosedOrError(self):
+		raise NotImplementedError
+
+	def isError(self):
+		raise NotImplementedError
+
+	def isOperational(self):
+		raise NotImplementedError
+
+	def isPrinting(self):
+		raise NotImplementedError
+
+	def isSdPrinting(self):
+		raise NotImplementedError
+
+	def isSdFileSelected(self):
+		raise NotImplementedError
+
+	def isStreaming(self):
+		raise NotImplementedError
+
+	def isPaused(self):
+		raise NotImplementedError
+
+	def isBusy(self):
+		raise NotImplementedError
+
+	def isSdReady(self):
+		raise NotImplementedError
+
+	def getPrintProgress(self):
+		raise NotImplementedError
+
+	def getPrintFilepos(self):
+		raise NotImplementedError
+
+	def getPrintTime(self):
+		raise NotImplementedError
+
+	def getCleanedPrintTime(self):
+		raise NotImplementedError
+
+	def getTemp(self):
+		raise NotImplementedError
+
+	def getBedTemp(self):
+		raise NotImplementedError
+
+	def getOffsets(self):
+		raise NotImplementedError
+
+	def getCurrentTool(self):
+		raise NotImplementedError
+
+	def getConnection(self):
+		raise NotImplementedError
+
+	def getTransport(self):
+		raise NotImplementedError
+
+	##~~ external interface
+
+	def close(self, isError = False):
+		raise NotImplementedError
+
+	def setTemperatureOffset(self, offsets):
+		raise NotImplementedError
+
+	def fakeOk(self):
+		raise NotImplementedError
+
+	def sendCommand(self, cmd, cmd_type=None, processed=False):
+		raise NotImplementedError
+
+	def sendGcodeScript(self, scriptName, replacements=None):
+		raise NotImplementedError
+
+	def startPrint(self):
+		raise NotImplementedError
+
+	def startFileTransfer(self, filename, localFilename, remoteFilename):
+		raise NotImplementedError
+
+	def selectFile(self, filename, sd):
+		raise NotImplementedError
+
+	def unselectFile(self):
+		raise NotImplementedError
+
+	def cancelPrint(self):
+		raise NotImplementedError
+
+	def setPause(self, pause):
+		raise NotImplementedError
+
+	def getSdFiles(self):
+		raise NotImplementedError
+
+	def startSdFileTransfer(self, filename):
+		raise NotImplementedError
+
+	def endSdFileTransfer(self, filename):
+		raise NotImplementedError
+
+	def deleteSdFile(self, filename):
+		raise NotImplementedError
+
+	def refreshSdFiles(self):
+		raise NotImplementedError
+
+	def initSdCard(self):
+		raise NotImplementedError
+
+	def releaseSdCard(self):
+		raise NotImplementedError
