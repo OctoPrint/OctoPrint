@@ -86,6 +86,15 @@ $(function() {
             self._processStateData(data.state);
         };
 
+        self.openOrCloseOnStateChange = function() {
+            var connectionTab = $("#connection");
+            if (self.isOperational() && connectionTab.hasClass("in")) {
+                connectionTab.collapse("hide");
+            } else if (!self.isOperational() && !connectionTab.hasClass("in")) {
+                connectionTab.collapse("show");
+            }
+        }
+
         self._processStateData = function(data) {
             self.previousIsOperational = self.isOperational();
 
@@ -97,15 +106,10 @@ $(function() {
             self.isReady(data.flags.ready);
             self.isLoading(data.flags.loading);
 
-            var connectionTab = $("#connection");
-            if (self.previousIsOperational != self.isOperational()) {
-                if (self.isOperational() && connectionTab.hasClass("in")) {
-                    // connection just got established, close connection tab for now
-                    connectionTab.collapse("hide");
-                } else if (!connectionTab.hasClass("in")) {
-                    // connection just dropped, make sure connection tab is open
-                    connectionTab.collapse("show");
-                }
+            if (self.loginState.isAdmin() && self.previousIsOperational != self.isOperational()) {
+                // only open or close if the panel is visible (for admins) and
+                // the state just changed to avoid thwarting manual open/close
+                self.openOrCloseOnStateChange();
             }
         };
 
@@ -147,6 +151,16 @@ $(function() {
 
         self.onStartup = function() {
             self.requestData();
+
+            // when isAdmin becomes true the first time, set the panel open or
+            // closed based on the connection state
+            var subscription = self.loginState.isAdmin.subscribe(function(newValue) {
+                if (newValue) {
+                    // wait until after the isAdmin state has run through all subscriptions
+                    setTimeout(self.openOrCloseOnStateChange, 0);
+                    subscription.dispose();
+                }
+            });
         };
     }
 
