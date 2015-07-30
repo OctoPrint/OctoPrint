@@ -24,23 +24,15 @@ from octoprint.filemanager import valid_file_type
 from octoprint.util import get_exception_string, sanitize_ascii, filter_non_ascii, CountedEvent, RepeatedTimer, comm_helpers
 
 class MachineCom(octoprint.plugin.MachineComPlugin):
-	def startup(self, port = None, baudrate=None, callbackObject=None, printerProfileManager=None):
+	def startup(self, callbackObject=None, printerProfileManager=None):
 		self._logger = logging.getLogger(__name__)
 		self._serialLogger = logging.getLogger("SERIAL")
 
-		if port == None:
-			port = settings().get(["serial", "port"])
-		if baudrate == None:
-			settingsBaudrate = settings().getInt(["serial", "baudrate"])
-			if settingsBaudrate is None:
-				baudrate = 0
-			else:
-				baudrate = settingsBaudrate
 		if callbackObject == None:
 			callbackObject = comm_helpers.MachineComPrintCallback()
 
-		self._port = port
-		self._baudrate = baudrate
+		self._port = None
+		self._baudrate = None
 		self._callback = callbackObject
 		self._printerProfileManager = printerProfileManager
 		self._state = self.STATE_NONE
@@ -133,6 +125,18 @@ class MachineCom(octoprint.plugin.MachineComPlugin):
 		self._sendNextLock = threading.Lock()
 		self._sendingLock = threading.RLock()
 
+	def connect(self, port=None, baudrate=None):
+		if port == None:
+			port = settings().get(["serial", "port"])
+		if baudrate == None:
+			settingsBaudrate = settings().getInt(["serial", "baudrate"])
+			if settingsBaudrate is None:
+				baudrate = 0
+			else:
+				baudrate = settingsBaudrate
+		self._port = port
+		self._baudrate = baudrate
+
 		# monitoring thread
 		self._monitoring_active = True
 		self.monitoring_thread = threading.Thread(target=self._monitor, name="comm._monitor")
@@ -144,6 +148,7 @@ class MachineCom(octoprint.plugin.MachineComPlugin):
 		self.sending_thread = threading.Thread(target=self._send_loop, name="comm.sending_thread")
 		self.sending_thread.daemon = True
 		self.sending_thread.start()
+
 
 	##~~ internal state management
 

@@ -1136,7 +1136,10 @@ class MachineComPlugin(OctoPrintPlugin):
 	STATE_CLOSED_WITH_ERROR = 10
 	STATE_TRANSFERING_FILE = 11
 
-	def startup(self, port = None, baudrate=None, callbackObject=None, printerProfileManager=None):
+	def startup(self, callbackObject=None, printerProfileManager=None):
+		raise NotImplementedError
+
+	def connect(self, port=None, baudrate=None):
 		raise NotImplementedError
 
 	def __del__(self):
