@@ -194,21 +194,22 @@ class Printer(PrinterInterface, comm_helpers.MachineComPrintCallback):
 			self._comm.close()
 		self._printerProfileManager.select(profile)
 
-                if not comm_plugin:
-                    comm_implementations = plugin_manager().get_implementations(MachineComPlugin)
+		if not comm_plugin:
+			comm_implementations = plugin_manager().get_implementations(MachineComPlugin)
 
-                    if not comm_implementations:
-                        return
+			if not comm_implementations:
+				return
 
-                    self._comm = comm_implementations[0]
-                elif not isinstance(comm_plugin, str):
-                    return
-                else:
-                    self._comm = plugin_manager().get_plugin(comm_plugin)
-                    if not self._comm:
-                        return
+			self._comm = comm_implementations[0]
+		elif not isinstance(comm_plugin, str):
+			return
+		else:
+			self._comm = plugin_manager().get_plugin(comm_plugin)
+			if not self._comm:
+				return
 
-                self._comm.startup(port, baudrate, callbackObject=self, printerProfileManager=self._printerProfileManager)
+		self._comm.startup(callbackObject=self, printerProfileManager=self._printerProfileManager)
+		self._comm.connect(port, baudrate)
 
 	def disconnect(self):
 		"""
