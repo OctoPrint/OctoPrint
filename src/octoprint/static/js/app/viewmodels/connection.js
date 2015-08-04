@@ -22,9 +22,11 @@ $(function() {
 
         self.portOptions = ko.observableArray(undefined);
         self.baudrateOptions = ko.observableArray(undefined);
+        self.commOptions = ko.observableArray(undefined);
         self.printerOptions = ko.observableArray(undefined);
         self.selectedPort = ko.observable(undefined);
         self.selectedBaudrate = ko.observable(undefined);
+        self.selectedComm = ko.observable(undefined);
         self.selectedPrinter = ko.observable(undefined);
         self.saveSettings = ko.observable(undefined);
         self.autoconnect = ko.observable(undefined);
@@ -60,18 +62,23 @@ $(function() {
         self.fromResponse = function(response) {
             var ports = response.options.ports;
             var baudrates = response.options.baudrates;
+            var comms = response.options.comms;
             var portPreference = response.options.portPreference;
             var baudratePreference = response.options.baudratePreference;
+            var commPreference = response.options.commPreference;
             var printerPreference = response.options.printerProfilePreference;
             var printerProfiles = response.options.printerProfiles;
 
             self.portOptions(ports);
             self.baudrateOptions(baudrates);
+            self.commOptions(comms);
 
             if (!self.selectedPort() && ports && ports.indexOf(portPreference) >= 0)
                 self.selectedPort(portPreference);
             if (!self.selectedBaudrate() && baudrates && baudrates.indexOf(baudratePreference) >= 0)
-                self.selectedBaudrate(baudratePreference);
+              self.selectedBaudrate(baudratePreference);
+            if (!self.selectedComm() && comms && _.find(comms, function(comm){ return comm.identifier === commPreference; }))
+                self.selectedComm(commPreference);
             if (!self.selectedPrinter() && printerProfiles && printerProfiles.indexOf(printerPreference) >= 0)
                 self.selectedPrinter(printerPreference);
 
@@ -115,6 +122,7 @@ $(function() {
                     "command": "connect",
                     "port": self.selectedPort() || "AUTO",
                     "baudrate": self.selectedBaudrate() || 0,
+                    "comm": self.selectedComm(),
                     "printerProfile": self.selectedPrinter(),
                     "autoconnect": self.settings.serial_autoconnect()
                 };
@@ -143,6 +151,10 @@ $(function() {
                     data: JSON.stringify({"command": "disconnect"})
                 })
             }
+        };
+
+        self.isCommHidden = function() {
+          return self.commOptions().length < 2;
         };
 
         self.onStartup = function() {

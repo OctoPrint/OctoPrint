@@ -11,6 +11,12 @@
             <select id="settings-baudrate" data-bind="options: serial_baudrateOptions, optionsCaption: 'AUTO', value: serial_baudrate"></select>
         </div>
     </div>
+    <div class="control-group" title="{{ _('Comm plugin to connect with') }}" data-bind="{ css: { hidden: serial_commOptions().length < 2 }}">
+        <label class="control-label" for="settings-comm">{{ _('Comm') }}</label>
+        <div class="controls">
+            <select id="settings-comm" data-bind="options: serial_commOptions, optionsText: 'name', optionsValue: 'identifier', value: serial_comm"></select>
+        </div>
+    </div>
     <div class="control-group" title="{{ _('Makes OctoPrint try to connect to the printer automatically during start up') }}">
         <div class="controls">
             <label class="checkbox">

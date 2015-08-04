@@ -198,7 +198,7 @@ class Printer(PrinterInterface, comm_helpers.MachineComPrintCallback):
 			comm_implementations = plugin_manager().get_implementations(MachineComPlugin)
 
 			if not comm_implementations:
-				return
+			        return
 
 			self._comm = comm_implementations[0]
 		elif not isinstance(comm_plugin, str):
@@ -486,11 +486,11 @@ class Printer(PrinterInterface, comm_helpers.MachineComPrintCallback):
 
 	def get_current_connection(self):
 		if self._comm is None:
-			return "Closed", None, None, None
+			return "Closed", None, None, None, None
 
 		port, baudrate = self._comm.getConnection()
 		printer_profile = self._printerProfileManager.get_current_or_default()
-		return self._comm.getStateString(), port, baudrate, printer_profile
+		return self._comm.getStateString(), port, baudrate, self._comm._identifier, printer_profile
 
 	def is_closed_or_error(self):
 		return self._comm is None or self._comm.isClosedOrError()
