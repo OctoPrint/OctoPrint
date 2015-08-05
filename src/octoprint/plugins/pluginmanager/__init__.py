@@ -321,6 +321,9 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		if plugin.key == "pluginmanager":
 			return make_response("Can't uninstall Plugin Manager", 400)
 
+		if plugin.key == "basic_comm":
+			return make_response("Can't uninstall Basic Comm", 400)
+
 		if plugin.bundled:
 			return make_response("Bundled plugins cannot be uninstalled", 400)
 
@@ -394,6 +397,9 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 	def command_toggle(self, plugin, command):
 		if plugin.key == "pluginmanager":
 			return make_response("Can't enable/disable Plugin Manager", 400)
+
+		if plugin.key == "basic_comm":
+			return make_response("Can't enable/disable Basic Comm", 400)
 
 		needs_restart = self._plugin_manager.is_restart_needing_plugin(plugin)
 		needs_refresh = plugin.implementation and isinstance(plugin.implementation, octoprint.plugin.ReloadNeedingPlugin)

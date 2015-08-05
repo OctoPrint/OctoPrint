@@ -82,11 +82,11 @@ $(function() {
         });
 
         self.enableToggle = function(data) {
-            return self.enableManagement() && data.key != 'pluginmanager';
+            return self.enableManagement() && data.key != 'pluginmanager' && data.key != 'basic_comm';
         };
 
         self.enableUninstall = function(data) {
-            return self.enableManagement() && !data.bundled && data.key != 'pluginmanager' && !data.pending_uninstall;
+            return self.enableManagement() && !data.bundled && data.key != 'basic_comm' && data.key != 'pluginmanager' && !data.pending_uninstall;
         };
 
         self.enableRepoInstall = function(data) {
@@ -210,7 +210,7 @@ $(function() {
                 return;
             }
 
-            if (data.key == "pluginmanager") return;
+            if (data.key == "pluginmanager" || data.key == "basic_comm") return;
 
             var command = self._getToggleCommand(data);
 
@@ -315,7 +315,7 @@ $(function() {
             }
 
             if (data.bundled) return;
-            if (data.key == "pluginmanager") return;
+            if (data.key == "pluginmanager" || data.key == "basic_comm") return;
 
             self._markWorking(gettext("Uninstalling plugin..."), _.sprintf(gettext("Uninstalling plugin \"%(name)s\""), {name: data.name}));
 

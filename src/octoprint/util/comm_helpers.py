@@ -13,6 +13,7 @@ import time
 
 from octoprint.events import Events
 from octoprint.filemanager.destinations import FileDestinations
+from octoprint.plugin import plugin_manager, MachineComPlugin
 from octoprint.settings import settings, default_settings
 
 try:
@@ -58,6 +59,10 @@ def baudrateList():
 		ret.remove(prev)
 		ret.insert(0, prev)
 	return ret
+
+def commList():
+    comm_implementations = plugin_manager().get_implementations(MachineComPlugin)
+    return [{ "identifier": c._identifier, "name": c._plugin_name } for c in comm_implementations]
 
 gcodeToEvent = {
 	# pause for user input

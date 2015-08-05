@@ -121,8 +121,10 @@ $(function() {
 
         self.serial_port = ko.observable();
         self.serial_baudrate = ko.observable();
+        self.serial_comm = ko.observable();
         self.serial_portOptions = ko.observableArray([]);
         self.serial_baudrateOptions = ko.observableArray([]);
+        self.serial_commOptions = ko.observableArray([]);
         self.serial_autoconnect = ko.observable(undefined);
         self.serial_timeoutConnection = ko.observable(undefined);
         self.serial_timeoutDetection = ko.observable(undefined);
@@ -414,8 +416,10 @@ $(function() {
 
             self.serial_port(response.serial.port);
             self.serial_baudrate(response.serial.baudrate);
+            self.serial_comm(response.serial.comm);
             self.serial_portOptions(response.serial.portOptions);
             self.serial_baudrateOptions(response.serial.baudrateOptions);
+            self.serial_commOptions(response.serial.commOptions);
             self.serial_autoconnect(response.serial.autoconnect);
             self.serial_timeoutConnection(response.serial.timeoutConnection);
             self.serial_timeoutDetection(response.serial.timeoutDetection);
@@ -503,6 +507,7 @@ $(function() {
                     "serial": {
                         "port": self.serial_port(),
                         "baudrate": self.serial_baudrate(),
+                        "comm": self.serial_comm(),
                         "autoconnect": self.serial_autoconnect(),
                         "timeoutConnection": self.serial_timeoutConnection(),
                         "timeoutDetection": self.serial_timeoutDetection(),
