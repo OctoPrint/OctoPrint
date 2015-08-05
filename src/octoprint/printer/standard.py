@@ -201,10 +201,14 @@ class Printer(PrinterInterface, comm_helpers.MachineComPrintCallback):
 			        return
 
 			self._comm = comm_implementations[0]
-		elif not isinstance(comm_plugin, str):
+		elif not isinstance(comm_plugin, basestring):
 			return
 		else:
-			self._comm = plugin_manager().get_plugin(comm_plugin)
+                        plugin_info = plugin_manager().get_plugin_info(comm_plugin)
+                        if not plugin_info:
+                            return
+
+                        self._comm = plugin_info.implementation
 			if not self._comm:
 				return
 
