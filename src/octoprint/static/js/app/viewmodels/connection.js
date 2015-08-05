@@ -154,7 +154,7 @@ $(function() {
         };
 
         self.isCommHidden = function() {
-          return self.commOptions().length < 2;
+          return (self.commOptions() || []).length === 1;
         };
 
         self.onStartup = function() {
