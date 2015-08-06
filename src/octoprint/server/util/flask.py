@@ -600,6 +600,7 @@ def collect_plugin_assets(enable_gcodeviewer=True, enable_timelapse=True, prefer
 		'js/app/viewmodels/control.js',
 		'js/app/viewmodels/firstrun.js',
 		'js/app/viewmodels/files.js',
+		'js/app/viewmodels/footer.js',
 		'js/app/viewmodels/loginstate.js',
 		'js/app/viewmodels/navigation.js',
 		'js/app/viewmodels/printerstate.js',
