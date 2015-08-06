@@ -1384,6 +1384,8 @@ class MachineCom(object):
 		except:
 			if "rs" in line:
 				lineToResend = int(line.split()[1])
+			if "Resend" in line:
+				lineToResend = int(line.split(':')[1])
 
 		if lineToResend is not None:
 			self._resendSwallowNextOk = True
