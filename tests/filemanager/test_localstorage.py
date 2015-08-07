@@ -8,6 +8,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import unittest
 import os
 import mock
+import os.path
 
 from ddt import ddt, unpack, data
 
@@ -41,7 +42,7 @@ class LocalStorageTest(unittest.TestCase):
 
 	def setUp(self):
 		import tempfile
-		self.basefolder = tempfile.mkdtemp()
+		self.basefolder = os.path.realpath(os.path.abspath(tempfile.mkdtemp()))
 		self.storage = octoprint.filemanager.storage.LocalFileStorage(self.basefolder)
 
 		# mock file manager module
