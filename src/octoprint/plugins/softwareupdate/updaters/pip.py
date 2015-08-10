@@ -10,6 +10,7 @@ import logging
 import pkg_resources
 
 from octoprint.util.pip import PipCaller, UnknownPip
+from .. import exceptions
 
 logger = logging.getLogger("octoprint.plugins.softwareupdate.updaters.pip")
 console_logger = logging.getLogger("octoprint.plugins.softwareupdate.updaters.pip.console")
@@ -44,7 +45,7 @@ def perform_update(target, check, target_version):
 
 	pip_caller = _get_pip_caller(command=pip_command)
 	if pip_caller is None:
-		raise RuntimeError("Can't run pip")
+		raise exceptions.UpdateError("Can't run pip", None)
 
 	install_arg = check["pip"].format(target_version=target_version)
 
@@ -54,12 +55,16 @@ def perform_update(target, check, target_version):
 	if "dependency_links" in check and check["dependency_links"] and pip_caller >= _pip_version_dependency_links:
 		pip_args += ["--process-dependency-links"]
 
-	pip_caller.execute(*pip_args)
+	returncode, stdout, stderr = pip_caller.execute(*pip_args)
+	if returncode != 0:
+		raise exceptions.UpdateError("Error while executing pip install", (stdout, stderr))
 
 	logger.debug(u"Target: %s, executing pip install %s --ignore-reinstalled --force-reinstall --no-deps" % (target, install_arg))
 	pip_args += ["--ignore-installed", "--force-reinstall", "--no-deps"]
 
-	pip_caller.execute(*pip_args)
+	returncode, stdout, stderr = pip_caller.execute(*pip_args)
+	if returncode != 0:
+		raise exceptions.UpdateError("Error while executing pip install --force-reinstall", (stdout, stderr))
 
 	return "ok"
 
