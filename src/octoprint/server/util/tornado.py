@@ -360,13 +360,24 @@ class UploadStorageFallbackHandler(tornado.web.RequestHandler):
 		for name, part in self._parts.iteritems():
 			if "filename" in part:
 				# add form fields for filename, path, size and content_type for all files contained in the request
-				fields = dict((self._suffixes[key], value) for (key, value) in dict(name=part["filename"], path=part["path"], size=str(os.stat(part["path"]).st_size), content_type=part["content_type"]).iteritems())
+				if not "path" in part:
+					continue
+
+				parameters = dict(
+					name=part["filename"],
+					path=part["path"],
+					size=str(os.stat(part["path"]).st_size)
+				)
+				if "content_type" in part:
+					parameters["content_type"] = part["content_type"]
+
+				fields = dict((self._suffixes[key], value) for (key, value) in parameters.iteritems())
 				for n, p in fields.iteritems():
 					key = name + "." + n
 					self._new_body += b"--%s\r\n" % self._multipart_boundary
 					self._new_body += b"Content-Disposition: form-data; name=\"%s\"\r\n" % key
 					self._new_body += b"\r\n"
-					self._new_body += p + b"\r\n"
+					self._new_body += b"%s\r\n" % p
 			elif "data" in part:
 				self._new_body += b"--%s\r\n" % self._multipart_boundary
 				value = part["data"]
