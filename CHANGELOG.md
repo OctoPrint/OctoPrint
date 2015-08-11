@@ -17,11 +17,29 @@
   (like the Software Update Plugin or the Plugin Manager) and core functionality
   to perform these common administrative tasks without the user needing to define
   everything redundantly.
+* `pip` helper now adjusts `pip install` parameters corresponding to detected
+  `pip` version:
+  * Removes `--process-dependency-links` when it's not needed
+  * Adds `--no-use-wheel` when it's needed
+  * Detects and reports on completely broken versions
+* Better tracking of printer connection state for plugins and scripts:
+  * Introduced three new Events `Connecting`, `Disconnecting` and
+    `PrinterStateChanged`.
+  * Introduced new GCODE script `beforePrinterDisconnected` which will get sent
+    before a (controlled) disconnect from the printer. This can be used to send
+    some final commands to the printer before the connection goes down, e.g.
+    `M117 Bye from OctoPrint`.
+  * The communication layer will now wait for the send queue to be fully processed
+    before disconnecting from the printer for good. This way it is ensured that
+    the `beforePrinterDisconnected` script or any further GCODE injected into it
+    will actually get sent.
+* Documentation improvements
 
 ### Bug Fixes
 
 * It's not possible anymore to select files that are not machinecode files (e.g.
   GCODE) for printing on the file API.
+* Changes to a user's personal settings via the UI now propagate across sessions.
 
 ## 1.2.4 (2015-07-23)
 
