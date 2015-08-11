@@ -221,6 +221,10 @@ class PrinterInterface(object):
 
 		Arguments:
 		    path (str): The path to select for printing. Either an absolute path (local file) or a
+		        filename (SD card).
+		    sd (boolean): Indicates whether the file is on the SD card or not.
+		    printAfterSelect (boolean): Indicates whether a print should be started
+		        after the file is selected.
 		"""
 		raise NotImplementedError()
 
