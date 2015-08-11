@@ -736,12 +736,57 @@ class Server():
 		# clean the folder
 		if settings().getBoolean(["devel", "webassets", "clean_on_startup"]):
 			import shutil
+			import errno
+			import sys
+
 			for entry in ("webassets", ".webassets-cache"):
 				path = os.path.join(base_folder, entry)
-				self._logger.debug("Deleting {path}...".format(**locals()))
-				shutil.rmtree(path, ignore_errors=True)
+
+				# delete path if it exists
+				if os.path.isdir(path):
+					try:
+						self._logger.debug("Deleting {path}...".format(**locals()))
+						shutil.rmtree(path)
+					except:
+						self._logger.exception("Error while trying to delete {path}, leaving it alone".format(**locals()))
+						continue
+
+				# re-create path
 				self._logger.debug("Creating {path}...".format(**locals()))
-				os.makedirs(path)
+				error_text = "Error while trying to re-create {path}, that might cause errors with the webassets cache".format(**locals())
+				try:
+					os.makedirs(path)
+				except OSError as e:
+					if e.errno == errno.EACCES:
+						# that might be caused by the user still having the folder open somewhere, let's try again after
+						# waiting a bit
+						import time
+						for n in xrange(3):
+							time.sleep(0.5)
+							self._logger.debug("Creating {path}: Retry #{retry} after {time}s".format(path=path, retry=n+1, time=(n + 1)*0.5))
+							try:
+								os.makedirs(path)
+								break
+							except:
+								if self._logger.isEnabledFor(logging.DEBUG):
+									self._logger.exception("Ignored error while creating directory {path}".format(**locals()))
+								pass
+						else:
+							# this will only get executed if we never did
+							# successfully execute makedirs above
+							self._logger.exception(error_text)
+							continue
+					else:
+						# not an access error, so something we don't understand
+						# went wrong -> log an error and stop
+						self._logger.exception(error_text)
+						continue
+				except:
+					# not an OSError, so something we don't understand
+					# went wrong -> log an error and stop
+					self._logger.exception(error_text)
+					continue
+
 				self._logger.info("Reset webasset folder {path}...".format(**locals()))
 
 		AdjustedEnvironment = type(Environment)(Environment.__name__, (Environment,), dict(
