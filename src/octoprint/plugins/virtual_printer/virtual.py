@@ -35,7 +35,7 @@ class VirtualPrinter():
 		self.buffered = Queue.Queue(maxsize=settings().getInt(["devel", "virtualPrinter", "commandBuffer"]))
 
 		for item in ['start\n', 'Marlin: Virtual Marlin!\n', '\x80\n', 'SD card ok\n']:
-			self.outgoing.put(item)
+			self._send(item)
 
 		self.currentExtruder = 0
 		self.temp = [0.0] * settings().getInt(["devel", "virtualPrinter", "numExtruders"])
@@ -113,7 +113,7 @@ class VirtualPrinter():
 				data = self.incoming.get(timeout=0.01)
 			except Queue.Empty:
 				if self._sendWait and time.time() > next_wait_timeout:
-					self.outgoing.put("wait")
+					self._send("wait")
 					next_wait_timeout = time.time() + self._waitInterval
 				continue
 
@@ -133,7 +133,7 @@ class VirtualPrinter():
 				data = data[:data.rfind("*")]
 				self.currentLine += 1
 			elif settings().getBoolean(["devel", "virtualPrinter", "forceChecksum"]):
-				self.outgoing.put("Error: Missing checksum")
+				self._send("Error: Missing checksum")
 				continue
 
 			# track N = N + 1
@@ -168,7 +168,7 @@ class VirtualPrinter():
 
 			if data.strip() == "version":
 				from octoprint._version import get_versions
-				self.outgoing.put("OctoPrint VirtualPrinter v" + get_versions()["version"])
+				self._send("OctoPrint VirtualPrinter v" + get_versions()["version"])
 				continue
 			elif data.startswith("!!DEBUG:"):
 				self._debugTrigger(data[len("!!DEBUG:"):].strip())
@@ -192,7 +192,7 @@ class VirtualPrinter():
 					self._listSd()
 			elif 'M21' in data:
 				self._sdCardReady = True
-				self.outgoing.put("SD card ok")
+				self._send("SD card ok")
 			elif 'M22' in data:
 				self._sdCardReady = False
 			elif 'M23' in data:
@@ -228,17 +228,17 @@ class VirtualPrinter():
 				output = "C: X:10.00 Y:3.20 Z:5.20 E:1.24"
 				if not self._okBeforeCommandOutput:
 					output = "ok " + output
-				self.outgoing.put(output)
+				self._send(output)
 				continue
 			elif "M117" in data:
 				# we'll just use this to echo a message, to allow playing around with pause triggers
-				self.outgoing.put("echo:%s" % re.search("M117\s+(.*)", data).group(1))
+				self._send("echo:%s" % re.search("M117\s+(.*)", data).group(1))
 			elif "M999" in data:
 				# mirror Marlin behaviour
-				self.outgoing.put("Resend: 1")
+				self._send("Resend: 1")
 			elif data.startswith("T"):
 				self.currentExtruder = int(re.search("T(\d+)", data).group(1))
-				self.outgoing.put("Active Extruder: %d" % self.currentExtruder)
+				self._send("Active Extruder: %d" % self.currentExtruder)
 			elif "G20" in data:
 				self._unitModifier = 1.0 / 2.54
 				if self._lastX is not None:
@@ -285,7 +285,7 @@ class VirtualPrinter():
 						del self._sleepAfterNext[command]
 
 					if interval is not None:
-						self.outgoing.put("// sleeping for {interval} seconds".format(interval=interval))
+						self._send("// sleeping for {interval} seconds".format(interval=interval))
 						time.sleep(interval)
 
 			if len(data.strip()) > 0 and not self._okBeforeCommandOutput:
@@ -299,20 +299,20 @@ class VirtualPrinter():
 				self.lastN = expected - 1
 
 			if actual is None:
-				self.outgoing.put("Error: Wrong checksum")
+				self._send("Error: Wrong checksum")
 			else:
-				self.outgoing.put("Error: expected line %d got %d" % (expected, actual))
+				self._send("Error: expected line %d got %d" % (expected, actual))
 
-			self.outgoing.put("Resend:%d" % expected)
-			self.outgoing.put("ok")
+			self._send("Resend:%d" % expected)
+			self._send("ok")
 
 	def _debugTrigger(self, data):
 		if data == "action_pause":
-			self.outgoing.put("// action:pause")
+			self._send("// action:pause")
 		elif data == "action_resume":
-			self.outgoing.put("// action:resume")
+			self._send("// action:resume")
 		elif data == "action_disconnect":
-			self.outgoing.put("// action:disconnect")
+			self._send("// action:disconnect")
 		elif data == "dont_answer":
 			self._dont_answer = True
 		elif data == "trigger_resend_lineno":
@@ -330,28 +330,28 @@ class VirtualPrinter():
 
 				if sleep_match is not None:
 					interval = int(sleep_match.group(1))
-					self.outgoing.put("// sleeping for {interval} seconds".format(interval=interval))
+					self._send("// sleeping for {interval} seconds".format(interval=interval))
 					time.sleep(interval)
 				elif sleep_after_match is not None:
 					command = sleep_after_match.group(1)
 					interval = int(sleep_after_match.group(2))
 					self._sleepAfter[command] = interval
-					self.outgoing.put("// going to sleep {interval} seconds after each {command}".format(**locals()))
+					self._send("// going to sleep {interval} seconds after each {command}".format(**locals()))
 				elif sleep_after_next_match is not None:
 					command = sleep_after_next_match.group(1)
 					interval = int(sleep_after_next_match.group(2))
 					self._sleepAfterNext[command] = interval
-					self.outgoing.put("// going to sleep {interval} seconds after next {command}".format(**locals()))
+					self._send("// going to sleep {interval} seconds after next {command}".format(**locals()))
 				elif custom_action_match is not None:
 					action = custom_action_match.group(1)
 					params = custom_action_match.group(2)
 					params = params.strip() if params is not None else ""
-					self.outgoing.put("// action:{action} {params}".format(**locals()).strip())
+					self._send("// action:{action} {params}".format(**locals()).strip())
 			except:
 				pass
 
 	def _listSd(self):
-		self.outgoing.put("Begin file list")
+		self._send("Begin file list")
 		if settings().getBoolean(["devel", "virtualPrinter", "extendedSdFileList"]):
 			items = map(
 				lambda x: "%s %d" % (x.upper(), os.stat(os.path.join(self._virtualSd, x)).st_size),
@@ -363,20 +363,20 @@ class VirtualPrinter():
 				os.listdir(self._virtualSd)
 			)
 		for item in items:
-			self.outgoing.put(item)
-		self.outgoing.put("End file list")
+			self._send(item)
+		self._send("End file list")
 
 	def _selectSdFile(self, filename):
 		if filename.startswith("/"):
 			filename = filename[1:]
 		file = os.path.join(self._virtualSd, filename.lower())
 		if not os.path.exists(file) or not os.path.isfile(file):
-			self.outgoing.put("open failed, File: %s." % filename)
+			self._send("open failed, File: %s." % filename)
 		else:
 			self._selectedSdFile = file
 			self._selectedSdFileSize = os.stat(file).st_size
-			self.outgoing.put("File opened: %s  Size: %d" % (filename, self._selectedSdFileSize))
-			self.outgoing.put("File selected")
+			self._send("File opened: %s  Size: %d" % (filename, self._selectedSdFileSize))
+			self._send("File selected")
 
 	def _startSdPrint(self):
 		if self._selectedSdFile is not None:
@@ -393,9 +393,9 @@ class VirtualPrinter():
 
 	def _reportSdStatus(self):
 		if self._sdPrinter is not None and self._sdPrintingSemaphore.is_set:
-			self.outgoing.put("SD printing byte %d/%d" % (self._selectedSdFilePos, self._selectedSdFileSize))
+			self._send("SD printing byte %d/%d" % (self._selectedSdFilePos, self._selectedSdFileSize))
 		else:
-			self.outgoing.put("Not SD printing")
+			self._send("Not SD printing")
 
 	def _processTemperatureQuery(self):
 		includeTarget = not settings().getBoolean(["devel", "virtualPrinter", "repetierStyleTargetTemperature"])
@@ -432,7 +432,7 @@ class VirtualPrinter():
 
 		if includeOk:
 			output = "ok " + output
-		self.outgoing.put(output)
+		self._send(output)
 
 	def _parseHotendCommand(self, line):
 		tool = 0
@@ -454,7 +454,7 @@ class VirtualPrinter():
 		if "M109" in line:
 			self._waitForHeatup("tool%d" % tool)
 		if settings().getBoolean(["devel", "virtualPrinter", "repetierStyleTargetTemperature"]):
-			self.outgoing.put("TargetExtr%d:%d" % (tool, self.targetTemp[tool]))
+			self._send("TargetExtr%d:%d" % (tool, self.targetTemp[tool]))
 
 	def _parseBedCommand(self, line):
 		try:
@@ -465,7 +465,7 @@ class VirtualPrinter():
 		if "M190" in line:
 			self._waitForHeatup("bed")
 		if settings().getBoolean(["devel", "virtualPrinter", "repetierStyleTargetTemperature"]):
-			self.outgoing.put("TargetBed:%d" % self.bedTargetTemp)
+			self._send("TargetBed:%d" % self.bedTargetTemp)
 
 	def _performMove(self, line):
 		matchX = re.search("X([0-9.]+)", line)
@@ -520,7 +520,7 @@ class VirtualPrinter():
 				slept = 0
 				while duration - slept > self._read_timeout:
 					time.sleep(self._read_timeout)
-					self.outgoing.put("wait")
+					self._send("wait")
 					slept += self._read_timeout
 			else:
 				time.sleep(duration)
@@ -563,11 +563,11 @@ class VirtualPrinter():
 			if os.path.isfile(file):
 				os.remove(file)
 			else:
-				self.outgoing.put("error writing to file")
+				self._send("error writing to file")
 
 		self._writingToSd = True
 		self._selectedSdFile = file
-		self.outgoing.put("Writing to file: %s" % filename)
+		self._send("Writing to file: %s" % filename)
 
 	def _finishSdFile(self):
 		self._writingToSd = False
@@ -599,7 +599,7 @@ class VirtualPrinter():
 		self._sdPrintingSemaphore.clear()
 		self._selectedSdFilePos = 0
 		self._sdPrinter = None
-		self.outgoing.put("Done printing file")
+		self._send("Done printing file")
 
 	def _waitForHeatup(self, heater):
 		delta = 1
@@ -608,12 +608,12 @@ class VirtualPrinter():
 			toolNum = int(heater[len("tool"):])
 			while self.temp[toolNum] < self.targetTemp[toolNum] - delta or self.temp[toolNum] > self.targetTemp[toolNum] + delta:
 				self._simulateTemps(delta=delta)
-				self.outgoing.put("T:%0.2f" % self.temp[toolNum])
+				self._send("T:%0.2f" % self.temp[toolNum])
 				time.sleep(delay)
 		elif heater == "bed":
 			while self.bedTemp < self.bedTargetTemp - delta or self.bedTemp > self.bedTargetTemp + delta:
 				self._simulateTemps(delta=delta)
-				self.outgoing.put("B:%0.2f" % self.bedTemp)
+				self._send("B:%0.2f" % self.bedTemp)
 				time.sleep(delay)
 
 	def _deleteSdFile(self, filename):
@@ -686,14 +686,18 @@ class VirtualPrinter():
 
 	def _sendOk(self):
 		if settings().getBoolean(["devel", "virtualPrinter", "okWithLinenumber"]):
-			self.outgoing.put("ok %d" % self.lastN)
+			self._send("ok %d" % self.lastN)
 		else:
-			self.outgoing.put("ok")
+			self._send("ok")
 
 	def _sendWaitAfterTimeout(self, timeout=5):
 		time.sleep(timeout)
 		if self.outgoing is not None:
-			self.outgoing.put("wait")
+			self._send("wait")
+
+	def _send(self, line):
+		if self.outgoing is not None:
+			self.outgoing.put(line)
 
 class CharCountingQueue(Queue.Queue):
 
