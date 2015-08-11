@@ -271,37 +271,51 @@ class MachineCom(object):
 	def getState(self):
 		return self._state
 
-	def getStateString(self):
-		if self._state == self.STATE_NONE:
+	def getStateId(self, state=None):
+		if state is None:
+			state = self._state
+
+		possible_states = filter(lambda x: x.startswith("STATE_"), self.__class__.__dict__.keys())
+		for possible_state in possible_states:
+			if getattr(self, possible_state) == state:
+				return possible_state[len("STATE_"):]
+
+		return "UNKNOWN"
+
+	def getStateString(self, state=None):
+		if state is None:
+			state = self._state
+
+		if state == self.STATE_NONE:
 			return "Offline"
-		if self._state == self.STATE_OPEN_SERIAL:
+		if state == self.STATE_OPEN_SERIAL:
 			return "Opening serial port"
-		if self._state == self.STATE_DETECT_SERIAL:
+		if state == self.STATE_DETECT_SERIAL:
 			return "Detecting serial port"
-		if self._state == self.STATE_DETECT_BAUDRATE:
+		if state == self.STATE_DETECT_BAUDRATE:
 			return "Detecting baudrate"
-		if self._state == self.STATE_CONNECTING:
+		if state == self.STATE_CONNECTING:
 			return "Connecting"
-		if self._state == self.STATE_OPERATIONAL:
+		if state == self.STATE_OPERATIONAL:
 			return "Operational"
-		if self._state == self.STATE_PRINTING:
+		if state == self.STATE_PRINTING:
 			if self.isSdFileSelected():
 				return "Printing from SD"
 			elif self.isStreaming():
 				return "Sending file to SD"
 			else:
 				return "Printing"
-		if self._state == self.STATE_PAUSED:
+		if state == self.STATE_PAUSED:
 			return "Paused"
-		if self._state == self.STATE_CLOSED:
+		if state == self.STATE_CLOSED:
 			return "Closed"
-		if self._state == self.STATE_ERROR:
+		if state == self.STATE_ERROR:
 			return "Error: %s" % (self.getErrorString())
-		if self._state == self.STATE_CLOSED_WITH_ERROR:
+		if state == self.STATE_CLOSED_WITH_ERROR:
 			return "Error: %s" % (self.getErrorString())
-		if self._state == self.STATE_TRANSFERING_FILE:
+		if state == self.STATE_TRANSFERING_FILE:
 			return "Transfering file to SD"
-		return "?%d?" % (self._state)
+		return "Unknown State (%d)" % (self._state)
 
 	def getErrorString(self):
 		return self._errorValue
@@ -382,7 +396,25 @@ class MachineCom(object):
 
 	##~~ external interface
 
-	def close(self, isError = False):
+	def close(self, is_error=False, wait=True, *args, **kwargs):
+		"""
+		Closes the connection to the printer.
+
+		If ``is_error`` is False, will attempt to send the ``beforePrinterDisconnected``
+		gcode script. If ``is_error`` is False and ``wait`` is True, will wait
+		until all messages in the send queue (including the ``beforePrinterDisconnected``
+		gcode script) have been sent to the printer.
+
+		Arguments:
+		   is_error (bool): Whether the closing takes place due to an error (True)
+		      or not (False, default)
+		   wait (bool): Whether to wait for all messages in the send
+		      queue to be processed before closing (True, default) or not (False)
+		"""
+
+		# legacy parameters
+		is_error = kwargs.get("isError", is_error)
+
 		if self._temperature_timer is not None:
 			try:
 				self._temperature_timer.cancel()
@@ -395,16 +427,25 @@ class MachineCom(object):
 			except:
 				pass
 
-		self._monitoring_active = False
-		self._send_queue_active = False
+		def deactivate_monitoring_and_send_queue():
+			self._monitoring_active = False
+			self._send_queue_active = False
 
 		printing = self.isPrinting() or self.isPaused()
 		if self._serial is not None:
-			if isError:
+			if not is_error:
+				self.sendGcodeScript("beforePrinterDisconnected")
+				if wait:
+					self._send_queue.join()
+
+			deactivate_monitoring_and_send_queue()
+			self._serial.close()
+			if is_error:
 				self._changeState(self.STATE_CLOSED_WITH_ERROR)
 			else:
 				self._changeState(self.STATE_CLOSED)
-			self._serial.close()
+		else:
+			deactivate_monitoring_and_send_queue()
 		self._serial = None
 
 		if settings().getBoolean(["feature", "sdSupport"]):
@@ -419,7 +460,6 @@ class MachineCom(object):
 					"origin": self._currentFile.getFileLocation()
 				}
 			eventManager().fire(Events.PRINT_FAILED, payload)
-		eventManager().fire(Events.DISCONNECTED)
 
 	def setTemperatureOffset(self, offsets):
 		self._tempOffsets.update(offsets)
@@ -1055,7 +1095,7 @@ class MachineCom(object):
 							except:
 								self._log("Unexpected error while setting baudrate: %d %s" % (baudrate, get_exception_string()))
 						else:
-							self.close()
+							self.close(wait=False)
 							self._errorValue = "No more baudrates to test, and no suitable baudrate found."
 							self._changeState(self.STATE_ERROR)
 							eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
@@ -1072,7 +1112,7 @@ class MachineCom(object):
 					elif "ok" in line:
 						self._onConnected()
 					elif time.time() > self._timeout:
-						self.close()
+						self.close(wait=False)
 
 				### Operational
 				elif self._state == self.STATE_OPERATIONAL or self._state == self.STATE_PAUSED:
@@ -1324,7 +1364,7 @@ class MachineCom(object):
 		except:
 			self._log("Unexpected error while reading serial port: %s" % (get_exception_string()))
 			self._errorValue = get_exception_string()
-			self.close(True)
+			self.close(is_error=True)
 			return None
 		if ret == '':
 			#self._log("Recv: TIMEOUT")
@@ -1509,52 +1549,58 @@ class MachineCom(object):
 				# wait until we have something in the queue
 				entry = self._send_queue.get()
 
-				# make sure we are still active
-				if not self._send_queue_active:
-					break
+				try:
+					# make sure we are still active
+					if not self._send_queue_active:
+						break
 
-				# fetch command and optional linenumber from queue
-				command, linenumber, command_type = entry
+					# fetch command and optional linenumber from queue
+					command, linenumber, command_type = entry
 
-				# some firmwares (e.g. Smoothie) might support additional in-band communication that will not
-				# stick to the acknowledgement behaviour of GCODE, so we check here if we have a GCODE command
-				# at hand here and only clear our clear_to_send flag later if that's the case
-				gcode = self.gcode_command_for_cmd(command)
+					# some firmwares (e.g. Smoothie) might support additional in-band communication that will not
+					# stick to the acknowledgement behaviour of GCODE, so we check here if we have a GCODE command
+					# at hand here and only clear our clear_to_send flag later if that's the case
+					gcode = self.gcode_command_for_cmd(command)
 
-				if linenumber is not None:
-					# line number predetermined - this only happens for resends, so we'll use the number and
-					# send directly without any processing (since that already took place on the first sending!)
-					self._doSendWithChecksum(command, linenumber)
-
-				else:
-					# trigger "sending" phase
-					command, _, gcode = self._process_command_phase("sending", command, command_type, gcode=gcode)
-
-					if command is None:
-						# so no, we are not going to send this, that was a last-minute bail, let's fetch the next item from the queue
-						continue
-
-					# now comes the part where we increase line numbers and send stuff - no turning back now
-					if (gcode is not None or self._sendChecksumWithUnknownCommands) and (self.isPrinting() or self._alwaysSendChecksum):
-						linenumber = self._currentLine
-						self._addToLastLines(command)
-						self._currentLine += 1
+					if linenumber is not None:
+						# line number predetermined - this only happens for resends, so we'll use the number and
+						# send directly without any processing (since that already took place on the first sending!)
 						self._doSendWithChecksum(command, linenumber)
+
 					else:
-						self._doSendWithoutChecksum(command)
+						# trigger "sending" phase
+						command, _, gcode = self._process_command_phase("sending", command, command_type, gcode=gcode)
 
-				# trigger "sent" phase and use up one "ok"
-				self._process_command_phase("sent", command, command_type, gcode=gcode)
+						if command is None:
+							# so no, we are not going to send this, that was a last-minute bail, let's fetch the next item from the queue
+							continue
 
-				# we only need to use up a clear if the command we just sent was either a gcode command or if we also
-				# require ack's for unknown commands
-				use_up_clear = self._unknownCommandsNeedAck
-				if gcode is not None:
-					use_up_clear = True
+						# now comes the part where we increase line numbers and send stuff - no turning back now
+						if (gcode is not None or self._sendChecksumWithUnknownCommands) and (self.isPrinting() or self._alwaysSendChecksum):
+							linenumber = self._currentLine
+							self._addToLastLines(command)
+							self._currentLine += 1
+							self._doSendWithChecksum(command, linenumber)
+						else:
+							self._doSendWithoutChecksum(command)
 
-				# if we need to use up a clear, do that now
-				if use_up_clear:
-					self._clear_to_send.clear()
+					# trigger "sent" phase and use up one "ok"
+					self._process_command_phase("sent", command, command_type, gcode=gcode)
+
+					# we only need to use up a clear if the command we just sent was either a gcode command or if we also
+					# require ack's for unknown commands
+					use_up_clear = self._unknownCommandsNeedAck
+					if gcode is not None:
+						use_up_clear = True
+
+					# if we need to use up a clear, do that now
+					if use_up_clear:
+						self._clear_to_send.clear()
+
+				finally:
+					# no matter _how_ we exit this block, we signal that we
+					# are done processing the last fetched queue entry
+					self._send_queue.task_done()
 
 				# now we just wait for the next clear and then start again
 				self._clear_to_send.wait()
@@ -1645,12 +1691,12 @@ class MachineCom(object):
 				self._logger.exception("Unexpected error while writing to serial port")
 				self._log("Unexpected error while writing to serial port: %s" % (get_exception_string()))
 				self._errorValue = get_exception_string()
-				self.close(True)
+				self.close(is_error=True)
 		except:
 			self._logger.exception("Unexpected error while writing to serial port")
 			self._log("Unexpected error while writing to serial port: %s" % (get_exception_string()))
 			self._errorValue = get_exception_string()
-			self.close(True)
+			self.close(is_error=True)
 
 	##~~ command handlers
 

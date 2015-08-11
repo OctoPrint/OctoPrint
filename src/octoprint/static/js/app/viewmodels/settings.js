@@ -145,6 +145,7 @@ $(function() {
         self.scripts_gcode_afterPrintPaused = ko.observable(undefined);
         self.scripts_gcode_beforePrintResumed = ko.observable(undefined);
         self.scripts_gcode_afterPrinterConnected = ko.observable(undefined);
+        self.scripts_gcode_beforePrinterDisconnected = ko.observable(undefined);
 
         self.temperature_profiles = ko.observableArray(undefined);
         self.temperature_cutoff = ko.observable(undefined);
@@ -440,6 +441,7 @@ $(function() {
             self.scripts_gcode_afterPrintPaused(response.scripts.gcode.afterPrintPaused);
             self.scripts_gcode_beforePrintResumed(response.scripts.gcode.beforePrintResumed);
             self.scripts_gcode_afterPrinterConnected(response.scripts.gcode.afterPrinterConnected);
+            self.scripts_gcode_beforePrinterDisconnected(response.scripts.gcode.beforePrinterDisconnected);
 
             self.temperature_profiles(response.temperature.profiles);
             self.temperature_cutoff(response.temperature.cutoff);
@@ -535,7 +537,8 @@ $(function() {
                             "afterPrintCancelled": self.scripts_gcode_afterPrintCancelled(),
                             "afterPrintPaused": self.scripts_gcode_afterPrintPaused(),
                             "beforePrintResumed": self.scripts_gcode_beforePrintResumed(),
-                            "afterPrinterConnected": self.scripts_gcode_afterPrinterConnected()
+                            "afterPrinterConnected": self.scripts_gcode_afterPrinterConnected(),
+                            "beforePrinterDisconnected": self.scripts_gcode_beforePrinterDisconnected()
                         }
                     },
                     "server": {

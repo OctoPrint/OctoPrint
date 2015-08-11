@@ -191,7 +191,9 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		 will be attempted.
 		"""
 		if self._comm is not None:
-			self._comm.close()
+			self.disconnect()
+
+		eventManager().fire(Events.CONNECTING)
 		self._printerProfileManager.select(profile)
 		self._comm = comm.MachineCom(port, baudrate, callbackObject=self, printerProfileManager=self._printerProfileManager)
 
@@ -199,11 +201,11 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		"""
 		 Closes the connection to the printer.
 		"""
+		eventManager().fire(Events.DISCONNECTING)
 		if self._comm is not None:
 			self._comm.close()
-		self._comm = None
-		self._printerProfileManager.deselect()
-		eventManager().fire(Events.DISCONNECTED)
+		else:
+			eventManager().fire(Events.DISCONNECTED)
 
 	def get_transport(self):
 
@@ -426,14 +428,17 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 				payload["origin"] = FileDestinations.SDCARD
 			eventManager().fire(Events.PRINT_FAILED, payload)
 
-	def get_state_string(self):
-		"""
-		 Returns a human readable string corresponding to the current communication state.
-		"""
+	def get_state_string(self, state=None):
 		if self._comm is None:
 			return "Offline"
 		else:
-			return self._comm.getStateString()
+			return self._comm.getStateString(state=state)
+
+	def get_state_id(self, state=None):
+		if self._comm is None:
+			return "OFFLINE"
+		else:
+			return self._comm.getStateId(state=state)
 
 	def get_current_data(self):
 		return self._stateMonitor.get_current_data()
@@ -560,6 +565,12 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 	def _setState(self, state):
 		self._state = state
 		self._stateMonitor.set_state({"text": self.get_state_string(), "flags": self._getStateFlags()})
+
+		payload = dict(
+			state_id=self.get_state_id(self._state),
+			state_string=self.get_state_string(self._state)
+		)
+		eventManager().fire(Events.PRINTER_STATE_CHANGED, payload)
 
 	def _addLog(self, log):
 		self._log.append(log)
@@ -775,6 +786,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			self._setProgressData(0, None, None, None)
 			self._setCurrentZ(None)
 			self._setJobData(None, None, None)
+			self._printerProfileManager.deselect()
+			eventManager().fire(Events.DISCONNECTED)
 
 		self._setState(state)
 

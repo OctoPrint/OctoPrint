@@ -105,6 +105,7 @@ def getSettings():
 		"scripts": {
 			"gcode": {
 				"afterPrinterConnected": None,
+				"beforePrinterDisconnected": None,
 				"beforePrintStarted": None,
 				"afterPrintCancelled": None,
 				"afterPrintDone": None,

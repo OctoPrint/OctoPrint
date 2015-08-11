@@ -28,8 +28,13 @@ class Events(object):
 	STARTUP = "Startup"
 
 	# connect/disconnect to printer
+	CONNECTING = "Connecting"
 	CONNECTED = "Connected"
+	DISCONNECTING = "Disconnecting"
 	DISCONNECTED = "Disconnected"
+
+	# State changes
+	PRINTER_STATE_CHANGED = "PrinterStateChanged"
 
 	# connect/disconnect by client
 	CLIENT_OPENED = "ClientOpened"

@@ -259,6 +259,31 @@ class PrinterInterface(object):
 		"""
 		raise NotImplementedError()
 
+	def get_state_id(self):
+		"""
+		Identifier of the current communication state.
+
+		Possible values are:
+
+		  * OPEN_SERIAL
+		  * DETECT_SERIAL
+		  * DETECT_BAUDRATE
+		  * CONNECTING
+		  * OPERATIONAL
+		  * PRINTING
+		  * PAUSED
+		  * CLOSED
+		  * ERROR
+		  * CLOSED_WITH_ERROR
+		  * TRANFERING_FILE
+		  * OFFLINE
+		  * UNKNOWN
+		  * NONE
+
+		Returns:
+		     (str) A unique identifier corresponding to the current communication state.
+		"""
+
 	def get_current_data(self):
 		"""
 		Returns:
