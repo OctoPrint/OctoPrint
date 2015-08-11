@@ -739,13 +739,10 @@ class Server():
 			for entry in ("webassets", ".webassets-cache"):
 				path = os.path.join(base_folder, entry)
 				self._logger.debug("Deleting {path}...".format(**locals()))
-				if os.path.isdir(path):
-					shutil.rmtree(path, ignore_errors=True)
-				elif os.path.isfile(path):
-					try:
-						os.remove(path)
-					except:
-						self._logger.exception("Exception while trying to delete {entry} from {base_folder}".format(**locals()))
+				shutil.rmtree(path, ignore_errors=True)
+				self._logger.debug("Creating {path}...".format(**locals()))
+				os.makedirs(path)
+				self._logger.info("Reset webasset folder {path}...".format(**locals()))
 
 		AdjustedEnvironment = type(Environment)(Environment.__name__, (Environment,), dict(
 			resolver_class=util.flask.PluginAssetResolver
