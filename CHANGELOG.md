@@ -33,6 +33,8 @@
     before disconnecting from the printer for good. This way it is ensured that
     the `beforePrinterDisconnected` script or any further GCODE injected into it
     will actually get sent.
+* Additional baud rates to allow for connecting can now be specified along side
+  additional serial ports via the settings dialog and the configuration file.
 * Documentation improvements
 
 ### Bug Fixes

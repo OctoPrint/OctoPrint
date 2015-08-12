@@ -31,6 +31,8 @@ try:
 except:
 	pass
 
+_logger = logging.getLogger(__name__)
+
 def serialList():
 	baselist=[]
 	if os.name=="nt":
@@ -64,6 +66,15 @@ def serialList():
 
 def baudrateList():
 	ret = [250000, 230400, 115200, 57600, 38400, 19200, 9600]
+	additionalBaudrates = settings().get(["serial", "additionalBaudrates"])
+	for additional in additionalBaudrates:
+		try:
+			ret.append(int(additional))
+		except:
+			_logger.warn("{} is not a valid additional baudrate, ignoring it".format(additional))
+
+	ret.sort(reverse=True)
+
 	prev = settings().getInt(["serial", "baudrate"])
 	if prev in ret:
 		ret.remove(prev)

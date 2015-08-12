@@ -131,6 +131,7 @@ $(function() {
         self.serial_timeoutSdStatus = ko.observable(undefined);
         self.serial_log = ko.observable(undefined);
         self.serial_additionalPorts = ko.observable(undefined);
+        self.serial_additionalBaudrates = ko.observable(undefined);
         self.serial_longRunningCommands = ko.observable(undefined);
 
         self.folder_uploads = ko.observable(undefined);
@@ -430,6 +431,7 @@ $(function() {
             self.serial_timeoutSdStatus(response.serial.timeoutSdStatus);
             self.serial_log(response.serial.log);
             self.serial_additionalPorts(response.serial.additionalPorts.join("\n"));
+            self.serial_additionalBaudrates(response.serial.additionalBaudrates.join(", "));
             self.serial_longRunningCommands(response.serial.longRunningCommands.join(", "));
 
             self.folder_uploads(response.folder.uploads);
@@ -518,6 +520,7 @@ $(function() {
                         "timeoutSdStatus": self.serial_timeoutSdStatus(),
                         "log": self.serial_log(),
                         "additionalPorts": commentableLinesToArray(self.serial_additionalPorts()),
+                        "additionalBaudrates": _.map(splitTextToArray(self.serial_additionalBaudrates(), ",", true, function(item) { return !isNaN(parseInt(item)); }), function(item) { return parseInt(item); }),
                         "longRunningCommands": splitTextToArray(self.serial_longRunningCommands(), ",", true)
                     },
                     "folder": {

@@ -83,6 +83,7 @@ default_settings = {
 			"sdStatus": 1
 		},
 		"additionalPorts": [],
+		"additionalBaudrates": [],
 		"longRunningCommands": ["G4", "G28", "G29", "G30", "G32", "M400", "M226"]
 	},
 	"server": {

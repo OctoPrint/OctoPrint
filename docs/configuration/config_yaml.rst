@@ -611,6 +611,10 @@ Use the following settings to configure the serial connection to the printer:
      additionalPorts:
      - /dev/myPrinterSymlink
 
+     # Use this to define additional baud rates to offer for connecting to serial ports. Must be a
+     # valid integer. Defaults to not set
+     - 123456
+
 .. _sec-configuration-config_yaml-server:
 
 Server
