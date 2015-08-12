@@ -279,20 +279,25 @@ $(function() {
                 type: "GET",
                 dataType: "json",
                 success: function(response) {
-                    var callbacks = self.callbacks;
-                    self.callbacks = [];
-
                     if (callback) {
-                        callbacks.push(callback);
+                        self.callbacks.push(callback);
                     }
 
                     try {
                         self.fromResponse(response);
-                        _.each(callbacks, function(cb) {
-                            cb();
-                        });
+
+                        var cb;
+                        while (self.callbacks.length) {
+                            cb = self.callbacks.shift();
+                            try {
+                                cb();
+                            } catch(exc) {
+                                log.error("Error calling settings callback", cb, ":", (exc.stack || exc));
+                            }
+                        }
                     } finally {
                         self.receiving(false);
+                        self.callbacks = [];
                     }
                 },
                 error: function(xhr) {
