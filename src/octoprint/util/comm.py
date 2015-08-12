@@ -160,6 +160,12 @@ class MachineCom(object):
 		self._pauseWaitTimeLost = 0.0
 		self._currentTool = 0
 
+		self._triggerTemperatureEvent = dict()  # Keyed by B, T0, T1, ...
+		self._temperatureWithinLimitStartTime = dict()
+		self._temperatureValueThreshold = settings().getFloat(["temperature", "targetEvents", "valueThreshold"])
+		self._temperatureTimeThreshold = settings().getFloat(["temperature", "targetEvents", "timeThreshold"])
+		self._temperatureManualOnly = settings().getBoolean(["temperature", "targetEvents", "manualOnly"])
+
 		self._long_running_command = False
 		self._heating = False
 
@@ -554,6 +560,13 @@ class MachineCom(object):
 		self._pauseWaitStartTime = 0
 		self._pauseWaitTimeLost = 0.0
 
+		if self._temperatureManualOnly:
+			# manualOnly semantics: If user manually commands a temperature change
+			# but starts a print before the target is reached,
+			# then no event will ever be triggered during the print
+			for tool in self._triggerTemperatureEvent:
+				self._resetTemperatureEvent(tool, triggerFlag = False)
+
 		try:
 			self._currentFile.start()
 
@@ -757,6 +770,32 @@ class MachineCom(object):
 		self._callback.on_comm_sd_state_change(self._sdAvailable)
 		self._callback.on_comm_sd_files(self._sdFiles)
 
+	##~~ temperature monitoring
+
+	def _resetTemperatureEvent(self, tool, triggerFlag = False):
+		self._triggerTemperatureEvent[tool] = triggerFlag
+		self._temperatureWithinLimitStartTime[tool] = None
+
+	def _checkTemperatureEvent(self, tool, actual, target):
+		if self._temperatureManualOnly and self.isPrinting():
+			return
+		if not self._triggerTemperatureEvent.get(tool, False):
+			return
+		if abs(actual - target) > self._temperatureValueThreshold:
+			return
+		now = time.time()
+		startTime = self._temperatureWithinLimitStartTime.get(tool, None)
+		if startTime is None:
+			self._temperatureWithinLimitStartTime[tool] = now
+		elif (now - startTime) > self._temperatureTimeThreshold and not self._heating:
+			self._logger.debug("Triggering target temperature event for tool %s" % tool)
+			eventManager().fire(Events.TARGET_TEMPERATURE_REACHED, {
+				"tool": tool,
+				"target": target,
+				"actual": actual
+			})
+			self._resetTemperatureEvent(tool, triggerFlag = False)
+
 	##~~ communication monitoring and handling
 
 	def _parseTemperatures(self, line):
@@ -792,13 +831,13 @@ class MachineCom(object):
 			# no T1 so only single reporting, "T" is our one and only extruder temperature
 			toolNum, actual, target = parsedTemps["T"]
 
+			if target is None and \
+			   (0 in self._temp.keys() and self._temp[0] is not None and isinstance(self._temp[0], tuple)):
+				(oldActual, target) = self._temp[0]  # Use old target instead
+
+			self._temp[0] = (actual, target)
 			if target is not None:
-				self._temp[0] = (actual, target)
-			elif 0 in self._temp.keys() and self._temp[0] is not None and isinstance(self._temp[0], tuple):
-				(oldActual, oldTarget) = self._temp[0]
-				self._temp[0] = (actual, oldTarget)
-			else:
-				self._temp[0] = (actual, None)
+				self._checkTemperatureEvent("T0", actual, target)
 		elif not "T0" in parsedTemps.keys() and "T" in parsedTemps.keys():
 			# Smoothieware sends multi extruder temperature data this way: "T:<first extruder> T1:<second extruder> ..." and therefore needs some special treatment...
 			_, actual, target = parsedTemps["T"]
@@ -812,24 +851,24 @@ class MachineCom(object):
 					continue
 
 				toolNum, actual, target = parsedTemps[tool]
+				if target is None and \
+				   (toolNum in self._temp.keys() and self._temp[toolNum] is not None and isinstance(self._temp[toolNum], tuple)):
+					(oldActual, target) = self._temp[toolNum]  # Use old target instead
+
+				self._temp[toolNum] = (actual, target)
 				if target is not None:
-					self._temp[toolNum] = (actual, target)
-				elif toolNum in self._temp.keys() and self._temp[toolNum] is not None and isinstance(self._temp[toolNum], tuple):
-					(oldActual, oldTarget) = self._temp[toolNum]
-					self._temp[toolNum] = (actual, oldTarget)
-				else:
-					self._temp[toolNum] = (actual, None)
+					self._checkTemperatureEvent(tool, actual, target)
 
 		# bed temperature
 		if "B" in parsedTemps.keys():
 			toolNum, actual, target = parsedTemps["B"]
+			if target is None and \
+			   (self._bedTemp is not None and isinstance(self._bedTemp, tuple)):
+				(oldActual, target) = self._bedTemp  # Use old target instead
+
+			self._bedTemp = (actual, target)
 			if target is not None:
-				self._bedTemp = (actual, target)
-			elif self._bedTemp is not None and isinstance(self._bedTemp, tuple):
-				(oldActual, oldTarget) = self._bedTemp
-				self._bedTemp = (actual, oldTarget)
-			else:
-				self._bedTemp = (actual, None)
+				self._checkTemperatureEvent("B", actual, target)
 
 	##~~ Serial monitor processing received messages
 
@@ -946,6 +985,14 @@ class MachineCom(object):
 						self._logger.debug("Externally triggered heatup detected")
 						self._heating = True
 						self._heatupWaitStartTime = time.time()
+
+						# TODO - Gina, pls check, I don't have an LCD - Spiros
+						for match in re.finditer(self._regex_temp, line):  # can there be more than one temperatures in the line, or just one? - Spiros
+							tool = match.group(1)
+							if tool == "T":
+								tool = "T0"  # is this right, or should be currently selected tool? - Spiros
+							self._resetTemperatureEvent(tool, triggerFlag = True)
+							
 					self._processTemperatures(line)
 					self._callback.on_comm_temperature_update(self._temp, self._bedTemp)
 
@@ -1748,6 +1795,7 @@ class MachineCom(object):
 					self._temp[toolNum] = (actual, target)
 				else:
 					self._temp[toolNum] = (None, target)
+				self._resetTemperatureEvent("T%d" % toolNum, triggerFlag = True)
 			except ValueError:
 				pass
 
@@ -1761,6 +1809,7 @@ class MachineCom(object):
 					self._bedTemp = (actual, target)
 				else:
 					self._bedTemp = (None, target)
+				self._resetTemperatureEvent("B", triggerFlag = True)
 			except ValueError:
 				pass
 

@@ -171,7 +171,12 @@ default_settings = {
 			{"name": "ABS", "extruder" : 210, "bed" : 100 },
 			{"name": "PLA", "extruder" : 180, "bed" : 60 }
 		],
-		"cutoff": 30
+		"cutoff": 30,
+		"targetEvents": {
+			"valueThreshold": 2.0,
+			"timeThreshold": 8.0,
+			"manualOnly": True
+		}
 	},
 	"printerProfiles": {
 		"default": None,

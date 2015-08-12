@@ -76,6 +76,9 @@ class Events(object):
 	E_STOP = "EStop"
 	REGISTERED_MESSAGE_RECEIVED = "RegisteredMessageReceived"
 
+	# Temperature
+	TARGET_TEMPERATURE_REACHED = "TargetTemperatureReached"
+
 	# Timelapse
 	CAPTURE_START = "CaptureStart"
 	CAPTURE_DONE = "CaptureDone"
