@@ -86,6 +86,7 @@ default_settings = {
 		},
 		"additionalPorts": [],
 		"longRunningCommands": ["G4", "G28", "G29", "G30", "G32"],
+		"checksumRequiringCommands": ["M110"],
 		"disconnectOnErrors": True,
 		"ignoreErrorsFromFirmware": False
 	},

@@ -611,6 +611,27 @@ Use the following settings to configure the serial connection to the printer:
      additionalPorts:
      - /dev/myPrinterSymlink
 
+     # Commands which are known to take a long time to be acknowledged by the firmware. E.g.
+     # homing, dwelling, auto leveling etc. Defaults to the below commands.
+     longRunningCommands:
+     - G4
+     - G28
+     - G29
+     - G30
+     - G32
+     - M400
+     - M226
+
+     # Commands which need to always be send with a checksum. Defaults to only M110
+     checksumRequiringCommands:
+     - M110
+
+     # Command to send in order to initiate a handshake with the printer.
+     # Defaults to "M110 N0" which simply resets the line numbers in the firmware and which
+     # should be acknowledged with a simple "ok".
+     helloCommand:
+     - M110 N0
+
 .. _sec-configuration-config_yaml-server:
 
 Server

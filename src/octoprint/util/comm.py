@@ -229,6 +229,8 @@ class MachineCom(object):
 
 		self._timeout = None
 
+		self._hello_command = settings().get(["serial", "helloCommand"])
+
 		self._alwaysSendChecksum = settings().getBoolean(["feature", "alwaysSendChecksum"])
 		self._sendChecksumWithUnknownCommands = settings().getBoolean(["feature", "sendChecksumWithUnknownCommands"])
 		self._unknownCommandsNeedAck = settings().getBoolean(["feature", "unknownCommandsNeedAck"])
@@ -245,6 +247,9 @@ class MachineCom(object):
 
 		self._disconnect_on_errors = settings().getBoolean(["serial", "disconnectOnErrors"])
 		self._ignore_errors = settings().getBoolean(["serial", "ignoreErrorsFromFirmware"])
+
+		self._long_running_commands = settings().get(["serial", "longRunningCommands"])
+		self._checksum_requiring_commands = settings().get(["serial", "checksumRequiringCommands"])
 
 		self._clear_to_send = CountedEvent(max=10, name="comm.clear_to_send")
 		self._send_queue = TypedQueue()
@@ -276,10 +281,6 @@ class MachineCom(object):
 
 		# print job
 		self._currentFile = None
-
-		# regexes
-
-		self._long_running_commands = settings().get(["serial", "longRunningCommands"])
 
 		# multithreading locks
 		self._sendNextLock = threading.Lock()
@@ -498,7 +499,7 @@ class MachineCom(object):
 	def fakeOk(self):
 		self._clear_to_send.set()
 
-	def sendCommand(self, cmd, cmd_type=None, processed=False):
+	def sendCommand(self, cmd, cmd_type=None, processed=False, force=False):
 		cmd = to_unicode(cmd, errors="replace")
 		if not processed:
 			cmd = process_gcode_line(cmd)
@@ -507,7 +508,7 @@ class MachineCom(object):
 
 		if self.isPrinting() and not self.isSdFileSelected():
 			self._commandQueue.put((cmd, cmd_type))
-		elif self.isOperational():
+		elif self.isOperational() or force:
 			self._sendCommand(cmd, cmd_type=cmd_type)
 
 	def sendGcodeScript(self, scriptName, replacements=None):
@@ -579,7 +580,7 @@ class MachineCom(object):
 
 			self._changeState(self.STATE_PRINTING)
 
-			self.sendCommand("M110 N0")
+			self.resetLineNumbers()
 
 			payload = {
 				"file": self._currentFile.getFilename(),
@@ -809,6 +810,16 @@ class MachineCom(object):
 		self._callback.on_comm_sd_state_change(self._sdAvailable)
 		self._callback.on_comm_sd_files(self._sdFiles)
 
+	def sayHello(self):
+		self.sendCommand(self._hello_command, force=True)
+		self._clear_to_send.set()
+
+	def resetLineNumbers(self, number=0):
+		if not self.isOperational():
+			return
+
+		self.sendCommand("M110 N%d" % number)
+
 	##~~ record aborted file positions
 
 	def _recordFilePosition(self):
@@ -887,10 +898,9 @@ class MachineCom(object):
 		connection_timeout = settings().getFloat(["serial", "timeout", "connection"])
 		detection_timeout = settings().getFloat(["serial", "timeout", "detection"])
 
-		# enqueue an M105 first thing
+		# enqueue the "hello command" first thing
 		if try_hello:
-			self._sendCommand("M110")
-			self._clear_to_send.set()
+			self.sayHello()
 
 		while self._monitoring_active:
 			try:
@@ -1122,8 +1132,7 @@ class MachineCom(object):
 							self._baudrateDetectRetry -= 1
 							self._serial.write('\n')
 							self._log("Baudrate test retry: %d" % (self._baudrateDetectRetry))
-							self._sendCommand("M110")
-							self._clear_to_send.set()
+							self.sayHello()
 						elif len(self._baudrateDetectList) > 0:
 							baudrate = self._baudrateDetectList.pop(0)
 							try:
@@ -1134,8 +1143,7 @@ class MachineCom(object):
 								self._baudrateDetectRetry = 5
 								self._timeout = get_new_timeout("communication")
 								self._serial.write('\n')
-								self._sendCommand("M110")
-								self._clear_to_send.set()
+								self.sayHello()
 							except:
 								self._log("Unexpected error while setting baudrate: %d %s" % (baudrate, get_exception_string()))
 						else:
@@ -1151,8 +1159,7 @@ class MachineCom(object):
 				elif self._state == self.STATE_CONNECTING:
 					if "start" in line and not startSeen:
 						startSeen = True
-						self._sendCommand("M110")
-						self._clear_to_send.set()
+						self.sayHello()
 					elif line.startswith("ok"):
 						self._onConnected()
 					elif time.time() > self._timeout:
@@ -1275,6 +1282,8 @@ class MachineCom(object):
 		self._temperature_timer.start()
 
 		self._changeState(self.STATE_OPERATIONAL)
+
+		self.resetLineNumbers()
 
 		if self._sdAvailable:
 			self.refreshSdFiles()
@@ -1653,8 +1662,12 @@ class MachineCom(object):
 						continue
 
 					# now comes the part where we increase line numbers and send stuff - no turning back now
+					command_requiring_checksum = gcode is not None and gcode in self._checksum_requiring_commands
+					command_allowing_checksum = gcode is not None or self._sendChecksumWithUnknownCommands
+					checksum_enabled = self.isPrinting() or self._alwaysSendChecksum
+
 					command_to_send = command.encode("ascii", errors="replace")
-					if (gcode is not None or self._sendChecksumWithUnknownCommands) and (self.isPrinting() or self._alwaysSendChecksum):
+					if command_requiring_checksum or (command_allowing_checksum and checksum_enabled):
 						self._doIncrementAndSendWithChecksum(command_to_send)
 					else:
 						self._doSendWithoutChecksum(command_to_send)
