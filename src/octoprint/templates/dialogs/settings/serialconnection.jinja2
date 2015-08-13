@@ -71,13 +71,6 @@
         </div>
     </div>
     <div class="control-group">
-        <label class="control-label" for="settings-serialLongRunningCommands">{{ _('Long running commands') }}</label>
-        <div class="controls">
-            <input type="text" class="input-block-level" id="settings-serialLongRunningCommands" data-bind="value: serial_longRunningCommands">
-            <span class="help-inline">{{ _('Use this to specify the commands known to take a long time to complete without output from your printer and hence might cause timeout issues. Just the G or M code, comma separated.')|format(glob_url="http://docs.python.org/2/library/glob.html") }}</span>
-        </div>
-    </div>
-    <div class="control-group">
         <label class="control-label" for="settings-serialAdditionalPorts">{{ _('Additional serial ports') }}</label>
         <div class="controls">
             <textarea rows="4" class="block" id="settings-serialAdditionalPorts" data-bind="value: serial_additionalPorts"></textarea>
@@ -98,4 +91,32 @@
             </label>
         </div>
     </div>
+
+    <div>
+        <div><small><a href="#" class="muted" onclick="$(this).children().toggleClass('icon-caret-right icon-caret-down').parent().parent().parent().next().slideToggle('fast')"><i class="icon-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
+        <div class="hide">
+            <div class="control-group" title="{{ _('Command to send to the firmware on first handshake attempt.') }}">
+                <label class="control-label" for="settings-serialHelloCommand">{{ _('"Hello" command') }}</label>
+                <div class="controls">
+                    <input type="text" class="input-block-level" id="settings-serialHelloCommand" data-bind="value: serial_helloCommand">
+                    <span class="help-inline">{{ _('Use this to specify a different command than the default <code>M110</code> to send to the printer on initial connection to trigger a communication handshake.') }}</span>
+                </div>
+            </div>
+            <div class="control-group" title="{{ _('Commands that are know to run long and hence should suppress communication timeouts from being triggered.') }}">
+                <label class="control-label" for="settings-serialLongRunningCommands">{{ _('Long running commands') }}</label>
+                <div class="controls">
+                    <input type="text" class="input-block-level" id="settings-serialLongRunningCommands" data-bind="value: serial_longRunningCommands">
+                    <span class="help-inline">{{ _('Use this to specify the commands known to take a long time to complete without output from your printer and hence might cause timeout issues. Just the G or M code, comma separated.') }}</span>
+                </div>
+            </div>
+            <div class="control-group" title="{{ _('Commands that always require a line number and checksum to be sent with them.') }}">
+                <label class="control-label" for="settings-serialChecksumRequiringCommands">{{ _('Commands that always require a checksum') }}</label>
+                <div class="controls">
+                    <input type="text" class="input-block-level" id="settings-serialChecksumRequiringCommands" data-bind="value: serial_checksumRequiringCommands">
+                    <span class="help-inline">{{ _('Use this to specify which commands <strong>always</strong> need to be sent with a checksum. Comma separated list.') }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </form>

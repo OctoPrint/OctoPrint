@@ -136,6 +136,8 @@ $(function() {
         self.serial_log = ko.observable(undefined);
         self.serial_additionalPorts = ko.observable(undefined);
         self.serial_longRunningCommands = ko.observable(undefined);
+        self.serial_checksumRequiringCommands = ko.observable(undefined);
+        self.serial_helloCommand = ko.observable(undefined);
         self.serial_ignoreErrorsFromFirmware = ko.observable(undefined);
         self.serial_disconnectOnErrors = ko.observable(undefined);
 
@@ -452,6 +454,8 @@ $(function() {
             self.serial_log(response.serial.log);
             self.serial_additionalPorts(response.serial.additionalPorts.join("\n"));
             self.serial_longRunningCommands(response.serial.longRunningCommands.join(", "));
+            self.serial_checksumRequiringCommands(response.serial.checksumRequiringCommands.join(", "));
+            self.serial_helloCommand(response.serial.helloCommand);
             self.serial_ignoreErrorsFromFirmware(response.serial.ignoreErrorsFromFirmware);
             self.serial_disconnectOnErrors(response.serial.disconnectOnErrors);
 
@@ -541,6 +545,8 @@ $(function() {
                         "log": self.serial_log(),
                         "additionalPorts": commentableLinesToArray(self.serial_additionalPorts()),
                         "longRunningCommands": splitTextToArray(self.serial_longRunningCommands(), ",", true),
+                        "checksumRequiringCommands": splitTextToArray(self.serial_checksumRequiringCommands(), ",", true),
+                        "helloCommand": self.serial_helloCommand(),
                         "ignoreErrorsFromFirmware": self.serial_ignoreErrorsFromFirmware(),
                         "disconnectOnErrors": self.serial_disconnectOnErrors()
                     },
