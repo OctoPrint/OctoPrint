@@ -16,16 +16,27 @@ from serial import SerialTimeoutException
 from octoprint.settings import settings
 from octoprint.plugin import plugin_manager
 
-class VirtualPrinter():
+class VirtualPrinter(object):
 	command_regex = re.compile("[GM]\d+")
 	sleep_regex = re.compile("sleep (\d+)")
 	sleep_after_regex = re.compile("sleep_after ([GM]\d+) (\d+)")
 	sleep_after_next_regex = re.compile("sleep_after_next ([GM]\d+) (\d+)")
 	custom_action_regex = re.compile("action_custom ([a-zA-Z0-9_]+)(\s+.*)?")
 
-	def __init__(self, read_timeout=5.0, write_timeout=10.0):
+	def __init__(self, seriallog_handler=None, read_timeout=5.0, write_timeout=10.0):
 		import logging
 		self._logger = logging.getLogger("octoprint.plugin.virtual_printer.VirtualPrinter")
+
+		self._seriallog = logging.getLogger("octoprint.plugin.virtual_printer.VirtualPrinter.serial")
+		self._seriallog.setLevel(logging.CRITICAL)
+		self._seriallog.propagate = False
+
+		if seriallog_handler is not None:
+			import logging.handlers
+			self._seriallog.addHandler(seriallog_handler)
+			self._seriallog.setLevel(logging.INFO)
+
+		self._seriallog.info("-"*78)
 
 		self._read_timeout = read_timeout
 		self._write_timeout = write_timeout
@@ -664,6 +675,7 @@ class VirtualPrinter():
 				return
 			try:
 				self.incoming.put(data, timeout=self._write_timeout)
+				self._seriallog.info("<<< {}".format(data.strip()))
 			except Queue.Full:
 				self._logger.info("Incoming queue is full, raising SerialTimeoutException")
 				raise SerialTimeoutException()
@@ -675,6 +687,7 @@ class VirtualPrinter():
 		try:
 			line = self.outgoing.get(timeout=self._read_timeout)
 			time.sleep(settings().getFloat(["devel", "virtualPrinter", "throttle"]))
+			self._seriallog.info(">>> {}".format(line.strip()))
 			return line
 		except Queue.Empty:
 			return ""
