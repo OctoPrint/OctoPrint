@@ -92,7 +92,7 @@
                 <label class="control-label" for="settings-serialHelloCommand">{{ _('"Hello" command') }}</label>
                 <div class="controls">
                     <input type="text" class="input-block-level" id="settings-serialHelloCommand" data-bind="value: serial_helloCommand">
-                    <span class="help-inline">{{ _('Use this to specify the commands known to take a long time to complete without output from your printer and hence might cause timeout issues. Just the G or M code, comma separated.')|format(glob_url="http://docs.python.org/2/library/glob.html") }}</span>
+                    <span class="help-inline">{{ _('Use this to specify a different command than the default <code>M110</code> to send to the printer on initial connection to trigger a communication handshake.') }}</span>
                 </div>
             </div>
             <div class="control-group" title="{{ _('Commands that are know to run long and hence should suppress communication timeouts from being triggered.') }}">
