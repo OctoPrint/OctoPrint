@@ -1390,7 +1390,7 @@ class MachineCom(object):
 		return line
 
 	def _readline(self):
-		if self._serial == None or self._connection_closing:
+		if self._serial is None:
 			return None
 
 		try:
@@ -1724,7 +1724,7 @@ class MachineCom(object):
 		self._doSendWithoutChecksum(commandToSend)
 
 	def _doSendWithoutChecksum(self, cmd):
-		if self._serial is None or self._connection_closing:
+		if self._serial is None:
 			return
 
 		self._log("Send: %s" % cmd)
