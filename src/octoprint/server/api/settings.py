@@ -85,7 +85,9 @@ def getSettings():
 			"log": s.getBoolean(["serial", "log"]),
 			"additionalPorts": s.get(["serial", "additionalPorts"]),
 			"additionalBaudrates": s.get(["serial", "additionalBaudrates"]),
-			"longRunningCommands": s.get(["serial", "longRunningCommands"])
+			"longRunningCommands": s.get(["serial", "longRunningCommands"]),
+			"checksumRequiringCommands": s.get(["serial", "checksumRequiringCommands"]),
+			"helloCommand": s.get(["serial", "helloCommand"])
 		},
 		"folder": {
 			"uploads": s.getBaseFolder("uploads"),
@@ -223,6 +225,8 @@ def setSettings():
 		if "additionalPorts" in data["serial"] and isinstance(data["serial"]["additionalPorts"], (list, tuple)): s.set(["serial", "additionalPorts"], data["serial"]["additionalPorts"])
 		if "additionalBaudrates" in data["serial"] and isinstance(data["serial"]["additionalBaudrates"], (list, tuple)): s.set(["serial", "additionalBaudrates"], data["serial"]["additionalBaudrates"])
 		if "longRunningCommands" in data["serial"] and isinstance(data["serial"]["longRunningCommands"], (list, tuple)): s.set(["serial", "longRunningCommands"], data["serial"]["longRunningCommands"])
+		if "checksumRequiringCommands" in data["serial"] and isinstance(data["serial"]["checksumRequiringCommands"], (list, tuple)): s.set(["serial", "checksumRequiringCommands"], data["serial"]["checksumRequiringCommands"])
+		if "helloCommand" in data["serial"]: s.set(["serial", "helloCommand"], data["serial"]["helloCommand"])
 
 		oldLog = s.getBoolean(["serial", "log"])
 		if "log" in data["serial"].keys(): s.setBoolean(["serial", "log"], data["serial"]["log"])
