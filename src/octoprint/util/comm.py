@@ -384,6 +384,10 @@ class MachineCom(object):
 	##~~ external interface
 
 	def close(self, isError = False):
+		if self._connection_closing:
+			return
+		self._connection_closing = True
+
 		if self._temperature_timer is not None:
 			try:
 				self._temperature_timer.cancel()
@@ -1322,7 +1326,7 @@ class MachineCom(object):
 		return line
 
 	def _readline(self):
-		if self._serial is None:
+		if self._serial == None or self._connection_closing:
 			return None
 
 		try:
@@ -1642,7 +1646,7 @@ class MachineCom(object):
 		self._doSendWithoutChecksum(commandToSend)
 
 	def _doSendWithoutChecksum(self, cmd):
-		if self._serial is None:
+		if self._serial is None or self._connection_closing:
 			return
 
 		self._log("Send: %s" % cmd)
