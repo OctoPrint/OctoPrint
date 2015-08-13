@@ -1373,7 +1373,8 @@ class MachineCom(object):
 		try:
 			ret = self._serial.readline()
 		except:
-			self._log("Unexpected error while reading serial port: %s" % (get_exception_string()))
+			self._logger.exception("Unexpected error while reading from serial port")
+			self._log("Unexpected error while reading serial port, please consult octoprint.log for details: %s" % (get_exception_string()))
 			self._errorValue = get_exception_string()
 			self.close(is_error=True)
 			return None
