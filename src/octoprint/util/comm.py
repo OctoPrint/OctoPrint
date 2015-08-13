@@ -162,6 +162,7 @@ class MachineCom(object):
 
 		self._long_running_command = False
 		self._heating = False
+		self._connection_closing = False
 
 		self._timeout = None
 
@@ -429,6 +430,10 @@ class MachineCom(object):
 		# legacy parameters
 		is_error = kwargs.get("isError", is_error)
 
+		if self._connection_closing:
+			return
+		self._connection_closing = True
+
 		if self._temperature_timer is not None:
 			try:
 				self._temperature_timer.cancel()
@@ -453,7 +458,13 @@ class MachineCom(object):
 					self._send_queue.join()
 
 			deactivate_monitoring_and_send_queue()
-			self._serial.close()
+
+			try:
+				self._serial.close()
+			except:
+				self._logger.exception("Error while trying to close serial port")
+				is_error = True
+
 			if is_error:
 				self._changeState(self.STATE_CLOSED_WITH_ERROR)
 			else:
@@ -1379,15 +1390,17 @@ class MachineCom(object):
 		return line
 
 	def _readline(self):
-		if self._serial == None:
+		if self._serial == None or self._connection_closing:
 			return None
+
 		try:
 			ret = self._serial.readline()
 		except:
-			self._logger.exception("Unexpected error while reading from serial port")
-			self._log("Unexpected error while reading serial port, please consult octoprint.log for details: %s" % (get_exception_string()))
-			self._errorValue = get_exception_string()
-			self.close(is_error=True)
+			if not self._connection_closing:
+				self._logger.exception("Unexpected error while reading from serial port")
+				self._log("Unexpected error while reading serial port, please consult octoprint.log for details: %s" % (get_exception_string()))
+				self._errorValue = get_exception_string()
+				self.close(is_error=True)
 			return None
 		if ret == '':
 			#self._log("Recv: TIMEOUT")
@@ -1711,6 +1724,9 @@ class MachineCom(object):
 		self._doSendWithoutChecksum(commandToSend)
 
 	def _doSendWithoutChecksum(self, cmd):
+		if self._serial is None or self._connection_closing:
+			return
+
 		self._log("Send: %s" % cmd)
 		try:
 			self._serial.write(cmd + '\n')
@@ -1719,15 +1735,17 @@ class MachineCom(object):
 			try:
 				self._serial.write(cmd + '\n')
 			except:
+				if not self._connection_closing:
+					self._logger.exception("Unexpected error while writing to serial port")
+					self._log("Unexpected error while writing to serial port: %s" % (get_exception_string()))
+					self._errorValue = get_exception_string()
+					self.close(is_error=True)
+		except:
+			if not self._connection_closing:
 				self._logger.exception("Unexpected error while writing to serial port")
 				self._log("Unexpected error while writing to serial port: %s" % (get_exception_string()))
 				self._errorValue = get_exception_string()
 				self.close(is_error=True)
-		except:
-			self._logger.exception("Unexpected error while writing to serial port")
-			self._log("Unexpected error while writing to serial port: %s" % (get_exception_string()))
-			self._errorValue = get_exception_string()
-			self.close(is_error=True)
 
 	##~~ command handlers
 
