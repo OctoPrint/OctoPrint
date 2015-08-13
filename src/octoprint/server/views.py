@@ -230,9 +230,30 @@ def index():
 		# finally add anything that's not included in our order yet
 		sorted_missing = list(missing_in_order)
 		if template_sorting[t]["key"] is not None:
-			# anything but navbar and generic components get sorted by their name
-			if template_sorting[t]["key"] == "name":
-				sorted_missing = sorted(missing_in_order, key=lambda x: templates[t]["entries"][x][0])
+			# default extractor: works with entries that are dicts and entries that are 2-tuples with the
+			# entry data at index 1
+			def extractor(item, key):
+				if isinstance(item, dict) and key in item:
+					return item[key]
+				elif isinstance(item, tuple) and len(item) > 1 and isinstance(item[1], dict) and key in item[1]:
+					return item[1][key]
+
+				return None
+
+			# if template type provides custom extractor, make sure its exceptions are handled
+			if "key_extractor" in template_sorting[t] and callable(template_sorting[t]["key_extractor"]):
+				def create_safe_extractor(extractor):
+					def f(x, k):
+						try:
+							return extractor(x, k)
+						except:
+							_logger.exception("Error while extracting sorting keys for template {}".format(t))
+							return None
+					return f
+				extractor = create_safe_extractor(template_sorting[t]["key_extractor"])
+
+			sort_key = template_sorting[t]["key"]
+			sorted_missing = sorted(missing_in_order, key=lambda x: extractor(templates[t]["entries"][x], sort_key))
 
 		if template_sorting[t]["add"] == "prepend":
 			templates[t]["order"] = sorted_missing + templates[t]["order"]
