@@ -321,7 +321,7 @@ $(function() {
                         .data("contextParent", $(this))
                         .show()
                         .css({
-                            position: "absolute",
+                            position: "fixed",
                             left: getMenuPosition(e.clientX, 'width', 'scrollLeft'),
                             top: getMenuPosition(e.clientY, 'height', 'scrollTop'),
                             "z-index": 9999
