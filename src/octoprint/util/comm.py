@@ -1598,6 +1598,10 @@ class MachineCom(object):
 							# so no, we are not going to send this, that was a last-minute bail, let's fetch the next item from the queue
 							continue
 
+						if command.strip() == "":
+							self._logger.info("Refusing to send an empty line to the printer")
+							continue
+
 						# now comes the part where we increase line numbers and send stuff - no turning back now
 						command_requiring_checksum = gcode is not None and gcode in self._checksum_requiring_commands
 						command_allowing_checksum = gcode is not None or self._sendChecksumWithUnknownCommands
