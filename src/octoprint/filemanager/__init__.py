@@ -155,7 +155,11 @@ class FileManager(object):
 		self._slicing_progress_callbacks.append(callback)
 
 	def unregister_slicingprogress_callback(self, callback):
-		self._slicing_progress_callbacks.remove(callback)
+		try:
+			self._slicing_progress_callbacks.remove(callback)
+		except ValueError:
+			# callback was not registered
+			pass
 
 	def _determine_analysis_backlog(self, storage_type, storage_manager):
 		counter = 0
