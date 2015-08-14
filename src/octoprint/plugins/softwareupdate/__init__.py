@@ -150,9 +150,6 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 					"restart": "octoprint"
 				},
 			},
-
-			"octoprint_restart_command": None,
-			"environment_restart_command": None,
 			"pip_command": None,
 
 			"cache_ttl": 24 * 60,
@@ -177,13 +174,35 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		self._version_cache_ttl = self._settings.get_int(["cache_ttl"]) * 60
 
 	def get_settings_version(self):
-		return 3
+		return 4
 
 	def on_settings_migrate(self, target, current=None):
+
+		if current is None or current < 4:
+			# config version 4 and higher moves octoprint_restart_command and
+			# environment_restart_command to the core configuration
+
+			# current plugin commands
+			configured_octoprint_restart_command = self._settings.get(["octoprint_restart_command"])
+			configured_environment_restart_command = self._settings.get(["environment_restart_command"])
+
+			# current global commands
+			configured_system_restart_command = self._settings.global_get(["server", "commands", "systemRestartCommand"])
+			configured_server_restart_command = self._settings.global_get(["server", "commands", "serverRestartCommand"])
+
+			# only set global commands if they are not yet set
+			if configured_system_restart_command is None and configured_environment_restart_command is not None:
+				self._settings.global_set(["server", "commands", "systemRestartCommand"], configured_environment_restart_command)
+			if configured_server_restart_command is None and configured_octoprint_restart_command is not None:
+				self._settings.global_set(["server", "commands", "serverRestartCommand"], configured_octoprint_restart_command)
+
+			# delete current plugin commands from config
+			self._settings.set(["environment_restart_command"], None)
+			self._settings.set(["octoprint_restart_command"], None)
+
 		if current is None or current == 2:
-			# there might be some left over data from the time we still persisted everything to settings,
-			# even the stuff that shouldn't be persisted but always provided by the hook - let's
-			# clean up
+			# No config version and config version 2 need the same fix, stripping
+			# accidentally persisted data off the checks
 
 			configured_checks = self._settings.get(["checks"], incl_defaults=False)
 			if configured_checks is None:
@@ -229,6 +248,10 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				self._settings.set(["checks", key], None, defaults=dummy_defaults)
 
 		elif current == 1:
+			# config version 1 had the error that the octoprint check got accidentally
+			# included in checks["octoprint"], leading to recursion and hence to
+			# yaml parser errors
+
 			configured_checks = self._settings.get(["checks"], incl_defaults=False)
 			if configured_checks is None:
 				return
@@ -239,7 +262,6 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				dummy_defaults["plugins"][self._identifier] = dict(checks=dict())
 				dummy_defaults["plugins"][self._identifier]["checks"]["octoprint"] = None
 				self._settings.set(["checks", "octoprint"], None, defaults=dummy_defaults)
-				self._settings.save()
 
 	def _clean_settings_check(self, key, data, defaults, delete=None, save=True):
 		if delete is None:
@@ -496,7 +518,11 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			if restart_type is not None and restart_type in ("octoprint", "environment"):
 				# one of our updates requires a restart of either type "octoprint" or "environment". Let's see if
 				# we can actually perform that
-				restart_command = self._settings.get(["%s_restart_command" % restart_type])
+
+				if restart_type == "octoprint":
+					restart_command = self._settings.global_get(["server", "commands", "serverRestartCommand"])
+				elif restart_type == "environment":
+					restart_command = self._settings.global_get(["server", "commands", "systemRestartCommand"])
 
 				if restart_command is not None:
 					self._send_client_message("restarting", dict(restart_type=restart_type, results=target_results))

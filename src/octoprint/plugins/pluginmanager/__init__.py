@@ -83,6 +83,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			repository="http://plugins.octoprint.org/plugins.json",
 			repository_ttl=24*60,
 			pip=None,
+			dependency_links=False,
 			hidden=[]
 		)
 
@@ -187,6 +188,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			plugin_name = data["plugin"] if "plugin" in data else None
 			return self.command_install(url=url,
 			                            force="force" in data and data["force"] in valid_boolean_trues,
+			                            dependency_links="dependency_links" in data and data["dependency_links"] in valid_boolean_trues,
 			                            reinstall=plugin_name)
 
 		elif command == "uninstall":
@@ -205,13 +207,16 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			plugin = self._plugin_manager.plugins[plugin_name]
 			return self.command_toggle(plugin, command)
 
-	def command_install(self, url=None, path=None, force=False, reinstall=None):
+	def command_install(self, url=None, path=None, force=False, reinstall=None, dependency_links=False):
 		if url is not None:
 			pip_args = ["install", sarge.shell_quote(url)]
 		elif path is not None:
 			pip_args = ["install", sarge.shell_quote(path)]
 		else:
 			raise ValueError("Either url or path must be provided")
+
+		if dependency_links or self._settings.get_boolean(["dependency_links"]):
+			pip_args.append("--process-dependency-links")
 
 		all_plugins_before = self._plugin_manager.find_plugins()
 
@@ -421,7 +426,14 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 	def _call_pip(self, args):
 		if self._pip_caller is None or not self._pip_caller.available:
 			raise RuntimeError(u"No pip available, can't operate".format(**locals()))
+
+		if "--process-dependency-links" in args:
+			self._log_message(u"Installation needs to process external dependencies, that might make it take a bit longer than usual depending on the pip version")
+
 		return self._pip_caller.execute(*args)
+
+	def _log_message(self, *lines):
+		self._log(lines, prefix=u"*", stream="message")
 
 	def _log_call(self, *lines):
 		self._log(lines, prefix=u" ", stream="call")
@@ -518,6 +530,12 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 		def map_repository_entry(entry):
 			result = dict(entry)
+
+			if not "follow_dependency_links" in result:
+				result["follow_dependency_links"] = False
+
+			if not "follow_dependency_links" in result:
+				result["follow_dependency_links"] = False
 
 			result["is_compatible"] = dict(
 				octoprint=True,

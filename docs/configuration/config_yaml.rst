@@ -611,6 +611,32 @@ Use the following settings to configure the serial connection to the printer:
      additionalPorts:
      - /dev/myPrinterSymlink
 
+     # Use this to define additional baud rates to offer for connecting to serial ports. Must be a
+     # valid integer. Defaults to not set
+     additionalBaudrates:
+     - 123456
+
+     # Commands which are known to take a long time to be acknowledged by the firmware. E.g.
+     # homing, dwelling, auto leveling etc. Defaults to the below commands.
+     longRunningCommands:
+     - G4
+     - G28
+     - G29
+     - G30
+     - G32
+     - M400
+     - M226
+
+     # Commands which need to always be send with a checksum. Defaults to only M110
+     checksumRequiringCommands:
+     - M110
+
+     # Command to send in order to initiate a handshake with the printer.
+     # Defaults to "M110 N0" which simply resets the line numbers in the firmware and which
+     # should be acknowledged with a simple "ok".
+     helloCommand:
+     - M110 N0
+
 .. _sec-configuration-config_yaml-server:
 
 Server
@@ -621,7 +647,8 @@ Use the following settings to configure the server:
 .. code-block:: yaml
 
    server:
-     # Use this option to define the host to which to bind the server, defaults to "0.0.0.0" (= all interfaces)
+     # Use this option to define the host to which to bind the server, defaults to "0.0.0.0" (= all
+     # interfaces)
      host: 0.0.0.0
 
      # Use this option to define the port to which to bind the server, defaults to 5000
@@ -690,6 +717,18 @@ Use the following settings to configure the server:
 
      # Maximum size of requests other than file uploads in bytes, defaults to 100KB.
      maxSize: 102400
+
+     # Commands to restart/shutdown octoprint or the system it's running on
+     commands:
+
+       # Command to restart OctoPrint, defaults to being unset
+       serverRestartCommand: sudo service octoprint restart
+
+       # Command to restart the system OctoPrint is running on, defaults to being unset
+       systemRestartCommand: sudo shutdown -r now
+
+       # Command to shut down the system OctoPrint is running on, defaults to being unset
+       systemShutdownCommand: sudo shutdown -h now
 
 
 .. note::

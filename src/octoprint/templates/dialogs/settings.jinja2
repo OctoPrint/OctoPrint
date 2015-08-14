@@ -1,7 +1,7 @@
 <div id="settings_dialog" class="modal hide fade large" tabindex="-1" role="dialog" aria-labelledby="settings_dialog_label" aria-hidden="true">
     <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal">&times;</button>
-        <h3 id="settings_dialog_label">{{ _('OctoPrint Settings') }}</h3>
+        <h3 id="settings_dialog_label">{{ _('OctoPrint Settings') }} <i class="icon-spinner icon-spin" data-bind="visible: receiving"></i></h3>
     </div>
     <div class="modal-body">
         <div class="full-sized-box">
@@ -49,6 +49,6 @@
     </div>
     <div class="modal-footer">
         <button class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Cancel') }}</button>
-        <button class="btn btn-primary" data-bind="click: function() { saveData(undefined, $root.hide) }">{{ _('Save') }}</button>
+        <button class="btn btn-primary" data-bind="click: function() { saveData(undefined, $root.hide) }, enable: !sending(), css: {disabled: sending()}"><i class="icon-spinner icon-spin" data-bind="visible: sending"></i> {{ _('Save') }}</button>
     </div>
 </div>

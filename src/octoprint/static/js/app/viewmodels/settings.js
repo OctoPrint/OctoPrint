@@ -6,6 +6,10 @@ $(function() {
         self.users = parameters[1];
         self.printerProfiles = parameters[2];
 
+        self.receiving = ko.observable(false);
+        self.sending = ko.observable(false);
+        self.callbacks = [];
+
         self.enqueuedForSaving = undefined;
 
         self.api_enabled = ko.observable(undefined);
@@ -129,7 +133,10 @@ $(function() {
         self.serial_timeoutSdStatus = ko.observable(undefined);
         self.serial_log = ko.observable(undefined);
         self.serial_additionalPorts = ko.observable(undefined);
+        self.serial_additionalBaudrates = ko.observable(undefined);
         self.serial_longRunningCommands = ko.observable(undefined);
+        self.serial_checksumRequiringCommands = ko.observable(undefined);
+        self.serial_helloCommand = ko.observable(undefined);
 
         self.folder_uploads = ko.observable(undefined);
         self.folder_timelapse = ko.observable(undefined);
@@ -143,6 +150,7 @@ $(function() {
         self.scripts_gcode_afterPrintPaused = ko.observable(undefined);
         self.scripts_gcode_beforePrintResumed = ko.observable(undefined);
         self.scripts_gcode_afterPrinterConnected = ko.observable(undefined);
+        self.scripts_gcode_beforePrinterDisconnected = ko.observable(undefined);
 
         self.temperature_profiles = ko.observableArray(undefined);
         self.temperature_cutoff = ko.observable(undefined);
@@ -150,6 +158,10 @@ $(function() {
         self.system_actions = ko.observableArray([]);
 
         self.terminalFilters = ko.observableArray([]);
+
+        self.server_commands_systemShutdownCommand = ko.observable(undefined);
+        self.server_commands_systemRestartCommand = ko.observable(undefined);
+        self.server_commands_serverRestartCommand = ko.observable(undefined);
 
         self.settings = undefined;
 
@@ -259,13 +271,42 @@ $(function() {
         };
 
         self.requestData = function(callback) {
+            if (self.receiving()) {
+                if (callback) {
+                    self.callbacks.push(callback);
+                }
+                return;
+            }
+
+            self.receiving(true);
             $.ajax({
                 url: API_BASEURL + "settings",
                 type: "GET",
                 dataType: "json",
                 success: function(response) {
-                    self.fromResponse(response);
-                    if (callback) callback();
+                    if (callback) {
+                        self.callbacks.push(callback);
+                    }
+
+                    try {
+                        self.fromResponse(response);
+
+                        var cb;
+                        while (self.callbacks.length) {
+                            cb = self.callbacks.shift();
+                            try {
+                                cb();
+                            } catch(exc) {
+                                log.error("Error calling settings callback", cb, ":", (exc.stack || exc));
+                            }
+                        }
+                    } finally {
+                        self.receiving(false);
+                        self.callbacks = [];
+                    }
+                },
+                error: function(xhr) {
+                    self.receiving(false);
                 }
             });
         };
@@ -394,7 +435,10 @@ $(function() {
             self.serial_timeoutSdStatus(response.serial.timeoutSdStatus);
             self.serial_log(response.serial.log);
             self.serial_additionalPorts(response.serial.additionalPorts.join("\n"));
+            self.serial_additionalBaudrates(response.serial.additionalBaudrates.join(", "));
             self.serial_longRunningCommands(response.serial.longRunningCommands.join(", "));
+            self.serial_checksumRequiringCommands(response.serial.checksumRequiringCommands.join(", "));
+            self.serial_helloCommand(response.serial.helloCommand);
 
             self.folder_uploads(response.folder.uploads);
             self.folder_timelapse(response.folder.timelapse);
@@ -410,6 +454,7 @@ $(function() {
             self.scripts_gcode_afterPrintPaused(response.scripts.gcode.afterPrintPaused);
             self.scripts_gcode_beforePrintResumed(response.scripts.gcode.beforePrintResumed);
             self.scripts_gcode_afterPrinterConnected(response.scripts.gcode.afterPrinterConnected);
+            self.scripts_gcode_beforePrinterDisconnected(response.scripts.gcode.beforePrinterDisconnected);
 
             self.temperature_profiles(response.temperature.profiles);
             self.temperature_cutoff(response.temperature.cutoff);
@@ -417,12 +462,18 @@ $(function() {
             self.system_actions(response.system.actions);
 
             self.terminalFilters(response.terminalFilters);
+
+            self.server_commands_systemShutdownCommand(response.server.commands.systemShutdownCommand);
+            self.server_commands_systemRestartCommand(response.server.commands.systemRestartCommand);
+            self.server_commands_serverRestartCommand(response.server.commands.serverRestartCommand);
         };
 
         self.saveData = function (data, successCallback) {
             self.settingsDialog.trigger("beforeSave");
 
             if (data == undefined) {
+                // we only set sending to true when we didn't include data
+                self.sending(true);
                 data = ko.mapping.toJS(self.settings);
 
                 data = _.extend(data, {
@@ -475,7 +526,10 @@ $(function() {
                         "timeoutSdStatus": self.serial_timeoutSdStatus(),
                         "log": self.serial_log(),
                         "additionalPorts": commentableLinesToArray(self.serial_additionalPorts()),
-                        "longRunningCommands": splitTextToArray(self.serial_longRunningCommands(), ",", true)
+                        "additionalBaudrates": _.map(splitTextToArray(self.serial_additionalBaudrates(), ",", true, function(item) { return !isNaN(parseInt(item)); }), function(item) { return parseInt(item); }),
+                        "longRunningCommands": splitTextToArray(self.serial_longRunningCommands(), ",", true),
+                        "checksumRequiringCommands": splitTextToArray(self.serial_checksumRequiringCommands(), ",", true),
+                        "helloCommand": self.serial_helloCommand()
                     },
                     "folder": {
                         "uploads": self.folder_uploads(),
@@ -499,7 +553,15 @@ $(function() {
                             "afterPrintCancelled": self.scripts_gcode_afterPrintCancelled(),
                             "afterPrintPaused": self.scripts_gcode_afterPrintPaused(),
                             "beforePrintResumed": self.scripts_gcode_beforePrintResumed(),
-                            "afterPrinterConnected": self.scripts_gcode_afterPrinterConnected()
+                            "afterPrinterConnected": self.scripts_gcode_afterPrinterConnected(),
+                            "beforePrinterDisconnected": self.scripts_gcode_beforePrinterDisconnected()
+                        }
+                    },
+                    "server": {
+                        "commands": {
+                            "systemShutdownCommand": self.server_commands_systemShutdownCommand(),
+                            "systemRestartCommand": self.server_commands_systemRestartCommand(),
+                            "serverRestartCommand": self.server_commands_serverRestartCommand()
                         }
                     }
                 });
@@ -512,10 +574,23 @@ $(function() {
                 contentType: "application/json; charset=UTF-8",
                 data: JSON.stringify(data),
                 success: function(response) {
-                    self.fromResponse(response);
-                    if (successCallback) successCallback(response);
+                    self.receiving(true);
+                    self.sending(false);
+                    try {
+                        self.fromResponse(response);
+                        if (successCallback) successCallback(response);
+                    } finally {
+                        self.receiving(false);
+                    }
+                },
+                error: function(xhr) {
+                    self.sending(false);
                 }
             });
+        };
+
+        self.onEventSettingsUpdated = function() {
+            self.requestData();
         };
 
         self.enqueueForSaving = function(data) {

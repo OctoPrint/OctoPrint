@@ -86,7 +86,7 @@ $(function() {
         self._processCurrentLogData = function(data) {
             self.log(self.log().concat(_.map(data, function(line) { return self._toInternalFormat(line) })));
             if (self.autoscrollEnabled()) {
-                self.log(self.log.slice(-300));
+                self.log(self.log.slice(-self.buffer()));
             }
         };
 

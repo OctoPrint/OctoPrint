@@ -149,7 +149,7 @@ class UserManager(object):
 		if session is not None:
 			for session in self._session_users_by_session:
 				user = self._session_users_by_session[session]
-				if username is None or username == user.get_name():
+				if username is None or username == user.get_id():
 					return user
 				break
 
@@ -443,7 +443,7 @@ class User(UserMixin):
 			path = [key]
 		else:
 			path = key
-		self._set_setting(path, value)
+		return self._set_setting(path, value)
 
 	def _get_setting(self, path):
 		s = self._settings
@@ -474,7 +474,8 @@ class User(UserMixin):
 
 class SessionUser(User):
 	def __init__(self, user):
-		User.__init__(self, user._username, user._passwordHash, user._active, user._roles, user._apikey)
+		self._user = user
+		User.__init__(self, user._username, user._passwordHash, user._active, user._roles, user._apikey, user._settings)
 
 		import string
 		import random
@@ -482,6 +483,18 @@ class SessionUser(User):
 		chars = string.ascii_uppercase + string.ascii_lowercase + string.digits
 		self._session = "".join(random.choice(chars) for _ in xrange(10))
 		self._created = time.time()
+
+	def __getattribute__(self, item):
+		if item in ("get_session", "_user", "_session", "_created"):
+			return object.__getattribute__(self, item)
+		else:
+			return getattr(object.__getattribute__(self, "_user"), item)
+
+	def __setattr__(self, item, value):
+		if item in ("_user", "_session", "_created"):
+			return object.__setattr__(self, item, value)
+		else:
+			return setattr(self._user, item, value)
 
 	def get_session(self):
 		return self._session

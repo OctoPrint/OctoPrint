@@ -29,14 +29,14 @@ def getTimelapseData():
 	config = {"type": "off"}
 	if timelapse is not None and isinstance(timelapse, octoprint.timelapse.ZTimelapse):
 		config["type"] = "zchange"
-		config["postRoll"] = timelapse.postRoll()
-		config["fps"] = timelapse.fps()
+		config["postRoll"] = timelapse.post_roll
+		config["fps"] = timelapse.fps
 	elif timelapse is not None and isinstance(timelapse, octoprint.timelapse.TimedTimelapse):
 		config["type"] = "timed"
-		config["postRoll"] = timelapse.postRoll()
-		config["fps"] = timelapse.fps()
+		config["postRoll"] = timelapse.post_roll
+		config["fps"] = timelapse.fps
 		config.update({
-			"interval": timelapse.interval()
+			"interval": timelapse.interval
 		})
 
 	files = octoprint.timelapse.getFinishedTimelapses()

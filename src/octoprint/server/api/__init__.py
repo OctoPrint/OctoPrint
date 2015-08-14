@@ -263,6 +263,9 @@ def utilTestPath():
 		from octoprint.util.paths import normalize
 
 		path = normalize(data["path"])
+		if not path:
+			return jsonify(path=path, exists=False, typeok=False, access=False, result=False)
+
 		check_type = None
 		check_access = []
 

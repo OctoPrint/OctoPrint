@@ -123,12 +123,19 @@ def enable_additional_translations(default_locale="en", additional_folders=None)
 
 def fix_webassets_cache():
 	from webassets import cache
-	import os
-	import tempfile
-	import pickle
-	import shutil
+
+	error_logger = logging.getLogger(__name__ + ".fix_webassets_cache")
 
 	def fixed_set(self, key, data):
+		import os
+		import tempfile
+		import pickle
+		import shutil
+
+		if not os.path.exists(self.directory):
+			error_logger.warn("Cache directory {} doesn't exist, not going "
+			                  "to attempt to write cache file".format(self.directory))
+
 		md5 = '%s' % cache.make_md5(self.V, key)
 		filename = os.path.join(self.directory, md5)
 		fd, temp_filename = tempfile.mkstemp(prefix='.' + md5,
@@ -147,6 +154,11 @@ def fix_webassets_cache():
 		import errno
 		import warnings
 		from webassets.cache import make_md5
+
+		if not os.path.exists(self.directory):
+			error_logger.warn("Cache directory {} doesn't exist, not going "
+			                  "to attempt to read cache file".format(self.directory))
+			return None
 
 		try:
 			hash = make_md5(self.V, key)
@@ -194,12 +206,15 @@ def fix_webassets_filtertool():
 		try:
 			content = func().getvalue()
 			if self.cache:
-				log.debug('Storing result in cache with key %s', key,)
-				self.cache.set(key, content)
+				try:
+					log.debug('Storing result in cache with key %s', key,)
+					self.cache.set(key, content)
+				except:
+					error_logger.exception("Got an exception while trying to save file to cache, not caching")
 			return MemoryHunk(content)
 		except:
 			error_logger.exception("Got an exception while trying to apply filter, ignoring file")
-			return MemoryHunk("")
+			return MemoryHunk(u"")
 
 	FilterTool._wrap_cache = fixed_wrap_cache
 

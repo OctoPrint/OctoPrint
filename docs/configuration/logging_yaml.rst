@@ -17,7 +17,7 @@ Changing log levels
 If you need to change the default logging level within OctoPrint, create the file with a text editor of your choice
 (it's usually not there). The general format is this::
 
-    logger:
+    loggers:
       <component>:
         level: <loglevel>
 
@@ -27,7 +27,7 @@ new log level to set. An example for increasing the log level of the events and 
 
 .. code-block:: yaml
 
-   logger:
+   loggers:
      octoprint.events:
        level: DEBUG
      octoprint.filemanager:

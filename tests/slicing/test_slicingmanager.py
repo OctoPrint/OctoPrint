@@ -142,11 +142,10 @@ class TestSlicingManager(unittest.TestCase):
 
 		# assert that temporary profile was created properly
 		self.slicer_plugin.save_slicer_profile.assert_called_once_with("tmp.file", default_profile, overrides=overrides)
-
 		# assert that slicing thread was created properly
 		mocked_thread.assert_called_once_with(target=mock.ANY, args=(self.slicer_plugin, source_path, dest_path, profile_name, overrides, printer_profile, position, callback, callback_args, callback_kwargs))
 		self.assertTrue(mock_thread.mock.daemon)
-		mock_thread.mock.start.assert_called_once()
+		self.assertEqual(mock_thread.mock.start.call_count, 1)
 
 		# assert that slicer was called correctly
 		self.slicer_plugin.do_slice.assert_called_once_with(source_path, printer_profile, machinecode_path=dest_path, profile_path="tmp.file", position=position, on_progress=None, on_progress_args=None, on_progress_kwargs=None)

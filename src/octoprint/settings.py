@@ -83,7 +83,10 @@ default_settings = {
 			"sdStatus": 1
 		},
 		"additionalPorts": [],
-		"longRunningCommands": ["G4", "G28", "G29", "G30", "G32"]
+		"additionalBaudrates": [],
+		"longRunningCommands": ["G4", "G28", "G29", "G30", "G32", "M400", "M226"],
+		"checksumRequiringCommands": ["M110"],
+		"helloCommand": "M110 N0"
 	},
 	"server": {
 		"host": "0.0.0.0",
@@ -104,6 +107,11 @@ default_settings = {
 			"pathSuffix": "path"
 		},
 		"maxSize": 100 * 1024, # 100 KB
+		"commands": {
+			"systemShutdownCommand": None,
+			"systemRestartCommand": None,
+			"serverRestartCommand": None
+		}
 	},
 	"webcam": {
 		"stream": None,
@@ -188,7 +196,7 @@ default_settings = {
 				"settings": [
 					"section_printer", "serial", "printerprofiles", "temperatures", "terminalfilters", "gcodescripts",
 					"section_features", "features", "webcam", "accesscontrol", "api",
-					"section_octoprint", "folders", "appearance", "logs", "plugin_pluginmanager", "plugin_softwareupdate"
+					"section_octoprint", "server", "folders", "appearance", "logs", "plugin_pluginmanager", "plugin_softwareupdate"
 				],
 				"usersettings": ["access", "interface"],
 				"wizard": ["access"],
@@ -322,14 +330,14 @@ class Settings(object):
 
 	                                               "/dev/ttyACM0"
 
-	``["serial", "timeouts"]``                 ::
+	``["serial", "timeout"]``                  ::
 
 	                                               communication: 20.0
 	                                               temperature: 5.0
 	                                               sdStatus: 1.0
 	                                               connection: 10.0
 
-	``["serial", "timeouts", "temperature"]``  ::
+	``["serial", "timeout", "temperature"]``   ::
 
 	                                               5.0
 
@@ -971,7 +979,7 @@ class Settings(object):
 		if not force and key in defaults and key in config and defaults[key] == value:
 			del config[key]
 			self._dirty = True
-		elif force or (not key in config and defaults[key] != value) or (key in config and config[key] != value):
+		elif force or (not key in config and key in defaults and defaults[key] != value) or (key in config and config[key] != value):
 			if value is None and key in config:
 				del config[key]
 			else:

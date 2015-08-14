@@ -154,6 +154,7 @@ def index():
 		folders=(gettext("Folders"), dict(template="dialogs/settings/folders.jinja2", _div="settings_folders", custom_bindings=False)),
 		appearance=(gettext("Appearance"), dict(template="dialogs/settings/appearance.jinja2", _div="settings_appearance", custom_bindings=False)),
 		logs=(gettext("Logs"), dict(template="dialogs/settings/logs.jinja2", _div="settings_logs")),
+		server=(gettext("Server"), dict(template="dialogs/settings/server.jinja2", _div="settings_server", custom_bindings=False)),
 	)
 	if enable_accesscontrol:
 		templates["settings"]["entries"]["accesscontrol"] = (gettext("Access Control"), dict(template="dialogs/settings/accesscontrol.jinja2", _div="settings_users", custom_bindings=False))
@@ -257,9 +258,30 @@ def index():
 		# finally add anything that's not included in our order yet
 		sorted_missing = list(missing_in_order)
 		if template_sorting[t]["key"] is not None:
-			# anything but navbar and generic components get sorted by their name
-			if template_sorting[t]["key"] == "name":
-				sorted_missing = sorted(missing_in_order, key=lambda x: templates[t]["entries"][x][0])
+			# default extractor: works with entries that are dicts and entries that are 2-tuples with the
+			# entry data at index 1
+			def extractor(item, key):
+				if isinstance(item, dict) and key in item:
+					return item[key]
+				elif isinstance(item, tuple) and len(item) > 1 and isinstance(item[1], dict) and key in item[1]:
+					return item[1][key]
+
+				return None
+
+			# if template type provides custom extractor, make sure its exceptions are handled
+			if "key_extractor" in template_sorting[t] and callable(template_sorting[t]["key_extractor"]):
+				def create_safe_extractor(extractor):
+					def f(x, k):
+						try:
+							return extractor(x, k)
+						except:
+							_logger.exception("Error while extracting sorting keys for template {}".format(t))
+							return None
+					return f
+				extractor = create_safe_extractor(template_sorting[t]["key_extractor"])
+
+			sort_key = template_sorting[t]["key"]
+			sorted_missing = sorted(missing_in_order, key=lambda x: extractor(templates[t]["entries"][x], sort_key))
 
 		if template_sorting[t]["add"] == "prepend":
 			templates[t]["order"] = sorted_missing + templates[t]["order"]
@@ -351,6 +373,8 @@ def _process_template_configs(name, implementation, configs, rules):
 					app.jinja_env.get_or_select_template(data["template"])
 				except TemplateNotFound:
 					pass
+				except:
+					_logger.exception("Error in template {}, not going to include it".format(data["template"]))
 				else:
 					includes[template_type].append(rule["to_entry"](data))
 

@@ -10,6 +10,8 @@ import sarge
 import sys
 import logging
 
+import pkg_resources
+
 from .commandline import CommandlineCaller
 
 
@@ -17,6 +19,10 @@ class UnknownPip(Exception):
 	pass
 
 class PipCaller(CommandlineCaller):
+	process_dependency_links = pkg_resources.parse_requirements("pip>=1.5")
+	no_use_wheel = pkg_resources.parse_requirements("pip==1.5.0")
+	broken = pkg_resources.parse_requirements("pip>=6.0.1,<=6.0.3")
+
 	def __init__(self, configured=None):
 		CommandlineCaller.__init__(self)
 		self._logger = logging.getLogger(__name__)
@@ -62,7 +68,16 @@ class PipCaller(CommandlineCaller):
 		if self._command is None:
 			raise UnknownPip()
 
-		command = [self._command] + list(args)
+		arg_list = list(args)
+		if "install" in arg_list:
+			if not self.version in self.__class__.process_dependency_links and "--process-dependency-links" in arg_list:
+				self._logger.debug("Found --process-dependency-links flag, version {} doesn't need that yet though, removing.".format(self.version))
+				arg_list.remove("--process-dependency-links")
+			if self.version in self.__class__.no_use_wheel and not "--no-use-wheel" in arg_list:
+				self._logger.debug("Version {} needs --no-use-wheel to properly work.".format(self.version))
+				arg_list.append("--no-use-wheel")
+
+		command = [self._command] + arg_list
 		return self.call(command)
 
 	def _find_pip(self):
@@ -121,12 +136,16 @@ class PipCaller(CommandlineCaller):
 
 			version_segment = split_output[1]
 
-			from pkg_resources import parse_version
 			try:
-				pip_version = parse_version(version_segment)
+				pip_version = pkg_resources.parse_version(version_segment)
 			except:
 				self._logger.exception("Error while trying to parse version string from pip command")
+				return None, None
 			else:
 				self._logger.info("Found pip at {}, version is {}".format(pip_command, version_segment))
+
+			if pip_version in self.__class__.broken:
+				self._logger.error("This version of pip is known to have errors that make it incompatible with how it needs to be used by OctoPrint. Please upgrade your pip version.")
+				return None, None
 
 		return pip_command, pip_version

@@ -84,7 +84,10 @@ def getSettings():
 			"timeoutSdStatus": s.getFloat(["serial", "timeout", "sdStatus"]),
 			"log": s.getBoolean(["serial", "log"]),
 			"additionalPorts": s.get(["serial", "additionalPorts"]),
-			"longRunningCommands": s.get(["serial", "longRunningCommands"])
+			"additionalBaudrates": s.get(["serial", "additionalBaudrates"]),
+			"longRunningCommands": s.get(["serial", "longRunningCommands"]),
+			"checksumRequiringCommands": s.get(["serial", "checksumRequiringCommands"]),
+			"helloCommand": s.get(["serial", "helloCommand"])
 		},
 		"folder": {
 			"uploads": s.getBaseFolder("uploads"),
@@ -105,12 +108,20 @@ def getSettings():
 		"scripts": {
 			"gcode": {
 				"afterPrinterConnected": None,
+				"beforePrinterDisconnected": None,
 				"beforePrintStarted": None,
 				"afterPrintCancelled": None,
 				"afterPrintDone": None,
 				"beforePrintPaused": None,
 				"afterPrintResumed": None,
 				"snippets": dict()
+			}
+		},
+		"server": {
+			"commands": {
+				"systemShutdownCommand": s.get(["server", "commands", "systemShutdownCommand"]),
+				"systemRestartCommand": s.get(["server", "commands", "systemRestartCommand"]),
+				"serverRestartCommand": s.get(["server", "commands", "serverRestartCommand"])
 			}
 		}
 	}
@@ -212,7 +223,10 @@ def setSettings():
 		if "timeoutTemperature" in data["serial"].keys(): s.setFloat(["serial", "timeout", "temperature"], data["serial"]["timeoutTemperature"])
 		if "timeoutSdStatus" in data["serial"].keys(): s.setFloat(["serial", "timeout", "sdStatus"], data["serial"]["timeoutSdStatus"])
 		if "additionalPorts" in data["serial"] and isinstance(data["serial"]["additionalPorts"], (list, tuple)): s.set(["serial", "additionalPorts"], data["serial"]["additionalPorts"])
+		if "additionalBaudrates" in data["serial"] and isinstance(data["serial"]["additionalBaudrates"], (list, tuple)): s.set(["serial", "additionalBaudrates"], data["serial"]["additionalBaudrates"])
 		if "longRunningCommands" in data["serial"] and isinstance(data["serial"]["longRunningCommands"], (list, tuple)): s.set(["serial", "longRunningCommands"], data["serial"]["longRunningCommands"])
+		if "checksumRequiringCommands" in data["serial"] and isinstance(data["serial"]["checksumRequiringCommands"], (list, tuple)): s.set(["serial", "checksumRequiringCommands"], data["serial"]["checksumRequiringCommands"])
+		if "helloCommand" in data["serial"]: s.set(["serial", "helloCommand"], data["serial"]["helloCommand"])
 
 		oldLog = s.getBoolean(["serial", "log"])
 		if "log" in data["serial"].keys(): s.setBoolean(["serial", "log"], data["serial"]["log"])
@@ -249,6 +263,12 @@ def setSettings():
 				if name == "snippets":
 					continue
 				s.saveScript("gcode", name, script.replace("\r\n", "\n").replace("\r", "\n"))
+
+	if "server" in data:
+		if "commands" in data["server"]:
+			if "systemShutdownCommand" in data["server"]["commands"].keys(): s.set(["server", "commands", "systemShutdownCommand"], data["server"]["commands"]["systemShutdownCommand"])
+			if "systemRestartCommand" in data["server"]["commands"].keys(): s.set(["server", "commands", "systemRestartCommand"], data["server"]["commands"]["systemRestartCommand"])
+			if "serverRestartCommand" in data["server"]["commands"].keys(): s.set(["server", "commands", "serverRestartCommand"], data["server"]["commands"]["serverRestartCommand"])
 
 	if "plugins" in data:
 		for plugin in octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.SettingsPlugin):

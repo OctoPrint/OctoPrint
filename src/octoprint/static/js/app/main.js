@@ -51,6 +51,7 @@ $(function() {
         //~~ Initialize PNotify
 
         PNotify.prototype.options.styling = "bootstrap2";
+        PNotify.prototype.options.mouse_reset = false;
 
         //~~ Initialize view models
 
@@ -58,7 +59,7 @@ $(function() {
         var viewModelMap = {};
 
         // Fix Function#name on browsers that do not support it (IE):
-        // see: http://stackoverflow.com/questions/6903762/function-name-not-supported-in-ie 
+        // see: http://stackoverflow.com/questions/6903762/function-name-not-supported-in-ie
         if (!(function f() {}).name) {
             Object.defineProperty(Function.prototype, 'name', {
                 get: function() {

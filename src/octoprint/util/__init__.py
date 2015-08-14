@@ -570,9 +570,13 @@ class RepeatedTimer(threading.Thread):
 	    run_first (boolean): If set to True, the function will be run for the first time *before* the first wait period.
 	        If set to False (the default), the function will be run for the first time *after* the first wait period.
 	    condition (callable): Condition that needs to be True for loop to continue. Defaults to ``lambda: True``.
+	    on_finish (callable): Callback to call when the timer finishes, either due to being cancelled or since
+	        the condition became false.
+	    daemon (bool): daemon flag to set on underlying thread.
 	"""
 
-	def __init__(self, interval, function, args=None, kwargs=None, run_first=False, condition=None):
+	def __init__(self, interval, function, args=None, kwargs=None,
+	             run_first=False, condition=None, on_finish=None, daemon=True):
 		threading.Thread.__init__(self)
 
 		if args is None:
@@ -593,9 +597,11 @@ class RepeatedTimer(threading.Thread):
 		self.kwargs = kwargs
 		self.run_first = run_first
 		self.condition = condition
+		self.on_finish = on_finish
+		self.daemon = daemon
 
 	def cancel(self):
-		self.finished.set()
+		self.finish()
 
 	def run(self):
 		while self.condition():
@@ -616,8 +622,13 @@ class RepeatedTimer(threading.Thread):
 				# if we are to run the function AFTER waiting for the first time
 				self.function(*self.args, **self.kwargs)
 
+		self.finish()
+
+	def finish(self):
 		# make sure we set our finished event so we can detect that the loop was finished
 		self.finished.set()
+		if callable(self.on_finish):
+			self.on_finish()
 
 
 class CountedEvent(object):

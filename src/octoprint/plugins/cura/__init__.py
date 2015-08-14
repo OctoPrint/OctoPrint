@@ -19,6 +19,8 @@ import octoprint.settings
 from octoprint.util.paths import normalize as normalize_path
 
 from .profile import Profile
+from .profile import GcodeFlavors
+from .profile import parse_gcode_flavor
 
 class CuraPlugin(octoprint.plugin.SlicerPlugin,
                  octoprint.plugin.SettingsPlugin,
@@ -260,15 +262,29 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 
 				self._cura_logger.info(u"### Slicing %s to %s using profile stored at %s" % (model_path, machinecode_path, profile_path))
 
-				engine_settings = self._convert_to_engine(profile_path, printer_profile, posX, posY)
-
 				executable = normalize_path(self._settings.get(["cura_engine"]))
 				if not executable:
 					return False, "Path to CuraEngine is not configured "
 
-				working_dir, _ = os.path.split(executable)
+				working_dir = os.path.dirname(executable)
+
+				# Start building the argument list for the CuraEngine command execution
 				args = [executable, '-v', '-p']
-				for k, v in engine_settings.items():
+
+				# Get the CuraEngine version out of the "usage" line that is gotten when calling the CuraEngine with the -h argument
+				new_engine = self._is_new_engine_version(executable)
+
+				# If the CuraEngine is the new version, add the JSON file path as argument
+				if new_engine:
+					args += ['-j', os.path.join(self._basefolder, "profiles", "fdmprinter.json")]
+
+				profile = Profile(self._load_profile(profile_path), printer_profile, posX, posY)
+
+				engine_settings = self._convert_to_engine(profile, new_engine=new_engine)
+
+				# Add the settings (sorted alphabetically) to the command
+
+				for k, v in sorted(engine_settings.items(), key=lambda s: s[0]):
 					args += ["-s", "%s=%s" % (k, str(v))]
 				args += ["-o", machinecode_path, model_path]
 
@@ -351,6 +367,8 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 							except:
 								pass
 
+						# Get the filament usage
+
 						elif line.startswith(u"Filament:") or line.startswith(u"Filament2:"):
 							if line.startswith(u"Filament:"):
 								filament_str = line[len(u"Filament:"):].strip()
@@ -361,17 +379,25 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 
 							try:
 								filament = int(filament_str)
+
 								if analysis is None:
 									analysis = dict()
 								if not "filament" in analysis:
 									analysis["filament"] = dict()
 								if not tool_key in analysis["filament"]:
 									analysis["filament"][tool_key] = dict()
-								analysis["filament"][tool_key]["length"] = filament
-								if "filamentDiameter" in engine_settings:
-									radius_in_cm = float(int(engine_settings["filamentDiameter"]) / 10000.0) / 2.0
-									filament_in_cm = filament / 10.0
-									analysis["filament"][tool_key]["volume"] = filament_in_cm * math.pi * radius_in_cm * radius_in_cm
+
+								if profile.get_float("filament_diameter") != None:
+									# The new CuraEngine outputs the "Filament" value as volume independently from the Gcode flavor
+									if new_engine:
+										analysis["filament"][tool_key] = _get_usage_from_volume(filament, profile.get_float("filament_diameter"))
+									# The old CuraEngine outputs the "Filament" value as volume only for ULTIGCODE and REPRAP_VOLUME
+									else:
+										if profile.get("gcode_flavor") == GcodeFlavors.ULTIGCODE or profile.get("gcode_flavor") == GcodeFlavors.REPRAP_VOLUME:
+											analysis["filament"][tool_key] = _get_usage_from_volume(filament, profile.get_float("filament_diameter"))
+										else:
+											analysis["filament"][tool_key] = _get_usage_from_length(filament, profile.get_float("filament_diameter"))
+
 							except:
 								pass
 			finally:
@@ -421,6 +447,11 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 				profile_dict = yaml.safe_load(f)
 			except:
 				raise IOError("Couldn't read profile from {path}".format(path=path))
+
+		if "gcode_flavor" in profile_dict and not isinstance(profile_dict["gcode_flavor"], (list, tuple)):
+			profile_dict["gcode_flavor"] = parse_gcode_flavor(profile_dict["gcode_flavor"])
+			self._save_profile(path, profile_dict)
+
 		return profile_dict
 
 	def _save_profile(self, path, profile, allow_overwrite=True):
@@ -428,9 +459,28 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 		with open(path, "wb") as f:
 			yaml.safe_dump(profile, f, default_flow_style=False, indent="  ", allow_unicode=True)
 
-	def _convert_to_engine(self, profile_path, printer_profile, posX, posY):
-		profile = Profile(self._load_profile(profile_path), printer_profile, posX, posY)
-		return profile.convert_to_engine()
+	def _convert_to_engine(self, profile, new_engine):
+		if new_engine:
+			return profile.convert_to_new_engine()
+		else:
+			return profile.convert_to_engine()
+
+	def _is_new_engine_version(self, executable):
+		import sarge
+
+		command = [executable, "-j", os.path.join(self._basefolder, "profiles", "fdmprinter.json")]
+		p = sarge.run(command, stdout=sarge.Capture(), stderr=sarge.Capture())
+		if p.returncode != 0:
+			self._logger.warn("Could not run {} -j, returned {}".format(executable, p.returncode))
+			self._logger.info(u"Assuming pre 15.06 version of CuraEngine.")
+			return False
+
+		for line in p.stderr.read().split('\n'):
+			if "unknown option: j" in line.strip().lower():
+				self._logger.info(u"Using pre 15.06 version of CuraEngine.")
+				return False
+		self._logger.info(u"Using post 15.06 version of CuraEngine.")
+		return True
 
 def _sanitize_name(name):
 	if name is None:
@@ -445,9 +495,39 @@ def _sanitize_name(name):
 	sanitized_name = sanitized_name.replace(" ", "_")
 	return sanitized_name.lower()
 
+def _get_usage_from_volume(filament_volume, filament_diameter):
+
+	# filament_volume is expressed in mm^3
+	# usage["volume"] is in cm^3 and usage["length"] is in mm
+
+	usage = dict()
+	usage["volume"] = filament_volume / 1000.0
+
+	radius_in_mm = filament_diameter / 2.0
+	usage["length"] = filament_volume / (math.pi * radius_in_mm * radius_in_mm)
+
+	return usage
+
+def _get_usage_from_length(filament_length, filament_diameter):
+
+	# filament_length is expressed in mm
+	# usage["volume"] is in cm^3 and usage["length"] is in mm
+
+	usage = dict()
+	usage["length"] = filament_length
+
+	radius_in_cm = (filament_diameter / 10.0) / 2.0
+	length_in_cm = filament_length / 10.0
+	usage["volume"] = length_in_cm * math.pi * radius_in_cm * radius_in_cm
+
+	return usage
+
 __plugin_name__ = "CuraEngine"
 __plugin_author__ = "Gina Häußge"
 __plugin_url__ = "https://github.com/foosel/OctoPrint/wiki/Plugin:-Cura"
 __plugin_description__ = "Adds support for slicing via CuraEngine from within OctoPrint"
 __plugin_license__ = "AGPLv3"
 __plugin_implementation__ = CuraPlugin()
+
+
+
