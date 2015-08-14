@@ -461,3 +461,53 @@ function splitTextToArray(text, sep, stripEmpty, filter) {
         function(item) { return (stripEmpty ? item : true) && (filter ? filter(item) : true); }
     );
 }
+
+function hasDataChanged(data, oldData) {
+    if (data == undefined) {
+        return false;
+    }
+
+    if (oldData == undefined) {
+        return true;
+    }
+
+    if (_.isPlainObject(data)) {
+        return _.any(_.keys(data), function(key) {return hasDataChanged(data[key], oldData[key]);});
+    } else {
+        return !_.isEqual(data, oldData);
+    }
+};
+
+function getOnlyChangedData(data, oldData) {
+    if (data == undefined) {
+        return {};
+    }
+
+    if (oldData == undefined) {
+        return data;
+    }
+
+    var f = function(root, oldRoot) {
+        if (!_.isPlainObject(root)) {
+            return root;
+        }
+
+        var retval = {};
+        _.forOwn(root, function(value, key) {
+            var oldValue = oldRoot[key];
+            if (_.isPlainObject(value)) {
+                if (hasDataChanged(value, oldValue)) {
+                    retval[key] = f(value, oldValue);
+                }
+            } else {
+                if (!_.isEqual(value, oldValue)) {
+                    retval[key] = value;
+                }
+            }
+        });
+        return retval;
+    };
+
+    return f(data, oldData);
+};
+
