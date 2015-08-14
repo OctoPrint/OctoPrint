@@ -404,95 +404,52 @@ $(function() {
                 data = ko.mapping.toJS(self.settings);
             }
 
-            data = _.extend(data, {
-                "api" : {
-                    "enabled": self.api_enabled(),
-                    "key": self.api_key(),
-                    "allowCrossOrigin": self.api_allowCrossOrigin()
+            // some special apply functions for various observables
+            var specialMappings = {
+                feature: {
+                    externalHeatupDetection: function() { return !self.feature_disableExternalHeatupDetection() }
                 },
-                "appearance" : {
-                    "name": self.appearance_name(),
-                    "color": self.appearance_color(),
-                    "colorTransparent": self.appearance_colorTransparent(),
-                    "defaultLanguage": self.appearance_defaultLanguage()
-                },
-                "printer": {
-                    "defaultExtrusionLength": self.printer_defaultExtrusionLength()
-                },
-                "webcam": {
-                    "streamUrl": self.webcam_streamUrl(),
-                    "snapshotUrl": self.webcam_snapshotUrl(),
-                    "ffmpegPath": self.webcam_ffmpegPath(),
-                    "bitrate": self.webcam_bitrate(),
-                    "ffmpegThreads": self.webcam_ffmpegThreads(),
-                    "watermark": self.webcam_watermark(),
-                    "flipH": self.webcam_flipH(),
-                    "flipV": self.webcam_flipV(),
-                    "rotate90": self.webcam_rotate90()
-                },
-                "feature": {
-                    "gcodeViewer": self.feature_gcodeViewer(),
-                    "temperatureGraph": self.feature_temperatureGraph(),
-                    "waitForStart": self.feature_waitForStart(),
-                    "alwaysSendChecksum": self.feature_alwaysSendChecksum(),
-                    "sdSupport": self.feature_sdSupport(),
-                    "sdAlwaysAvailable": self.feature_sdAlwaysAvailable(),
-                    "swallowOkAfterResend": self.feature_swallowOkAfterResend(),
-                    "repetierTargetTemp": self.feature_repetierTargetTemp(),
-                    "externalHeatupDetection": !self.feature_disableExternalHeatupDetection(),
-                    "keyboardControl": self.feature_keyboardControl(),
-                    "pollWatched": self.feature_pollWatched()
-                },
-                "serial": {
-                    "port": self.serial_port(),
-                    "baudrate": self.serial_baudrate(),
-                    "autoconnect": self.serial_autoconnect(),
-                    "timeoutConnection": self.serial_timeoutConnection(),
-                    "timeoutDetection": self.serial_timeoutDetection(),
-                    "timeoutCommunication": self.serial_timeoutCommunication(),
-                    "timeoutTemperature": self.serial_timeoutTemperature(),
-                    "timeoutSdStatus": self.serial_timeoutSdStatus(),
-                    "log": self.serial_log(),
-                    "additionalPorts": commentableLinesToArray(self.serial_additionalPorts()),
-                    "additionalBaudrates": _.map(splitTextToArray(self.serial_additionalBaudrates(), ",", true, function(item) { return !isNaN(parseInt(item)); }), function(item) { return parseInt(item); }),
-                    "longRunningCommands": splitTextToArray(self.serial_longRunningCommands(), ",", true),
-                    "checksumRequiringCommands": splitTextToArray(self.serial_checksumRequiringCommands(), ",", true),
-                    "helloCommand": self.serial_helloCommand()
-                },
-                "folder": {
-                    "uploads": self.folder_uploads(),
-                    "timelapse": self.folder_timelapse(),
-                    "timelapseTmp": self.folder_timelapseTmp(),
-                    "logs": self.folder_logs(),
-                    "watched": self.folder_watched()
-                },
-                "temperature": {
-                    "profiles": self.temperature_profiles(),
-                    "cutoff": self.temperature_cutoff()
-                },
-                "system": {
-                    "actions": self.system_actions()
-                },
-                "terminalFilters": self.terminalFilters(),
-                "scripts": {
-                    "gcode": {
-                        "beforePrintStarted": self.scripts_gcode_beforePrintStarted(),
-                        "afterPrintDone": self.scripts_gcode_afterPrintDone(),
-                        "afterPrintCancelled": self.scripts_gcode_afterPrintCancelled(),
-                        "afterPrintPaused": self.scripts_gcode_afterPrintPaused(),
-                        "beforePrintResumed": self.scripts_gcode_beforePrintResumed(),
-                        "afterPrinterConnected": self.scripts_gcode_afterPrinterConnected(),
-                        "beforePrinterDisconnected": self.scripts_gcode_beforePrinterDisconnected()
-                    }
-                },
-                "server": {
-                    "commands": {
-                        "systemShutdownCommand": self.server_commands_systemShutdownCommand(),
-                        "systemRestartCommand": self.server_commands_systemRestartCommand(),
-                        "serverRestartCommand": self.server_commands_serverRestartCommand()
-                    }
+                serial: {
+                    additionalPorts : function() { return commentableLinesToArray(self.serial_additionalPorts()) },
+                    additionalBaudrates: function() { return _.map(splitTextToArray(self.serial_additionalBaudrates(), ",", true, function(item) { return !isNaN(parseInt(item)); }), function(item) { return parseInt(item); }) },
+                    longRunningCommands: function() { return splitTextToArray(self.serial_longRunningCommands(), ",", true) },
+                    checksumRequiringCommands: function() { return splitTextToArray(self.serial_checksumRequiringCommands(), ",", true) }
                 }
-            });
+            };
+
+            var mapFromObservables = function(data, mapping, keyPrefix) {
+                var flag = false;
+                var result = {};
+                _.forOwn(data, function(value, key) {
+                    var observable = key;
+                    if (keyPrefix != undefined) {
+                        observable = keyPrefix + "_" + observable;
+                    }
+
+                    if (_.isPlainObject(value)) {
+                        // value is another object, we'll dive deeper
+                        var subresult = mapFromObservables(value, (mapping && mapping[key]) ? mapping[key] : undefined, observable);
+                        if (subresult != undefined) {
+                            result[key] = subresult;
+                            flag = true;
+                        }
+                    } else {
+                        // if we have a custom read function for this, we'll use it
+                        if (mapping && mapping[key] && _.isFunction(mapping[key])) {
+                            result[key] = mapping[key]();
+                            flag = true;
+                        } else if (self.hasOwnProperty(observable)) {
+                            result[key] = self[observable]();
+                            flag = true;
+                        }
+                    }
+                });
+                return flag ? result : undefined;
+            };
+
+            var dataFromObservables = mapFromObservables(data, specialMappings);
+
+            data = _.extend(data, dataFromObservables);
             return data;
         };
 
