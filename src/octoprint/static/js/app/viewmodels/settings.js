@@ -185,6 +185,74 @@ $(function() {
             self.terminalFilters.remove(filter);
         };
 
+        self.testWebcamStreamUrl = function() {
+            if (!self.webcam_streamUrl()) {
+                return;
+            }
+
+            var text = gettext("If you see your webcam stream below, the entered stream URL is ok.");
+            showMessageDialog({
+                title: gettext("Stream test"),
+                message: '<p>' + text + '</p><p><img src="' + self.webcam_streamUrl() + '" /></p>'
+            });
+        };
+
+        self.testWebcamSnapshotUrl = function(viewModel, event) {
+            if (!self.webcam_snapshotUrl()) {
+                return;
+            }
+
+            var target = $(event.target);
+            target.prepend('<i class="icon-spinner icon-spin"></i> ');
+
+            var errorText = gettext("Could not retrieve snapshot URL, please double check the URL");
+            var errorTitle = gettext("Snapshot test failed");
+            $.ajax({
+                url: API_BASEURL + "util/test",
+                type: "POST",
+                dataType: "json",
+                data: JSON.stringify({
+                    command: "url",
+                    url: self.webcam_snapshotUrl(),
+                    method: "GET",
+                    response: true
+                }),
+                contentType: "application/json; charset=UTF-8",
+                success: function(response) {
+                    $("i.icon-spinner", target).remove();
+
+                    if (!response.result) {
+                        showMessageDialog({
+                            title: errorTitle,
+                            message: errorText
+                        });
+                        return;
+                    }
+
+                    var content = response.response.content;
+                    var mimeType = "image/jpeg";
+
+                    var headers = response.response.headers;
+                    if (headers && headers["mime-type"]) {
+                        mimeType = headers["mime-type"];
+                    }
+
+                    var text = gettext("If you see your webcam snapshot picture below, the entered snapshot URL is ok.");
+                    showMessageDialog({
+                        title: gettext("Snapshot test"),
+                        message: $('<p>' + text + '</p><p><img src="data:' + mimeType + ';base64,' + content + '" /></p>')
+                    });
+                },
+                error: function() {
+                    $("i.icon-spinner", target).remove();
+                    showMessageDialog({
+                        title: errorTitle,
+                        message: errorText
+                    });
+                }
+            });
+        };
+
         self.onSettingsShown = function() {
             self.requestData();
         };
