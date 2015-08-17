@@ -317,6 +317,12 @@ def utilTestPath():
 				else:
 					return False
 
+			def as_dict(self):
+				return dict(
+					start=self.start,
+					end=self.end
+				)
+
 		status_ranges = dict(
 			informational=StatusCodeRange(start=100,end=200),
 			success=StatusCodeRange(start=200,end=300),
@@ -355,4 +361,27 @@ def utilTestPath():
 		except:
 			status = False
 
-		return jsonify(url=url, status=response.status_code, result=status)
+		result = dict(
+			url=url,
+			status=response.status_code,
+			result=status.as_dict() if isinstance(status, StatusCodeRange) else status
+		)
+
+		if "response" in data and (data["response"] in valid_boolean_trues or data["response"] in ("json", "bytes")):
+
+			import base64
+			content = base64.standard_b64encode(response.content)
+
+			if data["response"] == "json":
+				try:
+					content = response.json()
+				except:
+					logging.getLogger(__name__).exception("Couldn't convert response to json")
+					result["result"] = False
+
+			result["response"] = dict(
+				headers=dict(response.headers),
+				content=content
+			)
+
+		return jsonify(**result)
