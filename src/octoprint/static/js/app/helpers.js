@@ -434,45 +434,81 @@ function hideOfflineOverlay() {
     $("#offline_overlay").hide();
 }
 
-function showMessageDialog(message, options) {
+function showMessageDialog(msg, options) {
     options = options || {};
-
-    var messageDialog = $("#message_dialog");
+    if (_.isPlainObject(msg)) {
+        options = msg;
+    } else {
+        options.message = msg;
+    }
 
     var title = options.title || "";
+    var message = options.message || "";
     var close = options.close || gettext("Close");
+    var onclose = options.onclose || undefined;
 
-    $(".message_dialog_title", messageDialog).text(title);
-    $(".message_dialog_message", messageDialog).text(message);
-    $(".message_dialog_close", messageDialog).text(close);
+    var modalHeader = $('<a href="javascript:void(0)" class="close" data-dismiss="modal" aria-hidden="true">&times;</a><h3>' + title + '</h3>');
+    var modalBody = $(message);
+    var modalFooter = $('<a href="javascript:void(0)" class="btn" data-dismiss="modal" aria-hidden="true">' + close + '</a>');
 
-    messageDialog.modal("show");
+    var modal = $('<div></div>')
+        .addClass('modal hide fade')
+        .append($('<div></div>').addClass('modal-header').append(modalHeader))
+        .append($('<div></div>').addClass('modal-body').append(modalBody))
+        .append($('<div></div>').addClass('modal-footer').append(modalFooter));
+
+    modal.on("hidden", function() {
+        if (onclose && _.isFunction(onclose)) {
+            onclose();
+        }
+    });
+
+    modal.modal("show");
+    return modal;
 }
 
-function showConfirmationDialog(message, onacknowledge, options) {
+function showConfirmationDialog(msg, onacknowledge, options) {
     options = options || {};
-
-    var confirmationDialog = $("#confirmation_dialog");
+    if (_.isPlainObject(msg)) {
+        options = msg;
+    } else {
+        options.message = msg;
+        options.onproceed = onacknowledge;
+    }
 
     var title = options.title || gettext("Are you sure?");
+    var message = options.message || "";
     var question = options.question || gettext("Are you sure you want to proceed?");
     var cancel = options.cancel || gettext("Cancel");
     var proceed = options.proceed || gettext("Proceed");
+    var proceedClass = options.proceedClass || "danger";
+    var onproceed = options.onproceed || undefined;
 
-    $(".confirmation_dialog_message", confirmationDialog).text(message);
-    $(".confirmation_dialog_title", confirmationDialog).text(title);
-    $(".confirmation_dialog_question", confirmationDialog).text(question);
-    $(".confirmation_dialog_cancel", confirmationDialog).text(cancel);
+    var modalHeader = $('<a href="javascript:void(0)" class="close" data-dismiss="modal" aria-hidden="true">&times;</a><h3>' + title + '</h3>');
+    var modalBody = $('<p>' + message + '</p><p>' + question + '</p>');
 
-    var confirmationDialogAck = $(".confirmation_dialog_acknowledge", confirmationDialog);
-    confirmationDialogAck.text(proceed);
-    confirmationDialogAck.unbind("click");
-    confirmationDialogAck.bind("click", function (e) {
+    var cancelButton = $('<a href="javascript:void(0)" class="btn">' + cancel + '</a>')
+        .attr("data-dismiss", "modal")
+        .attr("aria-hidden", "true");
+    var proceedButton = $('<a href="javascript:void(0)" class="btn">' + proceed + '</a>')
+        .addClass("btn-" + proceedClass);
+
+    var modal = $('<div></div>')
+        .addClass('modal hide fade')
+        .append($('<div></div>').addClass('modal-header').append(modalHeader))
+        .append($('<div></div>').addClass('modal-body').append(modalBody))
+        .append($('<div></div>').addClass('modal-footer').append(cancelButton).append(proceedButton));
+    modal.modal("show");
+
+    proceedButton.click(function(e) {
         e.preventDefault();
-        $("#confirmation_dialog").modal("hide");
-        onacknowledge(e);
+        modal.modal("hide");
+        if (onproceed && _.isFunction(onproceed)) {
+            onproceed(e);
+        }
     });
-    confirmationDialog.modal("show");
+
+    return modal;
 }
 
 function commentableLinesToArray(lines) {

@@ -277,10 +277,11 @@ $(function() {
                     type: "error"
                 });
             } else {
-                showConfirmationDialog(gettext("This will update your OctoPrint installation and restart the server."), function(e) {
-                    e.preventDefault();
-                    $("#confirmation_dialog").modal("hide");
-                    self.performUpdate(force);
+                showConfirmationDialog({
+                    message: gettext("This will update your OctoPrint installation and restart the server."),
+                    onproceed: function(e) {
+                        self.performUpdate(force);
+                    }
                 });
             }
 

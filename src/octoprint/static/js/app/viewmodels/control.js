@@ -236,8 +236,11 @@ $(function() {
             }
 
             if (data.confirm) {
-                showConfirmationDialog(data.confirm, function (e) {
-                    callback(data);
+                showConfirmationDialog({
+                    message: data.confirm,
+                    onproceed: function (e) {
+                        callback(data);
+                    }
                 });
             } else {
                 callback(data);

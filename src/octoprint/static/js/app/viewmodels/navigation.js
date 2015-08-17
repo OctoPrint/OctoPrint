@@ -37,8 +37,11 @@ $(function() {
                 })
             };
             if (action.confirm) {
-                showConfirmationDialog(action.confirm, function (e) {
-                    callback();
+                showConfirmationDialog({
+                    message: action.confirm,
+                    onproceed: function(e) {
+                        callback();
+                    }
                 });
             } else {
                 callback();
