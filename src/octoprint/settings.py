@@ -545,6 +545,20 @@ class Settings(object):
 		import yaml
 		return yaml.safe_dump(self.effective)
 
+	@property
+	def effective_hash(self):
+		import hashlib
+		hash = hashlib.md5()
+		hash.update(repr(self.effective))
+		return hash.hexdigest()
+
+	@property
+	def config_hash(self):
+		import hashlib
+		hash = hashlib.md5()
+		hash.update(repr(self._config))
+		return hash.hexdigest()
+
 	#~~ load and save
 
 	def load(self, migrate=False):

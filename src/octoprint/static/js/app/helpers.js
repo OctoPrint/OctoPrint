@@ -488,3 +488,110 @@ function splitTextToArray(text, sep, stripEmpty, filter) {
         function(item) { return (stripEmpty ? item : true) && (filter ? filter(item) : true); }
     );
 }
+
+/**
+ * Returns true if comparing data and oldData yields changes, false otherwise.
+ *
+ * E.g.
+ *
+ *   hasDataChanged(
+ *     {foo: "bar", fnord: {one: "1", two: "2", three: "three", key: "value"}},
+ *     {foo: "bar", fnord: {one: "1", two: "2", three: "3", four: "4"}}
+ *   )
+ *
+ * will return
+ *
+ *   true
+ *
+ * and
+ *
+ *   hasDataChanged(
+ *     {foo: "bar", fnord: {one: "1", two: "2", three: "3"}},
+ *     {foo: "bar", fnord: {one: "1", two: "2", three: "3"}}
+ *   )
+ *
+ * will return
+ *
+ *   false
+ *
+ * Note that this will assume data and oldData to be structurally identical (same keys)
+ * and is optimized to check for value changes, not key updates.
+ */
+function hasDataChanged(data, oldData) {
+    if (data == undefined) {
+        return false;
+    }
+
+    if (oldData == undefined) {
+        return true;
+    }
+
+    if (_.isPlainObject(data)) {
+        return _.any(_.keys(data), function(key) {return hasDataChanged(data[key], oldData[key]);});
+    } else {
+        return !_.isEqual(data, oldData);
+    }
+}
+
+/**
+ * Compare provided data and oldData plain objects and only return those
+ * substructures of data that actually changed.
+ *
+ * E.g.
+ *
+ *   getOnlyChangedData(
+ *     {foo: "bar", fnord: {one: "1", two: "2", three: "three"}},
+ *     {foo: "bar", fnord: {one: "1", two: "2", three: "3"}}
+ *   )
+ *
+ * will return
+ *
+ *   {fnord: {three: "three"}}
+ *
+ * and
+ *
+ *   getOnlyChangedData(
+ *     {foo: "bar", fnord: {one: "1", two: "2", three: "3"}},
+ *     {foo: "bar", fnord: {one: "1", two: "2", three: "3"}}
+ *   )
+ *
+ * will return
+ *
+ *   {}
+ *
+ * Note that this will assume data and oldData to be structurally identical (same keys)
+ * and is optimized to check for value changes, not key updates.
+ */
+function getOnlyChangedData(data, oldData) {
+    if (data == undefined) {
+        return {};
+    }
+
+    if (oldData == undefined) {
+        return data;
+    }
+
+    var f = function(root, oldRoot) {
+        if (!_.isPlainObject(root)) {
+            return root;
+        }
+
+        var retval = {};
+        _.forOwn(root, function(value, key) {
+            var oldValue = oldRoot[key];
+            if (_.isPlainObject(value)) {
+                if (hasDataChanged(value, oldValue)) {
+                    retval[key] = f(value, oldValue);
+                }
+            } else {
+                if (!_.isEqual(value, oldValue)) {
+                    retval[key] = value;
+                }
+            }
+        });
+        return retval;
+    };
+
+    return f(data, oldData);
+}
+

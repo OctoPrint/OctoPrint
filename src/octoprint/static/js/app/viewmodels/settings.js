@@ -22,6 +22,7 @@ $(function() {
         self.appearance_defaultLanguage = ko.observable();
 
         self.settingsDialog = undefined;
+        self.settings_dialog_update_detected = undefined;
         self.translationManagerDialog = undefined;
         self.translationUploadElement = $("#settings_appearance_managelanguagesdialog_upload");
         self.translationUploadButton = $("#settings_appearance_managelanguagesdialog_upload_start");
@@ -164,6 +165,7 @@ $(function() {
         self.server_commands_serverRestartCommand = ko.observable(undefined);
 
         self.settings = undefined;
+        self.lastReceivedSettings = undefined;
 
         self.addTemperatureProfile = function() {
             self.temperature_profiles.push({name: "New", extruder:0, bed:0});
@@ -182,11 +184,16 @@ $(function() {
         };
 
         self.onSettingsShown = function() {
-          self.requestData();
+            self.requestData();
+        };
+
+        self.isDialogActive = function() {
+            return self.settingsDialog.is(":visible");
         };
 
         self.onStartup = function() {
             self.settingsDialog = $('#settings_dialog');
+            self.settingsUpdatedDialog = $('#settings_dialog_update_detected');
             self.translationManagerDialog = $('#settings_appearance_managelanguagesdialog');
             self.translationUploadElement = $("#settings_appearance_managelanguagesdialog_upload");
             self.translationUploadButton = $("#settings_appearance_managelanguagesdialog_upload_start");
@@ -247,6 +254,19 @@ $(function() {
                     }
                 });
             });
+
+            $(".reload_all", self.settingsUpdatedDialog).click(function(e) {
+                e.preventDefault();
+                self.settingsUpdatedDialog.modal("hide");
+                self.requestData();
+                return false;
+            });
+            $(".reload_nonconflicts", self.settingsUpdatedDialog).click(function(e) {
+                e.preventDefault();
+                self.settingsUpdatedDialog.modal("hide");
+                self.requestData(undefined, true);
+                return false;
+            });
         };
 
         self.show = function() {
@@ -270,7 +290,7 @@ $(function() {
             return false;
         };
 
-        self.requestData = function(callback) {
+        self.requestData = function(callback, local) {
             if (self.receiving()) {
                 if (callback) {
                     self.callbacks.push(callback);
@@ -289,7 +309,7 @@ $(function() {
                     }
 
                     try {
-                        self.fromResponse(response);
+                        self.fromResponse(response, local);
 
                         var cb;
                         while (self.callbacks.length) {
@@ -380,92 +400,150 @@ $(function() {
             })
         };
 
-        self.fromResponse = function(response) {
+        /**
+         * Fetches the settings as currently stored in this client instance.
+         */
+        self._getLocalData = function() {
+            var data = {};
+            if (self.settings != undefined) {
+                data = ko.mapping.toJS(self.settings);
+            }
+
+            // some special read functions for various observables
+            var specialMappings = {
+                feature: {
+                    externalHeatupDetection: function() { return !self.feature_disableExternalHeatupDetection() }
+                },
+                serial: {
+                    additionalPorts : function() { return commentableLinesToArray(self.serial_additionalPorts()) },
+                    additionalBaudrates: function() { return _.map(splitTextToArray(self.serial_additionalBaudrates(), ",", true, function(item) { return !isNaN(parseInt(item)); }), function(item) { return parseInt(item); }) },
+                    longRunningCommands: function() { return splitTextToArray(self.serial_longRunningCommands(), ",", true) },
+                    checksumRequiringCommands: function() { return splitTextToArray(self.serial_checksumRequiringCommands(), ",", true) }
+                }
+            };
+
+            var mapFromObservables = function(data, mapping, keyPrefix) {
+                var flag = false;
+                var result = {};
+
+                // process all key-value-pairs here
+                _.forOwn(data, function(value, key) {
+                    var observable = key;
+                    if (keyPrefix != undefined) {
+                        observable = keyPrefix + "_" + observable;
+                    }
+
+                    if (_.isPlainObject(value)) {
+                        // value is another object, we'll dive deeper
+                        var subresult = mapFromObservables(value, (mapping && mapping[key]) ? mapping[key] : undefined, observable);
+                        if (subresult != undefined) {
+                            // we only set something on our result if we got something back
+                            result[key] = subresult;
+                            flag = true;
+                        }
+                    } else {
+                        // if we have a custom read function for this, we'll use it
+                        if (mapping && mapping[key] && _.isFunction(mapping[key])) {
+                            result[key] = mapping[key]();
+                            flag = true;
+                        } else if (self.hasOwnProperty(observable)) {
+                            result[key] = self[observable]();
+                            flag = true;
+                        }
+                    }
+                });
+
+                // if we set something on our result (flag is true), we return result, else we return undefined
+                return flag ? result : undefined;
+            };
+
+            // map local observables based on our existing data
+            var dataFromObservables = mapFromObservables(data, specialMappings);
+
+            data = _.extend(data, dataFromObservables);
+            return data;
+        };
+
+        self.fromResponse = function(response, local) {
+            // server side changes to set
+            var serverChangedData;
+
+            // client side changes to keep
+            var clientChangedData;
+
+            if (local) {
+                // local is true, so we'll keep all local changes and only update what's been updated server side
+                serverChangedData = getOnlyChangedData(response, self.lastReceivedSettings);
+                clientChangedData = getOnlyChangedData(self._getLocalData(), self.lastReceivedSettings);
+            } else  {
+                // local is false or unset, so we'll forcefully update with the settings from the server
+                serverChangedData = response;
+                clientChangedData = undefined;
+            }
+
+            // last received settings reset to response
+            self.lastReceivedSettings = response;
+
             if (self.settings === undefined) {
-                self.settings = ko.mapping.fromJS(response);
+                self.settings = ko.mapping.fromJS(serverChangedData);
             } else {
-                ko.mapping.fromJS(response, self.settings);
+                ko.mapping.fromJS(serverChangedData, self.settings);
             }
 
-            self.api_enabled(response.api.enabled);
-            self.api_key(response.api.key);
-            self.api_allowCrossOrigin(response.api.allowCrossOrigin);
+            // some special apply functions for various observables
+            var specialMappings = {
+                appearance: {
+                    defaultLanguage: function(value) {
+                        self.appearance_defaultLanguage("_default");
+                        if (_.includes(self.locale_languages, value)) {
+                            self.appearance_defaultLanguage(value);
+                        }
+                    }
+                },
+                feature: {
+                    externalHeatupDetection: function(value) { self.feature_disableExternalHeatupDetection(!value) }
+                },
+                serial: {
+                    additionalPorts : function(value) { self.serial_additionalPorts(value.join("\n"))},
+                    additionalBaudrates: function(value) { self.serial_additionalBaudrates(value.join(", "))},
+                    longRunningCommands: function(value) { self.serial_longRunningCommands(value.join(", "))},
+                    checksumRequiringCommands: function(value) { self.serial_checksumRequiringCommands(value.join(", "))}
+                }
+            };
 
-            self.appearance_name(response.appearance.name);
-            self.appearance_color(response.appearance.color);
-            self.appearance_colorTransparent(response.appearance.colorTransparent);
-            self.appearance_defaultLanguage("_default");
-            if (_.includes(self.locale_languages, response.appearance.defaultLanguage)) {
-                self.appearance_defaultLanguage(response.appearance.defaultLanguage);
-            }
+            var mapToObservables = function(data, mapping, local, keyPrefix) {
+                if (!_.isPlainObject(data)) {
+                    return;
+                }
 
-            self.printer_defaultExtrusionLength(response.printer.defaultExtrusionLength);
+                // process all key-value-pairs here
+                _.forOwn(data, function(value, key) {
+                    var observable = key;
+                    if (keyPrefix != undefined) {
+                        observable = keyPrefix + "_" + observable;
+                    }
 
-            self.webcam_streamUrl(response.webcam.streamUrl);
-            self.webcam_snapshotUrl(response.webcam.snapshotUrl);
-            self.webcam_ffmpegPath(response.webcam.ffmpegPath);
-            self.webcam_bitrate(response.webcam.bitrate);
-            self.webcam_ffmpegThreads(response.webcam.ffmpegThreads);
-            self.webcam_watermark(response.webcam.watermark);
-            self.webcam_flipH(response.webcam.flipH);
-            self.webcam_flipV(response.webcam.flipV);
-            self.webcam_rotate90(response.webcam.rotate90);
+                    if (_.isPlainObject(value)) {
+                        // value is another object, we'll dive deeper
+                        mapToObservables(value, (mapping && mapping[key]) ? mapping[key] : undefined, (local && local[key]) ? local[key] : undefined, observable);
+                    } else {
+                        // if we have a local version of this field, we'll not override it
+                        if (local && local.hasOwnProperty(key)) {
+                            return;
+                        }
 
-            self.feature_gcodeViewer(response.feature.gcodeViewer);
-            self.feature_temperatureGraph(response.feature.temperatureGraph);
-            self.feature_waitForStart(response.feature.waitForStart);
-            self.feature_alwaysSendChecksum(response.feature.alwaysSendChecksum);
-            self.feature_sdSupport(response.feature.sdSupport);
-            self.feature_sdAlwaysAvailable(response.feature.sdAlwaysAvailable);
-            self.feature_swallowOkAfterResend(response.feature.swallowOkAfterResend);
-            self.feature_repetierTargetTemp(response.feature.repetierTargetTemp);
-            self.feature_disableExternalHeatupDetection(!response.feature.externalHeatupDetection);
-            self.feature_keyboardControl(response.feature.keyboardControl);
-            self.feature_pollWatched(response.feature.pollWatched);
+                        if (mapping && mapping[key] && _.isFunction(mapping[key])) {
+                            // if we have a custom apply function for this, we'll use it
+                            mapping[key](value);
+                        } else if (self.hasOwnProperty(observable)) {
+                            // else if we have a matching observable, we'll use that
+                            self[observable](value);
+                        }
+                    }
+                });
+            };
 
-            self.serial_port(response.serial.port);
-            self.serial_baudrate(response.serial.baudrate);
-            self.serial_portOptions(response.serial.portOptions);
-            self.serial_baudrateOptions(response.serial.baudrateOptions);
-            self.serial_autoconnect(response.serial.autoconnect);
-            self.serial_timeoutConnection(response.serial.timeoutConnection);
-            self.serial_timeoutDetection(response.serial.timeoutDetection);
-            self.serial_timeoutCommunication(response.serial.timeoutCommunication);
-            self.serial_timeoutTemperature(response.serial.timeoutTemperature);
-            self.serial_timeoutSdStatus(response.serial.timeoutSdStatus);
-            self.serial_log(response.serial.log);
-            self.serial_additionalPorts(response.serial.additionalPorts.join("\n"));
-            self.serial_additionalBaudrates(response.serial.additionalBaudrates.join(", "));
-            self.serial_longRunningCommands(response.serial.longRunningCommands.join(", "));
-            self.serial_checksumRequiringCommands(response.serial.checksumRequiringCommands.join(", "));
-            self.serial_helloCommand(response.serial.helloCommand);
-
-            self.folder_uploads(response.folder.uploads);
-            self.folder_timelapse(response.folder.timelapse);
-            self.folder_timelapseTmp(response.folder.timelapseTmp);
-            self.folder_logs(response.folder.logs);
-            self.folder_watched(response.folder.watched);
-
-            self.temperature_profiles(response.temperature.profiles);
-
-            self.scripts_gcode_beforePrintStarted(response.scripts.gcode.beforePrintStarted);
-            self.scripts_gcode_afterPrintDone(response.scripts.gcode.afterPrintDone);
-            self.scripts_gcode_afterPrintCancelled(response.scripts.gcode.afterPrintCancelled);
-            self.scripts_gcode_afterPrintPaused(response.scripts.gcode.afterPrintPaused);
-            self.scripts_gcode_beforePrintResumed(response.scripts.gcode.beforePrintResumed);
-            self.scripts_gcode_afterPrinterConnected(response.scripts.gcode.afterPrinterConnected);
-            self.scripts_gcode_beforePrinterDisconnected(response.scripts.gcode.beforePrinterDisconnected);
-
-            self.temperature_profiles(response.temperature.profiles);
-            self.temperature_cutoff(response.temperature.cutoff);
-
-            self.system_actions(response.system.actions);
-
-            self.terminalFilters(response.terminalFilters);
-
-            self.server_commands_systemShutdownCommand(response.server.commands.systemShutdownCommand);
-            self.server_commands_systemRestartCommand(response.server.commands.systemRestartCommand);
-            self.server_commands_serverRestartCommand(response.server.commands.serverRestartCommand);
+            mapToObservables(serverChangedData, specialMappings, clientChangedData);
         };
 
         self.saveData = function (data, successCallback) {
@@ -474,97 +552,9 @@ $(function() {
             if (data == undefined) {
                 // we only set sending to true when we didn't include data
                 self.sending(true);
-                data = ko.mapping.toJS(self.settings);
 
-                data = _.extend(data, {
-                    "api" : {
-                        "enabled": self.api_enabled(),
-                        "key": self.api_key(),
-                        "allowCrossOrigin": self.api_allowCrossOrigin()
-                    },
-                    "appearance" : {
-                        "name": self.appearance_name(),
-                        "color": self.appearance_color(),
-                        "colorTransparent": self.appearance_colorTransparent(),
-                        "defaultLanguage": self.appearance_defaultLanguage()
-                    },
-                    "printer": {
-                        "defaultExtrusionLength": self.printer_defaultExtrusionLength()
-                    },
-                    "webcam": {
-                        "streamUrl": self.webcam_streamUrl(),
-                        "snapshotUrl": self.webcam_snapshotUrl(),
-                        "ffmpegPath": self.webcam_ffmpegPath(),
-                        "bitrate": self.webcam_bitrate(),
-                        "ffmpegThreads": self.webcam_ffmpegThreads(),
-                        "watermark": self.webcam_watermark(),
-                        "flipH": self.webcam_flipH(),
-                        "flipV": self.webcam_flipV(),
-                        "rotate90": self.webcam_rotate90()
-                    },
-                    "feature": {
-                        "gcodeViewer": self.feature_gcodeViewer(),
-                        "temperatureGraph": self.feature_temperatureGraph(),
-                        "waitForStart": self.feature_waitForStart(),
-                        "alwaysSendChecksum": self.feature_alwaysSendChecksum(),
-                        "sdSupport": self.feature_sdSupport(),
-                        "sdAlwaysAvailable": self.feature_sdAlwaysAvailable(),
-                        "swallowOkAfterResend": self.feature_swallowOkAfterResend(),
-                        "repetierTargetTemp": self.feature_repetierTargetTemp(),
-                        "externalHeatupDetection": !self.feature_disableExternalHeatupDetection(),
-                        "keyboardControl": self.feature_keyboardControl(),
-                        "pollWatched": self.feature_pollWatched()
-                    },
-                    "serial": {
-                        "port": self.serial_port(),
-                        "baudrate": self.serial_baudrate(),
-                        "autoconnect": self.serial_autoconnect(),
-                        "timeoutConnection": self.serial_timeoutConnection(),
-                        "timeoutDetection": self.serial_timeoutDetection(),
-                        "timeoutCommunication": self.serial_timeoutCommunication(),
-                        "timeoutTemperature": self.serial_timeoutTemperature(),
-                        "timeoutSdStatus": self.serial_timeoutSdStatus(),
-                        "log": self.serial_log(),
-                        "additionalPorts": commentableLinesToArray(self.serial_additionalPorts()),
-                        "additionalBaudrates": _.map(splitTextToArray(self.serial_additionalBaudrates(), ",", true, function(item) { return !isNaN(parseInt(item)); }), function(item) { return parseInt(item); }),
-                        "longRunningCommands": splitTextToArray(self.serial_longRunningCommands(), ",", true),
-                        "checksumRequiringCommands": splitTextToArray(self.serial_checksumRequiringCommands(), ",", true),
-                        "helloCommand": self.serial_helloCommand()
-                    },
-                    "folder": {
-                        "uploads": self.folder_uploads(),
-                        "timelapse": self.folder_timelapse(),
-                        "timelapseTmp": self.folder_timelapseTmp(),
-                        "logs": self.folder_logs(),
-                        "watched": self.folder_watched()
-                    },
-                    "temperature": {
-                        "profiles": self.temperature_profiles(),
-                        "cutoff": self.temperature_cutoff()
-                    },
-                    "system": {
-                        "actions": self.system_actions()
-                    },
-                    "terminalFilters": self.terminalFilters(),
-                    "scripts": {
-                        "gcode": {
-                            "beforePrintStarted": self.scripts_gcode_beforePrintStarted(),
-                            "afterPrintDone": self.scripts_gcode_afterPrintDone(),
-                            "afterPrintCancelled": self.scripts_gcode_afterPrintCancelled(),
-                            "afterPrintPaused": self.scripts_gcode_afterPrintPaused(),
-                            "beforePrintResumed": self.scripts_gcode_beforePrintResumed(),
-                            "afterPrinterConnected": self.scripts_gcode_afterPrinterConnected(),
-                            "beforePrinterDisconnected": self.scripts_gcode_beforePrinterDisconnected()
-                        }
-                    },
-                    "server": {
-                        "commands": {
-                            "systemShutdownCommand": self.server_commands_systemShutdownCommand(),
-                            "systemRestartCommand": self.server_commands_systemRestartCommand(),
-                            "serverRestartCommand": self.server_commands_serverRestartCommand()
-                        }
-                    }
-                });
+                // we also only send data that actually changed when no data is specified
+                data = getOnlyChangedData(self._getLocalData(), self.lastReceivedSettings);
             }
 
             $.ajax({
@@ -590,7 +580,23 @@ $(function() {
         };
 
         self.onEventSettingsUpdated = function() {
-            self.requestData();
+            if (self.isDialogActive()) {
+                // dialog is open and not currently busy...
+                if (self.sending() || self.receiving()) {
+                    return;
+                }
+
+                if (!hasDataChanged(self._getLocalData(), self.lastReceivedSettings)) {
+                    // we don't have local changes, so just fetch new data
+                    self.requestData();
+                } else {
+                    // we have local changes, show update dialog
+                    self.settingsUpdatedDialog.modal("show");
+                }
+            } else {
+                // dialog is not open, just fetch new data
+                self.requestData();
+            }
         };
 
         self.enqueueForSaving = function(data) {

@@ -10,6 +10,7 @@ function DataUpdater(allViewModels) {
     self._autoReconnectDialogIndex = 1;
 
     self._pluginHash = undefined;
+    self._configHash = undefined;
 
     self.reloadOverlay = $("#reloadui_overlay");
     $("#reloadui_overlay_reload").click(function() { location.reload(true); });
@@ -127,6 +128,9 @@ function DataUpdater(allViewModels) {
                     var oldPluginHash = self._pluginHash;
                     self._pluginHash = data["plugin_hash"];
 
+                    var oldConfigHash = self._configHash;
+                    self._configHash = data["config_hash"];
+
                     if ($("#offline_overlay").is(":visible")) {
                         hideOfflineOverlay();
                         _.each(self.allViewModels, function(viewModel) {
@@ -140,7 +144,10 @@ function DataUpdater(allViewModels) {
                         }
                     }
 
-                    if (oldVersion != VERSION || (oldPluginHash != undefined && oldPluginHash != self._pluginHash)) {
+                    var versionChanged = oldVersion != VERSION;
+                    var pluginsChanged = oldPluginHash != undefined && oldPluginHash != self._pluginHash;
+                    var configChanged = oldConfigHash != undefined && oldConfigHash != self._configHash;
+                    if (versionChanged || pluginsChanged || configChanged) {
                         self.reloadOverlay.show();
                     }
 
@@ -180,7 +187,11 @@ function DataUpdater(allViewModels) {
 
                     log.debug("Got event " + type + " with payload: " + JSON.stringify(payload));
 
-                    if (type == "MovieRendering") {
+                    if (type == "SettingsUpdated") {
+                        if (payload && payload.hasOwnProperty("config_hash")) {
+                            self._configHash = payload.config_hash;
+                        }
+                    } else if (type == "MovieRendering") {
                         new PNotify({title: gettext("Rendering timelapse"), text: _.sprintf(gettext("Now rendering timelapse %(movie_basename)s"), payload)});
                     } else if (type == "MovieDone") {
                         new PNotify({title: gettext("Timelapse ready"), text: _.sprintf(gettext("New timelapse %(movie_basename)s is done rendering."), payload)});

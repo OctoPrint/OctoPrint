@@ -285,7 +285,11 @@ def setSettings():
 					logger.exception("Could not save settings for plugin {name} ({version})".format(version=plugin._plugin_version, name=plugin._plugin_name))
 
 	if s.save():
-		eventManager().fire(Events.SETTINGS_UPDATED)
+		payload = dict(
+			config_hash=s.config_hash,
+			effective_hash=s.effective_hash
+		)
+		eventManager().fire(Events.SETTINGS_UPDATED, payload=payload)
 
 	return getSettings()
 
