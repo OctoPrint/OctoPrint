@@ -39,11 +39,14 @@ $(function() {
 
         self.disableAccessControl = function() {
             var message = gettext("If you disable Access Control <strong>and</strong> your OctoPrint installation is accessible from the internet, your printer <strong>will be accessible by everyone - that also includes the bad guys!</strong>");
-            showConfirmationDialog(message, function(e) {
-                var data = {
-                    "ac": false
-                };
-                self._sendData(data);
+            showConfirmationDialog({
+                message: message,
+                onproceed: function (e) {
+                    var data = {
+                        "ac": false
+                    };
+                    self._sendData(data);
+                }
             });
         };
 
@@ -65,7 +68,10 @@ $(function() {
             if (!current || !_.startsWith(current, "wizard_firstrun_acl") || self.setup()) {
                 return true;
             }
-            showMessageDialog(gettext("You haven't yet set up access control. You need to either setup a username and password and click \"Keep Access Control Enabled\" or click \"Disable Access Control\" before continuing"), {title: "Please set up Access Control"});
+            showMessageDialog({
+                title: gettext("Please set up Access Control"),
+                message: gettext("You haven't yet set up access control. You need to either setup a username and password and click \"Keep Access Control Enabled\" or click \"Disable Access Control\" before continuing")
+            });
             return false;
         };
 
@@ -76,9 +82,19 @@ $(function() {
         };
     }
 
+    function WebcamWizardViewModel(parameters) {
+        var self = this;
+
+        self.settingsViewModel = parameters[0];
+    }
+
     OCTOPRINT_VIEWMODELS.push([
         AclWizardViewModel,
         [],
         "#wizard_firstrun_acl"
+    ], [
+        WebcamWizardViewModel,
+        ["settingsViewModel"],
+        "#wizard_firstrun_webcam"
     ]);
 });
