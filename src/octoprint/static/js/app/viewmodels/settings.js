@@ -398,13 +398,16 @@ $(function() {
             })
         };
 
+        /**
+         * Fetches the settings as currently stored in this client instance.
+         */
         self._getLocalData = function() {
             var data = {};
             if (self.settings != undefined) {
                 data = ko.mapping.toJS(self.settings);
             }
 
-            // some special apply functions for various observables
+            // some special read functions for various observables
             var specialMappings = {
                 feature: {
                     externalHeatupDetection: function() { return !self.feature_disableExternalHeatupDetection() }
@@ -420,6 +423,8 @@ $(function() {
             var mapFromObservables = function(data, mapping, keyPrefix) {
                 var flag = false;
                 var result = {};
+
+                // process all key-value-pairs here
                 _.forOwn(data, function(value, key) {
                     var observable = key;
                     if (keyPrefix != undefined) {
@@ -430,6 +435,7 @@ $(function() {
                         // value is another object, we'll dive deeper
                         var subresult = mapFromObservables(value, (mapping && mapping[key]) ? mapping[key] : undefined, observable);
                         if (subresult != undefined) {
+                            // we only set something on our result if we got something back
                             result[key] = subresult;
                             flag = true;
                         }
@@ -444,9 +450,12 @@ $(function() {
                         }
                     }
                 });
+
+                // if we set something on our result (flag is true), we return result, else we return undefined
                 return flag ? result : undefined;
             };
 
+            // map local observables based on our existing data
             var dataFromObservables = mapFromObservables(data, specialMappings);
 
             data = _.extend(data, dataFromObservables);
@@ -505,6 +514,7 @@ $(function() {
                     return;
                 }
 
+                // process all key-value-pairs here
                 _.forOwn(data, function(value, key) {
                     var observable = key;
                     if (keyPrefix != undefined) {
@@ -520,15 +530,13 @@ $(function() {
                             return;
                         }
 
-                        // applying the value usually means we'll call the observable with it
-                        var apply = function(v) { if (self.hasOwnProperty(observable)) { self[observable](v) } };
-
-                        // if we have a custom apply function for this, we'll use it instead
                         if (mapping && mapping[key] && _.isFunction(mapping[key])) {
-                            apply = mapping[key];
+                            // if we have a custom apply function for this, we'll use it
+                            mapping[key](value);
+                        } else if (self.hasOwnProperty(observable)) {
+                            // else if we have a matching observable, we'll use that
+                            self[observable](value);
                         }
-
-                        apply(value);
                     }
                 });
             };
@@ -543,7 +551,7 @@ $(function() {
                 // we only set sending to true when we didn't include data
                 self.sending(true);
 
-                // we also only sent data that actually changed when no data is specified
+                // we also only send data that actually changed when no data is specified
                 data = getOnlyChangedData(self._getLocalData(), self.lastReceivedSettings);
             }
 
@@ -571,17 +579,20 @@ $(function() {
 
         self.onEventSettingsUpdated = function() {
             if (self.isDialogActive()) {
+                // dialog is open and not currently busy...
                 if (self.sending() || self.receiving()) {
                     return;
                 }
 
                 if (!hasDataChanged(self._getLocalData(), self.lastReceivedSettings)) {
+                    // we don't have local changes, so just fetch new data
                     self.requestData();
-                    return;
+                } else {
+                    // we have local changes, show update dialog
+                    self.settingsUpdatedDialog.modal("show");
                 }
-
-                self.settingsUpdatedDialog.modal("show");
             } else {
+                // dialog is not open, just fetch new data
                 self.requestData();
             }
         };

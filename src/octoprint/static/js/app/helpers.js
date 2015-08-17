@@ -462,6 +462,34 @@ function splitTextToArray(text, sep, stripEmpty, filter) {
     );
 }
 
+/**
+ * Returns true if comparing data and oldData yields changes, false otherwise.
+ *
+ * E.g.
+ *
+ *   hasDataChanged(
+ *     {foo: "bar", fnord: {one: "1", two: "2", three: "three", key: "value"}},
+ *     {foo: "bar", fnord: {one: "1", two: "2", three: "3", four: "4"}}
+ *   )
+ *
+ * will return
+ *
+ *   true
+ *
+ * and
+ *
+ *   hasDataChanged(
+ *     {foo: "bar", fnord: {one: "1", two: "2", three: "3"}},
+ *     {foo: "bar", fnord: {one: "1", two: "2", three: "3"}}
+ *   )
+ *
+ * will return
+ *
+ *   false
+ *
+ * Note that this will assume data and oldData to be structurally identical (same keys)
+ * and is optimized to check for value changes, not key updates.
+ */
 function hasDataChanged(data, oldData) {
     if (data == undefined) {
         return false;
@@ -476,8 +504,37 @@ function hasDataChanged(data, oldData) {
     } else {
         return !_.isEqual(data, oldData);
     }
-};
+}
 
+/**
+ * Compare provided data and oldData plain objects and only return those
+ * substructures of data that actually changed.
+ *
+ * E.g.
+ *
+ *   getOnlyChangedData(
+ *     {foo: "bar", fnord: {one: "1", two: "2", three: "three"}},
+ *     {foo: "bar", fnord: {one: "1", two: "2", three: "3"}}
+ *   )
+ *
+ * will return
+ *
+ *   {fnord: {three: "three"}}
+ *
+ * and
+ *
+ *   getOnlyChangedData(
+ *     {foo: "bar", fnord: {one: "1", two: "2", three: "3"}},
+ *     {foo: "bar", fnord: {one: "1", two: "2", three: "3"}}
+ *   )
+ *
+ * will return
+ *
+ *   {}
+ *
+ * Note that this will assume data and oldData to be structurally identical (same keys)
+ * and is optimized to check for value changes, not key updates.
+ */
 function getOnlyChangedData(data, oldData) {
     if (data == undefined) {
         return {};
@@ -509,5 +566,5 @@ function getOnlyChangedData(data, oldData) {
     };
 
     return f(data, oldData);
-};
+}
 
