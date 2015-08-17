@@ -134,6 +134,16 @@ $(function() {
                 dataType: "json",
                 success: callback
             });
+        };
+
+        self.onSettingsPreventRefresh = function() {
+            if (self.isDialogActive() && hasDataChanged(self.settingsViewModel.getLocalData(), self.settingsViewModel.lastReceivedSettings)) {
+                // we have local changes, show update dialog
+                self.settingsViewModel.settingsUpdatedDialog.modal("show");
+                return true;
+            }
+
+            return false;
         }
     }
 
