@@ -6,6 +6,8 @@ $(function() {
         self.users = parameters[1];
         self.printerProfiles = parameters[2];
 
+        self.allViewModels = [];
+
         self.receiving = ko.observable(false);
         self.sending = ko.observable(false);
         self.callbacks = [];
@@ -228,6 +230,8 @@ $(function() {
         };
 
         self.onAllBound = function(allViewModels) {
+            self.allViewModels = allViewModels;
+
             self.settingsDialog.on('show', function(event) {
                 if (event.target.id == "settings_dialog") {
                     self.requestTranslationData();
@@ -403,7 +407,7 @@ $(function() {
         /**
          * Fetches the settings as currently stored in this client instance.
          */
-        self._getLocalData = function() {
+        self.getLocalData = function() {
             var data = {};
             if (self.settings != undefined) {
                 data = ko.mapping.toJS(self.settings);
@@ -474,7 +478,7 @@ $(function() {
             if (local) {
                 // local is true, so we'll keep all local changes and only update what's been updated server side
                 serverChangedData = getOnlyChangedData(response, self.lastReceivedSettings);
-                clientChangedData = getOnlyChangedData(self._getLocalData(), self.lastReceivedSettings);
+                clientChangedData = getOnlyChangedData(self.getLocalData(), self.lastReceivedSettings);
             } else  {
                 // local is false or unset, so we'll forcefully update with the settings from the server
                 serverChangedData = response;
@@ -554,7 +558,7 @@ $(function() {
                 self.sending(true);
 
                 // we also only send data that actually changed when no data is specified
-                data = getOnlyChangedData(self._getLocalData(), self.lastReceivedSettings);
+                data = getOnlyChangedData(self.getLocalData(), self.lastReceivedSettings);
             }
 
             $.ajax({
@@ -580,13 +584,31 @@ $(function() {
         };
 
         self.onEventSettingsUpdated = function() {
+            var preventSettingsRefresh = _.any(self.allViewModels, function(viewModel) {
+                if (viewModel.hasOwnProperty("onSettingsPreventRefresh")) {
+                    try {
+                        return viewModel["onSettingsPreventRefresh"]();
+                    } catch (e) {
+                        log.warn("Error while calling onSettingsPreventRefresh on", viewModel, ":", e);
+                        return false;
+                    }
+                } else {
+                    return false;
+                }
+            });
+
+            if (preventSettingsRefresh) {
+                // if any of our viewmodels prevented this refresh, we'll just return now
+                return;
+            }
+
             if (self.isDialogActive()) {
                 // dialog is open and not currently busy...
                 if (self.sending() || self.receiving()) {
                     return;
                 }
 
-                if (!hasDataChanged(self._getLocalData(), self.lastReceivedSettings)) {
+                if (!hasDataChanged(self.getLocalData(), self.lastReceivedSettings)) {
                     // we don't have local changes, so just fetch new data
                     self.requestData();
                 } else {
