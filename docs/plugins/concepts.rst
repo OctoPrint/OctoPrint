@@ -328,6 +328,8 @@ An overview of these properties follows.
   OctoPrint's printer management object, an instance of :class:`octoprint.printer.PrinterInterface`.
 ``self._app_session_manager``
   OctoPrint's application session manager, an instance of :class:`octoprint.server.util.flask.AppSessionManager`.
+``self._user_manager``
+  OctoPrint's user manager, an instance of :class:`octoprint.users.UserManager`.
 
 .. seealso::
 

@@ -186,6 +186,15 @@ class Server():
 		appSessionManager = util.flask.AppSessionManager()
 		pluginLifecycleManager = LifecycleManager(pluginManager)
 
+		# setup access control
+		if s.getBoolean(["accessControl", "enabled"]):
+			userManagerName = s.get(["accessControl", "userManager"])
+			try:
+				clazz = octoprint.util.get_class(userManagerName)
+				userManager = clazz()
+			except AttributeError, e:
+				self._logger.exception("Could not instantiate user manager %s, will run with accessControl disabled!" % userManagerName)
+
 		def octoprint_plugin_inject_factory(name, implementation):
 			if not isinstance(implementation, octoprint.plugin.OctoPrintPlugin):
 				return None
@@ -199,7 +208,8 @@ class Server():
 				printer=printer,
 				app_session_manager=appSessionManager,
 				plugin_lifecycle_manager=pluginLifecycleManager,
-				data_folder=os.path.join(settings().getBaseFolder("data"), name)
+				data_folder=os.path.join(settings().getBaseFolder("data"), name),
+				user_manager=userManager
 			)
 
 		def settings_plugin_inject_factory(name, implementation):
@@ -274,15 +284,6 @@ class Server():
 		events.CommandTrigger(printer)
 		if self._debug:
 			events.DebugEventListener()
-
-		# setup access control
-		if s.getBoolean(["accessControl", "enabled"]):
-			userManagerName = s.get(["accessControl", "userManager"])
-			try:
-				clazz = octoprint.util.get_class(userManagerName)
-				userManager = clazz()
-			except AttributeError, e:
-				self._logger.exception("Could not instantiate user manager %s, will run with accessControl disabled!" % userManagerName)
 
 		app.wsgi_app = util.ReverseProxied(
 			app.wsgi_app,
