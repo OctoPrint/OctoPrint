@@ -867,6 +867,28 @@ class Printer(PrinterInterface, comm_helpers.MachineComPrintCallback):
 	def on_comm_force_disconnect(self):
 		self.disconnect()
 
+	def on_comm_set_job_data(self, name, size, print_time):
+		self._stateMonitor.set_job_data({
+			"file": {
+				"name": name,
+				"origin": FileDestinations.LOCAL,
+				"size": size,
+				"date": None
+			},
+			"estimatedPrintTime": print_time,
+			"averagePrintTime": None,
+			"lastPrintTime": None,
+			"filament": None,
+		})
+
+	def on_comm_set_progress_data(self, completion, filepos, print_time, print_time_left):
+		self._stateMonitor.set_progress({
+			"completion": completion,
+			"filepos": filepos,
+			"printTime": print_time,
+			"printTimeLeft": print_time_left
+		})
+
 
 class StateMonitor(object):
 	def __init__(self, interval=0.5, on_update=None, on_add_temperature=None, on_add_log=None, on_add_message=None):
