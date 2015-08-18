@@ -164,8 +164,6 @@ def getSettings():
 @restricted_access
 @admin_permission.require(403)
 def setSettings():
-	logger = logging.getLogger(__name__)
-
 	if not "application/json" in request.headers["Content-Type"]:
 		return make_response("Expected content-type JSON", 400)
 
@@ -173,6 +171,13 @@ def setSettings():
 		data = request.json
 	except BadRequest:
 		return make_response("Malformed JSON body in request", 400)
+
+	_saveSettings(data)
+	return getSettings()
+
+def _saveSettings(data):
+	logger = logging.getLogger(__name__)
+
 	s = settings()
 
 	if "api" in data.keys():
@@ -290,6 +295,3 @@ def setSettings():
 			effective_hash=s.effective_hash
 		)
 		eventManager().fire(Events.SETTINGS_UPDATED, payload=payload)
-
-	return getSettings()
-
