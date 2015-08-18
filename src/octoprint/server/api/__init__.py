@@ -100,7 +100,7 @@ def pluginCommand(name):
 
 @api.route("/setup/wizard", methods=["GET"])
 def wizardState():
-	if not s().getBoolean(["server", "firstRun"]) and not admin_permission.can():
+	if not admin_permission.can():
 		abort(403)
 
 	result = dict()
@@ -117,28 +117,27 @@ def wizardState():
 
 	return jsonify(result)
 
-@api.route("/setup", methods=["POST"])
-def firstRunSetup():
-	if not s().getBoolean(["server", "firstRun"]):
+
+@api.route("/setup/wizard", methods=["POST"])
+def wizardFinish():
+	if not admin_permission.can():
 		abort(403)
 
-	if "ac" in request.values.keys() and request.values["ac"] in valid_boolean_trues and \
-					"user" in request.values.keys() and "pass1" in request.values.keys() and \
-					"pass2" in request.values.keys() and request.values["pass1"] == request.values["pass2"]:
-		# configure access control
-		s().setBoolean(["accessControl", "enabled"], True)
-		octoprint.server.userManager.addUser(request.values["user"], request.values["pass1"], True, ["user", "admin"], overwrite=True)
-		s().setBoolean(["server", "firstRun"], False)
-	elif "ac" in request.values.keys() and not request.values["ac"] in valid_boolean_trues:
-		# disable access control
-		s().setBoolean(["accessControl", "enabled"], False)
+	if s().getBoolean(["server", "firstRun"]):
 		s().setBoolean(["server", "firstRun"], False)
 
-		octoprint.server.loginManager.anonymous_user = octoprint.users.DummyUser
-		octoprint.server.principals.identity_loaders.appendleft(octoprint.users.dummy_identity_loader)
+	wizard_plugins = octoprint.server.pluginManager.get_implementations(octoprint.plugin.WizardPlugin)
+	for implementation in wizard_plugins:
+		name = implementation._identifier
+		try:
+			implementation.on_wizard_finish()
+		except:
+			logging.getLogger(__name__).exceptino("There was an error finishing the wizard for {}, ignoring".format(name))
 
 	s().save()
+
 	return NO_CONTENT
+
 
 #~~ system state
 

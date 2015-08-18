@@ -9,6 +9,8 @@ $(function() {
 
         self.allViewModels = undefined;
 
+        self.finishing = false;
+
         self.isDialogActive = function() {
             return self.wizardDialog.is(":visible");
         };
@@ -18,17 +20,19 @@ $(function() {
 
             self.getWizardDetails(function(response) {
                 _.each(self.allViewModels, function(viewModel) {
-                    if (viewModel.hasOwnProperty("onWizardDetails")) {
+                    if (!viewModel.unbound && viewModel.hasOwnProperty("onWizardDetails")) {
                         viewModel.onWizardDetails(response);
                     }
                 });
 
-                self.wizardDialog.modal({
-                    minHeight: function() { return Math.max($.fn.modal.defaults.maxHeight() - 80, 250); }
-                }).css({
-                    width: 'auto',
-                    'margin-left': function() { return -($(this).width() /2); }
-                });
+                if (!self.isDialogActive()) {
+                    self.wizardDialog.modal({
+                        minHeight: function() { return Math.max($.fn.modal.defaults.maxHeight() - 80, 250); }
+                    }).css({
+                        width: 'auto',
+                        'margin-left': function() { return -($(this).width() /2); }
+                    });
+                }
             });
         };
 
@@ -73,7 +77,7 @@ $(function() {
                     var active = tab[0].id;
                     if (active != undefined) {
                         _.each(allViewModels, function(viewModel) {
-                            if (viewModel.hasOwnProperty("onAfterWizardTabChange")) {
+                            if (!viewModel.unbound && viewModel.hasOwnProperty("onAfterWizardTabChange")) {
                                 viewModel.onAfterWizardTabChange(active);
                             }
                         });
@@ -96,7 +100,7 @@ $(function() {
                     if (current != undefined && next != undefined) {
                         var result = true;
                         _.each(allViewModels, function(viewModel) {
-                            if (viewModel.hasOwnProperty("onWizardTabChange")) {
+                            if (!viewModel.unbound && viewModel.hasOwnProperty("onWizardTabChange")) {
                                 result = result && (viewModel.onWizardTabChange(current, next) !== false);
                             }
                         });
@@ -106,19 +110,20 @@ $(function() {
                 onFinish: function(tab, navigation, index) {
                     var closeDialog = true;
                     _.each(allViewModels, function(viewModel) {
-                        if (viewModel.hasOwnProperty("onBeforeWizardFinish")) {
+                        if (!viewModel.unbound && viewModel.hasOwnProperty("onBeforeWizardFinish")) {
                             closeDialog = closeDialog && (viewModel.onBeforeWizardFinish() !== false);
                         }
                     });
 
                     if (closeDialog) {
                         _.each(allViewModels, function(viewModel) {
-                            if (viewModel.hasOwnProperty("onWizardFinish")) {
+                            if (!viewModel.unbound && viewModel.hasOwnProperty("onWizardFinish")) {
                                 viewModel.onWizardFinish();
                             }
                         });
-                        self.settingsViewModel.saveEnqueued();
-                        self.closeDialog();
+                        self.finishWizard(function() {
+                            self.closeDialog();
+                        });
                     }
                 }
             });
@@ -136,8 +141,28 @@ $(function() {
             });
         };
 
+        self.finishWizard = function(callback) {
+            self.finishing = true;
+
+            self.settingsViewModel.saveEnqueued();
+            $.ajax({
+                url: API_BASEURL + "setup/wizard",
+                type: "POST",
+                dataType: "json",
+                contentType: "application/json; charset=UTF-8",
+                success: function() {
+                    self.finishing = false;
+                    callback();
+                },
+                failure: function() {
+                    self.finishing = false;
+                }
+            })
+        };
+
         self.onSettingsPreventRefresh = function() {
-            if (self.isDialogActive() && hasDataChanged(self.settingsViewModel.getLocalData(), self.settingsViewModel.lastReceivedSettings)) {
+            if (!self.finishing && self.isDialogActive()
+                && hasDataChanged(self.settingsViewModel.getLocalData(), self.settingsViewModel.lastReceivedSettings)) {
                 // we have local changes, show update dialog
                 self.settingsViewModel.settingsUpdatedDialog.modal("show");
                 return true;

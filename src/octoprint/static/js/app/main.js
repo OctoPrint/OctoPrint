@@ -446,12 +446,14 @@ $(function() {
 
                         if (object == undefined || !object.length) {
                             log.info("Did not bind view model", viewModel.constructor.name, "to target", target, "since it does not exist");
+                            viewModel.unbound = true;
                             return;
                         }
 
                         var element = object.get(0);
                         if (element == undefined) {
                             log.info("Did not bind view model", viewModel.constructor.name, "to target", target, "since it does not exist");
+                            viewModel.unbound = true;
                             return;
                         }
 
@@ -460,6 +462,7 @@ $(function() {
                             log.debug("View model", viewModel.constructor.name, "bound to", target);
                         } catch (exc) {
                             log.error("Could not bind view model", viewModel.constructor.name, "to target", target, ":", (exc.stack || exc));
+                            viewModel.unbound = true;
                         }
                     });
                 }

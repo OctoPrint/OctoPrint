@@ -182,7 +182,6 @@ def index():
 		templates["wizard"]["entries"] = dict(
 			firstrunstart=(gettext("Start"), dict(template="dialogs/wizard/firstrun_start.jinja2", _div="wizard_firstrun_start")),
 			firstrunend=(gettext("Finish"), dict(template="dialogs/wizard/firstrun_end.jinja2", _div="wizard_firstrun_end")),
-			access=(gettext("Access Control"), dict(template="dialogs/wizard/firstrun_acl.jinja2", _div="wizard_firstrun_acl", custom_bindings=True))
 		)
 
 	# extract data from template plugins

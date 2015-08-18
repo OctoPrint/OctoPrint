@@ -1,5 +1,5 @@
 $(function() {
-    function AclWizardViewModel() {
+    function CoreWizardAclViewModel() {
         var self = this;
 
         self.username = ko.observable(undefined);
@@ -52,7 +52,7 @@ $(function() {
 
         self._sendData = function(data, callback) {
             $.ajax({
-                url: API_BASEURL + "setup",
+                url: API_BASEURL + "plugin/corewizard/acl",
                 type: "POST",
                 dataType: "json",
                 data: data,
@@ -65,7 +65,7 @@ $(function() {
         };
 
         self.onWizardTabChange = function(current, next) {
-            if (!current || !_.startsWith(current, "wizard_firstrun_acl") || self.setup()) {
+            if (!current || !_.startsWith(current, "wizard_plugin_corewizard_acl_") || self.setup()) {
                 return true;
             }
             showMessageDialog({
@@ -75,26 +75,37 @@ $(function() {
             return false;
         };
 
-        self.onWizardFinished = function() {
+        self.onWizardFinish = function() {
             if (!self.decision()) {
                 return "reload";
             }
         };
     }
 
-    function WebcamWizardViewModel(parameters) {
+    function CoreWizardWebcamViewModel(parameters) {
         var self = this;
 
         self.settingsViewModel = parameters[0];
+
+        self.onWizardFinish = function() {
+            if (self.unbound) return;
+
+            self.settingsViewModel.enqueueForSaving({
+                webcam: {
+                    streamUrl: self.settingsViewModel.webcam_streamUrl(),
+                    snapshotUrl: self.settingsViewModel.webcam_snapshotUrl()
+                }
+            });
+        }
     }
 
     OCTOPRINT_VIEWMODELS.push([
-        AclWizardViewModel,
+        CoreWizardAclViewModel,
         [],
-        "#wizard_firstrun_acl"
+        "#wizard_plugin_corewizard_acl"
     ], [
-        WebcamWizardViewModel,
+        CoreWizardWebcamViewModel,
         ["settingsViewModel"],
-        "#wizard_firstrun_webcam"
+        "#wizard_plugin_corewizard_webcam"
     ]);
 });
