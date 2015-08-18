@@ -447,6 +447,10 @@ function showMessageDialog(msg, options) {
     var close = options.close || gettext("Close");
     var onclose = options.onclose || undefined;
 
+    if (_.isString(message)) {
+        message = $("<p>" + message + "</p>");
+    }
+
     var modalHeader = $('<a href="javascript:void(0)" class="close" data-dismiss="modal" aria-hidden="true">&times;</a><h3>' + title + '</h3>');
     var modalBody = $(message);
     var modalFooter = $('<a href="javascript:void(0)" class="btn" data-dismiss="modal" aria-hidden="true">' + close + '</a>');
