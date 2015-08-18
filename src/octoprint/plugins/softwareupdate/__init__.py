@@ -631,15 +631,23 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		result = dict(check)
 
 		if target == "octoprint":
-			from octoprint._version import get_versions
 			from flask.ext.babel import gettext
 			result["displayName"] = check.get("displayName", gettext("OctoPrint"))
 			result["displayVersion"] = check.get("displayVersion", "{octoprint_version}")
-			result["current"] = get_versions()["version"]
+
+			from octoprint._version import get_versions
+			versions = get_versions()
+			if check["type"] == "github_commit":
+				result["current"] = versions.get("full-revisionid", versions.get("full", "unknown"))
+			else:
+				result["current"] = versions["version"]
 		else:
 			result["displayName"] = check.get("displayName", target)
 			result["displayVersion"] = check.get("displayVersion", check.get("current", "unknown"))
-			result["current"] = check.get("current", check.get("displayVersion", None))
+			if check["type"] in ("github_commit"):
+				result["current"] = check.get("current", None)
+			else:
+				result["current"] = check.get("current", check.get("displayVersion", None))
 
 		return result
 
