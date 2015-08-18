@@ -1,11 +1,8 @@
 <form class="form-horizontal">
     {% include "dialogs/_snippets/configurewebcamurls.jinja2" %}
-    <div class="control-group" title="{{ _('Full path to the FFMPEG binary') }}">
-        <label class="control-label" for="settings-webcamFfmpegPath">{{ _('Path to FFMPEG') }}</label>
-        <div class="controls">
-            <input type="text" class="input-block-level" data-bind="value: webcam_ffmpegPath" id="settings-webcamFfmpegPath">
-        </div>
-    </div>
+
+    {% include "dialogs/_snippets/configureffmpeg.jinja2" %}
+
     <div class="control-group" title="{{ _('Bitrate to use for encoding the timelapse video') }}">
         <label class="control-label" for="settings-webcamBitrate">{{ _('Timelapse bitrate') }}</label>
         <div class="controls">

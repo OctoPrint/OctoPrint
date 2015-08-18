@@ -169,6 +169,10 @@ $(function() {
         self.settings = undefined;
         self.lastReceivedSettings = undefined;
 
+        self.webcam_ffmpegPathText = ko.observable();
+        self.webcam_ffmpegPathOk = ko.observable(false);
+        self.webcam_ffmpegPathBroken = ko.observable(false);
+
         self.addTemperatureProfile = function() {
             self.temperature_profiles.push({name: "New", extruder:0, bed:0});
         };
@@ -251,6 +255,43 @@ $(function() {
                     });
                 }
             });
+        };
+
+        self.testWebcamFfmpegPath = function() {
+            if (!self.webcam_ffmpegPath()) {
+                return;
+            }
+
+            var successCallback = function(response) {
+                if (!response.result) {
+                    if (!response.exists) {
+                        self.webcam_ffmpegPathText(gettext("The path doesn't exist"));
+                    } else if (!response.typeok) {
+                        self.webcam_ffmpegPathText(gettext("The path is not a file"));
+                    } else if (!response.access) {
+                        self.webcam_ffmpegPathText(gettext("The path is not an executable"));
+                    }
+                } else {
+                    self.webcam_ffmpegPathText(gettext("The path is valid"));
+                }
+                self.webcam_ffmpegPathOk(response.result);
+                self.webcam_ffmpegPathBroken(!response.result);
+            };
+
+            var path = self.webcam_ffmpegPath();
+            $.ajax({
+                url: API_BASEURL + "util/test",
+                type: "POST",
+                dataType: "json",
+                data: JSON.stringify({
+                    command: "path",
+                    path: path,
+                    check_type: "file",
+                    check_access: "x"
+                }),
+                contentType: "application/json; charset=UTF-8",
+                success: successCallback
+            })
         };
 
         self.onSettingsShown = function() {
@@ -698,15 +739,23 @@ $(function() {
         };
 
         self.saveEnqueued = function(callback) {
-            var data = self.enqueuedForSaving;
-            self.enqueuedForSaving = undefined;
+            var data = self.getEnqueued();
+            self.resetEnqueued();
 
             if (data == undefined) {
                 return;
             }
 
             self.saveData(data, callback);
-        }
+        };
+
+        self.getEnqueued = function() {
+            return self.enqueuedForSaving;
+        };
+
+        self.resetEnqueued = function() {
+            self.enqueueForSaving = undefined;
+        };
     }
 
     OCTOPRINT_VIEWMODELS.push([
