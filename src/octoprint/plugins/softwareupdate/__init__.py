@@ -337,8 +337,10 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			if not target in check_targets:
 				continue
 
+			populated_check = self._populated_check(target, check)
+
 			try:
-				target_information, target_update_available, target_update_possible = self._get_current_version(target, check, force=force)
+				target_information, target_update_available, target_update_possible = self._get_current_version(target, populated_check, force=force)
 				if target_information is None:
 					continue
 			except exceptions.UnknownCheckType:
@@ -349,17 +351,17 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 			update_available = update_available or target_update_available
 			update_possible = update_possible or (target_update_possible and target_update_available)
-			information[target] = dict(updateAvailable=target_update_available, updatePossible=target_update_possible, information=target_information)
 
-			if "displayName" in check:
-				information[target]["displayName"] = check["displayName"]
+			from octoprint._version import get_versions
+			octoprint_version = get_versions()["version"]
+			local_name = target_information["local"]["name"]
+			local_value = target_information["local"]["value"]
 
-			if "displayVersion" in check:
-				from octoprint._version import get_versions
-				octoprint_version = get_versions()["version"]
-				local_name = target_information["local"]["name"]
-				local_value = target_information["local"]["value"]
-				information[target]["displayVersion"] = check["displayVersion"].format(octoprint_version=octoprint_version, local_name=local_name, local_value=local_value)
+			information[target] = dict(updateAvailable=target_update_available,
+			                           updatePossible=target_update_possible,
+			                           information=target_information,
+			                           displayName=populated_check["displayName"],
+			                           displayVersion=populated_check["displayVersion"].format(octoprint_version=octoprint_version, local_name=local_name, local_value=local_value))
 
 		if self._version_cache_dirty:
 			self._save_version_cache()
@@ -573,6 +575,30 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			self._logger.warn("Restart stdout:\n%s" % e.stdout)
 			self._logger.warn("Restart stderr:\n%s" % e.stderr)
 			raise exceptions.RestartFailed()
+
+	def _populated_check(self, target, check):
+		result = dict(check)
+
+		if target == "octoprint":
+			from flask.ext.babel import gettext
+			result["displayName"] = check.get("displayName", gettext("OctoPrint"))
+			result["displayVersion"] = check.get("displayVersion", "{octoprint_version}")
+
+			from octoprint._version import get_versions
+			versions = get_versions()
+			if check["type"] == "github_commit":
+				result["current"] = versions.get("full-revisionid", versions.get("full", "unknown"))
+			else:
+				result["current"] = versions["version"]
+		else:
+			result["displayName"] = check.get("displayName", target)
+			result["displayVersion"] = check.get("displayVersion", check.get("current", "unknown"))
+			if check["type"] in ("github_commit"):
+				result["current"] = check.get("current", None)
+			else:
+				result["current"] = check.get("current", check.get("displayVersion", None))
+
+		return result
 
 	def _get_version_checker(self, target, check):
 		"""
