@@ -14,15 +14,6 @@ $(function() {
 
         self.enqueuedForSaving = undefined;
 
-        self.api_enabled = ko.observable(undefined);
-        self.api_key = ko.observable(undefined);
-        self.api_allowCrossOrigin = ko.observable(undefined);
-
-        self.appearance_name = ko.observable(undefined);
-        self.appearance_color = ko.observable(undefined);
-        self.appearance_colorTransparent = ko.observable();
-        self.appearance_defaultLanguage = ko.observable();
-
         self.settingsDialog = undefined;
         self.settings_dialog_update_detected = undefined;
         self.translationManagerDialog = undefined;
@@ -99,6 +90,15 @@ $(function() {
             return n.display;
         })));
         self.locale_languages = _.keys(AVAILABLE_LOCALES);
+
+        self.api_enabled = ko.observable(undefined);
+        self.api_key = ko.observable(undefined);
+        self.api_allowCrossOrigin = ko.observable(undefined);
+
+        self.appearance_name = ko.observable(undefined);
+        self.appearance_color = ko.observable(undefined);
+        self.appearance_colorTransparent = ko.observable();
+        self.appearance_defaultLanguage = ko.observable();
 
         self.printer_defaultExtrusionLength = ko.observable(undefined);
 
@@ -742,7 +742,7 @@ $(function() {
         };
 
         self.resetEnqueued = function() {
-            self.enqueueForSaving = undefined;
+            self.enqueuedForSaving = undefined;
         };
     }
 
