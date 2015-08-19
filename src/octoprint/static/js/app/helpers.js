@@ -653,11 +653,11 @@ function callViewModelsIf(allViewModels, method, condition, callback) {
         if (callback == undefined) {
             // directly call view model method with no parameters
             parameters = undefined;
-            log.debug("Calling method", method, "on view models");
+            log.trace("Calling method", method, "on view models");
         } else if (_.isArray(callback)) {
             // directly call view model method with these parameters
             parameters = callback;
-            log.debug("Calling method", method, "on view models with specified parameters", parameters);
+            log.trace("Calling method", method, "on view models with specified parameters", parameters);
         } else {
             // ok, this doesn't make sense, callback is neither undefined nor
             // an array, we'll return without doing anything
@@ -668,7 +668,7 @@ function callViewModelsIf(allViewModels, method, condition, callback) {
         // the method directly
         callback = undefined;
     } else {
-        log.debug("Providing method", method, "on view models to specified callback", callback);
+        log.trace("Providing method", method, "on view models to specified callback", callback);
     }
 
     _.each(allViewModels, function(viewModel) {
