@@ -88,8 +88,6 @@ $(function() {
         self.settingsViewModel = parameters[0];
 
         self.onWizardFinish = function() {
-            if (self.unbound) return;
-
             self.settingsViewModel.enqueueForSaving({
                 webcam: {
                     streamUrl: self.settingsViewModel.webcam_streamUrl(),

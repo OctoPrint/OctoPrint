@@ -53,11 +53,7 @@ $(function() {
 
                 self.currentUser(response);
 
-                _.each(self.allViewModels, function(viewModel) {
-                    if (viewModel.hasOwnProperty("onUserLoggedIn")) {
-                        viewModel.onUserLoggedIn(response);
-                    }
-                });
+                callViewModels(self.allViewModels, "onUserLoggedIn", [response]);
             } else {
                 self.loggedIn(false);
                 self.username(undefined);
@@ -66,11 +62,7 @@ $(function() {
 
                 self.currentUser(undefined);
 
-                _.each(self.allViewModels, function(viewModel) {
-                    if (viewModel.hasOwnProperty("onUserLoggedOut")) {
-                        viewModel.onUserLoggedOut();
-                    }
-                });
+                callViewModels(self.allViewModels, "onUserLoggedOut");
             }
         };
 

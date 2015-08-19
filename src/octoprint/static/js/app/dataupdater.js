@@ -46,17 +46,12 @@ function DataUpdater(allViewModels) {
             // Only consider it a real disconnect if the trial number has exceeded our threshold.
 
             var handled = false;
-            _.each(self.allViewModels, function(viewModel) {
-                if (handled == true) {
-                    return;
-                }
-
-                if (viewModel.hasOwnProperty("onServerDisconnect")) {
-                    if (!viewModel.onServerDisconnect()) {
-                        handled = true;
-                    }
-                }
-            });
+            callViewModelsIf(
+                self.allViewModels,
+                "onServerDisconnect",
+                function() { return !handled; },
+                function(method) { handled = !method() || handled; }
+            );
 
             if (handled) {
                 return;
@@ -81,17 +76,12 @@ function DataUpdater(allViewModels) {
 
     self._onreconnectfailed = function() {
         var handled = false;
-        _.each(self.allViewModels, function(viewModel) {
-            if (handled == true) {
-                return;
-            }
-
-            if (viewModel.hasOwnProperty("onServerDisconnect")) {
-                if (!viewModel.onServerDisconnect()) {
-                    handled = true;
-                }
-            }
-        });
+        callViewModelsIf(
+            self.allViewModels,
+            "onServerDisconnect",
+            function() { return !handled; },
+            function(method) { handled = !method() || handled; }
+        );
 
         if (handled) {
             return;
@@ -133,11 +123,7 @@ function DataUpdater(allViewModels) {
 
                     if ($("#offline_overlay").is(":visible")) {
                         hideOfflineOverlay();
-                        _.each(self.allViewModels, function(viewModel) {
-                            if (viewModel.hasOwnProperty("onDataUpdaterReconnect")) {
-                                viewModel.onDataUpdaterReconnect();
-                            }
-                        });
+                        callViewModels(self.allViewModels, "onDataUpdaterReconnect");
 
                         if ($('#tabs li[class="active"] a').attr("href") == "#control") {
                             $("#webcam_image").attr("src", CONFIG_WEBCAM_STREAM + "?" + new Date().getTime());
@@ -154,29 +140,22 @@ function DataUpdater(allViewModels) {
                     break;
                 }
                 case "history": {
-                    _.each(self.allViewModels, function(viewModel) {
-                        if (viewModel.hasOwnProperty("fromHistoryData")) {
-                            viewModel.fromHistoryData(data);
-                        }
-                    });
+                    callViewModels(self.allViewModels, "fromHistoryData", [data]);
                     break;
                 }
                 case "current": {
-                    _.each(self.allViewModels, function(viewModel) {
-                        if (viewModel.hasOwnProperty("fromCurrentData")) {
-                            viewModel.fromCurrentData(data);
-                        }
-                    });
+                    callViewModels(self.allViewModels, "fromCurrentData", [data]);
                     break;
                 }
                 case "slicingProgress": {
                     gcodeUploadProgressBar.text(_.sprintf(gettext("Slicing ... (%(percentage)d%%)"), {percentage: Math.round(data["progress"])}));
 
-                    _.each(self.allViewModels, function(viewModel) {
-                        if (viewModel.hasOwnProperty("onSlicingProgress")) {
-                            viewModel.onSlicingProgress(data["slicer"], data["model_path"], data["machinecode_path"], data["progress"]);
-                        }
-                    });
+                    callViewModels(self.allViewModels, "onSlicingProgress", [
+                        data["slicer"],
+                        data["model_path"],
+                        data["machinecode_path"],
+                        data["progress"]
+                    ]);
                     break;
                 }
                 case "event": {
@@ -277,19 +256,12 @@ function DataUpdater(allViewModels) {
                     break;
                 }
                 case "timelapse": {
-                    _.each(self.allViewModels, function(viewModel) {
-                        if (viewModel.hasOwnProperty("fromTimelapseData")) {
-                            viewModel.fromTimelapseData(data);
-                        }
-                    });
+                    callViewModels(self.allViewModels, "fromTimelapseData", [data]);
                     break;
                 }
                 case "plugin": {
-                    _.each(self.allViewModels, function(viewModel) {
-                        if (viewModel.hasOwnProperty("onDataUpdaterPluginMessage")) {
-                            viewModel.onDataUpdaterPluginMessage(data.plugin, data.data);
-                        }
-                    })
+                    callViewModels(self.allViewModels, "onDataUpdaterPluginMessage", [data.plugin, data.data]);
+                    break;
                 }
             }
         }

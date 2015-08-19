@@ -448,10 +448,8 @@ $(function() {
 
         self.onAllBound = function (allViewModels) {
             var additionalControls = [];
-            _.each(allViewModels, function (viewModel) {
-                if (viewModel.hasOwnProperty("getAdditionalControls")) {
-                    additionalControls = additionalControls.concat(viewModel.getAdditionalControls());
-                }
+            callViewModels(allViewModels, "getAdditionalControls", function(method) {
+                additionalControls = additionalControls.concat(method());
             });
             if (additionalControls.length > 0) {
                 self.additionalControls = additionalControls;

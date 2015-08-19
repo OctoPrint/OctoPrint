@@ -344,28 +344,16 @@ $(function() {
             self.settingsDialog.on('show', function(event) {
                 if (event.target.id == "settings_dialog") {
                     self.requestTranslationData();
-                    _.each(allViewModels, function(viewModel) {
-                        if (viewModel.hasOwnProperty("onSettingsShown")) {
-                            viewModel.onSettingsShown();
-                        }
-                    });
+                    callViewModels(allViewModels, "onSettingsShown");
                 }
             });
             self.settingsDialog.on('hidden', function(event) {
                 if (event.target.id == "settings_dialog") {
-                    _.each(allViewModels, function(viewModel) {
-                        if (viewModel.hasOwnProperty("onSettingsHidden")) {
-                            viewModel.onSettingsHidden();
-                        }
-                    });
+                    callViewModels(allViewModels, "onSettingsHidden");
                 }
             });
             self.settingsDialog.on('beforeSave', function () {
-                _.each(allViewModels, function (viewModel) {
-                    if (viewModel.hasOwnProperty("onSettingsBeforeSave")) {
-                        viewModel.onSettingsBeforeSave();
-                    }
-                });
+                callViewModels(allViewModels, "onSettingsBeforeSave");
             });
 
             $(".reload_all", self.settingsUpdatedDialog).click(function(e) {

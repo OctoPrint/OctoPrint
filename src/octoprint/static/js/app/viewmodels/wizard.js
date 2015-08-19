@@ -19,11 +19,7 @@ $(function() {
             if (!CONFIG_WIZARD || !(CONFIG_FIRST_RUN || self.loginState.isAdmin())) return;
 
             self.getWizardDetails(function(response) {
-                _.each(self.allViewModels, function(viewModel) {
-                    if (!viewModel.unbound && viewModel.hasOwnProperty("onWizardDetails")) {
-                        viewModel.onWizardDetails(response);
-                    }
-                });
+                callViewModels(self.allViewModels, "onWizardDetails", [response]);
 
                 if (!self.isDialogActive()) {
                     self.wizardDialog.modal({
@@ -76,11 +72,7 @@ $(function() {
 
                     var active = tab[0].id;
                     if (active != undefined) {
-                        _.each(allViewModels, function(viewModel) {
-                            if (!viewModel.unbound && viewModel.hasOwnProperty("onAfterWizardTabChange")) {
-                                viewModel.onAfterWizardTabChange(active);
-                            }
-                        });
+                        callViewModels(allViewModels, "onAfterWizardTabChange", [active]);
                     }
                 },
                 onTabChange: function(tab, navigation, index, nextTabIndex, nextTab) {
@@ -99,28 +91,20 @@ $(function() {
 
                     if (current != undefined && next != undefined) {
                         var result = true;
-                        _.each(allViewModels, function(viewModel) {
-                            if (!viewModel.unbound && viewModel.hasOwnProperty("onWizardTabChange")) {
-                                result = result && (viewModel.onWizardTabChange(current, next) !== false);
-                            }
+                        callViewModels(allViewModels, "onWizardTabChange", function(method) {
+                            result = result && (method(current, next) !== false);
                         });
                         return result;
                     }
                 },
                 onFinish: function(tab, navigation, index) {
                     var closeDialog = true;
-                    _.each(allViewModels, function(viewModel) {
-                        if (!viewModel.unbound && viewModel.hasOwnProperty("onBeforeWizardFinish")) {
-                            closeDialog = closeDialog && (viewModel.onBeforeWizardFinish() !== false);
-                        }
+                    callViewModels(allViewModels, "onBeforeWizardFinish", function(method) {
+                        closeDialog = closeDialog && (method() !== false);
                     });
 
                     if (closeDialog) {
-                        _.each(allViewModels, function(viewModel) {
-                            if (!viewModel.unbound && viewModel.hasOwnProperty("onWizardFinish")) {
-                                viewModel.onWizardFinish();
-                            }
-                        });
+                        callViewModels(allViewModels, "onWizardFinish");
                         self.finishWizard(function() {
                             self.closeDialog();
                         });
