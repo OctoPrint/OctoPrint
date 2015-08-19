@@ -66,10 +66,10 @@ $(function() {
             }
         };
 
-        self.login = function() {
-            var username = self.loginUser();
-            var password = self.loginPass();
-            var remember = self.loginRemember();
+        self.login = function(u, p, r, callback) {
+            var username = u || self.loginUser();
+            var password = p || self.loginPass();
+            var remember = (r != undefined ? r : self.loginRemember());
 
             self.loginUser("");
             self.loginPass("");
@@ -82,6 +82,7 @@ $(function() {
                 success: function(response) {
                     new PNotify({title: gettext("Login successful"), text: _.sprintf(gettext('You are now logged in as "%(username)s"'), {username: response.name}), type: "success"});
                     self.fromResponse(response);
+                    if (callback) callback(response);
                 },
                 error: function(jqXHR, textStatus, errorThrown) {
                     new PNotify({title: gettext("Login failed"), text: gettext("User unknown or wrong password"), type: "error"});
