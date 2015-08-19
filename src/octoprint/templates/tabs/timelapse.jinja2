@@ -1,4 +1,7 @@
 <div style="display: none;" data-bind="visible: loginState.isUser">
+    <div class="alert" data-bind="visible: isPrinting()">
+        {{ _('Take note that timelapse configuration is disabled while your printer is printing.') }}
+    </div>
     <h1>{{ _('Timelapse Configuration') }}</h1>
 
     <label for="webcam_timelapse_mode">{{ _('Timelapse Mode') }}</label>
