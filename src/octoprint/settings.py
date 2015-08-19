@@ -92,6 +92,7 @@ default_settings = {
 		"host": "0.0.0.0",
 		"port": 5000,
 		"firstRun": True,
+		"seenWizards": {},
 		"secretKey": None,
 		"reverseProxy": {
 			"prefixHeader": "X-Script-Name",

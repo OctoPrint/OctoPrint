@@ -29,13 +29,13 @@ def index():
 
 	#~~ a bunch of settings
 
+	first_run = settings().getBoolean(["server", "firstRun"])
 	enable_gcodeviewer = settings().getBoolean(["gcodeViewer", "enabled"])
 	enable_timelapse = (settings().get(["webcam", "snapshot"]) and settings().get(["webcam", "ffmpeg"]))
 	enable_systemmenu = settings().get(["system"]) is not None and settings().get(["system", "actions"]) is not None and len(settings().get(["system", "actions"])) > 0
 	enable_accesscontrol = userManager is not None
 	preferred_stylesheet = settings().get(["devel", "stylesheet"])
 	locales = dict((l.language, dict(language=l.language, display=l.display_name, english=l.english_name)) for l in LOCALES)
-	first_run = settings().getBoolean(["server", "firstRun"])# and (userManager is None or not userManager.hasBeenCustomized())
 
 	##~~ prepare templates
 
@@ -190,16 +190,19 @@ def index():
 
 	plugin_vars = dict()
 	plugin_names = set()
+	seen_wizards = settings().get(["server", "seenWizards"])
 	for implementation in template_plugins:
 		name = implementation._identifier
 		plugin_names.add(name)
 		wizard_required = False
+		wizard_ignored = False
 
 		try:
 			vars = implementation.get_template_vars()
 			configs = implementation.get_template_configs()
 			if isinstance(implementation, octoprint.plugin.WizardPlugin):
 				wizard_required = implementation.is_wizard_required()
+				wizard_ignored = name in seen_wizards and seen_wizards[name] == implementation.get_wizard_version()
 		except:
 			_logger.exception("Error while retrieving template data for plugin {}, ignoring it".format(name))
 			continue
@@ -214,7 +217,7 @@ def index():
 
 		includes = _process_template_configs(name, implementation, configs, template_rules)
 
-		if not wizard_required:
+		if not wizard_required or wizard_ignored:
 			includes["wizard"] = list()
 
 		for t in template_types:
@@ -302,7 +305,7 @@ def index():
 	render_kwargs = dict(
 		webcamStream=settings().get(["webcam", "stream"]),
 		enableTemperatureGraph=settings().get(["feature", "temperatureGraph"]),
-		enableAccessControl=userManager is not None,
+		enableAccessControl=enable_accesscontrol,
 		enableSdSupport=settings().get(["feature", "sdSupport"]),
 		firstRun=first_run,
 		debug=debug,

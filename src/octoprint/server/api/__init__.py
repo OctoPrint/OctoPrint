@@ -100,7 +100,7 @@ def pluginCommand(name):
 
 @api.route("/setup/wizard", methods=["GET"])
 def wizardState():
-	if not admin_permission.can():
+	if not s().getBoolean(["server", "firstRun"]) and not admin_permission.can():
 		abort(403)
 
 	result = dict()
@@ -120,20 +120,35 @@ def wizardState():
 
 @api.route("/setup/wizard", methods=["POST"])
 def wizardFinish():
-	if not admin_permission.can():
+	if not s().getBoolean(["server", "firstRun"]) and not admin_permission.can():
 		abort(403)
+
+	data = dict()
+	try:
+		data = request.json
+	except:
+		abort(400)
+
+	if not "handled" in data:
+		abort(400)
+	handled = data["handled"]
 
 	if s().getBoolean(["server", "firstRun"]):
 		s().setBoolean(["server", "firstRun"], False)
+
+	seen_wizards = dict(s().get(["server", "seenWizards"]))
 
 	wizard_plugins = octoprint.server.pluginManager.get_implementations(octoprint.plugin.WizardPlugin)
 	for implementation in wizard_plugins:
 		name = implementation._identifier
 		try:
-			implementation.on_wizard_finish()
+			implementation.on_wizard_finish(name in handled)
+			if name in handled:
+				seen_wizards[name] = implementation.get_wizard_version()
 		except:
 			logging.getLogger(__name__).exceptino("There was an error finishing the wizard for {}, ignoring".format(name))
 
+	s().set(["server", "seenWizards"], seen_wizards)
 	s().save()
 
 	return NO_CONTENT

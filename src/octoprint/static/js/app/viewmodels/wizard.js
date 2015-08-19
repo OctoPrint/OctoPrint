@@ -10,6 +10,7 @@ $(function() {
         self.allViewModels = undefined;
 
         self.finishing = false;
+        self.wizards = [];
 
         self.isDialogActive = function() {
             return self.wizardDialog.is(":visible");
@@ -100,13 +101,32 @@ $(function() {
                 onFinish: function(tab, navigation, index) {
                     var closeDialog = true;
                     callViewModels(allViewModels, "onBeforeWizardFinish", function(method) {
+                        // we don't need to call all methods here, one method saying that
+                        // the dialog must not be closed yet is enough to stop
+                        //
+                        // we evaluate closeDialog first to make sure we don't call
+                        // the method once it becomes false
                         closeDialog = closeDialog && (method() !== false);
                     });
 
                     if (closeDialog) {
-                        callViewModels(allViewModels, "onWizardFinish");
+                        var reload = false;
+                        callViewModels(allViewModels, "onWizardFinish", function(method) {
+                            // if any of our methods returns that it wants to reload
+                            // we'll need to set reload to true
+                            //
+                            // order is important here - the method call needs to happen
+                            // first, or it won't happen after the reload flag has been
+                            // set once due to the || making further evaluation unnecessary
+                            // then
+                            reload = (method() == "reload") || reload;
+                        });
                         self.finishWizard(function() {
                             self.closeDialog();
+                            if (reload) {
+                                log.info("Wizard requested reloading");
+                                location.reload(true);
+                            }
                         });
                     }
                 }
@@ -121,7 +141,12 @@ $(function() {
                 url: API_BASEURL + "setup/wizard",
                 type: "GET",
                 dataType: "json",
-                success: callback
+                success: function(response) {
+                    self.wizards = _.filter(_.keys(response), function(key) { return response[key] && response[key]["required"]; });
+                    if (callback) {
+                        callback(response);
+                    }
+                }
             });
         };
 
@@ -133,6 +158,7 @@ $(function() {
                 url: API_BASEURL + "setup/wizard",
                 type: "POST",
                 dataType: "json",
+                data: JSON.stringify({handled: self.wizards}),
                 contentType: "application/json; charset=UTF-8",
                 success: function() {
                     self.finishing = false;
