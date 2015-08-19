@@ -137,6 +137,12 @@ class MachineComPrintCallback(object):
 	def on_comm_force_disconnect(self):
 		pass
 
+	def on_comm_set_job_data(self, name, size, print_time):
+		pass
+
+	def on_comm_set_progress_data(self, completion, filepos, print_time, print_time_left):
+		pass
+
 ### Printing file information classes ##################################################################################
 
 class PrintingFileInformation(object):
