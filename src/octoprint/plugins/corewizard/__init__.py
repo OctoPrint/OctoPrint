@@ -79,7 +79,7 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 	@octoprint.plugin.BlueprintPlugin.route("/acl", methods=["POST"])
 	def acl_wizard_api(self):
 		from flask import request
-		from octoprint.server.api import valid_boolean_trues
+		from octoprint.server.api import valid_boolean_trues, NO_CONTENT
 
 		if "ac" in request.values and request.values["ac"] in valid_boolean_trues and \
 						"user" in request.values.keys() and "pass1" in request.values.keys() and \
@@ -95,6 +95,7 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 			octoprint.server.principals.identity_loaders.appendleft(octoprint.users.dummy_identity_loader)
 
 		self._settings.save()
+		return NO_CONTENT
 
 	#~~ Webcam subwizard
 

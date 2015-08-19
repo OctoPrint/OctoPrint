@@ -1,6 +1,8 @@
 $(function() {
-    function CoreWizardAclViewModel() {
+    function CoreWizardAclViewModel(parameters) {
         var self = this;
+
+        self.loginStateViewModel = parameters[0];
 
         self.username = ko.observable(undefined);
         self.password = ko.observable(undefined);
@@ -52,14 +54,23 @@ $(function() {
 
         self._sendData = function(data, callback) {
             $.ajax({
-                url: API_BASEURL + "plugin/corewizard/acl",
+                url: BASEURL + "plugin/corewizard/acl",
                 type: "POST",
                 dataType: "json",
                 data: data,
                 success: function() {
                     self.setup(true);
                     self.decision(data.ac);
-                    if (callback) callback();
+                    if (data.ac) {
+                        // we now log the user in
+                        var user = data.user;
+                        var pass = data.pass1;
+                        self.loginStateViewModel.login(user, pass, true, function() {
+                            if (callback) callback();
+                        });
+                    } else {
+                        if (callback) callback();
+                    }
                 }
             });
         };
@@ -91,15 +102,21 @@ $(function() {
             self.settingsViewModel.enqueueForSaving({
                 webcam: {
                     streamUrl: self.settingsViewModel.webcam_streamUrl(),
-                    snapshotUrl: self.settingsViewModel.webcam_snapshotUrl()
+                    snapshotUrl: self.settingsViewModel.webcam_snapshotUrl(),
+                    ffmpegPath: self.settingsViewModel.webcam_ffmpegPath()
                 }
             });
+
+            if (self.settingsViewModel.webcam_streamUrl()
+                || (self.settingsViewModel.webcam_snapshotUrl() && self.settingsViewModel.webcam_ffmpegPath())) {
+                return "reload";
+            }
         }
     }
 
     OCTOPRINT_VIEWMODELS.push([
         CoreWizardAclViewModel,
-        [],
+        ["loginStateViewModel"],
         "#wizard_plugin_corewizard_acl"
     ], [
         CoreWizardWebcamViewModel,
