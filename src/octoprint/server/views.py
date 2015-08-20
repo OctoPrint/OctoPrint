@@ -202,7 +202,7 @@ def index():
 			configs = implementation.get_template_configs()
 			if isinstance(implementation, octoprint.plugin.WizardPlugin):
 				wizard_required = implementation.is_wizard_required()
-				wizard_ignored = name in seen_wizards and seen_wizards[name] == implementation.get_wizard_version()
+				wizard_ignored = octoprint.plugin.WizardPlugin.is_wizard_ignored(seen_wizards, implementation)
 		except:
 			_logger.exception("Error while retrieving template data for plugin {}, ignoring it".format(name))
 			continue

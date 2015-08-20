@@ -142,7 +142,7 @@ $(function() {
                 type: "GET",
                 dataType: "json",
                 success: function(response) {
-                    self.wizards = _.filter(_.keys(response), function(key) { return response[key] && response[key]["required"]; });
+                    self.wizards = _.filter(_.keys(response), function(key) { return response[key] && response[key]["required"] && !response[key]["ignored"]; });
                     if (callback) {
                         callback(response);
                     }

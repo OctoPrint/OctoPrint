@@ -103,6 +103,8 @@ def wizardState():
 	if not s().getBoolean(["server", "firstRun"]) and not admin_permission.can():
 		abort(403)
 
+	seen_wizards = s().get(["server", "seenWizards"])
+
 	result = dict()
 	wizard_plugins = octoprint.server.pluginManager.get_implementations(octoprint.plugin.WizardPlugin)
 	for implementation in wizard_plugins:
@@ -110,10 +112,12 @@ def wizardState():
 		try:
 			required = implementation.is_wizard_required()
 			details = implementation.get_wizard_details()
+			version = implementation.get_wizard_version()
+			ignored = octoprint.plugin.WizardPlugin.is_wizard_ignored(seen_wizards, implementation)
 		except:
 			logging.getLogger(__name__).exception("There was an error fetching wizard details for {}, ignoring".format(name))
 		else:
-			result[name] = dict(required=required, details=details)
+			result[name] = dict(required=required, details=details, version=version, ignored=ignored)
 
 	return jsonify(result)
 

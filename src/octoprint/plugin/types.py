@@ -249,6 +249,20 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 	   wrapper div and the link in the navigation will have the additional classes and styles applied as defined via the
 	   supplied configuration supplied through :func:`get_template_configs`.
 
+	Wizards
+	   Plugins may define wizard dialogs to display to the user if necessary (e.g. in case of missing information that
+	   needs to be queried from the user to make the plugin work). Note that with the current implementations, all
+	   wizard dialogs will always be sorted alphabetically by their ``name``. A wizard dialog provided through a
+	   plugin will only be displayed if the plugin reports the wizard as being required through :meth:`~octoprint.plugin.WizardPlugin.is_wizard_required`.
+	   Please also refer to the :class:`~octoprint.plugin.WizardPlugin` mixin for further details on this.
+
+	   The included template must be called ``<plugin identifier>_wizard.jinja2`` (e.g. ``myplugin_wizard.jinja2``) unless
+	   overridden by the configuration supplied through :func:`get_template_configs`.
+
+	   The template will be already wrapped into the necessary structure, plugins just need to supply the pure content.
+	   The wrapper div and the link in the wizard navigation will have the additional classes and styles applied as defined
+	   via the supplied configuration supplied through :func:`get_template_configs`.
+
 	Generic
 	   Plugins may also inject arbitrary templates into the page of the web interface itself, e.g. in order to
 	   add overlays or dialogs to be called from within the plugin's javascript code.
@@ -451,18 +465,191 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 
 
 class WizardPlugin(OctoPrintPlugin, ReloadNeedingPlugin):
+	"""
+	The ``WizardPlugin`` mixin allows plugins to report to OctoPrint whether
+	the ``wizard`` templates they define via the :class:`~octoprint.plugin.TemplatePlugin`
+	should be displayed to the user, what details to provide to their respective
+	wizard frontend components and what to do when the wizard is finished
+	by the user.
+
+	OctoPrint will only display such wizard dialogs to the user which belong
+	to plugins that
+
+	  * report ``True`` in their :func:`is_wizard_required` method and
+	  * have not yet been shown to the user in the version currently being reported
+	    by the :meth:`~octoprint.plugin.WizardPlugin.get_wizard_version` method
+
+	Example: If a plugin with the identifier ``myplugin`` has a specific
+	setting ``some_key`` it needs to have filled by the user in order to be
+	able to work at all, it would probably test for that setting's value in
+	the :meth:`~octoprint.plugin.WizardPlugin.is_wizard_required` method and
+	return ``True`` if the value is unset:
+
+	.. code-block:: python
+
+	   class MyPlugin(octoprint.plugin.SettingsPlugin,
+	                  octoprint.plugin.TemplatePlugin,
+	                  octoprint.plugin.WizardPlugin):
+
+	       def get_default_settings(self):
+	           return dict(some_key=None)
+
+	       def is_wizard_required(self):
+	           return self._settings.get(["some_key"]) is None
+
+	OctoPrint will then display the wizard dialog provided by the plugin through
+	the :class:`TemplatePlugin` mixin. Once the user finishes the wizard on the
+	frontend, OctoPrint will store that it already showed the wizard of ``myplugin``
+	in the version reported by :meth:`~octoprint.plugin.WizardPlugin.get_wizard_version`
+	- here ``None`` since that is the default value returned by that function
+	and the plugin did not override it.
+
+	If the plugin in a later version needs another setting from the user in order
+	to function, it will also need to change the reported version in order to
+	have OctoPrint reshow the dialog. E.g.
+
+	.. code-block:: python
+
+	   class MyPlugin(octoprint.plugin.SettingsPlugin,
+	                  octoprint.plugin.TemplatePlugin,
+	                  octoprint.plugin.WizardPlugin):
+
+	       def get_default_settings(self):
+	           return dict(some_key=None, some_other_key=None)
+
+	       def is_wizard_required(self):
+	           some_key_unset = self._settings.get(["some_key"]) is None
+	           some_other_key_unset = self._settings.get(["some_other_key"]) is None
+
+	           return some_key_unset or some_other_key_unset
+
+	       def get_wizard_version(self):
+	           return 1
+	"""
 
 	def is_wizard_required(self):
+		"""
+		Allows the plugin to report whether it needs to display a wizard to the
+		user or not.
+
+		Defaults to ``False``.
+
+		OctoPrint will only include those wizards from plugins which are reporting
+		their wizards as being required through this method returning ``True``.
+		Still, if OctoPrint already displayed that wizard in the same version
+		to the user once it won't be displayed again regardless whether this
+		method returns ``True`` or not.
+		"""
 		return False
 
+	def get_wizard_version(self):
+		"""
+		The version of this plugin's wizard. OctoPrint will only display a wizard
+		of the same plugin and wizard version once to the user. After they
+		finish the wizard, OctoPrint will remember that it already showed this
+		wizard in this particular version and not reshow it.
+
+		If a plugin needs to show its wizard to the user again (e.g. because
+		of changes in the required settings), increasing this value is the
+		way to notify OctoPrint of these changes.
+
+		Returns:
+		    int or None: an int signifying the current wizard version, should be incremented by plugins whenever there
+		                 are changes to the plugin that might necessitate reshowing the wizard if it is required. ``None``
+		                 will also be accepted and lead to the wizard always be ignored unless it has never been finished
+		                 so far
+		"""
+		return None
+
 	def get_wizard_details(self):
+		"""
+		Called by OctoPrint when the wizard wrapper dialog is shown. Allows the plugin to return data
+		that will then be made available to the view models via the view model callback ``onWizardDetails``.
+
+		Use this if your plugin's view model that handles your wizard dialog needs additional
+		data to perform its task.
+
+		Returns:
+		    dict: a dictionary containig additional data to provide to the frontend. Whatever the plugin
+		          returns here will be made available on the wizard API under the plugin's identifier
+		"""
 		return dict()
 
 	def on_wizard_finish(self, handled):
+		"""
+		Called by OctoPrint whenever the user finishes a wizard session is finished.
+
+		The ``handled`` parameter will indicate whether that plugin's wizard was
+		included in the wizard dialog presented to the user (so the plugin providing
+		it was reporting that the wizard was required and the wizard plus version was not
+		ignored/had already been seen).
+
+		Use this to do any clean up tasks necessary after wizard completion.
+
+		Arguments:
+		    handled (bool): True if the plugin's wizard was previously reported as
+		                    required, not ignored and thus presented to the user,
+		                    False otherwise
+		"""
 		pass
 
-	def get_wizard_version(self):
-		return None
+	@classmethod
+	def is_wizard_ignored(cls, seen_wizards, implementation):
+		"""
+		Determines whether the provided implementation is ignored based on the
+		provided information about already seen wizards and their versions or not.
+
+		A wizard is ignored if
+
+		  * the current and seen versions are identical
+		  * the current version is None and the seen version is not
+		  * the current version is less or equal than the seen one
+
+		.. code-block:: none
+
+		       |  current  |
+		       | N | 1 | 2 |   N = None
+		   ----+---+---+---+   X = ignored
+		   s N | X |   |   |
+		   e --+---+---+---+
+		   e 1 | X | X |   |
+		   n --+---+---+---+
+		     2 | X | X | X |
+		   ----+---+---+---+
+
+		Arguments:
+		    seen_wizards (dict): A dictionary with information about already seen
+		        wizards and their versions. Mappings from the identifiers of
+		        the plugin providing the wizard to the reported wizard
+		        version (int or None) that was already seen by the user.
+		    implementation (object): The plugin implementation to check.
+
+		Returns:
+		    bool: False if the provided ``implementation`` is either not a :class:`WizardPlugin`
+		          or has not yet been seen (in this version), True otherwise
+		"""
+
+		if not isinstance(implementation, cls):
+			return False
+
+		name = implementation._identifier
+		if not name in seen_wizards:
+			return False
+
+		seen = seen_wizards[name]
+		wizard_version = implementation.get_wizard_version()
+
+		current = None
+		if wizard_version is not None:
+			try:
+				current = int(wizard_version)
+			except ValueError as e:
+				import logging
+				logging.getLogger(__name__).log("WizardPlugin {} returned invalid value {} for wizard version: {}".format(name, wizard_version, str(e)))
+
+		return (current == seen) \
+		       or (current is None and seen is not None) \
+		       or (current <= seen)
 
 
 class SimpleApiPlugin(OctoPrintPlugin):
