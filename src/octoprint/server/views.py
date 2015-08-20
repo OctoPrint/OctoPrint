@@ -190,7 +190,7 @@ def index():
 
 	plugin_vars = dict()
 	plugin_names = set()
-	seen_wizards = settings().get(["server", "seenWizards"])
+	seen_wizards = settings().get(["server", "seenWizards"]) if not first_run else dict()
 	for implementation in template_plugins:
 		name = implementation._identifier
 		plugin_names.add(name)
