@@ -264,15 +264,6 @@ $(function() {
         };
 
         self.onWizardFinish = function() {
-            self.settingsViewModel.enqueueForSaving({
-                plugins: {
-                    cura: {
-                        cura_engine: self.settings.plugins.cura.cura_engine(),
-                        default_profile: self.settings.plugins.cura.default_profile(),
-                        debug_logging: self.settings.plugins.cura.debug_logging()
-                    }
-                }
-            });
             self.resetPathTest();
         };
     }

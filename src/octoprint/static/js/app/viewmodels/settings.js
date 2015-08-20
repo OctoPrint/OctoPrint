@@ -12,8 +12,6 @@ $(function() {
         self.sending = ko.observable(false);
         self.callbacks = [];
 
-        self.enqueuedForSaving = undefined;
-
         self.settingsDialog = undefined;
         self.settings_dialog_update_detected = undefined;
         self.translationManagerDialog = undefined;
@@ -716,33 +714,6 @@ $(function() {
                 // dialog is not open, just fetch new data
                 self.requestData();
             }
-        };
-
-        self.enqueueForSaving = function(data) {
-            if (self.enqueuedForSaving == undefined) {
-                self.enqueuedForSaving = data;
-            } else {
-                _.extend(self.enqueuedForSaving, data);
-            }
-        };
-
-        self.saveEnqueued = function(callback) {
-            var data = self.getEnqueued();
-            self.resetEnqueued();
-
-            if (data == undefined) {
-                return;
-            }
-
-            self.saveData(data, callback);
-        };
-
-        self.getEnqueued = function() {
-            return self.enqueuedForSaving;
-        };
-
-        self.resetEnqueued = function() {
-            self.enqueuedForSaving = undefined;
         };
     }
 

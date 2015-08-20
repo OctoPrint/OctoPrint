@@ -99,14 +99,6 @@ $(function() {
         self.settingsViewModel = parameters[0];
 
         self.onWizardFinish = function() {
-            self.settingsViewModel.enqueueForSaving({
-                webcam: {
-                    streamUrl: self.settingsViewModel.webcam_streamUrl(),
-                    snapshotUrl: self.settingsViewModel.webcam_snapshotUrl(),
-                    ffmpegPath: self.settingsViewModel.webcam_ffmpegPath()
-                }
-            });
-
             if (self.settingsViewModel.webcam_streamUrl()
                 || (self.settingsViewModel.webcam_snapshotUrl() && self.settingsViewModel.webcam_ffmpegPath())) {
                 return "reload";

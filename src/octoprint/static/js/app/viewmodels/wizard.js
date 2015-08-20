@@ -153,7 +153,7 @@ $(function() {
         self.finishWizard = function(callback) {
             self.finishing = true;
 
-            self.settingsViewModel.saveEnqueued();
+            self.settingsViewModel.saveData();
             $.ajax({
                 url: API_BASEURL + "setup/wizard",
                 type: "POST",
