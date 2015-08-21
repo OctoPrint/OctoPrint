@@ -170,6 +170,11 @@ $(function() {
         self.webcam_ffmpegPathText = ko.observable();
         self.webcam_ffmpegPathOk = ko.observable(false);
         self.webcam_ffmpegPathBroken = ko.observable(false);
+        self.webcam_ffmpegPathReset = function() {
+            self.webcam_ffmpegPathText("");
+            self.webcam_ffmpegPathOk(false);
+            self.webcam_ffmpegPathBroken(false);
+        };
 
         self.addTemperatureProfile = function() {
             self.temperature_profiles.push({name: "New", extruder:0, bed:0});
@@ -193,9 +198,13 @@ $(function() {
             }
 
             var text = gettext("If you see your webcam stream below, the entered stream URL is ok.");
+            var image = $('<img src="' + self.webcam_streamUrl() + '">');
+            var message = $("<p></p>")
+                .append(text)
+                .append(image);
             showMessageDialog({
                 title: gettext("Stream test"),
-                message: '<p>' + text + '</p><p><img src="' + self.webcam_streamUrl() + '" /></p>'
+                message: message
             });
         };
 
@@ -294,6 +303,10 @@ $(function() {
 
         self.onSettingsShown = function() {
             self.requestData();
+        };
+
+        self.onSettingsHidden = function() {
+            self.webcam_ffmpegPathReset();
         };
 
         self.isDialogActive = function() {

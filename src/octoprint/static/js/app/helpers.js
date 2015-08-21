@@ -446,6 +446,8 @@ function showMessageDialog(msg, options) {
     var message = options.message || "";
     var close = options.close || gettext("Close");
     var onclose = options.onclose || undefined;
+    var onshow = options.onshow || undefined;
+    var onshown = options.onshown || undefined;
 
     if (_.isString(message)) {
         message = $("<p>" + message + "</p>");
@@ -466,6 +468,14 @@ function showMessageDialog(msg, options) {
             onclose();
         }
     });
+
+    if (onshow) {
+        modal.on("show", onshow);
+    }
+
+    if (onshown) {
+        modal.on("shown", onshown);
+    }
 
     modal.modal("show");
     return modal;

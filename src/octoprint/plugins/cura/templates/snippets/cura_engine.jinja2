@@ -3,8 +3,8 @@
         <label class="control-label" for="settings-cura-path">{{ _('Path to CuraEngine') }}</label>
         <div class="controls">
             <div class="input-append">
-                <input type="text" class="input-block-level" data-bind="value: settings.plugins.cura.cura_engine">
-                <button class="btn" type="button" data-bind="click: testEnginePath">{{ _('Test') }}</button>
+                <input type="text" class="input-block-level" data-bind="value: settings.plugins.cura.cura_engine, valueUpdate: 'afterkeydown'">
+                <button class="btn" type="button" data-bind="click: testEnginePath, enable: testEnginePath(), css: {disabled: !testEnginePath()}">{{ _('Test') }}</button>
             </div>
             <span class="help-block" data-bind="visible: pathBroken() || pathOk, text: pathText"></span>
         </div>
