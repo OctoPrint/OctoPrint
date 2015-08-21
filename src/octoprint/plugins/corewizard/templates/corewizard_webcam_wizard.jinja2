@@ -26,7 +26,8 @@
 </p>{% endtrans %}
 
 <form class="form-horizontal" data-bind="with: settingsViewModel">
-    {% include "dialogs/_snippets/configurewebcamurls.jinja2" %}
+    {% include "_snippets/settings/webcam/webcamStreamUrl.jinja2" %}
+    {% include "_snippets/settings/webcam/webcamSnapshotUrl.jinja2" %}
 </form>
 
 <h4>{{ _('Timelapse Recordings') }}</h4>
@@ -37,5 +38,5 @@
 </p>{% endtrans %}
 
 <form class="form-horizontal" data-bind="with: settingsViewModel">
-    {% include "dialogs/_snippets/configureffmpeg.jinja2" %}
+    {% include "_snippets/settings/webcam/ffmpegPath.jinja2" %}
 </form>
