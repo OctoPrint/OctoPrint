@@ -1382,7 +1382,7 @@ class MachineCom(object):
 			if regex_minMaxError.match(line):
 				line = line.rstrip() + self._readline()
 
-			if 'line number' in line.lower() or 'checksum' in line.lower() or 'expected line' in line.lower():
+			if 'line number' in line.lower() or 'checksum' in line.lower() or 'format error' in line.lower() or 'expected line' in line.lower():
 				#Skip the communication errors, as those get corrected.
 				self._lastCommError = line[6:] if line.startswith("Error:") else line[2:]
 				pass
