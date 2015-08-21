@@ -76,6 +76,9 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 	def _get_acl_wizard_name(self):
 		return "Access Control"
 
+	def _get_acl_additional_wizard_template_data(self):
+		return dict(mandatory=self._is_acl_wizard_required())
+
 	@octoprint.plugin.BlueprintPlugin.route("/acl", methods=["POST"])
 	def acl_wizard_api(self):
 		from flask import request

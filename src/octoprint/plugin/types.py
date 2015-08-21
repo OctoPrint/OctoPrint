@@ -252,8 +252,10 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 	Wizards
 	   Plugins may define wizard dialogs to display to the user if necessary (e.g. in case of missing information that
 	   needs to be queried from the user to make the plugin work). Note that with the current implementations, all
-	   wizard dialogs will always be sorted alphabetically by their ``name``. A wizard dialog provided through a
-	   plugin will only be displayed if the plugin reports the wizard as being required through :meth:`~octoprint.plugin.WizardPlugin.is_wizard_required`.
+	   wizard dialogs will be will always be sorted by their ``mandatory`` attribute (which defaults to ``False``) and then
+	   alphabetically by their ``name``. Hence, mandatory wizard steps will come first, sorted alphabetically, then the
+	   optional steps will follow, also alphabetically. A wizard dialog provided through a plugin will only be displayed
+	   if the plugin reports the wizard as being required through :meth:`~octoprint.plugin.WizardPlugin.is_wizard_required`.
 	   Please also refer to the :class:`~octoprint.plugin.WizardPlugin` mixin for further details on this.
 
 	   The included template must be called ``<plugin identifier>_wizard.jinja2`` (e.g. ``myplugin_wizard.jinja2``) unless
@@ -262,6 +264,14 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 	   The template will be already wrapped into the necessary structure, plugins just need to supply the pure content.
 	   The wrapper div and the link in the wizard navigation will have the additional classes and styles applied as defined
 	   via the supplied configuration supplied through :func:`get_template_configs`.
+
+	   .. note::
+
+	      A note about ``mandatory`` wizard steps: In the current implementation, marking a wizard step as
+	      mandatory will *only* make it styled accordingly. It is the task of the :ref:`view model <sec-plugins-viewmodels>`
+	      to actually prevent the user from skipping the dialog by implementing the ``onWizardTabChange``
+	      callback and returning ``false`` there if it is detected that the user hasn't yet filled in the
+	      wizard step.
 
 	Generic
 	   Plugins may also inject arbitrary templates into the page of the web interface itself, e.g. in order to
@@ -409,6 +419,17 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 		        - Like ``styles`` but only applied to the link in the navigation.
 		      * - styles_content
 		        - Like ``styles`` but only applied to the content pane itself.
+
+		``wizard`` type
+
+		   .. list-table::
+		      :widths: 5 95
+
+		      * - mandatory
+		        - Whether the wizard step is mandatory (True) or not (False). Optional,
+		          defaults to False. If set to True, OctoPrint will sort visually mark
+		          the step as mandatory in the UI (bold in the navigation and a little
+		          alert) and also sort it into the first half.
 
 		.. note::
 
