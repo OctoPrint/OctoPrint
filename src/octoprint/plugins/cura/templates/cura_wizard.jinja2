@@ -1,9 +1,3 @@
-<div class="alert alert-info">{% trans %}
-    <strong>Note:</strong> OctoPrint currently only supports slicing with
-    CuraEngine up to 15.04 and importing Cura profiles from Cura versions
-    <em>up to 15.04</em>.
-{% endtrans %}</div>
-
 <div data-bind="visible: unconfiguredCuraEngine">
     <h3>{{ _('Configure CuraEngine') }}</h3>
     <p>{% trans %}
@@ -12,7 +6,9 @@
     {% endtrans %}</p>
 
     <div style="margin-top: 1em">
-        {% include "snippets/cura_engine.jinja2" %}
+        <form class="form-horizontal">
+            {% include "_snippets/settings/cura/enginePath.jinja2" %}
+        </form>
     </div>
 </div>
 
@@ -22,7 +18,7 @@
     yet. You should do this now.{% endtrans %}</p>
 
     <div>
-        {% include "snippets/cura_profiles.jinja2" %}
+        {% include "_snippets/settings/cura/profiles.jinja2" %}
     </div>
 
     <button class="btn btn-block" data-bind="click: function() { $root.showImportProfileDialog() }">{{ _('Import Profile...') }}</button>

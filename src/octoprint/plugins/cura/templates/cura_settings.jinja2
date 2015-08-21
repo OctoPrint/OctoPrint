@@ -1,11 +1,14 @@
 <h4>{{ _('General') }}</h4>
 
-{% include "snippets/cura_engine.jinja2" %}
+<form class="form-horizontal">
+    {% include "_snippets/settings/cura/enginePath.jinja2" %}
+    {% include "_snippets/settings/cura/engineLog.jinja2" %}
+</form>
 
 <h4>{{ _('Profiles') }}</h4>
 
-{% include "snippets/cura_profiles.jinja2" %}
+{% include "_snippets/settings/cura/profiles.jinja2" %}
 
 <button class="btn pull-right" data-bind="click: function() { $root.showImportProfileDialog() }">{{ _('Import Profile...') }}</button>
 
-{% include "snippets/cura_profile_importer.jinja2" %}
+{% include "_snippets/settings/cura/profileImporter.jinja2" %}
