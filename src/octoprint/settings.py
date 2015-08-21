@@ -774,11 +774,17 @@ class Settings(object):
 		if not self._dirty and not force:
 			return False
 
-		with open(self._configfile, "wb") as configFile:
-			yaml.safe_dump(self._config, configFile, default_flow_style=False, indent="    ", allow_unicode=True)
-			self._dirty = False
-		self.load()
-		return True
+		from octoprint.util import atomic_write
+		try:
+			with atomic_write(self._configfile, "wb", prefix="octoprint-config-", suffix=".yaml") as configFile:
+				yaml.safe_dump(self._config, configFile, default_flow_style=False, indent="    ", allow_unicode=True)
+				self._dirty = False
+		except:
+			self._logger.exception("Error while saving config.yaml!")
+			raise
+		else:
+			self.load()
+			return True
 
 	@property
 	def last_modified(self):
