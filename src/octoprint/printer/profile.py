@@ -329,12 +329,14 @@ class PrinterProfileManager(object):
 		if os.path.exists(path) and not allow_overwrite:
 			raise SaveError("Profile %s already exists and not allowed to overwrite" % profile["id"])
 
+		from octoprint.util import atomic_write
 		import yaml
-		with open(path, "wb") as f:
-			try:
+		try:
+			with atomic_write(path, "wb") as f:
 				yaml.safe_dump(profile, f, default_flow_style=False, indent="  ", allow_unicode=True)
-			except Exception as e:
-				raise SaveError("Cannot save profile %s: %s" % (profile["id"], str(e)))
+		except Exception as e:
+			self._logger.exception("Error while trying to save profile %s" % profile["id"])
+			raise SaveError("Cannot save profile %s: %s" % (profile["id"], str(e)))
 
 	def _remove_from_path(self, path):
 		try:

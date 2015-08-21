@@ -17,6 +17,7 @@ import shutil
 import threading
 from functools import wraps
 import warnings
+import contextlib
 
 
 logger = logging.getLogger(__name__)
@@ -512,6 +513,15 @@ def address_for_client(host, port):
 			return address
 		except:
 			continue
+
+
+@contextlib.contextmanager
+def atomic_write(filename, mode="w+b", prefix="tmp", suffix=""):
+	temp_config = tempfile.NamedTemporaryFile(mode=mode, prefix=prefix, suffix=suffix, delete=False)
+	yield temp_config
+	temp_config.close()
+	shutil.move(temp_config.name, filename)
+
 
 class RepeatedTimer(threading.Thread):
 	"""
