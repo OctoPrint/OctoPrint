@@ -808,13 +808,11 @@ class Server():
 		assets.updater = UpdaterType
 
 		enable_gcodeviewer = settings().getBoolean(["gcodeViewer", "enabled"])
-		enable_timelapse = (settings().get(["webcam", "snapshot"]) and settings().get(["webcam", "ffmpeg"]))
 		preferred_stylesheet = settings().get(["devel", "stylesheet"])
 		minify = settings().getBoolean(["devel", "webassets", "minify"])
 
 		dynamic_assets = util.flask.collect_plugin_assets(
 			enable_gcodeviewer=enable_gcodeviewer,
-			enable_timelapse=enable_timelapse,
 			preferred_stylesheet=preferred_stylesheet
 		)
 

@@ -600,7 +600,7 @@ class SettingsCheckUpdater(webassets.updater.BaseUpdater):
 
 ##~~ plugin assets collector
 
-def collect_plugin_assets(enable_gcodeviewer=True, enable_timelapse=True, preferred_stylesheet="css"):
+def collect_plugin_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 	logger = logging.getLogger(__name__ + ".collect_plugin_assets")
 
 	supported_stylesheets = ("css", "less")
@@ -622,6 +622,7 @@ def collect_plugin_assets(enable_gcodeviewer=True, enable_timelapse=True, prefer
 		'js/app/viewmodels/slicing.js',
 		'js/app/viewmodels/temperature.js',
 		'js/app/viewmodels/terminal.js',
+		'js/app/viewmodels/timelapse.js',
 		'js/app/viewmodels/users.js',
 		'js/app/viewmodels/log.js',
 		'js/app/viewmodels/usersettings.js',
@@ -634,8 +635,6 @@ def collect_plugin_assets(enable_gcodeviewer=True, enable_timelapse=True, prefer
 			'gcodeviewer/js/gCodeReader.js',
 			'gcodeviewer/js/renderer.js'
 		]
-	if enable_timelapse:
-		assets["js"].append('js/app/viewmodels/timelapse.js')
 
 	if preferred_stylesheet == "less":
 		assets["less"].append('less/octoprint.less')
