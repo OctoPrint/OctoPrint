@@ -223,7 +223,7 @@ class MachineCom(object):
 		self._temp = {}
 		self._bedTemp = None
 		self._tempOffsets = dict()
-		self._commandQueue = queue.Queue()
+		self._commandQueue = ClearableQueue()
 		self._currentZ = None
 		self._heatupWaitStartTime = None
 		self._heatupWaitTimeLost = 0.0
@@ -1820,8 +1820,30 @@ class MachineCom(object):
 		self._lastLines.clear()
 		self._resendDelta = None
 
-	def _gcode_M112_queuing(self, cmd, cmd_type=None): # It's an emergency what todo? Canceling the print should be the minimum
-		self.cancelPrint()
+	def _gcode_M112_queuing(self, cmd, cmd_type=None): 
+		# emergency stop, tell the printer right now and clear the queues
+		# jump the queue with the M112
+		self._doSendWithoutChecksum("M112")
+		self._doSendWithChecksum("M112", self._currentLine)
+
+		# of course, these clears are too late to get the one that another thread
+		# is in between get and task_done
+		self._commandQueue.clear()
+		self._send_queue.clear()
+
+		# close to reset host state
+		self._errorValue = "Closing serial port due to emergency stop M112."
+		self._log(self._errorValue)
+		self.close(is_error=True)
+
+		# fire the M112 event since we sent it and we're going to prevent the caller from seeing it
+		gcode = "M112"
+		if gcode in gcodeToEvent:
+			eventManager().fire(gcodeToEvent[gcode])
+
+		# return None 1-tuple to eat the one that is queuing because we don't want to send it twice
+		# I hope it got it the first time because as far as I can tell, there is no way to know
+		return None,
 
 	def _gcode_G4_sent(self, cmd, cmd_type=None):
 		# we are intending to dwell for a period of time, increase the timeout to match
@@ -2045,10 +2067,27 @@ class StreamingGcodeFileInformation(PrintingGcodeFileInformation):
 		return self._remoteFilename
 
 
-class TypedQueue(queue.Queue):
+class ClearableQueue(queue.Queue):
+	def clear(self):
+		self.all_tasks_done.acquire()
+		try:
+			self._clear()
+		finally:
+			self.all_tasks_done.release()
+
+	def _clear(self):
+		count = len(self.queue)
+		self.queue.clear()
+		self.unfinished_tasks -= count
+		if (self.unfinished_tasks <= 0):
+			self.all_tasks_done.notify_all();
+		self.not_full.notify()
+
+
+class TypedQueue(ClearableQueue):
 
 	def __init__(self, maxsize=0):
-		queue.Queue.__init__(self, maxsize=maxsize)
+		ClearableQueue.__init__(self, maxsize=maxsize)
 		self._lookup = []
 
 	def _put(self, item):
@@ -2060,10 +2099,10 @@ class TypedQueue(queue.Queue):
 				else:
 					self._lookup.append(cmd_type)
 
-		queue.Queue._put(self, item)
+		ClearableQueue._put(self, item)
 
 	def _get(self):
-		item = queue.Queue._get(self)
+		item = ClearableQueue._get(self)
 
 		if isinstance(item, tuple) and len(item) == 3:
 			cmd, line, cmd_type = item
@@ -2071,6 +2110,10 @@ class TypedQueue(queue.Queue):
 				self._lookup.remove(cmd_type)
 
 		return item
+
+	def _clear(self):
+		ClearableQueue._clear(self)
+		self._lookup = []
 
 
 class TypeAlreadyInQueue(Exception):
