@@ -1821,8 +1821,7 @@ class MachineCom(object):
 		self._resendDelta = None
 
 	def _gcode_M112_queuing(self, cmd, cmd_type=None):
-		# emergency stop, tell the printer right now and clear the queues
-		# jump the queue with the M112
+		# emergency stop, jump the queue with the M112
 		self._doSendWithoutChecksum("M112")
 		self._doSendWithChecksum("M112", self._currentLine)
 
