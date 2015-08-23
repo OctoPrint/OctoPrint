@@ -214,7 +214,7 @@ class MachineCom(object):
 		self._temp = {}
 		self._bedTemp = None
 		self._tempOffsets = dict()
-		self._commandQueue = ClearableQueue()
+		self._commandQueue = queue.Queue()
 		self._currentZ = None
 		self._heatupWaitStartTime = None
 		self._heatupWaitTimeLost = 0.0
@@ -1755,16 +1755,11 @@ class MachineCom(object):
 		self._lastLines.clear()
 		self._resendDelta = None
 
-	def _gcode_M112_queuing(self, cmd, cmd_type=None): 
+	def _gcode_M112_queuing(self, cmd, cmd_type=None):
 		# emergency stop, tell the printer right now and clear the queues
 		# jump the queue with the M112
 		self._doSendWithoutChecksum("M112")
 		self._doSendWithChecksum("M112", self._currentLine)
-
-		# of course, these clears are too late to get the one that another thread
-		# is in between get and task_done
-		self._commandQueue.clear()
-		self._send_queue.clear()
 
 		# close to reset host state
 		self._errorValue = "Closing serial port due to emergency stop M112."
@@ -2002,27 +1997,10 @@ class StreamingGcodeFileInformation(PrintingGcodeFileInformation):
 		return self._remoteFilename
 
 
-class ClearableQueue(queue.Queue):
-	def clear(self):
-		self.all_tasks_done.acquire()
-		try:
-			self._clear()
-		finally:
-			self.all_tasks_done.release()
-
-	def _clear(self):
-		count = len(self.queue)
-		self.queue.clear()
-		self.unfinished_tasks -= count
-		if (self.unfinished_tasks <= 0):
-			self.all_tasks_done.notify_all();
-		self.not_full.notify()
-
-
-class TypedQueue(ClearableQueue):
+class TypedQueue(queue.Queue):
 
 	def __init__(self, maxsize=0):
-		ClearableQueue.__init__(self, maxsize=maxsize)
+		queue.Queue.__init__(self, maxsize=maxsize)
 		self._lookup = []
 
 	def _put(self, item):
@@ -2034,10 +2012,10 @@ class TypedQueue(ClearableQueue):
 				else:
 					self._lookup.append(cmd_type)
 
-		ClearableQueue._put(self, item)
+		queue.Queue._put(self, item)
 
 	def _get(self):
-		item = ClearableQueue._get(self)
+		item = queue.Queue._get(self)
 
 		if isinstance(item, tuple) and len(item) == 3:
 			cmd, line, cmd_type = item
@@ -2045,10 +2023,6 @@ class TypedQueue(ClearableQueue):
 				self._lookup.remove(cmd_type)
 
 		return item
-
-	def _clear(self):
-		ClearableQueue._clear(self)
-		self._lookup = []
 
 
 class TypeAlreadyInQueue(Exception):
