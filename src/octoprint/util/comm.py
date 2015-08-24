@@ -1529,10 +1529,10 @@ class MachineCom(object):
 				# fetch command and optional linenumber from queue
 				command, linenumber, command_type = entry
 
-					# some firmwares (e.g. Smoothie) might support additional in-band communication that will not
-					# stick to the acknowledgement behaviour of GCODE, so we check here if we have a GCODE command
-					# at hand here and only clear our clear_to_send flag later if that's the case
-					gcode = gcode_command_for_cmd(command)
+				# some firmwares (e.g. Smoothie) might support additional in-band communication that will not
+				# stick to the acknowledgement behaviour of GCODE, so we check here if we have a GCODE command
+				# at hand here and only clear our clear_to_send flag later if that's the case
+				gcode = gcode_command_for_cmd(command)
 
 				if linenumber is not None:
 					# line number predetermined - this only happens for resends, so we'll use the number and
