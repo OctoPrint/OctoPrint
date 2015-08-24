@@ -83,9 +83,7 @@ default_settings = {
 			"sdStatus": 1
 		},
 		"additionalPorts": [],
-		"longRunningCommands": ["G4", "G28", "G29", "G30", "G32"],
-		"ignoreIdenticalResends": False,
-		"identicalResendsCountdown": 7
+		"longRunningCommands": ["G4", "G28", "G29", "G30", "G32"]
 	},
 	"server": {
 		"host": "0.0.0.0",
@@ -145,7 +143,9 @@ default_settings = {
 		"externalHeatupDetection": True,
 		"supportWait": True,
 		"keyboardControl": True,
-		"pollWatched": False
+		"pollWatched": False,
+		"ignoreIdenticalResends": False,
+		"identicalResendsCountdown": 7
 	},
 	"folder": {
 		"uploads": None,

@@ -238,7 +238,7 @@ class MachineCom(object):
 		self._lastResendNumber = None
 		self._currentResendCount = 0
 		self._resendSwallowNextOk = False
-		self._resendSwallowRepetitions = settings().getBoolean(["serial", "ignoreIdenticalResends"])
+		self._resendSwallowRepetitions = settings().getBoolean(["feature", "ignoreIdenticalResends"])
 		self._resendSwallowRepetitionsCounter = 0
 
 		self._clear_to_send = CountedEvent(max=10, name="comm.clear_to_send")
@@ -1435,7 +1435,7 @@ class MachineCom(object):
 			self._resendDelta = resendDelta
 			self._lastResendNumber = lineToResend
 			self._currentResendCount = 0
-			self._resendSwallowRepetitionsCounter = settings().getInt(["serial", "identicalResendsCountdown"])
+			self._resendSwallowRepetitionsCounter = settings().getInt(["feature", "identicalResendsCountdown"])
 
 			if self._resendDelta > len(self._lastLines) or len(self._lastLines) == 0 or self._resendDelta < 0:
 				self._errorValue = "Printer requested line %d but no sufficient history is available, can't resend" % lineToResend
