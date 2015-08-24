@@ -1664,14 +1664,14 @@ class MachineCom(object):
 	def _gcode_T_sent(self, cmd, cmd_type=None):
 		toolMatch = regexes_parameters["intT"].search(cmd)
 		if toolMatch:
-			self._currentTool = int(toolMatch.group(1))
+			self._currentTool = int(toolMatch.group("value"))
 
 	def _gcode_G0_sent(self, cmd, cmd_type=None):
 		if 'Z' in cmd:
 			match = regexes_parameters["floatZ"].search(cmd)
 			if match:
 				try:
-					z = float(match.group(1))
+					z = float(match.group("value"))
 					if self._currentZ != z:
 						self._currentZ = z
 						self._callback.on_comm_z_change(z)
@@ -1688,11 +1688,11 @@ class MachineCom(object):
 		toolNum = self._currentTool
 		toolMatch = regexes_parameters["intT"].search(cmd)
 		if toolMatch:
-			toolNum = int(toolMatch.group(1))
+			toolNum = int(toolMatch.group("value"))
 		match = regexes_parameters["floatS"].search(cmd)
 		if match:
 			try:
-				target = float(match.group(1))
+				target = float(match.group("value"))
 				if toolNum in self._temp.keys() and self._temp[toolNum] is not None and isinstance(self._temp[toolNum], tuple):
 					(actual, oldTarget) = self._temp[toolNum]
 					self._temp[toolNum] = (actual, target)
@@ -1705,7 +1705,7 @@ class MachineCom(object):
 		match = regexes_parameters["floatS"].search(cmd)
 		if match:
 			try:
-				target = float(match.group(1))
+				target = float(match.group("value"))
 				if self._bedTemp is not None and isinstance(self._bedTemp, tuple):
 					(actual, oldTarget) = self._bedTemp
 					self._bedTemp = (actual, target)
