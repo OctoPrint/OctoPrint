@@ -87,8 +87,6 @@ default_settings = {
 		"longRunningCommands": ["G4", "G28", "G29", "G30", "G32", "M400", "M226"],
 		"checksumRequiringCommands": ["M110"],
 		"helloCommand": "M110 N0",
-		"ignoreIdenticalResends": False,
-		"identicalResendsCountdown": 7
 	},
 	"server": {
 		"host": "0.0.0.0",
@@ -154,7 +152,9 @@ default_settings = {
 		"externalHeatupDetection": True,
 		"supportWait": True,
 		"keyboardControl": True,
-		"pollWatched": False
+		"pollWatched": False,
+		"ignoreIdenticalResends": False,
+		"identicalResendsCountdown": 7
 	},
 	"folder": {
 		"uploads": None,
