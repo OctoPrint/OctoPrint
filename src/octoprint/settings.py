@@ -86,7 +86,9 @@ default_settings = {
 		"additionalBaudrates": [],
 		"longRunningCommands": ["G4", "G28", "G29", "G30", "G32", "M400", "M226"],
 		"checksumRequiringCommands": ["M110"],
-		"helloCommand": "M110 N0"
+		"helloCommand": "M110 N0",
+		"ignoreIdenticalResends": False,
+		"identicalResendsCountdown": 7
 	},
 	"server": {
 		"host": "0.0.0.0",
