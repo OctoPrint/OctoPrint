@@ -314,8 +314,13 @@ class VirtualPrinter(object):
 			else:
 				self._send("Error: expected line %d got %d" % (expected, actual))
 
-			self._send("Resend:%d" % expected)
-			self._send("ok")
+			def request_resend():
+				self._send("Resend:%d" % expected)
+				self._send("ok")
+
+			if settings().getBoolean(["devel", "virtualPrinter", "repetierStyleResends"]):
+				request_resend()
+			request_resend()
 
 	def _debugTrigger(self, data):
 		if data == "action_pause":
