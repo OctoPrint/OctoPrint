@@ -66,6 +66,7 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection, octoprint.printer.
 			apikey=octoprint.server.UI_API_KEY,
 			version=octoprint.server.VERSION,
 			display_version=octoprint.server.DISPLAY_VERSION,
+			branch=octoprint.server.BRANCH,
 			plugin_hash=plugin_hash.hexdigest(),
 			config_hash=config_hash
 		))

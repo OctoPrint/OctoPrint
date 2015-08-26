@@ -113,6 +113,7 @@ function DataUpdater(allViewModels) {
                     var oldVersion = VERSION;
                     VERSION = data["version"];
                     DISPLAY_VERSION = data["display_version"];
+                    BRANCH = data["branch"];
                     $("span.version").text(DISPLAY_VERSION);
 
                     var oldPluginHash = self._pluginHash;
