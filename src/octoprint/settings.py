@@ -143,6 +143,7 @@ default_settings = {
 		"temperatureGraph": True,
 		"waitForStartOnConnect": False,
 		"alwaysSendChecksum": False,
+		"neverSendChecksum": False,
 		"sendChecksumWithUnknownCommands": False,
 		"unknownCommandsNeedAck": False,
 		"sdSupport": True,

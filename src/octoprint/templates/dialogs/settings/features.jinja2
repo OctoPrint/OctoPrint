@@ -44,13 +44,6 @@
     <div class="control-group">
         <div class="controls">
             <label class="checkbox">
-                <input type="checkbox" data-bind="checked: feature_alwaysSendChecksum" id="settings-featureAlwaysSendChecksum"> {{ _('Send a checksum with <strong>every</strong> command') }}  <span class="label">{{ _('Repetier') }}</span>
-            </label>
-        </div>
-    </div>
-    <div class="control-group">
-        <div class="controls">
-            <label class="checkbox">
                 <input type="checkbox" data-bind="checked: feature_ignoreIdenticalResends" id="settings-ignoreIdenticalResends"> {{ _('Ignore consecutive resend requests for the same line') }} <span class="label">{{ _('Repetier') }}</span>
             </label>
         </div>
@@ -66,6 +59,20 @@
         <div class="controls">
             <label class="checkbox">
                 <input type="checkbox" data-bind="checked: feature_disableExternalHeatupDetection" id="settings-featureExternalHeatupDetection"> {{ _('Disable detection of external heatups') }} <span class="label">{{ _('Repetier') }}</span>
+            </label>
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label">{{ _('Send a checksum with the command')}}</label>
+        <div class="controls">
+            <label class="radio">
+                <input type="radio" name="sendChecksumGroup" value="print" data-bind="checked: feature_sendChecksum" id="settings-featureSendChecksumPrint"> {{ _('When printing') }}
+            </label>
+            <label class="radio">
+                <input type="radio" name="sendChecksumGroup" value="always" data-bind="checked: feature_sendChecksum" id="settings-featureSendChecksumAlways"> {{ _('Always') }}  <span class="label">{{ _('Repetier') }}</span>
+            </label>
+            <label class="radio">
+                <input type="radio" name="sendChecksumGroup" value="never" data-bind="checked: feature_sendChecksum" id="settings-featureSendChecksumNever"> {{ _('Never') }}
             </label>
         </div>
     </div>
