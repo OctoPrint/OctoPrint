@@ -13,7 +13,17 @@ from ..util import execute
 
 
 def can_perform_update(target, check):
-	return "update_script" in check and ("checkout_folder" in check or "update_folder" in check)
+	import os
+	script_configured = bool("update_script" in check and check["update_script"])
+
+	folder = None
+	if "update_folder" in check:
+		folder = check["update_folder"]
+	elif "checkout_folder" in check:
+		folder = check["checkout_folder"]
+	folder_configured = bool(folder and os.path.isdir(folder))
+
+	return script_configured and folder_configured
 
 
 def perform_update(target, check, target_version):
