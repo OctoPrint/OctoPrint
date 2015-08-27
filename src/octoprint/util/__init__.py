@@ -19,7 +19,6 @@ from functools import wraps
 import warnings
 import contextlib
 
-
 logger = logging.getLogger(__name__)
 
 def warning_decorator_factory(warning_type):
@@ -198,29 +197,12 @@ def get_exception_string():
 	return "%s: '%s' @ %s:%s:%d" % (str(sys.exc_info()[0].__name__), str(sys.exc_info()[1]), os.path.basename(locationInfo[0]), locationInfo[2], locationInfo[1])
 
 
+@deprecated("get_free_bytes has been deprecated and will be removed in the future",
+            includedoc="Replaced by `psutil.disk_usage <http://pythonhosted.org/psutil/#psutil.disk_usage>`_.",
+            since="1.2.5")
 def get_free_bytes(path):
-	"""
-	Retrieves the number of free bytes on the partition ``path`` is located at and returns it. Works on both Windows and
-	Unix/Linux.
-
-	Taken from http://stackoverflow.com/a/2372171/2028598
-
-	Arguments:
-	    path (string): The path for which to check the remaining partition space.
-
-	Returns:
-	    int: The amount of bytes still left on the partition.
-	"""
-
-	path = os.path.abspath(path)
-	if sys.platform == "win32":
-		import ctypes
-		freeBytes = ctypes.c_ulonglong(0)
-		ctypes.windll.kernel32.GetDiskFreeSpaceExW(ctypes.c_wchar_p(path), None, None, ctypes.pointer(freeBytes))
-		return freeBytes.value
-	else:
-		st = os.statvfs(path)
-		return st.f_bavail * st.f_frsize
+	import psutil
+	return psutil.disk_usage(path).free
 
 
 def get_dos_filename(origin, existing_filenames=None, extension=None, **kwargs):

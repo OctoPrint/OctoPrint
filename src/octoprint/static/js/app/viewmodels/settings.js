@@ -121,6 +121,7 @@ $(function() {
         self.feature_disableExternalHeatupDetection = ko.observable(undefined);
         self.feature_keyboardControl = ko.observable(undefined);
         self.feature_pollWatched = ko.observable(undefined);
+        self.feature_ignoreIdenticalResends = ko.observable(undefined);
 
         self.serial_port = ko.observable();
         self.serial_baudrate = ko.observable();
@@ -163,6 +164,11 @@ $(function() {
         self.server_commands_systemShutdownCommand = ko.observable(undefined);
         self.server_commands_systemRestartCommand = ko.observable(undefined);
         self.server_commands_serverRestartCommand = ko.observable(undefined);
+
+        self.server_diskspace_warning = ko.observable();
+        self.server_diskspace_critical = ko.observable();
+        self.server_diskspace_warning_str = sizeObservable(self.server_diskspace_warning);
+        self.server_diskspace_critical_str = sizeObservable(self.server_diskspace_critical);
 
         self.settings = undefined;
         self.lastReceivedSettings = undefined;

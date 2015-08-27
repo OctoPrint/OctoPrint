@@ -249,6 +249,8 @@ class MachineCom(object):
 		self._lastResendNumber = None
 		self._currentResendCount = 0
 		self._resendSwallowNextOk = False
+		self._resendSwallowRepetitions = settings().getBoolean(["feature", "ignoreIdenticalResends"])
+		self._resendSwallowRepetitionsCounter = 0
 		self._checksum_requiring_commands = settings().get(["serial", "checksumRequiringCommands"])
 
 		self._clear_to_send = CountedEvent(max=10, name="comm.clear_to_send")
@@ -1484,9 +1486,18 @@ class MachineCom(object):
 				self._currentResendCount += 1
 				return
 
+			# If we ignore resend repetitions (Repetier firmware...), check if we
+			# need to do this now. If the same line number has been requested we
+			# already saw and resent, we'll ignore it up to <counter> times.
+			if self._resendSwallowRepetitions and lineToResend == self._lastResendNumber and self._resendSwallowRepetitionsCounter > 0:
+				self._logger.debug("Ignoring resend request for line %d, that is probably a repetition sent by the firmware to ensure it arrives, not a real request" % lineToResend)
+				self._resendSwallowRepetitionsCounter -= 1
+				return
+
 			self._resendDelta = resendDelta
 			self._lastResendNumber = lineToResend
 			self._currentResendCount = 0
+			self._resendSwallowRepetitionsCounter = settings().getInt(["feature", "identicalResendsCountdown"])
 
 			if self._resendDelta > len(self._lastLines) or len(self._lastLines) == 0 or self._resendDelta < 0:
 				self._errorValue = "Printer requested line %d but no sufficient history is available, can't resend" % lineToResend
@@ -1740,14 +1751,14 @@ class MachineCom(object):
 	def _gcode_T_sent(self, cmd, cmd_type=None):
 		toolMatch = regexes_parameters["intT"].search(cmd)
 		if toolMatch:
-			self._currentTool = int(toolMatch.group(1))
+			self._currentTool = int(toolMatch.group("value"))
 
 	def _gcode_G0_sent(self, cmd, cmd_type=None):
 		if 'Z' in cmd:
 			match = regexes_parameters["floatZ"].search(cmd)
 			if match:
 				try:
-					z = float(match.group(1))
+					z = float(match.group("value"))
 					if self._currentZ != z:
 						self._currentZ = z
 						self._callback.on_comm_z_change(z)
@@ -1764,11 +1775,11 @@ class MachineCom(object):
 		toolNum = self._currentTool
 		toolMatch = regexes_parameters["intT"].search(cmd)
 		if toolMatch:
-			toolNum = int(toolMatch.group(1))
+			toolNum = int(toolMatch.group("value"))
 		match = regexes_parameters["floatS"].search(cmd)
 		if match:
 			try:
-				target = float(match.group(1))
+				target = float(match.group("value"))
 				if toolNum in self._temp.keys() and self._temp[toolNum] is not None and isinstance(self._temp[toolNum], tuple):
 					(actual, oldTarget) = self._temp[toolNum]
 					self._temp[toolNum] = (actual, target)
@@ -1781,7 +1792,7 @@ class MachineCom(object):
 		match = regexes_parameters["floatS"].search(cmd)
 		if match:
 			try:
-				target = float(match.group(1))
+				target = float(match.group("value"))
 				if self._bedTemp is not None and isinstance(self._bedTemp, tuple):
 					(actual, oldTarget) = self._bedTemp
 					self._bedTemp = (actual, target)

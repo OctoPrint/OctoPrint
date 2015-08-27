@@ -13,7 +13,7 @@ from flask import request, g, url_for, make_response, render_template, send_from
 import octoprint.plugin
 
 from octoprint.server import app, userManager, pluginManager, gettext, \
-	debug, LOCALES, VERSION, DISPLAY_VERSION, UI_API_KEY
+	debug, LOCALES, VERSION, DISPLAY_VERSION, UI_API_KEY, BRANCH
 from octoprint.settings import settings
 
 from . import util
@@ -311,6 +311,7 @@ def index():
 		debug=debug,
 		version=VERSION,
 		display_version=DISPLAY_VERSION,
+		branch=BRANCH,
 		gcodeMobileThreshold=settings().get(["gcodeViewer", "mobileSizeThreshold"]),
 		gcodeThreshold=settings().get(["gcodeViewer", "sizeThreshold"]),
 		uiApiKey=UI_API_KEY,

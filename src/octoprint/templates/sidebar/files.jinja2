@@ -33,8 +33,8 @@
         <div class="title" data-bind="text: name"></div>
     </script>
 </div>
-<div class="muted text-right">
-    <small>{{ _('Free') }}: <span data-bind="text: freeSpaceString"></span></small>
+<div class="text-right muted" data-bind="attr: {title: diskusageString}, css: {'text-error': diskusageCritical}, style: {'font-weight': diskusageCritical() || diskusageWarning() ? 'bold' : 'normal'}">
+    <small>{{ _('Free') }}: <span data-bind="text: freeSpaceString"></span> / {{ _('Total') }}: <span data-bind="text: totalSpaceString"></span> <i class="icon-exclamation-sign" data-bind="visible: diskusageWarning" style="display: none"></i></small>
 </div>
 <div style="display: none;" data-bind="visible: loginState.isUser">
     <div class="row-fluid upload-buttons">
