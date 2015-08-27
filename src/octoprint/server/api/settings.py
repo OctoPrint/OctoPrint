@@ -63,6 +63,7 @@ def getSettings():
 			"temperatureGraph": s.getBoolean(["feature", "temperatureGraph"]),
 			"waitForStart": s.getBoolean(["feature", "waitForStartOnConnect"]),
 			"alwaysSendChecksum": s.getBoolean(["feature", "alwaysSendChecksum"]),
+			"neverSendChecksum": s.getBoolean(["feature", "neverSendChecksum"]),
 			"sdSupport": s.getBoolean(["feature", "sdSupport"]),
 			"sdAlwaysAvailable": s.getBoolean(["feature", "sdAlwaysAvailable"]),
 			"swallowOkAfterResend": s.getBoolean(["feature", "swallowOkAfterResend"]),
@@ -215,6 +216,7 @@ def _saveSettings(data):
 		if "temperatureGraph" in data["feature"].keys(): s.setBoolean(["feature", "temperatureGraph"], data["feature"]["temperatureGraph"])
 		if "waitForStart" in data["feature"].keys(): s.setBoolean(["feature", "waitForStartOnConnect"], data["feature"]["waitForStart"])
 		if "alwaysSendChecksum" in data["feature"].keys(): s.setBoolean(["feature", "alwaysSendChecksum"], data["feature"]["alwaysSendChecksum"])
+		if "neverSendChecksum" in data["feature"].keys(): s.setBoolean(["feature", "neverSendChecksum"], data["feature"]["neverSendChecksum"])
 		if "sdSupport" in data["feature"].keys(): s.setBoolean(["feature", "sdSupport"], data["feature"]["sdSupport"])
 		if "sdAlwaysAvailable" in data["feature"].keys(): s.setBoolean(["feature", "sdAlwaysAvailable"], data["feature"]["sdAlwaysAvailable"])
 		if "swallowOkAfterResend" in data["feature"].keys(): s.setBoolean(["feature", "swallowOkAfterResend"], data["feature"]["swallowOkAfterResend"])

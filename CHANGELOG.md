@@ -35,6 +35,8 @@
     will actually get sent.
 * Additional baud rates to allow for connecting can now be specified along side
   additional serial ports via the settings dialog and the configuration file.
+* Option to never send checksums (e.g. if the printer firmware doesn't support it),
+  see [#949](https://github.com/foosel/OctoPrint/issues/949).
 * Documentation improvements
 
 ### Bug Fixes

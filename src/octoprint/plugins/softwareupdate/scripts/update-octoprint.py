@@ -93,7 +93,8 @@ def _git(args, cwd, verbose=False, git_executable=None):
 
 	for c in commands:
 		try:
-			return _execute([c] + args, cwd=cwd)
+			returncode, stdout, stderr = _execute([c] + args, cwd=cwd)
+			return returncode, "\n".join(stdout), "\n".join(stderr)
 		except EnvironmentError:
 			e = sys.exc_info()[1]
 			if e.errno == errno.ENOENT:
