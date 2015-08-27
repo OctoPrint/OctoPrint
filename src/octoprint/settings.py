@@ -108,6 +108,10 @@ default_settings = {
 			"systemShutdownCommand": None,
 			"systemRestartCommand": None,
 			"serverRestartCommand": None
+		},
+		"diskspace": {
+			"warning": 500 * 1024 * 1024, # 500 MB
+			"critical": 200 * 1024 * 1024, # 200 MB
 		}
 	},
 	"webcam": {

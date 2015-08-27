@@ -2,9 +2,10 @@ $(function() {
     function GcodeFilesViewModel(parameters) {
         var self = this;
 
-        self.printerState = parameters[0];
+        self.settingsViewModel = parameters[0];
         self.loginState = parameters[1];
-        self.slicing = parameters[2];
+        self.printerState = parameters[2];
+        self.slicing = parameters[3];
 
         self.isErrorOrClosed = ko.observable(undefined);
         self.isOperational = ko.observable(undefined);
@@ -21,10 +22,34 @@ $(function() {
         });
 
         self.freeSpace = ko.observable(undefined);
+        self.totalSpace = ko.observable(undefined);
         self.freeSpaceString = ko.computed(function() {
             if (!self.freeSpace())
                 return "-";
             return formatSize(self.freeSpace());
+        });
+        self.totalSpaceString = ko.computed(function() {
+            if (!self.totalSpace())
+                return "-";
+            return formatSize(self.totalSpace());
+        });
+
+        self.diskusageWarning = ko.computed(function() {
+            return self.freeSpace() != undefined
+                && self.freeSpace() < self.settingsViewModel.server_diskspace_warning();
+        });
+        self.diskusageCritical = ko.computed(function() {
+            return self.freeSpace() != undefined
+                && self.freeSpace() < self.settingsViewModel.server_diskspace_critical();
+        });
+        self.diskusageString = ko.computed(function() {
+            if (self.diskusageCritical()) {
+                return gettext("Your available free disk space is critically low.");
+            } else if (self.diskusageWarning()) {
+                return gettext("Your available free disk space is starting to run low.");
+            } else {
+                return gettext("Your current disk usage.");
+            }
         });
 
         self.uploadButton = undefined;
@@ -155,8 +180,12 @@ $(function() {
                 }
             }
 
-            if (response.free) {
+            if (response.free != undefined) {
                 self.freeSpace(response.free);
+            }
+
+            if (response.total != undefined) {
+                self.totalSpace(response.total);
             }
 
             self.highlightFilename(self.printerState.filename());
@@ -575,7 +604,7 @@ $(function() {
 
     OCTOPRINT_VIEWMODELS.push([
         GcodeFilesViewModel,
-        ["printerStateViewModel", "loginStateViewModel", "slicingViewModel"],
+        ["settingsViewModel", "loginStateViewModel", "printerStateViewModel", "slicingViewModel"],
         "#files_wrapper"
     ]);
 });

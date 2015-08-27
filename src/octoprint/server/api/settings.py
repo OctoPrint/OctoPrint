@@ -119,6 +119,10 @@ def getSettings():
 				"systemShutdownCommand": s.get(["server", "commands", "systemShutdownCommand"]),
 				"systemRestartCommand": s.get(["server", "commands", "systemRestartCommand"]),
 				"serverRestartCommand": s.get(["server", "commands", "serverRestartCommand"])
+			},
+			"diskspace": {
+				"warning": s.getInt(["server", "diskspace", "warning"]),
+				"critical": s.getInt(["server", "diskspace", "critical"])
 			}
 		}
 	}
@@ -264,6 +268,9 @@ def setSettings():
 			if "systemShutdownCommand" in data["server"]["commands"].keys(): s.set(["server", "commands", "systemShutdownCommand"], data["server"]["commands"]["systemShutdownCommand"])
 			if "systemRestartCommand" in data["server"]["commands"].keys(): s.set(["server", "commands", "systemRestartCommand"], data["server"]["commands"]["systemRestartCommand"])
 			if "serverRestartCommand" in data["server"]["commands"].keys(): s.set(["server", "commands", "serverRestartCommand"], data["server"]["commands"]["serverRestartCommand"])
+		if "diskspace" in data["server"]:
+			if "warning" in data["server"]["diskspace"]: s.setInt(["server", "diskspace", "warning"], data["server"]["diskspace"]["warning"])
+			if "critical" in data["server"]["diskspace"]: s.setInt(["server", "diskspace", "critical"], data["server"]["diskspace"]["critical"])
 
 	if "plugins" in data:
 		for plugin in octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.SettingsPlugin):

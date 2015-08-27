@@ -333,6 +333,34 @@ function formatSize(bytes) {
     return _.sprintf("%.1f%s", bytes, "TB");
 }
 
+function bytesFromSize(size) {
+    if (size == undefined || size.trim() == "") return undefined;
+
+    var parsed = size.match(/^([+]?[0-9]*\.?[0-9]+)(?:\s*)?(.*)$/);
+    var number = parsed[1];
+    var unit = parsed[2].trim();
+
+    if (unit == "") return parseFloat(number);
+
+    var units = {
+        b: 1,
+        byte: 1,
+        bytes: 1,
+        kb: 1024,
+        mb: Math.pow(1024, 2),
+        gb: Math.pow(1024, 3),
+        tb: Math.pow(1024, 4)
+    };
+    unit = unit.toLowerCase();
+
+    if (!units.hasOwnProperty(unit)) {
+        return undefined;
+    }
+
+    var factor = units[unit];
+    return number * factor;
+}
+
 function formatDuration(seconds) {
     if (!seconds) return "-";
     if (seconds < 0) return "00:00:00";
@@ -461,3 +489,17 @@ function splitTextToArray(text, sep, stripEmpty, filter) {
         function(item) { return (stripEmpty ? item : true) && (filter ? filter(item) : true); }
     );
 }
+
+var sizeObservable = function(observable) {
+    return ko.computed({
+        read: function() {
+            return formatSize(observable());
+        },
+        write: function(value) {
+            var result = bytesFromSize(value);
+            if (result != undefined) {
+                observable(result);
+            }
+        }
+    })
+};

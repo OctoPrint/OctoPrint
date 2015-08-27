@@ -15,15 +15,18 @@ from octoprint.settings import settings
 from octoprint.server import NO_CONTENT, admin_permission
 from octoprint.server.util.flask import redirect_to_tornado, restricted_access
 from octoprint.server.api import api
-from octoprint.util import get_free_bytes
 
 
 @api.route("/logs", methods=["GET"])
 @restricted_access
 @admin_permission.require(403)
 def getLogFiles():
+	import psutil
+	usage = psutil.disk_usage(settings().getBaseFolder("logs"))
+
 	files = _getLogFiles()
-	return jsonify(files=files, free=get_free_bytes(settings().getBaseFolder("logs")))
+
+	return jsonify(files=files, free=usage.free, total=usage.total)
 
 
 @api.route("/logs/<path:filename>", methods=["GET"])

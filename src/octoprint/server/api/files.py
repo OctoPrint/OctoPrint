@@ -7,7 +7,6 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 from flask import request, jsonify, make_response, url_for
 
-import octoprint.util as util
 from octoprint.filemanager.destinations import FileDestinations
 from octoprint.settings import settings, valid_boolean_trues
 from octoprint.server import printer, fileManager, slicingManager, eventManager, NO_CONTENT
@@ -17,6 +16,8 @@ from octoprint.events import Events
 import octoprint.filemanager
 import octoprint.filemanager.util
 import octoprint.slicing
+
+import psutil
 
 
 #~~ GCODE file handling
@@ -29,7 +30,8 @@ def readGcodeFiles():
 		filter = request.values["filter"]
 	files = _getFileList(FileDestinations.LOCAL, filter=filter)
 	files.extend(_getFileList(FileDestinations.SDCARD))
-	return jsonify(files=files, free=util.get_free_bytes(settings().getBaseFolder("uploads")))
+	usage = psutil.disk_usage(settings().getBaseFolder("uploads"))
+	return jsonify(files=files, free=usage.free, total=usage.total)
 
 
 @api.route("/files/<string:origin>", methods=["GET"])
@@ -40,7 +42,8 @@ def readGcodeFilesForOrigin(origin):
 	files = _getFileList(origin)
 
 	if origin == FileDestinations.LOCAL:
-		return jsonify(files=files, free=util.get_free_bytes(settings().getBaseFolder("uploads")))
+		usage = psutil.disk_usage(settings().getBaseFolder("uploads"))
+		return jsonify(files=files, free=usage.free, total=usage.total)
 	else:
 		return jsonify(files=files)
 
