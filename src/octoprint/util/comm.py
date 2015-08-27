@@ -1840,7 +1840,16 @@ class MachineCom(object):
 	def _gcode_M112_queuing(self, cmd, cmd_type=None):
 		# emergency stop, jump the queue with the M112
 		self._doSendWithoutChecksum("M112")
-		self._doSendWithChecksum("M112", self._currentLine)
+		self._doIncrementAndSendWithChecksum("M112")
+
+		# No idea if the printer is still listening or if M112 won. Just in case
+		# we'll now try to also manually make sure all heaters are shut off - better
+		# safe than sorry. We do this ignoring the queue since at this point it
+		# is irrelevant whether the printer has sent enough ack's or not, we
+		# are going to shutdown the connection in a second anyhow.
+		for tool in range(self._printerProfileManager.get_current_or_default()["extruder"]["count"]):
+			self._doIncrementAndSendWithChecksum("M104 T{tool} S0".format(tool=tool))
+		self._doIncrementAndSendWithChecksum("M140 S0")
 
 		# close to reset host state
 		self._errorValue = "Closing serial port due to emergency stop M112."
