@@ -113,7 +113,7 @@ $(function() {
         self.feature_gcodeViewer = ko.observable(undefined);
         self.feature_temperatureGraph = ko.observable(undefined);
         self.feature_waitForStart = ko.observable(undefined);
-        self.feature_alwaysSendChecksum = ko.observable(undefined);
+        self.feature_sendChecksum = ko.observable("print");
         self.feature_sdSupport = ko.observable(undefined);
         self.feature_sdAlwaysAvailable = ko.observable(undefined);
         self.feature_swallowOkAfterResend = ko.observable(undefined);
@@ -530,7 +530,9 @@ $(function() {
             // some special read functions for various observables
             var specialMappings = {
                 feature: {
-                    externalHeatupDetection: function() { return !self.feature_disableExternalHeatupDetection() }
+                    externalHeatupDetection: function() { return !self.feature_disableExternalHeatupDetection()},
+                    alwaysSendChecksum: function() { return self.feature_sendChecksum() == "always"},
+                    neverSendChecksum: function() { return self.feature_sendChecksum() == "never"}
                 },
                 serial: {
                     additionalPorts : function() { return commentableLinesToArray(self.serial_additionalPorts()) },
@@ -619,7 +621,9 @@ $(function() {
                     }
                 },
                 feature: {
-                    externalHeatupDetection: function(value) { self.feature_disableExternalHeatupDetection(!value) }
+                    externalHeatupDetection: function(value) { self.feature_disableExternalHeatupDetection(!value) },
+                    alwaysSendChecksum: function(value) { if (value) { self.feature_sendChecksum("always")}},
+                    neverSendChecksum: function(value) { if (value) { self.feature_sendChecksum("never")}}
                 },
                 serial: {
                     additionalPorts : function(value) { self.serial_additionalPorts(value.join("\n"))},
