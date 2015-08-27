@@ -243,6 +243,7 @@ class MachineCom(object):
 		self._sendChecksumWithUnknownCommands = settings().getBoolean(["feature", "sendChecksumWithUnknownCommands"])
 		self._unknownCommandsNeedAck = settings().getBoolean(["feature", "unknownCommandsNeedAck"])
 		self._currentLine = 1
+		self._line_mutex = threading.RLock()
 		self._resendDelta = None
 		self._lastLines = deque([], 50)
 		self._lastCommError = None
@@ -1620,10 +1621,7 @@ class MachineCom(object):
 						checksum_enabled = self.isPrinting() or self._alwaysSendChecksum
 
 						if command_requiring_checksum or (command_allowing_checksum and checksum_enabled):
-							linenumber = self._currentLine
-							self._addToLastLines(command)
-							self._currentLine += 1
-							self._doSendWithChecksum(command, linenumber)
+							self._doIncrementAndSendWithChecksum(command)
 						else:
 							self._doSendWithoutChecksum(command)
 
@@ -1715,6 +1713,13 @@ class MachineCom(object):
 		return command, command_type, gcode
 
 	##~~ actual sending via serial
+
+	def _doIncrementAndSendWithChecksum(self, cmd):
+		with self._line_mutex:
+			linenumber = self._currentLine
+			self._addToLastLines(cmd)
+			self._currentLine += 1
+			self._doSendWithChecksum(cmd, linenumber)
 
 	def _doSendWithChecksum(self, cmd, lineNumber):
 		commandToSend = "N%d %s" % (lineNumber, cmd)
@@ -1824,11 +1829,12 @@ class MachineCom(object):
 		else:
 			newLineNumber = 0
 
-		# send M110 command with new line number
-		self._currentLine = newLineNumber
+		with self._line_mutex:
+			# send M110 command with new line number
+			self._currentLine = newLineNumber
 
-		# after a reset of the line number we have no way to determine what line exactly the printer now wants
-		self._lastLines.clear()
+			# after a reset of the line number we have no way to determine what line exactly the printer now wants
+			self._lastLines.clear()
 		self._resendDelta = None
 
 	def _gcode_M112_queuing(self, cmd, cmd_type=None):
