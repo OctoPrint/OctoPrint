@@ -76,6 +76,7 @@ class VirtualPrinter(object):
 		self._heatupThread = None
 
 		self._okBeforeCommandOutput = settings().getBoolean(["devel", "virtualPrinter", "okBeforeCommandOutput"])
+		self._supportM112 = settings().getBoolean(["devel", "virtualPrinter", "supportM112"])
 
 		self._sendWait = settings().getBoolean(["devel", "virtualPrinter", "sendWait"])
 		self._waitInterval = settings().getFloat(["devel", "virtualPrinter", "waitInterval"])
@@ -94,6 +95,7 @@ class VirtualPrinter(object):
 
 		self._action_hooks = plugin_manager().get_hooks("octoprint.plugin.virtual_printer.custom_action")
 
+		self._killed = False
 
 		waitThread = threading.Thread(target=self._sendWaitAfterTimeout)
 		waitThread.start()
@@ -117,7 +119,7 @@ class VirtualPrinter(object):
 
 	def _processIncoming(self):
 		next_wait_timeout = time.time() + self._waitInterval
-		while self.incoming is not None:
+		while self.incoming is not None and not self._killed:
 			self._simulateTemps()
 
 			try:
@@ -277,9 +279,10 @@ class VirtualPrinter(object):
 			elif "G92" in data:
 				self._setPosition(data)
 
-			elif data.startswith("G0") or data.startswith("G1") or data.startswith("G2") or data.startswith("G3") \
-					or data.startswith("G28") or data.startswith("G29") or data.startswith("G30") \
-					or data.startswith("G31") or data.startswith("G32"):
+			elif data.startswith("G28"):
+				self._performMove(data)
+
+			elif data.startswith("G0") or data.startswith("G1") or data.startswith("G2") or data.startswith("G3"):
 				# simulate reprap buffered commands via a Queue with maxsize which internally simulates the moves
 				self.buffered.put(data)
 
@@ -301,6 +304,12 @@ class VirtualPrinter(object):
 
 			if len(data.strip()) > 0 and not self._okBeforeCommandOutput:
 				self._sendOk()
+
+	def _kill(self):
+		if not self._supportM112:
+			return
+		self._killed = True
+		self._send("echo:EMERGENCY SHUTDOWN DETECTED. KILLED.")
 
 	def _triggerResend(self, expected=None, actual=None):
 		with self._incoming_lock:
@@ -532,14 +541,10 @@ class VirtualPrinter(object):
 				pass
 
 		if duration:
-			if settings().getBoolean(["devel", "virtualPrinter", "waitOnLongMoves"]):
-				slept = 0
-				while duration - slept > self._read_timeout:
-					time.sleep(self._read_timeout)
-					self._send("wait")
-					slept += self._read_timeout
-			else:
-				time.sleep(duration)
+			slept = 0
+			while duration - slept > self._read_timeout and not self._killed:
+				time.sleep(self._read_timeout)
+				slept += self._read_timeout
 
 	def _setPosition(self, line):
 		matchX = re.search("X([0-9.]+)", line)
@@ -593,6 +598,9 @@ class VirtualPrinter(object):
 		self._selectedSdFilePos = 0
 		with open(self._selectedSdFile, "r") as f:
 			for line in iter(f.readline, ""):
+				if self._killed:
+					break
+
 				# reset position if requested by client
 				if self._newSdFilePos is not None:
 					f.seek(self._newSdFilePos)
@@ -622,12 +630,12 @@ class VirtualPrinter(object):
 		delay = 1
 		if heater.startswith("tool"):
 			toolNum = int(heater[len("tool"):])
-			while self.temp[toolNum] < self.targetTemp[toolNum] - delta or self.temp[toolNum] > self.targetTemp[toolNum] + delta:
+			while not self._killed and (self.temp[toolNum] < self.targetTemp[toolNum] - delta or self.temp[toolNum] > self.targetTemp[toolNum] + delta):
 				self._simulateTemps(delta=delta)
 				self._send("T:%0.2f" % self.temp[toolNum])
 				time.sleep(delay)
 		elif heater == "bed":
-			while self.bedTemp < self.bedTargetTemp - delta or self.bedTemp > self.bedTargetTemp + delta:
+			while not self._killed and (self.bedTemp < self.bedTargetTemp - delta or self.bedTemp > self.bedTargetTemp + delta):
 				self._simulateTemps(delta=delta)
 				self._send("B:%0.2f" % self.bedTemp)
 				time.sleep(delay)
@@ -678,6 +686,12 @@ class VirtualPrinter(object):
 		with self._incoming_lock:
 			if self.incoming is None or self.outgoing is None:
 				return
+
+			if "M112" in data and self._supportM112:
+				self._seriallog.info("<<< {}".format(data.strip()))
+				self._kill()
+				return
+
 			try:
 				self.incoming.put(data, timeout=self._write_timeout)
 				self._seriallog.info("<<< {}".format(data.strip()))

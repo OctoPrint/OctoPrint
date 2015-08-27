@@ -297,7 +297,8 @@ default_settings = {
 			"txBuffer": 40,
 			"commandBuffer": 4,
 			"sendWait": True,
-			"waitInterval": 1.0
+			"waitInterval": 1.0,
+			"supportM112": True
 		}
 	}
 }
