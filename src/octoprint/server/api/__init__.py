@@ -19,7 +19,7 @@ import octoprint.server
 import octoprint.plugin
 from octoprint.server import admin_permission, NO_CONTENT
 from octoprint.settings import settings as s, valid_boolean_trues
-from octoprint.server.util import apiKeyRequestHandler, corsResponseHandler
+from octoprint.server.util import noCachingResponseHandler, apiKeyRequestHandler, corsResponseHandler
 from octoprint.server.util.flask import restricted_access, get_json_command_from_request, passive_login
 
 
@@ -41,6 +41,8 @@ from . import languages as api_languages
 
 
 VERSION = "0.1"
+
+api.after_request(noCachingResponseHandler)
 
 api.before_request(apiKeyRequestHandler)
 api.after_request(corsResponseHandler)
