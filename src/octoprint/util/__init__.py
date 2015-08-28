@@ -585,13 +585,18 @@ class RepeatedTimer(threading.Thread):
 	    run_first (boolean): If set to True, the function will be run for the first time *before* the first wait period.
 	        If set to False (the default), the function will be run for the first time *after* the first wait period.
 	    condition (callable): Condition that needs to be True for loop to continue. Defaults to ``lambda: True``.
+	    on_condition_false (callable): Callback to call when the timer finishes due to condition becoming false. Will
+	        be called before the ``on_finish`` callback.
+	    on_cancelled (callable): Callback to call when the timer finishes due to being cancelled. Will be called
+	        before the ``on_finish`` callback.
 	    on_finish (callable): Callback to call when the timer finishes, either due to being cancelled or since
 	        the condition became false.
 	    daemon (bool): daemon flag to set on underlying thread.
 	"""
 
 	def __init__(self, interval, function, args=None, kwargs=None,
-	             run_first=False, condition=None, on_finish=None, daemon=True):
+	             run_first=False, condition=None, on_condition_false=None,
+	             on_cancelled=None, on_finish=None, daemon=True):
 		threading.Thread.__init__(self)
 
 		if args is None:
@@ -612,11 +617,15 @@ class RepeatedTimer(threading.Thread):
 		self.kwargs = kwargs
 		self.run_first = run_first
 		self.condition = condition
+
+		self.on_condition_false = on_condition_false
+		self.on_cancelled = on_cancelled
 		self.on_finish = on_finish
+
 		self.daemon = daemon
 
 	def cancel(self):
-		self.finish()
+		self._finish(self.on_cancelled)
 
 	def run(self):
 		while self.condition():
@@ -631,17 +640,23 @@ class RepeatedTimer(threading.Thread):
 			# wait, but break if we are cancelled
 			self.finished.wait(self.interval())
 			if self.finished.is_set():
-				break
+				return
 
 			if not self.run_first:
 				# if we are to run the function AFTER waiting for the first time
 				self.function(*self.args, **self.kwargs)
 
-		self.finish()
+		# we'll only get here if the condition was false
+		self._finish(self.on_condition_false)
 
-	def finish(self):
-		# make sure we set our finished event so we can detect that the loop was finished
+	def _finish(self, *callbacks):
 		self.finished.set()
+
+		for callback in callbacks:
+			if not callable(callback):
+				continue
+			callback()
+
 		if callable(self.on_finish):
 			self.on_finish()
 
