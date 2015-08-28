@@ -1557,13 +1557,11 @@ class MachineCom(object):
 				# trigger "sent" phase and use up one "ok"
 				self._process_command_phase("sent", command, command_type, gcode=gcode)
 
-						if command_requiring_checksum or (command_allowing_checksum and checksum_enabled):
-							linenumber = self._currentLine
-							self._addToLastLines(command)
-							self._currentLine += 1
-							self._doSendWithChecksum(command, linenumber)
-						else:
-							self._doSendWithoutChecksum(command)
+				# we only need to use up a clear if the command we just sent was either a gcode command or if we also
+				# require ack's for unknown commands
+				use_up_clear = self._unknownCommandsNeedAck
+				if gcode is not None:
+					use_up_clear = True
 
 				# if we need to use up a clear, do that now
 				if use_up_clear:
