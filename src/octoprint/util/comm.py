@@ -1778,7 +1778,7 @@ class MachineCom(object):
 		# close to reset host state
 		self._errorValue = "Closing serial port due to emergency stop M112."
 		self._log(self._errorValue)
-		self.close(is_error=True)
+		self.close(isError=True)
 
 		# fire the M112 event since we sent it and we're going to prevent the caller from seeing it
 		gcode = "M112"

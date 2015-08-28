@@ -298,7 +298,7 @@ class VirtualPrinter():
 		if not self._supportM112:
 			return
 		self._killed = True
-		self._send("echo:EMERGENCY SHUTDOWN DETECTED. KILLED.")
+		self.outgoing.put("echo:EMERGENCY SHUTDOWN DETECTED. KILLED.")
 
 	def _triggerResend(self, expected=None, actual=None):
 		with self._incoming_lock:
@@ -677,7 +677,6 @@ class VirtualPrinter():
 				return
 
 			if "M112" in data and self._supportM112:
-				self._seriallog.info("<<< {}".format(data.strip()))
 				self._kill()
 				return
 
@@ -704,6 +703,9 @@ class VirtualPrinter():
 		self.buffered = None
 
 	def _sendOk(self):
+		if self.outgoing is None:
+			return
+
 		if settings().getBoolean(["devel", "virtualPrinter", "okWithLinenumber"]):
 			self.outgoing.put("ok %d" % self.lastN)
 		else:
