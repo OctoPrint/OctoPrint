@@ -666,7 +666,7 @@ class MachineCom(octoprint.plugin.MachineComPlugin):
 
 	def _processTemperatures(self, line):
 		current_tool = self._currentTool if self._currentTool is not None else 0
-		maxToolNum, parsedTemps = parse_temperature_line(line, current_tool)
+		maxToolNum, parsedTemps = comm_helpers.parse_temperature_line(line, current_tool)
 
 		if "T0" in parsedTemps.keys():
 			for n in range(maxToolNum + 1):
