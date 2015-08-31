@@ -1,5 +1,77 @@
 # OctoPrint Changelog
 
+## 1.2.5 (2015-08-31)
+
+### Improvements
+
+  * [#986](https://github.com/foosel/OctoPrint/issues/986) - Added tooltip for
+    "additional data" button in file list.
+  * [#1028](https://github.com/foosel/OctoPrint/issues/1028) - Hint about why
+    timelapse configuration is disabled.
+  * New central configuration option for commands to restart OctoPrint and to
+    restart and shut down the system OctoPrint is running on. This allows plugins
+    (like the Software Update Plugin or the Plugin Manager) and core functionality
+    to perform these common administrative tasks without the user needing to define
+    everything redundantly.
+  * Settings dialog now visualizes when settings are saving and when they being
+    retrieved. Also the Send/Cancel buttons are disabled while settings are saving
+    to prevent duplicated requests and concurrent retrieval of the settings by
+    multiple viewmodels is disabled as well.
+  * Better protection against rendering errors from templates provided by third
+    party plugins.
+  * Better protection against corrupting the configuration by using a temporary
+    file as intermediate buffer.
+  * Added warning to UI regarding Z timelapses and spiralized objects.
+  * Better compatibility with Repetier firmware:
+    * Added "Format Error" to whitelisted recoverable communication errors
+      (see also [#1032](https://github.com/foosel/OctoPrint/pull/1032)).
+    * Added option to ignore repeated resend requests for the same line (see
+      also discussion in [#1015](https://github.com/foosel/OctoPrint/pull/1015)).
+  * Software Update Plugin:
+    * Adjusted to utilize new centralized restart commands (see above).
+    * Allow configuration of checkout folder and version tracking type via
+      Plugin Configuration.
+    * Display message to user if OctoPrint's checkout folder is not configured
+      or a non-release version is running and version tracking against releases
+      is enabled.
+    * Clear version cache when a change in the check configuration is detected.
+    * Mark check configurations for which an update is not possible.
+  * Made disk space running low a bit more obvious through visual warning on
+    configurable thresholds.
+
+### Bug Fixes
+
+  * [#985](https://github.com/foosel/OctoPrint/issues/985) - Do not hiccup on
+    unset `Content-Type` part headers for multipart file uploads.
+  * [#1001](https://github.com/foosel/OctoPrint/issues/1001) - Fixed connection
+    tab not unfolding properly (see also [#1002](https://github.com/foosel/OctoPrint/pull/1002)).
+  * [#1012](https://github.com/foosel/OctoPrint/issues/1012) - All API
+    responses now set no-cache headers, making the Edge browser behave a bit better
+  * [#1019](https://github.com/foosel/OctoPrint/issues/1019) - Better error
+    handling of problems when trying to write the webassets cache.
+  * [#1021](https://github.com/foosel/OctoPrint/issues/1021) - Properly handle
+    serial close on Macs.
+  * [#1031](https://github.com/foosel/OctoPrint/issues/1031) - Special
+    handling of `M112` (emergency stop) command:
+    * Jump send queue
+    * In case the printer's firmware doesn't understand it yet, at least
+      shutdown all of the heaters
+    * Disconnect
+  * Properly reset job progress to 0% when restarting a previously completed
+    printjob (see [#998](https://github.com/foosel/OctoPrint/pull/998)).
+  * Report an update as failed if the `pip` command returns a return code that
+    indicates failure.
+  * Fixed sorting of templates: could only be sorted by name, individual
+    configurations were ignored (see [#1022](https://github.com/foosel/OctoPrint/pull/1022)).
+  * Fixed positioning of custom context menus: were offset due to changes in
+    overall positioning settings (see [#1023](https://github.com/foosel/OctoPrint/pull/1023)).
+  * Software Update: Don't use display version for comparison of git commit
+    hashs.
+  * Fixed temperature parsing for multi extruder setups.
+  * Fixed nested vertical and horizontal custom control layouts.
+
+([Commits](https://github.com/foosel/OctoPrint/compare/1.2.4...1.2.5))
+
 ## 1.2.4 (2015-07-23)
 
 ### Improvements
