@@ -8,6 +8,10 @@ Its website can be found at [octoprint.org](http://octoprint.org).
 
 The documentation is located at [docs.octoprint.org](http://docs.octoprint.org).
 
+The official plugin repository can be reached at [plugins.octoprint.org](http://plugins.octoprint.org).
+
+![Screenshot](http://i.imgur.com/dF3noFp.png)
+
 You are currently looking at the source code repository of OctoPrint. If you already installed it
 (e.g. by using the Raspberry Pi targeted distribution [OctoPi](https://github.com/guysoft/OctoPi)) and only
 want to find out how to use it, [the documentation](http://docs.octoprint.org/) and [the public wiki](https://github.com/foosel/OctoPrint/wiki)
@@ -42,7 +46,8 @@ which is a custom SD card image that includes OctoPrint plus dependencies.
 After installation, please make sure you follow the first-run wizard and set up
 access control as necessary. If you want to not only be notified about new
 releases but also be able to automatically upgrade to them from within
-OctoPrint, take a look [at the documentation of the Software Update Plugin](https://github.com/foosel/OctoPrint/wiki/Plugin:-Software-Update#making-octoprint-updateable-on-existing-installations).
+OctoPrint, take a look [at the documentation of the Software Update Plugin](https://github.com/foosel/OctoPrint/wiki/Plugin:-Software-Update#making-octoprint-updateable-on-existing-installations)
+and at its settings.
 
 Dependencies
 ------------
@@ -113,3 +118,4 @@ Special Thanks
 
 The development of OctoPrint is sponsored and maintained by [BQ](http://www.bq.com/).
 Cross-browser testing services are kindly provided by [BrowserStack](http://www.browserstack.com/).
+Profiling is done with the help of [PyVmMonitor](http://www.pyvmmonitor.com).
