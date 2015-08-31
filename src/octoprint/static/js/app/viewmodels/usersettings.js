@@ -90,18 +90,10 @@ $(function() {
 
         self.onAllBound = function(allViewModels) {
             self.userSettingsDialog.on('show', function() {
-                _.each(allViewModels, function(viewModel) {
-                    if (viewModel.hasOwnProperty("onUserSettingsShown")) {
-                        viewModel.onUserSettingsShown();
-                    }
-                });
+                callViewModels(allViewModels, "onUserSettingsShown");
             });
             self.userSettingsDialog.on('hidden', function() {
-                _.each(allViewModels, function(viewModel) {
-                    if (viewModel.hasOwnProperty("onUserSettingsHidden")) {
-                        viewModel.onUserSettingsHidden();
-                    }
-                });
+                callViewModels(allViewModels, "onUserSettingsHidden");
             });
         }
 

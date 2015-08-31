@@ -236,8 +236,11 @@ $(function() {
             }
 
             if (data.confirm) {
-                showConfirmationDialog(data.confirm, function (e) {
-                    callback(data);
+                showConfirmationDialog({
+                    message: data.confirm,
+                    onproceed: function (e) {
+                        callback(data);
+                    }
                 });
             } else {
                 callback(data);
@@ -445,10 +448,8 @@ $(function() {
 
         self.onAllBound = function (allViewModels) {
             var additionalControls = [];
-            _.each(allViewModels, function (viewModel) {
-                if (viewModel.hasOwnProperty("getAdditionalControls")) {
-                    additionalControls = additionalControls.concat(viewModel.getAdditionalControls());
-                }
+            callViewModels(allViewModels, "getAdditionalControls", function(method) {
+                additionalControls = additionalControls.concat(method());
             });
             if (additionalControls.length > 0) {
                 self.additionalControls = additionalControls;

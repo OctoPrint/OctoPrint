@@ -19,7 +19,7 @@ import octoprint.server
 import octoprint.plugin
 from octoprint.server import admin_permission, NO_CONTENT
 from octoprint.settings import settings as s, valid_boolean_trues
-from octoprint.server.util import apiKeyRequestHandler, corsResponseHandler
+from octoprint.server.util import noCachingResponseHandler, apiKeyRequestHandler, corsResponseHandler
 from octoprint.server.util.flask import restricted_access, get_json_command_from_request, passive_login
 
 
@@ -41,6 +41,8 @@ from . import languages as api_languages
 
 
 VERSION = "0.1"
+
+api.after_request(noCachingResponseHandler)
 
 api.before_request(apiKeyRequestHandler)
 api.after_request(corsResponseHandler)
@@ -98,29 +100,65 @@ def pluginCommand(name):
 
 #~~ first run setup
 
-
-@api.route("/setup", methods=["POST"])
-def firstRunSetup():
-	if not s().getBoolean(["server", "firstRun"]):
+@api.route("/setup/wizard", methods=["GET"])
+def wizardState():
+	if not s().getBoolean(["server", "firstRun"]) and not admin_permission.can():
 		abort(403)
 
-	if "ac" in request.values.keys() and request.values["ac"] in valid_boolean_trues and \
-					"user" in request.values.keys() and "pass1" in request.values.keys() and \
-					"pass2" in request.values.keys() and request.values["pass1"] == request.values["pass2"]:
-		# configure access control
-		s().setBoolean(["accessControl", "enabled"], True)
-		octoprint.server.userManager.addUser(request.values["user"], request.values["pass1"], True, ["user", "admin"])
-		s().setBoolean(["server", "firstRun"], False)
-	elif "ac" in request.values.keys() and not request.values["ac"] in valid_boolean_trues:
-		# disable access control
-		s().setBoolean(["accessControl", "enabled"], False)
+	seen_wizards = s().get(["server", "seenWizards"])
+
+	result = dict()
+	wizard_plugins = octoprint.server.pluginManager.get_implementations(octoprint.plugin.WizardPlugin)
+	for implementation in wizard_plugins:
+		name = implementation._identifier
+		try:
+			required = implementation.is_wizard_required()
+			details = implementation.get_wizard_details()
+			version = implementation.get_wizard_version()
+			ignored = octoprint.plugin.WizardPlugin.is_wizard_ignored(seen_wizards, implementation)
+		except:
+			logging.getLogger(__name__).exception("There was an error fetching wizard details for {}, ignoring".format(name))
+		else:
+			result[name] = dict(required=required, details=details, version=version, ignored=ignored)
+
+	return jsonify(result)
+
+
+@api.route("/setup/wizard", methods=["POST"])
+def wizardFinish():
+	if not s().getBoolean(["server", "firstRun"]) and not admin_permission.can():
+		abort(403)
+
+	data = dict()
+	try:
+		data = request.json
+	except:
+		abort(400)
+
+	if not "handled" in data:
+		abort(400)
+	handled = data["handled"]
+
+	if s().getBoolean(["server", "firstRun"]):
 		s().setBoolean(["server", "firstRun"], False)
 
-		octoprint.server.loginManager.anonymous_user = octoprint.users.DummyUser
-		octoprint.server.principals.identity_loaders.appendleft(octoprint.users.dummy_identity_loader)
+	seen_wizards = dict(s().get(["server", "seenWizards"]))
 
+	wizard_plugins = octoprint.server.pluginManager.get_implementations(octoprint.plugin.WizardPlugin)
+	for implementation in wizard_plugins:
+		name = implementation._identifier
+		try:
+			implementation.on_wizard_finish(name in handled)
+			if name in handled:
+				seen_wizards[name] = implementation.get_wizard_version()
+		except:
+			logging.getLogger(__name__).exceptino("There was an error finishing the wizard for {}, ignoring".format(name))
+
+	s().set(["server", "seenWizards"], seen_wizards)
 	s().save()
+
 	return NO_CONTENT
+
 
 #~~ system state
 
@@ -299,6 +337,12 @@ def utilTestPath():
 				else:
 					return False
 
+			def as_dict(self):
+				return dict(
+					start=self.start,
+					end=self.end
+				)
+
 		status_ranges = dict(
 			informational=StatusCodeRange(start=100,end=200),
 			success=StatusCodeRange(start=200,end=300),
@@ -337,4 +381,27 @@ def utilTestPath():
 		except:
 			status = False
 
-		return jsonify(url=url, status=response.status_code, result=status)
+		result = dict(
+			url=url,
+			status=response.status_code,
+			result=status.as_dict() if isinstance(status, StatusCodeRange) else status
+		)
+
+		if "response" in data and (data["response"] in valid_boolean_trues or data["response"] in ("json", "bytes")):
+
+			import base64
+			content = base64.standard_b64encode(response.content)
+
+			if data["response"] == "json":
+				try:
+					content = response.json()
+				except:
+					logging.getLogger(__name__).exception("Couldn't convert response to json")
+					result["result"] = False
+
+			result["response"] = dict(
+				headers=dict(response.headers),
+				content=content
+			)
+
+		return jsonify(**result)

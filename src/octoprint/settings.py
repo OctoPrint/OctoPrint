@@ -84,12 +84,16 @@ default_settings = {
 			"sdStatus": 1
 		},
 		"additionalPorts": [],
-		"longRunningCommands": ["G4", "G28", "G29", "G30", "G32", "M400", "M226"]
+		"additionalBaudrates": [],
+		"longRunningCommands": ["G4", "G28", "G29", "G30", "G32", "M400", "M226"],
+		"checksumRequiringCommands": ["M110"],
+		"helloCommand": "M110 N0",
 	},
 	"server": {
 		"host": "0.0.0.0",
 		"port": 5000,
 		"firstRun": True,
+		"seenWizards": {},
 		"secretKey": None,
 		"reverseProxy": {
 			"prefixHeader": "X-Script-Name",
@@ -109,6 +113,10 @@ default_settings = {
 			"systemShutdownCommand": None,
 			"systemRestartCommand": None,
 			"serverRestartCommand": None
+		},
+		"diskspace": {
+			"warning": 500 * 1024 * 1024, # 500 MB
+			"critical": 200 * 1024 * 1024, # 200 MB
 		}
 	},
 	"webcam": {
@@ -140,6 +148,7 @@ default_settings = {
 		"temperatureGraph": True,
 		"waitForStartOnConnect": False,
 		"alwaysSendChecksum": False,
+		"neverSendChecksum": False,
 		"sendChecksumWithUnknownCommands": False,
 		"unknownCommandsNeedAck": False,
 		"sdSupport": True,
@@ -149,7 +158,9 @@ default_settings = {
 		"externalHeatupDetection": True,
 		"supportWait": True,
 		"keyboardControl": True,
-		"pollWatched": False
+		"pollWatched": False,
+		"ignoreIdenticalResends": False,
+		"identicalResendsCountdown": 7
 	},
 	"folder": {
 		"uploads": None,
@@ -197,6 +208,7 @@ default_settings = {
 					"section_octoprint", "server", "folders", "appearance", "logs", "plugin_pluginmanager", "plugin_softwareupdate"
 				],
 				"usersettings": ["access", "interface"],
+				"wizard": ["access"],
 				"generic": []
 			},
 			"disabled": {
@@ -277,6 +289,7 @@ default_settings = {
 			},
 			"hasBed": True,
 			"repetierStyleTargetTemperature": False,
+			"repetierStyleResends": False,
 			"okBeforeCommandOutput": False,
 			"smoothieTemperatureReporting": False,
 			"extendedSdFileList": False,
@@ -286,7 +299,8 @@ default_settings = {
 			"txBuffer": 40,
 			"commandBuffer": 4,
 			"sendWait": True,
-			"waitInterval": 1.0
+			"waitInterval": 1.0,
+			"supportM112": True
 		}
 	}
 }
@@ -543,6 +557,20 @@ class Settings(object):
 		import yaml
 		return yaml.safe_dump(self.effective)
 
+	@property
+	def effective_hash(self):
+		import hashlib
+		hash = hashlib.md5()
+		hash.update(repr(self.effective))
+		return hash.hexdigest()
+
+	@property
+	def config_hash(self):
+		import hashlib
+		hash = hashlib.md5()
+		hash.update(repr(self._config))
+		return hash.hexdigest()
+
 	#~~ load and save
 
 	def load(self, migrate=False):
@@ -781,11 +809,17 @@ class Settings(object):
 		if not self._dirty and not force:
 			return False
 
-		with open(self._configfile, "wb") as configFile:
-			yaml.safe_dump(self._config, configFile, default_flow_style=False, indent="    ", allow_unicode=True)
-			self._dirty = False
-		self.load()
-		return True
+		from octoprint.util import atomic_write
+		try:
+			with atomic_write(self._configfile, "wb", prefix="octoprint-config-", suffix=".yaml") as configFile:
+				yaml.safe_dump(self._config, configFile, default_flow_style=False, indent="    ", allow_unicode=True)
+				self._dirty = False
+		except:
+			self._logger.exception("Error while saving config.yaml!")
+			raise
+		else:
+			self.load()
+			return True
 
 	@property
 	def last_modified(self):

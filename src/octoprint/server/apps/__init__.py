@@ -10,9 +10,14 @@ from flask import Blueprint, request, make_response, jsonify
 
 import octoprint.server
 import octoprint.plugin
+
+from octoprint.server.util import noCachingResponseHandler, corsResponseHandler
 from octoprint.settings import settings as s
 
 apps = Blueprint("apps", __name__)
+
+apps.after_request(noCachingResponseHandler)
+apps.after_request(corsResponseHandler)
 
 @apps.route("/auth", methods=["GET"])
 def getSessionKey():

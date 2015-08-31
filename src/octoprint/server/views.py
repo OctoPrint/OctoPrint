@@ -12,7 +12,8 @@ from flask import request, g, url_for, make_response, render_template, send_from
 
 import octoprint.plugin
 
-from octoprint.server import app, userManager, pluginManager, gettext, debug, LOCALES, VERSION, DISPLAY_VERSION, UI_API_KEY
+from octoprint.server import app, userManager, pluginManager, gettext, \
+	debug, LOCALES, VERSION, DISPLAY_VERSION, UI_API_KEY, BRANCH
 from octoprint.settings import settings
 
 from . import util
@@ -28,6 +29,7 @@ def index():
 
 	#~~ a bunch of settings
 
+	first_run = settings().getBoolean(["server", "firstRun"])
 	enable_gcodeviewer = settings().getBoolean(["gcodeViewer", "enabled"])
 	enable_timelapse = (settings().get(["webcam", "snapshot"]) and settings().get(["webcam", "ffmpeg"]))
 	enable_systemmenu = settings().get(["system"]) is not None and settings().get(["system", "actions"]) is not None and len(settings().get(["system", "actions"])) > 0
@@ -46,6 +48,7 @@ def index():
 		tab=dict(div=lambda x: "tab_plugin_" + x, template=lambda x: x + "_tab.jinja2", to_entry=lambda data: (data["name"], data)),
 		settings=dict(div=lambda x: "settings_plugin_" + x, template=lambda x: x + "_settings.jinja2", to_entry=lambda data: (data["name"], data)),
 		usersettings=dict(div=lambda x: "usersettings_plugin_" + x, template=lambda x: x + "_usersettings.jinja2", to_entry=lambda data: (data["name"], data)),
+		wizard=dict(div=lambda x: "wizard_plugin_" + x, template=lambda x: x + "_wizard.jinja2", to_entry=lambda data: (data["name"], data)),
 		generic=dict(template=lambda x: x + ".jinja2", to_entry=lambda data: data)
 	)
 
@@ -56,6 +59,7 @@ def index():
 		tab=dict(add="append", key="name"),
 		settings=dict(add="custom_append", key="name", custom_add_entries=lambda missing: dict(section_plugins=(gettext("Plugins"), None)), custom_add_order=lambda missing: ["section_plugins"] + missing),
 		usersettings=dict(add="append", key="name"),
+		wizard=dict(add="append", key="name", key_extractor=lambda d, k: "0:{}".format(d[0]) if "mandatory" in d[1] and d[1]["mandatory"] else "1:{}".format(d[0])),
 		generic=dict(add="append", key=None)
 	)
 
@@ -142,7 +146,7 @@ def index():
 		section_features=(gettext("Features"), None),
 
 		features=(gettext("Features"), dict(template="dialogs/settings/features.jinja2", _div="settings_features", custom_bindings=False)),
-		webcam=(gettext("Webcam"), dict(template="dialogs/settings/webcam.jinja2", _div="settings_webcam", custom_bindings=False)),
+		webcam=(gettext("Webcam & Timelapse"), dict(template="dialogs/settings/webcam.jinja2", _div="settings_webcam", custom_bindings=False)),
 		api=(gettext("API"), dict(template="dialogs/settings/api.jinja2", _div="settings_api", custom_bindings=False)),
 
 		section_octoprint=(gettext("OctoPrint"), None),
@@ -163,19 +167,42 @@ def index():
 			interface=(gettext("Interface"), dict(template="dialogs/usersettings/interface.jinja2", _div="usersettings_interface", custom_bindings=False)),
 		)
 
+	# wizard
+
+	if first_run:
+		def custom_insert_order(existing, missing):
+			if "firstrunstart" in missing:
+				missing.remove("firstrunstart")
+			if "firstrunend" in missing:
+				missing.remove("firstrunend")
+
+			return ["firstrunstart"] + existing + missing + ["firstrunend"]
+
+		template_sorting["wizard"].update(dict(add="custom_insert", custom_insert_entries=lambda missing: dict(), custom_insert_order=custom_insert_order))
+		templates["wizard"]["entries"] = dict(
+			firstrunstart=(gettext("Start"), dict(template="dialogs/wizard/firstrun_start.jinja2", _div="wizard_firstrun_start")),
+			firstrunend=(gettext("Finish"), dict(template="dialogs/wizard/firstrun_end.jinja2", _div="wizard_firstrun_end")),
+		)
+
 	# extract data from template plugins
 
 	template_plugins = pluginManager.get_implementations(octoprint.plugin.TemplatePlugin)
 
 	plugin_vars = dict()
 	plugin_names = set()
+	seen_wizards = settings().get(["server", "seenWizards"]) if not first_run else dict()
 	for implementation in template_plugins:
 		name = implementation._identifier
 		plugin_names.add(name)
+		wizard_required = False
+		wizard_ignored = False
 
 		try:
 			vars = implementation.get_template_vars()
 			configs = implementation.get_template_configs()
+			if isinstance(implementation, octoprint.plugin.WizardPlugin):
+				wizard_required = implementation.is_wizard_required()
+				wizard_ignored = octoprint.plugin.WizardPlugin.is_wizard_ignored(seen_wizards, implementation)
 		except:
 			_logger.exception("Error while retrieving template data for plugin {}, ignoring it".format(name))
 			continue
@@ -189,6 +216,9 @@ def index():
 			plugin_vars["plugin_" + name + "_" + var_name] = var_value
 
 		includes = _process_template_configs(name, implementation, configs, template_rules)
+
+		if not wizard_required or wizard_ignored:
+			includes["wizard"] = list()
 
 		for t in template_types:
 			for include in includes[t]:
@@ -230,9 +260,30 @@ def index():
 		# finally add anything that's not included in our order yet
 		sorted_missing = list(missing_in_order)
 		if template_sorting[t]["key"] is not None:
-			# anything but navbar and generic components get sorted by their name
-			if template_sorting[t]["key"] == "name":
-				sorted_missing = sorted(missing_in_order, key=lambda x: templates[t]["entries"][x][0])
+			# default extractor: works with entries that are dicts and entries that are 2-tuples with the
+			# entry data at index 1
+			def extractor(item, key):
+				if isinstance(item, dict) and key in item:
+					return item[key]
+				elif isinstance(item, tuple) and len(item) > 1 and isinstance(item[1], dict) and key in item[1]:
+					return item[1][key]
+
+				return None
+
+			# if template type provides custom extractor, make sure its exceptions are handled
+			if "key_extractor" in template_sorting[t] and callable(template_sorting[t]["key_extractor"]):
+				def create_safe_extractor(extractor):
+					def f(x, k):
+						try:
+							return extractor(x, k)
+						except:
+							_logger.exception("Error while extracting sorting keys for template {}".format(t))
+							return None
+					return f
+				extractor = create_safe_extractor(template_sorting[t]["key_extractor"])
+
+			sort_key = template_sorting[t]["key"]
+			sorted_missing = sorted(missing_in_order, key=lambda x: extractor(templates[t]["entries"][x], sort_key))
 
 		if template_sorting[t]["add"] == "prepend":
 			templates[t]["order"] = sorted_missing + templates[t]["order"]
@@ -244,25 +295,30 @@ def index():
 		elif template_sorting[t]["add"] == "custom_append" and "custom_add_entries" in template_sorting[t] and "custom_add_order" in template_sorting[t]:
 			templates[t]["entries"].update(template_sorting[t]["custom_add_entries"](sorted_missing))
 			templates[t]["order"] += template_sorting[t]["custom_add_order"](sorted_missing)
+		elif template_sorting[t]["add"] == "custom_insert" and "custom_insert_entries" in template_sorting[t] and "custom_insert_order" in template_sorting[t]:
+			templates[t]["entries"].update(template_sorting[t]["custom_insert_entries"](sorted_missing))
+			templates[t]["order"] = template_sorting[t]["custom_insert_order"](templates[t]["order"], sorted_missing)
 
 	#~~ prepare full set of template vars for rendering
 
-	first_run = settings().getBoolean(["server", "firstRun"]) and (userManager is None or not userManager.hasBeenCustomized())
+	wizard = bool(templates["wizard"]["order"])
 	render_kwargs = dict(
 		webcamStream=settings().get(["webcam", "stream"]),
 		enableTemperatureGraph=settings().get(["feature", "temperatureGraph"]),
-		enableAccessControl=userManager is not None,
+		enableAccessControl=enable_accesscontrol,
 		enableSdSupport=settings().get(["feature", "sdSupport"]),
 		firstRun=first_run,
 		debug=debug,
 		version=VERSION,
 		display_version=DISPLAY_VERSION,
+		branch=BRANCH,
 		gcodeMobileThreshold=settings().get(["gcodeViewer", "mobileSizeThreshold"]),
 		gcodeThreshold=settings().get(["gcodeViewer", "sizeThreshold"]),
 		uiApiKey=UI_API_KEY,
 		templates=templates,
 		pluginNames=plugin_names,
-		locales=locales
+		locales=locales,
+		wizard=wizard
 	)
 	render_kwargs.update(plugin_vars)
 
@@ -276,10 +332,8 @@ def index():
 	))
 	response.headers["Last-Modified"] = datetime.datetime.now()
 
-	if first_run:
-		response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0"
-		response.headers["Pragma"] = "no-cache"
-		response.headers["Expires"] = "-1"
+	if wizard:
+		response = util.flask.add_non_caching_response_headers(response)
 
 	return response
 

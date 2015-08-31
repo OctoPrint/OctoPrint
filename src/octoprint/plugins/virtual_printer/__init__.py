@@ -16,8 +16,15 @@ class VirtualPrinterPlugin(octoprint.plugin.SettingsPlugin):
         if not self._settings.global_get_boolean(["devel", "virtualPrinter", "enabled"]):
             return None
 
+        import logging
+        import logging.handlers
+
+        seriallog_handler = logging.handlers.RotatingFileHandler(self._settings.get_plugin_logfile_path(postfix="serial"), maxBytes=2*1024*1024)
+        seriallog_handler.setFormatter(logging.Formatter("%(asctime)s %(message)s"))
+        seriallog_handler.setLevel(logging.DEBUG)
+
         from . import virtual
-        serial_obj = virtual.VirtualPrinter(read_timeout=float(read_timeout))
+        serial_obj = virtual.VirtualPrinter(seriallog_handler=seriallog_handler, read_timeout=float(read_timeout))
         return serial_obj
 
 __plugin_name__ = "Virtual Printer"

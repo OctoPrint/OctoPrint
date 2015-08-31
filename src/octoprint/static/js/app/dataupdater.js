@@ -10,6 +10,7 @@ function DataUpdater(allViewModels) {
     self._autoReconnectDialogIndex = 1;
 
     self._pluginHash = undefined;
+    self._configHash = undefined;
 
     self.reloadOverlay = $("#reloadui_overlay");
     $("#reloadui_overlay_reload").click(function() { location.reload(true); });
@@ -45,17 +46,12 @@ function DataUpdater(allViewModels) {
             // Only consider it a real disconnect if the trial number has exceeded our threshold.
 
             var handled = false;
-            _.each(self.allViewModels, function(viewModel) {
-                if (handled == true) {
-                    return;
-                }
-
-                if (viewModel.hasOwnProperty("onServerDisconnect")) {
-                    if (!viewModel.onServerDisconnect()) {
-                        handled = true;
-                    }
-                }
-            });
+            callViewModelsIf(
+                self.allViewModels,
+                "onServerDisconnect",
+                function() { return !handled; },
+                function(method) { handled = !method() || handled; }
+            );
 
             if (handled) {
                 return;
@@ -80,17 +76,12 @@ function DataUpdater(allViewModels) {
 
     self._onreconnectfailed = function() {
         var handled = false;
-        _.each(self.allViewModels, function(viewModel) {
-            if (handled == true) {
-                return;
-            }
-
-            if (viewModel.hasOwnProperty("onServerDisconnect")) {
-                if (!viewModel.onServerDisconnect()) {
-                    handled = true;
-                }
-            }
-        });
+        callViewModelsIf(
+            self.allViewModels,
+            "onServerDisconnect",
+            function() { return !handled; },
+            function(method) { handled = !method() || handled; }
+        );
 
         if (handled) {
             return;
@@ -122,54 +113,50 @@ function DataUpdater(allViewModels) {
                     var oldVersion = VERSION;
                     VERSION = data["version"];
                     DISPLAY_VERSION = data["display_version"];
+                    BRANCH = data["branch"];
                     $("span.version").text(DISPLAY_VERSION);
 
                     var oldPluginHash = self._pluginHash;
                     self._pluginHash = data["plugin_hash"];
 
+                    var oldConfigHash = self._configHash;
+                    self._configHash = data["config_hash"];
+
                     if ($("#offline_overlay").is(":visible")) {
                         hideOfflineOverlay();
-                        _.each(self.allViewModels, function(viewModel) {
-                            if (viewModel.hasOwnProperty("onDataUpdaterReconnect")) {
-                                viewModel.onDataUpdaterReconnect();
-                            }
-                        });
+                        callViewModels(self.allViewModels, "onDataUpdaterReconnect");
 
                         if ($('#tabs li[class="active"] a').attr("href") == "#control") {
                             $("#webcam_image").attr("src", CONFIG_WEBCAM_STREAM + "?" + new Date().getTime());
                         }
                     }
 
-                    if (oldVersion != VERSION || (oldPluginHash != undefined && oldPluginHash != self._pluginHash)) {
+                    var versionChanged = oldVersion != VERSION;
+                    var pluginsChanged = oldPluginHash != undefined && oldPluginHash != self._pluginHash;
+                    var configChanged = oldConfigHash != undefined && oldConfigHash != self._configHash;
+                    if (versionChanged || pluginsChanged || configChanged) {
                         self.reloadOverlay.show();
                     }
 
                     break;
                 }
                 case "history": {
-                    _.each(self.allViewModels, function(viewModel) {
-                        if (viewModel.hasOwnProperty("fromHistoryData")) {
-                            viewModel.fromHistoryData(data);
-                        }
-                    });
+                    callViewModels(self.allViewModels, "fromHistoryData", [data]);
                     break;
                 }
                 case "current": {
-                    _.each(self.allViewModels, function(viewModel) {
-                        if (viewModel.hasOwnProperty("fromCurrentData")) {
-                            viewModel.fromCurrentData(data);
-                        }
-                    });
+                    callViewModels(self.allViewModels, "fromCurrentData", [data]);
                     break;
                 }
                 case "slicingProgress": {
                     gcodeUploadProgressBar.text(_.sprintf(gettext("Slicing ... (%(percentage)d%%)"), {percentage: Math.round(data["progress"])}));
 
-                    _.each(self.allViewModels, function(viewModel) {
-                        if (viewModel.hasOwnProperty("onSlicingProgress")) {
-                            viewModel.onSlicingProgress(data["slicer"], data["model_path"], data["machinecode_path"], data["progress"]);
-                        }
-                    });
+                    callViewModels(self.allViewModels, "onSlicingProgress", [
+                        data["slicer"],
+                        data["model_path"],
+                        data["machinecode_path"],
+                        data["progress"]
+                    ]);
                     break;
                 }
                 case "event": {
@@ -180,7 +167,11 @@ function DataUpdater(allViewModels) {
 
                     log.debug("Got event " + type + " with payload: " + JSON.stringify(payload));
 
-                    if (type == "MovieRendering") {
+                    if (type == "SettingsUpdated") {
+                        if (payload && payload.hasOwnProperty("config_hash")) {
+                            self._configHash = payload.config_hash;
+                        }
+                    } else if (type == "MovieRendering") {
                         new PNotify({title: gettext("Rendering timelapse"), text: _.sprintf(gettext("Now rendering timelapse %(movie_basename)s"), payload)});
                     } else if (type == "MovieDone") {
                         new PNotify({title: gettext("Timelapse ready"), text: _.sprintf(gettext("New timelapse %(movie_basename)s is done rendering."), payload)});
@@ -266,19 +257,12 @@ function DataUpdater(allViewModels) {
                     break;
                 }
                 case "timelapse": {
-                    _.each(self.allViewModels, function(viewModel) {
-                        if (viewModel.hasOwnProperty("fromTimelapseData")) {
-                            viewModel.fromTimelapseData(data);
-                        }
-                    });
+                    callViewModels(self.allViewModels, "fromTimelapseData", [data]);
                     break;
                 }
                 case "plugin": {
-                    _.each(self.allViewModels, function(viewModel) {
-                        if (viewModel.hasOwnProperty("onDataUpdaterPluginMessage")) {
-                            viewModel.onDataUpdaterPluginMessage(data.plugin, data.data);
-                        }
-                    })
+                    callViewModels(self.allViewModels, "onDataUpdaterPluginMessage", [data.plugin, data.data]);
+                    break;
                 }
             }
         }

@@ -51,6 +51,14 @@ TemplatePlugin
 .. autoclass:: octoprint.plugin.TemplatePlugin
    :members:
 
+.. _sec-plugins-mixins-wizardplugin:
+
+WizardPlugin
+------------
+
+.. autoclass:: octoprint.plugin.WizardPlugin
+   :members:
+
 .. _sec-plugins-mixins-simpleapiplugin:
 
 SimpleApiPlugin

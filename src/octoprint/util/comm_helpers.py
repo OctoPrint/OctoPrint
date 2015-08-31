@@ -21,6 +21,79 @@ try:
 except:
 	pass
 
+_logger = logging.getLogger(__name__)
+
+# a bunch of regexes we'll need for the communication parsing...
+
+regex_float_pattern = "[-+]?[0-9]*\.?[0-9]+"
+regex_positive_float_pattern = "[+]?[0-9]*\.?[0-9]+"
+regex_int_pattern = "\d+"
+
+regex_command = re.compile("^\s*((?P<commandGM>[GM]\d+)|(?P<commandT>T)\d+)")
+"""Regex for a GCODE command."""
+
+regex_float = re.compile(regex_float_pattern)
+"""Regex for a float value."""
+
+regexes_parameters = dict(
+	floatP=re.compile("(^|[^A-Za-z])[Pp](?P<value>%s)" % regex_float_pattern),
+	floatS=re.compile("(^|[^A-Za-z])[Ss](?P<value>%s)" % regex_float_pattern),
+	floatZ=re.compile("(^|[^A-Za-z])[Zz](?P<value>%s)" % regex_float_pattern),
+	intN=re.compile("(^|[^A-Za-z])[Nn](?P<value>%s)" % regex_int_pattern),
+	intT=re.compile("(^|[^A-Za-z])[Tt](?P<value>%s)" % regex_int_pattern)
+)
+"""Regexes for parsing various GCODE command parameters."""
+
+regex_minMaxError = re.compile("Error:[0-9]\n")
+"""Regex matching first line of min/max errors from the firmware."""
+
+regex_sdPrintingByte = re.compile("(?P<current>[0-9]*)/(?P<total>[0-9]*)")
+"""Regex matching SD printing status reports.
+
+Groups will be as follows:
+
+  * ``current``: current byte position in file being printed
+  * ``total``: total size of file being printed
+"""
+
+regex_sdFileOpened = re.compile("File opened:\s*(?P<name>.*?)\s+Size:\s*(?P<size>%s)" % regex_int_pattern)
+"""Regex matching "File opened" messages from the firmware.
+
+Groups will be as follows:
+
+  * ``name``: name of the file reported as having been opened (str)
+  * ``size``: size of the file in bytes (int)
+"""
+
+regex_temp = re.compile("(?P<tool>B|T(?P<toolnum>\d*)):\s*(?P<actual>%s)(\s*\/?\s*(?P<target>%s))?" % (regex_positive_float_pattern, regex_positive_float_pattern))
+"""Regex matching temperature entries in line.
+
+Groups will be as follows:
+
+  * ``tool``: whole tool designator, incl. optional ``toolnum`` (str)
+  * ``toolnum``: tool number, if provided (int)
+  * ``actual``: actual temperature (float)
+  * ``target``: target temperature, if provided (float)
+"""
+
+regex_repetierTempExtr = re.compile("TargetExtr(?P<toolnum>\d+):(?P<target>%s)" % regex_positive_float_pattern)
+"""Regex for matching target temp reporting from Repetier.
+
+Groups will be as follows:
+
+  * ``toolnum``: number of the extruder to which the target temperature
+    report belongs (int)
+  * ``target``: new target temperature (float)
+"""
+
+regex_repetierTempBed = re.compile("TargetBed:(?P<target>%s)" % regex_positive_float_pattern)
+"""Regex for matching target temp reporting from Repetier for beds.
+
+Groups will be as follows:
+
+  * ``target``: new target temperature (float)
+"""
+
 def serialList():
 	baselist=[]
 	if os.name=="nt":
@@ -54,6 +127,15 @@ def serialList():
 
 def baudrateList():
 	ret = [250000, 230400, 115200, 57600, 38400, 19200, 9600]
+	additionalBaudrates = settings().get(["serial", "additionalBaudrates"])
+	for additional in additionalBaudrates:
+		try:
+			ret.append(int(additional))
+		except:
+			_logger.warn("{} is not a valid additional baudrate, ignoring it".format(additional))
+
+	ret.sort(reverse=True)
+
 	prev = settings().getInt(["serial", "baudrate"])
 	if prev in ret:
 		ret.remove(prev)
@@ -481,4 +563,160 @@ def convert_feedback_controls(configured_controls):
 	feedback_matcher = re.compile("|".join(feedback_pattern))
 
 	return feedback_controls, feedback_matcher
+
+def canonicalize_temperatures(parsed, current):
+	"""
+	Canonicalizes the temperatures provided in parsed.
+
+	Will make sure that returned result only contains extruder keys
+	like Tn, so always qualified with a tool number.
+
+	The algorithm for cleaning up the parsed keys is the following:
+
+	  * If ``T`` is not included with the reported extruders, return
+	  * If more than just ``T`` is reported:
+	    * If both ``T`` and ``T0`` are reported set ``Tc`` to ``T``, remove
+	      ``T`` from the result.
+	    * Else set ``T0`` to ``T`` and delete ``T`` (Smoothie extra).
+	  * If only ``T`` is reported, set ``Tc`` to ``T`` and delete ``T``
+	  * return
+
+	Arguments:
+	    parsed (dict): the parsed temperatures (mapping tool => (actual, target))
+	      to canonicalize
+	    current (int): the current active extruder
+	Returns:
+	    dict: the canonicalized version of ``parsed``
+	"""
+
+	reported_extruders = filter(lambda x: x.startswith("T"), parsed.keys())
+	if not "T" in reported_extruders:
+		# Our reported_extruders are either empty or consist purely
+		# of Tn keys, no need for any action
+		return parsed
+
+	current_tool_key = "T%d" % current
+	result = dict(parsed)
+
+	if len(reported_extruders) > 1:
+		if "T0" in reported_extruders:
+			# Both T and T0 are present, so T contains the current
+			# extruder's temperature, e.g. for current_tool == 1:
+			#
+			#     T:<T1> T0:<T0> T2:<T2> ... B:<B>
+			#
+			# becomes
+			#
+			#     T0:<T1> T1:<T1> T2:<T2> ... B:<B>
+			#
+			# Same goes if Tc is already present, it will be overwritten:
+			#
+			#     T:<T1> T0:<T0> T1:<T1> T2:<T2> ... B:<B>
+			#
+			# becomes
+			#
+			#     T0:<T0> T1:<T1> T2:<T2> ... B:<B>
+			result[current_tool_key] = result["T"]
+			del result["T"]
+		else:
+			# So T is there, but T0 isn't. That looks like Smoothieware which
+			# always reports the first extruder T0 as T:
+			#
+			#     T:<T0> T1:<T1> T2:<T2> ... B:<B>
+			#
+			# becomes
+			#
+			#     T0:<T0> T1:<T1> T2:<T2> ... B:<B>
+			result["T0"] = result["T"]
+			del result["T"]
+
+	else:
+		# We only have T. That can mean two things:
+		#
+		#   * we only have one extruder at all, or
+		#   * we are currently parsing a response to M109/M190, which on
+		#     some firmwares doesn't report the full M105 output while
+		#     waiting for the target temperature to be reached but only
+		#     reports the current tool and bed
+		#
+		# In both cases it is however safe to just move our T over
+		# to T<current> in the parsed data, current should always stay
+		# 0 for single extruder printers. E.g. for current_tool == 1:
+		#
+		#     T:<T1>
+		#
+		# becomes
+		#
+		#     T1:<T1>
+
+		result[current_tool_key] = result["T"]
+		del result["T"]
+
+	return result
+
+def parse_temperature_line(line, current):
+	"""
+	Parses the provided temperature line.
+
+	The result will be a dictionary mapping from the extruder or bed key to
+	a tuple with current and target temperature. The result will be canonicalized
+	with :func:`canonicalize_temperatures` before returning.
+
+	Arguments:
+	    line (str): the temperature line to parse
+	    current (int): the current active extruder
+
+	Returns:
+	    tuple: a 2-tuple with the maximum tool number and a dict mapping from
+	      key to (actual, target) tuples, with key either matching ``Tn`` for ``n >= 0`` or ``B``
+	"""
+
+	result = {}
+	maxToolNum = 0
+	for match in re.finditer(regex_temp, line):
+		values = match.groupdict()
+		tool = values["tool"]
+		toolnum = values.get("toolnum", None)
+		toolNumber = int(toolnum) if toolnum is not None and len(toolnum) else None
+		if toolNumber > maxToolNum:
+			maxToolNum = toolNumber
+
+		try:
+			actual = float(match.group(3))
+			target = None
+			if match.group(4) and match.group(5):
+				target = float(match.group(5))
+
+			result[tool] = (actual, target)
+		except ValueError:
+			# catch conversion issues, we'll rather just not get the temperature update instead of killing the connection
+			pass
+
+	return max(maxToolNum, current), canonicalize_temperatures(result, current)
+
+def gcode_command_for_cmd(cmd):
+	"""
+	Tries to parse the provided ``cmd`` and extract the GCODE command identifier from it (e.g. "G0" for "G0 X10.0").
+
+	Arguments:
+	    cmd (str): The command to try to parse.
+
+	Returns:
+	    str or None: The GCODE command identifier if it could be parsed, or None if not.
+	"""
+	if not cmd:
+		return None
+
+	gcode = regex_command.search(cmd)
+	if not gcode:
+		return None
+
+	values = gcode.groupdict()
+	if "commandGM" in values and values["commandGM"]:
+		return values["commandGM"]
+	elif "commandT" in values and values["commandT"]:
+		return values["commandT"]
+	else:
+		# this should never happen
+		return None
 

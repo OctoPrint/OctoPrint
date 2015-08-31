@@ -10,7 +10,7 @@
     <label class="checkbox">
         <input type="checkbox" id="login_remember" data-bind="checked: loginState.loginRemember"> {{ _('Remember me') }}
     </label>
-    <button class="btn btn-block btn-primary" id="login_button" data-bind="click: loginState.login">{{ _('Login') }}</button>
+    <button class="btn btn-block btn-primary" id="login_button" data-bind="click: function() { loginState.login(); }">{{ _('Login') }}</button>
 </div>
 <ul id="login_dropdown_loggedin" class="hide" data-bind="css: {hide: !loginState.loggedIn(), 'dropdown-menu': loginState.loggedIn()}">
     <li><a href="#" id="usersettings_button" data-bind="click: function() { usersettings.show(); }">{{ _('User Settings') }}</a></li>
