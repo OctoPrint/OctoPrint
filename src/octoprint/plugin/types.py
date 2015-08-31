@@ -1491,6 +1491,7 @@ class MachineComPlugin(OctoPrintPlugin):
 
 	def refreshSdFiles(self):
 		raise NotImplementedError
+
 	def initSdCard(self):
 		raise NotImplementedError
 

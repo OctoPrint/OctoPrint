@@ -171,9 +171,9 @@ class TestCommHelpers(unittest.TestCase):
 	)
 	@unpack
 	def test_parameter_regexes(self, line, parameter, should_match, expected_value):
-		from octoprint.util.comm import regexes_parameters
+		from octoprint.util import comm_helpers
 
-		regex = regexes_parameters[parameter]
+		regex = comm_helpers.regexes_parameters[parameter]
 		match = regex.search(line)
 
 		if should_match:
@@ -194,8 +194,8 @@ class TestCommHelpers(unittest.TestCase):
 	)
 	@unpack
 	def test_gcode_command_for_cmd(self, cmd, expected):
-		from octoprint.util.comm import gcode_command_for_cmd
-		result = gcode_command_for_cmd(cmd)
+		from octoprint.util import comm_helpers
+		result = comm_helpers.gcode_command_for_cmd(cmd)
 		self.assertEquals(expected, result)
 
 	@data(
@@ -207,8 +207,8 @@ class TestCommHelpers(unittest.TestCase):
 	)
 	@unpack
 	def test_process_temperature_line(self, line, current, expected_result, expected_max):
-		from octoprint.util.comm import parse_temperature_line
-		maxtool, result = parse_temperature_line(line, current)
+		from octoprint.util import comm_helpers
+		maxtool, result = comm_helpers.parse_temperature_line(line, current)
 		self.assertDictEqual(expected_result, result)
 		self.assertEquals(expected_max, maxtool)
 
@@ -225,7 +225,7 @@ class TestCommHelpers(unittest.TestCase):
 	)
 	@unpack
 	def test_canonicalize_temperatures(self, parsed, current, expected):
-		from octoprint.util.comm import canonicalize_temperatures
-		result = canonicalize_temperatures(parsed, current)
+		from octoprint.util import comm_helpers
+		result = comm_helpers.canonicalize_temperatures(parsed, current)
 		self.assertDictEqual(expected, result)
 
