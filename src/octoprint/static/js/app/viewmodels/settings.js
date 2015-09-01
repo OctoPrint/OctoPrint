@@ -630,7 +630,8 @@ $(function() {
                     additionalBaudrates: function(value) { self.serial_additionalBaudrates(value.join(", "))},
                     longRunningCommands: function(value) { self.serial_longRunningCommands(value.join(", "))},
                     checksumRequiringCommands: function(value) { self.serial_checksumRequiringCommands(value.join(", "))}
-                }
+                },
+                terminalFilters: function(value) { self.terminalFilters.removeAll(); _.each(value, function(item) {self.terminalFilters.push(item)}); }
             };
 
             var mapToObservables = function(data, mapping, local, keyPrefix) {
