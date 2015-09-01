@@ -669,13 +669,22 @@ $(function() {
             mapToObservables(serverChangedData, specialMappings, clientChangedData);
         };
 
-        self.saveData = function (data, successCallback) {
+        self.saveData = function (data, successCallback, setAsSending) {
+            var options;
+            if (_.isPlainObject(successCallback)) {
+                options = successCallback;
+            } else {
+                options = {
+                    success: successCallback,
+                    sending: (setAsSending == true)
+                }
+            }
+
             self.settingsDialog.trigger("beforeSave");
 
-            if (data == undefined) {
-                // we only set sending to true when we didn't include data
-                self.sending(true);
+            self.sending(data == undefined || options.sending || false);
 
+            if (data == undefined) {
                 // we also only send data that actually changed when no data is specified
                 data = getOnlyChangedData(self.getLocalData(), self.lastReceivedSettings);
             }
@@ -686,18 +695,22 @@ $(function() {
                 dataType: "json",
                 contentType: "application/json; charset=UTF-8",
                 data: JSON.stringify(data),
-                success: function(response) {
+                success: function(data, status, xhr) {
                     self.receiving(true);
                     self.sending(false);
                     try {
-                        self.fromResponse(response);
-                        if (successCallback) successCallback(response);
+                        self.fromResponse(data);
+                        if (options.success) options.success(data, status, xhr);
                     } finally {
                         self.receiving(false);
                     }
                 },
-                error: function(xhr) {
+                error: function(xhr, status, error) {
                     self.sending(false);
+                    if (options.error) options.error(xhr, status, error);
+                },
+                complete: function(xhr, status) {
+                    if (options.complete) options.complete(xhr, status);
                 }
             });
         };

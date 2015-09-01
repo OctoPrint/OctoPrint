@@ -26,8 +26,6 @@ $(function() {
         self.config_checkoutFolder = ko.observable();
         self.config_checkType = ko.observable();
 
-        self.savingSettings = false;
-
         self.configurationDialog = $("#settings_plugin_softwareupdate_configurationdialog");
 
         self.config_availableCheckTypes = [
@@ -90,8 +88,10 @@ $(function() {
             self.configurationDialog.modal();
         };
 
-        self.savePluginSettings = function() {
-            self.savingSettings = true;
+        self.savePluginSettings = function(viewModel, event) {
+            var target = $(event.target);
+            target.prepend('<i class="icon-spinner icon-spin"></i> ');
+
             var data = {
                 plugins: {
                     softwareupdate: {
@@ -101,11 +101,16 @@ $(function() {
                     }
                 }
             };
-            self.settings.saveData(data, function() {
-                self.configurationDialog.modal("hide");
-                self._copyConfig();
-                self.performCheck();
-                self.savingSettings = false;
+            self.settings.saveData(data, {
+                success: function() {
+                    self.configurationDialog.modal("hide");
+                    self._copyConfig();
+                    self.performCheck();
+                },
+                complete: function() {
+                    $("i.icon-spinner", target).remove();
+                },
+                sending: true
             });
         };
 
@@ -373,10 +378,6 @@ $(function() {
                 clearTimeout(self.restartTimeout);
             }
             return true;
-        };
-
-        self.onSettingsPreventRefresh = function() {
-            return self.savingSettings;
         };
 
         self.onDataUpdaterReconnect = function() {
