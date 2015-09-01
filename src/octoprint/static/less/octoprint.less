@@ -188,7 +188,6 @@ body {
   /** OctoPrint application tabs */
 
   .tab-content {
-    padding: 9px 15px;
     border-left: 1px solid #DDD;
     border-right: 1px solid #DDD;
     border-bottom: 1px solid #DDD;
@@ -196,6 +195,10 @@ body {
     @radius: 4px;
     .border-bottom-right-radius(@radius);
     .border-bottom-left-radius(@radius);
+
+    .tab-pane {
+      padding: 9px 15px;
+    }
   }
 
   .nav {
@@ -383,7 +386,8 @@ ul.dropdown-menu li a {
 
 /** Connection settings */
 
-#connection_ports, #connection_baudrates, #connection_printers {
+#connection_ports, #connection_baudrates, #connection_comms, #connection_printers {
+  color: blue;
   width: 100%;
 }
 

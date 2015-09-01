@@ -15,18 +15,18 @@ import os
 import threading
 import time
 
-from octoprint import util as util
+from octoprint import util
 from octoprint.events import eventManager, Events
 from octoprint.filemanager import FileDestinations
-from octoprint.plugin import plugin_manager, ProgressPlugin
+from octoprint.plugin import plugin_manager, ProgressPlugin, MachineComPlugin
 from octoprint.printer import PrinterInterface, PrinterCallback, UnknownScript
 from octoprint.printer.estimation import TimeEstimationHelper
 from octoprint.settings import settings
-from octoprint.util import comm as comm
+from octoprint.util import comm_helpers
 from octoprint.util import InvariantContainer
 
 
-class Printer(PrinterInterface, comm.MachineComPrintCallback):
+class Printer(PrinterInterface, comm_helpers.MachineComPrintCallback):
 	"""
 	Default implementation of the :class:`PrinterInterface`. Manages the communication layer object and registers
 	itself with it as a callback to react to changes on the communication layer.
@@ -185,7 +185,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 	#~~ PrinterInterface implementation
 
-	def connect(self, port=None, baudrate=None, profile=None):
+	def connect(self, port=None, baudrate=None, profile=None, comm_plugin=None):
 		"""
 		 Connects to the printer. If port and/or baudrate is provided, uses these settings, otherwise autodetection
 		 will be attempted.
@@ -195,7 +195,27 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 		eventManager().fire(Events.CONNECTING)
 		self._printerProfileManager.select(profile)
-		self._comm = comm.MachineCom(port, baudrate, callbackObject=self, printerProfileManager=self._printerProfileManager)
+
+		if not comm_plugin:
+			comm_implementations = plugin_manager().get_implementations(MachineComPlugin)
+
+			if not comm_implementations:
+			        return
+
+			self._comm = comm_implementations[0]
+		elif not isinstance(comm_plugin, basestring):
+			return
+		else:
+                        plugin_info = plugin_manager().get_plugin_info(comm_plugin)
+                        if not plugin_info:
+                            return
+
+                        self._comm = plugin_info.implementation
+			if not self._comm:
+				return
+
+		self._comm.startup(callbackObject=self, printerProfileManager=self._printerProfileManager)
+		self._comm.connect(port, baudrate)
 
 	def disconnect(self):
 		"""
@@ -475,11 +495,11 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 	def get_current_connection(self):
 		if self._comm is None:
-			return "Closed", None, None, None
+			return "Closed", None, None, None, None
 
 		port, baudrate = self._comm.getConnection()
 		printer_profile = self._printerProfileManager.get_current_or_default()
-		return self._comm.getStateString(), port, baudrate, printer_profile
+		return self._comm.getStateString(), port, baudrate, self._comm._identifier, printer_profile
 
 	def is_closed_or_error(self):
 		return self._comm is None or self._comm.isClosedOrError()
@@ -772,14 +792,14 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		oldState = self._state
 
 		# forward relevant state changes to gcode manager
-		if oldState == comm.MachineCom.STATE_PRINTING:
+		if oldState == MachineComPlugin.STATE_PRINTING:
 			if self._selectedFile is not None:
-				if state == comm.MachineCom.STATE_CLOSED or state == comm.MachineCom.STATE_ERROR or state == comm.MachineCom.STATE_CLOSED_WITH_ERROR:
+				if state == MachineComPlugin.STATE_CLOSED or state == MachineComPlugin.STATE_ERROR or state == MachineComPlugin.STATE_CLOSED_WITH_ERROR:
 					self._fileManager.log_print(FileDestinations.SDCARD if self._selectedFile["sd"] else FileDestinations.LOCAL, self._selectedFile["filename"], time.time(), self._comm.getPrintTime(), False, self._printerProfileManager.get_current_or_default()["id"])
 			self._analysisQueue.resume() # printing done, put those cpu cycles to good use
-		elif state == comm.MachineCom.STATE_PRINTING:
+		elif state == MachineComPlugin.STATE_PRINTING:
 			self._analysisQueue.pause() # do not analyse files while printing
-		elif state == comm.MachineCom.STATE_CLOSED or state == comm.MachineCom.STATE_CLOSED_WITH_ERROR:
+		elif state == MachineComPlugin.STATE_CLOSED or state == MachineComPlugin.STATE_CLOSED_WITH_ERROR:
 			if self._comm is not None:
 				self._comm = None
 
@@ -859,6 +879,28 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 	def on_comm_force_disconnect(self):
 		self.disconnect()
+
+	def on_comm_set_job_data(self, name, size, print_time):
+		self._stateMonitor.set_job_data({
+			"file": {
+				"name": name,
+				"origin": FileDestinations.LOCAL,
+				"size": size,
+				"date": None
+			},
+			"estimatedPrintTime": print_time,
+			"averagePrintTime": None,
+			"lastPrintTime": None,
+			"filament": None,
+		})
+
+	def on_comm_set_progress_data(self, completion, filepos, print_time, print_time_left):
+		self._stateMonitor.set_progress({
+			"completion": completion,
+			"filepos": filepos,
+			"printTime": print_time,
+			"printTimeLeft": print_time_left
+		})
 
 
 class StateMonitor(object):

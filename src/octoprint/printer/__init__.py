@@ -23,12 +23,12 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import re
 
-import octoprint.util.comm as comm
+from octoprint.util import comm_helpers
 from octoprint.settings import settings
 
 def get_connection_options():
 	"""
-	Retrieves the available ports, baudrates, prefered port and baudrate for connecting to the printer.
+	Retrieves the available, comms, ports, baudrates, prefered port and baudrate for connecting to the printer.
 
 	Returned ``dict`` has the following structure::
 
@@ -37,16 +37,19 @@ def get_connection_options():
 	    portPreference: <configured default serial port>
 	    baudratePreference: <configured default baudrate>
 	    autoconnect: <whether autoconnect upon server startup is enabled or not>
+            comms: <list of available printer comms>
 
 	Returns:
 	    (dict): A dictionary holding the connection options in the structure specified above
 	"""
 	return {
-		"ports": comm.serialList(),
-		"baudrates": comm.baudrateList(),
+		"ports": comm_helpers.serialList(),
+		"baudrates": comm_helpers.baudrateList(),
 		"portPreference": settings().get(["serial", "port"]),
 		"baudratePreference": settings().getInt(["serial", "baudrate"]),
-		"autoconnect": settings().getBoolean(["serial", "autoconnect"])
+		"autoconnect": settings().getBoolean(["serial", "autoconnect"]),
+		"comms": comm_helpers.commList(),
+		"commPreference": settings().get(["serial", "comm"]) or 'basic_comm',
 	}
 
 
@@ -315,8 +318,8 @@ class PrinterInterface(object):
 	def get_current_connection(self):
 		"""
 		Returns:
-		    (tuple) The current connection information as a 4-tuple ``(connection_string, port, baudrate, printer_profile)``.
-		        If the printer is currently not connected, the tuple will be ``("Closed", None, None, None)``.
+		    (tuple) The current connection information as a 5-tuple ``(connection_string, port, baudrate, comm, printer_profile)``.
+		        If the printer is currently not connected, the tuple will be ``("Closed", None, None, None, None)``.
 		"""
 		raise NotImplementedError()
 

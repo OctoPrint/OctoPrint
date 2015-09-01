@@ -125,8 +125,10 @@ $(function() {
 
         self.serial_port = ko.observable();
         self.serial_baudrate = ko.observable();
+        self.serial_comm = ko.observable();
         self.serial_portOptions = ko.observableArray([]);
         self.serial_baudrateOptions = ko.observableArray([]);
+        self.serial_commOptions = ko.observableArray([]);
         self.serial_autoconnect = ko.observable(undefined);
         self.serial_timeoutConnection = ko.observable(undefined);
         self.serial_timeoutDetection = ko.observable(undefined);

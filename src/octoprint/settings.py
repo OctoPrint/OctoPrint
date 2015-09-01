@@ -73,6 +73,7 @@ default_settings = {
 	"serial": {
 		"port": None,
 		"baudrate": None,
+                "comm": None,
 		"autoconnect": False,
 		"log": False,
 		"timeout": {
@@ -322,6 +323,7 @@ class Settings(object):
 	    serial:
 	        port: "/dev/ttyACM0"
 	        baudrate: 250000
+                comm: basic_comm
 	        timeouts:
 	            communication: 20.0
 	            temperature: 5.0
