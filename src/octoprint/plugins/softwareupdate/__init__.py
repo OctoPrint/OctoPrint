@@ -668,6 +668,30 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			self._logger.warn("Restart stderr:\n%s" % e.stderr)
 			raise exceptions.RestartFailed()
 
+	def _populated_check(self, target, check):
+		result = dict(check)
+
+		if target == "octoprint":
+			from flask.ext.babel import gettext
+			result["displayName"] = check.get("displayName", gettext("OctoPrint"))
+			result["displayVersion"] = check.get("displayVersion", "{octoprint_version}")
+
+			from octoprint._version import get_versions
+			versions = get_versions()
+			if check["type"] == "github_commit":
+				result["current"] = versions.get("full-revisionid", versions.get("full", "unknown"))
+			else:
+				result["current"] = versions["version"]
+		else:
+			result["displayName"] = check.get("displayName", target)
+			result["displayVersion"] = check.get("displayVersion", check.get("current", "unknown"))
+			if check["type"] in ("github_commit"):
+				result["current"] = check.get("current", None)
+			else:
+				result["current"] = check.get("current", check.get("displayVersion", None))
+
+		return result
+
 	def _log(self, lines, prefix=None, stream=None, strip=True):
 		if strip:
 			lines = map(lambda x: x.strip(), lines)

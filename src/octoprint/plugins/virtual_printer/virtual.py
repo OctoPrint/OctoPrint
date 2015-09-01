@@ -717,6 +717,9 @@ class VirtualPrinter(object):
 		self.buffered = None
 
 	def _sendOk(self):
+		if self.outgoing is None:
+			return
+
 		if settings().getBoolean(["devel", "virtualPrinter", "okWithLinenumber"]):
 			self._send("ok %d" % self.lastN)
 		else:
