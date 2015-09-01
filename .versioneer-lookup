@@ -18,5 +18,8 @@ fix/.* 1.2.8 6c622f7c4332b71c6ece59552ffc87c146155c84 pep440-dev
 # Special case disconnected checkouts, e.g. 'git checkout <tag>'
 \(detached.*
 
+# Special case disconnected checkouts, e.g. 'git checkout <tag>'
+(detached.*
+
 # every other branch is a development branch and thus gets resolved to 1.3.0-dev for now
 .* 1.3.0 198d3450d94be1a2 pep440-dev
