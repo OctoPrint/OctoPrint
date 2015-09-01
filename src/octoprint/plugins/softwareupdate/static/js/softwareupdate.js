@@ -26,6 +26,8 @@ $(function() {
         self.config_checkoutFolder = ko.observable();
         self.config_checkType = ko.observable();
 
+        self.savingSettings = false;
+
         self.configurationDialog = $("#settings_plugin_softwareupdate_configurationdialog");
 
         self.config_availableCheckTypes = [
@@ -89,6 +91,7 @@ $(function() {
         };
 
         self.savePluginSettings = function() {
+            self.savingSettings = true;
             var data = {
                 plugins: {
                     softwareupdate: {
@@ -102,6 +105,7 @@ $(function() {
                 self.configurationDialog.modal("hide");
                 self._copyConfig();
                 self.performCheck();
+                self.savingSettings = false;
             });
         };
 
@@ -369,6 +373,10 @@ $(function() {
                 clearTimeout(self.restartTimeout);
             }
             return true;
+        };
+
+        self.onSettingsPreventRefresh = function() {
+            return self.savingSettings;
         };
 
         self.onDataUpdaterReconnect = function() {
