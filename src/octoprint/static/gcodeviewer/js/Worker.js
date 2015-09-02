@@ -233,6 +233,9 @@ var doParse = function () {
     var f, lastF = 4000;
     var extrude = false, extrudeRelative = false, retract = 0;
     var positionRelative = false;
+    var zLift = false;
+    var zLiftZ = undefined;
+    var zLiftMoves = [];
 
     var dcExtrude = false;
     var assumeNonDC = false;
@@ -447,6 +450,17 @@ var doParse = function () {
             if (!offset) offset = {x: 0, y: 0};
         }
 
+        // If move is on a new height and it's not extruding and
+        // it's not currently already in a Z-lift, assume it's possibly a Z-lift
+        if (typeof(z) !== 'undefined' && z != prevZ && !extrude && !zLift) {
+            zLift = true;
+            zLiftZ = prevZ;
+        }
+        // We're extruding, Z-lift is over
+        if (extrude) {
+            zLift = false;
+        }
+
         if (typeof(z) !== 'undefined' && z != prevZ) {
             if (z_heights[z]) {
                 layer = z_heights[z];
@@ -469,7 +483,7 @@ var doParse = function () {
 
         if (addToModel) {
             if (!model[layer]) model[layer] = [];
-            model[layer].push({
+            var command = {
                 x: x,
                 y: y,
                 z: z,
@@ -484,7 +498,29 @@ var doParse = function () {
                 gcodeLine: i,
                 percentage: percentage,
                 tool: tool
-            });
+            };
+
+            if (zLift) {
+                // Insert zLift moves for later processing
+                zLiftMoves.push({
+                    command: command,
+                    layer: layer
+                });
+            } else if (zLiftMoves.length > 0) {
+                // there's something to be checked in the Z-lift cache
+                if (prevZ === zLiftZ) {
+                    zLiftMoves.forEach(function (zLiftMove) {
+                        model[zLiftMove.layer].splice(model[layer].indexOf(zLiftMove.command), 1);
+                        model[z_heights[zLiftZ]].push(zLiftMove.command);
+                    });
+                }
+                // clear up cached Z-lift moves
+                zLiftMoves = [];
+                zLiftZ = undefined;
+            }
+
+
+            model[layer].push(command);
         }
 
         if (move) {
