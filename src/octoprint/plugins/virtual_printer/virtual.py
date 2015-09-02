@@ -97,9 +97,6 @@ class VirtualPrinter(object):
 
 		self._killed = False
 
-		waitThread = threading.Thread(target=self._sendWaitAfterTimeout)
-		waitThread.start()
-
 		readThread = threading.Thread(target=self._processIncoming)
 		readThread.start()
 

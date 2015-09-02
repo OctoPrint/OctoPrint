@@ -1156,32 +1156,17 @@ class MachineCom(object):
 					elif time.time() > self._timeout:
 						self.close(wait=False)
 
-				### Operational
-				elif self._state == self.STATE_OPERATIONAL or self._state == self.STATE_PAUSED:
-					if "ok" in line:
-						# if we still have commands to process, process them
-						if self._resendSwallowNextOk:
-							self._resendSwallowNextOk = False
-						elif self._resendDelta is not None:
-							self._resendNextCommand()
-						elif self._sendFromQueue():
-							pass
-
-					# resend -> start resend procedure from requested line
-					elif line.lower().startswith("resend") or line.lower().startswith("rs"):
-						self._handleResendRequest(line)
-
-				### Printing
-				elif self._state == self.STATE_PRINTING:
+				### Operational & Printing
+				if self._state in (self.STATE_OPERATIONAL, self.STATE_PAUSED, self.STATE_PRINTING):
 					if line == "" and time.time() > self._timeout:
 						if not self._long_running_command:
-							self._log("Communication timeout during printing, forcing a line")
+							self._log("Communication timeout, forcing a line")
 							self._sendCommand("M105")
 							self._clear_to_send.set()
 						else:
 							self._logger.debug("Ran into a communication timeout, but a command known to be a long runner is currently active")
 
-					if "ok" in line or (supportWait and "wait" in line):
+					elif "ok" in line or (self._state == self.STATE_PRINTING and supportWait and "wait" in line):
 						# a wait while printing means our printer's buffer ran out, probably due to some ok getting
 						# swallowed, so we treat it the same as an ok here teo take up communication again
 						if self._resendSwallowNextOk:
@@ -1193,9 +1178,10 @@ class MachineCom(object):
 						else:
 							if self._sendFromQueue():
 								pass
-							elif not self.isSdPrinting():
+							elif self._state == self.STATE_PRINTING and not self.isSdPrinting():
 								self._sendNext()
 
+					# resend -> start resend procedure from requested line
 					elif line.lower().startswith("resend") or line.lower().startswith("rs"):
 						self._handleResendRequest(line)
 			except:
