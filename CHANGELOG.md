@@ -2,7 +2,7 @@
 
 ## 1.2.6 (2015-09-02)
 
-### Improvement
+### Improvements
 
   * Added support for version reporting on detached checkouts
     (see [#1041](https://github.com/foosel/OctoPrint/pull/1041))
@@ -15,6 +15,8 @@
     a `python setup.py install` on OctoPrint. Also pinned all other requirements
     to definitive versions that definitely work while at it to keep that from
     happening again.
+
+([Commits](https://github.com/foosel/OctoPrint/compare/1.2.5...1.2.6))
 
 ## 1.2.5 (2015-08-31)
 
