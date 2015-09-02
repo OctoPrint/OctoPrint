@@ -2,6 +2,11 @@
 
 ## 1.2.6 (2015-09-02)
 
+### Improvement
+
+  * Added support for version reporting on detached checkouts
+    (see [#1041](https://github.com/foosel/OctoPrint/pull/1041))
+
 ### Bug Fixes
 
   * Pinned requirement for [psutil](https://pypi.python.org/pypi/psutil)
