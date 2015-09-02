@@ -1,5 +1,16 @@
 # OctoPrint Changelog
 
+## 1.2.6 (2015-09-02)
+
+### Bug Fixes
+
+  * Pinned requirement for [psutil](https://pypi.python.org/pypi/psutil)
+    dependency to version 3.1.1 of that library due to an issue when
+    installing version 3.2.0 of that library released on 2015-09-02 through
+    a `python setup.py install` on OctoPrint. Also pinned all other requirements
+    to definitive versions that definitely work while at it to keep that from
+    happening again.
+
 ## 1.2.5 (2015-08-31)
 
 ### Improvements
