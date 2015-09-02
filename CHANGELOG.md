@@ -45,6 +45,24 @@
   GCODE) for printing on the file API.
 * Changes to a user's personal settings via the UI now propagate across sessions.
 
+## 1.2.6 (2015-09-02)
+
+### Improvements
+
+  * Added support for version reporting on detached checkouts
+    (see [#1041](https://github.com/foosel/OctoPrint/pull/1041))
+
+### Bug Fixes
+
+  * Pinned requirement for [psutil](https://pypi.python.org/pypi/psutil)
+    dependency to version 3.1.1 of that library due to an issue when
+    installing version 3.2.0 of that library released on 2015-09-02 through
+    a `python setup.py install` on OctoPrint. Also pinned all other requirements
+    to definitive versions that definitely work while at it to keep that from
+    happening again.
+
+([Commits](https://github.com/foosel/OctoPrint/compare/1.2.5...1.2.6))
+
 ## 1.2.5 (2015-08-31)
 
 ### Improvements
