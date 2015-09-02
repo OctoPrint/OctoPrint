@@ -479,7 +479,7 @@ $(function() {
                         self.waitingForRestart = false;
 
                         self._markDone(text, "message_error");
-                    }, 30000);
+                    }, 60000);
 
                     break;
                 }
