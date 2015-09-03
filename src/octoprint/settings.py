@@ -80,6 +80,7 @@ default_settings = {
 			"connection": 10,
 			"communication": 30,
 			"temperature": 5,
+			"temperatureTargetSet": 1,
 			"sdStatus": 1
 		},
 		"additionalPorts": [],

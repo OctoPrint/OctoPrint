@@ -132,6 +132,7 @@ $(function() {
         self.serial_timeoutDetection = ko.observable(undefined);
         self.serial_timeoutCommunication = ko.observable(undefined);
         self.serial_timeoutTemperature = ko.observable(undefined);
+        self.serial_timeoutTemperatureTargetSet = ko.observable(undefined);
         self.serial_timeoutSdStatus = ko.observable(undefined);
         self.serial_log = ko.observable(undefined);
         self.serial_additionalPorts = ko.observable(undefined);
