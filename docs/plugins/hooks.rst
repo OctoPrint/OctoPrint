@@ -159,6 +159,30 @@ This describes actually four hooks:
    :param str gcode: Parsed GCODE command, e.g. ``G0`` or ``M110``, may also be None if no known command could be parsed
    :return: None, 1-tuple, 2-tuple or string, see the description above for details.
 
+.. _sec-plugins-hook-comm-protocol-gcode-recieved:
+
+octoprint.comm.protocol.gcode.recieved
+-------------------------------
+
+.. py:function:: hook(comm_instance, line, *args, **kwargs)
+
+   Get the returned lines sent by the printer. Handlers should return the recieved line or in any case, the modified 
+   version of it.
+
+   **Example:**
+
+   Looks for the response of a M115, which contains information about the MACHINE_TYPE, among other things.
+
+   .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/read_m115_response.py
+      :linenos:
+      :tab-width: 4
+      :caption: `read_m115_response.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/read_m115_response.py>`_
+
+   :param MachineCom comm_instance: The :class:`~octoprint.util.comm.MachineCom` instance which triggered the hook.
+   :param str line: The line recieved from the printer.
+   :return: The recieved line or in any case, a modified version of it.
+   :rtype: str
+
 .. _sec-plugins-hook-comm-protocol-scripts:
 
 octoprint.comm.protocol.scripts
