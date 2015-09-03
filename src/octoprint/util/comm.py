@@ -222,6 +222,7 @@ class MachineCom(object):
 		self._baudrateDetectRetry = 0
 		self._temp = {}
 		self._bedTemp = None
+		self._temperatureTargetSetThreshold = 25
 		self._tempOffsets = dict()
 		self._commandQueue = queue.Queue()
 		self._currentZ = None
@@ -1253,7 +1254,7 @@ class MachineCom(object):
 
 	def _onConnected(self):
 		self._serial.timeout = settings().getFloat(["serial", "timeout", "communication"])
-		self._temperature_timer = RepeatedTimer(lambda: get_interval("temperature", default_value=4.0), self._poll_temperature, run_first=True)
+		self._temperature_timer = RepeatedTimer(self._getTemperatureTimerInterval, self._poll_temperature, run_first=True)
 		self._temperature_timer.start()
 
 		self._changeState(self.STATE_OPERATIONAL)
@@ -1268,6 +1269,22 @@ class MachineCom(object):
 		payload = dict(port=self._port, baudrate=self._baudrate)
 		eventManager().fire(Events.CONNECTED, payload)
 		self.sendGcodeScript("afterPrinterConnected", replacements=dict(event=payload))
+
+	def _getTemperatureTimerInterval(self):
+		busy_default = 4.0
+		target_default = 2.0
+
+		if self.isBusy():
+			return get_interval("temperature", default_value=busy_default)
+
+		for temp in [self._temp[k][1] for k in self._temp.keys()]:
+			if temp > self._temperatureTargetSetThreshold:
+				return get_interval("temperatureTargetSet", default_value=target_default)
+
+		if self._bedTemp and len(self._bedTemp) > 0 and self._bedTemp[1] > self._temperatureTargetSetThreshold:
+			return get_interval("temperatureTargetSet", default_value=target_default)
+
+		return get_interval("temperature", default_value=busy_default)
 
 	def _sendFromQueue(self):
 		if not self._commandQueue.empty() and not self.isStreaming():

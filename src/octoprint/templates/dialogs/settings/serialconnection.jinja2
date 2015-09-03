@@ -18,13 +18,21 @@
             </label>
         </div>
     </div>
-    <div class="control-group" title="{{ _('Interval in which to poll for the temperature information from the printer while printing') }}">
+    <div class="control-group" title="{{ _('Interval in which to poll for the temperature information from the printer') }}">
         <label class="control-label" for="settings-serialTimeoutTemperature">{{ _('Temperature interval') }}</label>
         <div class="controls">
             <div class="input-append">
                 <input type="number" step="any" min="1" class="input-mini text-right" data-bind="value: serial_timeoutTemperature" id="settings-serialTimeoutTemperature">
                 <span class="add-on">s</span>
             </div>
+            <span class="help-inline">{{ _('When printing or idle')}}</span>
+        </div>
+        <div class="controls">
+            <div class="input-append">
+                <input type="number" step="any" min="1" class="input-mini text-right" data-bind="value: serial_timeoutTemperatureTargetSet" id="settings-serialTimeoutTemperatureTargetSet">
+                <span class="add-on">s</span>
+            </div>
+            <span class="help-inline">{{ _('When a target temperature is set')}}</span>
         </div>
     </div>
     <div class="control-group" title="{{ _('Interval in which to poll for the SD printing status information from the printer while printing') }}">
