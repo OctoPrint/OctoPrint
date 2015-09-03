@@ -1271,17 +1271,20 @@ class MachineCom(object):
 		self.sendGcodeScript("afterPrinterConnected", replacements=dict(event=payload))
 
 	def _getTemperatureTimerInterval(self):
+		busy_default = 4.0
+		target_default = 2.0
+
 		if self.isBusy():
-			return get_interval("temperature", default_value=4.0)
+			return get_interval("temperature", default_value=busy_default)
 
 		for temp in [self._temp[k][1] for k in self._temp.keys()]:
 			if temp > self._temperatureTargetSetThreshold:
-				return get_interval("temperatureTargetSet", default_value=1.0)
+				return get_interval("temperatureTargetSet", default_value=target_default)
 
 		if self._bedTemp and len(self._bedTemp) > 0 and self._bedTemp[1] > self._temperatureTargetSetThreshold:
-			return get_interval("temperatureTargetSet", default_value=1.0)
+			return get_interval("temperatureTargetSet", default_value=target_default)
 
-		return get_interval("temperature", default_value=4.0)
+		return get_interval("temperature", default_value=busy_default)
 
 	def _sendFromQueue(self):
 		if not self._commandQueue.empty() and not self.isStreaming():
