@@ -37,6 +37,9 @@
   additional serial ports via the settings dialog and the configuration file.
 * Option to never send checksums (e.g. if the printer firmware doesn't support it),
   see [#949](https://github.com/foosel/OctoPrint/issues/949).
+* Added secondary temperature polling interval to use when printer is not printing
+  but a target temperature is set - this way the graph should be more responsive
+  while monitoring a manual heatup.
 * Documentation improvements
 
 ### Bug Fixes
