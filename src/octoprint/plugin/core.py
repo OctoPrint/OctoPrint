@@ -1083,7 +1083,7 @@ class PluginManager(object):
 
 		return [impl[1] for impl in sorted(result, key=sort_func)]
 
-	def get_filtered_implementations(self, f, sorting_context=None, *types):
+	def get_filtered_implementations(self, f, *types, **kwargs):
 		"""
 		Get all mixin implementation that implementat *all* of the provided ``types`` and match the provided filter `f`.
 
@@ -1096,7 +1096,7 @@ class PluginManager(object):
 		"""
 
 		assert callable(f)
-		implementations = self.get_implementations(*types, sorting_context=sorting_context)
+		implementations = self.get_implementations(*types, sorting_context=kwargs.get("sorting_context", None))
 		return filter(f, implementations)
 
 	def get_helpers(self, name, *helpers):
