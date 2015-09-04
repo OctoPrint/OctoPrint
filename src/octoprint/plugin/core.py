@@ -1071,22 +1071,17 @@ class PluginManager(object):
 		if result is None:
 			return []
 
-		found_implementations = [impl[1] for impl in result]
+		def sort_func(impl):
+			sorting_value = None
+			if sorting_context is not None and isinstance(impl[1], SorteablePlugin):
+				try:
+					sorting_value = impl[1].get_sorting_key(sorting_context)
+				except:
+					self.logger.exception("Error while trying to retrieve sorting order for plugin {}".format(impl[0]))
 
-		if sorting_context is not None:
-			def sort_func(impl):
-				sorting_value = None
-				if isinstance(impl, SorteablePlugin):
-					try:
-						sorting_value = impl.get_sorting_key(sorting_context)
-					except:
-						self.logger.exception("Error while trying to retrieve sorting order for plugin {}".format(impl._identifier))
+			return sorting_value is None, sorting_value, impl[0]
 
-				return sorting_value is None, sorting_value
-
-			found_implementations = sorted(found_implementations, key=sort_func)
-
-		return found_implementations
+		return [impl[1] for impl in sorted(result, key=sort_func)]
 
 	def get_filtered_implementations(self, f, sorting_context=None, *types):
 		"""
