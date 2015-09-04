@@ -1071,7 +1071,7 @@ class PluginManager(object):
 
 		def sort_func(impl):
 			sorting_value = None
-			if sorting_context is not None and isinstance(impl[1], SorteablePlugin):
+			if sorting_context is not None and isinstance(impl[1], SortablePlugin):
 				try:
 					sorting_value = impl[1].get_sorting_key(sorting_context)
 				except:
@@ -1281,7 +1281,7 @@ class Plugin(object):
 class RestartNeedingPlugin(Plugin):
 	pass
 
-class SorteablePlugin(Plugin):
+class SortablePlugin(Plugin):
 	def get_sorting_key(self, context=None):
 		return None
 
