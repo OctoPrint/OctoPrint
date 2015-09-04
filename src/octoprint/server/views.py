@@ -270,18 +270,20 @@ def index():
 		if len(missing_in_order) == 0:
 			continue
 
-		# finally add anything that's not included in our order yet
-		sorted_missing = list(missing_in_order)
-		if template_sorting[t]["key"] is not None:
-			# default extractor: works with entries that are dicts and entries that are 2-tuples with the
-			# entry data at index 1
-			def extractor(item, key):
-				if isinstance(item, dict) and key in item:
-					return item[key]
-				elif isinstance(item, tuple) and len(item) > 1 and isinstance(item[1], dict) and key in item[1]:
-					return item[1][key]
+		# works with entries that are dicts and entries that are 2-tuples with the
+		# entry data at index 1
+		def config_extractor(item, key, default_value=None):
+			if isinstance(item, dict) and key in item:
+				return item[key] if key in item else default_value
+			elif isinstance(item, tuple) and len(item) > 1 and isinstance(item[1], dict) and key in item[1]:
+				return item[1][key] if key in item[1] else default_value
 
-				return None
+			return default_value
+
+		# finally add anything that's not included in our order yet
+		if template_sorting[t]["key"] is not None:
+			# we'll use our config extractor as default key extractor
+			extractor = config_extractor
 
 			# if template type provides custom extractor, make sure its exceptions are handled
 			if "key_extractor" in template_sorting[t] and callable(template_sorting[t]["key_extractor"]):
@@ -296,7 +298,20 @@ def index():
 				extractor = create_safe_extractor(template_sorting[t]["key_extractor"])
 
 			sort_key = template_sorting[t]["key"]
-			sorted_missing = sorted(missing_in_order, key=lambda x: extractor(templates[t]["entries"][x], sort_key))
+
+			def key_func(x):
+				config = templates[t]["entries"][x]
+				entry_order = config_extractor(config, "order", default_value=None)
+				return entry_order is None, entry_order, extractor(config, sort_key)
+
+			sorted_missing = sorted(missing_in_order, key=key_func)
+		else:
+			def key_func(x):
+				config = templates[t]["entries"][x]
+				entry_order = config_extractor(config, "order", default_value=None)
+				return entry_order is None, entry_order
+
+			sorted_missing = sorted(missing_in_order, key=key_func)
 
 		if template_sorting[t]["add"] == "prepend":
 			templates[t]["order"] = sorted_missing + templates[t]["order"]

@@ -23,7 +23,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import os
 import imp
-from collections import defaultdict, namedtuple
+from collections import defaultdict, namedtuple, OrderedDict
 import logging
 
 import pkg_resources
@@ -449,9 +449,10 @@ class PluginManager(object):
 
 		self.enabled_plugins = dict()
 		self.disabled_plugins = dict()
-		self.plugin_hooks = defaultdict(list)
 		self.plugin_implementations = dict()
 		self.plugin_implementations_by_type = defaultdict(list)
+
+		self._plugin_hooks = defaultdict(list)
 
 		self.implementation_injects = dict()
 		self.implementation_inject_factories = []
@@ -475,6 +476,10 @@ class PluginManager(object):
 		plugins = dict(self.enabled_plugins)
 		plugins.update(self.disabled_plugins)
 		return plugins
+
+	@property
+	def plugin_hooks(self):
+		return {key: map(lambda v: (v[1], v[2]), value) for key, value in self._plugin_hooks.items()}
 
 	def find_plugins(self, existing=None, ignore_uninstalled=True):
 		if existing is None:
@@ -780,7 +785,15 @@ class PluginManager(object):
 
 		# evaluate registered hooks
 		for hook, callback in plugin.hooks.items():
-			self.plugin_hooks[hook].append((name, callback))
+			if isinstance(callback, tuple):
+				if len(callback) != 2:
+					continue
+				callback, order = callback
+			else:
+				order = None
+
+			self._plugin_hooks[hook].append((order, name, callback))
+			self._sort_hooks(hook)
 
 		# evaluate registered implementation
 		if plugin.implementation:
@@ -792,8 +805,16 @@ class PluginManager(object):
 
 	def _deactivate_plugin(self, name, plugin):
 		for hook, callback in plugin.hooks.items():
+			if isinstance(callback, tuple):
+				if len(callback) != 2:
+					continue
+				callback, order = callback
+			else:
+				order = None
+
 			try:
-				self.plugin_hooks[hook].remove((name, callback))
+				self._plugin_hooks[hook].remove((order, name, callback))
+				self._sort_hooks(hook)
 			except ValueError:
 				# that's ok, the plugin was just not registered for the hook
 				pass
@@ -1019,7 +1040,11 @@ class PluginManager(object):
 
 		if not hook in self.plugin_hooks:
 			return dict()
-		return {hook[0]: hook[1] for hook in self.plugin_hooks[hook]}
+
+		result = OrderedDict()
+		for h in self.plugin_hooks[hook]:
+			result[h[0]] = h[1]
+		return result
 
 	def get_implementations(self, *types):
 		"""
@@ -1117,6 +1142,10 @@ class PluginManager(object):
 		for client in self.registered_clients:
 			try: client(plugin, data)
 			except: self.logger.exception("Exception while sending plugin data to client")
+
+	def _sort_hooks(self, hook):
+		self._plugin_hooks[hook] = sorted(self._plugin_hooks[hook],
+		                                  key=lambda x: (x[0] is None, x[0], x[1], x[2]))
 
 
 class InstalledEntryPoint(pkginfo.Installed):
