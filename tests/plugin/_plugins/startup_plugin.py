@@ -4,7 +4,11 @@ import octoprint.plugin
 
 
 class TestStartupPlugin(octoprint.plugin.StartupPlugin):
-	pass
+	def get_sorting_key(self, context=None):
+		if context == "sorting_test":
+			return 10
+		else:
+			return None
 
 
 __plugin_name__ = "Startup Plugin"
