@@ -784,13 +784,12 @@ class PluginManager(object):
 		plugin.hotchangeable = self.is_restart_needing_plugin(plugin)
 
 		# evaluate registered hooks
-		for hook, callback in plugin.hooks.items():
-			if isinstance(callback, tuple):
-				if len(callback) != 2:
-					continue
-				callback, order = callback
-			else:
-				order = None
+		for hook, definition in plugin.hooks.items():
+			try:
+				callback, order = self._get_callback_and_order(definition)
+			except ValueError as e:
+				self.logger.warn("There is something wrong with the hook definition {} for plugin {}: {}".format(definition, name, str(e)))
+				continue
 
 			self._plugin_hooks[hook].append((order, name, callback))
 			self._sort_hooks(hook)
@@ -804,13 +803,12 @@ class PluginManager(object):
 			self.plugin_implementations[name] = plugin.implementation
 
 	def _deactivate_plugin(self, name, plugin):
-		for hook, callback in plugin.hooks.items():
-			if isinstance(callback, tuple):
-				if len(callback) != 2:
-					continue
-				callback, order = callback
-			else:
-				order = None
+		for hook, definition in plugin.hooks.items():
+			try:
+				callback, order = self._get_callback_and_order(definition)
+			except ValueError as e:
+				self.logger.warn("There is something wrong with the hook definition {} for plugin {}: {}".format(definition, name, str(e)))
+				continue
 
 			try:
 				self._plugin_hooks[hook].remove((order, name, callback))
@@ -1079,6 +1077,12 @@ class PluginManager(object):
 				except:
 					self.logger.exception("Error while trying to retrieve sorting order for plugin {}".format(impl[0]))
 
+				try:
+					int(sorting_value)
+				except ValueError:
+					self.logger.warn("The order value returned by {} for sorting context {} is not a valid integer, ignoring it".format(impl[0], sorting_context))
+					sorting_value = None
+
 			return sorting_value is None, sorting_value, impl[0]
 
 		return [impl[1] for impl in sorted(result, key=sort_func)]
@@ -1159,6 +1163,28 @@ class PluginManager(object):
 	def _sort_hooks(self, hook):
 		self._plugin_hooks[hook] = sorted(self._plugin_hooks[hook],
 		                                  key=lambda x: (x[0] is None, x[0], x[1], x[2]))
+
+	def _get_callback_and_order(self, hook):
+		if callable(hook):
+			return hook, None
+
+		elif isinstance(hook, tuple) and len(hook) == 2:
+			callback, order = hook
+
+			# test that callback is a callable
+			if not callable(callback):
+				raise ValueError("Hook callback is not a callable")
+
+			# test that number is an int
+			try:
+				int(order)
+			except ValueError:
+				raise ValueError("Hook order is not a number")
+
+			return callback, order
+
+		else:
+			raise ValueError("Invalid hook definition, neither a callable nor a 2-tuple (callback, order): {!r}".format(hook))
 
 
 class InstalledEntryPoint(pkginfo.Installed):
