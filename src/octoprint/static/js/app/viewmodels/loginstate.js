@@ -113,6 +113,12 @@ $(function() {
             }
         };
 
+        self.onLoginRememberKeyup = function(data, event) {
+            if (event.keyCode == 9) {
+                $("#login_user").focus();
+            }
+        }
+
         self.onAllBound = function(allViewModels) {
             self.allViewModels = allViewModels;
         };
