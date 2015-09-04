@@ -1046,7 +1046,7 @@ class PluginManager(object):
 			result[h[0]] = h[1]
 		return result
 
-	def get_implementations(self, *types):
+	def get_implementations(self, *types, **kwargs):
 		"""
 		Get all mixin implementations that implement *all* of the provided ``types``.
 
@@ -1056,6 +1056,8 @@ class PluginManager(object):
 		Returns:
 		    list: A list of all found implementations
 		"""
+
+		sorting_context = kwargs.get("sorting_context", None)
 
 		result = None
 
@@ -1067,10 +1069,26 @@ class PluginManager(object):
 				result = result.intersection(implementations)
 
 		if result is None:
-			return dict()
-		return [impl[1] for impl in result]
+			return []
 
-	def get_filtered_implementations(self, f, *types):
+		found_implementations = [impl[1] for impl in result]
+
+		if sorting_context is not None:
+			def sort_func(impl):
+				sorting_value = None
+				if isinstance(impl, SorteablePlugin):
+					try:
+						sorting_value = impl.get_sorting_key(sorting_context)
+					except:
+						self.logger.exception("Error while trying to retrieve sorting order for plugin {}".format(impl._identifier))
+
+				return sorting_value is None, sorting_value
+
+			found_implementations = sorted(found_implementations, key=sort_func)
+
+		return found_implementations
+
+	def get_filtered_implementations(self, f, sorting_context=None, *types):
 		"""
 		Get all mixin implementation that implementat *all* of the provided ``types`` and match the provided filter `f`.
 
@@ -1083,7 +1101,7 @@ class PluginManager(object):
 		"""
 
 		assert callable(f)
-		implementations = self.get_implementations(*types)
+		implementations = self.get_implementations(*types, sorting_context=sorting_context)
 		return filter(f, implementations)
 
 	def get_helpers(self, name, *helpers):
@@ -1241,6 +1259,10 @@ class Plugin(object):
 
 class RestartNeedingPlugin(Plugin):
 	pass
+
+class SorteablePlugin(Plugin):
+	def get_sorting_key(self, context=None):
+		return None
 
 class PluginNeedsRestart(Exception):
 	def __init__(self, name):

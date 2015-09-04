@@ -417,7 +417,8 @@ class Server(object):
 		# run our startup plugins
 		octoprint.plugin.call_plugin(octoprint.plugin.StartupPlugin,
 		                             "on_startup",
-		                             args=(self._host, self._port))
+		                             args=(self._host, self._port),
+		                             sorting_context="StartupPlugin.on_startup")
 
 		def call_on_startup(name, plugin):
 			implementation = plugin.get_implementation(octoprint.plugin.StartupPlugin)
@@ -437,7 +438,8 @@ class Server(object):
 			# control to the ioloop
 			def work():
 				octoprint.plugin.call_plugin(octoprint.plugin.StartupPlugin,
-				                             "on_after_startup")
+				                             "on_after_startup",
+				                             sorting_context="StartupPlugin.on_after_startup")
 
 				def call_on_after_startup(name, plugin):
 					implementation = plugin.get_implementation(octoprint.plugin.StartupPlugin)
@@ -458,7 +460,8 @@ class Server(object):
 			observer.stop()
 			observer.join()
 			octoprint.plugin.call_plugin(octoprint.plugin.ShutdownPlugin,
-			                             "on_shutdown")
+			                             "on_shutdown",
+			                             sorting_context="ShutdownPlugin.on_shutdown")
 			self._logger.info("Goodbye!")
 		atexit.register(on_shutdown)
 

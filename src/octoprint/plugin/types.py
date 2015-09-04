@@ -18,7 +18,7 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
-from .core import (Plugin, RestartNeedingPlugin)
+from .core import (Plugin, RestartNeedingPlugin, SorteablePlugin)
 
 
 class OctoPrintPlugin(Plugin):
@@ -99,7 +99,7 @@ class OctoPrintPlugin(Plugin):
 class ReloadNeedingPlugin(Plugin):
 	pass
 
-class StartupPlugin(OctoPrintPlugin):
+class StartupPlugin(OctoPrintPlugin, SorteablePlugin):
 	"""
 	The ``StartupPlugin`` allows hooking into the startup of OctoPrint. It can be used to start up additional services
 	on or just after the startup of the server.
@@ -127,7 +127,7 @@ class StartupPlugin(OctoPrintPlugin):
 		pass
 
 
-class ShutdownPlugin(OctoPrintPlugin):
+class ShutdownPlugin(OctoPrintPlugin, SorteablePlugin):
 	"""
 	The ``ShutdownPlugin`` allows hooking into the shutdown of OctoPrint. It's usually used in conjunction with the
 	:class:`StartupPlugin` mixin, to cleanly shut down additional services again that where started by the :class:`StartupPlugin`

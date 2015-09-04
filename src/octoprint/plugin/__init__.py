@@ -152,7 +152,7 @@ def plugin_settings(plugin_key, defaults=None, get_preprocessors=None, set_prepr
 	return PluginSettings(settings(), plugin_key, defaults=defaults, get_preprocessors=get_preprocessors, set_preprocessors=set_preprocessors)
 
 
-def call_plugin(types, method, args=None, kwargs=None, callback=None, error_callback=None):
+def call_plugin(types, method, args=None, kwargs=None, callback=None, error_callback=None, sorting_context=None):
 	"""
 	Helper method to invoke the indicated ``method`` on all registered plugin implementations implementing the
 	indicated ``types``. Allows providing method arguments and registering callbacks to call in case of success
@@ -198,7 +198,7 @@ def call_plugin(types, method, args=None, kwargs=None, callback=None, error_call
 	if kwargs is None:
 		kwargs = dict()
 
-	plugins = plugin_manager().get_implementations(*types)
+	plugins = plugin_manager().get_implementations(*types, sorting_context=sorting_context)
 	for plugin in plugins:
 		if hasattr(plugin, method):
 			try:
