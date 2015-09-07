@@ -977,12 +977,28 @@ class LocalFileStorage(StorageInterface):
 
 			# folder recursion
 			elif os.path.isdir(entry_path) and recursive:
-				sub_result = self._list_folder(entry_path, filter=filter)
-				result[entry] = dict(
+				sub_result = self._list_folder(entry_path, filter=filter, recursive=recursive)
+				entry_data = dict(
 					name=entry,
 					type="folder",
 					children=sub_result
 				)
+
+				if not filter or filter(entry, entry_data):
+					def get_size(start_path):
+						total_size = 0
+						for dirpath, dirnames, filenames in os.walk(start_path):
+							for f in filenames:
+								fp = os.path.join(dirpath, f)
+								total_size += os.path.getsize(fp)
+						return total_size
+
+					# only add folders passing the optional filter
+					extended_entry_data = dict()
+					extended_entry_data.update(entry_data)
+					extended_entry_data["size"] = get_size(entry_path)
+
+					result[entry] = extended_entry_data
 
 		# TODO recreate links if we have metadata less entries
 

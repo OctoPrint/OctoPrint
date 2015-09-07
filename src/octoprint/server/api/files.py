@@ -26,10 +26,16 @@ import psutil
 @api.route("/files", methods=["GET"])
 def readGcodeFiles():
 	filter = None
+	recursive = False
 	if "filter" in request.values:
 		filter = request.values["filter"]
-	files = _getFileList(FileDestinations.LOCAL, filter=filter)
+
+	if "recursive" in request.values:
+		recursive = request.values["recursive"] == 'true'
+
+	files = _getFileList(FileDestinations.LOCAL, filter=filter, recursive=recursive)
 	files.extend(_getFileList(FileDestinations.SDCARD))
+
 	usage = psutil.disk_usage(settings().getBaseFolder("uploads"))
 	return jsonify(files=files, free=usage.free, total=usage.total)
 
@@ -39,7 +45,11 @@ def readGcodeFilesForOrigin(origin):
 	if origin not in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
 		return make_response("Unknown origin: %s" % origin, 404)
 
-	files = _getFileList(origin)
+	recursive = False
+	if "recursive" in request.values:
+		recursive = request.values["recursive"] == 'true'
+
+	files = _getFileList(origin, recursive=recursive)
 
 	if origin == FileDestinations.LOCAL:
 		usage = psutil.disk_usage(settings().getBaseFolder("uploads"))
@@ -48,15 +58,24 @@ def readGcodeFilesForOrigin(origin):
 		return jsonify(files=files)
 
 
-def _getFileDetails(origin, filename):
-	files = _getFileList(origin)
-	for file in files:
-		if file["name"] == filename:
-			return file
-	return None
+def _getFileDetails(origin, path):
+	files = _getFileList(origin, recursive=True)
+	path = path.split('/')
+
+	def recursive_get_filedetails(files, path):
+		for file in files:
+			if file["name"] == path[0]:
+				if len(path) > 1:
+					return recursive_get_filedetails(file["children"], path[1:])
+				else:
+					return file
+
+		return None
+
+	return recursive_get_filedetails(files, path)
 
 
-def _getFileList(origin, filter=None):
+def _getFileList(origin, filter=None, recursive=False):
 	if origin == FileDestinations.SDCARD:
 		sdFileList = printer.get_sd_files()
 
@@ -78,45 +97,56 @@ def _getFileList(origin, filter=None):
 		filter_func = None
 		if filter:
 			filter_func = lambda entry, entry_data: octoprint.filemanager.valid_file_type(entry, type=filter)
-		files = fileManager.list_files(origin, filter=filter_func, recursive=False)[origin].values()
-		for file in files:
-			file["origin"] = FileDestinations.LOCAL
 
-			if "analysis" in file and octoprint.filemanager.valid_file_type(file["name"], type="gcode"):
-				file["gcodeAnalysis"] = file["analysis"]
-				del file["analysis"]
+		files = fileManager.list_files(origin, filter=filter_func, recursive=recursive)[origin].values()
 
-			if "history" in file and octoprint.filemanager.valid_file_type(file["name"], type="gcode"):
-				# convert print log
-				history = file["history"]
-				del file["history"]
-				success = 0
-				failure = 0
-				last = None
-				for entry in history:
-					success += 1 if "success" in entry and entry["success"] else 0
-					failure += 1 if "success" in entry and not entry["success"] else 0
-					if not last or ("timestamp" in entry and "timestamp" in last and entry["timestamp"] > last["timestamp"]):
-						last = entry
-				if last:
-					prints = dict(
-						success=success,
-						failure=failure,
-						last=dict(
-							success=last["success"],
-							date=last["timestamp"]
+		def recursive_analysis(files, path):
+			for file in files:
+				file["origin"] = FileDestinations.LOCAL
+
+				if file["type"] == "folder":
+					file["children"] = recursive_analysis(file["children"].values(), path + file["name"] + "/")
+
+				if "analysis" in file and octoprint.filemanager.valid_file_type(file["name"], type="gcode"):
+					file["gcodeAnalysis"] = file["analysis"]
+					del file["analysis"]
+
+				if "history" in file and octoprint.filemanager.valid_file_type(file["name"], type="gcode"):
+					# convert print log
+					history = file["history"]
+					del file["history"]
+					success = 0
+					failure = 0
+					last = None
+					for entry in history:
+						success += 1 if "success" in entry and entry["success"] else 0
+						failure += 1 if "success" in entry and not entry["success"] else 0
+						if not last or ("timestamp" in entry and "timestamp" in last and entry["timestamp"] > last["timestamp"]):
+							last = entry
+					if last:
+						prints = dict(
+							success=success,
+							failure=failure,
+							last=dict(
+								success=last["success"],
+								date=last["timestamp"]
+							)
 						)
-					)
-					if "printTime" in last:
-						prints["last"]["printTime"] = last["printTime"]
-					file["prints"] = prints
+						if "printTime" in last:
+							prints["last"]["printTime"] = last["printTime"]
+						file["prints"] = prints
 
-			file.update({
-				"refs": {
-					"resource": url_for(".readGcodeFile", target=FileDestinations.LOCAL, filename=file["name"], _external=True),
-					"download": url_for("index", _external=True) + "downloads/files/" + FileDestinations.LOCAL + "/" + file["name"]
-				}
-			})
+				file.update({
+					"refs": {
+						"resource": url_for(".readGcodeFile", target=FileDestinations.LOCAL, filename=path + file["name"], _external=True),
+						"download": url_for("index", _external=True) + "downloads/files/" + FileDestinations.LOCAL + "/" + path + file["name"]
+					}
+				})
+
+			return files
+
+		files = recursive_analysis(files, "")
+
 	return files
 
 
@@ -166,24 +196,33 @@ def uploadGcodeFile(target):
 
 	# determine current job
 	currentFilename = None
+	currentFullPath = None
 	currentOrigin = None
 	currentJob = printer.get_current_job()
 	if currentJob is not None and "file" in currentJob.keys():
 		currentJobFile = currentJob["file"]
-		if "name" in currentJobFile.keys() and "origin" in currentJobFile.keys():
-			currentFilename = currentJobFile["name"]
+		if currentJobFile is not None and "name" in currentJobFile.keys() and "origin" in currentJobFile.keys() and currentJobFile["name"] is not None and currentJobFile["origin"] is not None:
+			currentPath, currentFilename = fileManager.sanitize(currentJobFile["origin"], currentJobFile["name"])
+			currentFullPath = fileManager.join_path(target, currentPath, currentFilename)
 			currentOrigin = currentJobFile["origin"]
 
 	# determine future filename of file to be uploaded, abort if it can't be uploaded
 	try:
-		futureFilename = fileManager.sanitize_name(FileDestinations.LOCAL, upload.filename)
+		futurePath, futureFilename = fileManager.sanitize(target, upload.filename)
 	except:
+		futurePath = None
 		futureFilename = None
+
 	if futureFilename is None:
 		return make_response("Can not upload file %s, wrong format?" % upload.filename, 415)
 
+	if "path" in request.values:
+		futurePath = fileManager.sanitize_path(target, request.values["path"])
+
+	futureFullPath = fileManager.join_path(target, futurePath, futureFilename)
+
 	# prohibit overwriting currently selected file while it's being printed
-	if futureFilename == currentFilename and target == currentOrigin and printer.is_printing() or printer.is_paused():
+	if futureFullPath == currentFullPath and target == currentOrigin and printer.is_printing() or printer.is_paused():
 		return make_response("Trying to overwrite file that is currently being printed: %s" % currentFilename, 409)
 
 	def fileProcessingFinished(filename, absFilename, destination):
@@ -212,7 +251,7 @@ def uploadGcodeFile(target):
 		if octoprint.filemanager.valid_file_type(added_file, "gcode") and (selectAfterUpload or printAfterSelect or (currentFilename == filename and currentOrigin == destination)):
 			printer.select_file(absFilename, destination == FileDestinations.SDCARD, printAfterSelect)
 
-	added_file = fileManager.add_file(FileDestinations.LOCAL, upload.filename, upload, allow_overwrite=True)
+	added_file = fileManager.add_file(FileDestinations.LOCAL, futureFullPath, upload, allow_overwrite=True)
 	if added_file is None:
 		return make_response("Could not upload the file %s" % upload.filename, 500)
 	if octoprint.filemanager.valid_file_type(added_file, "stl"):
