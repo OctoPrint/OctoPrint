@@ -22,21 +22,93 @@ from . import util
 import logging
 _logger = logging.getLogger(__name__)
 
-@app.route("/")
-@util.flask.cached(refreshif=lambda: util.flask.cache_check_headers() or "_refresh" in request.values,
-                   key=lambda: "view/%s/%s" % (request.path, g.locale),
-                   unless_response=util.flask.cache_check_response_headers)
-def index():
+_templates = None
+_plugin_names = None
+_plugin_vars = None
 
+@app.route("/")
+def index():
+	force_refresh = util.flask.cache_check_headers() or "_refresh" in request.values
+
+	global _templates, _plugin_names, _plugin_vars
+
+	if force_refresh or _templates is None or _plugin_names is None or _plugin_vars is None:
+		_templates, _plugin_names, _plugin_vars = _process_templates()
+
+	now = datetime.datetime.utcnow()
+	render_kwargs = _get_render_kwargs(_templates, _plugin_names, _plugin_vars, now)
+
+	def get_cached_view(key, view):
+		return util.flask.cached(refreshif=lambda: force_refresh,
+		                         key=lambda: "ui:{}:{}".format(key, g.locale),
+		                         unless_response=util.flask.cache_check_response_headers)(view)
+
+	ui_plugins = pluginManager.get_implementations(octoprint.plugin.UiPlugin, sorting_context="UiPlugin.on_ui_render")
+	for plugin in ui_plugins:
+		if plugin.will_handle_ui(request):
+			# plugin claims responsibility, let it render the UI
+			cached = get_cached_view(plugin._identifier, plugin.on_ui_render)
+			response = cached(now, request, render_kwargs)
+			if response is not None:
+				break
+
+	else:
+		# no plugin took an interest, we'll use the default UI
+		def make_default_ui():
+			r = make_response(render_template("index.jinja2", **render_kwargs))
+			if bool(render_kwargs["templates"]["wizard"]["order"]):
+				r = util.flask.add_non_caching_response_headers(response)
+			return r
+
+		cached = get_cached_view("_default", make_default_ui)
+		response = cached()
+
+	response.headers["Last-Modified"] = now
+
+	return response
+
+
+def _get_render_kwargs(templates, plugin_names, plugin_vars, now):
 	#~~ a bunch of settings
 
+	enable_accesscontrol = userManager is not None
+	first_run = settings().getBoolean(["server", "firstRun"])
+	locales = dict((l.language, dict(language=l.language, display=l.display_name, english=l.english_name)) for l in LOCALES)
+
+	#~~ prepare full set of template vars for rendering
+
+	wizard = bool(templates["wizard"]["order"])
+	render_kwargs = dict(
+		webcamStream=settings().get(["webcam", "stream"]),
+		enableTemperatureGraph=settings().get(["feature", "temperatureGraph"]),
+		enableAccessControl=enable_accesscontrol,
+		enableSdSupport=settings().get(["feature", "sdSupport"]),
+		firstRun=first_run,
+		debug=debug,
+		version=VERSION,
+		display_version=DISPLAY_VERSION,
+		branch=BRANCH,
+		gcodeMobileThreshold=settings().get(["gcodeViewer", "mobileSizeThreshold"]),
+		gcodeThreshold=settings().get(["gcodeViewer", "sizeThreshold"]),
+		uiApiKey=UI_API_KEY,
+		templates=templates,
+		pluginNames=plugin_names,
+		locales=locales,
+		wizard=wizard,
+		now=now
+	)
+	render_kwargs.update(plugin_vars)
+
+	return render_kwargs
+
+
+def _process_templates():
+	enable_accesscontrol = userManager is not None
 	first_run = settings().getBoolean(["server", "firstRun"])
 	enable_gcodeviewer = settings().getBoolean(["gcodeViewer", "enabled"])
 	enable_timelapse = (settings().get(["webcam", "snapshot"]) and settings().get(["webcam", "ffmpeg"]))
 	enable_systemmenu = settings().get(["system"]) is not None and settings().get(["system", "actions"]) is not None and len(settings().get(["system", "actions"])) > 0
-	enable_accesscontrol = userManager is not None
 	preferred_stylesheet = settings().get(["devel", "stylesheet"])
-	locales = dict((l.language, dict(language=l.language, display=l.display_name, english=l.english_name)) for l in LOCALES)
 
 	##~~ prepare templates
 
@@ -327,43 +399,7 @@ def index():
 			templates[t]["entries"].update(template_sorting[t]["custom_insert_entries"](sorted_missing))
 			templates[t]["order"] = template_sorting[t]["custom_insert_order"](templates[t]["order"], sorted_missing)
 
-	#~~ prepare full set of template vars for rendering
-
-	wizard = bool(templates["wizard"]["order"])
-	now = datetime.datetime.utcnow()
-	render_kwargs = dict(
-		webcamStream=settings().get(["webcam", "stream"]),
-		enableTemperatureGraph=settings().get(["feature", "temperatureGraph"]),
-		enableAccessControl=enable_accesscontrol,
-		enableSdSupport=settings().get(["feature", "sdSupport"]),
-		firstRun=first_run,
-		debug=debug,
-		version=VERSION,
-		display_version=DISPLAY_VERSION,
-		branch=BRANCH,
-		gcodeMobileThreshold=settings().get(["gcodeViewer", "mobileSizeThreshold"]),
-		gcodeThreshold=settings().get(["gcodeViewer", "sizeThreshold"]),
-		uiApiKey=UI_API_KEY,
-		templates=templates,
-		pluginNames=plugin_names,
-		locales=locales,
-		wizard=wizard,
-		now=now
-	)
-	render_kwargs.update(plugin_vars)
-
-	#~~ render!
-
-	response = make_response(render_template(
-		"index.jinja2",
-		**render_kwargs
-	))
-	response.headers["Last-Modified"] = now
-
-	if wizard:
-		response = util.flask.add_non_caching_response_headers(response)
-
-	return response
+	return templates, plugin_names, plugin_vars
 
 
 def _process_template_configs(name, implementation, configs, rules):
@@ -454,7 +490,8 @@ def robotsTxt():
 
 
 @app.route("/i18n/<string:locale>/<string:domain>.js")
-@util.flask.cached(refreshif=lambda: util.flask.cache_check_headers() or "_refresh" in request.values, key=lambda: "view/%s/%s" % (request.path, g.locale))
+@util.flask.cached(refreshif=lambda: util.flask.cache_check_headers() or "_refresh" in request.values,
+                   key=lambda: "{}:{}".format(request.path, g.locale))
 def localeJs(locale, domain):
 	messages = dict()
 	plural_expr = None

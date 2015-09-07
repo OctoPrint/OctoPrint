@@ -485,6 +485,15 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 		return os.path.join(self._basefolder, "templates")
 
 
+class UiPlugin(OctoPrintPlugin, SortablePlugin):
+
+	def will_handle_ui(self, request):
+		return False
+
+	def on_ui_render(self, now, request, render_kwargs):
+		return None
+
+
 class WizardPlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 	"""
 	The ``WizardPlugin`` mixin allows plugins to report to OctoPrint whether
