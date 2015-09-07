@@ -1,8 +1,32 @@
 <form class="form-search" data-bind="submit: performSearch">
     <input type="text" class="input-block search-query" data-bind="value: searchQuery, valueUpdate: 'input'" placeholder="{{ _('Search...') }}">
 </form>
-<div class="gcode_files" data-bind="slimScrolledForeach: listHelper.paginatedItems">
+<div class="gcode_files">
+    <!-- ko if: currentPath() != "" -->
+    <div class="entry" data-bind="click: function() { var path = $root.currentPath().split('/'); path.shift(); $root.changeFolderByPath(path.join('/')); }"><i class="icon-arrow-left"></i> {{  _('Back') }}</div>
+    <!-- /ko -->
+
+    <!-- ko if: listStyle() == 'folders_files' -->
+    <!-- ko slimScrolledForeach: foldersOnlyList -->
     <div class="entry" data-bind="attr: { id: $root.getEntryId($data) }, template: { name: $root.templateFor($data), data: $data }"></div>
+    <!-- /ko -->
+    <!-- ko slimScrolledForeach: filesOnlyList -->
+    <div class="entry" data-bind="attr: { id: $root.getEntryId($data) }, template: { name: $root.templateFor($data), data: $data }"></div>
+    <!-- /ko -->
+    <!-- /ko -->
+    <!-- ko if: listStyle() == 'files_folders' -->
+    <!-- ko slimScrolledForeach: filesOnlyList -->
+    <div class="entry" data-bind="attr: { id: $root.getEntryId($data) }, template: { name: $root.templateFor($data), data: $data }"></div>
+    <!-- /ko -->
+    <!-- ko slimScrolledForeach: foldersOnlyList -->
+    <div class="entry" data-bind="attr: { id: $root.getEntryId($data) }, template: { name: $root.templateFor($data), data: $data }"></div>
+    <!-- /ko -->
+    <!-- /ko -->
+    <!-- ko if: listStyle() == 'mixed' -->
+    <!-- ko slimScrolledForeach: listHelper.paginatedItems -->
+    <div class="entry" data-bind="attr: { id: $root.getEntryId($data) }, template: { name: $root.templateFor($data), data: $data }"></div>
+    <!-- /ko -->
+    <!-- /ko -->
 
     <script type="text/html" id="files_template_machinecode">
         <div class="title" data-bind="css: $root.getSuccessClass($data), style: { 'font-weight': $root.listHelper.isSelected($data) ? 'bold' : 'normal' }, text: name"></div>
@@ -30,7 +54,8 @@
     </script>
 
     <script type="text/html" id="files_template_folder">
-        <div class="title" data-bind="text: name"></div>
+        <div class="title" data-bind="click: $root.changeFolder"><i class="icon-folder-open"></i> <span data-bind="text: name"></span></div>
+        <div class="size">{{ _('Size') }}: <span data-bind="text: formatSize(size)"></span></div>
     </script>
 </div>
 <div class="text-right muted" data-bind="attr: {title: diskusageString}, css: {'text-error': diskusageCritical}, style: {'font-weight': diskusageCritical() || diskusageWarning() ? 'bold' : 'normal'}">

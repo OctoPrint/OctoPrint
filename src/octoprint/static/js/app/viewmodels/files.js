@@ -54,6 +54,10 @@ $(function() {
 
         self.uploadButton = undefined;
 
+        self.allItems = ko.observable(undefined);
+        self.listStyle = ko.observable("folders_files");
+        self.currentPath = ko.observable("");
+
         // initialize list helper
         self.listHelper = new ItemListHelper(
             "gcodeFiles",
@@ -78,27 +82,41 @@ $(function() {
                 }
             },
             {
-                "printed": function(file) {
-                    return !(file["prints"] && file["prints"]["success"] && file["prints"]["success"] > 0);
+                "printed": function(data) {
+                    return !(data["prints"] && data["prints"]["success"] && data["prints"]["success"] > 0) || (data["type"] && data["type"] == "folder");
                 },
-                "sd": function(file) {
-                    return file["origin"] && file["origin"] == "sdcard";
+                "sd": function(data) {
+                    return data["origin"] && data["origin"] == "sdcard";
                 },
-                "local": function(file) {
-                    return !(file["origin"] && file["origin"] == "sdcard");
+                "local": function(data) {
+                    return !(data["origin"] && data["origin"] == "sdcard");
                 },
-                "machinecode": function(file) {
-                    return file["type"] && file["type"] == "machinecode";
+                "machinecode": function(data) {
+                    return data["type"] && (data["type"] == "machinecode" || data["type"] == "folder");
                 },
-                "model": function(file) {
-                    return file["type"] && file["type"] == "model";
+                "model": function(data) {
+                    return data["type"] && (data["type"] == "model" || data["type"] == "folder");
+                },
+                "emptyFolder": function(data) {
+                    return data["type"] && data["type"] != "folder" || (data["size"] && data["size"] != 0);
                 }
             },
             "name",
-            [],
+            ["emptyFolder"],
             [["sd", "local"], ["machinecode", "model"]],
             0
         );
+
+        self.foldersOnlyList = ko.dependentObservable(function() {
+            filter = function(data) { return data["type"] && data["type"] == "folder"; };
+            var items = _.filter(self.listHelper.paginatedItems(), filter);
+            return items;
+        });
+        self.filesOnlyList = ko.dependentObservable(function() {
+            filter = function(data) { return data["type"] && data["type"] != "folder"; };
+            var items = _.filter(self.listHelper.paginatedItems(), filter);
+            return items;
+        });
 
         self.isLoadActionPossible = ko.computed(function() {
             return self.loginState.isUser() && !self.isPrinting() && !self.isPaused() && !self.isLoading();
@@ -142,7 +160,7 @@ $(function() {
         };
 
         self._otherRequestInProgress = false;
-        self.requestData = function(filenameToFocus, locationToFocus) {
+        self.requestData = function(filenameToFocus, locationToFocus, switchToPath) {
             if (self._otherRequestInProgress) return;
 
             self._otherRequestInProgress = true;
@@ -150,8 +168,9 @@ $(function() {
                 url: API_BASEURL + "files",
                 method: "GET",
                 dataType: "json",
+                data: {"recursive": true},
                 success: function(response) {
-                    self.fromResponse(response, filenameToFocus, locationToFocus);
+                    self.fromResponse(response, filenameToFocus, locationToFocus, switchToPath);
                     self._otherRequestInProgress = false;
                 },
                 error: function() {
@@ -160,13 +179,32 @@ $(function() {
             });
         };
 
-        self.fromResponse = function(response, filenameToFocus, locationToFocus) {
+        self.fromResponse = function(response, filenameToFocus, locationToFocus, switchToPath) {
             var files = response.files;
-            _.each(files, function(element, index, list) {
+            recursiveCheck = function(element, index, list) {
+                if (!element.hasOwnProperty("parent")) element.parent = { children: list, parent: undefined };
                 if (!element.hasOwnProperty("size")) element.size = undefined;
                 if (!element.hasOwnProperty("date")) element.date = undefined;
-            });
-            self.listHelper.updateItems(files);
+
+                if (element.type == "folder")
+                {
+                    for (var i = 0; i < element.children.length; i++) {
+                        element.children[i].parent = element;
+                        recursiveCheck(element.children[i], i, element.children);
+                    }
+                }
+            };
+            _.each(files, recursiveCheck);
+
+            self.allItems(files);
+            self.currentPath("");
+            self.listHelper.addFilter("emptyFolder");
+            if (!switchToPath) {
+                self.listHelper.updateItems(files);
+            }
+            else {
+                self.changeFolderByPath(switchToPath);
+            }
 
             if (filenameToFocus) {
                 // got a file to scroll to
@@ -191,6 +229,52 @@ $(function() {
             self.highlightFilename(self.printerState.filename());
         };
 
+        self.changeFolder = function(data) {
+            self.currentPath(self.pathByElement(data));
+            self.listHelper.updateItems(data.children);
+        };
+        self.changeFolderByPath = function(path) {
+            var element = self.elementByPath(path, { children: self.allItems() });
+            if (element) {
+                self.currentPath(path);
+                self.listHelper.updateItems(element.children);
+            }
+            else{
+                self.currentPath("");
+                self.listHelper.updateItems(self.allItems());
+            }
+        }
+
+        self.pathByElement = function(element) {
+            if (!element || element.parent == undefined)
+                return "";
+
+            recursivePath = function(element, path) {
+              if (element.parent !== undefined)
+                  return recursivePath(element.parent, element.name + "/" + path);
+
+              return path;
+            };
+            return recursivePath(element.parent, element.name);
+        };
+        self.elementByPath = function(path, startElement) {
+            recursiveSearch = function(path, element) {
+                if (path.length == 0)
+                    return element;
+
+                var name = path.shift();
+                for(var i = 0; i< startElement.children.length; i++) {
+                    if (name == startElement.children[i].name) {
+                        return recursivePath(path, startElement.children[i]);
+                    }
+                }
+
+                return undefined;
+            };
+
+            return recursiveSearch(path.split("/"), startElement);
+        };
+
         self.loadFile = function(file, printAfterLoad) {
             if (!file || !file.refs || !file.refs.hasOwnProperty("resource")) return;
 
@@ -206,11 +290,22 @@ $(function() {
         self.removeFile = function(file) {
             if (!file || !file.refs || !file.refs.hasOwnProperty("resource")) return;
 
+            var index = self.listHelper.paginatedItems().indexOf(file) + 1;
+            if (index >= self.listHelper.paginatedItems().length)
+                index = index - 2;
+            if (index < 0)
+                index = 0;
+
+            var filenameToFocus = undefined;
+            var fileToFocus = self.listHelper.paginatedItems()[index];
+            if (fileToFocus)
+                filenameToFocus = fileToFocus.name;
+
             $.ajax({
                 url: file.refs.resource,
                 type: "DELETE",
                 success: function() {
-                    self.requestData();
+                    self.requestData(undefined, filenameToFocus, self.pathByElement(file.parent));
                 }
             });
         };
@@ -352,7 +447,7 @@ $(function() {
         };
 
         self.onDataUpdaterReconnect = function() {
-            self.requestData();
+            self.requestData(undefined, undefined, self.currentPath());
         };
 
         self.onUserLoggedIn = function(user) {
@@ -397,7 +492,7 @@ $(function() {
                     filename = data.result.files.local.name;
                     location = "local";
                 }
-                self.requestData(filename, location);
+                self.requestData(filename, location, self.currentPath());
 
                 if (_.endsWith(filename.toLowerCase(), ".stl")) {
                     self.slicing.show(location, filename);
@@ -442,6 +537,8 @@ $(function() {
                     done: gcode_upload_done,
                     fail: gcode_upload_fail,
                     progressall: gcode_upload_progress
+                }).bind('fileuploadsubmit', function(e, data) {
+                    data.formData = { path: self.currentPath() };
                 });
             }
 
@@ -464,6 +561,8 @@ $(function() {
                     done: gcode_upload_done,
                     fail: gcode_upload_fail,
                     progressall: gcode_upload_progress
+                }).bind('fileuploadsubmit', function(e, data) {
+                    data.formData = { path: self.currentPath() };
                 });
             }
 
@@ -585,20 +684,20 @@ $(function() {
 
         self.onEventUpdatedFiles = function(payload) {
             if (payload.type == "gcode") {
-                self.requestData();
+                self.requestData(undefined, undefined, self.currentPath());
             }
         };
 
         self.onEventSlicingDone = function(payload) {
-            self.requestData();
+            self.requestData(undefined, undefined, self.currentPath());
         };
 
         self.onEventMetadataAnalysisFinished = function(payload) {
-            self.requestData();
+            self.requestData(undefined, undefined, self.currentPath());
         };
 
         self.onEventMetadataStatisticsUpdated = function(payload) {
-            self.requestData();
+            self.requestData(undefined, undefined, self.currentPath());
         };
     }
 

@@ -3,6 +3,10 @@
         <span class="icon-wrench"></span>
     </a>
     <ul class="dropdown-menu">
+        <li><a href="#" data-bind="click: function() { $root.listStyle('folders_files'); }"><i class="icon-ok" data-bind="style: {visibility: listStyle() == 'folders_files' ? 'visible' : 'hidden'}"></i> {{ _('Sort by Folders, Files') }}</a></li>
+        <li><a href="#" data-bind="click: function() { $root.listStyle('files_folders'); }"><i class="icon-ok" data-bind="style: {visibility: listStyle() == 'files_folders' ? 'visible' : 'hidden'}"></i> {{ _('Sort by Files, Folders') }}</a></li>
+        <li><a href="#" data-bind="click: function() { $root.listStyle('mixed'); }"><i class="icon-ok" data-bind="style: {visibility: listStyle() == 'mixed' ? 'visible' : 'hidden'}"></i> {{ _('Mixed') }}</a></li>
+        <li class="divider"></li>
         <li><a href="#" data-bind="click: function() { $root.listHelper.changeSorting('name'); }"><i class="icon-ok" data-bind="style: {visibility: listHelper.currentSorting() == 'name' ? 'visible' : 'hidden'}"></i> {{ _('Sort by name') }} ({{ _('ascending') }})</a></li>
         <li><a href="#" data-bind="click: function() { $root.listHelper.changeSorting('upload'); }"><i class="icon-ok" data-bind="style: {visibility: listHelper.currentSorting() == 'upload' ? 'visible' : 'hidden'}"></i> {{ _('Sort by upload date') }} ({{ _('descending') }})</a></li>
         <li><a href="#" data-bind="click: function() { $root.listHelper.changeSorting('size'); }"><i class="icon-ok" data-bind="style: {visibility: listHelper.currentSorting() == 'size' ? 'visible' : 'hidden'}"></i> {{ _('Sort by file size') }} ({{ _('descending') }})</a></li>
