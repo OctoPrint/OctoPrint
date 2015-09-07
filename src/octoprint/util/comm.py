@@ -269,7 +269,7 @@ class MachineCom(object):
 			sending=self._pluginManager.get_hooks("octoprint.comm.protocol.gcode.sending"),
 			sent=self._pluginManager.get_hooks("octoprint.comm.protocol.gcode.sent")
 		)
-		self._recieved_message_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.gcode.recieved")
+		self._received_message_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.gcode.received")
 
 		self._printer_action_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.action")
 		self._gcodescript_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.scripts")
@@ -1407,13 +1407,14 @@ class MachineCom(object):
 			self._log("WARN: While reading last line: %s" % e)
 			self._log("Recv: %r" % ret)
 
-		for name, hook in self._recieved_message_hooks.items():
+		for name, hook in self._received_message_hooks.items():
 			try:
 				ret = hook(self, ret)
 			except:
 				self._logger.exception("Error while processing hook {name}:".format(**locals()))
-		if ret is None:
-			return ""
+			else:
+				if ret is None:
+					return ""
 
 		return ret
 
