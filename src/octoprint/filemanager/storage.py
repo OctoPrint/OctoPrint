@@ -10,6 +10,7 @@ import logging
 import os
 import pylru
 import tempfile
+import shutil
 
 import octoprint.filemanager
 
@@ -112,6 +113,15 @@ class StorageInterface(object):
 		"""
 		raise NotImplementedError()
 
+	def move_folder(self, oldpath, newpath):
+		"""
+		Moves the folder ``oldpath`` to ``newpath``
+
+		:param string oldpath: path to the old folder
+		:param string newpath: path to the new folder
+		"""
+		raise NotImplementedError()
+
 	def add_file(self, path, file_object, printer_profile=None, links=None, allow_overwrite=False):
 		"""
 		Adds the file ``file_object`` as ``path``
@@ -133,6 +143,15 @@ class StorageInterface(object):
 		in the metadata and deleting all links pointing to the file.
 
 		:param string path: path of the file to remove
+		"""
+		raise NotImplementedError()
+
+	def move_file(self, oldpath, newpath):
+		"""
+		Moves the file ``oldpath`` to ``newpath``
+
+		:param string oldpath: path to the old file
+		:param string newpath: path to the new file
 		"""
 		raise NotImplementedError()
 
@@ -414,6 +433,25 @@ class LocalFileStorage(StorageInterface):
 		import shutil
 		shutil.rmtree(folder_path)
 
+	def move_folder(self, oldpath, newpath):
+		oldpath, oldname = self.sanitize(oldpath)
+		newpath, newname = self.sanitize(newpath)
+
+		oldfolder_path = os.path.join(oldpath, oldname)
+		if not os.path.exists(oldfolder_path):
+			return
+		if not os.path.isdir(oldfolder_path):
+			raise RuntimeError("{name} in {path} is not a folder".format(**locals()))
+
+		newfolder_path = os.path.join(newpath, newname)
+		if os.path.exists(newfolder_path):
+			return
+
+		try:
+			shutil.move(oldfolder_path, newfolder_path)
+		except Exception as e:
+			raise RuntimeError("Could not move/rename {oldname} in {oldpath} to {newname} in {newpath}".format(**locals()), e)
+
 	def add_file(self, path, file_object, printer_profile=None, links=None, allow_overwrite=False):
 		path, name = self.sanitize(path)
 		if not octoprint.filemanager.valid_file_type(name):
@@ -487,6 +525,38 @@ class LocalFileStorage(StorageInterface):
 							m["links"].remove(link)
 			del metadata[name]
 			self._save_metadata(path, metadata)
+
+	def move_file(self, oldpath, newpath):
+		oldpath, oldname = self.sanitize(oldpath)
+		newpath, newname = self.sanitize(newpath)
+
+		oldmetadata = self._get_metadata(oldpath)
+		newmetadata = self._get_metadata(newpath)
+
+		oldfile_path = os.path.join(oldpath, oldname)
+		if not os.path.exists(oldfile_path):
+			return
+		if not os.path.isfile(oldfile_path):
+			raise RuntimeError("{name} in {path} is not a file".format(**locals()))
+
+		newfile_path = os.path.join(newpath, newname)
+		if os.path.exists(newfile_path):
+			return
+
+		try:
+			shutil.move(oldfile_path, newfile_path)
+		except Exception as e:
+			raise RuntimeError("Could not move/rename {oldname} in {oldpath} to {newname} in {newpath}".format(**locals()), e)
+
+		if oldname in oldmetadata:
+			metadata = oldmetadata[oldname]
+			del metadata[oldname]
+			self._save_metadata(oldpath, oldmetadata)
+
+			newmetadata[newname] = metadata
+			newmetadata[newname]["hash"] = self._create_hash(os.path.join(newpath, newname))
+			self._save_metadata(newpath, newmetadata)
+
 
 	def get_metadata(self, path):
 		path, name = self.sanitize(path)

@@ -344,6 +344,10 @@ class FileManager(object):
 		self._storage(destination).remove_file(path)
 		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
 
+	def move_file(self, destination, oldpath, newpath):
+		self._storage(destination).move_file(oldpath, newpath)
+		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
+
 	def add_folder(self, destination, path, ignore_existing=True):
 		folder_path = self._storage(destination).add_folder(path, ignore_existing=ignore_existing)
 		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))

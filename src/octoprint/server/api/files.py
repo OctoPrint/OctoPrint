@@ -325,7 +325,9 @@ def gcodeFileCommand(filename, target):
 	# valid file commands, dict mapping command name to mandatory parameters
 	valid_commands = {
 		"select": [],
-		"slice": []
+		"slice": [],
+		"move": ["newpath"],
+		"rename": ["newpath"],
 	}
 
 	command, data, response = get_json_command_from_request(request, valid_commands)
@@ -457,6 +459,8 @@ def gcodeFileCommand(filename, target):
 		r = make_response(jsonify(result), 202)
 		r.headers["Location"] = location
 		return r
+	elif command == "mode" or command == "rename":
+		fileManager.move_file(target, filename, data["newpath"])
 
 	return NO_CONTENT
 
