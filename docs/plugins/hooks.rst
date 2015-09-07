@@ -167,7 +167,9 @@ octoprint.comm.protocol.gcode.received
 .. py:function:: hook(comm_instance, line, *args, **kwargs)
 
    Get the returned lines sent by the printer. Handlers should return the received line or in any case, the modified
-   version of it.
+   version of it. If the the handler returns None, processing will be aborted and the communication layer will get an
+   empty string as the received line. Note that Python functions will also automatically return ``None`` if an empty
+   ``return`` statement is used or just nothing is returned explicitely from the handler.
 
    **Example:**
 
