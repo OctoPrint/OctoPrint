@@ -15,6 +15,10 @@ $(function() {
 
         self.currentUser = ko.observable(undefined);
 
+        self.elementUsernameInput = undefined;
+        self.elementPasswordInput = undefined;
+        self.elementLoginButton = undefined;
+
         self.userMenuText = ko.computed(function() {
             if (self.loggedIn()) {
                 return self.username();
@@ -103,7 +107,7 @@ $(function() {
 
         self.onLoginUserKeyup = function(data, event) {
             if (event.keyCode == 13) {
-                $("#login_pass").focus();
+                self.elementPasswordInput.focus();
             }
         };
 
@@ -119,6 +123,18 @@ $(function() {
 
         self.onDataUpdaterReconnect = function() {
             self.requestData();
+        };
+
+        self.onStartup = function() {
+            self.elementUsernameInput = $("#login_user");
+            self.elementPasswordInput = $("#login_pass");
+            self.elementLoginButton = $("#login_button");
+            if (self.elementUsernameInput && self.elementUsernameInput.length
+                && self.elementLoginButton && self.elementLoginButton.length) {
+                self.elementLoginButton.blur(function() {
+                    self.elementUsernameInput.focus();
+                })
+            }
         };
 
         self.onStartupComplete = function() {
