@@ -1077,11 +1077,12 @@ class PluginManager(object):
 				except:
 					self.logger.exception("Error while trying to retrieve sorting order for plugin {}".format(impl[0]))
 
-				try:
-					int(sorting_value)
-				except ValueError:
-					self.logger.warn("The order value returned by {} for sorting context {} is not a valid integer, ignoring it".format(impl[0], sorting_context))
-					sorting_value = None
+				if sorting_value is not None:
+					try:
+						int(sorting_value)
+					except ValueError:
+						self.logger.warn("The order value returned by {} for sorting context {} is not a valid integer, ignoring it".format(impl[0], sorting_context))
+						sorting_value = None
 
 			return sorting_value is None, sorting_value, impl[0]
 
