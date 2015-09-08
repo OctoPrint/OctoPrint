@@ -53,6 +53,7 @@ date of first contribution):
   * [Andrew Erickson](https://github.com/aerickson)
   * [Nicanor Romero Venier](https://github.com/nicanor-romero)
   * [Thomas Hou](https://github.com/masterhou)
+  * [Mark Bastiaans](https://github.com/markbastiaans)
   * [Kevin Murphy](https://github.com/kevingelion)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
