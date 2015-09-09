@@ -227,8 +227,10 @@ def passive_login():
 		user = flask.ext.login.current_user
 
 	if user is not None and not user.is_anonymous():
-		flask.g.user = user
 		flask.ext.principal.identity_changed.send(flask.current_app._get_current_object(), identity=flask.ext.principal.Identity(user.get_id()))
+		if hasattr(user, "get_session"):
+			flask.session["usersession.id"] = user.get_session()
+		flask.g.user = user
 		return flask.jsonify(user.asDict())
 	elif settings().getBoolean(["accessControl", "autologinLocal"]) \
 			and settings().get(["accessControl", "autologinAs"]) is not None \
@@ -252,7 +254,7 @@ def passive_login():
 			logger = logging.getLogger(__name__)
 			logger.exception("Could not autologin user %s for networks %r" % (autologinAs, localNetworks))
 
-	return ("", 204)
+	return "", 204
 
 
 #~~ cache decorator for cacheable views

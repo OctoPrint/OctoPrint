@@ -28,13 +28,18 @@ class UserManager(object):
 	def login_user(self, user):
 		self._cleanup_sessions()
 
-		if user is None \
-		        or (isinstance(user, LocalProxy) and not isinstance(user._get_current_object(), User)) \
-		        or (not isinstance(user, LocalProxy) and not isinstance(user, User)):
+		if user is None:
+			return
+
+		if isinstance(user, LocalProxy):
+			user = user._get_current_object()
+
+		if not isinstance(user, User):
 			return None
 
 		if not isinstance(user, SessionUser):
 			user = SessionUser(user)
+
 		self._session_users_by_session[user.get_session()] = user
 
 		if not user.get_name() in self._session_users_by_username:
@@ -48,6 +53,9 @@ class UserManager(object):
 	def logout_user(self, user):
 		if user is None:
 			return
+
+		if isinstance(user, LocalProxy):
+			user = user._get_current_object()
 
 		if not isinstance(user, SessionUser):
 			return
@@ -146,12 +154,10 @@ class UserManager(object):
 			del self._session_users_by_username[username]
 
 	def findUser(self, username=None, session=None):
-		if session is not None:
-			for session in self._session_users_by_session:
-				user = self._session_users_by_session[session]
-				if username is None or username == user.get_name():
-					return user
-				break
+		if session is not None and session in self._session_users_by_session:
+			user = self._session_users_by_session[session]
+			if username is None or username == user.get_id():
+				return user
 
 		return None
 
