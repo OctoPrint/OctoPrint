@@ -283,11 +283,11 @@ def cached(timeout=5 * 60, key=lambda: "view/%s" % flask.request.path, unless=No
 			if not callable(refreshif) or not refreshif():
 				rv = _cache.get(cache_key)
 				if rv is not None:
-					logger.debug("Serving entry for {path} from cache".format(path=flask.request.path))
+					logger.debug("Serving entry for {path} from cache (key: {key})".format(path=flask.request.path, key=cache_key))
 					return rv
 
 			# get value from wrapped function
-			logger.debug("No cache entry or refreshing cache for {path}, calling wrapped function".format(path=flask.request.path))
+			logger.debug("No cache entry or refreshing cache for {path} (key: {key}), calling wrapped function".format(path=flask.request.path, key=cache_key))
 			rv = f(*args, **kwargs)
 
 			# do not store if the "unless_response" condition is true
