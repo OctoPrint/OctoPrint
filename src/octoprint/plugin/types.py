@@ -9,6 +9,9 @@ Please note that the plugin implementation types are documented in the section
 .. autoclass:: OctoPrintPlugin
    :show-inheritance:
 
+.. autoclass:: ReloadNeedingPlugin
+   :show-inheritance:
+
 """
 
 from __future__ import absolute_import
@@ -97,12 +100,18 @@ class OctoPrintPlugin(Plugin):
 
 
 class ReloadNeedingPlugin(Plugin):
-	pass
+	"""
+	Mixin for plugin types that need a reload of the UI in order to become usable.
+	"""
 
 class StartupPlugin(OctoPrintPlugin, SortablePlugin):
 	"""
 	The ``StartupPlugin`` allows hooking into the startup of OctoPrint. It can be used to start up additional services
 	on or just after the startup of the server.
+
+	``StartupPlugin`` is a :class:`~octoprint.plugin.core.SortablePlugin`. The
+	relevant sorting context for :meth:`on_startup` is ``StartupPlugin.on_startup``,
+	the one for :meth:`on_after_startup` will be ``StartupPlugin.on_after_startup``.
 	"""
 
 	def on_startup(self, host, port):
@@ -132,6 +141,9 @@ class ShutdownPlugin(OctoPrintPlugin, SortablePlugin):
 	The ``ShutdownPlugin`` allows hooking into the shutdown of OctoPrint. It's usually used in conjunction with the
 	:class:`StartupPlugin` mixin, to cleanly shut down additional services again that where started by the :class:`StartupPlugin`
 	part of the plugin.
+
+	``ShutdownPlugin`` is a :class:`~octoprint.plugin.core.SortablePlugin`.
+	The relevant sorting context will be ``ShutdownPlugin.on_shutdown``.
 	"""
 
 	def on_shutdown(self):
@@ -149,6 +161,8 @@ class AssetPlugin(OctoPrintPlugin, RestartNeedingPlugin):
 
 	A typical usage of the ``AssetPlugin`` functionality is to embed a custom view model to be used by templates injected
 	through a :class:`TemplatePlugin`.
+
+	``AssetPlugin`` is a :class:`~octoprint.plugins.core.RestartNeedingPlugin`.
 	"""
 
 	def get_asset_folder(self):
@@ -297,6 +311,8 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 	responsibility to ensure that all core functionality is still maintained.
 
 	Plugins can also add additional template types by implementing the :ref:`octoprint.ui.web.templatetypes <sec-plugins-hook-ui-web-templatetypes>` hook.
+
+	``TemplatePlugin`` is a :class:`~octoprint.plugin.core.ReloadNeedingPlugin`.
 	"""
 
 	def get_template_configs(self):
@@ -486,11 +502,163 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 
 
 class UiPlugin(OctoPrintPlugin, SortablePlugin):
+	"""
+	The ``UiPlugin`` mixin allows plugins to completely replace the UI served
+	by OctoPrint when requesting the main page hosted at `/`.
+
+	OctoPrint will query whether your mixin implementation will handle a
+	provided request by calling :meth:`~octoprint.plugin.UiPlugin.will_handle_ui` with the Flask
+	`Request <http://flask.pocoo.org/docs/0.10/api/#flask.Request>`_ object as
+	parameter. If you plugin returns `True` here, OctoPrint will next call
+	:meth:`~octoprint.plugin.UiPlugin.on_ui_render` with a couple of parameters like
+	- again - the Flask Request object and the render keyword arguments as
+	used by the default OctoPrint web interface. For more information see below.
+
+	There are two methods used in order to allow for caching of the actual
+	response sent to the client. Whatever a plugin implementation returns
+	from the call to its :meth:`~octoprint.plugin.UiPlugin.on_ui_render` method
+	will be cached server side. The cache will be emptied in case of explicit
+	no-cache headers sent by the client, or if the ``_refresh`` query parameter
+	on the request exists and is set to ``true``. To prevent caching of the
+	response altogether, a plugin may set no-cache headers on the returned
+	response as well.
+
+	``UiPlugin`` is a :class:`~octoprint.plugin.core.SortablePlugin`. The
+	relevant sorting context when acting as a UiPlugin is ``UiPlugin.will_handle_ui``.
+	The first plugin to return ``True`` will be the one whose ui will be used,
+	no further calls to :meth:`~octoprint.plugin.UiPlugin.on_ui_render` will be performed.
+
+	If implementations want to serve custom templates in the :meth:`~octoprint.plugin.UiPlugin.on_ui_render`
+	method it is recommended to also implement the :class:`~octoprint.plugin.TemplatePlugin`
+	mixin.
+
+	**Example**
+
+	What follows is a very simple example that renders a different (non functional and
+	only exemplary) UI if the requesting client has a UserAgent string hinting
+	at it being a mobile device:
+
+	.. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/dummy_mobile_ui/__init__.py
+	   :linenos:
+	   :tab-width: 4
+	   :caption: `dummy_mobile_ui/__init__.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/dummy_mobile_ui/__init__.py>`_
+
+	.. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/dummy_mobile_ui/templates/dummy_mobile_ui_index.jinja2
+	   :linenos:
+	   :tab-width: 4
+	   :caption: `dummy_mobile_ui/templates/dummy_mobile_ui_index.jinja2 <https://github.com/OctoPrint/Plugin-Examples/blob/master/dummy_mobile_ui/templates/dummy_mobile_ui_index.jinja2>`_
+
+	Try installing the above plugin ``dummy_mobile_ui`` (also available in the
+	`plugin examples repository <https://github.com/OctoPrint/Plugin-Examples/blob/master/dummy_mobile_ui>`_)
+	into your OctoPrint instance. If you access it from a regular desktop browser,
+	you should still see the default UI. However if you access it from a mobile
+	device (make sure to not have that request the desktop version of pages!)
+	you should see the very simple dummy page defined above.
+	"""
 
 	def will_handle_ui(self, request):
+		"""
+		Called by OctoPrint to determine if the mixin implementation will be
+		able to handle the ``request`` provided as a parameter.
+
+		Return ``True`` here to signal that your implementation will handle
+		the request and that the result of its :meth:`~octoprint.plugin.UiPlugin.on_ui_render` method
+		is what should be served to the user.
+
+		Arguments:
+		    request (flask.Request): A Flask `Request <http://flask.pocoo.org/docs/0.10/api/#flask.Request>`_
+		        object.
+
+		Returns:
+		    bool: ``True`` if the the implementation will serve the request,
+		        ``False`` otherwise.
+		"""
 		return False
 
 	def on_ui_render(self, now, request, render_kwargs):
+		"""
+		Called by OctoPrint to retrieve the response to send to the client
+		for the ``request`` to ``/``. Only called if :meth:`~octoprint.plugin.UiPlugin.will_handle_ui`
+		returned ``True``.
+
+		``render_kwargs`` will be a dictionary (whose contents are cached) which
+		will contain the following key and value pairs (note that not all
+		key value pairs contained in the dictionary are listed here, only
+		those you should depend on as a plugin developer at the current time):
+
+		.. list-table::
+		   :widths: 5 95
+
+		   * - debug
+		     - ``True`` if debug mode is enabled, ``False`` otherwise.
+		   * - firstRun
+		     - ``True`` if the server is being run for the first time (not
+		       configured yet), ``False`` otherwise.
+		   * - version
+		     - OctoPrint's version information. This is a ``dict`` with the
+		       following keys:
+
+		       .. list-table::
+		          :widths: 5 95
+
+		          * - number
+		            - The version number (e.g. ``x.y.z``)
+		          * - branch
+		            - The GIT branch from which the OctoPrint instance was built
+		              (e.g. ``master``)
+		          * - display
+		            - The full human readable version string, including the
+		              branch information (e.g. ``x.y.z (master branch)``
+
+		   * - uiApiKey
+		     - The UI API key to use for unauthorized API requests. This is
+		       freshly generated on every server restart.
+		   * - templates
+		     - Template data to render in the UI. Will be a ``dict`` containing entries
+		       for all known template types.
+
+		       The sub structure for each key will be as follows:
+
+		       .. list-table::
+		          :widths: 5 95
+
+		          * - order
+		            - A list of template names in the order they should appear
+		              in the final rendered page
+		          * - entries
+		            - The template entry definitions to render. Depending on the
+		              template type those are either 2-tuples of a name and a ``dict``
+		              or directly ``dicts`` with information regarding the
+		              template to render.
+
+		              For the possible contents of the data ``dicts`` see the
+		              :class:`~octoprint.plugin.TemplatePlugin` mixin.
+
+		   * - pluginNames
+		     - A list of names of :class:`~octoprint.plugin.TemplatePlugin`
+		       implementation that were enabled when creating the ``templates``
+		       value.
+		   * - locales
+		     - The locales for which there are translations available.
+
+		On top of that all additional template variables as provided by :meth:`~octoprint.plugin.TemplatePlugin.get_template_vars`
+		will be contained in the dictionary as well.
+
+		Arguments:
+		    now (datetime.datetime): The datetime instance representing "now"
+		        for this request, in case your plugin implementation needs this
+		        information.
+		    request (flask.Request): A Flask `Request <http://flask.pocoo.org/docs/0.10/api/#flask.Request>`_ object.
+		    render_kwargs (dict): The (cached) render keyword arguments that
+		        would usually be provided to the core UI render function.
+
+		Returns:
+		    flask.Response: Should return a Flask `Response <http://flask.pocoo.org/docs/0.10/api/#flask.Response>`_
+		        object that can be served to the requesting client directly. May be
+		        created with ``flask.make_response`` combined with something like
+		        ``flask.render_template``.
+		"""
+
 		return None
 
 
@@ -555,6 +723,8 @@ class WizardPlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 
 	       def get_wizard_version(self):
 	           return 1
+
+	``WizardPlugin`` is a :class:`~octoprint.plugin.core.ReloadNeedingPlugin`.
 	"""
 
 	def is_wizard_required(self):
@@ -859,6 +1029,8 @@ class BlueprintPlugin(OctoPrintPlugin, RestartNeedingPlugin):
 
 	   flask.url_for("plugin.myblueprintplugin.myEcho") # will return "/plugin/myblueprintplugin/echo"
 
+
+	``BlueprintPlugin`` implements :class:`~octoprint.plugins.core.RestartNeedingPlugin`.
 	"""
 
 	@staticmethod
