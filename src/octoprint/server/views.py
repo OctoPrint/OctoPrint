@@ -53,11 +53,25 @@ def index():
 				break
 
 	else:
+		wizard = bool(_templates["wizard"]["order"])
+		enable_accesscontrol = userManager is not None
+
+		render_kwargs.update(dict(
+			webcamStream=settings().get(["webcam", "stream"]),
+			enableTemperatureGraph=settings().get(["feature", "temperatureGraph"]),
+			enableAccessControl=enable_accesscontrol,
+			enableSdSupport=settings().get(["feature", "sdSupport"]),
+			gcodeMobileThreshold=settings().get(["gcodeViewer", "mobileSizeThreshold"]),
+			gcodeThreshold=settings().get(["gcodeViewer", "sizeThreshold"]),
+			wizard=wizard,
+			now=now,
+		))
+
 		# no plugin took an interest, we'll use the default UI
 		def make_default_ui():
 			r = make_response(render_template("index.jinja2", **render_kwargs))
 			if bool(render_kwargs["templates"]["wizard"]["order"]):
-				r = util.flask.add_non_caching_response_headers(response)
+				r = util.flask.add_non_caching_response_headers(r)
 			return r
 
 		cached = get_cached_view("_default", make_default_ui)
@@ -71,31 +85,19 @@ def index():
 def _get_render_kwargs(templates, plugin_names, plugin_vars, now):
 	#~~ a bunch of settings
 
-	enable_accesscontrol = userManager is not None
 	first_run = settings().getBoolean(["server", "firstRun"])
 	locales = dict((l.language, dict(language=l.language, display=l.display_name, english=l.english_name)) for l in LOCALES)
 
 	#~~ prepare full set of template vars for rendering
 
-	wizard = bool(templates["wizard"]["order"])
 	render_kwargs = dict(
-		webcamStream=settings().get(["webcam", "stream"]),
-		enableTemperatureGraph=settings().get(["feature", "temperatureGraph"]),
-		enableAccessControl=enable_accesscontrol,
-		enableSdSupport=settings().get(["feature", "sdSupport"]),
-		firstRun=first_run,
 		debug=debug,
-		version=VERSION,
-		display_version=DISPLAY_VERSION,
-		branch=BRANCH,
-		gcodeMobileThreshold=settings().get(["gcodeViewer", "mobileSizeThreshold"]),
-		gcodeThreshold=settings().get(["gcodeViewer", "sizeThreshold"]),
+		firstRun=first_run,
+		version=dict(number=VERSION, display=DISPLAY_VERSION, branch=BRANCH),
 		uiApiKey=UI_API_KEY,
 		templates=templates,
 		pluginNames=plugin_names,
 		locales=locales,
-		wizard=wizard,
-		now=now
 	)
 	render_kwargs.update(plugin_vars)
 
