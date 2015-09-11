@@ -416,14 +416,13 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			if not target in check_targets:
 				continue
 
-			populated_check = self._populated_check(target, check)
-
 			try:
+				populated_check = self._populated_check(target, check)
 				target_information, target_update_available, target_update_possible = self._get_current_version(target, populated_check, force=force)
 				if target_information is None:
 					target_information = dict()
 			except exceptions.UnknownCheckType:
-				self._logger.warn("Unknown update check type for %s" % target)
+				self._logger.warn("Unknown update check type for target {}".format(target))
 				continue
 
 			target_information = dict_merge(dict(local=dict(name="unknown", value="unknown"), remote=dict(name="unknown", value="unknown")), target_information)
@@ -669,6 +668,9 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			raise exceptions.RestartFailed()
 
 	def _populated_check(self, target, check):
+		if not "type" in check:
+			raise exceptions.UnknownCheckType()
+
 		result = dict(check)
 
 		if target == "octoprint":
@@ -702,30 +704,6 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 	def _send_client_message(self, message_type, data=None):
 		self._plugin_manager.send_plugin_message(self._identifier, dict(type=message_type, data=data))
-
-	def _populated_check(self, target, check):
-		result = dict(check)
-
-		if target == "octoprint":
-			from flask.ext.babel import gettext
-			result["displayName"] = check.get("displayName", gettext("OctoPrint"))
-			result["displayVersion"] = check.get("displayVersion", "{octoprint_version}")
-
-			from octoprint._version import get_versions
-			versions = get_versions()
-			if check["type"] == "github_commit":
-				result["current"] = versions.get("full-revisionid", versions.get("full", "unknown"))
-			else:
-				result["current"] = versions["version"]
-		else:
-			result["displayName"] = check.get("displayName", target)
-			result["displayVersion"] = check.get("displayVersion", check.get("current", "unknown"))
-			if check["type"] in ("github_commit"):
-				result["current"] = check.get("current", None)
-			else:
-				result["current"] = check.get("current", check.get("displayVersion", None))
-
-		return result
 
 	def _get_version_checker(self, target, check):
 		"""
