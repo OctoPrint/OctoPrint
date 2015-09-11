@@ -651,6 +651,24 @@ class BlueprintPlugin(OctoPrintPlugin, RestartNeedingPlugin):
 			return f
 		return decorator
 
+	@staticmethod
+	def errorhandler(code_or_exception):
+		"""
+		A decorator to mark errorhandlings methods in your BlueprintPlugin subclass. Works just the same as Flask's
+		own ``errorhandler`` decorator available on blueprints.
+
+		See `the documentation for flask.Blueprint.errorhandler <http://flask.pocoo.org/docs/0.10/api/#flask.Blueprint.errorhandler>`_
+		and `the documentation for flask.Flask.errorhandler <http://flask.pocoo.org/docs/0.10/api/#flask.Flask.errorhandler>`_ for more
+		information.
+		"""
+		from collections import defaultdict
+		def decorator(f):
+			if not hasattr(f, "_blueprint_error_handler") or f._blueprint_error_handler is None:
+				f._blueprint_error_handler = defaultdict(list)
+			f._blueprint_error_handler[f.__name__].append(code_or_exception)
+			return f
+		return decorator
+
 	def get_blueprint(self):
 		"""
 		Creates and returns the blueprint for your plugin. Override this if you want to define and handle your blueprint yourself.
@@ -669,6 +687,9 @@ class BlueprintPlugin(OctoPrintPlugin, RestartNeedingPlugin):
 				for blueprint_rule in f._blueprint_rules[member]:
 					rule, options = blueprint_rule
 					blueprint.add_url_rule(rule, options.pop("endpoint", f.__name__), view_func=f, **options)
+			if hasattr(f, "_blueprint_error_handler") and member in f._blueprint_error_handler:
+				for code_or_exception in f._blueprint_error_handler[member]:
+					blueprint.errorhandler(code_or_exception)(f)
 		return blueprint
 
 	def get_blueprint_kwargs(self):
