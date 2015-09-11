@@ -80,7 +80,7 @@ class OctoPrintPlugin(Plugin):
 	   and if not creating it before returning it. Injected by the plugin core system upon initialization of the
 	   implementation.
 
-    .. automethod:: get_plugin_data_folder
+	.. automethod:: get_plugin_data_folder
 	"""
 
 	def get_plugin_data_folder(self):
