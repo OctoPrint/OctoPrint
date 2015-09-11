@@ -81,7 +81,7 @@ def on_identity_loaded(sender, identity):
 	if user is None:
 		return
 
-	identity.provides.add(UserNeed(user.get_name()))
+	identity.provides.add(UserNeed(user.get_id()))
 	if user.is_user():
 		identity.provides.add(RoleNeed("user"))
 	if user.is_admin():
@@ -98,9 +98,9 @@ def load_user(id):
 
 	if userManager is not None:
 		if sessionid:
-			return userManager.findUser(username=id, session=sessionid)
+			return userManager.findUser(userid=id, session=sessionid)
 		else:
-			return userManager.findUser(username=id)
+			return userManager.findUser(userid=id)
 	return users.DummyUser()
 
 
