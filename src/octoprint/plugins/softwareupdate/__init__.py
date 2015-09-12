@@ -59,6 +59,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				self._refresh_configured_checks = False
 				self._configured_checks = self._settings.get(["checks"], merged=True)
 				update_check_hooks = self._plugin_manager.get_hooks("octoprint.plugin.softwareupdate.check_config")
+				check_providers = self._settings.get(["check_providers"], merged=True)
 				for name, hook in update_check_hooks.items():
 					try:
 						hook_checks = hook()
@@ -66,9 +67,23 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 						self._logger.exception("Error while retrieving update information from plugin {name}".format(**locals()))
 					else:
 						for key, data in hook_checks.items():
+							check_providers[key] = name
 							if key in self._configured_checks:
 								data = dict_merge(data, self._configured_checks[key])
 							self._configured_checks[key] = data
+				self._settings.set(["check_providers"], check_providers)
+				self._settings.save()
+
+				# we only want to process checks that came from plugins for
+				# which the plugins are still installed and enabled
+				config_checks = self._settings.get(["checks"])
+				plugin_and_not_enabled = lambda k: k in check_providers and \
+				                                   not check_providers[k] in self._plugin_manager.enabled_plugins
+				obsolete_plugin_checks = filter(plugin_and_not_enabled,
+				                                config_checks.keys())
+				for key in obsolete_plugin_checks:
+					self._logger.debug("Check for key {} was provided by plugin {} that's no longer available, ignoring it".format(key, check_providers[key]))
+					del self._configured_checks[key]
 
 			return self._configured_checks
 
@@ -134,6 +149,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				},
 			},
 			"pip_command": None,
+			"check_providers": {},
 
 			"cache_ttl": 24 * 60,
 		}
@@ -406,7 +422,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				if target_information is None:
 					target_information = dict()
 			except exceptions.UnknownCheckType:
-				self._logger.warn("Unknown update check type for target {}".format(target))
+				self._logger.warn("Unknown update check type for target {}: {}".format(target, check.get("type", "<n/a>")))
 				continue
 
 			target_information = dict_merge(dict(local=dict(name="unknown", value="unknown"), remote=dict(name="unknown", value="unknown")), target_information)
