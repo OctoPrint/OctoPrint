@@ -1,4 +1,5 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
+
 import sys
 from octoprint.daemon import Daemon
 from octoprint.server import Server
