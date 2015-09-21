@@ -689,13 +689,6 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		if not "type" in check:
 			raise exceptions.ConfigurationInvalid("no check type defined")
 
-		if target == "octoprint":
-			from octoprint._version import get_versions
-			from flask.ext.babel import gettext
-			check["displayName"] = gettext("OctoPrint")
-			check["displayVersion"] = "{octoprint_version}"
-			check["current"] = get_versions()["version"]
-
 		check_type = check["type"]
 		if check_type == "github_release":
 			return version_checks.github_release
