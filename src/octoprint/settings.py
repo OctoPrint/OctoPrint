@@ -1072,7 +1072,7 @@ class Settings(object):
 	def saveScript(self, script_type, name, script):
 		script_folder = self.getBaseFolder("scripts")
 		filename = os.path.realpath(os.path.join(script_folder, script_type, name))
-		if not filename.startswith(script_folder):
+		if not filename.startswith(os.path.realpath(script_folder)):
 			# oops, jail break, that shouldn't happen
 			raise ValueError("Invalid script path to save to: {filename} (from {script_type}:{name})".format(**locals()))
 

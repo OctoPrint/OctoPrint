@@ -12,6 +12,12 @@ way and could be extracted into a separate Python module in the future.
 .. autoclass:: Plugin
    :members:
 
+.. autoclass:: RestartNeedingPlugin
+   :members:
+
+.. autoclass:: SortablePlugin
+   :members:
+
 """
 
 from __future__ import absolute_import
@@ -1077,11 +1083,12 @@ class PluginManager(object):
 				except:
 					self.logger.exception("Error while trying to retrieve sorting order for plugin {}".format(impl[0]))
 
-				try:
-					int(sorting_value)
-				except ValueError:
-					self.logger.warn("The order value returned by {} for sorting context {} is not a valid integer, ignoring it".format(impl[0], sorting_context))
-					sorting_value = None
+				if sorting_value is not None:
+					try:
+						int(sorting_value)
+					except ValueError:
+						self.logger.warn("The order value returned by {} for sorting context {} is not a valid integer, ignoring it".format(impl[0], sorting_context))
+						sorting_value = None
 
 			return sorting_value is None, sorting_value, impl[0]
 
@@ -1279,10 +1286,34 @@ class Plugin(object):
 		pass
 
 class RestartNeedingPlugin(Plugin):
-	pass
+	"""
+	Mixin for plugin types that need a restart in order to be enabled.
+	"""
 
 class SortablePlugin(Plugin):
+	"""
+	Mixin for plugin types that are sortable.
+	"""
+
 	def get_sorting_key(self, context=None):
+		"""
+		Returns the sorting key to use for the implementation in the specified ``context``.
+
+		May return ``None`` if order is irrelevant.
+
+		Implementations returning None will be ordered by plugin identifier
+		after all implementations which did return a sorting key value that was
+		not None sorted by that.
+
+		Arguments:
+		    context (str): The sorting context for which to provide the
+		        sorting key value.
+
+		Returns:
+		    int or None: An integer signifying the sorting key value of the plugin
+		        (sorting will be done ascending), or None if the implementation
+		        doesn't care about calling order.
+		"""
 		return None
 
 class PluginNeedsRestart(Exception):

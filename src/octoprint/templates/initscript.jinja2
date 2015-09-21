@@ -25,9 +25,9 @@
     var SOCKJS_CLOSE_NORMAL = 1000;
 
     var UI_API_KEY = "{{ uiApiKey }}";
-    var VERSION = "{{ version }}";
-    var DISPLAY_VERSION = "{{ display_version }}";
-    var BRANCH = "{{ branch }}";
+    var VERSION = "{{ version.number }}";
+    var DISPLAY_VERSION = "{{ version.display }}";
+    var BRANCH = "{{ version.branch }}";
     var LOCALE = "{{ g.locale }}";
     var AVAILABLE_LOCALES = {{ locales|tojson }};
 

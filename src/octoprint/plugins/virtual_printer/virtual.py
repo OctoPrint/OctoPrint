@@ -235,7 +235,7 @@ class VirtualPrinter(object):
 					self._deleteSdFile(filename)
 			elif "M114" in data:
 				# send dummy position report
-				output = "C: X:10.00 Y:3.20 Z:5.20 E:1.24"
+				output = "C: X:{} Y:{} Z:{} E:{}".format(self._lastX, self._lastY, self._lastZ, self._lastE)
 				if not self._okBeforeCommandOutput:
 					output = "ok " + output
 				self._send(output)
@@ -243,6 +243,8 @@ class VirtualPrinter(object):
 			elif "M117" in data:
 				# we'll just use this to echo a message, to allow playing around with pause triggers
 				self._send("echo:%s" % re.search("M117\s+(.*)", data).group(1))
+			elif "M400" in data:
+				self.buffered.join()
 			elif "M999" in data:
 				# mirror Marlin behaviour
 				self._send("Resend: 1")
@@ -674,6 +676,7 @@ class VirtualPrinter(object):
 				continue
 
 			self._performMove(line)
+			self.buffered.task_done()
 
 	def write(self, data):
 		if self._debug_drop_connection:

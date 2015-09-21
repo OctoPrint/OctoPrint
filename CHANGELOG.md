@@ -47,6 +47,8 @@
 * It's not possible anymore to select files that are not machinecode files (e.g.
   GCODE) for printing on the file API.
 * Changes to a user's personal settings via the UI now propagate across sessions.
+* [#1047](https://github.com/foosel/OctoPrint/issues/1047) - Fixed 90 degree
+  webcam rotation for iOS Safari.
 
 ## 1.2.6 (2015-09-02)
 
