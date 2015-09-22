@@ -1,65 +1,80 @@
-var OctoPrint = (function($) {
-    var self = {};
+var OctoPrint = (function($, _) {
+    var exports = {};
 
-    self.options = {
+    exports.options = {
         "baseurl": undefined,
         "apikey": undefined
     };
 
-    self.ajax = function(opts) {
-        var url = self.options.baseurl + opts.url;
+    exports.ajax = function(opts) {
+        opts = opts || {};
+
+        var url = exports.options.baseurl;
+        if (!_.endsWith(url, "/")) {
+            url = url + "/";
+        }
+        url += opts.url;
+
         var headers = $.extend({}, opts.headers || {});
-        headers["X-Api-Key"] = self.options.apikey;
+        headers["X-Api-Key"] = exports.options.apikey;
 
         var params = $.extend({}, opts);
         params.url = url;
+        params.headers = headers;
 
-        $.ajax(params);
+        return $.ajax(params);
     };
 
-    self.get = function(opts) {
+    exports.get = function(opts) {
+        opts = opts || {};
+
         var params = $.extend({}, opts);
         params.type = "GET";
 
-        self.ajax(params);
+        return exports.ajax(params);
     };
 
-    self.post = function(opts) {
+    exports.post = function(data, opts) {
+        opts = opts || {};
+
         var headers = $.extend({}, opts.headers || {});
         headers["Cache-Control"] = "no-cache";
 
         var params = $.extend({}, opts);
         params.type = "POST";
-        params.data = JSON.stringify(data);
+        params.data = data;
         params.headers = headers;
 
-        self.ajax(params);
+        return exports.ajax(params);
     };
 
-    self.delete = function(opts) {
+    exports.delete = function(opts) {
+        opts = opts || {};
+
         var params = $.extend({}, opts);
         params.type = "DELETE";
 
-        self.ajax(params);
+        return exports.ajax(params);
     };
 
-    self.get_json = function(opts) {
+    exports.getJson = function(opts) {
+        opts = opts || {};
+
         var params = $.extend({}, opts);
         params.dataType = "json";
 
-        self.get(params);
+        return exports.get(params);
     };
 
-    self.post_json = function(opts) {
-        var data = opts.data || {};
+    exports.postJson = function(data, opts) {
+        opts = opts || {};
 
         var params = $.extend({}, opts);
         params.contentType = "application/json; charset=UTF-8";
         params.dataType = "json";
-        params.data = JSON.stringify(data);
 
-        self.post(params);
+        return exports.post(JSON.stringify(data), params);
     };
 
-    return self;
-})($);
+    return exports;
+})($, _);

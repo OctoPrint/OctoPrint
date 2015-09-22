@@ -1,21 +1,89 @@
 OctoPrint.files = (function($, _) {
-    var self = {};
+    var exports = {};
 
-    self.get = function(opts) {
-        var url = "api/files";
-        var origin = opts.origin || "";
+    exports.get = function(opts) {
+        opts = opts || {};
 
-        if (origin && _.contains(["local", "sdcard"], origin)) {
-            url += origin + "/"
+        var path = "api/files";
+        var location = opts.location || "";
+
+        if (location && _.contains(["local", "sdcard"], location)) {
+            path += "/" + location;
         }
 
-        OctoPrint.get_json({
-            url: url,
-            success: opts.success,
-            error: opts.error,
-            complete: opts.complete
-        })
+        var params = _.extend({}, opts);
+        params.url = path;
+
+        return OctoPrint.getJson(params);
     };
 
-    return self;
+    exports.listAll = function(opts) {
+        opts = opts || {};
+
+        if (opts.location) {
+            opts.location = undefined;
+        }
+
+        return exports.get(opts);
+    };
+
+    exports.listAllForLocation = function(location, opts) {
+        opts = opts || {};
+        opts.location = location;
+
+        return exports.get(opts);
+    };
+
+    exports.getInfoForFile = function(location, filename, opts) {
+        opts = opts || {};
+
+        var params = $.extend({}, opts);
+        params.url = exports.resourceForFile(location, filename);
+
+        return OctoPrint.getJson(params);
+    };
+
+    exports.selectFile = function(location, filename, print, opts) {
+        print = print || false;
+
+        var data = {
+            print: print
+        };
+
+        return exports.issueFileCommand(location, filename, "select", data, opts);
+    };
+
+    exports.sliceFile = function(location, filename, parameters, opts) {
+        parameters = parameters || {};
+
+        return exports.issueFileCommand(location, filename, "slice", parameters, opts);
+    };
+
+    exports.issueFileCommand = function(location, filename, command, data, opts) {
+        opts = opts || {};
+        data = data || {};
+
+        var payload = $.extend({}, data);
+        payload.command = command;
+
+        var params = $.extend({}, opts);
+        params.url = exports.resourceForFile(location, filename);
+
+        return OctoPrint.postJson(payload, params);
+    };
+
+    exports.deleteFile = function(location, filename, opts) {
+        opts = opts || {};
+
+        var params = $.extend({}, opts);
+        params.url = exports.resourceForFile(location, filename);
+
+        return OctoPrint.delete(opts);
+    };
+
+    exports.resourceForFile = function(location, filename) {
+        return "api/files/" + location + "/" + filename;
+    };
+
+    return exports;
 })($, _);
