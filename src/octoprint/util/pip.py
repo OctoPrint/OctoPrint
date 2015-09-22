@@ -21,14 +21,13 @@ class PipCaller(object):
 	def __init__(self, configured=None):
 		self._logger = logging.getLogger(__name__)
 
-		self._configured = configured
+		self.configured = configured
 
 		self._command = None
 		self._version = None
 
-		self._command, self._version = self._find_pip()
+		self.trigger_refresh()
 
-		self.refresh = False
 		self.on_log_call = lambda *args, **kwargs: None
 		self.on_log_stdout = lambda *args, **kwargs: None
 		self.on_log_stderr = lambda *args, **kwargs: None
@@ -57,10 +56,18 @@ class PipCaller(object):
 	def available(self):
 		return self._command is not None
 
+	def trigger_refresh(self):
+		try:
+			self._command, self._version = self._find_pip()
+		except:
+			self._logger.exception("Error while discovering pip command")
+			self._command = None
+			self._version = None
+		self.refresh = False
+
 	def execute(self, *args):
 		if self.refresh:
-			self._command, self._version = self._find_pip()
-			self.refresh = False
+			self.trigger_refresh()
 
 		if self._command is None:
 			raise UnknownPip()
@@ -111,7 +118,7 @@ class PipCaller(object):
 
 
 	def _find_pip(self):
-		pip_command = self._configured
+		pip_command = self.configured
 		pip_version = None
 
 		if pip_command is None:
