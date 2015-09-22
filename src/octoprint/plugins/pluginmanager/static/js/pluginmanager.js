@@ -6,6 +6,12 @@ $(function() {
         self.settingsViewModel = parameters[1];
         self.printerState = parameters[2];
 
+        self.config_repositoryUrl = ko.observable();
+        self.config_repositoryTtl = ko.observable();
+        self.config_pipCommand = ko.observable();
+
+        self.configurationDialog = $("#settings_plugin_pluginmanager_configurationdialog");
+
         self.plugins = new ItemListHelper(
             "plugin.pluginmanager.installedplugins",
             {
@@ -72,6 +78,10 @@ $(function() {
 
         self.followDependencyLinks = ko.observable(false);
 
+        self.pipAvailable = ko.observable(false);
+        self.pipCommand = ko.observable();
+        self.pipVersion = ko.observable();
+
         self.working = ko.observable(false);
         self.workingTitle = ko.observable();
         self.workingDialog = undefined;
@@ -86,11 +96,15 @@ $(function() {
         };
 
         self.enableUninstall = function(data) {
-            return self.enableManagement() && !data.bundled && data.key != 'pluginmanager' && !data.pending_uninstall;
+            return self.enableManagement()
+                && (data.origin != "entry_point" || self.pipAvailable())
+                && !data.bundled
+                && data.key != 'pluginmanager'
+                && !data.pending_uninstall;
         };
 
         self.enableRepoInstall = function(data) {
-            return self.enableManagement() && self.isCompatible(data);
+            return self.enableManagement() && self.pipAvailable() && self.isCompatible(data);
         };
 
         self.invalidUrl = ko.computed(function() {
@@ -100,7 +114,7 @@ $(function() {
 
         self.enableUrlInstall = ko.computed(function() {
             var url = self.installUrl();
-            return self.enableManagement() && url !== undefined && url.trim() != "" && !self.invalidUrl();
+            return self.enableManagement() && self.pipAvailable() && url !== undefined && url.trim() != "" && !self.invalidUrl();
         });
 
         self.invalidArchive = ko.computed(function() {
@@ -110,7 +124,7 @@ $(function() {
 
         self.enableArchiveInstall = ko.computed(function() {
             var name = self.uploadFilename();
-            return self.enableManagement() && name !== undefined && name.trim() != "" && !self.invalidArchive();
+            return self.enableManagement() && self.pipAvailable() && name !== undefined && name.trim() != "" && !self.invalidArchive();
         });
 
         self.uploadElement.fileupload({
@@ -167,7 +181,8 @@ $(function() {
 
         self.fromResponse = function(data) {
             self._fromPluginsResponse(data.plugins);
-            self._fromRepositoryResponse(data.repository)
+            self._fromRepositoryResponse(data.repository);
+            self._fromPipResponse(data.pip);
         };
 
         self._fromPluginsResponse = function(data) {
@@ -185,6 +200,17 @@ $(function() {
                 self.repositoryplugins.updateItems(data.plugins);
             } else {
                 self.repositoryplugins.updateItems([]);
+            }
+        };
+
+        self._fromPipResponse = function(data) {
+            self.pipAvailable(data.available);
+            if (data.available) {
+                self.pipCommand(data.command);
+                self.pipVersion(data.version);
+            } else {
+                self.pipCommand(undefined);
+                self.pipVersion(undefined);
             }
         };
 
@@ -341,6 +367,51 @@ $(function() {
             }
 
             self.requestData(true);
+        };
+
+        self.showPluginSettings = function() {
+            self._copyConfig();
+            self.configurationDialog.modal();
+        };
+
+        self.savePluginSettings = function() {
+            var pipCommand = self.config_pipCommand();
+            if (pipCommand != undefined && pipCommand.trim() == "") {
+                pipCommand = null;
+            }
+
+            var repository = self.config_repositoryUrl();
+            if (repository != undefined && repository.trim() == "") {
+                repository = null;
+            }
+
+            var repositoryTtl;
+            try {
+                repositoryTtl = parseInt(self.config_repositoryTtl());
+            } catch (ex) {
+                repositoryTtl = null;
+            }
+
+            var data = {
+                plugins: {
+                    pluginmanager: {
+                        repository: repository,
+                        repository_ttl: repositoryTtl,
+                        pip: pipCommand
+                    }
+                }
+            };
+            self.settingsViewModel.saveData(data, function() {
+                self.configurationDialog.modal("hide");
+                self._copyConfig();
+                self.refreshRepository();
+            });
+        };
+
+        self._copyConfig = function() {
+            self.config_repositoryUrl(self.settingsViewModel.settings.plugins.pluginmanager.repository());
+            self.config_repositoryTtl(self.settingsViewModel.settings.plugins.pluginmanager.repository_ttl());
+            self.config_pipCommand(self.settingsViewModel.settings.plugins.pluginmanager.pip());
         };
 
         self.installed = function(data) {
