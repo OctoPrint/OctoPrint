@@ -28,6 +28,7 @@ class PipCaller(CommandlineCaller):
 		self._logger = logging.getLogger(__name__)
 
 		self.configured = configured
+		self.refresh = False
 
 		self._command = None
 		self._version = None
