@@ -530,7 +530,8 @@ def get_remote_address(request):
 
 
 def get_json_command_from_request(request, valid_commands):
-	if not "application/json" in request.headers["Content-Type"]:
+	content_type = request.headers.get("Content-Type", None)
+	if content_type is None or not "application/json" in content_type:
 		return None, None, make_response("Expected content-type JSON", 400)
 
 	data = request.json
