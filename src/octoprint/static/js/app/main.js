@@ -7,6 +7,22 @@ $(function() {
 
         log.setLevel(CONFIG_DEBUG ? "debug" : "info");
 
+        //~~ OctoPrint client setup
+        OctoPrint.options.baseurl = BASEURL;
+        OctoPrint.options.apikey = UI_API_KEY;
+
+        OctoPrint.socket.onMessage("connected", function(data) {
+            OctoPrint.options.apikey = data.apikey;
+
+            // update the API key directly in jquery's ajax options too,
+            // to ensure the fileupload plugin and any plugins still using
+            // $.ajax directly still work fine too
+            UI_API_KEY = data["apikey"];
+            $.ajaxSetup({
+                headers: {"X-Api-Key": UI_API_KEY}
+            });
+        });
+
         //~~ AJAX setup
 
         // work around a stupid iOS6 bug where ajax requests get cached and only work once, as described at

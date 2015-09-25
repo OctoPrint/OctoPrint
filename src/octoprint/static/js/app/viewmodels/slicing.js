@@ -65,17 +65,13 @@ $(function() {
         });
 
         self.requestData = function(callback) {
-            $.ajax({
-                url: API_BASEURL + "slicing",
-                type: "GET",
-                dataType: "json",
-                success: function(data) {
+            OctoPrint.slicing.listAllSlicersAndProfiles()
+                .done(function(data) {
                     self.fromResponse(data);
                     if (callback !== undefined) {
                         callback();
                     }
-                }
-            });
+                });
         };
 
         self.fromResponse = function(data) {
@@ -150,7 +146,6 @@ $(function() {
             }
 
             var data = {
-                command: "slice",
                 slicer: self.slicer(),
                 profile: self.profile(),
                 printerProfile: self.printerProfile(),
@@ -163,19 +158,14 @@ $(function() {
                 data["select"] = true;
             }
 
-            $.ajax({
-                url: API_BASEURL + "files/" + self.target + "/" + self.file,
-                type: "POST",
-                dataType: "json",
-                contentType: "application/json; charset=UTF-8",
-                data: JSON.stringify(data)
-            });
+            OctoPrint.files.slice(self.target, self.file, data)
+                .done(function() {
+                    $("#slicing_configuration_dialog").modal("hide");
 
-            $("#slicing_configuration_dialog").modal("hide");
-
-            self.gcodeFilename(undefined);
-            self.slicer(self.defaultSlicer);
-            self.profile(self.defaultProfile);
+                    self.gcodeFilename(undefined);
+                    self.slicer(self.defaultSlicer);
+                    self.profile(self.defaultProfile);
+                });
         };
 
         self._sanitize = function(name) {

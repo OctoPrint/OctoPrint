@@ -225,18 +225,14 @@ $(function() {
 
             var errorText = gettext("Could not retrieve snapshot URL, please double check the URL");
             var errorTitle = gettext("Snapshot test failed");
-            $.ajax({
-                url: API_BASEURL + "util/test",
-                type: "POST",
-                dataType: "json",
-                data: JSON.stringify({
-                    command: "url",
-                    url: self.webcam_snapshotUrl(),
-                    method: "GET",
-                    response: true
-                }),
-                contentType: "application/json; charset=UTF-8",
-                success: function(response) {
+
+            var data = {
+                url: self.webcam_snapshotUrl(),
+                method: "GET",
+                response: true
+            };
+            OctoPrint.util.test("url", data)
+                .done(function(response) {
                     $("i.icon-spinner", target).remove();
 
                     if (!response.result) {
@@ -260,15 +256,14 @@ $(function() {
                         title: gettext("Snapshot test"),
                         message: $('<p>' + text + '</p><p><img src="data:' + mimeType + ';base64,' + content + '" /></p>')
                     });
-                },
-                error: function() {
+                })
+                .fail(function() {
                     $("i.icon-spinner", target).remove();
                     showMessageDialog({
                         title: errorTitle,
                         message: errorText
                     });
-                }
-            });
+                });
         };
 
         self.testWebcamFfmpegPath = function() {
@@ -293,19 +288,13 @@ $(function() {
             };
 
             var path = self.webcam_ffmpegPath();
-            $.ajax({
-                url: API_BASEURL + "util/test",
-                type: "POST",
-                dataType: "json",
-                data: JSON.stringify({
-                    command: "path",
-                    path: path,
-                    check_type: "file",
-                    check_access: "x"
-                }),
-                contentType: "application/json; charset=UTF-8",
-                success: successCallback
-            })
+            var data = {
+                path: path,
+                check_type: "file",
+                check_access: "x"
+            };
+            OctoPrint.util.test("path", data)
+                .done(successCallback);
         };
 
         self.onSettingsShown = function() {
@@ -331,6 +320,7 @@ $(function() {
                 dataType: "json",
                 maxNumberOfFiles: 1,
                 autoUpload: false,
+                headers: OctoPrint.getRequestHeaders(),
                 add: function(e, data) {
                     if (data.files.length == 0) {
                         return false;
@@ -418,11 +408,8 @@ $(function() {
             }
 
             self.receiving(true);
-            $.ajax({
-                url: API_BASEURL + "settings",
-                type: "GET",
-                dataType: "json",
-                success: function(response) {
+            OctoPrint.settings.get()
+                .done(function(response) {
                     if (callback) {
                         self.callbacks.push(callback);
                     }
@@ -443,23 +430,15 @@ $(function() {
                         self.receiving(false);
                         self.callbacks = [];
                     }
-                },
-                error: function(xhr) {
+                })
+                .fail(function() {
                     self.receiving(false);
-                }
-            });
+                });
         };
 
         self.requestTranslationData = function(callback) {
-            $.ajax({
-                url: API_BASEURL + "languages",
-                type: "GET",
-                dataType: "json",
-                success: function(response) {
-                    self.fromTranslationResponse(response);
-                    if (callback) callback();
-                }
-            })
+            return OctoPrint.languages.list()
+                .done(self.fromTranslationResponse);
         };
 
         self.fromTranslationResponse = function(response) {
@@ -509,14 +488,8 @@ $(function() {
         });
 
         self.deleteLanguagePack = function(locale, pack) {
-            $.ajax({
-                url: API_BASEURL + "languages/" + locale + "/" + pack,
-                type: "DELETE",
-                dataType: "json",
-                success: function(response) {
-                    self.fromTranslationResponse(response);
-                }
-            })
+            OctoPrint.languages.delete(locale, pack)
+                .done(self.fromTranslationResponse);
         };
 
         /**
@@ -690,13 +663,8 @@ $(function() {
                 data = getOnlyChangedData(self.getLocalData(), self.lastReceivedSettings);
             }
 
-            $.ajax({
-                url: API_BASEURL + "settings",
-                type: "POST",
-                dataType: "json",
-                contentType: "application/json; charset=UTF-8",
-                data: JSON.stringify(data),
-                success: function(data, status, xhr) {
+            OctoPrint.settings.save(data)
+                .done(function(data, status, xhr) {
                     self.receiving(true);
                     self.sending(false);
                     try {
@@ -705,15 +673,14 @@ $(function() {
                     } finally {
                         self.receiving(false);
                     }
-                },
-                error: function(xhr, status, error) {
+                })
+                .fail(function(xhr, status, error) {
                     self.sending(false);
                     if (options.error) options.error(xhr, status, error);
-                },
-                complete: function(xhr, status) {
+                })
+                .always(function(xhr, status) {
                     if (options.complete) options.complete(xhr, status);
-                }
-            });
+                });
         };
 
         self.onEventSettingsUpdated = function() {

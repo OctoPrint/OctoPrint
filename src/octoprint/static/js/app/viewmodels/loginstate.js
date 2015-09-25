@@ -32,20 +32,13 @@ $(function() {
                 return;
             }
 
-            $.ajax({
-                url: API_BASEURL + "users/" + self.currentUser().name,
-                type: "GET",
-                success: self.fromResponse
-            })
+            OctoPrint.users.get(self.currentUser().name)
+                .done(self.fromResponse);
         };
 
         self.requestData = function() {
-            $.ajax({
-                url: API_BASEURL + "login",
-                type: "POST",
-                data: {"passive": true},
-                success: self.fromResponse
-            })
+            OctoPrint.browser.passiveLogin()
+                .done(self.fromResponse);
         };
 
         self.fromResponse = function(response) {
@@ -70,7 +63,7 @@ $(function() {
             }
         };
 
-        self.login = function(u, p, r, callback) {
+        self.login = function(u, p, r) {
             var username = u || self.loginUser();
             var password = p || self.loginPass();
             var remember = (r != undefined ? r : self.loginRemember());
@@ -79,30 +72,22 @@ $(function() {
             self.loginPass("");
             self.loginRemember(false);
 
-            $.ajax({
-                url: API_BASEURL + "login",
-                type: "POST",
-                data: {"user": username, "pass": password, "remember": remember},
-                success: function(response) {
+            return OctoPrint.browser.login(username, password, remember)
+                .done(function(response) {
                     new PNotify({title: gettext("Login successful"), text: _.sprintf(gettext('You are now logged in as "%(username)s"'), {username: response.name}), type: "success"});
                     self.fromResponse(response);
-                    if (callback) callback(response);
-                },
-                error: function(jqXHR, textStatus, errorThrown) {
+                })
+                .fail(function() {
                     new PNotify({title: gettext("Login failed"), text: gettext("User unknown or wrong password"), type: "error"});
-                }
-            })
+                });
         };
 
         self.logout = function() {
-            $.ajax({
-                url: API_BASEURL + "logout",
-                type: "POST",
-                success: function(response) {
+            OctoPrint.browser.logout()
+                .done(function(response) {
                     new PNotify({title: gettext("Logout successful"), text: gettext("You are now logged out"), type: "success"});
                     self.fromResponse(response);
-                }
-            })
+                });
         };
 
         self.onLoginUserKeyup = function(data, event) {

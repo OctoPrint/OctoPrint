@@ -53,26 +53,22 @@ $(function() {
         };
 
         self._sendData = function(data, callback) {
-            $.ajax({
-                url: BASEURL + "plugin/corewizard/acl",
-                type: "POST",
-                dataType: "json",
-                data: data,
-                success: function() {
+            OctoPrint.postJson("plugin/corewizard/acl", data)
+                .done(function() {
                     self.setup(true);
                     self.decision(data.ac);
                     if (data.ac) {
                         // we now log the user in
                         var user = data.user;
                         var pass = data.pass1;
-                        self.loginStateViewModel.login(user, pass, true, function() {
-                            if (callback) callback();
-                        });
+                        self.loginStateViewModel.login(user, pass, true)
+                            .done(function() {
+                                if (callback) callback();
+                            });
                     } else {
                         if (callback) callback();
                     }
-                }
-            });
+                });
         };
 
         self.onWizardTabChange = function(current, next) {

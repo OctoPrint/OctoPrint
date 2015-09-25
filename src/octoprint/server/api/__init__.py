@@ -217,7 +217,11 @@ def performSystemAction():
 
 @api.route("/login", methods=["POST"])
 def login():
-	if octoprint.server.userManager is not None and "user" in request.values.keys() and "pass" in request.values.keys():
+	data = request.values
+	if hasattr(request, "json") and request.json:
+		data = request.json
+
+	if octoprint.server.userManager is not None and "user" in data and "pass" in data:
 		username = request.values["user"]
 		password = request.values["pass"]
 
@@ -241,7 +245,7 @@ def login():
 				return jsonify(user.asDict())
 		return make_response(("User unknown or password incorrect", 401, []))
 
-	elif "passive" in request.values:
+	elif "passive" in data:
 		return passive_login()
 	return NO_CONTENT
 

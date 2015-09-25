@@ -1,4 +1,66 @@
 $(function() {
+
+    OctoPrint.plugins.pluginmanager = (function($, _) {
+        var exports = {};
+
+        exports.get = function(refresh, opts) {
+            return OctoPrint.get(OctoPrint.getSimpleApiUrl("pluginmanager") + ((refresh) ? "?refresh_repository=true" : ""), opts);
+        };
+
+        exports.getWithRefresh = function(opts) {
+            return exports.get(true, opts);
+        };
+
+        exports.getWithoutRefresh = function(opts) {
+            return exports.get(false, opts);
+        };
+
+        exports.install = function(pluginUrl, dependencyLinks, opts) {
+            var data = {
+                url: pluginUrl,
+                dependency_links: !!dependencyLinks
+            };
+            return OctoPrint.simpleApiCommand(plugin, "install", data, opts);
+        };
+
+        exports.reinstall = function(plugin, pluginUrl, dependencyLinks, opts) {
+            var data = {
+                url: pluginUrl,
+                dependency_links: !!dependencyLinks,
+                reinstall: plugin,
+                force: true
+            };
+            return OctoPrint.simpleApiCommand(plugin, "install", data, opts);
+        };
+
+        exports.uninstall = function(plugin, opts) {
+            var data = {
+                plugin: plugin
+            };
+            return OctoPrint.simpleApiCommand(plugin, "uninstall", data, opts);
+        };
+
+        exports.enable = function(plugin, opts) {
+            var data = {
+                plugin: plugin
+            };
+            return OctoPrint.simpleApiCommand(plugin, "enable", data, opts);
+        };
+
+        exports.disable = function(plugin, opts) {
+            var data = {
+                plugin: plugin
+            };
+            return OctoPrint.simpleApiCommand(plugin, "disable", data, opts);
+        };
+
+        exports.upload = function(file) {
+            return OctoPrint.upload(OctoPrint.getBlueprintUrl("pluginmanager") + "upload_archive", file);
+        };
+
+        return exports;
+    })($, _);
+
     function PluginManagerViewModel(parameters) {
         var self = this;
 
@@ -193,12 +255,8 @@ $(function() {
                 return;
             }
 
-            $.ajax({
-                url: API_BASEURL + "plugin/pluginmanager" + ((includeRepo) ? "?refresh_repository=true" : ""),
-                type: "GET",
-                dataType: "json",
-                success: self.fromResponse
-            });
+            OctoPrint.plugins.pluginmanager.get(includeRepo)
+                .done(self.fromResponse);
         };
 
         self.togglePlugin = function(data) {
@@ -212,19 +270,25 @@ $(function() {
 
             if (data.key == "pluginmanager") return;
 
-            var command = self._getToggleCommand(data);
+            var onSuccess = self.requestData,
+                onError = function() {
+                    new PNotify({
+                        title: gettext("Something went wrong"),
+                        text: gettext("Please consult octoprint.log for details"),
+                        type: "error",
+                        hide: false
+                    })
+                };
 
-            var payload = {plugin: data.key};
-            self._postCommand(command, payload, function(response) {
-                self.requestData();
-            }, function() {
-                new PNotify({
-                    title: gettext("Something went wrong"),
-                    text: gettext("Please consult octoprint.log for details"),
-                    type: "error",
-                    hide: false
-                })
-            });
+            if (self._getToggleCommand(data) == "enable") {
+                OctoPrint.plugins.pluginmanager.enable(data.key)
+                    .done(onSuccess)
+                    .fail(onError);
+            } else {
+                OctoPrint.plugins.pluginmanager.disable(data.key)
+                    .done(onSuccess)
+                    .fail(onError);
+            }
         };
 
         self.showRepository = function() {
@@ -244,11 +308,7 @@ $(function() {
                 return;
             }
 
-            if (self.installed(data)) {
-                self.installPlugin(data.archive, data.title, data.id, data.follow_dependency_links || self.followDependencyLinks());
-            } else {
-                self.installPlugin(data.archive, data.title, undefined, data.follow_dependency_links || self.followDependencyLinks());
-            }
+            self.installPlugin(data.archive, data.title, (self.installed(data) ? data.id : undefined), data.follow_dependency_links || self.followDependencyLinks());
         };
 
         self.installPlugin = function(url, name, reinstall, followDependencyLinks) {
@@ -283,26 +343,33 @@ $(function() {
             }
             self._markWorking(workTitle, workText);
 
-            var command = "install";
-            var payload = {url: url, dependency_links: followDependencyLinks};
-            if (reinstall) {
-                payload["plugin"] = reinstall;
-                payload["force"] = true;
-            }
+            var onSuccess = function() {
+                    self.requestData();
+                    self.installUrl("");
+                },
+                onError = function() {
+                    new PNotify({
+                        title: gettext("Something went wrong"),
+                        text: gettext("Please consult octoprint.log for details"),
+                        type: "error",
+                        hide: false
+                    });
+                },
+                onAlways = function() {
+                    self._markDone();
+                };
 
-            self._postCommand(command, payload, function(response) {
-                self.requestData();
-                self._markDone();
-                self.installUrl("");
-            }, function() {
-                new PNotify({
-                    title: gettext("Something went wrong"),
-                    text: gettext("Please consult octoprint.log for details"),
-                    type: "error",
-                    hide: false
-                });
-                self._markDone();
-            });
+            if (reinstall) {
+                OctoPrint.plugins.pluginmanager.reinstall(reinstall, url, followDependencyLinks)
+                    .done(onSuccess)
+                    .fail(onError)
+                    .always(onAlways);
+            } else {
+                OctoPrint.plugins.pluginmanager.install(url, followDependencyLinks)
+                    .done(onSuccess)
+                    .fail(onError)
+                    .always(onAlways);
+            }
         };
 
         self.uninstallPlugin = function(data) {
@@ -319,20 +386,19 @@ $(function() {
 
             self._markWorking(gettext("Uninstalling plugin..."), _.sprintf(gettext("Uninstalling plugin \"%(name)s\""), {name: data.name}));
 
-            var command = "uninstall";
-            var payload = {plugin: data.key};
-            self._postCommand(command, payload, function(response) {
-                self.requestData();
-                self._markDone();
-            }, function() {
-                new PNotify({
-                    title: gettext("Something went wrong"),
-                    text: gettext("Please consult octoprint.log for details"),
-                    type: "error",
-                    hide: false
+            OctoPrint.plugins.pluginmanager.uninstall(data.key)
+                .done(self.requestData)
+                .fail(function() {
+                    new PNotify({
+                        title: gettext("Something went wrong"),
+                        text: gettext("Please consult octoprint.log for details"),
+                        type: "error",
+                        hide: false
+                    });
+                })
+                .always(function() {
+                    self._markDone();
                 });
-                self._markDone();
-            });
         };
 
         self.refreshRepository = function() {
@@ -398,33 +464,6 @@ $(function() {
                     hide: false
                 });
             }
-        };
-
-        self._postCommand = function (command, data, successCallback, failureCallback, alwaysCallback, timeout) {
-            var payload = _.extend(data, {command: command});
-
-            var params = {
-                url: API_BASEURL + "plugin/pluginmanager",
-                type: "POST",
-                dataType: "json",
-                data: JSON.stringify(payload),
-                contentType: "application/json; charset=UTF-8",
-                success: function(response) {
-                    if (successCallback) successCallback(response);
-                },
-                error: function() {
-                    if (failureCallback) failureCallback();
-                },
-                complete: function() {
-                    if (alwaysCallback) alwaysCallback();
-                }
-            };
-
-            if (timeout != undefined) {
-                params.timeout = timeout;
-            }
-
-            $.ajax(params);
         };
 
         self._markWorking = function(title, line) {

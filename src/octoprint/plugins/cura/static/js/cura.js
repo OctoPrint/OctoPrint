@@ -70,6 +70,7 @@ $(function() {
             dataType: "json",
             maxNumberOfFiles: 1,
             autoUpload: false,
+            headers: OctoPrint.getRequestHeaders(),
             add: function(e, data) {
                 if (data.files.length == 0) {
                     return false;
@@ -131,14 +132,11 @@ $(function() {
                 return (item.key == data.key);
             });
 
-            $.ajax({
-                url: data.resource(),
-                type: "DELETE",
-                success: function() {
+            OctoPrint.slicing.deleteProfileForSlicer("cura", data.key, {url: data.resource})
+                .done(function() {
                     self.requestData();
                     self.slicingViewModel.requestData();
-                }
-            });
+                });
         };
 
         self.makeProfileDefault = function(data) {
@@ -156,16 +154,10 @@ $(function() {
                 item.isdefault(true);
             }
 
-            $.ajax({
-                url: data.resource(),
-                type: "PATCH",
-                dataType: "json",
-                data: JSON.stringify({default: true}),
-                contentType: "application/json; charset=UTF-8",
-                success: function() {
+            OctoPrint.slicing.updateProfileForSlicer("cura", data.key, {default: true}, {url: data.resource()})
+                .done(function() {
                     self.requestData();
-                }
-            });
+                });
         };
 
         self.showImportProfileDialog = function(makeDefault) {
@@ -199,28 +191,13 @@ $(function() {
                 }
             }
 
-            $.ajax({
-                url: API_BASEURL + "util/test",
-                type: "POST",
-                dataType: "json",
-                data: JSON.stringify({
-                    command: "path",
-                    path: enginePath,
-                    check_type: "file",
-                    check_access: "x"
-                }),
-                contentType: "application/json; charset=UTF-8",
-                success: successCallback
-            })
+            OctoPrint.util.test("path", {path: enginePath, check_type: "file", check_access: "x"})
+                .done(successCallback);
         };
 
         self.requestData = function() {
-            $.ajax({
-                url: API_BASEURL + "slicing/cura/profiles",
-                type: "GET",
-                dataType: "json",
-                success: self.fromResponse
-            });
+            OctoPrint.slicing.listProfilesForSlicer("cura")
+                .done(self.fromResponse);
         };
 
         self.fromResponse = function(data) {

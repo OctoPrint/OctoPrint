@@ -19,22 +19,17 @@ $(function() {
 
         self.triggerAction = function(action) {
             var callback = function() {
-                $.ajax({
-                    url: API_BASEURL + "system",
-                    type: "POST",
-                    dataType: "json",
-                    data: "action=" + action.action,
-                    success: function() {
-                        new PNotify({title: "Success", text: _.sprintf(gettext("The command \"%(command)s\" executed successfully"), {command: action.name}), type: "success"});
-                    },
-                    error: function(jqXHR, textStatus, errorThrown) {
+                OctoPrint.control.executeSystemCommand(action.action)
+                    .done(function() {
+                        new PNotify({title: gettext("Success"), text: _.sprintf(gettext("The command \"%(command)s\" executed successfully"), {command: action.name}), type: "success"});
+                    })
+                    .fail(function() {
                         if (!action.hasOwnProperty("ignore") || !action.ignore) {
                             var error = "<p>" + _.sprintf(gettext("The command \"%(command)s\" could not be executed."), {command: action.name}) + "</p>";
                             error += pnotifyAdditionalInfo("<pre>" + jqXHR.responseText + "</pre>");
                             new PNotify({title: gettext("Error"), text: error, type: "error", hide: false});
                         }
-                    }
-                })
+                    });
             };
             if (action.confirm) {
                 showConfirmationDialog({

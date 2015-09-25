@@ -289,11 +289,8 @@ $(function() {
             self.enableReload(false);
             if (self.status == "idle" && self.errorCount < 3) {
                 self.status = "request";
-                $.ajax({
-                    url: BASEURL + "downloads/files/local/" + filename,
-                    data: { "ctime": date },
-                    type: "GET",
-                    success: function(response, rstatus) {
+                OctoPrint.files.download("local", filename)
+                    .done(function(response, rstatus) {
                         if(rstatus === 'success'){
                             self.showGCodeViewer(response, rstatus);
                             self.loadedFilename = filename;
@@ -301,12 +298,11 @@ $(function() {
                             self.status = "idle";
                             self.enableReload(true);
                         }
-                    },
-                    error: function() {
+                    })
+                    .fail(function() {
                         self.status = "idle";
                         self.errorCount++;
-                    }
-                });
+                    });
             }
         };
 
