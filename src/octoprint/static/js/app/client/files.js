@@ -1,88 +1,69 @@
 OctoPrint.files = (function($, _) {
     var exports = {};
 
-    exports.get = function(opts) {
-        opts = opts || {};
-
-        var path = "api/files";
-        var location = opts.location || "";
-
-        if (location && _.contains(["local", "sdcard"], location)) {
-            path += "/" + location;
-        }
-
-        var params = _.extend({}, opts);
-        params.url = path;
-
-        return OctoPrint.getJson(params);
+    var resourceForFile = function(location, filename) {
+        return "api/files/" + location + "/" + filename;
     };
 
-    exports.listAll = function(opts) {
-        opts = opts || {};
-
-        if (opts.location) {
-            opts.location = undefined;
-        }
-
-        return exports.get(opts);
+    var issueFileCommand = function(location, filename, command, data, opts) {
+        var url = resourceForFile(location, filename);
+        return OctoPrint.issueCommand(url, command, data, opts);
     };
 
-    exports.listAllForLocation = function(location, opts) {
-        opts = opts || {};
-        opts.location = location;
-
-        return exports.get(opts);
+    exports.list = function(opts) {
+        return OctoPrint.get("api/files", opts);
     };
 
-    exports.getInfoForFile = function(location, filename, opts) {
-        opts = opts || {};
-
-        var params = $.extend({}, opts);
-        params.url = exports.resourceForFile(location, filename);
-
-        return OctoPrint.getJson(params);
+    exports.listForLocation = function(location, opts) {
+        return OctoPrint.get("api/files/" + location, opts);
     };
 
-    exports.selectFile = function(location, filename, print, opts) {
+    exports.get = function(location, filename, opts) {
+        return OctoPrint.get(resourceForFile(location, filename), opts);
+    };
+
+    exports.select = function(location, filename, print, opts) {
         print = print || false;
 
         var data = {
             print: print
         };
 
-        return exports.issueFileCommand(location, filename, "select", data, opts);
+        return issueFileCommand(location, filename, "select", data, opts);
     };
 
-    exports.sliceFile = function(location, filename, parameters, opts) {
-        parameters = parameters || {};
-
-        return exports.issueFileCommand(location, filename, "slice", parameters, opts);
+    exports.slice = function(location, filename, parameters, opts) {
+        return issueFileCommand(location, filename, "slice",
+            parameters || {}, opts);
     };
 
-    exports.issueFileCommand = function(location, filename, command, data, opts) {
-        opts = opts || {};
+    exports.delete = function(location, filename, opts) {
+        return OctoPrint.delete(resourceForFile(location, filename), opts);
+    };
+
+    exports.upload = function(location, file, data) {
         data = data || {};
 
-        var payload = $.extend({}, data);
-        payload.command = command;
-
-        var params = $.extend({}, opts);
-        params.url = exports.resourceForFile(location, filename);
-
-        return OctoPrint.postJson(payload, params);
+        var filename = data.filename || undefined;
+        return OctoPrint.upload("api/files/" + location, file, filename, data);
     };
 
-    exports.deleteFile = function(location, filename, opts) {
-        opts = opts || {};
-
-        var params = $.extend({}, opts);
-        params.url = exports.resourceForFile(location, filename);
-
-        return OctoPrint.delete(opts);
-    };
-
-    exports.resourceForFile = function(location, filename) {
-        return "api/files/" + location + "/" + filename;
+    exports.download = function(location, filename, opts) {
+        var deferred = $.Deferred();
+        exports.get(location, filename, opts)
+            .done(function(response) {
+                OctoPrint.download(response.refs.download, opts)
+                    .done(function() {
+                        deferred.resolve.apply(null, arguments);
+                    })
+                    .fail(function() {
+                        deferred.reject.apply(null, arguments);
+                    });
+            })
+            .fail(function() {
+                deferred.reject.apply(null, arguments);
+            });
+        return deferred.promise();
     };
 
     return exports;

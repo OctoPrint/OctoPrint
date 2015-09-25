@@ -1,41 +1,25 @@
 OctoPrint.connection = (function() {
-    var self = {};
+    var exports = {};
 
-    self.getSettings = function(opts) {
-        opts = opts || {};
-
-        var params = $.extend({}, opts);
-        params.url = "api/connection";
-
-        return OctoPrint.getJson(params);
+    exports.getSettings = function(opts) {
+        return OctoPrint.get("api/connection", opts);
     };
 
-    self.connect = function(data, opts) {
-        data = data || {};
-
-        return self.issueCommand("connect", data, opts);
+    exports.connect = function(data, opts) {
+        return exports.issueCommand("connect", data || {}, opts);
     };
 
-    self.disconnect = function(opts) {
-        return self.issueCommand("disconnect", {}, opts);
+    exports.disconnect = function(opts) {
+        return exports.issueCommand("disconnect", {}, opts);
     };
 
-    self.fakeAck = function(opts) {
-        return self.issueCommand("fake_ack", {}, opts);
+    exports.fakeAck = function(opts) {
+        return exports.issueCommand("fake_ack", {}, opts);
     };
 
-    self.issueCommand = function(command, data, opts) {
-        opts = opts || {};
-        data = data || {};
-
-        var payload = $.extend({}, data);
-        payload.command = command;
-
-        var params = $.extend({}, opts);
-        params.url = "api/connection";
-
-        return OctoPrint.postJson(payload, params);
+    exports.issueCommand = function(command, data, opts) {
+        return OctoPrint.issueCommand("api/connection", command, data, opts);
     };
 
-    return self;
+    return exports;
 })($, _);

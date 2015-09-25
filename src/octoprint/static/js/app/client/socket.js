@@ -10,6 +10,7 @@ OctoPrint.socket = (function($, _, SockJS) {
     var socket = undefined;
     var reconnecting = false;
     var reconnectTrial = 0;
+    var registeredHandlers = {};
 
     var onOpen = function() {
         reconnecting = false;
@@ -35,45 +36,30 @@ OctoPrint.socket = (function($, _, SockJS) {
     };
 
     var onMessage = function(msg) {
-        for (var prop in msg.data) {
-            if (!msg.data.hasOwnProperty(prop)) {
-                continue;
-            }
+        _.each(msg.data, function(data, key) {
+            propagateMessage(key, data);
+        });
+    };
 
-            var data = msg.data[prop];
+    var propagateMessage = function(event, data) {
+        if (!registeredHandlers.hasOwnProperty(event)) {
+            return;
+        }
 
-            switch (prop) {
-                case "connected": {
-                    exports.onConnected(data);
-                    break;
-                }
-                case "history": {
-                    exports.onHistoryData(data);
-                    break;
-                }
-                case "current": {
-                    exports.onCurrentData(data);
-                    break;
-                }
-                case "event": {
-                    var event = data["type"];
-                    var payload = data["payload"];
-                    exports.onEvent(event, payload);
-                    break;
-                }
-                case "plugin": {
-                    exports.onPluginMessage(data.plugin, data.data);
-                    break;
-                }
-                case "timelapse": {
-                    exports.onTimelapseSettings(data);
-                    break;
-                }
-                case "slicingProgress": {
-                    exports.onSlicingProgress(data.slicer, data.model_path, data.machinecode_path, data.progress);
-                    break;
-                }
-            }
+        var eventObj = {event: event, data: data};
+
+        var catchAllHandlers = registeredHandlers["*"];
+        if (catchAllHandlers && catchAllHandlers.length) {
+            _.each(catchAllHandlers, function(handler) {
+                handler({event: eventObj})
+            });
+        }
+
+        var handlers = registeredHandlers[event];
+        if (handlers && handlers.length) {
+            _.each(handlers, function(handler) {
+                handler(eventObj);
+            });
         }
     };
 
@@ -105,13 +91,14 @@ OctoPrint.socket = (function($, _, SockJS) {
         }
     };
 
-    exports.onConnected = function(data) {};
-    exports.onCurrentData = function(data) {};
-    exports.onHistoryData = function(data) {};
-    exports.onEvent = function(event, data) {};
-    exports.onPluginMessage = function(plugin, message) {};
-    exports.onTimelapseSettings = function(data) {};
-    exports.onSlicingProgress = function(slicer, modelPath, machinecodePath, progress) {};
+    exports.onMessage = function(message, handler) {
+        if (!registeredHandlers.hasOwnProperty(message)) {
+            registeredHandlers[message] = [];
+        }
+        registeredHandlers[message].push(handler);
+        return exports;
+    };
+
     exports.onReconnectAttempt = function(trial) {};
     exports.onReconnectFailed = function() {};
 
