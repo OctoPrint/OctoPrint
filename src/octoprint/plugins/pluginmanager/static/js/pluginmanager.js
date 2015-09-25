@@ -20,7 +20,7 @@ $(function() {
                 url: pluginUrl,
                 dependency_links: !!dependencyLinks
             };
-            return OctoPrint.simpleApiCommand(plugin, "install", data, opts);
+            return OctoPrint.simpleApiCommand("pluginmanager", "install", data, opts);
         };
 
         exports.reinstall = function(plugin, pluginUrl, dependencyLinks, opts) {
@@ -30,28 +30,28 @@ $(function() {
                 reinstall: plugin,
                 force: true
             };
-            return OctoPrint.simpleApiCommand(plugin, "install", data, opts);
+            return OctoPrint.simpleApiCommand("pluginmanager", "install", data, opts);
         };
 
         exports.uninstall = function(plugin, opts) {
             var data = {
                 plugin: plugin
             };
-            return OctoPrint.simpleApiCommand(plugin, "uninstall", data, opts);
+            return OctoPrint.simpleApiCommand("pluginmanager", "uninstall", data, opts);
         };
 
         exports.enable = function(plugin, opts) {
             var data = {
                 plugin: plugin
             };
-            return OctoPrint.simpleApiCommand(plugin, "enable", data, opts);
+            return OctoPrint.simpleApiCommand("pluginmanager", "enable", data, opts);
         };
 
         exports.disable = function(plugin, opts) {
             var data = {
                 plugin: plugin
             };
-            return OctoPrint.simpleApiCommand(plugin, "disable", data, opts);
+            return OctoPrint.simpleApiCommand("pluginmanager", "disable", data, opts);
         };
 
         exports.upload = function(file) {

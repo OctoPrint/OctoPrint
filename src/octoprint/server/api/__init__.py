@@ -185,8 +185,13 @@ def apiVersion():
 @admin_permission.require(403)
 def performSystemAction():
 	logger = logging.getLogger(__name__)
-	if "action" in request.values.keys():
-		action = request.values["action"]
+
+	data = request.values
+	if hasattr(request, "json") and request.json:
+		data = request.json
+
+	if "action" in data:
+		action = data["action"]
 		available_actions = s().get(["system", "actions"])
 		for availableAction in available_actions:
 			if availableAction["action"] == action:

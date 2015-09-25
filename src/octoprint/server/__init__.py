@@ -913,7 +913,7 @@ class Server(object):
 			"js/lib/sockjs-0.3.4.min.js"
 		]
 		js_client = [
-			"js/app/client/octoprint.js",
+			"js/app/client/base.js",
 			"js/app/client/socket.js",
 			"js/app/client/browser.js",
 			"js/app/client/connection.js",
