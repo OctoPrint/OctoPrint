@@ -37,7 +37,7 @@ Issue a job command
 
    .. sourcecode:: http
 
-      POST /api/control/job HTTP/1.1
+      POST /api/job HTTP/1.1
       Host: example.com
       Content-Type: application/json
       X-Api-Key: abcdef...
@@ -54,7 +54,7 @@ Issue a job command
 
    .. sourcecode:: http
 
-      POST /api/control/job HTTP/1.1
+      POST /api/job HTTP/1.1
       Host: example.com
       Content-Type: application/json
       X-Api-Key: abcdef...
@@ -71,7 +71,7 @@ Issue a job command
 
    .. sourcecode:: http
 
-      POST /api/control/job HTTP/1.1
+      POST /api/job HTTP/1.1
       Host: example.com
       Content-Type: application/json
       X-Api-Key: abcdef...
@@ -88,7 +88,7 @@ Issue a job command
 
    .. sourcecode:: http
 
-      POST /api/control/job HTTP/1.1
+      POST /api/job HTTP/1.1
       Host: example.com
       Content-Type: application/json
       X-Api-Key: abcdef...

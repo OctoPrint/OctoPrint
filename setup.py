@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 # coding=utf-8
 
 from setuptools import setup, find_packages
@@ -16,8 +16,8 @@ import octoprint_setuptools
 INSTALL_REQUIRES = [
 	"flask>=0.9,<0.11",
 	"werkzeug==0.8.3",
-	"tornado==4.0.1",
-	"sockjs-tornado==1.0.1",
+	"tornado==4.0.2",
+	"sockjs-tornado==1.0.2",
 	"PyYAML==3.10",
 	"Flask-Login==0.2.2",
 	"Flask-Principal==0.3.5",
@@ -34,7 +34,7 @@ INSTALL_REQUIRES = [
 	"pkginfo==1.2.1",
 	"requests==2.7.0",
 	"semantic_version==2.4.2",
-	"psutil==3.1.1"
+	"psutil==3.2.1"
 ]
 
 # Additional requirements for optional install options
