@@ -6,14 +6,25 @@
 
 {% macro pluginmanager_nopip() %}
 <div class="alert" data-bind="visible: !pipAvailable()">{% trans %}
-    The <code>pip</code> command could not be detected automatically,
-    please configure it manually. No installation and uninstallation of plugin
+    The <code>pip</code> command could not be found.
+    Please configure it manually. No installation and uninstallation of plugin
     packages is possible while <code>pip</code> is unavailable.
+{% endtrans %}</div>
+{% endmacro %}
+
+{% macro pluginmanager_sudopip() %}
+<div class="alert alert-error" data-bind="visible: pipUseSudo()">{% trans %}
+    The <code>pip</code> command is configured to use <code>sudo</code>. This
+    is <strong>not</strong> recommended due to security reasons. It is <strong>strongly</strong>
+    suggested you install OctoPrint under a
+    <a href="https://github.com/foosel/OctoPrint/#installation">user-owned virtual environment</a>
+    so that the use of <code>sudo</code> is not needed for plugin management.
 {% endtrans %}</div>
 {% endmacro %}
 
 {{ pluginmanager_printing() }}
 {{ pluginmanager_nopip() }}
+{{ pluginmanager_sudopip() }}
 
 <div class="pull-right">
     <button class="btn btn-small" data-bind="click: function() { $root.showPluginSettings(); }" title="{{ _('Plugin Configuration') }}"><i class="icon-wrench"></i></button>
@@ -61,7 +72,7 @@
 <button class="btn btn-block" data-bind="click: $root.showRepository">{{ _('Get More...') }}</button>
 
 <p class="muted" data-bind="visible: pipAvailable()">
-    <small>Using pip at "<span data-bind="text: pipCommand"></span>" (Version <span data-bind="text: pipVersion"></span>)</small>
+    <small>Using pip at "<span data-bind="text: pipCommand"></span>" (Version <span data-bind="text: pipVersion"></span><span data-bind="visible: pipAdditionalArgs">, additional arguments: <span data-bind="text: pipAdditionalArgs"></span></span>)</small>
 </p>
 
 <div id="settings_plugin_pluginmanager_workingdialog" class="modal hide fade">
@@ -85,6 +96,7 @@
     <div class="modal-body">
         {{ pluginmanager_printing() }}
         {{ pluginmanager_nopip() }}
+        {{ pluginmanager_sudopip() }}
         <h4 style="position: relative">
             {{ _('... from the <a href="%(url)s" target="_blank">Plugin Repository</a>', url='http://plugins.octoprint.org') }}
             <a class="dropdown-toggle pull-right" data-toggle="dropdown" href="#">
@@ -198,6 +210,12 @@
                 <div class="controls">
                     <input type="text" class="input-block-level" data-bind="value: config_pipCommand" placeholder="{{ _('Autodetect') }}">
                     <span class="help-inline">{{ _('<strong>Only</strong> set this if OctoPrint cannot autodetect the path to <code>pip</code> to use for managing plugins.') }}</span>
+                </div>
+            </div>
+            <div class="control-group" title="{{ _('Additional arguments for pip command. You should normally not have to change this.') }}">
+                <label class="control-label">{{ _('Additional pip arguments') }}</label>
+                <div class="controls">
+                    <input type="text" class="input-block-level" data-bind="value: config_pipAdditionalArgs">
                 </div>
             </div>
             <div class="control-group" title="{{ _('URL of the Plugin Repository to use. You should normally not have to change this.') }}">

@@ -9,6 +9,7 @@ $(function() {
         self.config_repositoryUrl = ko.observable();
         self.config_repositoryTtl = ko.observable();
         self.config_pipCommand = ko.observable();
+        self.config_pipAdditionalArgs = ko.observable();
 
         self.configurationDialog = $("#settings_plugin_pluginmanager_configurationdialog");
 
@@ -81,6 +82,8 @@ $(function() {
         self.pipAvailable = ko.observable(false);
         self.pipCommand = ko.observable();
         self.pipVersion = ko.observable();
+        self.pipUseSudo = ko.observable();
+        self.pipAdditionalArgs = ko.observable();
 
         self.working = ko.observable(false);
         self.workingTitle = ko.observable();
@@ -208,9 +211,13 @@ $(function() {
             if (data.available) {
                 self.pipCommand(data.command);
                 self.pipVersion(data.version);
+                self.pipUseSudo(data.use_sudo);
+                self.pipAdditionalArgs(data.additional_args);
             } else {
                 self.pipCommand(undefined);
                 self.pipVersion(undefined);
+                self.pipUseSudo(undefined);
+                self.pipAdditionalArgs(undefined);
             }
         };
 
@@ -392,12 +399,18 @@ $(function() {
                 repositoryTtl = null;
             }
 
+            var pipArgs = self.config_pipAdditionalArgs();
+            if (pipArgs != undefined && pipArgs.trim() == "") {
+                pipArgs = null;
+            }
+
             var data = {
                 plugins: {
                     pluginmanager: {
                         repository: repository,
                         repository_ttl: repositoryTtl,
-                        pip: pipCommand
+                        pip: pipCommand,
+                        pip_args: pipArgs
                     }
                 }
             };
@@ -412,6 +425,7 @@ $(function() {
             self.config_repositoryUrl(self.settingsViewModel.settings.plugins.pluginmanager.repository());
             self.config_repositoryTtl(self.settingsViewModel.settings.plugins.pluginmanager.repository_ttl());
             self.config_pipCommand(self.settingsViewModel.settings.plugins.pluginmanager.pip());
+            self.config_pipAdditionalArgs(self.settingsViewModel.settings.plugins.pluginmanager.pip_args());
         };
 
         self.installed = function(data) {

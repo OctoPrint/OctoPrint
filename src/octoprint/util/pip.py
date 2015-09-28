@@ -26,6 +26,7 @@ class PipCaller(object):
 
 		self._command = None
 		self._version = None
+		self._use_sudo = False
 
 		self.trigger_refresh()
 
@@ -54,12 +55,16 @@ class PipCaller(object):
 		return self._version
 
 	@property
+	def use_sudo(self):
+		return self._use_sudo
+
+	@property
 	def available(self):
 		return self._command is not None
 
 	def trigger_refresh(self):
 		try:
-			self._command, self._version = self._find_pip()
+			self._command, self._version, self._use_sudo = self._find_pip()
 		except:
 			self._logger.exception("Error while discovering pip command")
 			self._command = None
@@ -74,6 +79,8 @@ class PipCaller(object):
 			raise UnknownPip()
 
 		command = [self._command] + list(args)
+		if self._use_sudo:
+			command = ["sudo"] + command
 
 		joined_command = " ".join(command)
 		self._logger.debug(u"Calling: {}".format(joined_command))
@@ -120,6 +127,11 @@ class PipCaller(object):
 
 	def _find_pip(self):
 		pip_command = self.configured
+		if pip_command is not None and pip_command.startswith("sudo "):
+			pip_command = pip_command[len("sudo "):]
+			pip_sudo = True
+		else:
+			pip_sudo = False
 		pip_version = None
 
 		if pip_command is None:
@@ -152,7 +164,11 @@ class PipCaller(object):
 
 		if pip_command is not None:
 			self._logger.debug("Found pip at {}, going to figure out its version".format(pip_command))
-			p = sarge.run([pip_command, "--version"], stdout=sarge.Capture(), stderr=sarge.Capture())
+
+			sarge_command = [pip_command, "--version"]
+			if pip_sudo:
+				sarge_command = ["sudo"] + sarge_command
+			p = sarge.run(sarge_command, stdout=sarge.Capture(), stderr=sarge.Capture())
 
 			if p.returncode != 0:
 				self._logger.warn("Error while trying to run pip --version: {}".format(p.stderr.text))
@@ -182,7 +198,7 @@ class PipCaller(object):
 			else:
 				self._logger.info("Found pip at {}, version is {}".format(pip_command, version_segment))
 
-		return pip_command, pip_version
+		return pip_command, pip_version, pip_sudo
 
 	def _log_stdout(self, *lines):
 		self.on_log_stdout(*lines)

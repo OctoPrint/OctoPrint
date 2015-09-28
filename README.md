@@ -38,10 +38,24 @@ For information about how to go about contributions of any kind, please see the 
 Installation
 ------------
 
-Installation instructions for installing from source for different operating systems can be found [on the wiki](https://github.com/foosel/OctoPrint/wiki#assorted-guides).
+Installation instructions for installing from source for different operating
+systems can be found [on the wiki](https://github.com/foosel/OctoPrint/wiki#assorted-guides).
 
 If you want to run OctoPrint on a Raspberry Pi you might want to take a look at [OctoPi](https://github.com/guysoft/OctoPi)
 which is a custom SD card image that includes OctoPrint plus dependencies.
+
+The generic steps that should basically be done regardless of operating system
+and runtime environment are the following (as *regular
+user*, please keep your hands *off* of the `sudo` command here!) - this assumes
+you already have Python 2.7, pip and virtualenv set up:
+
+1. Checkout OctoPrint: `git clone https://github.com/foosel/OctoPrint.git`
+2. Change into the OctoPrint folder: `cd OctoPrint`
+3. Create a user-owned virtual environment therein: `virtualenv --system-site-packages venv`
+4. Install OctoPrint *into that virtual environment*: `./venv/bin/python setup.py install`
+
+You may then start the OctoPrint server via `/path/to/OctoPrint/venv/bin/octoprint`, see [Usage](#usage)
+for details.
 
 After installation, please make sure you follow the first-run wizard and set up
 access control as necessary. If you want to not only be notified about new
