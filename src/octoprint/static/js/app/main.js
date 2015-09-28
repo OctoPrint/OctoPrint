@@ -37,6 +37,15 @@ $(function() {
             headers: {"X-Api-Key": UI_API_KEY}
         });
 
+        //~~ Initialize file upload plugin
+
+        $.widget("blueimp.fileupload", $.blueimp.fileupload, {
+            options: {
+                dropZone: null,
+                pasteZone: null
+            }
+        });
+
         //~~ Initialize i18n
 
         var catalog = window["BABEL_TO_LOAD_" + LOCALE];

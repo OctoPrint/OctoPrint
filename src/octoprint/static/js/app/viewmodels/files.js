@@ -53,6 +53,7 @@ $(function() {
         });
 
         self.uploadButton = undefined;
+        self.uploadSdButton = undefined;
 
         // initialize list helper
         self.listHelper = new ItemListHelper(
@@ -342,10 +343,16 @@ $(function() {
 
         self.onUserLoggedIn = function(user) {
             self.uploadButton.fileupload("enable");
+            if (self.uploadSdButton) {
+                self.uploadSdButton.fileupload("enable");
+            }
         };
 
         self.onUserLoggedOut = function() {
             self.uploadButton.fileupload("disable");
+            if (self.uploadSdButton) {
+                self.uploadSdButton.fileupload("disable");
+            }
         };
 
         self.onStartup = function() {
@@ -372,6 +379,31 @@ $(function() {
             //~~ Gcode upload
 
             self.uploadButton = $("#gcode_upload");
+            self.uploadSdButton = $("#gcode_upload_sd");
+            if (!self.uploadSdButton.length) {
+                self.uploadSdButton = undefined;
+            }
+
+            var uploadProgress = $("#gcode_upload_progress");
+            var uploadProgressBar = uploadProgress.find(".bar");
+
+            var localTarget = CONFIG_SD_SUPPORT ? $("#drop_locally") : $("#drop");
+            var sdTarget = $("#drop_sd");
+
+            function setProgressBar(percentage, text, active) {
+                uploadProgressBar
+                    .css("width", percentage + "%")
+                    .text(text);
+
+                if (active) {
+                    uploadProgress
+                        .addClass("progress-striped active");
+                } else {
+                    uploadProgress
+                        .removeClass("progress-striped active");
+                }
+            }
+
             function gcode_upload_done(e, data) {
                 var filename = undefined;
                 var location = undefined;
@@ -389,9 +421,7 @@ $(function() {
                 }
 
                 if (data.result.done) {
-                    $("#gcode_upload_progress .bar").css("width", "0%");
-                    $("#gcode_upload_progress").removeClass("progress-striped").removeClass("active");
-                    $("#gcode_upload_progress .bar").text("");
+                    setProgressBar(0, "", false);
                 }
             }
 
@@ -404,109 +434,44 @@ $(function() {
                     type: "error",
                     hide: false
                 });
-                $("#gcode_upload_progress .bar").css("width", "0%");
-                $("#gcode_upload_progress").removeClass("progress-striped").removeClass("active");
-                $("#gcode_upload_progress .bar").text("");
+                setProgressBar(0, "", false);
             }
 
             function gcode_upload_progress(e, data) {
                 var progress = parseInt(data.loaded / data.total * 100, 10);
-                $("#gcode_upload_progress .bar").css("width", progress + "%");
-                $("#gcode_upload_progress .bar").text(gettext("Uploading ..."));
-                if (progress >= 100) {
-                    $("#gcode_upload_progress").addClass("progress-striped").addClass("active");
-                    $("#gcode_upload_progress .bar").text(gettext("Saving ..."));
-                }
+                var uploaded = progress >= 100;
+
+                setProgressBar(progress, uploaded ? gettext("Saving ...") : gettext("Uploading ..."), uploaded);
             }
 
-            function enable_local_dropzone() {
-                $("#gcode_upload").fileupload({
-                    url: API_BASEURL + "files/local",
+            function setDropzone(dropzone, enable) {
+                var button = (dropzone == "local") ? self.uploadButton : self.uploadSdButton;
+                var drop = (dropzone == "local") ? localTarget : sdTarget;
+                var url = API_BASEURL + "files/" + dropzone;
+
+                button.fileupload({
+                    url: url,
                     dataType: "json",
-                    dropZone: localTarget,
+                    dropZone: enable ? drop : null,
+                    drop: function(e, data) {
+
+                    },
                     done: gcode_upload_done,
                     fail: gcode_upload_fail,
                     progressall: gcode_upload_progress
                 });
             }
 
-            function disable_local_dropzone() {
-                $("#gcode_upload").fileupload({
-                    url: API_BASEURL + "files/local",
-                    dataType: "json",
-                    dropZone: null,
-                    done: gcode_upload_done,
-                    fail: gcode_upload_fail,
-                    progressall: gcode_upload_progress
-                });
+            function evaluateDropzones() {
+                var enableLocal = self.loginState.isUser();
+                var enableSd = enableLocal && CONFIG_SD_SUPPORT && self.printerState.isSdReady();
+
+                setDropzone("local", enableLocal);
+                setDropzone("sdcard", enableSd);
             }
-
-            function enable_sd_dropzone() {
-                $("#gcode_upload_sd").fileupload({
-                    url: API_BASEURL + "files/sdcard",
-                    dataType: "json",
-                    dropZone: $("#drop_sd"),
-                    done: gcode_upload_done,
-                    fail: gcode_upload_fail,
-                    progressall: gcode_upload_progress
-                });
-            }
-
-            function disable_sd_dropzone() {
-                $("#gcode_upload_sd").fileupload({
-                    url: API_BASEURL + "files/sdcard",
-                    dataType: "json",
-                    dropZone: null,
-                    done: gcode_upload_done,
-                    fail: gcode_upload_fail,
-                    progressall: gcode_upload_progress
-                });
-            }
-
-            var localTarget;
-            if (CONFIG_SD_SUPPORT) {
-                localTarget = $("#drop_locally");
-            } else {
-                localTarget = $("#drop");
-            }
-
-            self.loginState.isUser.subscribe(function(newValue) {
-                if (newValue === true) {
-                    enable_local_dropzone();
-                } else {
-                    disable_local_dropzone();
-                }
-            });
-
-            if (self.loginState.isUser()) {
-                enable_local_dropzone();
-            } else {
-                disable_local_dropzone();
-            }
-
-            if (CONFIG_SD_SUPPORT) {
-                self.printerState.isSdReady.subscribe(function(newValue) {
-                    if (newValue === true && self.loginState.isUser()) {
-                        enable_sd_dropzone();
-                    } else {
-                        disable_sd_dropzone();
-                    }
-                });
-
-                self.loginState.isUser.subscribe(function(newValue) {
-                    if (newValue === true && self.printerState.isSdReady()) {
-                        enable_sd_dropzone();
-                    } else {
-                        disable_sd_dropzone();
-                    }
-                });
-
-                if (self.printerState.isSdReady() && self.loginState.isUser()) {
-                    enable_sd_dropzone();
-                } else {
-                    disable_sd_dropzone();
-                }
-            }
+            self.loginState.isUser.subscribe(evaluateDropzones);
+            self.printerState.isSdReady.subscribe(evaluateDropzones);
+            evaluateDropzones();
 
             $(document).bind("dragover", function (e) {
                 var dropOverlay = $("#drop_overlay");
@@ -519,7 +484,7 @@ $(function() {
                 var timeout = window.dropZoneTimeout;
 
                 if (!timeout) {
-                    dropOverlay.addClass('in');
+                    dropOverlay.addClass("in");
                 } else {
                     clearTimeout(timeout);
                 }
