@@ -226,12 +226,7 @@ $(function() {
             var errorText = gettext("Could not retrieve snapshot URL, please double check the URL");
             var errorTitle = gettext("Snapshot test failed");
 
-            var data = {
-                url: self.webcam_snapshotUrl(),
-                method: "GET",
-                response: true
-            };
-            OctoPrint.util.test("url", data)
+            OctoPrint.util.testUrl(self.webcam_snapshotUrl(), {method: "GET", response: true})
                 .done(function(response) {
                     $("i.icon-spinner", target).remove();
 
@@ -271,30 +266,22 @@ $(function() {
                 return;
             }
 
-            var successCallback = function(response) {
-                if (!response.result) {
-                    if (!response.exists) {
-                        self.webcam_ffmpegPathText(gettext("The path doesn't exist"));
-                    } else if (!response.typeok) {
-                        self.webcam_ffmpegPathText(gettext("The path is not a file"));
-                    } else if (!response.access) {
-                        self.webcam_ffmpegPathText(gettext("The path is not an executable"));
+            OctoPrint.util.testExecutable(self.webcam_ffmpegPath())
+                .done(function(response) {
+                    if (!response.result) {
+                        if (!response.exists) {
+                            self.webcam_ffmpegPathText(gettext("The path doesn't exist"));
+                        } else if (!response.typeok) {
+                            self.webcam_ffmpegPathText(gettext("The path is not a file"));
+                        } else if (!response.access) {
+                            self.webcam_ffmpegPathText(gettext("The path is not an executable"));
+                        }
+                    } else {
+                        self.webcam_ffmpegPathText(gettext("The path is valid"));
                     }
-                } else {
-                    self.webcam_ffmpegPathText(gettext("The path is valid"));
-                }
-                self.webcam_ffmpegPathOk(response.result);
-                self.webcam_ffmpegPathBroken(!response.result);
-            };
-
-            var path = self.webcam_ffmpegPath();
-            var data = {
-                path: path,
-                check_type: "file",
-                check_access: "x"
-            };
-            OctoPrint.util.test("path", data)
-                .done(successCallback);
+                    self.webcam_ffmpegPathOk(response.result);
+                    self.webcam_ffmpegPathBroken(!response.result);
+                });
         };
 
         self.onSettingsShown = function() {

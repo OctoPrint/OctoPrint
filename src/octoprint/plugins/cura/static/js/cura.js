@@ -168,13 +168,9 @@ $(function() {
             $("#settings_plugin_cura_import").modal("show");
         };
 
-        self.testEnginePath = function(successCallback) {
-            self.sendTestRequest(self.settings.plugins.cura.cura_engine());
-        };
-
-        self.sendTestRequest = function(enginePath, successCallback) {
-            if (successCallback == undefined) {
-                successCallback = function(response) {
+        self.testEnginePath = function() {
+            OctoPrint.util.testExecutable(self.settings.plugins.cura.cura_engine())
+                .done(function(response) {
                     if (!response.result) {
                         if (!response.exists) {
                             self.pathText(gettext("The path doesn't exist"));
@@ -188,11 +184,7 @@ $(function() {
                     }
                     self.pathOk(response.result);
                     self.pathBroken(!response.result);
-                }
-            }
-
-            OctoPrint.util.test("path", {path: enginePath, check_type: "file", check_access: "x"})
-                .done(successCallback);
+                });
         };
 
         self.requestData = function() {
