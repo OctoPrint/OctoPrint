@@ -1,38 +1,44 @@
+(function (global, factory) {
+    if (typeof define === "function" && define.amd) {
+        define(["OctoPrint"], factory);
+    } else {
+        factory(window.OctoPrint);
+    }
+})(window || this, function(OctoPrint) {
+    var exports = {};
+
+    var url = OctoPrint.getBlueprintUrl("softwareupdate");
+    var checkUrl = url + "check";
+    var updateUrl = url + "update";
+
+    exports.check = function(force, opts) {
+        return OctoPrint.get(checkUrl + ((!!force) ? "?force=true" : ""), opts);
+    };
+
+    exports.update = function(entries, force, opts) {
+        entries = entries || [];
+        if (typeof entries == "string") {
+            entries = [entries];
+        }
+
+        var data = {
+            entries: entries,
+            force: !!force
+        };
+        return OctoPrint.postJson(updateUrl, data, opts);
+    };
+
+    exports.updateAll = function(force, opts) {
+        var data = {
+            force: !!force
+        };
+        return OctoPrint.postJson(updateUrl, data, opts);
+    };
+
+    OctoPrint.plugins.softwareupdate = exports;
+});
+
 $(function() {
-    OctoPrint.plugins.softwareupdate = (function($, _) {
-        var exports = {};
-
-        var url = OctoPrint.getBlueprintUrl("softwareupdate");
-        var checkUrl = url + "check";
-        var updateUrl = url + "update";
-
-        exports.check = function(force, opts) {
-            return OctoPrint.get(checkUrl + ((!!force) ? "?force=true" : ""), opts);
-        };
-
-        exports.update = function(entries, force, opts) {
-            entries = entries || [];
-            if (typeof entries == "string") {
-                entries = [entries];
-            }
-
-            var data = {
-                entries: entries,
-                force: !!force
-            };
-            return OctoPrint.postJson(updateUrl, data, opts);
-        };
-
-        exports.updateAll = function(force, opts) {
-            var data = {
-                force: !!force
-            };
-            return OctoPrint.postJson(updateUrl, data, opts);
-        };
-
-        return exports;
-    })($, _);
-
     function SoftwareUpdateViewModel(parameters) {
         var self = this;
 

@@ -1,50 +1,60 @@
-OctoPrint.timelapse = (function($, _) {
+(function (global, factory) {
+    if (typeof define === "function" && define.amd) {
+        define(["OctoPrint", "jquery"], factory);
+    } else {
+        factory(window.OctoPrint, window.$);
+    }
+})(window || this, function(OctoPrint, $) {
     var exports = {};
 
     var url = "api/timelapse";
 
-    exports.get = function(opts) {
-        return OctoPrint.get(url, opts);
+    var timelapseUrl = function(filename) {
+        return url + "/" + filename;
     };
 
-    exports.list = function(opts) {
-        var deferred = $.Deferred();
+    OctoPrint.timelapse = {
+        get: function (opts) {
+            return OctoPrint.get(url, opts);
+        },
 
-        exports.get(opts)
-            .done(function(response, status, request) {
-                deferred.resolve(response.files, status, request);
-            })
-            .fail(function() {
-                deferred.reject.apply(null, arguments);
-            });
+        list: function (opts) {
+            var deferred = $.Deferred();
 
-        return deferred.promise();
-    };
+            exports.get(opts)
+                .done(function (response, status, request) {
+                    deferred.resolve(response.files, status, request);
+                })
+                .fail(function () {
+                    deferred.reject.apply(null, arguments);
+                });
 
-    exports.download = function(filename, opts) {
-        return OctoPrint.download(url + "/" + filename, opts);
-    };
+            return deferred.promise();
+        },
 
-    exports.delete = function(filename, opts) {
-        return OctoPrint.delete(url + "/" + filename, opts);
-    };
+        download: function (filename, opts) {
+            return OctoPrint.download(timelapseUrl(filename), opts);
+        },
 
-    exports.getConfig = function(opts) {
-        var deferred = $.Deferred();
-        exports.get(opts)
-            .done(function(response, status, request) {
-                deferred.resolve(response.config, status, request);
-            })
-            .fail(function() {
-                deferred.reject.apply(null, arguments);
-            });
-        return deferred.promise();
-    };
+        delete: function (filename, opts) {
+            return OctoPrint.delete(timelapseUrl(filename), opts);
+        },
 
-    exports.saveConfig = function(config, opts) {
-        config = config || {};
-        return OctoPrint.postJson(url, config, opts);
-    };
+        getConfig: function (opts) {
+            var deferred = $.Deferred();
+            exports.get(opts)
+                .done(function (response, status, request) {
+                    deferred.resolve(response.config, status, request);
+                })
+                .fail(function () {
+                    deferred.reject.apply(null, arguments);
+                });
+            return deferred.promise();
+        },
 
-    return exports;
-})($, _);
+        saveConfig: function (config, opts) {
+            config = config || {};
+            return OctoPrint.postJson(url, config, opts);
+        }
+    }
+});

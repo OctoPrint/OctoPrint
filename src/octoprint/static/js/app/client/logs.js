@@ -1,21 +1,25 @@
-OctoPrint.logs = (function($, _) {
-    var exports = {};
-
+(function (global, factory) {
+    if (typeof define === "function" && define.amd) {
+        define(["OctoPrint"], factory);
+    } else {
+        factory(window.OctoPrint);
+    }
+})(window || this, function(OctoPrint) {
     var url = "api/logs";
 
-    exports.list = function(opts) {
-        return OctoPrint.get(url, opts);
-    };
+    OctoPrint.logs = {
+        list: function(opts) {
+            return OctoPrint.get(url, opts);
+        },
 
-    exports.delete = function(file, opts) {
-        var fileUrl = url + "/" + file;
-        return OctoPrint.delete(fileUrl, opts);
-    };
+        delete: function(file, opts) {
+            var fileUrl = url + "/" + file;
+            return OctoPrint.delete(fileUrl, opts);
+        },
 
-    exports.download = function(file, opts) {
-        var fileUrl = url + "/" + file;
-        return OctoPrint.download(fileUrl, opts);
-    };
-
-    return exports;
-})($, _);
+        download: function(file, opts) {
+            var fileUrl = url + "/" + file;
+            return OctoPrint.download(fileUrl, opts);
+        }
+    }
+});

@@ -1,4 +1,10 @@
-OctoPrint.socket = (function($, _, SockJS) {
+(function (global, factory) {
+    if (typeof define === "function" && define.amd) {
+        define(["OctoPrint", "jquery", "lodash", "sockjs"], factory);
+    } else {
+        factory(window.OctoPrint, window.$, window._, window.SockJS);
+    }
+})(window || this, function(OctoPrint, $, _, SockJS) {
     var exports = {};
 
     exports.options = {
@@ -102,5 +108,5 @@ OctoPrint.socket = (function($, _, SockJS) {
     exports.onReconnectAttempt = function(trial) {};
     exports.onReconnectFailed = function() {};
 
-    return exports;
-})($, _, SockJS);
+    OctoPrint.socket = exports;
+});

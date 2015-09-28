@@ -1,44 +1,48 @@
-OctoPrint.control = (function($, _) {
-    var exports = {};
-
+(function (global, factory) {
+    if (typeof define === "function" && define.amd) {
+        define(["OctoPrint"], factory);
+    } else {
+        factory(window.OctoPrint);
+    }
+})(window || this, function(OctoPrint) {
     var customUrl = "api/printer/command/custom";
     var commandUrl = "api/printer/command";
 
-    exports.getCustomControls = function(opts) {
-        return OctoPrint.get(customUrl, opts);
-    };
+    OctoPrint.control = {
+        getCustomControls: function (opts) {
+            return OctoPrint.get(customUrl, opts);
+        },
 
-    exports.sendGcode = function(commands, opts) {
-        commands = commands || [];
+        sendGcode: function (commands, opts) {
+            return exports.sendGcodeWithParameters(commands, undefined, opts);
+        },
 
-        if (typeof commands === "string") {
-            commands = [commands];
+        sendGcodeWithParameters: function (commands, parameters, opts) {
+            commands = commands || [];
+            parameters = parameters || {};
+
+            if (typeof commands === "string") {
+                commands = [commands];
+            }
+
+            return OctoPrint.postJson(commandUrl, {
+                commands: commands,
+                parameters: parameters
+            }, opts);
+        },
+
+        sendGcodeScript: function (script, context, opts) {
+            script = script || "";
+            context = context || {};
+
+            return OctoPrint.postJson(commandUrl, {
+                script: script,
+                context: context
+            }, opts);
+        },
+
+        executeSystemCommand: function (action, opts) {
+            return OctoPrint.postJson("api/system", {action: action}, opts);
         }
-
-        return OctoPrint.postJson(commandUrl, {commands: commands}, opts);
-    };
-
-    exports.sendGcodeWithParameters = function(commands, parameters, opts) {
-        commands = commands || [];
-        parameters = parameters || {};
-
-        if (typeof commands === "string") {
-            commands = [commands];
-        }
-
-        return OctoPrint.postJson(commandUrl, {commands: commands, parameters: parameters}, opts);
-    };
-
-    exports.sendGcodeScript = function(script, context, opts) {
-        script = script || "";
-        context = context || {};
-
-        return OctoPrint.postJson(commandUrl, {script: script, context: context}, opts);
-    };
-
-    exports.executeSystemCommand = function(action, opts) {
-        return OctoPrint.postJson("api/system", {action: action}, opts);
-    };
-
-    return exports;
-})($, _);
+    }
+});

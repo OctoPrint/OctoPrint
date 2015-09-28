@@ -1,38 +1,45 @@
-OctoPrint.slicing = (function($, _) {
-    var exports = {};
-
+(function (global, factory) {
+    if (typeof define === "function" && define.amd) {
+        define(["OctoPrint"], factory);
+    } else {
+        factory(window.OctoPrint);
+    }
+})(window || this, function(OctoPrint) {
     var url = "api/slicing";
 
-    var getProfileUrl = function(slicer, profileId) {
-        return url + "/" + slicer + "/profiles/" + profileId;
+    var slicerUrl = function(slicer) {
+        return url + "/" + slicer;
     };
 
-    exports.listAllSlicersAndProfiles = function(opts) {
-        return OctoPrint.get(url, opts);
+    var profileUrl = function(slicer, profileId) {
+        return slicerUrl(slicer) + "/profiles/" + profileId;
     };
 
-    exports.listProfilesForSlicer = function(slicer, opts) {
-        var slicerUrl = url + "/" + slicer + "/profiles";
-        return OctoPrint.get(slicerUrl, opts);
-    };
+    OctoPrint.slicing = {
+        listAllSlicersAndProfiles: function(opts) {
+            return OctoPrint.get(url, opts);
+        },
 
-    exports.getProfileForSlicer = function(slicer, profileId, opts) {
-        return OctoPrint.get(getProfileUrl(slicer, profileId), opts);
-    };
+        listProfilesForSlicer: function(slicer, opts) {
+            return OctoPrint.get(slicerUrl(slicer) + "/profiles", opts);
+        },
 
-    exports.addProfileForSlicer = function(slicer, profileId, profile, opts) {
-        profile = profile || {};
-        return OctoPrint.putJson(getProfileUrl(slicer, profileId), profile, opts);
-    };
+        getProfileForSlicer: function(slicer, profileId, opts) {
+            return OctoPrint.get(profileUrl(slicer, profileId), opts);
+        },
 
-    exports.updateProfileForSlicer = function(slicer, profileId, profile, opts) {
-        profile = profile || {};
-        return OctoPrint.patchJson(getProfileUrl(slicer, profileId), profile, opts);
-    };
+        addProfileForSlicer: function(slicer, profileId, profile, opts) {
+            profile = profile || {};
+            return OctoPrint.putJson(profileUrl(slicer, profileId), profile, opts);
+        },
 
-    exports.deleteProfileForSlicer = function(slicer, profileId, opts) {
-        return OctoPrint.delete(getProfileUrl(slicer, profileId), opts);
-    };
+        updateProfileForSlicer: function(slicer, profileId, profile, opts) {
+            profile = profile || {};
+            return OctoPrint.patchJson(profileUrl(slicer, profileId), profile, opts);
+        },
 
-    return exports;
-})($, _);
+        deleteProfileForSlicer: function(slicer, profileId, opts) {
+            return OctoPrint.delete(profileUrl(slicer, profileId), opts);
+        }
+    }
+});

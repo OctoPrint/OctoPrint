@@ -1,66 +1,71 @@
+(function (global, factory) {
+    if (typeof define === "function" && define.amd) {
+        define(["OctoPrint"], factory);
+    } else {
+        factory(window.OctoPrint);
+    }
+})(window || this, function(OctoPrint) {
+    var exports = {};
+
+    exports.get = function(refresh, opts) {
+        return OctoPrint.get(OctoPrint.getSimpleApiUrl("pluginmanager") + ((refresh) ? "?refresh_repository=true" : ""), opts);
+    };
+
+    exports.getWithRefresh = function(opts) {
+        return exports.get(true, opts);
+    };
+
+    exports.getWithoutRefresh = function(opts) {
+        return exports.get(false, opts);
+    };
+
+    exports.install = function(pluginUrl, dependencyLinks, opts) {
+        var data = {
+            url: pluginUrl,
+            dependency_links: !!dependencyLinks
+        };
+        return OctoPrint.simpleApiCommand("pluginmanager", "install", data, opts);
+    };
+
+    exports.reinstall = function(plugin, pluginUrl, dependencyLinks, opts) {
+        var data = {
+            url: pluginUrl,
+            dependency_links: !!dependencyLinks,
+            reinstall: plugin,
+            force: true
+        };
+        return OctoPrint.simpleApiCommand("pluginmanager", "install", data, opts);
+    };
+
+    exports.uninstall = function(plugin, opts) {
+        var data = {
+            plugin: plugin
+        };
+        return OctoPrint.simpleApiCommand("pluginmanager", "uninstall", data, opts);
+    };
+
+    exports.enable = function(plugin, opts) {
+        var data = {
+            plugin: plugin
+        };
+        return OctoPrint.simpleApiCommand("pluginmanager", "enable", data, opts);
+    };
+
+    exports.disable = function(plugin, opts) {
+        var data = {
+            plugin: plugin
+        };
+        return OctoPrint.simpleApiCommand("pluginmanager", "disable", data, opts);
+    };
+
+    exports.upload = function(file) {
+        return OctoPrint.upload(OctoPrint.getBlueprintUrl("pluginmanager") + "upload_archive", file);
+    };
+
+    OctoPrint.plugins.pluginmanager = exports;
+});
+
 $(function() {
-
-    OctoPrint.plugins.pluginmanager = (function($, _) {
-        var exports = {};
-
-        exports.get = function(refresh, opts) {
-            return OctoPrint.get(OctoPrint.getSimpleApiUrl("pluginmanager") + ((refresh) ? "?refresh_repository=true" : ""), opts);
-        };
-
-        exports.getWithRefresh = function(opts) {
-            return exports.get(true, opts);
-        };
-
-        exports.getWithoutRefresh = function(opts) {
-            return exports.get(false, opts);
-        };
-
-        exports.install = function(pluginUrl, dependencyLinks, opts) {
-            var data = {
-                url: pluginUrl,
-                dependency_links: !!dependencyLinks
-            };
-            return OctoPrint.simpleApiCommand("pluginmanager", "install", data, opts);
-        };
-
-        exports.reinstall = function(plugin, pluginUrl, dependencyLinks, opts) {
-            var data = {
-                url: pluginUrl,
-                dependency_links: !!dependencyLinks,
-                reinstall: plugin,
-                force: true
-            };
-            return OctoPrint.simpleApiCommand("pluginmanager", "install", data, opts);
-        };
-
-        exports.uninstall = function(plugin, opts) {
-            var data = {
-                plugin: plugin
-            };
-            return OctoPrint.simpleApiCommand("pluginmanager", "uninstall", data, opts);
-        };
-
-        exports.enable = function(plugin, opts) {
-            var data = {
-                plugin: plugin
-            };
-            return OctoPrint.simpleApiCommand("pluginmanager", "enable", data, opts);
-        };
-
-        exports.disable = function(plugin, opts) {
-            var data = {
-                plugin: plugin
-            };
-            return OctoPrint.simpleApiCommand("pluginmanager", "disable", data, opts);
-        };
-
-        exports.upload = function(file) {
-            return OctoPrint.upload(OctoPrint.getBlueprintUrl("pluginmanager") + "upload_archive", file);
-        };
-
-        return exports;
-    })($, _);
-
     function PluginManagerViewModel(parameters) {
         var self = this;
 

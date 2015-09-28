@@ -1,37 +1,43 @@
-OctoPrint.printerprofiles = (function($, _) {
-    var exports = {};
-
+(function (global, factory) {
+    if (typeof define === "function" && define.amd) {
+        define(["OctoPrint", "jquery"], factory);
+    } else {
+        factory(window.OctoPrint, window.$);
+    }
+})(window || this, function(OctoPrint, $) {
     var url = "api/printerprofiles";
 
-    exports.get = function(opts) {
-        return OctoPrint.get(url, opts);
+    var profileUrl = function(profile) {
+        return url + "/" + profile;
     };
 
-    exports.add = function(profile, additional, opts) {
-        profile = profile || {};
-        additional = additional || {};
+    OctoPrint.printerprofiles = {
+        get: function (opts) {
+            return OctoPrint.get(url, opts);
+        },
 
-        var data = $.extend({}, additional);
-        data.profile = profile;
+        add: function (profile, additional, opts) {
+            profile = profile || {};
+            additional = additional || {};
 
-        return OctoPrint.postJson(url, data, opts);
-    };
+            var data = $.extend({}, additional);
+            data.profile = profile;
 
-    exports.update = function(id, profile, additional, opts) {
-        profile = profile || {};
-        additional = addtional || {};
+            return OctoPrint.postJson(url, data, opts);
+        },
 
-        var data = $.extend({}, additional);
-        data.profile = profile;
+        update: function (id, profile, additional, opts) {
+            profile = profile || {};
+            additional = addtional || {};
 
-        var profileUrl = url + "/" + id;
-        return OctoPrint.patchJson(profileUrl, data, opts);
-    };
+            var data = $.extend({}, additional);
+            data.profile = profile;
 
-    exports.delete = function(id, opts) {
-        var profileUrl = url + "/" + id;
-        return OctoPrint.delete(profileUrl, opts);
-    };
+            return OctoPrint.patchJson(profileUrl(id), data, opts);
+        },
 
-    return exports;
-})($, _);
+        delete: function (id, opts) {
+            return OctoPrint.delete(profileUrl(id), opts);
+        }
+    }
+});

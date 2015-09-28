@@ -1,25 +1,27 @@
-OctoPrint.connection = (function() {
-    var exports = {};
+(function (global, factory) {
+    if (typeof define === "function" && define.amd) {
+        define(["OctoPrint"], factory);
+    } else {
+        factory(window.OctoPrint);
+    }
+})(window || this, function(OctoPrint) {
+    var url = "api/connection";
 
-    exports.getSettings = function(opts) {
-        return OctoPrint.get("api/connection", opts);
-    };
+    OctoPrint.connection = {
+        getSettings: function(opts) {
+            return OctoPrint.get(url, opts);
+        },
 
-    exports.connect = function(data, opts) {
-        return exports.issueCommand("connect", data || {}, opts);
-    };
+        connect: function(data, opts) {
+            return OctoPrint.issueCommand(url, "connect", data || {}, opts);
+        },
 
-    exports.disconnect = function(opts) {
-        return exports.issueCommand("disconnect", {}, opts);
-    };
+        disconnect: function(opts) {
+            return OctoPrint.issueCommand(url, "disconnect", {}, opts);
+        },
 
-    exports.fakeAck = function(opts) {
-        return exports.issueCommand("fake_ack", {}, opts);
-    };
-
-    exports.issueCommand = function(command, data, opts) {
-        return OctoPrint.issueCommand("api/connection", command, data, opts);
-    };
-
-    return exports;
-})($, _);
+        fakeAck: function(opts) {
+            return OctoPrint.issueCommand(url, "fake_ack", {}, opts);
+        }
+    }
+});

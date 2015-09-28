@@ -1,4 +1,6 @@
 $(function() {
+        OctoPrint = window.OctoPrint;
+
         //~~ Lodash setup
 
         _.mixin({"sprintf": sprintf, "vsprintf": vsprintf});
