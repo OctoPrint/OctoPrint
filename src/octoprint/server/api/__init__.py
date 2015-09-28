@@ -227,10 +227,10 @@ def login():
 		data = request.json
 
 	if octoprint.server.userManager is not None and "user" in data and "pass" in data:
-		username = request.values["user"]
-		password = request.values["pass"]
+		username = data["user"]
+		password = data["pass"]
 
-		if "remember" in request.values.keys() and request.values["remember"] == "true":
+		if "remember" in data and data["remember"] in valid_boolean_trues:
 			remember = True
 		else:
 			remember = False
