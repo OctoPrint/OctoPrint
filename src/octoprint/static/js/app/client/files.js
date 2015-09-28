@@ -23,17 +23,19 @@
         return OctoPrint.issueCommand(url, command, data, opts);
     };
 
+    var getFile = function(location, filename, opts) {
+        return OctoPrint.get(resourceForFile(location, filename), opts);
+    };
+
     OctoPrint.files = {
+        get: getFile,
+
         list: function (opts) {
             return OctoPrint.get(url, opts);
         },
 
         listForLocation: function (location, opts) {
             return OctoPrint.get(resourceForLocation(location), opts);
-        },
-
-        get: function (location, filename, opts) {
-            return OctoPrint.get(resourceForFile(location, filename), opts);
         },
 
         select: function (location, filename, print, opts) {
@@ -64,7 +66,7 @@
 
         download: function (location, filename, opts) {
             var deferred = $.Deferred();
-            exports.get(location, filename, opts)
+            getFile(location, filename, opts)
                 .done(function (response) {
                     OctoPrint.download(response.refs.download, opts)
                         .done(function () {
