@@ -389,14 +389,17 @@ $(function() {
         self.requestData = function(local) {
             // handle old parameter format
             var callback = undefined;
-            if (_.isFunction(local)) {
-                log.warn("The callback parameter of SettingsViewModel.requestData is deprecated, the method now returns a promise, please use that instead.");
-                callback = local;
-                local = false;
-            } else if (arguments.length == 2) {
-                log.warn("The callback parameter of SettingsViewModel.requestData is deprecated, the method now returns a promise, please use that instead.");
-                callback = arguments[0];
-                local = arguments[1];
+            if (arguments.length == 2 || _.isFunction(local)) {
+                var exc = new Error();
+                log.warn("The callback parameter of SettingsViewModel.requestData is deprecated, the method now returns a promise, please use that instead. Stacktrace:", (exc.stack || exc.stacktrace || "<n/a>"));
+
+                if (arguments.length == 2) {
+                    callback = arguments[0];
+                    local = arguments[1];
+                } else {
+                    callback = local;
+                    local = false;
+                }
             }
 
             // handler for any explicitely provided callbacks
@@ -405,7 +408,7 @@ $(function() {
                 try {
                     callback();
                 } catch (exc) {
-                    log.error("Error calling settings callback", callback, ":", (exc.stack || exc));
+                    log.error("Error calling settings callback", callback, ":", (exc.stack || exc.stacktrace || exc));
                 }
             };
 
