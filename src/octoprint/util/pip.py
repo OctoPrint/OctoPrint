@@ -26,6 +26,7 @@ class PipCaller(object):
 
 		self._command = None
 		self._version = None
+		self._version_string = None
 		self._use_sudo = False
 
 		self.trigger_refresh()
@@ -55,6 +56,10 @@ class PipCaller(object):
 		return self._version
 
 	@property
+	def version_string(self):
+		return self._version_string
+
+	@property
 	def use_sudo(self):
 		return self._use_sudo
 
@@ -64,7 +69,7 @@ class PipCaller(object):
 
 	def trigger_refresh(self):
 		try:
-			self._command, self._version, self._use_sudo = self._find_pip()
+			self._command, self._version, self._version_string, self._use_sudo = self._find_pip()
 		except:
 			self._logger.exception("Error while discovering pip command")
 			self._command = None
@@ -127,12 +132,15 @@ class PipCaller(object):
 
 	def _find_pip(self):
 		pip_command = self.configured
+
 		if pip_command is not None and pip_command.startswith("sudo "):
 			pip_command = pip_command[len("sudo "):]
 			pip_sudo = True
 		else:
 			pip_sudo = False
+
 		pip_version = None
+		version_segment = None
 
 		if pip_command is None:
 			import os
@@ -198,7 +206,7 @@ class PipCaller(object):
 			else:
 				self._logger.info("Found pip at {}, version is {}".format(pip_command, version_segment))
 
-		return pip_command, pip_version, pip_sudo
+		return pip_command, pip_version, version_segment, pip_sudo
 
 	def _log_stdout(self, *lines):
 		self.on_log_stdout(*lines)

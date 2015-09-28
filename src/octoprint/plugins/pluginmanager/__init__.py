@@ -188,7 +188,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		               pip=dict(
 		                   available=self._pip_caller.available,
 		                   command=self._pip_caller.command,
-		                   version=str(self._pip_caller.version),
+		                   version=self._pip_caller.version_string,
 		                   use_sudo=self._pip_caller.use_sudo,
 		                   additional_args=self._settings.get(["pip_args"])
 		               ))
