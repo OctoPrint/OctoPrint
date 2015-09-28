@@ -32,6 +32,7 @@ class PipCaller(CommandlineCaller):
 
 		self._command = None
 		self._version = None
+		self._use_sudo = False
 
 		self.trigger_refresh()
 
@@ -60,12 +61,16 @@ class PipCaller(CommandlineCaller):
 		return self._version
 
 	@property
+	def use_sudo(self):
+		return self._use_sudo
+
+	@property
 	def available(self):
 		return self._command is not None
 
 	def trigger_refresh(self):
 		try:
-			self._command, self._version = self._find_pip()
+			self._command, self._version, self._use_sudo = self._find_pip()
 		except:
 			self._logger.exception("Error while discovering pip command")
 			self._command = None
@@ -88,11 +93,18 @@ class PipCaller(CommandlineCaller):
 				self._logger.debug("Version {} needs --no-use-wheel to properly work.".format(self.version))
 				arg_list.append("--no-use-wheel")
 
-		command = [self._command] + arg_list
+		command = [self._command] + list(args)
+		if self._use_sudo:
+			command = ["sudo"] + command
 		return self.call(command)
 
 	def _find_pip(self):
 		pip_command = self.configured
+		if pip_command is not None and pip_command.startswith("sudo "):
+			pip_command = pip_command[len("sudo "):]
+			pip_sudo = True
+		else:
+			pip_sudo = False
 		pip_version = None
 
 		if pip_command is None:
@@ -125,7 +137,11 @@ class PipCaller(CommandlineCaller):
 
 		if pip_command is not None:
 			self._logger.debug("Found pip at {}, going to figure out its version".format(pip_command))
-			p = sarge.run([pip_command, "--version"], stdout=sarge.Capture(), stderr=sarge.Capture())
+
+			sarge_command = [pip_command, "--version"]
+			if pip_sudo:
+				sarge_command = ["sudo"] + sarge_command
+			p = sarge.run(sarge_command, stdout=sarge.Capture(), stderr=sarge.Capture())
 
 			if p.returncode != 0:
 				self._logger.warn("Error while trying to run pip --version: {}".format(p.stderr.text))
@@ -157,6 +173,6 @@ class PipCaller(CommandlineCaller):
 
 			if pip_version in self.__class__.broken:
 				self._logger.error("This version of pip is known to have errors that make it incompatible with how it needs to be used by OctoPrint. Please upgrade your pip version.")
-				return None, None
+				return None, None, False
 
-		return pip_command, pip_version
+		return pip_command, pip_version, pip_sudo

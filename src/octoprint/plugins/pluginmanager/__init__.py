@@ -83,6 +83,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			repository="http://plugins.octoprint.org/plugins.json",
 			repository_ttl=24*60,
 			pip=None,
+			pip_args=None,
 			dependency_links=False,
 			hidden=[]
 		)
@@ -193,9 +194,11 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		               os=self._get_os(),
 		               octoprint=self._get_octoprint_version_string(),
 		               pip=dict(
-			               available=self._pip_caller.available,
-			               command=self._pip_caller.command,
-			               version=str(self._pip_caller.version)
+		                   available=self._pip_caller.available,
+		                   command=self._pip_caller.command,
+		                   version=str(self._pip_caller.version),
+		                   use_sudo=self._pip_caller.use_sudo,
+		                   additional_args=self._settings.get(["pip_args"])
 		               ))
 
 	def on_api_command(self, command, data):
@@ -452,6 +455,10 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 		if "--process-dependency-links" in args:
 			self._log_message(u"Installation needs to process external dependencies, that might make it take a bit longer than usual depending on the pip version")
+
+		additional_args = self._settings.get(["pip_args"])
+		if additional_args:
+			args.append(additional_args)
 
 		return self._pip_caller.execute(*args)
 
