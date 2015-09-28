@@ -231,19 +231,20 @@ $(function() {
             self._configureLayerSlider(layerSliderElement);
             self._configureLayerCommandSlider(commandSliderElement);
 
-            self.settings.requestData(function() {
-                GCODE.ui.init({
-                    container: "#gcode_canvas",
-                    onProgress: self._onProgress,
-                    onModelLoaded: self._onModelLoaded,
-                    onLayerSelected: self._onLayerSelected,
-                    bed: self._retrieveBedDimensions(),
-                    toolOffsets: self._retrieveToolOffsets(),
-                    invertAxes: self._retrieveAxesConfiguration()
+            self.settings.requestData()
+                .done(function() {
+                    GCODE.ui.init({
+                        container: "#gcode_canvas",
+                        onProgress: self._onProgress,
+                        onModelLoaded: self._onModelLoaded,
+                        onLayerSelected: self._onLayerSelected,
+                        bed: self._retrieveBedDimensions(),
+                        toolOffsets: self._retrieveToolOffsets(),
+                        invertAxes: self._retrieveAxesConfiguration()
+                    });
+                    self.synchronizeOptions();
+                    self.enabled = true;
                 });
-                self.synchronizeOptions();
-                self.enabled = true;
-            });
         };
 
         self.reset = function() {

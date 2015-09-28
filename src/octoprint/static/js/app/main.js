@@ -501,7 +501,8 @@ $(function() {
         if (!_.has(viewModelMap, "settingsViewModel")) {
             throw new Error("settingsViewModel is missing, can't run UI")
         }
-        viewModelMap["settingsViewModel"].requestData(bindViewModels);
+        viewModelMap["settingsViewModel"].requestData()
+            .done(bindViewModels);
     }
 );
 

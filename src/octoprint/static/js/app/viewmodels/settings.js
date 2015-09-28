@@ -10,7 +10,7 @@ $(function() {
 
         self.receiving = ko.observable(false);
         self.sending = ko.observable(false);
-        self.callbacks = [];
+        self.outstanding = [];
 
         self.settingsDialog = undefined;
         self.settings_dialog_update_detected = undefined;
@@ -386,44 +386,78 @@ $(function() {
             return false;
         };
 
-        self.requestData = function(callback, local) {
-            if (self.receiving()) {
-                if (callback) {
-                    self.callbacks.push(callback);
-                }
-                return;
+        self.requestData = function(local) {
+            // handle old parameter format
+            var callback = undefined;
+            if (_.isFunction(local)) {
+                log.warn("The callback parameter of SettingsViewModel.requestData is deprecated, the method now returns a promise, please use that instead.");
+                callback = local;
+                local = false;
+            } else if (arguments.length == 2) {
+                log.warn("The callback parameter of SettingsViewModel.requestData is deprecated, the method now returns a promise, please use that instead.");
+                callback = arguments[0];
+                local = arguments[1];
             }
 
+            // handler for any explicitely provided callbacks
+            var callbackHandler = function() {
+                if (!callback) return;
+                try {
+                    callback();
+                } catch (exc) {
+                    log.error("Error calling settings callback", callback, ":", (exc.stack || exc));
+                }
+            };
+
+            // if a request is already active, create a new deferred and return
+            // its promise, it will be resolved in the response handler of the
+            // current request
+            if (self.receiving()) {
+                var deferred = $.Deferred();
+                self.outstanding.push(deferred);
+
+                if (callback) {
+                    // if we have a callback, we need to make sure it will
+                    // get called when the deferred is resolved
+                    deferred.done(callbackHandler);
+                }
+
+                return deferred.promise();
+            }
+
+            // perform the request
             self.receiving(true);
-            OctoPrint.settings.get()
+            return OctoPrint.settings.get()
                 .done(function(response) {
+                    self.fromResponse(response, local);
+
                     if (callback) {
-                        self.callbacks.push(callback);
+                        var deferred = $.Deferred();
+                        deferred.done(callbackHandler);
+                        self.outstanding.push(deferred);
                     }
 
-                    try {
-                        self.fromResponse(response, local);
-
-                        var cb;
-                        while (self.callbacks.length) {
-                            cb = self.callbacks.shift();
-                            try {
-                                cb();
-                            } catch(exc) {
-                                log.error("Error calling settings callback", cb, ":", (exc.stack || exc));
-                            }
-                        }
-                    } finally {
-                        self.receiving(false);
-                        self.callbacks = [];
-                    }
+                    // resolve all promises
+                    var args = arguments;
+                    _.each(self.outstanding, function(deferred) {
+                        deferred.resolve(args);
+                    });
+                    self.outstanding = [];
                 })
                 .fail(function() {
+                    // reject all promises
+                    var args = arguments;
+                    _.each(self.outstanding, function(deferred) {
+                        deferred.reject(args);
+                    });
+                    self.outstanding = [];
+                })
+                .always(function() {
                     self.receiving(false);
                 });
         };
 
-        self.requestTranslationData = function(callback) {
+        self.requestTranslationData = function() {
             return OctoPrint.languages.list()
                 .done(self.fromTranslationResponse);
         };
