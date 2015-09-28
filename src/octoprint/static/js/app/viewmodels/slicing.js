@@ -64,13 +64,10 @@ $(function() {
                 && self.profile() != undefined;
         });
 
-        self.requestData = function(callback) {
-            OctoPrint.slicing.listAllSlicersAndProfiles()
+        self.requestData = function() {
+            return OctoPrint.slicing.listAllSlicersAndProfiles()
                 .done(function(data) {
                     self.fromResponse(data);
-                    if (callback !== undefined) {
-                        callback();
-                    }
                 });
         };
 
