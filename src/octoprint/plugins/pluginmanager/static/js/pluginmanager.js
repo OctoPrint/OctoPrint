@@ -82,8 +82,17 @@ $(function() {
         self.pipAvailable = ko.observable(false);
         self.pipCommand = ko.observable();
         self.pipVersion = ko.observable();
+        self.pipInstallDir = ko.observable();
+        self.pipUseUser = ko.observable();
         self.pipUseSudo = ko.observable();
         self.pipAdditionalArgs = ko.observable();
+
+        self.pipUseSudoString = ko.computed(function() {
+            return self.pipUseSudo() ? "yes" : "no";
+        });
+        self.pipUseUserString = ko.computed(function() {
+            return self.pipUseUser() ? "yes" : "no";
+        });
 
         self.working = ko.observable(false);
         self.workingTitle = ko.observable();
@@ -211,11 +220,15 @@ $(function() {
             if (data.available) {
                 self.pipCommand(data.command);
                 self.pipVersion(data.version);
+                self.pipInstallDir(data.install_dir);
+                self.pipUseUser(data.use_user);
                 self.pipUseSudo(data.use_sudo);
                 self.pipAdditionalArgs(data.additional_args);
             } else {
                 self.pipCommand(undefined);
                 self.pipVersion(undefined);
+                self.pipInstallDir(undefined);
+                self.pipUseUser(data.use_user);
                 self.pipUseSudo(undefined);
                 self.pipAdditionalArgs(undefined);
             }

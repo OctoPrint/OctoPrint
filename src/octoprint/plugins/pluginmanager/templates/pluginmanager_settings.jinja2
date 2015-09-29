@@ -71,9 +71,21 @@
 
 <button class="btn btn-block" data-bind="click: $root.showRepository">{{ _('Get More...') }}</button>
 
-<p class="muted" data-bind="visible: pipAvailable()">
-    <small>Using pip at "<span data-bind="text: pipCommand"></span>" (Version <span data-bind="text: pipVersion"></span><span data-bind="visible: pipAdditionalArgs">, additional arguments: <span data-bind="text: pipAdditionalArgs"></span></span>)</small>
-</p>
+<div class="muted" data-bind="visible: pipAvailable()">
+    <div>
+        <small>
+            <a href="#" class="muted" onclick="$(this).children('i.toggle-arrow').toggleClass('icon-caret-right icon-caret-down').parent().parent().parent().next().slideToggle('fast')">
+                <i class="toggle-arrow icon-caret-right"></i> Using pip at "<span data-bind="text: pipCommand"></span>", Version <span data-bind="text: pipVersion"></span>
+            </a>
+        </small>
+    </div>
+    <div class="hide">
+        <small>
+            Installation directory: <span data-bind="text: pipInstallDir"></span> ("--user" flag: <span data-bind="text: pipUseUserString"></span>, sudo: <span data-bind="text: pipUseSudoString"></span>)<br />
+            <span data-bind="visible: pipAdditionalArgs">Additional Arguments: <span data-bind="text: pipAdditionalArgs"></span></span>
+        </small>
+    </div>
+</div>
 
 <div id="settings_plugin_pluginmanager_workingdialog" class="modal hide fade">
     <div class="modal-header">

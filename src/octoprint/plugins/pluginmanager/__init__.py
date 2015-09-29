@@ -188,8 +188,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 		return jsonify(plugins=self._get_plugins(),
 		               repository=dict(
-			               available=self._repository_available,
-			               plugins=self._repository_plugins
+		                   available=self._repository_available,
+		                   plugins=self._repository_plugins
 		               ),
 		               os=self._get_os(),
 		               octoprint=self._get_octoprint_version_string(),
@@ -197,7 +197,9 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		                   available=self._pip_caller.available,
 		                   command=self._pip_caller.command,
 		                   version=self._pip_caller.version_string,
+		                   install_dir=self._pip_caller.install_dir,
 		                   use_sudo=self._pip_caller.use_sudo,
+		                   use_user=self._pip_caller.use_user,
 		                   additional_args=self._settings.get(["pip_args"])
 		               ))
 
