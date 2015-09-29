@@ -98,7 +98,7 @@ class PipCaller(CommandlineCaller):
 				self._logger.debug("Version {} needs --no-use-wheel to properly work.".format(self.version))
 				arg_list.append("--no-use-wheel")
 
-		command = [self._command] + list(args)
+		command = [self._command] + list(arg_list)
 		if self._use_sudo:
 			command = ["sudo"] + command
 		return self.call(command)
