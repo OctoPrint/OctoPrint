@@ -15,6 +15,7 @@ import pkg_resources
 
 from .commandline import CommandlineCaller
 
+_cache = dict(version=dict(), setup=dict())
 
 class UnknownPip(Exception):
 	pass
@@ -24,12 +25,13 @@ class PipCaller(CommandlineCaller):
 	no_use_wheel = pkg_resources.parse_requirements("pip==1.5.0")
 	broken = pkg_resources.parse_requirements("pip>=6.0.1,<=6.0.3")
 
-	def __init__(self, configured=None):
+	def __init__(self, configured=None, ignore_cache=False):
 		CommandlineCaller.__init__(self)
 		self._logger = logging.getLogger(__name__)
 
 		self.configured = configured
 		self.refresh = False
+		self.ignore_cache = ignore_cache
 
 		self._command = None
 		self._version = None
@@ -144,7 +146,7 @@ class PipCaller(CommandlineCaller):
 
 		self._logger.debug("Found pip at {}, going to figure out its version".format(pip_command))
 
-		pip_version, version_segment = self._get_pip_version(pip_command, pip_sudo)
+		pip_version, version_segment = self._get_pip_version(pip_command)
 		if pip_version is None:
 			return
 
@@ -212,10 +214,12 @@ class PipCaller(CommandlineCaller):
 
 		return pip_command
 
-	def _get_pip_version(self, pip_command, pip_sudo):
+	def _get_pip_version(self, pip_command):
+		if not self.ignore_cache and pip_command in _cache["version"]:
+			self._logger.debug("Using cached pip version information for {}".format(pip_command))
+			return _cache["version"][pip_command]
+
 		sarge_command = [pip_command, "--version"]
-		if pip_sudo:
-			sarge_command = ["sudo"] + sarge_command
 		p = sarge.run(sarge_command, stdout=sarge.Capture(), stderr=sarge.Capture())
 
 		if p.returncode != 0:
@@ -244,13 +248,19 @@ class PipCaller(CommandlineCaller):
 			self._logger.exception("Error while trying to parse version string from pip command")
 			return None, None
 
-		return pip_version, version_segment
+		result = pip_version, version_segment
+		_cache["version"][pip_command] = result
+		return result
 
 	pip_install_dir_regex = re.compile("^\s*!!! PIP_INSTALL_DIR=(.*)\s*$", re.MULTILINE)
 	pip_virtual_env_regex = re.compile("^\s*!!! PIP_VIRTUAL_ENV=(True|False)\s*$", re.MULTILINE)
 	pip_writable_regex = re.compile("^\s*!!! PIP_WRITABLE=(True|False)\s*$", re.MULTILINE)
 
 	def _check_pip_setup(self, pip_command):
+		if not self.ignore_cache and pip_command in _cache["setup"]:
+			self._logger.debug("Using cached pip setup information for {}".format(pip_command))
+			return _cache["setup"][pip_command]
+
 		import os
 		testballoon = os.path.join(os.path.realpath(os.path.dirname(__file__)), "piptestballoon")
 
@@ -273,9 +283,9 @@ class PipCaller(CommandlineCaller):
 				virtual_env = virtual_env_match.group(1) == "True"
 				writable = writable_match.group(1) == "True"
 
-				return writable or not virtual_env, not writable and not virtual_env, install_dir
-			else:
-				return False, False, None
+				result = writable or not virtual_env, not writable and not virtual_env, install_dir
+				_cache["setup"][pip_command] = result
+				return result
 
 		finally:
 			sarge_command = [pip_command, "uninstall", "-y", "OctoPrint-PipTestBalloon"]
