@@ -259,6 +259,8 @@ class PipCaller(CommandlineCaller):
 			p = sarge.run(sarge_command, stdout=sarge.Capture(), stderr=sarge.Capture())
 
 			output = p.stdout.text
+			self._logger.debug("Got output from {}: {}".format(" ".join(sarge_command), output))
+
 			install_dir_match = self.__class__.pip_install_dir_regex.search(output)
 			virtual_env_match = self.__class__.pip_virtual_env_regex.search(output)
 			writable_match = self.__class__.pip_writable_regex.search(output)
