@@ -254,9 +254,12 @@ class PipCaller(CommandlineCaller):
 		import os
 		testballoon = os.path.join(os.path.realpath(os.path.dirname(__file__)), "piptestballoon")
 
-		sarge_command = [pip_command, "install", testballoon, "--verbose"]
+		sarge_command = [pip_command, "install", ".", "--verbose"]
 		try:
-			p = sarge.run(sarge_command, stdout=sarge.Capture(), stderr=sarge.Capture())
+			p = sarge.run(sarge_command,
+			              stdout=sarge.Capture(),
+			              stderr=sarge.Capture(),
+			              cwd=testballoon)
 
 			output = p.stdout.text
 			self._logger.debug("Got output from {}: {}".format(" ".join(sarge_command), output))
