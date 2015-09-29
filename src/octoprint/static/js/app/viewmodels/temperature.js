@@ -232,6 +232,8 @@ $(function() {
                 var heaterOptions = self.heaterOptions();
                 if (!heaterOptions) return;
 
+                var maxTemps = [310];
+
                 _.each(_.keys(heaterOptions), function(type) {
                     if (type == "bed" && !self.hasBed()) {
                         return;
@@ -258,11 +260,31 @@ $(function() {
                         color: pusher.color(heaterOptions[type].color).tint(0.5).html(),
                         data: targets
                     });
+
+                    maxTemps.push(self.getMaxTemp(actuals, targets));
                 });
 
+                self.plotOptions.yaxis.max = Math.max.apply(null, maxTemps);
+                self.plotOptions.yaxis.ticks = self.plotOptions.yaxis.max / 30;
                 $.plot(graph, data, self.plotOptions);
             }
         };
+
+        self.getMaxTemp = function(actuals, targets) {
+            var pair;
+            var maxTemp = 0;
+            actuals.forEach(function(pair) {
+                if (pair[1] > maxTemp){
+                    maxTemp = pair[1];
+                }
+            });
+            targets.forEach(function(pair) {
+                if (pair[1] > maxTemp){
+                    maxTemp = pair[1];
+                }
+            });
+            return maxTemp;
+        }
 
         self.setTarget = function(item) {
             var value = item.newTarget();
