@@ -122,7 +122,7 @@ class PipCaller(CommandlineCaller):
 			if self.use_user:
 				arg_list.append("--user")
 
-		command = [self._command] + list(args)
+		command = [self._command] + list(arg_list)
 		if self._use_sudo:
 			command = ["sudo"] + command
 		return self.call(command)
