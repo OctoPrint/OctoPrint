@@ -133,6 +133,7 @@ class PluginInfo(object):
 		self.enabled = True
 		self.bundled = False
 		self.loaded = False
+		self.managable = True
 
 		self._name = name
 		self._version = version
@@ -475,7 +476,24 @@ class PluginManager(object):
 
 		self.marked_plugins = defaultdict(list)
 
+		self._python_install_dir = None
+		self._python_virtual_env = False
+		self._detect_python_environment()
+
 		self.reload_plugins(startup=True, initialize_implementations=False)
+
+	def _detect_python_environment(self):
+		from distutils.command.install import install as cmd_install
+		from distutils.dist import Distribution
+		import sys
+
+		cmd = cmd_install(Distribution())
+		cmd.finalize_options()
+
+		self._python_install_dir = cmd.install_lib
+		self._python_prefix = sys.prefix
+		self._python_virtual_env = hasattr(sys, "real_prefix") \
+		                           or (hasattr(sys, "base_prefix") and sys.prefix != sys.base_prefix)
 
 	@property
 	def plugins(self):
@@ -503,12 +521,13 @@ class PluginManager(object):
 		result = dict()
 
 		for folder in folders:
-			readonly = False
+			flagged_readonly = False
 			if isinstance(folder, (list, tuple)):
 				if len(folder) == 2:
-					folder, readonly = folder
+					folder, flagged_readonly = folder
 				else:
 					continue
+			actual_readonly = not os.access(folder, os.W_OK)
 
 			if not os.path.exists(folder):
 				self.logger.warn("Plugin folder {folder} could not be found, skipping it".format(folder=folder))
@@ -531,8 +550,8 @@ class PluginManager(object):
 				plugin = self._import_plugin_from_module(key, folder=folder)
 				if plugin:
 					plugin.origin = FolderOrigin("folder", folder)
-					if readonly:
-						plugin.bundled = True
+					plugin.managable = not flagged_readonly and not actual_readonly
+					plugin.bundled = flagged_readonly
 
 					plugin.enabled = False
 
@@ -578,6 +597,16 @@ class PluginManager(object):
 				plugin = self._import_plugin_from_module(key, **kwargs)
 				if plugin:
 					plugin.origin = EntryPointOrigin("entry_point", group, module_name, package_name, version)
+
+					# plugin is manageable if its location is writable and OctoPrint
+					# is either not running from a virtual env or the plugin is
+					# installed in that virtual env - the virtual env's pip will not
+					# allow us to uninstall stuff that is installed outside
+					# of the virtual env, so this check is necessary
+					plugin.managable = os.access(plugin.location, os.W_OK) \
+					                   and (not self._python_virtual_env
+					                        or plugin.location.startswith(self._python_prefix))
+
 					plugin.enabled = False
 					result[key] = plugin
 
