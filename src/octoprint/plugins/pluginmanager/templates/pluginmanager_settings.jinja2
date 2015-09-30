@@ -4,7 +4,31 @@
 </div>
 {% endmacro %}
 
+{% macro pluginmanager_nopip() %}
+<div class="alert" data-bind="visible: !pipAvailable()">{% trans %}
+    The <code>pip</code> command could not be found.
+    Please configure it manually. No installation and uninstallation of plugin
+    packages is possible while <code>pip</code> is unavailable.
+{% endtrans %}</div>
+{% endmacro %}
+
+{% macro pluginmanager_sudopip() %}
+<div class="alert alert-error" data-bind="visible: pipUseSudo()">{% trans %}
+    The <code>pip</code> command is configured to use <code>sudo</code>. This
+    is <strong>not</strong> recommended due to security reasons. It is <strong>strongly</strong>
+    suggested you install OctoPrint under a
+    <a href="https://github.com/foosel/OctoPrint/#installation">user-owned virtual environment</a>
+    so that the use of <code>sudo</code> is not needed for plugin management.
+{% endtrans %}</div>
+{% endmacro %}
+
 {{ pluginmanager_printing() }}
+{{ pluginmanager_nopip() }}
+{{ pluginmanager_sudopip() }}
+
+<div class="pull-right">
+    <button class="btn btn-small" data-bind="click: function() { $root.showPluginSettings(); }" title="{{ _('Plugin Configuration') }}"><i class="icon-wrench"></i></button>
+</div>
 
 <h3>{{ _('Installed Plugins') }}</h3>
 
@@ -47,6 +71,10 @@
 
 <button class="btn btn-block" data-bind="click: $root.showRepository">{{ _('Get More...') }}</button>
 
+<p class="muted" data-bind="visible: pipAvailable()">
+    <small>Using pip at "<span data-bind="text: pipCommand"></span>" (Version <span data-bind="text: pipVersion"></span><span data-bind="visible: pipAdditionalArgs">, additional arguments: <span data-bind="text: pipAdditionalArgs"></span></span>)</small>
+</p>
+
 <div id="settings_plugin_pluginmanager_workingdialog" class="modal hide fade">
     <div class="modal-header">
         <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
@@ -67,6 +95,8 @@
     </div>
     <div class="modal-body">
         {{ pluginmanager_printing() }}
+        {{ pluginmanager_nopip() }}
+        {{ pluginmanager_sudopip() }}
         <h4 style="position: relative">
             {{ _('... from the <a href="%(url)s" target="_blank">Plugin Repository</a>', url='http://plugins.octoprint.org') }}
             <a class="dropdown-toggle pull-right" data-toggle="dropdown" href="#">
@@ -167,3 +197,47 @@
         <button class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Close') }}</button>
     </div>
 </div>
+
+<div id="settings_plugin_pluginmanager_configurationdialog" class="modal hide fade">
+    <div class="modal-header">
+        <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
+        <h3>{{ _('Plugin Configuration') }}</h3>
+    </div>
+    <div class="modal-body">
+        <form class="form-horizontal">
+            <div class="control-group" title="{{ _('pip command to use for managing plugins. You might have to configure this if auto detection fails.') }}">
+                <label class="control-label">{{ _('pip command') }}</label>
+                <div class="controls">
+                    <input type="text" class="input-block-level" data-bind="value: config_pipCommand" placeholder="{{ _('Autodetect') }}">
+                    <span class="help-inline">{{ _('<strong>Only</strong> set this if OctoPrint cannot autodetect the path to <code>pip</code> to use for managing plugins.') }}</span>
+                </div>
+            </div>
+            <div class="control-group" title="{{ _('Additional arguments for pip command. You should normally not have to change this.') }}">
+                <label class="control-label">{{ _('Additional pip arguments') }}</label>
+                <div class="controls">
+                    <input type="text" class="input-block-level" data-bind="value: config_pipAdditionalArgs">
+                </div>
+            </div>
+            <div class="control-group" title="{{ _('URL of the Plugin Repository to use. You should normally not have to change this.') }}">
+                <label class="control-label">{{ _('Repository URL') }}</label>
+                <div class="controls">
+                    <input type="text" class="input-block-level" data-bind="value: config_repositoryUrl">
+                </div>
+            </div>
+            <div class="control-group" title="{{ _('How long to cache repository data, in minutes. You should normally not have to change this.') }}">
+                <label class="control-label">{{ _('Repository cache TTL') }}</label>
+                <div class="controls">
+                    <div class="input-append">
+                        <input type="number" class="input-mini" data-bind="value: config_repositoryTtl">
+                        <span class="add-on">min</span>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="modal-footer">
+        <button class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Cancel') }}</button>
+        <button class="btn btn-primary" data-bind="click: savePluginSettings" aria-hidden="true">{{ _('Save') }}</button>
+    </div>
+</div>
+

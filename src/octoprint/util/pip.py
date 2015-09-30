@@ -27,14 +27,19 @@ class PipCaller(CommandlineCaller):
 		CommandlineCaller.__init__(self)
 		self._logger = logging.getLogger(__name__)
 
-		self._configured = configured
+		self.configured = configured
+		self.refresh = False
 
 		self._command = None
 		self._version = None
+		self._version_string = None
+		self._use_sudo = False
 
-		self._command, self._version = self._find_pip()
+		self.trigger_refresh()
 
-		self.refresh = False
+		self.on_log_call = lambda *args, **kwargs: None
+		self.on_log_stdout = lambda *args, **kwargs: None
+		self.on_log_stderr = lambda *args, **kwargs: None
 
 	def __le__(self, other):
 		return self.version is not None and self.version <= other
@@ -57,13 +62,29 @@ class PipCaller(CommandlineCaller):
 		return self._version
 
 	@property
+	def version_string(self):
+		return self._version_string
+
+	@property
+	def use_sudo(self):
+		return self._use_sudo
+
+	@property
 	def available(self):
 		return self._command is not None
 
+	def trigger_refresh(self):
+		try:
+			self._command, self._version, self._version_string, self._use_sudo = self._find_pip()
+		except:
+			self._logger.exception("Error while discovering pip command")
+			self._command = None
+			self._version = None
+		self.refresh = False
+
 	def execute(self, *args):
 		if self.refresh:
-			self._command, self._version = self._find_pip()
-			self.refresh = False
+			self.trigger_refresh()
 
 		if self._command is None:
 			raise UnknownPip()
@@ -77,12 +98,22 @@ class PipCaller(CommandlineCaller):
 				self._logger.debug("Version {} needs --no-use-wheel to properly work.".format(self.version))
 				arg_list.append("--no-use-wheel")
 
-		command = [self._command] + arg_list
+		command = [self._command] + list(arg_list)
+		if self._use_sudo:
+			command = ["sudo"] + command
 		return self.call(command)
 
 	def _find_pip(self):
-		pip_command = self._configured
+		pip_command = self.configured
+
+		if pip_command is not None and pip_command.startswith("sudo "):
+			pip_command = pip_command[len("sudo "):]
+			pip_sudo = True
+		else:
+			pip_sudo = False
+
 		pip_version = None
+		version_segment = None
 
 		if pip_command is None:
 			import os
@@ -114,7 +145,11 @@ class PipCaller(CommandlineCaller):
 
 		if pip_command is not None:
 			self._logger.debug("Found pip at {}, going to figure out its version".format(pip_command))
-			p = sarge.run([pip_command, "--version"], stdout=sarge.Capture(), stderr=sarge.Capture())
+
+			sarge_command = [pip_command, "--version"]
+			if pip_sudo:
+				sarge_command = ["sudo"] + sarge_command
+			p = sarge.run(sarge_command, stdout=sarge.Capture(), stderr=sarge.Capture())
 
 			if p.returncode != 0:
 				self._logger.warn("Error while trying to run pip --version: {}".format(p.stderr.text))
@@ -140,12 +175,12 @@ class PipCaller(CommandlineCaller):
 				pip_version = pkg_resources.parse_version(version_segment)
 			except:
 				self._logger.exception("Error while trying to parse version string from pip command")
-				return None, None
+				return None, None, None
 			else:
 				self._logger.info("Found pip at {}, version is {}".format(pip_command, version_segment))
 
 			if pip_version in self.__class__.broken:
 				self._logger.error("This version of pip is known to have errors that make it incompatible with how it needs to be used by OctoPrint. Please upgrade your pip version.")
-				return None, None
+				return None, None, None, False
 
-		return pip_command, pip_version
+		return pip_command, pip_version, version_segment, pip_sudo

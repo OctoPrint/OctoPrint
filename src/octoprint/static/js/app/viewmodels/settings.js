@@ -540,6 +540,29 @@ $(function() {
                     additionalBaudrates: function() { return _.map(splitTextToArray(self.serial_additionalBaudrates(), ",", true, function(item) { return !isNaN(parseInt(item)); }), function(item) { return parseInt(item); }) },
                     longRunningCommands: function() { return splitTextToArray(self.serial_longRunningCommands(), ",", true) },
                     checksumRequiringCommands: function() { return splitTextToArray(self.serial_checksumRequiringCommands(), ",", true) }
+                },
+                scripts: {
+                    gcode: function() {
+                        // we have a special handler function for the gcode scripts since the
+                        // server will always send us those that have been set already, so we
+                        // can't depend on all keys that we support to be present in the
+                        // original request we iterate through in mapFromObservables to
+                        // generate our response - hence we use our observables instead
+                        //
+                        // Note: If we ever introduce sub categories in the gcode scripts
+                        // here (more _ after the prefix), we'll need to adjust this code
+                        // to be able to cope with that, right now it only strips the prefix
+                        // and uses the rest as key in the result, no recursive translation
+                        // is done!
+                        var result = {};
+                        var prefix = "scripts_gcode_";
+                        var observables = _.filter(_.keys(self), function(key) { return _.startsWith(key, prefix); });
+                        _.each(observables, function(observable) {
+                            var script = observable.substring(prefix.length);
+                            result[script] = self[observable]();
+                        });
+                        return result;
+                    }
                 }
             };
 
@@ -554,7 +577,10 @@ $(function() {
                         observable = keyPrefix + "_" + observable;
                     }
 
-                    if (_.isPlainObject(value)) {
+                    if (mapping && mapping[key] && _.isFunction(mapping[key])) {
+                        result[key] = mapping[key]();
+                        flag = true;
+                    } else if (_.isPlainObject(value)) {
                         // value is another object, we'll dive deeper
                         var subresult = mapFromObservables(value, (mapping && mapping[key]) ? mapping[key] : undefined, observable);
                         if (subresult != undefined) {
@@ -562,15 +588,9 @@ $(function() {
                             result[key] = subresult;
                             flag = true;
                         }
-                    } else {
-                        // if we have a custom read function for this, we'll use it
-                        if (mapping && mapping[key] && _.isFunction(mapping[key])) {
-                            result[key] = mapping[key]();
-                            flag = true;
-                        } else if (self.hasOwnProperty(observable)) {
-                            result[key] = self[observable]();
-                            flag = true;
-                        }
+                    } else if (self.hasOwnProperty(observable)) {
+                        result[key] = self[observable]();
+                        flag = true;
                     }
                 });
 
@@ -647,22 +667,17 @@ $(function() {
                         observable = keyPrefix + "_" + observable;
                     }
 
-                    if (_.isPlainObject(value)) {
+                    var haveLocalVersion = local && local.hasOwnProperty(key);
+
+                    if (mapping && mapping[key] && _.isFunction(mapping[key]) && !haveLocalVersion) {
+                        // if we have a custom apply function for this, we'll use it
+                        mapping[key](value);
+                    } else if (_.isPlainObject(value)) {
                         // value is another object, we'll dive deeper
                         mapToObservables(value, (mapping && mapping[key]) ? mapping[key] : undefined, (local && local[key]) ? local[key] : undefined, observable);
-                    } else {
-                        // if we have a local version of this field, we'll not override it
-                        if (local && local.hasOwnProperty(key)) {
-                            return;
-                        }
-
-                        if (mapping && mapping[key] && _.isFunction(mapping[key])) {
-                            // if we have a custom apply function for this, we'll use it
-                            mapping[key](value);
-                        } else if (self.hasOwnProperty(observable)) {
-                            // else if we have a matching observable, we'll use that
-                            self[observable](value);
-                        }
+                    } else if (!haveLocalVersion && self.hasOwnProperty(observable)) {
+                        // if we have a matching observable, we'll use that
+                        self[observable](value);
                     }
                 });
             };
