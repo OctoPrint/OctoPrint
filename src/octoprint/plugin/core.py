@@ -562,8 +562,17 @@ class PluginManager(object):
 	def _find_plugins_from_entry_points(self, groups, existing, ignore_uninstalled=True):
 		result = dict()
 
-		# let's make sure we have a current working set
+		# let's make sure we have a current working set ...
 		working_set = pkg_resources.WorkingSet()
+
+		# ... including the user's site packages
+		import site
+		import sys
+		if site.ENABLE_USER_SITE:
+			if not site.USER_SITE in working_set.entries:
+				working_set.add_entry(site.USER_SITE)
+			if not site.USER_SITE in sys.path:
+				site.addsitedir(site.USER_SITE)
 
 		if not isinstance(groups, (list, tuple)):
 			groups = [groups]
