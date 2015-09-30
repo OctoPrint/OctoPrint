@@ -140,7 +140,7 @@ class PipCaller(CommandlineCaller):
 					self._logger.debug("Virtual environment detected, removing --user flag.")
 					arg_list.remove("--user")
 			# otherwise add it if necessary
-			elif (self.use_user or self.force_user) and site.ENABLE_USER_SITE:
+			elif not self._virtual_env and site.ENABLE_USER_SITE and (self.use_user or self.force_user):
 				self._logger.debug("pip needs --user flag for installations.")
 				arg_list.append("--user")
 
