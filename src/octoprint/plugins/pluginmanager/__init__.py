@@ -337,8 +337,11 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			self._send_result_notification("install", result)
 			return jsonify(result)
 
-		self._plugin_manager.mark_plugin(new_plugin_key, uninstalled=False)
 		self._plugin_manager.reload_plugins()
+		is_reinstall = self._plugin_manager.is_plugin_marked(new_plugin_key, "uninstalled")
+		self._plugin_manager.mark_plugin(new_plugin_key,
+		                                 uninstalled=False,
+		                                 installed=not is_reinstall)
 
 		needs_restart = self._plugin_manager.is_restart_needing_plugin(new_plugin) or new_plugin_key in all_plugins_before or reinstall is not None
 		needs_refresh = new_plugin.implementation and isinstance(new_plugin.implementation, octoprint.plugin.ReloadNeedingPlugin)
@@ -351,10 +354,13 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 	def command_uninstall(self, plugin):
 		if plugin.key == "pluginmanager":
-			return make_response("Can't uninstall Plugin Manager", 400)
+			return make_response("Can't uninstall Plugin Manager", 403)
+
+		if not plugin.managable:
+			return make_response("Plugin is not managable and hence cannot be uninstalled", 403)
 
 		if plugin.bundled:
-			return make_response("Bundled plugins cannot be uninstalled", 400)
+			return make_response("Bundled plugins cannot be uninstalled", 403)
 
 		if plugin.origin is None:
 			self._logger.warn(u"Trying to uninstall plugin {plugin} but origin is unknown".format(**locals()))
@@ -398,7 +404,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		needs_restart = self._plugin_manager.is_restart_needing_plugin(plugin)
 		needs_refresh = plugin.implementation and isinstance(plugin.implementation, octoprint.plugin.ReloadNeedingPlugin)
 
-		self._plugin_manager.mark_plugin(plugin.key, uninstalled=True)
+		was_pending_install = self._plugin_manager.is_plugin_marked(plugin.key, "installed")
+		self._plugin_manager.mark_plugin(plugin.key, uninstalled=not was_pending_install, installed=False)
 
 		if not needs_restart:
 			try:
@@ -670,11 +677,12 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			url=plugin.url,
 			license=plugin.license,
 			bundled=plugin.bundled,
+			managable=plugin.managable,
 			enabled=plugin.enabled,
 			pending_enable=(not plugin.enabled and plugin.key in self._pending_enable),
 			pending_disable=(plugin.enabled and plugin.key in self._pending_disable),
-			pending_install=(plugin.key in self._pending_install),
-			pending_uninstall=(plugin.key in self._pending_uninstall),
+			pending_install=(self._plugin_manager.is_plugin_marked(plugin.key, "installed")),
+			pending_uninstall=(self._plugin_manager.is_plugin_marked(plugin.key, "uninstalled")),
 			origin=plugin.origin.type
 		)
 
