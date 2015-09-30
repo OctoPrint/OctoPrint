@@ -232,7 +232,7 @@ $(function() {
                 var heaterOptions = self.heaterOptions();
                 if (!heaterOptions) return;
 
-                var maxTemps = [310];
+                var maxTemps = [310/1.1];
 
                 _.each(_.keys(heaterOptions), function(type) {
                     if (type == "bed" && !self.hasBed()) {
@@ -264,8 +264,7 @@ $(function() {
                     maxTemps.push(self.getMaxTemp(actuals, targets));
                 });
 
-                self.plotOptions.yaxis.max = Math.max.apply(null, maxTemps);
-                self.plotOptions.yaxis.ticks = self.plotOptions.yaxis.max / 30;
+                self.plotOptions.yaxis.max = Math.max.apply(null, maxTemps) * 1.1;
                 $.plot(graph, data, self.plotOptions);
             }
         };
