@@ -861,7 +861,7 @@ class PluginManager(object):
 			                                         additional_pre_inits=additional_pre_inits,
 			                                         additional_post_inits=additional_post_inits)
 
-		self.logger.info("Initialized {count} plugin(s)".format(count=len(self.plugin_implementations)))
+		self.logger.info("Initialized {count} plugin implementation(s)".format(count=len(self.plugin_implementations)))
 
 	def initialize_implementation_of_plugin(self, name, plugin, additional_injects=None, additional_inject_factories=None, additional_pre_inits=None, additional_post_inits=None):
 		if plugin.implementation is None:
@@ -955,15 +955,13 @@ class PluginManager(object):
 			self.logger.info("No plugins available")
 		else:
 			self.logger.info("{count} plugin(s) registered with the system:\n{plugins}".format(count=len(all_plugins), plugins="\n".join(
-				sorted(
-					map(lambda x: "| " + x.long_str(show_bundled=show_bundled,
-					                                bundled_strs=bundled_str,
-					                                show_location=show_location,
-					                                location_str=location_str,
-					                                show_enabled=show_enabled,
-					                                enabled_strs=enabled_str),
-					    self.enabled_plugins.values())
-				)
+				map(lambda x: "| " + x.long_str(show_bundled=show_bundled,
+				                                bundled_strs=bundled_str,
+				                                show_location=show_location,
+				                                location_str=location_str,
+				                                show_enabled=show_enabled,
+				                                enabled_strs=enabled_str),
+				    sorted(self.plugins.values(), key=lambda x: str(x).lower()))
 			)))
 
 	def get_plugin(self, identifier, require_enabled=True):
