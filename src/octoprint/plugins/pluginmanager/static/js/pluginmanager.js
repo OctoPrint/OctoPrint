@@ -115,6 +115,7 @@ $(function() {
         self.enableUninstall = function(data) {
             return self.enableManagement()
                 && (data.origin != "entry_point" || self.pipAvailable())
+                && data.managable
                 && !data.bundled
                 && data.key != 'pluginmanager'
                 && !data.pending_uninstall;
