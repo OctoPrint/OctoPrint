@@ -10,6 +10,7 @@ import sarge
 import sys
 import logging
 import re
+import site
 
 import pkg_resources
 
@@ -25,7 +26,8 @@ class PipCaller(CommandlineCaller):
 	no_use_wheel = pkg_resources.parse_requirements("pip==1.5.0")
 	broken = pkg_resources.parse_requirements("pip>=6.0.1,<=6.0.3")
 
-	def __init__(self, configured=None, ignore_cache=False):
+	def __init__(self, configured=None, ignore_cache=False, force_sudo=False,
+	             force_user=False):
 		CommandlineCaller.__init__(self)
 		self._logger = logging.getLogger(__name__)
 
@@ -33,11 +35,15 @@ class PipCaller(CommandlineCaller):
 		self.refresh = False
 		self.ignore_cache = ignore_cache
 
+		self.force_sudo = force_sudo
+		self.force_user = force_user
+
 		self._command = None
 		self._version = None
 		self._version_string = None
 		self._use_sudo = False
 		self._use_user = False
+		self._virtual_env = False
 		self._install_dir = None
 
 		self.trigger_refresh()
@@ -91,6 +97,10 @@ class PipCaller(CommandlineCaller):
 		return self._use_user
 
 	@property
+	def virtual_env(self):
+		return self._virtual_env
+
+	@property
 	def available(self):
 		return self._command is not None
 
@@ -112,19 +122,35 @@ class PipCaller(CommandlineCaller):
 			raise UnknownPip()
 
 		arg_list = list(args)
+
 		if "install" in arg_list:
+			# strip --process-dependency-links for versions that don't support it
 			if not self.version in self.__class__.process_dependency_links and "--process-dependency-links" in arg_list:
 				self._logger.debug("Found --process-dependency-links flag, version {} doesn't need that yet though, removing.".format(self.version))
 				arg_list.remove("--process-dependency-links")
+
+			# add --no-use-wheel for versions that otherwise break
 			if self.version in self.__class__.no_use_wheel and not "--no-use-wheel" in arg_list:
 				self._logger.debug("Version {} needs --no-use-wheel to properly work.".format(self.version))
 				arg_list.append("--no-use-wheel")
-			if self.use_user:
+
+			# remove --user if it's present and a virtual env is detected
+			if "--user" in arg_list:
+				if self._virtual_env or not site.ENABLE_USER_SITE:
+					self._logger.debug("Virtual environment detected, removing --user flag.")
+					arg_list.remove("--user")
+			# otherwise add it if necessary
+			elif (self.use_user or self.force_user) and site.ENABLE_USER_SITE:
+				self._logger.debug("pip needs --user flag for installations.")
 				arg_list.append("--user")
 
+		# add args to command
 		command = [self._command] + list(arg_list)
-		if self._use_sudo:
+
+		# add sudo if necessary
+		if self._use_sudo or self.force_sudo:
 			command = ["sudo"] + command
+
 		return self.call(command)
 
 	def _setup_pip(self):
@@ -170,18 +196,19 @@ class PipCaller(CommandlineCaller):
 		# installation directory is NOT writable by us but we also don't run
 		# in a virtual environment may we proceed with the --user parameter.
 
-		ok, pip_user, pip_install_dir = self._check_pip_setup(pip_command)
+		ok, pip_user, pip_virtual_env, pip_install_dir = self._check_pip_setup(pip_command)
 		if not ok:
 			self._logger.error("Pip install directory {} is not writable and is part of a virtual environment, can't use this constellation".format(pip_install_dir))
 			return
 
-		self._logger.info("pip at {} installs to {}, --user flag needed => {}".format(pip_command, pip_install_dir, "yes" if pip_user else "no"))
+		self._logger.info("pip at {} installs to {}, --user flag needed => {}, virtual env => {}".format(pip_command, pip_install_dir, "yes" if pip_user else "no", "yes" if pip_virtual_env else "no"))
 
 		self._command = pip_command
 		self._version = pip_version
 		self._version_string = version_segment
 		self._use_sudo = pip_sudo
 		self._use_user = pip_user
+		self._virtual_env = pip_virtual_env
 		self._install_dir = pip_install_dir
 
 	def _autodetect_pip(self):
@@ -283,7 +310,11 @@ class PipCaller(CommandlineCaller):
 				virtual_env = virtual_env_match.group(1) == "True"
 				writable = writable_match.group(1) == "True"
 
-				result = writable or not virtual_env, not writable and not virtual_env, install_dir
+				# ok, enable user flag, virtual env yes/no, installation dir
+				result = writable or not virtual_env, \
+				         not writable and not virtual_env and site.ENABLE_USER_SITE, \
+				         virtual_env, \
+				         install_dir
 				_cache["setup"][pip_command] = result
 				return result
 
