@@ -198,7 +198,7 @@ class PipCaller(CommandlineCaller):
 
 		ok, pip_user, pip_virtual_env, pip_install_dir = self._check_pip_setup(pip_command)
 		if not ok:
-			self._logger.error("Pip install directory {} is not writable and is part of a virtual environment, can't use this constellation".format(pip_install_dir))
+			self._logger.error("Cannot use pip at {}".format(pip_command))
 			return
 
 		self._logger.info("pip at {} installs to {}, --user flag needed => {}, virtual env => {}".format(pip_command, pip_install_dir, "yes" if pip_user else "no", "yes" if pip_virtual_env else "no"))
@@ -299,26 +299,29 @@ class PipCaller(CommandlineCaller):
 			              cwd=testballoon)
 
 			output = p.stdout.text
-			self._logger.debug("Got output from {}: {}".format(" ".join(sarge_command), output))
-
-			install_dir_match = self.__class__.pip_install_dir_regex.search(output)
-			virtual_env_match = self.__class__.pip_virtual_env_regex.search(output)
-			writable_match = self.__class__.pip_writable_regex.search(output)
-
-			if install_dir_match and virtual_env_match and writable_match:
-				install_dir = install_dir_match.group(1)
-				virtual_env = virtual_env_match.group(1) == "True"
-				writable = writable_match.group(1) == "True"
-
-				# ok, enable user flag, virtual env yes/no, installation dir
-				result = writable or not virtual_env, \
-				         not writable and not virtual_env and site.ENABLE_USER_SITE, \
-				         virtual_env, \
-				         install_dir
-				_cache["setup"][pip_command] = result
-				return result
-
+		except:
+			self._logger.exception("Error while trying to install testballoon to figure out pip setup")
+			return False, False, False, None
 		finally:
 			sarge_command = [pip_command, "uninstall", "-y", "OctoPrint-PipTestBalloon"]
 			sarge.run(sarge_command, stdout=sarge.Capture(), stderr=sarge.Capture())
 
+		install_dir_match = self.__class__.pip_install_dir_regex.search(output)
+		virtual_env_match = self.__class__.pip_virtual_env_regex.search(output)
+		writable_match = self.__class__.pip_writable_regex.search(output)
+
+		if install_dir_match and virtual_env_match and writable_match:
+			install_dir = install_dir_match.group(1)
+			virtual_env = virtual_env_match.group(1) == "True"
+			writable = writable_match.group(1) == "True"
+
+			# ok, enable user flag, virtual env yes/no, installation dir
+			result = writable or not virtual_env, \
+			         not writable and not virtual_env and site.ENABLE_USER_SITE, \
+			         virtual_env, \
+			         install_dir
+			_cache["setup"][pip_command] = result
+			return result
+		else:
+			self._logger.debug("Could not detect desired output from testballoon install, got this instead: {}".format(" ".join(sarge_command), output))
+			return False, False, False, None
