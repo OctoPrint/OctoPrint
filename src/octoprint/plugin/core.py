@@ -686,15 +686,24 @@ class PluginManager(object):
 				hooks=sum(map(lambda x: len(x), self.plugin_hooks.values()))
 			))
 
-	def mark_plugin(self, name, uninstalled=None):
+	def mark_plugin(self, name, **kwargs):
 		if not name in self.plugins:
-			self.logger.warn("Trying to mark an unknown plugin {name}".format(**locals()))
+			self.logger.debug("Trying to mark an unknown plugin {name}".format(**locals()))
 
-		if uninstalled is not None:
-			if uninstalled and not name in self.marked_plugins["uninstalled"]:
-				self.marked_plugins["uninstalled"].append(name)
-			elif not uninstalled and name in self.marked_plugins["uninstalled"]:
-				self.marked_plugins["uninstalled"].remove(name)
+		for key, value in kwargs.items():
+			if value is None:
+				continue
+
+			if value and not name in self.marked_plugins[key]:
+				self.marked_plugins[key].append(name)
+			elif not value and name in self.marked_plugins[key]:
+				self.marked_plugins[key].remove(name)
+
+	def is_plugin_marked(self, name, key):
+		if not name in self.plugins:
+			return False
+
+		return name in self.marked_plugins[key]
 
 	def load_plugin(self, name, plugin=None, startup=False, initialize_implementation=True):
 		if not name in self.plugins:
