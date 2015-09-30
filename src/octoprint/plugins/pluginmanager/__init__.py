@@ -52,7 +52,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		self._repository_cache_path = os.path.join(self.get_plugin_data_folder(), "plugins.json")
 		self._repository_cache_ttl = self._settings.get_int(["repository_ttl"]) * 60
 
-		self._pip_caller = PipCaller(configured=self._settings.get(["pip"]))
+		self._pip_caller = PipCaller(configured=self._settings.get(["pip"]),
+		                             force_user=self._settings.get_boolean(["pip_force_user"]))
 		self._pip_caller.on_log_call = self._log_call
 		self._pip_caller.on_log_stdout = self._log_stdout
 		self._pip_caller.on_log_stderr = self._log_stderr
@@ -83,6 +84,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			repository="http://plugins.octoprint.org/plugins.json",
 			repository_ttl=24*60,
 			pip=None,
+			pip_args=None,
+			pip_force_user=False,
 			dependency_links=False,
 			hidden=[]
 		)
@@ -93,6 +96,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		new_pip = self._settings.get(["pip"])
 
 		self._repository_cache_ttl = self._settings.get_int(["repository_ttl"]) * 60
+		self._pip_caller.force_user = self._settings.get_boolean(["pip_force_user"])
 		if old_pip != new_pip:
 			self._pip_caller.configured = new_pip
 			try:
@@ -187,15 +191,20 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 		return jsonify(plugins=self._get_plugins(),
 		               repository=dict(
-			               available=self._repository_available,
-			               plugins=self._repository_plugins
+		                   available=self._repository_available,
+		                   plugins=self._repository_plugins
 		               ),
 		               os=self._get_os(),
 		               octoprint=self._get_octoprint_version_string(),
 		               pip=dict(
-			               available=self._pip_caller.available,
-			               command=self._pip_caller.command,
-			               version=str(self._pip_caller.version)
+		                   available=self._pip_caller.available,
+		                   command=self._pip_caller.command,
+		                   version=self._pip_caller.version_string,
+		                   install_dir=self._pip_caller.install_dir,
+		                   use_sudo=self._pip_caller.use_sudo,
+		                   use_user=self._pip_caller.use_user,
+		                   virtual_env=self._pip_caller.virtual_env,
+		                   additional_args=self._settings.get(["pip_args"])
 		               ))
 
 	def on_api_command(self, command, data):
@@ -328,11 +337,14 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			self._send_result_notification("install", result)
 			return jsonify(result)
 
-		self._plugin_manager.mark_plugin(new_plugin_key, uninstalled=False)
 		self._plugin_manager.reload_plugins()
-
 		needs_restart = self._plugin_manager.is_restart_needing_plugin(new_plugin) or new_plugin_key in all_plugins_before or reinstall is not None
 		needs_refresh = new_plugin.implementation and isinstance(new_plugin.implementation, octoprint.plugin.ReloadNeedingPlugin)
+
+		is_reinstall = self._plugin_manager.is_plugin_marked(new_plugin_key, "uninstalled")
+		self._plugin_manager.mark_plugin(new_plugin_key,
+		                                 uninstalled=False,
+		                                 installed=not is_reinstall and needs_restart)
 
 		self._plugin_manager.log_all_plugins()
 
@@ -342,10 +354,13 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 	def command_uninstall(self, plugin):
 		if plugin.key == "pluginmanager":
-			return make_response("Can't uninstall Plugin Manager", 400)
+			return make_response("Can't uninstall Plugin Manager", 403)
+
+		if not plugin.managable:
+			return make_response("Plugin is not managable and hence cannot be uninstalled", 403)
 
 		if plugin.bundled:
-			return make_response("Bundled plugins cannot be uninstalled", 400)
+			return make_response("Bundled plugins cannot be uninstalled", 403)
 
 		if plugin.origin is None:
 			self._logger.warn(u"Trying to uninstall plugin {plugin} but origin is unknown".format(**locals()))
@@ -389,7 +404,10 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		needs_restart = self._plugin_manager.is_restart_needing_plugin(plugin)
 		needs_refresh = plugin.implementation and isinstance(plugin.implementation, octoprint.plugin.ReloadNeedingPlugin)
 
-		self._plugin_manager.mark_plugin(plugin.key, uninstalled=True)
+		was_pending_install = self._plugin_manager.is_plugin_marked(plugin.key, "installed")
+		self._plugin_manager.mark_plugin(plugin.key,
+		                                 uninstalled=not was_pending_install and needs_restart,
+		                                 installed=False)
 
 		if not needs_restart:
 			try:
@@ -452,6 +470,10 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 		if "--process-dependency-links" in args:
 			self._log_message(u"Installation needs to process external dependencies, that might make it take a bit longer than usual depending on the pip version")
+
+		additional_args = self._settings.get(["pip_args"])
+		if additional_args:
+			args.append(additional_args)
 
 		return self._pip_caller.execute(*args)
 
@@ -657,11 +679,12 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			url=plugin.url,
 			license=plugin.license,
 			bundled=plugin.bundled,
+			managable=plugin.managable,
 			enabled=plugin.enabled,
 			pending_enable=(not plugin.enabled and plugin.key in self._pending_enable),
 			pending_disable=(plugin.enabled and plugin.key in self._pending_disable),
-			pending_install=(plugin.key in self._pending_install),
-			pending_uninstall=(plugin.key in self._pending_uninstall),
+			pending_install=(self._plugin_manager.is_plugin_marked(plugin.key, "installed")),
+			pending_uninstall=(self._plugin_manager.is_plugin_marked(plugin.key, "uninstalled")),
 			origin=plugin.origin.type
 		)
 

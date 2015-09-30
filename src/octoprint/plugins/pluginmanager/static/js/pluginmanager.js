@@ -76,6 +76,8 @@ $(function() {
         self.config_repositoryUrl = ko.observable();
         self.config_repositoryTtl = ko.observable();
         self.config_pipCommand = ko.observable();
+        self.config_pipAdditionalArgs = ko.observable();
+        self.config_pipForceUser = ko.observable();
 
         self.configurationDialog = $("#settings_plugin_pluginmanager_configurationdialog");
 
@@ -148,6 +150,21 @@ $(function() {
         self.pipAvailable = ko.observable(false);
         self.pipCommand = ko.observable();
         self.pipVersion = ko.observable();
+        self.pipInstallDir = ko.observable();
+        self.pipUseUser = ko.observable();
+        self.pipUseSudo = ko.observable();
+        self.pipVirtualEnv = ko.observable();
+        self.pipAdditionalArgs = ko.observable();
+
+        self.pipUseSudoString = ko.computed(function() {
+            return self.pipUseSudo() ? "yes" : "no";
+        });
+        self.pipUseUserString = ko.computed(function() {
+            return self.pipUseUser() ? "yes" : "no";
+        });
+        self.pipVirtualEnvString = ko.computed(function() {
+            return self.pipVirtualEnv() ? "yes" : "no";
+        });
 
         self.working = ko.observable(false);
         self.workingTitle = ko.observable();
@@ -165,6 +182,7 @@ $(function() {
         self.enableUninstall = function(data) {
             return self.enableManagement()
                 && (data.origin != "entry_point" || self.pipAvailable())
+                && data.managable
                 && !data.bundled
                 && data.key != 'pluginmanager'
                 && !data.pending_uninstall;
@@ -275,9 +293,19 @@ $(function() {
             if (data.available) {
                 self.pipCommand(data.command);
                 self.pipVersion(data.version);
+                self.pipInstallDir(data.install_dir);
+                self.pipUseUser(data.use_user);
+                self.pipUseSudo(data.use_sudo);
+                self.pipVirtualEnv(data.virtual_env);
+                self.pipAdditionalArgs(data.additional_args);
             } else {
                 self.pipCommand(undefined);
                 self.pipVersion(undefined);
+                self.pipInstallDir(undefined);
+                self.pipUseUser(undefined);
+                self.pipUseSudo(undefined);
+                self.pipVirtualEnv(undefined);
+                self.pipAdditionalArgs(undefined);
             }
         };
 
@@ -463,12 +491,19 @@ $(function() {
                 repositoryTtl = null;
             }
 
+            var pipArgs = self.config_pipAdditionalArgs();
+            if (pipArgs != undefined && pipArgs.trim() == "") {
+                pipArgs = null;
+            }
+
             var data = {
                 plugins: {
                     pluginmanager: {
                         repository: repository,
                         repository_ttl: repositoryTtl,
-                        pip: pipCommand
+                        pip: pipCommand,
+                        pip_args: pipArgs,
+                        pip_force_user: self.config_pipForceUser()
                     }
                 }
             };
@@ -483,6 +518,8 @@ $(function() {
             self.config_repositoryUrl(self.settingsViewModel.settings.plugins.pluginmanager.repository());
             self.config_repositoryTtl(self.settingsViewModel.settings.plugins.pluginmanager.repository_ttl());
             self.config_pipCommand(self.settingsViewModel.settings.plugins.pluginmanager.pip());
+            self.config_pipAdditionalArgs(self.settingsViewModel.settings.plugins.pluginmanager.pip_args());
+            self.config_pipForceUser(self.settingsViewModel.settings.plugins.pluginmanager.pip_force_user());
         };
 
         self.installed = function(data) {

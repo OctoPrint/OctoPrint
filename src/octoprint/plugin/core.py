@@ -133,6 +133,7 @@ class PluginInfo(object):
 		self.enabled = True
 		self.bundled = False
 		self.loaded = False
+		self.managable = True
 
 		self._name = name
 		self._version = version
@@ -475,7 +476,24 @@ class PluginManager(object):
 
 		self.marked_plugins = defaultdict(list)
 
+		self._python_install_dir = None
+		self._python_virtual_env = False
+		self._detect_python_environment()
+
 		self.reload_plugins(startup=True, initialize_implementations=False)
+
+	def _detect_python_environment(self):
+		from distutils.command.install import install as cmd_install
+		from distutils.dist import Distribution
+		import sys
+
+		cmd = cmd_install(Distribution())
+		cmd.finalize_options()
+
+		self._python_install_dir = cmd.install_lib
+		self._python_prefix = sys.prefix
+		self._python_virtual_env = hasattr(sys, "real_prefix") \
+		                           or (hasattr(sys, "base_prefix") and sys.prefix != sys.base_prefix)
 
 	@property
 	def plugins(self):
@@ -503,12 +521,13 @@ class PluginManager(object):
 		result = dict()
 
 		for folder in folders:
-			readonly = False
+			flagged_readonly = False
 			if isinstance(folder, (list, tuple)):
 				if len(folder) == 2:
-					folder, readonly = folder
+					folder, flagged_readonly = folder
 				else:
 					continue
+			actual_readonly = not os.access(folder, os.W_OK)
 
 			if not os.path.exists(folder):
 				self.logger.warn("Plugin folder {folder} could not be found, skipping it".format(folder=folder))
@@ -531,8 +550,8 @@ class PluginManager(object):
 				plugin = self._import_plugin_from_module(key, folder=folder)
 				if plugin:
 					plugin.origin = FolderOrigin("folder", folder)
-					if readonly:
-						plugin.bundled = True
+					plugin.managable = not flagged_readonly and not actual_readonly
+					plugin.bundled = flagged_readonly
 
 					plugin.enabled = False
 
@@ -543,8 +562,17 @@ class PluginManager(object):
 	def _find_plugins_from_entry_points(self, groups, existing, ignore_uninstalled=True):
 		result = dict()
 
-		# let's make sure we have a current working set
+		# let's make sure we have a current working set ...
 		working_set = pkg_resources.WorkingSet()
+
+		# ... including the user's site packages
+		import site
+		import sys
+		if site.ENABLE_USER_SITE:
+			if not site.USER_SITE in working_set.entries:
+				working_set.add_entry(site.USER_SITE)
+			if not site.USER_SITE in sys.path:
+				site.addsitedir(site.USER_SITE)
 
 		if not isinstance(groups, (list, tuple)):
 			groups = [groups]
@@ -578,6 +606,16 @@ class PluginManager(object):
 				plugin = self._import_plugin_from_module(key, **kwargs)
 				if plugin:
 					plugin.origin = EntryPointOrigin("entry_point", group, module_name, package_name, version)
+
+					# plugin is manageable if its location is writable and OctoPrint
+					# is either not running from a virtual env or the plugin is
+					# installed in that virtual env - the virtual env's pip will not
+					# allow us to uninstall stuff that is installed outside
+					# of the virtual env, so this check is necessary
+					plugin.managable = os.access(plugin.location, os.W_OK) \
+					                   and (not self._python_virtual_env
+					                        or plugin.location.startswith(self._python_prefix))
+
 					plugin.enabled = False
 					result[key] = plugin
 
@@ -648,15 +686,24 @@ class PluginManager(object):
 				hooks=sum(map(lambda x: len(x), self.plugin_hooks.values()))
 			))
 
-	def mark_plugin(self, name, uninstalled=None):
+	def mark_plugin(self, name, **kwargs):
 		if not name in self.plugins:
-			self.logger.warn("Trying to mark an unknown plugin {name}".format(**locals()))
+			self.logger.debug("Trying to mark an unknown plugin {name}".format(**locals()))
 
-		if uninstalled is not None:
-			if uninstalled and not name in self.marked_plugins["uninstalled"]:
-				self.marked_plugins["uninstalled"].append(name)
-			elif not uninstalled and name in self.marked_plugins["uninstalled"]:
-				self.marked_plugins["uninstalled"].remove(name)
+		for key, value in kwargs.items():
+			if value is None:
+				continue
+
+			if value and not name in self.marked_plugins[key]:
+				self.marked_plugins[key].append(name)
+			elif not value and name in self.marked_plugins[key]:
+				self.marked_plugins[key].remove(name)
+
+	def is_plugin_marked(self, name, key):
+		if not name in self.plugins:
+			return False
+
+		return name in self.marked_plugins[key]
 
 	def load_plugin(self, name, plugin=None, startup=False, initialize_implementation=True):
 		if not name in self.plugins:
