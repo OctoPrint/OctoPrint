@@ -344,8 +344,12 @@ class FileManager(object):
 		self._storage(destination).remove_file(path)
 		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
 
-	def move_file(self, destination, oldpath, newpath):
-		self._storage(destination).move_file(oldpath, newpath)
+	def copy_file(self, destination, source, dst, allow_overwrite=False):
+		self._storage(destination).copy_file(source, dst, allow_overwrite)
+		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
+
+	def move_file(self, destination, source, dst, allow_overwrite=False):
+		self._storage(destination).move_file(source, dst, allow_overwrite)
 		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
 
 	def add_folder(self, destination, path, ignore_existing=True):
@@ -355,6 +359,14 @@ class FileManager(object):
 
 	def remove_folder(self, destination, path, recursive=True):
 		self._storage(destination).remove_folder(path, recursive=recursive)
+		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
+
+	def copy_folder(self, destination, source, dst):
+		self._storage(destination).copy_folder(source, dst)
+		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
+
+	def move_folder(self, destination, source, dst, allow_overwrite=False):
+		self._storage(destination).move_folder(source, dst, allow_overwrite)
 		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
 
 	def get_metadata(self, destination, path):
