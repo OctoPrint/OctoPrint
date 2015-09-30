@@ -29,6 +29,7 @@ $(function() {
         self.ui_modelInfo = ko.observable("");
         self.ui_layerInfo = ko.observable("");
 
+        self.tabActive = false;
         self.enableReload = ko.observable(false);
 
         self.waitForApproval = ko.observable(false);
@@ -355,7 +356,7 @@ $(function() {
             if(self.loadedFilename
                     && self.loadedFilename == data.job.file.name
                     && self.loadedFileDate == data.job.file.date) {
-                if (self.currentlyPrinting && self.renderer_syncProgress() && !self.waitForApproval()) {
+                if (self.tabActive && self.currentlyPrinting && self.renderer_syncProgress() && !self.waitForApproval()) {
                     var cmdIndex = GCODE.gCodeReader.getCmdIndexForPercentage(data.progress.completion);
                     if(cmdIndex){
                         GCODE.renderer.render(cmdIndex.layer, 0, cmdIndex.cmd);
@@ -503,6 +504,10 @@ $(function() {
             self.initialize();
         }
 
+        self.onTabChange = function(current, previous) {
+            self.tabActive = current == "#gcode";
+
+        }
     }
 
     OCTOPRINT_VIEWMODELS.push([
