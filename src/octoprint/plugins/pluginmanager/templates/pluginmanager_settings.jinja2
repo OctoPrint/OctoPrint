@@ -217,19 +217,31 @@
     </div>
     <div class="modal-body">
         <form class="form-horizontal">
+            <legend>{{ _('pip configuration') }}</legend>
+
             <div class="control-group" title="{{ _('pip command to use for managing plugins. You might have to configure this if auto detection fails.') }}">
-                <label class="control-label">{{ _('pip command') }}</label>
+                <label class="control-label">{{ _('Command') }}</label>
                 <div class="controls">
                     <input type="text" class="input-block-level" data-bind="value: config_pipCommand" placeholder="{{ _('Autodetect') }}">
                     <span class="help-inline">{{ _('<strong>Only</strong> set this if OctoPrint cannot autodetect the path to <code>pip</code> to use for managing plugins.') }}</span>
                 </div>
             </div>
             <div class="control-group" title="{{ _('Additional arguments for pip command. You should normally not have to change this.') }}">
-                <label class="control-label">{{ _('Additional pip arguments') }}</label>
+                <label class="control-label">{{ _('Additional arguments') }}</label>
                 <div class="controls">
                     <input type="text" class="input-block-level" data-bind="value: config_pipAdditionalArgs">
                 </div>
             </div>
+            <div class="control-group">
+                <div class="controls">
+                    <label class="checkbox">
+                        <input type="checkbox" data-bind="checked: config_pipForceUser"> {{ _('Force the user of the <code>--user</code> flag with <code>pip install</code>') }}
+                    </label>
+                </div>
+            </div>
+
+            <legend>{{ _('Plugin repository configuration') }}</legend>
+
             <div class="control-group" title="{{ _('URL of the Plugin Repository to use. You should normally not have to change this.') }}">
                 <label class="control-label">{{ _('Repository URL') }}</label>
                 <div class="controls">

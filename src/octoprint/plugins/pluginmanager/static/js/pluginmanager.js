@@ -10,6 +10,7 @@ $(function() {
         self.config_repositoryTtl = ko.observable();
         self.config_pipCommand = ko.observable();
         self.config_pipAdditionalArgs = ko.observable();
+        self.config_pipForceUser = ko.observable();
 
         self.configurationDialog = $("#settings_plugin_pluginmanager_configurationdialog");
 
@@ -423,7 +424,8 @@ $(function() {
                         repository: repository,
                         repository_ttl: repositoryTtl,
                         pip: pipCommand,
-                        pip_args: pipArgs
+                        pip_args: pipArgs,
+                        pip_force_user: self.config_pipForceUser()
                     }
                 }
             };
@@ -439,6 +441,7 @@ $(function() {
             self.config_repositoryTtl(self.settingsViewModel.settings.plugins.pluginmanager.repository_ttl());
             self.config_pipCommand(self.settingsViewModel.settings.plugins.pluginmanager.pip());
             self.config_pipAdditionalArgs(self.settingsViewModel.settings.plugins.pluginmanager.pip_args());
+            self.config_pipForceUser(self.settingsViewModel.settings.plugins.pluginmanager.pip_force_user());
         };
 
         self.installed = function(data) {
