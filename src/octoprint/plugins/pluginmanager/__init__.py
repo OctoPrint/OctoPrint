@@ -338,13 +338,13 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			return jsonify(result)
 
 		self._plugin_manager.reload_plugins()
+		needs_restart = self._plugin_manager.is_restart_needing_plugin(new_plugin) or new_plugin_key in all_plugins_before or reinstall is not None
+		needs_refresh = new_plugin.implementation and isinstance(new_plugin.implementation, octoprint.plugin.ReloadNeedingPlugin)
+
 		is_reinstall = self._plugin_manager.is_plugin_marked(new_plugin_key, "uninstalled")
 		self._plugin_manager.mark_plugin(new_plugin_key,
 		                                 uninstalled=False,
-		                                 installed=not is_reinstall)
-
-		needs_restart = self._plugin_manager.is_restart_needing_plugin(new_plugin) or new_plugin_key in all_plugins_before or reinstall is not None
-		needs_refresh = new_plugin.implementation and isinstance(new_plugin.implementation, octoprint.plugin.ReloadNeedingPlugin)
+		                                 installed=not is_reinstall and needs_restart)
 
 		self._plugin_manager.log_all_plugins()
 
@@ -405,7 +405,9 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		needs_refresh = plugin.implementation and isinstance(plugin.implementation, octoprint.plugin.ReloadNeedingPlugin)
 
 		was_pending_install = self._plugin_manager.is_plugin_marked(plugin.key, "installed")
-		self._plugin_manager.mark_plugin(plugin.key, uninstalled=not was_pending_install, installed=False)
+		self._plugin_manager.mark_plugin(plugin.key,
+		                                 uninstalled=not was_pending_install and needs_restart,
+		                                 installed=False)
 
 		if not needs_restart:
 			try:
