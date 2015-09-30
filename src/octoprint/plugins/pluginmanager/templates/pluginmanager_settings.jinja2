@@ -6,8 +6,9 @@
 
 {% macro pluginmanager_nopip() %}
 <div class="alert" data-bind="visible: !pipAvailable()">{% trans %}
-    The <code>pip</code> command could not be found.
-    Please configure it manually. No installation and uninstallation of plugin
+    The <code>pip</code> command could not be found or does not work correctly
+    for this installation of OctoPrint - please consult the log file for details
+    and if necessary configure it manually. No installation and uninstallation of plugin
     packages is possible while <code>pip</code> is unavailable.
 {% endtrans %}</div>
 {% endmacro %}
