@@ -63,6 +63,10 @@ $(function() {
         PNotify.prototype.options.mouse_reset = false;
 
         PNotify.singleButtonNotify = function(options) {
+            if (!options.confirm || !options.confirm.buttons || !options.confirm.buttons.length) {
+                return new PNotify(options);
+            }
+
             var autoDisplay = options.auto_display != false;
 
             var params = $.extend(true, {}, options);
