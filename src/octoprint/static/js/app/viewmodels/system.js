@@ -26,12 +26,14 @@ $(function() {
 
         self.fromCommandResponse = function(response) {
             var actions = [];
-            _.each(response.core, function(data) {
-                var action = _.extend({}, data);
-                action.actionSource = "core";
-                actions.push(action);
-            });
-            actions.push({action: "divider"});
+            if (response.core && response.core.length) {
+                _.each(response.core, function(data) {
+                    var action = _.extend({}, data);
+                    action.actionSource = "core";
+                    actions.push(action);
+                });
+                actions.push({action: "divider"});
+            }
             _.each(response.custom, function(data) {
                 var action = _.extend({}, data);
                 action.actionSource = "custom";
