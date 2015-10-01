@@ -5,6 +5,7 @@ $(function() {
         self.loginState = parameters[0];
         self.settingsViewModel = parameters[1];
         self.printerState = parameters[2];
+        self.systemViewModel = parameters[3];
 
         self.config_repositoryUrl = ko.observable();
         self.config_repositoryTtl = ko.observable();
@@ -103,6 +104,20 @@ $(function() {
         self.workingTitle = ko.observable();
         self.workingDialog = undefined;
         self.workingOutput = undefined;
+
+        self.restartCommandSpec = undefined;
+        self.systemViewModel.systemActions.subscribe(function() {
+            var lastResponse = self.systemViewModel.lastCommandResponse;
+            if (!lastResponse || !lastResponse.core) {
+                self.restartCommandSpec = undefined;
+                return;
+            }
+
+            var restartSpec = _.filter(lastResponse.core, function(spec) { return spec.action == "restart" });
+            self.restartCommandSpec = restartSpec != undefined && restartSpec.length > 0 ? restartSpec[0] : undefined;
+        });
+
+        self.notifications = [];
 
         self.enableManagement = ko.computed(function() {
             return !self.printerState.isPrinting();
@@ -464,15 +479,65 @@ $(function() {
         };
 
         self._displayNotification = function(response, titleSuccess, textSuccess, textRestart, textReload, titleError, textError) {
+            var notification;
+
+            var beforeClose = function(notification) {
+                self.notifications = _.without(self.notifications, notification);
+            };
+
             if (response.result) {
                 if (response.needs_restart) {
-                    new PNotify({
+                    var options = {
                         title: titleSuccess,
                         text: textRestart,
+                        buttons: {
+                            closer: false,
+                            sticker: false
+                        },
+                        callbacks: {
+                            before_close: beforeClose
+                        },
                         hide: false
-                    });
+                    };
+
+                    if (self.restartCommandSpec) {
+                        options.confirm = {
+                            confirm: true,
+                            buttons: [{
+                                text: gettext("Restart now"),
+                                click: function () {
+                                    showConfirmationDialog({
+                                        message: gettext("This will restart your OctoPrint server."),
+                                        onproceed: function() {
+                                            $.ajax({
+                                                url: self.restartCommandSpec.resource,
+                                                type: "POST",
+                                                dataType: "json",
+                                                data: "{}",
+                                                contentType: "application/json; charset=UTF-8",
+                                                success: function() {
+                                                    new PNotify({
+                                                        title: gettext("Restart in progress"),
+                                                        text: gettext("The server is now being restarted in the background")
+                                                    })
+                                                },
+                                                error: function() {
+                                                    new PNotify({
+                                                        title: gettext("Something went wrong"),
+                                                        text: gettext("Trying to restart the server produced an error, please check octoprint.log for details. You'll have to restart manually.")
+                                                    })
+                                                }
+                                            });
+                                        }
+                                    });
+                                }
+                            }]
+                        }
+                    }
+
+                    notification = PNotify.singleButtonNotify(options);
                 } else if (response.needs_refresh) {
-                    new PNotify({
+                    notification = PNotify.singleButtonNotify({
                         title: titleSuccess,
                         text: textReload,
                         confirm: {
@@ -488,24 +553,35 @@ $(function() {
                             closer: false,
                             sticker: false
                         },
+                        callbacks: {
+                            before_close: beforeClose
+                        },
                         hide: false
                     })
                 } else {
-                    new PNotify({
+                    notification = new PNotify({
                         title: titleSuccess,
                         text: textSuccess,
                         type: "success",
+                        callbacks: {
+                            before_close: beforeClose
+                        },
                         hide: false
                     })
                 }
             } else {
-                new PNotify({
+                notification = new PNotify({
                     title: titleError,
                     text: textError,
                     type: "error",
+                    callbacks: {
+                        before_close: beforeClose
+                    },
                     hide: false
                 });
             }
+
+            self.notifications.push(notification);
         };
 
         self._postCommand = function (command, data, successCallback, failureCallback, alwaysCallback, timeout) {
@@ -577,6 +653,16 @@ $(function() {
         self.onUserLoggedIn = function(user) {
             if (user.admin) {
                 self.requestData();
+            } else {
+                self.onUserLoggedOut();
+            }
+        };
+
+        self.onUserLoggedOut = function() {
+            if (self.notifications) {
+                _.each(self.notifications, function(notification) {
+                    notification.remove();
+                });
             }
         };
 
@@ -730,5 +816,9 @@ $(function() {
     }
 
     // view model class, parameters for constructor, container to bind to
-    ADDITIONAL_VIEWMODELS.push([PluginManagerViewModel, ["loginStateViewModel", "settingsViewModel", "printerStateViewModel"], "#settings_plugin_pluginmanager"]);
+    ADDITIONAL_VIEWMODELS.push([
+        PluginManagerViewModel,
+        ["loginStateViewModel", "settingsViewModel", "printerStateViewModel", "systemViewModel"],
+        "#settings_plugin_pluginmanager"
+    ]);
 });
