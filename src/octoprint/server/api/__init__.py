@@ -38,6 +38,7 @@ from . import log as api_logs
 from . import slicing as api_slicing
 from . import printer_profiles as api_printer_profiles
 from . import languages as api_languages
+from . import system as api_system
 
 
 VERSION = "0.1"
@@ -176,45 +177,6 @@ def apiVersion():
 		"server": octoprint.server.VERSION,
 		"api": VERSION
 	})
-
-#~~ system control
-
-
-@api.route("/system", methods=["POST"])
-@restricted_access
-@admin_permission.require(403)
-def performSystemAction():
-	logger = logging.getLogger(__name__)
-
-	data = request.values
-	if hasattr(request, "json") and request.json:
-		data = request.json
-
-	if "action" in data:
-		action = data["action"]
-		available_actions = s().get(["system", "actions"])
-		for availableAction in available_actions:
-			if availableAction["action"] == action:
-				async = availableAction["async"] if "async" in availableAction else False
-				ignore = availableAction["ignore"] if "ignore" in availableAction else False
-				logger.info("Performing command: %s" % availableAction["command"])
-				try:
-					# we run this with shell=True since we have to trust whatever
-					# our admin configured as command and since we want to allow
-					# shell-alike handling here...
-					p = sarge.run(availableAction["command"], stderr=sarge.Capture(), shell=True, async=async)
-					if not async:
-						if not ignore and p.returncode != 0:
-							returncode = p.returncode
-							stderr_text = p.stderr.text
-							logger.warn("Command failed with return code %i: %s" % (returncode, stderr_text))
-							return make_response(("Command failed with return code %i: %s" % (returncode, stderr_text), 500, []))
-				except Exception, e:
-					if not ignore:
-						logger.warn("Command failed: %s" % e)
-						return make_response(("Command failed: %s" % e, 500, []))
-				break
-	return NO_CONTENT
 
 
 #~~ Login/user handling

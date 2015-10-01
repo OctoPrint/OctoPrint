@@ -80,6 +80,26 @@ $(function() {
         PNotify.prototype.options.styling = "bootstrap2";
         PNotify.prototype.options.mouse_reset = false;
 
+        PNotify.singleButtonNotify = function(options) {
+            if (!options.confirm || !options.confirm.buttons || !options.confirm.buttons.length) {
+                return new PNotify(options);
+            }
+
+            var autoDisplay = options.auto_display != false;
+
+            var params = $.extend(true, {}, options);
+            params.auto_display = false;
+
+            var notify = new PNotify(params);
+            notify.options.confirm.buttons = [notify.options.confirm.buttons[0]];
+            notify.modules.confirm.makeDialog(notify, notify.options.confirm);
+
+            if (autoDisplay) {
+                notify.open();
+            }
+            return notify;
+        };
+
         //~~ Initialize view models
 
         // the view model map is our basic look up table for dependencies that may be injected into other view models

@@ -631,6 +631,7 @@ def collect_plugin_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 		'js/app/viewmodels/printerprofiles.js',
 		'js/app/viewmodels/settings.js',
 		'js/app/viewmodels/slicing.js',
+		'js/app/viewmodels/system.js',
 		'js/app/viewmodels/temperature.js',
 		'js/app/viewmodels/terminal.js',
 		'js/app/viewmodels/timelapse.js',
