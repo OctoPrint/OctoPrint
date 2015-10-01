@@ -926,6 +926,7 @@ class Server(object):
 			"js/app/client/printerprofiles.js",
 			"js/app/client/settings.js",
 			"js/app/client/slicing.js",
+			"js/app/client/system.js",
 			"js/app/client/timelapse.js",
 			"js/app/client/users.js",
 			"js/app/client/util.js",

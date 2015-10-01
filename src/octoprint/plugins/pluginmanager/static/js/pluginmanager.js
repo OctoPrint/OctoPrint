@@ -580,25 +580,19 @@ $(function() {
                                     showConfirmationDialog({
                                         message: gettext("This will restart your OctoPrint server."),
                                         onproceed: function() {
-                                            $.ajax({
-                                                url: self.restartCommandSpec.resource,
-                                                type: "POST",
-                                                dataType: "json",
-                                                data: "{}",
-                                                contentType: "application/json; charset=UTF-8",
-                                                success: function() {
+                                            OctoPrint.system.executeCommand("core", "restart")
+                                                .done(function() {
                                                     new PNotify({
                                                         title: gettext("Restart in progress"),
                                                         text: gettext("The server is now being restarted in the background")
                                                     })
-                                                },
-                                                error: function() {
+                                                })
+                                                .fail(function() {
                                                     new PNotify({
                                                         title: gettext("Something went wrong"),
                                                         text: gettext("Trying to restart the server produced an error, please check octoprint.log for details. You'll have to restart manually.")
                                                     })
-                                                }
-                                            });
+                                                });
                                         }
                                     });
                                 }

@@ -39,10 +39,6 @@
                 script: script,
                 context: context
             }, opts);
-        },
-
-        executeSystemCommand: function (action, opts) {
-            return OctoPrint.postJson("api/system", {action: action}, opts);
         }
     }
 });

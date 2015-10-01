@@ -13,15 +13,11 @@ $(function() {
 
         self.requestCommandData = function() {
             if (!self.loginState.isAdmin()) {
-                return;
+                return $.Deferred().reject().promise();
             }
 
-            $.ajax({
-                url: API_BASEURL + "system/commands",
-                type: "GET",
-                dataType: "json",
-                success: self.fromCommandResponse
-            });
+            return OctoPrint.system.getCommands()
+                .done(self.fromCommandResponse);
         };
 
         self.fromCommandResponse = function(response) {
@@ -44,35 +40,41 @@ $(function() {
         };
 
         self.triggerCommand = function(commandSpec) {
+            var deferred = $.Deferred();
+
             var callback = function() {
-                $.ajax({
-                    url: commandSpec.resource,
-                    type: "POST",
-                    dataType: "json",
-                    data: "{}",
-                    contentType: "application/json; charset=UTF-8",
-                    success: function() {
+                OctoPrint.system.executeCommand(commandSpec.actionSource, commandSpec.action)
+                    .done(function() {
                         new PNotify({title: "Success", text: _.sprintf(gettext("The command \"%(command)s\" executed successfully"), {command: commandSpec.name}), type: "success"});
-                    },
-                    error: function(jqXHR, textStatus, errorThrown) {
+                        deferred.resolve(["success", arguments]);
+                    })
+                    .fail(function(jqXHR, textStatus, errorThrown) {
                         if (!commandSpec.hasOwnProperty("ignore") || !commandSpec.ignore) {
                             var error = "<p>" + _.sprintf(gettext("The command \"%(command)s\" could not be executed."), {command: commandSpec.name}) + "</p>";
                             error += pnotifyAdditionalInfo("<pre>" + jqXHR.responseText + "</pre>");
                             new PNotify({title: gettext("Error"), text: error, type: "error", hide: false});
+                            deferred.reject(["error", arguments]);
+                        } else {
+                            deferred.resolve(["ignored", arguments]);
                         }
-                    }
-                })
+                    });
             };
+
             if (commandSpec.confirm) {
                 showConfirmationDialog({
                     message: commandSpec.confirm,
-                    onproceed: function(e) {
+                    onproceed: function() {
                         callback();
+                    },
+                    oncancel: function() {
+                        deferred.reject("cancelled", arguments);
                     }
                 });
             } else {
                 callback();
             }
+
+            return deferred.promise();
         };
 
         self.onUserLoggedIn = function(user) {
