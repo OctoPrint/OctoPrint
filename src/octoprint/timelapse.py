@@ -233,7 +233,7 @@ class Timelapse(object):
 			return f
 
 		if self._post_roll > 0:
-			eventManager().fire(Events.POSTROLL_START, dict(postroll_duration=self.post_roll * self.fps, postroll_length=self.post_roll, postroll_fps=self.fps))
+			eventManager().fire(Events.POSTROLL_START, dict(postroll_duration=self.calculate_post_roll(), postroll_length=self.post_roll, postroll_fps=self.fps))
 			self._post_roll_start = time.time()
 			if doCreateMovie:
 				self._on_post_roll_done = getWaitForCaptures(resetAndCreate)
@@ -246,6 +246,9 @@ class Timelapse(object):
 				waitForCaptures(resetAndCreate)
 			else:
 				resetImageNumber()
+
+	def calculate_post_roll(self):
+		return None
 
 	def process_post_roll(self):
 		self.post_roll_finished()
@@ -469,6 +472,9 @@ class TimedTimelapse(Timelapse):
 	def on_print_done(self, event, payload):
 		self._postroll_captures = self.post_roll * self.fps
 		Timelapse.on_print_done(self, event, payload)
+
+	def calculate_post_roll(self):
+		return self.post_roll * self.fps * self.interval
 
 	def process_post_roll(self):
 		pass
