@@ -649,7 +649,10 @@ $(function() {
                     longRunningCommands: function(value) { self.serial_longRunningCommands(value.join(", "))},
                     checksumRequiringCommands: function(value) { self.serial_checksumRequiringCommands(value.join(", "))}
                 },
-                terminalFilters: function(value) { self.terminalFilters.removeAll(); _.each(value, function(item) {self.terminalFilters.push(item)}); }
+                terminalFilters: function(value) { self.terminalFilters($.extend(true, [], value)) },
+                temperature: {
+                    profiles: function(value) { self.temperature_profiles($.extend(true, [], value)); }
+                }
             };
 
             var mapToObservables = function(data, mapping, local, keyPrefix) {
