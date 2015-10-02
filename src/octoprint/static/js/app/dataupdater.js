@@ -146,15 +146,23 @@ function DataUpdater(allViewModels) {
                 hide: false
             });
         } else if (type == "PostRollStart") {
-            if (payload.postroll_duration > 60) {
-                format = {duration: _.sprintf(gettext("%(minutes)d min"), {minutes: payload.postroll_duration / 60})};
+            var title = gettext("Capturing timelapse postroll");
+
+            var text;
+            if (!payload.postroll_duration) {
+                text = _.sprintf(gettext("Now capturing timelapse post roll, this will take only a moment..."), format);
             } else {
-                format = {duration: _.sprintf(gettext("%(seconds)d sec"), {seconds: payload.postroll_duration})};
+                if (payload.postroll_duration > 60) {
+                    format = {duration: _.sprintf(gettext("%(minutes)d min"), {minutes: payload.postroll_duration / 60})};
+                } else {
+                    format = {duration: _.sprintf(gettext("%(seconds)d sec"), {seconds: payload.postroll_duration})};
+                }
+                text = _.sprintf(gettext("Now capturing timelapse post roll, this will take approximately %(duration)s..."), format);
             }
 
             new PNotify({
-                title: gettext("Capturing timelapse postroll"),
-                text: _.sprintf(gettext("Now capturing timelapse post roll, this will take approximately %(duration)s..."), format)
+                title: title,
+                text: text
             });
         } else if (type == "SlicingStarted") {
             gcodeUploadProgress.addClass("progress-striped").addClass("active");
