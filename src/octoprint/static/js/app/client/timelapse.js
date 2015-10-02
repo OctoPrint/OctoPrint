@@ -5,23 +5,23 @@
         factory(window.OctoPrint, window.$);
     }
 })(window || this, function(OctoPrint, $) {
-    var exports = {};
-
     var url = "api/timelapse";
 
     var timelapseUrl = function(filename) {
         return url + "/" + filename;
     };
 
+    var getTimelapseData = function (opts) {
+        return OctoPrint.get(url, opts);
+    };
+
     OctoPrint.timelapse = {
-        get: function (opts) {
-            return OctoPrint.get(url, opts);
-        },
+        get: getTimelapseData,
 
         list: function (opts) {
             var deferred = $.Deferred();
 
-            exports.get(opts)
+            getTimelapseData(opts)
                 .done(function (response, status, request) {
                     deferred.resolve(response.files, status, request);
                 })
@@ -42,7 +42,7 @@
 
         getConfig: function (opts) {
             var deferred = $.Deferred();
-            exports.get(opts)
+            getTimelapseData(opts)
                 .done(function (response, status, request) {
                     deferred.resolve(response.config, status, request);
                 })
