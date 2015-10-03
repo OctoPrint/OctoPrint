@@ -2,6 +2,19 @@
 
 ## 1.3.0 (unreleased)
 
+### New Features
+
+* A new wizard dialog for system setups that can also be extended by plugins. Replaces the first run dialog
+  for setting up access control and can also be triggered in other cases than only the first run, e.g.
+  if Plugins necessitate user input to function properly.
+* An About dialog including licenses, authors, the changelog and more, extendable by plugins if necessary.
+* New features within the plugin system (TODO):
+  * New plugin mixin `UiPlugin` for plugins that want to provide an alternative web interface delivered by the
+    server.
+* Extracted a Javascript client library for utilizing the server's API, can be reused by `UiPlugin`s. (TODO)
+
+(TODO) = needs to be further described and documented
+
 ### Improvements
 
 * Upgraded versioneer, generated version numbers are now PEP440 compatible (relevant
@@ -41,6 +54,8 @@
   but a target temperature is set - this way the graph should be more responsive
   while monitoring a manual heatup.
 * Documentation improvements
+* Test buttons for webcam snapshot & stream URL, ffmpeg path and some other settings
+  (see also [#183](https://github.com/foosel/OctoPrint/issues/183)).
 
 ### Bug Fixes
 

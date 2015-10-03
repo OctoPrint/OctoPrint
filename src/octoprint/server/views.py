@@ -573,4 +573,3 @@ def localeJs(locale, domain):
 def plugin_assets(name, filename):
 	return redirect(url_for("plugin." + name + ".static", filename=filename))
 
-

@@ -47,14 +47,8 @@ $(function() {
         self.previousIsOperational = undefined;
 
         self.requestData = function() {
-            $.ajax({
-                url: API_BASEURL + "connection",
-                method: "GET",
-                dataType: "json",
-                success: function(response) {
-                    self.fromResponse(response);
-                }
-            })
+            OctoPrint.connection.getSettings()
+                .done(self.fromResponse);
         };
 
         self.fromResponse = function(response) {
@@ -93,7 +87,7 @@ $(function() {
             } else if (!self.isOperational() && !connectionTab.hasClass("in")) {
                 connectionTab.collapse("show");
             }
-        }
+        };
 
         self._processStateData = function(data) {
             self.previousIsOperational = self.isOperational();
@@ -116,7 +110,6 @@ $(function() {
         self.connect = function() {
             if (self.isErrorOrClosed()) {
                 var data = {
-                    "command": "connect",
                     "port": self.selectedPort() || "AUTO",
                     "baudrate": self.selectedBaudrate() || 0,
                     "printerProfile": self.selectedPrinter(),
@@ -126,26 +119,14 @@ $(function() {
                 if (self.saveSettings())
                     data["save"] = true;
 
-                $.ajax({
-                    url: API_BASEURL + "connection",
-                    type: "POST",
-                    dataType: "json",
-                    contentType: "application/json; charset=UTF-8",
-                    data: JSON.stringify(data),
-                    success: function(response) {
+                OctoPrint.connection.connect(data)
+                    .done(function() {
                         self.settings.requestData();
                         self.settings.printerProfiles.requestData();
-                    }
-                });
+                    });
             } else {
                 self.requestData();
-                $.ajax({
-                    url: API_BASEURL + "connection",
-                    type: "POST",
-                    dataType: "json",
-                    contentType: "application/json; charset=UTF-8",
-                    data: JSON.stringify({"command": "disconnect"})
-                })
+                OctoPrint.connection.disconnect();
             }
         };
 

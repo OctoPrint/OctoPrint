@@ -1,4 +1,6 @@
 $(function() {
+        OctoPrint = window.OctoPrint;
+
         //~~ Lodash setup
 
         _.mixin({"sprintf": sprintf, "vsprintf": vsprintf});
@@ -6,6 +8,23 @@ $(function() {
         //~~ Logging setup
 
         log.setLevel(CONFIG_DEBUG ? "debug" : "info");
+
+        //~~ OctoPrint client setup
+        OctoPrint.options.baseurl = BASEURL;
+        OctoPrint.options.apikey = UI_API_KEY;
+
+        OctoPrint.socket.onMessage("connected", function(data) {
+            var payload = data.data;
+            OctoPrint.options.apikey = payload.apikey;
+
+            // update the API key directly in jquery's ajax options too,
+            // to ensure the fileupload plugin and any plugins still using
+            // $.ajax directly still work fine too
+            UI_API_KEY = payload["apikey"];
+            $.ajaxSetup({
+                headers: {"X-Api-Key": UI_API_KEY}
+            });
+        });
 
         //~~ AJAX setup
 
@@ -61,6 +80,26 @@ $(function() {
 
         PNotify.prototype.options.styling = "bootstrap2";
         PNotify.prototype.options.mouse_reset = false;
+
+        PNotify.singleButtonNotify = function(options) {
+            if (!options.confirm || !options.confirm.buttons || !options.confirm.buttons.length) {
+                return new PNotify(options);
+            }
+
+            var autoDisplay = options.auto_display != false;
+
+            var params = $.extend(true, {}, options);
+            params.auto_display = false;
+
+            var notify = new PNotify(params);
+            notify.options.confirm.buttons = [notify.options.confirm.buttons[0]];
+            notify.modules.confirm.makeDialog(notify, notify.options.confirm);
+
+            if (autoDisplay) {
+                notify.open();
+            }
+            return notify;
+        };
 
         //~~ Initialize view models
 
@@ -487,7 +526,8 @@ $(function() {
         if (!_.has(viewModelMap, "settingsViewModel")) {
             throw new Error("settingsViewModel is missing, can't run UI")
         }
-        viewModelMap["settingsViewModel"].requestData(bindViewModels);
+        viewModelMap["settingsViewModel"].requestData()
+            .done(bindViewModels);
     }
 );
 

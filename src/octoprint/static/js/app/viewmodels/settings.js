@@ -10,7 +10,7 @@ $(function() {
 
         self.receiving = ko.observable(false);
         self.sending = ko.observable(false);
-        self.callbacks = [];
+        self.outstanding = [];
 
         self.settingsDialog = undefined;
         self.settings_dialog_update_detected = undefined;
@@ -225,18 +225,9 @@ $(function() {
 
             var errorText = gettext("Could not retrieve snapshot URL, please double check the URL");
             var errorTitle = gettext("Snapshot test failed");
-            $.ajax({
-                url: API_BASEURL + "util/test",
-                type: "POST",
-                dataType: "json",
-                data: JSON.stringify({
-                    command: "url",
-                    url: self.webcam_snapshotUrl(),
-                    method: "GET",
-                    response: true
-                }),
-                contentType: "application/json; charset=UTF-8",
-                success: function(response) {
+
+            OctoPrint.util.testUrl(self.webcam_snapshotUrl(), {method: "GET", response: true})
+                .done(function(response) {
                     $("i.icon-spinner", target).remove();
 
                     if (!response.result) {
@@ -260,15 +251,14 @@ $(function() {
                         title: gettext("Snapshot test"),
                         message: $('<p>' + text + '</p><p><img src="data:' + mimeType + ';base64,' + content + '" /></p>')
                     });
-                },
-                error: function() {
+                })
+                .fail(function() {
                     $("i.icon-spinner", target).remove();
                     showMessageDialog({
                         title: errorTitle,
                         message: errorText
                     });
-                }
-            });
+                });
         };
 
         self.testWebcamFfmpegPath = function() {
@@ -276,36 +266,22 @@ $(function() {
                 return;
             }
 
-            var successCallback = function(response) {
-                if (!response.result) {
-                    if (!response.exists) {
-                        self.webcam_ffmpegPathText(gettext("The path doesn't exist"));
-                    } else if (!response.typeok) {
-                        self.webcam_ffmpegPathText(gettext("The path is not a file"));
-                    } else if (!response.access) {
-                        self.webcam_ffmpegPathText(gettext("The path is not an executable"));
+            OctoPrint.util.testExecutable(self.webcam_ffmpegPath())
+                .done(function(response) {
+                    if (!response.result) {
+                        if (!response.exists) {
+                            self.webcam_ffmpegPathText(gettext("The path doesn't exist"));
+                        } else if (!response.typeok) {
+                            self.webcam_ffmpegPathText(gettext("The path is not a file"));
+                        } else if (!response.access) {
+                            self.webcam_ffmpegPathText(gettext("The path is not an executable"));
+                        }
+                    } else {
+                        self.webcam_ffmpegPathText(gettext("The path is valid"));
                     }
-                } else {
-                    self.webcam_ffmpegPathText(gettext("The path is valid"));
-                }
-                self.webcam_ffmpegPathOk(response.result);
-                self.webcam_ffmpegPathBroken(!response.result);
-            };
-
-            var path = self.webcam_ffmpegPath();
-            $.ajax({
-                url: API_BASEURL + "util/test",
-                type: "POST",
-                dataType: "json",
-                data: JSON.stringify({
-                    command: "path",
-                    path: path,
-                    check_type: "file",
-                    check_access: "x"
-                }),
-                contentType: "application/json; charset=UTF-8",
-                success: successCallback
-            })
+                    self.webcam_ffmpegPathOk(response.result);
+                    self.webcam_ffmpegPathBroken(!response.result);
+                });
         };
 
         self.onSettingsShown = function() {
@@ -331,6 +307,7 @@ $(function() {
                 dataType: "json",
                 maxNumberOfFiles: 1,
                 autoUpload: false,
+                headers: OctoPrint.getRequestHeaders(),
                 add: function(e, data) {
                     if (data.files.length == 0) {
                         return false;
@@ -409,57 +386,83 @@ $(function() {
             return false;
         };
 
-        self.requestData = function(callback, local) {
-            if (self.receiving()) {
-                if (callback) {
-                    self.callbacks.push(callback);
+        self.requestData = function(local) {
+            // handle old parameter format
+            var callback = undefined;
+            if (arguments.length == 2 || _.isFunction(local)) {
+                var exc = new Error();
+                log.warn("The callback parameter of SettingsViewModel.requestData is deprecated, the method now returns a promise, please use that instead. Stacktrace:", (exc.stack || exc.stacktrace || "<n/a>"));
+
+                if (arguments.length == 2) {
+                    callback = arguments[0];
+                    local = arguments[1];
+                } else {
+                    callback = local;
+                    local = false;
                 }
-                return;
             }
 
-            self.receiving(true);
-            $.ajax({
-                url: API_BASEURL + "settings",
-                type: "GET",
-                dataType: "json",
-                success: function(response) {
-                    if (callback) {
-                        self.callbacks.push(callback);
-                    }
-
-                    try {
-                        self.fromResponse(response, local);
-
-                        var cb;
-                        while (self.callbacks.length) {
-                            cb = self.callbacks.shift();
-                            try {
-                                cb();
-                            } catch(exc) {
-                                log.error("Error calling settings callback", cb, ":", (exc.stack || exc));
-                            }
-                        }
-                    } finally {
-                        self.receiving(false);
-                        self.callbacks = [];
-                    }
-                },
-                error: function(xhr) {
-                    self.receiving(false);
+            // handler for any explicitely provided callbacks
+            var callbackHandler = function() {
+                if (!callback) return;
+                try {
+                    callback();
+                } catch (exc) {
+                    log.error("Error calling settings callback", callback, ":", (exc.stack || exc.stacktrace || exc));
                 }
-            });
+            };
+
+            // if a request is already active, create a new deferred and return
+            // its promise, it will be resolved in the response handler of the
+            // current request
+            if (self.receiving()) {
+                var deferred = $.Deferred();
+                self.outstanding.push(deferred);
+
+                if (callback) {
+                    // if we have a callback, we need to make sure it will
+                    // get called when the deferred is resolved
+                    deferred.done(callbackHandler);
+                }
+
+                return deferred.promise();
+            }
+
+            // perform the request
+            self.receiving(true);
+            return OctoPrint.settings.get()
+                .done(function(response) {
+                    self.fromResponse(response, local);
+
+                    if (callback) {
+                        var deferred = $.Deferred();
+                        deferred.done(callbackHandler);
+                        self.outstanding.push(deferred);
+                    }
+
+                    // resolve all promises
+                    var args = arguments;
+                    _.each(self.outstanding, function(deferred) {
+                        deferred.resolve(args);
+                    });
+                    self.outstanding = [];
+                })
+                .fail(function() {
+                    // reject all promises
+                    var args = arguments;
+                    _.each(self.outstanding, function(deferred) {
+                        deferred.reject(args);
+                    });
+                    self.outstanding = [];
+                })
+                .always(function() {
+                    self.receiving(false);
+                });
         };
 
-        self.requestTranslationData = function(callback) {
-            $.ajax({
-                url: API_BASEURL + "languages",
-                type: "GET",
-                dataType: "json",
-                success: function(response) {
-                    self.fromTranslationResponse(response);
-                    if (callback) callback();
-                }
-            })
+        self.requestTranslationData = function() {
+            return OctoPrint.languages.list()
+                .done(self.fromTranslationResponse);
         };
 
         self.fromTranslationResponse = function(response) {
@@ -509,14 +512,8 @@ $(function() {
         });
 
         self.deleteLanguagePack = function(locale, pack) {
-            $.ajax({
-                url: API_BASEURL + "languages/" + locale + "/" + pack,
-                type: "DELETE",
-                dataType: "json",
-                success: function(response) {
-                    self.fromTranslationResponse(response);
-                }
-            })
+            OctoPrint.languages.delete(locale, pack)
+                .done(self.fromTranslationResponse);
         };
 
         /**
@@ -652,7 +649,10 @@ $(function() {
                     longRunningCommands: function(value) { self.serial_longRunningCommands(value.join(", "))},
                     checksumRequiringCommands: function(value) { self.serial_checksumRequiringCommands(value.join(", "))}
                 },
-                terminalFilters: function(value) { self.terminalFilters.removeAll(); _.each(value, function(item) {self.terminalFilters.push(item)}); }
+                terminalFilters: function(value) { self.terminalFilters($.extend(true, [], value)) },
+                temperature: {
+                    profiles: function(value) { self.temperature_profiles($.extend(true, [], value)); }
+                }
             };
 
             var mapToObservables = function(data, mapping, local, keyPrefix) {
@@ -705,13 +705,8 @@ $(function() {
                 data = getOnlyChangedData(self.getLocalData(), self.lastReceivedSettings);
             }
 
-            $.ajax({
-                url: API_BASEURL + "settings",
-                type: "POST",
-                dataType: "json",
-                contentType: "application/json; charset=UTF-8",
-                data: JSON.stringify(data),
-                success: function(data, status, xhr) {
+            OctoPrint.settings.save(data)
+                .done(function(data, status, xhr) {
                     self.receiving(true);
                     self.sending(false);
                     try {
@@ -720,15 +715,14 @@ $(function() {
                     } finally {
                         self.receiving(false);
                     }
-                },
-                error: function(xhr, status, error) {
+                })
+                .fail(function(xhr, status, error) {
                     self.sending(false);
                     if (options.error) options.error(xhr, status, error);
-                },
-                complete: function(xhr, status) {
+                })
+                .always(function(xhr, status) {
                     if (options.complete) options.complete(xhr, status);
-                }
-            });
+                });
         };
 
         self.onEventSettingsUpdated = function() {

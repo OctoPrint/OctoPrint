@@ -1,3 +1,43 @@
+(function (global, factory) {
+    if (typeof define === "function" && define.amd) {
+        define(["OctoPrint"], factory);
+    } else {
+        factory(window.OctoPrint);
+    }
+})(window || this, function(OctoPrint) {
+    var exports = {};
+
+    var url = OctoPrint.getBlueprintUrl("softwareupdate");
+    var checkUrl = url + "check";
+    var updateUrl = url + "update";
+
+    exports.check = function(force, opts) {
+        return OctoPrint.get(checkUrl + ((!!force) ? "?force=true" : ""), opts);
+    };
+
+    exports.update = function(entries, force, opts) {
+        entries = entries || [];
+        if (typeof entries == "string") {
+            entries = [entries];
+        }
+
+        var data = {
+            entries: entries,
+            force: !!force
+        };
+        return OctoPrint.postJson(updateUrl, data, opts);
+    };
+
+    exports.updateAll = function(force, opts) {
+        var data = {
+            force: !!force
+        };
+        return OctoPrint.postJson(updateUrl, data, opts);
+    };
+
+    OctoPrint.plugins.softwareupdate = exports;
+});
+
 $(function() {
     function SoftwareUpdateViewModel(parameters) {
         var self = this;
@@ -221,20 +261,10 @@ $(function() {
 
         self.performCheck = function(showIfNothingNew, force, ignoreSeen) {
             if (!self.loginState.isUser()) return;
-
-            var url = PLUGIN_BASEURL + "softwareupdate/check";
-            if (force) {
-                url += "?force=true";
-            }
-
-            $.ajax({
-                url: url,
-                type: "GET",
-                dataType: "json",
-                success: function(data) {
+            OctoPrint.plugins.softwareupdate.check(force)
+                .done(function(data) {
                     self.fromCheckResponse(data, ignoreSeen, showIfNothingNew);
-                }
-            });
+                });
         };
 
         self._markNotificationAsSeen = function(data) {
@@ -285,13 +315,12 @@ $(function() {
             };
             self._showPopup(options);
 
-            $.ajax({
-                url: PLUGIN_BASEURL + "softwareupdate/update",
-                type: "POST",
-                dataType: "json",
-                contentType: "application/json; charset=UTF-8",
-                data: JSON.stringify({force: (force == true)}),
-                error: function() {
+            OctoPrint.plugins.softwareupdate.updateAll(force)
+                .done(function(data) {
+                    self.currentlyBeingUpdated = data.checks;
+                    self._markWorking(gettext("Updating..."), gettext("Updating, please wait."));
+                })
+                .fail(function() {
                     self.updateInProgress = false;
                     self._showPopup({
                         title: gettext("Update not started!"),
@@ -302,12 +331,7 @@ $(function() {
                             sticker: false
                         }
                     });
-                },
-                success: function(data) {
-                    self.currentlyBeingUpdated = data.checks;
-                    self._markWorking(gettext("Updating..."), gettext("Updating, please wait."));
-                }
-            });
+                });
         };
 
         self.update = function(force) {

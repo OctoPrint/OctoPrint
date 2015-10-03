@@ -912,6 +912,26 @@ class Server(object):
 			"js/lib/loglevel.min.js",
 			"js/lib/sockjs-0.3.4.min.js"
 		]
+		js_client = [
+			"js/app/client/base.js",
+			"js/app/client/socket.js",
+			"js/app/client/browser.js",
+			"js/app/client/connection.js",
+			"js/app/client/control.js",
+			"js/app/client/files.js",
+			"js/app/client/job.js",
+			"js/app/client/languages.js",
+			"js/app/client/logs.js",
+			"js/app/client/printer.js",
+			"js/app/client/printerprofiles.js",
+			"js/app/client/settings.js",
+			"js/app/client/slicing.js",
+			"js/app/client/system.js",
+			"js/app/client/timelapse.js",
+			"js/app/client/users.js",
+			"js/app/client/util.js",
+			"js/app/client/wizard.js"
+		]
 		js_app = dynamic_assets["js"] + [
 			"js/app/dataupdater.js",
 			"js/app/helpers.js",
@@ -966,8 +986,10 @@ class Server(object):
 
 		js_libs_bundle = Bundle(*js_libs, output="webassets/packed_libs.js", filters="js_delimiter_bundler")
 		if minify:
+			js_client_bundle = Bundle(*js_client, output="webassets/packed_client.js", filters="rjsmin, js_delimiter_bundler")
 			js_app_bundle = Bundle(*js_app, output="webassets/packed_app.js", filters="rjsmin, js_delimiter_bundler")
 		else:
+			js_client_bundle = Bundle(*js_client, output="webassets/packed_client.js", filters="js_delimiter_bundler")
 			js_app_bundle = Bundle(*js_app, output="webassets/packed_app.js", filters="js_delimiter_bundler")
 
 		css_libs_bundle = Bundle(*css_libs, output="webassets/packed_libs.css")
@@ -976,6 +998,7 @@ class Server(object):
 		all_less_bundle = Bundle(*less_app, output="webassets/packed_app.less", filters="cssrewrite, less_importrewrite")
 
 		assets.register("js_libs", js_libs_bundle)
+		assets.register("js_client", js_client_bundle)
 		assets.register("js_app", js_app_bundle)
 		assets.register("css_libs", css_libs_bundle)
 		assets.register("css_app", css_app_bundle)

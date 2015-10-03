@@ -19,18 +19,19 @@ $(function() {
         self.showDialog = function() {
             if (!CONFIG_WIZARD || !(CONFIG_FIRST_RUN || self.loginState.isAdmin())) return;
 
-            self.getWizardDetails(function(response) {
-                callViewModels(self.allViewModels, "onWizardDetails", [response]);
+            self.getWizardDetails()
+                .done(function(response) {
+                    callViewModels(self.allViewModels, "onWizardDetails", [response]);
 
-                if (!self.isDialogActive()) {
-                    self.wizardDialog.modal({
-                        minHeight: function() { return Math.max($.fn.modal.defaults.maxHeight() - 80, 250); }
-                    }).css({
-                        width: 'auto',
-                        'margin-left': function() { return -($(this).width() /2); }
-                    });
-                }
-            });
+                    if (!self.isDialogActive()) {
+                        self.wizardDialog.modal({
+                            minHeight: function() { return Math.max($.fn.modal.defaults.maxHeight() - 80, 250); }
+                        }).css({
+                            width: 'auto',
+                            'margin-left': function() { return -($(this).width() /2); }
+                        });
+                    }
+                });
         };
 
         self.closeDialog = function() {
@@ -121,53 +122,34 @@ $(function() {
                             // then
                             reload = (method() == "reload") || reload;
                         });
-                        self.finishWizard(function() {
-                            self.closeDialog();
-                            if (reload) {
-                                log.info("Wizard requested reloading");
-                                location.reload(true);
-                            }
-                        });
+                        self.finishWizard()
+                            .done(function() {
+                                self.closeDialog();
+                                if (reload) {
+                                    log.info("Wizard requested reloading");
+                                    location.reload(true);
+                                }
+                            });
                     }
                 }
             });
             self.showDialog();
         };
 
-        self.getWizardDetails = function(callback) {
-            if (!callback) return;
-
-            $.ajax({
-                url: API_BASEURL + "setup/wizard",
-                type: "GET",
-                dataType: "json",
-                success: function(response) {
+        self.getWizardDetails = function() {
+            return OctoPrint.wizard.get()
+                .done(function(response) {
                     self.wizards = _.filter(_.keys(response), function(key) { return response[key] && response[key]["required"] && !response[key]["ignored"]; });
-                    if (callback) {
-                        callback(response);
-                    }
-                }
-            });
+                });
         };
 
-        self.finishWizard = function(callback) {
+        self.finishWizard = function() {
             self.finishing = true;
-
             self.settingsViewModel.saveData();
-            $.ajax({
-                url: API_BASEURL + "setup/wizard",
-                type: "POST",
-                dataType: "json",
-                data: JSON.stringify({handled: self.wizards}),
-                contentType: "application/json; charset=UTF-8",
-                success: function() {
+            return OctoPrint.wizard.finish(self.wizards)
+                .always(function() {
                     self.finishing = false;
-                    callback();
-                },
-                failure: function() {
-                    self.finishing = false;
-                }
-            })
+                });
         };
 
         self.onSettingsPreventRefresh = function() {

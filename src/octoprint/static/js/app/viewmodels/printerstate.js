@@ -198,45 +198,25 @@ $(function() {
         };
 
         self.print = function() {
-            var restartCommand = function() {
-                self._jobCommand("restart");
-            };
-
             if (self.isPaused()) {
                 showConfirmationDialog({
                     message: gettext("This will restart the print job from the beginning."),
-                    onproceed: function(e) {
-                        restartCommand();
+                    onproceed: function() {
+                        OctoPrint.job.restart();
                     }
                 });
             } else {
-                self._jobCommand("start");
+                OctoPrint.job.start();
             }
-
         };
 
         self.pause = function() {
-            self._jobCommand("pause");
+            OctoPrint.job.pause();
         };
 
         self.cancel = function() {
-            self._jobCommand("cancel");
+            OctoPrint.job.cancel();
         };
-
-        self._jobCommand = function(command, callback) {
-            $.ajax({
-                url: API_BASEURL + "job",
-                type: "POST",
-                dataType: "json",
-                contentType: "application/json; charset=UTF-8",
-                data: JSON.stringify({command: command}),
-                success: function(response) {
-                    if (callback != undefined) {
-                        callback();
-                    }
-                }
-            });
-        }
     }
 
     OCTOPRINT_VIEWMODELS.push([

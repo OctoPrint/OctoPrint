@@ -165,19 +165,13 @@ $(function() {
             if (self._otherRequestInProgress) return;
 
             self._otherRequestInProgress = true;
-            $.ajax({
-                url: API_BASEURL + "files",
-                method: "GET",
-                dataType: "json",
-                data: {"recursive": true},
-                success: function(response) {
+            OctoPrint.files.list({ data: { recursive: true} })
+                .done(function(response) {
                     self.fromResponse(response, filenameToFocus, locationToFocus, switchToPath);
+                })
+                .always(function() {
                     self._otherRequestInProgress = false;
-                },
-                error: function() {
-                    self._otherRequestInProgress = false;
-                }
-            });
+                });
         };
 
         self.fromResponse = function(response, filenameToFocus, locationToFocus, switchToPath) {
@@ -244,7 +238,7 @@ $(function() {
                 self.currentPath("");
                 self.listHelper.updateItems(self.allItems());
             }
-        }
+        };
 
         self.pathByElement = function(element) {
             if (!element || element.parent == undefined)
@@ -277,20 +271,22 @@ $(function() {
         };
 
         self.loadFile = function(file, printAfterLoad) {
-            if (!file || !file.refs || !file.refs.hasOwnProperty("resource")) return;
-
-            $.ajax({
-                url: file.refs.resource,
-                type: "POST",
-                dataType: "json",
-                contentType: "application/json; charset=UTF-8",
-                data: JSON.stringify({command: "select", print: printAfterLoad})
-            });
+            if (!file) {
+                return;
+            }
+            OctoPrint.files.select(file.origin, file.name)
+                .done(function() {
+                    if (printAfterLoad) {
+                        OctoPrint.job.start();
+                    }
+                });
         };
 
         self.removeFile = function(file) {
-            if (!file || !file.refs || !file.refs.hasOwnProperty("resource")) return;
-
+            if (!file) {
+                return;
+            }
+            
             var index = self.listHelper.paginatedItems().indexOf(file) + 1;
             if (index >= self.listHelper.paginatedItems().length)
                 index = index - 2;
@@ -301,42 +297,31 @@ $(function() {
             var fileToFocus = self.listHelper.paginatedItems()[index];
             if (fileToFocus)
                 filenameToFocus = fileToFocus.name;
-
-            $.ajax({
-                url: file.refs.resource,
-                type: "DELETE",
-                success: function() {
+            
+            OctoPrint.files.delete(file.origin, file.name)
+                .done(function() {
                     self.requestData(undefined, filenameToFocus, self.pathByElement(file.parent));
-                }
-            });
+                })
         };
 
         self.sliceFile = function(file) {
-            if (!file) return;
+            if (!file) {
+                return;
+            }
 
             self.slicing.show(file.origin, file.name, true);
         };
 
         self.initSdCard = function() {
-            self._sendSdCommand("init");
+            OctoPrint.printer.initSd();
         };
 
         self.releaseSdCard = function() {
-            self._sendSdCommand("release");
+            OctoPrint.printer.releaseSd();
         };
 
         self.refreshSdFiles = function() {
-            self._sendSdCommand("refresh");
-        };
-
-        self._sendSdCommand = function(command) {
-            $.ajax({
-                url: API_BASEURL + "printer/sd",
-                type: "POST",
-                dataType: "json",
-                contentType: "application/json; charset=UTF-8",
-                data: JSON.stringify({command: command})
-            });
+            OctoPrint.printer.refreshSd();
         };
 
         self.downloadLink = function(data) {
