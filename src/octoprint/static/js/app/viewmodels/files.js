@@ -109,14 +109,12 @@ $(function() {
         );
 
         self.foldersOnlyList = ko.dependentObservable(function() {
-            filter = function(data) { return data["type"] && data["type"] == "folder"; };
-            var items = _.filter(self.listHelper.paginatedItems(), filter);
-            return items;
+            var filter = function(data) { return data["type"] && data["type"] == "folder"; };
+            return _.filter(self.listHelper.paginatedItems(), filter);
         });
         self.filesOnlyList = ko.dependentObservable(function() {
-            filter = function(data) { return data["type"] && data["type"] != "folder"; };
-            var items = _.filter(self.listHelper.paginatedItems(), filter);
-            return items;
+            var filter = function(data) { return data["type"] && data["type"] != "folder"; };
+            return _.filter(self.listHelper.paginatedItems(), filter);
         });
 
         self.isLoadActionPossible = ko.computed(function() {
@@ -176,20 +174,6 @@ $(function() {
 
         self.fromResponse = function(response, filenameToFocus, locationToFocus, switchToPath) {
             var files = response.files;
-            recursiveCheck = function(element, index, list) {
-                if (!element.hasOwnProperty("parent")) element.parent = { children: list, parent: undefined };
-                if (!element.hasOwnProperty("size")) element.size = undefined;
-                if (!element.hasOwnProperty("date")) element.date = undefined;
-
-                if (element.type == "folder")
-                {
-                    for (var i = 0; i < element.children.length; i++) {
-                        element.children[i].parent = element;
-                        recursiveCheck(element.children[i], i, element.children);
-                    }
-                }
-            };
-            _.each(files, recursiveCheck);
 
             self.allItems(files);
             self.currentPath("");
@@ -225,11 +209,11 @@ $(function() {
         };
 
         self.changeFolder = function(data) {
-            self.currentPath(self.pathByElement(data));
+            self.currentPath(OctoPrint.files.pathForElement(data));
             self.listHelper.updateItems(data.children);
         };
         self.changeFolderByPath = function(path) {
-            var element = self.elementByPath(path, { children: self.allItems() });
+            var element = OctoPrint.files.elementByPath(path, { children: self.allItems() });
             if (element) {
                 self.currentPath(path);
                 self.listHelper.updateItems(element.children);
@@ -240,41 +224,11 @@ $(function() {
             }
         };
 
-        self.pathByElement = function(element) {
-            if (!element || element.parent == undefined)
-                return "";
-
-            recursivePath = function(element, path) {
-              if (element.parent !== undefined)
-                  return recursivePath(element.parent, element.name + "/" + path);
-
-              return path;
-            };
-            return recursivePath(element.parent, element.name);
-        };
-        self.elementByPath = function(path, startElement) {
-            recursiveSearch = function(path, element) {
-                if (path.length == 0)
-                    return element;
-
-                var name = path.shift();
-                for(var i = 0; i< startElement.children.length; i++) {
-                    if (name == startElement.children[i].name) {
-                        return recursivePath(path, startElement.children[i]);
-                    }
-                }
-
-                return undefined;
-            };
-
-            return recursiveSearch(path.split("/"), startElement);
-        };
-
         self.loadFile = function(file, printAfterLoad) {
             if (!file) {
                 return;
             }
-            OctoPrint.files.select(file.origin, file.name)
+            OctoPrint.files.select(file.origin, OctoPrint.files.pathForElement(file))
                 .done(function() {
                     if (printAfterLoad) {
                         OctoPrint.job.start();
@@ -298,9 +252,9 @@ $(function() {
             if (fileToFocus)
                 filenameToFocus = fileToFocus.name;
             
-            OctoPrint.files.delete(file.origin, file.name)
+            OctoPrint.files.delete(file.origin, OctoPrint.files.pathForElement(file))
                 .done(function() {
-                    self.requestData(undefined, filenameToFocus, self.pathByElement(file.parent));
+                    self.requestData(undefined, filenameToFocus, OctoPrint.files.pathForElement(file.parent));
                 })
         };
 
@@ -309,7 +263,7 @@ $(function() {
                 return;
             }
 
-            self.slicing.show(file.origin, file.name, true);
+            self.slicing.show(file.origin, OctoPrint.files.pathForElement(file), true);
         };
 
         self.initSdCard = function() {
@@ -554,6 +508,8 @@ $(function() {
                     done: gcode_upload_done,
                     fail: gcode_upload_fail,
                     progressall: gcode_upload_progress
+                }).bind('fileuploadsubmit', function(e, data) {
+                    data.formData = { path: self.currentPath() };
                 });
             }
 
