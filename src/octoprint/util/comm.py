@@ -24,7 +24,7 @@ from octoprint.settings import settings, default_settings
 from octoprint.events import eventManager, Events
 from octoprint.filemanager import valid_file_type
 from octoprint.filemanager.destinations import FileDestinations
-from octoprint.util import get_exception_string, sanitize_ascii, filter_non_ascii, CountedEvent, RepeatedTimer
+from octoprint.util import get_exception_string, sanitize_ascii, filter_non_ascii, CountedEvent, RepeatedTimer, to_unicode, bom_aware_open
 
 try:
 	import _winreg
@@ -548,7 +548,7 @@ class MachineCom(object):
 		self._clear_to_send.set()
 
 	def sendCommand(self, cmd, cmd_type=None, processed=False, force=False):
-		cmd = cmd.encode('ascii', 'replace')
+		cmd = to_unicode(cmd, errors="replace")
 		if not processed:
 			cmd = process_gcode_line(cmd)
 			if not cmd:
@@ -1631,10 +1631,11 @@ class MachineCom(object):
 						command_allowing_checksum = gcode is not None or self._sendChecksumWithUnknownCommands
 						checksum_enabled = self._alwaysSendChecksum or (self.isPrinting() and not self._neverSendChecksum)
 
+						command_to_send = command.encode("ascii", errors="replace")
 						if command_requiring_checksum or (command_allowing_checksum and checksum_enabled):
-							self._doIncrementAndSendWithChecksum(command)
+							self._doIncrementAndSendWithChecksum(command_to_send)
 						else:
-							self._doSendWithoutChecksum(command)
+							self._doSendWithoutChecksum(command_to_send)
 
 					# trigger "sent" phase and use up one "ok"
 					self._process_command_phase("sent", command, command_type, gcode=gcode)
@@ -2039,7 +2040,7 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 		Opens the file for reading and determines the file size.
 		"""
 		PrintingFileInformation.start(self)
-		self._handle = open(self._filename, "r")
+		self._handle = bom_aware_open(self._filename, encoding="utf-8", errors="replace")
 
 	def close(self):
 		"""
@@ -2069,7 +2070,7 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 				if self._handle is None:
 					# file got closed just now
 					return None
-				line = self._handle.readline()
+				line = to_unicode(self._handle.readline())
 				if not line:
 					self.close()
 				processed = process_gcode_line(line, offsets=offsets, current_tool=current_tool)

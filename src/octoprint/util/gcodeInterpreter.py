@@ -35,7 +35,9 @@ class gcode(object):
 		if os.path.isfile(filename):
 			self.filename = filename
 			self._fileSize = os.stat(filename).st_size
-			with open(filename, "r") as f:
+
+			import codecs
+			with codecs.open(filename, encoding="utf-8", errors="replace") as f:
 				self._load(f, printer_profile, throttle=throttle)
 
 	def abort(self):
