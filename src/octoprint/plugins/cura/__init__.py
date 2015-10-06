@@ -456,7 +456,7 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 
 	def _save_profile(self, path, profile, allow_overwrite=True):
 		import yaml
-		with open(path, "wb") as f:
+		with octoprint.util.atomic_write(path, "wb") as f:
 			yaml.safe_dump(profile, f, default_flow_style=False, indent="  ", allow_unicode=True)
 
 	def _convert_to_engine(self, profile, new_engine):

@@ -557,7 +557,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 		try:
 			import json
-			with open(self._repository_cache_path, "w+b") as f:
+			with octoprint.util.atomic_write(self._repository_cache_path, "wb") as f:
 				json.dump(repo_data, f)
 		except Exception as e:
 			self._logger.exception("Error while saving repository data to {}: {}".format(self._repository_cache_path, str(e)))
