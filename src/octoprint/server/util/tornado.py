@@ -776,13 +776,19 @@ class LargeResponseHandler(tornado.web.StaticFileHandler):
 	       with the requested path as parameter. Should raise a ``tornado.web.HTTPError`` (e.g. an 404) if the requested
 	       path does not pass validation in which case the request will not be further processed.
 	       Defaults to ``None`` and hence no path validation being performed.
+	   etag_generator (function): Callback to call for generating the value of the ETag response header. Will be
+	       called with the response handler as parameter. May return ``None`` to prevent the ETag response header
+	       from being set. If not provided the last modified time of the file in question will be used as returned
+	       by ``get_content_version``.
 	"""
 
-	def initialize(self, path, default_filename=None, as_attachment=False, access_validation=None, path_validation=None):
+	def initialize(self, path, default_filename=None, as_attachment=False,
+	               access_validation=None, path_validation=None, etag_generator=None):
 		tornado.web.StaticFileHandler.initialize(self, os.path.abspath(path), default_filename)
 		self._as_attachment = as_attachment
 		self._access_validation = access_validation
 		self._path_validation = path_validation
+		self._etag_generator = etag_generator
 
 	def get(self, path, include_body=True):
 		if self._access_validation is not None:
@@ -795,6 +801,12 @@ class LargeResponseHandler(tornado.web.StaticFileHandler):
 	def set_extra_headers(self, path):
 		if self._as_attachment:
 			self.set_header("Content-Disposition", "attachment")
+
+	def compute_etag(self):
+		if self._etag_generator is not None:
+			return self._etag_generator(self)
+		else:
+			return self.get_content_version(self.absolute_path)
 
 	@classmethod
 	def get_content_version(cls, abspath):
