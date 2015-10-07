@@ -30,6 +30,8 @@ import logging
 import re
 import uuid
 
+from octoprint.util import atomic_write
+
 _APPNAME = "OctoPrint"
 
 _instance = None
@@ -1057,7 +1059,7 @@ class Settings(object):
 		path, _ = os.path.split(filename)
 		if not os.path.exists(path):
 			os.makedirs(path)
-		with open(filename, "w+") as f:
+		with atomic_write(filename, "wb") as f:
 			f.write(script)
 
 def _default_basedir(applicationName):

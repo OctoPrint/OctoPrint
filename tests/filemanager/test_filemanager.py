@@ -201,13 +201,13 @@ class FileManagerTest(unittest.TestCase):
 		self.assertEquals(metadata, expected)
 		self.local_storage.get_metadata.assert_called_once_with("test.file")
 
-	@mock.patch("__builtin__.open", new_callable=mock.mock_open)
+	@mock.patch("octoprint.filemanager.util.atomic_write")
 	@mock.patch("io.FileIO")
 	@mock.patch("shutil.copyfileobj")
 	@mock.patch("os.remove")
 	@mock.patch("tempfile.NamedTemporaryFile")
 	@mock.patch("time.time", side_effect=[1411979916.422, 1411979932.116])
-	def test_slice(self, mocked_time, mocked_tempfile, mocked_os, mocked_shutil, mocked_fileio, mocked_open):
+	def test_slice(self, mocked_time, mocked_tempfile, mocked_os, mocked_shutil, mocked_fileio, mocked_atomic_write):
 		callback = mock.MagicMock()
 		callback_args = ("one", "two", "three")
 
@@ -279,8 +279,8 @@ class FileManagerTest(unittest.TestCase):
 		self.local_storage.add_file.assert_called_once_with("dest.file", mock.ANY, printer_profile=expected_printer_profile, allow_overwrite=True, links=expected_links)
 
 		# assert that the generated gcode was manipulated as required
-		expected_open_calls = [mock.call("prefix/dest.file", "wb")]
-		self.assertEquals(mocked_open.call_args_list, expected_open_calls)
+		expected_atomic_write_calls = [mock.call("prefix/dest.file", "wb")]
+		self.assertEquals(mocked_atomic_write.call_args_list, expected_atomic_write_calls)
 		#mocked_open.return_value.write.assert_called_once_with(";Generated from source.file aabbccddeeff\r")
 
 		# assert that shutil was asked to copy the concatenated multistream
