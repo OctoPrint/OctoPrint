@@ -18,6 +18,11 @@ from .analysis import QueueEntry, AnalysisQueue
 from .storage import LocalFileStorage
 from .util import AbstractFileWrapper, StreamWrapper, DiskFileWrapper
 
+from collections import namedtuple
+
+ContentTypeMapping = namedtuple("ContentTypeMapping", "extensions, content_type")
+ContentTypeDetector = namedtuple("ContentTypeDetector", "extensions, detector")
+
 extensions = dict(
 )
 
@@ -25,11 +30,11 @@ def full_extension_tree():
 	result = dict(
 		# extensions for 3d model files
 		model=dict(
-			stl=["stl"]
+			stl=ContentTypeMapping(["stl"], "application/sla")
 		),
 		# extensions for printable machine code
 		machinecode=dict(
-			gcode=["gcode", "gco", "g"]
+			gcode=ContentTypeMapping(["gcode", "gco", "g"], "text/plain")
 		)
 	)
 
@@ -68,8 +73,12 @@ def get_all_extensions(subtree=None):
 		for key, value in subtree.items():
 			if isinstance(value, dict):
 				result += get_all_extensions(value)
+			elif isinstance(value, (ContentTypeMapping, ContentTypeDetector)):
+				result += value.extensions
 			elif isinstance(value, (list, tuple)):
 				result += value
+	elif isinstance(subtree, (ContentTypeMapping, ContentTypeDetector)):
+		result = subtree.extensions
 	elif isinstance(subtree, (list, tuple)):
 		result = subtree
 	return result
@@ -79,12 +88,31 @@ def get_path_for_extension(extension, subtree=None):
 		subtree = full_extension_tree()
 
 	for key, value in subtree.items():
-		if isinstance(value, (list, tuple)) and extension in value:
+		if isinstance(value, (ContentTypeMapping, ContentTypeDetector)) and extension in value.extensions:
+			return [key]
+		elif isinstance(value, (list, tuple)) and extension in value:
 			return [key]
 		elif isinstance(value, dict):
 			path = get_path_for_extension(extension, subtree=value)
 			if path:
 				return [key] + path
+
+	return None
+
+def get_content_type_mapping_for_extension(extension, subtree=None):
+	if not subtree:
+		subtree = full_extension_tree()
+
+	for key, value in subtree.items():
+		content_extension_matches = isinstance(value, (ContentTypeMapping, ContentTypeDetector)) and extension in value. extensions
+		list_extension_matches = isinstance(value, (list, tuple)) and extension in value
+
+		if content_extension_matches or list_extension_matches:
+			return value
+		elif isinstance(value, dict):
+			result = get_content_type_mapping_for_extension(extension, subtree=value)
+			if result is not None:
+				return result
 
 	return None
 
@@ -105,6 +133,19 @@ def get_file_type(filename):
 	_, extension = os.path.splitext(filename)
 	extension = extension[1:].lower()
 	return get_path_for_extension(extension)
+
+def get_mime_type(filename):
+	_, extension = os.path.splitext(filename)
+	extension = extension[1:].lower()
+	mapping = get_content_type_mapping_for_extension(extension)
+	if mapping:
+		if isinstance(mapping, ContentTypeMapping) and mapping.content_type is not None:
+			return mapping.content_type
+		elif isinstance(mapping, ContentTypeDetector) and callable(mapping.detector):
+			result = mapping.detector(filename)
+			if result is not None:
+				return result
+	return "application/octet-stream"
 
 
 class NoSuchStorage(Exception):

@@ -785,13 +785,15 @@ class LargeResponseHandler(tornado.web.StaticFileHandler):
 	"""
 
 	def initialize(self, path, default_filename=None, as_attachment=False, allow_client_caching=True,
-	               access_validation=None, path_validation=None, etag_generator=None):
+	               access_validation=None, path_validation=None, etag_generator=None,
+	               mime_type_guesser=None):
 		tornado.web.StaticFileHandler.initialize(self, os.path.abspath(path), default_filename)
 		self._as_attachment = as_attachment
 		self._allow_client_caching = allow_client_caching
 		self._access_validation = access_validation
 		self._path_validation = path_validation
 		self._etag_generator = etag_generator
+		self._mime_type_guesser = mime_type_guesser
 
 	def get(self, path, include_body=True):
 		if self._access_validation is not None:
@@ -814,6 +816,14 @@ class LargeResponseHandler(tornado.web.StaticFileHandler):
 			return self._etag_generator(self)
 		else:
 			return self.get_content_version(self.absolute_path)
+
+	def get_content_type(self):
+		if self._mime_type_guesser is not None:
+			type = self._mime_type_guesser(self.absolute_path)
+			if type is not None:
+				return type
+
+		return tornado.web.StaticFileHandler.get_content_type(self)
 
 	@classmethod
 	def get_content_version(cls, abspath):
