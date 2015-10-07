@@ -330,13 +330,29 @@ class Server():
 
 		upload_suffixes = dict(name=s.get(["server", "uploads", "nameSuffix"]), path=s.get(["server", "uploads", "pathSuffix"]))
 
+		download_handler_kwargs = dict(
+			as_attachment=True,
+			allow_client_caching=False
+		)
+		admin_validator = dict(access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.user_validator))
+		no_hidden_files_validator = dict(path_validation=util.tornado.path_validation_factory(lambda path: not os.path.basename(path).startswith("."), status_code=404))
+
+		def joined_dict(*dicts):
+			if not len(dicts):
+				return dict()
+
+			joined = dict()
+			for d in dicts:
+				joined.update(d)
+			return joined
+
 		server_routes = self._router.urls + [
 			# various downloads
-			(r"/downloads/timelapse/([^/]*\.mpg)", util.tornado.LargeResponseHandler, dict(path=s.getBaseFolder("timelapse"), as_attachment=True)),
-			(r"/downloads/files/local/(.*)", util.tornado.LargeResponseHandler, dict(path=s.getBaseFolder("uploads"), as_attachment=True, path_validation=util.tornado.path_validation_factory(lambda path: not os.path.basename(path).startswith("."), status_code=404))),
-			(r"/downloads/logs/([^/]*)", util.tornado.LargeResponseHandler, dict(path=s.getBaseFolder("logs"), as_attachment=True, access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.admin_validator))),
+			(r"/downloads/timelapse/([^/]*\.mpg)", util.tornado.LargeResponseHandler, joined_dict(dict(path=s.getBaseFolder("timelapse")), download_handler_kwargs, no_hidden_files_validator)),
+			(r"/downloads/files/local/(.*)", util.tornado.LargeResponseHandler, joined_dict(dict(path=s.getBaseFolder("uploads")), download_handler_kwargs, no_hidden_files_validator)),
+			(r"/downloads/logs/([^/]*)", util.tornado.LargeResponseHandler, joined_dict(dict(path=s.getBaseFolder("logs")), download_handler_kwargs, admin_validator)),
 			# camera snapshot
-			(r"/downloads/camera/current", util.tornado.UrlForwardHandler, dict(url=s.get(["webcam", "snapshot"]), as_attachment=True, access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.user_validator))),
+			(r"/downloads/camera/current", util.tornado.UrlProxyHandler, dict(url=s.get(["webcam", "snapshot"]), as_attachment=True, access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.user_validator))),
 			# generated webassets
 			(r"/static/webassets/(.*)", util.tornado.LargeResponseHandler, dict(path=os.path.join(s.getBaseFolder("generated"), "webassets")))
 		]
