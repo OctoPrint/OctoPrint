@@ -6,6 +6,7 @@ $(function() {
         self.settingsViewModel = parameters[1];
 
         self.wizardDialog = undefined;
+        self.reloadOverlay = undefined;
 
         self.allViewModels = undefined;
 
@@ -40,6 +41,7 @@ $(function() {
 
         self.onStartup = function() {
             self.wizardDialog = $("#wizard_dialog");
+            self.reloadOverlay = $("#reloadui_overlay");
         };
 
         self.onUserLoggedIn = function() {
@@ -126,8 +128,7 @@ $(function() {
                             .done(function() {
                                 self.closeDialog();
                                 if (reload) {
-                                    log.info("Wizard requested reloading");
-                                    location.reload(true);
+                                    self.reloadOverlay.show();
                                 }
                             });
                     }
@@ -144,12 +145,27 @@ $(function() {
         };
 
         self.finishWizard = function() {
+            var deferred = $.Deferred();
             self.finishing = true;
-            self.settingsViewModel.saveData();
-            return OctoPrint.wizard.finish(self.wizards)
-                .always(function() {
-                    self.finishing = false;
+
+            self.settingsViewModel.saveData()
+                .done(function() {
+                    OctoPrint.wizard.finish(self.wizards)
+                        .done(function() {
+                            deferred.resolve(arguments);
+                        })
+                        .fail(function() {
+                            deferred.reject(arguments);
+                        })
+                        .always(function() {
+                            self.finishing = false;
+                        });
+                })
+                .fail(function() {
+                    deferred.reject(arguments);
                 });
+
+            return deferred;
         };
 
         self.onSettingsPreventRefresh = function() {
