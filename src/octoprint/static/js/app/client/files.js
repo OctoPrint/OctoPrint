@@ -28,13 +28,12 @@
     };
 
     var preProcessList = function(response) {
-        recursiveCheck = function(element, index, list) {
+        var recursiveCheck = function(element, index, list) {
             if (!element.hasOwnProperty("parent")) element.parent = { children: list, parent: undefined };
             if (!element.hasOwnProperty("size")) element.size = undefined;
             if (!element.hasOwnProperty("date")) element.date = undefined;
 
-            if (element.type == "folder")
-            {
+            if (element.type == "folder") {
                 _.each(element.children, function(e, i, l) {
                     e.parent = element;
                     recursiveCheck(e, i, l);
@@ -103,7 +102,7 @@
             if (!element || !element.hasOwnProperty("parent") || element.parent == undefined)
                 return "";
 
-            recursivePath = function(element, path) {
+            var recursivePath = function(element, path) {
               if (element.hasOwnProperty("parent") && element.parent != undefined)
                   return recursivePath(element.parent, element.name + "/" + path);
 
@@ -114,7 +113,7 @@
         },
 
         elementByPath: function(location, startElement) {
-            recursiveSearch = function(location, element) {
+            var recursiveSearch = function(location, element) {
                 if (location.length == 0)
                     return element;
 
@@ -124,7 +123,7 @@
                 var name = location.shift();
                 for(var i = 0; i < element.children.length; i++) {
                     if (name == element.children[i].name) {
-                        return recursivePath(location, element.children[i]);
+                        return recursiveSearch(location, element.children[i]);
                     }
                 }
 
