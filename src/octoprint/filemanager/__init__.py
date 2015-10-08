@@ -302,6 +302,9 @@ class FileManager(object):
 	def file_exists(self, destination, path):
 		return self._storage(destination).file_exists(path)
 
+	def folder_exists(self, destination, path):
+		return self._storage(destination).folder_exists(path)
+
 	def list_files(self, destinations=None, path=None, filter=None, recursive=None):
 		if not destinations:
 			destinations = self._storage_managers.keys()
