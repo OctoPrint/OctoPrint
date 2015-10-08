@@ -84,13 +84,17 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 		from flask import request
 		from octoprint.server.api import valid_boolean_trues, NO_CONTENT
 
-		if "ac" in request.values and request.values["ac"] in valid_boolean_trues and \
-						"user" in request.values.keys() and "pass1" in request.values.keys() and \
-						"pass2" in request.values.keys() and request.values["pass1"] == request.values["pass2"]:
+		data = request.values
+		if hasattr(request, "json") and request.json:
+			data = request.json
+
+		if "ac" in data and data["ac"] in valid_boolean_trues and \
+						"user" in data.keys() and "pass1" in data.keys() and \
+						"pass2" in data.keys() and data["pass1"] == data["pass2"]:
 			# configure access control
 			self._settings.global_set_boolean(["accessControl", "enabled"], True)
-			octoprint.server.userManager.addUser(request.values["user"], request.values["pass1"], True, ["user", "admin"], overwrite=True)
-		elif "ac" in request.values.keys() and not request.values["ac"] in valid_boolean_trues:
+			octoprint.server.userManager.addUser(data["user"], data["pass1"], True, ["user", "admin"], overwrite=True)
+		elif "ac" in data.keys() and not data["ac"] in valid_boolean_trues:
 			# disable access control
 			self._settings.global_set_boolean(["accessControl", "enabled"], False)
 
