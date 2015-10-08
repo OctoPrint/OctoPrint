@@ -325,9 +325,7 @@ def gcodeFileCommand(filename, target):
 	# valid file commands, dict mapping command name to mandatory parameters
 	valid_commands = {
 		"select": [],
-		"slice": [],
-		"move": ["newpath"],
-		"rename": ["newpath"],
+		"slice": []
 	}
 
 	command, data, response = get_json_command_from_request(request, valid_commands)
@@ -459,22 +457,6 @@ def gcodeFileCommand(filename, target):
 		r = make_response(jsonify(result), 202)
 		r.headers["Location"] = location
 		return r
-	elif command == "move":
-		oldpath = fileManager.path_on_disk(target, filename)
-		newpath = fileManager.path_on_disk(target, data["newpath"])
-
-		if _verifyFileExists(target, newpath):
-			return make_response("File already exists", 404)
-
-		fileManager.move_file(target, oldpath, newpath)
-	elif command == "rename":
-		oldpath, oldname = fileManager.sanitize(target, filename)
-		newpath = fileManager.join(oldpath, data["newname"])
-
-		if _verifyFileExists(target, newpath):
-			return make_response("File already exists", 404)
-
-		fileManager.move_file(target, fileManager.join(oldpath, oldname), newpath)
 
 	return NO_CONTENT
 
