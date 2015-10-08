@@ -33,10 +33,16 @@ _valid_div_re = re.compile("[a-zA-Z_-]+")
 
 @app.route("/")
 def index():
-	force_refresh = util.flask.cache_check_headers() or "_refresh" in request.values
-
 	global _templates, _plugin_names, _plugin_vars
 
+	# helper to check if wizards are active
+	def wizard_active(templates):
+		return templates is not None and bool(templates["wizard"]["order"])
+
+	# we force a refresh if the client forces one or if we have wizards cached
+	force_refresh = util.flask.cache_check_headers() or "_refresh" in request.values or wizard_active(_templates)
+
+	# if we need to refresh our template cache or it's not yet set, process it
 	if force_refresh or _templates is None or _plugin_names is None or _plugin_vars is None:
 		_templates, _plugin_names, _plugin_vars = _process_templates()
 
@@ -58,9 +64,8 @@ def index():
 				break
 
 	else:
-		wizard = bool(_templates["wizard"]["order"])
+		wizard = wizard_active(_templates)
 		enable_accesscontrol = userManager is not None
-
 		render_kwargs.update(dict(
 			webcamStream=settings().get(["webcam", "stream"]),
 			enableTemperatureGraph=settings().get(["feature", "temperatureGraph"]),
@@ -75,7 +80,8 @@ def index():
 		# no plugin took an interest, we'll use the default UI
 		def make_default_ui():
 			r = make_response(render_template("index.jinja2", **render_kwargs))
-			if bool(render_kwargs["templates"]["wizard"]["order"]):
+			if wizard:
+				# if we have active wizard dialogs, set non caching headers
 				r = util.flask.add_non_caching_response_headers(r)
 			return r
 
