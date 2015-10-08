@@ -789,12 +789,16 @@ class LargeResponseHandler(tornado.web.StaticFileHandler):
 			self._access_validation(self.request)
 		if self._path_validation is not None:
 			self._path_validation(path)
+
+		if "cookie" in self.request.arguments:
+			self.set_cookie(self.request.arguments["cookie"][0], "true", path="/")
+
 		result = tornado.web.StaticFileHandler.get(self, path, include_body=include_body)
 		return result
 
 	def set_extra_headers(self, path):
 		if self._as_attachment:
-			self.set_header("Content-Disposition", "attachment")
+			self.set_header("Content-Disposition", "attachment; filename=%s" % os.path.basename(path))
 
 	@classmethod
 	def get_content_version(cls, abspath):
