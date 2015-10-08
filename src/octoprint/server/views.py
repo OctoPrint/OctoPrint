@@ -17,6 +17,8 @@ from octoprint.server import app, userManager, pluginManager, gettext, \
 	debug, LOCALES, VERSION, DISPLAY_VERSION, UI_API_KEY, BRANCH
 from octoprint.settings import settings
 
+import re
+
 from . import util
 
 import logging
@@ -25,6 +27,9 @@ _logger = logging.getLogger(__name__)
 _templates = None
 _plugin_names = None
 _plugin_vars = None
+
+_valid_id_re = re.compile("[a-z_]+")
+_valid_div_re = re.compile("[a-zA-Z_-]+")
 
 @app.route("/")
 def index():
@@ -466,6 +471,9 @@ def _process_template_config(name, implementation, rule, config=None, counter=1)
 		data["_div"] = rule["div"](name)
 		if "suffix" in data:
 			data["_div"] = data["_div"] + data["suffix"]
+		if not _valid_div_re.match(data["_div"]):
+			_logger.warn("Template config {} contains invalid div identifier {}, skipping it".format(name, data["_div"]))
+			return None
 
 	if not "template" in data:
 		data["template"] = rule["template"](name)
@@ -477,6 +485,7 @@ def _process_template_config(name, implementation, rule, config=None, counter=1)
 		data_bind = "allowBindings: true"
 		if "data_bind" in data:
 			data_bind = data_bind + ", " + data["data_bind"]
+		data_bind = data_bind.replace("\"", "\\\"")
 		data["data_bind"] = data_bind
 
 	data["_key"] = "plugin_" + name
