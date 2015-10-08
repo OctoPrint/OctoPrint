@@ -705,7 +705,7 @@ $(function() {
                 data = getOnlyChangedData(self.getLocalData(), self.lastReceivedSettings);
             }
 
-            OctoPrint.settings.save(data)
+            return OctoPrint.settings.save(data)
                 .done(function(data, status, xhr) {
                     self.receiving(true);
                     self.sending(false);

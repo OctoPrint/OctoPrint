@@ -17,6 +17,8 @@ import logging
 
 from octoprint.settings import settings
 
+from octoprint.util import atomic_write
+
 class UserManager(object):
 	valid_roles = ["user", "admin"]
 
@@ -217,7 +219,7 @@ class FilebasedUserManager(UserManager):
 				"settings": user._settings
 			}
 
-		with open(self._userfile, "wb") as f:
+		with atomic_write(self._userfile, "wb") as f:
 			yaml.safe_dump(data, f, default_flow_style=False, indent="    ", allow_unicode=True)
 			self._dirty = False
 		self._load()

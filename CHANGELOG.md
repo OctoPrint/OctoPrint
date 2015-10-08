@@ -56,6 +56,10 @@
 * Documentation improvements
 * Test buttons for webcam snapshot & stream URL, ffmpeg path and some other settings
   (see also [#183](https://github.com/foosel/OctoPrint/issues/183)).
+* Temperature graph automatically adjusts its Y axis range if necessary to
+  accomodate the plotted data (see also [#632](https://github.com/foosel/OctoPrint/issues/632)).
+* "Fan on" command now always sends `S255` parameter for better compatibility
+  across firmwares.
 
 ### Bug Fixes
 

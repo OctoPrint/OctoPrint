@@ -510,6 +510,29 @@ def atomic_write(filename, mode="w+b", prefix="tmp", suffix=""):
 	shutil.move(temp_config.name, filename)
 
 
+def bom_aware_open(filename, encoding="ascii", mode="r", **kwargs):
+	import codecs
+
+	codec = codecs.lookup(encoding)
+	encoding = codec.name
+
+	if kwargs is None:
+		kwargs = dict()
+
+	potential_bom_attribute = "BOM_" + codec.name.replace("utf-", "utf").upper()
+	if "r" in mode and hasattr(codecs, potential_bom_attribute):
+		# these encodings might have a BOM, so let's see if there is one
+		bom = getattr(codecs, potential_bom_attribute)
+
+		with open(filename, "rb") as f:
+			header = f.read(4)
+
+		if header.startswith(bom):
+			encoding += "-sig"
+
+	return codecs.open(filename, encoding=encoding, **kwargs)
+
+
 class RepeatedTimer(threading.Thread):
 	"""
 	This class represents an action that should be run repeatedly in an interval. It is similar to python's

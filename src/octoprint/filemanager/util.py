@@ -7,6 +7,8 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 
 import io
 
+from octoprint.util import atomic_write
+
 class AbstractFileWrapper(object):
 	"""
 	Wrapper for file representations to save to storages.
@@ -85,7 +87,7 @@ class StreamWrapper(AbstractFileWrapper):
 		"""
 		import shutil
 
-		with open(path, "wb") as dest:
+		with atomic_write(path, "wb") as dest:
 			with self.stream() as source:
 				shutil.copyfileobj(source, dest)
 

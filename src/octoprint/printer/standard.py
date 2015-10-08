@@ -691,7 +691,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			# Use a string for mtime because it could be float and the
 			# javascript needs to exact match
 			if not sd:
-				date = int(os.stat(path_on_disk).st_ctime)
+				date = int(os.stat(path_on_disk).st_mtime)
 
 			try:
 				fileData = self._fileManager.get_metadata(FileDestinations.SDCARD if sd else FileDestinations.LOCAL, path_on_disk)
