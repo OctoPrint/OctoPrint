@@ -34,6 +34,15 @@ class StorageInterface(object):
 		return
 		yield
 
+	def file_in_path(self, path, filepath):
+		"""
+		Returns whether the file indicated by ``file`` is inside ``path`` or not.
+		:param string path: the path to check
+		:param string filepath: path to the file
+		:return: ``True`` if the file is inside the path, ``False`` otherwise
+		"""
+		return NotImplementedError()
+
 	def file_exists(self, path):
 		"""
 		Returns whether the file indicated by ``path`` exists or not.
@@ -418,6 +427,9 @@ class LocalFileStorage(StorageInterface):
 			elif os.path.isdir(absolute_path):
 				for sub_entry in self._analysis_backlog_generator(absolute_path):
 					yield self.join_path(entry, sub_entry[0]), sub_entry[1], sub_entry[2]
+
+	def file_in_path(self, path, filepath):
+		return filepath.startswith(path)
 
 	def file_exists(self, path):
 		path, name = self.sanitize(path)

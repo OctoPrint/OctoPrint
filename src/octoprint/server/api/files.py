@@ -157,148 +157,178 @@ def _verifyFileExists(origin, filename):
 		return fileManager.file_exists(origin, filename)
 
 
+def _verifyFolderExists(origin, foldername):
+	if origin == FileDestinations.SDCARD:
+		return False
+	else:
+		return fileManager.folder_exists(origin, foldername)
+
+
+def _verifyFolderNotBusy(target, foldername):
+	busy_files = fileManager.get_busy_files()
+	for item in busy_files:
+		if target == item[0] and fileManager.file_in_path(target, foldername, item[1]):
+			return False
+
+	return True
+
 @api.route("/files/<string:target>", methods=["POST"])
 @restricted_access
 def uploadGcodeFile(target):
-	if not target in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
-		return make_response("Unknown target: %s" % target, 404)
-
 	input_name = "file"
 	input_upload_name = input_name + "." + settings().get(["server", "uploads", "nameSuffix"])
 	input_upload_path = input_name + "." + settings().get(["server", "uploads", "pathSuffix"])
 	if input_upload_name in request.values and input_upload_path in request.values:
+		if not target in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
+			return make_response("Unknown target: %s" % target, 404)
+
 		upload = octoprint.filemanager.util.DiskFileWrapper(request.values[input_upload_name], request.values[input_upload_path])
-	else:
-		return make_response("No file included", 400)
 
-	# Store any additional user data the caller may have passed.
-	userdata = None
-	if "userdata" in request.values:
-		import json
+		# Store any additional user data the caller may have passed.
+		userdata = None
+		if "userdata" in request.values:
+			import json
+			try:
+				userdata = json.loads(request.values["userdata"])
+			except:
+				return make_response("userdata contains invalid JSON", 400)
+
+		if target == FileDestinations.SDCARD and not settings().getBoolean(["feature", "sdSupport"]):
+			return make_response("SD card support is disabled", 404)
+
+		sd = target == FileDestinations.SDCARD
+		selectAfterUpload = "select" in request.values.keys() and request.values["select"] in valid_boolean_trues
+		printAfterSelect = "print" in request.values.keys() and request.values["print"] in valid_boolean_trues
+
+		if sd:
+			# validate that all preconditions for SD upload are met before attempting it
+			if not (printer.is_operational() and not (printer.is_printing() or printer.is_paused())):
+				return make_response("Can not upload to SD card, printer is either not operational or already busy", 409)
+			if not printer.is_sd_ready():
+				return make_response("Can not upload to SD card, not yet initialized", 409)
+
+		# determine current job
+		currentFilename = None
+		currentFullPath = None
+		currentOrigin = None
+		currentJob = printer.get_current_job()
+		if currentJob is not None and "file" in currentJob.keys():
+			currentJobFile = currentJob["file"]
+			if currentJobFile is not None and "name" in currentJobFile.keys() and "origin" in currentJobFile.keys() and currentJobFile["name"] is not None and currentJobFile["origin"] is not None:
+				currentPath, currentFilename = fileManager.sanitize(currentJobFile["origin"], currentJobFile["name"])
+				currentFullPath = fileManager.join_path(target, currentPath, currentFilename)
+				currentOrigin = currentJobFile["origin"]
+
+		# determine future filename of file to be uploaded, abort if it can't be uploaded
 		try:
-			userdata = json.loads(request.values["userdata"])
+			futurePath, futureFilename = fileManager.sanitize(target, upload.filename)
 		except:
-			return make_response("userdata contains invalid JSON", 400)
+			futurePath = None
+			futureFilename = None
 
-	if target == FileDestinations.SDCARD and not settings().getBoolean(["feature", "sdSupport"]):
-		return make_response("SD card support is disabled", 404)
+		if futureFilename is None:
+			return make_response("Can not upload file %s, wrong format?" % upload.filename, 415)
 
-	sd = target == FileDestinations.SDCARD
-	selectAfterUpload = "select" in request.values.keys() and request.values["select"] in valid_boolean_trues
-	printAfterSelect = "print" in request.values.keys() and request.values["print"] in valid_boolean_trues
+		if "path" in request.values:
+			futurePath = fileManager.sanitize_path(target, request.values["path"])
 
-	if sd:
-		# validate that all preconditions for SD upload are met before attempting it
-		if not (printer.is_operational() and not (printer.is_printing() or printer.is_paused())):
-			return make_response("Can not upload to SD card, printer is either not operational or already busy", 409)
-		if not printer.is_sd_ready():
-			return make_response("Can not upload to SD card, not yet initialized", 409)
+		futureFullPath = fileManager.join_path(target, futurePath, futureFilename)
 
-	# determine current job
-	currentFilename = None
-	currentFullPath = None
-	currentOrigin = None
-	currentJob = printer.get_current_job()
-	if currentJob is not None and "file" in currentJob.keys():
-		currentJobFile = currentJob["file"]
-		if currentJobFile is not None and "name" in currentJobFile.keys() and "origin" in currentJobFile.keys() and currentJobFile["name"] is not None and currentJobFile["origin"] is not None:
-			currentPath, currentFilename = fileManager.sanitize(currentJobFile["origin"], currentJobFile["name"])
-			currentFullPath = fileManager.join_path(target, currentPath, currentFilename)
-			currentOrigin = currentJobFile["origin"]
+		# prohibit overwriting currently selected file while it's being printed
+		if futureFullPath == currentFullPath and target == currentOrigin and printer.is_printing() or printer.is_paused():
+			return make_response("Trying to overwrite file that is currently being printed: %s" % currentFilename, 409)
 
-	# determine future filename of file to be uploaded, abort if it can't be uploaded
-	try:
-		futurePath, futureFilename = fileManager.sanitize(target, upload.filename)
-	except:
-		futurePath = None
-		futureFilename = None
+		def fileProcessingFinished(filename, absFilename, destination):
+			"""
+			Callback for when the file processing (upload, optional slicing, addition to analysis queue) has
+			finished.
 
-	if futureFilename is None:
-		return make_response("Can not upload file %s, wrong format?" % upload.filename, 415)
+			Depending on the file's destination triggers either streaming to SD card or directly calls selectAndOrPrint.
+			"""
 
-	if "path" in request.values:
-		futurePath = fileManager.sanitize_path(target, request.values["path"])
+			if destination == FileDestinations.SDCARD and octoprint.filemanager.valid_file_type(filename, "gcode"):
+				return filename, printer.add_sd_file(filename, absFilename, selectAndOrPrint)
+			else:
+				selectAndOrPrint(filename, absFilename, destination)
+				return filename
 
-	futureFullPath = fileManager.join_path(target, futurePath, futureFilename)
+		def selectAndOrPrint(filename, absFilename, destination):
+			"""
+			Callback for when the file is ready to be selected and optionally printed. For SD file uploads this is only
+			the case after they have finished streaming to the printer, which is why this callback is also used
+			for the corresponding call to addSdFile.
 
-	# prohibit overwriting currently selected file while it's being printed
-	if futureFullPath == currentFullPath and target == currentOrigin and printer.is_printing() or printer.is_paused():
-		return make_response("Trying to overwrite file that is currently being printed: %s" % currentFilename, 409)
+			Selects the just uploaded file if either selectAfterUpload or printAfterSelect are True, or if the
+			exact file is already selected, such reloading it.
+			"""
+			if octoprint.filemanager.valid_file_type(added_file, "gcode") and (selectAfterUpload or printAfterSelect or (currentFilename == filename and currentOrigin == destination)):
+				printer.select_file(absFilename, destination == FileDestinations.SDCARD, printAfterSelect)
 
-	def fileProcessingFinished(filename, absFilename, destination):
-		"""
-		Callback for when the file processing (upload, optional slicing, addition to analysis queue) has
-		finished.
-
-		Depending on the file's destination triggers either streaming to SD card or directly calls selectAndOrPrint.
-		"""
-
-		if destination == FileDestinations.SDCARD and octoprint.filemanager.valid_file_type(filename, "gcode"):
-			return filename, printer.add_sd_file(filename, absFilename, selectAndOrPrint)
+		added_file = fileManager.add_file(FileDestinations.LOCAL, futureFullPath, upload, allow_overwrite=True)
+		if added_file is None:
+			return make_response("Could not upload the file %s" % upload.filename, 500)
+		if octoprint.filemanager.valid_file_type(added_file, "stl"):
+			filename = added_file
+			done = True
 		else:
-			selectAndOrPrint(filename, absFilename, destination)
-			return filename
+			filename = fileProcessingFinished(added_file, fileManager.path_on_disk(FileDestinations.LOCAL, added_file), target)
+			done = True
 
-	def selectAndOrPrint(filename, absFilename, destination):
-		"""
-		Callback for when the file is ready to be selected and optionally printed. For SD file uploads this is only
-		the case after they have finished streaming to the printer, which is why this callback is also used
-		for the corresponding call to addSdFile.
+		if userdata is not None:
+			# upload included userdata, add this now to the metadata
+			fileManager.set_additional_metadata(FileDestinations.LOCAL, added_file, "userdata", userdata)
 
-		Selects the just uploaded file if either selectAfterUpload or printAfterSelect are True, or if the
-		exact file is already selected, such reloading it.
-		"""
-		if octoprint.filemanager.valid_file_type(added_file, "gcode") and (selectAfterUpload or printAfterSelect or (currentFilename == filename and currentOrigin == destination)):
-			printer.select_file(absFilename, destination == FileDestinations.SDCARD, printAfterSelect)
+		sdFilename = None
+		if isinstance(filename, tuple):
+			filename, sdFilename = filename
 
-	added_file = fileManager.add_file(FileDestinations.LOCAL, futureFullPath, upload, allow_overwrite=True)
-	if added_file is None:
-		return make_response("Could not upload the file %s" % upload.filename, 500)
-	if octoprint.filemanager.valid_file_type(added_file, "stl"):
-		filename = added_file
-		done = True
-	else:
-		filename = fileProcessingFinished(added_file, fileManager.path_on_disk(FileDestinations.LOCAL, added_file), target)
-		done = True
+		eventManager.fire(Events.UPLOAD, {"file": filename, "target": target})
 
-	if userdata is not None:
-		# upload included userdata, add this now to the metadata
-		fileManager.set_additional_metadata(FileDestinations.LOCAL, added_file, "userdata", userdata)
-
-	sdFilename = None
-	if isinstance(filename, tuple):
-		filename, sdFilename = filename
-
-	eventManager.fire(Events.UPLOAD, {"file": filename, "target": target})
-
-	files = {}
-	location = url_for(".readGcodeFile", target=FileDestinations.LOCAL, filename=filename, _external=True)
-	files.update({
-		FileDestinations.LOCAL: {
-			"name": filename,
-			"origin": FileDestinations.LOCAL,
-			"refs": {
-				"resource": location,
-				"download": url_for("index", _external=True) + "downloads/files/" + FileDestinations.LOCAL + "/" + filename
-			}
-		}
-	})
-
-	if sd and sdFilename:
-		location = url_for(".readGcodeFile", target=FileDestinations.SDCARD, filename=sdFilename, _external=True)
+		files = {}
+		location = url_for(".readGcodeFile", target=FileDestinations.LOCAL, filename=filename, _external=True)
 		files.update({
-			FileDestinations.SDCARD: {
-				"name": sdFilename,
-				"origin": FileDestinations.SDCARD,
+			FileDestinations.LOCAL: {
+				"name": filename,
+				"origin": FileDestinations.LOCAL,
 				"refs": {
-					"resource": location
+					"resource": location,
+					"download": url_for("index", _external=True) + "downloads/files/" + FileDestinations.LOCAL + "/" + filename
 				}
 			}
 		})
 
-	r = make_response(jsonify(files=files, done=done), 201)
-	r.headers["Location"] = location
-	return r
+		if sd and sdFilename:
+			location = url_for(".readGcodeFile", target=FileDestinations.SDCARD, filename=sdFilename, _external=True)
+			files.update({
+				FileDestinations.SDCARD: {
+					"name": sdFilename,
+					"origin": FileDestinations.SDCARD,
+					"refs": {
+						"resource": location
+					}
+				}
+			})
+
+		r = make_response(jsonify(files=files, done=done), 201)
+		r.headers["Location"] = location
+		return r
+	else:
+		if "foldername" not in request.json:
+			return make_response("No path information or no file included", 409)
+
+		if not target in [FileDestinations.LOCAL]:
+			return make_response("Unknown target: %s" % target, 404)
+
+		futurePath, futureName = fileManager.sanitize(target, request.json["foldername"])
+		futureFullPath = fileManager.join_path(target, futurePath, futureName)
+		if octoprint.filemanager.valid_file_type(futureName):
+			return make_response("Can't create a folder named %s, please try another name" % futureName, 409)
+
+		added_folder = fileManager.add_folder(target, futureFullPath)
+		if added_folder is None:
+			return make_response("Could not create folder %s" % futureName, 500)
+
+	return NO_CONTENT
 
 
 @api.route("/files/<string:target>/<path:filename>", methods=["GET"])
@@ -464,29 +494,52 @@ def gcodeFileCommand(filename, target):
 @api.route("/files/<string:target>/<path:filename>", methods=["DELETE"])
 @restricted_access
 def deleteGcodeFile(filename, target):
-	if not target in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
-		return make_response("Unknown target: %s" % target, 404)
+	if not _verifyFileExists(target, filename) and not _verifyFolderExists(target, filename):
+		return make_response("File/Folder not found on '%s': %s" % (target, filename), 404)
 
-	if not _verifyFileExists(target, filename):
-		return make_response("File not found on '%s': %s" % (target, filename), 404)
+	if _verifyFileExists(target, filename):
+		if not target in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
+			return make_response("Unknown target: %s" % target, 404)
 
-	# prohibit deleting files that are currently in use
-	currentOrigin, currentFilename = _getCurrentFile()
-	if currentFilename == filename and currentOrigin == target and (printer.is_printing() or printer.is_paused()):
-		make_response("Trying to delete file that is currently being printed: %s" % filename, 409)
+		# prohibit deleting files that are currently in use
+		currentOrigin, currentFilename = _getCurrentFile()
 
-	if (target, filename) in fileManager.get_busy_files():
-		make_response("Trying to delete a file that is currently in use: %s" % filename, 409)
+		if currentFilename is not None and currentFilename == filename and currentOrigin == target and (printer.is_printing() or printer.is_paused()):
+			return make_response("Trying to delete file that is currently being printed: %s" % filename, 409)
 
-	# deselect the file if it's currently selected
-	if currentFilename is not None and filename == currentFilename:
-		printer.unselect_file()
+		if not _verifyFolderNotBusy(target, filename):
+			return make_response("Trying to delete a file that is currently in use: %s" % filename, 409)
 
-	# delete it
-	if target == FileDestinations.SDCARD:
-		printer.delete_sd_file(filename)
-	else:
-		fileManager.remove_file(target, filename)
+		# deselect the file if it's currently selected
+		if currentFilename is not None and filename == currentFilename:
+			printer.unselect_file()
+
+		# delete it
+		if target == FileDestinations.SDCARD:
+			printer.delete_sd_file(filename)
+		else:
+			fileManager.remove_file(target, filename)
+
+	elif _verifyFolderExists(target, filename):
+		if not target in [FileDestinations.LOCAL]:
+			return make_response("Unknown target: %s" % target, 404)
+
+		folderpath = filename
+		# prohibit deleting folders that are currently in use
+		currentOrigin, currentFilename = _getCurrentFile()
+
+		if currentFilename is not None and fileManager.file_in_path(target, folderpath, currentFilename) and currentOrigin == target and (printer.is_printing() or printer.is_paused()):
+			return make_response("Trying to delete a folder that contains a file that is currently being printed: %s" % folderpath, 409)
+
+		if not _verifyFolderNotBusy(target, folderpath):
+			return make_response("Trying to delete a folder that contains a file that is currently in use: %s" % folderpath, 409)
+
+		# deselect the file if it's currently selected
+		if currentFilename is not None and fileManager.file_in_path(target, folderpath, currentFilename):
+			printer.unselect_file()
+
+		# delete it
+		fileManager.remove_folder(target, folderpath)
 
 	return NO_CONTENT
 

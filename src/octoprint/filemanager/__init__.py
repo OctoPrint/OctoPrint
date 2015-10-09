@@ -340,6 +340,9 @@ class FileManager(object):
 	def get_busy_files(self):
 		return self._slicing_jobs.keys()
 
+	def file_in_path(self, destination, path, file):
+		return self._storage(destination).file_in_path(path, file)
+
 	def file_exists(self, destination, path):
 		return self._storage(destination).file_exists(path)
 
