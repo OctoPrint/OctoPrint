@@ -73,6 +73,23 @@
             return OctoPrint.delete(resourceForFile(location, filename), opts);
         },
 
+        copy: function(location, filename, destination, opts) {
+            return issueFileCommand(location, filename, "copy", { destination: destination }, opts);
+        },
+
+        move: function(location, filename, destination, opts) {
+            return issueFileCommand(location, filename, "move", { destination: destination }, opts);
+        },
+
+        createFolder: function (location, name, path) {
+            var data = { foldername: name };
+            if (path != undefined && path != "") {
+                data["foldername"] = path + "/" + name;
+            }
+
+            return OctoPrint.postJson(resourceForLocation(location), data);
+        },
+
         upload: function (location, file, data) {
             data = data || {};
 
