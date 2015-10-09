@@ -349,13 +349,12 @@ def gcodeFileCommand(filename, target):
 	if not target in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
 		return make_response("Unknown target: %s" % target, 404)
 
-	if not _verifyFileExists(target, filename):
-		return make_response("File not found on '%s': %s" % (target, filename), 404)
-
 	# valid file commands, dict mapping command name to mandatory parameters
 	valid_commands = {
 		"select": [],
-		"slice": []
+		"slice": [],
+		"copy": ["destination"],
+		"move": ["destination"]
 	}
 
 	command, data, response = get_json_command_from_request(request, valid_commands)
@@ -363,6 +362,9 @@ def gcodeFileCommand(filename, target):
 		return response
 
 	if command == "select":
+		if not _verifyFileExists(target, filename):
+			return make_response("File not found on '%s': %s" % (target, filename), 404)
+
 		# selects/loads a file
 		if not octoprint.filemanager.valid_file_type(filename, type="machinecode"):
 			return make_response("Cannot select {filename} for printing, not a machinecode file".format(**locals()), 415)
@@ -382,6 +384,9 @@ def gcodeFileCommand(filename, target):
 		printer.select_file(filenameToSelect, sd, printAfterLoading)
 
 	elif command == "slice":
+		if not _verifyFileExists(target, filename):
+			return make_response("File not found on '%s': %s" % (target, filename), 404)
+
 		try:
 			if "slicer" in data:
 				slicer = data["slicer"]
@@ -487,6 +492,48 @@ def gcodeFileCommand(filename, target):
 		r = make_response(jsonify(result), 202)
 		r.headers["Location"] = location
 		return r
+
+	elif command == "copy" or command == "move":
+		# Copy and move are only possible on local storage
+		if not target in [FileDestinations.LOCAL]:
+			return make_response("Unknown target: %s" % target, 404)
+
+		if not _verifyFileExists(target, filename) and not _verifyFolderExists(target, filename):
+			return make_response("File/Folder not found on '%s': %s" % (target, filename), 404)
+
+		overwrite = data["overwrite"] if "overwrite" in data else False
+		destination = data["destination"]
+
+		if _verifyFolderExists(target, destination):
+			path, name = fileManager.split_path(target, filename)
+			destination = fileManager.join_path(target, destination, name)
+
+		if fileManager.file_exists(target, destination) and not overwrite:
+			return make_response("File already exists and overwrite is prohibited: %s" % filename, 409)
+
+		if command == "copy":
+			if fileManager.file_exists(target, filename):
+				fileManager.copy_file(target, filename, destination, overwrite)
+			elif fileManager.folder_exists(target, filename):
+				fileManager.copy_folder(target, filename, destination)
+		elif command == "move":
+			# prohibit deleting or moving files that are currently in use
+			currentOrigin, currentFilename = _getCurrentFile()
+
+			if currentFilename is not None and fileManager.file_in_path(target, filename, currentFilename) and currentOrigin == target and (printer.is_printing() or printer.is_paused()):
+				return make_response("Trying to delete a folder that contains a file that is currently being printed: %s" % filename, 409)
+
+			if not _verifyFolderNotBusy(target, filename):
+				return make_response("Trying to delete a folder that contains a file that is currently in use: %s" % filename, 409)
+
+			# deselect the file if it's currently selected
+			if currentFilename is not None and filename == currentFilename:
+				printer.unselect_file()
+
+			if fileManager.file_exists(target, filename):
+				fileManager.move_file(target, filename, destination, overwrite)
+			elif fileManager.folder_exists(target, filename):
+				fileManager.move_folder(target, filename, destination, overwrite)
 
 	return NO_CONTENT
 
