@@ -3,7 +3,7 @@
 </form>
 <div class="gcode_files">
     <!-- ko if: currentPath() != "" -->
-    <div class="entry" data-bind="click: function() { var path = $root.currentPath().split('/'); path.shift(); $root.changeFolderByPath(path.join('/')); }"><i class="icon-arrow-left"></i> {{  _('Back') }}</div>
+    <div class="entry" data-bind="click: function() { var path = $root.currentPath().split('/'); path.pop(); $root.changeFolderByPath(path.join('/')); }"><i class="icon-arrow-left"></i> {{  _('Back') }}</div>
     <!-- /ko -->
 
     <!-- ko if: listStyle() == 'folders_files' -->

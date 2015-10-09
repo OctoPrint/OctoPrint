@@ -1150,16 +1150,23 @@ class LocalFileStorage(StorageInterface):
 				if not filter or filter(entry, entry_data):
 					def get_size(start_path):
 						total_size = 0
-						for dirpath, dirnames, filenames in os.walk(start_path):
-							for f in filenames:
-								fp = os.path.join(dirpath, f)
+						for root, dirs, files in os.walk(start_path):
+							for f in files:
+								if f is ".metadata.yaml":
+									continue
+
+								fp = os.path.join(root, f)
 								total_size += os.path.getsize(fp)
+
 						return total_size
 
 					# only add folders passing the optional filter
 					extended_entry_data = dict()
 					extended_entry_data.update(entry_data)
 					extended_entry_data["size"] = get_size(entry_path)
+					stat = os.stat(entry_path)
+					if stat:
+						extended_entry_data["date"] = int(stat.st_ctime)
 
 					result[entry] = extended_entry_data
 

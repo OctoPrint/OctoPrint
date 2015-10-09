@@ -99,7 +99,10 @@ $(function() {
                     return data["type"] && (data["type"] == "model" || data["type"] == "folder");
                 },
                 "emptyFolder": function(data) {
-                    return data["type"] && data["type"] != "folder" || (data["size"] && data["size"] != 0);
+                    if (data["type"] && data["type"] != "folder")
+                        return true;
+
+                    return data.children.length != 0;
                 }
             },
             "name",
