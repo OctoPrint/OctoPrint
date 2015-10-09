@@ -47,11 +47,13 @@
         get: getFile,
 
         list: function (opts) {
-            return OctoPrint.get(url, opts).done(preProcessList);
+            return OctoPrint.get(url, opts)
+                .done(preProcessList);
         },
 
         listForLocation: function (location, opts) {
-            return OctoPrint.get(resourceForLocation(location), opts).done(preProcessList);
+            return OctoPrint.get(resourceForLocation(location), opts)
+                .done(preProcessList);
         },
 
         select: function (location, filename, print, opts) {
@@ -71,6 +73,23 @@
 
         delete: function (location, filename, opts) {
             return OctoPrint.delete(resourceForFile(location, filename), opts);
+        },
+
+        copy: function(location, filename, destination, opts) {
+            return issueFileCommand(location, filename, "copy", { destination: destination }, opts);
+        },
+
+        move: function(location, filename, destination, opts) {
+            return issueFileCommand(location, filename, "move", { destination: destination }, opts);
+        },
+
+        createFolder: function (location, name, path) {
+            var data = "foldername=" + name;
+            if (path != undefined && path != "") {
+                data = "foldername:" + path + "/" + name;
+            }
+
+            return OctoPrint.post(resourceForLocation(location), data);
         },
 
         upload: function (location, file, data) {

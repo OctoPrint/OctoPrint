@@ -139,7 +139,7 @@ class StorageInterface(object):
 		"""
 		raise NotImplementedError()
 
-	def move_folder(self, source, destination, allow_overwrite=False):
+	def move_folder(self, source, destination):
 		"""
 		Moves the folder ``source`` to ``destination``
 
@@ -172,7 +172,7 @@ class StorageInterface(object):
 		"""
 		raise NotImplementedError()
 
-	def copy_file(self, source, destination, allow_overwrite=False):
+	def copy_file(self, source, destination):
 		"""
 		Copys the file ``source`` to ``destination``
 
@@ -181,7 +181,7 @@ class StorageInterface(object):
 		"""
 		raise NotImplementedError()
 
-	def move_file(self, source, destination, allow_overwrite=False):
+	def move_file(self, source, destination):
 		"""
 		Moves the file ``source`` to ``destination``
 
@@ -429,6 +429,9 @@ class LocalFileStorage(StorageInterface):
 					yield self.join_path(entry, sub_entry[0]), sub_entry[1], sub_entry[2]
 
 	def file_in_path(self, path, filepath):
+		filepath = self.sanitize_path(filepath)
+		path = self.sanitize_path(path)
+
 		return filepath.startswith(path)
 
 	def file_exists(self, path):
@@ -476,45 +479,69 @@ class LocalFileStorage(StorageInterface):
 		import shutil
 		shutil.rmtree(folder_path)
 
+	def _copyMove1(self, source, destination):
+		sourcepath, sourcename = self.sanitize(source)
+		destinationpath, destinationname = self.sanitize(destination)
+
+		source_path = os.path.join(sourcepath, sourcename)
+		if not os.path.exists(source_path):
+			raise RuntimeError("{sourcename} in {sourcepath} does not exist".format(**locals()))
+
+		destination_path = os.path.join(destinationpath, destinationname)
+		if os.path.exists(destination_path):
+			raise RuntimeError("{destinationname} does already exist in {destinationpath}".format(**locals()))
+
+		sourceObj = dict(
+			path=sourcepath,
+			name=sourcename,
+			fullpath=source_path,
+		)
+		destinationObj = dict(
+			path=destinationpath,
+			name=destinationname,
+			fullpath=destination_path,
+		)
+		return sourceObj, destinationObj
+
+	def _copyMove2(self, source, destination):
+		sourceObj, destinationObj = self._copyMove1(source, destination)
+
+		if not os.path.isfile(sourceObj["fullpath"]):
+			raise RuntimeError("%s in %s is not a file" % (sourceObj["name"], sourceObj["path"]))
+
+		sourcemetadata = self._get_metadata(sourceObj["path"])
+		if not sourcemetadata:
+			sourcemetadata = dict()
+
+		destinationmetadata = self._get_metadata(destinationObj["path"])
+		if not destinationmetadata:
+			destinationmetadata = dict()
+
+		sourceObj.update(dict(metadata=sourcemetadata))
+		destinationObj.update(dict(metadata=destinationmetadata))
+		return sourceObj, destinationObj
+
 	def copy_folder(self, source, destination):
-		sourcepath, sourcename = self.sanitize(source)
-		destinationpath, destinationname = self.sanitize(destination)
+		sourceObj, destinationObj = self._copyMove1(source, destination)
 
-		sourcefolder_path = os.path.join(sourcepath, sourcename)
-		if not os.path.exists(sourcefolder_path):
-			return
-
-		if not os.path.isdir(sourcefolder_path):
-			raise RuntimeError("{name} in {path} is not a folder".format(**locals()))
-
-		destinationfolder_path = os.path.join(destinationpath, destinationname)
-		if os.path.exists(destinationfolder_path):
-			raise RuntimeError("{newname} does already exist in {newpath}".format(**locals()))
+		if not os.path.isdir(sourceObj["fullpath"]):
+			raise RuntimeError("%s in %s is not a folder" % (sourceObj["name"], sourceObj["path"]))
 
 		try:
-			shutil.copytree(sourcefolder_path, destinationfolder_path)
+			shutil.copytree(sourceObj["fullpath"], destinationObj["fullpath"])
 		except Exception as e:
-			raise RuntimeError("Could not copy {oldname} in {oldpath} to {newname} in {newpath}".format(**locals()), e)
+			raise RuntimeError("Could not copy %s in %s to %s in %s" % (sourceObj["name"], sourceObj["path"], destinationObj["name"], destinationObj["path"]), e)
 
-	def move_folder(self, source, destination, allow_overwrite=False):
-		sourcepath, sourcename = self.sanitize(source)
-		destinationpath, destinationname = self.sanitize(destination)
+	def move_folder(self, source, destination):
+		sourceObj, destinationObj = self._copyMove1(source, destination)
 
-		sourcefolder_path = os.path.join(sourcepath, sourcename)
-		if not os.path.exists(sourcefolder_path):
-			return
-
-		if not os.path.isdir(sourcefolder_path):
-			raise RuntimeError("{name} in {path} is not a folder".format(**locals()))
-
-		destinationfolder_path = os.path.join(destinationpath, destinationname)
-		if os.path.exists(destinationfolder_path) and not allow_overwrite:
-			raise RuntimeError("{newname} does already exist in {newpath} and overwriting is prohibited".format(**locals()))
+		if not os.path.isdir(sourceObj["fullpath"]):
+			raise RuntimeError("%s in %s is not a folder" % (sourceObj["name"], sourceObj["path"]))
 
 		try:
-			shutil.move(sourcefolder_path, destinationfolder_path)
+			shutil.move(sourceObj["fullpath"], destinationObj["fullpath"])
 		except Exception as e:
-			raise RuntimeError("Could not move {oldname} in {oldpath} to {newname} in {newpath}".format(**locals()), e)
+			raise RuntimeError("Could not move %s in %s to %s in %s" % (sourceObj["name"], sourceObj["path"], destinationObj["name"], destinationObj["path"]), e)
 
 	def add_file(self, path, file_object, printer_profile=None, links=None, allow_overwrite=False):
 		path, name = self.sanitize(path)
@@ -585,83 +612,41 @@ class LocalFileStorage(StorageInterface):
 					if not "links" in m:
 						continue
 					for link in m["links"]:
-						if "rel" in link and "hash" in link and (link["rel"] == "model" or link["rel"] == "machinecode") and link["hash"] == hash:
+						if "rel" in link and "hash" in link and (
+								link["rel"] == "model" or link["rel"] == "machinecode") and link["hash"] == hash:
 							m["links"].remove(link)
 			del metadata[name]
 			self._save_metadata(path, metadata)
 
-	def copy_file(self, source, destination, allow_overwrite=False):
-		sourcepath, sourcename = self.sanitize(source)
-		destinationpath, destinationname = self.sanitize(destination)
-
-		oldmetadata = self._get_metadata(sourcepath)
-		if not oldmetadata:
-			oldmetadata = dict()
-
-		newmetadata = self._get_metadata(destinationpath)
-		if not newmetadata:
-			newmetadata = dict()
-
-		sourcefile_path = os.path.join(sourcepath, sourcename)
-		if not os.path.exists(sourcefile_path):
-			return
-
-		if not os.path.isfile(sourcefile_path):
-			raise RuntimeError("{oldname} in {oldpath} is not a file".format(**locals()))
-
-		destinationfile_path = os.path.join(destinationpath, destinationname)
-		if os.path.exists(destinationfile_path) and not allow_overwrite:
-			raise RuntimeError("{newname} does already exist in {newpath} and overwriting is prohibited".format(**locals()))
+	def copy_file(self, source, destination):
+		sourceObj, destinationObj = self._copyMove2(source, destination)
 
 		try:
-			shutil.copy2(sourcefile_path, destinationfile_path)
+			shutil.copy2(sourceObj["fullpath"], destinationObj["fullpath"])
 		except Exception as e:
-			raise RuntimeError("Could not copy {oldname} in {oldpath} to {newname} in {newpath}".format(**locals()), e)
+			raise RuntimeError("Could not copy %s in %s to %s in %s" % (sourceObj["name"], sourceObj["path"], destinationObj["name"], destinationObj["path"]), e)
 
-		if sourcename in oldmetadata:
-			metadata = oldmetadata[sourcename]
-
-			newmetadata[destinationname] = metadata
-			newmetadata[destinationname]["hash"] = self._create_hash(destinationfile_path)
-			self._save_metadata(destinationpath, newmetadata)
+		if sourceObj["name"] in sourceObj["metadata"]:
+			destinationObj["metadata"][destinationObj["name"]] = sourceObj["metadata"][sourceObj["name"]]
+			destinationObj["metadata"][destinationObj["name"]]["hash"] = self._create_hash(destinationObj["fullpath"])
+			self._save_metadata(destinationObj["path"], destinationObj["metadata"])
 
 	def move_file(self, source, destination, allow_overwrite=False):
-		sourcepath, sourcename = self.sanitize(source)
-		destinationpath, destinationname = self.sanitize(destination)
-
-		oldmetadata = self._get_metadata(sourcepath)
-		if not oldmetadata:
-			oldmetadata = dict()
-
-		newmetadata = self._get_metadata(destinationpath)
-		if not newmetadata:
-			newmetadata = dict()
-
-		sourcefile_path = os.path.join(sourcepath, sourcename)
-		if not os.path.exists(sourcefile_path):
-			return
-
-		if not os.path.isfile(sourcefile_path):
-			raise RuntimeError("{oldname} in {oldpath} is not a file".format(**locals()))
-
-		destinationfile_path = os.path.join(destinationpath, destinationname)
-		if os.path.exists(destinationfile_path) and not allow_overwrite:
-			raise RuntimeError("{newname} does already exist in {newpath} and overwriting is prohibited".format(**locals()))
+		sourceObj, destinationObj = self._copyMove2(source, destination)
 
 		try:
-			shutil.move(sourcefile_path, destinationfile_path)
+			shutil.move(sourceObj["fullpath"], destinationObj["fullpath"])
 		except Exception as e:
-			raise RuntimeError("Could not move {oldname} in {oldpath} to {newname} in {newpath}".format(**locals()), e)
+			raise RuntimeError("Could not move %s in %s to %s in %s" % (sourceObj["name"], sourceObj["path"], destinationObj["name"], destinationObj["path"]), e)
 
-		if sourcename in oldmetadata:
-			metadata = oldmetadata[sourcename]
-			del oldmetadata[sourcename]
-			self._save_metadata(sourcepath, oldmetadata)
+		if sourceObj["name"] in sourceObj["metadata"]:
+			metadata = sourceObj["metadata"][sourceObj["name"]]
+			del sourceObj["metadata"][sourceObj["name"]]
+			self._save_metadata(sourceObj["path"], sourceObj["metadata"])
 
-			newmetadata[destinationname] = metadata
-			newmetadata[destinationname]["hash"] = self._create_hash(destinationfile_path)
-			self._save_metadata(destinationpath, newmetadata)
-
+			destinationObj["metadata"][destinationObj["name"]] = metadata
+			destinationObj["metadata"][destinationObj["name"]]["hash"] = self._create_hash(destinationObj["fullpath"])
+			self._save_metadata(destinationObj["path"], destinationObj["metadata"])
 
 	def get_metadata(self, path):
 		path, name = self.sanitize(path)
@@ -1160,25 +1145,18 @@ class LocalFileStorage(StorageInterface):
 				)
 
 				if not filter or filter(entry, entry_data):
-					def get_size(start_path):
+					def get_size():
 						total_size = 0
-						for root, dirs, files in os.walk(start_path):
-							for f in files:
-								if f is ".metadata.yaml":
-									continue
-
-								fp = os.path.join(root, f)
-								total_size += os.path.getsize(fp)
+						for element in entry_data["children"].itervalues():
+							if "size" in element:
+								total_size += element["size"]
 
 						return total_size
 
 					# only add folders passing the optional filter
 					extended_entry_data = dict()
 					extended_entry_data.update(entry_data)
-					extended_entry_data["size"] = get_size(entry_path)
-					stat = os.stat(entry_path)
-					if stat:
-						extended_entry_data["date"] = int(stat.st_ctime)
+					extended_entry_data["size"] = get_size()
 
 					result[entry] = extended_entry_data
 

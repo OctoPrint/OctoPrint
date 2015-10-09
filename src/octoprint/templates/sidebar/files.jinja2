@@ -7,25 +7,27 @@
     <!-- /ko -->
 
     <!-- ko if: listStyle() == 'folders_files' -->
-    <!-- ko slimScrolledForeach: foldersOnlyList -->
-    <div class="entry" data-bind="attr: { id: $root.getEntryId($data) }, template: { name: $root.templateFor($data), data: $data }"></div>
+        <!-- ko slimScrolledForeach: foldersOnlyList -->
+             <div class="entry" data-bind="attr: { id: $root.getEntryId($data) }, template: { name: $root.templateFor($data), data: $data }"></div>
+        <!-- /ko -->
+        <!-- ko slimScrolledForeach: filesOnlyList -->
+            <div class="entry" data-bind="attr: { id: $root.getEntryId($data) }, template: { name: $root.templateFor($data), data: $data }"></div>
+        <!-- /ko -->
     <!-- /ko -->
-    <!-- ko slimScrolledForeach: filesOnlyList -->
-    <div class="entry" data-bind="attr: { id: $root.getEntryId($data) }, template: { name: $root.templateFor($data), data: $data }"></div>
-    <!-- /ko -->
-    <!-- /ko -->
+
     <!-- ko if: listStyle() == 'files_folders' -->
-    <!-- ko slimScrolledForeach: filesOnlyList -->
-    <div class="entry" data-bind="attr: { id: $root.getEntryId($data) }, template: { name: $root.templateFor($data), data: $data }"></div>
+        <!-- ko slimScrolledForeach: filesOnlyList -->
+            <div class="entry" data-bind="attr: { id: $root.getEntryId($data) }, template: { name: $root.templateFor($data), data: $data }"></div>
+        <!-- /ko -->
+        <!-- ko slimScrolledForeach: foldersOnlyList -->
+            <div class="entry" data-bind="attr: { id: $root.getEntryId($data) }, template: { name: $root.templateFor($data), data: $data }"></div>
+        <!-- /ko -->
     <!-- /ko -->
-    <!-- ko slimScrolledForeach: foldersOnlyList -->
-    <div class="entry" data-bind="attr: { id: $root.getEntryId($data) }, template: { name: $root.templateFor($data), data: $data }"></div>
-    <!-- /ko -->
-    <!-- /ko -->
+
     <!-- ko if: listStyle() == 'mixed' -->
-    <!-- ko slimScrolledForeach: listHelper.paginatedItems -->
-    <div class="entry" data-bind="attr: { id: $root.getEntryId($data) }, template: { name: $root.templateFor($data), data: $data }"></div>
-    <!-- /ko -->
+        <!-- ko slimScrolledForeach: listHelper.paginatedItems -->
+            <div class="entry" data-bind="attr: { id: $root.getEntryId($data) }, template: { name: $root.templateFor($data), data: $data }"></div>
+        <!-- /ko -->
     <!-- /ko -->
 
     <script type="text/html" id="files_template_machinecode">
@@ -54,8 +56,10 @@
     </script>
 
     <script type="text/html" id="files_template_folder">
-        <div class="title" data-bind="click: $root.changeFolder"><i class="icon-folder-open"></i> <span data-bind="text: name"></span></div>
-        <div class="size">{{ _('Size') }}: <span data-bind="text: formatSize(size)"></span></div>
+        <div data-bind="click: $root.changeFolder">
+            <div class="title"><i class="icon-folder-open"></i> <span data-bind="text: name"></span></div>
+            <div class="size">{{ _('Size') }}: <span data-bind="text: formatSize(size)"></span></div>
+        </div>
     </script>
 </div>
 <div class="text-right muted" data-bind="attr: {title: diskusageString}, css: {'text-error': diskusageCritical}, style: {'font-weight': diskusageCritical() || diskusageWarning() ? 'bold' : 'normal'}">

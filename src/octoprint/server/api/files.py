@@ -25,13 +25,8 @@ import psutil
 
 @api.route("/files", methods=["GET"])
 def readGcodeFiles():
-	filter = None
-	recursive = False
-	if "filter" in request.values:
-		filter = request.values["filter"]
-
-	if "recursive" in request.values:
-		recursive = request.values["recursive"] == 'true'
+	filter = "filter" in request.values and request.values["recursive"] in valid_boolean_trues
+	recursive = "recursive" in request.values and request.values["recursive"] in valid_boolean_trues
 
 	files = _getFileList(FileDestinations.LOCAL, filter=filter, recursive=recursive)
 	files.extend(_getFileList(FileDestinations.SDCARD))
@@ -62,17 +57,40 @@ def _getFileDetails(origin, path):
 	files = _getFileList(origin, recursive=True)
 	path = path.split('/')
 
-	def recursive_get_filedetails(files, path):
-		for file in files:
-			if file["name"] == path[0]:
-				if len(path) > 1:
-					return recursive_get_filedetails(file["children"], path[1:])
-				else:
-					return file
+	if len(path) == 1:
+		# shortcut for files in the root folder
+		name = path[0]
+		for f in files:
+			if f["name"] == name:
+				return f
 
 		return None
 
-	return recursive_get_filedetails(files, path)
+	node = files
+	while path:
+		segment = path.pop(0)
+		for f in node:
+			if not f["name"] == segment:
+				# wrong name => next!
+				continue
+
+			if not path:
+				# no path left and name matches => found it!
+				return f
+
+			if not f["type"] == "folder":
+				# path left but not a folder => that doesn't work
+				return None
+
+			# we'll use this folder's children as the next iteration
+			node = f["children"]
+			break
+		else:
+			# nothing matched the name, we can't find it
+			return None
+
+	# nothing returned until now => not found
+	return None
 
 
 def _getFileList(origin, filter=None, recursive=False):
@@ -100,52 +118,55 @@ def _getFileList(origin, filter=None, recursive=False):
 
 		files = fileManager.list_files(origin, filter=filter_func, recursive=recursive)[origin].values()
 
-		def recursive_analysis(files, path):
+		def analyse_recursively(files, path=None):
+			if path is None:
+				path = ""
+
 			for file in files:
 				file["origin"] = FileDestinations.LOCAL
 
 				if file["type"] == "folder":
-					file["children"] = recursive_analysis(file["children"].values(), path + file["name"] + "/")
+					file["children"] = analyse_recursively(file["children"].values(), path + file["name"] + "/")
+				else:
+					if "analysis" in file and octoprint.filemanager.valid_file_type(file["name"], type="gcode"):
+						file["gcodeAnalysis"] = file["analysis"]
+						del file["analysis"]
 
-				if "analysis" in file and octoprint.filemanager.valid_file_type(file["name"], type="gcode"):
-					file["gcodeAnalysis"] = file["analysis"]
-					del file["analysis"]
-
-				if "history" in file and octoprint.filemanager.valid_file_type(file["name"], type="gcode"):
-					# convert print log
-					history = file["history"]
-					del file["history"]
-					success = 0
-					failure = 0
-					last = None
-					for entry in history:
-						success += 1 if "success" in entry and entry["success"] else 0
-						failure += 1 if "success" in entry and not entry["success"] else 0
-						if not last or ("timestamp" in entry and "timestamp" in last and entry["timestamp"] > last["timestamp"]):
-							last = entry
-					if last:
-						prints = dict(
-							success=success,
-							failure=failure,
-							last=dict(
-								success=last["success"],
-								date=last["timestamp"]
+					if "history" in file and octoprint.filemanager.valid_file_type(file["name"], type="gcode"):
+						# convert print log
+						history = file["history"]
+						del file["history"]
+						success = 0
+						failure = 0
+						last = None
+						for entry in history:
+							success += 1 if "success" in entry and entry["success"] else 0
+							failure += 1 if "success" in entry and not entry["success"] else 0
+							if not last or ("timestamp" in entry and "timestamp" in last and entry["timestamp"] > last["timestamp"]):
+								last = entry
+						if last:
+							prints = dict(
+								success=success,
+								failure=failure,
+								last=dict(
+									success=last["success"],
+									date=last["timestamp"]
+								)
 							)
-						)
-						if "printTime" in last:
-							prints["last"]["printTime"] = last["printTime"]
-						file["prints"] = prints
+							if "printTime" in last:
+								prints["last"]["printTime"] = last["printTime"]
+							file["prints"] = prints
 
-				file.update({
-					"refs": {
-						"resource": url_for(".readGcodeFile", target=FileDestinations.LOCAL, filename=path + file["name"], _external=True),
-						"download": url_for("index", _external=True) + "downloads/files/" + FileDestinations.LOCAL + "/" + path + file["name"]
-					}
-				})
+					file.update({
+						"refs": {
+							"resource": url_for(".readGcodeFile", target=FileDestinations.LOCAL, filename=path + file["name"], _external=True),
+							"download": url_for("index", _external=True) + "downloads/files/" + FileDestinations.LOCAL + "/" + path + file["name"]
+						}
+					})
 
 			return files
 
-		files = recursive_analysis(files, "")
+		analyse_recursively(files)
 
 	return files
 
@@ -164,13 +185,17 @@ def _verifyFolderExists(origin, foldername):
 		return fileManager.folder_exists(origin, foldername)
 
 
-def _verifyFolderNotBusy(target, foldername):
+def _isBusy(target, path):
+	currentOrigin, currentFilename = _getCurrentFile()
+	if currentFilename is not None and fileManager.file_in_path(target, path, currentFilename) and currentOrigin == target and (printer.is_printing() or printer.is_paused()):
+		return True
+
 	busy_files = fileManager.get_busy_files()
 	for item in busy_files:
-		if target == item[0] and fileManager.file_in_path(target, foldername, item[1]):
-			return False
+		if target == item[0] and fileManager.file_in_path(target, path, item[1]):
+			return True
 
-	return True
+	return False
 
 @api.route("/files/<string:target>", methods=["POST"])
 @restricted_access
@@ -312,14 +337,13 @@ def uploadGcodeFile(target):
 		r = make_response(jsonify(files=files, done=done), 201)
 		r.headers["Location"] = location
 		return r
-	else:
-		if "foldername" not in request.json:
-			return make_response("No path information or no file included", 409)
+	elif "foldername" in request.values:
+		foldername = request.values["foldername"]
 
 		if not target in [FileDestinations.LOCAL]:
-			return make_response("Unknown target: %s" % target, 404)
+			return make_response("Unknown target: %s" % target, 400)
 
-		futurePath, futureName = fileManager.sanitize(target, request.json["foldername"])
+		futurePath, futureName = fileManager.sanitize(target, foldername)
 		futureFullPath = fileManager.join_path(target, futurePath, futureName)
 		if octoprint.filemanager.valid_file_type(futureName):
 			return make_response("Can't create a folder named %s, please try another name" % futureName, 409)
@@ -327,6 +351,8 @@ def uploadGcodeFile(target):
 		added_folder = fileManager.add_folder(target, futureFullPath)
 		if added_folder is None:
 			return make_response("Could not create folder %s" % futureName, 500)
+	else:
+		return make_response("No file to upload and no folder to create", 400)
 
 	return NO_CONTENT
 
@@ -496,44 +522,37 @@ def gcodeFileCommand(filename, target):
 	elif command == "copy" or command == "move":
 		# Copy and move are only possible on local storage
 		if not target in [FileDestinations.LOCAL]:
-			return make_response("Unknown target: %s" % target, 404)
+			return make_response("Unsupported target for {}: {}".format(command, target), 400)
 
 		if not _verifyFileExists(target, filename) and not _verifyFolderExists(target, filename):
 			return make_response("File/Folder not found on '%s': %s" % (target, filename), 404)
 
-		overwrite = data["overwrite"] if "overwrite" in data else False
 		destination = data["destination"]
-
 		if _verifyFolderExists(target, destination):
 			path, name = fileManager.split_path(target, filename)
 			destination = fileManager.join_path(target, destination, name)
 
-		if fileManager.file_exists(target, destination) and not overwrite:
-			return make_response("File already exists and overwrite is prohibited: %s" % filename, 409)
+		if _verifyFileExists(target, destination) or _verifyFolderExists(target, destination):
+			return make_response("File/Folder already exists: %s" % filename, 409)
 
 		if command == "copy":
 			if fileManager.file_exists(target, filename):
-				fileManager.copy_file(target, filename, destination, overwrite)
+				fileManager.copy_file(target, filename, destination)
 			elif fileManager.folder_exists(target, filename):
 				fileManager.copy_folder(target, filename, destination)
 		elif command == "move":
-			# prohibit deleting or moving files that are currently in use
-			currentOrigin, currentFilename = _getCurrentFile()
-
-			if currentFilename is not None and fileManager.file_in_path(target, filename, currentFilename) and currentOrigin == target and (printer.is_printing() or printer.is_paused()):
-				return make_response("Trying to delete a folder that contains a file that is currently being printed: %s" % filename, 409)
-
-			if not _verifyFolderNotBusy(target, filename):
-				return make_response("Trying to delete a folder that contains a file that is currently in use: %s" % filename, 409)
+			if _isBusy(target, filename):
+				return make_response("Trying to move a file/folder that is currently in use: %s" % filename, 409)
 
 			# deselect the file if it's currently selected
+			currentOrigin, currentFilename = _getCurrentFile()
 			if currentFilename is not None and filename == currentFilename:
 				printer.unselect_file()
 
 			if fileManager.file_exists(target, filename):
-				fileManager.move_file(target, filename, destination, overwrite)
+				fileManager.move_file(target, filename, destination)
 			elif fileManager.folder_exists(target, filename):
-				fileManager.move_folder(target, filename, destination, overwrite)
+				fileManager.move_folder(target, filename, destination)
 
 	return NO_CONTENT
 
@@ -546,18 +565,13 @@ def deleteGcodeFile(filename, target):
 
 	if _verifyFileExists(target, filename):
 		if not target in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
-			return make_response("Unknown target: %s" % target, 404)
+			return make_response("Unknown target: %s" % target, 400)
 
-		# prohibit deleting files that are currently in use
-		currentOrigin, currentFilename = _getCurrentFile()
-
-		if currentFilename is not None and currentFilename == filename and currentOrigin == target and (printer.is_printing() or printer.is_paused()):
-			return make_response("Trying to delete file that is currently being printed: %s" % filename, 409)
-
-		if not _verifyFolderNotBusy(target, filename):
+		if _isBusy(target, filename):
 			return make_response("Trying to delete a file that is currently in use: %s" % filename, 409)
 
 		# deselect the file if it's currently selected
+		currentOrigin, currentFilename = _getCurrentFile()
 		if currentFilename is not None and filename == currentFilename:
 			printer.unselect_file()
 
@@ -569,19 +583,14 @@ def deleteGcodeFile(filename, target):
 
 	elif _verifyFolderExists(target, filename):
 		if not target in [FileDestinations.LOCAL]:
-			return make_response("Unknown target: %s" % target, 404)
+			return make_response("Unknown target: %s" % target, 400)
 
 		folderpath = filename
-		# prohibit deleting folders that are currently in use
-		currentOrigin, currentFilename = _getCurrentFile()
-
-		if currentFilename is not None and fileManager.file_in_path(target, folderpath, currentFilename) and currentOrigin == target and (printer.is_printing() or printer.is_paused()):
-			return make_response("Trying to delete a folder that contains a file that is currently being printed: %s" % folderpath, 409)
-
-		if not _verifyFolderNotBusy(target, folderpath):
+		if _isBusy(target, folderpath):
 			return make_response("Trying to delete a folder that contains a file that is currently in use: %s" % folderpath, 409)
 
 		# deselect the file if it's currently selected
+		currentOrigin, currentFilename = _getCurrentFile()
 		if currentFilename is not None and fileManager.file_in_path(target, folderpath, currentFilename):
 			printer.unselect_file()
 

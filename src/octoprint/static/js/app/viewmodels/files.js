@@ -99,10 +99,7 @@ $(function() {
                     return data["type"] && (data["type"] == "model" || data["type"] == "folder");
                 },
                 "emptyFolder": function(data) {
-                    if (data["type"] && data["type"] != "folder")
-                        return true;
-
-                    return data.children.length != 0;
+                    return data["type"] && (data["type"] != "folder" || data["children"].length != 0);
                 }
             },
             "name",
@@ -115,6 +112,7 @@ $(function() {
             var filter = function(data) { return data["type"] && data["type"] == "folder"; };
             return _.filter(self.listHelper.paginatedItems(), filter);
         });
+
         self.filesOnlyList = ko.dependentObservable(function() {
             var filter = function(data) { return data["type"] && data["type"] != "folder"; };
             return _.filter(self.listHelper.paginatedItems(), filter);
@@ -215,6 +213,7 @@ $(function() {
             self.currentPath(OctoPrint.files.pathForElement(data));
             self.listHelper.updateItems(data.children);
         };
+
         self.changeFolderByPath = function(path) {
             var element = OctoPrint.files.elementByPath(path, { children: self.allItems() });
             if (element) {
@@ -245,15 +244,18 @@ $(function() {
             }
             
             var index = self.listHelper.paginatedItems().indexOf(file) + 1;
-            if (index >= self.listHelper.paginatedItems().length)
+            if (index >= self.listHelper.paginatedItems().length) {
                 index = index - 2;
-            if (index < 0)
+            }
+            if (index < 0) {
                 index = 0;
+            }
 
             var filenameToFocus = undefined;
             var fileToFocus = self.listHelper.paginatedItems()[index];
-            if (fileToFocus)
+            if (fileToFocus) {
                 filenameToFocus = fileToFocus.name;
+            }
             
             OctoPrint.files.delete(file.origin, OctoPrint.files.pathForElement(file))
                 .done(function() {
