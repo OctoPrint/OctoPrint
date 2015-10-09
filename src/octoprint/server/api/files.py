@@ -443,6 +443,13 @@ def gcodeFileCommand(filename, target):
 			name, _ = os.path.splitext(filename)
 			gcode_name = name + ".gco"
 
+		if "path" in data and data["path"]:
+			gcode_name = fileManager.join_path(target, data["path"], gcode_name)
+		else:
+			path, _ = fileManager.split_path(target, filename)
+			if path:
+				gcode_name = fileManager.join_path(target, path, gcode_name)
+
 		# prohibit overwriting the file that is currently being printed
 		currentOrigin, currentFilename = _getCurrentFile()
 		if currentFilename == gcode_name and currentOrigin == target and (printer.is_printing() or printer.is_paused()):
