@@ -90,6 +90,7 @@
             }
 
             return OctoPrint.post(resourceForLocation(location), data);
+
         },
 
         upload: function (location, file, data) {
