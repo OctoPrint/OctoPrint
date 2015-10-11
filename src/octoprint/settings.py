@@ -304,6 +304,11 @@ default_settings = {
 valid_boolean_trues = [True, "true", "yes", "y", "1"]
 """ Values that are considered to be equivalent to the boolean ``True`` value, used for type conversion in various places."""
 
+
+class NoSuchSettingsPath(BaseException):
+	pass
+
+
 class Settings(object):
 	"""
 	The :class:`Settings` class allows managing all of OctoPrint's settings. It takes care of initializing the settings
@@ -810,13 +815,13 @@ class Settings(object):
 		stat = os.stat(self._configfile)
 		return stat.st_mtime
 
-	#~~ getter
+	##~~ Internal getter
 
-	def get(self, path, asdict=False, config=None, defaults=None, preprocessors=None, merged=False, incl_defaults=True):
+	def _get_value(self, path, asdict=False, config=None, defaults=None, preprocessors=None, merged=False, incl_defaults=True):
 		import octoprint.util as util
 
 		if len(path) == 0:
-			return None
+			raise NoSuchSettingsPath()
 
 		if config is None:
 			config = self._config
@@ -834,7 +839,7 @@ class Settings(object):
 				config = {}
 				defaults = defaults[key]
 			else:
-				return None
+				raise NoSuchSettingsPath()
 
 			if preprocessors and isinstance(preprocessors, dict) and key in preprocessors:
 				preprocessors = preprocessors[key]
@@ -858,7 +863,7 @@ class Settings(object):
 			elif incl_defaults and key in defaults:
 				value = defaults[key]
 			else:
-				value = None
+				raise NoSuchSettingsPath()
 
 			if preprocessors and isinstance(preprocessors, dict) and key in preprocessors and callable(preprocessors[key]):
 				value = preprocessors[key](value)
@@ -876,8 +881,34 @@ class Settings(object):
 		else:
 			return results
 
-	def getInt(self, path, config=None, defaults=None, preprocessors=None, incl_defaults=True):
-		value = self.get(path, config=config, defaults=defaults, preprocessors=preprocessors, incl_defaults=incl_defaults)
+	#~~ has
+
+	def has(self, path, **kwargs):
+		try:
+			self._get_value(path, **kwargs)
+		except NoSuchSettingsPath:
+			return False
+		else:
+			return True
+
+	#~~ getter
+
+	def get(self, path, **kwargs):
+		error_on_path = kwargs.get("error_on_path", False)
+		new_kwargs = dict(kwargs)
+		if "error_on_path" in new_kwargs:
+			del new_kwargs["error_on_path"]
+
+		try:
+			return self._get_value(path, **new_kwargs)
+		except NoSuchSettingsPath:
+			if error_on_path:
+				raise
+			else:
+				return None
+
+	def getInt(self, path, **kwargs):
+		value = self.get(path, **kwargs)
 		if value is None:
 			return None
 
@@ -887,8 +918,8 @@ class Settings(object):
 			self._logger.warn("Could not convert %r to a valid integer when getting option %r" % (value, path))
 			return None
 
-	def getFloat(self, path, config=None, defaults=None, preprocessors=None, incl_defaults=True):
-		value = self.get(path, config=config, defaults=defaults, preprocessors=preprocessors, incl_defaults=incl_defaults)
+	def getFloat(self, path, **kwargs):
+		value = self.get(path, **kwargs)
 		if value is None:
 			return None
 
@@ -898,8 +929,8 @@ class Settings(object):
 			self._logger.warn("Could not convert %r to a valid integer when getting option %r" % (value, path))
 			return None
 
-	def getBoolean(self, path, config=None, defaults=None, preprocessors=None, incl_defaults=True):
-		value = self.get(path, config=config, defaults=defaults, preprocessors=preprocessors, incl_defaults=incl_defaults)
+	def getBoolean(self, path, **kwargs):
+		value = self.get(path, **kwargs)
 		if value is None:
 			return None
 		if isinstance(value, bool):
@@ -952,6 +983,23 @@ class Settings(object):
 
 		return script
 
+	#~~ remove
+
+	def remove(self, path, config=None):
+		if config is None:
+			config = self._config
+
+		while len(path) > 1:
+			key = path.pop(0)
+			if not isinstance(config, dict) or key not in config:
+				return
+			config = config[key]
+
+		key = path.pop(0)
+		if isinstance(config, dict) and key in config:
+			del config[key]
+		self._dirty = True
+
 	#~~ setter
 
 	def set(self, path, value, force=False, defaults=None, config=None, preprocessors=None):
@@ -998,9 +1046,9 @@ class Settings(object):
 				config[key] = value
 			self._dirty = True
 
-	def setInt(self, path, value, force=False, defaults=None, config=None, preprocessors=None):
+	def setInt(self, path, value, **kwargs):
 		if value is None:
-			self.set(path, None, config=config, force=force, defaults=defaults, preprocessors=preprocessors)
+			self.set(path, None, **kwargs)
 			return
 
 		try:
@@ -1009,11 +1057,11 @@ class Settings(object):
 			self._logger.warn("Could not convert %r to a valid integer when setting option %r" % (value, path))
 			return
 
-		self.set(path, intValue, config=config, force=force, defaults=defaults, preprocessors=preprocessors)
+		self.set(path, intValue, **kwargs)
 
-	def setFloat(self, path, value, force=False, defaults=None, config=None, preprocessors=None):
+	def setFloat(self, path, value, **kwargs):
 		if value is None:
-			self.set(path, None, config=config, force=force, defaults=defaults, preprocessors=preprocessors)
+			self.set(path, None, **kwargs)
 			return
 
 		try:
@@ -1022,15 +1070,15 @@ class Settings(object):
 			self._logger.warn("Could not convert %r to a valid integer when setting option %r" % (value, path))
 			return
 
-		self.set(path, floatValue, config=config, force=force, defaults=defaults, preprocessors=preprocessors)
+		self.set(path, floatValue, **kwargs)
 
-	def setBoolean(self, path, value, force=False, defaults=None, config=None, preprocessors=None):
+	def setBoolean(self, path, value, **kwargs):
 		if value is None or isinstance(value, bool):
-			self.set(path, value, config=config, force=force, defaults=defaults, preprocessors=preprocessors)
+			self.set(path, value, **kwargs)
 		elif value.lower() in valid_boolean_trues:
-			self.set(path, True, config=config, force=force, defaults=defaults, preprocessors=preprocessors)
+			self.set(path, True, **kwargs)
 		else:
-			self.set(path, False, config=config, force=force, defaults=defaults, preprocessors=preprocessors)
+			self.set(path, False, **kwargs)
 
 	def setBaseFolder(self, type, path, force=False):
 		if type not in default_settings["folder"].keys():

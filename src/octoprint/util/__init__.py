@@ -447,6 +447,67 @@ dict_clean = deprecated("dict_clean has been renamed to dict_sanitize",
                         includedoc="Replaced by :func:`dict_sanitize`")(dict_sanitize)
 
 
+def dict_diff(a, b):
+	"""
+	Recursively calculates the minimal dict that would be needed to be deep merged with
+	a in order to produce the same result as deep merging a and b.
+
+	Example::
+
+	    >>> a = dict(foo=dict(a=1, b=2), bar=dict(c=3, d=4))
+	    >>> b = dict(bar=dict(c=3, d=5), fnord=None)
+	    >>> c = dict_diff(a, b)
+	    >>> c == dict(bar=dict(d=5), fnord=None)
+	    True
+	    >>> dict_merge(a, c) == dict_merge(a, b)
+	    True
+
+	Arguments:
+	    a (dict): Source dictionary
+	    b (dict): Dictionary to compare to source dictionary and derive diff for
+
+	Returns:
+	    dict: The minimal dictionary to deep merge on a to get the same result
+	        as deep merging b on a.
+	"""
+
+	if not isinstance(a, dict) or not isinstance(b, dict):
+		raise ValueError("a and b must be dictionaries")
+
+	if a == b:
+		# shortcut: if both are equal, we return an empty dict as result
+		return dict()
+
+	from copy import deepcopy
+
+	all_keys = set(a.keys() + b.keys())
+	result = dict()
+	for k in all_keys:
+		if k not in b:
+			# key not contained in b => not contained in result
+			continue
+
+		if k in a:
+			# key is present in both dicts, we have to take a look at the value
+			value_a = a[k]
+			value_b = b[k]
+
+			if value_a != value_b:
+				# we only need to look further if the values are not equal
+
+				if isinstance(value_a, dict) and isinstance(value_b, dict):
+					# both are dicts => deeper down it goes into the rabbit hole
+					result[k] = dict_diff(value_a, value_b)
+				else:
+					# new b wins over old a
+					result[k] = deepcopy(value_b)
+
+		else:
+			# key is new, add it
+			result[k] = deepcopy(b[k])
+	return result
+
+
 def dict_contains_keys(keys, dictionary):
 	"""
 	Recursively deep-checks if ``dictionary`` contains all keys found in ``keys``.

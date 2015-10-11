@@ -764,6 +764,9 @@ class SettingsPlugin(OctoPrintPlugin):
 	   the plugin core system upon initialization of the implementation.
 	"""
 
+	config_version_key = "_config_version"
+	"""Key of the field in the settings that holds the configuration format version."""
+
 	def on_settings_load(self):
 		"""
 		Loads the settings for the plugin, called by the Settings API view in order to retrieve all settings from
@@ -782,8 +785,8 @@ class SettingsPlugin(OctoPrintPlugin):
 		:return: the current settings of the plugin, as a dictionary
 		"""
 		data = self._settings.get([], asdict=True, merged=True)
-		if "_config_version" in data:
-			del data["_config_version"]
+		if self.config_version_key in data:
+			del data[self.config_version_key]
 		return data
 
 	def on_settings_save(self, data):
@@ -795,7 +798,8 @@ class SettingsPlugin(OctoPrintPlugin):
 		.. note::
 
 		   The default implementation will persist your plugin's settings as is, so just in the structure and in the
-		   types that were received by the Settings API view.
+		   types that were received by the Settings API view. Values identical to the default settings values
+		   will *not* be persisted.
 
 		   If you need more granular control here, e.g. over the used data types, you'll need to override this method
 		   and iterate yourself over all your settings, retrieving them (if set) from the supplied received ``data``
@@ -803,15 +807,27 @@ class SettingsPlugin(OctoPrintPlugin):
 
 		Arguments:
 		    data (dict): The settings dictionary to be saved for the plugin
+
+		Returns:
+		    dict: The settings that differed from the defaults and were actually saved.
 		"""
 		import octoprint.util
 
-		if "_config_version" in data:
-			del data["_config_version"]
+		if self.config_version_key in data:
+			del data[self.config_version_key]
 
-		current = self._settings.get([], asdict=True, merged=True)
-		merged = octoprint.util.dict_merge(current, data)
-		self._settings.set([], merged)
+		# determine diff dict that contains minimal set of changes against the
+		# default settings - we only want to persist that, not everything
+		diff = octoprint.util.dict_diff(self.get_settings_defaults(), data)
+
+		version = self.get_settings_version()
+
+		to_persist = dict(diff)
+		if version:
+			to_persist[self.config_version_key] = version
+		self._settings.set([], to_persist)
+
+		return diff
 
 	def get_settings_defaults(self):
 		"""
@@ -893,6 +909,52 @@ class SettingsPlugin(OctoPrintPlugin):
 		                  no version information can be found.
 		"""
 		pass
+
+	def on_settings_cleanup(self):
+		"""
+		Called after migration and initialization but before call to :func:`on_settings_initialized`.
+
+		Plugins may overwrite this method to perform additional clean up tasks.
+
+		The default implementation just minimizes the data persisted on disk to only contain
+		the differences to the defaults (in case the current data was persisted with an older
+		version of OctoPrint that still duplicated default data).
+		"""
+		import octoprint.util
+		from octoprint.settings import NoSuchSettingsPath
+
+		try:
+			# let's fetch the current persisted config (so only the data on disk,
+			# without the defaults)
+			config = self._settings.get([], asdict=True, incl_defaults=False, error_on_path=True)
+		except NoSuchSettingsPath:
+			# no config persisted, nothing to do => get out of here
+			return
+
+		if config is None:
+			# config is set to None, that doesn't make sense, kill it and leave
+			self._settings.clean_all_data()
+			return
+
+		if self.config_version_key in config and config[self.config_version_key] is None:
+			# delete None entries for config version - it's the default, no need
+			del config[self.config_version_key]
+
+		# calculate a minimal diff between the settings and the current config -
+		# anything already in the settings will be removed from the persisted
+		# config, no need to duplicate it
+		defaults = self.get_settings_defaults()
+		diff = octoprint.util.dict_diff(defaults, config)
+
+		if not diff:
+			# no diff to defaults, no need to have anything persisted
+			self._settings.clean_all_data()
+		else:
+			# diff => persist only that
+			self._settings.set([], diff)
+
+		# finally save everything
+		self._settings.save()
 
 	def on_settings_initialized(self):
 		"""

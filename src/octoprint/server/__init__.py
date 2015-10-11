@@ -213,7 +213,7 @@ class Server():
 			                                                   set_preprocessors=set_preprocessors)
 			return dict(settings=plugin_settings)
 
-		def settings_plugin_config_migration(name, implementation):
+		def settings_plugin_config_migration_and_cleanup(name, implementation):
 			if not isinstance(implementation, octoprint.plugin.SettingsPlugin):
 				return
 
@@ -221,12 +221,13 @@ class Server():
 			settings_migrator = implementation.on_settings_migrate
 
 			if settings_version is not None and settings_migrator is not None:
-				stored_version = implementation._settings.get_int(["_config_version"])
+				stored_version = implementation._settings.get_int([octoprint.plugin.SettingsPlugin.config_version_key])
 				if stored_version is None or stored_version < settings_version:
 					settings_migrator(settings_version, stored_version)
-					implementation._settings.set_int(["_config_version"], settings_version)
+					implementation._settings.set_int([octoprint.plugin.SettingsPlugin.config_version_key], settings_version)
 					implementation._settings.save()
 
+			implementation.on_settings_cleanup()
 			implementation.on_settings_initialized()
 
 		pluginManager.implementation_inject_factories=[octoprint_plugin_inject_factory, settings_plugin_inject_factory]
@@ -235,11 +236,11 @@ class Server():
 		settingsPlugins = pluginManager.get_implementations(octoprint.plugin.SettingsPlugin)
 		for implementation in settingsPlugins:
 			try:
-				settings_plugin_config_migration(implementation._identifier, implementation)
+				settings_plugin_config_migration_and_cleanup(implementation._identifier, implementation)
 			except:
 				self._logger.exception("Error while trying to migrate settings for plugin {}, ignoring it".format(implementation._identifier))
 
-		pluginManager.implementation_post_inits=[settings_plugin_config_migration]
+		pluginManager.implementation_post_inits=[settings_plugin_config_migration_and_cleanup]
 
 		pluginManager.log_all_plugins()
 
