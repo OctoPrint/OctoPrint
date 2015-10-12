@@ -293,7 +293,7 @@ $(function() {
             if (command.hasOwnProperty("command") || command.hasOwnProperty("commands")) {
                 var commands = command.commands || [command.command];
 
-                if (commands.hasOwnProperty("input")) {
+                if (command.hasOwnProperty("input")) {
                     var parameters = {};
                     _.each(command.input, function(input) {
                         if (!input.hasOwnProperty("parameter") || !input.hasOwnProperty("value")) {
