@@ -271,10 +271,12 @@ $(function() {
             },
             update: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
                 setTimeout(function() {
-                    if (element.nodeName == "#comment")
+                    if (element.nodeName == "#comment") {
+                        // foreach is bound to a virtual element
                         $(element.parentElement).slimScroll({scrollBy: 0});
-                    else
+                    } else {
                         $(element).slimScroll({scrollBy: 0});
+                    }
                 }, 10);
                 return ko.bindingHandlers.foreach.update(element, valueAccessor(), allBindings, viewModel, bindingContext);
             }

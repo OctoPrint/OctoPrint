@@ -118,6 +118,22 @@ $(function() {
             return _.filter(self.listHelper.paginatedItems(), filter);
         });
 
+        self.filesAndFolders = ko.dependentObservable(function() {
+            var style = self.listStyle();
+            if (style == "folders_files" || style == "files_folders") {
+                var files = self.filesOnlyList();
+                var folders = self.foldersOnlyList();
+
+                if (style == "folders_files") {
+                    return folders.concat(files);
+                } else {
+                    return files.concat(folders);
+                }
+            } else {
+                return self.listHelper.paginatedItems();
+            }
+        });
+
         self.isLoadActionPossible = ko.computed(function() {
             return self.loginState.isUser() && !self.isPrinting() && !self.isPaused() && !self.isLoading();
         });
@@ -212,6 +228,12 @@ $(function() {
         self.changeFolder = function(data) {
             self.currentPath(OctoPrint.files.pathForElement(data));
             self.listHelper.updateItems(data.children);
+        };
+
+        self.navigateUp = function() {
+            var path = self.currentPath().split("/");
+            path.pop();
+            self.changeFolderByPath(path.join("/"));
         };
 
         self.changeFolderByPath = function(path) {

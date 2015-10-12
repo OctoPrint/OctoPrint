@@ -479,7 +479,7 @@ class LocalFileStorage(StorageInterface):
 		import shutil
 		shutil.rmtree(folder_path)
 
-	def _copyMove1(self, source, destination):
+	def _copyMove(self, source, destination):
 		sourcepath, sourcename = self.sanitize(source)
 		destinationpath, destinationname = self.sanitize(destination)
 
@@ -503,8 +503,8 @@ class LocalFileStorage(StorageInterface):
 		)
 		return sourceObj, destinationObj
 
-	def _copyMove2(self, source, destination):
-		sourceObj, destinationObj = self._copyMove1(source, destination)
+	def _copyMoveWithMetadata(self, source, destination):
+		sourceObj, destinationObj = self._copyMove(source, destination)
 
 		if not os.path.isfile(sourceObj["fullpath"]):
 			raise RuntimeError("%s in %s is not a file" % (sourceObj["name"], sourceObj["path"]))
@@ -522,7 +522,7 @@ class LocalFileStorage(StorageInterface):
 		return sourceObj, destinationObj
 
 	def copy_folder(self, source, destination):
-		sourceObj, destinationObj = self._copyMove1(source, destination)
+		sourceObj, destinationObj = self._copyMove(source, destination)
 
 		if not os.path.isdir(sourceObj["fullpath"]):
 			raise RuntimeError("%s in %s is not a folder" % (sourceObj["name"], sourceObj["path"]))
@@ -533,7 +533,7 @@ class LocalFileStorage(StorageInterface):
 			raise RuntimeError("Could not copy %s in %s to %s in %s" % (sourceObj["name"], sourceObj["path"], destinationObj["name"], destinationObj["path"]), e)
 
 	def move_folder(self, source, destination):
-		sourceObj, destinationObj = self._copyMove1(source, destination)
+		sourceObj, destinationObj = self._copyMove(source, destination)
 
 		if not os.path.isdir(sourceObj["fullpath"]):
 			raise RuntimeError("%s in %s is not a folder" % (sourceObj["name"], sourceObj["path"]))
@@ -619,7 +619,7 @@ class LocalFileStorage(StorageInterface):
 			self._save_metadata(path, metadata)
 
 	def copy_file(self, source, destination):
-		sourceObj, destinationObj = self._copyMove2(source, destination)
+		sourceObj, destinationObj = self._copyMoveWithMetadata(source, destination)
 
 		try:
 			shutil.copy2(sourceObj["fullpath"], destinationObj["fullpath"])
@@ -632,7 +632,7 @@ class LocalFileStorage(StorageInterface):
 			self._save_metadata(destinationObj["path"], destinationObj["metadata"])
 
 	def move_file(self, source, destination, allow_overwrite=False):
-		sourceObj, destinationObj = self._copyMove2(source, destination)
+		sourceObj, destinationObj = self._copyMoveWithMetadata(source, destination)
 
 		try:
 			shutil.move(sourceObj["fullpath"], destinationObj["fullpath"])
