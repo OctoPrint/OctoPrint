@@ -449,6 +449,9 @@ $(function() {
                 var drop = (dropzone == "local") ? localTarget : sdTarget;
                 var url = API_BASEURL + "files/" + dropzone;
 
+                if (button === undefined)
+                    return;
+
                 button.fileupload({
                     url: url,
                     dataType: "json",
