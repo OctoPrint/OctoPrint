@@ -73,6 +73,8 @@ $(function() {
             {"key": "git_commit", "name": gettext("Commit")}
         ];
 
+        self.reloadOverlay = $("#reloadui_overlay");
+
         self.versions = new ItemListHelper(
             "plugin.softwareupdate.versions",
             {
@@ -407,18 +409,10 @@ $(function() {
         self.onDataUpdaterReconnect = function() {
             if (self.waitingForRestart) {
                 self.waitingForRestart = false;
-
-                var options = {
-                    title: gettext("Restart successful!"),
-                    text: gettext("The server was restarted successfully. The page will now reload automatically."),
-                    type: "success",
-                    hide: false
-                };
-                self._showPopup(options);
                 self.updateInProgress = false;
-
-                var delay = 5 + Math.floor(Math.random() * 5) + 1;
-                setTimeout(function() {location.reload(true);}, delay * 1000);
+                if (!self.reloadOverlay.is(":visible")) {
+                    self.reloadOverlay.show();
+                }
             }
         };
 
