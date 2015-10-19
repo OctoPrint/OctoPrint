@@ -22,8 +22,21 @@
         }, opts);
     };
 
+    var sendGcodeScriptWithParameters = function(script, context, parameters, opts) {
+        script = script || "";
+        context = context || {};
+        parameters = parameters || {};
+
+        return OctoPrint.postJson(commandUrl, {
+            script: script,
+            context: context,
+            parameters: parameters
+        }, opts);
+    };
+
     OctoPrint.control = {
         sendGcodeWithParameters: sendGcodeWithParameters,
+        sendGcodeScriptWithParameters: sendGcodeScriptWithParameters,
 
         getCustomControls: function (opts) {
             return OctoPrint.get(customUrl, opts);
@@ -34,13 +47,7 @@
         },
 
         sendGcodeScript: function (script, context, opts) {
-            script = script || "";
-            context = context || {};
-
-            return OctoPrint.postJson(commandUrl, {
-                script: script,
-                context: context
-            }, opts);
+            return sendGcodeScriptWithParameters(script, context, undefined, opts);
         }
     }
 });
