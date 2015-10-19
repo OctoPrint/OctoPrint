@@ -26,13 +26,13 @@ INSTALL_REQUIRES = [
 	"netaddr==0.7.17",
 	"watchdog==0.8.3",
 	"sarge==0.1.4",
-	"netifaces==0.8",
+	"netifaces==0.10",
 	"pylru==1.0.9",
 	"rsa==3.2",
 	"pkginfo==1.2.1",
 	"requests==2.7.0",
 	"semantic_version==2.4.2",
-	"psutil==3.1.1"
+	"psutil==3.2.1"
 ]
 
 # Additional requirements for optional install options
