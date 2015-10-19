@@ -62,6 +62,9 @@ def retrieveSystemCommandsForSource(source):
 def executeSystemCommand(source, command):
 	logger = logging.getLogger(__name__)
 
+	if command == "divider":
+		return make_response("Dividers cannot be executed", 400)
+
 	command_spec = _get_command_spec(source, command)
 	if not command_spec:
 		return make_response("Command {}:{} not found".format(source, command), 404)
@@ -158,12 +161,18 @@ def _get_core_command_spec(action):
 
 def _get_custom_command_specs():
 	specs = collections.OrderedDict()
+	dividers = 0
 	for spec in s().get(["system", "actions"]):
 		if not "action" in spec:
 			continue
 		copied = dict(spec)
 		copied["source"] = "custom"
-		specs[spec["action"]] = copied
+
+		action = spec["action"]
+		if action == "divider":
+			dividers += 1
+			action = "divider_{}".format(dividers)
+		specs[action] = copied
 	return specs
 
 
