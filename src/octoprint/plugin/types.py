@@ -931,7 +931,7 @@ class SettingsPlugin(OctoPrintPlugin):
 		try:
 			# let's fetch the current persisted config (so only the data on disk,
 			# without the defaults)
-			config = self._settings.get([], asdict=True, incl_defaults=False, error_on_path=True)
+			config = self._settings.get_all_data(merged=False, incl_defaults=False, error_on_path=True)
 		except NoSuchSettingsPath:
 			# no config persisted, nothing to do => get out of here
 			return
