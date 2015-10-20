@@ -10,10 +10,10 @@
 # master shall not use the lookup table, only tags
 master
 
-# maintenance is currently the branch for preparation of maintenance release 1.2.7
+# maintenance is currently the branch for preparation of maintenance release 1.2.8
 # so are any fix/... branches
-maintenance 1.2.7-dev 536bb31965db17b969e7c1c53e241ddac4ae1814
-fix/.* 1.2.7-dev 536bb31965db17b969e7c1c53e241ddac4ae1814
+maintenance 1.2.8-dev 6c622f7c4332b71c6ece59552ffc87c146155c84
+fix/.* 1.2.8-dev 6c622f7c4332b71c6ece59552ffc87c146155c84
 
 # Special case disconnected checkouts, e.g. 'git checkout <tag>'
 \(detached.*
