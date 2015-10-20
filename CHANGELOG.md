@@ -69,6 +69,62 @@
 * [#1047](https://github.com/foosel/OctoPrint/issues/1047) - Fixed 90 degree
   webcam rotation for iOS Safari.
 
+## 1.2.7 (2015-10-20)
+
+### Improvements
+
+  * [#1062](https://github.com/foosel/OctoPrint/issues/1062) - Plugin Manager
+    now has a configuration dialog that among other things allows defining the
+    used `pip` command if auto detection proves to be insufficient here.
+  * Allow defining additional `pip` parameters in Plugin Manager. That might
+    make `sudo`-less installation of plugins possible in situations where it's
+    tricky otherwise.
+  * Improved timelapse processing (backported from `devel` branch):
+    * Individually captured frames cannot "overtake" each other anymore through
+      usage of a capture queue.
+    * Notifications will now be shown when the capturing of the timelapse's
+      post roll happens, including an approximation of how long that will take.
+    * Usage of `requests` instead of `urllib` for fetching the snapshot,
+      appears to also have [positive effects on webcam compatibility](https://github.com/foosel/OctoPrint/issues/1078).
+  * Some more defensive escaping for various settings in the UI (e.g. webcam URL)
+  * Switch to more error resilient saving of configuration files and other files
+    modified during runtime (save to temporary file & move). Should reduce risk
+    of file corruption.
+  * Downloading GCODE and STL files should now set more fitting `Content-Type`
+    headers (`text/plain` and `application/sla`) for better client side support
+    for "Open with" like usage scenarios.
+  * Selecting z-triggered timelapse mode will now inform about that not working
+    when printing from SD card.
+  * Software Update Plugin: Removed "The web interface will now be reloaded"
+    notification after successful update since that became obsolete with
+    introduction of the "Reload Now" overlay.
+  * Updated required version of `psutil` and `netifaces` dependencies.
+
+### Bug Fixes
+
+  * [#1057](https://github.com/foosel/OctoPrint/issues/1057) - Better error
+    resilience of the Software Update plugin against broken/incomplete update
+    configurations.
+  * [#1075](https://github.com/foosel/OctoPrint/issues/1075) - Fixed support
+    of `sudo` for installing plugins, but added big visible warning about it
+    as it's **not** recommended.
+  * [#1077](https://github.com/foosel/OctoPrint/issues/1077) - Do not hiccup
+    on [UTF-8 BOMs](https://en.wikipedia.org/wiki/Byte_order_mark) (or other
+    BOMs for that matter) at the beginning of GCODE files.
+  * Fixed an issue that caused user sessions to not be properly associated,
+    leading to Sessions getting duplicated, wrongly saved etc.
+  * Fixed internal server error (HTTP 500) response on REST API calls with
+    unset `Content-Type` header.
+  * Fixed an issue leading to drag-and-drop file uploads to trigger frontend
+    processing in various other file upload widgets.
+  * Fixed a documentation error.
+  * Fixed caching behaviour on GCODE/STL downloads, was setting the `ETag`
+    header improperly.
+  * Fixed GCODE viewer not properly detecting change of currently visualized
+    file on Windows systems.
+
+([Commits](https://github.com/foosel/OctoPrint/compare/1.2.6...1.2.7))
+
 ## 1.2.6 (2015-09-02)
 
 ### Improvements
