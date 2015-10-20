@@ -236,9 +236,10 @@ class Server(object):
 				if stored_version is None or stored_version < settings_version:
 					settings_migrator(settings_version, stored_version)
 					implementation._settings.set_int([octoprint.plugin.SettingsPlugin.config_version_key], settings_version)
-					implementation._settings.save()
 
 			implementation.on_settings_cleanup()
+			implementation._settings.save()
+
 			implementation.on_settings_initialized()
 
 		pluginManager.implementation_inject_factories=[octoprint_plugin_inject_factory, settings_plugin_inject_factory]
