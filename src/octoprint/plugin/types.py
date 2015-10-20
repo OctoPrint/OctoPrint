@@ -813,12 +813,17 @@ class SettingsPlugin(OctoPrintPlugin):
 		"""
 		import octoprint.util
 
-		if self.config_version_key in data:
-			del data[self.config_version_key]
+		# get the current data
+		current = self._settings.get_all_data()
+
+		# merge our new data on top of it
+		new_current = octoprint.util.dict_merge(current, data)
+		if self.config_version_key in new_current:
+			del new_current[self.config_version_key]
 
 		# determine diff dict that contains minimal set of changes against the
 		# default settings - we only want to persist that, not everything
-		diff = octoprint.util.dict_diff(self.get_settings_defaults(), data)
+		diff = octoprint.util.dict_diff(self.get_settings_defaults(), new_current)
 
 		version = self.get_settings_version()
 

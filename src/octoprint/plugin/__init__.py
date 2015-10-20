@@ -446,6 +446,18 @@ class PluginSettings(object):
 		return path
 
 	def get_all_data(self, **kwargs):
+		merged = kwargs.get("merged", True)
+		asdict = kwargs.get("asdict", True)
+		defaults = kwargs.get("defaults", self.defaults)
+		preprocessors = kwargs.get("preprocessors", self.get_preprocessors)
+
+		kwargs.update(dict(
+			merged=merged,
+			asdict=asdict,
+			defaults=defaults,
+			preprocessors=preprocessors
+		))
+
 		return self.settings.get(self._prefix_path(), **kwargs)
 
 	def clean_all_data(self):
