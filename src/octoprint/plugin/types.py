@@ -1082,18 +1082,34 @@ class BlueprintPlugin(OctoPrintPlugin, RestartNeedingPlugin):
 		:return: the blueprint ready to be registered with Flask
 		"""
 
+		if hasattr(self, "_blueprint"):
+			# if we already constructed the blueprint and hence have it cached,
+			# return that instance - we don't want to instance it multiple times
+			return self._blueprint
+
 		import flask
 		kwargs = self.get_blueprint_kwargs()
 		blueprint = flask.Blueprint("plugin." + self._identifier, self._identifier, **kwargs)
+
+		# we now iterate over all members of ourselves and look if we find an attribute
+		# that has data originating from one of our decorators - we ignore anything
+		# starting with a _ to only handle public stuff
 		for member in [member for member in dir(self) if not member.startswith("_")]:
 			f = getattr(self, member)
+
 			if hasattr(f, "_blueprint_rules") and member in f._blueprint_rules:
+				# this attribute was annotated with our @route decorator
 				for blueprint_rule in f._blueprint_rules[member]:
 					rule, options = blueprint_rule
 					blueprint.add_url_rule(rule, options.pop("endpoint", f.__name__), view_func=f, **options)
+
 			if hasattr(f, "_blueprint_error_handler") and member in f._blueprint_error_handler:
+				# this attribute was annotated with our @error_handler decorator
 				for code_or_exception in f._blueprint_error_handler[member]:
 					blueprint.errorhandler(code_or_exception)(f)
+
+		# cache and return the blueprint object
+		self._blueprint = blueprint
 		return blueprint
 
 	def get_blueprint_kwargs(self):
@@ -1189,6 +1205,9 @@ class SettingsPlugin(OctoPrintPlugin):
 	   the plugin core system upon initialization of the implementation.
 	"""
 
+	config_version_key = "_config_version"
+	"""Key of the field in the settings that holds the configuration format version."""
+
 	def on_settings_load(self):
 		"""
 		Loads the settings for the plugin, called by the Settings API view in order to retrieve all settings from
@@ -1206,9 +1225,9 @@ class SettingsPlugin(OctoPrintPlugin):
 
 		:return: the current settings of the plugin, as a dictionary
 		"""
-		data = self._settings.get([], asdict=True, merged=True)
-		if "_config_version" in data:
-			del data["_config_version"]
+		data = self._settings.get_all_data()
+		if self.config_version_key in data:
+			del data[self.config_version_key]
 		return data
 
 	def on_settings_save(self, data):
@@ -1220,7 +1239,8 @@ class SettingsPlugin(OctoPrintPlugin):
 		.. note::
 
 		   The default implementation will persist your plugin's settings as is, so just in the structure and in the
-		   types that were received by the Settings API view.
+		   types that were received by the Settings API view. Values identical to the default settings values
+		   will *not* be persisted.
 
 		   If you need more granular control here, e.g. over the used data types, you'll need to override this method
 		   and iterate yourself over all your settings, retrieving them (if set) from the supplied received ``data``
@@ -1228,15 +1248,38 @@ class SettingsPlugin(OctoPrintPlugin):
 
 		Arguments:
 		    data (dict): The settings dictionary to be saved for the plugin
+
+		Returns:
+		    dict: The settings that differed from the defaults and were actually saved.
 		"""
 		import octoprint.util
 
-		if "_config_version" in data:
-			del data["_config_version"]
+		# get the current data
+		current = self._settings.get_all_data()
+		if current is None:
+			current = dict()
 
-		current = self._settings.get([], asdict=True, merged=True)
-		merged = octoprint.util.dict_merge(current, data)
-		self._settings.set([], merged)
+		# merge our new data on top of it
+		new_current = octoprint.util.dict_merge(current, data)
+		if self.config_version_key in new_current:
+			del new_current[self.config_version_key]
+
+		# determine diff dict that contains minimal set of changes against the
+		# default settings - we only want to persist that, not everything
+		diff = octoprint.util.dict_diff(self.get_settings_defaults(), new_current)
+
+		version = self.get_settings_version()
+
+		to_persist = dict(diff)
+		if version:
+			to_persist[self.config_version_key] = version
+
+		if to_persist:
+			self._settings.set([], to_persist)
+		else:
+			self._settings.clean_all_data()
+
+		return diff
 
 	def get_settings_defaults(self):
 		"""
@@ -1318,6 +1361,49 @@ class SettingsPlugin(OctoPrintPlugin):
 		                  no version information can be found.
 		"""
 		pass
+
+	def on_settings_cleanup(self):
+		"""
+		Called after migration and initialization but before call to :func:`on_settings_initialized`.
+
+		Plugins may overwrite this method to perform additional clean up tasks.
+
+		The default implementation just minimizes the data persisted on disk to only contain
+		the differences to the defaults (in case the current data was persisted with an older
+		version of OctoPrint that still duplicated default data).
+		"""
+		import octoprint.util
+		from octoprint.settings import NoSuchSettingsPath
+
+		try:
+			# let's fetch the current persisted config (so only the data on disk,
+			# without the defaults)
+			config = self._settings.get_all_data(merged=False, incl_defaults=False, error_on_path=True)
+		except NoSuchSettingsPath:
+			# no config persisted, nothing to do => get out of here
+			return
+
+		if config is None:
+			# config is set to None, that doesn't make sense, kill it and leave
+			self._settings.clean_all_data()
+			return
+
+		if self.config_version_key in config and config[self.config_version_key] is None:
+			# delete None entries for config version - it's the default, no need
+			del config[self.config_version_key]
+
+		# calculate a minimal diff between the settings and the current config -
+		# anything already in the settings will be removed from the persisted
+		# config, no need to duplicate it
+		defaults = self.get_settings_defaults()
+		diff = octoprint.util.dict_diff(defaults, config)
+
+		if not diff:
+			# no diff to defaults, no need to have anything persisted
+			self._settings.clean_all_data()
+		else:
+			# diff => persist only that
+			self._settings.set([], diff)
 
 	def on_settings_initialized(self):
 		"""
