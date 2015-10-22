@@ -645,6 +645,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		if filename is not None:
 			if sd:
 				path_in_storage = filename
+				if path_in_storage.startswith("/"):
+					path_in_storage = path_in_storage[1:]
 				path_on_disk = None
 			else:
 				path_in_storage = self._fileManager.path_in_storage(FileDestinations.LOCAL, filename)
