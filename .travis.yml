@@ -7,3 +7,4 @@ install:
 - pip install -e .[develop]
 script:
 - nosetests --with-doctest
+sudo: false
