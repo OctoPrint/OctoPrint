@@ -1082,18 +1082,34 @@ class BlueprintPlugin(OctoPrintPlugin, RestartNeedingPlugin):
 		:return: the blueprint ready to be registered with Flask
 		"""
 
+		if hasattr(self, "_blueprint"):
+			# if we already constructed the blueprint and hence have it cached,
+			# return that instance - we don't want to instance it multiple times
+			return self._blueprint
+
 		import flask
 		kwargs = self.get_blueprint_kwargs()
 		blueprint = flask.Blueprint("plugin." + self._identifier, self._identifier, **kwargs)
+
+		# we now iterate over all members of ourselves and look if we find an attribute
+		# that has data originating from one of our decorators - we ignore anything
+		# starting with a _ to only handle public stuff
 		for member in [member for member in dir(self) if not member.startswith("_")]:
 			f = getattr(self, member)
+
 			if hasattr(f, "_blueprint_rules") and member in f._blueprint_rules:
+				# this attribute was annotated with our @route decorator
 				for blueprint_rule in f._blueprint_rules[member]:
 					rule, options = blueprint_rule
 					blueprint.add_url_rule(rule, options.pop("endpoint", f.__name__), view_func=f, **options)
+
 			if hasattr(f, "_blueprint_error_handler") and member in f._blueprint_error_handler:
+				# this attribute was annotated with our @error_handler decorator
 				for code_or_exception in f._blueprint_error_handler[member]:
 					blueprint.errorhandler(code_or_exception)(f)
+
+		# cache and return the blueprint object
+		self._blueprint = blueprint
 		return blueprint
 
 	def get_blueprint_kwargs(self):
