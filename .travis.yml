@@ -8,3 +8,5 @@ install:
 script:
 - nosetests --with-doctest
 sudo: false
+git:
+  depth: 250
