@@ -12,7 +12,7 @@ import re
 import logging
 
 from octoprint.settings import settings
-from octoprint.util import dict_merge, dict_clean, dict_contains_keys
+from octoprint.util import dict_merge, dict_sanitize, dict_contains_keys
 
 class SaveError(Exception):
 	pass
@@ -214,7 +214,7 @@ class PrinterProfileManager(object):
 
 		identifier = self._sanitize(identifier)
 		profile["id"] = identifier
-		profile = dict_clean(profile, self.__class__.default)
+		profile = dict_sanitize(profile, self.__class__.default)
 
 		if identifier == "_default":
 			default_profile = dict_merge(self._load_default(), profile)

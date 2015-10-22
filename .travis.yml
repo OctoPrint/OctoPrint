@@ -6,4 +6,4 @@ python:
 install:
 - pip install -e .[develop]
 script:
-- nosetests tests/
+- nosetests --with-doctest

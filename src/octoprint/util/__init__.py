@@ -378,6 +378,14 @@ def dict_merge(a, b):
 
 	Taken from https://www.xormedia.com/recursively-merge-dictionaries-in-python/
 
+	Example::
+
+	    >>> a = dict(foo="foo", bar="bar", fnord=dict(a=1))
+	    >>> b = dict(foo="other foo", fnord=dict(b=2, l=["some", "list"]))
+	    >>> expected = dict(foo="other foo", bar="bar", fnord=dict(a=1, b=2, l=["some", "list"]))
+	    >>> dict_merge(a, b) == expected
+	    True
+
 	Arguments:
 	    a (dict): The dictionary to merge ``b`` into
 	    b (dict): The dictionary to merge into ``a``
@@ -399,14 +407,24 @@ def dict_merge(a, b):
 	return result
 
 
-def dict_clean(a, b):
+def dict_sanitize(a, b):
 	"""
-	Recursively deep-cleans ``b`` from ``a``, removing all keys and corresponding values from ``a`` that appear in
-	``b``.
+	Recursively deep-sanitizes ``a`` based on ``b``, removing all keys (and
+	associated values) from ``a`` that do not appear in ``b``.
+
+	Example::
+
+	    >>> a = dict(foo="foo", bar="bar", fnord=dict(a=1, b=2, l=["some", "list"]))
+	    >>> b = dict(foo=None, fnord=dict(a=None, b=None))
+	    >>> expected = dict(foo="foo", fnord=dict(a=1, b=2))
+	    >>> dict_sanitize(a, b) == expected
+	    True
+	    >>> dict_clean(a, b) == expected
+	    True
 
 	Arguments:
-	    a (dict): The dictionary to clean from ``b``.
-	    b (dict): The dictionary to clean ``b`` from.
+	    a (dict): The dictionary to clean against ``b``.
+	    b (dict): The dictionary containing the key structure to clean from ``a``.
 
 	Results:
 	    dict: A new dict based on ``a`` with all keys (and corresponding values) found in ``b`` removed.
@@ -421,21 +439,26 @@ def dict_clean(a, b):
 		if not k in b:
 			del result[k]
 		elif isinstance(v, dict):
-			result[k] = dict_clean(v, b[k])
+			result[k] = dict_sanitize(v, b[k])
 		else:
 			result[k] = deepcopy(v)
 	return result
+dict_clean = deprecated("dict_clean has been renamed to dict_sanitize",
+                        includedoc="Replaced by :func:`dict_sanitize`")(dict_sanitize)
 
 
-def dict_contains_keys(a, b):
+def dict_contains_keys(keys, dictionary):
 	"""
-	Recursively deep-checks if ``a`` contains all keys found in ``b``.
+	Recursively deep-checks if ``dictionary`` contains all keys found in ``keys``.
 
 	Example::
 
-	    >>> dict_contains_keys(dict(foo="bar", fnord=dict(a=1, b=2, c=3)), dict(foo="some_other_bar", fnord=dict(b=100)))
+	    >>> positive = dict(foo="some_other_bar", fnord=dict(b=100))
+	    >>> negative = dict(foo="some_other_bar", fnord=dict(b=100, d=20))
+	    >>> dictionary = dict(foo="bar", fnord=dict(a=1, b=2, c=3))
+	    >>> dict_contains_keys(positive, dictionary)
 	    True
-	    >>> dict_contains_keys(dict(foo="bar", fnord=dict(a=1, b=2, c=3)), dict(foo="some_other_bar", fnord=dict(b=100, d=20)))
+	    >>> dict_contains_keys(negative, dictionary)
 	    False
 
 	Arguments:
@@ -446,14 +469,14 @@ def dict_contains_keys(a, b):
 	    boolean: True if all keys found in ``b`` are also present in ``a``, False otherwise.
 	"""
 
-	if not isinstance(a, dict) or not isinstance(b, dict):
+	if not isinstance(keys, dict) or not isinstance(dictionary, dict):
 		return False
 
-	for k, v in a.iteritems():
-		if not k in b:
+	for k, v in keys.iteritems():
+		if not k in dictionary:
 			return False
 		elif isinstance(v, dict):
-			if not dict_contains_keys(v, b[k]):
+			if not dict_contains_keys(v, dictionary[k]):
 				return False
 
 	return True
