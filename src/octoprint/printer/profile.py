@@ -408,7 +408,7 @@ class PrinterProfileManager(object):
 		for path in (("volume", "width"), ("volume", "depth"), ("volume", "height"), ("extruder", "nozzleDiameter")):
 			try:
 				convert_value(profile, path, float)
-			except:
+			except Exception as e:
 				self._logger.warn("Profile has invalid value for path {path!r}: {msg}".format(path=".".join(path), msg=str(e)))
 				return False
 
@@ -416,7 +416,7 @@ class PrinterProfileManager(object):
 		for path in (("axes", "x", "inverted"), ("axes", "y", "inverted"), ("axes", "z", "inverted")):
 			try:
 				convert_value(profile, path, bool)
-			except:
+			except Exception as e:
 				self._logger.warn("Profile has invalid value for path {path!r}: {msg}".format(path=".".join(path), msg=str(e)))
 				return False
 
