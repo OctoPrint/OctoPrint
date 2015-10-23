@@ -47,7 +47,7 @@ EXTRA_REQUIRES = dict(
 		# Documentation dependencies
 		"sphinx>=1.3",
 		"sphinxcontrib-httpdomain",
-		"sphinx_rtd_theme"
+		"sphinx_rtd_theme",
 
 		# PyPi upload related
 		"pypandoc"
