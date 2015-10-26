@@ -447,7 +447,7 @@ dict_clean = deprecated("dict_clean has been renamed to dict_sanitize",
                         includedoc="Replaced by :func:`dict_sanitize`")(dict_sanitize)
 
 
-def dict_diff(a, b):
+def dict_minimal_mergediff(source, target):
 	"""
 	Recursively calculates the minimal dict that would be needed to be deep merged with
 	a in order to produce the same result as deep merging a and b.
@@ -456,55 +456,55 @@ def dict_diff(a, b):
 
 	    >>> a = dict(foo=dict(a=1, b=2), bar=dict(c=3, d=4))
 	    >>> b = dict(bar=dict(c=3, d=5), fnord=None)
-	    >>> c = dict_diff(a, b)
+	    >>> c = dict_minimal_mergediff(a, b)
 	    >>> c == dict(bar=dict(d=5), fnord=None)
 	    True
 	    >>> dict_merge(a, c) == dict_merge(a, b)
 	    True
 
 	Arguments:
-	    a (dict): Source dictionary
-	    b (dict): Dictionary to compare to source dictionary and derive diff for
+	    source (dict): Source dictionary
+	    target (dict): Dictionary to compare to source dictionary and derive diff for
 
 	Returns:
-	    dict: The minimal dictionary to deep merge on a to get the same result
-	        as deep merging b on a.
+	    dict: The minimal dictionary to deep merge on ``source`` to get the same result
+	        as deep merging ``target`` on ``source``.
 	"""
 
-	if not isinstance(a, dict) or not isinstance(b, dict):
-		raise ValueError("a and b must be dictionaries")
+	if not isinstance(source, dict) or not isinstance(target, dict):
+		raise ValueError("source and target must be dictionaries")
 
-	if a == b:
+	if source == target:
 		# shortcut: if both are equal, we return an empty dict as result
 		return dict()
 
 	from copy import deepcopy
 
-	all_keys = set(a.keys() + b.keys())
+	all_keys = set(source.keys() + target.keys())
 	result = dict()
 	for k in all_keys:
-		if k not in b:
-			# key not contained in b => not contained in result
+		if k not in target:
+			# key not contained in target => not contained in result
 			continue
 
-		if k in a:
+		if k in source:
 			# key is present in both dicts, we have to take a look at the value
-			value_a = a[k]
-			value_b = b[k]
+			value_source = source[k]
+			value_target = target[k]
 
-			if value_a != value_b:
+			if value_source != value_target:
 				# we only need to look further if the values are not equal
 
-				if isinstance(value_a, dict) and isinstance(value_b, dict):
+				if isinstance(value_source, dict) and isinstance(value_target, dict):
 					# both are dicts => deeper down it goes into the rabbit hole
-					result[k] = dict_diff(value_a, value_b)
+					result[k] = dict_minimal_mergediff(value_source, value_target)
 				else:
 					# new b wins over old a
-					result[k] = deepcopy(value_b)
+					result[k] = deepcopy(value_target)
 
 		else:
 			# key is new, add it
-			result[k] = deepcopy(b[k])
+			result[k] = deepcopy(target[k])
 	return result
 
 

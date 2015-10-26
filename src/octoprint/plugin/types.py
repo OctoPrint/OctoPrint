@@ -825,7 +825,7 @@ class SettingsPlugin(OctoPrintPlugin):
 
 		# determine diff dict that contains minimal set of changes against the
 		# default settings - we only want to persist that, not everything
-		diff = octoprint.util.dict_diff(self.get_settings_defaults(), new_current)
+		diff = octoprint.util.dict_minimal_mergediff(self.get_settings_defaults(), new_current)
 
 		version = self.get_settings_version()
 
@@ -955,7 +955,7 @@ class SettingsPlugin(OctoPrintPlugin):
 		# anything already in the settings will be removed from the persisted
 		# config, no need to duplicate it
 		defaults = self.get_settings_defaults()
-		diff = octoprint.util.dict_diff(defaults, config)
+		diff = octoprint.util.dict_minimal_mergediff(defaults, config)
 
 		if not diff:
 			# no diff to defaults, no need to have anything persisted
