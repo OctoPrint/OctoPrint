@@ -9,6 +9,8 @@ import logging
 from octoprint.daemon import Daemon
 from octoprint.server import Server
 
+logging.basicConfig()
+
 #~~ version
 
 from ._version import get_versions
@@ -188,69 +190,36 @@ def run_server(basedir, configfile, host, port, debug, allow_root, logging_confi
 	octoprint.run()
 
 
-@click.group(name="octoprint", invoke_without_command=True)
-@click.option("--basedir", "-b", type=click.Path(),
-              help="Specify the basedir to use for uploads, timelapses etc.")
-@click.option("--config", "-c", "configfile", type=click.Path(),
-              help="Specify the config file to use.")
-@hidden_option("--debug", "-d", is_flag=True)
-@hidden_option("--host", type=click.STRING)
-@hidden_option("--port", type=click.INT)
-@hidden_option("--logging", type=click.Path())
-@hidden_option("--daemon", type=click.Choice(["start", "stop", "restart"]))
-@hidden_option("--pid", type=click.Path())
-@hidden_option("--iknowwhatimdoing", "allow_root", is_flag=True)
-@click.version_option(version=__version__)
-@click.pass_context
-def octo(ctx, debug, host, port, basedir, configfile, logging, daemon, pid, allow_root):
-	class ContextObject(object):
-		def __init__(self):
-			self.debug = False
-			self.configfile = None
-			self.basedir = None
-			self.allow_root = None
+class OctoPrintContext(object):
+	def __init__(self, configfile=None, basedir=None, debug=False):
+		self.configfile = configfile
+		self.basedir = basedir
+		self.debug = debug
+pass_octoprint_ctx = click.make_pass_decorator(OctoPrintContext, ensure=True)
 
-	obj = ContextObject()
-	obj.debug = debug
-	obj.configfile = configfile
-	obj.basedir = basedir
-	obj.allow_root = allow_root
-
-	ctx.obj = obj
-
-	if ctx.invoked_subcommand is None:
-		if daemon:
-			click.echo("Daemon operation via \"octoprint --daemon "
-			           "(start|stop|restart)\" is deprecated, please use "
-			           "\"octoprint daemon start|stop|restart\" from now on")
-
-			ctx.invoke(daemon_command, pid=pid, daemon=daemon)
-		else:
-			click.echo("Starting the server via \"octoprint\" is deprecated, "
-			           "please use \"octoprint serve\" from now on.")
-
-			ctx.invoke(serve_command, host=host, port=port, logging=logging)
+@click.group()
+@pass_octoprint_ctx
+def server_commands(obj):
+	pass
 
 
-@octo.command(name="serve")
+@server_commands.command(name="serve")
 @click.option("--host", type=click.STRING,
               help="Specify the host on which to bind the server.")
 @click.option("--port", type=click.INT,
               help="Specify the port on which to bind the server.")
 @click.option("--logging", type=click.Path(),
               help="Specify the config file to use for configuring logging.")
-@click.option("--debug", "-d", is_flag=True,
-              help="Enable debug mode.")
 @click.option("--iknowwhatimdoing", "allow_root", is_flag=True,
               help="Allow OctoPrint to run as user root.")
-@click.pass_context
-def serve_command(ctx, host, port, logging, debug, allow_root):
+@pass_octoprint_ctx
+def serve_command(obj, host, port, logging, allow_root):
 	"""Starts the OctoPrint server."""
-	run_server(ctx.obj.basedir, ctx.obj.configfile, host, port, debug,
+	run_server(obj.basedir, obj.configfile, host, port, obj.debug,
 	           allow_root, logging)
 
 
-@octo.command(name="daemon")
+@server_commands.command(name="daemon")
 @click.option("--pid", type=click.Path(),
               help="Pidfile to use for daemonizing.")
 @click.option("--host", type=click.STRING,
@@ -265,8 +234,8 @@ def serve_command(ctx, host, port, logging, debug, allow_root):
               help="Allow OctoPrint to run as user root.")
 @click.argument("command", type=click.Choice(["start", "stop", "restart"]),
                 metavar="start|stop|restart")
-@click.pass_context
-def daemon_command(ctx, pid, host, port, logging, debug, allow_root, command):
+@pass_octoprint_ctx
+def daemon_command(octoprint_ctx, pid, host, port, logging, allow_root, command):
 	"""
 	Starts, stops or restarts in daemon mode.
 
@@ -277,8 +246,8 @@ def daemon_command(ctx, pid, host, port, logging, debug, allow_root, command):
 		           file=sys.stderr)
 		sys.exit(2)
 
-	daemon = OctoPrintDaemon(pid, ctx.obj.basedir, ctx.obj.configfile,
-	              host, port, debug, allow_root, logging)
+	daemon = OctoPrintDaemon(pid, octoprint_ctx.basedir, octoprint_ctx.configfile,
+	              host, port, octoprint_ctx.debug, allow_root, logging)
 
 	if command == "start":
 		daemon.start()
@@ -287,7 +256,10 @@ def daemon_command(ctx, pid, host, port, logging, debug, allow_root, command):
 	elif command == "restart":
 		daemon.restart()
 
+
 class OctoPrintCli(click.MultiCommand):
+
+	sep = ":"
 
 	def __init__(self, *args, **kwargs):
 		click.MultiCommand.__init__(self, *args, **kwargs)
@@ -299,13 +271,15 @@ class OctoPrintCli(click.MultiCommand):
 		if self._settings is not None:
 			return
 
+		if ctx.obj is None:
+			ctx.obj = OctoPrintContext()
+
 		self._settings = init_settings(ctx.obj.basedir, ctx.obj.configfile)
 		self._plugin_manager = init_pluginsystem(self._settings)
 		self._hooks = self._plugin_manager.get_hooks("octoprint.cli.command")
 
 	def list_commands(self, ctx):
 		self._initialize(ctx)
-
 		result = [name for name in self._get_commands()]
 		result.sort()
 		return result
@@ -321,28 +295,62 @@ class OctoPrintCli(click.MultiCommand):
 
 		for name, hook in self._hooks.items():
 			try:
-				commands = hook(self)
+				commands = hook(self, pass_octoprint_ctx)
 				for command in commands:
-					result[name + "." + command.name] = command
+					result[name + self.sep + command.name] = command
 			except:
 				self._logger.exception("Error while retrieving cli commants for plugin {}".format(name))
 
 		return result
 
-@octo.command(cls=OctoPrintCli)
-@click.option("--logging", type=click.Path(),
-              help="Specify the config file to use for configuring logging.")
-@click.option("--debug", "-d", is_flag=True,
-              help="Enable debug mode.")
+@click.group(cls=OctoPrintCli)
+@pass_octoprint_ctx
+def plugin_commands(obj):
+	logging.basicConfig(level=logging.DEBUG if obj.debug else logging.WARN)
+
+
+def set_ctx_obj_option(ctx, param, value):
+	if ctx.obj is None:
+		ctx.obj = OctoPrintContext()
+
+	if hasattr(ctx.obj, param.name):
+		setattr(ctx.obj, param.name, value)
+
+
+@click.group(name="octoprint", invoke_without_command=True, cls=click.CommandCollection,
+             sources=[server_commands, plugin_commands])
+@click.option("--basedir", "-b", type=click.Path(), callback=set_ctx_obj_option, is_eager=True,
+              help="Specify the basedir to use for uploads, timelapses etc.")
+@click.option("--config", "-c", "configfile", type=click.Path(), callback=set_ctx_obj_option, is_eager=True,
+              help="Specify the config file to use.")
+@click.option("--debug", "-d", is_flag=True, callback=set_ctx_obj_option, is_eager=True,
+              help="Enable debug mode")
+@hidden_option("--host", type=click.STRING)
+@hidden_option("--port", type=click.INT)
+@hidden_option("--logging", type=click.Path())
+@hidden_option("--daemon", type=click.Choice(["start", "stop", "restart"]))
+@hidden_option("--pid", type=click.Path())
+@hidden_option("--iknowwhatimdoing", "allow_root", is_flag=True)
+@click.version_option(version=__version__)
 @click.pass_context
-def cli(ctx, logging, debug):
-	"""
-	OctoPrint command line tools.
-	"""
-	pass
+def octo(ctx, debug, host, port, basedir, configfile, logging, daemon, pid, allow_root):
+
+	if ctx.invoked_subcommand is None:
+		if daemon:
+			click.echo("Daemon operation via \"octoprint --daemon "
+			           "(start|stop|restart)\" is deprecated, please use "
+			           "\"octoprint daemon start|stop|restart\" from now on")
+
+			ctx.invoke(daemon_command, pid=pid, daemon=daemon, debug=debug, allow_root=allow_root)
+		else:
+			click.echo("Starting the server via \"octoprint\" is deprecated, "
+			           "please use \"octoprint serve\" from now on.")
+
+			ctx.invoke(serve_command, host=host, port=port, logging=logging, debug=debug, allow_root=allow_root)
+
 
 def main():
-	octo.main(prog_name="octoprint", auto_envvar_prefix="OCTOPRINT")
+	octo(prog_name="octoprint", auto_envvar_prefix="OCTOPRINT")
 
 
 if __name__ == "__main__":
