@@ -4,6 +4,7 @@ from __future__ import absolute_import, print_function
 
 import sys
 import click
+import logging
 
 from octoprint.daemon import Daemon
 from octoprint.server import Server
@@ -36,7 +37,6 @@ def init_settings(basedir, configfile):
 
 
 def init_logging(settings, use_logging_file=True, logging_file=None, default_config=None, debug=False, uncaught_logger=None, uncaught_handler=None):
-	import logging
 	import os
 
 	from octoprint.util import dict_merge
@@ -202,7 +202,7 @@ def run_server(basedir, configfile, host, port, debug, allow_root, logging_confi
 @hidden_option("--iknowwhatimdoing", "allow_root", is_flag=True)
 @click.version_option(version=__version__)
 @click.pass_context
-def cli(ctx, debug, host, port, basedir, configfile, logging, daemon, pid, allow_root):
+def octo(ctx, debug, host, port, basedir, configfile, logging, daemon, pid, allow_root):
 	class ContextObject(object):
 		def __init__(self):
 			self.debug = False
@@ -232,7 +232,7 @@ def cli(ctx, debug, host, port, basedir, configfile, logging, daemon, pid, allow
 			ctx.invoke(serve_command, host=host, port=port, logging=logging)
 
 
-@cli.command(name="serve")
+@octo.command(name="serve")
 @click.option("--host", type=click.STRING,
               help="Specify the host on which to bind the server.")
 @click.option("--port", type=click.INT,
@@ -250,7 +250,7 @@ def serve_command(ctx, host, port, logging, debug, allow_root):
 	           allow_root, logging)
 
 
-@cli.command(name="daemon")
+@octo.command(name="daemon")
 @click.option("--pid", type=click.Path(),
               help="Pidfile to use for daemonizing.")
 @click.option("--host", type=click.STRING,
@@ -287,9 +287,62 @@ def daemon_command(ctx, pid, host, port, logging, debug, allow_root, command):
 	elif command == "restart":
 		daemon.restart()
 
+class OctoPrintCli(click.MultiCommand):
+
+	def __init__(self, *args, **kwargs):
+		click.MultiCommand.__init__(self, *args, **kwargs)
+		self._settings = None
+		self._plugin_manager = None
+		self._logger = logging.getLogger(__name__)
+
+	def _initialize(self, ctx):
+		if self._settings is not None:
+			return
+
+		self._settings = init_settings(ctx.obj.basedir, ctx.obj.configfile)
+		self._plugin_manager = init_pluginsystem(self._settings)
+		self._hooks = self._plugin_manager.get_hooks("octoprint.cli.command")
+
+	def list_commands(self, ctx):
+		self._initialize(ctx)
+
+		result = [name for name in self._get_commands()]
+		result.sort()
+		return result
+
+	def get_command(self, ctx, cmd_name):
+		self._initialize(ctx)
+		commands = self._get_commands()
+		return commands.get(cmd_name, None)
+
+	def _get_commands(self):
+		import collections
+		result = collections.OrderedDict()
+
+		for name, hook in self._hooks.items():
+			try:
+				commands = hook(self)
+				for command in commands:
+					result[name + "." + command.name] = command
+			except:
+				self._logger.exception("Error while retrieving cli commants for plugin {}".format(name))
+
+		return result
+
+@octo.command(cls=OctoPrintCli)
+@click.option("--logging", type=click.Path(),
+              help="Specify the config file to use for configuring logging.")
+@click.option("--debug", "-d", is_flag=True,
+              help="Enable debug mode.")
+@click.pass_context
+def cli(ctx, logging, debug):
+	"""
+	OctoPrint command line tools.
+	"""
+	pass
 
 def main():
-	cli.main(prog_name="octoprint", auto_envvar_prefix="OCTOPRINT")
+	octo.main(prog_name="octoprint", auto_envvar_prefix="OCTOPRINT")
 
 
 if __name__ == "__main__":
