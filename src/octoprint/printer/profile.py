@@ -12,7 +12,7 @@ import re
 import logging
 
 from octoprint.settings import settings
-from octoprint.util import dict_merge, dict_clean, dict_contains_keys
+from octoprint.util import dict_merge, dict_sanitize, dict_contains_keys
 
 class SaveError(Exception):
 	pass
@@ -214,7 +214,7 @@ class PrinterProfileManager(object):
 
 		identifier = self._sanitize(identifier)
 		profile["id"] = identifier
-		profile = dict_clean(profile, self.__class__.default)
+		profile = dict_sanitize(profile, self.__class__.default)
 
 		if identifier == "_default":
 			default_profile = dict_merge(self._load_default(), profile)
@@ -329,12 +329,14 @@ class PrinterProfileManager(object):
 		if os.path.exists(path) and not allow_overwrite:
 			raise SaveError("Profile %s already exists and not allowed to overwrite" % profile["id"])
 
+		from octoprint.util import atomic_write
 		import yaml
-		with open(path, "wb") as f:
-			try:
+		try:
+			with atomic_write(path, "wb") as f:
 				yaml.safe_dump(profile, f, default_flow_style=False, indent="  ", allow_unicode=True)
-			except Exception as e:
-				raise SaveError("Cannot save profile %s: %s" % (profile["id"], str(e)))
+		except Exception as e:
+			self._logger.exception("Error while trying to save profile %s" % profile["id"])
+			raise SaveError("Cannot save profile %s: %s" % (profile["id"], str(e)))
 
 	def _remove_from_path(self, path):
 		try:
@@ -406,7 +408,7 @@ class PrinterProfileManager(object):
 		for path in (("volume", "width"), ("volume", "depth"), ("volume", "height"), ("extruder", "nozzleDiameter")):
 			try:
 				convert_value(profile, path, float)
-			except:
+			except Exception as e:
 				self._logger.warn("Profile has invalid value for path {path!r}: {msg}".format(path=".".join(path), msg=str(e)))
 				return False
 
@@ -414,7 +416,7 @@ class PrinterProfileManager(object):
 		for path in (("axes", "x", "inverted"), ("axes", "y", "inverted"), ("axes", "z", "inverted")):
 			try:
 				convert_value(profile, path, bool)
-			except:
+			except Exception as e:
 				self._logger.warn("Profile has invalid value for path {path!r}: {msg}".format(path=".".join(path), msg=str(e)))
 				return False
 

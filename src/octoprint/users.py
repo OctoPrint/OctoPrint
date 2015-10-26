@@ -17,29 +17,37 @@ import logging
 
 from octoprint.settings import settings
 
+from octoprint.util import atomic_write
+
 class UserManager(object):
 	valid_roles = ["user", "admin"]
 
 	def __init__(self):
 		self._logger = logging.getLogger(__name__)
 		self._session_users_by_session = dict()
-		self._session_users_by_username = dict()
+		self._session_users_by_userid = dict()
 
 	def login_user(self, user):
 		self._cleanup_sessions()
 
-		if user is None \
-		        or (isinstance(user, LocalProxy) and not isinstance(user._get_current_object(), User)) \
-		        or (not isinstance(user, LocalProxy) and not isinstance(user, User)):
+		if user is None:
+			return
+
+		if isinstance(user, LocalProxy):
+			user = user._get_current_object()
+
+		if not isinstance(user, User):
 			return None
 
 		if not isinstance(user, SessionUser):
 			user = SessionUser(user)
+
 		self._session_users_by_session[user.get_session()] = user
 
-		if not user.get_name() in self._session_users_by_username:
-			self._session_users_by_username[user.get_name()] = []
-		self._session_users_by_username[user.get_name()].append(user)
+		userid = user.get_id()
+		if not userid in self._session_users_by_userid:
+			self._session_users_by_userid[userid] = []
+		self._session_users_by_userid[userid].append(user)
 
 		self._logger.debug("Logged in user: %r" % user)
 
@@ -49,14 +57,18 @@ class UserManager(object):
 		if user is None:
 			return
 
+		if isinstance(user, LocalProxy):
+			user = user._get_current_object()
+
 		if not isinstance(user, SessionUser):
 			return
 
-		if user.get_name() in self._session_users_by_username:
-			users_by_username = self._session_users_by_username[user.get_name()]
-			for u in users_by_username:
+		userid = user.get_id()
+		if userid in self._session_users_by_userid:
+			users_by_userid = self._session_users_by_userid[userid]
+			for u in users_by_userid:
 				if u.get_session() == user.get_session():
-					users_by_username.remove(u)
+					users_by_userid.remove(u)
 					break
 
 		if user.get_session() in self._session_users_by_session:
@@ -106,7 +118,7 @@ class UserManager(object):
 				# old hash doesn't match either, wrong password
 				return False
 
-	def addUser(self, username, password, active, roles):
+	def addUser(self, username, password, active, roles, overwrite=False):
 		pass
 
 	def changeUserActivation(self, username, active):
@@ -137,21 +149,19 @@ class UserManager(object):
 		pass
 
 	def removeUser(self, username):
-		if username in self._session_users_by_username:
-			users = self._session_users_by_username[username]
+		if username in self._session_users_by_userid:
+			users = self._session_users_by_userid[username]
 			sessions = [user.get_session() for user in users if isinstance(user, SessionUser)]
 			for session in sessions:
 				if session in self._session_users_by_session:
 					del self._session_users_by_session[session]
-			del self._session_users_by_username[username]
+			del self._session_users_by_userid[username]
 
-	def findUser(self, username=None, session=None):
-		if session is not None:
-			for session in self._session_users_by_session:
-				user = self._session_users_by_session[session]
-				if username is None or username == user.get_name():
-					return user
-				break
+	def findUser(self, userid=None, session=None):
+		if session is not None and session in self._session_users_by_session:
+			user = self._session_users_by_session[session]
+			if userid is None or userid == user.get_id():
+				return user
 
 		return None
 
@@ -209,16 +219,16 @@ class FilebasedUserManager(UserManager):
 				"settings": user._settings
 			}
 
-		with open(self._userfile, "wb") as f:
+		with atomic_write(self._userfile, "wb") as f:
 			yaml.safe_dump(data, f, default_flow_style=False, indent="    ", allow_unicode=True)
 			self._dirty = False
 		self._load()
 
-	def addUser(self, username, password, active=False, roles=None, apikey=None):
+	def addUser(self, username, password, active=False, roles=None, apikey=None, overwrite=False):
 		if not roles:
 			roles = ["user"]
 
-		if username in self._users.keys():
+		if username in self._users.keys() and not overwrite:
 			raise UserAlreadyExists(username)
 
 		self._users[username] = User(username, UserManager.createPasswordHash(password), active, roles, apikey=apikey)
@@ -345,16 +355,16 @@ class FilebasedUserManager(UserManager):
 		self._dirty = True
 		self._save()
 
-	def findUser(self, username=None, apikey=None, session=None):
-		user = UserManager.findUser(self, username=username, session=session)
+	def findUser(self, userid=None, apikey=None, session=None):
+		user = UserManager.findUser(self, userid=userid, session=session)
 
 		if user is not None:
 			return user
 
-		if username is not None:
-			if username not in self._users.keys():
+		if userid is not None:
+			if userid not in self._users.keys():
 				return None
-			return self._users[username]
+			return self._users[userid]
 
 		elif apikey is not None:
 			for user in self._users.values():
@@ -413,7 +423,7 @@ class User(UserMixin):
 		return self._passwordHash == passwordHash
 
 	def get_id(self):
-		return self._username
+		return self.get_name()
 
 	def get_name(self):
 		return self._username
@@ -443,7 +453,7 @@ class User(UserMixin):
 			path = [key]
 		else:
 			path = key
-		self._set_setting(path, value)
+		return self._set_setting(path, value)
 
 	def _get_setting(self, path):
 		s = self._settings
@@ -474,7 +484,8 @@ class User(UserMixin):
 
 class SessionUser(User):
 	def __init__(self, user):
-		User.__init__(self, user._username, user._passwordHash, user._active, user._roles, user._apikey)
+		self._user = user
+		User.__init__(self, user._username, user._passwordHash, user._active, user._roles, user._apikey, user._settings)
 
 		import string
 		import random
@@ -482,6 +493,18 @@ class SessionUser(User):
 		chars = string.ascii_uppercase + string.ascii_lowercase + string.digits
 		self._session = "".join(random.choice(chars) for _ in xrange(10))
 		self._created = time.time()
+
+	def __getattribute__(self, item):
+		if item in ("get_session", "_user", "_session", "_created"):
+			return object.__getattribute__(self, item)
+		else:
+			return getattr(object.__getattribute__(self, "_user"), item)
+
+	def __setattr__(self, item, value):
+		if item in ("_user", "_session", "_created"):
+			return object.__setattr__(self, item, value)
+		else:
+			return setattr(self._user, item, value)
 
 	def get_session(self):
 		return self._session

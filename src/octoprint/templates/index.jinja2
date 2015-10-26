@@ -55,7 +55,7 @@
                                     >
                                 <div class="accordion-heading">
                                     <a class="accordion-toggle" data-toggle="collapse" data-target="#{{ data._div }}">
-                                        {% if "icon" in data %}<i class="icon-{{ data.icon }}"></i> {% endif %}{{ entry }}
+                                        {% if "icon" in data %}<i class="icon-{{ data.icon }}"></i> {% endif %}{{ entry|e }}
                                     </a>
                                     {% if "template_header" in data %}
                                         {% include data.template_header ignore missing %}
@@ -87,7 +87,7 @@
                                     {% if "data_bind" in data %}data-bind="{{ data.data_bind }}"{% endif %}
                                     {% if "styles_link" in data %} style="{{ data.styles_link|join(', ') }}" {% elif "styles" in data %} style="{{ data.styles|join(', ') }}" {% endif %}
                                         >
-                                        <a href="#{{ data._div }}" data-toggle="tab">{{ entry }}</a>
+                                        <a href="#{{ data._div }}" data-toggle="tab">{{ entry|e }}</a>
                                 </li>
                                 {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- /ko -->{% endif %}
                             {% endfor %}
@@ -112,23 +112,24 @@
                 </div>
                 <div class="footer">
                     <ul class="pull-left muted">
-                        <li><small>{{ _('Version') }}: <span class="version">{{ display_version }}</span></small></li>
+                        <li><small>{{ _('Version') }}: <span class="version">{{ display_version|e }}</span></small></li>
                     </ul>
                     <ul class="pull-right">
                         <li><a href="http://octoprint.org"><i class="icon-home"></i> {{ _('Homepage') }}</a></li>
                         <li><a href="https://github.com/foosel/OctoPrint/"><i class="icon-github"></i> {{ _('Sourcecode') }}</a></li>
                         <li><a href="http://docs.octoprint.org"><i class="icon-book"></i> {{ _('Documentation') }}</a></li>
                         <li><a href="https://github.com/foosel/OctoPrint/issues"><i class="icon-flag"></i> {{ _('Bugs and Requests') }}</a></li>
+                        <li id="footer_about"><a href="javascript:void(0)" data-bind="click: show"><i class="icon-info-sign"></i> {{ _('About') }}</a></li>
                     </ul>
                 </div>
             </div>
 
             <!-- Dialogs -->
-            {% include 'dialogs/confirmation.jinja2' %}
-            {% include 'dialogs/firstrun.jinja2' %}
             {% include 'dialogs/settings.jinja2' %}
             {% include 'dialogs/slicing.jinja2' %}
             {% include 'dialogs/usersettings.jinja2' %}
+            {% include 'dialogs/wizard.jinja2' %}
+            {% include 'dialogs/about.jinja2' %}
             <!-- End of dialogs -->
 
             <!-- Overlays -->

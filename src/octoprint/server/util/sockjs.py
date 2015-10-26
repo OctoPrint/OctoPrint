@@ -13,6 +13,7 @@ import time
 import octoprint.timelapse
 import octoprint.server
 from octoprint.events import Events
+from octoprint.settings import settings
 
 import octoprint.printer
 
@@ -58,8 +59,17 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection, octoprint.printer.
 		plugin_hash = hashlib.md5()
 		plugin_hash.update(",".join(ui_plugins))
 
+		config_hash = settings().config_hash
+
 		# connected => update the API key, might be necessary if the client was left open while the server restarted
-		self._emit("connected", {"apikey": octoprint.server.UI_API_KEY, "version": octoprint.server.VERSION, "display_version": octoprint.server.DISPLAY_VERSION, "plugin_hash": plugin_hash.hexdigest()})
+		self._emit("connected", dict(
+			apikey=octoprint.server.UI_API_KEY,
+			version=octoprint.server.VERSION,
+			display_version=octoprint.server.DISPLAY_VERSION,
+			branch=octoprint.server.BRANCH,
+			plugin_hash=plugin_hash.hexdigest(),
+			config_hash=config_hash
+		))
 
 		self._printer.register_callback(self)
 		self._fileManager.register_slicingprogress_callback(self)

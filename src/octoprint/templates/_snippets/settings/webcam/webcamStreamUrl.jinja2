@@ -1,0 +1,9 @@
+<div class="control-group" title="{{ _('URL to embed into the UI for live viewing of the webcam stream') }}">
+    <label class="control-label" for="settings-webcamStreamUrl">{{ _('Stream URL') }}</label>
+    <div class="controls">
+        <div class="input-append">
+            <input type="text" class="input-block-level" data-bind="value: webcam_streamUrl, valueUpdate: 'afterkeydown'" id="settings-webcamStreamUrl">
+            <button class="btn" type="button" data-bind="click: testWebcamStreamUrl, enable: webcam_streamUrl(), css: {disabled: !webcam_streamUrl()}">{{ _('Test') }}</button>
+        </div>
+    </div>
+</div>

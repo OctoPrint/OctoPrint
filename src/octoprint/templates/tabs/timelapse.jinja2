@@ -1,12 +1,17 @@
 <div style="display: none;" data-bind="visible: loginState.isUser">
+    <div class="alert" data-bind="visible: isPrinting()">
+        {{ _('Take note that timelapse configuration is disabled while your printer is printing.') }}
+    </div>
     <h1>{{ _('Timelapse Configuration') }}</h1>
 
     <label for="webcam_timelapse_mode">{{ _('Timelapse Mode') }}</label>
     <select id="webcam_timelapse_mode" data-bind="value: timelapseType, enable: isOperational() && !isPrinting() && loginState.isUser()">
         <option value="off">{{ _('Off') }}</option>
-        <option value="zchange">{{ _('On Z Change') }}</option>
         <option value="timed">{{ _('Timed') }}</option>
+        <option value="zchange">{{ _('On Z Change') }}</option>
     </select>
+    <span class="help-block" data-bind="visible: timelapseType() == 'zchange'"><span class="label label-warning">{{ _('Warning') }}</span> {{ _('Do not use with spiralized ("Joris") vases or similar continuous Z models.') }}</span>
+    <span class="help-block" data-bind="visible: timelapseType() == 'zchange'"><span class="label label-info">{{ _('Note') }}</span> {% trans %}Does not work when printing from the printer's SD Card (no way to detect the change in Z reliably). Use "Timed" mode for those prints instead.{% endtrans %}</span>
 
     <label for="webcam_timelapse_fps">{{ _('Timelapse frame rate (in frames per second)') }}</label>
     <div class="input-append">

@@ -1,3 +1,43 @@
+(function (global, factory) {
+    if (typeof define === "function" && define.amd) {
+        define(["OctoPrint"], factory);
+    } else {
+        factory(window.OctoPrint);
+    }
+})(window || this, function(OctoPrint) {
+    var exports = {};
+
+    var url = OctoPrint.getBlueprintUrl("softwareupdate");
+    var checkUrl = url + "check";
+    var updateUrl = url + "update";
+
+    exports.check = function(force, opts) {
+        return OctoPrint.get(checkUrl + ((!!force) ? "?force=true" : ""), opts);
+    };
+
+    exports.update = function(entries, force, opts) {
+        entries = entries || [];
+        if (typeof entries == "string") {
+            entries = [entries];
+        }
+
+        var data = {
+            entries: entries,
+            force: !!force
+        };
+        return OctoPrint.postJson(updateUrl, data, opts);
+    };
+
+    exports.updateAll = function(force, opts) {
+        var data = {
+            force: !!force
+        };
+        return OctoPrint.postJson(updateUrl, data, opts);
+    };
+
+    OctoPrint.plugins.softwareupdate = exports;
+});
+
 $(function() {
     function SoftwareUpdateViewModel(parameters) {
         var self = this;
@@ -19,11 +59,21 @@ $(function() {
         self.workingOutput = undefined;
         self.loglines = ko.observableArray([]);
 
-        self.config_restartCommand = ko.observable();
-        self.config_rebootCommand = ko.observable();
+        self.octoprintUnconfigured = ko.observable();
+        self.octoprintUnreleased = ko.observable();
+
         self.config_cacheTtl = ko.observable();
+        self.config_checkoutFolder = ko.observable();
+        self.config_checkType = ko.observable();
 
         self.configurationDialog = $("#settings_plugin_softwareupdate_configurationdialog");
+
+        self.config_availableCheckTypes = [
+            {"key": "github_release", "name": gettext("Release")},
+            {"key": "git_commit", "name": gettext("Commit")}
+        ];
+
+        self.reloadOverlay = $("#reloadui_overlay");
 
         self.versions = new ItemListHelper(
             "plugin.softwareupdate.versions",
@@ -80,23 +130,36 @@ $(function() {
             self.configurationDialog.modal();
         };
 
-        self.savePluginSettings = function() {
+        self.savePluginSettings = function(viewModel, event) {
+            var target = $(event.target);
+            target.prepend('<i class="icon-spinner icon-spin"></i> ');
+
             var data = {
                 plugins: {
                     softwareupdate: {
-                        octoprint_restart_command: self.config_restartCommand(),
-                        environment_restart_command: self.config_rebootCommand(),
-                        cache_ttl: parseInt(self.config_cacheTtl())
+                        cache_ttl: parseInt(self.config_cacheTtl()),
+                        octoprint_checkout_folder: self.config_checkoutFolder(),
+                        octoprint_type: self.config_checkType()
                     }
                 }
             };
-            self.settings.saveData(data, function() { self.configurationDialog.modal("hide"); self._copyConfig(); });
+            self.settings.saveData(data, {
+                success: function() {
+                    self.configurationDialog.modal("hide");
+                    self._copyConfig();
+                    self.performCheck();
+                },
+                complete: function() {
+                    $("i.icon-spinner", target).remove();
+                },
+                sending: true
+            });
         };
 
         self._copyConfig = function() {
-            self.config_restartCommand(self.settings.settings.plugins.softwareupdate.octoprint_restart_command());
-            self.config_rebootCommand(self.settings.settings.plugins.softwareupdate.environment_restart_command());
             self.config_cacheTtl(self.settings.settings.plugins.softwareupdate.cache_ttl());
+            self.config_checkoutFolder(self.settings.settings.plugins.softwareupdate.octoprint_checkout_folder());
+            self.config_checkType(self.settings.settings.plugins.softwareupdate.octoprint_type());
         };
 
         self.fromCheckResponse = function(data, ignoreSeen, showIfNothingNew) {
@@ -114,6 +177,25 @@ $(function() {
                 versions.push(value);
             });
             self.versions.updateItems(versions);
+
+            var octoprint = data.information["octoprint"];
+            if (octoprint && octoprint.hasOwnProperty("check")) {
+                var check = octoprint.check;
+                if (BRANCH != "master" && check["type"] == "github_release") {
+                    self.octoprintUnreleased(true);
+                } else {
+                    self.octoprintUnreleased(false);
+                }
+
+                var checkoutFolder = (check["checkout_folder"] || "").trim();
+                var updateFolder = (check["update_folder"] || "").trim();
+                var checkType = check["type"] || "";
+                if ((checkType == "github_release" || checkType == "git_commit") && checkoutFolder == "" && updateFolder == "") {
+                    self.octoprintUnconfigured(true);
+                } else {
+                    self.octoprintUnconfigured(false);
+                }
+            }
 
             if (data.status == "updateAvailable" || data.status == "updatePossible") {
                 var text = gettext("There are updates available for the following components:");
@@ -181,20 +263,10 @@ $(function() {
 
         self.performCheck = function(showIfNothingNew, force, ignoreSeen) {
             if (!self.loginState.isUser()) return;
-
-            var url = PLUGIN_BASEURL + "softwareupdate/check";
-            if (force) {
-                url += "?force=true";
-            }
-
-            $.ajax({
-                url: url,
-                type: "GET",
-                dataType: "json",
-                success: function(data) {
+            OctoPrint.plugins.softwareupdate.check(force)
+                .done(function(data) {
                     self.fromCheckResponse(data, ignoreSeen, showIfNothingNew);
-                }
-            });
+                });
         };
 
         self._markNotificationAsSeen = function(data) {
@@ -245,13 +317,12 @@ $(function() {
             };
             self._showPopup(options);
 
-            $.ajax({
-                url: PLUGIN_BASEURL + "softwareupdate/update",
-                type: "POST",
-                dataType: "json",
-                contentType: "application/json; charset=UTF-8",
-                data: JSON.stringify({force: (force == true)}),
-                error: function() {
+            OctoPrint.plugins.softwareupdate.updateAll(force)
+                .done(function(data) {
+                    self.currentlyBeingUpdated = data.checks;
+                    self._markWorking(gettext("Updating..."), gettext("Updating, please wait."));
+                })
+                .fail(function() {
                     self.updateInProgress = false;
                     self._showPopup({
                         title: gettext("Update not started!"),
@@ -262,12 +333,7 @@ $(function() {
                             sticker: false
                         }
                     });
-                },
-                success: function(data) {
-                    self.currentlyBeingUpdated = data.checks;
-                    self._markWorking(gettext("Updating..."), gettext("Updating, please wait."));
-                }
-            });
+                });
         };
 
         self.update = function(force) {
@@ -283,10 +349,11 @@ $(function() {
                     type: "error"
                 });
             } else {
-                showConfirmationDialog(gettext("This will update your OctoPrint installation and restart the server."), function(e) {
-                    e.preventDefault();
-                    $("#confirmation_dialog").modal("hide");
-                    self.performUpdate(force);
+                showConfirmationDialog({
+                    message: gettext("This will update your OctoPrint installation and restart the server."),
+                    onproceed: function(e) {
+                        self.performUpdate(force);
+                    }
                 });
             }
 
@@ -342,18 +409,10 @@ $(function() {
         self.onDataUpdaterReconnect = function() {
             if (self.waitingForRestart) {
                 self.waitingForRestart = false;
-
-                var options = {
-                    title: gettext("Restart successful!"),
-                    text: gettext("The server was restarted successfully. The page will now reload automatically."),
-                    type: "success",
-                    hide: false
-                };
-                self._showPopup(options);
                 self.updateInProgress = false;
-
-                var delay = 5 + Math.floor(Math.random() * 5) + 1;
-                setTimeout(function() {location.reload(true);}, delay * 1000);
+                if (!self.reloadOverlay.is(":visible")) {
+                    self.reloadOverlay.show();
+                }
             }
         };
 
@@ -438,7 +497,7 @@ $(function() {
                         self.waitingForRestart = false;
 
                         self._markDone(text, "message_error");
-                    }, 30000);
+                    }, 60000);
 
                     break;
                 }

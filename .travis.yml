@@ -6,4 +6,7 @@ python:
 install:
 - pip install -e .[develop]
 script:
-- nosetests tests/
+- nosetests --with-doctest
+sudo: false
+git:
+  depth: 250

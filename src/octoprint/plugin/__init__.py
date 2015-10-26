@@ -106,7 +106,9 @@ def plugin_manager(init=False, plugin_folders=None, plugin_types=None, plugin_en
 				                EventHandlerPlugin,
 				                SlicerPlugin,
 				                AppPlugin,
-				                ProgressPlugin]
+				                ProgressPlugin,
+				                WizardPlugin,
+				                UiPlugin]
 			if plugin_entry_points is None:
 				plugin_entry_points = "octoprint.plugin"
 			if plugin_disabled_list is None:
@@ -159,7 +161,7 @@ def plugin_settings(plugin_key, defaults=None, get_preprocessors=None, set_prepr
 	                      set_preprocessors=set_preprocessors)
 
 
-def call_plugin(types, method, args=None, kwargs=None, callback=None, error_callback=None):
+def call_plugin(types, method, args=None, kwargs=None, callback=None, error_callback=None, sorting_context=None):
 	"""
 	Helper method to invoke the indicated ``method`` on all registered plugin implementations implementing the
 	indicated ``types``. Allows providing method arguments and registering callbacks to call in case of success
@@ -205,7 +207,7 @@ def call_plugin(types, method, args=None, kwargs=None, callback=None, error_call
 	if kwargs is None:
 		kwargs = dict()
 
-	plugins = plugin_manager().get_implementations(*types)
+	plugins = plugin_manager().get_implementations(*types, sorting_context=sorting_context)
 	for plugin in plugins:
 		if hasattr(plugin, method):
 			try:
@@ -301,19 +303,16 @@ class PluginSettings(object):
 		self.set_preprocessors = dict(plugins=dict())
 		self.set_preprocessors["plugins"][plugin_key] = set_preprocessors
 
-		def prefix_path(path):
-			return ['plugins', self.plugin_key] + path
-
 		def prefix_path_in_args(args, index=0):
 			result = []
 			if index == 0:
-				result.append(prefix_path(args[0]))
+				result.append(self._prefix_path(args[0]))
 				result.extend(args[1:])
 			else:
 				args_before = args[:index - 1]
 				args_after = args[index + 1:]
 				result.extend(args_before)
-				result.append(prefix_path(args[index]))
+				result.append(self._prefix_path(args[index]))
 				result.extend(args_after)
 			return result
 
@@ -332,6 +331,7 @@ class PluginSettings(object):
 			return kwargs
 
 		self.access_methods = dict(
+			has        =("has",        prefix_path_in_args, add_getter_kwargs),
 			get        =("get",        prefix_path_in_args, add_getter_kwargs),
 			get_int    =("getInt",     prefix_path_in_args, add_getter_kwargs),
 			get_float  =("getFloat",   prefix_path_in_args, add_getter_kwargs),
@@ -339,7 +339,8 @@ class PluginSettings(object):
 			set        =("set",        prefix_path_in_args, add_setter_kwargs),
 			set_int    =("setInt",     prefix_path_in_args, add_setter_kwargs),
 			set_float  =("setFloat",   prefix_path_in_args, add_setter_kwargs),
-			set_boolean=("setBoolean", prefix_path_in_args, add_setter_kwargs)
+			set_boolean=("setBoolean", prefix_path_in_args, add_setter_kwargs),
+			remove     =("remove",     prefix_path_in_args)
 		)
 		self.deprecated_access_methods = dict(
 			getInt    ="get_int",
@@ -349,6 +350,17 @@ class PluginSettings(object):
 			setFloat  ="set_float",
 			setBoolean="set_boolean"
 		)
+
+	def _prefix_path(self, path=None):
+		if path is None:
+			path = list()
+		return ['plugins', self.plugin_key] + path
+
+	def global_has(self, path, **kwargs):
+		return self.settings.has(path, **kwargs)
+
+	def global_remove(self, path, **kwargs):
+		return self.settings.remove(path, **kwargs)
 
 	def global_get(self, path, **kwargs):
 		"""
@@ -442,6 +454,24 @@ class PluginSettings(object):
 		if not os.path.isdir(path):
 			os.makedirs(path)
 		return path
+
+	def get_all_data(self, **kwargs):
+		merged = kwargs.get("merged", True)
+		asdict = kwargs.get("asdict", True)
+		defaults = kwargs.get("defaults", self.defaults)
+		preprocessors = kwargs.get("preprocessors", self.get_preprocessors)
+
+		kwargs.update(dict(
+			merged=merged,
+			asdict=asdict,
+			defaults=defaults,
+			preprocessors=preprocessors
+		))
+
+		return self.settings.get(self._prefix_path(), **kwargs)
+
+	def clean_all_data(self):
+		self.settings.remove(self._prefix_path())
 
 	def __getattr__(self, item):
 		all_access_methods = self.access_methods.keys() + self.deprecated_access_methods.keys()

@@ -1,0 +1,22 @@
+<form class="form-horizontal">
+    <h3>{{ _('Commands') }}</h3>
+
+    <div class="control-group" title="{{ _('Command to restart the OctoPrint server') }}">
+        <label class="control-label" for="settings-serverRestartCommand">{{ _('Restart OctoPrint') }}</label>
+        <div class="controls">
+            <input type="text" class="input-block-level" data-bind="value: server_commands_serverRestartCommand" id="settings-serverRestartCommand">
+        </div>
+    </div>
+    <div class="control-group" title="{{ _('Command to restart the system OctoPrint is running on') }}">
+        <label class="control-label" for="settings-systemRestartCommand">{{ _('Restart system') }}</label>
+        <div class="controls">
+            <input type="text" class="input-block-level" data-bind="value: server_commands_systemRestartCommand" id="settings-systemRestartCommand">
+        </div>
+    </div>
+    <div class="control-group" title="{{ _('Command to shut down the system OctoPrint is running on') }}">
+        <label class="control-label" for="settings-systemShutdownCommand">{{ _('Shutdown system') }}</label>
+        <div class="controls">
+            <input type="text" class="input-block-level" data-bind="value: server_commands_systemShutdownCommand" id="settings-systemShutdownCommand">
+        </div>
+    </div>
+</form>

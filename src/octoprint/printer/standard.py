@@ -191,7 +191,9 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		 will be attempted.
 		"""
 		if self._comm is not None:
-			self._comm.close()
+			self.disconnect()
+
+		eventManager().fire(Events.CONNECTING)
 		self._printerProfileManager.select(profile)
 		self._comm = comm.MachineCom(port, baudrate, callbackObject=self, printerProfileManager=self._printerProfileManager)
 
@@ -199,11 +201,11 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		"""
 		 Closes the connection to the printer.
 		"""
+		eventManager().fire(Events.DISCONNECTING)
 		if self._comm is not None:
 			self._comm.close()
-		self._comm = None
-		self._printerProfileManager.deselect()
-		eventManager().fire(Events.DISCONNECTED)
+		else:
+			eventManager().fire(Events.DISCONNECTED)
 
 	def get_transport(self):
 
@@ -389,6 +391,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		self._timeEstimationData = TimeEstimationHelper(rolling_window=rolling_window, threshold=threshold, countdown=countdown)
 
 		self._lastProgressReport = None
+		self._setProgressData(0, None, None, None)
 		self._setCurrentZ(None)
 		self._comm.startPrint()
 
@@ -425,14 +428,17 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 				payload["origin"] = FileDestinations.SDCARD
 			eventManager().fire(Events.PRINT_FAILED, payload)
 
-	def get_state_string(self):
-		"""
-		 Returns a human readable string corresponding to the current communication state.
-		"""
+	def get_state_string(self, state=None):
 		if self._comm is None:
 			return "Offline"
 		else:
-			return self._comm.getStateString()
+			return self._comm.getStateString(state=state)
+
+	def get_state_id(self, state=None):
+		if self._comm is None:
+			return "OFFLINE"
+		else:
+			return self._comm.getStateId(state=state)
 
 	def get_current_data(self):
 		return self._stateMonitor.get_current_data()
@@ -560,6 +566,12 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		self._state = state
 		self._stateMonitor.set_state({"text": self.get_state_string(), "flags": self._getStateFlags()})
 
+		payload = dict(
+			state_id=self.get_state_id(self._state),
+			state_string=self.get_state_string(self._state)
+		)
+		eventManager().fire(Events.PRINTER_STATE_CHANGED, payload)
+
 	def _addLog(self, log):
 		self._log.append(log)
 		self._stateMonitor.add_log(log)
@@ -644,6 +656,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		if filename is not None:
 			if sd:
 				path_in_storage = filename
+				if path_in_storage.startswith("/"):
+					path_in_storage = path_in_storage[1:]
 				path_on_disk = None
 			else:
 				path_in_storage = self._fileManager.path_in_storage(FileDestinations.LOCAL, filename)
@@ -679,7 +693,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			# Use a string for mtime because it could be float and the
 			# javascript needs to exact match
 			if not sd:
-				date = int(os.stat(path_on_disk).st_ctime)
+				date = int(os.stat(path_on_disk).st_mtime)
 
 			try:
 				fileData = self._fileManager.get_metadata(FileDestinations.SDCARD if sd else FileDestinations.LOCAL, path_on_disk)
@@ -774,6 +788,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			self._setProgressData(0, None, None, None)
 			self._setCurrentZ(None)
 			self._setJobData(None, None, None)
+			self._printerProfileManager.deselect()
+			eventManager().fire(Events.DISCONNECTED)
 
 		self._setState(state)
 

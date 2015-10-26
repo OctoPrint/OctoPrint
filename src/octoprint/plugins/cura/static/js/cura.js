@@ -23,6 +23,10 @@ $(function() {
         self.profileDisplayName = ko.observable();
         self.profileDescription = ko.observable();
         self.profileAllowOverwrite = ko.observable(true);
+        self.profileMakeDefault = ko.observable(false);
+
+        self.unconfiguredCuraEngine = ko.observable();
+        self.unconfiguredSlicingProfile = ko.observable();
 
         self.uploadElement = $("#settings-cura-import");
         self.uploadButton = $("#settings-cura-import-start");
@@ -66,6 +70,7 @@ $(function() {
             dataType: "json",
             maxNumberOfFiles: 1,
             autoUpload: false,
+            headers: OctoPrint.getRequestHeaders(),
             add: function(e, data) {
                 if (data.files.length == 0) {
                     return false;
@@ -93,6 +98,9 @@ $(function() {
                     if (self.profileDescription() !== undefined) {
                         form["description"] = self.profileDescription();
                     }
+                    if (self.profileMakeDefault()) {
+                        form["default"] = true;
+                    }
 
                     data.formData = form;
                     data.submit();
@@ -107,6 +115,7 @@ $(function() {
                 self.profileDisplayName(undefined);
                 self.profileDescription(undefined);
                 self.profileAllowOverwrite(true);
+                self.profileMakeDefault(false);
 
                 $("#settings_plugin_cura_import").modal("hide");
                 self.requestData();
@@ -123,14 +132,11 @@ $(function() {
                 return (item.key == data.key);
             });
 
-            $.ajax({
-                url: data.resource(),
-                type: "DELETE",
-                success: function() {
+            OctoPrint.slicing.deleteProfileForSlicer("cura", data.key, {url: data.resource()})
+                .done(function() {
                     self.requestData();
                     self.slicingViewModel.requestData();
-                }
-            });
+                });
         };
 
         self.makeProfileDefault = function(data) {
@@ -148,35 +154,23 @@ $(function() {
                 item.isdefault(true);
             }
 
-            $.ajax({
-                url: data.resource(),
-                type: "PATCH",
-                dataType: "json",
-                data: JSON.stringify({default: true}),
-                contentType: "application/json; charset=UTF-8",
-                success: function() {
+            OctoPrint.slicing.updateProfileForSlicer("cura", data.key, {default: true}, {url: data.resource()})
+                .done(function() {
                     self.requestData();
-                }
-            });
+                });
         };
 
-        self.showImportProfileDialog = function() {
+        self.showImportProfileDialog = function(makeDefault) {
+            if (makeDefault == undefined) {
+                makeDefault = _.filter(self.profiles.items(), function(profile) { profile.isdefault() }).length == 0;
+            }
+            self.profileMakeDefault(makeDefault);
             $("#settings_plugin_cura_import").modal("show");
         };
 
         self.testEnginePath = function() {
-            $.ajax({
-                url: API_BASEURL + "util/test",
-                type: "POST",
-                dataType: "json",
-                data: JSON.stringify({
-                    command: "path",
-                    path: self.settings.plugins.cura.cura_engine(),
-                    check_type: "file",
-                    check_access: "x"
-                }),
-                contentType: "application/json; charset=UTF-8",
-                success: function(response) {
+            OctoPrint.util.testExecutable(self.settings.plugins.cura.cura_engine())
+                .done(function(response) {
                     if (!response.result) {
                         if (!response.exists) {
                             self.pathText(gettext("The path doesn't exist"));
@@ -190,17 +184,12 @@ $(function() {
                     }
                     self.pathOk(response.result);
                     self.pathBroken(!response.result);
-                }
-            })
+                });
         };
 
         self.requestData = function() {
-            $.ajax({
-                url: API_BASEURL + "slicing/cura/profiles",
-                type: "GET",
-                dataType: "json",
-                success: self.fromResponse
-            });
+            OctoPrint.slicing.listProfilesForSlicer("cura")
+                .done(self.fromResponse);
         };
 
         self.fromResponse = function(data) {
@@ -223,9 +212,28 @@ $(function() {
         };
 
         self.onSettingsHidden = function() {
+            self.resetPathTest();
+        };
+
+        self.resetPathTest = function() {
             self.pathBroken(false);
             self.pathOk(false);
             self.pathText("");
+        };
+
+        self.onWizardDetails = function(response) {
+            if (!response.hasOwnProperty("cura") || !response.cura.required) return;
+
+            if (response.cura.details.hasOwnProperty("engine")) {
+                self.unconfiguredCuraEngine(!response.cura.details.engine);
+            }
+            if (response.cura.details.hasOwnProperty("profile")) {
+                self.unconfiguredSlicingProfile(!response.cura.details.profile);
+            }
+        };
+
+        self.onWizardFinish = function() {
+            self.resetPathTest();
         };
     }
 
@@ -233,6 +241,6 @@ $(function() {
     OCTOPRINT_VIEWMODELS.push([
         CuraViewModel,
         ["loginStateViewModel", "settingsViewModel", "slicingViewModel"],
-        "#settings_plugin_cura"
+        ["#settings_plugin_cura", "#wizard_plugin_cura"]
     ]);
 });

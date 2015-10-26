@@ -1,0 +1,58 @@
+<div id="settings_plugin_cura_import" class="modal hide fade">
+    <div class="modal-header">
+        <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
+        <h3>{{ _('Import Existing Cura Profile') }}</h3>
+    </div>
+    <div class="modal-body">
+        <form class="form-horizontal">
+            <div class="control-group">
+                <label class="control-label">{{ _('Profile ini file') }}</label>
+                <div class="controls">
+                    <div class="input-prepend">
+                <span class="btn fileinput-button">
+                    <span>{{ _('Browse...') }}</span>
+                    <input id="settings-cura-import" type="file" name="file" data-url="{{ url_for("plugin.cura.import_cura_profile") }}">
+                </span>
+                        <span class="add-on" data-bind="text: fileName"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">{{ _('Identifier') }}</label>
+                <div class="controls">
+                    <input type="text" class="input-block-level" data-bind="value: profileName, attr: {placeholder: placeholderName}">
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">{{ _('Name') }}</label>
+                <div class="controls">
+                    <input type="text" class="input-block-level" data-bind="value: profileDisplayName, attr: {placeholder: placeholderDisplayName}">
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">{{ _('Description') }}</label>
+                <div class="controls">
+                    <input type="text" class="input-block-level" data-bind="value: profileDescription, attr: {placeholder: placeholderDescription}">
+                </div>
+            </div>
+            <div class="control-group">
+                <div class="controls">
+                    <label class="checkbox">
+                        <input type="checkbox" data-bind="checked: profileMakeDefault"> {{ _('Make default profile') }}
+                    </label>
+                </div>
+            </div>
+            <div class="control-group">
+                <div class="controls">
+                    <label class="checkbox">
+                        <input type="checkbox" data-bind="checked: profileAllowOverwrite"> {{ _('Overwrite existing file') }}
+                    </label>
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="modal-footer">
+        <button class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Abort') }}</button>
+        <button class="btn btn-primary" id="settings-cura-import-start">{{ _('Confirm') }}</button>
+    </div>
+</div>

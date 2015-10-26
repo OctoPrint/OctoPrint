@@ -63,13 +63,15 @@ def getSettings():
 			"temperatureGraph": s.getBoolean(["feature", "temperatureGraph"]),
 			"waitForStart": s.getBoolean(["feature", "waitForStartOnConnect"]),
 			"alwaysSendChecksum": s.getBoolean(["feature", "alwaysSendChecksum"]),
+			"neverSendChecksum": s.getBoolean(["feature", "neverSendChecksum"]),
 			"sdSupport": s.getBoolean(["feature", "sdSupport"]),
 			"sdAlwaysAvailable": s.getBoolean(["feature", "sdAlwaysAvailable"]),
 			"swallowOkAfterResend": s.getBoolean(["feature", "swallowOkAfterResend"]),
 			"repetierTargetTemp": s.getBoolean(["feature", "repetierTargetTemp"]),
 			"externalHeatupDetection": s.getBoolean(["feature", "externalHeatupDetection"]),
 			"keyboardControl": s.getBoolean(["feature", "keyboardControl"]),
-			"pollWatched": s.getBoolean(["feature", "pollWatched"])
+			"pollWatched": s.getBoolean(["feature", "pollWatched"]),
+			"ignoreIdenticalResends": s.getBoolean(["feature", "ignoreIdenticalResends"])
 		},
 		"serial": {
 			"port": connectionOptions["portPreference"],
@@ -81,10 +83,14 @@ def getSettings():
 			"timeoutDetection": s.getFloat(["serial", "timeout", "detection"]),
 			"timeoutCommunication": s.getFloat(["serial", "timeout", "communication"]),
 			"timeoutTemperature": s.getFloat(["serial", "timeout", "temperature"]),
+			"timeoutTemperatureTargetSet": s.getFloat(["serial", "timeout", "temperatureTargetSet"]),
 			"timeoutSdStatus": s.getFloat(["serial", "timeout", "sdStatus"]),
 			"log": s.getBoolean(["serial", "log"]),
 			"additionalPorts": s.get(["serial", "additionalPorts"]),
-			"longRunningCommands": s.get(["serial", "longRunningCommands"])
+			"additionalBaudrates": s.get(["serial", "additionalBaudrates"]),
+			"longRunningCommands": s.get(["serial", "longRunningCommands"]),
+			"checksumRequiringCommands": s.get(["serial", "checksumRequiringCommands"]),
+			"helloCommand": s.get(["serial", "helloCommand"])
 		},
 		"folder": {
 			"uploads": s.getBaseFolder("uploads"),
@@ -105,12 +111,24 @@ def getSettings():
 		"scripts": {
 			"gcode": {
 				"afterPrinterConnected": None,
+				"beforePrinterDisconnected": None,
 				"beforePrintStarted": None,
 				"afterPrintCancelled": None,
 				"afterPrintDone": None,
 				"beforePrintPaused": None,
 				"afterPrintResumed": None,
 				"snippets": dict()
+			}
+		},
+		"server": {
+			"commands": {
+				"systemShutdownCommand": s.get(["server", "commands", "systemShutdownCommand"]),
+				"systemRestartCommand": s.get(["server", "commands", "systemRestartCommand"]),
+				"serverRestartCommand": s.get(["server", "commands", "serverRestartCommand"])
+			},
+			"diskspace": {
+				"warning": s.getInt(["server", "diskspace", "warning"]),
+				"critical": s.getInt(["server", "diskspace", "critical"])
 			}
 		}
 	}
@@ -153,8 +171,6 @@ def getSettings():
 @restricted_access
 @admin_permission.require(403)
 def setSettings():
-	logger = logging.getLogger(__name__)
-
 	if not "application/json" in request.headers["Content-Type"]:
 		return make_response("Expected content-type JSON", 400)
 
@@ -162,6 +178,13 @@ def setSettings():
 		data = request.json
 	except BadRequest:
 		return make_response("Malformed JSON body in request", 400)
+
+	_saveSettings(data)
+	return getSettings()
+
+def _saveSettings(data):
+	logger = logging.getLogger(__name__)
+
 	s = settings()
 
 	if "api" in data.keys():
@@ -194,6 +217,7 @@ def setSettings():
 		if "temperatureGraph" in data["feature"].keys(): s.setBoolean(["feature", "temperatureGraph"], data["feature"]["temperatureGraph"])
 		if "waitForStart" in data["feature"].keys(): s.setBoolean(["feature", "waitForStartOnConnect"], data["feature"]["waitForStart"])
 		if "alwaysSendChecksum" in data["feature"].keys(): s.setBoolean(["feature", "alwaysSendChecksum"], data["feature"]["alwaysSendChecksum"])
+		if "neverSendChecksum" in data["feature"].keys(): s.setBoolean(["feature", "neverSendChecksum"], data["feature"]["neverSendChecksum"])
 		if "sdSupport" in data["feature"].keys(): s.setBoolean(["feature", "sdSupport"], data["feature"]["sdSupport"])
 		if "sdAlwaysAvailable" in data["feature"].keys(): s.setBoolean(["feature", "sdAlwaysAvailable"], data["feature"]["sdAlwaysAvailable"])
 		if "swallowOkAfterResend" in data["feature"].keys(): s.setBoolean(["feature", "swallowOkAfterResend"], data["feature"]["swallowOkAfterResend"])
@@ -201,6 +225,7 @@ def setSettings():
 		if "externalHeatupDetection" in data["feature"].keys(): s.setBoolean(["feature", "externalHeatupDetection"], data["feature"]["externalHeatupDetection"])
 		if "keyboardControl" in data["feature"].keys(): s.setBoolean(["feature", "keyboardControl"], data["feature"]["keyboardControl"])
 		if "pollWatched" in data["feature"]: s.setBoolean(["feature", "pollWatched"], data["feature"]["pollWatched"])
+		if "ignoreIdenticalResends" in data["feature"]: s.setBoolean(["feature", "ignoreIdenticalResends"], data["feature"]["ignoreIdenticalResends"])
 
 	if "serial" in data.keys():
 		if "autoconnect" in data["serial"].keys(): s.setBoolean(["serial", "autoconnect"], data["serial"]["autoconnect"])
@@ -210,9 +235,13 @@ def setSettings():
 		if "timeoutDetection" in data["serial"].keys(): s.setFloat(["serial", "timeout", "detection"], data["serial"]["timeoutDetection"])
 		if "timeoutCommunication" in data["serial"].keys(): s.setFloat(["serial", "timeout", "communication"], data["serial"]["timeoutCommunication"])
 		if "timeoutTemperature" in data["serial"].keys(): s.setFloat(["serial", "timeout", "temperature"], data["serial"]["timeoutTemperature"])
+		if "timeoutTemperatureTargetSet" in data["serial"].keys(): s.setFloat(["serial", "timeout", "temperatureTargetSet"], data["serial"]["timeoutTemperatureTargetSet"])
 		if "timeoutSdStatus" in data["serial"].keys(): s.setFloat(["serial", "timeout", "sdStatus"], data["serial"]["timeoutSdStatus"])
 		if "additionalPorts" in data["serial"] and isinstance(data["serial"]["additionalPorts"], (list, tuple)): s.set(["serial", "additionalPorts"], data["serial"]["additionalPorts"])
+		if "additionalBaudrates" in data["serial"] and isinstance(data["serial"]["additionalBaudrates"], (list, tuple)): s.set(["serial", "additionalBaudrates"], data["serial"]["additionalBaudrates"])
 		if "longRunningCommands" in data["serial"] and isinstance(data["serial"]["longRunningCommands"], (list, tuple)): s.set(["serial", "longRunningCommands"], data["serial"]["longRunningCommands"])
+		if "checksumRequiringCommands" in data["serial"] and isinstance(data["serial"]["checksumRequiringCommands"], (list, tuple)): s.set(["serial", "checksumRequiringCommands"], data["serial"]["checksumRequiringCommands"])
+		if "helloCommand" in data["serial"]: s.set(["serial", "helloCommand"], data["serial"]["helloCommand"])
 
 		oldLog = s.getBoolean(["serial", "log"])
 		if "log" in data["serial"].keys(): s.setBoolean(["serial", "log"], data["serial"]["log"])
@@ -250,6 +279,15 @@ def setSettings():
 					continue
 				s.saveScript("gcode", name, script.replace("\r\n", "\n").replace("\r", "\n"))
 
+	if "server" in data:
+		if "commands" in data["server"]:
+			if "systemShutdownCommand" in data["server"]["commands"].keys(): s.set(["server", "commands", "systemShutdownCommand"], data["server"]["commands"]["systemShutdownCommand"])
+			if "systemRestartCommand" in data["server"]["commands"].keys(): s.set(["server", "commands", "systemRestartCommand"], data["server"]["commands"]["systemRestartCommand"])
+			if "serverRestartCommand" in data["server"]["commands"].keys(): s.set(["server", "commands", "serverRestartCommand"], data["server"]["commands"]["serverRestartCommand"])
+		if "diskspace" in data["server"]:
+			if "warning" in data["server"]["diskspace"]: s.setInt(["server", "diskspace", "warning"], data["server"]["diskspace"]["warning"])
+			if "critical" in data["server"]["diskspace"]: s.setInt(["server", "diskspace", "critical"], data["server"]["diskspace"]["critical"])
+
 	if "plugins" in data:
 		for plugin in octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.SettingsPlugin):
 			plugin_id = plugin._identifier
@@ -265,7 +303,8 @@ def setSettings():
 					logger.exception("Could not save settings for plugin {name} ({version})".format(version=plugin._plugin_version, name=plugin._plugin_name))
 
 	if s.save():
-		eventManager().fire(Events.SETTINGS_UPDATED)
-
-	return getSettings()
-
+		payload = dict(
+			config_hash=s.config_hash,
+			effective_hash=s.effective_hash
+		)
+		eventManager().fire(Events.SETTINGS_UPDATED, payload=payload)

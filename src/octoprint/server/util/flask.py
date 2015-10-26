@@ -123,12 +123,19 @@ def enable_additional_translations(default_locale="en", additional_folders=None)
 
 def fix_webassets_cache():
 	from webassets import cache
-	import os
-	import tempfile
-	import pickle
-	import shutil
+
+	error_logger = logging.getLogger(__name__ + ".fix_webassets_cache")
 
 	def fixed_set(self, key, data):
+		import os
+		import tempfile
+		import pickle
+		import shutil
+
+		if not os.path.exists(self.directory):
+			error_logger.warn("Cache directory {} doesn't exist, not going "
+			                  "to attempt to write cache file".format(self.directory))
+
 		md5 = '%s' % cache.make_md5(self.V, key)
 		filename = os.path.join(self.directory, md5)
 		fd, temp_filename = tempfile.mkstemp(prefix='.' + md5,
@@ -147,6 +154,11 @@ def fix_webassets_cache():
 		import errno
 		import warnings
 		from webassets.cache import make_md5
+
+		if not os.path.exists(self.directory):
+			error_logger.warn("Cache directory {} doesn't exist, not going "
+			                  "to attempt to read cache file".format(self.directory))
+			return None
 
 		try:
 			hash = make_md5(self.V, key)
@@ -194,12 +206,15 @@ def fix_webassets_filtertool():
 		try:
 			content = func().getvalue()
 			if self.cache:
-				log.debug('Storing result in cache with key %s', key,)
-				self.cache.set(key, content)
+				try:
+					log.debug('Storing result in cache with key %s', key,)
+					self.cache.set(key, content)
+				except:
+					error_logger.exception("Got an exception while trying to save file to cache, not caching")
 			return MemoryHunk(content)
 		except:
 			error_logger.exception("Got an exception while trying to apply filter, ignoring file")
-			return MemoryHunk("")
+			return MemoryHunk(u"")
 
 	FilterTool._wrap_cache = fixed_wrap_cache
 
@@ -212,8 +227,10 @@ def passive_login():
 		user = flask.ext.login.current_user
 
 	if user is not None and not user.is_anonymous():
-		flask.g.user = user
 		flask.ext.principal.identity_changed.send(flask.current_app._get_current_object(), identity=flask.ext.principal.Identity(user.get_id()))
+		if hasattr(user, "get_session"):
+			flask.session["usersession.id"] = user.get_session()
+		flask.g.user = user
 		return flask.jsonify(user.asDict())
 	elif settings().getBoolean(["accessControl", "autologinLocal"]) \
 			and settings().get(["accessControl", "autologinAs"]) is not None \
@@ -237,7 +254,7 @@ def passive_login():
 			logger = logging.getLogger(__name__)
 			logger.exception("Could not autologin user %s for networks %r" % (autologinAs, localNetworks))
 
-	return ("", 204)
+	return "", 204
 
 
 #~~ cache decorator for cacheable views
@@ -266,11 +283,11 @@ def cached(timeout=5 * 60, key=lambda: "view/%s" % flask.request.path, unless=No
 			if not callable(refreshif) or not refreshif():
 				rv = _cache.get(cache_key)
 				if rv is not None:
-					logger.debug("Serving entry for {path} from cache".format(path=flask.request.path))
+					logger.debug("Serving entry for {path} from cache (key: {key})".format(path=flask.request.path, key=cache_key))
 					return rv
 
 			# get value from wrapped function
-			logger.debug("No cache entry or refreshing cache for {path}, calling wrapped function".format(path=flask.request.path))
+			logger.debug("No cache entry or refreshing cache for {path} (key: {key}), calling wrapped function".format(path=flask.request.path, key=cache_key))
 			rv = f(*args, **kwargs)
 
 			# do not store if the "unless_response" condition is true
@@ -306,6 +323,14 @@ def cache_check_response_headers(response):
 		return True
 
 	return False
+
+
+def add_non_caching_response_headers(response):
+	response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0"
+	response.headers["Pragma"] = "no-cache"
+	response.headers["Expires"] = "-1"
+	return response
+
 
 #~~ access validators for use with tornado
 
@@ -505,7 +530,8 @@ def get_remote_address(request):
 
 
 def get_json_command_from_request(request, valid_commands):
-	if not "application/json" in request.headers["Content-Type"]:
+	content_type = request.headers.get("Content-Type", None)
+	if content_type is None or not "application/json" in content_type:
 		return None, None, make_response("Expected content-type JSON", 400)
 
 	data = request.json
@@ -585,7 +611,7 @@ class SettingsCheckUpdater(webassets.updater.BaseUpdater):
 
 ##~~ plugin assets collector
 
-def collect_plugin_assets(enable_gcodeviewer=True, enable_timelapse=True, preferred_stylesheet="css"):
+def collect_plugin_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 	logger = logging.getLogger(__name__ + ".collect_plugin_assets")
 
 	supported_stylesheets = ("css", "less")
@@ -598,7 +624,6 @@ def collect_plugin_assets(enable_gcodeviewer=True, enable_timelapse=True, prefer
 		'js/app/viewmodels/appearance.js',
 		'js/app/viewmodels/connection.js',
 		'js/app/viewmodels/control.js',
-		'js/app/viewmodels/firstrun.js',
 		'js/app/viewmodels/files.js',
 		'js/app/viewmodels/loginstate.js',
 		'js/app/viewmodels/navigation.js',
@@ -606,11 +631,15 @@ def collect_plugin_assets(enable_gcodeviewer=True, enable_timelapse=True, prefer
 		'js/app/viewmodels/printerprofiles.js',
 		'js/app/viewmodels/settings.js',
 		'js/app/viewmodels/slicing.js',
+		'js/app/viewmodels/system.js',
 		'js/app/viewmodels/temperature.js',
 		'js/app/viewmodels/terminal.js',
+		'js/app/viewmodels/timelapse.js',
 		'js/app/viewmodels/users.js',
 		'js/app/viewmodels/log.js',
-		'js/app/viewmodels/usersettings.js'
+		'js/app/viewmodels/usersettings.js',
+		'js/app/viewmodels/wizard.js',
+		'js/app/viewmodels/about.js'
 	]
 	if enable_gcodeviewer:
 		assets["js"] += [
@@ -619,8 +648,6 @@ def collect_plugin_assets(enable_gcodeviewer=True, enable_timelapse=True, prefer
 			'gcodeviewer/js/gCodeReader.js',
 			'gcodeviewer/js/renderer.js'
 		]
-	if enable_timelapse:
-		assets["js"].append('js/app/viewmodels/timelapse.js')
 
 	if preferred_stylesheet == "less":
 		assets["less"].append('less/octoprint.less')

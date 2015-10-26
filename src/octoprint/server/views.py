@@ -6,34 +6,122 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import os
+import datetime
 
 from collections import defaultdict
 from flask import request, g, url_for, make_response, render_template, send_from_directory, redirect
 
 import octoprint.plugin
 
-from octoprint.server import app, userManager, pluginManager, gettext, debug, LOCALES, VERSION, DISPLAY_VERSION, UI_API_KEY
+from octoprint.server import app, userManager, pluginManager, gettext, \
+	debug, LOCALES, VERSION, DISPLAY_VERSION, UI_API_KEY, BRANCH
 from octoprint.settings import settings
+
+import re
 
 from . import util
 
 import logging
 _logger = logging.getLogger(__name__)
 
-@app.route("/")
-@util.flask.cached(refreshif=lambda: util.flask.cache_check_headers() or "_refresh" in request.values,
-                   key=lambda: "view/%s/%s" % (request.path, g.locale),
-                   unless_response=util.flask.cache_check_response_headers)
-def index():
+_templates = None
+_plugin_names = None
+_plugin_vars = None
 
+_valid_id_re = re.compile("[a-z_]+")
+_valid_div_re = re.compile("[a-zA-Z_-]+")
+
+@app.route("/")
+def index():
+	global _templates, _plugin_names, _plugin_vars
+
+	# helper to check if wizards are active
+	def wizard_active(templates):
+		return templates is not None and bool(templates["wizard"]["order"])
+
+	# we force a refresh if the client forces one or if we have wizards cached
+	force_refresh = util.flask.cache_check_headers() or "_refresh" in request.values or wizard_active(_templates)
+
+	# if we need to refresh our template cache or it's not yet set, process it
+	if force_refresh or _templates is None or _plugin_names is None or _plugin_vars is None:
+		_templates, _plugin_names, _plugin_vars = _process_templates()
+
+	now = datetime.datetime.utcnow()
+	render_kwargs = _get_render_kwargs(_templates, _plugin_names, _plugin_vars, now)
+
+	def get_cached_view(key, view):
+		return util.flask.cached(refreshif=lambda: force_refresh,
+		                         key=lambda: "ui:{}:{}".format(key, g.locale),
+		                         unless_response=util.flask.cache_check_response_headers)(view)
+
+	ui_plugins = pluginManager.get_implementations(octoprint.plugin.UiPlugin, sorting_context="UiPlugin.on_ui_render")
+	for plugin in ui_plugins:
+		if plugin.will_handle_ui(request):
+			# plugin claims responsibility, let it render the UI
+			cached = get_cached_view(plugin._identifier, plugin.on_ui_render)
+			response = cached(now, request, render_kwargs)
+			if response is not None:
+				break
+
+	else:
+		wizard = wizard_active(_templates)
+		enable_accesscontrol = userManager is not None
+		render_kwargs.update(dict(
+			webcamStream=settings().get(["webcam", "stream"]),
+			enableTemperatureGraph=settings().get(["feature", "temperatureGraph"]),
+			enableAccessControl=enable_accesscontrol,
+			enableSdSupport=settings().get(["feature", "sdSupport"]),
+			gcodeMobileThreshold=settings().get(["gcodeViewer", "mobileSizeThreshold"]),
+			gcodeThreshold=settings().get(["gcodeViewer", "sizeThreshold"]),
+			wizard=wizard,
+			now=now,
+		))
+
+		# no plugin took an interest, we'll use the default UI
+		def make_default_ui():
+			r = make_response(render_template("index.jinja2", **render_kwargs))
+			if wizard:
+				# if we have active wizard dialogs, set non caching headers
+				r = util.flask.add_non_caching_response_headers(r)
+			return r
+
+		cached = get_cached_view("_default", make_default_ui)
+		response = cached()
+
+	response.headers["Last-Modified"] = now
+
+	return response
+
+
+def _get_render_kwargs(templates, plugin_names, plugin_vars, now):
 	#~~ a bunch of settings
 
+	first_run = settings().getBoolean(["server", "firstRun"])
+	locales = dict((l.language, dict(language=l.language, display=l.display_name, english=l.english_name)) for l in LOCALES)
+
+	#~~ prepare full set of template vars for rendering
+
+	render_kwargs = dict(
+		debug=debug,
+		firstRun=first_run,
+		version=dict(number=VERSION, display=DISPLAY_VERSION, branch=BRANCH),
+		uiApiKey=UI_API_KEY,
+		templates=templates,
+		pluginNames=plugin_names,
+		locales=locales,
+	)
+	render_kwargs.update(plugin_vars)
+
+	return render_kwargs
+
+
+def _process_templates():
+	enable_accesscontrol = userManager is not None
+	first_run = settings().getBoolean(["server", "firstRun"])
 	enable_gcodeviewer = settings().getBoolean(["gcodeViewer", "enabled"])
 	enable_timelapse = (settings().get(["webcam", "snapshot"]) and settings().get(["webcam", "ffmpeg"]))
 	enable_systemmenu = settings().get(["system"]) is not None and settings().get(["system", "actions"]) is not None and len(settings().get(["system", "actions"])) > 0
-	enable_accesscontrol = userManager is not None
 	preferred_stylesheet = settings().get(["devel", "stylesheet"])
-	locales = dict((l.language, dict(language=l.language, display=l.display_name, english=l.english_name)) for l in LOCALES)
 
 	##~~ prepare templates
 
@@ -46,6 +134,8 @@ def index():
 		tab=dict(div=lambda x: "tab_plugin_" + x, template=lambda x: x + "_tab.jinja2", to_entry=lambda data: (data["name"], data)),
 		settings=dict(div=lambda x: "settings_plugin_" + x, template=lambda x: x + "_settings.jinja2", to_entry=lambda data: (data["name"], data)),
 		usersettings=dict(div=lambda x: "usersettings_plugin_" + x, template=lambda x: x + "_usersettings.jinja2", to_entry=lambda data: (data["name"], data)),
+		wizard=dict(div=lambda x: "wizard_plugin_" + x, template=lambda x: x + "_wizard.jinja2", to_entry=lambda data: (data["name"], data)),
+		about=dict(div=lambda x: "about_plugin_" + x, template=lambda x: x + "_about.jinja2", to_entry=lambda data: (data["name"], data)),
 		generic=dict(template=lambda x: x + ".jinja2", to_entry=lambda data: data)
 	)
 
@@ -56,6 +146,8 @@ def index():
 		tab=dict(add="append", key="name"),
 		settings=dict(add="custom_append", key="name", custom_add_entries=lambda missing: dict(section_plugins=(gettext("Plugins"), None)), custom_add_order=lambda missing: ["section_plugins"] + missing),
 		usersettings=dict(add="append", key="name"),
+		wizard=dict(add="append", key="name", key_extractor=lambda d, k: "0:{}".format(d[0]) if "mandatory" in d[1] and d[1]["mandatory"] else "1:{}".format(d[0])),
+		about=dict(add="append", key="name"),
 		generic=dict(add="append", key=None)
 	)
 
@@ -142,7 +234,7 @@ def index():
 		section_features=(gettext("Features"), None),
 
 		features=(gettext("Features"), dict(template="dialogs/settings/features.jinja2", _div="settings_features", custom_bindings=False)),
-		webcam=(gettext("Webcam"), dict(template="dialogs/settings/webcam.jinja2", _div="settings_webcam", custom_bindings=False)),
+		webcam=(gettext("Webcam & Timelapse"), dict(template="dialogs/settings/webcam.jinja2", _div="settings_webcam", custom_bindings=False)),
 		api=(gettext("API"), dict(template="dialogs/settings/api.jinja2", _div="settings_api", custom_bindings=False)),
 
 		section_octoprint=(gettext("OctoPrint"), None),
@@ -150,6 +242,7 @@ def index():
 		folders=(gettext("Folders"), dict(template="dialogs/settings/folders.jinja2", _div="settings_folders", custom_bindings=False)),
 		appearance=(gettext("Appearance"), dict(template="dialogs/settings/appearance.jinja2", _div="settings_appearance", custom_bindings=False)),
 		logs=(gettext("Logs"), dict(template="dialogs/settings/logs.jinja2", _div="settings_logs")),
+		server=(gettext("Server"), dict(template="dialogs/settings/server.jinja2", _div="settings_server", custom_bindings=False)),
 	)
 	if enable_accesscontrol:
 		templates["settings"]["entries"]["accesscontrol"] = (gettext("Access Control"), dict(template="dialogs/settings/accesscontrol.jinja2", _div="settings_users", custom_bindings=False))
@@ -162,19 +255,52 @@ def index():
 			interface=(gettext("Interface"), dict(template="dialogs/usersettings/interface.jinja2", _div="usersettings_interface", custom_bindings=False)),
 		)
 
+	# wizard
+
+	if first_run:
+		def custom_insert_order(existing, missing):
+			if "firstrunstart" in missing:
+				missing.remove("firstrunstart")
+			if "firstrunend" in missing:
+				missing.remove("firstrunend")
+
+			return ["firstrunstart"] + existing + missing + ["firstrunend"]
+
+		template_sorting["wizard"].update(dict(add="custom_insert", custom_insert_entries=lambda missing: dict(), custom_insert_order=custom_insert_order))
+		templates["wizard"]["entries"] = dict(
+			firstrunstart=(gettext("Start"), dict(template="dialogs/wizard/firstrun_start.jinja2", _div="wizard_firstrun_start")),
+			firstrunend=(gettext("Finish"), dict(template="dialogs/wizard/firstrun_end.jinja2", _div="wizard_firstrun_end")),
+		)
+
+	# about dialog
+
+	templates["about"]["entries"] = dict(
+		about=(gettext("About OctoPrint"), dict(template="dialogs/about/about.jinja2", _div="about_about", custom_bindings=False)),
+		license=(gettext("OctoPrint License"), dict(template="dialogs/about/license.jinja2", _div="about_license", custom_bindings=False)),
+		thirdparty=(gettext("Third Party Licenses"), dict(template="dialogs/about/thirdparty.jinja2", _div="about_thirdparty", custom_bindings=False)),
+		authors=(gettext("Authors"), dict(template="dialogs/about/authors.jinja2", _div="about_authors", custom_bindings=False)),
+		changelog=(gettext("Changelog"), dict(template="dialogs/about/changelog.jinja2", _div="about_changelog", custom_bindings=False))
+	)
+
 	# extract data from template plugins
 
 	template_plugins = pluginManager.get_implementations(octoprint.plugin.TemplatePlugin)
 
 	plugin_vars = dict()
 	plugin_names = set()
+	seen_wizards = settings().get(["server", "seenWizards"]) if not first_run else dict()
 	for implementation in template_plugins:
 		name = implementation._identifier
 		plugin_names.add(name)
+		wizard_required = False
+		wizard_ignored = False
 
 		try:
 			vars = implementation.get_template_vars()
 			configs = implementation.get_template_configs()
+			if isinstance(implementation, octoprint.plugin.WizardPlugin):
+				wizard_required = implementation.is_wizard_required()
+				wizard_ignored = octoprint.plugin.WizardPlugin.is_wizard_ignored(seen_wizards, implementation)
 		except:
 			_logger.exception("Error while retrieving template data for plugin {}, ignoring it".format(name))
 			continue
@@ -188,6 +314,9 @@ def index():
 			plugin_vars["plugin_" + name + "_" + var_name] = var_value
 
 		includes = _process_template_configs(name, implementation, configs, template_rules)
+
+		if not wizard_required or wizard_ignored:
+			includes["wizard"] = list()
 
 		for t in template_types:
 			for include in includes[t]:
@@ -226,12 +355,48 @@ def index():
 		if len(missing_in_order) == 0:
 			continue
 
+		# works with entries that are dicts and entries that are 2-tuples with the
+		# entry data at index 1
+		def config_extractor(item, key, default_value=None):
+			if isinstance(item, dict) and key in item:
+				return item[key] if key in item else default_value
+			elif isinstance(item, tuple) and len(item) > 1 and isinstance(item[1], dict) and key in item[1]:
+				return item[1][key] if key in item[1] else default_value
+
+			return default_value
+
 		# finally add anything that's not included in our order yet
-		sorted_missing = list(missing_in_order)
 		if template_sorting[t]["key"] is not None:
-			# anything but navbar and generic components get sorted by their name
-			if template_sorting[t]["key"] == "name":
-				sorted_missing = sorted(missing_in_order, key=lambda x: templates[t]["entries"][x][0])
+			# we'll use our config extractor as default key extractor
+			extractor = config_extractor
+
+			# if template type provides custom extractor, make sure its exceptions are handled
+			if "key_extractor" in template_sorting[t] and callable(template_sorting[t]["key_extractor"]):
+				def create_safe_extractor(extractor):
+					def f(x, k):
+						try:
+							return extractor(x, k)
+						except:
+							_logger.exception("Error while extracting sorting keys for template {}".format(t))
+							return None
+					return f
+				extractor = create_safe_extractor(template_sorting[t]["key_extractor"])
+
+			sort_key = template_sorting[t]["key"]
+
+			def key_func(x):
+				config = templates[t]["entries"][x]
+				entry_order = config_extractor(config, "order", default_value=None)
+				return entry_order is None, entry_order, extractor(config, sort_key)
+
+			sorted_missing = sorted(missing_in_order, key=key_func)
+		else:
+			def key_func(x):
+				config = templates[t]["entries"][x]
+				entry_order = config_extractor(config, "order", default_value=None)
+				return entry_order is None, entry_order
+
+			sorted_missing = sorted(missing_in_order, key=key_func)
 
 		if template_sorting[t]["add"] == "prepend":
 			templates[t]["order"] = sorted_missing + templates[t]["order"]
@@ -243,44 +408,11 @@ def index():
 		elif template_sorting[t]["add"] == "custom_append" and "custom_add_entries" in template_sorting[t] and "custom_add_order" in template_sorting[t]:
 			templates[t]["entries"].update(template_sorting[t]["custom_add_entries"](sorted_missing))
 			templates[t]["order"] += template_sorting[t]["custom_add_order"](sorted_missing)
+		elif template_sorting[t]["add"] == "custom_insert" and "custom_insert_entries" in template_sorting[t] and "custom_insert_order" in template_sorting[t]:
+			templates[t]["entries"].update(template_sorting[t]["custom_insert_entries"](sorted_missing))
+			templates[t]["order"] = template_sorting[t]["custom_insert_order"](templates[t]["order"], sorted_missing)
 
-	#~~ prepare full set of template vars for rendering
-
-	first_run = settings().getBoolean(["server", "firstRun"]) and (userManager is None or not userManager.hasBeenCustomized())
-	render_kwargs = dict(
-		webcamStream=settings().get(["webcam", "stream"]),
-		enableTemperatureGraph=settings().get(["feature", "temperatureGraph"]),
-		enableAccessControl=userManager is not None,
-		enableSdSupport=settings().get(["feature", "sdSupport"]),
-		firstRun=first_run,
-		debug=debug,
-		version=VERSION,
-		display_version=DISPLAY_VERSION,
-		gcodeMobileThreshold=settings().get(["gcodeViewer", "mobileSizeThreshold"]),
-		gcodeThreshold=settings().get(["gcodeViewer", "sizeThreshold"]),
-		uiApiKey=UI_API_KEY,
-		templates=templates,
-		pluginNames=plugin_names,
-		locales=locales
-	)
-	render_kwargs.update(plugin_vars)
-
-	#~~ render!
-
-	import datetime
-
-	response = make_response(render_template(
-		"index.jinja2",
-		**render_kwargs
-	))
-	response.headers["Last-Modified"] = datetime.datetime.now()
-
-	if first_run:
-		response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0"
-		response.headers["Pragma"] = "no-cache"
-		response.headers["Expires"] = "-1"
-
-	return response
+	return templates, plugin_names, plugin_vars
 
 
 def _process_template_configs(name, implementation, configs, rules):
@@ -319,6 +451,8 @@ def _process_template_configs(name, implementation, configs, rules):
 					app.jinja_env.get_or_select_template(data["template"])
 				except TemplateNotFound:
 					pass
+				except:
+					_logger.exception("Error in template {}, not going to include it".format(data["template"]))
 				else:
 					includes[template_type].append(rule["to_entry"](data))
 
@@ -343,6 +477,9 @@ def _process_template_config(name, implementation, rule, config=None, counter=1)
 		data["_div"] = rule["div"](name)
 		if "suffix" in data:
 			data["_div"] = data["_div"] + data["suffix"]
+		if not _valid_div_re.match(data["_div"]):
+			_logger.warn("Template config {} contains invalid div identifier {}, skipping it".format(name, data["_div"]))
+			return None
 
 	if not "template" in data:
 		data["template"] = rule["template"](name)
@@ -354,6 +491,7 @@ def _process_template_config(name, implementation, rule, config=None, counter=1)
 		data_bind = "allowBindings: true"
 		if "data_bind" in data:
 			data_bind = data_bind + ", " + data["data_bind"]
+		data_bind = data_bind.replace("\"", "\\\"")
 		data["data_bind"] = data_bind
 
 	data["_key"] = "plugin_" + name
@@ -362,13 +500,15 @@ def _process_template_config(name, implementation, rule, config=None, counter=1)
 
 	return data
 
+
 @app.route("/robots.txt")
 def robotsTxt():
 	return send_from_directory(app.static_folder, "robots.txt")
 
 
 @app.route("/i18n/<string:locale>/<string:domain>.js")
-@util.flask.cached(refreshif=lambda: util.flask.cache_check_headers() or "_refresh" in request.values, key=lambda: "view/%s/%s" % (request.path, g.locale))
+@util.flask.cached(refreshif=lambda: util.flask.cache_check_headers() or "_refresh" in request.values,
+                   key=lambda: "{}:{}".format(request.path, g.locale))
 def localeJs(locale, domain):
 	messages = dict()
 	plural_expr = None
@@ -447,5 +587,4 @@ def localeJs(locale, domain):
 @app.route("/plugin_assets/<string:name>/<path:filename>")
 def plugin_assets(name, filename):
 	return redirect(url_for("plugin." + name + ".static", filename=filename))
-
 

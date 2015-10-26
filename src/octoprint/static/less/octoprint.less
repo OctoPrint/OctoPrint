@@ -437,28 +437,6 @@ ul.dropdown-menu li a {
 
   //min-height: 440px;
 
-  .flipH {
-    -webkit-transform: scaleX(-1);
-    -moz-transform: scaleX(-1);
-    -ms-transform: scaleX(-1);
-  }
-
-  .flipV {
-    -webkit-transform: scaleY(-1);
-    -moz-transform: scaleY(-1);
-    -ms-transform: scaleY(-1);
-  }
-
-  .flipH.flipV {
-    -webkit-transform: scaleX(-1) scaleY(-1);
-    -moz-transform: scaleX(-1) scaleY(-1);
-    -ms-transform: scaleX(-1) scaleY(-1);
-  }
-
-  .rotate90 {
-    transform: rotate(-90deg);
-  }
-
   .keycontrol_overlay {
     position: absolute;
     left: 10px;
@@ -611,11 +589,11 @@ ul.dropdown-menu li a {
     }
   }
 
-  .custom_section_horizontal .custom_control {
+  .custom_section_horizontal > .custom_control {
     display: inline-block;
   }
 
-  .custom_section_vertical .custom_control {
+  .custom_section_vertical > .custom_control {
       display:block;
   }
 
@@ -685,14 +663,17 @@ ul.dropdown-menu li a {
   }
 }
 
-/** Settings dialog */
-#settings_dialog {
-  .modal-body {
-    #settings_dialog_menu {
-      margin-left: 0;
-    }
+#settings_dialog_menu,
+#wizard_dialog_menu {
+  margin-left: 0;
+}
+
+#wizard_firstrun_acl {
+  .acl_decision {
+    margin-top: 1em;
   }
 }
+
 
 
 #settings_appearance_managelanguagesdialog_emptylist {
@@ -755,6 +736,10 @@ ul.dropdown-menu li a {
 
 .text-right {
   text-align: right;
+}
+
+.text-center {
+  text-align: center;
 }
 
 .overflow_visible {
@@ -908,6 +893,29 @@ textarea.block {
   float: none;
   margin-left: auto;
   margin-right: auto;
+}
+
+.flipH {
+  -webkit-transform: scaleX(-1);
+  -moz-transform: scaleX(-1);
+  -ms-transform: scaleX(-1);
+}
+
+.flipV {
+  -webkit-transform: scaleY(-1);
+  -moz-transform: scaleY(-1);
+  -ms-transform: scaleY(-1);
+}
+
+.flipH.flipV {
+  -webkit-transform: scaleX(-1) scaleY(-1);
+  -moz-transform: scaleX(-1) scaleY(-1);
+  -ms-transform: scaleX(-1) scaleY(-1);
+}
+
+.rotate90 {
+  -webkit-transform: rotate(-90deg);
+  transform: rotate(-90deg);
 }
 
 /** Styles for Bootstrap Slider */

@@ -1,3 +1,21 @@
+<div class="alert" data-bind="visible: octoprintUnconfigured()">{% trans %}
+    Please configure the <strong>checkout folder</strong> of OctoPrint, otherwise
+    this plugin won't be able to update it. Click on the <i class="icon-wrench"></i> button
+    to do this. Also refer to the <a href="https://github.com/foosel/OctoPrint/wiki/Plugin:-Software-Update" target="_blank">Documentation</a>.
+{% endtrans %}</div>
+<div class="alert" data-bind="visible: !octoprintUnconfigured() && octoprintUnreleased()">{% trans %}
+    <p>
+        <strong>You are running a non-release version of OctoPrint but are tracking OctoPrint
+        releases.</strong>
+    </p><p>
+        You probably want OctoPrint to track the matching development version instead.
+        If you have a local OctoPrint checkout folder switched to another branch,
+        <strong>simply switching over to "Commit" tracking</strong> will already
+        take care of that. Otherwise please take a look at the
+        <a href="https://github.com/foosel/OctoPrint/wiki/Plugin:-Software-Update" target="_blank">Documentation</a>.
+    </p>
+{% endtrans %}</div>
+
 <div class="pull-right">
     <button class="btn btn-small" data-bind="click: function() { $root.showPluginSettings(); }" title="{{ _('Plugin Configuration') }}"><i class="icon-wrench"></i></button>
 </div>
@@ -11,7 +29,7 @@
             <span data-bind="invisible: !updateAvailable"><i class="icon-bell" title="{{ _('Update available') }}"></i></span>
         </td>
         <td class="settings_plugin_softwareupdate_column_information">
-            <strong data-bind="text: displayName"></strong>: <span data-bind="text: displayVersion"></span><br>
+            <strong data-bind="text: displayName"></strong>: <span data-bind="text: displayVersion"></span> <span data-bind="invisible: updatePossible"><i class="icon-exclamation-sign" title="{{ _('Update not possible, configuration ok?') }}"></i></span><br>
             <small class="muted">
                 {{ _('Installed:') }} <span data-bind="text: information.local.name"></span><br>
                 {{ _('Available:') }} <span data-bind="text: information.remote.name"></span>
@@ -44,7 +62,7 @@
     <div><small><a href="#" class="muted" onclick="$(this).children().toggleClass('icon-caret-right icon-caret-down').parent().parent().parent().next().slideToggle('fast')"><i class="icon-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
     <div class="hide">
         <button class="btn btn-block" data-bind="click: function() { $root.performCheck(true, true, true); }">{{ _('Force check for update (overrides cache used for update checks)') }}</button>
-        <button class="btn btn-block btn-danger" data-bind="click: function() { $root.update(true); }">{{ _('Force update now (even if no new versions are available)') }}</button>
+        <button class="btn btn-block btn-danger" data-bind="visible: CONFIG_DEBUG, click: function() { $root.update(true); }">{{ _('Force update now (even if no new versions are available)') }}</button>
     </div>
 </div>
 
@@ -56,15 +74,15 @@
     <div class="modal-body">
         <form class="form-horizontal">
             <div class="control-group">
-                <label class="control-label">{{ _('Restart Command') }}</label>
+                <label class="control-label">{{ _('OctoPrint checkout folder') }}</label>
                 <div class="controls">
-                    <input type="text" class="input-block-level" data-bind="value: config_restartCommand">
+                    <input type="text" class="input-block-level" data-bind="value: config_checkoutFolder">
                 </div>
             </div>
             <div class="control-group">
-                <label class="control-label">{{ _('Reboot Command') }}</label>
+                <label class="control-label">{{ _('OctoPrint version tracking') }}</label>
                 <div class="controls">
-                    <input type="text" class="input-block-level" data-bind="value: config_rebootCommand">
+                    <select data-bind="value: config_checkType, options: config_availableCheckTypes, optionsText: 'name', optionsValue: 'key'"></select>
                 </div>
             </div>
             <div class="control-group">

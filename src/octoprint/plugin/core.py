@@ -12,6 +12,12 @@ way and could be extracted into a separate Python module in the future.
 .. autoclass:: Plugin
    :members:
 
+.. autoclass:: RestartNeedingPlugin
+   :members:
+
+.. autoclass:: SortablePlugin
+   :members:
+
 """
 
 from __future__ import absolute_import
@@ -23,7 +29,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import os
 import imp
-from collections import defaultdict, namedtuple
+from collections import defaultdict, namedtuple, OrderedDict
 import logging
 
 import pkg_resources
@@ -127,6 +133,7 @@ class PluginInfo(object):
 		self.enabled = True
 		self.bundled = False
 		self.loaded = False
+		self.managable = True
 
 		self._name = name
 		self._version = version
@@ -449,9 +456,10 @@ class PluginManager(object):
 
 		self.enabled_plugins = dict()
 		self.disabled_plugins = dict()
-		self.plugin_hooks = defaultdict(list)
 		self.plugin_implementations = dict()
 		self.plugin_implementations_by_type = defaultdict(list)
+
+		self._plugin_hooks = defaultdict(list)
 
 		self.implementation_injects = dict()
 		self.implementation_inject_factories = []
@@ -468,11 +476,34 @@ class PluginManager(object):
 
 		self.marked_plugins = defaultdict(list)
 
+		self._python_install_dir = None
+		self._python_virtual_env = False
+		self._detect_python_environment()
+
+		self.reload_plugins(startup=True, initialize_implementations=False)
+
+	def _detect_python_environment(self):
+		from distutils.command.install import install as cmd_install
+		from distutils.dist import Distribution
+		import sys
+
+		cmd = cmd_install(Distribution())
+		cmd.finalize_options()
+
+		self._python_install_dir = cmd.install_lib
+		self._python_prefix = sys.prefix
+		self._python_virtual_env = hasattr(sys, "real_prefix") \
+		                           or (hasattr(sys, "base_prefix") and sys.prefix != sys.base_prefix)
+
 	@property
 	def plugins(self):
 		plugins = dict(self.enabled_plugins)
 		plugins.update(self.disabled_plugins)
 		return plugins
+
+	@property
+	def plugin_hooks(self):
+		return {key: map(lambda v: (v[1], v[2]), value) for key, value in self._plugin_hooks.items()}
 
 	def find_plugins(self, existing=None, ignore_uninstalled=True):
 		if existing is None:
@@ -490,12 +521,13 @@ class PluginManager(object):
 		result = dict()
 
 		for folder in folders:
-			readonly = False
+			flagged_readonly = False
 			if isinstance(folder, (list, tuple)):
 				if len(folder) == 2:
-					folder, readonly = folder
+					folder, flagged_readonly = folder
 				else:
 					continue
+			actual_readonly = not os.access(folder, os.W_OK)
 
 			if not os.path.exists(folder):
 				self.logger.warn("Plugin folder {folder} could not be found, skipping it".format(folder=folder))
@@ -518,8 +550,8 @@ class PluginManager(object):
 				plugin = self._import_plugin_from_module(key, folder=folder)
 				if plugin:
 					plugin.origin = FolderOrigin("folder", folder)
-					if readonly:
-						plugin.bundled = True
+					plugin.managable = not flagged_readonly and not actual_readonly
+					plugin.bundled = flagged_readonly
 
 					plugin.enabled = False
 
@@ -530,8 +562,17 @@ class PluginManager(object):
 	def _find_plugins_from_entry_points(self, groups, existing, ignore_uninstalled=True):
 		result = dict()
 
-		# let's make sure we have a current working set
+		# let's make sure we have a current working set ...
 		working_set = pkg_resources.WorkingSet()
+
+		# ... including the user's site packages
+		import site
+		import sys
+		if site.ENABLE_USER_SITE:
+			if not site.USER_SITE in working_set.entries:
+				working_set.add_entry(site.USER_SITE)
+			if not site.USER_SITE in sys.path:
+				site.addsitedir(site.USER_SITE)
 
 		if not isinstance(groups, (list, tuple)):
 			groups = [groups]
@@ -565,6 +606,16 @@ class PluginManager(object):
 				plugin = self._import_plugin_from_module(key, **kwargs)
 				if plugin:
 					plugin.origin = EntryPointOrigin("entry_point", group, module_name, package_name, version)
+
+					# plugin is manageable if its location is writable and OctoPrint
+					# is either not running from a virtual env or the plugin is
+					# installed in that virtual env - the virtual env's pip will not
+					# allow us to uninstall stuff that is installed outside
+					# of the virtual env, so this check is necessary
+					plugin.managable = os.access(plugin.location, os.W_OK) \
+					                   and (not self._python_virtual_env
+					                        or plugin.location.startswith(self._python_prefix))
+
 					plugin.enabled = False
 					result[key] = plugin
 
@@ -635,15 +686,24 @@ class PluginManager(object):
 				hooks=sum(map(lambda x: len(x), self.plugin_hooks.values()))
 			))
 
-	def mark_plugin(self, name, uninstalled=None):
+	def mark_plugin(self, name, **kwargs):
 		if not name in self.plugins:
-			self.logger.warn("Trying to mark an unknown plugin {name}".format(**locals()))
+			self.logger.debug("Trying to mark an unknown plugin {name}".format(**locals()))
 
-		if uninstalled is not None:
-			if uninstalled and not name in self.marked_plugins["uninstalled"]:
-				self.marked_plugins["uninstalled"].append(name)
-			elif not uninstalled and name in self.marked_plugins["uninstalled"]:
-				self.marked_plugins["uninstalled"].remove(name)
+		for key, value in kwargs.items():
+			if value is None:
+				continue
+
+			if value and not name in self.marked_plugins[key]:
+				self.marked_plugins[key].append(name)
+			elif not value and name in self.marked_plugins[key]:
+				self.marked_plugins[key].remove(name)
+
+	def is_plugin_marked(self, name, key):
+		if not name in self.plugins:
+			return False
+
+		return name in self.marked_plugins[key]
 
 	def load_plugin(self, name, plugin=None, startup=False, initialize_implementation=True):
 		if not name in self.plugins:
@@ -777,8 +837,15 @@ class PluginManager(object):
 		plugin.hotchangeable = self.is_restart_needing_plugin(plugin)
 
 		# evaluate registered hooks
-		for hook, callback in plugin.hooks.items():
-			self.plugin_hooks[hook].append((name, callback))
+		for hook, definition in plugin.hooks.items():
+			try:
+				callback, order = self._get_callback_and_order(definition)
+			except ValueError as e:
+				self.logger.warn("There is something wrong with the hook definition {} for plugin {}: {}".format(definition, name, str(e)))
+				continue
+
+			self._plugin_hooks[hook].append((order, name, callback))
+			self._sort_hooks(hook)
 
 		# evaluate registered implementation
 		if plugin.implementation:
@@ -789,9 +856,16 @@ class PluginManager(object):
 			self.plugin_implementations[name] = plugin.implementation
 
 	def _deactivate_plugin(self, name, plugin):
-		for hook, callback in plugin.hooks.items():
+		for hook, definition in plugin.hooks.items():
 			try:
-				self.plugin_hooks[hook].remove((name, callback))
+				callback, order = self._get_callback_and_order(definition)
+			except ValueError as e:
+				self.logger.warn("There is something wrong with the hook definition {} for plugin {}: {}".format(definition, name, str(e)))
+				continue
+
+			try:
+				self._plugin_hooks[hook].remove((order, name, callback))
+				self._sort_hooks(hook)
 			except ValueError:
 				# that's ok, the plugin was just not registered for the hook
 				pass
@@ -859,7 +933,7 @@ class PluginManager(object):
 			                                         additional_pre_inits=additional_pre_inits,
 			                                         additional_post_inits=additional_post_inits)
 
-		self.logger.info("Initialized {count} plugin(s)".format(count=len(self.plugin_implementations)))
+		self.logger.info("Initialized {count} plugin implementation(s)".format(count=len(self.plugin_implementations)))
 
 	def initialize_implementation_of_plugin(self, name, plugin, additional_injects=None, additional_inject_factories=None, additional_pre_inits=None, additional_post_inits=None):
 		if plugin.implementation is None:
@@ -959,8 +1033,8 @@ class PluginManager(object):
 				                                location_str=location_str,
 				                                show_enabled=show_enabled,
 				                                enabled_strs=enabled_str),
-				    sorted(self.enabled_plugins.values(), key=lambda x: x.name.lower()),
-			))))
+				    sorted(self.plugins.values(), key=lambda x: str(x).lower()))
+			)))
 
 	def get_plugin(self, identifier, require_enabled=True):
 		"""
@@ -1015,9 +1089,13 @@ class PluginManager(object):
 
 		if not hook in self.plugin_hooks:
 			return dict()
-		return {hook[0]: hook[1] for hook in self.plugin_hooks[hook]}
 
-	def get_implementations(self, *types):
+		result = OrderedDict()
+		for h in self.plugin_hooks[hook]:
+			result[h[0]] = h[1]
+		return result
+
+	def get_implementations(self, *types, **kwargs):
 		"""
 		Get all mixin implementations that implement *all* of the provided ``types``.
 
@@ -1027,6 +1105,8 @@ class PluginManager(object):
 		Returns:
 		    list: A list of all found implementations
 		"""
+
+		sorting_context = kwargs.get("sorting_context", None)
 
 		result = None
 
@@ -1038,10 +1118,28 @@ class PluginManager(object):
 				result = result.intersection(implementations)
 
 		if result is None:
-			return dict()
-		return [impl[1] for impl in result]
+			return []
 
-	def get_filtered_implementations(self, f, *types):
+		def sort_func(impl):
+			sorting_value = None
+			if sorting_context is not None and isinstance(impl[1], SortablePlugin):
+				try:
+					sorting_value = impl[1].get_sorting_key(sorting_context)
+				except:
+					self.logger.exception("Error while trying to retrieve sorting order for plugin {}".format(impl[0]))
+
+				if sorting_value is not None:
+					try:
+						int(sorting_value)
+					except ValueError:
+						self.logger.warn("The order value returned by {} for sorting context {} is not a valid integer, ignoring it".format(impl[0], sorting_context))
+						sorting_value = None
+
+			return sorting_value is None, sorting_value, impl[0]
+
+		return [impl[1] for impl in sorted(result, key=sort_func)]
+
+	def get_filtered_implementations(self, f, *types, **kwargs):
 		"""
 		Get all mixin implementation that implementat *all* of the provided ``types`` and match the provided filter `f`.
 
@@ -1054,7 +1152,7 @@ class PluginManager(object):
 		"""
 
 		assert callable(f)
-		implementations = self.get_implementations(*types)
+		implementations = self.get_implementations(*types, sorting_context=kwargs.get("sorting_context", None))
 		return filter(f, implementations)
 
 	def get_helpers(self, name, *helpers):
@@ -1113,6 +1211,32 @@ class PluginManager(object):
 		for client in self.registered_clients:
 			try: client(plugin, data)
 			except: self.logger.exception("Exception while sending plugin data to client")
+
+	def _sort_hooks(self, hook):
+		self._plugin_hooks[hook] = sorted(self._plugin_hooks[hook],
+		                                  key=lambda x: (x[0] is None, x[0], x[1], x[2]))
+
+	def _get_callback_and_order(self, hook):
+		if callable(hook):
+			return hook, None
+
+		elif isinstance(hook, tuple) and len(hook) == 2:
+			callback, order = hook
+
+			# test that callback is a callable
+			if not callable(callback):
+				raise ValueError("Hook callback is not a callable")
+
+			# test that number is an int
+			try:
+				int(order)
+			except ValueError:
+				raise ValueError("Hook order is not a number")
+
+			return callback, order
+
+		else:
+			raise ValueError("Invalid hook definition, neither a callable nor a 2-tuple (callback, order): {!r}".format(hook))
 
 
 class InstalledEntryPoint(pkginfo.Installed):
@@ -1207,7 +1331,35 @@ class Plugin(object):
 		pass
 
 class RestartNeedingPlugin(Plugin):
-	pass
+	"""
+	Mixin for plugin types that need a restart in order to be enabled.
+	"""
+
+class SortablePlugin(Plugin):
+	"""
+	Mixin for plugin types that are sortable.
+	"""
+
+	def get_sorting_key(self, context=None):
+		"""
+		Returns the sorting key to use for the implementation in the specified ``context``.
+
+		May return ``None`` if order is irrelevant.
+
+		Implementations returning None will be ordered by plugin identifier
+		after all implementations which did return a sorting key value that was
+		not None sorted by that.
+
+		Arguments:
+		    context (str): The sorting context for which to provide the
+		        sorting key value.
+
+		Returns:
+		    int or None: An integer signifying the sorting key value of the plugin
+		        (sorting will be done ascending), or None if the implementation
+		        doesn't care about calling order.
+		"""
+		return None
 
 class PluginNeedsRestart(Exception):
 	def __init__(self, name):

@@ -23,14 +23,18 @@ class PluginTestCase(unittest.TestCase):
 		self.plugin_manager.initialize_implementations()
 
 	def test_plugin_loading(self):
-		self.assertEquals(5, len(self.plugin_manager.enabled_plugins))
-		self.assertEquals(1, len(self.plugin_manager.plugin_hooks))
+		self.assertEquals(7, len(self.plugin_manager.enabled_plugins))
+		self.assertEquals(2, len(self.plugin_manager.plugin_hooks))
 		self.assertEquals(4, len(self.plugin_manager.plugin_implementations))
 		self.assertEquals(3, len(self.plugin_manager.plugin_implementations_by_type))
 
 		# hook_plugin
 		self.assertTrue("octoprint.core.startup" in self.plugin_manager.plugin_hooks)
 		self.assertEquals(1, len(self.plugin_manager.plugin_hooks["octoprint.core.startup"]))
+
+		# ordered hook plugins
+		self.assertTrue("some.ordered.callback" in self.plugin_manager.plugin_hooks)
+		self.assertEquals(3, len(self.plugin_manager.plugin_hooks["some.ordered.callback"]))
 
 		# TestStartupPlugin & TestMixedPlugin
 		self.assertTrue(octoprint.plugin.StartupPlugin in self.plugin_manager.plugin_implementations_by_type)
@@ -119,18 +123,31 @@ class PluginTestCase(unittest.TestCase):
 		hooks = self.plugin_manager.get_hooks("octoprint.printing.print")
 		self.assertEquals(0, len(hooks))
 
-	def test_get_implementation(self):
+	def test_sorted_hooks(self):
+		hooks = self.plugin_manager.get_hooks("some.ordered.callback")
+		self.assertEquals(3, len(hooks))
+		self.assertListEqual(["one_ordered_hook_plugin", "another_ordered_hook_plugin", "hook_plugin"], hooks.keys())
+
+	def test_get_implementations(self):
 		implementations = self.plugin_manager.get_implementations(octoprint.plugin.StartupPlugin)
-		self.assertEquals(2, len(implementations)) # startup_plugin, mixed_plugin
+		self.assertListEqual(["mixed_plugin", "startup_plugin"], map(lambda x: x._identifier, implementations))
 
 		implementations = self.plugin_manager.get_implementations(octoprint.plugin.SettingsPlugin)
-		self.assertEquals(2, len(implementations)) # settings_plugin, mixed_plugin
+		self.assertListEqual(["mixed_plugin", "settings_plugin"], map(lambda x: x._identifier, implementations))
 
 		implementations = self.plugin_manager.get_implementations(octoprint.plugin.StartupPlugin, octoprint.plugin.SettingsPlugin)
-		self.assertEquals(1, len(implementations)) # mixed_plugin
+		self.assertListEqual(["mixed_plugin"], map(lambda x: x._identifier, implementations))
 
 		implementations = self.plugin_manager.get_implementations(octoprint.plugin.AssetPlugin)
-		self.assertEquals(1, len(implementations)) # deprecated_plugin, but only first implementation!
+		self.assertListEqual(["deprecated_plugin"], map(lambda x: x._identifier, implementations))
+
+	def test_get_filtered_implementations(self):
+		implementations = self.plugin_manager.get_filtered_implementations(lambda x: x._identifier.startswith("startup"), octoprint.plugin.StartupPlugin)
+		self.assertEquals(1, len(implementations))
+
+	def test_get_sorted_implementations(self):
+		implementations = self.plugin_manager.get_implementations(octoprint.plugin.StartupPlugin, sorting_context="sorting_test")
+		self.assertListEqual(["startup_plugin", "mixed_plugin"], map(lambda x: x._identifier, implementations))
 
 	def test_client_registration(self):
 		def test_client(*args, **kwargs):

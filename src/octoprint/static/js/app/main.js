@@ -1,4 +1,6 @@
 $(function() {
+        OctoPrint = window.OctoPrint;
+
         //~~ Lodash setup
 
         _.mixin({"sprintf": sprintf, "vsprintf": vsprintf});
@@ -6,6 +8,23 @@ $(function() {
         //~~ Logging setup
 
         log.setLevel(CONFIG_DEBUG ? "debug" : "info");
+
+        //~~ OctoPrint client setup
+        OctoPrint.options.baseurl = BASEURL;
+        OctoPrint.options.apikey = UI_API_KEY;
+
+        OctoPrint.socket.onMessage("connected", function(data) {
+            var payload = data.data;
+            OctoPrint.options.apikey = payload.apikey;
+
+            // update the API key directly in jquery's ajax options too,
+            // to ensure the fileupload plugin and any plugins still using
+            // $.ajax directly still work fine too
+            UI_API_KEY = payload["apikey"];
+            $.ajaxSetup({
+                headers: {"X-Api-Key": UI_API_KEY}
+            });
+        });
 
         //~~ AJAX setup
 
@@ -19,6 +38,15 @@ $(function() {
         // send the current UI API key with any request
         $.ajaxSetup({
             headers: {"X-Api-Key": UI_API_KEY}
+        });
+
+        //~~ Initialize file upload plugin
+
+        $.widget("blueimp.fileupload", $.blueimp.fileupload, {
+            options: {
+                dropZone: null,
+                pasteZone: null
+            }
         });
 
         //~~ Initialize i18n
@@ -51,6 +79,27 @@ $(function() {
         //~~ Initialize PNotify
 
         PNotify.prototype.options.styling = "bootstrap2";
+        PNotify.prototype.options.mouse_reset = false;
+
+        PNotify.singleButtonNotify = function(options) {
+            if (!options.confirm || !options.confirm.buttons || !options.confirm.buttons.length) {
+                return new PNotify(options);
+            }
+
+            var autoDisplay = options.auto_display != false;
+
+            var params = $.extend(true, {}, options);
+            params.auto_display = false;
+
+            var notify = new PNotify(params);
+            notify.options.confirm.buttons = [notify.options.confirm.buttons[0]];
+            notify.modules.confirm.makeDialog(notify, notify.options.confirm);
+
+            if (autoDisplay) {
+                notify.open();
+            }
+            return notify;
+        };
 
         //~~ Initialize view models
 
@@ -58,7 +107,7 @@ $(function() {
         var viewModelMap = {};
 
         // Fix Function#name on browsers that do not support it (IE):
-        // see: http://stackoverflow.com/questions/6903762/function-name-not-supported-in-ie 
+        // see: http://stackoverflow.com/questions/6903762/function-name-not-supported-in-ie
         if (!(function f() {}).name) {
             Object.defineProperty(Function.prototype, 'name', {
                 get: function() {
@@ -320,7 +369,7 @@ $(function() {
                         .data("contextParent", $(this))
                         .show()
                         .css({
-                            position: "absolute",
+                            position: "fixed",
                             left: getMenuPosition(e.clientX, 'width', 'scrollLeft'),
                             top: getMenuPosition(e.clientY, 'height', 'scrollTop'),
                             "z-index": 9999
@@ -365,23 +414,13 @@ $(function() {
         tabs.on('show', function (e) {
             var current = e.target.hash;
             var previous = e.relatedTarget.hash;
-
-            _.each(allViewModels, function(viewModel) {
-                if (viewModel.hasOwnProperty("onTabChange")) {
-                    viewModel.onTabChange(current, previous);
-                }
-            });
+            callViewModels(allViewModels, "onTabChange", [current, previous]);
         });
 
         tabs.on('shown', function (e) {
             var current = e.target.hash;
             var previous = e.relatedTarget.hash;
-
-            _.each(allViewModels, function(viewModel) {
-                if (viewModel.hasOwnProperty("onAfterTabChange")) {
-                    viewModel.onAfterTabChange(current, previous);
-                }
-            });
+            callViewModels(allViewModels, "onAfterTabChange", [current, previous]);
         });
 
         // Fix input element click problems on dropdowns
@@ -396,11 +435,7 @@ $(function() {
 
         //~~ Starting up the app
 
-        _.each(allViewModels, function(viewModel) {
-            if (viewModel.hasOwnProperty("onStartup")) {
-                viewModel.onStartup();
-            }
-        });
+        callViewModels(allViewModels, "onStartup");
 
         //~~ view model binding
 
@@ -431,6 +466,8 @@ $(function() {
                         targets = [targets];
                     }
 
+                    viewModel._bindings = [];
+
                     _.each(targets, function(target) {
                         if (target == undefined) {
                             return;
@@ -456,6 +493,12 @@ $(function() {
 
                         try {
                             ko.applyBindings(viewModel, element);
+                            viewModel._bindings.push(target);
+
+                            if (viewModel.hasOwnProperty("onBoundTo")) {
+                                viewModel.onBoundTo(target, element);
+                            }
+
                             log.debug("View model", viewModel.constructor.name, "bound to", target);
                         } catch (exc) {
                             log.error("Could not bind view model", viewModel.constructor.name, "to target", target, ":", (exc.stack || exc));
@@ -463,29 +506,24 @@ $(function() {
                     });
                 }
 
+                viewModel._unbound = viewModel._bindings != undefined && viewModel._bindings.length == 0;
+
                 if (viewModel.hasOwnProperty("onAfterBinding")) {
                     viewModel.onAfterBinding();
                 }
             });
 
-            _.each(allViewModels, function(viewModel) {
-                if (viewModel.hasOwnProperty("onAllBound")) {
-                    viewModel.onAllBound(allViewModels);
-                }
-            });
+            callViewModels(allViewModels, "onAllBound", [allViewModels]);
             log.info("... binding done");
 
-            _.each(allViewModels, function(viewModel) {
-                if (viewModel.hasOwnProperty("onStartupComplete")) {
-                    viewModel.onStartupComplete();
-                }
-            });
+            callViewModels(allViewModels, "onStartupComplete");
         };
 
         if (!_.has(viewModelMap, "settingsViewModel")) {
             throw new Error("settingsViewModel is missing, can't run UI")
         }
-        viewModelMap["settingsViewModel"].requestData(bindViewModels);
+        viewModelMap["settingsViewModel"].requestData()
+            .done(bindViewModels);
     }
 );
 

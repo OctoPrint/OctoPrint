@@ -1,25 +1,67 @@
 OctoPrint
 =========
 
-[![Flattr this git repo](http://api.flattr.com/button/flattr-badge-large.png)](https://flattr.com/submit/auto?user_id=foosel&url=https://github.com/foosel/OctoPrint&title=OctoPrint&language=&tags=github&category=software)
-
-OctoPrint provides a responsive web interface for controlling a 3D printer (RepRap, Ultimaker, ...). It is Free Software
+OctoPrint provides a snappy web interface for controlling a 3D printer (RepRap, Ultimaker, ...). It is Free Software
 and released under the [GNU Affero General Public License V3](http://www.gnu.org/licenses/agpl.html).
 
 Its website can be found at [octoprint.org](http://octoprint.org).
 
+The documentation is located at [docs.octoprint.org](http://docs.octoprint.org).
+
+The official plugin repository can be reached at [plugins.octoprint.org](http://plugins.octoprint.org).
+
+![Screenshot](http://i.imgur.com/dF3noFp.png)
+
+You are currently looking at the source code repository of OctoPrint. If you already installed it
+(e.g. by using the Raspberry Pi targeted distribution [OctoPi](https://github.com/guysoft/OctoPi)) and only
+want to find out how to use it, [the documentation](http://docs.octoprint.org/) and [the public wiki](https://github.com/foosel/OctoPrint/wiki)
+might be of more interest for you. You might also want to subscribe to [the mailing list](https://groups.google.com/group/octoprint)
+or the [G+ Community](https://plus.google.com/communities/102771308349328485741) where there are other active users who might be
+able to help you with any questions you might have.
+
 Contributing
 ------------
 
-Please see the project's [Contribution Guidelines](https://github.com/foosel/OctoPrint/blob/master/CONTRIBUTING.md).
+Contributions of all kinds are welcome, not only in the form of code but also with regards to the
+[official documentation](http://docs.octoprint.org/) or [the public wiki](https://github.com/foosel/OctoPrint/wiki), support
+of other users in the [bug tracker](https://github.com/foosel/OctoPrint/issues),
+[the Mailinglist](https://groups.google.com/group/octoprint) or
+[the G+ Community](https://plus.google.com/communities/102771308349328485741).
+
+If you think something is bad as it is about OctoPrint or its documentation the way it is, please help
+in any way to make it better instead of just complaining about it -- this is an Open Source Project
+after all :)
+
+For information about how to go about contributions of any kind, please see the project's
+[Contribution Guidelines](https://github.com/foosel/OctoPrint/blob/master/CONTRIBUTING.md).
 
 Installation
 ------------
 
-Installation instructions for installing from source for different operating systems can be found [on the wiki](https://github.com/foosel/OctoPrint/wiki#assorted-guides).
+Installation instructions for installing from source for different operating
+systems can be found [on the wiki](https://github.com/foosel/OctoPrint/wiki#assorted-guides).
 
 If you want to run OctoPrint on a Raspberry Pi you might want to take a look at [OctoPi](https://github.com/guysoft/OctoPi)
 which is a custom SD card image that includes OctoPrint plus dependencies.
+
+The generic steps that should basically be done regardless of operating system
+and runtime environment are the following (as *regular
+user*, please keep your hands *off* of the `sudo` command here!) - this assumes
+you already have Python 2.7, pip and virtualenv set up:
+
+1. Checkout OctoPrint: `git clone https://github.com/foosel/OctoPrint.git`
+2. Change into the OctoPrint folder: `cd OctoPrint`
+3. Create a user-owned virtual environment therein: `virtualenv --system-site-packages venv`
+4. Install OctoPrint *into that virtual environment*: `./venv/bin/python setup.py install`
+
+You may then start the OctoPrint server via `/path/to/OctoPrint/venv/bin/octoprint`, see [Usage](#usage)
+for details.
+
+After installation, please make sure you follow the first-run wizard and set up
+access control as necessary. If you want to not only be notified about new
+releases but also be able to automatically upgrade to them from within
+OctoPrint, take a look [at the documentation of the Software Update Plugin](https://github.com/foosel/OctoPrint/wiki/Plugin:-Software-Update#making-octoprint-updateable-on-existing-installations)
+and at its settings.
 
 Dependencies
 ------------
@@ -36,7 +78,11 @@ OctoPrint currently only supports Python 2.7.
 Usage
 -----
 
-Running the `setup.py` script installs the `octoprint` script in your Python installation's scripts folder
+Running the `setup.py` script via
+
+    python setup.py install
+
+installs the `octoprint` script in your Python installation's scripts folder
 (which depending on whether you installed OctoPrint globally or into a virtual env will be on your `PATH` or not). The
 following usage examples assume that said `octoprint` script is on your `PATH`.
 
@@ -77,5 +123,13 @@ which is located at `~/.octoprint` on Linux, at `%APPDATA%/OctoPrint` on Windows
 at `~/Library/Application Support/OctoPrint` on MacOS.
 
 A comprehensive overview of all available configuration settings can be found
-[on the wiki](https://github.com/foosel/OctoPrint/wiki/Configuration). Please note that the most commonly used
-configuration settings can also easily be edited from OctoPrint's settings dialog.
+[in the docs](http://docs.octoprint.org/en/master/configuration/config_yaml.html).
+Please note that the most commonly used configuration settings can also easily
+be edited from OctoPrint's settings dialog.
+
+Special Thanks
+--------------
+
+The development of OctoPrint is sponsored and maintained by [BQ](http://www.bq.com/).
+Cross-browser testing services are kindly provided by [BrowserStack](http://www.browserstack.com/).
+Profiling is done with the help of [PyVmMonitor](http://www.pyvmmonitor.com).

@@ -29,6 +29,7 @@ $(function() {
         self.ui_modelInfo = ko.observable("");
         self.ui_layerInfo = ko.observable("");
 
+        self.tabActive = false;
         self.enableReload = ko.observable(false);
 
         self.waitForApproval = ko.observable(false);
@@ -231,19 +232,20 @@ $(function() {
             self._configureLayerSlider(layerSliderElement);
             self._configureLayerCommandSlider(commandSliderElement);
 
-            self.settings.requestData(function() {
-                GCODE.ui.init({
-                    container: "#gcode_canvas",
-                    onProgress: self._onProgress,
-                    onModelLoaded: self._onModelLoaded,
-                    onLayerSelected: self._onLayerSelected,
-                    bed: self._retrieveBedDimensions(),
-                    toolOffsets: self._retrieveToolOffsets(),
-                    invertAxes: self._retrieveAxesConfiguration()
+            self.settings.requestData()
+                .done(function() {
+                    GCODE.ui.init({
+                        container: "#gcode_canvas",
+                        onProgress: self._onProgress,
+                        onModelLoaded: self._onModelLoaded,
+                        onLayerSelected: self._onLayerSelected,
+                        bed: self._retrieveBedDimensions(),
+                        toolOffsets: self._retrieveToolOffsets(),
+                        invertAxes: self._retrieveAxesConfiguration()
+                    });
+                    self.synchronizeOptions();
+                    self.enabled = true;
                 });
-                self.synchronizeOptions();
-                self.enabled = true;
-            });
         };
 
         self.reset = function() {
@@ -289,11 +291,8 @@ $(function() {
             self.enableReload(false);
             if (self.status == "idle" && self.errorCount < 3) {
                 self.status = "request";
-                $.ajax({
-                    url: BASEURL + "downloads/files/local/" + filename,
-                    data: { "ctime": date },
-                    type: "GET",
-                    success: function(response, rstatus) {
+                OctoPrint.files.download("local", filename)
+                    .done(function(response, rstatus) {
                         if(rstatus === 'success'){
                             self.showGCodeViewer(response, rstatus);
                             self.loadedFilename = filename;
@@ -301,12 +300,11 @@ $(function() {
                             self.status = "idle";
                             self.enableReload(true);
                         }
-                    },
-                    error: function() {
+                    })
+                    .fail(function() {
                         self.status = "idle";
                         self.errorCount++;
-                    }
-                });
+                    });
             }
         };
 
@@ -358,7 +356,7 @@ $(function() {
             if(self.loadedFilename
                     && self.loadedFilename == data.job.file.name
                     && self.loadedFileDate == data.job.file.date) {
-                if (self.currentlyPrinting && self.renderer_syncProgress() && !self.waitForApproval()) {
+                if (self.tabActive && self.currentlyPrinting && self.renderer_syncProgress() && !self.waitForApproval()) {
                     var cmdIndex = GCODE.gCodeReader.getCmdIndexForPercentage(data.progress.completion);
                     if(cmdIndex){
                         GCODE.renderer.render(cmdIndex.layer, 0, cmdIndex.cmd);
@@ -506,6 +504,10 @@ $(function() {
             self.initialize();
         }
 
+        self.onTabChange = function(current, previous) {
+            self.tabActive = current == "#gcode";
+
+        }
     }
 
     OCTOPRINT_VIEWMODELS.push([
