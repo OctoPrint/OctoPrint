@@ -395,12 +395,12 @@ def octo(ctx, debug, host, port, basedir, configfile, logging, daemon, pid, allo
 			           "start|stop|restart\" is deprecated, please use "
 			           "\"octoprint daemon start|stop|restart\" from now on")
 
-			ctx.invoke(daemon_command, pid=pid, daemon=daemon, debug=debug, allow_root=allow_root)
+			ctx.invoke(daemon_command, pid=pid, daemon=daemon, allow_root=allow_root)
 		else:
 			click.echo("Starting the server via \"octoprint\" is deprecated, "
 			           "please use \"octoprint serve\" from now on.")
 
-			ctx.invoke(serve_command, host=host, port=port, logging=logging, debug=debug, allow_root=allow_root)
+			ctx.invoke(serve_command, host=host, port=port, logging=logging, allow_root=allow_root)
 
 
 def main():
