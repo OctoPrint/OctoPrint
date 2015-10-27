@@ -3,7 +3,6 @@
 from __future__ import absolute_import, print_function
 
 import sys
-import click
 import logging
 
 #~~ version
@@ -18,14 +17,11 @@ __display_version__ = "{} ({} branch)".format(__version__, __branch__) if __bran
 del versions
 del get_versions
 
-
-from octoprint.daemon import Daemon
-from octoprint.server import Server
+#~~ sane logging defaults
 
 logging.basicConfig()
 
 #~~ init methods to bring up platform
-
 
 def init_platform(basedir, configfile, use_logging_file=True, logging_file=None,
                   logging_config=None, debug=False, uncaught_logger=None,
@@ -160,266 +156,10 @@ def init_pluginsystem(settings):
 	from octoprint.plugin import plugin_manager
 	return plugin_manager(init=True, settings=settings)
 
-
-#~~ Custom click option to hide from help
-
-
-class HiddenOption(click.Option):
-	def get_help_record(self, ctx):
-		pass
-
-def hidden_option(*param_decls, **attrs):
-	"""Attaches a hidden option to the command.  All positional arguments are
-	passed as parameter declarations to :class:`Option`; all keyword
-	arguments are forwarded unchanged.  This is equivalent to creating an
-	:class:`Option` instance manually and attaching it to the
-	:attr:`Command.params` list.
-	"""
-
-	import inspect
-	from click.decorators import _param_memo
-
-	def decorator(f):
-		if 'help' in attrs:
-			attrs['help'] = inspect.cleandoc(attrs['help'])
-		_param_memo(f, HiddenOption(param_decls, **attrs))
-		return f
-	return decorator
-
-
-#~~ daemon class
-
-
-class OctoPrintDaemon(Daemon):
-	def __init__(self, pidfile, basedir, configfile, host, port, debug, allow_root, logging_config):
-		Daemon.__init__(self, pidfile)
-
-		self._basedir = basedir
-		self._configfile = configfile
-		self._host = host
-		self._port = port
-		self._debug = debug
-		self._allow_root = allow_root
-		self._logging_config = logging_config
-
-	def run(self):
-		run_server(self._basedir, self._configfile, self._host, self._port, self._debug, self._allow_root, self._logging_config)
-
-
 #~~ server main method
 
-
-def run_server(basedir, configfile, host, port, debug, allow_root, logging_config):
-	def log_startup(_):
-		logging.getLogger("octoprint.server").info("Starting OctoPrint {}".format(__display_version__))
-
-	settings, _, plugin_manager = init_platform(basedir,
-	                                            configfile,
-	                                            logging_file=logging_config,
-	                                            debug=debug,
-	                                            uncaught_logger=__name__,
-	                                            after_logging=log_startup)
-
-	octoprint = Server(settings=settings, plugin_manager=plugin_manager, host=host, port=port, debug=debug, allow_root=allow_root)
-	octoprint.run()
-
-
-#~~ click context
-
-
-class OctoPrintContext(object):
-	def __init__(self, configfile=None, basedir=None, debug=False):
-		self.configfile = configfile
-		self.basedir = basedir
-		self.debug = debug
-pass_octoprint_ctx = click.make_pass_decorator(OctoPrintContext, ensure=True)
-
-
-#~~ "octoprint serve" and "octoprint daemon" commands
-
-
-@click.group()
-@pass_octoprint_ctx
-def server_commands(obj):
-	pass
-
-
-@server_commands.command(name="serve")
-@click.option("--host", type=click.STRING,
-              help="Specify the host on which to bind the server.")
-@click.option("--port", type=click.INT,
-              help="Specify the port on which to bind the server.")
-@click.option("--logging", type=click.Path(),
-              help="Specify the config file to use for configuring logging.")
-@click.option("--iknowwhatimdoing", "allow_root", is_flag=True,
-              help="Allow OctoPrint to run as user root.")
-@pass_octoprint_ctx
-def serve_command(obj, host, port, logging, allow_root):
-	"""Starts the OctoPrint server."""
-	run_server(obj.basedir, obj.configfile, host, port, obj.debug,
-	           allow_root, logging)
-
-
-@server_commands.command(name="daemon")
-@click.option("--pid", type=click.Path(),
-              help="Pidfile to use for daemonizing.")
-@click.option("--host", type=click.STRING,
-              help="Specify the host on which to bind the server.")
-@click.option("--port", type=click.INT,
-              help="Specify the port on which to bind the server.")
-@click.option("--logging", type=click.Path(),
-              help="Specify the config file to use for configuring logging.")
-@click.option("--debug", "-d", is_flag=True,
-              help="Enable debug mode")
-@click.option("--iknowwhatimdoing", "allow_root", is_flag=True,
-              help="Allow OctoPrint to run as user root.")
-@click.argument("command", type=click.Choice(["start", "stop", "restart"]),
-                metavar="start|stop|restart")
-@pass_octoprint_ctx
-def daemon_command(octoprint_ctx, pid, host, port, logging, allow_root, command):
-	"""
-	Starts, stops or restarts in daemon mode.
-
-	Please note that daemon mode is only supported under Linux right now.
-	"""
-	if sys.platform == "darwin" or sys.platform == "win32":
-		click.echo("Sorry, daemon mode is only supported under Linux right now",
-		           file=sys.stderr)
-		sys.exit(2)
-
-	daemon = OctoPrintDaemon(pid, octoprint_ctx.basedir, octoprint_ctx.configfile,
-	              host, port, octoprint_ctx.debug, allow_root, logging)
-
-	if command == "start":
-		daemon.start()
-	elif command == "stop":
-		daemon.stop()
-	elif command == "restart":
-		daemon.restart()
-
-
-#~~ "octoprint plugin:command" commands
-
-
-class OctoPrintCli(click.MultiCommand):
-	"""
-	Custom `click.MultiCommand` implementation that collects commands from
-	the plugin hook "octoprint.cli.commands".
-	"""
-
-	sep = ":"
-	"""Separator for commands between plugin name and command name."""
-
-	def __init__(self, *args, **kwargs):
-		click.MultiCommand.__init__(self, *args, **kwargs)
-		self._settings = None
-		self._plugin_manager = None
-		self._logger = logging.getLogger(__name__)
-
-	def _initialize(self, ctx):
-		if self._settings is not None:
-			return
-
-		if ctx.obj is None:
-			ctx.obj = OctoPrintContext()
-
-		# initialize settings and plugin manager based on provided
-		# context (basedir and configfile)
-		self._settings = init_settings(ctx.obj.basedir, ctx.obj.configfile)
-		self._plugin_manager = init_pluginsystem(self._settings)
-
-		# fetch registered hooks
-		self._hooks = self._plugin_manager.get_hooks("octoprint.cli.commands")
-
-	def list_commands(self, ctx):
-		self._initialize(ctx)
-		result = [name for name in self._get_commands()]
-		result.sort()
-		return result
-
-	def get_command(self, ctx, cmd_name):
-		self._initialize(ctx)
-		commands = self._get_commands()
-		return commands.get(cmd_name, None)
-
-	def _get_commands(self):
-		"""Fetch all commands from plugins providing any."""
-
-		import collections
-		result = collections.OrderedDict()
-
-		for name, hook in self._hooks.items():
-			try:
-				commands = hook(self, pass_octoprint_ctx)
-				for command in commands:
-					if not isinstance(command, click.Command):
-						self._logger.warn("Plugin {} provided invalid CLI command, ignoring it: {!r}".format(name, command))
-						continue
-					result[name + self.sep + command.name] = command
-			except:
-				self._logger.exception("Error while retrieving cli commants for plugin {}".format(name))
-
-		return result
-
-
-@click.group(cls=OctoPrintCli)
-@pass_octoprint_ctx
-def plugin_commands(obj):
-	"""Commands provided by plugins."""
-	logging.basicConfig(level=logging.DEBUG if obj.debug else logging.WARN)
-
-
-#~~ "octoprint" command, merges server_commands and plugin_commands groups
-
-
-def set_ctx_obj_option(ctx, param, value):
-	"""Helper for setting eager options on the context."""
-	if ctx.obj is None:
-		ctx.obj = OctoPrintContext()
-
-	if hasattr(ctx.obj, param.name):
-		setattr(ctx.obj, param.name, value)
-
-
-@click.group(name="octoprint", invoke_without_command=True, cls=click.CommandCollection,
-             sources=[server_commands, plugin_commands])
-@click.option("--basedir", "-b", type=click.Path(), callback=set_ctx_obj_option, is_eager=True,
-              help="Specify the basedir to use for uploads, timelapses etc.")
-@click.option("--config", "-c", "configfile", type=click.Path(), callback=set_ctx_obj_option, is_eager=True,
-              help="Specify the config file to use.")
-@click.option("--debug", "-d", is_flag=True, callback=set_ctx_obj_option, is_eager=True,
-              help="Enable debug mode")
-@hidden_option("--host", type=click.STRING)
-@hidden_option("--port", type=click.INT)
-@hidden_option("--logging", type=click.Path())
-@hidden_option("--daemon", type=click.Choice(["start", "stop", "restart"]))
-@hidden_option("--pid", type=click.Path())
-@hidden_option("--iknowwhatimdoing", "allow_root", is_flag=True)
-@click.version_option(version=__version__)
-@click.pass_context
-def octo(ctx, debug, host, port, basedir, configfile, logging, daemon, pid, allow_root):
-
-	if ctx.invoked_subcommand is None:
-		# We have to support calling the octoprint command without any
-		# sub commands to remain backwards compatible.
-		#
-		# But better print a message to inform people that they should
-		# use the sub commands instead.
-
-		if daemon:
-			click.echo("Daemon operation via \"octoprint --daemon "
-			           "start|stop|restart\" is deprecated, please use "
-			           "\"octoprint daemon start|stop|restart\" from now on")
-
-			ctx.invoke(daemon_command, pid=pid, daemon=daemon, allow_root=allow_root)
-		else:
-			click.echo("Starting the server via \"octoprint\" is deprecated, "
-			           "please use \"octoprint serve\" from now on.")
-
-			ctx.invoke(serve_command, host=host, port=port, logging=logging, allow_root=allow_root)
-
-
 def main():
+	from octoprint.cli import octo
 	octo(prog_name="octoprint", auto_envvar_prefix="OCTOPRINT")
 
 
