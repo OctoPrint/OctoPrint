@@ -37,6 +37,65 @@ octoprint.accesscontrol.appkey
    :return: A list of 3-tuples as described above
    :rtype: list
 
+.. _sec-plugins-hook-cli-commands:
+
+octoprint.cli.commands
+----------------------
+
+.. py:function:: hook(cli_group, pass_octoprint_ctx, *args, **kwargs)
+
+   By providing a handler for this hook plugins may register commands on OctoPrint's command line interface (CLI).
+
+   .. todo::
+
+        * More documentation
+        * Example
+
+   .. note::
+
+      If your hook handler is an instance method of a plugin mixin implementation, be aware that the hook will be
+      called without OctoPrint initializing your implementation instance. That means that **none** of the
+      :ref:`injected properties <sec-plugins-concepts-injectedproperties>` will be available and also the
+      :meth:`~octoprint.plugin.Plugin.initialize` method will not be called.
+
+      Your hook handler will have access to the plugin manager as ``cli_group._plugin_manager`` and to the
+      *global* settings as ``cli_group._settings``. You can have your handler turn the latter into a
+      :class:`~octoprint.plugin.PluginSettings` instance by using :func:`octoprint.plugin.plugin_settings_from_settings_plugin`
+      if your plugin's implementation implements the :class:`~octoprint.plugin.SettingsPlugin` mixin and inject
+      that and the plugin manager instance yourself:
+
+      .. code-block:: python
+
+         import octoprint.plugin
+
+         class MyPlugin(octoprint.plugin.SettingsPlugin):
+
+             def get_cli_commands(self, cli_group, pass_octoprint_ctx, *args, **kwargs):
+                 import logging
+
+                 settings = cli_group._settings
+                 plugin_settings = octoprint.plugin.plugin_settings_for_settings_plugin("myplugin", self)
+                 if plugin_settings is None:
+                     # this can happen if anything goes wrong with preparing the PluginSettings instance
+                     return dict()
+
+                 self._settings = plugin_settings
+                 self._plugin_manager = cli_group._plugin_manager
+                 self._logger = logging.getLogger(__name__)
+
+                 ### command definition starts here
+
+                 # ...
+
+
+      No other platform components will be available - the CLI runs outside of a running, fully initialized
+      OctoPrint server context, so there is absolutely no way to access a printer connection, the event bus or
+      anything else like that. The only things available are the settings and the plugin manager.
+
+   :return: A list of `Click commands or groups <http://click.pocoo.org/5/commands/>` to provide on
+            OctoPrint's CLI.
+   :rtype: list
+
 .. _sec-plugins-hook-comm-protocol-action:
 
 octoprint.comm.protocol.action
