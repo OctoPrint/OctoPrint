@@ -161,6 +161,34 @@ def plugin_settings(plugin_key, defaults=None, get_preprocessors=None, set_prepr
 	                      set_preprocessors=set_preprocessors)
 
 
+def plugin_settings_for_settings_plugin(plugin_key, instance, settings=None):
+	"""
+	Factory method for creating a :class:`PluginSettings` instance for a given :class:`SettingsPlugin` instance.
+
+	Will return `None` if the provided `instance` is not a :class:`SettingsPlugin` instance.
+
+	Arguments:
+	    plugin_key (string): The plugin identifier for which to create the settings instance.
+	    implementation (octoprint.plugin.SettingsPlugin): The :class:`SettingsPlugin` instance.
+	    settings (octoprint.settings.Settings): The settings instance to use. Defaults to the global OctoPrint settings.
+
+	Returns:
+	    PluginSettings or None: A fully initialized :class:`PluginSettings` instance to be used to access the plugin's
+	        settings, or `None` if the provided `instance` was not a class:`SettingsPlugin`
+	"""
+	if not isinstance(instance, SettingsPlugin):
+		return None
+
+	try:
+		defaults = instance.get_settings_defaults()
+		get_preprocessors, set_preprocessors = instance.get_settings_preprocessors()
+	except:
+		logging.getLogger(__name__).exception("Error while retrieving defaults or preprocessors for plugin {}".format(plugin_key))
+		return None
+
+	return plugin_settings(plugin_key, defaults=defaults, get_preprocessors=get_preprocessors, set_preprocessors=set_preprocessors, settings=settings)
+
+
 def call_plugin(types, method, args=None, kwargs=None, callback=None, error_callback=None, sorting_context=None):
 	"""
 	Helper method to invoke the indicated ``method`` on all registered plugin implementations implementing the

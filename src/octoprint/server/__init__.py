@@ -215,14 +215,10 @@ class Server():
 			)
 
 		def settings_plugin_inject_factory(name, implementation):
-			if not isinstance(implementation, octoprint.plugin.SettingsPlugin):
-				return None
-			default_settings = implementation.get_settings_defaults()
-			get_preprocessors, set_preprocessors = implementation.get_settings_preprocessors()
-			plugin_settings = octoprint.plugin.plugin_settings(name,
-			                                                   defaults=default_settings,
-			                                                   get_preprocessors=get_preprocessors,
-			                                                   set_preprocessors=set_preprocessors)
+			plugin_settings = octoprint.plugin.plugin_settings_for_settings_plugin(name, implementation)
+			if plugin_settings is None:
+				return
+
 			return dict(settings=plugin_settings)
 
 		def settings_plugin_config_migration_and_cleanup(name, implementation):
