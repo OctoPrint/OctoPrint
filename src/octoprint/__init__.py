@@ -6,25 +6,34 @@ import sys
 import click
 import logging
 
+#~~ version
+
+from ._version import get_versions
+versions = get_versions()
+
+__version__ = versions['version']
+__branch__ = versions['branch'] if 'branch' in versions else None
+__display_version__ = "{} ({} branch)".format(__version__, __branch__) if __branch__ else __version__
+
+del versions
+del get_versions
+
+
 from octoprint.daemon import Daemon
 from octoprint.server import Server
 
 logging.basicConfig()
-
-#~~ version
-
-from ._version import get_versions
-__version__ = get_versions()['version']
-del get_versions
-
 
 #~~ init methods to bring up platform
 
 
 def init_platform(basedir, configfile, use_logging_file=True, logging_file=None,
                   logging_config=None, debug=False, uncaught_logger=None,
-                  uncaught_handler=None):
+                  uncaught_handler=None, after_settings=None, after_logging=None):
 	settings = init_settings(basedir, configfile)
+	if callable(after_settings):
+		after_settings(settings)
+
 	logger = init_logging(settings,
 	                      use_logging_file=use_logging_file,
 	                      logging_file=logging_file,
@@ -32,6 +41,9 @@ def init_platform(basedir, configfile, use_logging_file=True, logging_file=None,
 	                      debug=debug,
 	                      uncaught_logger=uncaught_logger,
 	                      uncaught_handler=uncaught_handler)
+	if callable(after_logging):
+		after_logging(logger)
+
 	plugin_manager = init_pluginsystem(settings)
 	return settings, logger, plugin_manager
 
@@ -198,11 +210,15 @@ class OctoPrintDaemon(Daemon):
 
 
 def run_server(basedir, configfile, host, port, debug, allow_root, logging_config):
+	def log_startup(_):
+		logging.getLogger("octoprint.server").info("Starting OctoPrint {}".format(__display_version__))
+
 	settings, _, plugin_manager = init_platform(basedir,
 	                                            configfile,
 	                                            logging_file=logging_config,
 	                                            debug=debug,
-	                                            uncaught_logger=__name__)
+	                                            uncaught_logger=__name__,
+	                                            after_logging=log_startup)
 
 	octoprint = Server(settings=settings, plugin_manager=plugin_manager, host=host, port=port, debug=debug, allow_root=allow_root)
 	octoprint.run()

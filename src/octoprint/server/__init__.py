@@ -49,6 +49,7 @@ admin_permission = Permission(RoleNeed("admin"))
 user_permission = Permission(RoleNeed("user"))
 
 # only import the octoprint stuff down here, as it might depend on things defined above to be initialized already
+from octoprint import __version__, __branch__, __display_version__
 from octoprint.printer import get_connection_options
 from octoprint.printer.profile import PrinterProfileManager
 from octoprint.printer.standard import Printer
@@ -67,11 +68,9 @@ from . import util
 
 UI_API_KEY = ''.join('%02X' % ord(z) for z in uuid.uuid4().bytes)
 
-versions = octoprint._version.get_versions()
-VERSION = versions['version']
-BRANCH = versions['branch'] if 'branch' in versions else None
-DISPLAY_VERSION = "%s (%s branch)" % (VERSION, BRANCH) if BRANCH else VERSION
-del versions
+VERSION = __version__
+BRANCH = __branch__
+DISPLAY_VERSION = __display_version__
 
 LOCALES = []
 LANGUAGES = set()
@@ -156,8 +155,6 @@ class Server():
 
 		self._logger = logging.getLogger(__name__)
 		pluginManager = self._plugin_manager
-
-		self._logger.info("Starting OctoPrint %s" % DISPLAY_VERSION)
 
 		# monkey patch a bunch of stuff
 		util.tornado.fix_ioloop_scheduling()
@@ -1000,6 +997,3 @@ class LifecycleManager(object):
 				if callback in self._plugin_lifecycle_callbacks[event]:
 					self._plugin_lifecycle_callbacks[event].remove(callback)
 
-if __name__ == "__main__":
-	server = Server()
-	server.run()
