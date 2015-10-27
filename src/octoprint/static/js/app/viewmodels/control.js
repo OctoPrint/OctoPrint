@@ -287,30 +287,26 @@ $(function() {
         };
 
         self.sendCustomCommand = function (command) {
-            if (!command)
-                return;
+            if (!command) return;
+
+            var parameters = {};
+            if (command.hasOwnProperty("input")) {
+                _.each(command.input, function (input) {
+                    if (!input.hasOwnProperty("parameter") || !input.hasOwnProperty("value")) {
+                        return;
+                    }
+
+                    parameters[input.parameter] = input.value();
+                });
+            }
 
             if (command.hasOwnProperty("command") || command.hasOwnProperty("commands")) {
                 var commands = command.commands || [command.command];
-
-                if (command.hasOwnProperty("input")) {
-                    var parameters = {};
-                    _.each(command.input, function(input) {
-                        if (!input.hasOwnProperty("parameter") || !input.hasOwnProperty("value")) {
-                            return;
-                        }
-
-                        parameters[input.parameter] = input.value();
-                    });
-                    OctoPrint.control.sendGcodeWithParameters(commands, parameters);
-                } else {
-                    OctoPrint.control.sendGcode(commands);
-                }
+                OctoPrint.control.sendGcodeWithParameters(commands, parameters);
             } else if (command.hasOwnProperty("script")) {
                 var script = command.script;
                 var context = command.context || {};
-
-                OctoPrint.control.sendGcodeScript(script, context);
+                OctoPrint.control.sendGcodeScriptWithParameters(script, context, parameters);
             }
         };
 

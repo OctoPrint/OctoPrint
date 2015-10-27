@@ -744,24 +744,6 @@ class LocalFileStorage(StorageInterface):
 		Note that for a ``path`` without a trailing slash the last part will be considered a file name and
 		hence be returned at second position. If you only need to convert a folder path, be sure to
 		include a trailing slash for a string ``path`` or an empty last element for a list ``path``.
-
-		Examples::
-
-		    >>> storage = LocalFileStorage("/some/base/folder")
-		    >>> storage.sanitize("some/folder/and/some file.gco")
-		    ("/some/base/folder/some/folder/and", "some_file.gco")
-		    >>> storage.sanitize(("some", "folder", "and", "some file.gco"))
-		    ("/some/base/folder/some/folder/and", "some_file.gco")
-		    >>> storage.sanitize("some file.gco")
-		    ("/some/base/folder", "some_file.gco")
-		    >>> storage.sanitize(("some file.gco",))
-		    ("/some/base/folder", "some_file.gco")
-		    >>> storage.sanitize("")
-		    ("/some/base/folder", "")
-		    >>> storage.sanitize("some/folder/with/trailing/slash/")
-		    ("/some/base/folder/some/folder/with/trailing/slash", "")
-		    >>> storage.sanitize("some", "folder", "")
-		    ("/some/base/folder/some/folder", "")
 		"""
 		name = None
 		if isinstance(path, (str, unicode, basestring)):
@@ -788,24 +770,6 @@ class LocalFileStorage(StorageInterface):
 		Raises a :class:`ValueError` for a ``name`` containing ``/`` or ``\``. Otherwise strips any characters from the
 		given ``name`` that are not any of the ASCII characters, digits, ``-``, ``_``, ``.``, ``(``, ``)`` or space and
 		replaces and spaces with ``_``.
-
-		Examples::
-
-		    >>> storage = LocalFileStorage("/some/base/folder")
-		    >>> storage.sanitize_name("some_file.gco")
-		    "some_file.gco"
-		    >>> storage.sanitize_name("some_file with (parentheses) and ümläuts and digits 123.gco")
-		    "some_file_with_(parentheses)_and_mluts_and_digits_123.gco"
-		    >>> storage.sanitize_name("pengüino pequeño.stl")
-		    "pengino_pequeo.stl"
-		    >>> storage.sanitize_name("some/folder/still/left.gco")
-		    Traceback (most recent call last):
-		      File "<stdin>", line 1, in <module>
-		    ValueError: name must not contain / or \
-		    >>> storage.sanitize_name("also\\no\\backslashes.gco")
-		    Traceback (most recent call last):
-		      File "<stdin>", line 1, in <module>
-		    ValueError: name must not contain / or \
 		"""
 		if name is None:
 			return None
@@ -824,22 +788,6 @@ class LocalFileStorage(StorageInterface):
 		Ensures that the on disk representation of ``path`` is located under the configured basefolder. Resolves all
 		relative path elements (e.g. ``..``) and sanitizes folder names using :func:`sanitize_name`. Final path is the
 		absolute path including leading ``basefolder`` path.
-
-		Examples::
-
-		    >>> storage = LocalFileStorage("/some/base/folder")
-		    >>> storage.sanitize_path("folder/with/subfolder")
-		    "/some/base/folder/folder/with/subfolder"
-		    >>> storage.sanitize_path("folder/with/subfolder/../other/folder")
-		    "/some/base/folder/folder/with/other/folder"
-		    >>> storage.sanitize_path("/folder/with/leading/slash")
-		    "/some/base/folder/folder/with/leading/slash"
-		    >>> storage.sanitize_path(".folder/with/leading/dot")
-		    "/some/base/folder/folder/with/leading/dot
-		    >>> storage.sanitize_path("../../folder/out/of/the/basefolder")
-		    Traceback (most recent call last):
-		      File "<stdin>", line 1, in <module>
-		    ValueError: path not contained in base folder: /some/folder/out/of/the/basefolder
 		"""
 		if path[0] == "/" or path[0] == ".":
 			path = path[1:]

@@ -132,7 +132,7 @@ $(function() {
                 return (item.key == data.key);
             });
 
-            OctoPrint.slicing.deleteProfileForSlicer("cura", data.key, {url: data.resource})
+            OctoPrint.slicing.deleteProfileForSlicer("cura", data.key, {url: data.resource()})
                 .done(function() {
                     self.requestData();
                     self.slicingViewModel.requestData();
