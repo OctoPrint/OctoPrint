@@ -18,6 +18,9 @@ __version__ = get_versions()['version']
 del get_versions
 
 
+#~~ init methods to bring up platform
+
+
 def init_platform(basedir, configfile, use_logging_file=True, logging_file=None,
                   logging_config=None, debug=False, uncaught_logger=None,
                   uncaught_handler=None):
@@ -34,11 +37,15 @@ def init_platform(basedir, configfile, use_logging_file=True, logging_file=None,
 
 
 def init_settings(basedir, configfile):
+	"""Inits the settings instance based on basedir and configfile to use."""
+
 	from octoprint.settings import settings
 	return settings(init=True, basedir=basedir, configfile=configfile)
 
 
 def init_logging(settings, use_logging_file=True, logging_file=None, default_config=None, debug=False, uncaught_logger=None, uncaught_handler=None):
+	"""Sets up logging."""
+
 	import os
 
 	from octoprint.util import dict_merge
@@ -98,6 +105,7 @@ def init_logging(settings, use_logging_file=True, logging_file=None, default_con
 		default_config["root"]["level"] = "DEBUG"
 
 	if use_logging_file:
+		# further logging configuration from file...
 		if logging_file is None:
 			logging_file = os.path.join(settings.getBaseFolder("base"), "logging.yaml")
 
@@ -107,16 +115,20 @@ def init_logging(settings, use_logging_file=True, logging_file=None, default_con
 			with open(logging_file, "r") as f:
 				config_from_file = yaml.safe_load(f)
 
+		# we merge that with the default config
 		config = dict_merge(default_config, config_from_file)
 	else:
 		config = default_config
 
+	# configure logging globally
 	logging.config.dictConfig(config)
-	logging.captureWarnings(True)
 
+	# make sure we log any warnings
+	logging.captureWarnings(True)
 	import warnings
 	warnings.simplefilter("always")
 
+	# make sure we also log any uncaught exceptions
 	if uncaught_logger is None:
 		logger = logging.getLogger(__name__)
 	else:
@@ -132,10 +144,13 @@ def init_logging(settings, use_logging_file=True, logging_file=None, default_con
 
 
 def init_pluginsystem(settings):
+	"""Initializes the plugin manager based on the settings."""
 	from octoprint.plugin import plugin_manager
 	return plugin_manager(init=True, settings=settings)
 
+
 #~~ Custom click option to hide from help
+
 
 class HiddenOption(click.Option):
 	def get_help_record(self, ctx):
@@ -162,6 +177,7 @@ def hidden_option(*param_decls, **attrs):
 
 #~~ daemon class
 
+
 class OctoPrintDaemon(Daemon):
 	def __init__(self, pidfile, basedir, configfile, host, port, debug, allow_root, logging_config):
 		Daemon.__init__(self, pidfile)
@@ -177,7 +193,9 @@ class OctoPrintDaemon(Daemon):
 	def run(self):
 		run_server(self._basedir, self._configfile, self._host, self._port, self._debug, self._allow_root, self._logging_config)
 
-#~~ serve method
+
+#~~ server main method
+
 
 def run_server(basedir, configfile, host, port, debug, allow_root, logging_config):
 	settings, _, plugin_manager = init_platform(basedir,
@@ -190,12 +208,19 @@ def run_server(basedir, configfile, host, port, debug, allow_root, logging_confi
 	octoprint.run()
 
 
+#~~ click context
+
+
 class OctoPrintContext(object):
 	def __init__(self, configfile=None, basedir=None, debug=False):
 		self.configfile = configfile
 		self.basedir = basedir
 		self.debug = debug
 pass_octoprint_ctx = click.make_pass_decorator(OctoPrintContext, ensure=True)
+
+
+#~~ "octoprint serve" and "octoprint daemon" commands
+
 
 @click.group()
 @pass_octoprint_ctx
@@ -257,9 +282,17 @@ def daemon_command(octoprint_ctx, pid, host, port, logging, allow_root, command)
 		daemon.restart()
 
 
+#~~ "octoprint plugin:command" commands
+
+
 class OctoPrintCli(click.MultiCommand):
+	"""
+	Custom `click.MultiCommand` implementation that collects commands from
+	the plugin hook "octoprint.cli.commands".
+	"""
 
 	sep = ":"
+	"""Separator for commands between plugin name and command name."""
 
 	def __init__(self, *args, **kwargs):
 		click.MultiCommand.__init__(self, *args, **kwargs)
@@ -274,8 +307,12 @@ class OctoPrintCli(click.MultiCommand):
 		if ctx.obj is None:
 			ctx.obj = OctoPrintContext()
 
+		# initialize settings and plugin manager based on provided
+		# context (basedir and configfile)
 		self._settings = init_settings(ctx.obj.basedir, ctx.obj.configfile)
 		self._plugin_manager = init_pluginsystem(self._settings)
+
+		# fetch registered hooks
 		self._hooks = self._plugin_manager.get_hooks("octoprint.cli.commands")
 
 	def list_commands(self, ctx):
@@ -290,6 +327,8 @@ class OctoPrintCli(click.MultiCommand):
 		return commands.get(cmd_name, None)
 
 	def _get_commands(self):
+		"""Fetch all commands from plugins providing any."""
+
 		import collections
 		result = collections.OrderedDict()
 
@@ -297,19 +336,28 @@ class OctoPrintCli(click.MultiCommand):
 			try:
 				commands = hook(self, pass_octoprint_ctx)
 				for command in commands:
+					if not isinstance(command, click.Command):
+						self._logger.warn("Plugin {} provided invalid CLI command, ignoring it: {!r}".format(name, command))
+						continue
 					result[name + self.sep + command.name] = command
 			except:
 				self._logger.exception("Error while retrieving cli commants for plugin {}".format(name))
 
 		return result
 
+
 @click.group(cls=OctoPrintCli)
 @pass_octoprint_ctx
 def plugin_commands(obj):
+	"""Commands provided by plugins."""
 	logging.basicConfig(level=logging.DEBUG if obj.debug else logging.WARN)
 
 
+#~~ "octoprint" command, merges server_commands and plugin_commands groups
+
+
 def set_ctx_obj_option(ctx, param, value):
+	"""Helper for setting eager options on the context."""
 	if ctx.obj is None:
 		ctx.obj = OctoPrintContext()
 
@@ -336,9 +384,15 @@ def set_ctx_obj_option(ctx, param, value):
 def octo(ctx, debug, host, port, basedir, configfile, logging, daemon, pid, allow_root):
 
 	if ctx.invoked_subcommand is None:
+		# We have to support calling the octoprint command without any
+		# sub commands to remain backwards compatible.
+		#
+		# But better print a message to inform people that they should
+		# use the sub commands instead.
+
 		if daemon:
 			click.echo("Daemon operation via \"octoprint --daemon "
-			           "(start|stop|restart)\" is deprecated, please use "
+			           "start|stop|restart\" is deprecated, please use "
 			           "\"octoprint daemon start|stop|restart\" from now on")
 
 			ctx.invoke(daemon_command, pid=pid, daemon=daemon, debug=debug, allow_root=allow_root)
