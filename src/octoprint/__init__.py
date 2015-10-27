@@ -276,7 +276,7 @@ class OctoPrintCli(click.MultiCommand):
 
 		self._settings = init_settings(ctx.obj.basedir, ctx.obj.configfile)
 		self._plugin_manager = init_pluginsystem(self._settings)
-		self._hooks = self._plugin_manager.get_hooks("octoprint.cli.command")
+		self._hooks = self._plugin_manager.get_hooks("octoprint.cli.commands")
 
 	def list_commands(self, ctx):
 		self._initialize(ctx)
