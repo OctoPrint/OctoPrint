@@ -49,6 +49,7 @@ def hidden_option(*param_decls, **attrs):
 
 from .server import server_commands
 from .plugins import plugin_commands
+from .devel import devel_commands
 
 def set_ctx_obj_option(ctx, param, value):
 	"""Helper for setting eager options on the context."""
@@ -60,7 +61,7 @@ def set_ctx_obj_option(ctx, param, value):
 
 
 @click.group(name="octoprint", invoke_without_command=True, cls=click.CommandCollection,
-             sources=[server_commands, plugin_commands])
+             sources=[server_commands, plugin_commands, devel_commands])
 @click.option("--basedir", "-b", type=click.Path(), callback=set_ctx_obj_option, is_eager=True,
               help="Specify the basedir to use for uploads, timelapses etc.")
 @click.option("--config", "-c", "configfile", type=click.Path(), callback=set_ctx_obj_option, is_eager=True,
