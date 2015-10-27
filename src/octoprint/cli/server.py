@@ -63,8 +63,6 @@ def serve_command(obj, host, port, logging, allow_root):
               help="Specify the port on which to bind the server.")
 @click.option("--logging", type=click.Path(),
               help="Specify the config file to use for configuring logging.")
-@click.option("--debug", "-d", is_flag=True,
-              help="Enable debug mode")
 @click.option("--iknowwhatimdoing", "allow_root", is_flag=True,
               help="Allow OctoPrint to run as user root.")
 @click.argument("command", type=click.Choice(["start", "stop", "restart"]),

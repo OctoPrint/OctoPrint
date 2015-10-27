@@ -129,6 +129,7 @@ def init_logging(settings, use_logging_file=True, logging_file=None, default_con
 		config = default_config
 
 	# configure logging globally
+	import logging.config
 	logging.config.dictConfig(config)
 
 	# make sure we log any warnings
