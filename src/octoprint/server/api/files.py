@@ -187,15 +187,10 @@ def _verifyFolderExists(origin, foldername):
 
 def _isBusy(target, path):
 	currentOrigin, currentFilename = _getCurrentFile()
-	if currentFilename is not None and fileManager.file_in_path(target, path, currentFilename) and currentOrigin == target and (printer.is_printing() or printer.is_paused()):
+	if currentFilename is not None and currentOrigin == target and fileManager.file_in_path(FileDestinations.LOCAL, path, currentFilename) and (printer.is_printing() or printer.is_paused()):
 		return True
 
-	busy_files = fileManager.get_busy_files()
-	for item in busy_files:
-		if target == item[0] and fileManager.file_in_path(target, path, item[1]):
-			return True
-
-	return False
+	return any(target == x[0] and fileManager.file_in_path(FileDestinations.LOCAL, path, x[1]) for x in fileManager.get_busy_files())
 
 @api.route("/files/<string:target>", methods=["POST"])
 @restricted_access
@@ -233,20 +228,20 @@ def uploadGcodeFile(target):
 				return make_response("Can not upload to SD card, not yet initialized", 409)
 
 		# determine current job
+		currentPath = None
 		currentFilename = None
-		currentFullPath = None
 		currentOrigin = None
 		currentJob = printer.get_current_job()
 		if currentJob is not None and "file" in currentJob.keys():
 			currentJobFile = currentJob["file"]
 			if currentJobFile is not None and "name" in currentJobFile.keys() and "origin" in currentJobFile.keys() and currentJobFile["name"] is not None and currentJobFile["origin"] is not None:
-				currentPath, currentFilename = fileManager.sanitize(currentJobFile["origin"], currentJobFile["name"])
-				currentFullPath = fileManager.join_path(target, currentPath, currentFilename)
+				currentPath, currentFilename = fileManager.sanitize(FileDestinations.LOCAL, currentJobFile["name"])
 				currentOrigin = currentJobFile["origin"]
 
 		# determine future filename of file to be uploaded, abort if it can't be uploaded
 		try:
-			futurePath, futureFilename = fileManager.sanitize(target, upload.filename)
+			# FileDestinations.LOCAL = should normally be target, but can't because SDCard handling isn't implemented yet
+			futurePath, futureFilename = fileManager.sanitize(FileDestinations.LOCAL, upload.filename)
 		except:
 			futurePath = None
 			futureFilename = None
@@ -254,13 +249,12 @@ def uploadGcodeFile(target):
 		if futureFilename is None:
 			return make_response("Can not upload file %s, wrong format?" % upload.filename, 415)
 
-		if "path" in request.values:
-			futurePath = fileManager.sanitize_path(target, request.values["path"])
-
-		futureFullPath = fileManager.join_path(target, futurePath, futureFilename)
+		if "path" in request.values and request.values["path"]:
+			# FileDestinations.LOCAL = should normally be target, but can't because SDCard handling isn't implemented yet
+			futurePath = fileManager.sanitize_path(FileDestinations.LOCAL, request.values["path"])
 
 		# prohibit overwriting currently selected file while it's being printed
-		if futureFullPath == currentFullPath and target == currentOrigin and printer.is_printing() or printer.is_paused():
+		if futurePath == currentPath and futureFilename == currentFilename and target == currentOrigin and (printer.is_printing() or printer.is_paused()):
 			return make_response("Trying to overwrite file that is currently being printed: %s" % currentFilename, 409)
 
 		def fileProcessingFinished(filename, absFilename, destination):
@@ -288,6 +282,9 @@ def uploadGcodeFile(target):
 			"""
 			if octoprint.filemanager.valid_file_type(added_file, "gcode") and (selectAfterUpload or printAfterSelect or (currentFilename == filename and currentOrigin == destination)):
 				printer.select_file(absFilename, destination == FileDestinations.SDCARD, printAfterSelect)
+
+		# FileDestinations.LOCAL = should normally be target, but can't because SDCard handling isn't implemented yet
+		futureFullPath = fileManager.join_path(FileDestinations.LOCAL, futurePath, futureFilename)
 
 		added_file = fileManager.add_file(FileDestinations.LOCAL, futureFullPath, upload, allow_overwrite=True)
 		if added_file is None:
@@ -579,7 +576,7 @@ def deleteGcodeFile(filename, target):
 
 		# deselect the file if it's currently selected
 		currentOrigin, currentFilename = _getCurrentFile()
-		if currentFilename is not None and filename == currentFilename:
+		if currentFilename is not None and currentOrigin == target and filename == currentFilename:
 			printer.unselect_file()
 
 		# delete it
@@ -592,17 +589,16 @@ def deleteGcodeFile(filename, target):
 		if not target in [FileDestinations.LOCAL]:
 			return make_response("Unknown target: %s" % target, 400)
 
-		folderpath = filename
-		if _isBusy(target, folderpath):
-			return make_response("Trying to delete a folder that contains a file that is currently in use: %s" % folderpath, 409)
+		if _isBusy(target, filename):
+			return make_response("Trying to delete a folder that contains a file that is currently in use: %s" % filename, 409)
 
 		# deselect the file if it's currently selected
 		currentOrigin, currentFilename = _getCurrentFile()
-		if currentFilename is not None and fileManager.file_in_path(target, folderpath, currentFilename):
+		if currentFilename is not None and currentOrigin == target and fileManager.file_in_path(target, filename, currentFilename):
 			printer.unselect_file()
 
 		# delete it
-		fileManager.remove_folder(target, folderpath)
+		fileManager.remove_folder(target, filename)
 
 	return NO_CONTENT
 
