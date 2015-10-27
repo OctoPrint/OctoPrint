@@ -539,7 +539,8 @@ $(function() {
                     fail: gcode_upload_fail,
                     progressall: gcode_upload_progress
                 }).bind('fileuploadsubmit', function(e, data) {
-                    data.formData = { path: self.currentPath() };
+                    if (self.currentPath() != "")
+                        data.formData = { path: self.currentPath() };
                 });
             }
 
