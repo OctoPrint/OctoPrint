@@ -23,7 +23,7 @@
         <td style="text-align: right; vertical-align: middle" data-bind="html: formatTemperature(actual())"></td>
         <td style="vertical-align: middle; overflow: visible">
             <div class="input-append">
-                <input type="text" class="input-mini text-right tempInput" data-bind="attr: {placeholder: cleanTemperature(target()) }, value: newTarget, enable: $root.isOperational() && $root.loginState.isUser(), event: { keyup: function(d, e) {$root.handleEnter(e, 'target', $data);} }">
+                <input type="number" class="input-mini text-right tempInput" data-bind="attr: {placeholder: cleanTemperature(target()) }, value: newTarget, enable: $root.isOperational() && $root.loginState.isUser(), event: { keyup: function(d, e) {$root.handleEnter(e, 'target', $data);} }">
                 <span class="add-on">&deg;C</span>
                 <div class="btn-group">
                     <button type="submit" data-bind="click: $parent.setTarget, enable: $root.isOperational() && $root.loginState.isUser()" class="btn">{{ _('Set') }}</button>
