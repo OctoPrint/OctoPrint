@@ -24,7 +24,7 @@ logging.basicConfig()
 #~~ init methods to bring up platform
 
 def init_platform(basedir, configfile, use_logging_file=True, logging_file=None,
-                  logging_config=None, debug=False, uncaught_logger=None,
+                  logging_config=None, debug=False, verbosity=0, uncaught_logger=None,
                   uncaught_handler=None, after_settings=None, after_logging=None):
 	settings = init_settings(basedir, configfile)
 	if callable(after_settings):
@@ -35,6 +35,7 @@ def init_platform(basedir, configfile, use_logging_file=True, logging_file=None,
 	                      logging_file=logging_file,
 	                      default_config=logging_config,
 	                      debug=debug,
+	                      verbosity=verbosity,
 	                      uncaught_logger=uncaught_logger,
 	                      uncaught_handler=uncaught_handler)
 	if callable(after_logging):
@@ -51,7 +52,7 @@ def init_settings(basedir, configfile):
 	return settings(init=True, basedir=basedir, configfile=configfile)
 
 
-def init_logging(settings, use_logging_file=True, logging_file=None, default_config=None, debug=False, uncaught_logger=None, uncaught_handler=None):
+def init_logging(settings, use_logging_file=True, logging_file=None, default_config=None, debug=False, verbosity=0, uncaught_logger=None, uncaught_handler=None):
 	"""Sets up logging."""
 
 	import os
@@ -96,10 +97,13 @@ def init_logging(settings, use_logging_file=True, logging_file=None, default_con
 					"handlers": ["serialFile"],
 					"propagate": False
 				},
-				"tornado.application": {
+				"octoprint": {
 					"level": "INFO"
 				},
-				"tornado.general": {
+				"octoprint.util": {
+					"level": "INFO"
+				},
+				"octoprint.plugins": {
 					"level": "INFO"
 				}
 			},
@@ -109,7 +113,11 @@ def init_logging(settings, use_logging_file=True, logging_file=None, default_con
 			}
 		}
 
-	if debug:
+	if debug or verbosity > 0:
+		default_config["loggers"]["octoprint"]["level"] = "DEBUG"
+	if verbosity > 1:
+		default_config["loggers"]["octoprint.plugins"]["level"] = "DEBUG"
+	if verbosity > 2:
 		default_config["root"]["level"] = "DEBUG"
 
 	if use_logging_file:
@@ -134,8 +142,13 @@ def init_logging(settings, use_logging_file=True, logging_file=None, default_con
 
 	# make sure we log any warnings
 	logging.captureWarnings(True)
+
 	import warnings
-	warnings.simplefilter("always")
+
+	if verbosity > 2:
+		warnings.simplefilter("always")
+	elif debug or verbosity > 0:
+		warnings.simplefilter("default")
 
 	# make sure we also log any uncaught exceptions
 	if uncaught_logger is None:

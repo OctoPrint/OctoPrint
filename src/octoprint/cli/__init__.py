@@ -13,10 +13,11 @@ import octoprint
 
 
 class OctoPrintContext(object):
-	def __init__(self, configfile=None, basedir=None, debug=False):
+	def __init__(self, configfile=None, basedir=None, debug=False, verbosity=0):
 		self.configfile = configfile
 		self.basedir = basedir
 		self.debug = debug
+		self.verbosity = verbosity
 pass_octoprint_ctx = click.make_pass_decorator(OctoPrintContext, ensure=True)
 
 
@@ -62,12 +63,13 @@ def set_ctx_obj_option(ctx, param, value):
 
 @click.group(name="octoprint", invoke_without_command=True, cls=click.CommandCollection,
              sources=[server_commands, plugin_commands, devel_commands])
-@click.option("--basedir", "-b", type=click.Path(), callback=set_ctx_obj_option, is_eager=True,
+@click.option("--basedir", "-b", type=click.Path(), callback=set_ctx_obj_option, is_eager=True, expose_value=False,
               help="Specify the basedir to use for uploads, timelapses etc.")
-@click.option("--config", "-c", "configfile", type=click.Path(), callback=set_ctx_obj_option, is_eager=True,
+@click.option("--config", "-c", "configfile", type=click.Path(), callback=set_ctx_obj_option, is_eager=True, expose_value=False,
               help="Specify the config file to use.")
-@click.option("--debug", "-d", is_flag=True, callback=set_ctx_obj_option, is_eager=True,
-              help="Enable debug mode")
+@click.option("--verbose", "-v", "verbosity", count=True, callback=set_ctx_obj_option, is_eager=True, expose_value=False,
+              help="Increase logging verbosity")
+@hidden_option("--debug", "-d", is_flag=True)
 @hidden_option("--host", type=click.STRING)
 @hidden_option("--port", type=click.INT)
 @hidden_option("--logging", type=click.Path())
@@ -76,7 +78,7 @@ def set_ctx_obj_option(ctx, param, value):
 @hidden_option("--iknowwhatimdoing", "allow_root", is_flag=True)
 @click.version_option(version=octoprint.__version__)
 @click.pass_context
-def octo(ctx, debug, host, port, basedir, configfile, logging, daemon, pid, allow_root):
+def octo(ctx, debug, host, port, logging, daemon, pid, allow_root):
 
 	if ctx.invoked_subcommand is None:
 		# We have to support calling the octoprint command without any
@@ -91,10 +93,10 @@ def octo(ctx, debug, host, port, basedir, configfile, logging, daemon, pid, allo
 			           "\"octoprint daemon start|stop|restart\" from now on")
 
 			from octoprint.cli.server import daemon_command
-			ctx.invoke(daemon_command, pid=pid, daemon=daemon, allow_root=allow_root)
+			ctx.invoke(daemon_command, debug=debug, pid=pid, daemon=daemon, allow_root=allow_root)
 		else:
 			click.echo("Starting the server via \"octoprint\" is deprecated, "
 			           "please use \"octoprint serve\" from now on.")
 
 			from octoprint.cli.server import serve_command
-			ctx.invoke(serve_command, host=host, port=port, logging=logging, allow_root=allow_root)
+			ctx.invoke(serve_command, debug=debug, host=host, port=port, logging=logging, allow_root=allow_root)

@@ -80,6 +80,6 @@ class OctoPrintPluginCommands(click.MultiCommand):
 @pass_octoprint_ctx
 def plugin_commands(obj):
 	"""Commands provided by plugins."""
-	logging.basicConfig(level=logging.DEBUG if obj.debug else logging.WARN)
+	logging.basicConfig(level=logging.DEBUG if obj.verbosity > 0 else logging.WARN)
 
 

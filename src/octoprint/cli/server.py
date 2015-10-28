@@ -11,7 +11,7 @@ import sys
 
 from octoprint.cli import pass_octoprint_ctx
 
-def run_server(basedir, configfile, host, port, debug, allow_root, logging_config):
+def run_server(basedir, configfile, host, port, debug, allow_root, logging_config, verbosity):
 	from octoprint import init_platform, __display_version__
 
 	def log_startup(_):
@@ -21,6 +21,7 @@ def run_server(basedir, configfile, host, port, debug, allow_root, logging_confi
 	                                            configfile,
 	                                            logging_file=logging_config,
 	                                            debug=debug,
+	                                            verbosity=verbosity,
 	                                            uncaught_logger=__name__,
 	                                            after_logging=log_startup)
 
@@ -47,11 +48,13 @@ def server_commands(obj):
               help="Specify the config file to use for configuring logging.")
 @click.option("--iknowwhatimdoing", "allow_root", is_flag=True,
               help="Allow OctoPrint to run as user root.")
+@click.option("--debug", is_flag=True,
+              help="Enable debug mode")
 @pass_octoprint_ctx
-def serve_command(obj, host, port, logging, allow_root):
+def serve_command(obj, host, port, logging, allow_root, debug):
 	"""Starts the OctoPrint server."""
-	run_server(obj.basedir, obj.configfile, host, port, obj.debug,
-	           allow_root, logging)
+	run_server(obj.basedir, obj.configfile, host, port, debug,
+	           allow_root, logging, obj.verbosity)
 
 
 @server_commands.command(name="daemon")
@@ -65,10 +68,12 @@ def serve_command(obj, host, port, logging, allow_root):
               help="Specify the config file to use for configuring logging.")
 @click.option("--iknowwhatimdoing", "allow_root", is_flag=True,
               help="Allow OctoPrint to run as user root.")
+@click.option("--debug", is_flag=True,
+              help="Enable debug mode")
 @click.argument("command", type=click.Choice(["start", "stop", "restart"]),
                 metavar="start|stop|restart")
 @pass_octoprint_ctx
-def daemon_command(octoprint_ctx, pid, host, port, logging, allow_root, command):
+def daemon_command(octoprint_ctx, pid, host, port, logging, allow_root, debug, command):
 	"""
 	Starts, stops or restarts in daemon mode.
 
@@ -81,7 +86,7 @@ def daemon_command(octoprint_ctx, pid, host, port, logging, allow_root, command)
 
 	from octoprint.daemon import Daemon
 	class OctoPrintDaemon(Daemon):
-		def __init__(self, pidfile, basedir, configfile, host, port, debug, allow_root, logging_config):
+		def __init__(self, pidfile, basedir, configfile, host, port, debug, allow_root, logging_config, verbosity):
 			Daemon.__init__(self, pidfile)
 
 			self._basedir = basedir
@@ -91,12 +96,13 @@ def daemon_command(octoprint_ctx, pid, host, port, logging, allow_root, command)
 			self._debug = debug
 			self._allow_root = allow_root
 			self._logging_config = logging_config
+			self._verbosity = verbosity
 
 		def run(self):
-			run_server(self._basedir, self._configfile, self._host, self._port, self._debug, self._allow_root, self._logging_config)
+			run_server(self._basedir, self._configfile, self._host, self._port, self._debug, self._allow_root, self._logging_config, self._verbosity)
 
 	octoprint_daemon = OctoPrintDaemon(pid, octoprint_ctx.basedir, octoprint_ctx.configfile,
-	                                   host, port, octoprint_ctx.debug, allow_root, logging)
+	                                   host, port, debug, allow_root, logging, octoprint_ctx.verbosity)
 
 	if command == "start":
 		octoprint_daemon.start()
