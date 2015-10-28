@@ -26,7 +26,7 @@
 
 <div class="jog-panel" style="display: none;" data-bind="visible: loginState.isUser">
     <!-- XY jogging control panel -->
-    <div class="jog-panel">
+    <div class="jog-panel" id="controls-jog-xy">
         <h1>X/Y</h1>
         <div>
             <button class="btn box" id="control-yinc" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('y',1) }"><i class="icon-arrow-up"></i></button>
@@ -41,7 +41,7 @@
         </div>
     </div>
     <!-- Z jogging control panel -->
-    <div class="jog-panel">
+    <div class="jog-panel" id="controls-jog-z">
         <h1>Z</h1>
         <div>
             <button class="btn box" id="control-zinc" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('z',1) }"><i class="icon-arrow-up"></i></button>
@@ -55,8 +55,8 @@
     </div>
 
     <!-- Jog distance -->
-    <div class="distance">
-        <div class="btn-group" data-toggle="buttons-radio" id="jog_distance">
+    <div class="distance" id="controls-jog-distance">
+        <div class="btn-group" id="jog_distance" data-toggle="buttons-radio">
             <button type="button" id="control-distance01" class="btn distance" data-distance="0.1" data-bind="enable: loginState.isUser()">0.1</button>
             <button type="button" id="control-distance1" class="btn distance" data-distance="1" data-bind="enable: loginState.isUser()">1</button>
             <button type="button" id="control-distance10" class="btn distance active" data-distance="10" data-bind="enable: loginState.isUser()">10</button>
@@ -65,11 +65,13 @@
     </div>
 
     <!-- Feed rate -->
-    <input type="number" style="width: 153px" data-bind="slider: {min: 50, max: 150, step: 1, value: feedRate, tooltip: 'hide'}">
-    <button class="btn btn-block" style="width: 169px" data-bind="enable: isOperational() && loginState.isUser(), click: function() { $root.sendFeedRateCommand() }">{{ _('Feed rate:') }}<span data-bind="text: feedRate() + '%'"></span></button>
+    <div class="jog-panel" id="controls-jog-feedrate">
+        <input type="number" style="width: 153px" data-bind="slider: {min: 50, max: 150, step: 1, value: feedRate, tooltip: 'hide'}">
+        <button class="btn btn-block" style="width: 169px" data-bind="enable: isOperational() && loginState.isUser(), click: function() { $root.sendFeedRateCommand() }">{{ _('Feed rate:') }}<span data-bind="text: feedRate() + '%'"></span></button>
+    </div>
 </div>
 <!-- Extrusion control panel -->
-<div class="jog-panel" style="display: none;" data-bind="visible: loginState.isUser">
+<div class="jog-panel" id="controls-jog-extrusion" style="display: none;" data-bind="visible: loginState.isUser">
     <h1>Tool (E)</h1>
     <div>
         <div class="btn-group control-box">
@@ -94,7 +96,7 @@
     </div>
 </div>
 <!-- General control panel -->
-<div class="jog-panel" style="display: none;" data-bind="visible: loginState.isUser">
+<div class="jog-panel" id="controls-jog-general" style="display: none;" data-bind="visible: loginState.isUser">
     <h1>{{ _('General') }}</h1>
     <div>
         <button class="btn btn-block control-box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendCustomCommand({type:'command',command:'M18'}) }">{{ _('Motors off') }}</button>
@@ -104,7 +106,7 @@
 </div>
 
 <!-- Container for custom controls -->
-<div style="clear: both; display: none;" data-bind="visible: loginState.isUser, template: { name: $root.displayMode, foreach: controls }"></div>
+<div id="controls-jog-custom" style="clear: both; display: none;" data-bind="visible: loginState.isUser, template: { name: $root.displayMode, foreach: controls }"></div>
 
 <!-- Templates for custom controls -->
 <script type="text/html" id="customControls_containerTemplate_nameless">
