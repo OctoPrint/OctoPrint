@@ -23,18 +23,18 @@ logging.basicConfig()
 
 #~~ try to ensure a sound SSL environment
 
+urllib3_ssl = True
+"""Whether requests/urllib3 and urllib3 (if installed) should be able to establish
+   a sound SSL environment or not."""
+
 version_info = sys.version_info
 if version_info.major == 2 and version_info.minor <= 7 and version_info.micro < 9:
-	message = "Cannot configure PyOpenSSL for {} to ensure a secure " + \
-	          "SSL environment, update to Python >= 2.7.9 or install PyOpenSSL, see " + \
-	          "https://urllib3.readthedocs.org/en/latest/security.html#openssl-pyopenssl"
-
 	try:
 		# make sure our requests version of urllib3 is properly patched (if possible)
 		import requests.packages.urllib3.contrib.pyopenssl
 		requests.packages.urllib3.contrib.pyopenssl.inject_into_urllib3()
 	except ImportError:
-		logging.getLogger(__name__).warn(message.format("requests/urllib3"))
+		urllib3_ssl = False
 
 	try:
 		import urllib3
@@ -45,7 +45,7 @@ if version_info.major == 2 and version_info.minor <= 7 and version_info.micro < 
 			import urllib3.contrib.pyopenssl
 			urllib3.contrib.pyopenssl.inject_into_urllib3()
 		except ImportError:
-			logging.getLogger(__name__).warn(message.format("urllib3"))
+			urllib3_ssl = False
 	except ImportError:
 		pass
 

@@ -17,6 +17,16 @@ def run_server(basedir, configfile, host, port, debug, allow_root, logging_confi
 	def log_startup(_):
 		logging.getLogger("octoprint.server").info("Starting OctoPrint {}".format(__display_version__))
 
+		from octoprint import urllib3_ssl
+		if not urllib3_ssl:
+			logging.getLogger("octoprint.server")\
+				.warn("requests/urllib3 will run in an insecure SSL environment. "
+			          "You might see corresponding warnings logged later "
+			          "(\"InsecurePlatformWarning\"). It is recommended to either "
+			          "update to a Python version >= 2.7.9 or alternatively "
+			          "install PyOpenSSL plus its dependencies. For details see "
+			          "https://urllib3.readthedocs.org/en/latest/security.html#openssl-pyopenssl")
+
 	settings, _, plugin_manager = init_platform(basedir,
 	                                            configfile,
 	                                            logging_file=logging_config,
