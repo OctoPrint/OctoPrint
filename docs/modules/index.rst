@@ -7,6 +7,7 @@ Internal Modules
 .. toctree::
    :maxdepth: 3
 
+   cli.rst
    filemanager.rst
    plugin.rst
    printer.rst

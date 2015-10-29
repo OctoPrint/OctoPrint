@@ -9,8 +9,12 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 import click
 import logging
 
-
 class OctoPrintDevelCommands(click.MultiCommand):
+	"""
+	Custom `click.MultiCommand <http://click.pocoo.org/5/api/#click.MultiCommand>`_
+	implementation that provides commands relevant for (plugin) development
+	based on availability of development dependencies.
+	"""
 
 	sep = ":"
 

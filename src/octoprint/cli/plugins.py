@@ -14,21 +14,32 @@ from octoprint.cli import pass_octoprint_ctx, OctoPrintContext
 
 class OctoPrintPluginCommands(click.MultiCommand):
 	"""
-	Custom `click.MultiCommand` implementation that collects commands from
-	the plugin hook "octoprint.cli.commands".
+	Custom `click.MultiCommand <http://click.pocoo.org/5/api/#click.MultiCommand>`_
+	implementation that collects commands from the plugin hook
+	:ref:`octoprint.cli.commands <sec-plugins-hook-cli-commands>`.
+
+	.. attribute:: settings
+
+	   The global :class:`~octoprint.settings.Settings` instance.
+
+	.. attribute:: plugin_manager
+
+	   The :class:`~octoprint.plugin.core.PluginManager` instance.
 	"""
 
 	sep = ":"
-	"""Separator for commands between plugin name and command name."""
 
 	def __init__(self, *args, **kwargs):
 		click.MultiCommand.__init__(self, *args, **kwargs)
-		self._settings = None
-		self._plugin_manager = None
+
+		self.settings = None
+		self.plugin_manager = None
+
 		self._logger = logging.getLogger(__name__)
+		self._initialized = False
 
 	def _initialize(self, ctx):
-		if self._settings is not None:
+		if self._initialized:
 			return
 
 		if ctx.obj is None:
@@ -37,11 +48,13 @@ class OctoPrintPluginCommands(click.MultiCommand):
 		# initialize settings and plugin manager based on provided
 		# context (basedir and configfile)
 		from octoprint import init_settings, init_pluginsystem
-		self._settings = init_settings(ctx.obj.basedir, ctx.obj.configfile)
-		self._plugin_manager = init_pluginsystem(self._settings)
+		self.settings = init_settings(ctx.obj.basedir, ctx.obj.configfile)
+		self.plugin_manager = init_pluginsystem(self.settings)
 
 		# fetch registered hooks
-		self._hooks = self._plugin_manager.get_hooks("octoprint.cli.commands")
+		self.hooks = self.plugin_manager.get_hooks("octoprint.cli.commands")
+
+		self._initialized = True
 
 	def list_commands(self, ctx):
 		self._initialize(ctx)
@@ -60,7 +73,7 @@ class OctoPrintPluginCommands(click.MultiCommand):
 		import collections
 		result = collections.OrderedDict()
 
-		for name, hook in self._hooks.items():
+		for name, hook in self.hooks.items():
 			try:
 				commands = hook(self, pass_octoprint_ctx)
 				for command in commands:

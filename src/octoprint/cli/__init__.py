@@ -11,16 +11,20 @@ import octoprint
 #~~ click context
 
 class OctoPrintContext(object):
-	def __init__(self, configfile=None, basedir=None, debug=False, verbosity=0):
+	"""Custom context wrapping the standard options."""
+
+	def __init__(self, configfile=None, basedir=None, verbosity=0):
 		self.configfile = configfile
 		self.basedir = basedir
-		self.debug = debug
 		self.verbosity = verbosity
+
 pass_octoprint_ctx = click.make_pass_decorator(OctoPrintContext, ensure=True)
+"""Decorator to pass in the :class:`OctoPrintContext` instance."""
 
 #~~ Custom click option to hide from help
 
 class HiddenOption(click.Option):
+	"""Custom option sub class with empty help."""
 	def get_help_record(self, ctx):
 		pass
 
@@ -55,6 +59,13 @@ def set_ctx_obj_option(ctx, param, value):
 #~~ helper for setting a lot of bulk options
 
 def bulk_options(options):
+	"""
+	Utility decorator to decorate a function with a list of click decorators.
+
+	The provided list of ``options`` will be reversed to ensure correct
+	processing order (inverse from what would be intuitive).
+	"""
+
 	def decorator(f):
 		options.reverse()
 		for option in options:
@@ -65,6 +76,14 @@ def bulk_options(options):
 #~~ helper for setting --basedir, --config and --verbose options
 
 def standard_options(hidden=False):
+	"""
+	Decorator to add the standard options shared among all "octoprint" commands.
+
+	Adds the options ``--basedir``, ``--config`` and ``--verbose``. If ``hidden``
+	is set to ``True``, the options will be available on the command but not
+	listed in its help page.
+	"""
+
 	factory = click.option
 	if hidden:
 		factory = hidden_option
@@ -91,6 +110,9 @@ legacy_options = bulk_options([
 	hidden_option("--pid", type=click.Path(), default="/tmp/octoprint.pid"),
 	hidden_option("--iknowwhatimdoing", "allow_root", is_flag=True),
 ])
+"""Legacy options available directly on the "octoprint" command in earlier versions.
+   Kept available for reasons of backwards compatibility, but hidden from the
+   generated help pages."""
 
 #~~ "octoprint" command, merges server_commands and plugin_commands groups
 

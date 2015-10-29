@@ -12,6 +12,8 @@ import sys
 from octoprint.cli import pass_octoprint_ctx, bulk_options, standard_options
 
 def run_server(basedir, configfile, host, port, debug, allow_root, logging_config, verbosity):
+	"""Initializes the environment and starts up the server."""
+
 	from octoprint import init_platform, __display_version__
 
 	def log_startup(_):
@@ -39,9 +41,7 @@ def run_server(basedir, configfile, host, port, debug, allow_root, logging_confi
 	octoprint_server = Server(settings=settings, plugin_manager=plugin_manager, host=host, port=port, debug=debug, allow_root=allow_root)
 	octoprint_server.run()
 
-
 #~~ server options
-
 
 server_options = bulk_options([
 	click.option("--host", type=click.STRING,
@@ -54,6 +54,8 @@ server_options = bulk_options([
 	             help="Allow OctoPrint to run as user root."),
 	click.option("--debug", is_flag=True, help="Enable debug mode"),
 ])
+"""Decorator to add the options shared among the server commands: ``--host``, ``--port``,
+   ``--logging``, ``--iknowwhatimdoing`` and ``--debug``."""
 
 #~~ "octoprint serve" and "octoprint daemon" commands
 

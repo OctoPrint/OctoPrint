@@ -46,20 +46,87 @@ octoprint.cli.commands
 
    By providing a handler for this hook plugins may register commands on OctoPrint's command line interface (CLI).
 
-   .. todo::
+   Handlers are expected to return a list of callables annotated as `Click commands <http://click.pocoo.org/5/>`_ to register with the
+   CLI.
 
-        * More documentation
-        * Example
+   The custom ``MultiCommand`` instance :class:`~octoprint.cli.plugins.OctoPrintPluginCommands` is provided
+   as parameter. Via that object handlers may access the *global* :class:`~octoprint.settings.Settings`
+   and the :class:`~octoprint.plugin.core.PluginManager` instance as ``cli_group.settings`` and ``cli_group.plugin_manager``.
+
+   **Example:**
+
+   Registers two new commands, ``custom_cli_command:greet`` and ``custom_cli_command:random`` with
+   OctoPrint:
+
+   .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/custom_cli_command.py
+      :linenos:
+      :tab-width: 4
+      :caption: `custom_cli_command.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/custom_cli_command.py>`_
+
+   Calling ``octoprint --help`` shows the two new commands:
+
+   .. code-block:: none
+
+      $ octoprint --help
+      Usage: octoprint [OPTIONS] COMMAND [ARGS]...
+
+      Options:
+        -b, --basedir PATH  Specify the basedir to use for uploads, timelapses etc.
+        -c, --config PATH   Specify the config file to use.
+        -v, --verbose       Increase logging verbosity
+        --version           Show the version and exit.
+        --help              Show this message and exit.
+
+      Commands:
+        custom_cli_command:greet   Greet someone by name, the greeting can be...
+        custom_cli_command:random  Greet someone by name with a random greeting.
+        daemon                     Starts, stops or restarts in daemon mode.
+        devel:newplugin            Creates a new plugin based on the OctoPrint...
+        serve                      Starts the OctoPrint server.
+
+   Each also has an individual help output:
+
+   .. code-block:: none
+
+      $ octoprint custom_cli_command:greet --help
+      Usage: octoprint custom_cli_command:greet [OPTIONS] [NAME]
+
+        Greet someone by name, the greeting can be customized.
+
+      Options:
+        -g, --greeting TEXT  The greeting to use
+        --help               Show this message and exit.
+
+      $ octoprint custom_cli_command:random --help
+      Usage: octoprint custom_cli_command:random [OPTIONS] [NAME]
+
+        Greet someone by name with a random greeting.
+
+      Options:
+        --help  Show this message and exit.
+
+   And of course they work too:
+
+   .. code-block:: none
+
+      $ octoprint custom_cli_command:greet
+      Hello World!
+
+      $ octoprint custom_cli_command:greet --greeting "Good morning"
+      Good morning World!
+
+      $ octoprint custom_cli_command:random stranger
+      Hola stranger!
 
    .. note::
 
       If your hook handler is an instance method of a plugin mixin implementation, be aware that the hook will be
       called without OctoPrint initializing your implementation instance. That means that **none** of the
       :ref:`injected properties <sec-plugins-concepts-injectedproperties>` will be available and also the
-      :meth:`~octoprint.plugin.Plugin.initialize` method will not be called.
+      :method:`~octoprint.plugin.Plugin.initialize` method will not be called.
 
-      Your hook handler will have access to the plugin manager as ``cli_group._plugin_manager`` and to the
-      *global* settings as ``cli_group._settings``. You can have your handler turn the latter into a
+      Your hook handler will have access to the plugin manager as ``cli_group.plugin_manager`` and to the
+      *global* settings as ``cli_group.settings``. You can have your handler turn the latter into a
       :class:`~octoprint.plugin.PluginSettings` instance by using :func:`octoprint.plugin.plugin_settings_from_settings_plugin`
       if your plugin's implementation implements the :class:`~octoprint.plugin.SettingsPlugin` mixin and inject
       that and the plugin manager instance yourself:
@@ -92,7 +159,7 @@ octoprint.cli.commands
       OctoPrint server context, so there is absolutely no way to access a printer connection, the event bus or
       anything else like that. The only things available are the settings and the plugin manager.
 
-   :return: A list of `Click commands or groups <http://click.pocoo.org/5/commands/>` to provide on
+   :return: A list of `Click commands or groups <http://click.pocoo.org/5/commands/>`_ to provide on
             OctoPrint's CLI.
    :rtype: list
 
