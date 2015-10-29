@@ -83,17 +83,15 @@ class OctoPrintDevelCommands(click.MultiCommand):
 				cookiecutter_dict = {}
 				env = cookiecutter.prompt.Environment()
 
-				for key, raw in cookiecutter.prompt.iteritems(context['cookiecutter']):
+				for key, raw in context['cookiecutter'].items():
 					if key in options:
 						val = options[key]
 					else:
-						raw = raw if cookiecutter.prompt.is_string(raw) else str(raw)
+						raw = raw if isinstance(raw, basestring) else str(raw)
 						val = env.from_string(raw).render(cookiecutter=cookiecutter_dict)
 
 						if not no_input:
-							new_val = click.prompt(key, default=val)
-							if new_val != "":
-								val = new_val
+							val = click.prompt(key, default=val)
 
 					cookiecutter_dict[key] = val
 				return cookiecutter_dict
