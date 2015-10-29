@@ -74,7 +74,7 @@ def set_ctx_obj_option(ctx, param, value):
 @hidden_option("--port", type=click.INT)
 @hidden_option("--logging", type=click.Path())
 @hidden_option("--daemon", type=click.Choice(["start", "stop", "restart"]))
-@hidden_option("--pid", type=click.Path())
+@hidden_option("--pid", type=click.Path(), default="/tmp/octoprint.pid")
 @hidden_option("--iknowwhatimdoing", "allow_root", is_flag=True)
 @click.version_option(version=octoprint.__version__)
 @click.pass_context

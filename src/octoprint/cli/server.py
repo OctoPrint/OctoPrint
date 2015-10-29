@@ -58,7 +58,7 @@ def serve_command(obj, host, port, logging, allow_root, debug):
 
 
 @server_commands.command(name="daemon")
-@click.option("--pid", type=click.Path(),
+@click.option("--pid", type=click.Path(), default="/tmp/octoprint.pid",
               help="Pidfile to use for daemonizing.")
 @click.option("--host", type=click.STRING,
               help="Specify the host on which to bind the server.")
@@ -83,6 +83,11 @@ def daemon_command(octoprint_ctx, pid, host, port, logging, allow_root, debug, c
 		click.echo("Sorry, daemon mode is only supported under Linux right now",
 		           file=sys.stderr)
 		sys.exit(2)
+
+	if pid is None:
+		click.echo("No path to a pidfile set",
+		           file=sys.stderr)
+		sys.exit(1)
 
 	from octoprint.daemon import Daemon
 	class OctoPrintDaemon(Daemon):
