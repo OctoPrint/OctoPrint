@@ -108,13 +108,14 @@ def init_logging(settings, use_logging_file=True, logging_file=None, default_con
 				}
 			},
 			"root": {
-				"level": "INFO",
+				"level": "WARN",
 				"handlers": ["console", "file"]
 			}
 		}
 
 	if debug or verbosity > 0:
 		default_config["loggers"]["octoprint"]["level"] = "DEBUG"
+		default_config["root"]["level"] = "INFO"
 	if verbosity > 1:
 		default_config["loggers"]["octoprint.plugins"]["level"] = "DEBUG"
 	if verbosity > 2:
@@ -145,10 +146,12 @@ def init_logging(settings, use_logging_file=True, logging_file=None, default_con
 
 	import warnings
 
+	categories = (DeprecationWarning, PendingDeprecationWarning)
 	if verbosity > 2:
 		warnings.simplefilter("always")
 	elif debug or verbosity > 0:
-		warnings.simplefilter("default")
+		for category in categories:
+			warnings.simplefilter("always", category=category)
 
 	# make sure we also log any uncaught exceptions
 	if uncaught_logger is None:
