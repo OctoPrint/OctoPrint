@@ -9,7 +9,7 @@ import click
 import logging
 import sys
 
-from octoprint.cli import pass_octoprint_ctx
+from octoprint.cli import pass_octoprint_ctx, bulk_options, standard_options
 
 def run_server(basedir, configfile, host, port, debug, allow_root, logging_config, verbosity):
 	from octoprint import init_platform, __display_version__
@@ -40,8 +40,22 @@ def run_server(basedir, configfile, host, port, debug, allow_root, logging_confi
 	octoprint_server.run()
 
 
-#~~ "octoprint serve" and "octoprint daemon" commands
+#~~ server options
 
+
+server_options = bulk_options([
+	click.option("--host", type=click.STRING,
+	             help="Specify the host on which to bind the server."),
+	click.option("--port", type=click.INT,
+	             help="Specify the port on which to bind the server."),
+	click.option("--logging", type=click.Path(),
+	             help="Specify the config file to use for configuring logging."),
+	click.option("--iknowwhatimdoing", "allow_root", is_flag=True,
+	             help="Allow OctoPrint to run as user root."),
+	click.option("--debug", is_flag=True, help="Enable debug mode"),
+])
+
+#~~ "octoprint serve" and "octoprint daemon" commands
 
 @click.group()
 @pass_octoprint_ctx
@@ -50,16 +64,8 @@ def server_commands(obj):
 
 
 @server_commands.command(name="serve")
-@click.option("--host", type=click.STRING,
-              help="Specify the host on which to bind the server.")
-@click.option("--port", type=click.INT,
-              help="Specify the port on which to bind the server.")
-@click.option("--logging", type=click.Path(),
-              help="Specify the config file to use for configuring logging.")
-@click.option("--iknowwhatimdoing", "allow_root", is_flag=True,
-              help="Allow OctoPrint to run as user root.")
-@click.option("--debug", is_flag=True,
-              help="Enable debug mode")
+@server_options
+@standard_options(hidden=True)
 @pass_octoprint_ctx
 def serve_command(obj, host, port, logging, allow_root, debug):
 	"""Starts the OctoPrint server."""
@@ -70,16 +76,8 @@ def serve_command(obj, host, port, logging, allow_root, debug):
 @server_commands.command(name="daemon")
 @click.option("--pid", type=click.Path(), default="/tmp/octoprint.pid",
               help="Pidfile to use for daemonizing.")
-@click.option("--host", type=click.STRING,
-              help="Specify the host on which to bind the server.")
-@click.option("--port", type=click.INT,
-              help="Specify the port on which to bind the server.")
-@click.option("--logging", type=click.Path(),
-              help="Specify the config file to use for configuring logging.")
-@click.option("--iknowwhatimdoing", "allow_root", is_flag=True,
-              help="Allow OctoPrint to run as user root.")
-@click.option("--debug", is_flag=True,
-              help="Enable debug mode")
+@server_options
+@standard_options(hidden=True)
 @click.argument("command", type=click.Choice(["start", "stop", "restart", "status"]),
                 metavar="start|stop|restart|status")
 @pass_octoprint_ctx

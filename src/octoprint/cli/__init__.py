@@ -8,9 +8,7 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 import click
 import octoprint
 
-
 #~~ click context
-
 
 class OctoPrintContext(object):
 	def __init__(self, configfile=None, basedir=None, debug=False, verbosity=0):
@@ -20,9 +18,7 @@ class OctoPrintContext(object):
 		self.verbosity = verbosity
 pass_octoprint_ctx = click.make_pass_decorator(OctoPrintContext, ensure=True)
 
-
 #~~ Custom click option to hide from help
-
 
 class HiddenOption(click.Option):
 	def get_help_record(self, ctx):
@@ -46,11 +42,7 @@ def hidden_option(*param_decls, **attrs):
 		return f
 	return decorator
 
-#~~ "octoprint" command, merges server_commands and plugin_commands groups
-
-from .server import server_commands
-from .plugins import plugin_commands
-from .devel import devel_commands
+#~~ helper for settings context options
 
 def set_ctx_obj_option(ctx, param, value):
 	"""Helper for setting eager options on the context."""
@@ -60,22 +52,56 @@ def set_ctx_obj_option(ctx, param, value):
 	if hasattr(ctx.obj, param.name):
 		setattr(ctx.obj, param.name, value)
 
+#~~ helper for setting a lot of bulk options
+
+def bulk_options(options):
+	def decorator(f):
+		options.reverse()
+		for option in options:
+			option(f)
+		return f
+	return decorator
+
+#~~ helper for setting --basedir, --config and --verbose options
+
+def standard_options(hidden=False):
+	factory = click.option
+	if hidden:
+		factory = hidden_option
+
+	options = [
+		factory("--basedir", "-b", type=click.Path(), callback=set_ctx_obj_option, is_eager=True, expose_value=False,
+		        help="Specify the basedir to use for uploads, timelapses etc."),
+		factory("--config", "-c", "configfile", type=click.Path(), callback=set_ctx_obj_option, is_eager=True, expose_value=False,
+		        help="Specify the config file to use."),
+		factory("--verbose", "-v", "verbosity", count=True, callback=set_ctx_obj_option, is_eager=True, expose_value=False,
+		        help="Increase logging verbosity"),
+	]
+
+	return bulk_options(options)
+
+#~~ helper for settings legacy options we still have to support on "octoprint"
+
+legacy_options = bulk_options([
+	hidden_option("--host", type=click.STRING),
+	hidden_option("--port", type=click.INT),
+	hidden_option("--logging", type=click.Path()),
+	hidden_option("--debug", "-d", is_flag=True),
+	hidden_option("--daemon", type=click.Choice(["start", "stop", "restart"])),
+	hidden_option("--pid", type=click.Path(), default="/tmp/octoprint.pid"),
+	hidden_option("--iknowwhatimdoing", "allow_root", is_flag=True),
+])
+
+#~~ "octoprint" command, merges server_commands and plugin_commands groups
+
+from .server import server_commands
+from .plugins import plugin_commands
+from .devel import devel_commands
 
 @click.group(name="octoprint", invoke_without_command=True, cls=click.CommandCollection,
              sources=[server_commands, plugin_commands, devel_commands])
-@click.option("--basedir", "-b", type=click.Path(), callback=set_ctx_obj_option, is_eager=True, expose_value=False,
-              help="Specify the basedir to use for uploads, timelapses etc.")
-@click.option("--config", "-c", "configfile", type=click.Path(), callback=set_ctx_obj_option, is_eager=True, expose_value=False,
-              help="Specify the config file to use.")
-@click.option("--verbose", "-v", "verbosity", count=True, callback=set_ctx_obj_option, is_eager=True, expose_value=False,
-              help="Increase logging verbosity")
-@hidden_option("--debug", "-d", is_flag=True)
-@hidden_option("--host", type=click.STRING)
-@hidden_option("--port", type=click.INT)
-@hidden_option("--logging", type=click.Path())
-@hidden_option("--daemon", type=click.Choice(["start", "stop", "restart"]))
-@hidden_option("--pid", type=click.Path(), default="/tmp/octoprint.pid")
-@hidden_option("--iknowwhatimdoing", "allow_root", is_flag=True)
+@standard_options()
+@legacy_options
 @click.version_option(version=octoprint.__version__)
 @click.pass_context
 def octo(ctx, debug, host, port, logging, daemon, pid, allow_root):

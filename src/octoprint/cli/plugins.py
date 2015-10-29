@@ -10,9 +10,7 @@ import logging
 
 from octoprint.cli import pass_octoprint_ctx, OctoPrintContext
 
-
 #~~ "octoprint plugin:command" commands
-
 
 class OctoPrintPluginCommands(click.MultiCommand):
 	"""
@@ -74,7 +72,6 @@ class OctoPrintPluginCommands(click.MultiCommand):
 				self._logger.exception("Error while retrieving cli commants for plugin {}".format(name))
 
 		return result
-
 
 @click.group(cls=OctoPrintPluginCommands)
 @pass_octoprint_ctx
