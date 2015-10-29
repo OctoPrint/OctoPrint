@@ -70,8 +70,8 @@ def serve_command(obj, host, port, logging, allow_root, debug):
               help="Allow OctoPrint to run as user root.")
 @click.option("--debug", is_flag=True,
               help="Enable debug mode")
-@click.argument("command", type=click.Choice(["start", "stop", "restart"]),
-                metavar="start|stop|restart")
+@click.argument("command", type=click.Choice(["start", "stop", "restart", "status"]),
+                metavar="start|stop|restart|status")
 @pass_octoprint_ctx
 def daemon_command(octoprint_ctx, pid, host, port, logging, allow_root, debug, command):
 	"""
@@ -115,5 +115,7 @@ def daemon_command(octoprint_ctx, pid, host, port, logging, allow_root, debug, c
 		octoprint_daemon.stop()
 	elif command == "restart":
 		octoprint_daemon.restart()
+	elif command == "status":
+		octoprint_daemon.status()
 
 
