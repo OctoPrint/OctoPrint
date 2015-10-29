@@ -625,7 +625,7 @@ def atomic_write(filename, mode="w+b", prefix="tmp", suffix=""):
 
 
 @contextlib.contextmanager
-def tempdir(**kwargs):
+def tempdir(ignore_errors=False, onerror=None, **kwargs):
 	import tempfile
 	import shutil
 
@@ -633,7 +633,7 @@ def tempdir(**kwargs):
 	try:
 		yield dirpath
 	finally:
-		shutil.rmtree(dirpath)
+		shutil.rmtree(dirpath, ignore_errors=ignore_errors, onerror=onerror)
 
 
 def bom_aware_open(filename, encoding="ascii", mode="r", **kwargs):
