@@ -78,18 +78,29 @@ octoprint.cli.commands
         --help              Show this message and exit.
 
       Commands:
-        custom_cli_command:greet   Greet someone by name, the greeting can be...
-        custom_cli_command:random  Greet someone by name with a random greeting.
         daemon                     Starts, stops or restarts in daemon mode.
-        devel:newplugin            Creates a new plugin based on the OctoPrint...
+        dev:plugin                 Helpers for plugin developers
+        plugin:custom_cli_command  custom_cli_command commands
         serve                      Starts the OctoPrint server.
+
+      $ octoprint plugin:custom_cli_command --help
+      Usage: octoprint plugin:custom_cli_command [OPTIONS] COMMAND [ARGS]...
+
+        custom_cli_command commands
+
+      Options:
+        --help  Show this message and exit.
+
+      Commands:
+        greet   Greet someone by name, the greeting can be...
+        random  Greet someone by name with a random greeting.
 
    Each also has an individual help output:
 
    .. code-block:: none
 
-      $ octoprint custom_cli_command:greet --help
-      Usage: octoprint custom_cli_command:greet [OPTIONS] [NAME]
+      $ octoprint plugin:custom_cli_command greet --help
+      Usage: octoprint plugin:custom_cli_command greet [OPTIONS] [NAME]
 
         Greet someone by name, the greeting can be customized.
 
@@ -97,8 +108,8 @@ octoprint.cli.commands
         -g, --greeting TEXT  The greeting to use
         --help               Show this message and exit.
 
-      $ octoprint custom_cli_command:random --help
-      Usage: octoprint custom_cli_command:random [OPTIONS] [NAME]
+      $ octoprint plugin:custom_cli_command random --help
+      Usage: octoprint plugin:custom_cli_command random [OPTIONS] [NAME]
 
         Greet someone by name with a random greeting.
 
@@ -109,13 +120,13 @@ octoprint.cli.commands
 
    .. code-block:: none
 
-      $ octoprint custom_cli_command:greet
+      $ octoprint plugin:custom_cli_command greet
       Hello World!
 
-      $ octoprint custom_cli_command:greet --greeting "Good morning"
+      $ octoprint plugin:custom_cli_command greet --greeting "Good morning"
       Good morning World!
 
-      $ octoprint custom_cli_command:random stranger
+      $ octoprint plugin:custom_cli_command random stranger
       Hola stranger!
 
    .. note::
