@@ -135,10 +135,10 @@ so we'll first need to install that::
 
    (venv) $ pip install cookiecutter
 
-Then we can use the ``octoprint dev:plugin new`` command [#f1]_ to generate a new OctoPrint plugin skeleton for us::
+Then we can use the ``octoprint dev plugin:new`` command [#f1]_ to generate a new OctoPrint plugin skeleton for us::
 
    (venv) $ cd ~/devel
-   (venv) $ octoprint dev:plugin new helloworld
+   (venv) $ octoprint dev plugin:new helloworld
    Cloning into 'cookiecutter-octoprint-plugin'...
    remote: Counting objects: 101, done.
    remote: Total 101 (delta 0), reused 0 (delta 0), pack-reused 101
@@ -160,7 +160,7 @@ Then we can use the ``octoprint dev:plugin new`` command [#f1]_ to generate a ne
 
 .. note::
 
-   If ``octoprint dev:plugin new`` isn't recognized as a command (and also doesn't show up in the output of
+   If ``octoprint dev plugin:new`` isn't recognized as a command (and also doesn't show up in the output of
    ``octoprint --help``, make sure you installed cookiecutter into the same python environment as OctoPrint.
 
 This will create a project structure in the ``OctoPrint-HelloWorld`` folder we just changed to that looks like this::
@@ -230,10 +230,10 @@ Now all that's left to do is to move our ``helloworld.py`` into the ``octoprint_
 The plugin is now ready to be installed via ``python setup.py install``. However, since we are still
 working on our plugin, it makes more sense to use ``python setup.py develop`` for now -- this way the plugin becomes
 discoverable by OctoPrint, however we don't have to reinstall it after any changes we will still do. We can have the
-``octoprint dev:plugin install`` command do everything for us here, it will ensure to use the python binary belonging
+``octoprint dev plugin:install`` command do everything for us here, it will ensure to use the python binary belonging
 to your OctoPrint installation::
 
-   (venv) $ octoprint dev:plugin install
+   (venv) $ octoprint dev plugin:install
    running develop
    running egg_info
    creating OctoPrint_HelloWorld.egg-info
@@ -1075,11 +1075,11 @@ looking for examples.
 
 .. rubric:: Footnotes
 
-.. [#f1] Instead of the ``octoprint dev:plugin new`` you could also have manually called cookiecutter with the
+.. [#f1] Instead of the ``octoprint dev plugin:new`` you could also have manually called cookiecutter with the
          template's repository URL shortcut: ``cookiecutter gh:OctoPrint/cookiecutter-octoprint-plugin``. The
          ``devel:newplugin`` command already does this for you, makes sure cookiecutter always uses a fresh
          checkout without prompting you for it and also allows to pre-specify a bunch of settings (like the
-         plugin's identifier) directly from the command line. Take a look at ``octoprint dev:plugin new --help``
+         plugin's identifier) directly from the command line. Take a look at ``octoprint dev plugin:new --help``
          for the usage details.
 .. [#f2] Refer to the `LESS documentation <http://lesscss.org/#using-less>`_ on how to do that. If you are developing
          your plugin under Windows you might also want to give `WinLESS <http://winless.org/>`_ a look which will run

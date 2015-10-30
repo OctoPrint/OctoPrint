@@ -27,7 +27,6 @@ class OctoPrintPluginCommands(click.MultiCommand):
 	   The :class:`~octoprint.plugin.core.PluginManager` instance.
 	"""
 
-	prefix = "plugin"
 	sep = ":"
 
 	def __init__(self, *args, **kwargs):
@@ -77,26 +76,24 @@ class OctoPrintPluginCommands(click.MultiCommand):
 
 		for name, hook in self.hooks.items():
 			try:
-				plugin_info = self.plugin_manager.get_plugin_info(name, require_enabled=False)
-				command_group = click.Group(name=name, help="{} commands".format(plugin_info.name))
-
 				commands = hook(self, pass_octoprint_ctx)
 				for command in commands:
 					if not isinstance(command, click.Command):
 						self._logger.warn("Plugin {} provided invalid CLI command, ignoring it: {!r}".format(name, command))
 						continue
-					command_group.add_command(command)
-
-				result[self.prefix + self.sep + name] = command_group
+					result[name + self.sep + command.name] = command
 			except:
 				self._logger.exception("Error while retrieving cli commants for plugin {}".format(name))
 
 		return result
 
-@click.group(cls=OctoPrintPluginCommands)
+@click.group()
 @pass_octoprint_ctx
 def plugin_commands(obj):
-	"""Commands provided by plugins."""
 	logging.basicConfig(level=logging.DEBUG if obj.verbosity > 0 else logging.WARN)
 
+@plugin_commands.group(name="plugins", cls=OctoPrintPluginCommands)
+def plugins():
+	"""Additional commands provided by plugins."""
+	pass
 

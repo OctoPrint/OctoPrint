@@ -15,8 +15,8 @@ class OctoPrintDevelCommands(click.MultiCommand):
 	based on availability of development dependencies.
 	"""
 
-	prefix = "dev"
 	sep = ":"
+	groups = ("plugin",)
 
 	def __init__(self, *args, **kwargs):
 		click.MultiCommand.__init__(self, *args, **kwargs)
@@ -47,10 +47,11 @@ class OctoPrintDevelCommands(click.MultiCommand):
 				yield result
 
 	def _get_commands(self):
-		commands = dict()
-		for command in self._get_commands_from_prefix_methods("group_"):
-			commands[self.prefix + self.sep + command.name] = command
-		return commands
+		result = dict()
+		for group in self.groups:
+			for command in self._get_commands_from_prefix_methods("{}_".format(group)):
+				result[group + self.sep + command.name] = command
+		return result
 
 	def list_commands(self, ctx):
 		result = [name for name in self._get_commands()]
@@ -60,13 +61,6 @@ class OctoPrintDevelCommands(click.MultiCommand):
 	def get_command(self, ctx, cmd_name):
 		commands = self._get_commands()
 		return commands.get(cmd_name, None)
-
-	def group_plugin(self):
-		command_group = click.Group("plugin",
-		                            help="Helpers for plugin developers")
-		for command in self._get_commands_from_prefix_methods("plugin_"):
-			command_group.add_command(command)
-		return command_group
 
 	def plugin_new(self):
 		try:
@@ -229,6 +223,11 @@ class OctoPrintDevelCommands(click.MultiCommand):
 
 		return command
 
-@click.group(cls=OctoPrintDevelCommands)
+@click.group()
 def dev_commands():
+	pass
+
+@dev_commands.group(name="dev", cls=OctoPrintDevelCommands)
+def dev():
+	"""Additional commands for development tasks."""
 	pass
