@@ -211,11 +211,12 @@ class PipCaller(CommandlineCaller):
 			pip_sudo = False
 
 		if pip_command is None:
-			pip_command = self._autodetect_pip()
+			pip_command = self.autodetect_pip()
 
 		return pip_command, pip_sudo
 
-	def _autodetect_pip(self):
+	@classmethod
+	def autodetect_pip(cls):
 		import os
 		python_command = sys.executable
 		binary_dir = os.path.dirname(python_command)
@@ -333,7 +334,7 @@ class PipCaller(CommandlineCaller):
 class LocalPipCaller(PipCaller):
 
 	def _get_pip_command(self):
-		return self._autodetect_pip(), False
+		return self.autodetect_pip(), False
 
 	def _check_pip_setup(self, pip_command):
 		import sys

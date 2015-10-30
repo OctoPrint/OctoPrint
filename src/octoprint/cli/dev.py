@@ -7,7 +7,6 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 
 
 import click
-import logging
 
 class OctoPrintDevelCommands(click.MultiCommand):
 	"""
@@ -23,7 +22,6 @@ class OctoPrintDevelCommands(click.MultiCommand):
 		click.MultiCommand.__init__(self, *args, **kwargs)
 
 		from octoprint.util.commandline import CommandlineCaller
-		from octoprint.util.pip import LocalPipCaller
 		from functools import partial
 
 		def log_util(f):
@@ -32,19 +30,10 @@ class OctoPrintDevelCommands(click.MultiCommand):
 						f(line)
 			return log
 
-		log_call = log_util(lambda x: click.echo(">> {}".format(x)))
-		log_stdout = log_util(click.echo)
-		log_stderr = log_util(partial(click.echo, err=True))
-
-		self.pip_caller = LocalPipCaller()
-		self.pip_caller.on_log_call = log_call
-		self.pip_caller.on_log_stdout = log_stdout
-		self.pip_caller.on_log_stderr = log_stderr
-
 		self.command_caller = CommandlineCaller()
-		self.command_caller.on_log_call = log_call
-		self.command_caller.on_log_stdout = log_stdout
-		self.command_caller.on_log_stderr = log_stderr
+		self.command_caller.on_log_call = log_util(lambda x: click.echo(">> {}".format(x)))
+		self.command_caller.on_log_stdout = log_util(click.echo)
+		self.command_caller.on_log_stderr = log_util(partial(click.echo, err=True))
 
 	def _get_prefix_methods(self, method_prefix):
 		for name in [x for x in dir(self) if x.startswith(method_prefix)]:
@@ -219,7 +208,9 @@ class OctoPrintDevelCommands(click.MultiCommand):
 		return command
 
 	def plugin_uninstall(self):
-		if not self.pip_caller.available:
+		from octoprint.util.pip import PipCaller
+		pip_command = PipCaller.autodetect_pip()
+		if pip_command is None:
 			return
 
 		@click.command("uninstall")
@@ -233,8 +224,8 @@ class OctoPrintDevelCommands(click.MultiCommand):
 				click.echo("This doesn't look like an OctoPrint plugin name")
 				sys.exit(1)
 
-			call = ["uninstall", "--yes", name]
-			self.pip_caller.execute(*call)
+			call = [pip_command, "uninstall", "--yes", name]
+			self.command_caller.call(call)
 
 		return command
 
