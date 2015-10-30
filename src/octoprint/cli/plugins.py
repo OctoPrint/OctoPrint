@@ -35,6 +35,7 @@ class OctoPrintPluginCommands(click.MultiCommand):
 
 		self.settings = None
 		self.plugin_manager = None
+		self.hooks = dict()
 
 		self._logger = logging.getLogger(__name__)
 		self._initialized = False
