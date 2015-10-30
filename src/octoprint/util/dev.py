@@ -54,13 +54,13 @@ def log_duration(log=None, with_args=False):
 		def wrapped(*args, **kwargs):
 			if with_args:
 				args_str = ", ".join(map(lambda x: repr(x), args))
-				kwargs_str = ", ".join(map(lambda k, v: "{}={}".format(k, repr(v)), kwargs.items()))
+				kwargs_str = ", ".join(map(lambda item: "{}={}".format(item[0], repr(item[1])), kwargs.items()))
 				sep = ", " if args_str and kwargs_str else ""
 				arguments = "".join([args_str, sep, kwargs_str])
 			else:
 				arguments = "..."
 			context = "{name}({arguments})".format(name=f.__name__, arguments=arguments)
 			with duration_log(context=context, log=log):
-				f(*args, **kwargs)
+				return f(*args, **kwargs)
 		return wrapped
 	return decorator
