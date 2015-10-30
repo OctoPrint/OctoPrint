@@ -113,8 +113,10 @@
         {{ pluginmanager_sudopip() }}
         <h4 style="position: relative">
             {{ _('... from the <a href="%(url)s" target="_blank">Plugin Repository</a>', url='http://plugins.octoprint.org') }}
-            <a class="dropdown-toggle pull-right" data-toggle="dropdown" href="#">
-                <span class="icon-wrench"></span>
+            <div class="dropdown pull-right">
+                <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+                    <span class="icon-wrench"></span>
+                </a>
                 <ul class="dropdown-menu pull-right">
                     <li><a href="#" data-bind="click: function() { repositoryplugins.changeSorting('title'); }"><i class="icon-ok" data-bind="style: {visibility: repositoryplugins.currentSorting() == 'title' ? 'visible' : 'hidden'}"></i> {{ _('Sort by title') }} ({{ _('ascending') }})</a></li>
                     <li><a href="#" data-bind="click: function() { repositoryplugins.changeSorting('published'); }"><i class="icon-ok" data-bind="style: {visibility: repositoryplugins.currentSorting() == 'published' ? 'visible' : 'hidden'}"></i> {{ _('Sort by publication date') }} ({{ _('descending') }})</a></li>
@@ -124,7 +126,7 @@
                     <li class="divider"></li>
                     <li><a href="#" data-bind="click: function() { refreshRepository(); }"><i class="icon-refresh"></i> {{ _('Refresh list from repository') }}</a></li>
                 </ul>
-            </a>
+            </div>
         </h4>
 
         <form class="form-search" data-bind="submit: performRepositorySearch">
