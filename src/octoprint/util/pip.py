@@ -114,7 +114,7 @@ class PipCaller(CommandlineCaller):
 			self._version = None
 		self.refresh = False
 
-	def execute(self, *args):
+	def execute(self, *args, **kwargs):
 		if self.refresh:
 			self.trigger_refresh()
 
@@ -151,20 +151,10 @@ class PipCaller(CommandlineCaller):
 		if self._use_sudo or self.force_sudo:
 			command = ["sudo"] + command
 
-		return self.call(command)
+		return self.call(command, **kwargs)
 
 	def _setup_pip(self):
-		pip_command = self.configured
-
-		if pip_command is not None and pip_command.startswith("sudo "):
-			pip_command = pip_command[len("sudo "):]
-			pip_sudo = True
-		else:
-			pip_sudo = False
-
-		if pip_command is None:
-			pip_command = self._autodetect_pip()
-
+		pip_command, pip_sudo = self._get_pip_command()
 		if pip_command is None:
 			return
 
@@ -210,6 +200,20 @@ class PipCaller(CommandlineCaller):
 		self._use_user = pip_user
 		self._virtual_env = pip_virtual_env
 		self._install_dir = pip_install_dir
+
+	def _get_pip_command(self):
+		pip_command = self.configured
+
+		if pip_command is not None and pip_command.startswith("sudo "):
+			pip_command = pip_command[len("sudo "):]
+			pip_sudo = True
+		else:
+			pip_sudo = False
+
+		if pip_command is None:
+			pip_command = self._autodetect_pip()
+
+		return pip_command, pip_sudo
 
 	def _autodetect_pip(self):
 		import os
@@ -325,3 +329,22 @@ class PipCaller(CommandlineCaller):
 		else:
 			self._logger.debug("Could not detect desired output from testballoon install, got this instead: {}".format(" ".join(sarge_command), output))
 			return False, False, False, None
+
+class LocalPipCaller(PipCaller):
+
+	def _get_pip_command(self):
+		return self._autodetect_pip(), False
+
+	def _check_pip_setup(self, pip_command):
+		import sys
+		import os
+		from distutils.sysconfig import get_python_lib
+
+		virtual_env = hasattr(sys, "real_prefix")
+		install_dir = get_python_lib()
+		writable = os.access(install_dir, os.W_OK)
+
+		return writable or not virtual_env, \
+		       not writable and not virtual_env and site.ENABLE_USER_SITE, \
+		       virtual_env, \
+		       install_dir

@@ -6,12 +6,12 @@ octoprint.cli
 .. automodule:: octoprint.cli
    :members:
 
-.. _sec-modules-cli-devel:
+.. _sec-modules-cli-dev:
 
-octoprint.cli.devel
--------------------
+octoprint.cli.dev
+-----------------
 
-.. automodule:: octoprint.cli.devel
+.. automodule:: octoprint.cli.dev
    :members:
 
 .. _sec-modules-cli-plugins:

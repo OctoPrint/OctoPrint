@@ -118,10 +118,10 @@ legacy_options = bulk_options([
 
 from .server import server_commands
 from .plugins import plugin_commands
-from .devel import devel_commands
+from .dev import dev_commands
 
 @click.group(name="octoprint", invoke_without_command=True, cls=click.CommandCollection,
-             sources=[server_commands, plugin_commands, devel_commands])
+             sources=[server_commands, plugin_commands, dev_commands])
 @standard_options()
 @legacy_options
 @click.version_option(version=octoprint.__version__)

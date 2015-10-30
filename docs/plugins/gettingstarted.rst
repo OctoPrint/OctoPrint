@@ -10,6 +10,37 @@ Over the course of this little tutorial we'll build a full fledged, installable 
 at some locations throughout OctoPrint and also offers some other basic functionality to give you an idea of what
 you can achieve with OctoPrint's plugin system.
 
+First of all let use make sure that you have OctoPrint checked out and set up for development on your local
+development environment::
+
+  $ cd ~/devel
+  $ git clone https://github.com/foosel/OctoPrint
+  [...]
+  $ cd OctoPrint
+  $ virtualenv venv
+  [...]
+  $ source venv/bin/activate
+  (venv) $ pip install -e[develop]
+  [...]
+  (venv) $ octoprint --help
+  Usage: octoprint [OPTIONS] COMMAND [ARGS]...
+
+  [...]
+
+.. note::
+
+   You can also develop your plugin directly on your Raspberry Pi running OctoPi of course. In that
+   case please ignore the above instructions, you'll only need to activate the ``oprint``
+   virtual environment:
+
+   .. code-block:: none
+
+      $ source ~/oprint/bin/activate
+      (oprint) $ octoprint --help
+      Usage: octoprint [OPTIONS] COMMAND [ARGS]...
+
+      [...]
+
 We'll start at the most basic form a plugin can take - just a couple of simple lines of Python code:
 
 .. code-block:: python
@@ -24,14 +55,15 @@ We'll start at the most basic form a plugin can take - just a couple of simple l
 
 Saving this as ``helloworld.py`` in ``~/.octoprint/plugins`` yields you something resembling these log entries upon server startup::
 
+   (venv) $ octoprint serve
    2015-01-27 11:14:35,124 - octoprint.server - INFO - Starting OctoPrint 1.2.0-dev-448-gd96e56e (devel branch)
    [...]
    2015-01-27 11:14:35,124 - octoprint.plugin.core - INFO - Loading plugins from /home/pi/.octoprint/plugins, /home/pi/OctoPrint/src/octoprint/plugins and installed plugin packages...
    [...]
    2015-01-27 11:14:36,135 - octoprint.plugin.core - INFO - 3 plugin(s) registered with the system:
-   | CuraEngine (bundled) = /home/pi/OctoPrint/src/octoprint/plugins/cura
-   | Discovery (bundled) = /home/pi/OctoPrint/src/octoprint/plugins/discovery
+   [...]
    | Hello World (1.0.0) = /home/pi/.octoprint/plugins/helloworld.py
+   [...]
 
 OctoPrint found that plugin in the folder and took a look into it. The name and the version it displays in that log
 entry it got from the ``__plugin_name__`` and ``__plugin_version__`` lines. It also read the description from
@@ -101,31 +133,35 @@ or alternatively manually utilizing Python's standard package manager ``pip`` di
 So let's begin. We'll use the `cookiecutter <https://github.com/audreyr/cookiecutter>`_ template for OctoPrint plugins here,
 so we'll first need to install that::
 
-   $ pip install cookiecutter
+   (venv) $ pip install cookiecutter
 
-Then we can use the ``cookiecutter`` command to generate a new OctoPrint plugin skeleton for us::
+Then we can use the ``octoprint dev:plugin new`` command [#f1]_ to generate a new OctoPrint plugin skeleton for us::
 
-   $ cookiecutter gh:OctoPrint/cookiecutter-octoprint-plugin
+   (venv) $ cd ~/devel
+   (venv) $ octoprint dev:plugin new helloworld
    Cloning into 'cookiecutter-octoprint-plugin'...
-   remote: Counting objects: 70, done.
-   remote: Compressing objects: 100% (17/17), done.
-   emote: Total 70 (delta 0), reused 0 (delta 0), pack-reused 51
-   Unpacking objects: 100% (70/70), done.
-   Checking connectivity... done.
-   plugin_identifier (default is "skeleton")? helloworld
-   plugin_package (default is "octoprint_helloworld")?
-   plugin_name (default is "OctoPrint-Helloworld")?
-   repo_name (default is "OctoPrint-Helloworld")?
-   full_name (default is "You")? Your Name
-   email (default is "you@example.com")? you@somewhere.net
-   github_username (default is "you")? yourGithubName
-   plugin_version (default is "0.1.0")? 1.0.0
-   plugin_description (default is "TODO")? A quick "Hello World" example plugin for OctoPrint
-   plugin_license (default is "AGPLv3")?
-   plugin_homepage (default is "https://github.com/yourGithubName/OctoPrint-Helloworld")?
-   plugin_source (default is "https://github.com/yourGithubName/OctoPrint-Helloworld")?
-   plugin_installurl (default is "https://github.com/yourGithubName/OctoPrint-Helloworld/archive/master.zip")?
-   $ cd OctoPrint-HelloWorld
+   remote: Counting objects: 101, done.
+   remote: Total 101 (delta 0), reused 0 (delta 0), pack-reused 101
+   Receiving objects: 100% (101/101), 53.69 KiB, done.
+   Resolving deltas: 100% (35/35), done.
+   plugin_package [octoprint_helloworld]:
+   plugin_name [OctoPrint-Helloworld]:
+   repo_name [OctoPrint-Helloworld]:
+   full_name [You]: Your Name
+   email [you@example.com]: you@somewhere.net
+   github_username [you]: yourGithubName
+   plugin_version [0.1.0]: 1.0.0
+   plugin_description [TODO]: A quick "Hello World" example plugin for OCtoPrint
+   plugin_license [AGPLv3]:
+   plugin_homepage [https://github.com/yourGithubName/OctoPrint-Helloworld]:
+   plugin_source [https://github.com/yourGithubName/OctoPrint-Helloworld]:
+   plugin_installurl [https://github.com/yourGithubName/OctoPrint-Helloworld/archive/master.zip]:
+   (venv) $ cd OctoPrint-HelloWorld
+
+.. note::
+
+   If ``octoprint dev:plugin new`` isn't recognized as a command (and also doesn't show up in the output of
+   ``octoprint --help``, make sure you installed cookiecutter into the same python environment as OctoPrint.
 
 This will create a project structure in the ``OctoPrint-HelloWorld`` folder we just changed to that looks like this::
 
@@ -193,9 +229,11 @@ Now all that's left to do is to move our ``helloworld.py`` into the ``octoprint_
 
 The plugin is now ready to be installed via ``python setup.py install``. However, since we are still
 working on our plugin, it makes more sense to use ``python setup.py develop`` for now -- this way the plugin becomes
-discoverable by OctoPrint, however we don't have to reinstall it after any changes we will still do::
+discoverable by OctoPrint, however we don't have to reinstall it after any changes we will still do. We can have the
+``octoprint dev:plugin install`` command do everything for us here, it will ensure to use the python binary belonging
+to your OctoPrint installation::
 
-   $ python setup.py develop
+   (venv) $ octoprint dev:plugin install
    running develop
    running egg_info
    creating OctoPrint_HelloWorld.egg-info
@@ -209,9 +247,8 @@ Restart OctoPrint. Your plugin should still be properly discovered and the log l
    2015-01-27 13:43:34,134 - octoprint.plugin.core - INFO - Loading plugins from /home/pi/.octoprint/plugins, /home/pi/OctoPrint/src/octoprint/plugins and installed plugin packages...
    [...]
    2015-01-27 13:43:34,818 - octoprint.plugin.core - INFO - 3 plugin(s) registered with the system:
-   | CuraEngine (bundled) = /home/pi/OctoPrint/src/octoprint/plugins/cura
-   | Discovery (bundled) = /home/pi/OctoPrint/src/octoprint/plugins/discovery
-   | Hello World (1.0.0) = /home/pi/OctoPrint-HelloWorld/octoprint_helloworld
+   [...]
+   | Hello World (1.0.0) = /home/pi/devel/OctoPrint-HelloWorld/octoprint_helloworld
    [...]
    2015-01-27 13:43:38,997 - octoprint.plugins.helloworld - INFO - Hello World!
 
@@ -257,9 +294,9 @@ and ``__plugin_description__`` from ``__init__.py``:
 and restart OctoPrint::
 
    2015-01-27 13:46:33,786 - octoprint.plugin.core - INFO - 3 plugin(s) registered with the system:
-   | CuraEngine (bundled) = /home/pi/OctoPrint/src/octoprint/plugins/cura
-   | Discovery (bundled) = /home/pi/OctoPrint/src/octoprint/plugins/discovery
-   | OctoPrint-HelloWorld (1.0.0) = /home/pi/OctoPrint-HelloWorld/octoprint_helloworld
+   [...]
+   | OctoPrint-HelloWorld (1.0.0) = /home/pi/devel/OctoPrint-HelloWorld/octoprint_helloworld
+   [...]
 
 Our "Hello World" Plugin still gets detected fine, but it's now listed under the same name it's installed under,
 "OctoPrint-HelloWorld". That's a bit redundant and squashed, so we'll override that bit via ``__plugin_name__`` again:
@@ -284,9 +321,9 @@ Our "Hello World" Plugin still gets detected fine, but it's now listed under the
 Restart OctoPrint again::
 
    2015-01-27 13:48:54,122 - octoprint.plugin.core - INFO - 3 plugin(s) registered with the system:
-   | CuraEngine (bundled) = /home/pi/OctoPrint/src/octoprint/plugins/cura
-   | Discovery (bundled) = /home/pi/OctoPrint/src/octoprint/plugins/discovery
+   [...]
    | Hello World (1.0.0) = /home/pi/OctoPrint-HelloWorld/octoprint_helloworld
+   [...]
 
 Much better! You can override pretty much all of the metadata defined within ``setup.py`` from within your Plugin itself --
 take a look at :ref:`the available control properties <sec-plugin-concepts-controlproperties>` for all available
@@ -295,7 +332,7 @@ overrides.
 Following the README of the `Plugin Skeleton <https://github.com/OctoPrint/OctoPrint-PluginSkeleton>`_ you could now
 already publish your plugin on Github and it would be directly installable by others using pip::
 
-   pip install https://github.com/yourGithubName/OctoPrint-HelloWorld/archive/master.zip
+   (venv) $ pip install https://github.com/yourGithubName/OctoPrint-HelloWorld/archive/master.zip
 
 But let's add some more features instead.
 
@@ -857,7 +894,7 @@ generated CSS files (and compiles them on the fly in your browser using `lessjs 
 which makes development so much easier. Let's try that, so you know how it works for future bigger projects.
 
 Add another folder to our ``static`` folder called ``less`` and within that create a file ``helloworld.less``. Put
-into that the same content as into our CSS file. Compile that LESS file to CSS [#f1]_, overwriting our old ``helloworld.css``
+into that the same content as into our CSS file. Compile that LESS file to CSS [#f2]_, overwriting our old ``helloworld.css``
 in the process. The folder structure of our plugin should now look like this::
 
    octoprint_helloworld/
@@ -1038,6 +1075,12 @@ looking for examples.
 
 .. rubric:: Footnotes
 
-.. [#f1] Refer to the `LESS documentation <http://lesscss.org/#using-less>`_ on how to do that. If you are developing
+.. [#f1] Instead of the ``octoprint dev:plugin new`` you could also have manually called cookiecutter with the
+         template's repository URL shortcut: ``cookiecutter gh:OctoPrint/cookiecutter-octoprint-plugin``. The
+         ``devel:newplugin`` command already does this for you, makes sure cookiecutter always uses a fresh
+         checkout without prompting you for it and also allows to pre-specify a bunch of settings (like the
+         plugin's identifier) directly from the command line. Take a look at ``octoprint dev:plugin new --help``
+         for the usage details.
+.. [#f2] Refer to the `LESS documentation <http://lesscss.org/#using-less>`_ on how to do that. If you are developing
          your plugin under Windows you might also want to give `WinLESS <http://winless.org/>`_ a look which will run
          in the background and keep your CSS files up to date with your various project's LESS files automatically.

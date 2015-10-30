@@ -16,7 +16,52 @@ class OctoPrintDevelCommands(click.MultiCommand):
 	based on availability of development dependencies.
 	"""
 
+	prefix = "dev"
 	sep = ":"
+
+	def __init__(self, *args, **kwargs):
+		click.MultiCommand.__init__(self, *args, **kwargs)
+
+		from octoprint.util.commandline import CommandlineCaller
+		from octoprint.util.pip import LocalPipCaller
+		from functools import partial
+
+		def log_util(f):
+			def log(*lines):
+					for line in lines:
+						f(line)
+			return log
+
+		log_call = log_util(lambda x: click.echo(">> {}".format(x)))
+		log_stdout = log_util(click.echo)
+		log_stderr = log_util(partial(click.echo, err=True))
+
+		self.pip_caller = LocalPipCaller()
+		self.pip_caller.on_log_call = log_call
+		self.pip_caller.on_log_stdout = log_stdout
+		self.pip_caller.on_log_stderr = log_stderr
+
+		self.command_caller = CommandlineCaller()
+		self.command_caller.on_log_call = log_call
+		self.command_caller.on_log_stdout = log_stdout
+		self.command_caller.on_log_stderr = log_stderr
+
+	def _get_prefix_methods(self, method_prefix):
+		for name in [x for x in dir(self) if x.startswith(method_prefix)]:
+			method = getattr(self, name)
+			yield method
+
+	def _get_commands_from_prefix_methods(self, method_prefix):
+		for method in self._get_prefix_methods(method_prefix):
+			result = method()
+			if result is not None and isinstance(result, click.Command):
+				yield result
+
+	def _get_commands(self):
+		commands = dict()
+		for command in self._get_commands_from_prefix_methods("group_"):
+			commands[self.prefix + self.sep + command.name] = command
+		return commands
 
 	def list_commands(self, ctx):
 		result = [name for name in self._get_commands()]
@@ -27,22 +72,14 @@ class OctoPrintDevelCommands(click.MultiCommand):
 		commands = self._get_commands()
 		return commands.get(cmd_name, None)
 
-	def _get_commands(self):
-		commands = dict()
+	def group_plugin(self):
+		command_group = click.Group("plugin",
+		                            help="Helpers for plugin developers")
+		for command in self._get_commands_from_prefix_methods("plugin_"):
+			command_group.add_command(command)
+		return command_group
 
-		for name in [x for x in dir(self) if x.startswith("command_")]:
-			method = getattr(self, name)
-
-			try:
-				result = method()
-				if result is not None:
-					commands["devel" + self.sep + result.name] = result
-			except:
-				logging.getLogger(__name__).exception("There was an error registering one of the devel commands ({})".format(name))
-
-		return commands
-
-	def command_newplugin(self):
+	def plugin_new(self):
 		try:
 			import cookiecutter.main
 		except ImportError:
@@ -102,7 +139,7 @@ class OctoPrintDevelCommands(click.MultiCommand):
 			finally:
 				cookiecutter.main.prompt_for_config = original_prompt_for_config
 
-		@click.command("newplugin")
+		@click.command("new")
 		@click.option("--name", "-n", help="The name of the plugin")
 		@click.option("--package", "-p", help="The plugin package")
 		@click.option("--author", "-a", help="The plugin author's name")
@@ -153,6 +190,54 @@ class OctoPrintDevelCommands(click.MultiCommand):
 
 		return command
 
+	def plugin_install(self):
+		@click.command("install")
+		@click.option("--path", help="Path of the local plugin development folder to install")
+		def command(path):
+			"""
+			Installs the local plugin in development mode.
+
+			Note: This can NOT be used to install plugins from remote locations
+			such as the plugin repository! It is strictly for local development
+			of plugins, to ensure the plugin is installed (editable) into the
+			same python environment that OctoPrint is installed under.
+			"""
+
+			import os
+			import sys
+
+			if not path:
+				path = os.getcwd()
+
+			# check if this really looks like a plugin
+			if not os.path.isfile(os.path.join(path, "setup.py")):
+				click.echo("This doesn't look like an OctoPrint plugin folder")
+				sys.exit(1)
+
+			self.command_caller.call([sys.executable, "setup.py", "develop"], cwd=path)
+
+		return command
+
+	def plugin_uninstall(self):
+		if not self.pip_caller.available:
+			return
+
+		@click.command("uninstall")
+		@click.argument("name")
+		def command(name):
+			"""Uninstalls the plugin with the given name."""
+			import sys
+
+			lower_name = name.lower()
+			if not lower_name.startswith("octoprint_") and not lower_name.startswith("octoprint-"):
+				click.echo("This doesn't look like an OctoPrint plugin name")
+				sys.exit(1)
+
+			call = ["uninstall", "--yes", name]
+			self.pip_caller.execute(*call)
+
+		return command
+
 @click.group(cls=OctoPrintDevelCommands)
-def devel_commands():
+def dev_commands():
 	pass
