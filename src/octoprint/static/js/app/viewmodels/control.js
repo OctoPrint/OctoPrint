@@ -398,7 +398,9 @@ $(function() {
 
         self.updateRotatorWidth = function() {
             var webcamImage = $("#webcam_image");
-            if (self.settings.webcam_rotate90()) {
+			var rotation = self.settings.webcam_rotation();
+
+            if (rotation == 'rotate90' || rotation == 'rotate270') {
                 if (webcamImage.width() > 0) {
                     $("#webcam_rotator").css("height", webcamImage.width());
                 } else {

@@ -48,9 +48,10 @@
             </label>
         </div>
         <div class="controls">
-            <label class="checkbox">
-                <input type="checkbox" data-bind="checked: webcam_rotate90" id="settings-webcamRotate90"> {{ _('Rotate webcam 90 degrees counter clockwise') }}
-            </label>
+			<label class="control-label" for="settings-webcamRotation">{{ _('Rotation') }}</label>
+			<div class="controls">
+				<select id="settings-webcamRotation" data-bind="options: webcam_rotationOptions, value: webcam_rotation"></select>
+			</div>
         </div>
     </div>
 </form>

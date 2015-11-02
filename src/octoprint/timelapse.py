@@ -344,7 +344,16 @@ class Timelapse(object):
 			filters.append('hflip')
 		if settings().getBoolean(["webcam", "flipV"]):
 			filters.append('vflip')
-		if settings().getBoolean(["webcam", "rotate90"]):
+
+		rotation = settings().get(["webcam", "rotation"])
+
+		if rotation == "rotate90":
+			filters.append('transpose=1')
+		elif rotation == "rotate180":
+			# Rotate anti-clockwise twice.
+			filters.append('transpose=2')
+			filters.append('transpose=2')
+		elif rotation == "rotate270":
 			filters.append('transpose=2')
 
 		# add watermark if configured

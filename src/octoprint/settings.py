@@ -125,7 +125,7 @@ default_settings = {
 		"watermark": True,
 		"flipH": False,
 		"flipV": False,
-		"rotate90" : False,
+		"rotation" : "rotate0",
 		"timelapse": {
 			"type": "off",
 			"options": {},

@@ -105,7 +105,8 @@ $(function() {
         self.webcam_watermark = ko.observable(undefined);
         self.webcam_flipH = ko.observable(undefined);
         self.webcam_flipV = ko.observable(undefined);
-        self.webcam_rotate90 = ko.observable(undefined);
+        self.webcam_rotationOptions = ko.observable(undefined);
+		self.webcam_rotation = ko.observable(undefined);
 
         self.feature_gcodeViewer = ko.observable(undefined);
         self.feature_temperatureGraph = ko.observable(undefined);
@@ -409,7 +410,8 @@ $(function() {
             self.webcam_watermark(response.webcam.watermark);
             self.webcam_flipH(response.webcam.flipH);
             self.webcam_flipV(response.webcam.flipV);
-            self.webcam_rotate90(response.webcam.rotate90);
+            self.webcam_rotationOptions(response.webcam.rotationOptions);
+            self.webcam_rotation(response.webcam.rotation);
 
             self.feature_gcodeViewer(response.feature.gcodeViewer);
             self.feature_temperatureGraph(response.feature.temperatureGraph);
@@ -496,7 +498,7 @@ $(function() {
                         "watermark": self.webcam_watermark(),
                         "flipH": self.webcam_flipH(),
                         "flipV": self.webcam_flipV(),
-                        "rotate90": self.webcam_rotate90()
+						"rotation": self.webcam_rotation(),
                     },
                     "feature": {
                         "gcodeViewer": self.feature_gcodeViewer(),
