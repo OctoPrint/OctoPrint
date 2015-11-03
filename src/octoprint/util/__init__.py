@@ -584,8 +584,10 @@ def address_for_client(host, port):
 @contextlib.contextmanager
 def atomic_write(filename, mode="w+b", prefix="tmp", suffix=""):
 	temp_config = tempfile.NamedTemporaryFile(mode=mode, prefix=prefix, suffix=suffix, delete=False)
-	yield temp_config
-	temp_config.close()
+	try:
+		yield temp_config
+	finally:
+		temp_config.close()
 	shutil.move(temp_config.name, filename)
 
 
@@ -609,7 +611,7 @@ def bom_aware_open(filename, encoding="ascii", mode="r", **kwargs):
 		if header.startswith(bom):
 			encoding += "-sig"
 
-	return codecs.open(filename, encoding=encoding, **kwargs)
+	return codecs.open(filename, encoding=encoding, mode=mode, **kwargs)
 
 
 class RepeatedTimer(threading.Thread):
