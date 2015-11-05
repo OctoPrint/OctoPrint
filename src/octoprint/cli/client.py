@@ -39,32 +39,7 @@ def client_commands():
 def client(obj, host, port, httpuser, httppass, https, prefix):
 	"""Basic API client."""
 	obj.settings = init_settings(obj.basedir, obj.configfile)
-
-	settings_host = obj.settings.get(["server", "host"])
-	settings_port = obj.settings.getInt(["server", "port"])
-	settings_apikey = obj.settings.get(["api", "key"])
-
-	octoprint_client.apikey = settings_apikey
-	octoprint_client.baseurl = build_base_url(https=https,
-	                                          httpuser=httpuser,
-	                                          httppass=httppass,
-	                                          host=host or settings_host if settings_host != "0.0.0.0" else "127.0.0.1",
-	                                          port=port or settings_port,
-	                                          prefix=prefix)
-
-
-def build_base_url(https=False, httpuser=None, httppass=None, host=None, port=None, prefix=None):
-	protocol = "https" if https else "http"
-	httpauth = "{}:{}@".format(httpuser, httppass) if httpuser and httppass else ""
-	host = host if host else "127.0.0.1"
-	port = ":{}".format(port) if port else ":5000"
-	prefix = prefix if prefix else ""
-
-	return "{}://{}{}{}{}".format(protocol, httpauth, host, port, prefix)
-
-
-def build_url(obj, path):
-	return "{}/{}".format(build_base_url(obj), path)
+	octoprint_client.init_client(obj.settings, https=https, httpuser=httpuser, httppass=httppass, host=host, port=port, prefix=prefix)
 
 
 def log_response(response, status_code=True, body=True, headers=False):
@@ -143,7 +118,7 @@ def command(path, command, str_params, int_params, float_params, bool_params):
 	params = str_params + int_params + float_params + bool_params
 	for param in params:
 		data[param[0]] = param[1]
-	r = octoprint_client.post_command(path, command, parameters=data)
+	r = octoprint_client.post_command(path, command, additional=data)
 	log_response(r, body=False)
 
 
@@ -159,7 +134,7 @@ def upload(path, file_path, params, file_name, content_type):
 	for param in params:
 		data[param[0]] = param[1]
 
-	r = octoprint_client.upload(path, file_path, parameters=data, file_name=file_name, content_type=content_type)
+	r = octoprint_client.upload(path, file_path, additional=data, file_name=file_name, content_type=content_type)
 	log_response(r)
 
 
