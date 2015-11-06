@@ -50,7 +50,8 @@ def index():
 	render_kwargs = _get_render_kwargs(_templates, _plugin_names, _plugin_vars, now)
 
 	def get_cached_view(key, view):
-		return util.flask.cached(refreshif=lambda: force_refresh,
+		return util.flask.cached(timeout=-1,
+		                         refreshif=lambda: force_refresh,
 		                         key=lambda: "ui:{}:{}".format(key, g.locale),
 		                         unless_response=util.flask.cache_check_response_headers)(view)
 
@@ -507,7 +508,8 @@ def robotsTxt():
 
 
 @app.route("/i18n/<string:locale>/<string:domain>.js")
-@util.flask.cached(refreshif=lambda: util.flask.cache_check_headers() or "_refresh" in request.values,
+@util.flask.cached(timeout=-1,
+                   refreshif=lambda: util.flask.cache_check_headers() or "_refresh" in request.values,
                    key=lambda: "{}:{}".format(request.path, g.locale))
 def localeJs(locale, domain):
 	messages = dict()
