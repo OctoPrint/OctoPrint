@@ -26,7 +26,7 @@ import octoprint.server
 import octoprint.users
 import octoprint.plugin
 
-from werkzeug.contrib.cache import SimpleCache
+from werkzeug.contrib.cache import BaseCache
 
 
 #~~ monkey patching
@@ -259,7 +259,59 @@ def passive_login():
 
 #~~ cache decorator for cacheable views
 
-_cache = SimpleCache()
+class LessSimpleCache(BaseCache):
+	"""
+	Slightly improved version of :class:`SimpleCache`.
+
+	Setting ``default_timeout`` or ``timeout`` to ``-1`` will have no timeout be applied at all.
+	"""
+
+	def __init__(self, threshold=500, default_timeout=300):
+		BaseCache.__init__(self, default_timeout=default_timeout)
+		self._cache = {}
+		self.clear = self._cache.clear
+		self._threshold = threshold
+
+	def _prune(self):
+		if self.over_threshold():
+			now = time.time()
+			for idx, (key, (expires, _)) in enumerate(self._cache.items()):
+				if expires is not None and expires <= now or idx % 3 == 0:
+					self._cache.pop(key, None)
+
+	def get(self, key):
+		import pickle
+		now = time.time()
+		expires, value = self._cache.get(key, (0, None))
+		if expires is None or expires > now:
+			return pickle.loads(value)
+
+	def set(self, key, value, timeout=None):
+		import pickle
+		self._prune()
+		self._cache[key] = (self.calculate_timeout(timeout=timeout),
+		                    pickle.dumps(value, pickle.HIGHEST_PROTOCOL))
+
+	def add(self, key, value, timeout=None):
+		self.set(key, value, timeout=None)
+		self._cache.setdefault(key, self._cache[key])
+
+	def delete(self, key):
+		self._cache.pop(key, None)
+
+	def calculate_timeout(self, timeout=None):
+		if timeout is None:
+			timeout = self.default_timeout
+		if timeout is -1:
+			return None
+		return time.time() + timeout
+
+	def over_threshold(self):
+		if self._threshold is None:
+			return False
+		return len(self._cache) > self._threshold
+
+_cache = LessSimpleCache()
 
 def cached(timeout=5 * 60, key=lambda: "view/%s" % flask.request.path, unless=None, refreshif=None, unless_response=None):
 	def decorator(f):
