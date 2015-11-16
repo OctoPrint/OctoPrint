@@ -16,7 +16,7 @@ import logging
 import logging.handlers
 import hashlib
 
-from . import version_checks, updaters, exceptions, util
+from . import version_checks, updaters, exceptions, util, cli
 
 
 from octoprint.server.util.flask import restricted_access
@@ -381,7 +381,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		json_data = flask.request.json
 
 		if "check" in json_data:
-			check_targets = map(str.strip, json_data["check"])
+			check_targets = map(lambda x: x.strip(), json_data["check"])
 		else:
 			check_targets = None
 
@@ -762,136 +762,6 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		else:
 			raise exceptions.UnknownUpdateType()
 
-def cli_commands(cli_group, pass_octoprint_ctx, *args, **kwargs):
-	import click
-	import sys
-	import requests.exceptions
-	import octoprint_client as client
-
-	@click.command("check")
-	@click.option("--force", is_flag=True, help="Ignore the cache for the update check")
-	@click.argument("targets", nargs=-1)
-	def check_command(force, targets):
-		"""Check for updates."""
-		params = dict(force=force)
-		if targets:
-			params["check"] = ",".join(targets)
-
-		client.init_client(cli_group.settings)
-		r = client.get("plugin/softwareupdate/check", params=params)
-		try:
-			r.raise_for_status()
-		except requests.exceptions.HTTPError as e:
-			click.echo("Could not get update information from server, got {}".format(e))
-			sys.exit(1)
-
-		data = r.json()
-		status = data["status"]
-		information = data["information"]
-
-		lines = []
-		octoprint_line = None
-		for key, info in information.items():
-			status_text = "Up to date"
-			if info["updateAvailable"]:
-				if info["updatePossible"]:
-					status_text = "Update available"
-				else:
-					status_text = "Update available (manual)"
-			line = "{}\n\tInstalled: {}\n\tAvailable: {}\n\t=> {}".format(info["displayName"],
-			                                                              info["information"]["local"]["name"],
-			                                                              info["information"]["remote"]["name"],
-			                                                              status_text)
-			if key == "octoprint":
-				octoprint_line = line
-			else:
-				lines.append(line)
-
-		lines.sort()
-		if octoprint_line:
-			lines = [octoprint_line] + lines
-
-		for line in lines:
-			click.echo(line)
-
-		click.echo()
-		if status == "current":
-			click.echo("Everything is up to date")
-		else:
-			click.echo("There are updates available!")
-
-
-	@click.command("update")
-	@click.option("--force", is_flag=True, help="Update even if already up to date")
-	@click.argument("targets", nargs=-1)
-	def update_command(force, targets):
-		"""Apply updates."""
-		client.init_client(cli_group.settings)
-
-		data = dict(force=force)
-		if targets:
-			data["check"] = ",".join(targets)
-
-		client.init_client(cli_group.settings)
-
-		def on_message(ws, msg_type, msg):
-			if msg_type != "plugin" or msg["plugin"] != "softwareupdate":
-				return
-
-			plugin_message = msg["data"]
-			if not "type" in plugin_message:
-				return
-
-			plugin_message_type = plugin_message["type"]
-			plugin_message_data = plugin_message["data"]
-
-			if plugin_message_type == "updating":
-				click.echo("Updating {} to {}...".format(plugin_message_data["name"], plugin_message_data["target"]))
-
-			elif plugin_message_type == "update_failed":
-				click.echo("\t... failed: {}".format(plugin_message_data["reason"]))
-
-			elif plugin_message_type == "loglines" and "loglines" in plugin_message_data:
-				for entry in plugin_message_data["loglines"]:
-					prefix = ">>> " if entry["stream"] == "call" else ""
-					error = entry["stream"] == "stderr"
-					click.echo("\t{}{}".format(prefix, entry["line"].replace("\n", "\n\t")), err=error)
-
-			elif plugin_message_type == "success" or plugin_message_type == "restart_manually":
-				results = plugin_message_data["results"] if "results" in plugin_message_data else dict()
-				if results:
-					click.echo("The update finished successfully.")
-					if plugin_message_type == "restart_manually":
-						click.echo("Please restart the OctoPrint server.")
-				else:
-					click.echo("No update necessary")
-				ws.close()
-
-			elif plugin_message_type == "failure":
-				click.echo("Error")
-				ws.close()
-
-		thread = client.connect_socket(on_message=on_message)
-
-		r = client.post_json("plugin/softwareupdate/update", data=data)
-		try:
-			r.raise_for_status()
-		except requests.exceptions.HTTPError as e:
-			click.echo("Could not get update information from server, got {}".format(e))
-			sys.exit(1)
-
-		data = r.json()
-		to_be_updated = data["order"]
-		checks = data["checks"]
-		click.echo("Update in progress, updating:")
-		for name in to_be_updated:
-			click.echo("\t{}".format(name if not name in checks else checks[name]))
-
-		thread.join()
-
-
-	return [check_command, update_command]
-
 
 __plugin_name__ = "Software Update"
 __plugin_author__ = "Gina Häußge"
@@ -912,7 +782,7 @@ def __plugin_load__():
 
 	global __plugin_hooks__
 	__plugin_hooks__ = {
-		"octoprint.cli.commands": cli_commands
+		"octoprint.cli.commands": cli.commands
 	}
 
 
