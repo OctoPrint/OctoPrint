@@ -145,3 +145,32 @@ def delete(path):
 	r = octoprint_client.delete(path)
 	log_response(r)
 
+
+@client.command("listen")
+def listen():
+	def on_connect(ws):
+		click.echo(">>> Connected!")
+
+	def on_close(ws):
+		click.echo(">>> Connection closed!")
+
+	def on_error(ws, error):
+		click.echo("!!! Error: {}".format(error))
+
+	def on_heartbeat(ws):
+		click.echo("<3")
+
+	def on_message(ws, message_type, message_payload):
+		click.echo("Message: {}, Payload: {}".format(message_type, json.dumps(message_payload)))
+
+	socket = octoprint_client.connect_socket(on_connect=on_connect,
+	                                         on_close=on_close,
+	                                         on_error=on_error,
+	                                         on_heartbeat=on_heartbeat,
+	                                         on_message=on_message)
+
+	click.echo(">>> Waiting for client to exit")
+	try:
+		socket.wait()
+	finally:
+		click.echo(">>> Goodbye...")
