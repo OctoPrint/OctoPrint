@@ -16,7 +16,7 @@ import logging
 import logging.handlers
 import hashlib
 
-from . import version_checks, updaters, exceptions, util
+from . import version_checks, updaters, exceptions, util, cli
 
 
 from octoprint.server.util.flask import restricted_access
@@ -351,7 +351,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 	@restricted_access
 	def check_for_update(self):
 		if "check" in flask.request.values:
-			check_targets = map(str.strip, flask.request.values["check"].split(","))
+			check_targets = map(lambda x: x.strip(), flask.request.values["check"].split(","))
 		else:
 			check_targets = None
 
@@ -381,7 +381,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		json_data = flask.request.json
 
 		if "check" in json_data:
-			check_targets = map(str.strip, json_data["check"])
+			check_targets = map(lambda x: x.strip(), json_data["check"])
 		else:
 			check_targets = None
 
@@ -528,7 +528,8 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		updater_thread.daemon = False
 		updater_thread.start()
 
-		return to_be_updated, dict((key, check["displayName"] if "displayName" in check else key) for key, check in checks.items() if key in to_be_updated)
+		check_data = dict((key, self._populated_check(key, check)["displayName"]) for key, check in checks.items() if key in to_be_updated)
+		return to_be_updated, check_data
 
 	def _update_worker(self, checks, check_targets, force):
 
@@ -761,6 +762,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		else:
 			raise exceptions.UnknownUpdateType()
 
+
 __plugin_name__ = "Software Update"
 __plugin_author__ = "Gina Häußge"
 __plugin_url__ = "https://github.com/foosel/OctoPrint/wiki/Plugin:-Software-Update"
@@ -777,5 +779,10 @@ def __plugin_load__():
 		exceptions=exceptions,
 		util=util
 	)
+
+	global __plugin_hooks__
+	__plugin_hooks__ = {
+		"octoprint.cli.commands": cli.commands
+	}
 
 
