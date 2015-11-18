@@ -5,6 +5,9 @@ $(function() {
         self.loginState = parameters[0];
         self.settings = parameters[1];
 
+        // TODO remove with release of 1.3.0 and switch to OctoPrint.coreui usage
+        self.tabTracking = parameters[2];
+
         self._createToolEntry = function () {
             return {
                 name: ko.observable(),
@@ -415,31 +418,51 @@ $(function() {
 
         self.onSettingsBeforeSave = self.updateRotatorWidth;
 
+        self._disableWebcam = function() {
+            // only disable webcam stream if tab is out of focus for more than 5s, otherwise we might cause
+            // more load by the constant connection creation than by the actual webcam stream
+            self.webcamDisableTimeout = setTimeout(function () {
+                $("#webcam_image").attr("src", "");
+            }, 5000);
+        };
+
+        self._enableWebcam = function() {
+            if (self.tabTracking.selectedTab != "#control" || !self.tabTracking.browserTabVisible) {
+                return;
+            }
+
+            if (self.webcamDisableTimeout != undefined) {
+                clearTimeout(self.webcamDisableTimeout);
+            }
+            var webcamImage = $("#webcam_image");
+            var currentSrc = webcamImage.attr("src");
+            if (currentSrc === undefined || currentSrc.trim() == "") {
+                var newSrc = CONFIG_WEBCAM_STREAM;
+                if (CONFIG_WEBCAM_STREAM.lastIndexOf("?") > -1) {
+                    newSrc += "&";
+                } else {
+                    newSrc += "?";
+                }
+                newSrc += new Date().getTime();
+
+                self.updateRotatorWidth();
+                webcamImage.attr("src", newSrc);
+            }
+        };
+
         self.onTabChange = function (current, previous) {
             if (current == "#control") {
-                if (self.webcamDisableTimeout != undefined) {
-                    clearTimeout(self.webcamDisableTimeout);
-                }
-                var webcamImage = $("#webcam_image");
-                var currentSrc = webcamImage.attr("src");
-                if (currentSrc === undefined || currentSrc.trim() == "") {
-                    var newSrc = CONFIG_WEBCAM_STREAM;
-                    if (CONFIG_WEBCAM_STREAM.lastIndexOf("?") > -1) {
-                        newSrc += "&";
-                    } else {
-                        newSrc += "?";
-                    }
-                    newSrc += new Date().getTime();
-
-                    self.updateRotatorWidth();
-                    webcamImage.attr("src", newSrc);
-                }
+                self._enableWebcam();
             } else if (previous == "#control") {
-                // only disable webcam stream if tab is out of focus for more than 5s, otherwise we might cause
-                // more load by the constant connection creation than by the actual webcam stream
-                self.webcamDisableTimeout = setTimeout(function () {
-                    $("#webcam_image").attr("src", "");
-                }, 5000);
+                self._disableWebcam();
+            }
+        };
+
+        self.onBrowserTabVisibilityChange = function(status) {
+            if (status) {
+                self._enableWebcam();
+            } else {
+                self._disableWebcam();
             }
         };
 
@@ -565,7 +588,7 @@ $(function() {
 
     OCTOPRINT_VIEWMODELS.push([
         ControlViewModel,
-        ["loginStateViewModel", "settingsViewModel"],
+        ["loginStateViewModel", "settingsViewModel", "tabTracking"],
         "#control"
     ]);
 });

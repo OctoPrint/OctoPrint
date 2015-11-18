@@ -7,6 +7,72 @@ $(function() {
 
         log.setLevel(CONFIG_DEBUG ? "debug" : "info");
 
+        //~~ setup browser and internal tab tracking (in 1.3.0 that will be
+        //   much nicer with the global OctoPrint object...)
+
+        var tabTracking = (function() {
+            var exports = {
+                browserTabVisibility: undefined,
+                selectedTab: undefined
+            };
+
+            var browserVisibilityCallbacks = [];
+
+            var getHiddenProp = function() {
+                var prefixes = ["webkit", "moz", "ms", "o"];
+
+                // if "hidden" is natively supported just return it
+                if ("hidden" in document) {
+                    return "hidden"
+                }
+
+                // otherwise loop over all the known prefixes until we find one
+                var vendorPrefix = _.find(prefixes, function(prefix) {
+                    return (prefix + "Hidden" in document);
+                });
+                if (vendorPrefix !== undefined) {
+                    return vendorPrefix + "Hidden";
+                }
+
+                // nothing found
+                return undefined;
+            };
+
+            var isHidden = function() {
+                var prop = getHiddenProp();
+                if (!prop) return false;
+
+                return document[prop];
+            };
+
+            var updateBrowserVisibility = function() {
+                var visible = !isHidden();
+                exports.browserTabVisible = visible;
+                _.each(browserVisibilityCallbacks, function(callback) {
+                    callback(visible);
+                })
+            };
+
+            // register for browser visibility tracking
+
+            var prop = getHiddenProp();
+            if (!prop) return undefined;
+
+            var eventName = prop.replace(/[H|h]idden/, "") + "visibilitychange";
+            document.addEventListener(eventName, updateBrowserVisibility);
+
+            updateBrowserVisibility();
+
+            // exports
+
+            exports.isVisible = function() { return !isHidden() };
+            exports.onBrowserVisibilityChange = function(callback) {
+                browserVisibilityCallbacks.push(callback);
+            };
+
+            return exports;
+        })();
+
         //~~ AJAX setup
 
         // work around a stupid iOS6 bug where ajax requests get cached and only work once, as described at
@@ -66,6 +132,18 @@ $(function() {
 
         // the view model map is our basic look up table for dependencies that may be injected into other view models
         var viewModelMap = {};
+
+        // We put our tabTracking into the viewModelMap as a workaround until
+        // our global OctoPrint object becomes available in 1.3.0. This way
+        // we'll still be able to access it in our view models.
+        //
+        // NOTE TO DEVELOPERS: Do NOT depend on this dependency in your custom
+        // view models. It is ONLY provided for the core application to be able
+        // to backport a fix from the 1.3.0 development branch and WILL BE
+        // REMOVED once 1.3.0 gets released without any fallback!
+        //
+        // TODO: Remove with release of 1.3.0
+        viewModelMap.tabTracking = tabTracking;
 
         // Fix Function#name on browsers that do not support it (IE):
         // see: http://stackoverflow.com/questions/6903762/function-name-not-supported-in-ie
@@ -371,16 +449,22 @@ $(function() {
         $('.nav-pills, .nav-tabs').tabdrop();
 
         // Allow components to react to tab change
-        var tabs = $('#tabs a[data-toggle="tab"]');
-        tabs.on('show', function (e) {
-            var current = e.target.hash;
-            var previous = e.relatedTarget.hash;
+        var onTabChange = function(current, previous) {
+            log.debug("Selected OctoPrint tab changed: previous = " + previous + ", current = " + current);
+            tabTracking.selectedTab = current;
 
             _.each(allViewModels, function(viewModel) {
                 if (viewModel.hasOwnProperty("onTabChange")) {
                     viewModel.onTabChange(current, previous);
                 }
             });
+        };
+
+        var tabs = $('#tabs a[data-toggle="tab"]');
+        tabs.on('show', function (e) {
+            var current = e.target.hash;
+            var previous = e.relatedTarget.hash;
+            onTabChange(current, previous);
         });
 
         tabs.on('shown', function (e) {
@@ -393,6 +477,8 @@ $(function() {
                 }
             });
         });
+
+        onTabChange(OCTOPRINT_INITIAL_TAB);
 
         // Fix input element click problems on dropdowns
         $(".dropdown input, .dropdown label").click(function(e) {
@@ -485,10 +571,21 @@ $(function() {
             });
             log.info("... binding done");
 
+            // startup complete
             _.each(allViewModels, function(viewModel) {
                 if (viewModel.hasOwnProperty("onStartupComplete")) {
                     viewModel.onStartupComplete();
                 }
+            });
+
+            // make sure we can track the browser tab visibility
+            tabTracking.onBrowserVisibilityChange(function(status) {
+                log.debug("Browser tab is now " + (status ? "visible" : "hidden"));
+                _.each(allViewModels, function(viewModel) {
+                    if (viewModel.hasOwnProperty("onBrowserTabVisibilityChange")) {
+                        viewModel.onBrowserTabVisibilityChange(status);
+                    }
+                });
             });
         };
 

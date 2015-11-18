@@ -5,6 +5,9 @@ $(function() {
         self.loginState = parameters[0];
         self.settings = parameters[1];
 
+        // TODO remove with release of 1.3.0 and switch to OctoPrint.coreui usage
+        self.tabTracking = parameters[2];
+
         self.ui_progress_percentage = ko.observable();
         self.ui_progress_type = ko.observable();
         self.ui_progress_text = ko.computed(function() {
@@ -358,7 +361,7 @@ $(function() {
             if(self.loadedFilename
                     && self.loadedFilename == data.job.file.name
                     && self.loadedFileDate == data.job.file.date) {
-                if (self.currentlyPrinting && self.renderer_syncProgress() && !self.waitForApproval()) {
+                if (self.tabTracking.browserTabVisible && self.tabActive && self.currentlyPrinting && self.renderer_syncProgress() && !self.waitForApproval()) {
                     var cmdIndex = GCODE.gCodeReader.getCmdIndexForPercentage(data.progress.completion);
                     if(cmdIndex){
                         GCODE.renderer.render(cmdIndex.layer, 0, cmdIndex.cmd);
@@ -504,13 +507,16 @@ $(function() {
 
         self.onBeforeBinding = function() {
             self.initialize();
-        }
+        };
 
+        self.onTabChange = function(current, previous) {
+            self.tabActive = current == "#gcode";
+        };
     }
 
     OCTOPRINT_VIEWMODELS.push([
         GcodeViewModel,
-        ["loginStateViewModel", "settingsViewModel"],
+        ["loginStateViewModel", "settingsViewModel", "tabTracking"],
         "#gcode"
     ]);
 });
