@@ -35,7 +35,7 @@
 
     <script type="text/html" id="files_template_folder">
         <div data-bind="click: $root.changeFolder">
-            <div class="title"><i class="icon-folder-open"></i> <span data-bind="text: name"></span></div>
+            <div class="title" data-bind="style: { 'font-weight': $root.listHelper.isSelected($data) ? 'bold' : 'normal' }"><i class="icon-folder-open"></i> <span data-bind="text: name"></span></div>
             <div class="size">{{ _('Size') }}: <span data-bind="text: formatSize(size)"></span></div>
         </div>
     </script>

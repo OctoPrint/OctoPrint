@@ -146,12 +146,20 @@ $(function() {
             self.highlightFilename(newValue);
         });
 
+        self.highlightCurrentFilename = function() {
+            self.highlightFilename(self.printerState.filename());
+        };
+
         self.highlightFilename = function(filename) {
             if (filename == undefined) {
                 self.listHelper.selectNone();
             } else {
                 self.listHelper.selectItem(function(item) {
-                    return item.name == filename;
+                    if (item.type == "folder") {
+                        return _.startsWith(filename, OctoPrint.files.pathForElement(item) + "/");
+                    } else {
+                        return OctoPrint.files.pathForElement(item) == filename;
+                    }
                 });
             }
         };
@@ -195,6 +203,7 @@ $(function() {
             self.allItems(files);
             self.currentPath("");
             self.listHelper.addFilter("emptyFolder");
+
             if (!switchToPath) {
                 self.listHelper.updateItems(files);
             } else {
@@ -221,12 +230,13 @@ $(function() {
                 self.totalSpace(response.total);
             }
 
-            self.highlightFilename(self.printerState.filename());
+            self.highlightCurrentFilename();
         };
 
         self.changeFolder = function(data) {
             self.currentPath(OctoPrint.files.pathForElement(data));
             self.listHelper.updateItems(data.children);
+            self.highlightCurrentFilename();
         };
 
         self.navigateUp = function() {
@@ -244,6 +254,7 @@ $(function() {
                 self.currentPath("");
                 self.listHelper.updateItems(self.allItems());
             }
+            self.highlightCurrentFilename();
         };
 
         self.loadFile = function(file, printAfterLoad) {
