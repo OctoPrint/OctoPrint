@@ -49,6 +49,7 @@ admin_permission = Permission(RoleNeed("admin"))
 user_permission = Permission(RoleNeed("user"))
 
 # only import the octoprint stuff down here, as it might depend on things defined above to be initialized already
+from octoprint import __version__, __branch__, __display_version__
 from octoprint.printer import get_connection_options
 from octoprint.printer.profile import PrinterProfileManager
 from octoprint.printer.standard import Printer
@@ -67,11 +68,9 @@ from . import util
 
 UI_API_KEY = ''.join('%02X' % ord(z) for z in uuid.uuid4().bytes)
 
-versions = octoprint._version.get_versions()
-VERSION = versions['version']
-BRANCH = versions['branch'] if 'branch' in versions else None
-DISPLAY_VERSION = "%s (%s branch)" % (VERSION, BRANCH) if BRANCH else VERSION
-del versions
+VERSION = __version__
+BRANCH = __branch__
+DISPLAY_VERSION = __display_version__
 
 LOCALES = []
 LANGUAGES = set()
@@ -108,15 +107,14 @@ def load_user(id):
 #~~ startup code
 
 
-class Server(object):
-	def __init__(self, configfile=None, basedir=None, host="0.0.0.0", port=5000, debug=False, allowRoot=False, logConf=None):
-		self._configfile = configfile
-		self._basedir = basedir
+class Server():
+	def __init__(self, settings=None, plugin_manager=None, host="0.0.0.0", port=5000, debug=False, allow_root=False):
+		self._settings = settings
+		self._plugin_manager = plugin_manager
 		self._host = host
 		self._port = port
 		self._debug = debug
-		self._allowRoot = allowRoot
-		self._logConf = logConf
+		self._allow_root = allow_root
 		self._server = None
 
 		self._logger = None
@@ -126,8 +124,13 @@ class Server(object):
 		self._template_searchpaths = []
 
 	def run(self):
-		if not self._allowRoot:
+		if not self._allow_root:
 			self._check_for_root()
+
+		if self._settings is None:
+			self._settings = settings()
+		if self._plugin_manager is None:
+			self._plugin_manager = octoprint.plugin.plugin_manager()
 
 		global app
 		global babel
@@ -148,16 +151,14 @@ class Server(object):
 		from tornado.ioloop import IOLoop
 		from tornado.web import Application, RequestHandler
 
-		import sys
-
 		debug = self._debug
 
-		# first initialize the settings singleton and make sure it uses given configfile and basedir if available
-		s = settings(init=True, basedir=self._basedir, configfile=self._configfile)
+		self._logger = logging.getLogger(__name__)
+		pluginManager = self._plugin_manager
 
-		# then monkey patch a bunch of stuff
+		# monkey patch a bunch of stuff
 		util.tornado.fix_ioloop_scheduling()
-		util.flask.enable_additional_translations(additional_folders=[s.getBaseFolder("translations")])
+		util.flask.enable_additional_translations(additional_folders=[self._settings.getBaseFolder("translations")])
 
 		# setup app
 		self._setup_app()
@@ -165,31 +166,28 @@ class Server(object):
 		# setup i18n
 		self._setup_i18n(app)
 
-		# then initialize logging
-		self._setup_logging(self._debug, self._logConf)
-		self._logger = logging.getLogger(__name__)
-		def exception_logger(exc_type, exc_value, exc_tb):
-			self._logger.error("Uncaught exception", exc_info=(exc_type, exc_value, exc_tb))
-		sys.excepthook = exception_logger
-		self._logger.info("Starting OctoPrint %s" % DISPLAY_VERSION)
+		if self._settings.getBoolean(["serial", "log"]):
+			# enable debug logging to serial.log
+			logging.getLogger("SERIAL").setLevel(logging.DEBUG)
+			logging.getLogger("SERIAL").debug("Enabling serial logging")
 
-		# then initialize the plugin manager
-		pluginManager = octoprint.plugin.plugin_manager(init=True)
+		# load plugins
+		pluginManager.reload_plugins(startup=True, initialize_implementations=False)
 
 		printerProfileManager = PrinterProfileManager()
 		eventManager = events.eventManager()
 		analysisQueue = octoprint.filemanager.analysis.AnalysisQueue()
-		slicingManager = octoprint.slicing.SlicingManager(s.getBaseFolder("slicingProfiles"), printerProfileManager)
+		slicingManager = octoprint.slicing.SlicingManager(self._settings.getBaseFolder("slicingProfiles"), printerProfileManager)
 		storage_managers = dict()
-		storage_managers[octoprint.filemanager.FileDestinations.LOCAL] = octoprint.filemanager.storage.LocalFileStorage(s.getBaseFolder("uploads"))
+		storage_managers[octoprint.filemanager.FileDestinations.LOCAL] = octoprint.filemanager.storage.LocalFileStorage(self._settings.getBaseFolder("uploads"))
 		fileManager = octoprint.filemanager.FileManager(analysisQueue, slicingManager, printerProfileManager, initial_storage_managers=storage_managers)
 		printer = Printer(fileManager, analysisQueue, printerProfileManager)
 		appSessionManager = util.flask.AppSessionManager()
 		pluginLifecycleManager = LifecycleManager(pluginManager)
 
 		# setup access control
-		if s.getBoolean(["accessControl", "enabled"]):
-			userManagerName = s.get(["accessControl", "userManager"])
+		if self._settings.getBoolean(["accessControl", "enabled"]):
+			userManagerName = self._settings.get(["accessControl", "userManager"])
 			try:
 				clazz = octoprint.util.get_class(userManagerName)
 				userManager = clazz()
@@ -209,19 +207,15 @@ class Server(object):
 				printer=printer,
 				app_session_manager=appSessionManager,
 				plugin_lifecycle_manager=pluginLifecycleManager,
-				data_folder=os.path.join(settings().getBaseFolder("data"), name),
+				data_folder=os.path.join(self._settings.getBaseFolder("data"), name),
 				user_manager=userManager
 			)
 
 		def settings_plugin_inject_factory(name, implementation):
-			if not isinstance(implementation, octoprint.plugin.SettingsPlugin):
-				return None
-			default_settings = implementation.get_settings_defaults()
-			get_preprocessors, set_preprocessors = implementation.get_settings_preprocessors()
-			plugin_settings = octoprint.plugin.plugin_settings(name,
-			                                                   defaults=default_settings,
-			                                                   get_preprocessors=get_preprocessors,
-			                                                   set_preprocessors=set_preprocessors)
+			plugin_settings = octoprint.plugin.plugin_settings_for_settings_plugin(name, implementation)
+			if plugin_settings is None:
+				return
+
 			return dict(settings=plugin_settings)
 
 		def settings_plugin_config_migration_and_cleanup(name, implementation):
@@ -290,22 +284,22 @@ class Server(object):
 
 		app.wsgi_app = util.ReverseProxied(
 			app.wsgi_app,
-			s.get(["server", "reverseProxy", "prefixHeader"]),
-			s.get(["server", "reverseProxy", "schemeHeader"]),
-			s.get(["server", "reverseProxy", "hostHeader"]),
-			s.get(["server", "reverseProxy", "prefixFallback"]),
-			s.get(["server", "reverseProxy", "schemeFallback"]),
-			s.get(["server", "reverseProxy", "hostFallback"])
+			self._settings.get(["server", "reverseProxy", "prefixHeader"]),
+			self._settings.get(["server", "reverseProxy", "schemeHeader"]),
+			self._settings.get(["server", "reverseProxy", "hostHeader"]),
+			self._settings.get(["server", "reverseProxy", "prefixFallback"]),
+			self._settings.get(["server", "reverseProxy", "schemeFallback"]),
+			self._settings.get(["server", "reverseProxy", "hostFallback"])
 		)
 
-		secret_key = s.get(["server", "secretKey"])
+		secret_key = self._settings.get(["server", "secretKey"])
 		if not secret_key:
 			import string
 			from random import choice
 			chars = string.ascii_lowercase + string.ascii_uppercase + string.digits
 			secret_key = "".join(choice(chars) for _ in xrange(32))
-			s.set(["server", "secretKey"], secret_key)
-			s.save()
+			self._settings.set(["server", "secretKey"], secret_key)
+			self._settings.save()
 		app.secret_key = secret_key
 		loginManager = LoginManager()
 		loginManager.session_protection = "strong"
@@ -316,9 +310,9 @@ class Server(object):
 		loginManager.init_app(app)
 
 		if self._host is None:
-			self._host = s.get(["server", "host"])
+			self._host = self._settings.get(["server", "host"])
 		if self._port is None:
-			self._port = s.getInt(["server", "port"])
+			self._port = self._settings.getInt(["server", "port"])
 
 		app.debug = self._debug
 
@@ -332,7 +326,7 @@ class Server(object):
 
 		self._router = SockJSRouter(self._create_socket_connection, "/sockjs")
 
-		upload_suffixes = dict(name=s.get(["server", "uploads", "nameSuffix"]), path=s.get(["server", "uploads", "pathSuffix"]))
+		upload_suffixes = dict(name=self._settings.get(["server", "uploads", "nameSuffix"]), path=self._settings.get(["server", "uploads", "pathSuffix"]))
 
 		def mime_type_guesser(path):
 			from octoprint.filemanager import get_mime_type
@@ -357,13 +351,22 @@ class Server(object):
 
 		server_routes = self._router.urls + [
 			# various downloads
-			(r"/downloads/timelapse/([^/]*\.mpg)", util.tornado.LargeResponseHandler, joined_dict(dict(path=s.getBaseFolder("timelapse")), download_handler_kwargs, no_hidden_files_validator)),
-			(r"/downloads/files/local/(.*)", util.tornado.LargeResponseHandler, joined_dict(dict(path=s.getBaseFolder("uploads")), download_handler_kwargs, no_hidden_files_validator, additional_mime_types)),
-			(r"/downloads/logs/([^/]*)", util.tornado.LargeResponseHandler, joined_dict(dict(path=s.getBaseFolder("logs")), download_handler_kwargs, admin_validator)),
+			(r"/downloads/timelapse/([^/]*\.mpg)", util.tornado.LargeResponseHandler, joined_dict(dict(path=self._settings.getBaseFolder("timelapse")),
+			                                                                                      download_handler_kwargs,
+			                                                                                      no_hidden_files_validator)),
+			(r"/downloads/files/local/(.*)", util.tornado.LargeResponseHandler, joined_dict(dict(path=self._settings.getBaseFolder("uploads")),
+			                                                                                download_handler_kwargs,
+			                                                                                no_hidden_files_validator,
+			                                                                                additional_mime_types)),
+			(r"/downloads/logs/([^/]*)", util.tornado.LargeResponseHandler, joined_dict(dict(path=self._settings.getBaseFolder("logs")),
+			                                                                            download_handler_kwargs,
+			                                                                            admin_validator)),
 			# camera snapshot
-			(r"/downloads/camera/current", util.tornado.UrlProxyHandler, dict(url=s.get(["webcam", "snapshot"]), as_attachment=True, access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.user_validator))),
+			(r"/downloads/camera/current", util.tornado.UrlProxyHandler, dict(url=self._settings.get(["webcam", "snapshot"]),
+			                                                                  as_attachment=True,
+			                                                                  access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.user_validator))),
 			# generated webassets
-			(r"/static/webassets/(.*)", util.tornado.LargeResponseHandler, dict(path=os.path.join(s.getBaseFolder("generated"), "webassets")))
+			(r"/static/webassets/(.*)", util.tornado.LargeResponseHandler, dict(path=os.path.join(self._settings.getBaseFolder("generated"), "webassets")))
 		]
 		for name, hook in pluginManager.get_hooks("octoprint.server.http.routes").items():
 			try:
@@ -390,7 +393,7 @@ class Server(object):
 
 		self._tornado_app = Application(server_routes)
 		max_body_sizes = [
-			("POST", r"/api/files/([^/]*)", s.getInt(["server", "uploads", "maxSize"])),
+			("POST", r"/api/files/([^/]*)", self._settings.getInt(["server", "uploads", "maxSize"])),
 			("POST", r"/api/languages", 5 * 1024 * 1024)
 		]
 
@@ -416,25 +419,25 @@ class Server(object):
 						self._logger.debug("Adding maximum body size of {size}B for {method} requests to {route})".format(**locals()))
 						max_body_sizes.append((method, route, size))
 
-		self._server = util.tornado.CustomHTTPServer(self._tornado_app, max_body_sizes=max_body_sizes, default_max_body_size=s.getInt(["server", "maxSize"]))
+		self._server = util.tornado.CustomHTTPServer(self._tornado_app, max_body_sizes=max_body_sizes, default_max_body_size=self._settings.getInt(["server", "maxSize"]))
 		self._server.listen(self._port, address=self._host)
 
 		eventManager.fire(events.Events.STARTUP)
-		if s.getBoolean(["serial", "autoconnect"]):
-			(port, baudrate) = s.get(["serial", "port"]), s.getInt(["serial", "baudrate"])
+		if self._settings.getBoolean(["serial", "autoconnect"]):
+			(port, baudrate) = self._settings.get(["serial", "port"]), self._settings.getInt(["serial", "baudrate"])
 			printer_profile = printerProfileManager.get_default()
 			connectionOptions = get_connection_options()
 			if port in connectionOptions["ports"]:
 				printer.connect(port=port, baudrate=baudrate, profile=printer_profile["id"] if "id" in printer_profile else "_default")
 
 		# start up watchdogs
-		if s.getBoolean(["feature", "pollWatched"]):
+		if self._settings.getBoolean(["feature", "pollWatched"]):
 			# use less performant polling observer if explicitely configured
 			observer = PollingObserver()
 		else:
 			# use os default
 			observer = Observer()
-		observer.schedule(util.watchdog.GcodeWatchdogHandler(fileManager, printer), s.getBaseFolder("watched"))
+		observer.schedule(util.watchdog.GcodeWatchdogHandler(fileManager, printer), self._settings.getBaseFolder("watched"))
 		observer.start()
 
 		# run our startup plugins
@@ -527,88 +530,11 @@ class Server(object):
 			except octoprint.users.UnknownUser:
 				pass
 
-		default_language = settings().get(["appearance", "defaultLanguage"])
+		default_language = self._settings.get(["appearance", "defaultLanguage"])
 		if default_language is not None and not default_language == "_default" and default_language in LANGUAGES:
 			return Locale.negotiate([default_language], LANGUAGES)
 
 		return request.accept_languages.best_match(LANGUAGES)
-
-	def _setup_logging(self, debug, logConf=None):
-		defaultConfig = {
-			"version": 1,
-			"formatters": {
-				"simple": {
-					"format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-				}
-			},
-			"handlers": {
-				"console": {
-					"class": "logging.StreamHandler",
-					"level": "DEBUG",
-					"formatter": "simple",
-					"stream": "ext://sys.stdout"
-				},
-				"file": {
-					"class": "logging.handlers.TimedRotatingFileHandler",
-					"level": "DEBUG",
-					"formatter": "simple",
-					"when": "D",
-					"backupCount": "1",
-					"filename": os.path.join(settings().getBaseFolder("logs"), "octoprint.log")
-				},
-				"serialFile": {
-					"class": "logging.handlers.RotatingFileHandler",
-					"level": "DEBUG",
-					"formatter": "simple",
-					"maxBytes": 2 * 1024 * 1024, # let's limit the serial log to 2MB in size
-					"filename": os.path.join(settings().getBaseFolder("logs"), "serial.log")
-				}
-			},
-			"loggers": {
-				"SERIAL": {
-					"level": "CRITICAL",
-					"handlers": ["serialFile"],
-					"propagate": False
-				},
-				"tornado.application": {
-					"level": "INFO"
-				},
-				"tornado.general": {
-					"level": "INFO"
-				},
-				"octoprint.server.util.flask": {
-					"level": "WARN"
-				}
-			},
-			"root": {
-				"level": "INFO",
-				"handlers": ["console", "file"]
-			}
-		}
-
-		if debug:
-			defaultConfig["root"]["level"] = "DEBUG"
-
-		if logConf is None:
-			logConf = os.path.join(settings().getBaseFolder("base"), "logging.yaml")
-
-		configFromFile = {}
-		if os.path.exists(logConf) and os.path.isfile(logConf):
-			import yaml
-			with open(logConf, "r") as f:
-				configFromFile = yaml.safe_load(f)
-
-		config = octoprint.util.dict_merge(defaultConfig, configFromFile)
-		logging.config.dictConfig(config)
-		logging.captureWarnings(True)
-
-		import warnings
-		warnings.simplefilter("always")
-
-		if settings().getBoolean(["serial", "log"]):
-			# enable debug logging to serial.log
-			logging.getLogger("SERIAL").setLevel(logging.DEBUG)
-			logging.getLogger("SERIAL").debug("Enabling serial logging")
 
 	def _setup_app(self):
 		@app.before_request
@@ -820,10 +746,10 @@ class Server(object):
 		util.flask.fix_webassets_cache()
 		util.flask.fix_webassets_filtertool()
 
-		base_folder = settings().getBaseFolder("generated")
+		base_folder = self._settings.getBaseFolder("generated")
 
 		# clean the folder
-		if settings().getBoolean(["devel", "webassets", "clean_on_startup"]):
+		if self._settings.getBoolean(["devel", "webassets", "clean_on_startup"]):
 			import shutil
 			import errno
 			import sys
@@ -887,16 +813,16 @@ class Server(object):
 				return base_folder
 
 		assets = CustomDirectoryEnvironment(app)
-		assets.debug = not settings().getBoolean(["devel", "webassets", "bundle"])
+		assets.debug = not self._settings.getBoolean(["devel", "webassets", "bundle"])
 
 		UpdaterType = type(util.flask.SettingsCheckUpdater)(util.flask.SettingsCheckUpdater.__name__, (util.flask.SettingsCheckUpdater,), dict(
 			updater=assets.updater
 		))
 		assets.updater = UpdaterType
 
-		enable_gcodeviewer = settings().getBoolean(["gcodeViewer", "enabled"])
-		preferred_stylesheet = settings().get(["devel", "stylesheet"])
-		minify = settings().getBoolean(["devel", "webassets", "minify"])
+		enable_gcodeviewer = self._settings.getBoolean(["gcodeViewer", "enabled"])
+		preferred_stylesheet = self._settings.get(["devel", "stylesheet"])
+		minify = self._settings.getBoolean(["devel", "webassets", "minify"])
 
 		dynamic_assets = util.flask.collect_plugin_assets(
 			enable_gcodeviewer=enable_gcodeviewer,
@@ -1071,6 +997,3 @@ class LifecycleManager(object):
 				if callback in self._plugin_lifecycle_callbacks[event]:
 					self._plugin_lifecycle_callbacks[event].remove(callback)
 
-if __name__ == "__main__":
-	server = Server()
-	server.run()

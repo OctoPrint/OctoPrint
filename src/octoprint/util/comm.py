@@ -1788,6 +1788,12 @@ class MachineCom(object):
 		return None, # Don't send the M0 or M1 to the machine, as M0 and M1 are handled as an LCD menu pause.
 	_gcode_M1_queuing = _gcode_M0_queuing
 
+	def _gcode_M25_queuing(self, cmd, cmd_type=None):
+		# M25 while not printing from SD will be handled as pause. This way it can be used as another marker
+		# for GCODE induced pausing. Send it to the printer anyway though.
+		if self.isPrinting() and not self.isSdPrinting():
+			self.setPause(True)
+
 	def _gcode_M104_sent(self, cmd, cmd_type=None):
 		toolNum = self._currentTool
 		toolMatch = regexes_parameters["intT"].search(cmd)

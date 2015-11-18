@@ -34,4 +34,12 @@
     var OCTOPRINT_VIEWMODELS = [];
     var ADDITIONAL_VIEWMODELS = [];
     var OCTOPRINT_ADDITIONAL_BINDINGS = [];
+
+    {% if templates.tab.order %}
+        {% set first_tab = templates.tab.order[0] %}
+        {% set entry, data = templates.tab.entries[first_tab] %}
+        var OCTOPRINT_INITIAL_TAB = "#{{ data._div }}";
+    {% else %}
+        var OCTOPRINT_INITIAL_TAB = undefined;
+    {% endif %}
 </script>

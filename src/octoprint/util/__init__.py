@@ -547,6 +547,36 @@ def dict_contains_keys(keys, dictionary):
 
 	return True
 
+
+class fallback_dict(dict):
+	def __init__(self, custom, *fallbacks):
+		self.custom = custom
+		self.fallbacks = fallbacks
+
+	def __getitem__(self, item):
+		for dictionary in self._all():
+			if item in dictionary:
+				return dictionary[item]
+		raise KeyError()
+
+	def __setitem__(self, key, value):
+		self.custom[key] = value
+
+	def __delitem__(self, key):
+		for dictionary in self._all():
+			if key in dictionary:
+				del dictionary[key]
+
+	def keys(self):
+		result = set()
+		for dictionary in self._all():
+			result += dictionary.keys()
+		return result
+
+	def _all(self):
+		return [self.custom] + list(self.fallbacks)
+
+
 class Object(object):
 	pass
 
@@ -589,9 +619,23 @@ def address_for_client(host, port):
 @contextlib.contextmanager
 def atomic_write(filename, mode="w+b", prefix="tmp", suffix=""):
 	temp_config = tempfile.NamedTemporaryFile(mode=mode, prefix=prefix, suffix=suffix, delete=False)
-	yield temp_config
-	temp_config.close()
+	try:
+		yield temp_config
+	finally:
+		temp_config.close()
 	shutil.move(temp_config.name, filename)
+
+
+@contextlib.contextmanager
+def tempdir(ignore_errors=False, onerror=None, **kwargs):
+	import tempfile
+	import shutil
+
+	dirpath = tempfile.mkdtemp(**kwargs)
+	try:
+		yield dirpath
+	finally:
+		shutil.rmtree(dirpath, ignore_errors=ignore_errors, onerror=onerror)
 
 
 def bom_aware_open(filename, encoding="ascii", mode="r", **kwargs):
@@ -614,7 +658,7 @@ def bom_aware_open(filename, encoding="ascii", mode="r", **kwargs):
 		if header.startswith(bom):
 			encoding += "-sig"
 
-	return codecs.open(filename, encoding=encoding, **kwargs)
+	return codecs.open(filename, encoding=encoding, mode=mode, **kwargs)
 
 
 class RepeatedTimer(threading.Thread):

@@ -379,7 +379,7 @@ GCODE.renderer = (function(){
     };
 
     var drawLayer = function(layerNum, fromProgress, toProgress, isNotCurrentLayer){
-        console.log("Drawing layer " + layerNum + " from " + fromProgress + " to " + toProgress + " (current: " + !isNotCurrentLayer + ")");
+        log.trace("Drawing layer " + layerNum + " from " + fromProgress + " to " + toProgress + " (current: " + !isNotCurrentLayer + ")");
 
         var i;
 

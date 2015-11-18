@@ -17,10 +17,10 @@ from octoprint.settings import settings
 from octoprint.plugin import plugin_manager
 
 class VirtualPrinter(object):
-	command_regex = re.compile("[GM]\d+")
+	command_regex = re.compile("^([GMT])(\d+)")
 	sleep_regex = re.compile("sleep (\d+)")
-	sleep_after_regex = re.compile("sleep_after ([GM]\d+) (\d+)")
-	sleep_after_next_regex = re.compile("sleep_after_next ([GM]\d+) (\d+)")
+	sleep_after_regex = re.compile("sleep_after ([GMT]\d+) (\d+)")
+	sleep_after_next_regex = re.compile("sleep_after_next ([GMT]\d+) (\d+)")
 	custom_action_regex = re.compile("action_custom ([a-zA-Z0-9_]+)(\s+.*)?")
 
 	def __init__(self, seriallog_handler=None, read_timeout=5.0, write_timeout=10.0):
@@ -180,129 +180,183 @@ class VirtualPrinter(object):
 				from octoprint._version import get_versions
 				self._send("OctoPrint VirtualPrinter v" + get_versions()["version"])
 				continue
-			elif data.startswith("!!DEBUG:"):
-				self._debugTrigger(data[len("!!DEBUG:"):].strip())
+			elif data.startswith("!!DEBUG:") or data.strip() == "!!DEBUG":
+				debug_command = ""
+				if data.startswith("!!DEBUG:"):
+					debug_command = data[len("!!DEBUG:"):].strip()
+				self._debugTrigger(debug_command)
 				continue
 
+			# if we are sending oks before command output, send it now
 			if len(data.strip()) > 0 and self._okBeforeCommandOutput:
 				self._sendOk()
 
-			#print "Send: %s" % (data.rstrip())
-			if 'M104' in data or 'M109' in data:
-				self._parseHotendCommand(data)
+			# actual command handling
+			command_match = VirtualPrinter.command_regex.match(data)
+			if command_match is not None:
+				command = command_match.group(0)
+				letter = command_match.group(1)
 
-			if 'M140' in data or 'M190' in data:
-				self._parseBedCommand(data)
+				try:
+					# if we have a method _gcode_G, _gcode_M or _gcode_T, execute that first
+					letter_handler = "_gcode_{}".format(letter)
+					if hasattr(self, letter_handler):
+						code = command_match.group(2)
+						handled = getattr(self, letter_handler)(code, data)
+						if handled:
+							continue
 
-			if 'M105' in data:
-				self._processTemperatureQuery()
-				continue
-			elif 'M20' in data:
-				if self._sdCardReady:
-					self._listSd()
-			elif 'M21' in data:
-				self._sdCardReady = True
-				self._send("SD card ok")
-			elif 'M22' in data:
-				self._sdCardReady = False
-			elif 'M23' in data:
-				if self._sdCardReady:
-					filename = data.split(None, 1)[1].strip()
-					self._selectSdFile(filename)
-			elif 'M24' in data:
-				if self._sdCardReady:
-					self._startSdPrint()
-			elif 'M25' in data:
-				if self._sdCardReady:
-					self._pauseSdPrint()
-			elif 'M26' in data:
-				if self._sdCardReady:
-					pos = int(re.search("S([0-9]+)", data).group(1))
-					self._setSdPos(pos)
-			elif 'M27' in data:
-				if self._sdCardReady:
-					self._reportSdStatus()
-			elif 'M28' in data:
-				if self._sdCardReady:
-					filename = data.split(None, 1)[1].strip()
-					self._writeSdFile(filename)
-			elif 'M29' in data:
-				if self._sdCardReady:
-					self._finishSdFile()
-			elif 'M30' in data:
-				if self._sdCardReady:
-					filename = data.split(None, 1)[1].strip()
-					self._deleteSdFile(filename)
-			elif "M114" in data:
-				# send dummy position report
-				output = "C: X:{} Y:{} Z:{} E:{}".format(self._lastX, self._lastY, self._lastZ, self._lastE)
-				if not self._okBeforeCommandOutput:
-					output = "ok " + output
-				self._send(output)
-				continue
-			elif "M117" in data:
-				# we'll just use this to echo a message, to allow playing around with pause triggers
-				self._send("echo:%s" % re.search("M117\s+(.*)", data).group(1))
-			elif "M400" in data:
-				self.buffered.join()
-			elif "M999" in data:
-				# mirror Marlin behaviour
-				self._send("Resend: 1")
-			elif data.startswith("T"):
-				self.currentExtruder = int(re.search("T(\d+)", data).group(1))
-				self._send("Active Extruder: %d" % self.currentExtruder)
-			elif "G20" in data:
-				self._unitModifier = 1.0 / 2.54
-				if self._lastX is not None:
-					self._lastX *= 2.54
-				if self._lastY is not None:
-					self._lastY *= 2.54
-				if self._lastZ is not None:
-					self._lastZ *= 2.54
-				if self._lastE is not None:
-					self._lastE *= 2.54
-			elif "G21" in data:
-				self._unitModifier = 1.0
-				if self._lastX is not None:
-					self._lastX /= 2.54
-				if self._lastY is not None:
-					self._lastY /= 2.54
-				if self._lastZ is not None:
-					self._lastZ /= 2.54
-				if self._lastE is not None:
-					self._lastE /= 2.54
-			elif "G90" in data:
-				self._relative = False
-			elif "G91" in data:
-				self._relative = True
-			elif "G92" in data:
-				self._setPosition(data)
+					# then look for a method _gcode_<command> and execute that if it exists
+					command_handler = "_gcode_{}".format(command)
+					if hasattr(self, command_handler):
+						handled = getattr(self, command_handler)(data)
+						if handled:
+							continue
 
-			elif data.startswith("G28"):
-				self._performMove(data)
+				finally:
+					# make sure that the debug sleepAfter and sleepAfterNext stuff works even
+					# if we continued above
+					if len(self._sleepAfter) or len(self._sleepAfterNext):
+						interval = None
+						if command in self._sleepAfter:
+							interval = self._sleepAfter[command]
+						elif command in self._sleepAfterNext:
+							interval = self._sleepAfterNext[command]
+							del self._sleepAfterNext[command]
 
-			elif data.startswith("G0") or data.startswith("G1") or data.startswith("G2") or data.startswith("G3"):
-				# simulate reprap buffered commands via a Queue with maxsize which internally simulates the moves
-				self.buffered.put(data)
+						if interval is not None:
+							self._send("// sleeping for {interval} seconds".format(interval=interval))
+							time.sleep(interval)
 
-			if len(self._sleepAfter) or len(self._sleepAfterNext):
-				command_match = VirtualPrinter.command_regex.match(data)
-				if command_match is not None:
-					command = command_match.group(0)
-
-					interval = None
-					if command in self._sleepAfter:
-						interval = self._sleepAfter[command]
-					elif command in self._sleepAfterNext:
-						interval = self._sleepAfterNext[command]
-						del self._sleepAfterNext[command]
-
-					if interval is not None:
-						self._send("// sleeping for {interval} seconds".format(interval=interval))
-						time.sleep(interval)
-
+			# if we are sending oks after command output, send it now
 			if len(data.strip()) > 0 and not self._okBeforeCommandOutput:
 				self._sendOk()
+
+	##~~ command implementations
+
+	def _gcode_T(self, code, data):
+		self.currentExtruder = int(code)
+		self._send("Active Extruder: %d" % self.currentExtruder)
+
+	def _gcode_M104(self, data):
+		self._parseHotendCommand(data)
+	_gcode_M109 = _gcode_M104
+
+	def _gcode_M140(self, data):
+		self._parseBedCommand(data)
+	_gcode_M190 = _gcode_M140
+
+	def _gcode_M105(self, data):
+		self._processTemperatureQuery()
+		return True
+
+	def _gcode_M20(self, data):
+		if self._sdCardReady:
+			self._listSd()
+
+	def _gcode_M21(self, data):
+		self._sdCardReady = True
+		self._send("SD card ok")
+
+	def _gcode_M22(self, data):
+		self._sdCardReady = False
+
+	def _gcode_M23(self, data):
+		if self._sdCardReady:
+			filename = data.split(None, 1)[1].strip()
+			self._selectSdFile(filename)
+
+	def _gcode_M24(self, data):
+		if self._sdCardReady:
+			self._startSdPrint()
+
+	def _gcode_M25(self, data):
+		if self._sdCardReady:
+			self._pauseSdPrint()
+
+	def _gcode_M26(self, data):
+		if self._sdCardReady:
+			pos = int(re.search("S([0-9]+)", data).group(1))
+			self._setSdPos(pos)
+
+	def _gcode_M27(self, data):
+		if self._sdCardReady:
+			self._reportSdStatus()
+
+	def _gcode_M28(self, data):
+		if self._sdCardReady:
+			filename = data.split(None, 1)[1].strip()
+			self._writeSdFile(filename)
+
+	def _gcode_M29(self, data):
+		if self._sdCardReady:
+			self._finishSdFile()
+
+	def _gcode_M30(self, data):
+		if self._sdCardReady:
+			filename = data.split(None, 1)[1].strip()
+			self._deleteSdFile(filename)
+
+	def _gcode_M114(self, data):
+		output = "C: X:{} Y:{} Z:{} E:{}".format(self._lastX, self._lastY, self._lastZ, self._lastE)
+		if not self._okBeforeCommandOutput:
+			output = "ok " + output
+		self._send(output)
+		return True
+
+	def _gcode_M117(self, data):
+		# we'll just use this to echo a message, to allow playing around with pause triggers
+		self._send("echo:%s" % re.search("M117\s+(.*)", data).group(1))
+
+	def _gcode_M400(self, data):
+		self.buffered.join()
+
+	def _gcode_M999(self, data):
+		# mirror Marlin behaviour
+		self._send("Resend: 1")
+
+	def _gcode_G20(self, data):
+		self._unitModifier = 1.0 / 2.54
+		if self._lastX is not None:
+			self._lastX *= 2.54
+		if self._lastY is not None:
+			self._lastY *= 2.54
+		if self._lastZ is not None:
+			self._lastZ *= 2.54
+		if self._lastE is not None:
+			self._lastE *= 2.54
+
+	def _gcode_G21(self, data):
+		self._unitModifier = 1.0
+		if self._lastX is not None:
+			self._lastX /= 2.54
+		if self._lastY is not None:
+			self._lastY /= 2.54
+		if self._lastZ is not None:
+			self._lastZ /= 2.54
+		if self._lastE is not None:
+			self._lastE /= 2.54
+
+	def _gcode_G90(self, data):
+		self._relative = False
+
+	def _gcode_G91(self, data):
+		self._relative = True
+
+	def _gcode_G92(self, data):
+		self._setPosition(data)
+
+	def _gcode_G28(self, data):
+		self._performMove(data)
+
+	def _gcode_G0(self, data):
+		# simulate reprap buffered commands via a Queue with maxsize which internally simulates the moves
+		self.buffered.put(data)
+	_gcode_G1 = _gcode_G0
+	_gcode_G2 = _gcode_G0
+	_gcode_G3 = _gcode_G0
+
+	##~~ further helpers
 
 	def _kill(self):
 		if not self._supportM112:
@@ -331,7 +385,50 @@ class VirtualPrinter(object):
 			request_resend()
 
 	def _debugTrigger(self, data):
-		if data == "action_pause":
+		if data == "" or data == "help" or data == "?":
+			usage = """
+			OctoPrint Virtual Printer debug commands
+
+			help
+			?
+			| This help.
+
+			# Action Triggers
+
+			action_pause
+			| Sends a "// action:pause" action trigger to the host.
+			action_resume
+			| Sends a "// action:resume" action trigger to the host.
+			action_disconnect
+			| Sends a "// action:disconnect" action trigger to the
+			| host.
+			action_custom <action>[ <parameters>]
+			| Sends a custom "// action:<action> <parameters>"
+			| action trigger to the host.
+
+			# Communication Errors
+
+			dont_answer
+			| Will not acknowledge the next command.
+			trigger_resend_lineno
+			| Triggers a resend error with a line number mismatch
+			trigger_resend_checksum
+			| Triggers a resend error with a checksum mismatch
+			drop_connection
+			| Drops the serial connection
+
+			# Reply Timing / Sleeping
+
+			sleep <int:seconds>
+			| Sleep <seconds> s
+			sleep_after <str:command> <int:seconds>
+			| Sleeps <seconds> s after each execution of <command>
+			sleep_after_next <str:command> <int:seconds>
+			| Sleeps <seconds> s after execution of <command>
+			"""
+			for line in usage.split("\n"):
+				self._send("echo: {}".format(line.strip()))
+		elif data == "action_pause":
 			self._send("// action:pause")
 		elif data == "action_resume":
 			self._send("// action:resume")
