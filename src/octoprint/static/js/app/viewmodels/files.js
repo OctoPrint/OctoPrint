@@ -197,8 +197,7 @@ $(function() {
             self.listHelper.addFilter("emptyFolder");
             if (!switchToPath) {
                 self.listHelper.updateItems(files);
-            }
-            else {
+            } else {
                 self.changeFolderByPath(switchToPath);
             }
 
@@ -241,8 +240,7 @@ $(function() {
             if (element) {
                 self.currentPath(path);
                 self.listHelper.updateItems(element.children);
-            }
-            else{
+            } else{
                 self.currentPath("");
                 self.listHelper.updateItems(self.allItems());
             }
@@ -264,7 +262,7 @@ $(function() {
             if (!file) {
                 return;
             }
-            
+
             var index = self.listHelper.paginatedItems().indexOf(file) + 1;
             if (index >= self.listHelper.paginatedItems().length) {
                 index = index - 2;
@@ -278,7 +276,7 @@ $(function() {
             if (fileToFocus) {
                 filenameToFocus = fileToFocus.name;
             }
-            
+
             OctoPrint.files.delete(file.origin, OctoPrint.files.pathForElement(file))
                 .done(function() {
                     self.requestData(undefined, filenameToFocus, OctoPrint.files.pathForElement(file.parent));
@@ -403,9 +401,20 @@ $(function() {
             var query = self.searchQuery();
             if (query !== undefined && query.trim() != "") {
                 query = query.toLocaleLowerCase();
-                self.listHelper.changeSearchFunction(function(entry) {
-                    return entry && entry["name"].toLocaleLowerCase().indexOf(query) > -1;
-                });
+
+                var recursiveSearch = function(entry) {
+                    if (entry === undefined) {
+                        return false;
+                    }
+
+                    if (entry["type"] == "folder" && entry["children"]) {
+                        return _.any(entry["children"], recursiveSearch);
+                    } else {
+                        return entry["name"].toLocaleLowerCase().indexOf(query) > -1;
+                    }
+                };
+
+                self.listHelper.changeSearchFunction(recursiveSearch);
             } else {
                 self.listHelper.resetSearch();
             }
