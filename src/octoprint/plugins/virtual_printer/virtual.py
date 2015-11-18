@@ -19,8 +19,8 @@ from octoprint.plugin import plugin_manager
 class VirtualPrinter(object):
 	command_regex = re.compile("^([GMT])(\d+)")
 	sleep_regex = re.compile("sleep (\d+)")
-	sleep_after_regex = re.compile("sleep_after ([GM]\d+) (\d+)")
-	sleep_after_next_regex = re.compile("sleep_after_next ([GM]\d+) (\d+)")
+	sleep_after_regex = re.compile("sleep_after ([GMT]\d+) (\d+)")
+	sleep_after_next_regex = re.compile("sleep_after_next ([GMT]\d+) (\d+)")
 	custom_action_regex = re.compile("action_custom ([a-zA-Z0-9_]+)(\s+.*)?")
 
 	def __init__(self, seriallog_handler=None, read_timeout=5.0, write_timeout=10.0):
@@ -180,8 +180,11 @@ class VirtualPrinter(object):
 				from octoprint._version import get_versions
 				self._send("OctoPrint VirtualPrinter v" + get_versions()["version"])
 				continue
-			elif data.startswith("!!DEBUG:"):
-				self._debugTrigger(data[len("!!DEBUG:"):].strip())
+			elif data.startswith("!!DEBUG:") or data.strip() == "!!DEBUG":
+				debug_command = ""
+				if data.startswith("!!DEBUG:"):
+					debug_command = data[len("!!DEBUG:"):].strip()
+				self._debugTrigger(debug_command)
 				continue
 
 			# if we are sending oks before command output, send it now
@@ -382,7 +385,50 @@ class VirtualPrinter(object):
 			request_resend()
 
 	def _debugTrigger(self, data):
-		if data == "action_pause":
+		if data == "" or data == "help" or data == "?":
+			usage = """
+			OctoPrint Virtual Printer debug commands
+
+			help
+			?
+			| This help.
+
+			# Action Triggers
+
+			action_pause
+			| Sends a "// action:pause" action trigger to the host.
+			action_resume
+			| Sends a "// action:resume" action trigger to the host.
+			action_disconnect
+			| Sends a "// action:disconnect" action trigger to the
+			| host.
+			action_custom <action>[ <parameters>]
+			| Sends a custom "// action:<action> <parameters>"
+			| action trigger to the host.
+
+			# Communication Errors
+
+			dont_answer
+			| Will not acknowledge the next command.
+			trigger_resend_lineno
+			| Triggers a resend error with a line number mismatch
+			trigger_resend_checksum
+			| Triggers a resend error with a checksum mismatch
+			drop_connection
+			| Drops the serial connection
+
+			# Reply Timing / Sleeping
+
+			sleep <int:seconds>
+			| Sleep <seconds> s
+			sleep_after <str:command> <int:seconds>
+			| Sleeps <seconds> s after each execution of <command>
+			sleep_after_next <str:command> <int:seconds>
+			| Sleeps <seconds> s after execution of <command>
+			"""
+			for line in usage.split("\n"):
+				self._send("echo: {}".format(line.strip()))
+		elif data == "action_pause":
 			self._send("// action:pause")
 		elif data == "action_resume":
 			self._send("// action:resume")
