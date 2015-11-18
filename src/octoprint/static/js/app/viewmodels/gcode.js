@@ -356,7 +356,7 @@ $(function() {
             if(self.loadedFilename
                     && self.loadedFilename == data.job.file.name
                     && self.loadedFileDate == data.job.file.date) {
-                if (self.tabActive && self.currentlyPrinting && self.renderer_syncProgress() && !self.waitForApproval()) {
+                if (OctoPrint.coreui.browserTabVisible && self.tabActive && self.currentlyPrinting && self.renderer_syncProgress() && !self.waitForApproval()) {
                     var cmdIndex = GCODE.gCodeReader.getCmdIndexForPercentage(data.progress.completion);
                     if(cmdIndex){
                         GCODE.renderer.render(cmdIndex.layer, 0, cmdIndex.cmd);
@@ -502,12 +502,11 @@ $(function() {
 
         self.onBeforeBinding = function() {
             self.initialize();
-        }
+        };
 
         self.onTabChange = function(current, previous) {
             self.tabActive = current == "#gcode";
-
-        }
+        };
     }
 
     OCTOPRINT_VIEWMODELS.push([

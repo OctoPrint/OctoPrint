@@ -26,6 +26,71 @@ $(function() {
             });
         });
 
+        //~~ some CoreUI specific stuff we put into OctoPrint.coreui
+
+        OctoPrint.coreui = (function() {
+            var exports = {
+                browserTabVisibility: undefined,
+                selectedTab: undefined
+            };
+
+            var browserVisibilityCallbacks = [];
+
+            var getHiddenProp = function() {
+                var prefixes = ["webkit", "moz", "ms", "o"];
+
+                // if "hidden" is natively supported just return it
+                if ("hidden" in document) {
+                    return "hidden"
+                }
+
+                // otherwise loop over all the known prefixes until we find one
+                var vendorPrefix = _.find(prefixes, function(prefix) {
+                    return (prefix + "Hidden" in document);
+                });
+                if (vendorPrefix !== undefined) {
+                    return vendorPrefix + "Hidden";
+                }
+
+                // nothing found
+                return undefined;
+            };
+
+            var isHidden = function() {
+                var prop = getHiddenProp();
+                if (!prop) return false;
+
+                return document[prop];
+            };
+
+            var updateBrowserVisibility = function() {
+                var visible = !isHidden();
+                exports.browserTabVisible = visible;
+                _.each(browserVisibilityCallbacks, function(callback) {
+                    callback(visible);
+                })
+            };
+
+            // register for browser visibility tracking
+
+            var prop = getHiddenProp();
+            if (!prop) return undefined;
+
+            var eventName = prop.replace(/[H|h]idden/, "") + "visibilitychange";
+            document.addEventListener(eventName, updateBrowserVisibility);
+
+            updateBrowserVisibility();
+
+            // exports
+
+            exports.isVisible = function() { return !isHidden() };
+            exports.onBrowserVisibilityChange = function(callback) {
+                browserVisibilityCallbacks.push(callback);
+            };
+
+            return exports;
+        })();
+
         //~~ AJAX setup
 
         // work around a stupid iOS6 bug where ajax requests get cached and only work once, as described at
@@ -410,11 +475,17 @@ $(function() {
         $('.nav-pills, .nav-tabs').tabdrop();
 
         // Allow components to react to tab change
+        var onTabChange = function(current, previous) {
+            log.debug("Selected OctoPrint tab changed: previous = " + previous + ", current = " + current);
+            OctoPrint.coreui.selectedTab = current;
+            callViewModels(allViewModels, "onTabChange", [current, previous]);
+        };
+
         var tabs = $('#tabs a[data-toggle="tab"]');
         tabs.on('show', function (e) {
             var current = e.target.hash;
             var previous = e.relatedTarget.hash;
-            callViewModels(allViewModels, "onTabChange", [current, previous]);
+            onTabChange(current, previous);
         });
 
         tabs.on('shown', function (e) {
@@ -422,6 +493,8 @@ $(function() {
             var previous = e.relatedTarget.hash;
             callViewModels(allViewModels, "onAfterTabChange", [current, previous]);
         });
+
+        onTabChange(OCTOPRINT_INITIAL_TAB);
 
         // Fix input element click problems on dropdowns
         $(".dropdown input, .dropdown label").click(function(e) {
@@ -516,7 +589,14 @@ $(function() {
             callViewModels(allViewModels, "onAllBound", [allViewModels]);
             log.info("... binding done");
 
+            // startup complete
             callViewModels(allViewModels, "onStartupComplete");
+
+            // make sure we can track the browser tab visibility
+            OctoPrint.coreui.onBrowserVisibilityChange(function(status) {
+                log.debug("Browser tab is now " + (status ? "visible" : "hidden"));
+                callViewModels(allViewModels, "onBrowserTabVisibilityChange", [status]);
+            });
         };
 
         if (!_.has(viewModelMap, "settingsViewModel")) {
