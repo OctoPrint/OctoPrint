@@ -202,7 +202,6 @@ $(function() {
 
             self.allItems(files);
             self.currentPath("");
-            self.listHelper.addFilter("emptyFolder");
 
             if (!switchToPath) {
                 self.listHelper.updateItems(files);
