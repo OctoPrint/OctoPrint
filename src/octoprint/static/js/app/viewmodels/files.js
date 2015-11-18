@@ -55,6 +55,12 @@ $(function() {
         self.uploadButton = undefined;
         self.uploadSdButton = undefined;
 
+        self.addFolderDialog = undefined;
+        self.addFolderName = ko.observable(undefined);
+        self.enableAddFolder = ko.computed(function() {
+            return self.loginState.isUser() && self.addFolderName() && self.addFolderName().trim() != "";
+        });
+
         self.allItems = ko.observable(undefined);
         self.listStyle = ko.observable("folders_files");
         self.currentPath = ko.observable("");
@@ -254,6 +260,23 @@ $(function() {
                 self.listHelper.updateItems(self.allItems());
             }
             self.highlightCurrentFilename();
+        };
+
+        self.showAddFolderDialog = function() {
+            if (self.addFolderDialog) {
+                self.addFolderDialog.modal("show");
+            }
+        };
+
+        self.addFolder = function() {
+            var name = self.addFolderName();
+
+            // "local" only for now since we only support local and sdcard,
+            // and sdcard doesn't support creating folders...
+            OctoPrint.files.createFolder("local", name, self.currentPath())
+                .done(function() {
+                    self.addFolderDialog.modal("hide");
+                });
         };
 
         self.loadFile = function(file, printAfterLoad) {
@@ -471,6 +494,8 @@ $(function() {
                 scrollBy: "102px"
             });
 
+            self.addFolderDialog = $("#add_folder_dialog");
+
             //~~ Gcode upload
 
             self.uploadButton = $("#gcode_upload");
@@ -656,6 +681,6 @@ $(function() {
     OCTOPRINT_VIEWMODELS.push([
         GcodeFilesViewModel,
         ["settingsViewModel", "loginStateViewModel", "printerStateViewModel", "slicingViewModel"],
-        "#files_wrapper"
+        ["#files_wrapper", "#add_folder_dialog"]
     ]);
 });

@@ -44,6 +44,11 @@
     <small>{{ _('Free') }}: <span data-bind="text: freeSpaceString"></span> / {{ _('Total') }}: <span data-bind="text: totalSpaceString"></span> <i class="icon-exclamation-sign" data-bind="visible: diskusageWarning" style="display: none"></i></small>
 </div>
 <div style="display: none;" data-bind="visible: loginState.isUser">
+    <div class="row-fluid folder-button">
+        <span class="btn addfolder-button span12" data-bind="click: function() { if ($root.loginState.isUser()) { $root.showAddFolderDialog(); } }, css: {disabled: !$root.loginState.isUser()}">
+            <i class="icon-folder-close"></i> {{ _('Create folder...') }}
+        </span>
+    </div>
     <div class="row-fluid upload-buttons">
         {% if enableSdSupport %}
             <span class="btn btn-primary fileinput-button span6" data-bind="css: {disabled: !$root.loginState.isUser()}" style="margin-bottom: 10px">
