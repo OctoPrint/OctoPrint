@@ -119,12 +119,14 @@
         },
 
         pathForElement: function(element) {
-            if (!element || !element.hasOwnProperty("parent") || element.parent == undefined)
+            if (!element || !element.hasOwnProperty("parent") || element.parent == undefined) {
                 return "";
+            }
 
             var recursivePath = function(element, path) {
-              if (element.hasOwnProperty("parent") && element.parent != undefined)
+              if (element.hasOwnProperty("parent") && element.parent != undefined) {
                   return recursivePath(element.parent, element.name + "/" + path);
+              }
 
               return path;
             };
@@ -134,11 +136,13 @@
 
         elementByPath: function(location, startElement) {
             var recursiveSearch = function(location, element) {
-                if (location.length == 0)
+                if (location.length == 0) {
                     return element;
+                }
 
-                if (!element.hasOwnProperty("children"))
+                if (!element.hasOwnProperty("children")) {
                     return undefined;
+                }
 
                 var name = location.shift();
                 for(var i = 0; i < element.children.length; i++) {
