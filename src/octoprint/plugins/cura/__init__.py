@@ -37,11 +37,10 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 
 	##~~ TemplatePlugin API
 
-	def get_template_configs(self):
-		from flask.ext.babel import gettext
-		return [
-			dict(type="settings", name=gettext("CuraEngine"))
-		]
+	def get_template_vars(self):
+		return dict(
+			homepage=__plugin_url__
+		)
 
 	##~~ StartupPlugin API
 
@@ -413,9 +412,9 @@ def _sanitize_name(name):
 	sanitized_name = sanitized_name.replace(" ", "_")
 	return sanitized_name.lower()
 
-__plugin_name__ = "CuraEngine"
+__plugin_name__ = "CuraEngine (<= 15.04)"
 __plugin_author__ = "Gina Häußge"
 __plugin_url__ = "https://github.com/foosel/OctoPrint/wiki/Plugin:-Cura"
-__plugin_description__ = "Adds support for slicing via CuraEngine from within OctoPrint"
+__plugin_description__ = "Adds support for slicing via CuraEngine versions up to and including version 15.04 from within OctoPrint"
 __plugin_license__ = "AGPLv3"
 __plugin_implementation__ = CuraPlugin()

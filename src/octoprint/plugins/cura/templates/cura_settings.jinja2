@@ -1,5 +1,12 @@
 <h4>{{ _('General') }}</h4>
 
+<p>{% trans %}
+    Specify the path to the CuraEngine binary. Note that only
+    <strong>versions up to and including 15.04</strong> are supported.
+    CuraEngine version 15.06 or newer is <strong>not</strong>
+    compatible with this plugin.
+{% endtrans %}</p>
+
 <form class="form-horizontal">
     <div class="control-group">
         <label class="control-label" for="settings-cura-path">{{ _('Path to CuraEngine') }}</label>
@@ -10,7 +17,7 @@
     <div class="control-group">
         <div class="controls">
             <label class="checkbox">
-                <input type="checkbox" data-bind="checked: settings.plugins.cura.debug_logging"> {{ _('Log the output of CuraEngine to plugin_cura_engine.log') }}
+                <input type="checkbox" data-bind="checked: settings.plugins.cura.debug_logging"> {{ _('Log the output of CuraEngine to <code>plugin_cura_engine.log</code>') }}
             </label>
         </div>
     </div>
@@ -52,6 +59,10 @@
 </div>
 
 <button class="btn pull-right" data-bind="click: function() { $root.showImportProfileDialog() }">{{ _('Import Profile...') }}</button>
+
+<div style="clear: both">
+    <small>{% trans %}For more information on configuration and usage please <a href="{{ plugin_cura_homepage }}" target="_blank">see the Plugin's homepage</a>.{% endtrans %}</small>
+</div>
 
 <div id="settings_plugin_cura_import" class="modal hide fade">
     <div class="modal-header">
@@ -98,6 +109,13 @@
                 </div>
             </div>
         </form>
+
+        <small>{% trans %}
+            You can import your existing profile <code>.ini</code> files from Cura (version up to and
+            including 15.04) here. Please be aware that neither the <code>.json</code> profile format
+            from Cura versions starting with 15.06 is supported, nor are the custom Cura profile formats
+            that third party tools like e.g. Repetier create.
+        {% endtrans %}</small>
     </div>
     <div class="modal-footer">
         <button class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Abort') }}</button>
