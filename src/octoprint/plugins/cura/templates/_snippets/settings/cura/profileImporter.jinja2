@@ -50,6 +50,12 @@
                 </div>
             </div>
         </form>
+        <small>{% trans %}
+            You can import your existing profile <code>.ini</code> files from Cura (version up to and
+            including 15.04) here. Please be aware that neither the <code>.json</code> profile format
+            from Cura versions starting with 15.06 is supported, nor are the custom Cura profile formats
+            that third party tools like e.g. Repetier create.
+        {% endtrans %}</small>
     </div>
     <div class="modal-footer">
         <button class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Abort') }}</button>

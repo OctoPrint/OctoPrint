@@ -277,6 +277,7 @@ class MachineCom(object):
 		self._serial_factory_hooks = self._pluginManager.get_hooks("octoprint.comm.transport.serial.factory")
 
 		# SD status data
+		self._sdEnabled = settings().getBoolean(["feature", "sdSupport"])
 		self._sdAvailable = False
 		self._sdFileList = False
 		self._sdFiles = []
@@ -776,21 +777,28 @@ class MachineCom(object):
 		return self._sdFiles
 
 	def startSdFileTransfer(self, filename):
-		if not self.isOperational() or self.isBusy():
+		if not self._sdEnabled:
 			return
 
+		if not self.isOperational() or self.isBusy():
+			return
 		self._changeState(self.STATE_TRANSFERING_FILE)
 		self.sendCommand("M28 %s" % filename.lower())
 
 	def endSdFileTransfer(self, filename):
-		if not self.isOperational() or self.isBusy():
+		if not self._sdEnabled:
 			return
 
+		if not self.isOperational() or self.isBusy():
+			return
 		self.sendCommand("M29 %s" % filename.lower())
 		self._changeState(self.STATE_OPERATIONAL)
 		self.refreshSdFiles()
 
 	def deleteSdFile(self, filename):
+		if not self._sdEnabled:
+			return
+
 		if not self.isOperational() or (self.isBusy() and
 				isinstance(self._currentFile, PrintingSdFileInformation) and
 				self._currentFile.getFilename() == filename):
@@ -801,13 +809,21 @@ class MachineCom(object):
 		self.refreshSdFiles()
 
 	def refreshSdFiles(self):
+		if not self._sdEnabled:
+			return
+
 		if not self.isOperational() or self.isBusy():
 			return
+
 		self.sendCommand("M20")
 
 	def initSdCard(self):
+		if not self._sdEnabled:
+			return
+
 		if not self.isOperational():
 			return
+
 		self.sendCommand("M21")
 		if settings().getBoolean(["feature", "sdAlwaysAvailable"]):
 			self._sdAvailable = True
@@ -815,6 +831,9 @@ class MachineCom(object):
 			self._callback.on_comm_sd_state_change(self._sdAvailable)
 
 	def releaseSdCard(self):
+		if not self._sdEnabled:
+			return
+
 		if not self.isOperational() or (self.isBusy() and self.isSdFileSelected()):
 			# do not release the sd card if we are currently printing from it
 			return
@@ -1397,6 +1416,9 @@ class MachineCom(object):
 			elif 'volume.init' in line.lower() or "openroot" in line.lower() or 'workdir' in line.lower()\
 					or "error writing to file" in line.lower():
 				#Also skip errors with the SD card
+				pass
+			elif 'unknown command' in line.lower():
+				#Ignore unkown command errors, it could be a typo or some missing feature
 				pass
 			elif not self.isError():
 				self._errorValue = line[6:] if line.startswith("Error:") else line[2:]
