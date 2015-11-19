@@ -15,27 +15,27 @@ import octoprint_setuptools
 # Requirements for our application
 INSTALL_REQUIRES = [
 	"flask>=0.9,<0.11",
-	"werkzeug==0.8.3",
-	"tornado==4.0.2",
-	"sockjs-tornado==1.0.2",
-	"PyYAML==3.10",
-	"Flask-Login==0.2.2",
-	"Flask-Principal==0.3.5",
-	"Flask-Babel==0.9",
-	"Flask-Assets==0.10",
-	"Flask-Markdown==0.3",
-	"pyserial==2.7",
-	"netaddr==0.7.17",
-	"watchdog==0.8.3",
-	"sarge==0.1.4",
-	"netifaces==0.10",
-	"pylru==1.0.9",
-	"rsa==3.2",
-	"pkginfo==1.2.1",
-	"requests==2.7.0",
-	"semantic_version==2.4.2",
-	"psutil==3.2.1",
-	"Click"
+	"werkzeug>=0.8.3,<0.9",
+	"tornado>=4.0.2,<4.1",
+	"sockjs-tornado>=1.0.2,<1.1",
+	"PyYAML>=3.10,<3.11",
+	"Flask-Login>=0.2.2,<0.3",
+	"Flask-Principal>=0.3.5,<0.4",
+	"Flask-Babel>=0.9,<0.10",
+	"Flask-Assets>=0.10,<0.11",
+	"Flask-Markdown>=0.3,<0.4",
+	"pyserial>=2.7,<2.8",
+	"netaddr>=0.7.17,<0.8",
+	"watchdog>=0.8.3,<0.9",
+	"sarge>=0.1.4,<0.2",
+	"netifaces>=0.10,<0.11",
+	"pylru>=1.0.9,<1.1",
+	"rsa>=3.2,<3.3",
+	"pkginfo>=1.2.1,<1.3",
+	"requests>=2.7,<2.8",
+	"semantic_version>=2.4.2,<2.5",
+	"psutil>=3.2.1,<3.3",
+	"Click>=5.1,<5.2"
 ]
 
 # Additional requirements for optional install options
@@ -43,12 +43,12 @@ EXTRA_REQUIRES = dict(
 	# Dependencies for developing OctoPrint
 	develop=[
 		# Testing dependencies
-		"mock>=1.0.1",
-		"nose>=1.3.0",
+		"mock>=1.0.1,<1.1",
+		"nose>=1.3.0,<1.4",
 		"ddt",
 
 		# Documentation dependencies
-		"sphinx>=1.3",
+		"sphinx>=1.3,<1.4",
 		"sphinxcontrib-httpdomain",
 		"sphinx_rtd_theme",
 
