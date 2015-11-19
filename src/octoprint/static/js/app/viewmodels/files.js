@@ -269,6 +269,16 @@ $(function() {
         self.templateFor = function(data) {
             return "files_template_" + data.type;
         };
+        self.templateForBocusini = function(data) {
+            return "bocusini_files_template_" + data.type;
+        };
+		self.bocusiniThumbnail = function(data){
+			var thumb_file = data.name.split('.gco')[0]+'.jpg';
+			return "url(/plugin/bocusini_doodler/thumbs/"+thumb_file+")";
+		}
+		self.bocusiniFilename = function(data){
+			return data.name.split('.gco')[0].replace(/_/g, ' ');
+		}
 
         self.getEntryId = function(data) {
             return "gcode_file_" + md5(data["origin"] + ":" + data["name"]);
@@ -314,18 +324,18 @@ $(function() {
         self.getAdditionalData = function(data) {
             var output = "";
             if (data["gcodeAnalysis"]) {
-                if (data["gcodeAnalysis"]["filament"] && typeof(data["gcodeAnalysis"]["filament"]) == "object") {
-                    var filament = data["gcodeAnalysis"]["filament"];
-                    if (_.keys(filament).length == 1) {
-                        output += gettext("Filament") + ": " + formatFilament(data["gcodeAnalysis"]["filament"]["tool" + 0]) + "<br>";
-                    } else if (_.keys(filament).length > 1) {
-                        for (var toolKey in filament) {
-                            if (!_.startsWith(toolKey, "tool") || !filament[toolKey] || !filament[toolKey].hasOwnProperty("length") || filament[toolKey]["length"] <= 0) continue;
-
-                            output += gettext("Filament") + " (" + gettext("Tool") + " " + toolKey.substr("tool".length) + "): " + formatFilament(filament[toolKey]) + "<br>";
-                        }
-                    }
-                }
+//                if (data["gcodeAnalysis"]["filament"] && typeof(data["gcodeAnalysis"]["filament"]) == "object") {
+//                    var filament = data["gcodeAnalysis"]["filament"];
+//                    if (_.keys(filament).length == 1) {
+//                        output += gettext("Filament") + ": " + formatFilament(data["gcodeAnalysis"]["filament"]["tool" + 0]) + "<br>";
+//                    } else if (_.keys(filament).length > 1) {
+//                        for (var toolKey in filament) {
+//                            if (!_.startsWith(toolKey, "tool") || !filament[toolKey] || !filament[toolKey].hasOwnProperty("length") || filament[toolKey]["length"] <= 0) continue;
+//
+//                            output += gettext("Filament") + " (" + gettext("Tool") + " " + toolKey.substr("tool".length) + "): " + formatFilament(filament[toolKey]) + "<br>";
+//                        }
+//                    }
+//                }
                 output += gettext("Estimated Print Time") + ": " + formatDuration(data["gcodeAnalysis"]["estimatedPrintTime"]) + "<br>";
             }
             if (data["prints"] && data["prints"]["last"]) {
@@ -377,6 +387,15 @@ $(function() {
 
             $(".gcode_files").slimScroll({
                 height: "306px",
+                size: "5px",
+                distance: "0",
+                railVisible: true,
+                alwaysVisible: true,
+                scrollBy: "102px"
+            });
+
+			$(".bocusini_gcode_files").slimScroll({
+                height: "83.3vh",
                 size: "5px",
                 distance: "0",
                 railVisible: true,
@@ -577,7 +596,7 @@ $(function() {
                     if (dropZoneLocal) dropZoneLocalBackground.removeClass("hover");
                     if (dropZoneSd) dropZoneSdBackground.removeClass("hover");
                     if (dropZone) dropZoneBackground.removeClass("hover");
-                }, 100);
+                }, 1000);
             });
 
             self.requestData();
@@ -605,6 +624,6 @@ $(function() {
     OCTOPRINT_VIEWMODELS.push([
         GcodeFilesViewModel,
         ["settingsViewModel", "loginStateViewModel", "printerStateViewModel", "slicingViewModel"],
-        "#files_wrapper"
+        ["#files_wrapper",'#bocusini_files']
     ]);
 });

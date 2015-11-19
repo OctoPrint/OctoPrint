@@ -30,19 +30,29 @@ body {
 
 .brand (@color, @dark, @light) when (@color = @dark) {
   span {
-    background-image: url(../img/tentacle-20x20.png);
+    //background-image: url(../img/tentacle-20x20.png);
+    background-image: url(/plugin/bocusini_doodler/static/img/logo/doodle3d.png);
+	background-size:contain;
+	height:48px;
+	width:240px;
 
     @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-      background-image: url(../img/tentacle-20x20@2x.png);
+      //background-image: url(../img/tentacle-20x20@2x.png);
+      background-image: url(/plugin/bocusini_doodler/static/img/logo/doodle3d.png);
     }
   }
 }
 .brand (@color, @dark, @light) when (@color = @light) {
   span {
-    background-image: url(../img/tentacle-20x20-light.png);
-
+    //background-image: url(../img/tentacle-20x20-light.png);
+    background-image: url(/plugin/bocusini_doodler/static/img/logo/doodle3d.png);
+	background-size:contain;
+	height:48px;
+	width:240px;
+	
     @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-      background-image: url(../img/tentacle-20x20-light@2x.png);
+      //background-image: url(../img/tentacle-20x20-light@2x.png);
+      background-image: url(/plugin/bocusini_doodler/static/img/logo/doodle3d.png);
     }
   }
 }
@@ -67,11 +77,15 @@ body {
 }
 
 .navbar-background-color (@top, @bottom, @image) when (isstring(@image)) {
-  #imggradient > .vertical(@top, @bottom, @image);
+  //#imggradient > .vertical(@top, @bottom, @image);
+  background-color: @linkColor;
+  background-image: none;
 }
 
 .navbar-background-color(@top, @bottom, @image) when not (isstring(@image)) {
-  #gradient > .vertical(@top, @bottom);
+  //#gradient > .vertical(@top, @bottom);
+  background-color: @linkColor;
+  background-image: none;
 }
 
 

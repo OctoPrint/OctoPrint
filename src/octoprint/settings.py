@@ -134,7 +134,7 @@ default_settings = {
 		}
 	},
 	"gcodeViewer": {
-		"enabled": True,
+		"enabled": False,
 		"mobileSizeThreshold": 2 * 1024 * 1024, # 2MB
 		"sizeThreshold": 20 * 1024 * 1024, # 20MB
 	},
@@ -175,8 +175,8 @@ default_settings = {
 	},
 	"temperature": {
 		"profiles": [
-			{"name": "ABS", "extruder" : 210, "bed" : 100 },
-			{"name": "PLA", "extruder" : 180, "bed" : 60 }
+			{"name": "Marzipan", "extruder" : 60, "bed" : 0 },
+			{"name": "Cold Extrusion", "extruder" : 0, "bed" : 0 }
 		],
 		"cutoff": 30
 	},
@@ -197,7 +197,7 @@ default_settings = {
 			"order": {
 				"navbar": ["settings", "systemmenu", "login"],
 				"sidebar": ["connection", "state", "files"],
-				"tab": ["temperature", "control", "gcodeviewer", "terminal", "timelapse"],
+				"tab": ["control", "temperature", "gcodeviewer", "terminal", "timelapse"],
 				"settings": [
 					"section_printer", "serial", "printerprofiles", "temperatures", "terminalfilters", "gcodescripts",
 					"section_features", "features", "webcam", "accesscontrol", "api",
@@ -282,7 +282,7 @@ default_settings = {
 				"z": 200,
 				"e": 300
 			},
-			"hasBed": True,
+			"hasBed": False,
 			"repetierStyleTargetTemperature": False,
 			"repetierStyleResends": False,
 			"okBeforeCommandOutput": False,

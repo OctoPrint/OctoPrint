@@ -3782,6 +3782,7 @@ input[type="submit"].btn.btn-mini {
   display: block;
   float: none;
   max-width: 100%;
+  width: 100%;
   -webkit-border-radius: 0;
      -moz-border-radius: 0;
           border-radius: 0;

@@ -273,12 +273,12 @@ $(function() {
             });
         };
 
-        self.sendExtrudeCommand = function () {
-            self._sendECommand(1);
+        self.sendExtrudeCommand = function (amount) {
+            self._sendECommand(1, amount);
         };
 
-        self.sendRetractCommand = function () {
-            self._sendECommand(-1);
+        self.sendRetractCommand = function (amount) {
+            self._sendECommand(-1, amount);
         };
 
         self.sendFlowRateCommand = function () {
@@ -288,8 +288,11 @@ $(function() {
             });
         };
 
-        self._sendECommand = function (dir) {
-            var length = self.extrusionAmount();
+        self._sendECommand = function (dir, amount) {
+			var length;
+			if(typeof amount === 'undefined' || isNaN(amount)){
+				length = self.extrusionAmount();
+			}
             if (!length) length = self.settings.printer_defaultExtrusionLength();
 
             self.sendToolCommand({
@@ -566,6 +569,6 @@ $(function() {
     OCTOPRINT_VIEWMODELS.push([
         ControlViewModel,
         ["loginStateViewModel", "settingsViewModel"],
-        "#control"
+        ["#control", "#bocusini_control", "#buttonGroupPrinterDirect"]
     ]);
 });

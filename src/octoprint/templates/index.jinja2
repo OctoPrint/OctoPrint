@@ -16,10 +16,11 @@
     </head>
     <body>
         <div class="page-container">
+			<div id="octoprint_original">
             <div id="navbar" class="navbar navbar-static-top">
                 <div class="navbar-inner" data-bind="css: appearanceClasses">
                     <div class="container">
-                        <a class="brand" href="#"> <span data-bind="text: appearance.brand">OctoPrint</span></a>
+                        <a class="brand" href="#"><span></span></a>
                         <div class="nav-collapse">
                             <!-- Navbar -->
                             <ul class="nav pull-right">
@@ -122,7 +123,7 @@
                     </ul>
                 </div>
             </div>
-
+			</div>
             <!-- Dialogs -->
             {% include 'dialogs/confirmation.jinja2' %}
             {% include 'dialogs/firstrun.jinja2' %}
