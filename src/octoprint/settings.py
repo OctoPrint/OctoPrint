@@ -30,7 +30,7 @@ import logging
 import re
 import uuid
 
-from octoprint.util import atomic_write
+from octoprint.util import atomic_write, is_hidden_path
 
 _APPNAME = "OctoPrint"
 
@@ -413,9 +413,11 @@ class Settings(object):
 		return folder
 
 	def _init_script_templating(self):
-		from jinja2 import Environment, BaseLoader, FileSystemLoader, ChoiceLoader, TemplateNotFound
-		from jinja2.nodes import Include, Const
+		from jinja2 import Environment, BaseLoader, ChoiceLoader, TemplateNotFound
+		from jinja2.nodes import Include
 		from jinja2.ext import Extension
+
+		from octoprint.util.jinja import FilteredFileSystemLoader
 
 		class SnippetExtension(Extension):
 			tags = {"snippet"}
@@ -505,10 +507,14 @@ class Settings(object):
 				else:
 					return template
 
-		file_system_loader = FileSystemLoader(self.getBaseFolder("scripts"))
+		path_filter = lambda path: not is_hidden_path(path)
+		file_system_loader = FilteredFileSystemLoader(self.getBaseFolder("scripts"),
+		                                              path_filter=path_filter)
 		settings_loader = SettingsScriptLoader(self)
 		choice_loader = ChoiceLoader([file_system_loader, settings_loader])
-		select_loader = SelectLoader(choice_loader, dict(bundled=settings_loader, file=file_system_loader))
+		select_loader = SelectLoader(choice_loader,
+		                             dict(bundled=settings_loader,
+		                                  file=file_system_loader))
 		return RelEnvironment(loader=select_loader, extensions=[SnippetExtension])
 
 	def _get_script_template(self, script_type, name, source=False):

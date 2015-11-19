@@ -616,7 +616,9 @@ class Server():
 
 		# configure additional template folders for jinja2
 		import jinja2
-		filesystem_loader = jinja2.FileSystemLoader([])
+		import octoprint.util.jinja
+		filesystem_loader = octoprint.util.jinja.FilteredFileSystemLoader([],
+		                                                                  path_filter=lambda x: not octoprint.util.is_hidden_path(x))
 		filesystem_loader.searchpath = self._template_searchpaths
 
 		loaders = [app.jinja_loader, filesystem_loader]
