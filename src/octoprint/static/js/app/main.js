@@ -336,11 +336,17 @@ $(function() {
             },
             update: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
                 setTimeout(function() {
-                    $(element).slimScroll({scrollBy: 0});
+                    if (element.nodeName == "#comment") {
+                        // foreach is bound to a virtual element
+                        $(element.parentElement).slimScroll({scrollBy: 0});
+                    } else {
+                        $(element).slimScroll({scrollBy: 0});
+                    }
                 }, 10);
                 return ko.bindingHandlers.foreach.update(element, valueAccessor(), allBindings, viewModel, bindingContext);
             }
         };
+        ko.virtualElements.allowedBindings.slimScrolledForeach = true;
 
         ko.bindingHandlers.qrcode = {
             update: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
