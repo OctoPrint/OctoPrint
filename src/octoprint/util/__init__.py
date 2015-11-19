@@ -614,6 +614,23 @@ def bom_aware_open(filename, encoding="ascii", mode="r", **kwargs):
 	return codecs.open(filename, encoding=encoding, mode=mode, **kwargs)
 
 
+def is_hidden_path(path):
+	filename = os.path.basename(path)
+	if filename.startswith("."):
+		return True
+
+	if sys.platform == "win32":
+		try:
+			import ctypes
+			attrs = ctypes.windll.kernel32.GetFileAttributesW(unicode(path))
+			assert attrs != -1
+			return bool(attrs & 2)
+		except (AttributeError, AssertionError):
+			pass
+
+	return False
+
+
 class RepeatedTimer(threading.Thread):
 	"""
 	This class represents an action that should be run repeatedly in an interval. It is similar to python's

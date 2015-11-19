@@ -164,3 +164,40 @@ class TestAtomicWrite(unittest.TestCase):
 		mock_tempfile.assert_called_once_with(mode="w", prefix="foo", suffix="bar", delete=False)
 		mock_file.close.assert_called_once_with()
 		mock_move.assert_called_once_with("tempfile.tmp", "somefile.yaml")
+
+class IsHiddenPathTest(unittest.TestCase):
+
+	def setUp(self):
+		import tempfile
+
+		self.basepath = tempfile.mkdtemp()
+
+		self.path_always_visible = os.path.join(self.basepath, "always_visible.txt")
+		self.path_hidden_on_windows = os.path.join(self.basepath, "hidden_on_windows.txt")
+		self.path_always_hidden = os.path.join(self.basepath, ".always_hidden.txt")
+
+		for attr in ("path_always_visible", "path_hidden_on_windows", "path_always_hidden"):
+			path = getattr(self, attr)
+			with open(path, "w+b") as f:
+				f.write(attr)
+
+		import sys
+		if sys.platform == "win32":
+			# we use ctypes and the windows API to set the hidden attribute on the file
+			# only hidden on windows
+			import ctypes
+			ctypes.windll.kernel32.SetFileAttributesW(unicode(self.path_hidden_on_windows), 2)
+
+	def tearDown(self):
+		import shutil
+		shutil.rmtree(self.basepath)
+
+	def test_is_hidden_path(self):
+		self.assertFalse(octoprint.util.is_hidden_path(self.path_always_visible))
+		self.assertTrue(octoprint.util.is_hidden_path(self.path_always_hidden))
+
+		import sys
+		if sys.platform == "win32":
+			self.assertTrue(octoprint.util.is_hidden_path(self.path_hidden_on_windows))
+		else:
+			self.assertFalse(octoprint.util.is_hidden_path(self.path_hidden_on_windows))
