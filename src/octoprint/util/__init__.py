@@ -615,19 +615,27 @@ def bom_aware_open(filename, encoding="ascii", mode="r", **kwargs):
 
 
 def is_hidden_path(path):
+	if path is None:
+		# we define a None path as not hidden here
+		return False
+
 	filename = os.path.basename(path)
 	if filename.startswith("."):
+		# filenames starting with a . are hidden
 		return True
 
 	if sys.platform == "win32":
+		# if we are running on windows we also try to read the hidden file
+		# attribute via the windows api
 		try:
 			import ctypes
 			attrs = ctypes.windll.kernel32.GetFileAttributesW(unicode(path))
-			assert attrs != -1
-			return bool(attrs & 2)
+			assert attrs != -1     # INVALID_FILE_ATTRIBUTES == -1
+			return bool(attrs & 2) # FILE_ATTRIBUTE_HIDDEN == 2
 		except (AttributeError, AssertionError):
 			pass
 
+	# if we reach that point, the path is not hidden
 	return False
 
 

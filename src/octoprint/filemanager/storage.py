@@ -13,6 +13,8 @@ import tempfile
 
 import octoprint.filemanager
 
+from octoprint.util import is_hidden_path
+
 class StorageInterface(object):
 	"""
 	Interface of storage adapters for OctoPrint.
@@ -357,7 +359,7 @@ class LocalFileStorage(StorageInterface):
 		if not metadata:
 			metadata = dict()
 		for entry in os.listdir(path):
-			if entry.startswith(".") or not octoprint.filemanager.valid_file_type(entry):
+			if is_hidden_path(entry) or not octoprint.filemanager.valid_file_type(entry):
 				continue
 
 			absolute_path = os.path.join(path, entry)
@@ -887,7 +889,7 @@ class LocalFileStorage(StorageInterface):
 
 		result = dict()
 		for entry in os.listdir(path):
-			if entry.startswith("."):
+			if is_hidden_path(entry):
 				# no hidden files and folders
 				continue
 
