@@ -10,13 +10,14 @@
 # master shall not use the lookup table, only tags
 master
 
+# neither should disconnected checkouts, e.g. 'git checkout <tag>'
+HEAD
+\(detached.*
+
 # maintenance is currently the branch for preparation of maintenance release 1.2.8
 # so are any fix/... branches
 maintenance 1.2.8 6c622f7c4332b71c6ece59552ffc87c146155c84 pep440-dev
 fix/.* 1.2.8 6c622f7c4332b71c6ece59552ffc87c146155c84 pep440-dev
-
-# Special case disconnected checkouts, e.g. 'git checkout <tag>'
-\(detached.*
 
 # every other branch is a development branch and thus gets resolved to 1.3.0-dev for now
 .* 1.3.0 198d3450d94be1a2 pep440-dev
