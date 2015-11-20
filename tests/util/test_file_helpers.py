@@ -260,4 +260,5 @@ class IsHiddenPathTest(unittest.TestCase):
 	)
 	@ddt.unpack
 	def test_is_hidden_path(self, path_id, expected):
-		self.assertEqual(octoprint.util.is_hidden_path(getattr(self, path_id)), expected)
+		path = getattr(self, path_id) if path_id is not None else None
+		self.assertEqual(octoprint.util.is_hidden_path(path), expected)
