@@ -7,6 +7,8 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 import unittest
 import mock
 import os
+import ddt
+import sys
 
 import octoprint.util
 
@@ -222,6 +224,7 @@ class TempDirTest(unittest.TestCase):
 		mock_rmtree.assert_called_once_with(path, ignore_errors=True, onerror=onerror)
 
 
+@ddt.ddt
 class IsHiddenPathTest(unittest.TestCase):
 
 	def setUp(self):
@@ -249,12 +252,12 @@ class IsHiddenPathTest(unittest.TestCase):
 		import shutil
 		shutil.rmtree(self.basepath)
 
-	def test_is_hidden_path(self):
-		self.assertFalse(octoprint.util.is_hidden_path(self.path_always_visible))
-		self.assertTrue(octoprint.util.is_hidden_path(self.path_always_hidden))
-
-		import sys
-		if sys.platform == "win32":
-			self.assertTrue(octoprint.util.is_hidden_path(self.path_hidden_on_windows))
-		else:
-			self.assertFalse(octoprint.util.is_hidden_path(self.path_hidden_on_windows))
+	@ddt.data(
+		(None, False),
+		("path_always_visible", False),
+		("path_always_hidden", True),
+		("path_hidden_on_windows", sys.platform == "win32")
+	)
+	@ddt.unpack
+	def test_is_hidden_path(self, path_id, expected):
+		self.assertEqual(octoprint.util.is_hidden_path(getattr(self, path_id)), expected)

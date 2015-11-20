@@ -22,6 +22,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import os
 import octoprint.plugin
 import octoprint.events
+import octoprint.util
 from octoprint.settings import settings
 
 import logging
@@ -524,7 +525,7 @@ class SlicingManager(object):
 		profiles = dict()
 		slicer_profile_path = self.get_slicer_profile_path(slicer)
 		for entry in os.listdir(slicer_profile_path):
-			if not entry.endswith(".profile") or entry.startswith("."):
+			if not entry.endswith(".profile") or octoprint.util.is_hidden_path(entry):
 				# we are only interested in profiles and no hidden files
 				continue
 
