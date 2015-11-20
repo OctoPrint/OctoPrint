@@ -337,6 +337,21 @@ $(function() {
             self._processData(data);
         };
 
+        self._renderPercentage = function(percentage) {
+            var cmdIndex = GCODE.gCodeReader.getCmdIndexForPercentage(percentage);
+            if (!cmdIndex) return;
+
+            GCODE.renderer.render(cmdIndex.layer, 0, cmdIndex.cmd);
+            GCODE.ui.updateLayerInfo(cmdIndex.layer);
+
+            if (self.layerSlider != undefined) {
+                self.layerSlider.slider("setValue", cmdIndex.layer);
+            }
+            if (self.layerCommandSlider != undefined) {
+                self.layerCommandSlider.slider("setValue", [0, cmdIndex.cmd]);
+            }
+        };
+
         self._processData = function(data) {
             if (!data.job.file || !data.job.file.name && (self.loadedFilename || self.loadedFileDate)) {
                 self.waitForApproval(false);
@@ -357,18 +372,7 @@ $(function() {
                     && self.loadedFilename == data.job.file.name
                     && self.loadedFileDate == data.job.file.date) {
                 if (OctoPrint.coreui.browserTabVisible && self.tabActive && self.currentlyPrinting && self.renderer_syncProgress() && !self.waitForApproval()) {
-                    var cmdIndex = GCODE.gCodeReader.getCmdIndexForPercentage(data.progress.completion);
-                    if(cmdIndex){
-                        GCODE.renderer.render(cmdIndex.layer, 0, cmdIndex.cmd);
-                        GCODE.ui.updateLayerInfo(cmdIndex.layer);
-
-                        if (self.layerSlider != undefined) {
-                            self.layerSlider.slider("setValue", cmdIndex.layer);
-                        }
-                        if (self.layerCommandSlider != undefined) {
-                            self.layerCommandSlider.slider("setValue", [0, cmdIndex.cmd]);
-                        }
-                    }
+                    self._renderPercentage(data.progress.completion);
                 }
                 self.errorCount = 0
             } else {
@@ -389,6 +393,12 @@ $(function() {
                         self.loadFile(data.job.file.name, data.job.file.date);
                     }
                 }
+            }
+        };
+
+        self.onEventPrintDone = function() {
+            if (self.renderer_syncProgress() && !self.waitForApproval()) {
+                self._renderPercentage(100.0);
             }
         };
 
