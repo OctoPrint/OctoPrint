@@ -681,7 +681,7 @@ class Server(object):
 		import re
 
 		app.jinja_env.add_extension("jinja2.ext.do")
-		app.jinja_env.add_extension("octoprint.server.util.jinja.trycatch")
+		app.jinja_env.add_extension("octoprint.util.jinja.trycatch")
 
 		def regex_replace(s, find, replace):
 			return re.sub(find, replace, s)
