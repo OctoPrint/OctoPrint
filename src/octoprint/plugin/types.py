@@ -661,6 +661,14 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
 
 		return None
 
+	def get_ui_additional_key_data_for_cache(self, request):
+		return None
+
+	def get_ui_data_for_preemptive_caching(self, request):
+		return None
+
+	def get_ui_additional_request_data_for_preemptive_caching(self, request):
+		return None
 
 class WizardPlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 	"""

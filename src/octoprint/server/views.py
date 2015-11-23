@@ -49,17 +49,62 @@ def index():
 	now = datetime.datetime.utcnow()
 	render_kwargs = _get_render_kwargs(_templates, _plugin_names, _plugin_vars, now)
 
-	def get_cached_view(key, view):
+	def get_preemptively_cached_view(key, view, data=None, additional_request_data=None):
+		if (data is None and additional_request_data is None) or g.locale is None:
+			return view
+
+		d = dict(path=request.path,
+		         base_url=request.base_url,
+		         query_string="l10n={}".format(g.locale.language))
+
+		if key != "_default":
+			d["plugin"] = key
+
+		# add data if we have any
+		if data is not None:
+			if "query_string" in data:
+				data["query_string"] = "l10n={}&{}".format(g.locale.language, data["query_string"])
+			d.update(data)
+
+		# add additional request data if we have any
+		if additional_request_data:
+			d.update(dict(
+				_additional_request_data = additional_request_data
+			))
+
+		# finally decorate our view
+		return util.flask.preemptively_cached(data=d,
+		                                      unless=lambda: request.url_root in settings().get(["server", "preemptiveCache", "exceptions"]))(view)
+
+	def get_cached_view(key, view, additional_key_data=None):
+		def cache_key():
+			k = "ui:{}:{}:{}".format(key, request.base_url, g.locale.language if g.locale else "default")
+			ak = additional_key_data
+			if ak:
+				# we have some additional key components, let's attach them
+				if not isinstance(ak, (list, tuple)):
+					ak = [ak]
+				k = "{}:{}".format(k, ":".join(ak))
+			return k
+
 		return util.flask.cached(timeout=-1,
 		                         refreshif=lambda: force_refresh,
-		                         key=lambda: "ui:{}:{}:{}".format(key, request.base_url, g.locale),
+		                         key=cache_key,
 		                         unless_response=util.flask.cache_check_response_headers)(view)
 
 	ui_plugins = pluginManager.get_implementations(octoprint.plugin.UiPlugin, sorting_context="UiPlugin.on_ui_render")
 	for plugin in ui_plugins:
 		if plugin.will_handle_ui(request):
 			# plugin claims responsibility, let it render the UI
-			cached = get_cached_view(plugin._identifier, plugin.on_ui_render)
+			preemptively_cached = get_preemptively_cached_view(plugin._identifier,
+			                                                   plugin.on_ui_render,
+			                                                   plugin.get_ui_data_for_preemptive_caching(request),
+			                                                   plugin.get_ui_additional_request_data_for_preemptive_caching(request))
+
+			cached = get_cached_view(plugin._identifier,
+			                         preemptively_cached,
+			                         plugin.get_ui_additional_key_data_for_cache(request))
+
 			response = cached(now, request, render_kwargs)
 			if response is not None:
 				break
@@ -86,7 +131,8 @@ def index():
 				r = util.flask.add_non_caching_response_headers(r)
 			return r
 
-		cached = get_cached_view("_default", make_default_ui)
+		preemptively_cached = get_preemptively_cached_view("_default", make_default_ui, dict(), dict())
+		cached = get_cached_view("_default", preemptively_cached)
 		response = cached()
 
 	response.headers["Last-Modified"] = now
@@ -510,7 +556,9 @@ def robotsTxt():
 @app.route("/i18n/<string:locale>/<string:domain>.js")
 @util.flask.cached(timeout=-1,
                    refreshif=lambda: util.flask.cache_check_headers() or "_refresh" in request.values,
-                   key=lambda: "{}:{}".format(request.base_url, g.locale))
+                   key=lambda: "{}".format(request.base_url))
+@util.flask.preemptively_cached(data=lambda: dict(path=request.path, base_url=request.url_root) if g.locale else None,
+                                unless=lambda: request.url_root in settings().get(["server", "preemptiveCache", "exceptions"]))
 def localeJs(locale, domain):
 	messages = dict()
 	plural_expr = None
