@@ -467,6 +467,10 @@ class Server():
 					implementation.on_after_startup()
 				pluginLifecycleManager.add_callback("enabled", call_on_after_startup)
 
+				# when we are through with that we also run our preemptive cache
+				if settings().getBoolean(["devel", "cache", "preemptive"]):
+					self._execute_preemptive_flask_caching()
+
 			import threading
 			threading.Thread(target=work).start()
 		ioloop.add_callback(on_after_startup)
@@ -526,7 +530,7 @@ class Server():
 		if default_language is not None and not default_language == "_default" and default_language in LANGUAGES:
 			return Locale.negotiate([default_language], LANGUAGES)
 
-		return request.accept_languages.best_match(LANGUAGES)
+		return Locale.parse(request.accept_languages.best_match(LANGUAGES))
 
 	def _setup_logging(self, debug, logConf=None):
 		defaultConfig = {
@@ -662,6 +666,30 @@ class Server():
 		del jinja2
 
 		self._register_template_plugins()
+
+	def _execute_preemptive_flask_caching(self):
+		from octoprint.server.util.flask import get_preemptive_cache_data
+		from werkzeug.test import EnvironBuilder
+
+		cache_data = get_preemptive_cache_data()
+		if not cache_data:
+			return
+
+		def execute_caching():
+			for route in sorted(cache_data.keys(), key=lambda x: (x.count("/"), x)):
+				entries = cache_data[route]
+				for kwargs in entries:
+					try:
+						self._logger.info("Preemptively caching {} for {!r}".format(route, kwargs))
+						builder = EnvironBuilder(**kwargs)
+						app(builder.get_environ(), lambda *a, **kw: None)
+					except:
+						self._logger.exception("Error while trying to preemptively cache {} for {!r}".format(route, kwargs))
+
+		import threading
+		cache_thread = threading.Thread(target=execute_caching, name="Preemptive Cache Worker")
+		cache_thread.daemon = True
+		cache_thread.start()
 
 	def _register_template_plugins(self):
 		template_plugins = pluginManager.get_implementations(octoprint.plugin.TemplatePlugin)

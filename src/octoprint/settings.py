@@ -114,6 +114,9 @@ default_settings = {
 		"diskspace": {
 			"warning": 500 * 1024 * 1024, # 500 MB
 			"critical": 200 * 1024 * 1024, # 200 MB
+		},
+		"preemptiveCache": {
+			"exceptions": []
 		}
 	},
 	"webcam": {
@@ -262,7 +265,8 @@ default_settings = {
 	"devel": {
 		"stylesheet": "css",
 		"cache": {
-			"enabled": True
+			"enabled": True,
+			"preemptive": True
 		},
 		"webassets": {
 			"minify": False,

@@ -376,6 +376,69 @@ def cache_check_response_headers(response):
 
 	return False
 
+_preemptive_flask_cache = "preemptive_flask_cache.yaml"
+
+def preemptively_cached(data, unless=None):
+	def decorator(f):
+		@functools.wraps(f)
+		def decorated_function(*args, **kwargs):
+			if not (callable(unless) and unless()):
+				entry_data = data
+				if callable(entry_data):
+					entry_data = entry_data()
+
+				if entry_data is not None:
+					from flask import request
+					from octoprint.util import atomic_write
+					import yaml
+
+					data_folder = settings().getBaseFolder("data")
+					cache_data_file = os.path.join(data_folder, _preemptive_flask_cache)
+					cache_data = get_preemptive_cache_data()
+
+					if not request.path in cache_data:
+						cache_data[request.path] = []
+
+					cache_data_for_path = cache_data.get(request.path, [])
+					if all(map(lambda entry: entry_data != entry, cache_data_for_path)):
+						logging.getLogger(__name__).info("Adding {} for {!r} to views to preemptively cache".format(request.path, entry_data))
+						cache_data[request.path] = cache_data_for_path + [entry_data]
+						try:
+							with atomic_write(cache_data_file, "wb", prefix="octoprint-{}-".format(_preemptive_flask_cache[:-len(".yaml")]), suffix=".yaml") as handle:
+								yaml.safe_dump(cache_data, handle,default_flow_style=False, indent="    ", allow_unicode=True)
+						except:
+							logging.getLogger(__name__).exception("Error while writing {}".format(_preemptive_flask_cache))
+
+			return f(*args, **kwargs)
+
+		return decorated_function
+
+	return decorator
+
+
+def get_preemptive_cache_data(root=None):
+	import yaml
+
+	data_folder = settings().getBaseFolder("data")
+	cache_data_file = os.path.join(data_folder, _preemptive_flask_cache)
+	if not os.path.isfile(cache_data_file):
+		return dict()
+
+	cache_data = None
+	try:
+		with open(cache_data_file, "r") as f:
+			cache_data = yaml.safe_load(f)
+	except:
+		logging.getLogger(__name__).exception("Error while reading {}".format(_preemptive_flask_cache))
+
+	if cache_data is None:
+		cache_data = dict()
+
+	if root:
+		return cache_data.get(root, dict())
+	else:
+		return cache_data
+
 
 def add_non_caching_response_headers(response):
 	response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0"
