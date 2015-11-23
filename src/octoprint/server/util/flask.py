@@ -313,7 +313,7 @@ class LessSimpleCache(BaseCache):
 
 _cache = LessSimpleCache()
 
-def cached(timeout=5 * 60, key=lambda: "view/%s" % flask.request.path, unless=None, refreshif=None, unless_response=None):
+def cached(timeout=5 * 60, key=lambda: "view:%s" % flask.request.path, unless=None, refreshif=None, unless_response=None):
 	def decorator(f):
 		@functools.wraps(f)
 		def decorated_function(*args, **kwargs):
@@ -339,7 +339,7 @@ def cached(timeout=5 * 60, key=lambda: "view/%s" % flask.request.path, unless=No
 					return rv
 
 			# get value from wrapped function
-			logger.debug("No cache entry or refreshing cache for {path}, calling wrapped function".format(path=flask.request.path))
+			logger.debug("No cache entry or refreshing cache for {path} (key: {key}), calling wrapped function".format(path=flask.request.path, key=cache_key))
 			rv = f(*args, **kwargs)
 
 			# do not store if the "unless_response" condition is true
