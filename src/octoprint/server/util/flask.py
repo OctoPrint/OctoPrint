@@ -313,7 +313,7 @@ class LessSimpleCache(BaseCache):
 
 _cache = LessSimpleCache()
 
-def cached(timeout=5 * 60, key=lambda: "view/%s" % flask.request.path, unless=None, refreshif=None, unless_response=None):
+def cached(timeout=5 * 60, key=lambda: "view:%s" % flask.request.path, unless=None, refreshif=None, unless_response=None):
 	def decorator(f):
 		@functools.wraps(f)
 		def decorated_function(*args, **kwargs):

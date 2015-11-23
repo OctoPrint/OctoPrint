@@ -52,7 +52,7 @@ def index():
 	def get_cached_view(key, view):
 		return util.flask.cached(timeout=-1,
 		                         refreshif=lambda: force_refresh,
-		                         key=lambda: "ui:{}:{}".format(key, g.locale),
+		                         key=lambda: "ui:{}:{}:{}".format(key, request.base_url, g.locale),
 		                         unless_response=util.flask.cache_check_response_headers)(view)
 
 	ui_plugins = pluginManager.get_implementations(octoprint.plugin.UiPlugin, sorting_context="UiPlugin.on_ui_render")
@@ -510,7 +510,7 @@ def robotsTxt():
 @app.route("/i18n/<string:locale>/<string:domain>.js")
 @util.flask.cached(timeout=-1,
                    refreshif=lambda: util.flask.cache_check_headers() or "_refresh" in request.values,
-                   key=lambda: "{}:{}".format(request.path, g.locale))
+                   key=lambda: "{}:{}".format(request.base_url, g.locale))
 def localeJs(locale, domain):
 	messages = dict()
 	plural_expr = None
