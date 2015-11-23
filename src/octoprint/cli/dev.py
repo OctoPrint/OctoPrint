@@ -79,9 +79,11 @@ class OctoPrintDevelCommands(click.MultiCommand):
 			from octoprint.util import fallback_dict
 
 			original_get_user_config = cookiecutter.main.get_user_config
-			original_config = original_get_user_config()
 			try:
-				cookiecutter.main.get_user_config = lambda: fallback_dict(config, original_config)
+				def f(*args, **kwargs):
+					original_config = original_get_user_config(*args, **kwargs)
+					return fallback_dict(config, original_config)
+				cookiecutter.main.get_user_config = f
 				yield
 			finally:
 				cookiecutter.main.get_user_config = original_get_user_config
