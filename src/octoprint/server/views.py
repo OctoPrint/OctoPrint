@@ -14,7 +14,7 @@ from flask import request, g, url_for, make_response, render_template, send_from
 import octoprint.plugin
 
 from octoprint.server import app, userManager, pluginManager, gettext, \
-	debug, LOCALES, VERSION, DISPLAY_VERSION, UI_API_KEY, BRANCH
+	debug, LOCALES, VERSION, DISPLAY_VERSION, UI_API_KEY, BRANCH, preemptiveCache
 from octoprint.settings import settings
 
 import re
@@ -73,8 +73,9 @@ def index():
 			))
 
 		# finally decorate our view
-		return app.preemptive_cache.recorded(data=d,
-		                                     unless=lambda: request.url_root in settings().get(["server", "preemptiveCache", "exceptions"]))(view)
+		return util.flask.preemptively_cached(cache=preemptiveCache,
+		                                      data=d,
+		                                      unless=lambda: request.url_root in settings().get(["server", "preemptiveCache", "exceptions"]))(view)
 
 	def get_cached_view(key, view, additional_key_data=None):
 		def cache_key():
@@ -554,8 +555,9 @@ def robotsTxt():
 
 
 @app.route("/i18n/<string:locale>/<string:domain>.js")
-@app.preemptive_cache.recorded(data=lambda: dict(path=request.path, base_url=request.url_root),
-                               unless=lambda: request.url_root in settings().get(["server", "preemptiveCache", "exceptions"]))
+@util.flask.preemptively_cached(cache=preemptiveCache,
+                                data=lambda: dict(path=request.path, base_url=request.url_root),
+                                unless=lambda: request.url_root in settings().get(["server", "preemptiveCache", "exceptions"]))
 @util.flask.cached(timeout=-1,
                    refreshif=lambda: util.flask.cache_check_headers() or "_refresh" in request.values,
                    key=lambda: "{}".format(request.base_url))
