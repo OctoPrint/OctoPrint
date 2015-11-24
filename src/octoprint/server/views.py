@@ -13,7 +13,7 @@ from flask import request, g, url_for, make_response, render_template, send_from
 import octoprint.plugin
 
 from octoprint.server import app, userManager, pluginManager, gettext, \
-	debug, LOCALES, VERSION, DISPLAY_VERSION, UI_API_KEY, BRANCH
+	debug, LOCALES, VERSION, DISPLAY_VERSION, UI_API_KEY, BRANCH, preemptiveCache
 from octoprint.settings import settings
 
 import re
@@ -27,8 +27,9 @@ _valid_id_re = re.compile("[a-z_]+")
 _valid_div_re = re.compile("[a-zA-Z_-]+")
 
 @app.route("/")
-@app.preemptive_cache.recorded(data=lambda: dict(path=request.path, base_url=request.url_root, query_string="l10n={}".format(g.locale.language)) if g.locale else None,
-                               unless=lambda: request.url_root in settings().get(["server", "preemptiveCache", "exceptions"]))
+@util.flask.preemptively_cached(cache=preemptiveCache,
+                                data=lambda: dict(path=request.path, base_url=request.url_root, query_string="l10n={}".format(g.locale.language)) if g.locale else None,
+                                unless=lambda: request.url_root in settings().get(["server", "preemptiveCache", "exceptions"]))
 @util.flask.cached(timeout=-1,
                    refreshif=lambda: util.flask.cache_check_headers() or "_refresh" in request.values,
                    key=lambda: "view:{}:{}".format(request.base_url, g.locale.language if g.locale else "default"),
@@ -403,8 +404,9 @@ def robotsTxt():
 
 
 @app.route("/i18n/<string:locale>/<string:domain>.js")
-@app.preemptive_cache.recorded(data=lambda: dict(path=request.path, base_url=request.url_root),
-                               unless=lambda: request.url_root in settings().get(["server", "preemptiveCache", "exceptions"]))
+@util.flask.preemptively_cached(cache=preemptiveCache,
+                                data=lambda: dict(path=request.path, base_url=request.url_root),
+                                unless=lambda: request.url_root in settings().get(["server", "preemptiveCache", "exceptions"]))
 @util.flask.cached(timeout=-1,
                    refreshif=lambda: util.flask.cache_check_headers() or "_refresh" in request.values,
                    key=lambda: "view:{}".format(request.base_url))

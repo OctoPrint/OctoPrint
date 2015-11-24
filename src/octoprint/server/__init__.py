@@ -42,6 +42,7 @@ loginManager = None
 pluginManager = None
 appSessionManager = None
 pluginLifecycleManager = None
+preemptiveCache = None
 
 principals = Principal(app)
 admin_permission = Permission(RoleNeed("admin"))
@@ -61,6 +62,7 @@ import octoprint.util
 import octoprint.filemanager.storage
 import octoprint.filemanager.analysis
 import octoprint.slicing
+from octoprint.server.util.flask import PreemptiveCache
 
 from . import util
 
@@ -142,6 +144,7 @@ class Server():
 		global pluginManager
 		global appSessionManager
 		global pluginLifecycleManager
+		global preemptiveCache
 		global debug
 
 		from tornado.ioloop import IOLoop
@@ -185,6 +188,7 @@ class Server():
 		printer = Printer(fileManager, analysisQueue, printerProfileManager)
 		appSessionManager = util.flask.AppSessionManager()
 		pluginLifecycleManager = LifecycleManager(pluginManager)
+		preemptiveCache = PreemptiveCache(os.path.join(s.getBaseFolder("data"), "preemptive_cache_config.yaml"))
 
 		def octoprint_plugin_inject_factory(name, implementation):
 			if not isinstance(implementation, octoprint.plugin.OctoPrintPlugin):
@@ -199,7 +203,8 @@ class Server():
 				printer=printer,
 				app_session_manager=appSessionManager,
 				plugin_lifecycle_manager=pluginLifecycleManager,
-				data_folder=os.path.join(settings().getBaseFolder("data"), name)
+				data_folder=os.path.join(settings().getBaseFolder("data"), name),
+				preemptive_cache=preemptiveCache
 			)
 
 		def settings_plugin_inject_factory(name, implementation):
@@ -469,7 +474,7 @@ class Server():
 
 				# when we are through with that we also run our preemptive cache
 				if settings().getBoolean(["devel", "cache", "preemptive"]):
-					self._execute_preemptive_flask_caching()
+					self._execute_preemptive_flask_caching(preemptiveCache)
 
 			import threading
 			threading.Thread(target=work).start()
@@ -622,9 +627,6 @@ class Server():
 			response.headers.add("X-Clacks-Overhead", "GNU Terry Pratchett")
 			return response
 
-		preemptive_cache = octoprint.server.util.flask.PreemptiveCache(os.path.join(settings().getBaseFolder("data"), "preemptive_flask_cache.yaml"))
-		preemptive_cache.attach_to_app(app)
-
 	def _setup_i18n(self, app):
 		global babel
 		global LOCALES
@@ -670,19 +672,16 @@ class Server():
 
 		self._register_template_plugins()
 
-	def _execute_preemptive_flask_caching(self):
+	def _execute_preemptive_flask_caching(self, preemptive_cache):
 		from werkzeug.test import EnvironBuilder
 		import time
-
-		if not hasattr(app, "preemptive_cache"):
-			return
 
 		# we clean up entries from our preemptive cache settings that haven't been
 		# accessed longer than server.preemptiveCache.until days
 		preemptive_cache_timeout = settings().getInt(["server", "preemptiveCache", "until"])
 		cutoff_timestamp = time.time() + preemptive_cache_timeout * 24 * 60 * 60
 
-		cache_data = app.preemptive_cache.clean_all_data(lambda root, entries: filter(lambda entry: "_timestamp" in entry and entry["_timestamp"] <= cutoff_timestamp, entries))
+		cache_data = preemptive_cache.clean_all_data(lambda root, entries: filter(lambda entry: "_timestamp" in entry and entry["_timestamp"] <= cutoff_timestamp, entries))
 		if not cache_data:
 			return
 
@@ -697,7 +696,7 @@ class Server():
 
 						self._logger.info("Preemptively caching {} for {!r}".format(route, kwargs))
 						builder = EnvironBuilder(**kwargs)
-						with app.preemptive_cache.disable_timestamp_update():
+						with preemptive_cache.disable_timestamp_update():
 							app(builder.get_environ(), lambda *a, **kw: None)
 					except:
 						self._logger.exception("Error while trying to preemptively cache {} for {!r}".format(route, kwargs))

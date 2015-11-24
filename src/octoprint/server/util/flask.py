@@ -387,21 +387,17 @@ class PreemptiveCache(object):
 		self._logger = logging.getLogger(__name__ + "." + self.__class__.__name__)
 		self._update_timestamp = True
 
-	def recorded(self, data, unless=None):
-		def decorator(f):
-			@functools.wraps(f)
-			def decorated_function(*args, **kwargs):
-				if not (callable(unless) and unless()):
-					entry_data = data
-					if callable(entry_data):
-						entry_data = entry_data()
+	def record(self, data, unless=None):
+		if callable(unless) and unless():
+			return
 
-					if entry_data is not None:
-						from flask import request
-						self.add_data(request.path, entry_data)
-				return f(*args, **kwargs)
-			return decorated_function
-		return decorator
+		entry_data = data
+		if callable(entry_data):
+			entry_data = entry_data()
+
+		if entry_data is not None:
+			from flask import request
+			self.add_data(request.path, entry_data)
 
 	@contextlib.contextmanager
 	def disable_timestamp_update(self):
@@ -436,6 +432,10 @@ class PreemptiveCache(object):
 			try:
 				with open(self.cachefile, "r") as f:
 					cache_data = yaml.safe_load(f)
+			except IOError as e:
+				import errno
+				if e.errno != errno.ENOENT:
+					raise
 			except:
 				self._logger.exception("Error while reading {}".format(self.cachefile))
 
@@ -515,8 +515,15 @@ class PreemptiveCache(object):
 
 			self.set_data(root, [to_persist] + other)
 
-	def attach_to_app(self, app):
-		app.preemptive_cache = self
+
+def preemptively_cached(cache, data, unless=None):
+	def decorator(f):
+		@functools.wraps(f)
+		def decorated_function(*args, **kwargs):
+			cache.record(data, unless=unless)
+			return f(*args, **kwargs)
+		return decorated_function
+	return decorator
 
 
 def add_non_caching_response_headers(response):
