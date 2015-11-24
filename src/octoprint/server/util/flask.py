@@ -14,6 +14,7 @@ import flask.ext.assets
 import webassets.updater
 import webassets.utils
 import functools
+import contextlib
 import time
 import uuid
 import threading
@@ -376,74 +377,146 @@ def cache_check_response_headers(response):
 
 	return False
 
-_preemptive_flask_cache = "preemptive_flask_cache.yaml"
 
-def preemptively_cached(data, unless=None):
-	def decorator(f):
-		@functools.wraps(f)
-		def decorated_function(*args, **kwargs):
-			if not (callable(unless) and unless()):
-				entry_data = data
-				if callable(entry_data):
-					entry_data = entry_data()
+class PreemptiveCache(object):
 
-				if entry_data is not None:
-					from flask import request
-					from octoprint.util import atomic_write
-					import yaml
+	def __init__(self, cachefile):
+		self.cachefile = cachefile
 
-					data_folder = settings().getBaseFolder("data")
-					cache_data_file = os.path.join(data_folder, _preemptive_flask_cache)
-					cache_data = get_preemptive_cache_data()
+		self._lock = threading.RLock()
+		self._logger = logging.getLogger(__name__ + "." + self.__class__.__name__)
+		self._update_timestamp = True
 
-					if not request.path in cache_data:
-						cache_data[request.path] = []
+	def recorded(self, data, unless=None):
+		def decorator(f):
+			@functools.wraps(f)
+			def decorated_function(*args, **kwargs):
+				if not (callable(unless) and unless()):
+					entry_data = data
+					if callable(entry_data):
+						entry_data = entry_data()
 
-					def strip_ignored(d):
-						return dict((k, v) for k, v in d.items() if not k.startswith("_"))
+					if entry_data is not None:
+						from flask import request
+						self.add_data(request.path, entry_data)
+				return f(*args, **kwargs)
+			return decorated_function
+		return decorator
 
-					def compare(a, b):
-						return set(strip_ignored(a).items()) == set(strip_ignored(b).items())
+	@contextlib.contextmanager
+	def disable_timestamp_update(self):
+		with self._lock:
+			self._update_timestamp = False
+			yield
+			self._update_timestamp = True
 
-					cache_data_for_path = cache_data.get(request.path, [])
-					if not any(map(lambda entry: compare(entry_data, entry), cache_data_for_path)):
-						logging.getLogger(__name__).info("Adding {} for {!r} to views to preemptively cache".format(request.path, entry_data))
-						cache_data[request.path] = cache_data_for_path + [entry_data]
-						try:
-							with atomic_write(cache_data_file, "wb", prefix="octoprint-{}-".format(_preemptive_flask_cache[:-len(".yaml")]), suffix=".yaml") as handle:
-								yaml.safe_dump(cache_data, handle,default_flow_style=False, indent="    ", allow_unicode=True)
-						except:
-							logging.getLogger(__name__).exception("Error while writing {}".format(_preemptive_flask_cache))
+	def clean_all_data(self, cleanup_function):
+		assert callable(cleanup_function)
 
-			return f(*args, **kwargs)
+		with self._lock:
+			all_data = self.get_all_data()
+			for root, entries in all_data.items():
+				old_count = len(entries)
+				entries = cleanup_function(root, entries)
+				if not entries:
+					del all_data[root]
+					self._logger.debug("Removed root {} from preemptive cache".format(root))
+				elif len(entries) < old_count:
+					all_data[root] = entries
+					self._logger.debug("Removed {} from preemptive cache for root {}".format(old_count - len(entries), root))
+			self.set_all_data(all_data)
 
-		return decorated_function
+		return all_data
 
-	return decorator
+	def get_all_data(self):
+		import yaml
 
+		cache_data = None
+		with self._lock:
+			try:
+				with open(self.cachefile, "r") as f:
+					cache_data = yaml.safe_load(f)
+			except:
+				self._logger.exception("Error while reading {}".format(self.cachefile))
 
-def get_preemptive_cache_data(root=None):
-	import yaml
+		if cache_data is None:
+			cache_data = dict()
 
-	data_folder = settings().getBaseFolder("data")
-	cache_data_file = os.path.join(data_folder, _preemptive_flask_cache)
-	if not os.path.isfile(cache_data_file):
-		return dict()
-
-	cache_data = None
-	try:
-		with open(cache_data_file, "r") as f:
-			cache_data = yaml.safe_load(f)
-	except:
-		logging.getLogger(__name__).exception("Error while reading {}".format(_preemptive_flask_cache))
-
-	if cache_data is None:
-		cache_data = dict()
-
-	if root:
-		return cache_data.get(root, dict())
-	else:
 		return cache_data
+
+	def get_data(self, root):
+		cache_data = self.get_all_data()
+		return cache_data.get(root, dict())
+
+	def set_all_data(self, data):
+		from octoprint.util import atomic_write
+		import yaml
+
+		with self._lock:
+			try:
+				with atomic_write(self.cachefile, "wb") as handle:
+					yaml.safe_dump(data, handle,default_flow_style=False, indent="    ", allow_unicode=True)
+			except:
+				self._logger.exception("Error while writing {}".format(self.cachefile))
+
+	def set_data(self, root, data):
+		with self._lock:
+			all_data = self.get_all_data()
+			all_data[root] = data
+			self.set_all_data(all_data)
+
+	def add_data(self, root, data):
+		from octoprint.util import dict_filter
+
+		def strip_ignored(d):
+			return dict_filter(d, lambda k, v: not k.startswith("_"))
+
+		def compare(a, b):
+			return set(strip_ignored(a).items()) == set(strip_ignored(b).items())
+
+		def split_matched_and_unmatched(entry, entries):
+			matched = []
+			unmatched = []
+
+			for e in entries:
+				if compare(e, entry):
+					matched.append(e)
+				else:
+					unmatched.append(e)
+
+			return matched, unmatched
+
+		with self._lock:
+			cache_data = self.get_all_data()
+
+			if not root in cache_data:
+				cache_data[root] = []
+
+			existing, other = split_matched_and_unmatched(data, cache_data[root])
+
+			def get_newest(entries):
+				result = None
+				for entry in entries:
+					if "_timestamp" in entry and (result is None or ("_timestamp" in entry and result["_timestamp"] < entry["_timestamp"])):
+						result = entry
+				return result
+
+			to_persist = get_newest(existing)
+			if not to_persist:
+				import copy
+				to_persist = copy.deepcopy(data)
+				to_persist["_timestamp"] = time.time()
+				self._logger.info("Adding entry for {} and {!r}".format(root, to_persist))
+			elif self._update_timestamp:
+				to_persist["_timestamp"] = time.time()
+				self._logger.debug("Updating timestamp for {} and {!r}".format(root, data))
+			else:
+				self._logger.debug("Not updating timestamp for {} and {!r}, currently flagged as disabled".format(root, data))
+
+			self.set_data(root, [to_persist] + other)
+
+	def attach_to_app(self, app):
+		app.preemptive_cache = self
 
 
 def add_non_caching_response_headers(response):

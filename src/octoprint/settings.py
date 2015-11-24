@@ -121,7 +121,8 @@ default_settings = {
 			"critical": 200 * 1024 * 1024, # 200 MB
 		},
 		"preemptiveCache": {
-			"exceptions": []
+			"exceptions": [],
+			"until": 7
 		}
 	},
 	"webcam": {

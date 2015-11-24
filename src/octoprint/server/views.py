@@ -73,8 +73,8 @@ def index():
 			))
 
 		# finally decorate our view
-		return util.flask.preemptively_cached(data=d,
-		                                      unless=lambda: request.url_root in settings().get(["server", "preemptiveCache", "exceptions"]))(view)
+		return app.preemptive_cache.recorded(data=d,
+		                                     unless=lambda: request.url_root in settings().get(["server", "preemptiveCache", "exceptions"]))(view)
 
 	def get_cached_view(key, view, additional_key_data=None):
 		def cache_key():
@@ -96,16 +96,16 @@ def index():
 	for plugin in ui_plugins:
 		if plugin.will_handle_ui(request):
 			# plugin claims responsibility, let it render the UI
+			cached = get_cached_view(plugin._identifier,
+			                         plugin.on_ui_render,
+			                         plugin.get_ui_additional_key_data_for_cache(request))
+
 			preemptively_cached = get_preemptively_cached_view(plugin._identifier,
-			                                                   plugin.on_ui_render,
+			                                                   cached,
 			                                                   plugin.get_ui_data_for_preemptive_caching(request),
 			                                                   plugin.get_ui_additional_request_data_for_preemptive_caching(request))
 
-			cached = get_cached_view(plugin._identifier,
-			                         preemptively_cached,
-			                         plugin.get_ui_additional_key_data_for_cache(request))
-
-			response = cached(now, request, render_kwargs)
+			response = preemptively_cached(now, request, render_kwargs)
 			if response is not None:
 				break
 
@@ -131,9 +131,9 @@ def index():
 				r = util.flask.add_non_caching_response_headers(r)
 			return r
 
-		preemptively_cached = get_preemptively_cached_view("_default", make_default_ui, dict(), dict())
-		cached = get_cached_view("_default", preemptively_cached)
-		response = cached()
+		cached = get_cached_view("_default", make_default_ui)
+		preemptively_cached = get_preemptively_cached_view("_default", cached, dict(), dict())
+		response = preemptively_cached()
 
 	response.headers["Last-Modified"] = now
 
@@ -554,11 +554,11 @@ def robotsTxt():
 
 
 @app.route("/i18n/<string:locale>/<string:domain>.js")
+@app.preemptive_cache.recorded(data=lambda: dict(path=request.path, base_url=request.url_root),
+                               unless=lambda: request.url_root in settings().get(["server", "preemptiveCache", "exceptions"]))
 @util.flask.cached(timeout=-1,
                    refreshif=lambda: util.flask.cache_check_headers() or "_refresh" in request.values,
                    key=lambda: "{}".format(request.base_url))
-@util.flask.preemptively_cached(data=lambda: dict(path=request.path, base_url=request.url_root) if g.locale else None,
-                                unless=lambda: request.url_root in settings().get(["server", "preemptiveCache", "exceptions"]))
 def localeJs(locale, domain):
 	messages = dict()
 	plural_expr = None
