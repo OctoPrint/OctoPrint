@@ -27,12 +27,12 @@ _valid_id_re = re.compile("[a-z_]+")
 _valid_div_re = re.compile("[a-zA-Z_-]+")
 
 @app.route("/")
+@app.preemptive_cache.recorded(data=lambda: dict(path=request.path, base_url=request.url_root, query_string="l10n={}".format(g.locale.language)) if g.locale else None,
+                               unless=lambda: request.url_root in settings().get(["server", "preemptiveCache", "exceptions"]))
 @util.flask.cached(timeout=-1,
                    refreshif=lambda: util.flask.cache_check_headers() or "_refresh" in request.values,
                    key=lambda: "view:{}:{}".format(request.base_url, g.locale.language if g.locale else "default"),
                    unless_response=util.flask.cache_check_response_headers)
-@util.flask.preemptively_cached(data=lambda: dict(path=request.path, base_url=request.url_root, query_string="l10n={}".format(g.locale.language)) if g.locale else None,
-                                unless=lambda: request.url_root in settings().get(["server", "preemptiveCache", "exceptions"]))
 def index():
 	#~~ a bunch of settings
 
@@ -403,11 +403,11 @@ def robotsTxt():
 
 
 @app.route("/i18n/<string:locale>/<string:domain>.js")
+@app.preemptive_cache.recorded(data=lambda: dict(path=request.path, base_url=request.url_root),
+                               unless=lambda: request.url_root in settings().get(["server", "preemptiveCache", "exceptions"]))
 @util.flask.cached(timeout=-1,
                    refreshif=lambda: util.flask.cache_check_headers() or "_refresh" in request.values,
                    key=lambda: "view:{}".format(request.base_url))
-@util.flask.preemptively_cached(data=lambda: dict(path=request.path, base_url=request.url_root) if g.locale else None,
-                                unless=lambda: request.url_root in settings().get(["server", "preemptiveCache", "exceptions"]))
 def localeJs(locale, domain):
 	messages = dict()
 	plural_expr = None

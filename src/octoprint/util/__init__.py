@@ -542,6 +542,48 @@ def dict_contains_keys(keys, dictionary):
 
 	return True
 
+
+def dict_filter(dictionary, filter_function):
+	"""
+	Filters a dictionary with the provided filter_function
+
+	Example::
+
+	    >>> data = dict(key1="value1", key2="value2", other_key="other_value", foo="bar", bar="foo")
+	    >>> dict_filter(data, lambda k, v: k.startswith("key")) == dict(key1="value1", key2="value2")
+	    True
+	    >>> dict_filter(data, lambda k, v: v.startswith("value")) == dict(key1="value1", key2="value2")
+	    True
+	    >>> dict_filter(data, lambda k, v: k == "foo" or v == "foo") == dict(foo="bar", bar="foo")
+	    True
+	    >>> dict_filter(data, lambda k, v: False) == dict()
+	    True
+	    >>> dict_filter(data, lambda k, v: True) == data
+	    True
+	    >>> dict_filter(None, lambda k, v: True)
+	    Traceback (most recent call last):
+	        ...
+	    AssertionError
+	    >>> dict_filter(data, None)
+	    Traceback (most recent call last):
+	        ...
+	    AssertionError
+
+	Arguments:
+	    dictionary (dict): The dictionary to filter
+	    filter_function (callable): The filter function to apply, called with key and
+	        value of an entry in the dictionary, must return ``True`` for values to
+	        keep and ``False`` for values to strip
+
+	Returns:
+	    dict: A shallow copy of the provided dictionary, stripped of the key-value-pairs
+	        for which the ``filter_function`` returned ``False``
+	"""
+	assert isinstance(dictionary, dict)
+	assert callable(filter_function)
+	return dict((k, v) for k, v in dictionary.items() if filter_function(k, v))
+
+
 class Object(object):
 	pass
 

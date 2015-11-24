@@ -622,6 +622,9 @@ class Server():
 			response.headers.add("X-Clacks-Overhead", "GNU Terry Pratchett")
 			return response
 
+		preemptive_cache = octoprint.server.util.flask.PreemptiveCache(os.path.join(settings().getBaseFolder("data"), "preemptive_flask_cache.yaml"))
+		preemptive_cache.attach_to_app(app)
+
 	def _setup_i18n(self, app):
 		global babel
 		global LOCALES
@@ -668,10 +671,18 @@ class Server():
 		self._register_template_plugins()
 
 	def _execute_preemptive_flask_caching(self):
-		from octoprint.server.util.flask import get_preemptive_cache_data
 		from werkzeug.test import EnvironBuilder
+		import time
 
-		cache_data = get_preemptive_cache_data()
+		if not hasattr(app, "preemptive_cache"):
+			return
+
+		# we clean up entries from our preemptive cache settings that haven't been
+		# accessed longer than server.preemptiveCache.until days
+		preemptive_cache_timeout = settings().getInt(["server", "preemptiveCache", "until"])
+		cutoff_timestamp = time.time() + preemptive_cache_timeout * 24 * 60 * 60
+
+		cache_data = app.preemptive_cache.clean_all_data(lambda root, entries: filter(lambda entry: "_timestamp" in entry and entry["_timestamp"] <= cutoff_timestamp, entries))
 		if not cache_data:
 			return
 
@@ -679,10 +690,15 @@ class Server():
 			for route in sorted(cache_data.keys(), key=lambda x: (x.count("/"), x)):
 				entries = cache_data[route]
 				for kwargs in entries:
+					additional_request_data = kwargs.get("_additional_request_data", dict())
+					kwargs = dict((k, v) for k, v in kwargs.items() if not k.startswith("_"))
+					kwargs.update(additional_request_data)
 					try:
+
 						self._logger.info("Preemptively caching {} for {!r}".format(route, kwargs))
 						builder = EnvironBuilder(**kwargs)
-						app(builder.get_environ(), lambda *a, **kw: None)
+						with app.preemptive_cache.disable_timestamp_update():
+							app(builder.get_environ(), lambda *a, **kw: None)
 					except:
 						self._logger.exception("Error while trying to preemptively cache {} for {!r}".format(route, kwargs))
 
