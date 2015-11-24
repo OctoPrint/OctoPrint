@@ -197,12 +197,14 @@ footer {
   background-color: @octoDark;
   border-top: 1px solid mix(@octoLight, @octoDark, 50%);
 
-  padding-top: 45px;
-  padding-bottom: 60px;
-  //margin-top: 60px;
+  @footerHeight: 170px;
+  @footerPadding: 45px;
+  @footerMargin: @footerHeight + 2 * @footerPadding;
 
-  height: 170px;
-  margin-top: -266px;
+  padding-top: @footerPadding;
+  padding-bottom: @footerPadding;
+  height: @footerHeight;
+  margin-top: -1 * @footerMargin;
 
   a {
     color: @white;
@@ -224,5 +226,9 @@ footer {
   .poweredBy {
     text-align: center;
     font-size: 0.9em;
+  }
+
+  .legal {
+    margin-top: 10px;
   }
 }
