@@ -143,6 +143,20 @@ def get_api_key(request):
 	return None
 
 
+def get_plugin_hash():
+	from octoprint.plugin import plugin_manager
+
+	plugin_signature = lambda impl: "{}:{}".format(impl._identifier, impl._plugin_version)
+	template_plugins = map(plugin_signature, plugin_manager().get_implementations(octoprint.plugin.TemplatePlugin))
+	asset_plugins = map(plugin_signature, plugin_manager().get_implementations(octoprint.plugin.AssetPlugin))
+	ui_plugins = sorted(set(template_plugins + asset_plugins))
+
+	import hashlib
+	plugin_hash = hashlib.sha1()
+	plugin_hash.update(",".join(ui_plugins))
+	return plugin_hash.hexdigest()
+
+
 #~~ reverse proxy compatible WSGI middleware
 
 

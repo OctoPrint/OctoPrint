@@ -661,13 +661,25 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
 
 		return None
 
-	def get_ui_additional_key_data_for_cache(self, request):
+	def get_ui_additional_key_data_for_cache(self):
 		return None
 
-	def get_ui_data_for_preemptive_caching(self, request):
+	def get_ui_additional_tracked_files(self):
 		return None
 
-	def get_ui_additional_request_data_for_preemptive_caching(self, request):
+	def get_ui_custom_tracked_files(self):
+		return None
+
+	def get_ui_custom_etag(self):
+		return None
+
+	def get_ui_custom_lastmodified(self):
+		return None
+
+	def get_ui_data_for_preemptive_caching(self):
+		return None
+
+	def get_ui_additional_request_data_for_preemptive_caching(self):
 		return None
 
 class WizardPlugin(OctoPrintPlugin, ReloadNeedingPlugin):

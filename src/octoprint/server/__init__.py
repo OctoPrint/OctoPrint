@@ -26,6 +26,7 @@ import signal
 
 SUCCESS = {}
 NO_CONTENT = ("", 204)
+NOT_MODIFIED = ("Not Modified", 304)
 
 app = Flask("octoprint")
 assets = None

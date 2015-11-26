@@ -14,7 +14,8 @@ from flask import request, g, url_for, make_response, render_template, send_from
 import octoprint.plugin
 
 from octoprint.server import app, userManager, pluginManager, gettext, \
-	debug, LOCALES, VERSION, DISPLAY_VERSION, UI_API_KEY, BRANCH, preemptiveCache
+	debug, LOCALES, VERSION, DISPLAY_VERSION, UI_API_KEY, BRANCH, preemptiveCache, \
+	NOT_MODIFIED
 from octoprint.settings import settings
 
 import re
@@ -62,36 +63,131 @@ def index():
 
 		# add data if we have any
 		if data is not None:
-			if "query_string" in data:
-				data["query_string"] = "l10n={}&{}".format(g.locale.language, data["query_string"])
-			d.update(data)
+			try:
+				if callable(data):
+					data = data()
+				if "query_string" in data:
+					data["query_string"] = "l10n={}&{}".format(g.locale.language, data["query_string"])
+				d.update(data)
+			except:
+				_logger.exception("Error collecting data for preemptive cache from plugin {}".format(key))
 
 		# add additional request data if we have any
-		if additional_request_data:
-			d.update(dict(
-				_additional_request_data = additional_request_data
-			))
+		if callable(additional_request_data):
+			try:
+				ard = additional_request_data()
+				if ard:
+					d.update(dict(
+						_additional_request_data = ard
+					))
+			except:
+				_logger.exception("Error retrieving additional data for preemptive cache from plugin {}".format(key))
 
 		# finally decorate our view
 		return util.flask.preemptively_cached(cache=preemptiveCache,
 		                                      data=d,
 		                                      unless=lambda: request.url_root in settings().get(["server", "preemptiveCache", "exceptions"]))(view)
 
-	def get_cached_view(key, view, additional_key_data=None):
+	def get_cached_view(key, view, additional_key_data=None, additional_files=None, custom_files=None, custom_etag=None, custom_lastmodified=None):
 		def cache_key():
 			k = "ui:{}:{}:{}".format(key, request.base_url, g.locale.language if g.locale else "default")
-			ak = additional_key_data
-			if ak:
-				# we have some additional key components, let's attach them
-				if not isinstance(ak, (list, tuple)):
-					ak = [ak]
-				k = "{}:{}".format(k, ":".join(ak))
+			if callable(additional_key_data):
+				try:
+					ak = additional_key_data()
+					if ak:
+						# we have some additional key components, let's attach them
+						if not isinstance(ak, (list, tuple)):
+							ak = [ak]
+						k = "{}:{}".format(k, ":".join(ak))
+				except:
+					_logger.exception("Error while trying to retrieve additional cache key parts for plugin {}".format(key))
 			return k
 
-		return util.flask.cached(timeout=-1,
-		                         refreshif=lambda: force_refresh,
-		                         key=cache_key,
-		                         unless_response=util.flask.cache_check_response_headers)(view)
+		def check_etag_and_lastmodified():
+			files = collect_files()
+			lastmodified = compute_lastmodified(files)
+			lastmodified_ok = util.flask.check_lastmodified(lastmodified)
+			etag_ok = util.flask.check_etag(compute_etag(files, lastmodified))
+			return lastmodified_ok and etag_ok
+
+		def validate_cache(cached):
+			etag_different = compute_etag() != cached.get_etag()[0]
+			return force_refresh or etag_different
+
+		def collect_files():
+			if callable(custom_files):
+				try:
+					files = custom_files()
+					if files:
+						return files
+				except:
+					_logger.exception("Error while trying to retrieve tracked files for plugin {}".format(key))
+
+			templates = _get_all_templates()
+			assets = _get_all_assets()
+			translations = _get_all_translationfiles(g.locale.language if g.locale else "en",
+			                                         "messages")
+
+			files = templates + assets + translations
+
+			if callable(additional_files):
+				try:
+					af = additional_files()
+					if af:
+						files += af
+				except:
+					_logger.exception("Error while trying to retrieve additional tracked files for plugin {}".format(key))
+
+			return sorted(set(files))
+
+		def compute_lastmodified(files=None):
+			if callable(custom_lastmodified):
+				try:
+					lastmodified = custom_lastmodified()
+					if lastmodified:
+						return lastmodified
+				except:
+					_logger.exception("Error while trying to retrieve custom LastModified value for plugin {}".format(key))
+
+			if files is None:
+				files = collect_files()
+			return _compute_date(files)
+
+		def compute_etag(files=None, lastmodified=None):
+			if callable(custom_etag):
+				try:
+					etag = custom_etag()
+					if etag:
+						return etag
+				except:
+					_logger.exception("Error while trying to retrieve custom ETag value for plugin {}".format(key))
+
+			if files is None:
+				files = collect_files()
+			if lastmodified is None:
+				lastmodified = compute_lastmodified(files)
+			if lastmodified and not isinstance(lastmodified, basestring):
+				from werkzeug.http import http_date
+				lastmodified = http_date(lastmodified)
+
+			import hashlib
+			hash = hashlib.sha1()
+			hash.update(octoprint.__version__)
+			hash.update(octoprint.server.UI_API_KEY)
+			hash.update(",".join(sorted(files)))
+			if lastmodified:
+				hash.update(lastmodified)
+			return hash.hexdigest()
+
+		decorated_view = view
+		decorated_view = util.flask.lastmodified(lambda _: compute_lastmodified())(decorated_view)
+		decorated_view = util.flask.etagged(lambda _: compute_etag())(decorated_view)
+		decorated_view = util.flask.cached(timeout=-1,
+		                                   refreshif=validate_cache,
+		                                   key=cache_key,
+		                                   unless_response=util.flask.cache_check_response_headers)(decorated_view)
+		decorated_view = util.flask.conditional(check_etag_and_lastmodified, NOT_MODIFIED)(decorated_view)
+		return decorated_view
 
 	ui_plugins = pluginManager.get_implementations(octoprint.plugin.UiPlugin, sorting_context="UiPlugin.on_ui_render")
 	for plugin in ui_plugins:
@@ -99,12 +195,16 @@ def index():
 			# plugin claims responsibility, let it render the UI
 			cached = get_cached_view(plugin._identifier,
 			                         plugin.on_ui_render,
-			                         plugin.get_ui_additional_key_data_for_cache(request))
+			                         additional_key_data=plugin.get_ui_additional_key_data_for_cache,
+			                         additional_files=plugin.get_ui_additional_tracked_files,
+			                         custom_files=plugin.get_ui_custom_tracked_files,
+			                         custom_etag=plugin.get_ui_custom_etag,
+			                         custom_lastmodified=plugin.get_ui_custom_lastmodified)
 
 			preemptively_cached = get_preemptively_cached_view(plugin._identifier,
 			                                                   cached,
-			                                                   plugin.get_ui_data_for_preemptive_caching(request),
-			                                                   plugin.get_ui_additional_request_data_for_preemptive_caching(request))
+			                                                   plugin.get_ui_data_for_preemptive_caching,
+			                                                   plugin.get_ui_additional_request_data_for_preemptive_caching)
 
 			response = preemptively_cached(now, request, render_kwargs)
 			if response is not None:
@@ -132,11 +232,13 @@ def index():
 				r = util.flask.add_non_caching_response_headers(r)
 			return r
 
-		cached = get_cached_view("_default", make_default_ui)
-		preemptively_cached = get_preemptively_cached_view("_default", cached, dict(), dict())
+		cached = get_cached_view("_default",
+		                         make_default_ui)
+		preemptively_cached = get_preemptively_cached_view("_default",
+		                                                   cached,
+		                                                   dict(),
+		                                                   dict())
 		response = preemptively_cached()
-
-	response.headers["Last-Modified"] = now
 
 	return response
 
@@ -506,6 +608,7 @@ def _process_template_configs(name, implementation, configs, rules):
 
 	return includes
 
+
 def _process_template_config(name, implementation, rule, config=None, counter=1):
 	if "mandatory" in rule:
 		for mandatory in rule["mandatory"]:
@@ -550,80 +653,21 @@ def _process_template_config(name, implementation, rule, config=None, counter=1)
 
 
 @app.route("/robots.txt")
+@util.flask.cached(timeout=-1)
 def robotsTxt():
 	return send_from_directory(app.static_folder, "robots.txt")
 
 
 @app.route("/i18n/<string:locale>/<string:domain>.js")
-@util.flask.preemptively_cached(cache=preemptiveCache,
-                                data=lambda: dict(path=request.path, base_url=request.url_root),
-                                unless=lambda: request.url_root in settings().get(["server", "preemptiveCache", "exceptions"]))
-@util.flask.cached(timeout=-1,
-                   refreshif=lambda: util.flask.cache_check_headers() or "_refresh" in request.values,
-                   key=lambda: "{}".format(request.base_url))
+@util.flask.conditional(lambda: _check_etag_and_lastmodified_for_i18n(), NOT_MODIFIED)
+@util.flask.etagged(lambda _: _compute_etag_for_i18n(request.view_args["locale"], request.view_args["domain"]))
+@util.flask.lastmodified(lambda _: _compute_date_for_i18n(request.view_args["locale"], request.view_args["domain"]))
 def localeJs(locale, domain):
 	messages = dict()
 	plural_expr = None
 
 	if locale != "en":
-		from flask import _request_ctx_stack
-		from babel.messages.pofile import read_po
-
-		def messages_from_po(base_path, locale, domain):
-			path = os.path.join(base_path, locale)
-			if not os.path.isdir(path):
-				return None, None
-
-			path = os.path.join(path, "LC_MESSAGES", "{domain}.po".format(**locals()))
-			if not os.path.isfile(path):
-				return None, None
-
-			messages = dict()
-			with file(path) as f:
-				catalog = read_po(f, locale=locale, domain=domain)
-
-				for message in catalog:
-					message_id = message.id
-					if isinstance(message_id, (list, tuple)):
-						message_id = message_id[0]
-					messages[message_id] = message.string
-
-			return messages, catalog.plural_expr
-
-		user_base_path = os.path.join(settings().getBaseFolder("translations"))
-		user_plugin_path = os.path.join(user_base_path, "_plugins")
-
-		# plugin translations
-		plugins = octoprint.plugin.plugin_manager().enabled_plugins
-		for name, plugin in plugins.items():
-			dirs = [os.path.join(user_plugin_path, name), os.path.join(plugin.location, 'translations')]
-			for dirname in dirs:
-				if not os.path.isdir(dirname):
-					continue
-
-				plugin_messages, _ = messages_from_po(dirname, locale, domain)
-
-				if plugin_messages is not None:
-					messages = octoprint.util.dict_merge(messages, plugin_messages)
-					_logger.debug("Using translation folder {dirname} for locale {locale} of plugin {name}".format(**locals()))
-					break
-			else:
-				_logger.debug("No translations for locale {locale} for plugin {name}".format(**locals()))
-
-		# core translations
-		ctx = _request_ctx_stack.top
-		base_path = os.path.join(ctx.app.root_path, "translations")
-
-		dirs = [user_base_path, base_path]
-		for dirname in dirs:
-			core_messages, plural_expr = messages_from_po(dirname, locale, domain)
-
-			if core_messages is not None:
-				messages = octoprint.util.dict_merge(messages, core_messages)
-				_logger.debug("Using translation folder {dirname} for locale {locale} of core translations".format(**locals()))
-				break
-		else:
-			_logger.debug("No core translations for locale {locale}".format(**locals()))
+		messages, plural_expr = _get_translations(locale, domain)
 
 	catalog = dict(
 		messages=messages,
@@ -640,3 +684,130 @@ def localeJs(locale, domain):
 def plugin_assets(name, filename):
 	return redirect(url_for("plugin." + name + ".static", filename=filename))
 
+
+def _compute_etag_for_i18n(locale, domain, files=None, lastmodified=None):
+	if files is None:
+		files = _get_all_translationfiles(locale, domain)
+	if lastmodified is None:
+		lastmodified = _compute_date(files)
+	if lastmodified and not isinstance(lastmodified, basestring):
+		from werkzeug.http import http_date
+		lastmodified = http_date(lastmodified)
+
+	import hashlib
+	hash = hashlib.sha1()
+	hash.update(",".join(sorted(files)))
+	if lastmodified:
+		hash.update(lastmodified)
+	return hash.hexdigest()
+
+
+def _compute_date_for_i18n(locale, domain):
+	return _compute_date(_get_all_translationfiles(locale, domain))
+
+
+def _compute_date(files):
+	from datetime import datetime
+	timestamps = map(lambda path: os.stat(path).st_mtime, files)
+	max_timestamp = max(*timestamps) if timestamps else None
+	if max_timestamp:
+		# we set the micros to 0 since microseconds are not speced for HTTP
+		max_timestamp = datetime.fromtimestamp(max_timestamp).replace(microsecond=0)
+	return max_timestamp
+
+
+def _check_etag_and_lastmodified_for_i18n():
+	locale = request.view_args["locale"]
+	domain = request.view_args["domain"]
+
+	etag_ok = util.flask.check_etag(_compute_etag_for_i18n(request.view_args["locale"], request.view_args["domain"]))
+
+	lastmodified = _compute_date_for_i18n(locale, domain)
+	lastmodified_ok = lastmodified is None or util.flask.check_lastmodified(lastmodified)
+
+	return etag_ok and lastmodified_ok
+
+
+def _get_all_templates():
+	from octoprint.util.jinja import get_all_template_paths
+	return get_all_template_paths(app.jinja_loader)
+
+
+def _get_all_assets():
+	from octoprint.util.jinja import get_all_asset_paths
+	return get_all_asset_paths(app.jinja_env.assets_environment)
+
+
+def _get_all_translationfiles(locale, domain):
+	from flask import _request_ctx_stack
+
+	def get_po_path(basedir, locale, domain):
+		path = os.path.join(basedir, locale)
+		if not os.path.isdir(path):
+			return None
+
+		path = os.path.join(path, "LC_MESSAGES", "{domain}.po".format(**locals()))
+		if not os.path.isfile(path):
+			return None
+
+		return path
+
+	po_files = []
+
+	user_base_path = os.path.join(settings().getBaseFolder("translations"))
+	user_plugin_path = os.path.join(user_base_path, "_plugins")
+
+	# plugin translations
+	plugins = octoprint.plugin.plugin_manager().enabled_plugins
+	for name, plugin in plugins.items():
+		dirs = [os.path.join(user_plugin_path, name), os.path.join(plugin.location, 'translations')]
+		for dirname in dirs:
+			if not os.path.isdir(dirname):
+				continue
+
+			po_file = get_po_path(dirname, locale, domain)
+			if po_file:
+				po_files.append(po_file)
+				break
+
+	# core translations
+	ctx = _request_ctx_stack.top
+	base_path = os.path.join(ctx.app.root_path, "translations")
+
+	dirs = [user_base_path, base_path]
+	for dirname in dirs:
+		po_file = get_po_path(dirname, locale, domain)
+		if po_file:
+			po_files.append(po_file)
+			break
+
+	return po_files
+
+
+def _get_translations(locale, domain):
+	from babel.messages.pofile import read_po
+	from octoprint.util import dict_merge
+
+	messages = dict()
+	plural_expr = None
+
+	def messages_from_po(path, locale, domain):
+		messages = dict()
+		with file(path) as f:
+			catalog = read_po(f, locale=locale, domain=domain)
+
+			for message in catalog:
+				message_id = message.id
+				if isinstance(message_id, (list, tuple)):
+					message_id = message_id[0]
+				messages[message_id] = message.string
+
+		return messages, catalog.plural_expr
+
+	po_files = _get_all_translationfiles(locale, domain)
+	for po_file in po_files:
+		po_messages, plural_expr = messages_from_po(po_file, locale, domain)
+		if po_messages is not None:
+			messages = dict_merge(messages, po_messages)
+
+	return messages, plural_expr

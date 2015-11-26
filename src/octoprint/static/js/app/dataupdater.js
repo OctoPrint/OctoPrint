@@ -7,6 +7,7 @@ function DataUpdater(allViewModels) {
     self._configHash = undefined;
 
     self.reloadOverlay = $("#reloadui_overlay");
+    $("#reloadui_overlay_reload").click(function() { location.reload(); });
 
     self.connect = function() {
         OctoPrint.socket.connect({debug: !!SOCKJS_DEBUG});
