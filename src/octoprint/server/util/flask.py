@@ -548,7 +548,7 @@ def lastmodified(date):
 		@functools.wraps(f)
 		def decorated_function(*args, **kwargs):
 			rv = f(*args, **kwargs)
-			if not "last-modified" in rv.headers:
+			if not "Last-Modified" in rv.headers:
 				result = date
 				if callable(result):
 					result = result(rv)
@@ -558,7 +558,7 @@ def lastmodified(date):
 					result = http_date(result)
 
 				if result:
-					rv.headers["last-modified"] = result
+					rv.headers["Last-Modified"] = result
 			return rv
 		return decorated_function
 	return decorator
