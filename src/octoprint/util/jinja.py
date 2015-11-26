@@ -10,7 +10,7 @@ import os
 from jinja2 import nodes
 from jinja2.ext import Extension
 from jinja2.loaders import FileSystemLoader, PrefixLoader, ChoiceLoader, \
-	ModuleLoader, TemplateNotFound, split_template_path
+	TemplateNotFound, split_template_path
 
 class FilteredFileSystemLoader(FileSystemLoader):
 	"""
@@ -104,38 +104,44 @@ class ExceptionHandlerExtension(Extension):
 trycatch = ExceptionHandlerExtension
 
 
-def collect_template_folders(loader):
-	import copy
-
-	if isinstance(loader, FileSystemLoader):
-		return copy.copy(loader.searchpath)
-	elif isinstance(loader, PrefixLoader):
-		result = []
-		for subloader in loader.mapping.values():
-			result += collect_template_folders(subloader)
-		return result
-	elif isinstance(loader, ChoiceLoader):
-		result = []
-		for subloader in loader.loaders:
-			result += collect_template_folders(subloader)
-		return result
-	elif isinstance(loader, ModuleLoader):
-		return [loader.module.__path__]
-
-	return []
-
-
-def get_all_template_paths(loader, filter_function=None):
-	result = []
-	template_folders = collect_template_folders(loader)
-	for template_folder in template_folders:
-		walk_dir = os.walk(template_folder, followlinks=True)
+def get_all_template_paths(loader):
+	def walk_folder(folder):
+		files = []
+		walk_dir = os.walk(folder, followlinks=True)
 		for dirpath, dirnames, filenames in walk_dir:
 			for filename in filenames:
 				path = os.path.join(dirpath, filename)
-				if not callable(filter_function) or filter_function(path):
-					result.append(path)
-	return result
+				files.append(path)
+		return files
+
+	def collect_templates_for_loader(loader):
+		if isinstance(loader, FilteredFileSystemLoader):
+			result = []
+			for folder in loader.searchpath:
+				result += walk_folder(folder)
+			return filter(loader.path_filter, result)
+
+		elif isinstance(loader, FileSystemLoader):
+			result = []
+			for folder in loader.searchpath:
+				result += walk_folder(folder)
+			return result
+
+		elif isinstance(loader, PrefixLoader):
+			result = []
+			for subloader in loader.mapping.values():
+				result += collect_templates_for_loader(subloader)
+			return result
+
+		elif isinstance(loader, ChoiceLoader):
+			result = []
+			for subloader in loader.loaders:
+				result += collect_templates_for_loader(subloader)
+			return result
+
+		return []
+
+	return collect_templates_for_loader(loader)
 
 
 def get_all_asset_paths(env):
