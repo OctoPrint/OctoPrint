@@ -331,13 +331,14 @@ def cached(timeout=5 * 60, key=lambda: "view:%s" % flask.request.path, unless=No
 				return f(*args, **kwargs)
 
 			cache_key = key()
+			rv = _cache.get(cache_key)
 
 			# only take the value from the cache if we are not required to refresh it from the wrapped function
-			if not callable(refreshif) or not refreshif():
-				rv = _cache.get(cache_key)
-				if rv is not None:
-					logger.debug("Serving entry for {path} from cache".format(path=flask.request.path))
-					return rv
+			if rv is not None and (not callable(refreshif) or not refreshif(rv)):
+				logger.debug("Serving entry for {path} from cache".format(path=flask.request.path))
+				if not "X-From-Cache" in rv.headers:
+					rv.headers["X-From-Cache"] = "true"
+				return rv
 
 			# get value from wrapped function
 			logger.debug("No cache entry or refreshing cache for {path} (key: {key}), calling wrapped function".format(path=flask.request.path, key=cache_key))
@@ -524,6 +525,72 @@ def preemptively_cached(cache, data, unless=None):
 			return f(*args, **kwargs)
 		return decorated_function
 	return decorator
+
+
+def etagged(etag):
+	def decorator(f):
+		@functools.wraps(f)
+		def decorated_function(*args, **kwargs):
+			rv = f(*args, **kwargs)
+			if isinstance(rv, flask.Response):
+				result = etag
+				if callable(result):
+					result = result(rv)
+				if result:
+					rv.set_etag(result)
+			return rv
+		return decorated_function
+	return decorator
+
+
+def lastmodified(date):
+	def decorator(f):
+		@functools.wraps(f)
+		def decorated_function(*args, **kwargs):
+			rv = f(*args, **kwargs)
+			if not "last-modified" in rv.headers:
+				result = date
+				if callable(result):
+					result = result(rv)
+
+				if not isinstance(result, basestring):
+					from werkzeug.http import http_date
+					result = http_date(result)
+
+				if result:
+					rv.headers["last-modified"] = result
+			return rv
+		return decorated_function
+	return decorator
+
+
+def conditional(condition, met):
+	def decorator(f):
+		@functools.wraps(f)
+		def decorated_function(*args, **kwargs):
+			if callable(condition) and condition():
+				# condition has been met, return met-response
+				rv = met
+				if callable(met):
+					rv = met()
+				return rv
+
+			# condition hasn't been met, call decorated function
+			return f(*args, **kwargs)
+		return decorated_function
+	return decorator
+
+
+def check_etag(etag):
+	return flask.request.method in ("GET", "HEAD") and \
+	       flask.request.if_none_match and \
+	       etag in flask.request.if_none_match
+
+
+def check_lastmodified(lastmodified):
+	return flask.request.method in ("GET", "HEAD") and \
+	       flask.request.if_modified_since and \
+	       lastmodified >= flask.request.if_modified_since
 
 
 def add_non_caching_response_headers(response):

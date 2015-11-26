@@ -6,7 +6,8 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 
 import os
 
-from jinja2.loaders import FileSystemLoader, TemplateNotFound, split_template_path
+from jinja2.loaders import FileSystemLoader, PrefixLoader, ChoiceLoader, \
+	ModuleLoader, TemplateNotFound, split_template_path
 
 class FilteredFileSystemLoader(FileSystemLoader):
 	"""
@@ -48,3 +49,54 @@ class FilteredFileSystemLoader(FileSystemLoader):
 		filter_results = map(lambda x: not os.path.exists(os.path.join(x, path)) or self.path_filter(os.path.join(x, path)),
 		                     self.searchpath)
 		return all(filter_results)
+
+
+def collect_template_folders(loader):
+	import copy
+
+	if isinstance(loader, FileSystemLoader):
+		return copy.copy(loader.searchpath)
+	elif isinstance(loader, PrefixLoader):
+		result = []
+		for subloader in loader.mapping.values():
+			result += collect_template_folders(subloader)
+		return result
+	elif isinstance(loader, ChoiceLoader):
+		result = []
+		for subloader in loader.loaders:
+			result += collect_template_folders(subloader)
+		return result
+	elif isinstance(loader, ModuleLoader):
+		return [loader.module.__path__]
+
+	return []
+
+
+def get_all_template_paths(loader, filter_function=None):
+	result = []
+	template_folders = collect_template_folders(loader)
+	for template_folder in template_folders:
+		walk_dir = os.walk(template_folder, followlinks=True)
+		for dirpath, dirnames, filenames in walk_dir:
+			for filename in filenames:
+				path = os.path.join(dirpath, filename)
+				if not callable(filter_function) or filter_function(path):
+					result.append(path)
+	return result
+
+
+def get_all_asset_paths(env):
+	result = []
+	for bundle in env:
+		for content in bundle.resolve_contents():
+			try:
+				if not content:
+					continue
+				path = content[1]
+				if not os.path.isfile(path):
+					continue
+				result.append(path)
+			except IndexError:
+				# intentionally ignored
+				pass
+	return result
