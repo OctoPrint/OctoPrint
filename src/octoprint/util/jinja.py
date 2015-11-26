@@ -10,7 +10,7 @@ import os
 from jinja2 import nodes
 from jinja2.ext import Extension
 from jinja2.loaders import FileSystemLoader, PrefixLoader, ChoiceLoader, \
-	TemplateNotFound, split_template_path
+	BaseLoader, TemplateNotFound, split_template_path
 
 class FilteredFileSystemLoader(FileSystemLoader):
 	"""
@@ -52,6 +52,39 @@ class FilteredFileSystemLoader(FileSystemLoader):
 		filter_results = map(lambda x: not os.path.exists(os.path.join(x, path)) or self.path_filter(os.path.join(x, path)),
 		                     self.searchpath)
 		return all(filter_results)
+
+
+class SelectedFilesLoader(BaseLoader):
+	def __init__(self, files, encoding="utf-8"):
+		self.files = files
+		self.encoding = encoding
+
+	def get_source(self, environment, template):
+		if not template in self.files:
+			raise TemplateNotFound(template)
+
+		from jinja2.loaders import open_if_exists
+
+		path = self.files[template]
+		f = open_if_exists(path)
+		if f is None:
+			raise TemplateNotFound(template)
+		try:
+			contents = f.read().decode(self.encoding)
+		finally:
+			f.close()
+
+		mtime = os.path.getmtime(path)
+
+		def uptodate():
+			try:
+				return os.path.getmtime(path) == mtime
+			except OSError:
+				return False
+		return contents, path, uptodate
+
+	def list_templates(self):
+		return self.files.keys()
 
 
 class ExceptionHandlerExtension(Extension):
@@ -115,7 +148,11 @@ def get_all_template_paths(loader):
 		return files
 
 	def collect_templates_for_loader(loader):
-		if isinstance(loader, FilteredFileSystemLoader):
+		if isinstance(loader, SelectedFilesLoader):
+			import copy
+			return copy.copy(loader.files.values())
+
+		elif isinstance(loader, FilteredFileSystemLoader):
 			result = []
 			for folder in loader.searchpath:
 				result += walk_folder(folder)
