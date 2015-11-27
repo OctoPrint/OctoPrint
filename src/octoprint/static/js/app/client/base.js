@@ -97,7 +97,7 @@
     };
 
     OctoPrint.putJson = function(url, data, opts) {
-        return OctoPrint.put(url, data, contentTypeJson(opts));
+        return OctoPrint.put(url, JSON.stringify(data), contentTypeJson(opts));
     };
 
     OctoPrint.patch = function(url, data, opts) {
