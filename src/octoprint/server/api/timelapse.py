@@ -31,6 +31,10 @@ def getTimelapseData():
 		config["type"] = "zchange"
 		config["postRoll"] = timelapse.post_roll
 		config["fps"] = timelapse.fps
+	elif timelapse is not None and isinstance(timelapse, octoprint.timelapse.SnapshotTimelapse):
+		config["type"] = "snapshot"
+		config["postRoll"] = timelapse.post_roll
+		config["fps"] = timelapse.fps
 	elif timelapse is not None and isinstance(timelapse, octoprint.timelapse.TimedTimelapse):
 		config["type"] = "timed"
 		config["postRoll"] = timelapse.post_roll

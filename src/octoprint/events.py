@@ -85,6 +85,7 @@ class Events(object):
 	MOVIE_RENDERING = "MovieRendering"
 	MOVIE_DONE = "MovieDone"
 	MOVIE_FAILED = "MovieFailed"
+	SNAPSHOT = "Snapshot"
 
 	# Slicing
 	SLICING_STARTED = "SlicingStarted"

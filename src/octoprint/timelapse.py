@@ -39,7 +39,7 @@ def getFinishedTimelapses():
 		})
 	return files
 
-validTimelapseTypes = ["off", "timed", "zchange"]
+validTimelapseTypes = ["off", "timed", "zchange", "snapshot"]
 
 updateCallbacks = []
 
@@ -87,6 +87,8 @@ def configureTimelapse(config=None, persist=False):
 		current = None
 	elif "zchange" == type:
 		current = ZTimelapse(post_roll=postRoll, fps=fps)
+	elif "snapshot" == type:
+		current = SnapshotTimelapse(post_roll=postRoll, fps=fps)
 	elif "timed" == type:
 		interval = 10
 		if "options" in config and "interval" in config["options"] and config["options"]["interval"] > 0:
@@ -433,6 +435,38 @@ class ZTimelapse(Timelapse):
 
 	def _on_z_change(self, event, payload):
 		self.captureImage()
+
+class SnapshotTimelapse(Timelapse):
+	def __init__(self, post_roll=0, fps=25):
+		Timelapse.__init__(self, post_roll=post_roll, fps=fps)
+		self._logger.debug("SnapshotTimelapse initialized")
+
+	def event_subscriptions(self):
+		return [
+			(Events.SNAPSHOT, self._onSnapshot)
+		]
+
+	def config_data(self):
+		return {
+			"type": "snapshot"
+		}
+
+	def process_post_roll(self):
+		with self._capture_mutex:
+			filename = os.path.join(self._capture_dir, "tmp_%05d.jpg" % self._image_number)
+			self._image_number += 1
+
+		if self._perform_capture(filename):
+			for _ in range(self._post_roll * self._fps):
+				newFile = os.path.join(self._capture_dir, "tmp_%05d.jpg" % self._image_number)
+				self._image_number += 1
+				shutil.copyfile(filename, newFile)
+
+		Timelapse.process_post_roll(self)
+
+	def _onSnapshot(self, event, payload):
+		self.captureImage()
+
 
 
 class TimedTimelapse(Timelapse):

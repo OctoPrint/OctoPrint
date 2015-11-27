@@ -94,6 +94,8 @@ $(function() {
             var type = timelapse["type"];
             if (type == "zchange") {
                 return gettext("On Z Change");
+            } else if (type == "snapshot") {
+                return "On action:snapshot";
             } else if (type == "timed") {
                 return gettext("Timed") + " (" + timelapse["options"]["interval"] + " " + gettext("sec") + ")";
             } else {

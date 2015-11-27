@@ -8,6 +8,7 @@
     <select id="webcam_timelapse_mode" data-bind="value: timelapseType, enable: isOperational() && !isPrinting() && loginState.isUser()">
         <option value="off">{{ _('Off') }}</option>
         <option value="timed">{{ _('Timed') }}</option>
+        <option value="snapshot">{{ _('On action:snapshot') }}</option>
         <option value="zchange">{{ _('On Z Change') }}</option>
     </select>
     <span class="help-block" data-bind="visible: timelapseType() == 'zchange'"><span class="label label-warning">{{ _('Warning') }}</span> {{ _('Do not use with spiralized ("Joris") vases or similar continuous Z models.') }}</span>
