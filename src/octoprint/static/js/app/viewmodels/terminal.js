@@ -7,6 +7,7 @@ $(function() {
 
         self.log = ko.observableArray([]);
         self.buffer = ko.observable(300);
+        self.upperLimit = ko.observable(3000);
 
         self.command = ko.observable(undefined);
 
@@ -52,13 +53,21 @@ $(function() {
 
         self.lineCount = ko.computed(function() {
             var total = self.log().length;
+            var filtered = _.filter(self.displayedLines(), function(entry) { return entry.type == "filtered" }).length;
             var displayed = _.filter(self.displayedLines(), function(entry) { return entry.type == "line" }).length;
-            var filtered = total - displayed;
 
-            if (total == displayed) {
-                return _.sprintf(gettext("showing %(displayed)d lines"), {displayed: displayed});
+            if (filtered > 0) {
+                if (total > self.upperLimit()) {
+                    return _.sprintf(gettext("showing %(displayed)d lines (%(filtered)d of %(total)d total lines filtered, buffer full)"), {displayed: displayed, total: total, filtered: filtered});
+                } else {
+                    return _.sprintf(gettext("showing %(displayed)d lines (%(filtered)d of %(total)d total lines filtered)"), {displayed: displayed, total: total, filtered: filtered});
+                }
             } else {
-                return _.sprintf(gettext("showing %(displayed)d lines (%(filtered)d of %(total)d total lines filtered)"), {displayed: displayed, total: total, filtered: filtered});
+                if (total > self.upperLimit()) {
+                    return _.sprintf(gettext("showing %(displayed)d lines (buffer full)"), {displayed: displayed});
+                } else {
+                    return _.sprintf(gettext("showing %(displayed)d lines"), {displayed: displayed});
+                }
             }
         });
 
@@ -84,10 +93,25 @@ $(function() {
         };
 
         self._processCurrentLogData = function(data) {
-            self.log(self.log().concat(_.map(data, function(line) { return self._toInternalFormat(line) })));
-            if (self.autoscrollEnabled()) {
-                self.log(self.log.slice(-self.buffer()));
+            var length = self.log().length;
+            if (length >= self.upperLimit()) {
+                var cutoff = "--- too many lines to buffer, cut off ---";
+                var last = self.log()[length-1];
+                if (!last || last.type != "cut" || last.line != cutoff) {
+                    self.log(self.log().concat(self._toInternalFormat(cutoff, "cut")));
+                }
+                return;
             }
+
+            var newLog = self.log().concat(_.map(data, function(line) { return self._toInternalFormat(line) }));
+            if (self.autoscrollEnabled()) {
+                // we only keep the last <buffer> entries
+                newLog = newLog.slice(-self.buffer());
+            } else if (newLog.length > self.upperLimit()) {
+                // we only keep the first <upperLimit> entries
+                newLog = newLog.slice(0, self.upperLimit());
+            }
+            self.log(newLog);
         };
 
         self._processHistoryLogData = function(data) {
