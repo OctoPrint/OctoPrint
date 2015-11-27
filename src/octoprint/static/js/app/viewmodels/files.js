@@ -676,6 +676,10 @@ $(function() {
         self.onEventMetadataStatisticsUpdated = function(payload) {
             self.requestData(undefined, undefined, self.currentPath());
         };
+
+        self.onEventTransferDone = function(payload) {
+            self.requestData(payload.remote, "sdcard");
+        };
     }
 
     OCTOPRINT_VIEWMODELS.push([

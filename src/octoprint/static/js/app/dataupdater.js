@@ -201,7 +201,6 @@ function DataUpdater(allViewModels) {
                 text: _.sprintf(gettext("Streamed %(local)s to %(remote)s on SD, took %(time).2f seconds"), payload),
                 type: "success"
             });
-            gcodeFilesViewModel.requestData(payload.remote, "sdcard");
         }
 
         var legacyEventHandlers = {
