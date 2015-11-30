@@ -1,0 +1,1096 @@
+/* Default styles for the container */
+
+.joyride-tip-guide {
+  position: absolute;
+  background: #ffffff;
+  display: none;
+  color: #68a94a;
+  width: 300px;
+  z-index: 101;
+  top: 0;
+  /* keeps the page from scrolling when calculating position */
+  left: 0;
+  font-weight: normal;
+  border-radius: 10px;
+  border: 3px solid #92c07a;
+  -webkit-box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.4);
+}
+
+.joyride-content-wrapper {
+  padding: 10px 10px 15px 15px;
+}
+
+/* Add a little css triangle pip, older browser just miss out on the fanciness of it */
+
+.joyride-tip-guide span.joyride-nub {
+  display: block;
+  position: absolute;
+  right: 22px;
+  width: 0;
+  height: 0;
+  border: solid 14px;
+}
+
+.joyride-tip-guide span.joyride-nub.top {
+  border-color: #92c07a !important;
+  border-top-color: transparent !important;
+  border-left-color: transparent !important;
+  border-right-color: transparent !important;
+  border-top-width: 0;
+  top: -14px;
+  bottom: 0;
+}
+
+.joyride-tip-guide span.joyride-nub.bottom {
+  border-color: #92c07a !important;
+  border-bottom-color: transparent !important;
+  border-left-color: transparent !important;
+  border-right-color: transparent !important;
+  border-bottom-width: 0;
+  bottom: -14px !important;
+  bottom: 0;
+}
+
+.joyride-tip-guide span.joyride-nub.right {
+  border-color: #92c07a !important;
+  border-top-color: transparent !important;
+  border-right-color: transparent !important;
+  border-bottom-color: transparent !important;
+  border-right-width: 0;
+  top: 22px;
+  bottom: 0;
+  left: auto;
+  right: -14px;
+}
+
+.joyride-tip-guide span.joyride-nub.left {
+  border-color: #92c07a !important;
+  border-top-color: transparent !important;
+  border-left-color: transparent !important;
+  border-bottom-color: transparent !important;
+  border-left-width: 0;
+  top: 22px;
+  left: -14px;
+  right: auto;
+  bottom: 0;
+}
+
+.joyride-tip-guide span.joyride-nub.top-right {
+  border-color: #92c07a;
+  border-top-color: transparent !important;
+  border-left-color: transparent !important;
+  border-right-color: transparent !important;
+  border-top-width: 0;
+  top: -14px;
+  bottom: 0;
+  left: auto;
+  right: 28px;
+}
+
+/* Typography */
+
+.joyride-tip-guide h1,
+.joyride-tip-guide h2,
+.joyride-tip-guide h3,
+.joyride-tip-guide h4,
+.joyride-tip-guide h5,
+.joyride-tip-guide h6 {
+  line-height: 1.25em;
+  margin: 0;
+  font-weight: bold;
+  color: #92c07a;
+}
+
+.joyride-tip-guide h1 {
+  font-size: 1.85em;
+}
+
+.joyride-tip-guide h2 {
+  font-size: 1.7em;
+}
+
+.joyride-tip-guide h3 {
+  font-size: 1.55em;
+}
+
+.joyride-tip-guide h4 {
+  font-size: 1.4em;
+}
+
+.joyride-tip-guide h5 {
+  font-size: 1.25em;
+}
+
+.joyride-tip-guide h6 {
+  font-size: 1.1em;
+}
+
+.joyride-tip-guide p {
+  margin: 5px 0 25px;
+  font-size: 1.1em;
+  line-height: 1.3em;
+}
+
+.joyride-tip-guide a {
+  color: #92c07a;
+  text-decoration: none;
+  border-bottom: dotted 1px #cbe1bf;
+}
+
+.joyride-tip-guide a:hover {
+  color: #cbe1bf;
+  border-bottom: none;
+}
+
+.joyride-tip-guide .joyride-next-tip {
+  width: auto;
+  padding: 6px 18px 4px;
+  font-size: 13px;
+  text-decoration: none;
+  color: #ffffff;
+  border: solid 1px #92c57a;
+  background: #92c57a;
+  background: -webkit-gradient(linear, left top, left bottom, from(#92c57a), to(#68a94a));
+  background: -webkit-linear-gradient(top, #92c57a 0%, #68a94a 100%);
+  background: linear-gradient(top, #92c57a 0%, #68a94a 100%);
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.5);
+  border-radius: 2px;
+  -webkit-box-shadow: 0px 1px 0px rgba(255, 255, 255, 0.3) inset;
+  box-shadow: 0px 1px 0px rgba(255, 255, 255, 0.3) inset;
+}
+
+.joyride-tip-guide .joyride-next-tip:hover {
+  color: #ffffff !important;
+  border: solid 1px #92c57a !important;
+  background: #68a94a;
+  background: -webkit-gradient(linear, left top, left bottom, from(#68a94a), to(#92c57a));
+  background: -webkit-linear-gradient(top, #68a94a 0%, #92c57a 100%);
+  background: linear-gradient(top, #68a94a 0%, #92c57a 100%);
+}
+
+.joyride-timer-indicator-wrap {
+  width: 50px;
+  height: 3px;
+  border: solid 1px rgba(255, 255, 255, 0.1);
+  position: absolute;
+  right: 17px;
+  bottom: 16px;
+}
+
+.joyride-timer-indicator {
+  display: block;
+  width: 0;
+  height: inherit;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.joyride-close-tip {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  color: rgba(0, 0, 0, 0.5) !important;
+  text-decoration: none;
+  font-family: Verdana, sans-serif;
+  font-size: 10px;
+  font-weight: bold;
+  border-bottom: none !important;
+}
+
+.joyride-close-tip:hover {
+  color: rgba(0, 0, 0, 0.9) !important;
+}
+
+.joyride-modal-bg {
+  position: fixed;
+  height: 100%;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 100;
+  display: none;
+  top: 0;
+  left: 0;
+  cursor: pointer;
+}
+
+.joyride-expose-wrapper {
+  background-color: #fff;
+  position: absolute;
+  z-index: 102;
+  -webkit-box-shadow: 0px 0px 30px #fff;
+  box-shadow: 0px 0px 30px #fff;
+  border-radius: 5px;
+}
+
+.joyride-expose-cover {
+  background: transparent;
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: 5px;
+}
+
+@media only screen and (max-width: 767px) {
+  .joyride-tip-guide p {
+    margin: 5px 0 18px;
+    font-size: 1.0em;
+  }
+
+  .joyride-tip-guide .joyride-next-tip {
+    font-size: 1.0em;
+  }
+
+  .joyride-tip-guide h1 {
+    font-size: 1.60em;
+  }
+
+  .joyride-tip-guide h2 {
+    font-size: 1.48em;
+  }
+
+  .joyride-tip-guide h3 {
+    font-size: 1.36em;
+  }
+
+  .joyride-tip-guide h4 {
+    font-size: 1.24em;
+  }
+
+  .joyride-tip-guide h5 {
+    font-size: 1.12em;
+  }
+
+  .joyride-tip-guide h6 {
+    font-size: 1.0em;
+  }
+
+  .joyride-tip-guide-wrapper {
+    width: 80%;
+  }
+}
+
+#helpContainer {
+  display: none;
+  margin: 0;
+  padding: 0;
+}
+
+.joyride-tip-guide.d3dInfoWelcomePanel {
+  width: 460px;
+  padding: 25px;
+}
+
+.joyride-tip-guide.d3dDoodleCanvasPanel {
+  width: 215px;
+}
+
+.joyride-tip-guide.temperatureGauge {
+  width: 400px !important;
+}
+
+.joyride-tip-guide div.temperature {
+  float: left;
+  margin-left: 15px;
+  width: 60px;
+}
+
+.joyride-tip-guide div.temperature.blue {
+  color: blue;
+}
+
+.joyride-tip-guide div.temperature.orange {
+  color: orange;
+}
+
+.joyride-tip-guide div.temperature.red {
+  color: red;
+}
+
+/*
+  GLOBAL CONTAINER
+*/
+
+body.doodler_active {
+  background-color: #fcfcfc;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  /* disable cut copy paste */
+  overflow: hidden;
+  /* This chops off any overhanging divs */
+}
+
+/*  http://stackoverflow.com/questions/5348092/prevent-default-press-but-not-default-drag-in-ios-mobilesafari  */
+
+/*.btn3Doodler {
+  background-repeat: no-repeat;
+  cursor: pointer;
+  -moz-user-select: none;
+  -khtml-user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -khtml-user-drag: none;
+  -webkit-user-drag: none;
+  -webkit-touch-callout: none;
+   disable callout, image save panel 
+  -webkit-tap-highlight-color: transparent;
+   "turn off" link highlight 
+}*/
+/*
+.btn3Doodler.disabled {
+  opacity: 0.3;
+  cursor: default;
+}*/
+
+/*#btnPrint {
+  margin: 1% 5% 5% 0%;
+  width: 90%;
+  max-width: 163px;
+  height: auto;
+  float: right;
+}*/
+
+/*#btnStop {
+  margin: 5% 5% 1% 5%;
+  float: right;
+  width: 90%;
+  max-width: 98px;
+  height: auto;
+}*/
+/*
+#btnsOctoPrint {
+  position: absolute;
+  bottom: 4%;
+  right: 5px;
+  width: 80%;
+  margin: 1% 5%;
+  max-width: 160px;
+}
+
+#btnsOctoPrint .btn3Doodler {
+  width: 46%;
+  max-width: 53px;
+  height: auto;
+}*/
+/*
+#btnsOctoPrint .btnLeer {
+  width: 46%;
+  max-width: 53px;
+  height: auto;
+  cursor: default;
+}*/
+
+/*#btnsOctoPrint #btnInfo2 {
+  float: right;
+}*/
+
+/*#btnsSettingsInfo {
+  position: absolute;
+  bottom: 10%;
+  right: 5px;
+  width: 80%;
+  margin: 1% 5%;
+  max-width: 160px;
+}*/
+
+/*#btnsSettingsInfo .btn3Doodler {
+  width: 46%;
+  max-width: 53px;
+  height: auto;
+}*/
+
+/*#btnsSettingsInfo #btnSettings {
+  float: right;
+}*/
+
+
+#btnsPrevNext {
+  margin: 1% 7%;
+  max-width: 100px;
+  /*text-align:center;*/
+}
+
+#btnPrevious {
+  width: 40%;
+  max-width: 56px;
+  height: auto;
+}
+
+#btnNext {
+  width: 40%;
+  max-width: 56px;
+  height: auto;
+  float: right;
+}
+
+
+
+#btnAdd {
+  width: 90%;
+  max-width: 100px;
+  margin: 5% 5% 1% 5%;
+}
+
+#btnFileManager {
+  width: 90%;
+  max-width: 100px;
+  margin: 5% 5% 1% 5%;
+}
+
+/*
+  DOODLE UP/DOWN/LEFT/RIGHT buttons
+*/
+
+.manipulationBtns {
+  margin: 2px 5px;
+  position: absolute;
+  right: 0;
+  top: 0;
+  max-width: 340px;
+  max-height: 70px;
+  width: 45%;
+}
+
+.manipulationBtn {
+  width: 45%;
+  height: auto;
+  cursor: pointer;
+}
+
+.btnVertical {
+  width: 35%;
+  display: none;
+}
+
+#btnToggleEdit {
+  top: 4px;
+  left: 4px;
+  position: absolute;
+  display:none;
+}
+
+#btnCloseScan {
+  top: 4px;
+  right: 8px;
+  position: absolute;
+  display: none;
+  opacity: 0.7;
+  filter: alpha(opacity=70);
+}
+
+#buttonGroupEdit {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  padding: 5px 7px 9px 8px;
+  display: none;
+}
+
+#buttonGroupEdit .btn3Doodler {
+  float: left;
+}
+
+#buttonGroupEdit #btnZoom {
+  clear: left;
+  margin: 0 2px 0 0;
+}
+
+.buttonGroup {
+  /*background-color: white;*/
+  background-color: #fff;
+  position: absolute;
+  border: 3px solid black;
+  border-radius: 40px;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+  padding: 5% 5% 5% 5%;
+}
+
+#buttonGroupAdd {
+  display: none;
+  z-index: 1000;
+  position: relative;
+  margin-top: -52%;
+  margin-left: 70%;
+  width: 250%;
+  max-width: 280px;
+  /*fixme: can this grow based on it's content?*/
+  padding: 5%;
+}
+
+#buttonGroupAdd #btnWordArt,
+#buttonGroupAdd #btnShape,
+#buttonGroupAdd #btnScan {
+  width: 30%;
+}
+
+#buttonGroupAdd .btn3Doodler {
+  margin-top: 4px;
+}
+
+#buttonGroupAdd .firstbtn {
+  margin-left: 6px;
+}
+
+#buttonGroupAdd .lastbtn {
+  margin-right: 5px;
+}
+
+#buttonGroupVerticalShapes {
+  top: 7px;
+  left: 8px;
+  padding: 12px 7px 7px 9px;
+  width: 65px;
+}
+
+#buttonGroupVerticalShapes .btn3Doodler {
+  width: 35px;
+  margin-left: 3px;
+}
+
+#buttonGroupVerticalShapes .firstbtn {
+  margin-top: 10px;
+}
+
+#buttonGroupVerticalShapes .lastbtn {
+  margin-bottom: 10px;
+}
+
+#btnToggleVerticalShapes {
+  position: absolute;
+  top: 3px;
+  left: 6px;
+}
+
+@media only screen and (max-height: 480px), only screen and (max-width: 600px) and (min-device-pixel-ratio: 1.5), only screen and (max-width: 600px) and (-webkit-min-device-pixel-ratio: 1.5) {
+  #buttonGroupVerticalShapes #btnConv,
+  #buttonGroupVerticalShapes #btnDiv,
+  #buttonGroupVerticalShapes #btnSine,
+  #buttonGroupVerticalShapes #btnStraight {
+    display: none;
+  }
+}
+
+
+#popupMask {
+  background-color: rgba(255, 255, 255, 0.65);
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  display: none;
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+
+.popup {
+  background-color: #fff;
+  border: 2px solid #222;
+  border-radius: 15px;
+  -webkit-box-shadow: 0px 2px 6px 0px rgba(16, 16, 16, 0.65);
+  box-shadow: 0px 2px 6px 0px rgba(16, 16, 16, 0.65);
+  position: absolute;
+  left: 50%;
+  top: 50%;
+}
+
+.popup .content {
+  /*margin: 5%;*/
+  margin: 15px;
+}
+
+.popup {
+  display: none;
+}
+
+#popupWordArt {
+  width: 330px;
+  height: 210px;
+  margin-left: -165px;
+  margin-top: -105px;
+}
+
+#popupWordArt input[type="text"] {
+  width: 98%;
+}
+
+#popupWordArt #btnWordArtOk {
+  float: right;
+  margin: 15px 0 0 0;
+}
+
+#popupScan {
+  width: 330px;
+  height: 210px;
+  margin-left: -165px;
+  margin-top: -105px;
+}
+
+#popupScan input[type="file"] {
+  width: 98%;
+}
+
+#popupScan #btnScanOk {
+  float: right;
+  margin: 15px 0 0 0;
+}
+
+#popupShape {
+  width: 310px;
+  margin-left: -155px;
+  height: 230px;
+  margin-top: -115px;
+  top: 50%;
+}
+
+#popupShape #shapePreview {
+  border: 1px solid black;
+  border-radius: 5px;
+}
+
+#popupShape .lblShapeResolution {
+  display: inline-block;
+}
+
+#popupShape #iconShapeLessPoints,
+#popupShape #iconShapeMorePoints {
+  margin: 0 0 7px 0;
+}
+
+#popupShape #btnShapeOk {
+  position: absolute;
+  bottom: 5%;
+  right: 3%;
+}
+
+.columnRight {
+  float: right;
+}
+
+#landscape {
+  position: absolute;
+  width: 100%;
+/*  max-width: 1024px;
+  max-height: 768px;*/
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  /*overflow: hidden;*/
+/*  margin: 0 auto;
+  -webkit-box-shadow: 0 0 0 2px #5e8c71, 0 0 8px 4px rgba(8, 8, 8, 0.25);
+  box-shadow: 0 0 0 2px #5e8c71, 0 0 8px 4px rgba(8, 8, 8, 0.25);*/
+}
+
+#portrait {
+  display: none;
+}
+
+.bgContainer {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: -999;
+}
+
+#bgTop,
+#bgMiddle,
+#bgBottom {
+  opacity: 1.0;
+  -webkit-transition: opacity .35s linear;
+  transition: opacity .35s linear;
+  position: absolute;
+  left: 0px;
+}
+
+#bgTop {
+  top: 0px;
+}
+
+#bgMiddle {
+  top: 30%;
+}
+
+#bgBottom {
+  bottom: 0px;
+}
+
+@media only screen and (max-height: 700px) {
+  #bgMiddle {
+    display: none;
+  }
+}
+
+#centerpanel {
+  position: absolute;
+  width: 100%;
+  height: 85vh;
+}
+
+#logopanel {
+  text-align: center;
+  width: 100%;
+  height: 13vh;
+  background-image:url(/plugin/bocusini_doodler/static/img/logo_white.svg);
+  background-size:auto 75%;
+  background-position: center;
+  background-repeat:no-repeat;
+}
+
+
+#drawareacontainer {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+#canvasContainers {
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  margin: 0;
+}
+
+#mycanvasContainer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+}
+
+#mycanvas {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  /*border-right: 2px solid #333;*/
+}
+
+#previewContainer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 22%;
+  height: 100%;
+  display:none;
+}
+
+#preview {
+  min-width: 50px;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+#preview_tmp {
+  display: none;
+}
+
+/*
+	HEIGHT-related RESPONSIVE STUFF
+*/
+
+
+
+@media screen and (max-height: 655px) {
+
+
+}
+
+@media screen and (max-height: 525px) {
+
+}
+
+@media screen and (max-height: 375px) {
+
+}
+
+#mycanvas {
+  position: absolute;
+  left: 0px;
+  top: 0px;
+}
+
+#imgGuide {
+  opacity: 0.4;
+  filter: alpha(opacity=40);
+  pointer-events: none;
+  max-width: 100%;
+  max-height: 100%;
+  height: auto;
+  margin-left: auto;
+}
+
+#leftpanel {
+  position: absolute;
+  width: 10%;
+  top: 0px;
+  left: 0px;
+  bottom: 0px;
+}
+
+#rightpanel {
+  position: absolute;
+  width: 10%;
+  overflow: hidden;
+  /* hide thermometer and process indicator */
+  top: 0;
+  right: 0;
+  bottom: 0;
+}
+
+/*
+  PROGRESSGUAGE AND THERMOMETER SHARED STYLES
+*/
+
+.progressbarAppear {
+  /*margin-right: 1.5% !important;*/
+  right: -0.5% !important;
+}
+
+.thermometerAppear {
+  /*margin-right: 1.5% !important;*/
+  right: -6.5% !important;
+}
+
+/*
+
+  THERMOMETER
+
+*/
+
+#thermometerContainerParent {
+  position: relative;
+  width: 100%;
+  padding-top: 10px;
+}
+
+#thermometerContainer {
+/*  position: relative;
+  width: 70%;
+  float: right;
+  background-color: #fff;
+  border: solid #000;
+  border-width: 2px 0 2px 2px;
+  border-radius: 15px 0 0 15px;
+  padding: 5px;
+  -webkit-box-shadow: 0 2px 5px rgba(37, 37, 37, 0.35);
+  box-shadow: 0 2px 5px rgba(37, 37, 37, 0.35);
+  -webkit-transition: right 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  transition: right 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  right: -100%;*/
+}
+
+#thermometerCanvas {
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  /*width: 100%;*/
+  height: auto;
+  background-color: #fff;
+}
+
+/*
+
+  PROGRESS GUAGE
+
+*/
+
+#progressbarCanvasContainerParent {
+  position: relative;
+  width: 100%;
+}
+
+/*#progressbarCanvasContainer {
+  position: relative;
+  width: 70%;
+  float: right;
+  border: solid #000;
+  border-width: 2px 0 2px 2px;
+  border-radius: 15px 0 0 15px;
+  padding: 5px 0px 5px 5px;
+  padding: 5px;
+  background-color: #fff;
+  -webkit-box-shadow: 0 2px 5px rgba(37, 37, 37, 0.35);
+  box-shadow: 0 2px 5px rgba(37, 37, 37, 0.35);
+  -webkit-transition: right 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  transition: right 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  right: -100%;
+  margin: 5% 0%;
+}*/
+
+#progressbarCanvas {
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  /*width: 100%;*/
+  height: auto;
+  background-color: #fff;
+}
+
+/*
+  REST
+*/
+
+/*
+
+  SETTINGS POPUP
+
+*/
+
+#popupSettings {
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-width: 775px;
+  max-height: 540px;
+  margin: 7% 8%;
+  padding: 2%;
+}
+
+#popupSettings .toppanel {
+  height: 10%;
+}
+
+#popupSettings .toppanel .title {
+  height: 100%;
+  max-height: 44px;
+  width: auto;
+  margin: 0 0 1% 0;
+}
+
+#popupSettings .bottompanel {
+  width: 100%;
+  height: 90%;
+}
+
+#popupSettings .bottompanel > #settingsContainer {
+  float: left;
+  width: 83%;
+  height: 98%;
+  margin: .5%;
+  overflow-y: scroll;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid #bbbbbb;
+  border-radius: 5px;
+}
+
+#popupSettings .bottompanel > .right {
+  width: 15%;
+  height: 100%;
+  float: right;
+  position: relative;
+  right: 0;
+}
+
+#popupSettings .bottompanel > .right > .btnContainer {
+  position: absolute;
+  bottom: 3%;
+  right: 7%;
+  width: 100%;
+}
+
+#popupSettings .bottompanel > .right > .btnContainer > .btn3Doodler {
+  max-width: 85px;
+  min-width: 42px;
+  width: 88%;
+  height: auto;
+  margin: 8% 2% 2% 0;
+  cursor: pointer;
+  float: right;
+}
+
+#message {
+  position: absolute;
+  text-align: right;
+  top: 0;
+  right: 0;
+  padding: 0.4em 0.5em;
+  border-radius: 0 0 0 10px;
+  border: 2px solid #333;
+  border-width: 0 0 2px 2px;
+  font-weight: bold;
+  -webkit-box-shadow: 0px 2px 6px 0px rgba(16, 16, 16, 0.65);
+  box-shadow: 0px 2px 6px 0px rgba(16, 16, 16, 0.65);
+  color: #333;
+  white-space: nowrap;
+  display: none;
+}
+
+#message.error {
+  background: #EB313C;
+  color: #fff;
+}
+
+#message.warning {
+  background: #E9A86E;
+}
+
+#message.notice {
+  background: #93CAF4;
+}
+
+#message.info {
+  background: #97DD8A;
+}
+
+#page404 #message404 {
+  font-family: Helvetica, Arial, "Nimbus Sans L", sans-serif;
+  font-size: 16px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  height: 200px;
+  width: 500px;
+  margin: -85px 0px 0px -250px;
+  background-color: #FCFCFC;
+  padding: 0px 1em;
+}
+
+
+@media only screen and (max-height: 300px), only screen and (max-width: 450px) and (min-device-pixel-ratio: 1.5), only screen and (max-width: 450px) and (-webkit-min-device-pixel-ratio: 1.5) {
+  #popupSettings {
+    margin: 2% 2%;
+  }
+}
+
+@media only screen and (orientation: portrait) {
+  #landscape {
+    display: none;
+  }
+
+  #portrait {
+    display: block;
+  }
+
+  #vertImage {
+    margin: 0;
+    padding: 0;
+    /*border: 2px solid #f0f;*/
+    max-width: 100%;
+    height: auto;
+    width: auto;
+    /* for ie9 */
+  }
+}

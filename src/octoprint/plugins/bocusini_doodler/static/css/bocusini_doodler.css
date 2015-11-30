@@ -1,0 +1,253 @@
+#bocusini_overlay {
+	display:none;
+}
+
+.centered_content {
+	max-width: 1200px;
+	margin: 0 auto;
+}
+
+#right_column {
+	max-width: 180px;
+}
+
+.doodler_active #bocusini_overlay {
+	display: block;
+}
+
+.doodler_active #octoprint_original {
+	display:none;
+}
+
+#bocusini_nav {
+	padding-top: 10vh;
+	margin-bottom: -4px;
+	z-index: 999;
+	margin-left: 4px;
+	border:none;
+}
+
+.center_shadow {
+	position: relative;
+	background-color: #fff;
+	border: 1px solid darkgray;
+	border-radius: 10px;
+	-webkit-box-sizing: border-box;
+	-moz-box-sizing: border-box;
+	box-sizing: border-box;
+	-webkit-box-shadow: inset 0px 0px 8px -3px rgba(0,0,0,0.75);
+	-moz-box-shadow: inset 0px 0px 8px -3px rgba(0,0,0,0.75);
+	box-shadow: inset 0px 0px 8px -3px rgba(0,0,0,0.75);	
+}
+
+#bocusini_overlay .tab-content {
+	height: 90vh;
+}
+
+.spacer {
+	width:100%;
+	height: 25vh;
+}
+
+.printer_monitor {
+	float: left;	
+}
+
+.bgContainer, .bgContainer img{
+	width: 100%;
+}
+
+.tiny {
+	font-size: x-small;
+}
+
+.file_selection_box {
+	padding:.5em;
+}
+
+.gcode_thumb {
+	width: 200px;
+	height: 200px;
+	position: relative;
+	background-size: cover;
+	background-position: center;
+}
+.gcode_thumb .title {
+	font-size: larger;
+	color: #fff;
+	background-color: rgba(0,0,0,.7);
+	position: absolute;
+	bottom:0;
+	width: 100%;
+	padding:.5em;
+	overflow: hidden;
+	text-wrap: none;
+	text-overflow: ellipsis;
+	box-sizing: border-box;
+}
+
+.bocusini_gcode_files .entry {
+	display: inline-block;
+		margin: 8px;
+}
+
+.bocusini_gcode_files .entry .additionalInfo {
+	height: 150px;
+	overflow: hidden;
+	padding:1em;
+}
+
+.nav-tabs>li>a {
+	background-color: rgba(255,255,255,.6);
+	border-bottom: none;
+	background: -moz-linear-gradient(top,  rgba(255,255,255,0.6) 0%, rgba(255,255,255,1) 100%); /* FF3.6-15 */
+	background: -webkit-linear-gradient(top,  rgba(255,255,255,0.6) 0%,rgba(255,255,255,1) 100%); /* Chrome10-25,Safari5.1-6 */
+	background: linear-gradient(to bottom,  rgba(255,255,255,0.6) 0%,rgba(255,255,255,1) 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ccffffff', endColorstr='#ffffff',GradientType=0 ); /* IE6-9 */
+	
+}
+.nav-tabs>li>a:hover {
+	background-color: rgba(255,255,255,.8);
+	border-bottom: none;
+	background: -moz-linear-gradient(top,  rgba(255,255,255,0.8) 0%, rgba(255,255,255,1) 100%); /* FF3.6-15 */
+	background: -webkit-linear-gradient(top,  rgba(255,255,255,0.8) 0%,rgba(255,255,255,1) 100%); /* Chrome10-25,Safari5.1-6 */
+	background: linear-gradient(to bottom,  rgba(255,255,255,0.8) 0%,rgba(255,255,255,1) 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ccffffff', endColorstr='#ffffff',GradientType=0 ); /* IE6-9 */
+
+}
+
+.bocusini_box {
+	border: 1px solid darkgray;
+	border-radius: 8px;
+	background-color: #fff;
+	padding: 1em;
+	margin-bottom: 1em;
+}
+
+#buttonGroupPrinterDirect {
+  text-align:center;
+}
+
+.bocusini_gcode_files .entry .btn-group {
+	text-align: center;
+	width: 100%;
+	position: absolute;
+	bottom: -1px;
+}
+
+.heating_message {
+	color: red;
+	padding: .5em 0;
+}
+
+.flip-container {
+	perspective: 1000;
+}
+	/* flip the pane when hovered */
+	//.flip-container:hover .flipper,
+	.flip-container.hover .flipper,
+	.flip-container.flip .flipper {
+		transform: rotateY(180deg);
+	}
+	
+/*.flip-container:hover .flipper,*/
+.flip-container.hover .flipper,
+.flip-container.flip .flipper {
+	transform: rotateY(180deg);
+}
+
+.flip-container, .front, .back {
+	width: 200px;
+	height: 200px;
+	
+}
+
+.flip-container .front, .back {
+	border: 1px solid darkgrey;
+	border-radius: 8px;
+	overflow: hidden;
+}
+
+/* flip speed goes here */
+.flipper {
+	transition: 0.4s;
+	transform-style: preserve-3d;
+
+	position: relative;
+}
+
+/* hide back of pane during swap */
+.front, .back {
+	backface-visibility: hidden;
+
+	position: absolute;
+	top: 0;
+	left: 0;
+}
+
+/* front pane, placed above back */
+.front {
+	z-index: 2;
+	/* for firefox 31 */
+	transform: rotateY(0deg);
+}
+
+/* back, initially hidden pane */
+.back {
+	transform: rotateY(180deg);
+}
+
+@-webkit-keyframes pulse { 
+    0% { -webkit-transform: scale(1); } 
+    50% { -webkit-transform: scale(1.3); } 
+    100% { -webkit-transform: scale(1); } 
+} 
+@keyframes pulse { 
+    0% { transform: scale(1); } 
+    50% { transform: scale(1.3); } 
+    100% { transform: scale(1); } 
+} 
+.pulse { 
+    -webkit-animation-name: pulse; 
+    animation-name: pulse;
+	display: inline-block;
+	
+	-webkit-animation-duration: 1s; 
+    animation-duration: 1s; 
+    -webkit-animation-fill-mode: both; 
+    animation-fill-mode: both; 
+    -webkit-animation-timing-function: linear; 
+    animation-timing-function: linear; 
+    animation-iteration-count:infinite; 
+    -webkit-animation-iteration-count:infinite; 
+}
+
+
+
+@-webkit-keyframes wobble { 
+  0% { -webkit-transform: translateX(0%); } 
+  25% { -webkit-transform: translateX(-25%) rotate(-5deg); } 
+  50% { -webkit-transform: translateX(0%) rotate(0deg); } 
+  75% { -webkit-transform: translateX(25%) rotate(5deg); } 
+  100% { -webkit-transform: translateX(0%); } 
+} 
+@keyframes wobble { 
+  0% { transform: translateX(0%); } 
+  25% { transform: translateX(-15%) rotate(-3deg); } 
+  50% { transform: translateX(0%) rotate(0deg); } 
+  75% { transform: translateX(15%) rotate(3deg); } 
+  100% { transform: translateX(0%); } 
+} 
+.wobble { 
+    -webkit-animation-name: wobble; 
+    animation-name: wobble; 
+	-webkit-animation-duration: 1s; 
+    animation-duration: 1s; 
+    -webkit-animation-fill-mode: both; 
+    animation-fill-mode: both; 
+    -webkit-animation-timing-function: linear; 
+    animation-timing-function: linear; 
+    animation-iteration-count:infinite; 
+    -webkit-animation-iteration-count:infinite; 
+	display: inline-block;
+}
