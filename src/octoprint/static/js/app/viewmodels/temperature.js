@@ -36,7 +36,7 @@ $(function() {
 
         self.heaterOptions = ko.observable({});
 
-        self._numExtrudersUpdated = function() {
+        self._printerProfileUpdated = function() {
             var graphColors = ["red", "orange", "green", "brown", "purple"];
             var heaterOptions = {};
             var tools = self.tools();
@@ -69,15 +69,21 @@ $(function() {
             }
 
             // print bed
-            heaterOptions["bed"] = {name: gettext("Bed"), color: "blue"};
+            if (self.settingsViewModel.printerProfiles.currentProfileData().heatedBed()) {
+                self.hasBed(true);
+                heaterOptions["bed"] = {name: gettext("Bed"), color: "blue"};
+            } else {
+                self.hasBed(false);
+            }
 
             // write back
             self.heaterOptions(heaterOptions);
             self.tools(tools);
         };
         self.settingsViewModel.printerProfiles.currentProfileData.subscribe(function() {
-            self._numExtrudersUpdated();
-            self.settingsViewModel.printerProfiles.currentProfileData().extruder.count.subscribe(self._numExtrudersUpdated);
+            self._printerProfileUpdated();
+            self.settingsViewModel.printerProfiles.currentProfileData().extruder.count.subscribe(self._printerProfileUpdated);
+            self.settingsViewModel.printerProfiles.currentProfileData().heatedBed.subscribe(self._printerProfileUpdated());
         });
 
         self.temperatures = [];
@@ -152,11 +158,8 @@ $(function() {
             }
 
             if (lastData.hasOwnProperty("bed")) {
-                self.hasBed(true);
                 self.bedTemp["actual"](lastData.bed.actual);
                 self.bedTemp["target"](lastData.bed.target);
-            } else {
-                self.hasBed(false);
             }
 
             if (!CONFIG_TEMPERATURE_GRAPH) return;
@@ -208,8 +211,6 @@ $(function() {
                     if (!d[type]) return;
                     result[type].actual.push([time, d[type].actual]);
                     result[type].target.push([time, d[type].target]);
-
-                    self.hasBed(self.hasBed() || (type == "bed"));
                 })
             });
 
