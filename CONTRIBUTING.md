@@ -1,13 +1,15 @@
 # Contribution Guidelines
 
-This document outlines what you need to know in order to **[create tickets](#issues-tickets-however-you-may-call-them)**
-and to **[create pull requests](#pull-requests)**.
+This document outlines what you need to know before **[creating tickets](#issues-tickets-however-you-may-call-them)**
+or **[creating pull requests](#pull-requests)**.
 
 ## Contents
 
   * [Issues, Tickets, however you may call them](#issues-tickets-however-you-may-call-them)
     * [How to file a bug report](#how-to-file-a-bug-report)
   * [Pull requests](#pull-requests)
+  * [History](#history)
+  * [Footnotes](#footnotes)
 
 ## Issues, Tickets, however you may call them
 
@@ -206,17 +208,13 @@ See [How to open the Javascript Console in different browsers](https://webmaster
    that would just cause unnecessary work and frustration for everyone or
    possibly get the PR rejected.
 3. Create your pull request **from a custom branch** on your end (e.g.
-   `dev/myNewFeature`) **against the `devel` branch**. Create **one pull request
+   `dev/myNewFeature`)[1] **against the `devel` branch**. Create **one pull request
    per feature/bug fix**. If your PR contains an important bug fix, we will
    make sure to backport it to the `maintenance` branch to also include it in
    the next release.
-4. Create **one pull request per feature/bug fix**.
-5. Create a **custom branch** for your feature/bug fix and use that as base for
-   your pull request. The problem is that anything that you add to your PRs branch
-   will also become part of your PR, so if you create a PR from your version of `devel`
-   chances are high you'll add changes to the PR that do not belong to the PR.
-6. Make sure you **follow the current coding style**. This means:
-     * Tabs instead of spaces in the Python files[1]
+   your pull request.
+4. Make sure you **follow the current coding style**. This means:
+     * Tabs instead of spaces in the Python files[2]
      * Spaces instead of tabs in the Javascript sources
      * English language (code, variables, comments, ...)
      * Comments where necessary: Tell why the code does something like it does
@@ -224,18 +222,18 @@ See [How to open the Javascript Console in different browsers](https://webmaster
      * Following the general architecture
    If your PR needs to make changes to the Stylesheets, change the ``.less`` files
    from which the CSS is compiled.
-7. **Test your changes thoroughly**. That also means testing with usage
+5. **Test your changes thoroughly**. That also means testing with usage
    scenarios you don't normally use, e.g. if you only use access control, test
    without and vice versa. If you only test with your printer, test with the
    virtual printer and vice versa. State in your pull request how your tested
    your changes. Ideally **add unit tests** - OctoPrint severly lacks in that
    department, but we are trying to change that, so any new code already covered
    with a test suite helps a lot!
-8. In your pull request's description, **state what your pull request is doing**,
+6. In your pull request's description, **state what your pull request is doing**,
    as in, what feature does it implement, what bug does it fix. The more
    thoroughly you explain your intent behind the PR here, the higher the
    chances it will get merged fast.
-9. Important: Don't forget to **add yourself to the [AUTHORS](../AUTHORS.md)
+7. Important: Don't forget to **add yourself to the [AUTHORS](../AUTHORS.md)
    file** :)
 
 ## History
@@ -245,11 +243,14 @@ See [How to open the Javascript Console in different browsers](https://webmaster
   * 2015-01-27: Added another explicit link to the FAQ
   * 2015-07-07: Added step to add yourself to AUTHORS when creating a PR :)
   * 2015-11-30: Heavily reworked to include examples, better structure and
-    all information in once document.
+    all information in one document.
 
 ## Footnotes
-
-  * [1] - Yes, we know that this goes against PEP-8. OctoPrint started out as
+  * [1] - If you are wondering why, the problem is that anything that you add
+    to your PR's branch will also become part of your PR, so if you create a
+    PR from your version of `devel` chances are high you'll add changes to the
+    PR that do not belong to the PR.
+  * [2] - Yes, we know that this goes against PEP-8. OctoPrint started out as
     a fork of Cura and hence stuck to the coding style found therein. Changing
     it now would make the history and especially `git blame` completely
     unusable, so for now we'll have to deal with it (this decision might be
