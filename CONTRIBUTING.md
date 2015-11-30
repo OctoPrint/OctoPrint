@@ -41,7 +41,7 @@ into one ticket: One ticket per bug, request, brainstorming thread please.
 
 **Note**: A bot is in place that monitors new tickets, automatically
 categorizes them and checks new bug reports for usage of the provided template.
-That bot will only bother you if you open a ticket that appears to be bug (no
+That bot will only bother you if you open a ticket that appears to be a bug (no
 `[Request]` or `[Brainstorming]` in the title) without the template, and it
 will do that only to ensure that all information needed to solve the issue is
 available for the maintainers to directly start tackling that problem.
