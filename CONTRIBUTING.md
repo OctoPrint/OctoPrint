@@ -220,7 +220,6 @@ See [How to open the Javascript Console in different browsers](https://webmaster
    per feature/bug fix**. If your PR contains an important bug fix, we will
    make sure to backport it to the `maintenance` branch to also include it in
    the next release.
-   your pull request.
 4. Make sure you **follow the current coding style**. This means:
      * Tabs instead of spaces in the Python files[2]
      * Spaces instead of tabs in the Javascript sources
