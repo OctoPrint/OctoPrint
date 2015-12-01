@@ -1761,7 +1761,7 @@ function HelpTours() {
   }
 }
 
-var keyboardShortcutsEnabled = true;
+var keyboardShortcutsEnabled = false;
 var keyboardEscapeEnterEnabled = false;
 var wordBuffer = "";
 
