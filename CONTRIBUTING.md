@@ -6,24 +6,30 @@ or **[creating pull requests](#pull-requests)**.
 ## Contents
 
   * [Issues, Tickets, however you may call them](#issues-tickets-however-you-may-call-them)
-    * [How to file a bug report](#how-to-file-a-bug-report)
+  * [How to file a bug report](#how-to-file-a-bug-report)
+    * [What should I do before submitting a bug report?](#what-should-i-do-before-submitting-a-bug-report)
+    * [What should I include in a bug report?](#what-should-i-include-in-a-bug-report)
+    * [Where can I find which version and branch I'm on?](#where-can-i-find-which-version-and-branch-im-on)
+    * [Where can I find those log files you keep talking about?](#where-can-i-find-those-log-files-you-keep-talking-about)
+    * [Where can I find my browser's error console?](#where-can-i-find-my-browsers-error-console)
   * [Pull requests](#pull-requests)
   * [History](#history)
   * [Footnotes](#footnotes)
 
 ## Issues, Tickets, however you may call them
 
-Please read the following short instructions fully and follow them. This helps
-the maintainers to address problems in a timely manner and without taking away
-unnecessary time from actual bug fixing and feature addition. You can therefore
-help the project tremendously by just following these few points.
+Please read the following short instructions fully and follow them. You can
+help the project tremendously this way: not only do you help the maintainers
+to **address problems in a timely manner** but also keep it possible for them
+to **fix bugs, add new and improve on existing functionality** instead of doing
+nothing but ticket management.
 
-![Ticket flow chart](http://i.imgur.com/VS8D0Kw.png)
+![Ticket flow chart](http://i.imgur.com/qYSZyuw.png)
 
 - **[Read the FAQ](https://github.com/foosel/OctoPrint/wiki/FAQ)**
-- If you want to report a **bug**, [see below for information on how to file a bug report](#how-to-file-a-bug-report)
-  and *use the provided template*. You do not need to do anything else with
-  your ticket.
+- If you want to report a **bug**, [read "How to file a bug report" below](#how-to-file-a-bug-report)
+  and *[use the provided template](#what-should-i-include-in-a-ticket)*.
+  You do not need to do anything else with your ticket.
 - If you want to post a **request** of any kind (feature request, documentation
   request, ...), add `[Request]` to your issue's title (e.g. `[Request] Awesome new feature`).
 - If you are a **developer** that wants to brainstorm a pull request or possible
@@ -48,15 +54,15 @@ available for the maintainers to directly start tackling that problem.
 
 ----
 
-### How to file a bug report
+## How to file a bug report
 
 If you encounter an issue with OctoPrint, you are welcome to
 [submit a bug report](https://goo.gl/GzkGv9).
 
-Before you do so for the first time though please take a moment to read the
+Before you do that for the first time though please take a moment to read the
 following section *completely*. Thank you! :)
 
-#### What should I do before submitting a ticket?
+### What should I do before submitting a bug report?
 
 1. **Make sure you are at the right location**. This is the Github repository
    of the official version of OctoPrint, which is the 3D print server and
@@ -83,6 +89,7 @@ following section *completely*. Thank you! :)
    If you are feeling up to it you might also want to try the current development
    version of OctoPrint (if you aren't already). Refer to the [FAQ](https://github.com/foosel/OctoPrint/wiki/FAQ)
    for information on how to do this.
+
 3. The problem still exists? Then please **look through the
    [existing tickets](https://github.com/foosel/OctoPrint/issues?state=open)
    (use the [search](https://github.com/foosel/OctoPrint/search?q=&ref=cmdform&type=Issues))**
@@ -93,7 +100,7 @@ following section *completely*. Thank you! :)
    (e.g. do not only search for "webcam" if you happen to run into an issue
    with your webcam, also search for "timelapse" etc).
 
-#### What should I include in a ticket?
+### What should I include in a bug report?
 
 Always use the following template (you can remove what's within `[...]`, that's
 only provided here as some additional information for you):
@@ -142,7 +149,7 @@ only provided here as some additional information for you):
 
     I have read the FAQ.
 
-#### Where can I find which version and branch I'm on?
+### Where can I find which version and branch I'm on?
 
 You can find out all of them by taking a look into the lower left corner of the
 OctoPrint UI:
@@ -157,7 +164,7 @@ in OctoPrint's folder will tell you the version of OctoPrint you are running
 the branch you are on with a little *. `git rev-parse HEAD` will tell you the
 current commit.
 
-#### Where can I find those log files you keep talking about?
+### Where can I find those log files you keep talking about?
 
 OctoPrint by default provides two log outputs, a third one can be enabled if
 more information is needed.
@@ -166,13 +173,14 @@ One is contained in the **"Terminal" tab** within OctoPrint's UI and is a log
 of the last 300 lines of communication with the printer. Please copy-paste
 this somewhere (disable auto scroll to make copying the contents easier) -
 e.g. http://pastebin.com or http://gist.github.com - and include a link in
-your ticket.
+your bug report.
 
 There is also **OctoPrint's application log file** or in short `octoprint.log`,
 which is by default located at `~/.octoprint/logs/octoprint.log` on Linux,
 `%APPDATA%\OctoPrint\logs\octoprint.log` on Windows and
 `~/Library/Application Support/OctoPrint/logs/octoprint.log` on MacOS. Please
-copy-paste this to pastebin or gist as well and include a link in your ticket.
+copy-paste this to pastebin or gist as well and include a link in your bug
+report.
 
 It might happen that you are asked to provide a more **thorough log of the
 communication with the printer** if you haven't already done so, the `serial.log`.
@@ -181,13 +189,13 @@ it in the settings dialog. After enabling that log, please reproduce the problem
 again (connect to the printer, do whatever triggers it), then copy-paste
 `~/.octoprint/logs/serial.log` (Windows: `%APPDATA%\OctoPrint\logs\serial.log`,
 MacOS: `~/Library/Application Support/OctoPrint/logs/serial.log`) to pastebin
-or gist and include the link in the ticket.
+or gist and include the link in the bug report.
 
 You might also be asked to provide a log with an increased log level. You can
 find information on how to do just that in the
 [docs](http://docs.octoprint.org/en/master/configuration/logging_yaml.html).
 
-#### Where can I find my browser's error console?
+### Where can I find my browser's error console?
 
 See [How to open the Javascript Console in different browsers](https://webmasters.stackexchange.com/questions/8525/how-to-open-the-javascript-console-in-different-browsers)
 
@@ -233,7 +241,7 @@ See [How to open the Javascript Console in different browsers](https://webmaster
    as in, what feature does it implement, what bug does it fix. The more
    thoroughly you explain your intent behind the PR here, the higher the
    chances it will get merged fast.
-7. Important: Don't forget to **add yourself to the [AUTHORS](../AUTHORS.md)
+7. Important: Don't forget to **add yourself to the [AUTHORS](./AUTHORS.md)
    file** :)
 
 ## History
@@ -242,7 +250,7 @@ See [How to open the Javascript Console in different browsers](https://webmaster
     redirected to Mailinglist/G+ community
   * 2015-01-27: Added another explicit link to the FAQ
   * 2015-07-07: Added step to add yourself to AUTHORS when creating a PR :)
-  * 2015-11-30: Heavily reworked to include examples, better structure and
+  * 2015-12-01: Heavily reworked to include examples, better structure and
     all information in one document.
 
 ## Footnotes
