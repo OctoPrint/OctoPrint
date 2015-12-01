@@ -56,7 +56,8 @@ def getSettings():
 			"watermark": s.getBoolean(["webcam", "watermark"]),
 			"flipH": s.getBoolean(["webcam", "flipH"]),
 			"flipV": s.getBoolean(["webcam", "flipV"]),
-			"rotate90": s.getBoolean(["webcam", "rotate90"])
+			"rotationOptions": ["rotate0","rotate90","rotate180","rotate270"],
+			"rotation": s.get(["webcam", "rotation"])
 		},
 		"feature": {
 			"gcodeViewer": s.getBoolean(["gcodeViewer", "enabled"]),
@@ -199,7 +200,7 @@ def setSettings():
 		if "watermark" in data["webcam"].keys(): s.setBoolean(["webcam", "watermark"], data["webcam"]["watermark"])
 		if "flipH" in data["webcam"].keys(): s.setBoolean(["webcam", "flipH"], data["webcam"]["flipH"])
 		if "flipV" in data["webcam"].keys(): s.setBoolean(["webcam", "flipV"], data["webcam"]["flipV"])
-		if "rotate90" in data["webcam"].keys(): s.setBoolean(["webcam", "rotate90"], data["webcam"]["rotate90"])
+		if "rotation" in data["webcam"].keys(): s.set(["webcam", "rotation"], data["webcam"]["rotation"])
 
 	if "feature" in data.keys():
 		if "gcodeViewer" in data["feature"].keys(): s.setBoolean(["gcodeViewer", "enabled"], data["feature"]["gcodeViewer"])
