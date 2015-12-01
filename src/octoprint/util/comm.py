@@ -1729,6 +1729,12 @@ class MachineCom(object):
 		if self.isPrinting() and not self.isSdPrinting():
 			self.setPause(True)
 
+	def _gcode_M140_queuing(self, cmd, cmd_type=None):
+		if not self._printerProfileManager.get_current_or_default()["heatedBed"]:
+			self._log("Warn: Not sending \"{}\", printer profile has no heated bed".format(cmd))
+			return None, # Don't send bed commands if we don't have a heated bed
+	_gcode_M190_queuing = _gcode_M140_queuing
+
 	def _gcode_M104_sent(self, cmd, cmd_type=None):
 		toolNum = self._currentTool
 		toolMatch = regexes_parameters["intT"].search(cmd)
@@ -1802,7 +1808,8 @@ class MachineCom(object):
 		# are going to shutdown the connection in a second anyhow.
 		for tool in range(self._printerProfileManager.get_current_or_default()["extruder"]["count"]):
 			self._doIncrementAndSendWithChecksum("M104 T{tool} S0".format(tool=tool))
-		self._doIncrementAndSendWithChecksum("M140 S0")
+		if self._printerProfileManager.get_current_or_default()["heatedBed"]:
+			self._doIncrementAndSendWithChecksum("M140 S0")
 
 		# close to reset host state
 		self._errorValue = "Closing serial port due to emergency stop M112."
