@@ -1,6 +1,20 @@
 # OctoPrint Changelog
 
-## 1.2.8 (2015-12-01)
+## 1.2.8 (2015-12-02)
+
+### Important information for people updating from version 1.2.7
+
+Due to a bug in the Software Update plugin bundled with version 1.2.7, updating
+to 1.2.8 necessitates the installation of a plugin that fixes said bug
+(through monkey patching).
+
+The plugin "Updatefix 1.2.7" can be found [in the plugin repository](http://plugins.octoprint.org/plugins/updatefix127/) and
+[on Github](https://github.com/OctoPrint/OctoPrint-Updatefix-1.2.7/).
+
+Before attempting to update your installation from version 1.2.7 to version 1.2.8,
+please install the plugin via your plugin manager (it doesn't necessitate a
+restart or even a reload). Afterwards you can update as usual. The plugin will
+self-uninstall once it detects that it's running under OctoPrint 1.2.8.
 
 ### Improvements
 
@@ -43,6 +57,9 @@
    displaying bed temperature and controls and allowing the sending of GCODE
    commands targeting the bed (`M140`, `M190`) if the printer profile doesn't
    have a heated bed configured.
+ * Fixed an issue that stopped the software updater working for OctoPrint. A
+   fix can be applied for this issue to OctoPrint version 1.2.7 via
+   [the Updatefix 1.2.7 plugin](https://github.com/OctoPrint/OctoPrint-Updatefix-1.2.7).
  * Fix: Current filename in job data should never be prefixed with `/`
  * Only persist plugin settings that differ from the defaults. This way the
    `config.yaml` won't be filled with lots of redundant data. It's the
