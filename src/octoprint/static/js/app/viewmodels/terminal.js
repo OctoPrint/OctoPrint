@@ -35,7 +35,8 @@ $(function() {
 
             var filtered = false;
             var result = [];
-            _.each(self.log(), function(entry) {
+            var lines = self.log();
+            _.each(lines, function(entry) {
                 if (lineVisible(entry)) {
                     result.push(entry);
                     filtered = false;
@@ -47,14 +48,17 @@ $(function() {
 
             return result;
         });
-        self.displayedLines.subscribe(function() {
-            self.updateOutput();
-        });
 
         self.lineCount = ko.computed(function() {
-            var total = self.log().length;
-            var filtered = _.filter(self.displayedLines(), function(entry) { return entry.type == "filtered" }).length;
-            var displayed = _.filter(self.displayedLines(), function(entry) { return entry.type == "line" }).length;
+            var regex = self.filterRegex();
+            var lineVisible = function(entry) {
+                return regex == undefined || !entry.line.match(regex);
+            };
+
+            var lines = self.log();
+            var total = lines.length;
+            var displayed = _.filter(lines, lineVisible).length;
+            var filtered = total - displayed;
 
             if (filtered > 0) {
                 if (total > self.upperLimit()) {
@@ -112,10 +116,12 @@ $(function() {
                 newLog = newLog.slice(0, self.upperLimit());
             }
             self.log(newLog);
+            self.updateOutput();
         };
 
         self._processHistoryLogData = function(data) {
             self.log(_.map(data, function(line) { return self._toInternalFormat(line) }));
+            self.updateOutput();
         };
 
         self._toInternalFormat = function(line, type) {
@@ -165,7 +171,7 @@ $(function() {
         self.scrollToEnd = function() {
             var container = $("#terminal-output");
             if (container.length) {
-                container.scrollTop(container[0].scrollHeight - container.height())
+                container.scrollTop(container[0].scrollHeight);
             }
         };
 
