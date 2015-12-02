@@ -1117,13 +1117,7 @@ class MachineCom(object):
 				### Operational
 				elif self._state == self.STATE_OPERATIONAL or self._state == self.STATE_PAUSED:
 					if "ok" in line:
-						# if we still have commands to process, process them
-						if self._resendSwallowNextOk:
-							self._resendSwallowNextOk = False
-						elif self._resendDelta is not None:
-							self._resendNextCommand()
-						elif self._sendFromQueue():
-							pass
+						self._handle_ok()
 
 					# resend -> start resend procedure from requested line
 					elif line.lower().startswith("resend") or line.lower().startswith("rs"):
@@ -1141,18 +1135,8 @@ class MachineCom(object):
 
 					if "ok" in line or (supportWait and "wait" in line):
 						# a wait while printing means our printer's buffer ran out, probably due to some ok getting
-						# swallowed, so we treat it the same as an ok here teo take up communication again
-						if self._resendSwallowNextOk:
-							self._resendSwallowNextOk = False
-
-						elif self._resendDelta is not None:
-							self._resendNextCommand()
-
-						else:
-							if self._sendFromQueue():
-								pass
-							elif not self.isSdPrinting():
-								self._sendNext()
+						# swallowed, so we treat it the same as an ok here to take up communication again
+						self._handle_ok()
 
 					elif line.lower().startswith("resend") or line.lower().startswith("rs"):
 						self._handleResendRequest(line)
@@ -1165,6 +1149,24 @@ class MachineCom(object):
 				self._changeState(self.STATE_ERROR)
 				eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
 		self._log("Connection closed, closing down monitor")
+
+	def _handle_ok(self):
+		if not self._state in (self.STATE_PRINTING, self.STATE_OPERATIONAL, self.STATE_PAUSED):
+			return
+
+		if self._resendSwallowNextOk:
+			self._resendSwallowNextOk = False
+		elif self._resendDelta is not None:
+			self._resendNextCommand()
+		else:
+			self._continue_sending()
+
+	def _continue_sending(self):
+		if self._state == self.STATE_PRINTING:
+			if not self._sendFromQueue() and not self.isSdPrinting():
+				self._sendNext()
+		elif self._state == self.STATE_OPERATIONAL or self._state == self.STATE_PAUSED:
+			self._sendFromQueue()
 
 	def _process_registered_message(self, line, feedback_matcher, feedback_controls, feedback_errors):
 		feedback_match = feedback_matcher.search(line)
@@ -1240,20 +1242,29 @@ class MachineCom(object):
 		self.sendGcodeScript("afterPrinterConnected", replacements=dict(event=payload))
 
 	def _sendFromQueue(self):
-		if not self._commandQueue.empty() and not self.isStreaming():
+		# We loop here to make sure that if we do NOT send the first command
+		# from the queue, we'll send the second (if there is one). We do not
+		# want to get stuck here by throwing away commands.
+		while True:
+			if self._commandQueue.empty() or self.isStreaming():
+				# no command queue or irrelevant command queue => return
+				return False
+
 			entry = self._commandQueue.get()
 			if isinstance(entry, tuple):
 				if not len(entry) == 2:
-					return False
+					# something with that entry is broken, ignore it and fetch
+					# the next one
+					continue
 				cmd, cmd_type = entry
 			else:
 				cmd = entry
 				cmd_type = None
 
-			self._sendCommand(cmd, cmd_type=cmd_type)
-			return True
-		else:
-			return False
+			if self._sendCommand(cmd, cmd_type=cmd_type):
+				# we actually did add this cmd to the send queue, so let's
+				# return, we are done here
+				return True
 
 	def _detectPort(self, close):
 		programmer = stk500v2.Stk500v2()
@@ -1493,7 +1504,7 @@ class MachineCom(object):
 		# Make sure we are only handling one sending job at a time
 		with self._sendingLock:
 			if self._serial is None:
-				return
+				return False
 
 			gcode = None
 			if not self.isStreaming():
@@ -1502,7 +1513,7 @@ class MachineCom(object):
 
 				if cmd is None:
 					# command is no more, return
-					return
+					return False
 
 				if gcode and gcode in gcodeToEvent:
 					# if this is a gcode bound to an event, trigger that now
@@ -1514,6 +1525,8 @@ class MachineCom(object):
 			if not self.isStreaming():
 				# trigger the "queued" phase only if we are not streaming to sd right now
 				self._process_command_phase("queued", cmd, cmd_type, gcode=gcode)
+
+			return True
 
 	##~~ send loop handling
 
@@ -1567,7 +1580,14 @@ class MachineCom(object):
 					command, _, gcode = self._process_command_phase("sending", command, command_type, gcode=gcode)
 
 					if command is None:
-						# so no, we are not going to send this, that was a last-minute bail, let's fetch the next item from the queue
+						# No, we are not going to send this, that was a last-minute bail.
+						# However, since we already are in the send queue, our _monitor
+						# loop won't be triggered with the reply from this unsent command
+						# now, so we try to tickle the processing of any active
+						# command queues manually
+						self._continue_sending()
+
+						# and now let's fetch the next item from the queue
 						continue
 
 					# now comes the part where we increase line numbers and send stuff - no turning back now
