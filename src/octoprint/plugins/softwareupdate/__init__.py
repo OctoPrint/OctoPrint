@@ -516,19 +516,28 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		"""
 
 		checks = self._get_configured_checks()
+		populated_checks = dict()
+		for target, check in checks.items():
+			try:
+				populated_checks[target] = self._populated_check(target, check)
+			except exceptions.UnknownCheckType:
+				self._logger.debug("Ignoring unknown check type for target {}".format(target))
+			except:
+				self._logger.exception("Error while populating check prior to update for target {}".format(target))
+
 		if check_targets is None:
-			check_targets = checks.keys()
-		to_be_updated = sorted(set(check_targets) & set(checks.keys()))
+			check_targets = populated_checks.keys()
+		to_be_updated = sorted(set(check_targets) & set(populated_checks.keys()))
 		if "octoprint" in to_be_updated:
 			to_be_updated.remove("octoprint")
 			tmp = ["octoprint"] + to_be_updated
 			to_be_updated = tmp
 
-		updater_thread = threading.Thread(target=self._update_worker, args=(checks, to_be_updated, force))
+		updater_thread = threading.Thread(target=self._update_worker, args=(populated_checks, to_be_updated, force))
 		updater_thread.daemon = False
 		updater_thread.start()
 
-		check_data = dict((key, self._populated_check(key, check)["displayName"]) for key, check in checks.items() if key in to_be_updated)
+		check_data = dict((key, check["displayName"] if "displayName" in check else key) for key, check in populated_checks.items() if key in to_be_updated)
 		return to_be_updated, check_data
 
 	def _update_worker(self, checks, check_targets, force):

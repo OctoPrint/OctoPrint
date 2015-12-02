@@ -25,7 +25,8 @@ Tool
   See :ref:`sec-api-printer-toolcommand`.
 Bed
   Bed commands allow setting the temperature and temperature offset for the printer's heated bed. Querying the
-  corresponding resource returns temperature information including an optional history.
+  corresponding resource returns temperature information including an optional history. Note that Bed commands
+  are only available if the currently selected printer profile has a heated bed.
   See :ref:`sec-api-printer-bedcommand`.
 SD card
   SD commands allow initialization, refresh and release of the printer's SD card (if available). Querying the
@@ -564,6 +565,9 @@ Issue a bed command
 
    Upon success, a status code of :http:statuscode:`204` and an empty body is returned.
 
+   If no heated bed is configured for the currently selected printer profile, the resource will return
+   an :http:statuscode:`409`.
+
    **Example Target Temperature Request**
 
    Set the target temperature for the printer's heated bed to 75°C.
@@ -610,7 +614,8 @@ Issue a bed command
    :statuscode 204: No error
    :statuscode 400: If ``target`` or ``offset`` is not a valid number or outside of the supported range, or if the
                     request is otherwise invalid.
-   :statuscode 409: If the printer is not operational.
+   :statuscode 409: If the printer is not operational or the selected printer profile
+                    does not have a heated bed.
 
 .. _sec-api-printer-bedstate:
 
@@ -626,6 +631,9 @@ Retrieve the current bed state
    amount of returned history data points can be limited using the ``limit`` query parameter.
 
    Returns a :http:statuscode:`200` with a Temperature Response in the body upon success.
+
+   If no heated bed is configured for the currently selected printer profile, the resource will return
+   an :http:statuscode:`409`.
 
    .. note::
       If you want both tool and bed temperature information at the same time, take a look at
@@ -675,7 +683,8 @@ Retrieve the current bed state
    :query limit:    If set to an integer (``n``), only the last ``n`` data points from the printer's temperature history
                     will be returned. Will be ignored if ``history`` is not enabled.
    :statuscode 200: No error
-   :statuscode 409: If the printer is not operational.
+   :statuscode 409: If the printer is not operational or the selected printer profile
+                    does not have a heated bed.
 
 .. _sec-api-printer-sdcommand:
 
@@ -856,7 +865,7 @@ Send an arbitrary command to the printer
    .. sourcecode:: http
 
       HTTP/1.1 204 No Content
-   
+
    :json string command:  Single command to send to the printer, mutually exclusive with ``commands``.
    :json string commands: List of commands to send to the printer, mutually exclusive with ``command``.
    :statuscode 204:       No error
@@ -913,7 +922,8 @@ Temperature State
    * - ``bed``
      - 0..1
      - :ref:`Temperature Data <sec-api-datamodel-printer-tempdata>`
-     - Current temperature stats for the printer's heated bed. Not included if querying only tool state.
+     - Current temperature stats for the printer's heated bed. Not included if querying only tool state or if
+       the currently selected printer profile does not have a heated bed.
    * - ``history``
      - 0..1
      - List of :ref:`Historic Temperature Datapoint <sec-api-datamodel-printer-temphistory>`

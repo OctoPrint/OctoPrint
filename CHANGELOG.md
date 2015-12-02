@@ -69,6 +69,74 @@
 * [#1047](https://github.com/foosel/OctoPrint/issues/1047) - Fixed 90 degree
   webcam rotation for iOS Safari.
 
+## 1.2.8 (2015-12-01)
+
+### Improvements
+
+  * Version numbering now follows [PEP440](https://www.python.org/dev/peps/pep-0440/).
+  * Prepared some things for publishing OctoPrint on [PyPi](https://pypi.python.org/pypi)
+    in the future.
+  * [BlueprintPlugin mixin](http://docs.octoprint.org/en/master/plugins/mixins.html#blueprintplugin)
+     now has an `errorhandler` decorator that serves the same purpose as
+     [Flask's](http://flask.pocoo.org/docs/0.10/patterns/errorpages/#error-handlers)
+     ([#1059](https://github.com/foosel/OctoPrint/pull/1059))
+  * Interpret `M25` in a GCODE file that is being streamed from OctoPrint as
+    indication to pause, like `M0` and `M1`.
+  * Cache rendered page and translation files indefinitely. That should
+    significantly improve performance on reloads of the web interface.
+  * Added the string "unknown command" to the list of ignored printer errors.
+    This should help with general firmware compatibility in case a firmware
+    lacks features.
+  * The "CuraEngine" plugin now makes it more obvious that it only targets
+    CuraEngine versions up to and including 15.04 and also links to the plugin's
+    homepage with more information right within the settings dialog.
+  * Browser tab visibility is now tracked by the web interface, disabling the
+    webcam and the GCODE viewer if the tab containing OctoPrint is not active.
+    That should reduce the amount of resource utilized by the web interface on
+    the client when it is not actively monitored. Might also help to mitigate
+    [#1065](https://github.com/foosel/OctoPrint/issues/1065), the final verdict
+    on that one is still out though.
+  * The printer log in the terminal tab will now be cut off after 3000 lines
+    even if autoscroll is disabled. If the limit is reached, no more log lines
+    will be added to the client's buffer. That ensures that the log will not
+    scroll and the current log excerpt will stay put while also not causing
+    the browser to run into memory errors due to trying to buffer an endless
+    amount of log lines.
+  * Added a couple of unit tests
+
+### Bug Fixes
+
+ * [#1120](https://github.com/foosel/OctoPrint/issues/1120) - Made the watchdog
+   that monitors and handles the `watched` folder more resilient towards errors.
+ * [#1125](https://github.com/foosel/OctoPrint/issues/1125) - Fixed OctoPrint
+   displaying bed temperature and controls and allowing the sending of GCODE
+   commands targeting the bed (`M140`, `M190`) if the printer profile doesn't
+   have a heated bed configured.
+ * Fix: Current filename in job data should never be prefixed with `/`
+ * Only persist plugin settings that differ from the defaults. This way the
+   `config.yaml` won't be filled with lots of redundant data. It's the
+   responsibility of the plugin authors to responsibly handle changes in default
+   settings of their plugins and add data migration where necessary.
+ * Fixed a documentation bug ([#1067](https://github.com/foosel/OctoPrint/pull/1067))
+ * Fixed a conflict with bootstrap-responsive, e.g. when using the
+   [ScreenSquish Plugin](http://plugins.octoprint.org/plugins/screensquish/)
+   ([#1103](https://github.com/foosel/OctoPrint/pull/1067))
+ * Fixed OctoPrint still sending SD card related commands to the printer even
+   if SD card support is disabled (e.g. `M21`).
+ * Hidden files are no longer visible to the template engine, neither as (GCODE)
+   scripts nor as interface templates.
+ * The hostname and URL prefix via which the OctoPrint web interface is accessed
+   is now part of the cache key. Without that being the case the cache could
+   be created referring to something like `/octoprint/prefix/api/` for its API
+   endpoint (if accessed via `http://somehost:someport/octoprint/prefix/` first
+   time), which would then cause the interface to not work if accessed later
+   via another route (e.g. `http://someotherhost/`).
+ * Fixed a JavaScript error on finishing streaming of a file to SD.
+ * Fixed version reporting on detached HEADs (when the branch detection
+   reported "HEAD" instead of "(detached"
+
+([Commits](https://github.com/foosel/OctoPrint/compare/1.2.7...1.2.8))
+
 ## 1.2.7 (2015-10-20)
 
 ### Improvements

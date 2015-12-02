@@ -10,10 +10,9 @@ from werkzeug.exceptions import BadRequest
 import re
 
 from octoprint.settings import settings, valid_boolean_trues
-from octoprint.server import printer, NO_CONTENT
+from octoprint.server import printer, printerProfileManager, NO_CONTENT
 from octoprint.server.api import api
 from octoprint.server.util.flask import restricted_access, get_json_command_from_request
-import octoprint.util as util
 
 from octoprint.printer import UnknownScript
 
@@ -34,9 +33,13 @@ def printerState():
 
 	result = {}
 
+	processor = lambda x: x
+	if not printerProfileManager.get_current_or_default()["heatedBed"]:
+		processor = _delete_bed
+
 	# add temperature information
 	if not "temperature" in excludes:
-		result.update({"temperature": _getTemperatureData(lambda x: x)})
+		result.update({"temperature": _get_temperature_data(processor)})
 
 	# add sd information
 	if not "sd" in excludes and settings().getBoolean(["feature", "sdSupport"]):
@@ -145,14 +148,7 @@ def printerToolState():
 	if not printer.is_operational():
 		return make_response("Printer is not operational", 409)
 
-	def deleteBed(x):
-		data = dict(x)
-
-		if "bed" in data.keys():
-			del data["bed"]
-		return data
-
-	return jsonify(_getTemperatureData(deleteBed))
+	return jsonify(_get_temperature_data(_delete_bed))
 
 
 ##~~ Heated bed
@@ -163,6 +159,9 @@ def printerToolState():
 def printerBedCommand():
 	if not printer.is_operational():
 		return make_response("Printer is not operational", 409)
+
+	if not printerProfileManager.get_current_or_default()["heatedBed"]:
+		return make_response("Printer does not have a heated bed", 409)
 
 	valid_commands = {
 		"target": ["target"],
@@ -204,15 +203,10 @@ def printerBedState():
 	if not printer.is_operational():
 		return make_response("Printer is not operational", 409)
 
-	def deleteTools(x):
-		data = dict(x)
+	if not printerProfileManager.get_current_or_default()["heatedBed"]:
+		return make_response("Printer does not have a heated bed", 409)
 
-		for k in data.keys():
-			if k.startswith("tool"):
-				del data[k]
-		return data
-
-	data = _getTemperatureData(deleteTools)
+	data = _get_temperature_data(_delete_tools)
 	if isinstance(data, Response):
 		return data
 	else:
@@ -382,7 +376,7 @@ def getCustomControls():
 	return jsonify(controls=customControls)
 
 
-def _getTemperatureData(filter):
+def _get_temperature_data(preprocessor):
 	if not printer.is_operational():
 		return make_response("Printer is not operational", 409)
 
@@ -399,8 +393,23 @@ def _getTemperatureData(filter):
 		limit = min(limit, len(history))
 
 		tempData.update({
-			"history": map(lambda x: filter(x), history[-limit:])
+			"history": map(lambda x: preprocessor(x), history[-limit:])
 		})
 
-	return filter(tempData)
+	return preprocessor(tempData)
 
+
+def _delete_tools(x):
+	return _delete_from_data(x, lambda k: k.startswith("tool"))
+
+
+def _delete_bed(x):
+	return _delete_from_data(x, lambda k: k == "bed")
+
+
+def _delete_from_data(x, key_matcher):
+	data = dict(x)
+	for k in data.keys():
+		if key_matcher(k):
+			del data[k]
+	return data

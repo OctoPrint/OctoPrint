@@ -66,9 +66,10 @@ def index():
 			try:
 				if callable(data):
 					data = data()
-				if "query_string" in data:
-					data["query_string"] = "l10n={}&{}".format(g.locale.language, data["query_string"])
-				d.update(data)
+				if data:
+					if "query_string" in data:
+						data["query_string"] = "l10n={}&{}".format(g.locale.language, data["query_string"])
+					d.update(data)
 			except:
 				_logger.exception("Error collecting data for preemptive cache from plugin {}".format(key))
 
