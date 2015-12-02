@@ -1,12 +1,12 @@
 # OctoPrint Changelog
 
-## 1.2.8 (2015-12-02)
+## 1.2.8 (2015-12-03)
 
 ### Important information for people updating from version 1.2.7
 
 Due to a bug in the Software Update plugin bundled with version 1.2.7, updating
-to 1.2.8 necessitates the installation of a plugin that fixes said bug
-(through monkey patching).
+to 1.2.8 through OctoPrint itself necessitates the installation of a plugin
+that fixes said bug (through monkey patching).
 
 The plugin "Updatefix 1.2.7" can be found [in the plugin repository](http://plugins.octoprint.org/plugins/updatefix127/) and
 [on Github](https://github.com/OctoPrint/OctoPrint-Updatefix-1.2.7/).
@@ -14,7 +14,10 @@ The plugin "Updatefix 1.2.7" can be found [in the plugin repository](http://plug
 Before attempting to update your installation from version 1.2.7 to version 1.2.8,
 please install the plugin via your plugin manager and restart your server.
 Afterwards you can update as usual. The plugin will self-uninstall once it
-detects that it's running under OctoPrint 1.2.8.
+detects that it's running under OctoPrint 1.2.8. After the self-uninstall another restart
+of your server will be triggered (if you have setup your server's restart command,
+defaults to `sudo service octoprint restart` on OctoPi) in order to really get rid of any
+left-overs, so don't be alarmed when that happens.
 
 ### Improvements
 
@@ -47,6 +50,8 @@ detects that it's running under OctoPrint 1.2.8.
     scroll and the current log excerpt will stay put while also not causing
     the browser to run into memory errors due to trying to buffer an endless
     amount of log lines.
+  * Increased timeout of "waiting for restart" after an update from 20 to 60sec
+    (20sec turned out to be too little for OctoPi for whatever reason).
   * Added a couple of unit tests
 
 ### Bug Fixes
@@ -60,6 +65,8 @@ detects that it's running under OctoPrint 1.2.8.
  * Fixed an issue that stopped the software updater working for OctoPrint. A
    fix can be applied for this issue to OctoPrint version 1.2.7 via
    [the Updatefix 1.2.7 plugin](https://github.com/OctoPrint/OctoPrint-Updatefix-1.2.7).
+   For more information please refer to the [Important information for people updating from version 1.2.7](#important-information-for-people-updating-from-version-127)
+   above.
  * Fix: Current filename in job data should never be prefixed with `/`
  * Only persist plugin settings that differ from the defaults. This way the
    `config.yaml` won't be filled with lots of redundant data. It's the
