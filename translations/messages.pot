@@ -6,115 +6,141 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: OctoPrint 1.2.5-dev-57-g8ed0bef-dirty\n"
+"Project-Id-Version: OctoPrint 1.2.8.dev50+gb8283b2\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
-"POT-Creation-Date: 2015-08-31 10:04+0200\n"
+"POT-Creation-Date: 2015-12-01 11:20+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 1.3\n"
-
-#: src/octoprint/plugins/cura/__init__.py:43
-msgid "CuraEngine"
-msgstr ""
+"Generated-By: Babel 2.1.1\n"
 
 #: src/octoprint/plugins/cura/templates/cura_settings.jinja2:1
 #: src/octoprint/templates/tabs/control.jinja2:98
 msgid "General"
 msgstr ""
 
-#: src/octoprint/plugins/cura/templates/cura_settings.jinja2:5
+#: src/octoprint/plugins/cura/templates/cura_settings.jinja2:3
+msgid ""
+"\n"
+"    Specify the path to the CuraEngine binary. Note that only\n"
+"    <strong>versions up to and including 15.04</strong> are supported.\n"
+"    CuraEngine version 15.06 or newer is <strong>not</strong>\n"
+"    compatible with this plugin.\n"
+msgstr ""
+
+#: src/octoprint/plugins/cura/templates/cura_settings.jinja2:12
 msgid "Path to CuraEngine"
 msgstr ""
 
-#: src/octoprint/plugins/cura/templates/cura_settings.jinja2:13
-msgid "Log the output of CuraEngine to plugin_cura_engine.log"
+#: src/octoprint/plugins/cura/templates/cura_settings.jinja2:20
+msgid "Log the output of CuraEngine to <code>plugin_cura_engine.log</code>"
 msgstr ""
 
-#: src/octoprint/plugins/cura/templates/cura_settings.jinja2:19
+#: src/octoprint/plugins/cura/templates/cura_settings.jinja2:26
 msgid "Profiles"
 msgstr ""
 
-#: src/octoprint/plugins/cura/templates/cura_settings.jinja2:22
+#: src/octoprint/plugins/cura/templates/cura_settings.jinja2:29
 #: src/octoprint/templates/dialogs/settings/logs.jinja2:6
-#: src/octoprint/templates/tabs/timelapse.jinja2:49
+#: src/octoprint/templates/tabs/timelapse.jinja2:50
 msgid "Sort by"
 msgstr ""
 
-#: src/octoprint/plugins/cura/templates/cura_settings.jinja2:22
-#: src/octoprint/plugins/cura/templates/cura_settings.jinja2:27
-#: src/octoprint/plugins/cura/templates/cura_settings.jinja2:76
+#: src/octoprint/plugins/cura/templates/cura_settings.jinja2:29
+#: src/octoprint/plugins/cura/templates/cura_settings.jinja2:34
+#: src/octoprint/plugins/cura/templates/cura_settings.jinja2:87
 #: src/octoprint/templates/dialogs/settings/printerprofiles.jinja2:51
 msgid "Identifier"
 msgstr ""
 
-#: src/octoprint/plugins/cura/templates/cura_settings.jinja2:22
-#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:75
+#: src/octoprint/plugins/cura/templates/cura_settings.jinja2:29
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:105
 #: src/octoprint/templates/dialogs/settings/logs.jinja2:6
 #: src/octoprint/templates/sidebar/files_header.jinja2:6
-#: src/octoprint/templates/tabs/timelapse.jinja2:49
+#: src/octoprint/templates/tabs/timelapse.jinja2:50
 msgid "ascending"
 msgstr ""
 
-#: src/octoprint/plugins/cura/templates/cura_settings.jinja2:22
-#: src/octoprint/plugins/cura/templates/cura_settings.jinja2:28
-#: src/octoprint/plugins/cura/templates/cura_settings.jinja2:82
-#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:14
+#: src/octoprint/plugins/cura/templates/cura_settings.jinja2:29
+#: src/octoprint/plugins/cura/templates/cura_settings.jinja2:35
+#: src/octoprint/plugins/cura/templates/cura_settings.jinja2:93
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:38
 #: src/octoprint/templates/dialogs/settings/accesscontrol.jinja2:4
 #: src/octoprint/templates/dialogs/settings/logs.jinja2:6
 #: src/octoprint/templates/dialogs/settings/logs.jinja2:12
 #: src/octoprint/templates/dialogs/settings/printerprofiles.jinja2:5
 #: src/octoprint/templates/dialogs/settings/printerprofiles.jinja2:44
 #: src/octoprint/templates/dialogs/settings/terminalfilters.jinja2:3
-#: src/octoprint/templates/tabs/timelapse.jinja2:49
-#: src/octoprint/templates/tabs/timelapse.jinja2:54
+#: src/octoprint/templates/tabs/timelapse.jinja2:50
+#: src/octoprint/templates/tabs/timelapse.jinja2:55
 msgid "Name"
 msgstr ""
 
-#: src/octoprint/plugins/cura/templates/cura_settings.jinja2:29
-#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:15
+#: src/octoprint/plugins/cura/templates/cura_settings.jinja2:36
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:39
 msgid "Actions"
 msgstr ""
 
-#: src/octoprint/plugins/cura/templates/cura_settings.jinja2:37
+#: src/octoprint/plugins/cura/templates/cura_settings.jinja2:44
 msgid "Make default"
 msgstr ""
 
-#: src/octoprint/plugins/cura/templates/cura_settings.jinja2:37
+#: src/octoprint/plugins/cura/templates/cura_settings.jinja2:44
 #: src/octoprint/templates/dialogs/settings/printerprofiles.jinja2:15
 msgid "Delete Profile"
 msgstr ""
 
-#: src/octoprint/plugins/cura/templates/cura_settings.jinja2:54
+#: src/octoprint/plugins/cura/templates/cura_settings.jinja2:61
 msgid "Import Profile..."
 msgstr ""
 
-#: src/octoprint/plugins/cura/templates/cura_settings.jinja2:59
+#: src/octoprint/plugins/cura/templates/cura_settings.jinja2:64
+#, python-format
+msgid ""
+"For more information on configuration and usage please <a "
+"href=\"%(plugin_cura_homepage)s\" target=\"_blank\">see the Plugin's "
+"homepage</a>."
+msgstr ""
+
+#: src/octoprint/plugins/cura/templates/cura_settings.jinja2:70
 msgid "Import Existing Cura Profile"
 msgstr ""
 
-#: src/octoprint/plugins/cura/templates/cura_settings.jinja2:64
+#: src/octoprint/plugins/cura/templates/cura_settings.jinja2:75
 msgid "Profile ini file"
 msgstr ""
 
-#: src/octoprint/plugins/cura/templates/cura_settings.jinja2:68
-#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:141
+#: src/octoprint/plugins/cura/templates/cura_settings.jinja2:79
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:171
 #: src/octoprint/templates/dialogs/settings/appearance.jinja2:83
 msgid "Browse..."
 msgstr ""
 
-#: src/octoprint/plugins/cura/templates/cura_settings.jinja2:88
+#: src/octoprint/plugins/cura/templates/cura_settings.jinja2:99
 msgid "Description"
 msgstr ""
 
-#: src/octoprint/plugins/cura/templates/cura_settings.jinja2:96
+#: src/octoprint/plugins/cura/templates/cura_settings.jinja2:107
 msgid "Overwrite existing file"
 msgstr ""
 
-#: src/octoprint/plugins/cura/templates/cura_settings.jinja2:103
+#: src/octoprint/plugins/cura/templates/cura_settings.jinja2:113
+msgid ""
+"\n"
+"            You can import your existing profile <code>.ini</code> files "
+"from Cura (version up to and\n"
+"            including 15.04) here. Please be aware that neither the "
+"<code>.json</code> profile format\n"
+"            from Cura versions starting with 15.06 is supported, nor are "
+"the custom Cura profile formats\n"
+"            that third party tools like e.g. Repetier create.\n"
+"        "
+msgstr ""
+
+#: src/octoprint/plugins/cura/templates/cura_settings.jinja2:121
 #: src/octoprint/templates/dialogs/usersettings.jinja2:46
 #: src/octoprint/templates/dialogs/settings/accesscontrol.jinja2:80
 #: src/octoprint/templates/dialogs/settings/accesscontrol.jinja2:109
@@ -123,7 +149,7 @@ msgstr ""
 msgid "Abort"
 msgstr ""
 
-#: src/octoprint/plugins/cura/templates/cura_settings.jinja2:104
+#: src/octoprint/plugins/cura/templates/cura_settings.jinja2:122
 #: src/octoprint/templates/dialogs/usersettings.jinja2:47
 #: src/octoprint/templates/dialogs/settings/accesscontrol.jinja2:81
 #: src/octoprint/templates/dialogs/settings/accesscontrol.jinja2:110
@@ -132,251 +158,251 @@ msgstr ""
 msgid "Confirm"
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/__init__.py:107
+#: src/octoprint/plugins/pluginmanager/__init__.py:116
 msgid "Plugin Manager"
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:132
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:277
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:149
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:310
 msgid "Installing plugin..."
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:132
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:149
 msgid "Installing plugin from uploaded archive..."
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:147
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:225
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:302
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:332
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:546
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:576
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:593
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:610
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:164
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:258
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:335
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:365
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:631
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:661
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:678
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:695
 msgid "Something went wrong"
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:148
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:226
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:303
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:333
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:165
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:259
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:336
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:366
 msgid "Please consult octoprint.log for details"
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:279
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:312
 #, python-format
 msgid "Installing plugin \"%(name)s\" from %(url)s..."
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:281
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:314
 #, python-format
 msgid "Installing plugin from %(url)s..."
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:284
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:317
 msgid "Reinstalling plugin..."
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:285
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:318
 #, python-format
 msgid "Reinstalling plugin \"%(name)s\" from %(url)s..."
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:323
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:356
 msgid "Uninstalling plugin..."
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:323
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:356
 #, python-format
 msgid "Uninstalling plugin \"%(name)s\""
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:358
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:443
 msgid "Reinstall"
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:358
-#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:130
-#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:146
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:443
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:160
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:176
 msgid "Install"
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:358
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:443
 msgid "Incompatible"
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:376
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:461
 #: src/octoprint/templates/overlays/reloadui.jinja2:9
 msgid "Reload now"
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:445
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:530
 msgid "Done!"
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:465
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:550
 msgid "Enable Plugin"
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:465
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:550
 msgid "Disable Plugin"
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:530
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:615
 msgid "Plugin installed"
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:531
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:616
 msgid ""
 "A plugin was installed successfully, however it was impossible to detect "
 "which one. Please Restart OctoPrint to make sure everything will be "
 "registered properly"
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:535
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:620
 #, python-format
 msgid "Plugin \"%(name)s\" reinstalled"
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:536
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:621
 msgid "The plugin was reinstalled successfully"
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:537
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:622
 msgid ""
 "The plugin was reinstalled successfully, however a restart of OctoPrint "
 "is needed for that to take effect."
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:538
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:623
 msgid ""
 "The plugin was reinstalled successfully, however a reload of the page is "
 "needed for that to take effect."
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:540
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:625
 #, python-format
 msgid "Plugin \"%(name)s\" installed"
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:541
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:626
 msgid "The plugin was installed successfully"
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:542
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:627
 msgid ""
 "The plugin was installed successfully, however a restart of OctoPrint is "
 "needed for that to take effect."
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:543
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:628
 msgid ""
 "The plugin was installed successfully, however a reload of the page is "
 "needed for that to take effect."
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:554
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:639
 #, python-format
 msgid "Reinstalling the plugin from URL \"%(url)s\" failed: %(reason)s"
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:556
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:641
 #, python-format
 msgid "Installing the plugin from URL \"%(url)s\" failed: %(reason)s"
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:560
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:645
 #, python-format
 msgid ""
 "Reinstalling the plugin from URL \"%(url)s\" failed, please see the log "
 "for details."
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:562
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:647
 #, python-format
 msgid ""
 "Installing the plugin from URL \"%(url)s\" failed, please see the log for"
 " details."
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:571
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:656
 #, python-format
 msgid "Plugin \"%(name)s\" uninstalled"
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:572
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:657
 msgid "The plugin was uninstalled successfully"
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:573
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:658
 msgid ""
 "The plugin was uninstalled successfully, however a restart of OctoPrint "
 "is needed for that to take effect."
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:574
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:659
 msgid ""
 "The plugin was uninstalled successfully, however a reload of the page is "
 "needed for that to take effect."
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:578
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:663
 #, python-format
 msgid "Uninstalling the plugin failed: %(reason)s"
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:580
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:665
 msgid "Uninstalling the plugin failed, please see the log for details."
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:588
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:673
 #, python-format
 msgid "Plugin \"%(name)s\" enabled"
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:589
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:674
 msgid "The plugin was enabled successfully."
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:590
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:675
 msgid ""
 "The plugin was enabled successfully, however a restart of OctoPrint is "
 "needed for that to take effect."
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:591
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:676
 msgid ""
 "The plugin was enabled successfully, however a reload of the page is "
 "needed for that to take effect."
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:595
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:612
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:680
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:697
 #, python-format
 msgid "Toggling the plugin failed: %(reason)s"
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:597
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:614
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:682
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:699
 msgid "Toggling the plugin failed, please see the log for details."
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:605
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:690
 #, python-format
 msgid "Plugin \"%(name)s\" disabled"
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:606
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:691
 msgid "The plugin was disabled successfully."
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:607
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:692
 msgid ""
 "The plugin was disabled successfully, however a restart of OctoPrint is "
 "needed for that to take effect."
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:608
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:693
 msgid ""
 "The plugin was disabled successfully, however a reload of the page is "
 "needed for that to take effect."
@@ -388,128 +414,222 @@ msgid ""
 " printer is printing."
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:9
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:8
+msgid ""
+"\n"
+"    The <code>pip</code> command could not be found.\n"
+"    Please configure it manually. No installation and uninstallation of "
+"plugin\n"
+"    packages is possible while <code>pip</code> is unavailable.\n"
+msgstr ""
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:16
+msgid ""
+"\n"
+"    The <code>pip</code> command is configured to use <code>sudo</code>. "
+"This\n"
+"    is <strong>not</strong> recommended due to security reasons. It is "
+"<strong>strongly</strong>\n"
+"    suggested you install OctoPrint under a\n"
+"    <a href=\"https://github.com/foosel/OctoPrint/#installation\">user-"
+"owned virtual environment</a>\n"
+"    so that the use of <code>sudo</code> is not needed for plugin "
+"management.\n"
+msgstr ""
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:30
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:204
+#: src/octoprint/plugins/softwareupdate/templates/softwareupdate_settings.jinja2:20
+#: src/octoprint/plugins/softwareupdate/templates/softwareupdate_settings.jinja2:72
+msgid "Plugin Configuration"
+msgstr ""
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:33
 msgid "Installed Plugins"
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:21
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:45
 msgid "Bundled"
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:24
-#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:99
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:48
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:129
 #: src/octoprint/templates/index.jinja2:118
 msgid "Homepage"
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:31
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:55
 msgid "Uninstall Plugin"
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:48
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:72
 msgid "Get More..."
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:59
-#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:167
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:87
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:197
 #: src/octoprint/templates/dialogs/settings/appearance.jinja2:96
 msgid "Close"
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:66
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:94
 msgid "Install new Plugins..."
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:71
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:101
 #, python-format
 msgid "... from the <a href=\"%(url)s\" target=\"_blank\">Plugin Repository</a>"
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:75
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:105
 msgid "Sort by title"
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:76
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:106
 msgid "Sort by publication date"
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:76
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:106
 #: src/octoprint/templates/dialogs/settings/logs.jinja2:6
 #: src/octoprint/templates/sidebar/files_header.jinja2:7
 #: src/octoprint/templates/sidebar/files_header.jinja2:8
-#: src/octoprint/templates/tabs/timelapse.jinja2:49
+#: src/octoprint/templates/tabs/timelapse.jinja2:50
 msgid "descending"
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:78
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:108
 msgid "Only show uninstalled plugins"
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:79
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:109
 msgid "Only show compatible plugins"
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:81
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:111
 msgid "Refresh list from repository"
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:87
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:117
 #: src/octoprint/templates/sidebar/files.jinja2:2
 msgid "Search..."
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:98
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:128
 msgid "Details"
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:115
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:145
 msgid "Sadly the repository is currently not available"
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:118
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:148
 msgid "Is your OctoPrint installation connected to the internet?"
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:123
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:153
 msgid "... from URL"
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:128
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:158
 msgid "Enter URL..."
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:132
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:162
 msgid "This does not look like a valid \"http://\" or \"https://\" URL."
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:135
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:165
 msgid "... from an uploaded archive"
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:148
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:178
 msgid ""
 "This does not look like a valid plugin archive. Valid plugin archives "
 "should be either zip files or tarballs and have the extension \".zip\", "
 "\".tar.gz\", \".tgz\" or \".tar\""
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:152
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:182
 #: src/octoprint/plugins/softwareupdate/templates/softwareupdate_settings.jinja2:62
 #: src/octoprint/templates/tabs/terminal.jinja2:25
 msgid "Advanced options"
 msgstr ""
 
-#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:158
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:188
 msgid "Use <code>--process-dependency-links</code> with <code>pip install</code>"
 msgstr ""
 
-#: src/octoprint/plugins/softwareupdate/__init__.py:378
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:208
+msgid ""
+"pip command to use for managing plugins. You might have to configure this"
+" if auto detection fails."
+msgstr ""
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:209
+msgid "pip command"
+msgstr ""
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:211
+msgid "Autodetect"
+msgstr ""
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:212
+msgid ""
+"<strong>Only</strong> set this if OctoPrint cannot autodetect the path to"
+" <code>pip</code> to use for managing plugins."
+msgstr ""
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:215
+msgid ""
+"Additional arguments for pip command. You should normally not have to "
+"change this."
+msgstr ""
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:216
+msgid "Additional pip arguments"
+msgstr ""
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:221
+msgid ""
+"URL of the Plugin Repository to use. You should normally not have to "
+"change this."
+msgstr ""
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:222
+msgid "Repository URL"
+msgstr ""
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:227
+msgid ""
+"How long to cache repository data, in minutes. You should normally not "
+"have to change this."
+msgstr ""
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:228
+msgid "Repository cache TTL"
+msgstr ""
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:239
+#: src/octoprint/plugins/softwareupdate/templates/softwareupdate_settings.jinja2:100
+#: src/octoprint/templates/dialogs/confirmation.jinja2:11
+#: src/octoprint/templates/dialogs/settings.jinja2:51
+#: src/octoprint/templates/dialogs/slicing.jinja2:50
+#: src/octoprint/templates/sidebar/state.jinja2:19
+msgid "Cancel"
+msgstr ""
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:240
+#: src/octoprint/plugins/softwareupdate/templates/softwareupdate_settings.jinja2:101
+#: src/octoprint/templates/dialogs/settings.jinja2:52
+msgid "Save"
+msgstr ""
+
+#: src/octoprint/plugins/softwareupdate/__init__.py:394
 msgid "Software Update"
 msgstr ""
 
-#: src/octoprint/plugins/softwareupdate/__init__.py:662
-#: src/octoprint/plugins/softwareupdate/__init__.py:693
-#: src/octoprint/server/views.py:149
+#: src/octoprint/plugins/softwareupdate/__init__.py:680
+#: src/octoprint/server/views.py:155
 #: src/octoprint/static/js/app/viewmodels/appearance.js:11
 #: src/octoprint/static/js/app/viewmodels/appearance.js:13
 #: src/octoprint/static/js/app/viewmodels/appearance.js:18
@@ -525,142 +645,132 @@ msgstr ""
 msgid "Commit"
 msgstr ""
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:145
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:147
 msgid "There are updates available for the following components:"
 msgstr ""
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:159
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:161
 msgid ""
 "Those components marked with <i class=\"icon-ok\"></i> can be updated "
 "directly."
 msgstr ""
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:162
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:164
 msgid "Update Available"
 msgstr ""
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:174
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:176
 msgid "Ignore"
 msgstr ""
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:178
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:180
 msgid ""
 "You can make this message display again via \"Settings\" > \"Software "
 "Update\" > \"Check for update now\""
 msgstr ""
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:182
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:184
 msgid "Update now"
 msgstr ""
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:199
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:201
 msgid "Everything is up-to-date"
 msgstr ""
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:264
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:266
 msgid "Updating..."
 msgstr ""
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:265
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:267
 msgid "Now updating, please wait."
 msgstr ""
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:284
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:286
 msgid "Update not started!"
 msgstr ""
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:285
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:287
 msgid ""
 "The update could not be started. Is it already active? Please consult the"
 " log for details."
 msgstr ""
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:307
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:309
 msgid "Can't update while printing"
 msgstr ""
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:308
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:310
 msgid ""
 "A print job is currently in progress. Updating will be prevented until it"
 " is done."
 msgstr ""
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:312
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:314
 msgid "This will update your OctoPrint installation and restart the server."
 msgstr ""
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:336
-msgid "Restart successful!"
-msgstr ""
-
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:337
-msgid ""
-"The server was restarted successfully. The page will now reload "
-"automatically."
-msgstr ""
-
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:369
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:363
 #, python-format
 msgid "Now updating %(name)s to %(version)s"
 msgstr ""
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:377
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:371
 msgid "Update successful, restarting!"
 msgstr ""
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:378
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:372
 msgid "The update finished successfully and the server will now be restarted."
 msgstr ""
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:389
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:431
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:383
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:425
 msgid "Restart failed"
 msgstr ""
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:390
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:432
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:384
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:426
 msgid ""
 "The server apparently did not restart by itself, you'll have to do it "
 "manually. Please consult the log file on what went wrong."
 msgstr ""
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:406
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:400
 msgid "The update finished successfully, please restart OctoPrint now."
 msgstr ""
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:408
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:402
 msgid "The update finished successfully, please reboot the server now."
 msgstr ""
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:412
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:406
 msgid "Update successful, restart required!"
 msgstr ""
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:425
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:419
 msgid ""
 "Restarting OctoPrint failed, please restart it manually. You might also "
 "want to consult the log file on what went wrong here."
 msgstr ""
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:427
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:421
 msgid ""
 "Rebooting the server failed, please reboot it manually. You might also "
 "want to consult the log file on what went wrong here."
 msgstr ""
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:445
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:439
 msgid "Update successful!"
 msgstr ""
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:446
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:440
 msgid "The update finished successfully."
 msgstr ""
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:458
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:452
 msgid "Update failed!"
 msgstr ""
 
-#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:459
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:453
 msgid ""
 "The update did not finish successfully. Please consult the log for "
 "details."
@@ -696,11 +806,6 @@ msgid ""
 "        <a href=\"https://github.com/foosel/OctoPrint/wiki/Plugin"
 ":-Software-Update\" target=\"_blank\">Documentation</a>.\n"
 "    </p>\n"
-msgstr ""
-
-#: src/octoprint/plugins/softwareupdate/templates/softwareupdate_settings.jinja2:20
-#: src/octoprint/plugins/softwareupdate/templates/softwareupdate_settings.jinja2:72
-msgid "Plugin Configuration"
 msgstr ""
 
 #: src/octoprint/plugins/softwareupdate/templates/softwareupdate_settings.jinja2:23
@@ -747,120 +852,107 @@ msgstr ""
 msgid "Version cache TTL"
 msgstr ""
 
-#: src/octoprint/plugins/softwareupdate/templates/softwareupdate_settings.jinja2:100
-#: src/octoprint/templates/dialogs/confirmation.jinja2:11
-#: src/octoprint/templates/dialogs/settings.jinja2:51
-#: src/octoprint/templates/dialogs/slicing.jinja2:50
-#: src/octoprint/templates/sidebar/state.jinja2:19
-msgid "Cancel"
-msgstr ""
-
-#: src/octoprint/plugins/softwareupdate/templates/softwareupdate_settings.jinja2:101
-#: src/octoprint/templates/dialogs/settings.jinja2:52
-msgid "Save"
-msgstr ""
-
-#: src/octoprint/server/views.py:58
+#: src/octoprint/server/views.py:64
 msgid "Plugins"
 msgstr ""
 
-#: src/octoprint/server/views.py:115
+#: src/octoprint/server/views.py:121
 msgid "Connection"
 msgstr ""
 
-#: src/octoprint/server/views.py:116
+#: src/octoprint/server/views.py:122
 msgid "State"
 msgstr ""
 
-#: src/octoprint/server/views.py:117
+#: src/octoprint/server/views.py:123
 msgid "Files"
 msgstr ""
 
-#: src/octoprint/server/views.py:123
+#: src/octoprint/server/views.py:129
 msgid "Temperature"
 msgstr ""
 
-#: src/octoprint/server/views.py:124
+#: src/octoprint/server/views.py:130
 msgid "Control"
 msgstr ""
 
-#: src/octoprint/server/views.py:125
+#: src/octoprint/server/views.py:131
 msgid "Terminal"
 msgstr ""
 
-#: src/octoprint/server/views.py:128
+#: src/octoprint/server/views.py:134
 msgid "GCode Viewer"
 msgstr ""
 
-#: src/octoprint/server/views.py:130
+#: src/octoprint/server/views.py:136
 #: src/octoprint/templates/sidebar/state.jinja2:3
 msgid "Timelapse"
 msgstr ""
 
-#: src/octoprint/server/views.py:135
+#: src/octoprint/server/views.py:141
 msgid "Printer"
 msgstr ""
 
-#: src/octoprint/server/views.py:137
+#: src/octoprint/server/views.py:143
 msgid "Serial Connection"
 msgstr ""
 
-#: src/octoprint/server/views.py:138
+#: src/octoprint/server/views.py:144
 #: src/octoprint/templates/dialogs/settings/printerprofiles.jinja2:1
 msgid "Printer Profiles"
 msgstr ""
 
-#: src/octoprint/server/views.py:139
+#: src/octoprint/server/views.py:145
 msgid "Temperatures"
 msgstr ""
 
-#: src/octoprint/server/views.py:140
+#: src/octoprint/server/views.py:146
 msgid "Terminal Filters"
 msgstr ""
 
-#: src/octoprint/server/views.py:141
+#: src/octoprint/server/views.py:147
 msgid "GCODE Scripts"
 msgstr ""
 
-#: src/octoprint/server/views.py:143 src/octoprint/server/views.py:145
+#: src/octoprint/server/views.py:149 src/octoprint/server/views.py:151
 msgid "Features"
 msgstr ""
 
-#: src/octoprint/server/views.py:146
+#: src/octoprint/server/views.py:152
 msgid "Webcam"
 msgstr ""
 
-#: src/octoprint/server/views.py:147
+#: src/octoprint/server/views.py:153
 msgid "API"
 msgstr ""
 
-#: src/octoprint/server/views.py:151
+#: src/octoprint/server/views.py:157
 #: src/octoprint/templates/dialogs/settings/folders.jinja2:2
 msgid "Folders"
 msgstr ""
 
-#: src/octoprint/server/views.py:152
+#: src/octoprint/server/views.py:158
 msgid "Appearance"
 msgstr ""
 
-#: src/octoprint/server/views.py:153
+#: src/octoprint/server/views.py:159
 #: src/octoprint/templates/dialogs/settings/logs.jinja2:2
 msgid "Logs"
 msgstr ""
 
-#: src/octoprint/server/views.py:154
+#: src/octoprint/server/views.py:160
 msgid "Server"
 msgstr ""
 
-#: src/octoprint/server/views.py:157
+#: src/octoprint/server/views.py:163
 msgid "Access Control"
 msgstr ""
 
-#: src/octoprint/server/views.py:163
+#: src/octoprint/server/views.py:169
 msgid "Access"
 msgstr ""
 
-#: src/octoprint/server/views.py:164
+#: src/octoprint/server/views.py:170
 msgid "Interface"
 msgstr ""
 
@@ -887,71 +979,96 @@ msgid ""
 msgstr ""
 
 #: src/octoprint/static/js/app/dataupdater.js:169
-#: src/octoprint/static/js/app/dataupdater.js:197
+#: src/octoprint/static/js/app/dataupdater.js:222
 #, python-format
 msgid "Slicing ... (%(percentage)d%%)"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:186
+#: src/octoprint/static/js/app/dataupdater.js:187
 msgid "Rendering timelapse"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:186
+#: src/octoprint/static/js/app/dataupdater.js:187
 #, python-format
 msgid "Now rendering timelapse %(movie_basename)s"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:188
+#: src/octoprint/static/js/app/dataupdater.js:189
 msgid "Timelapse ready"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:188
+#: src/octoprint/static/js/app/dataupdater.js:189
 #, python-format
 msgid "New timelapse %(movie_basename)s is done rendering."
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:190
+#: src/octoprint/static/js/app/dataupdater.js:191
 #, python-format
 msgid ""
 "Rendering of timelapse %(movie_basename)s failed with return code "
 "%(returncode)s"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:192
+#: src/octoprint/static/js/app/dataupdater.js:194
 msgid "Rendering failed"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:199
+#: src/octoprint/static/js/app/dataupdater.js:200
+msgid "Capturing timelapse postroll"
+msgstr ""
+
+#: src/octoprint/static/js/app/dataupdater.js:204
+msgid "Now capturing timelapse post roll, this will take only a moment..."
+msgstr ""
+
+#: src/octoprint/static/js/app/dataupdater.js:207
+#, python-format
+msgid "%(minutes)d min"
+msgstr ""
+
+#: src/octoprint/static/js/app/dataupdater.js:209
+#, python-format
+msgid "%(seconds)d sec"
+msgstr ""
+
+#: src/octoprint/static/js/app/dataupdater.js:211
+#, python-format
+msgid ""
+"Now capturing timelapse post roll, this will take approximately "
+"%(duration)s..."
+msgstr ""
+
+#: src/octoprint/static/js/app/dataupdater.js:224
 msgid "Slicing ..."
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:205
+#: src/octoprint/static/js/app/dataupdater.js:230
 msgid "Slicing done"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:205
+#: src/octoprint/static/js/app/dataupdater.js:230
 #, python-format
 msgid "Sliced %(stl)s to %(gcode)s, took %(time).2f seconds"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:215
+#: src/octoprint/static/js/app/dataupdater.js:240
 #, python-format
 msgid "Could not slice %(stl)s to %(gcode)s: %(reason)s"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:216
+#: src/octoprint/static/js/app/dataupdater.js:241
 msgid "Slicing failed"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:220
+#: src/octoprint/static/js/app/dataupdater.js:245
 msgid "Streaming ..."
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:226
+#: src/octoprint/static/js/app/dataupdater.js:251
 msgid "Streaming done"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:227
+#: src/octoprint/static/js/app/dataupdater.js:252
 #, python-format
 msgid "Streamed %(local)s to %(remote)s on SD, took %(time).2f seconds"
 msgstr ""
@@ -970,51 +1087,51 @@ msgstr ""
 msgid "off"
 msgstr ""
 
-#: src/octoprint/static/js/app/main.js:46
+#: src/octoprint/static/js/app/main.js:129
 msgid "Offline"
 msgstr ""
 
-#: src/octoprint/static/js/app/main.js:47
+#: src/octoprint/static/js/app/main.js:130
 msgid "Opening serial port"
 msgstr ""
 
-#: src/octoprint/static/js/app/main.js:48
+#: src/octoprint/static/js/app/main.js:131
 msgid "Detecting serial port"
 msgstr ""
 
-#: src/octoprint/static/js/app/main.js:49
+#: src/octoprint/static/js/app/main.js:132
 msgid "Detecting baudrate"
 msgstr ""
 
-#: src/octoprint/static/js/app/main.js:50
+#: src/octoprint/static/js/app/main.js:133
 msgid "Connecting"
 msgstr ""
 
-#: src/octoprint/static/js/app/main.js:51
+#: src/octoprint/static/js/app/main.js:134
 msgid "Operational"
 msgstr ""
 
-#: src/octoprint/static/js/app/main.js:52
+#: src/octoprint/static/js/app/main.js:135
 msgid "Printing from SD"
 msgstr ""
 
-#: src/octoprint/static/js/app/main.js:53
+#: src/octoprint/static/js/app/main.js:136
 msgid "Sending file to SD"
 msgstr ""
 
-#: src/octoprint/static/js/app/main.js:54
+#: src/octoprint/static/js/app/main.js:137
 msgid "Printing"
 msgstr ""
 
-#: src/octoprint/static/js/app/main.js:55
+#: src/octoprint/static/js/app/main.js:138
 msgid "Paused"
 msgstr ""
 
-#: src/octoprint/static/js/app/main.js:56
+#: src/octoprint/static/js/app/main.js:139
 msgid "Closed"
 msgstr ""
 
-#: src/octoprint/static/js/app/main.js:57
+#: src/octoprint/static/js/app/main.js:140
 msgid "Transfering file to SD"
 msgstr ""
 
@@ -1027,15 +1144,15 @@ msgstr ""
 msgid "Disconnect"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/control.js:60
+#: src/octoprint/static/js/app/viewmodels/control.js:64
 #: src/octoprint/static/js/app/viewmodels/files.js:330
-#: src/octoprint/static/js/app/viewmodels/gcode.js:453
+#: src/octoprint/static/js/app/viewmodels/gcode.js:467
 #: src/octoprint/static/js/app/viewmodels/printerstate.js:167
 #: src/octoprint/static/js/app/viewmodels/temperature.js:58
 msgid "Tool"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/control.js:67
+#: src/octoprint/static/js/app/viewmodels/control.js:71
 #: src/octoprint/static/js/app/viewmodels/temperature.js:70
 msgid "Hotend"
 msgstr ""
@@ -1091,60 +1208,60 @@ msgid ""
 "be accessible by everyone - that also includes the bad guys!</strong>"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/gcode.js:14
+#: src/octoprint/static/js/app/viewmodels/gcode.js:18
 msgid "Loading..."
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/gcode.js:18
+#: src/octoprint/static/js/app/viewmodels/gcode.js:22
 msgid "Analyzing..."
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/gcode.js:22
+#: src/octoprint/static/js/app/viewmodels/gcode.js:26
 msgid "Analyzed"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/gcode.js:420
+#: src/octoprint/static/js/app/viewmodels/gcode.js:434
 msgid "Model size"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/gcode.js:421
+#: src/octoprint/static/js/app/viewmodels/gcode.js:435
 msgid "Estimated layer height"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/gcode.js:421
+#: src/octoprint/static/js/app/viewmodels/gcode.js:435
 msgid "mm"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/gcode.js:422
+#: src/octoprint/static/js/app/viewmodels/gcode.js:436
 msgid "Layer count"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/gcode.js:422
+#: src/octoprint/static/js/app/viewmodels/gcode.js:436
 msgid "printed"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/gcode.js:422
+#: src/octoprint/static/js/app/viewmodels/gcode.js:436
 msgid "visited"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/gcode.js:445
+#: src/octoprint/static/js/app/viewmodels/gcode.js:459
 msgid "Layer number"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/gcode.js:446
+#: src/octoprint/static/js/app/viewmodels/gcode.js:460
 msgid "Layer height"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/gcode.js:447
+#: src/octoprint/static/js/app/viewmodels/gcode.js:461
 msgid "GCODE commands in layer"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/gcode.js:450
-#: src/octoprint/static/js/app/viewmodels/gcode.js:453
+#: src/octoprint/static/js/app/viewmodels/gcode.js:464
+#: src/octoprint/static/js/app/viewmodels/gcode.js:467
 msgid "Filament used by layer"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/gcode.js:457
+#: src/octoprint/static/js/app/viewmodels/gcode.js:471
 msgid "Print time for layer"
 msgstr ""
 
@@ -1318,18 +1435,18 @@ msgid "Pause"
 msgstr ""
 
 #: src/octoprint/static/js/app/viewmodels/printerstate.js:96
-#: src/octoprint/templates/tabs/timelapse.jinja2:10
+#: src/octoprint/templates/tabs/timelapse.jinja2:11
 msgid "On Z Change"
 msgstr ""
 
 #: src/octoprint/static/js/app/viewmodels/printerstate.js:98
-#: src/octoprint/templates/tabs/timelapse.jinja2:11
+#: src/octoprint/templates/tabs/timelapse.jinja2:10
 msgid "Timed"
 msgstr ""
 
 #: src/octoprint/static/js/app/viewmodels/printerstate.js:98
-#: src/octoprint/templates/tabs/timelapse.jinja2:24
-#: src/octoprint/templates/tabs/timelapse.jinja2:31
+#: src/octoprint/templates/tabs/timelapse.jinja2:25
+#: src/octoprint/templates/tabs/timelapse.jinja2:32
 msgid "sec"
 msgstr ""
 
@@ -1369,39 +1486,51 @@ msgid "Slicing %(filename)s"
 msgstr ""
 
 #: src/octoprint/static/js/app/viewmodels/temperature.js:23
-#: src/octoprint/static/js/app/viewmodels/temperature.js:76
+#: src/octoprint/static/js/app/viewmodels/temperature.js:78
 #: src/octoprint/templates/dialogs/settings/temperatures.jinja2:16
 msgid "Bed"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/temperature.js:115
+#: src/octoprint/static/js/app/viewmodels/temperature.js:121
 msgid "just now"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/temperature.js:117
+#: src/octoprint/static/js/app/viewmodels/temperature.js:123
 msgid "min"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/temperature.js:263
+#: src/octoprint/static/js/app/viewmodels/temperature.js:264
 #: src/octoprint/templates/tabs/temperature.jinja2:11
 msgid "Actual"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/temperature.js:268
+#: src/octoprint/static/js/app/viewmodels/temperature.js:269
 #: src/octoprint/templates/tabs/temperature.jinja2:12
 msgid "Target"
-msgstr ""
-
-#: src/octoprint/static/js/app/viewmodels/terminal.js:59
-#, python-format
-msgid "showing %(displayed)d lines"
 msgstr ""
 
 #: src/octoprint/static/js/app/viewmodels/terminal.js:61
 #, python-format
 msgid ""
 "showing %(displayed)d lines (%(filtered)d of %(total)d total lines "
+"filtered, buffer full)"
+msgstr ""
+
+#: src/octoprint/static/js/app/viewmodels/terminal.js:63
+#, python-format
+msgid ""
+"showing %(displayed)d lines (%(filtered)d of %(total)d total lines "
 "filtered)"
+msgstr ""
+
+#: src/octoprint/static/js/app/viewmodels/terminal.js:67
+#, python-format
+msgid "showing %(displayed)d lines (buffer full)"
+msgstr ""
+
+#: src/octoprint/static/js/app/viewmodels/terminal.js:69
+#, python-format
+msgid "showing %(displayed)d lines"
 msgstr ""
 
 #: src/octoprint/static/js/app/viewmodels/usersettings.js:10
@@ -1591,7 +1720,7 @@ msgstr ""
 #: src/octoprint/templates/dialogs/settings/accesscontrol.jinja2:7
 #: src/octoprint/templates/dialogs/settings/logs.jinja2:15
 #: src/octoprint/templates/dialogs/settings/printerprofiles.jinja2:7
-#: src/octoprint/templates/tabs/timelapse.jinja2:56
+#: src/octoprint/templates/tabs/timelapse.jinja2:57
 msgid "Action"
 msgstr ""
 
@@ -1883,8 +2012,8 @@ msgstr ""
 #: src/octoprint/templates/dialogs/settings/logs.jinja2:13
 #: src/octoprint/templates/sidebar/files.jinja2:10
 #: src/octoprint/templates/sidebar/files.jinja2:24
-#: src/octoprint/templates/tabs/timelapse.jinja2:49
-#: src/octoprint/templates/tabs/timelapse.jinja2:55
+#: src/octoprint/templates/tabs/timelapse.jinja2:50
+#: src/octoprint/templates/tabs/timelapse.jinja2:56
 msgid "Size"
 msgstr ""
 
@@ -2594,35 +2723,45 @@ msgid ""
 "models."
 msgstr ""
 
-#: src/octoprint/templates/tabs/timelapse.jinja2:15
+#: src/octoprint/templates/tabs/timelapse.jinja2:14
+msgid "Note"
+msgstr ""
+
+#: src/octoprint/templates/tabs/timelapse.jinja2:14
+msgid ""
+"Does not work when printing from the printer's SD Card (no way to detect "
+"the change in Z reliably). Use \"Timed\" mode for those prints instead."
+msgstr ""
+
+#: src/octoprint/templates/tabs/timelapse.jinja2:16
 msgid "Timelapse frame rate (in frames per second)"
 msgstr ""
 
-#: src/octoprint/templates/tabs/timelapse.jinja2:18
+#: src/octoprint/templates/tabs/timelapse.jinja2:19
 msgid "fps"
 msgstr ""
 
-#: src/octoprint/templates/tabs/timelapse.jinja2:21
+#: src/octoprint/templates/tabs/timelapse.jinja2:22
 msgid "Timelapse post roll (in rendered seconds)"
 msgstr ""
 
-#: src/octoprint/templates/tabs/timelapse.jinja2:28
+#: src/octoprint/templates/tabs/timelapse.jinja2:29
 msgid "Interval"
 msgstr ""
 
-#: src/octoprint/templates/tabs/timelapse.jinja2:37
+#: src/octoprint/templates/tabs/timelapse.jinja2:38
 msgid "Save as default"
 msgstr ""
 
-#: src/octoprint/templates/tabs/timelapse.jinja2:42
+#: src/octoprint/templates/tabs/timelapse.jinja2:43
 msgid "Save config"
 msgstr ""
 
-#: src/octoprint/templates/tabs/timelapse.jinja2:46
+#: src/octoprint/templates/tabs/timelapse.jinja2:47
 msgid "Finished Timelapses"
 msgstr ""
 
-#: src/octoprint/templates/tabs/timelapse.jinja2:49
+#: src/octoprint/templates/tabs/timelapse.jinja2:50
 msgid "Creation date"
 msgstr ""
 

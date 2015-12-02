@@ -81,6 +81,8 @@ class VirtualPrinter(object):
 		self._sendWait = settings().getBoolean(["devel", "virtualPrinter", "sendWait"])
 		self._waitInterval = settings().getFloat(["devel", "virtualPrinter", "waitInterval"])
 
+		self._echoOnM117 = settings().getBoolean(["devel", "virtualPrinter", "echoOnM117"])
+
 		self.currentLine = 0
 		self.lastN = 0
 
@@ -306,7 +308,8 @@ class VirtualPrinter(object):
 
 	def _gcode_M117(self, data):
 		# we'll just use this to echo a message, to allow playing around with pause triggers
-		self._send("echo:%s" % re.search("M117\s+(.*)", data).group(1))
+		if self._echoOnM117:
+			self._send("echo:%s" % re.search("M117\s+(.*)", data).group(1))
 
 	def _gcode_M400(self, data):
 		self.buffered.join()
