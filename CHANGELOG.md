@@ -12,9 +12,9 @@ The plugin "Updatefix 1.2.7" can be found [in the plugin repository](http://plug
 [on Github](https://github.com/OctoPrint/OctoPrint-Updatefix-1.2.7/).
 
 Before attempting to update your installation from version 1.2.7 to version 1.2.8,
-please install the plugin via your plugin manager (it doesn't necessitate a
-restart or even a reload). Afterwards you can update as usual. The plugin will
-self-uninstall once it detects that it's running under OctoPrint 1.2.8.
+please install the plugin via your plugin manager and restart your server.
+Afterwards you can update as usual. The plugin will self-uninstall once it
+detects that it's running under OctoPrint 1.2.8.
 
 ### Improvements
 
