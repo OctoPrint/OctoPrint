@@ -28,7 +28,7 @@
 
         update: function (id, profile, additional, opts) {
             profile = profile || {};
-            additional = addtional || {};
+            additional = additional || {};
 
             var data = $.extend({}, additional);
             data.profile = profile;
