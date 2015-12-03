@@ -100,7 +100,7 @@ $(function () {
 		
 		self.do_calibration = function(amount){
 			self._zOffset += amount;
-			self.control.sendJogCommand('z',amount);
+			self.control.sendJogCommand('z',1, amount);
 			console.log("Z Offset", self._zOffset);
 		};
 		
