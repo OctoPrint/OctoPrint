@@ -86,14 +86,28 @@ $(function () {
 			}
 		};
 		
-		self.calibrate = function(){
-			console.log('calibrate');
+		
+		
+		
+		self.init_calibration = function(){
+			self._zOffset = 0;
+			self.control.sendHomeCommand(['z']);	
+			console.log('init calibration, Z Offset: 0');
 		};
 		
-		self.readyForCalibration = function(){
-			return self.printerstate.isOperational() && !self.printerstate.isPrinting() && self.loginState.isUser();
+		self.do_calibration = function(amount){
+			self._zOffset += amount;
+			self.control.sendJogCommand('z',amount);
+			console.log("Z Offset", self._zOffset);
 		};
 		
+		self.finish_calibration = function(){
+			var cmd = "M211Z"+self._zOffset;
+			self.control.sendCustomCommand({
+				commands: [cmd,"M500"]
+			});	
+		};
+
 		self.doodler_gcode_upload_done = function(payload){
 			// start OctoPrint streaming after upload is done
 			console.log("gcode_upload_done", payload);
@@ -220,6 +234,6 @@ $(function () {
 	ADDITIONAL_VIEWMODELS.push([
 		BocusiniDoodlerViewModel,
 		["loginStateViewModel", "printerStateViewModel", "settingsViewModel", "controlViewModel"],
-		["#system_buttons", "#bocusini_printerstate_buttons", '#bocusini_statemonitor', '#calibrateBtn']
+		["#system_buttons", "#bocusini_printerstate_buttons", '#bocusini_statemonitor', '#bocusini_calibration']
 	]);
 });
