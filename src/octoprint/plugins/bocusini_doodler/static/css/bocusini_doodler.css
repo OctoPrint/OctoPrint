@@ -102,6 +102,19 @@
 	height: 85vh;
 }
 
+#bocusini_calibration .tab-content {
+	height:50vh;
+}
+
+#bocusini_calibration .tab-pane {
+	padding:1em;
+}
+
+#zControlButtons {
+	float:left;
+	width: 100px;
+}
+
 .spacer {
 	width:100%;
 	height: 27vh;
@@ -215,13 +228,22 @@
   height: 79.5vh;
 }
 
-.calibration_picture {
-	background-image: url(/plugin/bocusini_doodler/static/img/calibration.png);
+.calibration_picture.step1{
+	background-image: url(/plugin/bocusini_doodler/static/img/calibration1.png);
 	background-size: contain;
 	height: 200px;
 	width: 100%;
-	margin: 1em 0;
-	
+	background-repeat: no-repeat;
+}
+
+.calibration_picture.step2 {
+	background-image: url(/plugin/bocusini_doodler/static/img/calibration2.png);
+	background-size: contain;
+	height: 400px;
+	width: 200px;
+	float: left;
+	background-repeat: no-repeat;
+	background-position: top left;
 }
 
 #calibrateBtn {

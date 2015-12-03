@@ -93,6 +93,8 @@ $(function () {
 			self._zOffset = 0;
 			self.control.sendHomeCommand(['z']);	
 			console.log('init calibration, Z Offset: 0');
+			$('#calibration_step1').removeClass('active');
+			$('#calibration_step2').addClass('active');
 		};
 		
 		self.do_calibration = function(amount){
@@ -106,6 +108,8 @@ $(function () {
 			self.control.sendCustomCommand({
 				commands: [cmd,"M500"]
 			});	
+			$('.calibration_tab').removeClass('active');
+			$('#calibration_step1').addClass('active');
 		};
 
 		self.doodler_gcode_upload_done = function(payload){

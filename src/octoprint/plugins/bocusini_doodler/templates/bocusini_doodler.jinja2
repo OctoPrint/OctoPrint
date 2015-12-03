@@ -199,54 +199,7 @@
 							</div>
 						</div>
 						<div id="bocusini_calibration" class="tab-pane row">
-							<div class='span1'>
-								<div class="spacer"></div>
-								<div style="display: none;" data-bind="visible: loginState.isUser">
-									
-								</div>
-							</div>
-
-							<div class='span8 calibration_howto center_shadow'>
-								<div class='txt'>
-									Your Bocusini needs an inital calibration. 
-									Follow the simple steps below before your first print.
-									Remember to repeat this procedure each time after changing your nozzle.
-								</div>
-								<div class="calibration_picture"></div>
-								<div class="row">
-									<div class="span6">
-										<ol class='txt'>
-											<li>
-												 Move the printhead to the home position by pressing the home button. 
-											<button class="btn btn-default btn-large box" data-bind="click: function() { init_calibration(); }">Init</button>
-											</li>
-											<li>
-												Use the z-control buttons on the right to move the nozzle tip
-												to the printing surface. Be careful not to move too far as this will damage your Bocusini.
-											</li>
-											<li>
-												Click the 'Calibrate' button to store your settings. 
-												You are ready to print now.
-											</li>
-										</ol>		
-										<div class='txt' id='calibrateBtn'>
-											<button class="btn btn-default btn-large box" data-bind="click: function() { finish_calibration(); }"><i class="icon-ok"></i>Calibrate</button>
-										</div>
-									</div>
-									
-									<div class="span1">
-										<div id="zControlButtons" class="btn-group btn-group-vertical">
-											<button class="btn btn-default btn-large box" id="control-zinc" data-bind=" click: function() { do_calibration(5) }"><i class="icon-arrow-up large"></i></button>
-											<button class="btn btn-default btn-large box" id="control-zinc" data-bind=" click: function() { do_calibration(1) }"><i class="icon-arrow-up small"></i></button>
-											<button class="btn btn-default btn-large box" id="control-zinc" data-bind="click: function() { do_calibration(.1) }"><i class="icon-arrow-up tiny"></i></button>
-											<button class="btn btn-default btn-large box" id="control-zdec" data-bind="click: function() { do_calibration(-.1) }"><i class="icon-arrow-down tiny"></i></button>
-											<button class="btn btn-default btn-large box" id="control-zdec" data-bind="click: function() { do_calibration(-1) }"><i class="icon-arrow-down small"></i></button>
-											<button class="btn btn-default btn-large box" id="control-zdec" data-bind="click: function() { do_calibration(-5) }"><i class="icon-arrow-down large"></i></button>
-										</div>
-										
-									</div>
-								</div>
-							</div>
+							{% include 'calibration_tab.jinja2' %}
 						</div>
 					</div>
 				</div>
