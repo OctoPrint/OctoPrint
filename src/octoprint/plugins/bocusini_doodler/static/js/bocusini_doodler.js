@@ -86,6 +86,14 @@ $(function () {
 			}
 		};
 		
+		self.calibrate = function(){
+			console.log('calibrate');
+		};
+		
+		self.readyForCalibration = function(){
+			return self.printerstate.isOperational() && !self.printerstate.isPrinting() && self.loginState.isUser();
+		};
+		
 		self.doodler_gcode_upload_done = function(payload){
 			// start OctoPrint streaming after upload is done
 			console.log("gcode_upload_done", payload);
@@ -212,6 +220,6 @@ $(function () {
 	ADDITIONAL_VIEWMODELS.push([
 		BocusiniDoodlerViewModel,
 		["loginStateViewModel", "printerStateViewModel", "settingsViewModel", "controlViewModel"],
-		["#system_buttons", "#bocusini_printerstate_buttons", '#bocusini_statemonitor']
+		["#system_buttons", "#bocusini_printerstate_buttons", '#bocusini_statemonitor', '#calibrateBtn']
 	]);
 });

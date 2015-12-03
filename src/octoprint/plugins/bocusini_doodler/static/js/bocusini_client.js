@@ -552,8 +552,8 @@ function PrinterPanel() {
 		// reload after changing printer type 
 		_printerSettings = _form.readForm();
 		
-		var gcodePanel = _element.find("#gcodePanel");
-		gcodePanel.coolfieldset({collapsed:true});
+//		var gcodePanel = _element.find("#gcodePanel");
+//		gcodePanel.coolfieldset({collapsed:true});
 	}
 	this.load = function(completeHandler) {
 		

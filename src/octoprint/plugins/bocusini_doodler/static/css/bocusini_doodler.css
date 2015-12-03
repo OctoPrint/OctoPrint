@@ -1,5 +1,13 @@
+#bocusini_overlay .btn-large {
+	font-size: 28px;
+}
+
 #bocusini_overlay {
 	display:none;
+}
+
+.txt {
+	padding: 1em;
 }
 
 .centered_content {
@@ -16,16 +24,60 @@
 }
 
 #bocusini_nav {
-	padding-top: 10vh;
-	margin-bottom: -4px;
+	padding-top: 15vh;
 	z-index: 999;
-	margin-left: 4px;
+	margin-left: 8px;
 	border:none;
+}
+
+#bocusini_nav.nav-tabs-large {
+	position: relative;	
+}
+#bocusini_nav.nav-tabs-large>li {
+	list-style: none;
+	border-bottom: none;
+	position: relative;
+	-webkit-user-select: none;
+	float: left;
+	margin-bottom: -6px;
+}
+#bocusini_nav.nav-tabs-large:before, 
+#bocusini_nav.nav-tabs-large:after {
+  display: table;
+  line-height: 0;
+  content: "";
+}
+
+#bocusini_nav .nav-tabs-large:after {
+  clear: both;
 }
 
 #bocusini_nav.nav-tabs-large>li>a {
 	line-height: 28px;
 	font-size: larger;
+	margin-right: 2px;
+	padding-bottom: 8px;
+	padding-left: 12px;
+	padding-right: 12px;
+	padding-top: 8px;
+	border-radius: 4px 4px 0 0;
+}
+#bocusini_nav.nav-tabs-large>.active>a, 
+#bocusini_nav.nav-tabs-large>.active>a:hover {
+  color: #555;
+  cursor: default;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-bottom-color: transparent;
+}
+
+#bocusini_nav.nav-tabs-large>li>a {
+  background-color: rgba(255,255,255,.6);
+  border-bottom: none;
+  background: -moz-linear-gradient(top, rgba(255,255,255,0.6) 0%, rgba(255,255,255,1) 100%);
+  background: -webkit-linear-gradient(top, rgba(255,255,255,0.6) 0%,rgba(255,255,255,1) 100%);
+  background: linear-gradient(to bottom, rgba(255,255,255,0.6) 0%,rgba(255,255,255,1) 100%);
+  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ccffffff', endColorstr='#ffffff',GradientType=0 );
 }
 
 #control-zhome {
@@ -47,12 +99,12 @@
 }
 
 #bocusini_overlay .tab-content {
-	height: 90vh;
+	height: 85vh;
 }
 
 .spacer {
 	width:100%;
-	height: 25vh;
+	height: 27vh;
 }
 
 .printer_monitor {
@@ -67,13 +119,21 @@
 	font-size: x-small;
 }
 
+.small {
+	font-size: smaller;
+}
+
+.large {
+	font-size: larger;
+}
+
 .file_selection_box {
 	padding:.5em;
 }
 
 .gcode_thumb {
-	width: 200px;
-	height: 200px;
+	width: 180px;
+	height: 180px;
 	position: relative;
 	background-size: cover;
 	background-position: center;
@@ -126,7 +186,7 @@
 	border: 1px solid darkgray;
 	border-radius: 8px;
 	background-color: #fff;
-	padding: 1em 0;
+	padding: 1em;
 	margin-bottom: 1em;
 }
 
@@ -134,8 +194,9 @@
   text-align:center;
 }
 
-#bocusini_statemonitor {
-	padding: 1em;
+#bocusini_printerstate_buttons.btn-group-vertical,
+#buttonGroupPrinterDirect .btn-group-vertical {
+	width: 100%;
 }
 
 .bocusini_gcode_files .entry .btn-group {
@@ -148,6 +209,23 @@
 .heating_message {
 	color: red;
 	padding: .5em 0;
+}
+
+.calibration_howto {
+  height: 79.5vh;
+}
+
+.calibration_picture {
+	background-image: url(/plugin/bocusini_doodler/static/img/calibration.png);
+	background-size: contain;
+	height: 200px;
+	width: 100%;
+	margin: 1em 0;
+	
+}
+
+#calibrateBtn {
+	text-align: center;
 }
 
 .flip-container {
@@ -167,8 +245,8 @@
 }
 
 .flip-container, .front, .back {
-	width: 200px;
-	height: 200px;
+	width: 180px;
+	height: 180px;
 	
 }
 

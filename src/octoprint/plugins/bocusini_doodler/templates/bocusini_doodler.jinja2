@@ -24,9 +24,10 @@
 						<div class="span1"></div>
 						<div class="span8">
 
-							<ul class="nav nav-tabs nav-tabs-large" id="bocusini_nav" role='navigation' aria-expanded='true'>
+							<ul class="nav xxnav-tabs nav-tabs-large" id="bocusini_nav" role='xxnavigation' aria-expanded='true'>
 								<li role="presentation" class="active"><a href="#bocusini_doodler" data-toggle="tab">Create</a></li>
 								<li role="presentation"><a href="#bocusini_files" data-toggle="tab">Select</a></li>
+								<li role="presentation"><a href="#bocusini_calibration" data-toggle="tab">Calibration</a></li>
 							</ul>
 						</div>
 					</div>
@@ -197,6 +198,56 @@
 								{% include 'bocusini_files.jinja2' %}
 							</div>
 						</div>
+						<div id="bocusini_calibration" class="tab-pane row">
+							<div class='span1'>
+								<div class="spacer"></div>
+								<div style="display: none;" data-bind="visible: loginState.isUser">
+									
+								</div>
+							</div>
+
+							<div class='span8 calibration_howto center_shadow'>
+								<div class='txt'>
+									Your Bocusini needs an inital calibration. 
+									Follow the simple steps below before your first print.
+									Remember to repeat this procedure each time after changing your nozzle.
+								</div>
+								<div class="calibration_picture"></div>
+								<div class="row">
+									<div class="span6">
+										<ol class='txt'>
+											<li>
+												After powering up your Bocusini the printhead is moving upwards.
+												Wait until it has reached its top position.
+											</li>
+											<li>
+												Use the z-control buttons on the right to move the nozzle tip
+												to the printing surface. Be careful not to move too far as this will damage your Bocusini.
+											</li>
+											<li>
+												Click the 'Calibrate' button to store your settings. 
+												You are ready to print now.
+											</li>
+										</ol>		
+										<div class='txt' id='calibrateBtn'>
+											<button class="btn btn-default btn-large box" data-bind="enable: readyForCalibration, click: function() { calibrate(); }"><i class="icon-ok"></i>Calibrate</button>
+										</div>
+									</div>
+									
+									<div class="span1">
+										<div id="zControlButtons" class="btn-group btn-group-vertical">
+											<button class="btn btn-default btn-large box" id="control-zinc" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('z',5) }"><i class="icon-arrow-up large"></i></button>
+											<button class="btn btn-default btn-large box" id="control-zinc" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('z',1) }"><i class="icon-arrow-up small"></i></button>
+											<button class="btn btn-default btn-large box" id="control-zinc" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('z',.1) }"><i class="icon-arrow-up tiny"></i></button>
+											<button class="btn btn-default btn-large box" id="control-zdec" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('z',-.1) }"><i class="icon-arrow-down tiny"></i></button>
+											<button class="btn btn-default btn-large box" id="control-zdec" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('z',-1) }"><i class="icon-arrow-down small"></i></button>
+											<button class="btn btn-default btn-large box" id="control-zdec" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('z',-5) }"><i class="icon-arrow-down large"></i></button>
+										</div>
+										
+									</div>
+								</div>
+							</div>
+						</div>
 					</div>
 				</div>
 				<div class="span3" id='right_column'>
@@ -226,37 +277,35 @@
 
 
 
-					<div class="bocusini_box">
+					<div style="padding: 1em 0;">
 						<div id="buttonGroupPrinterDirect" >
 
-							<div class="btn-group btn-group-vertical">
+<!--							<div class="btn-group btn-group-vertical">
 								<button class="btn btn-default btn-large box" id="control-zinc" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('z',5) }"><i class="icon-arrow-up"></i></button>
 								<button class="btn btn-default btn-large box" id="control-zinc" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('z',1) }"><i class="icon-arrow-up tiny"></i></button>
 								<button class="btn btn-default btn-large box" id="control-zdec" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('z',-1) }"><i class="icon-arrow-down tiny"></i></button>
 								<button class="btn btn-default btn-large box" id="control-zdec" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('z',-5) }"><i class="icon-arrow-down"></i></button>
-							</div>
+							</div>-->
 							<div class="btn-group btn-group-vertical">
 								<button class="btn btn-default btn-large control-box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendRetractCommand(5) }"><i class="icon-chevron-sign-up"></i></button>
-								<button class="btn btn-default btn-large control-box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendRetractCommand(1) }"><i class="icon-chevron-sign-up tiny"></i></button>
-								<button class="btn btn-default btn-large control-box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendExtrudeCommand(1) }"><i class="icon-chevron-sign-down tiny"></i></button>
-								<button class="btn btn-default btn-large control-box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendExtrudeCommand(5) }"><i class="icon-chevron-sign-down"></i></button>
+								<button class="btn btn-default btn-large control-box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendExtrudeCommand(1) }"><i class="icon-chevron-sign-down"></i></button>
 							</div>
 						</div>
-						<div class="" style="text-align: center;">
+<!--						<div class="" style="text-align: center;">
 							<button class="btn btn-default btn-large box" id="control-zhome" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendHomeCommand(['x','y','z']) }"><i class="icon-home"></i></button>
-						</div>
+						</div>-->
 						<div style='margin-top: .5em; text-align: center;'>
-							<div class="btn-group" id='bocusini_printerstate_buttons'>
+							<div class="btn-group btn-group-vertical" id='bocusini_printerstate_buttons'>
 								<button class="btn btn-primary btn-large" data-bind="enable: ps.isOperational() && !ps.isPrinting() && loginState.isUser(), click: start"><i class="icon-play"></i></button>
 								<button class="btn btn-default btn-large" data-bind="enable: ps.isPrinting() || ps.isPaused() && loginState.isUser(), click: pause"><i class="icon-pause" data-bind="css: { 'pulse': ps.isPaused()}"></i></button>
-								<button class="btn btn-default btn-large" data-bind="enable: ps.isPrinting() && loginState.isUser(), click: cancel"><i class="icon-stop"></i></button>
+								<button class="btn btn-danger btn-large" data-bind="enable: ps.isPrinting() && loginState.isUser(), click: cancel">STOP</button>
 							</div>
 						</div>
 					</div>
 
 					<div id="system_buttons" class="btn-group">
 						<button class="btn btn-large btn-default" id="btnOctoPrint" data-bind="visible:user_is_admin(), click:hide_doodler">
-							<img src="/plugin/bocusini_doodler/static/img/tentacle-76x76.png" style="width:1em;"/> 
+							<img src="/plugin/bocusini_doodler/static/img/tentacle-76x76.png" style="width:1.05em;"/> 
 						</button>
 						<button class="btn btn-large btn-default" id="btnShutdown" data-bind="visible:user_is_admin()"><i class="icon-off"></i></button>
 						<!--						<button class="btn btn-large btn-default" id="btnSettings"><i class="icon-gear"></i></button>

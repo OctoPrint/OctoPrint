@@ -395,7 +395,7 @@ $(function() {
             });
 
 			$(".bocusini_gcode_files").slimScroll({
-                height: "83.3vh",
+                height: "77vh",
                 size: "5px",
                 distance: "0",
                 railVisible: true,

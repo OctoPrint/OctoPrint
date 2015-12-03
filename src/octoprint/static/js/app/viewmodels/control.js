@@ -569,6 +569,6 @@ $(function() {
     OCTOPRINT_VIEWMODELS.push([
         ControlViewModel,
         ["loginStateViewModel", "settingsViewModel"],
-        ["#control", "#bocusini_control", "#buttonGroupPrinterDirect"]
+        ["#control", "#bocusini_control", "#zControlButtons", "#buttonGroupPrinterDirect"]
     ]);
 });
