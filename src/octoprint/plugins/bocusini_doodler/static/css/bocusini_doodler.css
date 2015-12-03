@@ -7,10 +7,6 @@
 	margin: 0 auto;
 }
 
-#right_column {
-	max-width: 180px;
-}
-
 .doodler_active #bocusini_overlay {
 	display: block;
 }
@@ -25,6 +21,16 @@
 	z-index: 999;
 	margin-left: 4px;
 	border:none;
+}
+
+#bocusini_nav.nav-tabs-large>li>a {
+	line-height: 28px;
+	font-size: larger;
+}
+
+#control-zhome {
+	width: 55%;
+	margin: .5em;
 }
 
 .center_shadow {
@@ -120,12 +126,16 @@
 	border: 1px solid darkgray;
 	border-radius: 8px;
 	background-color: #fff;
-	padding: 1em;
+	padding: 1em 0;
 	margin-bottom: 1em;
 }
 
 #buttonGroupPrinterDirect {
   text-align:center;
+}
+
+#bocusini_statemonitor {
+	padding: 1em;
 }
 
 .bocusini_gcode_files .entry .btn-group {
