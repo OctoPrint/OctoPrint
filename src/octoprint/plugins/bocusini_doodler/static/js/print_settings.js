@@ -15,8 +15,7 @@ settings["printer.startcode"] = ";Generated with Doodle3D (default)\n"
 + "G92 E0 ;zero the extruded length again\n"
 + "G92 E0 ;zero the extruded length again\n"
 + "G1 F9000\n"
-+ "G90 ;absolute positioning\n"
-+ "M117 Printing Doodle...   ;display message (20 characters to clear whole screen)\n"; 
++ "G90 ;absolute positioning\n";
 
 settings["printer.endcode"] =  "G91 ;relative positioning\n"
 + "G1 E-2 F300 ;retract the filament a bit before lifting the nozzle, to release some of the pressure\n"
@@ -24,10 +23,7 @@ settings["printer.endcode"] =  "G91 ;relative positioning\n"
 + "G28 X0 Y0 ;move X/Y to min endstops, so the head is out of the way\n"
 + "M107 ;fan off\n"
 + "M84 ;disable axes / steppers\n"
-+ "G90 ;absolute positioning\n"
-+ "M104 S{preheatTemp}\n"
-+ "{if heatedBed}M140 S{preheatBedTemp}\n"
-+ "M117 Done                 ;display message (20 characters to clear whole screen)";
++ "G90 ;absolute positioning\n";
 
 settings["printer.speed"] = 10;
 //normalSpeed = speed;
@@ -39,7 +35,7 @@ settings["printer.filamentThickness"] = 8;
 settings["printer.wallThickness"] = 0.7;
 settings["printer.screenToMillimeterScale"] = 1;
 settings["printer.layerHeight"] = 0.7;
-settings["printer.temperature"] = 60;
+settings["printer.temperature"] = 40;
 settings["printer.bed.temperature"] = 0;
 settings["printer.useSubLayers"] = true;
 settings["printer.enableTraveling"] = true;
