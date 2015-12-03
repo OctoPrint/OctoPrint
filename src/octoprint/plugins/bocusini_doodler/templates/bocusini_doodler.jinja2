@@ -240,8 +240,8 @@
 								<button class="btn btn-default btn-large box" id="control-zdec" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('z',-5) }"><i class="icon-arrow-down"></i></button>
 							</div>-->
 							<div class="btn-group btn-group-vertical">
-								<button class="btn btn-default btn-large control-box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendRetractCommand(5) }"><i class="icon-chevron-sign-up"></i></button>
-								<button class="btn btn-default btn-large control-box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendExtrudeCommand(1) }"><i class="icon-chevron-sign-down"></i></button>
+								<button class="btn btn-default btn-large control-box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { sendRetractCommand(500) }"><i class="icon-chevron-sign-up"></i></button>
+								<button class="btn btn-default btn-large control-box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { sendExtrudeCommand(1) }"><i class="icon-chevron-sign-down"></i></button>
 							</div>
 						</div>
 <!--						<div class="" style="text-align: center;">

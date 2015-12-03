@@ -292,6 +292,8 @@ $(function() {
 			var length;
 			if(typeof amount === 'undefined' || isNaN(amount)){
 				length = self.extrusionAmount();
+			} else {
+				length = amount;
 			}
             if (!length) length = self.settings.printer_defaultExtrusionLength();
 
@@ -569,6 +571,6 @@ $(function() {
     OCTOPRINT_VIEWMODELS.push([
         ControlViewModel,
         ["loginStateViewModel", "settingsViewModel"],
-        ["#control", "#bocusini_control", "#buttonGroupPrinterDirect"]
+        ["#control", "#buttonGroupPrinterDirect"]
     ]);
 });
