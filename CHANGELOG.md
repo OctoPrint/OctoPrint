@@ -1,6 +1,6 @@
 # OctoPrint Changelog
 
-## 1.2.8 (2015-12-03)
+## 1.2.8 (unreleased)
 
 ### Important information for people updating from version 1.2.7
 
