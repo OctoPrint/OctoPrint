@@ -91,6 +91,7 @@ $(function () {
 		
 		self.init_calibration = function(){
 			self._zOffset = 0;
+			self.control.sendHomeCommand(['x','y']);	
 			self.control.sendHomeCommand(['z']);	
 			console.log('init calibration, Z Offset: 0');
 			$('#calibration_step1').removeClass('active');
@@ -104,7 +105,7 @@ $(function () {
 		};
 		
 		self.finish_calibration = function(){
-			var cmd = "M211Z"+self._zOffset;
+			var cmd = "M211Z"+(self._zOffset*-1);
 			self.control.sendCustomCommand({
 				commands: [cmd,"M500"]
 			});	
