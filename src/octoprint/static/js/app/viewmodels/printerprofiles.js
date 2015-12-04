@@ -261,7 +261,7 @@ $(function() {
             }
 
             self.requestInProgress(true);
-            OctoPrint.printerprofiles.update(profile.key, profile)
+            OctoPrint.printerprofiles.update(profile.id, profile)
                 .done(function() {
                     if (callback !== undefined) {
                         callback();
