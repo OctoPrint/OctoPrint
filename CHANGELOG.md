@@ -57,6 +57,9 @@ as shown [in this short GIF](http://i.imgur.com/wp1j9bs.gif).
   * Added the string "unknown command" to the list of ignored printer errors.
     This should help with general firmware compatibility in case a firmware
     lacks features.
+  * Added the strings "cannot open" and "cannot enter" to the list of ignored
+    printer errors. Those are errors that Marlin may report if there is an issue
+    with the printer's SD card.
   * The "CuraEngine" plugin now makes it more obvious that it only targets
     CuraEngine versions up to and including 15.04 and also links to the plugin's
     homepage with more information right within the settings dialog.
