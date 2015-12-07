@@ -6,12 +6,15 @@
 
 #### A bug in 1.2.7 prevents directly updating to 1.2.8, here's what to do
 
-Due to a bug in the Software Update plugin bundled with version 1.2.7, updating
-to 1.2.8 through OctoPrint itself necessitates the installation of a plugin
-that fixes said bug (through monkey patching).
+A bug in OctoPrint 1.2.7 (fixed in 1.2.8) prevents updating OctoPrint to version
+1.2.8. If you try to perform the update, you will simply be told that "the update
+was successful", but the update won't actually have taken place. To solve this
+hen-egg-problem, a plugin has been made available that fixes said bug (through
+monkey patching).
 
-The plugin "Updatefix 1.2.7" can be found [in the plugin repository](http://plugins.octoprint.org/plugins/updatefix127/) and
-[on Github](https://github.com/OctoPrint/OctoPrint-Updatefix-1.2.7/).
+The plugin is called "Updatefix 1.2.7" and can be found
+[in the plugin repository](http://plugins.octoprint.org/plugins/updatefix127/)
+and [on Github](https://github.com/OctoPrint/OctoPrint-Updatefix-1.2.7/).
 
 Before attempting to update your installation from version 1.2.7 to version 1.2.8,
 please install the plugin via your plugin manager and restart your server. Note that
@@ -81,7 +84,8 @@ as shown [in this short GIF](http://i.imgur.com/wp1j9bs.gif).
    displaying bed temperature and controls and allowing the sending of GCODE
    commands targeting the bed (`M140`, `M190`) if the printer profile doesn't
    have a heated bed configured.
- * Fixed an issue that stopped the software updater working for OctoPrint. A
+ * Fixed an issue that stopped the software updater working for OctoPrint. The
+   updater reports success updating, but no update has actually taken place. A
    fix can be applied for this issue to OctoPrint version 1.2.7 via
    [the Updatefix 1.2.7 plugin](https://github.com/OctoPrint/OctoPrint-Updatefix-1.2.7).
    For more information please refer to the [Important information for people updating from version 1.2.7](#important-information-for-people-updating-from-version-127)
