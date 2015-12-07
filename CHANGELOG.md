@@ -1,8 +1,10 @@
 # OctoPrint Changelog
 
-## 1.2.8 (unreleased)
+## 1.2.8 (2015-12-07)
 
-### Important information for people updating from version 1.2.7
+### Notes for Upgraders
+
+#### A bug in 1.2.7 prevents directly updating to 1.2.8, here's what to do
 
 Due to a bug in the Software Update plugin bundled with version 1.2.7, updating
 to 1.2.8 through OctoPrint itself necessitates the installation of a plugin
@@ -12,12 +14,29 @@ The plugin "Updatefix 1.2.7" can be found [in the plugin repository](http://plug
 [on Github](https://github.com/OctoPrint/OctoPrint-Updatefix-1.2.7/).
 
 Before attempting to update your installation from version 1.2.7 to version 1.2.8,
-please install the plugin via your plugin manager and restart your server.
-Afterwards you can update as usual. The plugin will self-uninstall once it
-detects that it's running under OctoPrint 1.2.8. After the self-uninstall another restart
-of your server will be triggered (if you have setup your server's restart command,
-defaults to `sudo service octoprint restart` on OctoPi) in order to really get rid of any
-left-overs, so don't be alarmed when that happens.
+please install the plugin via your plugin manager and restart your server. Note that
+you will only see it in the Plugin Manager if you need it, since it's only compatible with
+OctoPrint version 1.2.7. After you installed the plugin and restarted your server
+you can update as usual. The plugin will self-uninstall once it detects that it's
+running under OctoPrint 1.2.8. After the self-uninstall another restart of your server
+will be triggered (if you have setup your server's restart command, defaults to
+`sudo service octoprint restart` on OctoPi) in order to really get rid of any
+left-overs, so don't be alarmed when that happens, it is intentional.
+
+**If you cannot or don't want to use the plugin**, alternatively you can switch
+OctoPrint to "Commit" based tracking via the settings of the Software Update plugin,
+update, then switch back to "Release" based tracking (see [this screenshot](https://i.imgur.com/wvkgiGJ.png)).
+
+#### Bed temperatures are now only displayed if printer profile has a heated bed configured
+
+This release fixes a [bug](https://github.com/foosel/OctoPrint/issues/1125)
+that caused bed temperature display and controls to be available even if the
+selected printer profile didn't have a heated bed configured.
+
+If your printer does have a heated bed but you are not seeing its temperature
+in the "Temperature" tab after updating to 1.2.8, please make sure to check
+the "Heated Bed" option in your printer profile (under Settings > Printer Profiles)
+as shown [in this short GIF](http://i.imgur.com/wp1j9bs.gif).
 
 ### Improvements
 
@@ -25,9 +44,9 @@ left-overs, so don't be alarmed when that happens.
   * Prepared some things for publishing OctoPrint on [PyPi](https://pypi.python.org/pypi)
     in the future.
   * [BlueprintPlugin mixin](http://docs.octoprint.org/en/master/plugins/mixins.html#blueprintplugin)
-     now has an `errorhandler` decorator that serves the same purpose as
-     [Flask's](http://flask.pocoo.org/docs/0.10/patterns/errorpages/#error-handlers)
-     ([#1059](https://github.com/foosel/OctoPrint/pull/1059))
+    now has an `errorhandler` decorator that serves the same purpose as
+    [Flask's](http://flask.pocoo.org/docs/0.10/patterns/errorpages/#error-handlers)
+    ([#1059](https://github.com/foosel/OctoPrint/pull/1059))
   * Interpret `M25` in a GCODE file that is being streamed from OctoPrint as
     indication to pause, like `M0` and `M1`.
   * Cache rendered page and translation files indefinitely. That should
@@ -89,6 +108,8 @@ left-overs, so don't be alarmed when that happens.
  * Fixed a JavaScript error on finishing streaming of a file to SD.
  * Fixed version reporting on detached HEADs (when the branch detection
    reported "HEAD" instead of "(detached"
+ * Fixed some path checks for systems with symlinked paths
+   ([#1051](https://github.com/foosel/OctoPrint/pull/1051))
 
 ([Commits](https://github.com/foosel/OctoPrint/compare/1.2.7...1.2.8))
 
@@ -478,7 +499,7 @@ left-overs, so don't be alarmed when that happens.
   changed under "Temperatures" in the Settings ([#343](https://github.com/foosel/OctoPrint/issues/343)).
 * High-DPI support for the GCode viewer ([#837](https://github.com/foosel/OctoPrint/issues/837)).
 * Stop websocket connections from multiplying ([#888](https://github.com/foosel/OctoPrint/pull/888)).
-* New setting to rotate webcam by 90Â° counter clockwise ([#895](https://github.com/foosel/OctoPrint/issues/895) and
+* New setting to rotate webcam by 90° counter clockwise ([#895](https://github.com/foosel/OctoPrint/issues/895) and
   [#906](https://github.com/foosel/OctoPrint/pull/906))
 * System commands now be set to a) run asynchronized by setting their `async` property to `true` and b) to ignore their
   result by setting their `ignore` property to `true`.
