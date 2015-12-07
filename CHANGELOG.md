@@ -110,6 +110,9 @@ as shown [in this short GIF](http://i.imgur.com/wp1j9bs.gif).
    reported "HEAD" instead of "(detached"
  * Fixed some path checks for systems with symlinked paths
    ([#1051](https://github.com/foosel/OctoPrint/pull/1051))
+ * Fixed a bug causing the "Server Offline" overlay to pop _under_ the
+   "Please reload" overlay, which could lead to "Connection refused" browser
+   messages when clicking "Reload now" in the wrong moment.
 
 ([Commits](https://github.com/foosel/OctoPrint/compare/1.2.7...1.2.8))
 
