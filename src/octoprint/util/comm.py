@@ -1416,6 +1416,11 @@ class MachineCom(object):
 		return False
 
 	def _handleErrors(self, line):
+		if line is None:
+			return
+
+		lower_line = line.lower()
+
 		# No matter the state, if we see an error, goto the error state and store the error for reference.
 		if line.startswith('Error:') or line.startswith('!!'):
 			#Oh YEAH, consistency.
@@ -1425,15 +1430,16 @@ class MachineCom(object):
 			if regex_minMaxError.match(line):
 				line = line.rstrip() + self._readline()
 
-			if 'line number' in line.lower() or 'checksum' in line.lower() or 'format error' in line.lower() or 'expected line' in line.lower():
+			if 'line number' in lower_line or 'checksum' in lower_line or 'format error' in lower_line or 'expected line' in lower_line:
 				#Skip the communication errors, as those get corrected.
 				self._lastCommError = line[6:] if line.startswith("Error:") else line[2:]
 				pass
-			elif 'volume.init' in line.lower() or "openroot" in line.lower() or 'workdir' in line.lower()\
-					or "error writing to file" in line.lower():
+			elif 'volume.init' in lower_line or "openroot" in lower_line or 'workdir' in lower_line\
+					or "error writing to file" in lower_line or "cannot open" in lower_line\
+					or "cannot enter" in lower_line:
 				#Also skip errors with the SD card
 				pass
-			elif 'unknown command' in line.lower():
+			elif 'unknown command' in lower_line:
 				#Ignore unkown command errors, it could be a typo or some missing feature
 				pass
 			elif not self.isError():

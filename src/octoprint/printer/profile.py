@@ -151,7 +151,7 @@ class PrinterProfileManager(object):
 			formFactor = BedTypes.RECTANGULAR,
 			origin = BedOrigin.LOWERLEFT
 		),
-		heatedBed = False,
+		heatedBed = True,
 		extruder=dict(
 			count = 1,
 			offsets = [
