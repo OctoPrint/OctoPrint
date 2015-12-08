@@ -927,6 +927,19 @@ class UrlProxyHandler(tornado.web.RequestHandler):
 		return "%s%s" % (self._basename, extension)
 
 
+class StaticDataHandler(tornado.web.RequestHandler):
+	def initialize(self, data="", content_type="text/plain"):
+		self.data = data
+		self.content_type = content_type
+
+	def get(self, *args, **kwargs):
+		self.set_status(200)
+		self.set_header("Content-Type", self.content_type)
+		self.write(self.data)
+		self.flush()
+		self.finish()
+
+
 #~~ Factory method for creating Flask access validation wrappers from the Tornado request context
 
 
