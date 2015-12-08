@@ -6,7 +6,8 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 
 import os
 
-from jinja2.loaders import FileSystemLoader, TemplateNotFound, split_template_path
+from jinja2.loaders import FileSystemLoader, PrefixLoader, ChoiceLoader, \
+	TemplateNotFound, split_template_path
 
 class FilteredFileSystemLoader(FileSystemLoader):
 	"""
@@ -48,3 +49,60 @@ class FilteredFileSystemLoader(FileSystemLoader):
 		filter_results = map(lambda x: not os.path.exists(os.path.join(x, path)) or self.path_filter(os.path.join(x, path)),
 		                     self.searchpath)
 		return all(filter_results)
+
+
+def get_all_template_paths(loader):
+	def walk_folder(folder):
+		files = []
+		walk_dir = os.walk(folder, followlinks=True)
+		for dirpath, dirnames, filenames in walk_dir:
+			for filename in filenames:
+				path = os.path.join(dirpath, filename)
+				files.append(path)
+		return files
+
+	def collect_templates_for_loader(loader):
+		if isinstance(loader, FilteredFileSystemLoader):
+			result = []
+			for folder in loader.searchpath:
+				result += walk_folder(folder)
+			return filter(loader.path_filter, result)
+
+		elif isinstance(loader, FileSystemLoader):
+			result = []
+			for folder in loader.searchpath:
+				result += walk_folder(folder)
+			return result
+
+		elif isinstance(loader, PrefixLoader):
+			result = []
+			for subloader in loader.mapping.values():
+				result += collect_templates_for_loader(subloader)
+			return result
+
+		elif isinstance(loader, ChoiceLoader):
+			result = []
+			for subloader in loader.loaders:
+				result += collect_templates_for_loader(subloader)
+			return result
+
+		return []
+
+	return collect_templates_for_loader(loader)
+
+
+def get_all_asset_paths(env):
+	result = []
+	for bundle in env:
+		for content in bundle.resolve_contents():
+			try:
+				if not content:
+					continue
+				path = content[1]
+				if not os.path.isfile(path):
+					continue
+				result.append(path)
+			except IndexError:
+				# intentionally ignored
+				pass
+	return result

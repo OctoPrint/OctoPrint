@@ -12,7 +12,7 @@ function DataUpdater(allViewModels) {
     self._pluginHash = undefined;
 
     self.reloadOverlay = $("#reloadui_overlay");
-    $("#reloadui_overlay_reload").click(function() { location.reload(true); });
+    $("#reloadui_overlay_reload").click(function() { location.reload(); });
 
     self.connect = function() {
         var options = {};
