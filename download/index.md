@@ -3,48 +3,64 @@ layout: page
 title: Download & Setup
 ---
 
-OctoPrint is currently available in the following forms:
-
-* as part of a specialized distribution for the RaspberryPi called "OctoPi"
-* as a source package
-
-A binary package for Debian-based Linux-systems is currently in the works. I'll also look into packages
-for other distributions/Windows/MacOS X if sufficient demand exists.
-
 OctoPi
 ======
 
-[Guy Sheffer](https://github.com/guysoft) maintains "OctoPi", an SD card image for the Raspberry Pi that already includes
-OctoPrint plus everything you need to run it:
+[Guy Sheffer](https://github.com/guysoft) maintains ["OctoPi"](https://github.com/guysoft/OctoPi),
+a [Raspbian based](http://www.raspbian.org/) SD card image for the Raspberry Pi
+that already includes OctoPrint plus everything you need to run it:
 
 * OctoPrint plus its dependencies
-* [MJPG-Streamer](http://sourceforge.net/apps/mediawiki/mjpg-streamer/index.php?title=Main_Page)
+* [MJPG-Streamer](https://github.com/jacksonliam/mjpg-streamer)
+  for live viewing of prints and timelapse video creation, compatible with various
+  USB webcams and the Raspberry Pi camera
+* [CuraEngine 15.04](https://github.com/Ultimaker/CuraEngine) for slicing directly
+  on your Raspberry Pi
+* [OctoPiPanel](https://github.com/jonaslorander/OctoPiPanel), which is an LCD
+  app that works with OctoPrint
 
-You can download the most current version from one of the following mirrors:
+You can download the latest version via the following button:
+
+<a class="btn btn-primary btn-large" href="https://storage.googleapis.com/octoprint/stable/2015-07-02_2015-05-05-octopi-wheezy-0.12.0.zip"><i class="icon-download-alt icon-large"></i>&nbsp;&nbsp;Download&nbsp;OctoPi&nbsp;0.12</a>
+
+or alternatively from one of the following mirrors:
 
 * [Mirror #1](http://docstech.net/OctoPiMirror/) (also includes nightly builds)
 * [Mirror #2](http://mirror.tsone.net.uk/octopi/)
 
-The source is available [here](https://github.com/guysoft/OctoPi).
+Getting Started with OctoPi
+---------------------------
+
+Please follow these steps after downloading
+
+1. Unzip the image and install the contained ``.img`` file to an SD card
+   [like any other Raspberry Pi image](https://www.raspberrypi.org/documentation/installation/installing-images/README.md).
+2. Configure your WiFi connection by editing ``octopi-network.txt`` on the root of the
+   flashed card when using it like a thumb drive.
+3. Boot the Pi from the card.
+4. Log into your Pi via SSH (it is located at ``octopi.local``
+   [if your computer supports bonjour](https://learn.adafruit.com/bonjour-zeroconf-networking-for-windows-and-linux/overview)
+   or the IP address assigned by your router), default username is "pi",
+   default password is "raspberry". Change the password using the ``passwd``
+   command and expand the filesystem of the SD card through the corresponding
+   option when running ``sudo raspi-config``.
+5. Access OctoPrint through ``http://octopi.local`` or ``http://<your pi's ip address>``.
+
+Please also refer to [OctoPi's README](https://github.com/guysoft/OctoPi), especially the ["How to use it" section](https://github.com/guysoft/OctoPi#how-to-use-it).
 
 [Thomas Sanladerer](https://www.youtube.com/channel/UCb8Rde3uRL1ohROUVg46h1A) created a great video guide on how to get OctoPi up an running.
+
 **Please note that OctoPi starting with version 0.12.0 now offers a different way to configured you WiFi connection than what is shown in that video,
-see below for details.**
+see the steps above for information on how to do it with the current release.**
 
 <div>
     <iframe width="560" height="315" src="//www.youtube.com/embed/EHzN_MwunmE" frameborder="0" allowfullscreen="allowfullscreen">&nbsp;</iframe>
 </div>
 
-1. Unzip the image and install it to an SD card [like any other Raspberry Pi image](https://www.raspberrypi.org/documentation/installation/installing-images/README.md).
-2. Configure your WiFi by editing ``octopi-network.txt`` on the root of the flashed card when using it like a thumb drive.
-3. Boot the Pi from the card.
-4. Log into your Pi via SSH (it is located at ``octopi.local`` [if your computer supports bonjour](https://learn.adafruit.com/bonjour-zeroconf-networking-for-windows-and-linux/overview) or the IP address assigned by your router), default username is "pi", default password is "raspberry". Change the password using the ``passwd`` command and expand the filesystem of the SD card through the corresponding option when running ``sudo raspi-config``.
-5. Access OctoPrint through ``http://octopi.local`` or ``http://<your pi's ip address>``.
+----
 
-Please also refer to [OctoPi's README](https://github.com/guysoft/OctoPi), especially the ["How to use it" section](https://github.com/guysoft/OctoPi#how-to-use-it).
-
-Source package
-==============
+Installing from source
+======================
 
 The generic setup instructions boil down to
 
