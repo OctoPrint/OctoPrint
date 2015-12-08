@@ -22,8 +22,8 @@ OctoPrint plus everything you need to run it:
 
 You can download the most current version from one of the following mirrors:
 
-* [Mirror #1](http://mirror.tsone.net.uk/octopi/)
-* [Mirror #2](http://docstech.net/OctoPiMirror/) (also includes nightly builds)
+* [Mirror #1](http://docstech.net/OctoPiMirror/) (also includes nightly builds)
+* [Mirror #2](http://mirror.tsone.net.uk/octopi/)
 
 The source is available [here](https://github.com/guysoft/OctoPi).
 
