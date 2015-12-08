@@ -23,6 +23,7 @@ import logging
 import logging.config
 import atexit
 import signal
+import base64
 
 SUCCESS = {}
 NO_CONTENT = ("", 204)
@@ -126,6 +127,8 @@ class Server():
 
 		self._template_searchpaths = []
 
+		self._intermediary_server = None
+
 	def run(self):
 		if not self._allow_root:
 			self._check_for_root()
@@ -175,7 +178,10 @@ class Server():
 			logging.getLogger("SERIAL").setLevel(logging.DEBUG)
 			logging.getLogger("SERIAL").debug("Enabling serial logging")
 
-		# load plugins
+		# start the intermediary server
+		self._start_intermediary_server()
+
+		# then initialize the plugin manager
 		pluginManager.reload_plugins(startup=True, initialize_implementations=False)
 
 		printerProfileManager = PrinterProfileManager()
@@ -372,7 +378,12 @@ class Server():
 			                                                                  as_attachment=True,
 			                                                                  access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.user_validator))),
 			# generated webassets
-			(r"/static/webassets/(.*)", util.tornado.LargeResponseHandler, dict(path=os.path.join(self._settings.getBaseFolder("generated"), "webassets")))
+			(r"/static/webassets/(.*)", util.tornado.LargeResponseHandler, dict(path=os.path.join(self._settings.getBaseFolder("generated"), "webassets"))),
+
+			# online indicators - text file with "online" as content and a transparent gif
+			(r"/online.txt", util.tornado.StaticDataHandler, dict(data="online\n")),
+			(r"/online.gif", util.tornado.StaticDataHandler, dict(data=bytes(base64.b64decode("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7")),
+			                                                      content_type="image/gif"))
 		]
 		for name, hook in pluginManager.get_hooks("octoprint.server.http.routes").items():
 			try:
@@ -424,6 +435,8 @@ class Server():
 
 						self._logger.debug("Adding maximum body size of {size}B for {method} requests to {route})".format(**locals()))
 						max_body_sizes.append((method, route, size))
+
+		self._stop_intermediary_server()
 
 		self._server = util.tornado.CustomHTTPServer(self._tornado_app, max_body_sizes=max_body_sizes, default_max_body_size=self._settings.getInt(["server", "maxSize"]))
 		self._server.listen(self._port, address=self._host)
@@ -980,6 +993,90 @@ class Server():
 		assets.register("css_app", css_app_bundle)
 		assets.register("less_app", all_less_bundle)
 
+	def _start_intermediary_server(self):
+		import BaseHTTPServer
+		import SimpleHTTPServer
+		import threading
+
+		host = self._host
+		port = self._port
+		if host is None:
+			host = self._settings.get(["server", "host"])
+		if port is None:
+			port = self._settings.getInt(["server", "port"])
+
+		self._logger.debug("Starting intermediary server on {}:{}".format(host, port))
+
+		class IntermediaryServerHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
+			def __init__(self, rules=None, *args, **kwargs):
+				if rules is None:
+					rules = []
+				self.rules = rules
+				SimpleHTTPServer.SimpleHTTPRequestHandler.__init__(self, *args, **kwargs)
+
+			def do_GET(self):
+				request_path = self.path
+				if "?" in request_path:
+					request_path = request_path[0:request_path.find("?")]
+
+				for rule in self.rules:
+					path, data, content_type = rule
+					if request_path == path:
+						self.send_response(200)
+						if content_type:
+							self.send_header("Content-Type", content_type)
+						self.end_headers()
+						self.wfile.write(data)
+						break
+				else:
+					self.send_response(404)
+					self.wfile.write("Not found")
+
+		base_path = os.path.realpath(os.path.join(os.path.dirname(__file__), "..", "static"))
+		rules = [
+			("/", ["intermediary.html",], "text/html"),
+			("/favicon.ico", ["img", "tentacle-20x20.png"], "image/png"),
+			("/intermediary.gif", bytes(base64.b64decode("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7")), "image/gif")
+		]
+
+		def contents(args):
+			path = os.path.join(base_path, *args)
+			if not os.path.isfile(path):
+				return ""
+
+			with open(path, "rb") as f:
+				data = f.read()
+			return data
+
+		def process(rule):
+			if len(rule) == 2:
+				path, data = rule
+				content_type = None
+			else:
+				path, data, content_type = rule
+
+			if isinstance(data, (list, tuple)):
+				data = contents(data)
+
+			return path, data, content_type
+
+		rules = map(process, filter(lambda rule: len(rule) == 2 or len(rule) == 3, rules))
+
+		self._intermediary_server = BaseHTTPServer.HTTPServer((host, port), lambda *args, **kwargs: IntermediaryServerHandler(rules, *args, **kwargs))
+
+		thread = threading.Thread(target=self._intermediary_server.serve_forever)
+		thread.daemon = True
+		thread.start()
+
+		self._logger.debug("Intermediary server started")
+
+	def _stop_intermediary_server(self):
+		if self._intermediary_server is None:
+			return
+		self._logger.debug("Shutting down intermediary server...")
+		self._intermediary_server.shutdown()
+		self._intermediary_server.server_close()
+		self._logger.debug("Intermediary server shut down")
 
 class LifecycleManager(object):
 	def __init__(self, plugin_manager):
