@@ -301,7 +301,8 @@ default_settings = {
 			"commandBuffer": 4,
 			"sendWait": True,
 			"waitInterval": 1.0,
-			"supportM112": True
+			"supportM112": True,
+			"echoOnM117": True
 		}
 	}
 }
