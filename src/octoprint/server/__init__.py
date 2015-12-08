@@ -691,24 +691,30 @@ class Server():
 		# we clean up entries from our preemptive cache settings that haven't been
 		# accessed longer than server.preemptiveCache.until days
 		preemptive_cache_timeout = settings().getInt(["server", "preemptiveCache", "until"])
-		cutoff_timestamp = time.time() + preemptive_cache_timeout * 24 * 60 * 60
+		cutoff_timestamp = time.time() - preemptive_cache_timeout * 24 * 60 * 60
 
-		cache_data = preemptive_cache.clean_all_data(lambda root, entries: filter(lambda entry: "_timestamp" in entry and entry["_timestamp"] <= cutoff_timestamp, entries))
+		def filter_old_entries(entry):
+			return "_timestamp" in entry and entry["_timestamp"] > cutoff_timestamp
+
+		cache_data = preemptive_cache.clean_all_data(lambda root, entries: filter(filter_old_entries, entries))
 		if not cache_data:
 			return
 
 		def execute_caching():
 			for route in sorted(cache_data.keys(), key=lambda x: (x.count("/"), x)):
-				entries = cache_data[route]
+				entries = reversed(sorted(cache_data[route], key=lambda x: x.get("_count", 0)))
 				for kwargs in entries:
+					plugin = kwargs.get("plugin", None)
 					additional_request_data = kwargs.get("_additional_request_data", dict())
-					kwargs = dict((k, v) for k, v in kwargs.items() if not k.startswith("_"))
+					kwargs = dict((k, v) for k, v in kwargs.items() if not k.startswith("_") and not k == "plugin")
 					kwargs.update(additional_request_data)
 					try:
-
-						self._logger.info("Preemptively caching {} for {!r}".format(route, kwargs))
+						if plugin:
+							self._logger.info("Preemptively caching {} (plugin {}) for {!r}".format(route, plugin, kwargs))
+						else:
+							self._logger.info("Preemptively caching {} for {!r}".format(route, kwargs))
 						builder = EnvironBuilder(**kwargs)
-						with preemptive_cache.disable_timestamp_update():
+						with preemptive_cache.disable_access_logging():
 							app(builder.get_environ(), lambda *a, **kw: None)
 					except:
 						self._logger.exception("Error while trying to preemptively cache {} for {!r}".format(route, kwargs))

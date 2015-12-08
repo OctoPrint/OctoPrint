@@ -542,7 +542,7 @@ def _check_etag_and_lastmodified_for_i18n():
 
 def _get_all_templates():
 	from octoprint.util.jinja import get_all_template_paths
-	return get_all_template_paths(app.jinja_loader, lambda path: not octoprint.util.is_hidden_path(path))
+	return get_all_template_paths(app.jinja_loader)
 
 
 def _get_all_assets():
