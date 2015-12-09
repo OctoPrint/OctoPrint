@@ -25,9 +25,9 @@
 						<div class="span8">
 
 							<ul class="nav nav-tabs-large" id="bocusini_nav" role='navigation' aria-expanded='true'>
-								<li role="presentation"><a href="#bocusini_doodler" data-toggle="tab">Create</a></li>
+								<li role="presentation" class="active"><a href="#bocusini_doodler" data-toggle="tab">Create</a></li>
 								<li role="presentation"><a href="#bocusini_files" data-toggle="tab">Select</a></li>
-								<li role="presentation" class="active"><a href="#bocusini_calibration" data-toggle="tab">Calibration</a></li>
+								<li role="presentation"><a href="#bocusini_calibration" data-toggle="tab">Calibration</a></li>
 							</ul>
 						</div>
 					</div>
@@ -199,7 +199,9 @@
 							</div>
 						</div>
 						<div id="bocusini_calibration" class="tab-pane row">
-							{% include 'calibration_tab.jinja2' %}
+							<!-- <div class="row"> --> 
+								{% include 'calibration_tab.jinja2' %}
+							<!-- </div> -->
 						</div>
 					</div>
 				</div>
@@ -264,4 +266,3 @@
 		<img id="vertImage" src="plugin/bocusini_doodler/static/img/bg_vertical.png"/>
 	</div>
 </div>
-
