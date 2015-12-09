@@ -386,7 +386,7 @@ class PreemptiveCache(object):
 
 		self._lock = threading.RLock()
 		self._logger = logging.getLogger(__name__ + "." + self.__class__.__name__)
-		self._update_timestamp = True
+		self._log_access = True
 
 	def record(self, data, unless=None):
 		if callable(unless) and unless():
@@ -401,11 +401,11 @@ class PreemptiveCache(object):
 			self.add_data(request.path, entry_data)
 
 	@contextlib.contextmanager
-	def disable_timestamp_update(self):
+	def disable_access_logging(self):
 		with self._lock:
-			self._update_timestamp = False
+			self._log_access = False
 			yield
-			self._update_timestamp = True
+			self._log_access = True
 
 	def clean_all_data(self, cleanup_function):
 		assert callable(cleanup_function)
@@ -507,12 +507,14 @@ class PreemptiveCache(object):
 				import copy
 				to_persist = copy.deepcopy(data)
 				to_persist["_timestamp"] = time.time()
+				to_persist["_count"] = 1
 				self._logger.info("Adding entry for {} and {!r}".format(root, to_persist))
-			elif self._update_timestamp:
+			elif self._log_access:
 				to_persist["_timestamp"] = time.time()
-				self._logger.debug("Updating timestamp for {} and {!r}".format(root, data))
+				to_persist["_count"] = to_persist.get("_count", 0) + 1
+				self._logger.debug("Updating timestamp and counter for {} and {!r}".format(root, data))
 			else:
-				self._logger.debug("Not updating timestamp for {} and {!r}, currently flagged as disabled".format(root, data))
+				self._logger.debug("Not updating timestamp and counter for {} and {!r}, currently flagged as disabled".format(root, data))
 
 			self.set_data(root, [to_persist] + other)
 
