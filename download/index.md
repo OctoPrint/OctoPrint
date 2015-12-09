@@ -6,7 +6,7 @@ title: Download & Setup
 OctoPi
 ======
 
-[Guy Sheffer](https://github.com/guysoft) maintains ["OctoPi"](https://github.com/guysoft/OctoPi),
+[Guy Sheffer](https://github.com/guysoft) maintains ["OctoPi"](https://octopi.octoprint.org),
 a [Raspbian based](http://www.raspbian.org/) SD card image for the Raspberry Pi
 that already includes OctoPrint plus everything you need to run it:
 
