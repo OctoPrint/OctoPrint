@@ -3248,7 +3248,7 @@ function initButtonBehavior() {
 	btnPDC = new Button("#btnPDC");
 	
 
-	$(".btn").Button(); //initalize other buttons
+	//$(".btn").Button(); //initalize other buttons
 
 	logoPanel.on("onButtonClick", onLogo);
 	//btnSettings.on("onButtonClick", openSettingsWindow);
