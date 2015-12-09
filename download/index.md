@@ -21,12 +21,9 @@ that already includes OctoPrint plus everything you need to run it:
 
 You can download the latest version via the following button:
 
-<a class="btn btn-primary btn-large" href="https://storage.googleapis.com/octoprint/stable/2015-07-02_2015-05-05-octopi-wheezy-0.12.0.zip"><i class="icon-download-alt icon-large"></i>&nbsp;&nbsp;Download&nbsp;OctoPi&nbsp;0.12</a>
+<a class="btn btn-primary btn-large" href="https://octopi.octoprint.org/latest"><i class="icon-download-alt icon-large"></i>&nbsp;&nbsp;Download&nbsp;OctoPi&nbsp;0.12</a>
 
-or alternatively from one of the following mirrors:
-
-* [Mirror #1](http://docstech.net/OctoPiMirror/) (also includes nightly builds)
-* [Mirror #2](http://mirror.tsone.net.uk/octopi/)
+<small>MD5Sum: <code>a6db7912bc4cf429865a05253cbe017b</code></small>
 
 Getting Started with OctoPi
 ---------------------------
