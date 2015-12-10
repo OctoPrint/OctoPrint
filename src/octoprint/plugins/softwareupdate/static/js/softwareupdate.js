@@ -184,7 +184,14 @@ $(function() {
                     value.releaseNotes = undefined;
                 }
 
-                value.fullName = _.sprintf(gettext("%(displayName)s: %(displayVersion)s"), value);
+                var fullNameTemplate = gettext("%(name)s: %(version)s");
+                value.fullNameLocal = _.sprintf(fullNameTemplate, {name: value.displayName, version: value.displayVersion});
+
+                var fullNameRemoteVars = {name: value.displayName, version: gettext("unknown")};
+                if (value.hasOwnProperty("information") && value.information.hasOwnProperty("remote") && value.information.remote.hasOwnProperty("name")) {
+                    fullNameRemoteVars.version = value.information.remote.name;
+                }
+                value.fullNameRemote = _.sprintf(fullNameTemplate, fullNameRemoteVars);
 
                 versions.push(value);
             });
@@ -217,7 +224,7 @@ $(function() {
                     if (update_info.updateAvailable) {
                         text += "<li>"
                             + "<i class='icon-li " + (update_info.updatePossible ? "icon-ok" : "icon-remove")+ "'></i>"
-                            + "<span class='name' title='" + update_info.fullName + "'>" + update_info.fullName + "</span>"
+                            + "<span class='name' title='" + update_info.fullNameRemote + "'>" + update_info.fullNameRemote + "</span>"
                             + (update_info.releaseNotes ? "<a href=\"" +  update_info.releaseNotes + "\" target=\"_blank\">" + gettext("Release Notes") + "</a>" : "")
                             + "</li>";
                     }
