@@ -335,7 +335,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 	@restricted_access
 	def check_for_update(self):
 		if "check" in flask.request.values:
-			check_targets = map(str.strip, flask.request.values["check"].split(","))
+			check_targets = map(lambda x: x.strip(), flask.request.values["check"].split(","))
 		else:
 			check_targets = None
 
@@ -365,7 +365,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		json_data = flask.request.json
 
 		if "check" in json_data:
-			check_targets = map(str.strip, json_data["check"])
+			check_targets = map(lambda x: x.strip(), json_data["check"])
 		else:
 			check_targets = None
 
@@ -425,7 +425,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				self._logger.warn("Unknown update check type for target {}: {}".format(target, check.get("type", "<n/a>")))
 				continue
 
-			target_information = dict_merge(dict(local=dict(name="unknown", value="unknown"), remote=dict(name="unknown", value="unknown")), target_information)
+			target_information = dict_merge(dict(local=dict(name="unknown", value="unknown"), remote=dict(name="unknown", value="unknown", release_notes=None)), target_information)
 
 			update_available = update_available or target_update_available
 			update_possible = update_possible or (target_update_possible and target_update_available)
@@ -435,12 +435,25 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			local_name = target_information["local"]["name"]
 			local_value = target_information["local"]["value"]
 
+			release_notes = None
+			if target_information and target_information["remote"] and target_information["remote"]["value"]:
+				if "release_notes" in populated_check and populated_check["release_notes"]:
+					release_notes = populated_check["release_notes"]
+				elif "release_notes" in target_information["remote"]:
+					release_notes = target_information["remote"]["release_notes"]
+
+				if release_notes:
+					release_notes = release_notes.format(octoprint_version=octoprint_version,
+					                                     target_name=target_information["remote"]["name"],
+					                                     target_version=target_information["remote"]["value"])
+
 			information[target] = dict(updateAvailable=target_update_available,
 			                           updatePossible=target_update_possible,
 			                           information=target_information,
 			                           displayName=populated_check["displayName"],
 			                           displayVersion=populated_check["displayVersion"].format(octoprint_version=octoprint_version, local_name=local_name, local_value=local_value),
-			                           check=populated_check)
+			                           check=populated_check,
+			                           releaseNotes=release_notes)
 
 		if self._version_cache_dirty:
 			self._save_version_cache()
