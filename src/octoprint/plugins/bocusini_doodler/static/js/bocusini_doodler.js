@@ -171,6 +171,9 @@ $(function () {
 
 		self.onStartup = function () {
 			$('body').addClass('doodler_active');
+			setTimeout(function(){
+				$('#bocusini_nav a[href="#bocusini_calibration"]').tab('show');
+			},1000); // Hack. switch tab after a short timeout.
 		};
 
 		// grab temperature
