@@ -45,13 +45,10 @@ Please follow these steps after downloading
 
 Please also refer to [OctoPi's README](https://github.com/guysoft/OctoPi), especially the ["How to use it" section](https://github.com/guysoft/OctoPi#how-to-use-it).
 
-[Thomas Sanladerer](https://www.youtube.com/channel/UCb8Rde3uRL1ohROUVg46h1A) created a great video guide on how to get OctoPi up an running.
-
-**Please note that OctoPi starting with version 0.12.0 now offers a different way to configured you WiFi connection than what is shown in that video,
-see the steps above for information on how to do it with the current release.**
+[Thomas Sanladerer](https://www.youtube.com/channel/UCb8Rde3uRL1ohROUVg46h1A) created a great video guide on how to get OctoPi 0.12 up an running.
 
 <div>
-    <iframe width="560" height="315" src="//www.youtube.com/embed/EHzN_MwunmE" frameborder="0" allowfullscreen="allowfullscreen">&nbsp;</iframe>
+    <iframe width="560" height="315" src="//www.youtube.com/embed/MwsxO3ksxm4" frameborder="0" allowfullscreen="allowfullscreen">&nbsp;</iframe>
 </div>
 
 ----
