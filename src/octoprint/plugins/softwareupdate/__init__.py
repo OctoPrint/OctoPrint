@@ -20,7 +20,7 @@ from . import version_checks, updaters, exceptions, util, cli
 
 
 from octoprint.server.util.flask import restricted_access
-from octoprint.server import admin_permission, VERSION
+from octoprint.server import admin_permission, VERSION, REVISION
 from octoprint.util import dict_merge
 import octoprint.settings
 
@@ -716,9 +716,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			result["displayVersion"] = check.get("displayVersion", "{octoprint_version}")
 
 			if check["type"] == "github_commit":
-				from octoprint._version import get_versions
-				versions = get_versions()
-				result["current"] = versions.get("full-revisionid", versions.get("full", "unknown"))
+				result["current"] = REVISION if REVISION else "unknown"
 			else:
 				result["current"] = VERSION
 		else:

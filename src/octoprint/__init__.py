@@ -11,8 +11,9 @@ from ._version import get_versions
 versions = get_versions()
 
 __version__ = versions['version']
-__branch__ = versions['branch'] if 'branch' in versions else None
+__branch__ = versions.get('branch', None)
 __display_version__ = "{} ({} branch)".format(__version__, __branch__) if __branch__ else __version__
+__revision__ = versions.get('full-revisionid', versions.get('full', None))
 
 del versions
 del get_versions

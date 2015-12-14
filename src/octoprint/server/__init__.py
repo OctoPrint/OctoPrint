@@ -52,7 +52,7 @@ admin_permission = Permission(RoleNeed("admin"))
 user_permission = Permission(RoleNeed("user"))
 
 # only import the octoprint stuff down here, as it might depend on things defined above to be initialized already
-from octoprint import __version__, __branch__, __display_version__
+from octoprint import __version__, __branch__, __display_version__, __revision__
 from octoprint.printer import get_connection_options
 from octoprint.printer.profile import PrinterProfileManager
 from octoprint.printer.standard import Printer
@@ -75,6 +75,7 @@ UI_API_KEY = ''.join('%02X' % ord(z) for z in uuid.uuid4().bytes)
 VERSION = __version__
 BRANCH = __branch__
 DISPLAY_VERSION = __display_version__
+REVISION = __revision__
 
 LOCALES = []
 LANGUAGES = set()
