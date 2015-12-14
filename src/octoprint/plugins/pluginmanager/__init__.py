@@ -11,7 +11,7 @@ import octoprint.plugin.core
 
 from octoprint.settings import valid_boolean_trues
 from octoprint.server.util.flask import restricted_access
-from octoprint.server import admin_permission
+from octoprint.server import admin_permission, VERSION
 from octoprint.util.pip import PipCaller, UnknownPip
 
 from flask import jsonify, make_response
@@ -633,8 +633,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			return "unknown"
 
 	def _get_octoprint_version_string(self):
-		from octoprint._version import get_versions
-		return get_versions()["version"]
+		return VERSION
 
 	def _get_octoprint_version(self, base=False):
 		octoprint_version_string = self._get_octoprint_version_string()
