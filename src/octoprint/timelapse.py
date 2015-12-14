@@ -19,6 +19,7 @@ import octoprint.util as util
 from octoprint.settings import settings
 from octoprint.events import eventManager, Events
 import sarge
+from subprocess import call
 
 # currently configured timelapse
 current = None
@@ -377,7 +378,7 @@ class Timelapse(object):
 		self._logger.debug("Rendering movie to %s" % output)
 		command.append("\"" + output + "\"")
 		eventManager().fire(Events.MOVIE_RENDERING, {"gcode": self._gcode_file, "movie": output, "movie_basename": os.path.basename(output)})
-
+		self._logger.debug(command)
 		command_str = " ".join(command)
 		self._logger.debug("Executing command: %s" % command_str)
 
@@ -446,6 +447,12 @@ class SnapshotTimelapse(Timelapse):
 			(Events.SNAPSHOT, self._onSnapshot)
 		]
 
+	def on_print_started(self, event, payload):
+		Timelapse.on_print_started(self, event, payload)
+		self._logger.info("SnapshotTimelapse restart camera...")
+		call(["/home/pi/restart_camera.sh"])
+		self.captureImage()
+	
 	def config_data(self):
 		return {
 			"type": "snapshot"
