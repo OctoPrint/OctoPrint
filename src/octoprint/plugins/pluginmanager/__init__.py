@@ -579,9 +579,6 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			if not "follow_dependency_links" in result:
 				result["follow_dependency_links"] = False
 
-			if not "follow_dependency_links" in result:
-				result["follow_dependency_links"] = False
-
 			result["is_compatible"] = dict(
 				octoprint=True,
 				os=True
@@ -650,6 +647,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 					if part.startswith("*"):
 						break
 					base_version.append(part)
+				base_version.append("*final")
 				octoprint_version = tuple(base_version)
 			else:
 				# new setuptools
