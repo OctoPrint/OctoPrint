@@ -47,6 +47,8 @@ $(function() {
         self.settings = parameters[2];
         self.popup = undefined;
 
+        self.forceUpdate = false;
+
         self.updateInProgress = false;
         self.waitingForRestart = false;
         self.restartTimeout = undefined;
@@ -67,6 +69,7 @@ $(function() {
         self.config_checkType = ko.observable();
 
         self.configurationDialog = $("#settings_plugin_softwareupdate_configurationdialog");
+        self.confirmationDialog = $("#softwareupdate_confirmation_dialog");
 
         self.config_availableCheckTypes = [
             {"key": "github_release", "name": gettext("Release")},
@@ -94,6 +97,10 @@ $(function() {
             [],
             5
         );
+
+        self.availableAndPossible = ko.computed(function() {
+            return _.filter(self.versions.items(), function(info) { return info.updateAvailable && info.updatePossible; });
+        });
 
         self.onUserLoggedIn = function() {
             self.performCheck();
@@ -173,6 +180,18 @@ $(function() {
                 if (!value.hasOwnProperty("displayVersion") || value.displayVersion == "") {
                     value.displayVersion = value.information.local.name;
                 }
+                if (!value.hasOwnProperty("releaseNotes") || value.releaseNotes == "") {
+                    value.releaseNotes = undefined;
+                }
+
+                var fullNameTemplate = gettext("%(name)s: %(version)s");
+                value.fullNameLocal = _.sprintf(fullNameTemplate, {name: value.displayName, version: value.displayVersion});
+
+                var fullNameRemoteVars = {name: value.displayName, version: gettext("unknown")};
+                if (value.hasOwnProperty("information") && value.information.hasOwnProperty("remote") && value.information.remote.hasOwnProperty("name")) {
+                    fullNameRemoteVars.version = value.information.remote.name;
+                }
+                value.fullNameRemote = _.sprintf(fullNameTemplate, fullNameRemoteVars);
 
                 versions.push(value);
             });
@@ -198,21 +217,23 @@ $(function() {
             }
 
             if (data.status == "updateAvailable" || data.status == "updatePossible") {
-                var text = gettext("There are updates available for the following components:");
+                var text = "<div class='softwareupdate_notification'>" + gettext("There are updates available for the following components:");
 
-                text += "<ul>";
+                text += "<ul class='icons-ul'>";
                 _.each(self.versions.items(), function(update_info) {
                     if (update_info.updateAvailable) {
-                        var displayName = update_info.key;
-                        if (update_info.hasOwnProperty("displayName")) {
-                            displayName = update_info.displayName;
-                        }
-                        text += "<li>" + displayName + (update_info.updatePossible ? " <i class=\"icon-ok\"></i>" : "") + "</li>";
+                        text += "<li>"
+                            + "<i class='icon-li " + (update_info.updatePossible ? "icon-ok" : "icon-remove")+ "'></i>"
+                            + "<span class='name' title='" + update_info.fullNameRemote + "'>" + update_info.fullNameRemote + "</span>"
+                            + (update_info.releaseNotes ? "<a href=\"" +  update_info.releaseNotes + "\" target=\"_blank\">" + gettext("Release Notes") + "</a>" : "")
+                            + "</li>";
                     }
                 });
                 text += "</ul>";
 
                 text += "<small>" + gettext("Those components marked with <i class=\"icon-ok\"></i> can be updated directly.") + "</small>";
+
+                text += "</div>";
 
                 var options = {
                     title: gettext("Update Available"),
@@ -302,7 +323,7 @@ $(function() {
             return result;
         };
 
-        self.performUpdate = function(force) {
+        self.performUpdate = function(force, items) {
             self.updateInProgress = true;
 
             var options = {
@@ -317,7 +338,7 @@ $(function() {
             };
             self._showPopup(options);
 
-            OctoPrint.plugins.softwareupdate.updateAll(force)
+            OctoPrint.plugins.softwareupdate.updateAll(force, items)
                 .done(function(data) {
                     self.currentlyBeingUpdated = data.checks;
                     self._markWorking(gettext("Updating..."), gettext("Updating, please wait."));
@@ -340,8 +361,6 @@ $(function() {
             if (self.updateInProgress) return;
             if (!self.loginState.isAdmin()) return;
 
-            force = (force == true);
-
             if (self.printerState.isPrinting()) {
                 self._showPopup({
                     title: gettext("Can't update while printing"),
@@ -349,14 +368,16 @@ $(function() {
                     type: "error"
                 });
             } else {
-                showConfirmationDialog({
-                    message: gettext("This will update your OctoPrint installation and restart the server."),
-                    onproceed: function(e) {
-                        self.performUpdate(force);
-                    }
-                });
+                self.forceUpdate = (force == true);
+                self.confirmationDialog.modal("show");
             }
 
+        };
+
+        self.confirmUpdate = function() {
+            self.confirmationDialog.hide();
+            self.performUpdate(self.forceUpdate,
+                _.map(self.availableAndPossible(), function(info) { return info.key }));
         };
 
         self._showWorkingDialog = function(title) {
@@ -592,5 +613,9 @@ $(function() {
     }
 
     // view model class, parameters for constructor, container to bind to
-    ADDITIONAL_VIEWMODELS.push([SoftwareUpdateViewModel, ["loginStateViewModel", "printerStateViewModel", "settingsViewModel"], document.getElementById("settings_plugin_softwareupdate")]);
+    ADDITIONAL_VIEWMODELS.push([
+        SoftwareUpdateViewModel,
+        ["loginStateViewModel", "printerStateViewModel", "settingsViewModel"],
+        ["#settings_plugin_softwareupdate", "#softwareupdate_confirmation_dialog"]
+    ]);
 });

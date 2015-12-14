@@ -32,7 +32,8 @@
             <strong data-bind="text: displayName"></strong>: <span data-bind="text: displayVersion"></span> <span data-bind="invisible: updatePossible"><i class="icon-exclamation-sign" title="{{ _('Update not possible, configuration ok?') }}"></i></span><br>
             <small class="muted">
                 {{ _('Installed:') }} <span data-bind="text: information.local.name"></span><br>
-                {{ _('Available:') }} <span data-bind="text: information.remote.name"></span>
+                {{ _('Available:') }} <span data-bind="text: information.remote.name"></span><br>
+                <span data-bind="visible: releaseNotes">{{ _('Release Notes:') }} <a data-bind="attr: {href: releaseNotes}, text: releaseNotes" target="_blank"></a></span>
             </small>
         </td>
     </tr>
