@@ -72,8 +72,9 @@ UI_API_KEY = ''.join('%02X' % ord(z) for z in uuid.uuid4().bytes)
 
 versions = octoprint._version.get_versions()
 VERSION = versions['version']
-BRANCH = versions['branch'] if 'branch' in versions else None
+BRANCH = versions.get('branch', None)
 DISPLAY_VERSION = "%s (%s branch)" % (VERSION, BRANCH) if BRANCH else VERSION
+REVISION = versions.get('full-revision-id', versions.get('full', None))
 del versions
 
 LOCALES = []
