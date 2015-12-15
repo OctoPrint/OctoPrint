@@ -101,7 +101,7 @@ def load_user(id):
 	else:
 		sessionid = None
 
-	if userManager is not None:
+	if settings().getBoolean(["accessControl", "enabled"]) and userManager is not None:
 		if sessionid:
 			return userManager.findUser(userid=id, session=sessionid)
 		else:
