@@ -107,7 +107,7 @@ $(function () {
 		self.finish_calibration = function(){
 			var cmd = "M211Z"+(self._zOffset*-1);
 			self.control.sendCustomCommand({
-				commands: [cmd,"M500"]
+				commands: [cmd,"M500" , "G28"]
 			});	
 			$('.calibration_tab').removeClass('active');
 			$('#calibration_step1').addClass('active');

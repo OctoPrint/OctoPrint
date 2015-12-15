@@ -21,6 +21,7 @@ settings["printer.endcode"] =  "G91 ;relative positioning\n"
 + "G1 E-1 F300 ;retract the filament a bit before lifting the nozzle, to release some of the pressure\n"
 + "G1 Z+0.5 E-1 X-20 Y-20 F9000 ;move Z up a bit and retract filament even more\n"
 + "G28 X0 Y0 ;move X/Y to min endstops, so the head is out of the way\n"
++ "G28 Z0 ;move Z to min endstops\n"
 + "M107 ;fan off\n"
 + "M84 ;disable axes / steppers\n"
 + "G90 ;absolute positioning\n";
@@ -43,7 +44,7 @@ settings["printer.retraction.enabled"] = true;
 settings["printer.retraction.speed"] = 50;
 settings["printer.retraction.minDistance"] = 3;
 settings["printer.retraction.amount"] = 1;
-settings["printer.heatup.temperature"] = 0;
+settings["printer.heatup.temperature"] = 50;
 settings["printer.heatup.bed.temperature"] = 0;
 settings["printer.dimensions.x"] = 100;
 settings["printer.dimensions.y"] = 100;
