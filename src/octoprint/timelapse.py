@@ -86,7 +86,10 @@ def configureTimelapse(config=None, persist=False):
 	if type is None or "off" == type:
 		current = None
 	elif "zchange" == type:
-		current = ZTimelapse(post_roll=postRoll, fps=fps)
+		retractionZHop = 0
+                if "options" in config and "retractionZHop" in config["options"] and config["options"]["retractionZHop"] > 0:
+                        retractionZHop = config["options"]["retractionZHop"]
+		current = ZTimelapse(post_roll=postRoll, retraction_zhop=retractionZHop, fps=fps)
 	elif "timed" == type:
 		interval = 10
 		if "options" in config and "interval" in config["options"] and config["options"]["interval"] > 0:
@@ -404,9 +407,14 @@ class Timelapse(object):
 
 
 class ZTimelapse(Timelapse):
-	def __init__(self, post_roll=0, fps=25):
+	def __init__(self, post_roll=0, retraction_zhop=0, fps=25):
 		Timelapse.__init__(self, post_roll=post_roll, fps=fps)
+		self._retraction_zhop = retraction_zhop
 		self._logger.debug("ZTimelapse initialized")
+
+	@property
+	def retraction_zhop(self):
+                return self._retraction_zhop
 
 	def event_subscriptions(self):
 		return [
@@ -415,7 +423,10 @@ class ZTimelapse(Timelapse):
 
 	def config_data(self):
 		return {
-			"type": "zchange"
+			"type": "zchange",
+			"options": {
+				"retractionZHop": self._retraction_zhop
+			}
 		}
 
 	def process_post_roll(self):
@@ -432,7 +443,10 @@ class ZTimelapse(Timelapse):
 		Timelapse.process_post_roll(self)
 
 	def _on_z_change(self, event, payload):
-		self.captureImage()
+		diff = round(payload["new"] - payload["old"], 3)
+		zhop = round(self._retraction_zhop, 3)
+		if diff > 0 and diff != zhop:
+			self.captureImage()
 
 
 class TimedTimelapse(Timelapse):

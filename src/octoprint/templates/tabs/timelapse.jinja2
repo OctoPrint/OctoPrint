@@ -33,6 +33,14 @@
         </div>
     </div>
 
+    <div id="webcam_timelapse_retractionsettings" data-bind="visible: timelapseType() == 'zchange'">
+        <label for="webcam_timelapse_retractionZHop">{{ _('Retraction Z-Hop (in mm)') }}</label>
+        <div class="input-append">
+            <input type="text" class="input-mini" id="webcam_timelapse_retractionZHop" data-bind="value: timelapseRetractionZHop, valueUpdate: 'afterkeydown', enable: isOperational() && !isPrinting() && loginState.isUser()">
+            <span class="add-on">{{ _('mm') }}</span>
+        </div>
+    </div>
+
     <div data-bind="visible: loginState.isAdmin">
         <label class="checkbox">
             <input type="checkbox" data-bind="checked: persist"> {{ _('Save as default') }}

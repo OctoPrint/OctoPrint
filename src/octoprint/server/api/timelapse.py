@@ -31,6 +31,9 @@ def getTimelapseData():
 		config["type"] = "zchange"
 		config["postRoll"] = timelapse.post_roll
 		config["fps"] = timelapse.fps
+		config.update({
+			"retractionZHop": timelapse.retraction_zhop
+		})
 	elif timelapse is not None and isinstance(timelapse, octoprint.timelapse.TimedTimelapse):
 		config["type"] = "timed"
 		config["postRoll"] = timelapse.post_roll
@@ -112,6 +115,21 @@ def setTimelapseConfig():
 					config["options"]["interval"] = interval
 				else:
 					return make_response("Invalid value for interval: %d" % interval)
+
+		if "retractionZHop" in request.values:
+                        config["options"] = {
+                                "retractionZHop": 0
+                        }
+
+                        try:
+                                retractionZHop = float(request.values["retractionZHop"])
+                        except ValueError:
+                                return make_response("Invalid value for retraction Z-Hop: %r" % request.values["retractionZHop"])
+                        else:
+                                if retractionZHop > 0:
+                                        config["options"]["retractionZHop"] = retractionZHop
+                                else:
+                                        return make_response("Invalid value for retraction Z-Hop: %d" % retractionZHop)
 
 		if admin_permission.can() and "save" in request.values and request.values["save"] in valid_boolean_trues:
 			octoprint.timelapse.configureTimelapse(config, True)

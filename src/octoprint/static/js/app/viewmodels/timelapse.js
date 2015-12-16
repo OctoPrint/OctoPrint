@@ -7,11 +7,13 @@ $(function() {
         self.defaultFps = 25;
         self.defaultPostRoll = 0;
         self.defaultInterval = 10;
+        self.defaultRetractionZHop = 0;
 
         self.timelapseType = ko.observable(undefined);
         self.timelapseTimedInterval = ko.observable(self.defaultInterval);
         self.timelapsePostRoll = ko.observable(self.defaultPostRoll);
         self.timelapseFps = ko.observable(self.defaultFps);
+        self.timelapseRetractionZHop = ko.observable(self.defaultRetractionZHop);
 
         self.persist = ko.observable(false);
         self.isDirty = ko.observable(false);
@@ -48,6 +50,9 @@ $(function() {
             self.isDirty(true);
         });
         self.timelapseFps.subscribe(function(newValue) {
+            self.isDirty(true);
+        });
+        self.timelapseRetractionZHop.subscribe(function(newValue) {
             self.isDirty(true);
         });
 
@@ -106,6 +111,14 @@ $(function() {
                 self.timelapseTimedInterval(self.defaultInterval);
             }
 
+            if (config.type == "zchange") {
+                if (config.retractionZHop != undefined && config.retractionZHop > 0) {
+                    self.timelapseRetractionZHop(config.retractionZHop);
+                }
+            } else {
+                self.timelapseRetractionZHop(self.defaultRetractionZHop);
+            }
+
             if (config.postRoll != undefined && config.postRoll >= 0) {
                 self.timelapsePostRoll(config.postRoll);
             } else {
@@ -159,6 +172,10 @@ $(function() {
 
             if (self.timelapseType() == "timed") {
                 payload["interval"] = self.timelapseTimedInterval();
+            }
+
+            if (self.timelapseType() == "zchange") {
+                payload["retractionZHop"] = self.timelapseRetractionZHop();
             }
 
             $.ajax({
