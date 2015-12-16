@@ -1,4 +1,4 @@
-$(function () {
+﻿$(function () {
 	function BocusiniDoodlerViewModel(parameters) {
 		var self = this;
 
