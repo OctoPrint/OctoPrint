@@ -43,7 +43,7 @@ def index():
 
 	enable_gcodeviewer = settings().getBoolean(["gcodeViewer", "enabled"])
 	enable_timelapse = (settings().get(["webcam", "snapshot"]) and settings().get(["webcam", "ffmpeg"]))
-	enable_systemmenu = settings().get(["system"]) is not None and settings().get(["system", "actions"]) is not None and len(settings().get(["system", "actions"])) > 0
+	enable_systemmenu = settings().get(["system"]) is not None and settings().get(["system", "actions"]) is not None
 	enable_accesscontrol = userManager is not None
 	preferred_stylesheet = settings().get(["devel", "stylesheet"])
 	locales = dict((l.language, dict(language=l.language, display=l.display_name, english=l.english_name)) for l in LOCALES)
