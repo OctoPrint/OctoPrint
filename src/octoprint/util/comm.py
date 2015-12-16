@@ -39,7 +39,7 @@ regex_float_pattern = "[-+]?[0-9]*\.?[0-9]+"
 regex_positive_float_pattern = "[+]?[0-9]*\.?[0-9]+"
 regex_int_pattern = "\d+"
 
-regex_command = re.compile("^\s*((?P<commandGM>[GM]\d+)|(?P<commandT>T)\d+)")
+regex_command = re.compile("^\s*((?P<commandGM>[GM]\d+)|(?P<commandT>T)\d+|(?P<commandF>F)\d+)")
 """Regex for a GCODE command."""
 
 regex_float = re.compile(regex_float_pattern)
@@ -2499,6 +2499,8 @@ def gcode_command_for_cmd(cmd):
 		return values["commandGM"]
 	elif "commandT" in values and values["commandT"]:
 		return values["commandT"]
+	elif "commandF" in values and values["commandF"]:
+		return values["commandF"]
 	else:
 		# this should never happen
 		return None
