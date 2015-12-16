@@ -271,7 +271,7 @@ def _process_templates():
 	first_run = settings().getBoolean(["server", "firstRun"])
 	enable_gcodeviewer = settings().getBoolean(["gcodeViewer", "enabled"])
 	enable_timelapse = (settings().get(["webcam", "snapshot"]) and settings().get(["webcam", "ffmpeg"]))
-	enable_systemmenu = settings().get(["system"]) is not None and settings().get(["system", "actions"]) is not None and len(settings().get(["system", "actions"])) > 0
+	enable_systemmenu = settings().get(["system"]) is not None and settings().get(["system", "actions"]) is not None
 	preferred_stylesheet = settings().get(["devel", "stylesheet"])
 
 	##~~ prepare templates
