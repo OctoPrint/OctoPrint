@@ -120,7 +120,7 @@ def get_user_for_apikey(apikey):
 		if apikey == settings().get(["api", "key"]) or octoprint.server.appSessionManager.validate(apikey):
 			# master key or an app session key was used
 			return ApiUser()
-		elif octoprint.server.userManager is not None:
+		elif octoprint.server.userManager.enabled:
 			# user key might have been used
 			return octoprint.server.userManager.findUser(apikey=apikey)
 	return None

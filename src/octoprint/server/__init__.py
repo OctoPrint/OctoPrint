@@ -101,7 +101,7 @@ def load_user(id):
 	else:
 		sessionid = None
 
-	if userManager is not None:
+	if userManager.enabled:
 		if sessionid:
 			return userManager.findUser(userid=id, session=sessionid)
 		else:
@@ -198,13 +198,15 @@ class Server():
 		preemptiveCache = PreemptiveCache(os.path.join(self._settings.getBaseFolder("data"), "preemptive_cache_config.yaml"))
 
 		# setup access control
-		if self._settings.getBoolean(["accessControl", "enabled"]):
-			userManagerName = self._settings.get(["accessControl", "userManager"])
-			try:
-				clazz = octoprint.util.get_class(userManagerName)
-				userManager = clazz()
-			except AttributeError, e:
-				self._logger.exception("Could not instantiate user manager %s, will run with accessControl disabled!" % userManagerName)
+		userManagerName = self._settings.get(["accessControl", "userManager"])
+		try:
+			clazz = octoprint.util.get_class(userManagerName)
+			userManager = clazz()
+		except AttributeError, e:
+			self._logger.exception("Could not instantiate user manager {}, falling back to FilebasedUserManager!".format(userManagerName))
+			userManager = octoprint.users.FilebasedUserManager()
+		finally:
+			userManager.enabled = self._settings.getBoolean(["accessControl", "enabled"])
 
 		def octoprint_plugin_inject_factory(name, implementation):
 			if not isinstance(implementation, octoprint.plugin.OctoPrintPlugin):
@@ -317,7 +319,7 @@ class Server():
 		loginManager = LoginManager()
 		loginManager.session_protection = "strong"
 		loginManager.user_callback = load_user
-		if userManager is None:
+		if not userManager.enabled:
 			loginManager.anonymous_user = users.DummyUser
 			principals.identity_loaders.appendleft(users.dummy_identity_loader)
 		loginManager.init_app(app)
@@ -545,7 +547,7 @@ class Server():
 		if "l10n" in request.values:
 			return Locale.negotiate([request.values["l10n"]], LANGUAGES)
 
-		if hasattr(g, "identity") and g.identity and userManager is not None:
+		if hasattr(g, "identity") and g.identity and userManager.enabled:
 			userid = g.identity.id
 			try:
 				user_language = userManager.getUserSetting(userid, ("interface", "language"))

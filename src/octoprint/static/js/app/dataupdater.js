@@ -6,9 +6,6 @@ function DataUpdater(allViewModels) {
     self._pluginHash = undefined;
     self._configHash = undefined;
 
-    self.reloadOverlay = $("#reloadui_overlay");
-    $("#reloadui_overlay_reload").click(function() { location.reload(); });
-
     self.connect = function() {
         OctoPrint.socket.connect({debug: !!SOCKJS_DEBUG});
     };
@@ -94,7 +91,7 @@ function DataUpdater(allViewModels) {
         var pluginsChanged = oldPluginHash != undefined && oldPluginHash != self._pluginHash;
         var configChanged = oldConfigHash != undefined && oldConfigHash != self._configHash;
         if (versionChanged || pluginsChanged || configChanged) {
-            self.reloadOverlay.show();
+            showReloadOverlay();
         }
     };
 

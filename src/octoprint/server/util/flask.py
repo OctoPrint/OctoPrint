@@ -222,7 +222,7 @@ def fix_webassets_filtertool():
 #~~ passive login helper
 
 def passive_login():
-	if octoprint.server.userManager is not None:
+	if octoprint.server.userManager.enabled:
 		user = octoprint.server.userManager.login_user(flask.ext.login.current_user)
 	else:
 		user = flask.ext.login.current_user
@@ -700,7 +700,7 @@ def restricted_access(func):
 	@functools.wraps(func)
 	def decorated_view(*args, **kwargs):
 		# if OctoPrint hasn't been set up yet, abort
-		if settings().getBoolean(["server", "firstRun"]) and (octoprint.server.userManager is None or not octoprint.server.userManager.hasBeenCustomized()):
+		if settings().getBoolean(["server", "firstRun"]) and settings().getBoolean(["accessControl", "enabled"]) and (octoprint.server.userManager is None or not octoprint.server.userManager.hasBeenCustomized()):
 			return flask.make_response("OctoPrint isn't setup yet", 403)
 
 		apikey = octoprint.server.util.get_api_key(flask.request)
