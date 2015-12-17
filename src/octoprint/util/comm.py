@@ -1612,9 +1612,14 @@ class MachineCom(object):
 				if gcode is not None:
 					use_up_clear = True
 
-				# if we need to use up a clear, do that now
 				if use_up_clear:
+					# if we need to use up a clear, do that now
 					self._clear_to_send.clear()
+				else:
+					# Otherwise we need to tickle the read queue - there might not be a reply
+					# to this command, so our _monitor loop will stay waiting until timeout. We
+					# definitely do not want that, so we tickle the queue manually here
+					self._continue_sending()
 
 				# now we just wait for the next clear and then start again
 				self._clear_to_send.wait()
