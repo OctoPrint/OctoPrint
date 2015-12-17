@@ -323,6 +323,9 @@ class Timelapse(object):
 			return True
 
 	def _create_movie(self, success=True):
+		if self._image_number == 0:
+			eventManager().fire(Events.MOVIE_FAILED, {"gcode": self._gcode_file, "movie": output, "movie_basename": os.path.basename(output), "returncode": 255, "error": "No images available. Movie will not be created."})
+			return
 		ffmpeg = settings().get(["webcam", "ffmpeg"])
 		bitrate = settings().get(["webcam", "bitrate"])
 		if ffmpeg is None or bitrate is None:
@@ -451,7 +454,6 @@ class SnapshotTimelapse(Timelapse):
 		Timelapse.on_print_started(self, event, payload)
 		self._logger.info("SnapshotTimelapse restart camera...")
 		call(["/home/pi/restart_camera.sh"])
-		self.captureImage()
 	
 	def config_data(self):
 		return {
