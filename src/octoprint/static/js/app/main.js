@@ -490,6 +490,9 @@ $(function() {
             e.preventDefault();
         });
 
+        // reload overlay
+        $("#reloadui_overlay_reload").click(function() { location.reload(); });
+
         //~~ Starting up the app
 
         _.each(allViewModels, function(viewModel) {

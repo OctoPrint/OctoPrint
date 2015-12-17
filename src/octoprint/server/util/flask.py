@@ -222,7 +222,7 @@ def fix_webassets_filtertool():
 #~~ passive login helper
 
 def passive_login():
-	if octoprint.server.userManager is not None:
+	if octoprint.server.userManager.enabled:
 		user = octoprint.server.userManager.login_user(flask.ext.login.current_user)
 	else:
 		user = flask.ext.login.current_user
