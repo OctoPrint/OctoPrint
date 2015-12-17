@@ -17,10 +17,10 @@ from octoprint.settings import settings
 from octoprint.plugin import plugin_manager
 
 class VirtualPrinter(object):
-	command_regex = re.compile("^([GMT])(\d+)")
+	command_regex = re.compile("^([GMTF])(\d+)")
 	sleep_regex = re.compile("sleep (\d+)")
-	sleep_after_regex = re.compile("sleep_after ([GMT]\d+) (\d+)")
-	sleep_after_next_regex = re.compile("sleep_after_next ([GMT]\d+) (\d+)")
+	sleep_after_regex = re.compile("sleep_after ([GMTF]\d+) (\d+)")
+	sleep_after_next_regex = re.compile("sleep_after_next ([GMTF]\d+) (\d+)")
 	custom_action_regex = re.compile("action_custom ([a-zA-Z0-9_]+)(\s+.*)?")
 
 	def __init__(self, seriallog_handler=None, read_timeout=5.0, write_timeout=10.0):
@@ -239,6 +239,9 @@ class VirtualPrinter(object):
 	def _gcode_T(self, code, data):
 		self.currentExtruder = int(code)
 		self._send("Active Extruder: %d" % self.currentExtruder)
+
+	def _gcode_F(self, code, data):
+		self._send("echo:changed F value")
 
 	def _gcode_M104(self, data):
 		self._parseHotendCommand(data)

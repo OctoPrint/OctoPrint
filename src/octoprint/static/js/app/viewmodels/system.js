@@ -88,7 +88,13 @@ $(function() {
         self.onUserLoggedOut = function() {
             self.lastCommandResponse = undefined;
             self.systemActions([]);
-        }
+        };
+
+        self.onEventSettingsUpdated = function() {
+            if (self.loginState.isAdmin()) {
+                self.requestData();
+            }
+        };
     }
 
     // view model class, parameters for constructor, container to bind to

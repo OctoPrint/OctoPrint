@@ -20,7 +20,7 @@ from . import version_checks, updaters, exceptions, util, cli
 
 
 from octoprint.server.util.flask import restricted_access
-from octoprint.server import admin_permission
+from octoprint.server import admin_permission, VERSION, REVISION
 from octoprint.util import dict_merge
 import octoprint.settings
 
@@ -446,8 +446,6 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			update_available = update_available or target_update_available
 			update_possible = update_possible or (target_update_possible and target_update_available)
 
-			from octoprint._version import get_versions
-			octoprint_version = get_versions()["version"]
 			local_name = target_information["local"]["name"]
 			local_value = target_information["local"]["value"]
 
@@ -459,7 +457,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 					release_notes = target_information["remote"]["release_notes"]
 
 				if release_notes:
-					release_notes = release_notes.format(octoprint_version=octoprint_version,
+					release_notes = release_notes.format(octoprint_version=VERSION,
 					                                     target_name=target_information["remote"]["name"],
 					                                     target_version=target_information["remote"]["value"])
 
@@ -467,7 +465,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			                           updatePossible=target_update_possible,
 			                           information=target_information,
 			                           displayName=populated_check["displayName"],
-			                           displayVersion=populated_check["displayVersion"].format(octoprint_version=octoprint_version, local_name=local_name, local_value=local_value),
+			                           displayVersion=populated_check["displayVersion"].format(octoprint_version=VERSION, local_name=local_name, local_value=local_value),
 			                           check=populated_check,
 			                           releaseNotes=release_notes)
 
@@ -717,12 +715,10 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			result["displayName"] = check.get("displayName", gettext("OctoPrint"))
 			result["displayVersion"] = check.get("displayVersion", "{octoprint_version}")
 
-			from octoprint._version import get_versions
-			versions = get_versions()
 			if check["type"] == "github_commit":
-				result["current"] = versions.get("full-revisionid", versions.get("full", "unknown"))
+				result["current"] = REVISION if REVISION else "unknown"
 			else:
-				result["current"] = versions["version"]
+				result["current"] = VERSION
 		else:
 			result["displayName"] = check.get("displayName", target)
 			result["displayVersion"] = check.get("displayVersion", check.get("current", "unknown"))
