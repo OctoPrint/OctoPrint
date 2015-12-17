@@ -476,6 +476,10 @@ function showConfirmationDialog(message, onacknowledge) {
     confirmationDialog.modal("show");
 }
 
+function showReloadOverlay() {
+    $("#reloadui_overlay").show();
+}
+
 function commentableLinesToArray(lines) {
     return splitTextToArray(lines, "\n", true, function(item) {return !_.startsWith(item, "#")});
 }

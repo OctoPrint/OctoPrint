@@ -44,7 +44,7 @@ def index():
 	enable_gcodeviewer = settings().getBoolean(["gcodeViewer", "enabled"])
 	enable_timelapse = (settings().get(["webcam", "snapshot"]) and settings().get(["webcam", "ffmpeg"]))
 	enable_systemmenu = settings().get(["system"]) is not None and settings().get(["system", "actions"]) is not None
-	enable_accesscontrol = userManager is not None
+	enable_accesscontrol = userManager.enabled
 	preferred_stylesheet = settings().get(["devel", "stylesheet"])
 	locales = dict((l.language, dict(language=l.language, display=l.display_name, english=l.english_name)) for l in LOCALES)
 
@@ -281,11 +281,11 @@ def index():
 
 	#~~ prepare full set of template vars for rendering
 
-	first_run = settings().getBoolean(["server", "firstRun"]) and (userManager is None or not userManager.hasBeenCustomized())
+	first_run = settings().getBoolean(["server", "firstRun"]) and userManager.enabled and not userManager.hasBeenCustomized()
 	render_kwargs = dict(
 		webcamStream=settings().get(["webcam", "stream"]),
 		enableTemperatureGraph=settings().get(["feature", "temperatureGraph"]),
-		enableAccessControl=userManager is not None,
+		enableAccessControl=userManager.enabled,
 		enableSdSupport=settings().get(["feature", "sdSupport"]),
 		firstRun=first_run,
 		debug=debug,
