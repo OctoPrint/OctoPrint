@@ -15,6 +15,7 @@ from octoprint.server.api import api
 from octoprint.events import Events
 import octoprint.filemanager
 import octoprint.filemanager.util
+import octoprint.filemanager.storage
 import octoprint.slicing
 
 import psutil
@@ -286,9 +287,14 @@ def uploadGcodeFile(target):
 		# FileDestinations.LOCAL = should normally be target, but can't because SDCard handling isn't implemented yet
 		futureFullPath = fileManager.join_path(FileDestinations.LOCAL, futurePath, futureFilename)
 
-		added_file = fileManager.add_file(FileDestinations.LOCAL, futureFullPath, upload, allow_overwrite=True)
-		if added_file is None:
-			return make_response("Could not upload the file %s" % upload.filename, 500)
+		try:
+			added_file = fileManager.add_file(FileDestinations.LOCAL, futureFullPath, upload, allow_overwrite=True)
+		except octoprint.filemanager.storage.StorageError as e:
+			if e.code == octoprint.filemanager.storage.StorageError.INVALID_FILE:
+				return make_response("Could not upload the file \"{}\", invalid type".format(upload.filename), 400)
+			else:
+				return make_response("Could not upload the file \"{}\"".format(upload.filename), 500)
+
 		if octoprint.filemanager.valid_file_type(added_file, "stl"):
 			filename = added_file
 			done = True
@@ -345,9 +351,13 @@ def uploadGcodeFile(target):
 		if octoprint.filemanager.valid_file_type(futureName):
 			return make_response("Can't create a folder named %s, please try another name" % futureName, 409)
 
-		added_folder = fileManager.add_folder(target, futureFullPath)
-		if added_folder is None:
-			return make_response("Could not create folder %s" % futureName, 500)
+		try:
+			added_folder = fileManager.add_folder(target, futureFullPath)
+		except octoprint.filemanager.storage.StorageError as e:
+			if e.code == octoprint.filemanager.storage.StorageError.INVALID_DIRECTORY:
+				return make_response("Could not create folder {}, invalid directory".format(futureName))
+			else:
+				return make_response("Could not create folder {}".format(futureName))
 	else:
 		return make_response("No file to upload and no folder to create", 400)
 
