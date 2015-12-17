@@ -2499,7 +2499,7 @@ def gcode_command_for_cmd(cmd):
 		return values["commandGM"]
 	elif "commandT" in values and values["commandT"]:
 		return values["commandT"]
-	elif "commandF" in values and values["commandF"]:
+	elif settings().getBoolean(["feature", "supportFAsCommand"]) and "commandF" in values and values["commandF"]:
 		return values["commandF"]
 	else:
 		# this should never happen
