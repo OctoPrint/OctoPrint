@@ -347,12 +347,15 @@ def uploadGcodeFile(target):
 			return make_response("Unknown target: %s" % target, 400)
 
 		futurePath, futureName = fileManager.sanitize(target, foldername)
+		if not futureName or not futurePath:
+			return make_response("Can't create a folder with an empty name", 400)
+
 		futureFullPath = fileManager.join_path(target, futurePath, futureName)
 		if octoprint.filemanager.valid_file_type(futureName):
 			return make_response("Can't create a folder named %s, please try another name" % futureName, 409)
 
 		try:
-			added_folder = fileManager.add_folder(target, futureFullPath)
+			fileManager.add_folder(target, futureFullPath)
 		except octoprint.filemanager.storage.StorageError as e:
 			if e.code == octoprint.filemanager.storage.StorageError.INVALID_DIRECTORY:
 				return make_response("Could not create folder {}, invalid directory".format(futureName))
