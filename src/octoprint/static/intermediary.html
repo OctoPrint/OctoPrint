@@ -133,6 +133,9 @@
                 var timeout = 1500;
 
                 var baseUrl = window.location.href;
+                if (baseUrl.indexOf("#") > -1) {
+                    baseUrl = baseUrl.substring(0, baseUrl.indexOf("#"));
+                }
                 if (baseUrl.indexOf("/static") > -1) {
                     baseUrl = baseUrl.substring(0, baseUrl.indexOf("/static")) + "/";
                 }
