@@ -188,7 +188,7 @@ def login():
 	if hasattr(request, "json") and request.json:
 		data = request.json
 
-	if octoprint.server.userManager is not None and "user" in data and "pass" in data:
+	if octoprint.server.userManager.enabled and "user" in data and "pass" in data:
 		username = data["user"]
 		password = data["pass"]
 
@@ -203,7 +203,7 @@ def login():
 		user = octoprint.server.userManager.findUser(username)
 		if user is not None:
 			if octoprint.server.userManager.checkPassword(username, password):
-				if octoprint.server.userManager is not None:
+				if octoprint.server.userManager.enabled:
 					user = octoprint.server.userManager.login_user(user)
 					session["usersession.id"] = user.get_session()
 					g.user = user

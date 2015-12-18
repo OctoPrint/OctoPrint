@@ -77,6 +77,7 @@ class VirtualPrinter(object):
 
 		self._okBeforeCommandOutput = settings().getBoolean(["devel", "virtualPrinter", "okBeforeCommandOutput"])
 		self._supportM112 = settings().getBoolean(["devel", "virtualPrinter", "supportM112"])
+		self._supportF = settings().getBoolean(["devel", "virtualPrinter", "supportF"])
 
 		self._sendWait = settings().getBoolean(["devel", "virtualPrinter", "sendWait"])
 		self._waitInterval = settings().getFloat(["devel", "virtualPrinter", "waitInterval"])
@@ -241,7 +242,12 @@ class VirtualPrinter(object):
 		self._send("Active Extruder: %d" % self.currentExtruder)
 
 	def _gcode_F(self, code, data):
-		self._send("echo:changed F value")
+		if self._supportF:
+			self._send("echo:changed F value")
+			return False
+		else:
+			self._send("Error: Unknown command F")
+			return True
 
 	def _gcode_M104(self, data):
 		self._parseHotendCommand(data)

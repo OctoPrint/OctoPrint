@@ -213,7 +213,7 @@ def index():
 
 	else:
 		wizard = wizard_active(_templates)
-		enable_accesscontrol = userManager is not None
+		enable_accesscontrol = userManager.enabled
 		render_kwargs.update(dict(
 			webcamStream=settings().get(["webcam", "stream"]),
 			enableTemperatureGraph=settings().get(["feature", "temperatureGraph"]),
@@ -267,7 +267,7 @@ def _get_render_kwargs(templates, plugin_names, plugin_vars, now):
 
 
 def _process_templates():
-	enable_accesscontrol = userManager is not None
+	enable_accesscontrol = userManager.enabled
 	first_run = settings().getBoolean(["server", "firstRun"])
 	enable_gcodeviewer = settings().getBoolean(["gcodeViewer", "enabled"])
 	enable_timelapse = (settings().get(["webcam", "snapshot"]) and settings().get(["webcam", "ffmpeg"]))

@@ -68,7 +68,7 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 	#~~ ACL subwizard
 
 	def _is_acl_wizard_required(self):
-		return self._user_manager is not None and not self._user_manager.hasBeenCustomized()
+		return self._user_manager.enabled and not self._user_manager.hasBeenCustomized()
 
 	def _get_acl_wizard_details(self):
 		return dict()
@@ -93,7 +93,8 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 						"pass2" in data.keys() and data["pass1"] == data["pass2"]:
 			# configure access control
 			self._settings.global_set_boolean(["accessControl", "enabled"], True)
-			octoprint.server.userManager.addUser(data["user"], data["pass1"], True, ["user", "admin"], overwrite=True)
+			self._user_manager.enable()
+			self._user_manager.addUser(data["user"], data["pass1"], True, ["user", "admin"], overwrite=True)
 		elif "ac" in data.keys() and not data["ac"] in valid_boolean_trues:
 			# disable access control
 			self._settings.global_set_boolean(["accessControl", "enabled"], False)
@@ -101,6 +102,7 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 			octoprint.server.loginManager.anonymous_user = octoprint.users.DummyUser
 			octoprint.server.principals.identity_loaders.appendleft(octoprint.users.dummy_identity_loader)
 
+			self._user_manager.disable()
 		self._settings.save()
 		return NO_CONTENT
 

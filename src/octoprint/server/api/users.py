@@ -23,7 +23,7 @@ from octoprint.server.util.flask import restricted_access
 @restricted_access
 @admin_permission.require(403)
 def getUsers():
-	if userManager is None:
+	if not userManager.enabled:
 		return jsonify(SUCCESS)
 
 	return jsonify({"users": userManager.getAllUsers()})
@@ -33,7 +33,7 @@ def getUsers():
 @restricted_access
 @admin_permission.require(403)
 def addUser():
-	if userManager is None:
+	if not userManager.enabled:
 		return jsonify(SUCCESS)
 
 	if not "application/json" in request.headers["Content-Type"]:
@@ -62,7 +62,7 @@ def addUser():
 @api.route("/users/<username>", methods=["GET"])
 @restricted_access
 def getUser(username):
-	if userManager is None:
+	if not userManager.enabled:
 		return jsonify(SUCCESS)
 
 	if current_user is not None and not current_user.is_anonymous() and (current_user.get_name() == username or current_user.is_admin()):
@@ -79,7 +79,7 @@ def getUser(username):
 @restricted_access
 @admin_permission.require(403)
 def updateUser(username):
-	if userManager is None:
+	if not userManager.enabled:
 		return jsonify(SUCCESS)
 
 	user = userManager.findUser(username)
@@ -110,7 +110,7 @@ def updateUser(username):
 @restricted_access
 @admin_permission.require(http_exception=403)
 def removeUser(username):
-	if userManager is None:
+	if not userManager.enabled:
 		return jsonify(SUCCESS)
 
 	try:
@@ -123,7 +123,7 @@ def removeUser(username):
 @api.route("/users/<username>/password", methods=["PUT"])
 @restricted_access
 def changePasswordForUser(username):
-	if userManager is None:
+	if not userManager.enabled:
 		return jsonify(SUCCESS)
 
 	if current_user is not None and not current_user.is_anonymous() and (current_user.get_name() == username or current_user.is_admin()):
@@ -151,7 +151,7 @@ def changePasswordForUser(username):
 @api.route("/users/<username>/settings", methods=["GET"])
 @restricted_access
 def getSettingsForUser(username):
-	if userManager is None:
+	if not userManager.enabled:
 		return jsonify(SUCCESS)
 
 	if current_user is None or current_user.is_anonymous() or (current_user.get_name() != username and not current_user.is_admin()):
@@ -165,7 +165,7 @@ def getSettingsForUser(username):
 @api.route("/users/<username>/settings", methods=["PATCH"])
 @restricted_access
 def changeSettingsForUser(username):
-	if userManager is None:
+	if not userManager.enabled:
 		return jsonify(SUCCESS)
 
 	if current_user is None or current_user.is_anonymous() or (current_user.get_name() != username and not current_user.is_admin()):
@@ -185,7 +185,7 @@ def changeSettingsForUser(username):
 @api.route("/users/<username>/apikey", methods=["DELETE"])
 @restricted_access
 def deleteApikeyForUser(username):
-	if userManager is None:
+	if not userManager.enabled:
 		return jsonify(SUCCESS)
 
 	if current_user is not None and not current_user.is_anonymous() and (current_user.get_name() == username or current_user.is_admin()):
@@ -201,7 +201,7 @@ def deleteApikeyForUser(username):
 @api.route("/users/<username>/apikey", methods=["POST"])
 @restricted_access
 def generateApikeyForUser(username):
-	if userManager is None:
+	if not userManager.enabled:
 		return jsonify(SUCCESS)
 
 	if current_user is not None and not current_user.is_anonymous() and (current_user.get_name() == username or current_user.is_admin()):

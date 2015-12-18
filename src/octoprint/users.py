@@ -26,6 +26,21 @@ class UserManager(object):
 		self._logger = logging.getLogger(__name__)
 		self._session_users_by_session = dict()
 		self._session_users_by_userid = dict()
+		self._enabled = True
+
+	@property
+	def enabled(self):
+		return self._enabled
+
+	@enabled.setter
+	def enabled(self, value):
+		self._enabled = value
+
+	def enable(self):
+		self._enabled = True
+
+	def disable(self):
+		self._enabled = False
 
 	def login_user(self, user):
 		self._cleanup_sessions()

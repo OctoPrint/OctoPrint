@@ -512,6 +512,9 @@ $(function() {
             e.preventDefault();
         });
 
+        // reload overlay
+        $("#reloadui_overlay_reload").click(function() { location.reload(); });
+
         //~~ Starting up the app
 
         callViewModels(allViewModels, "onStartup");

@@ -166,7 +166,8 @@ default_settings = {
 		"keyboardControl": True,
 		"pollWatched": False,
 		"ignoreIdenticalResends": False,
-		"identicalResendsCountdown": 7
+		"identicalResendsCountdown": 7,
+		"supportFAsCommand": False
 	},
 	"folder": {
 		"uploads": None,
@@ -310,7 +311,8 @@ default_settings = {
 			"sendWait": True,
 			"waitInterval": 1.0,
 			"supportM112": True,
-			"echoOnM117": True
+			"echoOnM117": True,
+			"supportF": False
 		}
 	}
 }

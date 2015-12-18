@@ -336,7 +336,7 @@ class StorageInterface(object):
 		raise NotImplementedError()
 
 
-class StorageError(BaseException):
+class StorageError(Exception):
 	UNKNOWN = "unknown"
 	INVALID_DIRECTORY = "invalid_directory"
 	INVALID_FILE = "invalid_file"
