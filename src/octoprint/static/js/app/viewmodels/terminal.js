@@ -253,8 +253,6 @@ $(function() {
         }
     }
 
-    }
-
     OCTOPRINT_VIEWMODELS.push([
         TerminalViewModel,
         ["loginStateViewModel", "settingsViewModel"],
