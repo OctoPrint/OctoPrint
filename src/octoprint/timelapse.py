@@ -19,6 +19,7 @@ import octoprint.util as util
 from octoprint.settings import settings
 from octoprint.events import eventManager, Events
 import sarge
+from subprocess import call
 
 # currently configured timelapse
 current = None
@@ -39,7 +40,7 @@ def getFinishedTimelapses():
 		})
 	return files
 
-validTimelapseTypes = ["off", "timed", "zchange"]
+validTimelapseTypes = ["off", "timed", "zchange", "snapshot"]
 
 updateCallbacks = []
 
@@ -87,6 +88,8 @@ def configureTimelapse(config=None, persist=False):
 		current = None
 	elif "zchange" == type:
 		current = ZTimelapse(post_roll=postRoll, fps=fps)
+	elif "snapshot" == type:
+		current = SnapshotTimelapse(post_roll=postRoll, fps=fps)
 	elif "timed" == type:
 		interval = 10
 		if "options" in config and "interval" in config["options"] and config["options"]["interval"] > 0:
@@ -320,6 +323,9 @@ class Timelapse(object):
 			return True
 
 	def _create_movie(self, success=True):
+		if self._image_number == 0:
+			eventManager().fire(Events.MOVIE_FAILED, {"gcode": self._gcode_file, "movie": output, "movie_basename": os.path.basename(output), "returncode": 255, "error": "No images available. Movie will not be created."})
+			return
 		ffmpeg = settings().get(["webcam", "ffmpeg"])
 		bitrate = settings().get(["webcam", "bitrate"])
 		if ffmpeg is None or bitrate is None:
@@ -375,7 +381,7 @@ class Timelapse(object):
 		self._logger.debug("Rendering movie to %s" % output)
 		command.append("\"" + output + "\"")
 		eventManager().fire(Events.MOVIE_RENDERING, {"gcode": self._gcode_file, "movie": output, "movie_basename": os.path.basename(output)})
-
+		self._logger.debug(command)
 		command_str = " ".join(command)
 		self._logger.debug("Executing command: %s" % command_str)
 
@@ -433,6 +439,43 @@ class ZTimelapse(Timelapse):
 
 	def _on_z_change(self, event, payload):
 		self.captureImage()
+
+class SnapshotTimelapse(Timelapse):
+	def __init__(self, post_roll=0, fps=25):
+		Timelapse.__init__(self, post_roll=post_roll, fps=fps)
+		self._logger.debug("SnapshotTimelapse initialized")
+
+	def event_subscriptions(self):
+		return [
+			(Events.SNAPSHOT, self._onSnapshot)
+		]
+
+	def on_print_started(self, event, payload):
+		Timelapse.on_print_started(self, event, payload)
+		self._logger.info("SnapshotTimelapse restart camera...")
+		call(["/home/pi/restart_camera.sh"])
+	
+	def config_data(self):
+		return {
+			"type": "snapshot"
+		}
+
+	def process_post_roll(self):
+		with self._capture_mutex:
+			filename = os.path.join(self._capture_dir, "tmp_%05d.jpg" % self._image_number)
+			self._image_number += 1
+
+		if self._perform_capture(filename):
+			for _ in range(self._post_roll * self._fps):
+				newFile = os.path.join(self._capture_dir, "tmp_%05d.jpg" % self._image_number)
+				self._image_number += 1
+				shutil.copyfile(filename, newFile)
+
+		Timelapse.process_post_roll(self)
+
+	def _onSnapshot(self, event, payload):
+		self.captureImage()
+
 
 
 class TimedTimelapse(Timelapse):

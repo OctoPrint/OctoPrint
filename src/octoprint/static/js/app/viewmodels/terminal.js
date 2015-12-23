@@ -244,6 +244,14 @@ $(function() {
             }
         };
 
+        self.onAfterBinding = function(){
+            allFilters = [];
+            _.each(self.filters(), function(entry) {
+                allFilters.push(entry.regex);
+            });
+            self.activeFilters(allFilters);
+        }
+
     }
 
     OCTOPRINT_VIEWMODELS.push([
