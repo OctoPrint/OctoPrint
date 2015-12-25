@@ -2,7 +2,7 @@
     <input type="text" class="input-block search-query" data-bind="value: searchQuery, valueUpdate: 'input'" placeholder="{{ _('Search...') }}">
 </form>
 <div class="gcode_files">
-    <div class="entry folder" data-bind="visible: currentPath() != '', click: function() { $root.navigateUp(); }" style="display: none"><i class="icon-arrow-left"></i> {{  _('Back') }}</div>
+    <div class="entry back" data-bind="visible: currentPath() != '', click: function() { $root.navigateUp(); }" style="display: none"><i class="icon-arrow-left"></i> {{  _('Back') }}</div>
 
     <!-- ko slimScrolledForeach: filesAndFolders -->
     <div class="entry" data-bind="attr: { id: $root.getEntryId($data) }, template: { name: $root.templateFor($data), data: $data }, css: $data.type"></div>
