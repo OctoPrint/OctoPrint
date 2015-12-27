@@ -275,6 +275,12 @@ This describes actually four hooks:
        should use this option.
      * A 2-tuple consisting of a rewritten version of the ``cmd`` and the ``cmd_type``, e.g. ``return "M105", "temperature_poll"``.
        Handlers which wish to rewrite both the command and the command type should use this option.
+     * Queuing only: A list of strings replacing the command with a series of commands of the same ``cmd_type``.
+     * Queuing only: A list of 2-tuple replacing the command with a series of commands with new ``cmd_type``. This allows
+       replacing a command with a series of commands of different type.
+
+     Note: Only one command of a given ``cmd_type`` (other than None) may be queued at a time. Trying to rewrite the ``cmd_type``
+     to one already in the queue will give an error. 
 
    **Example**
 
