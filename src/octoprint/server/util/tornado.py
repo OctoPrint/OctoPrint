@@ -800,12 +800,16 @@ class LargeResponseHandler(tornado.web.StaticFileHandler):
 			self._access_validation(self.request)
 		if self._path_validation is not None:
 			self._path_validation(path)
+
+		if "cookie" in self.request.arguments:
+			self.set_cookie(self.request.arguments["cookie"][0], "true", path="/")
+
 		result = tornado.web.StaticFileHandler.get(self, path, include_body=include_body)
 		return result
 
 	def set_extra_headers(self, path):
 		if self._as_attachment:
-			self.set_header("Content-Disposition", "attachment")
+			self.set_header("Content-Disposition", "attachment; filename=%s" % os.path.basename(path))
 
 		if not self._allow_client_caching:
 			self.set_header("Cache-Control", "max-age=0, must-revalidate, private")
@@ -925,6 +929,19 @@ class UrlProxyHandler(tornado.web.RequestHandler):
 			return None
 
 		return "%s%s" % (self._basename, extension)
+
+
+class StaticDataHandler(tornado.web.RequestHandler):
+	def initialize(self, data="", content_type="text/plain"):
+		self.data = data
+		self.content_type = content_type
+
+	def get(self, *args, **kwargs):
+		self.set_status(200)
+		self.set_header("Content-Type", self.content_type)
+		self.write(self.data)
+		self.flush()
+		self.finish()
 
 
 #~~ Factory method for creating Flask access validation wrappers from the Tornado request context

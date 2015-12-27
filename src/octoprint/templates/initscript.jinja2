@@ -17,6 +17,7 @@
     var CONFIG_TEMPERATURE_GRAPH = {%  if enableTemperatureGraph -%} true; {% else %} false; {%- endif %}
     var CONFIG_GCODE_SIZE_THRESHOLD = {{ gcodeThreshold|e }};
     var CONFIG_GCODE_MOBILE_SIZE_THRESHOLD = {{ gcodeMobileThreshold|e }};
+    var CONFIG_WIZARD = {% if wizard -%} true; {% else %} false; {%- endif %}
 
     var SOCKJS_URI = "{{ url_for('index') }}" + "sockjs";
     var SOCKJS_DEBUG = CONFIG_DEBUG;
@@ -24,9 +25,9 @@
     var SOCKJS_CLOSE_NORMAL = 1000;
 
     var UI_API_KEY = "{{ uiApiKey|e }}";
-    var VERSION = "{{ version|e }}";
-    var DISPLAY_VERSION = "{{ display_version|e }}";
-    var BRANCH = "{{ branch|e }}";
+    var VERSION = "{{ version.number|e }}";
+    var DISPLAY_VERSION = "{{ version.display|e }}";
+    var BRANCH = "{{ version.branch|e }}";
     var LOCALE = "{{ g.locale|e }}";
     var AVAILABLE_LOCALES = {{ locales|tojson }};
 

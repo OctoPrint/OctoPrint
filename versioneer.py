@@ -523,7 +523,7 @@ def get_config():
     cfg.tag_prefix = "%(TAG_PREFIX)s"
     cfg.parentdir_prefix = "%(PARENTDIR_PREFIX)s"
     cfg.versionfile_source = "%(VERSIONFILE_SOURCE)s"
-    cfg.lookupfile = None
+    cfg.lookupfile = "%(LOOKUP_FILE)s"
     cfg.verbose = False
     return cfg
 
@@ -2011,6 +2011,7 @@ def do_setup():
                         "TAG_PREFIX": cfg.tag_prefix,
                         "PARENTDIR_PREFIX": cfg.parentdir_prefix,
                         "VERSIONFILE_SOURCE": cfg.versionfile_source,
+                        "LOOKUP_FILE": cfg.lookupfile
                         })
 
     ipy = os.path.join(os.path.dirname(cfg.versionfile_source),

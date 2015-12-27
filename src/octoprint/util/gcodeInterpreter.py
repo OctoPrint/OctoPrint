@@ -56,6 +56,9 @@ class gcode(object):
 		absoluteE = True
 		scale = 1.0
 		posAbs = True
+		fwretractTime = 0
+		fwretractDist = 0
+		fwrecoverTime = 0
 		feedRateXY = min(printer_profile["axes"]["x"]["speed"], printer_profile["axes"]["y"]["speed"])
 		if feedRateXY == 0:
 			# some somewhat sane default if axes speeds are insane...
@@ -174,6 +177,10 @@ class gcode(object):
 					P = getCodeFloat(line, 'P')
 					if P is not None:
 						totalMoveTimeMinute += P / 60.0 / 1000.0
+				elif G == 10:   #Firmware retract
+					totalMoveTimeMinute += fwretractTime
+				elif G == 11:   #Firmware retract recover
+					totalMoveTimeMinute += fwrecoverTime
 				elif G == 20:	#Units are inches
 					scale = 25.4
 				elif G == 21:	#Units are mm
@@ -216,6 +223,15 @@ class gcode(object):
 					absoluteE = True
 				elif M == 83:   #Relative E
 					absoluteE = False
+				elif M == 207 or M == 208: #Firmware retract settings
+					s = getCodeFloat(line, 'S')
+					f = getCodeFloat(line, 'F')
+					if s is not None and f is not None:
+						if M == 207:
+							fwretractTime = s / f
+							fwretractDist = s
+						else:
+							fwrecoverTime = (fwretractDist + s) / f
 
 			elif T is not None:
 				if T > settings().getInt(["gcodeAnalysis", "maxExtruders"]):

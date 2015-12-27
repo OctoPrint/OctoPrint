@@ -32,7 +32,8 @@
             <strong data-bind="text: displayName"></strong>: <span data-bind="text: displayVersion"></span> <span data-bind="invisible: updatePossible"><i class="icon-exclamation-sign" title="{{ _('Update not possible, configuration ok?') }}"></i></span><br>
             <small class="muted">
                 {{ _('Installed:') }} <span data-bind="text: information.local.name"></span><br>
-                {{ _('Available:') }} <span data-bind="text: information.remote.name"></span>
+                {{ _('Available:') }} <span data-bind="text: information.remote.name"></span><br>
+                <span data-bind="visible: releaseNotes">{{ _('Release Notes:') }} <a data-bind="attr: {href: releaseNotes}, text: releaseNotes" target="_blank"></a></span>
             </small>
         </td>
     </tr>
@@ -99,6 +100,19 @@
     <div class="modal-footer">
         <button class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Cancel') }}</button>
         <button class="btn btn-primary" data-bind="click: savePluginSettings" aria-hidden="true">{{ _('Save') }}</button>
+    </div>
+</div>
+
+<div id="settings_plugin_softwareupdate_workingdialog" class="modal hide fade">
+    <div class="modal-header">
+        <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
+        <h3 data-bind="text: workingTitle"></h3>
+    </div>
+    <div class="modal-body">
+        <pre id="settings_plugin_softwareupdate_workingdialog_output" class="terminal pre-scrollable" style="height: 170px" data-bind="foreach: loglines"><span data-bind="text: line, css: {stdout: stream == 'stdout', stderr: stream == 'stderr', call: stream == 'call', message: stream == 'message'}"></span><br></pre>
+    </div>
+    <div class="modal-footer">
+        <button class="btn" data-dismiss="modal" data-bind="enable: !$root.working()" aria-hidden="true">{{ _('Close') }}</button>
     </div>
 </div>
 

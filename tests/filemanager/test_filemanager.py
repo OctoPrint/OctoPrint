@@ -351,4 +351,4 @@ class FileManagerTest(unittest.TestCase):
 		mocked_os.assert_called_once_with("tmp.file")
 
 		# assert that time.time was only called once
-		mocked_time.assert_called_once()
+		self.assertEqual(mocked_time.call_count, 1)

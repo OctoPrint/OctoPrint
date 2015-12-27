@@ -1,4 +1,6 @@
 $(function() {
+        OctoPrint = window.OctoPrint;
+
         //~~ Lodash setup
 
         _.mixin({"sprintf": sprintf, "vsprintf": vsprintf});
@@ -7,10 +9,26 @@ $(function() {
 
         log.setLevel(CONFIG_DEBUG ? "debug" : "info");
 
-        //~~ setup browser and internal tab tracking (in 1.3.0 that will be
-        //   much nicer with the global OctoPrint object...)
+        //~~ OctoPrint client setup
+        OctoPrint.options.baseurl = BASEURL;
+        OctoPrint.options.apikey = UI_API_KEY;
 
-        var tabTracking = (function() {
+        OctoPrint.socket.onMessage("connected", function(data) {
+            var payload = data.data;
+            OctoPrint.options.apikey = payload.apikey;
+
+            // update the API key directly in jquery's ajax options too,
+            // to ensure the fileupload plugin and any plugins still using
+            // $.ajax directly still work fine too
+            UI_API_KEY = payload["apikey"];
+            $.ajaxSetup({
+                headers: {"X-Api-Key": UI_API_KEY}
+            });
+        });
+
+        //~~ some CoreUI specific stuff we put into OctoPrint.coreui
+
+        OctoPrint.coreui = (function() {
             var exports = {
                 browserTabVisibility: undefined,
                 selectedTab: undefined
@@ -128,22 +146,30 @@ $(function() {
         PNotify.prototype.options.styling = "bootstrap2";
         PNotify.prototype.options.mouse_reset = false;
 
+        PNotify.singleButtonNotify = function(options) {
+            if (!options.confirm || !options.confirm.buttons || !options.confirm.buttons.length) {
+                return new PNotify(options);
+            }
+
+            var autoDisplay = options.auto_display != false;
+
+            var params = $.extend(true, {}, options);
+            params.auto_display = false;
+
+            var notify = new PNotify(params);
+            notify.options.confirm.buttons = [notify.options.confirm.buttons[0]];
+            notify.modules.confirm.makeDialog(notify, notify.options.confirm);
+
+            if (autoDisplay) {
+                notify.open();
+            }
+            return notify;
+        };
+
         //~~ Initialize view models
 
         // the view model map is our basic look up table for dependencies that may be injected into other view models
         var viewModelMap = {};
-
-        // We put our tabTracking into the viewModelMap as a workaround until
-        // our global OctoPrint object becomes available in 1.3.0. This way
-        // we'll still be able to access it in our view models.
-        //
-        // NOTE TO DEVELOPERS: Do NOT depend on this dependency in your custom
-        // view models. It is ONLY provided for the core application to be able
-        // to backport a fix from the 1.3.0 development branch and WILL BE
-        // REMOVED once 1.3.0 gets released without any fallback!
-        //
-        // TODO: Remove with release of 1.3.0
-        viewModelMap.tabTracking = tabTracking;
 
         // Fix Function#name on browsers that do not support it (IE):
         // see: http://stackoverflow.com/questions/6903762/function-name-not-supported-in-ie
@@ -310,11 +336,17 @@ $(function() {
             },
             update: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
                 setTimeout(function() {
-                    $(element).slimScroll({scrollBy: 0});
+                    if (element.nodeName == "#comment") {
+                        // foreach is bound to a virtual element
+                        $(element.parentElement).slimScroll({scrollBy: 0});
+                    } else {
+                        $(element).slimScroll({scrollBy: 0});
+                    }
                 }, 10);
                 return ko.bindingHandlers.foreach.update(element, valueAccessor(), allBindings, viewModel, bindingContext);
             }
         };
+        ko.virtualElements.allowedBindings.slimScrolledForeach = true;
 
         ko.bindingHandlers.qrcode = {
             update: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
@@ -451,13 +483,8 @@ $(function() {
         // Allow components to react to tab change
         var onTabChange = function(current, previous) {
             log.debug("Selected OctoPrint tab changed: previous = " + previous + ", current = " + current);
-            tabTracking.selectedTab = current;
-
-            _.each(allViewModels, function(viewModel) {
-                if (viewModel.hasOwnProperty("onTabChange")) {
-                    viewModel.onTabChange(current, previous);
-                }
-            });
+            OctoPrint.coreui.selectedTab = current;
+            callViewModels(allViewModels, "onTabChange", [current, previous]);
         };
 
         var tabs = $('#tabs a[data-toggle="tab"]');
@@ -470,12 +497,7 @@ $(function() {
         tabs.on('shown', function (e) {
             var current = e.target.hash;
             var previous = e.relatedTarget.hash;
-
-            _.each(allViewModels, function(viewModel) {
-                if (viewModel.hasOwnProperty("onAfterTabChange")) {
-                    viewModel.onAfterTabChange(current, previous);
-                }
-            });
+            callViewModels(allViewModels, "onAfterTabChange", [current, previous]);
         });
 
         onTabChange(OCTOPRINT_INITIAL_TAB);
@@ -490,13 +512,12 @@ $(function() {
             e.preventDefault();
         });
 
+        // reload overlay
+        $("#reloadui_overlay_reload").click(function() { location.reload(); });
+
         //~~ Starting up the app
 
-        _.each(allViewModels, function(viewModel) {
-            if (viewModel.hasOwnProperty("onStartup")) {
-                viewModel.onStartup();
-            }
-        });
+        callViewModels(allViewModels, "onStartup");
 
         //~~ view model binding
 
@@ -527,6 +548,8 @@ $(function() {
                         targets = [targets];
                     }
 
+                    viewModel._bindings = [];
+
                     _.each(targets, function(target) {
                         if (target == undefined) {
                             return;
@@ -552,6 +575,12 @@ $(function() {
 
                         try {
                             ko.applyBindings(viewModel, element);
+                            viewModel._bindings.push(target);
+
+                            if (viewModel.hasOwnProperty("onBoundTo")) {
+                                viewModel.onBoundTo(target, element);
+                            }
+
                             log.debug("View model", viewModel.constructor.name, "bound to", target);
                         } catch (exc) {
                             log.error("Could not bind view model", viewModel.constructor.name, "to target", target, ":", (exc.stack || exc));
@@ -559,40 +588,31 @@ $(function() {
                     });
                 }
 
+                viewModel._unbound = viewModel._bindings != undefined && viewModel._bindings.length == 0;
+
                 if (viewModel.hasOwnProperty("onAfterBinding")) {
                     viewModel.onAfterBinding();
                 }
             });
 
-            _.each(allViewModels, function(viewModel) {
-                if (viewModel.hasOwnProperty("onAllBound")) {
-                    viewModel.onAllBound(allViewModels);
-                }
-            });
+            callViewModels(allViewModels, "onAllBound", [allViewModels]);
             log.info("... binding done");
 
             // startup complete
-            _.each(allViewModels, function(viewModel) {
-                if (viewModel.hasOwnProperty("onStartupComplete")) {
-                    viewModel.onStartupComplete();
-                }
-            });
+            callViewModels(allViewModels, "onStartupComplete");
 
             // make sure we can track the browser tab visibility
-            tabTracking.onBrowserVisibilityChange(function(status) {
+            OctoPrint.coreui.onBrowserVisibilityChange(function(status) {
                 log.debug("Browser tab is now " + (status ? "visible" : "hidden"));
-                _.each(allViewModels, function(viewModel) {
-                    if (viewModel.hasOwnProperty("onBrowserTabVisibilityChange")) {
-                        viewModel.onBrowserTabVisibilityChange(status);
-                    }
-                });
+                callViewModels(allViewModels, "onBrowserTabVisibilityChange", [status]);
             });
         };
 
         if (!_.has(viewModelMap, "settingsViewModel")) {
             throw new Error("settingsViewModel is missing, can't run UI")
         }
-        viewModelMap["settingsViewModel"].requestData(bindViewModels);
+        viewModelMap["settingsViewModel"].requestData()
+            .done(bindViewModels);
     }
 );
 

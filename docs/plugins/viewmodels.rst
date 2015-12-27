@@ -171,7 +171,7 @@ onAfterTabChange
 
 getAdditionalControls
    Your viewmodel may return additional custom control definitions for inclusion on the "Control" tab of OctoPrint's
-   interface. See :ref:`the custom control feature<sec-features-custom_controls>`. 
+   interface. See :ref:`the custom control feature<sec-features-custom_controls>`.
 
 onSettingsShown
    Called when the settings dialog is shown.
@@ -188,6 +188,27 @@ onUserSettingsShown
 
 onUserSettingsHidden
    Called when the user settings dialog is hidden.
+
+onWizardDetails
+   Called with the response from the wizard detail API call initiated before opening the wizard dialog. Will contain
+   the data from all :class:`~octoprint.plugin.WizardPlugin` implementations returned by their :meth:`~octoprint.plugin.WizardPlugin.get_wizard_details`
+   method, mapped by the plugin identifier.
+
+onWizardTabChange
+   Called before the wizard tab/step is changed, with the ids of the current and the next tab as parameters. Return false
+   in order to prevent the tab change, e.g. if the wizard step is mandatory and not yet completed by the user. Take a look at
+   the "Core Wizard" plugin bundled with OctoPrint and the ACL wizard step in particular for an example on how to use this.
+
+onAfterWizardTabChange
+   Called after the wizard tab/step is changed, with the id of the current tab as parameter.
+
+onBeforeWizardFinish
+   Called before executing the finishing of the wizard. Return false here to stop the actual finish, e.g. if some step is
+   still incomplete.
+
+onWizardFinish
+   Called after executing the finishing of the wizard and before closing the dialog. Return ``reload`` here in order to
+   instruct OctoPrint to reload the UI after the wizard closes.
 
 In order to hook into any of those callbacks, just have your viewmodel define a function named accordingly, e.g.
 to get called after all viewmodels have been bound during application startup, implement a function ``onAllBound``

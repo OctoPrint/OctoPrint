@@ -12,13 +12,15 @@ import flask
 import os
 import threading
 import time
+import logging
+import logging.handlers
 import hashlib
 
-from . import version_checks, updaters, exceptions, util
+from . import version_checks, updaters, exceptions, util, cli
 
 
 from octoprint.server.util.flask import restricted_access
-from octoprint.server import admin_permission
+from octoprint.server import admin_permission, VERSION, REVISION
 from octoprint.util import dict_merge
 import octoprint.settings
 
@@ -29,7 +31,8 @@ import octoprint.settings
 class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
                            octoprint.plugin.SettingsPlugin,
                            octoprint.plugin.AssetPlugin,
-                           octoprint.plugin.TemplatePlugin):
+                           octoprint.plugin.TemplatePlugin,
+                           octoprint.plugin.StartupPlugin):
 	def __init__(self):
 		self._update_in_progress = False
 		self._configured_checks_mutex = threading.Lock()
@@ -41,7 +44,11 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		self._version_cache_path = None
 		self._version_cache_dirty = False
 
+		self._console_logger = None
+
 	def initialize(self):
+		self._console_logger = logging.getLogger("octoprint.plugins.softwareupdate.console")
+
 		self._version_cache_ttl = self._settings.get_int(["cache_ttl"]) * 60
 		self._version_cache_path = os.path.join(self.get_plugin_data_folder(), "versioncache.yaml")
 		self._load_version_cache()
@@ -52,6 +59,15 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 		self._plugin_lifecycle_manager.add_callback("enabled", refresh_checks)
 		self._plugin_lifecycle_manager.add_callback("disabled", refresh_checks)
+
+	def on_startup(self, host, port):
+		console_logging_handler = logging.handlers.RotatingFileHandler(self._settings.get_plugin_logfile_path(postfix="console"), maxBytes=2*1024*1024)
+		console_logging_handler.setFormatter(logging.Formatter("%(asctime)s %(message)s"))
+		console_logging_handler.setLevel(logging.DEBUG)
+
+		self._console_logger.addHandler(console_logging_handler)
+		self._console_logger.setLevel(logging.DEBUG)
+		self._console_logger.propagate = False
 
 	def _get_configured_checks(self):
 		with self._configured_checks_mutex:
@@ -335,7 +351,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 	@restricted_access
 	def check_for_update(self):
 		if "check" in flask.request.values:
-			check_targets = map(str.strip, flask.request.values["check"].split(","))
+			check_targets = map(lambda x: x.strip(), flask.request.values["check"].split(","))
 		else:
 			check_targets = None
 
@@ -365,7 +381,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		json_data = flask.request.json
 
 		if "check" in json_data:
-			check_targets = map(str.strip, json_data["check"])
+			check_targets = map(lambda x: x.strip(), json_data["check"])
 		else:
 			check_targets = None
 
@@ -425,22 +441,33 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				self._logger.warn("Unknown update check type for target {}: {}".format(target, check.get("type", "<n/a>")))
 				continue
 
-			target_information = dict_merge(dict(local=dict(name="unknown", value="unknown"), remote=dict(name="unknown", value="unknown")), target_information)
+			target_information = dict_merge(dict(local=dict(name="unknown", value="unknown"), remote=dict(name="unknown", value="unknown", release_notes=None)), target_information)
 
 			update_available = update_available or target_update_available
 			update_possible = update_possible or (target_update_possible and target_update_available)
 
-			from octoprint._version import get_versions
-			octoprint_version = get_versions()["version"]
 			local_name = target_information["local"]["name"]
 			local_value = target_information["local"]["value"]
+
+			release_notes = None
+			if target_information and target_information["remote"] and target_information["remote"]["value"]:
+				if "release_notes" in populated_check and populated_check["release_notes"]:
+					release_notes = populated_check["release_notes"]
+				elif "release_notes" in target_information["remote"]:
+					release_notes = target_information["remote"]["release_notes"]
+
+				if release_notes:
+					release_notes = release_notes.format(octoprint_version=VERSION,
+					                                     target_name=target_information["remote"]["name"],
+					                                     target_version=target_information["remote"]["value"])
 
 			information[target] = dict(updateAvailable=target_update_available,
 			                           updatePossible=target_update_possible,
 			                           information=target_information,
 			                           displayName=populated_check["displayName"],
-			                           displayVersion=populated_check["displayVersion"].format(octoprint_version=octoprint_version, local_name=local_name, local_value=local_value),
-			                           check=populated_check)
+			                           displayVersion=populated_check["displayVersion"].format(octoprint_version=VERSION, local_name=local_name, local_value=local_value),
+			                           check=populated_check,
+			                           releaseNotes=release_notes)
 
 		if self._version_cache_dirty:
 			self._save_version_cache()
@@ -492,9 +519,6 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		self._version_cache_dirty = True
 		return information, update_available, update_possible
 
-	def _send_client_message(self, message_type, data=None):
-		self._plugin_manager.send_plugin_message("softwareupdate", dict(type=message_type, data=data))
-
 	def perform_updates(self, check_targets=None, force=False):
 		"""
 		Performs the updates for the given check_targets. Will update all possible targets by default.
@@ -524,7 +548,8 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		updater_thread.daemon = False
 		updater_thread.start()
 
-		return to_be_updated, dict((key, check["displayName"] if "displayName" in check else key) for key, check in populated_checks.items() if key in to_be_updated)
+		check_data = dict((key, check["displayName"] if "displayName" in check else key) for key, check in populated_checks.items() if key in to_be_updated)
+		return to_be_updated, check_data
 
 	def _update_worker(self, checks, check_targets, force):
 
@@ -616,33 +641,34 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 		### The actual update procedure starts here...
 
+		populated_check = self._populated_check(target, check)
 		try:
 			self._logger.info("Starting update of %s to %s..." % (target, target_version))
-			self._send_client_message("updating", dict(target=target, version=target_version))
+			self._send_client_message("updating", dict(target=target, version=target_version, name=populated_check["displayName"]))
 			updater = self._get_updater(target, check)
 			if updater is None:
 				raise exceptions.UnknownUpdateType()
 
-			update_result = updater.perform_update(target, check, target_version)
+			update_result = updater.perform_update(target, populated_check, target_version, log_cb=self._log)
 			target_result = ("success", update_result)
 			self._logger.info("Update of %s to %s successful!" % (target, target_version))
 
 		except exceptions.UnknownUpdateType:
 			self._logger.warn("Update of %s can not be performed, unknown update type" % target)
-			self._send_client_message("update_failed", dict(target=target, version=target_version, reason="Unknown update type"))
+			self._send_client_message("update_failed", dict(target=target, version=target_version, name=populated_check["displayName"], reason="Unknown update type"))
 			return False, None
 
 		except Exception as e:
 			self._logger.exception("Update of %s can not be performed" % target)
-			if not "ignorable" in check or not check["ignorable"]:
+			if not "ignorable" in populated_check or not populated_check["ignorable"]:
 				target_error = True
 
 			if isinstance(e, exceptions.UpdateError):
 				target_result = ("failed", e.data)
-				self._send_client_message("update_failed", dict(target=target, version=target_version, reason=e.data))
+				self._send_client_message("update_failed", dict(target=target, version=target_version, name=populated_check["displayName"], reason=e.data))
 			else:
 				target_result = ("failed", None)
-				self._send_client_message("update_failed", dict(target=target, version=target_version, reason="unknown"))
+				self._send_client_message("update_failed", dict(target=target, version=target_version, name=populated_check["displayName"], reason="unknown"))
 
 		else:
 			# make sure that any external changes to config.yaml are loaded into the system
@@ -689,12 +715,10 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			result["displayName"] = check.get("displayName", gettext("OctoPrint"))
 			result["displayVersion"] = check.get("displayVersion", "{octoprint_version}")
 
-			from octoprint._version import get_versions
-			versions = get_versions()
 			if check["type"] == "github_commit":
-				result["current"] = versions.get("full-revisionid", versions.get("full", "unknown"))
+				result["current"] = REVISION if REVISION else "unknown"
 			else:
-				result["current"] = versions["version"]
+				result["current"] = VERSION
 		else:
 			result["displayName"] = check.get("displayName", target)
 			result["displayVersion"] = check.get("displayVersion", check.get("current", "unknown"))
@@ -704,6 +728,17 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				result["current"] = check.get("current", check.get("displayVersion", None))
 
 		return result
+
+	def _log(self, lines, prefix=None, stream=None, strip=True):
+		if strip:
+			lines = map(lambda x: x.strip(), lines)
+
+		self._send_client_message("loglines", data=dict(loglines=[dict(line=line, stream=stream) for line in lines]))
+		for line in lines:
+			self._console_logger.debug(u"{prefix} {line}".format(**locals()))
+
+	def _send_client_message(self, message_type, data=None):
+		self._plugin_manager.send_plugin_message(self._identifier, dict(type=message_type, data=data))
 
 	def _get_version_checker(self, target, check):
 		"""
@@ -745,6 +780,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		else:
 			raise exceptions.UnknownUpdateType()
 
+
 __plugin_name__ = "Software Update"
 __plugin_author__ = "Gina Häußge"
 __plugin_url__ = "https://github.com/foosel/OctoPrint/wiki/Plugin:-Software-Update"
@@ -761,5 +797,10 @@ def __plugin_load__():
 		exceptions=exceptions,
 		util=util
 	)
+
+	global __plugin_hooks__
+	__plugin_hooks__ = {
+		"octoprint.cli.commands": cli.commands
+	}
 
 

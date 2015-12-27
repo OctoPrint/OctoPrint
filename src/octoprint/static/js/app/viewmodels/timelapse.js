@@ -34,20 +34,20 @@ $(function() {
             return self.isDirty() && self.isOperational() && !self.isPrinting() && self.loginState.isUser();
         });
 
-        self.isOperational.subscribe(function(newValue) {
+        self.isOperational.subscribe(function() {
             self.requestData();
         });
 
-        self.timelapseType.subscribe(function(newValue) {
+        self.timelapseType.subscribe(function() {
             self.isDirty(true);
         });
-        self.timelapseTimedInterval.subscribe(function(newValue) {
+        self.timelapseTimedInterval.subscribe(function() {
             self.isDirty(true);
         });
-        self.timelapsePostRoll.subscribe(function(newValue) {
+        self.timelapsePostRoll.subscribe(function() {
             self.isDirty(true);
         });
-        self.timelapseFps.subscribe(function(newValue) {
+        self.timelapseFps.subscribe(function() {
             self.isDirty(true);
         });
 
@@ -83,12 +83,8 @@ $(function() {
         );
 
         self.requestData = function() {
-            $.ajax({
-                url: API_BASEURL + "timelapse",
-                type: "GET",
-                dataType: "json",
-                success: self.fromResponse
-            });
+            OctoPrint.timelapse.get()
+                .done(self.fromResponse);
         };
 
         self.fromResponse = function(response) {
@@ -141,15 +137,11 @@ $(function() {
         };
 
         self.removeFile = function(filename) {
-            $.ajax({
-                url: API_BASEURL + "timelapse/" + filename,
-                type: "DELETE",
-                dataType: "json",
-                success: self.requestData
-            });
+            OctoPrint.timelapse.delete(filename)
+                .done(self.requestData);
         };
 
-        self.save = function(data, event) {
+        self.save = function() {
             var payload = {
                 "type": self.timelapseType(),
                 "postRoll": self.timelapsePostRoll(),
@@ -161,20 +153,15 @@ $(function() {
                 payload["interval"] = self.timelapseTimedInterval();
             }
 
-            $.ajax({
-                url: API_BASEURL + "timelapse",
-                type: "POST",
-                dataType: "json",
-                data: payload,
-                success: self.fromResponse
-            });
+            OctoPrint.timelapse.saveConfig(payload)
+                .done(self.fromResponse);
         };
 
         self.onDataUpdaterReconnect = function() {
             self.requestData();
         };
 
-        self.onEventMovieDone = function(payload) {
+        self.onEventMovieDone = function() {
             self.requestData();
         };
 

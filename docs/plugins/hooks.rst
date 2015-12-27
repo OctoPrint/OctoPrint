@@ -37,6 +37,143 @@ octoprint.accesscontrol.appkey
    :return: A list of 3-tuples as described above
    :rtype: list
 
+.. _sec-plugins-hook-cli-commands:
+
+octoprint.cli.commands
+----------------------
+
+.. py:function:: hook(cli_group, pass_octoprint_ctx, *args, **kwargs)
+
+   By providing a handler for this hook plugins may register commands on OctoPrint's command line interface (CLI).
+
+   Handlers are expected to return a list of callables annotated as `Click commands <http://click.pocoo.org/5/>`_ to register with the
+   CLI.
+
+   The custom ``MultiCommand`` instance :class:`~octoprint.cli.plugins.OctoPrintPluginCommands` is provided
+   as parameter. Via that object handlers may access the *global* :class:`~octoprint.settings.Settings`
+   and the :class:`~octoprint.plugin.core.PluginManager` instance as ``cli_group.settings`` and ``cli_group.plugin_manager``.
+
+   **Example:**
+
+   Registers two new commands, ``custom_cli_command:greet`` and ``custom_cli_command:random`` with
+   OctoPrint:
+
+   .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/custom_cli_command.py
+      :linenos:
+      :tab-width: 4
+      :caption: `custom_cli_command.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/custom_cli_command.py>`_
+
+   Calling ``octoprint --help`` shows the two new commands:
+
+   .. code-block:: none
+
+      $ octoprint --help
+      Usage: octoprint [OPTIONS] COMMAND [ARGS]...
+
+      Options:
+        -b, --basedir PATH  Specify the basedir to use for uploads, timelapses etc.
+        -c, --config PATH   Specify the config file to use.
+        -v, --verbose       Increase logging verbosity
+        --version           Show the version and exit.
+        --help              Show this message and exit.
+
+      Commands:
+        daemon                     Starts, stops or restarts in daemon mode.
+        dev:plugin                 Helpers for plugin developers
+        plugin:custom_cli_command  custom_cli_command commands
+        serve                      Starts the OctoPrint server.
+
+      $ octoprint plugin:custom_cli_command --help
+      Usage: octoprint plugin:custom_cli_command [OPTIONS] COMMAND [ARGS]...
+
+        custom_cli_command commands
+
+      Options:
+        --help  Show this message and exit.
+
+      Commands:
+        greet   Greet someone by name, the greeting can be...
+        random  Greet someone by name with a random greeting.
+
+   Each also has an individual help output:
+
+   .. code-block:: none
+
+      $ octoprint plugin:custom_cli_command greet --help
+      Usage: octoprint plugin:custom_cli_command greet [OPTIONS] [NAME]
+
+        Greet someone by name, the greeting can be customized.
+
+      Options:
+        -g, --greeting TEXT  The greeting to use
+        --help               Show this message and exit.
+
+      $ octoprint plugin:custom_cli_command random --help
+      Usage: octoprint plugin:custom_cli_command random [OPTIONS] [NAME]
+
+        Greet someone by name with a random greeting.
+
+      Options:
+        --help  Show this message and exit.
+
+   And of course they work too:
+
+   .. code-block:: none
+
+      $ octoprint plugin:custom_cli_command greet
+      Hello World!
+
+      $ octoprint plugin:custom_cli_command greet --greeting "Good morning"
+      Good morning World!
+
+      $ octoprint plugin:custom_cli_command random stranger
+      Hola stranger!
+
+   .. note::
+
+      If your hook handler is an instance method of a plugin mixin implementation, be aware that the hook will be
+      called without OctoPrint initializing your implementation instance. That means that **none** of the
+      :ref:`injected properties <sec-plugins-concepts-injectedproperties>` will be available and also the
+      :method:`~octoprint.plugin.Plugin.initialize` method will not be called.
+
+      Your hook handler will have access to the plugin manager as ``cli_group.plugin_manager`` and to the
+      *global* settings as ``cli_group.settings``. You can have your handler turn the latter into a
+      :class:`~octoprint.plugin.PluginSettings` instance by using :func:`octoprint.plugin.plugin_settings_from_settings_plugin`
+      if your plugin's implementation implements the :class:`~octoprint.plugin.SettingsPlugin` mixin and inject
+      that and the plugin manager instance yourself:
+
+      .. code-block:: python
+
+         import octoprint.plugin
+
+         class MyPlugin(octoprint.plugin.SettingsPlugin):
+
+             def get_cli_commands(self, cli_group, pass_octoprint_ctx, *args, **kwargs):
+                 import logging
+
+                 settings = cli_group._settings
+                 plugin_settings = octoprint.plugin.plugin_settings_for_settings_plugin("myplugin", self)
+                 if plugin_settings is None:
+                     # this can happen if anything goes wrong with preparing the PluginSettings instance
+                     return dict()
+
+                 self._settings = plugin_settings
+                 self._plugin_manager = cli_group._plugin_manager
+                 self._logger = logging.getLogger(__name__)
+
+                 ### command definition starts here
+
+                 # ...
+
+
+      No other platform components will be available - the CLI runs outside of a running, fully initialized
+      OctoPrint server context, so there is absolutely no way to access a printer connection, the event bus or
+      anything else like that. The only things available are the settings and the plugin manager.
+
+   :return: A list of `Click commands or groups <http://click.pocoo.org/5/commands/>`_ to provide on
+            OctoPrint's CLI.
+   :rtype: list
+
 .. _sec-plugins-hook-comm-protocol-action:
 
 octoprint.comm.protocol.action
@@ -138,6 +275,12 @@ This describes actually four hooks:
        should use this option.
      * A 2-tuple consisting of a rewritten version of the ``cmd`` and the ``cmd_type``, e.g. ``return "M105", "temperature_poll"``.
        Handlers which wish to rewrite both the command and the command type should use this option.
+     * Queuing only: A list of strings replacing the command with a series of commands of the same ``cmd_type``.
+     * Queuing only: A list of 2-tuple replacing the command with a series of commands with new ``cmd_type``. This allows
+       replacing a command with a series of commands of different type.
+
+     Note: Only one command of a given ``cmd_type`` (other than None) may be queued at a time. Trying to rewrite the ``cmd_type``
+     to one already in the queue will give an error. 
 
    **Example**
 
@@ -158,6 +301,32 @@ This describes actually four hooks:
        printing status polling.
    :param str gcode: Parsed GCODE command, e.g. ``G0`` or ``M110``, may also be None if no known command could be parsed
    :return: None, 1-tuple, 2-tuple or string, see the description above for details.
+
+.. _sec-plugins-hook-comm-protocol-gcode-received:
+
+octoprint.comm.protocol.gcode.received
+--------------------------------------
+
+.. py:function:: hook(comm_instance, line, *args, **kwargs)
+
+   Get the returned lines sent by the printer. Handlers should return the received line or in any case, the modified
+   version of it. If the the handler returns None, processing will be aborted and the communication layer will get an
+   empty string as the received line. Note that Python functions will also automatically return ``None`` if an empty
+   ``return`` statement is used or just nothing is returned explicitely from the handler.
+
+   **Example:**
+
+   Looks for the response of a M115, which contains information about the MACHINE_TYPE, among other things.
+
+   .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/read_m115_response.py
+      :linenos:
+      :tab-width: 4
+      :caption: `read_m115_response.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/read_m115_response.py>`_
+
+   :param MachineCom comm_instance: The :class:`~octoprint.util.comm.MachineCom` instance which triggered the hook.
+   :param str line: The line received from the printer.
+   :return: The received line or in any case, a modified version of it.
+   :rtype: str
 
 .. _sec-plugins-hook-comm-protocol-scripts:
 

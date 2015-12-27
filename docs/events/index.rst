@@ -106,6 +106,9 @@ ClientClosed
 Printer communication
 ---------------------
 
+Connecting
+   The server is attempting to connect to the printer.
+
 Connected
    The server has connected to the printer.
 
@@ -113,6 +116,11 @@ Connected
 
      * ``port``: the connected serial port
      * ``baudrate``: the baud rate
+
+Disconnecting
+   The server is going to disconnect from the printer. Note that this
+   event might not always be sent when the server and printer get disconnected
+   from each other. Do not depend on this for critical life cycle management.
 
 Disconnected
    The server has disconnected from the printer
@@ -123,6 +131,15 @@ Error
    Payload:
 
      * ``error``: the error string
+
+PrinterStateChanged
+   The state of the printer changed.
+
+   Payload:
+
+     * ``state_id``: Id of the new state. See
+       :func:`~octoprint.printer.PrinterInterface.get_state_id` for possible values.
+     * ``state_string``: Text representation of the new state.
 
 File handling
 -------------

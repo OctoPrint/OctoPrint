@@ -462,18 +462,99 @@ function hideOfflineOverlay() {
     $("#offline_overlay").hide();
 }
 
-function showConfirmationDialog(message, onacknowledge) {
-    var confirmationDialog = $("#confirmation_dialog");
-    var confirmationDialogAck = $(".confirmation_dialog_acknowledge", confirmationDialog);
+function showMessageDialog(msg, options) {
+    options = options || {};
+    if (_.isPlainObject(msg)) {
+        options = msg;
+    } else {
+        options.message = msg;
+    }
 
-    $(".confirmation_dialog_message", confirmationDialog).text(message);
-    confirmationDialogAck.unbind("click");
-    confirmationDialogAck.bind("click", function (e) {
-        e.preventDefault();
-        $("#confirmation_dialog").modal("hide");
-        onacknowledge(e);
+    var title = options.title || "";
+    var message = options.message || "";
+    var close = options.close || gettext("Close");
+    var onclose = options.onclose || undefined;
+    var onshow = options.onshow || undefined;
+    var onshown = options.onshown || undefined;
+
+    if (_.isString(message)) {
+        message = $("<p>" + message + "</p>");
+    }
+
+    var modalHeader = $('<a href="javascript:void(0)" class="close" data-dismiss="modal" aria-hidden="true">&times;</a><h3>' + title + '</h3>');
+    var modalBody = $(message);
+    var modalFooter = $('<a href="javascript:void(0)" class="btn" data-dismiss="modal" aria-hidden="true">' + close + '</a>');
+
+    var modal = $('<div></div>')
+        .addClass('modal hide fade')
+        .append($('<div></div>').addClass('modal-header').append(modalHeader))
+        .append($('<div></div>').addClass('modal-body').append(modalBody))
+        .append($('<div></div>').addClass('modal-footer').append(modalFooter));
+
+    modal.on("hidden", function() {
+        if (onclose && _.isFunction(onclose)) {
+            onclose();
+        }
     });
-    confirmationDialog.modal("show");
+
+    if (onshow) {
+        modal.on("show", onshow);
+    }
+
+    if (onshown) {
+        modal.on("shown", onshown);
+    }
+
+    modal.modal("show");
+    return modal;
+}
+
+function showConfirmationDialog(msg, onacknowledge, options) {
+    options = options || {};
+    if (_.isPlainObject(msg)) {
+        options = msg;
+    } else {
+        options.message = msg;
+        options.onproceed = onacknowledge;
+    }
+
+    var title = options.title || gettext("Are you sure?");
+    var message = options.message || "";
+    var question = options.question || gettext("Are you sure you want to proceed?");
+    var cancel = options.cancel || gettext("Cancel");
+    var proceed = options.proceed || gettext("Proceed");
+    var proceedClass = options.proceedClass || "danger";
+    var onproceed = options.onproceed || undefined;
+
+    var modalHeader = $('<a href="javascript:void(0)" class="close" data-dismiss="modal" aria-hidden="true">&times;</a><h3>' + title + '</h3>');
+    var modalBody = $('<p>' + message + '</p><p>' + question + '</p>');
+
+    var cancelButton = $('<a href="javascript:void(0)" class="btn">' + cancel + '</a>')
+        .attr("data-dismiss", "modal")
+        .attr("aria-hidden", "true");
+    var proceedButton = $('<a href="javascript:void(0)" class="btn">' + proceed + '</a>')
+        .addClass("btn-" + proceedClass);
+
+    var modal = $('<div></div>')
+        .addClass('modal hide fade')
+        .append($('<div></div>').addClass('modal-header').append(modalHeader))
+        .append($('<div></div>').addClass('modal-body').append(modalBody))
+        .append($('<div></div>').addClass('modal-footer').append(cancelButton).append(proceedButton));
+    modal.modal("show");
+
+    proceedButton.click(function(e) {
+        e.preventDefault();
+        modal.modal("hide");
+        if (onproceed && _.isFunction(onproceed)) {
+            onproceed(e);
+        }
+    });
+
+    return modal;
+}
+
+function showReloadOverlay() {
+    $("#reloadui_overlay").show();
 }
 
 function commentableLinesToArray(lines) {
@@ -488,6 +569,166 @@ function splitTextToArray(text, sep, stripEmpty, filter) {
         ),
         function(item) { return (stripEmpty ? item : true) && (filter ? filter(item) : true); }
     );
+}
+
+/**
+ * Returns true if comparing data and oldData yields changes, false otherwise.
+ *
+ * E.g.
+ *
+ *   hasDataChanged(
+ *     {foo: "bar", fnord: {one: "1", two: "2", three: "three", key: "value"}},
+ *     {foo: "bar", fnord: {one: "1", two: "2", three: "3", four: "4"}}
+ *   )
+ *
+ * will return
+ *
+ *   true
+ *
+ * and
+ *
+ *   hasDataChanged(
+ *     {foo: "bar", fnord: {one: "1", two: "2", three: "3"}},
+ *     {foo: "bar", fnord: {one: "1", two: "2", three: "3"}}
+ *   )
+ *
+ * will return
+ *
+ *   false
+ *
+ * Note that this will assume data and oldData to be structurally identical (same keys)
+ * and is optimized to check for value changes, not key updates.
+ */
+function hasDataChanged(data, oldData) {
+    if (data == undefined) {
+        return false;
+    }
+
+    if (oldData == undefined) {
+        return true;
+    }
+
+    if (_.isPlainObject(data)) {
+        return _.any(_.keys(data), function(key) {return hasDataChanged(data[key], oldData[key]);});
+    } else {
+        return !_.isEqual(data, oldData);
+    }
+}
+
+/**
+ * Compare provided data and oldData plain objects and only return those
+ * substructures of data that actually changed.
+ *
+ * E.g.
+ *
+ *   getOnlyChangedData(
+ *     {foo: "bar", fnord: {one: "1", two: "2", three: "three"}},
+ *     {foo: "bar", fnord: {one: "1", two: "2", three: "3"}}
+ *   )
+ *
+ * will return
+ *
+ *   {fnord: {three: "three"}}
+ *
+ * and
+ *
+ *   getOnlyChangedData(
+ *     {foo: "bar", fnord: {one: "1", two: "2", three: "3"}},
+ *     {foo: "bar", fnord: {one: "1", two: "2", three: "3"}}
+ *   )
+ *
+ * will return
+ *
+ *   {}
+ *
+ * Note that this will assume data and oldData to be structurally identical (same keys)
+ * and is optimized to check for value changes, not key updates.
+ */
+function getOnlyChangedData(data, oldData) {
+    if (data == undefined) {
+        return {};
+    }
+
+    if (oldData == undefined) {
+        return data;
+    }
+
+    var f = function(root, oldRoot) {
+        if (!_.isPlainObject(root)) {
+            return root;
+        }
+
+        var retval = {};
+        _.forOwn(root, function(value, key) {
+            var oldValue = oldRoot[key];
+            if (_.isPlainObject(value)) {
+                if (hasDataChanged(value, oldValue)) {
+                    retval[key] = f(value, oldValue);
+                }
+            } else {
+                if (!_.isEqual(value, oldValue)) {
+                    retval[key] = value;
+                }
+            }
+        });
+        return retval;
+    };
+
+    return f(data, oldData);
+}
+
+function callViewModels(allViewModels, method, callback) {
+    callViewModelsIf(allViewModels, method, undefined, callback);
+}
+
+function callViewModelsIf(allViewModels, method, condition, callback) {
+    if (condition == undefined || !_.isFunction(condition)) {
+        condition = function() { return true; };
+    }
+
+    var parameters = undefined;
+    if (!_.isFunction(callback)) {
+        // if callback is not a function that means we are supposed to directly
+        // call the view model method instead of providing it to the callback
+        // - let's figure out how
+
+        if (callback == undefined) {
+            // directly call view model method with no parameters
+            parameters = undefined;
+            log.trace("Calling method", method, "on view models");
+        } else if (_.isArray(callback)) {
+            // directly call view model method with these parameters
+            parameters = callback;
+            log.trace("Calling method", method, "on view models with specified parameters", parameters);
+        } else {
+            // ok, this doesn't make sense, callback is neither undefined nor
+            // an array, we'll return without doing anything
+            return;
+        }
+
+        // we reset this here so we now further down that we want to call
+        // the method directly
+        callback = undefined;
+    } else {
+        log.trace("Providing method", method, "on view models to specified callback", callback);
+    }
+
+    _.each(allViewModels, function(viewModel) {
+        if (viewModel.hasOwnProperty(method) && condition(viewModel, method)) {
+            if (callback == undefined) {
+                if (parameters != undefined) {
+                    // call the method with the provided parameters
+                    viewModel[method].apply(viewModel, parameters);
+                } else {
+                    // call the method without parameters
+                    viewModel[method]();
+                }
+            } else {
+                // provide the method to the callback
+                callback(viewModel[method]);
+            }
+        }
+    });
 }
 
 var sizeObservable = function(observable) {

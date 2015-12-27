@@ -188,29 +188,18 @@ $(function() {
             }
 
             if (command) {
-                $.ajax({
-                    url: API_BASEURL + "printer/command",
-                    type: "POST",
-                    dataType: "json",
-                    contentType: "application/json; charset=UTF-8",
-                    data: JSON.stringify({"command": command})
-                });
-
-                self.cmdHistory.push(command);
-                self.cmdHistory.slice(-300); // just to set a sane limit to how many manually entered commands will be saved...
-                self.cmdHistoryIdx = self.cmdHistory.length;
-                self.command("");
+                OctoPrint.control.sendGcode(command)
+                    .done(function() {
+                        self.cmdHistory.push(command);
+                        self.cmdHistory.slice(-300); // just to set a sane limit to how many manually entered commands will be saved...
+                        self.cmdHistoryIdx = self.cmdHistory.length;
+                        self.command("");
+                    });
             }
         };
 
         self.fakeAck = function() {
-            $.ajax({
-                url: API_BASEURL + "connection",
-                type: "POST",
-                dataType: "json",
-                contentType: "application/json; charset=UTF-8",
-                data: JSON.stringify({"command": "fake_ack"})
-            });
+            OctoPrint.printer.fakeAck();
         };
 
         self.handleKeyDown = function(event) {
