@@ -425,7 +425,10 @@ class VirtualPrinter():
 		else:
 			self._selectedSdFile = file
 			self._selectedSdFileSize = os.stat(file).st_size
-			self.outgoing.put("File opened: %s  Size: %d" % (filename, self._selectedSdFileSize))
+			if settings().getBoolean(["devel", "virtualPrinter", "includeFilenameInOpened"]):
+				self.outgoing.put("File opened: %s  Size: %d" % (filename, self._selectedSdFileSize))
+			else:
+				self.outgoing.put("File opened")
 			self.outgoing.put("File selected")
 
 	def _startSdPrint(self):
