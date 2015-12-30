@@ -300,6 +300,7 @@ default_settings = {
 			"okWithLinenumber": False,
 			"numExtruders": 1,
 			"includeCurrentToolInTemps": True,
+			"includeFilenameOnOpened": True,
 			"movementSpeed": {
 				"x": 6000,
 				"y": 6000,
