@@ -49,7 +49,7 @@
         <div data-bind="visible: languagePacksAvailable()">
             <div id="settings_appearance_managelanguagesdialog_list" data-bind="slimScrolledForeach: translations.paginatedItems" style="height: 300px">
                 <div class="entry">
-                    <strong><a href="#" onclick="$(this).children('i').toggleClass('icon-caret-right icon-caret-down').parent().parent().next().slideToggle('fast')"><i class="icon-caret-down"></i> <span data-bind="text: $root.languagePackDisplay($data)"></span></a></strong>
+                    <strong><a href="#" data-bind="toggleContent: { class: 'icon-caret-right icon-caret-down', parent: '.entry', container: '.packs' }"><i class="icon-caret-down"></i> <span data-bind="text: $root.languagePackDisplay($data)"></span></a></strong>
                     <div class="packs">
                         <!-- ko foreach: $data.packs -->
                         <div class="row-fluid">

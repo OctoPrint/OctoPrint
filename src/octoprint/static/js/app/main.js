@@ -304,97 +304,6 @@ $(function() {
 
         var dataUpdater = new DataUpdater(allViewModels);
 
-        //~~ Custom knockout.js bindings
-
-        ko.bindingHandlers.popover = {
-            init: function(element, valueAccessor, allBindingsAccessor, viewModel, bindingContext) {
-                var val = ko.utils.unwrapObservable(valueAccessor());
-
-                var options = {
-                    title: val.title,
-                    animation: val.animation,
-                    placement: val.placement,
-                    trigger: val.trigger,
-                    delay: val.delay,
-                    content: val.content,
-                    html: val.html
-                };
-                $(element).popover(options);
-            }
-        };
-
-        ko.bindingHandlers.allowBindings = {
-            init: function (elem, valueAccessor) {
-                return { controlsDescendantBindings: !valueAccessor() };
-            }
-        };
-        ko.virtualElements.allowedBindings.allowBindings = true;
-
-        ko.bindingHandlers.slimScrolledForeach = {
-            init: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
-                return ko.bindingHandlers.foreach.init(element, valueAccessor(), allBindings, viewModel, bindingContext);
-            },
-            update: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
-                setTimeout(function() {
-                    if (element.nodeName == "#comment") {
-                        // foreach is bound to a virtual element
-                        $(element.parentElement).slimScroll({scrollBy: 0});
-                    } else {
-                        $(element).slimScroll({scrollBy: 0});
-                    }
-                }, 10);
-                return ko.bindingHandlers.foreach.update(element, valueAccessor(), allBindings, viewModel, bindingContext);
-            }
-        };
-        ko.virtualElements.allowedBindings.slimScrolledForeach = true;
-
-        ko.bindingHandlers.qrcode = {
-            update: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
-                var val = ko.utils.unwrapObservable(valueAccessor());
-
-                var defaultOptions = {
-                    text: "",
-                    size: 200,
-                    fill: "#000",
-                    background: null,
-                    label: "",
-                    fontname: "sans",
-                    fontcolor: "#000",
-                    radius: 0,
-                    ecLevel: "L"
-                };
-
-                var options = {};
-                _.each(defaultOptions, function(value, key) {
-                    options[key] = ko.utils.unwrapObservable(val[key]) || value;
-                });
-
-                $(element).empty().qrcode(options);
-            }
-        };
-
-        ko.bindingHandlers.invisible = {
-            init: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
-                if (!valueAccessor()) return;
-                ko.bindingHandlers.style.update(element, function() {
-                    return { visibility: 'hidden' };
-                })
-            }
-        };
-
-        ko.bindingHandlers.contextMenu = {
-            init: function (element, valueAccessor, allBindingsAccessor, viewModel, bindingContext) {
-                var val = ko.utils.unwrapObservable(valueAccessor());
-
-                $(element).contextMenu(val);
-            },
-            update: function (element, valueAccessor, allBindingsAccessor, viewModel, bindingContext) {
-                var val = ko.utils.unwrapObservable(valueAccessor());
-
-                $(element).contextMenu(val);
-            }
-        };
-
         //~~ some additional hooks and initializations
 
         // make sure modals max out at the window height
@@ -615,4 +524,3 @@ $(function() {
             .done(bindViewModels);
     }
 );
-

@@ -94,7 +94,7 @@
     </div>
 
     <div>
-        <div><small><a href="#" class="muted" onclick="$(this).children().toggleClass('icon-caret-right icon-caret-down').parent().parent().parent().next().slideToggle('fast')"><i class="icon-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
+        <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'icon-caret-right icon-caret-down', container: '#settings_serialConnection .hide' }"><i class="icon-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
         <div class="hide">
             <div class="control-group" title="{{ _('Command to send to the firmware on first handshake attempt.') }}">
                 <label class="control-label" for="settings-serialHelloCommand">{{ _('"Hello" command') }}</label>
