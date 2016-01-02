@@ -136,6 +136,9 @@
                 if (baseUrl.indexOf("/static") > -1) {
                     baseUrl = baseUrl.substring(0, baseUrl.indexOf("/static")) + "/";
                 }
+                if (baseUrl.indexOf("#") > -1) {
+                    baseUrl = baseUrl.substring(0, baseUrl.indexOf("#"));
+                }
                 var serverOnlineUrl = baseUrl + "online.gif";
                 var backendOnlineUrl = baseUrl + "intermediary.gif";
 
@@ -150,7 +153,7 @@
                         serverIsOnline = true;
                         message.className = "pulsate1 green";
                         message.innerText = "OctoPrint server online, reloading page...";
-                        window.location = baseUrl;
+                        window.location.reload();
                     } else {
                         // online.gif still not available, let's look at
                         var interval = 15;
