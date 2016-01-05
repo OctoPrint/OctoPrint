@@ -65,7 +65,7 @@ a GCODE script including user input.
        children:
        - name: Get Position
          command: M114
-         regex: "X:([0-9.]+) Y:([0-9.]+) Z:([0-9.]+) E:([0-9.]+)"
+         regex: "X:([-+]?[0-9.]+) Y:([-+]?[0-9.]+) Z:([-+]?[0-9.]+) E:([-+]?[0-9.]+)"
          template: "Position: X={0}, Y={1}, Z={2}, E={3}"
      - name: Fun stuff
        children:
