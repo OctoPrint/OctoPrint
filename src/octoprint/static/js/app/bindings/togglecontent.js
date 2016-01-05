@@ -2,13 +2,13 @@ ko.bindingHandlers.toggleContent = {
     init: function(element, valueAccessor) {
         var $elm = $(element),
             options = $.extend({
-	            class: null,
-	            container: null,
-	            parent: null,
-	            onComplete: function() {
-	                $(document).trigger("slideCompleted");
-	            }
-	        }, valueAccessor());
+                class: null,
+                container: null,
+                parent: null,
+                onComplete: function() {
+                    $(document).trigger("slideCompleted");
+                }
+            }, valueAccessor());
 
         $elm.on("click", function(e) {
             e.preventDefault();
