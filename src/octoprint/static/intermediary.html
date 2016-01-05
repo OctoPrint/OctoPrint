@@ -114,6 +114,8 @@
                     urlToUse += "?" + postfix;
                 }
 
+                console.log("Pinging " + url);
+
                 img.onload = function() {
                     callback("load");
                     calledBack = true;
@@ -124,6 +126,7 @@
                         calledBack = true;
                     }
                 };
+
                 img.src = urlToUse;
                 setTimeout(function() {
                     if (!calledBack) {
@@ -138,8 +141,14 @@
                 var timeout = 1500;
 
                 var baseUrl = window.location.href;
+                if (baseUrl.indexOf("#") > -1) {
+                    baseUrl = baseUrl.substring(0, baseUrl.indexOf("#"));
+                }
                 if (baseUrl.indexOf("/static") > -1) {
-                    baseUrl = baseUrl.substring(0, baseUrl.indexOf("/static")) + "/";
+                    baseUrl = baseUrl.substring(0, baseUrl.indexOf("/static"));
+                }
+                if (baseUrl[baseUrl.length - 1] != "/") {
+                    baseUrl += "/";
                 }
                 var serverOnlineUrl = baseUrl + "online.gif";
                 var backendOnlineUrl = baseUrl + "intermediary.gif";
@@ -163,7 +172,6 @@
                             interval = intervals.shift();
                         }
                         serverTimeout = setTimeout(function() {
-                            console.log("Pinging " + serverOnlineUrl);
                             ping(serverOnlineUrl, timeout, serverOnlineCallback);
                         }, interval * 1000)
                     }
@@ -183,7 +191,7 @@
                     }
 
                     backendOfflineCounter++;
-                    if (backendOfflineCounter > 5) {
+                    if (backendOfflineCounter > 10) {
                         if (serverTimeout) {
                             window.clearTimeout(serverTimeout);
                         }
