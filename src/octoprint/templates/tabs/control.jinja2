@@ -116,7 +116,7 @@
 </script>
 <script type="text/html" id="customControls_containerTemplate_collapsable">
     <div class="custom_section">
-        <h1 onclick="$(this).children().first().toggleClass('icon-caret-down icon-caret-right').parent().next().slideToggle('fast')"><i data-bind="css: {'icon-caret-down': !collapsed, 'icon-caret-right': collapsed}"></i> <span data-bind="text: name"></span></h1>
+        <h1 data-bind="toggleContent: { class: 'icon-caret-right icon-caret-down', parent: '.custom_section', container: '> div' }"><i data-bind="css: {'icon-caret-down': !collapsed, 'icon-caret-right': collapsed}"></i> <span data-bind="text: name"></span></h1>
         <!-- ko template: { name: 'customControls_containerTemplate', data: $data } --><!-- /ko -->
     </div>
 </script>
