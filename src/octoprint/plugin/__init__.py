@@ -368,7 +368,7 @@ class PluginSettings(object):
 			set_int    =("setInt",     prefix_path_in_args, add_setter_kwargs),
 			set_float  =("setFloat",   prefix_path_in_args, add_setter_kwargs),
 			set_boolean=("setBoolean", prefix_path_in_args, add_setter_kwargs),
-			remove     =("remove",     prefix_path_in_args)
+			remove     =("remove",     prefix_path_in_args, lambda x: x)
 		)
 		self.deprecated_access_methods = dict(
 			getInt    ="get_int",
