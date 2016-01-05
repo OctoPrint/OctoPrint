@@ -402,7 +402,7 @@ This describes actually four hooks:
        No manipulation is possible here anymore (returned values will be ignored).
      * ``sending``: This phase is triggered just before the command is actually being sent to the printer. Right afterwards
        a line number will be assigned and the command will be sent. Handlers may suppress or change commands here. The
-       command type is not taken into account anymore. Multi
+       command type is not taken into account anymore.
      * ``sent``: This phase is triggered just after the command was handed over to the serial connection to the printer.
        No manipulation is possible here anymore (returned values will be ignored). A command that reaches the sent phase
        must not necessarily have reached the printer yet and it might also still run into communication problems and a
