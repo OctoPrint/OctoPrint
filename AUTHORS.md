@@ -55,6 +55,7 @@ date of first contribution):
   * [Thomas Hou](https://github.com/masterhou)
   * [Mark Bastiaans](https://github.com/markbastiaans)
   * [Kevin Murphy](https://github.com/kevingelion)
+  * [Richard Joyce](https://github.com/richjoyce)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and
