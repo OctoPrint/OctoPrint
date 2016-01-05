@@ -2207,7 +2207,7 @@ class MachineCom(object):
 					normalized = _normalize_command_handler_result(command, command_type, gcode, hook_results)
 
 					# make sure we don't allow multi entry results in sending and sent phase
-					if phase in ("sending", "sent") and len(normalized) > 1:
+					if not phase in ("queuing",) and len(normalized) > 1:
 						self._logger.error("Error while processing hook {name} for phase {phase} and command {command}: Hook returned multi-entry result for phase {phase} and command {command}. That's not supported, if you need to do multi expansion of commands you need to do this in the queuing phase. Ignoring hook result and sending command as-is.".format(**locals()))
 						new_results.append((command, command_type, gcode))
 					else:
