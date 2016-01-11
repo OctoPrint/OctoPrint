@@ -32,6 +32,8 @@
 
 ## Server
 
+  * [Awesome-Slugify](https://pypi.python.org/pypi/awesome-slugify): GPLv3
+  * [Click](http://click.pocoo.org/): BSD
   * [Flask](http://flask.pocoo.org/): BSD
   * [Flask-Assets](http://github.com/miracle2k/flask-assets): BSD
   * [Flask-Babel](http://github.com/mitsuhiko/flask-babel): BSD
