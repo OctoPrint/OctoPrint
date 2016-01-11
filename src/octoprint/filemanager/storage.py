@@ -311,6 +311,10 @@ class LocalFileStorage(StorageInterface):
 
 		self._metadata_cache = pylru.lrucache(10)
 
+		from slugify import Slugify
+		self._slugify = Slugify()
+		self._slugify.safe_chars = "-_.() "
+
 		self._old_metadata = None
 		self._initialize_metadata()
 
@@ -609,9 +613,9 @@ class LocalFileStorage(StorageInterface):
 
 	def sanitize_name(self, name):
 		"""
-		Raises a :class:`ValueError` for a ``name`` containing ``/`` or ``\``. Otherwise strips any characters from the
-		given ``name`` that are not any of the ASCII characters, digits, ``-``, ``_``, ``.``, ``(``, ``)`` or space and
-		replaces and spaces with ``_``.
+		Raises a :class:`ValueError` for a ``name`` containing ``/`` or ``\``. Otherwise
+		slugifies the given ``name`` by converting it to ASCII, leaving ``-``, ``_``, ``.``,
+		``(``, and ``)`` as is.
 		"""
 		if name is None:
 			return None
@@ -619,11 +623,7 @@ class LocalFileStorage(StorageInterface):
 		if "/" in name or "\\" in name:
 			raise ValueError("name must not contain / or \\")
 
-		import string
-		valid_chars = "-_.() {ascii}{digits}".format(ascii=string.ascii_letters, digits=string.digits)
-		sanitized_name = ''.join(c for c in name if c in valid_chars)
-		sanitized_name = sanitized_name.replace(" ", "_")
-		return sanitized_name
+		return self._slugify(name).replace(" ", "_")
 
 	def sanitize_path(self, path):
 		"""

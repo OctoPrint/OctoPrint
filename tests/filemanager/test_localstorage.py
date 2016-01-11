@@ -309,8 +309,8 @@ class LocalStorageTest(unittest.TestCase):
 
 	@data(
 		("some_file.gco", "some_file.gco"),
-		("some_file with (parentheses) and ümläuts and digits 123.gco", "some_file_with_(parentheses)_and_mluts_and_digits_123.gco"),
-		("pengüino pequeño.stl", "pengino_pequeo.stl")
+		("some_file with (parentheses) and ümläuts and digits 123.gco", "some_file_with_(parentheses)_and_umlauts_and_digits_123.gco"),
+		("pengüino pequeño.stl", "penguino_pequeno.stl")
 	)
 	@unpack
 	def test_sanitize_name(self, input, expected):
