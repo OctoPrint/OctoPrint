@@ -651,7 +651,7 @@ class Server():
 		if octoprint.util.is_running_from_source():
 			root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
 			allowed = ["AUTHORS.md", "CHANGELOG.md", "THIRDPARTYLICENSES.md"]
-			files = {name: os.path.join(root, name) for name in allowed}
+			files = {"_data/" + name: os.path.join(root, name) for name in allowed}
 			loaders.append(octoprint.util.jinja.SelectedFilesLoader(files))
 
 		jinja_loader = jinja2.ChoiceLoader(loaders)
