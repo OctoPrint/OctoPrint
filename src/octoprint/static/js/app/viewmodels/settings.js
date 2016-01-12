@@ -363,9 +363,20 @@ $(function() {
                 self.requestData(undefined, true);
                 return false;
             });
+
+            // reset scroll position on tab change
+            $('ul.nav-list a[data-toggle="tab"]', self.settingsDialog).on("show", function() {
+                self._resetScrollPosition();
+            });
         };
 
-        self.show = function() {
+        self.show = function(tab) {
+            // select first or specified tab
+            self.selectTab(tab);
+
+            // reset scroll position
+            self._resetScrollPosition();
+
             // show settings, ensure centered position
             self.settingsDialog.modal({
                 minHeight: function() { return Math.max($.fn.modal.defaults.maxHeight() - 80, 250); }
@@ -760,6 +771,21 @@ $(function() {
             } else {
                 // dialog is not open, just fetch new data
                 self.requestData();
+            }
+        };
+
+        self._resetScrollPosition = function() {
+            $('.scrollable', self.settingsDialog).scrollTop(0);
+        };
+
+        self.selectTab = function(tab) {
+            if (tab != undefined) {
+                if (!_.startsWith(tab, "#")) {
+                    tab = "#" + tab;
+                }
+                $('ul.nav-list a[href="' + tab + '"]', self.settingsDialog).tab("show");
+            } else {
+                $('ul.nav-list a:first', self.settingsDialog).tab("show");
             }
         };
     }
