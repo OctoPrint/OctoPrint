@@ -511,6 +511,7 @@ class Server():
 			self._logger.info("Shutting down...")
 			observer.stop()
 			observer.join()
+			eventManager.fire(events.Events.SHUTDOWN)
 			octoprint.plugin.call_plugin(octoprint.plugin.ShutdownPlugin,
 			                             "on_shutdown",
 			                             sorting_context="ShutdownPlugin.on_shutdown")
