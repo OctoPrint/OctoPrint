@@ -12,7 +12,7 @@ import serial
 
 class SerialTransport(Transport):
 	name = "Serial Connection"
-	url_scheme = "serial"
+	key = "serial"
 	message_integrity = False
 
 	suggested_baudrates = [0, 250000, 230400, 115200, 57600, 38400, 19200, 9600]
@@ -20,11 +20,13 @@ class SerialTransport(Transport):
 	                      "/dev/cu.*", "/dev/cuaU*", "/dev/rfcomm*"]
 
 	@staticmethod
-	def for_additional_ports(additional_ports):
+	def for_additional_ports_and_baudrates(additional_ports, additional_baudrates):
 		patterns = SerialTransport.unix_port_patterns + additional_ports
+		baudrates = SerialTransport.suggested_baudrates + additional_baudrates
 		return type("SerialTransportWithAdditionalPorts",
 		            (SerialTransport,),
-		            {"unix_port_patterns": patterns})
+		            {"unix_port_patterns": patterns,
+		             "suggested_baudrates": baudrates})
 
 	@classmethod
 	def get_connection_options(cls):
@@ -82,6 +84,8 @@ class SerialTransport(Transport):
 
 
 class VirtualSerialTransport(SerialTransport):
+	name = "Virtual Serial Connection"
+	key = "virtual"
 	virtual_serial = None
 
 	@staticmethod

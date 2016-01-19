@@ -10,7 +10,7 @@ from .types import get_param_dict
 class Transport(object):
 
 	name = None
-	url_scheme = None
+	key = None
 	message_integrity = False
 
 	@classmethod
