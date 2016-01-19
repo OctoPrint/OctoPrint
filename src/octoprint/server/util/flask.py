@@ -14,6 +14,7 @@ import flask.ext.assets
 import webassets.updater
 import webassets.utils
 import functools
+import contextlib
 import time
 import uuid
 import threading
@@ -221,7 +222,7 @@ def fix_webassets_filtertool():
 #~~ passive login helper
 
 def passive_login():
-	if octoprint.server.userManager is not None:
+	if octoprint.server.userManager.enabled:
 		user = octoprint.server.userManager.login_user(flask.ext.login.current_user)
 	else:
 		user = flask.ext.login.current_user
@@ -313,7 +314,7 @@ class LessSimpleCache(BaseCache):
 
 _cache = LessSimpleCache()
 
-def cached(timeout=5 * 60, key=lambda: "view/%s" % flask.request.path, unless=None, refreshif=None, unless_response=None):
+def cached(timeout=5 * 60, key=lambda: "view:%s" % flask.request.path, unless=None, refreshif=None, unless_response=None):
 	def decorator(f):
 		@functools.wraps(f)
 		def decorated_function(*args, **kwargs):
@@ -330,16 +331,17 @@ def cached(timeout=5 * 60, key=lambda: "view/%s" % flask.request.path, unless=No
 				return f(*args, **kwargs)
 
 			cache_key = key()
+			rv = _cache.get(cache_key)
 
 			# only take the value from the cache if we are not required to refresh it from the wrapped function
-			if not callable(refreshif) or not refreshif():
-				rv = _cache.get(cache_key)
-				if rv is not None:
-					logger.debug("Serving entry for {path} from cache".format(path=flask.request.path))
-					return rv
+			if rv is not None and (not callable(refreshif) or not refreshif(rv)):
+				logger.debug("Serving entry for {path} from cache".format(path=flask.request.path))
+				if not "X-From-Cache" in rv.headers:
+					rv.headers["X-From-Cache"] = "true"
+				return rv
 
 			# get value from wrapped function
-			logger.debug("No cache entry or refreshing cache for {path}, calling wrapped function".format(path=flask.request.path))
+			logger.debug("No cache entry or refreshing cache for {path} (key: {key}), calling wrapped function".format(path=flask.request.path, key=cache_key))
 			rv = f(*args, **kwargs)
 
 			# do not store if the "unless_response" condition is true
@@ -375,6 +377,222 @@ def cache_check_response_headers(response):
 		return True
 
 	return False
+
+
+class PreemptiveCache(object):
+
+	def __init__(self, cachefile):
+		self.cachefile = cachefile
+
+		self._lock = threading.RLock()
+		self._logger = logging.getLogger(__name__ + "." + self.__class__.__name__)
+		self._log_access = True
+
+	def record(self, data, unless=None):
+		if callable(unless) and unless():
+			return
+
+		entry_data = data
+		if callable(entry_data):
+			entry_data = entry_data()
+
+		if entry_data is not None:
+			from flask import request
+			self.add_data(request.path, entry_data)
+
+	@contextlib.contextmanager
+	def disable_access_logging(self):
+		with self._lock:
+			self._log_access = False
+			yield
+			self._log_access = True
+
+	def clean_all_data(self, cleanup_function):
+		assert callable(cleanup_function)
+
+		with self._lock:
+			all_data = self.get_all_data()
+			for root, entries in all_data.items():
+				old_count = len(entries)
+				entries = cleanup_function(root, entries)
+				if not entries:
+					del all_data[root]
+					self._logger.debug("Removed root {} from preemptive cache".format(root))
+				elif len(entries) < old_count:
+					all_data[root] = entries
+					self._logger.debug("Removed {} from preemptive cache for root {}".format(old_count - len(entries), root))
+			self.set_all_data(all_data)
+
+		return all_data
+
+	def get_all_data(self):
+		import yaml
+
+		cache_data = None
+		with self._lock:
+			try:
+				with open(self.cachefile, "r") as f:
+					cache_data = yaml.safe_load(f)
+			except IOError as e:
+				import errno
+				if e.errno != errno.ENOENT:
+					raise
+			except:
+				self._logger.exception("Error while reading {}".format(self.cachefile))
+
+		if cache_data is None:
+			cache_data = dict()
+
+		return cache_data
+
+	def get_data(self, root):
+		cache_data = self.get_all_data()
+		return cache_data.get(root, dict())
+
+	def set_all_data(self, data):
+		from octoprint.util import atomic_write
+		import yaml
+
+		with self._lock:
+			try:
+				with atomic_write(self.cachefile, "wb") as handle:
+					yaml.safe_dump(data, handle,default_flow_style=False, indent="    ", allow_unicode=True)
+			except:
+				self._logger.exception("Error while writing {}".format(self.cachefile))
+
+	def set_data(self, root, data):
+		with self._lock:
+			all_data = self.get_all_data()
+			all_data[root] = data
+			self.set_all_data(all_data)
+
+	def add_data(self, root, data):
+		from octoprint.util import dict_filter
+
+		def strip_ignored(d):
+			return dict_filter(d, lambda k, v: not k.startswith("_"))
+
+		def compare(a, b):
+			return set(strip_ignored(a).items()) == set(strip_ignored(b).items())
+
+		def split_matched_and_unmatched(entry, entries):
+			matched = []
+			unmatched = []
+
+			for e in entries:
+				if compare(e, entry):
+					matched.append(e)
+				else:
+					unmatched.append(e)
+
+			return matched, unmatched
+
+		with self._lock:
+			cache_data = self.get_all_data()
+
+			if not root in cache_data:
+				cache_data[root] = []
+
+			existing, other = split_matched_and_unmatched(data, cache_data[root])
+
+			def get_newest(entries):
+				result = None
+				for entry in entries:
+					if "_timestamp" in entry and (result is None or ("_timestamp" in entry and result["_timestamp"] < entry["_timestamp"])):
+						result = entry
+				return result
+
+			to_persist = get_newest(existing)
+			if not to_persist:
+				import copy
+				to_persist = copy.deepcopy(data)
+				to_persist["_timestamp"] = time.time()
+				to_persist["_count"] = 1
+				self._logger.info("Adding entry for {} and {!r}".format(root, to_persist))
+			elif self._log_access:
+				to_persist["_timestamp"] = time.time()
+				to_persist["_count"] = to_persist.get("_count", 0) + 1
+				self._logger.debug("Updating timestamp and counter for {} and {!r}".format(root, data))
+			else:
+				self._logger.debug("Not updating timestamp and counter for {} and {!r}, currently flagged as disabled".format(root, data))
+
+			self.set_data(root, [to_persist] + other)
+
+
+def preemptively_cached(cache, data, unless=None):
+	def decorator(f):
+		@functools.wraps(f)
+		def decorated_function(*args, **kwargs):
+			cache.record(data, unless=unless)
+			return f(*args, **kwargs)
+		return decorated_function
+	return decorator
+
+
+def etagged(etag):
+	def decorator(f):
+		@functools.wraps(f)
+		def decorated_function(*args, **kwargs):
+			rv = f(*args, **kwargs)
+			if isinstance(rv, flask.Response):
+				result = etag
+				if callable(result):
+					result = result(rv)
+				if result:
+					rv.set_etag(result)
+			return rv
+		return decorated_function
+	return decorator
+
+
+def lastmodified(date):
+	def decorator(f):
+		@functools.wraps(f)
+		def decorated_function(*args, **kwargs):
+			rv = f(*args, **kwargs)
+			if not "Last-Modified" in rv.headers:
+				result = date
+				if callable(result):
+					result = result(rv)
+
+				if not isinstance(result, basestring):
+					from werkzeug.http import http_date
+					result = http_date(result)
+
+				if result:
+					rv.headers["Last-Modified"] = result
+			return rv
+		return decorated_function
+	return decorator
+
+
+def conditional(condition, met):
+	def decorator(f):
+		@functools.wraps(f)
+		def decorated_function(*args, **kwargs):
+			if callable(condition) and condition():
+				# condition has been met, return met-response
+				rv = met
+				if callable(met):
+					rv = met()
+				return rv
+
+			# condition hasn't been met, call decorated function
+			return f(*args, **kwargs)
+		return decorated_function
+	return decorator
+
+
+def check_etag(etag):
+	return flask.request.method in ("GET", "HEAD") and \
+	       flask.request.if_none_match and \
+	       etag in flask.request.if_none_match
+
+
+def check_lastmodified(lastmodified):
+	return flask.request.method in ("GET", "HEAD") and \
+	       flask.request.if_modified_since and \
+	       lastmodified >= flask.request.if_modified_since
 
 
 def add_non_caching_response_headers(response):
@@ -482,7 +700,7 @@ def restricted_access(func):
 	@functools.wraps(func)
 	def decorated_view(*args, **kwargs):
 		# if OctoPrint hasn't been set up yet, abort
-		if settings().getBoolean(["server", "firstRun"]) and (octoprint.server.userManager is None or not octoprint.server.userManager.hasBeenCustomized()):
+		if settings().getBoolean(["server", "firstRun"]) and settings().getBoolean(["accessControl", "enabled"]) and (octoprint.server.userManager is None or not octoprint.server.userManager.hasBeenCustomized()):
 			return flask.make_response("OctoPrint isn't setup yet", 403)
 
 		apikey = octoprint.server.util.get_api_key(flask.request)

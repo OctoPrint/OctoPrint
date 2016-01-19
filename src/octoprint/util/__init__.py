@@ -542,6 +542,48 @@ def dict_contains_keys(keys, dictionary):
 
 	return True
 
+
+def dict_filter(dictionary, filter_function):
+	"""
+	Filters a dictionary with the provided filter_function
+
+	Example::
+
+	    >>> data = dict(key1="value1", key2="value2", other_key="other_value", foo="bar", bar="foo")
+	    >>> dict_filter(data, lambda k, v: k.startswith("key")) == dict(key1="value1", key2="value2")
+	    True
+	    >>> dict_filter(data, lambda k, v: v.startswith("value")) == dict(key1="value1", key2="value2")
+	    True
+	    >>> dict_filter(data, lambda k, v: k == "foo" or v == "foo") == dict(foo="bar", bar="foo")
+	    True
+	    >>> dict_filter(data, lambda k, v: False) == dict()
+	    True
+	    >>> dict_filter(data, lambda k, v: True) == data
+	    True
+	    >>> dict_filter(None, lambda k, v: True)
+	    Traceback (most recent call last):
+	        ...
+	    AssertionError
+	    >>> dict_filter(data, None)
+	    Traceback (most recent call last):
+	        ...
+	    AssertionError
+
+	Arguments:
+	    dictionary (dict): The dictionary to filter
+	    filter_function (callable): The filter function to apply, called with key and
+	        value of an entry in the dictionary, must return ``True`` for values to
+	        keep and ``False`` for values to strip
+
+	Returns:
+	    dict: A shallow copy of the provided dictionary, stripped of the key-value-pairs
+	        for which the ``filter_function`` returned ``False``
+	"""
+	assert isinstance(dictionary, dict)
+	assert callable(filter_function)
+	return dict((k, v) for k, v in dictionary.items() if filter_function(k, v))
+
+
 class Object(object):
 	pass
 
@@ -584,8 +626,10 @@ def address_for_client(host, port):
 @contextlib.contextmanager
 def atomic_write(filename, mode="w+b", prefix="tmp", suffix=""):
 	temp_config = tempfile.NamedTemporaryFile(mode=mode, prefix=prefix, suffix=suffix, delete=False)
-	yield temp_config
-	temp_config.close()
+	try:
+		yield temp_config
+	finally:
+		temp_config.close()
 	shutil.move(temp_config.name, filename)
 
 
@@ -609,7 +653,32 @@ def bom_aware_open(filename, encoding="ascii", mode="r", **kwargs):
 		if header.startswith(bom):
 			encoding += "-sig"
 
-	return codecs.open(filename, encoding=encoding, **kwargs)
+	return codecs.open(filename, encoding=encoding, mode=mode, **kwargs)
+
+
+def is_hidden_path(path):
+	if path is None:
+		# we define a None path as not hidden here
+		return False
+
+	filename = os.path.basename(path)
+	if filename.startswith("."):
+		# filenames starting with a . are hidden
+		return True
+
+	if sys.platform == "win32":
+		# if we are running on windows we also try to read the hidden file
+		# attribute via the windows api
+		try:
+			import ctypes
+			attrs = ctypes.windll.kernel32.GetFileAttributesW(unicode(path))
+			assert attrs != -1     # INVALID_FILE_ATTRIBUTES == -1
+			return bool(attrs & 2) # FILE_ATTRIBUTE_HIDDEN == 2
+		except (AttributeError, AssertionError):
+			pass
+
+	# if we reach that point, the path is not hidden
+	return False
 
 
 class RepeatedTimer(threading.Thread):

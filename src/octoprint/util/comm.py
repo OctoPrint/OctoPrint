@@ -262,6 +262,7 @@ class MachineCom(object):
 		self._serial_factory_hooks = self._pluginManager.get_hooks("octoprint.comm.transport.serial.factory")
 
 		# SD status data
+		self._sdEnabled = settings().getBoolean(["feature", "sdSupport"])
 		self._sdAvailable = False
 		self._sdFileList = False
 		self._sdFiles = []
@@ -719,21 +720,28 @@ class MachineCom(object):
 		return self._sdFiles
 
 	def startSdFileTransfer(self, filename):
-		if not self.isOperational() or self.isBusy():
+		if not self._sdEnabled:
 			return
 
+		if not self.isOperational() or self.isBusy():
+			return
 		self._changeState(self.STATE_TRANSFERING_FILE)
 		self.sendCommand("M28 %s" % filename.lower())
 
 	def endSdFileTransfer(self, filename):
-		if not self.isOperational() or self.isBusy():
+		if not self._sdEnabled:
 			return
 
+		if not self.isOperational() or self.isBusy():
+			return
 		self.sendCommand("M29 %s" % filename.lower())
 		self._changeState(self.STATE_OPERATIONAL)
 		self.refreshSdFiles()
 
 	def deleteSdFile(self, filename):
+		if not self._sdEnabled:
+			return
+
 		if not self.isOperational() or (self.isBusy() and
 				isinstance(self._currentFile, PrintingSdFileInformation) and
 				self._currentFile.getFilename() == filename):
@@ -744,13 +752,21 @@ class MachineCom(object):
 		self.refreshSdFiles()
 
 	def refreshSdFiles(self):
+		if not self._sdEnabled:
+			return
+
 		if not self.isOperational() or self.isBusy():
 			return
+
 		self.sendCommand("M20")
 
 	def initSdCard(self):
+		if not self._sdEnabled:
+			return
+
 		if not self.isOperational():
 			return
+
 		self.sendCommand("M21")
 		if settings().getBoolean(["feature", "sdAlwaysAvailable"]):
 			self._sdAvailable = True
@@ -758,6 +774,9 @@ class MachineCom(object):
 			self._callback.on_comm_sd_state_change(self._sdAvailable)
 
 	def releaseSdCard(self):
+		if not self._sdEnabled:
+			return
+
 		if not self.isOperational() or (self.isBusy() and self.isSdFileSelected()):
 			# do not release the sd card if we are currently printing from it
 			return
@@ -1098,13 +1117,7 @@ class MachineCom(object):
 				### Operational
 				elif self._state == self.STATE_OPERATIONAL or self._state == self.STATE_PAUSED:
 					if "ok" in line:
-						# if we still have commands to process, process them
-						if self._resendSwallowNextOk:
-							self._resendSwallowNextOk = False
-						elif self._resendDelta is not None:
-							self._resendNextCommand()
-						elif self._sendFromQueue():
-							pass
+						self._handle_ok()
 
 					# resend -> start resend procedure from requested line
 					elif line.lower().startswith("resend") or line.lower().startswith("rs"):
@@ -1122,18 +1135,8 @@ class MachineCom(object):
 
 					if "ok" in line or (supportWait and "wait" in line):
 						# a wait while printing means our printer's buffer ran out, probably due to some ok getting
-						# swallowed, so we treat it the same as an ok here teo take up communication again
-						if self._resendSwallowNextOk:
-							self._resendSwallowNextOk = False
-
-						elif self._resendDelta is not None:
-							self._resendNextCommand()
-
-						else:
-							if self._sendFromQueue():
-								pass
-							elif not self.isSdPrinting():
-								self._sendNext()
+						# swallowed, so we treat it the same as an ok here to take up communication again
+						self._handle_ok()
 
 					elif line.lower().startswith("resend") or line.lower().startswith("rs"):
 						self._handleResendRequest(line)
@@ -1146,6 +1149,24 @@ class MachineCom(object):
 				self._changeState(self.STATE_ERROR)
 				eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
 		self._log("Connection closed, closing down monitor")
+
+	def _handle_ok(self):
+		if not self._state in (self.STATE_PRINTING, self.STATE_OPERATIONAL, self.STATE_PAUSED):
+			return
+
+		if self._resendSwallowNextOk:
+			self._resendSwallowNextOk = False
+		elif self._resendDelta is not None:
+			self._resendNextCommand()
+		else:
+			self._continue_sending()
+
+	def _continue_sending(self):
+		if self._state == self.STATE_PRINTING:
+			if not self._sendFromQueue() and not self.isSdPrinting():
+				self._sendNext()
+		elif self._state == self.STATE_OPERATIONAL or self._state == self.STATE_PAUSED:
+			self._sendFromQueue()
 
 	def _process_registered_message(self, line, feedback_matcher, feedback_controls, feedback_errors):
 		feedback_match = feedback_matcher.search(line)
@@ -1221,20 +1242,29 @@ class MachineCom(object):
 		self.sendGcodeScript("afterPrinterConnected", replacements=dict(event=payload))
 
 	def _sendFromQueue(self):
-		if not self._commandQueue.empty() and not self.isStreaming():
+		# We loop here to make sure that if we do NOT send the first command
+		# from the queue, we'll send the second (if there is one). We do not
+		# want to get stuck here by throwing away commands.
+		while True:
+			if self._commandQueue.empty() or self.isStreaming():
+				# no command queue or irrelevant command queue => return
+				return False
+
 			entry = self._commandQueue.get()
 			if isinstance(entry, tuple):
 				if not len(entry) == 2:
-					return False
+					# something with that entry is broken, ignore it and fetch
+					# the next one
+					continue
 				cmd, cmd_type = entry
 			else:
 				cmd = entry
 				cmd_type = None
 
-			self._sendCommand(cmd, cmd_type=cmd_type)
-			return True
-		else:
-			return False
+			if self._sendCommand(cmd, cmd_type=cmd_type):
+				# we actually did add this cmd to the send queue, so let's
+				# return, we are done here
+				return True
 
 	def _detectPort(self, close):
 		programmer = stk500v2.Stk500v2()
@@ -1314,6 +1344,11 @@ class MachineCom(object):
 		return False
 
 	def _handleErrors(self, line):
+		if line is None:
+			return
+
+		lower_line = line.lower()
+
 		# No matter the state, if we see an error, goto the error state and store the error for reference.
 		if line.startswith('Error:') or line.startswith('!!'):
 			#Oh YEAH, consistency.
@@ -1323,13 +1358,17 @@ class MachineCom(object):
 			if regex_minMaxError.match(line):
 				line = line.rstrip() + self._readline()
 
-			if 'line number' in line.lower() or 'checksum' in line.lower() or 'format error' in line.lower() or 'expected line' in line.lower():
+			if 'line number' in lower_line or 'checksum' in lower_line or 'format error' in lower_line or 'expected line' in lower_line:
 				#Skip the communication errors, as those get corrected.
 				self._lastCommError = line[6:] if line.startswith("Error:") else line[2:]
 				pass
-			elif 'volume.init' in line.lower() or "openroot" in line.lower() or 'workdir' in line.lower()\
-					or "error writing to file" in line.lower():
+			elif 'volume.init' in lower_line or "openroot" in lower_line or 'workdir' in lower_line\
+					or "error writing to file" in lower_line or "cannot open" in lower_line\
+					or "cannot enter" in lower_line:
 				#Also skip errors with the SD card
+				pass
+			elif 'unknown command' in lower_line:
+				#Ignore unkown command errors, it could be a typo or some missing feature
 				pass
 			elif not self.isError():
 				self._errorValue = line[6:] if line.startswith("Error:") else line[2:]
@@ -1471,7 +1510,7 @@ class MachineCom(object):
 		# Make sure we are only handling one sending job at a time
 		with self._sendingLock:
 			if self._serial is None:
-				return
+				return False
 
 			gcode = None
 			if not self.isStreaming():
@@ -1480,7 +1519,7 @@ class MachineCom(object):
 
 				if cmd is None:
 					# command is no more, return
-					return
+					return False
 
 				if gcode and gcode in gcodeToEvent:
 					# if this is a gcode bound to an event, trigger that now
@@ -1492,6 +1531,8 @@ class MachineCom(object):
 			if not self.isStreaming():
 				# trigger the "queued" phase only if we are not streaming to sd right now
 				self._process_command_phase("queued", cmd, cmd_type, gcode=gcode)
+
+			return True
 
 	##~~ send loop handling
 
@@ -1545,7 +1586,14 @@ class MachineCom(object):
 					command, _, gcode = self._process_command_phase("sending", command, command_type, gcode=gcode)
 
 					if command is None:
-						# so no, we are not going to send this, that was a last-minute bail, let's fetch the next item from the queue
+						# No, we are not going to send this, that was a last-minute bail.
+						# However, since we already are in the send queue, our _monitor
+						# loop won't be triggered with the reply from this unsent command
+						# now, so we try to tickle the processing of any active
+						# command queues manually
+						self._continue_sending()
+
+						# and now let's fetch the next item from the queue
 						continue
 
 					# now comes the part where we increase line numbers and send stuff - no turning back now
@@ -1564,9 +1612,14 @@ class MachineCom(object):
 				if gcode is not None:
 					use_up_clear = True
 
-				# if we need to use up a clear, do that now
 				if use_up_clear:
+					# if we need to use up a clear, do that now
 					self._clear_to_send.clear()
+				else:
+					# Otherwise we need to tickle the read queue - there might not be a reply
+					# to this command, so our _monitor loop will stay waiting until timeout. We
+					# definitely do not want that, so we tickle the queue manually here
+					self._continue_sending()
 
 				# now we just wait for the next clear and then start again
 				self._clear_to_send.wait()
@@ -1707,6 +1760,12 @@ class MachineCom(object):
 		if self.isPrinting() and not self.isSdPrinting():
 			self.setPause(True)
 
+	def _gcode_M140_queuing(self, cmd, cmd_type=None):
+		if not self._printerProfileManager.get_current_or_default()["heatedBed"]:
+			self._log("Warn: Not sending \"{}\", printer profile has no heated bed".format(cmd))
+			return None, # Don't send bed commands if we don't have a heated bed
+	_gcode_M190_queuing = _gcode_M140_queuing
+
 	def _gcode_M104_sent(self, cmd, cmd_type=None):
 		toolNum = self._currentTool
 		toolMatch = regexes_parameters["intT"].search(cmd)
@@ -1780,7 +1839,8 @@ class MachineCom(object):
 		# are going to shutdown the connection in a second anyhow.
 		for tool in range(self._printerProfileManager.get_current_or_default()["extruder"]["count"]):
 			self._doIncrementAndSendWithChecksum("M104 T{tool} S0".format(tool=tool))
-		self._doIncrementAndSendWithChecksum("M140 S0")
+		if self._printerProfileManager.get_current_or_default()["heatedBed"]:
+			self._doIncrementAndSendWithChecksum("M140 S0")
 
 		# close to reset host state
 		self._errorValue = "Closing serial port due to emergency stop M112."

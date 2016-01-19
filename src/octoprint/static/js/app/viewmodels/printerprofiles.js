@@ -15,7 +15,7 @@ $(function() {
                     height: 200,
                     origin: "lowerleft"
                 },
-                heatedBed: false,
+                heatedBed: true,
                 axes: {
                     x: {speed: 6000, inverted: false},
                     y: {speed: 6000, inverted: false},

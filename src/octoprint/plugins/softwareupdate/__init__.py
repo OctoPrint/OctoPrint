@@ -18,7 +18,7 @@ from . import version_checks, updaters, exceptions, util
 
 
 from octoprint.server.util.flask import restricted_access
-from octoprint.server import admin_permission
+from octoprint.server import admin_permission, VERSION, REVISION
 from octoprint.util import dict_merge
 import octoprint.settings
 
@@ -430,8 +430,6 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			update_available = update_available or target_update_available
 			update_possible = update_possible or (target_update_possible and target_update_available)
 
-			from octoprint._version import get_versions
-			octoprint_version = get_versions()["version"]
 			local_name = target_information["local"]["name"]
 			local_value = target_information["local"]["value"]
 
@@ -439,7 +437,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			                           updatePossible=target_update_possible,
 			                           information=target_information,
 			                           displayName=populated_check["displayName"],
-			                           displayVersion=populated_check["displayVersion"].format(octoprint_version=octoprint_version, local_name=local_name, local_value=local_value),
+			                           displayVersion=populated_check["displayVersion"].format(octoprint_version=VERSION, local_name=local_name, local_value=local_value),
 			                           check=populated_check)
 
 		if self._version_cache_dirty:
@@ -503,19 +501,28 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		"""
 
 		checks = self._get_configured_checks()
+		populated_checks = dict()
+		for target, check in checks.items():
+			try:
+				populated_checks[target] = self._populated_check(target, check)
+			except exceptions.UnknownCheckType:
+				self._logger.debug("Ignoring unknown check type for target {}".format(target))
+			except:
+				self._logger.exception("Error while populating check prior to update for target {}".format(target))
+
 		if check_targets is None:
-			check_targets = checks.keys()
-		to_be_updated = sorted(set(check_targets) & set(checks.keys()))
+			check_targets = populated_checks.keys()
+		to_be_updated = sorted(set(check_targets) & set(populated_checks.keys()))
 		if "octoprint" in to_be_updated:
 			to_be_updated.remove("octoprint")
 			tmp = ["octoprint"] + to_be_updated
 			to_be_updated = tmp
 
-		updater_thread = threading.Thread(target=self._update_worker, args=(checks, to_be_updated, force))
+		updater_thread = threading.Thread(target=self._update_worker, args=(populated_checks, to_be_updated, force))
 		updater_thread.daemon = False
 		updater_thread.start()
 
-		return to_be_updated, dict((key, check["displayName"] if "displayName" in check else key) for key, check in checks.items() if key in to_be_updated)
+		return to_be_updated, dict((key, check["displayName"] if "displayName" in check else key) for key, check in populated_checks.items() if key in to_be_updated)
 
 	def _update_worker(self, checks, check_targets, force):
 
@@ -680,12 +687,10 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			result["displayName"] = check.get("displayName", gettext("OctoPrint"))
 			result["displayVersion"] = check.get("displayVersion", "{octoprint_version}")
 
-			from octoprint._version import get_versions
-			versions = get_versions()
 			if check["type"] == "github_commit":
-				result["current"] = versions.get("full-revisionid", versions.get("full", "unknown"))
+				result["current"] = REVISION if REVISION else "unknown"
 			else:
-				result["current"] = versions["version"]
+				result["current"] = VERSION
 		else:
 			result["displayName"] = check.get("displayName", target)
 			result["displayVersion"] = check.get("displayVersion", check.get("current", "unknown"))

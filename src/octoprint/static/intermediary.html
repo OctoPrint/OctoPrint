@@ -1,0 +1,222 @@
+<html>
+    <head>
+        <title>OctoPrint is still starting</title>
+        <style>
+            body {
+                margin: 0;
+                font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+                font-size: 14px;
+                line-height: 20px;
+                color: #333333;
+                background-color: #ffffff;
+            }
+
+            #startup-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                z-index: 10000;
+                display: block;
+            }
+
+            .background {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+            }
+
+            .wrapper {
+                position: absolute;
+                top: 0;
+                bottom: 0;
+                left: 0;
+                right: 0;
+            }
+
+            .wrapper .outer {
+                display: table;
+                width: 100%;
+                height: 100%;
+            }
+
+            .wrapper .outer .inner {
+                display: table-cell;
+                vertical-align: middle;
+            }
+
+            .wrapper .outer .inner .content {
+                text-align: center;
+            }
+
+            .green {
+                color: #169300;
+            }
+
+            .red {
+                color: #990000;
+            }
+
+            .pulsate3 {
+                -webkit-animation: pulsate 3s ease-out;
+                -webkit-animation-iteration-count: infinite;
+                opacity: 0.5;
+            }
+
+            .pulsate1 {
+                -webkit-animation: pulsate 1s ease-out;
+                -webkit-animation-iteration-count: infinite;
+                opacity: 0.5;
+            }
+
+            @-webkit-keyframes pulsate {
+                0% {
+                    opacity: 0.5;
+                }
+                50% {
+                    opacity: 1.0;
+                }
+                100% {
+                    opacity: 0.5;
+                }
+            }
+        </style>
+        <script>
+            if (!String.prototype.endsWith) {
+                String.prototype.endsWith = function(searchString, position) {
+                    var subjectString = this.toString();
+                    if (typeof position !== 'number' || !isFinite(position) || Math.floor(position) !== position || position > subjectString.length) {
+                        position = subjectString.length;
+                    }
+                    position -= searchString.length;
+                    var lastIndex = subjectString.indexOf(searchString, position);
+                    return lastIndex !== -1 && lastIndex === position;
+                };
+            }
+
+            function ping(url, timeout, callback) {
+                var img = new Image();
+                var calledBack = false;
+
+                var urlToUse = url;
+                var postfix = "_=" + Date.now();
+                if (url.indexOf("?") > -1) {
+                    urlToUse += "&" + postfix;
+                } else {
+                    urlToUse += "?" + postfix;
+                }
+
+                console.log("Pinging " + url);
+
+                img.onload = function() {
+                    callback("load");
+                    calledBack = true;
+                };
+                img.onerror = function() {
+                    if (!calledBack) {
+                        callback("error");
+                        calledBack = true;
+                    }
+                };
+
+                img.src = urlToUse;
+                setTimeout(function() {
+                    if (!calledBack) {
+                        callback("timeout");
+                        calledBack = true;
+                    }
+                }, timeout);
+            }
+
+            window.onload = function() {
+                var intervals = [1, 1, 2, 3, 5, 8];
+                var timeout = 1500;
+
+                var baseUrl = window.location.href;
+                if (baseUrl.indexOf("#") > -1) {
+                    baseUrl = baseUrl.substring(0, baseUrl.indexOf("#"));
+                }
+                if (baseUrl.indexOf("/static") > -1) {
+                    baseUrl = baseUrl.substring(0, baseUrl.indexOf("/static"));
+                }
+                if (baseUrl[baseUrl.length - 1] != "/") {
+                    baseUrl += "/";
+                }
+                var serverOnlineUrl = baseUrl + "online.gif";
+                var backendOnlineUrl = baseUrl + "intermediary.gif";
+
+                var serverTimeout;
+
+                var message = window.document.getElementById("message");
+
+                var serverIsOnline = false;
+                var serverOnlineCallback = function(result) {
+                    if (result == "load") {
+                        // our online.gif loaded, so the server is up, let's reload
+                        serverIsOnline = true;
+                        message.className = "pulsate1 green";
+                        message.innerText = "OctoPrint server online, reloading page...";
+                        window.location = baseUrl;
+                    } else {
+                        // online.gif still not available, let's look at
+                        var interval = 15;
+                        if (intervals.length) {
+                            interval = intervals.shift();
+                        }
+                        serverTimeout = setTimeout(function() {
+                            ping(serverOnlineUrl, timeout, serverOnlineCallback);
+                        }, interval * 1000)
+                    }
+                };
+
+                var backendOfflineCounter = 0;
+                var backendOnlineCallback = function(result) {
+                    if (serverIsOnline) {
+                        return;
+                    }
+
+                    if (result == "load") {
+                        setTimeout(function() {
+                            ping(backendOnlineUrl, timeout, backendOnlineCallback);
+                        }, 1000);
+                        return;
+                    }
+
+                    backendOfflineCounter++;
+                    if (backendOfflineCounter > 10) {
+                        if (serverTimeout) {
+                            window.clearTimeout(serverTimeout);
+                        }
+
+                        message.className = "red";
+                        message.innerHTML = "Looks like something went wrong during startup, the server is gone again. You should check <code>octoprint.log</code>.";
+                    } else {
+                        setTimeout(function() {
+                            ping(backendOnlineUrl, timeout, backendOnlineCallback);
+                        }, 1000);
+                    }
+                };
+
+                ping(backendOnlineUrl, timeout, backendOnlineCallback);
+                ping(serverOnlineUrl, timeout, serverOnlineCallback);
+            }
+        </script>
+    </head>
+    <body>
+        <div id="startup-overlay">
+            <div class="background"></div>
+            <div class="wrapper">
+                <div class="outer">
+                    <div class="inner">
+                        <div class="content">
+                            <h1 id="message" class="pulsate3">OctoPrint is still starting up, please wait...</h1>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

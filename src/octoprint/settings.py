@@ -30,7 +30,7 @@ import logging
 import re
 import uuid
 
-from octoprint.util import atomic_write
+from octoprint.util import atomic_write, is_hidden_path
 
 _APPNAME = "OctoPrint"
 
@@ -114,6 +114,10 @@ default_settings = {
 		"diskspace": {
 			"warning": 500 * 1024 * 1024, # 500 MB
 			"critical": 200 * 1024 * 1024, # 200 MB
+		},
+		"preemptiveCache": {
+			"exceptions": [],
+			"until": 7
 		}
 	},
 	"webcam": {
@@ -253,16 +257,18 @@ default_settings = {
 	},
 	"scripts": {
 		"gcode": {
-			"afterPrintCancelled": "; disable motors\nM84\n\n;disable all heaters\n{% snippet 'disable_hotends' %}\nM140 S0\n\n;disable fan\nM106 S0",
+			"afterPrintCancelled": "; disable motors\nM84\n\n;disable all heaters\n{% snippet 'disable_hotends' %}\n{% snippet 'disable_bed' %}\n;disable fan\nM106 S0",
 			"snippets": {
-				"disable_hotends": "{% for tool in range(printer_profile.extruder.count) %}M104 T{{ tool }} S0\n{% endfor %}"
+				"disable_hotends": "{% for tool in range(printer_profile.extruder.count) %}M104 T{{ tool }} S0\n{% endfor %}",
+				"disable_bed": "{% if printer_profile.heatedBed %}M140 S0\n{% endif %}"
 			}
 		}
 	},
 	"devel": {
 		"stylesheet": "css",
 		"cache": {
-			"enabled": True
+			"enabled": True,
+			"preemptive": True
 		},
 		"webassets": {
 			"minify": False,
@@ -295,7 +301,8 @@ default_settings = {
 			"commandBuffer": 4,
 			"sendWait": True,
 			"waitInterval": 1.0,
-			"supportM112": True
+			"supportM112": True,
+			"echoOnM117": True
 		}
 	}
 }
@@ -405,9 +412,11 @@ class Settings(object):
 		return folder
 
 	def _init_script_templating(self):
-		from jinja2 import Environment, BaseLoader, FileSystemLoader, ChoiceLoader, TemplateNotFound
-		from jinja2.nodes import Include, Const
+		from jinja2 import Environment, BaseLoader, ChoiceLoader, TemplateNotFound
+		from jinja2.nodes import Include
 		from jinja2.ext import Extension
+
+		from octoprint.util.jinja import FilteredFileSystemLoader
 
 		class SnippetExtension(Extension):
 			tags = {"snippet"}
@@ -497,10 +506,14 @@ class Settings(object):
 				else:
 					return template
 
-		file_system_loader = FileSystemLoader(self.getBaseFolder("scripts"))
+		path_filter = lambda path: not is_hidden_path(path)
+		file_system_loader = FilteredFileSystemLoader(self.getBaseFolder("scripts"),
+		                                              path_filter=path_filter)
 		settings_loader = SettingsScriptLoader(self)
 		choice_loader = ChoiceLoader([file_system_loader, settings_loader])
-		select_loader = SelectLoader(choice_loader, dict(bundled=settings_loader, file=file_system_loader))
+		select_loader = SelectLoader(choice_loader,
+		                             dict(bundled=settings_loader,
+		                                  file=file_system_loader))
 		return RelEnvironment(loader=select_loader, extensions=[SnippetExtension])
 
 	def _get_script_template(self, script_type, name, source=False):
@@ -1100,7 +1113,7 @@ class Settings(object):
 	def saveScript(self, script_type, name, script):
 		script_folder = self.getBaseFolder("scripts")
 		filename = os.path.realpath(os.path.join(script_folder, script_type, name))
-		if not filename.startswith(script_folder):
+		if not filename.startswith(os.path.realpath(script_folder)):
 			# oops, jail break, that shouldn't happen
 			raise ValueError("Invalid script path to save to: {filename} (from {script_type}:{name})".format(**locals()))
 

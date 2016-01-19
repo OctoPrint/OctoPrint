@@ -5,6 +5,9 @@ $(function() {
         self.loginState = parameters[0];
         self.settings = parameters[1];
 
+        // TODO remove with release of 1.3.0 and switch to OctoPrint.coreui usage
+        self.tabTracking = parameters[2];
+
         self.ui_progress_percentage = ko.observable();
         self.ui_progress_type = ko.observable();
         self.ui_progress_text = ko.computed(function() {
@@ -339,6 +342,21 @@ $(function() {
             self._processData(data);
         };
 
+        self._renderPercentage = function(percentage) {
+            var cmdIndex = GCODE.gCodeReader.getCmdIndexForPercentage(percentage);
+            if (!cmdIndex) return;
+
+            GCODE.renderer.render(cmdIndex.layer, 0, cmdIndex.cmd);
+            GCODE.ui.updateLayerInfo(cmdIndex.layer);
+
+            if (self.layerSlider != undefined) {
+                self.layerSlider.slider("setValue", cmdIndex.layer);
+            }
+            if (self.layerCommandSlider != undefined) {
+                self.layerCommandSlider.slider("setValue", [0, cmdIndex.cmd]);
+            }
+        };
+
         self._processData = function(data) {
             if (!data.job.file || !data.job.file.name && (self.loadedFilename || self.loadedFileDate)) {
                 self.waitForApproval(false);
@@ -358,19 +376,8 @@ $(function() {
             if(self.loadedFilename
                     && self.loadedFilename == data.job.file.name
                     && self.loadedFileDate == data.job.file.date) {
-                if (self.currentlyPrinting && self.renderer_syncProgress() && !self.waitForApproval()) {
-                    var cmdIndex = GCODE.gCodeReader.getCmdIndexForPercentage(data.progress.completion);
-                    if(cmdIndex){
-                        GCODE.renderer.render(cmdIndex.layer, 0, cmdIndex.cmd);
-                        GCODE.ui.updateLayerInfo(cmdIndex.layer);
-
-                        if (self.layerSlider != undefined) {
-                            self.layerSlider.slider("setValue", cmdIndex.layer);
-                        }
-                        if (self.layerCommandSlider != undefined) {
-                            self.layerCommandSlider.slider("setValue", [0, cmdIndex.cmd]);
-                        }
-                    }
+                if (self.tabTracking.browserTabVisible && self.tabActive && self.currentlyPrinting && self.renderer_syncProgress() && !self.waitForApproval()) {
+                    self._renderPercentage(data.progress.completion);
                 }
                 self.errorCount = 0
             } else {
@@ -391,6 +398,12 @@ $(function() {
                         self.loadFile(data.job.file.name, data.job.file.date);
                     }
                 }
+            }
+        };
+
+        self.onEventPrintDone = function() {
+            if (self.renderer_syncProgress() && !self.waitForApproval()) {
+                self._renderPercentage(100.0);
             }
         };
 
@@ -504,13 +517,16 @@ $(function() {
 
         self.onBeforeBinding = function() {
             self.initialize();
-        }
+        };
 
+        self.onTabChange = function(current, previous) {
+            self.tabActive = current == "#gcode";
+        };
     }
 
     OCTOPRINT_VIEWMODELS.push([
         GcodeViewModel,
-        ["loginStateViewModel", "settingsViewModel"],
+        ["loginStateViewModel", "settingsViewModel", "tabTracking"],
         "#gcode"
     ]);
 });

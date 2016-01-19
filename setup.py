@@ -32,7 +32,8 @@ INSTALL_REQUIRES = [
 	"pkginfo==1.2.1",
 	"requests==2.7.0",
 	"semantic_version==2.4.2",
-	"psutil==3.2.1"
+	"psutil==3.2.1",
+	"awesome-slugify>=1.6.5,<1.7"
 ]
 
 # Additional requirements for optional install options

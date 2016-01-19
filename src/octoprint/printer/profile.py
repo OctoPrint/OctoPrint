@@ -12,7 +12,7 @@ import re
 import logging
 
 from octoprint.settings import settings
-from octoprint.util import dict_merge, dict_sanitize, dict_contains_keys
+from octoprint.util import dict_merge, dict_sanitize, dict_contains_keys, is_hidden_path
 
 class SaveError(Exception):
 	pass
@@ -151,7 +151,7 @@ class PrinterProfileManager(object):
 			formFactor = BedTypes.RECTANGULAR,
 			origin = BedOrigin.LOWERLEFT
 		),
-		heatedBed = False,
+		heatedBed = True,
 		extruder=dict(
 			count = 1,
 			offsets = [
@@ -289,7 +289,7 @@ class PrinterProfileManager(object):
 	def _load_all_identifiers(self):
 		results = dict(_default=None)
 		for entry in os.listdir(self._folder):
-			if entry.startswith(".") or not entry.endswith(".profile") or entry == "_default.profile":
+			if is_hidden_path(entry) or not entry.endswith(".profile") or entry == "_default.profile":
 				continue
 
 			path = os.path.join(self._folder, entry)

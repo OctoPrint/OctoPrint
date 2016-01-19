@@ -11,9 +11,6 @@ function DataUpdater(allViewModels) {
 
     self._pluginHash = undefined;
 
-    self.reloadOverlay = $("#reloadui_overlay");
-    $("#reloadui_overlay_reload").click(function() { location.reload(true); });
-
     self.connect = function() {
         var options = {};
         if (SOCKJS_DEBUG) {
@@ -142,7 +139,7 @@ function DataUpdater(allViewModels) {
                     }
 
                     if (oldVersion != VERSION || (oldPluginHash != undefined && oldPluginHash != self._pluginHash)) {
-                        self.reloadOverlay.show();
+                        showReloadOverlay();
                     }
 
                     break;
@@ -250,7 +247,6 @@ function DataUpdater(allViewModels) {
                             text: _.sprintf(gettext("Streamed %(local)s to %(remote)s on SD, took %(time).2f seconds"), payload),
                             type: "success"
                         });
-                        gcodeFilesViewModel.requestData(payload.remote, "sdcard");
                     }
 
                     var legacyEventHandlers = {

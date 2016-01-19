@@ -22,6 +22,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import os
 import octoprint.plugin
 import octoprint.events
+import octoprint.util
 from octoprint.settings import settings
 
 import logging
@@ -478,7 +479,7 @@ class SlicingManager(object):
 		profiles = dict()
 		slicer_profile_path = self.get_slicer_profile_path(slicer)
 		for entry in os.listdir(slicer_profile_path):
-			if not entry.endswith(".profile") or entry.startswith("."):
+			if not entry.endswith(".profile") or octoprint.util.is_hidden_path(entry):
 				# we are only interested in profiles and no hidden files
 				continue
 
@@ -539,7 +540,7 @@ class SlicingManager(object):
 		name = self._sanitize(name)
 
 		path = os.path.join(self.get_slicer_profile_path(slicer), "{name}.profile".format(name=name))
-		if not os.path.realpath(path).startswith(self._profile_path):
+		if not os.path.realpath(path).startswith(os.path.realpath(self._profile_path)):
 			raise IOError("Path to profile {name} tried to break out of allows sub path".format(**locals()))
 		if must_exist and not (os.path.exists(path) and os.path.isfile(path)):
 			raise UnknownProfile(slicer, name)
