@@ -10,6 +10,9 @@ $(function() {
 
         self.receiving = ko.observable(false);
         self.sending = ko.observable(false);
+        self.exchanging = ko.computed(function() {
+            return self.receiving() || self.sending();
+        });
         self.outstanding = [];
 
         self.settingsDialog = undefined;
