@@ -5,8 +5,8 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2016 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-from octoprint.comm.transport import Transport
-from octoprint.comm.transport.types import TextType, IntegerType, SuggestionType, ConstantNameType
+from octoprint.comm.transport import Transport, LineAwareTransportWrapper, PushingTransportWrapper
+from octoprint.comm.transport.parameters import TextType, IntegerType, SuggestionType, ConstantNameType
 
 import serial
 
@@ -19,12 +19,12 @@ class SerialTransport(Transport):
 	unix_port_patterns = ["/dev/ttyUSB*", "/dev/ttyACM*", "/dev/tty.usb*",
 	                      "/dev/cu.*", "/dev/cuaU*", "/dev/rfcomm*"]
 
-	@staticmethod
-	def for_additional_ports_and_baudrates(additional_ports, additional_baudrates):
+	@classmethod
+	def for_additional_ports_and_baudrates(cls, additional_ports, additional_baudrates):
 		patterns = SerialTransport.unix_port_patterns + additional_ports
 		baudrates = SerialTransport.suggested_baudrates + additional_baudrates
-		return type("SerialTransportWithAdditionalPorts",
-		            (SerialTransport,),
+		return type(cls.__name__ + "WithAdditionalPorts",
+		            (cls,),
 		            {"unix_port_patterns": patterns,
 		             "suggested_baudrates": baudrates})
 
@@ -69,15 +69,20 @@ class SerialTransport(Transport):
 		       + [ConstantNameType(port.device, port.description) for port in ports]
 
 	def __init__(self):
-		Transport.__init__(self)
-
+		super(Transport, self).__init__()
 		self._serial = None
 
-	def create_connection(self, port, baudrate):
+	def create_connection(self, port="AUTO", baudrate=0):
 		self._serial = serial.Serial(port=port, baudrate=baudrate)
 
-	def send(self, message):
-		self._serial.write(message)
+	def close(self):
+		self._serial.close()
+
+	def read(self, size=None):
+		return self._serial.read(size=size)
+
+	def write(self, data):
+		self._serial.write(data)
 
 	def close_connection(self):
 		self._serial.close()
@@ -86,19 +91,75 @@ class SerialTransport(Transport):
 class VirtualSerialTransport(SerialTransport):
 	name = "Virtual Serial Connection"
 	key = "virtual"
-	virtual_serial = None
-
-	@staticmethod
-	def for_virtual_serial(virtual_serial):
-		return type("CustomizedVirtualSerialTransport",
-		            (VirtualSerialTransport,),
-		            {"virtual_serial": virtual_serial})
 
 	@classmethod
 	def get_connection_options(cls):
 		return []
 
+	def __init__(self, *args, **kwargs):
+		super(VirtualSerialTransport, self).__init__()
+		self.virtual_serial_factory = kwargs.get("virtual_serial_factory", None)
+
+	def create_connection(self, *args, **kwargs):
+		if self.virtual_serial_factory is None:
+			raise ValueError("virtual_serial_factory is unset")
+
+		if not callable(self.virtual_serial_factory):
+			raise ValueError("virtual_serial_factory is not callable")
+
+		self._serial = self.virtual_serial_factory()
+
 
 if __name__ == "__main__":
-	for option in SerialTransport.get_connection_options():
+	for option in VirtualSerialTransport.get_connection_options():
 		print(repr(option))
+
+	def create_virtual_serial():
+		class VirtualSerial():
+			def __init__(self):
+				self.active = True
+				self.lines = [b"one", b"two", b"three", b"four", b"five"]
+
+			def read(self, size=None):
+				if self.active:
+					if self.lines:
+						data = self.lines.pop(0)
+						print("read called: {!r}".format(data))
+						return data + b"\n"
+					else:
+						self.close()
+						return ""
+				else:
+					raise RuntimeError("virtual serial is closed")
+
+			def write(self, data):
+				print("write called: {!r}".format(data))
+
+			def close(self):
+				self.active = False
+				print("Closed")
+		return VirtualSerial()
+
+	from octoprint.comm.transport import TransportListener
+	class MyTransportListener(TransportListener):
+		def on_transport_data_received(self, transport, data):
+			print(">>> Received: {!r}".format(data))
+			transport.write(b"echo:" + data)
+
+	listener = MyTransportListener()
+
+	#pushingvirtual = PushingTransportWrapper(LineAwareTransportWrapper(VirtualSerialTransport(virtual_serial_factory=create_virtual_serial)))
+	#pushingvirtual.register_listener(listener)
+	#pushingvirtual.connect()
+	#pushingvirtual.write(b"Just a test")
+	#pushingvirtual.wait()
+
+	to_send = [b"Send 1", b"Send 2"]
+	virtual = LineAwareTransportWrapper(VirtualSerialTransport(virtual_serial_factory=create_virtual_serial))
+	virtual.connect()
+	for data in to_send:
+		data += b"\n"
+		print(">>> {!r}".format(data))
+		virtual.write(data)
+		print("<<< {!r}".format(virtual.read()))
+	virtual.close()
