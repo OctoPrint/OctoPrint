@@ -18,6 +18,7 @@ import threading
 from functools import wraps
 import warnings
 import contextlib
+import collections
 
 logger = logging.getLogger(__name__)
 
@@ -937,3 +938,51 @@ class InvariantContainer(object):
 
 	def __iter__(self):
 		return self._data.__iter__()
+
+
+class dictview(collections.Mapping):
+	"""
+	>>> my_dict = dict(a="a", b="b", flag=True, value=23)
+	>>> view = dictview(my_dict)
+	>>> view["a"]
+	'a'
+	>>> view["flag"]
+	True
+	>>> view["foo"]
+	Traceback (most recent call last):
+	    ...
+	KeyError: 'foo'
+	>>> my_dict["foo"] = "bar"
+	>>> view["foo"]
+	'bar'
+	>>> view["foo"] = "fnord"
+	Traceback (most recent call last):
+	    ...
+	TypeError: 'dictview' object does not support item assignment
+	"""
+
+	def __init__(self, data, copy=False, deepcopy=False):
+		self.data = data
+		self.copy = copy
+		self.deepcopy = deepcopy
+
+	def __len__(self):
+		return len(self.data)
+
+	def __iter__(self):
+		return iter(self.data)
+
+	def __getitem__(self, key):
+		return self._get_item(key)
+
+	def _get_item(self, key):
+		import copy
+
+		value = self.data[key]
+
+		if self.deepcopy:
+			value = copy.deepcopy(value)
+		elif self.copy:
+			value = copy.copy(value)
+
+		return value

@@ -40,7 +40,7 @@ class Transport(object):
 
 class SeparatorAwareTransportWrapper(object):
 
-	def __init__(self, transport, separator="\n", chunksize=128):
+	def __init__(self, transport, separator, chunksize=128):
 		self.transport = transport
 		self.separator = separator
 
@@ -83,12 +83,14 @@ class SeparatorAwareTransportWrapper(object):
 class LineAwareTransportWrapper(SeparatorAwareTransportWrapper):
 
 	def __init__(self, transport, chunksize=512):
-		SeparatorAwareTransportWrapper.__init__(self, transport, separator="\n", chunksize=chunksize)
+		SeparatorAwareTransportWrapper.__init__(self, transport, b"\n", chunksize=chunksize)
 
 class PushingTransportWrapper(object):
 
-	def __init__(self, transport):
+	def __init__(self, transport, name="pushingTransportReceiveLoop"):
 		self.transport = transport
+		self.name = name
+
 		self._listeners = set()
 		self._receiver_active = False
 		self._receiver_thread = None
@@ -99,7 +101,7 @@ class PushingTransportWrapper(object):
 		import threading
 
 		self._receiver_active = True
-		self._receiver_thread = threading.Thread(target=self._receiver_loop)
+		self._receiver_thread = threading.Thread(target=self._receiver_loop, name=self.name)
 		self._receiver_thread.daemon = True
 		self._receiver_thread.start()
 

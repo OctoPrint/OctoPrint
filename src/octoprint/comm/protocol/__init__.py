@@ -6,7 +6,20 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 
+import logging
+
+
 class Protocol(object):
+
+	def __init__(self):
+		self._logger = logging.getLogger(__name__)
+		self._listeners = []
+
+	def register_listener(self, listener):
+		self._listeners.append(listener)
+
+	def unregister_listener(self, listener):
+		self._listeners.remove(listener)
 
 	def connect(self, transport):
 		pass
@@ -28,6 +41,20 @@ class Protocol(object):
 
 	def set_extrusion_multiplier(self, multiplier):
 		pass
+
+	def notify_listeners(self, name, *args, **kwargs):
+		for listener in self._listeners:
+			method = getattr(listener, name, None)
+			if not method:
+				continue
+
+			try:
+				method(*args, **kwargs)
+			except:
+				self._logger.exception("Exception while calling {} on protocol listener {}".format(
+						"{}({})".format(name, ", ".join(list(args) + ["{}={}".format(key, value)
+						                                              for key, value in kwargs.items()]))
+				))
 
 
 class FanControlProtocolMixin(object):
@@ -90,4 +117,22 @@ class FileStreamingProtocolMixin(FileManagementProtocolMixin):
 		pass
 
 	def stop_recording_file(self):
+		pass
+
+
+class ProtocolListener(object):
+
+	def on_protocol_connection_state(self, state):
+		pass
+
+	def on_protocol_temperature(self, temperatures):
+		pass
+
+
+class FileAwareProtocolListener(object):
+
+	def on_protocol_sd_file_list(self, files):
+		pass
+
+	def on_protocol_sd_status(self, name, pos, total):
 		pass
