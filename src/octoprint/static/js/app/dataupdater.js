@@ -25,7 +25,7 @@ function DataUpdater(allViewModels) {
             self.allViewModels,
             "onServerDisconnect",
             function() { return !handled; },
-            function(method) { handled = !method() || handled; }
+            function(method) { var result = method(); handled = (result !== undefined && !result) || handled; }
         );
 
         if (handled) {
@@ -45,7 +45,7 @@ function DataUpdater(allViewModels) {
             self.allViewModels,
             "onServerDisconnect",
             function() { return !handled; },
-            function(method) { handled = !method() || handled; }
+            function(method) { var result = method(); handled = (result !== undefined && !result) || handled; }
         );
 
         if (handled) {
@@ -78,11 +78,14 @@ function DataUpdater(allViewModels) {
         // hide it, plus reload the camera feed if it's currently displayed
         if ($("#offline_overlay").is(":visible")) {
             hideOfflineOverlay();
+            callViewModels(self.allViewModels, "onServerReconnect");
             callViewModels(self.allViewModels, "onDataUpdaterReconnect");
 
             if ($('#tabs li[class="active"] a').attr("href") == "#control") {
                 $("#webcam_image").attr("src", CONFIG_WEBCAM_STREAM + "?" + new Date().getTime());
             }
+        } else {
+            callViewModels(self.allViewModels, "onServerConnect");
         }
 
         // if the version, the plugin hash or the config hash changed, we
