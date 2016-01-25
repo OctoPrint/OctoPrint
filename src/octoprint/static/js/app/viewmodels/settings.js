@@ -8,6 +8,9 @@ $(function() {
 
         self.receiving = ko.observable(false);
         self.sending = ko.observable(false);
+        self.exchanging = ko.computed(function() {
+            return self.receiving() || self.sending();
+        });
         self.callbacks = [];
 
         self.api_enabled = ko.observable(undefined);
