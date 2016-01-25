@@ -182,20 +182,24 @@ $(function() {
             }
 
             var re = /^([gmt][0-9]+)(\s.*)?/;
-            var commandMatch = command.match(re);
-            if (commandMatch != null) {
-                command = commandMatch[1].toUpperCase() + ((commandMatch[2] !== undefined) ? commandMatch[2] : "");
-            }
+            var commands = command.split(",")
+            
+            $.when.apply($, $.map(commands, function(command) {
+                var commandMatch = command.match(re);
+            
+                if (commandMatch != null) {
+                    command = commandMatch[1].toUpperCase() + ((commandMatch[2] !== undefined) ? commandMatch[2] : "");
+                }
 
-            if (command) {
-                OctoPrint.control.sendGcode(command)
-                    .done(function() {
-                        self.cmdHistory.push(command);
-                        self.cmdHistory.slice(-300); // just to set a sane limit to how many manually entered commands will be saved...
-                        self.cmdHistoryIdx = self.cmdHistory.length;
-                        self.command("");
-                    });
-            }
+                if (command) {
+                    OctoPrint.control.sendGcode(command);
+                }
+            })).done(function(){
+                    self.cmdHistory.push(command);
+                    self.cmdHistory.slice(-300); // just to set a sane limit to how many manually entered commands will be saved...
+                    self.cmdHistoryIdx = self.cmdHistory.length;
+                    self.command("");
+                });
         };
 
         self.fakeAck = function() {
