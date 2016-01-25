@@ -48,7 +48,8 @@ function DataUpdater(allViewModels) {
                 }
 
                 if (viewModel.hasOwnProperty("onServerDisconnect")) {
-                    if (!viewModel.onServerDisconnect()) {
+                    var result = viewModel.onServerDisconnect();
+                    if (result !== undefined && !result) {
                         handled = true;
                     }
                 }
@@ -83,7 +84,8 @@ function DataUpdater(allViewModels) {
             }
 
             if (viewModel.hasOwnProperty("onServerDisconnect")) {
-                if (!viewModel.onServerDisconnect()) {
+                var result = viewModel.onServerDisconnect();
+                if (result !== undefined && !result) {
                     handled = true;
                 }
             }
@@ -128,7 +130,9 @@ function DataUpdater(allViewModels) {
                     if ($("#offline_overlay").is(":visible")) {
                         hideOfflineOverlay();
                         _.each(self.allViewModels, function(viewModel) {
-                            if (viewModel.hasOwnProperty("onDataUpdaterReconnect")) {
+                            if (viewModel.hasOwnProperty("onServerReconnect")) {
+                                viewModel.onServerReconnect();
+                            } else if (viewModel.hasOwnProperty("onDataUpdaterReconnect")) {
                                 viewModel.onDataUpdaterReconnect();
                             }
                         });
@@ -136,6 +140,12 @@ function DataUpdater(allViewModels) {
                         if ($('#tabs li[class="active"] a').attr("href") == "#control") {
                             $("#webcam_image").attr("src", CONFIG_WEBCAM_STREAM + "?" + new Date().getTime());
                         }
+                    } else {
+                        _.each(self.allViewModels, function(viewModel) {
+                            if (viewModel.hasOwnProperty("onServerConnect")) {
+                                viewModel.onServerConnect();
+                            }
+                        });
                     }
 
                     if (oldVersion != VERSION || (oldPluginHash != undefined && oldPluginHash != self._pluginHash)) {
