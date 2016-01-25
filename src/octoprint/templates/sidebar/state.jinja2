@@ -14,7 +14,7 @@
 </div>
 
 <div class="row-fluid print-control" style="display: none;" data-bind="visible: loginState.isUser">
-    <button class="btn btn-primary span4" data-bind="click: print, enable: isOperational() && isReady() && !isPrinting() && loginState.isUser(), css: {'btn-danger': isPaused()}, attr: {title: titlePrintButton}" id="job_print"><i class="icon-white" data-bind="css: {'icon-print': !isPaused(), 'icon-undo': isPaused()}"></i> <span data-bind="text: (isPaused() ? '{{ _('Restart') }}' : '{{ _('Print') }}')">{{ _('Print') }}</span></button>
-    <button class="btn span4" id="job_pause" data-bind="click: pause, enable: isOperational() && (isPrinting() || isPaused()) && loginState.isUser(), css: {active: isPaused()}, attr: {title: titlePauseButton}"><i data-bind="css: {'icon-pause': !isPaused(), 'icon-play': isPaused()}"></i> <span data-bind="visible: !isPaused()">{{ _('Pause') }}</span><span data-bind="visible: isPaused()">{{ _('Resume') }}</span></button>
-    <button class="btn span4" id="job_cancel" data-bind="click: cancel, enable: isOperational() && (isPrinting() || isPaused()) && loginState.isUser()" title="{{ _('Cancels the print job') }}"><i class="icon-stop"></i> {{ _('Cancel') }}</button>
+    <button class="btn btn-primary span4" data-bind="click: print, enable: enablePrint, css: {'btn-danger': isPaused()}, attr: {title: titlePrintButton}" id="job_print"><i class="icon-white" data-bind="css: {'icon-print': !isPaused(), 'icon-undo': isPaused()}"></i> <span data-bind="text: (isPaused() ? '{{ _('Restart') }}' : '{{ _('Print') }}')">{{ _('Print') }}</span></button>
+    <button class="btn span4" id="job_pause" data-bind="click: pause, enable: enablePause, css: {active: isPaused()}, attr: {title: titlePauseButton}"><i data-bind="css: {'icon-pause': !isPaused(), 'icon-play': isPaused()}"></i> <span data-bind="visible: !isPaused()">{{ _('Pause') }}</span><span data-bind="visible: isPaused()">{{ _('Resume') }}</span></button>
+    <button class="btn span4" id="job_cancel" data-bind="click: cancel, enable: enableCancel" title="{{ _('Cancels the print job') }}"><i class="icon-stop"></i> {{ _('Cancel') }}</button>
 </div>

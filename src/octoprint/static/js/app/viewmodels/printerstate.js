@@ -14,6 +14,16 @@ $(function() {
         self.isLoading = ko.observable(undefined);
         self.isSdReady = ko.observable(undefined);
 
+        self.enablePrint = ko.computed(function() {
+            return self.isOperational() && self.isReady() && !self.isPrinting() && self.loginState.isUser() && self.filename() != undefined;
+        });
+        self.enablePause = ko.computed(function() {
+            return self.isOperational() && (self.isPrinting() || self.isPaused()) && self.loginState.isUser();
+        });
+        self.enableCancel = ko.computed(function() {
+            return self.isOperational() && (self.isPrinting() || self.isPaused()) && self.loginState.isUser();
+        });
+
         self.filename = ko.observable(undefined);
         self.progress = ko.observable(undefined);
         self.filesize = ko.observable(undefined);
