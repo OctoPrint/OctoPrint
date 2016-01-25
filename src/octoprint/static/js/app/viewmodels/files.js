@@ -53,6 +53,10 @@ $(function() {
         });
 
         self.uploadButton = undefined;
+        self.sdUploadButton = undefined;
+        self.uploadProgressBar = undefined;
+        self.localTarget = undefined;
+        self.sdTarget = undefined;
 
         // initialize list helper
         self.listHelper = new ItemListHelper(
@@ -351,10 +355,6 @@ $(function() {
             return false;
         };
 
-        self.onDataUpdaterReconnect = function() {
-            self.requestData();
-        };
-
         self.onUserLoggedIn = function(user) {
             self.uploadButton.fileupload("enable");
         };
@@ -387,198 +387,34 @@ $(function() {
             //~~ Gcode upload
 
             self.uploadButton = $("#gcode_upload");
-            function gcode_upload_done(e, data) {
-                var filename = undefined;
-                var location = undefined;
-                if (data.result.files.hasOwnProperty("sdcard")) {
-                    filename = data.result.files.sdcard.name;
-                    location = "sdcard";
-                } else if (data.result.files.hasOwnProperty("local")) {
-                    filename = data.result.files.local.name;
-                    location = "local";
-                }
-                self.requestData(filename, location);
+            self.sdUploadButton = $("#gcode_upload_sd");
 
-                if (_.endsWith(filename.toLowerCase(), ".stl")) {
-                    self.slicing.show(location, filename);
-                }
+            self.uploadProgress = $("#gcode_upload_progress");
+            self.uploadProgressBar = $(".bar", self.uploadProgress);
 
-                if (data.result.done) {
-                    $("#gcode_upload_progress .bar").css("width", "0%");
-                    $("#gcode_upload_progress").removeClass("progress-striped").removeClass("active");
-                    $("#gcode_upload_progress .bar").text("");
-                }
-            }
-
-            function gcode_upload_fail(e, data) {
-                var error = "<p>" + gettext("Could not upload the file. Make sure that it is a GCODE file and has the extension \".gcode\" or \".gco\" or that it is an STL file with the extension \".stl\".") + "</p>";
-                error += pnotifyAdditionalInfo("<pre>" + data.jqXHR.responseText + "</pre>");
-                new PNotify({
-                    title: "Upload failed",
-                    text: error,
-                    type: "error",
-                    hide: false
-                });
-                $("#gcode_upload_progress .bar").css("width", "0%");
-                $("#gcode_upload_progress").removeClass("progress-striped").removeClass("active");
-                $("#gcode_upload_progress .bar").text("");
-            }
-
-            function gcode_upload_progress(e, data) {
-                var progress = parseInt(data.loaded / data.total * 100, 10);
-                $("#gcode_upload_progress .bar").css("width", progress + "%");
-                $("#gcode_upload_progress .bar").text(gettext("Uploading ..."));
-                if (progress >= 100) {
-                    $("#gcode_upload_progress").addClass("progress-striped").addClass("active");
-                    $("#gcode_upload_progress .bar").text(gettext("Saving ..."));
-                }
-            }
-
-            function enable_local_dropzone() {
-                $("#gcode_upload").fileupload({
-                    url: API_BASEURL + "files/local",
-                    dataType: "json",
-                    dropZone: localTarget,
-                    done: gcode_upload_done,
-                    fail: gcode_upload_fail,
-                    progressall: gcode_upload_progress
-                });
-            }
-
-            function disable_local_dropzone() {
-                $("#gcode_upload").fileupload({
-                    url: API_BASEURL + "files/local",
-                    dataType: "json",
-                    dropZone: null,
-                    done: gcode_upload_done,
-                    fail: gcode_upload_fail,
-                    progressall: gcode_upload_progress
-                });
-            }
-
-            function enable_sd_dropzone() {
-                $("#gcode_upload_sd").fileupload({
-                    url: API_BASEURL + "files/sdcard",
-                    dataType: "json",
-                    dropZone: $("#drop_sd"),
-                    done: gcode_upload_done,
-                    fail: gcode_upload_fail,
-                    progressall: gcode_upload_progress
-                });
-            }
-
-            function disable_sd_dropzone() {
-                $("#gcode_upload_sd").fileupload({
-                    url: API_BASEURL + "files/sdcard",
-                    dataType: "json",
-                    dropZone: null,
-                    done: gcode_upload_done,
-                    fail: gcode_upload_fail,
-                    progressall: gcode_upload_progress
-                });
-            }
-
-            var localTarget;
             if (CONFIG_SD_SUPPORT) {
-                localTarget = $("#drop_locally");
+                self.localTarget = $("#drop_locally");
             } else {
-                localTarget = $("#drop");
+                self.localTarget = $("#drop");
             }
+            self.sdTarget = $("#drop_sd");
 
             self.loginState.isUser.subscribe(function(newValue) {
-                if (newValue === true) {
-                    enable_local_dropzone();
-                } else {
-                    disable_local_dropzone();
-                }
+                self._enableLocalDropzone(newValue);
             });
-
-            if (self.loginState.isUser()) {
-                enable_local_dropzone();
-            } else {
-                disable_local_dropzone();
-            }
+            self._enableLocalDropzone(self.loginState.isUser());
 
             if (CONFIG_SD_SUPPORT) {
                 self.printerState.isSdReady.subscribe(function(newValue) {
-                    if (newValue === true && self.loginState.isUser()) {
-                        enable_sd_dropzone();
-                    } else {
-                        disable_sd_dropzone();
-                    }
+                    self._enableSdDropzone(newValue === true && self.loginState.isUser());
                 });
 
                 self.loginState.isUser.subscribe(function(newValue) {
-                    if (newValue === true && self.printerState.isSdReady()) {
-                        enable_sd_dropzone();
-                    } else {
-                        disable_sd_dropzone();
-                    }
+                    self._enableSdDropzone(newValue === true && self.printerState.isSdReady());
                 });
 
-                if (self.printerState.isSdReady() && self.loginState.isUser()) {
-                    enable_sd_dropzone();
-                } else {
-                    disable_sd_dropzone();
-                }
+                self._enableSdDropzone(self.printerState.isSdReady() && self.loginState.isUser());
             }
-
-            $(document).bind("dragover", function (e) {
-                var dropOverlay = $("#drop_overlay");
-                var dropZone = $("#drop");
-                var dropZoneLocal = $("#drop_locally");
-                var dropZoneSd = $("#drop_sd");
-                var dropZoneBackground = $("#drop_background");
-                var dropZoneLocalBackground = $("#drop_locally_background");
-                var dropZoneSdBackground = $("#drop_sd_background");
-                var timeout = window.dropZoneTimeout;
-
-                if (!timeout) {
-                    dropOverlay.addClass('in');
-                } else {
-                    clearTimeout(timeout);
-                }
-
-                var foundLocal = false;
-                var foundSd = false;
-                var found = false;
-                var node = e.target;
-                do {
-                    if (dropZoneLocal && node === dropZoneLocal[0]) {
-                        foundLocal = true;
-                        break;
-                    } else if (dropZoneSd && node === dropZoneSd[0]) {
-                        foundSd = true;
-                        break;
-                    } else if (dropZone && node === dropZone[0]) {
-                        found = true;
-                        break;
-                    }
-                    node = node.parentNode;
-                } while (node != null);
-
-                if (foundLocal) {
-                    dropZoneLocalBackground.addClass("hover");
-                    dropZoneSdBackground.removeClass("hover");
-                } else if (foundSd && self.printerState.isSdReady()) {
-                    dropZoneSdBackground.addClass("hover");
-                    dropZoneLocalBackground.removeClass("hover");
-                } else if (found) {
-                    dropZoneBackground.addClass("hover");
-                } else {
-                    if (dropZoneLocalBackground) dropZoneLocalBackground.removeClass("hover");
-                    if (dropZoneSdBackground) dropZoneSdBackground.removeClass("hover");
-                    if (dropZoneBackground) dropZoneBackground.removeClass("hover");
-                }
-
-                window.dropZoneTimeout = setTimeout(function () {
-                    window.dropZoneTimeout = null;
-                    dropOverlay.removeClass("in");
-                    if (dropZoneLocal) dropZoneLocalBackground.removeClass("hover");
-                    if (dropZoneSd) dropZoneSdBackground.removeClass("hover");
-                    if (dropZone) dropZoneBackground.removeClass("hover");
-                }, 100);
-            });
 
             self.requestData();
         };
@@ -604,6 +440,170 @@ $(function() {
         self.onEventTransferDone = function(payload) {
             self.requestData(payload.remote, "sdcard");
         };
+
+        self.onServerConnect = function(payload) {
+            self._enableDragNDrop(true);
+            self.requestData();
+        };
+
+        self.onServerReconnect = function(payload) {
+            self._enableDragNDrop(true);
+            self.requestData();
+        };
+
+        self.onServerDisconnect = function(payload) {
+            self._enableDragNDrop(false);
+        };
+
+        self._enableLocalDropzone = function(enable) {
+            var options = {
+                url: API_BASEURL + "files/local",
+                dataType: "json",
+                dropZone: enable ? self.localTarget : null,
+                done: self._handleUploadDone,
+                fail: self._handleUploadFail,
+                progressall: self._handleUploadProgress
+            };
+            self.uploadButton.fileupload(options);
+        };
+
+        self._enableSdDropzone = function(enable) {
+            var options = {
+                url: API_BASEURL + "files/local",
+                dataType: "json",
+                dropZone: enable ? self.sdTarget : null,
+                done: self._handleUploadDone,
+                fail: self._handleUploadFail,
+                progressall: self._handleUploadProgress
+            };
+            self.sdUploadButton.fileupload(options);
+        };
+
+        self._enableDragNDrop = function(enable) {
+            if (enable) {
+                $(document).bind("dragover", self._handleDragNDrop);
+                log.debug("Enabled drag-n-drop");
+            } else {
+                $(document).unbind("dragover", self._handleDragNDrop);
+                log.debug("Disabled drag-n-drop");
+            }
+        };
+
+        self._handleUploadDone = function(e, data) {
+            var filename = undefined;
+            var location = undefined;
+            if (data.result.files.hasOwnProperty("sdcard")) {
+                filename = data.result.files.sdcard.name;
+                location = "sdcard";
+            } else if (data.result.files.hasOwnProperty("local")) {
+                filename = data.result.files.local.name;
+                location = "local";
+            }
+            self.requestData(filename, location);
+
+            if (_.endsWith(filename.toLowerCase(), ".stl")) {
+                self.slicing.show(location, filename);
+            }
+
+            if (data.result.done) {
+                self.uploadProgressBar
+                    .css("width", "0%")
+                    .text("");
+                self.uploadProgress
+                    .removeClass("progress-striped")
+                    .removeClass("active");
+            }
+        };
+
+        self._handleUploadFail = function(e, data) {
+            var error = "<p>" + gettext("Could not upload the file. Make sure that it is a GCODE file and has the extension \".gcode\" or \".gco\" or that it is an STL file with the extension \".stl\".") + "</p>";
+            error += pnotifyAdditionalInfo("<pre>" + data.jqXHR.responseText + "</pre>");
+            new PNotify({
+                title: "Upload failed",
+                text: error,
+                type: "error",
+                hide: false
+            });
+            self.uploadProgressBar
+                .css("width", "0%")
+                .text("");
+            self.uploadProgress
+                .removeClass("progress-striped")
+                .removeClass("active");
+        };
+
+        self._handleUploadProgress = function(e, data) {
+            var progress = parseInt(data.loaded / data.total * 100, 10);
+
+            self.uploadProgressBar
+                .css("width", progress + "%")
+                .text(gettext("Uploading ..."));
+
+            if (progress >= 100) {
+                self.uploadProgress
+                    .addClass("progress-striped")
+                    .addClass("active");
+                self.uploadProgressBar
+                    .text(gettext("Saving ..."));
+            }
+        };
+
+        self._handleDragNDrop = function (e) {
+            var dropOverlay = $("#drop_overlay");
+            var dropZone = $("#drop");
+            var dropZoneLocal = $("#drop_locally");
+            var dropZoneSd = $("#drop_sd");
+            var dropZoneBackground = $("#drop_background");
+            var dropZoneLocalBackground = $("#drop_locally_background");
+            var dropZoneSdBackground = $("#drop_sd_background");
+            var timeout = window.dropZoneTimeout;
+
+            if (!timeout) {
+                dropOverlay.addClass('in');
+            } else {
+                clearTimeout(timeout);
+            }
+
+            var foundLocal = false;
+            var foundSd = false;
+            var found = false;
+            var node = e.target;
+            do {
+                if (dropZoneLocal && node === dropZoneLocal[0]) {
+                    foundLocal = true;
+                    break;
+                } else if (dropZoneSd && node === dropZoneSd[0]) {
+                    foundSd = true;
+                    break;
+                } else if (dropZone && node === dropZone[0]) {
+                    found = true;
+                    break;
+                }
+                node = node.parentNode;
+            } while (node != null);
+
+            if (foundLocal) {
+                dropZoneLocalBackground.addClass("hover");
+                dropZoneSdBackground.removeClass("hover");
+            } else if (foundSd && self.printerState.isSdReady()) {
+                dropZoneSdBackground.addClass("hover");
+                dropZoneLocalBackground.removeClass("hover");
+            } else if (found) {
+                dropZoneBackground.addClass("hover");
+            } else {
+                if (dropZoneLocalBackground) dropZoneLocalBackground.removeClass("hover");
+                if (dropZoneSdBackground) dropZoneSdBackground.removeClass("hover");
+                if (dropZoneBackground) dropZoneBackground.removeClass("hover");
+            }
+
+            window.dropZoneTimeout = setTimeout(function () {
+                window.dropZoneTimeout = null;
+                dropOverlay.removeClass("in");
+                if (dropZoneLocal) dropZoneLocalBackground.removeClass("hover");
+                if (dropZoneSd) dropZoneSdBackground.removeClass("hover");
+                if (dropZone) dropZoneBackground.removeClass("hover");
+            }, 100);
+        }
     }
 
     OCTOPRINT_VIEWMODELS.push([
