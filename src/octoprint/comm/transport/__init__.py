@@ -18,9 +18,15 @@ class Transport(object):
 		return []
 
 	def __init__(self, *args, **kwargs):
-		pass
+		self._state = TransportState.DISCONNECTED
+
+	@property
+	def state(self):
+		return self._state
 
 	def connect(self, **params):
+		if self.state == TransportState.CONNECTED:
+			raise AlreadyConnectedError("Already connected, disconnect first")
 		options = self.get_connection_options()
 		param_dict = get_param_dict(params, options)
 		self.create_connection(**param_dict)
@@ -36,6 +42,19 @@ class Transport(object):
 
 	def write(self, data):
 		pass
+
+
+class TransportState(object):
+	CONNECTED = "connected"
+	DISCONNECTED = "disconnected"
+
+
+class NotConnectedError(Exception):
+	pass
+
+
+class AlreadyConnectedError(Exception):
+	pass
 
 
 class SeparatorAwareTransportWrapper(object):

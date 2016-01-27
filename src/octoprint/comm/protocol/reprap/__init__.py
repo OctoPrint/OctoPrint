@@ -312,7 +312,7 @@ class ReprapGcodeProtocol(Protocol, MotorControlProtocolMixin, FanControlProtoco
 	def _do_increment_and_send_with_checksum(self, cmd):
 		with self._line_mutex:
 			linenumber = self._current_linenumber
-			self._addToLastLines(cmd)
+			self._add_to_last_line(cmd)
 			self._current_linenumber += 1
 			self._do_send_with_checksum(cmd, linenumber)
 
