@@ -8,7 +8,7 @@ $(function() {
         self.usersettings = parameters[3];
         self.system = parameters[4];
 
-        self.appearanceClasses = ko.computed(function() {
+        self.appearanceClasses = ko.pureComputed(function() {
             var classes = self.appearance.color();
             if (self.appearance.colorTransparent()) {
                 classes += " transparent";

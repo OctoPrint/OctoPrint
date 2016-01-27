@@ -24,13 +24,13 @@ $(function() {
         self.isReady = ko.observable(undefined);
         self.isLoading = ko.observable(undefined);
 
-        self.timelapseTypeSelected = ko.computed(function() {
+        self.timelapseTypeSelected = ko.pureComputed(function() {
             return ("off" != self.timelapseType());
         });
-        self.intervalInputEnabled = ko.computed(function() {
+        self.intervalInputEnabled = ko.pureComputed(function() {
             return ("timed" == self.timelapseType());
         });
-        self.saveButtonEnabled = ko.computed(function() {
+        self.saveButtonEnabled = ko.pureComputed(function() {
             return self.isDirty() && self.isOperational() && !self.isPrinting() && self.loginState.isUser();
         });
 

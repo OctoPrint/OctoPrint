@@ -9,7 +9,7 @@ $(function() {
         self.pathBroken = ko.observable(false);
         self.pathOk = ko.observable(false);
         self.pathText = ko.observable();
-        self.pathHelpVisible = ko.computed(function() {
+        self.pathHelpVisible = ko.pureComputed(function() {
             return self.pathBroken() || self.pathOk();
         });
 

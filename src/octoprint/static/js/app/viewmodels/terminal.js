@@ -41,14 +41,14 @@ $(function() {
         self.forceFancyFunctionality = ko.observable(false);
         self.forceTerminalLogDuringPrinting = ko.observable(false);
 
-        self.fancyFunctionality = ko.computed(function() {
+        self.fancyFunctionality = ko.pureComputed(function() {
             return self.enableFancyFunctionality() || self.forceFancyFunctionality();
         });
-        self.terminalLogDuringPrinting = ko.computed(function() {
+        self.terminalLogDuringPrinting = ko.pureComputed(function() {
             return !self.disableTerminalLogDuringPrinting() || self.forceTerminalLogDuringPrinting();
         });
 
-        self.displayedLines = ko.computed(function() {
+        self.displayedLines = ko.pureComputed(function() {
             if (!self.enableFancyFunctionality()) {
                 return self.log();
             }
@@ -74,14 +74,14 @@ $(function() {
             return result;
         });
 
-        self.plainLogOutput = ko.computed(function() {
+        self.plainLogOutput = ko.pureComputed(function() {
             if (self.fancyFunctionality()) {
                 return;
             }
             return self.plainLogLines().join("\n");
         });
 
-        self.lineCount = ko.computed(function() {
+        self.lineCount = ko.pureComputed(function() {
             if (!self.fancyFunctionality()) {
                 return;
             }

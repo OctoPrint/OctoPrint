@@ -23,26 +23,26 @@ $(function() {
 
         self.freeSpace = ko.observable(undefined);
         self.totalSpace = ko.observable(undefined);
-        self.freeSpaceString = ko.computed(function() {
+        self.freeSpaceString = ko.pureComputed(function() {
             if (!self.freeSpace())
                 return "-";
             return formatSize(self.freeSpace());
         });
-        self.totalSpaceString = ko.computed(function() {
+        self.totalSpaceString = ko.pureComputed(function() {
             if (!self.totalSpace())
                 return "-";
             return formatSize(self.totalSpace());
         });
 
-        self.diskusageWarning = ko.computed(function() {
+        self.diskusageWarning = ko.pureComputed(function() {
             return self.freeSpace() != undefined
                 && self.freeSpace() < self.settingsViewModel.server_diskspace_warning();
         });
-        self.diskusageCritical = ko.computed(function() {
+        self.diskusageCritical = ko.pureComputed(function() {
             return self.freeSpace() != undefined
                 && self.freeSpace() < self.settingsViewModel.server_diskspace_critical();
         });
-        self.diskusageString = ko.computed(function() {
+        self.diskusageString = ko.pureComputed(function() {
             if (self.diskusageCritical()) {
                 return gettext("Your available free disk space is critically low.");
             } else if (self.diskusageWarning()) {
@@ -143,11 +143,11 @@ $(function() {
             }
         });
 
-        self.isLoadActionPossible = ko.computed(function() {
+        self.isLoadActionPossible = ko.pureComputed(function() {
             return self.loginState.isUser() && !self.isPrinting() && !self.isPaused() && !self.isLoading();
         });
 
-        self.isLoadAndPrintActionPossible = ko.computed(function() {
+        self.isLoadAndPrintActionPossible = ko.pureComputed(function() {
             return self.loginState.isUser() && self.isOperational() && self.isLoadActionPossible();
         });
 

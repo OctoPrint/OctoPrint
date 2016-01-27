@@ -98,7 +98,7 @@ $(function() {
             5
         );
 
-        self.availableAndPossible = ko.computed(function() {
+        self.availableAndPossible = ko.pureComputed(function() {
             return _.filter(self.versions.items(), function(info) { return info.updateAvailable && info.updatePossible; });
         });
 

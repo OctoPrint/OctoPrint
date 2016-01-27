@@ -37,7 +37,7 @@ $(function() {
         self.isReady = ko.observable(undefined);
         self.isLoading = ko.observable(undefined);
 
-        self.buttonText = ko.computed(function() {
+        self.buttonText = ko.pureComputed(function() {
             if (self.isErrorOrClosed())
                 return gettext("Connect");
             else

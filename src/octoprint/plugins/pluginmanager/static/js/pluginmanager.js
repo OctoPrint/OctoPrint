@@ -157,13 +157,13 @@ $(function() {
         self.pipVirtualEnv = ko.observable();
         self.pipAdditionalArgs = ko.observable();
 
-        self.pipUseSudoString = ko.computed(function() {
+        self.pipUseSudoString = ko.pureComputed(function() {
             return self.pipUseSudo() ? "yes" : "no";
         });
-        self.pipUseUserString = ko.computed(function() {
+        self.pipUseUserString = ko.pureComputed(function() {
             return self.pipUseUser() ? "yes" : "no";
         });
-        self.pipVirtualEnvString = ko.computed(function() {
+        self.pipVirtualEnvString = ko.pureComputed(function() {
             return self.pipVirtualEnv() ? "yes" : "no";
         });
 
@@ -186,7 +186,7 @@ $(function() {
 
         self.notifications = [];
 
-        self.enableManagement = ko.computed(function() {
+        self.enableManagement = ko.pureComputed(function() {
             return !self.printerState.isPrinting();
         });
 
@@ -207,22 +207,22 @@ $(function() {
             return self.enableManagement() && self.pipAvailable() && self.isCompatible(data);
         };
 
-        self.invalidUrl = ko.computed(function() {
+        self.invalidUrl = ko.pureComputed(function() {
             var url = self.installUrl();
             return url !== undefined && url.trim() != "" && !(_.startsWith(url.toLocaleLowerCase(), "http://") || _.startsWith(url.toLocaleLowerCase(), "https://"));
         });
 
-        self.enableUrlInstall = ko.computed(function() {
+        self.enableUrlInstall = ko.pureComputed(function() {
             var url = self.installUrl();
             return self.enableManagement() && self.pipAvailable() && url !== undefined && url.trim() != "" && !self.invalidUrl();
         });
 
-        self.invalidArchive = ko.computed(function() {
+        self.invalidArchive = ko.pureComputed(function() {
             var name = self.uploadFilename();
             return name !== undefined && !(_.endsWith(name.toLocaleLowerCase(), ".zip") || _.endsWith(name.toLocaleLowerCase(), ".tar.gz") || _.endsWith(name.toLocaleLowerCase(), ".tgz") || _.endsWith(name.toLocaleLowerCase(), ".tar"));
         });
 
-        self.enableArchiveInstall = ko.computed(function() {
+        self.enableArchiveInstall = ko.pureComputed(function() {
             var name = self.uploadFilename();
             return self.enableManagement() && self.pipAvailable() && name !== undefined && name.trim() != "" && !self.invalidArchive();
         });
