@@ -101,7 +101,7 @@ $(function() {
             {key: "black", name: gettext("black")}
         ]);
 
-        self.availableOrigins = ko.computed(function() {
+        self.availableOrigins = ko.pureComputed(function() {
             var formFactor = self.editorVolumeFormFactor();
 
             var possibleOrigins = {
@@ -123,7 +123,7 @@ $(function() {
             return result;
         });
 
-        self.koEditorExtruderOffsets = ko.computed(function() {
+        self.koEditorExtruderOffsets = ko.pureComputed(function() {
             var extruderOffsets = self.editorExtruderOffsets();
             var numExtruders = self.editorExtruders();
             if (!numExtruders) {
@@ -144,11 +144,11 @@ $(function() {
             return extruderOffsets.slice(0, numExtruders - 1);
         });
 
-        self.editorNameInvalid = ko.computed(function() {
+        self.editorNameInvalid = ko.pureComputed(function() {
             return !self.editorName();
         });
 
-        self.editorIdentifierInvalid = ko.computed(function() {
+        self.editorIdentifierInvalid = ko.pureComputed(function() {
             var identifier = self.editorIdentifier();
             var placeholder = self.editorIdentifierPlaceholder();
             var data = identifier;
@@ -162,7 +162,7 @@ $(function() {
             return !data || !validCharacters || (self.editorNew() && existingProfile != undefined);
         });
 
-        self.editorIdentifierInvalidText = ko.computed(function() {
+        self.editorIdentifierInvalidText = ko.pureComputed(function() {
             if (!self.editorIdentifierInvalid()) {
                 return "";
             }
@@ -176,7 +176,7 @@ $(function() {
             }
         });
 
-        self.enableEditorSubmitButton = ko.computed(function() {
+        self.enableEditorSubmitButton = ko.pureComputed(function() {
             return !self.editorNameInvalid() && !self.editorIdentifierInvalid() && !self.requestInProgress();
         });
 

@@ -21,7 +21,7 @@ $(function() {
         self.profiles = ko.observableArray();
         self.printerProfile = ko.observable();
 
-        self.configured_slicers = ko.computed(function() {
+        self.configured_slicers = ko.pureComputed(function() {
             return _.filter(self.slicers(), function(slicer) {
                 return slicer.configured;
             });
@@ -53,11 +53,11 @@ $(function() {
             self.profilesForSlicer(newValue);
         });
 
-        self.enableSlicingDialog = ko.computed(function() {
+        self.enableSlicingDialog = ko.pureComputed(function() {
             return self.configured_slicers().length > 0;
         });
 
-        self.enableSliceButton = ko.computed(function() {
+        self.enableSliceButton = ko.pureComputed(function() {
             return self.gcodeFilename() != undefined
                 && self.gcodeFilename().trim() != ""
                 && self.slicer() != undefined

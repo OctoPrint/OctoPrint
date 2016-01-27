@@ -53,7 +53,7 @@ $(function() {
             self.editorRepeatedPassword(undefined);
         });
 
-        self.editorPasswordMismatch = ko.computed(function() {
+        self.editorPasswordMismatch = ko.pureComputed(function() {
             return self.editorPassword() != self.editorRepeatedPassword();
         });
 

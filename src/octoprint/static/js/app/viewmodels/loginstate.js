@@ -15,7 +15,7 @@ $(function() {
 
         self.currentUser = ko.observable(undefined);
 
-        self.userMenuText = ko.computed(function() {
+        self.userMenuText = ko.pureComputed(function() {
             if (self.loggedIn()) {
                 return self.username();
             } else {
