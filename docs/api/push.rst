@@ -12,7 +12,7 @@ Push updates
 
 .. contents::
 
-To enable real time information exchange between client and server, OctoPrint uses 
+To enable real time information exchange between client and server, OctoPrint uses
 `SockJS <https://github.com/sockjs/sockjs-protocol>`_ to push
 status updates, temperature changes etc to connected web interface instances.
 
@@ -42,6 +42,24 @@ following message types are currently available for usage by 3rd party clients:
 Clients must ignore any unknown messages.
 
 The data model of the attached payloads is described further below.
+
+OctoPrint's SockJS socket also accepts one command from the client to the server,
+the ``throttle`` command. Usually, OctoPrint will push the general state update
+in the ``current`` message twice per second. For some clients that might still
+be too fast, so they can signal a different factor to OctoPrint utilizing the
+``throttle`` message. OctoPrint expects a single integer here which represents
+the multiplier for the base rate limit of one message every 500ms. A value of
+1 hence will produce the default behaviour of getting every update. A value of
+2 will set the rate limit to maximally one message every 1s, 3 to maximally one
+message every 1.5s and so on.
+
+Example for a ``throttle`` client-server-message:
+
+.. sourcecode:: javascript
+
+   {
+     "throttle": 2
+   }
 
 .. _sec-api-push-datamodel:
 

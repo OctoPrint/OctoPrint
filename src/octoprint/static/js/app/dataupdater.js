@@ -11,6 +11,11 @@ function DataUpdater(allViewModels) {
 
     self._pluginHash = undefined;
 
+    self._throttleFactor = 1;
+    self._baseProcessingLimit = 500.0;
+    self._lastProcessingTimes = [];
+    self._lastProcessingTimesSize = 20;
+
     self.connect = function() {
         var options = {};
         if (SOCKJS_DEBUG) {
@@ -27,6 +32,30 @@ function DataUpdater(allViewModels) {
         self._socket.close();
         delete self._socket;
         self.connect();
+    };
+
+    self.increaseThrottle = function() {
+        self.setThrottle(self._throttleFactor + 1);
+    };
+
+    self.decreaseThrottle = function() {
+        if (self._throttleFactor <= 1) {
+            return;
+        }
+        self.setThrottle(self._throttleFactor - 1);
+    };
+
+    self.setThrottle = function(throttle) {
+        self._throttleFactor = throttle;
+
+        self._send("throttle", self._throttleFactor);
+        log.debug("DataUpdater: New SockJS throttle factor:", self._throttleFactor, " new processing limit:", self._baseProcessingLimit * self._throttleFactor);
+    };
+
+    self._send = function(message, data) {
+        var payload = {};
+        payload[message] = data;
+        self._socket.send(JSON.stringify(payload));
     };
 
     self._onconnect = function() {
@@ -110,6 +139,7 @@ function DataUpdater(allViewModels) {
             var gcodeUploadProgress = $("#gcode_upload_progress");
             var gcodeUploadProgressBar = $(".bar", gcodeUploadProgress);
 
+            var start = new Date().getTime();
             switch (prop) {
                 case "connected": {
                     // update the current UI API key and send it with any request
@@ -151,6 +181,8 @@ function DataUpdater(allViewModels) {
                     if (oldVersion != VERSION || (oldPluginHash != undefined && oldPluginHash != self._pluginHash)) {
                         showReloadOverlay();
                     }
+
+                    self.setThrottle(1);
 
                     break;
                 }
@@ -294,6 +326,27 @@ function DataUpdater(allViewModels) {
                             viewModel.onDataUpdaterPluginMessage(data.plugin, data.data);
                         }
                     })
+                }
+            }
+
+            var end = new Date().getTime();
+            var difference = end - start;
+
+            while (self._lastProcessingTimes.length >= self._lastProcessingTimesSize) {
+                self._lastProcessingTimes.shift();
+            }
+            self._lastProcessingTimes.push(difference);
+
+            var processingLimit = self._throttleFactor * self._baseProcessingLimit;
+            if (difference > processingLimit) {
+                self.increaseThrottle();
+                log.debug("We are slow (" + difference + " > " + processingLimit + "), reducing refresh rate");
+            } else if (self._throttleFactor > 1) {
+                var maxProcessingTime = Math.max.apply(null, self._lastProcessingTimes);
+                var lowerProcessingLimit = (self._throttleFactor - 1) * self._baseProcessingLimit;
+                if (maxProcessingTime < lowerProcessingLimit) {
+                    self.decreaseThrottle();
+                    log.debug("We are fast (" + maxProcessingTime + " < " + lowerProcessingLimit + "), increasing refresh rate");
                 }
             }
         }
