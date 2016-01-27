@@ -6,6 +6,35 @@ function DataUpdater(allViewModels) {
     self._pluginHash = undefined;
     self._configHash = undefined;
 
+    self._throttleFactor = 1;
+    self._baseProcessingLimit = 500.0;
+    self._lastProcessingTimes = [];
+    self._lastProcessingTimesSize = 20;
+
+    self.increaseThrottle = function() {
+        self.setThrottle(self._throttleFactor + 1);
+    };
+
+    self.decreaseThrottle = function() {
+        if (self._throttleFactor <= 1) {
+            return;
+        }
+        self.setThrottle(self._throttleFactor - 1);
+    };
+
+    self.setThrottle = function(throttle) {
+        self._throttleFactor = throttle;
+
+        self._send("throttle", self._throttleFactor);
+        log.debug("DataUpdater: New SockJS throttle factor:", self._throttleFactor, " new processing limit:", self._baseProcessingLimit * self._throttleFactor);
+    };
+
+    self._send = function(message, data) {
+        var payload = {};
+        payload[message] = data;
+        self._socket.send(JSON.stringify(payload));
+    };
+
     self.connect = function() {
         OctoPrint.socket.connect({debug: !!SOCKJS_DEBUG});
     };
@@ -232,8 +261,20 @@ function DataUpdater(allViewModels) {
         callViewModels(self.allViewModels, "onDataUpdaterPluginMessage", [event.data.plugin, event.data.data]);
     };
 
+    self._onIncreaseRate = function(measurement, minimum) {
+        log.debug("We are fast (" + measurement + " < " + minimum + "), increasing refresh rate");
+        OctoPrint.socket.increaseRate();
+    };
+
+    self._onDecreaseRate = function(measurement, maximum) {
+        log.debug("We are slow (" + measurement + " > " + maximum + "), reducing refresh rate");
+        OctoPrint.socket.decreaseRate();
+    };
+
     OctoPrint.socket.onReconnectAttempt = self._onReconnectAttempt;
     OctoPrint.socket.onReconnectFailed = self._onReconnectFailed;
+    OctoPrint.socket.onRateTooHigh = self._onDecreaseRate;
+    OctoPrint.socket.onRateTooLow = self._onIncreaseRate;
     OctoPrint.socket
         .onMessage("connected", self._onConnected)
         .onMessage("history", self._onHistoryData)

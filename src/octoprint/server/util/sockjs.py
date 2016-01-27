@@ -40,6 +40,10 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection, octoprint.printer.
 
 		self._remoteAddress = None
 
+		self._throttleFactor = 1
+		self._lastCurrent = 0
+		self._baseRateLimit = 0.5
+
 	def _getRemoteAddress(self, info):
 		forwardedFor = info.headers.get("X-Forwarded-For")
 		if forwardedFor is not None:
@@ -94,9 +98,31 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection, octoprint.printer.
 			self._eventManager.unsubscribe(event, self._onEvent)
 
 	def on_message(self, message):
-		pass
+		try:
+			import json
+			message = json.loads(message)
+		except:
+			self._logger.warn("Invalid JSON received from client {}, ignoring: {!r}".format(self._remoteAddress, message))
+			return
+
+		if "throttle" in message:
+			try:
+				throttle = int(message["throttle"])
+				if throttle < 1:
+					raise ValueError()
+			except ValueError:
+				self._logger.warn("Got invalid throttle factor from client {}, ignoring: {!r}".format(self._remoteAddress, message["throttle"]))
+			else:
+				self._throttleFactor = throttle
+				self._logger.debug("Set throttle factor for client {} to {}".format(self._remoteAddress, self._throttleFactor))
 
 	def on_printer_send_current_data(self, data):
+		# make sure we rate limit the updates according to our throttle factor
+		now = time.time()
+		if now < self._lastCurrent + self._baseRateLimit * self._throttleFactor:
+			return
+		self._lastCurrent = now
+
 		# add current temperature, log and message backlogs to sent data
 		with self._temperatureBacklogMutex:
 			temperatures = self._temperatureBacklog
