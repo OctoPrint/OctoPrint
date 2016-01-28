@@ -231,7 +231,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		elif path is not None:
 			pip_args = ["install", sarge.shell_quote(path)]
 		else:
-			raise ValueError("Either url or path must be provided")
+			raise ValueError("Either URL or path must be provided")
 
 		if dependency_links or self._settings.get_boolean(["dependency_links"]):
 			pip_args.append("--process-dependency-links")
@@ -244,7 +244,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			returncode, stdout, stderr = self._call_pip(pip_args)
 		except:
 			self._logger.exception("Could not install plugin from %s" % url)
-			return make_response("Could not install plugin from url, see the log for more details", 500)
+			return make_response("Could not install plugin from URL, see the log for more details", 500)
 		else:
 			if force:
 				pip_args += ["--ignore-installed", "--force-reinstall", "--no-deps"]
@@ -252,7 +252,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 					returncode, stdout, stderr = self._call_pip(pip_args)
 				except:
 					self._logger.exception("Could not install plugin from %s" % url)
-					return make_response("Could not install plugin from url, see the log for more details", 500)
+					return make_response("Could not install plugin from URL, see the log for more details", 500)
 
 		try:
 			result_line = filter(lambda x: x.startswith(success_string) or x.startswith(failure_string), stdout)[-1]
