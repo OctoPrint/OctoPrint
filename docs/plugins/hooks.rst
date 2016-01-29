@@ -244,12 +244,12 @@ This describes actually four hooks:
 
    ``phase`` will always match the ``<phase>`` part of the implemented hook (e.g. ``octoprint.comm.protocol.gcode.queued``
    handlers will always be called with ``phase`` set to ``queued``). This parameter is provided so that plugins may
-   utilize the same hook for mulitple phases if required.
+   utilize the same hook for multiple phases if required.
 
    Handlers are expected to return one of the following result variants:
 
      * ``None``: Don't change anything. Note that Python functions will also automatically return ``None`` if
-       an empty ``return`` statement is used or just nothing is returned explicitely from the handler. Hence, the following
+       an empty ``return`` statement is used or just nothing is returned explicitly from the handler. Hence, the following
        examples are all falling into this category:
 
        .. code-block:: python
@@ -647,13 +647,13 @@ octoprint.ui.web.templatetypes
       * - **Key**
         - **Description**
       * - div
-        - Function that returns the id of the container for template content if not explicitely provided by the template
+        - Function that returns the id of the container for template content if not explicitly provided by the template
           config, input parameter is the name of the plugin providing the currently processed template config. If not
           provided this defaults to a lambda function of the form ``lambda x: "<plugin identifier>_<template type>_plugin_" + x``
           with ``plugin identifier`` being the identifier of the plugin providing the additional template type.
       * - template
         - Function that returns the default template filename for a template type to attempt to include in case no
-          template name is explicitly provided by the template config, input parameter is the name of the plugin provifing
+          template name is explicitly provided by the template config, input parameter is the name of the plugin providing
           the current processed template config. If not provided this defaults to a lambda function of the form
           ``lambda x: x + "_plugin_<plugin identifier>_<template type>.jinja2"`` with ``plugin identifier`` being the
           identifier of the plugin providing the additional template type.
@@ -704,6 +704,6 @@ octoprint.ui.web.templatetypes
 
 
    :param dict template_rules: read-only dictionary of currently configured template rules
-   :param dict template_sorting: read-only dictionary of currentl configured template sorting specifications
+   :param dict template_sorting: read-only dictionary of currently configured template sorting specifications
    :return: a list of 3-tuples (template type, rule, sorting spec)
    :rtype: list

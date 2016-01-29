@@ -1030,7 +1030,7 @@ stop it from doing that at the start of this section, we should switch this back
      stylesheet: css
    # [...]
 
-Just out of curiousity, restart, shift-reload and take a final look at the ``head``:
+Just out of curiosity, restart, shift-reload and take a final look at the ``head``:
 
 .. code-block:: html
    :linenos:
@@ -1052,7 +1052,7 @@ Way more compact, isn't it?
    CSS files instead of any non-existing LESS files. So you don't really *have* to use LESS if you don't want, but
    as soon as you need it just switch over.
 
-   The same thing works the other way around too btw. If your plugin only provides LESS files, OctoPrint will link to
+   The same thing works the other way around too by the way. If your plugin only provides LESS files, OctoPrint will link to
    those, lessjs will take care of the compilation. Please keep in mind though that also providing CSS files is the
    cleaner way.
 

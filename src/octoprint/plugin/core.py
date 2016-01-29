@@ -1141,7 +1141,7 @@ class PluginManager(object):
 
 	def get_filtered_implementations(self, f, *types, **kwargs):
 		"""
-		Get all mixin implementation that implementat *all* of the provided ``types`` and match the provided filter `f`.
+		Get all mixin implementations that implement *all* of the provided ``types`` and match the provided filter `f`.
 
 		Arguments:
 		    f (callable): A filter function returning True for implementations to return and False for those to exclude.

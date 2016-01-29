@@ -48,9 +48,9 @@ Dependencies
 ------------
 
 OctoPrint will try to inject all viewmodel dependencies requested by your viewmodel. In order to do this it will
-perform multiple passes iterating over all registered viewmodels and collecting the necessary depedencies prior to
-construction. Circular depedencies (A dependens on B, B on C, C on A) naturally cannot be resolved and will cause an
-error to be logged to the Javascript console.
+perform multiple passes iterating over all registered viewmodels and collecting the necessary dependencies prior to
+construction. Circular dependencies (A depends on B, B on C, C on A) naturally cannot be resolved and will cause an
+error to be logged to the JavaScript console.
 
 OctoPrint's core currently comes with the following viewmodels that your plugin can request for injection:
 
@@ -76,7 +76,7 @@ navigationViewModel
 printerProfilesViewModel
    Viewmodel for the printer profiles settings dialog.
 printerStateViewModel
-   Viewmodel for the current printer state, very intersting for plugins that need
+   Viewmodel for the current printer state, very interesting for plugins that need
    to know information about the current print job, if the printer is connected, operational etc.
 settingsViewModel
    Viewmodel for the settings dialog, also holds all settings to be used by other viewmodels, hence
@@ -240,6 +240,6 @@ on your viewmodel, taking a list of all bound viewmodels:
 
    `OctoPrint's core viewmodels <https://github.com/foosel/OctoPrint/tree/devel/src/octoprint/static/js/app/viewmodels>`_
       OctoPrint's own viewmodels use the same mechanisms for interacting with each other and the web application as
-      plugins. Their sourcecode is therefore a good point of reference on how to achieve certain things.
+      plugins. Their source code is therefore a good point of reference on how to achieve certain things.
    `KnockoutJS documentation <http://knockoutjs.com/documentation/introduction.html>`_
       OctoPrint makes heavy use of KnockoutJS for building up its web app.

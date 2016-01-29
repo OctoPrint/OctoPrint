@@ -155,7 +155,7 @@ class ShutdownPlugin(OctoPrintPlugin, SortablePlugin):
 
 class AssetPlugin(OctoPrintPlugin, RestartNeedingPlugin):
 	"""
-	The ``AssetPlugin`` mixin allows plugins to define additional static assets such as Javascript or CSS files to
+	The ``AssetPlugin`` mixin allows plugins to define additional static assets such as JavaScript or CSS files to
 	be automatically embedded into the pages delivered by the server to be used within the client sided part of
 	the plugin.
 
@@ -181,7 +181,7 @@ class AssetPlugin(OctoPrintPlugin, RestartNeedingPlugin):
 		imported at the appropriate places to be available:
 
 		js
-		   Javascript files, such as additional view models
+		   JavaScript files, such as additional view models
 		css
 		   CSS files with additional styles, will be embedded into delivered pages when not running in LESS mode.
 		less
@@ -289,7 +289,7 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 
 	Generic
 	   Plugins may also inject arbitrary templates into the page of the web interface itself, e.g. in order to
-	   add overlays or dialogs to be called from within the plugin's javascript code.
+	   add overlays or dialogs to be called from within the plugin's JavaScript code.
 
 	.. figure:: ../images/template-plugin-types-main.png
 	   :align: center
@@ -467,8 +467,8 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 		      ]
 
 		   This will only include the tab defined in ``myplugin_othertab.jinja2`` though, ``myplugin_tab.jinja2`` will
-		   not be included automatically since the presence of a defintion for the ``tab`` type overrides the automatic
-		   injection of the default template. You'll have to include it explicitely:
+		   not be included automatically since the presence of a definition for the ``tab`` type overrides the automatic
+		   injection of the default template. You'll have to include it explicitly:
 
 		   .. code-block:: python
 
@@ -1536,7 +1536,7 @@ class SlicerPlugin(OctoPrintPlugin):
 		    path (str): The absolute path to which to save the profile.
 		    profile (SlicingProfile): The profile to save.
 		    allow_overwrite (boolean): Whether to allow to overwrite an existing profile at the indicated path (True,
-		        default) or not (False). If a profile already exists on teh path and this is False an
+		        default) or not (False). If a profile already exists on the path and this is False an
 		        :class:`IOError` should be raised.
 		    overrides (dict): Profile overrides to apply to the ``profile`` before saving it
 		"""
@@ -1582,7 +1582,7 @@ class SlicerPlugin(OctoPrintPlugin):
 
 		_analysis
 		    Analysis result of the generated machine code as returned by the slicer itself. This should match the
-		    data structure described for the analysis queue of the matching maching code format, e.g.
+		    data structure described for the analysis queue of the matching machine code format, e.g.
 		    :class:`~octoprint.filemanager.analysis.GcodeAnalysisQueue` for GCODE files.
 
 		For jobs that did not finish successfully (but not due to being cancelled!), ``result`` should be a :class:`str`

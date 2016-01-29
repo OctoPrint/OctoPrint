@@ -727,7 +727,7 @@ class CustomHTTP1Connection(tornado.http1connection.HTTP1Connection):
 		length if available, otherwise returns ``default_max_body_size``.
 
 		:param method: method of the request to match against
-		:param path: path od the request to match against
+		:param path: path of the request to match against
 		:return: determine maximum content length to apply to this request, max return 0 for unlimited allowed content
 		         length
 		"""
@@ -763,7 +763,7 @@ class LargeResponseHandler(tornado.web.StaticFileHandler):
 	Arguments:
 	   path (str): The system path from which to serve files (this will be forwarded to the ``initialize`` method of
 	       :class:``~tornado.web.StaticFileHandler``)
-	   default_filename (str): The default filename to serve if none is explicitely specified and the request references
+	   default_filename (str): The default filename to serve if none is explicitly specified and the request references
 	       a subdirectory of the served path (this will be forwarded to the ``initialize`` method of
 	       :class:``~tornado.web.StaticFileHandler`` as the ``default_filename`` keyword parameter). Defaults to ``None``.
 	   as_attachment (bool): Whether to serve requested files with ``Content-Disposition: attachment`` header (``True``)
@@ -850,7 +850,7 @@ class UrlProxyHandler(tornado.web.RequestHandler):
 
 	  * ``Date``, ``Cache-Control``, ``Expires``, ``ETag``, ``Server``, ``Content-Type`` and ``Location`` will be copied over.
 	  * If ``as_attachment`` is set to True, ``Content-Disposition`` will be set to ``attachment``. If ``basename`` is
-	    set including the attachement's ``filename`` attribute will be set to the base name followed by the extension
+	    set including the attachment's ``filename`` attribute will be set to the base name followed by the extension
 	    guessed based on the MIME type from the ``Content-Type`` header of the response. If no extension can be guessed
 	    no ``filename`` attribute will be set.
 
