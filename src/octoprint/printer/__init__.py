@@ -458,7 +458,7 @@ class PrinterCallback(object):
 		"""
 		Called when the internal state of the :class:`PrinterInterface` changes, due to changes in the printer state,
 		temperatures, log lines, job progress etc. Updates via this method are guaranteed to be throttled to a maximum
-		of 2 callees per second.
+		of 2 calls per second.
 
 		``data`` is a ``dict`` of the following structure::
 
