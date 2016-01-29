@@ -8,31 +8,33 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 
 import re
 
-from octoprint.comm.protocol import Protocol, FileStreamingProtocolMixin, MotorControlProtocolMixin, FanControlProtocolMixin
+from octoprint.comm.protocol import Protocol, FileStreamingProtocolMixin, MotorControlProtocolMixin, FanControlProtocolMixin, ProtocolState
 from octoprint.comm.transport import LineAwareTransportWrapper, TransportListener, PushingTransportWrapper
 
-from octoprint.util import to_unicode, dictview, CountedEvent
+from octoprint.comm.protocol.util import TypedQueue, TypeAlreadyInQueue, GcodeCommand, process_gcode_line, strip_comment
+
+from octoprint.job import LocalGcodeFilePrintjob, SDFilePrintjob, LocalGcodeStreamjob
+
+from octoprint.util import to_unicode, protectedkeydict, CountedEvent
 
 import Queue as queue
 import threading
 
-
-regex_float_pattern = "[-+]?[0-9]*\.?[0-9]+"
-regex_positive_float_pattern = "[+]?[0-9]*\.?[0-9]+"
-regex_int_pattern = "\d+"
-
-regex_float = re.compile(regex_float_pattern)
-"""Regex for a float value."""
-
-
 class ReprapGcodeProtocol(Protocol, MotorControlProtocolMixin, FanControlProtocolMixin, FileStreamingProtocolMixin, TransportListener):
+
+	supported_jobs = [LocalGcodeFilePrintjob, LocalGcodeStreamjob, SDFilePrintjob]
+
+	@staticmethod
+	def get_attributes_starting_with(flavor, prefix):
+		return [x for x in dir(flavor) if x.startswith(prefix)]
 
 	def __init__(self, flavor):
 		Protocol.__init__(self)
 		self.flavor = flavor
 
-		self._registered_messages = ["comm_ok", "comm_start", "comm_wait", "comm_resend"] \
-		                            + [x for x in dir(self.flavor) if x.startswith("message_")]
+		self._registered_messages = self.get_attributes_starting_with(self.flavor, "comm_") \
+		                            + self.get_attributes_starting_with(self.flavor, "message_")
+		self._error_messages = self.get_attributes_starting_with(self.flavor, "error_")
 
 		self._transport = None
 
@@ -40,9 +42,14 @@ class ReprapGcodeProtocol(Protocol, MotorControlProtocolMixin, FanControlProtoco
 			# sd status
 			sd_available=False,
 			sd_files=[],
-			sd_files_temp=None
+			sd_files_temp=None,
+
+			# resend status
+			resend_delta=None,
+			resend_linenumber=None,
+			resend_count=None,
 		)
-		self._state_view = dictview(self._internal_state)
+		self._protected_state = protectedkeydict(self._internal_state)
 
 		self._command_queue = queue.Queue()
 		self._clear_to_send = CountedEvent(max=10, name="comm.clear_to_send")
@@ -50,9 +57,16 @@ class ReprapGcodeProtocol(Protocol, MotorControlProtocolMixin, FanControlProtoco
 
 		self._current_linenumber = 1
 		self._last_lines = []
+		self._last_communication_error = None
+
+		self._gcode_hooks = dict(queuing=dict(),
+		                         queued=dict(),
+		                         sending=dict(),
+		                         sent=dict())
 
 		# mutexes
 		self._line_mutex = threading.RLock()
+		self._send_queue_mutex = threading.RLock()
 
 		# sending thread
 		self._send_queue_active = True
@@ -60,72 +74,85 @@ class ReprapGcodeProtocol(Protocol, MotorControlProtocolMixin, FanControlProtoco
 		self.sending_thread.daemon = True
 		self.sending_thread.start()
 
+		self._only_send_from_job = False
+		self._trigger_events_while_sending = True
+
 	def connect(self, transport):
 		self._transport = transport
+
+	def process(self, job, position=0):
+		if isinstance(job, LocalGcodeStreamjob):
+			self._only_send_from_job = True
+			self._trigger_events_while_sending = False
+		else:
+			self._only_send_from_job = False
+			self._trigger_events_while_sending = True
+
+		Protocol.process(job, position=position)
 
 	def move(self, x=None, y=None, z=None, e=None, feedrate=None, relative=False):
 		commands = [self.flavor.command_move(x=x, y=y, z=z, e=e, f=feedrate)]
 
 		if relative:
-			commands = [self.flavor.command_set_relative_positioning()] + commands + [self.flavor.command_set_absolute_positioning()]
+			commands = [self.flavor.command_set_relative_positioning()]\
+			           + commands\
+			           + [self.flavor.command_set_absolute_positioning()]
 
-		self._send(*commands)
+		self._send_commands(*commands)
 
 	def home(self, x=False, y=False, z=False):
-		self._send(self.flavor.command_home(x=x, y=y, z=z))
+		self._send_commands(self.flavor.command_home(x=x, y=y, z=z))
 
 	def set_feedrate_multiplier(self, multiplier):
-		self._send(self.flavor.command_set_feedrate_multiplier(multiplier))
+		self._send_commands(self.flavor.command_set_feedrate_multiplier(multiplier))
 
 	def set_extrusion_multiplier(self, multiplier):
-		self._send(self.flavor.command.set_extrusion_multiplier(multiplier))
+		self._send_commands(self.flavor.command.set_extrusion_multiplier(multiplier))
 
 	##~~ MotorControlProtocolMixin
 
 	def set_motors(self, enabled):
-		self._send(self.flavor.command.set_motors(enabled))
+		self._send_commands(self.flavor.command.set_motors(enabled))
 
 	##~~ FanControlProtocolMixin
 
 	def set_fan_speed(self, speed):
-		self._send(self.flavor.command.set_fan_speed(speed))
+		self._send_commands(self.flavor.command.set_fan_speed(speed))
 
 	##~~ FileStreamingProtocolMixin
 
 	def init_file_storage(self):
-		self._send(self.flavor.command_sd_init())
+		self._send_commands(self.flavor.command_sd_init())
 
 	def list_files(self):
-		self._send(self.flavor.command_sd_refresh())
+		self._send_commands(self.flavor.command_sd_refresh())
 
-	def start_file_print(self, name):
-		self._send(self.flavor.command_sd_select_file(name),
-		           self.flavor.command_sd_set_pos(0),
-		           self.flavor.command_sd_start())
+	def start_file_print(self, name, position=0):
+		self._send_commands(self.flavor.command_sd_select_file(name),
+		                    self.flavor.command_sd_set_pos(position),
+		                    self.flavor.command_sd_start())
 
 	def pause_file_print(self):
-		self._send(self.flavor.command_sd_pause())
+		self._send_commands(self.flavor.command_sd_pause())
 
 	def resume_file_print(self):
-		self._send(self.flavor.command_sd_resume())
+		self._send_commands(self.flavor.command_sd_resume())
 
 	def delete_file(self, name):
-		self._send(self.flavor.command_sd_delete(name))
+		self._send_commands(self.flavor.command_sd_delete(name))
 
 	def record_file(self, name, job):
-		self._send(self.flavor.command_sd_begin_write(name))
+		self._send_commands(self.flavor.command_sd_begin_write(name))
 
 	def stop_recording_file(self):
-		self._send(self.flavor.command_sd_end_write())
+		self._send_commands(self.flavor.command_sd_end_write())
+
+	##~~ Receiving
 
 	def on_transport_data_received(self, transport, data):
 		if transport != self._transport:
 			return
 		self._receive(data)
-
-	def _send(self, *commands):
-		for command in commands:
-			self._send_queue.put(str(command) + b"\n")
 
 	def _receive(self, data):
 		line = to_unicode(data, encoding="ascii", errors="replace").strip()
@@ -136,18 +163,233 @@ class ReprapGcodeProtocol(Protocol, MotorControlProtocolMixin, FanControlProtoco
 			if not handler_method:
 				continue
 
-			if getattr(self.flavor, message)(line, lower_line, self._state_view):
+			if getattr(self.flavor, message)(line, lower_line, self._protected_state):
 				message_args = dict()
 
 				parse_method = getattr(self.flavor, "parse_{}".format(message), None)
 				if parse_method:
-					message_args.update(parse_method(line, lower_line, self._state_view))
+					parse_result = parse_method(line, lower_line, self._protected_state)
+					if parse_result is None:
+						break
+
+					message_args.update(parse_result)
 
 				if not handler_method(**message_args):
 					break
 		else:
 			# unknown message
 			pass
+
+	def _on_comm_ok(self):
+		self._clear_to_send.set()
+
+		if not self.state in (ProtocolState.PRINTING, ProtocolState.CONNECTED, ProtocolState.PAUSED):
+			return
+
+		if self._internal_state["resend_delta"] is not None:
+			self._send_next_from_resend()
+		else:
+			self._continue_sending()
+
+	def _on_comm_wait(self):
+		if self.state == ProtocolState.PRINTING:
+			self._on_comm_ok()
+
+	def _on_comm_resend(self, linenumber):
+		if linenumber is None:
+			return
+
+		last_communication_error = self._last_communication_error
+		self._last_communication_error = None
+
+		resend_delta = self._current_linenumber - linenumber
+
+		if last_communication_error is not None \
+				and last_communication_error == "linenumber" \
+				and linenumber == self._internal_state["resend_last_linenumber"] \
+				and self._resend_delta is not None and self._internal_state["resend_count"] < self._internal_state["resend_delta"]:
+			self._logger.debug("Ignoring resend request for line {}, that still originates from lines we sent before we got the first resend request".format(linenumber))
+			self._internal_state["resend_count"] += 1
+			return
+
+		self._internal_state["resend_delta"] = resend_delta
+		self._internal_state["resend_last_linenumber"] = linenumber
+		self._internal_state["resend_count"] = 0
+
+		if self._internal_state["resend_delta"] > len(self._last_lines) or len(self._last_lines) == 0 or self._internal_state["resend_delta"] < 0:
+			# TODO error because printer requested lines we don't have
+			pass
+
+
+	def _on_comm_start(self):
+		print("!!! start")
+		self._clear_to_send.set()
+
+	def _on_comm_error(self, line, lower_line):
+		for message in self._error_messages:
+			handler_method = getattr(self, "_on_{}".format(message), None)
+			if not handler_method:
+				continue
+
+			if getattr(self.flavor, message)(line, lower_line, self._protected_state):
+				message_args = dict()
+
+				parse_method = getattr(self.flavor, "parse_{}".format(message), None)
+				if parse_method:
+					parse_result = parse_method(line, lower_line, self._protected_state)
+					if parse_result is None:
+						break
+
+					message_args.update(parse_result)
+
+				if not handler_method(**message_args):
+					break
+		else:
+			# unknown error message
+			pass
+
+	def on_error_communication(self, error_type):
+		self._last_communication_error = error_type
+
+	# TODO multiline error handling
+
+	def _on_message_sd_init_ok(self):
+		self._internal_state["sd_available"] = True
+		self.list_files()
+
+	def _on_message_sd_init_fail(self):
+		self._internal_state["sd_available"] = False
+
+	def _on_message_sd_begin_file_list(self):
+		self._internal_state["sd_files_temp"] = []
+
+	def _on_message_sd_end_file_list(self):
+		self._internal_state["sd_files"] = self._internal_state["sd_files_temp"]
+		self._internal_state["sd_files_temp"] = None
+		self.notify_listeners("on_protocol_sd_file_list", self._internal_state["sd_files"])
+
+	def _on_message_sd_entry(self, name, size):
+		self._internal_state["sd_files_temp"].append((name, size))
+
+	def _on_message_sd_file_opened(self, name, size):
+		pass
+
+	def _on_message_sd_file_selected(self):
+		pass
+
+	def _on_message_sd_done_printing(self):
+		pass
+
+	def _on_message_sd_printing_byte(self, current, total):
+		self.notify_listeners("on_protocol_sd_status", current, total)
+
+	##~~ Sending
+
+	def _continue_sending(self):
+		if self.state == ProtocolState.PRINTING and self._job is not None:
+			if not self._send_from_queue():
+				self._send_next_from_job()
+		elif self.state == ProtocolState.CONNECTED or self.state == ProtocolState.PAUSED:
+			self._send_from_queue()
+
+	def _send_next_from_resend(self):
+		self._last_communication_error = None
+
+		# Make sure we are only handling one sending job at a time
+		with self._send_queue_mutex:
+			resend_delta = self._internal_state["resend_delta"]
+			command = self._last_lines[-resend_delta]
+			linenumber = self._current_linenumber - resend_delta
+
+			self._enqueue_for_sending(command, linenumber=linenumber)
+
+			self._internal_state["resend_delta"] -= 1
+			if self._internal_state["resend_delta"] <= 0:
+				self._internal_state["resend_delta"] = None
+				self._internal_state["resend_last_linenumber"] = None
+				self._internal_state["resend_count"] = 0
+
+	def _send_next_from_job(self):
+		with self._send_queue_mutex:
+			line = self._job.get_next()
+			if line is not None:
+				self._send_command(line)
+
+				# TODO report progress
+
+	def _send_from_queue(self):
+		# We loop here to make sure that if we do NOT send the first command
+		# from the queue, we'll send the second (if there is one). We do not
+		# want to get stuck here by throwing away commands.
+		while True:
+			if self._command_queue.empty() or self._only_send_from_job:
+				# no command queue or irrelevant command queue => return
+				return False
+
+			entry = self._command_queue.get()
+			if isinstance(entry, tuple):
+				if not len(entry) == 2:
+					# something with that entry is broken, ignore it and fetch
+					# the next one
+					continue
+				cmd, cmd_type = entry
+			else:
+				cmd = entry
+				cmd_type = None
+
+			if self._send_command(cmd, command_type=cmd_type):
+				# we actually did add this cmd to the send queue, so let's
+				# return, we are done here
+				return True
+
+	def _send_commands(self, *commands):
+		for command in commands:
+			self._send_command(command)
+
+	def _send_command(self, command, command_type=None):
+		if isinstance(command, GcodeCommand):
+			gcode = command
+			command = gcode.command
+		else:
+			gcode = None
+
+		with self._send_queue_mutex:
+			if self._trigger_events_while_sending:
+				command, command_type, gcode = self._process_command_phase("queuing", command, command_type, gcode=gcode)
+
+				if command is None:
+					# command is no more, return
+					return False
+
+				# TODO gcode to event mapping
+				#if gcode and gcode.command in gcode_to_event:
+				#	# if this is a gcode bound to an event, trigger that now
+				#	self._eventbus.fire(gcode_to_event[gcode.command])
+
+			self._enqueue_for_sending(command, command_type=command_type)
+
+			if self._trigger_events_while_sending:
+				self._process_command_phase("queued", command, command_type, gcode=gcode)
+
+			return True
+
+	def _enqueue_for_sending(self, command, command_type=None, linenumber=None):
+		"""
+		Enqueues a command and optional command_type and linenumber in the send queue.
+
+		Arguments:
+		    command (unicode): The command to send
+		    command_type (unicode): An optional command type. There can only be
+		        one command of a specified command type in the queue at any
+		        given time.
+		    linenumber (int): An optional line number to use for sending the
+		        command.
+		"""
+
+		try:
+			self._send_queue.put((command, linenumber, command_type))
+		except TypeAlreadyInQueue as e:
+			self._logger.debug("Type already in queue: {}".format(e.type))
 
 	def _send_loop(self):
 		"""
@@ -207,7 +449,7 @@ class ReprapGcodeProtocol(Protocol, MotorControlProtocolMixin, FanControlProtoco
 						# now comes the part where we increase line numbers and send stuff - no turning back now
 						command_requiring_checksum = gcode is not None and gcode.command in self.flavor.checksum_requiring_commands
 						command_allowing_checksum = gcode is not None or self.flavor.unknown_with_checksum
-						checksum_enabled = self.flavor.always_send_checksum or (self.isPrinting() and not self.flavor.never_send_checksum)
+						checksum_enabled = self.flavor.always_send_checksum or (self.state == ProtocolState.PRINTING and not self.flavor.never_send_checksum)
 
 						command_to_send = command.encode("ascii", errors="replace")
 						if command_requiring_checksum or (command_allowing_checksum and checksum_enabled):
@@ -328,215 +570,7 @@ class ReprapGcodeProtocol(Protocol, MotorControlProtocolMixin, FanControlProtoco
 	def _add_to_last_line(self, command):
 		self._last_lines.append(command)
 
-	def _on_comm_ok(self):
-		self._clear_to_send.set()
 
-	def _on_comm_wait(self):
-		print("!!! wait")
-
-	def _on_comm_resend(self):
-		print("!!! resend")
-
-	def _on_comm_start(self):
-		print("!!! start")
-
-	def _on_message_sd_init_ok(self):
-		self._internal_state["sd_available"] = True
-		self.list_files()
-
-	def _on_message_sd_init_fail(self):
-		self._internal_state["sd_available"] = False
-
-	def _on_message_sd_begin_file_list(self):
-		self._internal_state["sd_files_temp"] = []
-
-	def _on_message_sd_end_file_list(self):
-		self._internal_state["sd_files"] = self._internal_state["sd_files_temp"]
-		self._internal_state["sd_files_temp"] = None
-		self.notify_listeners("on_protocol_sd_file_list", self._internal_state["sd_files"])
-
-	def _on_message_sd_entry(self, name, size):
-		self._internal_state["sd_files_temp"].append((name, size))
-
-class GcodeCommand(object):
-
-	known_float_attributes = ("x", "y", "z", "e", "s", "p", "r")
-	known_int_attributes = ("f", "t", "n")
-	known_attributes = known_float_attributes + known_int_attributes
-
-	command_regex = re.compile("^\s*((?P<GM>[GM](?P<number>\d+))|(?P<T>T(?P<tool>\d+))|(?P<F>F(?P<feedrate>\d+)))")
-
-	argument_pattern = "\s*([{float_args}]{float}|[{int_args}]{int})".format(float_args="".join(map(lambda x: x.upper(), known_float_attributes)),
-	                                                                                                     int_args="".join(map(lambda x: x.upper(), known_int_attributes)),
-	                                                                                                     float=regex_float_pattern,
-	                                                                                                     int=regex_int_pattern)
-	argument_regex = re.compile(argument_pattern)
-	param_regex = re.compile("^[GMT]\d+\s+(.*?)$")
-
-	@staticmethod
-	def from_line(line):
-		"""
-		>>> gcode = GcodeCommand.from_line("M30 some_file.gco")
-		>>> gcode.command
-		'M30'
-		>>> gcode.param
-		'some_file.gco'
-		>>> gcode = GcodeCommand.from_line("G28 X0 Y0")
-		>>> gcode.command
-		'G28'
-		>>> gcode.x
-		0.0
-		>>> gcode.y
-		0.0
-		>>> gcode = GcodeCommand.from_line("M104 S220.0 T1")
-		>>> gcode.command
-		'M104'
-		>>> gcode.s
-		220.0
-		>>> gcode.t
-		1
-		"""
-
-		line = line.strip()
-		command = ""
-		args = {"original": line}
-		match = GcodeCommand.command_regex.match(line)
-		if match is None:
-			args["unknown"] = True
-		else:
-			if match.group("GM"):
-				command = match.group("GM")
-
-				matched_args = GcodeCommand.argument_regex.findall(line)
-				if not matched_args:
-					param_match = GcodeCommand.param_regex.match(line)
-					if param_match is not None:
-						args["param"] = param_match.group(1)
-				else:
-					for arg in matched_args:
-						key = arg[0].lower()
-						if key in GcodeCommand.known_int_attributes:
-							value = int(arg[1:])
-						elif key in GcodeCommand.known_float_attributes:
-							value = float(arg[1:])
-						else:
-							value = str(arg[1:])
-						args[key] = value
-			elif match.group("T"):
-				command = "T"
-				args["tool"] = match.group("tool")
-			elif match.group("F"):
-				command = "F"
-				args["f"] = match.group("feedrate")
-
-		return GcodeCommand(command, **args)
-
-	def __init__(self, command, **kwargs):
-		self.command = command
-		self.x = None
-		self.y = None
-		self.z = None
-		self.e = None
-		self.s = None
-		self.p = None
-		self.r = None
-		self.f = None
-		self.t = None
-		self.n = None
-
-		self.tool = None
-		self.original = None
-		self.param = None
-
-		self.progress = None
-		self.callback = None
-
-		self.unknown = False
-
-		for key, value in kwargs.iteritems():
-			if key in GcodeCommand.known_attributes + ("tool", "original", "param", "progress", "callback", "unknown"):
-				self.__setattr__(key, value)
-
-	def __repr__(self):
-		return "GcodeCommand(\"{str}\",progress={progress})".format(str=str(self), progress=self.progress)
-
-	def __str__(self):
-		if self.original is not None:
-			return self.original
-		else:
-			attr = []
-			for key in GcodeCommand.known_attributes:
-				value = self.__getattribute__(key)
-				if value is not None:
-					if key in GcodeCommand.known_int_attributes:
-						attr.append("%s%d" % (key.upper(), value))
-					elif key in GcodeCommand.known_float_attributes:
-						attr.append("%s%f" % (key.upper(), value))
-					else:
-						attr.append("%s%r" % (key.upper(), value))
-			attributeStr = " ".join(attr)
-			return "%s%s%s" % (self.command.upper(), " " + attributeStr if attributeStr else "", " " + self.param if self.param else "")
-
-class TypedQueue(queue.Queue):
-
-	def __init__(self, maxsize=0):
-		queue.Queue.__init__(self, maxsize=maxsize)
-		self._lookup = []
-
-	def _put(self, item):
-		if isinstance(item, tuple) and len(item) == 3:
-			cmd, line, cmd_type = item
-			if cmd_type is not None:
-				if cmd_type in self._lookup:
-					raise TypeAlreadyInQueue(cmd_type, "Type {cmd_type} is already in queue".format(**locals()))
-				else:
-					self._lookup.append(cmd_type)
-
-		queue.Queue._put(self, item)
-
-	def _get(self):
-		item = queue.Queue._get(self)
-
-		if isinstance(item, tuple) and len(item) == 3:
-			cmd, line, cmd_type = item
-			if cmd_type is not None and cmd_type in self._lookup:
-				self._lookup.remove(cmd_type)
-
-		return item
-
-
-class TypeAlreadyInQueue(Exception):
-	def __init__(self, t, *args, **kwargs):
-		Exception.__init__(self, *args, **kwargs)
-		self.type = t
-
-
-def strip_comment(line):
-	if not ";" in line:
-		# shortcut
-		return line
-
-	escaped = False
-	result = []
-	for c in line:
-		if c == ";" and not escaped:
-			break
-		result += c
-		escaped = (c == "\\") and not escaped
-	return "".join(result)
-
-def process_gcode_line(line, offsets=None, current_tool=None):
-	line = strip_comment(line).strip()
-	if not len(line):
-		return None
-
-	#if offsets is not None:
-	#	line = apply_temperature_offsets(line, offsets, current_tool=current_tool)
-
-	return line
-
-
-"""
 if __name__ == "__main__":
 	from octoprint.comm.transport.serialtransport import VirtualSerialTransport
 	from octoprint.comm.protocol.reprap.virtual import VirtualPrinter
@@ -567,3 +601,4 @@ if __name__ == "__main__":
 
 if __name__ == "__main__":
 	gcode = GcodeCommand.from_line("M104 S220.4 T2")
+"""

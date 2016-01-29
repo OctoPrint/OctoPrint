@@ -8,7 +8,7 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 
 import re
 
-from octoprint.comm.protocol.reprap import GcodeCommand, regex_positive_float_pattern
+from octoprint.comm.protocol.util import GcodeCommand, regex_positive_float_pattern
 
 
 class ReprapGcodeFlavor(object):
@@ -37,6 +37,15 @@ class ReprapGcodeFlavor(object):
 
 	regex_sd_file_opened = re.compile("File opened:\s*(?P<name>.*?)(\s+Size:\s*(?P<size>[0-9]+))?")
 
+	regex_sd_printing_byte = re.compile("(?P<current>[0-9]*)/(?P<total>[0-9]*)")
+	"""Regex matching SD printing status reports.
+
+	Groups will be as follows:
+
+	  * ``current``: current byte position in file being printed
+	  * ``total``: total size of file being printed
+	"""
+
 	##~~ Message matchers
 
 	@classmethod
@@ -56,16 +65,20 @@ class ReprapGcodeFlavor(object):
 		return lower_line.startswith("resend") or lower_line.startswith("rs")
 
 	@classmethod
+	def comm_debug(cls, line, lower_line, state):
+		return line.startswith("//")
+
+	@classmethod
 	def comm_error(cls, line, lower_line, state):
 		return line.startswith("Error:") or line.startswith("!!")
 
 	@classmethod
-	def comm_error_multiline(cls, line, lower_line, state):
+	def error_multiline(cls, line, lower_line, state):
 		return False
 
 	@classmethod
-	def comm_error_communication(cls, line, lower_line, state):
-		return False
+	def error_communication(cls, line, lower_line, state):
+		return "line number" in lower_line or "checksum" in lower_line or "format error" in lower_line or "expected line" in lower_line
 
 	@classmethod
 	def message_temperature(cls, line, lower_line, state):
@@ -101,7 +114,7 @@ class ReprapGcodeFlavor(object):
 
 	@classmethod
 	def message_sd_not_printing(cls, line, lower_line, state):
-		return "no sd printing" in lower_line
+		return "not sd printing" in lower_line
 
 	@classmethod
 	def message_sd_done_printing(cls, line, lower_line, state):
@@ -122,6 +135,22 @@ class ReprapGcodeFlavor(object):
 	##~~ Message parsers
 
 	@classmethod
+	def parse_comm_error(cls, line, lower_line, state):
+		return dict(line=line, lower_line=lower_line)
+
+	@classmethod
+	def parse_error_communication(cls, line, lower_line, state):
+		if "line number" in lower_line or "expected line" in lower_line:
+			error_type = "linenumber"
+		elif "checksum" in lower_line:
+			error_type = "checksum"
+		else:
+			error_type = "other"
+
+		state["last_communication_error"] = error_type
+		return dict(error_type=error_type)
+
+	@classmethod
 	def parse_comm_resend(cls, line, lower_line, state):
 		line_to_resend = None
 		try:
@@ -138,8 +167,36 @@ class ReprapGcodeFlavor(object):
 
 	@classmethod
 	def parse_message_sd_entry(cls, line, lower_line, state):
-		name, size = line.split(" ", 2)
-		return dict(name=name, size=int(size))
+		fileinfo = lower_line.rsplit(None, 1)
+		if len(fileinfo) > 1:
+			# we might have extended file information here, so let's split filename and size and try to make them a bit nicer
+			filename, size = fileinfo
+			try:
+				size = int(size)
+			except ValueError:
+				# whatever that was, it was not an integer, so we'll just use the whole line as filename and set size to None
+				filename = lower_line
+				size = None
+		else:
+			# no extended file information, so only the filename is there and we set size to None
+			filename = lower_line
+			size = None
+
+		from octoprint.util import filter_non_ascii
+
+		if filter_non_ascii(filename):
+			return None
+		else:
+			if not filename.startswith("/"):
+				# file from the root of the sd -- we'll prepend a /
+				filename = "/" + filename
+
+		return dict(name=filename, size=int(size))
+
+	@classmethod
+	def parse_message_sd_printing_byte(cls, line, lower_line, state):
+		match = cls.regex_sd_printing_byte.match(lower_line)
+		return dict(current=match.group("current"), total=match.group("total"))
 
 	##~~ Commands
 

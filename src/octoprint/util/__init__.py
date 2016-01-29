@@ -986,3 +986,61 @@ class dictview(collections.Mapping):
 			value = copy.copy(value)
 
 		return value
+
+class protectedkeydict(collections.MutableMapping):
+	"""
+	>>> my_dict = dict(a="a")
+	>>> protected = protectedkeydict(my_dict)
+	>>> protected["a"]
+	'a'
+	>>> protected["a"] = "b"
+	Traceback (most recent call last):
+	    ...
+	KeyError: "Cannot set protected key 'a'"
+	>>> protected["b"] = "b"
+	>>> protected["b"] = "b2"
+	>>> del protected["a"]
+	Traceback (most recent call last):
+	    ...
+	KeyError: "Cannot delete protected key 'a'"
+	>>> del protected["b"]
+	"""
+
+	def __init__(self, data, copy=False, deepcopy=False):
+		self.data = data
+		self.copy = copy
+		self.deepcopy = deepcopy
+		self.protected_keys = data.keys()
+
+	def __len__(self):
+		return len(self.data)
+
+	def __iter__(self):
+		return iter(self.data)
+
+	def __getitem__(self, key):
+		return self._get_item(key)
+
+	def __setitem__(self, key, value):
+		if key in self.protected_keys:
+			raise KeyError("Cannot set protected key {!r}".format(key))
+		self.data[key] = value
+
+	def __delitem__(self, key):
+		if key in self.protected_keys:
+			raise KeyError("Cannot delete protected key {!r}".format(key))
+
+	def _get_item(self, key):
+		if key not in self.protected_keys:
+			return self.data[key]
+		else:
+			import copy
+
+			value = self.data[key]
+
+			if self.deepcopy:
+				value = copy.deepcopy(value)
+			elif self.copy:
+				value = copy.copy(value)
+
+			return value

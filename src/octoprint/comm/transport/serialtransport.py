@@ -9,6 +9,7 @@ from octoprint.comm.transport import Transport, LineAwareTransportWrapper, Pushi
 from octoprint.comm.transport.parameters import TextType, IntegerType, SuggestionType, ConstantNameType
 
 import serial
+import logging
 
 class SerialTransport(Transport):
 	name = "Serial Connection"
@@ -69,8 +70,10 @@ class SerialTransport(Transport):
 		       + [ConstantNameType(port.device, port.description) for port in ports]
 
 	def __init__(self):
-		super(Transport, self).__init__()
+		super(SerialTransport, self).__init__()
 		self._serial = None
+
+		self._logger = logging.getLogger(__name__)
 
 	def create_connection(self, port="AUTO", baudrate=0):
 		self._serial = serial.Serial(port=port, baudrate=baudrate)
@@ -79,10 +82,13 @@ class SerialTransport(Transport):
 		self._serial.close()
 
 	def read(self, size=None):
-		return self._serial.read(size=size)
+		result = self._serial.read(size=size)
+		print("<<< {!r}".format(result))
+		return result
 
 	def write(self, data):
 		self._serial.write(data)
+		print(">>> {!r}".format(data))
 
 	def close_connection(self):
 		self._serial.close()
