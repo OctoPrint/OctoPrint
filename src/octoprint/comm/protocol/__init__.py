@@ -5,19 +5,25 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+from octoprint.util.listener import ListenerAware
+from octoprint.comm.transport import TransportListener, TransportState
+
+from octoprint.util import to_unicode
 
 import logging
 
-class Protocol(object):
+class Protocol(ListenerAware, TransportListener):
 
 	supported_jobs = []
 
 	def __init__(self):
+		super(Protocol, self).__init__()
+
 		self._logger = logging.getLogger(__name__)
 		self._state = ProtocolState.DISCONNECTED
-		self._listeners = []
 
 		self._job = None
+		self._transport = None
 
 	@property
 	def state(self):
@@ -25,26 +31,33 @@ class Protocol(object):
 
 	@state.setter
 	def state(self, new_state):
+		old_state = self._state
 		self._state = new_state
 
-	def register_listener(self, listener):
-		self._listeners.append(listener)
+		name = "_on_state_{}".format(new_state)
+		method = getattr(self, name, None)
+		if method is not None:
+			method(old_state)
 
-	def unregister_listener(self, listener):
-		self._listeners.remove(listener)
+		self.notify_listeners("on_protocol_state", self, old_state, new_state)
 
 	def connect(self, transport):
-		pass
+		self._transport = transport
+		self._transport.register_listener(self)
+
+		if self._transport.state == TransportState.DISCONNECTED:
+			self._transport.connect()
+		self.state = ProtocolState.CONNECTING
 
 	def disconnect(self):
-		pass
+		self._transport.unregister_listener(self)
 
 	def process(self, job, position=0):
 		if not job.can_process(self):
 			raise ValueError("Job {} cannot be processed with protocol {}".format(job, self))
 		self._job = job
 		self._job.register_listener(self)
-		self._job.process(job, position=position)
+		self._job.process(self, position=position)
 
 	def pause_processing(self):
 		if self._job is None or self.state != ProtocolState.PRINTING:
@@ -68,51 +81,46 @@ class Protocol(object):
 	def set_extrusion_multiplier(self, multiplier):
 		pass
 
-	def notify_listeners(self, name, *args, **kwargs):
-		for listener in self._listeners:
-			method = getattr(listener, name, None)
-			if not method:
-				continue
+	def can_send(self):
+		return True
 
-			try:
-				method(*args, **kwargs)
-			except:
-				self._logger.exception("Exception while calling {} on protocol listener {}".format(
-						"{}({})".format(name, ", ".join(list(args) + ["{}={}".format(key, value)
-						                                              for key, value in kwargs.items()]))
-				))
+	def send_commands(self, command_type=None, *commands):
+		pass
 
 	def on_job_started(self, job):
-		if job != self._job:
-			return
 		self.state = ProtocolState.PRINTING
 
 	def on_job_done(self, job):
-		if job != self._job:
-			return
-		self._job = None
-		self.state = ProtocolState.CONNECTED
+		self._job_processed(job)
 
 	def on_job_cancelled(self, job):
-		if job != self._job:
-			return
-		self._job = None
-		self.state = ProtocolState.CONNECTED
+		self._job_processed(job)
 
 	def on_job_failed(self, job):
-		if job != self._job:
-			return
-		self._job = None
+		self._job_processed(job)
+
+	def _job_processed(self, job):
+		self._job.unregister_listener(self)
 		self.state = ProtocolState.CONNECTED
+
+	def on_transport_log_received_data(self, transport, data):
+		self.notify_listeners("on_protocol_log", self, "<<< {}".format(to_unicode(data, errors="replace").strip()))
+
+	def on_transport_log_sent_data(self, transport, data):
+		self.notify_listeners("on_protocol_log", self, ">>> {}".format(to_unicode(data, errors="replace").strip()))
+
+	def on_transport_log_message(self, transport, data):
+		self.notify_listeners("on_protocol_log", self, "--- {}".format(to_unicode(data, errors="replace").strip()))
 
 
 class ProtocolState(object):
+	CONNECTING = "connecting"
 	CONNECTED = "connected"
 	DISCONNECTED = "disconnected"
 	PRINTING = "printing"
 	PAUSED = "paused"
 	ERROR = "error"
-	DISCONNECTED_WITH_ERROR = "disconnected with error"
+	DISCONNECTED_WITH_ERROR = "disconnected_with_error"
 
 
 class FanControlProtocolMixin(object):
@@ -120,29 +128,38 @@ class FanControlProtocolMixin(object):
 	def set_fan_speed(self, speed):
 		pass
 
+	def get_fan_speed(self, speed):
+		pass
+
 
 class MotorControlProtocolMixin(object):
 
 	def enable_motors(self):
-		self.set_motors(True)
+		self.set_motor_state(True)
 
 	def disable_motors(self):
-		self.set_motors(False)
+		self.set_motor_state(False)
 
-	def set_motors(self, enabled):
+	def set_motor_state(self, enabled):
+		pass
+
+	def get_motor_state(self):
 		pass
 
 
 class PowerControlProtocolMixin(object):
 
 	def enable_power(self):
-		self.set_power(True)
+		self.set_power_state(True)
 
 	def disable_power(self):
-		self.set_power(False)
+		self.set_power_state(False)
 
-	def set_power(self, enabled):
+	def set_power_state(self, enabled):
 		pass
+
+	def get_power_state(self):
+		return None
 
 
 class FileAwareProtocolMixin(object):
@@ -183,23 +200,26 @@ class FileStreamingProtocolMixin(FileManagementProtocolMixin):
 
 class ProtocolListener(object):
 
-	def on_protocol_connection_state(self, state):
+	def on_protocol_state(self, protocol, old_state, new_state):
 		pass
 
-	def on_protocol_temperature(self, temperatures):
+	def on_protocol_temperature(self, protocol, temperatures):
+		pass
+
+	def on_protocol_log(self, protocol, message):
 		pass
 
 
 class FileAwareProtocolListener(object):
 
-	def on_protocol_sd_file_list(self, files):
+	def on_protocol_sd_file_list(self, protocol, files):
 		pass
 
-	def on_protocol_sd_status(self, name, pos, total):
+	def on_protocol_sd_status(self, protocol, pos, total):
 		pass
 
-	def on_protocol_file_print_started(self, name, size):
+	def on_protocol_file_print_started(self, protocol, name, size):
 		pass
 
-	def on_protocol_file_print_done(self):
+	def on_protocol_file_print_done(self, protocol):
 		pass

@@ -7,24 +7,19 @@ import time
 
 from octoprint.comm.protocol import FileAwareProtocolListener
 
+from octoprint.util.listener import ListenerAware
+
 from abc import ABCMeta, abstractmethod, abstractproperty
 
-class Printjob(object):
+class Printjob(ListenerAware):
 	__metaclass__ = ABCMeta
 
 	def __init__(self):
+		super(Printjob, self).__init__()
 		self._logger = logging.getLogger(__name__)
 		self._start = None
 		self._protocol = None
 		self._printer_profile = None
-
-		self._listeners = []
-
-	def register_listener(self, listener):
-		self._listeners.append(listener)
-
-	def unregister_listener(self, listener):
-		self._listeners.remove(listener)
 
 	def can_process(self, protocol):
 		return False
@@ -70,20 +65,6 @@ class Printjob(object):
 
 	def process_job_failed(self):
 		self.notify_listeners("on_job_failed")
-
-	def notify_listeners(self, name, *args, **kwargs):
-		for listener in self._listeners:
-			method = getattr(listener, name, None)
-			if not method:
-				continue
-
-			try:
-				method(*args, **kwargs)
-			except:
-				self._logger.exception("Exception while calling {} on printjob listener {}".format(
-					"{}({})".format(name, ", ".join(list(args) + ["{}={}".format(key, value)
-					                                              for key, value in kwargs.items()]))
-				))
 
 
 class LocalFilePrintjob(Printjob):
@@ -214,28 +195,24 @@ class SDFilePrintjob(Printjob, FileAwareProtocolListener):
 	def get_progress(self):
 		if self._size is None or self._last_pos is None:
 			return None
-		return self._last_pos / self._size
+		return float(self._last_pos) / float(self._size)
 
-	def on_protocol_sd_file_list(self, files):
-		pass
-
-	def on_protocol_sd_status(self, name, pos, total):
-		if name != self._filename:
-			return
+	def on_protocol_sd_status(self, protocol, pos, total):
 		self._last_pos = pos
+		self._size = total
+		self.notify_listeners("on_job_progress", self, self.get_progress(), self.get_time_estimate())
 
-	def on_protocol_file_print_started(self, name, size):
-		if name != self._filename:
-			return
+	def on_protocol_file_print_started(self, protocol, name, size):
 		self._size = size
 
-	def on_protocol_file_print_done(self):
+	def on_protocol_file_print_done(self, protocol):
 		self._active = False
 		self._protocol.unregister_listener(self)
 		self.notify_listeners("on_job_done", self)
 
 	def _query_status(self):
-		self._protocol.get_file_print_status()
+		if self._protocol.can_send():
+			self._protocol.get_file_print_status()
 
 	def _query_active(self):
 		return self._active
@@ -253,4 +230,7 @@ class PrintjobListener(object):
 		pass
 
 	def on_job_failed(self, job):
+		pass
+
+	def on_job_progress(self, job, progress, estimation):
 		pass

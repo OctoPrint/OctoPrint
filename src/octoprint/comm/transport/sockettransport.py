@@ -37,12 +37,12 @@ class TcpTransport(Transport):
 		self._socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM)
 		self._socket.connect((host, port))
 
-	def read(self, size=None):
+	def do_read(self, size=None, timeout=None):
 		if size is None:
 			size = 16
 		return self._socket.recv(size)
 
-	def write(self, data):
+	def do_write(self, data):
 		self._socket.sendall(data)
 
 	def close(self):

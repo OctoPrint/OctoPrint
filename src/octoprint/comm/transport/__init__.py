@@ -7,7 +7,12 @@ __copyright__ = "Copyright (C) 2016 The OctoPrint Project - Released under terms
 
 from .parameters import get_param_dict
 
-class Transport(object):
+import logging
+import time
+
+from octoprint.util.listener import ListenerAware
+
+class Transport(ListenerAware):
 
 	name = None
 	key = None
@@ -18,6 +23,9 @@ class Transport(object):
 		return []
 
 	def __init__(self, *args, **kwargs):
+		super(Transport, self).__init__()
+
+		self._logger = logging.getLogger(__name__)
 		self._state = TransportState.DISCONNECTED
 
 	@property
@@ -37,10 +45,19 @@ class Transport(object):
 	def create_connection(self, *args, **kwargs):
 		pass
 
-	def read(self, size=None):
-		return b""
+	def read(self, size=None, timeout=None):
+		data = self.do_read(size=size, timeout=timeout)
+		self.notify_listeners("on_transport_log_received_data", self, data)
+		return data
 
 	def write(self, data):
+		self.do_write(data)
+		self.notify_listeners("on_transport_log_sent_data", self, data)
+
+	def do_read(self, size=None, timeout=None):
+		return b""
+
+	def do_write(self, data):
 		pass
 
 
@@ -57,60 +74,65 @@ class AlreadyConnectedError(Exception):
 	pass
 
 
-class SeparatorAwareTransportWrapper(object):
+class SeparatorAwareTransportWrapper(ListenerAware):
 
-	def __init__(self, transport, separator, chunksize=128):
+	def __init__(self, transport, separator, internal_timeout=0.1):
+		super(SeparatorAwareTransportWrapper, self).__init__()
+
 		self.transport = transport
 		self.separator = separator
+		self.internal_timeout = internal_timeout
 
 		self._buffered = b""
-		self._chunksize = chunksize
 
-	def read(self, size=None):
-		if size is not None:
-			return self._internal_read(size)
+	def read(self, size=None, timeout=None):
+		data = self._buffered
+		self._buffered = b""
 
-		data = b""
-		while self.separator not in data:
-			data += self._internal_read(size=self._chunksize)
+		rest = timeout
+		while self.separator not in data and (rest is None or rest > 0):
+			start = time.time()
+			read = self.transport.read(1, timeout=self.internal_timeout)
+			end = time.time()
 
-		separator_pos = data.index(self.separator)
-		separator_end = separator_pos + len(self.separator)
-		self._buffered += data[separator_end:]
-		return data[:separator_end]
+			if rest is not None:
+				rest -= end - start if end > start else 0
+				if rest < 0:
+					rest = 0
 
-	def _internal_read(self, size=None):
-		if self._buffered:
-			if size is not None and len(self._buffered) > size:
-				# return first size bytes
-				data = self._buffered[:size]
-				self._buffered = self._buffered[size:]
-				return data
-			else:
-				# fetch data from buffer, reset buffer and recalculate size
-				data = self._buffered
-				self._buffered = b""
-				size -= len(data) if size is not None else None
-		else:
+			if read is None:
+				# EOF
+				break
+			data += read
+
+		if rest is not None and rest <= 0:
+			# couldn't read a full line within the timeout, returning empty line and
+			# buffering already read data
+			self._buffered = data
 			data = b""
 
-		return data + self.transport.read(size)
+		self.notify_listeners("on_transport_log_received_data", self, data)
+		return data
+
+	def write(self, data):
+		self.transport.write(data)
+		self.notify_listeners("on_transport_log_sent_data", self, data)
 
 	def __getattr__(self, item):
 		return getattr(self.transport, item)
 
 class LineAwareTransportWrapper(SeparatorAwareTransportWrapper):
 
-	def __init__(self, transport, chunksize=512):
-		SeparatorAwareTransportWrapper.__init__(self, transport, b"\n", chunksize=chunksize)
+	def __init__(self, transport):
+		SeparatorAwareTransportWrapper.__init__(self, transport, b"\n")
 
 class PushingTransportWrapper(object):
 
-	def __init__(self, transport, name="pushingTransportReceiveLoop"):
+	def __init__(self, transport, name="pushingTransportReceiveLoop", timeout=None):
 		self.transport = transport
 		self.name = name
+		self.timeout = timeout
 
-		self._listeners = set()
 		self._receiver_active = False
 		self._receiver_thread = None
 
@@ -131,30 +153,27 @@ class PushingTransportWrapper(object):
 	def wait(self):
 		self._receiver_thread.join()
 
-	def register_listener(self, transport_listener):
-		self._listeners.add(transport_listener)
-
-	def unregister_listener(self, transport_listener):
-		try:
-			self._listeners.remove(transport_listener)
-		except KeyError:
-			# not registered, ah well, we'll ignore that
-			pass
-
-	def _send_on_transport_data_received(self, data):
-		for listener in self._listeners:
-			listener.on_transport_data_received(self, data)
-
 	def _receiver_loop(self):
 		while self._receiver_active:
-			data = self.transport.read()
-			self._send_on_transport_data_received(data)
+			data = self.transport.read(timeout=self.timeout)
+			self.notify_listeners("on_transport_data_pushed", self, data)
 
 	def __getattr__(self, item):
 		return getattr(self.transport, item)
 
 class TransportListener(object):
 
-	def on_transport_data_received(self, transport, data):
+	def on_transport_log_sent_data(self, transport, data):
+		pass
+
+	def on_transport_log_received_data(self, transport, data):
+		pass
+
+	def on_transport_log_message(self, transport, data):
+		pass
+
+class PushingTransportWrapperListener(object):
+
+	def on_transport_data_pushed(self, transport, data):
 		pass
 

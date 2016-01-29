@@ -81,14 +81,11 @@ class SerialTransport(Transport):
 	def close(self):
 		self._serial.close()
 
-	def read(self, size=None):
-		result = self._serial.read(size=size)
-		print("<<< {!r}".format(result))
-		return result
+	def do_read(self, size=None, timeout=None):
+		return self._serial.read(size=size)
 
-	def write(self, data):
+	def do_write(self, data):
 		self._serial.write(data)
-		print(">>> {!r}".format(data))
 
 	def close_connection(self):
 		self._serial.close()
@@ -114,58 +111,3 @@ class VirtualSerialTransport(SerialTransport):
 			raise ValueError("virtual_serial_factory is not callable")
 
 		self._serial = self.virtual_serial_factory()
-
-
-if __name__ == "__main__":
-	for option in VirtualSerialTransport.get_connection_options():
-		print(repr(option))
-
-	def create_virtual_serial():
-		class VirtualSerial():
-			def __init__(self):
-				self.active = True
-				self.lines = [b"one", b"two", b"three", b"four", b"five"]
-
-			def read(self, size=None):
-				if self.active:
-					if self.lines:
-						data = self.lines.pop(0)
-						print("read called: {!r}".format(data))
-						return data + b"\n"
-					else:
-						self.close()
-						return ""
-				else:
-					raise RuntimeError("virtual serial is closed")
-
-			def write(self, data):
-				print("write called: {!r}".format(data))
-
-			def close(self):
-				self.active = False
-				print("Closed")
-		return VirtualSerial()
-
-	from octoprint.comm.transport import TransportListener
-	class MyTransportListener(TransportListener):
-		def on_transport_data_received(self, transport, data):
-			print(">>> Received: {!r}".format(data))
-			transport.write(b"echo:" + data)
-
-	listener = MyTransportListener()
-
-	#pushingvirtual = PushingTransportWrapper(LineAwareTransportWrapper(VirtualSerialTransport(virtual_serial_factory=create_virtual_serial)))
-	#pushingvirtual.register_listener(listener)
-	#pushingvirtual.connect()
-	#pushingvirtual.write(b"Just a test")
-	#pushingvirtual.wait()
-
-	to_send = [b"Send 1", b"Send 2"]
-	virtual = LineAwareTransportWrapper(VirtualSerialTransport(virtual_serial_factory=create_virtual_serial))
-	virtual.connect()
-	for data in to_send:
-		data += b"\n"
-		print(">>> {!r}".format(data))
-		virtual.write(data)
-		print("<<< {!r}".format(virtual.read()))
-	virtual.close()

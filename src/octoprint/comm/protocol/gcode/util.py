@@ -1,3 +1,9 @@
+# coding=utf-8
+from __future__ import absolute_import, unicode_literals, print_function, division
+
+__author__ = "Gina Häußge <osd@foosel.net>"
+__license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
+__copyright__ = "Copyright (C) 2016 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import re
 import Queue as queue
@@ -8,6 +14,15 @@ regex_int_pattern = "\d+"
 
 regex_float = re.compile(regex_float_pattern)
 """Regex for a float value."""
+
+regexes_parameters = dict(
+	floatP=re.compile("(^|[^A-Za-z])[Pp](?P<value>%s)" % regex_float_pattern),
+	floatS=re.compile("(^|[^A-Za-z])[Ss](?P<value>%s)" % regex_float_pattern),
+	floatZ=re.compile("(^|[^A-Za-z])[Zz](?P<value>%s)" % regex_float_pattern),
+	intN=re.compile("(^|[^A-Za-z])[Nn](?P<value>%s)" % regex_int_pattern),
+	intT=re.compile("(^|[^A-Za-z])[Tt](?P<value>%s)" % regex_int_pattern)
+)
+"""Regexes for parsing various GCODE command parameters."""
 
 
 class GcodeCommand(object):
@@ -180,12 +195,3 @@ def strip_comment(line):
 		escaped = (c == "\\") and not escaped
 	return "".join(result)
 
-def process_gcode_line(line, offsets=None, current_tool=None):
-	line = strip_comment(line).strip()
-	if not len(line):
-		return None
-
-	#if offsets is not None:
-	#	line = apply_temperature_offsets(line, offsets, current_tool=current_tool)
-
-	return line

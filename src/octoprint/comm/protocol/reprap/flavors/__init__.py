@@ -1,5 +1,6 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals, print_function, \
+	division
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -7,13 +8,18 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 
 
 import re
+import logging
+import time
 
-from octoprint.comm.protocol.util import GcodeCommand, regex_positive_float_pattern
+
+from octoprint.comm.protocol.gcode.util import GcodeCommand, regex_positive_float_pattern
 
 
 class ReprapGcodeFlavor(object):
 
 	key = "generic"
+
+	logger = logging.getLogger(__name__)
 
 	unknown_requires_ack = False
 	unknown_with_checksum = False
@@ -22,7 +28,8 @@ class ReprapGcodeFlavor(object):
 	never_send_checksum = False
 
 	checksum_requiring_commands = ["M110"]
-	long_running_commands = ["G4", "G28", "G29", "G30", "G32", "M400", "M226"]
+	long_running_commands = ["G4", "G28", "G29", "G30", "G32", "M190", "M109", "M400", "M226"]
+	asynchronous_commands = ["G0", "G1", "G2", "G3"]
 
 	regex_temp = re.compile("(?P<tool>B|T(?P<toolnum>\d*)):\s*(?P<actual>%s)(\s*\/?\s*(?P<target>%s))?" % (regex_positive_float_pattern, regex_positive_float_pattern))
 	"""Regex matching temperature entries in line.
@@ -35,9 +42,9 @@ class ReprapGcodeFlavor(object):
 	  * ``target``: target temperature, if provided (float)
 	"""
 
-	regex_sd_file_opened = re.compile("File opened:\s*(?P<name>.*?)(\s+Size:\s*(?P<size>[0-9]+))?")
+	regex_sd_file_opened = re.compile("file opened:\s*(?P<name>.*?)(\s+size:\s*(?P<size>[0-9]+)|$)")
 
-	regex_sd_printing_byte = re.compile("(?P<current>[0-9]*)/(?P<total>[0-9]*)")
+	regex_sd_printing_byte = re.compile("sd printing byte (?P<current>[0-9]*)/(?P<total>[0-9]*)")
 	"""Regex matching SD printing status reports.
 
 	Groups will be as follows:
@@ -49,8 +56,12 @@ class ReprapGcodeFlavor(object):
 	##~~ Message matchers
 
 	@classmethod
+	def comm_timeout(cls, line, lower_line, state):
+		return line == "" and time.time() > state["timeout"]
+
+	@classmethod
 	def comm_ok(cls, line, lower_line, state):
-		return lower_line.startswith("ok")
+		return lower_line.startswith("ok"), cls.message_temperature(line, lower_line, state)
 
 	@classmethod
 	def comm_start(cls, line, lower_line, state):
@@ -161,9 +172,142 @@ class ReprapGcodeFlavor(object):
 		return dict(linenumber=line_to_resend)
 
 	@classmethod
+	def parse_message_temperature(cls, line, lower_line, state):
+		"""
+		Parses the provided temperature line.
+
+		The result will be a dictionary mapping from the extruder or bed key to
+		a tuple with current and target temperature. The result will be canonicalized
+		with :func:`canonicalize_temperatures` before returning.
+
+		Returns:
+		    tuple: a 2-tuple with the maximum tool number and a dict mapping from
+		      key to (actual, target) tuples, with key either matching ``Tn`` for ``n >= 0`` or ``B``
+		"""
+
+		current_tool = state["current_tool"]
+
+		result = {}
+		max_tool_num = 0
+		for match in re.finditer(cls.regex_temp, line):
+			values = match.groupdict()
+			tool = values["tool"]
+			if tool == "T" and "toolnum" in values and values["toolnum"]:
+				tool_num = int(values["toolnum"])
+				if tool_num > max_tool_num:
+					max_tool_num = tool_num
+
+			try:
+				actual = float(values.get("actual", None)) if values.get("actual", None) is not None else None
+				target = float(values.get("target", None)) if values.get("target", None) is not None else None
+				result[tool] = actual, target
+			except ValueError:
+				# catch conversion issues, we'll rather just not get the temperature update instead of killing the connection
+				pass
+
+		heatup_detected = not lower_line.startswith("ok") and not state["heating"]
+
+		return dict(max_tool_num=max(max_tool_num, current_tool),
+		            temperatures=cls._canonicalize_temperatures(result, current_tool),
+		            heatup_detected=heatup_detected)
+
+	@classmethod
+	def _canonicalize_temperatures(cls, parsed, current):
+		"""
+		Canonicalizes the temperatures provided in parsed.
+
+		Will make sure that returned result only contains extruder keys
+		like Tn, so always qualified with a tool number.
+
+		The algorithm for cleaning up the parsed keys is the following:
+
+		  * If ``T`` is not included with the reported extruders, return
+		  * If more than just ``T`` is reported:
+		    * If both ``T`` and ``T0`` are reported set ``Tc`` to ``T``, remove
+		      ``T`` from the result.
+		    * Else set ``T0`` to ``T`` and delete ``T`` (Smoothie extra).
+		  * If only ``T`` is reported, set ``Tc`` to ``T`` and delete ``T``
+		  * return
+
+		Arguments:
+		    parsed (dict): the parsed temperatures (mapping tool => (actual, target))
+		      to canonicalize
+		    current (int): the current active extruder
+		Returns:
+		    dict: the canonicalized version of ``parsed``
+		"""
+
+		reported_extruders = filter(lambda x: x.startswith("T"), parsed.keys())
+		if not "T" in reported_extruders:
+			# Our reported_extruders are either empty or consist purely
+			# of Tn keys, no need for any action
+			return parsed
+
+		current_tool_key = "T%d" % current
+		result = dict(parsed)
+
+		if len(reported_extruders) > 1:
+			if "T0" in reported_extruders:
+				# Both T and T0 are present, so T contains the current
+				# extruder's temperature, e.g. for current_tool == 1:
+				#
+				#     T:<T1> T0:<T0> T2:<T2> ... B:<B>
+				#
+				# becomes
+				#
+				#     T0:<T1> T1:<T1> T2:<T2> ... B:<B>
+				#
+				# Same goes if Tc is already present, it will be overwritten:
+				#
+				#     T:<T1> T0:<T0> T1:<T1> T2:<T2> ... B:<B>
+				#
+				# becomes
+				#
+				#     T0:<T0> T1:<T1> T2:<T2> ... B:<B>
+				result[current_tool_key] = result["T"]
+				del result["T"]
+			else:
+				# So T is there, but T0 isn't. That looks like Smoothieware which
+				# always reports the first extruder T0 as T:
+				#
+				#     T:<T0> T1:<T1> T2:<T2> ... B:<B>
+				#
+				# becomes
+				#
+				#     T0:<T0> T1:<T1> T2:<T2> ... B:<B>
+				result["T0"] = result["T"]
+				del result["T"]
+
+		else:
+			# We only have T. That can mean two things:
+			#
+			#   * we only have one extruder at all, or
+			#   * we are currently parsing a response to M109/M190, which on
+			#     some firmwares doesn't report the full M105 output while
+			#     waiting for the target temperature to be reached but only
+			#     reports the current tool and bed
+			#
+			# In both cases it is however safe to just move our T over
+			# to T<current> in the parsed data, current should always stay
+			# 0 for single extruder printers. E.g. for current_tool == 1:
+			#
+			#     T:<T1>
+			#
+			# becomes
+			#
+			#     T1:<T1>
+
+			result[current_tool_key] = result["T"]
+			del result["T"]
+
+		return result
+
+	@classmethod
 	def parse_message_sd_file_opened(cls, line, lower_line, state):
 		match = cls.regex_sd_file_opened.match(lower_line)
-		return dict(name=match.group("name"), size=match.group("size"))
+		if not match:
+			return
+		return dict(name=match.group("name"), size=int(match.group("size")))
 
 	@classmethod
 	def parse_message_sd_entry(cls, line, lower_line, state):
@@ -196,25 +340,35 @@ class ReprapGcodeFlavor(object):
 	@classmethod
 	def parse_message_sd_printing_byte(cls, line, lower_line, state):
 		match = cls.regex_sd_printing_byte.match(lower_line)
-		return dict(current=match.group("current"), total=match.group("total"))
+		if not match:
+			return None
+		return dict(current=int(match.group("current")), total=int(match.group("total")))
 
 	##~~ Commands
+
+	@classmethod
+	def command_hello(cls):
+		return cls.command_set_line(0)
 
 	@classmethod
 	def command_get_temp(cls):
 		return GcodeCommand("M105")
 
 	@classmethod
-	def command_set_extruder_temp(cls, s, t, w):
-		return GcodeCommand("M109", s=s, t=t) if w else GcodeCommand("M104", s=s, t=t)
-
-	@classmethod
 	def command_set_line(cls, n):
 		return GcodeCommand("M110", n=n)
 
 	@classmethod
-	def command_set_bed_temp(cls, s, w):
-		return GcodeCommand("M190", s=s) if w else GcodeCommand("M140", s=s)
+	def command_emergency_stop(cls):
+		return GcodeCommand("M112")
+
+	@classmethod
+	def command_set_extruder_temp(cls, s, t, wait):
+		return GcodeCommand("M109" if wait else "M104", s=s, t=t)
+
+	@classmethod
+	def command_set_bed_temp(cls, s, wait):
+		return GcodeCommand("M190" if wait else "M140", s=s)
 
 	@classmethod
 	def command_set_relative_positioning(cls):
@@ -272,23 +426,30 @@ class ReprapGcodeFlavor(object):
 	def command_sd_select_file(cls, name):
 		return GcodeCommand("M23", param=name)
 
+	@classmethod
 	def command_sd_start(cls):
 		return GcodeCommand("M24")
 
+	@classmethod
 	def command_sd_pause(cls):
 		return GcodeCommand("M25")
 
+	@classmethod
 	def command_sd_set_pos(cls, pos):
 		return GcodeCommand("M26", s=pos)
 
+	@classmethod
 	def command_sd_status(cls):
 		return GcodeCommand("M27")
 
+	@classmethod
 	def command_sd_begin_write(cls, name):
 		return GcodeCommand("M28", param=name)
 
+	@classmethod
 	def command_sd_end_write(cls):
 		return GcodeCommand("M29")
 
+	@classmethod
 	def command_sd_delete(cls, name):
 		return GcodeCommand("M30", param=name)

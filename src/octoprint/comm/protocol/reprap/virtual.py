@@ -11,6 +11,8 @@ import threading
 import math
 import Queue
 
+from octoprint.util import to_unicode
+
 from serial import SerialTimeoutException
 
 class VirtualPrinter(object):
@@ -785,7 +787,7 @@ class VirtualPrinter(object):
 
 			try:
 				self.incoming.put(data, timeout=self._write_timeout)
-				self._seriallog.info("<<< {}".format(data.strip()))
+				self._seriallog.info(u"<<< {}".format(to_unicode(data.strip(), errors="replace")))
 			except Queue.Full:
 				self._logger.info("Incoming queue is full, raising SerialTimeoutException")
 				raise SerialTimeoutException()
@@ -797,7 +799,7 @@ class VirtualPrinter(object):
 		try:
 			line = self.outgoing.get(timeout=self._read_timeout) + "\n"
 			time.sleep(self._throttle)
-			self._seriallog.info(">>> {}".format(line.strip()))
+			self._seriallog.info(u">>> {}".format(to_unicode(line.strip(), errors="replace")))
 			return line
 		except Queue.Empty:
 			return ""
