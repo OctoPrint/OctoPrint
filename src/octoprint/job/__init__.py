@@ -21,6 +21,10 @@ class Printjob(ListenerAware):
 		self._protocol = None
 		self._printer_profile = None
 
+	@property
+	def elapsed(self):
+		return time.time() - self._start if self._start is not None else None
+
 	def can_process(self, protocol):
 		return False
 
@@ -66,6 +70,9 @@ class Printjob(ListenerAware):
 	def process_job_failed(self):
 		self.notify_listeners("on_job_failed")
 
+	def process_job_progress(self):
+		self.notify_listeners("on_job_progress", self, self.get_progress(), self.elapsed, self.get_time_estimate())
+
 
 class LocalFilePrintjob(Printjob):
 
@@ -86,6 +93,7 @@ class LocalFilePrintjob(Printjob):
 
 		if position > 0:
 			self._handle.seek(position)
+		self.process_job_started()
 
 	def get_next(self):
 		from octoprint.util import to_unicode
@@ -105,6 +113,7 @@ class LocalFilePrintjob(Printjob):
 					self.close()
 				processed = self.process_line(line)
 
+			self.process_job_progress()
 			return processed
 		except Exception as e:
 			self.close()
@@ -117,7 +126,7 @@ class LocalFilePrintjob(Printjob):
 	def get_progress(self):
 		if self._handle is None:
 			return 0.0
-		return self._handle.tell() / self._size
+		return float(self._handle.tell()) / float(self._size)
 
 	def close(self):
 		if self._handle is not None:
@@ -143,10 +152,16 @@ class LocalGcodeFilePrintjob(LocalFilePrintjob):
 		return LocalGcodeFilePrintjob in protocol.supported_jobs
 
 	def process_line(self, line):
-		processed = line
-		# strip comments
+		# TODO no dependency on protocol module
+		from octoprint.comm.protocol.gcode.util import strip_comment
 
-		# apply offsets
+		# strip line
+		processed = line.strip()
+
+		# strip comments
+		processed = strip_comment(processed)
+
+		# TODO apply offsets
 
 		# return result
 		return processed
@@ -200,15 +215,16 @@ class SDFilePrintjob(Printjob, FileAwareProtocolListener):
 	def on_protocol_sd_status(self, protocol, pos, total):
 		self._last_pos = pos
 		self._size = total
-		self.notify_listeners("on_job_progress", self, self.get_progress(), self.get_time_estimate())
+		self.process_job_progress()
 
 	def on_protocol_file_print_started(self, protocol, name, size):
 		self._size = size
+		self.process_job_started()
 
 	def on_protocol_file_print_done(self, protocol):
 		self._active = False
 		self._protocol.unregister_listener(self)
-		self.notify_listeners("on_job_done", self)
+		self.process_job_done()
 
 	def _query_status(self):
 		if self._protocol.can_send():
@@ -232,5 +248,5 @@ class PrintjobListener(object):
 	def on_job_failed(self, job):
 		pass
 
-	def on_job_progress(self, job, progress, estimation):
+	def on_job_progress(self, job, progress, elapsed, estimated):
 		pass

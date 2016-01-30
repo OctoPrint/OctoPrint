@@ -865,8 +865,8 @@ class ReprapGcodeProtocol(Protocol, MotorControlProtocolMixin,
 			_timeout = float(p_match.group("value")) / 1000.0
 		elif s_match:
 			_timeout = float(s_match.group("value"))
-		# TODO needs timeout handling
-		#self._timeout = get_new_timeout("communication") + _timeout
+
+		self._internal_state["timeout"] = self._get_timeout("communication") + _timeout
 
 	##~~ command phase handlers
 
@@ -898,40 +898,78 @@ if __name__ == "__main__":
 	from octoprint.comm.protocol import ProtocolListener, FileAwareProtocolListener
 	from octoprint.job import PrintjobListener
 
+	import os
+
+	virtual_sd = "C:/Users/gina/AppData/Roaming/OctoPrint/virtualSd"
+	filename = "50mm-t~5.gco"
+
 	def virtual_serial_factory():
-		return VirtualPrinter(virtual_sd="C:/Users/gina/AppData/Roaming/OctoPrint/virtualSd")
+		return VirtualPrinter(virtual_sd=virtual_sd)
 
 	class CustomProtocolListener(ProtocolListener, FileAwareProtocolListener, PrintjobListener):
 
+		def __init__(self, protocol):
+			super(CustomProtocolListener, self).__init__()
+			self._job = None
+			self._queue = []
+			self._protocol = protocol
+
+		def add_job(self, job):
+			self._queue.append(job)
+
+		def get_next_job(self):
+			return self._queue.pop(0) if self._queue else None
+
+		def start_next_job(self):
+			job = self.get_next_job()
+			if job is None:
+				return
+
+			self._job = job
+			self._job.register_listener(self)
+			self._protocol.process(self._job)
+
 		def on_protocol_state(self, protocol, old_state, new_state):
+			if protocol != self._protocol:
+				return
 			print("State changed from {} to {}".format(old_state, new_state))
 
 		def on_protocol_temperature(self, protocol, temperatures):
+			if protocol != self._protocol:
+				return
 			print("Temperature update: {!r}".format(temperatures))
 
 		def on_protocol_sd_file_list(self, protocol, files):
+			if protocol != self._protocol:
+				return
 			print("Received files from printer:")
 			for f in files:
 				print("\t{} (Size {} bytes)".format(*f))
 
-			filename = "50mm-t~5.gco"
-			print("Going to print file {} from SD card".format(filename))
-
-			from octoprint.job import SDFilePrintjob
-			job = SDFilePrintjob(filename)
-			job.register_listener(self)
-			protocol.process(job)
+			self.start_next_job()
 
 		def on_protocol_log(self, protocol, data):
+			if protocol != self._protocol:
+				return
 			print(data)
 
-		def on_job_progress(self, job, progress, estimation):
-			print("Job progress: {}% (Total estimated time: {}min)".format(int(progress * 100) if progress is not None else "-",
-			                                                               int(estimation / 60) if estimation is not None else "-"))
+		def on_job_progress(self, job, progress, elapsed, estimated):
+			if job != self._job:
+				return
+			print("Job progress: {}% (Time: {} min / {} min)".format(int(progress * 100) if progress is not None else "0",
+			                                                       "{}:{}".format(int(elapsed / 60), int(elapsed % 60)) if elapsed is not None else "?",
+			                                                       "{}:{}".format(int(estimated / 60), int(estimated % 60)) if estimated is not None else "?"))
+
+		def on_job_done(self, job):
+			self.start_next_job()
 
 	transport = VirtualSerialTransport(virtual_serial_factory=virtual_serial_factory)
 	protocol = ReprapGcodeProtocol(ReprapGcodeFlavor)
-	protocol.register_listener(CustomProtocolListener())
+
+	protocol_listener = CustomProtocolListener(protocol)
+	protocol_listener.add_job(LocalGcodeFilePrintjob(os.path.join(virtual_sd, filename)))
+	protocol_listener.add_job(SDFilePrintjob(filename))
+	protocol.register_listener(protocol_listener)
 
 	transport.connect()
 	protocol.connect(transport)
