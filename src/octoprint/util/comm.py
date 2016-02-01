@@ -242,6 +242,7 @@ class MachineCom(object):
 		self._resendSwallowRepetitions = settings().getBoolean(["feature", "ignoreIdenticalResends"])
 		self._resendSwallowRepetitionsCounter = 0
 
+		self._disconnect_on_errors = settings().getBoolean(["serial", "disconnectOnErrors"])
 		self._ignore_errors = settings().getBoolean(["serial", "ignoreErrorsFromFirmware"])
 
 		self._clear_to_send = CountedEvent(max=10, name="comm.clear_to_send")
@@ -649,7 +650,7 @@ class MachineCom(object):
 		eventManager().fire(Events.FILE_DESELECTED)
 		self._callback.on_comm_file_selected(None, None, False)
 
-	def cancelPrint(self):
+	def cancelPrint(self, firmware_error=None):
 		if not self.isOperational() or self.isStreaming():
 			return
 
@@ -667,7 +668,8 @@ class MachineCom(object):
 		payload = {
 			"file": self._currentFile.getFilename(),
 			"filename": os.path.basename(self._currentFile.getFilename()),
-			"origin": self._currentFile.getFileLocation()
+			"origin": self._currentFile.getFileLocation(),
+			"firmwareError": firmware_error
 		}
 
 		self.sendGcodeScript("afterPrintCancelled", replacements=dict(event=payload))
@@ -1375,11 +1377,16 @@ class MachineCom(object):
 			elif not self.isError():
 				error_text = line[6:] if line.startswith("Error:") else line[2:]
 				if not self._ignore_errors:
-					self._errorValue = error_text
-					self._changeState(self.STATE_ERROR)
-					eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
+					if self._disconnect_on_errors:
+						self._errorValue = error_text
+						self._changeState(self.STATE_ERROR)
+						eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
+					elif self.isPrinting():
+						self.cancelPrint(firmware_error=error_text)
+						self._clear_to_send.set()
 				else:
 					self._log("WARNING! Received an error from the printer's firmware, ignoring that as configured but you might want to investigate what happened here! Error: {}".format(error_text))
+					self._clear_to_send.set()
 		return line
 
 	def _readline(self):

@@ -87,7 +87,14 @@
     <div class="control-group">
         <div class="controls">
             <label class="checkbox">
-                <input type="checkbox" data-bind="checked: serial_ignoreErrorsFromFirmware" id="settings-ignoreErrorsFromFirmware"> {{ _('Ignore any errors from the firmware. Only use this if your firmware sends stuff prefixed with "Error" that is not an actual error. Might mask printer issues, be careful!') }} <span class="label label-important">{{ _('Warning') }}</span>
+                <input type="checkbox" data-bind="checked: serial_disconnectOnErrors" id="settings-disconnectOnErrors"> {{ _('Not only cancel ongoing prints but also disconnect on unhandled errors from the firmware.') }}</span>
+            </label>
+        </div>
+    </div>
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
+                <input type="checkbox" data-bind="checked: serial_ignoreErrorsFromFirmware" id="settings-ignoreErrorsFromFirmware"> {{ _('Ignore any unhandled errors from the firmware. Only use this if your firmware sends stuff prefixed with "Error" that is not an actual error. Might mask printer issues, be careful!') }} <span class="label label-important">{{ _('Warning') }}</span>
             </label>
         </div>
     </div>
