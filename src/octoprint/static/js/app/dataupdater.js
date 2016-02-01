@@ -289,6 +289,22 @@ function DataUpdater(allViewModels) {
                             text: _.sprintf(gettext("Streamed %(local)s to %(remote)s on SD, took %(time).2f seconds"), payload),
                             type: "success"
                         });
+                    } else if (type == "PrintCancelled") {
+                        if (payload.firmwareError) {
+                            new PNotify({
+                                title: gettext("Unhandled firmware error"),
+                                text: _.sprintf(gettext("The firmware reported an unhandled error. Due to that the ongoing print job was cancelled. Error: %(firmwareError)s"), payload),
+                                type: "error",
+                                hide: false
+                            });
+                        }
+                    } else if (type == "Error") {
+                        new PNotify({
+                                title: gettext("Unhandled firmware error"),
+                                text: _.sprintf(gettext("The firmware reported an unhandled error. Due to that OctoPrint disconnected. Error: %(error)s"), payload),
+                                type: "error",
+                                hide: false
+                        });
                     }
 
                     var legacyEventHandlers = {
