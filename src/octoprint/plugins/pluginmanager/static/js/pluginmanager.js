@@ -90,7 +90,7 @@ $(function() {
         self.workingDialog = undefined;
         self.workingOutput = undefined;
 
-        self.enableManagement = ko.computed(function() {
+        self.enableManagement = ko.pureComputed(function() {
             return !self.printerState.isPrinting();
         });
 
@@ -110,22 +110,22 @@ $(function() {
             return self.enableManagement() && self.pipAvailable() && self.isCompatible(data);
         };
 
-        self.invalidUrl = ko.computed(function() {
+        self.invalidUrl = ko.pureComputed(function() {
             var url = self.installUrl();
             return url !== undefined && url.trim() != "" && !(_.startsWith(url.toLocaleLowerCase(), "http://") || _.startsWith(url.toLocaleLowerCase(), "https://"));
         });
 
-        self.enableUrlInstall = ko.computed(function() {
+        self.enableUrlInstall = ko.pureComputed(function() {
             var url = self.installUrl();
             return self.enableManagement() && self.pipAvailable() && url !== undefined && url.trim() != "" && !self.invalidUrl();
         });
 
-        self.invalidArchive = ko.computed(function() {
+        self.invalidArchive = ko.pureComputed(function() {
             var name = self.uploadFilename();
             return name !== undefined && !(_.endsWith(name.toLocaleLowerCase(), ".zip") || _.endsWith(name.toLocaleLowerCase(), ".tar.gz") || _.endsWith(name.toLocaleLowerCase(), ".tgz") || _.endsWith(name.toLocaleLowerCase(), ".tar"));
         });
 
-        self.enableArchiveInstall = ko.computed(function() {
+        self.enableArchiveInstall = ko.pureComputed(function() {
             var name = self.uploadFilename();
             return self.enableManagement() && self.pipAvailable() && name !== undefined && name.trim() != "" && !self.invalidArchive();
         });

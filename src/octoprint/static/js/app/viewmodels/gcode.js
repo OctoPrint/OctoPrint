@@ -10,7 +10,7 @@ $(function() {
 
         self.ui_progress_percentage = ko.observable();
         self.ui_progress_type = ko.observable();
-        self.ui_progress_text = ko.computed(function() {
+        self.ui_progress_text = ko.pureComputed(function() {
             var text = "";
             switch (self.ui_progress_type()) {
                 case "loading": {
