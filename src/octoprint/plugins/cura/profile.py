@@ -31,6 +31,11 @@ class MachineShapeTypes(object):
 	SQUARE = "square"
 	CIRCULAR = "circular"
 
+class RetractionCombingTypes(object):
+    OFF = "off"
+    ALL = "all"
+    NO_SKIN = "no skin"
+
 class GcodeFlavors(object):
 	REPRAP = "reprap"
 	REPRAP_VOLUME = "reprap_volume"
@@ -390,7 +395,12 @@ class Profile(object):
 				"Both": SupportDualTypes.BOTH,
 				"First extruder": SupportDualTypes.FIRST,
 				"Second extruder": SupportDualTypes.SECOND
-			}
+			},
+            retraction_combing={
+                "Off": RetractionCombingTypes.OFF,
+                "All": RetractionCombingTypes.ALL,
+                "No Skin": RetractionCombingTypes.NO_SKIN
+            }
 		)
 
 		result = dict()
@@ -865,7 +875,7 @@ class Profile(object):
 			"retractionAmountExtruderSwitch": self.get_microns("retraction_dual_amount"),
 			"retractionZHop": self.get_microns("retraction_hop"),
 			"minimalExtrusionBeforeRetraction": self.get_microns("retraction_minimal_extrusion"),
-			"enableCombing": 1 if self.get_boolean("retraction_combing") else 0,
+            "enableCombing": 1 if self.get("retraction_combing") == RetractionCombingTypes.ALL else (2 if self.get("retraction_combing") == RetractionCombingTypes.NO_SKIN else 0),
 			"multiVolumeOverlap": self.get_microns("overlap_dual"),
 			"objectSink": max(0, self.get_microns("object_sink")),
 			"minimalLayerTime": self.get_int("cool_min_layer_time"),
