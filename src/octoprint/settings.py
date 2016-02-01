@@ -85,7 +85,8 @@ default_settings = {
 			"sdStatus": 1
 		},
 		"additionalPorts": [],
-		"longRunningCommands": ["G4", "G28", "G29", "G30", "G32"]
+		"longRunningCommands": ["G4", "G28", "G29", "G30", "G32"],
+		"ignoreErrorsFromFirmware": False
 	},
 	"server": {
 		"host": "0.0.0.0",

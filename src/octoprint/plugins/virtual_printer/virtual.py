@@ -338,6 +338,8 @@ class VirtualPrinter():
 			self._triggerResend(expected=self.lastN)
 		elif data == "drop_connection":
 			self._debug_drop_connection = True
+		elif data == "maxtemp_error":
+			self.outgoing.put("Error: MAXTEMP triggered!")
 		else:
 			try:
 				sleep_match = VirtualPrinter.sleep_regex.match(data)

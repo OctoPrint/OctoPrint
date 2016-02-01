@@ -242,6 +242,8 @@ class MachineCom(object):
 		self._resendSwallowRepetitions = settings().getBoolean(["feature", "ignoreIdenticalResends"])
 		self._resendSwallowRepetitionsCounter = 0
 
+		self._ignore_errors = settings().getBoolean(["serial", "ignoreErrorsFromFirmware"])
+
 		self._clear_to_send = CountedEvent(max=10, name="comm.clear_to_send")
 		self._send_queue = TypedQueue()
 		self._temperature_timer = None
@@ -1371,9 +1373,13 @@ class MachineCom(object):
 				#Ignore unkown command errors, it could be a typo or some missing feature
 				pass
 			elif not self.isError():
-				self._errorValue = line[6:] if line.startswith("Error:") else line[2:]
-				self._changeState(self.STATE_ERROR)
-				eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
+				error_text = line[6:] if line.startswith("Error:") else line[2:]
+				if not self._ignore_errors:
+					self._errorValue = error_text
+					self._changeState(self.STATE_ERROR)
+					eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
+				else:
+					self._log("WARNING! Received an error from the printer's firmware, ignoring that as configured but you might want to investigate what happened here! Error: {}".format(error_text))
 		return line
 
 	def _readline(self):
