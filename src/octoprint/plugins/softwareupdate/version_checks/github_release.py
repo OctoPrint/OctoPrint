@@ -15,33 +15,40 @@ RELEASE_URL = "https://api.github.com/repos/{user}/{repo}/releases"
 logger = logging.getLogger("octoprint.plugins.softwareupdate.version_checks.github_release")
 
 def _get_latest_release(user, repo, include_prerelease=False):
+	nothing = None, None, None
 	r = requests.get(RELEASE_URL.format(user=user, repo=repo))
 
 	from . import log_github_ratelimit
 	log_github_ratelimit(logger, r)
 
 	if not r.status_code == requests.codes.ok:
-		return None, None
+		return nothing
 
 	releases = r.json()
+
+	# sanitize
+	required_fields = {"name", "tag_name", "html_url", "draft", "prerelease", "published_at"}
+	releases = filter(lambda rel: set(rel.keys()) & required_fields == required_fields,
+	                  releases)
 
 	# filter out prereleases and drafts
 	if include_prerelease:
 		releases = filter(lambda rel: not rel["draft"], releases)
 	else:
-		releases = filter(lambda rel: not rel["prerelease"] and not rel["draft"], releases)
+		releases = filter(lambda rel: not rel["prerelease"] and not rel["draft"],
+		                  releases)
 
 	if not releases:
-		return None, None
+		return nothing
 
 	# sort by date
-	comp = lambda a, b: cmp(a["published_at"], b["published_at"])
+	comp = lambda a, b: cmp(a.get("published_at", None), b["published_at"])
 	releases = sorted(releases, cmp=comp)
 
 	# latest release = last in list
 	latest = releases[-1]
 
-	return latest["name"], latest["tag_name"]
+	return latest["name"], latest["tag_name"], latest.get("html_url", None)
 
 
 def _get_sanitized_version(version_string):
@@ -122,14 +129,14 @@ def get_latest(target, check, custom_compare=None):
 	include_prerelease = check.get("prerelease", False)
 	force_base = check.get("force_base", True)
 
-	remote_name, remote_tag = _get_latest_release(check["user"],
-	                                              check["repo"],
-	                                              include_prerelease=include_prerelease)
+	remote_name, remote_tag, release_notes = _get_latest_release(check["user"],
+	                                                             check["repo"],
+	                                                             include_prerelease=include_prerelease)
 	compare_type = check["release_compare"] if "release_compare" in check else "python"
 
 	information =dict(
 		local=dict(name=current, value=current),
-		remote=dict(name=remote_name, value=remote_tag)
+		remote=dict(name=remote_name, value=remote_tag, release_notes=release_notes)
 	)
 
 	logger.debug("Target: %s, local: %s, remote: %s" % (target, current, remote_tag))
