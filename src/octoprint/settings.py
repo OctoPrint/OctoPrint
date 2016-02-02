@@ -142,7 +142,8 @@ default_settings = {
 			"options": {},
 			"postRoll": 0,
 			"fps": 25
-		}
+		},
+		"cleanTmpAfterDays": 7
 	},
 	"gcodeViewer": {
 		"enabled": True,

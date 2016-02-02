@@ -11,6 +11,8 @@ function DataUpdater(allViewModels) {
     self._lastProcessingTimes = [];
     self._lastProcessingTimesSize = 20;
 
+    self._timelapse_popup = undefined;
+
     self.increaseThrottle = function() {
         self.setThrottle(self._throttleFactor + 1);
     };
@@ -163,17 +165,54 @@ function DataUpdater(allViewModels) {
                 self._configHash = payload.config_hash;
             }
         } else if (type == "MovieRendering") {
-            new PNotify({title: gettext("Rendering timelapse"), text: _.sprintf(gettext("Now rendering timelapse %(movie_basename)s"), payload)});
+            if (self._timelapse_popup !== undefined) {
+                self._timelapse_popup.remove();
+            }
+            self._timelapse_popup = new PNotify({
+                title: gettext("Rendering timelapse"),
+                text: _.sprintf(gettext("Now rendering timelapse %(movie_basename)s. Due to performance reasons it is not recommended to start a print job while a movie is still rendering."), payload),
+                hide: false,
+                callbacks: {
+                    before_close: function() {
+                        self._timelapse_popup = undefined;
+                    }
+                }
+            });
         } else if (type == "MovieDone") {
-            new PNotify({title: gettext("Timelapse ready"), text: _.sprintf(gettext("New timelapse %(movie_basename)s is done rendering."), payload)});
+            if (self._timelapse_popup !== undefined) {
+                self._timelapse_popup.remove();
+            }
+            self._timelapse_popup = new PNotify({
+                title: gettext("Timelapse ready"),
+                text: _.sprintf(gettext("New timelapse %(movie_basename)s is done rendering."), payload),
+                type: "success",
+                callbacks: {
+                    before_close: function(notice) {
+                        if (self._timelapse_popup == notice) {
+                            self._timelapse_popup = undefined;
+                        }
+                    }
+                }
+            });
         } else if (type == "MovieFailed") {
             html = "<p>" + _.sprintf(gettext("Rendering of timelapse %(movie_basename)s failed with return code %(returncode)s"), payload) + "</p>";
             html += pnotifyAdditionalInfo('<pre style="overflow: auto">' + payload.error + '</pre>');
-            new PNotify({
+
+            if (self._timelapse_popup !== undefined) {
+                self._timelapse_popup.remove();
+            }
+            self._timelapse_popup = new PNotify({
                 title: gettext("Rendering failed"),
                 text: html,
                 type: "error",
-                hide: false
+                hide: false,
+                callbacks: {
+                    before_close: function(notice) {
+                        if (self._timelapse_popup == notice) {
+                            self._timelapse_popup = undefined;
+                        }
+                    }
+                }
             });
         } else if (type == "PostRollStart") {
             var title = gettext("Capturing timelapse postroll");
@@ -182,17 +221,33 @@ function DataUpdater(allViewModels) {
             if (!payload.postroll_duration) {
                 text = _.sprintf(gettext("Now capturing timelapse post roll, this will take only a moment..."), format);
             } else {
+                format = {
+                    time: moment().add(payload.postroll_duration, "s").format("LT")
+                };
+
                 if (payload.postroll_duration > 60) {
-                    format = {duration: _.sprintf(gettext("%(minutes)d min"), {minutes: payload.postroll_duration / 60})};
+                    format.duration = _.sprintf(gettext("%(minutes)d min"), {minutes: payload.postroll_duration / 60});
+                    text = _.sprintf(gettext("Now capturing timelapse post roll, this will take approximately %(duration)s (so until %(time)s)..."), format);
                 } else {
-                    format = {duration: _.sprintf(gettext("%(seconds)d sec"), {seconds: payload.postroll_duration})};
+                    format.duration = _.sprintf(gettext("%(seconds)d sec"), {seconds: payload.postroll_duration});
+                    text = _.sprintf(gettext("Now capturing timelapse post roll, this will take approximately %(duration)s..."), format);
                 }
-                text = _.sprintf(gettext("Now capturing timelapse post roll, this will take approximately %(duration)s..."), format);
             }
 
-            new PNotify({
+            if (self._timelapse_popup !== undefined) {
+                self._timelapse_popup.remove();
+            }
+            self._timelapse_popup = new PNotify({
                 title: title,
-                text: text
+                text: text,
+                hide: false,
+                callbacks: {
+                    before_close: function(notice) {
+                        if (self._timelapse_popup == notice) {
+                            self._timelapse_popup = undefined;
+                        }
+                    }
+                }
             });
         } else if (type == "SlicingStarted") {
             gcodeUploadProgress.addClass("progress-striped").addClass("active");

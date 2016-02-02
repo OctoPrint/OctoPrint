@@ -14,9 +14,11 @@ import octoprint.timelapse
 import octoprint.util as util
 from octoprint.settings import settings, valid_boolean_trues
 
-from octoprint.server import admin_permission
-from octoprint.server.util.flask import redirect_to_tornado, restricted_access
+from octoprint.server import admin_permission, printer
+from octoprint.server.util.flask import redirect_to_tornado, restricted_access, get_json_command_from_request
 from octoprint.server.api import api
+
+from octoprint.server import NO_CONTENT
 
 
 #~~ timelapse handling
@@ -39,14 +41,17 @@ def getTimelapseData():
 			"interval": timelapse.interval
 		})
 
-	files = octoprint.timelapse.getFinishedTimelapses()
+	files = octoprint.timelapse.get_finished_timelapses()
 	for file in files:
 		file["url"] = url_for("index") + "downloads/timelapse/" + file["name"]
 
-	return jsonify({
-		"config": config,
-		"files": files
-	})
+	result = dict(config=config,
+	              files=files)
+
+	if "unrendered" in request.values and request.values["unrendered"] in valid_boolean_trues:
+		result.update(unrendered=octoprint.timelapse.get_unrendered_timelapses())
+
+	return jsonify(result)
 
 
 @api.route("/timelapse/<filename>", methods=["GET"])
@@ -57,12 +62,39 @@ def downloadTimelapse(filename):
 @api.route("/timelapse/<filename>", methods=["DELETE"])
 @restricted_access
 def deleteTimelapse(filename):
-	if util.is_allowed_file(filename, {"mpg"}):
+	if util.is_allowed_file(filename, ["mpg"]):
 		timelapse_folder = settings().getBaseFolder("timelapse")
 		full_path = os.path.realpath(os.path.join(timelapse_folder, filename))
 		if full_path.startswith(timelapse_folder) and os.path.exists(full_path):
 			os.remove(full_path)
 	return getTimelapseData()
+
+
+@api.route("/timelapse/unrendered/<name>", methods=["DELETE"])
+@restricted_access
+def deleteUnrenderedTimelapse(name):
+	octoprint.timelapse.delete_unrendered_timelapse(name)
+	return NO_CONTENT
+
+
+@api.route("/timelapse/unrendered/<name>", methods=["POST"])
+@restricted_access
+def processUnrenderedTimelapseCommand(name):
+	# valid file commands, dict mapping command name to mandatory parameters
+	valid_commands = {
+		"render": []
+	}
+
+	command, data, response = get_json_command_from_request(request, valid_commands)
+	if response is not None:
+		return response
+
+	if command == "render":
+		if printer.is_printing() or printer.is_paused():
+			return make_response("Printer is currently printing, cannot render timelapse", 409)
+		octoprint.timelapse.render_unrendered_timelapse(name)
+
+	return NO_CONTENT
 
 
 @api.route("/timelapse", methods=["POST"])
@@ -120,7 +152,7 @@ def setTimelapseConfig():
 		if admin_permission.can() and "save" in data and data["save"] in valid_boolean_trues:
 			octoprint.timelapse.configureTimelapse(config, True)
 		else:
-			octoprint.timelapse.configureTimelapse(config)
+			octoprint.timelapse.configure_timelapse(config)
 
 	return getTimelapseData()
 

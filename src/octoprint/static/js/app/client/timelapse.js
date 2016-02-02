@@ -11,6 +11,10 @@
         return url + "/" + filename;
     };
 
+    var unrenderedTimelapseUrl = function(name) {
+        return url + "/unrendered/" + name;
+    };
+
     var getTimelapseData = function (opts) {
         return OctoPrint.get(url, opts);
     };
@@ -38,6 +42,14 @@
 
         delete: function (filename, opts) {
             return OctoPrint.delete(timelapseUrl(filename), opts);
+        },
+
+        deleteUnrendered: function(name, opts) {
+            return OctoPrint.delete(unrenderedTimelapseUrl(name), opts);
+        },
+
+        renderUnrendered: function(name, opts) {
+            return OctoPrint.issueCommand(unrenderedTimelapseUrl(name), "render");
         },
 
         getConfig: function (opts) {
