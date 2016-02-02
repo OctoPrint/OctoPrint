@@ -73,20 +73,31 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection, octoprint.printer.
 
 		self._printer.register_callback(self)
 		self._fileManager.register_slicingprogress_callback(self)
-		octoprint.timelapse.registerCallback(self)
+		octoprint.timelapse.register_callback(self)
 		self._pluginManager.register_message_receiver(self.on_plugin_message)
 
 		self._eventManager.fire(Events.CLIENT_OPENED, {"remoteAddress": self._remoteAddress})
 		for event in octoprint.events.all_events():
 			self._eventManager.subscribe(event, self._onEvent)
 
-		octoprint.timelapse.notifyCallbacks(octoprint.timelapse.current)
+		octoprint.timelapse.notify_callbacks(octoprint.timelapse.current)
+
+		# This is a horrible hack for now to allow displaying a notification that a render job is still
+		# active in the backend on a fresh connect of a client. This needs to be substituted with a proper
+		# job management for timelapse rendering, analysis stuff etc that also gets cancelled when prints
+		# start and so on.
+		#
+		# For now this is the easiest way though to at least inform the user that a timelapse is still ongoing.
+		#
+		# TODO remove when central job management becomes available and takes care of this for us
+		if octoprint.timelapse.current_render_job is not None:
+			self._emit("event", {"type": Events.MOVIE_RENDERING, "payload": octoprint.timelapse.current_render_job})
 
 	def on_close(self):
 		self._logger.info("Client connection closed: %s" % self._remoteAddress)
 		self._printer.unregister_callback(self)
 		self._fileManager.unregister_slicingprogress_callback(self)
-		octoprint.timelapse.unregisterCallback(self)
+		octoprint.timelapse.unregister_callback(self)
 		self._pluginManager.unregister_message_receiver(self.on_plugin_message)
 
 		self._eventManager.fire(Events.CLIENT_CLOSED, {"remoteAddress": self._remoteAddress})
