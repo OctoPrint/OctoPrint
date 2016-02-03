@@ -558,17 +558,6 @@ $(function() {
             var dropZoneSdBackground = $("#drop_sd_background");
             var timeout = window.dropZoneTimeout;
 
-            var dataTransfer = undefined;
-            if (e.dataTransfer) {
-                dataTransfer = e.dataTransfer;
-            } else if (e.originalEvent && e.originalEvent.dataTransfer) {
-                dataTransfer = e.originalEvent.dataTransfer;
-            }
-
-            if (!dataTransfer || !dataTransfer.items || dataTransfer.items.length > 1 || dataTransfer.items[0].kind != "file") {
-                return;
-            }
-
             if (!timeout) {
                 dropOverlay.addClass('in');
             } else {
