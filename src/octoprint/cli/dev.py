@@ -204,11 +204,6 @@ class OctoPrintDevelCommands(click.MultiCommand):
 		return command
 
 	def plugin_uninstall(self):
-		from octoprint.util.pip import PipCaller
-		pip_command = PipCaller.autodetect_pip()
-		if pip_command is None:
-			return
-
 		@click.command("uninstall")
 		@click.argument("name")
 		def command(name):
@@ -220,7 +215,7 @@ class OctoPrintDevelCommands(click.MultiCommand):
 				click.echo("This doesn't look like an OctoPrint plugin name")
 				sys.exit(1)
 
-			call = [pip_command, "uninstall", "--yes", name]
+			call = [sys.executable, "-m", "pip", "uninstall", "--yes", name]
 			self.command_caller.call(call)
 
 		return command
