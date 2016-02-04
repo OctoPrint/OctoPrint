@@ -117,14 +117,16 @@ class ReprapGcodeProtocol(Protocol, MotorControlProtocolMixin,
 		self.sending_thread.daemon = True
 		self.sending_thread.start()
 
-	def connect(self, transport):
+	def connect(self, transport, transport_args=None, transport_kwargs=None):
 		if not isinstance(transport, Transport):
 			raise ValueError("transport must be a Transport subclass but is a {} instead".format(type(transport)))
 
 		self._internal_state["timeout"] = self._get_timeout("connection")
 
 		transport = PushingTransportWrapper(LineAwareTransportWrapper(transport), timeout=5.0)
-		super(ReprapGcodeProtocol, self).connect(transport)
+		super(ReprapGcodeProtocol, self).connect(transport,
+		                                         transport_args=transport_args,
+		                                         transport_kwargs=transport_kwargs)
 
 	def process(self, job, position=0):
 		if isinstance(job, LocalGcodeStreamjob):
@@ -149,11 +151,20 @@ class ReprapGcodeProtocol(Protocol, MotorControlProtocolMixin,
 	def home(self, x=False, y=False, z=False):
 		self._send_commands(self.flavor.command_home(x=x, y=y, z=z))
 
+	def change_tool(self, tool):
+		self._send_commands(self.flavor.command_set_tool(tool))
+
 	def set_feedrate_multiplier(self, multiplier):
 		self._send_commands(self.flavor.command_set_feedrate_multiplier(multiplier))
 
 	def set_extrusion_multiplier(self, multiplier):
-		self._send_commands(self.flavor.command.set_extrusion_multiplier(multiplier))
+		self._send_commands(self.flavor.command_set_extrusion_multiplier(multiplier))
+
+	def set_extruder_temperature(self, temperature, tool=None, wait=False):
+		self._send_commands(self.flavor.command_set_extruder_temp(temperature, tool, wait=wait))
+
+	def set_bed_temperature(self, temperature, wait=False):
+		self._send_commands(self.flavor.command_set_bed_temp(temperature, wait=wait))
 
 	##~~ MotorControlProtocolMixin
 
@@ -163,7 +174,7 @@ class ReprapGcodeProtocol(Protocol, MotorControlProtocolMixin,
 	##~~ FanControlProtocolMixin
 
 	def set_fan_speed(self, speed):
-		self._send_commands(self.flavor.command.set_fan_speed(speed))
+		self._send_commands(self.flavor.command.command_set_fan_speed(speed))
 
 	##~~ FileStreamingProtocolMixin
 

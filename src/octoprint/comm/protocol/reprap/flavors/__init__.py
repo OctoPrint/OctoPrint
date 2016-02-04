@@ -391,23 +391,23 @@ class ReprapGcodeFlavor(object):
 		return GcodeCommand("G28", x=0 if x else None, y=0 if y else None, z=0 if z else None)
 
 	@classmethod
-	def set_tool(cls, tool):
+	def command_set_tool(cls, tool):
 		return GcodeCommand("T{}".format(tool))
 
 	@classmethod
-	def set_feedrate_multiplier(cls, multiplier):
+	def command_set_feedrate_multiplier(cls, multiplier):
 		return GcodeCommand("M220", s=multiplier)
 
 	@classmethod
-	def set_extrusion_multiplier(cls, multiplier):
+	def command_set_extrusion_multiplier(cls, multiplier):
 		return GcodeCommand("M221", s=multiplier)
 
 	@classmethod
-	def set_fan_speed(cls, speed):
+	def command_set_fan_speed(cls, speed):
 		return GcodeCommand("M106", s=speed)
 
 	@classmethod
-	def set_motors(cls, enable):
+	def command_set_motors(cls, enable):
 		return GcodeCommand("M17") if enable else GcodeCommand("M18")
 
 	@classmethod

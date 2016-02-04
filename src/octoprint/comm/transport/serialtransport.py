@@ -69,14 +69,29 @@ class SerialTransport(Transport):
 		return [ConstantNameType("AUTO", "Autodetect")] \
 		       + [ConstantNameType(port.device, port.description) for port in ports]
 
-	def __init__(self):
+	@classmethod
+	def get_available_baudrates(cls):
+		return cls.suggested_baudrates
+
+	def __init__(self, *args, **kwargs):
 		super(SerialTransport, self).__init__()
-		self._serial = None
+
+		self.serial_factory = kwargs.get("serial_factory", None)
 
 		self._logger = logging.getLogger(__name__)
+		self._serial = None
 
 	def create_connection(self, port="AUTO", baudrate=0):
-		self._serial = serial.Serial(port=port, baudrate=baudrate)
+		factory = self.serial_factory
+		if self.serial_factory is None:
+			factory = serial.Serial
+
+		self._serial = factory(port=port, baudrate=baudrate)
+
+	def drop_connection(self):
+		if self._serial is not None:
+			self._serial.close()
+			self._serial = None
 
 	def close(self):
 		self._serial.close()

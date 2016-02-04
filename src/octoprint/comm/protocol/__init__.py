@@ -41,12 +41,17 @@ class Protocol(ListenerAware, TransportListener):
 
 		self.notify_listeners("on_protocol_state", self, old_state, new_state)
 
-	def connect(self, transport):
+	def connect(self, transport, transport_args=None, transport_kwargs=None):
+		if transport_args is None:
+			transport_args = []
+		if transport_kwargs is None:
+			transport_kwargs = dict()
+
 		self._transport = transport
 		self._transport.register_listener(self)
 
 		if self._transport.state == TransportState.DISCONNECTED:
-			self._transport.connect()
+			self._transport.connect(*transport_args, **transport_kwargs)
 		self.state = ProtocolState.CONNECTING
 
 	def disconnect(self):
@@ -69,10 +74,18 @@ class Protocol(ListenerAware, TransportListener):
 			return
 		self.state = ProtocolState.PRINTING
 
+	def cancel_processing(self):
+		if self._job is not None and self.state in (ProtocolState.PRINTING, ProtocolState.PAUSED):
+			self._job.cancel()
+		self.state = ProtocolState.CONNECTED
+
 	def move(self, x=None, y=None, z=None, e=None, feedrate=None, relative=False):
 		pass
 
 	def home(self, x=False, y=False, z=False):
+		pass
+
+	def change_tool(self, tool):
 		pass
 
 	def set_feedrate_multiplier(self, multiplier):
@@ -81,10 +94,19 @@ class Protocol(ListenerAware, TransportListener):
 	def set_extrusion_multiplier(self, multiplier):
 		pass
 
+	def set_extruder_temperature(self, temperature, tool=None, wait=False):
+		pass
+
+	def set_bed_temperature(self, temperature, wait=False):
+		pass
+
 	def can_send(self):
 		return True
 
 	def send_commands(self, command_type=None, *commands):
+		pass
+
+	def repair(self):
 		pass
 
 	def on_job_started(self, job):
@@ -167,6 +189,9 @@ class FileAwareProtocolMixin(object):
 	def init_file_storage(self):
 		pass
 
+	def eject_file_storage(self):
+		pass
+
 	def list_files(self):
 		pass
 
@@ -212,10 +237,13 @@ class ProtocolListener(object):
 
 class FileAwareProtocolListener(object):
 
-	def on_protocol_sd_file_list(self, protocol, files):
+	def on_protocol_file_storage_available(self, protocol, available):
 		pass
 
-	def on_protocol_sd_status(self, protocol, pos, total):
+	def on_protocol_file_list(self, protocol, files):
+		pass
+
+	def on_protocol_file_status(self, protocol, pos, total):
 		pass
 
 	def on_protocol_file_print_started(self, protocol, name, size):

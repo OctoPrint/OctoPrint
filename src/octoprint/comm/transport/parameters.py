@@ -57,30 +57,40 @@ class IntegerType(ParamType):
 		return value
 
 class ChoiceType(ParamType):
-	def __init__(self, name, title, choice_type, choices, default=None):
+	def __init__(self, name, title, choice_type, choices, default=None, choice_type_args=None, choice_type_kwargs=None):
 		self.choice_type = choice_type
+		self.choice_type_args = choice_type_args if choice_type_args is not None else []
+		self.choice_type_kwargs = choice_type_kwargs if choice_type_kwargs is not None else dict()
 		self.choices = choices
 		ParamType.__init__(self, name, title, default=default)
 
 	def convert(self, value):
-		value = self.choice_type.convert(value)
+		args = [self.name, self.title] + self.choice_type_args
+		kwargs = self.choice_type_kwargs
+		value = self.choice_type(*args, **kwargs).convert(value)
 		if not value in self.choices:
 			raise ValueError("value {} is not a valid choice")
 		return value
 
 class SuggestionType(ParamType):
-	def __init__(self, name, title, suggestion_type, suggestions, default=None):
+	def __init__(self, name, title, suggestion_type, suggestions, default=None, suggestion_type_args=None, suggestion_type_kwargs=None):
 		self.suggestion_type = suggestion_type
+		self.suggestion_type_args = suggestion_type_args if suggestion_type_args is not None else []
+		self.suggestion_type_kwargs = suggestion_type_kwargs if suggestion_type_kwargs is not None else dict()
 		self.suggestions = suggestions
 		ParamType.__init__(self, name, title, default=default)
 
 	def convert(self, value):
-		value = self.suggestion_type.convert(value)
+		args = [self.name, self.title] + self.suggestion_type_args
+		kwargs = self.suggestion_type_kwargs
+		value = self.suggestion_type(*args, **kwargs).convert(value)
 		return value
 
 class ListType(ParamType):
-	def __init__(self, name, title, item_type, default=None):
+	def __init__(self, name, title, item_type, default=None, item_type_args=None, item_type_kwargs=None):
 		self.item_type = item_type
+		self.item_type_args = item_type_args if item_type_args is not None else []
+		self.item_type_kwargs = item_type_kwargs if item_type_kwargs is not None else dict()
 		ParamType.__init__(self, name, title, default=default)
 
 	def convert(self, value):
@@ -91,7 +101,9 @@ class ListType(ParamType):
 		else:
 			raise ValueError("value {!r} must be either a comma-separated string or a list".format(value))
 
-		return map(self.item_type.convert, items)
+		args = [self.name, self.title] + self.item_type_args
+		kwargs = self.item_type_kwargs
+		return map(self.item_type(*args, **kwargs).convert, items)
 
 class ConstantType(ParamType):
 	def __init__(self, name, title, constant, default=None):

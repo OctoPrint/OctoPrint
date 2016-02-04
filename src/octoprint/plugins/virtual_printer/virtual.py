@@ -810,7 +810,7 @@ class VirtualPrinter(object):
 				self._logger.info("Incoming queue is full, raising SerialTimeoutException")
 				raise SerialTimeoutException()
 
-	def readline(self):
+	def read(self, size=None):
 		if self._debug_drop_connection:
 			raise SerialTimeoutException()
 
@@ -821,6 +821,9 @@ class VirtualPrinter(object):
 			return line
 		except Queue.Empty:
 			return ""
+
+	def readline(self):
+		return self.read()
 
 	def close(self):
 		self.incoming = None

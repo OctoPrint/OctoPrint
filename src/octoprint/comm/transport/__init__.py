@@ -32,17 +32,26 @@ class Transport(ListenerAware):
 	def state(self):
 		return self._state
 
+	@state.setter
+	def state(self, value):
+		self._state = value
+
 	def connect(self, **params):
 		if self.state == TransportState.CONNECTED:
 			raise AlreadyConnectedError("Already connected, disconnect first")
 		options = self.get_connection_options()
 		param_dict = get_param_dict(params, options)
 		self.create_connection(**param_dict)
+		self.state = TransportState.CONNECTED
 
 	def disconnect(self):
-		pass
+		self.drop_connection()
+		self.state = TransportState.DISCONNECTED
 
 	def create_connection(self, *args, **kwargs):
+		pass
+
+	def drop_connection(self):
 		pass
 
 	def read(self, size=None, timeout=None):

@@ -14,16 +14,29 @@ from abc import ABCMeta, abstractmethod, abstractproperty
 class Printjob(ListenerAware):
 	__metaclass__ = ABCMeta
 
-	def __init__(self):
+	def __init__(self, name=None):
 		super(Printjob, self).__init__()
 		self._logger = logging.getLogger(__name__)
 		self._start = None
 		self._protocol = None
 		self._printer_profile = None
+		self._name = name
 
 	@property
 	def elapsed(self):
 		return time.time() - self._start if self._start is not None else None
+
+	@property
+	def name(self):
+		return self._name
+
+	@property
+	def size(self):
+		return None
+
+	@property
+	def pos(self):
+		return None
 
 	def can_process(self, protocol):
 		return False
@@ -76,14 +89,22 @@ class Printjob(ListenerAware):
 
 class LocalFilePrintjob(Printjob):
 
-	def __init__(self, path, encoding="utf-8"):
-		Printjob.__init__(self)
+	def __init__(self, path, encoding="utf-8", name=None):
+		Printjob.__init__(self, name=name)
 
 		self._path = path
 		self._encoding = encoding
 		self._size = os.stat(path).st_size
 
 		self._handle = None
+
+	@property
+	def size(self):
+		return self._size
+
+	@property
+	def pos(self):
+		return self._handle.tell() if self._handle is not None else 0
 
 	def process(self, protocol, position=0):
 		Printjob.process(self, protocol, position=position)
@@ -181,7 +202,7 @@ class LocalGcodeStreamjob(LocalGcodeFilePrintjob):
 class SDFilePrintjob(Printjob, FileAwareProtocolListener):
 
 	def __init__(self, filename, status_interval=2.0):
-		Printjob.__init__(self)
+		Printjob.__init__(self, name=filename)
 		self._filename = filename
 		self._status_interval = status_interval
 
@@ -190,6 +211,14 @@ class SDFilePrintjob(Printjob, FileAwareProtocolListener):
 
 		self._size = None
 		self._last_pos = None
+
+	@property
+	def size(self):
+		return self._size
+
+	@property
+	def pos(self):
+		return self._last_pos
 
 	def can_process(self, protocol):
 		from octoprint.comm.protocol import FileAwareProtocolMixin
@@ -212,7 +241,7 @@ class SDFilePrintjob(Printjob, FileAwareProtocolListener):
 			return None
 		return float(self._last_pos) / float(self._size)
 
-	def on_protocol_sd_status(self, protocol, pos, total):
+	def on_protocol_file_status(self, protocol, pos, total):
 		self._last_pos = pos
 		self._size = total
 		self.process_job_progress()
