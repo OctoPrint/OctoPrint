@@ -40,6 +40,10 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection, octoprint.printer.
 
 		self._remoteAddress = None
 
+		self._throttleFactor = 1
+		self._lastCurrent = 0
+		self._baseRateLimit = 0.5
+
 	def _getRemoteAddress(self, info):
 		forwardedFor = info.headers.get("X-Forwarded-For")
 		if forwardedFor is not None:
@@ -73,20 +77,31 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection, octoprint.printer.
 
 		self._printer.register_callback(self)
 		self._fileManager.register_slicingprogress_callback(self)
-		octoprint.timelapse.registerCallback(self)
+		octoprint.timelapse.register_callback(self)
 		self._pluginManager.register_message_receiver(self.on_plugin_message)
 
 		self._eventManager.fire(Events.CLIENT_OPENED, {"remoteAddress": self._remoteAddress})
 		for event in octoprint.events.all_events():
 			self._eventManager.subscribe(event, self._onEvent)
 
-		octoprint.timelapse.notifyCallbacks(octoprint.timelapse.current)
+		octoprint.timelapse.notify_callbacks(octoprint.timelapse.current)
+
+		# This is a horrible hack for now to allow displaying a notification that a render job is still
+		# active in the backend on a fresh connect of a client. This needs to be substituted with a proper
+		# job management for timelapse rendering, analysis stuff etc that also gets cancelled when prints
+		# start and so on.
+		#
+		# For now this is the easiest way though to at least inform the user that a timelapse is still ongoing.
+		#
+		# TODO remove when central job management becomes available and takes care of this for us
+		if octoprint.timelapse.current_render_job is not None:
+			self._emit("event", {"type": Events.MOVIE_RENDERING, "payload": octoprint.timelapse.current_render_job})
 
 	def on_close(self):
 		self._logger.info("Client connection closed: %s" % self._remoteAddress)
 		self._printer.unregister_callback(self)
 		self._fileManager.unregister_slicingprogress_callback(self)
-		octoprint.timelapse.unregisterCallback(self)
+		octoprint.timelapse.unregister_callback(self)
 		self._pluginManager.unregister_message_receiver(self.on_plugin_message)
 
 		self._eventManager.fire(Events.CLIENT_CLOSED, {"remoteAddress": self._remoteAddress})
@@ -94,9 +109,31 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection, octoprint.printer.
 			self._eventManager.unsubscribe(event, self._onEvent)
 
 	def on_message(self, message):
-		pass
+		try:
+			import json
+			message = json.loads(message)
+		except:
+			self._logger.warn("Invalid JSON received from client {}, ignoring: {!r}".format(self._remoteAddress, message))
+			return
+
+		if "throttle" in message:
+			try:
+				throttle = int(message["throttle"])
+				if throttle < 1:
+					raise ValueError()
+			except ValueError:
+				self._logger.warn("Got invalid throttle factor from client {}, ignoring: {!r}".format(self._remoteAddress, message["throttle"]))
+			else:
+				self._throttleFactor = throttle
+				self._logger.debug("Set throttle factor for client {} to {}".format(self._remoteAddress, self._throttleFactor))
 
 	def on_printer_send_current_data(self, data):
+		# make sure we rate limit the updates according to our throttle factor
+		now = time.time()
+		if now < self._lastCurrent + self._baseRateLimit * self._throttleFactor:
+			return
+		self._lastCurrent = now
+
 		# add current temperature, log and message backlogs to sent data
 		with self._temperatureBacklogMutex:
 			temperatures = self._temperatureBacklog

@@ -545,7 +545,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 	def refresh_sd_files(self, blocking=False):
 		"""
-		Refreshs the list of file stored on the SD card attached to printer (if available and printer communication
+		Refreshes the list of file stored on the SD card attached to printer (if available and printer communication
 		available). Optional blocking parameter allows making the method block (max 10s) until the file list has been
 		received (and can be accessed via self._comm.getSdFiles()). Defaults to an asynchronous operation.
 		"""

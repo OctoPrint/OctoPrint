@@ -37,10 +37,10 @@ $(function() {
 
         self.keycontrolActive = ko.observable(false);
         self.keycontrolHelpActive = ko.observable(false);
-        self.keycontrolPossible = ko.computed(function () {
+        self.keycontrolPossible = ko.pureComputed(function () {
             return self.isOperational() && !self.isPrinting() && self.loginState.isUser() && !$.browser.mobile;
         });
-        self.showKeycontrols = ko.computed(function () {
+        self.showKeycontrols = ko.pureComputed(function () {
             return self.keycontrolActive() && self.keycontrolPossible();
         });
 

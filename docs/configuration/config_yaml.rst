@@ -666,7 +666,7 @@ Use the following settings to configure the server:
      # that AJAX requests and download URLs work.
      reverseProxy:
 
-       # The request header from which to determine the url prefix under which OctoPrint
+       # The request header from which to determine the URL prefix under which OctoPrint
        # is served by the reverse proxy
        prefixHeader: X-Script-Name
 
@@ -678,7 +678,7 @@ Use the following settings to configure the server:
        # is served by the reverse proxy
        hostHeader: X-Forwarded-Host
 
-       # Use this option to define an optional url prefix (with a leading /, so absolute to your
+       # Use this option to define an optional URL prefix (with a leading /, so absolute to your
        # server's root) under which to run OctoPrint. This should only be needed if you want to run
        # OctoPrint behind a reverse proxy under a different root endpoint than `/` and can't configure
        # said reverse proxy to send a prefix HTTP header (X-Script-Name by default, see above) with

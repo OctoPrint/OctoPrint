@@ -6,6 +6,37 @@ function DataUpdater(allViewModels) {
     self._pluginHash = undefined;
     self._configHash = undefined;
 
+    self._throttleFactor = 1;
+    self._baseProcessingLimit = 500.0;
+    self._lastProcessingTimes = [];
+    self._lastProcessingTimesSize = 20;
+
+    self._timelapse_popup = undefined;
+
+    self.increaseThrottle = function() {
+        self.setThrottle(self._throttleFactor + 1);
+    };
+
+    self.decreaseThrottle = function() {
+        if (self._throttleFactor <= 1) {
+            return;
+        }
+        self.setThrottle(self._throttleFactor - 1);
+    };
+
+    self.setThrottle = function(throttle) {
+        self._throttleFactor = throttle;
+
+        self._send("throttle", self._throttleFactor);
+        log.debug("DataUpdater: New SockJS throttle factor:", self._throttleFactor, " new processing limit:", self._baseProcessingLimit * self._throttleFactor);
+    };
+
+    self._send = function(message, data) {
+        var payload = {};
+        payload[message] = data;
+        self._socket.send(JSON.stringify(payload));
+    };
+
     self.connect = function() {
         OctoPrint.socket.connect({debug: !!SOCKJS_DEBUG});
     };
@@ -25,7 +56,7 @@ function DataUpdater(allViewModels) {
             self.allViewModels,
             "onServerDisconnect",
             function() { return !handled; },
-            function(method) { handled = !method() || handled; }
+            function(method) { var result = method(); handled = (result !== undefined && !result) || handled; }
         );
 
         if (handled) {
@@ -45,7 +76,7 @@ function DataUpdater(allViewModels) {
             self.allViewModels,
             "onServerDisconnect",
             function() { return !handled; },
-            function(method) { handled = !method() || handled; }
+            function(method) { var result = method(); handled = (result !== undefined && !result) || handled; }
         );
 
         if (handled) {
@@ -78,11 +109,14 @@ function DataUpdater(allViewModels) {
         // hide it, plus reload the camera feed if it's currently displayed
         if ($("#offline_overlay").is(":visible")) {
             hideOfflineOverlay();
+            callViewModels(self.allViewModels, "onServerReconnect");
             callViewModels(self.allViewModels, "onDataUpdaterReconnect");
 
             if ($('#tabs li[class="active"] a').attr("href") == "#control") {
                 $("#webcam_image").attr("src", CONFIG_WEBCAM_STREAM + "?" + new Date().getTime());
             }
+        } else {
+            callViewModels(self.allViewModels, "onServerConnect");
         }
 
         // if the version, the plugin hash or the config hash changed, we
@@ -131,17 +165,54 @@ function DataUpdater(allViewModels) {
                 self._configHash = payload.config_hash;
             }
         } else if (type == "MovieRendering") {
-            new PNotify({title: gettext("Rendering timelapse"), text: _.sprintf(gettext("Now rendering timelapse %(movie_basename)s"), payload)});
+            if (self._timelapse_popup !== undefined) {
+                self._timelapse_popup.remove();
+            }
+            self._timelapse_popup = new PNotify({
+                title: gettext("Rendering timelapse"),
+                text: _.sprintf(gettext("Now rendering timelapse %(movie_basename)s. Due to performance reasons it is not recommended to start a print job while a movie is still rendering."), payload),
+                hide: false,
+                callbacks: {
+                    before_close: function() {
+                        self._timelapse_popup = undefined;
+                    }
+                }
+            });
         } else if (type == "MovieDone") {
-            new PNotify({title: gettext("Timelapse ready"), text: _.sprintf(gettext("New timelapse %(movie_basename)s is done rendering."), payload)});
+            if (self._timelapse_popup !== undefined) {
+                self._timelapse_popup.remove();
+            }
+            self._timelapse_popup = new PNotify({
+                title: gettext("Timelapse ready"),
+                text: _.sprintf(gettext("New timelapse %(movie_basename)s is done rendering."), payload),
+                type: "success",
+                callbacks: {
+                    before_close: function(notice) {
+                        if (self._timelapse_popup == notice) {
+                            self._timelapse_popup = undefined;
+                        }
+                    }
+                }
+            });
         } else if (type == "MovieFailed") {
             html = "<p>" + _.sprintf(gettext("Rendering of timelapse %(movie_basename)s failed with return code %(returncode)s"), payload) + "</p>";
             html += pnotifyAdditionalInfo('<pre style="overflow: auto">' + payload.error + '</pre>');
-            new PNotify({
+
+            if (self._timelapse_popup !== undefined) {
+                self._timelapse_popup.remove();
+            }
+            self._timelapse_popup = new PNotify({
                 title: gettext("Rendering failed"),
                 text: html,
                 type: "error",
-                hide: false
+                hide: false,
+                callbacks: {
+                    before_close: function(notice) {
+                        if (self._timelapse_popup == notice) {
+                            self._timelapse_popup = undefined;
+                        }
+                    }
+                }
             });
         } else if (type == "PostRollStart") {
             var title = gettext("Capturing timelapse postroll");
@@ -150,17 +221,33 @@ function DataUpdater(allViewModels) {
             if (!payload.postroll_duration) {
                 text = _.sprintf(gettext("Now capturing timelapse post roll, this will take only a moment..."), format);
             } else {
+                format = {
+                    time: moment().add(payload.postroll_duration, "s").format("LT")
+                };
+
                 if (payload.postroll_duration > 60) {
-                    format = {duration: _.sprintf(gettext("%(minutes)d min"), {minutes: payload.postroll_duration / 60})};
+                    format.duration = _.sprintf(gettext("%(minutes)d min"), {minutes: payload.postroll_duration / 60});
+                    text = _.sprintf(gettext("Now capturing timelapse post roll, this will take approximately %(duration)s (so until %(time)s)..."), format);
                 } else {
-                    format = {duration: _.sprintf(gettext("%(seconds)d sec"), {seconds: payload.postroll_duration})};
+                    format.duration = _.sprintf(gettext("%(seconds)d sec"), {seconds: payload.postroll_duration});
+                    text = _.sprintf(gettext("Now capturing timelapse post roll, this will take approximately %(duration)s..."), format);
                 }
-                text = _.sprintf(gettext("Now capturing timelapse post roll, this will take approximately %(duration)s..."), format);
             }
 
-            new PNotify({
+            if (self._timelapse_popup !== undefined) {
+                self._timelapse_popup.remove();
+            }
+            self._timelapse_popup = new PNotify({
                 title: title,
-                text: text
+                text: text,
+                hide: false,
+                callbacks: {
+                    before_close: function(notice) {
+                        if (self._timelapse_popup == notice) {
+                            self._timelapse_popup = undefined;
+                        }
+                    }
+                }
             });
         } else if (type == "SlicingStarted") {
             gcodeUploadProgress.addClass("progress-striped").addClass("active");
@@ -199,6 +286,22 @@ function DataUpdater(allViewModels) {
                 text: _.sprintf(gettext("Streamed %(local)s to %(remote)s on SD, took %(time).2f seconds"), payload),
                 type: "success"
             });
+        } else if (type == "PrintCancelled") {
+            if (payload.firmwareError) {
+                new PNotify({
+                    title: gettext("Unhandled firmware error"),
+                    text: _.sprintf(gettext("The firmware reported an unhandled error. Due to that the ongoing print job was cancelled. Error: %(firmwareError)s"), payload),
+                    type: "error",
+                    hide: false
+                });
+            }
+        } else if (type == "Error") {
+            new PNotify({
+                    title: gettext("Unhandled firmware error"),
+                    text: _.sprintf(gettext("The firmware reported an unhandled error. Due to that OctoPrint disconnected. Error: %(error)s"), payload),
+                    type: "error",
+                    hide: false
+            });
         }
 
         var legacyEventHandlers = {
@@ -229,8 +332,20 @@ function DataUpdater(allViewModels) {
         callViewModels(self.allViewModels, "onDataUpdaterPluginMessage", [event.data.plugin, event.data.data]);
     };
 
+    self._onIncreaseRate = function(measurement, minimum) {
+        log.debug("We are fast (" + measurement + " < " + minimum + "), increasing refresh rate");
+        OctoPrint.socket.increaseRate();
+    };
+
+    self._onDecreaseRate = function(measurement, maximum) {
+        log.debug("We are slow (" + measurement + " > " + maximum + "), reducing refresh rate");
+        OctoPrint.socket.decreaseRate();
+    };
+
     OctoPrint.socket.onReconnectAttempt = self._onReconnectAttempt;
     OctoPrint.socket.onReconnectFailed = self._onReconnectFailed;
+    OctoPrint.socket.onRateTooHigh = self._onDecreaseRate;
+    OctoPrint.socket.onRateTooLow = self._onIncreaseRate;
     OctoPrint.socket
         .onMessage("connected", self._onConnected)
         .onMessage("history", self._onHistoryData)

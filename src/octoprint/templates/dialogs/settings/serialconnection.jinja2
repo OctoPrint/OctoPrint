@@ -92,6 +92,20 @@
             <span class="help-inline">{{ _('Use this to define additional serial port baud rates to list for connecting with, e.g. <code>123456</code>. Comma separated.')|format(glob_url="http://docs.python.org/2/library/glob.html") }}</span>
         </div>
     </div>
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
+                <input type="checkbox" data-bind="checked: serial_disconnectOnErrors" id="settings-disconnectOnErrors"> {{ _('Not only cancel ongoing prints but also disconnect on unhandled errors from the firmware.') }}</span>
+            </label>
+        </div>
+    </div>
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
+                <input type="checkbox" data-bind="checked: serial_ignoreErrorsFromFirmware" id="settings-ignoreErrorsFromFirmware"> {{ _('Ignore any unhandled errors from the firmware. Only use this if your firmware sends stuff prefixed with "Error" that is not an actual error. Might mask printer issues, be careful!') }} <span class="label label-important">{{ _('Warning') }}</span>
+            </label>
+        </div>
+    </div>
 
     <div>
         <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'icon-caret-right icon-caret-down', container: '#settings_serialConnection .hide' }"><i class="icon-caret-right"></i> {{ _('Advanced options') }}</a></small></div>

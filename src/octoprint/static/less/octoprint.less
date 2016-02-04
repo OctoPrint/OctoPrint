@@ -282,7 +282,8 @@ table {
     }
 
     // timelapse files
-    &.timelapse_files_name {
+    &.timelapse_files_name,
+    &.timelapse_unrendered_name {
       text-overflow: ellipsis;
       text-align: left;
     }
@@ -292,7 +293,18 @@ table {
       width: 55px;
     }
 
-    &.timelapse_files_action {
+    &.timelapse_unrendered_size {
+      text-align: right;
+      width: 55px;
+    }
+
+    &.timelapse_unrendered_count {
+      text-align: right;
+      width: 45px;
+    }
+
+    &.timelapse_files_action,
+    &.timelapse_unrendered_action {
       width: 45px;
       .actioncol;
     }
@@ -657,7 +669,7 @@ ul.dropdown-menu li a {
 
 #term {
   .terminal {
-    #terminal-output {
+    #terminal-output, #terminal-output-lowfi {
       min-height: 340px;
       margin-bottom: 5px;
     }

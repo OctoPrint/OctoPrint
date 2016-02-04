@@ -14,6 +14,16 @@ $(function() {
         self.isLoading = ko.observable(undefined);
         self.isSdReady = ko.observable(undefined);
 
+        self.enablePrint = ko.pureComputed(function() {
+            return self.isOperational() && self.isReady() && !self.isPrinting() && self.loginState.isUser() && self.filename() != undefined;
+        });
+        self.enablePause = ko.pureComputed(function() {
+            return self.isOperational() && (self.isPrinting() || self.isPaused()) && self.loginState.isUser();
+        });
+        self.enableCancel = ko.pureComputed(function() {
+            return self.isOperational() && (self.isPrinting() || self.isPaused()) && self.loginState.isUser();
+        });
+
         self.filename = ko.observable(undefined);
         self.progress = ko.observable(undefined);
         self.filesize = ko.observable(undefined);
@@ -39,30 +49,30 @@ $(function() {
         self.titlePrintButton = ko.observable(self.TITLE_PRINT_BUTTON_UNPAUSED);
         self.titlePauseButton = ko.observable(self.TITLE_PAUSE_BUTTON_UNPAUSED);
 
-        self.estimatedPrintTimeString = ko.computed(function() {
+        self.estimatedPrintTimeString = ko.pureComputed(function() {
             if (self.lastPrintTime())
                 return formatDuration(self.lastPrintTime());
             if (self.estimatedPrintTime())
                 return formatDuration(self.estimatedPrintTime());
             return "-";
         });
-        self.byteString = ko.computed(function() {
+        self.byteString = ko.pureComputed(function() {
             if (!self.filesize())
                 return "-";
             var filepos = self.filepos() ? formatSize(self.filepos()) : "-";
             return filepos + " / " + formatSize(self.filesize());
         });
-        self.heightString = ko.computed(function() {
+        self.heightString = ko.pureComputed(function() {
             if (!self.currentHeight())
                 return "-";
             return _.sprintf("%.02fmm", self.currentHeight());
         });
-        self.printTimeString = ko.computed(function() {
+        self.printTimeString = ko.pureComputed(function() {
             if (!self.printTime())
                 return "-";
             return formatDuration(self.printTime());
         });
-        self.printTimeLeftString = ko.computed(function() {
+        self.printTimeLeftString = ko.pureComputed(function() {
             if (self.printTimeLeft() == undefined) {
                 if (!self.printTime() || !(self.isPrinting() || self.isPaused())) {
                     return "-";
@@ -73,19 +83,19 @@ $(function() {
                 return formatFuzzyEstimation(self.printTimeLeft());
             }
         });
-        self.progressString = ko.computed(function() {
+        self.progressString = ko.pureComputed(function() {
             if (!self.progress())
                 return 0;
             return self.progress();
         });
-        self.pauseString = ko.computed(function() {
+        self.pauseString = ko.pureComputed(function() {
             if (self.isPaused())
                 return gettext("Continue");
             else
                 return gettext("Pause");
         });
 
-        self.timelapseString = ko.computed(function() {
+        self.timelapseString = ko.pureComputed(function() {
             var timelapse = self.timelapse();
 
             if (!timelapse || !timelapse.hasOwnProperty("type"))

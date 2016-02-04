@@ -33,7 +33,7 @@ $(function() {
             }
         });
 
-        self.passwordMismatch = ko.computed(function() {
+        self.passwordMismatch = ko.pureComputed(function() {
             return self.access_password() != self.access_repeatedPassword();
         });
 

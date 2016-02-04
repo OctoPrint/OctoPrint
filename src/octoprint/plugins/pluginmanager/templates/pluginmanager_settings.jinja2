@@ -221,28 +221,7 @@
     </div>
     <div class="modal-body">
         <form class="form-horizontal">
-            <legend>{{ _('pip configuration') }}</legend>
-
-            <div class="control-group" title="{{ _('pip command to use for managing plugins. You might have to configure this if auto detection fails.') }}">
-                <label class="control-label">{{ _('Command') }}</label>
-                <div class="controls">
-                    <input type="text" class="input-block-level" data-bind="value: config_pipCommand" placeholder="{{ _('Autodetect') }}">
-                    <span class="help-inline">{{ _('<strong>Only</strong> set this if OctoPrint cannot autodetect the path to <code>pip</code> to use for managing plugins.') }}</span>
-                </div>
-            </div>
-            <div class="control-group" title="{{ _('Additional arguments for pip command. You should normally not have to change this.') }}">
-                <label class="control-label">{{ _('Additional arguments') }}</label>
-                <div class="controls">
-                    <input type="text" class="input-block-level" data-bind="value: config_pipAdditionalArgs">
-                </div>
-            </div>
-            <div class="control-group">
-                <div class="controls">
-                    <label class="checkbox">
-                        <input type="checkbox" data-bind="checked: config_pipForceUser"> {{ _('Force the user of the <code>--user</code> flag with <code>pip install</code>') }}
-                    </label>
-                </div>
-            </div>
+            <p>{% trans %}You should normally <strong>not</strong> have to change <strong>any</strong> of the following settings, they are purely provided for convenience here.{% endtrans %}</p>
 
             <legend>{{ _('Plugin repository configuration') }}</legend>
 
@@ -259,6 +238,22 @@
                         <input type="number" class="input-mini" data-bind="value: config_repositoryTtl">
                         <span class="add-on">min</span>
                     </div>
+                </div>
+            </div>
+
+            <legend>{{ _('pip configuration') }}</legend>
+
+            <div class="control-group" title="{{ _('Additional arguments for the pip command. You should normally not have to change this.') }}">
+                <label class="control-label">{{ _('Additional arguments') }}</label>
+                <div class="controls">
+                    <input type="text" class="input-block-level" data-bind="value: config_pipAdditionalArgs">
+                </div>
+            </div>
+            <div class="control-group">
+                <div class="controls">
+                    <label class="checkbox">
+                        <input type="checkbox" data-bind="checked: config_pipForceUser"> {{ _('Force the use of the <code>--user</code> flag with <code>pip install</code>') }}
+                    </label>
                 </div>
             </div>
         </form>

@@ -145,7 +145,10 @@ class PipCaller(CommandlineCaller):
 				arg_list.append("--user")
 
 		# add args to command
-		command = [self._command] + list(arg_list)
+		if isinstance(self._command, list):
+			command = self._command + list(arg_list)
+		else:
+			command = [self._command] + list(arg_list)
 
 		# add sudo if necessary
 		if self._use_sudo or self.force_sudo:
@@ -158,19 +161,23 @@ class PipCaller(CommandlineCaller):
 		if pip_command is None:
 			return
 
+		pip_command_str = pip_command
+		if isinstance(pip_command_str, list):
+			pip_command_str = " ".join(pip_command_str)
+
 		# Determine the pip version
 
-		self._logger.debug("Found pip at {}, going to figure out its version".format(pip_command))
+		self._logger.debug("Found pip at {}, going to figure out its version".format(pip_command_str))
 
 		pip_version, version_segment = self._get_pip_version(pip_command)
 		if pip_version is None:
 			return
 
 		if pip_version in self.__class__.broken:
-			self._logger.error("This version of pip is known to have errors that make it incompatible with how it needs to be used by OctoPrint. Please upgrade your pip version.")
+			self._logger.error("This version of pip is known to have bugs that make it incompatible with how it needs to be used by OctoPrint. Please upgrade your pip version.")
 			return
 
-		self._logger.info("Version of pip at {} is {}".format(pip_command, version_segment))
+		self._logger.info("Version of pip \"{}\" is {}".format(pip_command_str, version_segment))
 
 		# Now figure out if pip belongs to a virtual environment and if the
 		# default installation directory is writable.
@@ -188,10 +195,13 @@ class PipCaller(CommandlineCaller):
 
 		ok, pip_user, pip_virtual_env, pip_install_dir = self._check_pip_setup(pip_command)
 		if not ok:
-			self._logger.error("Cannot use pip at {}".format(pip_command))
+			self._logger.error("Cannot use pip \"{}\"".format(pip_command_str))
 			return
 
-		self._logger.info("pip at {} installs to {}, --user flag needed => {}, virtual env => {}".format(pip_command, pip_install_dir, "yes" if pip_user else "no", "yes" if pip_virtual_env else "no"))
+		self._logger.info("pip \"{}\" installs to {}, --user flag needed => {}, virtual env => {}".format(pip_command_str,
+		                                                                                                  pip_install_dir,
+		                                                                                                  "yes" if pip_user else "no",
+		                                                                                                  "yes" if pip_virtual_env else "no"))
 
 		self._command = pip_command
 		self._version = pip_version
@@ -217,41 +227,31 @@ class PipCaller(CommandlineCaller):
 
 	@classmethod
 	def autodetect_pip(cls):
-		import os
-		python_command = sys.executable
-		binary_dir = os.path.dirname(python_command)
+		return [sys.executable, "-m", "pip"]
 
-		pip_command = os.path.join(binary_dir, "pip")
-		if sys.platform == "win32":
-			# Windows is a bit special... first of all the file will be called pip.exe, not just pip, and secondly
-			# for a non-virtualenv install (e.g. global install) the pip binary will not be located in the
-			# same folder as python.exe, but in a subfolder Scripts, e.g.
-			#
-			# C:\Python2.7\
-			#  |- python.exe
-			#  `- Scripts
-			#      `- pip.exe
-
-			# virtual env?
-			pip_command = os.path.join(binary_dir, "pip.exe")
-
-			if not os.path.isfile(pip_command):
-				# nope, let's try the Scripts folder then
-				scripts_dir = os.path.join(binary_dir, "Scripts")
-				if os.path.isdir(scripts_dir):
-					pip_command = os.path.join(scripts_dir, "pip.exe")
-
-		if not os.path.isfile(pip_command) or not os.access(pip_command, os.X_OK):
-			pip_command = None
-
-		return pip_command
+	@classmethod
+	def to_sarge_command(cls, pip_command, *args):
+		if isinstance(pip_command, list):
+			sarge_command = pip_command
+		else:
+			sarge_command = [pip_command]
+		return sarge_command + list(args)
 
 	def _get_pip_version(self, pip_command):
-		if not self.ignore_cache and pip_command in _cache["version"]:
-			self._logger.debug("Using cached pip version information for {}".format(pip_command))
-			return _cache["version"][pip_command]
+		# Debugging this with PyCharm/IntelliJ with Python plugin and no output is being
+		# generated? PyCharm bug. Disable "Attach to subprocess automatically when debugging"
+		# in IDE Settings or patch pydevd.py
+		# -> https://youtrack.jetbrains.com/issue/PY-18365#comment=27-1290453
 
-		sarge_command = [pip_command, "--version"]
+		pip_command_str = pip_command
+		if isinstance(pip_command_str, list):
+			pip_command_str = " ".join(pip_command_str)
+
+		if not self.ignore_cache and pip_command_str in _cache["version"]:
+			self._logger.debug("Using cached pip version information for {}".format(pip_command_str))
+			return _cache["version"][pip_command_str]
+
+		sarge_command = self.to_sarge_command(pip_command, "--version")
 		p = sarge.run(sarge_command, stdout=sarge.Capture(), stderr=sarge.Capture())
 
 		if p.returncode != 0:
@@ -281,57 +281,93 @@ class PipCaller(CommandlineCaller):
 			return None, None
 
 		result = pip_version, version_segment
-		_cache["version"][pip_command] = result
+		_cache["version"][pip_command_str] = result
 		return result
 
-	pip_install_dir_regex = re.compile("^\s*!!! PIP_INSTALL_DIR=(.*)\s*$", re.MULTILINE)
-	pip_virtual_env_regex = re.compile("^\s*!!! PIP_VIRTUAL_ENV=(True|False)\s*$", re.MULTILINE)
-	pip_writable_regex = re.compile("^\s*!!! PIP_WRITABLE=(True|False)\s*$", re.MULTILINE)
-
 	def _check_pip_setup(self, pip_command):
-		if not self.ignore_cache and pip_command in _cache["setup"]:
-			self._logger.debug("Using cached pip setup information for {}".format(pip_command))
-			return _cache["setup"][pip_command]
+		pip_command_str = pip_command
+		if isinstance(pip_command_str, list):
+			pip_command_str = " ".join(pip_command_str)
+
+		if not self.ignore_cache and pip_command_str in _cache["setup"]:
+			self._logger.debug("Using cached pip setup information for {}".format(pip_command_str))
+			return _cache["setup"][pip_command_str]
+
+		# This is horribly ugly and I'm sorry...
+		#
+		# While we can figure out the install directory, if that's writable and if a virtual environment
+		# is active for pip that belongs to our sys.executable python instance by just checking some
+		# variables, we can't for stuff like third party software we allow to update via the software
+		# update plugin.
+		#
+		# What we do instead for these situations is try to install (and of course uninstall) the
+		# testballoon dummy package, which collects that information for us. For pip <= 7 we could
+		# have the testballoon provide us with the info needed through stdout, if pip was called
+		# with --verbose anything printed to stdout within setup.py would be output. Pip 8 managed
+		# to break this mechanism. Any (!) output within setup.py appears to be suppressed now, and
+		# no combination of --log and multiple --verbose or -v arguments could get it to bring the
+		# output back.
+		#
+		# So here's what we do now instead. Our sarge call sets an environment variable
+		# "TESTBALLOON_OUTPUT" that points to a temporary file. If the testballoon sees that
+		# variable set, it opens the file and writes to it the output it so far printed on stdout.
+		# We then open the file and read in the data that way.
+		#
+		# Yeah, I'm not happy with that either. But as long as there's no way to otherwise figure
+		# out for a generic pip command whether OctoPrint can even install anything with that
+		# and if so how, well, that's how we'll have to do things.
 
 		import os
 		testballoon = os.path.join(os.path.realpath(os.path.dirname(__file__)), "piptestballoon")
 
-		sarge_command = [pip_command, "install", ".", "--verbose"]
-		try:
-			p = sarge.run(sarge_command,
-			              stdout=sarge.Capture(),
-			              stderr=sarge.Capture(),
-			              cwd=testballoon)
+		from octoprint.util import temppath
+		with temppath() as testballoon_output_file:
+			sarge_command = self.to_sarge_command(pip_command, "install", ".")
+			try:
+				# our testballoon is no real package, so this command will fail - that's ok though,
+				# we only need the output produced within the pip environment
+				sarge.run(sarge_command,
+				          stdout=sarge.Capture(),
+				          stderr=sarge.Capture(),
+				          cwd=testballoon,
+				          env=dict(TESTBALLOON_OUTPUT=testballoon_output_file))
+			except:
+				self._logger.exception("Error while trying to install testballoon to figure out pip setup")
+				return False, False, False, None
 
-			output = p.stdout.text
-		except:
-			self._logger.exception("Error while trying to install testballoon to figure out pip setup")
-			return False, False, False, None
-		finally:
-			sarge_command = [pip_command, "uninstall", "-y", "OctoPrint-PipTestBalloon"]
-			sarge.run(sarge_command, stdout=sarge.Capture(), stderr=sarge.Capture())
+			data = dict()
+			with open(testballoon_output_file) as f:
+				for line in f:
+					key, value = line.split("=", 2)
+					data[key] = value
 
-		install_dir_match = self.__class__.pip_install_dir_regex.search(output)
-		virtual_env_match = self.__class__.pip_virtual_env_regex.search(output)
-		writable_match = self.__class__.pip_writable_regex.search(output)
+		install_dir_str = data.get("PIP_INSTALL_DIR", None)
+		virtual_env_str = data.get("PIP_VIRTUAL_ENV", None)
+		writable_str = data.get("PIP_WRITABLE", None)
 
-		if install_dir_match and virtual_env_match and writable_match:
-			install_dir = install_dir_match.group(1)
-			virtual_env = virtual_env_match.group(1) == "True"
-			writable = writable_match.group(1) == "True"
+		if install_dir_str is not None and virtual_env_str is not None and writable_str is not None:
+			install_dir = install_dir_str.strip()
+			virtual_env = virtual_env_str.strip() == "True"
+			writable = writable_str.strip() == "True"
+
+			can_use_user_flag = not virtual_env and site.ENABLE_USER_SITE
 
 			# ok, enable user flag, virtual env yes/no, installation dir
-			result = writable or not virtual_env, \
-			         not writable and not virtual_env and site.ENABLE_USER_SITE, \
+			result = writable or can_use_user_flag, \
+			         not writable and can_use_user_flag, \
 			         virtual_env, \
 			         install_dir
-			_cache["setup"][pip_command] = result
+			_cache["setup"][pip_command_str] = result
 			return result
 		else:
-			self._logger.debug("Could not detect desired output from testballoon install, got this instead: {}".format(" ".join(sarge_command), output))
+			self._logger.debug("Could not detect desired output from testballoon install, got this instead: {!r}".format(data))
 			return False, False, False, None
 
 class LocalPipCaller(PipCaller):
+	"""
+	The LocalPipCaller always uses the pip instance associated with
+	sys.executable.
+	"""
 
 	def _get_pip_command(self):
 		return self.autodetect_pip(), False
@@ -345,7 +381,9 @@ class LocalPipCaller(PipCaller):
 		install_dir = get_python_lib()
 		writable = os.access(install_dir, os.W_OK)
 
-		return writable or not virtual_env, \
-		       not writable and not virtual_env and site.ENABLE_USER_SITE, \
+		can_use_user_flag = not virtual_env and site.ENABLE_USER_SITE
+
+		return writable or can_use_user_flag, \
+		       not writable and can_use_user_flag, \
 		       virtual_env, \
 		       install_dir

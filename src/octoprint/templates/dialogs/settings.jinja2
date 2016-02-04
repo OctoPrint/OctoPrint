@@ -49,7 +49,7 @@
     </div>
     <div class="modal-footer">
         <button class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Cancel') }}</button>
-        <button class="btn btn-primary" data-bind="click: function() { saveData(undefined, $root.hide) }, enable: !sending(), css: {disabled: sending()}"><i class="icon-spinner icon-spin" data-bind="visible: sending"></i> {{ _('Save') }}</button>
+        <button class="btn btn-primary" data-bind="click: function() { saveData(undefined, $root.hide) }, enable: !exchanging(), css: {disabled: exchanging()}"><i class="icon-spinner icon-spin" data-bind="visible: sending"></i> {{ _('Save') }}</button>
     </div>
 </div>
 

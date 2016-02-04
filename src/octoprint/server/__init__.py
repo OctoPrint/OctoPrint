@@ -290,7 +290,7 @@ class Server():
 		self._setup_assets()
 
 		# configure timelapse
-		octoprint.timelapse.configureTimelapse()
+		octoprint.timelapse.configure_timelapse()
 
 		# setup command triggers
 		events.CommandTrigger(printer)
@@ -880,7 +880,7 @@ class Server():
 			"js/lib/modernizr.custom.js",
 			"js/lib/lodash.min.js",
 			"js/lib/sprintf.min.js",
-			"js/lib/knockout.js",
+			"js/lib/knockout-3.4.0.js",
 			"js/lib/knockout.mapping-latest.js",
 			"js/lib/babel.js",
 			"js/lib/avltree.js",

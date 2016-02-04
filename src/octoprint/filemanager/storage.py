@@ -213,11 +213,11 @@ class StorageInterface(object):
 		  * ``model``: adds a link to a model from which the file was created/sliced, expected additional data is the ``name``
 		    and optionally the ``hash`` of the file to link to. If the link can be resolved against another file on the
 		    current ``path``, not only will it be added to the links of ``name`` but a reverse link of type ``machinecode``
-		    refering to ``name`` and its hash will also be added to the linked ``model`` file
+		    referring to ``name`` and its hash will also be added to the linked ``model`` file
 		  * ``machinecode``: adds a link to a file containing machine code created from the current file (model), expected
 		    additional data is the ``name`` and optionally the ``hash`` of the file to link to. If the link can be resolved
 		    against another file on the current ``path``, not only will it be added to the links of ``name`` but a reverse
-		    link of type ``model`` refering to ``name`` and its hash will also be added to the linked ``model`` file.
+		    link of type ``model`` referring to ``name`` and its hash will also be added to the linked ``model`` file.
 		  * ``web``: adds a location on the web associated with this file (e.g. a website where to download a model),
 		    expected additional data is a ``href`` attribute holding the website's URL and optionally a ``retrieved``
 		    attribute describing when the content was retrieved

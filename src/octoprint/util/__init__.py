@@ -681,6 +681,20 @@ def tempdir(ignore_errors=False, onerror=None, **kwargs):
 		shutil.rmtree(dirpath, ignore_errors=ignore_errors, onerror=onerror)
 
 
+@contextlib.contextmanager
+def temppath(prefix=None, suffix=""):
+	import tempfile
+
+	temp = tempfile.NamedTemporaryFile(prefix=prefix if prefix is not None else tempfile.template,
+	                                   suffix=suffix,
+	                                   delete=False)
+	try:
+		temp.close()
+		yield temp.name
+	finally:
+		os.remove(temp.name)
+
+
 def bom_aware_open(filename, encoding="ascii", mode="r", **kwargs):
 	import codecs
 

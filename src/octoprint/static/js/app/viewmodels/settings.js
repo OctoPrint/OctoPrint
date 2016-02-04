@@ -10,6 +10,9 @@ $(function() {
 
         self.receiving = ko.observable(false);
         self.sending = ko.observable(false);
+        self.exchanging = ko.pureComputed(function() {
+            return self.receiving() || self.sending();
+        });
         self.outstanding = [];
 
         self.settingsDialog = undefined;
@@ -19,11 +22,11 @@ $(function() {
         self.translationUploadButton = $("#settings_appearance_managelanguagesdialog_upload_start");
 
         self.translationUploadFilename = ko.observable();
-        self.invalidTranslationArchive = ko.computed(function() {
+        self.invalidTranslationArchive = ko.pureComputed(function() {
             var name = self.translationUploadFilename();
             return name !== undefined && !(_.endsWith(name.toLocaleLowerCase(), ".zip") || _.endsWith(name.toLocaleLowerCase(), ".tar.gz") || _.endsWith(name.toLocaleLowerCase(), ".tgz") || _.endsWith(name.toLocaleLowerCase(), ".tar"));
         });
-        self.enableTranslationUpload = ko.computed(function() {
+        self.enableTranslationUpload = ko.pureComputed(function() {
             var name = self.translationUploadFilename();
             return name !== undefined && name.trim() != "" && !self.invalidTranslationArchive();
         });
@@ -140,6 +143,8 @@ $(function() {
         self.serial_longRunningCommands = ko.observable(undefined);
         self.serial_checksumRequiringCommands = ko.observable(undefined);
         self.serial_helloCommand = ko.observable(undefined);
+        self.serial_ignoreErrorsFromFirmware = ko.observable(undefined);
+        self.serial_disconnectOnErrors = ko.observable(undefined);
 
         self.folder_uploads = ko.observable(undefined);
         self.folder_timelapse = ko.observable(undefined);
@@ -518,7 +523,7 @@ $(function() {
             return item.display + ((item.english != undefined) ? ' (' + item.english + ')' : '');
         };
 
-        self.languagePacksAvailable = ko.computed(function() {
+        self.languagePacksAvailable = ko.pureComputed(function() {
             return self.translations.allSize() > 0;
         });
 

@@ -46,7 +46,7 @@ def settings(init=False, basedir=None, configfile=None):
 	        (False, default). If this is set to True and the plugin manager has already been initialized, a :class:`ValueError`
 	        will be raised. The same will happen if the plugin manager has not yet been initialized and this is set to
 	        False.
-	    basedir (str): Path of the base directoy for all of OctoPrint's settings, log files, uploads etc. If not set
+	    basedir (str): Path of the base directory for all of OctoPrint's settings, log files, uploads etc. If not set
 	        the default will be used: ``~/.octoprint`` on Linux, ``%APPDATA%/OctoPrint`` on Windows and
 	        ``~/Library/Application Support/OctoPrint`` on MacOS.
 	    configfile (str): Path of the configuration file (``config.yaml``) to work on. If not set the default will
@@ -90,6 +90,8 @@ default_settings = {
 		"longRunningCommands": ["G4", "G28", "G29", "G30", "G32", "M400", "M226"],
 		"checksumRequiringCommands": ["M110"],
 		"helloCommand": "M110 N0",
+		"disconnectOnErrors": True,
+		"ignoreErrorsFromFirmware": False
 	},
 	"server": {
 		"host": "0.0.0.0",
@@ -140,7 +142,8 @@ default_settings = {
 			"options": {},
 			"postRoll": 0,
 			"fps": 25
-		}
+		},
+		"cleanTmpAfterDays": 7
 	},
 	"gcodeViewer": {
 		"enabled": True,

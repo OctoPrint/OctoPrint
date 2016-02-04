@@ -30,8 +30,12 @@ nothing but ticket management.
 - If you want to report a **bug**, [read "How to file a bug report" below](#how-to-file-a-bug-report)
   and *[use the provided template](#what-should-i-include-in-a-ticket)*.
   You do not need to do anything else with your ticket.
-- If you want to post a **request** of any kind (feature request, documentation
-  request, ...), add `[Request]` to your issue's title (e.g. `[Request] Awesome new feature`).
+- If you want to post a **feature request** or a **documentation request**, add `[Request]`
+  to your issue's title (e.g. `[Request] Awesome new feature`). A question on how to run/change/setup
+  something is **not** what qualifies as a request here, use the
+  [Mailinglist](https://groups.google.com/group/octoprint) or the
+  [Google+ Community](https://plus.google.com/communities/102771308349328485741) for
+  such support issues.
 - If you are a **developer** that wants to brainstorm a pull request or possible
   changes to the plugin system, add [Brainstorming] to your issue's title (e.g.
   `[Brainstorming] New plugin hook for doing some cool stuff`).
@@ -232,8 +236,8 @@ See [How to open the Javascript Console in different browsers](https://webmaster
 5. **Test your changes thoroughly**. That also means testing with usage
    scenarios you don't normally use, e.g. if you only use access control, test
    without and vice versa. If you only test with your printer, test with the
-   virtual printer and vice versa. State in your pull request how your tested
-   your changes. Ideally **add unit tests** - OctoPrint severly lacks in that
+   virtual printer and vice versa. State in your pull request how you tested
+   your changes. Ideally **add unit tests** - OctoPrint severely lacks in that
    department, but we are trying to change that, so any new code already covered
    with a test suite helps a lot!
 6. In your pull request's description, **state what your pull request is doing**,

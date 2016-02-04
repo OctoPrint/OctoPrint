@@ -76,7 +76,6 @@ $(function() {
 
         self.config_repositoryUrl = ko.observable();
         self.config_repositoryTtl = ko.observable();
-        self.config_pipCommand = ko.observable();
         self.config_pipAdditionalArgs = ko.observable();
         self.config_pipForceUser = ko.observable();
 
@@ -157,13 +156,13 @@ $(function() {
         self.pipVirtualEnv = ko.observable();
         self.pipAdditionalArgs = ko.observable();
 
-        self.pipUseSudoString = ko.computed(function() {
+        self.pipUseSudoString = ko.pureComputed(function() {
             return self.pipUseSudo() ? "yes" : "no";
         });
-        self.pipUseUserString = ko.computed(function() {
+        self.pipUseUserString = ko.pureComputed(function() {
             return self.pipUseUser() ? "yes" : "no";
         });
-        self.pipVirtualEnvString = ko.computed(function() {
+        self.pipVirtualEnvString = ko.pureComputed(function() {
             return self.pipVirtualEnv() ? "yes" : "no";
         });
 
@@ -186,7 +185,7 @@ $(function() {
 
         self.notifications = [];
 
-        self.enableManagement = ko.computed(function() {
+        self.enableManagement = ko.pureComputed(function() {
             return !self.printerState.isPrinting();
         });
 
@@ -207,22 +206,22 @@ $(function() {
             return self.enableManagement() && self.pipAvailable() && self.isCompatible(data);
         };
 
-        self.invalidUrl = ko.computed(function() {
+        self.invalidUrl = ko.pureComputed(function() {
             var url = self.installUrl();
             return url !== undefined && url.trim() != "" && !(_.startsWith(url.toLocaleLowerCase(), "http://") || _.startsWith(url.toLocaleLowerCase(), "https://"));
         });
 
-        self.enableUrlInstall = ko.computed(function() {
+        self.enableUrlInstall = ko.pureComputed(function() {
             var url = self.installUrl();
             return self.enableManagement() && self.pipAvailable() && url !== undefined && url.trim() != "" && !self.invalidUrl();
         });
 
-        self.invalidArchive = ko.computed(function() {
+        self.invalidArchive = ko.pureComputed(function() {
             var name = self.uploadFilename();
             return name !== undefined && !(_.endsWith(name.toLocaleLowerCase(), ".zip") || _.endsWith(name.toLocaleLowerCase(), ".tar.gz") || _.endsWith(name.toLocaleLowerCase(), ".tgz") || _.endsWith(name.toLocaleLowerCase(), ".tar"));
         });
 
-        self.enableArchiveInstall = ko.computed(function() {
+        self.enableArchiveInstall = ko.pureComputed(function() {
             var name = self.uploadFilename();
             return self.enableManagement() && self.pipAvailable() && name !== undefined && name.trim() != "" && !self.invalidArchive();
         });
@@ -489,11 +488,6 @@ $(function() {
         };
 
         self.savePluginSettings = function() {
-            var pipCommand = self.config_pipCommand();
-            if (pipCommand != undefined && pipCommand.trim() == "") {
-                pipCommand = null;
-            }
-
             var repository = self.config_repositoryUrl();
             if (repository != undefined && repository.trim() == "") {
                 repository = null;
@@ -516,7 +510,6 @@ $(function() {
                     pluginmanager: {
                         repository: repository,
                         repository_ttl: repositoryTtl,
-                        pip: pipCommand,
                         pip_args: pipArgs,
                         pip_force_user: self.config_pipForceUser()
                     }
@@ -532,7 +525,6 @@ $(function() {
         self._copyConfig = function() {
             self.config_repositoryUrl(self.settingsViewModel.settings.plugins.pluginmanager.repository());
             self.config_repositoryTtl(self.settingsViewModel.settings.plugins.pluginmanager.repository_ttl());
-            self.config_pipCommand(self.settingsViewModel.settings.plugins.pluginmanager.pip());
             self.config_pipAdditionalArgs(self.settingsViewModel.settings.plugins.pluginmanager.pip_args());
             self.config_pipForceUser(self.settingsViewModel.settings.plugins.pluginmanager.pip_force_user());
         };
