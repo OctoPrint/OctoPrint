@@ -76,7 +76,6 @@ $(function() {
 
         self.config_repositoryUrl = ko.observable();
         self.config_repositoryTtl = ko.observable();
-        self.config_pipCommand = ko.observable();
         self.config_pipAdditionalArgs = ko.observable();
         self.config_pipForceUser = ko.observable();
 
@@ -489,11 +488,6 @@ $(function() {
         };
 
         self.savePluginSettings = function() {
-            var pipCommand = self.config_pipCommand();
-            if (pipCommand != undefined && pipCommand.trim() == "") {
-                pipCommand = null;
-            }
-
             var repository = self.config_repositoryUrl();
             if (repository != undefined && repository.trim() == "") {
                 repository = null;
@@ -516,7 +510,6 @@ $(function() {
                     pluginmanager: {
                         repository: repository,
                         repository_ttl: repositoryTtl,
-                        pip: pipCommand,
                         pip_args: pipArgs,
                         pip_force_user: self.config_pipForceUser()
                     }
@@ -532,7 +525,6 @@ $(function() {
         self._copyConfig = function() {
             self.config_repositoryUrl(self.settingsViewModel.settings.plugins.pluginmanager.repository());
             self.config_repositoryTtl(self.settingsViewModel.settings.plugins.pluginmanager.repository_ttl());
-            self.config_pipCommand(self.settingsViewModel.settings.plugins.pluginmanager.pip());
             self.config_pipAdditionalArgs(self.settingsViewModel.settings.plugins.pluginmanager.pip_args());
             self.config_pipForceUser(self.settingsViewModel.settings.plugins.pluginmanager.pip_force_user());
         };

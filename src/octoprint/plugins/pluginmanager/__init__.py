@@ -12,7 +12,7 @@ import octoprint.plugin.core
 from octoprint.settings import valid_boolean_trues
 from octoprint.server.util.flask import restricted_access
 from octoprint.server import admin_permission, VERSION
-from octoprint.util.pip import PipCaller, UnknownPip
+from octoprint.util.pip import LocalPipCaller, UnknownPip
 
 from flask import jsonify, make_response
 from flask.ext.babel import gettext
@@ -52,8 +52,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		self._repository_cache_path = os.path.join(self.get_plugin_data_folder(), "plugins.json")
 		self._repository_cache_ttl = self._settings.get_int(["repository_ttl"]) * 60
 
-		self._pip_caller = PipCaller(configured=self._settings.get(["pip"]),
-		                             force_user=self._settings.get_boolean(["pip_force_user"]))
+		self._pip_caller = LocalPipCaller(force_user=self._settings.get_boolean(["pip_force_user"]))
 		self._pip_caller.on_log_call = self._log_call
 		self._pip_caller.on_log_stdout = self._log_stdout
 		self._pip_caller.on_log_stderr = self._log_stderr
@@ -83,7 +82,6 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		return dict(
 			repository="http://plugins.octoprint.org/plugins.json",
 			repository_ttl=24*60,
-			pip=None,
 			pip_args=None,
 			pip_force_user=False,
 			dependency_links=False,
@@ -91,18 +89,10 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		)
 
 	def on_settings_save(self, data):
-		old_pip = self._settings.get(["pip"])
 		octoprint.plugin.SettingsPlugin.on_settings_save(self, data)
-		new_pip = self._settings.get(["pip"])
 
 		self._repository_cache_ttl = self._settings.get_int(["repository_ttl"]) * 60
 		self._pip_caller.force_user = self._settings.get_boolean(["pip_force_user"])
-		if old_pip != new_pip:
-			self._pip_caller.configured = new_pip
-			try:
-				self._pip_caller.trigger_refresh()
-			except:
-				self._pip_caller
 
 	##~~ AssetPlugin
 
