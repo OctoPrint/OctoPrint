@@ -228,30 +228,33 @@ class ReprapGcodeProtocol(Protocol, MotorControlProtocolMixin,
 		return self.state in (ProtocolState.PRINTING, ProtocolState.PAUSED)
 
 	def _on_state_connecting(self, old_state):
+		if old_state is not ProtocolState.DISCONNECTED:
+			return
+
 		hello = self.flavor.command_hello()
 		if hello:
 			self._send_command(hello)
 			self._clear_to_send.set()
 
 	def _on_state_connected(self, old_state):
-		self._internal_state["timeout"] = self._get_timeout("communication")
+		if old_state == ProtocolState.CONNECTING:
+			self._internal_state["timeout"] = self._get_timeout("communication")
 
-		self._send_command(self.flavor.command_set_line(0))
-		self._clear_to_send.set()
+			self._send_command(self.flavor.command_set_line(0))
+			self._clear_to_send.set()
 
-		def poll_temperature_interval():
-			return self.interval["temperature_printing"] if self.state == ProtocolState.PRINTING else self.interval["temperature_idle"]
+			def poll_temperature_interval():
+				return self.interval["temperature_printing"] if self.state == ProtocolState.PRINTING else self.interval["temperature_idle"]
 
-		def poll_temperature():
-			if self._is_operational() and not self._internal_state["only_from_job"] and self.can_send():
-				self._send_command(self.flavor.command_get_temp(), command_type="temperature_poll")
+			def poll_temperature():
+				if self._is_operational() and not self._internal_state["only_from_job"] and self.can_send():
+					self._send_command(self.flavor.command_get_temp(), command_type="temperature_poll")
 
-		from octoprint.util import RepeatedTimer
-		self._temperature_poller = RepeatedTimer(poll_temperature_interval,
-		                                         poll_temperature,
-		                                         run_first=True,
-		                                         condition=self._is_operational)
-		self._temperature_poller.start()
+			from octoprint.util import RepeatedTimer
+			self._temperature_poller = RepeatedTimer(poll_temperature_interval,
+			                                         poll_temperature,
+			                                         run_first=True)
+			self._temperature_poller.start()
 
 	def _on_state_disconnected(self, old_state):
 		self._handle_disconnected(old_state, False)
@@ -333,6 +336,8 @@ class ReprapGcodeProtocol(Protocol, MotorControlProtocolMixin,
 
 		if self._internal_state["heating"]:
 			self._internal_state["heating"] = False
+		if self._internal_state["long_running_command"]:
+			self._internal_state["long_running_command"] = False
 
 		if not self.state in (ProtocolState.PRINTING, ProtocolState.CONNECTED, ProtocolState.PAUSED):
 			return
@@ -366,10 +371,6 @@ class ReprapGcodeProtocol(Protocol, MotorControlProtocolMixin,
 		self._internal_state["resend_delta"] = resend_delta
 		self._internal_state["resend_last_linenumber"] = linenumber
 		self._internal_state["resend_count"] = 0
-
-		if self._internal_state["resend_delta"] > len(self._last_lines) or len(self._last_lines) == 0 or self._internal_state["resend_delta"] < 0:
-			# TODO error because printer requested lines we don't have
-			pass
 
 	def _on_comm_start(self):
 		if self.state == ProtocolState.CONNECTING:
@@ -450,18 +451,33 @@ class ReprapGcodeProtocol(Protocol, MotorControlProtocolMixin,
 	##~~ Sending
 
 	def _continue_sending(self):
-		if self.state == ProtocolState.PRINTING and self._job is not None:
-			if not self._send_from_queue():
-				self._send_next_from_job()
-		elif self.state == ProtocolState.CONNECTED or self.state == ProtocolState.PAUSED:
-			self._send_from_queue()
+		if self._internal_state["resend_delta"] is not None:
+			self._send_next_from_resend()
+		else:
+			if self.state == ProtocolState.PRINTING and self._job is not None:
+				if not self._send_from_queue():
+					self._send_next_from_job()
+			elif self.state == ProtocolState.CONNECTED or self.state == ProtocolState.PAUSED:
+				self._send_from_queue()
 
 	def _send_next_from_resend(self):
 		self._last_communication_error = None
 
 		# Make sure we are only handling one sending job at a time
 		with self._send_queue_mutex:
+			def reset_resend_data():
+				self._internal_state["resend_delta"] = None
+				self._internal_state["resend_last_linenumber"] = None
+				self._internal_state["resend_count"] = 0
+
 			resend_delta = self._internal_state["resend_delta"]
+			if resend_delta > len(self._last_lines) or len(self._last_lines) == 0 or resend_delta < 0:
+				self._logger.error("Printer requested to resend a line further back than we have")
+				reset_resend_data()
+				if self._is_busy():
+					self.cancel_processing(error=True)
+				return
+
 			command = self._last_lines[-resend_delta]
 			linenumber = self._current_linenumber - resend_delta
 
@@ -469,9 +485,7 @@ class ReprapGcodeProtocol(Protocol, MotorControlProtocolMixin,
 
 			self._internal_state["resend_delta"] -= 1
 			if self._internal_state["resend_delta"] <= 0:
-				self._internal_state["resend_delta"] = None
-				self._internal_state["resend_last_linenumber"] = None
-				self._internal_state["resend_count"] = 0
+				reset_resend_data()
 
 	def _send_next_from_job(self):
 		with self._send_queue_mutex:
@@ -479,32 +493,31 @@ class ReprapGcodeProtocol(Protocol, MotorControlProtocolMixin,
 			if line is not None:
 				self._send_command(line)
 
-				# TODO report progress
-
 	def _send_from_queue(self):
-		# We loop here to make sure that if we do NOT send the first command
-		# from the queue, we'll send the second (if there is one). We do not
-		# want to get stuck here by throwing away commands.
-		while True:
-			if self._command_queue.empty() or self._internal_state["only_from_job"]:
-				# no command queue or irrelevant command queue => return
-				return False
+		with self._send_queue_mutex:
+			# We loop here to make sure that if we do NOT send the first command
+			# from the queue, we'll send the second (if there is one). We do not
+			# want to get stuck here by throwing away commands.
+			while True:
+				if self._command_queue.empty() or self._internal_state["only_from_job"]:
+					# no command queue or irrelevant command queue => return
+					return False
 
-			entry = self._command_queue.get()
-			if isinstance(entry, tuple):
-				if not len(entry) == 2:
-					# something with that entry is broken, ignore it and fetch
-					# the next one
-					continue
-				cmd, cmd_type = entry
-			else:
-				cmd = entry
-				cmd_type = None
+				entry = self._command_queue.get()
+				if isinstance(entry, tuple):
+					if not len(entry) == 2:
+						# something with that entry is broken, ignore it and fetch
+						# the next one
+						continue
+					cmd, cmd_type = entry
+				else:
+					cmd = entry
+					cmd_type = None
 
-			if self._send_command(cmd, command_type=cmd_type):
-				# we actually did add this cmd to the send queue, so let's
-				# return, we are done here
-				return True
+				if self._send_command(cmd, command_type=cmd_type):
+					# we actually did add this cmd to the send queue, so let's
+					# return, we are done here
+					return True
 
 	def _send_commands(self, *commands, **kwargs):
 		command_type = kwargs.get("command_type", None)

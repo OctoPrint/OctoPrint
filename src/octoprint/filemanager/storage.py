@@ -195,6 +195,13 @@ class StorageInterface(object):
 		"""
 		raise NotImplementedError()
 
+	def get_print_job(self, path):
+		"""
+		Retrieves the :class:`~octoprint.job.PrintJob` instance
+		to use for printing ``path``.
+		"""
+		raise NotImplementedError()
+
 	def get_metadata(self, path):
 		"""
 		Retrieves the metadata for the file ``path``.
@@ -633,6 +640,10 @@ class LocalFileStorage(StorageInterface):
 		self._copy_metadata_entry(source_data["path"], source_data["name"],
 		                          destination_data["path"], destination_data["name"],
 		                          delete_source=True)
+
+	def get_print_job(self, path):
+		from octoprint.job import LocalGcodeFilePrintjob
+		return LocalGcodeFilePrintjob(self.path_on_disk(path), name=path)
 
 	def get_metadata(self, path):
 		path, name = self.sanitize(path)
@@ -1230,3 +1241,10 @@ class LocalFileStorage(StorageInterface):
 				del self._metadata_locks[path]
 			else:
 				self._metadata_locks[path] = (counter, lock)
+
+
+class PrinterSDStorage(StorageInterface):
+
+	def get_print_job(self, path):
+		from octoprint.job import SDFilePrintjob
+		return SDFilePrintjob("/" + path)

@@ -811,6 +811,8 @@ class VirtualPrinter(object):
 				raise SerialTimeoutException()
 
 	def read(self, size=None):
+		from octoprint.util import to_str
+
 		if self._debug_drop_connection:
 			raise SerialTimeoutException()
 
@@ -818,7 +820,7 @@ class VirtualPrinter(object):
 			line = self.outgoing.get(timeout=self._read_timeout)
 			time.sleep(settings().getFloat(["devel", "virtualPrinter", "throttle"]))
 			self._seriallog.info(">>> {}".format(line.strip()))
-			return line
+			return to_str(line) + b"\n"
 		except Queue.Empty:
 			return ""
 

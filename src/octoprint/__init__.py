@@ -120,12 +120,36 @@ def init_logging(settings, use_logging_file=True, logging_file=None, default_con
 					"formatter": "simple",
 					"maxBytes": 2 * 1024 * 1024, # let's limit the serial log to 2MB in size
 					"filename": os.path.join(settings.getBaseFolder("logs"), "serial.log")
+				},
+				"protocolFile": {
+					"class": "logging.handlers.RotatingFileHandler",
+					"level": "DEBUG",
+					"formatter": "simple",
+					"maxBytes": 2 * 1024 * 1024, # let's limit the serial log to 2MB in size
+					"filename": os.path.join(settings.getBaseFolder("logs"), "protocol.log")
+				},
+				"transportFile": {
+					"class": "logging.handlers.RotatingFileHandler",
+					"level": "DEBUG",
+					"formatter": "simple",
+					"maxBytes": 2 * 1024 * 1024, # let's limit the serial log to 2MB in size
+					"filename": os.path.join(settings.getBaseFolder("logs"), "transport.log")
 				}
 			},
 			"loggers": {
 				"SERIAL": {
 					"level": "CRITICAL",
 					"handlers": ["serialFile"],
+					"propagate": False
+				},
+				"PROTOCOL": {
+					"level": "DEBUG",
+					"handlers": ["protocolFile"],
+					"propagate": False
+				},
+				"TRANSPORT": {
+					"level": "DEBUG",
+					"handlers": ["transportFile"],
 					"propagate": False
 				},
 				"octoprint": {

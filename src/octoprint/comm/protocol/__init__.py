@@ -20,6 +20,7 @@ class Protocol(ListenerAware, TransportListener):
 		super(Protocol, self).__init__()
 
 		self._logger = logging.getLogger(__name__)
+		self._protocol_logger = logging.getLogger("PROTOCOL")
 		self._state = ProtocolState.DISCONNECTED
 
 		self._job = None
@@ -39,9 +40,13 @@ class Protocol(ListenerAware, TransportListener):
 		if method is not None:
 			method(old_state)
 
+		self.process_protocol_log("--- Protocol state changed from '{}' to '{}'".format(old_state, new_state))
 		self.notify_listeners("on_protocol_state", self, old_state, new_state)
 
 	def connect(self, transport, transport_args=None, transport_kwargs=None):
+		self.process_protocol_log("--- Protocol {} connecting via transport {}...".format(self.__class__.__name__,
+		                                                                                  transport.__class__.__name__))
+
 		if transport_args is None:
 			transport_args = []
 		if transport_kwargs is None:
@@ -74,9 +79,9 @@ class Protocol(ListenerAware, TransportListener):
 			return
 		self.state = ProtocolState.PRINTING
 
-	def cancel_processing(self):
+	def cancel_processing(self, error=False):
 		if self._job is not None and self.state in (ProtocolState.PRINTING, ProtocolState.PAUSED):
-			self._job.cancel()
+			self._job.cancel(error=error)
 		self.state = ProtocolState.CONNECTED
 
 	def move(self, x=None, y=None, z=None, e=None, feedrate=None, relative=False):
@@ -126,14 +131,20 @@ class Protocol(ListenerAware, TransportListener):
 		self.state = ProtocolState.CONNECTED
 
 	def on_transport_log_received_data(self, transport, data):
-		self.notify_listeners("on_protocol_log", self, "<<< {}".format(to_unicode(data, errors="replace").strip()))
+		message = "<<< {}".format(to_unicode(data, errors="replace").strip())
+		self.process_protocol_log(message)
 
 	def on_transport_log_sent_data(self, transport, data):
-		self.notify_listeners("on_protocol_log", self, ">>> {}".format(to_unicode(data, errors="replace").strip()))
+		message = ">>> {}".format(to_unicode(data, errors="replace").strip())
+		self.process_protocol_log(message)
 
 	def on_transport_log_message(self, transport, data):
-		self.notify_listeners("on_protocol_log", self, "--- {}".format(to_unicode(data, errors="replace").strip()))
+		message = "--- {}".format(to_unicode(data, errors="replace").strip())
+		self.process_protocol_log(message)
 
+	def process_protocol_log(self, message):
+		self._protocol_logger.info(message)
+		self.notify_listeners("on_protocol_log", self, message)
 
 class ProtocolState(object):
 	CONNECTING = "connecting"

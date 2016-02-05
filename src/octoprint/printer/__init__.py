@@ -24,6 +24,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import re
 
 import octoprint.util.comm as comm
+import octoprint.util
 from octoprint.settings import settings
 
 def get_connection_options():
@@ -214,6 +215,26 @@ class PrinterInterface(object):
 		"""
 		raise NotImplementedError()
 
+	def select_job(self, job, start_printing=False):
+		"""
+		Selects the specified ``job`` for printing. Optionally can also directly start the print after selecting
+		the job.
+
+		Arguments:
+		    job (octoprint.job.PrintJob): The job to select for printing
+		    start_printing (bool): Whether to start printing directly or not.
+		"""
+		raise NotImplementedError()
+
+
+	def unselect_job(self):
+		"""
+		Unselects the currently selected job.
+		"""
+		raise NotImplementedError()
+
+	# TODO add a since to the deprecation message as soon as the version this stuff will be included in is defined
+	@octoprint.util.deprecated("select_file has been deprecated, use select_job instead", includedoc="Replaced by :func:`select_job`")
 	def select_file(self, path, sd, printAfterSelect=False):
 		"""
 		Selects the specified ``path`` for printing, specifying if the file is to be found on the ``sd`` or not.
@@ -228,6 +249,8 @@ class PrinterInterface(object):
 		"""
 		raise NotImplementedError()
 
+	# TODO add a since to the deprecation message as soon as the version this stuff will be included in is defined
+	@octoprint.util.deprecated("unselect_file has been deprecated, use unselect_job instead", includedoc="Replaced by :func:`unselect_job`")
 	def unselect_file(self):
 		"""
 		Unselects and currently selected file.

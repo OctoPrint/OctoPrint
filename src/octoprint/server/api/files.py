@@ -405,19 +405,14 @@ def gcodeFileCommand(filename, target):
 		if not octoprint.filemanager.valid_file_type(filename, type="machinecode"):
 			return make_response("Cannot select {filename} for printing, not a machinecode file".format(**locals()), 415)
 
-		printAfterLoading = False
-		if "print" in data.keys() and data["print"] in valid_boolean_trues:
+		print_after_loading = False
+		if "print" in data and data["print"] in valid_boolean_trues:
 			if not printer.is_operational():
 				return make_response("Printer is not operational, cannot directly start printing", 409)
-			printAfterLoading = True
+			print_after_loading = True
 
-		sd = False
-		if target == FileDestinations.SDCARD:
-			filenameToSelect = filename
-			sd = True
-		else:
-			filenameToSelect = fileManager.path_on_disk(target, filename)
-		printer.select_file(filenameToSelect, sd, printAfterLoading)
+		job = fileManager.get_print_job(target, filename)
+		printer.select_job(job, start_printing=print_after_loading)
 
 	elif command == "slice":
 		if not _verifyFileExists(target, filename):

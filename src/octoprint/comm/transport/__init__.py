@@ -34,7 +34,9 @@ class Transport(ListenerAware):
 
 	@state.setter
 	def state(self, value):
+		old_state = self.state
 		self._state = value
+		self.notify_listeners("on_transport_log_message", self, "Transport state changed from '{}' to '{}'".format(old_state, value))
 
 	def connect(self, **params):
 		if self.state == TransportState.CONNECTED:
