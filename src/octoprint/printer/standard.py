@@ -708,8 +708,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		total_print_time = estimated_total_print_time
 
 		original_estimate = None
-		if self._job.past_average_total:
-			original_estimate = self._job.past_average_total
+		if self._job.average_past_total:
+			original_estimate = self._job.average_past_total
 		elif self._job.analysis_total:
 			original_estimate = self._job.analysis_total
 
@@ -729,7 +729,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		self._print_time_left = total_print_time - self._job.job.elapsed if (total_print_time is not None and self._job.job.elapsed is not None) else None
 
 		self._state_monitor.set_progress(dict(completion=self._progress * 100 if self._progress is not None else None,
-		                                      filepos=self._job.pos,
+		                                      filepos=self._job.job.pos,
 		                                      printTime=int(self._print_time) if self._print_time is not None else None,
 		                                      printTimeLeft=int(self._print_time_left) if self._print_time_left is not None else None))
 
@@ -820,6 +820,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		                    average_past_total=average_past_total,
 		                    analysis_total=analysis_total,
 		                    estimator=estimation_helper)
+		job.register_listener(self)
 
 	def _send_initial_state_update(self, callback):
 		try:
