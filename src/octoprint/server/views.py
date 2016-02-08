@@ -29,7 +29,7 @@ _valid_div_re = re.compile("[a-zA-Z_-]+")
 
 @app.route("/")
 @util.flask.preemptively_cached(cache=preemptiveCache,
-                                data=lambda: dict(path=request.path, base_url=request.url_root, query_string="l10n={}".format(g.locale.language)) if g.locale else "en",
+                                data=lambda: dict(path=request.path, base_url=request.url_root, query_string="l10n={}".format(g.locale.language) if g.locale else "en"),
                                 unless=lambda: request.url_root in settings().get(["server", "preemptiveCache", "exceptions"]))
 @util.flask.conditional(lambda: _check_etag_and_lastmodified_for_index(), NOT_MODIFIED)
 @util.flask.cached(timeout=-1,
