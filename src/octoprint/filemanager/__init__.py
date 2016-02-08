@@ -423,7 +423,7 @@ class FileManager(object):
 		from octoprint.util import atomic_write
 
 		data = dict(origin=origin,
-		            path=path,
+		            path=self.path_in_storage(origin, path),
 		            pos=pos,
 		            date=time.time())
 		try:
