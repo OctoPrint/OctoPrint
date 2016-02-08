@@ -12,6 +12,7 @@ import octoprint.plugin
 import octoprint.util
 
 from octoprint.events import eventManager, Events
+from octoprint.settings import settings
 
 from .destinations import FileDestinations
 from .analysis import QueueEntry, AnalysisQueue
@@ -174,6 +175,8 @@ class FileManager(object):
 
 		self._progress_plugins = []
 		self._preprocessor_hooks = dict()
+
+		self._recovery_file = os.path.join(settings().getBaseFolder("data"), "print_recovery_data.yaml")
 
 	def initialize(self):
 		self.reload_plugins()
@@ -413,6 +416,43 @@ class FileManager(object):
 		except NoSuchStorage:
 			# if there's no storage configured where to log the print, we'll just not log it
 			pass
+
+	def save_recovery_data(self, origin, path, pos):
+		import time
+		import yaml
+		from octoprint.util import atomic_write
+
+		data = dict(origin=origin,
+		            path=path,
+		            pos=pos,
+		            date=time.time())
+		try:
+			with atomic_write(self._recovery_file) as f:
+				yaml.safe_dump(data, stream=f, default_flow_style=False, indent="  ", allow_unicode=True)
+		except:
+			self._logger.exception("Could not write recovery data to file {}".format(self._recovery_file))
+
+	def delete_recovery_data(self):
+		if not os.path.isfile(self._recovery_file):
+			return
+
+		try:
+			os.remove(self._recovery_file)
+		except:
+			self._logger.exception("Error deleting recovery data file {}".format(self._recovery_file))
+
+	def get_recovery_data(self):
+		if not os.path.isfile(self._recovery_file):
+			return None
+
+		import yaml
+		try:
+			with open(self._recovery_file) as f:
+				data = yaml.safe_load(f)
+			return data
+		except:
+			self._logger.exception("Could not read recovery data from file {}".format(self._recovery_file))
+			self.delete_recovery_data()
 
 	def set_additional_metadata(self, destination, path, key, data, overwrite=False, merge=False):
 		self._storage(destination).set_additional_metadata(path, key, data, overwrite=overwrite, merge=merge)

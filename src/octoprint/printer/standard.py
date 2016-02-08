@@ -67,6 +67,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		self._printTimeLeft = None
 
 		self._printAfterSelect = False
+		self._posAfterSelect = None
 
 		# sd handling
 		self._sdPrinting = False
@@ -345,12 +346,23 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		factor = self._convert_rate_value(factor, min=75, max=125)
 		self.commands("M221 S%d" % factor)
 
-	def select_file(self, path, sd, printAfterSelect=False):
+	def select_file(self, path, sd, printAfterSelect=False, pos=None):
 		if self._comm is None or (self._comm.isBusy() or self._comm.isStreaming()):
 			self._logger.info("Cannot load file: printer not connected or currently busy")
 			return
 
+		recovery_data = self._fileManager.get_recovery_data()
+		if recovery_data:
+			# clean up recovery data if we just selected a different file than is logged in that
+			expected_origin = FileDestinations.SDCARD if sd else FileDestinations.LOCAL
+			actual_origin = recovery_data.get("origin", None)
+			actual_path = recovery_data.get("path", None)
+
+			if actual_origin is None or actual_path is None or actual_origin != expected_origin or actual_path != path:
+				self._fileManager.delete_recovery_data()
+
 		self._printAfterSelect = printAfterSelect
+		self._posAfterSelect = pos
 		self._comm.selectFile("/" + path if sd else path, sd)
 		self._setProgressData(0, None, None, None)
 		self._setCurrentZ(None)
@@ -363,7 +375,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		self._setProgressData(0, None, None, None)
 		self._setCurrentZ(None)
 
-	def start_print(self):
+	def start_print(self, pos=None):
 		"""
 		 Starts the currently loaded print job.
 		 Only starts if the printer is connected and operational, not currently printing and a printjob is loaded
@@ -388,10 +400,12 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			countdown = rolling_window
 		self._timeEstimationData = TimeEstimationHelper(rolling_window=rolling_window, threshold=threshold, countdown=countdown)
 
+		self._fileManager.delete_recovery_data()
+
 		self._lastProgressReport = None
 		self._setProgressData(0, None, None, None)
 		self._setCurrentZ(None)
-		self._comm.startPrint()
+		self._comm.startPrint(pos=pos)
 
 	def toggle_pause_print(self):
 		"""
@@ -819,12 +833,13 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		self._stateMonitor.set_state({"text": self.get_state_string(), "flags": self._getStateFlags()})
 
 		if self._printAfterSelect:
-			self.start_print()
+			self.start_print(pos=self._posAfterSelect)
 
 	def on_comm_print_job_done(self):
 		self._fileManager.log_print(FileDestinations.SDCARD if self._selectedFile["sd"] else FileDestinations.LOCAL, self._selectedFile["filename"], time.time(), self._comm.getPrintTime(), True, self._printerProfileManager.get_current_or_default()["id"])
 		self._setProgressData(1.0, self._selectedFile["filesize"], self._comm.getPrintTime(), 0)
 		self._stateMonitor.set_state({"text": self.get_state_string(), "flags": self._getStateFlags()})
+		self._fileManager.delete_recovery_data()
 
 	def on_comm_file_transfer_started(self, filename, filesize):
 		self._sdStreaming = True
@@ -849,6 +864,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 	def on_comm_force_disconnect(self):
 		self.disconnect()
 
+	def on_comm_record_fileposition(self, origin, name, pos):
+		self._fileManager.save_recovery_data(origin, name, pos)
 
 class StateMonitor(object):
 	def __init__(self, interval=0.5, on_update=None, on_add_temperature=None, on_add_log=None, on_add_message=None):
