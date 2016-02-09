@@ -326,6 +326,7 @@ class MachineCom(object):
 				self._callback.on_comm_sd_files([])
 
 			if self._currentFile is not None:
+				self._recordFilePosition()
 				self._currentFile.close()
 
 		oldState = self.getStateString()
@@ -615,7 +616,7 @@ class MachineCom(object):
 			self.sendCommand(line)
 		return "\n".join(scriptLines)
 
-	def startPrint(self):
+	def startPrint(self, pos=None):
 		if not self.isOperational() or self.isPrinting():
 			return
 
@@ -643,19 +644,26 @@ class MachineCom(object):
 			self.sendGcodeScript("beforePrintStarted", replacements=dict(event=payload))
 
 			if self.isSdFileSelected():
-				#self.sendCommand("M26 S0") # setting the sd post apparently sometimes doesn't work, so we re-select
+				#self.sendCommand("M26 S0") # setting the sd pos apparently sometimes doesn't work, so we re-select
 				                            # the file instead
 
 				# make sure to ignore the "file selected" later on, otherwise we'll reset our progress data
 				self._ignore_select = True
 				self.sendCommand("M23 {filename}".format(filename=self._currentFile.getFilename()))
-				self._currentFile.setFilepos(0)
+				if pos is not None and isinstance(pos, int) and pos > 0:
+					self._currentFile.setFilepos(pos)
+					self.sendCommand("M26 S{}".format(pos))
+				else:
+					self._currentFile.setFilepos(0)
 
 				self.sendCommand("M24")
 
 				self._sd_status_timer = RepeatedTimer(lambda: get_interval("sdStatus", default_value=1.0), self._poll_sd_status, run_first=True)
 				self._sd_status_timer.start()
 			else:
+				if pos is not None and isinstance(pos, int) and pos > 0:
+					self._currentFile.seek(pos)
+
 				line = self._getNext()
 				if line is not None:
 					self.sendCommand(line)
@@ -721,6 +729,8 @@ class MachineCom(object):
 					self._sd_status_timer.cancel()
 				except:
 					pass
+
+		self._recordFilePosition()
 
 		payload = {
 			"file": self._currentFile.getFilename(),
@@ -858,6 +868,18 @@ class MachineCom(object):
 			return
 
 		self.sendCommand("M110 N%d" % number)
+
+	##~~ record aborted file positions
+
+	def _recordFilePosition(self):
+		if self._currentFile is None:
+			return
+
+		origin = self._currentFile.getFileLocation()
+		filename = self._currentFile.getFilename()
+		pos = self._currentFile.getFilepos()
+
+		self._callback.on_comm_record_fileposition(origin, filename, pos)
 
 	##~~ communication monitoring and handling
 
@@ -2026,6 +2048,9 @@ class MachineComPrintCallback(object):
 	def on_comm_force_disconnect(self):
 		pass
 
+	def on_comm_record_fileposition(self, origin, name, pos):
+		pass
+
 ### Printing file information classes ##################################################################################
 
 class PrintingFileInformation(object):
@@ -2123,6 +2148,13 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 			raise IOError("File %s does not exist" % self._filename)
 		self._size = os.stat(self._filename).st_size
 		self._pos = 0
+
+	def seek(self, offset):
+		if self._handle is None:
+			return
+
+		self._handle.seek(offset)
+		self._pos = self._handle.tell()
 
 	def start(self):
 		"""
