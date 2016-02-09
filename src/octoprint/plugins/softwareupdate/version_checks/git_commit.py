@@ -65,7 +65,7 @@ def get_latest(target, check):
 	if returncode != 0:
 		return None, True
 
-	return_code, base = _git(["merge-base", "@{0}", "@{u}"], checkout_folder)
+	returncode, base = _git(["merge-base", "@{0}", "@{u}"], checkout_folder)
 	if returncode != 0:
 		return None, True
 
