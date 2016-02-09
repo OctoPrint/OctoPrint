@@ -12,7 +12,6 @@ import octoprint.plugin
 import octoprint.util
 
 from octoprint.events import eventManager, Events
-from octoprint.settings import settings
 
 from .destinations import FileDestinations
 from .analysis import QueueEntry, AnalysisQueue
@@ -176,7 +175,8 @@ class FileManager(object):
 		self._progress_plugins = []
 		self._preprocessor_hooks = dict()
 
-		self._recovery_file = os.path.join(settings().getBaseFolder("data"), "print_recovery_data.yaml")
+		import octoprint.settings
+		self._recovery_file = os.path.join(octoprint.settings.settings().getBaseFolder("data"), "print_recovery_data.yaml")
 
 	def initialize(self):
 		self.reload_plugins()
