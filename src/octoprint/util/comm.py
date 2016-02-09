@@ -286,6 +286,7 @@ class MachineCom(object):
 		self._sdFiles = []
 		self._sdFileToSelect = None
 		self._ignore_select = False
+		self._manualStreaming = False
 
 		# print job
 		self._currentFile = None
@@ -1101,15 +1102,14 @@ class MachineCom(object):
 				elif 'File selected' in line:
 					if self._ignore_select:
 						self._ignore_select = False
-					elif self._currentFile is not None:
+					elif self._currentFile is not None and self.isSdFileSelected():
 						# final answer to M23, at least on Marlin, Repetier and Sprinter: "File selected"
 						self._callback.on_comm_file_selected(self._currentFile.getFilename(), self._currentFile.getFilesize(), True)
 						eventManager().fire(Events.FILE_SELECTED, {
 							"file": self._currentFile.getFilename(),
 							"origin": self._currentFile.getFileLocation()
 						})
-				elif 'Writing to file' in line:
-					# anwer to M28, at least on Marlin, Repetier and Sprinter: "Writing to file: %s"
+				elif 'Writing to file' in line and self.isStreaming():
 					self._changeState(self.STATE_PRINTING)
 					self._clear_to_send.set()
 					line = "ok"
@@ -1291,7 +1291,7 @@ class MachineCom(object):
 		will be done.
 		"""
 
-		if self.isOperational() and not self.isStreaming() and not self._long_running_command and not self._heating:
+		if self.isOperational() and not self.isStreaming() and not self._long_running_command and not self._heating and not self._manualStreaming:
 			self.sendCommand("M105", cmd_type="temperature_poll")
 
 	def _poll_sd_status(self):
@@ -1515,6 +1515,9 @@ class MachineCom(object):
 		return ret
 
 	def _getNext(self):
+		if self._currentFile is None:
+			return None
+
 		line = self._currentFile.getNext()
 		if line is None:
 			if self.isStreaming():
@@ -1891,6 +1894,16 @@ class MachineCom(object):
 		# for GCODE induced pausing. Send it to the printer anyway though.
 		if self.isPrinting() and not self.isSdPrinting():
 			self.setPause(True)
+
+	def _gcode_M28_sent(self, cmd, cmd_type=None):
+		if not self.isStreaming():
+			self._log("Detected manual streaming. Disabling temperature polling. Finish writing with M29. Do NOT attempt to print while manually streaming!")
+			self._manualStreaming = True
+
+	def _gcode_M29_sent(self, cmd, cmd_type=None):
+		if self._manualStreaming:
+			self._log("Manual streaming done. Re-enabling temperature polling. All is well.")
+			self._manualStreaming = False
 
 	def _gcode_M140_queuing(self, cmd, cmd_type=None):
 		if not self._printerProfileManager.get_current_or_default()["heatedBed"]:
