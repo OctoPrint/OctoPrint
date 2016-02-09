@@ -587,6 +587,7 @@ class VirtualPrinter():
 	def _finishSdFile(self):
 		self._writingToSd = False
 		self._selectedSdFile = None
+		self.outgoing.put("Done saving file")
 
 	def _sdPrintingWorker(self):
 		self._selectedSdFilePos = 0
