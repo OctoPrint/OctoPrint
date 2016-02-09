@@ -15,38 +15,29 @@ import re
 from octoprint.util import to_unicode
 
 
-try:
-	from pip._vendor.progress.helpers import HIDE_CURSOR as _HIDE_CURSOR
-except:
-	_HIDE_CURSOR = '\x1b[?25l'
-
-try:
-	from pip._vendor.progress.helpers import SHOW_CURSOR as _SHOW_CURSOR
-except:
-	_SHOW_CURSOR = '\x1b[?25h'
-
-# these regexes are taken from the colorama package
+# These regexes are based on the colorama package
 # Author: Jonathan Hartley
 # License: BSD-3 (https://github.com/tartley/colorama/blob/master/LICENSE.txt)
 # Website: https://github.com/tartley/colorama/
-_ANSI_CSI_PATTERN = "\001?\033\[((?:\d|;)*)([a-zA-Z])\002?"     # Control Sequence Introducer
+_ANSI_CSI_PATTERN = "\001?\033\[(\??(?:\d|;)*)([a-zA-Z])\002?"  # Control Sequence Introducer
 _ANSI_OSC_PATTERN = "\001?\033\]((?:.|;)*?)(\x07)\002?"         # Operating System Command
-_ANSI_REGEX = re.compile("{}|{}".format(_ANSI_CSI_PATTERN, _ANSI_OSC_PATTERN))
+_ANSI_REGEX = re.compile("|".join([_ANSI_CSI_PATTERN,
+                                   _ANSI_OSC_PATTERN]))
 
 
 def _clean_ansi(text):
 	"""
-	>>> text = _SHOW_CURSOR + "Successfully installed a package"
+	>>> text = "Successfully \x1b[?25linstalled a package"
 	>>> _clean_ansi(text)
 	'Successfully installed a package'
-	>>> text = _HIDE_CURSOR + "Successfully installed a package"
+	>>> text = "Successfully installed\x1b[?25h a package"
 	>>> _clean_ansi(text)
 	'Successfully installed a package'
 	>>> text = "Successfully installed a \x1b[31mpackage\x1b[39m"
 	>>> _clean_ansi(text)
 	'Successfully installed a package'
 	"""
-	return _ANSI_REGEX.sub("", text).replace(_HIDE_CURSOR, "").replace(_SHOW_CURSOR, "")
+	return _ANSI_REGEX.sub("", text)
 
 
 class UnknownPip(Exception):
