@@ -16,6 +16,7 @@ from octoprint.server import app, userManager, pluginManager, gettext, \
 	debug, LOCALES, VERSION, DISPLAY_VERSION, UI_API_KEY, BRANCH, preemptiveCache, \
 	NOT_MODIFIED
 from octoprint.settings import settings
+from octoprint.filemanager import get_all_extensions
 
 import re
 
@@ -297,7 +298,8 @@ def index():
 		uiApiKey=UI_API_KEY,
 		templates=templates,
 		pluginNames=plugin_names,
-		locales=locales
+		locales=locales,
+		supportedExtensions=map(lambda ext: ".{}".format(ext), get_all_extensions())
 	)
 	render_kwargs.update(plugin_vars)
 
