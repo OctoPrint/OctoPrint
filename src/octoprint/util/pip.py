@@ -9,9 +9,44 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import sarge
 import sys
 import logging
+import re
 
 
 from octoprint.util import to_unicode
+
+
+try:
+	from pip._vendor.progress.helpers import HIDE_CURSOR as _HIDE_CURSOR
+except:
+	_HIDE_CURSOR = '\x1b[?25l'
+
+try:
+	from pip._vendor.progress.helpers import SHOW_CURSOR as _SHOW_CURSOR
+except:
+	_SHOW_CURSOR = '\x1b[?25h'
+
+# these regexes are taken from the colorama package
+# Author: Jonathan Hartley
+# License: BSD-3 (https://github.com/tartley/colorama/blob/master/LICENSE.txt)
+# Website: https://github.com/tartley/colorama/
+_ANSI_CSI_PATTERN = "\001?\033\[((?:\d|;)*)([a-zA-Z])\002?"     # Control Sequence Introducer
+_ANSI_OSC_PATTERN = "\001?\033\]((?:.|;)*?)(\x07)\002?"         # Operating System Command
+_ANSI_REGEX = re.compile("{}|{}".format(_ANSI_CSI_PATTERN, _ANSI_OSC_PATTERN))
+
+
+def _clean_ansi(text):
+	"""
+	>>> text = _SHOW_CURSOR + "Successfully installed a package"
+	>>> _clean_ansi(text)
+	'Successfully installed a package'
+	>>> text = _HIDE_CURSOR + "Successfully installed a package"
+	>>> _clean_ansi(text)
+	'Successfully installed a package'
+	>>> text = "Successfully installed a \x1b[31mpackage\x1b[39m"
+	>>> _clean_ansi(text)
+	'Successfully installed a package'
+	"""
+	return _ANSI_REGEX.sub("", text).replace(_HIDE_CURSOR, "").replace(_SHOW_CURSOR, "")
 
 
 class UnknownPip(Exception):
@@ -100,13 +135,13 @@ class PipCaller(object):
 			while p.returncode is None:
 				line = p.stderr.readline(timeout=0.5)
 				if line:
-					line = to_unicode(line, errors="replace")
+					line = self._convert_line(line)
 					self._log_stderr(line)
 					all_stderr.append(line)
 
 				line = p.stdout.readline(timeout=0.5)
 				if line:
-					line = to_unicode(line, errors="replace")
+					line = self._convert_line(line)
 					self._log_stdout(line)
 					all_stdout.append(line)
 
@@ -117,13 +152,13 @@ class PipCaller(object):
 
 		stderr = p.stderr.text
 		if stderr:
-			split_lines = stderr.split("\n")
+			split_lines = map(self._convert_line, stderr.split("\n"))
 			self._log_stderr(*split_lines)
 			all_stderr += split_lines
 
 		stdout = p.stdout.text
 		if stdout:
-			split_lines = stdout.split("\n")
+			split_lines = map(self._convert_line, stdout.split("\n"))
 			self._log_stdout(*split_lines)
 			all_stdout += split_lines
 
@@ -213,3 +248,7 @@ class PipCaller(object):
 
 	def _log_stderr(self, *lines):
 		self.on_log_stderr(*lines)
+
+	@staticmethod
+	def _convert_line(line):
+		return to_unicode(_clean_ansi(line), errors="replace")
