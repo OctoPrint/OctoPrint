@@ -10,6 +10,9 @@ import mock
 import os
 import time
 
+from collections import namedtuple
+_stat = namedtuple("StatResult", "st_size, st_ctime, st_mtime")
+
 import octoprint.settings
 import octoprint.timelapse
 
@@ -100,3 +103,70 @@ class TimelapseTest(unittest.TestCase):
 		                                                                  "old-2.jpg"])
 		expected_deletion_calls = map(mock.call, expected_deletions)
 		self.assertListEqual(mock_remove.mock_calls, expected_deletion_calls)
+
+	@mock.patch("os.stat")
+	@mock.patch("os.listdir")
+	def test_get_finished_timelapses(self, mock_listdir, mock_stat):
+
+		## prepare
+
+		files = dict()
+		files["one.mpg"] = _stat(st_size=1024, st_ctime=self.now, st_mtime=self.now)
+		files["nope.jpg"] = _stat(st_size=100, st_ctime=self.now, st_mtime=self.now)
+		files["two.mpg"] = _stat(st_size=2048, st_ctime=self.now, st_mtime=self.now)
+
+		mocked_path = "/path/to/timelapse"
+		self.settings.getBaseFolder.return_value = mocked_path
+
+		mock_listdir.return_value = sorted(files.keys())
+
+		def stat(p):
+			name = p[len(mocked_path) + 1:]
+			return files[name]
+		mock_stat.side_effect = stat
+
+		## test
+		result = octoprint.timelapse.get_finished_timelapses()
+
+		## verify
+		self.assertEqual(len(result), 2)
+		self.assertEqual(result[0]["name"], "one.mpg")
+		self.assertEqual(result[0]["bytes"], 1024)
+		self.assertEqual(result[1]["name"], "two.mpg")
+		self.assertEqual(result[1]["bytes"], 2048)
+
+	@mock.patch("os.stat")
+	@mock.patch("os.listdir")
+	def test_unrendered_timelapses(self, mock_listdir, mock_stat):
+		## prepare
+		files = dict()
+		files["one-0.jpg"] = _stat(st_size=1, st_ctime=self.now - 1, st_mtime=self.now - 1)
+		files["one-1.jpg"] = _stat(st_size=2, st_ctime=self.now, st_mtime=self.now)
+		files["one-2.jpg"] = _stat(st_size=3, st_ctime=self.now, st_mtime=self.now)
+		files["nope.mpg"] = _stat(st_size=2048, st_ctime=self.now, st_mtime=self.now)
+		files["two-0.jpg"] = _stat(st_size=4, st_ctime=self.now, st_mtime=self.now)
+		files["two-1.jpg"] = _stat(st_size=5, st_ctime=self.now, st_mtime=self.now)
+
+		mocked_path = "/path/to/timelapse/tmp"
+		self.settings.getBaseFolder.return_value = mocked_path
+
+		mock_listdir.return_value = sorted(files.keys())
+
+		def stat(p):
+			name = p[len(mocked_path) + 1:]
+			return files[name]
+		mock_stat.side_effect = stat
+
+		## test
+		result = octoprint.timelapse.get_unrendered_timelapses()
+
+		## verify
+		self.assertEqual(len(result), 2)
+
+		self.assertEqual(result[0]["name"], "one")
+		self.assertEqual(result[0]["count"], 3)
+		self.assertEqual(result[0]["bytes"], 6)
+
+		self.assertEqual(result[1]["name"], "two")
+		self.assertEqual(result[1]["count"], 2)
+		self.assertEqual(result[1]["bytes"], 9)

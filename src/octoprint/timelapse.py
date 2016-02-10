@@ -99,7 +99,7 @@ def get_unrendered_timelapses():
 		del job["timestamp"]
 		return job
 
-	return [util.dict_merge(dict(name=key), finalize_fields(value)) for key, value in jobs.items()]
+	return sorted([util.dict_merge(dict(name=key), finalize_fields(value)) for key, value in jobs.items()], key=lambda x: x["name"])
 
 
 def delete_unrendered_timelapse(name):
