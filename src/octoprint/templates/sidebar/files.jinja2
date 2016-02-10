@@ -54,18 +54,18 @@
             <span class="btn btn-primary fileinput-button span6" data-bind="css: {disabled: !$root.loginState.isUser()}" style="margin-bottom: 10px">
                                 <i class="icon-upload-alt icon-white"></i>
                                 <span>{{ _('Upload') }}</span>
-                                <input id="gcode_upload" type="file" name="file" class="fileinput-button" data-bind="enable: loginState.isUser()">
+                                <input id="gcode_upload" accept="{{ ",".join(supportedExtensions) }}" type="file" name="file" class="fileinput-button" data-bind="enable: loginState.isUser()">
                             </span>
             <span class="btn btn-primary fileinput-button span6" data-bind="css: {disabled: !$root.loginState.isUser() || !$root.isSdReady()}" style="margin-bottom: 10px">
                                 <i class="icon-upload-alt icon-white"></i>
                                 <span>{{ _('Upload to SD') }}</span>
-                                <input id="gcode_upload_sd" type="file" name="file" class="fileinput-button" data-bind="enable: loginState.isUser() && isSdReady()">
+                                <input id="gcode_upload_sd" accept="{{ ",".join(supportedExtensions) }}" type="file" name="file" class="fileinput-button" data-bind="enable: loginState.isUser() && isSdReady()">
                             </span>
         {% else %}
             <span class="btn btn-primary fileinput-button span12" data-bind="css: {disabled: !$root.loginState.isUser()}" style="margin-bottom: 10px">
                                 <i class="icon-upload-alt icon-white"></i>
                                 <span>{{ _('Upload') }}</span>
-                                <input id="gcode_upload" type="file" name="file" class="fileinput-button" data-bind="enable: loginState.isUser()">
+                                <input id="gcode_upload" accept="{{ ",".join(supportedExtensions) }}" type="file" name="file" class="fileinput-button" data-bind="enable: loginState.isUser()">
                             </span>
         {% endif %}
     </div>

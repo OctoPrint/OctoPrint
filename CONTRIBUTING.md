@@ -13,6 +13,8 @@ or **[creating pull requests](#pull-requests)**.
     * [Where can I find those log files you keep talking about?](#where-can-i-find-those-log-files-you-keep-talking-about)
     * [Where can I find my browser's error console?](#where-can-i-find-my-browsers-error-console)
   * [Pull requests](#pull-requests)
+  * [What do the branches mean?](#what-do-the-branches-mean)
+  * [How OctoPrint is versioned](#how-octoprint-is-versioned)
   * [History](#history)
   * [Footnotes](#footnotes)
 
@@ -225,12 +227,14 @@ See [How to open the Javascript Console in different browsers](https://webmaster
    make sure to backport it to the `maintenance` branch to also include it in
    the next release.
 4. Make sure you **follow the current coding style**. This means:
+
      * Tabs instead of spaces in the Python files[2]
      * Spaces instead of tabs in the Javascript sources
      * English language (code, variables, comments, ...)
-     * Comments where necessary: Tell why the code does something like it does
+     * Comments where necessary: Tell *why* the code does something like it does
        it, structure your code
      * Following the general architecture
+
    If your PR needs to make changes to the Stylesheets, change the ``.less`` files
    from which the CSS is compiled.
 5. **Test your changes thoroughly**. That also means testing with usage
@@ -240,12 +244,74 @@ See [How to open the Javascript Console in different browsers](https://webmaster
    your changes. Ideally **add unit tests** - OctoPrint severely lacks in that
    department, but we are trying to change that, so any new code already covered
    with a test suite helps a lot!
-6. In your pull request's description, **state what your pull request is doing**,
+6. In your pull request's description, **state what your pull request does**,
    as in, what feature does it implement, what bug does it fix. The more
    thoroughly you explain your intent behind the PR here, the higher the
    chances it will get merged fast.
 7. Important: Don't forget to **add yourself to the [AUTHORS](./AUTHORS.md)
    file** :)
+
+## What do the branches mean?
+
+There are three main branches in OctoPrint:
+
+  * `master`: The master branch always contains the current stable release. It
+    is *only* updated on new releases. Will have a version number following
+    the scheme `x.y.z` (e.g. `1.2.9`) or - if it's absolutely necessary to
+    add a commit after release to this branch - `x.y.z.post<commits since x.y.z>`
+    (e.g. `1.2.9.post1`).
+  * `maintenance`: Improvements and fixes of the current release that make up
+    the next release go here. More or less continously updated. You can consider
+    this a preview of the next release version. It should be very stable at all
+    times. Anything you spot in here helps tremendously with getting a rock solid
+    next stable release, so if you want to help out development, running the
+    `maintenance` branch and reporting back anything you find is a very good way
+    to do that. Will usually have a version number following the scheme
+    `x.y.z+1.dev.<commits since increase of z>` for an OctoPrint version of `x.y.z`
+    (e.g. `1.2.10.dev12`).
+  * `devel`: Ongoing development of new features that will go into the next bigger
+    release (MINOR version number increases) will happen on this branch. Usually
+    kept stable, sometimes stuff can break though or lose backwards compatibility
+    temporarily. Can be considered the "bleeding edge". All PRs should target
+    *this* branch. Important improvements and fixes from PRs here are backported to
+    `maintenance` as needed. Will usually have a version number following the
+    scheme `x.y+1.0.dev<commits since increase of y>` for an OctoPrint version
+    of `x.y.z` (e.g. `1.3.0.dev123`).
+
+Additionally, from time to time you might see other branches pop up in the repository.
+Those usually have one of the following prefixes:
+
+  * `fix/...`: Fixes under development that are to be merged into the `maintenance`
+    and `devel` branches.
+  * `improve/...`: Improvements under development that are to be merged into the
+    `maintenance` and `devel` branches.
+  * `dev/...` or `feature/...`: New functionality under development that is to be merged
+    into the `devel` branch.
+
+There is also the `gh-pages` branch, which holds OctoPrint's web page, and a couple of
+older development branches that are slowly being migrated or deleted.
+
+## How OctoPrint is versioned
+
+OctoPrint follows the [semantic versioning scheme](http://semver.org/) of **MAJOR.MINOR.PATCH**.
+
+The **PATCH** version number is the one increasing most often due to OctoPrint's maintenance releases.
+Releases that only change the patch number indicate that they contain bug fixes and small improvements
+of existing functionality. Example: 1.2.8 to 1.2.9.
+
+The **MINOR** version number increases with releases that add a lot of new functionality and
+large features. Example: 1.2.x to 1.3.0.
+
+Finally, the **MAJOR** version number increases if there are breaking API changes that concern any of the
+documented interfaces (REST API, plugin interfaces, ...). So far this hasn't happened. Example: 1.x.y to 2.0.0.
+
+OctoPrint's version numbers are automatically generated using [versioneer](https://github.com/warner/python-versioneer)
+and depend on the selected git branch, nearest git tag and commits. The generated version number
+should always be [PEP440](https://www.python.org/dev/peps/pep-0440/) compatible. Unless a git tag
+is used for version number determination, the version number will also contain the git hash within
+the local version identifier to allow for an exact determination of the active code base
+(e.g. `1.2.9.dev68+g46c7a9c`). Additionally, instances with active uncommitted changes will contain
+`.dirty` in the local version identifier.
 
 ## History
 
@@ -255,6 +321,7 @@ See [How to open the Javascript Console in different browsers](https://webmaster
   * 2015-07-07: Added step to add yourself to AUTHORS when creating a PR :)
   * 2015-12-01: Heavily reworked to include examples, better structure and
     all information in one document.
+  * 2016-02-10: Added information about branch structure and versioning.
 
 ## Footnotes
   * [1] - If you are wondering why, the problem is that anything that you add

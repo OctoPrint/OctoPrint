@@ -150,7 +150,7 @@ def setTimelapseConfig():
 					return make_response("Invalid value for interval: %d" % interval)
 
 		if admin_permission.can() and "save" in data and data["save"] in valid_boolean_trues:
-			octoprint.timelapse.configureTimelapse(config, True)
+			octoprint.timelapse.configure_timelapse(config, True)
 		else:
 			octoprint.timelapse.configure_timelapse(config)
 

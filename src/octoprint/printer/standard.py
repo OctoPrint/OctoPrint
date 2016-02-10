@@ -396,12 +396,12 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		factor = self._convert_rate_value(factor, min=75, max=125)
 		self._protocol.set_extrusion_multiplier(factor)
 
-	def select_job(self, job, start_printing=False):
+	def select_job(self, job, start_printing=False, pos=None):
 		self._update_job(job)
 		self._reset_progress_data()
 
 		if start_printing and self.is_ready():
-			self.start_print()
+			self.start_print(pos=pos)
 
 	def unselect_job(self):
 		self._update_job(job=None)
@@ -409,18 +409,18 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 
 	# TODO add a since to the deprecation message as soon as the version this stuff will be included in is defined
 	@util.deprecated("select_file has been deprecated, use select_job instead", includedoc="Replaced by :func:`select_job`")
-	def select_file(self, path, sd, printAfterSelect=False):
+	def select_file(self, path, sd, printAfterSelect=False, pos=None):
 		if sd:
 			job = SDFilePrintjob("/" + path)
 		else:
 			job = LocalGcodeFilePrintjob(os.path.join(settings().getBaseFolder("uploads"), path), name=path)
 
-		self.select_job(job, start_printing=printAfterSelect)
+		self.select_job(job, start_printing=printAfterSelect, pos=pos)
 
 	# TODO add a since to the deprecation message as soon as the version this stuff will be included in is defined
 	unselect_file = util.deprecated("unselect_file has been deprecated, use unselect_job instead", includedoc="Replaced by :func:`unselect_job`")(unselect_job)
 
-	def start_print(self):
+	def start_print(self, pos=None):
 		"""
 		 Starts the currently loaded print job.
 		 Only starts if the printer is connected and operational, not currently printing and a printjob is loaded
@@ -432,7 +432,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		self._update_progress_data()
 		self._setCurrentZ(None)
 
-		self._protocol.process(self._job.job)
+		self._protocol.process(self._job.job, position=pos)
 
 	def toggle_pause_print(self):
 		"""
@@ -934,6 +934,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		# TODO
 		self.disconnect()
 
+	def on_comm_record_fileposition(self, origin, name, pos):
+		self._fileManager.save_recovery_data(origin, name, pos)
 
 class StateMonitor(object):
 	def __init__(self, interval=0.5, on_update=None, on_add_temperature=None, on_add_log=None, on_add_message=None):

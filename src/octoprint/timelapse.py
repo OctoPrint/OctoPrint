@@ -22,6 +22,8 @@ from octoprint.events import eventManager, Events
 import sarge
 import collections
 
+import re
+
 # currently configured timelapse
 current = None
 
@@ -31,6 +33,10 @@ current_render_job = None
 # filename formats
 _capture_format = "{prefix}-%d.jpg"
 _output_format = "{prefix}.mpg"
+
+# old capture format, needed to delete old left-overs from
+# versions <1.2.9
+_old_capture_format_re = re.compile("^tmp_\d{5}.jpg$")
 
 # valid timelapses
 _valid_timelapse_types = ["off", "timed", "zchange"]
@@ -93,7 +99,7 @@ def get_unrendered_timelapses():
 		del job["timestamp"]
 		return job
 
-	return [util.dict_merge(dict(name=key), finalize_fields(value)) for key, value in jobs.items()]
+	return sorted([util.dict_merge(dict(name=key), finalize_fields(value)) for key, value in jobs.items()], key=lambda x: x["name"])
 
 
 def delete_unrendered_timelapse(name):
@@ -129,13 +135,29 @@ def delete_old_unrendered_timelapses():
 	clean_after_days = settings().getInt(["webcam", "cleanTmpAfterDays"])
 	cutoff = time.time() - clean_after_days * 24 * 60 * 60
 
+	prefixes_to_clean = []
 	for filename in os.listdir(basedir):
 		try:
 			path = os.path.join(basedir, filename)
+
+			prefix = _extract_prefix(filename)
+			if prefix is None:
+				# might be an old tmp_00000.jpg kinda frame. we can't
+				# render those easily anymore, so delete that stuff
+				if _old_capture_format_re.match(filename):
+					os.remove(path)
+				continue
+
+			if prefix in prefixes_to_clean:
+				continue
+
 			if os.path.getmtime(path) < cutoff:
-				os.remove(path)
+				prefixes_to_clean.append(prefix)
 		except:
 			logging.getLogger(__name__).exception("Error while processing file {} during cleanup".format(filename))
+
+	for prefix in prefixes_to_clean:
+		delete_unrendered_timelapse(prefix)
 
 
 def _create_render_start_handler(name, gcode=None):

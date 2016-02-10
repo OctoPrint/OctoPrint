@@ -9,12 +9,12 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 import sarge
 import sys
 import logging
-import re
 import site
 
 import pkg_resources
 
-from .commandline import CommandlineCaller
+from .commandline import CommandlineCaller, clean_ansi
+from octoprint.util import to_unicode
 
 _cache = dict(version=dict(), setup=dict())
 
@@ -258,7 +258,7 @@ class PipCaller(CommandlineCaller):
 			self._logger.warn("Error while trying to run pip --version: {}".format(p.stderr.text))
 			return None, None
 
-		output = p.stdout.text
+		output = PipCaller._preprocess(p.stdout.text)
 		# output should look something like this:
 		#
 		#     pip <version> from <path> (<python version>)
@@ -362,6 +362,28 @@ class PipCaller(CommandlineCaller):
 		else:
 			self._logger.debug("Could not detect desired output from testballoon install, got this instead: {!r}".format(data))
 			return False, False, False, None
+
+	def _preprocess_lines(self, lines):
+		return map(self._preprocess, lines)
+
+	@staticmethod
+	def _preprocess(text):
+		"""
+		Strips ANSI and VT100 cursor control characters from line and makes sure it's a unicode.
+
+		Parameters:
+		    text (str or unicode): The text to process
+
+		Returns:
+		    (unicode) The processed text as a unicode, stripped of ANSI and VT100 cursor show/hide codes
+
+		Example::
+
+		    >>> text = b'some text with some\x1b[?25h ANSI codes for \x1b[31mred words\x1b[39m and\x1b[?25l also some cursor control codes'
+		    >>> PipCaller._preprocess(text)
+		    u'some text with some ANSI codes for red words and also some cursor control codes'
+		"""
+		return to_unicode(clean_ansi(text))
 
 class LocalPipCaller(PipCaller):
 	"""

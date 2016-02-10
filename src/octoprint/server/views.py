@@ -17,6 +17,7 @@ from octoprint.server import app, userManager, pluginManager, gettext, \
 	debug, LOCALES, VERSION, DISPLAY_VERSION, UI_API_KEY, BRANCH, preemptiveCache, \
 	NOT_MODIFIED
 from octoprint.settings import settings
+from octoprint.filemanager import get_all_extensions
 
 import re
 
@@ -249,6 +250,7 @@ def _get_render_kwargs(templates, plugin_names, plugin_vars, now):
 
 	first_run = settings().getBoolean(["server", "firstRun"])
 	locales = dict((l.language, dict(language=l.language, display=l.display_name, english=l.english_name)) for l in LOCALES)
+	extensions = map(lambda ext: ".{}".format(ext), get_all_extensions())
 
 	#~~ prepare full set of template vars for rendering
 
@@ -260,6 +262,7 @@ def _get_render_kwargs(templates, plugin_names, plugin_vars, now):
 		templates=templates,
 		pluginNames=plugin_names,
 		locales=locales,
+		supportedExtensions=extensions
 	)
 	render_kwargs.update(plugin_vars)
 

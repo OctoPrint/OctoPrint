@@ -605,8 +605,7 @@ $(function() {
                 self.uploadProgress
                     .removeClass("progress-striped active");
             }
-        }
-
+        };
 
         self._handleUploadDone = function(e, data) {
             var filename = undefined;
@@ -621,7 +620,7 @@ $(function() {
             self.requestData(filename, location, self.currentPath());
 
             if (data.result.done) {
-                selef._setProgressBar(0, "", false);
+                self._setProgressBar(0, "", false);
             }
         };
 
@@ -634,14 +633,14 @@ $(function() {
                 type: "error",
                 hide: false
             });
-            self.setProgressBar(0, "", false);
+            self._setProgressBar(0, "", false);
         };
 
         self._handleUploadProgress = function(e, data) {
             var progress = parseInt(data.loaded / data.total * 100, 10);
             var uploaded = progress >= 100;
 
-            self.setProgressBar(progress, uploaded ? gettext("Saving ...") : gettext("Uploading ..."), uploaded);
+            self._setProgressBar(progress, uploaded ? gettext("Saving ...") : gettext("Uploading ..."), uploaded);
         };
 
         self._handleDragNDrop = function (e) {

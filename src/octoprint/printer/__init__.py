@@ -215,7 +215,7 @@ class PrinterInterface(object):
 		"""
 		raise NotImplementedError()
 
-	def select_job(self, job, start_printing=False):
+	def select_job(self, job, start_printing=False, pos=None):
 		"""
 		Selects the specified ``job`` for printing. Optionally can also directly start the print after selecting
 		the job.
@@ -235,7 +235,7 @@ class PrinterInterface(object):
 
 	# TODO add a since to the deprecation message as soon as the version this stuff will be included in is defined
 	@octoprint.util.deprecated("select_file has been deprecated, use select_job instead", includedoc="Replaced by :func:`select_job`")
-	def select_file(self, path, sd, printAfterSelect=False):
+	def select_file(self, path, sd, printAfterSelect=False, pos=None):
 		"""
 		Selects the specified ``path`` for printing, specifying if the file is to be found on the ``sd`` or not.
 		Optionally can also directly start the print after selecting the file.
@@ -257,7 +257,7 @@ class PrinterInterface(object):
 		"""
 		raise NotImplementedError()
 
-	def start_print(self):
+	def start_print(self, pos=None):
 		"""
 		Starts printing the currently selected file. If no file is currently selected, does nothing.
 		"""
