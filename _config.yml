@@ -1,7 +1,7 @@
 permalink: /blog/:year/:month/:day/:title 
 
 exclude: [".rvmrc", ".rbenv-version", "README.md", "Rakefile", "changelog.md"]
-highlighter: pygments
+highlighter: rouge
 markdown: kramdown
 
 title : OctoPrint
