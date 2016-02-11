@@ -84,34 +84,34 @@ class CommandlineCaller(object):
 		all_stderr = []
 		try:
 			while p.returncode is None:
-				line = p.stderr.readline(timeout=0.5)
-				if line:
-					line, = self._preprocess_lines(line)
-					self._log_stderr(line)
-					all_stderr.append(line)
+				lines = p.stderr.readlines(timeout=0.5)
+				if lines:
+					lines = self._preprocess_lines(*lines)
+					self._log_stderr(*lines)
+					all_stderr += list(lines)
 
-				line = p.stdout.readline(timeout=0.5)
-				if line:
-					line, = self._preprocess_lines(line)
-					self._log_stdout(line)
-					all_stdout.append(line)
+				lines = p.stdout.readlines(timeout=0.5)
+				if lines:
+					lines = self._preprocess_lines(*lines)
+					self._log_stdout(*lines)
+					all_stdout += list(lines)
 
 				p.commands[0].poll()
 
 		finally:
 			p.close()
 
-		stderr = p.stderr.text
-		if stderr:
-			split_lines = self._preprocess_lines(*stderr.split("\n"))
-			self._log_stderr(*split_lines)
-			all_stderr += split_lines
+		lines = p.stderr.readlines()
+		if lines:
+			lines = self._preprocess_lines(*lines)
+			self._log_stderr(*lines)
+			all_stderr += lines
 
-		stdout = p.stdout.text
-		if stdout:
-			split_lines = self._preprocess_lines(*stdout.split("\n"))
-			self._log_stdout(*split_lines)
-			all_stdout += split_lines
+		lines = p.stdout.readlines()
+		if lines:
+			lines = self._preprocess_lines(*lines)
+			self._log_stdout(*lines)
+			all_stdout += lines
 
 		return p.returncode, all_stdout, all_stderr
 
