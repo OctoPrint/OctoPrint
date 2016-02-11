@@ -13,19 +13,8 @@
 {% endtrans %}</div>
 {% endmacro %}
 
-{% macro pluginmanager_sudopip() %}
-<div class="alert alert-error" data-bind="visible: pipUseSudo()">{% trans %}
-    The <code>pip</code> command is configured to use <code>sudo</code>. This
-    is <strong>not</strong> recommended due to security reasons. It is <strong>strongly</strong>
-    suggested you install OctoPrint under a
-    <a href="https://github.com/foosel/OctoPrint/#installation">user-owned virtual environment</a>
-    so that the use of <code>sudo</code> is not needed for plugin management.
-{% endtrans %}</div>
-{% endmacro %}
-
 {{ pluginmanager_printing() }}
 {{ pluginmanager_nopip() }}
-{{ pluginmanager_sudopip() }}
 
 <div class="pull-right">
     <button class="btn btn-small" data-bind="click: function() { $root.showPluginSettings(); }" title="{{ _('Plugin Configuration') }}"><i class="icon-wrench"></i></button>
@@ -76,13 +65,13 @@
     <div>
         <small>
             <a href="#" class="muted" onclick="$(this).children('i.toggle-arrow').toggleClass('icon-caret-right icon-caret-down').parent().parent().parent().next().slideToggle('fast')">
-                <i class="toggle-arrow icon-caret-right"></i> Using pip at "<span data-bind="text: pipCommand"></span>", Version <span data-bind="text: pipVersion"></span>
+                <i class="toggle-arrow icon-caret-right"></i> Using pip of "<span data-bind="text: pipPython"></span>", Version <span data-bind="text: pipVersion"></span>
             </a>
         </small>
     </div>
     <div class="hide">
         <small>
-            Installation directory: <span data-bind="text: pipInstallDir"></span> ("--user" flag: <span data-bind="text: pipUseUserString"></span>, sudo: <span data-bind="text: pipUseSudoString"></span>)<br />
+            Installation directory: <span data-bind="text: pipInstallDir"></span> ("--user" flag: <span data-bind="text: pipUseUserString"></span>)<br />
             Virtual environment: <span data-bind="text: pipVirtualEnvString"></span><br />
             <span data-bind="visible: pipAdditionalArgs">Additional Arguments: <span data-bind="text: pipAdditionalArgs"></span></span>
         </small>
@@ -110,7 +99,6 @@
     <div class="modal-body">
         {{ pluginmanager_printing() }}
         {{ pluginmanager_nopip() }}
-        {{ pluginmanager_sudopip() }}
         <h4 style="position: relative">
             {{ _('... from the <a href="%(url)s" target="_blank">Plugin Repository</a>', url='http://plugins.octoprint.org') }}
             <div class="dropdown pull-right">
