@@ -16,7 +16,10 @@ class ListenerAware(object):
 		self._listeners.add(listener)
 
 	def unregister_listener(self, listener):
-		self._listeners.remove(listener)
+		try:
+			self._listeners.remove(listener)
+		except KeyError:
+			pass
 
 	def notify_listeners(self, name, *args, **kwargs):
 		from logging import getLogger
