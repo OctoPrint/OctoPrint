@@ -1,0 +1,125 @@
+<h4>{{ _('General') }}</h4>
+
+<p>{% trans %}
+    Specify the path to the CuraEngine binary. Note that only
+    <strong>versions up to and including 15.04</strong> are supported.
+    CuraEngine version 15.06 or newer is <strong>not</strong>
+    compatible with this plugin.
+{% endtrans %}</p>
+
+<form class="form-horizontal">
+    <div class="control-group">
+        <label class="control-label" for="settings-cura-path">{{ _('Path to CuraEngine') }}</label>
+        <div class="controls">
+            <input type="text" class="input-block-level" data-bind="value: settings.plugins.cura.cura_engine">
+        </div>
+    </div>
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
+                <input type="checkbox" data-bind="checked: settings.plugins.cura.debug_logging"> {{ _('Log the output of CuraEngine to <code>plugin_cura_engine.log</code>') }}
+            </label>
+        </div>
+    </div>
+</form>
+
+<h4>{{ _('Profiles') }}</h4>
+
+<div class="pull-right">
+    <small>{{ _('Sort by') }}: <a href="#" data-bind="click: function() { profiles.changeSorting('id'); }">{{ _('Identifier') }} ({{ _('ascending') }})</a> | <a href="#" data-bind="click: function() { profiles.changeSorting('name'); }">{{ _('Name') }} ({{ _('ascending') }})</a></small>
+</div>
+<table class="table table-striped table-hover table-condensed table-hover">
+    <thead>
+    <tr>
+        <th class="settings_plugin_cura_profiles_key">{{ _('Identifier') }}</th>
+        <th class="settings_plugin_cura_profiles_name">{{ _('Name') }}</th>
+        <th class="settings_plugin_cura_profiles_actions">{{ _('Actions') }}</th>
+    </tr>
+    </thead>
+    <tbody data-bind="foreach: profiles.paginatedItems">
+        <tr data-bind="attr: {title: description}">
+            <td class="settings_plugin_cura_profiles_key"><span class="icon-star" data-bind="invisible: !isdefault()"></span> <span data-bind="text: key"></span></td>
+            <td class="settings_plugin_cura_profiles_name" data-bind="text: name"></td>
+            <td class="settings_plugin_cura_profiles_actions">
+                <a href="#" class="icon-star" title="{{ _('Make default') }}" data-bind="enable: !isdefault(), css: {disabled: isdefault()}, click: function() { if (!$data.isdefault()) { $root.makeProfileDefault($data); } }"></a>&nbsp;|&nbsp;<a href="#" class="icon-trash" title="{{ _('Delete Profile') }}" data-bind="enable: !isdefault(), css: {disabled: isdefault()}, click: function() { if (!$data.isdefault()) { $root.removeProfile($data); } }"></a>
+            </td>
+        </tr>
+    </tbody>
+</table>
+<div class="pagination pagination-mini pagination-centered">
+    <ul>
+        <li data-bind="css: {disabled: profiles.currentPage() === 0}"><a href="#" data-bind="click: profiles.prevPage">«</a></li>
+    </ul>
+    <ul data-bind="foreach: profiles.pages">
+        <li data-bind="css: { active: $data.number === $root.profiles.currentPage(), disabled: $data.number === -1 }"><a href="#" data-bind="text: $data.text, click: function() { $root.profiles.changePage($data.number); }"></a></li>
+    </ul>
+    <ul>
+        <li data-bind="css: {disabled: profiles.currentPage() === profiles.lastPage()}"><a href="#" data-bind="click: profiles.nextPage">»</a></li>
+    </ul>
+</div>
+
+<button class="btn pull-right" data-bind="click: function() { $root.showImportProfileDialog() }">{{ _('Import Profile...') }}</button>
+
+<div style="clear: both">
+    <small>{% trans %}For more information on configuration and usage please <a href="{{ plugin_cura_homepage }}" target="_blank">see the Plugin's homepage</a>.{% endtrans %}</small>
+</div>
+
+<div id="settings_plugin_cura_import" class="modal hide fade">
+    <div class="modal-header">
+        <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
+        <h3>{{ _('Import Existing Cura Profile') }}</h3>
+    </div>
+    <div class="modal-body">
+        <form class="form-horizontal">
+            <div class="control-group">
+                <label class="control-label">{{ _('Profile ini file') }}</label>
+                <div class="controls">
+                    <div class="input-prepend">
+                <span class="btn fileinput-button">
+                    <span>{{ _('Browse...') }}</span>
+                    <input id="settings-cura-import" type="file" name="file" data-url="{{ url_for("plugin.cura.import_cura_profile") }}">
+                </span>
+                        <span class="add-on" data-bind="text: fileName"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">{{ _('Identifier') }}</label>
+                <div class="controls">
+                    <input type="text" class="input-block-level" data-bind="value: profileName, attr: {placeholder: placeholderName}">
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">{{ _('Name') }}</label>
+                <div class="controls">
+                    <input type="text" class="input-block-level" data-bind="value: profileDisplayName, attr: {placeholder: placeholderDisplayName}">
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label">{{ _('Description') }}</label>
+                <div class="controls">
+                    <input type="text" class="input-block-level" data-bind="value: profileDescription, attr: {placeholder: placeholderDescription}">
+                </div>
+            </div>
+            <div class="control-group">
+                <div class="controls">
+                    <label class="checkbox">
+                        <input type="checkbox" data-bind="checked: profileAllowOverwrite"> {{ _('Overwrite existing file') }}
+                    </label>
+                </div>
+            </div>
+        </form>
+
+        <small>{% trans %}
+            You can import your existing profile <code>.ini</code> files from Cura (version up to and
+            including 15.04) here. Please be aware that neither the <code>.json</code> profile format
+            from Cura versions starting with 15.06 is supported, nor are the custom Cura profile formats
+            that third party tools like e.g. Repetier create.
+        {% endtrans %}</small>
+    </div>
+    <div class="modal-footer">
+        <button class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Abort') }}</button>
+        <button class="btn btn-primary" id="settings-cura-import-start">{{ _('Confirm') }}</button>
+    </div>
+</div>
+

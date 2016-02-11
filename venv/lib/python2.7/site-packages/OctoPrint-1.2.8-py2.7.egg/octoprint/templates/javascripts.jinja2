@@ -1,0 +1,11 @@
+{% assets "js_libs" %}
+    <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+{% endassets %}
+
+{% assets "js_app" %}
+    <script type="text/javascript" src="{{ ASSET_URL }}"></script>
+{% endassets %}
+
+{% if g.locale %}
+    <script type="text/javascript" src="{{ url_for('localeJs', locale=g.locale, domain='messages') }}"></script>
+{% endif %}

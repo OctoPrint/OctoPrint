@@ -1,0 +1,15 @@
+<form class="form-horizontal">
+    <fieldset>
+        <legend>{{ _('Language') }}</legend>
+        <div class="control-group">
+            <div class="controls">
+                <select data-bind="options: locales,
+                                   optionsText: function(item) { return item.display + ((item.language != undefined && item.english != undefined) ? ' [' + item.language + ', ' + item.english + ']' : '') },
+                                   optionsValue: 'language',
+                                   value: interface_language">
+                </select>
+                <span class="help-inline">{{ _('Changes to the interface language will only become active after a reload of the page.') }}</span>
+            </div>
+        </div>
+    </fieldset>
+</form>

@@ -1,0 +1,24 @@
+<form class="form-horizontal">
+    <div class="row-fluid">
+        <div class="span4"><h4>{{ _('Name') }}</h4></div>
+        <div class="span6"><h4>{{ _('RegExp') }} <small><a href="https://developer.mozilla.org/en/docs/Web/JavaScript/Guide/Regular_Expressions">?</a></small></h4></div>
+    </div>
+    <div data-bind="foreach: terminalFilters">
+        <div class="row-fluid" style="margin-bottom: 5px">
+            <div class="span4">
+                <input type="text" class="span12" data-bind="value: name">
+            </div>
+            <div class="span6">
+                <input type="text" class="span12" data-bind="value: regex">
+            </div>
+            <div class="span2">
+                <a title="Remove Filter" class="btn btn-danger" data-bind="click: $parent.removeTerminalFilter"><i class="icon-trash"></i></a>
+            </div>
+        </div>
+    </div>
+    <div class="row-fluid">
+        <div class="offset10 span2">
+            <a title="Add Filter" class="btn btn-primary" data-bind="click: addTerminalFilter"><i class="icon-plus"></i></a>
+        </div>
+    </div>
+</form>

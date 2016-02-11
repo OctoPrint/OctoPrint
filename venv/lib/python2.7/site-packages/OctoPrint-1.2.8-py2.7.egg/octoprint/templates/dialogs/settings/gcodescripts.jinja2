@@ -1,0 +1,38 @@
+<form class="form-horizontal">
+    <div class="control-group">
+        <label class="control-label">{{ _('Before print job starts') }}</label>
+        <div class="controls">
+            <textarea rows="4" class="block" data-bind="value: scripts_gcode_beforePrintStarted"></textarea>
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label">{{ _('After print job completes') }}</label>
+        <div class="controls">
+            <textarea rows="4" class="block" data-bind="value: scripts_gcode_afterPrintDone"></textarea>
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label">{{ _('After print job is cancelled') }}</label>
+        <div class="controls">
+            <textarea rows="4" class="block" data-bind="value: scripts_gcode_afterPrintCancelled"></textarea>
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label">{{ _('After print job is paused') }}</label>
+        <div class="controls">
+            <textarea rows="4" class="block" data-bind="value: scripts_gcode_afterPrintPaused"></textarea>
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label">{{ _('Before print job is resumed') }}</label>
+        <div class="controls">
+            <textarea rows="4" class="block" data-bind="value: scripts_gcode_beforePrintResumed"></textarea>
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label">{{ _('After connection to printer is established') }}</label>
+        <div class="controls">
+            <textarea rows="4" class="block" data-bind="value: scripts_gcode_afterPrinterConnected"></textarea>
+        </div>
+    </div>
+</form>

@@ -1,0 +1,9 @@
+Requirements to integrate Slic3r:
+	-Integration of Slic3r as a plugin
+	-Add Slic3r to plugins menu under settings
+	-When Slic3r is selected, add:
+		-A box to introduce the path
+		-A box to introduce each of the related profile files:
+			-Print settings
+			-Filament settings
+			-Printer settings
