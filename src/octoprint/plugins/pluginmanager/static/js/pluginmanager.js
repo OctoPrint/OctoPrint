@@ -148,17 +148,13 @@ $(function() {
         self.followDependencyLinks = ko.observable(false);
 
         self.pipAvailable = ko.observable(false);
-        self.pipCommand = ko.observable();
         self.pipVersion = ko.observable();
         self.pipInstallDir = ko.observable();
         self.pipUseUser = ko.observable();
-        self.pipUseSudo = ko.observable();
         self.pipVirtualEnv = ko.observable();
         self.pipAdditionalArgs = ko.observable();
+        self.pipPython = ko.observable();
 
-        self.pipUseSudoString = ko.pureComputed(function() {
-            return self.pipUseSudo() ? "yes" : "no";
-        });
         self.pipUseUserString = ko.pureComputed(function() {
             return self.pipUseUser() ? "yes" : "no";
         });
@@ -305,19 +301,16 @@ $(function() {
         self._fromPipResponse = function(data) {
             self.pipAvailable(data.available);
             if (data.available) {
-                self.pipCommand(data.command);
                 self.pipVersion(data.version);
                 self.pipInstallDir(data.install_dir);
                 self.pipUseUser(data.use_user);
-                self.pipUseSudo(data.use_sudo);
                 self.pipVirtualEnv(data.virtual_env);
                 self.pipAdditionalArgs(data.additional_args);
+                self.pipPython(data.python);
             } else {
-                self.pipCommand(undefined);
                 self.pipVersion(undefined);
                 self.pipInstallDir(undefined);
                 self.pipUseUser(undefined);
-                self.pipUseSudo(undefined);
                 self.pipVirtualEnv(undefined);
                 self.pipAdditionalArgs(undefined);
             }

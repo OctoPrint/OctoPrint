@@ -188,13 +188,12 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		               octoprint=self._get_octoprint_version_string(),
 		               pip=dict(
 		                   available=self._pip_caller.available,
-		                   command=self._pip_caller.command,
 		                   version=self._pip_caller.version_string,
 		                   install_dir=self._pip_caller.install_dir,
-		                   use_sudo=self._pip_caller.use_sudo,
 		                   use_user=self._pip_caller.use_user,
 		                   virtual_env=self._pip_caller.virtual_env,
-		                   additional_args=self._settings.get(["pip_args"])
+		                   additional_args=self._settings.get(["pip_args"]),
+		                   python=sys.executable
 		               ))
 
 	def on_api_command(self, command, data):

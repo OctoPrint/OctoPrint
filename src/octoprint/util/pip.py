@@ -161,13 +161,9 @@ class PipCaller(CommandlineCaller):
 		if pip_command is None:
 			return
 
-		pip_command_str = pip_command
-		if isinstance(pip_command_str, list):
-			pip_command_str = " ".join(pip_command_str)
-
 		# Determine the pip version
 
-		self._logger.debug("Found pip at {}, going to figure out its version".format(pip_command_str))
+		self._logger.debug("Going to figure out pip's version")
 
 		pip_version, version_segment = self._get_pip_version(pip_command)
 		if pip_version is None:
@@ -177,7 +173,7 @@ class PipCaller(CommandlineCaller):
 			self._logger.error("This version of pip is known to have bugs that make it incompatible with how it needs to be used by OctoPrint. Please upgrade your pip version.")
 			return
 
-		self._logger.info("Version of pip \"{}\" is {}".format(pip_command_str, version_segment))
+		self._logger.info("Version of pip is {}".format(version_segment))
 
 		# Now figure out if pip belongs to a virtual environment and if the
 		# default installation directory is writable.
@@ -195,13 +191,12 @@ class PipCaller(CommandlineCaller):
 
 		ok, pip_user, pip_virtual_env, pip_install_dir = self._check_pip_setup(pip_command)
 		if not ok:
-			self._logger.error("Cannot use pip \"{}\"".format(pip_command_str))
+			self._logger.error("Cannot use pip")
 			return
 
-		self._logger.info("pip \"{}\" installs to {}, --user flag needed => {}, virtual env => {}".format(pip_command_str,
-		                                                                                                  pip_install_dir,
-		                                                                                                  "yes" if pip_user else "no",
-		                                                                                                  "yes" if pip_virtual_env else "no"))
+		self._logger.info("pip installs to {}, --user flag needed => {}, virtual env => {}".format(pip_install_dir,
+		                                                                                           "yes" if pip_user else "no",
+		                                                                                           "yes" if pip_virtual_env else "no"))
 
 		self._command = pip_command
 		self._version = pip_version
@@ -227,7 +222,16 @@ class PipCaller(CommandlineCaller):
 
 	@classmethod
 	def autodetect_pip(cls):
-		return [sys.executable, "-m", "pip"]
+		commands = [[sys.executable, "-m", "pip"],
+		            [sys.executable, "-c", "import sys; sys.argv = ['pip'] + sys.argv[1:]; import pip; pip.main()"]]
+
+		for command in commands:
+			p = sarge.run(command + ["--version"], stdout=sarge.Capture(), stderr=sarge.Capture())
+			if p.returncode == 0:
+				logging.getLogger(__name__).info("Using \"{}\" as command to invoke pip".format(" ".join(command)))
+				return command
+
+		return None
 
 	@classmethod
 	def to_sarge_command(cls, pip_command, *args):
@@ -363,7 +367,7 @@ class PipCaller(CommandlineCaller):
 			self._logger.debug("Could not detect desired output from testballoon install, got this instead: {!r}".format(data))
 			return False, False, False, None
 
-	def _preprocess_lines(self, lines):
+	def _preprocess_lines(self, *lines):
 		return map(self._preprocess, lines)
 
 	@staticmethod
