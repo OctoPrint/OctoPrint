@@ -26,13 +26,10 @@ title : OctoPrint.org
 <div id="social-buttons">
     <div class="container">
         <span class="watch">
-          <iframe src="//ghbtns.com/github-btn.html?user=foosel&repo=OctoPrint&type=watch&count=true" allowtransparency="true" frameborder="0" scrolling="0" width="85" height="20"></iframe>
+          <iframe src="//ghbtns.com/github-btn.html?user=foosel&repo=OctoPrint&type=watch&count=true" allowtransparency="true" frameborder="0" scrolling="0" width="100" height="20"></iframe>
         </span>
         <span class="fork">
-          <iframe src="//ghbtns.com/github-btn.html?user=foosel&repo=OctoPrint&type=fork&count=true" allowtransparency="true" frameborder="0" scrolling="0" width="95" height="20"></iframe>
-        </span>
-        <span class="gplus">
-          <div class="g-plusone" data-size="medium" data-annotation="bubble" data-width="300" data-href="https://plus.google.com/110130855001142142895"></div>
+          <iframe src="//ghbtns.com/github-btn.html?user=foosel&repo=OctoPrint&type=fork&count=true" allowtransparency="true" frameborder="0" scrolling="0" width="100" height="20"></iframe>
         </span>
         <span class="twitter-follow">
           <a href="https://twitter.com/OctoPrint3D" class="twitter-follow-button" data-show-count="true" data-show-screen-name="false" data-dnt="true">Follow @OctoPrint3D</a>
@@ -41,6 +38,12 @@ title : OctoPrint.org
         <span class="twitter-tweet">
           <a href="https://twitter.com/share" class="twitter-share-button" data-url="http://octoprint.org" data-text="Checkout OctoPrint, the snappy web interface for your 3D printer:" data-dnt="true">Tweet</a>
           <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+        </span>
+        <span class="gplus">
+          <div class="g-plusone" data-size="medium" data-annotation="bubble" data-width="300" data-href="https://plus.google.com/110130855001142142895"></div>
+        </span>
+        <span class="facebook">
+          <div class="fb-like" data-href="https://www.facebook.com/OctoPrint" data-layout="button_count" data-action="like" data-show-faces="false" data-share="false"></div>
         </span>
     </div>
 </div>
@@ -76,13 +79,16 @@ title : OctoPrint.org
                 <a href="https://github.com/foosel/OctoPrint/blob/master/LICENSE">Affero General Public License (AGPL)</a>.
             </div>
             <div class="span4">
-                <h4><i class="icon-picture"></i> Visualize your gcode</h4>
-                OctoPrint incorporates the awesome <a href="https://github.com/hudbrog/gCodeViewer">gCodeVisualizer</a> by
-                Alexey Ustyantsev which allows you to visualize your gcode files before and even during printjobs.
+                <h4><i class="icon-puzzle-piece"></i> Extendable with plugins</h4>
+                OctoPrint's powerful <a href="http://docs.octoprint.org/en/master/plugins/index.html">Plugin System</a>
+                allows extending its functionality and the integrated <a href="http://plugins.octoprint.org/">Plugin Repository</a>
+                makes it easy to find and install awesome plugins from the community.
             </div>
             <div class="span4">
                 <h4><i class="icon-lightbulb"></i> Highly compatible</h4>
-                OctoPrint has been <a href="https://github.com/foosel/OctoPrint/wiki/Supported-Printers">proven to work</a> with many different printer electronics and firmwares. Give it a try!
+                OctoPrint has been <a href="https://github.com/foosel/OctoPrint/wiki/Supported-Printers">proven to work</a>
+                with many different printer electronics and firmwares, and thanks to its Plugin System even support for
+                non-standard printers can be added. Give it a try!
             </div>
         </div>
         <div class="row">
@@ -107,39 +113,41 @@ title : OctoPrint.org
                 <p>
                     OctoPrint differs from existing host solutions in that its major focus is to provide <strong>a web
                     interface</strong> that allows controlling the printer remotely from anywhere on the network or even the
-                    internet while offering the same <strong>responsiveness</strong> and feedback options available on native host
+                    internet while offering the same <strong>snappy experience</strong> available on native host
                     applications like the ones listed above. In order to achieve this, OctoPrint makes heavy use of
-                    current web technologies and frameworks, such as AJAX and HTML5 web sockets.
+                    current web technologies.
                 </p>
                 <p>
                     OctoPrint was developed to be run on small embedded devices such as the popular
-                    <a href="https://www.raspberrypi.org/">Raspberry Pi</a>. It allows you to turn your existing 3D printer
-                    into a WiFi enabled one and untether it from your laptop or work station.
+                    <a href="https://www.raspberrypi.org/">Raspberry Pi</a> - it isn't limited to the Raspberry Pi however,
+                    you can use any computer that you can run Python 2.7 on to run OctoPrint.
                 </p>
+
                 <h3>What's in the package?</h3>
                 <p>
                     OctoPrint currently offers the following features, with <a href="https://github.com/foosel/OctoPrint/issues?labels=type%3Arequest&page=1&state=open">more on the way</a>:
                 </p>
                 <ul>
-                    <li>uploading .gcode files to the server plus optionally the printer's SD card and managing them via the UI</li>
+                    <li>uploading .gcode and .stl files to the server plus optionally the printer's SD card and managing them via the UI</li>
                     <li>selecting a file for printing, getting the usual stats regarding filament usage (length and volume, stats not available for SD card files</li>
                     <li>starting, pausing and cancelling a print job</li>
                     <li>while connected to the printer getting information regarding the current temperature of both head and bed (if available) in a nice shiny javascript-y temperature graph</li>
-                    <li>access to the communication log (with the temperature and SD progress calls optionally filtered out to avoid clutter) and sending arbitrary codes to be executed by the printer</li>
+                    <li>access to the communication log (with configurable filters to remove clutter) and sending arbitrary codes to be executed by the printer</li>
                     <li>previewing the gcode of the selected model to be printed (via <a href="https://github.com/hudbrog/gCodeViewer">GCodeVisualizer</a>), including rendering of the progress during printing (not available when SD printing)</li>
                     <li>visual monitoring of the printer via webcam stream integrated into the UI (using e.g. <a href="http://sourceforge.net/apps/mediawiki/mjpg-streamer/index.php?title=Main_Page">MJPG-Streamer</a>)</li>
                     <li>creation of <a href="https://www.youtube.com/playlist?list=PL9j2DtsIPVkMTv8MxTej4d3KDTgxFltKs">timelapse recordings</a> of the printjob via webcam stream with shots triggered either by a z-change (not available when SD printing) or every n seconds</li>
                     <li><a href="https://github.com/foosel/OctoPrint/wiki/Configuring-Access-Control">access control</a> to provide a read-only mode on the web interface, allowing any actions only to logged in users</li>
-                    <li><a href="https://github.com/foosel/OctoPrint/wiki/Configuration">configurable custom controls</a> to add to the "Control" tab (<a href="https://github.com/foosel/OctoPrint/wiki/Cookbook:-Custom-Controls">Examples</a>)</li>
-                    <li><a href="https://github.com/foosel/OctoPrint/wiki/Configuration">configurable system commands</a> made available in a special dropdown, e.g. to shutdown OctoPrint's host or updating the software via git (<a href="https://github.com/foosel/OctoPrint/wiki/Cookbook:-System-Commands">Examples</a>)</a></li>
-                    <li><a href="https://github.com/foosel/OctoPrint/wiki/Configuration">configurable system commands or gcode commands</a> to be triggered on certain system events (<a href="https://github.com/foosel/OctoPrint/wiki/Cookbook:-Useful-Eventhooks">Examples</a>)</li>
+                    <li><a href="http://docs.octoprint.org/en/master/features/custom_controls.html">configurable custom controls</a> to add to the "Control" tab (<a href="https://github.com/foosel/OctoPrint/wiki/Cookbook:-Custom-Controls">Examples</a>)</li>
+                    <li><a href="http://docs.octoprint.org/en/master/configuration/config_yaml.html#system">configurable system commands</a> made available in a special dropdown, e.g. to shutdown OctoPrint's host or updating the software via git (<a href="https://github.com/foosel/OctoPrint/wiki/Cookbook:-System-Commands">Examples</a>)</li>
+                    <li><a href="http://docs.octoprint.org/en/master/events/index.html">configurable system commands or gcode commands</a> to be triggered on certain system events (<a href="https://github.com/foosel/OctoPrint/wiki/Cookbook:-Useful-Eventhooks">Examples</a>)</li>
+                    <li>an integrated <a href="http://plugins.octoprint.org/">Plugin Repository</a> with lots of plugins that add fancy new functionality, printer support or whole new interfaces with one click</li>
+                    <li>slicing uploaded .stl files directly from within OctoPrint, through CuraEngine or alternatively by adding support for additional slicing engines through plugins</li>
                 </ul>
+
                 <h3>Credit where credit is due</h3>
                 <p>
                     OctoPrint started out as a fork of <a href="http://daid.github.com/Cura/">Cura</a> for adding a
-                    web interface to its printing functionality and was originally named "Printer WebUI". It still uses
-                    large parts of Cura's communication code for talking to the printer, but has been reorganized to
-                    only include those parts of Cura necessary for its targeted use case.
+                    web interface to its printing functionality and was originally named "Printer WebUI".
                 </p>
                 <p>
                     It also uses the following libraries and frameworks for backend and frontend:
@@ -176,6 +184,7 @@ title : OctoPrint.org
                 <p>
                     I also want to thank <a href="http://jhimmen.de">Janina Himmen</a> for providing the kick-ass logo!
                 </p>
+
                 <h3>The project in a nutshell</h3>
                 <ul>
                     <li>OctoPrint is <strong>sponsored by <a href="http://www.bq.com/">BQ</a></strong>, a Spanish technology company which has over the last year embraced Open Source DIY projects including (but not limited to) 3D printing, which provides the project with <strong>a development team</strong> fully dedicated to improve, evolve and expand its functionality, robustness and quality, lead by its creator Gina Häußge.</li>
@@ -184,6 +193,7 @@ title : OctoPrint.org
                     <li>OctoPrint will <strong>never limit</strong> (or force) its functionality solely to BQ products. API and source will remain open and usable by <strong>anyone</strong> in accordance with the license.</li>
                     <li>OctoPrint will continue to pay special attention to <strong>RepRap</strong> based printers</li>
                 </ul>
+
                 <h3>Why is it called OctoPrint and what's with the crystal ball in the logo?</h3>
                 <p>
                     It so happens that I needed a favicon and also OctoPrint's first name -- Printer WebUI -- simply

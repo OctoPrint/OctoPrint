@@ -1,4 +1,14 @@
 @import "bootstrap/bootstrap.less";
+
+// fix for less v2 vs bootstrap v2, see http://stackoverflow.com/a/28182792/2028598
+#grid {
+    .core  {
+        .span(@gridColumns) {
+            width: (@gridColumnWidth * @gridColumns) + (@gridGutterWidth * (@gridColumns - 1));
+        }
+    }
+};
+
 @import url(https://fonts.googleapis.com/css?family=Arvo:400,700,400italic,700italic);
 @import url(https://fonts.googleapis.com/css?family=Open+Sans:400italic,700italic,400,700);
 
@@ -136,8 +146,14 @@ section {
   border-top: 1px solid #fff;
   border-bottom: 1px solid #ddd;
 
-  .watch, .fork, .flattr, .gplus {
-    margin-right: 30px;
+  .watch, .fork, .flattr, .gplus, .twitter-follow, .twitter-tweet {
+    margin-right: 20px;
+  }
+
+  .facebook {
+    .fb_iframe_widget {
+      top: -5px;
+    }
   }
 }
 
