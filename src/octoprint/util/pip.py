@@ -367,7 +367,7 @@ class PipCaller(CommandlineCaller):
 			self._logger.debug("Could not detect desired output from testballoon install, got this instead: {!r}".format(data))
 			return False, False, False, None
 
-	def _preprocess_lines(self, lines):
+	def _preprocess_lines(self, *lines):
 		return map(self._preprocess, lines)
 
 	@staticmethod

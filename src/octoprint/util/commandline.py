@@ -86,13 +86,13 @@ class CommandlineCaller(object):
 			while p.returncode is None:
 				line = p.stderr.readline(timeout=0.5)
 				if line:
-					line = self._preprocess_lines(line)
+					line, = self._preprocess_lines(line)
 					self._log_stderr(line)
 					all_stderr.append(line)
 
 				line = p.stdout.readline(timeout=0.5)
 				if line:
-					line = self._preprocess_lines(line)
+					line, = self._preprocess_lines(line)
 					self._log_stdout(line)
 					all_stdout.append(line)
 
@@ -103,14 +103,13 @@ class CommandlineCaller(object):
 
 		stderr = p.stderr.text
 		if stderr:
-			split_lines = self._preprocess_lines(
-				stderr.split("\n"))
+			split_lines = self._preprocess_lines(*stderr.split("\n"))
 			self._log_stderr(*split_lines)
 			all_stderr += split_lines
 
 		stdout = p.stdout.text
 		if stdout:
-			split_lines = self._preprocess_lines(stdout.split("\n"))
+			split_lines = self._preprocess_lines(*stdout.split("\n"))
 			self._log_stdout(*split_lines)
 			all_stdout += split_lines
 
@@ -122,5 +121,5 @@ class CommandlineCaller(object):
 	def _log_stderr(self, *lines):
 		self.on_log_stderr(*lines)
 
-	def _preprocess_lines(self, lines):
+	def _preprocess_lines(self, *lines):
 		return lines
