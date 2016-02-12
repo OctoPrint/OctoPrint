@@ -40,13 +40,15 @@ class Transport(ListenerAware):
 
 	def connect(self, **params):
 		if self.state == TransportState.CONNECTED:
-			raise AlreadyConnectedError("Already connected, disconnect first")
+			raise TransportAlreadyConnectedError("Already connected, disconnect first")
 		options = self.get_connection_options()
 		param_dict = get_param_dict(params, options)
 		self.create_connection(**param_dict)
 		self.state = TransportState.CONNECTED
 
 	def disconnect(self):
+		if self.state == TransportState.DISCONNECTED:
+			raise TransportNotConnectedError("Already disconnected")
 		self.drop_connection()
 		self.state = TransportState.DISCONNECTED
 
@@ -71,17 +73,20 @@ class Transport(ListenerAware):
 	def do_write(self, data):
 		pass
 
+	def __str__(self):
+		return self.__class__.__name__
+
 
 class TransportState(object):
 	CONNECTED = "connected"
 	DISCONNECTED = "disconnected"
 
 
-class NotConnectedError(Exception):
+class TransportNotConnectedError(Exception):
 	pass
 
 
-class AlreadyConnectedError(Exception):
+class TransportAlreadyConnectedError(Exception):
 	pass
 
 
@@ -132,10 +137,16 @@ class SeparatorAwareTransportWrapper(ListenerAware):
 	def __getattr__(self, item):
 		return getattr(self.transport, item)
 
+	def __str__(self):
+		return "SeparatorAwareTransportWrapper({}, separator={})".format(self.transport, self.separator)
+
 class LineAwareTransportWrapper(SeparatorAwareTransportWrapper):
 
 	def __init__(self, transport):
 		SeparatorAwareTransportWrapper.__init__(self, transport, b"\n")
+
+	def __str__(self):
+		return "LineAwareTransportWrapper({})".format(self.transport)
 
 class PushingTransportWrapper(object):
 
@@ -158,19 +169,26 @@ class PushingTransportWrapper(object):
 		self._receiver_thread.start()
 
 	def disconnect(self):
-		self.transport.disconnect()
 		self._receiver_active = False
+		self.transport.disconnect()
 
 	def wait(self):
 		self._receiver_thread.join()
 
 	def _receiver_loop(self):
 		while self._receiver_active:
-			data = self.transport.read(timeout=self.timeout)
-			self.notify_listeners("on_transport_data_pushed", self, data)
+			try:
+				data = self.transport.read(timeout=self.timeout)
+				self.notify_listeners("on_transport_data_pushed", self, data)
+			except:
+				if self._receiver_active:
+					raise
 
 	def __getattr__(self, item):
 		return getattr(self.transport, item)
+
+	def __str__(self):
+		return "PushingTransportWrapper({})".format(self.transport)
 
 class TransportListener(object):
 

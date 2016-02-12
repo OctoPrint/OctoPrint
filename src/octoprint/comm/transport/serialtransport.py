@@ -105,6 +105,8 @@ class SerialTransport(Transport):
 	def close_connection(self):
 		self._serial.close()
 
+	def __str__(self):
+		return "SerialTransport"
 
 class VirtualSerialTransport(SerialTransport):
 	name = "Virtual Serial Connection"
@@ -126,3 +128,6 @@ class VirtualSerialTransport(SerialTransport):
 			raise ValueError("virtual_serial_factory is not callable")
 
 		self._serial = self.virtual_serial_factory()
+
+	def __str__(self):
+		return "VirtualSerialTransport({})".format(self.virtual_serial_factory)

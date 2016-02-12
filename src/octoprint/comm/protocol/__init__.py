@@ -33,6 +33,9 @@ class Protocol(ListenerAware, TransportListener):
 	@state.setter
 	def state(self, new_state):
 		old_state = self._state
+		if old_state == new_state:
+			return
+
 		self._state = new_state
 
 		name = "_on_state_{}".format(new_state)
@@ -44,8 +47,11 @@ class Protocol(ListenerAware, TransportListener):
 		self.notify_listeners("on_protocol_state", self, old_state, new_state)
 
 	def connect(self, transport, transport_args=None, transport_kwargs=None):
-		self.process_protocol_log("--- Protocol {} connecting via transport {}...".format(self.__class__.__name__,
-		                                                                                  transport.__class__.__name__))
+		if self.state not in (ProtocolState.DISCONNECTED, ProtocolState.DISCONNECTED_WITH_ERROR):
+			raise ProtocolAlreadyConnectedError("Already connected, disconnect first")
+
+		self.process_protocol_log("--- Protocol {} connecting via transport {}...".format(self,
+		                                                                                  transport))
 
 		if transport_args is None:
 			transport_args = []
@@ -60,7 +66,16 @@ class Protocol(ListenerAware, TransportListener):
 		self.state = ProtocolState.CONNECTING
 
 	def disconnect(self):
+		if self.state in (ProtocolState.DISCONNECTED, ProtocolState.DISCONNECTED_WITH_ERROR):
+			raise ProtocolNotConnectedError("Already disconnected")
+
+		self.process_protocol_log("--- Protocol {} disconnecting from transport {}...".format(self,
+		                                                                                      self._transport))
+
 		self._transport.unregister_listener(self)
+		if self._transport.state == TransportState.CONNECTED:
+			self._transport.disconnect()
+		self.state = ProtocolState.DISCONNECTED
 
 	def process(self, job, position=0):
 		if not job.can_process(self):
@@ -146,6 +161,9 @@ class Protocol(ListenerAware, TransportListener):
 		self._protocol_logger.info(message)
 		self.notify_listeners("on_protocol_log", self, message)
 
+	def __str__(self):
+		return self.__class__.__name__
+
 class ProtocolState(object):
 	CONNECTING = "connecting"
 	CONNECTED = "connected"
@@ -155,6 +173,11 @@ class ProtocolState(object):
 	ERROR = "error"
 	DISCONNECTED_WITH_ERROR = "disconnected_with_error"
 
+class ProtocolAlreadyConnectedError(Exception):
+	pass
+
+class ProtocolNotConnectedError(Exception):
+	pass
 
 class FanControlProtocolMixin(object):
 

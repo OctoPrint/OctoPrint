@@ -128,6 +128,14 @@ class ReprapGcodeProtocol(Protocol, MotorControlProtocolMixin,
 		                                         transport_args=transport_args,
 		                                         transport_kwargs=transport_kwargs)
 
+	def disconnect(self):
+		self._send_queue_active = False
+		if self._temperature_poller:
+			self._temperature_poller.cancel()
+			self._temperature_poller = None
+
+		super(ReprapGcodeProtocol, self).disconnect()
+
 	def process(self, job, position=0):
 		if isinstance(job, LocalGcodeStreamjob):
 			self._internal_state["only_from_job"] = True

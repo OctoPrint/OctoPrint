@@ -243,11 +243,13 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		eventManager().fire(Events.DISCONNECTING)
 		self.cancel_print()
 
-		if self._protocol is not None:
+		if self._protocol is not None and self._protocol.state not in (ProtocolState.DISCONNECTED, ProtocolState.DISCONNECTED_WITH_ERROR):
 			self._protocol.disconnect()
+			self._protocol = None
 
 		if self._transport is not None:
 			self._transport.disconnect()
+			self._transport = None
 		eventManager().fire(Events.DISCONNECTED)
 
 	def get_transport(self):
@@ -450,7 +452,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		"""
 		 Cancel the current printjob.
 		"""
-		if self._protocol is None:
+		if self._protocol is None or not self._protocol.state in (ProtocolState.PRINTING, ProtocolState.PAUSED):
 			return
 
 		# reset progress, height, print time
