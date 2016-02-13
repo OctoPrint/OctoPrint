@@ -73,8 +73,14 @@ OctoPrint via `setup.py`:
 
 You should also do this every time after pulling from the repository, since the dependencies might have changed.
 
-OctoPrint currently only supports Python 2.7.
+OctoPrint currently only supports Python 2.7. You will also need the python-dev package for your system:  
 
+    sudo apt-get install python-dev
+
+If you are using virtualenv as recommended, you will also need to
+
+    sudo pip install virtualenv
+    
 Usage
 -----
 
