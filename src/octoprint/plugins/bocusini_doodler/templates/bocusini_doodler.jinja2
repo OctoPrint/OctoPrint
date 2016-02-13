@@ -55,7 +55,7 @@
 												<div id="mycanvasContainer">
 													<img id="imgGuide">
 													<canvas id="mycanvas"></canvas>
-													<img id="btnCloseScan" class="btn3Doodler" src="plugin/bocusini_doodler/static/img/buttons/btnClose.png" />
+													<img id="btnCloseScan" class="btn3Doodler" src="plugin/bocusini_doodler/static/img/buttons/btnClose.png" onclick="onBtnCloseScan();" />
 												</div>
 
 												<div id="previewContainer">
@@ -121,7 +121,7 @@
 
 							<div class="popup" id="popupWordArt">
 								<div class="content">
-									<h1>Add WordArt</h1>
+									<h2>Add WordArt</h2>
 									Please enter your text:<br>
 									<input id="txtWordArt" type="text"/>
 									<img id="btnWordArtOk" class="btn3Doodler" src="plugin/bocusini_doodler/static/img/buttons/btnOk.png">
@@ -130,16 +130,16 @@
 
 							<div class="popup" id="popupScan">
 								<div class="content">
-									<h1>Use photo as a guide</h1>
+									<h2>Use photo as a guide</h2>
 									<input id="fileScan" type="file"/>
 									<!-- <input id="txtDummy" type="text"/> -->
-									<img id="btnScanOk" class="btn3Doodler" src="plugin/bocusini_doodler/static/img/buttons/btnOk.png">
+									<img id="btnScanOk" class="btn3Doodler" src="plugin/bocusini_doodler/static/img/buttons/btnCancel.png" onClick="onBtnScanOk();" >
 								</div>
 							</div>
 
 							<div class="popup" id="popupShape">
 								<div class="content">
-									<h1>Add a new shape</h1>
+									<h2>Add a new shape</h2>
 									<div class="columnRight">
 										<img id="iconShapeLessPoints" src="plugin/bocusini_doodler/static/img/shapeLessPoints.gif" />
 										<img class="btn3Doodler" id="btnShapeMin" src="plugin/bocusini_doodler/static/img/buttons/btnMin.png" />
