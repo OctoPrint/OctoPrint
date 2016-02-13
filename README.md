@@ -77,6 +77,10 @@ OctoPrint currently only supports Python 2.7. You will also need the python-dev 
 
     sudo apt-get install python-dev
 
+If you are using virtualenv as recommended, you will aso need to
+
+    sudo pip install virtualenv
+    
 Usage
 -----
 
