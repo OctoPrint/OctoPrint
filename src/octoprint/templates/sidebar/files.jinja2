@@ -36,7 +36,7 @@
 <div class="text-right muted" data-bind="attr: {title: diskusageString}, css: {'text-error': diskusageCritical}, style: {'font-weight': diskusageCritical() || diskusageWarning() ? 'bold' : 'normal'}">
     <small>{{ _('Free') }}: <span data-bind="text: freeSpaceString"></span> / {{ _('Total') }}: <span data-bind="text: totalSpaceString"></span> <i class="icon-exclamation-sign" data-bind="visible: diskusageWarning" style="display: none"></i></small>
 </div>
-<div style="display: none;" data-bind="visible: loginState.isUser">
+<!--<div style="display: none;" data-bind="visible: loginState.isUser">
     <div class="row-fluid upload-buttons">
         {% if enableSdSupport %}
             <span class="btn btn-primary fileinput-button span6" data-bind="css: {disabled: !$root.loginState.isUser()}" style="margin-bottom: 10px">
@@ -63,4 +63,4 @@
     <div>
         <small class="muted">{{ _('Hint: You can also drag and drop files on this page to upload them.') }}</small>
     </div>
-</div>
+</div>-->
