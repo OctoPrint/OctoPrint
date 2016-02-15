@@ -85,9 +85,10 @@ class ReprapGcodeProtocol(Protocol, MotorControlProtocolMixin,
 			# misc
 			only_from_job=False,
 			trigger_events=True,
+			ignore_ok=0,
 
 			# timeout
-			timeout = None
+			timeout = None,
 		)
 		self._protected_state = protectedkeydict(self._internal_state)
 
@@ -112,10 +113,8 @@ class ReprapGcodeProtocol(Protocol, MotorControlProtocolMixin,
 		self._send_queue_mutex = threading.RLock()
 
 		# sending thread
-		self._send_queue_active = True
-		self.sending_thread = threading.Thread(target=self._send_loop, name="comm.sending_thread")
-		self.sending_thread.daemon = True
-		self.sending_thread.start()
+		self._send_queue_active = False
+		self._sending_thread = None
 
 	def connect(self, transport, transport_args=None, transport_kwargs=None):
 		if not isinstance(transport, Transport):
@@ -124,12 +123,22 @@ class ReprapGcodeProtocol(Protocol, MotorControlProtocolMixin,
 		self._internal_state["timeout"] = self._get_timeout("connection")
 
 		transport = PushingTransportWrapper(LineAwareTransportWrapper(transport), timeout=5.0)
+
+		self._send_queue_active = True
+		self._sending_thread = threading.Thread(target=self._send_loop, name="comm.sending_thread")
+		self._sending_thread.daemon = True
+		self._sending_thread.start()
+
 		super(ReprapGcodeProtocol, self).connect(transport,
 		                                         transport_args=transport_args,
 		                                         transport_kwargs=transport_kwargs)
 
+
 	def disconnect(self):
+		# TODO either clear send queue, or wait until everything has been sent...
 		self._send_queue_active = False
+		self._sending_thread = None
+
 		if self._temperature_poller:
 			self._temperature_poller.cancel()
 			self._temperature_poller = None
@@ -291,6 +300,8 @@ class ReprapGcodeProtocol(Protocol, MotorControlProtocolMixin,
 		line = to_unicode(data, encoding="ascii", errors="replace").strip()
 		lower_line = line.lower()
 
+		any_processed = False
+
 		for message in self._registered_messages:
 			handler_method = getattr(self, "_on_{}".format(message), None)
 			if not handler_method:
@@ -302,6 +313,10 @@ class ReprapGcodeProtocol(Protocol, MotorControlProtocolMixin,
 				matches, continue_further = matches
 
 			if matches:
+				if not any_processed:
+					self._on_comm_any()
+					any_processed = True
+
 				message_args = dict()
 
 				parse_method = getattr(self.flavor, "parse_{}".format(message), None)
@@ -324,6 +339,13 @@ class ReprapGcodeProtocol(Protocol, MotorControlProtocolMixin,
 			# unknown message
 			pass
 
+	def _on_comm_any(self):
+		if self.state == ProtocolState.CONNECTING:
+			hello = self.flavor.command_hello()
+			if hello:
+				self._send_command(hello)
+				self._clear_to_send.set()
+
 	def _on_comm_timeout(self):
 		if self.state == ProtocolState.CONNECTING:
 			self.disconnect()
@@ -336,6 +358,13 @@ class ReprapGcodeProtocol(Protocol, MotorControlProtocolMixin,
 				self._logger.debug("Ran into a communication timeout, but a command known to be a long runner is currently active")
 
 	def _on_comm_ok(self):
+		if self._internal_state["ignore_ok"] > 0:
+			self._internal_state["ignore_ok"] -= 1
+			if self._internal_state["ignore_ok"] < 0:
+				self._internal_state["ignore_ok"] = 0
+			self._logger.debug("Ignoring this ok, ignore counter is now {}".format(self._internal_state["ignore_ok"]))
+			return
+
 		if self.state == ProtocolState.CONNECTING:
 			self.state = ProtocolState.CONNECTED
 			return
@@ -355,6 +384,10 @@ class ReprapGcodeProtocol(Protocol, MotorControlProtocolMixin,
 		else:
 			self._continue_sending()
 
+	def _on_comm_ignore_ok(self):
+		self._internal_state["ignore_ok"] += 1
+		self._logger.info("Ignoring next ok, counter is now at {}".format(self._internal_state["ignore_ok"]))
+
 	def _on_comm_wait(self):
 		if self.state == ProtocolState.PRINTING:
 			self._on_comm_ok()
@@ -370,14 +403,14 @@ class ReprapGcodeProtocol(Protocol, MotorControlProtocolMixin,
 
 		if last_communication_error is not None \
 				and last_communication_error == "linenumber" \
-				and linenumber == self._internal_state["resend_last_linenumber"] \
+				and linenumber == self._internal_state["resend_linenumber"] \
 				and self._internal_state["resend_delta"] is not None and self._internal_state["resend_count"] < self._internal_state["resend_delta"]:
 			self._logger.debug("Ignoring resend request for line {}, that still originates from lines we sent before we got the first resend request".format(linenumber))
 			self._internal_state["resend_count"] += 1
 			return
 
 		self._internal_state["resend_delta"] = resend_delta
-		self._internal_state["resend_last_linenumber"] = linenumber
+		self._internal_state["resend_linenumber"] = linenumber
 		self._internal_state["resend_count"] = 0
 
 	def _on_comm_start(self):
@@ -475,7 +508,7 @@ class ReprapGcodeProtocol(Protocol, MotorControlProtocolMixin,
 		with self._send_queue_mutex:
 			def reset_resend_data():
 				self._internal_state["resend_delta"] = None
-				self._internal_state["resend_last_linenumber"] = None
+				self._internal_state["resend_linenumber"] = None
 				self._internal_state["resend_count"] = 0
 
 			resend_delta = self._internal_state["resend_delta"]
@@ -747,9 +780,9 @@ class ReprapGcodeProtocol(Protocol, MotorControlProtocolMixin,
 			self._do_send_with_checksum(cmd, linenumber)
 
 	def _do_send_with_checksum(self, cmd, lineNumber):
-		command_to_send = "N%d %s" % (lineNumber, cmd)
+		command_to_send = b"N%d %s" % (lineNumber, cmd)
 		checksum = reduce(lambda x,y:x^y, map(ord, command_to_send))
-		command_to_send = "%s*%d" % (command_to_send, checksum)
+		command_to_send = b"%s*%d" % (command_to_send, checksum)
 		self._do_send_without_checksum(command_to_send)
 
 	def _do_send_without_checksum(self, data):

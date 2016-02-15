@@ -84,6 +84,10 @@ class ReprapGcodeFlavor(object):
 		return line.startswith("Error:") or line.startswith("!!")
 
 	@classmethod
+	def comm_ignore_ok(cls, line, lower_line, state):
+		return False
+
+	@classmethod
 	def error_multiline(cls, line, lower_line, state):
 		return False
 
@@ -335,7 +339,7 @@ class ReprapGcodeFlavor(object):
 				# file from the root of the sd -- we'll prepend a /
 				filename = "/" + filename
 
-		return dict(name=filename, size=int(size))
+		return dict(name=filename, size=int(size) if size is not None else None)
 
 	@classmethod
 	def parse_message_sd_printing_byte(cls, line, lower_line, state):

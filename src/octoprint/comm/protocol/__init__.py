@@ -66,8 +66,10 @@ class Protocol(ListenerAware, TransportListener):
 		self.state = ProtocolState.CONNECTING
 
 	def disconnect(self):
-		if self.state in (ProtocolState.DISCONNECTED, ProtocolState.DISCONNECTED_WITH_ERROR):
-			raise ProtocolNotConnectedError("Already disconnected")
+		if self.state in (ProtocolState.DISCONNECTED, ProtocolState.DISCONNECTED_WITH_ERROR, ProtocolState.DISCONNECTING):
+			raise ProtocolNotConnectedError("Already disconnecting or disconnected")
+
+		self.state = ProtocolState.DISCONNECTING
 
 		self.process_protocol_log("--- Protocol {} disconnecting from transport {}...".format(self,
 		                                                                                      self._transport))
@@ -167,6 +169,7 @@ class Protocol(ListenerAware, TransportListener):
 class ProtocolState(object):
 	CONNECTING = "connecting"
 	CONNECTED = "connected"
+	DISCONNECTING = "disconnecting"
 	DISCONNECTED = "disconnected"
 	PRINTING = "printing"
 	PAUSED = "paused"

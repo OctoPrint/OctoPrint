@@ -52,7 +52,9 @@ def _serial_factory(port=None, baudrate=None):
 		except:
 			logging.getLogger(__name__).exception("Error while creating serial via factory {}".format(name))
 			return None
-		return serial_obj
+
+		if serial_obj is not None:
+			return serial_obj
 
 	return None
 
@@ -227,8 +229,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		transport = SerialTransport(serial_factory=_serial_factory)
 
 		from octoprint.comm.protocol.reprap import ReprapGcodeProtocol
-		from octoprint.comm.protocol.reprap.flavors import ReprapGcodeFlavor
-		protocol = ReprapGcodeProtocol(ReprapGcodeFlavor)
+		from octoprint.comm.protocol.reprap.flavors.marlin import BqMarlinFlavor
+		protocol = ReprapGcodeProtocol(BqMarlinFlavor)
 		protocol.register_listener(self)
 
 		self._transport = transport
@@ -245,11 +247,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 
 		if self._protocol is not None and self._protocol.state not in (ProtocolState.DISCONNECTED, ProtocolState.DISCONNECTED_WITH_ERROR):
 			self._protocol.disconnect()
+			self._protocol.unregister_listener(self)
 			self._protocol = None
-
-		if self._transport is not None:
-			self._transport.disconnect()
 			self._transport = None
+
 		eventManager().fire(Events.DISCONNECTED)
 
 	def get_transport(self):
@@ -876,7 +877,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		elif new_state == ProtocolState.PRINTING:
 			self._analysis_queue.pause() # do not analyse files while printing
 
-		elif new_state in (ProtocolState.DISCONNECTED, ProtocolState.DISCONNECTED_WITH_ERROR):
+		elif new_state in (ProtocolState.DISCONNECTED, ProtocolState.DISCONNECTED_WITH_ERROR) and old_state != ProtocolState.DISCONNECTING:
 			self.disconnect()
 			self._setCurrentZ(None)
 			self._update_progress_data()

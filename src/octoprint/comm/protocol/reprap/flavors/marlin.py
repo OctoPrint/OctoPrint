@@ -12,3 +12,14 @@ from octoprint.comm.protocol.reprap.flavors import ReprapGcodeFlavor
 class MarlinFlavor(ReprapGcodeFlavor):
 
 	key = "marlin"
+
+class BqMarlinFlavor(MarlinFlavor):
+
+	key = "bqmarlin"
+
+	long_running_commands = MarlinFlavor.long_running_commands + ["G92", "M800", "M801"]
+
+	@classmethod
+	def comm_ignore_ok(cls, line, lower_line, state):
+		return lower_line.startswith("echo:enqueueing")
+
