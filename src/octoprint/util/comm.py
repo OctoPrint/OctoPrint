@@ -221,6 +221,7 @@ class MachineCom(object):
 		self._pauseWaitStartTime = None
 		self._pauseWaitTimeLost = 0.0
 		self._currentTool = 0
+		self._formerTool = None
 
 		self._long_running_command = False
 		self._heating = False
@@ -994,10 +995,14 @@ class MachineCom(object):
 							pass
 
 				#If we are waiting for an M109 or M190 then measure the time we lost during heatup, so we can remove that time from our printing time estimate.
-				if 'ok' in line and self._heatupWaitStartTime:
-					self._heatupWaitTimeLost = self._heatupWaitTimeLost + (time.time() - self._heatupWaitStartTime)
-					self._heatupWaitStartTime = None
-					self._heating = False
+				if 'ok' in line:
+					if self._formerTool is not None:
+						self._currentTool = self._formerTool
+						self._formerTool = None
+					if self._heatupWaitStartTime:
+						self._heatupWaitTimeLost = self._heatupWaitTimeLost + (time.time() - self._heatupWaitStartTime)
+						self._heatupWaitStartTime = None
+						self._heating = False
 
 				##~~ SD Card handling
 				elif 'SD init fail' in line or 'volume.init failed' in line or 'openRoot failed' in line:
@@ -1814,11 +1819,17 @@ class MachineCom(object):
 			return None, # Don't send bed commands if we don't have a heated bed
 	_gcode_M190_queuing = _gcode_M140_queuing
 
-	def _gcode_M104_sent(self, cmd, cmd_type=None):
+	def _gcode_M104_sent(self, cmd, cmd_type=None, wait=False):
 		toolNum = self._currentTool
 		toolMatch = regexes_parameters["intT"].search(cmd)
+
 		if toolMatch:
 			toolNum = int(toolMatch.group("value"))
+
+			if wait:
+				self._formerTool = self._currentTool
+				self._currentTool = toolNum
+
 		match = regexes_parameters["floatS"].search(cmd)
 		if match:
 			try:
@@ -1831,7 +1842,7 @@ class MachineCom(object):
 			except ValueError:
 				pass
 
-	def _gcode_M140_sent(self, cmd, cmd_type=None):
+	def _gcode_M140_sent(self, cmd, cmd_type=None, wait=False):
 		match = regexes_parameters["floatS"].search(cmd)
 		if match:
 			try:
@@ -1848,13 +1859,13 @@ class MachineCom(object):
 		self._heatupWaitStartTime = time.time()
 		self._long_running_command = True
 		self._heating = True
-		self._gcode_M104_sent(cmd, cmd_type)
+		self._gcode_M104_sent(cmd, cmd_type, wait=True)
 
 	def _gcode_M190_sent(self, cmd, cmd_type=None):
 		self._heatupWaitStartTime = time.time()
 		self._long_running_command = True
 		self._heating = True
-		self._gcode_M140_sent(cmd, cmd_type)
+		self._gcode_M140_sent(cmd, cmd_type, wait=True)
 
 	def _gcode_M110_sending(self, cmd, cmd_type=None):
 		newLineNumber = None
