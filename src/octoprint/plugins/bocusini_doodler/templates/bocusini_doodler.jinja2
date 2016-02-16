@@ -175,9 +175,22 @@
 										<span class="btn btn-primary fileinput-button" data-bind="css: {disabled: !$root.loginState.isUser()}" style="margin-bottom: 10px">
 											<i class="icon-upload-alt icon-white"></i>
 											<span>{{ _('Upload') }}</span>
-											<input id="gcode_upload" type="file" name="file" class="fileinput-button" data-bind="enable: loginState.isUser()">
+											<input id="bocusini_gcode_upload" type="file" name="file" class="fileinput-button" data-bind="enable: loginState.isUser()">
 										</span>
-										<div id="gcode_upload_progress" class="progress" style="width: 100%;">
+										<div id="bocusini_gcode_upload_progress" class="progress" style="width: 100%;">
+											<div class="bar" style="width: 0%"></div>
+										</div>
+										<!--<div>
+											<small class="muted">{{ _('Hint: You can also drag and drop files on this page to upload them.') }}</small>
+										</div>-->
+								</div>
+								<div style="display: none;" data-bind="visible: loginState.isUser">
+										<span class="btn btn-primary fileinput-button" data-bind="css: {disabled: !$root.loginState.isUser()}" style="margin-bottom: 10px">
+											<i class="icon-upload-alt icon-white"></i>
+											<span>PicUp</span>
+											<input id="pic_upload" type="file" name="file" class="fileinput-button" data-bind="enable: loginState.isUser()">
+										</span>
+										<div id="pic_upload_progress" class="progress" style="width: 100%;">
 											<div class="bar" style="width: 0%"></div>
 										</div>
 										<!--<div>

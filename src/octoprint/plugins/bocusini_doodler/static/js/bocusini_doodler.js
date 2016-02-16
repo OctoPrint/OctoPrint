@@ -174,6 +174,134 @@
 			setTimeout(function(){
 				$('#bocusini_nav a[href="#bocusini_calibration"]').tab('show');
 			},1000); // Hack. switch tab after a short timeout.
+			
+			
+            //~~ Gcode upload
+
+            //self.uploadButton = $("#pic_upload");
+            function bocusini_gcode_upload_done(e, data) {
+                var filename = undefined;
+                var location = undefined;
+                if (data.result.files.hasOwnProperty("sdcard")) {
+                    filename = data.result.files.sdcard.name;
+                    location = "sdcard";
+                } else if (data.result.files.hasOwnProperty("local")) {
+                    filename = data.result.files.local.name;
+                    location = "local";
+                }
+                //self.requestData(filename, location);
+
+                if (_.endsWith(filename.toLowerCase(), ".stl")) {
+                    self.slicing.show(location, filename);
+                }
+
+                if (data.result.done) {
+                    $("#bocusini_gcode_upload_progress .bar").css("width", "0%");
+                    $("#bocusini_gcode_upload_progress").removeClass("progress-striped").removeClass("active");
+                    $("#bocusini_gcode_upload_progress .bar").text("");
+                }
+            }
+
+            function bocusini_gcode_upload_fail(e, data) {
+                var error = "<p>" + gettext("Could not upload the file. Make sure that it is a GCODE file and has the extension \".gcode\" or \".gco\" or that it is an STL file with the extension \".stl\".") + "</p>";
+                error += pnotifyAdditionalInfo("<pre>" + data.jqXHR.responseText + "</pre>");
+                new PNotify({
+                    title: "Upload failed",
+                    text: error,
+                    type: "error",
+                    hide: false
+                });
+                $("#bocusini_gcode_upload_progress .bar").css("width", "0%");
+                $("#bocusini_gcode_upload_progress").removeClass("progress-striped").removeClass("active");
+                $("#bocusini_gcode_upload_progress .bar").text("");
+            }
+
+            function bocusini_gcode_upload_progress(e, data) {
+                var progress = parseInt(data.loaded / data.total * 100, 10);
+                $("#bocusini_gcode_upload_progress .bar").css("width", progress + "%");
+                $("#bocusini_gcode_upload_progress .bar").text(gettext("Uploading ..."));
+                if (progress >= 100) {
+                    $("#bocusini_gcode_upload_progress").addClass("progress-striped").addClass("active");
+                    $("#bocusini_gcode_upload_progress .bar").text(gettext("Saving ..."));
+                }
+            }
+
+            function enable_bocusini_gcode_upload() {
+                $("#bocusini_gcode_upload").fileupload({
+                    url: API_BASEURL + "files/local",
+                    dataType: "json",
+                    dropZone: null,
+                    done: bocusini_gcode_upload_done,
+                    fail: bocusini_gcode_upload_fail,
+                    progressall: bocusini_gcode_upload_progress
+                });
+            }
+			
+			
+			function bocusini_pic_upload_done(e, data) {
+                /*var filename = undefined;
+                var location = undefined;
+                if (data.result.files.hasOwnProperty("sdcard")) {
+                    filename = data.result.files.sdcard.name;
+                    location = "sdcard";
+                } else if (data.result.files.hasOwnProperty("local")) {
+                    filename = data.result.files.local.name;
+                    location = "local";
+                }
+                //self.requestData(filename, location);
+
+                if (_.endsWith(filename.toLowerCase(), ".stl")) {
+                    self.slicing.show(location, filename);
+                }*/
+
+                //if (data.result.done) {
+                    $("#pic_upload_progress .bar").css("width", "0%");
+                    $("#pic_upload_progress").removeClass("progress-striped").removeClass("active");
+                    $("#pic_upload_progress .bar").text("");
+                //}
+            }
+
+            function bocusini_pic_upload_fail(e, data) {
+                var error = "<p>" + gettext("Could not upload the file. Make sure that it is a GCODE file and has the extension \".gcode\" or \".gco\" or that it is an STL file with the extension \".stl\".") + "</p>";
+                error += pnotifyAdditionalInfo("<pre>" + data.jqXHR.responseText + "</pre>");
+                new PNotify({
+                    title: "Upload failed",
+                    text: error,
+                    type: "error",
+                    hide: false
+                });
+                $("#pic_upload_progress .bar").css("width", "0%");
+                $("#pic_upload_progress").removeClass("progress-striped").removeClass("active");
+                $("#pic_upload_progress .bar").text("");
+            }
+
+            function bocusini_pic_upload_progress(e, data) {
+                var progress = parseInt(data.loaded / data.total * 100, 10);
+                $("#pic_upload_progress .bar").css("width", progress + "%");
+                $("#pic_upload_progress .bar").text(gettext("Uploading ..."));
+                if (progress >= 100) {
+                    $("#pic_upload_progress").addClass("progress-striped").addClass("active");
+                    $("#pic_upload_progress .bar").text(gettext("Saving ..."));
+                }
+            }
+
+            function enable_bocusini_pic_upload() {
+                $("#pic_upload").fileupload({
+                    url: "/plugin/bocusini_doodler/thumb",
+                    //url: API_BASEURL + "files/local",
+                    dataType: "json",
+                    dropZone: null,
+                    done: bocusini_pic_upload_done,
+                    fail: bocusini_pic_upload_fail,
+                    progressall: bocusini_pic_upload_progress
+                });
+            }
+
+
+			
+			enable_bocusini_gcode_upload();
+			enable_bocusini_pic_upload();
+			
 		};
 
 		// grab temperature
