@@ -17,7 +17,7 @@ import time
 
 from octoprint import util as util
 from octoprint.events import eventManager, Events
-from octoprint.filemanager import FileDestinations
+from octoprint.filemanager import FileDestinations, NoSuchStorage
 from octoprint.plugin import plugin_manager, ProgressPlugin
 from octoprint.printer import PrinterInterface, PrinterCallback, UnknownScript
 from octoprint.printer.estimation import TimeEstimationHelper
@@ -865,7 +865,12 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		self.disconnect()
 
 	def on_comm_record_fileposition(self, origin, name, pos):
-		self._fileManager.save_recovery_data(origin, name, pos)
+		try:
+			self._fileManager.save_recovery_data(origin, name, pos)
+		except NoSuchStorage:
+			pass
+		except:
+			self._logger.exception("Error while trying to persist print recovery data")
 
 class StateMonitor(object):
 	def __init__(self, interval=0.5, on_update=None, on_add_temperature=None, on_add_log=None, on_add_message=None):
