@@ -106,12 +106,26 @@ following section *completely*. Thank you! :)
    fixing it. Take the time to filter through possible duplicates and be really
    sure that your problem definitely is a new one. Try more than one search query
    (e.g. do not only search for "webcam" if you happen to run into an issue
-   with your webcam, also search for "timelapse" etc).
+   with your webcam, also search for "timelapse" etc). Do not only read the subject lines
+   of tickets that look like they might be related, but also read the ticket itself!
+
+   **Very important:** Please make absolutely sure that if you find a bug that looks like
+   it is the same as your's, it actually behaves the same as your's. E.g. if someone gives steps
+   to reproduce his bug that looks like your's, reproduce the bug like that if possible,
+   and only add a "me too" if you actually can reproduce the same
+   issue. Also **provide all information** as [described below](#what-should-i-include-in-a-bug-report)
+   and whatever was additionally requested over the course of the ticket
+   even if you "only" add to an existing ticket. The more information available regarding a bug, the higher
+   the chances of reproducing and solving it. But "me too" on an actually unrelated ticket
+   makes it more difficult due to on top of having to figure out the original problem
+   there's now also a [red herring](https://en.wikipedia.org/wiki/Red_herring) interfering - so please be
+   very diligent here!
 
 ### What should I include in a bug report?
 
 Always use the following template (you can remove what's within `[...]`, that's
-only provided here as some additional information for you):
+only provided here as some additional information for you), **even if only adding a
+"me too" to an existing ticket**:
 
     #### What were you doing?
 
@@ -156,6 +170,8 @@ only provided here as some additional information for you):
     [If applicable. Always include if unsure or reporting UI issues.]
 
     I have read the FAQ.
+
+Copy-paste this template **completely**. Do not skip any lines!
 
 ### Where can I find which version and branch I'm on?
 
@@ -324,6 +340,8 @@ the local version identifier to allow for an exact determination of the active c
   * 2015-12-01: Heavily reworked to include examples, better structure and
     all information in one document.
   * 2016-02-10: Added information about branch structure and versioning.
+  * 2016-02-16: Added requirement to add information from template to existing
+    tickets as well, explained issue with "me too" red herrings.
 
 ## Footnotes
   * [1] - If you are wondering why, the problem is that anything that you add
