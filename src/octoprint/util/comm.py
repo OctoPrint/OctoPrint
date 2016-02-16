@@ -920,13 +920,20 @@ class MachineCom(object):
 					else:
 						continue
 
+				def convert_line(line):
+					if line is None:
+						return None, None
+					stripped_line = line.strip()
+					return stripped_line, stripped_line.lower()
+
 				##~~ Error handling
 				line = self._handleErrors(line)
+				line, lower_line = convert_line(line)
 
 				##~~ SD file list
 				# if we are currently receiving an sd file list, each line is just a filename, so just read it and abort processing
 				if self._sdFileList and not "End file list" in line:
-					preprocessed_line = line.strip().lower()
+					preprocessed_line = lower_line
 					fileinfo = preprocessed_line.rsplit(None, 1)
 					if len(fileinfo) > 1:
 						# we might have extended file information here, so let's split filename and size and try to make them a bit nicer
@@ -995,7 +1002,7 @@ class MachineCom(object):
 							pass
 
 				#If we are waiting for an M109 or M190 then measure the time we lost during heatup, so we can remove that time from our printing time estimate.
-				if 'ok' in line:
+				if line.startswith("ok"):
 					if self._formerTool is not None:
 						self._currentTool = self._formerTool
 						self._formerTool = None
@@ -1051,7 +1058,7 @@ class MachineCom(object):
 				elif 'Writing to file' in line and self.isStreaming():
 					self._changeState(self.STATE_PRINTING)
 					self._clear_to_send.set()
-					line = "ok"
+					line, lower_line = convert_line("ok")
 				elif 'Done printing file' in line and self.isSdPrinting():
 					# printer is reporting file finished printing
 					self._sdFilePos = 0
@@ -1076,8 +1083,9 @@ class MachineCom(object):
 					self._clear_to_send.set()
 
 				##~~ Message handling
-				elif line.strip() != '' \
-						and line.strip() != 'ok' and not line.startswith("wait") \
+				elif line != '' \
+						and not line.startswith("ok") \
+						and not line.startswith("wait") \
 						and not line.startswith('Resend:') \
 						and line != 'echo:Unknown command:""\n' \
 						and self.isOperational():
@@ -1140,18 +1148,18 @@ class MachineCom(object):
 						startSeen = True
 						self._sendCommand("M110")
 						self._clear_to_send.set()
-					elif "ok" in line:
+					elif line.startswith("ok"):
 						self._onConnected()
 					elif time.time() > self._timeout:
 						self.close()
 
 				### Operational
 				elif self._state == self.STATE_OPERATIONAL or self._state == self.STATE_PAUSED:
-					if "ok" in line:
+					if line.startswith("ok"):
 						self._handle_ok()
 
 					# resend -> start resend procedure from requested line
-					elif line.lower().startswith("resend") or line.lower().startswith("rs"):
+					elif lower_line.startswith("resend") or lower_line.startswith("rs"):
 						self._handleResendRequest(line)
 
 				### Printing
@@ -1164,12 +1172,12 @@ class MachineCom(object):
 						else:
 							self._logger.debug("Ran into a communication timeout, but a command known to be a long runner is currently active")
 
-					if "ok" in line or (supportWait and "wait" in line):
+					if line.startswith("ok") or (supportWait and line.startswith("wait")):
 						# a wait while printing means our printer's buffer ran out, probably due to some ok getting
 						# swallowed, so we treat it the same as an ok here to take up communication again
 						self._handle_ok()
 
-					elif line.lower().startswith("resend") or line.lower().startswith("rs"):
+					elif lower_line.startswith("resend") or lower_line.startswith("rs"):
 						self._handleResendRequest(line)
 			except:
 				self._logger.exception("Something crashed inside the serial connection loop, please report this in OctoPrint's bug tracker:")
