@@ -313,7 +313,8 @@ class MachineCom(object):
 				self._callback.on_comm_sd_files([])
 
 			if self._currentFile is not None:
-				self._recordFilePosition()
+				if self.isBusy():
+					self._recordFilePosition()
 				self._currentFile.close()
 
 		oldState = self.getStateString()
