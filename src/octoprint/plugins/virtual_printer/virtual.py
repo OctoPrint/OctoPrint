@@ -591,49 +591,59 @@ class VirtualPrinter():
 
 	def _sdPrintingWorker(self):
 		self._selectedSdFilePos = 0
-		with open(self._selectedSdFile, "r") as f:
-			for line in iter(f.readline, ""):
-				if self._killed:
-					break
+		try:
+			with open(self._selectedSdFile, "r") as f:
+				for line in iter(f.readline, ""):
+					if self._killed:
+						break
 
-				# reset position if requested by client
-				if self._newSdFilePos is not None:
-					f.seek(self._newSdFilePos)
-					self._newSdFilePos = None
+					# reset position if requested by client
+					if self._newSdFilePos is not None:
+						f.seek(self._newSdFilePos)
+						self._newSdFilePos = None
 
-				# read current file position
-				self._selectedSdFilePos = f.tell()
+					# read current file position
+					self._selectedSdFilePos = f.tell()
 
-				# if we are paused, wait for unpausing
-				self._sdPrintingSemaphore.wait()
+					# if we are paused, wait for unpausing
+					self._sdPrintingSemaphore.wait()
 
-				# set target temps
-				if 'M104' in line or 'M109' in line:
-					self._parseHotendCommand(line)
-				if 'M140' in line or 'M190' in line:
-					self._parseBedCommand(line)
+					# set target temps
+					if 'M104' in line or 'M109' in line:
+						self._parseHotendCommand(line)
+					if 'M140' in line or 'M190' in line:
+						self._parseBedCommand(line)
 
-				time.sleep(settings().getFloat(["devel", "virtualPrinter", "throttle"]))
+					time.sleep(settings().getFloat(["devel", "virtualPrinter", "throttle"]))
+		except AttributeError:
+			if self.outgoing is not None:
+				raise
 
-		self._sdPrintingSemaphore.clear()
-		self._selectedSdFilePos = 0
-		self._sdPrinter = None
-		self.outgoing.put("Done printing file")
+		if not self._killed:
+			self._sdPrintingSemaphore.clear()
+			self._selectedSdFilePos = 0
+			self._sdPrinter = None
+			self.outgoing.put("Done printing file")
 
 	def _waitForHeatup(self, heater):
 		delta = 1
 		delay = 1
-		if heater.startswith("tool"):
-			toolNum = int(heater[len("tool"):])
-			while not self._killed and (self.temp[toolNum] < self.targetTemp[toolNum] - delta or self.temp[toolNum] > self.targetTemp[toolNum] + delta):
-				self._simulateTemps(delta=delta)
-				self.outgoing.put("T:%0.2f" % self.temp[toolNum])
-				time.sleep(delay)
-		elif heater == "bed":
-			while not self._killed and (self.bedTemp < self.bedTargetTemp - delta or self.bedTemp > self.bedTargetTemp + delta):
-				self._simulateTemps(delta=delta)
-				self.outgoing.put("B:%0.2f" % self.bedTemp)
-				time.sleep(delay)
+
+		try:
+			if heater.startswith("tool"):
+				toolNum = int(heater[len("tool"):])
+				while not self._killed and (self.temp[toolNum] < self.targetTemp[toolNum] - delta or self.temp[toolNum] > self.targetTemp[toolNum] + delta):
+					self._simulateTemps(delta=delta)
+					self.outgoing.put("T:%0.2f" % self.temp[toolNum])
+					time.sleep(delay)
+			elif heater == "bed":
+				while not self._killed and (self.bedTemp < self.bedTargetTemp - delta or self.bedTemp > self.bedTargetTemp + delta):
+					self._simulateTemps(delta=delta)
+					self.outgoing.put("B:%0.2f" % self.bedTemp)
+					time.sleep(delay)
+		except AttributeError:
+			if self.outgoing is not None:
+				raise
 
 	def _deleteSdFile(self, filename):
 		if filename.startswith("/"):
@@ -704,6 +714,7 @@ class VirtualPrinter():
 			return ""
 
 	def close(self):
+		self._killed = True
 		self.incoming = None
 		self.outgoing = None
 		self.buffered = None
