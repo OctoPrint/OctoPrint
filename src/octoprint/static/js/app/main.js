@@ -199,11 +199,8 @@ $(function() {
                 constructorParameters = [];
             }
 
-            if (_.some(constructorParameters, function(parameter) { return parameter === undefined; })) {
-                var _extractName = function(entry) { return entry[0]; };
-                var _onlyUnresolved = function(entry) { return entry[1] === undefined; };
-                var missingParameters = _.map(_.filter(_.zip(viewModelParameters, constructorParameters), _onlyUnresolved), _extractName);
-                log.debug("Postponing", viewModel[0].name, "due to missing parameters:", missingParameters);
+            if (constructorParameters.indexOf(undefined) !== -1) {
+                log.debug("Postponing", viewModel[0].name, "due to missing parameters:", _.keys(_.pick(_.object(viewModelParameters, constructorParameters), _.isUndefined)));
                 return;
             }
 
