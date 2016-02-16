@@ -665,6 +665,10 @@ class MachineCom(object):
 		if not self.isOperational() or self.isStreaming():
 			return
 
+		if not self.isBusy() or self._currentFile is None:
+			# we aren't even printing, nothing to cancel...
+			return
+
 		self._changeState(self.STATE_OPERATIONAL)
 
 		if self.isSdFileSelected():
