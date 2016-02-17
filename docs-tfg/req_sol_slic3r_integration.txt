@@ -1,9 +1,17 @@
-Requirements to integrate Slic3r:
-	-Integration of Slic3r as a plugin
-	-Add Slic3r to plugins menu under settings
-	-When Slic3r is selected, add:
+Requirements to integrate Slic3r in order to achieve slicing using the terminal:
+
+	-Integration of Slic3r as a plugin, so user can select whether to install it or not
+
+	-Add Slic3r to plugins menu under settings 
+
+	-If slic3r is selected to be installed, install automatically unless it already exists. If not possible, tell the user how to do it.
+
+	-When Slic3r is installed and in case it is selected, in the settings windows should appear:
 		-A box to introduce the path
 		-A box to introduce each of the related profile files:
 			-Print settings
 			-Filament settings
 			-Printer settings
+		-A checkbox to ask the user if he wishes to maintain the stl file after slicing or not		
+
+	-When slicing one or multiple objects, delete stl file if user chose that option in settings

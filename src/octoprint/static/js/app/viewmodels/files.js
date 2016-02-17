@@ -513,8 +513,6 @@ $(function() {
             if (!self.uploadSdButton.length) {
                 self.uploadSdButton = undefined;
             }
-
-<<<<<<< HEAD
                 if (_.endsWith(filename.toLowerCase(), ".stl")) {
                     self.slicing.show(location, filename);
                 }
@@ -523,21 +521,13 @@ $(function() {
                     $("#gcode_upload_progress .bar").css("width", "0%");
                     $("#gcode_upload_progress").removeClass("progress-striped").removeClass("active");
                     $("#gcode_upload_progress .bar").text("");
-		/*var cadena="";
-		    for(var i in data)
-		{
-			cadena+=" "+i+"\t";
-};*/
-		    
                 }
-            }
-=======
+            //}
             self.uploadProgress = $("#gcode_upload_progress");
             self.uploadProgressBar = $(".bar", self.uploadProgress);
 
             self.localTarget = CONFIG_SD_SUPPORT ? $("#drop_locally") : $("#drop");
             self.sdTarget = $("#drop_sd");
->>>>>>> 6945394fc25de4886dea6a77b11b256b62abda72
 
             function evaluateDropzones() {
                 var enableLocal = self.loginState.isUser();
