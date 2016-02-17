@@ -182,31 +182,33 @@ $(function() {
         }
 
         // helper to create a view model instance with injected constructor parameters from the view model map
-        var _createViewModelInstance = function(viewModel, viewModelMap){
-            var viewModelClass = viewModel[0];
-            var viewModelParameters = viewModel[1];
+        var _createViewModelInstance = function(viewModel, viewModelMap) {
 
-            if (viewModelParameters != undefined) {
-                if (!_.isArray(viewModelParameters)) {
-                    viewModelParameters = [viewModelParameters];
+            var viewModelParametersMap = function(parameter) {
+
+                // Check if parameter is found within optional array and if all conditions are met return null
+                if (optionalDependencyPass && viewModel.optional.indexOf(parameter) !== -1 && !viewModelMap[parameter]) {
+                    log.debug("Resolving optional parameter", [parameter], "without viewmodel");
+                    return null
                 }
 
-                // now we'll try to resolve all of the view model's constructor parameters via our view model map
-                var constructorParameters = _.map(viewModelParameters, function(parameter){
-                    return viewModelMap[parameter]
-                });
-            } else {
-                constructorParameters = [];
-            }
+                return viewModelMap[parameter]
+            };
+
+            // try to resolve all of the view model's constructor parameters via our view model map
+            var constructorParameters = _.map(viewModel.dependencies, viewModelParametersMap) || [];
 
             if (constructorParameters.indexOf(undefined) !== -1) {
-                log.debug("Postponing", viewModel[0].name, "due to missing parameters:", _.keys(_.pick(_.object(viewModelParameters, constructorParameters), _.isUndefined)));
+                log.debug("Postponing", viewModel.name, "due to missing parameters:", _.keys(_.pick(_.object(viewModel.dependencies, constructorParameters), _.isUndefined)));
                 return;
             }
 
+            // transform array into object if a plugin wants it as an object
+            constructorParameters = (viewModel.format === "object") ? _.object(viewModel.dependencies, constructorParameters) : constructorParameters;
+
             // if we came this far then we could resolve all constructor parameters, so let's construct that view model
-            log.debug("Constructing", viewModel[0].name, "with parameters:", viewModelParameters);
-            return new viewModelClass(constructorParameters);
+            log.debug("Constructing", viewModel.name, "with parameters:", viewModel.dependencies);
+            return new viewModel.construct(constructorParameters);
         };
 
         // map any additional view model bindings we might need to make
@@ -226,8 +228,7 @@ $(function() {
         });
 
         // helper for translating the name of a view model class into an identifier for the view model map
-        var _getViewModelId = function(viewModel){
-            var name = viewModel[0].name;
+        var _getViewModelId = function(name){
             return name.substr(0, 1).toLowerCase() + name.substr(1); // FooBarViewModel => fooBarViewModel
         };
 
@@ -240,20 +241,39 @@ $(function() {
         var allViewModels = [];
         var allViewModelData = [];
         var pass = 1;
+        var optionalDependencyPass = false;
         log.info("Starting dependency resolution...");
         while (unprocessedViewModels.length > 0) {
             log.debug("Dependency resolution, pass #" + pass);
             var startLength = unprocessedViewModels.length;
             var postponed = [];
 
+            if(optionalDependencyPass) {
+                log.debug("Resolving dependencies with optional flag");
+            }
+
             // now try to instantiate every one of our as of yet unprocessed view model descriptors
             while (unprocessedViewModels.length > 0){
                 var viewModel = unprocessedViewModels.shift();
-                var viewModelId = _getViewModelId(viewModel);
+
+                // Wrap anything not object related into a object
+                if(!(viewModel.constructor === Object)) {
+                    viewModel = {
+                        construct: viewModel[0],
+                        dependencies: viewModel[1]  || [],
+                        elements: viewModel[2]      || [],
+                        optional: viewModel[3]      || []
+                    };
+                }
+
+                viewModel.name = viewModel.name ||  _getViewModelId(viewModel.construct.name);
+                viewModel.dependencies = (_.isArray(viewModel.dependencies)) ? viewModel.dependencies : [viewModel.dependencies];
+                viewModel.elements = (_.isArray(viewModel.elements)) ? viewModel.elements : [viewModel.elements];
+                viewModel.optional = (_.isArray(viewModel.optional)) ? viewModel.optional : [viewModel.optional];
 
                 // make sure that we don't have two view models going by the same name
-                if (_.has(viewModelMap, viewModelId)) {
-                    log.error("Duplicate name while instantiating " + viewModelId);
+                if (_.has(viewModelMap, viewModel.name)) {
+                    log.error("Duplicate name while instantiating " + viewModel.name);
                     continue;
                 }
 
@@ -266,18 +286,15 @@ $(function() {
                 }
 
                 // we could resolve the depdendencies and the view model is not defined yet => add it, it's now fully processed
-                var viewModelBindTargets = viewModel[2];
-                if (!_.isArray(viewModelBindTargets)) {
-                    viewModelBindTargets = [viewModelBindTargets];
-                }
+                var viewModelBindTargets = viewModel.elements;
 
-                if (additionalBindings.hasOwnProperty(viewModelId)) {
-                    viewModelBindTargets = viewModelBindTargets.concat(additionalBindings[viewModelId]);
+                if (additionalBindings.hasOwnProperty(viewModel.name)) {
+                    viewModelBindTargets = viewModelBindTargets.concat(additionalBindings[viewModel.name]);
                 }
 
                 allViewModelData.push([viewModelInstance, viewModelBindTargets]);
                 allViewModels.push(viewModelInstance);
-                viewModelMap[viewModelId] = viewModelInstance;
+                viewModelMap[viewModel.name] = viewModelInstance;
             }
 
             // anything that's now in the postponed list has to be readded to the unprocessedViewModels
@@ -287,11 +304,15 @@ $(function() {
             // couldn't instantiate any more view models over a whole iteration, which in turn mean we can't resolve the
             // dependencies of remaining ones, so log that as an error and then quit the loop
             if (unprocessedViewModels.length == startLength) {
-                log.error("Could not instantiate the following view models due to unresolvable dependencies:");
-                _.each(unprocessedViewModels, function(entry) {
-                    log.error(entry[0].name + " (missing: " + _.filter(entry[1], function(id) { return !_.has(viewModelMap, id); }).join(", ") + " )");
-                });
-                break;
+                if(!optionalDependencyPass) {
+                    optionalDependencyPass = true;
+                } else {
+                    log.error("Could not instantiate the following view models due to unresolvable dependencies:");
+                    _.each(unprocessedViewModels, function(entry) {
+                        log.error(entry.name + " (missing: " + _.filter(entry.dependencies, function(id) { return !_.has(viewModelMap, id); }).join(", ") + " )");
+                    });
+                    break;
+                }
             }
 
             log.debug("Dependency resolution pass #" + pass + " finished, " + unprocessedViewModels.length + " view models left to process");
