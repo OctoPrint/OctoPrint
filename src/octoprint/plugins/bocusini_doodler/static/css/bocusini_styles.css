@@ -1097,3 +1097,12 @@ body.doodler_active {
     /* for ie9 */
   }
 }
+
+
+#bocusini_files span.bocusini-fileinput-button  {
+	width: 45px;
+}
+
+#bocusini_files div.bocusini-fileinput-progress  {
+	width: 70px;
+}

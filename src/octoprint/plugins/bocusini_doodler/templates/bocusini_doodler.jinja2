@@ -172,30 +172,24 @@
 							<div class='span1'>
 								<div class="spacer"></div>
 								<div style="display: none;" data-bind="visible: loginState.isUser">
-										<span class="btn btn-primary fileinput-button" data-bind="css: {disabled: !$root.loginState.isUser()}" style="margin-bottom: 10px">
+										<span class="btn btn-primary fileinput-button bocusini-fileinput-button" data-bind="css: {disabled: !$root.loginState.isUser()}" style="margin-bottom: 10px">
 											<i class="icon-upload-alt icon-white"></i>
-											<span>{{ _('Upload') }}</span>
-											<input id="bocusini_gcode_upload" type="file" name="file" class="fileinput-button" data-bind="enable: loginState.isUser()">
+											<span>Picture</span>
+											<input id="pic_upload" type="file" name="file" class="fileinput-button" accept="image/*" data-bind="enable: loginState.isUser()">
 										</span>
-										<div id="bocusini_gcode_upload_progress" class="progress" style="width: 100%;">
+										<div id="pic_upload_progress" class="progress bocusini-fileinput-progress">
 											<div class="bar" style="width: 0%"></div>
 										</div>
-										<!--<div>
-											<small class="muted">{{ _('Hint: You can also drag and drop files on this page to upload them.') }}</small>
-										</div>-->
 								</div>
 								<div style="display: none;" data-bind="visible: loginState.isUser">
-										<span class="btn btn-primary fileinput-button" data-bind="css: {disabled: !$root.loginState.isUser()}" style="margin-bottom: 10px">
+										<span class="btn btn-primary fileinput-button bocusini-fileinput-button" data-bind="css: {disabled: !$root.loginState.isUser()}" style="margin-bottom: 10px">
 											<i class="icon-upload-alt icon-white"></i>
-											<span>PicUp</span>
-											<input id="pic_upload" type="file" name="file" class="fileinput-button" data-bind="enable: loginState.isUser()">
+											<span>gcode</span>
+											<input id="bocusini_gcode_upload" type="file" name="file" class="fileinput-button" data-bind="enable: loginState.isUser()">
 										</span>
-										<div id="pic_upload_progress" class="progress" style="width: 100%;">
+										<div id="bocusini_gcode_upload_progress" class="progress bocusini-fileinput-progress">
 											<div class="bar" style="width: 0%"></div>
 										</div>
-										<!--<div>
-											<small class="muted">{{ _('Hint: You can also drag and drop files on this page to upload them.') }}</small>
-										</div>-->
 								</div>
 								<div class="text-right muted" data-bind="attr: {title: diskusageString}, css: {'text-error': diskusageCritical}, style: {'font-weight': diskusageCritical() || diskusageWarning() ? 'bold' : 'normal'}">
 																		<!--<small>
