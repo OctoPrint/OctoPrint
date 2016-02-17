@@ -35,4 +35,11 @@
             <textarea rows="4" class="block" data-bind="value: scripts_gcode_afterPrinterConnected"></textarea>
         </div>
     </div>
+    <div class="control-group">
+        <label class="control-label">{{ _('Before connection to printer is closed') }}</label>
+        <div class="controls">
+            <textarea rows="4" class="block" data-bind="value: scripts_gcode_beforePrinterDisconnected"></textarea>
+        </div>
+        <small>{{ _('This will only be executed when closing the connection actively. If the connection to the printer is suddenly lost nothing will be sent.') }}</small>
+    </div>
 </form>

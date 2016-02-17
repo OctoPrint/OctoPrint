@@ -1,5 +1,74 @@
 # OctoPrint Changelog
 
+## 1.3.0 (unreleased)
+
+### New Features
+
+* A new wizard dialog for system setups that can also be extended by plugins. Replaces the first run dialog
+  for setting up access control and can also be triggered in other cases than only the first run, e.g.
+  if Plugins necessitate user input to function properly.
+* An About dialog including licenses, authors, the changelog and more, extendable by plugins if necessary.
+* New features within the plugin system (TODO):
+  * New plugin mixin `UiPlugin` for plugins that want to provide an alternative web interface delivered by the
+    server.
+* Extracted a Javascript client library for utilizing the server's API, can be reused by `UiPlugin`s. (TODO)
+
+(TODO) = needs to be further described and documented
+
+### Improvements
+
+* Upgraded versioneer, generated version numbers are now PEP440 compatible (relevant
+  for setup)
+* More verbose output for Software Update plugin for logged in administrators.
+  Will now log the update commands and their output similar to the Plugin
+  Manager install and uninstall dialog.
+* Allow hiding plugins from Plugin Manager via ``config.yaml``.
+* Cura Plugin: "Test" button to check if path to cura engine is valid.
+* Cura Plugin: Now also supports 15.06 version of CuraEngine.
+* New central configuration option for commands to restart OctoPrint and to
+  restart and shut down the system OctoPrint is running on. This allows plugins
+  (like the Software Update Plugin or the Plugin Manager) and core functionality
+  to perform these common administrative tasks without the user needing to define
+  everything redundantly.
+* `pip` helper now adjusts `pip install` parameters corresponding to detected
+  `pip` version:
+  * Removes `--process-dependency-links` when it's not needed
+  * Adds `--no-use-wheel` when it's needed
+  * Detects and reports on completely broken versions
+* Better tracking of printer connection state for plugins and scripts:
+  * Introduced three new Events `Connecting`, `Disconnecting` and
+    `PrinterStateChanged`.
+  * Introduced new GCODE script `beforePrinterDisconnected` which will get sent
+    before a (controlled) disconnect from the printer. This can be used to send
+    some final commands to the printer before the connection goes down, e.g.
+    `M117 Bye from OctoPrint`.
+  * The communication layer will now wait for the send queue to be fully processed
+    before disconnecting from the printer for good. This way it is ensured that
+    the `beforePrinterDisconnected` script or any further GCODE injected into it
+    will actually get sent.
+* Additional baud rates to allow for connecting can now be specified along side
+  additional serial ports via the settings dialog and the configuration file.
+* Option to never send checksums (e.g. if the printer firmware doesn't support it),
+  see [#949](https://github.com/foosel/OctoPrint/issues/949).
+* Added secondary temperature polling interval to use when printer is not printing
+  but a target temperature is set - this way the graph should be more responsive
+  while monitoring a manual heatup.
+* Documentation improvements
+* Test buttons for webcam snapshot & stream URL, ffmpeg path and some other settings
+  (see also [#183](https://github.com/foosel/OctoPrint/issues/183)).
+* Temperature graph automatically adjusts its Y axis range if necessary to
+  accomodate the plotted data (see also [#632](https://github.com/foosel/OctoPrint/issues/632)).
+* "Fan on" command now always sends `S255` parameter for better compatibility
+  across firmwares.
+
+### Bug Fixes
+
+* It's not possible anymore to select files that are not machinecode files (e.g.
+  GCODE) for printing on the file API.
+* Changes to a user's personal settings via the UI now propagate across sessions.
+* [#1047](https://github.com/foosel/OctoPrint/issues/1047) - Fixed 90 degree
+  webcam rotation for iOS Safari.
+
 ## 1.2.8 (2015-12-07)
 
 ### Notes for Upgraders

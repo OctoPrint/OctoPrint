@@ -68,7 +68,7 @@ def configureTimelapse(config=None, persist=False):
 	global current
 
 	if config is None:
-		config = settings().get(["webcam", "timelapse"])
+		config = settings().get(["webcam", "timelapse"], merged=True)
 
 	if current is not None:
 		current.unload()

@@ -8,10 +8,11 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import unittest
 import os
 import mock
+import os.path
 
 from ddt import ddt, unpack, data
 
-import octoprint.filemanager.storage
+from octoprint.filemanager.storage import LocalFileStorage, StorageError
 
 
 class FileWrapper(object):
@@ -41,8 +42,8 @@ class LocalStorageTest(unittest.TestCase):
 
 	def setUp(self):
 		import tempfile
-		self.basefolder = tempfile.mkdtemp()
-		self.storage = octoprint.filemanager.storage.LocalFileStorage(self.basefolder)
+		self.basefolder = os.path.realpath(os.path.abspath(tempfile.mkdtemp()))
+		self.storage = LocalFileStorage(self.basefolder)
 
 		# mock file manager module
 		self.filemanager_patcher = mock.patch("octoprint.filemanager")
@@ -66,24 +67,24 @@ class LocalStorageTest(unittest.TestCase):
 		self.filemanager_patcher.stop()
 
 	def test_add_file(self):
-		self._add_file("bp_case.stl", "bp_case.stl", FILE_BP_CASE_STL)
+		self._add_and_verify_file("bp_case.stl", "bp_case.stl", FILE_BP_CASE_STL)
 
 	def test_add_file_overwrite(self):
-		self._add_file("bp_case.stl", "bp_case.stl", FILE_BP_CASE_STL)
+		self._add_and_verify_file("bp_case.stl", "bp_case.stl", FILE_BP_CASE_STL)
 
 		try:
-			self._add_file("bp_case.stl", "bp_case.stl", FILE_BP_CASE_STL, overwrite=False)
+			self._add_and_verify_file("bp_case.stl", "bp_case.stl", FILE_BP_CASE_STL, overwrite=False)
 		except:
 			pass
 
-		self._add_file("bp_case.stl", "bp_case.stl", FILE_BP_CASE_STL, overwrite=True)
+		self._add_and_verify_file("bp_case.stl", "bp_case.stl", FILE_BP_CASE_STL, overwrite=True)
 
 	def test_add_file_with_web(self):
 		import time
 		href = "http://www.example.com"
 		retrieved = time.time()
 
-		stl_name = self._add_file("bp_case.stl", "bp_case.stl", FILE_BP_CASE_STL, links=[("web", dict(href=href, retrieved=retrieved))])
+		stl_name = self._add_and_verify_file("bp_case.stl", "bp_case.stl", FILE_BP_CASE_STL, links=[("web", dict(href=href, retrieved=retrieved))])
 		stl_metadata = self.storage.get_metadata(stl_name)
 
 		self.assertIsNotNone(stl_metadata)
@@ -96,8 +97,8 @@ class LocalStorageTest(unittest.TestCase):
 		self.assertEquals(retrieved, link["retrieved"])
 
 	def test_add_file_with_association(self):
-		stl_name = self._add_file("bp_case.stl", "bp_case.stl", FILE_BP_CASE_STL)
-		gcode_name = self._add_file("bp_case.gcode", "bp_case.gcode", FILE_BP_CASE_GCODE, links=[("model", dict(name=stl_name))])
+		stl_name = self._add_and_verify_file("bp_case.stl", "bp_case.stl", FILE_BP_CASE_STL)
+		gcode_name = self._add_and_verify_file("bp_case.gcode", "bp_case.gcode", FILE_BP_CASE_GCODE, links=[("model", dict(name=stl_name))])
 
 		stl_metadata = self.storage.get_metadata(stl_name)
 		gcode_metadata = self.storage.get_metadata(gcode_name)
@@ -121,8 +122,8 @@ class LocalStorageTest(unittest.TestCase):
 		self.assertEquals(FILE_BP_CASE_GCODE.hash, link["hash"])
 
 	def test_remove_file(self):
-		stl_name = self._add_file("bp_case.stl", "bp_case.stl", FILE_BP_CASE_STL)
-		gcode_name = self._add_file("bp_case.gcode", "bp_case.gcode", FILE_BP_CASE_GCODE, links=[("model", dict(name=stl_name))])
+		stl_name = self._add_and_verify_file("bp_case.stl", "bp_case.stl", FILE_BP_CASE_STL)
+		gcode_name = self._add_and_verify_file("bp_case.gcode", "bp_case.gcode", FILE_BP_CASE_GCODE, links=[("model", dict(name=stl_name))])
 
 		stl_metadata = self.storage.get_metadata(stl_name)
 		gcode_metadata = self.storage.get_metadata(gcode_name)
@@ -141,23 +142,94 @@ class LocalStorageTest(unittest.TestCase):
 
 		self.assertEquals(0, len(gcode_metadata["links"]))
 
+	def test_copy_file(self):
+		self._add_file("bp_case.stl", FILE_BP_CASE_STL)
+		self._add_folder("test")
+
+		self.assertTrue(os.path.isfile(os.path.join(self.basefolder, "bp_case.stl")))
+		self.assertTrue(os.path.isdir(os.path.join(self.basefolder, "test")))
+
+		self.storage.copy_file("bp_case.stl", "test/copied.stl")
+
+		self.assertTrue(os.path.isfile(os.path.join(self.basefolder, "bp_case.stl")))
+		self.assertTrue(os.path.isfile(os.path.join(self.basefolder, "test", "copied.stl")))
+
+		stl_metadata = self.storage.get_metadata("bp_case.stl")
+		copied_metadata = self.storage.get_metadata("test/copied.stl")
+
+		self.assertIsNotNone(stl_metadata)
+		self.assertIsNotNone(copied_metadata)
+		self.assertDictEqual(stl_metadata, copied_metadata)
+
+	def test_move_file(self):
+		self._add_file("bp_case.stl", FILE_BP_CASE_STL)
+		self._add_folder("test")
+
+		self.assertTrue(os.path.isfile(os.path.join(self.basefolder, "bp_case.stl")))
+		self.assertTrue(os.path.isdir(os.path.join(self.basefolder, "test")))
+
+		before_stl_metadata = self.storage.get_metadata("bp_case.stl")
+
+		self.storage.move_file("bp_case.stl", "test/copied.stl")
+
+		self.assertFalse(os.path.isfile(os.path.join(self.basefolder, "bp_case.stl")))
+		self.assertTrue(os.path.isfile(os.path.join(self.basefolder, "test", "copied.stl")))
+
+		after_stl_metadata = self.storage.get_metadata("bp_case.stl")
+		copied_metadata = self.storage.get_metadata("test/copied.stl")
+
+		self.assertIsNotNone(before_stl_metadata)
+		self.assertIsNone(after_stl_metadata)
+		self.assertIsNotNone(copied_metadata)
+		self.assertDictEqual(before_stl_metadata, copied_metadata)
+
+	@data("copy_file", "move_file")
+	def test_copy_move_file_missing_source(self, operation):
+		try:
+			getattr(self.storage, operation)("bp_case.stl", "test/copied.stl")
+			self.fail("Expected an exception")
+		except StorageError as e:
+			self.assertEqual(e.code, StorageError.INVALID_SOURCE)
+
+	@data("copy_file", "move_file")
+	def test_copy_move_file_missing_destination_folder(self, operation):
+		self._add_file("bp_case.stl", FILE_BP_CASE_STL)
+
+		try:
+			getattr(self.storage, operation)("bp_case.stl", "test/copied.stl")
+			self.fail("Expected an exception")
+		except StorageError as e:
+			self.assertEqual(e.code, StorageError.INVALID_DESTINATION)
+
+	@data("copy_file", "move_file")
+	def test_copy_move_file_existing_destination_path(self, operation):
+		self._add_file("bp_case.stl", FILE_BP_CASE_STL)
+		self._add_folder("test")
+		self._add_file("test/crazyradio.stl", FILE_CRAZYRADIO_STL)
+
+		try:
+			getattr(self.storage, operation)("bp_case.stl", "test/crazyradio.stl")
+			self.fail("Expected an exception")
+		except StorageError as e:
+			self.assertEqual(e.code, StorageError.INVALID_DESTINATION)
+
 	def test_add_folder(self):
-		self._add_folder("test", "test")
+		self._add_and_verify_folder("test", "test")
 
 	def test_add_subfolder(self):
-		folder_name = self._add_folder("folder with some spaces", "folder_with_some_spaces")
-		subfolder_name = self._add_folder((folder_name, "subfolder"), folder_name + "/subfolder")
-		stl_name = self._add_file((subfolder_name, "bp_case.stl"), subfolder_name + "/bp_case.stl", FILE_BP_CASE_STL)
+		folder_name = self._add_and_verify_folder("folder with some spaces", "folder_with_some_spaces")
+		subfolder_name = self._add_and_verify_folder((folder_name, "subfolder"), folder_name + "/subfolder")
+		stl_name = self._add_and_verify_file((subfolder_name, "bp_case.stl"), subfolder_name + "/bp_case.stl", FILE_BP_CASE_STL)
 
 		self.assertTrue(os.path.exists(os.path.join(self.basefolder, folder_name)))
 		self.assertTrue(os.path.exists(os.path.join(self.basefolder, subfolder_name)))
 		self.assertTrue(os.path.exists(os.path.join(self.basefolder, stl_name)))
 
 	def test_remove_folder(self):
-		content_folder = self._add_folder("content", "content")
-		other_stl_name = self._add_file((content_folder, "crazyradio.stl"), content_folder + "/crazyradio.stl", FILE_CRAZYRADIO_STL)
+		content_folder = self._add_and_verify_folder("content", "content")
+		other_stl_name = self._add_and_verify_file((content_folder, "crazyradio.stl"), content_folder + "/crazyradio.stl", FILE_CRAZYRADIO_STL)
 
-		empty_folder = self._add_folder("empty", "empty")
+		empty_folder = self._add_and_verify_folder("empty", "empty")
 
 		try:
 			self.storage.remove_folder(content_folder, recursive=False)
@@ -176,20 +248,94 @@ class LocalStorageTest(unittest.TestCase):
 		self.assertFalse(os.path.isdir(os.path.join(self.basefolder, empty_folder)))
 
 	def test_remove_folder_with_metadata(self):
-		content_folder = self._add_folder("content", "content")
-		other_stl_name = self._add_file((content_folder, "crazyradio.stl"), content_folder + "/crazyradio.stl", FILE_CRAZYRADIO_STL)
+		content_folder = self._add_and_verify_folder("content", "content")
+		other_stl_name = self._add_and_verify_file((content_folder, "crazyradio.stl"), content_folder + "/crazyradio.stl", FILE_CRAZYRADIO_STL)
 		self.storage.remove_file(other_stl_name)
 
 		self.storage.remove_folder(content_folder, recursive=False)
 
+	def test_copy_folder(self):
+		self._add_folder("source")
+		self._add_folder("destination")
+		self._add_file("source/crazyradio.stl", FILE_CRAZYRADIO_STL)
+
+		source_metadata = self.storage.get_metadata("source/crazyradio.stl")
+		self.storage.copy_folder("source", "destination/copied")
+		copied_metadata = self.storage.get_metadata("destination/copied/crazyradio.stl")
+
+		self.assertTrue(os.path.isdir(os.path.join(self.basefolder, "source")))
+		self.assertTrue(os.path.isfile(os.path.join(self.basefolder, "source", "crazyradio.stl")))
+		self.assertTrue(os.path.isdir(os.path.join(self.basefolder, "destination")))
+		self.assertTrue(os.path.isdir(os.path.join(self.basefolder, "destination", "copied")))
+		self.assertTrue(os.path.isfile(os.path.join(self.basefolder, "destination", "copied", ".metadata.yaml")))
+		self.assertTrue(os.path.isfile(os.path.join(self.basefolder, "destination", "copied", "crazyradio.stl")))
+
+		self.assertIsNotNone(source_metadata)
+		self.assertIsNotNone(copied_metadata)
+		self.assertDictEqual(source_metadata, copied_metadata)
+
+	def test_move_folder(self):
+		self._add_folder("source")
+		self._add_folder("destination")
+		self._add_file("source/crazyradio.stl", FILE_CRAZYRADIO_STL)
+
+		before_source_metadata = self.storage.get_metadata("source/crazyradio.stl")
+		self.storage.move_folder("source", "destination/copied")
+		after_source_metadata = self.storage.get_metadata("source/crazyradio.stl")
+		copied_metadata = self.storage.get_metadata("destination/copied/crazyradio.stl")
+
+		self.assertFalse(os.path.isdir(os.path.join(self.basefolder, "source")))
+		self.assertFalse(os.path.isfile(os.path.join(self.basefolder, "source", "crazyradio.stl")))
+		self.assertTrue(os.path.isdir(os.path.join(self.basefolder, "destination")))
+		self.assertTrue(os.path.isdir(os.path.join(self.basefolder, "destination", "copied")))
+		self.assertTrue(os.path.isfile(os.path.join(self.basefolder, "destination", "copied", ".metadata.yaml")))
+		self.assertTrue(os.path.isfile(os.path.join(self.basefolder, "destination", "copied", "crazyradio.stl")))
+
+		self.assertIsNotNone(before_source_metadata)
+		self.assertIsNone(after_source_metadata)
+		self.assertIsNotNone(copied_metadata)
+		self.assertDictEqual(before_source_metadata, copied_metadata)
+
+	@data("copy_folder", "move_folder")
+	def test_copy_move_folder_missing_source(self, operation):
+		try:
+			getattr(self.storage, operation)("source", "destination/copied")
+			self.fail("Expected an exception")
+		except StorageError as e:
+			self.assertEqual(e.code, StorageError.INVALID_SOURCE)
+
+	@data("copy_folder", "move_folder")
+	def test_copy_move_folder_missing_destination_folder(self, operation):
+		self._add_folder("source")
+		self._add_file("source/crazyradio.stl", FILE_CRAZYRADIO_STL)
+
+		try:
+			getattr(self.storage, operation)("source", "destination/copied")
+			self.fail("Expected an exception")
+		except StorageError as e:
+			self.assertEqual(e.code, StorageError.INVALID_DESTINATION)
+
+	@data("copy_folder", "move_folder")
+	def test_copy_move_folder_existing_destination_path(self, operation):
+		self._add_folder("source")
+		self._add_file("source/crazyradio.stl", FILE_CRAZYRADIO_STL)
+		self._add_folder("destination")
+		self._add_folder("destination/copied")
+
+		try:
+			getattr(self.storage, operation)("source", "destination/copied")
+			self.fail("Expected an exception")
+		except StorageError as e:
+			self.assertEqual(e.code, StorageError.INVALID_DESTINATION)
+
 	def test_list(self):
-		bp_case_stl = self._add_file("bp_case.stl", "bp_case.stl", FILE_BP_CASE_STL)
-		self._add_file("bp_case.gcode", "bp_case.gcode", FILE_BP_CASE_GCODE, links=[("model", dict(name=bp_case_stl))])
+		bp_case_stl = self._add_and_verify_file("bp_case.stl", "bp_case.stl", FILE_BP_CASE_STL)
+		self._add_and_verify_file("bp_case.gcode", "bp_case.gcode", FILE_BP_CASE_GCODE, links=[("model", dict(name=bp_case_stl))])
 
-		content_folder = self._add_folder("content", "content")
-		self._add_file((content_folder, "crazyradio.stl"), content_folder + "/crazyradio.stl", FILE_CRAZYRADIO_STL)
+		content_folder = self._add_and_verify_folder("content", "content")
+		self._add_and_verify_file((content_folder, "crazyradio.stl"), content_folder + "/crazyradio.stl", FILE_CRAZYRADIO_STL)
 
-		self._add_folder("empty", "empty")
+		self._add_and_verify_folder("empty", "empty")
 
 		file_list = self.storage.list_files()
 		self.assertEquals(4, len(file_list))
@@ -214,8 +360,8 @@ class LocalStorageTest(unittest.TestCase):
 		self.assertEquals(0, len(file_list["empty"]["children"]))
 
 	def test_add_link_model(self):
-		stl_name = self._add_file("bp_case.stl", "bp_case.stl", FILE_BP_CASE_STL)
-		gcode_name = self._add_file("bp_case.gcode", "bp_case.gcode", FILE_BP_CASE_GCODE)
+		stl_name = self._add_and_verify_file("bp_case.stl", "bp_case.stl", FILE_BP_CASE_STL)
+		gcode_name = self._add_and_verify_file("bp_case.gcode", "bp_case.gcode", FILE_BP_CASE_GCODE)
 
 		self.storage.add_link(gcode_name, "model", dict(name=stl_name))
 
@@ -241,8 +387,8 @@ class LocalStorageTest(unittest.TestCase):
 		self.assertEquals(FILE_BP_CASE_GCODE.hash, link["hash"])
 
 	def test_add_link_machinecode(self):
-		stl_name = self._add_file("bp_case.stl", "bp_case.stl", FILE_BP_CASE_STL)
-		gcode_name = self._add_file("bp_case.gcode", "bp_case.gcode", FILE_BP_CASE_GCODE)
+		stl_name = self._add_and_verify_file("bp_case.stl", "bp_case.stl", FILE_BP_CASE_STL)
+		gcode_name = self._add_and_verify_file("bp_case.gcode", "bp_case.gcode", FILE_BP_CASE_GCODE)
 
 		self.storage.add_link(stl_name, "machinecode", dict(name=gcode_name))
 
@@ -268,7 +414,7 @@ class LocalStorageTest(unittest.TestCase):
 		self.assertEquals(FILE_BP_CASE_GCODE.hash, link["hash"])
 
 	def test_remove_link(self):
-		stl_name = self._add_file("bp_case.stl", "bp_case.stl", FILE_BP_CASE_STL)
+		stl_name = self._add_and_verify_file("bp_case.stl", "bp_case.stl", FILE_BP_CASE_STL)
 
 		self.storage.add_link(stl_name, "web", dict(href="http://www.example.com"))
 		self.storage.add_link(stl_name, "web", dict(href="http://www.example2.com"))
@@ -287,8 +433,8 @@ class LocalStorageTest(unittest.TestCase):
 		self.assertEquals(1, len(stl_metadata["links"]))
 
 	def test_remove_link_bidirectional(self):
-		stl_name = self._add_file("bp_case.stl", "bp_case.stl", FILE_BP_CASE_STL)
-		gcode_name = self._add_file("bp_case.gcode", "bp_case.gcode", FILE_BP_CASE_GCODE)
+		stl_name = self._add_and_verify_file("bp_case.stl", "bp_case.stl", FILE_BP_CASE_STL)
+		gcode_name = self._add_and_verify_file("bp_case.gcode", "bp_case.gcode", FILE_BP_CASE_GCODE)
 
 		self.storage.add_link(stl_name, "machinecode", dict(name=gcode_name))
 		self.storage.add_link(stl_name, "web", dict(href="http://www.example.com"))
@@ -309,8 +455,8 @@ class LocalStorageTest(unittest.TestCase):
 
 	@data(
 		("some_file.gco", "some_file.gco"),
-		("some_file with (parentheses) and ümläuts and digits 123.gco", "some_file_with_(parentheses)_and_mluts_and_digits_123.gco"),
-		("pengüino pequeño.stl", "pengino_pequeo.stl")
+		("some_file with (parentheses) and ümläuts and digits 123.gco", "some_file_with_(parentheses)_and_umlauts_and_digits_123.gco"),
+		("pengüino pequeño.stl", "penguino_pequeno.stl")
 	)
 	@unpack
 	def test_sanitize_name(self, input, expected):
@@ -378,8 +524,23 @@ class LocalStorageTest(unittest.TestCase):
 		self.assertEquals(expected_path, actual_path)
 		self.assertEquals(expected_name, actual_name)
 
-	def _add_file(self, path, expected_path, file_object, links=None, overwrite=False):
+	def _add_and_verify_file(self, path, expected_path, file_object, links=None, overwrite=False):
+		"""Adds a file to the storage and verifies the sanitized path."""
+		sanitized_path = self._add_file(path, file_object, links=links, overwrite=overwrite)
+		self.assertEquals(expected_path, sanitized_path)
+		return sanitized_path
+
+	def _add_file(self, path, file_object, links=None, overwrite=False):
+		"""
+		Adds a file to the storage.
+
+		Ensures file is present, metadata is present, hash and links (if applicable)
+		are populated correctly.
+
+		Returns sanitized path.
+		"""
 		sanitized_path = self.storage.add_file(path, file_object, links=links, allow_overwrite=overwrite)
+
 		split_path = sanitized_path.split("/")
 		if len(split_path) == 1:
 			file_path = os.path.join(self.basefolder, split_path[0])
@@ -388,9 +549,8 @@ class LocalStorageTest(unittest.TestCase):
 			file_path = os.path.join(self.basefolder, os.path.join(*split_path))
 			folder_path = os.path.join(self.basefolder, os.path.join(*split_path[:-1]))
 
-		self.assertEquals(expected_path, sanitized_path)
-		self.assertTrue(os.path.exists(file_path))
-		self.assertTrue(os.path.exists(os.path.join(folder_path, ".metadata.yaml")))
+		self.assertTrue(os.path.isfile(file_path))
+		self.assertTrue(os.path.isfile(os.path.join(folder_path, ".metadata.yaml")))
 
 		metadata = self.storage.get_metadata(sanitized_path)
 		self.assertIsNotNone(metadata)
@@ -405,11 +565,21 @@ class LocalStorageTest(unittest.TestCase):
 
 		return sanitized_path
 
-	def _add_folder(self, path, expected_path):
-		sanitized_path = self.storage.add_folder(path)
+	def _add_and_verify_folder(self, path, expected_path):
+		"""Adds a folder to the storage and verifies sanitized path."""
+		sanitized_path = self._add_folder(path)
 		self.assertEquals(expected_path, sanitized_path)
-		self.assertTrue(os.path.exists(os.path.join(self.basefolder, os.path.join(*sanitized_path.split("/")))))
-		self.assertTrue(os.path.isdir(os.path.join(self.basefolder, os.path.join(*sanitized_path.split("/")))))
+		return sanitized_path
 
+	def _add_folder(self, path):
+		"""
+		Adds a folder to the storage.
+
+		Verifies existance of folder.
+
+		Returns sanitized path.
+		"""
+		sanitized_path = self.storage.add_folder(path)
+		self.assertTrue(os.path.isdir(os.path.join(self.basefolder, os.path.join(*sanitized_path.split("/")))))
 		return sanitized_path
 

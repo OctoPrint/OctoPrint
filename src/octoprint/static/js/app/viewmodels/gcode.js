@@ -5,9 +5,6 @@ $(function() {
         self.loginState = parameters[0];
         self.settings = parameters[1];
 
-        // TODO remove with release of 1.3.0 and switch to OctoPrint.coreui usage
-        self.tabTracking = parameters[2];
-
         self.ui_progress_percentage = ko.observable();
         self.ui_progress_type = ko.observable();
         self.ui_progress_text = ko.computed(function() {
@@ -32,6 +29,7 @@ $(function() {
         self.ui_modelInfo = ko.observable("");
         self.ui_layerInfo = ko.observable("");
 
+        self.tabActive = false;
         self.enableReload = ko.observable(false);
 
         self.waitForApproval = ko.observable(false);
@@ -234,19 +232,20 @@ $(function() {
             self._configureLayerSlider(layerSliderElement);
             self._configureLayerCommandSlider(commandSliderElement);
 
-            self.settings.requestData(function() {
-                GCODE.ui.init({
-                    container: "#gcode_canvas",
-                    onProgress: self._onProgress,
-                    onModelLoaded: self._onModelLoaded,
-                    onLayerSelected: self._onLayerSelected,
-                    bed: self._retrieveBedDimensions(),
-                    toolOffsets: self._retrieveToolOffsets(),
-                    invertAxes: self._retrieveAxesConfiguration()
+            self.settings.requestData()
+                .done(function() {
+                    GCODE.ui.init({
+                        container: "#gcode_canvas",
+                        onProgress: self._onProgress,
+                        onModelLoaded: self._onModelLoaded,
+                        onLayerSelected: self._onLayerSelected,
+                        bed: self._retrieveBedDimensions(),
+                        toolOffsets: self._retrieveToolOffsets(),
+                        invertAxes: self._retrieveAxesConfiguration()
+                    });
+                    self.synchronizeOptions();
+                    self.enabled = true;
                 });
-                self.synchronizeOptions();
-                self.enabled = true;
-            });
         };
 
         self.reset = function() {
@@ -292,11 +291,8 @@ $(function() {
             self.enableReload(false);
             if (self.status == "idle" && self.errorCount < 3) {
                 self.status = "request";
-                $.ajax({
-                    url: BASEURL + "downloads/files/local/" + filename,
-                    data: { "ctime": date },
-                    type: "GET",
-                    success: function(response, rstatus) {
+                OctoPrint.files.download("local", filename)
+                    .done(function(response, rstatus) {
                         if(rstatus === 'success'){
                             self.showGCodeViewer(response, rstatus);
                             self.loadedFilename = filename;
@@ -304,12 +300,11 @@ $(function() {
                             self.status = "idle";
                             self.enableReload(true);
                         }
-                    },
-                    error: function() {
+                    })
+                    .fail(function() {
                         self.status = "idle";
                         self.errorCount++;
-                    }
-                });
+                    });
             }
         };
 
@@ -376,7 +371,7 @@ $(function() {
             if(self.loadedFilename
                     && self.loadedFilename == data.job.file.name
                     && self.loadedFileDate == data.job.file.date) {
-                if (self.tabTracking.browserTabVisible && self.tabActive && self.currentlyPrinting && self.renderer_syncProgress() && !self.waitForApproval()) {
+                if (OctoPrint.coreui.browserTabVisible && self.tabActive && self.currentlyPrinting && self.renderer_syncProgress() && !self.waitForApproval()) {
                     self._renderPercentage(data.progress.completion);
                 }
                 self.errorCount = 0
@@ -526,7 +521,7 @@ $(function() {
 
     OCTOPRINT_VIEWMODELS.push([
         GcodeViewModel,
-        ["loginStateViewModel", "settingsViewModel", "tabTracking"],
+        ["loginStateViewModel", "settingsViewModel"],
         "#gcode"
     ]);
 });

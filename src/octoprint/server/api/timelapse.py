@@ -68,52 +68,56 @@ def deleteTimelapse(filename):
 @api.route("/timelapse", methods=["POST"])
 @restricted_access
 def setTimelapseConfig():
-	if "type" in request.values:
+	data = request.values
+	if hasattr(request, "json") and request.json:
+		data = request.json
+
+	if "type" in data:
 		config = {
-			"type": request.values["type"],
+			"type": data["type"],
 			"postRoll": 0,
 			"fps": 25,
 			"options": {}
 		}
 
-		if "postRoll" in request.values:
+		if "postRoll" in data:
 			try:
-				postRoll = int(request.values["postRoll"])
+				postRoll = int(data["postRoll"])
 			except ValueError:
-				return make_response("Invalid value for postRoll: %r" % request.values["postRoll"], 400)
+				return make_response("Invalid value for postRoll: %r" % data["postRoll"], 400)
 			else:
 				if postRoll >= 0:
 					config["postRoll"] = postRoll
 				else:
 					return make_response("Invalid value for postRoll: %d" % postRoll, 400)
 
-		if "fps" in request.values:
+		if "fps" in data:
 			try:
-				fps = int(request.values["fps"])
+				fps = int(data["fps"])
 			except ValueError:
-				return make_response("Invalid value for fps: %r" % request.values["fps"], 400)
+				return make_response("Invalid value for fps: %r" % data["fps"], 400)
 			else:
 				if fps > 0:
 					config["fps"] = fps
 				else:
 					return make_response("Invalid value for fps: %d" % fps, 400)
 
-		if "interval" in request.values:
+		if "interval" in data:
 			config["options"] = {
 				"interval": 10
 			}
 
 			try:
-				interval = int(request.values["interval"])
+				interval = int(data["interval"])
 			except ValueError:
-				return make_response("Invalid value for interval: %r" % request.values["interval"])
+				return make_response("Invalid value for interval: %r" % data["interval"])
 			else:
 				if interval > 0:
 					config["options"]["interval"] = interval
 				else:
 					return make_response("Invalid value for interval: %d" % interval)
 
-		if admin_permission.can() and "save" in request.values and request.values["save"] in valid_boolean_trues:
+		if admin_permission.can() and "save" in data and data["save"] in valid_boolean_trues:
 			octoprint.timelapse.configureTimelapse(config, True)
 		else:
 			octoprint.timelapse.configureTimelapse(config)

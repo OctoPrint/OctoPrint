@@ -6,8 +6,9 @@
 
 {% macro pluginmanager_nopip() %}
 <div class="alert" data-bind="visible: !pipAvailable()">{% trans %}
-    The <code>pip</code> command could not be found.
-    Please configure it manually. No installation and uninstallation of plugin
+    The <code>pip</code> command could not be found or does not work correctly
+    for this installation of OctoPrint - please consult the log file for details
+    and if necessary configure it manually. No installation and uninstallation of plugin
     packages is possible while <code>pip</code> is unavailable.
 {% endtrans %}</div>
 {% endmacro %}
@@ -42,7 +43,7 @@
     <tbody data-bind="foreach: plugins.paginatedItems">
     <tr>
         <td class="settings_plugin_plugin_manager_plugins_name">
-            <div data-bind="css: {muted: !enabled}"><span data-bind="text: name"></span> <span data-bind="visible: version">(<span data-bind="text: version"></span>)</span> <i title="{{ _('Bundled') }}" class="icon-th-large" data-bind="visible: bundled"></i> <i title="Restart needed" class="icon-refresh" data-bind="visible: pending_enable || pending_disable || pending_uninstall"></i> <i title="Uninstalled" class="icon-remove" data-bind="visible: pending_uninstall"></i></div>
+            <div data-bind="css: {muted: !enabled}"><span data-bind="text: name"></span> <span data-bind="visible: version">(<span data-bind="text: version"></span>)</span> <i title="{{ _('Bundled with OctoPrint') }}" class="icon-th-large" data-bind="visible: bundled"></i> <i class="icon-lock" title="{{ _('Cannot be uninstalled through OctoPrint') }}" data-bind="visible: !managable"></i> <i title="{{ _('Restart of OctoPrint needed for changes to take effect') }}" class="icon-refresh" data-bind="visible: pending_enable || pending_disable || pending_install || pending_uninstall"></i> <i title="{{ _('Pending install') }}" class="icon-plus" data-bind="visible: pending_install"></i> <i title="{{ _('Pending uninstall') }}" class="icon-minus" data-bind="visible: pending_uninstall"></i></div>
             <div><small class="muted" data-bind="text: description">&nbsp;</small></div>
             <div data-bind="css: {muted: !enabled}">
                 <small data-bind="visible: url"><i class="icon-home"></i> <a data-bind="attr: {href: url}">{{ _('Homepage') }}</a></small>
@@ -71,9 +72,22 @@
 
 <button class="btn btn-block" data-bind="click: $root.showRepository">{{ _('Get More...') }}</button>
 
-<p class="muted" data-bind="visible: pipAvailable()">
-    <small>Using pip at "<span data-bind="text: pipCommand"></span>" (Version <span data-bind="text: pipVersion"></span><span data-bind="visible: pipAdditionalArgs">, additional arguments: <span data-bind="text: pipAdditionalArgs"></span></span>)</small>
-</p>
+<div class="muted" data-bind="visible: pipAvailable()">
+    <div>
+        <small>
+            <a href="#" class="muted" onclick="$(this).children('i.toggle-arrow').toggleClass('icon-caret-right icon-caret-down').parent().parent().parent().next().slideToggle('fast')">
+                <i class="toggle-arrow icon-caret-right"></i> Using pip at "<span data-bind="text: pipCommand"></span>", Version <span data-bind="text: pipVersion"></span>
+            </a>
+        </small>
+    </div>
+    <div class="hide">
+        <small>
+            Installation directory: <span data-bind="text: pipInstallDir"></span> ("--user" flag: <span data-bind="text: pipUseUserString"></span>, sudo: <span data-bind="text: pipUseSudoString"></span>)<br />
+            Virtual environment: <span data-bind="text: pipVirtualEnvString"></span><br />
+            <span data-bind="visible: pipAdditionalArgs">Additional Arguments: <span data-bind="text: pipAdditionalArgs"></span></span>
+        </small>
+    </div>
+</div>
 
 <div id="settings_plugin_pluginmanager_workingdialog" class="modal hide fade">
     <div class="modal-header">
@@ -99,8 +113,10 @@
         {{ pluginmanager_sudopip() }}
         <h4 style="position: relative">
             {{ _('... from the <a href="%(url)s" target="_blank">Plugin Repository</a>', url='http://plugins.octoprint.org') }}
-            <a class="dropdown-toggle pull-right" data-toggle="dropdown" href="#">
-                <span class="icon-wrench"></span>
+            <div class="dropdown pull-right">
+                <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+                    <span class="icon-wrench"></span>
+                </a>
                 <ul class="dropdown-menu pull-right">
                     <li><a href="#" data-bind="click: function() { repositoryplugins.changeSorting('title'); }"><i class="icon-ok" data-bind="style: {visibility: repositoryplugins.currentSorting() == 'title' ? 'visible' : 'hidden'}"></i> {{ _('Sort by title') }} ({{ _('ascending') }})</a></li>
                     <li><a href="#" data-bind="click: function() { repositoryplugins.changeSorting('published'); }"><i class="icon-ok" data-bind="style: {visibility: repositoryplugins.currentSorting() == 'published' ? 'visible' : 'hidden'}"></i> {{ _('Sort by publication date') }} ({{ _('descending') }})</a></li>
@@ -110,7 +126,7 @@
                     <li class="divider"></li>
                     <li><a href="#" data-bind="click: function() { refreshRepository(); }"><i class="icon-refresh"></i> {{ _('Refresh list from repository') }}</a></li>
                 </ul>
-            </a>
+            </div>
         </h4>
 
         <form class="form-search" data-bind="submit: performRepositorySearch">
@@ -205,19 +221,31 @@
     </div>
     <div class="modal-body">
         <form class="form-horizontal">
+            <legend>{{ _('pip configuration') }}</legend>
+
             <div class="control-group" title="{{ _('pip command to use for managing plugins. You might have to configure this if auto detection fails.') }}">
-                <label class="control-label">{{ _('pip command') }}</label>
+                <label class="control-label">{{ _('Command') }}</label>
                 <div class="controls">
                     <input type="text" class="input-block-level" data-bind="value: config_pipCommand" placeholder="{{ _('Autodetect') }}">
                     <span class="help-inline">{{ _('<strong>Only</strong> set this if OctoPrint cannot autodetect the path to <code>pip</code> to use for managing plugins.') }}</span>
                 </div>
             </div>
             <div class="control-group" title="{{ _('Additional arguments for pip command. You should normally not have to change this.') }}">
-                <label class="control-label">{{ _('Additional pip arguments') }}</label>
+                <label class="control-label">{{ _('Additional arguments') }}</label>
                 <div class="controls">
                     <input type="text" class="input-block-level" data-bind="value: config_pipAdditionalArgs">
                 </div>
             </div>
+            <div class="control-group">
+                <div class="controls">
+                    <label class="checkbox">
+                        <input type="checkbox" data-bind="checked: config_pipForceUser"> {{ _('Force the user of the <code>--user</code> flag with <code>pip install</code>') }}
+                    </label>
+                </div>
+            </div>
+
+            <legend>{{ _('Plugin repository configuration') }}</legend>
+
             <div class="control-group" title="{{ _('URL of the Plugin Repository to use. You should normally not have to change this.') }}">
                 <label class="control-label">{{ _('Repository URL') }}</label>
                 <div class="controls">

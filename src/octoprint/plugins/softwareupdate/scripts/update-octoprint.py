@@ -1,5 +1,5 @@
 #!/bin/env python
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
 __author__ = "Gina Haeussge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -7,8 +7,75 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 
 import errno
-import subprocess
 import sys
+
+def _log_call(*lines):
+	_log(lines, prefix=">", stream="call")
+
+
+def _log_stdout(*lines):
+	_log(lines, prefix=" ", stream="stdout")
+
+
+def _log_stderr(*lines):
+	_log(lines, prefix=" ", stream="stderr")
+
+
+def _log(lines, prefix=None, stream=None):
+	output_stream = sys.stdout
+	if stream == "stderr":
+		output_stream = sys.stderr
+
+	for line in lines:
+		print(u"{} {}".format(prefix, line.strip()), file=output_stream)
+
+
+def _execute(command, **kwargs):
+	import sarge
+
+	if isinstance(command, (list, tuple)):
+		joined_command = " ".join(command)
+	else:
+		joined_command = command
+	_log_call(joined_command)
+
+	kwargs.update(dict(async=True, stdout=sarge.Capture(), stderr=sarge.Capture()))
+
+	p = sarge.run(command, **kwargs)
+	p.wait_events()
+
+	all_stdout = []
+	all_stderr = []
+	try:
+		while p.returncode is None:
+			line = p.stderr.readline(timeout=0.5)
+			if line:
+				_log_stderr(line)
+				all_stderr.append(line)
+
+			line = p.stdout.readline(timeout=0.5)
+			if line:
+				_log_stdout(line)
+				all_stdout.append(line)
+
+			p.commands[0].poll()
+
+	finally:
+		p.close()
+
+	stderr = p.stderr.text
+	if stderr:
+		split_lines = stderr.split("\n")
+		_log_stderr(*split_lines)
+		all_stderr += split_lines
+
+	stdout = p.stdout.text
+	if stdout:
+		split_lines = stdout.split("\n")
+		_log_stdout(*split_lines)
+		all_stdout += split_lines
+
+	return p.returncode, all_stdout, all_stderr
 
 
 def _get_git_executables():
@@ -18,7 +85,7 @@ def _get_git_executables():
 	return GITS
 
 
-def _git(args, cwd, hide_stderr=False, verbose=False, git_executable=None):
+def _git(args, cwd, verbose=False, git_executable=None):
 	if git_executable is not None:
 		commands = [git_executable]
 	else:
@@ -26,10 +93,8 @@ def _git(args, cwd, hide_stderr=False, verbose=False, git_executable=None):
 
 	for c in commands:
 		try:
-			p = subprocess.Popen([c] + args, cwd=cwd, stdout=subprocess.PIPE,
-			                     stderr=(subprocess.PIPE if hide_stderr
-			                             else None))
-			break
+			returncode, stdout, stderr = _execute([c] + args, cwd=cwd)
+			return returncode, "\n".join(stdout), "\n".join(stderr)
 		except EnvironmentError:
 			e = sys.exc_info()[1]
 			if e.errno == errno.ENOENT:
@@ -43,37 +108,20 @@ def _git(args, cwd, hide_stderr=False, verbose=False, git_executable=None):
 			print("unable to find command, tried %s" % (commands,))
 		return None, None
 
-	stdout = p.communicate()[0].strip()
-	if sys.version >= '3':
-		stdout = stdout.decode()
-
-	if p.returncode != 0:
-		if verbose:
-			print("unable to run %s (error)" % args[0])
-
-	return p.returncode, stdout
-
 
 def _python(args, cwd, python_executable, sudo=False):
 	command = [python_executable] + args
 	if sudo:
 		command = ["sudo"] + command
 	try:
-		p = subprocess.Popen(command, cwd=cwd, stdout=subprocess.PIPE,
-		                     stderr=subprocess.PIPE)
+		return _execute(command, cwd=cwd)
 	except:
 		return None, None
-
-	stdout = p.communicate()[0].strip()
-	if sys.version >= "3":
-		stdout = stdout.decode()
-
-	return p.returncode, stdout
 
 
 def update_source(git_executable, folder, target, force=False):
 	print(">>> Running: git diff --shortstat")
-	returncode, stdout = _git(["diff", "--shortstat"], folder, git_executable=git_executable)
+	returncode, stdout, stderr = _git(["diff", "--shortstat"], folder, git_executable=git_executable)
 	if returncode != 0:
 		raise RuntimeError("Could not update, \"git diff\" failed with returncode %d: %s" % (returncode, stdout))
 	if stdout and stdout.strip():
@@ -84,7 +132,7 @@ def update_source(git_executable, folder, target, force=False):
 		patch = os.path.join(folder, "%s-preupdate.patch" % timestamp)
 
 		print(">>> Running: git diff and saving output to %s" % timestamp)
-		returncode, stdout = _git(["diff"], folder, git_executable=git_executable)
+		returncode, stdout, stderr = _git(["diff"], folder, git_executable=git_executable)
 		if returncode != 0:
 			raise RuntimeError("Could not update, installation directory was dirty and state could not be persisted as a patch to %s" % patch)
 
@@ -92,43 +140,39 @@ def update_source(git_executable, folder, target, force=False):
 			f.write(stdout)
 
 		print(">>> Running: git reset --hard")
-		returncode, stdout = _git(["reset", "--hard"], folder, git_executable=git_executable)
+		returncode, stdout, stderr = _git(["reset", "--hard"], folder, git_executable=git_executable)
 		if returncode != 0:
 			raise RuntimeError("Could not update, \"git reset --hard\" failed with returncode %d: %s" % (returncode, stdout))
 
 	print(">>> Running: git pull")
-	returncode, stdout = _git(["pull"], folder, git_executable=git_executable)
+	returncode, stdout, stderr = _git(["pull"], folder, git_executable=git_executable)
 	if returncode != 0:
 		raise RuntimeError("Could not update, \"git pull\" failed with returncode %d: %s" % (returncode, stdout))
-	print(stdout)
 
 	if force:
 		reset_command = ["reset"]
 		reset_command += [target]
 
 		print(">>> Running: git %s" % " ".join(reset_command))
-		returncode, stdout = _git(reset_command, folder, git_executable=git_executable)
+		returncode, stdout, stderr = _git(reset_command, folder, git_executable=git_executable)
 		if returncode != 0:
 			raise RuntimeError("Error while updating, \"git %s\" failed with returncode %d: %s" % (" ".join(reset_command), returncode, stdout))
-		print(stdout)
 
 
 def install_source(python_executable, folder, user=False, sudo=False):
 	print(">>> Running: python setup.py clean")
-	returncode, stdout = _python(["setup.py", "clean"], folder, python_executable)
+	returncode, stdout, stderr = _python(["setup.py", "clean"], folder, python_executable)
 	if returncode != 0:
 		print("\"python setup.py clean\" failed with returncode %d: %s" % (returncode, stdout))
 		print("Continuing anyways")
-	print(stdout)
 
 	print(">>> Running: python setup.py install")
 	args = ["setup.py", "install"]
 	if user:
 		args.append("--user")
-	returncode, stdout = _python(args, folder, python_executable, sudo=sudo)
+	returncode, stdout, stderr = _python(args, folder, python_executable, sudo=sudo)
 	if returncode != 0:
 		raise RuntimeError("Could not update, \"python setup.py install\" failed with returncode %d: %s" % (returncode, stdout))
-	print(stdout)
 
 
 def parse_arguments():

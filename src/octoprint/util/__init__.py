@@ -372,6 +372,11 @@ def to_unicode(s_or_u, encoding="utf-8", errors="strict"):
 		return s_or_u
 
 
+def is_running_from_source():
+	root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
+	return os.path.isdir(os.path.join(root, "src")) and os.path.isfile(os.path.join(root, "setup.py"))
+
+
 def dict_merge(a, b):
 	"""
 	Recursively deep-merges two dictionaries.
@@ -484,7 +489,7 @@ def dict_minimal_mergediff(source, target):
 	result = dict()
 	for k in all_keys:
 		if k not in target:
-			# key not contained in target => not contained in result
+			# key not contained in b => not contained in result
 			continue
 
 		if k in source:
@@ -542,6 +547,78 @@ def dict_contains_keys(keys, dictionary):
 
 	return True
 
+
+class fallback_dict(dict):
+	def __init__(self, custom, *fallbacks):
+		self.custom = custom
+		self.fallbacks = fallbacks
+
+	def __getitem__(self, item):
+		for dictionary in self._all():
+			if item in dictionary:
+				return dictionary[item]
+		raise KeyError()
+
+	def __setitem__(self, key, value):
+		self.custom[key] = value
+
+	def __delitem__(self, key):
+		for dictionary in self._all():
+			if key in dictionary:
+				del dictionary[key]
+
+	def keys(self):
+		result = set()
+		for dictionary in self._all():
+			result += dictionary.keys()
+		return result
+
+	def _all(self):
+		return [self.custom] + list(self.fallbacks)
+
+
+
+def dict_filter(dictionary, filter_function):
+	"""
+	Filters a dictionary with the provided filter_function
+
+	Example::
+
+	    >>> data = dict(key1="value1", key2="value2", other_key="other_value", foo="bar", bar="foo")
+	    >>> dict_filter(data, lambda k, v: k.startswith("key")) == dict(key1="value1", key2="value2")
+	    True
+	    >>> dict_filter(data, lambda k, v: v.startswith("value")) == dict(key1="value1", key2="value2")
+	    True
+	    >>> dict_filter(data, lambda k, v: k == "foo" or v == "foo") == dict(foo="bar", bar="foo")
+	    True
+	    >>> dict_filter(data, lambda k, v: False) == dict()
+	    True
+	    >>> dict_filter(data, lambda k, v: True) == data
+	    True
+	    >>> dict_filter(None, lambda k, v: True)
+	    Traceback (most recent call last):
+	        ...
+	    AssertionError
+	    >>> dict_filter(data, None)
+	    Traceback (most recent call last):
+	        ...
+	    AssertionError
+
+	Arguments:
+	    dictionary (dict): The dictionary to filter
+	    filter_function (callable): The filter function to apply, called with key and
+	        value of an entry in the dictionary, must return ``True`` for values to
+	        keep and ``False`` for values to strip
+
+	Returns:
+	    dict: A shallow copy of the provided dictionary, stripped of the key-value-pairs
+	        for which the ``filter_function`` returned ``False``
+	"""
+	assert isinstance(dictionary, dict)
+	assert callable(filter_function)
+	return dict((k, v) for k, v in dictionary.items() if filter_function(k, v))
+
+
 class Object(object):
 	pass
 
@@ -589,6 +666,18 @@ def atomic_write(filename, mode="w+b", prefix="tmp", suffix=""):
 	finally:
 		temp_config.close()
 	shutil.move(temp_config.name, filename)
+
+
+@contextlib.contextmanager
+def tempdir(ignore_errors=False, onerror=None, **kwargs):
+	import tempfile
+	import shutil
+
+	dirpath = tempfile.mkdtemp(**kwargs)
+	try:
+		yield dirpath
+	finally:
+		shutil.rmtree(dirpath, ignore_errors=ignore_errors, onerror=onerror)
 
 
 def bom_aware_open(filename, encoding="ascii", mode="r", **kwargs):
