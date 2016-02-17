@@ -887,10 +887,25 @@ class MachineCom(object):
 		connection_timeout = settings().getFloat(["serial", "timeout", "connection"])
 		detection_timeout = settings().getFloat(["serial", "timeout", "detection"])
 
-		# enqueue an M105 first thing
+		# M110 polling during connection phase
 		if try_hello:
-			self._sendCommand("M110")
-			self._clear_to_send.set()
+			# we do this repeatedly since depending on firmware/bootloader/cable it might happen
+			# that stuff gets lost during connection initialization, and if that stuff happens
+			# to be an "ok", we'll get stuck
+			#
+			# so let's make things a bit more robust here and just have it send an M110 every second
+			# while in "connecting" state so that we can retrigger an M110 processing if the "ok"
+			# for the first one gets lost
+
+			def poll_connection():
+				self._logger.debug("Performing M110 poll")
+				self._sendCommand("M110")
+				self._clear_to_send.set()
+			connection_poller = RepeatedTimer(1, poll_connection,
+			                                  run_first=True,
+			                                  condition=lambda: self._state == self.STATE_CONNECTING,
+			                                  on_finish=lambda: self._logger.debug("Stopping M110 poll, no longer connecting"))
+			connection_poller.start()
 
 		while self._monitoring_active:
 			try:
@@ -1116,6 +1131,10 @@ class MachineCom(object):
 
 				### Baudrate detection
 				if self._state == self.STATE_DETECT_BAUDRATE:
+					# TODO this needs to be rewritten to make use of a repeated timer and to move it outside of the monitor thread
+					# makes way more sense to have it as a separate function that is part of the connection attempt, not of
+					# the protocol implementation
+					# that whole _monitor loop is soooo ugly...
 					if line == '' or time.time() > self._timeout:
 						if self._baudrateDetectRetry > 0:
 							self._serial.timeout = detection_timeout
@@ -1151,8 +1170,6 @@ class MachineCom(object):
 				elif self._state == self.STATE_CONNECTING:
 					if "start" in line and not startSeen:
 						startSeen = True
-						self._sendCommand("M110")
-						self._clear_to_send.set()
 					elif line.startswith("ok"):
 						self._onConnected()
 					elif time.time() > self._timeout:
