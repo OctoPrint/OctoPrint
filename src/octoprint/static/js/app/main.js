@@ -204,7 +204,7 @@ $(function() {
             }
 
             // transform array into object if a plugin wants it as an object
-            constructorParameters = (viewModel.format === "object") ? _.object(viewModel.dependencies, constructorParameters) : constructorParameters;
+            constructorParameters = (viewModel.returnObject) ? _.object(viewModel.dependencies, constructorParameters) : constructorParameters;
 
             // if we came this far then we could resolve all constructor parameters, so let's construct that view model
             log.debug("Constructing", viewModel.name, "with parameters:", viewModel.dependencies);
