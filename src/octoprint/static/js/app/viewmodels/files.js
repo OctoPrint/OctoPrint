@@ -423,7 +423,7 @@ $(function() {
                     }
                 }
                 output += gettext("Estimated Print Time") + ": " + formatDuration(data["gcodeAnalysis"]["estimatedPrintTime"]) + "<br>";
-		if(data["gcodeAnalysis"]["warning"])
+		if(self.loginState.isUser()&&data["gcodeAnalysis"]["warning"])
 		{
 		    var warning = "<p>" + gettext("Object exceeds printing area") + "</p>";
                     warning += pnotifyAdditionalInfo("<pre>Object or objects in file '"+data["name"]+"' exceeds the printing area</pre>");
@@ -512,7 +512,6 @@ $(function() {
             self.uploadSdButton = $("#gcode_upload_sd");
             if (!self.uploadSdButton.length) {
                 self.uploadSdButton = undefined;
-            }
                 if (_.endsWith(filename.toLowerCase(), ".stl")) {
                     self.slicing.show(location, filename);
                 }
@@ -522,7 +521,7 @@ $(function() {
                     $("#gcode_upload_progress").removeClass("progress-striped").removeClass("active");
                     $("#gcode_upload_progress .bar").text("");
                 }
-            //}
+            }
             self.uploadProgress = $("#gcode_upload_progress");
             self.uploadProgressBar = $(".bar", self.uploadProgress);
 
