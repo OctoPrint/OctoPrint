@@ -184,15 +184,15 @@ $(function() {
         // helper to create a view model instance with injected constructor parameters from the view model map
         var _createViewModelInstance = function(viewModel, viewModelMap) {
 
+            // mirror the requested dependencies with an array of the viewModels
             var viewModelParametersMap = function(parameter) {
-
-                // Check if parameter is found within optional array and if all conditions are met return null
+                // check if parameter is found within optional array and if all conditions are met return null instead of undefined
                 if (optionalDependencyPass && viewModel.optional.indexOf(parameter) !== -1 && !viewModelMap[parameter]) {
                     log.debug("Resolving optional parameter", [parameter], "without viewmodel");
                     return null
                 }
 
-                return viewModelMap[parameter]
+                return viewModelMap[parameter] || undefined
             };
 
             // try to resolve all of the view model's constructor parameters via our view model map
@@ -248,25 +248,30 @@ $(function() {
             var startLength = unprocessedViewModels.length;
             var postponed = [];
 
-            if(optionalDependencyPass) {
-                log.debug("Resolving dependencies with optional flag");
-            }
-
             // now try to instantiate every one of our as of yet unprocessed view model descriptors
             while (unprocessedViewModels.length > 0){
                 var viewModel = unprocessedViewModels.shift();
 
-                // Wrap anything not object related into a object
-                if(!(viewModel.constructor === Object)) {
+                // wrap anything not object related into a object (use jQuery since lodash returns invalid results)
+                if(!$.isPlainObject(viewModel)) {
                     viewModel = {
-                        construct: viewModel[0],
-                        dependencies: viewModel[1]  || [],
-                        elements: viewModel[2]      || [],
-                        optional: viewModel[3]      || []
+                        construct: (_.isArray(viewModel)) ? viewModel[0] : viewModel,
+                        dependencies: viewModel[1] || [],
+                        elements: viewModel[2] || [],
+                        optional: viewModel[3] || []
                     };
                 }
 
-                viewModel.name = viewModel.name ||  _getViewModelId(viewModel.construct.name);
+                // make sure we have atleast a function
+                if (!_.isFunction(viewModel.construct)) {
+                    log.error("No function to instantiate with", viewModel);
+                    continue;
+                }
+
+                // if name is not set, get name from construct, if it's an anonymous function; generate one
+                viewModel.name = viewModel.name || _getViewModelId(viewModel.construct.name) || "unnamedViewModel" + _.uniqueId();
+
+                // make sure all value's are in an array
                 viewModel.dependencies = (_.isArray(viewModel.dependencies)) ? viewModel.dependencies : [viewModel.dependencies];
                 viewModel.elements = (_.isArray(viewModel.elements)) ? viewModel.elements : [viewModel.elements];
                 viewModel.optional = (_.isArray(viewModel.optional)) ? viewModel.optional : [viewModel.optional];
@@ -303,8 +308,10 @@ $(function() {
             // if we still have the same amount of items in our list of unprocessed view models it means that we
             // couldn't instantiate any more view models over a whole iteration, which in turn mean we can't resolve the
             // dependencies of remaining ones, so log that as an error and then quit the loop
-            if (unprocessedViewModels.length == startLength) {
+            if (unprocessedViewModels.length === startLength) {
+                // I'm gonna let you finish but we will do another pass with the optional dependencies flag enabled
                 if(!optionalDependencyPass) {
+                    log.debug("Resolving next pass with optional dependencies flag enabled");
                     optionalDependencyPass = true;
                 } else {
                     log.error("Could not instantiate the following view models due to unresolvable dependencies:");
