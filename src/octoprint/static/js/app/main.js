@@ -252,7 +252,7 @@ $(function() {
             while (unprocessedViewModels.length > 0){
                 var viewModel = unprocessedViewModels.shift();
 
-                // wrap anything not object related into a object (use jQuery since lodash returns invalid results)
+                // wrap anything not object related into an object (use jQuery since lodash returns invalid results)
                 if(!$.isPlainObject(viewModel)) {
                     viewModel = {
                         construct: (_.isArray(viewModel)) ? viewModel[0] : viewModel,
@@ -268,8 +268,8 @@ $(function() {
                     continue;
                 }
 
-                // if name is not set, get name from construct, if it's an anonymous function; generate one
-                viewModel.name = viewModel.name || _getViewModelId(viewModel.construct.name) || "unnamedViewModel" + _.uniqueId();
+                // if name is not set, get name from constructor, if it's an anonymous function generate one
+                viewModel.name = viewModel.name || _getViewModelId(viewModel.construct.name) || _.uniqueId("unnamedViewModel");
 
                 // make sure all value's are in an array
                 viewModel.dependencies = (_.isArray(viewModel.dependencies)) ? viewModel.dependencies : [viewModel.dependencies];
