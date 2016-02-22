@@ -426,7 +426,7 @@ $(function() {
 		if(self.loginState.isUser()&&data["gcodeAnalysis"]["warning"])
 		{
 		    var warning = "<p>" + gettext("Object exceeds printing area") + "</p>";
-                    warning += pnotifyAdditionalInfo("<pre>Object or objects in file '"+data["name"]+"' exceeds the printing area</pre>");
+                    warning += pnotifyAdditionalInfo("<pre>Object or objects in file '"+data["name"]+"' exceed/s the printing area</pre>");
                     new PNotify({
                         title: "Object dimensions",
                         text: warning,

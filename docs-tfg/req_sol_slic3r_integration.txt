@@ -12,6 +12,26 @@ Requirements to integrate Slic3r in order to achieve slicing using the terminal:
 			-Print settings
 			-Filament settings
 			-Printer settings
-		-A checkbox to ask the user if he wishes to maintain the stl file after slicing or not		
+		-A checkbox to ask the user if he wishes to maintain the stl file after slicing or not	
 
 	-When slicing one or multiple objects, delete stl file if user chose that option in settings
+
+	EDIT
+	
+	-Notify user if something went wrong searching for files both for slicing parameters and for command to create the gcode
+
+	-When imported a file, check if slic3r profile contains parameters even though they are not in default settings, so no slic3r version requirement is needed	
+
+	-Addition of a wiki so the user can install the plugin properly
+
+Solutions to meet requirements:
+
+	-Instead of starting from zero, a fork of OctoPrint-Slic3r repository has been done, so part of the work could be avoided
+	
+	-The forked files were cloned and later copied to .octoprint/plugins so it can be detected by OctoPrint
+	
+	-Slic3r was cloned from its repository and installed using Perl as stable versions already compiled didn't meet architecture requirements
+
+	-As it was already done, it was not needed to create the web part. Due to this, the fourth requirement was changed to the following:
+
+		-With the file uploaded, obtain information of related files where slicing parameters are located. This way, less files need to be uploaded as long as they are under server OS folders.
