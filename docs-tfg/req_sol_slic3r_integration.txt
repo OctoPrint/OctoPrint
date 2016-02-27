@@ -20,7 +20,7 @@ Requirements to integrate Slic3r in order to achieve slicing using the terminal:
 	
 	-Notify user if something went wrong searching for files both for slicing parameters and for command to create the gcode
 
-	-When imported a file, check if slic3r profile contains parameters even though they are not in default settings, so no slic3r version requirement is needed	
+	-When imported a file, check if slic3r profile contains parameters even though they are not in default settings, so no slic3r version 		requirement is needed	
 
 	-Addition of a wiki so the user can install the plugin properly
 
@@ -34,4 +34,6 @@ Solutions to meet requirements:
 
 	-As it was already done, it was not needed to create the web part. Due to this, the fourth requirement was changed to the following:
 
-		-With the file uploaded, obtain information of related files where slicing parameters are located. This way, less files need to be uploaded as long as they are under server OS folders.
+		-With the file uploaded, obtain information of related files where slicing parameters are located. This way, less files need to be 			uploaded as long as they are under server OS folders.
+
+	-Two little programs were done to test existing differences among plugin profile and profile files (the ones were the information was 		obtained when adding a profile to Slic3r) and to check differences between slic3r gcode and pulgin's generated gcode
