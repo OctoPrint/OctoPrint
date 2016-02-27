@@ -1,0 +1,41 @@
+<form class="form-horizontal">
+    <fieldset>
+        <legend>{{ _('Password') }}</legend>
+        <p>
+            {{ _('If you do not wish to change your password, just leave the following fields empty.') }}
+        </p>
+        <div class="control-group">
+            <label class="control-label" for="userSettings-access_password">{{ _('New Password') }}</label>
+            <div class="controls">
+                <input type="password" class="input-block-level" id="userSettings-access_password" data-bind="value: access_password" required>
+            </div>
+        </div>
+        <div class="control-group" data-bind="css: {error: passwordMismatch()}">
+            <label class="control-label" for="userSettings-access_repeatedPassword">{{ _('Repeat Password') }}</label>
+            <div class="controls">
+                <input type="password" class="input-block-level" id="userSettings-access_repeatedPassword" data-bind="value: access_repeatedPassword, valueUpdate: 'afterkeydown'" required>
+                <span class="help-inline" data-bind="visible: passwordMismatch()">{{ _('Passwords do not match') }}</span>
+            </div>
+        </div>
+    </fieldset>
+    <fieldset>
+        <legend>{{ _('API Key') }}</legend>
+        <div class="control-group">
+            <label class="control-label" for="userSettings-access_apikey">{{ _('Current API Key') }}</label>
+            <div class="controls">
+                <div class="input-append">
+                    <input type="text" class="input-block-level uneditable-input" id="userSettings-access_apikey" data-bind="value: access_apikey, valueUpdate: 'input', attr: {placeholder: '{{ _('N/A') }}'}">
+                    <a class="btn" title="Generate new Apikey" data-bind="click: function() { users.confirmGenerateApikey(); }"><i class="icon-refresh"></i></a>
+                    <a class="btn btn-danger" title="Delete Apikey" data-bind="click: function() { users.confirmDeleteApikey(); }"><i class="icon-trash"></i></a>
+                </div>
+
+            </div>
+        </div>
+        <div class="control-group">
+            <label class="control-label">{{ _('QR Code') }}</label>
+            <div class="controls">
+                <div data-bind="qrcode: {text: access_apikey, size: 150}"></div>
+            </div>
+        </div>
+    </fieldset>
+</form>

@@ -1,0 +1,162 @@
+{% if webcamStream %}
+    <div id="webcam_container" tabindex="0" data-bind="event: { keydown: onKeyDown, mouseover: onMouseOver, mouseout: onMouseOut, focus: onFocus }">
+        <div id="webcam_rotator" data-bind="css: { rotate90: settings.webcam_rotate90() }">
+            <img id="webcam_image" data-bind="css: { flipH: settings.webcam_flipH(), flipV: settings.webcam_flipV() }">
+        </div>
+        <div class="keycontrol_overlay" data-bind="visible: showKeycontrols">
+            <div class="keycontrol_overlay_heading">{{ _("Keyboard controls active") }} <a href="#" data-bind="click: toggleKeycontrolHelp"><i data-bind="css: { 'icon-chevron-down': !keycontrolHelpActive(), 'icon-chevron-up': keycontrolHelpActive() }"></i></a></div>
+            <div data-bind="visible: keycontrolHelpActive">
+                <div class="keycontrol_overlay_column">
+                    <kbd>&rarr;</kbd> / <kbd>&larr;</kbd>: {{ _("X Axis") }} +/-<br>
+                    <kbd>&uarr;</kbd> / <kbd>&darr;</kbd>: {{ _("Y Axis") }} +/-<br>
+                    <kbd>W</kbd>, <kbd>{{ _("Page&uarr;") }}</kbd> / <kbd>S</kbd>, <kbd>{{ _("Page&darr;") }}</kbd>: {{ _("Z Axis") }} +/-
+                </div>
+                <div class="keycontrol_overlay_column">
+                    <kbd>Home</kbd>: {{ _("Home X/Y") }}<br>
+                    <kbd>End</kbd>: {{ _("Home Z") }}<br>
+                    <kbd>1</kbd>, <kbd>2</kbd>, <kbd>3</kbd>, <kbd>4</kbd>: {{ _("Stepsize") }} 0.1, 1, 10, 100mm
+                </div>
+            </div>
+        </div>
+    </div>
+    <div data-bind="visible: keycontrolPossible">
+        <small class="muted">{{ _("Hint: If you move your mouse over the picture, you enter keyboard control mode.") }}</small>
+    </div>
+{% endif %}
+
+<div class="jog-panel" style="display: none;" data-bind="visible: loginState.isUser">
+    <!-- XY jogging control panel -->
+    <div class="jog-panel">
+        <h1>X/Y</h1>
+        <div>
+            <button class="btn box" id="control-yinc" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('y',1) }"><i class="icon-arrow-up"></i></button>
+        </div>
+        <div>
+            <button class="btn box pull-left" id="control-xdec" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('x',-1) }"><i class="icon-arrow-left"></i></button>
+            <button class="btn box pull-left" id="control-xyhome" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendHomeCommand(['x', 'y']) }"><i class="icon-home"></i></button>
+            <button class="btn box pull-left" id="control-xinc" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('x',1) }"><i class="icon-arrow-right"></i></button>
+        </div>
+        <div>
+            <button class="btn box" id="control-ydec" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('y',-1) }"><i class="icon-arrow-down"></i></button>
+        </div>
+    </div>
+    <!-- Z jogging control panel -->
+    <div class="jog-panel">
+        <h1>Z</h1>
+        <div>
+            <button class="btn box" id="control-zinc" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('z',1) }"><i class="icon-arrow-up"></i></button>
+        </div>
+        <div>
+            <button class="btn box" id="control-zhome" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendHomeCommand(['z']) }"><i class="icon-home"></i></button>
+        </div>
+        <div>
+            <button class="btn box" id="control-zdec" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('z',-1) }"><i class="icon-arrow-down"></i></button>
+        </div>
+    </div>
+
+    <!-- Jog distance -->
+    <div class="distance">
+        <div class="btn-group" data-toggle="buttons-radio" id="jog_distance">
+            <button type="button" id="control-distance01" class="btn distance" data-distance="0.1" data-bind="enable: loginState.isUser()">0.1</button>
+            <button type="button" id="control-distance1" class="btn distance" data-distance="1" data-bind="enable: loginState.isUser()">1</button>
+            <button type="button" id="control-distance10" class="btn distance active" data-distance="10" data-bind="enable: loginState.isUser()">10</button>
+            <button type="button" id="control-distance100" class="btn distance" data-distance="100" data-bind="enable: loginState.isUser()">100</button>
+        </div>
+    </div>
+
+    <!-- Feed rate -->
+    <input type="number" style="width: 153px" data-bind="slider: {min: 50, max: 150, step: 1, value: feedRate, tooltip: 'hide'}">
+    <button class="btn btn-block" style="width: 169px" data-bind="enable: isOperational() && loginState.isUser(), click: function() { $root.sendFeedRateCommand() }">{{ _('Feed rate:') }}<span data-bind="text: feedRate() + '%'"></span></button>
+</div>
+<!-- Extrusion control panel -->
+<div class="jog-panel" style="display: none;" data-bind="visible: loginState.isUser">
+    <h1>Tool (E)</h1>
+    <div>
+        <div class="btn-group control-box">
+            <button class="btn dropdown-toggle" data-toggle="dropdown" data-bind="enable: isOperational() && !isPrinting() && !isPaused() && loginState.isUser()">
+                {{ _('Select Tool...') }}
+                <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu" data-bind="foreach: tools">
+                <li><a href="#" data-bind="click: $root.sendSelectToolCommand, text: name(), enable: $root.isOperational() && !$root.isPrinting() && !$root.isPaused() && $root.loginState.isUser()"></a></li>
+            </ul>
+        </div>
+        <div class="input-append control-box">
+            <input type="text" class="input-mini text-right" data-bind="value: extrusionAmount, enable: isOperational() && !isPrinting() && loginState.isUser(), attr: {placeholder: settings.printer_defaultExtrusionLength}">
+            <span class="add-on">mm</span>
+        </div>
+        <button class="btn btn-block control-box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendExtrudeCommand() }">{{ _('Extrude') }}</button>
+        <button class="btn btn-block control-box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendRetractCommand() }">{{ _('Retract') }}</button>
+
+        <!-- Flow rate -->
+        <input style="width: 100px" type="number" data-bind="slider: {min: 75, max: 125, step: 1, value: flowRate, tooltip: 'hide'}">
+        <button class="btn btn-block control-box" data-bind="enable: isOperational() && loginState.isUser(), click: function() { $root.sendFlowRateCommand() }">{{ _('Flow rate:') }}<span data-bind="text: flowRate() + '%'"></span></button>
+    </div>
+</div>
+<!-- General control panel -->
+<div class="jog-panel" style="display: none;" data-bind="visible: loginState.isUser">
+    <h1>{{ _('General') }}</h1>
+    <div>
+        <button class="btn btn-block control-box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendCustomCommand({type:'command',command:'M18'}) }">{{ _('Motors off') }}</button>
+        <button class="btn btn-block control-box" data-bind="enable: isOperational() && loginState.isUser(), click: function() { $root.sendCustomCommand({type:'command',command:'M106'}) }">{{ _('Fan on') }}</button>
+        <button class="btn btn-block control-box" data-bind="enable: isOperational() && loginState.isUser(), click: function() { $root.sendCustomCommand({type:'command',command:'M106 S0'}) }">{{ _('Fan off') }}</button>
+    </div>
+</div>
+
+<!-- Container for custom controls -->
+<div style="clear: both; display: none;" data-bind="visible: loginState.isUser, template: { name: $root.displayMode, foreach: controls }"></div>
+
+<!-- Templates for custom controls -->
+<script type="text/html" id="customControls_containerTemplate_nameless">
+    <div class="custom_section">
+        <!-- ko template: { name: 'customControls_containerTemplate', data: $data } --><!-- /ko -->
+    </div>
+</script>
+<script type="text/html" id="customControls_containerTemplate_collapsable">
+    <div class="custom_section">
+        <h1 onclick="$(this).children().first().toggleClass('icon-caret-down icon-caret-right').parent().next().slideToggle('fast')"><i data-bind="css: {'icon-caret-down': !collapsed, 'icon-caret-right': collapsed}"></i> <span data-bind="text: name"></span></h1>
+        <!-- ko template: { name: 'customControls_containerTemplate', data: $data } --><!-- /ko -->
+    </div>
+</script>
+<script type="text/html" id="customControls_containerTemplate">
+    <!-- ko if: layout == 'vertical' -->
+    <div class="custom_section_vertical" data-bind="template: { name: $root.displayMode, foreach: children }, css: {hide: collapsed && name}"></div>
+    <!-- /ko -->
+
+    <!-- ko if: layout == 'horizontal' -->
+    <div class="custom_section_horizontal" data-bind="template: { name: $root.displayMode, foreach: children }, css: {hide: collapsed && name}"></div>
+    <!-- /ko -->
+
+    <!-- ko if: layout == 'horizontal_grid' -->
+    <div class="row-fluid custom_section_horizontal_grid" data-bind="css: {hide: collapsed && name}">
+        <!-- ko foreach: children -->
+        <div data-bind="template: { name: $root.displayMode }, css: $root.rowCss($data)"></div>
+        <!-- /ko -->
+    </div>
+    <!-- /ko -->
+</script>
+<script type="text/html" id="customControls_controlTemplate">
+    <form class="form-inline custom_control">
+        <!-- ko template: { name: 'customControls_controlTemplate_input', data: $data, if: $data.hasOwnProperty('input') } --><!-- /ko -->
+        <!-- ko template: { name: 'customControls_controlTemplate_command', data: $data, if: $data.hasOwnProperty('command') || $data.hasOwnProperty('commands') || $data.hasOwnProperty('script') || $data.hasOwnProperty('javascript') } --><!-- /ko -->
+        <!-- ko template: { name: 'customControls_controlTemplate_output', data: $data, if: $data.hasOwnProperty('output') } --><!-- /ko -->
+    </form>
+</script>
+<script type="text/html" id="customControls_controlTemplate_input">
+    <!-- ko foreach: input -->
+        <label style="cursor: default" data-bind="text: name"></label>
+        <!-- ko if: slider -->
+            <input type="number" style="width: 100px" data-bind="slider: {value: value, min: slider.min, max: slider.max, step: slider.step}">
+        <!-- /ko -->
+        <!-- ko ifnot: slider -->
+            <input type="text" class="input-small" data-bind="attr: {placeholder: name}, value: value">
+        <!-- /ko -->
+    <!-- /ko -->
+</script>
+<script type="text/html" id="customControls_controlTemplate_output">
+    <label style="cursor: default" data-bind="text: output"></label>
+</script>
+<script type="text/html" id="customControls_controlTemplate_command">
+    <button class="btn" data-bind="text: name, enable: $root.isCustomEnabled($data), click: function() { $root.clickCustom($data) }"></button>
+</script>
+<!-- End of templates for custom controls -->

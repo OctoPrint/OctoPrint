@@ -1,0 +1,58 @@
+Metadata-Version: 1.1
+Name: Flask
+Version: 0.10.1
+Summary: A microframework based on Werkzeug, Jinja2 and good intentions
+Home-page: http://github.com/mitsuhiko/flask/
+Author: Armin Ronacher
+Author-email: armin.ronacher@active-4.com
+License: BSD
+Description: 
+        Flask
+        -----
+        
+        Flask is a microframework for Python based on Werkzeug, Jinja 2 and good
+        intentions. And before you ask: It's BSD licensed!
+        
+        Flask is Fun
+        ````````````
+        
+        .. code:: python
+        
+            from flask import Flask
+            app = Flask(__name__)
+        
+            @app.route("/")
+            def hello():
+                return "Hello World!"
+        
+            if __name__ == "__main__":
+                app.run()
+        
+        And Easy to Setup
+        `````````````````
+        
+        .. code:: bash
+        
+            $ pip install Flask
+            $ python hello.py
+             * Running on http://localhost:5000/
+        
+        Links
+        `````
+        
+        * `website <http://flask.pocoo.org/>`_
+        * `documentation <http://flask.pocoo.org/docs/>`_
+        * `development version
+          <http://github.com/mitsuhiko/flask/zipball/master#egg=Flask-dev>`_
+        
+        
+Platform: any
+Classifier: Development Status :: 4 - Beta
+Classifier: Environment :: Web Environment
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3
+Classifier: Topic :: Internet :: WWW/HTTP :: Dynamic Content
+Classifier: Topic :: Software Development :: Libraries :: Python Modules

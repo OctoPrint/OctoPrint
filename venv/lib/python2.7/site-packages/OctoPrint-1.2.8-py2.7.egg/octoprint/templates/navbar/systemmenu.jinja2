@@ -1,0 +1,12 @@
+<a href="#" class="dropdown-toggle" data-toggle="dropdown">
+    <i class="icon-off"></i> {{ _('System') }}
+    <b class="caret"></b>
+</a>
+<ul class="dropdown-menu" data-bind="foreach: systemActions">
+    <!-- ko if: action == "divider" -->
+    <li class="divider" />
+    <!-- /ko -->
+    <!-- ko if: action != "divider" -->
+    <li><a href="#" data-bind="click: $root.triggerAction, text: name"></a></li>
+    <!-- /ko -->
+</ul>

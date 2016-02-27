@@ -1,0 +1,55 @@
+{% if enableTemperatureGraph %}
+    <div class="row-fluid">
+        <div id="temperature-graph"></div>
+    </div>
+{% endif %}
+<div class="row-fluid">
+
+    <table class="table table-bordered table-hover" style="table-layout: fixed; width: 100%; margin-top: 20px">
+        <tr>
+            <th style="width: 18%"></th>
+            <th style="width: 12%; text-align: right">{{ _('Actual') }}</th>
+            <th style="width: 35%">{{ _('Target') }}</th>
+            <th style="width: 35%">{{ _('Offset') }}</th>
+        </tr>
+        <!-- ko foreach: tools -->
+        <tr data-bind="template: { name: 'temprow-template' }"></tr>
+        <!-- /ko -->
+        <tr data-bind="template: { name: 'temprow-template', data: bedTemp }, visible: hasBed"></tr>
+    </table>
+
+    <script type="text/html" id="temprow-template">
+        <th style="vertical-align: middle" data-bind="text: name"></th>
+        <td style="text-align: right; vertical-align: middle" data-bind="html: formatTemperature(actual())"></td>
+        <td style="vertical-align: middle; overflow: visible">
+            <div class="input-append">
+                <input type="text" class="input-mini text-right tempInput" data-bind="attr: {placeholder: cleanTemperature(target()) }, value: newTarget, enable: $root.isOperational() && $root.loginState.isUser(), event: { keyup: function(d, e) {$root.handleEnter(e, 'target', $data);} }">
+                <span class="add-on">&deg;C</span>
+                <div class="btn-group">
+                    <button type="submit" data-bind="click: $parent.setTarget, enable: $root.isOperational() && $root.loginState.isUser()" class="btn">{{ _('Set') }}</button>
+                    <button class="btn dropdown-toggle" data-toggle="dropdown" data-bind="enable: $root.isOperational() && $root.loginState.isUser()">
+                        <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <!-- ko foreach: $root.temperature_profiles -->
+                        <li>
+                            <a href="#" data-bind="click: function() {$root.setTargetFromProfile($parent, $data);}, text: 'Set ' + name + ' (' + ($parent.key() == 'bed' ? bed : extruder) + '&deg;C)'"></a>
+                        </li>
+                        <!-- /ko -->
+                        <li class="divider"></li>
+                        <li>
+                            <a href="#" data-bind="click: $root.setTargetToZero">{{ _('Off') }}</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </td>
+        <td style="vertical-align: middle">
+            <div class="input-append">
+                <input type="number" min="-50" max="50" class="input-mini text-right tempInput" data-bind="attr: {placeholder: offset}, value: newOffset, enable: $root.isOperational() && $root.loginState.isUser(), event: { keyup: function(d, e) {$root.handleEnter(e, 'offset', $data);} }">
+                <span class="add-on">&deg;C</span>
+                <button type="submit" data-bind="click: $root.setOffset, enable: $root.isOperational() && $root.loginState.isUser()" class="btn">{{ _('Set') }}</button>
+            </div>
+        </td>
+    </script>
+</div>

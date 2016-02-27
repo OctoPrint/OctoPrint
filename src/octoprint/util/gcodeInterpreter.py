@@ -30,6 +30,8 @@ class gcode(object):
 		self.progressCallback = None
 		self._abort = False
 		self._filamentDiameter = 0
+		#Parameters for object size checking
+		self.warn=False
 
 	def load(self, filename, printer_profile, throttle=None):
 		if os.path.isfile(filename):
@@ -120,6 +122,13 @@ class gcode(object):
 					z = getCodeFloat(line, 'Z')
 					e = getCodeFloat(line, 'E')
 					f = getCodeFloat(line, 'F')
+					#Check if x,y or z exceeds printing area
+					width=float(printer_profile["volume"]["width"])
+					depth=float(printer_profile["volume"]["depth"])
+					height=float(printer_profile["volume"]["height"])
+					if not self.warn and (x>width or y>depth or z>height):
+						self.warn=True 
+						self._logger.warn("Object is bigger than the printing area")
 					oldPos = pos
 					pos = pos[:]
 					if posAbs:
@@ -271,6 +280,8 @@ class gcode(object):
 	def _parseCuraProfileString(self, comment, prefix):
 		return {key: value for (key, value) in map(lambda x: x.split("=", 1), zlib.decompress(base64.b64decode(comment[len(prefix):])).split("\b"))}
 
+	def getWarning(self):
+		return self.warn
 
 def getCodeInt(line, code):
 	n = line.find(code) + 1

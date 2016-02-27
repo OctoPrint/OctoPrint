@@ -423,6 +423,17 @@ $(function() {
                     }
                 }
                 output += gettext("Estimated Print Time") + ": " + formatDuration(data["gcodeAnalysis"]["estimatedPrintTime"]) + "<br>";
+		if(self.loginState.isUser()&&data["gcodeAnalysis"]["warning"])
+		{
+		    var warning = "<p>" + gettext("Object exceeds printing area") + "</p>";
+                    warning += pnotifyAdditionalInfo("<pre>Object or objects in file '"+data["name"]+"' exceed/s the printing area</pre>");
+                    new PNotify({
+                        title: "Object dimensions",
+                        text: warning,
+                        type: "warning",
+                        hide: false
+                    });
+		}
             }
             if (data["prints"] && data["prints"]["last"]) {
                 output += gettext("Last Printed") + ": " + formatTimeAgo(data["prints"]["last"]["date"]) + "<br>";
@@ -501,8 +512,16 @@ $(function() {
             self.uploadSdButton = $("#gcode_upload_sd");
             if (!self.uploadSdButton.length) {
                 self.uploadSdButton = undefined;
+                if (_.endsWith(filename.toLowerCase(), ".stl")) {
+                    self.slicing.show(location, filename);
+                }
+		
+                if (data.result.done) {
+                    $("#gcode_upload_progress .bar").css("width", "0%");
+                    $("#gcode_upload_progress").removeClass("progress-striped").removeClass("active");
+                    $("#gcode_upload_progress .bar").text("");
+                }
             }
-
             self.uploadProgress = $("#gcode_upload_progress");
             self.uploadProgressBar = $(".bar", self.uploadProgress);
 
