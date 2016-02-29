@@ -1,5 +1,0 @@
-
-[security]
-pyOpenSSL
-ndg-httpsclient
-pyasn1

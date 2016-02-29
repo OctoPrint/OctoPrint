@@ -1,4 +1,0 @@
-#!/home/pi/OctoPrint-TFG/venv/bin/python
-# EASY-INSTALL-SCRIPT: 'netaddr==0.7.17','netaddr'
-__requires__ = 'netaddr==0.7.17'
-__import__('pkg_resources').run_script('netaddr==0.7.17', 'netaddr')
