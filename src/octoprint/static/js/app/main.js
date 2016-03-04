@@ -252,8 +252,8 @@ $(function() {
             while (unprocessedViewModels.length > 0){
                 var viewModel = unprocessedViewModels.shift();
 
-                // wrap anything not object related into an object (use jQuery since lodash returns invalid results)
-                if(!$.isPlainObject(viewModel)) {
+                // wrap anything not object related into an object
+                if(!_.isPlainObject(viewModel)) {
                     viewModel = {
                         construct: (_.isArray(viewModel)) ? viewModel[0] : viewModel,
                         dependencies: viewModel[1] || [],
