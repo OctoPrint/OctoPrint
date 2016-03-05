@@ -60,6 +60,7 @@ date of first contribution):
   * ["bwgan"](https://github.com/bwgan)
   * [Siim Raud](https://github.com/2ndalpha)
   * ["geoporalis"](https://github.com/geoporalis)
+  * [therealbstern](https://github.com/therealbstern)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and
