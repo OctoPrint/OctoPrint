@@ -260,7 +260,7 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
 
 			self._gcode = gcodeInterpreter.gcode()
 			self._gcode.load(self._current.absolute_path, self._current.printer_profile, throttle=throttle_callback)
-						
+	
 			result = dict()
 			result["warning"]=self._gcode.getWarning()
 			if self._gcode.totalMoveTimeMinute:
