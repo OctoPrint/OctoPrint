@@ -62,7 +62,7 @@ def get_finished_timelapses():
 	files = []
 	basedir = settings().getBaseFolder("timelapse")
 	for osFile in os.listdir(basedir):
-		if not fnmatch.fnmatch(osFile, "*.mpg"):
+		if not fnmatch.fnmatch(osFile, "*.mp[g4]"):
 			continue
 		statResult = os.stat(os.path.join(basedir, osFile))
 		files.append({
