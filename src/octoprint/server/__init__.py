@@ -366,7 +366,8 @@ class Server():
 
 		server_routes = self._router.urls + [
 			# various downloads
-			(r"/downloads/timelapse/([^/]*\.mpg)", util.tornado.LargeResponseHandler, joined_dict(dict(path=self._settings.getBaseFolder("timelapse")),
+			# .mpg and .mp4 timelapses:
+			(r"/downloads/timelapse/([^/]*\.mp[g4])", util.tornado.LargeResponseHandler, joined_dict(dict(path=self._settings.getBaseFolder("timelapse")),
 			                                                                                      download_handler_kwargs,
 			                                                                                      no_hidden_files_validator)),
 			(r"/downloads/files/local/(.*)", util.tornado.LargeResponseHandler, joined_dict(dict(path=self._settings.getBaseFolder("uploads")),
