@@ -87,8 +87,8 @@ def configureTimelapse(config=None, persist=False):
 		current = None
 	elif "zchange" == type:
 		retractionZHop = 0
-                if "options" in config and "retractionZHop" in config["options"] and config["options"]["retractionZHop"] > 0:
-                        retractionZHop = config["options"]["retractionZHop"]
+		if "options" in config and "retractionZHop" in config["options"] and config["options"]["retractionZHop"] > 0:
+			retractionZHop = config["options"]["retractionZHop"]
 		current = ZTimelapse(post_roll=postRoll, retraction_zhop=retractionZHop, fps=fps)
 	elif "timed" == type:
 		interval = 10
