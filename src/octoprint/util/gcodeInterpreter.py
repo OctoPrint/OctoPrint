@@ -21,7 +21,6 @@ class AnalysisAborted(Exception):
 class gcode(object):
 	def __init__(self):
 		self._logger = logging.getLogger(__name__)
-
 		self.layerList = None
 		self.extrusionAmount = [0]
 		self.extrusionVolume = [0]
@@ -30,8 +29,13 @@ class gcode(object):
 		self.progressCallback = None
 		self._abort = False
 		self._filamentDiameter = 0
-		#Parameters for object size checking
-		self.warn=False
+		#Parameters for object size check
+		self.minX=None
+		self.minY=None
+		self.minZ=None
+		self.maxX=None
+		self.maxY=None
+		self.maxZ=None
 
 	def load(self, filename, printer_profile, throttle=None):
 		if os.path.isfile(filename):
@@ -46,6 +50,10 @@ class gcode(object):
 		self._abort = True
 
 	def _load(self, gcodeFile, printer_profile, throttle=None):
+		previousE=0
+		xList=list()
+		yList=list()
+		zList=list()
 		filePos = 0
 		readBytes = 0
 		pos = [0.0, 0.0, 0.0]
@@ -122,13 +130,15 @@ class gcode(object):
 					z = getCodeFloat(line, 'Z')
 					e = getCodeFloat(line, 'E')
 					f = getCodeFloat(line, 'F')
-					#Check if x,y or z exceeds printing area
-					width=float(printer_profile["volume"]["width"])
-					depth=float(printer_profile["volume"]["depth"])
-					height=float(printer_profile["volume"]["height"])
-					if not self.warn and (x>width or y>depth or z>height):
-						self.warn=True 
-						self._logger.warn("Object is bigger than the printing area")
+					#Add value to list in case move includes extrusion
+					if e is not None and (e-previousE)>0:
+						if x is not None:
+							xList.append(x)
+						if y is not None:
+							yList.append(y)
+						previousE=e
+					if z is not None:
+						zList.append(z)				
 					oldPos = pos
 					pos = pos[:]
 					if posAbs:
@@ -220,6 +230,7 @@ class gcode(object):
 					e = getCodeFloat(line, 'E')
 					if e is not None:
 						currentE[currentExtruder] = e
+						previousE=e
 					if x is not None:
 						posOffset[0] = pos[0] - x
 					if y is not None:
@@ -267,6 +278,14 @@ class gcode(object):
 			if throttle is not None:
 				throttle()
 
+		#We are only interested in minimum and maximum values from the list
+		self.minX=min(xList)
+		self.maxX=max(xList)
+		self.minY=min(yList)
+		self.maxY=max(yList)
+		self.minZ=min(zList)
+		self.maxZ=max(zList)
+
 		if self.progressCallback is not None:
 			self.progressCallback(100.0)
 
@@ -279,9 +298,6 @@ class gcode(object):
 
 	def _parseCuraProfileString(self, comment, prefix):
 		return {key: value for (key, value) in map(lambda x: x.split("=", 1), zlib.decompress(base64.b64decode(comment[len(prefix):])).split("\b"))}
-
-	def getWarning(self):
-		return self.warn
 
 def getCodeInt(line, code):
 	n = line.find(code) + 1

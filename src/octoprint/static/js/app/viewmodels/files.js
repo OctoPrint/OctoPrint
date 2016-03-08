@@ -6,6 +6,7 @@ $(function() {
         self.loginState = parameters[1];
         self.printerState = parameters[2];
         self.slicing = parameters[3];
+	self.printerProfiles=parameters[4];
 
         self.isErrorOrClosed = ko.observable(undefined);
         self.isOperational = ko.observable(undefined);
@@ -423,16 +424,74 @@ $(function() {
                     }
                 }
                 output += gettext("Estimated Print Time") + ": " + formatDuration(data["gcodeAnalysis"]["estimatedPrintTime"]) + "<br>";
-		if(self.loginState.isUser()&&data["gcodeAnalysis"]["warning"])
+		if(self.loginState.isUser())
 		{
-		    var warning = "<p>" + gettext("Object exceeds printing area") + "</p>";
-                    warning += pnotifyAdditionalInfo("<pre>Object or objects in file '"+data["name"]+"' exceed/s the printing area</pre>");
-                    new PNotify({
-                        title: "Object dimensions",
-                        text: warning,
-                        type: "warning",
-                        hide: false
-                    });
+                    var profileItems=self.printerProfiles.profiles.items();
+                    var count=0;
+                    while(count<profileItems.length && !profileItems[count].current)
+                    {
+                        count++;
+                    }
+                    if(count<profileItems.length)
+                    {
+                        var warn=false;
+                        var volumeInfo=profileItems[count].volume;
+                        var printingArea=data["gcodeAnalysis"]["printingArea"];
+                        if(volumeInfo.origin=="lowerleft")
+                        {
+                            if(printingArea["maxX"]>volumeInfo.width || printingArea["maxY"]>volumeInfo.depth || printingArea["maxZ"]>volumeInfo.height)
+                            {
+                                warn=true;
+                            }
+                        }
+                        else //origin is centre
+                        {
+                            if( printingArea["maxX"]>(volumeInfo.width/2) || printingArea["maxY"]>(volumeInfo.depth/2) || printingArea["maxZ"]>volumeInfo.height || Math.abs(printingArea["minX"])>(volumeInfo.width/2) || Math.abs(printingArea["minY"])>(volumeInfo.depth/2))
+                            {
+                                warn=true;
+                            }
+                        }
+                    }
+                    if(warn)
+                    {
+                        var warning = "<p>" + gettext("Revise file ")+ data["name"] + "</p>";
+                        var info="";
+                        if(volumeInfo.origin=="lowerleft" && printingArea["maxX"]>volumeInfo.width)
+                        {
+                            info=info+"Profile's width: "+volumeInfo.width+"\n Object's width: "+  printingArea["maxX"]+"\n";
+                        }
+                        if(volumeInfo.origin=="lowerleft" && printingArea["maxY"]>volumeInfo.depth)
+                        {
+                            info=info+"Profile's depth: "+volumeInfo.depth+"\n Object's depth: "+  printingArea["maxY"]+"\n";
+                        }
+                        if(volumeInfo.origin=="center" && printingArea["maxX"]>(volumeInfo.width/2))
+                        {
+                            info=info+"Profile's width (center origin): "+(volumeInfo.width/2)+"\n Object's width: "+  printingArea["maxX"]+"\n";
+                        }
+                        if(volumeInfo.origin=="center" && Math.abs(printingArea["minX"])>(volumeInfo.width/2))
+                        {
+                            info=info+"Profile's width (center origin): "+(volumeInfo.width/2)+"\n Object's width: "+  printingArea["minX"]+"\n";
+                        }
+                        if(volumeInfo.origin=="center" && printingArea["maxY"]>(volumeInfo.depth/2))
+                        {
+                            info=info+"Profile's depth (center origin): "+(volumeInfo.depth/2)+"\n Object's depth: "+  printingArea["maxY"]+"\n";
+                        }
+                        if(volumeInfo.origin=="center" && Math.abs(printingArea["minY"])>(volumeInfo.depth/2))
+                        {
+                            info=info+"Profile's depth (center origin): "+(volumeInfo.depth/2)+"\n Object's depth: "+  printingArea["minY"]+"\n";
+                        }
+                        if(printingArea["maxZ"]>volumeInfo.height)
+                        {
+                            info=info+"Profile's height: "+volumeInfo.height+"\n Object's height: "+  printingArea["maxZ"]+"\n";
+                        }
+                        warning += pnotifyAdditionalInfo("<pre>"+info+"</pre>");
+                        new PNotify({
+                            title: "Object exceeds the printing area",
+                            text: warning,
+                            type: "warning",
+                            hide: false
+                        });
+                    }
 		}
             }
             if (data["prints"] && data["prints"]["last"]) {
@@ -640,7 +699,7 @@ $(function() {
             self.requestData(filename, location, self.currentPath());
 
             if (data.result.done) {
-                selef._setProgressBar(0, "", false);
+                self._setProgressBar(0, "", false);
             }
         };
 
@@ -653,14 +712,14 @@ $(function() {
                 type: "error",
                 hide: false
             });
-            self.setProgressBar(0, "", false);
+            self._setProgressBar(0, "", false);
         };
 
         self._handleUploadProgress = function(e, data) {
             var progress = parseInt(data.loaded / data.total * 100, 10);
             var uploaded = progress >= 100;
 
-            self.setProgressBar(progress, uploaded ? gettext("Saving ...") : gettext("Uploading ..."), uploaded);
+            self._setProgressBar(progress, uploaded ? gettext("Saving ...") : gettext("Uploading ..."), uploaded);
         };
 
         self._handleDragNDrop = function (e) {
@@ -734,7 +793,7 @@ $(function() {
 
     OCTOPRINT_VIEWMODELS.push([
         GcodeFilesViewModel,
-        ["settingsViewModel", "loginStateViewModel", "printerStateViewModel", "slicingViewModel"],
+        ["settingsViewModel", "loginStateViewModel", "printerStateViewModel", "slicingViewModel","printerProfilesViewModel"],
         ["#files_wrapper", "#add_folder_dialog"]
     ]);
 });

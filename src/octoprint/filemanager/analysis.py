@@ -17,8 +17,6 @@ from octoprint.events import Events, eventManager
 
 import octoprint.util.gcodeInterpreter as gcodeInterpreter
 
-#Added to check if object exceeds printing area
-from octoprint.printer.profile import PrinterProfileManager
 
 class QueueEntry(collections.namedtuple("QueueEntry", "path, type, location, absolute_path, printer_profile")):
 	"""
@@ -262,7 +260,7 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
 			self._gcode.load(self._current.absolute_path, self._current.printer_profile, throttle=throttle_callback)
 	
 			result = dict()
-			result["warning"]=self._gcode.getWarning()
+			result["printingArea"]={"minX" : self._gcode.minX, "minY" : self._gcode.minY, "minZ" : self._gcode.minZ, "maxX" : self._gcode.maxX, "maxY" : self._gcode.maxY, "maxZ" : self._gcode.maxZ}
 			if self._gcode.totalMoveTimeMinute:
 				result["estimatedPrintTime"] = self._gcode.totalMoveTimeMinute * 60
 			if self._gcode.extrusionAmount:
