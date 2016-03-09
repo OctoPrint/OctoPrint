@@ -816,12 +816,9 @@ class RepeatedTimer(threading.Thread):
 
 class CountedEvent(object):
 
-	def __init__(self, value=0, max=None, name=None):
-		logger_name = __name__ + ".CountedEvent" + (".{name}".format(name=name) if name is not None else "")
-		self._logger = logging.getLogger(logger_name)
-
+	def __init__(self, value=0, maximum=None, **kwargs):
 		self._counter = 0
-		self._max = max
+		self._max = kwargs.get("max", maximum)
 		self._mutex = threading.Lock()
 		self._event = threading.Event()
 
@@ -846,17 +843,14 @@ class CountedEvent(object):
 			return self._counter == 0
 
 	def _internal_set(self, value):
-		self._logger.debug("New counter value: {value}".format(value=value))
 		self._counter = value
 		if self._counter <= 0:
 			self._counter = 0
 			self._event.clear()
-			self._logger.debug("Cleared event")
 		else:
 			if self._max is not None and self._counter > self._max:
 				self._counter = self._max
 			self._event.set()
-			self._logger.debug("Set event")
 
 
 class InvariantContainer(object):
