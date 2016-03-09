@@ -154,7 +154,7 @@ class VirtualPrinter():
 				if linenumber != expected:
 					self._triggerResend(actual=linenumber)
 					continue
-				elif self.currentLine == 101:
+				elif self.currentLine == 100:
 					# simulate a resend at line 100
 					self._triggerResend(expected=100)
 					continue
