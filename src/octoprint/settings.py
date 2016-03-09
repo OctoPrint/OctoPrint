@@ -89,7 +89,8 @@ default_settings = {
 		"checksumRequiringCommands": ["M110"],
 		"helloCommand": "M110 N0",
 		"disconnectOnErrors": True,
-		"ignoreErrorsFromFirmware": False
+		"ignoreErrorsFromFirmware": False,
+		"logResends": False
 	},
 	"server": {
 		"host": "0.0.0.0",

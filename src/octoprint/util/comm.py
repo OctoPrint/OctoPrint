@@ -245,8 +245,18 @@ class MachineCom(object):
 		self._resendSwallowRepetitions = settings().getBoolean(["feature", "ignoreIdenticalResends"])
 		self._resendSwallowRepetitionsCounter = 0
 
+		self._terminal_log = deque([], 20)
+
 		self._disconnect_on_errors = settings().getBoolean(["serial", "disconnectOnErrors"])
 		self._ignore_errors = settings().getBoolean(["serial", "ignoreErrorsFromFirmware"])
+
+		self._log_resends = settings().getBoolean(["serial", "logResends"])
+
+		# don't log more resends than 5 / 10s
+		self._log_resends_rate_start = None
+		self._log_resends_rate_count = 0
+		self._log_resends_max = 5
+		self._log_resends_rate_frame = 10
 
 		self._long_running_commands = settings().get(["serial", "longRunningCommands"])
 		self._checksum_requiring_commands = settings().get(["serial", "checksumRequiringCommands"])
@@ -324,8 +334,15 @@ class MachineCom(object):
 		self._callback.on_comm_state_change(newState)
 
 	def _log(self, message):
+		self._terminal_log.append(message)
 		self._callback.on_comm_log(message)
 		self._serialLogger.debug(message)
+
+	def _to_logfile_with_terminal(self, message=None, level=logging.INFO):
+		log = "Last lines in terminal:\n" + "\n".join(map(lambda x: "| " + x, self._terminal_log))
+		if message is not None:
+			log = message + "\n| " + log
+		self._logger.log(level, log)
 
 	def _addToLastLines(self, cmd):
 		self._lastLines.append(cmd)
@@ -1145,7 +1162,8 @@ class MachineCom(object):
 								self._serial.write('\n')
 								self.sayHello()
 							except:
-								self._log("Unexpected error while setting baudrate: %d %s" % (baudrate, get_exception_string()))
+								self._log("Unexpected error while setting baudrate {}: {}".format(baudrate, get_exception_string()))
+								self._logger.exception("Unexpceted error while setting baudrate {}".format(baudrate))
 						else:
 							self.close()
 							self._errorValue = "No more baudrates to test, and no suitable baudrate found."
@@ -1330,10 +1348,13 @@ class MachineCom(object):
 				programmer.connect(p)
 				serial_obj = programmer.leaveISP()
 			except ispBase.IspError as (e):
-				self._log("Error while connecting to %s: %s" % (p, str(e)))
+				error_message = "Error while connecting to %s: %s" % (p, str(e))
+				self._log(error_message)
+				self._logger.exception(error_message)
 			except:
-				self._log("Unexpected error while connecting to serial port: %s %s" % (p, get_exception_string()))
-
+				error_message = "Unexpected error while connecting to serial port: %s %s" % (p, get_exception_string())
+				self._log(error_message)
+				self._logger.exception(error_message)
 			if serial_obj is not None:
 				if (close):
 					serial_obj.close()
@@ -1380,7 +1401,9 @@ class MachineCom(object):
 				self._changeState(self.STATE_ERROR)
 				eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
 
-				self._log("Unexpected error while connecting to serial port: %s %s (hook %s)" % (self._port, exception_string, name))
+				error_message = "Unexpected error while connecting to serial port: %s %s (hook %s)" % (self._port, exception_string, name)
+				self._log(error_message)
+				self._logger.exception(error_message)
 
 				if "failed to set custom baud rate" in exception_string.lower():
 					self._log("Your installation does not support custom baudrates (e.g. 250000) for connecting to your printer. This is a problem of the pyserial library that OctoPrint depends on. Please update to a pyserial version that supports your baudrate or switch your printer's firmware to a standard baudrate (e.g. 115200). See https://github.com/foosel/OctoPrint/wiki/OctoPrint-support-for-250000-baud-rate-on-Raspbian")
@@ -1403,7 +1426,7 @@ class MachineCom(object):
 		lower_line = line.lower()
 
 		# No matter the state, if we see an error, goto the error state and store the error for reference.
-		if line.startswith('Error:') or line.startswith('!!'):
+		if lower_line.startswith('error:') or line.startswith('!!'):
 			#Oh YEAH, consistency.
 			# Marlin reports an MIN/MAX temp error as "Error:x\n: Extruder switched off. MAXTEMP triggered !\n"
 			#	But a bed temp error is reported as "Error: Temperature heated bed switched off. MAXTEMP triggered !!"
@@ -1413,7 +1436,7 @@ class MachineCom(object):
 
 			if 'line number' in lower_line or 'checksum' in lower_line or 'format error' in lower_line or 'expected line' in lower_line:
 				#Skip the communication errors, as those get corrected.
-				self._lastCommError = line[6:] if line.startswith("Error:") else line[2:]
+				self._lastCommError = line[6:] if lower_line.startswith("error:") else line[2:]
 				pass
 			elif 'volume.init' in lower_line or "openroot" in lower_line or 'workdir' in lower_line\
 					or "error writing to file" in lower_line or "cannot open" in lower_line\
@@ -1424,7 +1447,8 @@ class MachineCom(object):
 				#Ignore unkown command errors, it could be a typo or some missing feature
 				pass
 			elif not self.isError():
-				error_text = line[6:] if line.startswith("Error:") else line[2:]
+				error_text = line[6:] if lower_line.startswith("error:") else line[2:]
+				self._to_logfile_with_terminal("Received an error from the printer's firmware: {}".format(error_text), level=logging.WARN)
 				if not self._ignore_errors:
 					if self._disconnect_on_errors:
 						self._errorValue = error_text
@@ -1544,7 +1568,8 @@ class MachineCom(object):
 
 			if self._resendDelta > len(self._lastLines) or len(self._lastLines) == 0 or self._resendDelta < 0:
 				self._errorValue = "Printer requested line %d but no sufficient history is available, can't resend" % lineToResend
-				self._logger.warn(self._errorValue)
+				self._log(self._errorValue)
+				self._logger.warn(self._errorValue + ". Printer requested line {}, current line is {}, line history has {} entries.".format(lineToResend, self._currentLine, len(self._lastLines)))
 				if self.isPrinting():
 					# abort the print, there's nothing we can do to rescue it now
 					self._changeState(self.STATE_ERROR)
@@ -1554,6 +1579,22 @@ class MachineCom(object):
 					self._resendDelta = None
 			else:
 				self._resendNextCommand()
+
+			# if we log resends, make sure we don't log more resends than the set rate within a window
+			#
+			# this it to prevent the log from getting flooded for extremely bad communication issues
+			if self._log_resends:
+				now = time.time()
+				new_rate_window = self._log_resends_rate_start is None or self._log_resends_rate_start + self._log_resends_rate_frame < now
+				in_rate = self._log_resends_rate_count < self._log_resends_max
+
+				if new_rate_window or in_rate:
+					if new_rate_window:
+						self._log_resends_rate_start = now
+						self._log_resends_rate_count = 0
+
+					self._to_logfile_with_terminal("Got a resend request from the printer: requested line = {}, current line = {}".format(lineToResend, self._currentLine))
+					self._log_resends_rate_count += 1
 
 	def _resendNextCommand(self):
 		self._lastCommError = None
