@@ -758,25 +758,6 @@ class MachineCom(object):
 	def getSdFiles(self):
 		return self._sdFiles
 
-	def startSdFileTransfer(self, filename):
-		if not self._sdEnabled:
-			return
-
-		if not self.isOperational() or self.isBusy():
-			return
-		self._changeState(self.STATE_TRANSFERING_FILE)
-		self.sendCommand("M28 %s" % filename.lower())
-
-	def endSdFileTransfer(self, filename):
-		if not self._sdEnabled:
-			return
-
-		if not self.isOperational() or self.isBusy():
-			return
-		self.sendCommand("M29 %s" % filename.lower())
-		self._changeState(self.STATE_OPERATIONAL)
-		self.refreshSdFiles()
-
 	def deleteSdFile(self, filename):
 		if not self._sdEnabled:
 			return
