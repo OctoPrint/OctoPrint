@@ -61,6 +61,7 @@ class VirtualPrinter():
 		self._selectedSdFileSize = None
 		self._selectedSdFilePos = None
 		self._writingToSd = False
+		self._writingToSdHandle = None
 		self._newSdFilePos = None
 		self._heatupThread = None
 
@@ -164,9 +165,8 @@ class VirtualPrinter():
 			data += "\n"
 
 			# shortcut for writing to SD
-			if self._writingToSd and not self._selectedSdFile is None and not "M29" in data:
-				with open(self._selectedSdFile, "a") as f:
-					f.write(data)
+			if self._writingToSdHandle is not None and not "M29" in data:
+				self._writingToSdHandle.write(data)
 				self._sendOk()
 				continue
 
@@ -580,11 +580,28 @@ class VirtualPrinter():
 			else:
 				self.outgoing.put("error writing to file")
 
+		handle = None
+		try:
+			handle = open(file, "w")
+		except:
+			self.outgoing.put("error writing to file")
+			if handle is not None:
+				try:
+					handle.close()
+				except:
+					pass
+		self._writingToSdHandle = handle
 		self._writingToSd = True
 		self._selectedSdFile = file
 		self.outgoing.put("Writing to file: %s" % filename)
 
 	def _finishSdFile(self):
+		try:
+			self._writingToSdHandle.close()
+		except:
+			pass
+		finally:
+			self._writingToSdHandle = None
 		self._writingToSd = False
 		self._selectedSdFile = None
 		self.outgoing.put("Done saving file")
@@ -611,10 +628,12 @@ class VirtualPrinter():
 					# set target temps
 					if 'M104' in line or 'M109' in line:
 						self._parseHotendCommand(line)
-					if 'M140' in line or 'M190' in line:
+					elif 'M140' in line or 'M190' in line:
 						self._parseBedCommand(line)
+					elif line.startswith("G0") or line.startswith("G1") or line.startswith("G2") or line.startswith("G3"):
+						# simulate reprap buffered commands via a Queue with maxsize which internally simulates the moves
+						self.buffered.put(line)
 
-					time.sleep(settings().getFloat(["devel", "virtualPrinter", "throttle"]))
 		except AttributeError:
 			if self.outgoing is not None:
 				raise
@@ -708,7 +727,6 @@ class VirtualPrinter():
 
 		try:
 			line = self.outgoing.get(timeout=self._read_timeout)
-			time.sleep(settings().getFloat(["devel", "virtualPrinter", "throttle"]))
 			return line
 		except Queue.Empty:
 			return ""
