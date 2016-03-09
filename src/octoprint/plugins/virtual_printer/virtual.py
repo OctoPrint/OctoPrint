@@ -91,6 +91,10 @@ class VirtualPrinter():
 
 		self._killed = False
 
+		self._triggerResendAt100 = True
+		self._triggerResendWithTimeoutAt105 = True
+		self._triggeredResendWithTimeoutAt105 = False
+
 		waitThread = threading.Thread(target=self._sendWaitAfterTimeout)
 		waitThread.start()
 
@@ -148,6 +152,10 @@ class VirtualPrinter():
 				linenumber = int(re.search("N([0-9]+)", data).group(1))
 				self.lastN = linenumber
 				self.currentLine = linenumber
+
+				self._triggerResendAt100 = True
+				self._triggerResendWithTimeoutAt105 = True
+
 				self._sendOk()
 				continue
 			elif data.startswith("N"):
@@ -156,9 +164,17 @@ class VirtualPrinter():
 				if linenumber != expected:
 					self._triggerResend(actual=linenumber)
 					continue
-				elif self.currentLine == 100:
+				elif linenumber == 100 and self._triggerResendAt100:
 					# simulate a resend at line 100
+					self._triggerResendAt100 = False
 					self._triggerResend(expected=100)
+					continue
+				elif linenumber == 105 and self._triggerResendWithTimeoutAt105 and not self._writingToSd:
+					# simulate a resend with timeout at line 105
+					self._triggerResendWithTimeoutAt105 = False
+					self._triggerResend(expected=105)
+					self._dont_answer = True
+					self.lastN = linenumber
 					continue
 				else:
 					self.lastN = linenumber
