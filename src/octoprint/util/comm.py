@@ -1072,8 +1072,6 @@ class MachineCom(object):
 						})
 				elif 'Writing to file' in line and self.isStreaming():
 					self._changeState(self.STATE_PRINTING)
-					self._clear_to_send.set()
-					line, lower_line = convert_line("ok")
 				elif 'Done printing file' in line and self.isSdPrinting():
 					# printer is reporting file finished printing
 					self._sdFilePos = 0
