@@ -230,6 +230,7 @@ class MachineCom(object):
 		self._timeout = None
 
 		self._hello_command = settings().get(["serial", "helloCommand"])
+		self._trigger_ok_for_m29 = settings().getBoolean(["serial", "triggerOkForM29"])
 
 		self._alwaysSendChecksum = settings().getBoolean(["feature", "alwaysSendChecksum"])
 		self._sendChecksumWithUnknownCommands = settings().getBoolean(["feature", "sendChecksumWithUnknownCommands"])
@@ -1091,6 +1092,12 @@ class MachineCom(object):
 							pass
 				elif 'Done saving file' in line:
 					self.refreshSdFiles()
+
+					if self._trigger_ok_for_m29:
+						# workaround for most versions of Marlin out in the wild
+						# not sending an ok after saving a file
+						self._clear_to_send.set()
+						line, lower_line = convert_line("ok")
 				elif 'File deleted' in line and line.strip().endswith("ok"):
 					# buggy Marlin version that doesn't send a proper \r after the "File deleted" statement, fixed in
 					# current versions

@@ -73,6 +73,8 @@ class VirtualPrinter():
 
 		self._echoOnM117 = settings().getBoolean(["devel", "virtualPrinter", "echoOnM117"])
 
+		self._brokenM29 = settings().getBoolean(["devel", "virtualPrinter", "brokenM29"])
+
 		self.currentLine = 0
 		self.lastN = 0
 
@@ -223,6 +225,8 @@ class VirtualPrinter():
 			elif 'M29' in data:
 				if self._sdCardReady:
 					self._finishSdFile()
+				if self._brokenM29:
+					continue
 			elif 'M30' in data:
 				if self._sdCardReady:
 					filename = data.split(None, 1)[1].strip()

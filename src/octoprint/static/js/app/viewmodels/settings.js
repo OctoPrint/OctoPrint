@@ -140,6 +140,7 @@ $(function() {
         self.serial_helloCommand = ko.observable(undefined);
         self.serial_ignoreErrorsFromFirmware = ko.observable(undefined);
         self.serial_disconnectOnErrors = ko.observable(undefined);
+        self.serial_triggerOkForM29 = ko.observable(undefined);
 
         self.folder_uploads = ko.observable(undefined);
         self.folder_timelapse = ko.observable(undefined);
@@ -458,6 +459,7 @@ $(function() {
             self.serial_helloCommand(response.serial.helloCommand);
             self.serial_ignoreErrorsFromFirmware(response.serial.ignoreErrorsFromFirmware);
             self.serial_disconnectOnErrors(response.serial.disconnectOnErrors);
+            self.serial_triggerOkForM29(response.serial.triggerOkForM29);
 
             self.folder_uploads(response.folder.uploads);
             self.folder_timelapse(response.folder.timelapse);
@@ -548,7 +550,8 @@ $(function() {
                         "checksumRequiringCommands": splitTextToArray(self.serial_checksumRequiringCommands(), ",", true),
                         "helloCommand": self.serial_helloCommand(),
                         "ignoreErrorsFromFirmware": self.serial_ignoreErrorsFromFirmware(),
-                        "disconnectOnErrors": self.serial_disconnectOnErrors()
+                        "disconnectOnErrors": self.serial_disconnectOnErrors(),
+                        "triggerOkForM29": self.serial_triggerOkForM29()
                     },
                     "folder": {
                         "uploads": self.folder_uploads(),
