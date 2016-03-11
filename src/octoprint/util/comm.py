@@ -2247,11 +2247,8 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 
 	def _report_stats(self):
 		duration = time.time() - self._start_time
-		stats = dict(lines=self._read_lines,
-		             rate=float(self._read_lines) / duration,
-		             time_per_line=duration * 1000.0 / float(self._read_lines),
-		             duration=duration)
-		self._logger.info("Finished in {duration:.3f} s. Approx. transfer rate of {rate:.3f} lines/s or {time_per_line:.3f} ms per line".format(**stats))
+		self._logger.info("Finished in {:.3f} s.".format(duration))
+		pass
 
 class StreamingGcodeFileInformation(PrintingGcodeFileInformation):
 	def __init__(self, path, localFilename, remoteFilename):
@@ -2272,6 +2269,13 @@ class StreamingGcodeFileInformation(PrintingGcodeFileInformation):
 	def _process(self, line, offsets, current_tool):
 		return process_gcode_line(line)
 
+	def _report_stats(self):
+		duration = time.time() - self._start_time
+		stats = dict(lines=self._read_lines,
+		             rate=float(self._read_lines) / duration,
+		             time_per_line=duration * 1000.0 / float(self._read_lines),
+		             duration=duration)
+		self._logger.info("Finished in {duration:.3f} s. Approx. transfer rate of {rate:.3f} lines/s or {time_per_line:.3f} ms per line".format(**stats))
 
 def get_new_timeout(type, intervals):
 	now = time.time()
