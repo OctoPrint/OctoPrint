@@ -1491,15 +1491,13 @@ class MachineCom(object):
 				self._errorValue = get_exception_string()
 				self.close(True)
 			return None
-		if ret == '':
-			#self._log("Recv: TIMEOUT")
-			return ''
 
-		try:
-			self._log("Recv: %s" % sanitize_ascii(ret))
-		except ValueError as e:
-			self._log("WARN: While reading last line: %s" % e)
-			self._log("Recv: %r" % ret)
+		if ret != "":
+			try:
+				self._log("Recv: " + sanitize_ascii(ret))
+			except ValueError as e:
+				self._log("WARN: While reading last line: %s" % e)
+				self._log("Recv: " + repr(ret))
 
 		return ret
 
@@ -1726,7 +1724,7 @@ class MachineCom(object):
 				if linenumber is not None:
 					# line number predetermined - this only happens for resends, so we'll use the number and
 					# send directly without any processing (since that already took place on the first sending!)
-					self._doSendWithChecksum(command, linenumber)
+					self._do_send_with_checksum(command, linenumber)
 
 				else:
 					# trigger "sending" phase
@@ -1750,9 +1748,9 @@ class MachineCom(object):
 
 					command_to_send = command.encode("ascii", errors="replace")
 					if command_requiring_checksum or (command_allowing_checksum and checksum_enabled):
-						self._doIncrementAndSendWithChecksum(command_to_send)
+						self._do_increment_and_send_with_checksum(command_to_send)
 					else:
-						self._doSendWithoutChecksum(command_to_send)
+						self._do_send_without_checksum(command_to_send)
 
 				# trigger "sent" phase and use up one "ok"
 				self._process_command_phase("sent", command, command_type, gcode=gcode)
@@ -1843,24 +1841,24 @@ class MachineCom(object):
 
 	##~~ actual sending via serial
 
-	def _doIncrementAndSendWithChecksum(self, cmd):
+	def _do_increment_and_send_with_checksum(self, cmd):
 		with self._line_mutex:
 			linenumber = self._currentLine
 			self._addToLastLines(cmd)
 			self._currentLine += 1
-			self._doSendWithChecksum(cmd, linenumber)
+			self._do_send_with_checksum(cmd, linenumber)
 
-	def _doSendWithChecksum(self, cmd, lineNumber):
-		commandToSend = "N%d %s" % (lineNumber, cmd)
-		checksum = reduce(lambda x,y:x^y, map(ord, commandToSend))
-		commandToSend = "%s*%d" % (commandToSend, checksum)
-		self._doSendWithoutChecksum(commandToSend)
+	def _do_send_with_checksum(self, command, linenumber):
+		command_to_send = "N" + str(linenumber) + " " + command
+		checksum = reduce(lambda x, y: x ^ y, map(ord, command_to_send))
+		command_to_send = command_to_send + "*" + str(checksum)
+		self._do_send_without_checksum(command_to_send)
 
-	def _doSendWithoutChecksum(self, cmd):
+	def _do_send_without_checksum(self, cmd):
 		if self._serial is None:
 			return
 
-		self._log("Send: %s" % cmd)
+		self._log("Send: " + str(cmd))
 		try:
 			self._serial.write(cmd + '\n')
 		except serial.SerialTimeoutException:
@@ -1996,8 +1994,8 @@ class MachineCom(object):
 
 	def _gcode_M112_queuing(self, cmd, cmd_type=None):
 		# emergency stop, jump the queue with the M112
-		self._doSendWithoutChecksum("M112")
-		self._doIncrementAndSendWithChecksum("M112")
+		self._do_send_without_checksum("M112")
+		self._do_increment_and_send_with_checksum("M112")
 
 		# No idea if the printer is still listening or if M112 won. Just in case
 		# we'll now try to also manually make sure all heaters are shut off - better
@@ -2005,9 +2003,9 @@ class MachineCom(object):
 		# is irrelevant whether the printer has sent enough ack's or not, we
 		# are going to shutdown the connection in a second anyhow.
 		for tool in range(self._printerProfileManager.get_current_or_default()["extruder"]["count"]):
-			self._doIncrementAndSendWithChecksum("M104 T{tool} S0".format(tool=tool))
+			self._do_increment_and_send_with_checksum("M104 T{tool} S0".format(tool=tool))
 		if self._printerProfileManager.get_current_or_default()["heatedBed"]:
-			self._doIncrementAndSendWithChecksum("M140 S0")
+			self._do_increment_and_send_with_checksum("M140 S0")
 
 		# close to reset host state
 		self._errorValue = "Closing serial port due to emergency stop M112."
