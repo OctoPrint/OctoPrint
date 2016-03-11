@@ -228,6 +228,12 @@ class MachineCom(object):
 		self._connection_closing = False
 
 		self._timeout = None
+		self._timeout_intervals = dict()
+		for key, value in settings().get(["serial", "timeout"], merged=True, asdict=True).items():
+			try:
+				self._timeout_intervals[key] = float(value)
+			except:
+				pass
 
 		self._hello_command = settings().get(["serial", "helloCommand"])
 		self._trigger_ok_for_m29 = settings().getBoolean(["serial", "triggerOkForM29"])
@@ -625,7 +631,7 @@ class MachineCom(object):
 
 				self.sendCommand("M24")
 
-				self._sd_status_timer = RepeatedTimer(lambda: get_interval("sdStatus", default_value=1.0), self._poll_sd_status, run_first=True)
+				self._sd_status_timer = RepeatedTimer(self._timeout_intervals.get("sdStatus", 1.0), self._poll_sd_status, run_first=True)
 				self._sd_status_timer.start()
 			else:
 				if pos is not None and isinstance(pos, int) and pos > 0:
@@ -891,7 +897,7 @@ class MachineCom(object):
 			self._changeState(self.STATE_CONNECTING)
 
 		#Start monitoring the serial port.
-		self._timeout = get_new_timeout("communication")
+		self._timeout = get_new_timeout("communication", self._timeout_intervals)
 
 		startSeen = False
 		supportRepetierTargetTemp = settings().getBoolean(["feature", "repetierTargetTemp"])
@@ -910,7 +916,7 @@ class MachineCom(object):
 				if line is None:
 					break
 				if line.strip() is not "":
-					self._timeout = get_new_timeout("communication")
+					self._timeout = get_new_timeout("communication", self._timeout_intervals)
 
 				##~~ debugging output handling
 				if line.startswith("//"):
@@ -1155,7 +1161,7 @@ class MachineCom(object):
 									self._serial.timeout = connection_timeout
 								self._log("Trying baudrate: %d" % (baudrate))
 								self._baudrateDetectRetry = 5
-								self._timeout = get_new_timeout("communication")
+								self._timeout = get_new_timeout("communication", self._timeout_intervals)
 								self._serial.write('\n')
 								self.sayHello()
 							except:
@@ -1306,7 +1312,7 @@ class MachineCom(object):
 
 	def _onConnected(self):
 		self._serial.timeout = settings().getFloat(["serial", "timeout", "communication"])
-		self._temperature_timer = RepeatedTimer(lambda: get_interval("temperature", default_value=4.0), self._poll_temperature, run_first=True)
+		self._temperature_timer = RepeatedTimer(self._timeout_intervals.get("temperature", 4.0), self._poll_temperature, run_first=True)
 		self._temperature_timer.start()
 
 		self._changeState(self.STATE_OPERATIONAL)
@@ -2029,7 +2035,7 @@ class MachineCom(object):
 			_timeout = float(p_match.group("value")) / 1000.0
 		elif s_match:
 			_timeout = float(s_match.group("value"))
-		self._timeout = get_new_timeout("communication") + _timeout
+		self._timeout = get_new_timeout("communication", self._timeout_intervals) + _timeout
 
 	##~~ command phase handlers
 
@@ -2297,20 +2303,10 @@ class TypeAlreadyInQueue(Exception):
 		self.type = t
 
 
-def get_new_timeout(type):
+def get_new_timeout(type, intervals):
 	now = time.time()
-	return now + get_interval(type)
+	return now + intervals.get(type, 0.0)
 
-
-def get_interval(type, default_value=0.0):
-	if type not in default_settings["serial"]["timeout"]:
-		return default_value
-	else:
-		value = settings().getFloat(["serial", "timeout", type])
-		if not value:
-			return default_value
-		else:
-			return value
 
 _temp_command_regex = re.compile("^M(?P<command>104|109|140|190)(\s+T(?P<tool>\d+)|\s+S(?P<temperature>[-+]?\d*\.?\d*))+")
 
