@@ -24,7 +24,8 @@ from octoprint.settings import settings, default_settings
 from octoprint.events import eventManager, Events
 from octoprint.filemanager import valid_file_type
 from octoprint.filemanager.destinations import FileDestinations
-from octoprint.util import get_exception_string, sanitize_ascii, filter_non_ascii, CountedEvent, RepeatedTimer, to_unicode, bom_aware_open
+from octoprint.util import get_exception_string, sanitize_ascii, filter_non_ascii, CountedEvent, RepeatedTimer, \
+	to_unicode, bom_aware_open, TypedQueue, TypeAlreadyInQueue
 
 try:
 	import _winreg
@@ -214,7 +215,7 @@ class MachineCom(object):
 		self._temp = {}
 		self._bedTemp = None
 		self._tempOffsets = dict()
-		self._commandQueue = queue.Queue()
+		self._command_queue = TypedQueue()
 		self._currentZ = None
 		self._heatupWaitStartTime = None
 		self._heatupWaitTimeLost = 0.0
@@ -533,7 +534,10 @@ class MachineCom(object):
 				return
 
 		if self.isPrinting() and not self.isSdFileSelected():
-			self._commandQueue.put((cmd, cmd_type))
+			try:
+				self._command_queue.put((cmd, cmd_type), item_type=cmd_type)
+			except TypeAlreadyInQueue as e:
+				self._logger.debug("Type already in command queue: " + e.type)
 		elif self.isOperational() or force:
 			self._sendCommand(cmd, cmd_type=cmd_type)
 
@@ -1240,7 +1244,7 @@ class MachineCom(object):
 
 		else:
 			self._log("Communication timeout while printing, trying to trigger response from printer. " + general_message)
-			self._sendCommand("M105")
+			self._sendCommand("M105", cmd_type="temperature")
 			self._clear_to_send.set()
 
 		return
@@ -1332,11 +1336,11 @@ class MachineCom(object):
 		# from the queue, we'll send the second (if there is one). We do not
 		# want to get stuck here by throwing away commands.
 		while True:
-			if self._commandQueue.empty() or self.isStreaming():
+			if self._command_queue.empty() or self.isStreaming():
 				# no command queue or irrelevant command queue => return
 				return False
 
-			entry = self._commandQueue.get()
+			entry = self._command_queue.get()
 			if isinstance(entry, tuple):
 				if not len(entry) == 2:
 					# something with that entry is broken, ignore it and fetch
@@ -1691,9 +1695,9 @@ class MachineCom(object):
 		"""
 
 		try:
-			self._send_queue.put((command, linenumber, command_type))
+			self._send_queue.put((command, linenumber, command_type), item_type=command_type)
 		except TypeAlreadyInQueue as e:
-			self._logger.debug("Type already in queue: " + e.type)
+			self._logger.debug("Type already in send queue: " + e.type)
 
 	def _send_loop(self):
 		"""
@@ -2267,40 +2271,6 @@ class StreamingGcodeFileInformation(PrintingGcodeFileInformation):
 
 	def _process(self, line, offsets, current_tool):
 		return process_gcode_line(line)
-
-
-class TypedQueue(queue.Queue):
-
-	def __init__(self, maxsize=0):
-		queue.Queue.__init__(self, maxsize=maxsize)
-		self._lookup = []
-
-	def _put(self, item):
-		if isinstance(item, tuple) and len(item) == 3:
-			cmd, line, cmd_type = item
-			if cmd_type is not None:
-				if cmd_type in self._lookup:
-					raise TypeAlreadyInQueue(cmd_type, "Type {cmd_type} is already in queue".format(**locals()))
-				else:
-					self._lookup.append(cmd_type)
-
-		queue.Queue._put(self, item)
-
-	def _get(self):
-		item = queue.Queue._get(self)
-
-		if isinstance(item, tuple) and len(item) == 3:
-			cmd, line, cmd_type = item
-			if cmd_type is not None and cmd_type in self._lookup:
-				self._lookup.remove(cmd_type)
-
-		return item
-
-
-class TypeAlreadyInQueue(Exception):
-	def __init__(self, t, *args, **kwargs):
-		Exception.__init__(self, *args, **kwargs)
-		self.type = t
 
 
 def get_new_timeout(type, intervals):
