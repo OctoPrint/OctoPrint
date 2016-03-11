@@ -523,7 +523,7 @@ class MachineCom(object):
 		self._tempOffsets.update(offsets)
 
 	def fakeOk(self):
-		self._clear_to_send.set()
+		self._handle_ok()
 
 	def sendCommand(self, cmd, cmd_type=None, processed=False, force=False):
 		cmd = to_unicode(cmd, errors="replace")
