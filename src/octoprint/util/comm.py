@@ -1662,24 +1662,22 @@ class MachineCom(object):
 				return False
 
 			gcode = None
-			if not self.isStreaming():
-				# trigger the "queuing" phase only if we are not streaming to sd right now
-				cmd, cmd_type, gcode = self._process_command_phase("queuing", cmd, cmd_type, gcode=gcode)
 
-				if cmd is None:
-					# command is no more, return
-					return False
+			# trigger the "queuing" phase only if we are not streaming to sd right now
+			cmd, cmd_type, gcode = self._process_command_phase("queuing", cmd, cmd_type, gcode=gcode)
 
-				if gcode and gcode in gcodeToEvent:
-					# if this is a gcode bound to an event, trigger that now
-					eventManager().fire(gcodeToEvent[gcode])
+			if cmd is None:
+				# command is no more, return
+				return False
+
+			if not self.isStreaming() and gcode and gcode in gcodeToEvent:
+				# if this is a gcode bound to an event, trigger that now
+				eventManager().fire(gcodeToEvent[gcode])
 
 			# actually enqueue the command for sending
 			self._enqueue_for_sending(cmd, command_type=cmd_type)
 
-			if not self.isStreaming():
-				# trigger the "queued" phase only if we are not streaming to sd right now
-				self._process_command_phase("queued", cmd, cmd_type, gcode=gcode)
+			self._process_command_phase("queued", cmd, cmd_type, gcode=gcode)
 
 			return True
 
@@ -1781,7 +1779,7 @@ class MachineCom(object):
 		self._log("Closing down send loop")
 
 	def _process_command_phase(self, phase, command, command_type=None, gcode=None):
-		if phase not in ("queuing", "queued", "sending", "sent"):
+		if self.isStreaming() or phase not in ("queuing", "queued", "sending", "sent"):
 			return command, command_type, gcode
 
 		if gcode is None:
@@ -2234,8 +2232,7 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 				line = to_unicode(self._handle.readline())
 				if not line:
 					self.close()
-				processed = process_gcode_line(line, offsets=offsets, current_tool=current_tool)
-
+				processed = self._process(line, offsets, current_tool)
 			self._pos = self._handle.tell()
 			self._read_lines += 1
 			return processed
@@ -2243,6 +2240,9 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 			self.close()
 			self._logger.exception("Exception while processing line")
 			raise e
+
+	def _process(self, line, offsets, current_tool):
+		return process_gcode_line(line, offsets=offsets, current_tool=current_tool)
 
 	def _report_stats(self):
 		duration = time.time() - self._start_time
@@ -2267,6 +2267,9 @@ class StreamingGcodeFileInformation(PrintingGcodeFileInformation):
 
 	def getRemoteFilename(self):
 		return self._remoteFilename
+
+	def _process(self, line, offsets, current_tool):
+		return process_gcode_line(line)
 
 
 class TypedQueue(queue.Queue):
