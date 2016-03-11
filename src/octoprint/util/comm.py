@@ -1230,6 +1230,7 @@ class MachineCom(object):
 
 		if self._long_running_command:
 			self._logger.debug("Ran into a communication timeout, but a command known to be a long runner is currently active")
+			return
 
 		general_message = "Configure long running commands or increase communication timeout if that happens regularly on specific commands or long moves."
 		if self._resendActive:
