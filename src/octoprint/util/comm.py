@@ -1106,8 +1106,6 @@ class MachineCom(object):
 						except:
 							pass
 				elif 'Done saving file' in line:
-					self.refreshSdFiles()
-
 					if self._trigger_ok_for_m29:
 						# workaround for most versions of Marlin out in the wild
 						# not sending an ok after saving a file
