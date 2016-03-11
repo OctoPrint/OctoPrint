@@ -658,10 +658,11 @@ class MachineCom(object):
 			logging.info("Printer is not operation or busy")
 			return
 
+		self.resetLineNumbers()
+
 		self._currentFile = StreamingGcodeFileInformation(filename, localFilename, remoteFilename)
 		self._currentFile.start()
 
-		self.resetLineNumbers()
 		self.sendCommand("M28 %s" % remoteFilename)
 		eventManager().fire(Events.TRANSFER_STARTED, {"local": localFilename, "remote": remoteFilename})
 		self._callback.on_comm_file_transfer_started(remoteFilename, self._currentFile.getFilesize())
