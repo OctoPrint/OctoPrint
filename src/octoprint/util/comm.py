@@ -1854,7 +1854,9 @@ class MachineCom(object):
 
 	def _do_send_with_checksum(self, command, linenumber):
 		command_to_send = "N" + str(linenumber) + " " + command
-		checksum = reduce(lambda x, y: x ^ y, map(ord, command_to_send))
+		checksum = 0
+		for c in command_to_send:
+			checksum ^= ord(c)
 		command_to_send = command_to_send + "*" + str(checksum)
 		self._do_send_without_checksum(command_to_send)
 
