@@ -443,10 +443,13 @@ class ZTimelapse(Timelapse):
 		Timelapse.process_post_roll(self)
 
 	def _on_z_change(self, event, payload):
-		diff = round(payload["new"] - payload["old"], 3)
-		zhop = round(self._retraction_zhop, 3)
-		if diff > 0 and diff != zhop:
+		if self._retraction_zhop == 0:
 			self.captureImage()
+		else:
+			diff = round(payload["new"] - payload["old"], 3)
+			zhop = round(self._retraction_zhop, 3)
+			if diff > 0 and diff != zhop:
+				self.captureImage()
 
 
 class TimedTimelapse(Timelapse):
