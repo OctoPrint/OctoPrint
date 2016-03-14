@@ -473,7 +473,25 @@ class MachineCom(object):
 
 	##~~ external interface
 
-	def close(self, isError = False):
+	def close(self, is_error=False, wait=True, *args, **kwargs):
+		"""
+		Closes the connection to the printer.
+
+		If ``is_error`` is False, will attempt to send the ``beforePrinterDisconnected``
+		gcode script. If ``is_error`` is False and ``wait`` is True, will wait
+		until all messages in the send queue (including the ``beforePrinterDisconnected``
+		gcode script) have been sent to the printer.
+
+		Arguments:
+		   is_error (bool): Whether the closing takes place due to an error (True)
+		      or not (False, default)
+		   wait (bool): Whether to wait for all messages in the send
+		      queue to be processed before closing (True, default) or not (False)
+		"""
+
+		# legacy parameters
+		is_error = kwargs.get("isError", is_error)
+
 		if self._connection_closing:
 			return
 		self._connection_closing = True
@@ -490,23 +508,33 @@ class MachineCom(object):
 			except:
 				pass
 
-		self._monitoring_active = False
-		self._send_queue_active = False
+		def deactivate_monitoring_and_send_queue():
+			self._monitoring_active = False
+			self._send_queue_active = False
 
 		printing = self.isPrinting() or self.isPaused()
 		if self._serial is not None:
+			if not is_error and wait:
+				self._logger.info("Waiting for send queue to finish processing")
+				self._send_queue.join()
+
+			deactivate_monitoring_and_send_queue()
+
 			try:
 				self._serial.close()
 			except:
 				self._logger.exception("Error while trying to close serial port")
-				isError = True
-			if isError:
+				is_error = True
+
+			if is_error:
 				self._changeState(self.STATE_CLOSED_WITH_ERROR)
 			else:
 				self._changeState(self.STATE_CLOSED)
+		else:
+			deactivate_monitoring_and_send_queue()
 		self._serial = None
 
-		if settings().get(["feature", "sdSupport"]):
+		if settings().getBoolean(["feature", "sdSupport"]):
 			self._sdFileList = []
 
 		if printing:
@@ -1337,25 +1365,33 @@ class MachineCom(object):
 		# from the queue, we'll send the second (if there is one). We do not
 		# want to get stuck here by throwing away commands.
 		while True:
-			if self._command_queue.empty() or self.isStreaming():
-				# no command queue or irrelevant command queue => return
+			if self.isStreaming():
+				# command queue irrelevant
 				return False
 
-			entry = self._command_queue.get()
-			if isinstance(entry, tuple):
-				if not len(entry) == 2:
-					# something with that entry is broken, ignore it and fetch
-					# the next one
-					continue
-				cmd, cmd_type = entry
-			else:
-				cmd = entry
-				cmd_type = None
+			try:
+				entry = self._command_queue.get(block=False)
+			except queue.Empty:
+				# nothing in command queue
+				return False
 
-			if self._sendCommand(cmd, cmd_type=cmd_type):
-				# we actually did add this cmd to the send queue, so let's
-				# return, we are done here
-				return True
+			try:
+				if isinstance(entry, tuple):
+					if not len(entry) == 2:
+						# something with that entry is broken, ignore it and fetch
+						# the next one
+						continue
+					cmd, cmd_type = entry
+				else:
+					cmd = entry
+					cmd_type = None
+
+				if self._sendCommand(cmd, cmd_type=cmd_type):
+					# we actually did add this cmd to the send queue, so let's
+					# return, we are done here
+					return True
+			finally:
+				self._command_queue.task_done()
 
 	def _detectPort(self, close):
 		programmer = stk500v2.Stk500v2()
@@ -1713,66 +1749,73 @@ class MachineCom(object):
 				# wait until we have something in the queue
 				entry = self._send_queue.get()
 
-				# make sure we are still active
-				if not self._send_queue_active:
-					break
+				try:
 
-				# fetch command and optional linenumber from queue
-				command, linenumber, command_type = entry
+					# make sure we are still active
+					if not self._send_queue_active:
+						break
 
-				# some firmwares (e.g. Smoothie) might support additional in-band communication that will not
-				# stick to the acknowledgement behaviour of GCODE, so we check here if we have a GCODE command
-				# at hand here and only clear our clear_to_send flag later if that's the case
-				gcode = gcode_command_for_cmd(command)
+					# fetch command and optional linenumber from queue
+					command, linenumber, command_type = entry
 
-				if linenumber is not None:
-					# line number predetermined - this only happens for resends, so we'll use the number and
-					# send directly without any processing (since that already took place on the first sending!)
-					self._do_send_with_checksum(command, linenumber)
+					# some firmwares (e.g. Smoothie) might support additional in-band communication that will not
+					# stick to the acknowledgement behaviour of GCODE, so we check here if we have a GCODE command
+					# at hand here and only clear our clear_to_send flag later if that's the case
+					gcode = gcode_command_for_cmd(command)
 
-				else:
-					# trigger "sending" phase
-					command, _, gcode = self._process_command_phase("sending", command, command_type, gcode=gcode)
+					if linenumber is not None:
+						# line number predetermined - this only happens for resends, so we'll use the number and
+						# send directly without any processing (since that already took place on the first sending!)
+						self._do_send_with_checksum(command, linenumber)
 
-					if command is None:
-						# No, we are not going to send this, that was a last-minute bail.
-						# However, since we already are in the send queue, our _monitor
-						# loop won't be triggered with the reply from this unsent command
-						# now, so we try to tickle the processing of any active
-						# command queues manually
+					else:
+						# trigger "sending" phase
+						command, _, gcode = self._process_command_phase("sending", command, command_type, gcode=gcode)
+
+						if command is None:
+							# No, we are not going to send this, that was a last-minute bail.
+							# However, since we already are in the send queue, our _monitor
+							# loop won't be triggered with the reply from this unsent command
+							# now, so we try to tickle the processing of any active
+							# command queues manually
+							self._continue_sending()
+
+							# and now let's fetch the next item from the queue
+							continue
+
+						# now comes the part where we increase line numbers and send stuff - no turning back now
+						command_requiring_checksum = gcode is not None and gcode in self._checksum_requiring_commands
+						command_allowing_checksum = gcode is not None or self._sendChecksumWithUnknownCommands
+						checksum_enabled = self.isPrinting() or self._alwaysSendChecksum
+
+						command_to_send = command.encode("ascii", errors="replace")
+						if command_requiring_checksum or (command_allowing_checksum and checksum_enabled):
+							self._do_increment_and_send_with_checksum(command_to_send)
+						else:
+							self._do_send_without_checksum(command_to_send)
+
+					# trigger "sent" phase and use up one "ok"
+					self._process_command_phase("sent", command, command_type, gcode=gcode)
+
+					# we only need to use up a clear if the command we just sent was either a gcode command or if we also
+					# require ack's for unknown commands
+					use_up_clear = self._unknownCommandsNeedAck
+					if gcode is not None:
+						use_up_clear = True
+
+					if use_up_clear:
+						# if we need to use up a clear, do that now
+						self._clear_to_send.clear()
+					else:
+						# Otherwise we need to tickle the read queue - there might not be a reply
+						# to this command, so our _monitor loop will stay waiting until timeout. We
+						# definitely do not want that, so we tickle the queue manually here
 						self._continue_sending()
 
-						# and now let's fetch the next item from the queue
-						continue
-
-					# now comes the part where we increase line numbers and send stuff - no turning back now
-					command_requiring_checksum = gcode is not None and gcode in self._checksum_requiring_commands
-					command_allowing_checksum = gcode is not None or self._sendChecksumWithUnknownCommands
-					checksum_enabled = self.isPrinting() or self._alwaysSendChecksum
-
-					command_to_send = command.encode("ascii", errors="replace")
-					if command_requiring_checksum or (command_allowing_checksum and checksum_enabled):
-						self._do_increment_and_send_with_checksum(command_to_send)
-					else:
-						self._do_send_without_checksum(command_to_send)
-
-				# trigger "sent" phase and use up one "ok"
-				self._process_command_phase("sent", command, command_type, gcode=gcode)
-
-				# we only need to use up a clear if the command we just sent was either a gcode command or if we also
-				# require ack's for unknown commands
-				use_up_clear = self._unknownCommandsNeedAck
-				if gcode is not None:
-					use_up_clear = True
-
-				if use_up_clear:
-					# if we need to use up a clear, do that now
-					self._clear_to_send.clear()
-				else:
-					# Otherwise we need to tickle the read queue - there might not be a reply
-					# to this command, so our _monitor loop will stay waiting until timeout. We
-					# definitely do not want that, so we tickle the queue manually here
-					self._continue_sending()
+				finally:
+					# no matter _how_ we exit this block, we signal that we
+					# are done processing the last fetched queue entry
+					self._send_queue.task_done()
 
 				# now we just wait for the next clear and then start again
 				self._clear_to_send.wait()
@@ -1876,13 +1919,13 @@ class MachineCom(object):
 					self._logger.exception("Unexpected error while writing to serial port")
 					self._log("Unexpected error while writing to serial port: %s" % (get_exception_string()))
 					self._errorValue = get_exception_string()
-					self.close(True)
+					self.close(is_error=True)
 		except:
 			if not self._connection_closing:
 				self._logger.exception("Unexpected error while writing to serial port")
 				self._log("Unexpected error while writing to serial port: %s" % (get_exception_string()))
 				self._errorValue = get_exception_string()
-				self.close(True)
+				self.close(is_error=True)
 
 	##~~ command handlers
 
@@ -2016,7 +2059,7 @@ class MachineCom(object):
 		# close to reset host state
 		self._errorValue = "Closing serial port due to emergency stop M112."
 		self._log(self._errorValue)
-		self.close(isError=True)
+		self.close(is_error=True)
 
 		# fire the M112 event since we sent it and we're going to prevent the caller from seeing it
 		gcode = "M112"
