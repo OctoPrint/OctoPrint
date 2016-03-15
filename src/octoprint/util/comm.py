@@ -473,7 +473,7 @@ class MachineCom(object):
 
 	##~~ external interface
 
-	def close(self, is_error=False, wait=True, *args, **kwargs):
+	def close(self, is_error=False, wait=True, timeout=10.0, *args, **kwargs):
 		"""
 		Closes the connection to the printer.
 
@@ -515,8 +515,14 @@ class MachineCom(object):
 		printing = self.isPrinting() or self.isPaused()
 		if self._serial is not None:
 			if not is_error and wait:
-				self._logger.info("Waiting for send queue to finish processing")
-				self._send_queue.join()
+				self._logger.info("Waiting for command and send queue to finish processing (timeout={}s)".format(timeout))
+				if timeout is not None:
+					stop = time.time() + timeout
+					while (self._command_queue.unfinished_tasks or self._send_queue.unfinished_tasks) and time.time() < stop:
+						time.sleep(0.1)
+				else:
+					self._command_queue.join()
+					self._send_queue.join()
 
 			deactivate_monitoring_and_send_queue()
 
@@ -1324,22 +1330,22 @@ class MachineCom(object):
 		"""
 		Polls the temperature after the temperature timeout, re-enqueues itself.
 
-		If the printer is not operational, not printing from sd, busy with a long running command or heating, no poll
-		will be done.
+		If the printer is not operational, closing the connection, not printing from sd, busy with a long running
+		command or heating, no poll will be done.
 		"""
 
-		if self.isOperational() and not self.isStreaming() and not self._long_running_command and not self._heating and not self._manualStreaming:
+		if self.isOperational() and not self._connection_closing and not self.isStreaming() and not self._long_running_command and not self._heating and not self._manualStreaming:
 			self.sendCommand("M105", cmd_type="temperature_poll")
 
 	def _poll_sd_status(self):
 		"""
 		Polls the sd printing status after the sd status timeout, re-enqueues itself.
 
-		If the printer is not operational, not printing from sd, busy with a long running command or heating, no poll
-		will be done.
+		If the printer is not operational, closing the connection, not printing from sd, busy with a long running
+		command or heating, no poll will be done.
 		"""
 
-		if self.isOperational() and self.isSdPrinting() and not self._long_running_command and not self._heating:
+		if self.isOperational() and not self._connection_closing and self.isSdPrinting() and not self._long_running_command and not self._heating:
 			self.sendCommand("M27", cmd_type="sd_status_poll")
 
 	def _onConnected(self):
@@ -2390,6 +2396,9 @@ def process_gcode_line(line, offsets=None, current_tool=None):
 	return line
 
 def convert_pause_triggers(configured_triggers):
+	if not configured_triggers:
+		return dict()
+
 	triggers = {
 		"enable": [],
 		"disable": [],
@@ -2419,6 +2428,9 @@ def convert_pause_triggers(configured_triggers):
 
 
 def convert_feedback_controls(configured_controls):
+	if not configured_controls:
+		return dict(), None
+
 	def preprocess_feedback_control(control, result):
 		if "key" in control and "regex" in control and "template" in control:
 			# key is always the md5sum of the regex
