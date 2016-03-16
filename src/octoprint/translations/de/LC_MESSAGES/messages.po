@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OctoPrint\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
-"POT-Creation-Date: 2016-02-10 11:12+0100\n"
-"PO-Revision-Date: 2016-02-10 11:25+0100\n"
+"POT-Creation-Date: 2016-03-16 09:14+0100\n"
+"PO-Revision-Date: 2016-03-16 09:21+0100\n"
 "Last-Translator: Gina Häußge <osd@foosel.net>\n"
 "Language: de\n"
 "Language-Team: German (http://www.transifex.com/projects/p/octoprint/language/de/)\n"
@@ -521,6 +521,7 @@ msgstr "Das sieht nicht aus wie ein valides Pluginarchiv. Valide Pluginarchive s
 
 #: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:182
 #: src/octoprint/plugins/softwareupdate/templates/softwareupdate_settings.jinja2:63
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:96
 #: src/octoprint/templates/tabs/terminal.jinja2:27
 msgid "Advanced options"
 msgstr "Erweiterte Optionen"
@@ -1041,18 +1042,18 @@ msgstr "%(local)s nach %(remote)s gestreamt, dauerte %(time).2f Sekunden"
 
 #: src/octoprint/static/js/app/dataupdater.js:352
 #: src/octoprint/static/js/app/dataupdater.js:360
-msgid "Unhandled firmware error"
-msgstr "Unbehandelter Fehler der Firmware"
+msgid "Unhandled communication error"
+msgstr "Unbehandelter Kommunikationsfehler"
 
 #: src/octoprint/static/js/app/dataupdater.js:353
 #, python-format
-msgid "The firmware reported an unhandled error. Due to that the ongoing print job was cancelled. Error: %(firmwareError)s"
-msgstr "Die Firmware hat einen durch OctoPrint unbehandelten Fehler gemeldet. Daher wurder der laufende Druckauftrag abgebrochen. Fehler: %(firmwareError)s"
+msgid "There was an unhandled error while talking to the printer. Due to that the ongoing print job was cancelled. Error: %(firmwareError)s"
+msgstr "Es gab einen unbehandelten Fehler bei der Kommunikation mit dem Drucker. Daher wurder der laufende Druckauftrag abgebrochen. Fehler: %(firmwareError)s"
 
 #: src/octoprint/static/js/app/dataupdater.js:361
 #, python-format
-msgid "The firmware reported an unhandled error. Due to that OctoPrint disconnected. Error: %(error)s"
-msgstr "Die Firmware hat einen durch OctoPrint unbehandelten Fehler gemeldet. Daher hat OctoPrint die Verbindung getrennt. Fehler: %(error)s"
+msgid "The was an unhandled error while talking to the printer. Due to that OctoPrint disconnected. Error: %(error)s"
+msgstr "Es gab einen unbehandelten Fehler bei der Kommunikation mit dem Drucker. Daher hat OctoPrint die Verbindung getrennt. Fehler: %(error)s"
 
 #: src/octoprint/static/js/app/helpers.js:385
 #, python-format
@@ -1923,7 +1924,7 @@ msgstr "Falls der freie Plattenplatz unter diese Schwellwerte fallen sollte wird
 
 #: src/octoprint/templates/dialogs/settings/folders.jinja2:47
 #: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:69
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:97
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:90
 #: src/octoprint/templates/tabs/gcodeviewer.jinja2:66
 #: src/octoprint/templates/tabs/timelapse.jinja2:13
 msgid "Warning"
@@ -2132,29 +2133,65 @@ msgid "Log communication to serial.log (might negatively impact performance)"
 msgstr "Logge die Kommunikation in das serial.log (kann die Performance negativ beeinflussen)"
 
 #: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:74
-msgid "Long running commands"
-msgstr "Lang laufende Befehle"
-
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:77
-msgid "Use this to specify the commands known to take a long time to complete without output from your printer and hence might cause timeout issues. Just the G or M code, comma separated."
-msgstr "Nutze diese Option, um solche Befehle zu definieren, von denen Du weißt, dass sie eine längere Zeit lang laufen, währenddessen keinen Output produzieren und daher Timeoutprobleme verursachen könnten. Nur den G- oder M-Code, kommasepariert."
-
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:81
 msgid "Additional serial ports"
 msgstr "Zusätzliche serielle Ports"
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:84
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:77
 #, python-format
 msgid "Use this to define additional <a href=\"%%(glob_url)s\">glob patterns</a> matching serial ports to list for connecting against, e.g. <code>/dev/ttyAMA*</code>. One entry per line."
 msgstr "Nutze diese Einstellung um zusätzliche <a href=\"%%(glob_url)s\">glob patterns</a> zu konfigurieren, die auf serielle Ports deines Druckers matchen, z.B. <code>/dev/ttyAMA*</code>. Ein Eintrag pro Zeile."
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:90
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:83
 msgid "Not only cancel ongoing prints but also disconnect on unhandled errors from the firmware."
 msgstr "Bei unbehalten Firmwarefehlern nicht nur den Druckauftrag abbrechen, sondern auch die Verbindung zum Drucker trennen."
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:97
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:90
 msgid "Ignore any unhandled errors from the firmware. Only use this if your firmware sends stuff prefixed with \"Error\" that is not an actual error. Might mask printer issues, be careful!"
 msgstr "Alle unbehalten Firmwarefehler ignorieren. Nur nutzen wenn Deine Firmware Dinge mit \"Error\" sendet die nicht wirklich Fehler sind. Könnte Druckerprobleme maskieren, vorsicht!"
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:98
+msgid "Command to send to the firmware on first handshake attempt."
+msgstr "Kommando, das als erster Handshakeversuch an die Firmware gesendet werden soll"
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:99
+msgid "\"Hello\" command"
+msgstr "\"Hallo\"-Befehl"
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:102
+msgid "Use this to specify a different command than the default <code>M110</code> to send to the printer on initial connection to trigger a communication handshake."
+msgstr "Nutze diese Einstellung um einen anderen Befehl als <code>M110</code> beim initialen Verbindungsaufbau zum drucker zu senden."
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:105
+msgid "Commands that are know to run long and hence should suppress communication timeouts from being triggered."
+msgstr "Befehle, von denen bekannt ist, dass sie lang zur Ausführung benötigen und daher das Auslösen von Kommunikationstimeouts unterdrücken sollten."
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:106
+msgid "Long running commands"
+msgstr "Lang laufende Befehle"
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:109
+msgid "Use this to specify the commands known to take a long time to complete without output from your printer and hence might cause timeout issues. Just the G or M code, comma separated."
+msgstr "Nutze diese Option, um solche Befehle zu definieren, von denen Du weißt, dass sie eine längere Zeit lang laufen, währenddessen keinen Output produzieren und daher Timeoutprobleme verursachen könnten. Nur den G- oder M-Code, kommasepariert."
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:112
+msgid "Commands that always require a line number and checksum to be sent with them."
+msgstr "Befehle, die immer mit einer Prüfsumme und Zeilennummer gesendet werden müssen."
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:113
+msgid "Commands that always require a checksum"
+msgstr "Befehle, die immer eine Prüfsumme benötigen"
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:116
+msgid "Use this to specify which commands <strong>always</strong> need to be sent with a checksum. Comma separated list."
+msgstr "Nutze diese Einstellung um Befehle zu spezifizieren, die <strong>immer</strong> mit Prüfsumme gesendet werden müssen. Komma-separierte Liste."
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:121
+msgid "Generate additional <code>ok</code> for <code>M29</code>"
+msgstr "Zusätzliches <code>ok</code> für <code>M29</code> generieren"
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:121
+msgid "Most Marlin < v1.1.0"
+msgstr "Viele Marlin < v1.1.0"
 
 #: src/octoprint/templates/dialogs/settings/server.jinja2:2
 msgid "Commands"
