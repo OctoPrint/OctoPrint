@@ -145,6 +145,7 @@ $(function() {
         self.serial_helloCommand = ko.observable(undefined);
         self.serial_ignoreErrorsFromFirmware = ko.observable(undefined);
         self.serial_disconnectOnErrors = ko.observable(undefined);
+        self.serial_triggerOkForM29 = ko.observable(undefined);
 
         self.folder_uploads = ko.observable(undefined);
         self.folder_timelapse = ko.observable(undefined);

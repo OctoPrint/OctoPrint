@@ -289,16 +289,16 @@ function DataUpdater(allViewModels) {
         } else if (type == "PrintCancelled") {
             if (payload.firmwareError) {
                 new PNotify({
-                    title: gettext("Unhandled firmware error"),
-                    text: _.sprintf(gettext("The firmware reported an unhandled error. Due to that the ongoing print job was cancelled. Error: %(firmwareError)s"), payload),
+                    title: gettext("Unhandled communication error"),
+                    text: _.sprintf(gettext("There was an unhandled error while talking to the printer. Due to that the ongoing print job was cancelled. Error: %(firmwareError)s"), payload),
                     type: "error",
                     hide: false
                 });
             }
         } else if (type == "Error") {
             new PNotify({
-                    title: gettext("Unhandled firmware error"),
-                    text: _.sprintf(gettext("The firmware reported an unhandled error. Due to that OctoPrint disconnected. Error: %(error)s"), payload),
+                    title: gettext("Unhandled communication error"),
+                    text: _.sprintf(gettext("The was an unhandled error while talking to the printer. Due to that OctoPrint disconnected. Error: %(error)s"), payload),
                     type: "error",
                     hide: false
             });

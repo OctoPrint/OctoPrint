@@ -17,7 +17,7 @@ import time
 
 from octoprint import util as util
 from octoprint.events import eventManager, Events
-from octoprint.filemanager import FileDestinations
+from octoprint.filemanager import FileDestinations, NoSuchStorage
 from octoprint.plugin import plugin_manager, ProgressPlugin
 from octoprint.printer import PrinterInterface, PrinterCallback, UnknownScript
 from octoprint.printer.estimation import TimeEstimationHelper
@@ -62,10 +62,6 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 		self._currentZ = None
 
-		self._progress = None
-		self._printTime = None
-		self._printTimeLeft = None
-
 		self._printAfterSelect = False
 		self._posAfterSelect = None
 
@@ -93,7 +89,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			on_update=self._sendCurrentDataCallbacks,
 			on_add_temperature=self._sendAddTemperatureCallbacks,
 			on_add_log=self._sendAddLogCallbacks,
-			on_add_message=self._sendAddMessageCallbacks
+			on_add_message=self._sendAddMessageCallbacks,
+			on_get_progress=self._updateProgressDataCallback
 		)
 		self._stateMonitor.reset(
 			state={"text": self.get_state_string(), "flags": self._getStateFlags()},
@@ -366,7 +363,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		self._printAfterSelect = printAfterSelect
 		self._posAfterSelect = pos
 		self._comm.selectFile("/" + path if sd else path, sd)
-		self._setProgressData(0, None, None, None)
+		self._setProgressData(completion=0)
 		self._setCurrentZ(None)
 
 	def unselect_file(self):
@@ -374,7 +371,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			return
 
 		self._comm.unselectFile()
-		self._setProgressData(0, None, None, None)
+		self._setProgressData(completion=0)
 		self._setCurrentZ(None)
 
 	def start_print(self, pos=None):
@@ -405,7 +402,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		self._fileManager.delete_recovery_data()
 
 		self._lastProgressReport = None
-		self._setProgressData(0, None, None, None)
+		self._setProgressData(completion=0)
 		self._setCurrentZ(None)
 		self._comm.startPrint(pos=pos)
 
@@ -429,7 +426,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 		# reset progress, height, print time
 		self._setCurrentZ(None)
-		self._setProgressData(None, None, None, None)
+		self._setProgressData()
 
 		# mark print as failure
 		if self._selectedFile is not None:
@@ -608,7 +605,24 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 			return result
 
-	def _setProgressData(self, progress, filepos, printTime, cleanedPrintTime):
+	def _setProgressData(self, completion=None, filepos=None, printTime=None, printTimeLeft=None):
+		self._stateMonitor.set_progress(dict(completion=int(completion * 100) if completion is not None else None,
+		                                     filepos=filepos,
+		                                     printTime=int(printTime) if printTime is not None else None,
+		                                     printTimeLeft=int(printTimeLeft) if printTimeLeft is not None else None))
+
+	def _updateProgressDataCallback(self):
+		if self._comm is None:
+			progress = None
+			filepos = None
+			printTime = None
+			cleanedPrintTime = None
+		else:
+			progress = self._comm.getPrintProgress()
+			filepos = self._comm.getPrintFilepos()
+			printTime = self._comm.getPrintTime()
+			cleanedPrintTime = self._comm.getCleanedPrintTime()
+
 		estimatedTotalPrintTime = self._estimateTotalPrintTime(progress, cleanedPrintTime)
 		totalPrintTime = estimatedTotalPrintTime
 
@@ -624,16 +638,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 						sub_progress = 1.0
 					totalPrintTime = (1 - sub_progress) * statisticalTotalPrintTime + sub_progress * estimatedTotalPrintTime
 
-		self._progress = progress
-		self._printTime = printTime
-		self._printTimeLeft = totalPrintTime - cleanedPrintTime if (totalPrintTime is not None and cleanedPrintTime is not None) else None
-
-		self._stateMonitor.set_progress({
-			"completion": self._progress * 100 if self._progress is not None else None,
-			"filepos": filepos,
-			"printTime": int(self._printTime) if self._printTime is not None else None,
-			"printTimeLeft": int(self._printTimeLeft) if self._printTimeLeft is not None else None
-		})
+		printTimeLeft = totalPrintTime - cleanedPrintTime if (totalPrintTime is not None and cleanedPrintTime is not None) else None
 
 		if progress:
 			progress_int = int(progress * 100)
@@ -641,6 +646,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 				self._lastProgressReport = progress_int
 				self._reportPrintProgressToPlugins(progress_int)
 
+		return dict(completion=progress * 100 if progress is not None else None,
+		            filepos=filepos,
+		            printTime=int(printTime) if printTime is not None else None,
+		            printTimeLeft=int(printTimeLeft) if printTimeLeft is not None else None)
 
 	def _addTemperatureData(self, temp, bedTemp):
 		currentTimeUtc = int(time.time())
@@ -795,11 +804,12 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			self._analysisQueue.resume() # printing done, put those cpu cycles to good use
 		elif state == comm.MachineCom.STATE_PRINTING:
 			self._analysisQueue.pause() # do not analyse files while printing
-		elif state == comm.MachineCom.STATE_CLOSED or state == comm.MachineCom.STATE_CLOSED_WITH_ERROR:
+
+		if state == comm.MachineCom.STATE_CLOSED or state == comm.MachineCom.STATE_CLOSED_WITH_ERROR:
 			if self._comm is not None:
 				self._comm = None
 
-			self._setProgressData(0, None, None, None)
+			self._setProgressData(completion=0)
 			self._setCurrentZ(None)
 			self._setJobData(None, None, None)
 			self._printerProfileManager.deselect()
@@ -820,7 +830,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		 Triggers storage of new values for printTime, printTimeLeft and the current progress.
 		"""
 
-		self._setProgressData(self._comm.getPrintProgress(), self._comm.getPrintFilepos(), self._comm.getPrintTime(), self._comm.getCleanedPrintTime())
+		self._stateMonitor.trigger_progress_update()
 
 	def on_comm_z_change(self, newZ):
 		"""
@@ -850,7 +860,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 	def on_comm_print_job_done(self):
 		self._fileManager.log_print(FileDestinations.SDCARD if self._selectedFile["sd"] else FileDestinations.LOCAL, self._selectedFile["filename"], time.time(), self._comm.getPrintTime(), True, self._printerProfileManager.get_current_or_default()["id"])
-		self._setProgressData(1.0, self._selectedFile["filesize"], self._comm.getPrintTime(), 0)
+		self._setProgressData(completion=1.0, filepos=self._selectedFile["filesize"], printTime=self._comm.getPrintTime(), printTimeLeft=0)
 		self._stateMonitor.set_state({"text": self.get_state_string(), "flags": self._getStateFlags()})
 		self._fileManager.delete_recovery_data()
 
@@ -858,7 +868,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		self._sdStreaming = True
 
 		self._setJobData(filename, filesize, True)
-		self._setProgressData(0.0, 0, 0, None)
+		self._setProgressData(completion=0.0, filepos=0, printTime=0)
 		self._stateMonitor.set_state({"text": self.get_state_string(), "flags": self._getStateFlags()})
 
 	def on_comm_file_transfer_done(self, filename):
@@ -871,22 +881,28 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 		self._setCurrentZ(None)
 		self._setJobData(None, None, None)
-		self._setProgressData(None, None, None, None)
+		self._setProgressData()
 		self._stateMonitor.set_state({"text": self.get_state_string(), "flags": self._getStateFlags()})
 
 	def on_comm_force_disconnect(self):
 		self.disconnect()
 
 	def on_comm_record_fileposition(self, origin, name, pos):
-		self._fileManager.save_recovery_data(origin, name, pos)
+		try:
+			self._fileManager.save_recovery_data(origin, name, pos)
+		except NoSuchStorage:
+			pass
+		except:
+			self._logger.exception("Error while trying to persist print recovery data")
 
 class StateMonitor(object):
-	def __init__(self, interval=0.5, on_update=None, on_add_temperature=None, on_add_log=None, on_add_message=None):
+	def __init__(self, interval=0.5, on_update=None, on_add_temperature=None, on_add_log=None, on_add_message=None, on_get_progress=None):
 		self._interval = interval
 		self._update_callback = on_update
 		self._on_add_temperature = on_add_temperature
 		self._on_add_log = on_add_log
 		self._on_add_message = on_add_message
+		self._on_get_progress = on_get_progress
 
 		self._state = None
 		self._job_data = None
@@ -895,15 +911,23 @@ class StateMonitor(object):
 		self._current_z = None
 		self._progress = None
 
+		self._progress_dirty = False
+
 		self._offsets = {}
 
 		self._change_event = threading.Event()
 		self._state_lock = threading.Lock()
+		self._progress_lock = threading.Lock()
 
 		self._last_update = time.time()
 		self._worker = threading.Thread(target=self._work)
 		self._worker.daemon = True
 		self._worker.start()
+
+	def _get_current_progress(self):
+		if callable(self._on_get_progress):
+			return self._on_get_progress()
+		return self._progress
 
 	def reset(self, state=None, job_data=None, progress=None, current_z=None):
 		self.set_state(state)
@@ -936,9 +960,16 @@ class StateMonitor(object):
 		self._job_data = job_data
 		self._change_event.set()
 
+	def trigger_progress_update(self):
+		with self._progress_lock:
+			self._progress_dirty = True
+			self._change_event.set()
+
 	def set_progress(self, progress):
-		self._progress = progress
-		self._change_event.set()
+		with self._progress_lock:
+			self._progress_dirty = False
+			self._progress = progress
+			self._change_event.set()
 
 	def set_temp_offsets(self, offsets):
 		self._offsets = offsets
@@ -948,19 +979,24 @@ class StateMonitor(object):
 		while True:
 			self._change_event.wait()
 
-			with self._state_lock:
-				now = time.time()
-				delta = now - self._last_update
-				additional_wait_time = self._interval - delta
-				if additional_wait_time > 0:
-					time.sleep(additional_wait_time)
+			now = time.time()
+			delta = now - self._last_update
+			additional_wait_time = self._interval - delta
+			if additional_wait_time > 0:
+				time.sleep(additional_wait_time)
 
+			with self._state_lock:
 				data = self.get_current_data()
 				self._update_callback(data)
 				self._last_update = time.time()
 				self._change_event.clear()
 
 	def get_current_data(self):
+		with self._progress_lock:
+			if self._progress_dirty:
+				self._progress = self._get_current_progress()
+				self._progress_dirty = False
+
 		return {
 			"state": self._state,
 			"job": self._job_data,

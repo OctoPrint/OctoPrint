@@ -91,7 +91,11 @@ default_settings = {
 		"checksumRequiringCommands": ["M110"],
 		"helloCommand": "M110 N0",
 		"disconnectOnErrors": True,
-		"ignoreErrorsFromFirmware": False
+		"ignoreErrorsFromFirmware": False,
+		"logResends": False,
+
+		# command specific flags
+		"triggerOkForM29": True
 	},
 	"server": {
 		"host": "0.0.0.0",
@@ -315,6 +319,7 @@ default_settings = {
 			"waitInterval": 1.0,
 			"supportM112": True,
 			"echoOnM117": True,
+			"brokenM29": True,
 			"supportF": False
 		}
 	}

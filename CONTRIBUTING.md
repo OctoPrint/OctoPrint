@@ -106,12 +106,26 @@ following section *completely*. Thank you! :)
    fixing it. Take the time to filter through possible duplicates and be really
    sure that your problem definitely is a new one. Try more than one search query
    (e.g. do not only search for "webcam" if you happen to run into an issue
-   with your webcam, also search for "timelapse" etc).
+   with your webcam, also search for "timelapse" etc). Do not only read the subject lines
+   of tickets that look like they might be related, but also read the ticket itself!
+
+   **Very important:** Please make absolutely sure that if you find a bug that looks like
+   it is the same as your's, it actually behaves the same as your's. E.g. if someone gives steps
+   to reproduce his bug that looks like your's, reproduce the bug like that if possible,
+   and only add a "me too" if you actually can reproduce the same
+   issue. Also **provide all information** as [described below](#what-should-i-include-in-a-bug-report)
+   and whatever was additionally requested over the course of the ticket
+   even if you "only" add to an existing ticket. The more information available regarding a bug, the higher
+   the chances of reproducing and solving it. But "me too" on an actually unrelated ticket
+   makes it more difficult due to on top of having to figure out the original problem
+   there's now also a [red herring](https://en.wikipedia.org/wiki/Red_herring) interfering - so please be
+   very diligent here!
 
 ### What should I include in a bug report?
 
 Always use the following template (you can remove what's within `[...]`, that's
-only provided here as some additional information for you):
+only provided here as some additional information for you), **even if only adding a
+"me too" to an existing ticket**:
 
     #### What were you doing?
 
@@ -156,6 +170,8 @@ only provided here as some additional information for you):
     [If applicable. Always include if unsure or reporting UI issues.]
 
     I have read the FAQ.
+
+Copy-paste this template **completely**. Do not skip any lines!
 
 ### Where can I find which version and branch I'm on?
 
@@ -216,42 +232,66 @@ See [How to open the Javascript Console in different browsers](https://webmaster
    implement your feature as a plugin, create a "Brainstorming" ticket to get
    the discussion going on how best to solve *this* in OctoPrint's plugin
    system - maybe that's the actual PR you have been waiting for to contribute :)
-2. If you plan to make **any large changes to the code or appearance, please
-   open a "Brainstorming" ticket first** so that we can determine if it's a
-   good time for your specific pull request. It might be that we're currently
-   in the process of making heavy changes to the code locations you'd target
-   as well, or your approach doesn't fit the general "project vision", and
-   that would just cause unnecessary work and frustration for everyone or
+2. If you plan to make **any large or otherwise disruptive changes to the
+   code or appearance, please open a "Brainstorming" ticket first** so
+   that we can determine if it's a good time for your specific pull
+   request. It might be that we're currently in the process of making
+   heavy changes to the code locations you'd target as well, or your
+   approach doesn't fit the general "project vision", and that would
+   just cause unnecessary work and frustration for everyone or
    possibly get the PR rejected.
 3. Create your pull request **from a custom branch** on your end (e.g.
    `dev/myNewFeature`)[1] **against the `devel` branch**. Create **one pull request
    per feature/bug fix**. If your PR contains an important bug fix, we will
    make sure to backport it to the `maintenance` branch to also include it in
    the next release.
-4. Make sure you **follow the current coding style**. This means:
-
+4. Make sure there are **only relevant changes** included in your PR. No
+   changes to unrelated files, no additional files that don't belong (e.g.
+   commits of your full virtual environment). Make sure your PR consists
+   **ideally of only one commit** (use git's rebase and squash functionality).
+5. Make sure you **follow the current coding style**. This means:
      * Tabs instead of spaces in the Python files[2]
      * Spaces instead of tabs in the Javascript sources
      * English language (code, variables, comments, ...)
      * Comments where necessary: Tell *why* the code does something like it does
        it, structure your code
      * Following the general architecture
-
-   If your PR needs to make changes to the Stylesheets, change the ``.less`` files
-   from which the CSS is compiled.
-5. **Test your changes thoroughly**. That also means testing with usage
+     * If your PR needs to make changes to the Stylesheets, change the
+       ``.less`` files from which the CSS is compiled.
+     * Make sure you do not add dead code (e.g. commented out left-overs
+       from experiments).
+6. Ensure your changes **pass the existing unit tests**. PRs that break
+   those cannot be accepted.
+7. **Test your changes thoroughly**. That also means testing with usage
    scenarios you don't normally use, e.g. if you only use access control, test
    without and vice versa. If you only test with your printer, test with the
    virtual printer and vice versa. State in your pull request how you tested
    your changes. Ideally **add unit tests** - OctoPrint severely lacks in that
    department, but we are trying to change that, so any new code already covered
    with a test suite helps a lot!
-6. In your pull request's description, **state what your pull request does**,
+8. In your pull request's description, **state what your pull request does**,
    as in, what feature does it implement, what bug does it fix. The more
    thoroughly you explain your intent behind the PR here, the higher the
-   chances it will get merged fast.
-7. Important: Don't forget to **add yourself to the [AUTHORS](./AUTHORS.md)
+   chances it will get merged fast. There is a template provided below
+   that can help you here.
+9. Don't forget to **add yourself to the [AUTHORS](./AUTHORS.md)
    file** :)
+
+Template to use for Pull Request descriptions:
+
+```
+#### What does this PR do and why is it necessary?
+
+#### How was it tested? How can it be tested by the reviewer?
+
+#### Any background context you want to provide?
+
+#### What are the relevant tickets if any?
+
+#### Screenshots (if appropriate)
+
+#### Further notes
+```
 
 ## What do the branches mean?
 
@@ -324,6 +364,9 @@ the local version identifier to allow for an exact determination of the active c
   * 2015-12-01: Heavily reworked to include examples, better structure and
     all information in one document.
   * 2016-02-10: Added information about branch structure and versioning.
+  * 2016-02-16: Added requirement to add information from template to existing
+    tickets as well, explained issue with "me too" red herrings.
+  * 2016-03-14: Some more requirements for PRs, and a PR template.
 
 ## Footnotes
   * [1] - If you are wondering why, the problem is that anything that you add

@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: OctoPrint 1.2.9.dev71+g92c65cb.dirty\n"
+"Project-Id-Version: OctoPrint 1.2.10.dev50+g6305c4d\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
-"POT-Creation-Date: 2016-02-10 11:12+0100\n"
+"POT-Creation-Date: 2016-03-16 09:14+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -552,6 +552,7 @@ msgstr ""
 
 #: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:182
 #: src/octoprint/plugins/softwareupdate/templates/softwareupdate_settings.jinja2:63
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:96
 #: src/octoprint/templates/tabs/terminal.jinja2:27
 msgid "Advanced options"
 msgstr ""
@@ -1126,21 +1127,21 @@ msgstr ""
 
 #: src/octoprint/static/js/app/dataupdater.js:352
 #: src/octoprint/static/js/app/dataupdater.js:360
-msgid "Unhandled firmware error"
+msgid "Unhandled communication error"
 msgstr ""
 
 #: src/octoprint/static/js/app/dataupdater.js:353
 #, python-format
 msgid ""
-"The firmware reported an unhandled error. Due to that the ongoing print "
-"job was cancelled. Error: %(firmwareError)s"
+"There was an unhandled error while talking to the printer. Due to that "
+"the ongoing print job was cancelled. Error: %(firmwareError)s"
 msgstr ""
 
 #: src/octoprint/static/js/app/dataupdater.js:361
 #, python-format
 msgid ""
-"The firmware reported an unhandled error. Due to that OctoPrint "
-"disconnected. Error: %(error)s"
+"The was an unhandled error while talking to the printer. Due to that "
+"OctoPrint disconnected. Error: %(error)s"
 msgstr ""
 
 #: src/octoprint/static/js/app/helpers.js:385
@@ -2038,7 +2039,7 @@ msgstr ""
 
 #: src/octoprint/templates/dialogs/settings/folders.jinja2:47
 #: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:69
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:97
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:90
 #: src/octoprint/templates/tabs/gcodeviewer.jinja2:66
 #: src/octoprint/templates/tabs/timelapse.jinja2:13
 msgid "Warning"
@@ -2266,21 +2267,10 @@ msgid "Log communication to serial.log (might negatively impact performance)"
 msgstr ""
 
 #: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:74
-msgid "Long running commands"
-msgstr ""
-
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:77
-msgid ""
-"Use this to specify the commands known to take a long time to complete "
-"without output from your printer and hence might cause timeout issues. "
-"Just the G or M code, comma separated."
-msgstr ""
-
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:81
 msgid "Additional serial ports"
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:84
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:77
 #, python-format
 msgid ""
 "Use this to define additional <a href=\"%%(glob_url)s\">glob patterns</a>"
@@ -2288,17 +2278,73 @@ msgid ""
 "<code>/dev/ttyAMA*</code>. One entry per line."
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:90
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:83
 msgid ""
 "Not only cancel ongoing prints but also disconnect on unhandled errors "
 "from the firmware."
 msgstr ""
 
-#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:97
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:90
 msgid ""
 "Ignore any unhandled errors from the firmware. Only use this if your "
 "firmware sends stuff prefixed with \"Error\" that is not an actual error."
 " Might mask printer issues, be careful!"
+msgstr ""
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:98
+msgid "Command to send to the firmware on first handshake attempt."
+msgstr ""
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:99
+msgid "\"Hello\" command"
+msgstr ""
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:102
+msgid ""
+"Use this to specify a different command than the default "
+"<code>M110</code> to send to the printer on initial connection to trigger"
+" a communication handshake."
+msgstr ""
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:105
+msgid ""
+"Commands that are know to run long and hence should suppress "
+"communication timeouts from being triggered."
+msgstr ""
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:106
+msgid "Long running commands"
+msgstr ""
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:109
+msgid ""
+"Use this to specify the commands known to take a long time to complete "
+"without output from your printer and hence might cause timeout issues. "
+"Just the G or M code, comma separated."
+msgstr ""
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:112
+msgid ""
+"Commands that always require a line number and checksum to be sent with "
+"them."
+msgstr ""
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:113
+msgid "Commands that always require a checksum"
+msgstr ""
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:116
+msgid ""
+"Use this to specify which commands <strong>always</strong> need to be "
+"sent with a checksum. Comma separated list."
+msgstr ""
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:121
+msgid "Generate additional <code>ok</code> for <code>M29</code>"
+msgstr ""
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:121
+msgid "Most Marlin < v1.1.0"
 msgstr ""
 
 #: src/octoprint/templates/dialogs/settings/server.jinja2:2
