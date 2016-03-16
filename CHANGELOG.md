@@ -1,5 +1,33 @@
 # OctoPrint Changelog
 
+## 1.2.10 (2016-03-16)
+
+### Improvements
+
+  * Improved performance of console output during plugin installation/deinstallation
+  * Slight performance improvements in the communication layer
+  * Log small log excerpt to `octoprint.log` upon encountering a communication error.
+  * Changed wording in "firmware error" notifications to better reflect that there was an error while communicating with the printer, since the error condition can also be triggered by serial errors while trying to establish a connection to the printer or when already connected.
+  * Support downloading ".mp4" timelapse files. You'll need a [custom wrapper script for timelapse rendering](https://github.com/guysoft/OctoPi/issues/184) for this to be relevant to you. See also [#1255](https://github.com/foosel/OctoPrint/pull/1255)
+  * The communication layer will now wait up to 10s after clicking disconnect in order to send any left-over lines from its buffers.
+  * Moved less commonly used configuration options in Serial settings into "Advanced options" roll-out.
+
+### Bug Fixes
+
+  * [#1224](https://github.com/foosel/OctoPrint/issues/1224) - Fixed an issue introduced by the fix for [#1196](https://github.com/foosel/OctoPrint/issues/1196) that had the "Upload to SD" button stop working correctly.
+  * [#1226](https://github.com/foosel/OctoPrint/issues/1226) - Fixed an issue causing an error on disconnect after or cancelling of an SD print, caused by the unsuccessful attempt to record print recovery data for the file on the printer's SD card.
+  * [#1268](https://github.com/foosel/OctoPrint/issues/1268) - Only add bed temperature line to temperature management specific start gcode in CuraEngine invocation if a bed temperature is actually set in the slicing profile.
+  * [#1271](https://github.com/foosel/OctoPrint/issues/1271) - If a communication timeout occurs during an active resend request, OctoPrint will now not send an `M105` with an increased line number anymore but repeat the last resent command instead.
+  * [#1272](https://github.com/foosel/OctoPrint/issues/1272) - Don't add an extra `ok` for `M28` response.
+  * [#1273](https://github.com/foosel/OctoPrint/issues/1273) - Add an extra `ok` for `M29` response, but only if configured such in "Settings" > "Serial" > "Advanced options" > "Generate additional ok for M29"
+  * [#1274](https://github.com/foosel/OctoPrint/issues/1274) - Trigger `M20` only once after finishing uploading to SD
+  * [#1275](https://github.com/foosel/OctoPrint/issues/1275) - Prevent `M105` "cascade" due to communication timeouts
+  * Fixed wrong tracking of extruder heating up for `M109 Tn` commands in multi-extruder setups.
+  * Fixed start of SD file uploads not sending an `M110`.
+  * Fixed job data not being reset when disconnecting while printing.
+
+([Commits](https://github.com/foosel/OctoPrint/compare/1.2.9...1.2.10))
+
 ## 1.2.9 (2016-02-10)
 
 ### Improvements
