@@ -150,10 +150,10 @@ gcodeToEvent = {
 	"M0": Events.WAITING,
 	"M1": Events.WAITING,
 
-    # rfXXX printer pause
-    # see: http://www.rf1000.de/wiki/index.php/GCodes#M3070_-_Druck_pausieren_.28als_ob_Pause-Taste_gedr.C3.BCckt_wurde.29
-    "M3070": Events.WAITING,
-    "M3071": Events.WAITING,
+	# rfXXX printer pause
+	# see: http://www.rf1000.de/wiki/index.php/GCodes#M3070_-_Druck_pausieren_.28als_ob_Pause-Taste_gedr.C3.BCckt_wurde.29
+	"M3070": Events.WAITING,
+	"M3071": Events.WAITING,
 
 	# dwell command
 	"G4": Events.DWELL,
@@ -1970,8 +1970,8 @@ class MachineCom(object):
 		if self.isPrinting() and not self.isSdPrinting():
 			self.setPause(True)
 
-    _gcode_M3070_queuing = _gcode_M25_queuing # additions for rfxxx printer
-    _gcode_M3071_queuing = _gcode_M25_queuing
+	_gcode_M3070_queuing = _gcode_M25_queuing # additions for rfxxx printer
+	_gcode_M3071_queuing = _gcode_M25_queuing
 
 	def _gcode_M28_sent(self, cmd, cmd_type=None):
 		if not self.isStreaming():
