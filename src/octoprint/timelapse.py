@@ -523,13 +523,14 @@ class ZTimelapse(Timelapse):
 		Timelapse.process_post_roll(self)
 
 	def _on_z_change(self, event, payload):
-		if self._retraction_zhop == 0:
-			self.capture_image()
-		else:
+		if self._retraction_zhop != 0:
+			# check if height difference equals z-hop or is negative, if so don't take a picture
 			diff = round(payload["new"] - payload["old"], 3)
 			zhop = round(self._retraction_zhop, 3)
-			if diff > 0 and diff != zhop:
-				self.capture_image()
+			if diff == zhop or diff <= 0:
+				return
+
+		self.capture_image()
 
 
 class TimedTimelapse(Timelapse):
