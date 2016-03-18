@@ -28,25 +28,22 @@ from octoprint.server import NO_CONTENT
 def getTimelapseData():
 	timelapse = octoprint.timelapse.current
 
-	config = {"type": "off"}
 	if timelapse is not None and isinstance(timelapse, octoprint.timelapse.ZTimelapse):
-		config["type"] = "zchange"
-		config["postRoll"] = timelapse.post_roll
-		config["fps"] = timelapse.fps
-		config.update({
-			"retractionZHop": timelapse.retraction_zhop
-		})
+		config = dict(type="zchange",
+		              postRoll=timelapse.post_roll,
+		              fps=timelapse.fps,
+		              retractionZHop=timelapse.retraction_zhop)
 	elif timelapse is not None and isinstance(timelapse, octoprint.timelapse.TimedTimelapse):
-		config["type"] = "timed"
-		config["postRoll"] = timelapse.post_roll
-		config["fps"] = timelapse.fps
-		config.update({
-			"interval": timelapse.interval
-		})
+		config = dict(type="timed",
+		              postRoll=timelapse.post_roll,
+		              fps=timelapse.fps,
+		              interval=timelapse.interval)
+	else:
+		config = dict(type="off")
 
 	files = octoprint.timelapse.get_finished_timelapses()
-	for file in files:
-		file["url"] = url_for("index") + "downloads/timelapse/" + file["name"]
+	for f in files:
+		f["url"] = url_for("index") + "downloads/timelapse/" + f["name"]
 
 	result = dict(config=config,
 	              files=files)
