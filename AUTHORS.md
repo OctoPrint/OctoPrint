@@ -61,6 +61,7 @@ date of first contribution):
   * [Siim Raud](https://github.com/2ndalpha)
   * ["geoporalis"](https://github.com/geoporalis)
   * [Andrew Malota](https://github.com/2bitoperations)
+  * [Alexander Leisentritt](https://github.com/Alex9779)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and
