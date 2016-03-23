@@ -63,44 +63,30 @@ octoprint.cli.commands
       :tab-width: 4
       :caption: `custom_cli_command.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/custom_cli_command.py>`_
 
-   Calling ``octoprint --help`` shows the two new commands:
+   Calling ``octoprint plugins --help`` shows the two new commands:
 
    .. code-block:: none
 
-      $ octoprint --help
-      Usage: octoprint [OPTIONS] COMMAND [ARGS]...
+      $ octoprint plugins --help
+      Usage: octoprint plugins [OPTIONS] COMMAND [ARGS]...
 
-      Options:
-        -b, --basedir PATH  Specify the basedir to use for uploads, timelapses etc.
-        -c, --config PATH   Specify the config file to use.
-        -v, --verbose       Increase logging verbosity
-        --version           Show the version and exit.
-        --help              Show this message and exit.
-
-      Commands:
-        daemon                     Starts, stops or restarts in daemon mode.
-        dev:plugin                 Helpers for plugin developers
-        plugin:custom_cli_command  custom_cli_command commands
-        serve                      Starts the OctoPrint server.
-
-      $ octoprint plugin:custom_cli_command --help
-      Usage: octoprint plugin:custom_cli_command [OPTIONS] COMMAND [ARGS]...
-
-        custom_cli_command commands
+        Additional commands provided by plugins.
 
       Options:
         --help  Show this message and exit.
 
       Commands:
-        greet   Greet someone by name, the greeting can be...
-        random  Greet someone by name with a random greeting.
+        custom_cli_command:greet   Greet someone by name, the greeting can be...
+        custom_cli_command:random  Greet someone by name with a random greeting.
+        softwareupdate:check       Check for updates.
+        softwareupdate:update      Apply updates.
 
    Each also has an individual help output:
 
    .. code-block:: none
 
-      $ octoprint plugin:custom_cli_command greet --help
-      Usage: octoprint plugin:custom_cli_command greet [OPTIONS] [NAME]
+      $ octoprint plugins custom_cli_command:greet --help
+      Usage: octoprint plugins custom_cli_command:greet [OPTIONS] [NAME]
 
         Greet someone by name, the greeting can be customized.
 
@@ -108,8 +94,8 @@ octoprint.cli.commands
         -g, --greeting TEXT  The greeting to use
         --help               Show this message and exit.
 
-      $ octoprint plugin:custom_cli_command random --help
-      Usage: octoprint plugin:custom_cli_command random [OPTIONS] [NAME]
+      $ octoprint plugins custom_cli_command:random --help
+      Usage: octoprint plugins custom_cli_command:random [OPTIONS] [NAME]
 
         Greet someone by name with a random greeting.
 
@@ -120,13 +106,13 @@ octoprint.cli.commands
 
    .. code-block:: none
 
-      $ octoprint plugin:custom_cli_command greet
+      $ octoprint plugins custom_cli_command:greet
       Hello World!
 
-      $ octoprint plugin:custom_cli_command greet --greeting "Good morning"
+      $ octoprint plugins custom_cli_command:greet --greeting "Good morning"
       Good morning World!
 
-      $ octoprint plugin:custom_cli_command random stranger
+      $ octoprint plugins custom_cli_command:random stranger
       Hola stranger!
 
    .. note::
@@ -134,7 +120,7 @@ octoprint.cli.commands
       If your hook handler is an instance method of a plugin mixin implementation, be aware that the hook will be
       called without OctoPrint initializing your implementation instance. That means that **none** of the
       :ref:`injected properties <sec-plugins-concepts-injectedproperties>` will be available and also the
-      :method:`~octoprint.plugin.Plugin.initialize` method will not be called.
+      :meth:`~octoprint.plugin.Plugin.initialize` method will not be called.
 
       Your hook handler will have access to the plugin manager as ``cli_group.plugin_manager`` and to the
       *global* settings as ``cli_group.settings``. You can have your handler turn the latter into a
@@ -306,7 +292,7 @@ octoprint.comm.protocol.gcode.received
    Get the returned lines sent by the printer. Handlers should return the received line or in any case, the modified
    version of it. If the the handler returns None, processing will be aborted and the communication layer will get an
    empty string as the received line. Note that Python functions will also automatically return ``None`` if an empty
-   ``return`` statement is used or just nothing is returned explicitely from the handler.
+   ``return`` statement is used or just nothing is returned explicitly from the handler.
 
    **Example:**
 

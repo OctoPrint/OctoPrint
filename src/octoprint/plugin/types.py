@@ -640,6 +640,8 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
 		       value.
 		   * - locales
 		     - The locales for which there are translations available.
+		   * - supportedExtensions
+		     - The file extensions supported for uploads.
 
 		On top of that all additional template variables as provided by :meth:`~octoprint.plugin.TemplatePlugin.get_template_vars`
 		will be contained in the dictionary as well.
@@ -790,14 +792,14 @@ class WizardPlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 		data to perform its task.
 
 		Returns:
-		    dict: a dictionary containig additional data to provide to the frontend. Whatever the plugin
+		    dict: a dictionary containing additional data to provide to the frontend. Whatever the plugin
 		          returns here will be made available on the wizard API under the plugin's identifier
 		"""
 		return dict()
 
 	def on_wizard_finish(self, handled):
 		"""
-		Called by OctoPrint whenever the user finishes a wizard session is finished.
+		Called by OctoPrint whenever the user finishes a wizard session.
 
 		The ``handled`` parameter will indicate whether that plugin's wizard was
 		included in the wizard dialog presented to the user (so the plugin providing
