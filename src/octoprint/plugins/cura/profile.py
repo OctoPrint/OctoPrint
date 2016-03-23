@@ -459,13 +459,16 @@ class Profile(object):
 				index = None
 
 				for opt in arrayified_options:
-					if key.startswith(opt):
+					# if there's a period, the index comes before it
+					optsplit = opt.split('.')
+					keysplit = key.split('.')
+					if key.startswith(optsplit[0]) and keysplit[1:] == optsplit[1:]:
 						if key == opt:
 							index = 0
 						else:
 							try:
 								# try to convert the target index, e.g. print_temperature2 => print_temperature[1]
-								index = int(key[len(opt):]) - 1
+								index = int(keysplit[0][len(optsplit[0]):]) - 1
 							except ValueError:
 								# ignore entries for which that fails
 								ignored = True
