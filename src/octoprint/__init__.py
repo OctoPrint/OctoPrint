@@ -210,8 +210,12 @@ def main():
 	import sys
 
 	# os args are gained differently on win32
-	from click.utils import get_os_args
-	args = get_os_args()
+	try:
+		from click.utils import get_os_args
+		args = get_os_args()
+	except ImportError:
+		# for whatever reason we are running an older Click version?
+		args = sys.argv[1:]
 
 	if len(args) >= len(sys.argv):
 		# Now some ugly preprocessing of our arguments starts. We have a somewhat difficult situation on our hands
