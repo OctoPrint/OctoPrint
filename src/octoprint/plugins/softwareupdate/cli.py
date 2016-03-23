@@ -96,7 +96,7 @@ def commands(cli_group, pass_octoprint_ctx, *args, **kwargs):
 				click.echo("Updating {} to {}...".format(plugin_message_data["name"], plugin_message_data["target"]))
 
 			elif plugin_message_type == "update_failed":
-				click.echo("\t... failed: {}".format(plugin_message_data["reason"]))
+				click.echo("\t... failed :(")
 
 			elif plugin_message_type == "loglines" and "loglines" in plugin_message_data:
 				for entry in plugin_message_data["loglines"]:

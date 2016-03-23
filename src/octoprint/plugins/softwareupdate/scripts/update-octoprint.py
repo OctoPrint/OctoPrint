@@ -130,11 +130,15 @@ def _python(args, cwd, python_executable, sudo=False):
 		return None, None
 
 
+def _to_error(*lines):
+	return u"".join(map(lambda x: _to_unicode(x, errors="replace"), lines))
+
+
 def update_source(git_executable, folder, target, force=False):
 	print(">>> Running: git diff --shortstat")
 	returncode, stdout, stderr = _git(["diff", "--shortstat"], folder, git_executable=git_executable)
 	if returncode != 0:
-		raise RuntimeError("Could not update, \"git diff\" failed with returncode %d: %s" % (returncode, stdout))
+		raise RuntimeError("Could not update, \"git diff\" failed with returncode %d: %s" % (returncode, _to_error(*stdout)))
 	if stdout and "".join(stdout).strip():
 		# we got changes in the working tree, maybe from the user, so we'll now rescue those into a patch
 		import time
@@ -154,17 +158,17 @@ def update_source(git_executable, folder, target, force=False):
 		print(">>> Running: git reset --hard")
 		returncode, stdout, stderr = _git(["reset", "--hard"], folder, git_executable=git_executable)
 		if returncode != 0:
-			raise RuntimeError("Could not update, \"git reset --hard\" failed with returncode %d: %s" % (returncode, stdout))
+			raise RuntimeError("Could not update, \"git reset --hard\" failed with returncode %d: %s" % (returncode, _to_error(*stdout)))
 
 		print(">>> Running: git clean -f -d -e *-preupdate.patch")
 		returncode, stdout, stderr = _git(["clean", "-f", "-d", "-e", "*-preupdate.patch"], folder, git_executable=git_executable)
 		if returncode != 0:
-			raise RuntimeError("Could not update, \"git clean -f\" failed with returcode %d: %s" % (returncode, stdout))
+			raise RuntimeError("Could not update, \"git clean -f\" failed with returcode %d: %s" % (returncode, _to_error(*stdout)))
 
 	print(">>> Running: git pull")
 	returncode, stdout, stderr = _git(["pull"], folder, git_executable=git_executable)
 	if returncode != 0:
-		raise RuntimeError("Could not update, \"git pull\" failed with returncode %d: %s" % (returncode, stdout))
+		raise RuntimeError("Could not update, \"git pull\" failed with returncode %d: %s" % (returncode, _to_error(*stdout)))
 
 	if force:
 		reset_command = ["reset", "--hard"]
@@ -173,7 +177,7 @@ def update_source(git_executable, folder, target, force=False):
 		print(">>> Running: git %s" % " ".join(reset_command))
 		returncode, stdout, stderr = _git(reset_command, folder, git_executable=git_executable)
 		if returncode != 0:
-			raise RuntimeError("Error while updating, \"git %s\" failed with returncode %d: %s" % (" ".join(reset_command), returncode, stdout))
+			raise RuntimeError("Error while updating, \"git %s\" failed with returncode %d: %s" % (" ".join(reset_command), returncode, _to_error(*stdout)))
 
 
 def install_source(python_executable, folder, user=False, sudo=False):
@@ -189,7 +193,7 @@ def install_source(python_executable, folder, user=False, sudo=False):
 		args.append("--user")
 	returncode, stdout, stderr = _python(args, folder, python_executable, sudo=sudo)
 	if returncode != 0:
-		raise RuntimeError("Could not update, \"python setup.py install\" failed with returncode %d: %s" % (returncode, stdout))
+		raise RuntimeError("Could not update, \"python setup.py install\" failed with returncode %d: %s" % (returncode, _to_error(*stdout)))
 
 
 def parse_arguments():
