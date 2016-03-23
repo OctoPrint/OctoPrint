@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/bin/env python2
 from __future__ import absolute_import, print_function
 
 __author__ = "Gina Haeussge <osd@foosel.net>"
@@ -27,7 +27,15 @@ def _log(lines, prefix=None, stream=None):
 		output_stream = sys.stderr
 
 	for line in lines:
-		print(u"{} {}".format(prefix, line.strip()), file=output_stream)
+		print(u"{} {}".format(prefix, _to_unicode(line.rstrip(), errors="replace")), file=output_stream)
+
+
+def _to_unicode(s_or_u, encoding="utf-8", errors="strict"):
+	"""Make sure ``s_or_u`` is a unicode string."""
+	if isinstance(s_or_u, str):
+		return s_or_u.decode(encoding, errors=errors)
+	else:
+		return s_or_u
 
 
 def _execute(command, **kwargs):
@@ -41,39 +49,43 @@ def _execute(command, **kwargs):
 
 	kwargs.update(dict(async=True, stdout=sarge.Capture(), stderr=sarge.Capture()))
 
-	p = sarge.run(command, **kwargs)
-	p.wait_events()
+	try:
+		p = sarge.run(command, **kwargs)
+		p.wait_events()
+	except Exception as e:
+		import traceback
+		exception_lines = traceback.format_exc()
+		error = "Error while trying to run command {}: {}\n{}".format(joined_command, str(e), exception_lines)
+		return None, "", error
 
 	all_stdout = []
 	all_stderr = []
 	try:
 		while p.returncode is None:
-			line = p.stderr.readline(timeout=0.5)
-			if line:
-				_log_stderr(line)
-				all_stderr.append(line)
+			lines = p.stderr.readlines(timeout=0.5)
+			if lines:
+				_log_stderr(*lines)
+				all_stderr += list(lines)
 
-			line = p.stdout.readline(timeout=0.5)
-			if line:
-				_log_stdout(line)
-				all_stdout.append(line)
+			lines = p.stdout.readlines(timeout=0.5)
+			if lines:
+				_log_stdout(*lines)
+				all_stdout += list(lines)
 
 			p.commands[0].poll()
 
 	finally:
 		p.close()
 
-	stderr = p.stderr.text
-	if stderr:
-		split_lines = stderr.split("\n")
-		_log_stderr(*split_lines)
-		all_stderr += split_lines
+	lines = p.stderr.readlines()
+	if lines:
+		_log_stderr(*lines)
+		all_stderr += lines
 
-	stdout = p.stdout.text
-	if stdout:
-		split_lines = stdout.split("\n")
-		_log_stdout(*split_lines)
-		all_stdout += split_lines
+	lines = p.stdout.readlines()
+	if lines:
+		_log_stdout(*lines)
+		all_stdout += lines
 
 	return p.returncode, all_stdout, all_stderr
 
@@ -93,8 +105,7 @@ def _git(args, cwd, verbose=False, git_executable=None):
 
 	for c in commands:
 		try:
-			returncode, stdout, stderr = _execute([c] + args, cwd=cwd)
-			return returncode, "\n".join(stdout), "\n".join(stderr)
+			return _execute([c] + args, cwd=cwd)
 		except EnvironmentError:
 			e = sys.exc_info()[1]
 			if e.errno == errno.ENOENT:
@@ -124,7 +135,7 @@ def update_source(git_executable, folder, target, force=False):
 	returncode, stdout, stderr = _git(["diff", "--shortstat"], folder, git_executable=git_executable)
 	if returncode != 0:
 		raise RuntimeError("Could not update, \"git diff\" failed with returncode %d: %s" % (returncode, stdout))
-	if stdout and stdout.strip():
+	if stdout and "".join(stdout).strip():
 		# we got changes in the working tree, maybe from the user, so we'll now rescue those into a patch
 		import time
 		import os
@@ -137,12 +148,18 @@ def update_source(git_executable, folder, target, force=False):
 			raise RuntimeError("Could not update, installation directory was dirty and state could not be persisted as a patch to %s" % patch)
 
 		with open(patch, "wb") as f:
-			f.write(stdout)
+			for line in stdout:
+				f.write(line)
 
 		print(">>> Running: git reset --hard")
 		returncode, stdout, stderr = _git(["reset", "--hard"], folder, git_executable=git_executable)
 		if returncode != 0:
 			raise RuntimeError("Could not update, \"git reset --hard\" failed with returncode %d: %s" % (returncode, stdout))
+
+		print(">>> Running: git clean -f -d -e *-preupdate.patch")
+		returncode, stdout, stderr = _git(["clean", "-f", "-d", "-e", "*-preupdate.patch"], folder, git_executable=git_executable)
+		if returncode != 0:
+			raise RuntimeError("Could not update, \"git clean -f\" failed with returcode %d: %s" % (returncode, stdout))
 
 	print(">>> Running: git pull")
 	returncode, stdout, stderr = _git(["pull"], folder, git_executable=git_executable)
@@ -150,7 +167,7 @@ def update_source(git_executable, folder, target, force=False):
 		raise RuntimeError("Could not update, \"git pull\" failed with returncode %d: %s" % (returncode, stdout))
 
 	if force:
-		reset_command = ["reset"]
+		reset_command = ["reset", "--hard"]
 		reset_command += [target]
 
 		print(">>> Running: git %s" % " ".join(reset_command))
@@ -209,6 +226,12 @@ def main():
 	python_executable = sys.executable
 	if args.python_executable:
 		python_executable = args.python_executable
+		if python_executable.startswith('"'):
+			python_executable = python_executable[1:]
+		if python_executable.endswith('"'):
+			python_executable = python_executable[:-1]
+
+	print("Python executable: {!r}".format(python_executable))
 
 	folder = args.folder
 	target = args.target
