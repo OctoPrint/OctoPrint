@@ -7,9 +7,12 @@ Developing Plugins
 .. toctree::
    :maxdepth: 3
 
-   gettingstarted.rst
    concepts.rst
-   distributing.rst
+   controlproperties.rst
    mixins.rst
    hooks.rst
+   helpers.rst
+   injectedproperties.rst
    viewmodels.rst
+   gettingstarted.rst
+   distributing.rst

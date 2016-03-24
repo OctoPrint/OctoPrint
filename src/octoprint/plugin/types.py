@@ -109,9 +109,9 @@ class StartupPlugin(OctoPrintPlugin, SortablePlugin):
 	The ``StartupPlugin`` allows hooking into the startup of OctoPrint. It can be used to start up additional services
 	on or just after the startup of the server.
 
-	``StartupPlugin`` is a :class:`~octoprint.plugin.core.SortablePlugin`. The
-	relevant sorting context for :meth:`on_startup` is ``StartupPlugin.on_startup``,
-	the one for :meth:`on_after_startup` will be ``StartupPlugin.on_after_startup``.
+	``StartupPlugin`` is a :class:`~octoprint.plugin.core.SortablePlugin` and provides
+	sorting contexts for :meth:`~octoprint.plugin.StartupPlugin.on_startup` as well as
+	:meth:`~octoprint.plugin.StartupPlugin.on_after_startup`.
 	"""
 
 	def on_startup(self, host, port):
@@ -122,6 +122,8 @@ class StartupPlugin(OctoPrintPlugin, SortablePlugin):
 		is not actually up yet and none of your plugin's APIs or blueprints will be reachable yet. If you need to be
 		externally reachable, use :func:`on_after_startup` instead or additionally.
 
+		The relevant sorting context is ``StartupPlugin.on_startup``.
+
 		:param string host: the host the server will listen on, may be ``0.0.0.0``
 		:param int port:    the port the server will listen on
 		"""
@@ -131,6 +133,8 @@ class StartupPlugin(OctoPrintPlugin, SortablePlugin):
 	def on_after_startup(self):
 		"""
 		Called just after launch of the server, so when the listen loop is actually running already.
+
+		The relevant sorting context is ``StartupPlugin.on_after_startup``.
 		"""
 
 		pass
@@ -142,13 +146,15 @@ class ShutdownPlugin(OctoPrintPlugin, SortablePlugin):
 	:class:`StartupPlugin` mixin, to cleanly shut down additional services again that where started by the :class:`StartupPlugin`
 	part of the plugin.
 
-	``ShutdownPlugin`` is a :class:`~octoprint.plugin.core.SortablePlugin`.
-	The relevant sorting context will be ``ShutdownPlugin.on_shutdown``.
+	``ShutdownPlugin`` is a :class:`~octoprint.plugin.core.SortablePlugin` and provides a sorting context for
+	:meth:`~octoprint.plugin.ShutdownPlugin.on_shutdown`.
 	"""
 
 	def on_shutdown(self):
 		"""
 		Called upon the imminent shutdown of OctoPrint.
+
+		The relevant sorting context is ``ShutdownPlugin.on_shutdown``.
 		"""
 		pass
 
@@ -523,9 +529,9 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
 	response altogether, a plugin may set no-cache headers on the returned
 	response as well.
 
-	``UiPlugin`` is a :class:`~octoprint.plugin.core.SortablePlugin`. The
-	relevant sorting context when acting as a UiPlugin is ``UiPlugin.will_handle_ui``.
-	The first plugin to return ``True`` will be the one whose ui will be used,
+	``UiPlugin`` is a :class:`~octoprint.plugin.core.SortablePlugin` with a sorting context
+	for :meth:`~octoprint.plugin.UiPlugin.will_handle_ui`. The first plugin to return ``True``
+	for :meth:`~octoprint.plugin.UiPlugin.will_handle_ui` will be the one whose ui will be used,
 	no further calls to :meth:`~octoprint.plugin.UiPlugin.on_ui_render` will be performed.
 
 	If implementations want to serve custom templates in the :meth:`~octoprint.plugin.UiPlugin.on_ui_render`
@@ -564,6 +570,9 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
 		Return ``True`` here to signal that your implementation will handle
 		the request and that the result of its :meth:`~octoprint.plugin.UiPlugin.on_ui_render` method
 		is what should be served to the user.
+
+		The execution order of calls to this method can be influenced via the sorting context
+		``UiPlugin.will_handle_ui``.
 
 		Arguments:
 		    request (flask.Request): A Flask `Request <http://flask.pocoo.org/docs/0.10/api/#flask.Request>`_
