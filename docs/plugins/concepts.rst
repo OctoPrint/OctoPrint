@@ -132,6 +132,9 @@ Hooks are the smaller siblings of mixins, allowing to extend functionality or da
 would be too much overhead. Where mixins are based on classes, hooks are based on methods. Like with the mixin
 implementations, plugins inform OctoPrint about hook handlers using a control property, ``__plugin_hooks__``.
 
+This control property is a dictionary consisting of the implemented hooks' names as keys and either the hook callback
+or a 2-tuple of hook callback and order value as value.
+
 Each hook defines a contract detailing the call parameters for the hook handler method and the expected return type.
 OctoPrint will call the hook with the define parameters and process the result depending on the hook.
 
@@ -180,13 +183,6 @@ the general type of script for which to look for additions ("gcode") and the scr
 return a 2-tuple of prefix and postfix if has something for either of those, otherwise ``None``. OctoPrint will then take
 care to add prefix and suffix as necessary after a small round of preprocessing.
 
-.. note::
-
-   At the moment there exists no way to determine the execution order of various hook handlers within OctoPrint,
-   or to prevent the execution of further handlers down the chain.
-
-   This is planned for the very near future though.
-
 Plugins can easily add their own hooks too. For example, the `Software Update Plugin <https://github.com/OctoPrint/OctoPrint-SoftwareUpdate>`_
 declares a custom hook "octoprint.plugin.softwareupdate.check_config" which other plugins can add handlers for in order
 to register themselves with the Software Update Plugin by returning their own update check configuration.
@@ -202,6 +198,105 @@ property instead, manually instantiate your implementation instance and then add
    :tab-width: 4
    :caption: `custom_action_command.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/custom_action_command.py>`_
    :name: sec-plugin-concepts-hooks-example
+
+Hooks may also define an order number to allow influencing the execution order of the registered hook handlers. Instead
+of registering only a callback as hook handler, it is also possible to register a 2-tuple consisting of a callback and
+an integer value used for ordering handlers. They way this works is that OctoPrint will first sort all registered
+hook handlers with a order number, taking their identifier as the second sorting criteria, then after that append
+all hook handlers without a order number sorted only by their identifier.
+
+An example should help clear this up. Let's assume we have the following plugin ``ordertest`` which defines a new
+hook called ``octoprint.plugin.ordertest.callback``:
+
+.. code-block:: python
+   :linenos:
+   :name: `ordertest.py`
+
+   import octoprint.plugin
+
+   class OrderTestPlugin(octoprint.plugin.StartupPlugin):
+       def get_sorting_key(self, sorting_context):
+           return 10
+
+       def on_startup(self, *args, **kwargs):
+           self._logger.info("############### Order Test Plugin: StartupPlugin.on_startup called")
+           hooks = self._plugin_manager.get_hooks("octoprint.plugin.ordertest.callback")
+           for name, hook in hooks.items():
+               hook()
+
+       def on_after_startup(self):
+           self._logger.info("############### Order Test Plugin: StartupPlugin.on_after_startup called")
+
+   __plugin_name__ = "Order Test"
+   __plugin_version__ = "0.1.0"
+   __plugin_implementation__ = OrderTestPlugin()
+
+And these three plugins defining handlers for that hook:
+
+.. code-block:: python
+   :linenos:
+   :name: `oneorderedhook.py`
+
+   import logging
+
+    def callback(*args, **kwargs):
+        logging.getLogger("octoprint.plugins." + __name__).info("Callback called in oneorderedhook")
+
+    __plugin_name__ = "One Ordered Hook"
+    __plugin_version__ = "0.1.0"
+    __plugin_hooks__ = {
+        "octoprint.plugin.ordertest.callback": (callback, 1)
+    }
+
+.. code-block:: python
+   :linenos:
+   :name: `anotherorderedhook.py`
+
+   import logging
+
+   def callback(*args, **kwargs):
+       logging.getLogger("octoprint.plugins." + __name__).info("Callback called in anotherorderedhook")
+
+   __plugin_name__ = "Another Ordered Hook"
+   __plugin_version__ = "0.1.0"
+   __plugin_hooks__ = {
+       "octoprint.plugin.ordertest.callback": (callback, 2)
+   }
+
+.. code-block:: python
+   :linenos:
+   :name: `yetanotherhook.py`
+
+   import logging
+
+   def callback(*args, **kwargs):
+       logging.getLogger("octoprint.plugins." + __name__).info("Callback called in yetanotherhook")
+
+   __plugin_name__ = "Yet Another Hook"
+   __plugin_version__ = "0.1.0"
+   __plugin_hooks__ = {
+       "octoprint.plugin.ordertest.callback": callback
+   }
+
+Both ``orderedhook.py`` and ``anotherorderedhook.py`` not only define a handler callback in the hook registration,
+but actually a 2-tuple consisting of a callback and an order number. ``yetanotherhook.py`` only defines a callback.
+
+OctoPrint will sort these hooks so that ``orderedhook`` will be called first, then ``anotherorderedhook``, then
+``yetanotherhook``. Just going by the identifiers, the expected order would be ``anotherorderedhook``, ``orderedhook``,
+``yetanotherhook``, but since ``orderedhook`` defines a lower order number (``1``) than ``anotherorderedhook`` (``2``),
+it will be sorted before ``anotherorderedhook``. If you copy those files into your ``~/.octoprint/plugins`` folder
+and start up OctoPrint, you'll see output like this:
+
+.. code-block:: plain
+
+   [...]
+   2016-03-24 09:29:21,342 - octoprint.plugins.ordertest - INFO - ############### Order Test Plugin: StartupPlugin.on_startup called
+   2016-03-24 09:29:21,355 - octoprint.plugins.oneorderedhook - INFO - Callback called in oneorderedhook
+   2016-03-24 09:29:21,357 - octoprint.plugins.anotherorderedhook - INFO - Callback called in anotherorderedhook
+   2016-03-24 09:29:21,358 - octoprint.plugins.yetanotherhook - INFO - Callback called in yetanotherhook
+   [...]
+   2016-03-24 09:29:21,861 - octoprint.plugins.ordertest - INFO - ############### Order Test Plugin: StartupPlugin.on_after_startup called
+   [...]
 
 .. seealso::
 
