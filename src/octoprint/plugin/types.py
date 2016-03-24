@@ -560,6 +560,20 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
 	you should still see the default UI. However if you access it from a mobile
 	device (make sure to not have that request the desktop version of pages!)
 	you should see the very simple dummy page defined above.
+
+	**Preemptive and Runtime Caching**
+
+	OctoPrint will also cache your custom UI for your in its server side UI cache, making sure
+	it only gets re-rendered if the request demands that (by having no-cache headers set) or if
+	the cache gets invalidated otherwise.
+
+	In order to be able to do that, the ``UiPlugin`` offers overriding a couple of cache specific
+	methods used for figuring out the source files whose modification time to use for cache invalidation
+	as well as override possibilities for ETag and LastModified calculation. Additionally there are
+	methods to allow persisting call parameters to allow for preemptively caching your UI during
+	server startup (basically eager caching instead of lazily waiting for the first request).
+
+	See below for details on this.
 	"""
 
 	def will_handle_ui(self, request):
@@ -673,24 +687,82 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
 		return None
 
 	def get_ui_additional_key_data_for_cache(self):
+		"""
+		Allows to return additional data to use in the cache key.
+
+		Returns:
+		    list, tuple: A list or tuple of strings to use in the cache key. Will be joined by OctoPrint
+		        using ``:`` as separator and appended to the existing ``ui:<identifier>:<base url>:<locale>``
+		        cache key. Ignored if ``None`` is returned.
+		"""
 		return None
 
 	def get_ui_additional_tracked_files(self):
+		"""
+		Allows to return additional files to track for validating existing caches. By default OctoPrint
+		will track all declared templates, assets and translation files in the system. Additional
+		files can be added by a plugin through this callback.
+
+		Returns:
+		    list: A list of paths to additional files whose modification to track for (in)validating
+		        the cache. Ignored if ``None`` is returned.
+		"""
 		return None
 
 	def get_ui_custom_tracked_files(self):
+		"""
+		Allows to define a complete separate set of files to track for (in)validating the cache. If this
+		method returns something, the templates, assets and translation files won't be tracked, only the
+		files specified in the returned list.
+
+		Returns:
+		    list: A list of paths representing the only files whose modification to track for (in)validating
+		        the cache. Ignored if ``None`` is returned.
+		"""
 		return None
 
 	def get_ui_custom_etag(self):
+		"""
+		Allows to use a custom way to calculate the ETag, instead of the default method (hashing
+		OctoPrint's version, current ``UI_API_KEY``, tracked file paths and ``LastModified`` value).
+
+		Returns:
+		    basestring: An alternatively calculate ETag value. Ignored if ``None`` is returned.
+		"""
 		return None
 
 	def get_ui_custom_lastmodified(self):
+		"""
+		Allows to calculate the LastModified differently than using the most recent modification
+		date of all tracked files.
+
+		Returns:
+		    int: An alternatively calculated LastModified value. Ignored if ``None`` is returned.
+		"""
 		return None
 
 	def get_ui_data_for_preemptive_caching(self):
+		"""
+		Allows defining additional data to be persisted in the preemptive cache configuration, on
+		top of the request path, base URL and used locale will be persisted.
+
+		Returns:
+		    dict: Additional data to persist in the preemptive cache configuration.
+		"""
 		return None
 
 	def get_ui_additional_request_data_for_preemptive_caching(self):
+		"""
+		Allows defining additional request data to persist in the preemptive cache configuration and
+		to use for the fake request used for populating the preemptive cache.
+
+		Keys and values are used as keyword arguments for creating the `Werkzeug EnvironBuilder <http://werkzeug.pocoo.org/docs/0.11/test/#werkzeug.test.EnvironBuilder>`_
+		used for creating the fake request.
+
+		Returns:
+		    dict: Additional request data to persist in the preemptive cache configuration and to
+		        use for request environment construction.
+		"""
 		return None
 
 class WizardPlugin(OctoPrintPlugin, ReloadNeedingPlugin):
