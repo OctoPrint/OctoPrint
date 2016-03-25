@@ -411,9 +411,13 @@ function cleanTemperature(temp) {
     return temp;
 }
 
-function formatTemperature(temp) {
+function formatTemperature(temp, showF) {
     if (!temp || temp < 10) return gettext("off");
-    return _.sprintf("%.1f&deg;C (%.1f&deg;F)", temp, temp * 9 / 5 + 32);
+    if (showF) {
+        return _.sprintf("%.1f&deg;C (%.1f&deg;F)", temp, temp * 9 / 5 + 32);
+    } else {
+        return _.sprintf("%.1f&deg;C", temp);
+    }
 }
 
 function pnotifyAdditionalInfo(inner) {
