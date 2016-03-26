@@ -1,5 +1,5 @@
 <div data-bind="visible: !waitForApproval()">
-    <div class="canvas_container">
+    <div id="canvas_container" class="canvas_container" tabindex="0" data-bind="event: { keydown: onKeyDown, mouseover: onMouseOver, mouseout: onMouseOut }">
         <input id="gcode_slider_layers" type="text">
         <canvas id="gcode_canvas" width="568" height="568"></canvas>
         <input id="gcode_slider_commands" type="text" style="width: 554px">

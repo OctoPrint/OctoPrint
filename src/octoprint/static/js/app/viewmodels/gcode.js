@@ -497,6 +497,54 @@ $(function() {
             GCODE.ui.changeSelectedLayer(value);
         };
 
+        self.onMouseOver = function(data, event) {
+            if (!self.settings.feature_keyboardControl()) return;
+            $("#canvas_container").focus();
+
+        };
+        self.onMouseOut = function(data, event) {
+            if (!self.settings.feature_keyboardControl()) return;
+            $("#canvas_container").blur();
+        };
+        self.onKeyDown = function(data, event) {
+            if (!self.settings.feature_keyboardControl()) return;
+
+            var value = self.currentLayer;
+            switch(event.which){
+                case 33: // Pg up
+                    value = value + 10; // No need to check against max this is done by the Slider anyway
+                    break;
+                case 34: // Pg down
+                    value = value - 10; // No need to check against min, this is done by the Slider anyway
+                    break;
+                case 38: // up arrow key
+                    value = value + 1; // No need to check against max this is done by the Slider anyway
+                    break;
+                case 40: // down arrow key
+                    value = value - 1; // No need to check against min, this is done by the Slider anyway
+                    break;
+            }
+
+            if (value != self.currentLayer) {
+                event.preventDefault();
+
+                self.layerSlider.slider('setValue', value);
+                value = self.layerSlider.slider('getValue');
+                self.layerSlider
+                    .trigger({
+                        type: 'slideStart',
+                        value: value
+                    })
+                    .trigger({
+                        type: 'slide',
+                        value: value
+                    }).trigger({
+                        type: 'slideStop',
+                        value: value
+                    });
+            }
+        };
+
         self.changeCommandRange = function(event) {
             if (self.currentlyPrinting && self.renderer_syncProgress()) self.renderer_syncProgress(false);
 
