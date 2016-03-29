@@ -93,7 +93,8 @@ def getSettings():
 			"helloCommand": s.get(["serial", "helloCommand"]),
 			"ignoreErrorsFromFirmware": s.getBoolean(["serial", "ignoreErrorsFromFirmware"]),
 			"disconnectOnErrors": s.getBoolean(["serial", "disconnectOnErrors"]),
-			"triggerOkForM29": s.getBoolean(["serial", "triggerOkForM29"])
+			"triggerOkForM29": s.getBoolean(["serial", "triggerOkForM29"]),
+			"supportResendsWithoutOk": s.getBoolean(["serial", "supportResendsWithoutOk"])
 		},
 		"folder": {
 			"uploads": s.getBaseFolder("uploads"),
@@ -248,6 +249,7 @@ def _saveSettings(data):
 		if "ignoreErrorsFromFirmware" in data["serial"]: s.setBoolean(["serial", "ignoreErrorsFromFirmware"], data["serial"]["ignoreErrorsFromFirmware"])
 		if "disconnectOnErrors" in data["serial"]: s.setBoolean(["serial", "disconnectOnErrors"], data["serial"]["disconnectOnErrors"])
 		if "triggerOkForM29" in data["serial"]: s.setBoolean(["serial", "triggerOkForM29"], data["serial"]["triggerOkForM29"])
+		if "supportResendsWithoutOk" in data["serial"]: s.setBoolean(["serial", "supportResendsWithoutOk"], data["serial"]["supportResendsWithoutOk"])
 
 		oldLog = s.getBoolean(["serial", "log"])
 		if "log" in data["serial"].keys(): s.setBoolean(["serial", "log"], data["serial"]["log"])

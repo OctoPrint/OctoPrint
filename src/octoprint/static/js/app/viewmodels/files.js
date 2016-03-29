@@ -506,7 +506,12 @@ $(function() {
             self.uploadProgress = $("#gcode_upload_progress");
             self.uploadProgressBar = $(".bar", self.uploadProgress);
 
-            self.localTarget = CONFIG_SD_SUPPORT ? $("#drop_locally") : $("#drop");
+            if (CONFIG_SD_SUPPORT) {
+                self.localTarget = $("#drop_locally");
+            } else {
+                self.localTarget = $("#drop");
+                self.listHelper.removeFilter('sd');
+            }
             self.sdTarget = $("#drop_sd");
 
             function evaluateDropzones() {

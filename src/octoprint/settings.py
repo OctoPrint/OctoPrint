@@ -92,7 +92,8 @@ default_settings = {
 		"helloCommand": "M110 N0",
 		"disconnectOnErrors": True,
 		"ignoreErrorsFromFirmware": False,
-		"logResends": False,
+		"logResends": True,
+		"supportResendsWithoutOk": False,
 
 		# command specific flags
 		"triggerOkForM29": True
