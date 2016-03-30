@@ -102,6 +102,12 @@ $(function() {
         }
     }
 
+    function CoreWizardServerCommandsViewModel(parameters) {
+        var self = this;
+
+        self.settingsViewModel = parameters[0];
+    }
+
     OCTOPRINT_VIEWMODELS.push([
         CoreWizardAclViewModel,
         ["loginStateViewModel"],
@@ -110,5 +116,9 @@ $(function() {
         CoreWizardWebcamViewModel,
         ["settingsViewModel"],
         "#wizard_plugin_corewizard_webcam"
+    ], [
+        CoreWizardServerCommandsViewModel,
+        ["settingsViewModel"],
+        "#wizard_plugin_corewizard_servercommands"
     ]);
 });
