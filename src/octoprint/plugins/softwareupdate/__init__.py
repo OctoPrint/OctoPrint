@@ -216,15 +216,25 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			))
 		)
 
+		updated_octoprint_check_config = False
+
 		if "octoprint_checkout_folder" in data:
 			self._settings.set(["checks", "octoprint", "checkout_folder"], data["octoprint_checkout_folder"], defaults=defaults, force=True)
 			if update_folder and data["octoprint_checkout_folder"]:
 				self._settings.set(["checks", "octoprint", "update_folder"], None, defaults=defaults, force=True)
-			self._refresh_configured_checks = True
+			updated_octoprint_check_config = True
 
 		if "octoprint_type" in data and data["octoprint_type"] in ("github_release", "git_commit"):
 			self._settings.set(["checks", "octoprint", "type"], data["octoprint_type"], defaults=defaults, force=True)
+			updated_octoprint_check_config = True
+
+		if updated_octoprint_check_config:
 			self._refresh_configured_checks = True
+			try:
+				del self._version_cache["octoprint"]
+			except KeyError:
+				pass
+			self._version_cache_dirty = True
 
 	def get_settings_version(self):
 		return 4
@@ -406,7 +416,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			dict(type="settings", name=gettext("Software Update"))
 		]
 
-	##~~
+	##~~ WizardPlugin API
 
 	def is_wizard_required(self):
 		checks = self._get_configured_checks()

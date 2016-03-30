@@ -32,6 +32,8 @@ $(function() {
                             'margin-left': function() { return -($(this).width() /2); }
                         });
                     }
+
+                    callViewModels(self.allViewModels, "onWizardShow");
                 });
         };
 
@@ -96,7 +98,8 @@ $(function() {
                     if (current != undefined && next != undefined) {
                         var result = true;
                         callViewModels(allViewModels, "onWizardTabChange", function(method) {
-                            result = result && (method(current, next) !== false);
+                            // we want to continue evaluating even if result becomes false
+                            result = (method(current, next) !== false) && result;
                         });
                         return result;
                     }
@@ -130,6 +133,7 @@ $(function() {
                                 if (reload) {
                                     self.reloadOverlay.show();
                                 }
+                                callViewModels(allViewModels, "onAfterWizardFinish");
                             });
                     }
                 }

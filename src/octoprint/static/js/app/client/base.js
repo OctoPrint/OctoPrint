@@ -84,6 +84,10 @@
         return OctoPrint.ajax("GET", url, opts);
     };
 
+    OctoPrint.getWithQuery = function(url, data, opts) {
+        return OctoPrint.ajaxWithData("GET", url, data, opts);
+    };
+
     OctoPrint.post = function(url, data, opts) {
         return OctoPrint.ajaxWithData("POST", url, data, noCache(opts));
     };

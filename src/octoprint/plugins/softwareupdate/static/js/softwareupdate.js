@@ -11,8 +11,23 @@
     var checkUrl = url + "check";
     var updateUrl = url + "update";
 
+    exports.checkEntries = function(entries, force, opts) {
+        entries = entries || [];
+        if (typeof entries == "string") {
+            entries = [entries];
+        }
+
+        var data = {
+            force: !!force
+        };
+        if (entries && entries.length) {
+            data["check"] = entries.join(",")
+        }
+        return OctoPrint.getWithQuery(checkUrl, data, opts);
+    };
+
     exports.check = function(force, opts) {
-        return OctoPrint.get(checkUrl + ((!!force) ? "?force=true" : ""), opts);
+        return exports.checkEntries([], force, opts);
     };
 
     exports.update = function(entries, force, opts) {
@@ -430,6 +445,11 @@ $(function() {
             }
 
             return true;
+        };
+
+        self.onAfterWizardFinish = function() {
+            // we might have changed our config, so we need to refresh our check data from the server
+            self.performCheck();
         };
 
         self.onStartup = function() {
