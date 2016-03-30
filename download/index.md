@@ -25,6 +25,8 @@ You can download the latest version via the following button:
 
 <small>MD5Sum: <code>a6db7912bc4cf429865a05253cbe017b</code></small>
 
+Compatible with Raspberry Pi A, B, A+, B+, B2. For Raspberry Pi 3 and Zero please use a [nightly build](http://docstech.net/OctoPiMirror/nightly/) for now.
+
 Getting Started with OctoPi
 ---------------------------
 
