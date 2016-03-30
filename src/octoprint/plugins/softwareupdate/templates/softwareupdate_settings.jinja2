@@ -74,18 +74,8 @@
     </div>
     <div class="modal-body">
         <form class="form-horizontal">
-            <div class="control-group">
-                <label class="control-label">{{ _('OctoPrint checkout folder') }}</label>
-                <div class="controls">
-                    <input type="text" class="input-block-level" data-bind="value: config_checkoutFolder">
-                </div>
-            </div>
-            <div class="control-group">
-                <label class="control-label">{{ _('OctoPrint version tracking') }}</label>
-                <div class="controls">
-                    <select data-bind="value: config_checkType, options: config_availableCheckTypes, optionsText: 'name', optionsValue: 'key'"></select>
-                </div>
-            </div>
+            {% include "_snippets/plugins/softwareupdate/checkoutFolder.jinja2" %}
+            {% include "_snippets/plugins/softwareupdate/versionTracking.jinja2" %}
             <div class="control-group">
                 <label class="control-label">{{ _('Version cache TTL') }}</label>
                 <div class="controls">

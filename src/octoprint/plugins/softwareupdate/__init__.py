@@ -32,7 +32,8 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
                            octoprint.plugin.SettingsPlugin,
                            octoprint.plugin.AssetPlugin,
                            octoprint.plugin.TemplatePlugin,
-                           octoprint.plugin.StartupPlugin):
+                           octoprint.plugin.StartupPlugin,
+                           octoprint.plugin.WizardPlugin):
 	def __init__(self):
 		self._update_in_progress = False
 		self._configured_checks_mutex = threading.Lock()
@@ -177,12 +178,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 		checks = self._get_configured_checks()
 		if "octoprint" in checks:
-			if "checkout_folder" in checks["octoprint"]:
-				data["octoprint_checkout_folder"] = checks["octoprint"]["checkout_folder"]
-			elif "update_folder" in checks["octoprint"]:
-				data["octoprint_checkout_folder"] = checks["octoprint"]["update_folder"]
-			else:
-				data["octoprint_checkout_folder"] = None
+			data["octoprint_checkout_folder"] = self._get_octoprint_checkout_folder(checks=checks)
 			data["octoprint_type"] = checks["octoprint"].get("type", None)
 		else:
 			data["octoprint_checkout_folder"] = None
@@ -409,6 +405,14 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		return [
 			dict(type="settings", name=gettext("Software Update"))
 		]
+
+	##~~
+
+	def is_wizard_required(self):
+		checks = self._get_configured_checks()
+		check = checks.get("octoprint", None)
+		checkout_folder = self._get_octoprint_checkout_folder(checks=checks)
+		return check and "update_script" in check and not checkout_folder
 
 	#~~ Updater
 
@@ -779,6 +783,20 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			return updaters.python_updater
 		else:
 			raise exceptions.UnknownUpdateType()
+
+	def _get_octoprint_checkout_folder(self, checks=None):
+		if checks is None:
+			checks = self._get_configured_checks()
+
+		if not "octoprint" in checks:
+			return None
+
+		if "checkout_folder" in checks["octoprint"]:
+			return checks["octoprint"]["checkout_folder"]
+		elif "update_folder" in checks["octoprint"]:
+			return checks["octoprint"]["update_folder"]
+
+		return None
 
 
 __plugin_name__ = "Software Update"

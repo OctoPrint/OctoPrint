@@ -169,6 +169,11 @@ $(function() {
             self.config_checkType(self.settings.settings.plugins.softwareupdate.octoprint_type());
         };
 
+        self._copyConfigBack = function() {
+            self.settings.settings.plugins.softwareupdate.octoprint_checkout_folder(self.config_checkoutFolder());
+            self.settings.settings.plugins.softwareupdate.octoprint_type(self.config_checkType());
+        };
+
         self.fromCheckResponse = function(data, ignoreSeen, showIfNothingNew) {
             var versions = [];
             _.each(data.information, function(value, key) {
@@ -415,6 +420,18 @@ $(function() {
             self.workingOutput.scrollTop(self.workingOutput[0].scrollHeight - self.workingOutput.height());
         };
 
+        self.onWizardTabChange = function(current, next) {
+            if (next && _.startsWith(next, "wizard_plugin_softwareupdate")) {
+                // switching to the plugin wizard tab
+                self._copyConfig();
+            } else if (current && _.startsWith(current, "wizard_plugin_softwareupdate")) {
+                // switching away from the plugin wizard tab
+                self._copyConfigBack();
+            }
+
+            return true;
+        };
+
         self.onStartup = function() {
             self.workingDialog = $("#settings_plugin_softwareupdate_workingdialog");
             self.workingOutput = $("#settings_plugin_softwareupdate_workingdialog_output");
@@ -616,6 +633,6 @@ $(function() {
     ADDITIONAL_VIEWMODELS.push([
         SoftwareUpdateViewModel,
         ["loginStateViewModel", "printerStateViewModel", "settingsViewModel"],
-        ["#settings_plugin_softwareupdate", "#softwareupdate_confirmation_dialog"]
+        ["#settings_plugin_softwareupdate", "#softwareupdate_confirmation_dialog", "#wizard_plugin_softwareupdate"]
     ]);
 });
