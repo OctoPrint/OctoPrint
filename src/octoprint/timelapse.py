@@ -511,12 +511,12 @@ class ZTimelapse(Timelapse):
 
 	def process_post_roll(self):
 		with self._capture_mutex:
-			filename = os.path.join(self._capture_dir, "tmp_%05d.jpg" % self._image_number)
+			filename = os.path.join(self._capture_dir, _capture_format.format(prefix=self._file_prefix) % self._image_number)
 			self._image_number += 1
 
 		if self._perform_capture(filename):
 			for _ in range(self._post_roll * self._fps):
-				newFile = os.path.join(self._capture_dir, "tmp_%05d.jpg" % self._image_number)
+				newFile = os.path.join(self._capture_dir, _capture_format.format(prefix=self._file_prefix) % self._image_number)
 				self._image_number += 1
 				shutil.copyfile(filename, newFile)
 
@@ -568,11 +568,11 @@ class TimedTimelapse(Timelapse):
 		self._timer.start()
 
 	def on_print_done(self, event, payload):
-		self._postroll_captures = self.post_roll * self.fps
+		self._postroll_captures = self._post_roll * self._fps
 		Timelapse.on_print_done(self, event, payload)
 
 	def calculate_post_roll(self):
-		return self.post_roll * self.fps * self.interval
+		return self._post_roll * self._fps * self._interval
 
 	def process_post_roll(self):
 		pass
