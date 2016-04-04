@@ -454,35 +454,44 @@ $(function() {
                     }
                     if(warn)
                     {
-                        var warning = "<p>" + gettext("Revise file ")+ data["name"] + "</p>";
+                        var warning = "<p>" + _.sprintf(gettext("Revise file %s"), data["name"]) + "</p>";
                         var info="";
-                        if(volumeInfo.origin=="lowerleft" && printingArea["maxX"]>volumeInfo.width)
+                        if(volumeInfo.origin=="lowerleft")
                         {
-                            info=info+"Profile's width: "+volumeInfo.width+"\n Object's width: "+  printingArea["maxX"]+"\n";
+		                if(printingArea["maxX"]>volumeInfo.width)
+		                {
+		                    info=info+_.sprintf(gettext("Profile's max. X: %s\n Object's max. X: %s\n"),volumeInfo.width,printingArea["maxX"]);
+		                }
+		                if(printingArea["maxY"]>volumeInfo.depth)
+		                {
+		                    info=info+_.sprintf(gettext("Profile's max. Y: %s\n Object's max. Y: %s\n"),volumeInfo.depth, printingArea["maxY"]);
+		                }
                         }
-                        if(volumeInfo.origin=="lowerleft" && printingArea["maxY"]>volumeInfo.depth)
+                        else
                         {
-                            info=info+"Profile's depth: "+volumeInfo.depth+"\n Object's depth: "+  printingArea["maxY"]+"\n";
-                        }
-                        if(volumeInfo.origin=="center" && printingArea["maxX"]>(volumeInfo.width/2))
-                        {
-                            info=info+"Profile's width (center origin): "+(volumeInfo.width/2)+"\n Object's width: "+  printingArea["maxX"]+"\n";
-                        }
-                        if(volumeInfo.origin=="center" && Math.abs(printingArea["minX"])>(volumeInfo.width/2))
-                        {
-                            info=info+"Profile's width (center origin): "+(volumeInfo.width/2)+"\n Object's width: "+  printingArea["minX"]+"\n";
-                        }
-                        if(volumeInfo.origin=="center" && printingArea["maxY"]>(volumeInfo.depth/2))
-                        {
-                            info=info+"Profile's depth (center origin): "+(volumeInfo.depth/2)+"\n Object's depth: "+  printingArea["maxY"]+"\n";
-                        }
-                        if(volumeInfo.origin=="center" && Math.abs(printingArea["minY"])>(volumeInfo.depth/2))
-                        {
-                            info=info+"Profile's depth (center origin): "+(volumeInfo.depth/2)+"\n Object's depth: "+  printingArea["minY"]+"\n";
+                            if(volumeInfo.origin=="center")
+                            {
+		                if(Math.abs(printingArea["minX"])>(volumeInfo.width/2))
+		                {
+		                    info=info+_.sprintf(gettext("Profile's min. X: %s\n Object's min. X: %s\n"),-(volumeInfo.width/2),printingArea["minX"]);
+		                }
+		                if(printingArea["maxX"]>(volumeInfo.width/2))
+		                {
+		                    info=info+_.sprintf(gettext("Profile's max. X: %s\n Object's max. X: %s\n"),(volumeInfo.width/2),printingArea["maxX"]);
+		                }
+		                if(Math.abs(printingArea["minY"])>(volumeInfo.depth/2))
+		                {
+		                    info=info+_.sprintf(gettext("Profile's min. Y: %s\n Object's min. Y: %s\n"),-(volumeInfo.depth/2),printingArea["minY"]);
+		                }
+		                if(printingArea["maxY"]>(volumeInfo.depth/2))
+		                {
+		                    info=info+_.sprintf(gettext("Profile's max. Y: %s\n Object's max. Y: %s)\n"),(volumeInfo.depth/2),printingArea["maxY"]);
+		                }
+                            }
                         }
                         if(printingArea["maxZ"]>volumeInfo.height)
                         {
-                            info=info+"Profile's height: "+volumeInfo.height+"\n Object's height: "+  printingArea["maxZ"]+"\n";
+                            info=info+_.sprintf(gettext("Profile's max. Z: %s\n Object's max. Z: %s"),volumeInfo.height,printingArea["maxZ"]);
                         }
                         warning += pnotifyAdditionalInfo("<pre>"+info+"</pre>");
                         new PNotify({
