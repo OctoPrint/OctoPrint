@@ -317,10 +317,16 @@ body.doodler_active {
   -ms-user-select: none;
   user-select: none;
   /* disable cut copy paste */
-  overflow: hidden;
+  overflow: visible;
+  display: block !important;
+   width: 100%;
   /* This chops off any overhanging divs */
 }
-
+.page-container
+{
+    height: 100%;
+	display: block;
+}
 /*  http://stackoverflow.com/questions/5348092/prevent-default-press-but-not-default-drag-in-ios-mobilesafari  */
 
 /*.btn3Doodler {
@@ -478,6 +484,15 @@ body.doodler_active {
   display: none;
   opacity: 0.7;
   filter: alpha(opacity=70);
+    background-image: url(plugin/bocusini_doodler/static/img/buttons/btnClose.png);
+    background-size: 99%;
+    background-repeat: no-repeat;
+    width: 29px;
+    height: 30px;
+    background-color: transparent;
+    border: none;
+    background-position-y: -2px;
+    border-radius: 25px;
 }
 
 #buttonGroupEdit {
@@ -630,8 +645,9 @@ body.doodler_active {
 #popupScan {
   width: 330px;
   height: 210px;
-  margin-left: -165px;
-  margin-top: -105px;
+  position: relative;
+  left: 231px;
+  margin-top: -109px;
 }
 
 #popupScan input[type="file"] {
@@ -639,8 +655,15 @@ body.doodler_active {
 }
 
 #popupScan #btnScanOk {
-  float: right;
-  margin: 15px 0 0 0;
+    float: right;
+    margin: 15px 0 0 0;
+    background-color: #CA1A11;
+    color: #fff;
+    font-size: 17px;
+    padding: 5px 13px;
+    border-radius: 5px;
+    box-shadow: 3px 3px rgba(0, 0, 0, 0.59);
+    border: 1px solid black;
 }
 
 #popupShape {
@@ -680,11 +703,12 @@ body.doodler_active {
   width: 100%;
 /*  max-width: 1024px;
   max-height: 768px;*/
+
   top: 0;
   bottom: 0;
   left: 0;
   right: 0;
-  /*overflow: hidden;*/
+ overflow: visible;
 /*  margin: 0 auto;
   -webkit-box-shadow: 0 0 0 2px #5e8c71, 0 0 8px 4px rgba(8, 8, 8, 0.25);
   box-shadow: 0 0 0 2px #5e8c71, 0 0 8px 4px rgba(8, 8, 8, 0.25);*/
@@ -697,9 +721,10 @@ body.doodler_active {
 .bgContainer {
   position: absolute;
   width: 100%;
-  height: 100%;
-  overflow: hidden;
-  z-index: -999;
+  height: 715px;
+  overflow: visible;
+-webkit-overflow-scrolling: touch; 
+ z-index: -999;
 }
 
 #bgTop,
@@ -733,7 +758,8 @@ body.doodler_active {
 #centerpanel {
   position: absolute;
   width: 100%;
-  height: 79.5vh;
+/*  height: 79.5vh;*/
+ height: 650px;
 }
 
 #logopanel {
@@ -834,6 +860,7 @@ body.doodler_active {
   pointer-events: none;
   max-width: 100%;
   max-height: 100%;
+  width: 100%;
   height: auto;
   margin-left: auto;
 }
@@ -1074,14 +1101,15 @@ body.doodler_active {
     margin: 2% 2%;
   }
 }
-
 @media only screen and (orientation: portrait) {
   #landscape {
-    display: none;
+    display: block;
+    overflow-x: auto;
+    overflow-y: auto;
   }
 
   #portrait {
-    display: block;
+    display: none;
   }
 
   #vertImage {
@@ -1093,4 +1121,5 @@ body.doodler_active {
     width: auto;
     /* for ie9 */
   }
+
 }

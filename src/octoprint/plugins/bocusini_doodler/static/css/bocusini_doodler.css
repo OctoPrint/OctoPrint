@@ -117,7 +117,15 @@
 
 .spacer {
 	width:100%;
-	height: 27vh;
+	/* height: 27vh;*/
+	margin-top: 20px;
+}
+#right_column
+{
+    float: right;
+    position: absolute;
+    margin-top: 20%;
+    margin-left: 743px;
 }
 
 .printer_monitor {
@@ -150,6 +158,7 @@
 	position: relative;
 	background-size: cover;
 	background-position: center;
+        border-radius: 7px 7px 7px 7px;
 }
 .gcode_thumb .title {
 	font-size: larger;
@@ -159,10 +168,11 @@
 	bottom:0;
 	width: 100%;
 	padding:.5em;
-	overflow: hidden;
+	/* overflow: hidden; */
 	text-wrap: none;
 	text-overflow: ellipsis;
 	box-sizing: border-box;
+	border-radius: 0px 0px 7px 7px;
 }
 
 .bocusini_gcode_files .entry {
@@ -172,7 +182,7 @@
 
 .bocusini_gcode_files .entry .additionalInfo {
 	height: 150px;
-	overflow: hidden;
+	// overflow: hidden;
 	padding:1em;
 }
 
@@ -199,8 +209,8 @@
 	border: 1px solid darkgray;
 	border-radius: 8px;
 	background-color: #fff;
-	padding: 1em;
-	margin-bottom: 1em;
+	padding: 6px 5px;
+//	margin-bottom: 1em;
 }
 
 #buttonGroupPrinterDirect {
@@ -221,11 +231,12 @@
 
 .heating_message {
 	color: red;
-	padding: .5em 0;
+	// padding: .5em 0;
 }
 
 .calibration_howto {
-  height: 79.5vh;
+ /* height: 79.5vh;*/
+height:650px;
 }
 
 .calibration_picture.step1{
@@ -259,11 +270,28 @@
 	.flip-container.flip .flipper {
 		transform: rotateY(180deg);
 	}
-	
-/*.flip-container:hover .flipper,*/
+
+/* .flip-container:hover .flipper, */
 .flip-container.hover .flipper,
 .flip-container.flip .flipper {
 	transform: rotateY(180deg);
+}
+
+.flip-container.flip  .front {
+
+visibility: hidden;
+}
+.flip-container.flip  .back {
+    transform: rotateY(180deg);
+visibility: visible;
+}
+.flip-container .back {
+
+visibility: hidden;
+}
+.flip-container front {
+
+visibility: visible;
 }
 
 .flip-container, .front, .back {
@@ -275,10 +303,11 @@
 .flip-container .front, .back {
 	border: 1px solid darkgrey;
 	border-radius: 8px;
-	overflow: hidden;
+	// overflow: hidden;
 }
 
 /* flip speed goes here */
+
 .flipper {
 	transition: 0.4s;
 	transform-style: preserve-3d;
@@ -287,8 +316,9 @@
 }
 
 /* hide back of pane during swap */
+
 .front, .back {
-	backface-visibility: hidden;
+	/* backface-visibility: hidden; */
 
 	position: absolute;
 	top: 0;
@@ -302,10 +332,21 @@
 	transform: rotateY(0deg);
 }
 
-/* back, initially hidden pane */
+back, initially hidden pane 
 .back {
-	transform: rotateY(180deg);
+	 transform: rotateY(180deg); 
 }
+@-webkit-keyframes spin {
+  0% { transform: rotateY(0) ;}
+  100% { transform: rotateY(360deg) ;}
+}
+@keyframes spin {
+  0% { transform: rotateY(0) ;}
+  100% { transform: rotateY(360deg) ;}
+}
+
+
+
 
 @-webkit-keyframes pulse { 
     0% { -webkit-transform: scale(1); } 
@@ -361,3 +402,113 @@
     -webkit-animation-iteration-count:infinite; 
 	display: inline-block;
 }
+
+
+
+.alertbox{
+    width: 344px;
+    margin-left: -216px !important;
+    position: absolute;
+    padding: 0px;
+    margin: 0px;
+    border: solid 2px #56A94B;
+    border-radius: 10px;
+    background-color: #FCFCFC;
+    // opacity: 0.9;
+}
+.alerttitle{
+    visibility: hidden;
+    background-color: #FCFCFC;
+    color: #FFFFFF;
+    font-size: 12px;
+    width: 344px;
+    height: 20px;
+    cursor: pointer;
+    text-align: center;
+    margin: 0px;
+    padding: 0px;
+    opacity: 0.9;
+    border-radius: 10px 10px 0px 0px;
+}
+.alerttxt{
+    background-color: #FCFCFC;
+    margin: 0px;
+    font-size: 21px;
+    text-align: center;
+    padding-bottom: 10px !important;
+    padding-top: 10px !important;
+    padding: 0px;
+    width: 344px;
+    color: #56A94B;
+}
+.alertfoot{
+    background-color: #FCFCFC;
+    text-align: center;
+    width: 344px;
+    margin: 0px;
+    padding: 0px;
+    opacity: 0.9;
+    padding-bottom: 22px !important;
+    border-radius: 0px 0px 10px 10px;
+}
+.alertbut{
+    margin-top: 2px;
+    width: 79px !important;
+    height: 33px;
+    cursor: pointer;
+    color: white;
+    background-color: #58A94B;
+}
+
+
+
+
+
+
+
+
+    .onoffswitch {
+        position: relative; width: 85px;
+        -webkit-user-select:none; -moz-user-select:none; -ms-user-select: none;
+    }
+    .onoffswitch-checkbox {
+        display: none;
+    }
+    .onoffswitch-label {
+        display: block; overflow: hidden; cursor: pointer;
+        border: 2px solid #575757; border-radius: 20px;
+    }
+    .onoffswitch-inner {
+        display: block; width: 200%; margin-left: -100%;
+        transition: margin 0.3s ease-in 0s;
+    }
+    .onoffswitch-inner:before, .onoffswitch-inner:after {
+        display: block; float: left; width: 50%; height: 32px; padding: 0; line-height: 32px;
+        font-size: 17px; color: white; font-family: Trebuchet, Arial, sans-serif; font-weight: bold;
+        box-sizing: border-box;
+    }
+    .onoffswitch-inner:before {
+        content: "ON";
+        padding-left: 10px;
+        background-color: #E00B0B; color: #FFFFFF;
+    }
+    .onoffswitch-inner:after {
+        content: "OFF";
+        padding-right: 10px;
+        background-color: #4874F0; color: #FFFFFF;
+        text-align: right;
+    }
+    .onoffswitch-switch {
+        display: block; width: 21px; margin: 5.5px;
+        background: #FAFAFA;
+        position: absolute; top: 0; bottom: 0;
+        right: 49px;
+        border: 2px solid #575757; border-radius: 20px;
+        transition: all 0.3s ease-in 0s; 
+    }
+    .onoffswitch-checkbox:checked + .onoffswitch-label .onoffswitch-inner {
+        margin-left: 0;
+    }
+    .onoffswitch-checkbox:checked + .onoffswitch-label .onoffswitch-switch {
+        right: 0px; 
+    }
