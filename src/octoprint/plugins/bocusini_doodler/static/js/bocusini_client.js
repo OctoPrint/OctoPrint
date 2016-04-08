@@ -1,13 +1,4 @@
 /*
-
-
-
-
-main.js
-
-
-
-
  * This file is part of the Doodle3D project (http://doodle3d.com).
  *
  * Copyright (c) 2013, Doodle3D
@@ -15,194 +6,1155 @@ main.js
  * See file LICENSE.txt or visit http://www.gnu.org/licenses/gpl.html for full license details.
  */
 
-var debugMode = false;              // debug mode
-var sendPrintCommands = true;       // if Doodle3d should send print commands to the 3d printer
-var communicateWithWifibox = true;  // if Doodle3d should try interfacing with the wifibox (in case one is not connected)
-var wifiboxIsRemote = false;        // when you want to run the client on a computer and have it remotely connect to the wifibox
-var autoUpdate = true; 							// auto retrieve updates about temperature and progress from printer
-var autoLoadSketchId;
-
-////var printer =  new Printer();
-////var progressbar = new Progressbar();
-////var thermometer = new Thermometer();
-////var settingsWindow = new SettingsWindow();
-////var message = new Message();
-
-var firstTimeSettingsLoaded = true;
-
-var wifiboxURL; // Using the uhttpd lua handler as default, because of better performance
-var wifiboxCGIBinURL; // CGI-bin, for some network stuff, where it needs to restart the webserver for example
-
-var $drawAreaContainer, $doodleCanvas, doodleCanvas, doodleCanvasContext, $previewContainer;
-
-var showhideInterval;
-var showOrHide = false;
-var limitedFeatures = false;
-
-var clientInfo = {};
-
-var POPUP_SHOW_DURATION = 175;
-var BUTTON_GROUP_SHOW_DURATION = 80;
-
-$(function() {
-  console.log("ready");
-  
-  /*if (getURLParameter("d") != "null") debugMode = (getURLParameter("d") == "1");
-  if (getURLParameter("p") != "null") sendPrintCommands = (getURLParameter("p") == "1");
-  if (getURLParameter("c") != "null") communicateWithWifibox = (getURLParameter("c") == "1");
-  if (getURLParameter("r") != "null") wifiboxIsRemote = (getURLParameter("r") == "1");
-  if (getURLParameter("u") != "null") autoUpdate = (getURLParameter("u") == "1");
-  if (getURLParameter("l") != "null") limitedFeatures = (getURLParameter("l") == "1");
-  if (getURLParameter("load") != "null") autoLoadSketchId = parseInt(getURLParameter("load"));
-
-  var hostname;
-  if (wifiboxIsRemote) hostname = 'http://10.10.0.1';
-  if (getURLParameter("wifiboxURL") != "null") hostname = getURLParameter("wifiboxURL");
-  
-  if (location.host=='doodle3d') hostname = 'http://wifibox';
-  if (!hostname) hostname = "http://" + window.location.host;
-
-  //wifiboxURL = hostname+"/myapi";
-  wifiboxURL = hostname+"/";
-  wifiboxCGIBinURL = hostname+"/cgi-bin/myapi";
-
-
-  if (!communicateWithWifibox) {
-    sendPrintCommands = false; // 'communicateWithWifibox = false' implies this
-  }
-  console.log("debugMode: " + debugMode);
-  console.log("sendPrintCommands: " + sendPrintCommands);
-  console.log("communicateWithWifibox: " + communicateWithWifibox);
-  console.log("wifiboxIsRemote: " + wifiboxIsRemote);
-  console.log("wifibox URL: " + wifiboxURL);
-
-  // rudimentary client info
-  clientInfo.isMobileDevice = isMobileDevice();
-  clientInfo.isSmartphone = isSmartphone();
-*/
-  initDoodleDrawing();
-  initPreviewRendering();
-  initLayouting();
-  // initSidebars();
-  initButtonBehavior();
-  ////initKeyboard();
-  // initVerticalShapes();
-  ////initWordArt();
-  ////initShapeDialog();
-  initScanDialog();
-
-  disableDragging();
-  
-/*  if (!clientInfo.isSmartphone) initHelp();
-
-	thermometer.init($("#thermometerCanvas"), $("#thermometerContainer"));
-  progressbar.init($("#progressbarCanvas"), $("#progressbarCanvasContainer"));
-
-  message.init($("#message"));
-
-  printer.init();
-	$(document).on(Printer.UPDATE,update);
-
-	settingsWindow.init(wifiboxURL,wifiboxCGIBinURL);
-	$(document).on(SettingsWindow.SETTINGS_LOADED, settingsLoaded);
+function FormPanel() {
+	var className = 'FormPanel';
 	
-  if(debugMode) {
-    console.log("debug mode is true");
-    $("body").css("overflow", "auto");
-    $("#debug_textArea").css("display", "block");
-    //$("#preview_tmp").css("display", "block");
-    $("#debug_display").css("display", "block");
-  }
-
-  if (limitedFeatures) {
-    initLimitedInterface();
-  }
-*/  
-  
-});
-
-function disableDragging() {
-  $(document).bind("dragstart", function(event) {
-    console.log("dragstart");
-    event.preventDefault();
-  });
-}
-
-/*function showOrHideThermo() {
-  console.log("f:showOrHideThermo()");
-  if (showOrHide) {
-    thermometer.hide();
-    progressbar.hide();
-  } else {
-    thermometer.show();
-    progressbar.show();
-
-  }
-  showOrHide = !showOrHide;
-}
-
-function settingsLoaded() {
-	console.log("settingsLoaded");
+	var _configAPI = new ConfigAPI();
+	var _retryDelay = 2000;
+	var _retrySaveSettingsDelay;
+	var _retryLoadAllSettingsDelay;
+	var _retryLoadSettingsDelay;
+	var _retryResetSettingsDelay;
 	
-	if(firstTimeSettingsLoaded) {
-		console.log("  preheat: ",settings["printer.heatup.enabled"]);
-		console.log("  state: ",state);
-		if(state == Printer.IDLE_STATE && settings["printer.heatup.enabled"]) {
-			printer.preheat();
-		}
-		console.log("doodle3d.tour.enabled: ",settings["doodle3d.tour.enabled"]);
-		if(settings["doodle3d.tour.enabled"] && !clientInfo.isSmartphone) {
-			console.log("show tour");
-			initHelp();
-		}
-		firstTimeSettingsLoaded = false;
-	}
+	// ui elements
+	var _element;
 	
+	var _self = this;
+	
+	this.init = function(wifiboxURL,wifiboxCGIBinURL,panelElement) {
+		
+		// make _self the scope of which init was called?
+		// needed to have the subclass instance access the same counter 
+		//_self = this; 
+		//console.log("  _element: ",_element);
+		_element = panelElement;
+		//console.log("  >_element: ",_element);
+		_configAPI.init(wifiboxURL,wifiboxCGIBinURL);
+	};
+	
+	//this.readForm = function(form) {
+	this.readForm = function(form) {
+		//console.log("FormPanel:readForm");
+		if(!form) form = _element; // if no form specified, read whole panel form
+		//console.log("FormPanel");
+		var settings = {};
+		// Read all selects
+		var selects = form.find("select");
+		selects.each( function(index,element) {
+			var elem = $(element);
+			//var fieldName = elem.attr('name');
+			if(elem.attr('name') != "") {
+				settings[elem.attr('name')] = elem.val();
+			}
+		});
+		// Read all inputs
+		var inputs = form.find("input");
+		inputs.each( function(index,element) {
+			var elem = $(element);
+			if(elem.attr('name') != "") {
+				switch(elem.attr("type")) {
+				case "text":
+				case "number":
+					settings[elem.attr('name')] = elem.val();
+					break;
+				case "checkbox":
+					settings[elem.attr('name')] = elem.prop('checked');
+					break;
+				}
+			}
+		});
+		// Read all textareas
+		var textareas = form.find("textarea");
+		textareas.each( function(index,element) {
+			var elem = $(element);
+			settings[elem.attr('name')] = elem.val();
+		});
+		return settings;
+	};
+	
+	this.fillForm = function(settings,form) { 
+		//console.log("FormPanel:fillForm");
+		if(!form) form = _element; // if no form specified, fill whole panel form
+		//console.log("  form: ",form);
+		
+		clearValidationErrors();
+		
+		//fill form with loaded settings
+		var selects = form.find("select");
+		selects.each( function(index,element) {
+			var elem = $(element);
+			elem.val(settings[elem.attr('name')]);
+		});
+		var inputs = form.find("input");
+		inputs.each( function(index,element) {
+			var elem = $(element);
+			//console.log("printer setting input: ",index,element.attr("type"),element.attr('name')); //,element);
+			switch(elem.attr("type")) {
+			case "text":
+			case "number":
+				elem.val(settings[elem.attr('name')]);
+				break;
+			case "checkbox":
+				elem.prop('checked', settings[elem.attr('name')]);
+				break;
+			}
+		});
+		var textareas = form.find("textarea");
+		textareas.each( function(index,element) {
+			var elem = $(element);
+			var value = settings[elem.attr('name')];
+			// console.log(className,'fillForm textarea set value',value);
+			elem.val(value);
+		});
+	};
+	
+	this.saveSettings = function(newSettings,complete) {
+		console.log("  newSettings: ",newSettings);
+		_configAPI.save(newSettings,function(data) {
+			var validation = data.validation;
+			//console.log("  validation: ",validation);
+			clearValidationErrors();
+			var validated = true;
+			$.each(validation, function(key, val) {
+				if (val != "ok") {
+					console.log("ERROR: setting '" + key + "' not successfully set. Message: " + val);
+					displayValidationError(key,val);
+					validated = false;
+				}
+			});
+			if(complete) complete(validated, data);
+		}, function() {
+			console.log("Settings:saveSettings: failed");
+			clearTimeout(_retrySaveSettingsDelay);
+			_retrySaveSettingsDelay = setTimeout(function() { _self.saveSettings(newSettings,complete); },_retryDelay); // retry after delay
+		});
+	};
+	function displayValidationError(key,msg) {
+		var formElement = _element.find("[name|='"+key+"']");
+		formElement.addClass("error");
+		var errorMsg = "<p class='errorMsg'>"+msg+"</p>";
+		formElement.after(errorMsg);
+	};
+	function clearValidationErrors() {
+		_element.find(".errorMsg").remove();
+		_element.find(".error").removeClass("error");
+	};
+	
+	this.loadAllSettings = function(complete) {
+		_configAPI.loadAll(complete,function() {
+			clearTimeout(_retryLoadAllSettingsDelay);
+			_retryLoadAllSettingsDelay = setTimeout(function() { _self.loadAllSettings(complete); },_retryDelay); // retry after delay
+		});
+	};
+	this.loadSettings = function(targetSettings,complete) {
+		// console.log(className,'loadSettings',targetSettings);
+		_configAPI.load(targetSettings,complete,function() {
+			clearTimeout(_retryLoadSettingsDelay);
+			_retryLoadSettingsDelay = setTimeout(function() { _self.loadSettings(targetSettings,complete); },_retryDelay); // retry after delay
+		});
+	};
+	
+	this.resetAllSettings = function(complete) {
+		_configAPI.resetAll(complete,function() { 
+			clearTimeout(_retryResetSettingsDelay);
+			_retryResetSettingsDelay = setTimeout(function() { _self.resetAllSettings(complete); },_retryDelay); // retry after delay
+		});
+	};
 }
-
-function setDebugText(text) {
-	$("#debug_display").text(text);
-  
-}*/
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /*
-
-
-
-
-AddScanDialog.js
-
-
-
-
  * This file is part of the Doodle3D project (http://doodle3d.com).
  *
  * Copyright (c) 2013, Doodle3D
  * This software is licensed under the terms of the GNU GPL v2 or later.
  * See file LICENSE.txt or visit http://www.gnu.org/licenses/gpl.html for full license details.
  */
+
+function NetworkPanel() {
+	var className = 'NetworkPanel';
+	var NOT_CONNECTED = "not connected"; // used as first item in networks list
+	
+	// network mode
+	NetworkPanel.NETWORK_MODE = {
+		NEITHER: "neither",
+		CLIENT: "clientMode",
+		ACCESS_POINT: "accessPointMode"
+	};
+	var _networkMode = NetworkPanel.NETWORK_MODE.NEITHER;
+	var _networkModeChangedHandler;
+	
+	var _form = new FormPanel();
+	var _api = new NetworkAPI();
+	var _networks = {};
+	var _currentNetwork;					// the ssid of the network the box is on
+	var _selectedNetwork;         // the ssid of the selected network in the client mode settings
+	var _substituted_ssid;				// the substituted ssid (displayed during creation)
+	var _currentLocalIP = "";
+	var _currentAP;
+	var _currentNetworkStatus;
+	
+	var _retryDelay = 2000;
+	//var _retryRefreshNetworksDelay;
+	var _retryRetrieveStatusDelayTime = 1000;
+	var _retryRetrieveStatusDelay;
+	// after switching wifi network or creating a access point we delay the status retrieval
+	// because the webserver needs time to switch
+	var _retrieveNetworkStatusDelayTime = 1000;
+	var _retrieveNetworkStatusDelay;
+	
+	// ui elements
+	var _element;
+	var _networkSelector;
+	var _apFieldSet;
+	var _clientFieldSet;
+	var _apRadioButton;
+	var _clientRadioButton;
+	var _btnRefresh
+	var _btnConnect;
+	var _btnCreate;
+	var _passwordField;
+	var _passwordLabel;
+	var _clientStateDisplay;
+	var _apModeStateDisplay;
+	
+	var _self = this;
+	
+	this.init = function(wifiboxURL,wifiboxCGIBinURL,panelElement) {
+		//console.log("NetworkPanel:init");
+		
+		_form.init(wifiboxURL,wifiboxCGIBinURL,panelElement)
+		
+		_api.init(wifiboxURL,wifiboxCGIBinURL);
+		
+		_element = panelElement;
+		_apRadioButton			= _element.find("#ap");
+		_clientRadioButton	= _element.find("#client");
+		_btnRefresh		 			= _element.find("#refreshNetworks");
+		_btnConnect 				= _element.find("#connectToNetwork");
+		_btnCreate 					= _element.find("#createAP");
+		_networkSelector 		= _element.find("#network");
+		_apFieldSet 				= _element.find("#apSettings");
+		_clientFieldSet 		= _element.find("#clientSettings");
+		_passwordField 			= _element.find("#password");
+		_passwordLabel 			= _element.find("#passwordLabel");
+		_clientStateDisplay = _element.find("#clientModeState");
+		_apModeStateDisplay = _element.find("#apModeState");
+		
+		_apRadioButton.parent().on('touchstart mousedown',showAPSettings);
+		_clientRadioButton.parent().on('touchstart mousedown',showClientSettings);
+		_btnRefresh.on('touchstart mousedown',onRefreshClick);
+		_btnConnect.on('touchstart mousedown',_self.connectToNetwork);
+		_btnCreate.on('touchstart mousedown',_self.createAP);
+		_networkSelector.change(networkSelectorChanged);
+	}
+	/*
+	 * Handlers
+	 */
+	function showAPSettings() {
+		_apFieldSet.show();
+		_clientFieldSet.hide();
+	};
+	function showClientSettings() {
+		_clientFieldSet.show();
+		_apFieldSet.hide();
+	};
+	function onRefreshClick() {
+		_btnRefresh.attr("disabled", true);
+		_self.refreshNetworks(function() {
+			_btnRefresh.removeAttr("disabled");
+		})
+	}
+	function networkSelectorChanged(e) {
+		var selectedOption = $(this).find("option:selected");
+		_self.selectNetwork(selectedOption.val());
+	};
+
+	this.update = function() {
+		//console.log("NetworkPanel:update");
+		_self.refreshNetworks();
+		_self.retrieveNetworkStatus(false);
+	}
+	this.refreshNetworks = function(completeHandler) {
+		if (limitedFeatures) {
+			console.log(className,'ignoring refreshNetworks due to limitedFeatures mode');
+			return; //don't check printer status when in limitedFeatures mode
+		}
+		
+		//console.log("NetworkPanel:refreshNetworks");
+		_api.scan(function(data) { // completed
+			//console.log("NetworkPanel:scanned");
+			_networks = {};
+			var foundCurrentNetwork = false;
+			// fill network selector
+			_networkSelector.empty();
+			_networkSelector.append(
+					$("<option></option>").val(NOT_CONNECTED).html(NOT_CONNECTED)
+			);
+			$.each(data.networks, function(index,element) {
+				if(element.ssid == _currentNetwork) {
+					foundCurrentNetwork = true;
+				}
+				_networkSelector.append(
+						$("<option></option>").val(element.ssid).html(element.ssid)
+				);
+				_networks[element.ssid] = element;
+			});
+			if(foundCurrentNetwork) {
+				_networkSelector.val(_currentNetwork);
+				_self.selectNetwork(_currentNetwork);
+			}
+			if(completeHandler) completeHandler();
+		}/*,
+		function() { // failed
+			clearTimeout(_retryRefreshNetworksDelay);
+			_retryRetrieveStatusDelay = setTimeout(function() { _self.refreshNetworks(completeHandler); },_retryDelay); // retry after delay
+		}*/);
+	};
+	
+	this.retrieveNetworkStatus = function(connecting) {
+
+		if (limitedFeatures) {
+			console.log(className,'ignoring retrieveNetworkStatus due to limitedFeatures mode');
+			return; //don't check network status when in limitedFeatures mode
+		}
+
+		//console.log("NetworkPanel:retrieveNetworkStatus");
+
+		_api.status(function(data) {
+			if(data.status === "") {
+				data.status = NetworkAPI.STATUS.CREATED.toString();
+			}
+			if(typeof data.status === 'string') {
+				data.status = parseInt(data.status);
+			}
+			//console.log("NetworkPanel:retrievedStatus status: ",data.status,data.statusMessage);
+			
+			// if status changed
+			if(data.status != _currentNetworkStatus) {
+				// Determine which network mode ui to show
+				switch(data.status) {
+					case NetworkAPI.STATUS.NOT_CONNECTED:
+						setNetworkMode(NetworkPanel.NETWORK_MODE.NEITHER);
+						break;
+					case NetworkAPI.STATUS.CONNECTING_FAILED:
+					case NetworkAPI.STATUS.CONNECTING:
+					case NetworkAPI.STATUS.CONNECTED:
+						setNetworkMode(NetworkPanel.NETWORK_MODE.CLIENT);
+						break;
+					case NetworkAPI.STATUS.CREATING:
+					case NetworkAPI.STATUS.CREATED:
+						setNetworkMode(NetworkPanel.NETWORK_MODE.ACCESS_POINT);
+						break;
+				}
+				// update info
+				switch(data.status) {
+					case NetworkAPI.STATUS.CONNECTED:
+						_currentNetwork = data.ssid;
+						_currentLocalIP = data.localip;
+						_self.selectNetwork(data.ssid);
+						break;
+					case NetworkAPI.STATUS.CONNECTING_FAILED:
+					case NetworkAPI.STATUS.CONNECTING:
+						_currentLocalIP = "";
+						break;
+					case NetworkAPI.STATUS.CREATING:
+					case NetworkAPI.STATUS.CREATED:					
+						_currentNetwork = undefined;
+						_self.selectNetwork(NOT_CONNECTED);
+						if(data.ssid && data.status == NetworkAPI.STATUS.CREATED) {
+							_currentAP = data.ssid;
+						}
+						break;
+				}
+				// update ui 
+				updateClientModeUI(data.status,data.statusMessage);
+				updateAPModeUI(data.status,"");
+			}
+
+			// Keep checking for updates?
+			if(connecting) {
+				switch(data.status) {
+				case NetworkAPI.STATUS.CONNECTING:
+				case NetworkAPI.STATUS.CREATING:
+					clearTimeout(_retryRetrieveStatusDelay);
+				  _retryRetrieveStatusDelay = setTimeout(function() { _self.retrieveNetworkStatus(connecting); },_retryRetrieveStatusDelayTime); // retry after delay
+					break;
+				}
+			}
+			_currentNetworkStatus = data.status;
+		}, function() {
+			//console.log("NetworkPanel:retrieveStatus failed");
+			clearTimeout(_retryRetrieveStatusDelay);
+			_retryRetrieveStatusDelay = setTimeout(function() { _self.retrieveNetworkStatus(connecting); }, _retryRetrieveStatusDelayTime); // retry after delay
+		});
+	};
+	function setNetworkMode(mode) {
+		//console.log("NetworkPanel:setNetworkMode: ",_networkMode,">",mode);
+		if(mode == _networkMode) return;
+		switch(mode) {
+			case NetworkPanel.NETWORK_MODE.NEITHER:
+				_apFieldSet.show();
+				_clientFieldSet.show();
+				break;
+			case NetworkPanel.NETWORK_MODE.CLIENT:
+				_clientRadioButton.prop('checked',true);
+				_apFieldSet.hide();
+				_clientFieldSet.show();
+				break;
+			case NetworkPanel.NETWORK_MODE.ACCESS_POINT:
+				_apRadioButton.prop('checked',true);
+				_apFieldSet.show();
+				_clientFieldSet.hide();
+				break;
+		}
+		_networkMode = mode;
+		if(_networkModeChangedHandler) _networkModeChangedHandler(_networkMode);
+	}
+	
+	this.selectNetwork = function(ssid) {
+		//console.log("NetworkPanel:selectNetwork: ",ssid);
+		if(ssid == "") return;
+		_selectedNetwork = ssid;
+
+		var network = _networks[ssid];
+		if(network === undefined || network.encryption == "none") {
+			_passwordLabel.hide();
+			_passwordField.hide();
+		} else {
+			_passwordLabel.show();
+			_passwordField.show();
+		}
+		_passwordField.val("");
+	};
+	
+	function updateClientModeUI(state,statusMessage) {
+		//console.log("NetworkPanel:updateClientModeUI ",state,statusMessage);
+		var msg = "";
+		switch(state) {
+			case NetworkAPI.STATUS.NOT_CONNECTED:
+			case NetworkAPI.STATUS.CREATING:
+			case NetworkAPI.STATUS.CREATED:
+				_btnConnect.removeAttr("disabled");
+				msg = "Not connected";
+				_networkSelector.val(NOT_CONNECTED);
+				break;
+			case NetworkAPI.STATUS.CONNECTED:
+				_btnConnect.removeAttr("disabled");
+				msg = "Connected to: <b>"+_currentNetwork+"</b>.";
+				if(_currentLocalIP != undefined && _currentLocalIP != "") {
+					var a = "<a href='http://"+_currentLocalIP+"' target='_black'>"+_currentLocalIP+"</a>";
+					msg += " (IP: "+a+")";
+				}
+				_networkSelector.val(_currentNetwork);
+				break;
+			case NetworkAPI.STATUS.CONNECTING:
+				_btnConnect.attr("disabled", true);
+				msg = "Connecting... Reconnect by connecting your device to <b>"+_selectedNetwork+"</b> and going to <a href='http://connect.doodle3d.com'>connect.doodle3d.com</a>";
+				break;
+			case NetworkAPI.STATUS.CONNECTING_FAILED:
+				_btnConnect.removeAttr("disabled");
+				msg = statusMessage;
+				break;
+		}
+		//console.log("  client display msg: ",msg);
+		_clientStateDisplay.html(msg);
+	};
+	function updateAPModeUI(state,statusMessage) {
+		var msg = "";
+		switch(state) {
+			case NetworkAPI.STATUS.CONNECTING_FAILED:
+			case NetworkAPI.STATUS.NOT_CONNECTED:
+			case NetworkAPI.STATUS.CONNECTING:
+			case NetworkAPI.STATUS.CONNECTED:
+				_btnCreate.removeAttr("disabled");
+				msg = "Not currently a access point";
+				break;
+			case NetworkAPI.STATUS.CREATED:
+				_btnCreate.removeAttr("disabled");
+				msg = "Is access point: <b>"+_currentAP+"</b>";
+				break;
+			case NetworkAPI.STATUS.CREATING:
+				_btnCreate.attr("disabled", true);
+				msg = "Creating access point... Reconnect by connecting your device to <b>"+_substituted_ssid+"</b> and going to <a href='http://draw.doodle3d.com'>draw.doodle3d.com</a>";
+				break;
+		}
+		//console.log("  ap display msg: ",msg);
+		_apModeStateDisplay.html(msg);
+	};
+
+	this.connectToNetwork = function() {
+		//console.log("NetworkPanel:connectToNetwork");
+		if(_selectedNetwork == undefined) return;
+		// save network related settings and on complete, connect to network
+		_form.saveSettings(_form.readForm(),function(validated, data) {
+			if(!validated) return;
+			updateClientModeUI(NetworkAPI.STATUS.CONNECTING,"");
+			_api.associate(_selectedNetwork,_passwordField.val(),true);
+			
+			// after switching wifi network or creating a access point we delay the status retrieval
+			// because the webserver needs time to switch it's status
+			clearTimeout(_retrieveNetworkStatusDelay);
+			_retrieveNetworkStatusDelay = setTimeout(function() { _self.retrieveNetworkStatus(true); }, _retrieveNetworkStatusDelayTime);
+		});
+	};
+
+	this.createAP = function() {
+		//console.log("createAP");
+		// save network related settings and on complete, create access point
+		_form.saveSettings(_form.readForm(),function(validated, data) {
+			if(!validated) return;
+			_substituted_ssid = data.substituted_ssid;
+			updateAPModeUI(NetworkAPI.STATUS.CREATING,""); 
+			_api.openAP();
+
+			// after switching wifi network or creating a access point we delay the status retrieval
+			// because the webserver needs time to switch it's status
+			clearTimeout(_retrieveNetworkStatusDelay);
+			_retrieveNetworkStatusDelay = setTimeout(function() { _self.retrieveNetworkStatus(true); }, _retrieveNetworkStatusDelayTime);
+		});
+	};
+	
+	this.setNetworkModeChangedHandler = function(handler) {
+		_networkModeChangedHandler = handler;
+	}
+}
+
+/*
+ * This file is part of the Doodle3D project (http://doodle3d.com).
+ *
+ * Copyright (c) 2013, Doodle3D
+ * This software is licensed under the terms of the GNU GPL v2 or later.
+ * See file LICENSE.txt or visit http://www.gnu.org/licenses/gpl.html for full license details.
+ */
+
+function PrinterPanel() {
+	
+	this.printerType;
+	var _api = new PrinterAPI();
+	var _form = new FormPanel();
+	
+	// ui elements
+	var _element;
+	var _printerSelector;
+	var _printerSettings;
+	
+	var _self = this;
+	
+	this.init = function(wifiboxURL,wifiboxCGIBinURL,panelElement) {
+		
+		_form.init(wifiboxURL,wifiboxCGIBinURL,panelElement)
+		_api.init(wifiboxURL,wifiboxCGIBinURL);
+		_element = panelElement;
+		_printerSelector 	= _element.find("#printerType");
+		_printerSelector.change(_self.printerSelectorChanged);
+		
+		// we use readForm to get all the settings we need to 
+		// reload after changing printer type 
+		_printerSettings = _form.readForm();
+		
+//		var gcodePanel = _element.find("#gcodePanel");
+//		gcodePanel.coolfieldset({collapsed:true});
+	}
+	this.load = function(completeHandler) {
+		
+		_api.listAll(function(data) {
+			$.each(data.printers, function(key, value) {
+				// console.log(key,value);
+				$('#printerType').append($('<option>').text(value).attr('value', key));
+			});
+			completeHandler();
+		});
+	}
+	this.printerSelectorChanged = function(e) {
+		_self.printerType = _printerSelector.find("option:selected").val();
+		var settings = {}; 
+		settings[_printerSelector.attr("name")] = _self.printerType;
+		
+		_form.saveSettings(settings,function(validated) {
+			if(!validated) return;
+			_form.loadSettings(_printerSettings,function(settings) {
+				_form.fillForm(settings);
+			});
+		});
+	}
+}
+
+/*
+ * This file is part of the Doodle3D project (http://doodle3d.com).
+ *
+ * Copyright (c) 2013, Doodle3D
+ * This software is licensed under the terms of the GNU GPL v2 or later.
+ * See file LICENSE.txt or visit http://www.gnu.org/licenses/gpl.html for full license details.
+ */
+
+//these settings are defined in the firmware (conf_defaults.lua) and will be initialized in loadSettings()
+//var settings = {};
+var settingsPopup;
+//wrapper to prevent scoping issues in showSettings()
+function openSettingsWindow() {
+	settingsWindow.loadSettings(function() { // reload settings
+		settingsPopup.open();
+	});
+}
+
+function SettingsWindow() {
+	
+	var _window;
+	var _btnOK;
+	
+	var _wifiboxURL;
+	var _restoredStateHideDelayTime = 3000;
+	var _restoredStateHideDelay; // setTimout instance
+
+	// Events
+	SettingsWindow.SETTINGS_LOADED 		= "settingsLoaded";
+	
+	var _form = new FormPanel();
+	var _updatePanel = new UpdatePanel();
+	var _printerPanel = new PrinterPanel();
+	var _networkPanel = new NetworkPanel();
+	var _networkAPI = new NetworkAPI();
+	
+	var _restoreStateField
+	
+	var self = this;
+
+	this.init = function(wifiboxURL,wifiboxCGIBinURL) {
+		
+		_wifiboxURL = wifiboxURL;
+
+		_window = $("#popupSettings");
+		_btnOK = _window.find(".btnOK");
+		settingsPopup = new Popup($("#popupSettings"), $("#popupMask"));
+		settingsPopup.setEnterEnabled(false);
+		settingsPopup.setAutoCloseEnabled(false);
+		
+		_btnOK.on('touchstart mousedown',settingsPopup.commit);
+		$("#popupSettings").bind("onPopupCancel", function() { settingsPopup.close(); } );
+		$("#popupSettings").bind("onPopupCommit", self.submitwindow);
+		
+		_networkAPI.init(wifiboxURL,wifiboxCGIBinURL);
+		
+		// Load external settings.html into SettingsWindow
+		_window.find("#settingsContainer").load("settings.html", function() {
+			console.log("Settings:finished loading settings.html");
+
+			var formElement = _window.find("form");
+			formElement.submit(function (e) { self.submitwindow(e); });
+			
+			_form.init(wifiboxURL,wifiboxCGIBinURL,formElement);
+			
+			// printer panel
+			var printerPanelElement = formElement.find("#printerPanel");
+			_printerPanel.init(wifiboxURL,wifiboxCGIBinURL,printerPanelElement);
+			
+			// Load printer types list 
+			// First, because after the settings are loaded the printer type need to be selected 
+			_printerPanel.load(function() {
+				
+				_restoreStateField	= formElement.find("#restoreState");
+				self.btnRestoreSettings	= formElement.find("#restoreSettings");
+				self.btnRestoreSettings.on('touchstart mousedown',self.resetSettings);
+
+				// network panel
+				var $networkPanelElement = formElement.find("#networkPanel");
+				_networkPanel.init(wifiboxURL,wifiboxCGIBinURL,$networkPanelElement);
+				
+				
+				// update panel
+				var updatePanelElement = formElement.find("#updatePanel");
+				_updatePanel.init(wifiboxURL,updatePanelElement);
+				_networkPanel.setNetworkModeChangedHandler(function(networkMode) {
+					var inAccessPointMode = (networkMode == NetworkPanel.NETWORK_MODE.ACCESS_POINT);
+					_updatePanel.setInAccessPointMode(inAccessPointMode);
+				});
+				
+				self.loadSettings();
+				
+			});
+		}); //this.window.find
+	}; //this.init
+	
+	this.openSettings = function() {
+		self.loadSettings(function() { // reload settings
+			settingsPopup.open();
+		});
+	};
+	
+//	this.closeSettings = function(complete) {
+//		settingsPopup.close(complete);
+//	};
+
+	this.submitwindow = function(e) {
+		_btnOK.attr("disabled",true);
+		e.preventDefault();
+		e.stopPropagation();
+		var newSettings = _form.readForm();
+		_form.saveSettings(newSettings,function(validated, data){
+			if(validated) {
+				settings = newSettings; // store new settings in global settings
+				settingsPopup.close();
+				self.signin();
+			}
+			_btnOK.removeAttr("disabled");
+		});
+	};
+	
+	this.loadSettings = function(complete) {
+		_form.loadAllSettings(function(loadedSettings){
+			console.log("Settings:loaded settings: ",loadedSettings);
+			settings = loadedSettings;
+			_form.fillForm(settings);
+			$(document).trigger(SettingsWindow.SETTINGS_LOADED);
+			if(complete) complete();
+		});
+		_networkPanel.update();
+	};
+	
+	this.resetSettings = function() {
+		console.log("resetSettings");
+		self.btnRestoreSettings.attr("disabled", true);
+		clearTimeout(_restoredStateHideDelay);
+		self.setRestoreState("Restoring...");
+		_form.resetAllSettings(function(restoredSettings) { 
+			//console.log("  settings: ",restoredSettings);
+			settings = restoredSettings;
+			_form.fillForm(restoredSettings);
+			$(document).trigger(SettingsWindow.SETTINGS_LOADED);
+
+			self.btnRestoreSettings.removeAttr("disabled");
+			self.setRestoreState("Settings restored");
+			// auto hide status
+			clearTimeout(_restoredStateHideDelay);
+			_restoredStateHideDelay = setTimeout(function() { self.setRestoreState("");	},_restoredStateHideDelayTime);
+		});
+	};
+	
+	this.setRestoreState = function(text) {
+		_restoreStateField.html(text);
+	};
+
+	this.signin = function() {
+		_networkAPI.signin();
+	};
+
+	this.downloadlogs = function() {
+		window.location.href = _wifiboxURL + "/info/logfiles";
+	};
+
+	this.downloadGcode = function() {
+		var gcode = generate_gcode();
+		if (gcode!=undefined) {
+			var blob = new Blob([gcode.join("\n")], {type: "text/plain;charset=utf-8"});
+			saveAs(blob, "doodle3d.gcode");
+		}
+	};
+
+	this.downloadSvg = function() {
+		var svg = saveToSvg();
+		if (svg!=undefined) {
+			var blob = new Blob([svg], {type: "text/plain;charset=utf-8"});
+			saveAs(blob, "doodle3d.svg");
+		}
+	};
+
+	this.openFileManager = function() {
+		location.href = "filemanager/"+location.search;
+	}
+}
+
+/*************************
+ *
+ *
+ *  FROM DOODLE3D.INI
+ *
+ */
+
+//TODO: find all references to these variables, replace them and finally remove these.
+var objectHeight = 20;
+var layerHeight = .2;
+//var wallThickness = .5;
+//var hop = 0;
+//var speed = 70;
+//var travelSpeed = 200;
+var enableTraveling = true;
+//var filamentThickness = 2.89;
+var minScale = .3;
+var maxScale = 1;
+var shape = "%";
+var twists = 0;
+//var useSubLayers = true;
+//var debug = false; // debug moved to main.js
+var loglevel = 2;
+//var zOffset = 0;
+var serverport = 8888;
+var autoLoadImage = "hand.txt";
+var loadOffset = [0, 0]; // x en y ?
+var showWarmUp = true;
+var loopAlways = false;
+var firstLayerSlow = true;
+var useSubpathColors = false;
+var autoWarmUp = true;
+//var maxObjectHeight = 150;
+var maxScaleDifference = .1;
+var frameRate = 60;
+var quitOnEscape = true;
+var screenToMillimeterScale = .3; // 0.3
+//var targetTemperature = 220;
+//var simplifyiterations = 10;
+//var simplifyminNumPoints = 15;
+//var simplifyminDistance = 3;
+//var retractionspeed = 50;
+//var retractionminDistance = 5;
+//var retractionamount = 3;
+var sideis3D = true;
+var sidevisible = true;
+var sidebounds = [900, 210, 131, 390];
+var sideborder = [880, 169, 2, 471];
+var windowbounds = [0, 0, 800, 500];
+var windowcenter = true;
+var windowfullscreen = false;
+var autoWarmUpCommand = "M104 S230";
+//var checkTemperatureInterval = 3;
+var autoWarmUpDelay = 3;
+/*
+ * This file is part of the Doodle3D project (http://doodle3d.com).
+ *
+ * Copyright (c) 2013, Doodle3D
+ * This software is licensed under the terms of the GNU GPL v2 or later.
+ * See file LICENSE.txt or visit http://www.gnu.org/licenses/gpl.html for full license details.
+ */
+
+function UpdatePanel() {
+	var className = 'UpdatePanel';
+	var _form = new FormPanel();
+
+	this.wifiboxURL;
+	this.element;
+
+	this.statusCheckInterval = 1000;
+	this.statusCheckDelayer; 			// setTimout instance
+	this.installedDelay = 90*1000; 		// Since we can't retrieve status during installation we show the installed text after a fixed delay
+	this.installedDelayer; 				// setTimout instance
+	this.retryDelay = 1000;
+	this.retryDelayer; 					// setTimout instance
+	//this.timeoutTime = 3000;
+
+	this.canUpdate = false;
+	this.currentVersion = "";
+	this.newestVersion;
+	this.currentReleaseDate;
+	this.newestReleaseDate;
+	this.progress;
+	this.imageSize;
+	var _inAccessPointMode;
+
+	// states from api, see Doodle3D firmware src/script/d3d-updater.lua
+	UpdatePanel.NONE 			= 1; // default state
+	UpdatePanel.DOWNLOADING  	= 2;
+	UpdatePanel.DOWNLOAD_FAILED	= 3;
+	UpdatePanel.IMAGE_READY 	= 4; // download successful and checked
+	UpdatePanel.INSTALLING 		= 5;
+	UpdatePanel.INSTALLED 		= 6;
+	UpdatePanel.INSTALL_FAILED 	= 7;
+
+	this.state; // update state from api
+	this.stateText = ""; // update state text from api
+
+	var self = this;
+
+	this.init = function(wifiboxURL,updatePanelElement) {
+		_form.init(wifiboxURL,wifiboxURL,updatePanelElement);
+
+		this.wifiboxURL = wifiboxURL;
+
+		this.element = updatePanelElement;
+		this.retainCheckbox = this.element.find("#retainConfiguration");
+		this.includeBetasCheckbox = this.element.find("#includeBetas");
+		this.btnUpdate = this.element.find("#update");
+		this.statusDisplay = this.element.find("#updateState");
+		this.infoDisplay = this.element.find("#updateInfo");
+
+		this.retainCheckbox.change(this.retainChanged);
+		this.includeBetasCheckbox.change(this.includeBetasChanged);
+		this.btnUpdate.click(this.update);
+
+		this.checkStatus(false);
+	}
+
+	this.retainChanged = function(e) {
+		//console.log("UpdatePanel:retainChanged");
+		//this call ensures that the update button gets enabled if (!retainChanged && !canUpdate)
+		self.setState(self.state,true);
+	}
+
+	this.includeBetasChanged = function() {
+		//console.log("UpdatePanel:includeBetasChanged");
+		_form.saveSettings(_form.readForm(),function(validated, data) {
+			if(validated) self.checkStatus(false);
+		});
+	}
+
+
+	this.update = function() {
+		console.log("UpdatePanel:update");
+		self.downloadUpdate();
+	}
+
+	this.downloadUpdate = function() {
+		console.log("UpdatePanel:downloadUpdate");
+		$.ajax({
+			url: self.wifiboxURL + "/update/download",
+			type: "POST",
+			dataType: 'json',
+			success: function(response){
+				console.log("UpdatePanel:downloadUpdate response: ",response);
+			}
+		}).fail(function() {
+			console.log("UpdatePanel:downloadUpdate: failed");
+		});
+		self.setState(UpdatePanel.DOWNLOADING);
+		self.startCheckingStatus();
+	}
+
+	this.installUpdate = function() {
+		console.log("UpdatePanel:installUpdate");
+
+		// should personal sketches and settings be retained over update?
+		var retain = self.retainCheckbox.prop('checked');
+		console.log("  retain: ",retain);
+
+		self.stopCheckingStatus();
+		postData = {no_retain:!retain}
+		$.ajax({
+			url: self.wifiboxURL + "/update/install",
+			type: "POST",
+			data: postData,
+			dataType: 'json',
+			success: function(response){
+				console.log("UpdatePanel:installUpdate response: ",response);
+			}
+		}).fail(function() {
+			//console.log("UpdatePanel:installUpdate: no respons (there shouldn't be)");
+		});
+		self.setState(UpdatePanel.INSTALLING);
+
+		clearTimeout(self.installedDelayer);
+		self.installedDelayer = setTimeout(function() { self.setState(UpdatePanel.INSTALLED) },self.installedDelay);
+	}
+
+
+	this.startCheckingStatus = function() {
+		clearTimeout(self.statusCheckDelayer);
+		clearTimeout(self.retryDelayer);
+		self.statusCheckDelayer = setTimeout(function() { self.checkStatus(true) },self.statusCheckInterval);
+	}
+
+	this.stopCheckingStatus = function() {
+		clearTimeout(self.statusCheckDelayer);
+		clearTimeout(self.retryDelayer);
+	}
+
+	this.checkStatus = function(keepChecking) {
+		if (limitedFeatures) {
+			console.log(className,'ignoring checkStatus due to limitedFeatures mode');
+			return; //don't check printer status when in limitedFeatures mode
+		}
+
+		if (!communicateWithWifibox) return;
+		$.ajax({
+			url: self.wifiboxURL + "/update/status",
+			type: "GET",
+			dataType: 'json',
+			//timeout: self.timeoutTime,
+			success: function(response){
+				console.log("UpdatePanel:checkStatus response: ",response);
+
+				// Keep checking ?
+				if(keepChecking) {
+					switch(self.state){
+						case UpdatePanel.DOWNLOADING:
+						case UpdatePanel.INSTALLING:
+							clearTimeout(self.statusCheckDelayer);
+							self.statusCheckDelayer = setTimeout(function() { self.checkStatus(keepChecking) },self.statusCheckInterval);
+							break;
+					}
+				}
+
+				if(response.status != "error") {
+					var data = response.data;
+					self.handleStatusData(data);
+				} else {
+					console.log("API update/status call returned an error: '" + response.msg + "'");
+				}
+			}
+		}).fail(function() {
+			//console.log("UpdatePanel:checkStatus: failed");
+			if(keepChecking) {
+				clearTimeout(self.retryDelayer);
+				self.retryDelayer = setTimeout(function() { self.checkStatus(keepChecking) },self.retryDelay); // retry after delay
+			}
+		});
+	}
+
+
+	this.handleStatusData = function(data) {
+		//console.log("UpdatePanel:handleStatusData");
+		//status texts and button state might have to be updated if the newest version changes (e.g., after (un)ticking include betas checkbox)
+		var refreshUI = (self.newestVersion != data.newest_version);
+
+		self.canUpdate 				= data.can_update;
+
+		if(self.currentVersion != data.current_version || self.newestVersion != data.newest_version) {
+			self.currentVersion 	= data.current_version;
+			self.newestVersion 		= data.newest_version;
+			self.currentReleaseDate	= data.current_release_date; // not always available (for older versions)
+			self.newestReleaseDate	= data.newest_release_date; // not always available (for older versions)
+			self.updateInfoDisplay();
+		}
+
+		self.stateText 				= data.state_text;
+		self.progress 				= data.progress; // not always available
+		self.imageSize 				= data.image_size; // not always available
+
+		self.setState(data.state_code, refreshUI);
+
+		switch(this.state){
+			case UpdatePanel.IMAGE_READY:
+				self.installUpdate();
+				break;
+		}
+	}
+
+	this.setState = function(newState,refresh) {
+		//console.log("UpdatePanel:setState");
+		if(!refresh && this.state == newState) return;
+		console.log("UpdatePanel:setState: ",this.state," > ",newState,"(",this.stateText,") (in Access Point Mode: ",_inAccessPointMode,") (newestVersion: ",self.newestVersion,") (refresh: ",refresh,")");
+		this.state = newState;
+
+		// should personal sketches and settings be retained over update?
+		var retain = self.retainCheckbox.prop('checked');
+		//console.log("  retain", retain);
+
+		// download button
+		// if there isn't newestVersion data something went wrong,
+		//   probably accessing the internet
+		//console.log("  self.newestVersion: ",self.newestVersion);
+		if(self.newestVersion != undefined) {
+			//console.log("  this.state: ",this.state);
+			switch(this.state){
+				case UpdatePanel.NONE:
+				case UpdatePanel.DOWNLOAD_FAILED:
+				case UpdatePanel.INSTALL_FAILED:
+					//console.log("  self.canUpdate: ",self.canUpdate);
+					if(self.canUpdate || !retain) {
+						self.btnUpdate.removeAttr("disabled");
+					} else {
+						self.btnUpdate.attr("disabled", true);
+					}
+					break;
+				default:
+					self.btnUpdate.attr("disabled", true);
+				break;
+			}
+		} else {
+			self.btnUpdate.attr("disabled", true);
+		}
+		this.updateStatusDisplay();
+	}
+
+	this.updateStatusDisplay = function() {
+		var text = "";
+		if(self.newestVersion != undefined) {
+			switch(this.state){
+				case UpdatePanel.NONE:
+					if(self.canUpdate) {
+						var currIsBeta = self.versionIsBeta(self.currentVersion);
+						var newIsBeta = self.versionIsBeta(self.newestVersion);
+						var relIsNewer = (self.newestReleaseDate && self.currentReleaseDate) ? (self.newestReleaseDate - self.currentReleaseDate > 0) : true;
+
+						if (!newIsBeta) {
+							if (relIsNewer) text = "Update available.";
+							else text = "You can switch back to the latest stable release."; //this case is always a beta->stable 'downgrade'
+						} else {
+							//NOTE: actually, an older beta will never be presented as update by the API
+							var prefixText = currIsBeta ? "A" : (relIsNewer ? "A newer" : "An older");
+							text = prefixText + " beta release is available.";
+						}
+					} else {
+						text = "You're up to date.";
+					}
+					break;
+				case UpdatePanel.DOWNLOADING:
+					text = "Downloading update...";
+					break;
+				case UpdatePanel.DOWNLOAD_FAILED:
+					text = "Downloading update failed.";
+					break;
+				case UpdatePanel.IMAGE_READY:
+					text = "Update downloaded.";
+					break;
+				case UpdatePanel.INSTALLING:
+					text = "Installing update... (will take a minute)";
+					break;
+				case UpdatePanel.INSTALLED:
+					//text = "Update complete, please reconnect by connecting your device to the access point of your WiFi box and going to <a href='http://draw.doodle3d.com'>draw.doodle3d.com</a>";
+					text = "Update complete, please <a href='javascript:location.reload(true);'>refresh Page</a>.";
+					break;
+				case UpdatePanel.INSTALL_FAILED:
+					text = "Installing update failed.";
+					break;
+			}
+		} else {
+			if(_inAccessPointMode) {
+				text = "Can't access internet in access point mode.";
+			} else {
+				text = "Can't access internet.";
+			}
+		}
+		this.statusDisplay.html(text);
+	}
+
+	this.updateInfoDisplay = function() {
+		var html = 'Current version: ' + self.currentVersion;
+		if (self.currentReleaseDate) html += '; released: ' + self.formatDate(self.currentReleaseDate);
+		html += ' (<a target="d3d-curr-relnotes" href="ReleaseNotes.html">release notes</a>).';
+
+		if(self.canUpdate) {
+			html += '<br/>Latest version: ' + self.newestVersion;
+			if (self.newestReleaseDate) html += '; released: ' + self.formatDate(self.newestReleaseDate);
+			html += ' (<a target="d3d-new-relnotes" href="http://doodle3d.com/updates/images/ReleaseNotes.md">release notes</a>).';
+		}
+		self.infoDisplay.html(html);
+	}
+
+
+	this.setInAccessPointMode = function(inAccessPointMode) {
+		_inAccessPointMode = inAccessPointMode;
+		self.updateStatusDisplay();
+	}
+
+	this.formatDate = function(ts) {
+		if (!ts || ts.length != 8 || !/^[0-9]+$/.test(ts)) return null;
+		var fields = [ ts.substr(0, 4), ts.substr(4, 2), ts.substr(6, 2) ];
+		if (!fields || fields.length != 3 || fields[1] > 12) return null;
+
+		var abbrMonths = [ 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Sep', 'Aug', 'Oct', 'Nov', 'Dec' ];
+		return abbrMonths[fields[1] - 1] + " " + fields[2] + ", " + fields[0];
+	}
+
+	this.versionIsBeta = function(version) {
+		return version ? /.*-.*/g.test(version) : null;
+	}
+}
+
 //var shapeResolution=3;
 var shapePopup;
 
 function initScanDialog() {
   scanPopup = new Popup($("#popupScan"), $("#popupMask"));
   $("#btnScanOk").on("onButtonClick", onBtnScanOk);
-  //$("#btnCloseScan").on("onButtonClick", onBtnCloseScan);
+  $("#btnCloseScan").on("onButtonClick", onBtnCloseScan);
 }
 
 function onBtnCloseScan() {
@@ -238,36 +1190,6 @@ $("#fileScan").change(function(){
     readURL(this);
 });
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-
-
-
-
-AddShapeDialog.js
-
-
-
-
- * This file is part of the Doodle3D project (http://doodle3d.com).
- *
- * Copyright (c) 2013, Doodle3D
- * This software is licensed under the terms of the GNU GPL v2 or later.
- * See file LICENSE.txt or visit http://www.gnu.org/licenses/gpl.html for full license details.
- */
 var shapeResolution=3;
 var shapePopup;
 
@@ -346,32 +1268,7 @@ function updateShapePreview() {
   c.lineWidth = 2;
   c.stroke();
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /*
-
-
-
-
-Button.js
-
-
-
-
  * This file is part of the Doodle3D project (http://doodle3d.com).
  *
  * Copyright (c) 2013, Doodle3D
@@ -521,34 +1418,456 @@ $.fn.Button = function() {
 		new Button(this);
 	});
 };
+/*
+ * This file is part of the Doodle3D project (http://doodle3d.com).
+ *
+ * Copyright (c) 2013, Doodle3D
+ * This software is licensed under the terms of the GNU GPL v2 or later.
+ * See file LICENSE.txt or visit http://www.gnu.org/licenses/gpl.html for full license details.
+ */
+
+var grandTour;
+function GrandTour(_name) {
+  //console.log("GrandTour");
+  this.tour = "";
+  this.name = _name;
+  this.active = false;
+  var self = this;
+
+  this.init = function() {
+    //console.log("GrandTour >> f:init()");
+
+    this.tour = function() {
+      $('#help_d3dIntro').joyride({
+        autoStart: false,
+        modal: true,
+        expose: true,
+        'tipAdjustmentX': 15,
+        'tipAdjustmentY': 15,
+        'tipLocation': 'bottom',         // 'top' or 'bottom' in relation to parent
+        'nubPosition': 'auto',           // override on a per tooltip bases
+        'scrollSpeed': 300,              // Page scrolling speed in ms
+        //      'timer': 2000,                   // 0 = off, all other numbers = time(ms)
+//        'startTimerOnClick': true,       // true/false to start timer on first click
+        'nextButton': true,              // true/false for next button visibility
+        'tipAnimation': 'fade',           // 'pop' or 'fade' in each tip
+//        'pauseAfter': [],                // array of indexes where to pause the tour after
+        'tipAnimationFadeSpeed': 350,    // if 'fade'- speed in ms of transition
+//        'cookieMonster': true,           // true/false for whether cookies are used
+//        'cookieDomain': false,           // set to false or yoursite.com
+//        'cookieName': 'Doodle3DFirstTime',         // choose your own cookie name
+        //      'localStorage': true,         //
+        //      'localStorageKey': 'Doodle3DFirstTime',         // choose your own cookie name
+        'preRideCallback' : self.preRideCallback,
+        'preStepCallback': self.preStepCallback,       // A method to call before each step
+        'postStepCallback': self.postStepCallback,       // A method to call after each step
+        'postRideCallback': self.postRideCallback        // a method to call once the tour closes
+      });
+    };
+    this.tour();
+  };
+
+  this.preRideCallback = function(index, tip) {
+    //console.log("GrandTour >> f:preRideCallback() >> index: " + index);
+    if (index == 0 && $.cookie("Doodle3DFirstTime") == "ridden") {
+      //console.log("GrandTour >> f:preRideCallback() >> we've been here before...");
+
+      if ($.cookie("grandTourFinished")) {
+        // grand tour was previously finished (eh.. is that useful?)
+
+        // executing this 3 times because there doesn't seem to be a 'go to step X' method
+//        $(this).joyride('set_li', false);
+        $(this).joyride('set_li', false);
+//        $(this).joyride('set_li', false);
+      } else {
+        $(this).joyride('set_li', false);
+      }
+    }
+    
+    // Overrule printer to tour mode, pausing status updates
+    printer.overruleState(Printer.TOUR_STATE);
+    
+    // bring up thermometer and progressbar to explain them
+    thermometer.show();
+    progressbar.show();
+    message.hide();
+  };
+  this.preStepCallback = function(index, tip) {
+//    console.log("GrandTour >> f:preStepCallback() >> index: " + index);
+//    console.log("GrandTour >> f:preStepCallback() >> tip: " , tip);
+//    console.log("GrandTour >> f:preStepCallback() >> $(this): " , $(this));
+//    console.log("GrandTour >> f:preStepCallback() >> tipsettings: " , $(this)[0].tipSettings);
+
+    var dataset = $(this)[0].$li[0].dataset;
+    if (dataset.action != undefined) {
+      switch (dataset.action) {
+        case "showMessage":
+          //console.log("    action: showMessage");
+          message.set("This is a status message...", Message.NOTICE);
+          break;
+      }
+    }
+  };
+  this.postStepCallback = function(index, tip) {
+    //console.log("GrandTour >> f:postStepCallback() >> index: " + index);
+   // var dataset = $(this)[0].$li[0].dataset;
+  };
+  this.postRideCallback = function(index, tip) {
+//    console.log("GrandTour >> f:postRideCallback() >> index: " + index + ", self.active: " + self.active);
+//    console.log("GrandTour >> f:postRideCallback() >> this: " , self);
+
+    self.active = false;
+
+    $(document).trigger(helpTours.TOURFINISHED, self.name);
+
+    // hide the elements which were summoned for the purposes of the tour
+//    thermometer.hide();
+//    progressbar.hide();
+//    message.hide();
+
+    // after seeing the grand tour for the first time ever, set cookie 'Doodle3DFirstTime' to true
+    if (!$.cookie("Doodle3DFirstTime")) {
+      $.cookie("Doodle3DFirstTime", 'ridden', { expires: 365, domain: false, path: '/' });
+    }
+
+    if (index < $(this)[0].$tip_content.length - 1) {
+      //console.log("GrandTour >> f:postRideCallback() >> tour terminated before its true end");
+      // tour wasn't finished
+
+      // tour was ended prematurely. For only the first few visits, nag the user about being able to revisit the tour..
+      if (parseInt($.cookie("Doodle3DVisitCounter")) < helpTours.numTimesToShowNagPopup) {
+        helpTours.startTour(helpTours.INFOREMINDER, helpTours);
+      }
+//      infoReminderTour.start();
+    } else {
+      // tour was finished
+      //console.log("GrandTour >> f:postRideCallback() >> tour ended at its true end");
+      // we should be at the end...
+      if (!$.cookie("grandTourFinished") && parseInt($.cookie("Doodle3DVisitCounter")) < helpTours.numTimesToShowNagPopup) {
+        helpTours.startTour(helpTours.INFOREMINDER, helpTours);
+      }
+      $.cookie("grandTourFinished", 'yes', { expires: 365, domain: false, path: '/' });
+    }
+
+  };
+
+  this.start = function() {
+    //console.log("GrandTour >> f:start() >> this: " , this);
+    this.active = true;
+    $(window).joyride('restart');
+//    self.tour();
+  };
+}
+
+var infoReminderTour;
+function InfoReminderTour(_name) {
+  //console.log("InfoReminderTour");
+  this.tour = "";
+  this.name = _name;
+  this.active = false;
+  var self = this;
+
+  this.init = function(callback) {
+    //console.log("InfoReminderTour >> f:init()");
+
+    this.tour = function() {
+      $('#help_InfoReminder').joyride({
+        autoStart: false,
+        modal: true,
+        expose: true,
+        'tipAdjustmentX': 15,
+        'tipAdjustmentY': 15,
+        'tipLocation': 'bottom',         // 'top' or 'bottom' in relation to parent
+        'nubPosition': 'auto',           // override on a per tooltip bases
+        'scrollSpeed': 300,              // Page scrolling speed in ms
+        'nextButton': true,              // true/false for next button visibility
+        'tipAnimation': 'fade',           // 'pop' or 'fade' in each tip
+        'tipAnimationFadeSpeed': 350,    // if 'fade'- speed in ms of transition
+        'preRideCallback' : self.preRideCallback,
+        'postStepCallback': self.postStepCallback,       // A method to call after each step
+        'postRideCallback': self.postRideCallback        // a method to call once the tour closes
+      });
+    }
+    this.tour();
+    if (callback != undefined) callback();
+  };
+
+  this.preRideCallback = function(index, tip) {
+    //console.log("InfoReminderTour >> f:preRideCallback() >> index: " + index + ", tip: " , tip);
+  };
+  this.postStepCallback = function(index, tip) {
+    //console.log("InfoReminderTour >> f:postStepCallback() >> index: " + index + ", tip: " , tip);
+  };
+  this.postRideCallback = function(index, tip) {
+    //console.log("InfoReminderTour >> f:postRideCallback() >> index: " + index + ", tip: " , tip);
+    this.active = false;
+    $(document).trigger(helpTours.TOURFINISHED, self.name);
+  };
+
+  this.start = function() {
+    //console.log("InfoReminderTour >> f:start()");
+    this.active = true;
+    $(window).joyride('restart');
+//    self.tour();
+  };
+}
+
+function initHelp() {
+  //console.log("f:initHelp()");
+
+  // track number of visits of this user
+//  if ($.cookie("Doodle3DVisitCounter") == null) {
+//    $.cookie("Doodle3DVisitCounter", '0');
+//  } else {
+//    $.cookie("Doodle3DVisitCounter", parseInt($.cookie("Doodle3DVisitCounter")) + 1);
+//  }
+
+  // load the html file which describes the tour contents
+  $("#helpContainer").load("helpcontent.html", function() {
+    //console.log("helpContent loaded");
+
+    helpTours = new HelpTours();
+
+    helpTours.init( function () {
 
 
+      if (parseInt($.cookie("Doodle3DVisitCounter")) < helpTours.numTimesToShowNagPopup) {
+        //console.log("initHelp >> Doodle3DFirstTime cookie is set, Doodle3DVisitCounter is < 4");
+        if ($.cookie("Doodle3DFirstTime") != "ridden") {
+          setTimeout(helpTours.startTour, 750, helpTours.tours.grandTour, helpTours);
+        } else {
+          setTimeout(helpTours.startTour, 750, helpTours.tours.infoReminderTour, helpTours);
+        }
+        // remind user of our nifty tour
+      } else if (parseInt($.cookie("Doodle3DVisitCounter")) == helpTours.numTimesToShowNagPopup && $.cookie("Doodle3DFirstTime") != "ridden") {
+        // remind
+        setTimeout(helpTours.startTour, 750, helpTours.tours.infoReminderTour, helpTours);
+      }
+//            // only trigger starttour if user is seeing Doodle3D for the first time
+//      if ($.cookie("Doodle3DFirstTime") != "ridden") {
+//        console.log("initHelp >> intro tour has not been given yet > let's go!");
+//        setTimeout(helpTours.startTour, 750, helpTours.tours.grandTour, helpTours);
+//      } else if (parseInt($.cookie("Doodle3DVisitCounter")) < helpTours.numTimesToShowNagPopup) {
+//        console.log("initHelp >> Doodle3DFirstTime cookie is set, Doodle3DVisitCounter is < 4");
+//        // remind user of our nifty tour
+//        setTimeout(helpTours.startTour, 750, helpTours.tours.infoReminderTour, helpTours);
+//      }
+    });
+  });
+
+}
+
+var helpTours;
+function HelpTours() {
+  //console.log("HelpTours");
+
+  this.numTimesToShowNagPopup = 2;
+
+  this.WELCOMETOUR    = "welcometour";
+  this.INFOREMINDER   = "inforeminder";
+  this.TOURFINISHED   = "tourfinished";
+  this.tours = {
+    'grandTour'           : this.WELCOMETOUR,
+    'infoReminderTour'    : this.INFOREMINDER
+  };
+
+  this.currActiveTour = "";
+  this.tourActive = false;
+
+  var self = this;
+
+  this.init = function(callback) {
+    //console.log("HelpTours >> f:init >> self: " + self);
+    $(document).on(this.TOURFINISHED, this.tourEnded);
+
+    grandTour = new GrandTour(this.WELCOMETOUR);
+    infoReminderTour = new InfoReminderTour(this.INFOREMINDER);
+
+//    this.tours["grandTour"] = self.WELCOMETOUR;
+//    this.tours["infoReminderTour "]= self.INFOREMINDER;
+    //console.log("HelpTours >> f:init >> this.tours: " , this.tours);
+
+    if (callback != undefined) callback();
+  };
 
 
+  this.startTour = function(which, scope) {
+    if (scope == undefined) scope = this;
+//    console.log("HelpTours >> f:startTour >> scope: " , scope);
+//    console.log("HelpTours >> f:startTour >> currActiveTour: " , scope.currActiveTour.name);
+//    console.log("HelpTours >> f:startTour >> currActiveTour.active: " , scope.currActiveTour.active);
+//    console.log("HelpTours >> f:startTour >> target to start: '" + which);
 
 
+    switch (which) {
+      case scope.WELCOMETOUR:
+        // do welcometour
+        //console.log("HelpTours >> f:startTour >> case this.WELCOMETOUR >> scope.tourActive = " + scope.tourActive);
+        //console.log("HelpTours >> f:startTour >> case this.WELCOMETOUR");
+        if (scope.tourActive) {
+          if (scope.currActiveTour.active == true) {
+            $(window).joyride('end');
+            scope.currActiveTour = undefined;
+          }
+          scope.tourActive = false;
+        }
+        $(window).joyride('destroy');
+//        var self = this;
+          grandTour.init();
+        setTimeout(function(scp) {
+          grandTour.start();
+          scp.currActiveTour = grandTour;
+          scp.tourActive = true;
+        }, 250, scope);
+//        $(window).joyride('restart');
 
+        break;
+      case self.INFOREMINDER:
+        // do info reminder
+//      console.log("HelpTours >> f:startTour >> case self.INFOREMINDER >> scope.tourActive = " + scope.tourActive);
+        //console.log("HelpTours >> f:startTour >> case self.INFOREMINDER");
+        if (scope.tourActive) {
+//          console.log("    killing previous joyride... ");
+          if (scope.currActiveTour.active == true) {
+            $(window).joyride('end');
+            scope.currActiveTour = undefined;
+          }
+//          console.log("    setting tourActive to false....");
+          scope.tourActive = false;
+//          console.log("    scope.tourActive: " + scope.tourActive);
+        }
+        $(window).joyride('destroy');
+//        var self = this;
+          infoReminderTour.init();
+        setTimeout(function(scp) {
+          infoReminderTour.start();
+          scp.currActiveTour = infoReminderTour;
+          scp.tourActive = true;
+        }, 250, scope);
 
+        break;
+    }
+  }
 
+  this.tourEnded = function(e, n) {
+    //console.log("HelpTours >> f:tourEnded >> self.tourActive: " + self.tourActive + ", name: " + n);
 
+    $(window).joyride('destroy');
+    self.currActiveTour = undefined;
+    self.tourActive = false;
 
+    message.hide();
+    printer.checkStatus();
+  }
+}
 
+var keyboardShortcutsEnabled = false;
+var keyboardEscapeEnterEnabled = false;
+var wordBuffer = "";
 
+var wordFuncs = {
+		"idbeholdl": function() {
+			alert("Light!");
+		},
+		"idspispopd": function() {
+			drawTextOnCanvas("Im in ur kanvas drawin' ur stuffz.");
+		},
+		"dia": function() {
+			var cx = canvasWidth / 2;
+			var cy = canvasHeight /2;
+			drawCircle(cx, cy, 50, 4);
+			shapeMoveTo(cx - 20, cy);
+			shapeLineTo(cx + 20, cy);
+			shapeMoveTo(cx, cy - 20);
+			shapeLineTo(cx, cy + 20);
+		},
+		"stats": function() {
+			var text = "Shape statistics:\nNumber of points: " + _points.length;
+			alert(text);
+		},
+		"pdump": function() {
+			console.log("points array: " + _points);
+		}
+};
 
+function initKeyboard() {
 
+	$(document).keypress(function(event) {
 
+		if (keyboardEscapeEnterEnabled) {
+			switch (event.keyCode) {
+			case 13:
+				$(document).trigger("onEnterKey");
+				break;
+			case 27:
+				$(document).trigger("onEscapeKey");
+				break;
+			}
+		}
+
+		if (!keyboardShortcutsEnabled) return;
+		if (event.ctrlKey && event.altKey && ! event.metaKey) processWords(event);
+		if (event.altKey || event.ctrlKey || event.metaKey) return; //ignore key presses with modifier keys except shift
+
+		var ch = String.fromCharCode(event.which);
+
+		switch (ch) {
+			case '+': case '=': zoomShape(1.05); break;
+			case ',': openSettingsWindow(); break;
+			case '-': zoomShape(.95); break;
+			case ';': moveShape(-5,0); break;
+			case '[': previewTwistLeft(); break;
+			case '\'': moveShape(5,0); break;
+			case ']': previewTwistRight(); break;
+			case 'c': newSketch(); break;
+			case 'f': showTravelLines=!showTravelLines; redrawDoodle(); break;
+			case 'g': settingsWindow.downloadGcode(); break;
+			case 'H': previewDown(true); break;
+			case 'h': previewUp(true); break;
+			case 'i': showShapeDialog(); break;
+			case 'L': nextSketch(); break;
+			case 'l': prevSketch(); break;
+			case 'n': newSketch(); break;
+			case 'p': print(); break;
+			case 'q': stopPrint(); break;
+			case 'R': rotateShape(-.1); break;
+			case 'r': rotateShape(.1); break;
+			case 's': saveSketch(); break;
+			case 'T': showScanDialog(); break;
+			case 't': showWordArtDialog(); break;
+			case 'u': oopsUndo(); break;
+			case '|': resetTwist(); break;
+			
+			//default: console.log("Key: '" + ch + "' (" + event.which + ")");
+		}
+		if(event.which != 13) { // don't prevent enter usage, it's used in tour
+			event.preventDefault(); //prevents the character to end up in a focussed textfield
+		}
+	})
+
+}
+
+function processWords(e) {
+	wordBuffer += String.fromCharCode(e.which);
+	
+	var match = false;
+	for (var k in wordFuncs) {
+		if (k.indexOf(wordBuffer) == 0) {
+			if (k.length == wordBuffer.length) match = wordFuncs[k];
+			else match = true;
+			break;
+		}
+	}
+	
+	if (typeof(match) == 'function') {
+		match();
+		wordBuffer = "";
+	} else if (!match) {
+		wordBuffer = "";
+	}
+}
 
 /*
-
-
-
-
-Message.js
-
-
-
-
-
  * This file is part of the Doodle3D project (http://doodle3d.com).
  *
  * Copyright (c) 2013, Doodle3D
@@ -654,38 +1973,562 @@ function Popup(element, mask) {
 		if (autoCloseEnabled) self.close();
 	}
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /*
-
-
-
-
-Shape.js
-
-
-
-
  * This file is part of the Doodle3D project (http://doodle3d.com).
  *
  * Copyright (c) 2013, Doodle3D
  * This software is licensed under the terms of the GNU GPL v2 or later.
  * See file LICENSE.txt or visit http://www.gnu.org/licenses/gpl.html for full license details.
  */
- 
+
+/* not using this now
+var $printProgressContainer = $("#printProgressContainer");
+var $progressbar = $("#progressbar");
+var $progressAmount = $(".progressAmount");
+function setPrintprogress(val) {
+	if (isNaN(val)) return;
+//	console.log("f:setPrintprogress() >> val " + val);
+	$progressbar.css("width", val*100 + "%");
+	$progressAmount.text(Math.floor(val*100) + "%");
+}
+//*/
+
+function Printer() {
+	var className = 'Printer';
+
+	Printer.WIFIBOX_DISCONNECTED_STATE	= "wifibox disconnected";
+	Printer.UNKNOWN_STATE				= "unknown";				// happens when a printer is connection but there isn't communication yet
+	Printer.DISCONNECTED_STATE			= "disconnected";			// printer disconnected
+	Printer.CONNECTING_STATE 			= "connecting";				// printer connecting (printer found, but driver has not yet finished setting up the connection)
+	Printer.IDLE_STATE 					= "idle"; 					// printer found and ready to use, but idle
+	Printer.BUFFERING_STATE				= "buffering";				// printer is buffering (recieving) data, but not yet printing
+	Printer.PRINTING_STATE				= "printing";
+	Printer.STOPPING_STATE				= "stopping";				// when you stop (abort) a print it prints the endcode
+	Printer.TOUR_STATE					= "tour";					// when in joyride mode
+
+	Printer.ON_BEFORE_UNLOAD_MESSAGE = "You're doodle is still being sent to the printer, leaving will result in a incomplete 3D print";
+
+	this.temperature 		= 0;
+	this.targetTemperature 	= 0;
+	this.currentLine 		= 0;
+	this.totalLines			= 0;
+	this.bufferedLines		= 0;
+	this.state				= Printer.UNKNOWN_STATE;
+	this.hasControl			= true;	// whether this client has control access
+
+	this.wifiboxURL;
+
+	this.checkStatusInterval = 3000;
+	this.checkStatusDelay;
+	this.timeoutTime = 3000;
+	this.sendPrintPartTimeoutTime = 5000;
+
+	this.gcode; 							// gcode to be printed
+	this.sendLength = 500; 					// max amount of gcode lines per post (limited because WiFi box can't handle too much)
+
+	this.retryDelay = 2000; 				// retry setTimout delay
+	this.retrySendPrintPartDelay; 			// retry setTimout instance
+	this.retryCheckStatusDelay; 			// retry setTimout instance
+	this.retryStopDelay;					// retry setTimout instance
+	this.retryPreheatDelay;					// retry setTimout instance
+
+	Printer.MAX_GCODE_SIZE = 10;			// max size of gcode in MB's (estimation)
+
+	this.stateOverruled = false;
+
+	// Events
+	Printer.UPDATE = "update";
+
+	var self = this;
+
+	this.init = function() {
+		//console.log("Printer:init");
+		//this.wifiboxURL = "http://" + window.location.host + "/cgi-bin/d3dapi";
+		//this.wifiboxURL = "http://10.10.0.1/cgi-bin/d3dapi";
+		this.wifiboxURL = wifiboxURL;
+		//this.wifiboxURL = "proxy5.php";
+		//console.log("  wifiboxURL: ",this.wifiboxURL);
+
+		if (autoUpdate) {
+			this.startStatusCheckInterval();
+		}
+	}
+
+	this.preheat = function() {
+		console.log("Printer:preheat");
+
+		if (this.state != Printer.IDLE_STATE) return;
+
+		var self = this;
+		if (communicateWithWifibox) {
+			$.ajax({
+				url: this.wifiboxURL + "/printer/heatup",
+				type: "POST",
+				dataType: 'json',
+				timeout: this.timeoutTime,
+				success: function(data){
+					console.log("Printer:preheat response: ",data);
+					if(data.status != "success") {
+						clearTimeout(self.retryPreheatDelay);
+						self.retryPreheatDelay = setTimeout(function() { self.preheat() },self.retryDelay); // retry after delay
+					}
+				}
+			}).fail(function() {
+				console.log("Printer:preheat: failed");
+				clearTimeout(self.retryPreheatDelay);
+				self.retryPreheatDelay = setTimeout(function() { self.preheat() },self.retryDelay); // retry after delay
+			});
+		} else {
+			console.log ("Printer >> f:preheat() >> communicateWithWifibox is false, so not executing this function");
+		}
+	}
+
+	this.print = function(gcode) {
+		console.log("Printer:print");
+		console.log("  gcode total # of lines: " + gcode.length);
+
+		message.set("Sending doodle to printer...",Message.NOTICE);
+		self.addLeaveWarning();
+
+		/*for (i = 0; i < gcode.length; i++) {
+			gcode[i] += " (" + i + ")";
+		}*/
+
+		this.sendIndex = 0;
+		this.gcode = gcode;
+
+		//console.log("  gcode[20]: ",gcode[20]);
+		var gcodeLineSize = this.byteSize(gcode[20]);
+		//console.log("  gcodeLineSize: ",gcodeLineSize);
+		var gcodeSize = gcodeLineSize*gcode.length/1024/1024; // estimate gcode size in MB's
+		console.log("  gcodeSize: ",gcodeSize);
+
+		if(gcodeSize > Printer.MAX_GCODE_SIZE) {
+			var msg = "Error: Printer:print: gcode file is probably too big ("+gcodeSize+"MB) (max: "+Printer.MAX_GCODE_SIZE+"MB)";
+			alert(msg);
+			console.log(msg);
+
+			this.overruleState(Printer.IDLE_STATE);
+			this.startStatusCheckInterval();
+			message.hide();
+			self.removeLeaveWarning();
+
+			return;
+		}
+
+		//this.targetTemperature = settings["printer.temperature"]; // slight hack
+
+		this.sendPrintPart(this.sendIndex, this.sendLength);
+	}
+
+	this.byteSize = function(s){
+		return~-encodeURI(s).split(/%..|./).length;
+	}
+
+	this.sendPrintPart = function(sendIndex,sendLength) {
+		console.log("Printer:sendPrintPart sendIndex: " + sendIndex + "/" + this.gcode.length + ", sendLength: " + sendLength);
+
+
+		var sendPercentage = Math.round(sendIndex/this.gcode.length*100);
+		message.set("Sending doodle to printer: "+sendPercentage+"%",Message.NOTICE,false,true);
+
+		var firstOne = (sendIndex == 0)? true : false;
+		var start = firstOne; // start printing right away
+
+		var completed = false;
+		if (this.gcode.length < (sendIndex + sendLength)) {
+			console.log("  sending less than max sendLength (and last)");
+			sendLength = this.gcode.length - sendIndex;
+			//lastOne = true;
+			completed = true;
+		}
+		var gcodePart = this.gcode.slice(sendIndex, sendIndex+sendLength);
+
+		var postData = { gcode: gcodePart.join("\n"), first: firstOne, start: start};
+		var self = this;
+		if (communicateWithWifibox) {
+			$.ajax({
+				url: this.wifiboxURL + "/printer/print",
+				type: "POST",
+				data: postData,
+				dataType: 'json',
+				timeout: this.sendPrintPartTimeoutTime,
+				success: function(data){
+					console.log("Printer:sendPrintPart response: ",data);
+
+					if(data.status == "success") {
+						if (completed) {
+							console.log("Printer:sendPrintPart:gcode sending completed");
+							this.gcode = [];
+							//btnStop.css("display","block"); // hack
+							btnStop.enable(); //check me
+							self.removeLeaveWarning();
+							message.set("Doodle has been sent to printer...",Message.INFO,true);
+							//self.targetTemperature = settings["printer.temperature"]; // slight hack
+						} else {
+							// only if the state hasn't been changed (by for example pressing stop) we send more gcode
+
+							//console.log("Printer:sendPrintPart:gcode part received (state: ",self.state,")");
+							if(self.state == Printer.PRINTING_STATE || self.state == Printer.BUFFERING_STATE) {
+								//console.log("Printer:sendPrintPart:sending next part");
+								self.sendPrintPart(sendIndex + sendLength, sendLength);
+							}
+						}
+					}
+					// after we know the first gcode packed has bin received or failed
+					// (and the driver had time to update the printer.state)
+					// we start checking the status again
+					if(sendIndex == 0) {
+						self.startStatusCheckInterval();
+					}
+				}
+			}).fail(function() {
+				console.log("Printer:sendPrintPart: failed");
+				clearTimeout(self.retrySendPrintPartDelay);
+				self.retrySendPrintPartDelay = setTimeout(function() {
+					console.log("request printer:sendPrintPart failed retry");
+					self.sendPrintPart(sendIndex, sendLength)
+				},self.retryDelay); // retry after delay
+
+				// after we know the gcode packed has bin received or failed
+				// (and the driver had time to update the printer.state)
+				// we start checking the status again
+				self.startStatusCheckInterval();
+			});
+		} else {
+			console.log ("Printer >> f:sendPrintPart() >> communicateWithWifibox is false, so not executing this function");
+		}
+	}
+
+	this.stop = function() {
+		var endCode = generateEndCode();
+		var postData = { gcode: endCode.join("\n")};
+		var self = this;
+		if (communicateWithWifibox) {
+			$.ajax({
+				url: this.wifiboxURL + "/printer/stop",
+				type: "POST",
+				data: postData,
+				dataType: 'json',
+				timeout: this.timeoutTime,
+				success: function(data){
+					console.log("Printer:stop response: ", data);
+
+					// after we know the stop has bin received or failed
+					// (and the driver had time to update the printer.state)
+					// we start checking the status again
+					self.startStatusCheckInterval();
+				}
+			}).fail(function() {
+				console.log("Printer:stop: failed");
+				clearTimeout(self.retryStopDelay);
+				self.retryStopDelay = setTimeout(function() { self.stop() },self.retryDelay); // retry after delay
+
+				// after we know the stop has bin received or failed
+				// (and the driver had time to update the printer.state)
+				// we start checking the status again
+				self.startStatusCheckInterval();
+			});
+		} else {
+			console.log ("Printer >> f:stop() >> communicateWithWifibox is false, so not executing this function");
+		}
+	}
+
+	this.startStatusCheckInterval = function() {
+		console.log("Printer:startStatusCheckInterval");
+		self.checkStatus();
+		clearTimeout(self.checkStatusDelay);
+		clearTimeout(self.retryCheckStatusDelay);
+		self.checkStatusDelay = setTimeout(function() { self.checkStatus() }, self.checkStatusInterval);
+	}
+
+	this.stopStatusCheckInterval = function() {
+		console.log("Printer:stopStatusCheckInterval");
+		clearTimeout(self.checkStatusDelay);
+		clearTimeout(self.retryCheckStatusDelay);
+	}
+
+	this.checkStatus = function() {
+		return;
+		if (limitedFeatures) {
+			console.log(className,'ignoring checkStatus due to limitedFeatures mode');
+			return; //don't check printer status when in limitedFeatures mode
+		}
+
+		//console.log("Printer:checkStatus");
+		this.stateOverruled = false;
+		//console.log("  stateOverruled: ",this.stateOverruled);
+		var self = this;
+		if (communicateWithWifibox) {
+			$.ajax({
+				url: this.wifiboxURL + "/info/status",
+				dataType: 'json',
+				timeout: this.timeoutTime,
+				success: function(response){
+					//console.log("  Printer:status: ",response.data.state); //," response: ",response);
+
+					self.handleStatusUpdate(response);
+
+					clearTimeout(self.checkStatusDelay);
+					clearTimeout(self.retryCheckStatusDelay);
+					self.checkStatusDelay = setTimeout(function() { self.checkStatus() }, self.checkStatusInterval);
+				}
+			}).fail(function() {
+				console.log("Printer:checkStatus: failed");
+				self.state = Printer.WIFIBOX_DISCONNECTED_STATE;
+				clearTimeout(self.checkStatusDelay);
+				clearTimeout(self.retryCheckStatusDelay);
+				self.retryCheckStatusDelay = setTimeout(function() { self.checkStatus() },self.retryDelay); // retry after delay
+				$(document).trigger(Printer.UPDATE);
+			});
+		} else {
+			console.log ("Printer >> f:checkStatus() >> communicateWithWifibox is false, so not executing this function");
+		}
+	}
+
+	this.handleStatusUpdate = function(response) {
+		//console.log("Printer:handleStatusUpdate response: ",response);
+		var data = response.data;
+		if(response.status != "success") {
+			self.state = Printer.UNKNOWN_STATE;
+		} else {
+			// state
+			//console.log("  stateOverruled: ",this.stateOverruled);
+			if(!this.stateOverruled) {
+				self.state = data.state;
+				//console.log("  state > ",self.state);
+			}
+
+			// temperature
+			self.temperature = data.hotend;
+			self.targetTemperature = data.hotend_target;
+
+			// progress
+			self.currentLine = data.current_line;
+			self.totalLines = data.total_lines;
+			self.bufferedLines = data.buffered_lines
+
+			// access
+			self.hasControl = data.has_control;
+
+			if(self.state == Printer.PRINTING_STATE || self.state == Printer.STOPPING_STATE) {
+				console.log("progress: ",self.currentLine+"/"+self.totalLines+" ("+self.bufferedLines+") ("+self.state+")");
+			}
+		}
+		$(document).trigger(Printer.UPDATE);
+	}
+
+	this.overruleState = function(newState) {
+		this.stateOverruled = true;
+		console.log("  stateOverruled: ",this.stateOverruled);
+
+		self.state = newState;
+
+		$(document).trigger(Printer.UPDATE);
+
+		this.stopStatusCheckInterval();
+	}
+
+	this.removeLeaveWarning = function() {
+		window.onbeforeunload = null;
+	}
+
+	this.addLeaveWarning = function() {
+		window.onbeforeunload = function() {
+			console.log("WARNING:"+Printer.ON_BEFORE_UNLOAD_MESSAGE);
+			return Printer.ON_BEFORE_UNLOAD_MESSAGE;
+		};
+	}
+}
+
+// JavaScript Document
+
+function changeCapsule() {
+	alert("changeCapsule");
+}
+
+function printerHome() {
+	
+	$.post( "http://10.10.0.1:5000/api/printer/print", { gcode: "G90; G0 X0Y0Z0", start: "true", first: "true" } )
+  		.done(function( data ) {
+			if (data.status == "error")	alert( "Error-Message: " + data.msg );
+  		});
+		
+}
+
+function printerXUp() {
+	
+	$.post( "http://10.10.0.1:5000/api/printer/print", { gcode: "G91; G0 X1", start: "true", first: "true" } )
+  		.done(function( data ) {
+			if (data.status == "error")	alert( "Error-Message: " + data.msg );
+  		});
+
+}
+
+function printerXDown() {
+	
+	$.post( "http://10.10.0.1:5000/api/printer/print", { gcode: "G91; G0 X-1", start: "true", first: "true" } )
+  		.done(function( data ) {
+			if (data.status == "error")	alert( "Error-Message: " + data.msg );
+  		});
+
+}
+
+function printerYUp() {
+	
+	$.post( "http://10.10.0.1:5000/api/printer/print", { gcode: "G91; G0 Y1", start: "true", first: "true" } )
+  		.done(function( data ) {
+			if (data.status == "error")	alert( "Error-Message: " + data.msg );
+  		});
+
+}
+
+function printerYDown() {
+	
+	$.post( "http://10.10.0.1:5000/api/printer/print", { gcode: "G91; G0 Y-1", start: "true", first: "true" } )
+  		.done(function( data ) {
+			if (data.status == "error")	alert( "Error-Message: " + data.msg );
+  		});
+
+}
+
+function printerZUp() {
+	
+	$.post( "http://10.10.0.1:5000/api/printer/print", { gcode: "G91; G0 Z1", start: "true", first: "true" } )
+  		.done(function( data ) {
+			if (data.status == "error")	alert( "Error-Message: " + data.msg );
+  		});
+
+}
+
+function printerZDown() {
+	
+	$.post( "http://10.10.0.1:5000/api/printer/print", { gcode: "G91; G0 Z-1", start: "true", first: "true" } )
+  		.done(function( data ) {
+			if (data.status == "error")	alert( "Error-Message: " + data.msg );
+  		});
+
+}
+
+
+/*
+ * This file is part of the Doodle3D project (http://doodle3d.com).
+ *
+ * Copyright (c) 2013, Doodle3D
+ * This software is licensed under the terms of the GNU GPL v2 or later.
+ * See file LICENSE.txt or visit http://www.gnu.org/licenses/gpl.html for full license details.
+ */
+
+function Progressbar() {
+  this.currProgress = 0; // default val
+
+  this.progressbarFGImg = new Image();
+  this.progressbarFGImgSrc = "/plugin/bocusini_doodler/static/img/progress_fg.png";
+  this.progressbarBGImg = new Image();
+  this.progressbarBGImgSrc = "/plugin/bocusini_doodler/static/img/progress_bg.png";
+
+  this.progressWidth= 93;
+  this.progressHeight = 82;
+
+  this.quartPI = .5 * Math.PI;
+  this.twoPI = 2 * Math.PI;
+
+  // To make the progressbar start with a minimal amount of 'progress'
+  // so that you can visually see that there is progress
+  this.progressPadding = Math.PI * .1;
+
+  this.$canvas;
+  this.canvas;
+  this.context;
+  this.$container;
+
+  this.isInitted = false;
+
+  this.enabled = true;
+
+  this.init = function(targCanvas, targCanvasContainer) {
+    console.log("Thermometer.init()");
+
+    this.$container = targCanvasContainer;
+
+    this.$canvas = targCanvas;
+    this.canvas = this.$canvas[0];
+    this.context = this.canvas.getContext('2d');
+
+
+    var self = this;
+    this.progressbarBGImg.onload = function() {
+      //console.log("progressbarBGImg img loaded");
+      //        self.isInitted = true;
+      //        self.update(self.currentTemperature, self.targetTemperature);
+
+      self.progressbarFGImg.onload = function() {
+        console.log("progressbarFGImg img loaded");
+        self.isInitted = true;
+        self.update(0, 100);
+      };
+      self.progressbarFGImg.src = self.progressbarFGImgSrc;
+    };
+    this.progressbarBGImg.src = this.progressbarBGImgSrc;
+  }
+
+  this.update = function(part, total) {
+    //console.log("Progressbar.update(" + part + "," + total + ")");
+
+    var pct = part / total;
+    if (this.isInitted) {
+      if (part == undefined) part = 0;
+      if (total== undefined) total = 100; // prevent divide by zero
+
+      var progress = part / total;
+      progress = Math.min(progress, 1.0);
+      progress = Math.max(progress, 0);
+      //console.log("progressbar >> f:update() >> progress: " + progress);
+
+      // clear
+      this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+      this.context.drawImage(this.progressbarBGImg, 0, 0);
+
+      this.context.font = "7pt sans-serif";
+
+      // draw the progressbar foreground's clipping path
+      this.context.save();
+      this.context.beginPath();
+      this.context.moveTo(45, 45);
+      this.context.lineTo(45, 0);
+      this.context.arc(45, 45, 45, -this.quartPI, -this.quartPI + this.progressPadding + (progress * (this.twoPI - this.progressPadding)), false); // circle bottom of thermometer
+      this.context.lineTo(45, 45);
+      this.context.clip();
+
+      this.context.drawImage(this.progressbarFGImg, 0, 0);
+      this.context.restore();
+
+      if (debugMode) {
+        this.context.fillStyle = '#222';
+        this.context.strokeStyle = '#fff';
+        this.context.lineWidth = 3;
+        this.context.textAlign="center";
+        this.context.strokeText(part + " / " + total, 45, 45, 90);
+        this.context.fillText(part + " / " + total, 45, 45, 90);
+      }
+
+    } else {
+      console.log("Progressbar.setTemperature() -> thermometer not initialized!");
+    }
+  }
+  this.show = function() {
+    this.$container.addClass("progressbarAppear");
+    //  	this.$container.show();
+    this.enabled = true;
+  }
+  this.hide = function() {
+    this.$container.removeClass("progressbarAppear");
+    //  	this.$container.hide();
+      this.enabled = false;
+  }
+}
+
 function drawCircle(x0,y0,r,res) {
   if (res==undefined) res = 50; //circle resolution
   beginShape();
@@ -706,7 +2549,7 @@ function drawCircle(x0,y0,r,res) {
 }
 
 function beginShape(x,y) {
-  //setSketchModified(true);
+  setSketchModified(true);
 }
 
 function shapeMoveTo(x,y) {
@@ -811,7 +2654,7 @@ function rotateShape(radians) {
 }
 
 function updateView() {
-  //setSketchModified(true);
+  setSketchModified(true);
   redrawDoodle(true);
   adjustPreviewTransformation();
   renderToImageDataPreview();
@@ -870,36 +2713,305 @@ function drawCircleTemp(x, y, r, color) {
 	ctx.fillStyle = 'black';
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /*
-
-
-
-
-WordArt.js
-
-
-
-
  * This file is part of the Doodle3D project (http://doodle3d.com).
  *
  * Copyright (c) 2013, Doodle3D
  * This software is licensed under the terms of the GNU GPL v2 or later.
  * See file LICENSE.txt or visit http://www.gnu.org/licenses/gpl.html for full license details.
  */
+
+//SVG validator: http://validator.w3.org/
+//SVG viewer: http://svg-edit.googlecode.com/svn/branches/2.6/editor/svg-editor.html
+function saveToSvg() {
+	var lastX = 0, lastY = 0, lastIsMove = false;
+	var svg = '';
+
+	var boundsWidth = doodleBounds[2] - doodleBounds[0];
+	var boundsHeight = doodleBounds[3] - doodleBounds[1];
+
+	svg += '<?xml version="1.0" standalone="no"?>\n';
+	svg += '<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">\n';
+	svg += '<svg width="' + boundsWidth + '" height="' + boundsHeight + '" version="1.1" xmlns="http://www.w3.org/2000/svg">\n';
+	svg += '\t<desc>Doodle 3D sketch</desc>\n';
+
+	var data = '';
+	for (var i = 0; i < _points.length; ++i) {
+		var x = _points[i][0], y = _points[i][1], isMove = _points[i][2];
+		var dx = x - lastX, dy = y - lastY;
+
+		if (i == 0)
+			data += 'M'; //emit absolute move on first pair of coordinates
+		else if (isMove != lastIsMove)
+			data += isMove ? 'm' : 'l';
+
+		data += dx + ',' + dy + ' ';
+
+		lastX = x;
+		lastY = y;
+		lastIsMove = isMove;
+	}
+
+	svg += '\t<path transform="translate(' + -doodleBounds[0] + ',' + -doodleBounds[1] + ')" d="' + data + '" fill="none" stroke="black" stroke-width="2" />\n';
+
+	var fields = JSON.stringify({'height': numLayers, 'outlineShape': VERTICALSHAPE, 'twist': rStep});
+	svg += '\t<!--<![CDATA[d3d-keys ' + fields + ']]>-->\n';
+
+	svg += '</svg>\n';
+
+	return svg;
+}
+
+
+//TODO: use local variables instead of _points,numLayers,VERTICALSHAPE and rStep so we can leave a current doodle in tact if an error occurs while parsing
+function loadFromSvg(svgData) {
+	var mode = '', x = 0, y = 0;
+
+	console.log("loading " + svgData.length + " bytes of data...");
+
+	clearDoodle();
+
+	svgData = svgData.replace("M0,0 ",""); //RC: hack
+
+	var p = svgData.indexOf("<path");
+	if (p == -1) { console.log("loadFromSvg: could not find parsing start point"); return false; }
+	p = svgData.indexOf('d="', p);
+	if (p == -1) { console.log("loadFromSvg: could not find parsing start point"); return false; }
+	p += 3; //skip 'd="'
+
+	var skipSpace = function() { while (svgData.charAt(p) == ' ') p++; }
+	var parseCommand = function() {
+		while (true) {
+			skipSpace();
+			var c = svgData.charAt(p);
+			if (c == 'M' || c == 'm' || c == 'L' || c == 'l') { //new command letter
+				mode = c;
+			} else if (c == '"') { //end of command chain
+				return true;
+			} else { //something else, must be a pair of coordinates...
+				var tx = 0, ty = 0, numberEnd = 0, len = 0;
+				// var firstComma = svgData.indexOf(',', p);
+				// var firstSpace = svgData.indexOf(' ', p);
+
+				numberEnd = svgData.indexOf(',', p);
+
+				////// RC: if instead of a comma a space is used between a pair use that as a separator
+				var firstSpace = svgData.indexOf(' ', p);
+				if (firstSpace<numberEnd) numberEnd=firstSpace;   
+				//console.log('numberEnd',numberEnd,firstSpace);
+				////////////////
+
+				if (numberEnd == -1) { console.log("could not find comma in coordinate pair"); return false; }
+				len = numberEnd - p;
+				tx = parseFloat(svgData.substr(p, len));
+				p += len + 1;
+				skipSpace();
+				numberEnd = svgData.indexOf(' ', p);
+				if (numberEnd == -1) { console.log("could not find space after coordinate pair"); return false; }
+				len = numberEnd - p;
+				ty = parseFloat(svgData.substr(p, len));
+				p += len;
+
+				if (mode == 'M' || mode == 'L') {
+					x = tx; y = ty;
+				} else if (mode == 'm' || mode == 'l') {
+					x += tx; y += ty;
+				} else {
+					console.log("loadFromSvg: found coordinate pair but mode was never set");
+					return false;
+				}
+
+				var isMove = mode == 'm' || mode == 'M';
+
+				//TODO: create script-wide function for adding points?
+				//console.log("inserting "+x+","+y+" ",isMove);
+				updatePrevX = x;
+				updatePrevY = y;
+				_points.push([x, y, isMove]);
+				adjustBounds(x, y);
+				adjustPreviewTransformation();
+
+				if (isMove) draw(x, y, .5);
+				else draw(x, y);
+			}
+			p++;
+		}
+
+		return true;
+	};
+
+	parseCommand(); //depends on value of p, so don't move this without taking that into consideration
+
+	const fieldDefMarker = "<!--<![CDATA[d3d-keys";
+	p = svgData.indexOf(fieldDefMarker);
+	if (p == -1) { console.log("loadFromSvg: could not find metadata marker"); return false; }
+	p += fieldDefMarker.length;
+	skipSpace();
+
+	var endP = svgData.indexOf("]]>-->", p);
+	if (endP == -1) { console.log("loadFromSvg: could not find metadata end-marker"); return false; }
+	var metaFields = JSON.parse(svgData.substr(p, endP - p));
+	//TODO: log error and return false if parsing failed
+	for (var k in metaFields) {
+		var v = metaFields[k];
+		switch (k) {
+		case "height": numLayers = v; break;
+		case "outlineShape": VERTICALSHAPE = v; break;
+		case "twist": rStep = v; break;
+		}
+	}
+
+	renderToImageDataPreview();
+
+	return true;
+}
+
+/*
+ * This file is part of the Doodle3D project (http://doodle3d.com).
+ *
+ * Copyright (c) 2013, Doodle3D
+ * This software is licensed under the terms of the GNU GPL v2 or later.
+ * See file LICENSE.txt or visit http://www.gnu.org/licenses/gpl.html for full license details.
+ */
+
+// TODO assess if this var is still necessary
+var $displayThermometer = $("#thermometerContainer");
+
+
+//TODO 2013-09-18 allow displaying temperatures HIGHER than the targTemp (it's now being capped at targTemp).
+function Thermometer() {
+  this.currentTemperature = 0; // default val
+  this.targetTemperature = 0; // default val
+
+  this.thermoOverlayImg = new Image();
+  this.thermoOverlayImgSrc = "/plugin/bocusini_doodler/static/img/thermometer_fg_overlay.png"; // ../img/thermometer_fg_overlay.png
+
+  this.thermoWidth= 40;
+  this.thermoHeight = 100;
+
+  this.$canvas;
+  this.canvas;
+  this.context;
+  this.$container;
+  
+  this.isInitted = false;
+  
+  this.enabled = true;
+  
+  this.thermoColors = [
+    [50, 200, 244], // 'cold'
+    [244, 190, 10], // 'warming up'
+    [244, 50, 50]   // 'ready / hot'
+  ];
+
+  this.init = function(targCanvas, targCanvasContainer) {
+    //console.log("Thermometer.init()");
+
+    this.$container = targCanvasContainer;
+
+    this.$canvas = targCanvas;
+    this.canvas = this.$canvas[0];
+    this.context = this.canvas.getContext('2d');
+
+
+    var self = this;
+    this.thermoOverlayImg.onload = function() {
+      //console.log("canvasThermoOverlay img loaded");
+      self.isInitted = true;
+      self.update(self.currentTemperature, self.targetTemperature);
+    };
+    this.thermoOverlayImg.src = this.thermoOverlayImgSrc;
+  }
+
+  this.update = function(curr, targ) {
+    //      console.log("Thermometer.update(" + curr + "," + targ + ")");
+
+    if (this.isInitted) {
+    	if(!this.enabled) return;
+      if (curr == undefined) curr = 0;
+      if (targ== undefined) targ = 180; // prevent divide by zero
+
+      var progress = curr / targ;
+
+//      progress = Math.min(progress, 1.0);
+      progress = Math.max(progress, 0);
+
+      var h = this.thermoHeight; // 94 // px
+      var paddingUnder = 15; // how far is beginpoint from bottom of thermometer
+      var paddingAbove = 25; // how far is endpoint from top of thermometer
+      var endPoint = h * .8;
+      var p = Math.floor((h - paddingUnder - paddingAbove) * progress); // %
+      //    var tempHeight =
+
+      var currColor = this.thermoColors[0];
+      if (progress > 0.98) {
+        currColor = this.thermoColors[2];
+      } else if (progress > 0.25) {
+        currColor = this.thermoColors[1];
+      }
+
+      // clear
+      this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      this.context.font = "10pt sans-serif";
+
+      // draw the thermometer clipping path
+      this.context.save();
+      this.context.beginPath();
+      this.context.arc(40, 80, 16, 0, 2 * Math.PI, false); // circle bottom of thermometer
+      this.context.arc(40, 10, 4, 0, 2 * Math.PI, false); // circle at top of thermometer tube
+      this.context.rect(36, 11, 8, 70); // thermometer tube
+      this.context.fillStyle = '#fff';
+      this.context.fill();
+      this.context.clip();
+
+      // draw rectangle which represents temperature
+      // rect will be clipped by the thermometer outlines
+      this.context.beginPath();
+      this.context.rect(20, h - paddingUnder - p, 60, p + paddingUnder);
+      //console.log("   currColor: " + currColor);
+      //todo Math.floor??
+      this.context.fillStyle = "rgb(" + currColor[0] + "," + currColor[1] + "," + currColor[2] + ")";
+      this.context.fill();
+      this.context.restore();
+
+      // additional text labels
+      this.context.save();
+      this.context.beginPath();
+      this.context.moveTo(32, paddingAbove);
+      this.context.lineTo(52, paddingAbove);
+      this.context.lineWidth = 2;
+      this.context.strokeStyle = '#000';
+      this.context.stroke();
+      this.context.fillStyle = '#000';
+      this.context.textAlign = "left";
+      this.context.textBaseline = "middle";
+      this.context.fillText(targ + "°", 55, paddingAbove);
+      this.context.restore();
+
+      // the thermometer outline png
+      this.context.drawImage(this.thermoOverlayImg, 20, 0);
+
+      // text
+      this.context.fillStyle = '#000';
+      this.context.textAlign="center";
+      this.context.fillText(curr + "°", 40, h + paddingUnder);
+    } else {
+      console.log("Thermometer.setTemperature() -> thermometer not initialized!");
+    }
+  }
+  this.show = function() {
+    this.$container.addClass("thermometerAppear");
+//    $("#progressbarCanvasContainer").addClass("thermometerAppear");
+//  	this.$container.show();
+  	this.enabled = true;
+  }
+  this.hide = function() {
+    this.$container.removeClass("thermometerAppear");
+//    $("#progressbarCanvasContainer").removeClass("thermometerAppear");
+//  	this.$container.hide();
+  	this.enabled = false;
+  }
+}
 
 var wordArtPopup;
 
@@ -1058,36 +3170,7 @@ function canvasDrawPoints(canvas,points) {
   endShape();
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /*
-
-
-
-
-
-
-buttonbehaviors.js
-
-
-
-
-
-
  * This file is part of the Doodle3D project (http://doodle3d.com).
  *
  * Copyright (c) 2013, Doodle3D
@@ -1158,6 +3241,12 @@ function initButtonBehavior() {
 	btnOctoPrint = new Button("#btnOctoPrint");
 	btnShutdown = new Button("#btnShutdown");
 	
+	btnPDHome = new Button("#btnPDHome");
+	btnPDX = new Button("#btnPDX");
+	btnPDY = new Button("#btnPDY");
+	btnPDZ = new Button("#btnPDZ");
+	btnPDC = new Button("#btnPDC");
+	
 
 	//$(".btn").Button(); //initalize other buttons
 
@@ -1171,9 +3260,9 @@ function initButtonBehavior() {
     btnScan.on("onButtonClick", onBtnScan);
 	btnPrint.on("onButtonClick", print);
 	btnStop.on("onButtonClick", stopPrint);
-	//btnSave.on("onButtonClick", saveSketch);
-	//btnPrevious.on("onButtonClick", previousSketch);
-	//btnNext.on("onButtonClick", nextSketch);
+	btnSave.on("onButtonClick", saveSketch);
+	btnPrevious.on("onButtonClick", previousSketch);
+	btnNext.on("onButtonClick", nextSketch);
 	btnOops.on("onButtonHold", onBtnOops);
 	// vertical shape buttons
 	btnToggleVerticalShapes.on("onButtonClick", onBtnToggleVerticalShapes);
@@ -1189,12 +3278,18 @@ function initButtonBehavior() {
 	btnZoom.on("onButtonHold", onBtnZoom);
 	btnRotate.on("onButtonHold", onBtnRotate);
 	
+	btnPDHome.on("onButtonClick", onbtnPDHome);
+	btnPDX.on("onButtonHold", onBtnPDX);
+	btnPDY.on("onButtonHold", onBtnPDY);
+	btnPDZ.on("onButtonHold", onBtnPDZ);
+	btnPDC.on("onButtonClick", changeCapsule);
+	
 	btnFileManager.on("onButtonClick", onBtnFileManager);
 	//btnOctoPrint.on("onButtonClick", onBtnOctoPrint);
 	btnShutdown.on("onButtonClick", onBtnShutdown);
 
 	//getSavedSketchStatus();
-	//listSketches();
+	listSketches();
 	// setSketchModified(false);
 	// updateSketchButtonStates();
 
@@ -1235,6 +3330,7 @@ function initButtonBehavior() {
 		return distance(cursor.x,cursor.y,button.x,button.y)<radius;
 	}
 
+
 	function onBtnToggleEdit() {
 		var btnImg;
 		if(buttonGroupEdit.is(":hidden")) {
@@ -1246,7 +3342,6 @@ function initButtonBehavior() {
 
 		buttonGroupEdit.fadeToggle(BUTTON_GROUP_SHOW_DURATION);
 	}
-	
 	function onBtnMove(e,cursor) {
 		var w = btnMove.width();
 		var h = btnMove.height();
@@ -1255,13 +3350,11 @@ function initButtonBehavior() {
 		//console.log("move speed: ",speedX,speedY);
 		moveShape(speedX,speedY);
 	}
-	
 	function onBtnZoom(e,cursor) {
 		var h = btnZoom.height();
 		var multiplier = (h/2-cursor.y)*0.003	+ 1;
 		zoomShape(multiplier);
 	}
-	
 	function onBtnRotate(e,cursor) {
 		var h = btnRotate.height();
 		var multiplier = (h/2-cursor.y)*0.003;
@@ -1276,7 +3369,6 @@ function initButtonBehavior() {
 			previewDown(true);
 		}
 	}
-	
 	function onBtnTwist(e,cursor) {
 		var h = btnTwist.height();
 		var multiplier = (cursor.y-h/2)*0.0005;
@@ -1304,6 +3396,37 @@ function initButtonBehavior() {
         showScanDialog();
 		buttonGroupAdd.fadeOut();
     }
+	
+	function onbtnPDHome(e) {
+		printerHome();
+	}
+
+	function onBtnPDX(e,cursor) {
+		var h = btnPDX.height();
+		if(cursor.y < h/2) {
+			printerXUp();
+		} else {
+			printerXDown();
+		}
+	}
+
+	function onBtnPDY(e,cursor) {
+		var h = btnPDY.height();
+		if(cursor.y < h/2) {
+			printerYUp();
+		} else {
+			printerYDown();
+		}
+	}
+
+	function onBtnPDZ(e,cursor) {
+		var h = btnPDZ.height();
+		if(cursor.y < h/2) {
+			printerZUp();
+		} else {
+			printerZDown();
+		}
+	}
 	
 	function onBtnSettings(e) {
 		//alert("Einstellungen");
@@ -1448,7 +3571,7 @@ function previewUp(redrawLess) {
 	if (numLayers < maxNumLayers) {
 		numLayers++;
 	}
-	//setSketchModified(true);
+	setSketchModified(true);
 
 //	redrawPreview(redrawLess);
 	redrawRenderedPreview(redrawLess);
@@ -1458,7 +3581,7 @@ function previewDown(redrawLess) {
 	if (numLayers > minNumLayers) {
 		numLayers--;
 	}
-	//setSketchModified(true);
+	setSketchModified(true);
 //	redrawPreview(redrawLess);
 	redrawRenderedPreview(redrawLess);
 }
@@ -1477,59 +3600,153 @@ function previewTwist(increment,redrawLess) {
 	else if(rStep > previewRotationLimit) rStep = previewRotationLimit;
 
 	redrawRenderedPreview(redrawLess);
-	//setSketchModified(true);
+	setSketchModified(true);
 }
 
 function resetTwist() {
 	rStep = 0;
 	redrawRenderedPreview();
-	//setSketchModified(true);
+	setSketchModified(true);
 }
 
 function update() {
-	//setState(printer.state,printer.hasControl);
+	setState(printer.state,printer.hasControl);
 
-	//thermometer.update(printer.temperature, printer.targetTemperature);
-	//progressbar.update(printer.currentLine, printer.totalLines);
+	thermometer.update(printer.temperature, printer.targetTemperature);
+	progressbar.update(printer.currentLine, printer.totalLines);
 }
 
+function setState(newState,newHasControl) {
+	if(newState == state && newHasControl == hasControl) return;
 
+	prevState = state;
 
+	console.log("setState: ",prevState," > ",newState," ( ",newHasControl,")");
+	setDebugText("State: "+newState);
 
+	// print button
+	var printEnabled = (newState == Printer.IDLE_STATE && newHasControl);
+	if(printEnabled) {
+		btnPrint.enable();
+		btnPDHome.enable();
+		btnPDX.enable();
+		btnPDY.enable();
+		btnPDZ.enable();
+		btnPDC.enable();
+	} else {
+		//btnPrint.disable();
+		//btnPDHome.disable();
+		//btnPDX.disable();
+		//btnPDY.disable();
+		//btnPDZ.disable();
+		//btnPDC.disable();
+	}
 
+	// stop button
+	var stopEnabled = ((newState == Printer.PRINTING_STATE || newState == Printer.BUFFERING_STATE) && newHasControl);
+	if(stopEnabled) {
+		btnStop.enable();
+	} else {
+		btnStop.disable();
+	}
 
+	// thermometer
+	switch(newState) {
+	case Printer.IDLE_STATE: /* fall-through */
+	case Printer.BUFFERING_STATE: /* fall-through */
+	case Printer.PRINTING_STATE: /* fall-through */
+	case Printer.STOPPING_STATE:
+		thermometer.show();
+		break;
+	default:
+		thermometer.hide();
+	break;
+	}
 
+	// progress indicator
+	switch(newState) {
+	case Printer.PRINTING_STATE:
+		progressbar.show();
+		break;
+	default:
+		progressbar.hide();
+	break;
+	}
 
+	/* settings button */
+	switch(newState) {
+	case Printer.CONNECTING_STATE: /* fall-through */
+	case Printer.IDLE_STATE:
+		btnSettings.enable();
+		break;
+	case Printer.WIFIBOX_DISCONNECTED_STATE: /* fall-through */
+	case Printer.BUFFERING_STATE: /* fall-through */
+	case Printer.PRINTING_STATE: /* fall-through */
+	case Printer.STOPPING_STATE:
+		//btnSettings.disable();
+		break;
+	default:
+		btnSettings.enable();
+	break;
+	}
 
+	/* save, next and prev buttons */
+	switch(newState) {
+	case Printer.WIFIBOX_DISCONNECTED_STATE:
+		btnPrevious.disable();
+		btnNext.disable()
+		btnSave.disable();
+		break;
+	default:
+		// updatePrevNextButtonState();
+		updateSketchButtonStates();
+		if (isModified) btnSave.enable();
+	break;
+	}
 
+	if(connectingHintDelay && newState != Printer.CONNECTING_STATE) {
+		clearTimeout(connectingHintDelay);
+		connectingHintDelay = null;
+	}
 
+	if(newState == Printer.WIFIBOX_DISCONNECTED_STATE) {
+		message.set("Lost connection to WiFi box",Message.ERROR);
+	}	else if(prevState == Printer.WIFIBOX_DISCONNECTED_STATE) {
+		message.set("Connected to WiFi box",Message.INFO,true);
+	} else if(newState == Printer.DISCONNECTED_STATE) {
+		message.set("Printer disconnected",Message.WARNING,true);
+	} else if(newState == Printer.CONNECTING_STATE) {
+		message.set("Printer connecting...",Message.INFO,false);
+		if (prevState != Printer.CONNECTING_STATE) { //enable 'watchdog' if we entered from a different state
+			clearTimeout(connectingHintDelay);
+			connectingHintDelay = setTimeout(function() {
+				message.set("Printer still not connected, did you<br/>select the correct printer type?", Message.WARNING, false);
+				connectingHintDelay = null;
+			}, connectingHintDelayTime);
+		}
+	} else if(prevState == Printer.DISCONNECTED_STATE && newState == Printer.IDLE_STATE ||
+			prevState == Printer.UNKNOWN_STATE && newState == Printer.IDLE_STATE ||
+			prevState == Printer.CONNECTING_STATE && newState == Printer.IDLE_STATE) {
+		message.set("Printer connected",Message.INFO,true);
+		console.log("  preheat: ",settings["printer.heatup.enabled"]);
+		if(settings["printer.heatup.enabled"]) {
+			// HACK: we delay the preheat because the makerbot driver needs time to connect
+			clearTimeout(preheatDelay);
+			preheatDelay = setTimeout(printer.preheat,preheatDelayTime); // retry after delay
+		}
+	}	else if(prevState == Printer.PRINTING_STATE && newState == Printer.STOPPING_STATE) {
+		console.log("stopmsg show");
+		message.set("Printer stopping",Message.INFO,false);
+	}	else if(prevState == Printer.STOPPING_STATE && newState == Printer.IDLE_STATE) {
+		console.log("stopmsg hide");
+		message.hide();
+	}
 
-
-
-
-
-
-
-
-
+	state = newState;
+	hasControl = newHasControl;
+}
 
 /*
-
-
-
-
-
-
-
-previewRendering.js
-
-
-
-
-
-
-
-
  * This file is part of the Doodle3D project (http://doodle3d.com).
  *
  * Copyright (c) 2013, Doodle3D
@@ -1712,7 +3929,7 @@ function clearDoodle() {
   resetPreview();
   resetVerticalShapes();
 
-  //setSketchModified(false);
+  setSketchModified(false);
   // updateSketchButtonStates();
 }
 
@@ -1813,7 +4030,7 @@ function adjustPreviewTransformation() {
  * * * * * * * * * */
 function onCanvasMouseDown(e) {
 	//console.log("canvasDrawing:onCanvasMouseDown");
-    //setSketchModified(true);
+    setSketchModified(true);
 
 //  console.log("f:onCanvasMouseDown()");
   //  console.log("onCanvasMouseDown >> e.offsetX,e.offsetY = " + e.offsetX+","+e.offsetY);
@@ -1846,7 +4063,7 @@ function onCanvasMouseMove(e) {
 //  console.log("f:onCanvasMouseMove()");
   if (!dragging) return;
 
-  //setSketchModified(true);
+  setSketchModified(true);
 
   //    console.log("onmousemove");
 
@@ -1921,7 +4138,7 @@ function onCanvasMouseUp(e) {
 }
 
 function onCanvasTouchDown(e) {
-  //setSketchModified(true);
+  setSketchModified(true);
 
   e.preventDefault();
   //console.log("f:onCanvasTouchDown >> e: " , e);
@@ -1946,7 +4163,7 @@ function onCanvasTouchDown(e) {
 
 function onCanvasTouchMove(e) {
 	//console.log("canvasDrawing:onCanvasTouchMove");
-  //setSketchModified(true);
+  setSketchModified(true);
 
   e.preventDefault();
 //  var x = e.touches[0].pageX - e.touches[0].target.offsetLeft;
@@ -2031,25 +4248,26 @@ function prevent(e) {
 
 
 
+/*
+ * This file is part of the Doodle3D project (http://doodle3d.com).
+ *
+ * Copyright (c) 2013, Doodle3D
+ * This software is licensed under the terms of the GNU GPL v2 or later.
+ * See file LICENSE.txt or visit http://www.gnu.org/licenses/gpl.html for full license details.
+ */
 
+function setTemperature(callback) {
 
+  if (callback != undefined) callback();
 
+}
+function setTemperature(callback) {
 
+  if (callback != undefined) callback();
 
-
-
+}
 
 /*
-
-
-
-
-gcodeGenerating.js
-
-
-
-
-
  * This file is part of the Doodle3D project (http://doodle3d.com).
  *
  * Copyright (c) 2013, Doodle3D
@@ -2360,32 +4578,7 @@ Point.prototype = {
   }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 /*
-
-
-
-
-
-init_layout.js
-
-
-
-
-
  * This file is part of the Doodle3D project (http://doodle3d.com).
  *
  * Copyright (c) 2013, Doodle3D
@@ -2473,9 +4666,9 @@ var preview_tmp;
 var previewCtx_tmp;
 
 var previewDefaults = {
-	rotation: 0, //Math.PI/90,
-	numLayers: 10, //was 1
-	showTravelLines: false
+  rotation: 0, //Math.PI/90,
+  numLayers: 1, //was 10
+  showTravelLines: false
 }
 
 var svgPathRegExp = /[LM]\d* \d*/ig;
@@ -2826,69 +5019,223 @@ function updatePreview(_x, _y, redrawLess) {
   updatePrevY = _y;
 
 }
+//*/
+
+// JavaScript Document
 
 
 
-
-
-
-
-
-
-
-
-
-
-
+function openFileManager() {
+		//alert("FileManager");
+		location.href = "filemanager/"+location.search;
+}
 /*
-
-
-
-
-sketches.js
-
-
-
-
-
-
-
  * This file is part of the Doodle3D project (http://doodle3d.com).
  *
  * Copyright (c) 2013, Doodle3D
  * This software is licensed under the terms of the GNU GPL v2 or later.
  * See file LICENSE.txt or visit http://www.gnu.org/licenses/gpl.html for full license details.
-*/
-function newSketch(e) {
-	clearDoodle();
-	curSketch = sketches.length; //index of the last item + 1
-	//updateSketchButtonStates();
+ */
+
+var sidebarLeft;
+var sidebarRight;
+
+function initSidebars() {
+  console.log("f:initSidebars()");
+
+  sidebarLeft = new SideBar();
+  sidebarLeft.init("#leftpanel", "hideleft", function() {
+    $("#leftpanel").show();
+  });
+
+  sidebarRight = new SideBar();
+  sidebarRight.init("#rightpanel", "hideright", function() {
+    $("#rightpanel").show();
+  });
+}
+
+function SideBar() {
+  this.initted = false;
+  this.$contentTarg = undefined;
+  this.$sideBtn = undefined;
+  this.contentHidden = false;
+  this.hideClass = "";
+
+  this.init = function(targ, hideClass, callback) {
+    console.log("SideBar >> f:init >> targ: " , $(targ) , ", hideClass: " + hideClass);
+    this.$contentTarg = $(targ);
+    this.hideClass = hideClass;
+
+    this.$contentTarg.addClass(this.hideClass);
+    this.contentHidden = true;
+
+    this.$contentTarg.append("<div class='sidebutton'></div>");
+    this.$sideBtn = $(targ +" .sidebutton");
+    var self = this;
+
+    this.$sideBtn.on('click', function(e) {
+      console.log("sidebutton");
+      self.toggleShowHide();
+    });
+
+    this.initted = true;
+
+    callback();
+  }
+
+  this.toggleShowHide = function() {
+    if (this.contentHidden) {
+      this.contentHidden = false;
+      this.$contentTarg.removeClass(this.hideClass);
+      //        self.$sideBtn.addClass("sidebuttonin");
+      this.$sideBtn.addClass("sidebuttonin");
+    } else {
+      this.contentHidden = true;
+      this.$contentTarg.addClass(this.hideClass);
+      //        self.$sideBtn.removeClass("sidebuttonin");
+      this.$sideBtn.removeClass("sidebuttonin");
+
+    }
+  }
 }
 
 
+/*
+ * This file is part of the Doodle3D project (http://doodle3d.com).
+ *
+ * Copyright (c) 2013, Doodle3D
+ * This software is licensed under the terms of the GNU GPL v2 or later.
+ * See file LICENSE.txt or visit http://www.gnu.org/licenses/gpl.html for full license details.
+ */
 
+var curSketch = 0;
+var sketches = []; //contains fileIDs
+var sketchLoaded = false;
 
+function previousSketch(e) {
+	loadSketch(curSketch-1);	
+}
 
+function nextSketch(e) {
+	loadSketch(curSketch+1);
+}
 
+function newSketch(e) {
+	clearDoodle();
+	curSketch = sketches.length; //index of the last item + 1
+	updateSketchButtonStates();
+}
 
+function listSketches() {
+	console.log('listSketches')
+	$.get(wifiboxURL + "/sketch/list", function(data) {
+		if (data.status=='success') {
+			sketches = data.data.list;
+			curSketch = sketches.length-1;
+			setSketchModified(false);
+			updateSketchButtonStates();
 
+			if (autoLoadSketchId) loadSketch(autoLoadSketchId);
+		}
+	})
+}
 
+function setSketchModified(_isModified) {
+	isModified = _isModified;
+	updateSketchButtonStates();
+}
 
+function updateSketchButtonStates() {
+	console.log('sketch: isModified',isModified,'curSketch',curSketch,'sketches.length',sketches.length);
 
+	if (isModified) {
+		btnSave.enable();
+	}
+	else {
+		btnSave.disable();
+	}
 
+	if (curSketch<sketches.length-1) {
+		btnNext.enable();
+	} else {
+		btnNext.disable();
+	}
 
+	if (curSketch>0) {
+		btnPrevious.enable();
+	} else {
+		btnPrevious.disable();
+	}
+
+}
+
+function loadSketch(_curSketch) {
+	curSketch = _curSketch;
+
+	if (curSketch<0) curSketch=0;
+	if (curSketch>sketches.length-1) curSketch=sketches.length-1;
+
+	var id = sketches[curSketch];
+
+	console.log('sketch: loadSketch curSketch',curSketch,'id',id);
+
+	$.get(wifiboxURL + "/sketch", {id:id}, function(response) {
+		if (response.status=='success') {
+			console.log('sketch: loaded',response);
+			var svgData = response.data.data;
+			loadFromSvg(svgData);
+			setSketchModified(false);
+			sketchLoaded = true;
+		} else {
+			console.log('error loading sketch: ',response);
+			listSketches();
+		}
+		
+	})
+}
+
+function saveSketch() {
+	//console.log("sketch: saveSketch");
+	var svgData = saveToSvg();
+
+	//alert(wifiboxCGIBinURL + "/sketch/new(halihallo)" + "#########" + svgData);
+	
+	//var response = location.href(wifiboxCGIBinURL + "/sketch/new(halihallo)");
+	//alert(response);
+	data = svgData.replace(/\"/g,'\'');
+	
+	alert(data);
+
+	$.post(wifiboxCGIBinURL + "/sketch/new(" + data + ")", function(response) {
+		//console.log("sketch: saveSketch: response",response);
+		//listSketches();
+		alert(response);
+	})
+	
+	//$.post(wifiboxURL + "sketches/test.php", {data: svgData}, function(response) {
+		//console.log("sketch: saveSketch: response",response);
+		//listSketches();
+		//alert(response);
+	//})
+	
+	//data = svgData;
+	
+	//$.post( wifiboxURL + "/sketches/test.html", function( data ) {
+  		//$( ".result" ).html( data );
+	//});
+	
+	//$.post( wifiboxURL + "sketches/test.php", {data: svgData}, function( response ) {
+  		//alert( "Data Loaded: " + response );
+	//});
+	
+	//$.post(wifiboxURL + "sketches/test.php", {data: svgData});
+	//$.post(wifiboxURL + "sketches/test.php");
+	
+	alert("Fertig!");
+
+}
 
 /*
-
-
-
-
-utils.js
-
-
-
-
-
  * This file is part of the Doodle3D project (http://doodle3d.com).
  *
  * Copyright (c) 2013, Doodle3D
@@ -2897,6 +5244,17 @@ utils.js
  */
 
 // http://stackoverflow.com/questions/1403888/get-url-parameter-with-jquery
+function getURLParameter(name) {
+  return decodeURI(
+    (new RegExp('[&?]'+name + '=' + '(.+?)(&|$)').exec(location.search)||[,null])[1]
+  );
+}
+
+// returns true for all smartphones and tablets
+function isMobileDevice() {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Windows Mobile/i.test(navigator.userAgent);
+}
+
 // returns true for smartphones (Android will be a bit dodgy (tablet or phone, all depends on pixels vs devicePixelRatio...)
 function isSmartphone() {
   var returnBool = false;
@@ -2914,40 +5272,8 @@ function isSmartphone() {
 }
 
 function distance(x1, y1, x2, y2) {
-	return Math.sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1));
+  return Math.sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1));
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-
-
-
-
-verticalShapes.js
-
-
-
-
-
- * This file is part of the Doodle3D project (http://doodle3d.com).
- *
- * Copyright (c) 2013, Doodle3D
- * This software is licensed under the terms of the GNU GPL v2 or later.
- * See file LICENSE.txt or visit http://www.gnu.org/licenses/gpl.html for full license details.
- */
 
 var VERTICALSHAPE;
 
@@ -2970,6 +5296,158 @@ function initVerticalShapes() {
 function resetVerticalShapes() {
   setVerticalShape(verticalShapes.NONE);
 }
+/*
+ * This file is part of the Doodle3D project (http://doodle3d.com).
+ *
+ * Copyright (c) 2013, Doodle3D
+ * This software is licensed under the terms of the GNU GPL v2 or later.
+ * See file LICENSE.txt or visit http://www.gnu.org/licenses/gpl.html for full license details.
+ */
+
+var debugMode = false;              // debug mode
+var sendPrintCommands = true;       // if Doodle3d should send print commands to the 3d printer
+var communicateWithWifibox = true;  // if Doodle3d should try interfacing with the wifibox (in case one is not connected)
+var wifiboxIsRemote = false;        // when you want to run the client on a computer and have it remotely connect to the wifibox
+var autoUpdate = true; 							// auto retrieve updates about temperature and progress from printer
+var autoLoadSketchId;
+
+var printer =  new Printer();
+var progressbar = new Progressbar();
+var thermometer = new Thermometer();
+var settingsWindow = new SettingsWindow();
+var message = new Message();
+
+var firstTimeSettingsLoaded = true;
+
+var wifiboxURL; // Using the uhttpd lua handler as default, because of better performance
+var wifiboxCGIBinURL; // CGI-bin, for some network stuff, where it needs to restart the webserver for example
+
+var $drawAreaContainer, $doodleCanvas, doodleCanvas, doodleCanvasContext, $previewContainer;
+
+var showhideInterval;
+var showOrHide = false;
+var limitedFeatures = false;
+
+var clientInfo = {};
+
+var POPUP_SHOW_DURATION = 175;
+var BUTTON_GROUP_SHOW_DURATION = 80;
+
+$(function() {
+  console.log("ready");
+  
+  if (getURLParameter("d") != "null") debugMode = (getURLParameter("d") == "1");
+  if (getURLParameter("p") != "null") sendPrintCommands = (getURLParameter("p") == "1");
+  if (getURLParameter("c") != "null") communicateWithWifibox = (getURLParameter("c") == "1");
+  if (getURLParameter("r") != "null") wifiboxIsRemote = (getURLParameter("r") == "1");
+  if (getURLParameter("u") != "null") autoUpdate = (getURLParameter("u") == "1");
+  if (getURLParameter("l") != "null") limitedFeatures = (getURLParameter("l") == "1");
+  if (getURLParameter("load") != "null") autoLoadSketchId = parseInt(getURLParameter("load"));
+
+  var hostname;
+  if (wifiboxIsRemote) hostname = 'http://10.10.0.1';
+  if (getURLParameter("wifiboxURL") != "null") hostname = getURLParameter("wifiboxURL");
+  
+  if (location.host=='doodle3d') hostname = 'http://wifibox';
+  if (!hostname) hostname = "http://" + window.location.host;
+
+  //wifiboxURL = hostname+"/myapi";
+  wifiboxURL = hostname+"/";
+  wifiboxCGIBinURL = hostname+"/cgi-bin/myapi";
 
 
+  if (!communicateWithWifibox) {
+    sendPrintCommands = false; // 'communicateWithWifibox = false' implies this
+  }
+  console.log("debugMode: " + debugMode);
+  console.log("sendPrintCommands: " + sendPrintCommands);
+  console.log("communicateWithWifibox: " + communicateWithWifibox);
+  console.log("wifiboxIsRemote: " + wifiboxIsRemote);
+  console.log("wifibox URL: " + wifiboxURL);
 
+  // rudimentary client info
+  clientInfo.isMobileDevice = isMobileDevice();
+  clientInfo.isSmartphone = isSmartphone();
+
+  initDoodleDrawing();
+  initPreviewRendering();
+  initLayouting();
+  // initSidebars();
+  initButtonBehavior();
+  initKeyboard();
+  // initVerticalShapes();
+  initWordArt();
+  initShapeDialog();
+  initScanDialog();
+
+  disableDragging();
+  
+  if (!clientInfo.isSmartphone) initHelp();
+
+	thermometer.init($("#thermometerCanvas"), $("#thermometerContainer"));
+  progressbar.init($("#progressbarCanvas"), $("#progressbarCanvasContainer"));
+
+  message.init($("#message"));
+
+  printer.init();
+	$(document).on(Printer.UPDATE,update);
+
+	settingsWindow.init(wifiboxURL,wifiboxCGIBinURL);
+	$(document).on(SettingsWindow.SETTINGS_LOADED, settingsLoaded);
+	
+  if(debugMode) {
+    console.log("debug mode is true");
+    $("body").css("overflow", "auto");
+    $("#debug_textArea").css("display", "block");
+    //$("#preview_tmp").css("display", "block");
+    $("#debug_display").css("display", "block");
+  }
+
+  if (limitedFeatures) {
+    initLimitedInterface();
+  }
+});
+
+function disableDragging() {
+  $(document).bind("dragstart", function(event) {
+    console.log("dragstart");
+    event.preventDefault();
+  });
+}
+
+function showOrHideThermo() {
+  console.log("f:showOrHideThermo()");
+  if (showOrHide) {
+    thermometer.hide();
+    progressbar.hide();
+  } else {
+    thermometer.show();
+    progressbar.show();
+
+  }
+  showOrHide = !showOrHide;
+}
+
+function settingsLoaded() {
+	console.log("settingsLoaded");
+	
+	if(firstTimeSettingsLoaded) {
+		console.log("  preheat: ",settings["printer.heatup.enabled"]);
+		console.log("  state: ",state);
+		if(state == Printer.IDLE_STATE && settings["printer.heatup.enabled"]) {
+			printer.preheat();
+		}
+		console.log("doodle3d.tour.enabled: ",settings["doodle3d.tour.enabled"]);
+		if(settings["doodle3d.tour.enabled"] && !clientInfo.isSmartphone) {
+			console.log("show tour");
+			initHelp();
+		}
+		firstTimeSettingsLoaded = false;
+	}
+	
+}
+
+function setDebugText(text) {
+	$("#debug_display").text(text);
+  
+}
