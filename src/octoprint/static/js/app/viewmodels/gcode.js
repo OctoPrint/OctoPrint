@@ -419,6 +419,9 @@ $(function() {
                     self.layerSlider.slider("disable");
                     self.layerSlider.slider("setMax", 1);
                     self.layerSlider.slider("setValue", 0);
+                    $('#btn_layer_up').prop('disabled', true);
+                    $('#btn_layer_down').prop('disabled', true);
+  
                 }
                 self.currentLayer = 0;
             } else {
@@ -434,6 +437,8 @@ $(function() {
                     self.layerSlider.slider("enable");
                     self.layerSlider.slider("setMax", model.layersPrinted - 1);
                     self.layerSlider.slider("setValue", 0);
+                    $('#btn_layer_up').prop('disabled', false);
+                    $('#btn_layer_down').prop('disabled', false);
                 }
             }
         };
@@ -498,16 +503,16 @@ $(function() {
         };
 
         self.onMouseOver = function(data, event) {
-            if (!self.settings.feature_keyboardControl()) return;
+            if (!self.settings.feature_keyboardControl() || self.layerSlider != undefined) return;
             $("#canvas_container").focus();
 
         };
         self.onMouseOut = function(data, event) {
-            if (!self.settings.feature_keyboardControl()) return;
+            if (!self.settings.feature_keyboardControl() || self.layerSlider != undefined) return;
             $("#canvas_container").blur();
         };
         self.onKeyDown = function(data, event) {
-            if (!self.settings.feature_keyboardControl()) return;
+            if (!self.settings.feature_keyboardControl() || self.layerSlider != undefined) return;
 
             var value = self.currentLayer;
             switch(event.which){
@@ -524,25 +529,7 @@ $(function() {
                     value = value - 1; // No need to check against min, this is done by the Slider anyway
                     break;
             }
-
-            if (value != self.currentLayer) {
-                event.preventDefault();
-
-                self.layerSlider.slider('setValue', value);
-                value = self.layerSlider.slider('getValue');
-                self.layerSlider
-                    .trigger({
-                        type: 'slideStart',
-                        value: value
-                    })
-                    .trigger({
-                        type: 'slide',
-                        value: value
-                    }).trigger({
-                        type: 'slideStop',
-                        value: value
-                    });
-            }
+            self.incrementLayer(value);
         };
 
         self.changeCommandRange = function(event) {
@@ -566,6 +553,38 @@ $(function() {
         self.onTabChange = function(current, previous) {
             self.tabActive = current == "#gcode";
         };
+        
+        self.incrementLayer = function(value){
+            if (value != self.currentLayer) {
+                event.preventDefault();
+
+                self.layerSlider.slider('setValue', value);
+                value = self.layerSlider.slider('getValue');
+                //This sets the srollbar to the appropriate position.
+                self.layerSlider
+                    .trigger({
+                        type: 'slideStart',
+                        value: value
+                    })
+                    .trigger({
+                        type: 'slide',
+                        value: value
+                    }).trigger({
+                        type: 'slideStop',
+                        value: value
+                    });
+            }
+        };
+        
+        $( "#btn_layer_up" ).click(function() {
+          var value = self.layerSlider.slider('getValue')+1;
+          self.incrementLayer(value);
+        });
+        
+        $( "#btn_layer_down" ).click(function() {
+          var value = self.layerSlider.slider('getValue')-1;
+          self.incrementLayer(value);
+        });
     }
 
     OCTOPRINT_VIEWMODELS.push([
