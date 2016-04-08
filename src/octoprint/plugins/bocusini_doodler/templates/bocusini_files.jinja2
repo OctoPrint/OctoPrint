@@ -18,9 +18,11 @@
 					<div class="back">
 						<div class="additionalInfo" data-bind="html: $root.getAdditionalData($data)"></div>
 						<div class="btn-group action-buttons">
-							<div class="btn btn-large" data-bind="click: function() { if ($root.enableRemove($data)) { $root.removeFile($data); } else { return; } }, css: {disabled: !$root.enableRemove($data)}" title="{{ _('Remove') }}"><i class="icon-trash"></i></div>
-							<!--<a class="btn btn-large dl_btn" data-bind="attr: {href: $root.downloadLink($data), css: {disabled: !$root.downloadLink($data)}}" title="{{ _('Download') }}"><i class="icon-download-alt"></i></a>-->
-							<div class="btn btn-large"  data-bind="click: function() { if ($root.enableSelect($data)) { $root.loadFile($data, true); } else { return; } }, css: {disabled: !$root.enableSelect($data)}" title="{{ _('Load and Print') }}"><i class="icon-print"></i></div>
+							<div class="btn btn-large" data-bind="click: function() {if ($root.enableRemove($data)) { $root.removeFile($data); } else { return; } }, css: {disabled: !$root.enableRemove($data)}" title="{{ _('Remove') }}"><i class="icon-trash"></i></div>
+							<!-- <div class="btn btn-large" data-bind="click: function() { if ($root.enableRemove($data)) { $root.removeFile($data); } else { return; } }, css: {disabled: !$root.enableRemove($data)}" title="{{ _('Remove') }}"><i class="icon-trash"></i></div> -->														
+							<!-- <a class="btn btn-large dl_btn" data-bind="attr: {href: $root.downloadLink($data), css: {disabled: !$root.downloadLink($data)}}" title="{{ _('Download') }}"><i class="icon-download-alt"></i></a>-->
+						 	<!-- <div class="btn btn-large"  data-bind="click: function() { if ($root.enableSelect($data)) { $root.loadFile($data, true); } else { return; } }, css: {disabled: !$root.enableSelect($data)}" title="{{ _('Load and Print') }}"><i class="icon-print"></i></div> -->
+						        <div class="btn btn-large"  data-bind="click: function() { if ($root.enableSelectFile($data)) { $root.loadFile($data, true); } else { return; } }, css: {}" title="{{ _('Load and Print') }}"><i class="icon-print"></i></div>
 						</div>
 					</div>
 				</div>

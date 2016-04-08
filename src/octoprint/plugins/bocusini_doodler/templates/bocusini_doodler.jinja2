@@ -1,10 +1,7 @@
-<!--[if lt IE 9]>
-		 <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-<![endif]-->
-
+<script src="/home/pi/OctoPrint/src/octoprint/static/js/app/viewmodels/temperature.js"></script>
 <div id="bocusini_overlay">
 	<!-- background images -->
-	<div class="bgContainer">
+	<div class="bgContainer" data-bind="slimScrolledForeach: listHelper.paginatedItems">
 		<!--		<img id="bgTop"    src="plugin/bocusini_doodler/static/img/bg_top.png" />
 				<img id="bgMiddle" src="plugin/bocusini_doodler/static/img/bg_middle.png" />
 				<img id="bgBottom" src="plugin/bocusini_doodler/static/img/bg_bottom.png" />-->
@@ -15,7 +12,7 @@
 			<li><span>Image 04</span><div><h3></h3></div></li>
 			<li><span>Image 05</span><div><h3></h3></div></li>
 			<li><span>Image 06</span><div><h3></h3></div></li>
-		</ul>
+		</ul>                    
 	</div>
 	<div id="logopanel" ></div>
 
@@ -23,7 +20,6 @@
 		<div class="centered_content">
 			<div class="row">
 				<div class="span9">
-
 					<div class="row">
 						<div class="span1"></div>
 						<div class="span8">
@@ -59,8 +55,14 @@
 												<div id="mycanvasContainer">
 													<img id="imgGuide">
 													<canvas id="mycanvas"></canvas>
-													<img id="btnCloseScan" class="btn3Doodler" src="plugin/bocusini_doodler/static/img/buttons/btnClose.png" />
+													<button id="btnCloseScan" class="btn3Doodler" onclick="deleteImg('imgGuide'); deleteImg('btnCloseScan');"style="background-image: url(plugin/bocusini_doodler/static/img/buttons/btnClose.png);" ></button>
+													<!-- <img id="btnCloseScan" class="btn3Doodler" src="plugin/bocusini_doodler/static/img/buttons/btnClose.png" /> -->
 												</div>
+<script>
+function deleteImg(image) {
+    document.getElementById(image).style.display = "none";
+}
+</script>
 
 												<div id="previewContainer">
 													<canvas id="preview"></canvas>
@@ -134,10 +136,12 @@
 
 							<div class="popup" id="popupScan">
 								<div class="content">
-									<h1>Use photo as a guide</h1>
-									<input id="fileScan" type="file"/>
+									<h1>Use photo as a template</h1>
+									<input id="fileScan" type="file" value="Choose a file"/>
 									<!-- <input id="txtDummy" type="text"/> -->
-									<img id="btnScanOk" class="btn3Doodler" src="plugin/bocusini_doodler/static/img/buttons/btnOk.png">
+									<!--  <img id="btnScanOk" class="btn3Doodler" src="plugin/bocusini_doodler/static/img/buttons/btnOk.png"> -->
+									<button id="btnScanOk" class="btn3Doodler" onclick="deleteImg('popupMask');deleteImg('popupScan');" > cancel </button>
+
 								</div>
 							</div>
 
@@ -211,15 +215,44 @@
 				</div>
 				<div class="span3" id='right_column'>
 					<div class="spacer"></div>
+		
+
+
 					<div class='bocusini_box' id='bocusini_statemonitor'>
 						<div class='bocusini_temp'>
 							<span class='actualTemp' data-bind="text:_tempStr(actualTemp())"></span> /
 							<span data-bind="text:_tempStr(targetTemp())"></span>
+
 							<div data-bind="visible:isPreheating()" class='heating_message' style='display:none;'>
 								<i class='icon icon-fire' data-bind="css: { 'wobble': isPreheating()}"></i> heating up
 							</div>
+<!-- modification **** Cooling *******-->
+		<div data-bind="visible:isCooling()" class='heating_message' style='display:none; color: blue;'>
+		<i class='icon icon-fire' data-bind="css: { 'wobble': isCooling()}" style="color: blue;"></i> cooling
+		</div>
+<!-- end_modification -->
+
+<!-- modification **** Heating ON OFF *******
+
+    <div class="onoffswitch">
+        <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="myonoffswitch"  checked>
+        <label onclick="setTem()" class="onoffswitch-label" for="myonoffswitch">
+            <span class="onoffswitch-inner"></span>
+            <span class="onoffswitch-switch"></span>
+        </label>
+    </div>
+			**** -->
+
+
+<button id="buttonOn" onclick="setColor('buttonOn', 'buttonOff')"  data-bind="enable: loginState.isUser() && !ps.isPrinting(), visible:isCold(), click: function() {  _sendTempCommand(50)}" style="background-color: rgb(211, 124, 119); color: white; border-radius: 5px; width: 50px;">ON</button>
+<button id="buttonOff" onclick="setColor2('buttonOn', 'buttonOff')"  data-bind="enable: loginState.isUser() && !ps.isPrinting(),  visible:isWarm(), click: function() { _sendTempCommand(0) }"  style="background-color: rgba(25, 45, 169, 0.592157); color: white; border-radius: 5px; width: 50px;">OFF</button>
+
+		
+<!-- end_modification -->
+
+
 						</div>
-						<div>
+					<!--	<div>
 							<div class="progress">
 								<div class="bar" id="bocusini_progressBar" data-bind="style: { width: progressString() + '%' }" style="width: 0%;"></div>
 							</div>
@@ -231,7 +264,8 @@
 						<div id="thermometerContainer" class="printer_monitor" style='display: none;'>
 							<canvas id="thermometerCanvas" width="90" height="120"></canvas>
 						</div>
-						<div class="clearfix"></div>
+						<div class="clearfix"></div> -->
+					
 					</div>
 
 
@@ -246,19 +280,42 @@
 						<div style='margin-top: .5em; text-align: center;'>
 							<div class="btn-group btn-group-vertical" id='bocusini_printerstate_buttons'>
 								<button class="btn btn-primary btn-large" data-bind="enable: ps.isOperational() && !ps.isPrinting() && loginState.isUser(), click: start"><i class="icon-play"></i></button>
-								<button class="btn btn-default btn-large" data-bind="enable: ps.isPrinting() || ps.isPaused() && loginState.isUser(), click: pause"><i class="icon-pause" data-bind="css: { 'pulse': ps.isPaused()}"></i></button>
+								<button class="btn btn-default btn-large" data-bind="enable: ps.isPrinting() || ps.isPaused() && loginState.isUser(), click: pause "><i class="icon-pause" data-bind="css: { 'pulse': ps.isPaused()}"></i></button>
 								<button class="btn btn-danger btn-large" data-bind="enable: ps.isPrinting() && loginState.isUser(), click: cancel">STOP</button>
 							</div>
 						</div>
+
+
 					</div>
 
 					<div id="system_buttons" class="btn-group">
+
+<!-- modification -->			
+	<div class="btn btn-large btn-default" style="width: 98%; margin-top: -870px; border: 1px solid darkgray; border-radius: 8px;" data-bind="visible: ps.isPrinting()"><h1 data-bind="css: { 'pulse': ps.isPrinting()}">Printing</h1>
+<div>
+							<div class="progress" style="margin-bottom: 0px;">
+								<div class="bar" id="bocusini_progressBar" data-bind="style: { width: progressString() + '%' }" style="width: 0%; "></div>
+							</div>
+						</div>
+						
+						<div id="progressbarCanvasContainer" class="printer_monitor" style='display: none;'>
+							<canvas id="progressbarCanvas" width="93" height="82"></canvas>
+						</div>
+						<div id="thermometerContainer" class="printer_monitor" style='display: none;'>
+							<canvas id="thermometerCanvas" width="90" height="120"></canvas>
+						</div>
+						<div class="clearfix"></div>
+</div>
+<!-- end modification -->
+			
+
 						<button class="btn btn-large btn-default" id="btnOctoPrint" data-bind="visible:user_is_admin(), click:hide_doodler">
 							<img src="/plugin/bocusini_doodler/static/img/tentacle-76x76.png" style="width:1.05em;"/> 
 						</button>
 						<button class="btn btn-large btn-default" id="btnShutdown" data-bind="visible:user_is_admin()"><i class="icon-off"></i></button>
 						<!--						<button class="btn btn-large btn-default" id="btnSettings"><i class="icon-gear"></i></button>
 												<button class="btn btn-large btn-default" id="btnInfo"><i class="icon-info-sign"></i></button>-->
+
 					</div>
 
 				</div>
@@ -270,3 +327,4 @@
 		<img id="vertImage" src="plugin/bocusini_doodler/static/img/bg_vertical.png"/>
 	</div>
 </div>
+
