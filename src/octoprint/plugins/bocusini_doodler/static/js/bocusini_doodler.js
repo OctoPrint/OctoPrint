@@ -1,7 +1,7 @@
 $(function () {
 	function BocusiniDoodlerViewModel(parameters) {
 		var self = this;
-
+		var replace = 0;
 		self.loginState = parameters[0];
 		self.ps = parameters[1]; // printerState
 		self.settings = parameters[2];
@@ -16,6 +16,20 @@ $(function () {
 			return self.ps.isPrinting() && heating; 
 		});
 
+//modification
+		self.isCooling = ko.computed(function(){
+			var cooling = !isNaN(self.targetTemp()) && !isNaN(self.actualTemp()) && (self.actualTemp() > self.targetTemp());
+			return self.ps.isPrinting() && cooling; 
+		});
+		self.isCold = ko.computed(function(){
+			var cold = (self.targetTemp()==0);
+			return cold; 
+		});
+		self.isWarm = ko.computed(function(){
+			var warm = (self.targetTemp()>0);
+			return warm; 
+		});
+//end_modification
 
 		self.progressString = self.ps.progressString;
 
@@ -33,17 +47,56 @@ $(function () {
 		self.pause = function () {
 			console.log('pause');
 			if (self.ps.isPrinting()) {
+				self.sendRetractCommand(1);
+				self.control.sendCustomCommand({ commands: ["G28 Y0"] });
 				self.ps.pause();
 				self.control.sendHomeCommand(['x', 'y']);
+
+
+				if (confirm("Replace the cartridge?") == true)
+	  			{
+				self.control.sendCustomCommand({ commands: ["G28 Z0"] });
+				self.sendRetractCommand(500);
+				replace = 1;
+				}
+
 			}
+
+
 			if (self.ps.isPaused()) {
-				self.control.sendHomeCommand(['x', 'y']);
+				if (replace == 1)
+				{
+				self.control.sendCustomCommand({commands: ["G92 E0"]});
+				// alert("Cartridge changed");
+				var myVar;
+				alert("Cartridge changed. Please wait 5 minutes");
+				myFunction();
+					function myFunction() {
+   				 		myVar = setTimeout(alertFunc, 300000);
+					}
+					function alertFunc() {
+						alert("Ready");
+						self.ps.pause();
+						replace = 0;
+					}
+	
+				}
+				// self.control.sendHomeCommand(['x', 'y']);
+				else {
+				self.control.sendCustomCommand({commands: ["G92 E1"]});
+				self.control.sendCustomCommand({commands: ["G92 E0"]});
 				self.ps.pause();
+				}
 			}
 		};
 
 		self.cancel = function () {
+			self.sendRetractCommand(3);
 			self.ps.cancel();
+//modification		
+			self.control.sendCustomCommand({ commands: ["G28 Y0"] });
+			self.control.sendCustomCommand({commands: ["G28"]});
+//end_modification
 		};
 		self.start = function () {
 			if ($('body').hasClass('doodler_active')) {
@@ -85,6 +138,62 @@ $(function () {
 				console.log("Print without selection - not specified yet.");
 			}
 		};
+//modification
+
+        self.sendExtrudeCommand = function (amount) {
+            self._sendECommand(1, amount);
+        };
+
+        self.sendRetractCommand = function (amount) {
+            self._sendECommand(-1, amount);
+        };
+
+        self._sendECommand = function (dir, amount) {
+			var length;
+			if(typeof amount === 'undefined' || isNaN(amount)){
+				length = self.extrusionAmount();
+			} else {
+				length = amount;
+			}
+            if (!length) length = self.settings.printer_defaultExtrusionLength();
+
+            self.sendToolCommand({
+                command: "extrude",
+                amount: length * dir
+            });
+        };
+
+        self.sendSelectToolCommand = function (data) {
+            if (!data || !data.key()) return;
+
+            self.sendToolCommand({
+                command: "select",
+                tool: data.key()
+            });
+        };
+	
+	self.sendPrintHeadCommand = function (data) {
+            $.ajax({
+                url: API_BASEURL + "printer/printhead",
+                type: "POST",
+                dataType: "json",
+                contentType: "application/json; charset=UTF-8",
+                data: JSON.stringify(data)
+            });
+        };
+
+
+        self.sendToolCommand = function (data) {
+            $.ajax({
+                url: API_BASEURL + "printer/tool",
+                type: "POST",
+                dataType: "json",
+                contentType: "application/json; charset=UTF-8",
+                data: JSON.stringify(data)
+            });
+        };
+
+//end modification
 		
 		
 		
@@ -109,6 +218,10 @@ $(function () {
 			self.control.sendCustomCommand({
 				commands: [cmd,"M500" , "G28"]
 			});	
+//modification
+			// msgBox("Calibration successful");
+			alert("Calibration successful");
+//end_modification
 			$('.calibration_tab').removeClass('active');
 			$('#calibration_step1').addClass('active');
 		};
@@ -244,4 +357,133 @@ $(function () {
 		["loginStateViewModel", "printerStateViewModel", "settingsViewModel", "controlViewModel"],
 		["#system_buttons", "#bocusini_printerstate_buttons", '#bocusini_statemonitor', '#bocusini_calibration']
 	]);
+
+
+//*****************************
+//  Custom Alert Box
+//  Free to use with credits in tact.
+//  Written By Adam Matthews aka Basscyst
+//	AdamDMatthews@Gmail.com
+//*****************************
+function msgBox(msg,hdr){
+	if(!document.getElementById('alerts')){
+		var div=document.createElement('div');
+		div.setAttribute('id','alerts');
+		document.body.appendChild(div);
+	}
+	var div=document.createElement('div');
+	div.className="alertbox";
+	var h3=document.createElement('h3');
+	h3.className="alerttitle";
+	var p=document.createElement('p');
+	p.className="alerttxt";
+	var footdiv=document.createElement('p');
+	footdiv.className="alertfoot";
+	div.appendChild(h3);
+	div.appendChild(p);
+	div.appendChild(footdiv);
+	var but=document.createElement('input');
+	but.setAttribute('type','button');
+	but.className='alertbut';
+	but.setAttribute('value','OK');
+	footdiv.appendChild(but);
+	var hdr=(hdr) ? hdr : "Alert!";
+	h3.appendChild(document.createTextNode(hdr));
+	var cut=msg.split("\n");
+	var len=cut.length;
+	p.appendChild(document.createTextNode(cut[0]));
+	for(var i=1;i<len;i++){	
+		p.appendChild(document.createElement('br'));
+		p.appendChild(document.createTextNode(cut[i]));
+	}
+	document.getElementById('alerts').appendChild(div);
+	window.onscroll=function(){
+		placeAlerts();	
+	}
+	window.onresize=function(){
+		placeAlerts();	
+	}
+	placeAlerts();
+}
+var posX;
+var posY;
+function mouseXY(e){
+	if (!e){
+		var e = window.event;	
+	}
+	if (e.clientX)
+	{
+	     posX = e.clientX + document.documentElement.scrollLeft;
+	     posY = e.clientY + document.documentElement.scrollTop;
+	}
+	else
+	{
+	     posX = Math.max(e.pageX,0);
+	     posY = Math.max(e.pageY,0);
+	}
+	var coord=new Array();
+	return coord;
+}
+if(document.captureEvents){
+	document.captureEvents(Event.MOUSEMOVE)
+}
+function placeAlerts(){
+	var alerts=document.getElementById('alerts').getElementsByTagName('div');
+	var len=alerts.length;
+	var x=0;
+	var y=300;
+	var w=document.body.clientWidth;
+	var h=document.body.clientHeight;
+	for(var i=0;i<len;i++){
+		alerts[i].style.zIndex=i+100;
+		alerts[i].getElementsByTagName('h3')[0].onmousedown="";
+		alerts[i].getElementsByTagName('input')[0].onclick="";
+		
+		if(window.pageYOffset){
+				alerts[i].style.top=y+(window.pageYOffset)+'px';
+			}else{
+				alerts[i].style.top=y+(document.documentElement.scrollTop)+'px';
+			}
+		alerts[i].style.left=(w / 2)- (343 / 2) + x +'px';;
+		x=x+15;
+		y=y+15;
+		if(i==len-1){
+			var h3=alerts[i].getElementsByTagName('h3')[0];
+			var but=alerts[i].getElementsByTagName('input')[0];
+			but.onclick=function(){
+				this.parentNode.parentNode.parentNode.removeChild(this.parentNode.parentNode);	
+				var alerts=document.getElementById('alerts').getElementsByTagName('div');
+				if(alerts.length==0){
+					window.onscroll="";
+				}
+				placeAlerts();
+			}
+			h3.onmousedown=function(event){
+				this.parentNode.setAttribute('id','active_alert');
+				var event=(event)?event:arguments[0];
+					mouseXY(event);
+				start_x=posX;
+				start_left=document.getElementById('active_alert').style.left.replace('px','');
+				adjust=posX-start_left;
+				document.onmousemove=function(event){
+					var event=(event)?event:arguments[0];
+					mouseXY(event);
+					var obj=document.getElementById('active_alert');
+					obj.style.left=posX-adjust+'px';
+					obj.style.top=posY-5+'px';
+				};
+			}
+			h3.onmouseup=function(){
+				document.onmousemove="";
+				this.parentNode.setAttribute('id','');
+			}	
+		}
+	}	
+}
+
+//*****************************
+// Custom Alert Box
+// end_modification
+//*****************************
+
 });

@@ -11,14 +11,13 @@ settings["printer.startcode"] = ";Generated with Doodle3D (default)\n"
 + "G28 Z0 ;move Z to min endstops\n"
 // + "G1 Z1 F9000 ;move the platform down 15mm\n" //original 15
 + "G92 E0 ;zero the extruded length\n"
-+ "G1 F200 E1.5 ;extrude 1.5mm of feed stock\n" // original 5.5
-+ "G92 E0 ;zero the extruded length again\n"
++ "G1 F200 E4 ;extrude 4mm of feed stock\n" // original 5.5
 + "G92 E0 ;zero the extruded length again\n"
 + "G1 F6000\n"
 + "G90 ;absolute positioning\n";
 
 settings["printer.endcode"] =  "G91 ;relative positioning\n"
-+ "G1 E-1 F300 ;retract the filament a bit before lifting the nozzle, to release some of the pressure\n"
++ "G1 E-2 F300 ;retract the filament a bit before lifting the nozzle, to release some of the pressure\n"
 + "G1 Z+0.5 E-1 X-20 Y-20 F9000 ;move Z up a bit and retract filament even more\n"
 + "G28 X0 Y0 ;move X/Y to min endstops, so the head is out of the way\n"
 + "G28 Z0 ;move Z to min endstops\n"
