@@ -60,6 +60,8 @@ def getSettings():
 		},
 		"feature": {
 			"gcodeViewer": s.getBoolean(["gcodeViewer", "enabled"]),
+			"sizeThreshold": s.getInt(["gcodeViewer", "sizeThreshold"]),
+			"mobileSizeThreshold": s.getInt(["gcodeViewer", "mobileSizeThreshold"]),
 			"temperatureGraph": s.getBoolean(["feature", "temperatureGraph"]),
 			"waitForStart": s.getBoolean(["feature", "waitForStartOnConnect"]),
 			"alwaysSendChecksum": s.getBoolean(["feature", "alwaysSendChecksum"]),
@@ -218,6 +220,8 @@ def _saveSettings(data):
 
 	if "feature" in data.keys():
 		if "gcodeViewer" in data["feature"].keys(): s.setBoolean(["gcodeViewer", "enabled"], data["feature"]["gcodeViewer"])
+		if "sizeThreshold" in data["feature"].keys(): s.setInt(["gcodeViewer", "sizeThreshold"], data["feature"]["sizeThreshold"])
+		if "mobileSizeThreshold" in data["feature"].keys(): s.setInt(["gcodeViewer", "mobileSizeThreshold"], data["feature"]["mobileSizeThreshold"])
 		if "temperatureGraph" in data["feature"].keys(): s.setBoolean(["feature", "temperatureGraph"], data["feature"]["temperatureGraph"])
 		if "waitForStart" in data["feature"].keys(): s.setBoolean(["feature", "waitForStartOnConnect"], data["feature"]["waitForStart"])
 		if "alwaysSendChecksum" in data["feature"].keys(): s.setBoolean(["feature", "alwaysSendChecksum"], data["feature"]["alwaysSendChecksum"])
