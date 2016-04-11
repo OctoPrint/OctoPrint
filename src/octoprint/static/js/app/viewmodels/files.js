@@ -6,7 +6,7 @@ $(function() {
         self.loginState = parameters[1];
         self.printerState = parameters[2];
         self.slicing = parameters[3];
-	self.printerProfiles=parameters[4];
+        self.printerProfiles=parameters[4];
 
         self.isErrorOrClosed = ko.observable(undefined);
         self.isOperational = ko.observable(undefined);
@@ -424,29 +424,32 @@ $(function() {
                     }
                 }
                 output += gettext("Estimated Print Time") + ": " + formatDuration(data["gcodeAnalysis"]["estimatedPrintTime"]) + "<br>";
-		if(self.loginState.isUser())
-		{
+                if (self.loginState.isUser())
+                {
                     var profileItems=self.printerProfiles.profiles.items();
                     var count=0;
-                    while(count<profileItems.length && !profileItems[count].current)
+                    while(count < profileItems.length && !profileItems[count].current)
                     {
                         count++;
                     }
-                    if(count<profileItems.length)
+                    if (count < profileItems.length)
                     {
                         var warn=false;
                         var volumeInfo=profileItems[count].volume;
                         var printingArea=data["gcodeAnalysis"]["printingArea"];
                         if(volumeInfo.origin=="lowerleft")
                         {
-                            if(printingArea["maxX"]>volumeInfo.width || printingArea["maxY"]>volumeInfo.depth || printingArea["maxZ"]>volumeInfo.height)
+                            if(printingArea["maxX"]>volumeInfo.width || printingArea["maxY"]>volumeInfo.depth ||
+                               printingArea["maxZ"]>volumeInfo.height)
                             {
                                 warn=true;
                             }
                         }
                         else //origin is centre
                         {
-                            if( printingArea["maxX"]>(volumeInfo.width/2) || printingArea["maxY"]>(volumeInfo.depth/2) || printingArea["maxZ"]>volumeInfo.height || Math.abs(printingArea["minX"])>(volumeInfo.width/2) || Math.abs(printingArea["minY"])>(volumeInfo.depth/2))
+                            if( printingArea["maxX"]>(volumeInfo.width/2) || printingArea["maxY"]>(volumeInfo.depth/2) ||
+                               printingArea["maxZ"]>volumeInfo.height || Math.abs(printingArea["minX"])>(volumeInfo.width/2) ||
+                               Math.abs(printingArea["minY"])>(volumeInfo.depth/2))
                             {
                                 warn=true;
                             }
@@ -456,44 +459,39 @@ $(function() {
                     {
                         var warning = "<p>" + _.sprintf(gettext("Revise file %s"), data["name"]) + "</p>";
                         var info="";
-                        if(volumeInfo.origin=="lowerleft")
-                        {
-		                if(printingArea["maxX"]>volumeInfo.width)
-		                {
-		                    info=info+_.sprintf(gettext("Profile's max. X: %s\n Object's max. X: %s\n"),volumeInfo.width,printingArea["maxX"]);
-		                }
-		                if(printingArea["maxY"]>volumeInfo.depth)
-		                {
-		                    info=info+_.sprintf(gettext("Profile's max. Y: %s\n Object's max. Y: %s\n"),volumeInfo.depth, printingArea["maxY"]);
-		                }
+
+                        // set print volume boundaries
+                        var boundaries = {
+                            minX : 0,
+                            maxX : volumeInfo.width,
+                            minY : 0,
+                            maxY : volumeInfo.depth,
+                            minZ : 0,
+                            maxZ : volumeInfo.height
+                        };
+                        if (volumeInfo.origin === "center") {
+                            boundaries["maxX"] = volumeInfo.width / 2;
+                            boundaries["minX"] = -1 * boundaries["maxX"];
+                            boundaries["maxY"] = volumeInfo.depth / 2;
+                            boundaries["minY"] = -1 * boundaries["maxY"];
                         }
-                        else
-                        {
-                            if(volumeInfo.origin=="center")
-                            {
-		                if(Math.abs(printingArea["minX"])>(volumeInfo.width/2))
-		                {
-		                    info=info+_.sprintf(gettext("Profile's min. X: %s\n Object's min. X: %s\n"),-(volumeInfo.width/2),printingArea["minX"]);
-		                }
-		                if(printingArea["maxX"]>(volumeInfo.width/2))
-		                {
-		                    info=info+_.sprintf(gettext("Profile's max. X: %s\n Object's max. X: %s\n"),(volumeInfo.width/2),printingArea["maxX"]);
-		                }
-		                if(Math.abs(printingArea["minY"])>(volumeInfo.depth/2))
-		                {
-		                    info=info+_.sprintf(gettext("Profile's min. Y: %s\n Object's min. Y: %s\n"),-(volumeInfo.depth/2),printingArea["minY"]);
-		                }
-		                if(printingArea["maxY"]>(volumeInfo.depth/2))
-		                {
-		                    info=info+_.sprintf(gettext("Profile's max. Y: %s\n Object's max. Y: %s)\n"),(volumeInfo.depth/2),printingArea["maxY"]);
-		                }
-                            }
+
+                        // find exceeded dimensions
+                        if (printingArea["minX"] < boundaries["minX"] || printingArea["maxX"] > boundaries["maxX"]) {
+                            info += _.sprintf(gettext("Profile's width: ( %s, %s) vs object's width: (%s, %s)\n"), boundaries["minX"],
+                                              boundaries["maxX"],printingArea["minX"], printingArea["maxX"]);
                         }
-                        if(printingArea["maxZ"]>volumeInfo.height)
-                        {
-                            info=info+_.sprintf(gettext("Profile's max. Z: %s\n Object's max. Z: %s"),volumeInfo.height,printingArea["maxZ"]);
+                        if (printingArea["minY"] < boundaries["minY"] || printingArea["maxY"] > boundaries["maxY"]) {
+                            info += _.sprintf(gettext("Profile's depth: (%s, %s) vs object's depth: (%s, %s)\n"),boundaries["minY"],
+                                              boundaries["maxY"], printingArea["minY"], printingArea["maxY"]);
                         }
-                        warning += pnotifyAdditionalInfo("<pre>"+info+"</pre>");
+                        if (printingArea["minZ"] < boundaries["minZ"] || printingArea["maxZ"] > boundaries["maxZ"]) {
+                            info += _.sprintf(gettext("Profile's height: (%s, %s) vs object's height: (%s, %s)\n"),boundaries["minZ"],
+                                              boundaries["maxZ"], printingArea["minZ"], printingArea["maxZ"]);
+                        }
+
+                        //warn user
+                        warning += pnotifyAdditionalInfo("<pre>" + info + "</pre>");
                         new PNotify({
                             title: "Object exceeds the printing area",
                             text: warning,
@@ -501,7 +499,7 @@ $(function() {
                             hide: false
                         });
                     }
-		}
+                }
             }
             if (data["prints"] && data["prints"]["last"]) {
                 output += gettext("Last Printed") + ": " + formatTimeAgo(data["prints"]["last"]["date"]) + "<br>";
@@ -583,7 +581,7 @@ $(function() {
                 if (_.endsWith(filename.toLowerCase(), ".stl")) {
                     self.slicing.show(location, filename);
                 }
-		
+        
                 if (data.result.done) {
                     $("#gcode_upload_progress .bar").css("width", "0%");
                     $("#gcode_upload_progress").removeClass("progress-striped").removeClass("active");

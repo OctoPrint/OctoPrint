@@ -51,9 +51,6 @@ class gcode(object):
 
 	def _load(self, gcodeFile, printer_profile, throttle=None):
 		previousE=0
-		xList=list()
-		yList=list()
-		zList=list()
 		filePos = 0
 		readBytes = 0
 		pos = [0.0, 0.0, 0.0]
@@ -131,14 +128,16 @@ class gcode(object):
 					e = getCodeFloat(line, 'E')
 					f = getCodeFloat(line, 'F')
 					#Add value to list in case move includes extrusion
-					if e is not None and (e-previousE)>0:
-						if x is not None:
-							xList.append(x)
-						if y is not None:
-							yList.append(y)
-						previousE=e
+					if e is not None and (e - previousE) > 0:
+						self.minX = x if self.minX is None or x < self.minX else self.minX
+						self.maxX = x if self.maxX is None or x > self.maxX else self.maxX
+						self.minY = y if self.minY is None or y < self.minY else self.minY
+						self.maxY = y if self.maxY is None or y > self.maxY else self.maxY
+						previousE = e
+
 					if z is not None:
-						zList.append(z)				
+						self.minZ = z if self.minZ is None or z < self.minZ else self.minZ
+						self.maxZ = z if self.maxZ is None or z > self.maxZ else self.maxZ
 					oldPos = pos
 					pos = pos[:]
 					if posAbs:
@@ -277,14 +276,6 @@ class gcode(object):
 
 			if throttle is not None:
 				throttle()
-
-		#We are only interested in minimum and maximum values from the list
-		self.minX=min(xList)
-		self.maxX=max(xList)
-		self.minY=min(yList)
-		self.maxY=max(yList)
-		self.minZ=min(zList)
-		self.maxZ=max(zList)
 
 		if self.progressCallback is not None:
 			self.progressCallback(100.0)
