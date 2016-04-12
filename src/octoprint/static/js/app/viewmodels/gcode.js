@@ -529,7 +529,7 @@ $(function() {
                     value = value - 1; // No need to check against min, this is done by the Slider anyway
                     break;
             }
-            self.incrementLayer(value);
+            self.changeLayer(value);
         };
 
         self.changeCommandRange = function(event) {
@@ -554,7 +554,7 @@ $(function() {
             self.tabActive = current == "#gcode";
         };
         
-        self.incrementLayer = function(value){
+        self.changeLayer = function(value){
             if (value != self.currentLayer) {
                 event.preventDefault();
 
@@ -578,12 +578,12 @@ $(function() {
         
         $( "#btn_layer_up" ).click(function() {
           var value = self.layerSlider.slider('getValue')+1;
-          self.incrementLayer(value);
+          self.changeLayer(value);
         });
         
         $( "#btn_layer_down" ).click(function() {
           var value = self.layerSlider.slider('getValue')-1;
-          self.incrementLayer(value);
+          self.changeLayer(value);
         });
     }
 
