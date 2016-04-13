@@ -578,13 +578,12 @@ $(function() {
         self.incrementLayer = function() {
           var value = self.layerSlider.slider('getValue')+1;
           self.shiftLayer(value);
-        }
+        };
         
         self.decrementLayer = function() {
           var value = self.layerSlider.slider('getValue')-1;
           self.shiftLayer(value);
-        }
-        
+        };
     }
 
     OCTOPRINT_VIEWMODELS.push([
