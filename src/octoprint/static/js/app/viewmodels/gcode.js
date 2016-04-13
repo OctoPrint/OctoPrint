@@ -52,6 +52,8 @@ $(function() {
 
         self.reader_sortLayers = ko.observable(true);
         self.reader_hideEmptyLayers = ko.observable(true);
+        
+        self.layerSelectionEnabled = ko.observable(false)
 
         self.synchronizeOptions = function(additionalRendererOptions, additionalReaderOptions) {
             var renderer = {
@@ -419,9 +421,7 @@ $(function() {
                     self.layerSlider.slider("disable");
                     self.layerSlider.slider("setMax", 1);
                     self.layerSlider.slider("setValue", 0);
-                    $('#btn_layer_up').prop('disabled', true);
-                    $('#btn_layer_down').prop('disabled', true);
-  
+                    self.layerSelectionEnabled(false);
                 }
                 self.currentLayer = 0;
             } else {
@@ -437,8 +437,7 @@ $(function() {
                     self.layerSlider.slider("enable");
                     self.layerSlider.slider("setMax", model.layersPrinted - 1);
                     self.layerSlider.slider("setValue", 0);
-                    $('#btn_layer_up').prop('disabled', false);
-                    $('#btn_layer_down').prop('disabled', false);
+                    self.layerSelectionEnabled(true);
                 }
             }
         };
@@ -529,7 +528,7 @@ $(function() {
                     value = value - 1; // No need to check against min, this is done by the Slider anyway
                     break;
             }
-            self.incrementLayer(value);
+            self.shiftLayer(value);
         };
 
         self.changeCommandRange = function(event) {
@@ -554,7 +553,7 @@ $(function() {
             self.tabActive = current == "#gcode";
         };
         
-        self.incrementLayer = function(value){
+        self.shiftLayer = function(value){
             if (value != self.currentLayer) {
                 event.preventDefault();
 
@@ -576,15 +575,16 @@ $(function() {
             }
         };
         
-        $( "#btn_layer_up" ).click(function() {
+        self.incrementLayer = function() {
           var value = self.layerSlider.slider('getValue')+1;
-          self.incrementLayer(value);
-        });
+          self.shiftLayer(value);
+        }
         
-        $( "#btn_layer_down" ).click(function() {
+        self.decrementLayer = function() {
           var value = self.layerSlider.slider('getValue')-1;
-          self.incrementLayer(value);
-        });
+          self.shiftLayer(value);
+        }
+        
     }
 
     OCTOPRINT_VIEWMODELS.push([
