@@ -284,6 +284,17 @@ $(function() {
 		self.bocusiniFilename = function(data){
 			return data.name.split('.gco')[0].replace(/_/g, ' ');
 		}
+        self.bocusiniRemoveThumbnail = function(data) {
+            var thumb_file = data.name.split('.gco')[0]+'.jpg';
+          
+            $.ajax({
+                url: API_BASEURL + "files/local/thumbs/" + thumb_file,
+                type: "DELETE",
+                success: function() {
+                    self.requestData();
+                }
+            });
+        };
 
         self.getEntryId = function(data) {
             return "gcode_file_" + md5(data["origin"] + ":" + data["name"]);
