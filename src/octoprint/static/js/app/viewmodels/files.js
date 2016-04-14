@@ -216,6 +216,9 @@ $(function() {
                     self.requestData();
                 }
             });
+			
+			self.bocusiniRemoveThumbnail(file);
+			
 	  }
 
         };
