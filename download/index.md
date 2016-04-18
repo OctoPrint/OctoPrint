@@ -3,8 +3,7 @@ layout: page
 title: Download & Setup
 ---
 
-OctoPi
-======
+# OctoPi
 
 [Guy Sheffer](https://github.com/guysoft) maintains ["OctoPi"](https://octopi.octoprint.org),
 a [Raspbian based](http://www.raspbian.org/) SD card image for the Raspberry Pi
@@ -27,8 +26,7 @@ You can download the latest version via the following button:
 
 Compatible with Raspberry Pi A, B, A+, B+, B2. For Raspberry Pi 3 and Zero please use a [nightly build](http://docstech.net/OctoPiMirror/nightly/) for now.
 
-Getting Started with OctoPi
----------------------------
+##  Getting Started with OctoPi
 
 Please follow these steps after downloading
 
@@ -55,8 +53,7 @@ Please also refer to [OctoPi's README](https://github.com/guysoft/OctoPi), espec
 
 ----
 
-Installing from source
-======================
+#  Installing from source
 
 The generic setup instructions boil down to
 
@@ -69,20 +66,17 @@ The generic setup instructions boil down to
 
 More specific setup instructions for the most common runtime environments can be found below.
 
-Linux
------
+##  Linux
 
 For installing OctoPrint from source, please take a look at [the setup instructions for Raspbian on the wiki](https://github.com/foosel/OctoPrint/wiki/Setup-on-a-Raspberry-Pi-running-Raspbian).
 They should be pretty identical on other Linux distributions.
 
-Windows
--------
+##  Windows
 
 OctoPrint is being developed under Windows 7, therefore it will run there as well although its targeted use case
 is running it on low-powered embedded devices with Linux. If you want to give it a try on Windows, you can find
 instructions on what to do [on the wiki](https://github.com/foosel/OctoPrint/wiki/Setup-on-Windows).
 
-Mac
----
+## Mac
 
 For installing OctoPrint on a Mac, please take a look at [the setup instructions for MacOS on the wiki](https://github.com/foosel/OctoPrint/wiki/Setup-on-Mac).

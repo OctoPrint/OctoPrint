@@ -1,0 +1,86 @@
+- id: full-remote-control-and-monitoring
+  title: Full remote control & monitoring
+  icon: wifi
+  short-description: Control and monitor every aspect of your 3D printer and your printing jobs right from within your browser.
+  description: 'Control and monitor every aspect of your 3D printer and your printing jobs right from within your browser:
+
+
+      * Access the **embedded webcam feed** and watch remotely how your printer is creating your newest thing.
+
+      * Get constant feedback regarding the **current progress of your print job**.
+
+      * Take a look at the **integrated GCODE visualizer** to see a rendition of the GCODE you are currently printing.
+
+      * Keep an eye on the **temperatures** of your hotends and print bed and adapt them on the fly.
+
+      * Move the print head **along all axes**, extrude, retract or just define your own [custom controls]().
+
+      * **Start, stop or just pause your current print job**, you are in full control at any time.'
+  screenshots:
+  - features/temperature-tab.png
+  - features/control-tab.png
+  - features/gcodeviewer-tab.png
+  - features/terminal-tab.png
+
+- id: compatible-and-extendable
+  title: Compatible and extendable
+  icon: puzzle-piece
+  short-description: OctoPrint's powerful plugin system allows extending its functionality and the integrated plugin repository makes it easy to find and install awesome plugins from the community.
+  description: 'Out of the box OctoPrint is **compatible with most of the available consumer 3D printers**. And its
+      powerful plugin system allows extending its functionality in various ways. To name a few:
+
+
+      * Have OctoPrint send you **push notifications** on job progress via [Pushbullet](http://plugins.octoprint.org/plugins/octobullet/), [Pushover](http://plugins.octoprint.org/plugins/pushover/) or [Mail](http://plugins.octoprint.org/plugins/emailnotifier/).
+
+      * Completely **replace OctoPrint''s UI** on mobile devices via [TouchUI](http://plugins.octoprint.org/plugins/touchui/).
+
+      * Integrate OctoPrint into your **messaging tool** of choice, like [Telegram](http://plugins.octoprint.org/plugins/telegram/) or [Slack](http://plugins.octoprint.org/plugins/slack/).
+
+      * Collect **statistics** of your printer and print jobs via the [Print History](http://plugins.octoprint.org/plugins/printhistory/) or the [Printer Statistics](http://plugins.octoprint.org/plugins/stats/) plugin.
+
+      * Add **support for specific printers** like [Flashforge printers or older Makerbots](http://plugins.octoprint.org/plugins/gpx/) or the [Micro 3D printer](http://plugins.octoprint.org/plugins/m3dfio/).
+
+
+    OctoPrint''s [official plugin repository](http://plugins.octoprint.org/) is integrated right within OctoPrint and installing a plugin is only
+    a click away. And [getting started](http://docs.octoprint.org/en/master/plugins/index.html) on plugin development is easy!'
+  screenshots:
+  - features/printerprofile-dialog.png
+  - features/pluginrepo-dialog.png
+
+- id: 100-percent-open-source
+  title: 100% Open Source
+  icon: github
+  short-description: Free and open source software released under the Affero General Public License (AGPL).
+  description: 'OctoPrint is Free and Open Source Software released under the GNU Affero General Public License (AGPL).
+
+
+    All its source code is [available in its Github repository](https://github.com/foosel/OctoPrint) and everyone can
+    modify it to their own needs.
+
+    '
+  screenshots:
+  - features/opensource.png
+
+- id: even-more
+  title: And even more!
+  description: '
+
+      * Create awesome **timelapse recordings** of your prints!
+
+      * **Slice** your STL files directly within OctoPrint.
+
+      * Control who can control your printer with the built-in **access controls**.
+
+      * Add **system commands** to the menu to easily shutdown or reboot your OctoPrint server or even your printer.
+
+      * Configure **even hooks** to react to certain events within OctoPrint by calling external commands or sending custom GCODE to your printer.
+
+      * and so much more...'
+
+
+  screenshots:
+  - features/timelapse-tab.png
+  - features/slicing-dialog.png
+  - features/accesscontrol-dialog.png
+  - features/system-menu.png
+

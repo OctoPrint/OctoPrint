@@ -1,17 +1,44 @@
-<div class="navbar navbar-inverse navbar-fixed-top">
+<div class="navbar navbar-inverse navbar-fixed-top" data-scroll-header>
   <div class="navbar-inner">
     <div class="container">
-      <a class="brand" href="/"><img src="/assets/img/tentacle-20x20.png" class="tentacle"> {{ site.title }}</a>
-      <ul class="nav">
-        <li><a href="/download/">Download</a></li>
-        <li><a href="http://plugins.octoprint.org">Plugins</a></li>
-        <li><a href="https://github.com/foosel/OctoPrint/wiki/FAQ">FAQ</a></li>
-        <li><a href="http://docs.octoprint.org">Documentation</a></li>
-        <li><a href="https://github.com/foosel/OctoPrint/issues">Issuetracker</a></li>
-        <li><a href="/slides/">Slides</a></li>
-      </ul>
+      <a class="brand hidden-phone" href="/"><img src="/assets/img/tentacle-20x20.png" alt="Tentacle logo" class="tentacle"> {{ site.title }}</a>
+      <a class="brand visible-phone" href="/"><img src="/assets/img/tentacle-20x20.png" alt="Tentacle logo" class="tentacle"></a>
+      <a href="javascript:void(0)" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </a>
       <div class="pull-right">
-        <a class="brand bqlogo" href="http://www.bq.com"><img src="/assets/img/bq-30x30-allwhite.png"></a>
+        <ul class="nav social-navbar">
+          <li><a href="/support-octoprint/" title="Support OctoPrint!"><img src="{{ BASE_PATH }}/assets/img/sponsors/patreon.png" style="height: 18px; margin-top: -4px"></a></li>
+          <li><a href="https://twitter.com/OctoPrint3D" title="OctoPrint on Twitter"><i class="fa fa-twitter"></i></a></li>
+          <li><a href="" title="OctoPrint on G+"><i class="fa fa-google-plus"></i></a></li>
+          <li><a href="https://facebook.com/OctoPrint" title="OctoPrint on Facebook"><i class="fa fa-facebook"></i></a></li>
+          <li><a href="https://github.com/foosel/OctoPrint" title="OctoPrint on Github"><i class="fa fa-github"></i></a></li>
+        </ul>
+      </div>
+      <div class="nav-collapse collapse">
+        <ul class="nav">
+          <li><a href="/download/">Download</a></li>
+          <li><a href="/support-octoprint/">Donate</a></li>
+          <li class="dropdown">
+            <a href="javascript:void(0)" class="dropdown-toggle" data-toggle="dropdown">Learn <b class="caret"></b></a>
+            <ul class="dropdown-menu">
+              <li><a href="https://github.com/foosel/OctoPrint/wiki/FAQ">Frequently Asked Questions</a></li>
+              <li><a href="https://github.com/foosel/OctoPrint/wiki">Wiki</a></li>
+              <li><a href="http://docs.octoprint.org">Documentation</a></li>
+            </ul>
+          </li>
+          <li class="dropdown">
+            <a href="javascript:void(0)" class="dropdown-toggle" data-toggle="dropdown">Contribute <b class="caret"></b></a>
+            <ul class="dropdown-menu">
+              <li><a href="https://github.com/foosel/OctoPrint">Source</a></li>
+              <li><a href="https://github.com/foosel/OctoPrint/blob/master/CONTRIBUTING.md">Contribution Guidelines</a></li>
+              <li><a href="https://github.com/foosel/OctoPrint/issues">Issuetracker</a></li>
+            </ul>
+          </li>
+          <li><a href="http://plugins.octoprint.org">Plugins</a></li>
+        </ul>
       </div>
     </div>
   </div>

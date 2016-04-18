@@ -9,18 +9,24 @@
     <title>{{ page.title }}</title>
     {% if page.description %}<meta name="description" content="{{ page.description }}">{% endif %}
     <meta name="author" content="{{ site.author.name }}">
-    <meta name="google-site-verification" content="osM4sczQyefZOgwP3h7NLvcKoN9YLM63zh5xjJoa8SU" />
 
     <!--[if lt IE 9]>
     <script src="//html5shim.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
 
     <!-- Enable responsive viewport -->
-    <meta name="viewport" content="width=960">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <!-- Le styles -->
     <link rel="stylesheet" href="{{ BASE_PATH }}/assets/css/site.css">
+    <link rel="stylesheet" href="{{ BASE_PATH }}/assets/css/bootstrap-responsive.css">
     <link rel="stylesheet" href="{{ BASE_PATH }}/assets/css/prettify.css">
+    <link rel="stylesheet" href="{{ BASE_PATH }}/assets/css/lightbox.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+
+    <link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/jquery.slick/1.5.9/slick.css"/>
+    <link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/jquery.slick/1.5.9/slick-theme.css"/>
+
 
     <!-- Le fav and touch icons -->
     <link rel="shortcut icon" href="{{ BASE_PATH }}/assets/img/tentacle-32x32.png">
@@ -31,8 +37,7 @@
 
 </head>
 
-<body data-spy="scroll" data-target=".navbar">
-<div id="fb-root"></div>
+<body>
 
 {% include navigation.html %}
 
@@ -44,12 +49,14 @@
 
 {% include footer.html %}
 
-<a href="https://github.com/foosel/OctoPrint"><img style="position: absolute; top: 42px; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_green_007200.png" alt="Fork me on GitHub"></a>
-
 <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
 <script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.4.4/underscore-min.js"></script>
 <script src="//cdnjs.cloudflare.com/ajax/libs/prettify/r224/prettify.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/holder/2.9.3/holder.min.js"></script>
+<script src="//cdn.jsdelivr.net/jquery.slick/1.5.9/slick.min.js"></script>
 <script src="{{ BASE_PATH }}/assets/js/bootstrap.min.js"></script>
+<script src="{{ BASE_PATH }}/assets/js/lightbox.min.js"></script>
+<script src="{{ BASE_PATH }}/assets/js/smooth-scroll.min.js"></script>
 <script src="{{ BASE_PATH }}/assets/js/site.js"></script>
 
 <script>
