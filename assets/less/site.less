@@ -47,6 +47,11 @@ body, html {
     li {
       margin-left: 10px;
     }
+
+    .navbar-patreon {
+      height: 18px;
+      margin-top: -4px;
+    }
   }
 }
 
@@ -69,6 +74,30 @@ ol.slick-dots {
   margin: 0;
 }
 
+.octo-heart {
+  color: @octoLight;
+}
+
+.to-top {
+  position: fixed;
+  right: 10px;
+  bottom: 10px;
+  cursor: pointer;
+  padding: 10px;
+  background-color: @octoDark;
+  display: none;
+
+  border: 1px solid mix(@octoLight, @octoDark, 50%);
+  .border-radius(10px);
+
+  i {
+    color: white;
+  }
+
+  &.active {
+    display: block;
+  }
+}
 
 #wrap {
   padding-top: 40px;

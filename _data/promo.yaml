@@ -13,7 +13,7 @@
 
       * Keep an eye on the **temperatures** of your hotends and print bed and adapt them on the fly.
 
-      * Move the print head **along all axes**, extrude, retract or just define your own [custom controls]().
+      * Move the print head **along all axes**, extrude, retract or just define your own [custom controls](http://docs.octoprint.org/en/master/features/custom_controls.html).
 
       * **Start, stop or just pause your current print job**, you are in full control at any time.'
   screenshots:
