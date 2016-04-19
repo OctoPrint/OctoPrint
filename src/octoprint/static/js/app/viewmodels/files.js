@@ -396,6 +396,7 @@ $(function() {
                 self.localTarget = $("#drop_locally");
             } else {
                 self.localTarget = $("#drop");
+                self.listHelper.removeFilter('sd');
             }
             self.sdTarget = $("#drop_sd");
 
