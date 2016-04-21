@@ -57,10 +57,9 @@
     <!-- Jog distance -->
     <div class="distance">
         <div class="btn-group" data-toggle="buttons-radio" id="jog_distance">
-            <button type="button" id="control-distance01" class="btn distance" data-distance="0.1" data-bind="enable: loginState.isUser()">0.1</button>
-            <button type="button" id="control-distance1" class="btn distance" data-distance="1" data-bind="enable: loginState.isUser()">1</button>
-            <button type="button" id="control-distance10" class="btn distance active" data-distance="10" data-bind="enable: loginState.isUser()">10</button>
-            <button type="button" id="control-distance100" class="btn distance" data-distance="100" data-bind="enable: loginState.isUser()">100</button>
+            <!-- ko foreach: distances -->
+            <button type="button" class="btn distance" data-bind="enable: $root.loginState.isUser(), text: $data, click: function() { $root.distance($data) }, css: { active: $root.distance() === $data }, attr: { id: 'control-distance' + $root.stripDistanceDecimal($data) }"></button>
+            <!-- /ko -->
         </div>
     </div>
 
