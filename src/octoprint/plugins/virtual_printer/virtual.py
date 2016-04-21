@@ -150,7 +150,12 @@ class VirtualPrinter(object):
 
 			# strip checksum
 			if "*" in data:
+				checksum = int(data[data.rfind("*") + 1:])
 				data = data[:data.rfind("*")]
+				if not checksum == self._calculate_checksum(data):
+					self._triggerResend(expected=self.currentLine + 1)
+					continue
+
 				self.currentLine += 1
 			elif settings().getBoolean(["devel", "virtualPrinter", "forceChecksum"]):
 				self._send("Error: Missing checksum")
@@ -387,6 +392,12 @@ class VirtualPrinter(object):
 	_gcode_G3 = _gcode_G0
 
 	##~~ further helpers
+
+	def _calculate_checksum(self, line):
+		checksum = 0
+		for c in line:
+			checksum ^= ord(c)
+		return checksum
 
 	def _kill(self):
 		if not self._supportM112:
