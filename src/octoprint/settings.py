@@ -111,6 +111,7 @@ default_settings = {
 		"disconnectOnErrors": True,
 		"ignoreErrorsFromFirmware": False,
 		"logResends": True,
+		"autoUppercaseBlacklist": ["M117"],
 		"supportResendsWithoutOk": False,
 		"logPositionOnPause": True,
 		"logPositionOnCancel": True,

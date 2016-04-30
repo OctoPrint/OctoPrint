@@ -172,6 +172,7 @@ $(function() {
         self.serial_ignoreErrorsFromFirmware = ko.observable(undefined);
         self.serial_disconnectOnErrors = ko.observable(undefined);
         self.serial_triggerOkForM29 = ko.observable(undefined);
+        self.serial_autoUppercaseBlacklist = ko.observable(undefined);
         self.serial_supportResendsWithoutOk = ko.observable(undefined);
         self.serial_logPositionOnPause = ko.observable(undefined);
         self.serial_logPositionOnCancel = ko.observable(undefined);
@@ -670,7 +671,8 @@ $(function() {
                     additionalPorts : function() { return commentableLinesToArray(self.serial_additionalPorts()) },
                     additionalBaudrates: function() { return _.map(splitTextToArray(self.serial_additionalBaudrates(), ",", true, function(item) { return !isNaN(parseInt(item)); }), function(item) { return parseInt(item); }) },
                     longRunningCommands: function() { return splitTextToArray(self.serial_longRunningCommands(), ",", true) },
-                    checksumRequiringCommands: function() { return splitTextToArray(self.serial_checksumRequiringCommands(), ",", true) }
+                    checksumRequiringCommands: function() { return splitTextToArray(self.serial_checksumRequiringCommands(), ",", true) },
+                    autoUppercaseBlacklist: function() { return splitTextToArray(self.serial_autoUppercaseBlacklist(), ",", true) },
                 },
                 scripts: {
                     gcode: function() {
@@ -781,7 +783,8 @@ $(function() {
                     additionalPorts : function(value) { self.serial_additionalPorts(value.join("\n"))},
                     additionalBaudrates: function(value) { self.serial_additionalBaudrates(value.join(", "))},
                     longRunningCommands: function(value) { self.serial_longRunningCommands(value.join(", "))},
-                    checksumRequiringCommands: function(value) { self.serial_checksumRequiringCommands(value.join(", "))}
+                    checksumRequiringCommands: function(value) { self.serial_checksumRequiringCommands(value.join(", "))},
+                    autoUppercaseBlacklist: function(value) { self.serial_autoUppercaseBlacklist(value.join(", "))}
                 },
                 terminalFilters: function(value) { self.terminalFilters($.extend(true, [], value)) },
                 temperature: {
