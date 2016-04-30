@@ -116,6 +116,13 @@
                     <span class="help-inline">{{ _('Use this to specify which commands <strong>always</strong> need to be sent with a checksum. Comma separated list.') }}</span>
                 </div>
             </div>
+            <div class="control-group" title="{{ _('Commands to not completely auto-uppercase ') }}">
+                <label class="control-label" for="settings-serialAutoUppercaseBlacklist">{{ _('Auto Uppercase Blacklist') }}</label>
+                <div class="controls">
+                    <input type="text" class="input-block-level" id="settings-serialAutoUppercaseBlacklist" data-bind="value: serial_autoUppercaseBlacklist">
+                    <span class="help-inline">{{ _('Use this to specify the commands that should not be automatically uppercased') }}</span>
+                </div>
+            </div>
             <div class="controls">
                 <label class="checkbox">
                     <input type="checkbox" data-bind="checked: serial_triggerOkForM29" id="settings-triggerOkForM29"> {{ _('Generate additional <code>ok</code> for <code>M29</code>') }} <span class="label">{{ _('Most Marlin < v1.1.0') }}</span>

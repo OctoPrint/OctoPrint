@@ -91,6 +91,7 @@ default_settings = {
 		"disconnectOnErrors": True,
 		"ignoreErrorsFromFirmware": False,
 		"logResends": False,
+		"autoUppercaseBlacklist": ["M117"],
 
 		# command specific flags
 		"triggerOkForM29": True
@@ -1026,6 +1027,7 @@ class Settings(object):
 	#~~ setter
 
 	def set(self, path, value, force=False, defaults=None, config=None, preprocessors=None):
+		
 		if len(path) == 0:
 			return
 
