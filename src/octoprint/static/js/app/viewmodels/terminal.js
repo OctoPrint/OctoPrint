@@ -272,7 +272,7 @@ $(function() {
         };
 
         self.fakeAck = function() {
-            OctoPrint.printer.fakeAck();
+            OctoPrint.connection.fakeAck();
         };
 
         self.handleKeyDown = function(event) {
