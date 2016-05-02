@@ -12,6 +12,7 @@ from flask.ext.login import LoginManager, current_user
 from flask.ext.principal import Principal, Permission, RoleNeed, identity_loaded, UserNeed
 from flask.ext.babel import Babel, gettext, ngettext
 from flask.ext.assets import Environment, Bundle
+from flaskext.markdown import Markdown
 from babel import Locale
 from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
@@ -112,7 +113,7 @@ def load_user(id):
 #~~ startup code
 
 
-class Server():
+class Server(object):
 	def __init__(self, configfile=None, basedir=None, host="0.0.0.0", port=5000, debug=False, allowRoot=False, logConf=None):
 		self._configfile = configfile
 		self._basedir = basedir
@@ -642,6 +643,8 @@ class Server():
 			response.headers.add("X-Clacks-Overhead", "GNU Terry Pratchett")
 			return response
 
+		Markdown(app)
+
 	def _setup_i18n(self, app):
 		global babel
 		global LOCALES
@@ -669,7 +672,40 @@ class Server():
 			return self._get_locale()
 
 	def _setup_jinja2(self):
+		import re
+
 		app.jinja_env.add_extension("jinja2.ext.do")
+
+		def regex_replace(s, find, replace):
+			return re.sub(find, replace, s)
+
+		html_header_regex = re.compile("<h(?P<number>[1-6])>(?P<content>.*?)</h(?P=number)>")
+		def offset_html_headers(s, offset):
+			def repl(match):
+				number = int(match.group("number"))
+				number += offset
+				if number > 6:
+					number = 6
+				elif number < 1:
+					number = 1
+				return "<h{number}>{content}</h{number}>".format(number=number, content=match.group("content"))
+			return html_header_regex.sub(repl, s)
+
+		markdown_header_regex = re.compile("^(?P<hashs>#+)\s+(?P<content>.*)$", flags=re.MULTILINE)
+		def offset_markdown_headers(s, offset):
+			def repl(match):
+				number = len(match.group("hashs"))
+				number += offset
+				if number > 6:
+					number = 6
+				elif number < 1:
+					number = 1
+				return "{hashs} {content}".format(hashs="#" * number, content=match.group("content"))
+			return markdown_header_regex.sub(repl, s)
+
+		app.jinja_env.filters["regex_replace"] = regex_replace
+		app.jinja_env.filters["offset_html_headers"] = offset_html_headers
+		app.jinja_env.filters["offset_markdown_headers"] = offset_markdown_headers
 
 		# configure additional template folders for jinja2
 		import jinja2
@@ -678,12 +714,37 @@ class Server():
 		                                                                  path_filter=lambda x: not octoprint.util.is_hidden_path(x))
 		filesystem_loader.searchpath = self._template_searchpaths
 
-		jinja_loader = jinja2.ChoiceLoader([
-			app.jinja_loader,
-			filesystem_loader
-		])
+		loaders = [app.jinja_loader, filesystem_loader]
+		if octoprint.util.is_running_from_source():
+			root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
+			allowed = ["AUTHORS.md", "CHANGELOG.md", "SPONSORS.md", "THIRDPARTYLICENSES.md"]
+
+			class SourceRootFilesystemLoader(jinja2.FileSystemLoader):
+				def __init__(self, template_filter, prefix, *args, **kwargs):
+					jinja2.FileSystemLoader.__init__(self, *args, **kwargs)
+					self._filter = template_filter
+					if not prefix.endswith("/"):
+						prefix += "/"
+					self._prefix = prefix
+
+				def get_source(self, environment, template):
+					if not template.startswith(self._prefix):
+						raise jinja2.TemplateNotFound(template)
+
+					template = template[len(self._prefix):]
+					if not self._filter(template):
+						raise jinja2.TemplateNotFound(template)
+
+					return jinja2.FileSystemLoader.get_source(self, environment, template)
+
+				def list_templates(self):
+					templates = jinja2.FileSystemLoader.list_templates(self)
+					return map(lambda t: self._prefix + t, filter(self._filter, templates))
+
+			loaders.append(SourceRootFilesystemLoader(lambda t: t in allowed, "_data/", root))
+
+		jinja_loader = jinja2.ChoiceLoader(loaders)
 		app.jinja_loader = jinja_loader
-		del jinja2
 
 		self._register_template_plugins()
 

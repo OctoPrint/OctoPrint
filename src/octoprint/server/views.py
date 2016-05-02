@@ -6,6 +6,7 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import os
+import datetime
 
 from collections import defaultdict
 from flask import request, g, url_for, make_response, render_template, send_from_directory, redirect
@@ -60,6 +61,7 @@ def index():
 		tab=dict(div=lambda x: "tab_plugin_" + x, template=lambda x: x + "_tab.jinja2", to_entry=lambda data: (data["name"], data)),
 		settings=dict(div=lambda x: "settings_plugin_" + x, template=lambda x: x + "_settings.jinja2", to_entry=lambda data: (data["name"], data)),
 		usersettings=dict(div=lambda x: "usersettings_plugin_" + x, template=lambda x: x + "_usersettings.jinja2", to_entry=lambda data: (data["name"], data)),
+		about=dict(div=lambda x: "about_plugin_" + x, template=lambda x: x + "_about.jinja2", to_entry=lambda data: (data["name"], data)),
 		generic=dict(template=lambda x: x + ".jinja2", to_entry=lambda data: data)
 	)
 
@@ -70,6 +72,7 @@ def index():
 		tab=dict(add="append", key="name"),
 		settings=dict(add="custom_append", key="name", custom_add_entries=lambda missing: dict(section_plugins=(gettext("Plugins"), None)), custom_add_order=lambda missing: ["section_plugins"] + missing),
 		usersettings=dict(add="append", key="name"),
+		about=dict(add="append", key="name"),
 		generic=dict(add="append", key=None)
 	)
 
@@ -177,6 +180,17 @@ def index():
 			interface=(gettext("Interface"), dict(template="dialogs/usersettings/interface.jinja2", _div="usersettings_interface", custom_bindings=False)),
 		)
 
+	# about dialog
+
+	templates["about"]["entries"] = dict(
+		about=(gettext("About OctoPrint"), dict(template="dialogs/about/about.jinja2", _div="about_about", custom_bindings=False)),
+		license=(gettext("OctoPrint License"), dict(template="dialogs/about/license.jinja2", _div="about_license", custom_bindings=False)),
+		thirdparty=(gettext("Third Party Licenses"), dict(template="dialogs/about/thirdparty.jinja2", _div="about_thirdparty", custom_bindings=False)),
+		authors=(gettext("Authors"), dict(template="dialogs/about/authors.jinja2", _div="about_authors", custom_bindings=False)),
+		changelog=(gettext("Changelog"), dict(template="dialogs/about/changelog.jinja2", _div="about_changelog", custom_bindings=False)),
+		sponsors=(gettext("Sponsors"), dict(template="dialogs/about/sponsors.jinja2", _div="about_sponsors", custom_bindings=False))
+	)
+
 	# extract data from template plugins
 
 	template_plugins = pluginManager.get_implementations(octoprint.plugin.TemplatePlugin)
@@ -282,6 +296,7 @@ def index():
 
 	#~~ prepare full set of template vars for rendering
 
+	now = datetime.datetime.utcnow()
 	first_run = settings().getBoolean(["server", "firstRun"]) and userManager.enabled and not userManager.hasBeenCustomized()
 	render_kwargs = dict(
 		webcamStream=settings().get(["webcam", "stream"]),
@@ -299,6 +314,7 @@ def index():
 		templates=templates,
 		pluginNames=plugin_names,
 		locales=locales,
+		now=now,
 		supportedExtensions=map(lambda ext: ".{}".format(ext), get_all_extensions())
 	)
 	render_kwargs.update(plugin_vars)

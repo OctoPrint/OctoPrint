@@ -119,6 +119,7 @@
                         <li><a href="https://github.com/foosel/OctoPrint/"><i class="icon-github"></i> {{ _('Sourcecode') }}</a></li>
                         <li><a href="http://docs.octoprint.org"><i class="icon-book"></i> {{ _('Documentation') }}</a></li>
                         <li><a href="https://github.com/foosel/OctoPrint/issues"><i class="icon-flag"></i> {{ _('Bugs and Requests') }}</a></li>
+                        <li id="footer_about"><a href="javascript:void(0)" data-bind="click: show"><i class="icon-info-sign"></i> {{ _('About') }}</a></li>
                     </ul>
                 </div>
             </div>
@@ -129,6 +130,7 @@
             {% include 'dialogs/settings.jinja2' %}
             {% include 'dialogs/slicing.jinja2' %}
             {% include 'dialogs/usersettings.jinja2' %}
+            {% include 'dialogs/about.jinja2' %}
             <!-- End of dialogs -->
 
             <!-- Overlays -->

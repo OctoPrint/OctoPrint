@@ -249,9 +249,10 @@ class MachineCom(object):
 		self._lastCommError = None
 		self._lastResendNumber = None
 		self._currentResendCount = 0
-		self._resendSwallowNextOk = False
 		self._resendSwallowRepetitions = settings().getBoolean(["feature", "ignoreIdenticalResends"])
 		self._resendSwallowRepetitionsCounter = 0
+
+		self._supportResendsWithoutOk = settings().getBoolean(["serial", "supportResendsWithoutOk"])
 
 		self._resendActive = False
 
@@ -262,11 +263,11 @@ class MachineCom(object):
 
 		self._log_resends = settings().getBoolean(["serial", "logResends"])
 
-		# don't log more resends than 5 / 10s
+		# don't log more resends than 5 / 60s
 		self._log_resends_rate_start = None
 		self._log_resends_rate_count = 0
 		self._log_resends_max = 5
-		self._log_resends_rate_frame = 10
+		self._log_resends_rate_frame = 60
 
 		self._long_running_commands = settings().get(["serial", "longRunningCommands"])
 		self._checksum_requiring_commands = settings().get(["serial", "checksumRequiringCommands"])
@@ -1590,84 +1591,89 @@ class MachineCom(object):
 				self._callback.on_comm_progress()
 
 	def _handleResendRequest(self, line):
-		lineToResend = None
 		try:
-			lineToResend = int(line.replace("N:", " ").replace("N", " ").replace(":", " ").split()[-1])
-		except:
-			if "rs" in line:
-				lineToResend = int(line.split()[1])
+			lineToResend = None
+			try:
+				lineToResend = int(line.replace("N:", " ").replace("N", " ").replace(":", " ").split()[-1])
+			except:
+				if "rs" in line:
+					lineToResend = int(line.split()[1])
 
-		if lineToResend is None:
-			return False
+			if lineToResend is None:
+				return False
 
-		if self._resendDelta is None and lineToResend == self._currentLine:
-			# We don't expect to have an active resend request and the printer is requesting a resend of
-			# a line we haven't yet sent.
+			if self._resendDelta is None and lineToResend == self._currentLine:
+				# We don't expect to have an active resend request and the printer is requesting a resend of
+				# a line we haven't yet sent.
+				#
+				# This means the printer got a line from us with N = self._currentLine - 1 but had already
+				# acknowledged that. This can happen if the last line was resent due to a timeout during
+				# an active (prior) resend request.
+				#
+				# We will ignore this resend request and just continue normally.
+				self._logger.debug("Ignoring resend request for line %d == current line, we haven't sent that yet so the printer got N-1 twice from us, probably due to a timeout" % lineToResend)
+				return False
+
+			lastCommError = self._lastCommError
+			self._lastCommError = None
+
+			resendDelta = self._currentLine - lineToResend
+
+			if lastCommError is not None \
+					and ("line number" in lastCommError.lower() or "expected line" in lastCommError.lower()) \
+					and lineToResend == self._lastResendNumber \
+					and self._resendDelta is not None and self._currentResendCount < self._resendDelta:
+				self._logger.debug("Ignoring resend request for line %d, that still originates from lines we sent before we got the first resend request" % lineToResend)
+				self._currentResendCount += 1
+				return True
+
+			# If we ignore resend repetitions (Repetier firmware...), check if we
+			# need to do this now. If the same line number has been requested we
+			# already saw and resent, we'll ignore it up to <counter> times.
+			if self._resendSwallowRepetitions and lineToResend == self._lastResendNumber and self._resendSwallowRepetitionsCounter > 0:
+				self._logger.debug("Ignoring resend request for line %d, that is probably a repetition sent by the firmware to ensure it arrives, not a real request" % lineToResend)
+				self._resendSwallowRepetitionsCounter -= 1
+				return True
+
+			self._resendActive = True
+			self._resendDelta = resendDelta
+			self._lastResendNumber = lineToResend
+			self._currentResendCount = 0
+			self._resendSwallowRepetitionsCounter = settings().getInt(["feature", "identicalResendsCountdown"])
+
+			if self._resendDelta > len(self._lastLines) or len(self._lastLines) == 0 or self._resendDelta < 0:
+				self._errorValue = "Printer requested line %d but no sufficient history is available, can't resend" % lineToResend
+				self._log(self._errorValue)
+				self._logger.warn(self._errorValue + ". Printer requested line {}, current line is {}, line history has {} entries.".format(lineToResend, self._currentLine, len(self._lastLines)))
+				if self.isPrinting():
+					# abort the print, there's nothing we can do to rescue it now
+					self._changeState(self.STATE_ERROR)
+					eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
+				else:
+					# reset resend delta, we can't do anything about it
+					self._resendDelta = None
+
+			# if we log resends, make sure we don't log more resends than the set rate within a window
 			#
-			# This means the printer got a line from us with N = self._currentLine - 1 but had already
-			# acknowledged that. This can happen if the last line was resent due to a timeout during
-			# an active (prior) resend request.
-			#
-			# We will ignore this resend request and just continue normally.
-			self._logger.debug("Ignoring resend request for line %d == current line, we haven't sent that yet so the printer got N-1 twice from us, probably due to a timeout" % lineToResend)
-			return False
+			# this it to prevent the log from getting flooded for extremely bad communication issues
+			if self._log_resends:
+				now = time.time()
+				new_rate_window = self._log_resends_rate_start is None or self._log_resends_rate_start + self._log_resends_rate_frame < now
+				in_rate = self._log_resends_rate_count < self._log_resends_max
 
-		lastCommError = self._lastCommError
-		self._lastCommError = None
+				if new_rate_window or in_rate:
+					if new_rate_window:
+						self._log_resends_rate_start = now
+						self._log_resends_rate_count = 0
 
-		resendDelta = self._currentLine - lineToResend
+					self._to_logfile_with_terminal("Got a resend request from the printer: requested line = {}, current line = {}".format(lineToResend, self._currentLine))
+					self._log_resends_rate_count += 1
 
-		if lastCommError is not None \
-				and ("line number" in lastCommError.lower() or "expected line" in lastCommError.lower()) \
-				and lineToResend == self._lastResendNumber \
-				and self._resendDelta is not None and self._currentResendCount < self._resendDelta:
-			self._logger.debug("Ignoring resend request for line %d, that still originates from lines we sent before we got the first resend request" % lineToResend)
-			self._currentResendCount += 1
 			return True
-
-		# If we ignore resend repetitions (Repetier firmware...), check if we
-		# need to do this now. If the same line number has been requested we
-		# already saw and resent, we'll ignore it up to <counter> times.
-		if self._resendSwallowRepetitions and lineToResend == self._lastResendNumber and self._resendSwallowRepetitionsCounter > 0:
-			self._logger.debug("Ignoring resend request for line %d, that is probably a repetition sent by the firmware to ensure it arrives, not a real request" % lineToResend)
-			self._resendSwallowRepetitionsCounter -= 1
-			return True
-
-		self._resendActive = True
-		self._resendDelta = resendDelta
-		self._lastResendNumber = lineToResend
-		self._currentResendCount = 0
-		self._resendSwallowRepetitionsCounter = settings().getInt(["feature", "identicalResendsCountdown"])
-
-		if self._resendDelta > len(self._lastLines) or len(self._lastLines) == 0 or self._resendDelta < 0:
-			self._errorValue = "Printer requested line %d but no sufficient history is available, can't resend" % lineToResend
-			self._log(self._errorValue)
-			self._logger.warn(self._errorValue + ". Printer requested line {}, current line is {}, line history has {} entries.".format(lineToResend, self._currentLine, len(self._lastLines)))
-			if self.isPrinting():
-				# abort the print, there's nothing we can do to rescue it now
-				self._changeState(self.STATE_ERROR)
-				eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
-			else:
-				# reset resend delta, we can't do anything about it
-				self._resendDelta = None
-
-		# if we log resends, make sure we don't log more resends than the set rate within a window
-		#
-		# this it to prevent the log from getting flooded for extremely bad communication issues
-		if self._log_resends:
-			now = time.time()
-			new_rate_window = self._log_resends_rate_start is None or self._log_resends_rate_start + self._log_resends_rate_frame < now
-			in_rate = self._log_resends_rate_count < self._log_resends_max
-
-			if new_rate_window or in_rate:
-				if new_rate_window:
-					self._log_resends_rate_start = now
-					self._log_resends_rate_count = 0
-
-				self._to_logfile_with_terminal("Got a resend request from the printer: requested line = {}, current line = {}".format(lineToResend, self._currentLine))
-				self._log_resends_rate_count += 1
-
-		return True
+		finally:
+			if self._supportResendsWithoutOk:
+				# simulate an ok if our flags indicate that the printer needs that for resend requests to work
+				self._handle_ok()
 
 	def _resendSameCommand(self):
 		self._resendNextCommand(again=True)

@@ -373,6 +373,11 @@ def to_unicode(s_or_u, encoding="utf-8", errors="strict"):
 		return s_or_u
 
 
+def is_running_from_source():
+	root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
+	return os.path.isdir(os.path.join(root, "src")) and os.path.isfile(os.path.join(root, "setup.py"))
+
+
 def dict_merge(a, b):
 	"""
 	Recursively deep-merges two dictionaries.

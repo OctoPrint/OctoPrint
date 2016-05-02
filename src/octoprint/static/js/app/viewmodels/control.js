@@ -26,6 +26,9 @@ $(function() {
         self.extrusionAmount = ko.observable(undefined);
         self.controls = ko.observableArray([]);
 
+        self.distances = ko.observableArray([0.1, 1, 10, 100]);
+        self.distance = ko.observable(10);
+
         self.tools = ko.observableArray([]);
 
         self.feedRate = ko.observable(100);
@@ -249,7 +252,7 @@ $(function() {
 
         self.sendJogCommand = function (axis, multiplier, distance) {
             if (typeof distance === "undefined")
-                distance = $('#jog_distance button.active').data('distance');
+                distance = self.distance();
             if (self.settings.printerProfiles.currentProfileData() && self.settings.printerProfiles.currentProfileData()["axes"] && self.settings.printerProfiles.currentProfileData()["axes"][axis] && self.settings.printerProfiles.currentProfileData()["axes"][axis]["inverted"]()) {
                 multiplier *= -1;
             }
@@ -582,6 +585,10 @@ $(function() {
                 }
                 button.click();
             }
+        };
+
+        self.stripDistanceDecimal = function(distance) {
+            return distance.toString().replace(".", "");
         };
 
     }

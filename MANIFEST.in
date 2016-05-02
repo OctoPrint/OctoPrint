@@ -4,5 +4,8 @@ recursive-include src/octoprint/plugins *
 recursive-include src/octoprint/translations *
 include versioneer.py
 include src/octoprint/_version.py
+include AUTHORS.md
+include CHANGELOG.md
+include LICENSE
 include README.md
 include requirements.txt
