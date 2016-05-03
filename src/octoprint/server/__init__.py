@@ -703,9 +703,24 @@ class Server(object):
 				return "{hashs} {content}".format(hashs="#" * number, content=match.group("content"))
 			return markdown_header_regex.sub(repl, s)
 
+		html_link_regex = re.compile("<(?P<tag>a.*?)>(?P<content>.*?)</a>")
+		def externalize_links(text):
+			def repl(match):
+				tag = match.group("tag")
+				if not u"href" in tag:
+					return match.group(0)
+
+				if not u"target=" in tag and not u"rel=" in tag:
+					tag += u" target=\"_blank\" rel=\"noreferrer noopener\""
+
+				content = match.group("content")
+				return u"<{tag}>{content}</a>".format(tag=tag, content=content)
+			return html_link_regex.sub(repl, text)
+
 		app.jinja_env.filters["regex_replace"] = regex_replace
 		app.jinja_env.filters["offset_html_headers"] = offset_html_headers
 		app.jinja_env.filters["offset_markdown_headers"] = offset_markdown_headers
+		app.jinja_env.filters["externalize_links"] = externalize_links
 
 		# configure additional template folders for jinja2
 		import jinja2
