@@ -34,10 +34,11 @@
 
   * [Awesome-Slugify](https://pypi.python.org/pypi/awesome-slugify): GPLv3
   * [Click](http://click.pocoo.org/): BSD
+  * [feedparser](https://github.com/kurtmckee/feedparser): BSD
   * [Flask](http://flask.pocoo.org/): BSD
   * [Flask-Assets](http://github.com/miracle2k/flask-assets): BSD
   * [Flask-Babel](http://github.com/mitsuhiko/flask-babel): BSD
-  * [Flask-Login](https://flask-login.readthedocs.org/en/latest/https://github.com/maxcountryman/flask-login): MIT
+  * [Flask-Login](https://github.com/maxcountryman/flask-login): MIT
   * [Flask-Markdown](http://github.com/dcolish/flask-markdown): BSD
   * [Flask-Principal](http://packages.python.org/Flask-Principal/): MIT
   * [netaddr](https://github.com/drkjam/netaddr/): BSD

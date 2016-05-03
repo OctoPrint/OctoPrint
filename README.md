@@ -10,6 +10,9 @@ The documentation is located at [docs.octoprint.org](http://docs.octoprint.org).
 
 The official plugin repository can be reached at [plugins.octoprint.org](http://plugins.octoprint.org).
 
+OctoPrint's development wouldn't be possible without the [financial support by its community](http://octoprint.org/support-octoprint/).
+If you enjoy OctoPrint, please consider becoming a regular supporter!
+
 ![Screenshot](http://i.imgur.com/dF3noFp.png)
 
 You are currently looking at the source code repository of OctoPrint. If you already installed it
@@ -26,7 +29,7 @@ Contributions of all kinds are welcome, not only in the form of code but also wi
 [official documentation](http://docs.octoprint.org/) or [the public wiki](https://github.com/foosel/OctoPrint/wiki), support
 of other users in the [bug tracker](https://github.com/foosel/OctoPrint/issues),
 [the Mailinglist](https://groups.google.com/group/octoprint) or
-[the G+ Community](https://plus.google.com/communities/102771308349328485741).
+[the G+ Community](https://plus.google.com/communities/102771308349328485741) and also [financially](http://octoprint.org/support-octoprint/).
 
 If you think something is bad as it is about OctoPrint or its documentation the way it is, please help
 in any way to make it better instead of just complaining about it -- this is an Open Source Project

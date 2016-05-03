@@ -668,9 +668,24 @@ class Server(object):
 				return "{hashs} {content}".format(hashs="#" * number, content=match.group("content"))
 			return markdown_header_regex.sub(repl, s)
 
+		html_link_regex = re.compile("<(?P<tag>a.*?)>(?P<content>.*?)</a>")
+		def externalize_links(text):
+			def repl(match):
+				tag = match.group("tag")
+				if not u"href" in tag:
+					return match.group(0)
+
+				if not u"target=" in tag and not u"rel=" in tag:
+					tag += u" target=\"_blank\" rel=\"noreferrer noopener\""
+
+				content = match.group("content")
+				return u"<{tag}>{content}</a>".format(tag=tag, content=content)
+			return html_link_regex.sub(repl, text)
+
 		app.jinja_env.filters["regex_replace"] = regex_replace
 		app.jinja_env.filters["offset_html_headers"] = offset_html_headers
 		app.jinja_env.filters["offset_markdown_headers"] = offset_markdown_headers
+		app.jinja_env.filters["externalize_links"] = externalize_links
 
 		# configure additional template folders for jinja2
 		import jinja2
@@ -682,7 +697,7 @@ class Server(object):
 		loaders = [app.jinja_loader, filesystem_loader]
 		if octoprint.util.is_running_from_source():
 			root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
-			allowed = ["AUTHORS.md", "CHANGELOG.md", "SPONSORS.md", "THIRDPARTYLICENSES.md"]
+			allowed = ["AUTHORS.md", "CHANGELOG.md", "SUPPORTERS.md", "THIRDPARTYLICENSES.md"]
 			files = {"_data/" + name: os.path.join(root, name) for name in allowed}
 			loaders.append(octoprint.util.jinja.SelectedFilesLoader(files))
 

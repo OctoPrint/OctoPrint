@@ -35,7 +35,7 @@
             <div data-bind="css: {muted: !enabled}"><span data-bind="text: name"></span> <span data-bind="visible: version">(<span data-bind="text: version"></span>)</span> <i title="{{ _('Bundled with OctoPrint') }}" class="icon-th-large" data-bind="visible: bundled"></i> <i class="icon-lock" title="{{ _('Cannot be uninstalled through OctoPrint') }}" data-bind="visible: !managable"></i> <i title="{{ _('Restart of OctoPrint needed for changes to take effect') }}" class="icon-refresh" data-bind="visible: pending_enable || pending_disable || pending_install || pending_uninstall"></i> <i title="{{ _('Pending install') }}" class="icon-plus" data-bind="visible: pending_install"></i> <i title="{{ _('Pending uninstall') }}" class="icon-minus" data-bind="visible: pending_uninstall"></i></div>
             <div><small class="muted" data-bind="text: description">&nbsp;</small></div>
             <div data-bind="css: {muted: !enabled}">
-                <small data-bind="visible: url"><i class="icon-home"></i> <a data-bind="attr: {href: url}">{{ _('Homepage') }}</a></small>
+                <small data-bind="visible: url"><i class="icon-home"></i> <a data-bind="attr: {href: url}" target="_blank" rel="noreferrer noopener">{{ _('Homepage') }}</a></small>
                 <small data-bind="visible: license"><i class="icon-legal"></i> <span data-bind="text: license"></span></small>
                 <small data-bind="visible: author"><i class="icon-user"></i> <span data-bind="text: author"></span></small>
                 <small>&nbsp;</small>
