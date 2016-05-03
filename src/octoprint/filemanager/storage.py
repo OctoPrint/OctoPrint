@@ -577,8 +577,15 @@ class LocalFileStorage(StorageInterface):
 		# save the file's hash to the metadata of the folder
 		file_hash = self._create_hash(file_path)
 		metadata = self._get_metadata_entry(path, name, default=dict())
+		metadata_dirty = False
 		if not "hash" in metadata or metadata["hash"] != file_hash:
 			metadata["hash"] = file_hash
+			metadata_dirty = True
+		if "analysis" in metadata:
+			del metadata["analysis"]
+			metadata_dirty = True
+
+		if metadata_dirty:
 			self._update_metadata_entry(path, name, metadata)
 
 		# process any links that were also provided for adding to the file
@@ -679,9 +686,6 @@ class LocalFileStorage(StorageInterface):
 			import octoprint.util
 			new_data = octoprint.util.dict_merge(current_data, data)
 			metadata[name][key] = new_data
-			metadata_dirty = True
-		elif key in metadata[name] and overwrite:
-			metadata[name][key] = data
 			metadata_dirty = True
 
 		if metadata_dirty:

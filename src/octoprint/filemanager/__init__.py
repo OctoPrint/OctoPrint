@@ -513,7 +513,7 @@ class FileManager(object):
 			return
 
 		storage_manager = self._storage_managers[destination]
-		storage_manager.set_additional_metadata(path, "analysis", result)
+		storage_manager.set_additional_metadata(path, "analysis", result, overwrite=True)
 
 	def _on_analysis_finished(self, entry, result):
 		self._add_analysis_result(entry.location, entry.path, result)
