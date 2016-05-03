@@ -48,23 +48,19 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 		                          _releases=dict(name="OctoPrint Release Announcements",
 		                                         priority=2,
 		                                         type="rss",
-		                                         url="http://octoprint.org/feeds/releases.xml",
-		                                         read_until=1458121176),
+		                                         url="http://octoprint.org/feeds/releases.xml"),
 		                          _spotlight=dict(name="OctoPrint Community Spotlights",
 		                                          priority=2,
 		                                          type="rss",
-		                                          url="http://octoprint.org/feeds/spotlight.xml",
-		                                          read_until=1447953971),
+		                                          url="http://octoprint.org/feeds/spotlight.xml"),
 		                          _octopi=dict(name="OctoPi Announcements",
 		                                       priority=2,
 		                                       type="rss",
-		                                       url="http://octoprint.org/feeds/octopi.xml",
-		                                       read_until=1462200600),
+		                                       url="http://octoprint.org/feeds/octopi.xml"),
 		                          _plugins=dict(name="New Plugins in the Repository",
 		                                        priority=2,
 		                                        type="rss",
-		                                        url="http://plugins.octoprint.org/feed.xml",
-		                                        read_until=1461628800)),
+		                                        url="http://plugins.octoprint.org/feed.xml")),
 		            enabled_channels=[],
 		            forced_channels=["_important"],
 		            ttl=6*60,
@@ -100,8 +96,13 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 		enabled = self._settings.get(["enabled_channels"])
 		forced = self._settings.get(["forced_channels"])
 		for key, data in channel_configs.items():
-			entries = self._to_internal_feed(channel_data.get(key, []), read_until=channel_configs[key].get("read_until", None))
+			read_until = channel_configs[key].get("read_until", None)
+			entries = sorted(self._to_internal_feed(channel_data.get(key, []), read_until=read_until), key=lambda e: e["published"], reverse=True)
 			unread = len(filter(lambda e: not e["read"], entries))
+
+			if read_until is None and entries:
+				last = entries[0]["published"]
+				self._mark_read_until(key, last)
 
 			result[key] = dict(channel=data["name"],
 			                   url=data["url"],
@@ -128,32 +129,38 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 			return response
 
 		if command == "read":
-			current_read_until = None
-			channel_data = self._settings.get(["channels", channel], merged=True)
-			if channel_data:
-				current_read_until = channel_data.get("read_until", None)
-
-			defaults = dict(plugins=dict(announcements=dict(channels=dict())))
-			defaults["plugins"]["announcements"]["channels"][channel] = dict(read_until=current_read_until)
-
 			until = data["until"]
-			self._settings.set(["channels", channel, "read_until"], until, defaults=defaults)
-			self._settings.save()
+			self._mark_read_until(channel, until)
 
 		elif command == "toggle":
-			enabled_channels = list(self._settings.get(["enabled_channels"]))
-
-			if channel in enabled_channels:
-				enabled_channels.remove(channel)
-			else:
-				enabled_channels.append(channel)
-
-			self._settings.set(["enabled_channels"], enabled_channels)
-			self._settings.save()
+			self._toggle(channel)
 
 		return NO_CONTENT
 
 	# Internal Tools
+
+	def _mark_read_until(self, channel, until):
+		current_read_until = None
+		channel_data = self._settings.get(["channels", channel], merged=True)
+		if channel_data:
+			current_read_until = channel_data.get("read_until", None)
+
+		defaults = dict(plugins=dict(announcements=dict(channels=dict())))
+		defaults["plugins"]["announcements"]["channels"][channel] = dict(read_until=current_read_until)
+
+		self._settings.set(["channels", channel, "read_until"], until, defaults=defaults)
+		self._settings.save()
+
+	def _toggle(self, channel):
+		enabled_channels = list(self._settings.get(["enabled_channels"]))
+
+		if channel in enabled_channels:
+			enabled_channels.remove(channel)
+		else:
+			enabled_channels.append(channel)
+
+		self._settings.set(["enabled_channels"], enabled_channels)
+		self._settings.save()
 
 	def _get_channel_configs(self):
 		return self._settings.get(["channels"], merged=True)
@@ -231,7 +238,7 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 	def _to_internal_entry(self, entry, read_until=None):
 		published = calendar.timegm(entry["published_parsed"])
 
-		read = False
+		read = True
 		if read_until is not None:
 			read = published <= read_until
 
