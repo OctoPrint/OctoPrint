@@ -22,10 +22,10 @@
                     <!-- ko if: $data.enabled || $data.forced -->
                     <div class="tab-pane" data-bind="attr: {id: 'plugin_announcements_dialog_channel_' + $data.key}">
                         <!-- ko foreach: $data.data -->
-                        <hr data-bind="visible: $index() > 0">
                         <article data-bind="css: {read: $data.read}">
+                            <hr data-bind="visible: $index() > 0">
                             <h3><a data-bind="text: $data.title, attr: {href: $data.link}" target="_blank" rel="noreferrer noopener"></a> <small data-bind="text: formatTimeAgo($data.published), attr: {title: formatDate($data.published)}"></small></h3>
-                            <div data-bind="html: $data.summary"></div>
+                            <div class="content" data-bind="html: $data.summary"></div>
                             <div class="actions">
                                 <span class="articlelink"><small><a data-bind="text: $data.link, attr: {href: $data.link}" target="_blank" rel="noreferrer noopener"></a></small></span>
                                 <span class="markread"><small><a href="javascript:void(0)" data-bind="click: function() { $root.markRead($parent.key, $data.published) }"><i class="icon-eye-open"></i> {{ _('Mark as last read') }}</a></small></span>
