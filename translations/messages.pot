@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: OctoPrint 1.2.11.dev31+g5a8c365.dirty\n"
+"Project-Id-Version: OctoPrint 1.2.11.dev32+g76959e0.dirty\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
-"POT-Creation-Date: 2016-05-04 09:51+0200\n"
+"POT-Creation-Date: 2016-05-04 13:26+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,7 +17,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.2.0\n"
 
-#: src/octoprint/plugins/announcements/__init__.py:81
+#: src/octoprint/plugins/announcements/__init__.py:85
 #: src/octoprint/plugins/announcements/templates/announcements.jinja2:4
 #: src/octoprint/plugins/announcements/templates/announcements_navbar.jinja2:1
 msgid "Announcements"
@@ -35,15 +35,15 @@ msgstr ""
 msgid "Enable Channel"
 msgstr ""
 
-#: src/octoprint/plugins/announcements/static/js/announcements.js:245
+#: src/octoprint/plugins/announcements/static/js/announcements.js:249
 msgid "Later"
 msgstr ""
 
-#: src/octoprint/plugins/announcements/static/js/announcements.js:251
+#: src/octoprint/plugins/announcements/static/js/announcements.js:255
 msgid "Mark read"
 msgstr ""
 
-#: src/octoprint/plugins/announcements/static/js/announcements.js:257
+#: src/octoprint/plugins/announcements/static/js/announcements.js:261
 msgid "Read..."
 msgstr ""
 
@@ -87,7 +87,7 @@ msgid "Actions"
 msgstr ""
 
 #: src/octoprint/plugins/announcements/templates/announcements_settings.jinja2:34
-msgid "Show Announcements..."
+msgid "Refresh Announcements"
 msgstr ""
 
 #: src/octoprint/plugins/cura/templates/cura_settings.jinja2:1

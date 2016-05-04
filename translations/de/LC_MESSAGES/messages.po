@@ -5,20 +5,21 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version:  OctoPrint\n"
+"Project-Id-Version: OctoPrint\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
-"POT-Creation-Date: 2016-05-04 09:51+0200\n"
-"PO-Revision-Date: 2016-05-04 09:47+0100\n"
+"POT-Creation-Date: 2016-05-04 13:26+0200\n"
+"PO-Revision-Date: 2016-05-04 13:27+0100\n"
 "Last-Translator: Gina Häußge <osd@foosel.net>\n"
 "Language: de\n"
 "Language-Team: German (http://www.transifex.com/projects/p/octoprint/language/de/)\n"
-"Plural-Forms: nplurals=2; plural=(n != 1)\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.2.0\n"
+"X-Generator: Poedit 1.6.8\n"
 
-#: src/octoprint/plugins/announcements/__init__.py:81
+#: src/octoprint/plugins/announcements/__init__.py:85
 #: src/octoprint/plugins/announcements/templates/announcements.jinja2:4
 #: src/octoprint/plugins/announcements/templates/announcements_navbar.jinja2:1
 msgid "Announcements"
@@ -36,15 +37,15 @@ msgstr "Kanal deaktivieren"
 msgid "Enable Channel"
 msgstr "Kanal aktivieren"
 
-#: src/octoprint/plugins/announcements/static/js/announcements.js:245
+#: src/octoprint/plugins/announcements/static/js/announcements.js:249
 msgid "Later"
 msgstr "Später"
 
-#: src/octoprint/plugins/announcements/static/js/announcements.js:251
+#: src/octoprint/plugins/announcements/static/js/announcements.js:255
 msgid "Mark read"
 msgstr "Gelesen"
 
-#: src/octoprint/plugins/announcements/static/js/announcements.js:257
+#: src/octoprint/plugins/announcements/static/js/announcements.js:261
 msgid "Read..."
 msgstr "Lesen..."
 
@@ -88,8 +89,8 @@ msgid "Actions"
 msgstr "Aktionen"
 
 #: src/octoprint/plugins/announcements/templates/announcements_settings.jinja2:34
-msgid "Show Announcements..."
-msgstr "Ankündigungen anzeigen..."
+msgid "Refresh Announcements"
+msgstr "Ankündigungen aktualisieren"
 
 #: src/octoprint/plugins/cura/templates/cura_settings.jinja2:1
 #: src/octoprint/templates/tabs/control.jinja2:97
@@ -821,9 +822,7 @@ msgid ""
 "        take care of that. Otherwise please take a look at the\n"
 "        <a href=\"https://github.com/foosel/OctoPrint/wiki/Plugin:-Software-Update\" target=\"_blank\">Documentation</a>.\n"
 "    </p>\n"
-msgstr ""
-"  <p>    <strong>Du nutzt eine unveröffentlichte Version von OctoPrint, trackst aber OctoPrint Releases.</strong>"
-"  </p>  <p>    Du willst vermutlich, dass OctoPrint stattdessen die entsprechende Entwicklungsversion trackt.    Falls Du dein lokales OctoPrint-Checkoutverzeichnis auf einen anderen Branch gewechselt hast, dann <strong>wechsle das Tracking einfach auf \"Commit\"</strong>. Ansonsten wirf einen Blick in die <a href=\"https://github.com/foosel/OctoPrint/wiki/Plugin:-Software-Update\" target=\"_blank\">Dokumentation</a>.  </p>"
+msgstr "  <p>    <strong>Du nutzt eine unveröffentlichte Version von OctoPrint, trackst aber OctoPrint Releases.</strong  </p>  <p>    Du willst vermutlich, dass OctoPrint stattdessen die entsprechende Entwicklungsversion trackt.    Falls Du dein lokales OctoPrint-Checkoutverzeichnis auf einen anderen Branch gewechselt hast, dann <strong>wechsle das Tracking einfach auf \"Commit\"</strong>. Ansonsten wirf einen Blick in die <a href=\"https://github.com/foosel/OctoPrint/wiki/Plugin:-Software-Update\" target=\"_blank\">Dokumentation</a>.  </p>"
 
 #: src/octoprint/plugins/softwareupdate/templates/softwareupdate_settings.jinja2:23
 msgid "Current versions"
@@ -2922,3 +2921,5 @@ msgstr "Zeitrafferaufnahme rendern"
 #~ msgid "Supporters"
 #~ msgstr "Unterstützer"
 
+#~ msgid "Show Announcements..."
+#~ msgstr "Ankündigungen anzeigen..."
