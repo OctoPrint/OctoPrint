@@ -42,7 +42,7 @@
     <!-- Le social media meta data -->
     {% capture thetitle %}{% if page.title %}{{ page.title }}{% else %}{{ site.title }}{% endif %}{% endcapture %}
     {% capture thedescription %}{% if page.excerpt %}{{ page.excerpt | strip_html }}{% else %}{% if page.description %}{{ page.description }}{% else %}{{ site.description }}{% endif %}{% endif %}{% endcapture %}
-    {% capture theimage %}{{ site.external }}{{ BASE_PATH }}/assets/img/octoprint-avatar-240x240.png{% endcapture %}
+    {% capture theimage %}{{ site.external }}{{ BASE_PATH }}{% if page.card %}{{ page.card }}{% else %}/assets/img/octoprint-avatar-240x240.png{% endif %}{% endcapture %}
 
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:site" content="@{{ site.twitter }}" />

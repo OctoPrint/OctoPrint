@@ -58,6 +58,11 @@ layout: default
             {% endif %}
         </div>
         <div class="span4">
+            {% if page.featuredimage %}
+            <dl class="featuredimage">
+                <img src="{{ page.featuredimage }}" class="img-rounded">
+            </dl>
+            {% endif %}
             <dl class="author">
                 <dt>Author</dt>
                 <dd>

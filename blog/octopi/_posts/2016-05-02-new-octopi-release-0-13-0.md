@@ -3,8 +3,7 @@ layout: post
 author: foosel
 title: "New OctoPi Release: 0.13.0"
 date: 2016-05-02 16:50:00 +0200
-images:
-- https://raw.githubusercontent.com/guysoft/OctoPi/devel/media/OctoPi.png
+featuredimage: https://raw.githubusercontent.com/guysoft/OctoPi/devel/media/OctoPi.png
 ---
 
 [Guy Sheffer](https://github.com/guysoft) just released a new version of 

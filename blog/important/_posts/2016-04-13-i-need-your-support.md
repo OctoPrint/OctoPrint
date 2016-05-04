@@ -12,6 +12,8 @@ links:
   url: https://www.patreon.com/foosel
   image: /assets/img/sponsors/patreon.png
 originalUrl: https://plus.google.com/+OctoprintOrg/posts/5m53jf6cdme
+card: /assets/img/blog/2016-04/2016-04-13-support-card.png
+featuredimage: /assets/img/blog/2016-04/2016-04-13-support-featured.png
 ---
 Most of you probably know that OctoPrint's development has been heavily 
 sponsored by BQ since August 2014, mostly by employing me (Gina Häußge) 
@@ -50,7 +52,7 @@ You've seen what I've been able to do over the past couple of years. I
 promise you that if I'm able to continue working at this level of 
 involvement, more awesome things are going to happen. If you love 
 OctoPrint and believe in its potential and my skills to get it there, 
-please consider supporting me on Patreon.
+please consider [supporting me on Patreon](https://www.patreon.com/foosel).
 
 My contract with BQ ends in a couple of weeks. I should hopefully still 
 be able to continue working on OctoPrint for some time after this, to 
