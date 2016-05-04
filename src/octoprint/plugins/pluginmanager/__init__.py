@@ -114,7 +114,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 	def get_template_configs(self):
 		return [
 			dict(type="settings", name=gettext("Plugin Manager"), template="pluginmanager_settings.jinja2", custom_bindings=True),
-			dict(type="about", name=gettext("Plugin Licenses"), template="pluginmanager_about.jinja2")
+			dict(type="about", name="Plugin Licenses", template="pluginmanager_about.jinja2")
 		]
 
 	def get_template_vars(self):
