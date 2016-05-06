@@ -157,23 +157,15 @@ class DaemonTest(unittest.TestCase):
 		self.daemon.set_pid.assert_called_once_with(str(pid))
 		mock_signal.assert_called_once_with(signal.SIGTERM, self.daemon._on_sigterm)
 
-	@mock.patch("sys.exit")
-	def test_on_sigterm(self, mock_exit):
+	def test_terminated(self):
 		# setup
 		self.daemon.remove_pidfile = mock.MagicMock()
 
-		mock_exit.side_effect = ExpectedExit
-
 		# test
-		try:
-			self.daemon._on_sigterm("foo", "bar")
-			self.fail("Expected an exit")
-		except ExpectedExit:
-			pass
+		self.daemon.terminated()
 
 		# assert
 		self.daemon.remove_pidfile.assert_called_once_with()
-		mock_exit.assert_called_once_with(0)
 
 	def test_start(self):
 		# setup
