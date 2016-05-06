@@ -21,7 +21,7 @@ that already includes OctoPrint plus everything you need to run it:
 
 You can download the latest version via the following button:
 
-<a class="btn btn-primary btn-large" href="https://octopi.octoprint.org/latest"><i class="icon-download-alt icon-large"></i>&nbsp;&nbsp;Download&nbsp;OctoPi&nbsp;0.13</a>
+<a class="btn btn-primary btn-large" href="https://octopi.octoprint.org/latest" data-event-category="download" data-event-action="latest"><i class="icon-download-alt icon-large"></i>&nbsp;&nbsp;Download&nbsp;OctoPi&nbsp;0.13</a>
 
 <small>MD5Sum: <code>d0191958de7ffe0f0a62c9313b7a3fc9</code></small>
 
