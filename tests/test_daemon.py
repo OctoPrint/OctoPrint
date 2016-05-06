@@ -155,7 +155,6 @@ class DaemonTest(unittest.TestCase):
 		self.daemon._double_fork.assert_called_once_with()
 		self.daemon._redirect_io.assert_called_once_with()
 		self.daemon.set_pid.assert_called_once_with(str(pid))
-		mock_signal.assert_called_once_with(signal.SIGTERM, self.daemon._on_sigterm)
 
 	def test_terminated(self):
 		# setup
