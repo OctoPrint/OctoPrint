@@ -38,8 +38,8 @@ layout: default
         </div>
         <div class="row-fluid">
             <div class="offset2 span8 actionbox">
-                <a href="/support-octoprint/" class="donatelink" title="Love OctoPrint? Consider supporting the project!">
-                    <i class="fa fa-heart octo-heart"></i> OctoPrint? Consider supporting the project!
+                <a class="btn btn-large btn-block donatelink" href="/support-octoprint/" title="Consider supporting the project!" data-event-category="supportlink" data-event-action="button">
+                    <i class="fa fa-heart octo-heart"></i> Consider supporting the project!
                 </a>
                 <a class="btn btn-primary btn-large btn-block" title="Download" href="/download/"><i class="fa fa-download"></i> Download</a>
             </div>
@@ -51,7 +51,7 @@ layout: default
                     {% if site.data.sponsors.size > 0 %}
                     <div class="row-fluid">
                         <div class="span12">
-                            OctoPrint's development is proudly sponsored by
+                            OctoPrint's development is made possible by
                         </div>
                     </div>
                     <div class="row-fluid sponsorrow">
@@ -65,13 +65,13 @@ layout: default
                     </div>
                     <div class="row-fluid">
                         <div class="span12">
-                            ... and its awesome patrons on <a href="{{ site.patreon }}" target="_blank">Patreon</a>!
+                            ... and its awesome patrons on <a href="{{ site.patreon }}" target="_blank" rel="noopener noreferrer" data-event-category="support" data-event-action="patreon">Patreon</a>!
                         </div>
                     </div>
                     {% else %}
                     <div class="row-fluid">
                         <div class="span12">
-                            OctoPrint's development is supported by its awesome patrons on <a href="{{ site.patreon }}" target="_blank">Patreon</a>.<!--<br>If you are representing a company and would like to support OctoPrint's development, please <a href="/support-octoprint/">get in touch!</a>-->
+                            OctoPrint's development is made possible by its awesome patrons on <a href="{{ site.patreon }}" rel="noopener noreferrer" data-event-category="support" data-event-action="patreon">Patreon</a>.
                         </div>
                     </div>
                     {% endif %}
