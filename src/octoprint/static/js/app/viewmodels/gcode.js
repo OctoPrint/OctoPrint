@@ -52,7 +52,7 @@ $(function() {
 
         self.reader_sortLayers = ko.observable(true);
         self.reader_hideEmptyLayers = ko.observable(true);
-        
+
         self.layerSelectionEnabled = ko.observable(false)
 
         self.synchronizeOptions = function(additionalRendererOptions, additionalReaderOptions) {
@@ -552,14 +552,14 @@ $(function() {
         self.onTabChange = function(current, previous) {
             self.tabActive = current == "#gcode";
         };
-        
+
         self.shiftLayer = function(value){
             if (value != self.currentLayer) {
                 event.preventDefault();
 
                 self.layerSlider.slider('setValue', value);
                 value = self.layerSlider.slider('getValue');
-                //This sets the srollbar to the appropriate position.
+                //This sets the scroll bar to the appropriate position.
                 self.layerSlider
                     .trigger({
                         type: 'slideStart',
@@ -574,15 +574,15 @@ $(function() {
                     });
             }
         };
-        
+
         self.incrementLayer = function() {
-          var value = self.layerSlider.slider('getValue')+1;
-          self.shiftLayer(value);
+            var value = self.layerSlider.slider('getValue') + 1;
+            self.shiftLayer(value);
         };
-        
+
         self.decrementLayer = function() {
-          var value = self.layerSlider.slider('getValue')-1;
-          self.shiftLayer(value);
+            var value = self.layerSlider.slider('getValue') - 1;
+            self.shiftLayer(value);
         };
     }
 
