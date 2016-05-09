@@ -116,6 +116,10 @@ $(function() {
         self.webcam_rotate90 = ko.observable(undefined);
 
         self.feature_gcodeViewer = ko.observable(undefined);
+        self.feature_sizeThreshold = ko.observable();
+        self.feature_mobileSizeThreshold = ko.observable();
+        self.feature_sizeThreshold_str = sizeObservable(self.feature_sizeThreshold);
+        self.feature_mobileSizeThreshold_str = sizeObservable(self.feature_mobileSizeThreshold);
         self.feature_temperatureGraph = ko.observable(undefined);
         self.feature_waitForStart = ko.observable(undefined);
         self.feature_sendChecksum = ko.observable("print");
