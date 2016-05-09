@@ -97,6 +97,10 @@ $(function() {
             })
         };
 
+        self.refreshAnnouncements = function() {
+            self.retrieveData(true);
+        };
+
         self.retrieveData = function(force) {
             if (!self.loginState.isAdmin()) return;
 

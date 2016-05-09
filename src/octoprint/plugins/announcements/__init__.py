@@ -29,8 +29,12 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
                          octoprint.plugin.TemplatePlugin):
 
 	def __init__(self):
-		self._cached_channels = dict()
-		self._cached_channels_mutex = threading.RLock()
+		self._cached_channel_configs = None
+		self._cached_channel_configs_mutex = threading.RLock()
+
+		from slugify import Slugify
+		self._slugify = Slugify()
+		self._slugify.safe_chars = "-_."
 
 	# StartupPlugin
 
@@ -48,23 +52,19 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 		                          _releases=dict(name="OctoPrint Release Announcements",
 		                                         priority=2,
 		                                         type="rss",
-		                                         url="http://octoprint.org/feeds/releases.xml",
-		                                         read_until=1458121176),
+		                                         url="http://octoprint.org/feeds/releases.xml"),
 		                          _spotlight=dict(name="OctoPrint Community Spotlights",
 		                                          priority=2,
 		                                          type="rss",
-		                                          url="http://octoprint.org/feeds/spotlight.xml",
-		                                          read_until=1447953971),
+		                                          url="http://octoprint.org/feeds/spotlight.xml"),
 		                          _octopi=dict(name="OctoPi Announcements",
 		                                       priority=2,
 		                                       type="rss",
-		                                       url="http://octoprint.org/feeds/octopi.xml",
-		                                       read_until=1462200600),
+		                                       url="http://octoprint.org/feeds/octopi.xml"),
 		                          _plugins=dict(name="New Plugins in the Repository",
 		                                        priority=2,
 		                                        type="rss",
-		                                        url="http://plugins.octoprint.org/feed.xml",
-		                                        read_until=1461628800)),
+		                                        url="http://plugins.octoprint.org/feed.xml")),
 		            enabled_channels=[],
 		            forced_channels=["_important"],
 		            ttl=6*60,
@@ -92,20 +92,30 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 	@restricted_access
 	@admin_permission.require(403)
 	def get_channel_data(self):
+		from octoprint.settings import valid_boolean_trues
+
 		result = dict()
 
-		channel_data = self._fetch_all_channels()
+		force = "force" in flask.request.values and flask.request.values["force"] in valid_boolean_trues
 
-		channel_configs = self._get_channel_configs()
+		channel_data = self._fetch_all_channels(force=force)
+		channel_configs = self._get_channel_configs(force=force)
+
 		enabled = self._settings.get(["enabled_channels"])
 		forced = self._settings.get(["forced_channels"])
+
 		for key, data in channel_configs.items():
-			entries = self._to_internal_feed(channel_data.get(key, []), read_until=channel_configs[key].get("read_until", None))
+			read_until = channel_configs[key].get("read_until", None)
+			entries = sorted(self._to_internal_feed(channel_data.get(key, []), read_until=read_until), key=lambda e: e["published"], reverse=True)
 			unread = len(filter(lambda e: not e["read"], entries))
+
+			if read_until is None and entries:
+				last = entries[0]["published"]
+				self._mark_read_until(key, last)
 
 			result[key] = dict(channel=data["name"],
 			                   url=data["url"],
-			                   priority=data["priority"],
+			                   priority=data.get("priority", 2),
 			                   enabled=key in enabled or key in forced,
 			                   forced=key in forced,
 			                   data=entries,
@@ -128,63 +138,106 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 			return response
 
 		if command == "read":
-			current_read_until = None
-			channel_data = self._settings.get(["channels", channel], merged=True)
-			if channel_data:
-				current_read_until = channel_data.get("read_until", None)
-
-			defaults = dict(plugins=dict(announcements=dict(channels=dict())))
-			defaults["plugins"]["announcements"]["channels"][channel] = dict(read_until=current_read_until)
-
 			until = data["until"]
-			self._settings.set(["channels", channel, "read_until"], until, defaults=defaults)
-			self._settings.save()
+			self._mark_read_until(channel, until)
 
 		elif command == "toggle":
-			enabled_channels = list(self._settings.get(["enabled_channels"]))
-
-			if channel in enabled_channels:
-				enabled_channels.remove(channel)
-			else:
-				enabled_channels.append(channel)
-
-			self._settings.set(["enabled_channels"], enabled_channels)
-			self._settings.save()
+			self._toggle(channel)
 
 		return NO_CONTENT
 
 	# Internal Tools
 
-	def _get_channel_configs(self):
-		return self._settings.get(["channels"], merged=True)
+	def _mark_read_until(self, channel, until):
+		"""Set read_until timestamp of a channel."""
 
-	def _fetch_all_channels(self):
-		with self._cached_channels_mutex:
-			channels = self._get_channel_configs()
-			enabled = self._settings.get(["enabled_channels"])
-			forced = self._settings.get(["forced_channels"])
+		current_read_until = None
+		channel_data = self._settings.get(["channels", channel], merged=True)
+		if channel_data:
+			current_read_until = channel_data.get("read_until", None)
 
-			all_channels = dict()
-			for key, config in channels.items():
-				if not key in enabled and not key in forced:
-					continue
+		defaults = dict(plugins=dict(announcements=dict(channels=dict())))
+		defaults["plugins"]["announcements"]["channels"][channel] = dict(read_until=current_read_until)
 
-				data = self._get_channel_data(key, config)
-				if data is not None:
-					all_channels[key] = data
+		with self._cached_channel_configs_mutex:
+			self._settings.set(["channels", channel, "read_until"], until, defaults=defaults)
+			self._settings.save()
+			self._cached_channel_configs = None
 
-			self._cached_channels = all_channels
+	def _toggle(self, channel):
+		"""Toggle enable/disabled state of a channel."""
 
-		return self._cached_channels
+		enabled_channels = list(self._settings.get(["enabled_channels"]))
 
-	def _get_channel_data(self, key, config):
-		data = self._get_channel_data_from_cache(key, config)
+		if channel in enabled_channels:
+			enabled_channels.remove(channel)
+		else:
+			enabled_channels.append(channel)
+
+		self._settings.set(["enabled_channels"], enabled_channels)
+		self._settings.save()
+
+	def _get_channel_configs(self, force=False):
+		"""Retrieve all channel configs with sanitized keys."""
+
+		with self._cached_channel_configs_mutex:
+			if self._cached_channel_configs is None or force:
+				configs = self._settings.get(["channels"], merged=True)
+				result = dict()
+				for key, config in configs.items():
+					if "url" not in config or "name" not in config:
+						# strip invalid entries
+						continue
+					result[self._slugify(key)] = config
+				self._cached_channel_configs = result
+		return self._cached_channel_configs
+
+	def _get_channel_config(self, key, force=False):
+		"""Retrieve specific channel config for channel."""
+
+		safe_key = self._slugify(key)
+		return self._get_channel_configs(force=force).get(safe_key)
+
+	def _fetch_all_channels(self, force=False):
+		"""Fetch all channel feeds from cache or network."""
+
+		channels = self._get_channel_configs(force=force)
+		enabled = self._settings.get(["enabled_channels"])
+		forced = self._settings.get(["forced_channels"])
+
+		all_channels = dict()
+		for key, config in channels.items():
+			if not key in enabled and not key in forced:
+				continue
+
+			if not "url" in config:
+				continue
+
+			data = self._get_channel_data(key, config, force=force)
+			if data is not None:
+				all_channels[key] = data
+
+		return all_channels
+
+	def _get_channel_data(self, key, config, force=False):
+		"""Fetch individual channel feed from cache/network."""
+
+		data = None
+
+		if not force:
+			# we may use the cache, see if we have something in there
+			data = self._get_channel_data_from_cache(key, config)
+
 		if data is None:
+			# cache not allowed or empty, fetch from network
 			data = self._get_channel_data_from_network(key, config)
+
 		return data
 
 	def _get_channel_data_from_cache(self, key, config):
-		channel_path = os.path.join(self.get_plugin_data_folder(), "{}.cache".format(key))
+		"""Fetch channel feed from cache."""
+
+		channel_path = self._get_channel_cache_path(key)
 
 		if os.path.exists(channel_path):
 			if "ttl" in config and isinstance(config["ttl"], int):
@@ -196,30 +249,35 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 			now = time.time()
 			if os.stat(channel_path).st_mtime + ttl > now:
 				d = feedparser.parse(channel_path)
-				self._logger.info("Loaded channel {} from cache".format(key))
+				self._logger.debug(u"Loaded channel {} from cache at {}".format(key, channel_path))
 				return d
 
 		return None
 
 	def _get_channel_data_from_network(self, key, config):
+		"""Fetch channel feed from network."""
+
 		import requests
 
 		url = config["url"]
 		try:
+			start = time.time()
 			r = requests.get(url)
-			self._logger.info("Loaded channel {} from {}".format(key, config["url"]))
+			self._logger.info(u"Loaded channel {} from {} in {:.2}s".format(key, config["url"], time.time() - start))
 		except Exception as e:
 			self._logger.exception(
-				"Could not fetch channel {} from {}: {}".format(key, config["url"], str(e)))
+				u"Could not fetch channel {} from {}: {}".format(key, config["url"], str(e)))
 			return None
 
 		response = r.text
-		channel_path = os.path.join(self.get_plugin_data_folder(), "{}.cache".format(key))
+		channel_path = self._get_channel_cache_path(key)
 		with codecs.open(channel_path, mode="w", encoding="utf-8") as f:
 			f.write(response)
 		return feedparser.parse(response)
 
 	def _to_internal_feed(self, feed, read_until=None):
+		"""Convert feed to internal data structure."""
+
 		result = []
 		if "entries" in feed:
 			for entry in feed["entries"]:
@@ -229,9 +287,11 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 		return result
 
 	def _to_internal_entry(self, entry, read_until=None):
+		"""Convert feed entries to internal data structure."""
+
 		published = calendar.timegm(entry["published_parsed"])
 
-		read = False
+		read = True
 		if read_until is not None:
 			read = published <= read_until
 
@@ -242,6 +302,12 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 		            published=published,
 		            link=entry["link"],
 		            read=read)
+
+	def _get_channel_cache_path(self, key):
+		"""Retrieve cache path for channel key."""
+
+		safe_key = self._slugify(key)
+		return os.path.join(self.get_plugin_data_folder(), "{}.cache".format(safe_key))
 
 
 _image_tag_re = re.compile(r'<img.*?/?>')

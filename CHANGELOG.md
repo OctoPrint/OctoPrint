@@ -69,6 +69,28 @@
 * [#1047](https://github.com/foosel/OctoPrint/issues/1047) - Fixed 90 degree
   webcam rotation for iOS Safari.
 
+## 1.2.11 (2016-05-04)
+
+### Important Announcement
+
+Due to a recent change in the financial situation of the project, the funding of OctoPrint is at stake. If you love OctoPrint and want to see its development continue at the pace of the past two years, please read on about its current funding situation and how you can help: ["I need your support"](http://octoprint.org/blog/2016/04/13/i-need-your-support/).
+
+### Improvements
+
+  * Added option to treat resend requests as `ok` for such firmwares that do not send an `ok` after requesting a resend. If you printer communication gets stalled after a resend request from the firmware, try checking this option.
+  * Added an "About" dialog to properly inform about OctoPrint's license, contributors and supporters.
+  * Added a announcement plugin that utilizes the RSS feeds of the [OctoPrint Blog](http://octoprint.org/blog/) and the [plugin repository](http://plugins.octoprint.org) to display news to the user. By default only the "important announcement" category is enabled. This category will only be used for very rare situations such as making you aware of critical updates or important news. You can enable further categories (with more announcements to be expected) in the plugin's settings dialog.
+
+### Bug Fixes
+
+  * [#1300](https://github.com/foosel/OctoPrint/issues/1300) - Removed possibility to accidentally disabling local file list by first limiting view to files from SD and then disabling SD support.
+  * [#1315](https://github.com/foosel/OctoPrint/issues/1315) - Fixed broken post roll on z-based timelapses.
+  * Fixed CSS data binding syntax on the download link in the files list
+  * Changed control distance from jQuery data into a knockout observerable and observerableArray
+  * Allow an unauthorized user to logout from a logedin interface state
+
+([Commits](https://github.com/foosel/OctoPrint/compare/1.2.10...1.2.11))
+
 ## 1.2.10 (2016-03-16)
 
 ### Improvements
