@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: OctoPrint\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
 "POT-Creation-Date: 2016-05-04 13:26+0200\n"
-"PO-Revision-Date: 2016-05-04 13:27+0100\n"
+"PO-Revision-Date: 2016-05-09 15:26+0100\n"
 "Last-Translator: Gina Häußge <osd@foosel.net>\n"
 "Language: de\n"
 "Language-Team: German (http://www.transifex.com/projects/p/octoprint/language/de/)\n"
@@ -789,7 +789,7 @@ msgstr "Das wird die folgenden Komponenten aktualisieren und den Server neu star
 
 #: src/octoprint/plugins/softwareupdate/templates/softwareupdate.jinja2:19
 msgid "Be sure to read through any linked release notes, especially those for OctoPrint since they might contain important information you need to know <strong>before</strong> upgrading."
-msgstr "Bitte lies alle verlinkten Release Notes, insbesondere die von OctoPrint, da diese wichtige Informationen behinhalten könnten, die Du <strong>for</strong> dem Softwareupdate wissen solltest."
+msgstr "Bitte lies alle verlinkten Release Notes, insbesondere die von OctoPrint, da diese wichtige Informationen behinhalten könnten, die Du <strong>vor</strong> dem Softwareupdate wissen solltest."
 
 #: src/octoprint/plugins/softwareupdate/templates/softwareupdate.jinja2:22
 #: src/octoprint/templates/dialogs/confirmation.jinja2:8
