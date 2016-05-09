@@ -101,6 +101,7 @@ $(function() {
         self.appearance_color = ko.observable(undefined);
         self.appearance_colorTransparent = ko.observable();
         self.appearance_defaultLanguage = ko.observable();
+        self.appearance_showFahrenheitAlso = ko.observable(undefined);
 
         self.printer_defaultExtrusionLength = ko.observable(undefined);
 

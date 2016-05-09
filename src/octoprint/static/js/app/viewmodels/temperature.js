@@ -248,8 +248,9 @@ $(function() {
                         targets = self.temperatures[type].target;
                     }
 
-                    var actualTemp = actuals && actuals.length ? formatTemperature(actuals[actuals.length - 1][1]) : "-";
-                    var targetTemp = targets && targets.length ? formatTemperature(targets[targets.length - 1][1]) : "-";
+                    var showFahrenheit = self.settingsViewModel.settings.appearance.showFahrenheitAlso();
+                    var actualTemp = actuals && actuals.length ? formatTemperature(actuals[actuals.length - 1][1], showFahrenheit) : "-";
+                    var targetTemp = targets && targets.length ? formatTemperature(targets[targets.length - 1][1], showFahrenheit) : "-";
 
                     data.push({
                         label: gettext("Actual") + " " + heaterOptions[type].name + ": " + actualTemp,

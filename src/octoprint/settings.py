@@ -212,6 +212,7 @@ default_settings = {
 		"color": "default",
 		"colorTransparent": False,
 		"defaultLanguage": "_default",
+		"showFahrenheitAlso": False,
 		"components": {
 			"order": {
 				"navbar": ["settings", "systemmenu", "login", "plugin_announcements"],
