@@ -43,6 +43,8 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection, octoprint.printer.
 		self._lastCurrent = 0
 		self._baseRateLimit = 0.5
 
+		self._emit_mutex = threading.RLock()
+
 	def _getRemoteAddress(self, info):
 		forwardedFor = info.headers.get("X-Forwarded-For")
 		if forwardedFor is not None:
@@ -194,7 +196,8 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection, octoprint.printer.
 		self.sendEvent(event, payload)
 
 	def _emit(self, type, payload):
-		try:
-			self.send({type: payload})
-		except Exception as e:
-			self._logger.warn("Could not send message to client %s: %s" % (self._remoteAddress, str(e)))
+		with self._emit_mutex:
+			try:
+				self.send({type: payload})
+			except Exception as e:
+				self._logger.warn("Could not send message to client %s: %s" % (self._remoteAddress, str(e)))
