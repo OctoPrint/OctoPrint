@@ -31,9 +31,6 @@ class Daemon:
 		pid = str(os.getpid())
 		self.set_pid(pid)
 
-		# register listener for SIGTERM
-		signal.signal(signal.SIGTERM, self._on_sigterm)
-
 	def _double_fork(self):
 		try:
 			pid = os.fork()
@@ -71,10 +68,8 @@ class Daemon:
 		os.dup2(so.fileno(), sys.stdout.fileno())
 		os.dup2(se.fileno(), sys.stderr.fileno())
 
-	def _on_sigterm(self, _signo, _stack_frame):
-		"""Signal handler for SIGTERM, deletes the pidfile."""
+	def terminated(self):
 		self.remove_pidfile()
-		sys.exit(0)
 
 	def start(self):
 		"""Start the daemon."""
