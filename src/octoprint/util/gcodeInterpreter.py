@@ -21,7 +21,6 @@ class AnalysisAborted(Exception):
 class gcode(object):
 	def __init__(self):
 		self._logger = logging.getLogger(__name__)
-
 		self.layerList = None
 		self.extrusionAmount = [0]
 		self.extrusionVolume = [0]
@@ -30,6 +29,13 @@ class gcode(object):
 		self.progressCallback = None
 		self._abort = False
 		self._filamentDiameter = 0
+		#Parameters for object size check
+		self.minX=None
+		self.minY=None
+		self.minZ=None
+		self.maxX=None
+		self.maxY=None
+		self.maxZ=None
 
 	def load(self, filename, printer_profile, throttle=None):
 		if os.path.isfile(filename):
@@ -143,7 +149,14 @@ class gcode(object):
 					if e is not None:
 						if absoluteE:
 							e -= currentE[currentExtruder]
+						# If move includes extrusion, calculate new min/max coordinates of model
 						if e > 0.0:
+							self.minX = pos[0] if self.minX is None or pos[0] < self.minX else self.minX
+							self.maxX = pos[0] if self.maxX is None or pos[0] > self.maxX else self.maxX
+							self.minY = pos[1] if self.minY is None or pos[1] < self.minY else self.minY
+							self.maxY = pos[1] if self.maxY is None or pos[1] > self.maxY else self.maxY
+							self.minZ = pos[2] if self.minZ is None or pos[2] < self.minZ else self.minZ
+							self.maxZ = pos[2] if self.maxZ is None or pos[2] > self.maxZ else self.maxZ
 							moveType = 'extrude'
 						if e < 0.0:
 							moveType = 'retract'
@@ -270,7 +283,6 @@ class gcode(object):
 
 	def _parseCuraProfileString(self, comment, prefix):
 		return {key: value for (key, value) in map(lambda x: x.split("=", 1), zlib.decompress(base64.b64decode(comment[len(prefix):])).split("\b"))}
-
 
 def getCodeInt(line, code):
 	n = line.find(code) + 1
