@@ -66,6 +66,7 @@ date of first contribution):
   * [Ishwar Agarwal](https://github.com/agarwali)
   * [Kye Hoover](https://github.com/eykrevooh)
   * [Philipp Baum](https://github.com/philphilphil)
+  * [Kyle Evans](https://github.com/kevans91)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and
