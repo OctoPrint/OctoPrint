@@ -50,7 +50,6 @@ class gcode(object):
 		self._abort = True
 
 	def _load(self, gcodeFile, printer_profile, throttle=None):
-		previousE=0
 		filePos = 0
 		readBytes = 0
 		pos = [0.0, 0.0, 0.0]
@@ -127,17 +126,6 @@ class gcode(object):
 					z = getCodeFloat(line, 'Z')
 					e = getCodeFloat(line, 'E')
 					f = getCodeFloat(line, 'F')
-					#Add value to list in case move includes extrusion
-					if e is not None and (e - previousE) > 0:
-						self.minX = x if self.minX is None or x < self.minX else self.minX
-						self.maxX = x if self.maxX is None or x > self.maxX else self.maxX
-						self.minY = y if self.minY is None or y < self.minY else self.minY
-						self.maxY = y if self.maxY is None or y > self.maxY else self.maxY
-						previousE = e
-
-					if z is not None:
-						self.minZ = z if self.minZ is None or z < self.minZ else self.minZ
-						self.maxZ = z if self.maxZ is None or z > self.maxZ else self.maxZ
 					oldPos = pos
 					pos = pos[:]
 					if posAbs:
@@ -161,7 +149,14 @@ class gcode(object):
 					if e is not None:
 						if absoluteE:
 							e -= currentE[currentExtruder]
+						# If move includes extrusion, calculate new min/max coordinates of model
 						if e > 0.0:
+							self.minX = pos[0] if self.minX is None or pos[0] < self.minX else self.minX
+							self.maxX = pos[0] if self.maxX is None or pos[0] > self.maxX else self.maxX
+							self.minY = pos[1] if self.minY is None or pos[1] < self.minY else self.minY
+							self.maxY = pos[1] if self.maxY is None or pos[1] > self.maxY else self.maxY
+							self.minZ = pos[2] if self.minZ is None or pos[2] < self.minZ else self.minZ
+							self.maxZ = pos[2] if self.maxZ is None or pos[2] > self.maxZ else self.maxZ
 							moveType = 'extrude'
 						if e < 0.0:
 							moveType = 'retract'
