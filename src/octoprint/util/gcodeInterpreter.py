@@ -224,7 +224,6 @@ class gcode(object):
 					e = getCodeFloat(line, 'E')
 					if e is not None:
 						currentE[currentExtruder] = e
-						previousE=e
 					if x is not None:
 						posOffset[0] = pos[0] - x
 					if y is not None:
