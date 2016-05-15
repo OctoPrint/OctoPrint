@@ -24,7 +24,7 @@ class Main(Daemon):
 		self._logConf = logConf
 
 	def run(self):
-		octoprint = Server(self._configfile, self._basedir, self._host, self._port, self._debug, self._allowRoot)
+		octoprint = Server(self._configfile, self._basedir, self._host, self._port, self._debug, self._allowRoot, self._logConf, self)
 		octoprint.run()
 
 def main():
