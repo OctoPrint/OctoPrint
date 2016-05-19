@@ -711,6 +711,10 @@ $(function() {
             }
             self.requestData(filename, location, self.currentPath());
 
+            if (_.endsWith(filename.toLowerCase(), ".stl")) {
+                self.slicing.show(location, filename);
+            }
+
             if (data.result.done) {
                 self._setProgressBar(0, "", false);
             }
