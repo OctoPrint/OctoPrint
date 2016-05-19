@@ -3,8 +3,8 @@
 This module defines the interface for communicating with a connected printer.
 
 The communication is in fact divided in two components, the :class:`PrinterInterface` and a deeper lying
-communcation layer. However, plugins should only ever need to use the :class:`PrinterInterface` as the
-abstracted version of the actual printer communiciation.
+communication layer. However, plugins should only ever need to use the :class:`PrinterInterface` as the
+abstracted version of the actual printer communication.
 
 .. autofunction:: get_connection_options
 
@@ -28,7 +28,7 @@ from octoprint.settings import settings
 
 def get_connection_options():
 	"""
-	Retrieves the available ports, baudrates, prefered port and baudrate for connecting to the printer.
+	Retrieves the available ports, baudrates, preferred port and baudrate for connecting to the printer.
 
 	Returned ``dict`` has the following structure::
 
@@ -99,7 +99,7 @@ class PrinterInterface(object):
 
 	def fake_ack(self):
 		"""
-		Fakes an acknowledgement for the communication layer. If the communication between OctoPrint and the printer
+		Fakes an acknowledgment for the communication layer. If the communication between OctoPrint and the printer
 		gets stuck due to lost "ok" responses from the server due to communication issues, this can be used to get
 		things going again.
 		"""
@@ -155,7 +155,7 @@ class PrinterInterface(object):
 
 	def extrude(self, amount):
 		"""
-		Extrude ``amount`` milimeters of material from the tool.
+		Extrude ``amount`` millimeters of material from the tool.
 
 		Arguments:
 		    amount (int, float): The amount of material to extrude in mm
@@ -221,6 +221,10 @@ class PrinterInterface(object):
 
 		Arguments:
 		    path (str): The path to select for printing. Either an absolute path (local file) or a
+		        filename (SD card).
+		    sd (boolean): Indicates whether the file is on the SD card or not.
+		    printAfterSelect (boolean): Indicates whether a print should be started
+		        after the file is selected.
 		"""
 		raise NotImplementedError()
 
@@ -254,6 +258,31 @@ class PrinterInterface(object):
 		     (str) A human readable string corresponding to the current communication state.
 		"""
 		raise NotImplementedError()
+
+	def get_state_id(self):
+		"""
+		Identifier of the current communication state.
+
+		Possible values are:
+
+		  * OPEN_SERIAL
+		  * DETECT_SERIAL
+		  * DETECT_BAUDRATE
+		  * CONNECTING
+		  * OPERATIONAL
+		  * PRINTING
+		  * PAUSED
+		  * CLOSED
+		  * ERROR
+		  * CLOSED_WITH_ERROR
+		  * TRANFERING_FILE
+		  * OFFLINE
+		  * UNKNOWN
+		  * NONE
+
+		Returns:
+		     (str) A unique identifier corresponding to the current communication state.
+		"""
 
 	def get_current_data(self):
 		"""
@@ -429,7 +458,7 @@ class PrinterCallback(object):
 		"""
 		Called when the internal state of the :class:`PrinterInterface` changes, due to changes in the printer state,
 		temperatures, log lines, job progress etc. Updates via this method are guaranteed to be throttled to a maximum
-		of 2 calles per second.
+		of 2 calls per second.
 
 		``data`` is a ``dict`` of the following structure::
 

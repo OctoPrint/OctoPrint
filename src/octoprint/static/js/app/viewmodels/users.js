@@ -60,12 +60,8 @@ $(function() {
         self.requestData = function() {
             if (!CONFIG_ACCESS_CONTROL) return;
 
-            $.ajax({
-                url: API_BASEURL + "users",
-                type: "GET",
-                dataType: "json",
-                success: self.fromResponse
-            });
+            OctoPrint.users.list()
+                .done(self.fromResponse);
         };
 
         self.fromResponse = function(response) {
@@ -83,12 +79,19 @@ $(function() {
         self.confirmAddUser = function() {
             if (!CONFIG_ACCESS_CONTROL) return;
 
-            var user = {name: self.editorUsername(), password: self.editorPassword(), admin: self.editorAdmin(), active: self.editorActive()};
-            self.addUser(user, function() {
-                // close dialog
-                self.currentUser(undefined);
-                self.addUserDialog.modal("hide");
-            });
+            var user = {
+                name: self.editorUsername(),
+                password: self.editorPassword(),
+                admin: self.editorAdmin(),
+                active: self.editorActive()
+            };
+
+            self.addUser(user)
+                .done(function() {
+                    // close dialog
+                    self.currentUser(undefined);
+                    self.addUserDialog.modal("hide");
+                });
         };
 
         self.showEditUserDialog = function(user) {
@@ -105,12 +108,12 @@ $(function() {
             user.active = self.editorActive();
             user.admin = self.editorAdmin();
 
-            // make AJAX call
-            self.updateUser(user, function() {
-                // close dialog
-                self.currentUser(undefined);
-                self.editUserDialog.modal("hide");
-            });
+            self.updateUser(user)
+                .done(function() {
+                    // close dialog
+                    self.currentUser(undefined);
+                    self.editUserDialog.modal("hide");
+                });
         };
 
         self.showChangePasswordDialog = function(user) {
@@ -123,27 +126,30 @@ $(function() {
         self.confirmChangePassword = function() {
             if (!CONFIG_ACCESS_CONTROL) return;
 
-            self.updatePassword(self.currentUser().name, self.editorPassword(), function() {
-                // close dialog
-                self.currentUser(undefined);
-                self.changePasswordDialog.modal("hide");
-            });
+            self.updatePassword(self.currentUser().name, self.editorPassword())
+                .done(function() {
+                    // close dialog
+                    self.currentUser(undefined);
+                    self.changePasswordDialog.modal("hide");
+                });
         };
 
         self.confirmGenerateApikey = function() {
             if (!CONFIG_ACCESS_CONTROL) return;
 
-            self.generateApikey(self.currentUser().name, function(response) {
-                self._updateApikey(response.apikey);
-            })
+            self.generateApikey(self.currentUser().name)
+                .done(function(response) {
+                    self._updateApikey(response.apikey);
+                });
         };
 
         self.confirmDeleteApikey = function() {
             if (!CONFIG_ACCESS_CONTROL) return;
 
-            self.deleteApikey(self.currentUser().name, function() {
-                self._updateApikey(undefined);
-            })
+            self.deleteApikey(self.currentUser().name)
+                .done(function() {
+                    self._updateApikey(undefined);
+                });
         };
 
         self._updateApikey = function(apikey) {
@@ -159,108 +165,55 @@ $(function() {
             self.changePasswordDialog = $("#settings-usersDialogChangePassword");
         };
 
-        //~~ AJAX calls
+        //~~ API calls
 
-        self.addUser = function(user, callback) {
-            if (!CONFIG_ACCESS_CONTROL) return;
-            if (user === undefined) return;
+        self.addUser = function(user) {
+            if (!user) {
+                throw OctoPrint.InvalidArgumentError("user must be set");
+            }
 
-            $.ajax({
-                url: API_BASEURL + "users",
-                type: "POST",
-                contentType: "application/json; charset=UTF-8",
-                data: JSON.stringify(user),
-                success: function(response) {
-                    self.fromResponse(response);
-                    if (callback) {
-                        callback(response);
-                    }
-                }
-            });
+            return OctoPrint.users.add(user)
+                .done(self.fromResponse);
         };
 
-        self.removeUser = function(user, callback) {
-            if (!CONFIG_ACCESS_CONTROL) return;
-            if (user === undefined) return;
+        self.removeUser = function(user) {
+            if (!user) {
+                throw OctoPrint.InvalidArgumentError("user must be set");
+            }
 
             if (user.name == self.loginState.username()) {
                 // we do not allow to delete ourselves
-                new PNotify({title: "Not possible", text: "You may not delete your own account.", type: "error"});
-                return;
+                new PNotify({
+                    title: gettext("Not possible"),
+                    text: gettext("You may not delete your own account."),
+                    type: "error"
+                });
+                return $.Deferred().reject("You may not delete your own account").promise();
             }
 
-            $.ajax({
-                url: API_BASEURL + "users/" + user.name,
-                type: "DELETE",
-                success: function(response) {
-                    self.fromResponse(response);
-                    if (callback) {
-                        callback(response);
-                    }
-                }
-            });
+            return OctoPrint.users.delete(user.name)
+                .done(self.fromResponse);
         };
 
-        self.updateUser = function(user, callback) {
-            if (!CONFIG_ACCESS_CONTROL) return;
-            if (user === undefined) return;
+        self.updateUser = function(user) {
+            if (!user) {
+                throw OctoPrint.InvalidArgumentError("user must be set");
+            }
 
-            $.ajax({
-                url: API_BASEURL + "users/" + user.name,
-                type: "PUT",
-                contentType: "application/json; charset=UTF-8",
-                data: JSON.stringify(user),
-                success: function(response) {
-                    self.fromResponse(response);
-                    if (callback) {
-                        callback(response);
-                    }
-                }
-            });
+            return OctoPrint.users.update(user.name, user.active, user.admin)
+                .done(self.fromResponse);
         };
 
-        self.updatePassword = function(username, password, callback) {
-            if (!CONFIG_ACCESS_CONTROL) return;
-
-            $.ajax({
-                url: API_BASEURL + "users/" + username + "/password",
-                type: "PUT",
-                contentType: "application/json; charset=UTF-8",
-                data: JSON.stringify({password: password}),
-                success: function(response) {
-                    if (callback) {
-                        callback(response);
-                    }
-                }
-            });
+        self.updatePassword = function(username, password) {
+            return OctoPrint.users.changePassword(username, password);
         };
 
-        self.generateApikey = function(username, callback) {
-            if (!CONFIG_ACCESS_CONTROL) return;
-
-            $.ajax({
-                url: API_BASEURL + "users/" + username + "/apikey",
-                type: "POST",
-                success: function(response) {
-                    if (callback) {
-                        callback(response);
-                    }
-                }
-            });
+        self.generateApikey = function(username) {
+            return OctoPrint.users.generateApiKey(username);
         };
 
-        self.deleteApikey = function(username, callback) {
-            if (!CONFIG_ACCESS_CONTROL) return;
-
-            $.ajax({
-                url: API_BASEURL + "users/" + username + "/apikey",
-                type: "DELETE",
-                success: function(response) {
-                    if (callback) {
-                        callback(response);
-                    }
-                }
-            });
+        self.deleteApikey = function(username) {
+            return OctoPrint.users.resetApiKey(username);
         };
 
         self.onUserLoggedIn = function(user) {

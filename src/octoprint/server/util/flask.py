@@ -335,7 +335,7 @@ def cached(timeout=5 * 60, key=lambda: "view:%s" % flask.request.path, unless=No
 
 			# only take the value from the cache if we are not required to refresh it from the wrapped function
 			if rv is not None and (not callable(refreshif) or not refreshif(rv)):
-				logger.debug("Serving entry for {path} from cache".format(path=flask.request.path))
+				logger.debug("Serving entry for {path} from cache (key: {key})".format(path=flask.request.path, key=cache_key))
 				if not "X-From-Cache" in rv.headers:
 					rv.headers["X-From-Cache"] = "true"
 				return rv
@@ -648,7 +648,7 @@ def _get_flask_user_from_request(request):
 	from octoprint.settings import settings
 
 	apikey = octoprint.server.util.get_api_key(request)
-	if settings().get(["api", "enabled"]) and apikey is not None:
+	if settings().getBoolean(["api", "enabled"]) and apikey is not None:
 		user = octoprint.server.util.get_user_for_apikey(apikey)
 	else:
 		user = flask.ext.login.current_user
@@ -891,10 +891,17 @@ def collect_plugin_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 		less=[]
 	)
 	assets["js"] = [
+		'js/app/bindings/allowbindings.js',
+		'js/app/bindings/contextmenu.js',
+		'js/app/bindings/invisible.js',
+		'js/app/bindings/popover.js',
+		'js/app/bindings/qrcode.js',
+		'js/app/bindings/slimscrolledforeach.js',
+		'js/app/bindings/toggle.js',
+		'js/app/bindings/togglecontent.js',
 		'js/app/viewmodels/appearance.js',
 		'js/app/viewmodels/connection.js',
 		'js/app/viewmodels/control.js',
-		'js/app/viewmodels/firstrun.js',
 		'js/app/viewmodels/files.js',
 		'js/app/viewmodels/loginstate.js',
 		'js/app/viewmodels/navigation.js',
@@ -902,12 +909,15 @@ def collect_plugin_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 		'js/app/viewmodels/printerprofiles.js',
 		'js/app/viewmodels/settings.js',
 		'js/app/viewmodels/slicing.js',
+		'js/app/viewmodels/system.js',
 		'js/app/viewmodels/temperature.js',
 		'js/app/viewmodels/terminal.js',
 		'js/app/viewmodels/timelapse.js',
 		'js/app/viewmodels/users.js',
 		'js/app/viewmodels/log.js',
-		'js/app/viewmodels/usersettings.js'
+		'js/app/viewmodels/usersettings.js',
+		'js/app/viewmodels/wizard.js',
+		'js/app/viewmodels/about.js'
 	]
 	if enable_gcodeviewer:
 		assets["js"] += [

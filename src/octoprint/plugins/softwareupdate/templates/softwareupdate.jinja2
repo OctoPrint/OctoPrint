@@ -11,7 +11,7 @@
             <!-- ko foreach: availableAndPossible -->
             <li>
                 <span class="name" data-bind="text: fullNameRemote, attr: {title: fullNameRemote}"></span>
-                <div class="releaseNotes" data-bind="visible: releaseNotes"><a data-bind="attr: {href: releaseNotes}">{{ _('Release Notes') }}</a></div>
+                <div class="releaseNotes" data-bind="visible: releaseNotes"><a data-bind="attr: {href: releaseNotes}" target="_blank" rel="noreferrer noopener">{{ _('Release Notes') }}</a></div>
             </li>
             <!-- /ko -->
         </ul>

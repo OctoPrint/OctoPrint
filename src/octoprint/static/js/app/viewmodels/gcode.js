@@ -5,9 +5,6 @@ $(function() {
         self.loginState = parameters[0];
         self.settings = parameters[1];
 
-        // TODO remove with release of 1.3.0 and switch to OctoPrint.coreui usage
-        self.tabTracking = parameters[2];
-
         self.ui_progress_percentage = ko.observable();
         self.ui_progress_type = ko.observable();
         self.ui_progress_text = ko.pureComputed(function() {
@@ -32,6 +29,7 @@ $(function() {
         self.ui_modelInfo = ko.observable("");
         self.ui_layerInfo = ko.observable("");
 
+        self.tabActive = false;
         self.enableReload = ko.observable(false);
 
         self.waitForApproval = ko.observable(false);
@@ -54,6 +52,8 @@ $(function() {
 
         self.reader_sortLayers = ko.observable(true);
         self.reader_hideEmptyLayers = ko.observable(true);
+
+        self.layerSelectionEnabled = ko.observable(false)
 
         self.synchronizeOptions = function(additionalRendererOptions, additionalReaderOptions) {
             var renderer = {
@@ -234,19 +234,20 @@ $(function() {
             self._configureLayerSlider(layerSliderElement);
             self._configureLayerCommandSlider(commandSliderElement);
 
-            self.settings.requestData(function() {
-                GCODE.ui.init({
-                    container: "#gcode_canvas",
-                    onProgress: self._onProgress,
-                    onModelLoaded: self._onModelLoaded,
-                    onLayerSelected: self._onLayerSelected,
-                    bed: self._retrieveBedDimensions(),
-                    toolOffsets: self._retrieveToolOffsets(),
-                    invertAxes: self._retrieveAxesConfiguration()
+            self.settings.requestData()
+                .done(function() {
+                    GCODE.ui.init({
+                        container: "#gcode_canvas",
+                        onProgress: self._onProgress,
+                        onModelLoaded: self._onModelLoaded,
+                        onLayerSelected: self._onLayerSelected,
+                        bed: self._retrieveBedDimensions(),
+                        toolOffsets: self._retrieveToolOffsets(),
+                        invertAxes: self._retrieveAxesConfiguration()
+                    });
+                    self.synchronizeOptions();
+                    self.enabled = true;
                 });
-                self.synchronizeOptions();
-                self.enabled = true;
-            });
         };
 
         self.reset = function() {
@@ -292,11 +293,8 @@ $(function() {
             self.enableReload(false);
             if (self.status == "idle" && self.errorCount < 3) {
                 self.status = "request";
-                $.ajax({
-                    url: BASEURL + "downloads/files/local/" + filename,
-                    data: { "ctime": date },
-                    type: "GET",
-                    success: function(response, rstatus) {
+                OctoPrint.files.download("local", filename)
+                    .done(function(response, rstatus) {
                         if(rstatus === 'success'){
                             self.showGCodeViewer(response, rstatus);
                             self.loadedFilename = filename;
@@ -304,12 +302,11 @@ $(function() {
                             self.status = "idle";
                             self.enableReload(true);
                         }
-                    },
-                    error: function() {
+                    })
+                    .fail(function() {
                         self.status = "idle";
                         self.errorCount++;
-                    }
-                });
+                    });
             }
         };
 
@@ -376,7 +373,7 @@ $(function() {
             if(self.loadedFilename
                     && self.loadedFilename == data.job.file.name
                     && self.loadedFileDate == data.job.file.date) {
-                if (self.tabTracking.browserTabVisible && self.tabActive && self.currentlyPrinting && self.renderer_syncProgress() && !self.waitForApproval()) {
+                if (OctoPrint.coreui.browserTabVisible && self.tabActive && self.currentlyPrinting && self.renderer_syncProgress() && !self.waitForApproval()) {
                     self._renderPercentage(data.progress.completion);
                 }
                 self.errorCount = 0
@@ -424,6 +421,7 @@ $(function() {
                     self.layerSlider.slider("disable");
                     self.layerSlider.slider("setMax", 1);
                     self.layerSlider.slider("setValue", 0);
+                    self.layerSelectionEnabled(false);
                 }
                 self.currentLayer = 0;
             } else {
@@ -439,6 +437,7 @@ $(function() {
                     self.layerSlider.slider("enable");
                     self.layerSlider.slider("setMax", model.layersPrinted - 1);
                     self.layerSlider.slider("setValue", 0);
+                    self.layerSelectionEnabled(true);
                 }
             }
         };
@@ -502,6 +501,36 @@ $(function() {
             GCODE.ui.changeSelectedLayer(value);
         };
 
+        self.onMouseOver = function(data, event) {
+            if (!self.settings.feature_keyboardControl() || self.layerSlider != undefined) return;
+            $("#canvas_container").focus();
+
+        };
+        self.onMouseOut = function(data, event) {
+            if (!self.settings.feature_keyboardControl() || self.layerSlider != undefined) return;
+            $("#canvas_container").blur();
+        };
+        self.onKeyDown = function(data, event) {
+            if (!self.settings.feature_keyboardControl() || self.layerSlider != undefined) return;
+
+            var value = self.currentLayer;
+            switch(event.which){
+                case 33: // Pg up
+                    value = value + 10; // No need to check against max this is done by the Slider anyway
+                    break;
+                case 34: // Pg down
+                    value = value - 10; // No need to check against min, this is done by the Slider anyway
+                    break;
+                case 38: // up arrow key
+                    value = value + 1; // No need to check against max this is done by the Slider anyway
+                    break;
+                case 40: // down arrow key
+                    value = value - 1; // No need to check against min, this is done by the Slider anyway
+                    break;
+            }
+            self.shiftLayer(value);
+        };
+
         self.changeCommandRange = function(event) {
             if (self.currentlyPrinting && self.renderer_syncProgress()) self.renderer_syncProgress(false);
 
@@ -523,11 +552,43 @@ $(function() {
         self.onTabChange = function(current, previous) {
             self.tabActive = current == "#gcode";
         };
+
+        self.shiftLayer = function(value){
+            if (value != self.currentLayer) {
+                event.preventDefault();
+
+                self.layerSlider.slider('setValue', value);
+                value = self.layerSlider.slider('getValue');
+                //This sets the scroll bar to the appropriate position.
+                self.layerSlider
+                    .trigger({
+                        type: 'slideStart',
+                        value: value
+                    })
+                    .trigger({
+                        type: 'slide',
+                        value: value
+                    }).trigger({
+                        type: 'slideStop',
+                        value: value
+                    });
+            }
+        };
+
+        self.incrementLayer = function() {
+            var value = self.layerSlider.slider('getValue') + 1;
+            self.shiftLayer(value);
+        };
+
+        self.decrementLayer = function() {
+            var value = self.layerSlider.slider('getValue') - 1;
+            self.shiftLayer(value);
+        };
     }
 
     OCTOPRINT_VIEWMODELS.push([
         GcodeViewModel,
-        ["loginStateViewModel", "settingsViewModel", "tabTracking"],
+        ["loginStateViewModel", "settingsViewModel"],
         "#gcode"
     ]);
 });

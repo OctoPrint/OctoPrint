@@ -385,7 +385,7 @@ table {
 }
 
 #temp_newTemp, #temp_newBedTemp, #speed_innerWall, #speed_outerWall, #speed_fill, #speed_support,
-#webcam_timelapse_interval, #webcam_timelapse_postRoll, #webcam_timelapse_fps {
+#webcam_timelapse_interval, #webcam_timelapse_postRoll, #webcam_timelapse_fps, #webcam_timelapse_retractionZHop {
   text-align: right;
 }
 
@@ -455,28 +455,6 @@ ul.dropdown-menu li a {
   outline: none;
 
   //min-height: 440px;
-
-  .flipH {
-    -webkit-transform: scaleX(-1);
-    -moz-transform: scaleX(-1);
-    -ms-transform: scaleX(-1);
-  }
-
-  .flipV {
-    -webkit-transform: scaleY(-1);
-    -moz-transform: scaleY(-1);
-    -ms-transform: scaleY(-1);
-  }
-
-  .flipH.flipV {
-    -webkit-transform: scaleX(-1) scaleY(-1);
-    -moz-transform: scaleX(-1) scaleY(-1);
-    -ms-transform: scaleX(-1) scaleY(-1);
-  }
-
-  .rotate90 {
-    transform: rotate(-90deg);
-  }
 
   .keycontrol_overlay {
     position: absolute;
@@ -660,6 +638,9 @@ ul.dropdown-menu li a {
 
   .canvas_container {
     position: relative;
+    &:hover, &:active {
+      outline: 0;
+    }
   }
 
   #gcode_layer_slider {
@@ -704,14 +685,23 @@ ul.dropdown-menu li a {
   }
 }
 
-/** Settings dialog */
 #settings_dialog {
-  .modal-body {
-    #settings_dialog_menu {
-      margin-left: 0;
-    }
+  .aboutlink {
+    float: left;
   }
 }
+
+#settings_dialog_menu,
+#wizard_dialog_menu {
+  margin-left: 0;
+}
+
+#wizard_firstrun_acl {
+  .acl_decision {
+    margin-top: 1em;
+  }
+}
+
 
 
 #settings_appearance_managelanguagesdialog_emptylist {
@@ -774,6 +764,10 @@ ul.dropdown-menu li a {
 
 .text-right {
   text-align: right;
+}
+
+.text-center {
+  text-align: center;
 }
 
 .overflow_visible {
@@ -927,6 +921,29 @@ textarea.block {
   float: none;
   margin-left: auto;
   margin-right: auto;
+}
+
+.flipH {
+  -webkit-transform: scaleX(-1);
+  -moz-transform: scaleX(-1);
+  -ms-transform: scaleX(-1);
+}
+
+.flipV {
+  -webkit-transform: scaleY(-1);
+  -moz-transform: scaleY(-1);
+  -ms-transform: scaleY(-1);
+}
+
+.flipH.flipV {
+  -webkit-transform: scaleX(-1) scaleY(-1);
+  -moz-transform: scaleX(-1) scaleY(-1);
+  -ms-transform: scaleX(-1) scaleY(-1);
+}
+
+.rotate90 {
+  -webkit-transform: rotate(-90deg);
+  transform: rotate(-90deg);
 }
 
 .ui-pnotify a {

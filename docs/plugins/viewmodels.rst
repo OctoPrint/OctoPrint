@@ -48,9 +48,9 @@ Dependencies
 ------------
 
 OctoPrint will try to inject all viewmodel dependencies requested by your viewmodel. In order to do this it will
-perform multiple passes iterating over all registered viewmodels and collecting the necessary depedencies prior to
-construction. Circular depedencies (A dependens on B, B on C, C on A) naturally cannot be resolved and will cause an
-error to be logged to the Javascript console.
+perform multiple passes iterating over all registered viewmodels and collecting the necessary dependencies prior to
+construction. Circular dependencies (A depends on B, B on C, C on A) naturally cannot be resolved and will cause an
+error to be logged to the JavaScript console.
 
 OctoPrint's core currently comes with the following viewmodels that your plugin can request for injection:
 
@@ -76,7 +76,7 @@ navigationViewModel
 printerProfilesViewModel
    Viewmodel for the printer profiles settings dialog.
 printerStateViewModel
-   Viewmodel for the current printer state, very intersting for plugins that need
+   Viewmodel for the current printer state, very interesting for plugins that need
    to know information about the current print job, if the printer is connected, operational etc.
 settingsViewModel
    Viewmodel for the settings dialog, also holds all settings to be used by other viewmodels, hence
@@ -171,7 +171,7 @@ onAfterTabChange
 
 getAdditionalControls
    Your viewmodel may return additional custom control definitions for inclusion on the "Control" tab of OctoPrint's
-   interface. See :ref:`the custom control feature<sec-features-custom_controls>`. 
+   interface. See :ref:`the custom control feature<sec-features-custom_controls>`.
 
 onSettingsShown
    Called when the settings dialog is shown.
@@ -188,6 +188,27 @@ onUserSettingsShown
 
 onUserSettingsHidden
    Called when the user settings dialog is hidden.
+
+onWizardDetails
+   Called with the response from the wizard detail API call initiated before opening the wizard dialog. Will contain
+   the data from all :class:`~octoprint.plugin.WizardPlugin` implementations returned by their :meth:`~octoprint.plugin.WizardPlugin.get_wizard_details`
+   method, mapped by the plugin identifier.
+
+onWizardTabChange
+   Called before the wizard tab/step is changed, with the ids of the current and the next tab as parameters. Return false
+   in order to prevent the tab change, e.g. if the wizard step is mandatory and not yet completed by the user. Take a look at
+   the "Core Wizard" plugin bundled with OctoPrint and the ACL wizard step in particular for an example on how to use this.
+
+onAfterWizardTabChange
+   Called after the wizard tab/step is changed, with the id of the current tab as parameter.
+
+onBeforeWizardFinish
+   Called before executing the finishing of the wizard. Return false here to stop the actual finish, e.g. if some step is
+   still incomplete.
+
+onWizardFinish
+   Called after executing the finishing of the wizard and before closing the dialog. Return ``reload`` here in order to
+   instruct OctoPrint to reload the UI after the wizard closes.
 
 In order to hook into any of those callbacks, just have your viewmodel define a function named accordingly, e.g.
 to get called after all viewmodels have been bound during application startup, implement a function ``onAllBound``
@@ -219,6 +240,6 @@ on your viewmodel, taking a list of all bound viewmodels:
 
    `OctoPrint's core viewmodels <https://github.com/foosel/OctoPrint/tree/devel/src/octoprint/static/js/app/viewmodels>`_
       OctoPrint's own viewmodels use the same mechanisms for interacting with each other and the web application as
-      plugins. Their sourcecode is therefore a good point of reference on how to achieve certain things.
+      plugins. Their source code is therefore a good point of reference on how to achieve certain things.
    `KnockoutJS documentation <http://knockoutjs.com/documentation/introduction.html>`_
       OctoPrint makes heavy use of KnockoutJS for building up its web app.

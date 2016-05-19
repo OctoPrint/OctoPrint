@@ -46,7 +46,7 @@ def settings(init=False, basedir=None, configfile=None):
 	        (False, default). If this is set to True and the plugin manager has already been initialized, a :class:`ValueError`
 	        will be raised. The same will happen if the plugin manager has not yet been initialized and this is set to
 	        False.
-	    basedir (str): Path of the base directoy for all of OctoPrint's settings, log files, uploads etc. If not set
+	    basedir (str): Path of the base directory for all of OctoPrint's settings, log files, uploads etc. If not set
 	        the default will be used: ``~/.octoprint`` on Linux, ``%APPDATA%/OctoPrint`` on Windows and
 	        ``~/Library/Application Support/OctoPrint`` on MacOS.
 	    configfile (str): Path of the configuration file (``config.yaml``) to work on. If not set the default will
@@ -82,16 +82,19 @@ default_settings = {
 			"connection": 10,
 			"communication": 30,
 			"temperature": 5,
+			"temperatureTargetSet": 2,
 			"sdStatus": 1
 		},
 		"additionalPorts": [],
+		"additionalBaudrates": [],
 		"longRunningCommands": ["G4", "G28", "G29", "G30", "G32", "M400", "M226"],
 		"checksumRequiringCommands": ["M110"],
 		"helloCommand": "M110 N0",
 		"disconnectOnErrors": True,
 		"ignoreErrorsFromFirmware": False,
-		"logResends": False,
 		"autoUppercaseBlacklist": ["M117"],
+		"logResends": True,
+		"supportResendsWithoutOk": False,
 
 		# command specific flags
 		"triggerOkForM29": True
@@ -100,6 +103,7 @@ default_settings = {
 		"host": "0.0.0.0",
 		"port": 5000,
 		"firstRun": True,
+		"seenWizards": {},
 		"secretKey": None,
 		"reverseProxy": {
 			"prefixHeader": "X-Script-Name",
@@ -159,6 +163,7 @@ default_settings = {
 		"temperatureGraph": True,
 		"waitForStartOnConnect": False,
 		"alwaysSendChecksum": False,
+		"neverSendChecksum": False,
 		"sendChecksumWithUnknownCommands": False,
 		"unknownCommandsNeedAck": False,
 		"sdSupport": True,
@@ -170,7 +175,8 @@ default_settings = {
 		"keyboardControl": True,
 		"pollWatched": False,
 		"ignoreIdenticalResends": False,
-		"identicalResendsCountdown": 7
+		"identicalResendsCountdown": 7,
+		"supportFAsCommand": False
 	},
 	"folder": {
 		"uploads": None,
@@ -207,17 +213,20 @@ default_settings = {
 		"color": "default",
 		"colorTransparent": False,
 		"defaultLanguage": "_default",
+		"showFahrenheitAlso": False,
 		"components": {
 			"order": {
-				"navbar": ["settings", "systemmenu", "login"],
+				"navbar": ["settings", "systemmenu", "login", "plugin_announcements"],
 				"sidebar": ["connection", "state", "files"],
 				"tab": ["temperature", "control", "gcodeviewer", "terminal", "timelapse"],
 				"settings": [
 					"section_printer", "serial", "printerprofiles", "temperatures", "terminalfilters", "gcodescripts",
-					"section_features", "features", "webcam", "accesscontrol", "api",
-					"section_octoprint", "server", "folders", "appearance", "logs", "plugin_pluginmanager", "plugin_softwareupdate"
+					"section_features", "features", "webcam", "accesscontrol", "gcodevisualizer", "api",
+					"section_octoprint", "server", "folders", "appearance", "logs", "plugin_pluginmanager", "plugin_softwareupdate", "plugin_announcements"
 				],
 				"usersettings": ["access", "interface"],
+				"wizard": ["access"],
+				"about": ["about", "supporters", "authors", "changelog", "license", "thirdparty", "plugin_pluginmanager"],
 				"generic": []
 			},
 			"disabled": {
@@ -313,7 +322,8 @@ default_settings = {
 			"waitInterval": 1.0,
 			"supportM112": True,
 			"echoOnM117": True,
-			"brokenM29": True
+			"brokenM29": True,
+			"supportF": False
 		}
 	}
 }
@@ -579,6 +589,20 @@ class Settings(object):
 	def effective_yaml(self):
 		import yaml
 		return yaml.safe_dump(self.effective)
+
+	@property
+	def effective_hash(self):
+		import hashlib
+		hash = hashlib.md5()
+		hash.update(repr(self.effective))
+		return hash.hexdigest()
+
+	@property
+	def config_hash(self):
+		import hashlib
+		hash = hashlib.md5()
+		hash.update(repr(self._config))
+		return hash.hexdigest()
 
 	#~~ load and save
 

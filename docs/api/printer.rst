@@ -699,7 +699,7 @@ Issue an SD command
 
    init
      Initializes the printer's SD card, making it available for use. This also includes an initial retrieval of the
-     list of files currently stored on the SD card, so after issueing that command a :ref:`retrieval of the files
+     list of files currently stored on the SD card, so after issuing that command a :ref:`retrieval of the files
      on SD card <sec-api-fileops-retrievelocation>` will return a successful result.
 
      .. note::
