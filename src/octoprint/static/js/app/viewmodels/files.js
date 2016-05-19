@@ -289,7 +289,8 @@ $(function() {
             }
             OctoPrint.files.select(file.origin, OctoPrint.files.pathForElement(file))
                 .done(function() {
-                    if (printAfterLoad) {
+                    var withinPrintDimensions = self.evaluatePrintDimensions(file, true);
+                    if (withinPrintDimensions && printAfterLoad) {
                         OctoPrint.job.start();
                     }
                 });
@@ -411,6 +412,17 @@ $(function() {
         self.getAdditionalData = function(data) {
             var output = "";
             if (data["gcodeAnalysis"]) {
+                if (data["gcodeAnalysis"]["printingArea"]) {
+                    var area = data["gcodeAnalysis"]["printingArea"];
+                    var dimensions = {
+                        width: area["maxX"] - area["minX"],
+                        depth: area["maxY"] - area["minY"],
+                        height: area["maxZ"] - area["minZ"]
+                    };
+
+                    output += gettext("Model Size") + ": " + _.sprintf("%(width).2fmm &times; %(depth).2fmm &times; %(height).2fmm", dimensions);
+                    output += "<br>";
+                }
                 if (data["gcodeAnalysis"]["filament"] && typeof(data["gcodeAnalysis"]["filament"]) == "object") {
                     var filament = data["gcodeAnalysis"]["filament"];
                     if (_.keys(filament).length == 1) {
@@ -424,82 +436,6 @@ $(function() {
                     }
                 }
                 output += gettext("Estimated Print Time") + ": " + formatDuration(data["gcodeAnalysis"]["estimatedPrintTime"]) + "<br>";
-                if (self.loginState.isUser())
-                {
-                    var profileItems=self.printerProfiles.profiles.items();
-                    var count=0;
-                    while(count < profileItems.length && !profileItems[count].current)
-                    {
-                        count++;
-                    }
-                    if (count < profileItems.length)
-                    {
-                        var warn=false;
-                        var volumeInfo=profileItems[count].volume;
-                        var printingArea=data["gcodeAnalysis"]["printingArea"];
-                        if(volumeInfo.origin=="lowerleft")
-                        {
-                            if(printingArea["maxX"]>volumeInfo.width || printingArea["maxY"]>volumeInfo.depth ||
-                               printingArea["maxZ"]>volumeInfo.height)
-                            {
-                                warn=true;
-                            }
-                        }
-                        else //origin is centre
-                        {
-                            if( printingArea["maxX"]>(volumeInfo.width/2) || printingArea["maxY"]>(volumeInfo.depth/2) ||
-                               printingArea["maxZ"]>volumeInfo.height || Math.abs(printingArea["minX"])>(volumeInfo.width/2) ||
-                               Math.abs(printingArea["minY"])>(volumeInfo.depth/2))
-                            {
-                                warn=true;
-                            }
-                        }
-                    }
-                    if(warn)
-                    {
-                        var warning = "<p>" + _.sprintf(gettext("Revise file %s"), data["name"]) + "</p>";
-                        var info="";
-
-                        // set print volume boundaries
-                        var boundaries = {
-                            minX : 0,
-                            maxX : volumeInfo.width,
-                            minY : 0,
-                            maxY : volumeInfo.depth,
-                            minZ : 0,
-                            maxZ : volumeInfo.height
-                        };
-                        if (volumeInfo.origin === "center") {
-                            boundaries["maxX"] = volumeInfo.width / 2;
-                            boundaries["minX"] = -1 * boundaries["maxX"];
-                            boundaries["maxY"] = volumeInfo.depth / 2;
-                            boundaries["minY"] = -1 * boundaries["maxY"];
-                        }
-
-                        // find exceeded dimensions
-                        if (printingArea["minX"] < boundaries["minX"] || printingArea["maxX"] > boundaries["maxX"]) {
-                            info += _.sprintf(gettext("Profile's width: ( %s, %s) vs object's width: (%s, %s)\n"), boundaries["minX"],
-                                              boundaries["maxX"],printingArea["minX"], printingArea["maxX"]);
-                        }
-                        if (printingArea["minY"] < boundaries["minY"] || printingArea["maxY"] > boundaries["maxY"]) {
-                            info += _.sprintf(gettext("Profile's depth: (%s, %s) vs object's depth: (%s, %s)\n"),boundaries["minY"],
-                                              boundaries["maxY"], printingArea["minY"], printingArea["maxY"]);
-                        }
-                        if (printingArea["minZ"] < boundaries["minZ"] || printingArea["maxZ"] > boundaries["maxZ"]) {
-                            info += _.sprintf(gettext("Profile's height: (%s, %s) vs object's height: (%s, %s)\n"),boundaries["minZ"],
-                                              boundaries["maxZ"], printingArea["minZ"], printingArea["maxZ"]);
-                        }
-
-                        //warn user
-                        warning += pnotifyAdditionalInfo("<pre>" + info + "</pre>");
-                        new PNotify({
-                            title: "Object exceeds the printing area",
-                            text: warning,
-                            type: "warning",
-                            hide: false
-                        });
-                    }
-                }
             }
             if (data["prints"] && data["prints"]["last"]) {
                 output += gettext("Last Printed") + ": " + formatTimeAgo(data["prints"]["last"]["date"]) + "<br>";
@@ -508,6 +444,80 @@ $(function() {
                 }
             }
             return output;
+        };
+
+        self.evaluatePrintDimensions = function(data, notify) {
+            var printingArea = data["gcodeAnalysis"]["printingArea"];
+            if (!printingArea) {
+                return true;
+            }
+
+            var printerProfile = self.printerProfiles.currentProfileData();
+            if (!printerProfile) {
+                return true;
+            }
+
+            var volumeInfo = printerProfile.volume;
+            if (!volumeInfo) {
+                return true;
+            }
+
+            // set print volume boundaries
+            var boundaries = {
+                minX : 0,
+                maxX : volumeInfo.width(),
+                minY : 0,
+                maxY : volumeInfo.depth(),
+                minZ : 0,
+                maxZ : volumeInfo.height()
+            };
+            if (volumeInfo.origin() == "center") {
+                boundaries["maxX"] = volumeInfo.width() / 2;
+                boundaries["minX"] = -1 * boundaries["maxX"];
+                boundaries["maxY"] = volumeInfo.depth() / 2;
+                boundaries["minY"] = -1 * boundaries["maxY"];
+            }
+
+            // model not within bounds, we need to prepare a warning
+            var warning = "<p>" + _.sprintf(gettext("Object in %(name)s exceeds the print volume of the currently selected printer profile, be careful when printing this."), data) + "</p>";
+            var info = "";
+
+            var formatData = {
+                profile: boundaries,
+                object: printingArea
+            };
+
+            info += _.sprintf(gettext("Object's bounding box: (%(object.minX).2f, %(object.minY).2f, %(object.minZ).2f) &times; (%(object.maxX).2f, %(object.maxY).2f, %(object.maxZ).2f)"), formatData);
+            info += "<br>";
+            info += _.sprintf(gettext("Print volume: (%(profile.minX).2f, %(profile.minY).2f, %(profile.minZ).2f) &times; (%(profile.maxX).2f, %(profile.maxY).2f, %(profile.maxZ).2f)"), formatData);
+
+            // find exceeded dimensions
+            if (printingArea["minX"] < boundaries["minX"] || printingArea["maxX"] > boundaries["maxX"]) {
+                info += gettext("<br>Object exceeds print volume in width.");
+            }
+            if (printingArea["minY"] < boundaries["minY"] || printingArea["maxY"] > boundaries["maxY"]) {
+                info += gettext("<br>Object exceeds print volume in depth.");
+            }
+            if (printingArea["minZ"] < boundaries["minZ"] || printingArea["maxZ"] > boundaries["maxZ"]) {
+                info += gettext("<br>Object exceeds print volume in height.");
+            }
+
+            //warn user
+            if (info != "") {
+                if (notify) {
+                    warning += pnotifyAdditionalInfo(info);
+
+                    new PNotify({
+                        title: gettext("Object doesn't fit print volume"),
+                        text: warning,
+                        type: "warning",
+                        hide: false
+                    });
+                }
+                return false;
+            } else {
+                return true;
+            }
         };
 
         self.performSearch = function(e) {
@@ -578,16 +588,8 @@ $(function() {
             self.uploadSdButton = $("#gcode_upload_sd");
             if (!self.uploadSdButton.length) {
                 self.uploadSdButton = undefined;
-                if (_.endsWith(filename.toLowerCase(), ".stl")) {
-                    self.slicing.show(location, filename);
-                }
-        
-                if (data.result.done) {
-                    $("#gcode_upload_progress .bar").css("width", "0%");
-                    $("#gcode_upload_progress").removeClass("progress-striped").removeClass("active");
-                    $("#gcode_upload_progress .bar").text("");
-                }
             }
+
             self.uploadProgress = $("#gcode_upload_progress");
             self.uploadProgressBar = $(".bar", self.uploadProgress);
 
