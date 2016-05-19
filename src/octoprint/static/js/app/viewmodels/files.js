@@ -436,6 +436,82 @@ $(function() {
                     }
                 }
                 output += gettext("Estimated Print Time") + ": " + formatDuration(data["gcodeAnalysis"]["estimatedPrintTime"]) + "<br>";
+                if (self.loginState.isUser())
+                {
+                    var profileItems=self.printerProfiles.profiles.items();
+                    var count=0;
+                    while(count < profileItems.length && !profileItems[count].current)
+                    {
+                        count++;
+                    }
+                    if (count < profileItems.length)
+                    {
+                        var warn=false;
+                        var volumeInfo=profileItems[count].volume;
+                        var printingArea=data["gcodeAnalysis"]["printingArea"];
+                        if(volumeInfo.origin=="lowerleft")
+                        {
+                            if(printingArea["maxX"]>volumeInfo.width || printingArea["maxY"]>volumeInfo.depth ||
+                               printingArea["maxZ"]>volumeInfo.height)
+                            {
+                                warn=true;
+                            }
+                        }
+                        else //origin is centre
+                        {
+                            if( printingArea["maxX"]>(volumeInfo.width/2) || printingArea["maxY"]>(volumeInfo.depth/2) ||
+                               printingArea["maxZ"]>volumeInfo.height || Math.abs(printingArea["minX"])>(volumeInfo.width/2) ||
+                               Math.abs(printingArea["minY"])>(volumeInfo.depth/2))
+                            {
+                                warn=true;
+                            }
+                        }
+                    }
+                    if(warn)
+                    {
+                        var warning = "<p>" + _.sprintf(gettext("Revise file %s"), data["name"]) + "</p>";
+                        var info="";
+
+                        // set print volume boundaries
+                        var boundaries = {
+                            minX : 0,
+                            maxX : volumeInfo.width,
+                            minY : 0,
+                            maxY : volumeInfo.depth,
+                            minZ : 0,
+                            maxZ : volumeInfo.height
+                        };
+                        if (volumeInfo.origin === "center") {
+                            boundaries["maxX"] = volumeInfo.width / 2;
+                            boundaries["minX"] = -1 * boundaries["maxX"];
+                            boundaries["maxY"] = volumeInfo.depth / 2;
+                            boundaries["minY"] = -1 * boundaries["maxY"];
+                        }
+
+                        // find exceeded dimensions
+                        if (printingArea["minX"] < boundaries["minX"] || printingArea["maxX"] > boundaries["maxX"]) {
+                            info += _.sprintf(gettext("Profile's width: ( %s, %s) vs object's width: (%s, %s)\n"), boundaries["minX"],
+                                              boundaries["maxX"],printingArea["minX"], printingArea["maxX"]);
+                        }
+                        if (printingArea["minY"] < boundaries["minY"] || printingArea["maxY"] > boundaries["maxY"]) {
+                            info += _.sprintf(gettext("Profile's depth: (%s, %s) vs object's depth: (%s, %s)\n"),boundaries["minY"],
+                                              boundaries["maxY"], printingArea["minY"], printingArea["maxY"]);
+                        }
+                        if (printingArea["minZ"] < boundaries["minZ"] || printingArea["maxZ"] > boundaries["maxZ"]) {
+                            info += _.sprintf(gettext("Profile's height: (%s, %s) vs object's height: (%s, %s)\n"),boundaries["minZ"],
+                                              boundaries["maxZ"], printingArea["minZ"], printingArea["maxZ"]);
+                        }
+
+                        //warn user
+                        warning += pnotifyAdditionalInfo("<pre>" + info + "</pre>");
+                        new PNotify({
+                            title: "Object exceeds the printing area",
+                            text: warning,
+                            type: "warning",
+                            hide: false
+                        });
+                    }
+                }
             }
             if (data["prints"] && data["prints"]["last"]) {
                 output += gettext("Last Printed") + ": " + formatTimeAgo(data["prints"]["last"]["date"]) + "<br>";
@@ -588,8 +664,16 @@ $(function() {
             self.uploadSdButton = $("#gcode_upload_sd");
             if (!self.uploadSdButton.length) {
                 self.uploadSdButton = undefined;
+                if (_.endsWith(filename.toLowerCase(), ".stl")) {
+                    self.slicing.show(location, filename);
+                }
+        
+                if (data.result.done) {
+                    $("#gcode_upload_progress .bar").css("width", "0%");
+                    $("#gcode_upload_progress").removeClass("progress-striped").removeClass("active");
+                    $("#gcode_upload_progress .bar").text("");
+                }
             }
-
             self.uploadProgress = $("#gcode_upload_progress");
             self.uploadProgressBar = $(".bar", self.uploadProgress);
 
