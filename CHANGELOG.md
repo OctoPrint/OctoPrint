@@ -60,6 +60,11 @@
   accomodate the plotted data (see also [#632](https://github.com/foosel/OctoPrint/issues/632)).
 * "Fan on" command now always sends `S255` parameter for better compatibility
   across firmwares.
+* Warn users with a notification if file is selected that exceeds the current print
+  volume (if the corresponding model data is available, see also [#1254](https://github.com/foosel/OctoPrint/pull/1254))
+* Added Layer Up/Down buttons to Gcode view (see also [#1306](https://github.com/foosel/OctoPrint/pull/1306))
+* Added option to also display temperatures in Fahrenheit (see also [#1258](https://github.com/foosel/OctoPrint/pull/1258))
+* Allow changing GCode viewer size thresholds via settings menu (see also [#1308](https://github.com/foosel/OctoPrint/pull/1308))
 
 ### Bug Fixes
 
