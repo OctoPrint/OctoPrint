@@ -6,6 +6,7 @@ $(function() {
         self.loginState = parameters[1];
         self.printerState = parameters[2];
         self.slicing = parameters[3];
+        self.printerProfiles=parameters[4];
 
         self.isErrorOrClosed = ko.observable(undefined);
         self.isOperational = ko.observable(undefined);
@@ -288,7 +289,8 @@ $(function() {
             }
             OctoPrint.files.select(file.origin, OctoPrint.files.pathForElement(file))
                 .done(function() {
-                    if (printAfterLoad) {
+                    var withinPrintDimensions = self.evaluatePrintDimensions(file, true);
+                    if (withinPrintDimensions && printAfterLoad) {
                         OctoPrint.job.start();
                     }
                 });
@@ -410,6 +412,17 @@ $(function() {
         self.getAdditionalData = function(data) {
             var output = "";
             if (data["gcodeAnalysis"]) {
+                if (data["gcodeAnalysis"]["printingArea"]) {
+                    var area = data["gcodeAnalysis"]["printingArea"];
+                    var dimensions = {
+                        width: area["maxX"] - area["minX"],
+                        depth: area["maxY"] - area["minY"],
+                        height: area["maxZ"] - area["minZ"]
+                    };
+
+                    output += gettext("Model Size") + ": " + _.sprintf("%(width).2fmm &times; %(depth).2fmm &times; %(height).2fmm", dimensions);
+                    output += "<br>";
+                }
                 if (data["gcodeAnalysis"]["filament"] && typeof(data["gcodeAnalysis"]["filament"]) == "object") {
                     var filament = data["gcodeAnalysis"]["filament"];
                     if (_.keys(filament).length == 1) {
@@ -431,6 +444,80 @@ $(function() {
                 }
             }
             return output;
+        };
+
+        self.evaluatePrintDimensions = function(data, notify) {
+            var printingArea = data["gcodeAnalysis"]["printingArea"];
+            if (!printingArea) {
+                return true;
+            }
+
+            var printerProfile = self.printerProfiles.currentProfileData();
+            if (!printerProfile) {
+                return true;
+            }
+
+            var volumeInfo = printerProfile.volume;
+            if (!volumeInfo) {
+                return true;
+            }
+
+            // set print volume boundaries
+            var boundaries = {
+                minX : 0,
+                maxX : volumeInfo.width(),
+                minY : 0,
+                maxY : volumeInfo.depth(),
+                minZ : 0,
+                maxZ : volumeInfo.height()
+            };
+            if (volumeInfo.origin() == "center") {
+                boundaries["maxX"] = volumeInfo.width() / 2;
+                boundaries["minX"] = -1 * boundaries["maxX"];
+                boundaries["maxY"] = volumeInfo.depth() / 2;
+                boundaries["minY"] = -1 * boundaries["maxY"];
+            }
+
+            // model not within bounds, we need to prepare a warning
+            var warning = "<p>" + _.sprintf(gettext("Object in %(name)s exceeds the print volume of the currently selected printer profile, be careful when printing this."), data) + "</p>";
+            var info = "";
+
+            var formatData = {
+                profile: boundaries,
+                object: printingArea
+            };
+
+            info += _.sprintf(gettext("Object's bounding box: (%(object.minX).2f, %(object.minY).2f, %(object.minZ).2f) &times; (%(object.maxX).2f, %(object.maxY).2f, %(object.maxZ).2f)"), formatData);
+            info += "<br>";
+            info += _.sprintf(gettext("Print volume: (%(profile.minX).2f, %(profile.minY).2f, %(profile.minZ).2f) &times; (%(profile.maxX).2f, %(profile.maxY).2f, %(profile.maxZ).2f)"), formatData);
+
+            // find exceeded dimensions
+            if (printingArea["minX"] < boundaries["minX"] || printingArea["maxX"] > boundaries["maxX"]) {
+                info += gettext("<br>Object exceeds print volume in width.");
+            }
+            if (printingArea["minY"] < boundaries["minY"] || printingArea["maxY"] > boundaries["maxY"]) {
+                info += gettext("<br>Object exceeds print volume in depth.");
+            }
+            if (printingArea["minZ"] < boundaries["minZ"] || printingArea["maxZ"] > boundaries["maxZ"]) {
+                info += gettext("<br>Object exceeds print volume in height.");
+            }
+
+            //warn user
+            if (info != "") {
+                if (notify) {
+                    warning += pnotifyAdditionalInfo(info);
+
+                    new PNotify({
+                        title: gettext("Object doesn't fit print volume"),
+                        text: warning,
+                        type: "warning",
+                        hide: false
+                    });
+                }
+                return false;
+            } else {
+                return true;
+            }
         };
 
         self.performSearch = function(e) {
@@ -708,7 +795,7 @@ $(function() {
 
     OCTOPRINT_VIEWMODELS.push([
         GcodeFilesViewModel,
-        ["settingsViewModel", "loginStateViewModel", "printerStateViewModel", "slicingViewModel"],
+        ["settingsViewModel", "loginStateViewModel", "printerStateViewModel", "slicingViewModel","printerProfilesViewModel"],
         ["#files_wrapper", "#add_folder_dialog"]
     ]);
 });
