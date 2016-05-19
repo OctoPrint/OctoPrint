@@ -99,7 +99,6 @@ def getSettings():
 			"triggerOkForM29": s.getBoolean(["serial", "triggerOkForM29"]),
 			"supportResendsWithoutOk": s.getBoolean(["serial", "supportResendsWithoutOk"]),
 			"autoUppercaseBlacklist": s.get(["serial", "autoUppercaseBlacklist"])
-			
 		},
 		"folder": {
 			"uploads": s.getBaseFolder("uploads"),

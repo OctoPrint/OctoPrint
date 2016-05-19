@@ -706,7 +706,6 @@ $(function() {
                     }
                 });
             };
-
             mapToObservables(serverChangedData, specialMappings, clientChangedData);
         };
 
@@ -724,7 +723,7 @@ $(function() {
             self.settingsDialog.trigger("beforeSave");
 
             self.sending(data == undefined || options.sending || false);
-
+            
             if (data == undefined) {
                 // we also only send data that actually changed when no data is specified
                 data = getOnlyChangedData(self.getLocalData(), self.lastReceivedSettings);
