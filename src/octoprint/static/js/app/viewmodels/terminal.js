@@ -256,8 +256,12 @@ $(function() {
 
             var re = /^([gmt][0-9]+)(\s.*)?/;
             var commandMatch = command.match(re);
+            self.blacklist =  splitTextToArray(self.settings.serial_autoUppercaseBlacklist(), ",", true);
             if (commandMatch != null) {
                 command = commandMatch[1].toUpperCase() + ((commandMatch[2] !== undefined) ? commandMatch[2] : "");
+                if (self.blacklist.indexOf(commandMatch[1].toUpperCase()) < 0){
+                    command = command.toUpperCase()
+                }
             }
 
             if (command) {

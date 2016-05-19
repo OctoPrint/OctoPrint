@@ -92,6 +92,7 @@ default_settings = {
 		"helloCommand": "M110 N0",
 		"disconnectOnErrors": True,
 		"ignoreErrorsFromFirmware": False,
+		"autoUppercaseBlacklist": ["M117"],
 		"logResends": True,
 		"supportResendsWithoutOk": False,
 
@@ -1050,6 +1051,7 @@ class Settings(object):
 	#~~ setter
 
 	def set(self, path, value, force=False, defaults=None, config=None, preprocessors=None):
+		
 		if len(path) == 0:
 			return
 

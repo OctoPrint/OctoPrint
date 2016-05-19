@@ -285,6 +285,7 @@ class MachineCom(object):
 
 		self._long_running_commands = settings().get(["serial", "longRunningCommands"])
 		self._checksum_requiring_commands = settings().get(["serial", "checksumRequiringCommands"])
+		self._auto_uppercase_blacklist = settings().get(["serial", "autoUppercaseBlacklist"])
 
 		self._clear_to_send = CountedEvent(max=10, name="comm.clear_to_send")
 		self._send_queue = TypedQueue()

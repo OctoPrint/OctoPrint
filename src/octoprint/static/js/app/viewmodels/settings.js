@@ -152,6 +152,7 @@ $(function() {
         self.serial_ignoreErrorsFromFirmware = ko.observable(undefined);
         self.serial_disconnectOnErrors = ko.observable(undefined);
         self.serial_triggerOkForM29 = ko.observable(undefined);
+        self.serial_autoUppercaseBlacklist = ko.observable(undefined);
         self.serial_supportResendsWithoutOk = ko.observable(undefined);
 
         self.folder_uploads = ko.observable(undefined);
@@ -705,7 +706,6 @@ $(function() {
                     }
                 });
             };
-
             mapToObservables(serverChangedData, specialMappings, clientChangedData);
         };
 
@@ -723,7 +723,7 @@ $(function() {
             self.settingsDialog.trigger("beforeSave");
 
             self.sending(data == undefined || options.sending || false);
-
+            
             if (data == undefined) {
                 // we also only send data that actually changed when no data is specified
                 data = getOnlyChangedData(self.getLocalData(), self.lastReceivedSettings);
