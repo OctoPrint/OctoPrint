@@ -40,7 +40,7 @@ regex_float_pattern = "[-+]?[0-9]*\.?[0-9]+"
 regex_positive_float_pattern = "[+]?[0-9]*\.?[0-9]+"
 regex_int_pattern = "\d+"
 
-regex_command = re.compile("^\s*((?P<commandGM>[GM]\d+)|(?P<commandT>T)\d+)")
+regex_command = re.compile("^\s*((?P<commandGM>[GM]\d+)|(?P<commandT>T)\d+|(?P<commandF>F)\d+)")
 """Regex for a GCODE command."""
 
 regex_float = re.compile(regex_float_pattern)
@@ -138,6 +138,15 @@ def serialList():
 
 def baudrateList():
 	ret = [250000, 230400, 115200, 57600, 38400, 19200, 9600]
+	additionalBaudrates = settings().get(["serial", "additionalBaudrates"])
+	for additional in additionalBaudrates:
+		try:
+			ret.append(int(additional))
+		except:
+			_logger.warn("{} is not a valid additional baudrate, ignoring it".format(additional))
+
+	ret.sort(reverse=True)
+
 	prev = settings().getInt(["serial", "baudrate"])
 	if prev in ret:
 		ret.remove(prev)
@@ -214,6 +223,7 @@ class MachineCom(object):
 		self._baudrateDetectRetry = 0
 		self._temp = {}
 		self._bedTemp = None
+		self._temperatureTargetSetThreshold = 25
 		self._tempOffsets = dict()
 		self._command_queue = TypedQueue()
 		self._currentZ = None
@@ -239,7 +249,10 @@ class MachineCom(object):
 		self._hello_command = settings().get(["serial", "helloCommand"])
 		self._trigger_ok_for_m29 = settings().getBoolean(["serial", "triggerOkForM29"])
 
+		self._hello_command = settings().get(["serial", "helloCommand"])
+
 		self._alwaysSendChecksum = settings().getBoolean(["feature", "alwaysSendChecksum"])
+		self._neverSendChecksum = settings().getBoolean(["feature", "neverSendChecksum"])
 		self._sendChecksumWithUnknownCommands = settings().getBoolean(["feature", "sendChecksumWithUnknownCommands"])
 		self._unknownCommandsNeedAck = settings().getBoolean(["feature", "unknownCommandsNeedAck"])
 		self._currentLine = 1
@@ -249,9 +262,11 @@ class MachineCom(object):
 		self._lastCommError = None
 		self._lastResendNumber = None
 		self._currentResendCount = 0
-		self._resendSwallowNextOk = False
 		self._resendSwallowRepetitions = settings().getBoolean(["feature", "ignoreIdenticalResends"])
 		self._resendSwallowRepetitionsCounter = 0
+		self._checksum_requiring_commands = settings().get(["serial", "checksumRequiringCommands"])
+
+		self._supportResendsWithoutOk = settings().getBoolean(["serial", "supportResendsWithoutOk"])
 
 		self._resendActive = False
 
@@ -262,11 +277,11 @@ class MachineCom(object):
 
 		self._log_resends = settings().getBoolean(["serial", "logResends"])
 
-		# don't log more resends than 5 / 10s
+		# don't log more resends than 5 / 60s
 		self._log_resends_rate_start = None
 		self._log_resends_rate_count = 0
 		self._log_resends_max = 5
-		self._log_resends_rate_frame = 10
+		self._log_resends_rate_frame = 60
 
 		self._long_running_commands = settings().get(["serial", "longRunningCommands"])
 		self._checksum_requiring_commands = settings().get(["serial", "checksumRequiringCommands"])
@@ -286,6 +301,7 @@ class MachineCom(object):
 			sending=self._pluginManager.get_hooks("octoprint.comm.protocol.gcode.sending"),
 			sent=self._pluginManager.get_hooks("octoprint.comm.protocol.gcode.sent")
 		)
+		self._received_message_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.gcode.received")
 
 		self._printer_action_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.action")
 		self._gcodescript_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.scripts")
@@ -329,7 +345,7 @@ class MachineCom(object):
 			return
 
 		if newState == self.STATE_CLOSED or newState == self.STATE_CLOSED_WITH_ERROR:
-			if settings().get(["feature", "sdSupport"]):
+			if settings().getBoolean(["feature", "sdSupport"]):
 				self._sdFileList = False
 				self._sdFiles = []
 				self._callback.on_comm_sd_files([])
@@ -363,37 +379,51 @@ class MachineCom(object):
 	def getState(self):
 		return self._state
 
-	def getStateString(self):
-		if self._state == self.STATE_NONE:
+	def getStateId(self, state=None):
+		if state is None:
+			state = self._state
+
+		possible_states = filter(lambda x: x.startswith("STATE_"), self.__class__.__dict__.keys())
+		for possible_state in possible_states:
+			if getattr(self, possible_state) == state:
+				return possible_state[len("STATE_"):]
+
+		return "UNKNOWN"
+
+	def getStateString(self, state=None):
+		if state is None:
+			state = self._state
+
+		if state == self.STATE_NONE:
 			return "Offline"
-		if self._state == self.STATE_OPEN_SERIAL:
+		if state == self.STATE_OPEN_SERIAL:
 			return "Opening serial port"
-		if self._state == self.STATE_DETECT_SERIAL:
+		if state == self.STATE_DETECT_SERIAL:
 			return "Detecting serial port"
-		if self._state == self.STATE_DETECT_BAUDRATE:
+		if state == self.STATE_DETECT_BAUDRATE:
 			return "Detecting baudrate"
-		if self._state == self.STATE_CONNECTING:
+		if state == self.STATE_CONNECTING:
 			return "Connecting"
-		if self._state == self.STATE_OPERATIONAL:
+		if state == self.STATE_OPERATIONAL:
 			return "Operational"
-		if self._state == self.STATE_PRINTING:
+		if state == self.STATE_PRINTING:
 			if self.isSdFileSelected():
 				return "Printing from SD"
 			elif self.isStreaming():
 				return "Sending file to SD"
 			else:
 				return "Printing"
-		if self._state == self.STATE_PAUSED:
+		if state == self.STATE_PAUSED:
 			return "Paused"
-		if self._state == self.STATE_CLOSED:
+		if state == self.STATE_CLOSED:
 			return "Closed"
-		if self._state == self.STATE_ERROR:
+		if state == self.STATE_ERROR:
 			return "Error: %s" % (self.getErrorString())
-		if self._state == self.STATE_CLOSED_WITH_ERROR:
+		if state == self.STATE_CLOSED_WITH_ERROR:
 			return "Error: %s" % (self.getErrorString())
-		if self._state == self.STATE_TRANSFERING_FILE:
+		if state == self.STATE_TRANSFERING_FILE:
 			return "Transfering file to SD"
-		return "?%d?" % (self._state)
+		return "Unknown State (%d)" % (self._state)
 
 	def getErrorString(self):
 		return self._errorValue
@@ -515,15 +545,16 @@ class MachineCom(object):
 
 		printing = self.isPrinting() or self.isPaused()
 		if self._serial is not None:
-			if not is_error and wait:
-				self._logger.info("Waiting for command and send queue to finish processing (timeout={}s)".format(timeout))
-				if timeout is not None:
-					stop = time.time() + timeout
-					while (self._command_queue.unfinished_tasks or self._send_queue.unfinished_tasks) and time.time() < stop:
-						time.sleep(0.1)
-				else:
-					self._command_queue.join()
-					self._send_queue.join()
+			if not is_error:
+				self.sendGcodeScript("beforePrinterDisconnected")
+				if wait:
+					if timeout is not None:
+						stop = time.time() + timeout
+						while (self._command_queue.unfinished_tasks or self._send_queue.unfinished_tasks) and time.time() < stop:
+							time.sleep(0.1)
+					else:
+						self._command_queue.join()
+						self._send_queue.join()
 
 			deactivate_monitoring_and_send_queue()
 
@@ -553,7 +584,6 @@ class MachineCom(object):
 					"origin": self._currentFile.getFileLocation()
 				}
 			eventManager().fire(Events.PRINT_FAILED, payload)
-		eventManager().fire(Events.DISCONNECTED)
 
 	def setTemperatureOffset(self, offsets):
 		self._tempOffsets.update(offsets)
@@ -1206,7 +1236,7 @@ class MachineCom(object):
 								self._log("Unexpected error while setting baudrate {}: {}".format(baudrate, get_exception_string()))
 								self._logger.exception("Unexpceted error while setting baudrate {}".format(baudrate))
 						else:
-							self.close()
+							self.close(wait=False)
 							self._errorValue = "No more baudrates to test, and no suitable baudrate found."
 							self._changeState(self.STATE_ERROR)
 							eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
@@ -1223,7 +1253,7 @@ class MachineCom(object):
 					elif line.startswith("ok"):
 						self._onConnected()
 					elif time.time() > self._timeout:
-						self.close()
+						self.close(wait=False)
 
 			except:
 				self._logger.exception("Something crashed inside the serial connection loop, please report this in OctoPrint's bug tracker:")
@@ -1351,7 +1381,7 @@ class MachineCom(object):
 
 	def _onConnected(self):
 		self._serial.timeout = settings().getFloat(["serial", "timeout", "communication"])
-		self._temperature_timer = RepeatedTimer(self._timeout_intervals.get("temperature", 4.0), self._poll_temperature, run_first=True)
+		self._temperature_timer = RepeatedTimer(self._getTemperatureTimerInterval, self._poll_temperature, run_first=True)
 		self._temperature_timer.start()
 
 		self._changeState(self.STATE_OPERATIONAL)
@@ -1366,6 +1396,22 @@ class MachineCom(object):
 		payload = dict(port=self._port, baudrate=self._baudrate)
 		eventManager().fire(Events.CONNECTED, payload)
 		self.sendGcodeScript("afterPrinterConnected", replacements=dict(event=payload))
+
+	def _getTemperatureTimerInterval(self):
+		busy_default = 4.0
+		target_default = 2.0
+
+		if self.isBusy():
+			return self._timeout_intervals.get("temperature", busy_default)
+
+		for temp in [self._temp[k][1] for k in self._temp.keys()]:
+			if temp > self._temperatureTargetSetThreshold:
+				return self._timeout_intervals.get("temperatureTargetSet", target_default)
+
+		if self._bedTemp and len(self._bedTemp) > 0 and self._bedTemp[1] > self._temperatureTargetSetThreshold:
+			return self._timeout_intervals.get("temperatureTargetSet", target_default)
+
+		return self._timeout_intervals.get("temperature", busy_default)
 
 	def _sendFromQueue(self):
 		# We loop here to make sure that if we do NOT send the first command
@@ -1536,7 +1582,7 @@ class MachineCom(object):
 				self._logger.exception("Unexpected error while reading from serial port")
 				self._log("Unexpected error while reading serial port, please consult octoprint.log for details: %s" % (get_exception_string()))
 				self._errorValue = get_exception_string()
-				self.close(True)
+				self.close(is_error=True)
 			return None
 
 		if ret != "":
@@ -1545,6 +1591,15 @@ class MachineCom(object):
 			except ValueError as e:
 				self._log("WARN: While reading last line: %s" % e)
 				self._log("Recv: " + repr(ret))
+
+		for name, hook in self._received_message_hooks.items():
+			try:
+				ret = hook(self, ret)
+			except:
+				self._logger.exception("Error while processing hook {name}:".format(**locals()))
+			else:
+				if ret is None:
+					return ""
 
 		return ret
 
@@ -1591,84 +1646,89 @@ class MachineCom(object):
 				self._callback.on_comm_progress()
 
 	def _handleResendRequest(self, line):
-		lineToResend = None
 		try:
-			lineToResend = int(line.replace("N:", " ").replace("N", " ").replace(":", " ").split()[-1])
-		except:
-			if "rs" in line:
-				lineToResend = int(line.split()[1])
+			lineToResend = None
+			try:
+				lineToResend = int(line.replace("N:", " ").replace("N", " ").replace(":", " ").split()[-1])
+			except:
+				if "rs" in line:
+					lineToResend = int(line.split()[1])
 
-		if lineToResend is None:
-			return False
+			if lineToResend is None:
+				return False
 
-		if self._resendDelta is None and lineToResend == self._currentLine:
-			# We don't expect to have an active resend request and the printer is requesting a resend of
-			# a line we haven't yet sent.
+			if self._resendDelta is None and lineToResend == self._currentLine:
+				# We don't expect to have an active resend request and the printer is requesting a resend of
+				# a line we haven't yet sent.
+				#
+				# This means the printer got a line from us with N = self._currentLine - 1 but had already
+				# acknowledged that. This can happen if the last line was resent due to a timeout during
+				# an active (prior) resend request.
+				#
+				# We will ignore this resend request and just continue normally.
+				self._logger.debug("Ignoring resend request for line %d == current line, we haven't sent that yet so the printer got N-1 twice from us, probably due to a timeout" % lineToResend)
+				return False
+
+			lastCommError = self._lastCommError
+			self._lastCommError = None
+
+			resendDelta = self._currentLine - lineToResend
+
+			if lastCommError is not None \
+					and ("line number" in lastCommError.lower() or "expected line" in lastCommError.lower()) \
+					and lineToResend == self._lastResendNumber \
+					and self._resendDelta is not None and self._currentResendCount < self._resendDelta:
+				self._logger.debug("Ignoring resend request for line %d, that still originates from lines we sent before we got the first resend request" % lineToResend)
+				self._currentResendCount += 1
+				return True
+
+			# If we ignore resend repetitions (Repetier firmware...), check if we
+			# need to do this now. If the same line number has been requested we
+			# already saw and resent, we'll ignore it up to <counter> times.
+			if self._resendSwallowRepetitions and lineToResend == self._lastResendNumber and self._resendSwallowRepetitionsCounter > 0:
+				self._logger.debug("Ignoring resend request for line %d, that is probably a repetition sent by the firmware to ensure it arrives, not a real request" % lineToResend)
+				self._resendSwallowRepetitionsCounter -= 1
+				return True
+
+			self._resendActive = True
+			self._resendDelta = resendDelta
+			self._lastResendNumber = lineToResend
+			self._currentResendCount = 0
+			self._resendSwallowRepetitionsCounter = settings().getInt(["feature", "identicalResendsCountdown"])
+
+			if self._resendDelta > len(self._lastLines) or len(self._lastLines) == 0 or self._resendDelta < 0:
+				self._errorValue = "Printer requested line %d but no sufficient history is available, can't resend" % lineToResend
+				self._log(self._errorValue)
+				self._logger.warn(self._errorValue + ". Printer requested line {}, current line is {}, line history has {} entries.".format(lineToResend, self._currentLine, len(self._lastLines)))
+				if self.isPrinting():
+					# abort the print, there's nothing we can do to rescue it now
+					self._changeState(self.STATE_ERROR)
+					eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
+				else:
+					# reset resend delta, we can't do anything about it
+					self._resendDelta = None
+
+			# if we log resends, make sure we don't log more resends than the set rate within a window
 			#
-			# This means the printer got a line from us with N = self._currentLine - 1 but had already
-			# acknowledged that. This can happen if the last line was resent due to a timeout during
-			# an active (prior) resend request.
-			#
-			# We will ignore this resend request and just continue normally.
-			self._logger.debug("Ignoring resend request for line %d == current line, we haven't sent that yet so the printer got N-1 twice from us, probably due to a timeout" % lineToResend)
-			return False
+			# this it to prevent the log from getting flooded for extremely bad communication issues
+			if self._log_resends:
+				now = time.time()
+				new_rate_window = self._log_resends_rate_start is None or self._log_resends_rate_start + self._log_resends_rate_frame < now
+				in_rate = self._log_resends_rate_count < self._log_resends_max
 
-		lastCommError = self._lastCommError
-		self._lastCommError = None
+				if new_rate_window or in_rate:
+					if new_rate_window:
+						self._log_resends_rate_start = now
+						self._log_resends_rate_count = 0
 
-		resendDelta = self._currentLine - lineToResend
+					self._to_logfile_with_terminal("Got a resend request from the printer: requested line = {}, current line = {}".format(lineToResend, self._currentLine))
+					self._log_resends_rate_count += 1
 
-		if lastCommError is not None \
-				and ("line number" in lastCommError.lower() or "expected line" in lastCommError.lower()) \
-				and lineToResend == self._lastResendNumber \
-				and self._resendDelta is not None and self._currentResendCount < self._resendDelta:
-			self._logger.debug("Ignoring resend request for line %d, that still originates from lines we sent before we got the first resend request" % lineToResend)
-			self._currentResendCount += 1
 			return True
-
-		# If we ignore resend repetitions (Repetier firmware...), check if we
-		# need to do this now. If the same line number has been requested we
-		# already saw and resent, we'll ignore it up to <counter> times.
-		if self._resendSwallowRepetitions and lineToResend == self._lastResendNumber and self._resendSwallowRepetitionsCounter > 0:
-			self._logger.debug("Ignoring resend request for line %d, that is probably a repetition sent by the firmware to ensure it arrives, not a real request" % lineToResend)
-			self._resendSwallowRepetitionsCounter -= 1
-			return True
-
-		self._resendActive = True
-		self._resendDelta = resendDelta
-		self._lastResendNumber = lineToResend
-		self._currentResendCount = 0
-		self._resendSwallowRepetitionsCounter = settings().getInt(["feature", "identicalResendsCountdown"])
-
-		if self._resendDelta > len(self._lastLines) or len(self._lastLines) == 0 or self._resendDelta < 0:
-			self._errorValue = "Printer requested line %d but no sufficient history is available, can't resend" % lineToResend
-			self._log(self._errorValue)
-			self._logger.warn(self._errorValue + ". Printer requested line {}, current line is {}, line history has {} entries.".format(lineToResend, self._currentLine, len(self._lastLines)))
-			if self.isPrinting():
-				# abort the print, there's nothing we can do to rescue it now
-				self._changeState(self.STATE_ERROR)
-				eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
-			else:
-				# reset resend delta, we can't do anything about it
-				self._resendDelta = None
-
-		# if we log resends, make sure we don't log more resends than the set rate within a window
-		#
-		# this it to prevent the log from getting flooded for extremely bad communication issues
-		if self._log_resends:
-			now = time.time()
-			new_rate_window = self._log_resends_rate_start is None or self._log_resends_rate_start + self._log_resends_rate_frame < now
-			in_rate = self._log_resends_rate_count < self._log_resends_max
-
-			if new_rate_window or in_rate:
-				if new_rate_window:
-					self._log_resends_rate_start = now
-					self._log_resends_rate_count = 0
-
-				self._to_logfile_with_terminal("Got a resend request from the printer: requested line = {}, current line = {}".format(lineToResend, self._currentLine))
-				self._log_resends_rate_count += 1
-
-		return True
+		finally:
+			if self._supportResendsWithoutOk:
+				# simulate an ok if our flags indicate that the printer needs that for resend requests to work
+				self._handle_ok()
 
 	def _resendSameCommand(self):
 		self._resendNextCommand(again=True)
@@ -1757,7 +1817,6 @@ class MachineCom(object):
 				entry = self._send_queue.get()
 
 				try:
-
 					# make sure we are still active
 					if not self._send_queue_active:
 						break
@@ -1788,6 +1847,15 @@ class MachineCom(object):
 							self._continue_sending()
 
 							# and now let's fetch the next item from the queue
+							continue
+
+						if command.strip() == "":
+							self._logger.info("Refusing to send an empty line to the printer")
+
+							# same here, tickle the queues manually
+							self._continue_sending()
+
+							# and fetch the next item
 							continue
 
 						# now comes the part where we increase line numbers and send stuff - no turning back now
@@ -2621,6 +2689,8 @@ def gcode_command_for_cmd(cmd):
 		return values["commandGM"]
 	elif "commandT" in values and values["commandT"]:
 		return values["commandT"]
+	elif settings().getBoolean(["feature", "supportFAsCommand"]) and "commandF" in values and values["commandF"]:
+		return values["commandF"]
 	else:
 		# this should never happen
 		return None

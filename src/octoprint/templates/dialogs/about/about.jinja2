@@ -1,0 +1,49 @@
+<h3>{{ _('OctoPrint') }}</h3>
+
+<h4>{{ _('The snappy web interface for your 3D printer') }}</h4>
+
+<p>Version <span class="version">{{ display_version }}</span></p>
+
+<ul>
+    <li>Website: <a href="http://octoprint.org" target="_blank" rel="noreferrer noopener">octoprint.org</a></li>
+    <li>Source Code: <a href="https://github.com/foosel/OctoPrint" target="_blank" rel="noreferrer noopener">github.com/foosel/OctoPrint</a></li>
+    <li>Documentation: <a href="http://docs.octoprint.org" target="_blank" rel="noreferrer noopener">docs.octoprint.org</a></li>
+</ul>
+
+<p>
+    <strong>Development of OctoPrint wouldn't be possible without <a href="javascript:void(0)" data-bind="click: function() { showTab('{{ templates.about.entries.supporters[1]._div }}'); }">its supporters</a>.</strong><br>
+    If you enjoy OctoPrint, please consider <a href="http://octoprint.org/support-octoprint/" target="_blank" rel="noreferrer noopener">supporting its ongoing development</a>.
+</p>
+
+<p>
+    &copy; 2012-{{ now.strftime("%Y") }} <a href="javascript:void(0)" data-bind="click: function() { showTab('{{ templates.about.entries.authors[1]._div }}'); }">The OctoPrint Authors</a>
+</p>
+
+<p>
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as
+    published by the Free Software Foundation, either version 3 of the
+    License, or (at your option) any later version.
+</p>
+
+<p>
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+</p>
+
+<p>
+    For a copy of the GNU Affero General Public License, see <a href="javascript:void(0)" data-bind="click: function() { showTab('{{ templates.about.entries.license[1]._div }}'); }">{{ templates.about.entries.license[0] }}</a>
+    to the left.
+</p>
+
+<p>
+    OctoPrint also utilizes various dependencies under terms of their
+    respective licenses, which can be found under <a href="javascript:void(0)" data-bind="click: function() { showTab('{{ templates.about.entries.thirdparty[1]._div }}'); }">{{ templates.about.entries.thirdparty[0] }}</a> to
+    the left. Copyright of those dependencies lies with their respective authors
+</p>
+
+<p><small>
+    "OctoPrint" is a registered trademark.
+</small></p>

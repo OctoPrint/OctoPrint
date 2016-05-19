@@ -1,3 +1,70 @@
+(function (global, factory) {
+    if (typeof define === "function" && define.amd) {
+        define(["OctoPrint"], factory);
+    } else {
+        factory(window.OctoPrint);
+    }
+})(window || this, function(OctoPrint) {
+    var exports = {};
+
+    exports.get = function(refresh, opts) {
+        return OctoPrint.get(OctoPrint.getSimpleApiUrl("pluginmanager") + ((refresh) ? "?refresh_repository=true" : ""), opts);
+    };
+
+    exports.getWithRefresh = function(opts) {
+        return exports.get(true, opts);
+    };
+
+    exports.getWithoutRefresh = function(opts) {
+        return exports.get(false, opts);
+    };
+
+    exports.install = function(pluginUrl, dependencyLinks, opts) {
+        var data = {
+            url: pluginUrl,
+            dependency_links: !!dependencyLinks
+        };
+        return OctoPrint.simpleApiCommand("pluginmanager", "install", data, opts);
+    };
+
+    exports.reinstall = function(plugin, pluginUrl, dependencyLinks, opts) {
+        var data = {
+            url: pluginUrl,
+            dependency_links: !!dependencyLinks,
+            reinstall: plugin,
+            force: true
+        };
+        return OctoPrint.simpleApiCommand("pluginmanager", "install", data, opts);
+    };
+
+    exports.uninstall = function(plugin, opts) {
+        var data = {
+            plugin: plugin
+        };
+        return OctoPrint.simpleApiCommand("pluginmanager", "uninstall", data, opts);
+    };
+
+    exports.enable = function(plugin, opts) {
+        var data = {
+            plugin: plugin
+        };
+        return OctoPrint.simpleApiCommand("pluginmanager", "enable", data, opts);
+    };
+
+    exports.disable = function(plugin, opts) {
+        var data = {
+            plugin: plugin
+        };
+        return OctoPrint.simpleApiCommand("pluginmanager", "disable", data, opts);
+    };
+
+    exports.upload = function(file) {
+        return OctoPrint.upload(OctoPrint.getBlueprintUrl("pluginmanager") + "upload_archive", file);
+    };
+
+    OctoPrint.plugins.pluginmanager = exports;
+});
+
 $(function() {
     function PluginManagerViewModel(parameters) {
         var self = this;
@@ -5,11 +72,12 @@ $(function() {
         self.loginState = parameters[0];
         self.settingsViewModel = parameters[1];
         self.printerState = parameters[2];
+        self.systemViewModel = parameters[3];
 
         self.config_repositoryUrl = ko.observable();
         self.config_repositoryTtl = ko.observable();
-        self.config_pipCommand = ko.observable();
         self.config_pipAdditionalArgs = ko.observable();
+        self.config_pipForceUser = ko.observable();
 
         self.configurationDialog = $("#settings_plugin_pluginmanager_configurationdialog");
 
@@ -80,15 +148,38 @@ $(function() {
         self.followDependencyLinks = ko.observable(false);
 
         self.pipAvailable = ko.observable(false);
-        self.pipCommand = ko.observable();
         self.pipVersion = ko.observable();
-        self.pipUseSudo = ko.observable();
+        self.pipInstallDir = ko.observable();
+        self.pipUseUser = ko.observable();
+        self.pipVirtualEnv = ko.observable();
         self.pipAdditionalArgs = ko.observable();
+        self.pipPython = ko.observable();
+
+        self.pipUseUserString = ko.pureComputed(function() {
+            return self.pipUseUser() ? "yes" : "no";
+        });
+        self.pipVirtualEnvString = ko.pureComputed(function() {
+            return self.pipVirtualEnv() ? "yes" : "no";
+        });
 
         self.working = ko.observable(false);
         self.workingTitle = ko.observable();
         self.workingDialog = undefined;
         self.workingOutput = undefined;
+
+        self.restartCommandSpec = undefined;
+        self.systemViewModel.systemActions.subscribe(function() {
+            var lastResponse = self.systemViewModel.lastCommandResponse;
+            if (!lastResponse || !lastResponse.core) {
+                self.restartCommandSpec = undefined;
+                return;
+            }
+
+            var restartSpec = _.filter(lastResponse.core, function(spec) { return spec.action == "restart" });
+            self.restartCommandSpec = restartSpec != undefined && restartSpec.length > 0 ? restartSpec[0] : undefined;
+        });
+
+        self.notifications = [];
 
         self.enableManagement = ko.pureComputed(function() {
             return !self.printerState.isPrinting();
@@ -101,6 +192,7 @@ $(function() {
         self.enableUninstall = function(data) {
             return self.enableManagement()
                 && (data.origin != "entry_point" || self.pipAvailable())
+                && data.managable
                 && !data.bundled
                 && data.key != 'pluginmanager'
                 && !data.pending_uninstall;
@@ -209,14 +301,17 @@ $(function() {
         self._fromPipResponse = function(data) {
             self.pipAvailable(data.available);
             if (data.available) {
-                self.pipCommand(data.command);
                 self.pipVersion(data.version);
-                self.pipUseSudo(data.use_sudo);
+                self.pipInstallDir(data.install_dir);
+                self.pipUseUser(data.use_user);
+                self.pipVirtualEnv(data.virtual_env);
                 self.pipAdditionalArgs(data.additional_args);
+                self.pipPython(data.python);
             } else {
-                self.pipCommand(undefined);
                 self.pipVersion(undefined);
-                self.pipUseSudo(undefined);
+                self.pipInstallDir(undefined);
+                self.pipUseUser(undefined);
+                self.pipVirtualEnv(undefined);
                 self.pipAdditionalArgs(undefined);
             }
         };
@@ -226,12 +321,8 @@ $(function() {
                 return;
             }
 
-            $.ajax({
-                url: API_BASEURL + "plugin/pluginmanager" + ((includeRepo) ? "?refresh_repository=true" : ""),
-                type: "GET",
-                dataType: "json",
-                success: self.fromResponse
-            });
+            OctoPrint.plugins.pluginmanager.get(includeRepo)
+                .done(self.fromResponse);
         };
 
         self.togglePlugin = function(data) {
@@ -245,19 +336,25 @@ $(function() {
 
             if (data.key == "pluginmanager") return;
 
-            var command = self._getToggleCommand(data);
+            var onSuccess = self.requestData,
+                onError = function() {
+                    new PNotify({
+                        title: gettext("Something went wrong"),
+                        text: gettext("Please consult octoprint.log for details"),
+                        type: "error",
+                        hide: false
+                    })
+                };
 
-            var payload = {plugin: data.key};
-            self._postCommand(command, payload, function(response) {
-                self.requestData();
-            }, function() {
-                new PNotify({
-                    title: gettext("Something went wrong"),
-                    text: gettext("Please consult octoprint.log for details"),
-                    type: "error",
-                    hide: false
-                })
-            });
+            if (self._getToggleCommand(data) == "enable") {
+                OctoPrint.plugins.pluginmanager.enable(data.key)
+                    .done(onSuccess)
+                    .fail(onError);
+            } else {
+                OctoPrint.plugins.pluginmanager.disable(data.key)
+                    .done(onSuccess)
+                    .fail(onError);
+            }
         };
 
         self.showRepository = function() {
@@ -277,11 +374,7 @@ $(function() {
                 return;
             }
 
-            if (self.installed(data)) {
-                self.installPlugin(data.archive, data.title, data.id, data.follow_dependency_links || self.followDependencyLinks());
-            } else {
-                self.installPlugin(data.archive, data.title, undefined, data.follow_dependency_links || self.followDependencyLinks());
-            }
+            self.installPlugin(data.archive, data.title, (self.installed(data) ? data.id : undefined), data.follow_dependency_links || self.followDependencyLinks());
         };
 
         self.installPlugin = function(url, name, reinstall, followDependencyLinks) {
@@ -316,26 +409,33 @@ $(function() {
             }
             self._markWorking(workTitle, workText);
 
-            var command = "install";
-            var payload = {url: url, dependency_links: followDependencyLinks};
-            if (reinstall) {
-                payload["plugin"] = reinstall;
-                payload["force"] = true;
-            }
+            var onSuccess = function() {
+                    self.requestData();
+                    self.installUrl("");
+                },
+                onError = function() {
+                    new PNotify({
+                        title: gettext("Something went wrong"),
+                        text: gettext("Please consult octoprint.log for details"),
+                        type: "error",
+                        hide: false
+                    });
+                },
+                onAlways = function() {
+                    self._markDone();
+                };
 
-            self._postCommand(command, payload, function(response) {
-                self.requestData();
-                self._markDone();
-                self.installUrl("");
-            }, function() {
-                new PNotify({
-                    title: gettext("Something went wrong"),
-                    text: gettext("Please consult octoprint.log for details"),
-                    type: "error",
-                    hide: false
-                });
-                self._markDone();
-            });
+            if (reinstall) {
+                OctoPrint.plugins.pluginmanager.reinstall(reinstall, url, followDependencyLinks)
+                    .done(onSuccess)
+                    .fail(onError)
+                    .always(onAlways);
+            } else {
+                OctoPrint.plugins.pluginmanager.install(url, followDependencyLinks)
+                    .done(onSuccess)
+                    .fail(onError)
+                    .always(onAlways);
+            }
         };
 
         self.uninstallPlugin = function(data) {
@@ -352,20 +452,19 @@ $(function() {
 
             self._markWorking(gettext("Uninstalling plugin..."), _.sprintf(gettext("Uninstalling plugin \"%(name)s\""), {name: data.name}));
 
-            var command = "uninstall";
-            var payload = {plugin: data.key};
-            self._postCommand(command, payload, function(response) {
-                self.requestData();
-                self._markDone();
-            }, function() {
-                new PNotify({
-                    title: gettext("Something went wrong"),
-                    text: gettext("Please consult octoprint.log for details"),
-                    type: "error",
-                    hide: false
+            OctoPrint.plugins.pluginmanager.uninstall(data.key)
+                .done(self.requestData)
+                .fail(function() {
+                    new PNotify({
+                        title: gettext("Something went wrong"),
+                        text: gettext("Please consult octoprint.log for details"),
+                        type: "error",
+                        hide: false
+                    });
+                })
+                .always(function() {
+                    self._markDone();
                 });
-                self._markDone();
-            });
         };
 
         self.refreshRepository = function() {
@@ -382,11 +481,6 @@ $(function() {
         };
 
         self.savePluginSettings = function() {
-            var pipCommand = self.config_pipCommand();
-            if (pipCommand != undefined && pipCommand.trim() == "") {
-                pipCommand = null;
-            }
-
             var repository = self.config_repositoryUrl();
             if (repository != undefined && repository.trim() == "") {
                 repository = null;
@@ -409,8 +503,8 @@ $(function() {
                     pluginmanager: {
                         repository: repository,
                         repository_ttl: repositoryTtl,
-                        pip: pipCommand,
-                        pip_args: pipArgs
+                        pip_args: pipArgs,
+                        pip_force_user: self.config_pipForceUser()
                     }
                 }
             };
@@ -424,8 +518,8 @@ $(function() {
         self._copyConfig = function() {
             self.config_repositoryUrl(self.settingsViewModel.settings.plugins.pluginmanager.repository());
             self.config_repositoryTtl(self.settingsViewModel.settings.plugins.pluginmanager.repository_ttl());
-            self.config_pipCommand(self.settingsViewModel.settings.plugins.pluginmanager.pip());
             self.config_pipAdditionalArgs(self.settingsViewModel.settings.plugins.pluginmanager.pip_args());
+            self.config_pipForceUser(self.settingsViewModel.settings.plugins.pluginmanager.pip_force_user());
         };
 
         self.installed = function(data) {
@@ -441,15 +535,59 @@ $(function() {
         };
 
         self._displayNotification = function(response, titleSuccess, textSuccess, textRestart, textReload, titleError, textError) {
+            var notification;
+
+            var beforeClose = function(notification) {
+                self.notifications = _.without(self.notifications, notification);
+            };
+
             if (response.result) {
                 if (response.needs_restart) {
-                    new PNotify({
+                    var options = {
                         title: titleSuccess,
                         text: textRestart,
+                        buttons: {
+                            closer: false,
+                            sticker: false
+                        },
+                        callbacks: {
+                            before_close: beforeClose
+                        },
                         hide: false
-                    });
+                    };
+
+                    if (self.restartCommandSpec) {
+                        options.confirm = {
+                            confirm: true,
+                            buttons: [{
+                                text: gettext("Restart now"),
+                                click: function () {
+                                    showConfirmationDialog({
+                                        message: gettext("This will restart your OctoPrint server."),
+                                        onproceed: function() {
+                                            OctoPrint.system.executeCommand("core", "restart")
+                                                .done(function() {
+                                                    new PNotify({
+                                                        title: gettext("Restart in progress"),
+                                                        text: gettext("The server is now being restarted in the background")
+                                                    })
+                                                })
+                                                .fail(function() {
+                                                    new PNotify({
+                                                        title: gettext("Something went wrong"),
+                                                        text: gettext("Trying to restart the server produced an error, please check octoprint.log for details. You'll have to restart manually.")
+                                                    })
+                                                });
+                                        }
+                                    });
+                                }
+                            }]
+                        }
+                    }
+
+                    notification = PNotify.singleButtonNotify(options);
                 } else if (response.needs_refresh) {
-                    new PNotify({
+                    notification = PNotify.singleButtonNotify({
                         title: titleSuccess,
                         text: textReload,
                         confirm: {
@@ -465,51 +603,35 @@ $(function() {
                             closer: false,
                             sticker: false
                         },
+                        callbacks: {
+                            before_close: beforeClose
+                        },
                         hide: false
                     })
                 } else {
-                    new PNotify({
+                    notification = new PNotify({
                         title: titleSuccess,
                         text: textSuccess,
                         type: "success",
+                        callbacks: {
+                            before_close: beforeClose
+                        },
                         hide: false
                     })
                 }
             } else {
-                new PNotify({
+                notification = new PNotify({
                     title: titleError,
                     text: textError,
                     type: "error",
+                    callbacks: {
+                        before_close: beforeClose
+                    },
                     hide: false
                 });
             }
-        };
 
-        self._postCommand = function (command, data, successCallback, failureCallback, alwaysCallback, timeout) {
-            var payload = _.extend(data, {command: command});
-
-            var params = {
-                url: API_BASEURL + "plugin/pluginmanager",
-                type: "POST",
-                dataType: "json",
-                data: JSON.stringify(payload),
-                contentType: "application/json; charset=UTF-8",
-                success: function(response) {
-                    if (successCallback) successCallback(response);
-                },
-                error: function() {
-                    if (failureCallback) failureCallback();
-                },
-                complete: function() {
-                    if (alwaysCallback) alwaysCallback();
-                }
-            };
-
-            if (timeout != undefined) {
-                params.timeout = timeout;
-            }
-
-            $.ajax(params);
+            self.notifications.push(notification);
         };
 
         self._markWorking = function(title, line) {
@@ -554,6 +676,16 @@ $(function() {
         self.onUserLoggedIn = function(user) {
             if (user.admin) {
                 self.requestData();
+            } else {
+                self.onUserLoggedOut();
+            }
+        };
+
+        self.onUserLoggedOut = function() {
+            if (self.notifications) {
+                _.each(self.notifications, function(notification) {
+                    notification.remove();
+                });
             }
         };
 
@@ -707,5 +839,9 @@ $(function() {
     }
 
     // view model class, parameters for constructor, container to bind to
-    ADDITIONAL_VIEWMODELS.push([PluginManagerViewModel, ["loginStateViewModel", "settingsViewModel", "printerStateViewModel"], "#settings_plugin_pluginmanager"]);
+    ADDITIONAL_VIEWMODELS.push([
+        PluginManagerViewModel,
+        ["loginStateViewModel", "settingsViewModel", "printerStateViewModel", "systemViewModel"],
+        "#settings_plugin_pluginmanager"
+    ]);
 });

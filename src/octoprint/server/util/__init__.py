@@ -44,7 +44,7 @@ def apiKeyRequestHandler():
 		# ui api key => continue regular request processing
 		return
 
-	if not settings().get(["api", "enabled"]):
+	if not settings().getBoolean(["api", "enabled"]):
 		# api disabled => 401
 		return _flask.make_response("API disabled", 401)
 
@@ -116,7 +116,7 @@ def optionsAllowOrigin(request):
 
 
 def get_user_for_apikey(apikey):
-	if settings().get(["api", "enabled"]) and apikey is not None:
+	if settings().getBoolean(["api", "enabled"]) and apikey is not None:
 		if apikey == settings().get(["api", "key"]) or octoprint.server.appSessionManager.validate(apikey):
 			# master key or an app session key was used
 			return ApiUser()

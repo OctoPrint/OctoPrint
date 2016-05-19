@@ -223,7 +223,7 @@ def configure_timelapse(config=None, persist=False):
 	global current
 
 	if config is None:
-		config = settings().get(["webcam", "timelapse"])
+		config = settings().get(["webcam", "timelapse"], merged=True)
 
 	if current is not None:
 		current.unload()
@@ -241,7 +241,10 @@ def configure_timelapse(config=None, persist=False):
 	if type is None or "off" == type:
 		current = None
 	elif "zchange" == type:
-		current = ZTimelapse(post_roll=postRoll, fps=fps)
+		retractionZHop = 0
+		if "options" in config and "retractionZHop" in config["options"] and config["options"]["retractionZHop"] > 0:
+			retractionZHop = config["options"]["retractionZHop"]
+		current = ZTimelapse(post_roll=postRoll, retraction_zhop=retractionZHop, fps=fps)
 	elif "timed" == type:
 		interval = 10
 		if "options" in config and "interval" in config["options"] and config["options"]["interval"] > 0:
@@ -484,9 +487,14 @@ class Timelapse(object):
 
 
 class ZTimelapse(Timelapse):
-	def __init__(self, post_roll=0, fps=25):
+	def __init__(self, post_roll=0, retraction_zhop=0, fps=25):
 		Timelapse.__init__(self, post_roll=post_roll, fps=fps)
+		self._retraction_zhop = retraction_zhop
 		self._logger.debug("ZTimelapse initialized")
+
+	@property
+	def retraction_zhop(self):
+		return self._retraction_zhop
 
 	def event_subscriptions(self):
 		return [
@@ -495,23 +503,33 @@ class ZTimelapse(Timelapse):
 
 	def config_data(self):
 		return {
-			"type": "zchange"
+			"type": "zchange",
+			"options": {
+				"retractionZHop": self._retraction_zhop
+			}
 		}
 
 	def process_post_roll(self):
 		with self._capture_mutex:
-			filename = os.path.join(self._capture_dir, "tmp_%05d.jpg" % self._image_number)
+			filename = os.path.join(self._capture_dir, _capture_format.format(prefix=self._file_prefix) % self._image_number)
 			self._image_number += 1
 
 		if self._perform_capture(filename):
 			for _ in range(self._post_roll * self._fps):
-				newFile = os.path.join(self._capture_dir, "tmp_%05d.jpg" % self._image_number)
+				newFile = os.path.join(self._capture_dir, _capture_format.format(prefix=self._file_prefix) % self._image_number)
 				self._image_number += 1
 				shutil.copyfile(filename, newFile)
 
 		Timelapse.process_post_roll(self)
 
 	def _on_z_change(self, event, payload):
+		if self._retraction_zhop != 0:
+			# check if height difference equals z-hop or is negative, if so don't take a picture
+			diff = round(payload["new"] - payload["old"], 3)
+			zhop = round(self._retraction_zhop, 3)
+			if diff == zhop or diff <= 0:
+				return
+
 		self.capture_image()
 
 
@@ -550,11 +568,11 @@ class TimedTimelapse(Timelapse):
 		self._timer.start()
 
 	def on_print_done(self, event, payload):
-		self._postroll_captures = self.post_roll * self.fps
+		self._postroll_captures = self._post_roll * self._fps
 		Timelapse.on_print_done(self, event, payload)
 
 	def calculate_post_roll(self):
-		return self.post_roll * self.fps * self.interval
+		return self._post_roll * self._fps * self._interval
 
 	def process_post_roll(self):
 		pass

@@ -168,6 +168,62 @@ class TestAtomicWrite(unittest.TestCase):
 		mock_move.assert_called_once_with("tempfile.tmp", "somefile.yaml")
 
 
+class TempDirTest(unittest.TestCase):
+
+	@mock.patch("shutil.rmtree")
+	@mock.patch("tempfile.mkdtemp")
+	def test_tempdir(self, mock_mkdtemp, mock_rmtree):
+		"""Tests regular "good" case."""
+
+		# setup
+		path = "/path/to/tmpdir"
+		mock_mkdtemp.return_value = path
+
+		# test
+		with octoprint.util.tempdir() as td:
+			self.assertEquals(td, path)
+
+		# assert
+		mock_mkdtemp.assert_called_once_with()
+		mock_rmtree.assert_called_once_with(path, ignore_errors=False, onerror=None)
+
+	@mock.patch("shutil.rmtree")
+	@mock.patch("tempfile.mkdtemp")
+	def test_tempdir_parameters_mkdtemp(self, mock_mkdtemp, mock_rmtree):
+		"""Tests that parameters for mkdtemp are properly propagated."""
+
+		# setup
+		path = "/path/to/tmpdir"
+		mock_mkdtemp.return_value = path
+
+		# test
+		with octoprint.util.tempdir(prefix="prefix", suffix="suffix", dir="dir") as td:
+			self.assertEquals(td, path)
+
+		# assert
+		mock_mkdtemp.assert_called_once_with(prefix="prefix", suffix="suffix", dir="dir")
+		mock_rmtree.assert_called_once_with(path, ignore_errors=False, onerror=None)
+
+	@mock.patch("shutil.rmtree")
+	@mock.patch("tempfile.mkdtemp")
+	def test_tempdir_parameters_rmtree(self, mock_mkdtemp, mock_rmtree):
+		"""Tests that parameters for rmtree are properly propagated."""
+
+		# setup
+		path = "/path/to/tmpdir"
+		mock_mkdtemp.return_value = path
+
+		onerror = mock.MagicMock()
+
+		# test
+		with octoprint.util.tempdir(ignore_errors=True, onerror=onerror) as td:
+			self.assertEquals(td, path)
+
+		# assert
+		mock_mkdtemp.assert_called_once_with()
+		mock_rmtree.assert_called_once_with(path, ignore_errors=True, onerror=onerror)
+
+
 @ddt.ddt
 class IsHiddenPathTest(unittest.TestCase):
 

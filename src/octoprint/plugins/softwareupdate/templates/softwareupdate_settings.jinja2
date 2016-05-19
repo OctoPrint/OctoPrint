@@ -33,7 +33,7 @@
             <small class="muted">
                 {{ _('Installed:') }} <span data-bind="text: information.local.name"></span><br>
                 {{ _('Available:') }} <span data-bind="text: information.remote.name"></span><br>
-                <span data-bind="visible: releaseNotes">{{ _('Release Notes:') }} <a data-bind="attr: {href: releaseNotes}, text: releaseNotes" target="_blank"></a></span>
+                <span data-bind="visible: releaseNotes">{{ _('Release Notes:') }} <a data-bind="attr: {href: releaseNotes}, text: releaseNotes" target="_blank" rel="noreferrer noopener"></a></span>
             </small>
         </td>
     </tr>
@@ -74,18 +74,8 @@
     </div>
     <div class="modal-body">
         <form class="form-horizontal">
-            <div class="control-group">
-                <label class="control-label">{{ _('OctoPrint checkout folder') }}</label>
-                <div class="controls">
-                    <input type="text" class="input-block-level" data-bind="value: config_checkoutFolder">
-                </div>
-            </div>
-            <div class="control-group">
-                <label class="control-label">{{ _('OctoPrint version tracking') }}</label>
-                <div class="controls">
-                    <select data-bind="value: config_checkType, options: config_availableCheckTypes, optionsText: 'name', optionsValue: 'key'"></select>
-                </div>
-            </div>
+            {% include "_snippets/plugins/softwareupdate/checkoutFolder.jinja2" %}
+            {% include "_snippets/plugins/softwareupdate/versionTracking.jinja2" %}
             <div class="control-group">
                 <label class="control-label">{{ _('Version cache TTL') }}</label>
                 <div class="controls">
@@ -100,6 +90,19 @@
     <div class="modal-footer">
         <button class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Cancel') }}</button>
         <button class="btn btn-primary" data-bind="click: savePluginSettings" aria-hidden="true">{{ _('Save') }}</button>
+    </div>
+</div>
+
+<div id="settings_plugin_softwareupdate_workingdialog" class="modal hide fade">
+    <div class="modal-header">
+        <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
+        <h3 data-bind="text: workingTitle"></h3>
+    </div>
+    <div class="modal-body">
+        <pre id="settings_plugin_softwareupdate_workingdialog_output" class="terminal pre-scrollable" style="height: 170px" data-bind="foreach: loglines"><span data-bind="text: line, css: {stdout: stream == 'stdout', stderr: stream == 'stderr', call: stream == 'call', message: stream == 'message'}"></span><br></pre>
+    </div>
+    <div class="modal-footer">
+        <button class="btn" data-dismiss="modal" data-bind="enable: !$root.working()" aria-hidden="true">{{ _('Close') }}</button>
     </div>
 </div>
 

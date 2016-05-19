@@ -115,20 +115,22 @@
                         <li><small>{{ _('Version') }}: <span class="version">{{ display_version|e }}</span></small></li>
                     </ul>
                     <ul class="pull-right">
-                        <li><a href="http://octoprint.org"><i class="icon-home"></i> {{ _('Homepage') }}</a></li>
-                        <li><a href="https://github.com/foosel/OctoPrint/"><i class="icon-github"></i> {{ _('Sourcecode') }}</a></li>
-                        <li><a href="http://docs.octoprint.org"><i class="icon-book"></i> {{ _('Documentation') }}</a></li>
-                        <li><a href="https://github.com/foosel/OctoPrint/issues"><i class="icon-flag"></i> {{ _('Bugs and Requests') }}</a></li>
+                        <li><a href="http://octoprint.org" target="_blank" rel="noreferrer noopener"><i class="icon-home"></i> {{ _('Homepage') }}</a></li>
+                        <li><a href="https://github.com/foosel/OctoPrint/" target="_blank" rel="noreferrer noopener"><i class="icon-github"></i> {{ _('Sourcecode') }}</a></li>
+                        <li><a href="http://docs.octoprint.org" target="_blank" rel="noreferrer noopener"><i class="icon-book"></i> {{ _('Documentation') }}</a></li>
+                        <li><a href="https://github.com/foosel/OctoPrint/issues" target="_blank" rel="noreferrer noopener"><i class="icon-flag"></i> {{ _('Bugs and Requests') }}</a></li>
+                        <li id="footer_about"><a href="javascript:void(0)" data-bind="click: show"><i class="icon-info-sign"></i> {{ _('About') }}</a></li>
                     </ul>
                 </div>
             </div>
 
             <!-- Dialogs -->
-            {% include 'dialogs/confirmation.jinja2' %}
-            {% include 'dialogs/firstrun.jinja2' %}
             {% include 'dialogs/settings.jinja2' %}
             {% include 'dialogs/slicing.jinja2' %}
             {% include 'dialogs/usersettings.jinja2' %}
+            {% include 'dialogs/wizard.jinja2' %}
+            {% include 'dialogs/about.jinja2' %}
+            {% include 'dialogs/files.jinja2' %}
             <!-- End of dialogs -->
 
             <!-- Overlays -->

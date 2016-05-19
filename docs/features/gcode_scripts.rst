@@ -26,6 +26,10 @@ Predefined Scripts
 The following GCODE scripts are sent by OctoPrint automatically:
 
   * ``afterPrinterConnected``: Sent after OctoPrint successfully connected to a printer. Defaults to an empty script.
+  * ``beforePrinterDisconnected``: Sent just before OctoPrint (actively) closes the connection to the printer. Defaults
+    to an empty script. Note that this will *not* be sent for unexpected connection cut offs, e.g. in case of errors
+    on the serial line, only when the user clicks the "Disconnect" button or the printer requests a disconnect via an
+    :ref:`action command <sec-features-action_commands>` .
   * ``beforePrintStarted``: Sent just before a print job is started. Defaults to an empty script.
   * ``afterPrintCancelled``: Sent just after a print job was cancelled. Defaults to the
     :ref:`bundled script listed below <sec-features-gcode_scripts-bundled>`.

@@ -265,8 +265,8 @@ See [How to open the Javascript Console in different browsers](https://webmaster
 7. **Test your changes thoroughly**. That also means testing with usage
    scenarios you don't normally use, e.g. if you only use access control, test
    without and vice versa. If you only test with your printer, test with the
-   virtual printer and vice versa. State in your pull request how your tested
-   your changes. Ideally **add unit tests** - OctoPrint severly lacks in that
+   virtual printer and vice versa. State in your pull request how you tested
+   your changes. Ideally **add unit tests** - OctoPrint severely lacks in that
    department, but we are trying to change that, so any new code already covered
    with a test suite helps a lot!
 8. In your pull request's description, **state what your pull request does**,

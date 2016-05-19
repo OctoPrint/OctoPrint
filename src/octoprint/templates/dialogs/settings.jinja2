@@ -48,7 +48,30 @@
         </div>
     </div>
     <div class="modal-footer">
+        <button class="btn aboutlink" data-bind="click: about.show"><i class="icon-info-sign"></i> {{ _('About OctoPrint') }}</button>
         <button class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Cancel') }}</button>
         <button class="btn btn-primary" data-bind="click: function() { saveData(undefined, $root.hide) }, enable: !exchanging(), css: {disabled: exchanging()}"><i class="icon-spinner icon-spin" data-bind="visible: sending"></i> {{ _('Save') }}</button>
+    </div>
+</div>
+
+<div id="settings_dialog_update_detected" class="modal hide fade" data-keyboard="false">
+    <div class="modal-header">
+        <h3>{{ _('Settings update detected') }}</h3>
+    </div>
+    <div class="modal-body">
+        <p>{% trans %}
+            The settings have been updated on the server. You may reload all settings,
+            overwriting any changes you might have done locally, or alternatively
+            only reload those settings you haven't changed locally.
+        {% endtrans %}</p>
+        <p>{% trans %}
+            How do you want to proceed?
+        {% endtrans %}</p>
+    </div>
+    <div class="modal-footer">
+        <div class="row-fluid">
+            <a href="#" class="btn btn-danger span6 reload_all">{{ _('Reload all') }}</a>
+            <a href="#" class="btn btn-primary span6 reload_nonconflicts">{{ _('Reload only non-conflicting changes') }}</a>
+        </div>
     </div>
 </div>

@@ -133,7 +133,7 @@ class UserManager(object):
 				# old hash doesn't match either, wrong password
 				return False
 
-	def addUser(self, username, password, active, roles):
+	def addUser(self, username, password, active, roles, overwrite=False):
 		pass
 
 	def changeUserActivation(self, username, active):
@@ -239,11 +239,11 @@ class FilebasedUserManager(UserManager):
 			self._dirty = False
 		self._load()
 
-	def addUser(self, username, password, active=False, roles=None, apikey=None):
+	def addUser(self, username, password, active=False, roles=None, apikey=None, overwrite=False):
 		if not roles:
 			roles = ["user"]
 
-		if username in self._users.keys():
+		if username in self._users.keys() and not overwrite:
 			raise UserAlreadyExists(username)
 
 		self._users[username] = User(username, UserManager.createPasswordHash(password), active, roles, apikey=apikey)
@@ -468,7 +468,7 @@ class User(UserMixin):
 			path = [key]
 		else:
 			path = key
-		self._set_setting(path, value)
+		return self._set_setting(path, value)
 
 	def _get_setting(self, path):
 		s = self._settings
@@ -499,6 +499,7 @@ class User(UserMixin):
 
 class SessionUser(User):
 	def __init__(self, user):
+		self._user = user
 		User.__init__(self, user._username, user._passwordHash, user._active, user._roles, user._apikey, user._settings)
 
 		import string
@@ -507,6 +508,18 @@ class SessionUser(User):
 		chars = string.ascii_uppercase + string.ascii_lowercase + string.digits
 		self._session = "".join(random.choice(chars) for _ in xrange(10))
 		self._created = time.time()
+
+	def __getattribute__(self, item):
+		if item in ("get_session", "_user", "_session", "_created"):
+			return object.__getattribute__(self, item)
+		else:
+			return getattr(object.__getattribute__(self, "_user"), item)
+
+	def __setattr__(self, item, value):
+		if item in ("_user", "_session", "_created"):
+			return object.__setattr__(self, item, value)
+		else:
+			return setattr(self._user, item, value)
 
 	def get_session(self):
 		return self._session

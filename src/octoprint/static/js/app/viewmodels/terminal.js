@@ -5,9 +5,6 @@ $(function() {
         self.loginState = parameters[0];
         self.settings = parameters[1];
 
-        // TODO remove with release of 1.3.0 and switch to OctoPrint.coreui usage
-        self.tabTracking = parameters[2];
-
         self.tabActive = false;
 
         self.log = ko.observableArray([]);
@@ -228,7 +225,7 @@ $(function() {
         };
 
         self.updateOutput = function() {
-            if (self.tabActive && self.tabTracking.browserTabVisible && self.autoscrollEnabled()) {
+            if (self.tabActive && OctoPrint.coreui.browserTabVisible && self.autoscrollEnabled()) {
                 self.scrollToEnd();
             }
         };
@@ -268,29 +265,18 @@ $(function() {
             }
 
             if (command) {
-                $.ajax({
-                    url: API_BASEURL + "printer/command",
-                    type: "POST",
-                    dataType: "json",
-                    contentType: "application/json; charset=UTF-8",
-                    data: JSON.stringify({"command": command})
-                });
-
-                self.cmdHistory.push(command);
-                self.cmdHistory.slice(-300); // just to set a sane limit to how many manually entered commands will be saved...
-                self.cmdHistoryIdx = self.cmdHistory.length;
-                self.command("");
+                OctoPrint.control.sendGcode(command)
+                    .done(function() {
+                        self.cmdHistory.push(command);
+                        self.cmdHistory.slice(-300); // just to set a sane limit to how many manually entered commands will be saved...
+                        self.cmdHistoryIdx = self.cmdHistory.length;
+                        self.command("");
+                    });
             }
         };
 
         self.fakeAck = function() {
-            $.ajax({
-                url: API_BASEURL + "connection",
-                type: "POST",
-                dataType: "json",
-                contentType: "application/json; charset=UTF-8",
-                data: JSON.stringify({"command": "fake_ack"})
-            });
+            OctoPrint.connection.fakeAck();
         };
 
         self.handleKeyDown = function(event) {
@@ -335,7 +321,7 @@ $(function() {
 
     OCTOPRINT_VIEWMODELS.push([
         TerminalViewModel,
-        ["loginStateViewModel", "settingsViewModel", "tabTracking"],
+        ["loginStateViewModel", "settingsViewModel"],
         "#term"
     ]);
 });

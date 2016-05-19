@@ -343,8 +343,14 @@ class FileManager(object):
 	def get_busy_files(self):
 		return self._slicing_jobs.keys()
 
+	def file_in_path(self, destination, path, file):
+		return self._storage(destination).file_in_path(path, file)
+
 	def file_exists(self, destination, path):
 		return self._storage(destination).file_exists(path)
+
+	def folder_exists(self, destination, path):
+		return self._storage(destination).folder_exists(path)
 
 	def list_files(self, destinations=None, path=None, filter=None, recursive=None):
 		if not destinations:
@@ -388,6 +394,14 @@ class FileManager(object):
 		self._storage(destination).remove_file(path)
 		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
 
+	def copy_file(self, destination, source, dst):
+		self._storage(destination).copy_file(source, dst)
+		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
+
+	def move_file(self, destination, source, dst):
+		self._storage(destination).move_file(source, dst)
+		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
+
 	def add_folder(self, destination, path, ignore_existing=True):
 		folder_path = self._storage(destination).add_folder(path, ignore_existing=ignore_existing)
 		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
@@ -395,6 +409,14 @@ class FileManager(object):
 
 	def remove_folder(self, destination, path, recursive=True):
 		self._storage(destination).remove_folder(path, recursive=recursive)
+		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
+
+	def copy_folder(self, destination, source, dst):
+		self._storage(destination).copy_folder(source, dst)
+		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
+
+	def move_folder(self, destination, source, dst):
+		self._storage(destination).move_folder(source, dst)
 		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
 
 	def get_metadata(self, destination, path):
@@ -491,7 +513,7 @@ class FileManager(object):
 			return
 
 		storage_manager = self._storage_managers[destination]
-		storage_manager.set_additional_metadata(path, "analysis", result)
+		storage_manager.set_additional_metadata(path, "analysis", result, overwrite=True)
 
 	def _on_analysis_finished(self, entry, result):
 		self._add_analysis_result(entry.location, entry.path, result)
