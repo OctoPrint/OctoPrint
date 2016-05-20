@@ -629,7 +629,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 		printTimeLeft = totalPrintTime - cleanedPrintTime if (totalPrintTime is not None and cleanedPrintTime is not None) else None
 
-		if progress:
+		if progress is not None:
 			progress_int = int(progress * 100)
 			if self._lastProgressReport != progress_int:
 				self._lastProgressReport = progress_int
