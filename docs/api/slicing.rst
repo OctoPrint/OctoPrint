@@ -32,7 +32,7 @@ List All Slicers and Slicing Profiles
 
    .. sourcecode:: http
 
-      GET /api/slicing/profiles HTTP/1.1
+      GET /api/slicing HTTP/1.1
       Host: example.com
       X-Api-Key: abcdef...
 
