@@ -28,7 +28,7 @@ So where does that leave us? I for one feel cautiously optimistic :)
 
 Looking at the funding situation right now I'll be able to continue working on OctoPrint. Since I'll
 basically be self-employed from now on, that also means I'll have to constantly
-keep an eye on funding develops over time and build up a 
+keep an eye on how funding develops over time and build up a 
 bit of a buffer in case something unexpected happens (Patreon going belly
 up, big sponsors leaving, german tax law surprises, stuff like this).
 Which in turn means that while
