@@ -487,24 +487,24 @@ $(function() {
                 object: printingArea
             };
 
-            info += _.sprintf(gettext("Object's bounding box: (%(object.minX).2f, %(object.minY).2f, %(object.minZ).2f) &times; (%(object.maxX).2f, %(object.maxY).2f, %(object.maxZ).2f)"), formatData);
-            info += "<br>";
-            info += _.sprintf(gettext("Print volume: (%(profile.minX).2f, %(profile.minY).2f, %(profile.minZ).2f) &times; (%(profile.maxX).2f, %(profile.maxY).2f, %(profile.maxZ).2f)"), formatData);
-
             // find exceeded dimensions
             if (printingArea["minX"] < boundaries["minX"] || printingArea["maxX"] > boundaries["maxX"]) {
-                info += gettext("<br>Object exceeds print volume in width.");
+                info += gettext("Object exceeds print volume in width.<br>");
             }
             if (printingArea["minY"] < boundaries["minY"] || printingArea["maxY"] > boundaries["maxY"]) {
-                info += gettext("<br>Object exceeds print volume in depth.");
+                info += gettext("Object exceeds print volume in depth.<br>");
             }
             if (printingArea["minZ"] < boundaries["minZ"] || printingArea["maxZ"] > boundaries["maxZ"]) {
-                info += gettext("<br>Object exceeds print volume in height.");
+                info += gettext("Object exceeds print volume in height.<br>");
             }
 
             //warn user
             if (info != "") {
                 if (notify) {
+                    info += _.sprintf(gettext("Object's bounding box: (%(object.minX).2f, %(object.minY).2f, %(object.minZ).2f) &times; (%(object.maxX).2f, %(object.maxY).2f, %(object.maxZ).2f)"), formatData);
+                    info += "<br>";
+                    info += _.sprintf(gettext("Print volume: (%(profile.minX).2f, %(profile.minY).2f, %(profile.minZ).2f) &times; (%(profile.maxX).2f, %(profile.maxY).2f, %(profile.maxZ).2f)"), formatData);
+
                     warning += pnotifyAdditionalInfo(info);
 
                     new PNotify({
