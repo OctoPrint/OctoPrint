@@ -35,6 +35,10 @@ def full_extension_tree():
 		# extensions for printable machine code
 		machinecode=dict(
 			gcode=ContentTypeMapping(["gcode", "gco", "g"], "text/plain")
+		),
+		# extensions for videos (timelapse)
+		video=dict(
+			mpeg=ContentTypeMapping(["mpeg", "mpg", "mp4"], "video/mpeg")
 		)
 	)
 

@@ -11,7 +11,6 @@ from flask import request, jsonify, url_for, make_response
 from werkzeug.utils import secure_filename
 
 import octoprint.timelapse
-import octoprint.util as util
 from octoprint.settings import settings, valid_boolean_trues
 
 from octoprint.server import admin_permission, printer
@@ -62,7 +61,7 @@ def downloadTimelapse(filename):
 @api.route("/timelapse/<filename>", methods=["DELETE"])
 @restricted_access
 def deleteTimelapse(filename):
-	if util.is_allowed_file(filename, ["mpg"]):
+	if octoprint.filemanager.valid_file_type(filename, type="mpeg"):
 		timelapse_folder = settings().getBaseFolder("timelapse")
 		full_path = os.path.realpath(os.path.join(timelapse_folder, filename))
 		if full_path.startswith(timelapse_folder) and os.path.exists(full_path):
