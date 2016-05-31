@@ -38,7 +38,8 @@ def full_extension_tree():
 		),
 		# extensions for videos (timelapse)
 		video=dict(
-			mpeg=ContentTypeMapping(["mpeg", "mpg", "mp4"], "video/mpeg")
+			mpeg=ContentTypeMapping(["mpeg", "mpg"], "video/mpeg"),
+			mp4=ContentTypeMapping(["mp4"], "video/mp4")
 		)
 	)
 
