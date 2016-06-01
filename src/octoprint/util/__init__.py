@@ -206,7 +206,7 @@ def get_free_bytes(path):
 	return psutil.disk_usage(path).free
 
 
-def get_dos_filename(origin, existing_filenames=None, extension=None, **kwargs):
+def get_dos_filename(input, existing_filenames=None, extension=None, whitelisted_extensions=None, **kwargs):
 	"""
 	Converts the provided input filename to a 8.3 DOS compatible filename. If ``existing_filenames`` is provided, the
 	conversion result will be guaranteed not to collide with any of the filenames provided thus.
@@ -219,6 +219,8 @@ def get_dos_filename(origin, existing_filenames=None, extension=None, **kwargs):
 	        Optional.
 	    extension (string): The .3 file extension to use for the generated filename. If not provided, the extension of
 	        the provided ``filename`` will simply be truncated to 3 characters.
+	    whitelisted_extensions (list): A list of extensions on ``input`` that will be left as-is instead of
+	        exchanging for ``extension``.
 	    kwargs (dict): Additional keyword arguments to provide to :func:`find_collision_free_name`.
 
 	Returns:
@@ -228,16 +230,43 @@ def get_dos_filename(origin, existing_filenames=None, extension=None, **kwargs):
 
 	Raises:
 	    ValueError: No 8.3 compatible name could be found that doesn't collide with the provided ``existing_filenames``.
+
+	Examples:
+
+	    >>> get_dos_filename("test1234.gco")
+	    u'test1234.gco'
+	    >>> get_dos_filename("test1234.gcode")
+	    u'test1234.gco'
+	    >>> get_dos_filename("test12345.gco")
+	    u'test12~1.gco'
+	    >>> get_dos_filename("test1234.fnord", extension="gco")
+	    u'test1234.gco'
+	    >>> get_dos_filename("auto0.g", extension="gco")
+	    u'auto0.gco'
+	    >>> get_dos_filename("auto0.g", extension="gco", whitelisted_extensions=["g"])
+	    u'auto0.g'
+	    >>> get_dos_filename(None)
+	    >>> get_dos_filename("foo")
+	    u'foo'
 	"""
 
-	if origin is None:
+	if input is None:
 		return None
 
 	if existing_filenames is None:
 		existing_filenames = []
 
-	filename, ext = os.path.splitext(origin)
-	if extension is None:
+	if extension is not None:
+		extension = extension.lower()
+
+	if whitelisted_extensions is None:
+		whitelisted_extensions = []
+
+	filename, ext = os.path.splitext(input)
+
+	ext = ext.lower()
+	ext = ext[1:] if ext.startswith(".") else ext
+	if ext in whitelisted_extensions or extension is None:
 		extension = ext
 
 	return find_collision_free_name(filename, extension, existing_filenames, **kwargs)
@@ -286,9 +315,36 @@ def find_collision_free_name(filename, extension, existing_filenames, max_power=
 
 	Raises:
 	    ValueError: No collision free name could be found.
-	"""
 
-	# TODO unit test!
+	Examples:
+
+	    >>> find_collision_free_name("test1234", "gco", [])
+	    u'test1234.gco'
+	    >>> find_collision_free_name("test1234", "gcode", [])
+	    u'test1234.gco'
+	    >>> find_collision_free_name("test12345", "gco", [])
+	    u'test12~1.gco'
+	    >>> find_collision_free_name("test 123", "gco", [])
+	    u'test_123.gco'
+	    >>> find_collision_free_name("test1234", "g o", [])
+	    u'test1234.g_o'
+	    >>> find_collision_free_name("test12345", "gco", ["test12~1.gco"])
+	    u'test12~2.gco'
+	    >>> many_files = ["test12~{}.gco".format(x) for x in range(10)[1:]]
+	    >>> find_collision_free_name("test12345", "gco", many_files)
+	    u'test1~10.gco'
+	    >>> many_more_files = many_files + ["test1~{}.gco".format(x) for x in range(10, 99)]
+	    >>> find_collision_free_name("test12345", "gco", many_more_files)
+	    u'test1~99.gco'
+	    >>> many_more_files_plus_one = many_more_files + ["test1~99.gco"]
+	    >>> find_collision_free_name("test12345", "gco", many_more_files_plus_one)
+	    Traceback (most recent call last):
+	    ...
+	    ValueError: Can't create a collision free filename
+	    >>> find_collision_free_name("test12345", "gco", many_more_files_plus_one, max_power=3)
+	    u'test~100.gco'
+
+	"""
 
 	if not isinstance(filename, unicode):
 		filename = unicode(filename)
@@ -302,14 +358,21 @@ def find_collision_free_name(filename, extension, existing_filenames, max_power=
 	extension = make_valid(extension)
 	extension = extension[:3] if len(extension) > 3 else extension
 
-	if len(filename) <= 8 and not filename + "." + extension in existing_filenames:
+	full_name_format = u"{filename}.{extension}" if extension else u"{filename}"
+
+	result = full_name_format.format(filename=filename,
+	                                 extension=extension)
+	if len(filename) <= 8 and not result in existing_filenames:
 		# early exit
-		return filename + "." + extension
+		return result
 
 	counter = 1
 	power = 1
+	prefix_format = u"{segment}~{counter}"
 	while counter < (10 ** max_power):
-		result = filename[:(6 - power + 1)] + "~" + str(counter) + "." + extension
+		prefix = prefix_format.format(segment=filename[:(6 - power + 1)], counter=str(counter))
+		result = full_name_format.format(filename=prefix,
+		                                 extension=extension)
 		if result not in existing_filenames:
 			return result
 		counter += 1
