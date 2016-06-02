@@ -47,6 +47,9 @@ _update_callbacks = []
 # lock for timelapse cleanup, must be re-entrant
 _cleanup_lock = threading.RLock()
 
+# lock for timelapse job
+_job_lock = threading.RLock()
+
 
 def _extract_prefix(filename):
 	"""
@@ -78,10 +81,14 @@ def get_finished_timelapses():
 
 
 def get_unrendered_timelapses():
+	global _job_lock
+	global current
+
 	delete_old_unrendered_timelapses()
 
 	basedir = settings().getBaseFolder("timelapse_tmp")
 	jobs = collections.defaultdict(lambda: dict(count=0, size=None, bytes=0, date=None, timestamp=None))
+
 	for osFile in os.listdir(basedir):
 		if not fnmatch.fnmatch(osFile, "*.jpg"):
 			continue
@@ -96,13 +103,23 @@ def get_unrendered_timelapses():
 		if jobs[prefix]["timestamp"] is None or statResult.st_ctime < jobs[prefix]["timestamp"]:
 			jobs[prefix]["timestamp"] = statResult.st_ctime
 
-	def finalize_fields(job):
-		job["size"] = util.get_formatted_size(job["bytes"])
-		job["date"] = util.get_formatted_datetime(datetime.datetime.fromtimestamp(job["timestamp"]))
-		del job["timestamp"]
-		return job
+	with _job_lock:
+		global current_render_job
 
-	return sorted([util.dict_merge(dict(name=key), finalize_fields(value)) for key, value in jobs.items()], key=lambda x: x["name"])
+		def finalize_fields(prefix, job):
+			currently_recording = current is not None and current.prefix == prefix
+			currently_rendering = current_render_job is not None and current_render_job["prefix"] == prefix
+
+			job["size"] = util.get_formatted_size(job["bytes"])
+			job["date"] = util.get_formatted_datetime(datetime.datetime.fromtimestamp(job["timestamp"]))
+			job["recording"] = currently_recording
+			job["rendering"] = currently_rendering
+			job["processing"] = currently_recording or currently_rendering
+			del job["timestamp"]
+
+			return job
+
+		return sorted([util.dict_merge(dict(name=key), finalize_fields(key, value)) for key, value in jobs.items()], key=lambda x: x["name"])
 
 
 def delete_unrendered_timelapse(name):
@@ -175,11 +192,15 @@ def delete_old_unrendered_timelapses():
 
 def _create_render_start_handler(name, gcode=None):
 	def f(movie):
-		global current_render_job
-		event_payload = {"gcode": gcode if gcode is not None else "unknown",
-		                 "movie": movie,
-		                 "movie_basename": os.path.basename(movie)}
-		current_render_job = event_payload
+		global _job_lock
+
+		with _job_lock:
+			global current_render_job
+			event_payload = {"gcode": gcode if gcode is not None else "unknown",
+			                 "movie": movie,
+			                 "movie_basename": os.path.basename(movie)}
+			current_render_job = dict(prefix=name)
+			current_render_job.update(event_payload)
 		eventManager().fire(Events.MOVIE_RENDERING, event_payload)
 	return f
 
@@ -277,6 +298,7 @@ class Timelapse(object):
 		self._image_number = None
 		self._in_timelapse = False
 		self._gcode_file = None
+		self._file_prefix = None
 
 		self._post_roll = post_roll
 		self._on_post_roll_done = None
@@ -302,6 +324,10 @@ class Timelapse(object):
 		eventManager().subscribe(Events.PRINT_RESUMED, self.on_print_resumed)
 		for (event, callback) in self.event_subscriptions():
 			eventManager().subscribe(event, callback)
+
+	@property
+	def prefix(self):
+		return self._file_prefix
 
 	@property
 	def post_roll(self):
