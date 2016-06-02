@@ -198,7 +198,8 @@ def _create_render_start_handler(name, gcode=None):
 			global current_render_job
 			event_payload = {"gcode": gcode if gcode is not None else "unknown",
 			                 "movie": movie,
-			                 "movie_basename": os.path.basename(movie)}
+			                 "movie_basename": os.path.basename(movie),
+			                 "movie_prefix": name}
 			current_render_job = dict(prefix=name)
 			current_render_job.update(event_payload)
 		eventManager().fire(Events.MOVIE_RENDERING, event_payload)
@@ -210,7 +211,8 @@ def _create_render_success_handler(name, gcode=None):
 		delete_unrendered_timelapse(name)
 		event_payload = {"gcode": gcode if gcode is not None else "unknown",
 		                 "movie": movie,
-		                 "movie_basename": os.path.basename(movie)}
+		                 "movie_basename": os.path.basename(movie),
+		                 "movie_prefix": name}
 		eventManager().fire(Events.MOVIE_DONE, event_payload)
 	return f
 
@@ -219,7 +221,8 @@ def _create_render_fail_handler(name, gcode=None):
 	def f(movie, returncode=255, stdout="Unknown error", stderr="Unknown error"):
 		event_payload = {"gcode": gcode if gcode is not None else "unknown",
 		                 "movie": movie,
-		                 "movie_basename": os.path.basename(movie)}
+		                 "movie_basename": os.path.basename(movie),
+		                 "movie_prefix": name}
 		payload = dict(event_payload)
 		payload.update(dict(returncode=returncode, error=stderr))
 		eventManager().fire(Events.MOVIE_FAILED, payload)
@@ -229,7 +232,9 @@ def _create_render_fail_handler(name, gcode=None):
 def _create_render_always_handler(name, gcode=None):
 	def f(movie):
 		global current_render_job
-		current_render_job = None
+		global _job_lock
+		with _job_lock:
+			current_render_job = None
 	return f
 
 
