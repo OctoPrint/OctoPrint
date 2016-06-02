@@ -276,13 +276,13 @@ $(function() {
         self.onEventMovieRendering = function(payload) {
             self.displayTimelapsePopup({
                 title: gettext("Rendering timelapse"),
-                text: _.sprintf(gettext("Now rendering timelapse %(movie_basename)s. Due to performance reasons it is not recommended to start a print job while a movie is still rendering."), payload),
+                text: _.sprintf(gettext("Now rendering timelapse %(movie_prefix)s. Due to performance reasons it is not recommended to start a print job while a movie is still rendering."), payload),
                 hide: false
             });
         };
 
         self.onEventMovieFailed = function(payload) {
-            var html = "<p>" + _.sprintf(gettext("Rendering of timelapse %(movie_basename)s failed with return code %(returncode)s"), payload) + "</p>";
+            var html = "<p>" + _.sprintf(gettext("Rendering of timelapse %(movie_prefix)s failed with return code %(returncode)s"), payload) + "</p>";
             html += pnotifyAdditionalInfo('<pre style="overflow: auto">' + payload.error + '</pre>');
 
             self.displayTimelapsePopup({
@@ -296,7 +296,7 @@ $(function() {
         self.onEventMovieDone = function(payload) {
             self.displayTimelapsePopup({
                 title: gettext("Timelapse ready"),
-                text: _.sprintf(gettext("New timelapse %(movie_basename)s is done rendering."), payload),
+                text: _.sprintf(gettext("New timelapse %(movie_prefix)s is done rendering."), payload),
                 type: "success",
                 callbacks: {
                     before_close: function(notice) {

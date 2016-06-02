@@ -44,6 +44,12 @@ _valid_timelapse_types = ["off", "timed", "zchange"]
 # callbacks for timelapse config updates
 _update_callbacks = []
 
+# lock for timelapse cleanup, must be re-entrant
+_cleanup_lock = threading.RLock()
+
+# lock for timelapse job
+_job_lock = threading.RLock()
+
 
 def _extract_prefix(filename):
 	"""
@@ -75,10 +81,14 @@ def get_finished_timelapses():
 
 
 def get_unrendered_timelapses():
+	global _job_lock
+	global current
+
 	delete_old_unrendered_timelapses()
 
 	basedir = settings().getBaseFolder("timelapse_tmp")
 	jobs = collections.defaultdict(lambda: dict(count=0, size=None, bytes=0, date=None, timestamp=None))
+
 	for osFile in os.listdir(basedir):
 		if not fnmatch.fnmatch(osFile, "*.jpg"):
 			continue
@@ -93,23 +103,37 @@ def get_unrendered_timelapses():
 		if jobs[prefix]["timestamp"] is None or statResult.st_ctime < jobs[prefix]["timestamp"]:
 			jobs[prefix]["timestamp"] = statResult.st_ctime
 
-	def finalize_fields(job):
-		job["size"] = util.get_formatted_size(job["bytes"])
-		job["date"] = util.get_formatted_datetime(datetime.datetime.fromtimestamp(job["timestamp"]))
-		del job["timestamp"]
-		return job
+	with _job_lock:
+		global current_render_job
 
-	return sorted([util.dict_merge(dict(name=key), finalize_fields(value)) for key, value in jobs.items()], key=lambda x: x["name"])
+		def finalize_fields(prefix, job):
+			currently_recording = current is not None and current.prefix == prefix
+			currently_rendering = current_render_job is not None and current_render_job["prefix"] == prefix
+
+			job["size"] = util.get_formatted_size(job["bytes"])
+			job["date"] = util.get_formatted_datetime(datetime.datetime.fromtimestamp(job["timestamp"]))
+			job["recording"] = currently_recording
+			job["rendering"] = currently_rendering
+			job["processing"] = currently_recording or currently_rendering
+			del job["timestamp"]
+
+			return job
+
+		return sorted([util.dict_merge(dict(name=key), finalize_fields(key, value)) for key, value in jobs.items()], key=lambda x: x["name"])
 
 
 def delete_unrendered_timelapse(name):
+	global _cleanup_lock
+
 	basedir = settings().getBaseFolder("timelapse_tmp")
-	for filename in os.listdir(basedir):
-		try:
-			if fnmatch.fnmatch(filename, "{}*.jpg".format(name)):
-				os.remove(os.path.join(basedir, filename))
-		except:
-			logging.getLogger(__name__).exception("Error while processing file {} during cleanup".format(filename))
+	with _cleanup_lock:
+		for filename in os.listdir(basedir):
+			try:
+				if fnmatch.fnmatch(filename, "{}*.jpg".format(name)):
+					os.remove(os.path.join(basedir, filename))
+			except:
+				if logging.getLogger(__name__).isEnabledFor(logging.DEBUG):
+					logging.getLogger(__name__).exception("Error while processing file {} during cleanup".format(filename))
 
 
 def render_unrendered_timelapse(name, gcode=None, postfix=None, fps=25):
@@ -131,53 +155,65 @@ def render_unrendered_timelapse(name, gcode=None, postfix=None, fps=25):
 
 
 def delete_old_unrendered_timelapses():
+	global _cleanup_lock
+
 	basedir = settings().getBaseFolder("timelapse_tmp")
 	clean_after_days = settings().getInt(["webcam", "cleanTmpAfterDays"])
 	cutoff = time.time() - clean_after_days * 24 * 60 * 60
 
 	prefixes_to_clean = []
-	for filename in os.listdir(basedir):
-		try:
-			path = os.path.join(basedir, filename)
 
-			prefix = _extract_prefix(filename)
-			if prefix is None:
-				# might be an old tmp_00000.jpg kinda frame. we can't
-				# render those easily anymore, so delete that stuff
-				if _old_capture_format_re.match(filename):
-					os.remove(path)
-				continue
+	with _cleanup_lock:
+		for filename in os.listdir(basedir):
+			try:
+				path = os.path.join(basedir, filename)
 
-			if prefix in prefixes_to_clean:
-				continue
+				prefix = _extract_prefix(filename)
+				if prefix is None:
+					# might be an old tmp_00000.jpg kinda frame. we can't
+					# render those easily anymore, so delete that stuff
+					if _old_capture_format_re.match(filename):
+						os.remove(path)
+					continue
 
-			if os.path.getmtime(path) < cutoff:
-				prefixes_to_clean.append(prefix)
-		except:
-			logging.getLogger(__name__).exception("Error while processing file {} during cleanup".format(filename))
+				if prefix in prefixes_to_clean:
+					continue
 
-	for prefix in prefixes_to_clean:
-		delete_unrendered_timelapse(prefix)
+				if os.path.getmtime(path) < cutoff:
+					prefixes_to_clean.append(prefix)
+			except:
+				if logging.getLogger(__name__).isEnabledFor(logging.DEBUG):
+					logging.getLogger(__name__).exception("Error while processing file {} during cleanup".format(filename))
+
+		for prefix in prefixes_to_clean:
+			delete_unrendered_timelapse(prefix)
+			logging.getLogger(__name__).info("Deleted old unrendered timelapse {}".format(prefix))
 
 
 def _create_render_start_handler(name, gcode=None):
 	def f(movie):
-		global current_render_job
-		event_payload = {"gcode": gcode if gcode is not None else "unknown",
-		                 "movie": movie,
-		                 "movie_basename": os.path.basename(movie)}
-		current_render_job = event_payload
+		global _job_lock
+
+		with _job_lock:
+			global current_render_job
+			event_payload = {"gcode": gcode if gcode is not None else "unknown",
+			                 "movie": movie,
+			                 "movie_basename": os.path.basename(movie),
+			                 "movie_prefix": name}
+			current_render_job = dict(prefix=name)
+			current_render_job.update(event_payload)
 		eventManager().fire(Events.MOVIE_RENDERING, event_payload)
 	return f
 
 
 def _create_render_success_handler(name, gcode=None):
 	def f(movie):
+		delete_unrendered_timelapse(name)
 		event_payload = {"gcode": gcode if gcode is not None else "unknown",
 		                 "movie": movie,
-		                 "movie_basename": os.path.basename(movie)}
+		                 "movie_basename": os.path.basename(movie),
+		                 "movie_prefix": name}
 		eventManager().fire(Events.MOVIE_DONE, event_payload)
-		delete_unrendered_timelapse(name)
 	return f
 
 
@@ -185,7 +221,8 @@ def _create_render_fail_handler(name, gcode=None):
 	def f(movie, returncode=255, stdout="Unknown error", stderr="Unknown error"):
 		event_payload = {"gcode": gcode if gcode is not None else "unknown",
 		                 "movie": movie,
-		                 "movie_basename": os.path.basename(movie)}
+		                 "movie_basename": os.path.basename(movie),
+		                 "movie_prefix": name}
 		payload = dict(event_payload)
 		payload.update(dict(returncode=returncode, error=stderr))
 		eventManager().fire(Events.MOVIE_FAILED, payload)
@@ -195,7 +232,9 @@ def _create_render_fail_handler(name, gcode=None):
 def _create_render_always_handler(name, gcode=None):
 	def f(movie):
 		global current_render_job
-		current_render_job = None
+		global _job_lock
+		with _job_lock:
+			current_render_job = None
 	return f
 
 
@@ -267,6 +306,7 @@ class Timelapse(object):
 		self._image_number = None
 		self._in_timelapse = False
 		self._gcode_file = None
+		self._file_prefix = None
 
 		self._post_roll = post_roll
 		self._on_post_roll_done = None
@@ -292,6 +332,10 @@ class Timelapse(object):
 		eventManager().subscribe(Events.PRINT_RESUMED, self.on_print_resumed)
 		for (event, callback) in self.event_subscriptions():
 			eventManager().subscribe(event, callback)
+
+	@property
+	def prefix(self):
+		return self._file_prefix
 
 	@property
 	def post_roll(self):
