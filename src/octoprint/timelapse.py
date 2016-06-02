@@ -44,6 +44,9 @@ _valid_timelapse_types = ["off", "timed", "zchange"]
 # callbacks for timelapse config updates
 _update_callbacks = []
 
+# lock for timelapse cleanup, must be re-entrant
+_cleanup_lock = threading.RLock()
+
 
 def _extract_prefix(filename):
 	"""
@@ -103,13 +106,17 @@ def get_unrendered_timelapses():
 
 
 def delete_unrendered_timelapse(name):
+	global _cleanup_lock
+
 	basedir = settings().getBaseFolder("timelapse_tmp")
-	for filename in os.listdir(basedir):
-		try:
-			if fnmatch.fnmatch(filename, "{}*.jpg".format(name)):
-				os.remove(os.path.join(basedir, filename))
-		except:
-			logging.getLogger(__name__).exception("Error while processing file {} during cleanup".format(filename))
+	with _cleanup_lock:
+		for filename in os.listdir(basedir):
+			try:
+				if fnmatch.fnmatch(filename, "{}*.jpg".format(name)):
+					os.remove(os.path.join(basedir, filename))
+			except:
+				if logging.getLogger(__name__).isEnabledFor(logging.DEBUG):
+					logging.getLogger(__name__).exception("Error while processing file {} during cleanup".format(filename))
 
 
 def render_unrendered_timelapse(name, gcode=None, postfix=None, fps=25):
@@ -131,33 +138,39 @@ def render_unrendered_timelapse(name, gcode=None, postfix=None, fps=25):
 
 
 def delete_old_unrendered_timelapses():
+	global _cleanup_lock
+
 	basedir = settings().getBaseFolder("timelapse_tmp")
 	clean_after_days = settings().getInt(["webcam", "cleanTmpAfterDays"])
 	cutoff = time.time() - clean_after_days * 24 * 60 * 60
 
 	prefixes_to_clean = []
-	for filename in os.listdir(basedir):
-		try:
-			path = os.path.join(basedir, filename)
 
-			prefix = _extract_prefix(filename)
-			if prefix is None:
-				# might be an old tmp_00000.jpg kinda frame. we can't
-				# render those easily anymore, so delete that stuff
-				if _old_capture_format_re.match(filename):
-					os.remove(path)
-				continue
+	with _cleanup_lock:
+		for filename in os.listdir(basedir):
+			try:
+				path = os.path.join(basedir, filename)
 
-			if prefix in prefixes_to_clean:
-				continue
+				prefix = _extract_prefix(filename)
+				if prefix is None:
+					# might be an old tmp_00000.jpg kinda frame. we can't
+					# render those easily anymore, so delete that stuff
+					if _old_capture_format_re.match(filename):
+						os.remove(path)
+					continue
 
-			if os.path.getmtime(path) < cutoff:
-				prefixes_to_clean.append(prefix)
-		except:
-			logging.getLogger(__name__).exception("Error while processing file {} during cleanup".format(filename))
+				if prefix in prefixes_to_clean:
+					continue
 
-	for prefix in prefixes_to_clean:
-		delete_unrendered_timelapse(prefix)
+				if os.path.getmtime(path) < cutoff:
+					prefixes_to_clean.append(prefix)
+			except:
+				if logging.getLogger(__name__).isEnabledFor(logging.DEBUG):
+					logging.getLogger(__name__).exception("Error while processing file {} during cleanup".format(filename))
+
+		for prefix in prefixes_to_clean:
+			delete_unrendered_timelapse(prefix)
+			logging.getLogger(__name__).info("Deleted old unrendered timelapse {}".format(prefix))
 
 
 def _create_render_start_handler(name, gcode=None):
@@ -173,11 +186,11 @@ def _create_render_start_handler(name, gcode=None):
 
 def _create_render_success_handler(name, gcode=None):
 	def f(movie):
+		delete_unrendered_timelapse(name)
 		event_payload = {"gcode": gcode if gcode is not None else "unknown",
 		                 "movie": movie,
 		                 "movie_basename": os.path.basename(movie)}
 		eventManager().fire(Events.MOVIE_DONE, event_payload)
-		delete_unrendered_timelapse(name)
 	return f
 
 
