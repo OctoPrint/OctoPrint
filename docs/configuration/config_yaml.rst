@@ -434,6 +434,9 @@ Use the following settings to enable or disable OctoPrint features:
      # Specifies whether support for SD printing and file management should be enabled
      sdSupport: true
 
+     # Specifies whether firmware expects relative paths for selecting SD files
+     sdRelativePath: false
+
      # Whether to always assume that an SD card is present in the printer.
      # Needed by some firmwares which don't report the SD card status properly.
      sdAlwaysAvailable: false

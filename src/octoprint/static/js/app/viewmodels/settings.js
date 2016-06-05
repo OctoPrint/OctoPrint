@@ -116,6 +116,7 @@ $(function() {
         self.feature_waitForStart = ko.observable(undefined);
         self.feature_alwaysSendChecksum = ko.observable(undefined);
         self.feature_sdSupport = ko.observable(undefined);
+        self.feature_sdRelativePath = ko.observable(undefined);
         self.feature_sdAlwaysAvailable = ko.observable(undefined);
         self.feature_swallowOkAfterResend = ko.observable(undefined);
         self.feature_repetierTargetTemp = ko.observable(undefined);

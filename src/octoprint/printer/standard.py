@@ -360,7 +360,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 		self._printAfterSelect = printAfterSelect
 		self._posAfterSelect = pos
-		self._comm.selectFile("/" + path if sd else path, sd)
+		self._comm.selectFile("/" + path if sd and not settings().getBoolean(["feature", "sdRelativePath"]) else path, sd)
 		self._setProgressData(completion=0)
 		self._setCurrentZ(None)
 
