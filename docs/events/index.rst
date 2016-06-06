@@ -365,6 +365,30 @@ SlicingFailed
      * ``gcode``: the sliced GCODE's filename
      * ``reason``: the reason for the slicing having failed
 
+SlicingProfileAdded
+   A new slicing profile was added.
+
+   Payload:
+
+     * ``slicer``: the slicer for which the profile was added
+     * ``profile``: the profile that was added
+
+SlicingProfileModified
+   A new slicing profile was modified.
+
+   Payload:
+
+     * ``slicer``: the slicer for which the profile was modified
+     * ``profile``: the profile that was modified
+
+SlicingProfileDeleted
+   A slicing profile was deleted.
+
+   Payload:
+
+     * ``slicer``: the slicer for which the profile was deleted
+     * ``profile``: the profile that was deleted
+
 Settings
 --------
 
