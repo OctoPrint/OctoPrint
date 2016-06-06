@@ -1,0 +1,25 @@
+---
+layout: default
+---
+{% include pageheader.html %}
+
+<div class="container downloadpage">
+    <div class="hidden-phone visible-desktop visible-tablet content row-fluid">
+        <!-- standard view: content first, then sponsor column -->
+        <div class="span9 text">
+            {{ content }}
+        </div>
+        <div class="hidden-phone visible-desktop visible-tablet span3 sponsorcolumn">
+            {% include sponsorcolumn.html %}
+        </div>
+    </div>
+    <div class="visible-phone hidden-desktop hidden-tablet content row-fluid">
+        <!-- mobile view: sponsor column first, then content -->
+        <div class="span3 sponsorcolumn">
+            {% include sponsorcolumn.html %}
+        </div>
+        <div class="span9 text">
+            {{ content }}
+        </div>
+    </div>
+</div>

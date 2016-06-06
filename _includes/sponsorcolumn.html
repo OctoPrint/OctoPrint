@@ -1,0 +1,21 @@
+<div class="flufftext">
+    OctoPrint's development is made possible by
+</div>
+
+<div class="sponsors">
+    {% for sponsor in site.data.sponsors %}
+        <div class="sponsor">
+            <a href="{{ sponsor.url }}" title="{{ sponsor.title }}" data-event-category="sponsor" data-event-action="{{ sponsor.title }}">
+                <img src="{{ BASE_PATH }}/assets/img/sponsors/{{ sponsor.logo }}" alt="{{ sponsor.title }}" title="{{ sponsor.title }}">
+            </a>
+        </div>
+    {% endfor %}
+</div>
+
+<div class="patreon">
+    ... and all the awesome patrons on <a href="{{ site.patreon }}" target="_blank" rel="noopener noreferrer" data-event-category="support" data-event-action="patreon">Patreon</a>!
+</div>
+
+<a class="btn btn-block donatelink" href="/support-octoprint/" title="Support the project!" data-event-category="supportlink" data-event-action="button">
+    <i class="fa fa-heart octo-heart"></i> Support the project too!
+</a>
