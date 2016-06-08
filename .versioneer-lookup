@@ -7,8 +7,10 @@
 # The file is processed from top to bottom, the first matching line wins. If <tag> or <reference commit> are left out,
 # the lookup table does not apply to the matched branches
 
-# master shall not use the lookup table, only tags
+# master, prerelease and rc shall not use the lookup table, only tags
 master
+prerelease
+rc
 
 # neither should disconnected checkouts, e.g. 'git checkout <tag>'
 HEAD
