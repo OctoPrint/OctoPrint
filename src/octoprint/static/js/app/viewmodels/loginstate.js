@@ -129,13 +129,10 @@ $(function() {
             self.allViewModels = allViewModels;
         };
 
-        self.onDataUpdaterReconnect = function() {
+        self.onServerConnect = function() {
             self.requestData();
         };
-
-        self.onStartupComplete = function() {
-            self.requestData();
-        };
+        self.onServerReconnect = self.onServerConnect;
     }
 
     OCTOPRINT_VIEWMODELS.push([

@@ -16,11 +16,15 @@ function DataUpdater(allViewModels) {
     self._lastProcessingTimes = [];
     self._lastProcessingTimesSize = 20;
 
-    self.connect = function() {
+    self._connectCallback = undefined;
+
+    self.connect = function(callback) {
         var options = {};
         if (SOCKJS_DEBUG) {
             options["debug"] = true;
         }
+
+        self._connectCallback = callback;
 
         self._socket = new SockJS(SOCKJS_URI, undefined, options);
         self._socket.onopen = self._onconnect;
@@ -184,6 +188,13 @@ function DataUpdater(allViewModels) {
 
                     self.setThrottle(1);
 
+                    log.info("Connected to the server");
+
+                    if (self._connectCallback) {
+                        self._connectCallback();
+                        self._connectCallback = undefined;
+                    }
+
                     break;
                 }
                 case "history": {
@@ -334,6 +345,4 @@ function DataUpdater(allViewModels) {
             }
         }
     };
-
-    self.connect();
 }

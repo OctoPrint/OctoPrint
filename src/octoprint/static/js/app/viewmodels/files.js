@@ -446,11 +446,7 @@ $(function() {
             self._enableDragNDrop(true);
             self.requestData();
         };
-
-        self.onServerReconnect = function(payload) {
-            self._enableDragNDrop(true);
-            self.requestData();
-        };
+        self.onServerReconnect = self.onServerConnect;
 
         self.onServerDisconnect = function(payload) {
             self._enableDragNDrop(false);
