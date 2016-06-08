@@ -59,25 +59,24 @@ Please also refer to [OctoPi's README](https://github.com/guysoft/OctoPi), espec
 
 The generic setup instructions boil down to
 
-1. Installing [Python 2.7](https://www.python.org/) including [pip](https://pip.pypa.io/en/latest/installing.html)
+1. Installing [Python 2.7](https://www.python.org/) including [pip](https://pip.pypa.io/en/latest/installing.html) and [virtualenv](https://virtualenv.pypa.io/en/stable/installation/).
 2. Obtaining the source through either of:
-   1. cloning the [source repository](https://github.com/foosel/OctoPrint.git): ``git clone https://github.com/foosel/OctoPrint.git``
+   1. cloning the [source repository](https://github.com/foosel/OctoPrint.git): `git clone https://github.com/foosel/OctoPrint.git`
    2. downloading an [archive of the current stable version](https://github.com/foosel/OctoPrint/archive/master.zip) from Github and unpacking it
-3. In the source code folder from the command line: ``python setup.py install``
-4. Start OctoPrint through ``octoprint`` from the command line
+3. Creating a (user owned) virtual environment in the source folder: `virtualenv venv`
+4. Installing OctoPrint *into that virtual environment*: `./venv/bin/python setup.py install`
+5. OctoPrint may then be started through `./venv/bin/octoprint` or with an absolute path `/path/to/OctoPrint/venv/bin/octoprint`
 
 More specific setup instructions for the most common runtime environments can be found below.
 
 ##  Linux
 
 For installing OctoPrint from source, please take a look at [the setup instructions for Raspbian on the wiki](https://github.com/foosel/OctoPrint/wiki/Setup-on-a-Raspberry-Pi-running-Raspbian).
-They should be pretty identical on other Linux distributions.
+They should be pretty much identical on other Linux distributions.
 
 ##  Windows
 
-OctoPrint is being developed under Windows 7, therefore it will run there as well although its targeted use case
-is running it on low-powered embedded devices with Linux. If you want to give it a try on Windows, you can find
-instructions on what to do [on the wiki](https://github.com/foosel/OctoPrint/wiki/Setup-on-Windows).
+For installing OctoPrint on a Windows system, please take a look at [the setup instructions for Windows on the wiki](https://github.com/foosel/OctoPrint/wiki/Setup-on-Windows).
 
 ## Mac
 
