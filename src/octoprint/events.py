@@ -86,6 +86,14 @@ class Events(object):
 	SLICING_DONE = "SlicingDone"
 	SLICING_FAILED = "SlicingFailed"
 	SLICING_CANCELLED = "SlicingCancelled"
+	SLICING_PROFILE_ADDED = "SlicingProfileAdded"
+	SLICING_PROFILE_MODIFIED = "SlicingProfileModified"
+	SLICING_PROFILE_DELETED = "SlicingProfileDeleted"
+
+	# Printer Profiles
+	PRINTER_PROFILE_ADDED = "PrinterProfileAdded"
+	PRINTER_PROFILE_MODIFIED = "PrinterProfileModified"
+	PRINTER_PROFILE_DELETED = "PrinterProfileDeleted"
 
 	# Settings
 	SETTINGS_UPDATED = "SettingsUpdated"
@@ -107,7 +115,7 @@ class EventManager(object):
 		self._registeredListeners = collections.defaultdict(list)
 		self._logger = logging.getLogger(__name__)
 
-		self._queue = Queue.PriorityQueue()
+		self._queue = Queue.Queue()
 		self._worker = threading.Thread(target=self._work)
 		self._worker.daemon = True
 		self._worker.start()
@@ -115,7 +123,7 @@ class EventManager(object):
 	def _work(self):
 		try:
 			while True:
-				(event, payload) = self._queue.get(True)
+				event, payload = self._queue.get(True)
 
 				eventListeners = self._registeredListeners[event]
 				self._logger.debug("Firing event: %s (Payload: %r)" % (event, payload))
@@ -144,7 +152,7 @@ class EventManager(object):
 		payload being a payload object specific to the event.
 		"""
 
-		self._queue.put((event, payload), 0)
+		self._queue.put((event, payload))
 
 		if event == Events.UPDATED_FILES and "type" in payload and payload["type"] == "printables":
 			# when sending UpdatedFiles with type "printables", also send another event with deprecated type "gcode"
@@ -152,8 +160,7 @@ class EventManager(object):
 			import copy
 			legacy_payload = copy.deepcopy(payload)
 			legacy_payload["type"] = "gcode"
-			self._queue.put((event, legacy_payload), 0)
-
+			self._queue.put((event, legacy_payload))
 
 	def subscribe(self, event, callback):
 		"""

@@ -93,7 +93,7 @@ $(function() {
             } else if (!self.isOperational() && !connectionTab.hasClass("in")) {
                 connectionTab.collapse("show");
             }
-        }
+        };
 
         self._processStateData = function(data) {
             self.previousIsOperational = self.isOperational();
@@ -106,7 +106,7 @@ $(function() {
             self.isReady(data.flags.ready);
             self.isLoading(data.flags.loading);
 
-            if (self.loginState.isAdmin() && self.previousIsOperational != self.isOperational()) {
+            if (self.loginState.isUser() && self.previousIsOperational != self.isOperational()) {
                 // only open or close if the panel is visible (for admins) and
                 // the state just changed to avoid thwarting manual open/close
                 self.openOrCloseOnStateChange();

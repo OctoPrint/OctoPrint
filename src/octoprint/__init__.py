@@ -24,7 +24,14 @@ class Main(Daemon):
 		self._logConf = logConf
 
 	def run(self):
-		octoprint = Server(self._configfile, self._basedir, self._host, self._port, self._debug, self._allowRoot)
+		octoprint = Server(configfile=self._configfile,
+		                   basedir=self._basedir,
+		                   host=self._host,
+		                   port=self._port,
+		                   debug=self._debug,
+		                   allowRoot=self._allowRoot,
+		                   logConf=self._logConf,
+		                   octoprint_daemon=self)
 		octoprint.run()
 
 def main():
@@ -77,7 +84,13 @@ def main():
 		elif "restart" == args.daemon:
 			daemon.restart()
 	else:
-		octoprint = Server(args.config, args.basedir, args.host, args.port, args.debug, args.allowRoot, args.logConf)
+		octoprint = Server(configfile=args.config,
+		                   basedir=args.basedir,
+		                   host=args.host,
+		                   port=args.port,
+		                   debug=args.debug,
+		                   allowRoot=args.allowRoot,
+		                   logConf=args.logConf)
 		octoprint.run()
 
 if __name__ == "__main__":

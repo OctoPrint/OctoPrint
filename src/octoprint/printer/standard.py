@@ -528,7 +528,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		self.refresh_sd_files(blocking=True)
 		existingSdFiles = map(lambda x: x[0], self._comm.getSdFiles())
 
-		remoteName = util.get_dos_filename(filename, existing_filenames=existingSdFiles, extension="gco")
+		remoteName = util.get_dos_filename(filename,
+		                                   existing_filenames=existingSdFiles,
+		                                   extension="gco",
+		                                   whitelisted_extensions=["gco", "g"])
 		self._timeEstimationData = TimeEstimationHelper()
 		self._comm.startFileTransfer(absolutePath, filename, "/" + remoteName)
 
@@ -629,7 +632,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 		printTimeLeft = totalPrintTime - cleanedPrintTime if (totalPrintTime is not None and cleanedPrintTime is not None) else None
 
-		if progress:
+		if progress is not None:
 			progress_int = int(progress * 100)
 			if self._lastProgressReport != progress_int:
 				self._lastProgressReport = progress_int

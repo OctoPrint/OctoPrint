@@ -4,6 +4,8 @@ $(function() {
 
         self.loginState = parameters[0];
 
+        self.timelapsePopup = undefined;
+
         self.defaultFps = 25;
         self.defaultPostRoll = 0;
         self.defaultInterval = 10;
@@ -227,11 +229,88 @@ $(function() {
             });
         };
 
+        self.displayTimelapsePopup = function(options) {
+            if (self.timelapsePopup !== undefined) {
+                self.timelapsePopup.remove();
+            }
+
+            _.extend(options, {
+                callbacks: {
+                    before_close: function(notice) {
+                        if (self.timelapsePopup == notice) {
+                            self.timelapsePopup = undefined;
+                        }
+                    }
+                }
+            });
+
+            self.timelapsePopup = new PNotify(options);
+        };
+
         self.onDataUpdaterReconnect = function() {
             self.requestData();
         };
 
+        self.onEventPostRollStart = function(payload) {
+            var title = gettext("Capturing timelapse postroll");
+
+            var text;
+            if (!payload.postroll_duration) {
+                text = _.sprintf(gettext("Now capturing timelapse post roll, this will take only a moment..."), format);
+            } else {
+                var format = {
+                    time: moment().add(payload.postroll_duration, "s").format("LT")
+                };
+
+                if (payload.postroll_duration > 60) {
+                    format.duration = _.sprintf(gettext("%(minutes)d min"), {minutes: payload.postroll_duration / 60});
+                    text = _.sprintf(gettext("Now capturing timelapse post roll, this will take approximately %(duration)s (so until %(time)s)..."), format);
+                } else {
+                    format.duration = _.sprintf(gettext("%(seconds)d sec"), {seconds: payload.postroll_duration});
+                    text = _.sprintf(gettext("Now capturing timelapse post roll, this will take approximately %(duration)s..."), format);
+                }
+            }
+
+            self.displayTimelapsePopup({
+                title: title,
+                text: text,
+                hide: false
+            });
+        };
+
+        self.onEventMovieRendering = function(payload) {
+            self.displayTimelapsePopup({
+                title: gettext("Rendering timelapse"),
+                text: _.sprintf(gettext("Now rendering timelapse %(movie_prefix)s. Due to performance reasons it is not recommended to start a print job while a movie is still rendering."), payload),
+                hide: false
+            });
+        };
+
+        self.onEventMovieFailed = function(payload) {
+            var html = "<p>" + _.sprintf(gettext("Rendering of timelapse %(movie_prefix)s failed with return code %(returncode)s"), payload) + "</p>";
+            html += pnotifyAdditionalInfo('<pre style="overflow: auto">' + payload.error + '</pre>');
+
+            self.displayTimelapsePopup({
+                title: gettext("Rendering failed"),
+                text: html,
+                type: "error",
+                hide: false
+            });
+        };
+
         self.onEventMovieDone = function(payload) {
+            self.displayTimelapsePopup({
+                title: gettext("Timelapse ready"),
+                text: _.sprintf(gettext("New timelapse %(movie_prefix)s is done rendering."), payload),
+                type: "success",
+                callbacks: {
+                    before_close: function(notice) {
+                        if (self.timelapsePopup == notice) {
+                            self.timelapsePopup = undefined;
+                        }
+                    }
+                }
+            });
             self.requestData();
         };
 

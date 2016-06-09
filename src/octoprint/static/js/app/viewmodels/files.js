@@ -442,12 +442,7 @@ $(function() {
             self.requestData(payload.remote, "sdcard");
         };
 
-        self.onServerConnect = function(payload) {
-            self._enableDragNDrop(true);
-            self.requestData();
-        };
-
-        self.onServerReconnect = function(payload) {
+        self.onServerConnect = self.onServerReconnect = function(payload) {
             self._enableDragNDrop(true);
             self.requestData();
         };

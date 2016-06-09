@@ -105,3 +105,16 @@ class ProfileAlreadyExists(ProfileException):
 	def __init__(self, slicer, profile, *args, **kwargs):
 		ProfileException.__init__(self, slicer, profile, *args, **kwargs)
 		self.message = "Profile {profile} for slicer {slicer} already exists".format(profile=profile, slicer=slicer)
+
+class CouldNotDeleteProfile(ProfileException):
+	"""
+	Raised if there is an unexpected error trying to delete a known profile.
+	"""
+	def __init__(self, slicer, profile, cause=None, *args, **kwargs):
+		ProfileException.__init__(self, slicer, profile, *args, **kwargs)
+
+		self.cause = cause
+		if cause:
+			self.message = "Could not delete profile {profile} for slicer {slicer}: {cause}".format(profile=profile, slicer=slicer, cause=str(cause))
+		else:
+			self.message = "Could not delete profile {profile} for slicer {slicer}".format(profile=profile, slicer=slicer)

@@ -14,7 +14,7 @@ from octoprint.server.api import api, NO_CONTENT
 
 from octoprint.settings import settings as s, valid_boolean_trues
 
-from octoprint.slicing import UnknownSlicer, SlicerNotConfigured, ProfileAlreadyExists, UnknownProfile
+from octoprint.slicing import UnknownSlicer, SlicerNotConfigured, ProfileAlreadyExists, UnknownProfile, CouldNotDeleteProfile
 
 
 @api.route("/slicing", methods=["GET"])
@@ -147,6 +147,8 @@ def slicingDelSlicerProfile(slicer, name):
 		slicingManager.delete_profile(slicer, name)
 	except UnknownSlicer:
 		return make_response("Unknown slicer {slicer}".format(**locals()), 404)
+	except CouldNotDeleteProfile as e:
+		return make_response("Could not delete profile {profile} for slicer {slicer}: {cause}".format(profile=name, slicer=slicer, cause=str(e.cause)), 500)
 
 	return NO_CONTENT
 

@@ -114,7 +114,7 @@ def load_user(id):
 
 
 class Server(object):
-	def __init__(self, configfile=None, basedir=None, host="0.0.0.0", port=5000, debug=False, allowRoot=False, logConf=None):
+	def __init__(self, configfile=None, basedir=None, host="0.0.0.0", port=5000, debug=False, allowRoot=False, logConf=None, octoprint_daemon=None):
 		self._configfile = configfile
 		self._basedir = basedir
 		self._host = host
@@ -123,6 +123,7 @@ class Server(object):
 		self._allowRoot = allowRoot
 		self._logConf = logConf
 		self._server = None
+		self._octoprint_daemon = octoprint_daemon
 
 		self._logger = None
 
@@ -505,6 +506,11 @@ class Server(object):
 			observer.join()
 			octoprint.plugin.call_plugin(octoprint.plugin.ShutdownPlugin,
 			                             "on_shutdown")
+
+			if self._octoprint_daemon is not None:
+				self._logger.info("Cleaning up daemon pidfile")
+				self._octoprint_daemon.terminated()
+
 			self._logger.info("Goodbye!")
 		atexit.register(on_shutdown)
 

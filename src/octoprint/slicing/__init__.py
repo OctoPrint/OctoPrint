@@ -407,7 +407,18 @@ class SlicingManager(object):
 				profile.description = description
 
 		path = self.get_profile_path(slicer, name)
+		is_overwrite = os.path.exists(path)
+
+		if is_overwrite and not allow_overwrite:
+			raise ProfileAlreadyExists(slicer, profile.name)
+
 		self._save_profile_to_path(slicer, path, profile, overrides=overrides, allow_overwrite=allow_overwrite)
+
+		payload = dict(slicer=slicer,
+		               profile=name)
+		event = octoprint.events.Events.SLICING_PROFILE_MODIFIED if is_overwrite else octoprint.events.Events.SLICING_PROFILE_ADDED
+		octoprint.events.eventManager().fire(event, payload)
+
 		return profile
 
 	def _temporary_profile(self, slicer, name=None, overrides=None):
@@ -436,6 +447,7 @@ class SlicingManager(object):
 
 		Raises:
 		    ~octoprint.slicing.exceptions.UnknownSlicer: The slicer ``slicer`` is unknown.
+		    ~octoprint.slicing.exceptions.CouldNotDeleteProfile: There was an error while deleting the profile.
 		"""
 
 		if not slicer in self.registered_slicers:
@@ -445,10 +457,17 @@ class SlicingManager(object):
 			raise ValueError("name must be set")
 
 		try:
-			path = self.get_profile_path(slicer, name, must_exist=True)
-		except UnknownProfile:
-			return
-		os.remove(path)
+			try:
+				path = self.get_profile_path(slicer, name, must_exist=True)
+			except UnknownProfile:
+				return
+			os.remove(path)
+		except ProfileException as e:
+			raise e
+		except Exception as e:
+			raise CouldNotDeleteProfile(slicer, name, cause=e)
+		else:
+			octoprint.events.eventManager().fire(octoprint.events.Events.SLICING_PROFILE_DELETED, dict(slicer=slicer, profile=name))
 
 	def all_profiles(self, slicer, require_configured=False):
 		"""
