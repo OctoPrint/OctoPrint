@@ -41,6 +41,7 @@ thanks to everyone who contributed!
   * Mark Qvist
   * Mark Walker
   * Masayoshi Mitsui
+  * Michael McDargh
   * Miguel Angel Salmeron
   * Mikey 
   * Miles Flavel
