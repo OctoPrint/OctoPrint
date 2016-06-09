@@ -91,6 +91,14 @@ class Events(object):
 	SLICING_DONE = "SlicingDone"
 	SLICING_FAILED = "SlicingFailed"
 	SLICING_CANCELLED = "SlicingCancelled"
+	SLICING_PROFILE_ADDED = "SlicingProfileAdded"
+	SLICING_PROFILE_MODIFIED = "SlicingProfileModified"
+	SLICING_PROFILE_DELETED = "SlicingProfileDeleted"
+
+	# Printer Profiles
+	PRINTER_PROFILE_ADDED = "PrinterProfileAdded"
+	PRINTER_PROFILE_MODIFIED = "PrinterProfileModified"
+	PRINTER_PROFILE_DELETED = "PrinterProfileDeleted"
 
 	# Settings
 	SETTINGS_UPDATED = "SettingsUpdated"

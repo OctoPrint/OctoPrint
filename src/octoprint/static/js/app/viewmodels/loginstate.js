@@ -111,7 +111,7 @@ $(function() {
             self.allViewModels = allViewModels;
         };
 
-        self.onDataUpdaterReconnect = function() {
+        self.onServerConnect = self.onServerReconnect = function() {
             self.requestData();
         };
 
@@ -125,10 +125,6 @@ $(function() {
                     self.elementUsernameInput.focus();
                 })
             }
-        };
-
-        self.onStartupComplete = function() {
-            self.requestData();
         };
     }
 

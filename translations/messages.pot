@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: OctoPrint 1.2.11.dev32+g76959e0.dirty\n"
+"Project-Id-Version: OctoPrint 1.2.12.dev21+g5006b01.dirty\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
-"POT-Creation-Date: 2016-05-04 13:26+0200\n"
+"POT-Creation-Date: 2016-06-08 11:03+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1045,14 +1045,14 @@ msgstr ""
 msgid "Interface"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:94
-#: src/octoprint/static/js/app/dataupdater.js:129
+#: src/octoprint/static/js/app/dataupdater.js:92
+#: src/octoprint/static/js/app/dataupdater.js:127
 #: src/octoprint/static/js/app/helpers.js:451
 #: src/octoprint/templates/overlays/offline.jinja2:6
 msgid "Server is offline"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:95
+#: src/octoprint/static/js/app/dataupdater.js:93
 msgid ""
 "The server appears to be offline, at least I'm not getting any response "
 "from it. I'll try to reconnect automatically <strong>over the next couple"
@@ -1060,131 +1060,67 @@ msgid ""
 "anytime using the button below."
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:130
+#: src/octoprint/static/js/app/dataupdater.js:128
 msgid ""
 "The server appears to be offline, at least I'm not getting any response "
 "from it. I <strong>could not reconnect automatically</strong>, but you "
 "may try a manual reconnect using the button below."
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:208
-#: src/octoprint/static/js/app/dataupdater.js:314
+#: src/octoprint/static/js/app/dataupdater.js:206
+#: src/octoprint/static/js/app/dataupdater.js:226
 #, python-format
 msgid "Slicing ... (%(percentage)d%%)"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:230
-msgid "Rendering timelapse"
-msgstr ""
-
-#: src/octoprint/static/js/app/dataupdater.js:231
-#, python-format
-msgid ""
-"Now rendering timelapse %(movie_basename)s. Due to performance reasons it"
-" is not recommended to start a print job while a movie is still "
-"rendering."
-msgstr ""
-
-#: src/octoprint/static/js/app/dataupdater.js:244
-msgid "Timelapse ready"
-msgstr ""
-
-#: src/octoprint/static/js/app/dataupdater.js:245
-#, python-format
-msgid "New timelapse %(movie_basename)s is done rendering."
-msgstr ""
-
-#: src/octoprint/static/js/app/dataupdater.js:256
-#, python-format
-msgid ""
-"Rendering of timelapse %(movie_basename)s failed with return code "
-"%(returncode)s"
-msgstr ""
-
-#: src/octoprint/static/js/app/dataupdater.js:263
-msgid "Rendering failed"
-msgstr ""
-
-#: src/octoprint/static/js/app/dataupdater.js:276
-msgid "Capturing timelapse postroll"
-msgstr ""
-
-#: src/octoprint/static/js/app/dataupdater.js:280
-msgid "Now capturing timelapse post roll, this will take only a moment..."
-msgstr ""
-
-#: src/octoprint/static/js/app/dataupdater.js:287
-#, python-format
-msgid "%(minutes)d min"
-msgstr ""
-
-#: src/octoprint/static/js/app/dataupdater.js:288
-#, python-format
-msgid ""
-"Now capturing timelapse post roll, this will take approximately "
-"%(duration)s (so until %(time)s)..."
-msgstr ""
-
-#: src/octoprint/static/js/app/dataupdater.js:290
-#, python-format
-msgid "%(seconds)d sec"
-msgstr ""
-
-#: src/octoprint/static/js/app/dataupdater.js:291
-#, python-format
-msgid ""
-"Now capturing timelapse post roll, this will take approximately "
-"%(duration)s..."
-msgstr ""
-
-#: src/octoprint/static/js/app/dataupdater.js:316
+#: src/octoprint/static/js/app/dataupdater.js:228
 msgid "Slicing ..."
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:322
+#: src/octoprint/static/js/app/dataupdater.js:234
 msgid "Slicing done"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:322
+#: src/octoprint/static/js/app/dataupdater.js:234
 #, python-format
 msgid "Sliced %(stl)s to %(gcode)s, took %(time).2f seconds"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:332
+#: src/octoprint/static/js/app/dataupdater.js:244
 #, python-format
 msgid "Could not slice %(stl)s to %(gcode)s: %(reason)s"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:333
+#: src/octoprint/static/js/app/dataupdater.js:245
 msgid "Slicing failed"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:337
+#: src/octoprint/static/js/app/dataupdater.js:249
 msgid "Streaming ..."
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:343
+#: src/octoprint/static/js/app/dataupdater.js:255
 msgid "Streaming done"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:344
+#: src/octoprint/static/js/app/dataupdater.js:256
 #, python-format
 msgid "Streamed %(local)s to %(remote)s on SD, took %(time).2f seconds"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:350
-#: src/octoprint/static/js/app/dataupdater.js:358
+#: src/octoprint/static/js/app/dataupdater.js:262
+#: src/octoprint/static/js/app/dataupdater.js:270
 msgid "Unhandled communication error"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:351
+#: src/octoprint/static/js/app/dataupdater.js:263
 #, python-format
 msgid ""
 "There was an unhandled error while talking to the printer. Due to that "
 "the ongoing print job was cancelled. Error: %(firmwareError)s"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:359
+#: src/octoprint/static/js/app/dataupdater.js:271
 #, python-format
 msgid ""
 "The was an unhandled error while talking to the printer. Due to that "
@@ -1655,6 +1591,69 @@ msgstr ""
 msgid "showing %(displayed)d lines"
 msgstr ""
 
+#: src/octoprint/static/js/app/viewmodels/timelapse.js:255
+msgid "Capturing timelapse postroll"
+msgstr ""
+
+#: src/octoprint/static/js/app/viewmodels/timelapse.js:259
+msgid "Now capturing timelapse post roll, this will take only a moment..."
+msgstr ""
+
+#: src/octoprint/static/js/app/viewmodels/timelapse.js:266
+#, python-format
+msgid "%(minutes)d min"
+msgstr ""
+
+#: src/octoprint/static/js/app/viewmodels/timelapse.js:267
+#, python-format
+msgid ""
+"Now capturing timelapse post roll, this will take approximately "
+"%(duration)s (so until %(time)s)..."
+msgstr ""
+
+#: src/octoprint/static/js/app/viewmodels/timelapse.js:269
+#, python-format
+msgid "%(seconds)d sec"
+msgstr ""
+
+#: src/octoprint/static/js/app/viewmodels/timelapse.js:270
+#, python-format
+msgid ""
+"Now capturing timelapse post roll, this will take approximately "
+"%(duration)s..."
+msgstr ""
+
+#: src/octoprint/static/js/app/viewmodels/timelapse.js:283
+msgid "Rendering timelapse"
+msgstr ""
+
+#: src/octoprint/static/js/app/viewmodels/timelapse.js:284
+#, python-format
+msgid ""
+"Now rendering timelapse %(movie_prefix)s. Due to performance reasons it "
+"is not recommended to start a print job while a movie is still rendering."
+msgstr ""
+
+#: src/octoprint/static/js/app/viewmodels/timelapse.js:290
+#, python-format
+msgid ""
+"Rendering of timelapse %(movie_prefix)s failed with return code "
+"%(returncode)s"
+msgstr ""
+
+#: src/octoprint/static/js/app/viewmodels/timelapse.js:294
+msgid "Rendering failed"
+msgstr ""
+
+#: src/octoprint/static/js/app/viewmodels/timelapse.js:303
+msgid "Timelapse ready"
+msgstr ""
+
+#: src/octoprint/static/js/app/viewmodels/timelapse.js:304
+#, python-format
+msgid "New timelapse %(movie_prefix)s is done rendering."
+msgstr ""
+
 #: src/octoprint/static/js/app/viewmodels/usersettings.js:10
 msgid "Site default"
 msgstr ""
@@ -2107,6 +2106,13 @@ msgstr ""
 
 #: src/octoprint/templates/dialogs/settings/folders.jinja2:53
 msgid "Critical"
+msgstr ""
+
+#: src/octoprint/templates/dialogs/settings/folders.jinja2:59
+msgid ""
+"Provide values including size unit. Allowed units are: b, byte, bytes, "
+"kb, mb, gb, tb (case insensitive). Example: <code>5MB</code>, "
+"<code>500KB</code>"
 msgstr ""
 
 #: src/octoprint/templates/dialogs/settings/gcodescripts.jinja2:3
@@ -3006,11 +3012,11 @@ msgstr ""
 msgid "Frames"
 msgstr ""
 
-#: src/octoprint/templates/tabs/timelapse.jinja2:97
+#: src/octoprint/templates/tabs/timelapse.jinja2:99
 msgid "Delete unrendered timelapse"
 msgstr ""
 
-#: src/octoprint/templates/tabs/timelapse.jinja2:97
+#: src/octoprint/templates/tabs/timelapse.jinja2:99
 msgid "Render timelapse"
 msgstr ""
 

@@ -6,6 +6,8 @@ function DataUpdater(allViewModels) {
     self._pluginHash = undefined;
     self._configHash = undefined;
 
+    self._connectedDeferred = undefined;
+
     self._throttleFactor = 1;
     self._baseProcessingLimit = 500.0;
     self._lastProcessingTimes = [];
@@ -36,11 +38,21 @@ function DataUpdater(allViewModels) {
     };
 
     self.connect = function() {
+        if (self._connectedDeferred) {
+            self._connectedDeferred.reject();
+        }
+        self._connectedDeferred = $.Deferred();
         OctoPrint.socket.connect({debug: !!SOCKJS_DEBUG});
+        return self._connectedDeferred.promise();
     };
 
     self.reconnect = function() {
+        if (self._connectedDeferred) {
+            self._connectedDeferred.reject();
+        }
+        self._connectedDeferred = $.Deferred();
         OctoPrint.socket.reconnect();
+        return self._connectedDeferred.promise();
     };
 
     self._onReconnectAttempt = function(trial) {
@@ -124,6 +136,14 @@ function DataUpdater(allViewModels) {
         var configChanged = oldConfigHash != undefined && oldConfigHash != self._configHash;
         if (versionChanged || pluginsChanged || configChanged) {
             showReloadOverlay();
+        }
+
+        log.info("Connected to the server");
+
+        // if we have a connected promise, resolve it now
+        if (self._connectedDeferred) {
+            self._connectedDeferred.resolve();
+            self._connectedDeferred = undefined;
         }
     };
 
@@ -266,6 +286,4 @@ function DataUpdater(allViewModels) {
         .onMessage("event", self._onEvent)
         .onMessage("timelapse", self._onTimelapse)
         .onMessage("plugin", self._onPluginMessage);
-
-    self.connect();
 }
