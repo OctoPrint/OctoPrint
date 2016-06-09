@@ -223,10 +223,12 @@ def index():
 	else:
 		wizard = wizard_active(_templates)
 		enable_accesscontrol = userManager.enabled
+		accesscontrol_active = enable_accesscontrol and userManager.hasBeenCustomized()
 		render_kwargs.update(dict(
 			webcamStream=settings().get(["webcam", "stream"]),
 			enableTemperatureGraph=settings().get(["feature", "temperatureGraph"]),
 			enableAccessControl=enable_accesscontrol,
+			accessControlActive=accesscontrol_active,
 			enableSdSupport=settings().get(["feature", "sdSupport"]),
 			gcodeMobileThreshold=settings().get(["gcodeViewer", "mobileSizeThreshold"]),
 			gcodeThreshold=settings().get(["gcodeViewer", "sizeThreshold"]),

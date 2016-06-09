@@ -18,7 +18,7 @@ $(function() {
         };
 
         self.showDialog = function() {
-            if (!CONFIG_WIZARD || !(CONFIG_FIRST_RUN || self.loginState.isAdmin())) return;
+            if (!CONFIG_WIZARD || !((CONFIG_FIRST_RUN && !CONFIG_ACCESS_CONTROL_ACTIVE) || self.loginState.isAdmin())) return;
 
             self.getWizardDetails()
                 .done(function(response) {
