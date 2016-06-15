@@ -254,7 +254,7 @@ class VirtualPrinter():
 					self._deleteSdFile(filename)
 			elif "M114" in data:
 				# send dummy position report
-				output = "C: X:10.00 Y:3.20 Z:5.20 E:1.24"
+				output = "X:10.00 Y:3.20 Z:5.20 E:1.24 Count: A:1000 B:320 C:1040"
 				if not self._okBeforeCommandOutput:
 					output = "ok " + output
 				self.outgoing.put(output)
