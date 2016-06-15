@@ -1046,8 +1046,17 @@ class MachineCom(object):
 				if handled and self._state not in (self.STATE_CONNECTING, self.STATE_DETECT_BAUDRATE):
 					continue
 
-				##~~ Temperature processing
-				if ' T:' in line or line.startswith('T:') or ' T0:' in line or line.startswith('T0:') or ' B:' in line or line.startswith('B:'):
+				# position report processing
+				if 'X:' in line and 'Y:' in line and 'Z:' in line:
+					# currently only here to prevent any "B:"s in a position report from
+					# triggering temperature processing and being interpreted as a bed
+					# temperature - can happen with COREXY in current Marlin
+					#
+					# see also issue #1373
+					pass
+
+				# temperature processing
+				elif ' T:' in line or line.startswith('T:') or ' T0:' in line or line.startswith('T0:') or ((' B:' in line or line.startswith('B:')) and not 'A:' in line):
 					if not disable_external_heatup_detection and not line.strip().startswith("ok") and not self._heating:
 						self._logger.debug("Externally triggered heatup detected")
 						self._heating = True
