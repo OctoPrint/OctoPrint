@@ -182,17 +182,17 @@ $(function() {
         }
 
         // helper to create a view model instance with injected constructor parameters from the view model map
-        var _createViewModelInstance = function(viewModel, viewModelMap) {
+        var _createViewModelInstance = function(viewModel, viewModelMap, optionalDependencyPass) {
 
             // mirror the requested dependencies with an array of the viewModels
             var viewModelParametersMap = function(parameter) {
                 // check if parameter is found within optional array and if all conditions are met return null instead of undefined
                 if (optionalDependencyPass && viewModel.optional.indexOf(parameter) !== -1 && !viewModelMap[parameter]) {
                     log.debug("Resolving optional parameter", [parameter], "without viewmodel");
-                    return null
+                    return null; // null == "optional but not available"
                 }
 
-                return viewModelMap[parameter] || undefined
+                return viewModelMap[parameter] || undefined; // undefined == "not available"
             };
 
             // try to resolve all of the view model's constructor parameters via our view model map
@@ -282,7 +282,7 @@ $(function() {
                     continue;
                 }
 
-                var viewModelInstance = _createViewModelInstance(viewModel, viewModelMap);
+                var viewModelInstance = _createViewModelInstance(viewModel, viewModelMap, optionalDependencyPass);
 
                 // our view model couldn't yet be instantiated, so postpone it for a bit
                 if (viewModelInstance === undefined) {
@@ -310,7 +310,7 @@ $(function() {
             // dependencies of remaining ones, so log that as an error and then quit the loop
             if (unprocessedViewModels.length === startLength) {
                 // I'm gonna let you finish but we will do another pass with the optional dependencies flag enabled
-                if(!optionalDependencyPass) {
+                if (!optionalDependencyPass) {
                     log.debug("Resolving next pass with optional dependencies flag enabled");
                     optionalDependencyPass = true;
                 } else {
