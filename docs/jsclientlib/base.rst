@@ -1,0 +1,287 @@
+.. sec-jsclientlib-base:
+
+:mod:`OctoPrint`
+----------------
+
+.. js:data:: OctoPrint.options
+
+   The client library's options.
+
+   ``OctoPrint.options.apikey``
+       The API Key to use for requests against the OctoPrint API. Should usually be
+       the anonymous UI API Key provided on the socket.
+
+   ``OctoPrint.options.baseurl``
+       The base URL of the OctoPrint API
+
+.. js:data:: OctoPrint.plugins
+
+   Registration of client library components provided by plugins.
+
+   OctoPrint plugins should always register their library exports
+   in this object, using their plugin identifier as key.
+
+   **Example:**
+
+   .. code-block:: javascript
+
+      (function (global, factory) {
+          if (typeof define === "function" && define.amd) {
+              define(["OctoPrint"], factory);
+          } else {
+              factory(window.OctoPrint);
+          }
+      })(window || this, function(OctoPrint) {
+          var exports = {};
+
+          // fill exports
+
+          OctoPrint.plugins.myplugin = exports
+      });
+
+.. js:function:: OctoPrint.getBaseUrl()
+
+   Returns the canonical base URL to use for OctoPrint's API. Uses the current value of
+   :js:data:`OctoPrint.options.baseurl <OctoPrint.options>`. If that doesn't end in a ``/``,
+   a trailing ``/`` will be appended to the URL before the result is returned.
+
+   :returns string: The base url to use to access OctoPrint's API.
+
+.. js:function:: OctoPrint.getRequestHeaders(additional)
+
+   Generates a dictionary of HTTP headers to use for API requests against OctoPrint with all
+   necessary headers and any additionally provided ones.
+
+   At the moment this entails setting the ``X-Api-Key`` header based on the current value of
+   ``OctoPrint.options.apikey`` at a minimum.
+
+   :param object additional: Additional headers to add to the request.
+   :returns object: HTTP headers to use for requests.
+
+.. js:function:: OctoPrint.ajax(method, url, opts)
+
+   Performs an AJAX request against the OctoPrint API, utilizing `jQuery's own ajax function <http://api.jquery.com/jquery.ajax/>`_.
+
+   The HTTP method to use may be defined through ``opts.method`` or - if that is not provided -- through the
+   ``method`` parameter. If neither is available, ``GET`` will be used.
+
+   The URL to perform the request against may be defined through ``opts.url`` or -- if that is not provided --
+   through the ``url`` parameter. If neither is available, an empty string will be used (plain base URL). If the
+   URL starts with ``http://`` or ``https://`` it will be used directly. Otherwise the return value of :js:func:`OctoPrint.getBaseUrl`
+   will be prepended.
+
+   As headers everything returned by :js:func:`OctoPrint.getRequestHeaders` will be used. Additional headers to set
+   may be defined by providing them through ``opts.headers``.
+
+   If ``opts.dataType`` is set, it will be used for setting the corresponding option on the jQuery ``ajax`` call, otherwise
+   ``json`` will be used.
+
+   Anything provided in the ``opts`` parameter will also be passed on to the jQuery ``ajax`` call.
+
+   :param string method: The HTTP method to use for the request (optional)
+   :param string url: The URL to perform the request against (optional)
+   :param object opts: Additional options to use for the request, see above for details (optional)
+   :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response's response
+
+.. js:function:: OctoPrint.ajaxWithData(method, url, data, opts)
+
+   Performs an AJAX request against the OctoPrint API, including the provided ``data`` in the body of the request.
+
+   Utilizes :js:func:`OctoPrint.ajax`, see that for more details.
+
+   :param string method: The HTTP method to use for the request (optional)
+   :param string url: The URL to perform the request against (optional)
+   :param object data: The data to send in the request body (optional)
+   :param object opts: Additonal options to use for the request (optional)
+   :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
+
+.. js:function:: OctoPrint.get(url, opts)
+
+   Performs a ``GET`` request against ``url``.
+
+   **Example:**
+
+   .. code-block:: javascript
+
+      OctoPrint.get("api/version")
+          .done(function(response) {
+              console.log("API:", response.api, "Server:", response.server);
+          });
+
+   :param string url: URL against which to make the request, relative to base url or absolute
+   :param object opts: Additional options for the request
+   :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
+
+.. js:function:: OctoPrint.getWithQuery(url, data, opts)
+
+   Performs a ``GET`` request against ``url`` using the provided ``data`` as URL query.
+
+   **Example:**
+
+   .. code-block:: javascript
+
+      // this should perform a GET of "api/timelapse?unrendered=true"
+      OctoPrint.getWithQuery("api/timelapse", {"unrendered": true});
+
+   :param string url: URL against which to make the request, relative to base url or absolute
+   :param object data: An object containing the key/value pairs of the query data OR a string representation of the query
+   :param object opts: Additional options for the request
+   :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
+
+.. js:function:: OctoPrint.post(url, data, opts)
+
+   Performs a ``POST`` request against ``url`` using the provided ``data`` as request body.
+
+   **Example:**
+
+   .. todo::
+
+      Add example
+
+   :param string url: URL against which to make the request, relative to base url or absolute
+   :param string data: Data to post as request body
+   :param object opts: Additional options for the request
+   :param object opts: Additional options for the request
+   :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
+
+.. js:function:: OctoPrint.postJson(url, data, opts)
+
+   Performs a ``POST`` request against ``url`` using the provided ``data`` object as request body
+   after serializing it to JSON.
+
+   **Example:**
+
+   .. todo::
+
+      Add example
+
+   :param string url: URL against which to make the request, relative to base url or absolute
+   :param object data: Data to post as request body after serialization to JSON
+   :param object opts: Additional options for the request
+   :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
+
+.. js:function:: OctoPrint.put(url, data, opts)
+
+   Performs ``PUT`` request against ``url`` using the provided ``data`` as request body.
+
+   See :js:func:`OctoPrint.post` for details.
+
+.. js:function:: OctoPrint.putJson(url, data, opts)
+
+   Performs ``PUT`` request against ``url`` using the provided ``data`` as request body after
+   serializing it to JSON.
+
+   See :js:func:`OctoPrint.postJson` for details.
+
+.. js:function:: OctoPrint.patch(url, data, opts)
+
+   Performs ``PATCH`` request against ``url`` using the provided ``data`` as request body.
+
+   See :js:func:`OctoPrint.post` for details.
+
+.. js:function:: OctoPrint.patchJson(url, data, opts)
+
+   Performs ``PATCH`` request against ``url`` using the provided ``data`` as request body after
+   serializing it to JSON.
+
+   See :js:func:`OctoPrint.postJson` for details.
+
+.. js:function:: OctoPrint.delete(url, opts)
+
+   Performs a ``DELETE`` request against ``url``.
+
+   :param string url: URL against which to make the request, relative to base url or absolute
+   :param object opts: Additional options for the request
+   :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
+
+.. js:function:: OctoPrint.download(url, opts)
+
+   Downloads a file from ``url``, returning the response body as data type ``text``.
+
+   Use this if you need to download a file from the server in order to process it further in the client. The
+   response body returned on successful completion of the returned `jQuery Promise <http://api.jquery.com/Types/#Promise>`_
+   will contain the requested file as raw string/binary.
+
+   :param string url: URL to download
+   :param object opts: Addtional options for the request
+   :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
+
+.. js:function:: OctoPrint.upload(url, file, filename, additional)
+
+   Uploads a ``file`` to ``url`` using a ``multipart/form-data`` ``POST`` request.
+
+   ``file`` should be either of
+
+     * a jQuery element pointing at a file input of the page of which the first
+       `File instance <https://developer.mozilla.org/en-US/docs/Web/API/File>`_ will be used,
+     * a string usable as selector to address a file input of the page of which the first
+       `File instance <https://developer.mozilla.org/en-US/docs/Web/API/File>`_ will be used or
+     * a `File instance <https://developer.mozilla.org/en-US/docs/Web/API/File>`_
+
+   If ``filename`` is provided, the file upload data will contain its value as file name for the
+   upload, otherwise the ``name`` property from the `File instance <https://developer.mozilla.org/en-US/docs/Web/API/File>`_.
+
+   The function will return a `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ which will also be
+   notified on the upload progress with an object containing the following properties:
+
+   loaded
+       The number of bytes already uploaded
+   total
+       The total number of bytes to upload
+
+   This can be used to populate progress bars or other types of progress visualization.
+
+   It is important to note that contrary to all the other request methods in this module, ``OctoPrint.upload``
+   is implemented using ``XMLHttpRequest`` directly instead of relying on jQuery's ``ajax`` function. It still
+   tries to replicate its behaviour on the returned `jQuery Promise <http://api.jquery.com/Types/#Promise>`_
+   however, meaning that the ``resolve`` and ``reject`` methods will be called with ``(data, textStatus, request)``
+   and ``(request, textStatus, error)`` parameters respectively.
+
+   Additional form elements for the POSTed form can be supplied through the ``additional`` parameters.
+   This should be an object of key/value pairs that are set as field name and value on the `FormData <https://developer.mozilla.org/en/docs/Web/API/FormData>`_
+   object that will be used in the request.
+
+   **Example**
+
+   Uploading a file from a file input element, updating a label with the current upload progress.
+
+   .. code-block:: javascript
+
+      var fileInput = $("#my-file-input");
+      var progressOutput = $("#progress-output");
+
+      OctoPrint.upload("/plugins/myplugin/some/path", fileInput, "myfilename.dat", {"somekey": "somevalue"})
+          .progress(function(data) {
+              if (data.total) {
+                  var percentage = Math.round(data.loaded * 100 / data.total);
+                  if (percentage || percentage == 0) {
+                      progressOutput.text(percentage + "%");
+                      return;
+                  }
+              }
+              progressOutput.text("");
+          })
+          .done(function(response, textStatus, request) {
+              progressOutput.text("Uploaded!");
+          });
+
+   :param string url: The URL to ``POST`` the upload to
+   :param object file: The file to object, see description for details
+   :param string filename: An optional file name to use for the upload
+   :param object additional: An optional object of additional key/value pairs to set on the uploaded form data
+
+.. js:function:: OctoPrint.issueCommand(url, command, payload, opts)
+
+.. js:function:: OctoPrint.getSimpleApiUrl(plugin)
+
+.. js:function:: OctoPrint.simpleApiGet(plugin, opts)
+
+.. js:function:: OctoPrint.simpleApiCommand(plugin, command, payload, opts)
+
+.. js:function:: OctoPrint.getBlueprintUrl(plugin)
+
+.. js:function:: OctoPrint.createRejectedDeferred()
+
+.. js:function:: OctoPrint.createCustomException(name)
+
+.. js:class:: OctoPrint.InvalidArgumentError

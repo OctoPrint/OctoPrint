@@ -22,4 +22,5 @@ Contents
    events/index.rst
    plugins/index.rst
    modules/index.rst
+   jsclientlib/index.rst
 
