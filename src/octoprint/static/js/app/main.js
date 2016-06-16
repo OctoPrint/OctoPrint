@@ -56,12 +56,12 @@ $(function() {
             // register for browser visibility tracking
 
             var prop = getHiddenProp();
-            if (!prop) return undefined;
+            if (prop) {
+                var eventName = prop.replace(/[H|h]idden/, "") + "visibilitychange";
+                document.addEventListener(eventName, updateBrowserVisibility);
 
-            var eventName = prop.replace(/[H|h]idden/, "") + "visibilitychange";
-            document.addEventListener(eventName, updateBrowserVisibility);
-
-            updateBrowserVisibility();
+                updateBrowserVisibility();
+            }
 
             // exports
 
