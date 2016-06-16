@@ -6,7 +6,9 @@
 
   * [#1373](https://github.com/foosel/OctoPrint/issues/1373): Don't parse `B:` as bed temperature when it shows up as part of a position report from `M114`.
   * [#1374](https://github.com/foosel/OctoPrint/issues/1374): Don't try to perform a passive login when the components we'd need to inform about a change in login state aren't yet available. Solves a bug that lead - among other things - to the Plugin Manager and the Software Update Plugin not showing anything but misleading errors until the user logged out and back in.
-  * Fixed the temperature graph looking staying uninitialized until a connection to a printer was established.
+  * Fixed the temperature graph staying uninitialized until a connection to a printer was established.
+  * Fixed an error causing issues during frontend startup if the browser doesn't support tracking browser visibility.
+  * Fixed an error causing issues during frontend startup if the browser doesn't support the capabilities needed for the GCODE viewer.
 
 ([Commits](https://github.com/foosel/OctoPrint/compare/1.2.12...1.2.13))
 
