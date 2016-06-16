@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: OctoPrint 1.2.12.dev21+g5006b01.dirty\n"
+"Project-Id-Version: OctoPrint 1.2.13.dev7+g6c20e58\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
-"POT-Creation-Date: 2016-06-08 11:03+0200\n"
+"POT-Creation-Date: 2016-06-16 12:18+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,7 +17,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.2.0\n"
 
-#: src/octoprint/plugins/announcements/__init__.py:85
+#: src/octoprint/plugins/announcements/__init__.py:89
 #: src/octoprint/plugins/announcements/templates/announcements.jinja2:4
 #: src/octoprint/plugins/announcements/templates/announcements_navbar.jinja2:1
 msgid "Announcements"
@@ -1045,14 +1045,14 @@ msgstr ""
 msgid "Interface"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:92
-#: src/octoprint/static/js/app/dataupdater.js:127
+#: src/octoprint/static/js/app/dataupdater.js:96
+#: src/octoprint/static/js/app/dataupdater.js:131
 #: src/octoprint/static/js/app/helpers.js:451
 #: src/octoprint/templates/overlays/offline.jinja2:6
 msgid "Server is offline"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:93
+#: src/octoprint/static/js/app/dataupdater.js:97
 msgid ""
 "The server appears to be offline, at least I'm not getting any response "
 "from it. I'll try to reconnect automatically <strong>over the next couple"
@@ -1060,67 +1060,67 @@ msgid ""
 "anytime using the button below."
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:128
+#: src/octoprint/static/js/app/dataupdater.js:132
 msgid ""
 "The server appears to be offline, at least I'm not getting any response "
 "from it. I <strong>could not reconnect automatically</strong>, but you "
 "may try a manual reconnect using the button below."
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:206
-#: src/octoprint/static/js/app/dataupdater.js:226
+#: src/octoprint/static/js/app/dataupdater.js:217
+#: src/octoprint/static/js/app/dataupdater.js:237
 #, python-format
 msgid "Slicing ... (%(percentage)d%%)"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:228
+#: src/octoprint/static/js/app/dataupdater.js:239
 msgid "Slicing ..."
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:234
+#: src/octoprint/static/js/app/dataupdater.js:245
 msgid "Slicing done"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:234
+#: src/octoprint/static/js/app/dataupdater.js:245
 #, python-format
 msgid "Sliced %(stl)s to %(gcode)s, took %(time).2f seconds"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:244
+#: src/octoprint/static/js/app/dataupdater.js:255
 #, python-format
 msgid "Could not slice %(stl)s to %(gcode)s: %(reason)s"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:245
+#: src/octoprint/static/js/app/dataupdater.js:256
 msgid "Slicing failed"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:249
+#: src/octoprint/static/js/app/dataupdater.js:260
 msgid "Streaming ..."
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:255
+#: src/octoprint/static/js/app/dataupdater.js:266
 msgid "Streaming done"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:256
+#: src/octoprint/static/js/app/dataupdater.js:267
 #, python-format
 msgid "Streamed %(local)s to %(remote)s on SD, took %(time).2f seconds"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:262
-#: src/octoprint/static/js/app/dataupdater.js:270
+#: src/octoprint/static/js/app/dataupdater.js:273
+#: src/octoprint/static/js/app/dataupdater.js:281
 msgid "Unhandled communication error"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:263
+#: src/octoprint/static/js/app/dataupdater.js:274
 #, python-format
 msgid ""
 "There was an unhandled error while talking to the printer. Due to that "
 "the ongoing print job was cancelled. Error: %(firmwareError)s"
 msgstr ""
 
-#: src/octoprint/static/js/app/dataupdater.js:271
+#: src/octoprint/static/js/app/dataupdater.js:282
 #, python-format
 msgid ""
 "The was an unhandled error while talking to the printer. Due to that "
@@ -1200,14 +1200,14 @@ msgstr ""
 
 #: src/octoprint/static/js/app/viewmodels/control.js:65
 #: src/octoprint/static/js/app/viewmodels/files.js:329
-#: src/octoprint/static/js/app/viewmodels/gcode.js:465
+#: src/octoprint/static/js/app/viewmodels/gcode.js:471
 #: src/octoprint/static/js/app/viewmodels/printerstate.js:177
-#: src/octoprint/static/js/app/viewmodels/temperature.js:56
+#: src/octoprint/static/js/app/viewmodels/temperature.js:58
 msgid "Tool"
 msgstr ""
 
 #: src/octoprint/static/js/app/viewmodels/control.js:71
-#: src/octoprint/static/js/app/viewmodels/temperature.js:67
+#: src/octoprint/static/js/app/viewmodels/temperature.js:69
 msgid "Hotend"
 msgstr ""
 
@@ -1240,18 +1240,18 @@ msgstr ""
 msgid "Last Print Time"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/files.js:520
+#: src/octoprint/static/js/app/viewmodels/files.js:515
 msgid ""
 "Could not upload the file. Make sure that it is a GCODE file and has the "
 "extension \".gcode\" or \".gco\" or that it is an STL file with the "
 "extension \".stl\"."
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/files.js:541
+#: src/octoprint/static/js/app/viewmodels/files.js:536
 msgid "Uploading ..."
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/files.js:548
+#: src/octoprint/static/js/app/viewmodels/files.js:543
 msgid "Saving ..."
 msgstr ""
 
@@ -1274,52 +1274,52 @@ msgstr ""
 msgid "Analyzed"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/gcode.js:431
+#: src/octoprint/static/js/app/viewmodels/gcode.js:437
 msgid "Model size"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/gcode.js:432
+#: src/octoprint/static/js/app/viewmodels/gcode.js:438
 msgid "Estimated total print time"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/gcode.js:433
+#: src/octoprint/static/js/app/viewmodels/gcode.js:439
 msgid "Estimated layer height"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/gcode.js:433
+#: src/octoprint/static/js/app/viewmodels/gcode.js:439
 msgid "mm"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/gcode.js:434
+#: src/octoprint/static/js/app/viewmodels/gcode.js:440
 msgid "Layer count"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/gcode.js:434
+#: src/octoprint/static/js/app/viewmodels/gcode.js:440
 msgid "printed"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/gcode.js:434
+#: src/octoprint/static/js/app/viewmodels/gcode.js:440
 msgid "visited"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/gcode.js:457
+#: src/octoprint/static/js/app/viewmodels/gcode.js:463
 msgid "Layer number"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/gcode.js:458
+#: src/octoprint/static/js/app/viewmodels/gcode.js:464
 msgid "Layer height"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/gcode.js:459
+#: src/octoprint/static/js/app/viewmodels/gcode.js:465
 msgid "GCODE commands in layer"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/gcode.js:462
-#: src/octoprint/static/js/app/viewmodels/gcode.js:465
+#: src/octoprint/static/js/app/viewmodels/gcode.js:468
+#: src/octoprint/static/js/app/viewmodels/gcode.js:471
 msgid "Filament used by layer"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/gcode.js:469
+#: src/octoprint/static/js/app/viewmodels/gcode.js:475
 msgid "Print time for layer"
 msgstr ""
 
@@ -1544,25 +1544,25 @@ msgid "Slicing %(filename)s"
 msgstr ""
 
 #: src/octoprint/static/js/app/viewmodels/temperature.js:23
-#: src/octoprint/static/js/app/viewmodels/temperature.js:74
+#: src/octoprint/static/js/app/viewmodels/temperature.js:76
 #: src/octoprint/templates/dialogs/settings/temperatures.jinja2:16
 msgid "Bed"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/temperature.js:112
+#: src/octoprint/static/js/app/viewmodels/temperature.js:115
 msgid "just now"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/temperature.js:114
+#: src/octoprint/static/js/app/viewmodels/temperature.js:117
 msgid "min"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/temperature.js:253
+#: src/octoprint/static/js/app/viewmodels/temperature.js:256
 #: src/octoprint/templates/tabs/temperature.jinja2:11
 msgid "Actual"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/temperature.js:258
+#: src/octoprint/static/js/app/viewmodels/temperature.js:261
 #: src/octoprint/templates/tabs/temperature.jinja2:12
 msgid "Target"
 msgstr ""
