@@ -235,7 +235,7 @@ $(function() {
             self._configureLayerCommandSlider(commandSliderElement);
 
             self.settings.requestData(function() {
-                GCODE.ui.init({
+                var initResult = GCODE.ui.init({
                     container: "#gcode_canvas",
                     onProgress: self._onProgress,
                     onModelLoaded: self._onModelLoaded,
@@ -244,6 +244,12 @@ $(function() {
                     toolOffsets: self._retrieveToolOffsets(),
                     invertAxes: self._retrieveAxesConfiguration()
                 });
+
+                if (!initResult) {
+                    log.info("Could not initialize GCODE viewer component");
+                    return;
+                }
+
                 self.synchronizeOptions();
                 self.enabled = true;
             });
