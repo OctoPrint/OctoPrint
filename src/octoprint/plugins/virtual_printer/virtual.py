@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
@@ -204,7 +204,7 @@ class VirtualPrinter():
 			if len(data.strip()) > 0 and self._okBeforeCommandOutput:
 				self._sendOk()
 
-			#print "Send: %s" % (data.rstrip())
+			#print("Send: %s" % (data.rstrip()))
 			if 'M104' in data or 'M109' in data:
 				self._parseHotendCommand(data)
 

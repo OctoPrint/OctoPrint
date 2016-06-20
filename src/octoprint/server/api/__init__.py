@@ -170,7 +170,7 @@ def performSystemAction():
 							stderr_text = p.stderr.text
 							logger.warn("Command failed with return code %i: %s" % (returncode, stderr_text))
 							return make_response(("Command failed with return code %i: %s" % (returncode, stderr_text), 500, []))
-				except Exception, e:
+				except Exception as e:
 					if not ignore:
 						logger.warn("Command failed: %s" % e)
 						return make_response(("Command failed: %s" % e, 500, []))

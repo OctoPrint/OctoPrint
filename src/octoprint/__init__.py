@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 import sys
 from octoprint.daemon import Daemon
 from octoprint.server import Server
@@ -68,7 +69,7 @@ def main():
 	args = parser.parse_args()
 
 	if args.version:
-		print "OctoPrint version %s" % __version__
+		print("OctoPrint version %s" % __version__)
 		sys.exit(0)
 
 	if args.daemon:

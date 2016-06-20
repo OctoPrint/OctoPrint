@@ -755,7 +755,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 				"messages": list(self._messages)
 			})
 			callback.on_printer_send_initial_data(data)
-		except Exception, err:
+		except Exception as err:
 			import sys
 			sys.stderr.write("ERROR: %s\n" % str(err))
 			pass

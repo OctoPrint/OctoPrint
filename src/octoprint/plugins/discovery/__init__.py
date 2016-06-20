@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -249,7 +249,7 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 
 		    def browse_callback(results):
 		      for result in results:
-		        print "Name: {name}, Host: {host}, Port: {port}, TXT: {txt_record!r}".format(**result)
+		        print("Name: {name}, Host: {host}, Port: {port}, TXT: {txt_record!r}".format(**result))
 
 		:param service_type: the service type to browse for
 		:param block: whether to block, defaults to True
@@ -368,7 +368,7 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 
 		    def browse_callback(results):
 		      for result in results:
-		        print "Location: {}".format(result)
+		        print("Location: {}".format(result))
 
 		:param query: the SSDP query to send, e.g. "upnp:rootdevice" to search for all devices
 		:param block: whether to block, defaults to True

@@ -1410,7 +1410,7 @@ class MachineCom(object):
 				self._log("Connecting to: %s" % (p))
 				programmer.connect(p)
 				serial_obj = programmer.leaveISP()
-			except ispBase.IspError as (e):
+			except ispBase.IspError as e:
 				error_message = "Error while connecting to %s: %s" % (p, str(e))
 				self._log(error_message)
 				self._logger.exception(error_message)

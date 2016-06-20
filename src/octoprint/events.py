@@ -295,7 +295,7 @@ class CommandTrigger(GenericEventListener):
 				else:
 					processedCommand = self._processCommand(command, payload)
 				self.executeCommand(processedCommand, commandType, debug=debug)
-			except KeyError, e:
+			except KeyError as e:
 				self._logger.warn("There was an error processing one or more placeholders in the following command: %s" % command)
 
 	def executeCommand(self, command, commandType, debug=False):
@@ -319,7 +319,7 @@ class CommandTrigger(GenericEventListener):
 					commandExecutioner(c)
 			else:
 				commandExecutioner(command)
-		except subprocess.CalledProcessError, e:
+		except subprocess.CalledProcessError as e:
 			self._logger.warn("Command failed with return code %i: %s" % (e.returncode, str(e)))
 		except:
 			self._logger.exception("Command failed")
