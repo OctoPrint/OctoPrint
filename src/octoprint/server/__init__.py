@@ -193,17 +193,43 @@ class Server(object):
 		storage_managers = dict()
 		storage_managers[octoprint.filemanager.FileDestinations.LOCAL] = octoprint.filemanager.storage.LocalFileStorage(self._settings.getBaseFolder("uploads"))
 		fileManager = octoprint.filemanager.FileManager(analysisQueue, slicingManager, printerProfileManager, initial_storage_managers=storage_managers)
-		printer = Printer(fileManager, analysisQueue, printerProfileManager)
 		appSessionManager = util.flask.AppSessionManager()
 		pluginLifecycleManager = LifecycleManager(pluginManager)
 		preemptiveCache = PreemptiveCache(os.path.join(self._settings.getBaseFolder("data"), "preemptive_cache_config.yaml"))
+
+		components = dict(
+			plugin_manager=pluginManager,
+			printer_profile_manager=printerProfileManager,
+			event_bus=eventManager,
+			analysis_queue=analysisQueue,
+			slicing_manager=slicingManager,
+			file_manager=fileManager,
+			app_session_manager=appSessionManager,
+			plugin_lifecycle_manager=pluginLifecycleManager,
+			user_manager=userManager,
+			preemptive_cache=preemptiveCache
+		)
+
+		# create printer instance
+		printer_factories = pluginManager.get_hooks("octoprint.printer.factory")
+		for name, factory in printer_factories.items():
+			try:
+				printer = factory(components)
+				if printer is not None:
+					self._logger.debug("Created printer instance from factory {}".format(name))
+					break
+			except:
+				self._logger.exception("Error while creating printer instance from factory {}".format(name))
+		else:
+			printer = Printer(fileManager, analysisQueue, printerProfileManager)
+		components.update(dict(printer=printer))
 
 		# setup access control
 		userManagerName = self._settings.get(["accessControl", "userManager"])
 		try:
 			clazz = octoprint.util.get_class(userManagerName)
 			userManager = clazz()
-		except AttributeError, e:
+		except AttributeError as e:
 			self._logger.exception("Could not instantiate user manager {}, falling back to FilebasedUserManager!".format(userManagerName))
 			userManager = octoprint.users.FilebasedUserManager()
 		finally:
@@ -212,20 +238,12 @@ class Server(object):
 		def octoprint_plugin_inject_factory(name, implementation):
 			if not isinstance(implementation, octoprint.plugin.OctoPrintPlugin):
 				return None
-			return dict(
-				plugin_manager=pluginManager,
-				printer_profile_manager=printerProfileManager,
-				event_bus=eventManager,
-				analysis_queue=analysisQueue,
-				slicing_manager=slicingManager,
-				file_manager=fileManager,
-				printer=printer,
-				app_session_manager=appSessionManager,
-				plugin_lifecycle_manager=pluginLifecycleManager,
-				data_folder=os.path.join(self._settings.getBaseFolder("data"), name),
-				user_manager=userManager,
-				preemptive_cache=preemptiveCache
-			)
+			props = dict()
+			props.update(components)
+			props.update(dict(
+				data_folder=os.path.join(self._settings.getBaseFolder("data"), name)
+			))
+			return props
 
 		def settings_plugin_inject_factory(name, implementation):
 			plugin_settings = octoprint.plugin.plugin_settings_for_settings_plugin(name, implementation)
