@@ -81,10 +81,12 @@ class StorageInterface(object):
 		       "children": {
 		         "some_sub_folder": {
 		           "type": "folder",
+		           "typePath": ["folder"],
 		           "children": { ... }
 		         },
 		         "some_file.gcode": {
 		           "type": "machinecode",
+		           "typePath": ["machinecode", "gcode"],
 		           "hash": "<sha1 hash>",
 		           "links": [ ... ],
 		           ...
@@ -93,12 +95,14 @@ class StorageInterface(object):
 		       }
 		     "test.gcode": {
 		       "type": "machinecode",
+		       "typePath": ["machinecode", "gcode"],
 		       "hash": "<sha1 hash>",
 		       "links": [...],
 		       ...
 		     },
 		     "test.stl": {
 		       "type": "model",
+		       "typePath": ["model", "stl"],
 		       "hash": "<sha1 hash>",
 		       "links": [...],
 		       ...
@@ -1035,12 +1039,12 @@ class LocalFileStorage(StorageInterface):
 
 			# file handling
 			if os.path.isfile(entry_path):
-				file_type = octoprint.filemanager.get_file_type(entry)
-				if not file_type:
+				type_path = octoprint.filemanager.get_file_type(entry)
+				if not type_path:
 					# only supported extensions
 					continue
 				else:
-					file_type = file_type[0]
+					file_type = type_path[0]
 
 				if entry in metadata and isinstance(metadata[entry], dict):
 					entry_data = metadata[entry]
@@ -1056,6 +1060,7 @@ class LocalFileStorage(StorageInterface):
 					extended_entry_data.update(entry_data)
 					extended_entry_data["name"] = entry
 					extended_entry_data["type"] = file_type
+					extended_entry_data["typePath"] = type_path
 					stat = os.stat(entry_path)
 					if stat:
 						extended_entry_data["size"] = stat.st_size
@@ -1069,13 +1074,14 @@ class LocalFileStorage(StorageInterface):
 				entry_data = dict(
 					name=entry,
 					type="folder",
+					type_path=["folder"],
 					children=sub_result
 				)
 
 				if not filter or filter(entry, entry_data):
 					def get_size():
 						total_size = 0
-						for element in entry_data["children"].itervalues():
+						for element in entry_data["children"].values():
 							if "size" in element:
 								total_size += element["size"]
 
