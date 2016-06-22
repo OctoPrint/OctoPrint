@@ -23,7 +23,7 @@ like your plugin) or a package (a folder named like your plugin + ``__init.py__`
 Proper packages installable via pip
 -----------------------------------
 
-You can have your users install it via ``pip`` and register it for the `entry point <https://pythonhosted.org/setuptools/setuptools.html#dynamic-discovery-of-services-and-plugins>`_ ``octoprint.plugin`` via
+You can have your users install it via ``pip`` and register it for the `entry point <http://setuptools.readthedocs.io/en/latest/setuptools.html#dynamic-discovery-of-services-and-plugins>`_ ``octoprint.plugin`` via
 your plugin's ``setup.py``, this way it will be found automatically by OctoPrint upon initialization of the
 plugin subsystem [#f1]_.
 
