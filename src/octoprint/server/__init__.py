@@ -234,6 +234,7 @@ class Server(object):
 			userManager = octoprint.users.FilebasedUserManager()
 		finally:
 			userManager.enabled = self._settings.getBoolean(["accessControl", "enabled"])
+		components["user_manager"] = userManager
 
 		def octoprint_plugin_inject_factory(name, implementation):
 			if not isinstance(implementation, octoprint.plugin.OctoPrintPlugin):
