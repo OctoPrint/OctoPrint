@@ -211,6 +211,8 @@ def init_pluginsystem(settings):
 
 	def handle_plugin_loaded(name, plugin):
 		if hasattr(plugin.instance, "__plugin_settings_overlay__"):
+			plugin.needs_restart = True
+
 			# plugin has a settings overlay, inject it
 			overlay_definition = getattr(plugin.instance, "__plugin_settings_overlay__")
 			if isinstance(overlay_definition, (tuple, list)):

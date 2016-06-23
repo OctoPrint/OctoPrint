@@ -134,6 +134,7 @@ class PluginInfo(object):
 		self.bundled = False
 		self.loaded = False
 		self.managable = True
+		self.needs_restart = False
 
 		self._name = name
 		self._version = version
@@ -900,7 +901,7 @@ class PluginManager(object):
 					pass
 
 	def is_restart_needing_plugin(self, plugin):
-		return self.has_restart_needing_implementation(plugin) or self.has_restart_needing_hooks(plugin)
+		return plugin.needs_restart or self.has_restart_needing_implementation(plugin) or self.has_restart_needing_hooks(plugin)
 
 	def has_restart_needing_implementation(self, plugin):
 		if not plugin.implementation:
