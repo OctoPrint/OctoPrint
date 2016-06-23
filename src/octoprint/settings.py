@@ -720,6 +720,25 @@ class Settings(object):
 		if migrate:
 			self._migrate_config()
 
+	def add_overlay(self, overlay, migrate=False):
+		config = None
+
+		if isinstance(overlay, basestring):
+			if os.path.exists(overlay) and os.path.isfile(overlay):
+				with open(overlay, "r") as f:
+					config = yaml.safe_load(f)
+		elif isinstance(overlay, dict):
+			config = overlay
+		else:
+			raise ValueError("Overlay must be either a path to a yaml file or a dictionary")
+
+		if not isinstance(config, dict):
+			raise ValueError("Configuration data must be a dict but is a {}".format(config.__class__))
+
+		if migrate:
+			self._migrate_config(config)
+		self._map.parents.maps.insert(0, config)
+
 	def _migrate_config(self, config=None):
 		if config is None:
 			config = self._config
