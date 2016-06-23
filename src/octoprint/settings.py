@@ -29,6 +29,7 @@ import yaml
 import logging
 import re
 import uuid
+import copy
 
 try:
 	from collections import ChainMap
@@ -358,6 +359,8 @@ class HierarchicalChainMap(ChainMap):
 	def has_path(self, path, only_local=False, only_defaults=False):
 		if only_defaults:
 			current = self.parents
+		elif only_local:
+			current = self.__class__(self.maps[0])
 		else:
 			current = self
 
@@ -375,6 +378,8 @@ class HierarchicalChainMap(ChainMap):
 	def get_by_path(self, path, only_local=False, only_defaults=False):
 		if only_defaults:
 			current = self.parents
+		elif only_local:
+			current = self.__class__(self.maps[0])
 		else:
 			current = self
 
@@ -1018,7 +1023,7 @@ class Settings(object):
 			current = current[key]
 		return current
 
-	def _get_value(self, path, asdict=False, config=None, defaults=None, preprocessors=None, merged=False, incl_defaults=True):
+	def _get_value(self, path, asdict=False, config=None, defaults=None, preprocessors=None, merged=False, incl_defaults=True, do_copy=True):
 		if len(path) == 0:
 			raise NoSuchSettingsPath()
 
@@ -1077,6 +1082,9 @@ class Settings(object):
 
 				if callable(preprocessor):
 					value = preprocessor(value)
+
+			if do_copy:
+				value = copy.deepcopy(value)
 
 			if asdict:
 				results[key] = value
@@ -1196,18 +1204,16 @@ class Settings(object):
 	#~~ remove
 
 	def remove(self, path, config=None):
-		if config is None:
-			config = self._config
+		if config is not None:
+			mappings = [config] + self._overlay_maps + [self._default_map]
+			chain = HierarchicalChainMap(*mappings)
+		else:
+			chain = self._map
 
-		while len(path) > 1:
-			key = path.pop(0)
-			if not isinstance(config, dict) or key not in config:
-				return
-			config = config[key]
-
-		key = path.pop(0)
-		if isinstance(config, dict) and key in config:
-			del config[key]
+		try:
+			chain.del_by_path(path)
+		except KeyError:
+			pass
 		self._dirty = True
 
 	#~~ setter
