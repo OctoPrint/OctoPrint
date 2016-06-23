@@ -706,6 +706,17 @@ class Settings(object):
 	def _config(self, value):
 		self._map.maps[0] = value
 
+	@property
+	def _overlay_maps(self):
+		if len(self._map.maps) > 2:
+			return self._map.maps[1:-1]
+		else:
+			return {}
+
+	@property
+	def _default_map(self):
+		return self._map.maps[-1]
+
 	#~~ load and save
 
 	def load(self, migrate=False):
@@ -725,7 +736,7 @@ class Settings(object):
 
 		if callable(overlay):
 			try:
-				overlay = overlay()
+				overlay = overlay(self)
 			except:
 				self._logger.exception("Error loading overlay from callable")
 				return
@@ -1018,7 +1029,9 @@ class Settings(object):
 			if defaults is None:
 				defaults = dict(self._map.parents)
 
-			chain = HierarchicalChainMap(config, defaults)
+			# mappings: provided config + any intermediary parents + provided defaults + regular defaults
+			mappings = [config] + self._overlay_maps + [defaults, self._default_map]
+			chain = HierarchicalChainMap(*mappings)
 		else:
 			chain = self._map
 
