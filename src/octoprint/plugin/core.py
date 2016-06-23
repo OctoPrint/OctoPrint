@@ -472,6 +472,9 @@ class PluginManager(object):
 		self.on_plugin_disabled = lambda *args, **kwargs: None
 		self.on_plugin_implementations_initialized = lambda *args, **kwargs: None
 
+		self.on_plugins_loaded = lambda *args, **kwargs: None
+		self.on_plugins_enabled = lambda *args, **kwargs: None
+
 		self.registered_clients = []
 
 		self.marked_plugins = defaultdict(list)
@@ -479,8 +482,6 @@ class PluginManager(object):
 		self._python_install_dir = None
 		self._python_virtual_env = False
 		self._detect_python_environment()
-
-		self.reload_plugins(startup=True, initialize_implementations=False)
 
 	def _detect_python_environment(self):
 		from distutils.command.install import install as cmd_install
@@ -667,15 +668,32 @@ class PluginManager(object):
 		plugins = self.find_plugins(existing=dict((k, v) for k, v in self.plugins.items() if not k in force_reload))
 		self.disabled_plugins.update(plugins)
 
+		# 1st pass: loading the plugins
 		for name, plugin in plugins.items():
 			try:
 				self.load_plugin(name, plugin, startup=startup, initialize_implementation=initialize_implementations)
-				if not self._is_plugin_disabled(name):
+			except PluginNeedsRestart:
+				pass
+			except PluginLifecycleException as e:
+				self.logger.info(str(e))
+
+		self.on_plugins_loaded(startup=startup,
+							   initialize_implementations=initialize_implementations,
+							   force_reload=force_reload)
+
+		# 2nd pass: enabling those plugins that need enabling
+		for name, plugin in plugins.items():
+			try:
+				if plugin.loaded and not self._is_plugin_disabled(name):
 					self.enable_plugin(name, plugin=plugin, initialize_implementation=initialize_implementations, startup=startup)
 			except PluginNeedsRestart:
 				pass
 			except PluginLifecycleException as e:
 				self.logger.info(str(e))
+
+		self.on_plugins_enabled(startup=startup,
+								initialize_implementations=initialize_implementations,
+								force_reload=force_reload)
 
 		if len(self.enabled_plugins) <= 0:
 			self.logger.info("No plugins found")

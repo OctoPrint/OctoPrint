@@ -1165,17 +1165,24 @@ class LifecycleManager(object):
 		self._plugin_lifecycle_callbacks = defaultdict(list)
 		self._logger = logging.getLogger(__name__)
 
+		def wrap_plugin_event(lifecycle_event, new_handler):
+			orig_handler = getattr(self._plugin_manager, "on_plugin_" + lifecycle_event)
+
+			def handler(*args, **kwargs):
+				if callable(orig_handler):
+					orig_handler(*args, **kwargs)
+				if callable(new_handler):
+					new_handler(*args, **kwargs)
+
+			return handler
+
 		def on_plugin_event_factory(lifecycle_event):
 			def on_plugin_event(name, plugin):
 				self.on_plugin_event(lifecycle_event, name, plugin)
 			return on_plugin_event
 
-		self._plugin_manager.on_plugin_loaded = on_plugin_event_factory("loaded")
-		self._plugin_manager.on_plugin_unloaded = on_plugin_event_factory("unloaded")
-		self._plugin_manager.on_plugin_activated = on_plugin_event_factory("activated")
-		self._plugin_manager.on_plugin_deactivated = on_plugin_event_factory("deactivated")
-		self._plugin_manager.on_plugin_enabled = on_plugin_event_factory("enabled")
-		self._plugin_manager.on_plugin_disabled = on_plugin_event_factory("disabled")
+		for event in ("loaded", "unloaded", "enabled", "disabled"):
+			wrap_plugin_event(event, on_plugin_event_factory(event))
 
 	def on_plugin_event(self, event, name, plugin):
 		for lifecycle_callback in self._plugin_lifecycle_callbacks[event]:

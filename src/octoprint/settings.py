@@ -720,8 +720,15 @@ class Settings(object):
 		if migrate:
 			self._migrate_config()
 
-	def add_overlay(self, overlay, migrate=False):
+	def load_overlay(self, overlay, migrate=True):
 		config = None
+
+		if callable(overlay):
+			try:
+				overlay = overlay()
+			except:
+				self._logger.exception("Error loading overlay from callable")
+				return
 
 		if isinstance(overlay, basestring):
 			if os.path.exists(overlay) and os.path.isfile(overlay):
@@ -737,7 +744,10 @@ class Settings(object):
 
 		if migrate:
 			self._migrate_config(config)
-		self._map.parents.maps.insert(0, config)
+		return config
+
+	def add_overlay(self, overlay):
+		self._map.maps.insert(1, overlay)
 
 	def _migrate_config(self, config=None):
 		if config is None:
