@@ -529,6 +529,7 @@ function showConfirmationDialog(msg, onacknowledge, options) {
     var proceed = options.proceed || gettext("Proceed");
     var proceedClass = options.proceedClass || "danger";
     var onproceed = options.onproceed || undefined;
+    var dialogClass = options.dialogClass || "";
 
     var modalHeader = $('<a href="javascript:void(0)" class="close" data-dismiss="modal" aria-hidden="true">&times;</a><h3>' + title + '</h3>');
     var modalBody = $('<p>' + message + '</p><p>' + question + '</p>');
@@ -541,6 +542,7 @@ function showConfirmationDialog(msg, onacknowledge, options) {
 
     var modal = $('<div></div>')
         .addClass('modal hide fade')
+        .addClass(dialogClass)
         .append($('<div></div>').addClass('modal-header').append(modalHeader))
         .append($('<div></div>').addClass('modal-body').append(modalBody))
         .append($('<div></div>').addClass('modal-footer').append(cancelButton).append(proceedButton));
