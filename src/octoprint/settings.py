@@ -716,7 +716,7 @@ class Settings(object):
 		if len(self._map.maps) > 2:
 			return self._map.maps[1:-1]
 		else:
-			return {}
+			return []
 
 	@property
 	def _default_map(self):
