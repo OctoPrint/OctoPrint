@@ -491,9 +491,9 @@ class PluginManager(object):
 		cmd.finalize_options()
 
 		self._python_install_dir = cmd.install_lib
-		self._python_prefix = sys.prefix
+		self._python_prefix = os.path.realpath(sys.prefix)
 		self._python_virtual_env = hasattr(sys, "real_prefix") \
-		                           or (hasattr(sys, "base_prefix") and sys.prefix != sys.base_prefix)
+		                           or (hasattr(sys, "base_prefix") and os.path.realpath(sys.prefix) != os.path.realpath(sys.base_prefix))
 
 	@property
 	def plugins(self):
@@ -614,7 +614,7 @@ class PluginManager(object):
 					# of the virtual env, so this check is necessary
 					plugin.managable = os.access(plugin.location, os.W_OK) \
 					                   and (not self._python_virtual_env
-					                        or plugin.location.startswith(self._python_prefix))
+					                        or is_sub_path_of(plugin.location, self._python_prefix))
 
 					plugin.enabled = False
 					result[key] = plugin
@@ -648,7 +648,7 @@ class PluginManager(object):
 	def _import_plugin(self, key, f, filename, description, name=None, version=None, summary=None, author=None, url=None, license=None):
 		try:
 			instance = imp.load_module(key, f, filename, description)
-			return PluginInfo(key, filename, instance, name=name, version=version, description=summary, author=author, url=url, license=license)
+			return PluginInfo(key, os.path.realpath(filename), instance, name=name, version=version, description=summary, author=author, url=url, license=license)
 		except:
 			self.logger.exception("Error loading plugin {key}".format(key=key))
 			return None
@@ -1237,6 +1237,27 @@ class PluginManager(object):
 
 		else:
 			raise ValueError("Invalid hook definition, neither a callable nor a 2-tuple (callback, order): {!r}".format(hook))
+
+
+def is_sub_path_of(path, parent):
+	"""
+	Tests if `path` is a sub path (or identical) to `path`.
+
+	>>> is_sub_path_of("/a/b/c", "/a/b")
+	True
+	>>> is_sub_path_of("/a/b/c", "/a/b2")
+	False
+	>>> is_sub_path_of("/a/b/c", "/b/c")
+	False
+	>>> is_sub_path_of("/foo/bar/../../a/b/c", "/a/b")
+	True
+	>>> is_sub_path_of("/a/b", "/a/b")
+	True
+	"""
+	rel_path = os.path.relpath(os.path.realpath(path),
+	                           os.path.realpath(parent))
+	return not (rel_path == os.pardir or
+	            rel_path.startswith(os.pardir + os.sep))
 
 
 class InstalledEntryPoint(pkginfo.Installed):
