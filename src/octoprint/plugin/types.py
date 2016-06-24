@@ -741,6 +741,16 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
 		"""
 		return None
 
+	def get_ui_preemptive_caching_enabled(self):
+		"""
+		Allows to control whether the view provided by the plugin should be preemptively
+		cached on server startup (default) or not.
+
+		Returns:
+		    bool: Whether to enable preemptive caching or not
+		"""
+		return True
+
 	def get_ui_data_for_preemptive_caching(self):
 		"""
 		Allows defining additional data to be persisted in the preemptive cache configuration, on

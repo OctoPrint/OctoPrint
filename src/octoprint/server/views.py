@@ -37,6 +37,8 @@ _valid_div_re = re.compile("[a-zA-Z_-]+")
 def index():
 	global _templates, _plugin_names, _plugin_vars
 
+	preemptive_cache_enabled = settings().getBoolean(["devel", "cache", "preemptive"])
+
 	# helper to check if wizards are active
 	def wizard_active(templates):
 		return templates is not None and bool(templates["wizard"]["order"])
@@ -116,11 +118,13 @@ def index():
 			files = collect_files()
 			lastmodified = compute_lastmodified(files)
 			lastmodified_ok = util.flask.check_lastmodified(lastmodified)
-			etag_ok = util.flask.check_etag(compute_etag(files, lastmodified))
+			etag_ok = util.flask.check_etag(compute_etag(files=files,
+			                                             lastmodified=lastmodified,
+			                                             additional=cache_key()))
 			return lastmodified_ok and etag_ok
 
 		def validate_cache(cached):
-			etag_different = compute_etag() != cached.get_etag()[0]
+			etag_different = compute_etag(additional=cache_key()) != cached.get_etag()[0]
 			return force_refresh or etag_different
 
 		def collect_files():
@@ -202,8 +206,7 @@ def index():
 		decorated_view = util.flask.conditional(check_etag_and_lastmodified, NOT_MODIFIED)(decorated_view)
 		return decorated_view
 
-	ui_plugins = pluginManager.get_implementations(octoprint.plugin.UiPlugin, sorting_context="UiPlugin.on_ui_render")
-	for plugin in ui_plugins:
+	def plugin_view(plugin):
 		if plugin.will_handle_ui(request):
 			# plugin claims responsibility, let it render the UI
 			cached = get_cached_view(plugin._identifier,
@@ -214,17 +217,18 @@ def index():
 			                         custom_etag=plugin.get_ui_custom_etag,
 			                         custom_lastmodified=plugin.get_ui_custom_lastmodified)
 
-			preemptively_cached = get_preemptively_cached_view(plugin._identifier,
-			                                                   cached,
-			                                                   plugin.get_ui_data_for_preemptive_caching,
-			                                                   plugin.get_ui_additional_request_data_for_preemptive_caching,
-			                                                   plugin.get_ui_additional_unless)
+			if preemptive_cache_enabled and plugin.get_ui_preemptive_caching_enabled():
+				view = get_preemptively_cached_view(plugin._identifier,
+				                                    cached,
+				                                    plugin.get_ui_data_for_preemptive_caching,
+				                                    plugin.get_ui_additional_request_data_for_preemptive_caching,
+				                                    plugin.get_ui_additional_unless)
+			else:
+				view = cached
 
-			response = preemptively_cached(now, request, render_kwargs)
-			if response is not None:
-				break
+			return view(now, request, render_kwargs)
 
-	else:
+	def default_view():
 		wizard = wizard_active(_templates)
 		enable_accesscontrol = userManager.enabled
 		accesscontrol_active = enable_accesscontrol and userManager.hasBeenCustomized()
@@ -254,7 +258,36 @@ def index():
 		                                                   cached,
 		                                                   dict(),
 		                                                   dict())
-		response = preemptively_cached()
+		return preemptively_cached()
+
+	forced_view = None
+	preemptive_cache_environment = preemptiveCache.environment
+	if preemptive_cache_environment is not None and isinstance(preemptive_cache_environment, dict):
+		forced_view = preemptive_cache_environment.get("plugin", "_default")
+
+	if forced_view:
+		# we have view forced by the preemptive cache
+		_logger.debug("Forcing rendering of view {}".format(forced_view))
+		response = None
+		if forced_view != "_default":
+			plugin = pluginManager.get_plugin_info(forced_view, require_enabled=True)
+			if plugin is not None and isinstance(plugin.implementation, octoprint.plugin.UiPlugin):
+				response = plugin_view(plugin.implementation)
+
+		if response is None:
+			return default_view()
+
+	else:
+		# select view from plugins and fall back on default view if no plugin will handle it
+		ui_plugins = pluginManager.get_implementations(octoprint.plugin.UiPlugin, sorting_context="UiPlugin.on_ui_render")
+		for plugin in ui_plugins:
+			identifier = plugin._identifier
+			if plugin.will_handle_ui(request):
+				response = plugin_view(plugin)
+				if response is not None:
+					break
+		else:
+			response = default_view()
 
 	return response
 
