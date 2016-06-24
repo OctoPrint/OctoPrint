@@ -162,7 +162,7 @@ def index():
 				files = collect_files()
 			return _compute_date(files)
 
-		def compute_etag(files=None, lastmodified=None):
+		def compute_etag(files=None, lastmodified=None, additional=None):
 			if callable(custom_etag):
 				try:
 					etag = custom_etag()
@@ -178,6 +178,8 @@ def index():
 			if lastmodified and not isinstance(lastmodified, basestring):
 				from werkzeug.http import http_date
 				lastmodified = http_date(lastmodified)
+			if additional is None:
+				additional = []
 
 			import hashlib
 			hash = hashlib.sha1()
@@ -186,11 +188,13 @@ def index():
 			hash.update(",".join(sorted(files)))
 			if lastmodified:
 				hash.update(lastmodified)
+			for add in additional:
+				hash.update(add)
 			return hash.hexdigest()
 
 		decorated_view = view
 		decorated_view = util.flask.lastmodified(lambda _: compute_lastmodified())(decorated_view)
-		decorated_view = util.flask.etagged(lambda _: compute_etag())(decorated_view)
+		decorated_view = util.flask.etagged(lambda _: compute_etag(additional=cache_key()))(decorated_view)
 		decorated_view = util.flask.cached(timeout=-1,
 		                                   refreshif=validate_cache,
 		                                   key=cache_key,
