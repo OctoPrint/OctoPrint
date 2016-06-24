@@ -419,7 +419,7 @@ class HierarchicalChainMap(ChainMap):
 	def _hierarchy_for_key(cls, key, chain):
 		wrapped_mappings = list()
 		for mapping in chain.maps:
-			if key in mapping:
+			if key in mapping and mapping[key] is not None:
 				wrapped_mappings.append(mapping[key])
 			else:
 				wrapped_mappings.append(dict())
