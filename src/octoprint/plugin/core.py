@@ -493,9 +493,9 @@ class PluginManager(object):
 		cmd.finalize_options()
 
 		self._python_install_dir = cmd.install_lib
-		self._python_prefix = sys.prefix
+		self._python_prefix = os.path.realpath(sys.prefix)
 		self._python_virtual_env = hasattr(sys, "real_prefix") \
-		                           or (hasattr(sys, "base_prefix") and sys.prefix != sys.base_prefix)
+		                           or (hasattr(sys, "base_prefix") and os.path.realpath(sys.prefix) != os.path.realpath(sys.base_prefix))
 
 	@property
 	def plugins(self):
@@ -616,7 +616,11 @@ class PluginManager(object):
 					# of the virtual env, so this check is necessary
 					plugin.managable = os.access(plugin.location, os.W_OK) \
 					                   and (not self._python_virtual_env
-					                        or plugin.location.startswith(self._python_prefix))
+					                        or is_sub_path_of(plugin.location, self._python_prefix)
+											or is_editable_install(self._python_install_dir,
+																   package_name,
+																   module_name,
+																   plugin.location))
 
 					plugin.enabled = False
 					result[key] = plugin
@@ -1256,6 +1260,43 @@ class PluginManager(object):
 
 		else:
 			raise ValueError("Invalid hook definition, neither a callable nor a 2-tuple (callback, order): {!r}".format(hook))
+
+
+def is_sub_path_of(path, parent):
+	"""
+	Tests if `path` is a sub path (or identical) to `path`.
+
+	>>> is_sub_path_of("/a/b/c", "/a/b")
+	True
+	>>> is_sub_path_of("/a/b/c", "/a/b2")
+	False
+	>>> is_sub_path_of("/a/b/c", "/b/c")
+	False
+	>>> is_sub_path_of("/foo/bar/../../a/b/c", "/a/b")
+	True
+	>>> is_sub_path_of("/a/b", "/a/b")
+	True
+	"""
+	rel_path = os.path.relpath(os.path.realpath(path),
+	                           os.path.realpath(parent))
+	return not (rel_path == os.pardir or
+	            rel_path.startswith(os.pardir + os.sep))
+
+
+def is_editable_install(install_dir, package, module, location):
+	package_link = os.path.join(install_dir, "{}.egg-link".format(package))
+	if os.path.isfile(package_link):
+		expected_target = os.path.normcase(os.path.realpath(location))
+		try:
+			with open(package_link) as f:
+				contents = f.readlines()
+			for line in contents:
+				target = os.path.normcase(os.path.realpath(os.path.join(line.strip(), module)))
+				if target == expected_target:
+					return True
+		except:
+			pass
+	return False
 
 
 class InstalledEntryPoint(pkginfo.Installed):

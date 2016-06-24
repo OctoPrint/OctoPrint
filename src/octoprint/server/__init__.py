@@ -752,6 +752,20 @@ class Server(object):
 				entries = reversed(sorted(cache_data[route], key=lambda x: x.get("_count", 0)))
 				for kwargs in entries:
 					plugin = kwargs.get("plugin", None)
+					if plugin:
+						try:
+							plugin_info = pluginManager.get_plugin_info(plugin, require_enabled=True)
+							implementation = plugin_info.implementation
+							if implementation is None or not isinstance(implementation, octoprint.plugin.UiPlugin):
+								self._logger.debug("Plugin {} is not a UiPlugin, preemptive caching makes no sense".format(plugin))
+								continue
+							if not implementation.get_ui_preemptive_caching_enabled():
+								self._logger.debug("Plugin {} has disabled preemptive caching".format(plugin))
+								continue
+						except:
+							self._logger.exception("Error while trying to check if plugin {} has preemptive caching enabled, skipping entry")
+							continue
+
 					additional_request_data = kwargs.get("_additional_request_data", dict())
 					kwargs = dict((k, v) for k, v in kwargs.items() if not k.startswith("_") and not k == "plugin")
 					kwargs.update(additional_request_data)
@@ -761,8 +775,9 @@ class Server(object):
 						else:
 							self._logger.info("Preemptively caching {} for {!r}".format(route, kwargs))
 						builder = EnvironBuilder(**kwargs)
-						with preemptive_cache.disable_access_logging():
-							app(builder.get_environ(), lambda *a, **kw: None)
+						with preemptive_cache.cache_environment(dict(plugin=plugin if plugin is not None else "_default")):
+							with preemptive_cache.disable_access_logging():
+								app(builder.get_environ(), lambda *a, **kw: None)
 					except:
 						self._logger.exception("Error while trying to preemptively cache {} for {!r}".format(route, kwargs))
 
