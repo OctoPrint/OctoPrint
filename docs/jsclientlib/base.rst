@@ -134,9 +134,13 @@
 
    **Example:**
 
-   .. todo::
+   .. code-block:: javascript
 
-      Add example
+      var url = OctoPrint.getBlueprintUrl("myplugin") + "endpoint";
+      OctoPrint.post(url, "a whole lot of data", {"contentType": "application/octet-stream"})
+          .done(function(response) {
+              // do something with the response
+          });
 
    :param string url: URL against which to make the request, relative to base url or absolute
    :param string data: Data to post as request body
@@ -151,9 +155,13 @@
 
    **Example:**
 
-   .. todo::
+   .. code-block:: javascript
 
-      Add example
+      var url = OctoPrint.getBlueprintUrl("myplugin") + "endpoint";
+      OctoPrint.postJson(url, {"someKey": "someValue"})
+          .done(function(response) {
+              // do something with the response
+          });
 
    :param string url: URL against which to make the request, relative to base url or absolute
    :param object data: Data to post as request body after serialization to JSON
@@ -241,7 +249,7 @@
    This should be an object of key/value pairs that are set as field name and value on the `FormData <https://developer.mozilla.org/en/docs/Web/API/FormData>`_
    object that will be used in the request.
 
-   **Example**
+   **Example:**
 
    Uploading a file from a file input element, updating a label with the current upload progress.
 
@@ -272,16 +280,118 @@
 
 .. js:function:: OctoPrint.issueCommand(url, command, payload, opts)
 
+   Issues a command against an OctoPrint command API endpoint.
+
+   OctoPrint contains various API endpoints which follow a specific pattern: The payload of the request body is
+   a JSON object which contains at least one property ``command`` and depending on the provided command additional
+   parameters as further properties for the command. See the :ref:`Issue a file command <sec-api-fileops-filecommand>`
+   for an example of an API endpoint following this pattern.
+
+   Using this function sending commands to such API endpoints becomes a trivial task. The function expects
+   the ``url`` of the endpoint, the ``command`` to send, and optional ``payload`` and additional ``opts``.
+
+   The function will take care of wrapping the ``command`` and the ``payload`` into one JSON object and
+   POSTing that to the endpoint with the correct JSON content type.
+
+   **Example:**
+
+   .. code-block:: javascript
+
+      var url = OctoPrint.getBlueprintUrl("myplugin") + "myendpoint";
+      OctoPrint.issueCommand(url, "mycommand", {"someParameter": "someValue",
+                                                "someOtherParameter": "someOtherValue"})
+          .done(function(response) {
+              // do something with the response
+          });
+
+   :param string url: The URL to ``POST`` the command to
+   :param string command: The command to issue
+   :param object payload: Additional payload data for the command
+   :param object opts: Addtional options for the request
+   :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
+
 .. js:function:: OctoPrint.getSimpleApiUrl(plugin)
+
+   Returns the proper URL for the endpoint of a :class:`~octoprint.plugin.SimpleApiPlugin`, based on the
+   plugin identifier.
+
+   **Example:**
+
+   .. code-block:: javascript
+
+      // prints "api/plugin/myplugin/"
+      console.log(OctoPrint.getSimpleApiUrl("myplugin")
+
+   :param string plugin: The identifier of the plugin for which to return the URL
+   :returns string: The URL to use as endpoint
 
 .. js:function:: OctoPrint.simpleApiGet(plugin, opts)
 
+   Performs a ``GET`` request against the endpoint of a :class:`~octoprint.plugin.SimpleApiPlugin` with
+   identifier ``plugin``.
+
+   .. code-block:: javascript
+
+      OctoPrint.simpleApiGet("myplugin")
+          .done(function(response) {
+              // do something with the response
+          });
+
+   :param string plugin: The identifier of the plugin
+   :param object opts: Addtional options for the request
+   :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
+
 .. js:function:: OctoPrint.simpleApiCommand(plugin, command, payload, opts)
+
+   Performs the API command ``command`` against the endpoint of a :class:`~octoprint.plugin.SimpleApiPlugin` with
+   identifier ``plugin``, including the optional ``payload``.
+
+   **Example:**
+
+   .. code-block:: javascript
+
+      OctoPrint.simpleApiCommand("myplugin", "mycommand", {"someParameter": "someValue",
+                                                           "otherParameter": "otherValue"})
+          .done(function(response) {
+              // do something with the response
+          });
+
+   :param string plugin: The identifier of the plugin
+   :param string command: The command to issue
+   :param object payload: Additional payload data for the command
+   :param object opts: Addtional options for the request
+   :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
 .. js:function:: OctoPrint.getBlueprintUrl(plugin)
 
+   Returns the proper base URL for blueprint endpoints of a :class:`~octoprint.plugin.BlueprintPlugin` with
+   identifier ``plugin``.
+
+   **Example:**
+
+   .. code-block:: javascript
+
+      // prints "plugin/myplugin/"
+      console.log(OctoPrint.getBlueprintUrl("myplugin"));
+
 .. js:function:: OctoPrint.createRejectedDeferred()
+
+   Shortcut for creating a rejected `jQuery Deferred <http://api.jquery.com/category/deferred-object/>`_.
 
 .. js:function:: OctoPrint.createCustomException(name)
 
+   Creates a custom exception class. ``name`` may be either a function in which case it will be used
+   as constructor for the new exception class, or a string, in which case a constructor with proper
+   ``name``, ``message`` and ``stack`` attributes will be created. The class hierarchy will be propery
+   setup to subclass ``Error``.
+
+   **Example:**
+
+   .. code-block:: javascript
+
+      MyCustomException = OctoPrint.createCustomException("MyCustomException");
+      throw new MyCustomException("Something went horribly wrong!");
+
 .. js:class:: OctoPrint.InvalidArgumentError
+
+   Exception to use when functions are called with invalid arguments.
