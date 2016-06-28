@@ -53,7 +53,6 @@ user_permission = Permission(RoleNeed("user"))
 
 # only import the octoprint stuff down here, as it might depend on things defined above to be initialized already
 from octoprint import __version__, __branch__, __display_version__, __revision__
-from octoprint.printer import get_connection_options
 from octoprint.printer.profile import PrinterProfileManager
 from octoprint.printer.standard import Printer
 from octoprint.settings import settings
@@ -193,7 +192,6 @@ class Server(object):
 		storage_managers = dict()
 		storage_managers[octoprint.filemanager.FileDestinations.LOCAL] = octoprint.filemanager.storage.LocalFileStorage(self._settings.getBaseFolder("uploads"))
 		fileManager = octoprint.filemanager.FileManager(analysisQueue, slicingManager, printerProfileManager, initial_storage_managers=storage_managers)
-		printer = Printer(fileManager, analysisQueue, printerProfileManager)
 		appSessionManager = util.flask.AppSessionManager()
 		pluginLifecycleManager = LifecycleManager(pluginManager)
 		preemptiveCache = PreemptiveCache(os.path.join(self._settings.getBaseFolder("data"), "preemptive_cache_config.yaml"))
@@ -203,29 +201,48 @@ class Server(object):
 		try:
 			clazz = octoprint.util.get_class(userManagerName)
 			userManager = clazz()
-		except AttributeError, e:
+		except AttributeError as e:
 			self._logger.exception("Could not instantiate user manager {}, falling back to FilebasedUserManager!".format(userManagerName))
 			userManager = octoprint.users.FilebasedUserManager()
 		finally:
 			userManager.enabled = self._settings.getBoolean(["accessControl", "enabled"])
 
+		components = dict(
+			plugin_manager=pluginManager,
+			printer_profile_manager=printerProfileManager,
+			event_bus=eventManager,
+			analysis_queue=analysisQueue,
+			slicing_manager=slicingManager,
+			file_manager=fileManager,
+			app_session_manager=appSessionManager,
+			plugin_lifecycle_manager=pluginLifecycleManager,
+			user_manager=userManager,
+			preemptive_cache=preemptiveCache
+		)
+
+		# create printer instance
+		printer_factories = pluginManager.get_hooks("octoprint.printer.factory")
+		for name, factory in printer_factories.items():
+			try:
+				printer = factory(components)
+				if printer is not None:
+					self._logger.debug("Created printer instance from factory {}".format(name))
+					break
+			except:
+				self._logger.exception("Error while creating printer instance from factory {}".format(name))
+		else:
+			printer = Printer(fileManager, analysisQueue, printerProfileManager)
+		components.update(dict(printer=printer))
+
 		def octoprint_plugin_inject_factory(name, implementation):
 			if not isinstance(implementation, octoprint.plugin.OctoPrintPlugin):
 				return None
-			return dict(
-				plugin_manager=pluginManager,
-				printer_profile_manager=printerProfileManager,
-				event_bus=eventManager,
-				analysis_queue=analysisQueue,
-				slicing_manager=slicingManager,
-				file_manager=fileManager,
-				printer=printer,
-				app_session_manager=appSessionManager,
-				plugin_lifecycle_manager=pluginLifecycleManager,
-				data_folder=os.path.join(self._settings.getBaseFolder("data"), name),
-				user_manager=userManager,
-				preemptive_cache=preemptiveCache
-			)
+			props = dict()
+			props.update(components)
+			props.update(dict(
+				data_folder=os.path.join(self._settings.getBaseFolder("data"), name)
+			))
+			return props
 
 		def settings_plugin_inject_factory(name, implementation):
 			plugin_settings = octoprint.plugin.plugin_settings_for_settings_plugin(name, implementation)
@@ -450,7 +467,7 @@ class Server(object):
 		if self._settings.getBoolean(["serial", "autoconnect"]):
 			(port, baudrate) = self._settings.get(["serial", "port"]), self._settings.getInt(["serial", "baudrate"])
 			printer_profile = printerProfileManager.get_default()
-			connectionOptions = get_connection_options()
+			connectionOptions = printer.__class__.get_connection_options()
 			if port in connectionOptions["ports"]:
 				printer.connect(port=port, baudrate=baudrate, profile=printer_profile["id"] if "id" in printer_profile else "_default")
 
@@ -733,6 +750,24 @@ class Server(object):
 				entries = reversed(sorted(cache_data[route], key=lambda x: x.get("_count", 0)))
 				for kwargs in entries:
 					plugin = kwargs.get("plugin", None)
+					if plugin:
+						try:
+							plugin_info = pluginManager.get_plugin_info(plugin, require_enabled=True)
+							if plugin_info is None:
+								self._logger.debug("Plugin {} is not installed or enabled, preemptive caching makes no sense".format(plugin))
+								continue
+
+							implementation = plugin_info.implementation
+							if implementation is None or not isinstance(implementation, octoprint.plugin.UiPlugin):
+								self._logger.debug("Plugin {} is not a UiPlugin, preemptive caching makes no sense".format(plugin))
+								continue
+							if not implementation.get_ui_preemptive_caching_enabled():
+								self._logger.debug("Plugin {} has disabled preemptive caching".format(plugin))
+								continue
+						except:
+							self._logger.exception("Error while trying to check if plugin {} has preemptive caching enabled, skipping entry")
+							continue
+
 					additional_request_data = kwargs.get("_additional_request_data", dict())
 					kwargs = dict((k, v) for k, v in kwargs.items() if not k.startswith("_") and not k == "plugin")
 					kwargs.update(additional_request_data)
@@ -742,8 +777,9 @@ class Server(object):
 						else:
 							self._logger.info("Preemptively caching {} for {!r}".format(route, kwargs))
 						builder = EnvironBuilder(**kwargs)
-						with preemptive_cache.disable_access_logging():
-							app(builder.get_environ(), lambda *a, **kw: None)
+						with preemptive_cache.cache_environment(dict(plugin=plugin if plugin is not None else "_default")):
+							with preemptive_cache.disable_access_logging():
+								app(builder.get_environ(), lambda *a, **kw: None)
 					except:
 						self._logger.exception("Error while trying to preemptively cache {} for {!r}".format(route, kwargs))
 
@@ -1146,17 +1182,24 @@ class LifecycleManager(object):
 		self._plugin_lifecycle_callbacks = defaultdict(list)
 		self._logger = logging.getLogger(__name__)
 
+		def wrap_plugin_event(lifecycle_event, new_handler):
+			orig_handler = getattr(self._plugin_manager, "on_plugin_" + lifecycle_event)
+
+			def handler(*args, **kwargs):
+				if callable(orig_handler):
+					orig_handler(*args, **kwargs)
+				if callable(new_handler):
+					new_handler(*args, **kwargs)
+
+			return handler
+
 		def on_plugin_event_factory(lifecycle_event):
 			def on_plugin_event(name, plugin):
 				self.on_plugin_event(lifecycle_event, name, plugin)
 			return on_plugin_event
 
-		self._plugin_manager.on_plugin_loaded = on_plugin_event_factory("loaded")
-		self._plugin_manager.on_plugin_unloaded = on_plugin_event_factory("unloaded")
-		self._plugin_manager.on_plugin_activated = on_plugin_event_factory("activated")
-		self._plugin_manager.on_plugin_deactivated = on_plugin_event_factory("deactivated")
-		self._plugin_manager.on_plugin_enabled = on_plugin_event_factory("enabled")
-		self._plugin_manager.on_plugin_disabled = on_plugin_event_factory("disabled")
+		for event in ("loaded", "unloaded", "enabled", "disabled"):
+			wrap_plugin_event(event, on_plugin_event_factory(event))
 
 	def on_plugin_event(self, event, name, plugin):
 		for lifecycle_callback in self._plugin_lifecycle_callbacks[event]:

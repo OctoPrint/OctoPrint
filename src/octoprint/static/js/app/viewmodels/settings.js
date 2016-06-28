@@ -131,6 +131,7 @@ $(function() {
         self.feature_keyboardControl = ko.observable(undefined);
         self.feature_pollWatched = ko.observable(undefined);
         self.feature_ignoreIdenticalResends = ko.observable(undefined);
+        self.feature_modelSizeDetection = ko.observable(undefined);
 
         self.serial_port = ko.observable();
         self.serial_baudrate = ko.observable();

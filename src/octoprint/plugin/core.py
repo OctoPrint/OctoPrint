@@ -134,6 +134,7 @@ class PluginInfo(object):
 		self.bundled = False
 		self.loaded = False
 		self.managable = True
+		self.needs_restart = False
 
 		self._name = name
 		self._version = version
@@ -472,6 +473,9 @@ class PluginManager(object):
 		self.on_plugin_disabled = lambda *args, **kwargs: None
 		self.on_plugin_implementations_initialized = lambda *args, **kwargs: None
 
+		self.on_plugins_loaded = lambda *args, **kwargs: None
+		self.on_plugins_enabled = lambda *args, **kwargs: None
+
 		self.registered_clients = []
 
 		self.marked_plugins = defaultdict(list)
@@ -479,8 +483,6 @@ class PluginManager(object):
 		self._python_install_dir = None
 		self._python_virtual_env = False
 		self._detect_python_environment()
-
-		self.reload_plugins(startup=True, initialize_implementations=False)
 
 	def _detect_python_environment(self):
 		from distutils.command.install import install as cmd_install
@@ -491,9 +493,9 @@ class PluginManager(object):
 		cmd.finalize_options()
 
 		self._python_install_dir = cmd.install_lib
-		self._python_prefix = sys.prefix
+		self._python_prefix = os.path.realpath(sys.prefix)
 		self._python_virtual_env = hasattr(sys, "real_prefix") \
-		                           or (hasattr(sys, "base_prefix") and sys.prefix != sys.base_prefix)
+		                           or (hasattr(sys, "base_prefix") and os.path.realpath(sys.prefix) != os.path.realpath(sys.base_prefix))
 
 	@property
 	def plugins(self):
@@ -614,7 +616,11 @@ class PluginManager(object):
 					# of the virtual env, so this check is necessary
 					plugin.managable = os.access(plugin.location, os.W_OK) \
 					                   and (not self._python_virtual_env
-					                        or plugin.location.startswith(self._python_prefix))
+					                        or is_sub_path_of(plugin.location, self._python_prefix)
+											or is_editable_install(self._python_install_dir,
+																   package_name,
+																   module_name,
+																   plugin.location))
 
 					plugin.enabled = False
 					result[key] = plugin
@@ -667,15 +673,32 @@ class PluginManager(object):
 		plugins = self.find_plugins(existing=dict((k, v) for k, v in self.plugins.items() if not k in force_reload))
 		self.disabled_plugins.update(plugins)
 
+		# 1st pass: loading the plugins
 		for name, plugin in plugins.items():
 			try:
 				self.load_plugin(name, plugin, startup=startup, initialize_implementation=initialize_implementations)
-				if not self._is_plugin_disabled(name):
+			except PluginNeedsRestart:
+				pass
+			except PluginLifecycleException as e:
+				self.logger.info(str(e))
+
+		self.on_plugins_loaded(startup=startup,
+							   initialize_implementations=initialize_implementations,
+							   force_reload=force_reload)
+
+		# 2nd pass: enabling those plugins that need enabling
+		for name, plugin in plugins.items():
+			try:
+				if plugin.loaded and not self._is_plugin_disabled(name):
 					self.enable_plugin(name, plugin=plugin, initialize_implementation=initialize_implementations, startup=startup)
 			except PluginNeedsRestart:
 				pass
 			except PluginLifecycleException as e:
 				self.logger.info(str(e))
+
+		self.on_plugins_enabled(startup=startup,
+								initialize_implementations=initialize_implementations,
+								force_reload=force_reload)
 
 		if len(self.enabled_plugins) <= 0:
 			self.logger.info("No plugins found")
@@ -882,7 +905,7 @@ class PluginManager(object):
 					pass
 
 	def is_restart_needing_plugin(self, plugin):
-		return self.has_restart_needing_implementation(plugin) or self.has_restart_needing_hooks(plugin)
+		return plugin.needs_restart or self.has_restart_needing_implementation(plugin) or self.has_restart_needing_hooks(plugin)
 
 	def has_restart_needing_implementation(self, plugin):
 		if not plugin.implementation:
@@ -1237,6 +1260,43 @@ class PluginManager(object):
 
 		else:
 			raise ValueError("Invalid hook definition, neither a callable nor a 2-tuple (callback, order): {!r}".format(hook))
+
+
+def is_sub_path_of(path, parent):
+	"""
+	Tests if `path` is a sub path (or identical) to `path`.
+
+	>>> is_sub_path_of("/a/b/c", "/a/b")
+	True
+	>>> is_sub_path_of("/a/b/c", "/a/b2")
+	False
+	>>> is_sub_path_of("/a/b/c", "/b/c")
+	False
+	>>> is_sub_path_of("/foo/bar/../../a/b/c", "/a/b")
+	True
+	>>> is_sub_path_of("/a/b", "/a/b")
+	True
+	"""
+	rel_path = os.path.relpath(os.path.realpath(path),
+	                           os.path.realpath(parent))
+	return not (rel_path == os.pardir or
+	            rel_path.startswith(os.pardir + os.sep))
+
+
+def is_editable_install(install_dir, package, module, location):
+	package_link = os.path.join(install_dir, "{}.egg-link".format(package))
+	if os.path.isfile(package_link):
+		expected_target = os.path.normcase(os.path.realpath(location))
+		try:
+			with open(package_link) as f:
+				contents = f.readlines()
+			for line in contents:
+				target = os.path.normcase(os.path.realpath(os.path.join(line.strip(), module)))
+				if target == expected_target:
+					return True
+		except:
+			pass
+	return False
 
 
 class InstalledEntryPoint(pkginfo.Installed):

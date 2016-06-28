@@ -383,10 +383,13 @@ class PreemptiveCache(object):
 
 	def __init__(self, cachefile):
 		self.cachefile = cachefile
+		self.environment = None
 
-		self._lock = threading.RLock()
 		self._logger = logging.getLogger(__name__ + "." + self.__class__.__name__)
 		self._log_access = True
+
+		self._lock = threading.RLock()
+		self._environment_lock = threading.RLock()
 
 	def record(self, data, unless=None):
 		if callable(unless) and unless():
@@ -406,6 +409,13 @@ class PreemptiveCache(object):
 			self._log_access = False
 			yield
 			self._log_access = True
+
+	@contextlib.contextmanager
+	def cache_environment(self, environment):
+		with self._environment_lock:
+			self.environment = environment
+			yield
+			self.environment = None
 
 	def clean_all_data(self, cleanup_function):
 		assert callable(cleanup_function)
@@ -585,13 +595,13 @@ def conditional(condition, met):
 
 def check_etag(etag):
 	return flask.request.method in ("GET", "HEAD") and \
-	       flask.request.if_none_match and \
+	       flask.request.if_none_match is not None and \
 	       etag in flask.request.if_none_match
 
 
 def check_lastmodified(lastmodified):
 	return flask.request.method in ("GET", "HEAD") and \
-	       flask.request.if_modified_since and \
+	       flask.request.if_modified_since is not None and \
 	       lastmodified >= flask.request.if_modified_since
 
 

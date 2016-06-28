@@ -216,10 +216,6 @@ Progress information
 File related
 ============
 
-.. todo::
-
-   Update to reflect enhanced data now available.
-
 .. _sec-api-datamodel-files-file:
 
 File information
@@ -242,6 +238,11 @@ File information
      - String
      - Type of file. ``model`` or ``machinecode``. Or ``folder`` if it's a folder, in which case the ``children``
        node will be populated
+   * - ``typePath``
+     - 1
+     - list
+     - Path to type of file in extension tree. E.g. ``["model", "stl"]`` for ``.stl`` files, or ``["machinecode", "gcode"]``
+       for ``.gcode`` files. ``["folder"]`` for folders.
 
 Additional properties depend on ``type``. For a ``type`` value of ``folder``, see "Folders". For any other value
 see "Files".

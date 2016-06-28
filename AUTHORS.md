@@ -68,6 +68,7 @@ date of first contribution):
   * [Philipp Baum](https://github.com/philphilphil)
   * [Kyle Evans](https://github.com/kevans91)
   * [Javier Martínez Arrieta](https://github.com/Javierma)
+  * ["MirceaDan"](https://github.com/ByReaL)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and

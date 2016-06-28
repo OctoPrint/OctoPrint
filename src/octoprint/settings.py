@@ -29,8 +29,14 @@ import yaml
 import logging
 import re
 import uuid
+import copy
 
-from octoprint.util import atomic_write, is_hidden_path
+try:
+	from collections import ChainMap
+except ImportError:
+	from chainmap import ChainMap
+
+from octoprint.util import atomic_write, is_hidden_path, dict_merge
 
 _APPNAME = "OctoPrint"
 
@@ -175,7 +181,8 @@ default_settings = {
 		"pollWatched": False,
 		"ignoreIdenticalResends": False,
 		"identicalResendsCountdown": 7,
-		"supportFAsCommand": False
+		"supportFAsCommand": False,
+		"modelSizeDetection": True
 	},
 	"folder": {
 		"uploads": None,
@@ -336,6 +343,102 @@ class NoSuchSettingsPath(BaseException):
 	pass
 
 
+class HierarchicalChainMap(ChainMap):
+
+	def deep_dict(self, root=None):
+		if root is None:
+			root = self
+
+		result = dict()
+		for key, value in root.items():
+			if isinstance(value, dict):
+				result[key] = self.deep_dict(root=self.__class__._get_next(key, root))
+			else:
+				result[key] = value
+		return result
+
+	def has_path(self, path, only_local=False, only_defaults=False):
+		if only_defaults:
+			current = self.parents
+		elif only_local:
+			current = self.__class__(self.maps[0])
+		else:
+			current = self
+
+		try:
+			for key in path[:-1]:
+				value = current[key]
+				if isinstance(value, dict):
+					current = self.__class__._get_next(key, current, only_local=only_local)
+				else:
+					return False
+			return path[-1] in current
+		except KeyError:
+			return False
+
+	def get_by_path(self, path, only_local=False, only_defaults=False):
+		if only_defaults:
+			current = self.parents
+		elif only_local:
+			current = self.__class__(self.maps[0])
+		else:
+			current = self
+
+		for key in path[:-1]:
+			value = current[key]
+			if isinstance(value, dict):
+				current = self.__class__._get_next(key, current, only_local=only_local)
+			else:
+				raise KeyError(key)
+
+		return current[path[-1]]
+
+	def set_by_path(self, path, value):
+		current = self
+
+		for key in path[:-1]:
+			if key not in current.maps[0]:
+				current.maps[0][key] = dict()
+			if not isinstance(current[key], dict):
+				raise KeyError(key)
+			current = self.__class__._hierarchy_for_key(key, current)
+
+		current[path[-1]] = value
+
+	def del_by_path(self, path):
+		if not path:
+			raise ValueError("Invalid path")
+
+		current = self
+
+		for key in path[:-1]:
+			if not isinstance(current[key], dict):
+				raise KeyError(key)
+			current = self.__class__._hierarchy_for_key(key, current)
+
+		del current[path[-1]]
+
+
+	@classmethod
+	def _hierarchy_for_key(cls, key, chain):
+		wrapped_mappings = list()
+		for mapping in chain.maps:
+			if key in mapping and mapping[key] is not None:
+				wrapped_mappings.append(mapping[key])
+			else:
+				wrapped_mappings.append(dict())
+		return HierarchicalChainMap(*wrapped_mappings)
+
+	@classmethod
+	def _get_next(cls, key, node, only_local=False):
+		if isinstance(node, dict):
+			return node[key]
+		elif only_local and not key in node.maps[0]:
+			raise KeyError(key)
+		else:
+			return cls._hierarchy_for_key(key, node)
+
+
 class Settings(object):
 	"""
 	The :class:`Settings` class allows managing all of OctoPrint's settings. It takes care of initializing the settings
@@ -392,6 +495,8 @@ class Settings(object):
 		self._logger = logging.getLogger(__name__)
 
 		self._basedir = None
+
+		self._map = HierarchicalChainMap(dict(), default_settings)
 
 		self._config = None
 		self._dirty = False
@@ -581,8 +686,7 @@ class Settings(object):
 
 	@property
 	def effective(self):
-		import octoprint.util
-		return octoprint.util.dict_merge(default_settings, self._config)
+		return self._map.deep_dict()
 
 	@property
 	def effective_yaml(self):
@@ -593,15 +697,48 @@ class Settings(object):
 	def effective_hash(self):
 		import hashlib
 		hash = hashlib.md5()
-		hash.update(repr(self.effective))
+		hash.update(self.effective_yaml)
 		return hash.hexdigest()
+
+	@property
+	def config_yaml(self):
+		import yaml
+		return yaml.safe_dump(self._config)
 
 	@property
 	def config_hash(self):
 		import hashlib
 		hash = hashlib.md5()
-		hash.update(repr(self._config))
+		hash.update(self.config_yaml)
 		return hash.hexdigest()
+
+	@property
+	def _config(self):
+		return self._map.maps[0]
+
+	@_config.setter
+	def _config(self, value):
+		self._map.maps[0] = value
+
+	@property
+	def _overlay_maps(self):
+		if len(self._map.maps) > 2:
+			return self._map.maps[1:-1]
+		else:
+			return []
+
+	@property
+	def _default_map(self):
+		return self._map.maps[-1]
+
+	@property
+	def last_modified(self):
+		"""
+		Returns:
+		    int: The last modification time of the configuration file.
+		"""
+		stat = os.stat(self._configfile)
+		return stat.st_mtime
 
 	#~~ load and save
 
@@ -612,12 +749,44 @@ class Settings(object):
 				self._mtime = self.last_modified
 		# changed from else to handle cases where the file exists, but is empty / 0 bytes
 		if not self._config:
-			self._config = {}
+			self._config = dict()
 
 		if migrate:
 			self._migrate_config()
 
-	def _migrate_config(self):
+	def load_overlay(self, overlay, migrate=True):
+		config = None
+
+		if callable(overlay):
+			try:
+				overlay = overlay(self)
+			except:
+				self._logger.exception("Error loading overlay from callable")
+				return
+
+		if isinstance(overlay, basestring):
+			if os.path.exists(overlay) and os.path.isfile(overlay):
+				with open(overlay, "r") as f:
+					config = yaml.safe_load(f)
+		elif isinstance(overlay, dict):
+			config = overlay
+		else:
+			raise ValueError("Overlay must be either a path to a yaml file or a dictionary")
+
+		if not isinstance(config, dict):
+			raise ValueError("Configuration data must be a dict but is a {}".format(config.__class__))
+
+		if migrate:
+			self._migrate_config(config)
+		return config
+
+	def add_overlay(self, overlay):
+		self._map.maps.insert(1, overlay)
+
+	def _migrate_config(self, config=None):
+		if config is None:
+			config = self._config
+
 		dirty = False
 
 		migrators = (
@@ -628,20 +797,20 @@ class Settings(object):
 		)
 
 		for migrate in migrators:
-			dirty = migrate() or dirty
+			dirty = migrate(config) or dirty
 		if dirty:
 			self.save(force=True)
 
-	def _migrate_gcode_scripts(self):
+	def _migrate_gcode_scripts(self, config):
 		"""
 		Migrates an old development version of gcode scripts to the new template based format.
 		"""
 
 		dirty = False
-		if "scripts" in self._config:
-			if "gcode" in self._config["scripts"]:
-				if "templates" in self._config["scripts"]["gcode"]:
-					del self._config["scripts"]["gcode"]["templates"]
+		if "scripts" in config:
+			if "gcode" in config["scripts"]:
+				if "templates" in config["scripts"]["gcode"]:
+					del config["scripts"]["gcode"]["templates"]
 
 				replacements = dict(
 					disable_steppers="M84",
@@ -650,21 +819,21 @@ class Settings(object):
 					disable_fan="M106 S0"
 				)
 
-				for name, script in self._config["scripts"]["gcode"].items():
+				for name, script in config["scripts"]["gcode"].items():
 					self.saveScript("gcode", name, script.format(**replacements))
-			del self._config["scripts"]
+			del config["scripts"]
 			dirty = True
 		return dirty
 
-	def _migrate_printer_parameters(self):
+	def _migrate_printer_parameters(self, config):
 		"""
 		Migrates the old "printer > parameters" data structure to the new printer profile mechanism.
 		"""
-		default_profile = self._config["printerProfiles"]["defaultProfile"] if "printerProfiles" in self._config and "defaultProfile" in self._config["printerProfiles"] else dict()
+		default_profile = config["printerProfiles"]["defaultProfile"] if "printerProfiles" in config and "defaultProfile" in config["printerProfiles"] else dict()
 		dirty = False
 
-		if "printerParameters" in self._config:
-			printer_parameters = self._config["printerParameters"]
+		if "printerParameters" in config:
+			printer_parameters = config["printerParameters"]
 
 			if "movementSpeed" in printer_parameters or "invertAxes" in printer_parameters:
 				default_profile["axes"] = dict(x=dict(), y=dict(), z=dict(), e=dict())
@@ -672,12 +841,12 @@ class Settings(object):
 					for axis in ("x", "y", "z", "e"):
 						if axis in printer_parameters["movementSpeed"]:
 							default_profile["axes"][axis]["speed"] = printer_parameters["movementSpeed"][axis]
-					del self._config["printerParameters"]["movementSpeed"]
+					del config["printerParameters"]["movementSpeed"]
 				if "invertedAxes" in printer_parameters:
 					for axis in ("x", "y", "z", "e"):
 						if axis in printer_parameters["invertedAxes"]:
 							default_profile["axes"][axis]["inverted"] = True
-					del self._config["printerParameters"]["invertedAxes"]
+					del config["printerParameters"]["invertedAxes"]
 
 			if "numExtruders" in printer_parameters or "extruderOffsets" in printer_parameters:
 				if not "extruder" in default_profile:
@@ -685,14 +854,14 @@ class Settings(object):
 
 				if "numExtruders" in printer_parameters:
 					default_profile["extruder"]["count"] = printer_parameters["numExtruders"]
-					del self._config["printerParameters"]["numExtruders"]
+					del config["printerParameters"]["numExtruders"]
 				if "extruderOffsets" in printer_parameters:
 					extruder_offsets = []
 					for offset in printer_parameters["extruderOffsets"]:
 						if "x" in offset and "y" in offset:
 							extruder_offsets.append((offset["x"], offset["y"]))
 					default_profile["extruder"]["offsets"] = extruder_offsets
-					del self._config["printerParameters"]["extruderOffsets"]
+					del config["printerParameters"]["extruderOffsets"]
 
 			if "bedDimensions" in printer_parameters:
 				bed_dimensions = printer_parameters["bedDimensions"]
@@ -709,49 +878,49 @@ class Settings(object):
 						default_profile["volume"]["width"] = bed_dimensions["x"]
 					if "y" in bed_dimensions:
 						default_profile["volume"]["depth"] = bed_dimensions["y"]
-				del self._config["printerParameters"]["bedDimensions"]
+				del config["printerParameters"]["bedDimensions"]
 
 			dirty = True
 
 		if dirty:
-			if not "printerProfiles" in self._config:
-				self._config["printerProfiles"] = dict()
-			self._config["printerProfiles"]["defaultProfile"] = default_profile
+			if not "printerProfiles" in config:
+				config["printerProfiles"] = dict()
+			config["printerProfiles"]["defaultProfile"] = default_profile
 		return dirty
 
-	def _migrate_reverse_proxy_config(self):
+	def _migrate_reverse_proxy_config(self, config):
 		"""
 		Migrates the old "server > baseUrl" and "server > scheme" configuration entries to
 		"server > reverseProxy > prefixFallback" and "server > reverseProxy > schemeFallback".
 		"""
-		if "server" in self._config.keys() and ("baseUrl" in self._config["server"] or "scheme" in self._config["server"]):
+		if "server" in config.keys() and ("baseUrl" in config["server"] or "scheme" in config["server"]):
 			prefix = ""
-			if "baseUrl" in self._config["server"]:
-				prefix = self._config["server"]["baseUrl"]
-				del self._config["server"]["baseUrl"]
+			if "baseUrl" in config["server"]:
+				prefix = config["server"]["baseUrl"]
+				del config["server"]["baseUrl"]
 
 			scheme = ""
-			if "scheme" in self._config["server"]:
-				scheme = self._config["server"]["scheme"]
-				del self._config["server"]["scheme"]
+			if "scheme" in config["server"]:
+				scheme = config["server"]["scheme"]
+				del config["server"]["scheme"]
 
-			if not "reverseProxy" in self._config["server"] or not isinstance(self._config["server"]["reverseProxy"], dict):
-				self._config["server"]["reverseProxy"] = dict()
+			if not "reverseProxy" in config["server"] or not isinstance(config["server"]["reverseProxy"], dict):
+				config["server"]["reverseProxy"] = dict()
 			if prefix:
-				self._config["server"]["reverseProxy"]["prefixFallback"] = prefix
+				config["server"]["reverseProxy"]["prefixFallback"] = prefix
 			if scheme:
-				self._config["server"]["reverseProxy"]["schemeFallback"] = scheme
+				config["server"]["reverseProxy"]["schemeFallback"] = scheme
 			self._logger.info("Migrated reverse proxy configuration to new structure")
 			return True
 		else:
 			return False
 
-	def _migrate_event_config(self):
+	def _migrate_event_config(self, config):
 		"""
 		Migrates the old event configuration format of type "events > gcodeCommandTrigger" and
 		"event > systemCommandTrigger" to the new events format.
 		"""
-		if "events" in self._config.keys() and ("gcodeCommandTrigger" in self._config["events"] or "systemCommandTrigger" in self._config["events"]):
+		if "events" in config.keys() and ("gcodeCommandTrigger" in config["events"] or "systemCommandTrigger" in config["events"]):
 			self._logger.info("Migrating config (event subscriptions)...")
 
 			# migrate event hooks to new format
@@ -793,12 +962,12 @@ class Settings(object):
 				return event, command
 
 			disableSystemCommands = False
-			if "systemCommandTrigger" in self._config["events"] and "enabled" in self._config["events"]["systemCommandTrigger"]:
-				disableSystemCommands = not self._config["events"]["systemCommandTrigger"]["enabled"]
+			if "systemCommandTrigger" in config["events"] and "enabled" in config["events"]["systemCommandTrigger"]:
+				disableSystemCommands = not config["events"]["systemCommandTrigger"]["enabled"]
 
 			disableGcodeCommands = False
-			if "gcodeCommandTrigger" in self._config["events"] and "enabled" in self._config["events"]["gcodeCommandTrigger"]:
-				disableGcodeCommands = not self._config["events"]["gcodeCommandTrigger"]["enabled"]
+			if "gcodeCommandTrigger" in config["events"] and "enabled" in config["events"]["gcodeCommandTrigger"]:
+				disableGcodeCommands = not config["events"]["gcodeCommandTrigger"]["enabled"]
 
 			disableAllCommands = disableSystemCommands and disableGcodeCommands
 			newEvents = {
@@ -806,8 +975,8 @@ class Settings(object):
 				"subscriptions": []
 			}
 
-			if "systemCommandTrigger" in self._config["events"] and "subscriptions" in self._config["events"]["systemCommandTrigger"]:
-				for trigger in self._config["events"]["systemCommandTrigger"]["subscriptions"]:
+			if "systemCommandTrigger" in config["events"] and "subscriptions" in config["events"]["systemCommandTrigger"]:
+				for trigger in config["events"]["systemCommandTrigger"]["subscriptions"]:
 					if not ("event" in trigger and "command" in trigger):
 						continue
 
@@ -818,8 +987,8 @@ class Settings(object):
 					newTrigger["event"], newTrigger["command"] = migrateEventHook(trigger["event"], trigger["command"])
 					newEvents["subscriptions"].append(newTrigger)
 
-			if "gcodeCommandTrigger" in self._config["events"] and "subscriptions" in self._config["events"]["gcodeCommandTrigger"]:
-				for trigger in self._config["events"]["gcodeCommandTrigger"]["subscriptions"]:
+			if "gcodeCommandTrigger" in config["events"] and "subscriptions" in config["events"]["gcodeCommandTrigger"]:
+				for trigger in config["events"]["gcodeCommandTrigger"]["subscriptions"]:
 					if not ("event" in trigger and "command" in trigger):
 						continue
 
@@ -831,7 +1000,7 @@ class Settings(object):
 					newTrigger["command"] = newTrigger["command"].split(",")
 					newEvents["subscriptions"].append(newTrigger)
 
-			self._config["events"] = newEvents
+			config["events"] = newEvents
 			self._logger.info("Migrated %d event subscriptions to new format and structure" % len(newEvents["subscriptions"]))
 			return True
 		else:
@@ -853,74 +1022,85 @@ class Settings(object):
 			self.load()
 			return True
 
-	@property
-	def last_modified(self):
-		"""
-		Returns:
-		    int: The last modification time of the configuration file.
-		"""
-		stat = os.stat(self._configfile)
-		return stat.st_mtime
-
 	##~~ Internal getter
 
-	def _get_value(self, path, asdict=False, config=None, defaults=None, preprocessors=None, merged=False, incl_defaults=True):
-		import octoprint.util as util
+	def _get_by_path(self, path, config):
+		current = config
+		for key in path:
+			if key not in current:
+				raise NoSuchSettingsPath()
+			current = current[key]
+		return current
 
-		if len(path) == 0:
+	def _get_value(self, path, asdict=False, config=None, defaults=None, preprocessors=None, merged=False, incl_defaults=True, do_copy=True):
+		if not path:
 			raise NoSuchSettingsPath()
 
-		if config is None:
-			config = self._config
-		if defaults is None:
-			defaults = default_settings
-		if preprocessors is None:
-			preprocessors = self._get_preprocessors
+		if config is not None or defaults is not None:
+			if config is None:
+				config = self._config
 
-		while len(path) > 1:
-			key = path.pop(0)
-			if key in config and key in defaults:
-				config = config[key]
-				defaults = defaults[key]
-			elif incl_defaults and key in defaults:
-				config = {}
-				defaults = defaults[key]
-			else:
-				raise NoSuchSettingsPath()
+			if defaults is None:
+				defaults = dict(self._map.parents)
 
-			if preprocessors and isinstance(preprocessors, dict) and key in preprocessors:
-				preprocessors = preprocessors[key]
-
-
-		k = path.pop(0)
-		if not isinstance(k, (list, tuple)):
-			keys = [k]
+			# mappings: provided config + any intermediary parents + provided defaults + regular defaults
+			mappings = [config] + self._overlay_maps + [defaults, self._default_map]
+			chain = HierarchicalChainMap(*mappings)
 		else:
-			keys = k
+			chain = self._map
+
+		preprocessor = None
+		if preprocessors is not None:
+			try:
+				preprocessor = self._get_by_path(path, preprocessors)
+			except NoSuchSettingsPath:
+				pass
+
+		parent_path = path[:-1]
+		last = path[-1]
+
+		if not isinstance(last, (list, tuple)):
+			keys = [last]
+		else:
+			keys = last
 
 		if asdict:
-			results = {}
+			results = dict()
 		else:
-			results = []
+			results = list()
+
 		for key in keys:
-			if key in config:
-				value = config[key]
-				if merged and key in defaults:
-					value = util.dict_merge(defaults[key], value)
-			elif incl_defaults and key in defaults:
-				value = defaults[key]
-			else:
+			try:
+				value = chain.get_by_path(parent_path + [key], only_local=not incl_defaults)
+			except KeyError:
 				raise NoSuchSettingsPath()
 
-			if preprocessors and isinstance(preprocessors, dict) and key in preprocessors and callable(preprocessors[key]):
-				value = preprocessors[key](value)
+			if isinstance(value, dict) and merged:
+				try:
+					default_value = chain.get_by_path(parent_path + [key], only_defaults=True)
+					if default_value is not None:
+						value = dict_merge(default_value, value)
+				except KeyError:
+					raise NoSuchSettingsPath()
+
+			if preprocessors is not None:
+				try:
+					preprocessor = self._get_by_path(path, preprocessors)
+				except:
+					pass
+
+				if callable(preprocessor):
+					value = preprocessor(value)
+
+			if do_copy:
+				value = copy.deepcopy(value)
 
 			if asdict:
 				results[key] = value
 			else:
 				results.append(value)
 
-		if not isinstance(k, (list, tuple)):
+		if not isinstance(last, (list, tuple)):
 			if asdict:
 				return results.values().pop()
 			else:
@@ -951,8 +1131,7 @@ class Settings(object):
 		except NoSuchSettingsPath:
 			if error_on_path:
 				raise
-			else:
-				return None
+			return None
 
 	def getInt(self, path, **kwargs):
 		value = self.get(path, **kwargs)
@@ -1032,65 +1211,81 @@ class Settings(object):
 
 	#~~ remove
 
-	def remove(self, path, config=None):
-		if config is None:
-			config = self._config
+	def remove(self, path, config=None, error_on_path=False):
+		if not path:
+			if error_on_path:
+				raise NoSuchSettingsPath()
+			return
 
-		while len(path) > 1:
-			key = path.pop(0)
-			if not isinstance(config, dict) or key not in config:
-				return
-			config = config[key]
+		if config is not None:
+			mappings = [config] + self._overlay_maps + [self._default_map]
+			chain = HierarchicalChainMap(*mappings)
+		else:
+			chain = self._map
 
-		key = path.pop(0)
-		if isinstance(config, dict) and key in config:
-			del config[key]
-		self._dirty = True
+		try:
+			chain.del_by_path(path)
+			self._dirty = True
+		except KeyError:
+			if error_on_path:
+				raise NoSuchSettingsPath()
+			pass
 
 	#~~ setter
 
-	def set(self, path, value, force=False, defaults=None, config=None, preprocessors=None):
-		if len(path) == 0:
+	def set(self, path, value, force=False, defaults=None, config=None, preprocessors=None, error_on_path=False):
+		if not path:
+			if error_on_path:
+				raise NoSuchSettingsPath()
 			return
 
 		if self._mtime is not None and self.last_modified != self._mtime:
 			self.load()
 
-		if config is None:
-			config = self._config
-		if defaults is None:
-			defaults = default_settings
-		if preprocessors is None:
-			preprocessors = self._set_preprocessors
+		if config is not None or defaults is not None:
+			if config is None:
+				config = self._config
 
-		while len(path) > 1:
-			key = path.pop(0)
-			if key in config.keys() and key in defaults.keys():
-				config = config[key]
-				defaults = defaults[key]
-			elif key in defaults.keys():
-				config[key] = {}
-				config = config[key]
-				defaults = defaults[key]
+			if defaults is None:
+				defaults = dict(self._map.parents)
+
+			chain = HierarchicalChainMap(config, defaults)
+		else:
+			chain = self._map
+
+		preprocessor = None
+		if preprocessors is not None:
+			try:
+				preprocessor = self._get_by_path(path, preprocessors)
+			except NoSuchSettingsPath:
+				pass
+
+			if callable(preprocessor):
+				value = preprocessor(value)
+
+		try:
+			current = chain.get_by_path(path)
+			default_value = chain.get_by_path(path, only_defaults=True)
+			in_local = chain.has_path(path, only_local=True)
+			in_defaults = chain.has_path(path, only_defaults=True)
+		except KeyError:
+			if error_on_path:
+				raise NoSuchSettingsPath()
+			return
+
+		if not force and in_defaults and in_local and default_value == value:
+			try:
+				chain.del_by_path(path)
+				self._dirty = True
+			except KeyError:
+				if error_on_path:
+					raise NoSuchSettingsPath()
+				pass
+		elif force or (not in_local and in_defaults and default_value != value) or (in_local and current != value):
+			if value is None and in_local:
+				chain.del_by_path(path)
 			else:
-				return
-
-			if preprocessors and isinstance(preprocessors, dict) and key in preprocessors:
-				preprocessors = preprocessors[key]
-
-		key = path.pop(0)
-
-		if preprocessors and isinstance(preprocessors, dict) and key in preprocessors and callable(preprocessors[key]):
-			value = preprocessors[key](value)
-
-		if not force and key in defaults and key in config and defaults[key] == value:
-			del config[key]
-			self._dirty = True
-		elif force or (not key in config and key in defaults and defaults[key] != value) or (key in config and config[key] != value):
-			if value is None and key in config:
-				del config[key]
-			else:
-				config[key] = value
+				chain.set_by_path(path, value)
 			self._dirty = True
 
 	def setInt(self, path, value, **kwargs):
@@ -1122,7 +1317,7 @@ class Settings(object):
 	def setBoolean(self, path, value, **kwargs):
 		if value is None or isinstance(value, bool):
 			self.set(path, value, **kwargs)
-		elif value.lower() in valid_boolean_trues:
+		elif isinstance(value, basestring) and value.lower() in valid_boolean_trues:
 			self.set(path, True, **kwargs)
 		else:
 			self.set(path, False, **kwargs)

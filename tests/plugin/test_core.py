@@ -17,9 +17,16 @@ class PluginTestCase(unittest.TestCase):
 		self.plugin_folder = os.path.join(os.path.dirname(os.path.realpath(__file__)), "_plugins")
 
 		plugin_folders = [self.plugin_folder]
-		plugin_types = [octoprint.plugin.SettingsPlugin, octoprint.plugin.StartupPlugin, octoprint.plugin.AssetPlugin]
+		plugin_types = [octoprint.plugin.SettingsPlugin,
+		                octoprint.plugin.StartupPlugin,
+		                octoprint.plugin.AssetPlugin]
 		plugin_entry_points = None
-		self.plugin_manager = octoprint.plugin.core.PluginManager(plugin_folders, plugin_types, plugin_entry_points, plugin_disabled_list=[], logging_prefix="logging_prefix.")
+		self.plugin_manager = octoprint.plugin.core.PluginManager(plugin_folders,
+		                                                          plugin_types,
+		                                                          plugin_entry_points,
+		                                                          plugin_disabled_list=[],
+		                                                          logging_prefix="logging_prefix.")
+		self.plugin_manager.reload_plugins(startup=True, initialize_implementations=False)
 		self.plugin_manager.initialize_implementations()
 
 	def test_plugin_loading(self):

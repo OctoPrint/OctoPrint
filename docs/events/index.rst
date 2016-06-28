@@ -352,7 +352,9 @@ SlicingStarted
    Payload:
 
      * ``stl``: the STL's filename
+     * ``stl_location``: the STL's location
      * ``gcode``: the sliced GCODE's filename
+     * ``gcode_location``: the sliced GCODE's location
      * ``progressAvailable``: true if progress information via the ``slicingProgress`` push update will be available, false if not
 
 SlicingDone
@@ -361,7 +363,9 @@ SlicingDone
    Payload:
 
      * ``stl``: the STL's filename
+     * ``stl_location``: the STL's location
      * ``gcode``: the sliced GCODE's filename
+     * ``gcode_location``: the sliced GCODE's location
      * ``time``: the time needed for slicing, in seconds (float)
 
 SlicingCancelled
@@ -371,7 +375,9 @@ SlicingCancelled
    Payload:
 
      * ``stl``: the STL's filename
+     * ``stl_location``: the STL's location
      * ``gcode``: the sliced GCODE's filename
+     * ``gcode_location``: the sliced GCODE's location
 
 SlicingFailed
    The slicing of a file has failed.
@@ -379,7 +385,9 @@ SlicingFailed
    Payload:
 
      * ``stl``: the STL's filename
+     * ``stl_location``: the STL's location
      * ``gcode``: the sliced GCODE's filename
+     * ``gcode_location``: the sliced GCODE's location
      * ``reason``: the reason for the slicing having failed
 
 SlicingProfileAdded

@@ -447,6 +447,15 @@ $(function() {
         };
 
         self.evaluatePrintDimensions = function(data, notify) {
+            if (!self.settingsViewModel.feature_modelSizeDetection()) {
+                return true;
+            }
+
+            var analysis = data["gcodeAnalysis"];
+            if (!analysis) {
+                return true;
+            }
+
             var printingArea = data["gcodeAnalysis"]["printingArea"];
             if (!printingArea) {
                 return true;
@@ -506,6 +515,8 @@ $(function() {
                     info += _.sprintf(gettext("Print volume: (%(profile.minX).2f, %(profile.minY).2f, %(profile.minZ).2f) &times; (%(profile.maxX).2f, %(profile.maxY).2f, %(profile.maxZ).2f)"), formatData);
 
                     warning += pnotifyAdditionalInfo(info);
+
+                    warning += "<p><small>You can disable this check via Settings &gt; Features &gt; \"Enable model size detection [...]\"</small></p>";
 
                     new PNotify({
                         title: gettext("Object doesn't fit print volume"),

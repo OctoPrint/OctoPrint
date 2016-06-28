@@ -8,7 +8,14 @@
     </div>
     <div class="control-group">
         <div class="controls">
-			<label class="checkbox">
+            <label class="checkbox">
+                <input type="checkbox" data-bind="checked: feature_modelSizeDetection" id="settings-modelSizeDetection"> {{ _('Enable model size detection and warn if model exceeds print bed') }} <span class="label label-info">{{ _('Beta') }}</span>
+            </label>
+        </div>
+    </div>
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
                 <input type="checkbox" data-bind="checked: feature_sdSupport" id="settings-featureSdSupport"> {{ _('Enable SD support') }}
             </label>
         </div>

@@ -244,9 +244,16 @@ class FileManager(object):
 		def stlProcessed(source_location, source_path, tmp_path, dest_location, dest_path, start_time, printer_profile_id, callback, callback_args, _error=None, _cancelled=False, _analysis=None):
 			try:
 				if _error:
-					eventManager().fire(Events.SLICING_FAILED, {"stl": source_path, "gcode": dest_path, "reason": _error})
+					eventManager().fire(Events.SLICING_FAILED, dict(stl=source_path,
+																	stl_location=source_location,
+																	gcode=dest_path,
+																	gcode_location=dest_location,
+																	reason=_error))
 				elif _cancelled:
-					eventManager().fire(Events.SLICING_CANCELLED, {"stl": source_path, "gcode": dest_path})
+					eventManager().fire(Events.SLICING_CANCELLED, dict(stl=source_path,
+																	   stl_location=source_location,
+																	   gcode=dest_path,
+																	   gcode_location=dest_location))
 				else:
 					source_meta = self.get_metadata(source_location, source_path)
 					hash = source_meta["hash"]
@@ -262,7 +269,11 @@ class FileManager(object):
 					self.add_file(dest_location, dest_path, file_obj, links=links, allow_overwrite=True, printer_profile=printer_profile, analysis=_analysis)
 
 					end_time = time.time()
-					eventManager().fire(Events.SLICING_DONE, {"stl": source_path, "gcode": dest_path, "time": end_time - start_time})
+					eventManager().fire(Events.SLICING_DONE, dict(stl=source_path,
+																  stl_location=source_location,
+																  gcode=dest_path,
+																  gcode_location=dest_location,
+																  time=end_time - start_time))
 
 					if callback is not None:
 						if callback_args is None:
@@ -284,7 +295,11 @@ class FileManager(object):
 
 		import time
 		start_time = time.time()
-		eventManager().fire(Events.SLICING_STARTED, {"stl": source_path, "gcode": dest_path, "progressAvailable": slicer.get_slicer_properties()["progress_report"] if slicer else False})
+		eventManager().fire(Events.SLICING_STARTED, {"stl": source_path,
+		                                             "stl_location": source_location,
+		                                             "gcode": dest_path,
+		                                             "gcode_location": dest_location,
+		                                             "progressAvailable": slicer.get_slicer_properties()["progress_report"] if slicer else False})
 
 		import tempfile
 		f = tempfile.NamedTemporaryFile(suffix=".gco", delete=False)

@@ -37,7 +37,8 @@ INSTALL_REQUIRES = [
 	"psutil>=3.2.1,<3.3",
 	"Click>=6.2,<6.3",
 	"awesome-slugify>=1.6.5,<1.7",
-	"feedparser>=5.2.1,<5.3"
+	"feedparser>=5.2.1,<5.3",
+	"chainmap>=1.0.2,<1.1"
 ]
 
 # Additional requirements for optional install options
