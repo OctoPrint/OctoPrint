@@ -295,7 +295,11 @@ class FileManager(object):
 
 		import time
 		start_time = time.time()
-		eventManager().fire(Events.SLICING_STARTED, {"stl": source_path, "gcode": dest_path, "progressAvailable": slicer.get_slicer_properties()["progress_report"] if slicer else False})
+		eventManager().fire(Events.SLICING_STARTED, {"stl": source_path,
+		                                             "stl_location": source_location,
+		                                             "gcode": dest_path,
+		                                             "gcode_location": dest_location,
+		                                             "progressAvailable": slicer.get_slicer_properties()["progress_report"] if slicer else False})
 
 		import tempfile
 		f = tempfile.NamedTemporaryFile(suffix=".gco", delete=False)
