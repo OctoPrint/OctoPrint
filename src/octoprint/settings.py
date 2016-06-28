@@ -181,7 +181,8 @@ default_settings = {
 		"pollWatched": False,
 		"ignoreIdenticalResends": False,
 		"identicalResendsCountdown": 7,
-		"supportFAsCommand": False
+		"supportFAsCommand": False,
+		"modelSizeDetection": True
 	},
 	"folder": {
 		"uploads": None,

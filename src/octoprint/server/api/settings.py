@@ -73,7 +73,8 @@ def getSettings():
 			"externalHeatupDetection": s.getBoolean(["feature", "externalHeatupDetection"]),
 			"keyboardControl": s.getBoolean(["feature", "keyboardControl"]),
 			"pollWatched": s.getBoolean(["feature", "pollWatched"]),
-			"ignoreIdenticalResends": s.getBoolean(["feature", "ignoreIdenticalResends"])
+			"ignoreIdenticalResends": s.getBoolean(["feature", "ignoreIdenticalResends"]),
+			"modelSizeDetection": s.getBoolean(["feature", "modelSizeDetection"])
 		},
 		"serial": {
 			"port": connectionOptions["portPreference"],
@@ -235,6 +236,7 @@ def _saveSettings(data):
 		if "keyboardControl" in data["feature"].keys(): s.setBoolean(["feature", "keyboardControl"], data["feature"]["keyboardControl"])
 		if "pollWatched" in data["feature"]: s.setBoolean(["feature", "pollWatched"], data["feature"]["pollWatched"])
 		if "ignoreIdenticalResends" in data["feature"]: s.setBoolean(["feature", "ignoreIdenticalResends"], data["feature"]["ignoreIdenticalResends"])
+		if "modelSizeDetection" in data["feature"]: s.setBoolean(["feature", "modelSizeDetection"], data["feature"]["modelSizeDetection"])
 
 	if "serial" in data.keys():
 		if "autoconnect" in data["serial"].keys(): s.setBoolean(["serial", "autoconnect"], data["serial"]["autoconnect"])
