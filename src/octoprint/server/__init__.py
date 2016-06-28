@@ -196,6 +196,17 @@ class Server(object):
 		pluginLifecycleManager = LifecycleManager(pluginManager)
 		preemptiveCache = PreemptiveCache(os.path.join(self._settings.getBaseFolder("data"), "preemptive_cache_config.yaml"))
 
+		# setup access control
+		userManagerName = self._settings.get(["accessControl", "userManager"])
+		try:
+			clazz = octoprint.util.get_class(userManagerName)
+			userManager = clazz()
+		except AttributeError as e:
+			self._logger.exception("Could not instantiate user manager {}, falling back to FilebasedUserManager!".format(userManagerName))
+			userManager = octoprint.users.FilebasedUserManager()
+		finally:
+			userManager.enabled = self._settings.getBoolean(["accessControl", "enabled"])
+
 		components = dict(
 			plugin_manager=pluginManager,
 			printer_profile_manager=printerProfileManager,
@@ -222,18 +233,6 @@ class Server(object):
 		else:
 			printer = Printer(fileManager, analysisQueue, printerProfileManager)
 		components.update(dict(printer=printer))
-
-		# setup access control
-		userManagerName = self._settings.get(["accessControl", "userManager"])
-		try:
-			clazz = octoprint.util.get_class(userManagerName)
-			userManager = clazz()
-		except AttributeError as e:
-			self._logger.exception("Could not instantiate user manager {}, falling back to FilebasedUserManager!".format(userManagerName))
-			userManager = octoprint.users.FilebasedUserManager()
-		finally:
-			userManager.enabled = self._settings.getBoolean(["accessControl", "enabled"])
-		components["user_manager"] = userManager
 
 		def octoprint_plugin_inject_factory(name, implementation):
 			if not isinstance(implementation, octoprint.plugin.OctoPrintPlugin):
