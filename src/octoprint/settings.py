@@ -722,6 +722,15 @@ class Settings(object):
 	def _default_map(self):
 		return self._map.maps[-1]
 
+	@property
+	def last_modified(self):
+		"""
+		Returns:
+		    int: The last modification time of the configuration file.
+		"""
+		stat = os.stat(self._configfile)
+		return stat.st_mtime
+
 	#~~ load and save
 
 	def load(self, migrate=False):
@@ -1004,15 +1013,6 @@ class Settings(object):
 			self.load()
 			return True
 
-	@property
-	def last_modified(self):
-		"""
-		Returns:
-		    int: The last modification time of the configuration file.
-		"""
-		stat = os.stat(self._configfile)
-		return stat.st_mtime
-
 	##~~ Internal getter
 
 	def _get_by_path(self, path, config):
@@ -1203,7 +1203,7 @@ class Settings(object):
 
 	#~~ remove
 
-	def remove(self, path, config=None):
+	def remove(self, path, config=None, error_on_path=False):
 		if config is not None:
 			mappings = [config] + self._overlay_maps + [self._default_map]
 			chain = HierarchicalChainMap(*mappings)
@@ -1212,14 +1212,18 @@ class Settings(object):
 
 		try:
 			chain.del_by_path(path)
+			self._dirty = True
 		except KeyError:
+			if error_on_path:
+				raise NoSuchSettingsPath()
 			pass
-		self._dirty = True
 
 	#~~ setter
 
-	def set(self, path, value, force=False, defaults=None, config=None, preprocessors=None):
+	def set(self, path, value, force=False, defaults=None, config=None, preprocessors=None, error_on_path=False):
 		if len(path) == 0:
+			if error_on_path:
+				raise NoSuchSettingsPath()
 			return
 
 		if self._mtime is not None and self.last_modified != self._mtime:
@@ -1252,6 +1256,8 @@ class Settings(object):
 			in_local = chain.has_path(path, only_local=True)
 			in_defaults = chain.has_path(path, only_defaults=True)
 		except KeyError:
+			if error_on_path:
+				raise NoSuchSettingsPath()
 			return
 
 		if not force and in_defaults and in_local and default_value == value:
@@ -1259,6 +1265,8 @@ class Settings(object):
 				chain.del_by_path(path)
 				self._dirty = True
 			except KeyError:
+				if error_on_path:
+					raise NoSuchSettingsPath()
 				pass
 		elif force or (not in_local and in_defaults and default_value != value) or (in_local and current != value):
 			if value is None and in_local:
@@ -1296,7 +1304,7 @@ class Settings(object):
 	def setBoolean(self, path, value, **kwargs):
 		if value is None or isinstance(value, bool):
 			self.set(path, value, **kwargs)
-		elif value.lower() in valid_boolean_trues:
+		elif isinstance(value, basestring) and value.lower() in valid_boolean_trues:
 			self.set(path, True, **kwargs)
 		else:
 			self.set(path, False, **kwargs)

@@ -12,9 +12,8 @@ from werkzeug.exceptions import BadRequest
 
 from octoprint.events import eventManager, Events
 from octoprint.settings import settings
-from octoprint.printer import get_connection_options
 
-from octoprint.server import admin_permission
+from octoprint.server import admin_permission, printer
 from octoprint.server.api import api
 from octoprint.server.util.flask import restricted_access
 
@@ -30,7 +29,7 @@ def getSettings():
 
 	s = settings()
 
-	connectionOptions = get_connection_options()
+	connectionOptions = printer.__class__.get_connection_options()
 
 	data = {
 		"api": {

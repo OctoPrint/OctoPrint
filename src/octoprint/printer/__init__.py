@@ -23,31 +23,15 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import re
 
-import octoprint.util.comm as comm
 from octoprint.settings import settings
+from octoprint.util import deprecated
 
+
+@deprecated(message="get_connection_options has been replaced by PrinterInterface.get_connection_options",
+            includedoc="Replaced by :func:`PrinterInterface.get_connection_options`",
+            since="1.3.0")
 def get_connection_options():
-	"""
-	Retrieves the available ports, baudrates, preferred port and baudrate for connecting to the printer.
-
-	Returned ``dict`` has the following structure::
-
-	    ports: <list of available serial ports>
-	    baudrates: <list of available baudrates>
-	    portPreference: <configured default serial port>
-	    baudratePreference: <configured default baudrate>
-	    autoconnect: <whether autoconnect upon server startup is enabled or not>
-
-	Returns:
-	    (dict): A dictionary holding the connection options in the structure specified above
-	"""
-	return {
-		"ports": comm.serialList(),
-		"baudrates": comm.baudrateList(),
-		"portPreference": settings().get(["serial", "port"]),
-		"baudratePreference": settings().getInt(["serial", "baudrate"]),
-		"autoconnect": settings().getBoolean(["serial", "autoconnect"])
-	}
+	return PrinterInterface.get_connection_options()
 
 
 class PrinterInterface(object):
@@ -64,6 +48,31 @@ class PrinterInterface(object):
 
 	valid_heater_regex = re.compile("^(tool\d+|bed)$")
 	"""Regex for valid heater identifiers."""
+
+	@classmethod
+	def get_connection_options(cls):
+		"""
+		Retrieves the available ports, baudrates, preferred port and baudrate for connecting to the printer.
+
+		Returned ``dict`` has the following structure::
+
+		    ports: <list of available serial ports>
+		    baudrates: <list of available baudrates>
+		    portPreference: <configured default serial port>
+		    baudratePreference: <configured default baudrate>
+		    autoconnect: <whether autoconnect upon server startup is enabled or not>
+
+		Returns:
+		    (dict): A dictionary holding the connection options in the structure specified above
+		"""
+		import octoprint.util.comm as comm
+		return {
+			"ports": comm.serialList(),
+			"baudrates": comm.baudrateList(),
+			"portPreference": settings().get(["serial", "port"]),
+			"baudratePreference": settings().getInt(["serial", "baudrate"]),
+			"autoconnect": settings().getBoolean(["serial", "autoconnect"])
+		}
 
 	def connect(self, port=None, baudrate=None, profile=None):
 		"""
@@ -200,7 +209,7 @@ class PrinterInterface(object):
 
 		Arguments:
 		    factor (int, float): The factor for the feed rate to send to the firmware. Percentage expressed as either an
-		    int between 0 and 100 or a float between 0 and 1.
+		        int between 0 and 100 or a float between 0 and 1.
 		"""
 		raise NotImplementedError()
 
@@ -210,7 +219,7 @@ class PrinterInterface(object):
 
 		Arguments:
 		    factor (int, float): The factor for the flow rate to send to the firmware. Percentage expressed as either an
-		    int between 0 and 100 or a float between 0 and 1.
+		        int between 0 and 100 or a float between 0 and 1.
 		"""
 		raise NotImplementedError()
 
