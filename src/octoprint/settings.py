@@ -603,6 +603,15 @@ class Settings(object):
 		hash.update(repr(self._config))
 		return hash.hexdigest()
 
+	@property
+	def last_modified(self):
+		"""
+		Returns:
+		    int: The last modification time of the configuration file.
+		"""
+		stat = os.stat(self._configfile)
+		return stat.st_mtime
+
 	#~~ load and save
 
 	def load(self, migrate=False):
@@ -853,15 +862,6 @@ class Settings(object):
 			self.load()
 			return True
 
-	@property
-	def last_modified(self):
-		"""
-		Returns:
-		    int: The last modification time of the configuration file.
-		"""
-		stat = os.stat(self._configfile)
-		return stat.st_mtime
-
 	##~~ Internal getter
 
 	def _get_value(self, path, asdict=False, config=None, defaults=None, preprocessors=None, merged=False, incl_defaults=True):
@@ -1032,25 +1032,41 @@ class Settings(object):
 
 	#~~ remove
 
-	def remove(self, path, config=None):
+	def remove(self, path, config=None, error_on_path=False):
+		if not len(path):
+			if error_on_path:
+				raise NoSuchSettingsPath()
+			return
+
 		if config is None:
 			config = self._config
 
 		while len(path) > 1:
 			key = path.pop(0)
 			if not isinstance(config, dict) or key not in config:
+				if error_on_path:
+					raise NoSuchSettingsPath()
 				return
 			config = config[key]
 
+		if not isinstance(config, dict):
+			if error_on_path:
+				raise NoSuchSettingsPath()
+			return
+
 		key = path.pop(0)
-		if isinstance(config, dict) and key in config:
+		if key in config:
 			del config[key]
-		self._dirty = True
+			self._dirty = True
+		elif error_on_path:
+			raise NoSuchSettingsPath()
 
 	#~~ setter
 
-	def set(self, path, value, force=False, defaults=None, config=None, preprocessors=None):
+	def set(self, path, value, force=False, defaults=None, config=None, preprocessors=None, error_on_path=False):
 		if len(path) == 0:
+			if error_on_path:
+				raise NoSuchSettingsPath()
 			return
 
 		if self._mtime is not None and self.last_modified != self._mtime:
@@ -1073,17 +1089,26 @@ class Settings(object):
 				config = config[key]
 				defaults = defaults[key]
 			else:
+				if error_on_path:
+					raise NoSuchSettingsPath()
 				return
 
 			if preprocessors and isinstance(preprocessors, dict) and key in preprocessors:
 				preprocessors = preprocessors[key]
+
+		if not isinstance(config, dict):
+			if error_on_path:
+				raise NoSuchSettingsPath()
+			return
 
 		key = path.pop(0)
 
 		if preprocessors and isinstance(preprocessors, dict) and key in preprocessors and callable(preprocessors[key]):
 			value = preprocessors[key](value)
 
-		if not force and key in defaults and key in config and defaults[key] == value:
+		if not key in defaults and error_on_path:
+			raise NoSuchSettingsPath()
+		elif not force and key in defaults and key in config and defaults[key] == value:
 			del config[key]
 			self._dirty = True
 		elif force or (not key in config and key in defaults and defaults[key] != value) or (key in config and config[key] != value):
@@ -1122,7 +1147,7 @@ class Settings(object):
 	def setBoolean(self, path, value, **kwargs):
 		if value is None or isinstance(value, bool):
 			self.set(path, value, **kwargs)
-		elif value.lower() in valid_boolean_trues:
+		elif isinstance(value, basestring) and value.lower() in valid_boolean_trues:
 			self.set(path, True, **kwargs)
 		else:
 			self.set(path, False, **kwargs)
