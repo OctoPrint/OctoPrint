@@ -405,6 +405,9 @@ class HierarchicalChainMap(ChainMap):
 		current[path[-1]] = value
 
 	def del_by_path(self, path):
+		if not path:
+			raise ValueError("Invalid path")
+
 		current = self
 
 		for key in path[:-1]:
@@ -693,14 +696,19 @@ class Settings(object):
 	def effective_hash(self):
 		import hashlib
 		hash = hashlib.md5()
-		hash.update(repr(self.effective))
+		hash.update(self.effective_yaml)
 		return hash.hexdigest()
+
+	@property
+	def config_yaml(self):
+		import yaml
+		return yaml.safe_dump(self._config)
 
 	@property
 	def config_hash(self):
 		import hashlib
 		hash = hashlib.md5()
-		hash.update(repr(self._config))
+		hash.update(self.config_yaml)
 		return hash.hexdigest()
 
 	@property
@@ -1024,7 +1032,7 @@ class Settings(object):
 		return current
 
 	def _get_value(self, path, asdict=False, config=None, defaults=None, preprocessors=None, merged=False, incl_defaults=True, do_copy=True):
-		if len(path) == 0:
+		if not path:
 			raise NoSuchSettingsPath()
 
 		if config is not None or defaults is not None:
@@ -1122,8 +1130,7 @@ class Settings(object):
 		except NoSuchSettingsPath:
 			if error_on_path:
 				raise
-			else:
-				return None
+			return None
 
 	def getInt(self, path, **kwargs):
 		value = self.get(path, **kwargs)
@@ -1204,6 +1211,11 @@ class Settings(object):
 	#~~ remove
 
 	def remove(self, path, config=None, error_on_path=False):
+		if not path:
+			if error_on_path:
+				raise NoSuchSettingsPath()
+			return
+
 		if config is not None:
 			mappings = [config] + self._overlay_maps + [self._default_map]
 			chain = HierarchicalChainMap(*mappings)
@@ -1221,7 +1233,7 @@ class Settings(object):
 	#~~ setter
 
 	def set(self, path, value, force=False, defaults=None, config=None, preprocessors=None, error_on_path=False):
-		if len(path) == 0:
+		if not path:
 			if error_on_path:
 				raise NoSuchSettingsPath()
 			return

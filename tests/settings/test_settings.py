@@ -436,20 +436,20 @@ class TestSettings(unittest.TestCase):
 	def test_effective_hash(self):
 		with self.mocked_config():
 			hash = hashlib.md5()
-			hash.update(repr(self.expected_effective))
+			hash.update(yaml.safe_dump(self.expected_effective))
 			expected_effective_hash = hash.hexdigest()
-			print(repr(self.expected_effective))
+			print(yaml.safe_dump(self.expected_effective))
 
 			settings = octoprint.settings.Settings()
 			effective_hash = settings.effective_hash
-			print(repr(settings.effective))
+			print(yaml.safe_dump(settings.effective))
 
 			self.assertEqual(expected_effective_hash, effective_hash)
 
 	def test_config_hash(self):
 		with self.mocked_config():
 			hash = hashlib.md5()
-			hash.update(repr(self.config))
+			hash.update(yaml.safe_dump(self.config))
 			expected_config_hash = hash.hexdigest()
 
 			settings = octoprint.settings.Settings()
