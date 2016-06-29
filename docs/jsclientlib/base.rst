@@ -319,7 +319,7 @@
 
    .. code-block:: javascript
 
-      // prints "api/plugin/myplugin/"
+      // prints "api/plugin/myplugin"
       console.log(OctoPrint.getSimpleApiUrl("myplugin")
 
    :param string plugin: The identifier of the plugin for which to return the URL
