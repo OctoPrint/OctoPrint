@@ -225,6 +225,11 @@ class ReverseProxied(object):
 
 		# determine scheme
 		scheme = environ.get(self._header_scheme, "")
+		if scheme and "," in scheme:
+			# Scheme might be something like "https,https" if doubly-reverse-proxied
+			# without stripping original scheme header first, make sure to only use
+			# the first entry in such a case. See #1391.
+			scheme, _ = map(lambda x: x.strip(), scheme.split(",", 1))
 		if not scheme:
 			scheme = self._fallback_scheme
 
