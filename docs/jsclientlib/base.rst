@@ -81,7 +81,7 @@
    :param string method: The HTTP method to use for the request (optional)
    :param string url: The URL to perform the request against (optional)
    :param object opts: Additional options to use for the request, see above for details (optional)
-   :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response's response
+   :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
 .. js:function:: OctoPrint.ajaxWithData(method, url, data, opts)
 
