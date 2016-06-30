@@ -211,7 +211,7 @@
    will contain the requested file as raw string/binary.
 
    :param string url: URL to download
-   :param object opts: Addtional options for the request
+   :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
 .. js:function:: OctoPrint.upload(url, file, filename, additional)
@@ -307,7 +307,7 @@
    :param string url: The URL to ``POST`` the command to
    :param string command: The command to issue
    :param object payload: Additional payload data for the command
-   :param object opts: Addtional options for the request
+   :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
 .. js:function:: OctoPrint.getSimpleApiUrl(plugin)
@@ -338,7 +338,7 @@
           });
 
    :param string plugin: The identifier of the plugin
-   :param object opts: Addtional options for the request
+   :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
 .. js:function:: OctoPrint.simpleApiCommand(plugin, command, payload, opts)
@@ -359,7 +359,7 @@
    :param string plugin: The identifier of the plugin
    :param string command: The command to issue
    :param object payload: Additional payload data for the command
-   :param object opts: Addtional options for the request
+   :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
 .. js:function:: OctoPrint.getBlueprintUrl(plugin)

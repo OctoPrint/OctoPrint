@@ -83,13 +83,13 @@
             return issueFileCommand(location, filename, "move", { destination: destination }, opts);
         },
 
-        createFolder: function (location, name, path) {
+        createFolder: function (location, name, path, opts) {
             var data = "foldername=" + name;
             if (path != undefined && path != "") {
-                data = "foldername:" + path + "/" + name;
+                data = "foldername=" + path + "/" + name;
             }
 
-            return OctoPrint.post(resourceForLocation(location), data);
+            return OctoPrint.post(resourceForLocation(location), data, opts);
 
         },
 

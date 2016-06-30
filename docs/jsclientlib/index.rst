@@ -11,3 +11,8 @@ JavaScript Client Library
    browser.rst
    connection.rst
    control.rst
+   files.rst
+   job.rst
+   languages.rst
+   logs.rst
+   printer.rst

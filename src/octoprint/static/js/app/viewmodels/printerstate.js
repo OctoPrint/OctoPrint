@@ -221,7 +221,7 @@ $(function() {
         };
 
         self.pause = function() {
-            OctoPrint.job.pause();
+            OctoPrint.job.togglePause();
         };
 
         self.cancel = function() {

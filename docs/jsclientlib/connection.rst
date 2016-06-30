@@ -9,6 +9,9 @@
 
    See :ref:`Get connection settings <sec-api-connection-current>` for the response format.
 
+   :param object opts: Additional options for the request
+   :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
+
 .. js:function:: OctoPrint.connection.connect(data, opts)
 
    Connects to the printer, optionally using the provided connection ``data`` as parameters.
@@ -23,11 +26,18 @@
 
    See :ref:`Issue a connection command <sec-api-connection-command>` for more details.
 
+   :param object data: Connection data to use
+   :param object opts: Additional options for the request
+   :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
+
 .. js:function:: OctoPrint.connection.disconnect(opts)
 
    Disconnects from the printer.
 
    See :ref:`Issue a connection command <sec-api-connection-command>` for more details.
+
+   :param object opts: Additional options for the request
+   :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
 .. js:function:: OctoPrint.connection.fakeAck(opts)
 
@@ -35,3 +45,5 @@
 
    See :ref:`Issue a connection command <sec-api-connection-command>` for more details.
 
+   :param object opts: Additional options for the request
+   :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response

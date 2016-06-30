@@ -4,12 +4,6 @@
 Printer operations
 ******************
 
-.. warning::
-
-   This part of the API is still heavily in development, especially anything that has to do with temperature control.
-   If you happen to want to develop against it, you should drop me an email to make sure I can give you a heads-up when
-   something changes.
-
 .. contents::
 
 Printer control is mostly achieved through the use of commands, issued to resources reflecting components of the
@@ -34,6 +28,29 @@ SD card
   See :ref:`sec-api-printer-sdcommand`.
 
 Besides that, OctoPrint also provides a :ref:`full state report of the printer <sec-api-printer-state>`.
+
+.. note::
+
+   You might be wondering why all command responses below only return a ``204`` with an empty body instead of
+   the output of the just sent commands. There are two reasons for this.
+
+   OctoPrint's internal webserver is single threaded and can only handle one request at a time. This is
+   not a problem generally since asynchronous programming allows to just have one request which is waiting for
+   data from a long running backend operation to sleep while handling other requests. The internal framework
+   used for providing the REST API though, Flask, is based on WSGI, which is synchrounous in nature. This means
+   that it is impossible to wait in a non blocking wait while handling a request on the REST API. So in order to
+   return the response of a command sent to the printer, the single thread of the webserver would have to be blocked
+   by the API while the response wasn't available yet. Which in turn would mean that the whole web server would
+   stop responding while waiting for the printer to reply, which, depending on the command in question (e.g. homing)
+   can take a long while. That would be a bad idea.
+
+   The second reason is that thanks to a large number of firmwares out there having a `particular bug <https://github.com/MarlinFirmware/Marlin/commit/acc0e7527914948656ccabba35f7faedc94ef885>`_
+   that makes it impossible to track the output of sent commands, identifying the correct response to a given
+   sent command is pretty much hit-and-miss. That situation gets even worse considering that it's next to impossible
+   to distinguish firmware versions which have that bug from firmware versions which don't have it.
+
+   Hence OctoPrint currently doesn't offer any synchronous way of retrieving the output of responses from the printer.
+   If you need the printer's serial communication, you'll need to subscribe to :ref:`push updates <sec-api-push>`.
 
 .. _sec-api-printer-state:
 

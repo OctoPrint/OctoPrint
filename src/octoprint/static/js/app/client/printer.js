@@ -28,12 +28,12 @@
     };
 
     OctoPrint.printer = {
-        getFullState: function (data, opts) {
-            data = data || {};
+        getFullState: function (flags, opts) {
+            flags = flags || {};
 
-            var history = data.history || undefined;
-            var limit = data.limit || undefined;
-            var exclude = data.exclude || undefined;
+            var history = flags.history || undefined;
+            var limit = flags.limit || undefined;
+            var exclude = flags.exclude || undefined;
 
             var getUrl = url;
             if (history || exclude) {
@@ -53,11 +53,11 @@
             return OctoPrint.get(getUrl, opts);
         },
 
-        getToolState: function (data, opts) {
-            data = data || {};
+        getToolState: function (flags, opts) {
+            flags = flags || {};
 
-            var history = data.history || undefined;
-            var limit = data.limit || undefined;
+            var history = flags.history || undefined;
+            var limit = flags.limit || undefined;
 
             var getUrl = toolUrl;
             if (history) {
@@ -70,11 +70,11 @@
             return OctoPrint.get(getUrl, opts);
         },
 
-        getBedState: function (data, opts) {
-            data = data || {};
+        getBedState: function (flags, opts) {
+            flags = flags || {};
 
-            var history = data.history || undefined;
-            var limit = data.limit || undefined;
+            var history = flags.history || undefined;
+            var limit = flags.limit || undefined;
 
             var getUrl = bedUrl;
             if (history) {
@@ -91,13 +91,13 @@
             return OctoPrint.get(sdUrl, opts);
         },
 
-        jog: function (data, opts) {
-            data = data || {};
+        jog: function (amounts, opts) {
+            amounts = amounts || {};
 
             var payload = {};
-            if (data.x) payload.x = data.x;
-            if (data.y) payload.y = data.y;
-            if (data.z) payload.z = data.z;
+            if (amounts.x) payload.x = amounts.x;
+            if (amounts.y) payload.y = amounts.y;
+            if (amounts.z) payload.z = amounts.z;
 
             return issuePrintheadCommand("jog", payload, opts);
         },
@@ -172,11 +172,11 @@
             return issueToolCommand("flowrate", payload, opts);
         },
 
-        setBedTargetTemperature: function (temperature, opts) {
-            temperature = temperature || 0;
+        setBedTargetTemperature: function (target, opts) {
+            target = target || 0;
 
             var payload = {
-                target: temperature
+                target: target
             };
 
             return issueBedCommand("target", payload, opts);
