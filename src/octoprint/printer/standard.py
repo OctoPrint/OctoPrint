@@ -404,14 +404,29 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		self._setCurrentZ(None)
 		self._comm.startPrint(pos=pos)
 
-	def toggle_pause_print(self):
+	def pause_print(self):
 		"""
-		 Pause the current printjob.
+		Pause the current printjob.
 		"""
 		if self._comm is None:
 			return
 
-		self._comm.setPause(not self._comm.isPaused())
+		if self._comm.isPaused():
+			return
+
+		self._comm.setPause(True)
+
+	def resume_print(self):
+		"""
+		Resume the current printjob.
+		"""
+		if self._comm is None:
+			return
+
+		if not self._comm.isPaused():
+			return
+
+		self._comm.setPause(False)
 
 	def cancel_print(self):
 		"""

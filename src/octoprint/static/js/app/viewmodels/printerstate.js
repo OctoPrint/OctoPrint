@@ -223,21 +223,41 @@ $(function() {
 
         };
 
-        self.pause = function() {
-            self._jobCommand("pause");
+        self.onlyPause = function() {
+            self.pause("pause");
+        };
+
+        self.onlyResume = function() {
+            self.pause("resume");
+        };
+
+        self.pause = function(action) {
+            action = action || "toggle";
+            self._jobCommand("pause", {"action": action});
         };
 
         self.cancel = function() {
             self._jobCommand("cancel");
         };
 
-        self._jobCommand = function(command, callback) {
+        self._jobCommand = function(command, payload, callback) {
+            if (arguments.length == 1) {
+                payload = {};
+                callback = undefined;
+            } else if (arguments.length == 2 && typeof payload === "function") {
+                callback = payload;
+                payload = {};
+            }
+
+            var data = _.extend(payload, {});
+            data.command = command;
+
             $.ajax({
                 url: API_BASEURL + "job",
                 type: "POST",
                 dataType: "json",
                 contentType: "application/json; charset=UTF-8",
-                data: JSON.stringify({command: command}),
+                data: JSON.stringify(data),
                 success: function(response) {
                     if (callback != undefined) {
                         callback();
