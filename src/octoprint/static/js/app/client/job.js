@@ -7,8 +7,13 @@
 })(window || this, function(OctoPrint) {
     var url = "api/job";
 
-    var issueCommand = function(command, opts) {
-        return OctoPrint.issueCommand(url, command, {}, opts);
+    var issueCommand = function(command, payload, opts) {
+        if (arguments.length == 2) {
+            opts = payload;
+            payload = {};
+        }
+
+        return OctoPrint.issueCommand(url, command, payload, opts);
     };
 
     OctoPrint.job = {
@@ -22,7 +27,13 @@
             return issueCommand("restart", opts);
         },
         pause: function(opts) {
-            return issueCommand("pause", opts);
+            return issueCommand("pause", {"action": "pause"}, opts);
+        },
+        resume: function(opts) {
+            return issueCommand("pause", {"action": "resume"}, opts)
+        },
+        togglePause: function(opts) {
+            return issueCommand("pause", {"action": "toggle"}, opts);
         },
         cancel: function(opts) {
             return issueCommand("cancel", opts);

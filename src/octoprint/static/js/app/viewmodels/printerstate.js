@@ -220,8 +220,16 @@ $(function() {
             }
         };
 
-        self.pause = function() {
+        self.onlyPause = function() {
             OctoPrint.job.pause();
+        };
+
+        self.onlyResume = function() {
+            OctoPrint.job.resume();
+        };
+
+        self.pause = function(action) {
+            OctoPrint.job.togglePause();
         };
 
         self.cancel = function() {
