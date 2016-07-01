@@ -151,7 +151,7 @@ class gcode(object):
 					else:
 						e = 0.0
 
-					if x is not None or y is not None or z is not None:
+					if moveType == "move":
 						diffX = oldPos[0] - pos[0]
 						diffY = oldPos[1] - pos[1]
 						totalMoveTimeMinute += math.sqrt(diffX * diffX + diffY * diffY) / feedRateXY
