@@ -154,11 +154,13 @@ class gcode(object):
 					if moveType == "move":
 						diffX = oldPos[0] - pos[0]
 						diffY = oldPos[1] - pos[1]
-						totalMoveTimeMinute += math.sqrt(diffX * diffX + diffY * diffY) / feedRateXY
+						diffZ = oldPos[1] - pos[1]
+						totalMoveTimeMinute += math.sqrt(diffX * diffX + diffY * diffY + diffZ * diffZ) / feedRateXY
 					elif moveType == "extrude":
 						diffX = oldPos[0] - pos[0]
 						diffY = oldPos[1] - pos[1]
-						time1 = math.sqrt(diffX * diffX + diffY * diffY) / feedRateXY
+						diffZ = oldPos[1] - pos[1]
+						time1 = math.sqrt(diffX * diffX + diffY * diffY + diffZ * diffZ) / feedRateXY
 						time2 = abs(e / feedRateXY)
 						totalMoveTimeMinute += max(time1, time2)
 					elif moveType == "retract":
