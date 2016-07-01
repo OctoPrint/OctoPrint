@@ -166,9 +166,9 @@ $(function() {
             } else {
                 self.listHelper.selectItem(function(item) {
                     if (item.type == "folder") {
-                        return _.startsWith(filename, OctoPrint.files.pathForElement(item) + "/");
+                        return _.startsWith(filename, item.path + "/");
                     } else {
-                        return OctoPrint.files.pathForElement(item) == filename;
+                        return item.path == filename;
                     }
                 });
             }
@@ -198,7 +198,7 @@ $(function() {
             if (self._otherRequestInProgress) return;
 
             self._otherRequestInProgress = true;
-            OctoPrint.files.list({ data: { recursive: true} })
+            OctoPrint.files.list(true)
                 .done(function(response) {
                     self.fromResponse(response, filenameToFocus, locationToFocus, switchToPath);
                 })
@@ -243,7 +243,7 @@ $(function() {
         };
 
         self.changeFolder = function(data) {
-            self.currentPath(OctoPrint.files.pathForElement(data));
+            self.currentPath(data.path);
             self.listHelper.updateItems(data.children);
             self.highlightCurrentFilename();
         };
@@ -255,7 +255,7 @@ $(function() {
         };
 
         self.changeFolderByPath = function(path) {
-            var element = OctoPrint.files.elementByPath(path, { children: self.allItems() });
+            var element = self.elementByPath(path);
             if (element) {
                 self.currentPath(path);
                 self.listHelper.updateItems(element.children);
@@ -268,6 +268,7 @@ $(function() {
 
         self.showAddFolderDialog = function() {
             if (self.addFolderDialog) {
+                self.addFolderName("");
                 self.addFolderDialog.modal("show");
             }
         };
@@ -287,7 +288,7 @@ $(function() {
             if (!file) {
                 return;
             }
-            OctoPrint.files.select(file.origin, OctoPrint.files.pathForElement(file))
+            OctoPrint.files.select(file.origin, file.path)
                 .done(function() {
                     var withinPrintDimensions = self.evaluatePrintDimensions(file, true);
                     if (withinPrintDimensions && printAfterLoad) {
@@ -315,9 +316,9 @@ $(function() {
                 filenameToFocus = fileToFocus.name;
             }
 
-            OctoPrint.files.delete(file.origin, OctoPrint.files.pathForElement(file))
+            OctoPrint.files.delete(file.origin, file.path)
                 .done(function() {
-                    self.requestData(undefined, filenameToFocus, OctoPrint.files.pathForElement(file.parent));
+                    self.requestData(undefined, filenameToFocus, (file.parent ? file.parent.path : ""));
                 })
         };
 
@@ -326,7 +327,7 @@ $(function() {
                 return;
             }
 
-            self.slicing.show(file.origin, OctoPrint.files.pathForElement(file), true);
+            self.slicing.show(file.origin, file.path, true);
         };
 
         self.initSdCard = function() {
@@ -556,6 +557,31 @@ $(function() {
             return false;
         };
 
+        self.elementByPath = function(path, root) {
+            root = root || {children: self.allItems()};
+
+            var recursiveSearch = function(location, element) {
+                if (location.length == 0) {
+                    return element;
+                }
+
+                if (!element.hasOwnProperty("children")) {
+                    return undefined;
+                }
+
+                var name = location.shift();
+                for (var i = 0; i < element.children.length; i++) {
+                    if (name == element.children[i].name) {
+                        return recursiveSearch(location, element.children[i]);
+                    }
+                }
+
+                return undefined;
+            };
+
+            return recursiveSearch(path.split("/"), root);
+        };
+
         self.onUserLoggedIn = function(user) {
             self.uploadButton.fileupload("enable");
             if (self.uploadSdButton) {
@@ -645,7 +671,7 @@ $(function() {
         };
 
         self.onEventTransferDone = function(payload) {
-            self.requestData(payload.remote, "sdcard");
+            self.requestData(undefined, payload.remote, "sdcard");
         };
 
         self.onServerConnect = self.onServerReconnect = function(payload) {

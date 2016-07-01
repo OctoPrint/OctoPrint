@@ -77,14 +77,20 @@ class StorageInterface(object):
 
 		   {
 		     "some_folder": {
+		       "name": "some_folder",
+		       "path": "some_folder",
 		       "type": "folder",
 		       "children": {
 		         "some_sub_folder": {
+		           "name": "some_sub_folder",
+		           "path": "some_folder/some_sub_folder",
 		           "type": "folder",
 		           "typePath": ["folder"],
 		           "children": { ... }
 		         },
 		         "some_file.gcode": {
+		           "name": "some_file.gcode",
+		           "path": "some_folder/some_file.gcode",
 		           "type": "machinecode",
 		           "typePath": ["machinecode", "gcode"],
 		           "hash": "<sha1 hash>",
@@ -94,6 +100,8 @@ class StorageInterface(object):
 		         ...
 		       }
 		     "test.gcode": {
+		       "name": "test.gcode",
+		       "path": "test.gcode",
 		       "type": "machinecode",
 		       "typePath": ["machinecode", "gcode"],
 		       "hash": "<sha1 hash>",
@@ -101,6 +109,8 @@ class StorageInterface(object):
 		       ...
 		     },
 		     "test.stl": {
+		       "name": "test.stl",
+		       "path": "test.stl",
 		       "type": "model",
 		       "typePath": ["model", "stl"],
 		       "hash": "<sha1 hash>",
@@ -1023,7 +1033,7 @@ class LocalFileStorage(StorageInterface):
 		if metadata_dirty:
 			self._save_metadata(path, metadata)
 
-	def _list_folder(self, path, filter=None, recursive=True):
+	def _list_folder(self, path, base="", filter=None, recursive=True):
 		metadata = self._get_metadata(path)
 		if not metadata:
 			metadata = dict()
@@ -1036,6 +1046,7 @@ class LocalFileStorage(StorageInterface):
 				continue
 
 			entry_path = os.path.join(path, entry)
+			path_in_location = entry if not base else base + entry
 
 			# file handling
 			if os.path.isfile(entry_path):
@@ -1059,6 +1070,7 @@ class LocalFileStorage(StorageInterface):
 					extended_entry_data = dict()
 					extended_entry_data.update(entry_data)
 					extended_entry_data["name"] = entry
+					extended_entry_data["path"] = path_in_location
 					extended_entry_data["type"] = file_type
 					extended_entry_data["typePath"] = type_path
 					stat = os.stat(entry_path)
@@ -1069,14 +1081,17 @@ class LocalFileStorage(StorageInterface):
 					result[entry] = extended_entry_data
 
 			# folder recursion
-			elif os.path.isdir(entry_path) and recursive:
-				sub_result = self._list_folder(entry_path, filter=filter, recursive=recursive)
+			elif os.path.isdir(entry_path):
 				entry_data = dict(
 					name=entry,
+					path=path_in_location,
 					type="folder",
-					type_path=["folder"],
-					children=sub_result
+					type_path=["folder"]
 				)
+				if recursive:
+					sub_result = self._list_folder(entry_path, base=path_in_location + "/", filter=filter,
+					                               recursive=recursive)
+					entry_data["children"] = sub_result
 
 				if not filter or filter(entry, entry_data):
 					def get_size():
@@ -1090,7 +1105,8 @@ class LocalFileStorage(StorageInterface):
 					# only add folders passing the optional filter
 					extended_entry_data = dict()
 					extended_entry_data.update(entry_data)
-					extended_entry_data["size"] = get_size()
+					if recursive:
+						extended_entry_data["size"] = get_size()
 
 					result[entry] = extended_entry_data
 
