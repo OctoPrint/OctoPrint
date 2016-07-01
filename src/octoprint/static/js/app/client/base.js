@@ -26,6 +26,24 @@
         return params;
     };
 
+    var contentTypeFalse = function(opts) {
+        opts = opts || {};
+
+        var params = $.extend({}, opts);
+        params.contentType = false;
+
+        return params;
+    };
+
+    var noProcessData = function(opts) {
+        opts = opts || {};
+
+        var params = $.extend({}, opts);
+        params.processData = false;
+
+        return params;
+    };
+
     OctoPrint.options = {
         "baseurl": undefined,
         "apikey": undefined
@@ -90,6 +108,15 @@
 
     OctoPrint.post = function(url, data, opts) {
         return OctoPrint.ajaxWithData("POST", url, data, noCache(opts));
+    };
+
+    OctoPrint.postForm = function(url, data, opts) {
+        var form = new FormData();
+        _.each(data, function(value, key) {
+            form.append(key, value);
+        });
+
+        return OctoPrint.post(url, form, contentTypeFalse(noProcessData(opts)));
     };
 
     OctoPrint.postJson = function(url, data, opts) {
