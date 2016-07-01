@@ -91,13 +91,16 @@
             return OctoPrint.get(sdUrl, opts);
         },
 
-        jog: function (amounts, opts) {
-            amounts = amounts || {};
+        jog: function (params, opts) {
+            params = params || {};
 
-            var payload = {};
-            if (amounts.x) payload.x = amounts.x;
-            if (amounts.y) payload.y = amounts.y;
-            if (amounts.z) payload.z = amounts.z;
+            var absolute = params.absolute || false;
+
+            var payload = {absolute: absolute};
+            if (params.x) payload.x = params.x;
+            if (params.y) payload.y = params.y;
+            if (params.z) payload.z = params.z;
+            if (params.speed !== undefined) payload.speed = params.speed;
 
             return issuePrintheadCommand("jog", payload, opts);
         },

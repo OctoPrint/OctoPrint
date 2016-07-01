@@ -244,9 +244,11 @@ def printerPrintheadCommand():
 					return make_response("Not a number for axis %s: %r" % (axis, value), 400)
 				validated_values[axis] = value
 
+		absolute = "absolute" in data and data["absolute"] in valid_boolean_trues
+		speed = data.get("speed", None)
+
 		# execute the jog commands
-		for axis, value in validated_values.iteritems():
-			printer.jog(axis, value)
+		printer.jog(validated_values, relative=not absolute, speed=speed)
 
 	##~~ home command
 	elif command == "home":

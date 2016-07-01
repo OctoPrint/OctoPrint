@@ -243,19 +243,42 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		if not result:
 			raise UnknownScript(name)
 
-	def jog(self, axis, amount):
-		if not isinstance(axis, (str, unicode)):
-			raise ValueError("axis must be a string: {axis}".format(axis=axis))
+	def jog(self, axes, relative=True, speed=None, *args, **kwargs):
+		if isinstance(axes, basestring):
+			# legacy parameter format, there should be an amount as first anonymous positional arguments too
+			axis = axes
 
-		axis = axis.lower()
-		if not axis in PrinterInterface.valid_axes:
-			raise ValueError("axis must be any of {axes}: {axis}".format(axes=", ".join(PrinterInterface.valid_axes), axis=axis))
-		if not isinstance(amount, (int, long, float)):
-			raise ValueError("amount must be a valid number: {amount}".format(amount=amount))
+			if not len(args) >= 1:
+				raise ValueError("amount not set")
+			amount = args[0]
+			if not isinstance(amount, (int, long, float)):
+				raise ValueError("amount must be a valid number: {amount}".format(amount=amount))
 
-		printer_profile = self._printerProfileManager.get_current_or_default()
-		movement_speed = printer_profile["axes"][axis]["speed"]
-		self.commands(["G91", "G1 %s%.4f F%d" % (axis.upper(), amount, movement_speed), "G90"])
+			axes = dict()
+			axes[axis] = amount
+
+		if not axes:
+			raise ValueError("At least one axis to jog must be provided")
+
+		for axis in axes:
+			if not axis in PrinterInterface.valid_axes:
+				raise ValueError("Invalid axis {}, valid axes are {}".format(axis, ", ".join(PrinterInterface.valid_axes)))
+
+		command = "G1 {}".format(" ".join(["{}{}".format(axis.upper(), amount) for axis, amount in axes.items()]))
+
+		if speed is None:
+			printer_profile = self._printerProfileManager.get_current_or_default()
+			speed = min([printer_profile["axes"][axis]["speed"] for axis in axes])
+
+		if speed and not isinstance(speed, bool):
+			command += " F{}".format(speed)
+
+		if relative:
+			commands = ["G91", command, "G90"]
+		else:
+			commands = ["G90", command]
+
+		self.commands(commands)
 
 	def home(self, axes):
 		if not isinstance(axes, (list, tuple)):

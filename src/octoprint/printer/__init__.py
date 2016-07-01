@@ -142,13 +142,17 @@ class PrinterInterface(object):
 		"""
 		raise NotImplementedError()
 
-	def jog(self, axis, amount):
+	def jog(self, axes, relative=True, speed=None, *args, **kwargs):
 		"""
 		Jogs the specified printer ``axis`` by the specified ``amount`` in mm.
 
 		Arguments:
-		    axis (str): The axis to jog, will be converted to lower case, one of "x", "y", "z" or "e"
-		    amount (int, float): The amount by which to jog in mm
+		    axes (dict): Axes and distances to jog, keys are axes ("x", "y", "z"), values are distances in mm
+		    relative (bool): Whether to interpret the distance values as relative (true, default) or absolute (false)
+		        coordinates
+		    speed (int, bool or None): Speed at which to jog (F parameter). If set to ``False`` no speed will be set
+		        specifically. If set to ``None`` (or left out) the minimum of all involved axes speeds from the printer
+		        profile will be used.
 		"""
 		raise NotImplementedError()
 

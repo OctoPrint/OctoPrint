@@ -208,9 +208,14 @@ Issue a print head command
    jog
      Jogs the print head (relatively) by a defined amount in one or more axes. Additional parameters are:
 
-     * ``x``: Optional. Amount to jog print head on x axis, must be a valid number corresponding to the distance to travel in mm.
-     * ``y``: Optional. Amount to jog print head on y axis, must be a valid number corresponding to the distance to travel in mm.
-     * ``z``: Optional. Amount to jog print head on z axis, must be a valid number corresponding to the distance to travel in mm.
+     * ``x``: Optional. Amount/coordinate to jog print head on x axis, must be a valid number corresponding to the distance to travel in mm.
+     * ``y``: Optional. Amount/coordinate to jog print head on y axis, must be a valid number corresponding to the distance to travel in mm.
+     * ``z``: Optional. Amount/coordinate to jog print head on z axis, must be a valid number corresponding to the distance to travel in mm.
+     * ``absolute``: Optional. Boolean value specifying whether to move relative to current position (provided
+       axes values are relative amounts) or to absolute position (provided axes values are coordinates)
+     * ``speed``: Optiona. Speed at which to move. If not provided, minimum speed for all selected axes from printer
+       profile will be used. If provided but ``false``, no speed parameter will be appended to the command. Otherwise
+       interpreted as an integer signifying the speed in mm/s, to append to the command.
 
    home
      Homes the print head in all of the given axes. Additional parameters are:
