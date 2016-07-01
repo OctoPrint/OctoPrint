@@ -164,7 +164,12 @@ class gcode(object):
 						time2 = abs(e / feedRateXY)
 						totalMoveTimeMinute += max(time1, time2)
 					elif moveType == "retract":
-						totalMoveTimeMinute += abs(e / feedRateXY)
+						diffX = oldPos[0] - pos[0]
+						diffY = oldPos[1] - pos[1]
+						diffZ = oldPos[1] - pos[1]
+						time1 = math.sqrt(diffX * diffX + diffY * diffY + diffZ * diffZ) / feedRateXY
+						time2 = abs(e / feedRateXY)
+						totalMoveTimeMinute += max(time1, time2)
 
 					if moveType == 'move' and oldPos[2] != pos[2]:
 						if oldPos[2] > pos[2] and abs(oldPos[2] - pos[2]) > 5.0 and pos[2] < 1.0:
