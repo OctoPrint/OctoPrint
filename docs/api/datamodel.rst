@@ -232,7 +232,12 @@ File information
    * - ``name``
      - 1
      - String
-     - The name of the file
+     - The name of the file without path. E.g. "file.gco" for a file "file.gco" located anywhere in the file system.
+   * - ``path``
+     - 1
+     - String
+     - The path to the file within the location. E.g. "folder/subfolder/file.gco" for a file "file.gco" located within
+       "folder" and "subfolder" relative to the root of the location.
    * - ``type``
      - 1
      - String
@@ -261,7 +266,13 @@ Folders
    * - ``children``
      - 0..*
      - Array of :ref:`File information items <sec-api-datamodel-files-file>`
-     - Contained children for entries of type ``folder``
+     - Contained children for entries of type ``folder``. Will only include children in subfolders in recursive
+       listings. Not present in non recursive listings, this might be revisited in the future.
+   * - ``size``
+     - 0..1
+     - Number
+     - The size of all files contained in the folder and its subfolders. Not present in non recursive listings, this might
+       be revisited in the future.
 
 Files
 '''''
@@ -300,6 +311,38 @@ Files
      - 0..1
      - :ref:`GCODE analysis information <sec-api-datamodel-files-gcodeanalysis>`
      - Information from the analysis of the GCODE file, if available. Left out in abridged version.
+
+.. _sec-api-datamodel-files-fileabridged:
+
+Abridged file or folder information
+-----------------------------------
+
+.. list-table::
+   :widths: 15 5 10 30
+   :header-rows: 1
+
+   * - Name
+     - Multiplicity
+     - Type
+     - Description
+   * - ``name``
+     - 1
+     - String
+     - The name of the file or folder without path. E.g. "file.gco" for a file "file.gco" located anywhere in the file system.
+   * - ``path``
+     - 1
+     - String
+     - The path to the file or folder within the location. E.g. "folder/subfolder/file.gco" for a file "file.gco" located within
+       "folder" and "subfolder" relative to the root of the location.
+   * - ``origin``
+     - 1
+     - String, either ``local`` or ``sdcard``
+     - The origin of the file, ``local`` when stored in OctoPrint's ``uploads`` folder, ``sdcard`` when stored on the
+       printer's SD card (if available)
+   * - ``refs``
+     - 0..1
+     - :ref:`sec-api-datamodel-files-ref`
+     - References relevant to this file or folder, left out in abridged version
 
 .. _sec-api-datamodel-files-gcodeanalysis:
 
@@ -348,13 +391,14 @@ References
    * - ``resource``
      - 1
      - URL
-     - The resource that represents the file (e.g. for issuing commands to or for deleting)
+     - The resource that represents the file or folder (e.g. for issuing commands to or for deleting)
    * - ``download``
      - 0..1
      - URL
-     - The download URL for the file
+     - The download URL for the file. Never present for folders.
    * - ``model``
      - 0..1
      - URL
-     - The model from which this file was generated (e.g. an STL, currently not used)
+     - The model from which this file was generated (e.g. an STL, currently not used). Never present for
+       folders.
 

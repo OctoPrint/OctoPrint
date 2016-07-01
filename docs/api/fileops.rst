@@ -135,20 +135,27 @@ Retrieve files from specific location
 
 .. _sec-api-fileops-uploadfile:
 
-Upload file
-===========
+Upload file or create folder
+============================
 
 .. http:post:: /api/files/(string:location)
 
-   Upload a file to the selected `location`.
+   Upload a file to the selected ``location`` or create a new empty folder on it.
 
    Other than most of the other requests on OctoPrint's API which are expected as JSON, this request is expected as
    ``Content-Type: multipart/form-data`` due to the included file upload.
 
+   To upload a file, the request body must at least contain the ``file`` form field with the
+   contents and file name of the file to upload.
+
+   To create a new folder, the request body must at least contain the ``foldername`` form field,
+   specifying the name of the new folder. Note that folder creation is currently only supported on
+   the ``local`` file system.
+
    Returns a :http:statuscode:`201` response with a ``Location`` header set to the management URL of the uploaded
    file and an :ref:`Upload Response <sec-api-fileops-datamodel-uploadresponse>` as the body upon successful completion.
 
-   **Example**
+   **Example for uploading a file**
 
    .. sourcecode:: http
 
@@ -194,6 +201,7 @@ Upload file
         "files": {
           "local": {
             "name": "whistle_v2.gcode",
+            "path": "whistle_v2.gcode",
             "origin": "local",
             "refs": {
               "resource": "http://example.com/api/files/local/whistle_v2.gcode",
@@ -202,6 +210,7 @@ Upload file
           },
           "sdcard": {
             "name": "whistle_.gco",
+            "path": "whistle_.gco",
             "origin": "sdcard",
             "refs": {
               "resource": "http://example.com/api/files/sdcard/whistle_.gco"
@@ -211,35 +220,73 @@ Upload file
         "done": true
       }
 
-   :param location: The target location to which to upload the file. Currently only ``local`` and ``sdcard`` are supported
-                    here, with ``local`` referring to OctoPrint's ``uploads`` folder and ``sdcard`` referring to
-                    the printer's SD card. If an upload targets the SD card, it will also be stored locally first.
-   :form file:      The file to upload, including a valid ``filename``.
-   :form select:    Whether to select the file directly after upload (``true``) or not (``false``). Optional, defaults
-                    to ``false``.
-   :form print:     Whether to start printing the file directly after upload (``true``) or not (``false``). If set, `select`
-                    is implicitely ``true`` as well. Optional, defaults to ``false``.
-   :form userdata:  [Optional] An optional string that if specified will be interpreted as JSON and then saved along
-                    with the file as metadata (metadata key ``userdata``)
-   :statuscode 201: No error
-   :statuscode 400: If no `file` is included in the request, `userdata` was provided but could not be parsed as JSON
-                    or the request is otherwise invalid.
-   :statuscode 404: If `location` is neither ``local`` nor ``sdcard`` or trying to upload to SD card and SD card support
-                    is disabled
-   :statuscode 409: If the upload of the file would override the file that is currently being printed or if an upload
-                    to SD card was requested and the printer is either not operational or currently busy with a print job.
-   :statuscode 415: If the file is neither a ``gcode`` nor an ``stl`` file (or it is an ``stl`` file but slicing support
-                    is disabled)
-   :statuscode 500: If the upload failed internally
+   **Example for creating a folder**
+
+   .. sourcecode:: http
+
+      POST /api/files/local HTTP/1.1
+      Host: example.com
+      X-Api-Key: abcdef...
+      Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryDeC2E3iWbTv1PwMD
+
+      ------WebKitFormBoundaryDeC2E3iWbTv1PwMD
+      Content-Disposition: form-data; name="foldername"
+
+      subfolder
+      ------WebKitFormBoundaryDeC2E3iWbTv1PwMD
+      Content-Disposition: form-data; name="path"
+
+      folder/
+      ------WebKitFormBoundaryDeC2E3iWbTv1PwMD--
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+      Location: http://example.com/api/files/local/folder/subfolder
+
+      {
+        "folder": {
+          "name": "subfolder",
+          "path": "folder/subfolder",
+          "origin": "local"
+        },
+        "done": true
+      }
+
+   :param location:  The target location to which to upload the file. Currently only ``local`` and ``sdcard`` are supported
+                     here, with ``local`` referring to OctoPrint's ``uploads`` folder and ``sdcard`` referring to
+                     the printer's SD card. If an upload targets the SD card, it will also be stored locally first.
+   :form file:       The file to upload, including a valid ``filename``.
+   :form path:       The path within the ``location`` to upload the file to or create the folder in (without the future
+                     filename or ``foldername`` - basically the parent folder). If unset will be taken from the provided
+                     ``file``'s name or ``foldername`` and default to the root folder of the ``location``.
+   :form select:     Whether to select the file directly after upload (``true``) or not (``false``). Optional, defaults
+                     to ``false``. Ignored when creating a folder.
+   :form print:      Whether to start printing the file directly after upload (``true``) or not (``false``). If set, ``select``
+                     is implicitely ``true`` as well. Optional, defaults to ``false``. Ignored when creating a folder.
+   :form userdata:   [Optional] An optional string that if specified will be interpreted as JSON and then saved along
+                     with the file as metadata (metadata key ``userdata``). Ignored when creating a folder.
+   :form foldername: The name of the folder to create. Ignored when uploading a file.
+   :statuscode 201:  No error
+   :statuscode 400:  If no ``file`` or ``foldername`` are included in the request, ``userdata`` was provided but could
+                     not be parsed as JSON or the request is otherwise invalid.
+   :statuscode 404:  If ``location`` is neither ``local`` nor ``sdcard`` or trying to upload to SD card and SD card support
+                     is disabled
+   :statuscode 409:  If the upload of the file would override the file that is currently being printed or if an upload
+                     to SD card was requested and the printer is either not operational or currently busy with a print job.
+   :statuscode 415:  If the file is neither a ``gcode`` nor an ``stl`` file (or it is an ``stl`` file but slicing support
+                     is disabled)
+   :statuscode 500:  If the upload failed internally
 
 .. _sec-api-fileops-retrievefileinfo:
 
-Retrieve a specific file's information
-======================================
+Retrieve a specific file's or folder's information
+==================================================
 
 .. http:get:: /api/files/(string:location)/(path:filename)
 
-   Retrieves the selected file's information.
+   Retrieves the selected file's or folder's information.
 
    If the file is unknown, a :http:statuscode:`404` is returned.
 
@@ -287,8 +334,9 @@ Retrieve a specific file's information
 
    :param location: The location of the file for which to retrieve the information, either ``local`` or ``sdcard``.
    :param filename: The filename of the file for which to retrieve the information
+   :param children: Whether to include children of folders (true, default) or not (false)
    :statuscode 200: No error
-   :statuscode 404: If `target` is neither ``local`` nor ``sdcard``, ``sdcard`` but SD card support is disabled or the
+   :statuscode 404: If ``target`` is neither ``local`` nor ``sdcard``, ``sdcard`` but SD card support is disabled or the
                     requested file was not found
 
 .. _sec-api-fileops-filecommand:
@@ -296,7 +344,7 @@ Retrieve a specific file's information
 Issue a file command
 ====================
 
-.. http:post:: /api/files/(string:target)/(path:filename)
+.. http:post:: /api/files/(string:location)/(path:path)
 
    Issue a file command to an existing file. Currently supported commands are:
 
@@ -306,6 +354,8 @@ Issue a file command
      * ``print``: Optional, if set to ``true`` the file will start printing directly after selection. If the printer
        is not operational when this parameter is present and set to ``true``, the request will fail with a response
        of ``409 Conflict``.
+
+     Upon success, a status code of :http:statuscode:`204` and an empty body is returned.
 
    slice
      Slices an STL file into GCODE. Note that this is an asynchronous operation that will take place in the background
@@ -334,7 +384,8 @@ Issue a file command
      also mean that if it was supposed to be directly selected and start printing after the slicing finished, this will not
      take place anymore and whether this will happen with the new sliced file depends entirely on the new request!
 
-   Upon success, a status code of :http:statuscode:`204` and an empty body is returned, unless specified otherwise.
+     Upon success, a status code of :http:statuscode:`202` and a :ref:`sec-api-datamodel-files-fileabridged` in the response
+     body will be returned.
 
    **Example Select Request**
 
@@ -358,7 +409,7 @@ Issue a file command
 
    .. sourcecode:: http
 
-      POST /api/files/local/some_model.stl HTTP/1.1
+      POST /api/files/local/some_folder/some_model.stl HTTP/1.1
       Host: example.com
       Content-Type: application/json
       X-Api-Key: abcdef...
@@ -383,16 +434,17 @@ Issue a file command
       {
         "origin": "local",
         "name": "some_model.first_try.gcode",
+        "path": "some_folder/some_model.first_try.gcode",
         "refs": {
-          "download": "http://example.com/downloads/files/local/some_model.first_try.gcode",
-          "resource": "http://example.com/api/files/local/some_model.first_try.gcode"
+          "download": "http://example.com/downloads/files/local/some_folder/some_model.first_try.gcode",
+          "resource": "http://example.com/api/files/local/some_folder/some_model.first_try.gcode"
         }
       }
 
 
-   :param target:               The target location on which to delete the file, either ``local`` (for OctoPrint's ``uploads``
+   :param location:             The target location on which to delete the file, either ``local`` (for OctoPrint's ``uploads``
                                 folder) or ``sdcard`` for the printer's SD card (if available)
-   :param filename:             The filename of the file for which to issue the command
+   :param path:                 The path of the file for which to issue the command
    :json string command:        The command to issue for the file, currently only ``select`` is supported
    :json boolean print:         ``select`` and ``slice`` command: Optional, whether to start printing the file directly after selection
                                 or slicing, defaults to ``false``.
@@ -410,7 +462,7 @@ Issue a file command
    :statuscode 202:             No error for a ``slice`` command.
    :statuscode 400:             If the ``command`` is unknown or the request is otherwise invalid
    :statuscode 415:             If a ``slice`` command was issued against something other than an STL file.
-   :statuscode 404:             If `target` is neither ``local`` nor ``sdcard`` or the requested file was not found
+   :statuscode 404:             If ``location`` is neither ``local`` nor ``sdcard`` or the requested file was not found
    :statuscode 409:             If a selected file is supposed to start printing directly but the printer is not operational or
                                 if a file to be sliced is supposed to be selected or start printing directly but the printer
                                 is not operational or already printing.
@@ -420,9 +472,9 @@ Issue a file command
 Delete file
 ===========
 
-.. http:delete:: /api/files/(string:target)/(path:filename)
+.. http:delete:: /api/files/(string:location)/(path:path)
 
-   Delete the selected `filename` on the selected `target`.
+   Delete the selected ``path`` on the selected ``location``.
 
    If the file to be deleted is currently being printed, a :http:statuscode:`409` will be returned.
 
@@ -436,11 +488,11 @@ Delete file
       Host: example.com
       X-Api-Key: abcdef...
 
-   :param target:   The target location on which to delete the file, either ``local`` (for OctoPrint's ``uploads``
+   :param location: The target location on which to delete the file, either ``local`` (for OctoPrint's ``uploads``
                     folder) or ``sdcard`` for the printer's SD card (if available)
-   :param filename: The filename of the file to delete
+   :param path:     The path of the file to delete
    :statuscode 204: No error
-   :statuscode 404: If `target` is neither ``local`` nor ``sdcard`` or the requested file was not found
+   :statuscode 404: If ``location`` is neither ``local`` nor ``sdcard`` or the requested file was not found
    :statuscode 409: If the file to be deleted is currently being printed
 
 .. _sec-api-fileops-datamodel:
@@ -485,24 +537,28 @@ Upload response
      - Type
      - Description
    * - ``files``
-     - 1
+     - 0..1
      - Object
      - Abridged information regarding the file that was just uploaded. If only uploaded to ``local`` this will only
        contain the ``local`` property. If uploaded to SD card, this will contain both ``local`` and ``sdcard`` properties.
+       Only contained if a file was uploaded, not present if only a new folder was created.
    * - ``files.local``
      - 1
-     - :ref:`sec-api-datamodel-files-file`
-     - The information regarding the file that was just uploaded to the local storage (only the fields ``name``,
-       ``origin`` and ``refs`` will be set).
+     - :ref:`sec-api-datamodel-files-fileabridged`
+     - The information regarding the file that was just uploaded to the local storage.
    * - ``files.sdcard``
      - 0..1
-     - :ref:`sec-api-datamodel-files-file`
-     - The information regarding the file that was just uploaded to the printer's SD card (only the fields ``name``,
-       ``origin`` and ``refs`` will be set).
+     - :ref:`sec-api-datamodel-files-fileabridged`
+     - The information regarding the file that was just uploaded to the printer's SD card.
+   * - ``folder``
+     - 0..1
+     - :ref:`sec-api-datamodel-files-fileabridged`
+     - Abridged information regarding the folder that was just created. Only contained if a folder
+       was created, not present if a file was uploaded.
    * - ``done``
      - 1
      - Boolean
-     - Whether the file processing after upload has already finished (``true``) or not, e.g. due to first needing
+     - Whether any file processing after upload has already finished (``true``) or not, e.g. due to first needing
        to perform a slicing step (``false``). Clients may use this information to direct progress displays related to
        the upload.
 

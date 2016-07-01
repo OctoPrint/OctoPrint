@@ -297,12 +297,16 @@
 
    Instructs the printer to refresh the list of files on the SD card (if present).
 
+   See the ``refresh`` command in :ref:`Issue an SD command <sec-api-printer-sdcommand>` for more details.
+
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
 .. js:function:: OctoPrint.printer.releaseSd(opts)
 
    Instructs the printer to release its SD card (if present).
+
+   See the ``release`` command in :ref:`Issue an SD command <sec-api-printer-sdcommand>` for more details.
 
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
