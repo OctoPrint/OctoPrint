@@ -55,7 +55,7 @@ class TestSlicingManager(unittest.TestCase):
 		self.plugin_manager.return_value.get_implementations.side_effect = get_implementations
 
 	def test_registered_slicers(self):
-		self.assertEquals(["mock"], self.slicing_manager.registered_slicers)
+		self.assertEqual(["mock"], self.slicing_manager.registered_slicers)
 
 	def test_slicing_enabled(self):
 		self.assertTrue(self.slicing_manager.slicing_enabled)
@@ -68,7 +68,7 @@ class TestSlicingManager(unittest.TestCase):
 				return None
 		self.settings.get.side_effect = get
 
-		self.assertEquals("mock", self.slicing_manager.default_slicer)
+		self.assertEqual("mock", self.slicing_manager.default_slicer)
 
 	def test_default_slicer_unknown(self):
 		def get(path):
@@ -122,7 +122,7 @@ class TestSlicingManager(unittest.TestCase):
 		# mock printer profile manager
 		printer_profile = dict(_id="mock_printer", _name="Mock Printer Profile")
 		def get_printer_profile(printer_profile_id):
-			self.assertEquals("mock_printer", printer_profile_id)
+			self.assertEqual("mock_printer", printer_profile_id)
 			return printer_profile
 		self.printer_profile_manager.get.side_effect = get_printer_profile
 
