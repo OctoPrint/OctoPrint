@@ -341,7 +341,7 @@ def gcodeFileCommand(filename, target):
 		else:
 			import os
 			name, _ = os.path.splitext(filename)
-			destination = name + "." + slicer_instance.get_slicer_properties().get("destination_extensions", ["gco", "gcode", "g"])
+			destination = name + "." + slicer_instance.get_slicer_properties().get("destination_extensions", ["gco", "gcode", "g"])[0]
 
 		# prohibit overwriting the file that is currently being printed
 		currentOrigin, currentFilename = _getCurrentFile()
