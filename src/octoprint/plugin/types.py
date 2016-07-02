@@ -1067,6 +1067,13 @@ class SlicerPlugin(OctoPrintPlugin):
 		    against slicers running on the same device will result in an error.
 		progress_report
 		    ``True`` if the slicer can report back slicing progress to OctoPrint ``False`` otherwise.
+		source_file_types
+		    A list of file types this slicer supports as valid origin file types. These are file types as found in the
+		    paths within the extension tree. Plugins may add additional file types through the :ref:`sec-plugins-hook-filemanager-extensiontree` hook.
+		    The system will test source files contains in incoming slicing requests via :meth:`octoprint.filemanager.valid_file_type` against the
+		    targeted slicer's ``source_file_types``.
+		destination_extension
+		    The possible extensions of slicing result files.
 
 		Returns:
 		    dict: A dict describing the slicer as outlined above.
@@ -1075,7 +1082,9 @@ class SlicerPlugin(OctoPrintPlugin):
 			type=None,
 			name=None,
 			same_device=True,
-			progress_report=False
+			progress_report=False,
+			source_file_types=["model"],
+			destination_extensions=["gco", "gcode", "g"]
 		)
 
 	def get_slicer_default_profile(self):

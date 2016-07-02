@@ -19,6 +19,8 @@ from octoprint.slicing import UnknownSlicer, SlicerNotConfigured, ProfileAlready
 
 @api.route("/slicing", methods=["GET"])
 def slicingListAll():
+	from octoprint.filemanager import get_extensions
+
 	default_slicer = s().get(["slicing", "defaultSlicer"])
 
 	if "configured" in request.values and request.values["configured"] in valid_boolean_trues:
@@ -30,12 +32,21 @@ def slicingListAll():
 	for slicer in slicers:
 		try:
 			slicer_impl = slicingManager.get_slicer(slicer, require_configured=False)
+
+			extensions = set()
+			for source_file_type in slicer_impl.get_slicer_properties().get("source_file_types", ["model"]):
+				extensions = extensions.union(get_extensions(source_file_type))
+
 			result[slicer] = dict(
 				key=slicer,
 				displayName=slicer_impl.get_slicer_properties()["name"],
 				default=default_slicer == slicer,
-				configured = slicer_impl.is_slicer_configured(),
-				profiles=_getSlicingProfilesData(slicer)
+				configured=slicer_impl.is_slicer_configured(),
+				profiles=_getSlicingProfilesData(slicer),
+				extensions=dict(
+					source=list(extensions),
+					destination=slicer_impl.get_slicer_properties().get("destination_extensions", ["gco", "gcode", "g"])
+				)
 			)
 		except (UnknownSlicer, SlicerNotConfigured):
 			# this should never happen
