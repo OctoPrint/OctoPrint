@@ -27,6 +27,7 @@ ContentTypeDetector = namedtuple("ContentTypeDetector", "extensions, detector")
 extensions = dict(
 )
 
+
 def full_extension_tree():
     result = dict(
         # extensions for 3d model files

@@ -9,9 +9,9 @@ import os
 import re
 import threading
 import math
- try:
-     import queue
- except ImportError:
+try:
+    import queue
+except ImportError:
     import Queue as queue
 
 from serial import SerialTimeoutException

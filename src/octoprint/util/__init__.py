@@ -18,9 +18,9 @@ import threading
 from functools import wraps
 import warnings
 import contextlib
- try:
-     import queue
- except ImportError:
+try:
+    import queue
+except ImportError:
     import Queue as queue
 import collections
 

@@ -10,9 +10,9 @@ import glob
 import time
 import re
 import threading
- try:
-     import queue
- except ImportError:
+try:
+    import queue
+except ImportError:
     import Queue as queue
 import logging
 import serial

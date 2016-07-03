@@ -11,9 +11,9 @@ import fnmatch
 import datetime
 import sys
 import shutil
- try:
-     import queue
- except ImportError:
+try:
+    import queue
+except ImportError:
     import Queue as queue
 import requests
 
