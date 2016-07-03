@@ -33,10 +33,10 @@ from octoprint.util import get_exception_string, sanitize_ascii, filter_non_asci
 try:
     import winreg
 except ImportError:
-	try:
+    try:
         import _winreg as winreg
     except:
-       pass
+        pass
 
 _logger = logging.getLogger(__name__)
 
