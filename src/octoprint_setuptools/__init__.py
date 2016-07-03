@@ -13,409 +13,409 @@ from setuptools import Command
 
 
 def package_data_dirs(source, sub_folders):
-	import os
-	dirs = []
+    import os
+    dirs = []
 
-	for d in sub_folders:
-		folder = os.path.join(source, d)
-		if not os.path.exists(folder):
-			continue
+    for d in sub_folders:
+        folder = os.path.join(source, d)
+        if not os.path.exists(folder):
+            continue
 
-		for dirname, _, files in os.walk(folder):
-			dirname = os.path.relpath(dirname, source)
-			for f in files:
-				dirs.append(os.path.join(dirname, f))
+        for dirname, _, files in os.walk(folder):
+            dirname = os.path.relpath(dirname, source)
+            for f in files:
+                dirs.append(os.path.join(dirname, f))
 
-	return dirs
+    return dirs
 
 
 def recursively_handle_files(directory, file_matcher, folder_matcher=None, folder_handler=None, file_handler=None):
-	applied_handler = False
+    applied_handler = False
 
-	for filename in os.listdir(directory):
-		path = os.path.join(directory, filename)
+    for filename in os.listdir(directory):
+        path = os.path.join(directory, filename)
 
-		if file_handler is not None and file_matcher(filename):
-			file_handler(path)
-			applied_handler = True
+        if file_handler is not None and file_matcher(filename):
+            file_handler(path)
+            applied_handler = True
 
-		elif os.path.isdir(path) and (folder_matcher is None or folder_matcher(directory, filename, path)):
-			sub_applied_handler = recursively_handle_files(path, file_matcher, folder_handler=folder_handler, file_handler=file_handler)
-			if sub_applied_handler:
-				applied_handler = True
+        elif os.path.isdir(path) and (folder_matcher is None or folder_matcher(directory, filename, path)):
+            sub_applied_handler = recursively_handle_files(path, file_matcher, folder_handler=folder_handler, file_handler=file_handler)
+            if sub_applied_handler:
+                applied_handler = True
 
-			if folder_handler is not None:
-				folder_handler(path, sub_applied_handler)
+            if folder_handler is not None:
+                folder_handler(path, sub_applied_handler)
 
-	return applied_handler
+    return applied_handler
 
 
 class CleanCommand(Command):
-	description = "clean build artifacts"
-	user_options = []
-	boolean_options = []
+    description = "clean build artifacts"
+    user_options = []
+    boolean_options = []
 
-	build_folder = "build"
-	source_folder = "src"
-	eggs = []
+    build_folder = "build"
+    source_folder = "src"
+    eggs = []
 
-	@classmethod
-	def for_options(cls, build_folder="build", source_folder="src", eggs=None):
-		if eggs is None:
-			eggs = []
-		return type(cls)(cls.__name__, (cls,), dict(
-			build_folder=build_folder,
-			source_folder=source_folder,
-			eggs=eggs
-		))
+    @classmethod
+    def for_options(cls, build_folder="build", source_folder="src", eggs=None):
+        if eggs is None:
+            eggs = []
+        return type(cls)(cls.__name__, (cls,), dict(
+            build_folder=build_folder,
+            source_folder=source_folder,
+            eggs=eggs
+        ))
 
-	def initialize_options(self):
-		pass
+    def initialize_options(self):
+        pass
 
-	def finalize_options(self):
-		pass
+    def finalize_options(self):
+        pass
 
-	def run(self):
-		# build folder
-		if os.path.exists(self.__class__.build_folder):
-			print("Deleting build directory")
-			shutil.rmtree(self.__class__.build_folder)
+    def run(self):
+        # build folder
+        if os.path.exists(self.__class__.build_folder):
+            print("Deleting build directory")
+            shutil.rmtree(self.__class__.build_folder)
 
-		# eggs
-		for egg in self.__class__.eggs:
-			globbed_eggs = glob.glob(egg)
-			for globbed_egg in globbed_eggs:
-				print("Deleting %s directory" % globbed_egg)
-				shutil.rmtree(globbed_egg)
+        # eggs
+        for egg in self.__class__.eggs:
+            globbed_eggs = glob.glob(egg)
+            for globbed_egg in globbed_eggs:
+                print("Deleting %s directory" % globbed_egg)
+                shutil.rmtree(globbed_egg)
 
-		# pyc files
-		def delete_folder_if_empty(path, applied_handler):
-			if not applied_handler:
-				return
-			if len(os.listdir(path)) == 0:
-				shutil.rmtree(path)
-				print("Deleted %s since it was empty" % path)
+        # pyc files
+        def delete_folder_if_empty(path, applied_handler):
+            if not applied_handler:
+                return
+            if len(os.listdir(path)) == 0:
+                shutil.rmtree(path)
+                print("Deleted %s since it was empty" % path)
 
-		def delete_file(path):
-			os.remove(path)
-			print("Deleted %s" % path)
+        def delete_file(path):
+            os.remove(path)
+            print("Deleted %s" % path)
 
-		import fnmatch
-		recursively_handle_files(
-			os.path.abspath(self.__class__.source_folder),
-			lambda name: fnmatch.fnmatch(name.lower(), "*.pyc"),
-			folder_matcher=lambda dir, name, path: name != ".git",
-			folder_handler=delete_folder_if_empty,
-			file_handler=delete_file
-		)
+        import fnmatch
+        recursively_handle_files(
+            os.path.abspath(self.__class__.source_folder),
+            lambda name: fnmatch.fnmatch(name.lower(), "*.pyc"),
+            folder_matcher=lambda dir, name, path: name != ".git",
+            folder_handler=delete_folder_if_empty,
+            file_handler=delete_file
+        )
 
 
 class NewTranslation(Command):
-	description = "create a new translation"
-	user_options = [
-		('locale=', 'l', 'locale for the new translation'),
-		]
-	boolean_options = []
+    description = "create a new translation"
+    user_options = [
+        ('locale=', 'l', 'locale for the new translation'),
+        ]
+    boolean_options = []
 
-	pot_file = None
-	output_dir = None
+    pot_file = None
+    output_dir = None
 
-	@classmethod
-	def for_options(cls, pot_file=None, output_dir=None):
-		if pot_file is None:
-			raise ValueError("pot_file must not be None")
-		if output_dir is None:
-			raise ValueError("output_dir must not be None")
+    @classmethod
+    def for_options(cls, pot_file=None, output_dir=None):
+        if pot_file is None:
+            raise ValueError("pot_file must not be None")
+        if output_dir is None:
+            raise ValueError("output_dir must not be None")
 
-		return type(cls)(cls.__name__, (cls,), dict(
-			pot_file=pot_file,
-			output_dir=output_dir
-		))
+        return type(cls)(cls.__name__, (cls,), dict(
+            pot_file=pot_file,
+            output_dir=output_dir
+        ))
 
-	def __init__(self, dist, **kw):
-		from babel.messages import frontend as babel
-		self.babel_init_messages = babel.init_catalog(dist)
-		Command.__init__(self, dist, **kw)
+    def __init__(self, dist, **kw):
+        from babel.messages import frontend as babel
+        self.babel_init_messages = babel.init_catalog(dist)
+        Command.__init__(self, dist, **kw)
 
-	def initialize_options(self):
-		self.locale = None
-		self.babel_init_messages.initialize_options()
+    def initialize_options(self):
+        self.locale = None
+        self.babel_init_messages.initialize_options()
 
-	def finalize_options(self):
-		self.babel_init_messages.locale = self.locale
-		self.babel_init_messages.input_file = self.__class__.pot_file
-		self.babel_init_messages.output_dir = self.__class__.output_dir
-		self.babel_init_messages.finalize_options()
+    def finalize_options(self):
+        self.babel_init_messages.locale = self.locale
+        self.babel_init_messages.input_file = self.__class__.pot_file
+        self.babel_init_messages.output_dir = self.__class__.output_dir
+        self.babel_init_messages.finalize_options()
 
-	def run(self):
-		self.babel_init_messages.run()
+    def run(self):
+        self.babel_init_messages.run()
 
 
 class ExtractTranslation(Command):
-	description = "extract translations"
-	user_options = []
-	boolean_options = []
+    description = "extract translations"
+    user_options = []
+    boolean_options = []
 
-	mail_address = "i18n@octoprint.org"
-	copyright_holder = "The OctoPrint Project"
-	mapping_file = None
-	pot_file = None
-	input_dirs = None
+    mail_address = "i18n@octoprint.org"
+    copyright_holder = "The OctoPrint Project"
+    mapping_file = None
+    pot_file = None
+    input_dirs = None
 
-	@classmethod
-	def for_options(cls, mail_address="i18n@octoprint.org", copyright_holder="The OctoPrint Project", mapping_file=None, pot_file=None, input_dirs=None):
-		if mapping_file is None:
-			raise ValueError("mapping_file must not be None")
-		if pot_file is None:
-			raise ValueError("pot_file must not be None")
-		if input_dirs is None:
-			raise ValueError("input_dirs must not be None")
+    @classmethod
+    def for_options(cls, mail_address="i18n@octoprint.org", copyright_holder="The OctoPrint Project", mapping_file=None, pot_file=None, input_dirs=None):
+        if mapping_file is None:
+            raise ValueError("mapping_file must not be None")
+        if pot_file is None:
+            raise ValueError("pot_file must not be None")
+        if input_dirs is None:
+            raise ValueError("input_dirs must not be None")
 
-		return type(cls)(cls.__name__, (cls,), dict(
-			mapping_file=mapping_file,
-			pot_file=pot_file,
-			input_dirs=input_dirs,
-			mail_address=mail_address,
-			copyright_holder=copyright_holder
-		))
+        return type(cls)(cls.__name__, (cls,), dict(
+            mapping_file=mapping_file,
+            pot_file=pot_file,
+            input_dirs=input_dirs,
+            mail_address=mail_address,
+            copyright_holder=copyright_holder
+        ))
 
-	def __init__(self, dist, **kw):
-		from babel.messages import frontend as babel
-		self.babel_extract_messages = babel.extract_messages(dist)
-		Command.__init__(self, dist, **kw)
+    def __init__(self, dist, **kw):
+        from babel.messages import frontend as babel
+        self.babel_extract_messages = babel.extract_messages(dist)
+        Command.__init__(self, dist, **kw)
 
-	def initialize_options(self):
-		self.babel_extract_messages.initialize_options()
+    def initialize_options(self):
+        self.babel_extract_messages.initialize_options()
 
-	def finalize_options(self):
-		self.babel_extract_messages.mapping_file = self.__class__.mapping_file
-		self.babel_extract_messages.output_file = self.__class__.pot_file
-		self.babel_extract_messages.input_dirs = self.__class__.input_dirs
-		self.babel_extract_messages.msgid_bugs_address = self.__class__.mail_address
-		self.babel_extract_messages.copyright_holder = self.__class__.copyright_holder
-		self.babel_extract_messages.finalize_options()
+    def finalize_options(self):
+        self.babel_extract_messages.mapping_file = self.__class__.mapping_file
+        self.babel_extract_messages.output_file = self.__class__.pot_file
+        self.babel_extract_messages.input_dirs = self.__class__.input_dirs
+        self.babel_extract_messages.msgid_bugs_address = self.__class__.mail_address
+        self.babel_extract_messages.copyright_holder = self.__class__.copyright_holder
+        self.babel_extract_messages.finalize_options()
 
-	def run(self):
-		self.babel_extract_messages.run()
+    def run(self):
+        self.babel_extract_messages.run()
 
 
 class RefreshTranslation(Command):
-	description = "refresh translations"
-	user_options = [
-		('locale=', 'l', 'locale for the translation to refresh'),
-		]
-	boolean_options = []
+    description = "refresh translations"
+    user_options = [
+        ('locale=', 'l', 'locale for the translation to refresh'),
+        ]
+    boolean_options = []
 
-	mail_address = "i18n@octoprint.org"
-	copyright_holder = "The OctoPrint Project"
-	mapping_file = None
-	pot_file = None
-	input_dirs = None
-	output_dir = None
+    mail_address = "i18n@octoprint.org"
+    copyright_holder = "The OctoPrint Project"
+    mapping_file = None
+    pot_file = None
+    input_dirs = None
+    output_dir = None
 
-	@classmethod
-	def for_options(cls, mail_address="i18n@octoprint.org", copyright_holder="The OctoPrint Project", mapping_file=None, pot_file=None, input_dirs=None, output_dir=None):
-		if mapping_file is None:
-			raise ValueError("mapping_file must not be None")
-		if pot_file is None:
-			raise ValueError("pot_file must not be None")
-		if input_dirs is None:
-			raise ValueError("input_dirs must not be None")
-		if output_dir is None:
-			raise ValueError("output_dir must not be None")
+    @classmethod
+    def for_options(cls, mail_address="i18n@octoprint.org", copyright_holder="The OctoPrint Project", mapping_file=None, pot_file=None, input_dirs=None, output_dir=None):
+        if mapping_file is None:
+            raise ValueError("mapping_file must not be None")
+        if pot_file is None:
+            raise ValueError("pot_file must not be None")
+        if input_dirs is None:
+            raise ValueError("input_dirs must not be None")
+        if output_dir is None:
+            raise ValueError("output_dir must not be None")
 
-		return type(cls)(cls.__name__, (cls,), dict(
-			mapping_file=mapping_file,
-			pot_file=pot_file,
-			input_dirs=input_dirs,
-			mail_address=mail_address,
-			copyright_holder=copyright_holder,
-			output_dir=output_dir
-		))
+        return type(cls)(cls.__name__, (cls,), dict(
+            mapping_file=mapping_file,
+            pot_file=pot_file,
+            input_dirs=input_dirs,
+            mail_address=mail_address,
+            copyright_holder=copyright_holder,
+            output_dir=output_dir
+        ))
 
-	def __init__(self, dist, **kw):
-		from babel.messages import frontend as babel
-		self.babel_extract_messages = babel.extract_messages(dist)
-		self.babel_update_messages = babel.update_catalog(dist)
-		Command.__init__(self, dist, **kw)
+    def __init__(self, dist, **kw):
+        from babel.messages import frontend as babel
+        self.babel_extract_messages = babel.extract_messages(dist)
+        self.babel_update_messages = babel.update_catalog(dist)
+        Command.__init__(self, dist, **kw)
 
-	def initialize_options(self):
-		self.locale = None
-		self.babel_extract_messages.initialize_options()
-		self.babel_update_messages.initialize_options()
+    def initialize_options(self):
+        self.locale = None
+        self.babel_extract_messages.initialize_options()
+        self.babel_update_messages.initialize_options()
 
-	def finalize_options(self):
-		self.babel_extract_messages.mapping_file = self.__class__.mapping_file
-		self.babel_extract_messages.output_file = self.__class__.pot_file
-		self.babel_extract_messages.input_dirs = self.__class__.input_dirs
-		self.babel_extract_messages.msgid_bugs_address = self.__class__.mail_address
-		self.babel_extract_messages.copyright_holder = self.__class__.copyright_holder
-		self.babel_extract_messages.finalize_options()
+    def finalize_options(self):
+        self.babel_extract_messages.mapping_file = self.__class__.mapping_file
+        self.babel_extract_messages.output_file = self.__class__.pot_file
+        self.babel_extract_messages.input_dirs = self.__class__.input_dirs
+        self.babel_extract_messages.msgid_bugs_address = self.__class__.mail_address
+        self.babel_extract_messages.copyright_holder = self.__class__.copyright_holder
+        self.babel_extract_messages.finalize_options()
 
-		self.babel_update_messages.input_file = self.__class__.pot_file
-		self.babel_update_messages.output_dir = self.__class__.output_dir
-		self.babel_update_messages.locale = self.locale
+        self.babel_update_messages.input_file = self.__class__.pot_file
+        self.babel_update_messages.output_dir = self.__class__.output_dir
+        self.babel_update_messages.locale = self.locale
 
-	def run(self):
-		self.babel_extract_messages.run()
-		self.babel_update_messages.run()
+    def run(self):
+        self.babel_extract_messages.run()
+        self.babel_update_messages.run()
 
 
 class CompileTranslation(Command):
-	description = "compile translations"
-	user_options = []
-	boolean_options = []
+    description = "compile translations"
+    user_options = []
+    boolean_options = []
 
-	output_dir = None
+    output_dir = None
 
-	@classmethod
-	def for_options(cls, output_dir=None):
-		if output_dir is None:
-			raise ValueError("output_dir must not be None")
+    @classmethod
+    def for_options(cls, output_dir=None):
+        if output_dir is None:
+            raise ValueError("output_dir must not be None")
 
-		return type(cls)(cls.__name__, (cls,), dict(
-			output_dir=output_dir
-		))
+        return type(cls)(cls.__name__, (cls,), dict(
+            output_dir=output_dir
+        ))
 
-	def __init__(self, dist, **kw):
-		from babel.messages import frontend as babel
-		self.babel_compile_messages = babel.compile_catalog(dist)
-		Command.__init__(self, dist, **kw)
+    def __init__(self, dist, **kw):
+        from babel.messages import frontend as babel
+        self.babel_compile_messages = babel.compile_catalog(dist)
+        Command.__init__(self, dist, **kw)
 
-	def initialize_options(self):
-		self.babel_compile_messages.initialize_options()
+    def initialize_options(self):
+        self.babel_compile_messages.initialize_options()
 
-	def finalize_options(self):
-		self.babel_compile_messages.directory = self.__class__.output_dir
+    def finalize_options(self):
+        self.babel_compile_messages.directory = self.__class__.output_dir
 
-	def run(self):
-		self.babel_compile_messages.run()
+    def run(self):
+        self.babel_compile_messages.run()
 
 
 class BundleTranslation(Command):
-	description = "bundles translations"
-	user_options = [
-		('locale=', 'l', 'locale for the translation to bundle')
-	]
-	boolean_options = []
+    description = "bundles translations"
+    user_options = [
+        ('locale=', 'l', 'locale for the translation to bundle')
+    ]
+    boolean_options = []
 
-	source_dir = None
-	target_dir = None
+    source_dir = None
+    target_dir = None
 
-	@classmethod
-	def for_options(cls, source_dir=None, target_dir=None):
-		if source_dir is None:
-			raise ValueError("source_dir must not be None")
-		if target_dir is None:
-			raise ValueError("target_dir must not be None")
+    @classmethod
+    def for_options(cls, source_dir=None, target_dir=None):
+        if source_dir is None:
+            raise ValueError("source_dir must not be None")
+        if target_dir is None:
+            raise ValueError("target_dir must not be None")
 
-		return type(cls)(cls.__name__, (cls,), dict(
-			source_dir=source_dir,
-			target_dir=target_dir
-		))
+        return type(cls)(cls.__name__, (cls,), dict(
+            source_dir=source_dir,
+            target_dir=target_dir
+        ))
 
-	def initialize_options(self):
-		self.locale = None
+    def initialize_options(self):
+        self.locale = None
 
-	def finalize_options(self):
-		pass
+    def finalize_options(self):
+        pass
 
-	def run(self):
-		locale = self.locale
-		source_path = os.path.join(self.__class__.source_dir, locale)
-		target_path = os.path.join(self.__class__.target_dir, locale)
+    def run(self):
+        locale = self.locale
+        source_path = os.path.join(self.__class__.source_dir, locale)
+        target_path = os.path.join(self.__class__.target_dir, locale)
 
-		if not os.path.exists(source_path):
-			raise RuntimeError("source path " + source_path + " does not exist")
+        if not os.path.exists(source_path):
+            raise RuntimeError("source path " + source_path + " does not exist")
 
-		if os.path.exists(target_path):
-			if not os.path.isdir(target_path):
-				raise RuntimeError("target path " + target_path + " exists and is not a directory")
-			shutil.rmtree(target_path)
+        if os.path.exists(target_path):
+            if not os.path.isdir(target_path):
+                raise RuntimeError("target path " + target_path + " exists and is not a directory")
+            shutil.rmtree(target_path)
 
-		print("Copying translations for locale {locale} from {source_path} to {target_path}...".format(**locals()))
-		shutil.copytree(source_path, target_path)
+        print("Copying translations for locale {locale} from {source_path} to {target_path}...".format(**locals()))
+        shutil.copytree(source_path, target_path)
 
 
 class PackTranslation(Command):
-	description = "creates language packs for translations"
-	user_options = [
-		('locale=', 'l', 'locale for the translation to pack'),
-		('author=', 'a', 'author of the translation'),
-		('target=', 't', 'target folder for the pack')
-	]
-	boolean_options = []
+    description = "creates language packs for translations"
+    user_options = [
+        ('locale=', 'l', 'locale for the translation to pack'),
+        ('author=', 'a', 'author of the translation'),
+        ('target=', 't', 'target folder for the pack')
+    ]
+    boolean_options = []
 
-	source_dir = None
-	pack_name_prefix = None
-	pack_path_prefix = None
+    source_dir = None
+    pack_name_prefix = None
+    pack_path_prefix = None
 
-	@classmethod
-	def for_options(cls, source_dir=None, pack_name_prefix=None, pack_path_prefix=None):
-		if source_dir is None:
-			raise ValueError("source_dir must not be None")
-		if pack_name_prefix is None:
-			raise ValueError("pack_name_prefix must not be None")
-		if pack_path_prefix is None:
-			raise ValueError("pack_path_prefix must not be None")
+    @classmethod
+    def for_options(cls, source_dir=None, pack_name_prefix=None, pack_path_prefix=None):
+        if source_dir is None:
+            raise ValueError("source_dir must not be None")
+        if pack_name_prefix is None:
+            raise ValueError("pack_name_prefix must not be None")
+        if pack_path_prefix is None:
+            raise ValueError("pack_path_prefix must not be None")
 
-		return type(cls)(cls.__name__, (cls,), dict(
-			source_dir=source_dir,
-			pack_name_prefix=pack_name_prefix,
-			pack_path_prefix=pack_path_prefix
-		))
+        return type(cls)(cls.__name__, (cls,), dict(
+            source_dir=source_dir,
+            pack_name_prefix=pack_name_prefix,
+            pack_path_prefix=pack_path_prefix
+        ))
 
-	def initialize_options(self):
-		self.locale = None
-		self.author = None
-		self.target = None
+    def initialize_options(self):
+        self.locale = None
+        self.author = None
+        self.target = None
 
-	def finalize_options(self):
-		if self.locale is None:
-			raise ValueError("locale must be provided")
+    def finalize_options(self):
+        if self.locale is None:
+            raise ValueError("locale must be provided")
 
-	def run(self):
-		locale = self.locale
-		locale_dir = os.path.join(self.__class__.source_dir, locale)
+    def run(self):
+        locale = self.locale
+        locale_dir = os.path.join(self.__class__.source_dir, locale)
 
-		if not os.path.isdir(locale_dir):
-			raise RuntimeError("translation does not exist, please create it first")
+        if not os.path.isdir(locale_dir):
+            raise RuntimeError("translation does not exist, please create it first")
 
-		import datetime
+        import datetime
 
-		now = datetime.datetime.utcnow().replace(microsecond=0)
+        now = datetime.datetime.utcnow().replace(microsecond=0)
 
-		if self.target is None:
-			self.target = self.__class__.source_dir
+        if self.target is None:
+            self.target = self.__class__.source_dir
 
-		zip_path = os.path.join(self.target, "{prefix}{locale}_{date}.zip".format(prefix=self.__class__.pack_name_prefix, locale=locale, date=now.strftime("%Y%m%d%H%M%S")))
-		print("Packing translation to {zip_path}".format(**locals()))
+        zip_path = os.path.join(self.target, "{prefix}{locale}_{date}.zip".format(prefix=self.__class__.pack_name_prefix, locale=locale, date=now.strftime("%Y%m%d%H%M%S")))
+        print("Packing translation to {zip_path}".format(**locals()))
 
-		def add_recursively(zip, path, prefix):
-			if not os.path.isdir(path):
-				return
+        def add_recursively(zip, path, prefix):
+            if not os.path.isdir(path):
+                return
 
-			for entry in os.listdir(path):
-				entry_path = os.path.join(path, entry)
-				new_prefix = prefix + "/" + entry
-				if os.path.isdir(entry_path):
-					add_recursively(zip, entry_path, new_prefix)
-				elif os.path.isfile(entry_path):
-					print("Adding {entry_path} as {new_prefix}".format(**locals()))
-					zip.write(entry_path, new_prefix)
+            for entry in os.listdir(path):
+                entry_path = os.path.join(path, entry)
+                new_prefix = prefix + "/" + entry
+                if os.path.isdir(entry_path):
+                    add_recursively(zip, entry_path, new_prefix)
+                elif os.path.isfile(entry_path):
+                    print("Adding {entry_path} as {new_prefix}".format(**locals()))
+                    zip.write(entry_path, new_prefix)
 
-		meta_str = "last_update: {date}\n".format(date=now.isoformat())
-		if self.author:
-			meta_str += "author: {author}\n".format(author=self.author)
+        meta_str = "last_update: {date}\n".format(date=now.isoformat())
+        if self.author:
+            meta_str += "author: {author}\n".format(author=self.author)
 
-		zip_locale_root = self.__class__.pack_path_prefix + locale
+        zip_locale_root = self.__class__.pack_path_prefix + locale
 
-		import zipfile
-		with zipfile.ZipFile(zip_path, "w") as zip:
-			add_recursively(zip, locale_dir, zip_locale_root)
+        import zipfile
+        with zipfile.ZipFile(zip_path, "w") as zip:
+            add_recursively(zip, locale_dir, zip_locale_root)
 
-			print("Adding meta.yaml as {zip_locale_root}/meta.yaml".format(**locals()))
-			zip.writestr(zip_locale_root + "/meta.yaml", meta_str)
+            print("Adding meta.yaml as {zip_locale_root}/meta.yaml".format(**locals()))
+            zip.writestr(zip_locale_root + "/meta.yaml", meta_str)
 
 
 def get_babel_commandclasses(pot_file=None,
@@ -427,111 +427,111 @@ def get_babel_commandclasses(pot_file=None,
                              bundled_dir=None,
                              mail_address="i18n@octoprint.org",
                              copyright_holder="The OctoPrint Project"):
-	result = dict(
-		babel_new=NewTranslation.for_options(pot_file=pot_file, output_dir=output_dir),
-		babel_extract=ExtractTranslation.for_options(mapping_file=mapping_file, pot_file=pot_file, input_dirs=input_dirs, mail_address=mail_address, copyright_holder=copyright_holder),
-		babel_refresh=RefreshTranslation.for_options(mapping_file=mapping_file, pot_file=pot_file, input_dirs=input_dirs, output_dir=output_dir, mail_address=mail_address, copyright_holder=copyright_holder),
-		babel_compile=CompileTranslation.for_options(output_dir=output_dir),
-		babel_pack=PackTranslation.for_options(source_dir=output_dir, pack_name_prefix=pack_name_prefix, pack_path_prefix=pack_path_prefix)
-	)
+    result = dict(
+        babel_new=NewTranslation.for_options(pot_file=pot_file, output_dir=output_dir),
+        babel_extract=ExtractTranslation.for_options(mapping_file=mapping_file, pot_file=pot_file, input_dirs=input_dirs, mail_address=mail_address, copyright_holder=copyright_holder),
+        babel_refresh=RefreshTranslation.for_options(mapping_file=mapping_file, pot_file=pot_file, input_dirs=input_dirs, output_dir=output_dir, mail_address=mail_address, copyright_holder=copyright_holder),
+        babel_compile=CompileTranslation.for_options(output_dir=output_dir),
+        babel_pack=PackTranslation.for_options(source_dir=output_dir, pack_name_prefix=pack_name_prefix, pack_path_prefix=pack_path_prefix)
+    )
 
-	if bundled_dir is not None:
-		result["babel_bundle"] = BundleTranslation.for_options(source_dir=output_dir, target_dir=bundled_dir)
+    if bundled_dir is not None:
+        result["babel_bundle"] = BundleTranslation.for_options(source_dir=output_dir, target_dir=bundled_dir)
 
-	return result
+    return result
 
 
 def create_plugin_setup_parameters(identifier="todo", name="TODO", version="0.1", description="TODO", author="TODO",
                                    mail="todo@example.com", url="TODO", license="AGPLv3", source_folder=".", additional_data=None,
                                    additional_packages=None, ignored_packages=None, requires=None, extra_requires=None,
                                    cmdclass=None, eggs=None, package=None, dependency_links=None):
-	import pkg_resources
+    import pkg_resources
 
-	if package is None:
-		package = "octoprint_{identifier}".format(**locals())
+    if package is None:
+        package = "octoprint_{identifier}".format(**locals())
 
-	if additional_data is None:
-		additional_data = list()
+    if additional_data is None:
+        additional_data = list()
 
-	if additional_packages is None:
-		additional_packages = list()
+    if additional_packages is None:
+        additional_packages = list()
 
-	if ignored_packages is None:
-		ignored_packages = list()
+    if ignored_packages is None:
+        ignored_packages = list()
 
-	if dependency_links is None:
-		dependency_links = list()
+    if dependency_links is None:
+        dependency_links = list()
 
-	if requires is None:
-		requires = ["OctoPrint"]
-	if not isinstance(requires, list):
-		raise ValueError("requires must be a list")
-	if "OctoPrint" not in requires:
-		requires = ["OctoPrint"] + list(requires)
+    if requires is None:
+        requires = ["OctoPrint"]
+    if not isinstance(requires, list):
+        raise ValueError("requires must be a list")
+    if "OctoPrint" not in requires:
+        requires = ["OctoPrint"] + list(requires)
 
-	if extra_requires is None:
-		extra_requires = dict()
-	if not isinstance(extra_requires, dict):
-		raise ValueError("extra_requires must be a dict")
+    if extra_requires is None:
+        extra_requires = dict()
+    if not isinstance(extra_requires, dict):
+        raise ValueError("extra_requires must be a dict")
 
-	if cmdclass is None:
-		cmdclass = dict()
-	if not isinstance(cmdclass, dict):
-		raise ValueError("cmdclass must be a dict")
+    if cmdclass is None:
+        cmdclass = dict()
+    if not isinstance(cmdclass, dict):
+        raise ValueError("cmdclass must be a dict")
 
-	if eggs is None:
-		eggs = []
-	if not isinstance(eggs, list):
-		raise ValueError("eggs must be a list")
+    if eggs is None:
+        eggs = []
+    if not isinstance(eggs, list):
+        raise ValueError("eggs must be a list")
 
-	egg = "{name}*.egg-info".format(name=pkg_resources.to_filename(pkg_resources.safe_name(name)))
-	if egg not in eggs:
-		eggs = [egg] + eggs
+    egg = "{name}*.egg-info".format(name=pkg_resources.to_filename(pkg_resources.safe_name(name)))
+    if egg not in eggs:
+        eggs = [egg] + eggs
 
-	cmdclass.update(dict(
-		clean=CleanCommand.for_options(source_folder=os.path.join(source_folder, package), eggs=eggs)
-	))
+    cmdclass.update(dict(
+        clean=CleanCommand.for_options(source_folder=os.path.join(source_folder, package), eggs=eggs)
+    ))
 
-	translation_dir = os.path.join(source_folder, "translations")
-	pot_file = os.path.join(translation_dir, "messages.pot")
-	bundled_dir = os.path.join(source_folder, package, "translations")
-	if os.path.isdir(translation_dir) and os.path.isfile(pot_file):
-		cmdclass.update(get_babel_commandclasses(pot_file=pot_file, output_dir=translation_dir, bundled_dir=bundled_dir, pack_name_prefix="{name}-i18n-".format(**locals()), pack_path_prefix="_plugins/{identifier}/".format(**locals())))
+    translation_dir = os.path.join(source_folder, "translations")
+    pot_file = os.path.join(translation_dir, "messages.pot")
+    bundled_dir = os.path.join(source_folder, package, "translations")
+    if os.path.isdir(translation_dir) and os.path.isfile(pot_file):
+        cmdclass.update(get_babel_commandclasses(pot_file=pot_file, output_dir=translation_dir, bundled_dir=bundled_dir, pack_name_prefix="{name}-i18n-".format(**locals()), pack_path_prefix="_plugins/{identifier}/".format(**locals())))
 
-	from setuptools import find_packages
-	packages = list(set([package] + filter(lambda x: x.startswith("{package}.".format(package=package)), find_packages(where=source_folder, exclude=ignored_packages)) + additional_packages))
-	print("Found packages: {packages!r}".format(**locals()))
+    from setuptools import find_packages
+    packages = list(set([package] + filter(lambda x: x.startswith("{package}.".format(package=package)), find_packages(where=source_folder, exclude=ignored_packages)) + additional_packages))
+    print("Found packages: {packages!r}".format(**locals()))
 
-	return dict(
-		name=name,
-		version=version,
-		description=description,
-		author=author,
-		author_email=mail,
-		url=url,
-		license=license,
+    return dict(
+        name=name,
+        version=version,
+        description=description,
+        author=author,
+        author_email=mail,
+        url=url,
+        license=license,
 
-		# adding new commands
-		cmdclass=cmdclass,
+        # adding new commands
+        cmdclass=cmdclass,
 
-		# we only have our plugin package to install
-		packages=packages,
+        # we only have our plugin package to install
+        packages=packages,
 
-		# we might have additional data files in sub folders that need to be installed too
-		package_data={package: package_data_dirs(os.path.join(source_folder, package), ["static", "templates", "translations"] + additional_data)},
-		include_package_data=True,
+        # we might have additional data files in sub folders that need to be installed too
+        package_data={package: package_data_dirs(os.path.join(source_folder, package), ["static", "templates", "translations"] + additional_data)},
+        include_package_data=True,
 
-		# If you have any package data that needs to be accessible on the file system, such as templates or static assets
-		# this plugin is not zip_safe.
-		zip_safe=False,
+        # If you have any package data that needs to be accessible on the file system, such as templates or static assets
+        # this plugin is not zip_safe.
+        zip_safe=False,
 
-		install_requires=requires,
-		extras_require=extra_requires,
-		dependency_links=dependency_links,
+        install_requires=requires,
+        extras_require=extra_requires,
+        dependency_links=dependency_links,
 
-		# Hook the plugin into the "octoprint.plugin" entry point, mapping the plugin_identifier to the plugin_package.
-		# That way OctoPrint will be able to find the plugin and load it.
-		entry_points={
-			"octoprint.plugin": ["{identifier} = {package}".format(**locals())]
-		}
-	)
+        # Hook the plugin into the "octoprint.plugin" entry point, mapping the plugin_identifier to the plugin_package.
+        # That way OctoPrint will be able to find the plugin and load it.
+        entry_points={
+            "octoprint.plugin": ["{identifier} = {package}".format(**locals())]
+        }
+    )

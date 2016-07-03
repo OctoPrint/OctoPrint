@@ -34,87 +34,87 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 
 
 class SlicingException(Exception):
-	"""
-	Base exception of all slicing related exceptions.
-	"""
-	pass
+    """
+    Base exception of all slicing related exceptions.
+    """
+    pass
 
 class SlicingCancelled(SlicingException):
-	"""
-	Raised if a slicing job was cancelled.
-	"""
-	pass
+    """
+    Raised if a slicing job was cancelled.
+    """
+    pass
 
 class SlicerException(SlicingException):
-	"""
-	Base exception of all slicer related exceptions.
+    """
+    Base exception of all slicer related exceptions.
 
-	.. attribute:: slicer
+    .. attribute:: slicer
 
-	   Identifier of the slicer for which the exception was raised.
-	"""
-	def __init__(self, slicer, *args, **kwargs):
-		SlicingException.__init__(self, *args, **kwargs)
-		self.slicer = slicer
+       Identifier of the slicer for which the exception was raised.
+    """
+    def __init__(self, slicer, *args, **kwargs):
+        SlicingException.__init__(self, *args, **kwargs)
+        self.slicer = slicer
 
 class SlicerNotConfigured(SlicerException):
-	"""
-	Raised if a slicer is not yet configured but must be configured to proceed.
-	"""
-	def __init__(self, slicer, *args, **kwargs):
-		SlicerException.__init__(self, slicer, *args, **kwargs)
-		self.message = "Slicer not configured: {slicer}".format(slicer=slicer)
+    """
+    Raised if a slicer is not yet configured but must be configured to proceed.
+    """
+    def __init__(self, slicer, *args, **kwargs):
+        SlicerException.__init__(self, slicer, *args, **kwargs)
+        self.message = "Slicer not configured: {slicer}".format(slicer=slicer)
 
 class UnknownSlicer(SlicerException):
-	"""
-	Raised if a slicer is unknown.
-	"""
-	def __init__(self, slicer, *args, **kwargs):
-		SlicerException.__init__(self, slicer, *args, **kwargs)
-		self.message = "No such slicer: {slicer}".format(slicer=slicer)
+    """
+    Raised if a slicer is unknown.
+    """
+    def __init__(self, slicer, *args, **kwargs):
+        SlicerException.__init__(self, slicer, *args, **kwargs)
+        self.message = "No such slicer: {slicer}".format(slicer=slicer)
 
 class ProfileException(Exception):
-	"""
-	Base exception of all slicing profile related exceptions.
+    """
+    Base exception of all slicing profile related exceptions.
 
-	.. attribute:: slicer
+    .. attribute:: slicer
 
-	   Identifier of the slicer to which the profile belongs.
+       Identifier of the slicer to which the profile belongs.
 
-	.. attribute:: profile
+    .. attribute:: profile
 
-	   Identifier of the profile for which the exception was raised.
-	"""
-	def __init__(self, slicer, profile, *args, **kwargs):
-		Exception.__init__(self, *args, **kwargs)
-		self.slicer = slicer
-		self.profile = profile
+       Identifier of the profile for which the exception was raised.
+    """
+    def __init__(self, slicer, profile, *args, **kwargs):
+        Exception.__init__(self, *args, **kwargs)
+        self.slicer = slicer
+        self.profile = profile
 
 class UnknownProfile(ProfileException):
-	"""
-	Raised if a slicing profile does not exist but must exist to proceed.
-	"""
-	def __init__(self, slicer, profile, *args, **kwargs):
-		ProfileException.__init__(self, slicer, profile, *args, **kwargs)
-		self.message = "Profile {profile} for slicer {slicer} does not exist".format(profile=profile, slicer=slicer)
+    """
+    Raised if a slicing profile does not exist but must exist to proceed.
+    """
+    def __init__(self, slicer, profile, *args, **kwargs):
+        ProfileException.__init__(self, slicer, profile, *args, **kwargs)
+        self.message = "Profile {profile} for slicer {slicer} does not exist".format(profile=profile, slicer=slicer)
 
 class ProfileAlreadyExists(ProfileException):
-	"""
-	Raised if a slicing profile already exists and must not be overwritten.
-	"""
-	def __init__(self, slicer, profile, *args, **kwargs):
-		ProfileException.__init__(self, slicer, profile, *args, **kwargs)
-		self.message = "Profile {profile} for slicer {slicer} already exists".format(profile=profile, slicer=slicer)
+    """
+    Raised if a slicing profile already exists and must not be overwritten.
+    """
+    def __init__(self, slicer, profile, *args, **kwargs):
+        ProfileException.__init__(self, slicer, profile, *args, **kwargs)
+        self.message = "Profile {profile} for slicer {slicer} already exists".format(profile=profile, slicer=slicer)
 
 class CouldNotDeleteProfile(ProfileException):
-	"""
-	Raised if there is an unexpected error trying to delete a known profile.
-	"""
-	def __init__(self, slicer, profile, cause=None, *args, **kwargs):
-		ProfileException.__init__(self, slicer, profile, *args, **kwargs)
+    """
+    Raised if there is an unexpected error trying to delete a known profile.
+    """
+    def __init__(self, slicer, profile, cause=None, *args, **kwargs):
+        ProfileException.__init__(self, slicer, profile, *args, **kwargs)
 
-		self.cause = cause
-		if cause:
-			self.message = "Could not delete profile {profile} for slicer {slicer}: {cause}".format(profile=profile, slicer=slicer, cause=str(cause))
-		else:
-			self.message = "Could not delete profile {profile} for slicer {slicer}".format(profile=profile, slicer=slicer)
+        self.cause = cause
+        if cause:
+            self.message = "Could not delete profile {profile} for slicer {slicer}: {cause}".format(profile=profile, slicer=slicer, cause=str(cause))
+        else:
+            self.message = "Could not delete profile {profile} for slicer {slicer}".format(profile=profile, slicer=slicer)
