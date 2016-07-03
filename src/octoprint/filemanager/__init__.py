@@ -19,6 +19,7 @@ from .storage import LocalFileStorage
 from .util import AbstractFileWrapper, StreamWrapper, DiskFileWrapper
 
 from collections import namedtuple
+import collections
 
 ContentTypeMapping = namedtuple("ContentTypeMapping", "extensions, content_type")
 ContentTypeDetector = namedtuple("ContentTypeDetector", "extensions, detector")
@@ -141,7 +142,7 @@ def get_mime_type(filename):
 	if mapping:
 		if isinstance(mapping, ContentTypeMapping) and mapping.content_type is not None:
 			return mapping.content_type
-		elif isinstance(mapping, ContentTypeDetector) and callable(mapping.detector):
+		elif isinstance(mapping, ContentTypeDetector) and isinstance(mapping.detector, collections.Callable):
 			result = mapping.detector(filename)
 			if result is not None:
 				return result

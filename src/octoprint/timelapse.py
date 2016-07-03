@@ -11,7 +11,10 @@ import fnmatch
 import datetime
 import sys
 import shutil
-import Queue
+ try:
+ 	import queue
+ except ImportError:
+	import Queue as queue
 import requests
 
 import octoprint.util as util
@@ -318,7 +321,7 @@ class Timelapse(object):
 		self._fps = fps
 
 		self._capture_mutex = threading.Lock()
-		self._capture_queue = Queue.Queue()
+		self._capture_queue = queue.Queue()
 		self._capture_queue_active = True
 
 		self._capture_queue_thread = threading.Thread(target=self._capture_queue_worker)
@@ -514,7 +517,7 @@ class Timelapse(object):
 			self._logger.debug("Image {} captured from {}".format(filename, self._snapshot_url))
 		except:
 			self._logger.exception("Could not capture image {} from {}".format(filename, self._snapshot_url))
-			if callable(onerror):
+			if isinstance(onerror, collections.Callable):
 				onerror()
 			eventManager().fire(Events.CAPTURE_FAILED, dict(file=filename))
 			return False
@@ -834,5 +837,5 @@ class TimelapseRenderJob(object):
 		"""Notifies registered callbacks of type `callback`."""
 		name = "_on_{}".format(callback)
 		method = getattr(self, name, None)
-		if method is not None and callable(method):
+		if method is not None and isinstance(method, collections.Callable):
 			method(*args, **kwargs)

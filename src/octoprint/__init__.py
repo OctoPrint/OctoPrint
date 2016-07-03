@@ -8,6 +8,7 @@ import logging
 #~~ version
 
 from ._version import get_versions
+import collections
 versions = get_versions()
 
 __version__ = versions['version']
@@ -58,7 +59,7 @@ def init_platform(basedir, configfile, use_logging_file=True, logging_file=None,
                   logging_config=None, debug=False, verbosity=0, uncaught_logger=None,
                   uncaught_handler=None, after_settings=None, after_logging=None):
 	settings = init_settings(basedir, configfile)
-	if callable(after_settings):
+	if isinstance(after_settings, collections.Callable):
 		after_settings(settings)
 
 	logger = init_logging(settings,
@@ -69,7 +70,7 @@ def init_platform(basedir, configfile, use_logging_file=True, logging_file=None,
 	                      verbosity=verbosity,
 	                      uncaught_logger=uncaught_logger,
 	                      uncaught_handler=uncaught_handler)
-	if callable(after_logging):
+	if isinstance(after_logging, collections.Callable):
 		after_logging(logger)
 
 	plugin_manager = init_pluginsystem(settings)

@@ -11,6 +11,7 @@ from jinja2 import nodes
 from jinja2.ext import Extension
 from jinja2.loaders import FileSystemLoader, PrefixLoader, ChoiceLoader, \
 	BaseLoader, TemplateNotFound, split_template_path
+import collections
 
 class FilteredFileSystemLoader(FileSystemLoader):
 	"""
@@ -33,7 +34,7 @@ class FilteredFileSystemLoader(FileSystemLoader):
 		self.path_filter = path_filter
 
 	def get_source(self, environment, template):
-		if callable(self.path_filter):
+		if isinstance(self.path_filter, collections.Callable):
 			pieces = split_template_path(template)
 			if not self._combined_filter(os.path.join(*pieces)):
 				raise TemplateNotFound(template)
@@ -43,7 +44,7 @@ class FilteredFileSystemLoader(FileSystemLoader):
 	def list_templates(self):
 		result = FileSystemLoader.list_templates(self)
 
-		if callable(self.path_filter):
+		if isinstance(self.path_filter, collections.Callable):
 			result = sorted(filter(self._combined_filter, result))
 
 		return result

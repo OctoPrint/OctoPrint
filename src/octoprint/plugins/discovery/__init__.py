@@ -380,10 +380,12 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 		"""
 
 		import threading
-
-		import httplib
+		try:
+			import http.client as httpc
+		except ImportError:
+			import httplib as httpc
 		import io
-		class Response(httplib.HTTPResponse):
+		class Response(httpc.HTTPResponse):
 			def __init__(self, response_text):
 				self.fp = io.BytesIO(response_text)
 				self.debuglevel = 0
@@ -602,9 +604,14 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 		:param timeout: timeout after which to stop waiting for M-SEARCHs for a short while in order to put out an
 		                alive message
 		"""
-
-		from BaseHTTPServer import BaseHTTPRequestHandler
-		from StringIO import StringIO
+		try:
+			from http.server import BaseHTTPRequestHandler
+		except ImportError:
+			from BaseHTTPServer import BaseHTTPRequestHandler
+		try:
+			from io import StringIO
+		except ImportError:
+			from StringIO import StringIO
 		import socket
 
 		socket.setdefaulttimeout(timeout)

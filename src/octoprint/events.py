@@ -8,7 +8,10 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import datetime
 import logging
 import subprocess
-import Queue
+try:
+	import queue
+except ImportError:
+	import Queue as queue
 import threading
 import collections
 
@@ -120,7 +123,7 @@ class EventManager(object):
 		self._registeredListeners = collections.defaultdict(list)
 		self._logger = logging.getLogger(__name__)
 
-		self._queue = Queue.Queue()
+		self._queue = queue.Queue()
 		self._worker = threading.Thread(target=self._work)
 		self._worker.daemon = True
 		self._worker.start()
@@ -300,7 +303,7 @@ class CommandTrigger(GenericEventListener):
 				else:
 					processedCommand = self._processCommand(command, payload)
 				self.executeCommand(processedCommand, commandType, debug=debug)
-			except KeyError, e:
+			except KeyError as e:
 				self._logger.warn("There was an error processing one or more placeholders in the following command: %s" % command)
 
 	def executeCommand(self, command, commandType, debug=False):
@@ -324,7 +327,7 @@ class CommandTrigger(GenericEventListener):
 					commandExecutioner(c)
 			else:
 				commandExecutioner(command)
-		except subprocess.CalledProcessError, e:
+		except subprocess.CalledProcessError as e:
 			self._logger.warn("Command failed with return code %i: %s" % (e.returncode, str(e)))
 		except:
 			self._logger.exception("Command failed")

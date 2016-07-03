@@ -24,6 +24,7 @@ import re
 from . import util
 
 import logging
+import collections
 _logger = logging.getLogger(__name__)
 
 _templates = None
@@ -67,7 +68,7 @@ def index():
 		# add data if we have any
 		if data is not None:
 			try:
-				if callable(data):
+				if isinstance(data, collections.Callable):
 					data = data()
 				if data:
 					if "query_string" in data:
@@ -77,7 +78,7 @@ def index():
 				_logger.exception("Error collecting data for preemptive cache from plugin {}".format(key))
 
 		# add additional request data if we have any
-		if callable(additional_request_data):
+		if isinstance(additional_request_data, collections.Callable):
 			try:
 				ard = additional_request_data()
 				if ard:
@@ -89,7 +90,7 @@ def index():
 
 		def unless():
 			disabled_for_root = request.url_root in settings().get(["server", "preemptiveCache", "exceptions"])
-			if callable(additional_unless):
+			if isinstance(additional_unless, collections.Callable):
 				return disabled_for_root or additional_unless()
 			else:
 				return disabled_for_root
@@ -102,7 +103,7 @@ def index():
 	def get_cached_view(key, view, additional_key_data=None, additional_files=None, custom_files=None, custom_etag=None, custom_lastmodified=None):
 		def cache_key():
 			k = "ui:{}:{}:{}".format(key, request.base_url, g.locale.language if g.locale else "default")
-			if callable(additional_key_data):
+			if isinstance(additional_key_data, collections.Callable):
 				try:
 					ak = additional_key_data()
 					if ak:
@@ -128,7 +129,7 @@ def index():
 			return force_refresh or etag_different
 
 		def collect_files():
-			if callable(custom_files):
+			if isinstance(custom_files, collections.Callable):
 				try:
 					files = custom_files()
 					if files:
@@ -143,7 +144,7 @@ def index():
 
 			files = templates + assets + translations
 
-			if callable(additional_files):
+			if isinstance(additional_files, collections.Callable):
 				try:
 					af = additional_files()
 					if af:
@@ -154,7 +155,7 @@ def index():
 			return sorted(set(files))
 
 		def compute_lastmodified(files=None):
-			if callable(custom_lastmodified):
+			if isinstance(custom_lastmodified, collections.Callable):
 				try:
 					lastmodified = custom_lastmodified()
 					if lastmodified:
@@ -167,7 +168,7 @@ def index():
 			return _compute_date(files)
 
 		def compute_etag(files=None, lastmodified=None, additional=None):
-			if callable(custom_etag):
+			if isinstance(custom_etag, collections.Callable):
 				try:
 					etag = custom_etag()
 					if etag:
@@ -574,7 +575,7 @@ def _process_templates():
 			extractor = config_extractor
 
 			# if template type provides custom extractor, make sure its exceptions are handled
-			if "key_extractor" in template_sorting[t] and callable(template_sorting[t]["key_extractor"]):
+			if "key_extractor" in template_sorting[t] and isinstance(template_sorting[t]["key_extractor"], collections.Callable):
 				def create_safe_extractor(extractor):
 					def f(x, k):
 						try:

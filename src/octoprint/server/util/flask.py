@@ -1,6 +1,7 @@
 # coding=utf-8
 from __future__ import absolute_import
 from flask import make_response
+import collections
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -321,7 +322,7 @@ def cached(timeout=5 * 60, key=lambda: "view:%s" % flask.request.path, unless=No
 			logger = logging.getLogger(__name__)
 
 			# bypass the cache if "unless" condition is true
-			if callable(unless) and unless():
+			if isinstance(unless, collections.Callable) and unless():
 				logger.debug("Cache for {path} bypassed, calling wrapped function".format(path=flask.request.path))
 				return f(*args, **kwargs)
 
@@ -334,7 +335,7 @@ def cached(timeout=5 * 60, key=lambda: "view:%s" % flask.request.path, unless=No
 			rv = _cache.get(cache_key)
 
 			# only take the value from the cache if we are not required to refresh it from the wrapped function
-			if rv is not None and (not callable(refreshif) or not refreshif(rv)):
+			if rv is not None and (not isinstance(refreshif, collections.Callable) or not refreshif(rv)):
 				logger.debug("Serving entry for {path} from cache (key: {key})".format(path=flask.request.path, key=cache_key))
 				if not "X-From-Cache" in rv.headers:
 					rv.headers["X-From-Cache"] = "true"
@@ -345,7 +346,7 @@ def cached(timeout=5 * 60, key=lambda: "view:%s" % flask.request.path, unless=No
 			rv = f(*args, **kwargs)
 
 			# do not store if the "unless_response" condition is true
-			if callable(unless_response) and unless_response(rv):
+			if isinstance(unless_response, collections.Callable) and unless_response(rv):
 				logger.debug("Not caching result for {path}, bypassed".format(path=flask.request.path))
 				return rv
 
@@ -392,11 +393,11 @@ class PreemptiveCache(object):
 		self._environment_lock = threading.RLock()
 
 	def record(self, data, unless=None):
-		if callable(unless) and unless():
+		if isinstance(unless, collections.Callable) and unless():
 			return
 
 		entry_data = data
-		if callable(entry_data):
+		if isinstance(entry_data, collections.Callable):
 			entry_data = entry_data()
 
 		if entry_data is not None:
@@ -418,7 +419,7 @@ class PreemptiveCache(object):
 			self.environment = None
 
 	def clean_all_data(self, cleanup_function):
-		assert callable(cleanup_function)
+		assert isinstance(cleanup_function, collections.Callable)
 
 		with self._lock:
 			all_data = self.get_all_data()
@@ -546,7 +547,7 @@ def etagged(etag):
 			rv = f(*args, **kwargs)
 			if isinstance(rv, flask.Response):
 				result = etag
-				if callable(result):
+				if isinstance(result, collections.Callable):
 					result = result(rv)
 				if result:
 					rv.set_etag(result)
@@ -562,7 +563,7 @@ def lastmodified(date):
 			rv = f(*args, **kwargs)
 			if not "Last-Modified" in rv.headers:
 				result = date
-				if callable(result):
+				if isinstance(result, collections.Callable):
 					result = result(rv)
 
 				if not isinstance(result, basestring):
@@ -580,10 +581,10 @@ def conditional(condition, met):
 	def decorator(f):
 		@functools.wraps(f)
 		def decorated_function(*args, **kwargs):
-			if callable(condition) and condition():
+			if isinstance(condition, collections.Callable) and condition():
 				# condition has been met, return met-response
 				rv = met
-				if callable(met):
+				if isinstance(met, collections.Callable):
 					rv = met()
 				return rv
 
