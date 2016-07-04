@@ -358,9 +358,11 @@ class Profile(object):
 		if not os.path.exists(path) or not os.path.isfile(path):
 			logger.warn("Path {path} does not exist or is not a file, cannot import".format(**locals()))
 			return None
-
-		import ConfigParser
-		config = ConfigParser.ConfigParser()
+		try:
+			import configparser
+		except ImportError:
+			import ConfigParser as configparser
+		config = configparser.ConfigParser()
 		try:
 			config.read(path)
 		except:

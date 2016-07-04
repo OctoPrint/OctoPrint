@@ -2,7 +2,7 @@ import os, struct, sys, time
 
 from serial import Serial
 
-import chipDB
+from . import chipDB
 
 class IspBase():
 	def programChip(self, flashData):

@@ -10,6 +10,7 @@ import octoprint.plugin
 
 
 from flask.ext.babel import gettext
+import collections
 
 
 class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
@@ -153,7 +154,7 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 				continue
 
 			attr = getattr(self, item)
-			if callable(callback):
+			if isinstance(callback, collections.Callable):
 				callback(key, attr)
 			result[key] = attr
 

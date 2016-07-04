@@ -18,7 +18,11 @@ import threading
 from functools import wraps
 import warnings
 import contextlib
+try:
+	import queue
+except ImportError:
 import Queue as queue
+import collections
 
 logger = logging.getLogger(__name__)
 
@@ -679,7 +683,7 @@ def dict_filter(dictionary, filter_function):
 	        for which the ``filter_function`` returned ``False``
 	"""
 	assert isinstance(dictionary, dict)
-	assert callable(filter_function)
+	assert isinstance(filter_function, collections.Callable)
 	return dict((k, v) for k, v in dictionary.items() if filter_function(k, v))
 
 
@@ -884,7 +888,7 @@ class RepeatedTimer(threading.Thread):
 		if condition is None:
 			condition = lambda: True
 
-		if not callable(interval):
+		if not isinstance(interval, collections.Callable):
 			self.interval = lambda: interval
 		else:
 			self.interval = interval
@@ -931,11 +935,11 @@ class RepeatedTimer(threading.Thread):
 		self.finished.set()
 
 		for callback in callbacks:
-			if not callable(callback):
+			if not isinstance(callback, collections.Callable):
 				continue
 			callback()
 
-		if callable(self.on_finish):
+		if isinstance(self.on_finish, collections.Callable):
 			self.on_finish()
 
 

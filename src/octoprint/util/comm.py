@@ -10,6 +10,9 @@ import glob
 import time
 import re
 import threading
+try:
+	import queue
+except ImportError:
 import Queue as queue
 import logging
 import serial
@@ -28,7 +31,10 @@ from octoprint.util import get_exception_string, sanitize_ascii, filter_non_asci
 	to_unicode, bom_aware_open, TypedQueue, TypeAlreadyInQueue
 
 try:
-	import _winreg
+	import winreg
+except ImportError:
+	try:
+		import _winreg as winreg
 except:
 	pass
 
@@ -109,10 +115,10 @@ def serialList():
 	baselist=[]
 	if os.name=="nt":
 		try:
-			key=_winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE,"HARDWARE\\DEVICEMAP\\SERIALCOMM")
+			key=winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE,"HARDWARE\\DEVICEMAP\\SERIALCOMM")
 			i=0
 			while(1):
-				baselist+=[_winreg.EnumValue(key,i)[1]]
+				baselist+=[winreg.EnumValue(key,i)[1]]
 				i+=1
 		except:
 			pass
@@ -1464,7 +1470,7 @@ class MachineCom(object):
 				self._log("Connecting to: %s" % (p))
 				programmer.connect(p)
 				serial_obj = programmer.leaveISP()
-			except ispBase.IspError as (e):
+			except ispBase.IspError as e:
 				error_message = "Error while connecting to %s: %s" % (p, str(e))
 				self._log(error_message)
 				self._logger.exception(error_message)

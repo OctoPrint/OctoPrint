@@ -27,6 +27,7 @@ from octoprint.plugin.core import (PluginInfo, PluginManager, Plugin)
 from octoprint.plugin.types import *
 
 from octoprint.util import deprecated
+import collections
 
 # singleton
 _instance = None
@@ -511,7 +512,7 @@ class PluginSettings(object):
 				item = new
 
 			settings_name, args_mapper, kwargs_mapper = self.access_methods[item]
-			if hasattr(self.settings, settings_name) and callable(getattr(self.settings, settings_name)):
+			if hasattr(self.settings, settings_name) and isinstance(getattr(self.settings, settings_name), collections.Callable):
 				orig_func = getattr(self.settings, settings_name)
 				if decorator is not None:
 					orig_func = decorator(orig_func)

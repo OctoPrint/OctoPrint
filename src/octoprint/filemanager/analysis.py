@@ -7,6 +7,9 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 
 import logging
+try:
+	import queue
+except ImportError:
 import Queue as queue
 import os
 import threading
