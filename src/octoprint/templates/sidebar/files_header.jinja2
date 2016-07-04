@@ -15,8 +15,8 @@
             </ul>
         </li>
         <li class="divider"></li>
-        <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('machinecode'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'machinecode') ? 'visible' : 'hidden'}"></i> {{ _('Only show GCode files') }}</a></li>
-        <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('model'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'model') ? 'visible' : 'hidden'}"></i> {{ _('Only show STL files') }}</a></li>
+        <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('machinecode'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'machinecode') ? 'visible' : 'hidden'}"></i> {{ _('Only show machine code files') }}</a></li>
+        <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('model'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'model') ? 'visible' : 'hidden'}"></i> {{ _('Only show model files') }}</a></li>
         {% if enableSdSupport %}
             <li class="divider"></li>
             <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('local'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'local') ? 'visible' : 'hidden'}"></i> {{ _('Only show files stored locally') }}</a></li>
