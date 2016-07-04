@@ -793,6 +793,12 @@ class Server(object):
 					additional_request_data = kwargs.get("_additional_request_data", dict())
 					kwargs = dict((k, v) for k, v in kwargs.items() if not k.startswith("_") and not k == "plugin")
 					kwargs.update(additional_request_data)
+
+					base_url = kwargs.get("base_url", "")
+					if not (base_url.startswith("http://") or base_url.startswith("https://")):
+						self._logger.info("Skipping preemptive cache entry with base url {}, neither http:// nor https:// and possibly broken".format(base_url))
+						continue
+
 					try:
 						if plugin:
 							self._logger.info("Preemptively caching {} (plugin {}) for {!r}".format(route, plugin, kwargs))
