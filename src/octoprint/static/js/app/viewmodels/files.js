@@ -641,6 +641,15 @@ $(function() {
             });
 
             self.addFolderDialog = $("#add_folder_dialog");
+            self.addFolderDialog.on("shown", function() {
+                $("input", self.addFolderDialog).focus();
+            });
+            $("form", self.addFolderDialog).on("submit", function(e) {
+                e.preventDefault();
+                if (self.enableAddFolder()) {
+                    self.addFolder();
+                }
+            });
 
             //~~ Gcode upload
 
