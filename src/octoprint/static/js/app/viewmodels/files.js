@@ -62,6 +62,7 @@ $(function() {
         self.ignoreUpdatedFilesEvent = false;
 
         self.addingFolder = ko.observable(false);
+        self.activeRemovals = ko.observableArray([]);
 
         self.addFolderDialog = undefined;
         self.addFolderName = ko.observable(undefined);
@@ -325,6 +326,29 @@ $(function() {
                 });
         };
 
+        self.removeFolder = function(folder, event) {
+            if (!folder) {
+                return;
+            }
+
+            if (folder.type != "folder") {
+                return;
+            }
+
+            if (folder.weight > 0) {
+                // confirm recursive delete
+                var options = {
+                    message: _.sprintf(gettext("You are about to delete the folder \"%(folder)s\" which still contains files and/or sub folders."), {folder: folder.name}),
+                    onproceed: function() {
+                        self._removeEntry(folder, event);
+                    }
+                };
+                showConfirmationDialog(options);
+            } else {
+                self._removeEntry(folder, event);
+            }
+        };
+
         self.loadFile = function(file, printAfterLoad) {
             if (!file) {
                 return;
@@ -338,29 +362,16 @@ $(function() {
                 });
         };
 
-        self.removeFile = function(file) {
+        self.removeFile = function(file, event) {
             if (!file) {
                 return;
             }
 
-            var index = self.listHelper.paginatedItems().indexOf(file) + 1;
-            if (index >= self.listHelper.paginatedItems().length) {
-                index = index - 2;
-            }
-            if (index < 0) {
-                index = 0;
+            if (file.type == "folder") {
+                return;
             }
 
-            var filenameToFocus = undefined;
-            var fileToFocus = self.listHelper.paginatedItems()[index];
-            if (fileToFocus) {
-                filenameToFocus = fileToFocus.name;
-            }
-
-            OctoPrint.files.delete(file.origin, file.path)
-                .done(function() {
-                    self.requestData(undefined, filenameToFocus, (file.parent ? file.parent.path : ""));
-                })
+            self._removeEntry(file, event);
         };
 
         self.sliceFile = function(file) {
@@ -381,6 +392,70 @@ $(function() {
 
         self.refreshSdFiles = function() {
             OctoPrint.printer.refreshSd();
+        };
+
+        self._removeEntry = function(entry, event) {
+            var index = self.listHelper.paginatedItems().indexOf(entry) + 1;
+            if (index >= self.listHelper.paginatedItems().length) {
+                index = index - 2;
+            }
+            if (index < 0) {
+                index = 0;
+            }
+
+            var filenameToFocus = undefined;
+            var fileToFocus = self.listHelper.paginatedItems()[index];
+            if (fileToFocus) {
+                filenameToFocus = fileToFocus.name;
+            }
+
+            self.activeRemovals.push(entry.origin + ":" + entry.path);
+            var finishActiveRemoval = function() {
+                self.activeRemovals(_.filter(self.activeRemovals(), function(e) {
+                    return e != entry.origin + ":" + entry.path;
+                }));
+            };
+
+            var activateSpinner = function(){},
+                finishSpinner = function(){};
+
+            if (event) {
+                var element = $(event.currentTarget);
+                if (element.length) {
+                    var icon = $("i.icon-trash", element);
+                    if (icon.length) {
+                        activateSpinner = function() {
+                            icon.removeClass("icon-trash").addClass("icon-spinner icon-spin");
+                        };
+                        finishSpinner = function() {
+                            icon.removeClass("icon-spinner icon-spin").addClass("icon-trash");
+                        };
+                    }
+                }
+            }
+
+            activateSpinner();
+
+            var deferred = $.Deferred();
+            OctoPrint.files.delete(entry.origin, entry.path)
+                .done(function() {
+                    self.requestData(undefined, filenameToFocus, (entry.parent ? entry.parent.path : ""))
+                        .done(function() {
+                            deferred.resolve();
+                        })
+                        .fail(function() {
+                            deferred.reject();
+                        });
+                })
+                .fail(function() {
+                    deferred.reject();
+                });
+
+            return deferred.promise()
+                .always(function() {
+                    finishActiveRemoval();
+                    finishSpinner();
+                });
         };
 
         self.downloadLink = function(data) {
@@ -425,7 +500,19 @@ $(function() {
         };
 
         self.enableRemove = function(data) {
-            return self.loginState.isUser() && !_.contains(self.printerState.busyFiles(), data.origin + ":" + data.name);
+            if (_.contains(self.activeRemovals(), data.origin + ":" + data.path)) {
+                return false;
+            }
+
+            var busy = false;
+            if (data.type == "folder") {
+                busy = _.any(self.printerState.busyFiles(), function(name) {
+                    return _.startsWith(name, data.origin + ":" + data.path + "/");
+                });
+            } else {
+                busy = _.contains(self.printerState.busyFiles(), data.origin + ":" + data.path);
+            }
+            return self.loginState.isUser() && !busy;
         };
 
         self.enableSelect = function(data, printAfterSelect) {

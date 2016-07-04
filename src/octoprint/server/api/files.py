@@ -616,7 +616,7 @@ def deleteGcodeFile(filename, target):
 			printer.unselect_file()
 
 		# delete it
-		fileManager.remove_folder(target, filename)
+		fileManager.remove_folder(target, filename, recursive=True)
 
 	return NO_CONTENT
 
