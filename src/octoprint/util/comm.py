@@ -13,7 +13,7 @@ import threading
 try:
 	import queue
 except ImportError:
-import Queue as queue
+	import Queue as queue
 import logging
 import serial
 import octoprint.plugin
@@ -35,8 +35,8 @@ try:
 except ImportError:
 	try:
 		import _winreg as winreg
-except:
-	pass
+	except:
+		pass
 
 _logger = logging.getLogger(__name__)
 

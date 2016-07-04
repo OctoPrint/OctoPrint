@@ -607,11 +607,11 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 		try:
 			from http.server import BaseHTTPRequestHandler
 		except ImportError:
-		from BaseHTTPServer import BaseHTTPRequestHandler
+			from BaseHTTPServer import BaseHTTPRequestHandler
 		try:
 			from io import StringIO
 		except ImportError:
-		from StringIO import StringIO
+			from StringIO import StringIO
 		import socket
 
 		socket.setdefaulttimeout(timeout)

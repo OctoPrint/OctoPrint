@@ -21,7 +21,7 @@ import contextlib
 try:
 	import queue
 except ImportError:
-import Queue as queue
+	import Queue as queue
 import collections
 
 logger = logging.getLogger(__name__)

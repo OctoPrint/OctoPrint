@@ -327,7 +327,7 @@ def _strip_tags(text):
 	u'&#62; &#x3E; Foo'
 	"""
 	try:
-	from HTMLParser import HTMLParser
+		from HTMLParser import HTMLParser
 	except ImportError:
 		from html.parser import HTMLParser
 
