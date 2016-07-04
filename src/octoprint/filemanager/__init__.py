@@ -299,7 +299,7 @@ class FileManager(object):
 		                                             "stl_location": source_location,
 		                                             "gcode": dest_path,
 		                                             "gcode_location": dest_location,
-		                                             "progressAvailable": slicer.get_slicer_properties()["progress_report"] if slicer else False})
+		                                             "progressAvailable": slicer.get_slicer_properties().get("progress_report", False) if slicer else False})
 
 		import tempfile
 		f = tempfile.NamedTemporaryFile(suffix=".gco", delete=False)

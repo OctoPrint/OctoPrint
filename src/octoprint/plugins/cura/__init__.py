@@ -199,7 +199,9 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 			type="cura",
 			name="CuraEngine",
 			same_device=True,
-			progress_report=True
+			progress_report=True,
+			source_file_types=["stl"],
+			destination_extensions=["gco", "gcode", "g"]
 		)
 
 	def get_slicer_default_profile(self):

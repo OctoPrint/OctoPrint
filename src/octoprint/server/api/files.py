@@ -438,28 +438,31 @@ def gcodeFileCommand(filename, target):
 		except octoprint.slicing.UnknownSlicer as e:
 			return make_response("Slicer {slicer} is not available".format(slicer=e.slicer), 400)
 
-		if not octoprint.filemanager.valid_file_type(filename, type="stl"):
-			return make_response("Cannot slice {filename}, not an STL file".format(**locals()), 415)
+		if not any([octoprint.filemanager.valid_file_type(filename, type=source_file_type) for source_file_type in slicer_instance.get_slicer_properties().get("source_file_types", ["model"])]):
+			return make_response("Cannot slice {filename}, not a model file".format(**locals()), 415)
 
-		if slicer_instance.get_slicer_properties()["same_device"] and (printer.is_printing() or printer.is_paused()):
+		if slicer_instance.get_slicer_properties().get("same_device", True) and (printer.is_printing() or printer.is_paused()):
 			# slicer runs on same device as OctoPrint, slicing while printing is hence disabled
 			return make_response("Cannot slice on {slicer} while printing due to performance reasons".format(**locals()), 409)
 
-		if "gcode" in data and data["gcode"]:
-			gcode_name = data["gcode"]
+		if "destination" in data and data["destination"]:
+			destination = data["destination"]
+			del data["destination"]
+		elif "gcode" in data and data["gcode"]:
+			destination = data["gcode"]
 			del data["gcode"]
 		else:
 			import os
 			name, _ = os.path.splitext(filename)
-			gcode_name = name + ".gco"
+			destination = name + "." + slicer_instance.get_slicer_properties().get("destination_extensions", ["gco", "gcode", "g"])[0]
 
-		full_path = gcode_name
+		full_path = destination
 		if "path" in data and data["path"]:
-			full_path = fileManager.join_path(target, data["path"], gcode_name)
+			full_path = fileManager.join_path(target, data["path"], destination)
 		else:
 			path, _ = fileManager.split_path(target, filename)
 			if path:
-				full_path = fileManager.join_path(target, path, gcode_name)
+				full_path = fileManager.join_path(target, path, destination)
 
 		# prohibit overwriting the file that is currently being printed
 		currentOrigin, currentFilename = _getCurrentFile()
@@ -525,7 +528,7 @@ def gcodeFileCommand(filename, target):
 		files = {}
 		location = url_for(".readGcodeFile", target=target, filename=full_path, _external=True)
 		result = {
-			"name": gcode_name,
+			"name": destination,
 			"path": full_path,
 			"origin": FileDestinations.LOCAL,
 			"refs": {
