@@ -552,6 +552,20 @@ ul.dropdown-menu li a {
       .additionalInfo {
         padding-bottom: @line-height + 2px;
       }
+
+      @highlight-color: yellow;
+      @keyframes highlightframes {
+        0% {
+          background: @highlight-color;
+        }
+        100% {
+          background: transparent;
+        }
+      }
+
+      &.highlight {
+        animation: highlightframes 2s;
+      }
     }
   }
 

@@ -58,6 +58,8 @@ $(function() {
         self.localTarget = undefined;
         self.sdTarget = undefined;
 
+        self._uploadInProgress = false;
+
         // initialize list helper
         self.listHelper = new ItemListHelper(
             "gcodeFiles",
@@ -145,22 +147,26 @@ $(function() {
             self.isSdReady(data.flags.sdReady);
         };
 
-        self._otherRequestInProgress = false;
+        self._otherRequestInProgress = undefined;
+        self._filenameToFocus = undefined;
+        self._locationToFocus = undefined;
         self.requestData = function(filenameToFocus, locationToFocus) {
-            if (self._otherRequestInProgress) return;
+            self._filenameToFocus = self._filenameToFocus || filenameToFocus;
+            self._locationToFocus = self._locationToFocus || locationToFocus;
+            if (self._otherRequestInProgress !== undefined) {
+                return self._otherRequestInProgress
+            }
 
-            self._otherRequestInProgress = true;
-            $.ajax({
+            return self._otherRequestInProgress = $.ajax({
                 url: API_BASEURL + "files",
                 method: "GET",
-                dataType: "json",
-                success: function(response) {
-                    self.fromResponse(response, filenameToFocus, locationToFocus);
-                    self._otherRequestInProgress = false;
-                },
-                error: function() {
-                    self._otherRequestInProgress = false;
-                }
+                dataType: "json"
+            }).done(function(response) {
+                self.fromResponse(response, self._filenameToFocus, self._locationToFocus);
+            }).always(function() {
+                self._otherRequestInProgress = undefined;
+                self._filenameToFocus = undefined;
+                self._locationToFocus = undefined;
             });
         };
 
@@ -179,8 +185,19 @@ $(function() {
                 }
                 var entryElement = self.getEntryElement({name: filenameToFocus, origin: locationToFocus});
                 if (entryElement) {
+                    // scroll to uploaded element
                     var entryOffset = entryElement.offsetTop;
-                    $(".gcode_files").slimScroll({ scrollTo: entryOffset + "px" });
+                    $(".gcode_files").slimScroll({
+                        scrollTo: entryOffset + "px"
+                    });
+
+                    // highlight uploaded element
+                    var element = $(entryElement);
+                    element.on("webkitAnimationEnd oanimationend msAnimationEnd animationend", function(e) {
+                        // remove highlight class again
+                        element.removeClass("highlight");
+                    });
+                    element.addClass("highlight");
                 }
             }
 
@@ -421,9 +438,15 @@ $(function() {
         };
 
         self.onEventUpdatedFiles = function(payload) {
-            if (payload.type == "gcode") {
-                self.requestData();
+            if (self._uploadInProgress) {
+                return;
             }
+
+            if (payload.type !== "gcode") {
+                return;
+            }
+
+            self.requestData();
         };
 
         self.onEventSlicingDone = function(payload) {
@@ -456,8 +479,10 @@ $(function() {
                 url: API_BASEURL + "files/local",
                 dataType: "json",
                 dropZone: enable ? self.localTarget : null,
+                submit: self._handleUploadStart,
                 done: self._handleUploadDone,
                 fail: self._handleUploadFail,
+                always: self._handleUploadAlways,
                 progressall: self._handleUploadProgress
             };
             self.uploadButton.fileupload(options);
@@ -468,8 +493,10 @@ $(function() {
                 url: API_BASEURL + "files/sdcard",
                 dataType: "json",
                 dropZone: enable ? self.sdTarget : null,
+                submit: self._handleUploadStart,
                 done: self._handleUploadDone,
                 fail: self._handleUploadFail,
+                always: self._handleUploadAlways,
                 progressall: self._handleUploadProgress
             };
             self.sdUploadButton.fileupload(options);
@@ -483,6 +510,11 @@ $(function() {
                 $(document).unbind("dragover", self._handleDragNDrop);
                 log.debug("Disabled drag-n-drop");
             }
+        };
+
+        self._handleUploadStart = function(e, data) {
+            self._uploadInProgress = true;
+            return true;
         };
 
         self._handleUploadDone = function(e, data) {
@@ -526,6 +558,10 @@ $(function() {
             self.uploadProgress
                 .removeClass("progress-striped")
                 .removeClass("active");
+        };
+
+        self._handleUploadAlways = function(e, data) {
+            self._uploadInProgress = false;
         };
 
         self._handleUploadProgress = function(e, data) {
