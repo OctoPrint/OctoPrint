@@ -59,12 +59,14 @@ $(function() {
         self.localTarget = undefined;
         self.sdTarget = undefined;
 
-        self._uploadInProgress = false;
+        self.ignoreUpdatedFilesEvent = false;
+
+        self.addingFolder = ko.observable(false);
 
         self.addFolderDialog = undefined;
         self.addFolderName = ko.observable(undefined);
-        self.enableAddFolder = ko.computed(function() {
-            return self.loginState.isUser() && self.addFolderName() && self.addFolderName().trim() != "";
+        self.enableAddFolder = ko.pureComputed(function() {
+            return self.loginState.isUser() && self.addFolderName() && self.addFolderName().trim() != "" && !self.addingFolder();
         });
 
         self.allItems = ko.observable(undefined);
@@ -301,9 +303,25 @@ $(function() {
 
             // "local" only for now since we only support local and sdcard,
             // and sdcard doesn't support creating folders...
-            OctoPrint.files.createFolder("local", name, self.currentPath())
-                .done(function() {
-                    self.addFolderDialog.modal("hide");
+            var location = "local";
+
+            self.ignoreUpdatedFilesEvent = true;
+            self.addingFolder(true);
+            OctoPrint.files.createFolder(location, name, self.currentPath())
+                .done(function(data) {
+                    self.requestData(data.folder.name, data.folder.origin)
+                        .done(function() {
+                            self.addFolderDialog.modal("hide");
+                        })
+                        .always(function() {
+                            self.addingFolder(false);
+                        });
+                })
+                .fail(function() {
+                    self.addingFolder(false);
+                })
+                .always(function() {
+                    self.ignoreUpdatedFilesEvent = false;
                 });
         };
 
@@ -685,7 +703,7 @@ $(function() {
         };
 
         self.onEventUpdatedFiles = function(payload) {
-            if (self._uploadInProgress) {
+            if (self.ignoreUpdatedFilesEvent) {
                 return;
             }
 
@@ -772,7 +790,7 @@ $(function() {
         };
 
         self._handleUploadStart = function(e, data) {
-            self._uploadInProgress = true;
+            self.ignoreUpdatedFilesEvent = true;
             return true;
         };
 
@@ -818,11 +836,7 @@ $(function() {
         };
 
         self._handleUploadAlways = function(e, data) {
-            self._uploadInProgress = false;
-        };
-
-        self._handleUploadAlways = function(e, data) {
-            self._uploadInProgress = false;
+            self.ignoreUpdatedFilesEvent = false;
         };
 
         self._handleUploadProgress = function(e, data) {
