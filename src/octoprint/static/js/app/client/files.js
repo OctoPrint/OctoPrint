@@ -34,10 +34,14 @@
             if (!element.hasOwnProperty("date")) element.date = undefined;
 
             if (element.type == "folder") {
+                element.weight = 0;
                 _.each(element.children, function(e, i, l) {
                     e.parent = element;
                     recursiveCheck(e, i, l);
+                    element.weight += e.weight;
                 });
+            } else {
+                element.weight = 1;
             }
         };
         _.each(response.files, recursiveCheck);

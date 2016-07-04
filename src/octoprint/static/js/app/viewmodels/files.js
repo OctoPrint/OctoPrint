@@ -111,7 +111,7 @@ $(function() {
                     return data["type"] && (data["type"] == "model" || data["type"] == "folder");
                 },
                 "emptyFolder": function(data) {
-                    return data["type"] && (data["type"] != "folder" || data["children"].length != 0);
+                    return data["type"] && (data["type"] != "folder" || data["weight"] > 0);
                 }
             },
             "name",
