@@ -18,12 +18,12 @@ class CountedEventTest(unittest.TestCase):
 
 		event = CountedEvent()
 
-		self.assertEquals(0, event._counter)
+		self.assertEqual(0, event._counter)
 		self.assertFalse(event._event.is_set())
 
 		event.set()
 
-		self.assertEquals(1, event._counter)
+		self.assertEqual(1, event._counter)
 		self.assertTrue(event._event.is_set())
 
 	def test_set_more_than_max(self):
@@ -31,17 +31,17 @@ class CountedEventTest(unittest.TestCase):
 
 		event = CountedEvent(max=1)
 
-		self.assertEquals(0, event._counter)
+		self.assertEqual(0, event._counter)
 		self.assertFalse(event._event.is_set())
 
 		event.set()
 
-		self.assertEquals(1, event._counter)
+		self.assertEqual(1, event._counter)
 		self.assertTrue(event._event.is_set())
 
 		event.set()
 
-		self.assertEquals(1, event._counter)
+		self.assertEqual(1, event._counter)
 		self.assertTrue(event._event.is_set())
 
 	def test_clear_once(self):
@@ -49,12 +49,12 @@ class CountedEventTest(unittest.TestCase):
 
 		event = CountedEvent(1)
 
-		self.assertEquals(1, event._counter)
+		self.assertEqual(1, event._counter)
 		self.assertTrue(event._event.is_set())
 
 		event.clear()
 
-		self.assertEquals(0, event._counter)
+		self.assertEqual(0, event._counter)
 		self.assertFalse(event._event.is_set())
 
 	def test_clear_all(self):
@@ -62,12 +62,12 @@ class CountedEventTest(unittest.TestCase):
 
 		event = CountedEvent(10)
 
-		self.assertEquals(10, event._counter)
+		self.assertEqual(10, event._counter)
 		self.assertTrue(event._event.is_set())
 
 		event.clear(completely=True)
 
-		self.assertEquals(0, event._counter)
+		self.assertEqual(0, event._counter)
 		self.assertFalse(event._event.is_set())
 
 	def test_clear_more_than_available(self):
@@ -75,17 +75,17 @@ class CountedEventTest(unittest.TestCase):
 
 		event = CountedEvent(1)
 
-		self.assertEquals(1, event._counter)
+		self.assertEqual(1, event._counter)
 		self.assertTrue(event._event.is_set())
 
 		event.clear()
 
-		self.assertEquals(0, event._counter)
+		self.assertEqual(0, event._counter)
 		self.assertFalse(event._event.is_set())
 
 		event.clear()
 
-		self.assertEquals(0, event._counter)
+		self.assertEqual(0, event._counter)
 		self.assertFalse(event._event.is_set())
 
 	def test_blocked(self):

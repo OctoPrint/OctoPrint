@@ -24,6 +24,7 @@ import logging.config
 import atexit
 import signal
 import base64
+import collections
 
 SUCCESS = {}
 NO_CONTENT = ("", 204)
@@ -1192,9 +1193,9 @@ class LifecycleManager(object):
 			orig_handler = getattr(self._plugin_manager, "on_plugin_" + lifecycle_event)
 
 			def handler(*args, **kwargs):
-				if callable(orig_handler):
+				if isinstance(orig_handler, collections.Callable):
 					orig_handler(*args, **kwargs)
-				if callable(new_handler):
+				if isinstance(new_handler, collections.Callable):
 					new_handler(*args, **kwargs)
 
 			return handler

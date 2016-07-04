@@ -7,7 +7,10 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 
 import logging
-import Queue as queue
+try:
+	import queue
+except ImportError:
+	import Queue as queue
 import os
 import threading
 import collections
@@ -260,7 +263,7 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
 			self._gcode.load(self._current.absolute_path, self._current.printer_profile, throttle=throttle_callback)
 
 			result = dict()
-			result["printingArea"] = {"minX" : self._gcode.minX, "minY" : self._gcode.minY, "minZ" : self._gcode.minZ, 
+			result["printingArea"] = {"minX" : self._gcode.minX, "minY" : self._gcode.minY, "minZ" : self._gcode.minZ,
 						  "maxX" : self._gcode.maxX, "maxY" : self._gcode.maxY, "maxZ" : self._gcode.maxZ}
 			if self._gcode.totalMoveTimeMinute:
 				result["estimatedPrintTime"] = self._gcode.totalMoveTimeMinute * 60

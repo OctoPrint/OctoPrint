@@ -7,6 +7,7 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 
 import requests
 import time
+import collections
 
 apikey = None
 baseurl = None
@@ -86,11 +87,11 @@ class SocketClient(object):
 		internal = "_ws_" + cb
 		if hasattr(self, internal):
 			cb_func = getattr(self, internal)
-			if callable(cb_func):
+			if isinstance(cb_func, collections.Callable):
 				cb_func(*args, **kwargs)
 
 		cb_func = self._ws_kwargs.get(cb, None)
-		if callable(cb_func):
+		if isinstance(cb_func, collections.Callable):
 			cb_func(*args, **kwargs)
 
 	def _ws_on_open(self, ws):
@@ -334,7 +335,7 @@ def connect_socket(**kwargs):
 
 		if message_type == "h":
 			# "heartbeat" message
-			if callable(on_heartbeat_cb):
+			if isinstance(on_heartbeat_cb, collections.Callable):
 				on_heartbeat_cb(ws)
 				return
 		elif message_type == "o":
@@ -344,7 +345,7 @@ def connect_socket(**kwargs):
 			# "close" message
 			return
 
-		if not callable(on_message_cb):
+		if not isinstance(on_message_cb, collections.Callable):
 			return
 
 		message_body = message[1:]
@@ -361,15 +362,15 @@ def connect_socket(**kwargs):
 				on_message_cb(ws, internal_type, internal_message)
 
 	def on_open(ws):
-		if callable(on_open_cb):
+		if isinstance(on_open_cb, collections.Callable):
 			on_open_cb(ws)
 
 	def on_close(ws):
-		if callable(on_close_cb):
+		if isinstance(on_close_cb, collections.Callable):
 			on_close_cb(ws)
 
 	def on_error(ws, error):
-		if callable(on_error_cb):
+		if isinstance(on_error_cb, collections.Callable):
 			on_error_cb(ws, error)
 
 	socket = SocketClient(url,

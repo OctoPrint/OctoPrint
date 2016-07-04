@@ -30,6 +30,7 @@ import logging
 import re
 import uuid
 import copy
+import collections
 
 try:
 	from collections import ChainMap
@@ -757,7 +758,7 @@ class Settings(object):
 	def load_overlay(self, overlay, migrate=True):
 		config = None
 
-		if callable(overlay):
+		if isinstance(overlay, collections.Callable):
 			try:
 				overlay = overlay(self)
 			except:
@@ -1089,7 +1090,7 @@ class Settings(object):
 				except:
 					pass
 
-				if callable(preprocessor):
+				if isinstance(preprocessor, collections.Callable):
 					value = preprocessor(value)
 
 			if do_copy:
@@ -1260,7 +1261,7 @@ class Settings(object):
 			except NoSuchSettingsPath:
 				pass
 
-			if callable(preprocessor):
+			if isinstance(preprocessor, collections.Callable):
 				value = preprocessor(value)
 
 		try:

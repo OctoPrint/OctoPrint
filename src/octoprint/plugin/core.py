@@ -34,6 +34,7 @@ import logging
 
 import pkg_resources
 import pkginfo
+import collections
 
 EntryPointOrigin = namedtuple("EntryPointOrigin", "type, entry_point, module_name, package_name, package_version")
 FolderOrigin = namedtuple("FolderOrigin", "type, folder")
@@ -1174,7 +1175,7 @@ class PluginManager(object):
 		    list: A list of all found and matching implementations.
 		"""
 
-		assert callable(f)
+		assert isinstance(f, collections.Callable)
 		implementations = self.get_implementations(*types, sorting_context=kwargs.get("sorting_context", None))
 		return filter(f, implementations)
 
@@ -1240,14 +1241,14 @@ class PluginManager(object):
 		                                  key=lambda x: (x[0] is None, x[0], x[1], x[2]))
 
 	def _get_callback_and_order(self, hook):
-		if callable(hook):
+		if isinstance(hook, collections.Callable):
 			return hook, None
 
 		elif isinstance(hook, tuple) and len(hook) == 2:
 			callback, order = hook
 
 			# test that callback is a callable
-			if not callable(callback):
+			if not isinstance(callback, collections.Callable):
 				raise ValueError("Hook callback is not a callable")
 
 			# test that number is an int

@@ -24,6 +24,7 @@ from octoprint.printer.estimation import TimeEstimationHelper
 from octoprint.settings import settings
 from octoprint.util import comm as comm
 from octoprint.util import InvariantContainer
+import collections
 
 
 class Printer(PrinterInterface, comm.MachineComPrintCallback):
@@ -804,7 +805,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 				"messages": list(self._messages)
 			})
 			callback.on_printer_send_initial_data(data)
-		except Exception, err:
+		except Exception as err:
 			import sys
 			sys.stderr.write("ERROR: %s\n" % str(err))
 			pass
@@ -966,7 +967,7 @@ class StateMonitor(object):
 		self._worker.start()
 
 	def _get_current_progress(self):
-		if callable(self._on_get_progress):
+		if isinstance(self._on_get_progress, collections.Callable):
 			return self._on_get_progress()
 		return self._progress
 

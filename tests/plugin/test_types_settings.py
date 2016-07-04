@@ -219,7 +219,7 @@ class TestSettingsPlugin(unittest.TestCase):
 		)
 		self.settings.set.assert_called_once_with([], expected)
 
-		self.assertEquals(diff, expected)
+		self.assertEqual(diff, expected)
 
 	def test_on_settings_save_nodiff(self):
 		"""Tests that data is cleaned if there's not difference between data and defaults."""
@@ -247,7 +247,7 @@ class TestSettingsPlugin(unittest.TestCase):
 		### assert
 
 		self.settings.clean_all_data.assert_called_once_with()
-		self.assertEquals(diff, dict())
+		self.assertEqual(diff, dict())
 
 	def test_on_settings_save_configversion(self):
 		"""Tests that saved data gets stripped config version and set correct one."""
@@ -279,7 +279,7 @@ class TestSettingsPlugin(unittest.TestCase):
 		# while there was no diff, we should still have saved the new config version
 		self.settings.set.assert_called_once_with([], expected_set)
 
-		self.assertEquals(diff, expected_diff)
+		self.assertEqual(diff, expected_diff)
 
 	def test_on_settings_load(self):
 		"""Tests that on_settings_load returns what's stored in the config, without config version."""
@@ -310,4 +310,4 @@ class TestSettingsPlugin(unittest.TestCase):
 
 		### assert
 
-		self.assertEquals(result, expected)
+		self.assertEqual(result, expected)
