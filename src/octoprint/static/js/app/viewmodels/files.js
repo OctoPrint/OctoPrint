@@ -790,7 +790,14 @@ $(function() {
         };
 
         self._handleUploadFail = function(e, data) {
-            var error = "<p>" + gettext("Could not upload the file. Make sure that it is a GCODE file and has the extension \".gcode\" or \".gco\" or that it is an STL file with the extension \".stl\".") + "</p>";
+            var extensions = _.map(SUPPORTED_EXTENSIONS, function(extension) {
+                return extension.toLowerCase();
+            }).sort();
+            extensions = extensions.join(", ");
+            var error = "<p>"
+                + _.sprintf(gettext("Could not upload the file. Make sure that it is a valid file with one of these extensions: %(extensions)s"),
+                            {extensions: extensions})
+                + "</p>";
             error += pnotifyAdditionalInfo("<pre>" + data.jqXHR.responseText + "</pre>");
             new PNotify({
                 title: "Upload failed",
@@ -799,6 +806,10 @@ $(function() {
                 hide: false
             });
             self._setProgressBar(0, "", false);
+        };
+
+        self._handleUploadAlways = function(e, data) {
+            self._uploadInProgress = false;
         };
 
         self._handleUploadAlways = function(e, data) {
