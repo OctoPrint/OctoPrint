@@ -59,6 +59,8 @@ $(function() {
         self.localTarget = undefined;
         self.sdTarget = undefined;
 
+        self._uploadInProgress = false;
+
         self.addFolderDialog = undefined;
         self.addFolderName = ko.observable(undefined);
         self.enableAddFolder = ko.computed(function() {
@@ -193,17 +195,27 @@ $(function() {
             self.isSdReady(data.flags.sdReady);
         };
 
-        self._otherRequestInProgress = false;
+        self._otherRequestInProgress = undefined;
+        self._filenameToFocus = undefined;
+        self._locationToFocus = undefined;
+        self._switchToPath = undefined;
         self.requestData = function(filenameToFocus, locationToFocus, switchToPath) {
-            if (self._otherRequestInProgress) return;
+            self._filenameToFocus = self._filenameToFocus || filenameToFocus;
+            self._locationToFocus = self._locationToFocus || locationToFocus;
+            self._switchToPath = self._switchToPath || switchToPath;
+            if (self._otherRequestInProgress !== undefined) {
+                return self._otherRequestInProgress
+            }
 
-            self._otherRequestInProgress = true;
-            OctoPrint.files.list(true)
+            return self._otherRequestInProgress = OctoPrint.files.list(true)
                 .done(function(response) {
-                    self.fromResponse(response, filenameToFocus, locationToFocus, switchToPath);
+                    self.fromResponse(response, self._filenameToFocus, self._locationToFocus, self._switchToPath);
                 })
                 .always(function() {
-                    self._otherRequestInProgress = false;
+                    self._otherRequestInProgress = undefined;
+                    self._filenameToFocus = undefined;
+                    self._locationToFocus = undefined;
+                    self._switchToPath = undefined;
                 });
         };
 
@@ -226,8 +238,19 @@ $(function() {
                 }
                 var entryElement = self.getEntryElement({name: filenameToFocus, origin: locationToFocus});
                 if (entryElement) {
+                    // scroll to uploaded element
                     var entryOffset = entryElement.offsetTop;
-                    $(".gcode_files").slimScroll({ scrollTo: entryOffset + "px" });
+                    $(".gcode_files").slimScroll({
+                        scrollTo: entryOffset + "px"
+                    });
+
+                    // highlight uploaded element
+                    var element = $(entryElement);
+                    element.on("webkitAnimationEnd oanimationend msAnimationEnd animationend", function(e) {
+                        // remove highlight class again
+                        element.removeClass("highlight");
+                    });
+                    element.addClass("highlight");
                 }
             }
 
@@ -653,9 +676,15 @@ $(function() {
         };
 
         self.onEventUpdatedFiles = function(payload) {
-            if (payload.type == "gcode") {
-                self.requestData(undefined, undefined, self.currentPath());
+            if (self._uploadInProgress) {
+                return;
             }
+
+            if (payload.type !== "gcode") {
+                return;
+            }
+
+            self.requestData(undefined, undefined, self.currentPath());
         };
 
         self.onEventSlicingDone = function(payload) {
@@ -698,8 +727,10 @@ $(function() {
                 drop: function(e, data) {
 
                 },
+                submit: self._handleUploadStart,
                 done: self._handleUploadDone,
                 fail: self._handleUploadFail,
+                always: self._handleUploadAlways,
                 progressall: self._handleUploadProgress
             }).bind('fileuploadsubmit', function(e, data) {
                 if (self.currentPath() != "")
@@ -731,6 +762,11 @@ $(function() {
             }
         };
 
+        self._handleUploadStart = function(e, data) {
+            self._uploadInProgress = true;
+            return true;
+        };
+
         self._handleUploadDone = function(e, data) {
             var filename = undefined;
             var location = undefined;
@@ -741,14 +777,15 @@ $(function() {
                 filename = data.result.files.local.name;
                 location = "local";
             }
-            self.requestData(filename, location, self.currentPath());
+            self.requestData(filename, location, self.currentPath())
+                .done(function() {
+                    if (data.result.done) {
+                        self._setProgressBar(0, "", false);
+                    }
+                });
 
             if (_.endsWith(filename.toLowerCase(), ".stl")) {
                 self.slicing.show(location, filename);
-            }
-
-            if (data.result.done) {
-                self._setProgressBar(0, "", false);
             }
         };
 
@@ -762,6 +799,10 @@ $(function() {
                 hide: false
             });
             self._setProgressBar(0, "", false);
+        };
+
+        self._handleUploadAlways = function(e, data) {
+            self._uploadInProgress = false;
         };
 
         self._handleUploadProgress = function(e, data) {
