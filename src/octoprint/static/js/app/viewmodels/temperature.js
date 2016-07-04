@@ -251,7 +251,9 @@ $(function() {
                         targets = self.temperatures[type].target;
                     }
 
-                    var showFahrenheit = self.settingsViewModel.settings.appearance.showFahrenheitAlso();
+                    var showFahrenheit = (self.settingsViewModel.settings !== undefined )
+                                         ? self.settingsViewModel.settings.appearance.showFahrenheitAlso()
+                                         : false;
                     var actualTemp = actuals && actuals.length ? formatTemperature(actuals[actuals.length - 1][1], showFahrenheit) : "-";
                     var targetTemp = targets && targets.length ? formatTemperature(targets[targets.length - 1][1], showFahrenheit) : "-";
 
@@ -288,7 +290,7 @@ $(function() {
                 }
             });
             return maxTemp;
-        }
+        };
 
         self.setTarget = function(item) {
             var value = item.newTarget();
