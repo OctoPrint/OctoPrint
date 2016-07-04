@@ -88,7 +88,7 @@ def index():
 				_logger.exception("Error retrieving additional data for preemptive cache from plugin {}".format(key))
 
 		def unless():
-			disabled_for_root = request.url_root in settings().get(["server", "preemptiveCache", "exceptions"])
+			disabled_for_root = request.url_root in settings().get(["server", "preemptiveCache", "exceptions"]) or not (request.url_root.startswith("http://") or request.url_root.startswith("https://")))
 			if callable(additional_unless):
 				return disabled_for_root or additional_unless()
 			else:
