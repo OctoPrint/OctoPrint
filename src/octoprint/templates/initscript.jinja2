@@ -29,6 +29,7 @@
     var BRANCH = "{{ branch|e }}";
     var LOCALE = "{{ g.locale|e }}";
     var AVAILABLE_LOCALES = {{ locales|tojson }};
+    var SUPPORTED_EXTENSIONS = {{ supportedExtensions|tojson }};
 
     var OCTOPRINT_VIEWMODELS = [];
     var ADDITIONAL_VIEWMODELS = [];
