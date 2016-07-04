@@ -7,8 +7,8 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 
 def can_perform_update(target, check):
-	return "python_updater" in check and check["python_updater"] is not None
+    return "python_updater" in check and check["python_updater"] is not None
 
 
 def perform_update(target, check, target_version, log_cb=None):
-	return check["python_updater"].perform_update(target, check, target_version, log_cb=None)
+    return check["python_updater"].perform_update(target, check, target_version, log_cb=None)

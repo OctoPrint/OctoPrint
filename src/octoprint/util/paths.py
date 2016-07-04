@@ -6,14 +6,14 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 def normalize(path, expand_user=True, expand_vars=True, **kwargs):
-	import os
+    import os
 
-	if path is None:
-		return None
+    if path is None:
+        return None
 
-	if expand_user:
-		path = os.path.expanduser(path)
-	if expand_vars:
-		path = os.path.expandvars(path)
-	path = os.path.realpath(os.path.abspath(path))
-	return path
+    if expand_user:
+        path = os.path.expanduser(path)
+    if expand_vars:
+        path = os.path.expandvars(path)
+    path = os.path.realpath(os.path.abspath(path))
+    return path

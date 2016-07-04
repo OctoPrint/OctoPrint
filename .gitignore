@@ -29,3 +29,8 @@ OctoPrint.egg-info
 *.orig
 
 *.codekit
+
+venv
+venv26
+venv27
+venv35

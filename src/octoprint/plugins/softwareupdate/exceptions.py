@@ -7,31 +7,31 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 
 class NoUpdateAvailable(Exception):
-	pass
+    pass
 
 class UpdateAlreadyInProgress(Exception):
-	pass
+    pass
 
 class UnknownUpdateType(Exception):
-	pass
+    pass
 
 class UnknownCheckType(Exception):
-	pass
+    pass
 
 class UpdateError(Exception):
-	def __init__(self, message, data):
-		self.message = message
-		self.data = data
+    def __init__(self, message, data):
+        self.message = message
+        self.data = data
 
 class ScriptError(Exception):
-	def __init__(self, returncode, stdout, stderr):
-		self.returncode = returncode
-		self.stdout = stdout
-		self.stderr = stderr
+    def __init__(self, returncode, stdout, stderr):
+        self.returncode = returncode
+        self.stdout = stdout
+        self.stderr = stderr
 
 class RestartFailed(Exception):
-	pass
+    pass
 
 class ConfigurationInvalid(Exception):
-	pass
+    pass
 

@@ -19,67 +19,67 @@ _pip_callers = dict()
 _pip_version_dependency_links = pkg_resources.parse_version("1.5")
 
 def can_perform_update(target, check):
-	pip_caller = _get_pip_caller(command=check["pip_command"] if "pip_command" in check else None)
-	return "pip" in check and pip_caller is not None and pip_caller.available
+    pip_caller = _get_pip_caller(command=check["pip_command"] if "pip_command" in check else None)
+    return "pip" in check and pip_caller is not None and pip_caller.available
 
 def _get_pip_caller(command=None):
-	key = command
-	if command is None:
-		key = "__default"
+    key = command
+    if command is None:
+        key = "__default"
 
-	if not key in _pip_callers:
-		try:
-			_pip_callers[key] = PipCaller(configured=command)
-		except UnknownPip:
-			_pip_callers[key] = None
+    if not key in _pip_callers:
+        try:
+            _pip_callers[key] = PipCaller(configured=command)
+        except UnknownPip:
+            _pip_callers[key] = None
 
-	return _pip_callers[key]
+    return _pip_callers[key]
 
 def perform_update(target, check, target_version, log_cb=None):
-	pip_command = None
-	if "pip_command" in check:
-		pip_command = check["pip_command"]
+    pip_command = None
+    if "pip_command" in check:
+        pip_command = check["pip_command"]
 
-	pip_caller = _get_pip_caller(command=pip_command)
-	if pip_caller is None:
-		raise exceptions.UpdateError("Can't run pip", None)
+    pip_caller = _get_pip_caller(command=pip_command)
+    if pip_caller is None:
+        raise exceptions.UpdateError("Can't run pip", None)
 
-	def _log_call(*lines):
-		_log(lines, prefix=" ", stream="call")
+    def _log_call(*lines):
+        _log(lines, prefix=" ", stream="call")
 
-	def _log_stdout(*lines):
-		_log(lines, prefix=">", stream="stdout")
+    def _log_stdout(*lines):
+        _log(lines, prefix=">", stream="stdout")
 
-	def _log_stderr(*lines):
-		_log(lines, prefix="!", stream="stderr")
+    def _log_stderr(*lines):
+        _log(lines, prefix="!", stream="stderr")
 
-	def _log(lines, prefix=None, stream=None):
-		if log_cb is None:
-			return
-		log_cb(lines, prefix=prefix, stream=stream)
+    def _log(lines, prefix=None, stream=None):
+        if log_cb is None:
+            return
+        log_cb(lines, prefix=prefix, stream=stream)
 
-	if log_cb is not None:
-		pip_caller.on_log_call = _log_call
-		pip_caller.on_log_stdout = _log_stdout
-		pip_caller.on_log_stderr = _log_stderr
+    if log_cb is not None:
+        pip_caller.on_log_call = _log_call
+        pip_caller.on_log_stdout = _log_stdout
+        pip_caller.on_log_stderr = _log_stderr
 
-	install_arg = check["pip"].format(target_version=target_version)
+    install_arg = check["pip"].format(target_version=target_version)
 
-	logger.debug(u"Target: %s, executing pip install %s" % (target, install_arg))
-	pip_args = ["install", check["pip"].format(target_version=target_version, target=target_version)]
+    logger.debug(u"Target: %s, executing pip install %s" % (target, install_arg))
+    pip_args = ["install", check["pip"].format(target_version=target_version, target=target_version)]
 
-	if "dependency_links" in check and check["dependency_links"]:
-		pip_args += ["--process-dependency-links"]
+    if "dependency_links" in check and check["dependency_links"]:
+        pip_args += ["--process-dependency-links"]
 
-	returncode, stdout, stderr = pip_caller.execute(*pip_args)
-	if returncode != 0:
-		raise exceptions.UpdateError("Error while executing pip install", (stdout, stderr))
+    returncode, stdout, stderr = pip_caller.execute(*pip_args)
+    if returncode != 0:
+        raise exceptions.UpdateError("Error while executing pip install", (stdout, stderr))
 
-	logger.debug(u"Target: %s, executing pip install %s --ignore-reinstalled --force-reinstall --no-deps" % (target, install_arg))
-	pip_args += ["--ignore-installed", "--force-reinstall", "--no-deps"]
+    logger.debug(u"Target: %s, executing pip install %s --ignore-reinstalled --force-reinstall --no-deps" % (target, install_arg))
+    pip_args += ["--ignore-installed", "--force-reinstall", "--no-deps"]
 
-	returncode, stdout, stderr = pip_caller.execute(*pip_args)
-	if returncode != 0:
-		raise exceptions.UpdateError("Error while executing pip install --force-reinstall", (stdout, stderr))
+    returncode, stdout, stderr = pip_caller.execute(*pip_args)
+    if returncode != 0:
+        raise exceptions.UpdateError("Error while executing pip install --force-reinstall", (stdout, stderr))
 
-	return "ok"
+    return "ok"

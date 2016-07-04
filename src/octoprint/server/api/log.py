@@ -21,48 +21,48 @@ from octoprint.server.api import api
 @restricted_access
 @admin_permission.require(403)
 def getLogFiles():
-	import psutil
-	usage = psutil.disk_usage(settings().getBaseFolder("logs"))
+    import psutil
+    usage = psutil.disk_usage(settings().getBaseFolder("logs"))
 
-	files = _getLogFiles()
+    files = _getLogFiles()
 
-	return jsonify(files=files, free=usage.free, total=usage.total)
+    return jsonify(files=files, free=usage.free, total=usage.total)
 
 
 @api.route("/logs/<path:filename>", methods=["GET"])
 @restricted_access
 @admin_permission.require(403)
 def downloadLog(filename):
-	return redirect_to_tornado(request, url_for("index") + "downloads/logs/" + filename)
+    return redirect_to_tornado(request, url_for("index") + "downloads/logs/" + filename)
 
 
 @api.route("/logs/<path:filename>", methods=["DELETE"])
 @restricted_access
 @admin_permission.require(403)
 def deleteLog(filename):
-	secure = os.path.join(settings().getBaseFolder("logs"), secure_filename(filename))
-	if not os.path.exists(secure):
-		return make_response("File not found: %s" % filename, 404)
+    secure = os.path.join(settings().getBaseFolder("logs"), secure_filename(filename))
+    if not os.path.exists(secure):
+        return make_response("File not found: %s" % filename, 404)
 
-	os.remove(secure)
+    os.remove(secure)
 
-	return NO_CONTENT
+    return NO_CONTENT
 
 
 def _getLogFiles():
-	files = []
-	basedir = settings().getBaseFolder("logs")
-	for osFile in os.listdir(basedir):
-		statResult = os.stat(os.path.join(basedir, osFile))
-		files.append({
-			"name": osFile,
-			"date": int(statResult.st_mtime),
-			"size": statResult.st_size,
-			"refs": {
-				"resource": url_for(".downloadLog", filename=osFile, _external=True),
-				"download": url_for("index", _external=True) + "downloads/logs/" + osFile
-			}
-		})
+    files = []
+    basedir = settings().getBaseFolder("logs")
+    for osFile in os.listdir(basedir):
+        statResult = os.stat(os.path.join(basedir, osFile))
+        files.append({
+            "name": osFile,
+            "date": int(statResult.st_mtime),
+            "size": statResult.st_size,
+            "refs": {
+                "resource": url_for(".downloadLog", filename=osFile, _external=True),
+                "download": url_for("index", _external=True) + "downloads/logs/" + osFile
+            }
+        })
 
-	return files
+    return files
 

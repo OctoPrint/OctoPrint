@@ -8,7 +8,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 from ..exceptions import ConfigurationInvalid
 
 def get_latest(target, check, full_data=False):
-	if not "python_checker" in check:
-		raise ConfigurationInvalid("Update configuration for %s of type commandline needs command defined" % target)
+    if not "python_checker" in check:
+        raise ConfigurationInvalid("Update configuration for %s of type commandline needs command defined" % target)
 
-	return check["python_checker"].get_latest(target, check, full_data=full_data)
+    return check["python_checker"].get_latest(target, check, full_data=full_data)

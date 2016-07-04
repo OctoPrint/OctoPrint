@@ -10,18 +10,18 @@ from .exceptions import ScriptError
 
 
 def execute(command, cwd=None, evaluate_returncode=True):
-	import sarge
-	p = None
+    import sarge
+    p = None
 
-	try:
-		p = sarge.run(command, cwd=cwd, stdout=sarge.Capture(), stderr=sarge.Capture())
-	except:
-		returncode = p.returncode if p is not None else None
-		stdout = p.stdout.text if p is not None and p.stdout is not None else ""
-		stderr = p.stderr.text if p is not None and p.stderr is not None else ""
-		raise ScriptError(returncode, stdout, stderr)
+    try:
+        p = sarge.run(command, cwd=cwd, stdout=sarge.Capture(), stderr=sarge.Capture())
+    except:
+        returncode = p.returncode if p is not None else None
+        stdout = p.stdout.text if p is not None and p.stdout is not None else ""
+        stderr = p.stderr.text if p is not None and p.stderr is not None else ""
+        raise ScriptError(returncode, stdout, stderr)
 
-	if evaluate_returncode and p.returncode != 0:
-		raise ScriptError(p.returncode, p.stdout.text, p.stderr.text)
+    if evaluate_returncode and p.returncode != 0:
+        raise ScriptError(p.returncode, p.stdout.text, p.stderr.text)
 
-	return p.returncode, p.stdout.text, p.stderr.text
+    return p.returncode, p.stdout.text, p.stderr.text
