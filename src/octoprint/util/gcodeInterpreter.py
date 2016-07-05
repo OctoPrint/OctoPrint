@@ -58,7 +58,7 @@ class Vector3D(object):
 			# copy constructor
 			other = args[0]
 			if not isinstance(other, Vector3D):
-				raise ValueError("Object to copy must be a Scalar3D instance")
+				raise ValueError("Object to copy must be a Vector3D instance")
 
 			self.x = other.x
 			self.y = other.y
@@ -78,7 +78,7 @@ class Vector3D(object):
 			                self.y + other[1],
 			                self.z + other[2])
 		else:
-			raise ValueError("other must be a Scalar3D instance or a list or tuple of length 3")
+			raise ValueError("other must be a Vector3D instance or a list or tuple of length 3")
 
 	def __sub__(self, other):
 		if isinstance(other, Vector3D):
@@ -90,7 +90,7 @@ class Vector3D(object):
 			                self.y - other[1],
 			                self.z - other[2])
 		else:
-			raise ValueError("other must be a Scalar3D instance or a list or tuple")
+			raise ValueError("other must be a Vector3D instance or a list or tuple")
 
 	def __mul__(self, other):
 		if isinstance(other, (int, float)):
@@ -112,7 +112,7 @@ class Vector3D(object):
 		return self.x == other.x and self.y == other.y and self.z == other.z
 
 	def __str__(self):
-		return "Scalar3D(x={}, y={}, z={}, length={})".format(self.x, self.y, self.z, self.length)
+		return "Vector3D(x={}, y={}, z={}, length={})".format(self.x, self.y, self.z, self.length)
 
 
 class AnalysisAborted(Exception):
