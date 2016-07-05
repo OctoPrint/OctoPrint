@@ -51,9 +51,9 @@ $(function() {
 
         self.estimatedPrintTimeString = ko.pureComputed(function() {
             if (self.lastPrintTime())
-                return formatDuration(self.lastPrintTime());
+                return formatFuzzyEstimation(self.lastPrintTime());
             if (self.estimatedPrintTime())
-                return formatDuration(self.estimatedPrintTime());
+                return formatFuzzyEstimation(self.estimatedPrintTime());
             return "-";
         });
         self.byteString = ko.pureComputed(function() {

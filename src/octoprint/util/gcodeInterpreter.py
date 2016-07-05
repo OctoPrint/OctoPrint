@@ -14,6 +14,107 @@ import logging
 from octoprint.settings import settings
 
 
+class Vector3D(object):
+	"""
+	3D vector value
+
+	Supports addition, subtraction and multiplication with a scalar value (float, int) as well as calculating the
+	length of the vector.
+
+	Examples:
+
+	>>> a = Vector3D(1.0, 1.0, 1.0)
+	>>> b = Vector3D(4.0, 4.0, 4.0)
+	>>> a + b == Vector3D(5.0, 5.0, 5.0)
+	True
+	>>> b - a == Vector3D(3.0, 3.0, 3.0)
+	True
+	>>> abs(a - b) == Vector3D(3.0, 3.0, 3.0)
+	True
+	>>> a * 2 == Vector3D(2.0, 2.0, 2.0)
+	True
+	>>> a * 2 == 2 * a
+	True
+	>>> a.length == math.sqrt(a.x ** 2 + a.y ** 2 + a.z ** 2)
+	True
+	>>> copied_a = Vector3D(a)
+	>>> a == copied_a
+	True
+	>>> copied_a.x == a.x and copied_a.y == a.y and copied_a.z == a.z
+	True
+	"""
+
+	def __init__(self, *args, **kwargs):
+		self.x = kwargs.get("x", 0.0)
+		self.y = kwargs.get("y", 0.0)
+		self.z = kwargs.get("z", 0.0)
+
+		if len(args) == 3:
+			self.x = args[0]
+			self.y = args[1]
+			self.z = args[2]
+
+		elif len(args) == 1:
+			# copy constructor
+			other = args[0]
+			if not isinstance(other, Vector3D):
+				raise ValueError("Object to copy must be a Scalar3D instance")
+
+			self.x = other.x
+			self.y = other.y
+			self.z = other.z
+
+	@property
+	def length(self):
+		return math.sqrt(self.x * self.x + self.y * self.y + self.z * self.z)
+
+	def __add__(self, other):
+		if isinstance(other, Vector3D):
+			return Vector3D(self.x + other.x,
+			                self.y + other.y,
+			                self.z + other.z)
+		elif isinstance(other, (tuple, list)) and len(other) == 3:
+			return Vector3D(self.x + other[0],
+			                self.y + other[1],
+			                self.z + other[2])
+		else:
+			raise ValueError("other must be a Scalar3D instance or a list or tuple of length 3")
+
+	def __sub__(self, other):
+		if isinstance(other, Vector3D):
+			return Vector3D(self.x - other.x,
+			                self.y - other.y,
+			                self.z - other.z)
+		elif isinstance(other, (tuple, list)) and len(other) == 3:
+			return Vector3D(self.x - other[0],
+			                self.y - other[1],
+			                self.z - other[2])
+		else:
+			raise ValueError("other must be a Scalar3D instance or a list or tuple")
+
+	def __mul__(self, other):
+		if isinstance(other, (int, float)):
+			return Vector3D(self.x * other,
+			                self.y * other,
+			                self.z * other)
+		else:
+			raise ValueError("other must be a float or int value")
+
+	def __rmul__(self, other):
+		return self.__mul__(other)
+
+	def __abs__(self):
+		return Vector3D(abs(self.x), abs(self.y), abs(self.z))
+
+	def __eq__(self, other):
+		if not isinstance(other, Vector3D):
+			return False
+		return self.x == other.x and self.y == other.y and self.z == other.z
+
+	def __str__(self):
+		return "Scalar3D(x={}, y={}, z={}, length={})".format(self.x, self.y, self.z, self.length)
+
+
 class AnalysisAborted(Exception):
 	pass
 
@@ -52,8 +153,8 @@ class gcode(object):
 	def _load(self, gcodeFile, printer_profile, throttle=None):
 		filePos = 0
 		readBytes = 0
-		pos = [0.0, 0.0, 0.0]
-		posOffset = [0.0, 0.0, 0.0]
+		pos = Vector3D(0.0, 0.0, 0.0)
+		posOffset = Vector3D(0.0, 0.0, 0.0)
 		currentE = [0.0]
 		totalExtrusion = [0.0]
 		maxExtrusion = [0.0]
@@ -65,10 +166,10 @@ class gcode(object):
 		fwretractTime = 0
 		fwretractDist = 0
 		fwrecoverTime = 0
-		feedRateXY = min(printer_profile["axes"]["x"]["speed"], printer_profile["axes"]["y"]["speed"])
-		if feedRateXY == 0:
+		feedrate = min(printer_profile["axes"]["x"]["speed"], printer_profile["axes"]["y"]["speed"])
+		if feedrate == 0:
 			# some somewhat sane default if axes speeds are insane...
-			feedRateXY = 2000
+			feedrate = 2000
 		offsets = printer_profile["extruder"]["offsets"]
 
 		for line in gcodeFile:
@@ -126,28 +227,22 @@ class gcode(object):
 					z = getCodeFloat(line, 'Z')
 					e = getCodeFloat(line, 'E')
 					f = getCodeFloat(line, 'F')
-					oldPos = pos
-					pos = pos[:]
-					if posAbs:
-						if x is not None:
-							pos[0] = x * scale + posOffset[0]
-						if y is not None:
-							pos[1] = y * scale + posOffset[1]
-						if z is not None:
-							pos[2] = z * scale + posOffset[2]
-					else:
-						if x is not None:
-							pos[0] += x * scale
-						if y is not None:
-							pos[1] += y * scale
-						if z is not None:
-							pos[2] += z * scale
-					if f is not None and f != 0:
-						feedRateXY = f
 
-					moveType = 'move'
+					oldPos = pos
+					newPos = Vector3D(x if x is not None else pos.x,
+					                  y if y is not None else pos.y,
+					                  z if z is not None else pos.z)
+
+					if posAbs:
+						pos = newPos * scale + posOffset
+					else:
+						pos += newPos * scale
+					if f is not None and f != 0:
+						feedrate = f
+
 					if e is not None:
 						if absoluteE:
+							# make sure e is relative
 							e -= currentE[currentExtruder]
 						# If move includes extrusion, calculate new min/max coordinates of model
 						if e > 0.0:
@@ -157,32 +252,22 @@ class gcode(object):
 							self.maxY = pos[1] if self.maxY is None or pos[1] > self.maxY else self.maxY
 							self.minZ = pos[2] if self.minZ is None or pos[2] < self.minZ else self.minZ
 							self.maxZ = pos[2] if self.maxZ is None or pos[2] > self.maxZ else self.maxZ
-							moveType = 'extrude'
-						if e < 0.0:
-							moveType = 'retract'
 						totalExtrusion[currentExtruder] += e
 						currentE[currentExtruder] += e
-						if totalExtrusion[currentExtruder] > maxExtrusion[currentExtruder]:
-							maxExtrusion[currentExtruder] = totalExtrusion[currentExtruder]
+						maxExtrusion[currentExtruder] = max(maxExtrusion[currentExtruder],
+						                                    totalExtrusion[currentExtruder])
 					else:
 						e = 0.0
 
-					if x is not None or y is not None or z is not None:
-						diffX = oldPos[0] - pos[0]
-						diffY = oldPos[1] - pos[1]
-						totalMoveTimeMinute += math.sqrt(diffX * diffX + diffY * diffY) / feedRateXY
-					elif moveType == "extrude":
-						diffX = oldPos[0] - pos[0]
-						diffY = oldPos[1] - pos[1]
-						time1 = math.sqrt(diffX * diffX + diffY * diffY) / feedRateXY
-						time2 = abs(e / feedRateXY)
-						totalMoveTimeMinute += max(time1, time2)
-					elif moveType == "retract":
-						totalMoveTimeMinute += abs(e / feedRateXY)
+					# move time in x, y, z, will be 0 if no movement happened
+					moveTimeXYZ = abs((oldPos - pos).length / feedrate)
 
-					if moveType == 'move' and oldPos[2] != pos[2]:
-						if oldPos[2] > pos[2] and abs(oldPos[2] - pos[2]) > 5.0 and pos[2] < 1.0:
-							oldPos[2] = 0.0
+					# time needed for extruding, will be 0 if no extrusion happened
+					extrudeTime = abs(e / feedrate)
+
+					# time to add is maximum of both
+					totalMoveTimeMinute += max(moveTimeXYZ, extrudeTime)
+
 				elif G == 4:	#Delay
 					S = getCodeFloat(line, 'S')
 					if S is not None:
@@ -202,17 +287,17 @@ class gcode(object):
 					x = getCodeFloat(line, 'X')
 					y = getCodeFloat(line, 'Y')
 					z = getCodeFloat(line, 'Z')
-					center = [0.0,0.0,0.0]
+					center = Vector3D(0.0, 0.0, 0.0)
 					if x is None and y is None and z is None:
 						pos = center
 					else:
-						pos = pos[:]
+						pos = Vector3D(pos)
 						if x is not None:
-							pos[0] = center[0]
+							pos.x = center.x
 						if y is not None:
-							pos[1] = center[1]
+							pos.y = center.y
 						if z is not None:
-							pos[2] = center[2]
+							pos.z = center.z
 				elif G == 90:	#Absolute position
 					posAbs = True
 				elif G == 91:	#Relative position
@@ -225,11 +310,11 @@ class gcode(object):
 					if e is not None:
 						currentE[currentExtruder] = e
 					if x is not None:
-						posOffset[0] = pos[0] - x
+						posOffset.x = pos.x - x
 					if y is not None:
-						posOffset[1] = pos[1] - y
+						posOffset.y = pos.y - y
 					if z is not None:
-						posOffset[2] = pos[2] - z
+						posOffset.z = pos.z - z
 
 			elif M is not None:
 				if M == 82:   #Absolute E
@@ -250,13 +335,13 @@ class gcode(object):
 				if T > settings().getInt(["gcodeAnalysis", "maxExtruders"]):
 					self._logger.warn("GCODE tried to select tool %d, that looks wrong, ignoring for GCODE analysis" % T)
 				else:
-					posOffset[0] -= offsets[currentExtruder][0] if currentExtruder < len(offsets) else 0
-					posOffset[1] -= offsets[currentExtruder][1] if currentExtruder < len(offsets) else 0
+					posOffset.x -= offsets[currentExtruder][0] if currentExtruder < len(offsets) else 0
+					posOffset.y -= offsets[currentExtruder][1] if currentExtruder < len(offsets) else 0
 
 					currentExtruder = T
 
-					posOffset[0] += offsets[currentExtruder][0] if currentExtruder < len(offsets) else 0
-					posOffset[1] += offsets[currentExtruder][1] if currentExtruder < len(offsets) else 0
+					posOffset.x += offsets[currentExtruder][0] if currentExtruder < len(offsets) else 0
+					posOffset.y += offsets[currentExtruder][1] if currentExtruder < len(offsets) else 0
 
 					if len(currentE) <= currentExtruder:
 						for i in range(len(currentE), currentExtruder + 1):

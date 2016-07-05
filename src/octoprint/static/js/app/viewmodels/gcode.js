@@ -433,7 +433,7 @@ $(function() {
             } else {
                 var output = [];
                 output.push(gettext("Model size") + ": " + model.width.toFixed(2) + "mm &times; " + model.depth.toFixed(2) + "mm &times; " + model.height.toFixed(2) + "mm");
-                output.push(gettext("Estimated total print time") + ": " + formatDuration(model.printTime));
+                output.push(gettext("Estimated total print time") + ": " + formatFuzzyEstimation(model.printTime));
                 output.push(gettext("Estimated layer height") + ": " + model.layerHeight.toFixed(2) + gettext("mm"));
                 output.push(gettext("Layer count") + ": " + model.layersPrinted.toFixed(0) + " " + gettext("printed") + ", " + model.layersTotal.toFixed(0) + " " + gettext("visited"));
 
@@ -471,7 +471,7 @@ $(function() {
                         }
                     }
                 }
-                output.push(gettext("Print time for layer") + ": " + formatDuration(layer.printTime));
+                output.push(gettext("Print time for layer") + ": " + formatFuzzyEstimation(layer.printTime));
 
                 self.ui_layerInfo(output.join("<br>"));
 
