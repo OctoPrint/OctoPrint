@@ -541,14 +541,8 @@ $(function() {
         self.getAdditionalData = function(data) {
             var output = "";
             if (data["gcodeAnalysis"]) {
-                if (data["gcodeAnalysis"]["printingArea"]) {
-                    var area = data["gcodeAnalysis"]["printingArea"];
-                    var dimensions = {
-                        width: area["maxX"] - area["minX"],
-                        depth: area["maxY"] - area["minY"],
-                        height: area["maxZ"] - area["minZ"]
-                    };
-
+                if (data["gcodeAnalysis"]["dimensions"]) {
+                    var dimensions = data["gcodeAnalysis"]["dimensions"];
                     output += gettext("Model Size") + ": " + _.sprintf("%(width).2fmm &times; %(depth).2fmm &times; %(height).2fmm", dimensions);
                     output += "<br>";
                 }

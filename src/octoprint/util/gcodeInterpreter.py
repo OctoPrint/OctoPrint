@@ -115,6 +115,42 @@ class Vector3D(object):
 		return "Scalar3D(x={}, y={}, z={}, length={})".format(self.x, self.y, self.z, self.length)
 
 
+class MinMax3D(object):
+	"""
+	Tracks minimum and maximum of recorded values
+
+	Examples:
+
+	>>> minmax = MinMax3D()
+	>>> minmax.record(Scalar3D(2.0, 2.0, 2.0))
+	>>> minmax.min.x == 2.0 == minmax.max.x and minmax.min.y == 2.0 == minmax.max.y and minmax.min.z == 2.0 == minmax.max.z
+	True
+	>>> minmax.record(Scalar3D(1.0, 2.0, 3.0))
+	>>> minmax.min.x == 1.0 and minmax.min.y == 2.0 and minmax.min.z == 2.0
+	True
+	>>> minmax.max.x == 2.0 and minmax.max.y == 2.0 and minmax.max.z == 3.0
+	True
+	>>> minmax.size == Scalar3D(1.0, 0.0, 1.0)
+	True
+	"""
+
+	def __init__(self):
+		self.min = Vector3D(None, None, None)
+		self.max = Vector3D(None, None, None)
+
+	def record(self, coordinate):
+		for c in ("x", "y", "z"):
+			current_min = getattr(self.min, c)
+			current_max = getattr(self.max, c)
+			value = getattr(coordinate, c)
+			setattr(self.min, c, value if current_min is None or value < current_min else current_min)
+			setattr(self.max, c, value if current_max is None or value > current_max else current_max)
+
+	@property
+	def size(self):
+		return abs(self.max - self.min)
+
+
 class AnalysisAborted(Exception):
 	pass
 
@@ -130,13 +166,23 @@ class gcode(object):
 		self.progressCallback = None
 		self._abort = False
 		self._filamentDiameter = 0
-		#Parameters for object size check
-		self.minX=None
-		self.minY=None
-		self.minZ=None
-		self.maxX=None
-		self.maxY=None
-		self.maxZ=None
+		self._minMax = MinMax3D()
+
+	@property
+	def dimensions(self):
+		size = self._minMax.size
+		return dict(width=size.x,
+		            depth=size.y,
+		            height=size.z)
+
+	@property
+	def printing_area(self):
+		return dict(minX=self._minMax.min.x,
+		            minY=self._minMax.min.y,
+		            minZ=self._minMax.min.z,
+		            maxX=self._minMax.max.x,
+		            maxY=self._minMax.max.y,
+		            maxZ=self._minMax.max.z)
 
 	def load(self, filename, printer_profile, throttle=None):
 		if os.path.isfile(filename):
@@ -246,12 +292,8 @@ class gcode(object):
 							e -= currentE[currentExtruder]
 						# If move includes extrusion, calculate new min/max coordinates of model
 						if e > 0.0:
-							self.minX = pos[0] if self.minX is None or pos[0] < self.minX else self.minX
-							self.maxX = pos[0] if self.maxX is None or pos[0] > self.maxX else self.maxX
-							self.minY = pos[1] if self.minY is None or pos[1] < self.minY else self.minY
-							self.maxY = pos[1] if self.maxY is None or pos[1] > self.maxY else self.maxY
-							self.minZ = pos[2] if self.minZ is None or pos[2] < self.minZ else self.minZ
-							self.maxZ = pos[2] if self.maxZ is None or pos[2] > self.maxZ else self.maxZ
+							# extrusion -> relevant for print area & dimensions
+							self._minMax.record(pos)
 						totalExtrusion[currentExtruder] += e
 						currentE[currentExtruder] += e
 						maxExtrusion[currentExtruder] = max(maxExtrusion[currentExtruder],
