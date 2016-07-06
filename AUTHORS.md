@@ -70,6 +70,7 @@ date of first contribution):
   * [Javier Martínez Arrieta](https://github.com/Javierma)
   * ["MirceaDan"](https://github.com/ByReaL)
   * [Ovidiu Hossu](https://github.com/MoonshineSG)
+  * [Eyck Jentzsch](https://github.com/eyck)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and
