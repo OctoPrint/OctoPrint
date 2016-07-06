@@ -490,7 +490,7 @@ GCODE.renderer = (function(){
                     ctx.lineWidth = renderOptions['extrusionWidth'];
                     ctx.beginPath();
                     ctx.moveTo(prevX, prevY);
-                    if(cmd.direction !== undefined && cmd.direction != 0){
+                    if (cmds[i].direction !== undefined && cmds[i].direction != 0){
                         var cmd = cmds[i];
                         var di = cmd.i*zoomFactor;
                         var dj = -1*cmd.j*zoomFactor; // Y-coordinate is inverted
