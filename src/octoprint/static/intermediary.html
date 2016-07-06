@@ -176,7 +176,7 @@
                         }
                     } else {
                         // online.gif still not available, let's look at
-                        var interval = 15;
+                        var interval = 10;
                         if (intervals.length) {
                             interval = intervals.shift();
                         }
@@ -200,7 +200,7 @@
                     }
 
                     backendOfflineCounter++;
-                    if (backendOfflineCounter > 10) {
+                    if (backendOfflineCounter > 15) {
                         if (serverTimeout) {
                             window.clearTimeout(serverTimeout);
                         }
