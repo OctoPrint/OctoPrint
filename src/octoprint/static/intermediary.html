@@ -136,21 +136,22 @@
                 var timeout = 1500;
 
                 var baseUrl = window.location.href;
-                var reloadUrl = window.location.href;
+                var currentQuery = "";
+                var currentFragment = "";
+
                 if (baseUrl.indexOf("#") > -1) {
+                    currentFragment = baseUrl.substring(baseUrl.indexOf("#"));
                     baseUrl = baseUrl.substring(0, baseUrl.indexOf("#"));
-                    reloadUrl = baseUrl;
                 }
                 if (baseUrl.indexOf("?") > -1) {
+                    currentQuery = baseUrl.substring(baseUrl.indexOf("?"));
                     baseUrl = baseUrl.substring(0, baseUrl.indexOf("?"));
                 }
                 if (baseUrl.indexOf("/static") > -1) {
                     baseUrl = baseUrl.substring(0, baseUrl.indexOf("/static"));
-                    reloadUrl = baseUrl;
                 }
                 if (baseUrl[baseUrl.length - 1] != "/") {
                     baseUrl += "/";
-                    reloadUrl = baseUrl;
                 }
                 var serverOnlineUrl = baseUrl + "online.gif";
                 var backendOnlineUrl = baseUrl + "intermediary.gif";
@@ -166,7 +167,13 @@
                         serverIsOnline = true;
                         message.className = "pulsate1 green";
                         message.innerText = "OctoPrint server online, reloading page...";
-                        window.location = reloadUrl;
+
+                        var reloadUrl = baseUrl + currentQuery + currentFragment;
+                        if (reloadUrl == window.location.href) {
+                            window.location.reload(false);
+                        } else {
+                            window.location.href = reloadUrl;
+                        }
                     } else {
                         // online.gif still not available, let's look at
                         var interval = 15;
