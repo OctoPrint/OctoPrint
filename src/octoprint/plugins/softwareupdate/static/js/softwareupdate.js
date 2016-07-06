@@ -342,7 +342,7 @@ $(function() {
         };
 
         self.confirmUpdate = function() {
-            self.confirmationDialog.hide();
+            self.confirmationDialog.modal("hide");
             self.performUpdate(self.forceUpdate,
                                _.map(self.availableAndPossible(), function(info) { return info.key }));
         };
