@@ -660,37 +660,6 @@ class Server(object):
 				return "{hashs} {content}".format(hashs="#" * number, content=match.group("content"))
 			return markdown_header_regex.sub(repl, s)
 
-		app.jinja_env.filters["regex_replace"] = regex_replace
-		app.jinja_env.filters["offset_html_headers"] = offset_html_headers
-		app.jinja_env.filters["offset_markdown_headers"] = offset_markdown_headers
-
-		def regex_replace(s, find, replace):
-			return re.sub(find, replace, s)
-
-		html_header_regex = re.compile("<h(?P<number>[1-6])>(?P<content>.*?)</h(?P=number)>")
-		def offset_html_headers(s, offset):
-			def repl(match):
-				number = int(match.group("number"))
-				number += offset
-				if number > 6:
-					number = 6
-				elif number < 1:
-					number = 1
-				return "<h{number}>{content}</h{number}>".format(number=number, content=match.group("content"))
-			return html_header_regex.sub(repl, s)
-
-		markdown_header_regex = re.compile("^(?P<hashs>#+)\s+(?P<content>.*)$", flags=re.MULTILINE)
-		def offset_markdown_headers(s, offset):
-			def repl(match):
-				number = len(match.group("hashs"))
-				number += offset
-				if number > 6:
-					number = 6
-				elif number < 1:
-					number = 1
-				return "{hashs} {content}".format(hashs="#" * number, content=match.group("content"))
-			return markdown_header_regex.sub(repl, s)
-
 		html_link_regex = re.compile("<(?P<tag>a.*?)>(?P<content>.*?)</a>")
 		def externalize_links(text):
 			def repl(match):
