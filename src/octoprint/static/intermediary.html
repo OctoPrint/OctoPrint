@@ -141,8 +141,16 @@
                 var timeout = 1500;
 
                 var baseUrl = window.location.href;
+                var currentQuery = "";
+                var currentFragment = "";
+
                 if (baseUrl.indexOf("#") > -1) {
+                    currentFragment = baseUrl.substring(baseUrl.indexOf("#"));
                     baseUrl = baseUrl.substring(0, baseUrl.indexOf("#"));
+                }
+                if (baseUrl.indexOf("?") > -1) {
+                    currentQuery = baseUrl.substring(baseUrl.indexOf("?"));
+                    baseUrl = baseUrl.substring(0, baseUrl.indexOf("?"));
                 }
                 if (baseUrl.indexOf("/static") > -1) {
                     baseUrl = baseUrl.substring(0, baseUrl.indexOf("/static"));
@@ -164,10 +172,16 @@
                         serverIsOnline = true;
                         message.className = "pulsate1 green";
                         message.innerText = "OctoPrint server online, reloading page...";
-                        window.location = baseUrl;
+
+                        var reloadUrl = baseUrl + currentQuery + currentFragment;
+                        if (reloadUrl == window.location.href) {
+                            window.location.reload(false);
+                        } else {
+                            window.location.href = reloadUrl;
+                        }
                     } else {
                         // online.gif still not available, let's look at
-                        var interval = 15;
+                        var interval = 10;
                         if (intervals.length) {
                             interval = intervals.shift();
                         }
@@ -191,7 +205,7 @@
                     }
 
                     backendOfflineCounter++;
-                    if (backendOfflineCounter > 10) {
+                    if (backendOfflineCounter > 15) {
                         if (serverTimeout) {
                             window.clearTimeout(serverTimeout);
                         }

@@ -67,6 +67,7 @@ def getSettings():
 			"alwaysSendChecksum": s.getBoolean(["feature", "alwaysSendChecksum"]),
 			"neverSendChecksum": s.getBoolean(["feature", "neverSendChecksum"]),
 			"sdSupport": s.getBoolean(["feature", "sdSupport"]),
+			"sdRelativePath": s.getBoolean(["feature", "sdRelativePath"]),
 			"sdAlwaysAvailable": s.getBoolean(["feature", "sdAlwaysAvailable"]),
 			"swallowOkAfterResend": s.getBoolean(["feature", "swallowOkAfterResend"]),
 			"repetierTargetTemp": s.getBoolean(["feature", "repetierTargetTemp"]),
@@ -229,6 +230,7 @@ def _saveSettings(data):
 		if "alwaysSendChecksum" in data["feature"].keys(): s.setBoolean(["feature", "alwaysSendChecksum"], data["feature"]["alwaysSendChecksum"])
 		if "neverSendChecksum" in data["feature"].keys(): s.setBoolean(["feature", "neverSendChecksum"], data["feature"]["neverSendChecksum"])
 		if "sdSupport" in data["feature"].keys(): s.setBoolean(["feature", "sdSupport"], data["feature"]["sdSupport"])
+		if "sdRelativePath" in data["feature"].keys(): s.setBoolean(["feature", "sdRelativePath"], data["feature"]["sdRelativePath"])
 		if "sdAlwaysAvailable" in data["feature"].keys(): s.setBoolean(["feature", "sdAlwaysAvailable"], data["feature"]["sdAlwaysAvailable"])
 		if "swallowOkAfterResend" in data["feature"].keys(): s.setBoolean(["feature", "swallowOkAfterResend"], data["feature"]["swallowOkAfterResend"])
 		if "repetierTargetTemp" in data["feature"].keys(): s.setBoolean(["feature", "repetierTargetTemp"], data["feature"]["repetierTargetTemp"])

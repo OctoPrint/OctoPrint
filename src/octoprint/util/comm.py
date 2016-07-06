@@ -1149,12 +1149,16 @@ class MachineCom(object):
 				elif 'File opened' in line and not self._ignore_select:
 					# answer to M23, at least on Marlin, Repetier and Sprinter: "File opened:%s Size:%d"
 					match = regex_sdFileOpened.search(line)
+					if match:
+						name = match.group("name")
+						size = int(match.group("size"))
+					else:
+						name = "Unknown"
+						size = 0
 					if self._sdFileToSelect:
 						name = self._sdFileToSelect
 						self._sdFileToSelect = None
-					else:
-						name = match.group("name")
-					self._currentFile = PrintingSdFileInformation(name, int(match.group("size")))
+					self._currentFile = PrintingSdFileInformation(name, size)
 				elif 'File selected' in line:
 					if self._ignore_select:
 						self._ignore_select = False

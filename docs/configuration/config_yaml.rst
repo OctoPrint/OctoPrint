@@ -290,6 +290,14 @@ The following settings are only relevant to you if you want to do OctoPrint deve
        #        < ok T0:34.3/0.0 T1:23.5/0.0 B:43.2/0.0
        includeCurrentToolInTemps: true
 
+       # Whether to include the selected filename in the M23 File opened response.
+       #
+       # True:  > M23 filename.gcode
+       #        < File opened: filename.gcode  Size: 27
+       # False: > M23 filename.gcode
+       #        > File opened
+       includeFilenameInOpened: true
+
        # The maximum movement speeds of the simulated printer's axes, in mm/s
        movementSpeed:
          x: 6000
@@ -425,6 +433,9 @@ Use the following settings to enable or disable OctoPrint features:
 
      # Specifies whether support for SD printing and file management should be enabled
      sdSupport: true
+
+     # Specifies whether firmware expects relative paths for selecting SD files
+     sdRelativePath: false
 
      # Whether to always assume that an SD card is present in the printer.
      # Needed by some firmwares which don't report the SD card status properly.
