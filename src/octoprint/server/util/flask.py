@@ -420,7 +420,7 @@ class PreemptiveCache(object):
 					self._logger.debug("Removed root {} from preemptive cache".format(root))
 				elif len(entries) < old_count:
 					all_data[root] = entries
-					self._logger.debug("Removed {} from preemptive cache for root {}".format(old_count - len(entries), root))
+					self._logger.debug("Removed {} entries from preemptive cache for root {}".format(old_count - len(entries), root))
 			self.set_all_data(all_data)
 
 		return all_data

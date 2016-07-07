@@ -779,10 +779,25 @@ class Server(object):
 		preemptive_cache_timeout = settings().getInt(["server", "preemptiveCache", "until"])
 		cutoff_timestamp = time.time() - preemptive_cache_timeout * 24 * 60 * 60
 
-		def filter_old_entries(entry):
+		def filter_current_entries(entry):
+			"""Returns True for entries younger than the cutoff date"""
 			return "_timestamp" in entry and entry["_timestamp"] > cutoff_timestamp
 
-		cache_data = preemptive_cache.clean_all_data(lambda root, entries: filter(filter_old_entries, entries))
+		def filter_http_entries(entry):
+			"""Returns True for entries targeting http or https."""
+			return "base_url" in entry \
+			       and entry["base_url"] \
+			       and (entry["base_url"].startswith("http://")
+			            or entry["base_url"].startswith("https://"))
+
+		def filter_entries(entry):
+			"""Combined filter."""
+			filters = (filter_current_entries,
+			           filter_http_entries)
+			return all([f(entry) for f in filters])
+
+		# filter out all old and non-http entries
+		cache_data = preemptive_cache.clean_all_data(lambda root, entries: filter(filter_entries, entries))
 		if not cache_data:
 			return
 
@@ -795,11 +810,6 @@ class Server(object):
 					kwargs = dict((k, v) for k, v in kwargs.items() if not k.startswith("_") and not k == "plugin")
 					kwargs.update(additional_request_data)
 
-					base_url = kwargs.get("base_url", "")
-					if not (base_url.startswith("http://") or base_url.startswith("https://")):
-						self._logger.info("Skipping preemptive cache entry with base url {}, neither http:// nor https:// and possibly broken".format(base_url))
-						continue
-
 					try:
 						if plugin:
 							self._logger.info("Preemptively caching {} (plugin {}) for {!r}".format(route, plugin, kwargs))
@@ -811,6 +821,7 @@ class Server(object):
 					except:
 						self._logger.exception("Error while trying to preemptively cache {} for {!r}".format(route, kwargs))
 
+		# asynchronous caching
 		import threading
 		cache_thread = threading.Thread(target=execute_caching, name="Preemptive Cache Worker")
 		cache_thread.daemon = True
