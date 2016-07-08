@@ -1003,8 +1003,9 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 		if location == FileDestinations.SDCARD:
 			full_path = print_job_file
-			name = full_path
-			path = ""
+			if full_path.startswith("/"):
+				full_path = full_path[1:]
+			name = path = full_path
 			origin = FileDestinations.SDCARD
 
 		else:
