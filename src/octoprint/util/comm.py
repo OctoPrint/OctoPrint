@@ -575,14 +575,7 @@ class MachineCom(object):
 			self._sdFileList = []
 
 		if printing:
-			payload = None
-			if self._currentFile is not None:
-				payload = {
-					"file": self._currentFile.getFilename(),
-					"filename": os.path.basename(self._currentFile.getFilename()),
-					"origin": self._currentFile.getFileLocation()
-				}
-			eventManager().fire(Events.PRINT_FAILED, payload)
+			self._callback.on_comm_print_job_failed()
 
 	def setTemperatureOffset(self, offsets):
 		self._tempOffsets.update(offsets)
@@ -676,13 +669,7 @@ class MachineCom(object):
 
 			self.resetLineNumbers()
 
-			payload = {
-				"file": self._currentFile.getFilename(),
-				"filename": os.path.basename(self._currentFile.getFilename()),
-				"origin": self._currentFile.getFileLocation()
-			}
-			eventManager().fire(Events.PRINT_STARTED, payload)
-			self.sendGcodeScript("beforePrintStarted", replacements=dict(event=payload))
+			self._callback.on_comm_print_job_started()
 
 			if self.isSdFileSelected():
 				#self.sendCommand("M26 S0") # setting the sd pos apparently sometimes doesn't work, so we re-select
@@ -743,11 +730,6 @@ class MachineCom(object):
 			self.sendCommand("M23 %s" % filename)
 		else:
 			self._currentFile = PrintingGcodeFileInformation(filename, offsets_callback=self.getOffsets, current_tool_callback=self.getCurrentTool)
-			eventManager().fire(Events.FILE_SELECTED, {
-				"file": self._currentFile.getFilename(),
-				"filename": os.path.basename(self._currentFile.getFilename()),
-				"origin": self._currentFile.getFileLocation()
-			})
 			self._callback.on_comm_file_selected(filename, self._currentFile.getFilesize(), False)
 
 	def unselectFile(self):
@@ -755,7 +737,6 @@ class MachineCom(object):
 			return
 
 		self._currentFile = None
-		eventManager().fire(Events.FILE_DESELECTED)
 		self._callback.on_comm_file_selected(None, None, False)
 
 	def cancelPrint(self, firmware_error=None):
@@ -778,16 +759,7 @@ class MachineCom(object):
 					pass
 
 		self._recordFilePosition()
-
-		payload = {
-			"file": self._currentFile.getFilename(),
-			"filename": os.path.basename(self._currentFile.getFilename()),
-			"origin": self._currentFile.getFileLocation(),
-			"firmwareError": firmware_error
-		}
-
-		self.sendGcodeScript("afterPrintCancelled", replacements=dict(event=payload))
-		eventManager().fire(Events.PRINT_CANCELLED, payload)
+		self._callback.on_comm_print_job_cancelled()
 
 	def setPause(self, pause):
 		if self.isStreaming():
@@ -796,20 +768,13 @@ class MachineCom(object):
 		if not self._currentFile:
 			return
 
-		payload = {
-			"file": self._currentFile.getFilename(),
-			"filename": os.path.basename(self._currentFile.getFilename()),
-			"origin": self._currentFile.getFileLocation()
-		}
-
 		if not pause and self.isPaused():
 			if self._pauseWaitStartTime:
 				self._pauseWaitTimeLost = self._pauseWaitTimeLost + (time.time() - self._pauseWaitStartTime)
 				self._pauseWaitStartTime = None
 
 			self._changeState(self.STATE_PRINTING)
-
-			self.sendGcodeScript("beforePrintResumed", replacements=dict(event=payload))
+			self._callback.on_comm_print_job_resumed()
 
 			if self.isSdFileSelected():
 				self.sendCommand("M24")
@@ -822,7 +787,6 @@ class MachineCom(object):
 			# now make sure we actually do something, up until now we only filled up the queue
 			self._sendFromQueue()
 
-			eventManager().fire(Events.PRINT_RESUMED, payload)
 		elif pause and self.isPrinting():
 			if not self._pauseWaitStartTime:
 				self._pauseWaitStartTime = time.time()
@@ -830,9 +794,9 @@ class MachineCom(object):
 			self._changeState(self.STATE_PAUSED)
 			if self.isSdFileSelected():
 				self.sendCommand("M25") # pause print
-			self.sendGcodeScript("afterPrintPaused", replacements=dict(event=payload))
 
-			eventManager().fire(Events.PRINT_PAUSED, payload)
+			self._callback.on_comm_print_job_paused()
+
 
 	def getSdFiles(self):
 		return self._sdFiles
@@ -1165,10 +1129,6 @@ class MachineCom(object):
 					elif self._currentFile is not None and self.isSdFileSelected():
 						# final answer to M23, at least on Marlin, Repetier and Sprinter: "File selected"
 						self._callback.on_comm_file_selected(self._currentFile.getFilename(), self._currentFile.getFilesize(), True)
-						eventManager().fire(Events.FILE_SELECTED, {
-							"file": self._currentFile.getFilename(),
-							"origin": self._currentFile.getFileLocation()
-						})
 				elif 'Writing to file' in line and self.isStreaming():
 					self._changeState(self.STATE_PRINTING)
 				elif 'Done printing file' in line and self.isSdPrinting():
@@ -1176,12 +1136,6 @@ class MachineCom(object):
 					self._sdFilePos = 0
 					self._callback.on_comm_print_job_done()
 					self._changeState(self.STATE_OPERATIONAL)
-					eventManager().fire(Events.PRINT_DONE, {
-						"file": self._currentFile.getFilename(),
-						"filename": os.path.basename(self._currentFile.getFilename()),
-						"origin": self._currentFile.getFileLocation(),
-						"time": self.getPrintTime()
-					})
 					if self._sd_status_timer is not None:
 						try:
 							self._sd_status_timer.cancel()
@@ -1637,17 +1591,8 @@ class MachineCom(object):
 				eventManager().fire(Events.TRANSFER_DONE, payload)
 				self.refreshSdFiles()
 			else:
-				payload = {
-					"file": self._currentFile.getFilename(),
-					"filename": os.path.basename(self._currentFile.getFilename()),
-					"origin": self._currentFile.getFileLocation(),
-					"time": self.getPrintTime()
-				}
 				self._callback.on_comm_print_job_done()
 				self._changeState(self.STATE_OPERATIONAL)
-				eventManager().fire(Events.PRINT_DONE, payload)
-
-				self.sendGcodeScript("afterPrintDone", replacements=dict(event=payload))
 		return line
 
 	def _sendNext(self):
@@ -2193,7 +2138,22 @@ class MachineComPrintCallback(object):
 	def on_comm_progress(self):
 		pass
 
+	def on_comm_print_job_started(self):
+		pass
+
+	def on_comm_print_job_failed(self):
+		pass
+
 	def on_comm_print_job_done(self):
+		pass
+
+	def on_comm_print_job_cancelled(self):
+		pass
+
+	def on_comm_print_job_paused(self):
+		pass
+
+	def on_comm_print_job_resumed(self):
 		pass
 
 	def on_comm_z_change(self, newZ):

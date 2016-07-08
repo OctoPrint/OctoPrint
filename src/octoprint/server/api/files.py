@@ -287,7 +287,12 @@ def uploadGcodeFile(target):
 		if isinstance(filename, tuple):
 			filename, sdFilename = filename
 
-		eventManager.fire(Events.UPLOAD, {"file": filename, "target": target})
+		eventManager.fire(Events.UPLOAD, {"name": futureFilename,
+		                                  "path": filename,
+		                                  "target": target,
+
+		                                  # TODO deprecated, remove in 1.4.0
+		                                  "file": filename})
 
 		files = {}
 		location = url_for(".readGcodeFile", target=FileDestinations.LOCAL, filename=filename, _external=True)

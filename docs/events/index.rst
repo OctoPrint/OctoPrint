@@ -152,8 +152,15 @@ Upload
    A file has been uploaded.
 
    Payload:
-     * ``file``: the file's name
-     * ``target``: the target to which the file was uploaded, either ``local`` or ``sdcard``
+     * ``name``: the file's name
+     * ``path``: the file's path within its storage location
+     * ``target``: the target storage location to which the file was uploaded, either ``local`` or ``sdcard``
+
+   .. deprecated:: 1.3.0
+
+        * ``file``: the file's path within its storage location
+
+      Still available for reasons of backwards compatibility. Will be removed with 1.4.0.
 
 UpdatedFiles
    A file list was modified.
@@ -201,19 +208,26 @@ MetadataAnalysisFinished
       Still available for reasons of backwards compatibility. Will be removed with 1.4.0.
 
 FileSelected
-   A GCODE file has been selected for printing.
+   A file has been selected for printing.
 
    Payload:
 
-     * ``file``: the full path to the file
-     * ``filename``: the file's name
-     * ``origin``: the origin of the file, either ``local`` or ``sdcard``
+     * ``name``: the file's name
+     * ``path``: the file's path within its storage location
+     * ``origin``: the origin storage location of the file, either ``local`` or ``sdcard``
+
+   .. deprecated:: 1.3.0
+
+        * ``file``: the file's full path on disk (``local``) or within its storage (``sdcard``)
+        * ``filename``: the file's name
+
+      Still available for reasons of backwards compatibility. Will be removed with 1.4.0.
 
 FileDeselected
    No file is selected any more for printing.
 
 TransferStarted
-   A GCODE file transfer to SD has started.
+   A file transfer to the printer's SD has started.
 
    Payload:
 
@@ -223,7 +237,7 @@ TransferStarted
    **Note:** Name changed in version 1.1.0
 
 TransferDone
-   A GCODE file transfer to SD has finished.
+   A file transfer to the printer's SD has finished.
 
    Payload:
 
@@ -239,49 +253,97 @@ PrintStarted
 
    Payload:
 
-     * ``file``: the file's name
-     * ``origin``: the origin of the file, either ``local`` or ``sdcard``
+     * ``name``: the file's name
+     * ``path``: the file's path within its storage location
+     * ``origin``: the origin storage location of the file, either ``local`` or ``sdcard``
+
+   .. deprecated:: 1.3.0
+
+        * ``file``: the file's full path on disk (``local``) or within its storage (``sdcard``)
+        * ``filename``: the file's name
+
+      Still available for reasons of backwards compatibility. Will be removed with 1.4.0.
 
 PrintFailed
    A print failed.
 
    Payload:
 
-     * ``file``: the file's name
-     * ``origin``: the origin of the file, either ``local`` or ``sdcard``
+     * ``name``: the file's name
+     * ``path``: the file's path within its storage location
+     * ``origin``: the origin storage location of the file, either ``local`` or ``sdcard``
+
+   .. deprecated:: 1.3.0
+
+        * ``file``: the file's full path on disk (``local``) or within its storage (``sdcard``)
+        * ``filename``: the file's name
+
+      Still available for reasons of backwards compatibility. Will be removed with 1.4.0.
 
 PrintDone
    A print completed successfully.
 
    Payload:
 
-     * ``file``: the file's name
-     * ``origin``: the origin of the file, either ``local`` or ``sdcard``
+     * ``name``: the file's name
+     * ``path``: the file's path within its storage location
+     * ``origin``: the origin storage location of the file, either ``local`` or ``sdcard``
      * ``time``: the time needed for the print, in seconds (float)
+
+   .. deprecated:: 1.3.0
+
+        * ``file``: the file's full path on disk (``local``) or within its storage (``sdcard``)
+        * ``filename``: the file's name
+
+      Still available for reasons of backwards compatibility. Will be removed with 1.4.0.
 
 PrintCancelled
    The print has been cancelled via the cancel button.
 
    Payload:
 
-     * ``file``: the file's name
-     * ``origin``: the origin of the file, either ``local`` or ``sdcard``
+     * ``name``: the file's name
+     * ``path``: the file's path within its storage location
+     * ``origin``: the origin storage location of the file, either ``local`` or ``sdcard``
+
+   .. deprecated:: 1.3.0
+
+        * ``file``: the file's full path on disk (``local``) or within its storage (``sdcard``)
+        * ``filename``: the file's name
+
+      Still available for reasons of backwards compatibility. Will be removed with 1.4.0.
 
 PrintPaused
    The print has been paused.
 
    Payload:
 
-     * ``file``: the file's name
-     * ``origin``: the origin of the file, either ``local`` or ``sdcard``
+     * ``name``: the file's name
+     * ``path``: the file's path within its storage location
+     * ``origin``: the origin storage location of the file, either ``local`` or ``sdcard``
+
+   .. deprecated:: 1.3.0
+
+        * ``file``: the file's full path on disk (``local``) or within its storage (``sdcard``)
+        * ``filename``: the file's name
+
+      Still available for reasons of backwards compatibility. Will be removed with 1.4.0.
 
 PrintResumed
    The print has been resumed.
 
    Payload:
 
-     * ``file``: the file's name
-     * ``origin``: the origin of the file, either ``local`` or ``sdcard``
+     * ``name``: the file's name
+     * ``path``: the file's path within its storage location
+     * ``origin``: the origin storage location of the file, either ``local`` or ``sdcard``
+
+   .. deprecated:: 1.3.0
+
+        * ``file``: the file's full path on disk (``local``) or within its storage (``sdcard``)
+        * ``filename``: the file's name
+
+      Still available for reasons of backwards compatibility. Will be removed with 1.4.0.
 
 GCODE processing
 ----------------

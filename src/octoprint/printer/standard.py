@@ -97,6 +97,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			job_data={
 				"file": {
 					"name": None,
+					"path": None,
 					"size": None,
 					"origin": None,
 					"date": None
@@ -232,7 +233,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		for command in commands:
 			self._comm.sendCommand(command)
 
-	def script(self, name, context=None):
+	def script(self, name, context=None, must_be_set=True):
 		if self._comm is None:
 			return
 
@@ -240,7 +241,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			raise ValueError("name must be set")
 
 		result = self._comm.sendGcodeScript(name, replacements=context)
-		if not result:
+		if not result and must_be_set:
 			raise UnknownScript(name)
 
 	def jog(self, axes, relative=True, speed=None, *args, **kwargs):
@@ -719,13 +720,15 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 	def _setJobData(self, filename, filesize, sd):
 		if filename is not None:
 			if sd:
-				path_in_storage = filename
-				if path_in_storage.startswith("/"):
-					path_in_storage = path_in_storage[1:]
+				name_in_storage = filename
+				if name_in_storage.startswith("/"):
+					name_in_storage = name_in_storage[1:]
+				path_in_storage = name_in_storage
 				path_on_disk = None
 			else:
 				path_in_storage = self._fileManager.path_in_storage(FileDestinations.LOCAL, filename)
 				path_on_disk = self._fileManager.path_on_disk(FileDestinations.LOCAL, filename)
+				_, name_in_storage = self._fileManager.split_path(FileDestinations.LOCAL, path_in_storage)
 			self._selectedFile = {
 				"filename": path_in_storage,
 				"filesize": filesize,
@@ -737,6 +740,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			self._stateMonitor.set_job_data({
 				"file": {
 					"name": None,
+					"path": None,
 					"origin": None,
 					"size": None,
 					"date": None
@@ -784,7 +788,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 		self._stateMonitor.set_job_data({
 			"file": {
-				"name": path_in_storage,
+				"name": name_in_storage,
+				"path": path_in_storage,
 				"origin": FileDestinations.SDCARD if sd else FileDestinations.LOCAL,
 				"size": filesize,
 				"date": date
@@ -804,7 +809,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 				"messages": list(self._messages)
 			})
 			callback.on_printer_send_initial_data(data)
-		except Exception, err:
+		except Exception as err:
 			import sys
 			sys.stderr.write("ERROR: %s\n" % str(err))
 			pass
@@ -892,18 +897,66 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		eventManager().fire(Events.UPDATED_FILES, {"type": "gcode"})
 		self._sdFilelistAvailable.set()
 
-	def on_comm_file_selected(self, filename, filesize, sd):
-		self._setJobData(filename, filesize, sd)
+	def on_comm_file_selected(self, full_path, size, sd):
+		if full_path is not None:
+			payload = self._payload_for_print_job_event(location=FileDestinations.SDCARD if sd else FileDestinations.LOCAL,
+			                                            print_job_file=full_path)
+			eventManager().fire(Events.FILE_SELECTED, payload)
+		else:
+			eventManager().fire(Events.FILE_DESELECTED)
+
+		self._setJobData(full_path, size, sd)
 		self._stateMonitor.set_state({"text": self.get_state_string(), "flags": self._getStateFlags()})
 
 		if self._printAfterSelect:
 			self.start_print(pos=self._posAfterSelect)
 
+	def on_comm_print_job_started(self):
+		payload = self._payload_for_print_job_event()
+		if payload:
+			eventManager().fire(Events.PRINT_STARTED, payload)
+
 	def on_comm_print_job_done(self):
+		payload = self._payload_for_print_job_event()
+		if payload:
+			payload["time"] = self._comm.getPrintTime()
+			eventManager().fire(Events.PRINT_DONE, payload)
+			self.script("afterPrintDone",
+			            context=dict(event=payload),
+			            must_be_set=False)
+
 		self._fileManager.log_print(FileDestinations.SDCARD if self._selectedFile["sd"] else FileDestinations.LOCAL, self._selectedFile["filename"], time.time(), self._comm.getPrintTime(), True, self._printerProfileManager.get_current_or_default()["id"])
 		self._setProgressData(completion=1.0, filepos=self._selectedFile["filesize"], printTime=self._comm.getPrintTime(), printTimeLeft=0)
 		self._stateMonitor.set_state({"text": self.get_state_string(), "flags": self._getStateFlags()})
 		self._fileManager.delete_recovery_data()
+
+	def on_comm_print_job_failed(self):
+		payload = self._payload_for_print_job_event()
+		eventManager().fire(Events.PRINT_FAILED, payload)
+
+	def on_comm_print_job_cancelled(self):
+		payload = self._payload_for_print_job_event()
+		if payload:
+			eventManager().fire(Events.PRINT_CANCELLED, payload)
+			self.script("afterPrintCancelled",
+			            context=dict(event=payload),
+			            must_be_set=False)
+
+	def on_comm_print_job_paused(self):
+		payload = self._payload_for_print_job_event()
+		if payload:
+			eventManager().fire(Events.PRINT_PAUSED, payload)
+			self.script("afterPrintPaused",
+			            context=dict(event=payload),
+			            must_be_set=False)
+
+	def on_comm_print_job_resumed(self):
+		payload = self._payload_for_print_job_event()
+		if payload:
+			eventManager().fire(Events.PRINT_RESUMED, payload)
+			self.script("beforePrintResumed",
+			            context=dict(event=payload),
+			            must_be_set=False)
 
 	def on_comm_file_transfer_started(self, filename, filesize):
 		self._sdStreaming = True
@@ -935,6 +988,39 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			pass
 		except:
 			self._logger.exception("Error while trying to persist print recovery data")
+
+	def _payload_for_print_job_event(self, location=None, print_job_file=None):
+		if print_job_file is None:
+			selected_file = self._selectedFile
+			if not selected_file:
+				return dict()
+
+			print_job_file = selected_file.get("filename", None)
+			location = FileDestinations.LOCAL if selected_file.get("sd", False) else FileDestinations.SDCARD
+
+		if not print_job_file or not location:
+			return dict()
+
+		if location == FileDestinations.SDCARD:
+			full_path = print_job_file
+			name = full_path
+			path = ""
+			origin = FileDestinations.SDCARD
+
+		else:
+			full_path = self._fileManager.path_on_disk(FileDestinations.LOCAL, print_job_file)
+			path = self._fileManager.path_in_storage(FileDestinations.LOCAL, print_job_file)
+			_, name = self._fileManager.split_path(FileDestinations.LOCAL, path)
+			origin = FileDestinations.LOCAL
+
+		return dict(name=name,
+		            path=path,
+		            origin=origin,
+
+		            # TODO deprecated, remove in 1.4.0
+		            file=full_path,
+		            filename=name)
+
 
 class StateMonitor(object):
 	def __init__(self, interval=0.5, on_update=None, on_add_temperature=None, on_add_log=None, on_add_message=None, on_get_progress=None):
