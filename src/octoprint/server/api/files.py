@@ -75,6 +75,7 @@ def _getFileList(origin, path=None, filter=None, recursive=False):
 				file = {
 					"type": "machinecode",
 					"name": sdFile,
+					"path": sdFile,
 					"origin": FileDestinations.SDCARD,
 					"refs": {
 						"resource": url_for(".readGcodeFile", target=FileDestinations.SDCARD, filename=sdFile, _external=True)
