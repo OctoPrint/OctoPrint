@@ -569,10 +569,13 @@ class VirtualPrinter():
 				pass
 
 		if duration:
-			slept = 0
-			while duration - slept > self._read_timeout and not self._killed:
-				time.sleep(self._read_timeout)
-				slept += self._read_timeout
+			if duration > self._read_timeout:
+				slept = 0
+				while duration - slept > self._read_timeout and not self._killed:
+					time.sleep(self._read_timeout)
+					slept += self._read_timeout
+			else:
+				time.sleep(duration)
 
 	def _setPosition(self, line):
 		matchX = re.search("X([0-9.]+)", line)
