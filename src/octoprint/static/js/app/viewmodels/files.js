@@ -157,12 +157,12 @@ $(function() {
             return self.loginState.isUser() && self.isOperational() && self.isLoadActionPossible();
         });
 
-        self.printerState.filename.subscribe(function(newValue) {
+        self.printerState.filepath.subscribe(function(newValue) {
             self.highlightFilename(newValue);
         });
 
         self.highlightCurrentFilename = function() {
-            self.highlightFilename(self.printerState.filename());
+            self.highlightFilename(self.printerState.filepath());
         };
 
         self.highlightFilename = function(filename) {
@@ -876,24 +876,24 @@ $(function() {
         };
 
         self._handleUploadDone = function(e, data) {
-            var filename = undefined;
+            var filepath = undefined;
             var location = undefined;
             if (data.result.files.hasOwnProperty("sdcard")) {
-                filename = data.result.files.sdcard.name;
+                filepath = data.result.files.sdcard.path;
                 location = "sdcard";
             } else if (data.result.files.hasOwnProperty("local")) {
-                filename = data.result.files.local.name;
+                filepath = data.result.files.local.path;
                 location = "local";
             }
-            self.requestData(filename, location, self.currentPath())
+            self.requestData(filepath, location, self.currentPath())
                 .done(function() {
                     if (data.result.done) {
                         self._setProgressBar(0, "", false);
                     }
                 });
 
-            if (_.endsWith(filename.toLowerCase(), ".stl")) {
-                self.slicing.show(location, filename);
+            if (_.endsWith(filepath.toLowerCase(), ".stl")) {
+                self.slicing.show(location, filepath);
             }
         };
 
