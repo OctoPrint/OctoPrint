@@ -34,7 +34,7 @@ $(function() {
 
         self.waitForApproval = ko.observable(false);
         self.selectedFile = {
-            name: ko.observable(undefined),
+            path: ko.observable(undefined),
             date: ko.observable(undefined),
             size: ko.observable(undefined)
         };
@@ -207,7 +207,7 @@ $(function() {
             }
         };
 
-        self.loadedFilename = undefined;
+        self.loadedFilepath = undefined;
         self.loadedFileDate = undefined;
         self.status = 'idle';
         self.enabled = false;
@@ -245,12 +245,12 @@ $(function() {
                         toolOffsets: self._retrieveToolOffsets(),
                         invertAxes: self._retrieveAxesConfiguration()
                     });
-    
+
                     if (!initResult) {
                         log.info("Could not initialize GCODE viewer component");
                         return;
                     }
-    
+
                     self.synchronizeOptions();
                     self.enabled = true;
                 });
@@ -258,7 +258,7 @@ $(function() {
 
         self.reset = function() {
             self.enableReload(false);
-            self.loadedFilename = undefined;
+            self.loadedFilepath = undefined;
             self.loadedFileDate = undefined;
             self.clear();
         };
@@ -295,15 +295,15 @@ $(function() {
             }).on("slide", self.changeCommandRange);
         };
 
-        self.loadFile = function(filename, date){
+        self.loadFile = function(path, date){
             self.enableReload(false);
             if (self.status == "idle" && self.errorCount < 3) {
                 self.status = "request";
-                OctoPrint.files.download("local", filename)
+                OctoPrint.files.download("local", path)
                     .done(function(response, rstatus) {
                         if(rstatus === 'success'){
                             self.showGCodeViewer(response, rstatus);
-                            self.loadedFilename = filename;
+                            self.loadedFilepath = path;
                             self.loadedFileDate = date;
                             self.status = "idle";
                             self.enableReload(true);
@@ -334,7 +334,7 @@ $(function() {
 
         self.reload = function() {
             if (!self.enableReload()) return;
-            self.loadFile(self.loadedFilename, self.loadedFileDate);
+            self.loadFile(self.loadedFilepath, self.loadedFileDate);
         };
 
         self.fromHistoryData = function(data) {
@@ -361,12 +361,12 @@ $(function() {
         };
 
         self._processData = function(data) {
-            if (!data.job.file || !data.job.file.name && (self.loadedFilename || self.loadedFileDate)) {
+            if (!data.job.file || !data.job.file.path && (self.loadedFilepath || self.loadedFileDate)) {
                 self.waitForApproval(false);
 
-                self.loadedFilename = undefined;
+                self.loadedFilepath = undefined;
                 self.loadedFileDate = undefined;
-                self.selectedFile.name(undefined);
+                self.selectedFile.path(undefined);
                 self.selectedFile.date(undefined);
                 self.selectedFile.size(undefined);
 
@@ -376,8 +376,8 @@ $(function() {
             if (!self.enabled) return;
             self.currentlyPrinting = data.state.flags && (data.state.flags.printing || data.state.flags.paused);
 
-            if(self.loadedFilename
-                    && self.loadedFilename == data.job.file.name
+            if(self.loadedFilepath
+                    && self.loadedFilepath == data.job.file.path
                     && self.loadedFileDate == data.job.file.date) {
                 if (OctoPrint.coreui.browserTabVisible && self.tabActive && self.currentlyPrinting && self.renderer_syncProgress() && !self.waitForApproval()) {
                     self._renderPercentage(data.progress.completion);
@@ -385,20 +385,20 @@ $(function() {
                 self.errorCount = 0
             } else {
                 self.clear();
-                if (data.job.file.name && data.job.file.origin != "sdcard"
+                if (data.job.file.path && data.job.file.origin != "sdcard"
                         && self.status != "request"
-                        && (!self.waitForApproval() || self.selectedFile.name() != data.job.file.name || self.selectedFile.date() != data.job.file.date)) {
-                    self.selectedFile.name(data.job.file.name);
+                        && (!self.waitForApproval() || self.selectedFile.path() != data.job.file.path || self.selectedFile.date() != data.job.file.date)) {
+                    self.selectedFile.path(data.job.file.path);
                     self.selectedFile.date(data.job.file.date);
                     self.selectedFile.size(data.job.file.size);
 
                     if (data.job.file.size > CONFIG_GCODE_SIZE_THRESHOLD || ($.browser.mobile && data.job.file.size > CONFIG_GCODE_MOBILE_SIZE_THRESHOLD)) {
                         self.waitForApproval(true);
-                        self.loadedFilename = undefined;
+                        self.loadedFilepath = undefined;
                         self.loadedFileDate = undefined;
                     } else {
                         self.waitForApproval(false);
-                        self.loadFile(data.job.file.name, data.job.file.date);
+                        self.loadFile(data.job.file.path, data.job.file.date);
                     }
                 }
             }
@@ -412,7 +412,7 @@ $(function() {
 
         self.approveLargeFile = function() {
             self.waitForApproval(false);
-            self.loadFile(self.selectedFile.name(), self.selectedFile.date());
+            self.loadFile(self.selectedFile.path(), self.selectedFile.date());
         };
 
         self._onProgress = function(type, percentage) {
