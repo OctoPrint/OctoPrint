@@ -142,7 +142,7 @@ class EventManager(object):
 
 				octoprint.plugin.call_plugin(octoprint.plugin.types.EventHandlerPlugin,
 				                             "on_event",
-				                             args=[event, payload])
+				                             args=(event, payload))
 		except:
 			self._logger.exception("Ooops, the event bus worker loop crashed")
 
@@ -256,14 +256,19 @@ class CommandTrigger(GenericEventListener):
 			return
 
 		eventsToSubscribe = []
-		for subscription in settings().get(["events", "subscriptions"]):
+		subscriptions = settings().get(["events", "subscriptions"])
+		for subscription in subscriptions:
+			if not isinstance(subscription, dict):
+				self._logger.info("Invalid subscription definition, not a dictionary: {!r}".format(subscription))
+				continue
+
 			if not "event" in subscription.keys() or not "command" in subscription.keys() \
 					or not "type" in subscription.keys() or not subscription["type"] in ["system", "gcode"]:
-				self._logger.info("Invalid command trigger, missing either event, type or command or type is invalid: %r" % subscription)
+				self._logger.info("Invalid command trigger, missing either event, type or command or type is invalid: {!r}".format(subscription))
 				continue
 
 			if "enabled" in subscription.keys() and not subscription["enabled"]:
-				self._logger.info("Disabled command trigger: %r" % subscription)
+				self._logger.info("Disabled command trigger: {!r}".format(subscription))
 				continue
 
 			event = subscription["event"]
@@ -300,7 +305,7 @@ class CommandTrigger(GenericEventListener):
 				else:
 					processedCommand = self._processCommand(command, payload)
 				self.executeCommand(processedCommand, commandType, debug=debug)
-			except KeyError, e:
+			except KeyError as e:
 				self._logger.warn("There was an error processing one or more placeholders in the following command: %s" % command)
 
 	def executeCommand(self, command, commandType, debug=False):
@@ -324,7 +329,7 @@ class CommandTrigger(GenericEventListener):
 					commandExecutioner(c)
 			else:
 				commandExecutioner(command)
-		except subprocess.CalledProcessError, e:
+		except subprocess.CalledProcessError as e:
 			self._logger.warn("Command failed with return code %i: %s" % (e.returncode, str(e)))
 		except:
 			self._logger.exception("Command failed")
@@ -344,19 +349,32 @@ class CommandTrigger(GenericEventListener):
 		The following substitutions are currently supported:
 
 		  - {__currentZ} : current Z position of the print head, or -1 if not available
-		  - {__filename} : current selected filename, or "NO FILE" if no file is selected
+		  - {__filename} : name of currently selected file, or "NO FILE" if no file is selected
+		  - {__filepath} : path in origin location of currently selected file, or "NO FILE" if no file is selected
+		  - {__fileorigin} : origin of currently selected file, or "NO FILE" if no file is selected
 		  - {__progress} : current print progress in percent, 0 if no print is in progress
 		  - {__data} : the string representation of the event's payload
+		  - {__json} : the json representation of the event's payload, "{}" if there is no payload, "" if there was an error on serialization
 		  - {__now} : ISO 8601 representation of the current date and time
 
 		Additionally, the keys of the event's payload can also be used as placeholder.
 		"""
 
+		json_string = "{}"
+		if payload:
+			import json
+			try:
+				json_string = json.dumps(payload)
+			except:
+				json_string = ""
+
 		params = {
 			"__currentZ": "-1",
 			"__filename": "NO FILE",
+			"__filepath": "NO PATH",
 			"__progress": "0",
 			"__data": str(payload),
+			"__json": json_string,
 			"__now": datetime.datetime.now().isoformat()
 		}
 
@@ -367,6 +385,8 @@ class CommandTrigger(GenericEventListener):
 
 		if "job" in currentData.keys() and currentData["job"] is not None:
 			params["__filename"] = currentData["job"]["file"]["name"]
+			params["__filepath"] = currentData["job"]["file"]["path"]
+			params["__fileorigin"] = currentData["job"]["file"]["origin"]
 			if "progress" in currentData.keys() and currentData["progress"] is not None \
 				and "completion" in currentData["progress"].keys() and currentData["progress"]["completion"] is not None:
 				params["__progress"] = str(round(currentData["progress"]["completion"] * 100))

@@ -62,7 +62,9 @@ Placeholders
 You can use the following generic placeholders in your event hooks:
 
   * ``{__currentZ}``: the current Z position of the head if known, -1 if not available
-  * ``{__filename}``: filename of the currently selected file, "NO FILE" if not available
+  * ``{__filename}`` : name of currently selected file, or ``NO FILE`` if no file is selected
+  * ``{__filepath}`` : path in origin location of currently selected file, or ``NO FILE`` if no file is selected
+  * ``{__fileorigin}`` : origin of currently selected file, or ``NO FILE`` if no file is selected
   * ``{__progress}``: the progress of the print in percent, 0 if not available
   * ``{__data}``: a string representation of the payload
   * ``{__now}``: the date and time of the event in ISO 8601
@@ -70,10 +72,12 @@ You can use the following generic placeholders in your event hooks:
 Additionally, all data from the payload can be accessed by its key. Example: If the payload happens to be defined
 something like this:
 
-  * ``file``: the file's name
-  * ``origin``: the origin of the file, either ``local`` or ``sdcard``
+  * ``name``: the file's name
+  * ``path``: the file's path in its origin storage location
+  * ``origin``: the origin storage location of the file, either ``local`` or ``sdcard``
 
-then you'll be able to access the filename via the placeholder ``{file}`` and the origin via the placeholder ``{origin}``.
+then you'll be able to access the file's name via the placeholder ``{name}``, its path via the placeholder ``{path}``
+and its origin via the placeholder ``{origin}``.
 
 
 .. _sec-events-available_events:
