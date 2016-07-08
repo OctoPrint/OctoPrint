@@ -26,6 +26,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import sys
 import os
 import yaml
+import yaml.parser
 import logging
 import re
 import uuid
@@ -343,6 +344,14 @@ valid_boolean_trues = [True, "true", "yes", "y", "1"]
 
 class NoSuchSettingsPath(BaseException):
 	pass
+
+
+class InvalidSettings(BaseException):
+	def __init__(self, message, line=None, column=None, details=None):
+		self.message = message
+		self.line = line
+		self.column = column
+		self.details = details
 
 
 class HierarchicalChainMap(ChainMap):
@@ -747,8 +756,25 @@ class Settings(object):
 	def load(self, migrate=False):
 		if os.path.exists(self._configfile) and os.path.isfile(self._configfile):
 			with open(self._configfile, "r") as f:
-				self._config = yaml.safe_load(f)
-				self._mtime = self.last_modified
+				try:
+					self._config = yaml.safe_load(f)
+					self._mtime = self.last_modified
+				except yaml.YAMLError as e:
+					details = e.message
+
+					if hasattr(e, "problem_mark"):
+						line = e.problem_mark.line
+						column = e.problem_mark.column
+					else:
+						line = None
+						column = None
+
+					raise InvalidSettings("Invalid YAML file: {}".format(self._configfile),
+					                      details=details,
+					                      line=line,
+					                      column=column)
+				except:
+					raise
 		# changed from else to handle cases where the file exists, but is empty / 0 bytes
 		if not self._config:
 			self._config = dict()

@@ -48,9 +48,14 @@ class OctoPrintPluginCommands(click.MultiCommand):
 
 		# initialize settings and plugin manager based on provided
 		# context (basedir and configfile)
-		from octoprint import init_settings, init_pluginsystem
-		self.settings = init_settings(ctx.obj.basedir, ctx.obj.configfile)
-		self.plugin_manager = init_pluginsystem(self.settings)
+		from octoprint import init_settings, init_pluginsystem, FatalStartupError
+		try:
+			self.settings = init_settings(ctx.obj.basedir, ctx.obj.configfile)
+			self.plugin_manager = init_pluginsystem(self.settings)
+		except FatalStartupError as e:
+			click.echo(e.message, err=True)
+			click.echo("There was a fatal error initializing the settings or the plugin system.", err=True)
+			ctx.exit(-1)
 
 		# fetch registered hooks
 		self.hooks = self.plugin_manager.get_hooks("octoprint.cli.commands")

@@ -52,6 +52,11 @@ if version_info.major == 2 and version_info.minor <= 7 and version_info.micro < 
 
 del version_info
 
+#~~ custom exceptions
+
+class FatalStartupError(BaseException):
+	pass
+
 #~~ init methods to bring up platform
 
 def init_platform(basedir, configfile, use_logging_file=True, logging_file=None,
@@ -79,8 +84,14 @@ def init_platform(basedir, configfile, use_logging_file=True, logging_file=None,
 def init_settings(basedir, configfile):
 	"""Inits the settings instance based on basedir and configfile to use."""
 
-	from octoprint.settings import settings
-	return settings(init=True, basedir=basedir, configfile=configfile)
+	from octoprint.settings import settings, InvalidSettings
+	try:
+		return settings(init=True, basedir=basedir, configfile=configfile)
+	except InvalidSettings as e:
+		message = "Error parsing the configuration file, it appears to be invalid YAML."
+		if e.line is not None and e.column is not None:
+			message += " The parser reported an error on line {}, column {}.".format(e.line, e.column)
+		raise FatalStartupError(message)
 
 
 def init_logging(settings, use_logging_file=True, logging_file=None, default_config=None, debug=False, verbosity=0, uncaught_logger=None, uncaught_handler=None):
