@@ -996,7 +996,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 				return dict()
 
 			print_job_file = selected_file.get("filename", None)
-			location = FileDestinations.LOCAL if selected_file.get("sd", False) else FileDestinations.SDCARD
+			location = FileDestinations.SDCARD if selected_file.get("sd", False) else FileDestinations.LOCAL
 
 		if not print_job_file or not location:
 			return dict()
