@@ -18,12 +18,13 @@ from octoprint.events import Events, eventManager
 import octoprint.util.gcodeInterpreter as gcodeInterpreter
 
 
-class QueueEntry(collections.namedtuple("QueueEntry", "path, type, location, absolute_path, printer_profile")):
+class QueueEntry(collections.namedtuple("QueueEntry", "name, path, type, location, absolute_path, printer_profile")):
 	"""
 	A :class:`QueueEntry` for processing through the :class:`AnalysisQueue`. Wraps the entry's properties necessary
 	for processing.
 
 	Arguments:
+	    name (str): Name of the file to analyze.
 	    path (str): Storage location specific path to the file to analyze.
 	    type (str): Type of file to analyze, necessary to map to the correct :class:`AbstractAnalysisQueue` sub class.
 	        At the moment, only ``gcode`` is supported here.
@@ -83,7 +84,13 @@ class AnalysisQueue(object):
 	def _analysis_finished(self, entry, result):
 		for callback in self._callbacks:
 			callback(entry, result)
-		eventManager().fire(Events.METADATA_ANALYSIS_FINISHED, {"file": entry.path, "result": result})
+		eventManager().fire(Events.METADATA_ANALYSIS_FINISHED, {"name": entry.name,
+		                                                        "path": entry.path,
+		                                                        "origin": entry.location,
+		                                                        "result": result,
+
+		                                                        # TODO: deprecated, remove in a future release
+		                                                        "file": entry.path})
 
 class AbstractAnalysisQueue(object):
 	"""
@@ -195,7 +202,13 @@ class AbstractAnalysisQueue(object):
 
 		try:
 			self._logger.info("Starting analysis of {entry}".format(**locals()))
-			eventManager().fire(Events.METADATA_ANALYSIS_STARTED, {"file": entry.path, "type": entry.type})
+			eventManager().fire(Events.METADATA_ANALYSIS_STARTED, {"name": entry.name,
+			                                                       "path": entry.path,
+			                                                       "origin": entry.location,
+			                                                       "type": entry.type,
+
+			                                                       # TODO deprecated, remove in 1.4.0
+			                                                       "file": entry.path})
 			try:
 				result = self._do_analysis(high_priority=high_priority)
 			except TypeError:

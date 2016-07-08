@@ -166,19 +166,35 @@ UpdatedFiles
           Support for the ``gcode`` type will be removed in the next release after version 1.2.0.
 
 MetadataAnalysisStarted
-   The metadata analysis of a GCODE file has started.
+   The metadata analysis of a file has started.
 
    Payload:
 
-     * ``file``: the file's name
+     * ``name``: the file's name
+     * ``path``: the file's path within its storage location
+     * ``origin``: the file's origin storage location
 
-MetadataAnalaysisFinished
-   The metadata analysis of a GCODE file has finished.
+   .. deprecated:: 1.3.0
+
+        * ``file``: the file's path within its storage location
+
+      Still available for reasons of backwards compatibility. Will be removed with 1.4.0.
+
+MetadataAnalysisFinished
+   The metadata analysis of a file has finished.
 
    Payload:
 
-     * ``file``: the file's name
+     * ``name``: the file's name
+     * ``path``: the file's path within its storage location
+     * ``origin``: the file's origin storage location
      * ``result``: the analysis result -- this is a python object currently only available for internal use
+
+   .. deprecated:: 1.3.0
+
+        * ``file``: the file's path within its storage location
+
+      Still available for reasons of backwards compatibility. Will be removed with 1.4.0.
 
 FileSelected
    A GCODE file has been selected for printing.

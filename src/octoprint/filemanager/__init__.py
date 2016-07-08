@@ -209,9 +209,10 @@ class FileManager(object):
 		counter = 0
 		for entry, path, printer_profile in storage_manager.analysis_backlog:
 			file_type = get_file_type(path)[-1]
+			file_name = storage_manager.split_path(path)
 
 			# we'll use the default printer profile for the backlog since we don't know better
-			queue_entry = QueueEntry(entry, file_type, storage_type, path, self._printer_profile_manager.get_default())
+			queue_entry = QueueEntry(file_name, entry, file_type, storage_type, path, self._printer_profile_manager.get_default())
 			self._analysis_queue.enqueue(queue_entry, high_priority=False)
 			counter += 1
 		self._logger.info("Added {counter} items from storage type \"{storage_type}\" to analysis queue".format(**locals()))
@@ -393,11 +394,12 @@ class FileManager(object):
 				file_object = hook_file_object
 		file_path = self._storage(destination).add_file(path, file_object, links=links, printer_profile=printer_profile, allow_overwrite=allow_overwrite)
 		absolute_path = self._storage(destination).path_on_disk(file_path)
+		_, file_name = self._storage(destination).split_path(file_path)
 
 		if analysis is None:
 			file_type = get_file_type(absolute_path)
 			if file_type:
-				queue_entry = QueueEntry(file_path, file_type[-1], destination, absolute_path, printer_profile)
+				queue_entry = QueueEntry(file_name, file_path, file_type[-1], destination, absolute_path, printer_profile)
 				self._analysis_queue.enqueue(queue_entry, high_priority=True)
 		else:
 			self._add_analysis_result(destination, path, analysis)
