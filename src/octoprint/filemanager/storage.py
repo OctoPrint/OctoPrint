@@ -490,9 +490,13 @@ class LocalFileStorage(StorageInterface):
 	def list_files(self, path=None, filter=None, recursive=True):
 		if path:
 			path = self.sanitize_path(path)
+			base = self.path_in_storage(path)
+			if base:
+				base += "/"
 		else:
 			path = self.basefolder
-		return self._list_folder(path, filter=filter, recursive=recursive)
+			base = ""
+		return self._list_folder(path, base=base, filter=filter, recursive=recursive)
 
 	def add_folder(self, path, ignore_existing=True):
 		path, name = self.sanitize(path)

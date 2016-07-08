@@ -138,8 +138,8 @@ def _getFileList(origin, path=None, filter=None, recursive=False):
 
 					file_or_folder.update({
 						"refs": {
-							"resource": url_for(".readGcodeFile", target=FileDestinations.LOCAL, filename=path + file_or_folder["name"], _external=True),
-							"download": url_for("index", _external=True) + "downloads/files/" + FileDestinations.LOCAL + "/" + path + file_or_folder["name"]
+							"resource": url_for(".readGcodeFile", target=FileDestinations.LOCAL, filename=file_or_folder["path"], _external=True),
+							"download": url_for("index", _external=True) + "downloads/files/" + FileDestinations.LOCAL + "/" + file_or_folder["path"]
 						}
 					})
 
