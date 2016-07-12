@@ -1933,24 +1933,31 @@ class MachineCom(object):
 			return
 
 		self._log("Send: " + str(cmd))
-		try:
-			self._serial.write(cmd + '\n')
-		except serial.SerialTimeoutException:
-			self._log("Serial timeout while writing to serial port, trying again.")
+
+		cmd += "\n"
+		written = 0
+		while written < len(cmd):
+			to_send = cmd[written:]
 			try:
-				self._serial.write(cmd + '\n')
+				written += self._serial.write(to_send)
+			except serial.SerialTimeoutException:
+				self._log("Serial timeout while writing to serial port, trying again.")
+				try:
+					written += self._serial.write(to_send)
+				except:
+					if not self._connection_closing:
+						self._logger.exception("Unexpected error while writing to serial port")
+						self._log("Unexpected error while writing to serial port: %s" % (get_exception_string()))
+						self._errorValue = get_exception_string()
+						self.close(is_error=True)
+					break
 			except:
 				if not self._connection_closing:
 					self._logger.exception("Unexpected error while writing to serial port")
 					self._log("Unexpected error while writing to serial port: %s" % (get_exception_string()))
 					self._errorValue = get_exception_string()
 					self.close(is_error=True)
-		except:
-			if not self._connection_closing:
-				self._logger.exception("Unexpected error while writing to serial port")
-				self._log("Unexpected error while writing to serial port: %s" % (get_exception_string()))
-				self._errorValue = get_exception_string()
-				self.close(is_error=True)
+				break
 
 	##~~ command handlers
 
