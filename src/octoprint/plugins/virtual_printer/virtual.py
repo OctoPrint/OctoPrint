@@ -41,7 +41,9 @@ class VirtualPrinter(object):
 		self._read_timeout = read_timeout
 		self._write_timeout = write_timeout
 
-		self.incoming = CharCountingQueue(settings().getInt(["devel", "virtualPrinter", "rxBuffer"]), name="RxBuffer")
+		self._rx_buffer_size = settings().getInt(["devel", "virtualPrinter", "rxBuffer"])
+
+		self.incoming = CharCountingQueue(self._rx_buffer_size, name="RxBuffer")
 		self.outgoing = Queue.Queue()
 		self.buffered = Queue.Queue(maxsize=settings().getInt(["devel", "virtualPrinter", "commandBuffer"]))
 
@@ -107,10 +109,10 @@ class VirtualPrinter(object):
 		self._triggerResendWithTimeoutAt105 = True
 		self._triggeredResendWithTimeoutAt105 = False
 
-		readThread = threading.Thread(target=self._processIncoming)
+		readThread = threading.Thread(target=self._processIncoming, name="octoprint.plugins.virtual_printer.wait_thread")
 		readThread.start()
 
-		bufferThread = threading.Thread(target=self._processBuffer)
+		bufferThread = threading.Thread(target=self._processBuffer, name="octoprint.plugins.virtual_printer.buffer_thread")
 		bufferThread.start()
 
 	def __str__(self):
@@ -126,15 +128,24 @@ class VirtualPrinter(object):
 
 	def _processIncoming(self):
 		next_wait_timeout = time.time() + self._waitInterval
+		buf = ""
 		while self.incoming is not None and not self._killed:
 			self._simulateTemps()
 
 			try:
 				data = self.incoming.get(timeout=0.01)
+				self.incoming.task_done()
 			except Queue.Empty:
 				if self._sendWait and time.time() > next_wait_timeout:
 					self._send("wait")
 					next_wait_timeout = time.time() + self._waitInterval
+				continue
+
+			buf += data
+			if "\n" in buf:
+				data = buf[:buf.find("\n") + 1]
+				buf = buf[buf.find("\n") + 1:]
+			else:
 				continue
 
 			next_wait_timeout = time.time() + self._waitInterval
@@ -257,6 +268,8 @@ class VirtualPrinter(object):
 			# if we are sending oks after command output, send it now
 			if len(data.strip()) > 0 and not self._okBeforeCommandOutput:
 				self._sendOk()
+
+		self._logger.info("Closing down read loop")
 
 	##~~ command implementations
 
@@ -854,6 +867,8 @@ class VirtualPrinter(object):
 			self._performMove(line)
 			self.buffered.task_done()
 
+		self._logger.info("Closing down buffer loop")
+
 	def write(self, data):
 		if self._debug_drop_connection:
 			self._logger.info("Debug drop of connection requested, raising SerialTimeoutException")
@@ -861,16 +876,17 @@ class VirtualPrinter(object):
 
 		with self._incoming_lock:
 			if self.incoming is None or self.outgoing is None:
-				return
+				return 0
 
 			if "M112" in data and self._supportM112:
 				self._seriallog.info("<<< {}".format(data.strip()))
 				self._kill()
-				return
+				return len(data)
 
 			try:
-				self.incoming.put(data, timeout=self._write_timeout)
+				written = self.incoming.put(data, timeout=self._write_timeout)
 				self._seriallog.info("<<< {}".format(data.strip()))
+				return written
 			except Queue.Full:
 				self._logger.info("Incoming queue is full, raising SerialTimeoutException")
 				raise SerialTimeoutException()
@@ -882,6 +898,7 @@ class VirtualPrinter(object):
 		try:
 			line = self.outgoing.get(timeout=self._read_timeout)
 			self._seriallog.info(">>> {}".format(line.strip()))
+			self.outgoing.task_done()
 			return line
 		except Queue.Empty:
 			return ""
@@ -917,22 +934,25 @@ class CharCountingQueue(Queue.Queue):
 		self._size = 0
 		self._name = name
 
-	def put(self, item, block=True, timeout=None):
+	def put(self, item, block=True, timeout=None, partial=False):
 		self.not_full.acquire()
+
 		try:
-			item_size = self._len(item)
+			if not self._will_it_fit(item) and partial:
+				space_left = self.maxsize - self._qsize()
+				item = item[:space_left]
 
 			if not block:
-				if self._qsize() + item_size >= self.maxsize:
+				if not self._will_it_fit(item):
 					raise Queue.Full
 			elif timeout is None:
-				while self._qsize() + item_size >= self.maxsize:
+				while not self._will_it_fit(item):
 					self.not_full.wait()
 			elif timeout < 0:
 				raise ValueError("'timeout' must be a positive number")
 			else:
 				endtime = time.time() + timeout
-				while self._qsize() + item_size >= self.maxsize:
+				while not self._will_it_fit(item):
 					remaining = endtime - time.time()
 					if remaining <= 0.0:
 						raise Queue.Full
@@ -941,6 +961,8 @@ class CharCountingQueue(Queue.Queue):
 			self._put(item)
 			self.unfinished_tasks += 1
 			self.not_empty.notify()
+
+			return self._len(item)
 		finally:
 			self.not_full.release()
 
@@ -960,3 +982,6 @@ class CharCountingQueue(Queue.Queue):
 		item = self.queue.popleft()
 		self._size -= self._len(item)
 		return item
+
+	def _will_it_fit(self, item):
+		return self.maxsize - self._qsize() >= self._len(item)
