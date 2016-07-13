@@ -159,6 +159,7 @@ class FileManagerTest(unittest.TestCase):
 
 		self.local_storage.add_file.return_value = ("", "test.file")
 		self.local_storage.path_on_disk.return_value = "prefix/test.file"
+		self.local_storage.split_path.return_value = ("", "test.file")
 
 		test_profile = dict(id="_default", name="My Default Profile")
 		self.printer_profile_manager.get_current_or_default.return_value = test_profile
