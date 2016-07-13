@@ -16,7 +16,7 @@ from serial import SerialTimeoutException
 from octoprint.settings import settings
 from octoprint.plugin import plugin_manager
 
-class VirtualPrinter():
+class VirtualPrinter(object):
 	command_regex = re.compile("[GM]\d+")
 	sleep_regex = re.compile("sleep (\d+)")
 	sleep_after_regex = re.compile("sleep_after ([GM]\d+) (\d+)")
@@ -25,7 +25,7 @@ class VirtualPrinter():
 
 	def __init__(self, read_timeout=5.0, write_timeout=10.0):
 		import logging
-		self._logger = logging.getLogger("octoprint.plugin.virtual_printer.VirtualPrinter")
+		self._logger = logging.getLogger("octoprint.plugins.virtual_printer.VirtualPrinter")
 
 		self._read_timeout = read_timeout
 		self._write_timeout = write_timeout
@@ -107,6 +107,24 @@ class VirtualPrinter():
 	def __str__(self):
 		return "VIRTUAL(read_timeout={read_timeout},write_timeout={write_timeout},options={options})"\
 			.format(read_timeout=self._read_timeout, write_timeout=self._write_timeout, options=settings().get(["devel", "virtualPrinter"]))
+
+	@property
+	def timeout(self):
+		return self._read_timeout
+
+	@timeout.setter
+	def timeout(self, value):
+		self._logger.debug("Setting read timeout to {}s".format(value))
+		self._read_timeout = value
+
+	@property
+	def write_timeout(self):
+		return self._write_timeout
+
+	@write_timeout.setter
+	def write_timeout(self, value):
+		self._logger.debug("Setting write timeout to {}s".format(value))
+		self._write_timeout = value
 
 	def _clearQueue(self, queue):
 		try:

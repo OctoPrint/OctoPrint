@@ -81,6 +81,7 @@ default_settings = {
 			"detection": 0.5,
 			"connection": 10,
 			"communication": 30,
+			"heatup": 2,
 			"temperature": 5,
 			"sdStatus": 1
 		},
