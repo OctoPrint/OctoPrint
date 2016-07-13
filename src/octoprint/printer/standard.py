@@ -861,6 +861,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		self._stateMonitor.set_state({"text": self.get_state_string(), "flags": self._getStateFlags()})
 
 		if self._printAfterSelect:
+			self._printAfterSelect = False
 			self.start_print(pos=self._posAfterSelect)
 
 	def on_comm_print_job_done(self):
