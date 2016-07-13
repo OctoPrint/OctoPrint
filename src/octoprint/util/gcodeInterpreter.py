@@ -132,6 +132,20 @@ class MinMax3D(object):
 	True
 	>>> minmax.size == Vector3D(1.0, 0.0, 1.0)
 	True
+	>>> empty = MinMax3D()
+	>>> empty.size == Vector3D(0.0, 0.0, 0.0)
+	True
+	>>> partial = MinMax3D()
+	>>> partial.record(Vector3D(2.0, None, 2.0))
+	>>> partial.min.x == 2.0 == partial.max.x and partial.min.y == None == partial.max.y and partial.min.z == 2.0 == partial.max.z
+	True
+	>>> partial.record(Vector3D(1.0, None, 3.0))
+	>>> partial.min.x == 1.0 and partial.min.y == None and partial.min.z == 2.0
+	True
+	>>> partial.max.x == 2.0 and partial.max.y == None and partial.max.z == 3.0
+	True
+	>>> partial.size == Vector3D(1.0, 0.0, 1.0)
+	True
 	"""
 
 	def __init__(self):
@@ -139,7 +153,7 @@ class MinMax3D(object):
 		self.max = Vector3D(None, None, None)
 
 	def record(self, coordinate):
-		for c in ("x", "y", "z"):
+		for c in "xyz":
 			current_min = getattr(self.min, c)
 			current_max = getattr(self.max, c)
 			value = getattr(coordinate, c)
@@ -148,7 +162,13 @@ class MinMax3D(object):
 
 	@property
 	def size(self):
-		return abs(self.max - self.min)
+		result = Vector3D()
+		for c in "xyz":
+			min = getattr(self.min, c)
+			max = getattr(self.max, c)
+			value = abs(max - min) if min is not None and max is not None else 0.0
+			setattr(result, c, value)
+		return result
 
 
 class AnalysisAborted(Exception):
