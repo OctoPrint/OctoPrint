@@ -24,6 +24,7 @@ from octoprint.printer.estimation import TimeEstimationHelper
 from octoprint.settings import settings
 from octoprint.util import comm as comm
 from octoprint.util import InvariantContainer
+from octoprint.util import to_unicode
 
 
 class Printer(PrinterInterface, comm.MachineComPrintCallback):
@@ -50,11 +51,9 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		self._temps = TemperatureHistory(cutoff=settings().getInt(["temperature", "cutoff"])*60)
 		self._tempBacklog = []
 
-		self._latestMessage = None
 		self._messages = deque([], 300)
 		self._messageBacklog = []
 
-		self._latestLog = None
 		self._log = deque([], 300)
 		self._logBacklog = []
 
@@ -770,10 +769,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 				"messages": list(self._messages)
 			})
 			callback.on_printer_send_initial_data(data)
-		except Exception, err:
-			import sys
-			sys.stderr.write("ERROR: %s\n" % str(err))
-			pass
+		except:
+			self._logger.exception("Error while trying to send inital state update")
 
 	def _getStateFlags(self):
 		return {
@@ -792,7 +789,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		"""
 		 Callback method for the comm object, called upon log output.
 		"""
-		self._addLog(message)
+		self._addLog(to_unicode(message, "utf-8", errors="replace"))
 
 	def on_comm_temperature_update(self, temp, bedTemp):
 		self._addTemperatureData(temp, bedTemp)
@@ -827,7 +824,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		 Callback method for the comm object, called upon message exchanges via serial.
 		 Stores the message in the message buffer, truncates buffer to the last 300 lines.
 		"""
-		self._addMessage(message)
+		self._addMessage(to_unicode(message, "utf-8", errors="replace"))
 
 	def on_comm_progress(self):
 		"""
@@ -924,6 +921,8 @@ class StateMonitor(object):
 		self._change_event = threading.Event()
 		self._state_lock = threading.Lock()
 		self._progress_lock = threading.Lock()
+		self._log_lock = threading.Lock()
+		self._message_lock = threading.Lock()
 
 		self._last_update = time.time()
 		self._worker = threading.Thread(target=self._work)
