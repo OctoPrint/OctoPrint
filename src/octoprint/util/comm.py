@@ -1171,13 +1171,7 @@ class MachineCom(object):
 					self._handle_ok()
 
 				##~~ Message handling
-				elif line != '' \
-						and not line.startswith("ok") \
-						and not line.startswith("wait") \
-						and not line.startswith('Resend:') \
-						and line != 'echo:Unknown command:""\n' \
-						and self.isOperational():
-					self._callback.on_comm_message(line)
+				self._callback.on_comm_message(line)
 
 				##~~ Parsing for feedback commands
 				if feedback_controls and feedback_matcher and not "_all" in feedback_errors:
