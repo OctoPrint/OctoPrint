@@ -921,8 +921,6 @@ class StateMonitor(object):
 		self._change_event = threading.Event()
 		self._state_lock = threading.Lock()
 		self._progress_lock = threading.Lock()
-		self._log_lock = threading.Lock()
-		self._message_lock = threading.Lock()
 
 		self._last_update = time.time()
 		self._worker = threading.Thread(target=self._work)
