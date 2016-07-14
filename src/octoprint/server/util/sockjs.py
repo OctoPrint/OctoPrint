@@ -12,6 +12,9 @@ import time
 
 import octoprint.timelapse
 import octoprint.server
+import octoprint.events
+import octoprint.plugin
+
 from octoprint.events import Events
 from octoprint.settings import settings
 

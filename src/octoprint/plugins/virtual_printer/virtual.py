@@ -25,7 +25,7 @@ class VirtualPrinter(object):
 
 	def __init__(self, seriallog_handler=None, read_timeout=5.0, write_timeout=10.0):
 		import logging
-		self._logger = logging.getLogger("octoprint.plugin.virtual_printer.VirtualPrinter")
+		self._logger = logging.getLogger("octoprint.plugins.virtual_printer.VirtualPrinter")
 
 		self._seriallog = logging.getLogger("octoprint.plugin.virtual_printer.VirtualPrinter.serial")
 		self._seriallog.setLevel(logging.CRITICAL)
@@ -118,6 +118,24 @@ class VirtualPrinter(object):
 	def __str__(self):
 		return "VIRTUAL(read_timeout={read_timeout},write_timeout={write_timeout},options={options})"\
 			.format(read_timeout=self._read_timeout, write_timeout=self._write_timeout, options=settings().get(["devel", "virtualPrinter"]))
+
+	@property
+	def timeout(self):
+		return self._read_timeout
+
+	@timeout.setter
+	def timeout(self, value):
+		self._logger.debug("Setting read timeout to {}s".format(value))
+		self._read_timeout = value
+
+	@property
+	def write_timeout(self):
+		return self._write_timeout
+
+	@write_timeout.setter
+	def write_timeout(self, value):
+		self._logger.debug("Setting write timeout to {}s".format(value))
+		self._write_timeout = value
 
 	def _clearQueue(self, queue):
 		try:
