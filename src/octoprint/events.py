@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import (print_function, absolute_import)
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>, Lars Norpchen"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'

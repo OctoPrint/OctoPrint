@@ -3,6 +3,7 @@
 This module bundles commonly used utility methods or helper classes that are used in multiple places withing
 OctoPrint's source code.
 """
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'

@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 from octoprint.printer.estimation import TimeEstimationHelper
 
 __author__ = "Gina Häußge <osd@foosel.net>"
