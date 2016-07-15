@@ -52,7 +52,7 @@ class DaemonTest(unittest.TestCase):
 		self.assertListEqual(mock_exit.mock_calls, [mock.call(0), mock.call(0)])
 		mock_chdir.assert_called_once_with("/")
 		mock_setsid.assert_called_once_with()
-		mock_umask.assert_called_once_with(002)
+		mock_umask.assert_called_once_with(0o002)
 
 	@mock.patch("os.fork", create=True)
 	@mock.patch("sys.exit")
