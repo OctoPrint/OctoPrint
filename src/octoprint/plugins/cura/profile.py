@@ -7,6 +7,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 
 import re
+from builtins import range
 
 class SupportLocationTypes(object):
 	NONE = "none"
@@ -496,7 +497,7 @@ class Profile(object):
 					if not key in result:
 						result[key] = []
 					if len(result[key]) <= index:
-						for n in xrange(index - len(result[key]) + 1):
+						for n in range(index - len(result[key]) + 1):
 							result[key].append(None)
 					result[key][index] = value
 				else:
@@ -549,7 +550,7 @@ class Profile(object):
 			# So override > profile > default, if neither override nor profile value are available
 			# the default value should just be left as is
 
-			for x in xrange(len(result)):
+			for x in range(len(result)):
 				if override_value is not None and  x < len(override_value) and override_value[x] is not None:
 					# we have an override value for this location, so we use it
 					result[x] = override_value[x]
@@ -811,7 +812,7 @@ class Profile(object):
 
 				prefix_preheat = ""
 				prefix_waitheat = ""
-				for n in xrange(0, extruder_count):
+				for n in range(0, extruder_count):
 					if n > 0:
 						prefix_preheat += temp_line(temp, n, "M104 T{extruder} S{temp}\n")
 					prefix_waitheat += temp_line(temp, n, "M109 T{extruder} S{temp}\n")

@@ -17,6 +17,7 @@ from babel import Locale
 from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
 from collections import defaultdict
+from builtins import range
 
 import os
 import logging
@@ -330,7 +331,7 @@ class Server(object):
 			import string
 			from random import choice
 			chars = string.ascii_lowercase + string.ascii_uppercase + string.digits
-			secret_key = "".join(choice(chars) for _ in xrange(32))
+			secret_key = "".join(choice(chars) for _ in range(32))
 			self._settings.set(["server", "secretKey"], secret_key)
 			self._settings.save()
 		app.secret_key = secret_key
@@ -917,7 +918,7 @@ class Server(object):
 						# that might be caused by the user still having the folder open somewhere, let's try again after
 						# waiting a bit
 						import time
-						for n in xrange(3):
+						for n in range(3):
 							time.sleep(0.5)
 							self._logger.debug("Creating {path}: Retry #{retry} after {time}s".format(path=path, retry=n+1, time=(n + 1)*0.5))
 							try:
