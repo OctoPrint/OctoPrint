@@ -29,7 +29,7 @@ class BomAwareOpenTest(unittest.TestCase):
 			contents = f.readlines()
 
 		# assert
-		self.assertEquals(len(contents), 3)
+		self.assertEqual(len(contents), 3)
 		self.assertTrue(contents[0].startswith("#"))
 
 	def test_bom_aware_open_without_bom(self):
@@ -40,7 +40,7 @@ class BomAwareOpenTest(unittest.TestCase):
 			contents = f.readlines()
 
 		# assert
-		self.assertEquals(len(contents), 3)
+		self.assertEqual(len(contents), 3)
 		self.assertTrue(contents[0].startswith("#"))
 
 	def test_bom_aware_open_ascii(self):
@@ -51,7 +51,7 @@ class BomAwareOpenTest(unittest.TestCase):
 			contents = f.readlines()
 
 		# assert
-		self.assertEquals(len(contents), 3)
+		self.assertEqual(len(contents), 3)
 		self.assertTrue(contents[0].startswith(u"\ufffd" * 3 + "#"))
 		self.assertTrue(contents[2].endswith(u"\ufffd\ufffd" * 6))
 

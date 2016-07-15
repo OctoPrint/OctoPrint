@@ -11,7 +11,10 @@ import fnmatch
 import datetime
 import sys
 import shutil
-import Queue
+try:
+	import queue
+except ImportError:
+	import Queue as queue
 import requests
 
 import octoprint.util as util
@@ -318,7 +321,7 @@ class Timelapse(object):
 		self._fps = fps
 
 		self._capture_mutex = threading.Lock()
-		self._capture_queue = Queue.Queue()
+		self._capture_queue = queue.Queue()
 		self._capture_queue_active = True
 
 		self._capture_queue_thread = threading.Thread(target=self._capture_queue_worker)

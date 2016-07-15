@@ -9,7 +9,10 @@ import os
 import re
 import threading
 import math
-import Queue
+try:
+	import queue
+except ImportError:
+	import Queue as queue
 
 from serial import SerialTimeoutException
 
@@ -44,8 +47,8 @@ class VirtualPrinter(object):
 		self._rx_buffer_size = settings().getInt(["devel", "virtualPrinter", "rxBuffer"])
 
 		self.incoming = CharCountingQueue(self._rx_buffer_size, name="RxBuffer")
-		self.outgoing = Queue.Queue()
-		self.buffered = Queue.Queue(maxsize=settings().getInt(["devel", "virtualPrinter", "commandBuffer"]))
+		self.outgoing = queue.Queue()
+		self.buffered = queue.Queue(maxsize=settings().getInt(["devel", "virtualPrinter", "commandBuffer"]))
 
 		for item in ['start\n', 'Marlin: Virtual Marlin!\n', '\x80\n', 'SD card ok\n']:
 			self._send(item)
@@ -141,7 +144,7 @@ class VirtualPrinter(object):
 		try:
 			while queue.get(block=False):
 				continue
-		except Queue.Empty:
+		except queue.Empty:
 			pass
 
 	def _processIncoming(self):
@@ -153,7 +156,7 @@ class VirtualPrinter(object):
 			try:
 				data = self.incoming.get(timeout=0.01)
 				self.incoming.task_done()
-			except Queue.Empty:
+			except queue.Empty:
 				if self._sendWait and time.time() > next_wait_timeout:
 					self._send("wait")
 					next_wait_timeout = time.time() + self._waitInterval
@@ -876,7 +879,7 @@ class VirtualPrinter(object):
 		while self.buffered is not None:
 			try:
 				line = self.buffered.get(timeout=0.5)
-			except Queue.Empty:
+			except queue.Empty:
 				continue
 
 			if line is None:
@@ -905,7 +908,7 @@ class VirtualPrinter(object):
 				written = self.incoming.put(data, timeout=self._write_timeout)
 				self._seriallog.info("<<< {}".format(data.strip()))
 				return written
-			except Queue.Full:
+			except queue.Full:
 				self._logger.info("Incoming queue is full, raising SerialTimeoutException")
 				raise SerialTimeoutException()
 
@@ -918,7 +921,7 @@ class VirtualPrinter(object):
 			self._seriallog.info(">>> {}".format(line.strip()))
 			self.outgoing.task_done()
 			return line
-		except Queue.Empty:
+		except queue.Empty:
 			return ""
 
 	def close(self):
@@ -945,10 +948,10 @@ class VirtualPrinter(object):
 		if self.outgoing is not None:
 			self.outgoing.put(line)
 
-class CharCountingQueue(Queue.Queue):
+class CharCountingQueue(queue.Queue):
 
 	def __init__(self, maxsize, name=None):
-		Queue.Queue.__init__(self, maxsize=maxsize)
+		queue.Queue.__init__(self, maxsize=maxsize)
 		self._size = 0
 		self._name = name
 
@@ -962,7 +965,7 @@ class CharCountingQueue(Queue.Queue):
 
 			if not block:
 				if not self._will_it_fit(item):
-					raise Queue.Full
+					raise queue.Full
 			elif timeout is None:
 				while not self._will_it_fit(item):
 					self.not_full.wait()
@@ -973,7 +976,7 @@ class CharCountingQueue(Queue.Queue):
 				while not self._will_it_fit(item):
 					remaining = endtime - time.time()
 					if remaining <= 0.0:
-						raise Queue.Full
+						raise queue.Full
 					self.not_full.wait(remaining)
 
 			self._put(item)

@@ -93,7 +93,7 @@ def executeSystemCommand(source, command):
 				error = "Command failed with return code {}:\nSTDOUT: {}\nSTDERR: {}".format(returncode, stdout_text, stderr_text)
 				logger.warn(error)
 				return make_response(error, 500)
-	except Exception, e:
+	except Exception as e:
 		if not ignore:
 			error = "Command failed: {}".format(str(e))
 			logger.warn(error)

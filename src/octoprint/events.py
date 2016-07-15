@@ -8,7 +8,10 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import datetime
 import logging
 import subprocess
-import Queue
+try:
+	import queue
+except ImportError:
+	import Queue as queue
 import threading
 import collections
 
@@ -120,7 +123,7 @@ class EventManager(object):
 		self._registeredListeners = collections.defaultdict(list)
 		self._logger = logging.getLogger(__name__)
 
-		self._queue = Queue.Queue()
+		self._queue = queue.Queue()
 		self._worker = threading.Thread(target=self._work)
 		self._worker.daemon = True
 		self._worker.start()
