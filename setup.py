@@ -49,7 +49,7 @@ EXTRA_REQUIRES = dict(
 		# Testing dependencies
 		"mock>=2.0.0,<2.1.0",
 		"nose>=1.3.0,<1.4",
-		"doctest-ignore-unicode>=0.1.2,<0.2"
+		"doctest-ignore-unicode>=0.1.2,<0.2",
 		"coverage>=4.1,<4.2",
 		"ddt",
 
