@@ -95,7 +95,7 @@ class ExceptionHandlerExtension(Extension):
 		self._logger = logging.getLogger(__name__)
 
 	def parse(self, parser):
-		token = parser.stream.next()
+		token = next(parser.stream)
 		lineno = token.lineno
 		filename = parser.name
 		error = parser.parse_expression()

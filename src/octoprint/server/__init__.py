@@ -17,6 +17,7 @@ from babel import Locale
 from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
 from collections import defaultdict
+from builtins import bytes
 
 import os
 import logging
@@ -69,7 +70,7 @@ from octoprint.server.util.flask import PreemptiveCache
 
 from . import util
 
-UI_API_KEY = ''.join('%02X' % ord(z) for z in uuid.uuid4().bytes)
+UI_API_KEY = ''.join('%02X' % z for z in bytes(uuid.uuid4().bytes))
 
 VERSION = __version__
 BRANCH = __branch__
