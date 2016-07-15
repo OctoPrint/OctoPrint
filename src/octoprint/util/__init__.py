@@ -472,7 +472,7 @@ def dict_merge(a, b):
 	if not isinstance(b, dict):
 		return b
 	result = deepcopy(a)
-	for k, v in b.iteritems():
+	for k, v in b.items():
 		if k in result and isinstance(result[k], dict):
 			result[k] = dict_merge(result[k], v)
 		else:
@@ -508,7 +508,7 @@ def dict_sanitize(a, b):
 		return a
 
 	result = deepcopy(a)
-	for k, v in a.iteritems():
+	for k, v in a.items():
 		if not k in b:
 			del result[k]
 		elif isinstance(v, dict):
@@ -606,7 +606,7 @@ def dict_contains_keys(keys, dictionary):
 	if not isinstance(keys, dict) or not isinstance(dictionary, dict):
 		return False
 
-	for k, v in keys.iteritems():
+	for k, v in keys.items():
 		if not k in dictionary:
 			return False
 		elif isinstance(v, dict):

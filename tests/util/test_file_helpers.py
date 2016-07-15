@@ -181,7 +181,7 @@ class TempDirTest(unittest.TestCase):
 
 		# test
 		with octoprint.util.tempdir() as td:
-			self.assertEquals(td, path)
+			self.assertEqual(td, path)
 
 		# assert
 		mock_mkdtemp.assert_called_once_with()
@@ -198,7 +198,7 @@ class TempDirTest(unittest.TestCase):
 
 		# test
 		with octoprint.util.tempdir(prefix="prefix", suffix="suffix", dir="dir") as td:
-			self.assertEquals(td, path)
+			self.assertEqual(td, path)
 
 		# assert
 		mock_mkdtemp.assert_called_once_with(prefix="prefix", suffix="suffix", dir="dir")
@@ -217,7 +217,7 @@ class TempDirTest(unittest.TestCase):
 
 		# test
 		with octoprint.util.tempdir(ignore_errors=True, onerror=onerror) as td:
-			self.assertEquals(td, path)
+			self.assertEqual(td, path)
 
 		# assert
 		mock_mkdtemp.assert_called_once_with()

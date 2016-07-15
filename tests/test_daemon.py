@@ -96,7 +96,7 @@ class DaemonTest(unittest.TestCase):
 		self.assertEqual(self.error_method.call_count, 1)
 		mock_chdir.assert_called_once_with("/")
 		mock_setsid.assert_called_once_with()
-		mock_umask.assert_called_once_with(002)
+		mock_umask.assert_called_once_with(0o002)
 
 	@mock.patch("sys.stdin")
 	@mock.patch("sys.stdout")
