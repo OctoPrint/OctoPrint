@@ -1,8 +1,9 @@
+from __future__ import absolute_import, division, print_function
 import os, struct, sys, time
 
 from serial import Serial
 
-import chipDB
+from . import chipDB
 
 class IspBase():
 	def programChip(self, flashData):

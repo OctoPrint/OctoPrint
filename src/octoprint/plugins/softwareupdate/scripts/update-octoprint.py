@@ -1,5 +1,5 @@
 #!/bin/env python2
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Haeussge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'

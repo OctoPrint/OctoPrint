@@ -1,9 +1,10 @@
+from __future__ import absolute_import, division, print_function
 import os, struct, sys, time
 
 from serial import Serial
 from serial import SerialException
 
-import ispBase, intelHex
+from . import ispBase, intelHex
 
 class Stk500v2(ispBase.IspBase):
 	def __init__(self):
