@@ -66,7 +66,7 @@ class TestSettings(unittest.TestCase):
 			                         (timelapse_folder, expected_timelapse_folder),
 			                         (timelapse_tmp_folder, expected_timelapse_tmp_folder)):
 				self.assertIsNotNone(folder)
-				self.assertEquals(folder, expected)
+				self.assertEqual(folder, expected)
 				self.assertTrue(os.path.isdir(folder))
 
 	def test_basedir_initialization_with_custom_basedir(self):

@@ -18,7 +18,10 @@ import threading
 from functools import wraps
 import warnings
 import contextlib
-import Queue as queue
+try:
+	import queue
+except ImportError:
+	import Queue as queue
 
 logger = logging.getLogger(__name__)
 
