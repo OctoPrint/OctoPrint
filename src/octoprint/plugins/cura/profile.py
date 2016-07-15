@@ -951,7 +951,7 @@ class Profile(object):
 				settings["extruderOffset[{extruder}].{axis}".format(extruder=extruder, axis=axis.upper())] = self.get("extruder_offset_{axis}{extruder}".format(extruder=extruder, axis=axis.lower()))
 
 		fanFullHeight = self.get_microns("fan_full_height")
-		settings["fanFullOnLayerNr"] = (fanFullHeight - settings["initialLayerThickness"] - 1) / settings["layerThickness"] + 1
+		settings["fanFullOnLayerNr"] = (fanFullHeight - settings["initialLayerThickness"] - 1) // settings["layerThickness"] + 1
 		if settings["fanFullOnLayerNr"] < 0:
 			settings["fanFullOnLayerNr"] = 0
 
