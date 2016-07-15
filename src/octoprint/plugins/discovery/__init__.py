@@ -12,6 +12,7 @@ The SSDP/UPNP implementations has been largely inspired by https://gist.github.c
 import logging
 import os
 import flask
+from builtins import range
 
 import octoprint.plugin
 import octoprint.util
@@ -409,7 +410,7 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 				"HOST: {mcast_addr}:{mcast_port}\r\n\r\n"
 			])
 
-			for _ in xrange(retries):
+			for _ in range(retries):
 				for addr in octoprint.util.interface_addresses():
 					try:
 						sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
@@ -420,7 +421,7 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 						message = search_message.format(query=query,
 						                                mcast_addr=self.__class__.ssdp_multicast_addr,
 						                                mcast_port=self.__class__.ssdp_multicast_port)
-						for _ in xrange(2):
+						for _ in range(2):
 							sock.sendto(message, (self.__class__.ssdp_multicast_addr, self.__class__.ssdp_multicast_port))
 
 						try:
@@ -541,7 +542,7 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 
 		self._ssdp_monitor_active = False
 		if self.host and self.port:
-			for _ in xrange(2):
+			for _ in range(2):
 				self._ssdp_notify(alive=False)
 
 	def _ssdp_notify(self, alive=True):
@@ -587,7 +588,7 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 				                                nts="ssdp:alive" if alive else "ssdp:byebye",
 				                                mcast_addr=self.__class__.ssdp_multicast_addr,
 				                                mcast_port=self.__class__.ssdp_multicast_port)
-				for _ in xrange(2):
+				for _ in range(2):
 					# send twice, stuff might get lost, it's only UDP
 					sock.sendto(message, (self.__class__.ssdp_multicast_addr, self.__class__.ssdp_multicast_port))
 			except:

@@ -14,6 +14,7 @@ import yaml
 import uuid
 
 import logging
+from builtins import range
 
 from octoprint.settings import settings
 
@@ -107,7 +108,7 @@ class UserManager(object):
 				import string
 				from random import choice
 				chars = string.ascii_lowercase + string.ascii_uppercase + string.digits
-				salt = "".join(choice(chars) for _ in xrange(32))
+				salt = "".join(choice(chars) for _ in range(32))
 				settings().set(["accessControl", "salt"], salt)
 				settings().save()
 
@@ -506,7 +507,7 @@ class SessionUser(User):
 		import random
 		import time
 		chars = string.ascii_uppercase + string.ascii_lowercase + string.digits
-		self._session = "".join(random.choice(chars) for _ in xrange(10))
+		self._session = "".join(random.choice(chars) for _ in range(10))
 		self._created = time.time()
 
 	def __getattribute__(self, item):
