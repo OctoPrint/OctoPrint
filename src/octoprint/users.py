@@ -14,7 +14,7 @@ import yaml
 import uuid
 
 import logging
-from builtins import range
+from builtins import range, bytes
 
 from octoprint.settings import settings
 
@@ -347,7 +347,7 @@ class FilebasedUserManager(UserManager):
 			raise UnknownUser(username)
 
 		user = self._users[username]
-		user._apikey = ''.join('%02X' % ord(z) for z in uuid.uuid4().bytes)
+		user._apikey = ''.join('%02X' % z for z in bytes(uuid.uuid4().bytes))
 		self._dirty = True
 		self._save()
 		return user._apikey

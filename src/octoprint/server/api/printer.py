@@ -91,7 +91,7 @@ def printerToolCommand():
 
 		# make sure the targets are valid and the values are numbers
 		validated_values = {}
-		for tool, value in targets.iteritems():
+		for tool, value in targets.items():
 			if re.match(validation_regex, tool) is None:
 				return make_response("Invalid target for setting temperature: %s" % tool, 400)
 			if not isinstance(value, (int, long, float)):
@@ -108,7 +108,7 @@ def printerToolCommand():
 
 		# make sure the targets are valid, the values are numbers and in the range [-50, 50]
 		validated_values = {}
-		for tool, value in offsets.iteritems():
+		for tool, value in offsets.items():
 			if re.match(validation_regex, tool) is None:
 				return make_response("Invalid target for setting temperature: %s" % tool, 400)
 			if not isinstance(value, (int, long, float)):

@@ -31,6 +31,7 @@ import logging
 import re
 import uuid
 import copy
+from builtins import bytes
 
 try:
 	from collections import ChainMap
@@ -528,7 +529,7 @@ class Settings(object):
 		self.load(migrate=True)
 
 		if self.get(["api", "key"]) is None:
-			self.set(["api", "key"], ''.join('%02X' % ord(z) for z in uuid.uuid4().bytes))
+			self.set(["api", "key"], ''.join('%02X' % z for z in bytes(uuid.uuid4().bytes)))
 			self.save(force=True)
 
 		self._script_env = self._init_script_templating()

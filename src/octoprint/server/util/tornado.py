@@ -137,7 +137,7 @@ class UploadStorageFallbackHandler(tornado.web.RequestHandler):
 		self._path = path
 
 		self._suffixes = dict((key, key) for key in ("name", "path", "content_type", "size"))
-		for suffix_type, suffix in suffixes.iteritems():
+		for suffix_type, suffix in suffixes.items():
 			if suffix_type in self._suffixes and suffix is not None:
 				self._suffixes[suffix_type] = suffix
 
@@ -357,7 +357,7 @@ class UploadStorageFallbackHandler(tornado.web.RequestHandler):
 		"""
 
 		self._new_body = b""
-		for name, part in self._parts.iteritems():
+		for name, part in self._parts.items():
 			if "filename" in part:
 				# add form fields for filename, path, size and content_type for all files contained in the request
 				if not "path" in part:
@@ -371,8 +371,8 @@ class UploadStorageFallbackHandler(tornado.web.RequestHandler):
 				if "content_type" in part:
 					parameters["content_type"] = part["content_type"]
 
-				fields = dict((self._suffixes[key], value) for (key, value) in parameters.iteritems())
-				for n, p in fields.iteritems():
+				fields = dict((self._suffixes[key], value) for (key, value) in parameters.items())
+				for n, p in fields.items():
 					key = name + "." + n
 					self._new_body += b"--%s\r\n" % self._multipart_boundary
 					self._new_body += b"Content-Disposition: form-data; name=\"%s\"\r\n" % key
