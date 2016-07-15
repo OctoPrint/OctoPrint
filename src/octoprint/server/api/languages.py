@@ -8,6 +8,7 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 import os
 import tarfile
 import zipfile
+import io
 
 from collections import defaultdict
 
@@ -21,7 +22,7 @@ from octoprint.server.util.flask import restricted_access
 
 from octoprint.plugin import plugin_manager
 
-from flask.ext.babel import Locale
+from flask_babel import Locale
 
 @api.route("/languages", methods=["GET"])
 @restricted_access
@@ -46,7 +47,7 @@ def getInstalledLanguagePacks():
 			if os.path.isfile(meta_path):
 				import yaml
 				try:
-					with open(meta_path) as f:
+					with io.open(meta_path, 'rt', encoding='utf-8') as f:
 						meta = yaml.safe_load(f)
 				except:
 					pass

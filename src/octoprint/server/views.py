@@ -10,6 +10,7 @@ import datetime
 
 from collections import defaultdict
 from flask import request, g, url_for, make_response, render_template, send_from_directory, redirect
+from past.builtins import basestring
 
 import octoprint.plugin
 

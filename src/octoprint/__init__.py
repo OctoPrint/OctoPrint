@@ -4,6 +4,7 @@ from __future__ import absolute_import, division, print_function
 
 import sys
 import logging
+import io
 
 #~~ version
 
@@ -171,7 +172,7 @@ def init_logging(settings, use_logging_file=True, logging_file=None, default_con
 		config_from_file = {}
 		if os.path.exists(logging_file) and os.path.isfile(logging_file):
 			import yaml
-			with open(logging_file, "r") as f:
+			with io.open(logging_file, 'rt', encoding='utf-8') as f:
 				config_from_file = yaml.safe_load(f)
 
 		# we merge that with the default config

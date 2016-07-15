@@ -7,6 +7,7 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 
 def commands(cli_group, pass_octoprint_ctx, *args, **kwargs):
 	import click
+	click.disable_unicode_literals_warning = True
 	import sys
 	import requests.exceptions
 	import octoprint_client as client

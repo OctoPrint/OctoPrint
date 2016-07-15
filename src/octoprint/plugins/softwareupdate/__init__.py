@@ -15,6 +15,7 @@ import time
 import logging
 import logging.handlers
 import hashlib
+import io
 
 from . import version_checks, updaters, exceptions, util, cli
 
@@ -110,7 +111,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 		import yaml
 		try:
-			with open(self._version_cache_path) as f:
+			with io.open(self._version_cache_path, 'rt', encoding='utf-8') as f:
 				data = yaml.safe_load(f)
 		except:
 			self._logger.exception("Error while loading version cache from disk")
@@ -749,7 +750,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 		self._send_client_message("loglines", data=dict(loglines=[dict(line=line, stream=stream) for line in lines]))
 		for line in lines:
-			self._console_logger.debug(u"{prefix} {line}".format(**locals()))
+			self._console_logger.debug("{prefix} {line}".format(**locals()))
 
 	def _send_client_message(self, message_type, data=None):
 		self._plugin_manager.send_plugin_message(self._identifier, dict(type=message_type, data=data))

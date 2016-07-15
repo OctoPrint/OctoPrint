@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, print_function
 import os
 import sys
+import io
 
 """
 This "python package" doesn't actually install. This is intenional. It is merely
@@ -38,7 +39,7 @@ path = os.environ.get("TESTBALLOON_OUTPUT", None)
 if path is not None:
 	# environment variable set, write to a log
 	path = os.path.abspath(path)
-	with open(path, mode="w+b") as output:
+	with io.open(path, mode="w+b") as output:
 		produce_output(output)
 else:
 	# write to stdout

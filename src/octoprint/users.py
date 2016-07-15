@@ -5,8 +5,8 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-from flask.ext.login import UserMixin
-from flask.ext.principal import Identity
+from flask_login import UserMixin
+from flask_principal import Identity
 from werkzeug.local import LocalProxy
 import hashlib
 import os
@@ -14,6 +14,7 @@ import yaml
 import uuid
 
 import logging
+import io
 from builtins import range, bytes
 
 from octoprint.settings import settings
@@ -206,7 +207,7 @@ class FilebasedUserManager(UserManager):
 	def _load(self):
 		if os.path.exists(self._userfile) and os.path.isfile(self._userfile):
 			self._customized = True
-			with open(self._userfile, "r") as f:
+			with io.open(self._userfile, 'rt', encoding='utf-8') as f:
 				data = yaml.safe_load(f)
 				for name in data.keys():
 					attributes = data[name]

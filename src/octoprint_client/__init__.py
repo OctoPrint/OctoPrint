@@ -7,6 +7,7 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 
 import requests
 import time
+import io
 
 apikey = None
 baseurl = None
@@ -288,7 +289,7 @@ def upload(path, file_path, additional=None, file_name=None, content_type=None, 
 	if file_name is None:
 		file_name = os.path.basename(file_path)
 
-	with open(file_path, "rb") as fp:
+	with io.open(file_path, "rb") as fp:
 		if content_type:
 			files = dict(file=(file_name, fp, content_type))
 		else:

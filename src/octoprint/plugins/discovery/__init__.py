@@ -198,7 +198,7 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 
 		key = (reg_type, port)
 		self._sd_refs[key] = pybonjour.DNSServiceRegister(**params)
-		self._logger.info(u"Registered {name} for {reg_type}".format(**locals()))
+		self._logger.info("Registered {name} for {reg_type}".format(**locals()))
 
 	def zeroconf_unregister(self, reg_type, port=None):
 		"""
@@ -381,10 +381,12 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 		"""
 
 		import threading
-
-		import httplib
+		try:
+			import http.client as httpc
+		except ImportError:
+			import httplib as httpc
 		import io
-		class Response(httplib.HTTPResponse):
+		class Response(httpc.HTTPResponse):
 			def __init__(self, response_text):
 				self.fp = io.BytesIO(response_text)
 				self.debuglevel = 0
@@ -603,9 +605,14 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 		:param timeout: timeout after which to stop waiting for M-SEARCHs for a short while in order to put out an
 		                alive message
 		"""
-
-		from BaseHTTPServer import BaseHTTPRequestHandler
-		from StringIO import StringIO
+		try:
+			from http.server import BaseHTTPRequestHandler
+		except ImportError:
+			from BaseHTTPServer import BaseHTTPRequestHandler
+		try:
+			from io import StringIO
+		except ImportError:
+			from StringIO import StringIO
 		import socket
 
 		socket.setdefaulttimeout(timeout)
@@ -637,7 +644,7 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 
 		sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, socket.inet_aton(self.__class__.ssdp_multicast_addr) + socket.inet_aton('0.0.0.0'))
 
-		self._logger.info(u"Registered {} for SSDP".format(self.get_instance_name()))
+		self._logger.info("Registered {} for SSDP".format(self.get_instance_name()))
 
 		self._ssdp_notify(alive=True)
 
@@ -678,7 +685,7 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 	def get_instance_name(self):
 		name = self._settings.global_get(["appearance", "name"])
 		if name:
-			return u"OctoPrint instance \"{}\"".format(name)
+			return "OctoPrint instance \"{}\"".format(name)
 		else:
 			import socket
-			return u"OctoPrint instance on {}".format(socket.gethostname())
+			return "OctoPrint instance on {}".format(socket.gethostname())

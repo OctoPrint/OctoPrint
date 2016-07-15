@@ -3,7 +3,7 @@
 This module bundles commonly used utility methods or helper classes that are used in multiple places withing
 OctoPrint's source code.
 """
-from __future__ import absolute_import, division, print_function
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -19,10 +19,13 @@ import threading
 from functools import wraps
 import warnings
 import contextlib
+import io
 try:
 	import queue
 except ImportError:
 	import Queue as queue
+from past.builtins import basestring
+from builtins import str
 
 logger = logging.getLogger(__name__)
 
@@ -238,20 +241,30 @@ def get_dos_filename(input, existing_filenames=None, extension=None, whitelisted
 	Examples:
 
 	    >>> get_dos_filename("test1234.gco")
-	    u'test1234.gco'
+	    'test1234.gco'
 	    >>> get_dos_filename("test1234.gcode")
-	    u'test1234.gco'
+	    'test1234.gco'
 	    >>> get_dos_filename("test12345.gco")
-	    u'test12~1.gco'
+	    'test12~1.gco'
 	    >>> get_dos_filename("test1234.fnord", extension="gco")
-	    u'test1234.gco'
+	    'test1234.gco'
 	    >>> get_dos_filename("auto0.g", extension="gco")
-	    u'auto0.gco'
+	    'auto0.gco'
 	    >>> get_dos_filename("auto0.g", extension="gco", whitelisted_extensions=["g"])
-	    u'auto0.g'
+	    'auto0.g'
 	    >>> get_dos_filename(None)
 	    >>> get_dos_filename("foo")
-	    u'foo'
+	    'foo'
+	    >>> get_dos_filename("🆃🅴ⓢⓣ①②③𝟜⑤.gcode")
+	    '🆃🅴ⓢⓣ①②~1.gco'
+	    >>> get_dos_filename("A file.doc")
+	    'Afile~1.doc'
+	    >>> get_dos_filename("A_file.doc")
+	    'A_file.doc'
+	    >>> get_dos_filename("A long filename.txt")
+	    'Alongf~1.txt'
+	    >>> get_dos_filename("This is a really long filename.123.456.789....")
+	    'Thisis~1.789'
 	"""
 
 	if input is None:
@@ -265,6 +278,13 @@ def get_dos_filename(input, existing_filenames=None, extension=None, whitelisted
 
 	if whitelisted_extensions is None:
 		whitelisted_extensions = []
+	try:
+		input = input.decode("ascii")
+	except UnicodeEncodeError:
+		pass
+	valid_chars = b'-_.abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+	valid_input = b''.join(c if c in valid_chars else b'_' for c in input)
+	while valid_input[-1:] == b'.': valid_input = valid_input[:-1]
 
 	filename, ext = os.path.splitext(input)
 
@@ -277,7 +297,7 @@ def get_dos_filename(input, existing_filenames=None, extension=None, whitelisted
 
 
 def find_collision_free_name(filename, extension, existing_filenames, max_power=2):
-	"""
+	u"""
 	Tries to find a collision free translation of "<filename>.<extension>" to the 8.3 DOS compatible format,
 	preventing collisions with any of the ``existing_filenames``.
 
@@ -323,37 +343,40 @@ def find_collision_free_name(filename, extension, existing_filenames, max_power=
 	Examples:
 
 	    >>> find_collision_free_name("test1234", "gco", [])
-	    u'test1234.gco'
+	    'test1234.gco'
 	    >>> find_collision_free_name("test1234", "gcode", [])
-	    u'test1234.gco'
+	    'test1234.gco'
 	    >>> find_collision_free_name("test12345", "gco", [])
-	    u'test12~1.gco'
+	    'test12~1.gco'
 	    >>> find_collision_free_name("test 123", "gco", [])
-	    u'test_123.gco'
+	    'test_123.gco'
 	    >>> find_collision_free_name("test1234", "g o", [])
-	    u'test1234.g_o'
+	    'test1234.g_o'
 	    >>> find_collision_free_name("test12345", "gco", ["test12~1.gco"])
-	    u'test12~2.gco'
+	    'test12~2.gco'
 	    >>> many_files = ["test12~{}.gco".format(x) for x in range(10)[1:]]
 	    >>> find_collision_free_name("test12345", "gco", many_files)
-	    u'test1~10.gco'
+	    'test1~10.gco'
 	    >>> many_more_files = many_files + ["test1~{}.gco".format(x) for x in range(10, 99)]
 	    >>> find_collision_free_name("test12345", "gco", many_more_files)
-	    u'test1~99.gco'
+	    'test1~99.gco'
 	    >>> many_more_files_plus_one = many_more_files + ["test1~99.gco"]
 	    >>> find_collision_free_name("test12345", "gco", many_more_files_plus_one)
 	    Traceback (most recent call last):
 	    ...
 	    ValueError: Can't create a collision free filename
 	    >>> find_collision_free_name("test12345", "gco", many_more_files_plus_one, max_power=3)
-	    u'test~100.gco'
+	    'test~100.gco'
+	    >>> find_collision_free_name("🆃🅴ⓢⓣ①②③𝟜⑤", "gco", many_more_files_plus_one, max_power=3)
+	    '🆃🅴ⓢⓣ①②③𝟜⑤'
+	    
 
 	"""
 
-	if not isinstance(filename, unicode):
-		filename = unicode(filename)
-	if not isinstance(extension, unicode):
-		extension = unicode(extension)
+	if not isinstance(filename, str):
+		filename = str(filename)
+	if not isinstance(extension, str):
+		extension = str(extension)
 
 	def make_valid(text):
 		return re.sub(r"\s+", "_", text.translate({ord(i):None for i in ".\"/\\[]:;=,"})).lower()
@@ -362,7 +385,7 @@ def find_collision_free_name(filename, extension, existing_filenames, max_power=
 	extension = make_valid(extension)
 	extension = extension[:3] if len(extension) > 3 else extension
 
-	full_name_format = u"{filename}.{extension}" if extension else u"{filename}"
+	full_name_format = "{filename}.{extension}" if extension else "{filename}"
 
 	result = full_name_format.format(filename=filename,
 	                                 extension=extension)
@@ -372,7 +395,7 @@ def find_collision_free_name(filename, extension, existing_filenames, max_power=
 
 	counter = 1
 	power = 1
-	prefix_format = u"{segment}~{counter}"
+	prefix_format = "{segment}~{counter}"
 	while counter < (10 ** max_power):
 		prefix = prefix_format.format(segment=filename[:(6 - power + 1)], counter=str(counter))
 		result = full_name_format.format(filename=prefix,
@@ -426,7 +449,7 @@ def filter_non_ascii(line):
 
 def to_str(s_or_u, encoding="utf-8", errors="strict"):
 	"""Make sure ``s_or_u`` is a str."""
-	if isinstance(s_or_u, unicode):
+	if isinstance(s_or_u, str):
 		return s_or_u.encode(encoding, errors=errors)
 	else:
 		return s_or_u
@@ -553,7 +576,7 @@ def dict_minimal_mergediff(source, target):
 
 	from copy import deepcopy
 
-	all_keys = set(source.keys() + target.keys())
+	all_keys = set(list(source.keys()) + list(target.keys()))
 	result = dict()
 	for k in all_keys:
 		if k not in target:
@@ -776,7 +799,7 @@ def bom_aware_open(filename, encoding="ascii", mode="r", **kwargs):
 		# these encodings might have a BOM, so let's see if there is one
 		bom = getattr(codecs, potential_bom_attribute)
 
-		with open(filename, "rb") as f:
+		with io.open(filename, "rb") as f:
 			header = f.read(4)
 
 		if header.startswith(bom):

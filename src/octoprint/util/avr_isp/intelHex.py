@@ -5,7 +5,7 @@ from builtins import range
 def readHex(filename):
 	data = []
 	extraAddr = 0
-	f = io.open(filename, "r")
+	f = io.open(filename, 'rt', encoding='utf-8')
 	for line in f:
 		line = line.strip()
 		if line[0] != ':':

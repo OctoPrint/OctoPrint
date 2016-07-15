@@ -7,6 +7,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 from flask import request, jsonify, make_response, Response
 from werkzeug.exceptions import BadRequest
+from builtins import str
 import re
 
 from octoprint.settings import settings, valid_boolean_trues
@@ -388,7 +389,7 @@ def _get_temperature_data(preprocessor):
 		tempHistory = printer.get_temperature_history()
 
 		limit = 300
-		if "limit" in request.values.keys() and unicode(request.values["limit"]).isnumeric():
+		if "limit" in request.values.keys() and str(request.values["limit"]).isnumeric():
 			limit = int(request.values["limit"])
 
 		history = list(tempHistory)

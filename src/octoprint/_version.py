@@ -16,6 +16,7 @@ import os
 import re
 import subprocess
 import sys
+import io
 
 
 def get_keywords():
@@ -130,7 +131,7 @@ def git_get_keywords(versionfile_abs):
     # _version.py.
     keywords = {}
     try:
-        f = open(versionfile_abs, "r")
+        f = io.open(versionfile_abs, 'rt', encoding='utf-8')
         for line in f.readlines():
             if line.strip().startswith("git_refnames ="):
                 mo = re.search(r'=\s*"(.*)"', line)
@@ -307,7 +308,7 @@ def git_parse_lookup_file(path):
 
     import re
     lookup = []
-    with open(path, "r") as f:
+    with io.open(path, 'rt', encoding='utf-8') as f:
         for line in f:
             if '#' in line:
                 line = line[:line.rindex("#")]

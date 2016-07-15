@@ -72,7 +72,7 @@ class CommandlineCaller(object):
 			joined_command = " ".join(command)
 		else:
 			joined_command = command
-		self._logger.debug(u"Calling: {}".format(joined_command))
+		self._logger.debug("Calling: {}".format(joined_command))
 		self.on_log_call(joined_command)
 
 		kwargs.update(dict(async=True, stdout=sarge.Capture(), stderr=sarge.Capture()))

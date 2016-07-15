@@ -20,7 +20,7 @@ import flask
 
 from octoprint.server import admin_permission
 from octoprint.server.util.flask import restricted_access
-from flask.ext.babel import gettext
+from flask_babel import gettext
 
 class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
                          octoprint.plugin.SettingsPlugin,
@@ -253,7 +253,7 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 			now = time.time()
 			if os.stat(channel_path).st_mtime + ttl > now:
 				d = feedparser.parse(channel_path)
-				self._logger.debug(u"Loaded channel {} from cache at {}".format(key, channel_path))
+				self._logger.debug("Loaded channel {} from cache at {}".format(key, channel_path))
 				return d
 
 		return None
@@ -267,15 +267,15 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 		try:
 			start = time.time()
 			r = requests.get(url)
-			self._logger.info(u"Loaded channel {} from {} in {:.2}s".format(key, config["url"], time.time() - start))
+			self._logger.info("Loaded channel {} from {} in {:.2}s".format(key, config["url"], time.time() - start))
 		except Exception as e:
 			self._logger.exception(
-				u"Could not fetch channel {} from {}: {}".format(key, config["url"], str(e)))
+				"Could not fetch channel {} from {}: {}".format(key, config["url"], str(e)))
 			return None
 
 		response = r.text
 		channel_path = self._get_channel_cache_path(key)
-		with codecs.open(channel_path, mode="w", encoding="utf-8") as f:
+		with codecs.open(channel_path, mode="wt", encoding="utf-8") as f:
 			f.write(response)
 		return feedparser.parse(response)
 
@@ -321,13 +321,15 @@ def _strip_images(text):
 
 def _strip_tags(text):
 	"""
-	>>> _strip_tags(u"<a href='test.html'>Hello world</a>&lt;img src='foo.jpg'&gt;")
-	u"Hello world&lt;img src='foo.jpg'&gt;"
-	>>> _strip_tags(u"&#62; &#x3E; Foo")
-	u'&#62; &#x3E; Foo'
+	>>> _strip_tags("<a href='test.html'>Hello world</a>&lt;img src='foo.jpg'&gt;")
+	"Hello world&lt;img src='foo.jpg'&gt;"
+	>>> _strip_tags("&#62; &#x3E; Foo")
+	'&#62; &#x3E; Foo'
 	"""
-
-	from HTMLParser import HTMLParser
+	try:
+		from HTMLParser import HTMLParser
+	except ImportError:
+		from html.parser import HTMLParser
 
 	class TagStripper(HTMLParser):
 

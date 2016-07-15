@@ -14,13 +14,13 @@ import octoprint_setuptools
 
 # Requirements for our application
 INSTALL_REQUIRES = [
-	"flask>=0.9,<0.11",
-	"werkzeug>=0.8.3,<0.9",
+	"flask>=0.10,<0.12",
+	"werkzeug>=0.9,<=0.9",
 	"tornado>=4.0.2,<4.1",
 	"sockjs-tornado>=1.0.2,<1.1",
 	"PyYAML>=3.10,<3.11",
 	"Flask-Login>=0.2.2,<0.3",
-	"Flask-Principal>=0.3.5,<0.4",
+	"Flask-Principal>=0.4,<0.5",
 	"Flask-Babel>=0.9,<0.10",
 	"Flask-Assets>=0.10,<0.11",
 	"Flask-Markdown>=0.3,<0.4",
@@ -28,7 +28,7 @@ INSTALL_REQUIRES = [
 	"netaddr>=0.7.17,<0.8",
 	"watchdog>=0.8.3,<0.9",
 	"sarge>=0.1.4,<0.2",
-	"netifaces>=0.10,<0.11",
+	"gns3-netifaces>=0.10,<0.11",
 	"pylru>=1.0.9,<1.1",
 	"rsa>=3.2,<3.3",
 	"pkginfo>=1.2.1,<1.3",
@@ -47,8 +47,10 @@ EXTRA_REQUIRES = dict(
 	# Dependencies for developing OctoPrint
 	develop=[
 		# Testing dependencies
-		"mock>=1.0.1,<1.1",
+		"mock>=2.0.0,<2.1.0",
 		"nose>=1.3.0,<1.4",
+		"doctest-ignore-unicode>=0.1.2,<0.2"
+		"coverage>=4.1,<4.2",
 		"ddt",
 
 		# Documentation dependencies
@@ -158,6 +160,7 @@ def params():
 		"Natural Language :: English",
 		"Operating System :: OS Independent",
 		"Programming Language :: Python :: 2.7",
+		"Programming Language :: Python :: 3.5",
 		"Programming Language :: JavaScript",
 		"Topic :: Internet :: WWW/HTTP",
 		"Topic :: Internet :: WWW/HTTP :: Dynamic Content",

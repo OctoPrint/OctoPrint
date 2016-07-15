@@ -8,6 +8,8 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import re
 from builtins import range
+from past.builtins import basestring
+from builtins import str
 
 class SupportLocationTypes(object):
 	NONE = "none"
@@ -359,9 +361,11 @@ class Profile(object):
 		if not os.path.exists(path) or not os.path.isfile(path):
 			logger.warn("Path {path} does not exist or is not a file, cannot import".format(**locals()))
 			return None
-
-		import ConfigParser
-		config = ConfigParser.ConfigParser()
+		try:
+			import configparser
+		except ImportError:
+			import ConfigParser as configparser
+		config = configparser.ConfigParser()
 		try:
 			config.read(path)
 		except:
@@ -671,7 +675,7 @@ class Profile(object):
 		if value is None:
 			return default
 
-		if isinstance(value, (str, unicode, basestring)):
+		if isinstance(value, (str)):
 			value = value.replace(",", ".").strip()
 
 		try:
@@ -686,7 +690,7 @@ class Profile(object):
 
 		if isinstance(value, bool):
 			return value
-		elif isinstance(value, (str, unicode, basestring)):
+		elif isinstance(value, (str)):
 			return value.lower() == "true" or value.lower() == "yes" or value.lower() == "on" or value == "1"
 		elif isinstance(value, (int, float)):
 			return value > 0
@@ -725,7 +729,7 @@ class Profile(object):
 
 		result = []
 		for k, v in profile.items():
-			if isinstance(v, (str, unicode)):
+			if isinstance(v, (str)):
 				result.append("{k}={v}".format(k=k, v=v.encode("utf-8")))
 			else:
 				result.append("{k}={v}".format(k=k, v=v))
@@ -780,7 +784,7 @@ class Profile(object):
 		else:
 			contents = self.get_gcode_template(key)
 
-		return unicode(prefix + re.sub("(.)\{([^\}]*)\}", self.replaceTagMatch, contents).rstrip() + '\n' + postfix).strip().encode('utf-8') + '\n'
+		return str(prefix + re.sub("(.)\{([^\}]*)\}", self.replaceTagMatch, contents).rstrip() + '\n' + postfix).strip().encode('utf-8') + '\n'
 
 	def get_start_gcode_prefix(self, contents):
 		extruder_count = self.get_int("extruder_amount")

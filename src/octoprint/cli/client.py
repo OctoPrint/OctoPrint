@@ -5,7 +5,10 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import click
+click.disable_unicode_literals_warning = True
 import json
+import io
+from builtins import str
 
 import octoprint_client
 
@@ -94,16 +97,16 @@ def post_from_file(path, file_path, json_flag, yaml_flag):
 	"""POSTs JSON data to the specified server path."""
 	if json_flag or yaml_flag:
 		if json_flag:
-			with open(file_path, "rb") as fp:
+			with io.open(file_path, "rb") as fp:
 				data = json.load(fp)
 		else:
 			import yaml
-			with open(file_path, "rb") as fp:
+			with io.open(file_path, "rb") as fp:
 				data = yaml.safe_load(fp)
 
 		r = octoprint_client.post_json(path, data)
 	else:
-		with open(file_path, "rb") as fp:
+		with io.open(file_path, "rb") as fp:
 			data = fp.read()
 
 		r = octoprint_client.post(path, data)
@@ -114,10 +117,10 @@ def post_from_file(path, file_path, json_flag, yaml_flag):
 @client.command("command")
 @click.argument("path")
 @click.argument("command")
-@click.option("--str", "-s", "str_params", multiple=True, nargs=2, type=click.Tuple([unicode, unicode]))
-@click.option("--int", "-i", "int_params", multiple=True, nargs=2, type=click.Tuple([unicode, int]))
-@click.option("--float", "-f", "float_params", multiple=True, nargs=2, type=click.Tuple([unicode, float]))
-@click.option("--bool", "-b", "bool_params", multiple=True, nargs=2, type=click.Tuple([unicode, bool]))
+@click.option("--str", "-s", "str_params", multiple=True, nargs=2, type=click.Tuple([str,]))
+@click.option("--int", "-i", "int_params", multiple=True, nargs=2, type=click.Tuple([str, int]))
+@click.option("--float", "-f", "float_params", multiple=True, nargs=2, type=click.Tuple([str, float]))
+@click.option("--bool", "-b", "bool_params", multiple=True, nargs=2, type=click.Tuple([str, bool]))
 def command(path, command, str_params, int_params, float_params, bool_params):
 	"""Sends a JSON command to the specified server path."""
 	data = dict()
@@ -131,7 +134,7 @@ def command(path, command, str_params, int_params, float_params, bool_params):
 @client.command("upload")
 @click.argument("path")
 @click.argument("file_path", type=click.Path(exists=True, dir_okay=False, resolve_path=True))
-@click.option("--parameter", "-P", "params", multiple=True, nargs=2, type=click.Tuple([unicode, unicode]))
+@click.option("--parameter", "-P", "params", multiple=True, nargs=2, type=click.Tuple([str,]))
 @click.option("--file-name", type=click.STRING)
 @click.option("--content-type", type=click.STRING)
 def upload(path, file_path, params, file_name, content_type):

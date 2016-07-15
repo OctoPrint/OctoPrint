@@ -10,6 +10,7 @@ import copy
 
 from flask import jsonify, make_response, request, url_for
 from werkzeug.exceptions import BadRequest
+from past.builtins import basestring
 
 from octoprint.server.api import api, NO_CONTENT
 from octoprint.server.util.flask import restricted_access

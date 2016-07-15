@@ -8,16 +8,19 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import uuid
 from sockjs.tornado import SockJSRouter
 from flask import Flask, g, request, session, Blueprint
-from flask.ext.login import LoginManager, current_user
-from flask.ext.principal import Principal, Permission, RoleNeed, identity_loaded, UserNeed
-from flask.ext.babel import Babel, gettext, ngettext
-from flask.ext.assets import Environment, Bundle
+from flask_login import LoginManager, current_user
+from flask_principal import Principal, Permission, RoleNeed, identity_loaded, UserNeed
+from flask_babel import Babel, gettext, ngettext
+from flask_assets import Environment, Bundle
 from flaskext.markdown import Markdown
 from babel import Locale
 from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
 from collections import defaultdict
-from builtins import bytes, range
+from builtins import range
+from past.builtins import basestring
+from builtins import bytes
+from builtins import str
 
 import os
 import logging
@@ -25,6 +28,7 @@ import logging.config
 import atexit
 import signal
 import base64
+import io
 
 SUCCESS = {}
 NO_CONTENT = ("", 204)
@@ -665,14 +669,14 @@ class Server(object):
 		def externalize_links(text):
 			def repl(match):
 				tag = match.group("tag")
-				if not u"href" in tag:
+				if not "href" in tag:
 					return match.group(0)
 
-				if not u"target=" in tag and not u"rel=" in tag:
-					tag += u" target=\"_blank\" rel=\"noreferrer noopener\""
+				if not "target=" in tag and not "rel=" in tag:
+					tag += " target=\"_blank\" rel=\"noreferrer noopener\""
 
 				content = match.group("content")
-				return u"<{tag}>{content}</a>".format(tag=tag, content=content)
+				return "<{tag}>{content}</a>".format(tag=tag, content=content)
 			return html_link_regex.sub(repl, text)
 
 		app.jinja_env.filters["regex_replace"] = regex_replace
@@ -1128,7 +1132,7 @@ class Server(object):
 			if not os.path.isfile(path):
 				return ""
 
-			with open(path, "rb") as f:
+			with io.open(path, "rb") as f:
 				data = f.read()
 			return data
 
@@ -1193,7 +1197,7 @@ class LifecycleManager(object):
 			lifecycle_callback(name, plugin)
 
 	def add_callback(self, events, callback):
-		if isinstance(events, (str, unicode)):
+		if isinstance(events, (str)):
 			events = [events]
 
 		for event in events:
@@ -1205,7 +1209,7 @@ class LifecycleManager(object):
 				if callback in self._plugin_lifecycle_callbacks[event]:
 					self._plugin_lifecycle_callbacks[event].remove(callback)
 		else:
-			if isinstance(events, (str, unicode)):
+			if isinstance(events, (str)):
 				events = [events]
 
 			for event in events:

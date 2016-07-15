@@ -31,13 +31,16 @@ import logging
 import re
 import uuid
 import copy
+import io
 from builtins import bytes
+from builtins import str
 
 try:
 	from collections import ChainMap
 except ImportError:
 	from chainmap import ChainMap
 
+from past.builtins import basestring
 from octoprint.util import atomic_write, is_hidden_path, dict_merge
 
 _APPNAME = "OctoPrint"
@@ -757,7 +760,7 @@ class Settings(object):
 
 	def load(self, migrate=False):
 		if os.path.exists(self._configfile) and os.path.isfile(self._configfile):
-			with open(self._configfile, "r") as f:
+			with io.open(self._configfile, 'rt', encoding='utf-8') as f:
 				try:
 					self._config = yaml.safe_load(f)
 					self._mtime = self.last_modified
@@ -796,7 +799,7 @@ class Settings(object):
 
 		if isinstance(overlay, basestring):
 			if os.path.exists(overlay) and os.path.isfile(overlay):
-				with open(overlay, "r") as f:
+				with io.open(overlay, 'rt', encoding='utf-8') as f:
 					config = yaml.safe_load(f)
 		elif isinstance(overlay, dict):
 			config = overlay
@@ -1193,7 +1196,7 @@ class Settings(object):
 			return value
 		if isinstance(value, (int, float)):
 			return value != 0
-		if isinstance(value, (str, unicode)):
+		if isinstance(value, (str)):
 			return value.lower() in valid_boolean_trues
 		return value is not None
 

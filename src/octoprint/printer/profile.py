@@ -10,6 +10,7 @@ import os
 import copy
 import re
 import logging
+import io
 
 from octoprint.settings import settings
 from octoprint.util import dict_merge, dict_sanitize, dict_contains_keys, is_hidden_path
@@ -305,7 +306,7 @@ class PrinterProfileManager(object):
 			return None
 
 		import yaml
-		with open(path) as f:
+		with io.open(path, 'rt', encoding='utf-8') as f:
 			profile = yaml.safe_load(f)
 
 		if self._migrate_profile(profile):

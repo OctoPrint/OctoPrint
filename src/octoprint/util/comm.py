@@ -19,6 +19,8 @@ import serial
 import octoprint.plugin
 
 from collections import deque
+from past.builtins import basestring
+from builtins import str
 
 from octoprint.util.avr_isp import stk500v2
 from octoprint.util.avr_isp import ispBase
@@ -31,9 +33,12 @@ from octoprint.util import get_exception_string, sanitize_ascii, filter_non_asci
 	to_unicode, bom_aware_open, TypedQueue, TypeAlreadyInQueue
 
 try:
-	import _winreg
-except:
-	pass
+	import winreg
+except ImportError:
+	try:
+		import _winreg as winreg
+	except:
+		pass
 
 _logger = logging.getLogger(__name__)
 
@@ -112,10 +117,10 @@ def serialList():
 	baselist=[]
 	if os.name=="nt":
 		try:
-			key=_winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE,"HARDWARE\\DEVICEMAP\\SERIALCOMM")
+			key=winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE,"HARDWARE\\DEVICEMAP\\SERIALCOMM")
 			i=0
 			while(1):
-				baselist+=[_winreg.EnumValue(key,i)[1]]
+				baselist+=[winreg.EnumValue(key,i)[1]]
 				i+=1
 		except:
 			pass

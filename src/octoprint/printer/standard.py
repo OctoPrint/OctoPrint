@@ -24,7 +24,8 @@ from octoprint.printer.estimation import TimeEstimationHelper
 from octoprint.settings import settings
 from octoprint.util import comm as comm
 from octoprint.util import InvariantContainer
-from octoprint.util import to_unicode
+from past.builtins import basestring
+from builtins import str
 
 
 class Printer(PrinterInterface, comm.MachineComPrintCallback):
@@ -573,8 +574,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 		remoteName = util.get_dos_filename(filename,
 		                                   existing_filenames=existingSdFiles,
-		                                   extension="gco",
-		                                   whitelisted_extensions=["gco", "g"])
+		                                   extension="GCO",
+		                                   whitelisted_extensions=["GCO", "G"])
 		self._timeEstimationData = TimeEstimationHelper()
 		self._comm.startFileTransfer(absolutePath, filename, "/" + remoteName)
 

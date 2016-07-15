@@ -9,6 +9,7 @@ import os
 import re
 import threading
 import math
+import io
 try:
 	import queue
 except ImportError:
@@ -767,7 +768,7 @@ class VirtualPrinter(object):
 
 		handle = None
 		try:
-			handle = open(file, "w")
+			handle = io.open(file, "wt", encoding="utf-8")
 		except:
 			self.outgoing.put("error writing to file")
 			if handle is not None:
@@ -794,7 +795,7 @@ class VirtualPrinter(object):
 	def _sdPrintingWorker(self):
 		self._selectedSdFilePos = 0
 		try:
-			with open(self._selectedSdFile, "r") as f:
+			with io.open(self._selectedSdFile, 'rt', encoding='utf-8') as f:
 				for line in iter(f.readline, ""):
 					if self._killed:
 						break

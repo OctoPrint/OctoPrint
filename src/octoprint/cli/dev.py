@@ -7,6 +7,8 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 
 
 import click
+click.disable_unicode_literals_warning = True
+from past.builtins import basestring
 
 class OctoPrintDevelCommands(click.MultiCommand):
 	"""

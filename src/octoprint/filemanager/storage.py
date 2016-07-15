@@ -10,10 +10,13 @@ import logging
 import os
 import pylru
 import shutil
+import io
 
 from octoprint.util import atomic_write
 from contextlib import contextmanager
 from copy import deepcopy
+from past.builtins import basestring
+from builtins import str
 
 import octoprint.filemanager
 
@@ -418,7 +421,7 @@ class LocalFileStorage(StorageInterface):
 		if os.path.exists(old_metadata_path):
 			# load the old metadata file
 			try:
-				with open(old_metadata_path) as f:
+				with io.open(old_metadata_path, 'rt', encoding='utf-8') as f:
 					import yaml
 					self._old_metadata = yaml.safe_load(f)
 			except:
@@ -748,7 +751,7 @@ class LocalFileStorage(StorageInterface):
 		include a trailing slash for a string ``path`` or an empty last element for a list ``path``.
 		"""
 		name = None
-		if isinstance(path, (str, unicode, basestring)):
+		if isinstance(path, (str)):
 			if path.startswith(self.basefolder):
 				path = path[len(self.basefolder):]
 			path = path.replace(os.path.sep, "/")
@@ -801,7 +804,7 @@ class LocalFileStorage(StorageInterface):
 	def path_in_storage(self, path):
 		if isinstance(path, (tuple, list)):
 			path = self.join_path(*path)
-		if isinstance(path, (str, unicode, basestring)):
+		if isinstance(path, (str)):
 			if path.startswith(self.basefolder):
 				path = path[len(self.basefolder):]
 			path = path.replace(os.path.sep, "/")
@@ -1152,7 +1155,7 @@ class LocalFileStorage(StorageInterface):
 
 		blocksize = 65536
 		hash = hashlib.sha1()
-		with open(path, "rb") as f:
+		with io.open(path, "rb") as f:
 			buffer = f.read(blocksize)
 			while len(buffer) > 0:
 				hash.update(buffer)
@@ -1207,7 +1210,7 @@ class LocalFileStorage(StorageInterface):
 
 			metadata_path = os.path.join(path, ".metadata.yaml")
 			if os.path.exists(metadata_path):
-				with open(metadata_path) as f:
+				with io.open(metadata_path, 'rt', encoding='utf-8') as f:
 					try:
 						import yaml
 						metadata = yaml.safe_load(f)

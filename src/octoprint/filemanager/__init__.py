@@ -7,6 +7,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import logging
 import os
+import io
 
 import octoprint.plugin
 import octoprint.util
@@ -19,6 +20,8 @@ from .storage import LocalFileStorage
 from .util import AbstractFileWrapper, StreamWrapper, DiskFileWrapper
 
 from collections import namedtuple
+from past.builtins import basestring
+from builtins import str
 
 ContentTypeMapping = namedtuple("ContentTypeMapping", "extensions, content_type")
 ContentTypeDetector = namedtuple("ContentTypeDetector", "extensions, detector")
@@ -486,7 +489,7 @@ class FileManager(object):
 
 		import yaml
 		try:
-			with open(self._recovery_file) as f:
+			with io.open(self._recovery_file, 'rt', encoding='utf-8') as f:
 				data = yaml.safe_load(f)
 			return data
 		except:

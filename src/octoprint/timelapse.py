@@ -11,6 +11,7 @@ import fnmatch
 import datetime
 import sys
 import shutil
+import io
 try:
 	import queue
 except ImportError:
@@ -509,7 +510,7 @@ class Timelapse(object):
 		try:
 			self._logger.debug("Going to capture {} from {}".format(filename, self._snapshot_url))
 			r = requests.get(self._snapshot_url, stream=True)
-			with open (filename, "wb") as f:
+			with io.open(filename, "wb") as f:
 				for chunk in r.iter_content(chunk_size=1024):
 					if chunk:
 						f.write(chunk)

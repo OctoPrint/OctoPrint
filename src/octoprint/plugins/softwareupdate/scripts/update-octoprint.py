@@ -8,6 +8,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import errno
 import sys
+import io
 
 def _log_call(*lines):
 	_log(lines, prefix=">", stream="call")
@@ -27,7 +28,7 @@ def _log(lines, prefix=None, stream=None):
 		output_stream = sys.stderr
 
 	for line in lines:
-		print(u"{} {}".format(prefix, _to_unicode(line.rstrip(), errors="replace")), file=output_stream)
+		print("{} {}".format(prefix, _to_unicode(line.rstrip(), errors="replace")), file=output_stream)
 
 
 def _to_unicode(s_or_u, encoding="utf-8", errors="strict"):
@@ -131,7 +132,7 @@ def _python(args, cwd, python_executable, sudo=False):
 
 
 def _to_error(*lines):
-	return u"".join(map(lambda x: _to_unicode(x, errors="replace"), lines))
+	return "".join(map(lambda x: _to_unicode(x, errors="replace"), lines))
 
 
 def update_source(git_executable, folder, target, force=False):
@@ -151,7 +152,7 @@ def update_source(git_executable, folder, target, force=False):
 		if returncode != 0:
 			raise RuntimeError("Could not update, installation directory was dirty and state could not be persisted as a patch to %s" % patch)
 
-		with open(patch, "wb") as f:
+		with io.open(patch, "wb") as f:
 			for line in stdout:
 				f.write(line)
 

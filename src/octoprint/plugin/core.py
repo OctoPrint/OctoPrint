@@ -31,6 +31,7 @@ import os
 import imp
 from collections import defaultdict, namedtuple, OrderedDict
 import logging
+import io
 
 import pkg_resources
 import pkginfo
@@ -1288,7 +1289,7 @@ def is_editable_install(install_dir, package, module, location):
 	if os.path.isfile(package_link):
 		expected_target = os.path.normcase(os.path.realpath(location))
 		try:
-			with open(package_link) as f:
+			with io.open(package_link, 'rt', encoding='utf-8') as f:
 				contents = f.readlines()
 			for line in contents:
 				target = os.path.normcase(os.path.realpath(os.path.join(line.strip(), module)))
@@ -1346,7 +1347,7 @@ class InstalledEntryPoint(pkginfo.Installed):
 					else:
 						path = candidate
 					if os.path.exists(path):
-						with open(path) as f:
+						with io.open(path, 'rt', encoding='utf-8') as f:
 							return f.read()
 		warnings.warn('No PKG-INFO found for package: %s' % self.package_name)
 

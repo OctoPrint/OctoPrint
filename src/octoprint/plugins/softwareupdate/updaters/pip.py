@@ -65,7 +65,7 @@ def perform_update(target, check, target_version, log_cb=None):
 
 	install_arg = check["pip"].format(target_version=target_version)
 
-	logger.debug(u"Target: %s, executing pip install %s" % (target, install_arg))
+	logger.debug("Target: %s, executing pip install %s" % (target, install_arg))
 	pip_args = ["install", check["pip"].format(target_version=target_version, target=target_version)]
 
 	if "dependency_links" in check and check["dependency_links"]:
@@ -75,7 +75,7 @@ def perform_update(target, check, target_version, log_cb=None):
 	if returncode != 0:
 		raise exceptions.UpdateError("Error while executing pip install", (stdout, stderr))
 
-	logger.debug(u"Target: %s, executing pip install %s --ignore-reinstalled --force-reinstall --no-deps" % (target, install_arg))
+	logger.debug("Target: %s, executing pip install %s --ignore-reinstalled --force-reinstall --no-deps" % (target, install_arg))
 	pip_args += ["--ignore-installed", "--force-reinstall", "--no-deps"]
 
 	returncode, stdout, stderr = pip_caller.execute(*pip_args)
