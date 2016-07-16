@@ -135,7 +135,7 @@
                     }
                 }, timeout);
             }
-
+            
             window.onload = function() {
                 var intervals = [1, 1, 2, 3, 5, 8];
                 var timeout = 1500;
@@ -172,13 +172,16 @@
                         serverIsOnline = true;
                         message.className = "pulsate1 green";
                         message.innerText = "OctoPrint server online, reloading page...";
-
-                        var reloadUrl = baseUrl + currentQuery + currentFragment;
-                        if (reloadUrl == window.location.href) {
-                            window.location.reload(false);
-                        } else {
-                            window.location.href = reloadUrl;
-                        }
+                        
+                        setTimeout(function() {
+                            var reloadUrl = baseUrl + currentQuery + currentFragment;
+                            if (reloadUrl == window.location.href) {
+                                window.location.reload(false);
+                            } else {
+                                window.location.href = reloadUrl;
+                            }
+                        }, 10000);
+                        
                     } else {
                         // online.gif still not available, let's look at
                         var interval = 10;
