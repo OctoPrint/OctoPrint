@@ -159,3 +159,18 @@ class ExceptionHandlerExtension(Extension):
 			return "Unknown error"
 
 trycatch = ExceptionHandlerExtension
+
+
+class MarkdownFilter(object):
+
+	def __init__(self, app, **markdown_options):
+		self._markdown_options = markdown_options
+		app.jinja_env.filters.setdefault("markdown", self)
+
+	def __call__(self, stream):
+		from jinja2 import Markup
+		from markdown import Markdown
+
+		# Markdown is not thread safe
+		markdown = Markdown(**self._markdown_options)
+		return Markup(markdown.convert(stream))
