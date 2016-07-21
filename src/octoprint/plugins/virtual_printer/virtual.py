@@ -82,6 +82,7 @@ class VirtualPrinter(object):
 
 		self._incoming_lock = threading.RLock()
 
+		self._debug_awol = False
 		self._debug_sleep = None
 		self._sleepAfterNext = dict()
 		self._sleepAfter = dict()
@@ -403,6 +404,9 @@ class VirtualPrinter(object):
 			self._debug_drop_connection = True
 		elif data == "maxtemp_error":
 			self._output("Error: MAXTEMP triggered!")
+		elif data == "go_awol":
+			self._output("// Going AWOL")
+			self._debug_awol = True
 		else:
 			try:
 				sleep_match = VirtualPrinter.sleep_regex.match(data)
@@ -782,6 +786,9 @@ class VirtualPrinter(object):
 				pass
 
 	def write(self, data):
+		if self._debug_awol:
+			return len(data)
+
 		if self._debug_drop_connection:
 			self._logger.info("Debug drop of connection requested, raising SerialTimeoutException")
 			raise SerialTimeoutException()
@@ -801,6 +808,10 @@ class VirtualPrinter(object):
 				raise SerialTimeoutException()
 
 	def readline(self):
+		if self._debug_awol:
+			time.sleep(self._read_timeout)
+			return ""
+
 		if self._debug_drop_connection:
 			raise SerialTimeoutException()
 
