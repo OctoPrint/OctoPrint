@@ -236,6 +236,14 @@ class MachineCom(object):
 			except:
 				pass
 
+		self._consecutive_timeouts = 0
+		self._consecutive_timeout_maximums = dict()
+		for key, value in settings().get(["serial", "maxCommunicationTimeouts"], merged=True, asdict=True).items():
+			try:
+				self._consecutive_timeout_maximums[key] = int(value)
+			except:
+				pass
+
 		self._hello_command = settings().get(["serial", "helloCommand"])
 		self._trigger_ok_for_m29 = settings().getBoolean(["serial", "triggerOkForM29"])
 
@@ -566,15 +574,17 @@ class MachineCom(object):
 		if not processed:
 			cmd = process_gcode_line(cmd)
 			if not cmd:
-				return
+				return False
 
 		if self.isPrinting() and not self.isSdFileSelected():
 			try:
 				self._command_queue.put((cmd, cmd_type), item_type=cmd_type)
+				return True
 			except TypeAlreadyInQueue as e:
 				self._logger.debug("Type already in command queue: " + e.type)
+				return False
 		elif self.isOperational() or force:
-			self._sendCommand(cmd, cmd_type=cmd_type)
+			return self._sendCommand(cmd, cmd_type=cmd_type)
 
 	def sendGcodeScript(self, scriptName, replacements=None):
 		context = dict()
@@ -921,6 +931,8 @@ class MachineCom(object):
 
 		disable_external_heatup_detection = not settings().getBoolean(["feature", "externalHeatupDetection"])
 
+		self._consecutive_timeouts = 0
+
 		#Open the serial port.
 		if not self._openSerial():
 			return
@@ -956,6 +968,7 @@ class MachineCom(object):
 				if line is None:
 					break
 				if line.strip() is not "":
+					self._consecutive_timeouts = 0
 					if self._heating:
 						self._timeout = get_new_timeout("heatup", self._timeout_intervals)
 					else:
@@ -1232,6 +1245,7 @@ class MachineCom(object):
 					elif line.startswith("ok"):
 						self._onConnected()
 					elif time.time() > self._timeout:
+						self._log("There was a timeout while trying to connect to the printer")
 						self.close()
 
 			except:
@@ -1271,29 +1285,58 @@ class MachineCom(object):
 		return
 
 	def _handle_timeout(self):
-		if self._state not in (self.STATE_PRINTING,):
-			return
-
-		if self._long_running_command:
-			self._logger.debug("Ran into a communication timeout, but a command known to be a long runner is currently active")
+		if self._state not in (self.STATE_PRINTING,
+		                       self.STATE_PAUSED,
+		                       self.STATE_OPERATIONAL):
 			return
 
 		general_message = "Configure long running commands or increase communication timeout if that happens regularly on specific commands or long moves."
-		if self._resendActive:
-			self._log("Communication timeout while printing and during an active resend, resending same line again to trigger response from printer. " + general_message)
-			self._resendSameCommand()
-			self._clear_to_send.set()
+
+		# figure out which consecutive timeout maximum we have to use
+		if self._long_running_command:
+			consecutive_max = self._consecutive_timeout_maximums.get("long", 0)
+		elif self._state in (self.STATE_PRINTING,):
+			consecutive_max = self._consecutive_timeout_maximums.get("printing", 0)
+		else:
+			consecutive_max = self._consecutive_timeout_maximums.get("idle", 0)
+
+		# now increment the timeout counter
+		self._consecutive_timeouts += 1
+		self._logger.debug("Now at {} consecutive timeouts".format(self._consecutive_timeouts))
+
+		if 0 < consecutive_max < self._consecutive_timeouts:
+			# too many consecutive timeouts, we give up
+			message = "No response from printer after {} consecutive communication timeouts, considering it dead.".format(consecutive_max + 1)
+			self._logger.info(message)
+			self._log(message + " " + general_message)
+			self._errorValue = "Too many consecutive timeouts"
+			self.close(is_error=True)
+
+		elif self._resendActive:
+			# resend active, resend same command instead of triggering a new one
+			message = "Communication timeout while printing and during an active resend, resending same line again to trigger response from printer."
+			self._logger.info(message)
+			self._log(message + " " + general_message)
+			if self._resendSameCommand():
+				self._clear_to_send.set()
 
 		elif self._heating:
-			self._logger.debug("Timeout while in an active heatup, considering heatup to be over then")
+			# blocking heatup active, consider that finished
+			message = "Timeout while in an active heatup, considering heatup to be over."
+			self._logger.info(message)
 			self._finish_heatup()
 
-		else:
-			self._log("Communication timeout while printing, trying to trigger response from printer. " + general_message)
-			self._sendCommand("M105", cmd_type="temperature")
-			self._clear_to_send.set()
+		elif self._long_running_command:
+			# long running command active, ignore timeout
+			self._logger.debug("Ran into a communication timeout, but a command known to be a long runner is currently active")
 
-		return
+		elif self._state in (self.STATE_PRINTING, self.STATE_PAUSED):
+			# printing, try to tickle the printer
+			message = "Communication timeout while printing, trying to trigger response from printer."
+			self._logger.info(message)
+			self._log(message + " " + general_message)
+			if self._sendCommand("M105", cmd_type="temperature"):
+				self._clear_to_send.set()
 
 	def _track_heatup(self):
 		self._heating = True
@@ -1719,13 +1762,15 @@ class MachineCom(object):
 			cmd = self._lastLines[-self._resendDelta]
 			lineNumber = self._currentLine - self._resendDelta
 
-			self._enqueue_for_sending(cmd, linenumber=lineNumber)
+			result = self._enqueue_for_sending(cmd, linenumber=lineNumber)
 
 			self._resendDelta -= 1
 			if self._resendDelta <= 0:
 				self._resendDelta = None
 				self._lastResendNumber = None
 				self._currentResendCount = 0
+
+			return result
 
 	def _sendCommand(self, cmd, cmd_type=None):
 		# Make sure we are only handling one sending job at a time
@@ -1747,11 +1792,11 @@ class MachineCom(object):
 				eventManager().fire(gcodeToEvent[gcode])
 
 			# actually enqueue the command for sending
-			self._enqueue_for_sending(cmd, command_type=cmd_type)
-
-			self._process_command_phase("queued", cmd, cmd_type, gcode=gcode)
-
-			return True
+			if self._enqueue_for_sending(cmd, command_type=cmd_type):
+				self._process_command_phase("queued", cmd, cmd_type, gcode=gcode)
+				return True
+			else:
+				return False
 
 	##~~ send loop handling
 
@@ -1767,8 +1812,10 @@ class MachineCom(object):
 
 		try:
 			self._send_queue.put((command, linenumber, command_type), item_type=command_type)
+			return True
 		except TypeAlreadyInQueue as e:
 			self._logger.debug("Type already in send queue: " + e.type)
+			return False
 
 	def _send_loop(self):
 		"""
