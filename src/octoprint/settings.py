@@ -86,9 +86,9 @@ default_settings = {
 			"sdStatus": 1
 		},
 		"maxCommunicationTimeouts": {
-			"idle": 5,
-			"printing": 10,
-			"long": 10
+			"idle": 2,
+			"printing": 5,
+			"long": 5
 		},
 		"maxWritePasses": 5,
 		"additionalPorts": [],
