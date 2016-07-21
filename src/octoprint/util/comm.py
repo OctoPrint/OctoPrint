@@ -244,6 +244,8 @@ class MachineCom(object):
 			except:
 				pass
 
+		self._max_write_passes = settings().getInt(["serial", "maxWritePasses"])
+
 		self._hello_command = settings().get(["serial", "helloCommand"])
 		self._trigger_ok_for_m29 = settings().getBoolean(["serial", "triggerOkForM29"])
 
@@ -1992,8 +1994,11 @@ class MachineCom(object):
 
 		cmd += "\n"
 		written = 0
+		passes = 0
 		while written < len(cmd):
 			to_send = cmd[written:]
+			old_written = written
+
 			try:
 				written += self._serial.write(to_send)
 			except serial.SerialTimeoutException:
@@ -2014,6 +2019,18 @@ class MachineCom(object):
 					self._errorValue = get_exception_string()
 					self.close(is_error=True)
 				break
+
+			if old_written == written:
+				# nothing written this pass
+				passes += 1
+				if passes > self._max_write_passes:
+					# nothing written in max consecutive passes, we give up
+					message = "Could not write anything to the serial port in {} tries, something appears to be wrong with the printer communication".format(self._max_write_passes)
+					self._logger.error(message)
+					self._log(message)
+					self._errorValue = "Could not write to serial port"
+					self.close(is_error=True)
+					break
 
 	##~~ command handlers
 
