@@ -82,6 +82,7 @@ class VirtualPrinter(object):
 
 		self._incoming_lock = threading.RLock()
 
+		self._debug_sleep = None
 		self._sleepAfterNext = dict()
 		self._sleepAfter = dict()
 
@@ -412,7 +413,7 @@ class VirtualPrinter(object):
 				if sleep_match is not None:
 					interval = int(sleep_match.group(1))
 					self._output("// sleeping for {interval} seconds".format(interval=interval))
-					time.sleep(interval)
+					self._debug_sleep = interval
 				elif sleep_after_match is not None:
 					command = sleep_after_match.group(1)
 					interval = int(sleep_after_match.group(2))
@@ -803,11 +804,32 @@ class VirtualPrinter(object):
 		if self._debug_drop_connection:
 			raise SerialTimeoutException()
 
+		if self._debug_sleep > 0:
+			# if we are supposed to sleep, we sleep not longer than the read timeout
+			# (and then on the next call sleep again if there's time to sleep left)
+			sleep_for = min(self._debug_sleep, self._read_timeout)
+			self._debug_sleep -= sleep_for
+			time.sleep(sleep_for)
+
+			if self._debug_sleep > 0:
+				# we slept the full read timeout, return an empty line
+				return ""
+
+			# otherwise our left over timeout is the read timeout minus what we already
+			# slept for
+			timeout = self._read_timeout - sleep_for
+
+		else:
+			# use the full read timeout as timeout
+			timeout = self._read_timeout
+
 		try:
-			line = self.outgoing.get(timeout=self._read_timeout)
+			# fetch a line from the queue, wait no longer than timeout
+			line = self.outgoing.get(timeout=timeout)
 			self.outgoing.task_done()
 			return line
 		except Queue.Empty:
+			# queue empty? return empty line
 			return ""
 
 	def close(self):
@@ -843,7 +865,8 @@ class CharCountingQueue(Queue.Queue):
 		try:
 			if not self._will_it_fit(item) and partial:
 				space_left = self.maxsize - self._qsize()
-				item = item[:space_left]
+				if space_left:
+					item = item[:space_left]
 
 			if not block:
 				if not self._will_it_fit(item):
