@@ -1340,6 +1340,13 @@ class MachineCom(object):
 			if self._sendCommand("M105", cmd_type="temperature"):
 				self._clear_to_send.set()
 
+		elif self._clear_to_send.blocked():
+			# timeout while idle and no oks left, let's try to tickle the printer
+			message = "Communication timeout while idle, trying to trigger response from printer."
+			self._logger.info(message)
+			self._log(message + " " + general_message)
+			self._clear_to_send.set()
+
 	def _track_heatup(self):
 		self._heating = True
 		self._heatupWaitStartTime = time.time()
