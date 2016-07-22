@@ -396,11 +396,11 @@ class MachineCom(object):
 		if self._state == self.STATE_PAUSED:
 			return "Paused"
 		if self._state == self.STATE_CLOSED:
-			return "Closed"
+			return "Offline"
 		if self._state == self.STATE_ERROR:
 			return "Error: %s" % (self.getErrorString())
 		if self._state == self.STATE_CLOSED_WITH_ERROR:
-			return "Error: %s" % (self.getErrorString())
+			return "Offline: %s" % (self.getErrorString())
 		if self._state == self.STATE_TRANSFERING_FILE:
 			return "Transfering file to SD"
 		return "?%d?" % (self._state)
@@ -1256,8 +1256,8 @@ class MachineCom(object):
 				errorMsg = "See octoprint.log for details"
 				self._log(errorMsg)
 				self._errorValue = errorMsg
-				self._changeState(self.STATE_ERROR)
 				eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
+				self.close(is_error=True)
 		self._log("Connection closed, closing down monitor")
 
 	def _handle_ok(self):
@@ -1311,7 +1311,8 @@ class MachineCom(object):
 			message = "No response from printer after {} consecutive communication timeouts, considering it dead.".format(consecutive_max + 1)
 			self._logger.info(message)
 			self._log(message + " " + general_message)
-			self._errorValue = "Too many consecutive timeouts"
+			self._errorValue = "Too many consecutive timeouts, printer still connected and alive?"
+			eventManager().fire(Events.ERROR, {"error": self._errorValue})
 			self.close(is_error=True)
 
 		elif self._resendActive:
