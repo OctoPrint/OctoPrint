@@ -588,9 +588,12 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		self._currentZ = currentZ
 		self._stateMonitor.set_current_z(self._currentZ)
 
-	def _setState(self, state):
+	def _setState(self, state, state_string=None):
+		if state_string is None:
+			state_string = self.get_state_string()
+
 		self._state = state
-		self._stateMonitor.set_state({"text": self.get_state_string(), "flags": self._getStateFlags()})
+		self._stateMonitor.set_state({"text": state_string, "flags": self._getStateFlags()})
 
 	def _addLog(self, log):
 		self._log.append(log)
@@ -811,6 +814,9 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		"""
 		oldState = self._state
 
+		if self._comm is not None:
+			state_string = self._comm.getStateString()
+
 		# forward relevant state changes to gcode manager
 		if oldState == comm.MachineCom.STATE_PRINTING:
 			with self._selectedFileLock:
@@ -829,7 +835,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			self._setCurrentZ(None)
 			self._setJobData(None, None, None)
 
-		self._setState(state)
+		self._setState(state, state_string=state_string)
 
 	def on_comm_message(self, message):
 		"""
