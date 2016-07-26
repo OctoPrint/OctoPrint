@@ -283,6 +283,15 @@ default_settings = {
 			}
 		}
 	},
+	"estimation": {
+		"printTime": {
+			"statsWeighingUntil": 0.5,
+			"validityRange": 0.15,
+			"forceDumbFromPercent": 0.3,
+			"forceDumbAfterMin": 30,
+			"stableThreshold": 60
+		}
+	},
 	"devel": {
 		"stylesheet": "css",
 		"cache": {
