@@ -220,7 +220,7 @@ def uploadGcodeFile(target):
 		done = True
 	else:
 		filename = fileProcessingFinished(added_file, fileManager.path_on_disk(FileDestinations.LOCAL, added_file), target)
-		done = True
+		done = not sd
 
 	if userdata is not None:
 		# upload included userdata, add this now to the metadata
