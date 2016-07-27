@@ -57,8 +57,11 @@
                             </span>
         {% endif %}
     </div>
-    <div id="gcode_upload_progress" class="progress" style="width: 100%;">
-        <div class="bar" style="width: 0%"></div>
+    <div id="gcode_upload_progress" class="progress progress-text-centered">
+        <span class="progress-text-back" data-bind="text: uploadProgressText"></span>
+        <div class="bar">
+            <span class="progress-text-front" data-bind="copyWidth: ':parent :parent :parent :parent form', text: uploadProgressText"></span>
+        </div>
     </div>
     <div>
         <small class="muted">{{ _('Hint: You can also drag and drop files on this page to upload them.') }}</small>

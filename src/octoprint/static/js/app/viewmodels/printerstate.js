@@ -30,6 +30,7 @@ $(function() {
         self.filepos = ko.observable(undefined);
         self.printTime = ko.observable(undefined);
         self.printTimeLeft = ko.observable(undefined);
+        self.printTimeLeftOrigin = ko.observable(undefined);
         self.sd = ko.observable(undefined);
         self.timelapse = ko.observable(undefined);
 
@@ -87,6 +88,12 @@ $(function() {
             if (!self.progress())
                 return 0;
             return self.progress();
+        });
+        self.progressBarString = ko.pureComputed(function() {
+            if (!self.progress()) {
+                return "";
+            }
+            return _.sprintf("%d%%", self.progress());
         });
         self.pauseString = ko.pureComputed(function() {
             if (self.isPaused())
@@ -191,6 +198,7 @@ $(function() {
             self.filepos(data.filepos);
             self.printTime(data.printTime);
             self.printTimeLeft(data.printTimeLeft);
+            self.printTimeLeftOrigin(data.printTimeLeftOrigin);
         };
 
         self._processZData = function(data) {
