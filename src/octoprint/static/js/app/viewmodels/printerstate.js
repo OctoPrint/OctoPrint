@@ -84,6 +84,50 @@ $(function() {
                 return formatFuzzyEstimation(self.printTimeLeft());
             }
         });
+        self.printTimeLeftOriginString = ko.pureComputed(function() {
+            var value = self.printTimeLeftOrigin();
+            switch (value) {
+                case "linear": {
+                    return gettext("Based on a linear approximation (accuracy highly dependent on the model)");
+                }
+                case "analysis": {
+                    return gettext("Based on the estimate from analysis of file (medium accuracy)");
+                }
+                case "mixed-analysis": {
+                    return gettext("Based on a mix of estimate from analysis and calculation (medium accuracy)");
+                }
+                case "average": {
+                    return gettext("Based on the average total of past prints of this model with the same printer profile (usually good accuracy)");
+                }
+                case "mixed-average": {
+                    return gettext("Based on a mix of average total from past prints and calculation (usually good accuracy)");
+                }
+                case "estimate": {
+                    return gettext("Based on the calculated estimate (best accuracy)");
+                }
+                default: {
+                    return "";
+                }
+            }
+        });
+        self.printTimeLeftOriginClass = ko.pureComputed(function() {
+            var value = self.printTimeLeftOrigin();
+            switch (value) {
+                default:
+                case "linear": {
+                    return "text-error";
+                }
+                case "analysis":
+                case "mixed-analysis": {
+                    return "text-warning";
+                }
+                case "average":
+                case "mixed-average":
+                case "estimate": {
+                    return "text-success";
+                }
+            }
+        });
         self.progressString = ko.pureComputed(function() {
             if (!self.progress())
                 return 0;

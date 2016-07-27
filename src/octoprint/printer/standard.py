@@ -638,11 +638,13 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			cleanedPrintTime = self._comm.getCleanedPrintTime()
 
 		statisticalTotalPrintTime = None
+		statisticalTotalPrintTimeType = None
 		if self._selectedFile and "estimatedPrintTime" in self._selectedFile \
 				and self._selectedFile["estimatedPrintTime"]:
 			statisticalTotalPrintTime = self._selectedFile["estimatedPrintTime"]
+			statisticalTotalPrintTimeType = self._selectedFile.get("estimatedPrintTimeType", None)
 
-		printTimeLeft, printTimeLeftOrigin = self._estimatePrintTimeLeft(progress, printTime, cleanedPrintTime, statisticalTotalPrintTime)
+		printTimeLeft, printTimeLeftOrigin = self._estimatePrintTimeLeft(progress, printTime, cleanedPrintTime, statisticalTotalPrintTime, statisticalTotalPrintTimeType)
 
 		if progress is not None:
 			progress_int = int(progress * 100)
@@ -656,7 +658,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		            printTimeLeft=int(printTimeLeft) if printTimeLeft is not None else None,
 		            printTimeLeftOrigin=printTimeLeftOrigin)
 
-	def _estimatePrintTimeLeft(self, progress, printTime, cleanedPrintTime, statisticalTotalPrintTime):
+	def _estimatePrintTimeLeft(self, progress, printTime, cleanedPrintTime, statisticalTotalPrintTime, statisticalTotalPrintTimeType):
 		"""
 		Tries to estimate the print time left for the print job
 
@@ -705,9 +707,11 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		        (if detectable).
 		    statisticalTotalPrintTime (float or None): Total print time of past prints against same printer profile,
 		        or estimated total print time from GCODE analysis.
+		    statisticalTotalPrintTimeType (str or None): Type of statistical print time, either "average" (total time
+		        of former prints) or "analysis"
 
 		Returns:
-		    (float or None) estimated print time left or None if not proper estimate could be made at all
+		    (2-tuple) estimated print time left or None if not proper estimate could be made at all, origin of estimation
 		"""
 
 		if progress is None or printTime is None or cleanedPrintTime is None:
@@ -722,7 +726,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			if estimatedTotalPrintTime is None:
 				# no estimate yet, we'll use the statistical total
 				totalPrintTime = statisticalTotalPrintTime
-				printTimeLeftOrigin = "stats"
+				printTimeLeftOrigin = statisticalTotalPrintTimeType
 
 			else:
 				if progress < self._timeEstimationStatsWeighingUntil:
@@ -730,7 +734,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 					sub_progress = progress * (1 / self._timeEstimationStatsWeighingUntil)
 					if sub_progress > 1.0:
 						sub_progress = 1.0
-					printTimeLeftOrigin = "mixture"
+					printTimeLeftOrigin = "mixed-" + statisticalTotalPrintTimeType
 				else:
 					# use only the current estimate
 					sub_progress = 1.0
@@ -855,9 +859,11 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 				if averagePrintTime is not None:
 					self._selectedFile["estimatedPrintTime"] = averagePrintTime
+					self._selectedFile["estimatedPrintTimeType"] = "average"
 				elif estimatedPrintTime is not None:
 					# TODO apply factor which first needs to be tracked!
 					self._selectedFile["estimatedPrintTime"] = estimatedPrintTime
+					self._selectedFile["estimatedPrintTimeType"] = "analysis"
 
 		self._stateMonitor.set_job_data({
 			"file": {
