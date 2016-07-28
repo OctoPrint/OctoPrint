@@ -390,8 +390,9 @@ Issue a file command
       }
 
 
-   :param target:               The target location on which to delete the file, either ``local`` (for OctoPrint's ``uploads``
-                                folder) or ``sdcard`` for the printer's SD card (if available)
+   :param target:               The target location on which the file to send the command for is located, either
+                                ``local`` (for OctoPrint's ``uploads`` folder) or ``sdcard`` for the printer's SD card
+                                (if available)
    :param filename:             The filename of the file for which to issue the command
    :json string command:        The command to issue for the file, currently only ``select`` is supported
    :json boolean print:         ``select`` and ``slice`` command: Optional, whether to start printing the file directly after selection
