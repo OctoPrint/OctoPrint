@@ -761,7 +761,7 @@ def _compute_date_for_i18n(locale, domain):
 
 def _compute_date(files):
 	from datetime import datetime
-	timestamps = map(lambda path: os.stat(path).st_mtime, files)
+	timestamps = map(lambda path: os.stat(path).st_mtime, files) + [0] if files else []
 	max_timestamp = max(*timestamps) if timestamps else None
 	if max_timestamp:
 		# we set the micros to 0 since microseconds are not speced for HTTP
