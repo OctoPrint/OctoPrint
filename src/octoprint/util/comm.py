@@ -332,6 +332,10 @@ class MachineCom(object):
 	def __del__(self):
 		self.close()
 
+	@property
+	def _active(self):
+		return self._monitoring_active and self._send_queue_active
+
 	##~~ internal state management
 
 	def _changeState(self, newState):
@@ -1361,11 +1365,25 @@ class MachineCom(object):
 			self._serial.timeout = settings().getFloat(["serial", "timeout", "communication"])
 
 	def _continue_sending(self):
-		if self._state == self.STATE_PRINTING:
-			if not self._sendFromQueue() and not self.isSdPrinting():
-				self._sendNext()
-		elif self._state == self.STATE_OPERATIONAL or self._state == self.STATE_PAUSED:
-			self._sendFromQueue()
+		while self._active:
+
+			if self._state == self.STATE_OPERATIONAL or self._state == self.STATE_PAUSED or self.isSdPrinting():
+				# just send stuff from the command queue and be done with it
+				return self._sendFromQueue()
+
+			elif self._state == self.STATE_PRINTING:
+				# we are printing, we really want to send either something from the command
+				# queue or the next line from our file, so we only return here if we actually DO
+				# send something
+				if self._sendFromQueue():
+					# we found something in the queue to send
+					return True
+
+				elif self._sendNext():
+					# we sent the next line from the file
+					return True
+
+				self._logger.debug("No command sent on ok while printing, doing another iteration")
 
 	def _process_registered_message(self, line, feedback_matcher, feedback_controls, feedback_errors):
 		feedback_match = feedback_matcher.search(line)
@@ -1660,10 +1678,20 @@ class MachineCom(object):
 
 	def _sendNext(self):
 		with self._sendNextLock:
-			line = self._getNext()
-			if line is not None:
-				self._sendCommand(line)
+			while self._active:
+				# we loop until we've actually enqueued a line for sending
+				line = self._getNext()
+				if line is None:
+					# end of file, return false
+					return False
+
+				result = self._sendCommand(line)
 				self._callback.on_comm_progress()
+				if result:
+					# line sent, return true
+					return True
+
+				self._logger.debug("Command \"{}\" from file not enqueued, doing another iteration".format(line))
 
 	def _handleResendRequest(self, line):
 		try:
