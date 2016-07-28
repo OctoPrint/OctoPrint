@@ -12,7 +12,6 @@ from flask.ext.login import LoginManager, current_user
 from flask.ext.principal import Principal, Permission, RoleNeed, identity_loaded, UserNeed
 from flask.ext.babel import Babel, gettext, ngettext
 from flask.ext.assets import Environment, Bundle
-from flaskext.markdown import Markdown
 from babel import Locale
 from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
@@ -600,7 +599,8 @@ class Server(object):
 			response.headers.add("X-Clacks-Overhead", "GNU Terry Pratchett")
 			return response
 
-		Markdown(app)
+		from octoprint.util.jinja import MarkdownFilter
+		MarkdownFilter(app)
 
 	def _setup_i18n(self, app):
 		global babel

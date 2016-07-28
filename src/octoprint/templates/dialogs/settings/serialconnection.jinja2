@@ -141,6 +141,24 @@
                     <input type="checkbox" data-bind="checked: serial_supportResendsWithoutOk" id="settings-supportResendsWithoutOk"> {{ _('Simulate an additional `ok` for resend requests') }}
                 </label>
             </div>
+            <div class="control-group" title="{{ _('Maximum consecutive communication timeouts while idle. More than this and the printer will be considered to be gone. Set to 0 to disable.') }}">
+                <label class="control-label" for="settings-serialMaxTimeoutsIdle">{{ _('Max. consecutive timeouts while idle') }}</label>
+                <div class="controls">
+                    <input type="number" min="0" class="input-mini text-right" id="settings-serialMaxTimeoutsIdle" data-bind="value: serial_maxTimeoutsIdle">
+                </div>
+            </div>
+            <div class="control-group" title="{{ _('Maximum consecutive communication timeouts while printing. More than this and the printer will be considered to be gone. Set to 0 to disable.') }}">
+                <label class="control-label" for="settings-serialMaxTimeoutsPrinting">{{ _('Max. consecutive timeouts while printing') }}</label>
+                <div class="controls">
+                    <input type="number" min="0" class="input-mini text-right" id="settings-serialMaxTimeoutsPrinting" data-bind="value: serial_maxTimeoutsPrinting">
+                </div>
+            </div>
+            <div class="control-group" title="{{ _('Maximum consecutive communication timeouts while a long running command is active. More than this and the printer will be considered to be gone. Set to 0 to disable.') }}">
+                <label class="control-label" for="settings-serialMaxTimeoutsLong">{{ _('Max. consecutive timeouts during long running commands') }}</label>
+                <div class="controls">
+                    <input type="number" min="0" class="input-mini text-right" id="settings-serialMaxTimeoutsLong" data-bind="value: serial_maxTimeoutsLong">
+                </div>
+            </div>
         </div>
     </div>
 

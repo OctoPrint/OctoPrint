@@ -73,6 +73,7 @@ $(function() {
         self.allItems = ko.observable(undefined);
         self.listStyle = ko.observable("folders_files");
         self.currentPath = ko.observable("");
+        self.uploadProgressText = ko.observable();
 
         // initialize list helper
         self.listHelper = new ItemListHelper(
@@ -795,8 +796,58 @@ $(function() {
             self.requestData(undefined, undefined, self.currentPath());
         };
 
+        self.onEventSlicingStarted = function(payload) {
+            self.uploadProgress
+                .addClass("progress-striped")
+                .addClass("active");
+            self.uploadProgressBar.css("width", "100%");
+            if (payload.progressAvailable) {
+                self.uploadProgressText(_.sprintf(gettext("Slicing ... (%(percentage)d%%)"), {percentage: 0}));
+            } else {
+                self.uploadProgressText(gettext("Slicing ..."));
+            }
+        };
+
+        self.onSlicingProgress = function(slicer, modelPath, machinecodePath, progress) {
+            self.uploadProgressText(_.sprintf(gettext("Slicing ... (%(percentage)d%%)"), {percentage: Math.round(progress)}));
+        };
+
+        self.onEventSlicingCancelled = function(payload) {
+            self.uploadProgress
+                .removeClass("progress-striped")
+                .removeClass("active");
+            self.uploadProgressBar
+                .css("width", "0%");
+            self.uploadProgressText("");
+        };
+
         self.onEventSlicingDone = function(payload) {
+            self.uploadProgress
+                .removeClass("progress-striped")
+                .removeClass("active");
+            self.uploadProgressBar
+                .css("width", "0%");
+            self.uploadProgressText("");
+
+            new PNotify({
+                title: gettext("Slicing done"),
+                text: _.sprintf(gettext("Sliced %(stl)s to %(gcode)s, took %(time).2f seconds"), payload),
+                type: "success"
+            });
+
             self.requestData(undefined, undefined, self.currentPath());
+        };
+
+        self.onEventSlicingFailed = function(payload) {
+            self.uploadProgress
+                .removeClass("progress-striped")
+                .removeClass("active");
+            self.uploadProgressBar
+                .css("width", "0%");
+            self.uploadProgressText("");
+
+            var html = _.sprintf(gettext("Could not slice %(stl)s to %(gcode)s: %(reason)s"), payload);
+            new PNotify({title: gettext("Slicing failed"), text: html, type: "error", hide: false});
         };
 
         self.onEventMetadataAnalysisFinished = function(payload) {
@@ -807,7 +858,29 @@ $(function() {
             self.requestData(undefined, undefined, self.currentPath());
         };
 
+        self.onEventTransferStarted = function(payload) {
+            self.uploadProgress
+                .addClass("progress-striped")
+                .addClass("active");
+            self.uploadProgressBar
+                .css("width", "100%");
+            self.uploadProgressText(gettext("Streaming ..."));
+        };
+
         self.onEventTransferDone = function(payload) {
+            self.uploadProgress
+                .removeClass("progress-striped")
+                .removeClass("active");
+            self.uploadProgressBar
+                .css("width", "0");
+            self.uploadProgressText("");
+
+            new PNotify({
+                title: gettext("Streaming done"),
+                text: _.sprintf(gettext("Streamed %(local)s to %(remote)s on SD, took %(time).2f seconds"), payload),
+                type: "success"
+            });
+
             self.requestData(undefined, payload.remote, "sdcard");
         };
 
@@ -858,8 +931,8 @@ $(function() {
 
         self._setProgressBar = function(percentage, text, active) {
             self.uploadProgressBar
-                .css("width", percentage + "%")
-                .text(text);
+                .css("width", percentage + "%");
+            self.uploadProgressText(text);
 
             if (active) {
                 self.uploadProgress

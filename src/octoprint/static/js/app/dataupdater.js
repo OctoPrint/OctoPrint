@@ -177,48 +177,7 @@ function DataUpdater(allViewModels) {
 
         log.debug("Got event " + type + " with payload: " + JSON.stringify(payload));
 
-        if (type == "SettingsUpdated") {
-            if (payload && payload.hasOwnProperty("config_hash")) {
-                self._configHash = payload.config_hash;
-            }
-        } else if (type == "SlicingStarted") {
-            gcodeUploadProgress.addClass("progress-striped").addClass("active");
-            gcodeUploadProgressBar.css("width", "100%");
-            if (payload.progressAvailable) {
-                gcodeUploadProgressBar.text(_.sprintf(gettext("Slicing ... (%(percentage)d%%)"), {percentage: 0}));
-            } else {
-                gcodeUploadProgressBar.text(gettext("Slicing ..."));
-            }
-        } else if (type == "SlicingDone") {
-            gcodeUploadProgress.removeClass("progress-striped").removeClass("active");
-            gcodeUploadProgressBar.css("width", "0%");
-            gcodeUploadProgressBar.text("");
-            new PNotify({title: gettext("Slicing done"), text: _.sprintf(gettext("Sliced %(stl)s to %(gcode)s, took %(time).2f seconds"), payload), type: "success"});
-        } else if (type == "SlicingCancelled") {
-            gcodeUploadProgress.removeClass("progress-striped").removeClass("active");
-            gcodeUploadProgressBar.css("width", "0%");
-            gcodeUploadProgressBar.text("");
-        } else if (type == "SlicingFailed") {
-            gcodeUploadProgress.removeClass("progress-striped").removeClass("active");
-            gcodeUploadProgressBar.css("width", "0%");
-            gcodeUploadProgressBar.text("");
-
-            html = _.sprintf(gettext("Could not slice %(stl)s to %(gcode)s: %(reason)s"), payload);
-            new PNotify({title: gettext("Slicing failed"), text: html, type: "error", hide: false});
-        } else if (type == "TransferStarted") {
-            gcodeUploadProgress.addClass("progress-striped").addClass("active");
-            gcodeUploadProgressBar.css("width", "100%");
-            gcodeUploadProgressBar.text(gettext("Streaming ..."));
-        } else if (type == "TransferDone") {
-            gcodeUploadProgress.removeClass("progress-striped").removeClass("active");
-            gcodeUploadProgressBar.css("width", "0%");
-            gcodeUploadProgressBar.text("");
-            new PNotify({
-                title: gettext("Streaming done"),
-                text: _.sprintf(gettext("Streamed %(local)s to %(remote)s on SD, took %(time).2f seconds"), payload),
-                type: "success"
-            });
-        } else if (type == "PrintCancelled") {
+        if (type == "PrintCancelled") {
             if (payload.firmwareError) {
                 new PNotify({
                     title: gettext("Unhandled communication error"),

@@ -94,6 +94,12 @@ default_settings = {
 			"temperatureTargetSet": 2,
 			"sdStatus": 1
 		},
+		"maxCommunicationTimeouts": {
+			"idle": 2,
+			"printing": 5,
+			"long": 5
+		},
+		"maxWritePasses": 5,
 		"additionalPorts": [],
 		"additionalBaudrates": [],
 		"longRunningCommands": ["G4", "G28", "G29", "G30", "G32", "M400", "M226"],
@@ -291,6 +297,15 @@ default_settings = {
 				"disable_hotends": "{% for tool in range(printer_profile.extruder.count) %}M104 T{{ tool }} S0\n{% endfor %}",
 				"disable_bed": "{% if printer_profile.heatedBed %}M140 S0\n{% endif %}"
 			}
+		}
+	},
+	"estimation": {
+		"printTime": {
+			"statsWeighingUntil": 0.5,
+			"validityRange": 0.15,
+			"forceDumbFromPercent": 0.3,
+			"forceDumbAfterMin": 30,
+			"stableThreshold": 60
 		}
 	},
 	"devel": {

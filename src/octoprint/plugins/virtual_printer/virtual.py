@@ -97,6 +97,8 @@ class VirtualPrinter(object):
 
 		self._incoming_lock = threading.RLock()
 
+		self._debug_awol = False
+		self._debug_sleep = None
 		self._sleepAfterNext = dict()
 		self._sleepAfter = dict()
 
@@ -485,6 +487,8 @@ class VirtualPrinter(object):
 
 			dont_answer
 			| Will not acknowledge the next command.
+			go_awol
+			| Will completely stop replying
 			trigger_resend_lineno
 			| Triggers a resend error with a line number mismatch
 			trigger_resend_checksum
@@ -518,7 +522,10 @@ class VirtualPrinter(object):
 		elif data == "drop_connection":
 			self._debug_drop_connection = True
 		elif data == "maxtemp_error":
-			self.outgoing.put("Error: MAXTEMP triggered!")
+			self._output("Error: MAXTEMP triggered!")
+		elif data == "go_awol":
+			self._output("// Going AWOL")
+			self._debug_awol = True
 		else:
 			try:
 				sleep_match = VirtualPrinter.sleep_regex.match(data)
@@ -529,7 +536,7 @@ class VirtualPrinter(object):
 				if sleep_match is not None:
 					interval = int(sleep_match.group(1))
 					self._send("// sleeping for {interval} seconds".format(interval=interval))
-					time.sleep(interval)
+					self._debug_sleep = interval
 				elif sleep_after_match is not None:
 					command = sleep_after_match.group(1)
 					interval = int(sleep_after_match.group(2))
@@ -769,7 +776,7 @@ class VirtualPrinter(object):
 		try:
 			handle = open(file, "w")
 		except:
-			self.outgoing.put("error writing to file")
+			self._output("error writing to file")
 			if handle is not None:
 				try:
 					handle.close()
@@ -789,7 +796,7 @@ class VirtualPrinter(object):
 			self._writingToSdHandle = None
 		self._writingToSd = False
 		self._selectedSdFile = None
-		self.outgoing.put("Done saving file")
+		self._output("Done saving file")
 
 	def _sdPrintingWorker(self):
 		self._selectedSdFilePos = 0
@@ -827,7 +834,7 @@ class VirtualPrinter(object):
 			self._sdPrintingSemaphore.clear()
 			self._selectedSdFilePos = 0
 			self._sdPrinter = None
-			self.outgoing.put("Done printing file")
+			self._output("Done printing file")
 
 	def _waitForHeatup(self, heater):
 		delta = 1
@@ -838,12 +845,12 @@ class VirtualPrinter(object):
 				toolNum = int(heater[len("tool"):])
 				while not self._killed and (self.temp[toolNum] < self.targetTemp[toolNum] - delta or self.temp[toolNum] > self.targetTemp[toolNum] + delta):
 					self._simulateTemps(delta=delta)
-					self.outgoing.put("T:%0.2f" % self.temp[toolNum])
+					self._output("T:%0.2f" % self.temp[toolNum])
 					time.sleep(delay)
 			elif heater == "bed":
 				while not self._killed and (self.bedTemp < self.bedTargetTemp - delta or self.bedTemp > self.bedTargetTemp + delta):
 					self._simulateTemps(delta=delta)
-					self.outgoing.put("B:%0.2f" % self.bedTemp)
+					self._output("B:%0.2f" % self.bedTemp)
 					time.sleep(delay)
 		except AttributeError:
 			if self.outgoing is not None:
@@ -890,7 +897,17 @@ class VirtualPrinter(object):
 
 		self._logger.info("Closing down buffer loop")
 
+	def _output(self, line):
+		try:
+			self.outgoing.put(line)
+		except:
+			if self.outgoing is None:
+				pass
+
 	def write(self, data):
+		if self._debug_awol:
+			return len(data)
+
 		if self._debug_drop_connection:
 			self._logger.info("Debug drop of connection requested, raising SerialTimeoutException")
 			raise SerialTimeoutException()
@@ -913,15 +930,40 @@ class VirtualPrinter(object):
 				raise SerialTimeoutException()
 
 	def readline(self):
+		if self._debug_awol:
+			time.sleep(self._read_timeout)
+			return ""
+
 		if self._debug_drop_connection:
 			raise SerialTimeoutException()
 
+		if self._debug_sleep > 0:
+			# if we are supposed to sleep, we sleep not longer than the read timeout
+			# (and then on the next call sleep again if there's time to sleep left)
+			sleep_for = min(self._debug_sleep, self._read_timeout)
+			self._debug_sleep -= sleep_for
+			time.sleep(sleep_for)
+
+			if self._debug_sleep > 0:
+				# we slept the full read timeout, return an empty line
+				return ""
+
+			# otherwise our left over timeout is the read timeout minus what we already
+			# slept for
+			timeout = self._read_timeout - sleep_for
+
+		else:
+			# use the full read timeout as timeout
+			timeout = self._read_timeout
+
 		try:
-			line = self.outgoing.get(timeout=self._read_timeout)
+			# fetch a line from the queue, wait no longer than timeout
+			line = self.outgoing.get(timeout=timeout)
 			self._seriallog.info(">>> {}".format(line.strip()))
 			self.outgoing.task_done()
 			return line
 		except queue.Empty:
+			# queue empty? return empty line
 			return ""
 
 	def close(self):
@@ -961,7 +1003,8 @@ class CharCountingQueue(queue.Queue):
 		try:
 			if not self._will_it_fit(item) and partial:
 				space_left = self.maxsize - self._qsize()
-				item = item[:space_left]
+				if space_left:
+					item = item[:space_left]
 
 			if not block:
 				if not self._will_it_fit(item):

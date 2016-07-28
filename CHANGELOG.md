@@ -74,6 +74,43 @@
 * [#1047](https://github.com/foosel/OctoPrint/issues/1047) - Fixed 90 degree
   webcam rotation for iOS Safari.
 
+## 1.2.14 (2016-07-28)
+
+### Improvements
+
+  * [#935](https://github.com/foosel/OctoPrint/issues/935) - Support alternative source file types and target extensions in [SlicerPlugins](http://docs.octoprint.org/en/master/plugins/mixins.html#slicerplugin).
+  * [#1393](https://github.com/foosel/OctoPrint/issues/1393) - Added dedicated sub commands on the job API to pause and resume a print job (instead of only offering a toggle option).
+  * Better "upload error" message with a list of supported extensions (instead of hardcoded ones)
+  * Use fuzzy times for print time estimation from GCODE analysis
+  * Allow M23 "File opened" response with no filename (RepRapPro)
+  * Allow intermediary startup page to forward query parameters and fragments from initial call to actual web frontend
+  * More error resilience when rendering templates (e.g. from plugins)
+  * Make sure that all bytes of a line to send to the printer have actually been sent
+  * "Tickle" printer when encountering a communication timeout while idle
+  * Report `CLOSED`/`CLOSED_WITH_ERROR` states as "Offline" in frontend for more consistency with startup `NONE` state which already was reported as "Offline"
+  * Another attempt at a saner print time estimation: Force linear (way less accurate) estimate if calculation of more accurate version takes too long, sanity check calculated estimate and use linear estimate if it looks wrong, improved threshold values for calculation. Read [the second half of this post on the mailing list](https://groups.google.com/forum/#!msg/octoprint/WWpm1FCUkAs/X3HomTM5DgAJ) on why accurate print time estimation is so difficult to achieve.
+  * Display print job progress percentage on progress bar.
+  * Added an indicator for print time left prediction accuracy and explanation of its origin as tooltip.
+  * Improved visual distinction of "State" sidebar panel info clusters.
+
+### Bug Fixes
+
+  * [#1385](https://github.com/foosel/OctoPrint/issues/1385) - Send all non-protocol messages from printer to clients.
+  * [#1388](https://github.com/foosel/OctoPrint/issues/1388) - Track consecutive timeouts even when idle and disconnect from printer when it's not responding any longer.
+  * [#1391](https://github.com/foosel/OctoPrint/issues/1391) - Only use the first value from the X-Scheme header for the reverse proxy setup. Otherwise there could be problems when multiple reverse proxies were configured chained together, each adding their own header to the mix.
+  * [#1407](https://github.com/foosel/OctoPrint/issues/1407) - If a file is uploaded with the "print" flag set to true, make sure to clear that flag after the print job has been triggered so that now all following uploaded or selected files will start printing on their own.
+  * [#1409](https://github.com/foosel/OctoPrint/issues/1409) - Don't report a communication timeout after a heatup triggered by a print from SD.
+  * Fixed scrolling to freshly uploaded files, also now highlighting the file entry for better visibility.
+  * Fixed overeager preemptive caching of invalid protocols.
+  * Fix modal background of update confirmation not vanishing
+  * Ensure log entries and messages from printer are sent to frontend already converted to utf-8. Otherwise even one line in the log that can't be converted automatically without error can cause updates from the backend to not arrive.
+  * Report correct printer state including error strings even after disconnecting
+  * While printing, be sure to read the next line from file and send that if the current line was filtered
+  * Small fixes in the GCODE analysis
+  * Small fixes in the documentation
+
+([Commits](https://github.com/foosel/OctoPrint/compare/1.2.13...1.2.14))
+
 ## 1.2.13 (2016-06-16)
 
 ### Bug Fixes

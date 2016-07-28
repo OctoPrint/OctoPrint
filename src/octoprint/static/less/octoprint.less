@@ -491,6 +491,14 @@ ul.dropdown-menu li a {
   }
 }
 
+/** State sidebar panel */
+
+#state_wrapper {
+  hr {
+    margin: 5px 0;
+  }
+}
+
 /** GCODE file manager */
 
 #files {
@@ -1070,4 +1078,56 @@ _::-webkit-full-page-media, _:future, :root .full-sized-box {
 
 input[type=number] {
   text-align: right;
+}
+
+// Progress bars with text
+//
+// .progress-text-front will also need to have the full width of the enclosing
+// progress wrapper applied (e.g. via copyWidth knockout binding)
+
+.progress-text,
+.progress-text-centered {
+  position: relative;
+
+  .progress-text-front,
+  .progress-text-back {
+    white-space: nowrap;
+  }
+
+  .progress-text-front {
+    box-sizing: border-box;
+    padding: 0 10px;
+    width: 100%;
+    display: block;
+  }
+
+  .progress-text-back {
+    position: absolute;
+    font-size: 12px;
+    line-height: 20px;
+    display: block;
+    box-sizing: border-box;
+    text-align: center;
+    padding: 0 10px;
+  }
+
+  .bar {
+    position: absolute;
+    overflow: hidden;
+  }
+}
+
+.progress-text-centered {
+  .progress-text-front {
+    position: absolute;
+    font-size: 12px;
+    line-height: 20px;
+    display: block;
+    text-align: center;
+    color: #fff;
+  }
+
+  .progress-text-back {
+    width: 100%;
+  }
 }

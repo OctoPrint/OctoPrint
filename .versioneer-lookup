@@ -16,11 +16,11 @@ rc
 HEAD
 \(detached.*
 
-# maintenance is currently the branch for preparation of maintenance release 1.2.14
+# maintenance is currently the branch for preparation of maintenance release 1.2.15
 # so are any fix/... and improve/... branches
-maintenance 1.2.14 cb2e0d449f607bbc89c7ad13c983a0cf11bbfdee pep440-dev
-fix/.* 1.2.14 cb2e0d449f607bbc89c7ad13c983a0cf11bbfdee pep440-dev
-improve/.* 1.2.14 cb2e0d449f607bbc89c7ad13c983a0cf11bbfdee pep440-dev
+maintenance 1.2.15 14969e5508b7b66f38abaf0f96bb7dc5b9ebe929 pep440-dev
+fix/.* 1.2.15 14969e5508b7b66f38abaf0f96bb7dc5b9ebe929 pep440-dev
+improve/.* 1.2.15 14969e5508b7b66f38abaf0f96bb7dc5b9ebe929 pep440-dev
 
 # every other branch is a development branch and thus gets resolved to 1.3.0-dev for now
 .* 1.3.0 198d3450d94be1a2 pep440-dev
