@@ -2036,11 +2036,21 @@ class MachineCom(object):
 			old_written = written
 
 			try:
-				written += self._serial.write(to_send)
+				result = self._serial.write(to_send)
+				if result is None or not isinstance(result, int):
+					# probably some plugin not returning the written bytes, assuming all of them
+					written += len(cmd)
+				else:
+					written += result
 			except serial.SerialTimeoutException:
 				self._log("Serial timeout while writing to serial port, trying again.")
 				try:
-					written += self._serial.write(to_send)
+					result = self._serial.write(to_send)
+					if result is None or not isinstance(result, int):
+						# probably some plugin not returning the written bytes, assuming all of them
+						written += len(cmd)
+					else:
+						written += result
 				except:
 					if not self._connection_closing:
 						self._logger.exception("Unexpected error while writing to serial port")
