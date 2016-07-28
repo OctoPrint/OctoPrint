@@ -8,7 +8,7 @@
 {{ _('Approx. Total Print Time') }}: <strong data-bind="text: estimatedPrintTimeString"></strong><br>
 <hr>
 {{ _('Print Time') }}: <strong data-bind="text: printTimeString"></strong><br>
-{{ _('Print Time Left') }}: <strong data-bind="text: printTimeLeftString"></strong> <span id="state_printtimeleft_popover" style="display: none" data-bind="visible: printTimeLeftOrigin, attr: {title: printTimeLeftOriginString}"><i class="icon-info-sign" data-bind="css: printTimeLeftOriginClass"></i></span><br>
+{{ _('Print Time Left') }}: <strong data-bind="text: printTimeLeftString"></strong> <span id="state_printtimeleft_popover" style="display: none" data-bind="visible: printTimeLeftOrigin, attr: {title: printTimeLeftOriginString}, css: printTimeLeftOriginClass">&#9679;</span><br>
 {{ _('Printed') }}: <strong data-bind="text: byteString"></strong><br>
 
 <div class="progress progress-text-centered">
