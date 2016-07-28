@@ -918,6 +918,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		"""
 		oldState = self._state
 
+		state_string = None
 		if self._comm is not None:
 			state_string = self._comm.getStateString()
 
