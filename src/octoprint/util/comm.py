@@ -1321,7 +1321,7 @@ class MachineCom(object):
 
 		elif self._resendActive:
 			# resend active, resend same command instead of triggering a new one
-			message = "Communication timeout while printing and during an active resend, resending same line again to trigger response from printer."
+			message = "Communication timeout during an active resend, resending same line again to trigger response from printer."
 			self._logger.info(message)
 			self._log(message + " " + general_message)
 			if self._resendSameCommand():
@@ -1779,7 +1779,7 @@ class MachineCom(object):
 				self._handle_ok()
 
 	def _resendSameCommand(self):
-		self._resendNextCommand(again=True)
+		return self._resendNextCommand(again=True)
 
 	def _resendNextCommand(self, again=False):
 		self._lastCommError = None
