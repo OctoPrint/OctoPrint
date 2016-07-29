@@ -975,10 +975,7 @@ class MachineCom(object):
 					break
 				if line.strip() is not "":
 					self._consecutive_timeouts = 0
-					if self._heating:
-						self._timeout = get_new_timeout("heatup", self._timeout_intervals)
-					else:
-						self._timeout = get_new_timeout("communication", self._timeout_intervals)
+					self._timeout = get_new_timeout("communication", self._timeout_intervals)
 
 				##~~ debugging output handling
 				if line.startswith("//"):
@@ -1081,7 +1078,8 @@ class MachineCom(object):
 				elif ' T:' in line or line.startswith('T:') or ' T0:' in line or line.startswith('T0:') or ((' B:' in line or line.startswith('B:')) and not 'A:' in line):
 					if not disable_external_heatup_detection and not line.strip().startswith("ok") and not self._heating:
 						self._logger.debug("Externally triggered heatup detected")
-						self._track_heatup()
+						self._heating = True
+						self._heatupWaitStartTime = time.time()
 					self._processTemperatures(line)
 					self._callback.on_comm_temperature_update(self._temp, self._bedTemp)
 
@@ -1352,17 +1350,11 @@ class MachineCom(object):
 			self._log(message + " " + general_message)
 			self._clear_to_send.set()
 
-	def _track_heatup(self):
-		self._heating = True
-		self._heatupWaitStartTime = time.time()
-		self._serial.timeout = settings().getFloat(["serial", "timeout", "heatup"])
-
 	def _finish_heatup(self):
 		if self._heatupWaitStartTime:
 			self._heatupWaitTimeLost = self._heatupWaitTimeLost + (time.time() - self._heatupWaitStartTime)
 			self._heatupWaitStartTime = None
 			self._heating = False
-			self._serial.timeout = settings().getFloat(["serial", "timeout", "communication"])
 
 	def _continue_sending(self):
 		while self._active:
@@ -2152,13 +2144,15 @@ class MachineCom(object):
 				pass
 
 	def _gcode_M109_sent(self, cmd, cmd_type=None):
+		self._heatupWaitStartTime = time.time()
 		self._long_running_command = True
-		self._track_heatup()
+		self._heating = True
 		self._gcode_M104_sent(cmd, cmd_type, wait=True)
 
 	def _gcode_M190_sent(self, cmd, cmd_type=None):
+		self._heatupWaitStartTime = time.time()
 		self._long_running_command = True
-		self._track_heatup()
+		self._heating = True
 		self._gcode_M140_sent(cmd, cmd_type, wait=True)
 
 	def _gcode_M110_sending(self, cmd, cmd_type=None):
