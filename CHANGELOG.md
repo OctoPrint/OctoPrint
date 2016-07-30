@@ -74,6 +74,20 @@
 * [#1047](https://github.com/foosel/OctoPrint/issues/1047) - Fixed 90 degree
   webcam rotation for iOS Safari.
 
+## 1.2.15 (2016-07-30)
+
+### Improvements
+
+  * [#1425](https://github.com/foosel/OctoPrint/issues/1425) - Added a compatibility work around for plugins implementing the [`octoprint.comm.transport.serial_factory` hook](http://docs.octoprint.org/en/master/plugins/hooks.html#octoprint-comm-transport-serial-factory) but whose handler's `write` method did not return the number of written bytes (e.g. [GPX plugin including v2.5.2](http://plugins.octoprint.org/plugins/gpx/), [M33 Fio plugin including v1.2](http://plugins.octoprint.org/plugins/m33fio/)).
+
+### Bug Fixes
+
+  * [#1423](https://github.com/foosel/OctoPrint/issues/1423) - Fixed an issue with certain printers dropping or garbling communication when setting the read timeout of the serial line. Removed the dynamic timeout setting introduced by [#1409](https://github.com/foosel/OctoPrint/issues/1409) to solve this.
+  * [#1425](https://github.com/foosel/OctoPrint/issues/1425) - Fixed an error when trying to close a printer connection that had not yet been opened and was `None`
+  * Fixed "Last Modified" header calculation for views where only one source file was present
+
+([Commits](https://github.com/foosel/OctoPrint/compare/1.2.14...1.2.15))
+
 ## 1.2.14 (2016-07-28)
 
 ### Improvements
