@@ -313,7 +313,7 @@ class LocalFileStorage(StorageInterface):
 
 		from slugify import Slugify
 		self._slugify = Slugify()
-		self._slugify.safe_chars = "-_.() "
+		self._slugify.safe_chars = "-_.()[] "
 
 		self._old_metadata = None
 		self._initialize_metadata()
