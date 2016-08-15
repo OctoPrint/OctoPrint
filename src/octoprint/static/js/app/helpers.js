@@ -363,7 +363,7 @@ function bytesFromSize(size) {
 
 function formatDuration(seconds) {
     if (!seconds) return "-";
-    if (seconds < 0) return "00:00:00";
+    if (seconds < 1) return "00:00:00";
 
     var s = seconds % 60;
     var m = (seconds % 3600) / 60;
@@ -373,8 +373,7 @@ function formatDuration(seconds) {
 }
 
 function formatFuzzyEstimation(seconds, base) {
-    if (!seconds) return "-";
-    if (seconds < 0) return "-";
+    if (!seconds || seconds < 1) return "-";
 
     var m;
     if (base != undefined) {
@@ -388,14 +387,30 @@ function formatFuzzyEstimation(seconds, base) {
 }
 
 function formatFuzzyPrintTime(totalSeconds) {
-    if (!totalSeconds || totalSeconds < 0) return "-";
+    /**
+     * Formats a print time estimate in a very fuzzy way.
+     *
+     * Accuracy decreases the higher the estimation is:
+     *
+     *   * less than 30s: "a couple of seconds"
+     *   * 30s to a minute: "less than a minute"
+     *   * 1 to 30min: rounded to full minutes, above 30s is minute + 1 ("27 minutes", "2 minutes")
+     *   * 30min to 40min: "40 minutes"
+     *   * 40min to 50min: "50 minutes"
+     *   * 50min to 1h: "1 hour"
+     *   * 1 to 12h: rounded to half hours, 15min to 45min is ".5", above that hour + 1 ("4 hours", "2.5 hours")
+     *   * 12 to 24h: rounded to full hours, above 30min is hour + 1, over 23.5h is "1 day"
+     *   * Over a day: rounded to half days, 8h to 16h is ".5", above that days + 1 ("1 day", "4 days", "2.5 days")
+     */
+
+    if (!totalSeconds || totalSeconds < 1) return "-";
 
     var d = moment.duration(totalSeconds, "seconds");
 
     var seconds = d.seconds();
     var minutes = d.minutes();
     var hours = d.hours();
-    var days = d.days();
+    var days = d.asDays();
 
     var replacements = {
         days: days,
@@ -409,10 +424,10 @@ function formatFuzzyPrintTime(totalSeconds) {
 
     if (days >= 1) {
         // days
-        if (hours >= 14) {
+        if (hours >= 16) {
             replacements.days += 1;
             text = gettext("%(days)d days");
-        } else if (hours > 10 && hours < 14) {
+        } else if (hours >= 8 && hours < 16) {
             text = gettext("%(days)d.5 days");
         } else {
             if (days == 1) {
@@ -421,32 +436,44 @@ function formatFuzzyPrintTime(totalSeconds) {
                 text = gettext("%(days)d days");
             }
         }
-    } else if (days == 0 && hours >= 1) {
+    } else if (hours >= 1) {
         // only hours
-        if (hours == 1) {
-            // between 1 and 2 hours, slightly different rules than for other hours
-            if (minutes <= 10) {
-                text = gettext("1 hour");
-            } else if (minutes > 10 && minutes <= 30) {
-                text = gettext("1.5 hours");
-            } else {
-                text = gettext("2 hours");
-            }
-        } else {
-            // over two hours
+        if (hours < 12) {
             if (minutes < 15) {
-                text = gettext("%(hours)d hours");
+                // less than .15 => .0
+                if (hours == 1) {
+                    text = gettext("%(hours)d hour");
+                } else {
+                    text = gettext("%(hours)d hours");
+                }
             } else if (minutes >= 15 && minutes < 45) {
+                // between .25 and .75 => .5
                 text = gettext("%(hours)d.5 hours");
             } else {
+                // over .75 => hours + 1
                 replacements.hours += 1;
                 text = gettext("%(hours)d hours");
             }
+        } else {
+            if (hours == 23 && minutes > 30) {
+                // over 23.5 hours => 1 day
+                text = gettext("1 day");
+            } else {
+                if (minutes > 30) {
+                    // over .5 => hours + 1
+                    replacements.hours += 1;
+                }
+                text = gettext("%(hours)d hours");
+            }
         }
-    } else if (days == 0 && hours == 0 && minutes >= 1) {
+    } else if (minutes >= 1) {
         // only minutes
         if (minutes < 2) {
-            text = gettext("a minute");
+            if (seconds < 30) {
+                text = gettext("a minute");
+            } else {
+                text = gettext("2 minutes");
+            }
         } else if (minutes < 30) {
             if (seconds > 30) {
                 replacements.minutes += 1;
