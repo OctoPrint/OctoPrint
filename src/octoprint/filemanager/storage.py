@@ -625,7 +625,7 @@ class LocalFileStorage(StorageInterface):
 			raise ValueError("name must not contain / or \\")
 
 		result = self._slugify(name).replace(" ", "_")
-		if result.startswith("."):
+		if result and result != "." and result != ".." and result[0] == ".":
 			# hidden files under *nix
 			result = result[1:]
 		return result
@@ -636,8 +636,11 @@ class LocalFileStorage(StorageInterface):
 		relative path elements (e.g. ``..``) and sanitizes folder names using :func:`sanitize_name`. Final path is the
 		absolute path including leading ``basefolder`` path.
 		"""
-		if path[0] == "/" or path[0] == ".":
+		if path[0] == "/":
 			path = path[1:]
+		elif path[0] == "." and path[1] == "/":
+			path = path[2:]
+
 		path_elements = path.split("/")
 		joined_path = self.basefolder
 		for path_element in path_elements:
