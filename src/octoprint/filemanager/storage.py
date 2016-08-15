@@ -624,7 +624,11 @@ class LocalFileStorage(StorageInterface):
 		if "/" in name or "\\" in name:
 			raise ValueError("name must not contain / or \\")
 
-		return self._slugify(name).replace(" ", "_")
+		result = self._slugify(name).replace(" ", "_")
+		if result.startswith("."):
+			# hidden files under *nix
+			result = result[1:]
+		return result
 
 	def sanitize_path(self, path):
 		"""
