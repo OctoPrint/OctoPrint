@@ -10,6 +10,7 @@ import logging
 import os
 import pylru
 import tempfile
+import shutil
 
 import octoprint.filemanager
 
@@ -894,6 +895,28 @@ class LocalFileStorage(StorageInterface):
 				continue
 
 			entry_path = os.path.join(path, entry)
+
+			sanitized = self.sanitize_name(entry)
+			if sanitized != entry:
+				# entry is not sanitized yet, let's take care of that
+				sanitized_path = os.path.join(path, sanitized)
+				sanitized_name, sanitized_ext = os.path.splitext(sanitized)
+
+				counter = 1
+				while os.path.exists(sanitized_path):
+					counter += 1
+					sanitized = self.sanitize_name("{}_({}){}".format(sanitized_name, counter, sanitized_ext))
+					sanitized_path = os.path.join(path, sanitized)
+
+				try:
+					shutil.move(entry_path, sanitized_path)
+
+					self._logger.info("Sanitized \"{}\" to \"{}\"".format(entry_path, sanitized_path))
+					entry = sanitized
+					entry_path = sanitized_path
+				except:
+					self._logger.exception("Error while trying to rename \"{}\" to \"{}\", ignoring file".format(entry_path, sanitized_path))
+					continue
 
 			# file handling
 			if os.path.isfile(entry_path):
