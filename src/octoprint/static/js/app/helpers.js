@@ -387,6 +387,90 @@ function formatFuzzyEstimation(seconds, base) {
     return m.fromNow(true);
 }
 
+function formatFuzzyPrintTime(totalSeconds) {
+    if (!totalSeconds || totalSeconds < 0) return "-";
+
+    var d = moment.duration(totalSeconds, "seconds");
+
+    var seconds = d.seconds();
+    var minutes = d.minutes();
+    var hours = d.hours();
+    var days = d.days();
+
+    var replacements = {
+        days: days,
+        hours: hours,
+        minutes: minutes,
+        seconds: seconds,
+        totalSeconds: totalSeconds
+    };
+
+    var text = "-";
+
+    if (days >= 1) {
+        // days
+        if (hours >= 14) {
+            replacements.days += 1;
+            text = gettext("%(days)d days");
+        } else if (hours > 10 && hours < 14) {
+            text = gettext("%(days)d.5 days");
+        } else {
+            if (days == 1) {
+                text = gettext("%(days)d day");
+            } else {
+                text = gettext("%(days)d days");
+            }
+        }
+    } else if (days == 0 && hours >= 1) {
+        // only hours
+        if (hours == 1) {
+            // between 1 and 2 hours, slightly different rules than for other hours
+            if (minutes <= 10) {
+                text = gettext("1 hour");
+            } else if (minutes > 10 && minutes <= 30) {
+                text = gettext("1.5 hours");
+            } else {
+                text = gettext("2 hours");
+            }
+        } else {
+            // over two hours
+            if (minutes < 15) {
+                text = gettext("%(hours)d hours");
+            } else if (minutes >= 15 && minutes < 45) {
+                text = gettext("%(hours)d.5 hours");
+            } else {
+                replacements.hours += 1;
+                text = gettext("%(hours)d hours");
+            }
+        }
+    } else if (days == 0 && hours == 0 && minutes >= 1) {
+        // only minutes
+        if (minutes < 2) {
+            text = gettext("a minute");
+        } else if (minutes < 30) {
+            if (seconds > 30) {
+                replacements.minutes += 1;
+            }
+            text = gettext("%(minutes)d minutes");
+        } else if (minutes <= 40) {
+            text = gettext("40 minutes");
+        } else if (minutes <= 50) {
+            text = gettext("50 minutes");
+        } else {
+            text = gettext("1 hour");
+        }
+    } else {
+        // only seconds
+        if (seconds < 30) {
+            text = gettext("a couple of seconds");
+        } else {
+            text = gettext("less than a minute");
+        }
+    }
+
+    return _.sprintf(text, replacements);
+}
+
 function formatDate(unixTimestamp) {
     if (!unixTimestamp) return "-";
     return moment.unix(unixTimestamp).format(gettext(/* L10N: Date format */ "YYYY-MM-DD HH:mm"));
