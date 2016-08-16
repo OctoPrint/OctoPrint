@@ -796,15 +796,16 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 				printTimeLeft = dumbTotalPrintTime - cleanedPrintTime
 				printTimeLeftOrigin = "linear"
 
-		elif progress > self._timeEstimationForceDumbFromPercent or \
-				cleanedPrintTime * 60 >= self._timeEstimationForceDumbAfterMin:
-			# more than x% or y min printed and still no real estimate, ok, we'll use the dumb variant :/
-			printTimeLeft = dumbTotalPrintTime - cleanedPrintTime
+		else:
 			printTimeLeftOrigin = "linear"
+			if progress > self._timeEstimationForceDumbFromPercent or \
+					cleanedPrintTime >= self._timeEstimationForceDumbAfterMin * 60:
+				# more than x% or y min printed and still no real estimate, ok, we'll use the dumb variant :/
+				printTimeLeft = dumbTotalPrintTime - cleanedPrintTime
 
-		if printTimeLeft < 0:
+		if printTimeLeft is not None and printTimeLeft < 0:
 			# shouldn't actually happen, but let's make sure
-			return None, None
+			printTimeLeft = None
 
 		return printTimeLeft, printTimeLeftOrigin
 

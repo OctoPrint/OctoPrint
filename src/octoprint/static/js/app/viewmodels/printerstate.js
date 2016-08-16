@@ -53,9 +53,9 @@ $(function() {
 
         self.estimatedPrintTimeString = ko.pureComputed(function() {
             if (self.lastPrintTime())
-                return formatFuzzyEstimation(self.lastPrintTime());
+                return formatFuzzyPrintTime(self.lastPrintTime());
             if (self.estimatedPrintTime())
-                return formatFuzzyEstimation(self.estimatedPrintTime());
+                return formatFuzzyPrintTime(self.estimatedPrintTime());
             return "-";
         });
         self.byteString = ko.pureComputed(function() {
@@ -79,17 +79,17 @@ $(function() {
                 if (!self.printTime() || !(self.isPrinting() || self.isPaused())) {
                     return "-";
                 } else {
-                    return gettext("Calculating...");
+                    return gettext("Still stabilizing...");
                 }
             } else {
-                return formatFuzzyEstimation(self.printTimeLeft());
+                return formatFuzzyPrintTime(self.printTimeLeft());
             }
         });
         self.printTimeLeftOriginString = ko.pureComputed(function() {
             var value = self.printTimeLeftOrigin();
             switch (value) {
                 case "linear": {
-                    return gettext("Based on a linear approximation (accuracy highly dependent on the model)");
+                    return gettext("Based on a linear approximation (very low accuracy, especially at the beginning of the print)");
                 }
                 case "analysis": {
                     return gettext("Based on the estimate from analysis of file (medium accuracy)");

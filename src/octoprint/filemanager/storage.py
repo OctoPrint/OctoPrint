@@ -404,7 +404,7 @@ class LocalFileStorage(StorageInterface):
 
 		from slugify import Slugify
 		self._slugify = Slugify()
-		self._slugify.safe_chars = "-_.() "
+		self._slugify.safe_chars = "-_.()[] "
 
 		self._old_metadata = None
 		self._initialize_metadata()
@@ -779,7 +779,11 @@ class LocalFileStorage(StorageInterface):
 		if "/" in name or "\\" in name:
 			raise ValueError("name must not contain / or \\")
 
-		return self._slugify(name).replace(" ", "_")
+		result = self._slugify(name).replace(" ", "_")
+		if result and result != "." and result != ".." and result[0] == ".":
+			# hidden files under *nix
+			result = result[1:]
+		return result
 
 	def sanitize_path(self, path):
 		"""
@@ -787,8 +791,11 @@ class LocalFileStorage(StorageInterface):
 		relative path elements (e.g. ``..``) and sanitizes folder names using :func:`sanitize_name`. Final path is the
 		absolute path including leading ``basefolder`` path.
 		"""
-		if path[0] == "/" or path[0] == ".":
+		if path[0] == "/":
 			path = path[1:]
+		elif path[0] == "." and path[1] == "/":
+			path = path[2:]
+
 		path_elements = path.split("/")
 		joined_path = self.basefolder
 		for path_element in path_elements:
@@ -1051,6 +1058,28 @@ class LocalFileStorage(StorageInterface):
 
 			entry_path = os.path.join(path, entry)
 			path_in_location = entry if not base else base + entry
+
+			sanitized = self.sanitize_name(entry)
+			if sanitized != entry:
+				# entry is not sanitized yet, let's take care of that
+				sanitized_path = os.path.join(path, sanitized)
+				sanitized_name, sanitized_ext = os.path.splitext(sanitized)
+
+				counter = 1
+				while os.path.exists(sanitized_path):
+					counter += 1
+					sanitized = self.sanitize_name("{}_({}){}".format(sanitized_name, counter, sanitized_ext))
+					sanitized_path = os.path.join(path, sanitized)
+
+				try:
+					shutil.move(entry_path, sanitized_path)
+
+					self._logger.info("Sanitized \"{}\" to \"{}\"".format(entry_path, sanitized_path))
+					entry = sanitized
+					entry_path = sanitized_path
+				except:
+					self._logger.exception("Error while trying to rename \"{}\" to \"{}\", ignoring file".format(entry_path, sanitized_path))
+					continue
 
 			# file handling
 			if os.path.isfile(entry_path):
