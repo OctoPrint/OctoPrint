@@ -206,27 +206,25 @@ def index():
 		decorated_view = util.flask.conditional(check_etag_and_lastmodified, NOT_MODIFIED)(decorated_view)
 		return decorated_view
 
-	def plugin_view(plugin):
-		if plugin.will_handle_ui(request):
-			# plugin claims responsibility, let it render the UI
-			cached = get_cached_view(plugin._identifier,
-			                         plugin.on_ui_render,
-			                         additional_key_data=plugin.get_ui_additional_key_data_for_cache,
-			                         additional_files=plugin.get_ui_additional_tracked_files,
-			                         custom_files=plugin.get_ui_custom_tracked_files,
-			                         custom_etag=plugin.get_ui_custom_etag,
-			                         custom_lastmodified=plugin.get_ui_custom_lastmodified)
+	def plugin_view(p):
+		cached = get_cached_view(p._identifier,
+		                         p.on_ui_render,
+		                         additional_key_data=p.get_ui_additional_key_data_for_cache,
+		                         additional_files=p.get_ui_additional_tracked_files,
+		                         custom_files=p.get_ui_custom_tracked_files,
+		                         custom_etag=p.get_ui_custom_etag,
+		                         custom_lastmodified=p.get_ui_custom_lastmodified)
 
-			if preemptive_cache_enabled and plugin.get_ui_preemptive_caching_enabled():
-				view = get_preemptively_cached_view(plugin._identifier,
-				                                    cached,
-				                                    plugin.get_ui_data_for_preemptive_caching,
-				                                    plugin.get_ui_additional_request_data_for_preemptive_caching,
-				                                    plugin.get_ui_additional_unless)
-			else:
-				view = cached
+		if preemptive_cache_enabled and p.get_ui_preemptive_caching_enabled():
+			view = get_preemptively_cached_view(p._identifier,
+			                                    cached,
+			                                    p.get_ui_data_for_preemptive_caching,
+			                                    p.get_ui_additional_request_data_for_preemptive_caching,
+			                                    p.get_ui_additional_unless)
+		else:
+			view = cached
 
-			return view(now, request, render_kwargs)
+		return view(now, request, render_kwargs)
 
 	def default_view():
 		wizard = wizard_active(_templates)
@@ -281,8 +279,8 @@ def index():
 		# select view from plugins and fall back on default view if no plugin will handle it
 		ui_plugins = pluginManager.get_implementations(octoprint.plugin.UiPlugin, sorting_context="UiPlugin.on_ui_render")
 		for plugin in ui_plugins:
-			identifier = plugin._identifier
 			if plugin.will_handle_ui(request):
+				# plugin claims responsibility, let it render the UI
 				response = plugin_view(plugin)
 				if response is not None:
 					break
