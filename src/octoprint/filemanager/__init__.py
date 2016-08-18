@@ -212,8 +212,8 @@ class FileManager(object):
 
 			# we'll use the default printer profile for the backlog since we don't know better
 			queue_entry = QueueEntry(entry, file_type, storage_type, path, self._printer_profile_manager.get_default())
-			self._analysis_queue.enqueue(queue_entry, high_priority=False)
-			counter += 1
+			if self._analysis_queue.enqueue(queue_entry, high_priority=False):
+				counter += 1
 		self._logger.info("Added {counter} items from storage type \"{storage_type}\" to analysis queue".format(**locals()))
 
 	def add_storage(self, storage_type, storage_manager):
