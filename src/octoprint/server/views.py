@@ -57,7 +57,7 @@ def _preemptive_data(key, path=None, base_url=None, data=None, additional_reques
 
 	d = dict(path=path,
 	         base_url=base_url,
-	         query_string="l10n={}".format(g.locale.language))
+	         query_string="l10n={}".format(g.locale.language if g.locale else "en"))
 
 	if key != "_default":
 		d["plugin"] = key
