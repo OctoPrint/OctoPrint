@@ -329,7 +329,9 @@ def index():
 		                                                   dict())
 		return preemptively_cached()
 
-	forced_view = request.headers.get("X-Forced-View", None)
+	response = None
+
+	forced_view = request.headers.get("X-Force-View", None)
 
 	if forced_view:
 		# we have view forced by the preemptive cache
