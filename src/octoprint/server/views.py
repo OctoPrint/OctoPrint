@@ -34,9 +34,13 @@ def _preemptive_unless(base_url=None):
 	if base_url is None:
 		base_url = request.url_root
 
-	return not settings().getBoolean(["devel", "cache", "preemptive"]) \
-	       or base_url in settings().get(["server", "preemptiveCache", "exceptions"]) \
-	       or not (base_url.startswith("http://") or base_url.startswith("https://"))
+	cache_disabled = not settings().getBoolean(["devel", "cache", "preemptive"]) \
+	                 or base_url in settings().get(["server", "preemptiveCache", "exceptions"]) \
+	                 or not (base_url.startswith("http://") or base_url.startswith("https://"))
+
+	recording_disabled = request.headers.get("X-Preemptive-Record", "yes") == "no"
+
+	return cache_disabled or recording_disabled
 
 def _preemptive_data(path=None, base_url=None):
 	if path is None:

@@ -815,9 +815,13 @@ class Server(object):
 							self._logger.info("Preemptively caching {} (plugin {}) for {!r}".format(route, plugin, kwargs))
 						else:
 							self._logger.info("Preemptively caching {} for {!r}".format(route, kwargs))
+
+						headers = kwargs.get("headers", dict())
+						headers["X-Preemptive-Record"] = "no"
+						kwargs["headers"] = headers
+
 						builder = EnvironBuilder(**kwargs)
-						with preemptive_cache.disable_access_logging():
-							app(builder.get_environ(), lambda *a, **kw: None)
+						app(builder.get_environ(), lambda *a, **kw: None)
 					except:
 						self._logger.exception("Error while trying to preemptively cache {} for {!r}".format(route, kwargs))
 

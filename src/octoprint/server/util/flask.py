@@ -402,9 +402,7 @@ class PreemptiveCache(object):
 		self.cachefile = cachefile
 
 		self._lock = threading.RLock()
-		self._log_lock = threading.RLock()
 		self._logger = logging.getLogger(__name__ + "." + self.__class__.__name__)
-		self._log_access = True
 
 	def record(self, data, unless=None, root=None):
 		if callable(unless) and unless():
@@ -437,13 +435,6 @@ class PreemptiveCache(object):
 				return True
 
 		return False
-
-	@contextlib.contextmanager
-	def disable_access_logging(self):
-		with self._log_lock:
-			self._log_access = False
-			yield
-			self._log_access = True
 
 	def clean_all_data(self, cleanup_function):
 		assert callable(cleanup_function)
@@ -505,13 +496,6 @@ class PreemptiveCache(object):
 			self.set_all_data(all_data)
 
 	def add_data(self, root, data):
-		with self._log_lock:
-			if not self._log_access:
-				self._logger.debug(
-					"Not updating timestamp and counter for {} and {!r}, currently flagged as disabled".format(root,
-					                                                                                           data))
-				return
-
 		def split_matched_and_unmatched(entry, entries):
 			matched = []
 			unmatched = []
