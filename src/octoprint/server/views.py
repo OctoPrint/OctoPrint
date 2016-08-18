@@ -76,7 +76,7 @@ def in_cache():
 		_logger.info("Found path {} in cache (key: {}), signaling as cached".format(path, key))
 		return response
 	else:
-		_logger.info("Path {} not yet cached (key: {}), signaling as missing".format(path, key))
+		_logger.debug("Path {} not yet cached (key: {}), signaling as missing".format(path, key))
 		return abort(404)
 
 @app.route("/")
