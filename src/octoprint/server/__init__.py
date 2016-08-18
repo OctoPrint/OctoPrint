@@ -739,15 +739,15 @@ class Server(object):
 						try:
 							plugin_info = pluginManager.get_plugin_info(plugin, require_enabled=True)
 							if plugin_info is None:
-								self._logger.debug("Plugin {} is not installed or enabled, preemptive caching makes no sense".format(plugin))
+								self._logger.info("About to preemptively cache plugin {} but it is not installed or enabled, preemptive caching makes no sense".format(plugin))
 								continue
 
 							implementation = plugin_info.implementation
 							if implementation is None or not isinstance(implementation, octoprint.plugin.UiPlugin):
-								self._logger.debug("Plugin {} is not a UiPlugin, preemptive caching makes no sense".format(plugin))
+								self._logger.info("About to preemptively cache plugin {} but it is not a UiPlugin, preemptive caching makes no sense".format(plugin))
 								continue
 							if not implementation.get_ui_preemptive_caching_enabled():
-								self._logger.debug("Plugin {} has disabled preemptive caching".format(plugin))
+								self._logger.info("About to preemptively cache plugin {} but it has disabled preemptive caching".format(plugin))
 								continue
 						except:
 							self._logger.exception("Error while trying to check if plugin {} has preemptive caching enabled, skipping entry")
