@@ -34,16 +34,116 @@ _plugin_vars = None
 _valid_id_re = re.compile("[a-z_]+")
 _valid_div_re = re.compile("[a-zA-Z_-]+")
 
+def _preemptive_unless(base_url=None, additional_unless=None):
+	if base_url is None:
+		base_url = request.url_root
+
+	disabled_for_root = not settings().getBoolean(["devel", "cache", "preemptive"]) \
+	                    or base_url in settings().get(["server", "preemptiveCache", "exceptions"]) \
+	                    or not (base_url.startswith("http://") or base_url.startswith("https://"))
+
+	if callable(additional_unless):
+		return disabled_for_root or additional_unless()
+	else:
+		return disabled_for_root
+
+def _preemptive_data(key, path=None, base_url=None, data=None, additional_request_data=None):
+	if path is None:
+		path = request.path
+	if base_url is None:
+		base_url = request.url_root
+
+	d = dict(path=path,
+	         base_url=base_url,
+	         query_string="l10n={}".format(g.locale.language))
+
+	if key != "_default":
+		d["plugin"] = key
+
+	# add data if we have any
+	if data is not None:
+		try:
+			if callable(data):
+				data = data()
+			if data:
+				if "query_string" in data:
+					data["query_string"] = "l10n={}&{}".format(g.locale.language, data["query_string"])
+				d.update(data)
+		except:
+			_logger.exception("Error collecting data for preemptive cache from plugin {}".format(key))
+
+	# add additional request data if we have any
+	if callable(additional_request_data):
+		try:
+			ard = additional_request_data()
+			if ard:
+				d.update(dict(
+					_additional_request_data=ard
+				))
+		except:
+			_logger.exception("Error retrieving additional data for preemptive cache from plugin {}".format(key))
+
+	return d
+
+def _cache_key(ui, url=None, locale=None, additional_key_data=None):
+	if url is None:
+		url = request.base_url
+	if locale is None:
+		locale = g.locale.language if g.locale else "en"
+
+	k = "ui:{}:{}:{}".format(ui, url, locale)
+	if callable(additional_key_data):
+		try:
+			ak = additional_key_data()
+			if ak:
+				# we have some additional key components, let's attach them
+				if not isinstance(ak, (list, tuple)):
+					ak = [ak]
+				k = "{}:{}".format(k, ":".join(ak))
+		except:
+			_logger.exception("Error while trying to retrieve additional cache key parts for ui {}".format(ui))
+	return k
+
 @app.route("/cached.gif")
 def in_cache():
 	url = request.base_url.replace("/cached.gif", "/")
-	key = lambda: "view:{}:{}".format(url, g.locale.language if g.locale else "en")
-	if not util.flask.is_in_cache(key):
-		return abort(404)
+	path = request.path.replace("/cached.gif", "/")
+	base_url = request.url_root
+
+	# select view from plugins and fall back on default view if no plugin will handle it
+	ui_plugins = pluginManager.get_implementations(octoprint.plugin.UiPlugin,
+	                                               sorting_context="UiPlugin.on_ui_render")
+	for plugin in ui_plugins:
+		if plugin.will_handle_ui(request):
+			ui = plugin._identifier
+			key = _cache_key(plugin._identifier,
+			                 url=url,
+			                 additional_key_data=plugin.get_ui_additional_key_data_for_cache)
+			unless = _preemptive_unless(url, additional_unless=plugin.get_ui_additional_unless)
+			data = _preemptive_data(plugin._identifier,
+			                        path=path,
+			                        base_url=base_url,
+			                        data=plugin.get_ui_data_for_preemptive_caching,
+			                        additional_request_data=plugin.get_ui_additional_request_data_for_preemptive_caching)
+			break
+	else:
+		ui = "_default"
+		key = _cache_key("_default", url=url)
+		unless = _preemptive_unless(url)
+		data = _preemptive_data("_default", path=path, base_url=base_url)
 
 	response = make_response(bytes(base64.b64decode("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7")))
 	response.headers["Content-Type"] = "image/gif"
-	return response
+
+	if unless or not preemptiveCache.has_record(data, root=path):
+		_logger.info("Preemptive cache not active for path {}, ui {} and data {!r}, signaling as cached".format(path, ui, data))
+		return response
+	elif util.flask.is_in_cache(key):
+		_logger.info("Found path {} in cache (key: {}), signaling as cached".format(path, key))
+		return response
+	else:
+		_logger.debug("Path {} not yet cached (key: {}), signaling as missing".format(path, key))
+		return abort(404)
 
 @app.route("/")
 def index():
@@ -69,42 +169,10 @@ def index():
 		if (data is None and additional_request_data is None) or g.locale is None:
 			return view
 
-		d = dict(path=request.path,
-		         base_url=request.base_url,
-		         query_string="l10n={}".format(g.locale.language))
-
-		if key != "_default":
-			d["plugin"] = key
-
-		# add data if we have any
-		if data is not None:
-			try:
-				if callable(data):
-					data = data()
-				if data:
-					if "query_string" in data:
-						data["query_string"] = "l10n={}&{}".format(g.locale.language, data["query_string"])
-					d.update(data)
-			except:
-				_logger.exception("Error collecting data for preemptive cache from plugin {}".format(key))
-
-		# add additional request data if we have any
-		if callable(additional_request_data):
-			try:
-				ard = additional_request_data()
-				if ard:
-					d.update(dict(
-						_additional_request_data = ard
-					))
-			except:
-				_logger.exception("Error retrieving additional data for preemptive cache from plugin {}".format(key))
+		d = _preemptive_data(key, data=data, additional_request_data=additional_request_data)
 
 		def unless():
-			disabled_for_root = request.url_root in settings().get(["server", "preemptiveCache", "exceptions"]) or not (request.url_root.startswith("http://") or request.url_root.startswith("https://"))
-			if callable(additional_unless):
-				return disabled_for_root or additional_unless()
-			else:
-				return disabled_for_root
+			return _preemptive_unless(base_url=request.url_root, additional_unless=additional_unless)
 
 		# finally decorate our view
 		return util.flask.preemptively_cached(cache=preemptiveCache,
@@ -113,18 +181,7 @@ def index():
 
 	def get_cached_view(key, view, additional_key_data=None, additional_files=None, custom_files=None, custom_etag=None, custom_lastmodified=None):
 		def cache_key():
-			k = "ui:{}:{}:{}".format(key, request.base_url, g.locale.language if g.locale else "default")
-			if callable(additional_key_data):
-				try:
-					ak = additional_key_data()
-					if ak:
-						# we have some additional key components, let's attach them
-						if not isinstance(ak, (list, tuple)):
-							ak = [ak]
-						k = "{}:{}".format(k, ":".join(ak))
-				except:
-					_logger.exception("Error while trying to retrieve additional cache key parts for plugin {}".format(key))
-			return k
+			return _cache_key(key, additional_key_data=additional_key_data)
 
 		def check_etag_and_lastmodified():
 			files = collect_files()

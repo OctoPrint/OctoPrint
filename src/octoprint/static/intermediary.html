@@ -167,9 +167,15 @@
 
                 var message = window.document.getElementById("message");
 
+                var indexCached = false;
                 var indexCachedCallback = function(result) {
                     if (result == "load") {
+                        if (indexCached) {
+                            return;
+                        }
+
                         // our cached.gif loaded, so the index is cached now, let's reload
+                        indexCached = true;
                         message.className = "pulsate1 green";
                         message.innerText = "OctoPrint server ready, reloading page...";
 
