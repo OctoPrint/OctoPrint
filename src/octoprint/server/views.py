@@ -42,10 +42,12 @@ def _preemptive_unless(base_url=None, additional_unless=None):
 	                    or base_url in settings().get(["server", "preemptiveCache", "exceptions"]) \
 	                    or not (base_url.startswith("http://") or base_url.startswith("https://"))
 
+	recording_disabled = request.headers.get("X-Preemptive-Record", "yes") == "no"
+
 	if callable(additional_unless):
-		return disabled_for_root or additional_unless()
+		return recording_disabled or disabled_for_root or additional_unless()
 	else:
-		return disabled_for_root
+		return recording_disabled or disabled_for_root
 
 def _preemptive_data(key, path=None, base_url=None, data=None, additional_request_data=None):
 	if path is None:

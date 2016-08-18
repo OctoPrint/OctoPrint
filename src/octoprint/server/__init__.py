@@ -765,11 +765,11 @@ class Server(object):
 
 						headers = kwargs.get("headers", dict())
 						headers["X-Force-View"] = plugin if plugin else "_default"
+						headers["X-Preemptive-Record"] = "no"
 						kwargs["headers"] = headers
 
 						builder = EnvironBuilder(**kwargs)
-						with preemptive_cache.disable_access_logging():
-							app(builder.get_environ(), lambda *a, **kw: None)
+						app(builder.get_environ(), lambda *a, **kw: None)
 					except:
 						self._logger.exception("Error while trying to preemptively cache {} for {!r}".format(route, kwargs))
 
