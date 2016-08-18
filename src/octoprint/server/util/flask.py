@@ -312,6 +312,18 @@ class LessSimpleCache(BaseCache):
 			return False
 		return len(self._cache) > self._threshold
 
+	def __getitem__(self, key):
+		return self.get(key)
+
+	def __setitem__(self, key, value):
+		return self.set(key, value)
+
+	def __delitem__(self, key):
+		return self.delete(key)
+
+	def __contains__(self, key):
+		return key in self._cache
+
 _cache = LessSimpleCache()
 
 def cached(timeout=5 * 60, key=lambda: "view:%s" % flask.request.path, unless=None, refreshif=None, unless_response=None):
@@ -357,6 +369,9 @@ def cached(timeout=5 * 60, key=lambda: "view:%s" % flask.request.path, unless=No
 		return decorated_function
 
 	return decorator
+
+def is_in_cache(key=lambda: "view:%s" % flask.request.path):
+	return key() in _cache
 
 def cache_check_headers():
 	return "no-cache" in flask.request.cache_control or "no-cache" in flask.request.pragma
