@@ -759,9 +759,9 @@ class Server(object):
 
 					try:
 						if plugin:
-							self._logger.info("Preemptively caching {} (plugin {}) for {!r}".format(route, plugin, kwargs))
+							self._logger.info("Preemptively caching {} (ui {}) for {!r}".format(route, plugin, kwargs))
 						else:
-							self._logger.info("Preemptively caching {} for {!r}".format(route, kwargs))
+							self._logger.info("Preemptively caching {} (ui _default) for {!r}".format(route, kwargs))
 
 						headers = kwargs.get("headers", dict())
 						headers["X-Force-View"] = plugin if plugin else "_default"
