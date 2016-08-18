@@ -371,7 +371,9 @@ def cached(timeout=5 * 60, key=lambda: "view:%s" % flask.request.path, unless=No
 	return decorator
 
 def is_in_cache(key=lambda: "view:%s" % flask.request.path):
-	return key() in _cache
+	if callable(key):
+		key = key()
+	return key in _cache
 
 def cache_check_headers():
 	return "no-cache" in flask.request.cache_control or "no-cache" in flask.request.pragma
@@ -400,10 +402,11 @@ class PreemptiveCache(object):
 		self.cachefile = cachefile
 
 		self._lock = threading.RLock()
+		self._log_lock = threading.RLock()
 		self._logger = logging.getLogger(__name__ + "." + self.__class__.__name__)
 		self._log_access = True
 
-	def record(self, data, unless=None):
+	def record(self, data, unless=None, root=None):
 		if callable(unless) and unless():
 			return
 
@@ -412,12 +415,32 @@ class PreemptiveCache(object):
 			entry_data = entry_data()
 
 		if entry_data is not None:
+			if root is None:
+				from flask import request
+				root = request.path
+			self.add_data(root, entry_data)
+
+	def has_record(self, data, root=None):
+		if callable(data):
+			data = data()
+
+		if data is None:
+			return False
+
+		if root is None:
 			from flask import request
-			self.add_data(request.path, entry_data)
+			root = request.path
+
+		all_data = self.get_data(root)
+		for existing in all_data:
+			if self._compare_data(data, existing):
+				return True
+
+		return False
 
 	@contextlib.contextmanager
 	def disable_access_logging(self):
-		with self._lock:
+		with self._log_lock:
 			self._log_access = False
 			yield
 			self._log_access = True
@@ -482,20 +505,19 @@ class PreemptiveCache(object):
 			self.set_all_data(all_data)
 
 	def add_data(self, root, data):
-		from octoprint.util import dict_filter
-
-		def strip_ignored(d):
-			return dict_filter(d, lambda k, v: not k.startswith("_"))
-
-		def compare(a, b):
-			return set(strip_ignored(a).items()) == set(strip_ignored(b).items())
+		with self._log_lock:
+			if not self._log_access:
+				self._logger.debug(
+					"Not updating timestamp and counter for {} and {!r}, currently flagged as disabled".format(root,
+					                                                                                           data))
+				return
 
 		def split_matched_and_unmatched(entry, entries):
 			matched = []
 			unmatched = []
 
 			for e in entries:
-				if compare(e, entry):
+				if self._compare_data(e, entry):
 					matched.append(e)
 				else:
 					unmatched.append(e)
@@ -503,12 +525,6 @@ class PreemptiveCache(object):
 			return matched, unmatched
 
 		with self._lock:
-			if not self._log_access:
-				self._logger.debug(
-					"Not updating timestamp and counter for {} and {!r}, currently flagged as disabled".format(root,
-					                                                                                           data))
-				return
-
 			cache_data = self.get_all_data()
 
 			if not root in cache_data:
@@ -536,6 +552,14 @@ class PreemptiveCache(object):
 				self._logger.debug("Updating timestamp and counter for {} and {!r}".format(root, data))
 
 			self.set_data(root, [to_persist] + other)
+
+	def _compare_data(self, a, b):
+		from octoprint.util import dict_filter
+
+		def strip_ignored(d):
+			return dict_filter(d, lambda k, v: not k.startswith("_"))
+
+		return set(strip_ignored(a).items()) == set(strip_ignored(b).items())
 
 
 def preemptively_cached(cache, data, unless=None):
