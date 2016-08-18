@@ -30,15 +30,13 @@ _logger = logging.getLogger(__name__)
 _valid_id_re = re.compile("[a-z_]+")
 _valid_div_re = re.compile("[a-zA-Z_-]+")
 
-def _preemptive_unless(root=None, path=None):
-	if root is None:
-		root = request.url_root
-	if path is None:
-		path = request.path
+def _preemptive_unless(base_url=None):
+	if base_url is None:
+		base_url = request.url_root
 
 	return not settings().getBoolean(["devel", "cache", "preemptive"]) \
-	       or path in settings().get(["server", "preemptiveCache", "exceptions"]) \
-	       or not (root.startswith("http://") or root.startswith("https://"))
+	       or base_url in settings().get(["server", "preemptiveCache", "exceptions"]) \
+	       or not (base_url.startswith("http://") or base_url.startswith("https://"))
 
 def _preemptive_data(path=None, base_url=None):
 	if path is None:
@@ -69,7 +67,7 @@ def in_cache():
 	response = make_response(bytes(base64.b64decode("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7")))
 	response.headers["Content-Type"] = "image/gif"
 
-	if _preemptive_unless(root=url, path=path) or not preemptiveCache.has_record(data, root=path):
+	if _preemptive_unless(base_url=url) or not preemptiveCache.has_record(data, root=path):
 		_logger.info("Preemptive cache not active for path {} and data {!r}, signaling as cached".format(path, data))
 		return response
 	elif util.flask.is_in_cache(key):
