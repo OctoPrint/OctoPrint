@@ -327,10 +327,7 @@ def index():
 		                                                   dict())
 		return preemptively_cached()
 
-	forced_view = None
-	preemptive_cache_environment = preemptiveCache.environment
-	if preemptive_cache_environment is not None and isinstance(preemptive_cache_environment, dict):
-		forced_view = preemptive_cache_environment.get("plugin", "_default")
+	forced_view = request.headers.get("X-Forced-View", None)
 
 	if forced_view:
 		# we have view forced by the preemptive cache
@@ -353,6 +350,8 @@ def index():
 				response = plugin_view(plugin)
 				if response is not None:
 					break
+				else:
+					_logger.warn("UiPlugin {} returned an empty response".format(plugin._identifier))
 		else:
 			response = default_view()
 

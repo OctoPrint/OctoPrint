@@ -762,10 +762,14 @@ class Server(object):
 							self._logger.info("Preemptively caching {} (plugin {}) for {!r}".format(route, plugin, kwargs))
 						else:
 							self._logger.info("Preemptively caching {} for {!r}".format(route, kwargs))
+
+						headers = kwargs.get("headers", dict())
+						headers["X-Force-View"] = plugin if plugin else "_default"
+						kwargs["headers"] = headers
+
 						builder = EnvironBuilder(**kwargs)
-						with preemptive_cache.cache_environment(dict(plugin=plugin if plugin is not None else "_default")):
-							with preemptive_cache.disable_access_logging():
-								app(builder.get_environ(), lambda *a, **kw: None)
+						with preemptive_cache.disable_access_logging():
+							app(builder.get_environ(), lambda *a, **kw: None)
 					except:
 						self._logger.exception("Error while trying to preemptively cache {} for {!r}".format(route, kwargs))
 

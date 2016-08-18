@@ -448,13 +448,6 @@ class PreemptiveCache(object):
 			yield
 			self._log_access = True
 
-	@contextlib.contextmanager
-	def cache_environment(self, environment):
-		with self._environment_lock:
-			self.environment = environment
-			yield
-			self.environment = None
-
 	def clean_all_data(self, cleanup_function):
 		assert callable(cleanup_function)
 
