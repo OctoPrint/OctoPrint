@@ -9,7 +9,7 @@ import os
 import datetime
 
 from collections import defaultdict
-from flask import request, g, url_for, make_response, render_template, send_from_directory, redirect
+from flask import request, g, url_for, make_response, render_template, send_from_directory, redirect, abort
 
 import octoprint.plugin
 
@@ -20,6 +20,7 @@ from octoprint.settings import settings
 from octoprint.filemanager import get_all_extensions
 
 import re
+import base64
 
 from . import util
 
@@ -32,6 +33,17 @@ _plugin_vars = None
 
 _valid_id_re = re.compile("[a-z_]+")
 _valid_div_re = re.compile("[a-zA-Z_-]+")
+
+@app.route("/cached.gif")
+def in_cache():
+	url = request.base_url.replace("/cached.gif", "/")
+	key = lambda: "view:{}:{}".format(url, g.locale.language if g.locale else "en")
+	if not util.flask.is_in_cache(key):
+		return abort(404)
+
+	response = make_response(bytes(base64.b64decode("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7")))
+	response.headers["Content-Type"] = "image/gif"
+	return response
 
 @app.route("/")
 def index():

@@ -158,20 +158,20 @@
                 if (baseUrl[baseUrl.length - 1] != "/") {
                     baseUrl += "/";
                 }
+                var indexCachedUrl = baseUrl + "cached.gif";
                 var serverOnlineUrl = baseUrl + "online.gif";
                 var backendOnlineUrl = baseUrl + "intermediary.gif";
 
                 var serverTimeout;
+                var cachedTimeout;
 
                 var message = window.document.getElementById("message");
 
-                var serverIsOnline = false;
-                var serverOnlineCallback = function(result) {
+                var indexCachedCallback = function(result) {
                     if (result == "load") {
-                        // our online.gif loaded, so the server is up, let's reload
-                        serverIsOnline = true;
+                        // our cached.gif loaded, so the index is cached now, let's reload
                         message.className = "pulsate1 green";
-                        message.innerText = "OctoPrint server online, reloading page...";
+                        message.innerText = "OctoPrint server ready, reloading page...";
 
                         var reloadUrl = baseUrl + currentQuery + currentFragment;
                         if (reloadUrl == window.location.href) {
@@ -180,7 +180,21 @@
                             window.location.href = reloadUrl;
                         }
                     } else {
-                        // online.gif still not available, let's look at
+                        // cached.gif still not available, let's look at it again in a second
+                        cachedTimeout = setTimeout(function() {
+                            ping(indexCachedUrl, timeout, indexCachedCallback);
+                        }, 1000)
+                    }
+                };
+
+                var serverIsOnline = false;
+                var serverOnlineCallback = function(result) {
+                    if (result == "load") {
+                        // our online.gif loaded, so the server is up, let's wait for it to become ready
+                        serverIsOnline = true;
+                        ping(indexCachedUrl, timeout, indexCachedCallback);
+                    } else {
+                        // online.gif still not available, let's look at it again later
                         var interval = 10;
                         if (intervals.length) {
                             interval = intervals.shift();
@@ -208,6 +222,9 @@
                     if (backendOfflineCounter > 15) {
                         if (serverTimeout) {
                             window.clearTimeout(serverTimeout);
+                        }
+                        if (cachedTimeout) {
+                            window.clearTimeout(cachedTimeout);
                         }
 
                         message.className = "red";
