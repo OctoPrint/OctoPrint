@@ -106,6 +106,9 @@ def _cache_key(ui, url=None, locale=None, additional_key_data=None):
 			_logger.exception("Error while trying to retrieve additional cache key parts for ui {}".format(ui))
 	return k
 
+def _valid_status_for_cache(status_code):
+	return 200 <= status_code < 400
+
 @app.route("/cached.gif")
 def in_cache():
 	url = request.base_url.replace("/cached.gif", "/")
@@ -273,7 +276,7 @@ def index():
 		decorated_view = util.flask.cached(timeout=-1,
 		                                   refreshif=validate_cache,
 		                                   key=cache_key,
-		                                   unless_response=util.flask.cache_check_response_headers)(decorated_view)
+		                                   unless_response=lambda response: util.flask.cache_check_response_headers(response) or util.flask.cache_check_status_code(response, _valid_status_for_cache))(decorated_view)
 		decorated_view = util.flask.conditional(check_etag_and_lastmodified, NOT_MODIFIED)(decorated_view)
 		return decorated_view
 
@@ -336,14 +339,12 @@ def index():
 	if forced_view:
 		# we have view forced by the preemptive cache
 		_logger.debug("Forcing rendering of view {}".format(forced_view))
-		response = None
 		if forced_view != "_default":
 			plugin = pluginManager.get_plugin_info(forced_view, require_enabled=True)
 			if plugin is not None and isinstance(plugin.implementation, octoprint.plugin.UiPlugin):
 				response = plugin_view(plugin.implementation)
-
-		if response is None:
-			return default_view()
+		else:
+			response = default_view()
 
 	else:
 		# select view from plugins and fall back on default view if no plugin will handle it
@@ -356,9 +357,9 @@ def index():
 					break
 				else:
 					_logger.warn("UiPlugin {} returned an empty response".format(plugin._identifier))
-		else:
-			response = default_view()
 
+	if response is None:
+		return abort(404)
 	return response
 
 

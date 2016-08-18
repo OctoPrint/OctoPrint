@@ -395,6 +395,14 @@ def cache_check_response_headers(response):
 
 	return False
 
+def cache_check_status_code(response, valid):
+	if not isinstance(response, flask.Response):
+		return False
+
+	if callable(valid):
+		return not valid(response.status_code)
+	else:
+		return response.status_code not in valid
 
 class PreemptiveCache(object):
 
