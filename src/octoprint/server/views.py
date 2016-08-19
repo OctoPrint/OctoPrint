@@ -357,6 +357,8 @@ def index():
 					break
 				else:
 					_logger.warn("UiPlugin {} returned an empty response".format(plugin._identifier))
+		else:
+			response = default_view()
 
 	if response is None:
 		return abort(404)
