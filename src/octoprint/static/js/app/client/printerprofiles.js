@@ -12,7 +12,7 @@
     };
 
     OctoPrint.printerprofiles = {
-        get: function (opts) {
+        list: function (opts) {
             return OctoPrint.get(url, opts);
         },
 
@@ -24,6 +24,10 @@
             data.profile = profile;
 
             return OctoPrint.postJson(url, data, opts);
+        },
+
+        get: function (id, opts) {
+            return OctoPrint.get(profileUrl(id), opts);
         },
 
         update: function (id, profile, additional, opts) {
