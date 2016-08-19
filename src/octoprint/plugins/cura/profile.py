@@ -404,32 +404,6 @@ class Profile(object):
 			}
 		)
 
-		# Translation dict for new CuraEngine option names
-		new_engine_options = dict(
-			fill_sparse_density="fill_density",
-			machine_nozzle_size="nozzle_size",
-			material_print_temperature="print_temperature",
-			#support_type="support", # In conflict with "support_type" from old CuraEngine
-			support_pattern="support_type",
-			adhesion_type="platform_adhesion",
-			material_diameter="filament_diameter",
-			material_flow="filament_flow",
-			speed_travel="travel_speed",
-			speed_layer_0="bottom_layer_speed",
-			speed_print="print_speed",
-			speed_infill="infill_speed",
-			speed_wall_0="outer_shell_speed",
-			speed_wall_x="inner_shell_speed",
-			cool_fan_enabled="fan_enabled",
-			cool_fan_full_at_height="fan_full_height",
-			cool_fan_speed="fan_speed",
-			cool_fan_speed_max="fan_speed_max",
-			cool_lift_head="cool_head_lift",
-			cool_min_speed="cool_min_feedrate",
-			machine_start_gcode="start_gcode",
-			machine_end_gcode="end_gcode",
-			machine_gcode_flavor="gcode_flavor")
-
 		result = dict()
 		for section in config.sections():
 
@@ -481,10 +455,6 @@ class Profile(object):
 				if key in translated_options:
 					# if the key has to be translated to a new value, do that now
 					key = translated_options[key]
-
-				if key in new_engine_options:
-					# if the key has to be translated from the new CuraEngine versions, do that now
-					key = new_engine_options[key]
 
 				if key in value_conversions and value in value_conversions[key]:
 					value = value_conversions[key][value]
@@ -761,7 +731,7 @@ class Profile(object):
 
 		return pre + str(f)
 
-	def get_gcode(self, key, new_engine=False):
+	def get_gcode(self, key):
 		prefix = ""
 		postfix = ""
 
@@ -772,10 +742,7 @@ class Profile(object):
 
 		if key == "start_gcode":
 			contents = self.get_gcode_template("start_gcode")
-
-			# If using the new CuraEngine, there is no need to extend the start_gcode
-			if not new_engine:
-				prefix += self.get_start_gcode_prefix(contents)
+			prefix += self.get_start_gcode_prefix(contents)
 
 		else:
 			contents = self.get_gcode_template(key)
@@ -1030,131 +997,20 @@ class Profile(object):
 
 		return settings
 
-	def convert_to_new_engine(self):
-
-		settings = {
-			"layer_height": self.get_float("layer_height"),
-			"wall_thickness": self.get_float("wall_thickness"),
-			"retraction_enable": self.get_boolean("retraction_enable"),
-			"top_bottom_thickness": self.get_float("solid_layer_thickness"),
-			"fill_sparse_density": self.get_float("fill_density"),
-			"machine_nozzle_size": self.get_float("nozzle_size"),
-			"speed_print": self.get_float("print_speed"),
-			"material_print_temperature": self.get_float("print_temperature"),
-			"material_diameter": self.get_float("filament_diameter"),
-			"material_flow": self.get_float("filament_flow"),
-			"retraction_speed": self.get_float("retraction_speed"),
-			"retraction_amount": self.get_float("retraction_amount") if self.get_boolean("retraction_enable") else 0,
-			"retraction_min_travel": self.get_float("retraction_min_travel"),
-			"retraction_combing": self.get_boolean("retraction_combing"),
-			"retraction_hop": self.get_float("retraction_hop"),
-			"bottom_thickness": self.get_float("bottom_thickness"),
-			"top_layers": self.calculate_solid_layer_count(),
-			"bottom_layers": self.calculate_solid_layer_count(),
-			"speed_travel": self.get_float("travel_speed"),
-			"speed_layer_0": self.get_float("bottom_layer_speed"),
-			"speed_infill": self.get_float("infill_speed") if self.get_float("infill_speed") > 0 else self.get_float("print_speed"),
-			"speed_wall_0": self.get_float("outer_shell_speed") if self.get_float("outer_shell_speed") > 0 else self.get_float("print_speed"), # Translated from "inset0_speed"
-			"speed_wall_x": self.get_float("inner_shell_speed") if self.get_float("inner_shell_speed") > 0 else self.get_float("print_speed"), # Translated from "insetx_speed"
-			"cool_min_layer_time": self.get_float("cool_min_layer_time"),
-			"cool_fan_enabled": self.get_boolean("fan_enabled"),
-			"cool_fan_full_at_height": self.get_int("fan_full_height"),
-			"cool_fan_speed": self.get_float("fan_speed"),
-			"cool_fan_speed_max": self.get_float("fan_speed_max") if self.get_boolean("fan_enabled") else 0,
-			"cool_lift_head": self.get_boolean("cool_head_lift"),
-			"cool_min_speed": self.get_float("cool_min_feedrate"),
-			"skirt_line_count": self.get_int("skirt_line_count"),
-			"fill_overlap": self.get_float("fill_overlap"),
-			"magic_spiralize": self.get_boolean("spiralize"),
-
-			# machine settings
-
-			"machine_width": self.get_float("machine_width"),
-			"machine_depth": self.get_float("machine_depth"),
-			"machine_center_is_zero": self.get_boolean("machine_center_is_zero"),
-			"machine_heated_bed": self.get_boolean("has_heated_bed"),
-
-			# gcodes
-
-			"machine_start_gcode": self.get_gcode("start_gcode", new_engine=True),
-			"machine_end_gcode": self.get_gcode("end_gcode", new_engine=True),
-		}
-
-		# gcode flavor
-
-		settings["machine_gcode_flavor"] = self.get("gcode_flavor")[0]
-
-		# heated bed - The new CuraEngine uses the integer "material_bed_temperature" instead of the boolean "machine_heated_bed"
-
-		if self.get_boolean("has_heated_bed"):
-			settings["material_bed_temperature"] = self.get_float("print_bed_temperature")
-		else:
-			settings["material_bed_temperature"] = 0
-
-		# support
-
-		if self.get("support") == SupportLocationTypes.NONE:
-			settings["support_enable"] = False
-		else:
-			settings["support_enable"] = True
-			settings["support_angle"] = self.get_float("support_angle")
-			settings["support_fill_rate"] = self.get_float("support_fill_rate")
-			settings["support_xy_distance"] = self.get_float("support_xy_distance")
-			settings["support_z_distance"] = self.get_float("support_z_distance")
-
-			# support type
-
-			if self.get("support") == SupportLocationTypes.TOUCHING_BUILDPLATE:
-				settings["support_type"] = "Touching Buildplate"
-			elif self.get("support") == SupportLocationTypes.EVERYWHERE:
-				settings["support_type"] = "Everywhere"
-
-			# support pattern
-
-			if self.get("support_type") == SupportTypes.GRID:
-				settings["support_pattern"] = "Grid"
-			elif self.get("support_type") == SupportTypes.LINES:
-				settings["support_pattern"] = "Lines"
-
-		# adhesion type
-
-		if self.get("platform_adhesion") == PlatformAdhesionTypes.NONE:
-			settings["adhesion_type"] = "None"
-		elif self.get("platform_adhesion") == PlatformAdhesionTypes.BRIM:
-			settings["adhesion_type"] = "Brim"
-			settings["brim_line_count"] = self.get_int("brim_line_count")
-		elif self.get("platform_adhesion") == PlatformAdhesionTypes.RAFT:
-			settings["adhesion_type"] = "Raft"
-			settings["raft_margin"] = self.get_int("raft_margin")
-			settings["raft_line_spacing"] = self.get_float("raft_line_spacing")
-			settings["raft_base_thickness"] = self.get_float("raft_base_thickness")
-			settings["raft_base_linewidth"] = self.get_float("raft_base_linewidth")
-			settings["raft_interface_thickness"] = self.get_float("raft_interface_thickness")
-			settings["raft_interface_linewidth"] = self.get_float("raft_interface_linewidth")
-			settings["raft_airgap"] = self.get_float("raft_airgap")
-			settings["raft_surface_layers"] = self.get_int("raft_surface_layers")
-
-		# skirt
-
-		if self.get_int("skirt_line_count") != 0:
-			settings["skirt_gap"] = self.get_float("skirt_gap")
-			settings["skirt_minimal_length"] = self.get_float("skirt_minimal_length")
-
-		return settings
 
 def parse_gcode_flavor(value):
 
-		value = value.lower()
+	value = value.lower()
 
-		if "reprap" in value and ("volume" in value or "volumatric" in value):
-			return GcodeFlavors.REPRAP_VOLUME
-		elif "ultigcode" in value:
-			return GcodeFlavors.ULTIGCODE
-		elif "makerbot" in value:
-			return GcodeFlavors.MAKERBOT
-		elif "bfb" in value:
-			return GcodeFlavors.BFB
-		elif "mach3" in value:
-			return GcodeFlavors.MACH3
-		else:
-			return GcodeFlavors.REPRAP
+	if "reprap" in value and ("volume" in value or "volumatric" in value):
+		return GcodeFlavors.REPRAP_VOLUME
+	elif "ultigcode" in value:
+		return GcodeFlavors.ULTIGCODE
+	elif "makerbot" in value:
+		return GcodeFlavors.MAKERBOT
+	elif "bfb" in value:
+		return GcodeFlavors.BFB
+	elif "mach3" in value:
+		return GcodeFlavors.MACH3
+	else:
+		return GcodeFlavors.REPRAP
