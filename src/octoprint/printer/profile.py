@@ -216,7 +216,7 @@ class PrinterProfileManager(object):
 		profile["id"] = identifier
 		profile = dict_sanitize(profile, self.__class__.default)
 
-		if identifier == "_default":
+		if identifier == self.__class__.default["id"]:
 			default_profile = dict_merge(self._load_default(), profile)
 			if not self._ensure_valid_profile(default_profile):
 				raise InvalidProfileError()
@@ -232,6 +232,15 @@ class PrinterProfileManager(object):
 		if self._current is not None and self._current["id"] == identifier:
 			self.select(identifier)
 		return self.get(identifier)
+
+	def is_default_unmodified(self):
+		default = settings().get(["printerProfiles", "default"])
+		default_overrides = settings().get(["printerProfiles", "defaultProfile"])
+		return (default is None or default == self.__class__.default["id"]) and not default_overrides
+
+	@property
+	def profile_count(self):
+		return len(self._load_all_identifiers())
 
 	def get_default(self):
 		default = settings().get(["printerProfiles", "default"])
