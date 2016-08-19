@@ -258,7 +258,7 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 	   configuration supplied through :func:`get_template_configs`.
 
 	Settings
-	   Plugins may inject a dialog into the existing settings view. Note that with the current implementations, plugins
+	   Plugins may inject a dialog into the existing settings view. Note that with the current implementation, plugins
 	   will always be listed beneath the "Plugins" header in the settings link list, ordered alphabetically after
 	   their displayed name.
 
@@ -267,11 +267,11 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 
 	   The template will be already wrapped into the necessary structure, plugins just need to supply the pure content. The
 	   wrapper div and the link in the navigation will have the additional classes and styles applied as defined via the
-	   supplied configuration supplied through :func:`get_template_configs`.
+	   configuration through :func:`get_template_configs`.
 
 	Wizards
 	   Plugins may define wizard dialogs to display to the user if necessary (e.g. in case of missing information that
-	   needs to be queried from the user to make the plugin work). Note that with the current implementations, all
+	   needs to be queried from the user to make the plugin work). Note that with the current implementation, all
 	   wizard dialogs will be will always be sorted by their ``mandatory`` attribute (which defaults to ``False``) and then
 	   alphabetically by their ``name``. Hence, mandatory wizard steps will come first, sorted alphabetically, then the
 	   optional steps will follow, also alphabetically. A wizard dialog provided through a plugin will only be displayed
@@ -283,7 +283,7 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 
 	   The template will be already wrapped into the necessary structure, plugins just need to supply the pure content.
 	   The wrapper div and the link in the wizard navigation will have the additional classes and styles applied as defined
-	   via the supplied configuration supplied through :func:`get_template_configs`.
+	   via the configuration supplied through :func:`get_template_configs`.
 
 	   .. note::
 
@@ -292,6 +292,17 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 	      to actually prevent the user from skipping the dialog by implementing the ``onWizardTabChange``
 	      callback and returning ``false`` there if it is detected that the user hasn't yet filled in the
 	      wizard step.
+
+	About
+	   Plugins may define additional panels into OctoPrint's "About" dialog. Note that with the current implementation
+	   further about dialog panels will be sorted alphabetically by their name and sorted after the predefined ones.
+
+	   The included template must be called ``<plugin identifier>_about.jinja2`` (e.g. ``myplugin_about.jinja2``) unless
+	   overridden by the configuration supplied through :func:`get_template_configs`.
+
+	   The template will be already wrapped into the necessary structure, plugins just need to supply the pure content. The
+	   wrapped div and the link in the navigation will have the additional classes and styles applied as defined via
+	   the configuration supplied through :func:`get_template_configs`.
 
 	Generic
 	   Plugins may also inject arbitrary templates into the page of the web interface itself, e.g. in order to
@@ -342,6 +353,8 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 		         * ``sidebar``: sidebar heading
 		         * ``tab``: tab heading
 		         * ``settings``: settings link
+		         * ``wizard``: wizard link
+		         * ``about``: about link
 		         * ``generic``: unused
 
 		   * - template
@@ -351,6 +364,8 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 		         * ``sidebar``: ``<plugin identifier>_sidebar.jinja2``
 		         * ``tab``: ``<plugin identifier>_tab.jinja2``
 		         * ``settings``: ``<plugin identifier>_settings.jinja2``
+		         * ``wizard``: ``<plugin identifier>_wizard.jinja2``
+		         * ``about``: ``<plugin identifier>_about.jinja2``
 		         * ``generic``: ``<plugin identifier>.jinja2``
 
 		   * - suffix
