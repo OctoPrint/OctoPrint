@@ -193,7 +193,8 @@ Available plugin hooks
 
 .. note::
 
-   All of the hooks below take at least two parameters, ``*args`` and ``**kwargs``. Please make sure those are present.
+   All of the hooks below take at least two parameters, ``*args`` and ``**kwargs``. Make sure those are
+   **always** present in your hook handler declaration.
    They will act as placeholders if additional parameters are added to the hooks in the future and will allow
    your plugin to stay compatible to OctoPrint without any necessary adjustments from you in these cases.
 
