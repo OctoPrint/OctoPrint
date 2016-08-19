@@ -563,7 +563,7 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
 
 	**Preemptive and Runtime Caching**
 
-	OctoPrint will also cache your custom UI for your in its server side UI cache, making sure
+	OctoPrint will also cache your custom UI for you in its server side UI cache, making sure
 	it only gets re-rendered if the request demands that (by having no-cache headers set) or if
 	the cache gets invalidated otherwise.
 
@@ -727,7 +727,7 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
 		OctoPrint's version, current ``UI_API_KEY``, tracked file paths and ``LastModified`` value).
 
 		Returns:
-		    basestring: An alternatively calculate ETag value. Ignored if ``None`` is returned.
+		    basestring: An alternatively calculated ETag value. Ignored if ``None`` is returned (default).
 		"""
 		return None
 
@@ -737,7 +737,7 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
 		date of all tracked files.
 
 		Returns:
-		    int: An alternatively calculated LastModified value. Ignored if ``None`` is returned.
+		    int: An alternatively calculated LastModified value. Ignored if ``None`` is returned (default).
 		"""
 		return None
 
@@ -746,15 +746,17 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
 		Allows to control whether the view provided by the plugin should be preemptively
 		cached on server startup (default) or not.
 
+		Have this return False if you do not want your plugin's UI to ever be preemptively cached.
+
 		Returns:
-		    bool: Whether to enable preemptive caching or not
+		    bool: Whether to enable preemptive caching (True, default) or not (False)
 		"""
 		return True
 
 	def get_ui_data_for_preemptive_caching(self):
 		"""
 		Allows defining additional data to be persisted in the preemptive cache configuration, on
-		top of the request path, base URL and used locale will be persisted.
+		top of the request path, base URL and used locale.
 
 		Returns:
 		    dict: Additional data to persist in the preemptive cache configuration.
@@ -766,7 +768,8 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
 		Allows defining additional request data to persist in the preemptive cache configuration and
 		to use for the fake request used for populating the preemptive cache.
 
-		Keys and values are used as keyword arguments for creating the `Werkzeug EnvironBuilder <http://werkzeug.pocoo.org/docs/0.11/test/#werkzeug.test.EnvironBuilder>`_
+		Keys and values are used as keyword arguments for creating the
+		`Werkzeug EnvironBuilder <http://werkzeug.pocoo.org/docs/0.11/test/#werkzeug.test.EnvironBuilder>`_
 		used for creating the fake request.
 
 		Returns:
@@ -775,7 +778,17 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
 		"""
 		return None
 
-	def get_ui_additional_unless(self):
+	def get_ui_preemptive_caching_additional_unless(self):
+		"""
+		Allows defining additional reasons for temporarily not adding a preemptive cache record for
+		your plugin's UI.
+
+		OctoPrint will call this method when processing a UI request, to determine whether to record the
+		access or not. If you return ``True`` here, no record will be created.
+
+		Returns:
+		    bool: Whether to suppress a record (True) or not (False, default)
+		"""
 		return False
 
 class WizardPlugin(OctoPrintPlugin, ReloadNeedingPlugin):

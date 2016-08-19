@@ -124,7 +124,7 @@ def in_cache():
 			key = _cache_key(plugin._identifier,
 			                 url=url,
 			                 additional_key_data=plugin.get_ui_additional_key_data_for_cache)
-			unless = _preemptive_unless(url, additional_unless=plugin.get_ui_additional_unless)
+			unless = _preemptive_unless(url, additional_unless=plugin.get_ui_preemptive_caching_additional_unless)
 			data = _preemptive_data(plugin._identifier,
 			                        path=path,
 			                        base_url=base_url,
@@ -294,7 +294,7 @@ def index():
 			                                    cached,
 			                                    p.get_ui_data_for_preemptive_caching,
 			                                    p.get_ui_additional_request_data_for_preemptive_caching,
-			                                    p.get_ui_additional_unless)
+			                                    p.get_ui_preemptive_caching_additional_unless)
 		else:
 			view = cached
 
