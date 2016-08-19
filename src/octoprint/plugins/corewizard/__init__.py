@@ -139,6 +139,17 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 	def _get_servercommands_wizard_name(self):
 		return gettext("Server Commands")
 
+	#~~ Printer profile subwizard
+
+	def _is_printerprofile_wizard_required(self):
+		return self._printer_profile_manager.is_default_unmodified() and self._printer_profile_manager.profile_count == 1
+
+	def _get_printerprofile_wizard_details(self):
+		return dict()
+
+	def _get_printerprofile_wizard_name(self):
+		return gettext("Default Printer Profile")
+
 	#~~ helpers
 
 	def _get_subwizard_attrs(self, start, end, callback=None):

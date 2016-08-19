@@ -108,6 +108,30 @@ $(function() {
         self.settingsViewModel = parameters[0];
     }
 
+    function CoreWizardPrinterProfileViewModel(parameters) {
+        var self = this;
+
+        self.printerProfiles = parameters[0];
+
+        self.editor = self.printerProfiles.createProfileEditor();
+        self.editorLoaded = ko.observable(false);
+
+        self.onStartup = function() {
+            OctoPrint.printerprofiles.get("_default")
+                .done(function(data) {
+                    self.editor.fromProfileData(data);
+                    self.editorLoaded(true);
+                });
+        };
+
+        self.onWizardFinish = function() {
+            OctoPrint.printerprofiles.update("_default", self.editor.toProfileData())
+                .done(function() {
+                    self.printerProfiles.requestData();
+                });
+        };
+    }
+
     OCTOPRINT_VIEWMODELS.push([
         CoreWizardAclViewModel,
         ["loginStateViewModel"],
@@ -120,5 +144,9 @@ $(function() {
         CoreWizardServerCommandsViewModel,
         ["settingsViewModel"],
         "#wizard_plugin_corewizard_servercommands"
+    ], [
+        CoreWizardPrinterProfileViewModel,
+        ["printerProfilesViewModel"],
+        "#wizard_plugin_corewizard_printerprofile"
     ]);
 });

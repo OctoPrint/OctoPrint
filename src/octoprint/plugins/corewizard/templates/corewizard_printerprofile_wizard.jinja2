@@ -1,0 +1,12 @@
+<h3>{{ _('Set up your printer profile') }}</h3>
+<p>{% trans %}Please make sure the settings below match your printer. If you plan on connecting more than one printer
+to OctoPrint, you can also configure additional printer profiles under Settings > Printer Profiles{% endtrans %}</p>
+
+<div data-bind="visible: editorLoaded" style="display: none">
+    <!-- ko with: editor -->
+    {% include "_snippets/settings/printerprofiles/profileEditor.jinja2" %}
+    <!-- /ko -->
+</div>
+<div data-bind="visible: !editorLoaded()">
+    Loading...
+</div>
