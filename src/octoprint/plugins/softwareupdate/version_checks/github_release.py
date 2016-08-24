@@ -14,7 +14,60 @@ RELEASE_URL = "https://api.github.com/repos/{user}/{repo}/releases"
 
 logger = logging.getLogger("octoprint.plugins.softwareupdate.version_checks.github_release")
 
-def _get_latest_release(user, repo, include_prerelease=False):
+def _filter_out_latest(releases, include_prerelease=False, prerelease_channel=None):
+	"""
+	Filters out the newest of all matching releases.
+
+	Tests:
+
+	    >>> release_1_2_15 = dict(name="1.2.15", tag_name="1.2.15", html_url="some_url", published_at="2016-07-29T19:53:29Z", prerelease=False, draft=False, target_commitish="prerelease")
+	    >>> release_1_2_16rc1 = dict(name="1.2.16rc1", tag_name="1.2.16rc1", html_url="some_url", published_at="2016-08-29T12:00:00Z", prerelease=True, draft=False, target_commitish="rc/maintenance")
+	    >>> release_1_2_16rc2 = dict(name="1.2.16rc2", tag_name="1.2.16rc2", html_url="some_url", published_at="2016-08-30T12:00:00Z", prerelease=True, draft=False, target_commitish="rc/maintenance")
+	    >>> release_1_2_17rc1 = dict(name="1.2.17rc1", tag_name="1.2.17rc1", html_url="some_url", published_at="2016-08-31T12:00:00Z", prerelease=True, draft=True, target_commitish="rc/maintenance")
+	    >>> release_1_3_0rc1 = dict(name="1.3.0rc1", tag_name="1.3.0rc1", html_url="some_url", published_at="2016-12-12T12:00:00Z", prerelease=True, draft=False, target_commitish="rc/devel")
+	    >>> release_1_4_0rc1 = dict(name="1.4.0rc1", tag_name="1.4.0rc1", html_url="some_url", published_at="2017-12-12T12:00:00Z", prerelease=True, draft=False, target_commitish="rc/future")
+	    >>> releases = [release_1_2_15, release_1_2_16rc1, release_1_2_16rc2, release_1_2_17rc1, release_1_3_0rc1, release_1_4_0rc1]
+	    >>> _filter_out_latest(releases, include_prerelease=False, prerelease_channel=None)
+	    ('1.2.15', '1.2.15', 'some_url')
+	    >>> _filter_out_latest(releases, include_prerelease=True, prerelease_channel="rc/maintenance")
+	    ('1.2.16rc2', '1.2.16rc2', 'some_url')
+	    >>> _filter_out_latest(releases, include_prerelease=True, prerelease_channel="rc/devel")
+	    ('1.3.0rc1', '1.3.0rc1', 'some_url')
+	    >>> _filter_out_latest(releases, include_prerelease=True, prerelease_channel=None)
+	    ('1.4.0rc1', '1.4.0rc1', 'some_url')
+	    >>> _filter_out_latest(releases, include_prerelease=True, prerelease_channel="rc/doesntexist")
+	    ('1.2.15', '1.2.15', 'some_url')
+	    >>> _filter_out_latest([release_1_2_17rc1])
+	    (None, None, None)
+	    >>> _filter_out_latest([release_1_2_16rc1, release_1_2_16rc2])
+	    (None, None, None)
+	"""
+
+	nothing = None, None, None
+
+	# filter out prereleases and drafts
+	filter_function = lambda rel: not rel["prerelease"] and not rel["draft"]
+	if include_prerelease:
+		if prerelease_channel:
+			filter_function = lambda rel: not rel["draft"] and (
+			not rel["prerelease"] or rel["target_commitish"] == prerelease_channel)
+		else:
+			filter_function = lambda rel: not rel["draft"]
+
+	releases = filter(filter_function, releases)
+	if not releases:
+		return nothing
+
+	# sort by date
+	releases = sorted(releases, key=lambda release: release.get("published_at", None))
+
+	# latest release = last in list
+	latest = releases[-1]
+
+	return latest["name"], latest["tag_name"], latest.get("html_url", None)
+
+
+def _get_latest_release(user, repo, include_prerelease=False, prerelease_channel=None):
 	nothing = None, None, None
 	r = requests.get(RELEASE_URL.format(user=user, repo=repo))
 
@@ -27,34 +80,46 @@ def _get_latest_release(user, repo, include_prerelease=False):
 	releases = r.json()
 
 	# sanitize
-	required_fields = {"name", "tag_name", "html_url", "draft", "prerelease", "published_at"}
+	required_fields = {"name", "tag_name", "html_url", "draft", "prerelease", "published_at", "target_commitish"}
 	releases = filter(lambda rel: set(rel.keys()) & required_fields == required_fields,
 	                  releases)
 
-	# filter out prereleases and drafts
-	if include_prerelease:
-		releases = filter(lambda rel: not rel["draft"], releases)
-	else:
-		releases = filter(lambda rel: not rel["prerelease"] and not rel["draft"],
-		                  releases)
-
-	if not releases:
-		return nothing
-
-	# sort by date
-	comp = lambda a, b: cmp(a.get("published_at", None), b["published_at"])
-	releases = sorted(releases, cmp=comp)
-
-	# latest release = last in list
-	latest = releases[-1]
-
-	return latest["name"], latest["tag_name"], latest.get("html_url", None)
+	return _filter_out_latest(releases, include_prerelease=include_prerelease, prerelease_channel=prerelease_channel)
 
 
 def _get_sanitized_version(version_string):
+	"""
+	Removes "-..." prefix from version strings.
+
+	Tests:
+	    >>> _get_sanitized_version("1.2.15")
+	    '1.2.15'
+	    >>> _get_sanitized_version("1.2.15-dev12")
+	    '1.2.15'
+	"""
 	if "-" in version_string:
 		version_string = version_string[:version_string.find("-")]
 	return version_string
+
+
+def _get_base_from_version_tuple(version_tuple):
+	"""
+	Reduces version tuple to base version.
+
+	Tests:
+
+	    >>> _get_base_from_version_tuple(("1", "2", "15"))
+	    ('1', '2', '15')
+	    >>> _get_base_from_version_tuple(("1", "2", "15", "*", "dev12"))
+	    ('1', '2', '15')
+	"""
+
+	base_version = []
+	for part in version_tuple:
+		if part.startswith("*"):
+			break
+		base_version.append(part)
+	return tuple(base_version)
 
 
 def _get_comparable_version_pkg_resources(version_string, force_base=True):
@@ -65,12 +130,7 @@ def _get_comparable_version_pkg_resources(version_string, force_base=True):
 	if force_base:
 		if isinstance(version, tuple):
 			# old setuptools
-			base_version = []
-			for part in version:
-				if part.startswith("*"):
-					break
-				base_version.append(part)
-			version = tuple(base_version)
+			version = _get_base_from_version_tuple(version)
 		else:
 			# new setuptools
 			version = pkg_resources.parse_version(version.base_version)
@@ -91,10 +151,32 @@ def _get_comparable_version_semantic(version_string, force_base=True):
 
 
 def _is_current(release_information, compare_type, custom=None, force_base=True):
+	"""
+	Checks if the provided release information indicates the version being the most current one.
+
+	Tests:
+
+	    >>> _is_current(dict(remote=dict(value=None))
+	    True
+	    >>> _is_current(dict(local=dict(value="1.2.15"), remote=dict(value="1.2.16")))
+	    False
+	    >>> _is_current(dict(local=dict(value="1.2.16dev1"), remote=dict(value="1.2.16dev2")))
+	    True
+	    >>> _is_current(dict(local=dict(value="1.2.16dev1"), remote=dict(value="1.2.16dev2")), force_base=False)
+	    False
+	    >>> _is_current(dict(local=dict(value="1.2.16dev3"), remote=dict(value="1.2.16dev2")), force_base=False)
+	    True
+	    >>> _is_current(dict(local=dict(value="1.2.16dev3"), remote=dict(value="1.2.16dev2")), force_base=False, compare_type="python_unequal")
+	    False
+
+	"""
+
 	if release_information["remote"]["value"] is None:
 		return True
 
-	if not compare_type in ("python", "semantic", "unequal", "custom") or compare_type == "custom" and custom is None:
+	if not compare_type in ("python", "python_unequal",
+	                        "semantic", "semantic_unequal",
+	                        "unequal", "custom") or compare_type == "custom" and custom is None:
 		compare_type = "python"
 
 	sanitized_local = _get_sanitized_version(release_information["local"]["value"])
@@ -106,10 +188,20 @@ def _is_current(release_information, compare_type, custom=None, force_base=True)
 			remote_version = _get_comparable_version_pkg_resources(sanitized_remote, force_base=force_base)
 			return local_version >= remote_version
 
+		elif compare_type == "python_unequal":
+			local_version = _get_comparable_version_pkg_resources(sanitized_local, force_base=force_base)
+			remote_version = _get_comparable_version_pkg_resources(sanitized_remote, force_base=force_base)
+			return local_version == remote_version
+
 		elif compare_type == "semantic":
 			local_version = _get_comparable_version_semantic(sanitized_local, force_base=force_base)
 			remote_version = _get_comparable_version_semantic(sanitized_remote, force_base=force_base)
 			return local_version >= remote_version
+
+		elif compare_type == "semantic_unequal":
+			local_version = _get_comparable_version_semantic(sanitized_local, force_base=force_base)
+			remote_version = _get_comparable_version_semantic(sanitized_remote, force_base=force_base)
+			return local_version == remote_version
 
 		elif compare_type == "custom":
 			return custom(sanitized_local, sanitized_remote)
@@ -127,12 +219,14 @@ def get_latest(target, check, custom_compare=None):
 
 	current = check.get("current", None)
 	include_prerelease = check.get("prerelease", False)
+	prerelease_channel = check.get("prerelease_channel", None)
 	force_base = check.get("force_base", True)
 
 	remote_name, remote_tag, release_notes = _get_latest_release(check["user"],
 	                                                             check["repo"],
-	                                                             include_prerelease=include_prerelease)
-	compare_type = check["release_compare"] if "release_compare" in check else "python"
+	                                                             include_prerelease=include_prerelease,
+	                                                             prerelease_channel=prerelease_channel)
+	compare_type = check.get("release_compare", "python")
 
 	information =dict(
 		local=dict(name=current, value=current),

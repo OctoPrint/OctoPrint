@@ -86,6 +86,12 @@
                     <select data-bind="value: config_checkType, options: config_availableCheckTypes, optionsText: 'name', optionsValue: 'key'"></select>
                 </div>
             </div>
+            <div class="control-group" data-bind="visible: config_checkType() == 'github_release'">
+                <label class="control-label">{{ _('OctoPrint Release Channel') }}</label>
+                <div class="controls">
+                    <select data-bind="value: config_releaseChannel, options: config_availableReleaseChannels, optionsText: 'name', optionsValue: 'key'"></select>
+                </div>
+            </div>
             <div class="control-group">
                 <label class="control-label">{{ _('Version cache TTL') }}</label>
                 <div class="controls">

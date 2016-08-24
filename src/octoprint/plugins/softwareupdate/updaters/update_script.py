@@ -33,9 +33,11 @@ def perform_update(target, check, target_version):
 		raise ConfigurationInvalid("checkout_folder and update_folder are missing for update target %s, one is needed" % target)
 
 	update_script = check["update_script"]
-	folder = check["update_folder"] if "update_folder" in check else check["checkout_folder"]
-	pre_update_script = check["pre_update_script"] if "pre_update_script" in check else None
-	post_update_script = check["post_update_script"] if "post_update_script" in check else None
+	update_branch = check.get("update_branch", "")
+	force_exact_version = check.get("force_exact_version", False)
+	folder = check.get("update_folder", check["checkout_folder"])
+	pre_update_script = check.get("pre_update_script", None)
+	post_update_script = check.get("post_update_script", None)
 
 	update_stdout = ""
 	update_stderr = ""
@@ -56,7 +58,11 @@ def perform_update(target, check, target_version):
 	### update
 
 	try:
-		update_command = update_script.format(python=sys.executable, folder=folder, target=target_version)
+		update_command = update_script.format(python=sys.executable,
+		                                      folder=folder,
+		                                      target=target_version,
+		                                      branch=update_branch,
+		                                      force="true" if force_exact_version else "false")
 
 		logger.debug("Target %s, running update script: %s" % (target, update_command))
 		returncode, stdout, stderr = execute(update_command, cwd=folder)
