@@ -1036,6 +1036,9 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		payload = self._payload_for_print_job_event()
 		if payload:
 			eventManager().fire(Events.PRINT_STARTED, payload)
+			self.script("beforePrintStarted",
+			            context=dict(event=payload),
+			            must_be_set=False)
 
 	def on_comm_print_job_done(self):
 		payload = self._payload_for_print_job_event()
