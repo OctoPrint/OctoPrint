@@ -122,7 +122,7 @@ def update_source(git_executable, folder, target, force=False, branch=None):
 	print(stdout)
 
 	if force:
-		reset_command = ["reset"]
+		reset_command = ["reset", "--hard"]
 		reset_command += [target]
 
 		print(">>> Running: git %s" % " ".join(reset_command))
