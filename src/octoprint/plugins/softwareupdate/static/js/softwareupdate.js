@@ -112,16 +112,18 @@ $(function() {
         };
 
         self._copyConfig = function() {
+            var availableReleaseChannels = [];
+            _.each(self.settings.settings.plugins.softwareupdate.octoprint_branch_mappings(), function(mapping) {
+                availableReleaseChannels.push({"key": mapping.branch(), "name": gettext(mapping.name() || mapping.branch())});
+            });
+            self.config_availableReleaseChannels(availableReleaseChannels);
+
             self.config_cacheTtl(self.settings.settings.plugins.softwareupdate.cache_ttl());
             self.config_checkoutFolder(self.settings.settings.plugins.softwareupdate.octoprint_checkout_folder());
             self.config_checkType(self.settings.settings.plugins.softwareupdate.octoprint_type());
             self.config_releaseChannel(self.settings.settings.plugins.softwareupdate.octoprint_release_channel());
 
-            var availableReleaseChannels = [];
-            _.each(self.settings.settings.plugins.softwareupdate.octoprint_branch_mappings(), function(mapping) {
-                availableReleaseChannels.push({"key": mapping.branch, "name": gettext(mapping.name || mapping.branch)});
-            });
-            self.config_availableReleaseChannels(availableReleaseChannels);
+            log.info("releaseChannel:", self.config_releaseChannel(), ", availableReleaseChannels:", availableReleaseChannels);
         };
 
         self.fromCheckResponse = function(data, ignoreSeen, showIfNothingNew) {

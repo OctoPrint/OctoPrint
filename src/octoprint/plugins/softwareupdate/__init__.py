@@ -154,8 +154,8 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 			"octoprint_stable_branch": dict(branch="master", name="Stable"),
 			"octoprint_prerelease_branches": [
-				dict(branch="rc/maintenance", name="Maintenance"),
-				dict(branch="rc/devel", name="Devel")
+				dict(branch="rc/maintenance", name="Maintenance RCs"),
+				dict(branch="rc/devel", name="Development RCs")
 			],
 
 			"cache_ttl": 24 * 60,
