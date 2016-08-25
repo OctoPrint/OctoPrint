@@ -641,6 +641,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				# one of our updates requires a restart of either type "octoprint" or "environment". Let's see if
 				# we can actually perform that
 
+				restart_command = None
 				if restart_type == "octoprint":
 					restart_command = self._settings.global_get(["server", "commands", "serverRestartCommand"])
 				elif restart_type == "environment":
@@ -754,22 +755,36 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				result["current"] = VERSION
 
 				if check["type"] == "github_release" and (check["prerelease"] or BRANCH != self._settings.get(["octoprint_stable_branch", "branch"])):
+					# we are tracking github releases and are either also tracking prerelease OR are currently installed
+					# from something that is not the stable (master) branch => we need to change some parameters
+
 					# we force python unequality check here because that will also allow us to
-					# downgrade on a prerelease channel change
+					# downgrade on a prerelease channel change (rc/devel => rc/maintenance)
 					result["release_compare"] = "python_unequal"
 
 					# also we compare versions fully, not just the base so that we see a difference
-					# between RCs for the same version release
+					# between RCs + stable for the same version release
 					result["force_base"] = False
 
 					if check.get("update_script", None):
-						channel = result["prerelease_channel"] = check.get("prerelease_channel", BRANCH)
-						if channel:
-							# if we have a release channel, we also set our update_branch here to our release channel
-							result["update_branch"] = check.get("update_branch", channel)
+						# if we are using the update_script, we also need to set our update_branch and force
+						# to install the exact version we requested
 
-						# we also force our target version in the update
-						result["force_exact_version"] = True
+						if check["prerelease"]:
+							# we are tracking prereleases => we want to be on the correct prerelease channel/branch
+							channel = check.get("prerelease_channel", None)
+							if channel:
+								# if we have a release channel, we also set our update_branch here to our release channel
+								# in case it's not already set
+								result["update_branch"] = check.get("update_branch", channel)
+
+							# we also force our target version in the update
+							result["force_exact_version"] = True
+
+						else:
+							# we are not tracking prereleases, but aren't on the stable branch either => switch back
+							# to stable branch on update
+							result["update_branch"] = self._settings.get(["octoprint_stable_branch", "branch"])
 
 		else:
 			result["displayName"] = check.get("displayName", target)
