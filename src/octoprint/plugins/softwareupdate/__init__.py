@@ -189,6 +189,11 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				data["octoprint_checkout_folder"] = None
 			data["octoprint_type"] = checks["octoprint"].get("type", None)
 
+			try:
+				data["octoprint_method"] = self._get_update_method("octoprint", checks["octoprint"])
+			except exceptions.UnknownUpdateType:
+				data["octoprint_method"] = "unknown"
+
 			data["octoprint_release_channel"] = self._settings.get(["octoprint_stable_branch", "branch"])
 			if checks["octoprint"].get("prerelease", False):
 				channel = checks["octoprint"].get("prerelease_channel", BRANCH)
@@ -774,6 +779,10 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			else:
 				result["current"] = check.get("current", check.get("displayVersion", None))
 
+		if "pip" in result:
+			if not "pip_command" in check and self._settings.get(["pip_command"]) is not None:
+				result["pip_command"] = self._settings.get(["pip_command"])
+
 		return result
 
 	def _get_version_checker(self, target, check):
@@ -799,22 +808,45 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		else:
 			raise exceptions.UnknownCheckType()
 
+	def _get_update_method(self, target, check, valid_methods=None):
+		"""
+		Determines the update method for the given target and check.
+
+		If ``valid_methods`` is provided, determine method must be contained
+		therein to be considered valid.
+
+		Raises an ``UnknownUpdateType`` exception if method cannot be determined
+		or validated.
+		"""
+
+		method = None
+		if "method" in check:
+			method = check["method"]
+		else:
+			if "update_script" in check:
+				method = "update_script"
+			elif "pip" in check:
+				method = "pip"
+			elif "python_updater" in check:
+				method = "python_updated"
+
+		if method is None or (valid_methods and not method in valid_methods):
+			raise exceptions.UnknownUpdateType()
+
+		return method
+
 	def _get_updater(self, target, check):
 		"""
 		Retrieves the updater for the given target and check configuration. Will raise an UnknownUpdateType if updater
 		cannot be determined.
 		"""
 
-		if "update_script" in check:
-			return updaters.update_script
-		elif "pip" in check:
-			if not "pip_command" in check and self._settings.get(["pip_command"]) is not None:
-				check["pip_command"] = self._settings.get(["pip_command"])
-			return updaters.pip
-		elif "python_updater" in check:
-			return updaters.python_updater
-		else:
-			raise exceptions.UnknownUpdateType()
+		mapping = dict(update_script=updaters.update_script,
+		               pip=updaters.pip,
+		               python_updater=updaters.python_updater)
+
+		method = self._get_update_method(target, check, valid_methods=mapping.keys())
+		return mapping[method]
 
 __plugin_name__ = "Software Update"
 __plugin_author__ = "Gina Häußge"

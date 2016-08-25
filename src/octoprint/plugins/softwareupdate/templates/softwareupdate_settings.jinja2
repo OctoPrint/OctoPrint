@@ -74,19 +74,19 @@
     </div>
     <div class="modal-body">
         <form class="form-horizontal">
-            <div class="control-group">
+            <div class="control-group" data-bind="visible: config_updateMethod() == 'update_script' || config_updateMethod() == 'python_updater'">
                 <label class="control-label">{{ _('OctoPrint checkout folder') }}</label>
                 <div class="controls">
                     <input type="text" class="input-block-level" data-bind="value: config_checkoutFolder">
                 </div>
             </div>
-            <div class="control-group">
+            <div class="control-group" data-bind="visible: config_availableCheckTypes().length > 0">
                 <label class="control-label">{{ _('OctoPrint version tracking') }}</label>
                 <div class="controls">
                     <select data-bind="value: config_checkType, options: config_availableCheckTypes, optionsText: 'name', optionsValue: 'key'"></select>
                 </div>
             </div>
-            <div class="control-group" data-bind="visible: config_checkType() == 'github_release'">
+            <div class="control-group" data-bind="visible: config_availableCheckTypes().length > 0 && config_checkType() == 'github_release'">
                 <label class="control-label">{{ _('OctoPrint Release Channel') }}</label>
                 <div class="controls">
                     <select data-bind="value: config_releaseChannel, options: config_availableReleaseChannels, optionsText: 'name', optionsValue: 'key'"></select>

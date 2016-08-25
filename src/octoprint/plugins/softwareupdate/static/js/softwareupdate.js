@@ -21,15 +21,13 @@ $(function() {
         self.config_cacheTtl = ko.observable();
         self.config_checkoutFolder = ko.observable();
         self.config_checkType = ko.observable();
+        self.config_updateMethod = ko.observable();
         self.config_releaseChannel = ko.observable();
 
         self.configurationDialog = $("#settings_plugin_softwareupdate_configurationdialog");
         self.confirmationDialog = $("#softwareupdate_confirmation_dialog");
 
-        self.config_availableCheckTypes = [
-            {"key": "github_release", "name": gettext("Release")},
-            {"key": "git_commit", "name": gettext("Commit")}
-        ];
+        self.config_availableCheckTypes = ko.observableArray([]);
         self.config_availableReleaseChannels = ko.observableArray([]);
 
         self.reloadOverlay = $("#reloadui_overlay");
@@ -112,18 +110,28 @@ $(function() {
         };
 
         self._copyConfig = function() {
+            var updateMethod = self.settings.settings.plugins.softwareupdate.octoprint_method();
+
+            var availableCheckTypes = [];
+            if (updateMethod == "update_script" || updateMethod == "python") {
+                availableCheckTypes = [{"key": "github_release", "name": gettext("Release")},
+                                       {"key": "git_commit", "name": gettext("Commit")}];
+            } else {
+                availableCheckTypes = [];
+            }
+            self.config_availableCheckTypes(availableCheckTypes);
+
             var availableReleaseChannels = [];
             _.each(self.settings.settings.plugins.softwareupdate.octoprint_branch_mappings(), function(mapping) {
                 availableReleaseChannels.push({"key": mapping.branch(), "name": gettext(mapping.name() || mapping.branch())});
             });
             self.config_availableReleaseChannels(availableReleaseChannels);
 
+            self.config_updateMethod(updateMethod);
             self.config_cacheTtl(self.settings.settings.plugins.softwareupdate.cache_ttl());
             self.config_checkoutFolder(self.settings.settings.plugins.softwareupdate.octoprint_checkout_folder());
             self.config_checkType(self.settings.settings.plugins.softwareupdate.octoprint_type());
             self.config_releaseChannel(self.settings.settings.plugins.softwareupdate.octoprint_release_channel());
-
-            log.info("releaseChannel:", self.config_releaseChannel(), ", availableReleaseChannels:", availableReleaseChannels);
         };
 
         self.fromCheckResponse = function(data, ignoreSeen, showIfNothingNew) {
