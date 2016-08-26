@@ -553,34 +553,58 @@ def gcodeFileCommand(filename, target):
 			return make_response("Unsupported target for {}: {}".format(command, target), 400)
 
 		if not _verifyFileExists(target, filename) and not _verifyFolderExists(target, filename):
-			return make_response("File/Folder not found on '%s': %s" % (target, filename), 404)
+			return make_response("File or folder not found on {}: {}".format(target, filename), 404)
 
 		destination = data["destination"]
-		if _verifyFolderExists(target, destination):
-			path, name = fileManager.split_path(target, filename)
-			destination = fileManager.join_path(target, destination, name)
+		if not _verifyFolderExists(target, destination):
+			return make_response("Destination folder not found on {}: {}".format(target, destination), 404)
+
+		path, name = fileManager.split_path(target, filename)
+		destination = fileManager.join_path(target, destination, name)
 
 		if _verifyFileExists(target, destination) or _verifyFolderExists(target, destination):
-			return make_response("File/Folder already exists: %s" % filename, 409)
+			return make_response("File or folder does already exist on {}: {}".format(target, destination), 409)
+
+		is_file = fileManager.file_exists(target, filename)
+		is_folder = fileManager.folder_exists(target, filename)
+
+		if not (is_file or is_folder):
+			return make_response("{} on {} is neither file or folder, can't {}".format(filename, target, command), 400)
 
 		if command == "copy":
-			if fileManager.file_exists(target, filename):
+			if is_file:
 				fileManager.copy_file(target, filename, destination)
-			elif fileManager.folder_exists(target, filename):
+			else:
 				fileManager.copy_folder(target, filename, destination)
 		elif command == "move":
 			if _isBusy(target, filename):
-				return make_response("Trying to move a file/folder that is currently in use: %s" % filename, 409)
+				return make_response("Trying to move a file or folder that is currently in use: {}".format(filename), 409)
 
 			# deselect the file if it's currently selected
 			currentOrigin, currentFilename = _getCurrentFile()
 			if currentFilename is not None and filename == currentFilename:
 				printer.unselect_file()
 
-			if fileManager.file_exists(target, filename):
+			if is_file:
 				fileManager.move_file(target, filename, destination)
-			elif fileManager.folder_exists(target, filename):
+			else:
 				fileManager.move_folder(target, filename, destination)
+
+		location = url_for(".readGcodeFile", target=target, filename=destination, _external=True)
+		result = {
+			"name": name,
+			"path": destination,
+			"origin": FileDestinations.LOCAL,
+			"refs": {
+				"resource": location
+			}
+		}
+		if is_file:
+			result["refs"]["download"] = url_for("index", _external=True) + "downloads/files/" + target + "/" + destination
+
+		r = make_response(jsonify(result), 201)
+		r.headers["Location"] = location
+		return r
 
 	return NO_CONTENT
 
