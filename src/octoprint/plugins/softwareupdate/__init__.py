@@ -762,12 +762,12 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 					# downgrade on a prerelease channel change (rc/devel => rc/maintenance)
 					result["release_compare"] = "python_unequal"
 
-					# also we compare versions fully, not just the base so that we see a difference
+					# we compare versions fully, not just the base so that we see a difference
 					# between RCs + stable for the same version release
 					result["force_base"] = False
 
 					if check.get("update_script", None):
-						# if we are using the update_script, we also need to set our update_branch and force
+						# if we are using the update_script, we need to set our update_branch and force
 						# to install the exact version we requested
 
 						if check["prerelease"]:
@@ -784,7 +784,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 						else:
 							# we are not tracking prereleases, but aren't on the stable branch either => switch back
 							# to stable branch on update
-							result["update_branch"] = self._settings.get(["octoprint_stable_branch", "branch"])
+							result["update_branch"] = check.get("update_branch", self._settings.get(["octoprint_stable_branch", "branch"]))
 
 		else:
 			result["displayName"] = check.get("displayName", target)
