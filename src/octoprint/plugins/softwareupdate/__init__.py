@@ -146,17 +146,14 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 					"user": "foosel",
 					"repo": "OctoPrint",
 					"update_script": "{{python}} \"{update_script}\" --branch={{branch}} --force={{force}} \"{{folder}}\" {{target}}".format(update_script=update_script),
-					"restart": "octoprint"
+					"restart": "octoprint",
+					"stable_branch": dict(branch="master", name="Stable"),
+					"prerelease_branches": [dict(branch="rc/maintenance", name="Maintenance RCs"),
+					                        dict(branch="rc/devel", name="Devel RCs")]
 				},
 			},
 			"pip_command": None,
 			"check_providers": {},
-
-			"octoprint_stable_branch": dict(branch="master", name="Stable"),
-			"octoprint_prerelease_branches": [
-				dict(branch="rc/maintenance", name="Maintenance RCs"),
-				dict(branch="rc/devel", name="Development RCs")
-			],
 
 			"cache_ttl": 24 * 60,
 		}
@@ -165,16 +162,6 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		data = dict(octoprint.plugin.SettingsPlugin.on_settings_load(self))
 		if "checks" in data:
 			del data["checks"]
-
-		branch_mappings = []
-		if "octoprint_stable_branch" in data:
-			branch_mappings.append(data["octoprint_stable_branch"])
-			del data["octoprint_stable_branch"]
-		if "octoprint_prerelease_branches" in data:
-			for mapping in data["octoprint_prerelease_branches"]:
-				branch_mappings.append(mapping)
-			del data["octoprint_prerelease_branches"]
-		data["octoprint_branch_mappings"] = branch_mappings
 
 		if "check_providers" in data:
 			del data["check_providers"]
@@ -194,20 +181,34 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			except exceptions.UnknownUpdateType:
 				data["octoprint_method"] = "unknown"
 
-			data["octoprint_release_channel"] = self._settings.get(["octoprint_stable_branch", "branch"])
+			stable_branch = None
+			prerelease_branches = []
+			branch_mappings = []
+			if "stable_branch" in checks["octoprint"]:
+				branch_mappings.append(checks["octoprint"]["stable_branch"])
+				stable_branch = checks["octoprint"]["stable_branch"]["branch"]
+			if "prerelease_branches" in checks["octoprint"]:
+				for mapping in checks["octoprint"]["prerelease_branches"]:
+					branch_mappings.append(mapping)
+					prerelease_branches.append(mapping["branch"])
+			data["octoprint_branch_mappings"] = branch_mappings
+
+			data["octoprint_release_channel"] = stable_branch
 			if checks["octoprint"].get("prerelease", False):
 				channel = checks["octoprint"].get("prerelease_channel", BRANCH)
-				if channel in [x["branch"] for x in self._settings.get(["octoprint_prerelease_branches"])]:
+				if channel in prerelease_branches:
 					data["octoprint_release_channel"] = channel
+
 		else:
 			data["octoprint_checkout_folder"] = None
 			data["octoprint_type"] = None
+			data["octoprint_branch_mappings"] = []
 
 		return data
 
 	def on_settings_save(self, data):
 		for key in self.get_settings_defaults():
-			if key == "checks" or key == "cache_ttl" or key == "octoprint_checkout_folder" or key == "octoprint_type":
+			if key in ("checks", "cache_ttl", "octoprint_checkout_folder", "octoprint_type", "octoprint_release_channel"):
 				continue
 			if key in data:
 				self._settings.set([key], data[key])
@@ -253,7 +254,8 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			self._refresh_configured_checks = True
 
 		if "octoprint_release_channel" in data:
-			if data["octoprint_release_channel"] in [x["branch"] for x in self._settings.get(["octoprint_prerelease_branches"])]:
+			prerelease_branches = self._settings.get(["checks", "octoprint", "prerelease_branches"])
+			if prerelease_branches and data["octoprint_release_channel"] in [x["branch"] for x in prerelease_branches]:
 				self._settings.set(["checks", "octoprint", "prerelease"], True, defaults=defaults, force=True)
 				self._settings.set(["checks", "octoprint", "prerelease_channel"], data["octoprint_release_channel"], defaults=defaults, force=True)
 				self._refresh_configured_checks = True
@@ -394,7 +396,8 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 		try:
 			information, update_available, update_possible = self.get_current_versions(check_targets=check_targets, force=force)
-			return flask.jsonify(dict(status="updatePossible" if update_available and update_possible else "updateAvailable" if update_available else "current", information=information))
+			return flask.jsonify(dict(status="updatePossible" if update_available and update_possible else "updateAvailable" if update_available else "current",
+			                          information=information))
 		except exceptions.ConfigurationInvalid as e:
 			flask.make_response("Update not properly configured, can't proceed: %s" % e.message, 500)
 
@@ -749,12 +752,21 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			result["displayName"] = check.get("displayName", gettext("OctoPrint"))
 			result["displayVersion"] = check.get("displayVersion", "{octoprint_version}")
 
+			stable_branch = "master"
+			release_branches = []
+			if "stable_branch" in check:
+				release_branches.append(check["stable_branch"]["branch"])
+				stable_branch = check["stable_branch"]["branch"]
+			if "prerelease_branches" in check:
+				release_branches += [x["branch"] for x in check["prerelease_branches"]]
+			result["released_version"] = not release_branches or BRANCH in release_branches
+
 			if check["type"] == "github_commit":
 				result["current"] = REVISION if REVISION else "unknown"
 			else:
 				result["current"] = VERSION
 
-				if check["type"] == "github_release" and (check["prerelease"] or BRANCH != self._settings.get(["octoprint_stable_branch", "branch"])):
+				if check["type"] == "github_release" and (check["prerelease"] or BRANCH != stable_branch):
 					# we are tracking github releases and are either also tracking prerelease OR are currently installed
 					# from something that is not the stable (master) branch => we need to change some parameters
 
@@ -780,7 +792,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 						else:
 							# we are not tracking prereleases, but aren't on the stable branch either => switch back
 							# to stable branch on update
-							result["update_branch"] = check.get("update_branch", self._settings.get(["octoprint_stable_branch", "branch"]))
+							result["update_branch"] = check.get("update_branch", stable_branch)
 
 
 						if BRANCH != result.get("prerelease_channel"):

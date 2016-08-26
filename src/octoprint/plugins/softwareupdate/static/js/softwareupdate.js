@@ -165,7 +165,7 @@ $(function() {
             var octoprint = data.information["octoprint"];
             if (octoprint && octoprint.hasOwnProperty("check")) {
                 var check = octoprint.check;
-                if (check["release_branches"] && !_.contains(check["release_branches"], BRANCH) && check["type"] == "github_release") {
+                if (check["released_version"] === false && check["type"] == "github_release") {
                     self.octoprintUnreleased(true);
                 } else {
                     self.octoprintUnreleased(false);
