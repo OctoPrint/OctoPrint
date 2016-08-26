@@ -758,10 +758,6 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 					# we are tracking github releases and are either also tracking prerelease OR are currently installed
 					# from something that is not the stable (master) branch => we need to change some parameters
 
-					# we force python unequality check here because that will also allow us to
-					# downgrade on a prerelease channel change (rc/devel => rc/maintenance)
-					result["release_compare"] = "python_unequal"
-
 					# we compare versions fully, not just the base so that we see a difference
 					# between RCs + stable for the same version release
 					result["force_base"] = False
@@ -785,6 +781,16 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 							# we are not tracking prereleases, but aren't on the stable branch either => switch back
 							# to stable branch on update
 							result["update_branch"] = check.get("update_branch", self._settings.get(["octoprint_stable_branch", "branch"]))
+
+
+						if BRANCH != result.get("prerelease_channel"):
+							# we force python unequality check here because that will also allow us to
+							# downgrade on a prerelease channel change (rc/devel => rc/maintenance)
+							#
+							# we detect channel changes by comparing the current branch with the target
+							# branch of the release channel - unequality means we might have to handle
+							# a downgrade
+							result["release_compare"] = "python_unequal"
 
 		else:
 			result["displayName"] = check.get("displayName", target)
