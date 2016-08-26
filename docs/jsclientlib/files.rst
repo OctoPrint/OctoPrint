@@ -73,7 +73,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.files.select(location, filename, print, opts)
+.. js:function:: OctoPrint.files.select(location, path, print, opts)
 
    Selects a file at ``location`` named ``filename`` for printing. If ``print`` is supplied and
    truthy, also starts printing the file immediately.
@@ -81,58 +81,95 @@
    See the ``select`` command in :ref:`Issue a file command <sec-api-fileops-filecommand>` for more details.
 
    :param string location: The location of the file to select
-   :param string filename: The name of the file to select
+   :param string path: The name of the file to select
    :param boolean print: Whether to print the file after selection (true) or not (false, default)
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.files.slice(location, filename, parameters, opts)
+.. js:function:: OctoPrint.files.slice(location, path, parameters, opts)
 
    Slices a file at ``location`` called ``filename``, using the supplied slice command ``parameters``.
 
    See the ``slice`` command in :ref:`Issue a file command <sec-api-fileops-filecommand>` for more details.
 
    :param string location: The location of the file to slice
-   :param string filename: The name of the file to slice
+   :param string path: The path of the file to slice
    :param object parameters: Additional parameters for the ``slice`` command
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.files.delete(location, filename, opts)
+.. js:function:: OctoPrint.files.delete(location, path, opts)
 
-   Deletes the file at ``location`` named ``filename``.
+   Deletes the file or folder at ``location`` and ``path``.
 
    See :ref:`Delete file <sec-api-fileops-delete>` for more details.
 
    :param string location: The location of the file to delete
-   :param string filename: The name of the file to delete
+   :param string path: The path of the file to delete
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.files.copy(location, filename, destination, opts)
+.. js:function:: OctoPrint.files.copy(location, path, destination, opts)
 
-   .. todo::
+   Copies file or folder ``path`` on ``location`` to new parent folder ``destination`` on ``location``.
 
-      Also needs API documentation.
+   ``destination`` must already exist.
 
+   **Example:**
+
+   .. code-block:: javascript
+
+      OctoPrint.files.copy("local", "some/file.gco", "other/folder");
+
+   See :ref:`Issue a file command <sec-api-fileops-filecommand>` for more details.
+
+   :param string location: The location of the file to copy, currently only "local" is supported
+   :param string path: The path of the file or folder to copy
+   :param string destination: The path of the parent to which to copy the file or folder
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
 .. js:function:: OctoPrint.files.move(location, filename, destination, opts)
 
-   .. todo::
+   Moves file or folder ``path`` on ``location`` to new parent folder ``destination`` on ``location``.
 
-      Also needs API documentation.
+   ``destination`` must already exist.
 
+   **Example:**
+
+   .. code-block:: javascript
+
+      OctoPrint.files.move("local", "some/file.gco", "other/folder");
+
+   See :ref:`Issue a file command <sec-api-fileops-filecommand>` for more details.
+
+   :param string location: The location of the file to move, currently only "local" is supported
+   :param string path: The path of the file or folder to move
+   :param string destination: The path of the parent to which to copy the file or folder
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
 .. js:function:: OctoPrint.files.createFolder(location, name, path, opts)
 
-   .. todo::
+   Creates a new folder ``name`` on ``location``. If ``path`` is provided and not empty the folder
+   will be created as a new child of it.
 
-      Also needs API documentation.
+   **Example:**
 
+   .. code-block:: javascript
+
+      // creates new folder "folder" in the root of "local"
+      OctoPrint.files.createFolder("local", "folder");
+
+      // creates new folder "subfolder" in parent "some/existing/folder" on "local"
+      OctoPrint.files.createFolder("local", "subfolder", "some/existing/folder");
+
+   See :ref:`Upload file or create folder <sec-api-fileops-uploadfile>` for more details on the folder creation API.
+
+   :param string location: The location to create the folder on (currently only "local" is supported)
+   :param string name: The name of the new folder
+   :param string path: The path to the parent folder in which to create the new folder. May be left unset in which
+                       case the folder will be created in the root directory of ``location``.
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
@@ -155,12 +192,12 @@
        An optional object or a serialized JSON string of additional user supplised data to associate with
        the uploaded file.
 
-   See :ref:`Upload file <sec-api-fileops-uploadfile>` for more details on the file upload API and
+   See :ref:`Upload file or create folder <sec-api-fileops-uploadfile>` for more details on the file upload API and
    :js:func:`OctoPrint.upload` for more details on the underlying library upload mechanism, including
    what values are accepted for the ``file`` parameter.
 
    :param string location: The location to upload the file to
-   :param object or string file: The file to upload, either a
+   :param object or string file: The file to upload, see :js:func:`OctoPrint.upload` for more details
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
 .. js:function:: OctoPrint.files.download(location, path, opts)

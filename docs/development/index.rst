@@ -17,7 +17,7 @@ Setting up a Development environment
 Obtaining, building and running the source
 ------------------------------------------
 
-These describes the general steps in obtaining, building and running. OS specific instructions can be found
+This describes the general steps in obtaining, building and running. OS specific instructions can be found
 below.
 
   * Prerequisites:
@@ -115,7 +115,7 @@ Mac OS X
    This guide is based on the `Setup Guide for Mac OS X on OctoPrint's wiki <https://github.com/foosel/OctoPrint/wiki/Setup-on-Mac/>`_.
    Please report back if it works for you, due to lack of access to a Mac I cannot test it myself. Thanks.
 
-This assumes you'll host your OctoPrint development checkout at ``C:\Devel\OctoPrint``. If you want to use a different
+This assumes you'll host your OctoPrint development checkout at ``~/devel/OctoPrint``. If you want to use a different
 location, please substitute accordingly.
 
 You'll need a user account with administrator privileges.

@@ -387,6 +387,30 @@ Issue a file command
      Upon success, a status code of :http:statuscode:`202` and a :ref:`sec-api-datamodel-files-fileabridged` in the response
      body will be returned.
 
+   copy
+     Copies the file or folder to a new ``destination`` on the same ``location``. Additional parameters are:
+
+     * ``destination``: The path of the parent folder to which to copy the file or folder. It must already exist.
+
+     If there already exists a file or folder of the same name at ``destination``, the request will return a :http:statuscode:`409`.
+     If the ``destination`` folder does not exist, a :http:statuscode:`404` will be returned.
+
+     Upon success, a status code of :http:statuscode:`201` and a :ref:`sec-api-datamodel-files-fileabridged` in the response
+     body will be returned.
+
+   move
+     Moves the file or folder to a new ``destination`` on the same ``location``. Additional parameters are:
+
+     * ``destination``: The path of the parent folder to which to move the file or folder.
+
+     If there already exists a file or folder of the same name at ``destination``, the request will return a :http:statuscode:`409`.
+     If the ``destination`` folder does not exist, a :http:statuscode:`404` will be returned. If the ``path`` is currently
+     in use by OctoPrint (e.g. it is a GCODE file that's currently being printed) a :http:statuscode:`409` will be
+     returned.
+
+     Upon success, a status code of :http:statuscode:`201` and a :ref:`sec-api-datamodel-files-fileabridged` in the response
+     body will be returned.
+
    **Example Select Request**
 
    .. sourcecode:: http
@@ -441,6 +465,62 @@ Issue a file command
         }
       }
 
+   **Example Copy Request**
+
+   .. sourcecode:: http
+
+      POST /api/files/local/some_folder/some_model.gcode HTTP/1.1
+      Host: example.com
+      Content-Type: application/json
+      X-Api-Key: abcdef...
+
+      {
+        "command": "copy",
+        "destination": "some_other_folder/subfolder"
+      }
+
+   .. sourcecode:: http
+
+      HTTP/1.1 201 Created
+      Content-Type: application/json
+
+      {
+        "origin": "local",
+        "name": "some_model.gcode",
+        "path": "some_other_folder/subfolder/some_model.gcode",
+        "refs": {
+          "download": "http://example.com/downloads/files/local/some_other_folder/subfolder/some_model.gcode",
+          "resource": "http://example.com/api/files/local/some_other_folder/subfolder/some_model.gcode"
+        }
+      }
+
+   **Example Move Request**
+
+   .. sourcecode:: http
+
+      POST /api/files/local/some_folder/and_a_subfolder HTTP/1.1
+      Host: example.com
+      Content-Type: application/json
+      X-Api-Key: abcdef...
+
+      {
+        "command": "move",
+        "destination": "some_other_folder"
+      }
+
+   .. sourcecode:: http
+
+      HTTP/1.1 201 Created
+      Content-Type: application/json
+
+      {
+        "origin": "local",
+        "name": "and_a_subfolder",
+        "path": "some_other_folder/and_a_subfolder",
+        "refs": {
+          "resource": "http://example.com/api/files/local/some_other_folder/and_a_subfolder"
+        }
+      }
 
    :param location:             The target location on which to send the command for is located, either ``local`` (for OctoPrint's ``uploads``
                                 folder) or ``sdcard`` for the printer's SD card (if available)

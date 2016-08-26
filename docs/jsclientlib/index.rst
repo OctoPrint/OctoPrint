@@ -16,3 +16,12 @@ JavaScript Client Library
    languages.rst
    logs.rst
    printer.rst
+   printerprofiles.rst
+   settings.rst
+   slicing.rst
+   socket.rst
+   system.rst
+   timelapse.rst
+   users.rst
+   util.rst
+   wizard.rst
