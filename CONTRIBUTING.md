@@ -299,14 +299,9 @@ There are three main branches in OctoPrint:
 
   * `master`: The master branch always contains the current stable release. It
     is *only* updated on new releases. Will have a version number following
-    the scheme `x.y.z` (e.g. `1.2.9`) or - if it's absolutely necessary to
-    add a commit after release to this branch - `x.y.z.post<commits since x.y.z>`
+    the scheme `<x>.<y>.<z>` (e.g. `1.2.9`) or - if it's absolutely necessary to
+    add a commit after release to this branch - `<x>.<y>.<z>.post<commits since x.y.z>`
     (e.g. `1.2.9.post1`).
-  * `prerelease`: This branch is only used during the short period where a
-    future release has "graduated" from the `maintenance` branch and is already
-    tagged, but still marked on Github as a pre-release. This is mostly used for
-    update testing just before new releases. Version number follows the scheme
-    `x.y.z` (e.g. `1.2.9`), just like the `master` branch.
   * `maintenance`: Improvements and fixes of the current release that make up
     the next release go here. More or less continously updated. You can consider
     this a preview of the next release version. It should be very stable at all
@@ -314,7 +309,7 @@ There are three main branches in OctoPrint:
     next stable release, so if you want to help out development, running the
     `maintenance` branch and reporting back anything you find is a very good way
     to do that. Will usually have a version number following the scheme
-    `x.y.z+1.dev.<commits since increase of z>` for an OctoPrint version of `x.y.z`
+    `<x>.<y>.<z+1>.dev<commits since increase of z>` for an OctoPrint version of `<x>.<y>.<z>`
     (e.g. `1.2.10.dev12`).
   * `devel`: Ongoing development of new features that will go into the next bigger
     release (MINOR version number increases) will happen on this branch. Usually
@@ -322,8 +317,16 @@ There are three main branches in OctoPrint:
     temporarily. Can be considered the "bleeding edge". All PRs should target
     *this* branch. Important improvements and fixes from PRs here are backported to
     `maintenance` as needed. Will usually have a version number following the
-    scheme `x.y+1.0.dev<commits since increase of y>` for an OctoPrint version
-    of `x.y.z` (e.g. `1.3.0.dev123`).
+    scheme `<x>.<y+1>.0.dev<commits since increase of y>` for a current OctoPrint version
+    of `<x>.<y>.<z>` (e.g. `1.3.0.dev123`).
+  * `rc/maintenance`: This branch is reserved for future releases that have graduated from
+    the `maintenance` branch and are now being pushed on the "Maintenance"
+    pre release channel for further testing. Version number follows the scheme
+    `<x>.<y>.<z>rc<n>` (e.g. `1.2.9rc1`).
+  * `rc/devel`: This branch is reserved for future releases that have graduated from
+    the `devel` branch and are now being pushed on the "Devel" pre release channel
+    for further testing. Version number follows the scheme `<x>.<y+1>.0rc<n>` (e.g. `1.3.0rc1`)
+    for a current stable OctoPrint version of `<x>.<y>.<z>`.
 
 Additionally, from time to time you might see other branches pop up in the repository.
 Those usually have one of the following prefixes:
@@ -334,9 +337,6 @@ Those usually have one of the following prefixes:
     `maintenance` and `devel` branches.
   * `dev/...` or `feature/...`: New functionality under development that is to be merged
     into the `devel` branch.
-  * `rc`: A branch similar in nature to the `prerelease` branch, only that it will be
-    used to provide current release candidates of the next stable version to be derived
-    from the `devel` branch.
 
 There is also the `gh-pages` branch, which holds OctoPrint's web page, and a couple of
 older development branches that are slowly being migrated or deleted.

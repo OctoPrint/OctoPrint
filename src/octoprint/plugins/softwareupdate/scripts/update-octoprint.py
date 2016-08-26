@@ -134,7 +134,7 @@ def _to_error(*lines):
 	return u"".join(map(lambda x: _to_unicode(x, errors="replace"), lines))
 
 
-def update_source(git_executable, folder, target, force=False):
+def _rescue_changes(git_executable, folder):
 	print(">>> Running: git diff --shortstat")
 	returncode, stdout, stderr = _git(["diff", "--shortstat"], folder, git_executable=git_executable)
 	if returncode != 0:
@@ -155,6 +155,13 @@ def update_source(git_executable, folder, target, force=False):
 			for line in stdout:
 				f.write(line)
 
+		return True
+
+	return False
+
+
+def update_source(git_executable, folder, target, force=False, branch=None):
+	if _rescue_changes(git_executable, folder):
 		print(">>> Running: git reset --hard")
 		returncode, stdout, stderr = _git(["reset", "--hard"], folder, git_executable=git_executable)
 		if returncode != 0:
@@ -164,6 +171,18 @@ def update_source(git_executable, folder, target, force=False):
 		returncode, stdout, stderr = _git(["clean", "-f", "-d", "-e", "*-preupdate.patch"], folder, git_executable=git_executable)
 		if returncode != 0:
 			raise RuntimeError("Could not update, \"git clean -f\" failed with returcode %d: %s" % (returncode, _to_error(*stdout)))
+
+	print(">>> Running: git fetch")
+	returncode, stdout = _git(["fetch"], folder, git_executable=git_executable)
+	if returncode != 0:
+		raise RuntimeError("Could not update, \"git fetch\" failed with returncode %d: %s" % (returncode, stdout))
+	print(stdout)
+
+	if branch is not None and branch.strip() != "":
+		print(">>> Running: git checkout {}".format(branch))
+		returncode, stdout = _git(["checkout", branch], folder, git_executable=git_executable)
+		if returncode != 0:
+			raise RuntimeError("Could not update, \"git checkout\" failed with returncode %d: %s" % (returncode, stdout))
 
 	print(">>> Running: git pull")
 	returncode, stdout, stderr = _git(["pull"], folder, git_executable=git_executable)
@@ -199,18 +218,24 @@ def install_source(python_executable, folder, user=False, sudo=False):
 def parse_arguments():
 	import argparse
 
+	boolean_trues = ["true", "yes", "1"]
+	boolean_falses = ["false", "no", "0"]
+
 	parser = argparse.ArgumentParser(prog="update-octoprint.py")
 
 	parser.add_argument("--git", action="store", type=str, dest="git_executable",
 	                    help="Specify git executable to use")
 	parser.add_argument("--python", action="store", type=str, dest="python_executable",
 	                    help="Specify python executable to use")
-	parser.add_argument("--force", action="store_true", dest="force",
-	                    help="Set this to force the update to only the specified version (nothing newer)")
+	parser.add_argument("--force", action="store", type=lambda x: x in boolean_trues,
+	                    dest="force", default=False,
+	                    help="Set this to true to force the update to only the specified version (nothing newer, nothing older)")
 	parser.add_argument("--sudo", action="store_true", dest="sudo",
 	                    help="Install with sudo")
 	parser.add_argument("--user", action="store_true", dest="user",
 	                    help="Install to the user site directory instead of the general site directory")
+	parser.add_argument("--branch", action="store", type=str, dest="branch", default=None,
+	                    help="Specify the branch to make sure is checked out")
 	parser.add_argument("folder", type=str,
 	                    help="Specify the base folder of the OctoPrint installation to update")
 	parser.add_argument("target", type=str,
@@ -238,13 +263,12 @@ def main():
 	print("Python executable: {!r}".format(python_executable))
 
 	folder = args.folder
-	target = args.target
 
 	import os
 	if not os.access(folder, os.W_OK):
 		raise RuntimeError("Could not update, base folder is not writable")
 
-	update_source(git_executable, folder, target, force=args.force)
+	update_source(git_executable, folder, args.target, force=args.force, branch=args.branch)
 	install_source(python_executable, folder, user=args.user, sudo=args.sudo)
 
 if __name__ == "__main__":
