@@ -738,32 +738,10 @@ class Server(object):
 
 		loaders = [app.jinja_loader, filesystem_loader]
 		if octoprint.util.is_running_from_source():
+			from octoprint.util.jinja import SelectedFileSystemLoader
 			root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
 			allowed = ["AUTHORS.md", "CHANGELOG.md", "SUPPORTERS.md", "THIRDPARTYLICENSES.md"]
-
-			class SourceRootFilesystemLoader(jinja2.FileSystemLoader):
-				def __init__(self, template_filter, prefix, *args, **kwargs):
-					jinja2.FileSystemLoader.__init__(self, *args, **kwargs)
-					self._filter = template_filter
-					if not prefix.endswith("/"):
-						prefix += "/"
-					self._prefix = prefix
-
-				def get_source(self, environment, template):
-					if not template.startswith(self._prefix):
-						raise jinja2.TemplateNotFound(template)
-
-					template = template[len(self._prefix):]
-					if not self._filter(template):
-						raise jinja2.TemplateNotFound(template)
-
-					return jinja2.FileSystemLoader.get_source(self, environment, template)
-
-				def list_templates(self):
-					templates = jinja2.FileSystemLoader.list_templates(self)
-					return map(lambda t: self._prefix + t, filter(self._filter, templates))
-
-			loaders.append(SourceRootFilesystemLoader(lambda t: t in allowed, "_data/", root))
+			loaders.append(SelectedFileSystemLoader(root, allowed, prefix="_data/"))
 
 		jinja_loader = jinja2.ChoiceLoader(loaders)
 		app.jinja_loader = jinja_loader
