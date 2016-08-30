@@ -11,6 +11,11 @@ import copy
 import re
 import logging
 
+try:
+	from os import scandir
+except ImportError:
+	from scandir import scandir
+
 from octoprint.settings import settings
 from octoprint.util import dict_merge, dict_sanitize, dict_contains_keys, is_hidden_path
 
@@ -242,6 +247,12 @@ class PrinterProfileManager(object):
 	def profile_count(self):
 		return len(self._load_all_identifiers())
 
+	@property
+	def last_modified(self):
+		dates = [os.stat(self._folder).st_mtime]
+		dates += [entry.stat().st_mtime for entry in scandir(self._folder) if entry.name.endswith(".profile")]
+		return max(dates)
+
 	def get_default(self):
 		default = settings().get(["printerProfiles", "default"])
 		if default is not None and self.exists(default):
@@ -297,16 +308,15 @@ class PrinterProfileManager(object):
 
 	def _load_all_identifiers(self):
 		results = dict(_default=None)
-		for entry in os.listdir(self._folder):
-			if is_hidden_path(entry) or not entry.endswith(".profile") or entry == "_default.profile":
+		for entry in scandir(self._folder):
+			if is_hidden_path(entry.name) or not entry.name.endswith(".profile") or entry.name == "_default.profile":
 				continue
 
-			path = os.path.join(self._folder, entry)
-			if not os.path.isfile(path):
+			if not entry.is_file():
 				continue
 
-			identifier = entry[:-len(".profile")]
-			results[identifier] = path
+			identifier = entry.name[:-len(".profile")]
+			results[identifier] = entry.path
 		return results
 
 	def _load_from_path(self, path):

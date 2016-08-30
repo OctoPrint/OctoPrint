@@ -95,9 +95,15 @@ $(function() {
 
         // work around a stupid iOS6 bug where ajax requests get cached and only work once, as described at
         // http://stackoverflow.com/questions/12506897/is-safari-on-ios-6-caching-ajax-results
-        $.ajaxSetup({
-            type: 'POST',
-            headers: { "cache-control": "no-cache" }
+        $.ajaxPrefilter(function(options, originalOptions, jqXHR) {
+            if (options.type != "GET") {
+                var headers;
+                if (options.hasOwnProperty("headers")) {
+                    options.headers["Cache-Control"] = "no-cache";
+                } else {
+                    options.headers = { "Cache-Control": "no-cache" };
+                }
+            }
         });
 
         // send the current UI API key with any request

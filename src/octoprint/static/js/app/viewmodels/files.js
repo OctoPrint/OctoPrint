@@ -203,15 +203,25 @@ $(function() {
         self._filenameToFocus = undefined;
         self._locationToFocus = undefined;
         self._switchToPath = undefined;
-        self.requestData = function(filenameToFocus, locationToFocus, switchToPath) {
-            self._filenameToFocus = self._filenameToFocus || filenameToFocus;
-            self._locationToFocus = self._locationToFocus || locationToFocus;
-            self._switchToPath = self._switchToPath || switchToPath;
+        self.requestData = function(filenameToFocus, locationToFocus, switchToPath, force) {
+            if (arguments.length == 1 && _.isObject(arguments[0])) {
+                var params = arguments[0];
+                self._filenameToFocus = self._filenameToFocus || params.filenameToFocus;
+                self._locationToFocus = self._locationToFocus || params.locationToFocus;
+                self._switchToPath = self._switchToPath || params.switchToPath;
+                force = params.force || false;
+            } else {
+                self._filenameToFocus = self._filenameToFocus || filenameToFocus;
+                self._locationToFocus = self._locationToFocus || locationToFocus;
+                self._switchToPath = self._switchToPath || switchToPath;
+                force = force || false;
+            }
+
             if (self._otherRequestInProgress !== undefined) {
                 return self._otherRequestInProgress
             }
 
-            return self._otherRequestInProgress = OctoPrint.files.list(true)
+            return self._otherRequestInProgress = OctoPrint.files.list(true, force)
                 .done(function(response) {
                     self.fromResponse(response, self._filenameToFocus, self._locationToFocus, self._switchToPath);
                 })

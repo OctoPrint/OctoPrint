@@ -35,6 +35,11 @@ import logging
 import pkg_resources
 import pkginfo
 
+try:
+	from os import scandir
+except ImportError:
+	from scandir import scandir
+
 EntryPointOrigin = namedtuple("EntryPointOrigin", "type, entry_point, module_name, package_name, package_version")
 FolderOrigin = namedtuple("FolderOrigin", "type, folder")
 
@@ -535,13 +540,11 @@ class PluginManager(object):
 				self.logger.warn("Plugin folder {folder} could not be found, skipping it".format(folder=folder))
 				continue
 
-			entries = os.listdir(folder)
-			for entry in entries:
-				path = os.path.join(folder, entry)
-				if os.path.isdir(path) and os.path.isfile(os.path.join(path, "__init__.py")):
-					key = entry
-				elif os.path.isfile(path) and entry.endswith(".py"):
-					key = entry[:-3] # strip off the .py extension
+			for entry in scandir(folder):
+				if entry.is_dir() and os.path.isfile(os.path.join(entry.path, "__init__.py")):
+					key = entry.name
+				elif entry.is_file() and entry.name.endswith(".py"):
+					key = entry.name[:-3] # strip off the .py extension
 				else:
 					continue
 
@@ -637,7 +640,7 @@ class PluginManager(object):
 			else:
 				return None
 		except:
-			self.logger.warn("Could not locate plugin {key}")
+			self.logger.warn("Could not locate plugin {key}".format(key=key))
 			return None
 
 		plugin = self._import_plugin(key, *module, name=name, version=version, summary=summary, author=author, url=url, license=license)

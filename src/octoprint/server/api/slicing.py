@@ -9,7 +9,7 @@ from flask import request, jsonify, make_response, url_for
 from werkzeug.exceptions import BadRequest
 
 from octoprint.server import slicingManager
-from octoprint.server.util.flask import restricted_access
+from octoprint.server.util.flask import restricted_access, with_revalidation_checking
 from octoprint.server.api import api, NO_CONTENT
 
 from octoprint.settings import settings as s, valid_boolean_trues
@@ -17,7 +17,39 @@ from octoprint.settings import settings as s, valid_boolean_trues
 from octoprint.slicing import UnknownSlicer, SlicerNotConfigured, ProfileAlreadyExists, UnknownProfile, CouldNotDeleteProfile
 
 
+def _lastmodified(configured):
+	if configured:
+		slicers = slicingManager.configured_slicers
+	else:
+		slicers = slicingManager.registered_slicers
+
+	lms = [0]
+	for slicer in slicers:
+		lms.append(slicingManager.profiles_last_modified(slicer))
+
+	return max(lms)
+
+
+def _etag(configured, lm=None):
+	if lm is None:
+		lm = _lastmodified(configured)
+
+	import hashlib
+	hash = hashlib.sha1()
+	hash.update(str(lm))
+
+	if configured:
+		hash.update(repr(sorted(slicingManager.configured_slicers)))
+	else:
+		hash.update(repr(sorted(slicingManager.registered_slicers)))
+
+	return hash.hexdigest()
+
+
 @api.route("/slicing", methods=["GET"])
+@with_revalidation_checking(etag_factory=lambda lm=None: _etag(request.values.get("configured", "false") in valid_boolean_trues, lm=lm),
+                            lastmodified_factory=lambda: _lastmodified(request.values.get("configured", "false") in valid_boolean_trues),
+                            unless=lambda: request.values.get("force", "false") in valid_boolean_trues)
 def slicingListAll():
 	from octoprint.filemanager import get_extensions
 

@@ -11,19 +11,36 @@ from flask import request, jsonify, make_response
 from werkzeug.exceptions import BadRequest
 
 from octoprint.events import eventManager, Events
-from octoprint.settings import settings
+from octoprint.settings import settings, valid_boolean_trues
 
 from octoprint.server import admin_permission, printer
 from octoprint.server.api import api
-from octoprint.server.util.flask import restricted_access
+from octoprint.server.util.flask import restricted_access, with_revalidation_checking
 
 import octoprint.plugin
 import octoprint.util
 
 #~~ settings
 
+def _lastmodified():
+	return settings().last_modified
+
+def _etag(lm=None):
+	if lm is None:
+		lm = _lastmodified()
+
+	connection_options = printer.__class__.get_connection_options()
+
+	import hashlib
+	hash = hashlib.sha1()
+	hash.update(str(lm))
+	hash.update(repr(connection_options))
+	return hash.hexdigest()
 
 @api.route("/settings", methods=["GET"])
+@with_revalidation_checking(etag_factory=_etag,
+                            lastmodified_factory=_lastmodified,
+                            unless=lambda: request.values.get("force", "false") in valid_boolean_trues)
 def getSettings():
 	logger = logging.getLogger(__name__)
 

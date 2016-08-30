@@ -19,7 +19,7 @@ import hashlib
 from . import version_checks, updaters, exceptions, util, cli
 
 
-from octoprint.server.util.flask import restricted_access
+from octoprint.server.util.flask import restricted_access, with_revalidation_checking, check_etag
 from octoprint.server import admin_permission, VERSION, REVISION, BRANCH
 from octoprint.util import dict_merge
 import octoprint.settings
@@ -411,17 +411,46 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		else:
 			check_targets = None
 
-		if "force" in flask.request.values and flask.request.values["force"] in octoprint.settings.valid_boolean_trues:
-			force = True
-		else:
-			force = False
+		force = flask.request.values.get("force", "false") in octoprint.settings.valid_boolean_trues
 
-		try:
-			information, update_available, update_possible = self.get_current_versions(check_targets=check_targets, force=force)
-			return flask.jsonify(dict(status="updatePossible" if update_available and update_possible else "updateAvailable" if update_available else "current",
-			                          information=information))
-		except exceptions.ConfigurationInvalid as e:
-			flask.make_response("Update not properly configured, can't proceed: %s" % e.message, 500)
+		def view():
+			try:
+				information, update_available, update_possible = self.get_current_versions(check_targets=check_targets, force=force)
+				return flask.jsonify(dict(status="updatePossible" if update_available and update_possible else "updateAvailable" if update_available else "current",
+				                          information=information))
+			except exceptions.ConfigurationInvalid as e:
+				return flask.make_response("Update not properly configured, can't proceed: %s" % e.message, 500)
+
+		def etag():
+			checks = self._get_configured_checks()
+
+			targets = check_targets
+			if targets is None:
+				targets = checks.keys()
+
+			import hashlib
+			hash = hashlib.sha1()
+
+			targets = sorted(targets)
+			for target in targets:
+				current_hash = self._get_check_hash(checks.get(target, dict()))
+				if target in self._version_cache and not force:
+					data = self._version_cache[target]
+					hash.update(current_hash)
+					hash.update(str(data["timestamp"] + self._version_cache_ttl >= time.time() > data["timestamp"]))
+					hash.update(repr(data["information"]))
+					hash.update(str(data["available"]))
+					hash.update(str(data["possible"]))
+
+			hash.update(",".join(targets))
+			return hash.hexdigest()
+
+		def condition():
+			return check_etag(etag())
+
+		return with_revalidation_checking(etag_factory=lambda *args, **kwargs: etag(),
+		                                  condition=lambda *args, **kwargs: condition(),
+		                                  unless=lambda: force)(view)()
 
 
 	@octoprint.plugin.BlueprintPlugin.route("/update", methods=["POST"])

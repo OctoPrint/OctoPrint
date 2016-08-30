@@ -10,7 +10,7 @@ import octoprint.plugin
 import octoprint.plugin.core
 
 from octoprint.settings import valid_boolean_trues
-from octoprint.server.util.flask import restricted_access
+from octoprint.server.util.flask import restricted_access, with_revalidation_checking, check_etag
 from octoprint.server import admin_permission, VERSION
 from octoprint.util.pip import LocalPipCaller, UnknownPip
 
@@ -176,25 +176,42 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		if not admin_permission.can():
 			return make_response("Insufficient rights", 403)
 
-		if "refresh_repository" in request.values and request.values["refresh_repository"] in valid_boolean_trues:
+		refresh_repository = request.values.get("refresh_repository", "false") in valid_boolean_trues
+		if refresh_repository:
 			self._repository_available = self._refresh_repository()
 
-		return jsonify(plugins=self._get_plugins(),
-		               repository=dict(
-		                   available=self._repository_available,
-		                   plugins=self._repository_plugins
-		               ),
-		               os=self._get_os(),
-		               octoprint=self._get_octoprint_version_string(),
-		               pip=dict(
-		                   available=self._pip_caller.available,
-		                   version=self._pip_caller.version_string,
-		                   install_dir=self._pip_caller.install_dir,
-		                   use_user=self._pip_caller.use_user,
-		                   virtual_env=self._pip_caller.virtual_env,
-		                   additional_args=self._settings.get(["pip_args"]),
-		                   python=sys.executable
+		def view():
+			return jsonify(plugins=self._get_plugins(),
+			               repository=dict(
+			                   available=self._repository_available,
+			                   plugins=self._repository_plugins
+			               ),
+			               os=self._get_os(),
+			               octoprint=self._get_octoprint_version_string(),
+			               pip=dict(
+			                   available=self._pip_caller.available,
+			                   version=self._pip_caller.version_string,
+			                   install_dir=self._pip_caller.install_dir,
+			                   use_user=self._pip_caller.use_user,
+			                   virtual_env=self._pip_caller.virtual_env,
+			                   additional_args=self._settings.get(["pip_args"]),
+			                   python=sys.executable
 		               ))
+
+		def etag():
+			import hashlib
+			hash = hashlib.sha1()
+			hash.update(repr(self._get_plugins()))
+			hash.update(str(self._repository_available))
+			hash.update(repr(self._repository_plugins))
+			return hash.hexdigest()
+
+		def condition():
+			return check_etag(etag())
+
+		return with_revalidation_checking(etag_factory=lambda *args, **kwargs: etag(),
+		                                  condition=lambda *args, **kwargs: condition(),
+		                                  unless=lambda: refresh_repository)(view)()
 
 	def on_api_command(self, command, data):
 		if not admin_permission.can():

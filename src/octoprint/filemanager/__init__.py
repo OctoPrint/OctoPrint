@@ -227,6 +227,10 @@ class FileManager(object):
 		del self._storage_managers[type]
 
 	@property
+	def registered_storages(self):
+		return list(self._storage_managers.keys())
+
+	@property
 	def slicing_enabled(self):
 		return self._slicing_manager.slicing_enabled
 
@@ -519,6 +523,9 @@ class FileManager(object):
 
 	def path_in_storage(self, destination, path):
 		return self._storage(destination).path_in_storage(path)
+
+	def last_modified(self, destination, path=None, recursive=False):
+		return self._storage(destination).last_modified(path=path, recursive=recursive)
 
 	def _storage(self, destination):
 		if not destination in self._storage_managers:

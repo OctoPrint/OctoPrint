@@ -19,7 +19,7 @@ import feedparser
 import flask
 
 from octoprint.server import admin_permission
-from octoprint.server.util.flask import restricted_access
+from octoprint.server.util.flask import restricted_access, with_revalidation_checking, check_etag
 from flask.ext.babel import gettext
 
 class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
@@ -100,32 +100,54 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 
 		result = dict()
 
-		force = "force" in flask.request.values and flask.request.values["force"] in valid_boolean_trues
-
-		channel_data = self._fetch_all_channels(force=force)
-		channel_configs = self._get_channel_configs(force=force)
+		force = flask.request.values.get("force", "false") in valid_boolean_trues
 
 		enabled = self._settings.get(["enabled_channels"])
 		forced = self._settings.get(["forced_channels"])
 
-		for key, data in channel_configs.items():
-			read_until = channel_configs[key].get("read_until", None)
-			entries = sorted(self._to_internal_feed(channel_data.get(key, []), read_until=read_until), key=lambda e: e["published"], reverse=True)
-			unread = len(filter(lambda e: not e["read"], entries))
+		channel_configs = self._get_channel_configs(force=force)
 
-			if read_until is None and entries:
-				last = entries[0]["published"]
-				self._mark_read_until(key, last)
+		def view():
+			channel_data = self._fetch_all_channels(force=force)
 
-			result[key] = dict(channel=data["name"],
-			                   url=data["url"],
-			                   priority=data.get("priority", 2),
-			                   enabled=key in enabled or key in forced,
-			                   forced=key in forced,
-			                   data=entries,
-			                   unread=unread)
+			for key, data in channel_configs.items():
+				read_until = channel_configs[key].get("read_until", None)
+				entries = sorted(self._to_internal_feed(channel_data.get(key, []), read_until=read_until), key=lambda e: e["published"], reverse=True)
+				unread = len(filter(lambda e: not e["read"], entries))
 
-		return flask.jsonify(result)
+				if read_until is None and entries:
+					last = entries[0]["published"]
+					self._mark_read_until(key, last)
+
+				result[key] = dict(channel=data["name"],
+				                   url=data["url"],
+				                   priority=data.get("priority", 2),
+				                   enabled=key in enabled or key in forced,
+				                   forced=key in forced,
+				                   data=entries,
+				                   unread=unread)
+
+			return flask.jsonify(result)
+
+		def etag():
+			import hashlib
+			hash = hashlib.sha1()
+			hash.update(repr(sorted(enabled)))
+			hash.update(repr(sorted(forced)))
+
+			for channel in sorted(channel_configs.keys()):
+				hash.update(repr(channel_configs[channel]))
+				channel_data = self._get_channel_data_from_cache(channel, channel_configs[channel])
+				hash.update(repr(channel_data))
+
+			return hash.hexdigest()
+
+		def condition():
+			return check_etag(etag())
+
+		return with_revalidation_checking(etag_factory=lambda *args, **kwargs: etag(),
+		                                  condition=lambda *args, **kwargs: condition(),
+		                                  unless=lambda: force)(view)()
 
 	@octoprint.plugin.BlueprintPlugin.route("/channels/<channel>", methods=["POST"])
 	@restricted_access

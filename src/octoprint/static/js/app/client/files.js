@@ -50,9 +50,19 @@
     OctoPrint.files = {
         get: getEntry,
 
-        list: function (recursively, opts) {
+        list: function (recursively, force, opts) {
             recursively = recursively || false;
-            return OctoPrint.getWithQuery(url, {recursive: recursively}, opts)
+            force = force || false;
+
+            var query = {};
+            if (recursively) {
+                query.recursive = recursively;
+            }
+            if (force) {
+                query.force = force;
+            }
+
+            return OctoPrint.getWithQuery(url, query, opts)
                 .done(preProcessList);
         },
 

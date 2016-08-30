@@ -10,7 +10,7 @@ from flask import request, jsonify, make_response, url_for
 from octoprint.filemanager.destinations import FileDestinations
 from octoprint.settings import settings, valid_boolean_trues
 from octoprint.server import printer, fileManager, slicingManager, eventManager, NO_CONTENT
-from octoprint.server.util.flask import restricted_access, get_json_command_from_request
+from octoprint.server.util.flask import restricted_access, get_json_command_from_request, with_revalidation_checking
 from octoprint.server.api import api
 from octoprint.events import Events
 import octoprint.filemanager
@@ -19,15 +19,77 @@ import octoprint.filemanager.storage
 import octoprint.slicing
 
 import psutil
+import hashlib
+import logging
+import threading
 
 
 #~~ GCODE file handling
 
+_file_cache = dict()
+_file_cache_mutex = threading.RLock()
+
+def _clear_file_cache():
+	with _file_cache_mutex:
+		_file_cache.clear()
+
+def _create_lastmodified(path, recursive):
+	if path.endswith("/api/files"):
+		# all storages involved
+		lms = [0]
+		for storage in fileManager.registered_storages:
+			try:
+				lms.append(fileManager.last_modified(storage, recursive=recursive))
+			except:
+				logging.getLogger(__name__).exception("There was an error retrieving the last modified data from storage {}".format(storage))
+				lms.append(None)
+
+		if filter(lambda x: x is None, lms):
+			# we return None if ANY of the involved storages returned None
+			return None
+
+		# if we reach this point, we return the maximum of all dates
+		return max(lms)
+
+	elif path.endswith("/files/local"):
+		# only local storage involved
+		try:
+			return fileManager.last_modified(FileDestinations.LOCAL, recursive=recursive)
+		except:
+			logging.getLogger(__name__).exception("There was an error retrieving the last modified data from storage {}".format(FileDestinations.LOCAL))
+			return None
+
+	else:
+		return None
+
+
+def _create_etag(path, recursive, lm=None):
+	if lm is None:
+		lm = _create_lastmodified(path)
+
+	if lm is None:
+		return None
+
+	hash = hashlib.sha1()
+	hash.update(str(lm))
+	hash.update(str(recursive))
+	return hash.hexdigest()
+
 
 @api.route("/files", methods=["GET"])
+@with_revalidation_checking(etag_factory=lambda lm=None: _create_etag(request.path,
+                                                                      request.values.get("recursive", False),
+                                                                      lm=lm),
+                            lastmodified_factory=lambda: _create_lastmodified(request.path,
+                                                                              request.values.get("recursive", False)),
+                            unless=lambda: request.values.get("force", False) or request.values.get("_refresh", False))
 def readGcodeFiles():
-	filter = "filter" in request.values and request.values["recursive"] in valid_boolean_trues
-	recursive = "recursive" in request.values and request.values["recursive"] in valid_boolean_trues
+	filter = request.values.get("filter", "false") in valid_boolean_trues
+	recursive = request.values.get("recursive", "false") in valid_boolean_trues
+	force = request.values.get("force", "false") in valid_boolean_trues
+
+	if force:
+		_clear_file_cache()
 
 	files = _getFileList(FileDestinations.LOCAL, filter=filter, recursive=recursive)
 	files.extend(_getFileList(FileDestinations.SDCARD))
@@ -37,13 +99,25 @@ def readGcodeFiles():
 
 
 @api.route("/files/<string:origin>", methods=["GET"])
+@with_revalidation_checking(etag_factory=lambda lm=None: _create_etag(request.path,
+                                                                      request.values.get("recursive", False),
+                                                                      lm=lm),
+                            lastmodified_factory=lambda: _create_lastmodified(request.path,
+                                                                              request.values.get("recursive", False)),
+                            unless=lambda: request.values.get("force", False) or request.values.get("_refresh", False))
 def readGcodeFilesForOrigin(origin):
 	if origin not in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
 		return make_response("Unknown origin: %s" % origin, 404)
 
-	recursive = False
-	if "recursive" in request.values:
-		recursive = request.values["recursive"] in valid_boolean_trues
+	recursive = request.values.get("recursive", "false") in valid_boolean_trues
+	force = request.values.get("force", "false") in valid_boolean_trues
+
+	if force:
+		with _file_cache_mutex:
+			try:
+				del _file_cache[origin]
+			except KeyError:
+				pass
 
 	files = _getFileList(origin, recursive=recursive)
 
@@ -89,7 +163,12 @@ def _getFileList(origin, path=None, filter=None, recursive=False):
 		if filter:
 			filter_func = lambda entry, entry_data: octoprint.filemanager.valid_file_type(entry, type=filter)
 
-		files = fileManager.list_files(origin, path=path, filter=filter_func, recursive=recursive)[origin].values()
+		with _file_cache_mutex:
+			files, lastmodified = _file_cache.get("{}:{}:{}:{}".format(origin, path, recursive, filter), ([], None))
+			if lastmodified is None or lastmodified < fileManager.last_modified(origin, path=path, recursive=recursive):
+				files = fileManager.list_files(origin, path=path, filter=filter_func, recursive=recursive)[origin].values()
+				lastmodified = fileManager.last_modified(origin, path=path, recursive=recursive)
+				_file_cache["{}:{}:{}:{}".format(origin, path, recursive, filter)] = (files, lastmodified)
 
 		def analyse_recursively(files, path=None):
 			if path is None:
