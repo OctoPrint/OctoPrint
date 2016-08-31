@@ -53,7 +53,9 @@ $(function() {
         self.reader_sortLayers = ko.observable(true);
         self.reader_hideEmptyLayers = ko.observable(true);
 
-        self.layerSelectionEnabled = ko.observable(false)
+        self.layerSelectionEnabled = ko.observable(false);
+        self.layerUpEnabled = ko.observable(false);
+        self.layerDownEnabled = ko.observable(false);
 
         self.synchronizeOptions = function(additionalRendererOptions, additionalReaderOptions) {
             var renderer = {
@@ -221,6 +223,7 @@ $(function() {
 
         self.currentLayer = undefined;
         self.currentCommand = undefined;
+        self.maxLayer = undefined;
 
         self.initialize = function() {
             var layerSliderElement = $("#gcode_slider_layers");
@@ -428,8 +431,11 @@ $(function() {
                     self.layerSlider.slider("setMax", 1);
                     self.layerSlider.slider("setValue", 0);
                     self.layerSelectionEnabled(false);
+                    self.layerDownEnabled(false);
+                    self.layerUpEnabled(false);
                 }
                 self.currentLayer = 0;
+                self.maxLayer = 0;
             } else {
                 var output = [];
                 output.push(gettext("Model size") + ": " + model.width.toFixed(2) + "mm &times; " + model.depth.toFixed(2) + "mm &times; " + model.height.toFixed(2) + "mm");
@@ -439,11 +445,14 @@ $(function() {
 
                 self.ui_modelInfo(output.join("<br>"));
 
+                self.maxLayer = model.layersPrinted - 1;
                 if (self.layerSlider != undefined) {
                     self.layerSlider.slider("enable");
-                    self.layerSlider.slider("setMax", model.layersPrinted - 1);
+                    self.layerSlider.slider("setMax", self.maxLayer);
                     self.layerSlider.slider("setValue", 0);
                     self.layerSelectionEnabled(true);
+                    self.layerDownEnabled(false);
+                    self.layerUpEnabled(self.maxLayer > 0);
                 }
             }
         };
@@ -455,6 +464,9 @@ $(function() {
                     self.layerCommandSlider.slider("disable");
                     self.layerCommandSlider.slider("setMax", 1);
                     self.layerCommandSlider.slider("setValue", [0, 1]);
+
+                    self.layerDownEnabled(false);
+                    self.layerUpEnabled(false);
                 }
                 self.currentCommand = [0, 1];
             } else {
@@ -475,10 +487,14 @@ $(function() {
 
                 self.ui_layerInfo(output.join("<br>"));
 
+                console.log("#### Layer number:", layer.number, ", max layer:", self.maxLayer);
                 if (self.layerCommandSlider != undefined) {
                     self.layerCommandSlider.slider("enable");
                     self.layerCommandSlider.slider("setMax", layer.commands - 1);
                     self.layerCommandSlider.slider("setValue", [0, layer.commands - 1]);
+
+                    self.layerDownEnabled(layer.number > 0);
+                    self.layerUpEnabled(layer.number < self.maxLayer);
                 }
             }
         };
@@ -561,8 +577,6 @@ $(function() {
 
         self.shiftLayer = function(value){
             if (value != self.currentLayer) {
-                event.preventDefault();
-
                 self.layerSlider.slider('setValue', value);
                 value = self.layerSlider.slider('getValue');
                 //This sets the scroll bar to the appropriate position.
