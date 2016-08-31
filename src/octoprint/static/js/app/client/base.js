@@ -77,6 +77,7 @@
         var urlToCall = url;
         if (!_.startsWith(url, "http://") && !_.startsWith(url, "https://")) {
             urlToCall = OctoPrint.getBaseUrl() + url;
+            opts.url = urlToCall;
         }
 
         var headers = OctoPrint.getRequestHeaders(opts.headers);
