@@ -176,6 +176,9 @@ def _getFileList(origin, path=None, filter=None, recursive=False):
 				_file_cache["{}:{}:{}:{}".format(origin, path, recursive, filter)] = (files, lastmodified)
 
 		def analyse_recursively(files, path=None):
+			# make a shallow copy in order to not accidentally modify the cached data
+			files = list(files)
+
 			if path is None:
 				path = ""
 
@@ -233,7 +236,7 @@ def _getFileList(origin, path=None, filter=None, recursive=False):
 
 			return files
 
-		analyse_recursively(files)
+		files = analyse_recursively(files)
 
 	return files
 
