@@ -34,7 +34,7 @@ def _clear_file_cache():
 		_file_cache.clear()
 
 def _create_lastmodified(path, recursive):
-	if path.endswith("/api/files"):
+	if path.endswith("/files"):
 		# all storages involved
 		lms = [0]
 		for storage in fileManager.registered_storages:
@@ -73,6 +73,11 @@ def _create_etag(path, recursive, lm=None):
 	hash = hashlib.sha1()
 	hash.update(str(lm))
 	hash.update(str(recursive))
+
+	if path.endswith("/files") or path.endswith("/files/sdcard"):
+		# include sd data in etag
+		hash.update(repr(sorted(printer.get_sd_files(), key=lambda x: x[0])))
+
 	return hash.hexdigest()
 
 
@@ -175,6 +180,9 @@ def _getFileList(origin, path=None, filter=None, recursive=False):
 				path = ""
 
 			for file_or_folder in files:
+				# make a shallow copy in order to not accidentally modify the cached data
+				file_or_folder = dict(file_or_folder)
+
 				file_or_folder["origin"] = FileDestinations.LOCAL
 
 				if file_or_folder["type"] == "folder":
