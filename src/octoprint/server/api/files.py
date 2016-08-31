@@ -65,7 +65,7 @@ def _create_lastmodified(path, recursive):
 
 def _create_etag(path, recursive, lm=None):
 	if lm is None:
-		lm = _create_lastmodified(path)
+		lm = _create_lastmodified(path, recursive)
 
 	if lm is None:
 		return None
