@@ -176,12 +176,10 @@ def _getFileList(origin, path=None, filter=None, recursive=False):
 				_file_cache["{}:{}:{}:{}".format(origin, path, recursive, filter)] = (files, lastmodified)
 
 		def analyse_recursively(files, path=None):
-			# make a shallow copy in order to not accidentally modify the cached data
-			files = list(files)
-
 			if path is None:
 				path = ""
 
+			result = []
 			for file_or_folder in files:
 				# make a shallow copy in order to not accidentally modify the cached data
 				file_or_folder = dict(file_or_folder)
@@ -192,11 +190,7 @@ def _getFileList(origin, path=None, filter=None, recursive=False):
 					if "children" in file_or_folder:
 						file_or_folder["children"] = analyse_recursively(file_or_folder["children"].values(), path + file_or_folder["name"] + "/")
 
-					file_or_folder.update({
-						"refs": {
-							"resource": url_for(".readGcodeFile", target=FileDestinations.LOCAL, filename=path + file_or_folder["name"], _external=True)
-						}
-					})
+					file_or_folder["refs"] = dict(resource=url_for(".readGcodeFile", target=FileDestinations.LOCAL, filename=path + file_or_folder["name"], _external=True))
 				else:
 					if "analysis" in file_or_folder and octoprint.filemanager.valid_file_type(file_or_folder["name"], type="gcode"):
 						file_or_folder["gcodeAnalysis"] = file_or_folder["analysis"]
@@ -227,14 +221,12 @@ def _getFileList(origin, path=None, filter=None, recursive=False):
 								prints["last"]["printTime"] = last["printTime"]
 							file_or_folder["prints"] = prints
 
-					file_or_folder.update({
-						"refs": {
-							"resource": url_for(".readGcodeFile", target=FileDestinations.LOCAL, filename=file_or_folder["path"], _external=True),
-							"download": url_for("index", _external=True) + "downloads/files/" + FileDestinations.LOCAL + "/" + file_or_folder["path"]
-						}
-					})
+					file_or_folder["refs"] = dict(resource=url_for(".readGcodeFile", target=FileDestinations.LOCAL, filename=file_or_folder["path"], _external=True),
+					                              download=url_for("index", _external=True) + "downloads/files/" + FileDestinations.LOCAL + "/" + file_or_folder["path"])
 
-			return files
+				result.append(file_or_folder)
+
+			return result
 
 		files = analyse_recursively(files)
 
