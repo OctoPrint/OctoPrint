@@ -1057,7 +1057,6 @@ class LocalFileStorage(StorageInterface):
 				continue
 
 			entry_path = os.path.join(path, entry)
-			path_in_location = entry if not base else base + entry
 
 			sanitized = self.sanitize_name(entry)
 			if sanitized != entry:
@@ -1080,6 +1079,8 @@ class LocalFileStorage(StorageInterface):
 				except:
 					self._logger.exception("Error while trying to rename \"{}\" to \"{}\", ignoring file".format(entry_path, sanitized_path))
 					continue
+
+			path_in_location = entry if not base else base + entry
 
 			# file handling
 			if os.path.isfile(entry_path):
