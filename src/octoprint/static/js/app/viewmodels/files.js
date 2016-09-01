@@ -200,47 +200,86 @@ $(function() {
         };
 
         self._otherRequestInProgress = undefined;
-        self._filenameToFocus = undefined;
-        self._locationToFocus = undefined;
+        self._focus = undefined;
         self._switchToPath = undefined;
-        self.requestData = function(filenameToFocus, locationToFocus, switchToPath) {
-            self._filenameToFocus = self._filenameToFocus || filenameToFocus;
-            self._locationToFocus = self._locationToFocus || locationToFocus;
+        self.requestData = function(params) {
+            var focus, switchToPath;
+
+            if (_.isObject(params)) {
+                focus = params.focus;
+                switchToPath = params.switchToPath;
+            } else if (arguments.length) {
+                // old argument list type call signature
+                log.warn("FilesViewModel.requestData called with old argument list. That is deprecated, please use parameter object instead.");
+                if (arguments.length >= 1) {
+                    if (arguments.length >= 2) {
+                        focus = {location: arguments[1], path: arguments[0]};
+                    } else {
+                        focus = {location: "local", path: arguments[0]};
+                    }
+                }
+                if (arguments.length >= 3) {
+                    switchToPath = arguments[2];
+                }
+            }
+
+            self._focus = self._focus || focus;
             self._switchToPath = self._switchToPath || switchToPath;
+
             if (self._otherRequestInProgress !== undefined) {
                 return self._otherRequestInProgress
             }
 
             return self._otherRequestInProgress = OctoPrint.files.list(true)
                 .done(function(response) {
-                    self.fromResponse(response, self._filenameToFocus, self._locationToFocus, self._switchToPath);
+                    self.fromResponse(response, {focus: self._focus, switchToPath: self._switchToPath});
                 })
                 .always(function() {
                     self._otherRequestInProgress = undefined;
-                    self._filenameToFocus = undefined;
-                    self._locationToFocus = undefined;
+                    self._focus = undefined;
                     self._switchToPath = undefined;
                 });
         };
 
-        self.fromResponse = function(response, filenameToFocus, locationToFocus, switchToPath) {
+        self.fromResponse = function(response, params) {
+            var focus = undefined;
+            var switchToPath;
+
+            if (_.isObject(params)) {
+                focus = params.focus || undefined;
+                switchToPath = params.switchToPath || undefined;
+            } else if (arguments.length > 1) {
+                log.warn("FilesViewModel.requestData called with old argument list. That is deprecated, please use parameter object instead.");
+                if (arguments.length > 2) {
+                    focus = {location: arguments[2], path: arguments[1]};
+                } else {
+                    focus = {location: "local", path: arguments[1]};
+                }
+                if (arguments.length > 3) {
+                    switchToPath = arguments[3] || undefined;
+                }
+            }
+
             var files = response.files;
 
             self.allItems(files);
-            self.currentPath("");
 
             if (!switchToPath) {
-                self.listHelper.updateItems(files);
+                var currentPath = self.currentPath();
+                if (currentPath === undefined) {
+                    self.listHelper.updateItems(files);
+                    self.currentPath("");
+                } else {
+                    // if we have a current path, make sure we stay on it
+                    self.changeFolderByPath(currentPath);
+                }
             } else {
                 self.changeFolderByPath(switchToPath);
             }
 
-            if (filenameToFocus) {
+            if (focus) {
                 // got a file to scroll to
-                if (locationToFocus === undefined) {
-                    locationToFocus = "local";
-                }
-                var entryElement = self.getEntryElement({name: filenameToFocus, origin: locationToFocus});
+                var entryElement = self.getEntryElement({path: focus.path, origin: focus.location});
                 if (entryElement) {
                     // scroll to uploaded element
                     var entryOffset = entryElement.offsetTop;
@@ -311,7 +350,12 @@ $(function() {
             self.addingFolder(true);
             OctoPrint.files.createFolder(location, name, self.currentPath())
                 .done(function(data) {
-                    self.requestData(data.folder.name, data.folder.origin)
+                    self.requestData({
+                        focus: {
+                            path: data.folder.name,
+                            location: data.folder.origin
+                        }
+                    })
                         .done(function() {
                             self.addFolderDialog.modal("hide");
                         })
@@ -404,10 +448,10 @@ $(function() {
                 index = 0;
             }
 
-            var filenameToFocus = undefined;
+            var focus = undefined;
             var fileToFocus = self.listHelper.paginatedItems()[index];
             if (fileToFocus) {
-                filenameToFocus = fileToFocus.name;
+                focus = {location: fileToFocus.origin, path: fileToFocus.path};
             }
 
             self.activeRemovals.push(entry.origin + ":" + entry.path);
@@ -440,7 +484,10 @@ $(function() {
             var deferred = $.Deferred();
             OctoPrint.files.delete(entry.origin, entry.path)
                 .done(function() {
-                    self.requestData(undefined, filenameToFocus, (entry.parent ? entry.parent.path : ""))
+                    self.requestData({
+                        focus: focus,
+                        switchToPath: (entry.parent ? entry.parent.path : "")
+                    })
                         .done(function() {
                             deferred.resolve();
                         })
@@ -487,7 +534,7 @@ $(function() {
         };
 
         self.getEntryId = function(data) {
-            return "gcode_file_" + md5(data["origin"] + ":" + data["name"]);
+            return "gcode_file_" + md5(data["origin"] + ":" + data["path"]);
         };
 
         self.getEntryElement = function(data) {
@@ -793,7 +840,7 @@ $(function() {
                 return;
             }
 
-            self.requestData(undefined, undefined, self.currentPath());
+            self.requestData();
         };
 
         self.onEventSlicingStarted = function(payload) {
@@ -835,7 +882,7 @@ $(function() {
                 type: "success"
             });
 
-            self.requestData(undefined, undefined, self.currentPath());
+            self.requestData();
         };
 
         self.onEventSlicingFailed = function(payload) {
@@ -851,11 +898,11 @@ $(function() {
         };
 
         self.onEventMetadataAnalysisFinished = function(payload) {
-            self.requestData(undefined, undefined, self.currentPath());
+            self.requestData();
         };
 
         self.onEventMetadataStatisticsUpdated = function(payload) {
-            self.requestData(undefined, undefined, self.currentPath());
+            self.requestData();
         };
 
         self.onEventTransferStarted = function(payload) {
@@ -881,12 +928,12 @@ $(function() {
                 type: "success"
             });
 
-            self.requestData(undefined, payload.remote, "sdcard");
+            self.requestData({focus: {location: "sdcard", path: payload.remote}});
         };
 
         self.onServerConnect = self.onServerReconnect = function(payload) {
             self._enableDragNDrop(true);
-            self.requestData(undefined, undefined, self.currentPath());
+            self.requestData();
         };
 
         self.onServerDisconnect = function(payload) {
@@ -949,24 +996,21 @@ $(function() {
         };
 
         self._handleUploadDone = function(e, data) {
-            var filepath = undefined;
-            var location = undefined;
+            var focus = undefined;
             if (data.result.files.hasOwnProperty("sdcard")) {
-                filepath = data.result.files.sdcard.path;
-                location = "sdcard";
+                focus = {location: "sdcard", path: data.result.files.sdcard.path};
             } else if (data.result.files.hasOwnProperty("local")) {
-                filepath = data.result.files.local.path;
-                location = "local";
+                focus = {location: "local", path: data.result.files.local.path};
             }
-            self.requestData(filepath, location, self.currentPath())
+            self.requestData({focus: focus})
                 .done(function() {
                     if (data.result.done) {
                         self._setProgressBar(0, "", false);
                     }
                 });
 
-            if (_.endsWith(filepath.toLowerCase(), ".stl")) {
-                self.slicing.show(location, filepath);
+            if (focus && _.endsWith(focus.path.toLowerCase(), ".stl")) {
+                self.slicing.show(focus.location, focus.path);
             }
         };
 
