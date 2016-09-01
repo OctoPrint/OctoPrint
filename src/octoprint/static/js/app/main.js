@@ -271,10 +271,14 @@ $(function() {
                 // if name is not set, get name from constructor, if it's an anonymous function generate one
                 viewModel.name = viewModel.name || _getViewModelId(viewModel.construct.name) || _.uniqueId("unnamedViewModel");
 
+                // no alternative names? empty array
+                viewModel.additionalNames = viewModel.additionalNames || [];
+
                 // make sure all value's are in an array
                 viewModel.dependencies = (_.isArray(viewModel.dependencies)) ? viewModel.dependencies : [viewModel.dependencies];
                 viewModel.elements = (_.isArray(viewModel.elements)) ? viewModel.elements : [viewModel.elements];
                 viewModel.optional = (_.isArray(viewModel.optional)) ? viewModel.optional : [viewModel.optional];
+                viewModel.additionalNames = (_.isArray(viewModel.additionalNames)) ? viewModel.additionalNames : [viewModel.additionalNames];
 
                 // make sure that we don't have two view models going by the same name
                 if (_.has(viewModelMap, viewModel.name)) {
@@ -300,6 +304,20 @@ $(function() {
                 allViewModelData.push([viewModelInstance, viewModelBindTargets]);
                 allViewModels.push(viewModelInstance);
                 viewModelMap[viewModel.name] = viewModelInstance;
+
+                if (viewModel.additionalNames.length) {
+                    var registeredAdditionalNames = [];
+                    _.each(viewModel.additionalNames, function(additionalName) {
+                        if (!_.has(viewModelMap, additionalName)) {
+                            viewModelMap[additionalName] = viewModelInstance;
+                            registeredAdditionalNames.push(additionalName);
+                        }
+                    });
+
+                    if (registeredAdditionalNames.length) {
+                        log.debug("Registered", viewModel.name, "under these additional names:", registeredAdditionalNames);
+                    }
+                }
             }
 
             // anything that's now in the postponed list has to be readded to the unprocessedViewModels

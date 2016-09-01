@@ -842,7 +842,7 @@ function callViewModelsIf(allViewModels, method, condition, callback) {
                 }
             } else {
                 // provide the method to the callback
-                callback(viewModel[method]);
+                callback(viewModel[method], viewModel);
             }
         }
     });

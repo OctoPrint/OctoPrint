@@ -1,5 +1,5 @@
 $(function() {
-    function GcodeFilesViewModel(parameters) {
+    function FilesViewModel(parameters) {
         var self = this;
 
         self.settingsViewModel = parameters[0];
@@ -1058,9 +1058,11 @@ $(function() {
         }
     }
 
-    OCTOPRINT_VIEWMODELS.push([
-        GcodeFilesViewModel,
-        ["settingsViewModel", "loginStateViewModel", "printerStateViewModel", "slicingViewModel","printerProfilesViewModel"],
-        ["#files_wrapper", "#add_folder_dialog"]
-    ]);
+    OCTOPRINT_VIEWMODELS.push({
+        construct: FilesViewModel,
+        name: "filesViewModel",
+        additionalNames: ["gcodeFilesViewModel"],
+        dependencies: ["settingsViewModel", "loginStateViewModel", "printerStateViewModel", "slicingViewModel", "printerProfilesViewModel"],
+        elements: ["#files_wrapper", "#add_folder_dialog"],
+    });
 });
