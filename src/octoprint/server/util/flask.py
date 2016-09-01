@@ -173,7 +173,7 @@ def fix_webassets_cache():
 			f = open(filename, 'rb')
 		except IOError as e:
 			if e.errno != errno.ENOENT:
-				raise
+				error_logger.exception("Got an exception while trying to open webasset file {}".format(filename))
 			return None
 		try:
 			result = f.read()
