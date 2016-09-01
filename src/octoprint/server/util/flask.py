@@ -334,15 +334,26 @@ def cached(timeout=5 * 60, key=lambda: "view:%s" % flask.request.path, unless=No
 		def decorated_function(*args, **kwargs):
 			logger = logging.getLogger(__name__)
 
+			def f_with_duration(*args, **kwargs):
+				start_time = time.time()
+				try:
+					return f(*args, **kwargs)
+				finally:
+					elapsed = time.time() - start_time
+					logger.debug(
+						"Needed {elapsed:.2f}s to render {path} (key: {key})".format(elapsed=elapsed,
+						                                                             path=flask.request.path,
+						                                                             key=cache_key))
+
 			# bypass the cache if "unless" condition is true
 			if callable(unless) and unless():
 				logger.debug("Cache for {path} bypassed, calling wrapped function".format(path=flask.request.path))
-				return f(*args, **kwargs)
+				return f_with_duration(*args, **kwargs)
 
 			# also bypass the cache if it's disabled completely
 			if not settings().getBoolean(["devel", "cache", "enabled"]):
 				logger.debug("Cache for {path} disabled, calling wrapped function".format(path=flask.request.path))
-				return f(*args, **kwargs)
+				return f_with_duration(*args, **kwargs)
 
 			cache_key = key()
 			rv = _cache.get(cache_key)
@@ -356,11 +367,11 @@ def cached(timeout=5 * 60, key=lambda: "view:%s" % flask.request.path, unless=No
 
 			# get value from wrapped function
 			logger.debug("No cache entry or refreshing cache for {path} (key: {key}), calling wrapped function".format(path=flask.request.path, key=cache_key))
-			rv = f(*args, **kwargs)
+			rv = f_with_duration(*args, **kwargs)
 
 			# do not store if the "unless_response" condition is true
 			if callable(unless_response) and unless_response(rv):
-				logger.debug("Not caching result for {path}, bypassed".format(path=flask.request.path))
+				logger.debug("Not caching result for {path} (key: {key}), bypassed".format(path=flask.request.path, key=cache_key))
 				return rv
 
 			# store it in the cache
