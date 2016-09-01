@@ -113,11 +113,11 @@ def _git(args, cwd, verbose=False, git_executable=None):
 			if verbose:
 				print("unable to run %s" % args[0])
 				print(e)
-			return None, None
+			return None, None, None
 	else:
 		if verbose:
 			print("unable to find command, tried %s" % (commands,))
-		return None, None
+		return None, None, None
 
 
 def _python(args, cwd, python_executable, sudo=False):
@@ -127,7 +127,7 @@ def _python(args, cwd, python_executable, sudo=False):
 	try:
 		return _execute(command, cwd=cwd)
 	except:
-		return None, None
+		return None, None, None
 
 
 def _to_error(*lines):
@@ -173,16 +173,16 @@ def update_source(git_executable, folder, target, force=False, branch=None):
 			raise RuntimeError("Could not update, \"git clean -f\" failed with returcode %d: %s" % (returncode, _to_error(*stdout)))
 
 	print(">>> Running: git fetch")
-	returncode, stdout = _git(["fetch"], folder, git_executable=git_executable)
+	returncode, stdout, stderr = _git(["fetch"], folder, git_executable=git_executable)
 	if returncode != 0:
-		raise RuntimeError("Could not update, \"git fetch\" failed with returncode %d: %s" % (returncode, stdout))
+		raise RuntimeError("Could not update, \"git fetch\" failed with returncode %d: %s" % (returncode, _to_error(*stdout)))
 	print(stdout)
 
 	if branch is not None and branch.strip() != "":
 		print(">>> Running: git checkout {}".format(branch))
-		returncode, stdout = _git(["checkout", branch], folder, git_executable=git_executable)
+		returncode, stdout, stderr = _git(["checkout", branch], folder, git_executable=git_executable)
 		if returncode != 0:
-			raise RuntimeError("Could not update, \"git checkout\" failed with returncode %d: %s" % (returncode, stdout))
+			raise RuntimeError("Could not update, \"git checkout\" failed with returncode %d: %s" % (returncode, _to_error(*stdout)))
 
 	print(">>> Running: git pull")
 	returncode, stdout, stderr = _git(["pull"], folder, git_executable=git_executable)
