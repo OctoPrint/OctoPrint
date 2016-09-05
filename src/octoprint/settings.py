@@ -108,12 +108,16 @@ default_settings = {
 		"firstRun": True,
 		"secretKey": None,
 		"reverseProxy": {
-			"prefixHeader": "X-Script-Name",
-			"schemeHeader": "X-Scheme",
-			"hostHeader": "X-Forwarded-Host",
-			"prefixFallback": "",
-			"schemeFallback": "",
-			"hostFallback": ""
+			"prefixHeader": None,
+			"schemeHeader": None,
+			"hostHeader": None,
+			"serverHeader": None,
+			"portHeader": None,
+			"prefixFallback": None,
+			"schemeFallback": None,
+			"hostFallback": None,
+			"serverFallback": None,
+			"portFallback": None
 		},
 		"uploads": {
 			"maxSize":  1 * 1024 * 1024 * 1024, # 1GB
