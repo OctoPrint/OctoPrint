@@ -7,7 +7,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import uuid
 from sockjs.tornado import SockJSRouter
-from flask import Flask, g, request, session, Blueprint
+from flask import Flask, g, request, session, Blueprint, Request, Response
 from flask.ext.login import LoginManager, current_user
 from flask.ext.principal import Principal, Permission, RoleNeed, identity_loaded, UserNeed
 from flask.ext.babel import Babel, gettext, ngettext
@@ -168,7 +168,7 @@ class Server(object):
 		util.flask.enable_additional_translations(additional_folders=[s.getBaseFolder("translations")])
 
 		# setup app
-		self._setup_app()
+		self._setup_app(app)
 
 		# setup i18n
 		self._setup_i18n(app)
@@ -199,9 +199,15 @@ class Server(object):
 		pluginLifecycleManager = LifecycleManager(pluginManager)
 		preemptiveCache = PreemptiveCache(os.path.join(s.getBaseFolder("data"), "preemptive_cache_config.yaml"))
 
+		# ... and initialize all plugins
+
 		def octoprint_plugin_inject_factory(name, implementation):
+			"""Factory for injections for all OctoPrintPlugins"""
+
 			if not isinstance(implementation, octoprint.plugin.OctoPrintPlugin):
+				# we only care about OctoPrintPlugins
 				return None
+
 			return dict(
 				plugin_manager=pluginManager,
 				printer_profile_manager=printerProfileManager,
@@ -217,8 +223,13 @@ class Server(object):
 			)
 
 		def settings_plugin_inject_factory(name, implementation):
+			"""Factory for additional injections depending on plugin type"""
+
 			if not isinstance(implementation, octoprint.plugin.SettingsPlugin):
+				# we only care about SettingsPlugins
 				return None
+
+			# SettingsPlugin instnances get a PluginSettings instance injected
 			default_settings = implementation.get_settings_defaults()
 			get_preprocessors, set_preprocessors = implementation.get_settings_preprocessors()
 			plugin_settings = octoprint.plugin.plugin_settings(name,
@@ -228,6 +239,8 @@ class Server(object):
 			return dict(settings=plugin_settings)
 
 		def settings_plugin_config_migration_and_cleanup(name, implementation):
+			"""Take care of migrating and cleaning up any old settings"""
+
 			if not isinstance(implementation, octoprint.plugin.SettingsPlugin):
 				return
 
@@ -269,6 +282,8 @@ class Server(object):
 
 		# setup jinja2
 		self._setup_jinja2()
+
+		# make sure plugin lifecycle events relevant for jinja2 are taken care of
 		def template_enabled(name, plugin):
 			if plugin.implementation is None or not isinstance(plugin.implementation, octoprint.plugin.TemplatePlugin):
 				return
@@ -296,31 +311,12 @@ class Server(object):
 		try:
 			clazz = octoprint.util.get_class(userManagerName)
 			userManager = clazz()
-		except AttributeError, e:
+		except AttributeError as e:
 			self._logger.exception("Could not instantiate user manager {}, falling back to FilebasedUserManager!".format(userManagerName))
 			userManager = octoprint.users.FilebasedUserManager()
 		finally:
 			userManager.enabled = s.getBoolean(["accessControl", "enabled"])
 
-		app.wsgi_app = util.ReverseProxied(
-			app.wsgi_app,
-			s.get(["server", "reverseProxy", "prefixHeader"]),
-			s.get(["server", "reverseProxy", "schemeHeader"]),
-			s.get(["server", "reverseProxy", "hostHeader"]),
-			s.get(["server", "reverseProxy", "prefixFallback"]),
-			s.get(["server", "reverseProxy", "schemeFallback"]),
-			s.get(["server", "reverseProxy", "hostFallback"])
-		)
-
-		secret_key = s.get(["server", "secretKey"])
-		if not secret_key:
-			import string
-			from random import choice
-			chars = string.ascii_lowercase + string.ascii_uppercase + string.digits
-			secret_key = "".join(choice(chars) for _ in xrange(32))
-			s.set(["server", "secretKey"], secret_key)
-			s.save()
-		app.secret_key = secret_key
 		loginManager = LoginManager()
 		loginManager.session_protection = "strong"
 		loginManager.user_callback = load_user
@@ -329,17 +325,15 @@ class Server(object):
 			principals.identity_loaders.appendleft(users.dummy_identity_loader)
 		loginManager.init_app(app)
 
-		if self._host is None:
-			self._host = s.get(["server", "host"])
-		if self._port is None:
-			self._port = s.getInt(["server", "port"])
-
-		app.debug = self._debug
-
 		# register API blueprint
 		self._setup_blueprints()
 
 		## Tornado initialization starts here
+
+		if self._host is None:
+			self._host = s.get(["server", "host"])
+		if self._port is None:
+			self._port = s.getInt(["server", "port"])
 
 		ioloop = IOLoop()
 		ioloop.install()
@@ -382,6 +376,8 @@ class Server(object):
 			(r"/online.txt", util.tornado.StaticDataHandler, dict(data="online\n")),
 			(r"/online.gif", util.tornado.StaticDataHandler, dict(data=bytes(base64.b64decode("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7")), content_type="image/gif"))
 		]
+
+		# fetch additional routes from plugins
 		for name, hook in pluginManager.get_hooks("octoprint.server.http.routes").items():
 			try:
 				result = hook(list(server_routes))
@@ -435,10 +431,13 @@ class Server(object):
 
 		self._stop_intermediary_server()
 
+		# initialize and bind the server
 		self._server = util.tornado.CustomHTTPServer(self._tornado_app, max_body_sizes=max_body_sizes, default_max_body_size=s.getInt(["server", "maxSize"]))
 		self._server.listen(self._port, address=self._host)
 
 		eventManager.fire(events.Events.STARTUP)
+
+		# auto connect
 		if s.getBoolean(["serial", "autoconnect"]):
 			(port, baudrate) = s.get(["serial", "port"]), s.getInt(["serial", "baudrate"])
 			printer_profile = printerProfileManager.get_default()
@@ -531,7 +530,8 @@ class Server(object):
 
 	def _create_socket_connection(self, session):
 		global printer, fileManager, analysisQueue, userManager, eventManager
-		return util.sockjs.PrinterStateConnection(printer, fileManager, analysisQueue, userManager, eventManager, pluginManager, session)
+		return util.sockjs.PrinterStateConnection(printer, fileManager, analysisQueue, userManager,
+		                                          eventManager, pluginManager, session)
 
 	def _check_for_root(self):
 		if "geteuid" in dir(os) and os.geteuid() == 0:
@@ -635,7 +635,41 @@ class Server(object):
 			logging.getLogger("SERIAL").setLevel(logging.DEBUG)
 			logging.getLogger("SERIAL").debug("Enabling serial logging")
 
-	def _setup_app(self):
+	def _setup_app(self, app):
+		from octoprint.server.util.flask import ReverseProxiedEnvironment, OctoPrintFlaskRequest, OctoPrintFlaskResponse
+
+		s = settings()
+
+		app.debug = self._debug
+
+		secret_key = s.get(["server", "secretKey"])
+		if not secret_key:
+			import string
+			from random import choice
+			chars = string.ascii_lowercase + string.ascii_uppercase + string.digits
+			secret_key = "".join(choice(chars) for _ in range(32))
+			s.set(["server", "secretKey"], secret_key)
+			s.save()
+
+		app.secret_key = secret_key
+
+		reverse_proxied = ReverseProxiedEnvironment(
+			header_prefix=s.get(["server", "reverseProxy", "prefixHeader"]),
+			header_scheme=s.get(["server", "reverseProxy", "schemeHeader"]),
+			header_host=s.get(["server", "reverseProxy", "hostHeader"]),
+			header_server=s.get(["server", "reverseProxy", "serverHeader"]),
+			header_port=s.get(["server", "reverseProxy", "portHeader"]),
+			prefix=s.get(["server", "reverseProxy", "prefixFallback"]),
+			scheme=s.get(["server", "reverseProxy", "schemeFallback"]),
+			host=s.get(["server", "reverseProxy", "hostFallback"]),
+			server=s.get(["server", "reverseProxy", "serverFallback"]),
+			port=s.get(["server", "reverseProxy", "portFallback"])
+		)
+
+		OctoPrintFlaskRequest.environment_wrapper = reverse_proxied
+		app.request_class = OctoPrintFlaskRequest
+		app.response_class = OctoPrintFlaskResponse
+
 		@app.before_request
 		def before_request():
 			g.locale = self._get_locale()
@@ -932,7 +966,7 @@ class Server(object):
 						# that might be caused by the user still having the folder open somewhere, let's try again after
 						# waiting a bit
 						import time
-						for n in xrange(3):
+						for n in range(3):
 							time.sleep(0.5)
 							self._logger.debug("Creating {path}: Retry #{retry} after {time}s".format(path=path, retry=n+1, time=(n + 1)*0.5))
 							try:
