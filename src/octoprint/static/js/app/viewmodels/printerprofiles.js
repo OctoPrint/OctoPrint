@@ -176,8 +176,8 @@ $(function() {
             self.model(data.model);
 
             self.volumeWidth(data.volume.width);
-            self.volumeHeight(data.volume.depth);
-            self.volumeDepth(data.volume.height);
+            self.volumeHeight(data.volume.height);
+            self.volumeDepth(data.volume.depth);
             self.volumeFormFactor(data.volume.formFactor);
             self.volumeOrigin(data.volume.origin);
 
@@ -220,7 +220,7 @@ $(function() {
                 model: self.model(),
                 volume: {
                     width: parseFloat(self.volumeWidth()),
-                    depth: parseFloat(self.volumeHeight()),
+                    depth: parseFloat(self.volumeDepth()),
                     height: parseFloat(self.volumeHeight()),
                     formFactor: self.volumeFormFactor(),
                     origin: self.volumeOrigin()
