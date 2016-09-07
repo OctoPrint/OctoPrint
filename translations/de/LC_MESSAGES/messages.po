@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OctoPrint\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
-"POT-Creation-Date: 2016-09-07 11:35+0200\n"
-"PO-Revision-Date: 2016-09-07 11:50+0100\n"
+"POT-Creation-Date: 2016-09-07 12:06+0200\n"
+"PO-Revision-Date: 2016-09-07 12:09+0100\n"
 "Last-Translator: Gina Häußge <osd@foosel.net>\n"
 "Language: de\n"
 "Language-Team: German (http://www.transifex.com/projects/p/octoprint/"
@@ -190,6 +190,7 @@ msgid "Overwrite existing file"
 msgstr "Vorhandene Datei überschreiben"
 
 #: src/octoprint/plugins/cura/templates/cura_settings.jinja2:113
+#, fuzzy
 msgid ""
 "\n"
 "            You can import your existing profile <code>.ini</code> files "
@@ -199,7 +200,7 @@ msgid ""
 "            from Cura versions starting with 15.06 is supported, nor are the "
 "custom Cura profile formats\n"
 "            that third party tools like e.g. Repetier create.\n"
-"    "
+"        "
 msgstr ""
 "\n"
 "    Hier kannst Du Deine existierenden Profildateien (<code>.ini</code>) aus "
@@ -3231,6 +3232,10 @@ msgstr "Lüfter aus"
 #: src/octoprint/templates/tabs/gcodeviewer.jinja2:17
 msgid "Model info"
 msgstr "Modelinformationen"
+
+#: src/octoprint/templates/tabs/gcodeviewer.jinja2:20
+msgid "Layer info"
+msgstr "Schichtinformationen"
 
 #: src/octoprint/templates/tabs/gcodeviewer.jinja2:24
 msgid "Renderer options"
