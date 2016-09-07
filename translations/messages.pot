@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: OctoPrint 1.2.16.dev32+g62d5f04\n"
+"Project-Id-Version: OctoPrint 1.2.16.dev33+g536d46f.dirty\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
-"POT-Creation-Date: 2016-09-06 11:51+0200\n"
+"POT-Creation-Date: 2016-09-07 11:35+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1253,19 +1253,22 @@ msgstr ""
 
 #: src/octoprint/static/js/app/viewmodels/files.js:343
 #: src/octoprint/static/js/app/viewmodels/files.js:348
+#: src/octoprint/static/js/app/viewmodels/gcode.js:468
+#: src/octoprint/static/js/app/viewmodels/gcode.js:471
 msgid "Filament"
 msgstr ""
 
 #: src/octoprint/static/js/app/viewmodels/files.js:352
-msgid "Estimated Print Time"
+#: src/octoprint/static/js/app/viewmodels/gcode.js:475
+msgid "Estimated print time"
 msgstr ""
 
 #: src/octoprint/static/js/app/viewmodels/files.js:355
-msgid "Last Printed"
+msgid "Last printed"
 msgstr ""
 
 #: src/octoprint/static/js/app/viewmodels/files.js:357
-msgid "Last Print Time"
+msgid "Last print time"
 msgstr ""
 
 #: src/octoprint/static/js/app/viewmodels/files.js:460
@@ -1380,16 +1383,7 @@ msgid "Layer height"
 msgstr ""
 
 #: src/octoprint/static/js/app/viewmodels/gcode.js:465
-msgid "GCODE commands in layer"
-msgstr ""
-
-#: src/octoprint/static/js/app/viewmodels/gcode.js:468
-#: src/octoprint/static/js/app/viewmodels/gcode.js:471
-msgid "Filament used by layer"
-msgstr ""
-
-#: src/octoprint/static/js/app/viewmodels/gcode.js:475
-msgid "Print time for layer"
+msgid "GCODE commands"
 msgstr ""
 
 #: src/octoprint/static/js/app/viewmodels/loginstate.js:22
@@ -2172,7 +2166,7 @@ msgstr ""
 #: src/octoprint/templates/dialogs/settings/folders.jinja2:47
 #: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:69
 #: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:90
-#: src/octoprint/templates/tabs/gcodeviewer.jinja2:69
+#: src/octoprint/templates/tabs/gcodeviewer.jinja2:75
 #: src/octoprint/templates/tabs/timelapse.jinja2:13
 msgid "Warning"
 msgstr ""
@@ -2979,13 +2973,20 @@ msgstr ""
 
 #: src/octoprint/templates/tabs/gcodeviewer.jinja2:65
 msgid ""
-"Note that the time estimates in this tab are calculated by the GCODE "
-"viewer in your browser and might differ from the values calculated by the"
-" server that are displayed in the \"State\" and \"Files\" panels in the "
-"sidebar due to slightly different implementations."
+"\n"
+"            Note that the time and usage values in this tab are "
+"<strong>estimated</strong> by the GCODE viewer in your\n"
+"            browser and might differ from the values "
+"<strong>estimated</strong> by the server that are displayed in the\n"
+"            \"State\" and \"Files\" panels in the sidebar due to slightly"
+" different implementations. Also note that these\n"
+"            <strong>estimated</strong> values may be inaccurate since "
+"they can also take information present in the\n"
+"            GCODE file into account.\n"
+"        "
 msgstr ""
 
-#: src/octoprint/templates/tabs/gcodeviewer.jinja2:70
+#: src/octoprint/templates/tabs/gcodeviewer.jinja2:76
 msgid ""
 "<p>\n"
 "        You've selected <strong data-bind=\"text: "
@@ -3002,7 +3003,7 @@ msgid ""
 "    </p>"
 msgstr ""
 
-#: src/octoprint/templates/tabs/gcodeviewer.jinja2:81
+#: src/octoprint/templates/tabs/gcodeviewer.jinja2:87
 #, python-format
 msgid "Yes, please visualize %(name)s regardless of its size"
 msgstr ""
