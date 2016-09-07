@@ -62,7 +62,13 @@
     </div>
 
     <div class="muted">
-        <small>{{ _('Note that the time estimates in this tab are calculated by the GCODE viewer in your browser and might differ from the values calculated by the server that are displayed in the "State" and "Files" panels in the sidebar due to slightly different implementations.') }}</small>
+        <small>{% trans %}
+            Note that the time and usage values in this tab are <strong>estimated</strong> by the GCODE viewer in your
+            browser and might differ from the values <strong>estimated</strong> by the server that are displayed in the
+            "State" and "Files" panels in the sidebar due to slightly different implementations. Also note that these
+            <strong>estimated</strong> values may be inaccurate since they can also take information present in the
+            GCODE file into account.
+        {% endtrans %}</small>
     </div>
 </div>
 <div data-bind="visible: waitForApproval">
