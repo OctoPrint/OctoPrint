@@ -104,18 +104,22 @@ class UploadStorageFallbackHandler(tornado.web.RequestHandler):
 	    true
 	    ------WebKitFormBoundarypYiSUx63abAmhT5C
 	    Content-Disposition: form-data; name="file.path"
+	    Content-Type: text/plain; charset=utf-8
 
 	    /tmp/tmpzupkro
 	    ------WebKitFormBoundarypYiSUx63abAmhT5C
 	    Content-Disposition: form-data; name="file.name"
+	    Content-Type: text/plain; charset=utf-8
 
 	    test.gcode
 	    ------WebKitFormBoundarypYiSUx63abAmhT5C
 	    Content-Disposition: form-data; name="file.content_type"
+	    Content-Type: text/plain; charset=utf-8
 
 	    application/octet-stream
 	    ------WebKitFormBoundarypYiSUx63abAmhT5C
 	    Content-Disposition: form-data; name="file.size"
+	    Content-Type: text/plain; charset=utf-8
 
 	    349182
 	    ------WebKitFormBoundarypYiSUx63abAmhT5C--
@@ -272,9 +276,19 @@ class UploadStorageFallbackHandler(tornado.web.RequestHandler):
 			header = header[header_check:]
 
 		# convert to dict
-		header = tornado.httputil.HTTPHeaders.parse(header.decode("utf-8"))
+		try:
+			header = tornado.httputil.HTTPHeaders.parse(header.decode("utf-8"))
+		except UnicodeDecodeError:
+			try:
+				header = tornado.httputil.HTTPHeaders.parse(header.decode("iso-8859-1"))
+			except:
+				# looks like we couldn't decode something here neither as UTF-8 nor ISO-8859-1
+				self._logger.warn("Could not decode multipart headers in request, should be either UTF-8 or ISO-8859-1")
+				self.send_error(400)
+				return
+
 		disp_header = header.get("Content-Disposition", "")
-		disposition, disp_params = tornado.httputil._parse_header(disp_header)
+		disposition, disp_params = _parse_header(disp_header, strip_quotes=False)
 
 		if disposition != "form-data":
 			self._logger.warn("Got a multipart header without form-data content disposition, ignoring that one")
@@ -283,7 +297,22 @@ class UploadStorageFallbackHandler(tornado.web.RequestHandler):
 			self._logger.warn("Got a multipart header without name, ignoring that one")
 			return
 
-		self._current_part = self._on_part_start(disp_params["name"], header.get("Content-Type", None), filename=disp_params["filename"] if "filename" in disp_params else None)
+		filename = disp_params.get("filename*", None) # RFC 5987 header present?
+		if filename is not None:
+			try:
+				filename = _extended_header_value(filename)
+			except:
+				# parse error, this is not RFC 5987 compliant after all
+				self._logger.warn("extended filename* value {!r} is not RFC 5987 compliant")
+				self.send_error(400)
+				return
+		else:
+			# no filename* header, just strip quotes from filename header then and be done
+			filename = _strip_value_quotes(disp_params.get("filename", None))
+
+		self._current_part = self._on_part_start(_strip_value_quotes(disp_params["name"]),
+		                                         header.get("Content-Type", None),
+		                                         filename=filename)
 
 	def _on_part_start(self, name, content_type, filename=None):
 		"""
@@ -357,7 +386,7 @@ class UploadStorageFallbackHandler(tornado.web.RequestHandler):
 		"""
 
 		self._new_body = b""
-		for name, part in self._parts.iteritems():
+		for name, part in self._parts.items():
 			if "filename" in part:
 				# add form fields for filename, path, size and content_type for all files contained in the request
 				if not "path" in part:
@@ -371,11 +400,12 @@ class UploadStorageFallbackHandler(tornado.web.RequestHandler):
 				if "content_type" in part:
 					parameters["content_type"] = part["content_type"]
 
-				fields = dict((self._suffixes[key], value) for (key, value) in parameters.iteritems())
-				for n, p in fields.iteritems():
+				fields = dict((self._suffixes[key], value) for (key, value) in parameters.items())
+				for n, p in fields.items():
 					key = name + "." + n
 					self._new_body += b"--%s\r\n" % self._multipart_boundary
 					self._new_body += b"Content-Disposition: form-data; name=\"%s\"\r\n" % key
+					self._new_body += b"Content-Type: text/plain; charset=utf-8\r\n"
 					self._new_body += b"\r\n"
 					self._new_body += b"%s\r\n" % p
 			elif "data" in part:
@@ -428,6 +458,47 @@ class UploadStorageFallbackHandler(tornado.web.RequestHandler):
 	delete = _handle_method
 	head = _handle_method
 	options = _handle_method
+
+
+def _parse_header(line, strip_quotes=True):
+	parts = tornado.httputil._parseparam(';' + line)
+	key = next(parts)
+	pdict = {}
+	for p in parts:
+		i = p.find('=')
+		if i >= 0:
+			name = p[:i].strip().lower()
+			value = p[i + 1:].strip()
+			if strip_quotes:
+				value = _strip_value_quotes(value)
+			pdict[name] = value
+	return key, pdict
+
+
+def _strip_value_quotes(value):
+	if not value:
+		return value
+
+	if len(value) >= 2 and value[0] == value[-1] == '"':
+		value = value[1:-1]
+		value = value.replace('\\\\', '\\').replace('\\"', '"')
+
+	return value
+
+
+def _extended_header_value(value):
+	if not value:
+		return value
+
+	if value.lower().startswith("iso-8859-1'") or value.lower().startswith("utf-8'"):
+		# RFC 5987 section 3.2
+		from urllib import unquote
+		encoding, _, value = value.split("'", 2)
+		return unquote(value).decode(encoding)
+
+	else:
+		# no encoding provided, strip potentially present quotes and call it a day
+		return _strip_value_quotes(value)
 
 
 class WsgiInputContainer(object):
