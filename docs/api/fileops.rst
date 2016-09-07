@@ -161,18 +161,10 @@ Upload file
       Content-Disposition: form-data; name="file"; filename="whistle_v2.gcode"
       Content-Type: application/octet-stream
 
-      ;Generated with Cura_SteamEngine 13.11.2
       M109 T0 S220.000000
       T0
-      ;Sliced at: Wed 11-12-2013 16:53:12
-      ;Basic settings: Layer height: 0.2 Walls: 0.8 Fill: 20
-      ;Print time: #P_TIME#
-      ;Filament used: #F_AMNT#m #F_WGHT#g
-      ;Filament cost: #F_COST#
-      ;M190 S70 ;Uncomment to add your own bed temperature line
-      ;M109 S220 ;Uncomment to add your own temperature line
-      G21        ;metric values
-      G90        ;absolute positioning
+      G21
+      G90
       ...
       ------WebKitFormBoundaryDeC2E3iWbTv1PwMC
       Content-Disposition: form-data; name="select"
@@ -188,7 +180,7 @@ Upload file
 
       HTTP/1.1 200 OK
       Content-Type: application/json
-      Location: http://example.com/api/files/sdcard/whistle_.gcode
+      Location: http://example.com/api/files/sdcard/whistle_v2.gcode
 
       {
         "files": {
@@ -205,6 +197,46 @@ Upload file
             "origin": "sdcard",
             "refs": {
               "resource": "http://example.com/api/files/sdcard/whistle_.gco"
+            }
+          }
+        },
+        "done": false
+      }
+
+   **Example with UTF-8 encoded filename following RFC 5987**
+
+   .. sourcecode:: http
+
+      POST /api/files/local HTTP/1.1
+      Host: example.com
+      X-Api-Key: abcdef...
+      Content-Type: multipart/form-data; boundary=----WebKitFormBoundaryDeC2E3iWbTv1PwMC
+
+      ------WebKitFormBoundaryDeC2E3iWbTv1PwMC
+      Content-Disposition: form-data; name="file"; filename*=utf-8''20mm-%C3%BCml%C3%A4ut-b%C3%B6x.gcode
+      Content-Type: application/octet-stream
+
+      M109 T0 S220.000000
+      T0
+      G21
+      G90
+      ...
+      ------WebKitFormBoundaryDeC2E3iWbTv1PwMC--
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+      Location: http://example.com/api/files/local/20mm-umlaut-box.gcode
+
+      {
+        "files": {
+          "local": {
+            "name": "20mm-umlaut-box",
+            "origin": "local",
+            "refs": {
+              "resource": "http://example.com/api/files/local/whistle_v2.gcode",
+              "download": "http://example.com/downloads/files/local/whistle_v2.gcode"
             }
           }
         },
