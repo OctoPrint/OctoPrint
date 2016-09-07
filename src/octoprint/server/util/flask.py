@@ -334,6 +334,8 @@ def cached(timeout=5 * 60, key=lambda: "view:%s" % flask.request.path, unless=No
 		def decorated_function(*args, **kwargs):
 			logger = logging.getLogger(__name__)
 
+			cache_key = key()
+
 			def f_with_duration(*args, **kwargs):
 				start_time = time.time()
 				try:
@@ -355,7 +357,6 @@ def cached(timeout=5 * 60, key=lambda: "view:%s" % flask.request.path, unless=No
 				logger.debug("Cache for {path} disabled, calling wrapped function".format(path=flask.request.path))
 				return f_with_duration(*args, **kwargs)
 
-			cache_key = key()
 			rv = _cache.get(cache_key)
 
 			# only take the value from the cache if we are not required to refresh it from the wrapped function
