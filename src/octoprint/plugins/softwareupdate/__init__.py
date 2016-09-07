@@ -795,7 +795,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			else:
 				result["current"] = VERSION
 
-				if check["type"] == "github_release" and (check["prerelease"] or BRANCH != stable_branch):
+				if check["type"] == "github_release" and (check.get("prerelease", None) or BRANCH != stable_branch):
 					# we are tracking github releases and are either also tracking prerelease OR are currently installed
 					# from something that is not the stable (master) branch => we need to change some parameters
 

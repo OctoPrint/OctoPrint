@@ -606,12 +606,12 @@ $(function() {
                         }
                     }
                 }
-                output += gettext("Estimated Print Time") + ": " + formatFuzzyPrintTime(data["gcodeAnalysis"]["estimatedPrintTime"]) + "<br>";
+                output += gettext("Estimated print time") + ": " + formatFuzzyPrintTime(data["gcodeAnalysis"]["estimatedPrintTime"]) + "<br>";
             }
             if (data["prints"] && data["prints"]["last"]) {
-                output += gettext("Last Printed") + ": " + formatTimeAgo(data["prints"]["last"]["date"]) + "<br>";
+                output += gettext("Last printed") + ": " + formatTimeAgo(data["prints"]["last"]["date"]) + "<br>";
                 if (data["prints"]["last"]["lastPrintTime"]) {
-                    output += gettext("Last Print Time") + ": " + formatDuration(data["prints"]["last"]["lastPrintTime"]);
+                    output += gettext("Last print time") + ": " + formatDuration(data["prints"]["last"]["lastPrintTime"]);
                 }
             }
             return output;

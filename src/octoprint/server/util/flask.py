@@ -219,6 +219,193 @@ def fix_webassets_filtertool():
 
 	FilterTool._wrap_cache = fixed_wrap_cache
 
+#~~ WSGI environment wrapper for reverse proxying
+
+class ReverseProxiedEnvironment(object):
+
+	@staticmethod
+	def to_header_candidates(values):
+		if values is None:
+			return []
+		if not isinstance(values, (list, tuple)):
+			values = [values]
+		to_wsgi_format = lambda header: "HTTP_" + header.upper().replace("-", "_")
+		return map(to_wsgi_format, values)
+
+	def __init__(self,
+	             header_prefix=None,
+	             header_scheme=None,
+	             header_host=None,
+	             header_server=None,
+	             header_port=None,
+	             prefix=None,
+	             scheme=None,
+	             host=None,
+	             server=None,
+	             port=None):
+
+		# sensible defaults
+		if header_prefix is None:
+			header_prefix = ["x-script-name"]
+		if header_scheme is None:
+			header_scheme = ["x-forwarded-proto", "x-scheme"]
+		if header_host is None:
+			header_host = ["x-forwarded-host"]
+		if header_server is None:
+			header_server = ["x-forwarded-server"]
+		if header_port is None:
+			header_port = ["x-forwarded-port"]
+
+		# header candidates
+		self._headers_prefix = self.to_header_candidates(header_prefix)
+		self._headers_scheme = self.to_header_candidates(header_scheme)
+		self._headers_host = self.to_header_candidates(header_host)
+		self._headers_server = self.to_header_candidates(header_server)
+		self._headers_port = self.to_header_candidates(header_port)
+
+		# fallback prefix & scheme & host from config
+		self._fallback_prefix = prefix
+		self._fallback_scheme = scheme
+		self._fallback_host = host
+		self._fallback_server = server
+		self._fallback_port = port
+
+	def __call__(self, environ):
+		def retrieve_header(header_type):
+			candidates = getattr(self, "_headers_" + header_type, [])
+			fallback = getattr(self, "_fallback_" + header_type, None)
+
+			for candidate in candidates:
+				value = environ.get(candidate, None)
+				if value is not None:
+					return value
+			else:
+				return fallback
+
+		def host_to_server_and_port(host, scheme):
+			if host is None:
+				return None, None
+
+			if ":" in host:
+				server, port = host.split(":", 1)
+			else:
+				server = host
+				port = "443" if scheme == "https" else "80"
+
+			return server, port
+
+		# determine prefix
+		prefix = retrieve_header("prefix")
+		if prefix is not None:
+			environ["SCRIPT_NAME"] = prefix
+			path_info = environ["PATH_INFO"]
+			if path_info.startswith(prefix):
+				environ["PATH_INFO"] = path_info[len(prefix):]
+
+		# determine scheme
+		scheme = retrieve_header("scheme")
+		if scheme is not None and "," in scheme:
+			# Scheme might be something like "https,https" if doubly-reverse-proxied
+			# without stripping original scheme header first, make sure to only use
+			# the first entry in such a case. See #1391.
+			scheme, _ = map(lambda x: x.strip(), scheme.split(",", 1))
+		if scheme is not None:
+			environ["wsgi.url_scheme"] = scheme
+
+		# determine host
+		url_scheme = environ["wsgi.url_scheme"]
+		host = retrieve_header("host")
+		if host is not None:
+			# if we have a host, we take server_name and server_port from it
+			server, port = host_to_server_and_port(host, url_scheme)
+			environ["HTTP_HOST"] = host
+			environ["SERVER_NAME"] = server
+			environ["SERVER_PORT"] = port
+		else:
+			# else we take a look at the server and port headers and if we have
+			# something there we derive the host from it
+
+			# determine server - should usually not be used
+			server = retrieve_header("server")
+			if server is not None:
+				environ["SERVER_NAME"] = server
+
+			# determine port - should usually not be used
+			port = retrieve_header("port")
+			if port is not None:
+				environ["SERVER_PORT"] = port
+
+			# make sure HTTP_HOST matches SERVER_NAME and SERVER_PORT
+			expected_server, expected_port = host_to_server_and_port(environ.get("HTTP_HOST", None), url_scheme)
+			if expected_server != environ["SERVER_NAME"] or expected_port != environ["SERVER_PORT"]:
+				# there's a difference, fix it!
+				if url_scheme == "http" and environ["SERVER_PORT"] == "80" or url_scheme == "https" and environ["SERVER_PORT"] == "443":
+					# default port for scheme, can be skipped
+					environ["HTTP_HOST"] = environ["SERVER_NAME"]
+				else:
+					environ["HTTP_HOST"] = environ["SERVER_NAME"] + ":" + environ["SERVER_PORT"]
+
+		# call wrapped app with rewritten environment
+		return environ
+
+#~~ request and response versions
+
+from werkzeug.wrappers import cached_property
+
+class OctoPrintFlaskRequest(flask.Request):
+	environment_wrapper = staticmethod(lambda x: x)
+
+	def __init__(self, environ, *args, **kwargs):
+		# apply environment wrapper to provided WSGI environment
+		flask.Request.__init__(self, self.environment_wrapper(environ), *args, **kwargs)
+
+	@cached_property
+	def cookies(self):
+		# strip cookie_suffix from all cookies in the request, return result
+		cookies = flask.Request.cookies.__get__(self)
+
+		def cookie_name_converter(key):
+			return key[:-len(self.cookie_suffix)] if key.endswith(self.cookie_suffix) else key
+
+		return dict((cookie_name_converter(key), value) for key, value in cookies.items())
+
+	@cached_property
+	def server_name(self):
+		"""Short cut to the request's server name header"""
+		return self.environ.get("SERVER_NAME")
+
+	@cached_property
+	def server_port(self):
+		"""Short cut to the request's server port header"""
+		return self.environ.get("SERVER_PORT")
+
+	@cached_property
+	def cookie_suffix(self):
+		"""
+		Request specific suffix for set and read cookies
+
+		We need this because cookies are not port-specific and we don't want to overwrite our
+		session and other cookies from one OctoPrint instance on our machine with those of another
+		one who happens to listen on the same address albeit a different port.
+		"""
+		return "_P" + self.server_port
+
+
+class OctoPrintFlaskResponse(flask.Response):
+	def set_cookie(self, key, *args, **kwargs):
+		# restrict cookie path to script root
+		kwargs["path"] = flask.request.script_root + kwargs.get("path", "/")
+
+		# add request specific cookie suffix to name
+		flask.Response.set_cookie(self, key + flask.request.cookie_suffix, *args, **kwargs)
+
+	def delete_cookie(self, key, *args, **kwargs):
+		# restrict cookie path to script root
+		kwargs["path"] = flask.request.script_root + kwargs.get("path", "/")
+
+		# add request specific cookie suffix to name
+		flask.Response.delete_cookie(self, key + flask.request.cookie_suffix, *args, **kwargs)
+
 #~~ passive login helper
 
 def passive_login():

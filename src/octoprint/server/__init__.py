@@ -7,7 +7,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import uuid
 from sockjs.tornado import SockJSRouter
-from flask import Flask, g, request, session, Blueprint
+from flask import Flask, g, request, session, Blueprint, Request, Response
 from flask.ext.login import LoginManager, current_user
 from flask.ext.principal import Principal, Permission, RoleNeed, identity_loaded, UserNeed
 from flask.ext.babel import Babel, gettext, ngettext
@@ -169,7 +169,7 @@ class Server(object):
 		util.flask.enable_additional_translations(additional_folders=[self._settings.getBaseFolder("translations")])
 
 		# setup app
-		self._setup_app()
+		self._setup_app(app)
 
 		# setup i18n
 		self._setup_i18n(app)
@@ -235,6 +235,7 @@ class Server(object):
 		components.update(dict(printer=printer))
 
 		def octoprint_plugin_inject_factory(name, implementation):
+			"""Factory for injections for all OctoPrintPlugins"""
 			if not isinstance(implementation, octoprint.plugin.OctoPrintPlugin):
 				return None
 			props = dict()
@@ -245,6 +246,7 @@ class Server(object):
 			return props
 
 		def settings_plugin_inject_factory(name, implementation):
+			"""Factory for additional injections depending on plugin type"""
 			plugin_settings = octoprint.plugin.plugin_settings_for_settings_plugin(name, implementation)
 			if plugin_settings is None:
 				return
@@ -252,6 +254,8 @@ class Server(object):
 			return dict(settings=plugin_settings)
 
 		def settings_plugin_config_migration_and_cleanup(name, implementation):
+			"""Take care of migrating and cleaning up any old settings"""
+
 			if not isinstance(implementation, octoprint.plugin.SettingsPlugin):
 				return
 
@@ -293,6 +297,8 @@ class Server(object):
 
 		# setup jinja2
 		self._setup_jinja2()
+
+		# make sure plugin lifecycle events relevant for jinja2 are taken care of
 		def template_enabled(name, plugin):
 			if plugin.implementation is None or not isinstance(plugin.implementation, octoprint.plugin.TemplatePlugin):
 				return
@@ -315,25 +321,6 @@ class Server(object):
 		if self._debug:
 			events.DebugEventListener()
 
-		app.wsgi_app = util.ReverseProxied(
-			app.wsgi_app,
-			self._settings.get(["server", "reverseProxy", "prefixHeader"]),
-			self._settings.get(["server", "reverseProxy", "schemeHeader"]),
-			self._settings.get(["server", "reverseProxy", "hostHeader"]),
-			self._settings.get(["server", "reverseProxy", "prefixFallback"]),
-			self._settings.get(["server", "reverseProxy", "schemeFallback"]),
-			self._settings.get(["server", "reverseProxy", "hostFallback"])
-		)
-
-		secret_key = self._settings.get(["server", "secretKey"])
-		if not secret_key:
-			import string
-			from random import choice
-			chars = string.ascii_lowercase + string.ascii_uppercase + string.digits
-			secret_key = "".join(choice(chars) for _ in range(32))
-			self._settings.set(["server", "secretKey"], secret_key)
-			self._settings.save()
-		app.secret_key = secret_key
 		loginManager = LoginManager()
 		loginManager.session_protection = "strong"
 		loginManager.user_callback = load_user
@@ -342,17 +329,15 @@ class Server(object):
 			principals.identity_loaders.appendleft(users.dummy_identity_loader)
 		loginManager.init_app(app)
 
-		if self._host is None:
-			self._host = self._settings.get(["server", "host"])
-		if self._port is None:
-			self._port = self._settings.getInt(["server", "port"])
-
-		app.debug = self._debug
-
 		# register API blueprint
 		self._setup_blueprints()
 
 		## Tornado initialization starts here
+
+		if self._host is None:
+			self._host = self._settings.get(["server", "host"])
+		if self._port is None:
+			self._port = self._settings.getInt(["server", "port"])
 
 		ioloop = IOLoop()
 		ioloop.install()
@@ -370,7 +355,7 @@ class Server(object):
 			allow_client_caching=False
 		)
 		additional_mime_types=dict(mime_type_guesser=mime_type_guesser)
-		admin_validator = dict(access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.user_validator))
+		admin_validator = dict(access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.admin_validator))
 		no_hidden_files_validator = dict(path_validation=util.tornado.path_validation_factory(lambda path: not octoprint.util.is_hidden_path(path), status_code=404))
 
 		def joined_dict(*dicts):
@@ -407,6 +392,8 @@ class Server(object):
 			(r"/online.gif", util.tornado.StaticDataHandler, dict(data=bytes(base64.b64decode("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7")),
 			                                                      content_type="image/gif"))
 		]
+
+		# fetch additional routes from plugins
 		for name, hook in pluginManager.get_hooks("octoprint.server.http.routes").items():
 			try:
 				result = hook(list(server_routes))
@@ -460,10 +447,13 @@ class Server(object):
 
 		self._stop_intermediary_server()
 
+		# initialize and bind the server
 		self._server = util.tornado.CustomHTTPServer(self._tornado_app, max_body_sizes=max_body_sizes, default_max_body_size=self._settings.getInt(["server", "maxSize"]))
 		self._server.listen(self._port, address=self._host)
 
 		eventManager.fire(events.Events.STARTUP)
+
+		# auto connect
 		if self._settings.getBoolean(["serial", "autoconnect"]):
 			(port, baudrate) = self._settings.get(["serial", "port"]), self._settings.getInt(["serial", "baudrate"])
 			printer_profile = printerProfileManager.get_default()
@@ -559,7 +549,8 @@ class Server(object):
 
 	def _create_socket_connection(self, session):
 		global printer, fileManager, analysisQueue, userManager, eventManager
-		return util.sockjs.PrinterStateConnection(printer, fileManager, analysisQueue, userManager, eventManager, pluginManager, session)
+		return util.sockjs.PrinterStateConnection(printer, fileManager, analysisQueue, userManager,
+		                                          eventManager, pluginManager, session)
 
 	def _check_for_root(self):
 		if "geteuid" in dir(os) and os.geteuid() == 0:
@@ -586,7 +577,41 @@ class Server(object):
 
 		return Locale.parse(request.accept_languages.best_match(LANGUAGES))
 
-	def _setup_app(self):
+	def _setup_app(self, app):
+		from octoprint.server.util.flask import ReverseProxiedEnvironment, OctoPrintFlaskRequest, OctoPrintFlaskResponse
+
+		s = settings()
+
+		app.debug = self._debug
+
+		secret_key = s.get(["server", "secretKey"])
+		if not secret_key:
+			import string
+			from random import choice
+			chars = string.ascii_lowercase + string.ascii_uppercase + string.digits
+			secret_key = "".join(choice(chars) for _ in range(32))
+			s.set(["server", "secretKey"], secret_key)
+			s.save()
+
+		app.secret_key = secret_key
+
+		reverse_proxied = ReverseProxiedEnvironment(
+			header_prefix=s.get(["server", "reverseProxy", "prefixHeader"]),
+			header_scheme=s.get(["server", "reverseProxy", "schemeHeader"]),
+			header_host=s.get(["server", "reverseProxy", "hostHeader"]),
+			header_server=s.get(["server", "reverseProxy", "serverHeader"]),
+			header_port=s.get(["server", "reverseProxy", "portHeader"]),
+			prefix=s.get(["server", "reverseProxy", "prefixFallback"]),
+			scheme=s.get(["server", "reverseProxy", "schemeFallback"]),
+			host=s.get(["server", "reverseProxy", "hostFallback"]),
+			server=s.get(["server", "reverseProxy", "serverFallback"]),
+			port=s.get(["server", "reverseProxy", "portFallback"])
+		)
+
+		OctoPrintFlaskRequest.environment_wrapper = reverse_proxied
+		app.request_class = OctoPrintFlaskRequest
+		app.response_class = OctoPrintFlaskResponse
+
 		@app.before_request
 		def before_request():
 			g.locale = self._get_locale()
