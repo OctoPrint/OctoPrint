@@ -369,10 +369,16 @@ class OctoPrintFlaskRequest(flask.Request):
 		# strip cookie_suffix from all cookies in the request, return result
 		cookies = flask.Request.cookies.__get__(self)
 
-		def cookie_name_converter(key):
-			return key[:-len(self.cookie_suffix)] if key.endswith(self.cookie_suffix) else key
+		result = dict()
+		desuffixed = dict()
+		for key, value in cookies.items():
+			if key.endswith(self.cookie_suffix):
+				desuffixed[key[:-len(self.cookie_suffix)]] = value
+			else:
+				result[key] = value
 
-		return dict((cookie_name_converter(key), value) for key, value in cookies.items())
+		result.update(desuffixed)
+		return result
 
 	@cached_property
 	def server_name(self):

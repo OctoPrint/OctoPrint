@@ -433,28 +433,32 @@ class OctoPrintFlaskRequestTest(unittest.TestCase):
 
 	def test_server_name(self):
 		request = OctoPrintFlaskRequest(standard_environ)
-		self.assertEquals(request.server_name, "localhost")
+		self.assertEquals("localhost", request.server_name)
 
 	def test_server_port(self):
 		request = OctoPrintFlaskRequest(standard_environ)
-		self.assertEquals(request.server_port, "5000")
+		self.assertEquals("5000", request.server_port)
 
 	def test_cookie_suffix(self):
 		request = OctoPrintFlaskRequest(standard_environ)
-		self.assertEquals(request.cookie_suffix, "_P5000")
+		self.assertEquals("_P5000", request.cookie_suffix)
 
 	def test_cookies(self):
 		environ = dict(standard_environ)
 		environ["HTTP_COOKIE"] = "postfixed_P5000=postfixed_value; " \
 		                         "postfixed_wrong_P5001=postfixed_wrong_value; " \
-		                         "unpostfixed=unpostfixed_value"
+		                         "unpostfixed=unpostfixed_value; " \
+		                         "both_P5000=both_postfixed_value; " \
+		                         "both=both_unpostfixed_value;"
 
 		request = OctoPrintFlaskRequest(environ)
 
 		cookies = request.cookies
-		self.assertDictEqual(cookies, {"postfixed": "postfixed_value",
-		                               "postfixed_wrong_P5001": "postfixed_wrong_value",
-		                               "unpostfixed": "unpostfixed_value"})
+		self.assertDictEqual({"postfixed": u"postfixed_value",
+		                      "postfixed_wrong_P5001": u"postfixed_wrong_value",
+		                      "unpostfixed": u"unpostfixed_value",
+		                      "both": u"both_postfixed_value"},
+		                     cookies)
 
 ##~~
 
