@@ -103,27 +103,29 @@ class ReverseProxiedEnvironmentTest(unittest.TestCase):
 			"wsgi.url_scheme": "https"
 		}),
 
-		# server and port headers set -> host derived with port
+		# host set, server and port differ -> updated, standard port
 		({
-			"HTTP_X_FORWARDED_SERVER": "example2.com",
-			"HTTP_X_FORWARDED_PORT": "444",
-			"HTTP_X_FORWARDED_PROTO": "https"
-		}, {
-			 "HTTP_HOST": "example2.com:444",
-			 "SERVER_NAME": "example2.com",
-			 "SERVER_PORT": "444",
-			 "wsgi.url_scheme": "https"
-		}),
+			"HTTP_HOST": "example.com",
+			"wsgi.url_scheme": "https",
+			"SERVER_NAME": "localhost",
+			"SERVER_PORT": "80"
+		 }, {
+			"HTTP_HOST": "example.com",
+			"SERVER_NAME": "example.com",
+			"SERVER_PORT": "443",
+		 }),
 
-		# server and port headers set, standard port -> host derived, no port
+		# host set, server and port differ -> updated, non standard port
 		({
-			"HTTP_X_FORWARDED_SERVER": "example.com",
-			"HTTP_X_FORWARDED_PORT": "80",
-		}, {
-			 "HTTP_HOST": "example.com",
+			 "HTTP_HOST": "example.com:444",
+			 "wsgi.url_scheme": "https",
+			 "SERVER_NAME": "localhost",
+			 "SERVER_PORT": "80"
+		 }, {
+			 "HTTP_HOST": "example.com:444",
 			 "SERVER_NAME": "example.com",
-			 "SERVER_PORT": "80",
-		}),
+			 "SERVER_PORT": "444",
+		 }),
 
 		# multiple scheme entries -> only use first one
 		({
@@ -132,7 +134,7 @@ class ReverseProxiedEnvironmentTest(unittest.TestCase):
 			"wsgi.url_scheme": "https"
 		}),
 
-		# host = none -> should never happen but you never know...
+		# host = none (should never happen but you never know) -> server & port used for reconstruction
 		({
 			"HTTP_HOST": None,
 			"HTTP_X_FORWARDED_SERVER": "example.com",
@@ -149,6 +151,67 @@ class ReverseProxiedEnvironmentTest(unittest.TestCase):
 
 		merged_environ = dict(standard_environ)
 		merged_environ.update(environ)
+
+		actual = reverse_proxied(merged_environ)
+
+		merged_expected = dict(standard_environ)
+		merged_expected.update(environ)
+		merged_expected.update(expected)
+
+		self.assertDictEqual(merged_expected, actual)
+
+	@data(
+		# server and port headers set -> host derived with port
+		({
+			 "SERVER_NAME": "example2.com",
+			 "SERVER_PORT": "444",
+			 "HTTP_X_FORWARDED_PROTO": "https"
+		 }, {
+			 "HTTP_HOST": "example2.com:444",
+			 "SERVER_NAME": "example2.com",
+			 "SERVER_PORT": "444",
+			 "wsgi.url_scheme": "https"
+		 }),
+
+		# server and port headers set, standard port -> host derived, no port
+		({
+			 "SERVER_NAME": "example.com",
+			 "SERVER_PORT": "80",
+		 }, {
+			 "HTTP_HOST": "example.com",
+			 "SERVER_NAME": "example.com",
+			 "SERVER_PORT": "80",
+		 }),
+
+		# server and port forwarded headers set -> host derived with port
+		({
+			 "HTTP_X_FORWARDED_SERVER": "example2.com",
+			 "HTTP_X_FORWARDED_PORT": "444",
+			 "HTTP_X_FORWARDED_PROTO": "https"
+		 }, {
+			 "HTTP_HOST": "example2.com:444",
+			 "SERVER_NAME": "example2.com",
+			 "SERVER_PORT": "444",
+			 "wsgi.url_scheme": "https"
+		 }),
+
+		# server and port forwarded headers set, standard port -> host derived, no port
+		({
+			 "HTTP_X_FORWARDED_SERVER": "example.com",
+			 "HTTP_X_FORWARDED_PORT": "80",
+		 }, {
+			 "HTTP_HOST": "example.com",
+			 "SERVER_NAME": "example.com",
+			 "SERVER_PORT": "80",
+		 }),
+	)
+	@unpack
+	def test_nohost(self, environ, expected):
+		reverse_proxied = ReverseProxiedEnvironment()
+
+		merged_environ = dict(standard_environ)
+		merged_environ.update(environ)
+		del merged_environ["HTTP_HOST"]
 
 		actual = reverse_proxied(merged_environ)
 
@@ -195,57 +258,7 @@ class ReverseProxiedEnvironmentTest(unittest.TestCase):
 			"SERVER_PORT": "81"
 		}),
 
-		# server overridden
-		({
-			"server": "example.com"
-		}, {
-		}, {
-			"HTTP_HOST": "example.com:5000",
-			"SERVER_NAME": "example.com",
-			"SERVER_PORT": "5000"
-		}),
-
-		# port overridden, standard port
-		({
-			"port": "80"
-		}, {
-		}, {
-			"HTTP_HOST": "localhost",
-			"SERVER_PORT": "80"
-		}),
-
-		# port overridden, non standard port
-		({
-			"port": "81"
-		}, {
-		}, {
-			"HTTP_HOST": "localhost:81",
-			"SERVER_PORT": "81"
-		}),
-
-		# server and port overridden, default port
-		({
-			"server": "example.com",
-			"port": "80"
-		}, {
-		}, {
-			"HTTP_HOST": "example.com",
-			"SERVER_NAME": "example.com",
-			"SERVER_PORT": "80"
-		}),
-
-		# server and port overridden, non default port
-		({
-			"server": "example.com",
-			"port": "81"
-		}, {
-		}, {
-			"HTTP_HOST": "example.com:81",
-			"SERVER_NAME": "example.com",
-			"SERVER_PORT": "81"
-		}),
-
-		# prefix not really overridden
+		# prefix not really overridden, forwarded headers take precedence
 		({
 			"prefix": "/octoprint"
 		}, {
@@ -253,7 +266,7 @@ class ReverseProxiedEnvironmentTest(unittest.TestCase):
 		}, {
 		}),
 
-		# scheme not really overridden
+		# scheme not really overridden, forwarded headers take precedence
 		({
 			"scheme": "https"
 		}, {
@@ -261,7 +274,7 @@ class ReverseProxiedEnvironmentTest(unittest.TestCase):
 		}, {
 		}),
 
-		# scheme 2 not really overridden
+		# scheme 2 not really overridden, forwarded headers take precedence
 		({
 			"scheme": "https"
 		}, {
@@ -269,7 +282,7 @@ class ReverseProxiedEnvironmentTest(unittest.TestCase):
 		}, {
 		}),
 
-		# host not really overridden
+		# host not really overridden, forwarded headers take precedence
 		({
 			"host": "example.com:444"
 		}, {
@@ -277,7 +290,7 @@ class ReverseProxiedEnvironmentTest(unittest.TestCase):
 		}, {
 		}),
 
-		# server not really overridden
+		# server not really overridden, forwarded headers take precedence
 		({
 			"server": "example.com"
 		}, {
@@ -285,11 +298,19 @@ class ReverseProxiedEnvironmentTest(unittest.TestCase):
 		}, {
 		}),
 
-		# port not really overridden
+		# port not really overridden, forwarded headers take precedence
 		({
 			"port": "444"
 		}, {
 			"HTTP_X_FORWARDED_PORT": "5000"
+		}, {
+		}),
+
+		# server and port not really overridden, Host header wins
+		({
+			"server": "example.com",
+			"port": "80"
+		}, {
 		}, {
 		})
 	)
@@ -299,6 +320,74 @@ class ReverseProxiedEnvironmentTest(unittest.TestCase):
 
 		merged_environ = dict(standard_environ)
 		merged_environ.update(environ)
+
+		actual = reverse_proxied(merged_environ)
+
+		merged_expected = dict(standard_environ)
+		merged_expected.update(environ)
+		merged_expected.update(expected)
+
+		self.assertDictEqual(merged_expected, actual)
+
+	@data(
+		# server overridden
+		({
+			 "server": "example.com"
+		 }, {
+		 }, {
+			 "HTTP_HOST": "example.com:5000",
+			 "SERVER_NAME": "example.com",
+			 "SERVER_PORT": "5000"
+		 }),
+
+		# port overridden, standard port
+		({
+			 "port": "80"
+		 }, {
+		 }, {
+			 "HTTP_HOST": "localhost",
+			 "SERVER_PORT": "80"
+		 }),
+
+		# port overridden, non standard port
+		({
+			 "port": "81"
+		 }, {
+		 }, {
+			 "HTTP_HOST": "localhost:81",
+			 "SERVER_PORT": "81"
+		 }),
+
+		# server and port overridden, default port
+		({
+			 "server": "example.com",
+			 "port": "80"
+		 }, {
+		 }, {
+			 "HTTP_HOST": "example.com",
+			 "SERVER_NAME": "example.com",
+			 "SERVER_PORT": "80"
+		 }),
+
+		# server and port overridden, non default port
+		({
+			 "server": "example.com",
+			 "port": "81"
+		 }, {
+		 }, {
+			 "HTTP_HOST": "example.com:81",
+			 "SERVER_NAME": "example.com",
+			 "SERVER_PORT": "81"
+		 }),
+
+	)
+	@unpack
+	def test_fallbacks_nohost(self, fallbacks, environ, expected):
+		reverse_proxied = ReverseProxiedEnvironment(**fallbacks)
+
+		merged_environ = dict(standard_environ)
+		merged_environ.update(environ)
+		del merged_environ["HTTP_HOST"]
 
 		actual = reverse_proxied(merged_environ)
 

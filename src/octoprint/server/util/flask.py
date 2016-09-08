@@ -321,6 +321,14 @@ class ReverseProxiedEnvironment(object):
 			environ["HTTP_HOST"] = host
 			environ["SERVER_NAME"] = server
 			environ["SERVER_PORT"] = port
+
+		elif environ.get("HTTP_HOST", None) is not None:
+			# if we have a Host header, we use that and make sure our server name and port properties match it
+			host = environ["HTTP_HOST"]
+			server, port = host_to_server_and_port(host, url_scheme)
+			environ["SERVER_NAME"] = server
+			environ["SERVER_PORT"] = port
+
 		else:
 			# else we take a look at the server and port headers and if we have
 			# something there we derive the host from it
@@ -335,15 +343,12 @@ class ReverseProxiedEnvironment(object):
 			if port is not None:
 				environ["SERVER_PORT"] = port
 
-			# make sure HTTP_HOST matches SERVER_NAME and SERVER_PORT
-			expected_server, expected_port = host_to_server_and_port(environ.get("HTTP_HOST", None), url_scheme)
-			if expected_server != environ["SERVER_NAME"] or expected_port != environ["SERVER_PORT"]:
-				# there's a difference, fix it!
-				if url_scheme == "http" and environ["SERVER_PORT"] == "80" or url_scheme == "https" and environ["SERVER_PORT"] == "443":
-					# default port for scheme, can be skipped
-					environ["HTTP_HOST"] = environ["SERVER_NAME"]
-				else:
-					environ["HTTP_HOST"] = environ["SERVER_NAME"] + ":" + environ["SERVER_PORT"]
+			# reconstruct host header
+			if url_scheme == "http" and environ["SERVER_PORT"] == "80" or url_scheme == "https" and environ["SERVER_PORT"] == "443":
+				# default port for scheme, can be skipped
+				environ["HTTP_HOST"] = environ["SERVER_NAME"]
+			else:
+				environ["HTTP_HOST"] = environ["SERVER_NAME"] + ":" + environ["SERVER_PORT"]
 
 		# call wrapped app with rewritten environment
 		return environ
