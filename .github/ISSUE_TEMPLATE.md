@@ -5,7 +5,10 @@ This is a bug and feature tracker, please only use it to report bugs
 or request features within OctoPrint (not OctoPi, not any OctoPrint
 plugins and not unofficial OctoPrint versions). Mark requests with
 a [Request] prefix in the title please. Fully fill out the bug reporting
-template for bug reports.
+template for bug reports. Do not delete any lines from the template but
+those enclosed in [ and ] - and those please do delete, they are only
+provided for your information and removing them makes your ticket more
+readable :)
 
 Do not seek support here ("I need help with ..."), that belongs on
 the mailing list or the G+ community (both linked in the "guidelines
@@ -17,11 +20,12 @@ Thank you!
 
 #### What were you doing?
 
-[Please be as specific as possible here. The maintainers will need to reproduce
-your issue in order to fix it and that is not possible if they don't know
-what you did to get it to happen in the first place. If you encountered
-a problem with specific files of any sorts, make sure to also include a link to a file
-with which to reproduce the problem.]
+[Please be as specific as possible here. The maintainers will need to
+reproduce your issue in order to fix it and that is not possible if they
+don't know what you did to get it to happen in the first place.
+
+If you encountered a problem with specific files of any sorts, make sure
+to also include a link to a file with which to reproduce the problem.]
 
 #### What did you expect to happen?
 
@@ -29,7 +33,7 @@ with which to reproduce the problem.]
 
 #### Branch & Commit or Version of OctoPrint
 
-[Can be found in the lower left corner of the web interface.]
+[Can be found in the lower left corner of the web interface. ALWAYS INCLUDE.]
 
 #### Printer model & used firmware incl. version
 
@@ -41,12 +45,17 @@ with which to reproduce the problem.]
 
 #### Link to octoprint.log
 
-[On gist.github.com or pastebin.com. Always include and never truncate.]
+[On gist.github.com or pastebin.com. ALWAYS INCLUDE and never truncate.]
 
 #### Link to contents of terminal tab or serial.log
 
 [On gist.github.com or pastebin.com. If applicable, always include if unsure or
-reporting communication issues. Never truncate.]
+reporting communication issues. Never truncate.
+
+serial.log is usually not written due to performance reasons and must be
+enabled explicitly. Provide at the very least the contents of your
+terminal tab at the time of the bug occurence, even if you do not have
+a serial.log.]
 
 #### Link to contents of Javascript console in the browser
 

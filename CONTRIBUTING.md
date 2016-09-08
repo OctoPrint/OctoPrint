@@ -123,17 +123,18 @@ following section *completely*. Thank you! :)
 
 ### What should I include in a bug report?
 
-Always use the following template (you can remove what's within `[...]`, that's
+Always use the following template (please remove what's within `[...]`, that's
 only provided here as some additional information for you), **even if only adding a
 "me too" to an existing ticket**:
 
     #### What were you doing?
 
-    [Please be as specific as possible here. The maintainers will need to reproduce
-    your issue in order to fix it and that is not possible if they don't know
-    what you did to get it to happen in the first place. If you encountered
-    a problem with specific files of any sorts, make sure to also include a link to a file
-    with which to reproduce the problem.]
+    [Please be as specific as possible here. The maintainers will need to
+    reproduce your issue in order to fix it and that is not possible if they
+    don't know what you did to get it to happen in the first place.
+
+    If you encountered a problem with specific files of any sorts, make sure
+    to also include a link to a file with which to reproduce the problem.]
 
     #### What did you expect to happen?
 
@@ -141,7 +142,7 @@ only provided here as some additional information for you), **even if only addin
 
     #### Branch & Commit or Version of OctoPrint
 
-    [Can be found in the lower left corner of the web interface.]
+    [Can be found in the lower left corner of the web interface. ALWAYS INCLUDE.]
 
     #### Printer model & used firmware incl. version
 
@@ -153,12 +154,17 @@ only provided here as some additional information for you), **even if only addin
 
     #### Link to octoprint.log
 
-    [On gist.github.com or pastebin.com. Always include and never truncate.]
+    [On gist.github.com or pastebin.com. ALWAYS INCLUDE and never truncate.]
 
     #### Link to contents of terminal tab or serial.log
 
     [On gist.github.com or pastebin.com. If applicable, always include if unsure or
-    reporting communication issues. Never truncate.]
+    reporting communication issues. Never truncate.
+
+    serial.log is usually not written due to performance reasons and must be
+    enabled explicitly. Provide at the very least the contents of your
+    terminal tab at the time of the bug occurence, even if you do not have
+    a serial.log.]
 
     #### Link to contents of Javascript console in the browser
 
@@ -376,6 +382,7 @@ the local version identifier to allow for an exact determination of the active c
     tickets as well, explained issue with "me too" red herrings.
   * 2016-03-14: Some more requirements for PRs, and a PR template.
   * 2016-06-08: New `prerelease` and `rc` branches explained.
+  * 2016-09-09: New `rc/*` branches explained.
 
 ## Footnotes
   * [1] - If you are wondering why, the problem is that anything that you add
