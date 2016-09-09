@@ -303,7 +303,7 @@ class UploadStorageFallbackHandler(tornado.web.RequestHandler):
 				filename = _extended_header_value(filename)
 			except:
 				# parse error, this is not RFC 5987 compliant after all
-				self._logger.warn("extended filename* value {!r} is not RFC 5987 compliant")
+				self._logger.warn("extended filename* value {!r} is not RFC 5987 compliant".format(filename))
 				self.send_error(400)
 				return
 		else:
@@ -494,11 +494,11 @@ def _extended_header_value(value):
 		# RFC 5987 section 3.2
 		from urllib import unquote
 		encoding, _, value = value.split("'", 2)
-		return unquote(value).decode(encoding)
+		return unquote(octoprint.util.to_str(value, encoding="iso-8859-1")).decode(encoding)
 
 	else:
 		# no encoding provided, strip potentially present quotes and call it a day
-		return _strip_value_quotes(value)
+		return octoprint.util.to_unicode(_strip_value_quotes(value), encoding="utf-8")
 
 
 class WsgiInputContainer(object):

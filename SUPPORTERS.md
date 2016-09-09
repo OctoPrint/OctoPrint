@@ -1,4 +1,4 @@
-# Supporters 
+# Supporters
 
 Development of this version of OctoPrint wouldn't have been possible without
 [financial support by the community](http://octoprint.org/support-octoprint/) -
@@ -12,11 +12,13 @@ thanks to everyone who contributed!
   * Arnljot Arntsen
   * Aurelio Bernal Ramírez
   * Bart Zudell
+  * Boris Hussein
   * Brad Jackson
   * Brad Mooneyham
   * Brent Fiegle
   * Brian E. Tyler
   * Charles Mitchell
+  * Christopher Day
   * Christian Petropolis
   * COLLE+McVOY
   * CreativeTools
@@ -33,6 +35,7 @@ thanks to everyone who contributed!
   * J. Eckert
   * Jason Galarneau
   * Joe Korzeniewski
+  * Josh Daniels
   * Joshua Gregory
   * Kaile Riser
   * Kale Stedman
@@ -45,11 +48,11 @@ thanks to everyone who contributed!
   * Mark Walker
   * Masayoshi Mitsui
   * Michael McDargh
-  * Miguel Angel Salmeron
   * Mikey
   * Miles Flavel
   * Mohammed Khorakiwala
   * Noe Ruiz
+  * Patrick McGinnis
   * Paul Generes
   * Peter Grace
   * Peter Schmehl
@@ -64,8 +67,9 @@ thanks to everyone who contributed!
   * stefi davis
   * Steven Pearson
   * Sven Mueller
+  * Terrance Shaw
   * Thomas Hatley
-  * Thomas Sanladerer
   * Trent Shumay
+  * Xpandedreality
 
-and 844 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!
+and 905 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!

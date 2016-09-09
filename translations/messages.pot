@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: OctoPrint 1.2.16.dev36+g2256a1e\n"
+"Project-Id-Version: OctoPrint 1.2.16.dev44+ge19ecb0\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
-"POT-Creation-Date: 2016-09-07 12:06+0200\n"
+"POT-Creation-Date: 2016-09-09 11:35+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -655,7 +655,7 @@ msgstr ""
 
 #: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:239
 #: src/octoprint/plugins/softwareupdate/templates/softwareupdate.jinja2:26
-#: src/octoprint/plugins/softwareupdate/templates/softwareupdate_settings.jinja2:107
+#: src/octoprint/plugins/softwareupdate/templates/softwareupdate_settings.jinja2:108
 #: src/octoprint/templates/dialogs/confirmation.jinja2:11
 #: src/octoprint/templates/dialogs/slicing.jinja2:50
 #: src/octoprint/templates/sidebar/state.jinja2:25
@@ -663,7 +663,7 @@ msgid "Cancel"
 msgstr ""
 
 #: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:240
-#: src/octoprint/plugins/softwareupdate/templates/softwareupdate_settings.jinja2:108
+#: src/octoprint/plugins/softwareupdate/templates/softwareupdate_settings.jinja2:109
 msgid "Save"
 msgstr ""
 
@@ -935,7 +935,15 @@ msgstr ""
 msgid "OctoPrint Release Channel"
 msgstr ""
 
-#: src/octoprint/plugins/softwareupdate/templates/softwareupdate_settings.jinja2:96
+#: src/octoprint/plugins/softwareupdate/templates/softwareupdate_settings.jinja2:93
+#, python-format
+msgid ""
+"Make sure you have read <a href=\"%(url)s\" target=\"_blank\" "
+"rel=\"noreferrer noopener\">\"Using Release Channels\"</a> before "
+"switching to a release channel other than \"Stable\""
+msgstr ""
+
+#: src/octoprint/plugins/softwareupdate/templates/softwareupdate_settings.jinja2:97
 msgid "Version cache TTL"
 msgstr ""
 
