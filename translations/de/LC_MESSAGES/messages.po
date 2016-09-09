@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OctoPrint\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
-"POT-Creation-Date: 2016-09-07 12:06+0200\n"
-"PO-Revision-Date: 2016-09-07 12:09+0100\n"
+"POT-Creation-Date: 2016-09-09 11:35+0200\n"
+"PO-Revision-Date: 2016-09-09 11:48+0100\n"
 "Last-Translator: Gina Häußge <osd@foosel.net>\n"
 "Language: de\n"
 "Language-Team: German (http://www.transifex.com/projects/p/octoprint/"
@@ -190,7 +190,6 @@ msgid "Overwrite existing file"
 msgstr "Vorhandene Datei überschreiben"
 
 #: src/octoprint/plugins/cura/templates/cura_settings.jinja2:113
-#, fuzzy
 msgid ""
 "\n"
 "            You can import your existing profile <code>.ini</code> files "
@@ -738,7 +737,7 @@ msgstr "Repository-Cache TTL"
 
 #: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:239
 #: src/octoprint/plugins/softwareupdate/templates/softwareupdate.jinja2:26
-#: src/octoprint/plugins/softwareupdate/templates/softwareupdate_settings.jinja2:107
+#: src/octoprint/plugins/softwareupdate/templates/softwareupdate_settings.jinja2:108
 #: src/octoprint/templates/dialogs/confirmation.jinja2:11
 #: src/octoprint/templates/dialogs/slicing.jinja2:50
 #: src/octoprint/templates/sidebar/state.jinja2:25
@@ -746,7 +745,7 @@ msgid "Cancel"
 msgstr "Abbruch"
 
 #: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:240
-#: src/octoprint/plugins/softwareupdate/templates/softwareupdate_settings.jinja2:108
+#: src/octoprint/plugins/softwareupdate/templates/softwareupdate_settings.jinja2:109
 msgid "Save"
 msgstr "Speichern"
 
@@ -1063,7 +1062,18 @@ msgstr "Versionstracking für OctoPrint"
 msgid "OctoPrint Release Channel"
 msgstr "OctoPrint Release Channel"
 
-#: src/octoprint/plugins/softwareupdate/templates/softwareupdate_settings.jinja2:96
+#: src/octoprint/plugins/softwareupdate/templates/softwareupdate_settings.jinja2:93
+#, python-format
+msgid ""
+"Make sure you have read <a href=\"%(url)s\" target=\"_blank\" rel="
+"\"noreferrer noopener\">\"Using Release Channels\"</a> before switching to a "
+"release channel other than \"Stable\""
+msgstr ""
+"Bitte lies <a href=\"%(url)s\" target=\"_blank\" rel=\"noreferrer noopener\">"
+"\"Using Release Channels\"</a> bevor du auf einen anderen Release Channel "
+"als \"Stable\" wechselst"
+
+#: src/octoprint/plugins/softwareupdate/templates/softwareupdate_settings.jinja2:97
 msgid "Version cache TTL"
 msgstr "TTL des Versionscaches"
 
