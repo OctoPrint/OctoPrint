@@ -386,7 +386,8 @@ class CommandTrigger(GenericEventListener):
 		if "currentZ" in currentData.keys() and currentData["currentZ"] is not None:
 			params["__currentZ"] = str(currentData["currentZ"])
 
-		if "job" in currentData.keys() and currentData["job"] is not None:
+		if "job" in currentData and "file" in currentData["job"] and "name" in currentData["job"]["file"] \
+				and currentData["job"]["file"]["name"] is not None:
 			params["__filename"] = currentData["job"]["file"]["name"]
 			params["__filepath"] = currentData["job"]["file"]["path"]
 			params["__fileorigin"] = currentData["job"]["file"]["origin"]
