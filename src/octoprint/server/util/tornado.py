@@ -145,6 +145,9 @@ class UploadStorageFallbackHandler(tornado.web.RequestHandler):
 			if suffix_type in self._suffixes and suffix is not None:
 				self._suffixes[suffix_type] = suffix
 
+		# multipart boundary
+		self._multipart_boundary = None
+
 		# Parts, files and values will be stored here
 		self._parts = dict()
 		self._files = []
@@ -181,7 +184,7 @@ class UploadStorageFallbackHandler(tornado.web.RequestHandler):
 			if self.is_multipart():
 				if not self._bytes_left:
 					# we don't support requests without a content-length
-					raise tornado.web.HTTPError(400, reason="No Content-Length supplied")
+					raise tornado.web.HTTPError(400, log_message="No Content-Length supplied")
 
 				# extract the multipart boundary
 				fields = self._content_type.split(";")
@@ -194,7 +197,14 @@ class UploadStorageFallbackHandler(tornado.web.RequestHandler):
 							self._multipart_boundary = tornado.escape.utf8(v)
 						break
 				else:
-					self._multipart_boundary = None
+					# RFC2046 section 5.1 (as referred to from RFC 7578) defines the boundary
+					# parameter as mandatory for multipart requests:
+					#
+					#     The only mandatory global parameter for the "multipart" media type is
+					#     the boundary parameter, which consists of 1 to 70 characters [...]
+					#
+					# So no boundary? 400 Bad Request
+					raise tornado.web.HTTPError(400, log_message="No multipart boundary supplied")
 		else:
 			self._fallback(self.request, b"")
 			self._finished = True
