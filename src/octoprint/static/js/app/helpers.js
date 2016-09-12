@@ -242,7 +242,7 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
         // determine comparator
         var comparator = undefined;
         var currentSorting = self.currentSorting();
-        if (typeof currentSorting !== undefined && typeof self.supportedSorting[currentSorting] !== undefined) {
+        if (typeof currentSorting !== 'undefined' && typeof self.supportedSorting[currentSorting] !== 'undefined') {
             comparator = self.supportedSorting[currentSorting];
         }
 
@@ -252,17 +252,17 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
         // filter if necessary
         var filters = self.currentFilters();
         _.each(filters, function(filter) {
-            if (typeof filter !== undefined && typeof supportedFilters[filter] !== undefined)
+            if (typeof filter !== 'undefined' && typeof supportedFilters[filter] !== 'undefined')
                 result = _.filter(result, supportedFilters[filter]);
         });
 
         // search if necessary
-        if (typeof self.searchFunction !== undefined && self.searchFunction) {
+        if (typeof self.searchFunction !== 'undefined' && self.searchFunction) {
             result = _.filter(result, self.searchFunction);
         }
 
         // sort if necessary
-        if (typeof comparator !== undefined)
+        if (typeof comparator !== 'undefined')
             result.sort(comparator);
 
         // set result list
