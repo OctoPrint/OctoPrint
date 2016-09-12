@@ -1,6 +1,6 @@
 # OctoPrint Changelog
 
-## 1.2.16rc1 (2016-09-08)
+## 1.2.16rc1 (2016-09-09)
 
 ### Improvements
 
