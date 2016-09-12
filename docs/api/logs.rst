@@ -15,7 +15,7 @@ Log file management
 Retrieve a list of available log files
 ======================================
 
-.. http:post:: /api/logs
+.. http:get:: /api/logs
 
    Retrieve information regarding all log files currently available and regarding the disk space still available
    in the system on the location the log files are being stored.

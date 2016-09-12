@@ -1,11 +1,13 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import io
+
+from octoprint.util import atomic_write
 
 class AbstractFileWrapper(object):
 	"""
@@ -85,7 +87,7 @@ class StreamWrapper(AbstractFileWrapper):
 		"""
 		import shutil
 
-		with open(path, "wb") as dest:
+		with atomic_write(path, "wb") as dest:
 			with self.stream() as source:
 				shutil.copyfileobj(source, dest)
 

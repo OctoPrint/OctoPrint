@@ -1,3 +1,10 @@
+src/octoprint/templates/_data/AUTHORS.md
+src/octoprint/templates/_data/CHANGELOG.md
+src/octoprint/templates/_data/SUPPORTERS.md
+src/octoprint/templates/_data/THIRDPARTYLICENSES.md
+
+devtools
+
 *.tar.bz2
 *.tar.gz
 *.7z
@@ -22,3 +29,11 @@ OctoPrint.egg-info
 *.orig
 
 *.codekit
+
+venv
+venv26
+venv27
+venv33
+venv34
+venv35
+venv36

@@ -1,0 +1,7 @@
+<form class="form-horizontal">
+    <h3>{{ _('Commands') }}</h3>
+
+    {% include "_snippets/settings/server/serverCommandServerRestart.jinja2" %}
+    {% include "_snippets/settings/server/serverCommandSystemRestart.jinja2" %}
+    {% include "_snippets/settings/server/serverCommandSystemShutdown.jinja2" %}
+</form>

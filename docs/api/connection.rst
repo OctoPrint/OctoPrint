@@ -76,9 +76,9 @@ Issue a connection command
      Instructs OctoPrint to disconnect from the printer.
 
    fake_ack
-     Fakes an acknowledgement message for OctoPrint in case one got lost on the serial line and the communication
+     Fakes an acknowledgment message for OctoPrint in case one got lost on the serial line and the communication
      with the printer since stalled. This should only be used in "emergencies" (e.g. to save prints), the reason
-     for the lost acknowledgement should always be properly investigated and removed instead of depending on this
+     for the lost acknowledgment should always be properly investigated and removed instead of depending on this
      "symptom solver".
 
    **Example Connect Request**

@@ -1,10 +1,12 @@
 $(function() {
-    function GcodeFilesViewModel(parameters) {
+    function FilesViewModel(parameters) {
         var self = this;
 
-        self.printerState = parameters[0];
+        self.settingsViewModel = parameters[0];
         self.loginState = parameters[1];
-        self.slicing = parameters[2];
+        self.printerState = parameters[2];
+        self.slicing = parameters[3];
+        self.printerProfiles=parameters[4];
 
         self.isErrorOrClosed = ko.observable(undefined);
         self.isOperational = ko.observable(undefined);
@@ -21,13 +23,57 @@ $(function() {
         });
 
         self.freeSpace = ko.observable(undefined);
-        self.freeSpaceString = ko.computed(function() {
+        self.totalSpace = ko.observable(undefined);
+        self.freeSpaceString = ko.pureComputed(function() {
             if (!self.freeSpace())
                 return "-";
             return formatSize(self.freeSpace());
         });
+        self.totalSpaceString = ko.pureComputed(function() {
+            if (!self.totalSpace())
+                return "-";
+            return formatSize(self.totalSpace());
+        });
+
+        self.diskusageWarning = ko.pureComputed(function() {
+            return self.freeSpace() != undefined
+                && self.freeSpace() < self.settingsViewModel.server_diskspace_warning();
+        });
+        self.diskusageCritical = ko.pureComputed(function() {
+            return self.freeSpace() != undefined
+                && self.freeSpace() < self.settingsViewModel.server_diskspace_critical();
+        });
+        self.diskusageString = ko.pureComputed(function() {
+            if (self.diskusageCritical()) {
+                return gettext("Your available free disk space is critically low.");
+            } else if (self.diskusageWarning()) {
+                return gettext("Your available free disk space is starting to run low.");
+            } else {
+                return gettext("Your current disk usage.");
+            }
+        });
 
         self.uploadButton = undefined;
+        self.uploadSdButton = undefined;
+        self.uploadProgressBar = undefined;
+        self.localTarget = undefined;
+        self.sdTarget = undefined;
+
+        self.ignoreUpdatedFilesEvent = false;
+
+        self.addingFolder = ko.observable(false);
+        self.activeRemovals = ko.observableArray([]);
+
+        self.addFolderDialog = undefined;
+        self.addFolderName = ko.observable(undefined);
+        self.enableAddFolder = ko.pureComputed(function() {
+            return self.loginState.isUser() && self.addFolderName() && self.addFolderName().trim() != "" && !self.addingFolder();
+        });
+
+        self.allItems = ko.observable(undefined);
+        self.listStyle = ko.observable("folders_files");
+        self.currentPath = ko.observable("");
+        self.uploadProgressText = ko.observable();
 
         // initialize list helper
         self.listHelper = new ItemListHelper(
@@ -47,52 +93,89 @@ $(function() {
                 },
                 "size": function(a, b) {
                     // sorts descending
-                    if (b["bytes"] === undefined || a["bytes"] > b["bytes"]) return -1;
-                    if (a["bytes"] < b["bytes"]) return 1;
+                    if (b["size"] === undefined || a["size"] > b["size"]) return -1;
+                    if (a["size"] < b["size"]) return 1;
                     return 0;
                 }
             },
             {
-                "printed": function(file) {
-                    return !(file["prints"] && file["prints"]["success"] && file["prints"]["success"] > 0);
+                "printed": function(data) {
+                    return !(data["prints"] && data["prints"]["success"] && data["prints"]["success"] > 0) || (data["type"] && data["type"] == "folder");
                 },
-                "sd": function(file) {
-                    return file["origin"] && file["origin"] == "sdcard";
+                "sd": function(data) {
+                    return data["origin"] && data["origin"] == "sdcard";
                 },
-                "local": function(file) {
-                    return !(file["origin"] && file["origin"] == "sdcard");
+                "local": function(data) {
+                    return !(data["origin"] && data["origin"] == "sdcard");
                 },
-                "machinecode": function(file) {
-                    return file["type"] && file["type"] == "machinecode";
+                "machinecode": function(data) {
+                    return data["type"] && (data["type"] == "machinecode" || data["type"] == "folder");
                 },
-                "model": function(file) {
-                    return file["type"] && file["type"] == "model";
+                "model": function(data) {
+                    return data["type"] && (data["type"] == "model" || data["type"] == "folder");
+                },
+                "emptyFolder": function(data) {
+                    return data["type"] && (data["type"] != "folder" || data["weight"] > 0);
                 }
             },
             "name",
-            [],
+            ["emptyFolder"],
             [["sd", "local"], ["machinecode", "model"]],
             0
         );
 
-        self.isLoadActionPossible = ko.computed(function() {
+        self.foldersOnlyList = ko.dependentObservable(function() {
+            var filter = function(data) { return data["type"] && data["type"] == "folder"; };
+            return _.filter(self.listHelper.paginatedItems(), filter);
+        });
+
+        self.filesOnlyList = ko.dependentObservable(function() {
+            var filter = function(data) { return data["type"] && data["type"] != "folder"; };
+            return _.filter(self.listHelper.paginatedItems(), filter);
+        });
+
+        self.filesAndFolders = ko.dependentObservable(function() {
+            var style = self.listStyle();
+            if (style == "folders_files" || style == "files_folders") {
+                var files = self.filesOnlyList();
+                var folders = self.foldersOnlyList();
+
+                if (style == "folders_files") {
+                    return folders.concat(files);
+                } else {
+                    return files.concat(folders);
+                }
+            } else {
+                return self.listHelper.paginatedItems();
+            }
+        });
+
+        self.isLoadActionPossible = ko.pureComputed(function() {
             return self.loginState.isUser() && !self.isPrinting() && !self.isPaused() && !self.isLoading();
         });
 
-        self.isLoadAndPrintActionPossible = ko.computed(function() {
+        self.isLoadAndPrintActionPossible = ko.pureComputed(function() {
             return self.loginState.isUser() && self.isOperational() && self.isLoadActionPossible();
         });
 
-        self.printerState.filename.subscribe(function(newValue) {
+        self.printerState.filepath.subscribe(function(newValue) {
             self.highlightFilename(newValue);
         });
+
+        self.highlightCurrentFilename = function() {
+            self.highlightFilename(self.printerState.filepath());
+        };
 
         self.highlightFilename = function(filename) {
             if (filename == undefined) {
                 self.listHelper.selectNone();
             } else {
                 self.listHelper.selectItem(function(item) {
-                    return item.name == filename;
+                    if (item.type == "folder") {
+                        return _.startsWith(filename, item.path + "/");
+                    } else {
+                        return item.path == filename;
+                    }
                 });
             }
         };
@@ -116,102 +199,311 @@ $(function() {
             self.isSdReady(data.flags.sdReady);
         };
 
-        self._otherRequestInProgress = false;
-        self.requestData = function(filenameToFocus, locationToFocus) {
-            if (self._otherRequestInProgress) return;
+        self._otherRequestInProgress = undefined;
+        self._focus = undefined;
+        self._switchToPath = undefined;
+        self.requestData = function(params) {
+            var focus, switchToPath;
 
-            self._otherRequestInProgress = true;
-            $.ajax({
-                url: API_BASEURL + "files",
-                method: "GET",
-                dataType: "json",
-                success: function(response) {
-                    self.fromResponse(response, filenameToFocus, locationToFocus);
-                    self._otherRequestInProgress = false;
-                },
-                error: function() {
-                    self._otherRequestInProgress = false;
+            if (_.isObject(params)) {
+                focus = params.focus;
+                switchToPath = params.switchToPath;
+            } else if (arguments.length) {
+                // old argument list type call signature
+                log.warn("FilesViewModel.requestData called with old argument list. That is deprecated, please use parameter object instead.");
+                if (arguments.length >= 1) {
+                    if (arguments.length >= 2) {
+                        focus = {location: arguments[1], path: arguments[0]};
+                    } else {
+                        focus = {location: "local", path: arguments[0]};
+                    }
                 }
-            });
-        };
-
-        self.fromResponse = function(response, filenameToFocus, locationToFocus) {
-            var files = response.files;
-            _.each(files, function(element, index, list) {
-                if (!element.hasOwnProperty("size")) element.size = undefined;
-                if (!element.hasOwnProperty("date")) element.date = undefined;
-            });
-            self.listHelper.updateItems(files);
-
-            if (filenameToFocus) {
-                // got a file to scroll to
-                if (locationToFocus === undefined) {
-                    locationToFocus = "local";
-                }
-                var entryElement = self.getEntryElement({name: filenameToFocus, origin: locationToFocus});
-                if (entryElement) {
-                    var entryOffset = entryElement.offsetTop;
-                    $(".gcode_files").slimScroll({ scrollTo: entryOffset + "px" });
+                if (arguments.length >= 3) {
+                    switchToPath = arguments[2];
                 }
             }
 
-            if (response.free) {
+            self._focus = self._focus || focus;
+            self._switchToPath = self._switchToPath || switchToPath;
+
+            if (self._otherRequestInProgress !== undefined) {
+                return self._otherRequestInProgress
+            }
+
+            return self._otherRequestInProgress = OctoPrint.files.list(true)
+                .done(function(response) {
+                    self.fromResponse(response, {focus: self._focus, switchToPath: self._switchToPath});
+                })
+                .always(function() {
+                    self._otherRequestInProgress = undefined;
+                    self._focus = undefined;
+                    self._switchToPath = undefined;
+                });
+        };
+
+        self.fromResponse = function(response, params) {
+            var focus = undefined;
+            var switchToPath;
+
+            if (_.isObject(params)) {
+                focus = params.focus || undefined;
+                switchToPath = params.switchToPath || undefined;
+            } else if (arguments.length > 1) {
+                log.warn("FilesViewModel.requestData called with old argument list. That is deprecated, please use parameter object instead.");
+                if (arguments.length > 2) {
+                    focus = {location: arguments[2], path: arguments[1]};
+                } else {
+                    focus = {location: "local", path: arguments[1]};
+                }
+                if (arguments.length > 3) {
+                    switchToPath = arguments[3] || undefined;
+                }
+            }
+
+            var files = response.files;
+
+            self.allItems(files);
+
+            if (!switchToPath) {
+                var currentPath = self.currentPath();
+                if (currentPath === undefined) {
+                    self.listHelper.updateItems(files);
+                    self.currentPath("");
+                } else {
+                    // if we have a current path, make sure we stay on it
+                    self.changeFolderByPath(currentPath);
+                }
+            } else {
+                self.changeFolderByPath(switchToPath);
+            }
+
+            if (focus) {
+                // got a file to scroll to
+                var entryElement = self.getEntryElement({path: focus.path, origin: focus.location});
+                if (entryElement) {
+                    // scroll to uploaded element
+                    var entryOffset = entryElement.offsetTop;
+                    $(".gcode_files").slimScroll({
+                        scrollTo: entryOffset + "px"
+                    });
+
+                    // highlight uploaded element
+                    var element = $(entryElement);
+                    element.on("webkitAnimationEnd oanimationend msAnimationEnd animationend", function(e) {
+                        // remove highlight class again
+                        element.removeClass("highlight");
+                    });
+                    element.addClass("highlight");
+                }
+            }
+
+            if (response.free != undefined) {
                 self.freeSpace(response.free);
             }
 
-            self.highlightFilename(self.printerState.filename());
+            if (response.total != undefined) {
+                self.totalSpace(response.total);
+            }
+
+            self.highlightCurrentFilename();
+        };
+
+        self.changeFolder = function(data) {
+            self.currentPath(data.path);
+            self.listHelper.updateItems(data.children);
+            self.highlightCurrentFilename();
+        };
+
+        self.navigateUp = function() {
+            var path = self.currentPath().split("/");
+            path.pop();
+            self.changeFolderByPath(path.join("/"));
+        };
+
+        self.changeFolderByPath = function(path) {
+            var element = self.elementByPath(path);
+            if (element) {
+                self.currentPath(path);
+                self.listHelper.updateItems(element.children);
+            } else{
+                self.currentPath("");
+                self.listHelper.updateItems(self.allItems());
+            }
+            self.highlightCurrentFilename();
+        };
+
+        self.showAddFolderDialog = function() {
+            if (self.addFolderDialog) {
+                self.addFolderName("");
+                self.addFolderDialog.modal("show");
+            }
+        };
+
+        self.addFolder = function() {
+            var name = self.addFolderName();
+
+            // "local" only for now since we only support local and sdcard,
+            // and sdcard doesn't support creating folders...
+            var location = "local";
+
+            self.ignoreUpdatedFilesEvent = true;
+            self.addingFolder(true);
+            OctoPrint.files.createFolder(location, name, self.currentPath())
+                .done(function(data) {
+                    self.requestData({
+                        focus: {
+                            path: data.folder.name,
+                            location: data.folder.origin
+                        }
+                    })
+                        .done(function() {
+                            self.addFolderDialog.modal("hide");
+                        })
+                        .always(function() {
+                            self.addingFolder(false);
+                        });
+                })
+                .fail(function() {
+                    self.addingFolder(false);
+                })
+                .always(function() {
+                    self.ignoreUpdatedFilesEvent = false;
+                });
+        };
+
+        self.removeFolder = function(folder, event) {
+            if (!folder) {
+                return;
+            }
+
+            if (folder.type != "folder") {
+                return;
+            }
+
+            if (folder.weight > 0) {
+                // confirm recursive delete
+                var options = {
+                    message: _.sprintf(gettext("You are about to delete the folder \"%(folder)s\" which still contains files and/or sub folders."), {folder: folder.name}),
+                    onproceed: function() {
+                        self._removeEntry(folder, event);
+                    }
+                };
+                showConfirmationDialog(options);
+            } else {
+                self._removeEntry(folder, event);
+            }
         };
 
         self.loadFile = function(file, printAfterLoad) {
-            if (!file || !file.refs || !file.refs.hasOwnProperty("resource")) return;
-
-            $.ajax({
-                url: file.refs.resource,
-                type: "POST",
-                dataType: "json",
-                contentType: "application/json; charset=UTF-8",
-                data: JSON.stringify({command: "select", print: printAfterLoad})
-            });
+            if (!file) {
+                return;
+            }
+            OctoPrint.files.select(file.origin, file.path)
+                .done(function() {
+                    var withinPrintDimensions = self.evaluatePrintDimensions(file, true);
+                    if (withinPrintDimensions && printAfterLoad) {
+                        OctoPrint.job.start();
+                    }
+                });
         };
 
-        self.removeFile = function(file) {
-            if (!file || !file.refs || !file.refs.hasOwnProperty("resource")) return;
+        self.removeFile = function(file, event) {
+            if (!file) {
+                return;
+            }
 
-            $.ajax({
-                url: file.refs.resource,
-                type: "DELETE",
-                success: function() {
-                    self.requestData();
-                }
-            });
+            if (file.type == "folder") {
+                return;
+            }
+
+            self._removeEntry(file, event);
         };
 
         self.sliceFile = function(file) {
-            if (!file) return;
+            if (!file) {
+                return;
+            }
 
-            self.slicing.show(file.origin, file.name, true);
+            self.slicing.show(file.origin, file.path, true);
         };
 
         self.initSdCard = function() {
-            self._sendSdCommand("init");
+            OctoPrint.printer.initSd();
         };
 
         self.releaseSdCard = function() {
-            self._sendSdCommand("release");
+            OctoPrint.printer.releaseSd();
         };
 
         self.refreshSdFiles = function() {
-            self._sendSdCommand("refresh");
+            OctoPrint.printer.refreshSd();
         };
 
-        self._sendSdCommand = function(command) {
-            $.ajax({
-                url: API_BASEURL + "printer/sd",
-                type: "POST",
-                dataType: "json",
-                contentType: "application/json; charset=UTF-8",
-                data: JSON.stringify({command: command})
-            });
+        self._removeEntry = function(entry, event) {
+            var index = self.listHelper.paginatedItems().indexOf(entry) + 1;
+            if (index >= self.listHelper.paginatedItems().length) {
+                index = index - 2;
+            }
+            if (index < 0) {
+                index = 0;
+            }
+
+            var focus = undefined;
+            var fileToFocus = self.listHelper.paginatedItems()[index];
+            if (fileToFocus) {
+                focus = {location: fileToFocus.origin, path: fileToFocus.path};
+            }
+
+            self.activeRemovals.push(entry.origin + ":" + entry.path);
+            var finishActiveRemoval = function() {
+                self.activeRemovals(_.filter(self.activeRemovals(), function(e) {
+                    return e != entry.origin + ":" + entry.path;
+                }));
+            };
+
+            var activateSpinner = function(){},
+                finishSpinner = function(){};
+
+            if (event) {
+                var element = $(event.currentTarget);
+                if (element.length) {
+                    var icon = $("i.icon-trash", element);
+                    if (icon.length) {
+                        activateSpinner = function() {
+                            icon.removeClass("icon-trash").addClass("icon-spinner icon-spin");
+                        };
+                        finishSpinner = function() {
+                            icon.removeClass("icon-spinner icon-spin").addClass("icon-trash");
+                        };
+                    }
+                }
+            }
+
+            activateSpinner();
+
+            var deferred = $.Deferred();
+            OctoPrint.files.delete(entry.origin, entry.path)
+                .done(function() {
+                    self.requestData({
+                        focus: focus,
+                        switchToPath: (entry.parent ? entry.parent.path : "")
+                    })
+                        .done(function() {
+                            deferred.resolve();
+                        })
+                        .fail(function() {
+                            deferred.reject();
+                        });
+                })
+                .fail(function() {
+                    deferred.reject();
+                });
+
+            return deferred.promise()
+                .always(function() {
+                    finishActiveRemoval();
+                    finishSpinner();
+                });
         };
 
         self.downloadLink = function(data) {
@@ -242,7 +534,7 @@ $(function() {
         };
 
         self.getEntryId = function(data) {
-            return "gcode_file_" + md5(data["origin"] + ":" + data["name"]);
+            return "gcode_file_" + md5(data["origin"] + ":" + data["path"]);
         };
 
         self.getEntryElement = function(data) {
@@ -256,7 +548,19 @@ $(function() {
         };
 
         self.enableRemove = function(data) {
-            return self.loginState.isUser() && !_.contains(self.printerState.busyFiles(), data.origin + ":" + data.name);
+            if (_.contains(self.activeRemovals(), data.origin + ":" + data.path)) {
+                return false;
+            }
+
+            var busy = false;
+            if (data.type == "folder") {
+                busy = _.any(self.printerState.busyFiles(), function(name) {
+                    return _.startsWith(name, data.origin + ":" + data.path + "/");
+                });
+            } else {
+                busy = _.contains(self.printerState.busyFiles(), data.origin + ":" + data.path);
+            }
+            return self.loginState.isUser() && !busy;
         };
 
         self.enableSelect = function(data, printAfterSelect) {
@@ -265,7 +569,7 @@ $(function() {
         };
 
         self.enableSlicing = function(data) {
-            return self.loginState.isUser() && self.slicing.enableSlicingDialog();
+            return self.loginState.isUser() && self.slicing.enableSlicingDialog() && self.slicing.enableSlicingDialogForFile(data.name);
         };
 
         self.enableAdditionalData = function(data) {
@@ -285,6 +589,11 @@ $(function() {
         self.getAdditionalData = function(data) {
             var output = "";
             if (data["gcodeAnalysis"]) {
+                if (data["gcodeAnalysis"]["dimensions"]) {
+                    var dimensions = data["gcodeAnalysis"]["dimensions"];
+                    output += gettext("Model Size") + ": " + _.sprintf("%(width).2fmm &times; %(depth).2fmm &times; %(height).2fmm", dimensions);
+                    output += "<br>";
+                }
                 if (data["gcodeAnalysis"]["filament"] && typeof(data["gcodeAnalysis"]["filament"]) == "object") {
                     var filament = data["gcodeAnalysis"]["filament"];
                     if (_.keys(filament).length == 1) {
@@ -297,42 +606,164 @@ $(function() {
                         }
                     }
                 }
-                output += gettext("Estimated Print Time") + ": " + formatDuration(data["gcodeAnalysis"]["estimatedPrintTime"]) + "<br>";
+                output += gettext("Estimated print time") + ": " + formatFuzzyPrintTime(data["gcodeAnalysis"]["estimatedPrintTime"]) + "<br>";
             }
             if (data["prints"] && data["prints"]["last"]) {
-                output += gettext("Last Printed") + ": " + formatTimeAgo(data["prints"]["last"]["date"]) + "<br>";
+                output += gettext("Last printed") + ": " + formatTimeAgo(data["prints"]["last"]["date"]) + "<br>";
                 if (data["prints"]["last"]["lastPrintTime"]) {
-                    output += gettext("Last Print Time") + ": " + formatDuration(data["prints"]["last"]["lastPrintTime"]);
+                    output += gettext("Last print time") + ": " + formatDuration(data["prints"]["last"]["lastPrintTime"]);
                 }
             }
             return output;
         };
 
-        self.performSearch = function(e) {
-            if (e !== undefined) {
-                e.preventDefault();
+        self.evaluatePrintDimensions = function(data, notify) {
+            if (!self.settingsViewModel.feature_modelSizeDetection()) {
+                return true;
             }
 
-            var query = self.searchQuery();
-            if (query !== undefined && query.trim() != "") {
-                self.listHelper.changeSearchFunction(function(entry) {
-                    return entry && entry["name"].toLocaleLowerCase().indexOf(query) > -1;
-                });
+            var analysis = data["gcodeAnalysis"];
+            if (!analysis) {
+                return true;
+            }
+
+            var printingArea = data["gcodeAnalysis"]["printingArea"];
+            if (!printingArea) {
+                return true;
+            }
+
+            var printerProfile = self.printerProfiles.currentProfileData();
+            if (!printerProfile) {
+                return true;
+            }
+
+            var volumeInfo = printerProfile.volume;
+            if (!volumeInfo) {
+                return true;
+            }
+
+            // set print volume boundaries
+            var boundaries = {
+                minX : 0,
+                maxX : volumeInfo.width(),
+                minY : 0,
+                maxY : volumeInfo.depth(),
+                minZ : 0,
+                maxZ : volumeInfo.height()
+            };
+            if (volumeInfo.origin() == "center") {
+                boundaries["maxX"] = volumeInfo.width() / 2;
+                boundaries["minX"] = -1 * boundaries["maxX"];
+                boundaries["maxY"] = volumeInfo.depth() / 2;
+                boundaries["minY"] = -1 * boundaries["maxY"];
+            }
+
+            // model not within bounds, we need to prepare a warning
+            var warning = "<p>" + _.sprintf(gettext("Object in %(name)s exceeds the print volume of the currently selected printer profile, be careful when printing this."), data) + "</p>";
+            var info = "";
+
+            var formatData = {
+                profile: boundaries,
+                object: printingArea
+            };
+
+            // find exceeded dimensions
+            if (printingArea["minX"] < boundaries["minX"] || printingArea["maxX"] > boundaries["maxX"]) {
+                info += gettext("Object exceeds print volume in width.<br>");
+            }
+            if (printingArea["minY"] < boundaries["minY"] || printingArea["maxY"] > boundaries["maxY"]) {
+                info += gettext("Object exceeds print volume in depth.<br>");
+            }
+            if (printingArea["minZ"] < boundaries["minZ"] || printingArea["maxZ"] > boundaries["maxZ"]) {
+                info += gettext("Object exceeds print volume in height.<br>");
+            }
+
+            //warn user
+            if (info != "") {
+                if (notify) {
+                    info += _.sprintf(gettext("Object's bounding box: (%(object.minX).2f, %(object.minY).2f, %(object.minZ).2f) &times; (%(object.maxX).2f, %(object.maxY).2f, %(object.maxZ).2f)"), formatData);
+                    info += "<br>";
+                    info += _.sprintf(gettext("Print volume: (%(profile.minX).2f, %(profile.minY).2f, %(profile.minZ).2f) &times; (%(profile.maxX).2f, %(profile.maxY).2f, %(profile.maxZ).2f)"), formatData);
+
+                    warning += pnotifyAdditionalInfo(info);
+
+                    warning += "<p><small>You can disable this check via Settings &gt; Features &gt; \"Enable model size detection [...]\"</small></p>";
+
+                    new PNotify({
+                        title: gettext("Object doesn't fit print volume"),
+                        text: warning,
+                        type: "warning",
+                        hide: false
+                    });
+                }
+                return false;
             } else {
-                self.listHelper.resetSearch();
+                return true;
             }
         };
 
-        self.onDataUpdaterReconnect = function() {
-            self.requestData();
+        self.performSearch = function(e) {
+            var query = self.searchQuery();
+            if (query !== undefined && query.trim() != "") {
+                query = query.toLocaleLowerCase();
+
+                var recursiveSearch = function(entry) {
+                    if (entry === undefined) {
+                        return false;
+                    }
+
+                    if (entry["type"] == "folder" && entry["children"]) {
+                        return _.any(entry["children"], recursiveSearch);
+                    } else {
+                        return entry["name"].toLocaleLowerCase().indexOf(query) > -1;
+                    }
+                };
+
+                self.listHelper.changeSearchFunction(recursiveSearch);
+            } else {
+                self.listHelper.resetSearch();
+            }
+
+            return false;
+        };
+
+        self.elementByPath = function(path, root) {
+            root = root || {children: self.allItems()};
+
+            var recursiveSearch = function(location, element) {
+                if (location.length == 0) {
+                    return element;
+                }
+
+                if (!element.hasOwnProperty("children")) {
+                    return undefined;
+                }
+
+                var name = location.shift();
+                for (var i = 0; i < element.children.length; i++) {
+                    if (name == element.children[i].name) {
+                        return recursiveSearch(location, element.children[i]);
+                    }
+                }
+
+                return undefined;
+            };
+
+            return recursiveSearch(path.split("/"), root);
         };
 
         self.onUserLoggedIn = function(user) {
             self.uploadButton.fileupload("enable");
+            if (self.uploadSdButton) {
+                self.uploadSdButton.fileupload("enable");
+            }
         };
 
         self.onUserLoggedOut = function() {
             self.uploadButton.fileupload("disable");
+            if (self.uploadSdButton) {
+                self.uploadSdButton.fileupload("disable");
+            }
         };
 
         self.onStartup = function() {
@@ -356,213 +787,114 @@ $(function() {
                 scrollBy: "102px"
             });
 
+            self.addFolderDialog = $("#add_folder_dialog");
+            self.addFolderDialog.on("shown", function() {
+                $("input", self.addFolderDialog).focus();
+            });
+            $("form", self.addFolderDialog).on("submit", function(e) {
+                e.preventDefault();
+                if (self.enableAddFolder()) {
+                    self.addFolder();
+                }
+            });
+
             //~~ Gcode upload
 
             self.uploadButton = $("#gcode_upload");
-            function gcode_upload_done(e, data) {
-                var filename = undefined;
-                var location = undefined;
-                if (data.result.files.hasOwnProperty("sdcard")) {
-                    filename = data.result.files.sdcard.name;
-                    location = "sdcard";
-                } else if (data.result.files.hasOwnProperty("local")) {
-                    filename = data.result.files.local.name;
-                    location = "local";
-                }
-                self.requestData(filename, location);
-
-                if (_.endsWith(filename.toLowerCase(), ".stl")) {
-                    self.slicing.show(location, filename);
-                }
-
-                if (data.result.done) {
-                    $("#gcode_upload_progress .bar").css("width", "0%");
-                    $("#gcode_upload_progress").removeClass("progress-striped").removeClass("active");
-                    $("#gcode_upload_progress .bar").text("");
-                }
+            self.uploadSdButton = $("#gcode_upload_sd");
+            if (!self.uploadSdButton.length) {
+                self.uploadSdButton = undefined;
             }
 
-            function gcode_upload_fail(e, data) {
-                var error = "<p>" + gettext("Could not upload the file. Make sure that it is a GCODE file and has the extension \".gcode\" or \".gco\" or that it is an STL file with the extension \".stl\".") + "</p>";
-                error += pnotifyAdditionalInfo("<pre>" + data.jqXHR.responseText + "</pre>");
-                new PNotify({
-                    title: "Upload failed",
-                    text: error,
-                    type: "error",
-                    hide: false
-                });
-                $("#gcode_upload_progress .bar").css("width", "0%");
-                $("#gcode_upload_progress").removeClass("progress-striped").removeClass("active");
-                $("#gcode_upload_progress .bar").text("");
-            }
-
-            function gcode_upload_progress(e, data) {
-                var progress = parseInt(data.loaded / data.total * 100, 10);
-                $("#gcode_upload_progress .bar").css("width", progress + "%");
-                $("#gcode_upload_progress .bar").text(gettext("Uploading ..."));
-                if (progress >= 100) {
-                    $("#gcode_upload_progress").addClass("progress-striped").addClass("active");
-                    $("#gcode_upload_progress .bar").text(gettext("Saving ..."));
-                }
-            }
-
-            function enable_local_dropzone() {
-                $("#gcode_upload").fileupload({
-                    url: API_BASEURL + "files/local",
-                    dataType: "json",
-                    dropZone: localTarget,
-                    done: gcode_upload_done,
-                    fail: gcode_upload_fail,
-                    progressall: gcode_upload_progress
-                });
-            }
-
-            function disable_local_dropzone() {
-                $("#gcode_upload").fileupload({
-                    url: API_BASEURL + "files/local",
-                    dataType: "json",
-                    dropZone: null,
-                    done: gcode_upload_done,
-                    fail: gcode_upload_fail,
-                    progressall: gcode_upload_progress
-                });
-            }
-
-            function enable_sd_dropzone() {
-                $("#gcode_upload_sd").fileupload({
-                    url: API_BASEURL + "files/sdcard",
-                    dataType: "json",
-                    dropZone: $("#drop_sd"),
-                    done: gcode_upload_done,
-                    fail: gcode_upload_fail,
-                    progressall: gcode_upload_progress
-                });
-            }
-
-            function disable_sd_dropzone() {
-                $("#gcode_upload_sd").fileupload({
-                    url: API_BASEURL + "files/sdcard",
-                    dataType: "json",
-                    dropZone: null,
-                    done: gcode_upload_done,
-                    fail: gcode_upload_fail,
-                    progressall: gcode_upload_progress
-                });
-            }
-
-            var localTarget;
-            if (CONFIG_SD_SUPPORT) {
-                localTarget = $("#drop_locally");
-            } else {
-                localTarget = $("#drop");
-            }
-
-            self.loginState.isUser.subscribe(function(newValue) {
-                if (newValue === true) {
-                    enable_local_dropzone();
-                } else {
-                    disable_local_dropzone();
-                }
-            });
-
-            if (self.loginState.isUser()) {
-                enable_local_dropzone();
-            } else {
-                disable_local_dropzone();
-            }
+            self.uploadProgress = $("#gcode_upload_progress");
+            self.uploadProgressBar = $(".bar", self.uploadProgress);
 
             if (CONFIG_SD_SUPPORT) {
-                self.printerState.isSdReady.subscribe(function(newValue) {
-                    if (newValue === true && self.loginState.isUser()) {
-                        enable_sd_dropzone();
-                    } else {
-                        disable_sd_dropzone();
-                    }
-                });
-
-                self.loginState.isUser.subscribe(function(newValue) {
-                    if (newValue === true && self.printerState.isSdReady()) {
-                        enable_sd_dropzone();
-                    } else {
-                        disable_sd_dropzone();
-                    }
-                });
-
-                if (self.printerState.isSdReady() && self.loginState.isUser()) {
-                    enable_sd_dropzone();
-                } else {
-                    disable_sd_dropzone();
-                }
+                self.localTarget = $("#drop_locally");
+            } else {
+                self.localTarget = $("#drop");
+                self.listHelper.removeFilter('sd');
             }
+            self.sdTarget = $("#drop_sd");
 
-            $(document).bind("dragover", function (e) {
-                var dropOverlay = $("#drop_overlay");
-                var dropZone = $("#drop");
-                var dropZoneLocal = $("#drop_locally");
-                var dropZoneSd = $("#drop_sd");
-                var dropZoneBackground = $("#drop_background");
-                var dropZoneLocalBackground = $("#drop_locally_background");
-                var dropZoneSdBackground = $("#drop_sd_background");
-                var timeout = window.dropZoneTimeout;
+            function evaluateDropzones() {
+                var enableLocal = self.loginState.isUser();
+                var enableSd = enableLocal && CONFIG_SD_SUPPORT && self.printerState.isSdReady();
 
-                if (!timeout) {
-                    dropOverlay.addClass('in');
-                } else {
-                    clearTimeout(timeout);
-                }
-
-                var foundLocal = false;
-                var foundSd = false;
-                var found = false;
-                var node = e.target;
-                do {
-                    if (dropZoneLocal && node === dropZoneLocal[0]) {
-                        foundLocal = true;
-                        break;
-                    } else if (dropZoneSd && node === dropZoneSd[0]) {
-                        foundSd = true;
-                        break;
-                    } else if (dropZone && node === dropZone[0]) {
-                        found = true;
-                        break;
-                    }
-                    node = node.parentNode;
-                } while (node != null);
-
-                if (foundLocal) {
-                    dropZoneLocalBackground.addClass("hover");
-                    dropZoneSdBackground.removeClass("hover");
-                } else if (foundSd && self.printerState.isSdReady()) {
-                    dropZoneSdBackground.addClass("hover");
-                    dropZoneLocalBackground.removeClass("hover");
-                } else if (found) {
-                    dropZoneBackground.addClass("hover");
-                } else {
-                    if (dropZoneLocalBackground) dropZoneLocalBackground.removeClass("hover");
-                    if (dropZoneSdBackground) dropZoneSdBackground.removeClass("hover");
-                    if (dropZoneBackground) dropZoneBackground.removeClass("hover");
-                }
-
-                window.dropZoneTimeout = setTimeout(function () {
-                    window.dropZoneTimeout = null;
-                    dropOverlay.removeClass("in");
-                    if (dropZoneLocal) dropZoneLocalBackground.removeClass("hover");
-                    if (dropZoneSd) dropZoneSdBackground.removeClass("hover");
-                    if (dropZone) dropZoneBackground.removeClass("hover");
-                }, 100);
-            });
+                self._setDropzone("local", enableLocal);
+                self._setDropzone("sdcard", enableSd);
+            }
+            self.loginState.isUser.subscribe(evaluateDropzones);
+            self.printerState.isSdReady.subscribe(evaluateDropzones);
+            evaluateDropzones();
 
             self.requestData();
         };
 
         self.onEventUpdatedFiles = function(payload) {
-            if (payload.type == "gcode") {
-                self.requestData();
+            if (self.ignoreUpdatedFilesEvent) {
+                return;
+            }
+
+            if (payload.type !== "gcode") {
+                return;
+            }
+
+            self.requestData();
+        };
+
+        self.onEventSlicingStarted = function(payload) {
+            self.uploadProgress
+                .addClass("progress-striped")
+                .addClass("active");
+            self.uploadProgressBar.css("width", "100%");
+            if (payload.progressAvailable) {
+                self.uploadProgressText(_.sprintf(gettext("Slicing ... (%(percentage)d%%)"), {percentage: 0}));
+            } else {
+                self.uploadProgressText(gettext("Slicing ..."));
             }
         };
 
+        self.onSlicingProgress = function(slicer, modelPath, machinecodePath, progress) {
+            self.uploadProgressText(_.sprintf(gettext("Slicing ... (%(percentage)d%%)"), {percentage: Math.round(progress)}));
+        };
+
+        self.onEventSlicingCancelled = function(payload) {
+            self.uploadProgress
+                .removeClass("progress-striped")
+                .removeClass("active");
+            self.uploadProgressBar
+                .css("width", "0%");
+            self.uploadProgressText("");
+        };
+
         self.onEventSlicingDone = function(payload) {
+            self.uploadProgress
+                .removeClass("progress-striped")
+                .removeClass("active");
+            self.uploadProgressBar
+                .css("width", "0%");
+            self.uploadProgressText("");
+
+            new PNotify({
+                title: gettext("Slicing done"),
+                text: _.sprintf(gettext("Sliced %(stl)s to %(gcode)s, took %(time).2f seconds"), payload),
+                type: "success"
+            });
+
             self.requestData();
+        };
+
+        self.onEventSlicingFailed = function(payload) {
+            self.uploadProgress
+                .removeClass("progress-striped")
+                .removeClass("active");
+            self.uploadProgressBar
+                .css("width", "0%");
+            self.uploadProgressText("");
+
+            var html = _.sprintf(gettext("Could not slice %(stl)s to %(gcode)s: %(reason)s"), payload);
+            new PNotify({title: gettext("Slicing failed"), text: html, type: "error", hide: false});
         };
 
         self.onEventMetadataAnalysisFinished = function(payload) {
@@ -572,11 +904,209 @@ $(function() {
         self.onEventMetadataStatisticsUpdated = function(payload) {
             self.requestData();
         };
+
+        self.onEventTransferStarted = function(payload) {
+            self.uploadProgress
+                .addClass("progress-striped")
+                .addClass("active");
+            self.uploadProgressBar
+                .css("width", "100%");
+            self.uploadProgressText(gettext("Streaming ..."));
+        };
+
+        self.onEventTransferDone = function(payload) {
+            self.uploadProgress
+                .removeClass("progress-striped")
+                .removeClass("active");
+            self.uploadProgressBar
+                .css("width", "0");
+            self.uploadProgressText("");
+
+            new PNotify({
+                title: gettext("Streaming done"),
+                text: _.sprintf(gettext("Streamed %(local)s to %(remote)s on SD, took %(time).2f seconds"), payload),
+                type: "success"
+            });
+
+            self.requestData({focus: {location: "sdcard", path: payload.remote}});
+        };
+
+        self.onServerConnect = self.onServerReconnect = function(payload) {
+            self._enableDragNDrop(true);
+            self.requestData();
+        };
+
+        self.onServerDisconnect = function(payload) {
+            self._enableDragNDrop(false);
+        };
+
+        self._setDropzone = function(dropzone, enable) {
+            var button = (dropzone == "local") ? self.uploadButton : self.uploadSdButton;
+            var drop = (dropzone == "local") ? self.localTarget : self.sdTarget;
+            var url = API_BASEURL + "files/" + dropzone;
+
+            if (button === undefined)
+                return;
+
+            button.fileupload({
+                url: url,
+                dataType: "json",
+                dropZone: enable ? drop : null,
+                drop: function(e, data) {
+
+                },
+                submit: self._handleUploadStart,
+                done: self._handleUploadDone,
+                fail: self._handleUploadFail,
+                always: self._handleUploadAlways,
+                progressall: self._handleUploadProgress
+            }).bind('fileuploadsubmit', function(e, data) {
+                if (self.currentPath() != "")
+                    data.formData = { path: self.currentPath() };
+            });
+        };
+
+        self._enableDragNDrop = function(enable) {
+            if (enable) {
+                $(document).bind("dragover", self._handleDragNDrop);
+                log.debug("Enabled drag-n-drop");
+            } else {
+                $(document).unbind("dragover", self._handleDragNDrop);
+                log.debug("Disabled drag-n-drop");
+            }
+        };
+
+        self._setProgressBar = function(percentage, text, active) {
+            self.uploadProgressBar
+                .css("width", percentage + "%");
+            self.uploadProgressText(text);
+
+            if (active) {
+                self.uploadProgress
+                    .addClass("progress-striped active");
+            } else {
+                self.uploadProgress
+                    .removeClass("progress-striped active");
+            }
+        };
+
+        self._handleUploadStart = function(e, data) {
+            self.ignoreUpdatedFilesEvent = true;
+            return true;
+        };
+
+        self._handleUploadDone = function(e, data) {
+            var focus = undefined;
+            if (data.result.files.hasOwnProperty("sdcard")) {
+                focus = {location: "sdcard", path: data.result.files.sdcard.path};
+            } else if (data.result.files.hasOwnProperty("local")) {
+                focus = {location: "local", path: data.result.files.local.path};
+            }
+            self.requestData({focus: focus})
+                .done(function() {
+                    if (data.result.done) {
+                        self._setProgressBar(0, "", false);
+                    }
+                });
+
+            if (focus && _.endsWith(focus.path.toLowerCase(), ".stl")) {
+                self.slicing.show(focus.location, focus.path);
+            }
+        };
+
+        self._handleUploadFail = function(e, data) {
+            var extensions = _.map(SUPPORTED_EXTENSIONS, function(extension) {
+                return extension.toLowerCase();
+            }).sort();
+            extensions = extensions.join(", ");
+            var error = "<p>"
+                + _.sprintf(gettext("Could not upload the file. Make sure that it is a valid file with one of these extensions: %(extensions)s"),
+                            {extensions: extensions})
+                + "</p>";
+            error += pnotifyAdditionalInfo("<pre>" + data.jqXHR.responseText + "</pre>");
+            new PNotify({
+                title: "Upload failed",
+                text: error,
+                type: "error",
+                hide: false
+            });
+            self._setProgressBar(0, "", false);
+        };
+
+        self._handleUploadAlways = function(e, data) {
+            self.ignoreUpdatedFilesEvent = false;
+        };
+
+        self._handleUploadProgress = function(e, data) {
+            var progress = parseInt(data.loaded / data.total * 100, 10);
+            var uploaded = progress >= 100;
+
+            self._setProgressBar(progress, uploaded ? gettext("Saving ...") : gettext("Uploading ..."), uploaded);
+        };
+
+        self._handleDragNDrop = function (e) {
+            var dropOverlay = $("#drop_overlay");
+            var dropZone = $("#drop");
+            var dropZoneLocal = $("#drop_locally");
+            var dropZoneSd = $("#drop_sd");
+            var dropZoneBackground = $("#drop_background");
+            var dropZoneLocalBackground = $("#drop_locally_background");
+            var dropZoneSdBackground = $("#drop_sd_background");
+            var timeout = window.dropZoneTimeout;
+
+            if (!timeout) {
+                dropOverlay.addClass('in');
+            } else {
+                clearTimeout(timeout);
+            }
+
+            var foundLocal = false;
+            var foundSd = false;
+            var found = false;
+            var node = e.target;
+            do {
+                if (dropZoneLocal && node === dropZoneLocal[0]) {
+                    foundLocal = true;
+                    break;
+                } else if (dropZoneSd && node === dropZoneSd[0]) {
+                    foundSd = true;
+                    break;
+                } else if (dropZone && node === dropZone[0]) {
+                    found = true;
+                    break;
+                }
+                node = node.parentNode;
+            } while (node != null);
+
+            if (foundLocal) {
+                dropZoneLocalBackground.addClass("hover");
+                dropZoneSdBackground.removeClass("hover");
+            } else if (foundSd && self.printerState.isSdReady()) {
+                dropZoneSdBackground.addClass("hover");
+                dropZoneLocalBackground.removeClass("hover");
+            } else if (found) {
+                dropZoneBackground.addClass("hover");
+            } else {
+                if (dropZoneLocalBackground) dropZoneLocalBackground.removeClass("hover");
+                if (dropZoneSdBackground) dropZoneSdBackground.removeClass("hover");
+                if (dropZoneBackground) dropZoneBackground.removeClass("hover");
+            }
+
+            window.dropZoneTimeout = setTimeout(function () {
+                window.dropZoneTimeout = null;
+                dropOverlay.removeClass("in");
+                if (dropZoneLocal) dropZoneLocalBackground.removeClass("hover");
+                if (dropZoneSd) dropZoneSdBackground.removeClass("hover");
+                if (dropZone) dropZoneBackground.removeClass("hover");
+            }, 100);
+        }
     }
 
-    OCTOPRINT_VIEWMODELS.push([
-        GcodeFilesViewModel,
-        ["printerStateViewModel", "loginStateViewModel", "slicingViewModel"],
-        "#files_wrapper"
-    ]);
+    OCTOPRINT_VIEWMODELS.push({
+        construct: FilesViewModel,
+        name: "filesViewModel",
+        additionalNames: ["gcodeFilesViewModel"],
+        dependencies: ["settingsViewModel", "loginStateViewModel", "printerStateViewModel", "slicingViewModel", "printerProfilesViewModel"],
+        elements: ["#files_wrapper", "#add_folder_dialog"],
+    });
 });

@@ -1,0 +1,18 @@
+<h3>Plugin Licenses</h3>
+
+<ul>
+    {% for plugin in plugin_pluginmanager_thirdparty %}
+        <li>{% if plugin.url %}<a href="{{ plugin.url }}" target="_blank" rel="noreferrer noopener">{% endif %}{{ plugin.name }}{% if plugin.url %}</a>{% endif %}: {% if plugin.license %}{{ plugin.license }}{% else %}-{% endif %}</li>
+    {% endfor %}
+</ul>
+
+{% if templates.plugin_pluginmanager_about_thirdparty.order %}
+    <h3>Licenses of Plugin Dependencies</h3>
+
+    {% for key in templates.plugin_pluginmanager_about_thirdparty.order %}
+        {% set heading, config = templates.plugin_pluginmanager_about_thirdparty.entries[key] %}
+        <h4>{{ heading }}</h4>
+
+        {% include config.template ignore missing %}
+    {% endfor %}
+{% endif %}

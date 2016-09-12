@@ -19,17 +19,38 @@ Issue a job command
      Starts the print of the currently selected file. For selecting a file, see :ref:`Issue a file command <sec-api-fileops-filecommand>`.
      If a print job is already active, a :http:statuscode:`409` will be returned.
 
+   cancel
+     Cancels the current print job.  If no print job is active (either paused or printing), a :http:statuscode:`409`
+     will be returned.
+
    restart
      Restart the print of the currently selected file from the beginning. There must be an active print job for this to work
      and the print job must currently be paused. If either is not the case, a :http:statuscode:`409` will be returned.
 
-   pause
-     Pauses/unpauses the current print job. If no print job is active (either paused or printing), a :http:statuscode:`409`
-     will be returned.
+     Equivalent to issuing a ``cancel`` command while paused, directly followed by a ``start`` command.
 
-   cancel
-     Cancels the current print job.  If no print job is active (either paused or printing), a :http:statuscode:`409`
-     will be returned.
+   pause
+     Pauses/resumes/toggles the current print job. Accepts one optional additional parameter ``action``
+     specifying which action to take. Valid values for this parameter are:
+
+     pause
+         Pauses the current job if it's printing, does nothing if it's already paused.
+     resume
+         Resumes the current job if it's paused, does nothing if it's printing.
+     toggle
+         Toggles the pause state of the job, pausing it if it's printing and resuming it if it's currently paused.
+
+     In order to stay backwards compatible to earlier iterations of this API, the default
+     action to take if no ``action`` parameter is supplied is to toggle the print job status.
+
+     If no print job is active (either paused or printing), a :http:statuscode:`409` will be returned.
+
+     .. note::
+
+        While the approach to implement pause/resume/toggle behaviour through sub commands via the ``action``
+        parameter instead of having dedicated ``pause``, ``resume`` and ``toggle`` commands seems clumsy, this path
+        was chosen to have the API stay backwards compatible to prior versions which only offered the toggle
+        behaviour under the ``pause`` command.
 
    Upon success, a status code of :http:statuscode:`204` and an empty body is returned.
 
@@ -37,7 +58,7 @@ Issue a job command
 
    .. sourcecode:: http
 
-      POST /api/control/job HTTP/1.1
+      POST /api/job HTTP/1.1
       Host: example.com
       Content-Type: application/json
       X-Api-Key: abcdef...
@@ -50,11 +71,28 @@ Issue a job command
 
       HTTP/1.1 204 No Content
 
+   **Example Cancel Request**
+
+   .. sourcecode:: http
+
+      POST /api/job HTTP/1.1
+      Host: example.com
+      Content-Type: application/json
+      X-Api-Key: abcdef...
+
+      {
+        "command": "cancel"
+      }
+
+   .. sourcecode:: http
+
+      HTTP/1.1 204 No Content
+
    **Example Restart Request**
 
    .. sourcecode:: http
 
-      POST /api/control/job HTTP/1.1
+      POST /api/job HTTP/1.1
       Host: example.com
       Content-Type: application/json
       X-Api-Key: abcdef...
@@ -71,30 +109,50 @@ Issue a job command
 
    .. sourcecode:: http
 
-      POST /api/control/job HTTP/1.1
+      POST /api/job HTTP/1.1
       Host: example.com
       Content-Type: application/json
       X-Api-Key: abcdef...
 
       {
-        "command": "pause"
+        "command": "pause",
+        "action": "pause"
       }
 
    .. sourcecode:: http
 
       HTTP/1.1 204 No Content
 
-   **Example Cancel Request**
+   **Example Resume Request**
 
    .. sourcecode:: http
 
-      POST /api/control/job HTTP/1.1
+      POST /api/job HTTP/1.1
       Host: example.com
       Content-Type: application/json
       X-Api-Key: abcdef...
 
       {
-        "command": "cancel"
+        "command": "pause",
+        "action": "resume"
+      }
+
+   .. sourcecode:: http
+
+      HTTP/1.1 204 No Content
+
+   **Example Pause Toggle Request**
+
+   .. sourcecode:: http
+
+      POST /api/job HTTP/1.1
+      Host: example.com
+      Content-Type: application/json
+      X-Api-Key: abcdef...
+
+      {
+        "command": "pause",
+        "action": "toggle"
       }
 
    .. sourcecode:: http

@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
@@ -16,14 +16,19 @@ import octoprint.util
 import octoprint.slicing
 import octoprint.settings
 
+from octoprint.util.paths import normalize as normalize_path
+
 from .profile import Profile
+from .profile import GcodeFlavors
+from .profile import parse_gcode_flavor
 
 class CuraPlugin(octoprint.plugin.SlicerPlugin,
                  octoprint.plugin.SettingsPlugin,
                  octoprint.plugin.TemplatePlugin,
                  octoprint.plugin.AssetPlugin,
                  octoprint.plugin.BlueprintPlugin,
-                 octoprint.plugin.StartupPlugin):
+                 octoprint.plugin.StartupPlugin,
+                 octoprint.plugin.WizardPlugin):
 
 	def __init__(self):
 		self._logger = logging.getLogger("octoprint.plugins.cura")
@@ -34,6 +39,32 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 		self._slicing_commands = dict()
 		self._cancelled_jobs = []
 		self._job_mutex = threading.Lock()
+
+	def _is_engine_configured(self, cura_engine=None):
+		if cura_engine is None:
+			cura_engine = normalize_path(self._settings.get(["cura_engine"]))
+		return cura_engine is not None and os.path.isfile(cura_engine) and os.access(cura_engine, os.X_OK)
+
+	def _is_profile_available(self):
+		return bool(self._slicing_manager.all_profiles("cura", require_configured=False))
+
+	##~~ TemplatePlugin API
+
+	def get_template_vars(self):
+		return dict(
+			homepage=__plugin_url__
+		)
+
+	##~~ WizardPlugin API
+
+	def is_wizard_required(self):
+		return not self._is_engine_configured() or not self._is_profile_available()
+
+	def get_wizard_details(self):
+		return dict(
+			engine=self._is_engine_configured(),
+			profile=self._is_profile_available()
+		)
 
 	##~~ StartupPlugin API
 
@@ -52,9 +83,6 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 	@octoprint.plugin.BlueprintPlugin.route("/import", methods=["POST"])
 	def import_cura_profile(self):
 		import datetime
-		import tempfile
-
-		from octoprint.server import slicingManager
 
 		input_name = "file"
 		input_upload_name = input_name + "." + self._settings.global_get(["server", "uploads", "nameSuffix"])
@@ -83,8 +111,10 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 		profile_display_name = name
 		profile_description = "Imported from {filename} on {date}".format(filename=filename, date=octoprint.util.get_formatted_datetime(datetime.datetime.now()))
 		profile_allow_overwrite = False
+		profile_make_default = False
 
 		# overrides
+		from octoprint.server.api import valid_boolean_trues
 		if "name" in flask.request.values:
 			profile_name = flask.request.values["name"]
 		if "displayName" in flask.request.values:
@@ -92,22 +122,31 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 		if "description" in flask.request.values:
 			profile_description = flask.request.values["description"]
 		if "allowOverwrite" in flask.request.values:
-			from octoprint.server.api import valid_boolean_trues
 			profile_allow_overwrite = flask.request.values["allowOverwrite"] in valid_boolean_trues
+		if "default" in flask.request.values:
+			profile_make_default = flask.request.values["default"] in valid_boolean_trues
 
 		try:
-			slicingManager.save_profile("cura",
-			                            profile_name,
-			                            profile_dict,
-			                            allow_overwrite=profile_allow_overwrite,
-			                            display_name=profile_display_name,
-			                            description=profile_description)
+			self._slicing_manager.save_profile("cura",
+			                                   profile_name,
+			                                   profile_dict,
+			                                   allow_overwrite=profile_allow_overwrite,
+			                                   display_name=profile_display_name,
+			                                   description=profile_description)
 		except octoprint.slicing.ProfileAlreadyExists:
 			self._logger.warn("Profile {profile_name} already exists, aborting".format(**locals()))
 			return flask.make_response("A profile named {profile_name} already exists for slicer cura".format(**locals()), 409)
 
+		if profile_make_default:
+			try:
+				self._slicing_manager.set_default_profile("cura", profile_name)
+			except octoprint.slicing.UnknownProfile:
+				self._logger.warn("Profile {profile_name} could not be set as default, aborting".format(**locals()))
+				return flask.make_response("The profile {profile_name} for slicer cura could not be set as default".format(**locals()), 500)
+
 		result = dict(
 			resource=flask.url_for("api.slicingGetSlicerProfile", slicer="cura", name=profile_name, _external=True),
+			name=profile_name,
 			displayName=profile_display_name,
 			description=profile_description
 		)
@@ -148,18 +187,21 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 	##~~ SlicerPlugin API
 
 	def is_slicer_configured(self):
-		cura_engine = self._settings.get(["cura_engine"])
-		if cura_engine is not None and os.path.exists(cura_engine):
+		cura_engine = normalize_path(self._settings.get(["cura_engine"]))
+		if self._is_engine_configured(cura_engine=cura_engine):
 			return True
 		else:
 			self._logger.info("Path to CuraEngine has not been configured yet or does not exist (currently set to %r), Cura will not be selectable for slicing" % cura_engine)
+			return False
 
 	def get_slicer_properties(self):
 		return dict(
 			type="cura",
 			name="CuraEngine",
 			same_device=True,
-			progress_report=True
+			progress_report=True,
+			source_file_types=["stl"],
+			destination_extensions=["gco", "gcode", "g"]
 		)
 
 	def get_slicer_default_profile(self):
@@ -184,9 +226,6 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 		return octoprint.slicing.SlicingProfile(properties["type"], "unknown", profile_dict, display_name=display_name, description=description)
 
 	def save_slicer_profile(self, path, profile, allow_overwrite=True, overrides=None):
-		if os.path.exists(path) and not allow_overwrite:
-			raise octoprint.slicing.ProfileAlreadyExists("cura", profile.name)
-
 		new_profile = Profile.merge_profile(profile.data, overrides=overrides)
 
 		if profile.display_name is not None:
@@ -218,25 +257,28 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 					if not on_progress_kwargs:
 						on_progress_kwargs = dict()
 
-				self._cura_logger.info("### Slicing %s to %s using profile stored at %s" % (model_path, machinecode_path, profile_path))
+				self._cura_logger.info(u"### Slicing %s to %s using profile stored at %s" % (model_path, machinecode_path, profile_path))
 
-				engine_settings = self._convert_to_engine(profile_path, printer_profile, posX, posY)
-
-				executable = self._settings.get(["cura_engine"])
+				executable = normalize_path(self._settings.get(["cura_engine"]))
 				if not executable:
 					return False, "Path to CuraEngine is not configured "
 
-				working_dir, _ = os.path.split(executable)
-				args = ['"%s"' % executable, '-v', '-p']
-				for k, v in engine_settings.items():
-					args += ["-s", '"%s=%s"' % (k, str(v))]
-				args += ['-o', '"%s"' % machinecode_path, '"%s"' % model_path]
+				working_dir = os.path.dirname(executable)
+
+				engine_settings = self._convert_to_engine(profile_path, printer_profile, posX, posY)
+
+				# Start building the argument list for the CuraEngine command execution
+				args = [executable, '-v', '-p']
+
+				# Add the settings (sorted alphabetically) to the command
+				for k, v in sorted(engine_settings.items(), key=lambda s: s[0]):
+					args += ["-s", "%s=%s" % (k, str(v))]
+				args += ["-o", machinecode_path, model_path]
+
+				self._logger.info(u"Running %r in %s" % (" ".join(args), working_dir))
 
 				import sarge
-				command = " ".join(args)
-				self._logger.info("Running %r in %s" % (command, working_dir))
-
-				p = sarge.run(command, cwd=working_dir, async=True, stdout=sarge.Capture(), stderr=sarge.Capture())
+				p = sarge.run(args, cwd=working_dir, async=True, stdout=sarge.Capture(), stderr=sarge.Capture())
 				p.wait_events()
 				self._slicing_commands[machinecode_path] = p.commands[0]
 
@@ -254,6 +296,7 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 						p.commands[0].poll()
 						continue
 
+					line = octoprint.util.to_unicode(line, errors="replace")
 					self._cura_logger.debug(line.strip())
 
 					if on_progress is not None:
@@ -282,14 +325,14 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 						#
 						# with <step_factor> being 0 for "inset", 1 for "skin" and 2 for "export".
 
-						if line.startswith("Layer count:") and layer_count is None:
+						if line.startswith(u"Layer count:") and layer_count is None:
 							try:
-								layer_count = float(line[len("Layer count:"):].strip())
+								layer_count = float(line[len(u"Layer count:"):].strip())
 							except:
 								pass
 
-						elif line.startswith("Progress:"):
-							split_line = line[len("Progress:"):].strip().split(":")
+						elif line.startswith(u"Progress:"):
+							split_line = line[len(u"Progress:"):].strip().split(":")
 							if len(split_line) == 3:
 								step, current_layer, _ = split_line
 								try:
@@ -302,36 +345,41 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 									on_progress_kwargs["_progress"] = (step_factor[step] * layer_count + current_layer) / (layer_count * 3)
 									on_progress(*on_progress_args, **on_progress_kwargs)
 
-						elif line.startswith("Print time:"):
+						elif line.startswith(u"Print time:"):
 							try:
-								print_time = int(line[len("Print time:"):].strip())
+								print_time = int(line[len(u"Print time:"):].strip())
 								if analysis is None:
 									analysis = dict()
 								analysis["estimatedPrintTime"] = print_time
 							except:
 								pass
 
-						elif line.startswith("Filament:") or line.startswith("Filament2:"):
-							if line.startswith("Filament:"):
-								filament_str = line[len("Filament:"):].strip()
+						# Get the filament usage
+
+						elif line.startswith(u"Filament:") or line.startswith(u"Filament2:"):
+							if line.startswith(u"Filament:"):
+								filament_str = line[len(u"Filament:"):].strip()
 								tool_key = "tool0"
 							else:
-								filament_str = line[len("Filament2:"):].strip()
+								filament_str = line[len(u"Filament2:"):].strip()
 								tool_key = "tool1"
 
 							try:
 								filament = int(filament_str)
+
 								if analysis is None:
 									analysis = dict()
 								if not "filament" in analysis:
 									analysis["filament"] = dict()
 								if not tool_key in analysis["filament"]:
 									analysis["filament"][tool_key] = dict()
-								analysis["filament"][tool_key]["length"] = filament
-								if "filamentDiameter" in engine_settings:
-									radius_in_cm = float(int(engine_settings["filamentDiameter"]) / 10000.0) / 2.0
-									filament_in_cm = filament / 10.0
-									analysis["filament"][tool_key]["volume"] = filament_in_cm * math.pi * radius_in_cm * radius_in_cm
+
+								if profile.get_float("filament_diameter") != None:
+									if profile.get("gcode_flavor") == GcodeFlavors.ULTIGCODE or profile.get("gcode_flavor") == GcodeFlavors.REPRAP_VOLUME:
+										analysis["filament"][tool_key] = _get_usage_from_volume(filament, profile.get_float("filament_diameter"))
+									else:
+										analysis["filament"][tool_key] = _get_usage_from_length(filament, profile.get_float("filament_diameter"))
+
 							except:
 								pass
 			finally:
@@ -339,20 +387,20 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 
 			with self._job_mutex:
 				if machinecode_path in self._cancelled_jobs:
-					self._cura_logger.info("### Cancelled")
+					self._cura_logger.info(u"### Cancelled")
 					raise octoprint.slicing.SlicingCancelled()
 
-			self._cura_logger.info("### Finished, returncode %d" % p.returncode)
+			self._cura_logger.info(u"### Finished, returncode %d" % p.returncode)
 			if p.returncode == 0:
 				return True, dict(analysis=analysis)
 			else:
-				self._logger.warn("Could not slice via Cura, got return code %r" % p.returncode)
+				self._logger.warn(u"Could not slice via Cura, got return code %r" % p.returncode)
 				return False, "Got returncode %r" % p.returncode
 
 		except octoprint.slicing.SlicingCancelled as e:
 			raise e
 		except:
-			self._logger.exception("Could not slice via Cura, got an unknown error")
+			self._logger.exception(u"Could not slice via Cura, got an unknown error")
 			return False, "Unknown error, please consult the log file"
 
 		finally:
@@ -371,7 +419,7 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 				command = self._slicing_commands[machinecode_path]
 				if command is not None:
 					command.terminate()
-				self._logger.info("Cancelled slicing of %s" % machinecode_path)
+				self._logger.info(u"Cancelled slicing of %s" % machinecode_path)
 
 	def _load_profile(self, path):
 		import yaml
@@ -381,11 +429,16 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 				profile_dict = yaml.safe_load(f)
 			except:
 				raise IOError("Couldn't read profile from {path}".format(path=path))
+
+		if "gcode_flavor" in profile_dict and not isinstance(profile_dict["gcode_flavor"], (list, tuple)):
+			profile_dict["gcode_flavor"] = parse_gcode_flavor(profile_dict["gcode_flavor"])
+			self._save_profile(path, profile_dict)
+
 		return profile_dict
 
 	def _save_profile(self, path, profile, allow_overwrite=True):
 		import yaml
-		with open(path, "wb") as f:
+		with octoprint.util.atomic_write(path, "wb") as f:
 			yaml.safe_dump(profile, f, default_flow_style=False, indent="  ", allow_unicode=True)
 
 	def _convert_to_engine(self, profile_path, printer_profile, posX, posY):
@@ -405,9 +458,39 @@ def _sanitize_name(name):
 	sanitized_name = sanitized_name.replace(" ", "_")
 	return sanitized_name.lower()
 
-__plugin_name__ = "CuraEngine"
+def _get_usage_from_volume(filament_volume, filament_diameter):
+
+	# filament_volume is expressed in mm^3
+	# usage["volume"] is in cm^3 and usage["length"] is in mm
+
+	usage = dict()
+	usage["volume"] = filament_volume / 1000.0
+
+	radius_in_mm = filament_diameter / 2.0
+	usage["length"] = filament_volume / (math.pi * radius_in_mm * radius_in_mm)
+
+	return usage
+
+def _get_usage_from_length(filament_length, filament_diameter):
+
+	# filament_length is expressed in mm
+	# usage["volume"] is in cm^3 and usage["length"] is in mm
+
+	usage = dict()
+	usage["length"] = filament_length
+
+	radius_in_cm = (filament_diameter / 10.0) / 2.0
+	length_in_cm = filament_length / 10.0
+	usage["volume"] = length_in_cm * math.pi * radius_in_cm * radius_in_cm
+
+	return usage
+
+__plugin_name__ = "CuraEngine (<= 15.04)"
 __plugin_author__ = "Gina Häußge"
 __plugin_url__ = "https://github.com/foosel/OctoPrint/wiki/Plugin:-Cura"
-__plugin_description__ = "Adds support for slicing via CuraEngine from within OctoPrint"
+__plugin_description__ = "Adds support for slicing via CuraEngine versions up to and including version 15.04 from within OctoPrint"
 __plugin_license__ = "AGPLv3"
 __plugin_implementation__ = CuraPlugin()
+
+
+

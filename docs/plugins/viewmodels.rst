@@ -6,7 +6,7 @@ Viewmodels
 .. contents::
    :local:
 
-When implementing frontend components, you'll sooner or later want to define your own `KnockoutJS viewmodels <http://knockoutjs.com/>`_
+When implementing frontend components, you'll sooner or later want to define your own `KnockoutJS view models <http://knockoutjs.com/>`_
 in order to provide custom functionality.
 
 .. _sec-plugins-viewmodels-registering:
@@ -14,112 +14,171 @@ in order to provide custom functionality.
 Registering custom viewmodels
 -----------------------------
 
-Register your viewmodel with OctoPrint's web app by pushing a 3-tuple consisting of your viewmodel's class, a list
-of all required dependencies to be injected into the constructor and a list of all elements to bind the viewmodel to.
+Register your view model with OctoPrint's web app by pushing a config object unto the global array ``OCTOPRINT_VIEWMODELS``.
+
+Possible properties in this config object are:
+
+construct
+    Function to use for constructing the view model instance. Usually that will be the view model class, which acts as
+    a constructor. This property is mandatory.
+name
+    Name to register the view model under. If not provided, the name of the ``construct`` function will
+    be used, turning the first letter lower case. If a view model under the same name already exists at time
+    of construction, an error will be logged and the view model will not be instantiated.
+additionalNames
+    A list of additional names to also register the view model under. Only those that do not already exist will be
+    registered.
+dependencies
+    List of dependencies the view model needs injected. If any of the view models in this list cannot be found,
+    initialization of the view model will fail.  The parameters injected on instantiation will consist of first
+    the ``dependencies``, then the ``optional`` list concatenated.
+optional
+    A list of optional dependencies the view model needs injected. If any of the view models in this list cannot be found,
+    they will be ``null`` in the parameter list injected to the constructor on instantiation. The parameters injected on
+    instantiation will consist of first the ``dependencies``, then the ``optional`` list concatenated.
+elements
+    A list of UI elements to bind to. Each binding target can be either a string which will then be passed to jQuery's
+    ``$(...)`` method to resolve the target, or alternatively directly a jQuery element
 
 Example:
 
 .. code-block:: javascript
+   :emphasize-lines: 12-22
+
+   $(function() {
+       function MyCustomViewModel(parameters) {
+           var self = this;
+
+           self.loginState = parameters[0]; // requested as first dependency below
+           self.settings = parameters[1]; // requested as second dependency below
+           self.someOtherViewModel = parameters[2]; // requested as first optional dependency below
+
+           // more of your view model's implementation
+       }
+
+       // we don't explicitely declare a name property here
+       // our view model will be registered under "myCustomViewModel" (implicit
+       // name derived from contructor name) and "yourCustomViewModel" (explicitely
+       // provided as additional name)
+       OCTOPRINT_VIEWMODELS.push({
+           construct: MyCustomViewModel,
+           additionalNames: ["yourCustomViewModel"],
+           dependencies: ["loginStateViewModel", "settingsViewModel"],
+           optional: ["someOtherViewModel"],
+           elements: ["#some_div", "#some_other_div"]
+       });
+   })
+
+You might also come across a different approach to view model declaration, providing not a config object but instead
+a 3-tuple of constructor, dependencies and elements to bind to. Additional names, different names than the default name
+and optional dependencies cannot be specified with this format. It should be considered deprecated. Still, an example
+of how that would look in practice is provided here as well:
+
+.. code-block:: javascript
+   :caption: Old tuple-based configuration format, consider this deprecated
+   :emphasize-lines: 11-16
 
    $(function() {
        function MyCustomViewModel(parameters) {
            var self = this;
 
            self.loginState = parameters[0]; // requested as first constructor parameter below
+           self.settingsViewModel = parameters[1] // requested as second constructor parameter below
 
-           // more of your viewmodel's implementation
+           // more of your view model's implementation
        }
 
+       // construct, dependencies, elements
        OCTOPRINT_VIEWMODELS.push([
            MyCustomViewModel,
-           ["loginStateViewModel"],
+           ["loginStateViewModel", "settingsViewModel"],
            ["#some_div", "#some_other_div"]
        ]);
    })
-
-.. note::
-
-   Each provided binding target may be either a string which will then be passed to jQuery's ``$(...)`` method to resolve
-   the target, or alternatively directly a jQuery element.
 
 .. _sec-plugins-viewmodels-dependencies:
 
 Dependencies
 ------------
 
-OctoPrint will try to inject all viewmodel dependencies requested by your viewmodel. In order to do this it will
-perform multiple passes iterating over all registered viewmodels and collecting the necessary depedencies prior to
-construction. Circular depedencies (A dependens on B, B on C, C on A) naturally cannot be resolved and will cause an
-error to be logged to the Javascript console.
+OctoPrint will try to inject all view model dependencies requested by your view model. In order to do this it will
+perform multiple passes iterating over all registered view models and collecting the necessary dependencies prior to
+construction. Circular dependencies (A depends on B, B on C, C on A) naturally cannot be resolved and will cause an
+error to be logged to the JavaScript console.
 
-OctoPrint's core currently comes with the following viewmodels that your plugin can request for injection:
+OctoPrint's core currently comes with the following view models that your plugin can request for injection:
 
 appearanceViewModel
-   Viewmodel that holds the appearance settings (name, color and transparency flag).
+   View model that holds the appearance settings (name, color and transparency flag).
 connectionViewModel
-   Viewmodel for the connection sidebar entry.
+   View model for the connection sidebar entry.
 controlViewModel
-   Viewmodel for the control tab.
-gcodeFilesViewModel
-   Viewmodel for the files sidebar entry.
+   View model for the control tab.
+filesViewModel
+   View model for the files sidebar entry. Also available under the deprecated name ``gcodeFilesViewModel``.
 firstRunViewModel
-   Viewmodel for the first run dialog.
+   View model for the first run dialog.
 gcodeViewModel
-   Viewmodel for the gcode viewer tab.
+   View model for the gcode viewer tab.
+gcodeFilesViewModel
+   Deprecated in favor of ``filesViewModel``.
 logViewModel
-   Viewmodel for the logfile settings dialog.
+   View model for the logfile settings dialog.
 loginStateViewModel
-   Viewmodel for the current loginstate of the user, very interesting for plugins that need to
+   View model for the current loginstate of the user, very interesting for plugins that need to
    evaluate the current login state or information about the current user, e.g. associated roles.
 navigationViewModel
-   Viewmodel for the navigation bar.
+   View model for the navigation bar.
 printerProfilesViewModel
-   Viewmodel for the printer profiles settings dialog.
+   View model for the printer profiles settings dialog.
 printerStateViewModel
-   Viewmodel for the current printer state, very intersting for plugins that need
+   View model for the current printer state, very interesting for plugins that need
    to know information about the current print job, if the printer is connected, operational etc.
 settingsViewModel
-   Viewmodel for the settings dialog, also holds all settings to be used by other viewmodels, hence
+   View model for the settings dialog, also holds all settings to be used by other view models, hence
    very interesting for plugins as well.
 slicingViewModel
-   Viewmodel for the slicing dialog.
+   View model for the slicing dialog.
 temperatureViewModel
-   Viewmodel for the temperature tab, also holds current temperature information which
+   View model for the temperature tab, also holds current temperature information which
    might be interesting for plugins.
 terminalViewModel
-   Viewmodel for the terminal tab, also holds terminal log entries.
+   View model for the terminal tab, also holds terminal log entries.
 timelapseViewModel
-   Viewmodel for the timelapse tab.
+   View model for the timelapse tab.
 usersViewModel
-   Viewmodel for the user management in the settings dialog.
+   View model for the user management in the settings dialog.
 userSettingsViewModel
-   Viewmodel for settings associated with the currently logged in user, used for
+   View model for settings associated with the currently logged in user, used for
    the user settings dialog.
+wizardViewModel
+   View model for the wizard dialog.
 
-Additionally each plugin's viewmodel will be added to the viewmodel map used for resolving dependencies as well, using
-the viewmodel's class name with a lower case first character as identifier (so "MyCustomViewModel" will be registered
-for dependency injection as "myCustomViewModel").
+Each plugin's view model will be added to the view model map used for resolving dependencies as well, using
+the view model's class name with a lower case first character as identifier (so "MyCustomViewModel" will be registered
+for dependency injection as "myCustomViewModel") or an alternative name provided in the ``name`` property of the
+config object, plus any configured ``additionalNames``.
 
 .. _sec-plugins-viewmodels-callbacks:
 
 Callbacks
 ---------
 
-OctoPrint's web application will call several callbacks on all registered viewmodels, provided they implement them.
+OctoPrint's web application will call several callbacks on all registered view models, provided they implement them.
 Those are listed below:
 
 onStartup()
-   Called when the first initialization has been done: All viewmodels are constructed and hence their dependencies
+   Called when the first initialization has been done: All view models are constructed and hence their dependencies
    resolved, no bindings have been done yet.
 
 onBeforeBinding()
-   Called per viewmodel before attempting to bind it to its binding targets.
+   Called per view model before attempting to bind it to its binding targets.
 
 onAfterBinding()
-   Called per viewmodel after binding it to its binding targets.
+   Called per view model after binding it to its binding targets.
 
 onAllBound(allViewModels)
-   Called after all viewmodels have been bound, with the list of all viewmodels as the single parameter.
+   Called after all view models have been bound, with the list of all view models as the single parameter.
 
 onStartupComplete()
    Called after the startup of the web app has been completed.
@@ -161,39 +220,64 @@ onUserLoggedIn(user)
 onUserLoggedOut()
    Called when a user gets logged out of the web app.
 
-onTabChange(current, previous)
+onTabChange(next, current)
    Called before the main tab view switches to a new tab, so `before` the new tab becomes visible. Called with the
-   current and previous tab's hash (e.g. ``#control``).
+   next (changed to) and current (still visible) tab's hash (e.g. ``#control``). Note that ``current`` might be undefined
+   on the very first call.
 
-onAfterTabChange
+onAfterTabChange(current, previous)
    Called after the main tab view switches to a new tab, so `after` the new tab becomes visible. Called with the
    current and previous tab's hash (e.g. ``#control``).
 
-getAdditionalControls
-   Your viewmodel may return additional custom control definitions for inclusion on the "Control" tab of OctoPrint's
-   interface. See :ref:`the custom control feature<sec-features-custom_controls>`. 
+getAdditionalControls()
+   Your view model may return additional custom control definitions for inclusion on the "Control" tab of OctoPrint's
+   interface. See :ref:`the custom control feature<sec-features-custom_controls>`.
 
-onSettingsShown
+onSettingsShown()
    Called when the settings dialog is shown.
 
-onSettingsHidden
+onSettingsHidden()
    Called when the settings dialog is hidden.
 
-onSettingsBeforeSave
-   Called just before the settings viewmodel is sent to the server. This is useful, for example, if your plugin
-   needs to compute persisted settings from a custom viewmodel.
+onSettingsBeforeSave()
+   Called just before the settings view model is sent to the server. This is useful, for example, if your plugin
+   needs to compute persisted settings from a custom view model.
 
-onUserSettingsShown
+onUserSettingsShown()
    Called when the user settings dialog is shown.
 
-onUserSettingsHidden
+onUserSettingsHidden()
    Called when the user settings dialog is hidden.
 
-In order to hook into any of those callbacks, just have your viewmodel define a function named accordingly, e.g.
-to get called after all viewmodels have been bound during application startup, implement a function ``onAllBound``
-on your viewmodel, taking a list of all bound viewmodels:
+onWizardDetails(response)
+   Called with the response from the wizard detail API call initiated before opening the wizard dialog. Will contain
+   the data from all :class:`~octoprint.plugin.WizardPlugin` implementations returned by their :meth:`~octoprint.plugin.WizardPlugin.get_wizard_details`
+   method, mapped by the plugin identifier.
+
+onBeforeWizardTabChange(next, current)
+   Called before the wizard tab/step is changed, with the ids of the next (changed to) and the current (still visible) tab
+   as parameters. Return false in order to prevent the tab change, e.g. if the wizard step is mandatory and not yet
+   completed by the user. Take a look at the "Core Wizard" plugin bundled with OctoPrint and the ACL wizard step in
+   particular for an example on how to use this.
+
+onAfterWizardTabChange(current)
+   Called after the wizard tab/step is changed, with the id of the current tab as parameter. The id of the previous
+   tab is sadly not available currently.
+
+onBeforeWizardFinish()
+   Called before executing the finishing of the wizard. Return false here to stop the actual finish, e.g. if some step is
+   still incomplete.
+
+onWizardFinish()
+   Called after executing the finishing of the wizard and before closing the dialog. Return ``reload`` here in order to
+   instruct OctoPrint to reload the UI after the wizard closes.
+
+In order to hook into any of those callbacks, just have your view model define a function named accordingly, e.g.
+to get called after all view models have been bound during application startup, implement a function ``onAllBound``
+on your view model, taking a list of all bound view models:
 
 .. code-block:: javascript
+   :emphasize-lines: 7-8
 
    $(function() {
        function MyCustomViewModel(parameters) {
@@ -208,17 +292,17 @@ on your viewmodel, taking a list of all bound viewmodels:
            // ...
        }
 
-       OCTOPRINT_VIEWMODELS.push([
-           MyCustomViewModel,
-           ["loginStateViewModel"],
-           ["#some_div", "#some_other_div"]
-       ]);
+       OCTOPRINT_VIEWMODELS.push({
+           construct: MyCustomViewModel,
+           dependencies: ["loginStateViewModel"],
+           elements: ["#some_div", "#some_other_div"]
+       });
    })
 
 .. seealso::
 
    `OctoPrint's core viewmodels <https://github.com/foosel/OctoPrint/tree/devel/src/octoprint/static/js/app/viewmodels>`_
-      OctoPrint's own viewmodels use the same mechanisms for interacting with each other and the web application as
-      plugins. Their sourcecode is therefore a good point of reference on how to achieve certain things.
+      OctoPrint's own view models use the same mechanisms for interacting with each other and the web application as
+      plugins. Their source code is therefore a good point of reference on how to achieve certain things.
    `KnockoutJS documentation <http://knockoutjs.com/documentation/introduction.html>`_
       OctoPrint makes heavy use of KnockoutJS for building up its web app.

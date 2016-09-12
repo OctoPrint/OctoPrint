@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -44,7 +44,7 @@ def apiKeyRequestHandler():
 		# ui api key => continue regular request processing
 		return
 
-	if not settings().get(["api", "enabled"]):
+	if not settings().getBoolean(["api", "enabled"]):
 		# api disabled => 401
 		return _flask.make_response("API disabled", 401)
 
@@ -80,6 +80,18 @@ def corsResponseHandler(resp):
 	return resp
 
 
+def noCachingResponseHandler(resp):
+	"""
+	``after_request`` handler for blueprints which shall set no caching headers
+	on their responses.
+
+	Sets ``Cache-Control``, ``Pragma`` and ``Expires`` headers accordingly
+	to prevent all client side caching from taking place.
+	"""
+
+	return flask.add_non_caching_response_headers(resp)
+
+
 def optionsAllowOrigin(request):
 	"""
 	Shortcut for request handling for CORS OPTIONS requests to set CORS headers.
@@ -104,11 +116,11 @@ def optionsAllowOrigin(request):
 
 
 def get_user_for_apikey(apikey):
-	if settings().get(["api", "enabled"]) and apikey is not None:
+	if settings().getBoolean(["api", "enabled"]) and apikey is not None:
 		if apikey == settings().get(["api", "key"]) or octoprint.server.appSessionManager.validate(apikey):
 			# master key or an app session key was used
 			return ApiUser()
-		elif octoprint.server.userManager is not None:
+		elif octoprint.server.userManager.enabled:
 			# user key might have been used
 			return octoprint.server.userManager.findUser(apikey=apikey)
 	return None
@@ -131,90 +143,15 @@ def get_api_key(request):
 	return None
 
 
-#~~ reverse proxy compatible WSGI middleware
+def get_plugin_hash():
+	from octoprint.plugin import plugin_manager
 
+	plugin_signature = lambda impl: "{}:{}".format(impl._identifier, impl._plugin_version)
+	template_plugins = map(plugin_signature, plugin_manager().get_implementations(octoprint.plugin.TemplatePlugin))
+	asset_plugins = map(plugin_signature, plugin_manager().get_implementations(octoprint.plugin.AssetPlugin))
+	ui_plugins = sorted(set(template_plugins + asset_plugins))
 
-class ReverseProxied(object):
-	"""
-	Wrap the application in this middleware and configure the
-	front-end server to add these headers, to let you quietly bind
-	this to a URL other than / and to an HTTP scheme that is
-	different than what is used locally.
-
-	In nginx:
-
-	.. code-block:: none
-
-	   location /myprefix {
-	       proxy_pass http://192.168.0.1:5001;
-	       proxy_set_header Host $host;
-	       proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-	       proxy_set_header X-Scheme $scheme;
-	       proxy_set_header X-Script-Name /myprefix;
-	   }
-
-	Alternatively define prefix and scheme via config.yaml:
-
-	.. code-block:: yaml
-
-	   server:
-	     baseUrl: /myprefix
-	     scheme: http
-
-	:param app: the WSGI application
-	:param header_script_name: the HTTP header in the wsgi environment from which to determine the prefix
-	:param header_scheme: the HTTP header in the wsgi environment from which to determine the scheme
-	:param header_host: the HTTP header in the wsgi environment from which to determine the host for which to generate external URLs
-	:param base_url: the prefix to use as fallback if headers are not set
-	:param scheme: the scheme to use as fallback if headers are not set
-	:param host: the host to use as fallback if headers are not set
-	"""
-
-	def __init__(self, app, header_prefix="x-script-name", header_scheme="x-scheme", header_host="x-forwarded-host", base_url="", scheme="", host=""):
-		self.app = app
-
-		# headers for prefix & scheme & host, converted to conform to WSGI format
-		to_wsgi_format = lambda header: "HTTP_" + header.upper().replace("-", "_")
-		self._header_prefix = to_wsgi_format(header_prefix)
-		self._header_scheme = to_wsgi_format(header_scheme)
-		self._header_host = to_wsgi_format(header_host)
-
-		# fallback prefix & scheme & host from config
-		self._fallback_prefix = base_url
-		self._fallback_scheme = scheme
-		self._fallback_host = host
-
-	def __call__(self, environ, start_response):
-		# determine prefix
-		prefix = environ.get(self._header_prefix, "")
-		if not prefix:
-			prefix = self._fallback_prefix
-
-		# rewrite SCRIPT_NAME and if necessary also PATH_INFO based on prefix
-		if prefix:
-			environ["SCRIPT_NAME"] = prefix
-			path_info = environ["PATH_INFO"]
-			if path_info.startswith(prefix):
-				environ["PATH_INFO"] = path_info[len(prefix):]
-
-		# determine scheme
-		scheme = environ.get(self._header_scheme, "")
-		if not scheme:
-			scheme = self._fallback_scheme
-
-		# rewrite wsgi.url_scheme based on scheme
-		if scheme:
-			environ["wsgi.url_scheme"] = scheme
-
-		# determine host
-		host = environ.get(self._header_host, "")
-		if not host:
-			host = self._fallback_host
-
-		# rewrite host header based on host
-		if host:
-			environ["HTTP_HOST"] = host
-
-		# call wrapped app with rewritten environment
-		return self.app(environ, start_response)
-
+	import hashlib
+	plugin_hash = hashlib.sha1()
+	plugin_hash.update(",".join(ui_plugins))
+	return plugin_hash.hexdigest()

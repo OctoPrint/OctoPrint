@@ -9,7 +9,7 @@
     <div class="control-group">
         <div class="controls">
             <label class="checkbox">
-                <input type="checkbox" data-bind="checked: feature_gcodeViewer" id="settings-featureGcodeViewer"> {{ _('Enable GCode Visualizer') }}
+                <input type="checkbox" data-bind="checked: feature_modelSizeDetection" id="settings-modelSizeDetection"> {{ _('Enable model size detection and warn if model exceeds print bed') }} <span class="label label-info">{{ _('Beta') }}</span>
             </label>
         </div>
     </div>
@@ -37,6 +37,13 @@
     <div class="control-group">
         <div class="controls">
             <label class="checkbox">
+                <input type="checkbox" data-bind="checked: feature_sdRelativePath" id="settings-sdRelativePath"> {{ _('Select SD files by relative path') }} <span class="label">{{ _('RepRap Firmware') }}</span>
+            </label>
+        </div>
+    </div>
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
                 <input type="checkbox" data-bind="checked: feature_sdAlwaysAvailable" id="settings-featureSdAlwaysAvailable"> {{ _('Always assume SD card is present') }} <span class="label">{{ _('Repetier') }}</span>
             </label>
         </div>
@@ -44,7 +51,7 @@
     <div class="control-group">
         <div class="controls">
             <label class="checkbox">
-                <input type="checkbox" data-bind="checked: feature_alwaysSendChecksum" id="settings-featureAlwaysSendChecksum"> {{ _('Send a checksum with <strong>every</strong> command') }}  <span class="label">{{ _('Repetier') }}</span>
+                <input type="checkbox" data-bind="checked: feature_ignoreIdenticalResends" id="settings-ignoreIdenticalResends"> {{ _('Ignore consecutive resend requests for the same line') }} <span class="label">{{ _('Repetier') }}</span>
             </label>
         </div>
     </div>
@@ -63,9 +70,16 @@
         </div>
     </div>
     <div class="control-group">
+        <label class="control-label">{{ _('Send a checksum with the command')}}</label>
         <div class="controls">
-            <label class="checkbox">
-                <input type="checkbox" data-bind="checked: feature_swallowOkAfterResend" id="settings-swallowOkAfterResend"> {{ _('Swallow the first "ok" after a resend response') }}
+            <label class="radio">
+                <input type="radio" name="sendChecksumGroup" value="print" data-bind="checked: feature_sendChecksum" id="settings-featureSendChecksumPrint"> {{ _('When printing') }}
+            </label>
+            <label class="radio">
+                <input type="radio" name="sendChecksumGroup" value="always" data-bind="checked: feature_sendChecksum" id="settings-featureSendChecksumAlways"> {{ _('Always') }}  <span class="label">{{ _('Repetier') }}</span>
+            </label>
+            <label class="radio">
+                <input type="radio" name="sendChecksumGroup" value="never" data-bind="checked: feature_sendChecksum" id="settings-featureSendChecksumNever"> {{ _('Never') }}
             </label>
         </div>
     </div>

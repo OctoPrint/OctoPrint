@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -18,6 +18,11 @@ from .analysis import QueueEntry, AnalysisQueue
 from .storage import LocalFileStorage
 from .util import AbstractFileWrapper, StreamWrapper, DiskFileWrapper
 
+from collections import namedtuple
+
+ContentTypeMapping = namedtuple("ContentTypeMapping", "extensions, content_type")
+ContentTypeDetector = namedtuple("ContentTypeDetector", "extensions, detector")
+
 extensions = dict(
 )
 
@@ -25,11 +30,11 @@ def full_extension_tree():
 	result = dict(
 		# extensions for 3d model files
 		model=dict(
-			stl=["stl"]
+			stl=ContentTypeMapping(["stl"], "application/sla")
 		),
 		# extensions for printable machine code
 		machinecode=dict(
-			gcode=["gcode", "gco", "g"]
+			gcode=ContentTypeMapping(["gcode", "gco", "g"], "text/plain")
 		)
 	)
 
@@ -68,8 +73,12 @@ def get_all_extensions(subtree=None):
 		for key, value in subtree.items():
 			if isinstance(value, dict):
 				result += get_all_extensions(value)
+			elif isinstance(value, (ContentTypeMapping, ContentTypeDetector)):
+				result += value.extensions
 			elif isinstance(value, (list, tuple)):
 				result += value
+	elif isinstance(subtree, (ContentTypeMapping, ContentTypeDetector)):
+		result = subtree.extensions
 	elif isinstance(subtree, (list, tuple)):
 		result = subtree
 	return result
@@ -79,12 +88,31 @@ def get_path_for_extension(extension, subtree=None):
 		subtree = full_extension_tree()
 
 	for key, value in subtree.items():
-		if isinstance(value, (list, tuple)) and extension in value:
+		if isinstance(value, (ContentTypeMapping, ContentTypeDetector)) and extension in value.extensions:
+			return [key]
+		elif isinstance(value, (list, tuple)) and extension in value:
 			return [key]
 		elif isinstance(value, dict):
 			path = get_path_for_extension(extension, subtree=value)
 			if path:
 				return [key] + path
+
+	return None
+
+def get_content_type_mapping_for_extension(extension, subtree=None):
+	if not subtree:
+		subtree = full_extension_tree()
+
+	for key, value in subtree.items():
+		content_extension_matches = isinstance(value, (ContentTypeMapping, ContentTypeDetector)) and extension in value. extensions
+		list_extension_matches = isinstance(value, (list, tuple)) and extension in value
+
+		if content_extension_matches or list_extension_matches:
+			return value
+		elif isinstance(value, dict):
+			result = get_content_type_mapping_for_extension(extension, subtree=value)
+			if result is not None:
+				return result
 
 	return None
 
@@ -105,6 +133,19 @@ def get_file_type(filename):
 	_, extension = os.path.splitext(filename)
 	extension = extension[1:].lower()
 	return get_path_for_extension(extension)
+
+def get_mime_type(filename):
+	_, extension = os.path.splitext(filename)
+	extension = extension[1:].lower()
+	mapping = get_content_type_mapping_for_extension(extension)
+	if mapping:
+		if isinstance(mapping, ContentTypeMapping) and mapping.content_type is not None:
+			return mapping.content_type
+		elif isinstance(mapping, ContentTypeDetector) and callable(mapping.detector):
+			result = mapping.detector(filename)
+			if result is not None:
+				return result
+	return "application/octet-stream"
 
 
 class NoSuchStorage(Exception):
@@ -134,6 +175,9 @@ class FileManager(object):
 		self._progress_plugins = []
 		self._preprocessor_hooks = dict()
 
+		import octoprint.settings
+		self._recovery_file = os.path.join(octoprint.settings.settings().getBaseFolder("data"), "print_recovery_data.yaml")
+
 	def initialize(self):
 		self.reload_plugins()
 
@@ -155,17 +199,22 @@ class FileManager(object):
 		self._slicing_progress_callbacks.append(callback)
 
 	def unregister_slicingprogress_callback(self, callback):
-		self._slicing_progress_callbacks.remove(callback)
+		try:
+			self._slicing_progress_callbacks.remove(callback)
+		except ValueError:
+			# callback was not registered
+			pass
 
 	def _determine_analysis_backlog(self, storage_type, storage_manager):
 		counter = 0
 		for entry, path, printer_profile in storage_manager.analysis_backlog:
 			file_type = get_file_type(path)[-1]
+			file_name = storage_manager.split_path(path)
 
 			# we'll use the default printer profile for the backlog since we don't know better
-			queue_entry = QueueEntry(entry, file_type, storage_type, path, self._printer_profile_manager.get_default())
-			self._analysis_queue.enqueue(queue_entry, high_priority=False)
-			counter += 1
+			queue_entry = QueueEntry(file_name, entry, file_type, storage_type, path, self._printer_profile_manager.get_default())
+			if self._analysis_queue.enqueue(queue_entry, high_priority=False):
+				counter += 1
 		self._logger.info("Added {counter} items from storage type \"{storage_type}\" to analysis queue".format(**locals()))
 
 	def add_storage(self, storage_type, storage_manager):
@@ -196,9 +245,16 @@ class FileManager(object):
 		def stlProcessed(source_location, source_path, tmp_path, dest_location, dest_path, start_time, printer_profile_id, callback, callback_args, _error=None, _cancelled=False, _analysis=None):
 			try:
 				if _error:
-					eventManager().fire(Events.SLICING_FAILED, {"stl": source_path, "gcode": dest_path, "reason": _error})
+					eventManager().fire(Events.SLICING_FAILED, dict(stl=source_path,
+																	stl_location=source_location,
+																	gcode=dest_path,
+																	gcode_location=dest_location,
+																	reason=_error))
 				elif _cancelled:
-					eventManager().fire(Events.SLICING_CANCELLED, {"stl": source_path, "gcode": dest_path})
+					eventManager().fire(Events.SLICING_CANCELLED, dict(stl=source_path,
+																	   stl_location=source_location,
+																	   gcode=dest_path,
+																	   gcode_location=dest_location))
 				else:
 					source_meta = self.get_metadata(source_location, source_path)
 					hash = source_meta["hash"]
@@ -214,7 +270,11 @@ class FileManager(object):
 					self.add_file(dest_location, dest_path, file_obj, links=links, allow_overwrite=True, printer_profile=printer_profile, analysis=_analysis)
 
 					end_time = time.time()
-					eventManager().fire(Events.SLICING_DONE, {"stl": source_path, "gcode": dest_path, "time": end_time - start_time})
+					eventManager().fire(Events.SLICING_DONE, dict(stl=source_path,
+																  stl_location=source_location,
+																  gcode=dest_path,
+																  gcode_location=dest_location,
+																  time=end_time - start_time))
 
 					if callback is not None:
 						if callback_args is None:
@@ -236,7 +296,11 @@ class FileManager(object):
 
 		import time
 		start_time = time.time()
-		eventManager().fire(Events.SLICING_STARTED, {"stl": source_path, "gcode": dest_path, "progressAvailable": slicer.get_slicer_properties()["progress_report"] if slicer else False})
+		eventManager().fire(Events.SLICING_STARTED, {"stl": source_path,
+		                                             "stl_location": source_location,
+		                                             "gcode": dest_path,
+		                                             "gcode_location": dest_location,
+		                                             "progressAvailable": slicer.get_slicer_properties().get("progress_report", False) if slicer else False})
 
 		import tempfile
 		f = tempfile.NamedTemporaryFile(suffix=".gco", delete=False)
@@ -295,8 +359,14 @@ class FileManager(object):
 	def get_busy_files(self):
 		return self._slicing_jobs.keys()
 
+	def file_in_path(self, destination, path, file):
+		return self._storage(destination).file_in_path(path, file)
+
 	def file_exists(self, destination, path):
 		return self._storage(destination).file_exists(path)
+
+	def folder_exists(self, destination, path):
+		return self._storage(destination).folder_exists(path)
 
 	def list_files(self, destinations=None, path=None, filter=None, recursive=None):
 		if not destinations:
@@ -314,16 +384,22 @@ class FileManager(object):
 			printer_profile = self._printer_profile_manager.get_current_or_default()
 
 		for hook in self._preprocessor_hooks.values():
-			hook_file_object = hook(path, file_object, links=links, printer_profile=printer_profile, allow_overwrite=allow_overwrite)
+			try:
+				hook_file_object = hook(path, file_object, links=links, printer_profile=printer_profile, allow_overwrite=allow_overwrite)
+			except:
+				self._logger.exception("Error when calling preprocessor hook {}, ignoring".format(hook))
+				continue
+
 			if hook_file_object is not None:
 				file_object = hook_file_object
 		file_path = self._storage(destination).add_file(path, file_object, links=links, printer_profile=printer_profile, allow_overwrite=allow_overwrite)
 		absolute_path = self._storage(destination).path_on_disk(file_path)
+		_, file_name = self._storage(destination).split_path(file_path)
 
 		if analysis is None:
 			file_type = get_file_type(absolute_path)
 			if file_type:
-				queue_entry = QueueEntry(file_path, file_type[-1], destination, absolute_path, printer_profile)
+				queue_entry = QueueEntry(file_name, file_path, file_type[-1], destination, absolute_path, printer_profile)
 				self._analysis_queue.enqueue(queue_entry, high_priority=True)
 		else:
 			self._add_analysis_result(destination, path, analysis)
@@ -335,6 +411,14 @@ class FileManager(object):
 		self._storage(destination).remove_file(path)
 		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
 
+	def copy_file(self, destination, source, dst):
+		self._storage(destination).copy_file(source, dst)
+		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
+
+	def move_file(self, destination, source, dst):
+		self._storage(destination).move_file(source, dst)
+		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
+
 	def add_folder(self, destination, path, ignore_existing=True):
 		folder_path = self._storage(destination).add_folder(path, ignore_existing=ignore_existing)
 		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
@@ -342,6 +426,14 @@ class FileManager(object):
 
 	def remove_folder(self, destination, path, recursive=True):
 		self._storage(destination).remove_folder(path, recursive=recursive)
+		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
+
+	def copy_folder(self, destination, source, dst):
+		self._storage(destination).copy_folder(source, dst)
+		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
+
+	def move_folder(self, destination, source, dst):
+		self._storage(destination).move_folder(source, dst)
 		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
 
 	def get_metadata(self, destination, path):
@@ -363,6 +455,43 @@ class FileManager(object):
 		except NoSuchStorage:
 			# if there's no storage configured where to log the print, we'll just not log it
 			pass
+
+	def save_recovery_data(self, origin, path, pos):
+		import time
+		import yaml
+		from octoprint.util import atomic_write
+
+		data = dict(origin=origin,
+		            path=self.path_in_storage(origin, path),
+		            pos=pos,
+		            date=time.time())
+		try:
+			with atomic_write(self._recovery_file) as f:
+				yaml.safe_dump(data, stream=f, default_flow_style=False, indent="  ", allow_unicode=True)
+		except:
+			self._logger.exception("Could not write recovery data to file {}".format(self._recovery_file))
+
+	def delete_recovery_data(self):
+		if not os.path.isfile(self._recovery_file):
+			return
+
+		try:
+			os.remove(self._recovery_file)
+		except:
+			self._logger.exception("Error deleting recovery data file {}".format(self._recovery_file))
+
+	def get_recovery_data(self):
+		if not os.path.isfile(self._recovery_file):
+			return None
+
+		import yaml
+		try:
+			with open(self._recovery_file) as f:
+				data = yaml.safe_load(f)
+			return data
+		except:
+			self._logger.exception("Could not read recovery data from file {}".format(self._recovery_file))
+			self.delete_recovery_data()
 
 	def set_additional_metadata(self, destination, path, key, data, overwrite=False, merge=False):
 		self._storage(destination).set_additional_metadata(path, key, data, overwrite=overwrite, merge=merge)
@@ -401,7 +530,7 @@ class FileManager(object):
 			return
 
 		storage_manager = self._storage_managers[destination]
-		storage_manager.set_additional_metadata(path, "analysis", result)
+		storage_manager.set_additional_metadata(path, "analysis", result, overwrite=True)
 
 	def _on_analysis_finished(self, entry, result):
 		self._add_analysis_result(entry.location, entry.path, result)

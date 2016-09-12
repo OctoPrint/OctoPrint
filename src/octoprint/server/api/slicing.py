@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -14,11 +14,13 @@ from octoprint.server.api import api, NO_CONTENT
 
 from octoprint.settings import settings as s, valid_boolean_trues
 
-from octoprint.slicing import UnknownSlicer, SlicerNotConfigured, ProfileAlreadyExists, UnknownProfile
+from octoprint.slicing import UnknownSlicer, SlicerNotConfigured, ProfileAlreadyExists, UnknownProfile, CouldNotDeleteProfile
 
 
 @api.route("/slicing", methods=["GET"])
 def slicingListAll():
+	from octoprint.filemanager import get_extensions
+
 	default_slicer = s().get(["slicing", "defaultSlicer"])
 
 	if "configured" in request.values and request.values["configured"] in valid_boolean_trues:
@@ -30,12 +32,21 @@ def slicingListAll():
 	for slicer in slicers:
 		try:
 			slicer_impl = slicingManager.get_slicer(slicer, require_configured=False)
+
+			extensions = set()
+			for source_file_type in slicer_impl.get_slicer_properties().get("source_file_types", ["model"]):
+				extensions = extensions.union(get_extensions(source_file_type))
+
 			result[slicer] = dict(
 				key=slicer,
 				displayName=slicer_impl.get_slicer_properties()["name"],
 				default=default_slicer == slicer,
-				configured = slicer_impl.is_slicer_configured(),
-				profiles=_getSlicingProfilesData(slicer)
+				configured=slicer_impl.is_slicer_configured(),
+				profiles=_getSlicingProfilesData(slicer),
+				extensions=dict(
+					source=list(extensions),
+					destination=slicer_impl.get_slicer_properties().get("destination_extensions", ["gco", "gcode", "g"])
+				)
 			)
 		except (UnknownSlicer, SlicerNotConfigured):
 			# this should never happen
@@ -127,17 +138,16 @@ def slicingPatchSlicerProfile(slicer, name):
 	if "description" in json_data:
 		description = json_data["description"]
 
+	saved_profile = slicingManager.save_profile(slicer, name, profile,
+	                                            allow_overwrite=True,
+	                                            overrides=data,
+	                                            display_name=display_name,
+	                                            description=description)
+
 	from octoprint.server.api import valid_boolean_trues
 	if "default" in json_data and json_data["default"] in valid_boolean_trues:
-		default_profiles = s().get(["slicing", "defaultProfiles"])
-		if not default_profiles:
-			default_profiles = dict()
-		default_profiles[slicer] = name
-		s().set(["slicing", "defaultProfiles"], default_profiles)
-		s().save(force=True)
+		slicingManager.set_default_profile(slicer, name, require_exists=False)
 
-	saved_profile = slicingManager.save_profile(slicer, name, profile,
-	                                            allow_overwrite=True, overrides=data, display_name=display_name, description=description)
 	return jsonify(_getSlicingProfileData(slicer, name, saved_profile))
 
 @api.route("/slicing/<string:slicer>/profiles/<string:name>", methods=["DELETE"])
@@ -147,6 +157,8 @@ def slicingDelSlicerProfile(slicer, name):
 		slicingManager.delete_profile(slicer, name)
 	except UnknownSlicer:
 		return make_response("Unknown slicer {slicer}".format(**locals()), 404)
+	except CouldNotDeleteProfile as e:
+		return make_response("Could not delete profile {profile} for slicer {slicer}: {cause}".format(profile=name, slicer=slicer, cause=str(e.cause)), 500)
 
 	return NO_CONTENT
 

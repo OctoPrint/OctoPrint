@@ -13,7 +13,7 @@ registered plugin types.
    :members:
 """
 
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -22,7 +22,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import os
 import logging
 
-from octoprint.settings import settings
+from octoprint.settings import settings as s
 from octoprint.plugin.core import (PluginInfo, PluginManager, Plugin)
 from octoprint.plugin.types import *
 
@@ -44,7 +44,7 @@ def _validate_plugin(phase, plugin_info):
 			setattr(plugin_info.instance, PluginInfo.attr_hooks, hooks)
 
 def plugin_manager(init=False, plugin_folders=None, plugin_types=None, plugin_entry_points=None, plugin_disabled_list=None,
-                   plugin_restart_needing_hooks=None, plugin_obsolete_hooks=None, plugin_validators=None):
+                   plugin_restart_needing_hooks=None, plugin_obsolete_hooks=None, plugin_validators=None, settings=None):
 	"""
 	Factory method for initially constructing and consecutively retrieving the :class:`~octoprint.plugin.core.PluginManager`
 	singleton.
@@ -87,9 +87,12 @@ def plugin_manager(init=False, plugin_folders=None, plugin_types=None, plugin_en
 
 	else:
 		if init:
+			if settings is None:
+				settings = s()
+
 			if plugin_folders is None:
 				plugin_folders = (
-					settings().getBaseFolder("plugins"),
+					settings.getBaseFolder("plugins"),
 					(os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "plugins")), True)
 				)
 			if plugin_types is None:
@@ -103,11 +106,13 @@ def plugin_manager(init=False, plugin_folders=None, plugin_types=None, plugin_en
 				                EventHandlerPlugin,
 				                SlicerPlugin,
 				                AppPlugin,
-				                ProgressPlugin]
+				                ProgressPlugin,
+				                WizardPlugin,
+				                UiPlugin]
 			if plugin_entry_points is None:
 				plugin_entry_points = "octoprint.plugin"
 			if plugin_disabled_list is None:
-				plugin_disabled_list = settings().get(["plugins", "_disabled"])
+				plugin_disabled_list = settings.get(["plugins", "_disabled"])
 			if plugin_restart_needing_hooks is None:
 				plugin_restart_needing_hooks = [
 					"octoprint.server.http"
@@ -134,7 +139,7 @@ def plugin_manager(init=False, plugin_folders=None, plugin_types=None, plugin_en
 	return _instance
 
 
-def plugin_settings(plugin_key, defaults=None, get_preprocessors=None, set_preprocessors=None):
+def plugin_settings(plugin_key, defaults=None, get_preprocessors=None, set_preprocessors=None, settings=None):
 	"""
 	Factory method for creating a :class:`PluginSettings` instance.
 
@@ -143,15 +148,48 @@ def plugin_settings(plugin_key, defaults=None, get_preprocessors=None, set_prepr
 	    defaults (dict): The default settings for the plugin.
 	    get_preprocessors (dict): The getter preprocessors for the plugin.
 	    set_preprocessors (dict): The setter preprocessors for the plugin.
+	    settings (octoprint.settings.Settings): The settings instance to use.
 
 	Returns:
 	    PluginSettings: A fully initialized :class:`PluginSettings` instance to be used to access the plugin's
 	        settings
 	"""
-	return PluginSettings(settings(), plugin_key, defaults=defaults, get_preprocessors=get_preprocessors, set_preprocessors=set_preprocessors)
+	if settings is None:
+		settings = s()
+	return PluginSettings(settings, plugin_key, defaults=defaults,
+	                      get_preprocessors=get_preprocessors,
+	                      set_preprocessors=set_preprocessors)
 
 
-def call_plugin(types, method, args=None, kwargs=None, callback=None, error_callback=None):
+def plugin_settings_for_settings_plugin(plugin_key, instance, settings=None):
+	"""
+	Factory method for creating a :class:`PluginSettings` instance for a given :class:`SettingsPlugin` instance.
+
+	Will return `None` if the provided `instance` is not a :class:`SettingsPlugin` instance.
+
+	Arguments:
+	    plugin_key (string): The plugin identifier for which to create the settings instance.
+	    implementation (octoprint.plugin.SettingsPlugin): The :class:`SettingsPlugin` instance.
+	    settings (octoprint.settings.Settings): The settings instance to use. Defaults to the global OctoPrint settings.
+
+	Returns:
+	    PluginSettings or None: A fully initialized :class:`PluginSettings` instance to be used to access the plugin's
+	        settings, or `None` if the provided `instance` was not a class:`SettingsPlugin`
+	"""
+	if not isinstance(instance, SettingsPlugin):
+		return None
+
+	try:
+		defaults = instance.get_settings_defaults()
+		get_preprocessors, set_preprocessors = instance.get_settings_preprocessors()
+	except:
+		logging.getLogger(__name__).exception("Error while retrieving defaults or preprocessors for plugin {}".format(plugin_key))
+		return None
+
+	return plugin_settings(plugin_key, defaults=defaults, get_preprocessors=get_preprocessors, set_preprocessors=set_preprocessors, settings=settings)
+
+
+def call_plugin(types, method, args=None, kwargs=None, callback=None, error_callback=None, sorting_context=None):
 	"""
 	Helper method to invoke the indicated ``method`` on all registered plugin implementations implementing the
 	indicated ``types``. Allows providing method arguments and registering callbacks to call in case of success
@@ -197,7 +235,7 @@ def call_plugin(types, method, args=None, kwargs=None, callback=None, error_call
 	if kwargs is None:
 		kwargs = dict()
 
-	plugins = plugin_manager().get_implementations(*types)
+	plugins = plugin_manager().get_implementations(*types, sorting_context=sorting_context)
 	for plugin in plugins:
 		if hasattr(plugin, method):
 			try:
@@ -293,19 +331,16 @@ class PluginSettings(object):
 		self.set_preprocessors = dict(plugins=dict())
 		self.set_preprocessors["plugins"][plugin_key] = set_preprocessors
 
-		def prefix_path(path):
-			return ['plugins', self.plugin_key] + path
-
 		def prefix_path_in_args(args, index=0):
 			result = []
 			if index == 0:
-				result.append(prefix_path(args[0]))
+				result.append(self._prefix_path(args[0]))
 				result.extend(args[1:])
 			else:
 				args_before = args[:index - 1]
 				args_after = args[index + 1:]
 				result.extend(args_before)
-				result.append(prefix_path(args[index]))
+				result.append(self._prefix_path(args[index]))
 				result.extend(args_after)
 			return result
 
@@ -324,6 +359,7 @@ class PluginSettings(object):
 			return kwargs
 
 		self.access_methods = dict(
+			has        =("has",        prefix_path_in_args, add_getter_kwargs),
 			get        =("get",        prefix_path_in_args, add_getter_kwargs),
 			get_int    =("getInt",     prefix_path_in_args, add_getter_kwargs),
 			get_float  =("getFloat",   prefix_path_in_args, add_getter_kwargs),
@@ -331,7 +367,8 @@ class PluginSettings(object):
 			set        =("set",        prefix_path_in_args, add_setter_kwargs),
 			set_int    =("setInt",     prefix_path_in_args, add_setter_kwargs),
 			set_float  =("setFloat",   prefix_path_in_args, add_setter_kwargs),
-			set_boolean=("setBoolean", prefix_path_in_args, add_setter_kwargs)
+			set_boolean=("setBoolean", prefix_path_in_args, add_setter_kwargs),
+			remove     =("remove",     prefix_path_in_args, lambda x: x)
 		)
 		self.deprecated_access_methods = dict(
 			getInt    ="get_int",
@@ -341,6 +378,17 @@ class PluginSettings(object):
 			setFloat  ="set_float",
 			setBoolean="set_boolean"
 		)
+
+	def _prefix_path(self, path=None):
+		if path is None:
+			path = list()
+		return ['plugins', self.plugin_key] + path
+
+	def global_has(self, path, **kwargs):
+		return self.settings.has(path, **kwargs)
+
+	def global_remove(self, path, **kwargs):
+		return self.settings.remove(path, **kwargs)
 
 	def global_get(self, path, **kwargs):
 		"""
@@ -434,6 +482,24 @@ class PluginSettings(object):
 		if not os.path.isdir(path):
 			os.makedirs(path)
 		return path
+
+	def get_all_data(self, **kwargs):
+		merged = kwargs.get("merged", True)
+		asdict = kwargs.get("asdict", True)
+		defaults = kwargs.get("defaults", self.defaults)
+		preprocessors = kwargs.get("preprocessors", self.get_preprocessors)
+
+		kwargs.update(dict(
+			merged=merged,
+			asdict=asdict,
+			defaults=defaults,
+			preprocessors=preprocessors
+		))
+
+		return self.settings.get(self._prefix_path(), **kwargs)
+
+	def clean_all_data(self):
+		self.settings.remove(self._prefix_path())
 
 	def __getattr__(self, item):
 		all_access_methods = self.access_methods.keys() + self.deprecated_access_methods.keys()

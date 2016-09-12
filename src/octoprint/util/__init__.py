@@ -3,6 +3,7 @@
 This module bundles commonly used utility methods or helper classes that are used in multiple places withing
 OctoPrint's source code.
 """
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -17,7 +18,11 @@ import shutil
 import threading
 from functools import wraps
 import warnings
-
+import contextlib
+try:
+	import queue
+except ImportError:
+	import Queue as queue
 
 logger = logging.getLogger(__name__)
 
@@ -197,32 +202,15 @@ def get_exception_string():
 	return "%s: '%s' @ %s:%s:%d" % (str(sys.exc_info()[0].__name__), str(sys.exc_info()[1]), os.path.basename(locationInfo[0]), locationInfo[2], locationInfo[1])
 
 
+@deprecated("get_free_bytes has been deprecated and will be removed in the future",
+            includedoc="Replaced by `psutil.disk_usage <http://pythonhosted.org/psutil/#psutil.disk_usage>`_.",
+            since="1.2.5")
 def get_free_bytes(path):
-	"""
-	Retrieves the number of free bytes on the partition ``path`` is located at and returns it. Works on both Windows and
-	Unix/Linux.
-
-	Taken from http://stackoverflow.com/a/2372171/2028598
-
-	Arguments:
-	    path (string): The path for which to check the remaining partition space.
-
-	Returns:
-	    int: The amount of bytes still left on the partition.
-	"""
-
-	path = os.path.abspath(path)
-	if sys.platform == "win32":
-		import ctypes
-		freeBytes = ctypes.c_ulonglong(0)
-		ctypes.windll.kernel32.GetDiskFreeSpaceExW(ctypes.c_wchar_p(path), None, None, ctypes.pointer(freeBytes))
-		return freeBytes.value
-	else:
-		st = os.statvfs(path)
-		return st.f_bavail * st.f_frsize
+	import psutil
+	return psutil.disk_usage(path).free
 
 
-def get_dos_filename(origin, existing_filenames=None, extension=None, **kwargs):
+def get_dos_filename(input, existing_filenames=None, extension=None, whitelisted_extensions=None, **kwargs):
 	"""
 	Converts the provided input filename to a 8.3 DOS compatible filename. If ``existing_filenames`` is provided, the
 	conversion result will be guaranteed not to collide with any of the filenames provided thus.
@@ -235,6 +223,8 @@ def get_dos_filename(origin, existing_filenames=None, extension=None, **kwargs):
 	        Optional.
 	    extension (string): The .3 file extension to use for the generated filename. If not provided, the extension of
 	        the provided ``filename`` will simply be truncated to 3 characters.
+	    whitelisted_extensions (list): A list of extensions on ``input`` that will be left as-is instead of
+	        exchanging for ``extension``.
 	    kwargs (dict): Additional keyword arguments to provide to :func:`find_collision_free_name`.
 
 	Returns:
@@ -244,16 +234,43 @@ def get_dos_filename(origin, existing_filenames=None, extension=None, **kwargs):
 
 	Raises:
 	    ValueError: No 8.3 compatible name could be found that doesn't collide with the provided ``existing_filenames``.
+
+	Examples:
+
+	    >>> get_dos_filename("test1234.gco")
+	    u'test1234.gco'
+	    >>> get_dos_filename("test1234.gcode")
+	    u'test1234.gco'
+	    >>> get_dos_filename("test12345.gco")
+	    u'test12~1.gco'
+	    >>> get_dos_filename("test1234.fnord", extension="gco")
+	    u'test1234.gco'
+	    >>> get_dos_filename("auto0.g", extension="gco")
+	    u'auto0.gco'
+	    >>> get_dos_filename("auto0.g", extension="gco", whitelisted_extensions=["g"])
+	    u'auto0.g'
+	    >>> get_dos_filename(None)
+	    >>> get_dos_filename("foo")
+	    u'foo'
 	"""
 
-	if origin is None:
+	if input is None:
 		return None
 
 	if existing_filenames is None:
 		existing_filenames = []
 
-	filename, ext = os.path.splitext(origin)
-	if extension is None:
+	if extension is not None:
+		extension = extension.lower()
+
+	if whitelisted_extensions is None:
+		whitelisted_extensions = []
+
+	filename, ext = os.path.splitext(input)
+
+	ext = ext.lower()
+	ext = ext[1:] if ext.startswith(".") else ext
+	if ext in whitelisted_extensions or extension is None:
 		extension = ext
 
 	return find_collision_free_name(filename, extension, existing_filenames, **kwargs)
@@ -302,9 +319,36 @@ def find_collision_free_name(filename, extension, existing_filenames, max_power=
 
 	Raises:
 	    ValueError: No collision free name could be found.
-	"""
 
-	# TODO unit test!
+	Examples:
+
+	    >>> find_collision_free_name("test1234", "gco", [])
+	    u'test1234.gco'
+	    >>> find_collision_free_name("test1234", "gcode", [])
+	    u'test1234.gco'
+	    >>> find_collision_free_name("test12345", "gco", [])
+	    u'test12~1.gco'
+	    >>> find_collision_free_name("test 123", "gco", [])
+	    u'test_123.gco'
+	    >>> find_collision_free_name("test1234", "g o", [])
+	    u'test1234.g_o'
+	    >>> find_collision_free_name("test12345", "gco", ["test12~1.gco"])
+	    u'test12~2.gco'
+	    >>> many_files = ["test12~{}.gco".format(x) for x in range(10)[1:]]
+	    >>> find_collision_free_name("test12345", "gco", many_files)
+	    u'test1~10.gco'
+	    >>> many_more_files = many_files + ["test1~{}.gco".format(x) for x in range(10, 99)]
+	    >>> find_collision_free_name("test12345", "gco", many_more_files)
+	    u'test1~99.gco'
+	    >>> many_more_files_plus_one = many_more_files + ["test1~99.gco"]
+	    >>> find_collision_free_name("test12345", "gco", many_more_files_plus_one)
+	    Traceback (most recent call last):
+	    ...
+	    ValueError: Can't create a collision free filename
+	    >>> find_collision_free_name("test12345", "gco", many_more_files_plus_one, max_power=3)
+	    u'test~100.gco'
+
+	"""
 
 	if not isinstance(filename, unicode):
 		filename = unicode(filename)
@@ -318,14 +362,21 @@ def find_collision_free_name(filename, extension, existing_filenames, max_power=
 	extension = make_valid(extension)
 	extension = extension[:3] if len(extension) > 3 else extension
 
-	if len(filename) <= 8 and not filename + "." + extension in existing_filenames:
+	full_name_format = u"{filename}.{extension}" if extension else u"{filename}"
+
+	result = full_name_format.format(filename=filename,
+	                                 extension=extension)
+	if len(filename) <= 8 and not result in existing_filenames:
 		# early exit
-		return filename + "." + extension
+		return result
 
 	counter = 1
 	power = 1
+	prefix_format = u"{segment}~{counter}"
 	while counter < (10 ** max_power):
-		result = filename[:(6 - power + 1)] + "~" + str(counter) + "." + extension
+		prefix = prefix_format.format(segment=filename[:(6 - power + 1)], counter=str(counter))
+		result = full_name_format.format(filename=prefix,
+		                                 extension=extension)
 		if result not in existing_filenames:
 			return result
 		counter += 1
@@ -352,9 +403,7 @@ def silent_remove(file):
 def sanitize_ascii(line):
 	if not isinstance(line, basestring):
 		raise ValueError("Expected either str or unicode but got {} instead".format(line.__class__.__name__ if line is not None else None))
-	if isinstance(line, str):
-		line = unicode(line, 'ascii', 'replace')
-	return line.encode('ascii', 'replace').rstrip()
+	return to_unicode(line, encoding="ascii", errors="replace").rstrip()
 
 
 def filter_non_ascii(line):
@@ -369,10 +418,31 @@ def filter_non_ascii(line):
 	"""
 
 	try:
-		unicode(line, 'ascii').encode('ascii')
+		to_str(to_unicode(line, encoding="ascii"), encoding="ascii")
 		return False
 	except ValueError:
 		return True
+
+
+def to_str(s_or_u, encoding="utf-8", errors="strict"):
+	"""Make sure ``s_or_u`` is a str."""
+	if isinstance(s_or_u, unicode):
+		return s_or_u.encode(encoding, errors=errors)
+	else:
+		return s_or_u
+
+
+def to_unicode(s_or_u, encoding="utf-8", errors="strict"):
+	"""Make sure ``s_or_u`` is a unicode string."""
+	if isinstance(s_or_u, str):
+		return s_or_u.decode(encoding, errors=errors)
+	else:
+		return s_or_u
+
+
+def is_running_from_source():
+	root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
+	return os.path.isdir(os.path.join(root, "src")) and os.path.isfile(os.path.join(root, "setup.py"))
 
 
 def dict_merge(a, b):
@@ -380,6 +450,14 @@ def dict_merge(a, b):
 	Recursively deep-merges two dictionaries.
 
 	Taken from https://www.xormedia.com/recursively-merge-dictionaries-in-python/
+
+	Example::
+
+	    >>> a = dict(foo="foo", bar="bar", fnord=dict(a=1))
+	    >>> b = dict(foo="other foo", fnord=dict(b=2, l=["some", "list"]))
+	    >>> expected = dict(foo="other foo", bar="bar", fnord=dict(a=1, b=2, l=["some", "list"]))
+	    >>> dict_merge(a, b) == expected
+	    True
 
 	Arguments:
 	    a (dict): The dictionary to merge ``b`` into
@@ -394,7 +472,7 @@ def dict_merge(a, b):
 	if not isinstance(b, dict):
 		return b
 	result = deepcopy(a)
-	for k, v in b.iteritems():
+	for k, v in b.items():
 		if k in result and isinstance(result[k], dict):
 			result[k] = dict_merge(result[k], v)
 		else:
@@ -402,14 +480,24 @@ def dict_merge(a, b):
 	return result
 
 
-def dict_clean(a, b):
+def dict_sanitize(a, b):
 	"""
-	Recursively deep-cleans ``b`` from ``a``, removing all keys and corresponding values from ``a`` that appear in
-	``b``.
+	Recursively deep-sanitizes ``a`` based on ``b``, removing all keys (and
+	associated values) from ``a`` that do not appear in ``b``.
+
+	Example::
+
+	    >>> a = dict(foo="foo", bar="bar", fnord=dict(a=1, b=2, l=["some", "list"]))
+	    >>> b = dict(foo=None, fnord=dict(a=None, b=None))
+	    >>> expected = dict(foo="foo", fnord=dict(a=1, b=2))
+	    >>> dict_sanitize(a, b) == expected
+	    True
+	    >>> dict_clean(a, b) == expected
+	    True
 
 	Arguments:
-	    a (dict): The dictionary to clean from ``b``.
-	    b (dict): The dictionary to clean ``b`` from.
+	    a (dict): The dictionary to clean against ``b``.
+	    b (dict): The dictionary containing the key structure to clean from ``a``.
 
 	Results:
 	    dict: A new dict based on ``a`` with all keys (and corresponding values) found in ``b`` removed.
@@ -420,25 +508,91 @@ def dict_clean(a, b):
 		return a
 
 	result = deepcopy(a)
-	for k, v in a.iteritems():
+	for k, v in a.items():
 		if not k in b:
 			del result[k]
 		elif isinstance(v, dict):
-			result[k] = dict_clean(v, b[k])
+			result[k] = dict_sanitize(v, b[k])
 		else:
 			result[k] = deepcopy(v)
 	return result
+dict_clean = deprecated("dict_clean has been renamed to dict_sanitize",
+                        includedoc="Replaced by :func:`dict_sanitize`")(dict_sanitize)
 
 
-def dict_contains_keys(a, b):
+def dict_minimal_mergediff(source, target):
 	"""
-	Recursively deep-checks if ``a`` contains all keys found in ``b``.
+	Recursively calculates the minimal dict that would be needed to be deep merged with
+	a in order to produce the same result as deep merging a and b.
 
 	Example::
 
-	    >>> dict_contains_keys(dict(foo="bar", fnord=dict(a=1, b=2, c=3)), dict(foo="some_other_bar", fnord=dict(b=100)))
+	    >>> a = dict(foo=dict(a=1, b=2), bar=dict(c=3, d=4))
+	    >>> b = dict(bar=dict(c=3, d=5), fnord=None)
+	    >>> c = dict_minimal_mergediff(a, b)
+	    >>> c == dict(bar=dict(d=5), fnord=None)
 	    True
-	    >>> dict_contains_keys(dict(foo="bar", fnord=dict(a=1, b=2, c=3)), dict(foo="some_other_bar", fnord=dict(b=100, d=20)))
+	    >>> dict_merge(a, c) == dict_merge(a, b)
+	    True
+
+	Arguments:
+	    source (dict): Source dictionary
+	    target (dict): Dictionary to compare to source dictionary and derive diff for
+
+	Returns:
+	    dict: The minimal dictionary to deep merge on ``source`` to get the same result
+	        as deep merging ``target`` on ``source``.
+	"""
+
+	if not isinstance(source, dict) or not isinstance(target, dict):
+		raise ValueError("source and target must be dictionaries")
+
+	if source == target:
+		# shortcut: if both are equal, we return an empty dict as result
+		return dict()
+
+	from copy import deepcopy
+
+	all_keys = set(source.keys() + target.keys())
+	result = dict()
+	for k in all_keys:
+		if k not in target:
+			# key not contained in b => not contained in result
+			continue
+
+		if k in source:
+			# key is present in both dicts, we have to take a look at the value
+			value_source = source[k]
+			value_target = target[k]
+
+			if value_source != value_target:
+				# we only need to look further if the values are not equal
+
+				if isinstance(value_source, dict) and isinstance(value_target, dict):
+					# both are dicts => deeper down it goes into the rabbit hole
+					result[k] = dict_minimal_mergediff(value_source, value_target)
+				else:
+					# new b wins over old a
+					result[k] = deepcopy(value_target)
+
+		else:
+			# key is new, add it
+			result[k] = deepcopy(target[k])
+	return result
+
+
+def dict_contains_keys(keys, dictionary):
+	"""
+	Recursively deep-checks if ``dictionary`` contains all keys found in ``keys``.
+
+	Example::
+
+	    >>> positive = dict(foo="some_other_bar", fnord=dict(b=100))
+	    >>> negative = dict(foo="some_other_bar", fnord=dict(b=100, d=20))
+	    >>> dictionary = dict(foo="bar", fnord=dict(a=1, b=2, c=3))
+	    >>> dict_contains_keys(positive, dictionary)
+	    True
+	    >>> dict_contains_keys(negative, dictionary)
 	    False
 
 	Arguments:
@@ -449,17 +603,89 @@ def dict_contains_keys(a, b):
 	    boolean: True if all keys found in ``b`` are also present in ``a``, False otherwise.
 	"""
 
-	if not isinstance(a, dict) or not isinstance(b, dict):
+	if not isinstance(keys, dict) or not isinstance(dictionary, dict):
 		return False
 
-	for k, v in a.iteritems():
-		if not k in b:
+	for k, v in keys.items():
+		if not k in dictionary:
 			return False
 		elif isinstance(v, dict):
-			if not dict_contains_keys(v, b[k]):
+			if not dict_contains_keys(v, dictionary[k]):
 				return False
 
 	return True
+
+
+class fallback_dict(dict):
+	def __init__(self, custom, *fallbacks):
+		self.custom = custom
+		self.fallbacks = fallbacks
+
+	def __getitem__(self, item):
+		for dictionary in self._all():
+			if item in dictionary:
+				return dictionary[item]
+		raise KeyError()
+
+	def __setitem__(self, key, value):
+		self.custom[key] = value
+
+	def __delitem__(self, key):
+		for dictionary in self._all():
+			if key in dictionary:
+				del dictionary[key]
+
+	def keys(self):
+		result = set()
+		for dictionary in self._all():
+			result += dictionary.keys()
+		return result
+
+	def _all(self):
+		return [self.custom] + list(self.fallbacks)
+
+
+
+def dict_filter(dictionary, filter_function):
+	"""
+	Filters a dictionary with the provided filter_function
+
+	Example::
+
+	    >>> data = dict(key1="value1", key2="value2", other_key="other_value", foo="bar", bar="foo")
+	    >>> dict_filter(data, lambda k, v: k.startswith("key")) == dict(key1="value1", key2="value2")
+	    True
+	    >>> dict_filter(data, lambda k, v: v.startswith("value")) == dict(key1="value1", key2="value2")
+	    True
+	    >>> dict_filter(data, lambda k, v: k == "foo" or v == "foo") == dict(foo="bar", bar="foo")
+	    True
+	    >>> dict_filter(data, lambda k, v: False) == dict()
+	    True
+	    >>> dict_filter(data, lambda k, v: True) == data
+	    True
+	    >>> dict_filter(None, lambda k, v: True)
+	    Traceback (most recent call last):
+	        ...
+	    AssertionError
+	    >>> dict_filter(data, None)
+	    Traceback (most recent call last):
+	        ...
+	    AssertionError
+
+	Arguments:
+	    dictionary (dict): The dictionary to filter
+	    filter_function (callable): The filter function to apply, called with key and
+	        value of an entry in the dictionary, must return ``True`` for values to
+	        keep and ``False`` for values to strip
+
+	Returns:
+	    dict: A shallow copy of the provided dictionary, stripped of the key-value-pairs
+	        for which the ``filter_function`` returned ``False``
+	"""
+	assert isinstance(dictionary, dict)
+	assert callable(filter_function)
+	return dict((k, v) for k, v in dictionary.items() if filter_function(k, v))
+
 
 class Object(object):
 	pass
@@ -498,6 +724,91 @@ def address_for_client(host, port):
 			return address
 		except:
 			continue
+
+
+@contextlib.contextmanager
+def atomic_write(filename, mode="w+b", prefix="tmp", suffix=""):
+	temp_config = tempfile.NamedTemporaryFile(mode=mode, prefix=prefix, suffix=suffix, delete=False)
+	try:
+		yield temp_config
+	finally:
+		temp_config.close()
+	shutil.move(temp_config.name, filename)
+
+
+@contextlib.contextmanager
+def tempdir(ignore_errors=False, onerror=None, **kwargs):
+	import tempfile
+	import shutil
+
+	dirpath = tempfile.mkdtemp(**kwargs)
+	try:
+		yield dirpath
+	finally:
+		shutil.rmtree(dirpath, ignore_errors=ignore_errors, onerror=onerror)
+
+
+@contextlib.contextmanager
+def temppath(prefix=None, suffix=""):
+	import tempfile
+
+	temp = tempfile.NamedTemporaryFile(prefix=prefix if prefix is not None else tempfile.template,
+	                                   suffix=suffix,
+	                                   delete=False)
+	try:
+		temp.close()
+		yield temp.name
+	finally:
+		os.remove(temp.name)
+
+
+def bom_aware_open(filename, encoding="ascii", mode="r", **kwargs):
+	import codecs
+
+	codec = codecs.lookup(encoding)
+	encoding = codec.name
+
+	if kwargs is None:
+		kwargs = dict()
+
+	potential_bom_attribute = "BOM_" + codec.name.replace("utf-", "utf").upper()
+	if "r" in mode and hasattr(codecs, potential_bom_attribute):
+		# these encodings might have a BOM, so let's see if there is one
+		bom = getattr(codecs, potential_bom_attribute)
+
+		with open(filename, "rb") as f:
+			header = f.read(4)
+
+		if header.startswith(bom):
+			encoding += "-sig"
+
+	return codecs.open(filename, encoding=encoding, mode=mode, **kwargs)
+
+
+def is_hidden_path(path):
+	if path is None:
+		# we define a None path as not hidden here
+		return False
+
+	filename = os.path.basename(path)
+	if filename.startswith("."):
+		# filenames starting with a . are hidden
+		return True
+
+	if sys.platform == "win32":
+		# if we are running on windows we also try to read the hidden file
+		# attribute via the windows api
+		try:
+			import ctypes
+			attrs = ctypes.windll.kernel32.GetFileAttributesW(unicode(path))
+			assert attrs != -1     # INVALID_FILE_ATTRIBUTES == -1
+			return bool(attrs & 2) # FILE_ATTRIBUTE_HIDDEN == 2
+		except (AttributeError, AssertionError):
+			pass
+
+	# if we reach that point, the path is not hidden
+	return False
+
 
 class RepeatedTimer(threading.Thread):
 	"""
@@ -556,9 +867,18 @@ class RepeatedTimer(threading.Thread):
 	    run_first (boolean): If set to True, the function will be run for the first time *before* the first wait period.
 	        If set to False (the default), the function will be run for the first time *after* the first wait period.
 	    condition (callable): Condition that needs to be True for loop to continue. Defaults to ``lambda: True``.
+	    on_condition_false (callable): Callback to call when the timer finishes due to condition becoming false. Will
+	        be called before the ``on_finish`` callback.
+	    on_cancelled (callable): Callback to call when the timer finishes due to being cancelled. Will be called
+	        before the ``on_finish`` callback.
+	    on_finish (callable): Callback to call when the timer finishes, either due to being cancelled or since
+	        the condition became false.
+	    daemon (bool): daemon flag to set on underlying thread.
 	"""
 
-	def __init__(self, interval, function, args=None, kwargs=None, run_first=False, condition=None):
+	def __init__(self, interval, function, args=None, kwargs=None,
+	             run_first=False, condition=None, on_condition_false=None,
+	             on_cancelled=None, on_finish=None, daemon=True):
 		threading.Thread.__init__(self)
 
 		if args is None:
@@ -580,8 +900,14 @@ class RepeatedTimer(threading.Thread):
 		self.run_first = run_first
 		self.condition = condition
 
+		self.on_condition_false = on_condition_false
+		self.on_cancelled = on_cancelled
+		self.on_finish = on_finish
+
+		self.daemon = daemon
+
 	def cancel(self):
-		self.finished.set()
+		self._finish(self.on_cancelled)
 
 	def run(self):
 		while self.condition():
@@ -596,24 +922,32 @@ class RepeatedTimer(threading.Thread):
 			# wait, but break if we are cancelled
 			self.finished.wait(self.interval())
 			if self.finished.is_set():
-				break
+				return
 
 			if not self.run_first:
 				# if we are to run the function AFTER waiting for the first time
 				self.function(*self.args, **self.kwargs)
 
-		# make sure we set our finished event so we can detect that the loop was finished
+		# we'll only get here if the condition was false
+		self._finish(self.on_condition_false)
+
+	def _finish(self, *callbacks):
 		self.finished.set()
+
+		for callback in callbacks:
+			if not callable(callback):
+				continue
+			callback()
+
+		if callable(self.on_finish):
+			self.on_finish()
 
 
 class CountedEvent(object):
 
-	def __init__(self, value=0, max=None, name=None):
-		logger_name = __name__ + ".CountedEvent" + (".{name}".format(name=name) if name is not None else "")
-		self._logger = logging.getLogger(logger_name)
-
+	def __init__(self, value=0, maximum=None, **kwargs):
 		self._counter = 0
-		self._max = max
+		self._max = kwargs.get("max", maximum)
 		self._mutex = threading.Lock()
 		self._event = threading.Event()
 
@@ -638,17 +972,14 @@ class CountedEvent(object):
 			return self._counter == 0
 
 	def _internal_set(self, value):
-		self._logger.debug("New counter value: {value}".format(value=value))
 		self._counter = value
 		if self._counter <= 0:
 			self._counter = 0
 			self._event.clear()
-			self._logger.debug("Cleared event")
 		else:
 			if self._max is not None and self._counter > self._max:
 				self._counter = self._max
 			self._event.set()
-			self._logger.debug("Set event")
 
 
 class InvariantContainer(object):
@@ -682,3 +1013,43 @@ class InvariantContainer(object):
 
 	def __iter__(self):
 		return self._data.__iter__()
+
+
+class TypedQueue(queue.Queue):
+
+	def __init__(self, maxsize=0):
+		queue.Queue.__init__(self, maxsize=maxsize)
+		self._lookup = set()
+
+	def put(self, item, item_type=None, *args, **kwargs):
+		queue.Queue.put(self, (item, item_type), *args, **kwargs)
+
+	def get(self, *args, **kwargs):
+		item, _ = queue.Queue.get(self, *args, **kwargs)
+		return item
+
+	def _put(self, item):
+		_, item_type = item
+		if item_type is not None:
+			if item_type in self._lookup:
+				raise TypeAlreadyInQueue(item_type, "Type {} is already in queue".format(item_type))
+			else:
+				self._lookup.add(item_type)
+
+		queue.Queue._put(self, item)
+
+	def _get(self):
+		item = queue.Queue._get(self)
+		_, item_type = item
+
+		if item_type is not None:
+			self._lookup.discard(item_type)
+
+		return item
+
+
+class TypeAlreadyInQueue(Exception):
+	def __init__(self, t, *args, **kwargs):
+		Exception.__init__(self, *args, **kwargs)
+		self.type = t
+

@@ -244,6 +244,9 @@ The following settings are only relevant to you if you want to do OctoPrint deve
        # be fully rerendered on request to / on the server.
        enabled: true
 
+       # Whether to enable the preemptive cache
+       preemptive: true
+
      # Settings for stylesheet preference. OctoPrint will prefer to use the stylesheet type
      # specified here. Usually (on a production install) that will be the compiled css (default).
      # Developers may specify less here too.
@@ -259,6 +262,9 @@ The following settings are only relevant to you if you want to do OctoPrint deve
        # If set to true, OctoPrint will minify its viewmodels (that includes those of plugins). Note: if bundle is
        # set to false, no minification will take place either.
        minify: true
+
+       # Whether to delete generated web assets on server startup (forcing a regeneration)
+       clean_on_startup: true
 
      # Settings for the virtual printer
      virtualPrinter:
@@ -290,6 +296,14 @@ The following settings are only relevant to you if you want to do OctoPrint deve
        #        < ok T0:34.3/0.0 T1:23.5/0.0 B:43.2/0.0
        includeCurrentToolInTemps: true
 
+       # Whether to include the selected filename in the M23 File opened response.
+       #
+       # True:  > M23 filename.gcode
+       #        < File opened: filename.gcode  Size: 27
+       # False: > M23 filename.gcode
+       #        > File opened
+       includeFilenameInOpened: true
+
        # The maximum movement speeds of the simulated printer's axes, in mm/s
        movementSpeed:
          x: 6000
@@ -312,6 +326,10 @@ The following settings are only relevant to you if you want to do OctoPrint deve
        #        > M105
        #        < ok T0:34.3/220.0 T1:23.5/0.0 B:43.2/0.0
        repetierStyleTargetTemperature: false
+
+       # If enabled, uses repetier style resends, sending multiple resends for the same line
+       # to make sure nothing gets lost on the line
+       repetierStyleResends: false
 
        # If enabled, reports the first extruder in M105 responses as T instead of T0
        #
@@ -340,8 +358,53 @@ The following settings are only relevant to you if you want to do OctoPrint deve
        # side will block
        rxBuffer: 64
 
-       # Size of
+       # Size of simulated command buffer
        commandBuffer: 4
+
+       # Whether to support the M112 command with simulated kill
+       supportM112: true
+
+       # Whether to send messages received via M117 back as "echo:" lines
+       echoOnM117: true
+
+       # Whether to simulate broken M29 behaviour (missing ok after response)
+       brokenM29: true
+
+.. _sec-configuration-config_yaml-estimation:
+
+Estimation
+----------
+
+The following settings provide parameters for estimators within OctoPrint. Currently only
+the estimation of the left print time during an active job utilizes this section.
+
+.. code-block:: yaml
+
+   estimation:
+     # Parameters for the print time estmation during an ongoing print job
+     printTime:
+       # Until which percentage to do a weighted mixture of statistical duration (analysis or
+       # past prints) with the result from the calculated estimate if that's already available.
+       # Utilized to compensate for the fact that the earlier in a print job, the least accuracy
+       # even a stable calculated estimate provides.
+       statsWeighingUntil: 0.5
+
+       # Range the assumed percentage (based on current estimated statistical, calculated or mixed
+       # total vs elapsed print time so far) needs to be around the actual percentage for the
+       # result to be used
+       validityRange: 0.15
+
+       # If no estimate could be calculated until this percentage and no statistical data is available,
+       # use dumb linear estimate
+       forceDumbFromPercent: 0.3
+
+       # If no estimate could be calculated until this many minutes into the print and no statistical
+       # data is available, use dumb linear estimate
+       forceDumbAfterMin: 30
+
+       # Average fluctuation between individual calculated estimates to consider in stable range. Seconds
+       # of difference.
+       stableThreshold: 60
 
 .. _sec-configuration-config_yaml-events:
 
@@ -426,6 +489,9 @@ Use the following settings to enable or disable OctoPrint features:
      # Specifies whether support for SD printing and file management should be enabled
      sdSupport: true
 
+     # Specifies whether firmware expects relative paths for selecting SD files
+     sdRelativePath: false
+
      # Whether to always assume that an SD card is present in the printer.
      # Needed by some firmwares which don't report the SD card status properly.
      sdAlwaysAvailable: false
@@ -442,6 +508,16 @@ Use the following settings to enable or disable OctoPrint features:
 
      # Whether to enable the keyboard control feature in the control tab
      keyboardControl: true
+
+     # Whether to actively poll the watched folder (true) or to rely on the OS's file system
+     # notifications instead (false)
+     pollWatched: false
+
+     # Whether to ignore identical resends from the printer (true, repetier) or not (false)
+     ignoreIdenticalResends: false
+
+     # If ignoredIdenticalResends is true, how many consecutive identical resends to ignore
+     identicalResendsCount: 7
 
 .. _sec-configuration-config_yaml-folder:
 
@@ -611,6 +687,48 @@ Use the following settings to configure the serial connection to the printer:
      additionalPorts:
      - /dev/myPrinterSymlink
 
+     # Use this to define additional baud rates to offer for connecting to serial ports. Must be a
+     # valid integer. Defaults to not set
+     additionalBaudrates:
+     - 123456
+
+     # Commands which are known to take a long time to be acknowledged by the firmware. E.g.
+     # homing, dwelling, auto leveling etc. Defaults to the below commands.
+     longRunningCommands:
+     - G4
+     - G28
+     - G29
+     - G30
+     - G32
+     - M400
+     - M226
+
+     # Commands which need to always be send with a checksum. Defaults to only M110
+     checksumRequiringCommands:
+     - M110
+
+     # Command to send in order to initiate a handshake with the printer.
+     # Defaults to "M110 N0" which simply resets the line numbers in the firmware and which
+     # should be acknowledged with a simple "ok".
+     helloCommand: M110 N0
+
+     # Whether to disconnect on errors or not
+     disconnectOnErrors: true
+
+     # Whether to completely ignore errors from the firmware or not
+     ignoreErrorsFromFirmware: false
+
+     # Whether to log resends to octoprint.log or not. Invaluable debug tool without performance
+     # impact, leave on if possible please
+     logResends: true
+
+     # Whether to support resends without follow-up ok or not
+     supportResendsWithoutOk: false
+
+     # Whether to "manually" trigger an ok for M29 (a lot of versions of this command are buggy and
+     # the responds skips on the ok)
+     triggerOkForM29: true
+
 .. _sec-configuration-config_yaml-server:
 
 Server
@@ -621,7 +739,8 @@ Use the following settings to configure the server:
 .. code-block:: yaml
 
    server:
-     # Use this option to define the host to which to bind the server, defaults to "0.0.0.0" (= all interfaces)
+     # Use this option to define the host to which to bind the server, defaults to "0.0.0.0" (= all
+     # interfaces)
      host: 0.0.0.0
 
      # Use this option to define the port to which to bind the server, defaults to 5000
@@ -639,7 +758,7 @@ Use the following settings to configure the server:
      # that AJAX requests and download URLs work.
      reverseProxy:
 
-       # The request header from which to determine the url prefix under which OctoPrint
+       # The request header from which to determine the URL prefix under which OctoPrint
        # is served by the reverse proxy
        prefixHeader: X-Script-Name
 
@@ -651,7 +770,7 @@ Use the following settings to configure the server:
        # is served by the reverse proxy
        hostHeader: X-Forwarded-Host
 
-       # Use this option to define an optional url prefix (with a leading /, so absolute to your
+       # Use this option to define an optional URL prefix (with a leading /, so absolute to your
        # server's root) under which to run OctoPrint. This should only be needed if you want to run
        # OctoPrint behind a reverse proxy under a different root endpoint than `/` and can't configure
        # said reverse proxy to send a prefix HTTP header (X-Script-Name by default, see above) with
@@ -690,6 +809,39 @@ Use the following settings to configure the server:
 
      # Maximum size of requests other than file uploads in bytes, defaults to 100KB.
      maxSize: 102400
+
+     # Commands to restart/shutdown octoprint or the system it's running on
+     commands:
+
+       # Command to restart OctoPrint, defaults to being unset
+       serverRestartCommand: sudo service octoprint restart
+
+       # Command to restart the system OctoPrint is running on, defaults to being unset
+       systemRestartCommand: sudo shutdown -r now
+
+       # Command to shut down the system OctoPrint is running on, defaults to being unset
+       systemShutdownCommand: sudo shutdown -h now
+
+     # Settings of when to display what disk space warning
+     diskspace:
+
+       # Threshold (bytes) after which to consider disk space becoming sparse,
+       # defaults to 500MB
+       warning: 63488000
+
+       # Threshold (bytes) after which to consider disk space becoming critical,
+       # defaults to 200MB
+       critical: 209715200
+
+     # Configuration of the preemptive cache
+     preemptiveCache:
+
+       # which server paths to exclude from the preemptive cache
+       exceptions:
+       - /some/path
+
+       # How many days to leave unused entries in the preemptive cache config
+       until: 7
 
 
 .. note::

@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -104,18 +104,22 @@ class UploadStorageFallbackHandler(tornado.web.RequestHandler):
 	    true
 	    ------WebKitFormBoundarypYiSUx63abAmhT5C
 	    Content-Disposition: form-data; name="file.path"
+	    Content-Type: text/plain; charset=utf-8
 
 	    /tmp/tmpzupkro
 	    ------WebKitFormBoundarypYiSUx63abAmhT5C
 	    Content-Disposition: form-data; name="file.name"
+	    Content-Type: text/plain; charset=utf-8
 
 	    test.gcode
 	    ------WebKitFormBoundarypYiSUx63abAmhT5C
 	    Content-Disposition: form-data; name="file.content_type"
+	    Content-Type: text/plain; charset=utf-8
 
 	    application/octet-stream
 	    ------WebKitFormBoundarypYiSUx63abAmhT5C
 	    Content-Disposition: form-data; name="file.size"
+	    Content-Type: text/plain; charset=utf-8
 
 	    349182
 	    ------WebKitFormBoundarypYiSUx63abAmhT5C--
@@ -137,7 +141,7 @@ class UploadStorageFallbackHandler(tornado.web.RequestHandler):
 		self._path = path
 
 		self._suffixes = dict((key, key) for key in ("name", "path", "content_type", "size"))
-		for suffix_type, suffix in suffixes.iteritems():
+		for suffix_type, suffix in suffixes.items():
 			if suffix_type in self._suffixes and suffix is not None:
 				self._suffixes[suffix_type] = suffix
 
@@ -245,7 +249,7 @@ class UploadStorageFallbackHandler(tornado.web.RequestHandler):
 			self._on_part_header(self._buffer[delimiter_len+2:end_of_header])
 			self._buffer = self._buffer[end_of_header + 4:]
 
-		if delimiter_loc != -1 and self._buffer[delimiter_len:delimiter_len+2] == "--":
+		if delimiter_loc != -1 and self._buffer.strip() == delimiter + "--":
 			# we saw the last boundary and are at the end of our request
 			if self._current_part:
 				self._on_part_finish(self._current_part)
@@ -272,9 +276,19 @@ class UploadStorageFallbackHandler(tornado.web.RequestHandler):
 			header = header[header_check:]
 
 		# convert to dict
-		header = tornado.httputil.HTTPHeaders.parse(header.decode("utf-8"))
+		try:
+			header = tornado.httputil.HTTPHeaders.parse(header.decode("utf-8"))
+		except UnicodeDecodeError:
+			try:
+				header = tornado.httputil.HTTPHeaders.parse(header.decode("iso-8859-1"))
+			except:
+				# looks like we couldn't decode something here neither as UTF-8 nor ISO-8859-1
+				self._logger.warn("Could not decode multipart headers in request, should be either UTF-8 or ISO-8859-1")
+				self.send_error(400)
+				return
+
 		disp_header = header.get("Content-Disposition", "")
-		disposition, disp_params = tornado.httputil._parse_header(disp_header)
+		disposition, disp_params = _parse_header(disp_header, strip_quotes=False)
 
 		if disposition != "form-data":
 			self._logger.warn("Got a multipart header without form-data content disposition, ignoring that one")
@@ -283,7 +297,22 @@ class UploadStorageFallbackHandler(tornado.web.RequestHandler):
 			self._logger.warn("Got a multipart header without name, ignoring that one")
 			return
 
-		self._current_part = self._on_part_start(disp_params["name"], header.get("Content-Type", None), filename=disp_params["filename"] if "filename" in disp_params else None)
+		filename = disp_params.get("filename*", None) # RFC 5987 header present?
+		if filename is not None:
+			try:
+				filename = _extended_header_value(filename)
+			except:
+				# parse error, this is not RFC 5987 compliant after all
+				self._logger.warn("extended filename* value {!r} is not RFC 5987 compliant".format(filename))
+				self.send_error(400)
+				return
+		else:
+			# no filename* header, just strip quotes from filename header then and be done
+			filename = _strip_value_quotes(disp_params.get("filename", None))
+
+		self._current_part = self._on_part_start(_strip_value_quotes(disp_params["name"]),
+		                                         header.get("Content-Type", None),
+		                                         filename=filename)
 
 	def _on_part_start(self, name, content_type, filename=None):
 		"""
@@ -357,16 +386,28 @@ class UploadStorageFallbackHandler(tornado.web.RequestHandler):
 		"""
 
 		self._new_body = b""
-		for name, part in self._parts.iteritems():
+		for name, part in self._parts.items():
 			if "filename" in part:
 				# add form fields for filename, path, size and content_type for all files contained in the request
-				fields = dict((self._suffixes[key], value) for (key, value) in dict(name=part["filename"], path=part["path"], size=str(os.stat(part["path"]).st_size), content_type=part["content_type"]).iteritems())
-				for n, p in fields.iteritems():
+				if not "path" in part:
+					continue
+
+				parameters = dict(
+					name=part["filename"],
+					path=part["path"],
+					size=str(os.stat(part["path"]).st_size)
+				)
+				if "content_type" in part:
+					parameters["content_type"] = part["content_type"]
+
+				fields = dict((self._suffixes[key], value) for (key, value) in parameters.items())
+				for n, p in fields.items():
 					key = name + "." + n
 					self._new_body += b"--%s\r\n" % self._multipart_boundary
 					self._new_body += b"Content-Disposition: form-data; name=\"%s\"\r\n" % key
+					self._new_body += b"Content-Type: text/plain; charset=utf-8\r\n"
 					self._new_body += b"\r\n"
-					self._new_body += p + b"\r\n"
+					self._new_body += b"%s\r\n" % p
 			elif "data" in part:
 				self._new_body += b"--%s\r\n" % self._multipart_boundary
 				value = part["data"]
@@ -417,6 +458,47 @@ class UploadStorageFallbackHandler(tornado.web.RequestHandler):
 	delete = _handle_method
 	head = _handle_method
 	options = _handle_method
+
+
+def _parse_header(line, strip_quotes=True):
+	parts = tornado.httputil._parseparam(';' + line)
+	key = next(parts)
+	pdict = {}
+	for p in parts:
+		i = p.find('=')
+		if i >= 0:
+			name = p[:i].strip().lower()
+			value = p[i + 1:].strip()
+			if strip_quotes:
+				value = _strip_value_quotes(value)
+			pdict[name] = value
+	return key, pdict
+
+
+def _strip_value_quotes(value):
+	if not value:
+		return value
+
+	if len(value) >= 2 and value[0] == value[-1] == '"':
+		value = value[1:-1]
+		value = value.replace('\\\\', '\\').replace('\\"', '"')
+
+	return value
+
+
+def _extended_header_value(value):
+	if not value:
+		return value
+
+	if value.lower().startswith("iso-8859-1'") or value.lower().startswith("utf-8'"):
+		# RFC 5987 section 3.2
+		from urllib import unquote
+		encoding, _, value = value.split("'", 2)
+		return unquote(octoprint.util.to_str(value, encoding="iso-8859-1")).decode(encoding)
+
+	else:
+		# no encoding provided, strip potentially present quotes and call it a day
+		return octoprint.util.to_unicode(_strip_value_quotes(value), encoding="utf-8")
 
 
 class WsgiInputContainer(object):
@@ -716,7 +798,7 @@ class CustomHTTP1Connection(tornado.http1connection.HTTP1Connection):
 		length if available, otherwise returns ``default_max_body_size``.
 
 		:param method: method of the request to match against
-		:param path: path od the request to match against
+		:param path: path of the request to match against
 		:return: determine maximum content length to apply to this request, max return 0 for unlimited allowed content
 		         length
 		"""
@@ -752,11 +834,13 @@ class LargeResponseHandler(tornado.web.StaticFileHandler):
 	Arguments:
 	   path (str): The system path from which to serve files (this will be forwarded to the ``initialize`` method of
 	       :class:``~tornado.web.StaticFileHandler``)
-	   default_filename (str): The default filename to serve if none is explicitely specified and the request references
+	   default_filename (str): The default filename to serve if none is explicitly specified and the request references
 	       a subdirectory of the served path (this will be forwarded to the ``initialize`` method of
 	       :class:``~tornado.web.StaticFileHandler`` as the ``default_filename`` keyword parameter). Defaults to ``None``.
 	   as_attachment (bool): Whether to serve requested files with ``Content-Disposition: attachment`` header (``True``)
 	       or not. Defaults to ``False``.
+	   allow_client_caching (bool): Whether to allow the client to cache (by not setting any ``Cache-Control`` or
+	       ``Expires`` headers on the response) or not.
 	   access_validation (function): Callback to call in the ``get`` method to validate access to the resource. Will
 	       be called with ``self.request`` as parameter which contains the full tornado request object. Should raise
 	       a ``tornado.web.HTTPError`` if access is not allowed in which case the request will not be further processed.
@@ -765,25 +849,56 @@ class LargeResponseHandler(tornado.web.StaticFileHandler):
 	       with the requested path as parameter. Should raise a ``tornado.web.HTTPError`` (e.g. an 404) if the requested
 	       path does not pass validation in which case the request will not be further processed.
 	       Defaults to ``None`` and hence no path validation being performed.
+	   etag_generator (function): Callback to call for generating the value of the ETag response header. Will be
+	       called with the response handler as parameter. May return ``None`` to prevent the ETag response header
+	       from being set. If not provided the last modified time of the file in question will be used as returned
+	       by ``get_content_version``.
 	"""
 
-	def initialize(self, path, default_filename=None, as_attachment=False, access_validation=None, path_validation=None):
+	def initialize(self, path, default_filename=None, as_attachment=False, allow_client_caching=True,
+	               access_validation=None, path_validation=None, etag_generator=None,
+	               mime_type_guesser=None):
 		tornado.web.StaticFileHandler.initialize(self, os.path.abspath(path), default_filename)
 		self._as_attachment = as_attachment
+		self._allow_client_caching = allow_client_caching
 		self._access_validation = access_validation
 		self._path_validation = path_validation
+		self._etag_generator = etag_generator
+		self._mime_type_guesser = mime_type_guesser
 
 	def get(self, path, include_body=True):
 		if self._access_validation is not None:
 			self._access_validation(self.request)
 		if self._path_validation is not None:
 			self._path_validation(path)
+
+		if "cookie" in self.request.arguments:
+			self.set_cookie(self.request.arguments["cookie"][0], "true", path="/")
+
 		result = tornado.web.StaticFileHandler.get(self, path, include_body=include_body)
 		return result
 
 	def set_extra_headers(self, path):
 		if self._as_attachment:
-			self.set_header("Content-Disposition", "attachment")
+			self.set_header("Content-Disposition", "attachment; filename=%s" % os.path.basename(path))
+
+		if not self._allow_client_caching:
+			self.set_header("Cache-Control", "max-age=0, must-revalidate, private")
+			self.set_header("Expires", "-1")
+
+	def compute_etag(self):
+		if self._etag_generator is not None:
+			return self._etag_generator(self)
+		else:
+			return self.get_content_version(self.absolute_path)
+
+	def get_content_type(self):
+		if self._mime_type_guesser is not None:
+			type = self._mime_type_guesser(self.absolute_path)
+			if type is not None:
+				return type
+
+		return tornado.web.StaticFileHandler.get_content_type(self)
 
 	@classmethod
 	def get_content_version(cls, abspath):
@@ -794,7 +909,7 @@ class LargeResponseHandler(tornado.web.StaticFileHandler):
 ##~~ URL Forward Handler for forwarding requests to a preconfigured static URL
 
 
-class UrlForwardHandler(tornado.web.RequestHandler):
+class UrlProxyHandler(tornado.web.RequestHandler):
 	"""
 	`tornado.web.RequestHandler <http://tornado.readthedocs.org/en/branch4.0/web.html#request-handlers>`_ that proxies
 	requests to a preconfigured url and returns the response. Allows delivery of the requested content as attachment
@@ -804,9 +919,9 @@ class UrlForwardHandler(tornado.web.RequestHandler):
 	for making the request to the configured endpoint and return the body of the client response with the status code
 	from the client response and the following headers:
 
-	  * ``Date``, ``Cache-Control``, ``Server``, ``Content-Type`` and ``Location`` will be copied over.
+	  * ``Date``, ``Cache-Control``, ``Expires``, ``ETag``, ``Server``, ``Content-Type`` and ``Location`` will be copied over.
 	  * If ``as_attachment`` is set to True, ``Content-Disposition`` will be set to ``attachment``. If ``basename`` is
-	    set including the attachement's ``filename`` attribute will be set to the base name followed by the extension
+	    set including the attachment's ``filename`` attribute will be set to the base name followed by the extension
 	    guessed based on the MIME type from the ``Content-Type`` header of the response. If no extension can be guessed
 	    no ``filename`` attribute will be set.
 
@@ -854,7 +969,7 @@ class UrlForwardHandler(tornado.web.RequestHandler):
 		filename = None
 
 		self.set_status(response.code)
-		for name in ("Date", "Cache-Control", "Server", "Content-Type", "Location"):
+		for name in ("Date", "Cache-Control", "Server", "Content-Type", "Location", "Expires", "ETag"):
 			value = response.headers.get(name)
 			if value:
 				self.set_header(name, value)
@@ -885,6 +1000,19 @@ class UrlForwardHandler(tornado.web.RequestHandler):
 			return None
 
 		return "%s%s" % (self._basename, extension)
+
+
+class StaticDataHandler(tornado.web.RequestHandler):
+	def initialize(self, data="", content_type="text/plain"):
+		self.data = data
+		self.content_type = content_type
+
+	def get(self, *args, **kwargs):
+		self.set_status(200)
+		self.set_header("Content-Type", self.content_type)
+		self.write(self.data)
+		self.flush()
+		self.finish()
 
 
 #~~ Factory method for creating Flask access validation wrappers from the Tornado request context

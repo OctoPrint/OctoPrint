@@ -1,0 +1,29 @@
+<div id="softwareupdate_confirmation_dialog" class="modal hide fade">
+    <div class="modal-header">
+        <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
+        <h3>{{ _('Are you sure you want to update now?') }}</h3>
+    </div>
+    <div class="modal-body">
+        <p>
+            {{ _('This will update the following components and restart the server:') }}
+        </p>
+        <ul>
+            <!-- ko foreach: availableAndPossible -->
+            <li>
+                <span class="name" data-bind="text: fullNameRemote, attr: {title: fullNameRemote}"></span>
+                <div class="releaseNotes" data-bind="visible: releaseNotes"><a data-bind="attr: {href: releaseNotes}" target="_blank" rel="noreferrer noopener">{{ _('Release Notes') }}</a></div>
+            </li>
+            <!-- /ko -->
+        </ul>
+        <p>
+            {{ _('Be sure to read through any linked release notes, especially those for OctoPrint since they might contain important information you need to know <strong>before</strong> upgrading.') }}
+        </p>
+        <p>
+            {{ _('Are you sure you want to proceed?') }}
+        </p>
+    </div>
+    <div class="modal-footer">
+        <a href="#" class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Cancel') }}</a>
+        <a href="#" class="btn btn-danger" data-bind="click: function() { $root.confirmUpdate(); }">{{ _('Proceed') }}</a>
+    </div>
+</div>

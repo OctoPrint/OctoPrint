@@ -10,26 +10,38 @@
     var CONFIG_TIMELAPSEFILESPERPAGE = 10;
     var CONFIG_LOGFILESPERPAGE = 10;
     var CONFIG_USERSPERPAGE = 10;
-    var CONFIG_WEBCAM_STREAM = "{{ webcamStream }}";
+    var CONFIG_WEBCAM_STREAM = "{{ webcamStream|e }}";
     var CONFIG_ACCESS_CONTROL = {% if enableAccessControl -%} true; {% else %} false; {%- endif %}
+    var CONFIG_ACCESS_CONTROL_ACTIVE = {% if accessControlActive -%} true; {% else %} false; {%- endif %}
     var CONFIG_SD_SUPPORT = {% if enableSdSupport -%} true; {% else %} false; {%- endif %}
     var CONFIG_FIRST_RUN = {%  if firstRun -%} true; {% else %} false; {%- endif %}
     var CONFIG_TEMPERATURE_GRAPH = {%  if enableTemperatureGraph -%} true; {% else %} false; {%- endif %}
-    var CONFIG_GCODE_SIZE_THRESHOLD = {{ gcodeThreshold }};
-    var CONFIG_GCODE_MOBILE_SIZE_THRESHOLD = {{ gcodeMobileThreshold }};
+    var CONFIG_GCODE_SIZE_THRESHOLD = {{ gcodeThreshold|e }};
+    var CONFIG_GCODE_MOBILE_SIZE_THRESHOLD = {{ gcodeMobileThreshold|e }};
+    var CONFIG_WIZARD = {% if wizard -%} true; {% else %} false; {%- endif %}
 
     var SOCKJS_URI = "{{ url_for('index') }}" + "sockjs";
     var SOCKJS_DEBUG = CONFIG_DEBUG;
     // sockjs should define CLOSE_NORMAL for us, but they don't (from ws spec)
-    var SOCKJS_CLOSE_NORMAL = 1000
+    var SOCKJS_CLOSE_NORMAL = 1000;
 
-    var UI_API_KEY = "{{ uiApiKey }}";
-    var VERSION = "{{ version }}";
-    var DISPLAY_VERSION = "{{ display_version }}";
-    var LOCALE = "{{ g.locale }}";
+    var UI_API_KEY = "{{ uiApiKey|e }}";
+    var VERSION = "{{ version.number|e }}";
+    var DISPLAY_VERSION = "{{ version.display|e }}";
+    var BRANCH = "{{ version.branch|e }}";
+    var LOCALE = "{{ g.locale|e }}";
     var AVAILABLE_LOCALES = {{ locales|tojson }};
+    var SUPPORTED_EXTENSIONS = {{ supportedExtensions|tojson }};
 
     var OCTOPRINT_VIEWMODELS = [];
     var ADDITIONAL_VIEWMODELS = [];
     var OCTOPRINT_ADDITIONAL_BINDINGS = [];
+
+    {% if templates.tab.order %}
+        {% set first_tab = templates.tab.order[0] %}
+        {% set entry, data = templates.tab.entries[first_tab] %}
+        var OCTOPRINT_INITIAL_TAB = "#{{ data._div }}";
+    {% else %}
+        var OCTOPRINT_INITIAL_TAB = undefined;
+    {% endif %}
 </script>

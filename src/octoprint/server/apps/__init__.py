@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -10,9 +10,14 @@ from flask import Blueprint, request, make_response, jsonify
 
 import octoprint.server
 import octoprint.plugin
+
+from octoprint.server.util import noCachingResponseHandler, corsResponseHandler
 from octoprint.settings import settings as s
 
 apps = Blueprint("apps", __name__)
+
+apps.after_request(noCachingResponseHandler)
+apps.after_request(corsResponseHandler)
 
 @apps.route("/auth", methods=["GET"])
 def getSessionKey():

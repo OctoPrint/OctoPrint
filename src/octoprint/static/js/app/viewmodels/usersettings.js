@@ -33,7 +33,7 @@ $(function() {
             }
         });
 
-        self.passwordMismatch = ko.computed(function() {
+        self.passwordMismatch = ko.pureComputed(function() {
             return self.access_password() != self.access_repeatedPassword();
         });
 
@@ -60,24 +60,17 @@ $(function() {
                     "language": self.interface_language()
                 }
             };
-            self.updateSettings(self.currentUser().name, settings, function() {
-                // close dialog
-                self.currentUser(undefined);
-                self.userSettingsDialog.modal("hide");
-                self.loginState.reloadUser();
-            });
+            self.updateSettings(self.currentUser().name, settings)
+                .done(function() {
+                    // close dialog
+                    self.currentUser(undefined);
+                    self.userSettingsDialog.modal("hide");
+                    self.loginState.reloadUser();
+                });
         };
 
-        self.updateSettings = function(username, settings, callback) {
-            if (!CONFIG_ACCESS_CONTROL) return;
-
-            $.ajax({
-                url: API_BASEURL + "users/" + username + "/settings",
-                type: "PATCH",
-                contentType: "application/json; charset=UTF-8",
-                data: JSON.stringify(settings),
-                success: callback
-            });
+        self.updateSettings = function(username, settings) {
+            return OctoPrint.users.saveSettings(username, settings);
         };
 
         self.saveEnabled = function() {
@@ -90,18 +83,10 @@ $(function() {
 
         self.onAllBound = function(allViewModels) {
             self.userSettingsDialog.on('show', function() {
-                _.each(allViewModels, function(viewModel) {
-                    if (viewModel.hasOwnProperty("onUserSettingsShown")) {
-                        viewModel.onUserSettingsShown();
-                    }
-                });
+                callViewModels(allViewModels, "onUserSettingsShown");
             });
             self.userSettingsDialog.on('hidden', function() {
-                _.each(allViewModels, function(viewModel) {
-                    if (viewModel.hasOwnProperty("onUserSettingsHidden")) {
-                        viewModel.onUserSettingsHidden();
-                    }
-                });
+                callViewModels(allViewModels, "onUserSettingsHidden");
             });
         }
 

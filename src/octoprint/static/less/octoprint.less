@@ -282,7 +282,8 @@ table {
     }
 
     // timelapse files
-    &.timelapse_files_name {
+    &.timelapse_files_name,
+    &.timelapse_unrendered_name {
       text-overflow: ellipsis;
       text-align: left;
     }
@@ -292,7 +293,18 @@ table {
       width: 55px;
     }
 
-    &.timelapse_files_action {
+    &.timelapse_unrendered_size {
+      text-align: right;
+      width: 55px;
+    }
+
+    &.timelapse_unrendered_count {
+      text-align: right;
+      width: 45px;
+    }
+
+    &.timelapse_files_action,
+    &.timelapse_unrendered_action {
       width: 45px;
       .actioncol;
     }
@@ -373,7 +385,7 @@ table {
 }
 
 #temp_newTemp, #temp_newBedTemp, #speed_innerWall, #speed_outerWall, #speed_fill, #speed_support,
-#webcam_timelapse_interval, #webcam_timelapse_postRoll, #webcam_timelapse_fps {
+#webcam_timelapse_interval, #webcam_timelapse_postRoll, #webcam_timelapse_fps, #webcam_timelapse_retractionZHop {
   text-align: right;
 }
 
@@ -396,8 +408,15 @@ ul.dropdown-menu li a {
   left: 0;
   width: 100%;
   height: 100%;
-  z-index: 10001;
   display: none;
+}
+
+#offline_overlay {
+  z-index: 10002;
+}
+
+#reloadui_overlay {
+  z-index: 10001;
 }
 
 #offline_overlay_background,
@@ -437,31 +456,6 @@ ul.dropdown-menu li a {
 
   //min-height: 440px;
 
-  .flipH {
-    -webkit-transform: scaleX(-1);
-    -moz-transform: scaleX(-1);
-    -ms-transform: scaleX(-1);
-    transform: scaleX(-1);
-  }
-
-  .flipV {
-    -webkit-transform: scaleY(-1);
-    -moz-transform: scaleY(-1);
-    -ms-transform: scaleY(-1);
-    transform: scaleY(-1);
-  }
-
-  .flipH.flipV {
-    -webkit-transform: scaleX(-1) scaleY(-1);
-    -moz-transform: scaleX(-1) scaleY(-1);
-    -ms-transform: scaleX(-1) scaleY(-1);
-    transform: scaleX(-1) scaleY(-1);  
-}
-
-  .rotate90 {
-    transform: rotate(-90deg);
-  }
-
   .keycontrol_overlay {
     position: absolute;
     left: 10px;
@@ -494,6 +488,14 @@ ul.dropdown-menu li a {
       padding: 10px;
       float: left;
     }
+  }
+}
+
+/** State sidebar panel */
+
+#state_wrapper {
+  hr {
+    margin: 5px 0;
   }
 }
 
@@ -535,6 +537,20 @@ ul.dropdown-menu li a {
 
       .additionalInfo {
         padding-bottom: @line-height + 2px;
+      }
+
+      @highlight-color: yellow;
+      @keyframes highlightframes {
+        0% {
+          background: @highlight-color;
+        }
+        100% {
+          background: transparent;
+        }
+      }
+
+      &.highlight {
+        animation: highlightframes 2s;
       }
     }
   }
@@ -614,11 +630,11 @@ ul.dropdown-menu li a {
     }
   }
 
-  .custom_section_horizontal .custom_control {
+  .custom_section_horizontal > .custom_control {
     display: inline-block;
   }
 
-  .custom_section_vertical .custom_control {
+  .custom_section_vertical > .custom_control {
       display:block;
   }
 
@@ -635,7 +651,7 @@ ul.dropdown-menu li a {
 
 #gcode {
   .progress {
-    width: 582px;
+    width: 588px;
 
     .bar {
       .transition(width 0s linear);
@@ -644,6 +660,14 @@ ul.dropdown-menu li a {
 
   .canvas_container {
     position: relative;
+    &:hover, &:active {
+      outline: 0;
+    }
+  }
+
+  .layer-buttons {
+    padding-top: 5px;
+    padding-bottom: 7px;
   }
 
   #gcode_layer_slider {
@@ -675,7 +699,7 @@ ul.dropdown-menu li a {
 
 #term {
   .terminal {
-    #terminal-output {
+    #terminal-output, #terminal-output-lowfi {
       min-height: 340px;
       margin-bottom: 5px;
     }
@@ -688,14 +712,23 @@ ul.dropdown-menu li a {
   }
 }
 
-/** Settings dialog */
 #settings_dialog {
-  .modal-body {
-    #settings_dialog_menu {
-      margin-left: 0;
-    }
+  .aboutlink {
+    float: left;
   }
 }
+
+#settings_dialog_menu,
+#wizard_dialog_menu {
+  margin-left: 0;
+}
+
+#wizard_firstrun_acl {
+  .acl_decision {
+    margin-top: 1em;
+  }
+}
+
 
 
 #settings_appearance_managelanguagesdialog_emptylist {
@@ -760,8 +793,16 @@ ul.dropdown-menu li a {
   text-align: right;
 }
 
+.text-center {
+  text-align: center;
+}
+
 .overflow_visible {
   overflow: visible !important;
+}
+
+.clickable {
+  cursor: pointer;
 }
 
 .border_box {
@@ -913,6 +954,36 @@ textarea.block {
   margin-right: auto;
 }
 
+.flipH {
+  -webkit-transform: scaleX(-1);
+  -moz-transform: scaleX(-1);
+  -ms-transform: scaleX(-1);
+  transform: scaleX(-1);
+}
+
+.flipV {
+  -webkit-transform: scaleY(-1);
+  -moz-transform: scaleY(-1);
+  -ms-transform: scaleY(-1);
+  transform: scaleY(-1);
+}
+
+.flipH.flipV {
+  -webkit-transform: scaleX(-1) scaleY(-1);
+  -moz-transform: scaleX(-1) scaleY(-1);
+  -ms-transform: scaleX(-1) scaleY(-1);
+  transform: scaleX(-1) scaleY(-1);
+}
+
+.rotate90 {
+  -webkit-transform: rotate(-90deg);
+  transform: rotate(-90deg);
+}
+
+.ui-pnotify a {
+  text-decoration: underline;
+}
+
 /** Styles for Bootstrap Slider */
 
 .slider {
@@ -978,6 +1049,20 @@ textarea.block {
   }
 }
 
+// Special delivery for Safari browsers... because Safari >= 8 sometimes just
+// shows us white panes on the settings dialog when the full-sized-box has
+// an absolute position (which it needs for both scrollbars to work), at least
+// until the page is resized or otherwise a rerender is triggered, we'll have
+// our styling resolve to static positioning on that browser for now.
+//
+// This btw also means that the dialog will change in size. Yay.
+//
+// Better use something else if you have the option, that thing is really
+// weird.
+_::-webkit-full-page-media, _:future, :root .full-sized-box {
+  position: static;
+}
+
 .scrollable {
   height: 100%;
   overflow: auto;
@@ -1001,4 +1086,56 @@ textarea.block {
 
 input[type=number] {
   text-align: right;
+}
+
+// Progress bars with text
+//
+// .progress-text-front will also need to have the full width of the enclosing
+// progress wrapper applied (e.g. via copyWidth knockout binding)
+
+.progress-text,
+.progress-text-centered {
+  position: relative;
+
+  .progress-text-front,
+  .progress-text-back {
+    white-space: nowrap;
+  }
+
+  .progress-text-front {
+    box-sizing: border-box;
+    padding: 0 10px;
+    width: 100%;
+    display: block;
+  }
+
+  .progress-text-back {
+    position: absolute;
+    font-size: 12px;
+    line-height: 20px;
+    display: block;
+    box-sizing: border-box;
+    text-align: center;
+    padding: 0 10px;
+  }
+
+  .bar {
+    position: absolute;
+    overflow: hidden;
+  }
+}
+
+.progress-text-centered {
+  .progress-text-front {
+    position: absolute;
+    font-size: 12px;
+    line-height: 20px;
+    display: block;
+    text-align: center;
+    color: #fff;
+  }
+
+  .progress-text-back {
+    width: 100%;
+  }
 }

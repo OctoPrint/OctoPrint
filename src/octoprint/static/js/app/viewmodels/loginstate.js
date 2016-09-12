@@ -2,8 +2,8 @@ $(function() {
     function LoginStateViewModel() {
         var self = this;
 
-        self.loginUser = ko.observable();
-        self.loginPass = ko.observable();
+        self.loginUser = ko.observable("");
+        self.loginPass = ko.observable("");
         self.loginRemember = ko.observable(false);
 
         self.loggedIn = ko.observable(false);
@@ -15,7 +15,11 @@ $(function() {
 
         self.currentUser = ko.observable(undefined);
 
-        self.userMenuText = ko.computed(function() {
+        self.elementUsernameInput = undefined;
+        self.elementPasswordInput = undefined;
+        self.elementLoginButton = undefined;
+
+        self.userMenuText = ko.pureComputed(function() {
             if (self.loggedIn()) {
                 return self.username();
             } else {
@@ -28,20 +32,13 @@ $(function() {
                 return;
             }
 
-            $.ajax({
-                url: API_BASEURL + "users/" + self.currentUser().name,
-                type: "GET",
-                success: self.fromResponse
-            })
+            OctoPrint.users.get(self.currentUser().name)
+                .done(self.fromResponse);
         };
 
         self.requestData = function() {
-            $.ajax({
-                url: API_BASEURL + "login",
-                type: "POST",
-                data: {"passive": true},
-                success: self.fromResponse
-            })
+            OctoPrint.browser.passiveLogin()
+                .done(self.fromResponse);
         };
 
         self.fromResponse = function(response) {
@@ -53,11 +50,7 @@ $(function() {
 
                 self.currentUser(response);
 
-                _.each(self.allViewModels, function(viewModel) {
-                    if (viewModel.hasOwnProperty("onUserLoggedIn")) {
-                        viewModel.onUserLoggedIn(response);
-                    }
-                });
+                callViewModels(self.allViewModels, "onUserLoggedIn", [response]);
             } else {
                 self.loggedIn(false);
                 self.username(undefined);
@@ -66,51 +59,45 @@ $(function() {
 
                 self.currentUser(undefined);
 
-                _.each(self.allViewModels, function(viewModel) {
-                    if (viewModel.hasOwnProperty("onUserLoggedOut")) {
-                        viewModel.onUserLoggedOut();
-                    }
-                });
+                callViewModels(self.allViewModels, "onUserLoggedOut");
             }
         };
 
-        self.login = function() {
-            var username = self.loginUser();
-            var password = self.loginPass();
-            var remember = self.loginRemember();
+        self.login = function(u, p, r) {
+            var username = u || self.loginUser();
+            var password = p || self.loginPass();
+            var remember = (r != undefined ? r : self.loginRemember());
 
-            self.loginUser("");
-            self.loginPass("");
-            self.loginRemember(false);
-
-            $.ajax({
-                url: API_BASEURL + "login",
-                type: "POST",
-                data: {"user": username, "pass": password, "remember": remember},
-                success: function(response) {
+            return OctoPrint.browser.login(username, password, remember)
+                .done(function(response) {
                     new PNotify({title: gettext("Login successful"), text: _.sprintf(gettext('You are now logged in as "%(username)s"'), {username: response.name}), type: "success"});
                     self.fromResponse(response);
-                },
-                error: function(jqXHR, textStatus, errorThrown) {
+
+                    self.loginUser("");
+                    self.loginPass("");
+                    self.loginRemember(false);
+                })
+                .fail(function() {
                     new PNotify({title: gettext("Login failed"), text: gettext("User unknown or wrong password"), type: "error"});
-                }
-            })
+                });
         };
 
         self.logout = function() {
-            $.ajax({
-                url: API_BASEURL + "logout",
-                type: "POST",
-                success: function(response) {
+            OctoPrint.browser.logout()
+                .done(function(response) {
                     new PNotify({title: gettext("Logout successful"), text: gettext("You are now logged out"), type: "success"});
                     self.fromResponse(response);
-                }
-            })
+                })
+                .error(function(error) {
+                    if (error && error.status === 401) {
+                         self.fromResponse(false);
+                    }
+                });
         };
 
         self.onLoginUserKeyup = function(data, event) {
             if (event.keyCode == 13) {
-                $("#login_pass").focus();
+                self.elementPasswordInput.focus();
             }
         };
 
@@ -124,12 +111,21 @@ $(function() {
             self.allViewModels = allViewModels;
         };
 
-        self.onDataUpdaterReconnect = function() {
+        self.onStartupComplete = self.onServerConnect = self.onServerReconnect = function() {
+            if (self.allViewModels == undefined) return;
             self.requestData();
         };
 
-        self.onStartupComplete = function() {
-            self.requestData();
+        self.onStartup = function() {
+            self.elementUsernameInput = $("#login_user");
+            self.elementPasswordInput = $("#login_pass");
+            self.elementLoginButton = $("#login_button");
+            if (self.elementUsernameInput && self.elementUsernameInput.length
+                && self.elementLoginButton && self.elementLoginButton.length) {
+                self.elementLoginButton.blur(function() {
+                    self.elementUsernameInput.focus();
+                })
+            }
         };
     }
 

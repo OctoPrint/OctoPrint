@@ -1,3 +1,21 @@
+<div class="alert" data-bind="visible: octoprintUnconfigured()">{% trans %}
+    Please configure the <strong>checkout folder</strong> of OctoPrint, otherwise
+    this plugin won't be able to update it. Click on the <i class="icon-wrench"></i> button
+    to do this. Also refer to the <a href="https://github.com/foosel/OctoPrint/wiki/Plugin:-Software-Update" target="_blank">Documentation</a>.
+{% endtrans %}</div>
+<div class="alert" data-bind="visible: !octoprintUnconfigured() && octoprintUnreleased()">{% trans %}
+    <p>
+        <strong>You are running a non-release version of OctoPrint but are tracking OctoPrint
+        releases.</strong>
+    </p><p>
+        You probably want OctoPrint to track the matching development version instead.
+        If you have a local OctoPrint checkout folder switched to another branch,
+        <strong>simply switching over to "Commit" tracking</strong> will already
+        take care of that. Otherwise please take a look at the
+        <a href="https://github.com/foosel/OctoPrint/wiki/Plugin:-Software-Update" target="_blank">Documentation</a>.
+    </p>
+{% endtrans %}</div>
+
 <div class="pull-right">
     <button class="btn btn-small" data-bind="click: function() { $root.showPluginSettings(); }" title="{{ _('Plugin Configuration') }}"><i class="icon-wrench"></i></button>
 </div>
@@ -11,10 +29,11 @@
             <span data-bind="invisible: !updateAvailable"><i class="icon-bell" title="{{ _('Update available') }}"></i></span>
         </td>
         <td class="settings_plugin_softwareupdate_column_information">
-            <strong data-bind="text: displayName"></strong>: <span data-bind="text: displayVersion"></span><br>
+            <strong data-bind="text: displayName"></strong>: <span data-bind="text: displayVersion"></span> <span data-bind="invisible: updatePossible"><i class="icon-exclamation-sign" title="{{ _('Update not possible, configuration ok?') }}"></i></span><br>
             <small class="muted">
                 {{ _('Installed:') }} <span data-bind="text: information.local.name"></span><br>
-                {{ _('Available:') }} <span data-bind="text: information.remote.name"></span>
+                {{ _('Available:') }} <span data-bind="text: information.remote.name"></span><br>
+                <span data-bind="visible: releaseNotes">{{ _('Release Notes:') }} <a data-bind="attr: {href: releaseNotes}, text: releaseNotes" target="_blank" rel="noreferrer noopener"></a></span>
             </small>
         </td>
     </tr>
@@ -44,7 +63,7 @@
     <div><small><a href="#" class="muted" onclick="$(this).children().toggleClass('icon-caret-right icon-caret-down').parent().parent().parent().next().slideToggle('fast')"><i class="icon-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
     <div class="hide">
         <button class="btn btn-block" data-bind="click: function() { $root.performCheck(true, true, true); }">{{ _('Force check for update (overrides cache used for update checks)') }}</button>
-        <button class="btn btn-block btn-danger" data-bind="click: function() { $root.update(true); }">{{ _('Force update now (even if no new versions are available)') }}</button>
+        <button class="btn btn-block btn-danger" data-bind="visible: CONFIG_DEBUG, click: function() { $root.update(true); }">{{ _('Force update now (even if no new versions are available)') }}</button>
     </div>
 </div>
 
@@ -55,18 +74,9 @@
     </div>
     <div class="modal-body">
         <form class="form-horizontal">
-            <div class="control-group">
-                <label class="control-label">{{ _('Restart Command') }}</label>
-                <div class="controls">
-                    <input type="text" class="input-block-level" data-bind="value: config_restartCommand">
-                </div>
-            </div>
-            <div class="control-group">
-                <label class="control-label">{{ _('Reboot Command') }}</label>
-                <div class="controls">
-                    <input type="text" class="input-block-level" data-bind="value: config_rebootCommand">
-                </div>
-            </div>
+            {% include "_snippets/plugins/softwareupdate/checkoutFolder.jinja2" %}
+            {% include "_snippets/plugins/softwareupdate/versionTracking.jinja2" %}
+            {% include "_snippets/plugins/softwareupdate/releaseChannel.jinja2" %}
             <div class="control-group">
                 <label class="control-label">{{ _('Version cache TTL') }}</label>
                 <div class="controls">
@@ -81,6 +91,19 @@
     <div class="modal-footer">
         <button class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Cancel') }}</button>
         <button class="btn btn-primary" data-bind="click: savePluginSettings" aria-hidden="true">{{ _('Save') }}</button>
+    </div>
+</div>
+
+<div id="settings_plugin_softwareupdate_workingdialog" class="modal hide fade">
+    <div class="modal-header">
+        <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
+        <h3 data-bind="text: workingTitle"></h3>
+    </div>
+    <div class="modal-body">
+        <pre id="settings_plugin_softwareupdate_workingdialog_output" class="terminal pre-scrollable" style="height: 170px" data-bind="foreach: loglines"><span data-bind="text: line, css: {stdout: stream == 'stdout', stderr: stream == 'stderr', call: stream == 'call', message: stream == 'message'}"></span><br></pre>
+    </div>
+    <div class="modal-footer">
+        <button class="btn" data-dismiss="modal" data-bind="enable: !$root.working()" aria-hidden="true">{{ _('Close') }}</button>
     </div>
 </div>
 

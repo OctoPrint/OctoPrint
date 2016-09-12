@@ -1,0 +1,6 @@
+<div class="control-group" data-bind="visible: config_updateMethod() == 'update_script' || config_updateMethod() == 'python_updater'">
+    <label class="control-label">{{ _('OctoPrint checkout folder') }}</label>
+    <div class="controls">
+        <input type="text" class="input-block-level" data-bind="value: config_checkoutFolder">
+    </div>
+</div>

@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -12,6 +12,100 @@ import mock
 
 import octoprint.filemanager
 import octoprint.filemanager.util
+
+import octoprint.settings
+
+class FilemanagerMethodTest(unittest.TestCase):
+
+	def setUp(self):
+		# mock plugin manager
+		self.plugin_manager_patcher = mock.patch("octoprint.plugin.plugin_manager")
+		self.plugin_manager_getter = self.plugin_manager_patcher.start()
+
+		self.plugin_manager = mock.MagicMock()
+
+		hook_extensions = dict(
+			some_plugin=lambda: dict(dict(machinecode=dict(foo=["foo", "f"]))),
+			other_plugin=lambda: dict(dict(model=dict(amf=["amf"]))),
+			mime_map=lambda: dict(
+				mime_map=dict(
+					mime_map_yes=octoprint.filemanager.ContentTypeMapping(["mime_map_yes"], "application/mime_map_yes")
+				)
+			),
+			mime_detect=lambda: dict(
+				dict(
+					machinecode=dict(
+						mime_detect_yes=octoprint.filemanager.ContentTypeDetector(["mime_detect_yes"], lambda x: "application/mime_detect_yes"),
+						mime_detect_no=octoprint.filemanager.ContentTypeDetector(["mime_detect_no"], lambda x: None)
+					)
+				)
+			)
+		)
+		self.plugin_manager.get_hooks.return_value = hook_extensions
+
+		self.plugin_manager_getter.return_value = self.plugin_manager
+
+	def tearDown(self):
+		self.plugin_manager_patcher.stop()
+
+	def test_full_extension_tree(self):
+		full = octoprint.filemanager.full_extension_tree()
+		self.assertTrue("machinecode" in full)
+		self.assertTrue("gcode" in full["machinecode"])
+		self.assertTrue(isinstance(full["machinecode"]["gcode"], octoprint.filemanager.ContentTypeMapping))
+		self.assertItemsEqual(["gcode", "gco", "g"], full["machinecode"]["gcode"].extensions)
+		self.assertTrue("foo" in full["machinecode"])
+		self.assertTrue(isinstance(full["machinecode"]["foo"], list))
+		self.assertItemsEqual(["f", "foo"], full["machinecode"]["foo"])
+
+		self.assertTrue("model" in full)
+		self.assertTrue("stl" in full["model"])
+		self.assertTrue(isinstance(full["model"]["stl"], octoprint.filemanager.ContentTypeMapping))
+		self.assertItemsEqual(["stl"], full["model"]["stl"].extensions)
+		self.assertTrue("amf" in full["model"])
+		self.assertTrue(isinstance(full["model"]["amf"], list))
+		self.assertItemsEqual(["amf"], full["model"]["amf"])
+
+	def test_get_mimetype(self):
+		self.assertEqual(octoprint.filemanager.get_mime_type("foo.stl"), "application/sla")
+		self.assertEqual(octoprint.filemanager.get_mime_type("foo.gcode"), "text/plain")
+		self.assertEqual(octoprint.filemanager.get_mime_type("foo.unknown"), "application/octet-stream")
+		self.assertEqual(octoprint.filemanager.get_mime_type("foo.mime_map_yes"), "application/mime_map_yes")
+		self.assertEqual(octoprint.filemanager.get_mime_type("foo.mime_map_no"), "application/octet-stream")
+		self.assertEqual(octoprint.filemanager.get_mime_type("foo.mime_detect_yes"), "application/mime_detect_yes")
+		self.assertEqual(octoprint.filemanager.get_mime_type("foo.mime_detect_no"), "application/octet-stream")
+
+	def test_valid_file_type(self):
+		self.assertTrue(octoprint.filemanager.valid_file_type("foo.stl", type="model"))
+		self.assertTrue(octoprint.filemanager.valid_file_type("foo.stl", type="stl"))
+		self.assertFalse(octoprint.filemanager.valid_file_type("foo.stl", type="machinecode"))
+		self.assertTrue(octoprint.filemanager.valid_file_type("foo.foo", type="machinecode"))
+		self.assertTrue(octoprint.filemanager.valid_file_type("foo.foo", type="foo"))
+		self.assertTrue(octoprint.filemanager.valid_file_type("foo.foo"))
+		self.assertTrue(octoprint.filemanager.valid_file_type("foo.mime_map_yes"))
+		self.assertTrue(octoprint.filemanager.valid_file_type("foo.mime_detect_yes"))
+		self.assertFalse(octoprint.filemanager.valid_file_type("foo.unknown"))
+
+	def test_get_file_type(self):
+		self.assertEqual(["machinecode", "gcode"], octoprint.filemanager.get_file_type("foo.gcode"))
+		self.assertEqual(["machinecode", "gcode"], octoprint.filemanager.get_file_type("foo.gco"))
+		self.assertEqual(["machinecode", "foo"], octoprint.filemanager.get_file_type("foo.f"))
+		self.assertEqual(["model", "stl"], octoprint.filemanager.get_file_type("foo.stl"))
+		self.assertEqual(["model", "amf"], octoprint.filemanager.get_file_type("foo.amf"))
+		self.assertIsNone(octoprint.filemanager.get_file_type("foo.unknown"))
+
+	def test_hook_failure(self):
+		def hook():
+			raise RuntimeError("Boo!")
+		self.plugin_manager.get_hooks.return_value = dict(hook=hook)
+
+		with mock.patch("octoprint.filemanager.logging") as patched_logging:
+			logger = mock.MagicMock()
+			patched_logging.getLogger.return_value = logger
+
+			octoprint.filemanager.get_all_extensions()
+
+			self.assertEqual(1, len(logger.mock_calls))
 
 class FileManagerTest(unittest.TestCase):
 
@@ -32,6 +126,15 @@ class FileManagerTest(unittest.TestCase):
 		self.plugin_manager_patcher = mock.patch("octoprint.plugin.plugin_manager")
 		self.plugin_manager = self.plugin_manager_patcher.start()
 
+		# mock settings
+		self.settings_patcher = mock.patch("octoprint.settings.settings")
+		self.settings_getter = self.settings_patcher.start()
+
+		self.settings = mock.create_autospec(octoprint.settings.Settings)
+		self.settings.getBaseFolder.return_value = "/path/to/a/base_folder"
+
+		self.settings_getter.return_value = self.settings
+
 		self.analysis_queue = mock.MagicMock(spec=octoprint.filemanager.AnalysisQueue)
 
 		self.slicing_manager = mock.MagicMock(spec=octoprint.slicing.SlicingManager)
@@ -49,19 +152,21 @@ class FileManagerTest(unittest.TestCase):
 	def cleanUp(self):
 		self.event_manager_patcher.stop()
 		self.plugin_manager_patcher.stop()
+		self.settings_patcher.stop()
 
 	def test_add_file(self):
 		wrapper = object()
 
 		self.local_storage.add_file.return_value = ("", "test.file")
 		self.local_storage.path_on_disk.return_value = "prefix/test.file"
+		self.local_storage.split_path.return_value = ("", "test.file")
 
 		test_profile = dict(id="_default", name="My Default Profile")
 		self.printer_profile_manager.get_current_or_default.return_value = test_profile
 
 		file_path = self.file_manager.add_file(octoprint.filemanager.FileDestinations.LOCAL, "test.file", wrapper)
 
-		self.assertEquals(("", "test.file"), file_path)
+		self.assertEqual(("", "test.file"), file_path)
 		self.local_storage.add_file.assert_called_once_with("test.file", wrapper, printer_profile=test_profile, allow_overwrite=False, links=None)
 		self.fire_event.assert_called_once_with(octoprint.filemanager.Events.UPDATED_FILES, dict(type="printables"))
 
@@ -76,7 +181,7 @@ class FileManagerTest(unittest.TestCase):
 
 		folder_path = self.file_manager.add_folder(octoprint.filemanager.FileDestinations.LOCAL, "test_folder")
 
-		self.assertEquals(("", "test_folder"), folder_path)
+		self.assertEqual(("", "test_folder"), folder_path)
 		self.local_storage.add_folder.assert_called_once_with("test_folder", ignore_existing=True)
 		self.fire_event.assert_called_once_with(octoprint.filemanager.Events.UPDATED_FILES, dict(type="printables"))
 
@@ -87,7 +192,7 @@ class FileManagerTest(unittest.TestCase):
 			self.file_manager.add_folder(octoprint.filemanager.FileDestinations.LOCAL, "test_folder", ignore_existing=False)
 			self.fail("Expected an exception to occur!")
 		except RuntimeError as e:
-			self.assertEquals("already there", e.message)
+			self.assertEqual("already there", e.message)
 		self.local_storage.add_folder.assert_called_once_with("test_folder", ignore_existing=False)
 
 	def test_remove_folder(self):
@@ -100,22 +205,145 @@ class FileManagerTest(unittest.TestCase):
 		self.file_manager.remove_folder(octoprint.filemanager.FileDestinations.LOCAL, "test_folder", recursive=False)
 		self.local_storage.remove_folder.assert_called_once_with("test_folder", recursive=False)
 
+	@mock.patch("octoprint.util.atomic_write", create=True)
+	@mock.patch("yaml.safe_dump", create=True)
+	@mock.patch("time.time")
+	def test_save_recovery_data(self, mock_time, mock_yaml_safe_dump, mock_atomic_write):
+		import os
+
+		now = 123456789
+		path = "some_file.gco"
+		pos = 1234
+		recovery_file = os.path.join("/path/to/a/base_folder", "print_recovery_data.yaml")
+
+		mock_atomic_write.return_value = mock.MagicMock(spec=file)
+		mock_atomic_write_handle = mock_atomic_write.return_value.__enter__.return_value
+		mock_time.return_value = now
+		self.local_storage.path_in_storage.return_value = path
+
+		self.file_manager.save_recovery_data(octoprint.filemanager.FileDestinations.LOCAL, path, pos)
+
+		expected = dict(origin=octoprint.filemanager.FileDestinations.LOCAL,
+		                path=path,
+		                pos=pos,
+		                date=now)
+
+
+		mock_atomic_write.assert_called_with(recovery_file)
+		mock_yaml_safe_dump.assert_called_with(expected, stream=mock_atomic_write_handle, default_flow_style=False, indent="  ", allow_unicode=True)
+
+	@mock.patch("octoprint.util.atomic_write", create=True)
+	@mock.patch("yaml.safe_dump", create=True)
+	@mock.patch("time.time")
+	def test_save_recovery_data(self, mock_time, mock_yaml_safe_dump, mock_atomic_write):
+		import os
+
+		now = 123456789
+		path = "some_file.gco"
+		pos = 1234
+		recovery_file = os.path.join("/path/to/a/base_folder", "print_recovery_data.yaml")
+
+		mock_atomic_write.return_value = mock.MagicMock(spec=file)
+		mock_atomic_write_handle = mock_atomic_write.return_value.__enter__.return_value
+		mock_time.return_value = now
+		self.local_storage.path_in_storage.return_value = path
+
+		mock_yaml_safe_dump.side_effect = RuntimeError
+
+		self.file_manager.save_recovery_data(octoprint.filemanager.FileDestinations.LOCAL, path, pos)
+
+	@mock.patch("os.path.isfile")
+	@mock.patch("os.remove")
+	def test_delete_recovery_data(self, mock_remove, mock_isfile):
+		import os
+		recovery_file = os.path.join("/path/to/a/base_folder", "print_recovery_data.yaml")
+
+		mock_isfile.return_value = True
+
+		self.file_manager.delete_recovery_data()
+
+		mock_remove.assert_called_with(recovery_file)
+
+	@mock.patch("os.path.isfile")
+	@mock.patch("os.remove")
+	def test_delete_recovery_data_no_file(self, mock_remove, mock_isfile):
+		mock_isfile.return_value = False
+
+		self.file_manager.delete_recovery_data()
+
+		self.assertFalse(mock_remove.called)
+
+	@mock.patch("os.path.isfile")
+	@mock.patch("os.remove")
+	def test_delete_recovery_data_error(self, mock_remove, mock_isfile):
+		mock_isfile.return_value = True
+		mock_remove.side_effect = RuntimeError
+
+		self.file_manager.delete_recovery_data()
+
+	@mock.patch("os.path.isfile")
+	@mock.patch("yaml.safe_load")
+	def test_get_recovery_data(self, mock_yaml_safe_load, mock_isfile):
+		import os
+		recovery_file = os.path.join("/path/to/a/base_folder", "print_recovery_data.yaml")
+
+		mock_isfile.return_value = True
+
+		data = dict(path="some_path.gco",
+		            origin="local",
+		            pos=1234,
+		            date=123456789)
+		mock_yaml_safe_load.return_value = data
+
+		with mock.patch("__builtin__.open", mock.mock_open(read_data=data), create=True) as m:
+			result = self.file_manager.get_recovery_data()
+
+			self.assertDictEqual(data, result)
+
+			m.assert_called_with(recovery_file)
+
+			mock_handle = m()
+			mock_yaml_safe_load.assert_called_with(mock_handle)
+
+	@mock.patch("os.path.isfile")
+	def test_get_recovery_data_no_file(self, mock_isfile):
+		mock_isfile.return_value = False
+
+		result = self.file_manager.get_recovery_data()
+
+		self.assertIsNone(result)
+
+	@mock.patch("os.path.isfile")
+	@mock.patch("yaml.safe_load")
+	@mock.patch("os.remove")
+	def test_get_recovery_data_broken_file(self, mock_remove, mock_yaml_safe_load, mock_isfile):
+		import os
+		recovery_file = os.path.join("/path/to/a/base_folder", "print_recovery_data.yaml")
+
+		mock_isfile.return_value = True
+		mock_yaml_safe_load.side_effect = RuntimeError
+
+		result = self.file_manager.get_recovery_data()
+
+		self.assertIsNone(result)
+		mock_remove.assert_called_with(recovery_file)
+
 	def test_get_metadata(self):
 		expected = dict(key="value")
 		self.local_storage.get_metadata.return_value = expected
 
 		metadata = self.file_manager.get_metadata(octoprint.filemanager.FileDestinations.LOCAL, "test.file")
 
-		self.assertEquals(metadata, expected)
+		self.assertEqual(metadata, expected)
 		self.local_storage.get_metadata.assert_called_once_with("test.file")
 
-	@mock.patch("__builtin__.open", new_callable=mock.mock_open)
+	@mock.patch("octoprint.filemanager.util.atomic_write")
 	@mock.patch("io.FileIO")
 	@mock.patch("shutil.copyfileobj")
 	@mock.patch("os.remove")
 	@mock.patch("tempfile.NamedTemporaryFile")
 	@mock.patch("time.time", side_effect=[1411979916.422, 1411979932.116])
-	def test_slice(self, mocked_time, mocked_tempfile, mocked_os, mocked_shutil, mocked_fileio, mocked_open):
+	def test_slice(self, mocked_time, mocked_tempfile, mocked_os, mocked_shutil, mocked_fileio, mocked_atomic_write):
 		callback = mock.MagicMock()
 		callback_args = ("one", "two", "three")
 
@@ -157,9 +385,9 @@ class FileManagerTest(unittest.TestCase):
 
 		# mock slice method on slicing manager
 		def slice(slicer_name, source_path, dest_path, profile, done_cb, printer_profile_id=None, position=None, callback_args=None, overrides=None, on_progress=None, on_progress_args=None, on_progress_kwargs=None):
-			self.assertEquals("some_slicer", slicer_name)
-			self.assertEquals("prefix/source.file", source_path)
-			self.assertEquals("tmp.file", dest_path)
+			self.assertEqual("some_slicer", slicer_name)
+			self.assertEqual("prefix/source.file", source_path)
+			self.assertEqual("tmp.file", dest_path)
 			self.assertIsNone(profile)
 			self.assertIsNone(overrides)
 			self.assertIsNone(printer_profile_id)
@@ -187,16 +415,16 @@ class FileManagerTest(unittest.TestCase):
 		self.local_storage.add_file.assert_called_once_with("dest.file", mock.ANY, printer_profile=expected_printer_profile, allow_overwrite=True, links=expected_links)
 
 		# assert that the generated gcode was manipulated as required
-		expected_open_calls = [mock.call("prefix/dest.file", "wb")]
-		self.assertEquals(mocked_open.call_args_list, expected_open_calls)
+		expected_atomic_write_calls = [mock.call("prefix/dest.file", "wb")]
+		self.assertEqual(mocked_atomic_write.call_args_list, expected_atomic_write_calls)
 		#mocked_open.return_value.write.assert_called_once_with(";Generated from source.file aabbccddeeff\r")
 
 		# assert that shutil was asked to copy the concatenated multistream
-		self.assertEquals(1, len(mocked_shutil.call_args_list))
+		self.assertEqual(1, len(mocked_shutil.call_args_list))
 		shutil_call_args = mocked_shutil.call_args_list[0]
 		self.assertTrue(isinstance(shutil_call_args[0][0], octoprint.filemanager.util.MultiStream))
 		multi_stream = shutil_call_args[0][0]
-		self.assertEquals(2, len(multi_stream.streams))
+		self.assertEqual(2, len(multi_stream.streams))
 		self.assertTrue(isinstance(multi_stream.streams[0], io.BytesIO))
 
 		# assert that the temporary file was deleted
@@ -230,9 +458,9 @@ class FileManagerTest(unittest.TestCase):
 
 		# mock slice method on slicing manager
 		def slice(slicer_name, source_path, dest_path, profile, done_cb, printer_profile_id=None, position=None, callback_args=None, overrides=None, on_progress=None, on_progress_args=None, on_progress_kwargs=None):
-			self.assertEquals("some_slicer", slicer_name)
-			self.assertEquals("prefix/source.file", source_path)
-			self.assertEquals("tmp.file", dest_path)
+			self.assertEqual("some_slicer", slicer_name)
+			self.assertEqual("prefix/source.file", source_path)
+			self.assertEqual("tmp.file", dest_path)
 			self.assertIsNone(profile)
 			self.assertIsNone(overrides)
 			self.assertIsNone(printer_profile_id)
@@ -259,4 +487,4 @@ class FileManagerTest(unittest.TestCase):
 		mocked_os.assert_called_once_with("tmp.file")
 
 		# assert that time.time was only called once
-		mocked_time.assert_called_once()
+		self.assertEqual(mocked_time.call_count, 1)
