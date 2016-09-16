@@ -1,5 +1,18 @@
 # OctoPrint Changelog
 
+## 1.2.16rc2 (2016-09-16)
+
+### Improvements
+
+  * Return a "400 Bad Request" instead of a "500 Internal Server Error" if a `multipart/form-data` request (e.g. a file upload) is sent which lacks the `boundary` field.
+
+### Bug Fixes
+
+  * [#1491](https://github.com/foosel/OctoPrint/issues/1491): Fixed generate/delete API key in the user settings
+  * [#1492](https://github.com/foosel/OctoPrint/issues/1492): Fixed a bug in the software update plugin depending on the presence of the ``prerelease`` flag which is only present when added manually or using a non stable release channel.
+
+([Commits](https://github.com/foosel/OctoPrint/compare/1.2.16rc1...1.2.16rc2))
+
 ## 1.2.16rc1 (2016-09-09)
 
 ### Improvements
