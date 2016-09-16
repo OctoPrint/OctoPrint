@@ -192,7 +192,7 @@ def delete_old_unrendered_timelapses():
 				if prefix in prefixes_to_clean:
 					continue
 
-				if os.path.getmtime(entry.path) < cutoff:
+				if entry.stat().st_mtime < cutoff:
 					prefixes_to_clean.append(prefix)
 			except:
 				if logging.getLogger(__name__).isEnabledFor(logging.DEBUG):
