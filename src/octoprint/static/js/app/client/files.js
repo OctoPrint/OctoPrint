@@ -9,9 +9,18 @@
     }
 })(function(OctoPrint, $, _) {
     var url = "api/files";
+    var downloadUrl = "downloads/files";
 
     var resourceForLocation = function(location) {
         return url + "/" + location;
+    };
+
+    var downloadForLocation = function(location) {
+        return downloadUrl + "/" + location;
+    };
+
+    var downloadForEntry = function(location, filename) {
+        return downloadForLocation(location) + "/" + filename;
     };
 
     var resourceForEntry = function(location, filename) {
@@ -119,21 +128,7 @@
         },
 
         download: function (location, path, opts) {
-            var deferred = $.Deferred();
-            getEntry(location, path, opts)
-                .done(function (response) {
-                    OctoPrint.download(response.refs.download, opts)
-                        .done(function () {
-                            deferred.resolve.apply(null, arguments);
-                        })
-                        .fail(function () {
-                            deferred.reject.apply(null, arguments);
-                        });
-                })
-                .fail(function () {
-                    deferred.reject.apply(null, arguments);
-                });
-            return deferred.promise();
+            return OctoPrint.download(downloadForEntry(location, path), opts);
         }
     }
 });
