@@ -460,6 +460,9 @@ $(function() {
             // perform the request
             self.receiving(true);
             return OctoPrint.settings.get()
+                .always(function() {
+                    self.receiving(false);
+                })
                 .done(function(response) {
                     self.fromResponse(response, local);
 
@@ -483,9 +486,6 @@ $(function() {
                         deferred.reject(args);
                     });
                     self.outstanding = [];
-                })
-                .always(function() {
-                    self.receiving(false);
                 });
         };
 

@@ -7,6 +7,11 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 import logging
 import os
 
+try:
+	from os import scandir, walk
+except ImportError:
+	from scandir import scandir, walk
+
 from jinja2 import nodes
 from jinja2.ext import Extension
 from jinja2.loaders import FileSystemLoader, PrefixLoader, ChoiceLoader, \
@@ -90,7 +95,7 @@ class SelectedFilesLoader(BaseLoader):
 def get_all_template_paths(loader):
 	def walk_folder(folder):
 		files = []
-		walk_dir = os.walk(folder, followlinks=True)
+		walk_dir = walk(folder, followlinks=True)
 		for dirpath, dirnames, filenames in walk_dir:
 			for filename in filenames:
 				path = os.path.join(dirpath, filename)

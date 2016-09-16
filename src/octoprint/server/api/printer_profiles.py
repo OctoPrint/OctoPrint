@@ -11,15 +11,33 @@ import copy
 from flask import jsonify, make_response, request, url_for
 from werkzeug.exceptions import BadRequest
 
-from octoprint.server.api import api, NO_CONTENT
-from octoprint.server.util.flask import restricted_access
+from octoprint.server.api import api, NO_CONTENT, valid_boolean_trues
+from octoprint.server.util.flask import restricted_access, with_revalidation_checking
 from octoprint.util import dict_merge
 
 from octoprint.server import printerProfileManager
 from octoprint.printer.profile import InvalidProfileError, CouldNotOverwriteError, SaveError
 
 
+def _lastmodified():
+	return printerProfileManager.last_modified
+
+
+def _etag(lm=None):
+	if lm is None:
+		lm = _lastmodified()
+
+	import hashlib
+	hash = hashlib.sha1()
+	hash.update(str(lm))
+	hash.update(repr(printerProfileManager.get_default()))
+	return hash.hexdigest()
+
+
 @api.route("/printerprofiles", methods=["GET"])
+@with_revalidation_checking(etag_factory=_etag,
+                            lastmodified_factory=_lastmodified,
+                            unless=lambda: request.values.get("force", "false") in valid_boolean_trues)
 def printerProfilesList():
 	all_profiles = printerProfileManager.get_all()
 	return jsonify(dict(profiles=_convert_profiles(all_profiles)))

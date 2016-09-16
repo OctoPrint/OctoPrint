@@ -92,6 +92,20 @@ def noCachingResponseHandler(resp):
 	return flask.add_non_caching_response_headers(resp)
 
 
+def noCachingExceptGetResponseHandler(resp):
+	"""
+	``after_request`` handler for blueprints which shall set no caching headers
+	on their responses to any requests that are not sent with method ``GET``.
+
+	See :func:`noCachingResponseHandler`.
+	"""
+
+	if _flask.request.method == "GET":
+		return flask.add_no_max_age_response_headers(resp)
+	else:
+		return flask.add_non_caching_response_headers(resp)
+
+
 def optionsAllowOrigin(request):
 	"""
 	Shortcut for request handling for CORS OPTIONS requests to set CORS headers.

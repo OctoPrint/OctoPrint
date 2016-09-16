@@ -203,11 +203,12 @@ $(function() {
         self._focus = undefined;
         self._switchToPath = undefined;
         self.requestData = function(params) {
-            var focus, switchToPath;
+            var focus, switchToPath, force;
 
             if (_.isObject(params)) {
                 focus = params.focus;
                 switchToPath = params.switchToPath;
+                force = params.force
             } else if (arguments.length) {
                 // old argument list type call signature
                 log.warn("FilesViewModel.requestData called with old argument list. That is deprecated, please use parameter object instead.");
@@ -221,6 +222,9 @@ $(function() {
                 if (arguments.length >= 3) {
                     switchToPath = arguments[2];
                 }
+                if (arguments.length >= 4) {
+                    force = arguments[3];
+                }
             }
 
             self._focus = self._focus || focus;
@@ -230,7 +234,7 @@ $(function() {
                 return self._otherRequestInProgress
             }
 
-            return self._otherRequestInProgress = OctoPrint.files.list(true)
+            return self._otherRequestInProgress = OctoPrint.files.list(true, force)
                 .done(function(response) {
                     self.fromResponse(response, {focus: self._focus, switchToPath: self._switchToPath});
                 })

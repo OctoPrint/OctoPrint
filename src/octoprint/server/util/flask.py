@@ -29,6 +29,10 @@ import octoprint.plugin
 
 from werkzeug.contrib.cache import BaseCache
 
+try:
+	from os import scandir, walk
+except ImportError:
+	from scandir import scandir, walk
 
 #~~ monkey patching
 
@@ -52,12 +56,12 @@ def enable_additional_translations(default_locale="en", additional_folders=None)
 			if not os.path.isdir(dirname):
 				return []
 			result = []
-			for folder in os.listdir(dirname):
-				locale_dir = os.path.join(dirname, folder, 'LC_MESSAGES')
+			for entry in scandir(dirname):
+				locale_dir = os.path.join(entry.path, 'LC_MESSAGES')
 				if not os.path.isdir(locale_dir):
 					continue
-				if filter(lambda x: x.endswith('.mo'), os.listdir(locale_dir)):
-					result.append(Locale.parse(folder))
+				if filter(lambda x: x.name.endswith('.mo'), scandir(locale_dir)):
+					result.append(Locale.parse(entry.name))
 			if not result:
 				result.append(Locale.parse(self._default_locale))
 			return result
@@ -832,6 +836,61 @@ def conditional(condition, met):
 	return decorator
 
 
+def with_revalidation_checking(etag_factory=None,
+                               lastmodified_factory=None,
+                               condition=None,
+                               unless=None):
+	if etag_factory is None:
+		def etag_factory(lm=None):
+			return None
+
+	if lastmodified_factory is None:
+		def lastmodified_factory():
+			return None
+
+	if condition is None:
+		def condition(lm=None, etag=None):
+			if lm is None:
+				lm = lastmodified_factory()
+
+			if etag is None:
+				etag = etag_factory(lm=lm)
+
+			return check_lastmodified(lm) and check_etag(etag)
+
+	if unless is None:
+		def unless():
+			return False
+
+	def decorator(f):
+		@functools.wraps(f)
+		def decorated_function(*args, **kwargs):
+			lm = lastmodified_factory()
+			etag = etag_factory(lm)
+
+			if condition(lm, etag) and not unless():
+				return make_response("Not Modified", 304)
+
+			# generate response
+			response = f(*args, **kwargs)
+
+			# set etag header if not already set
+			if etag and response.get_etag()[0] is None:
+				response.set_etag(etag)
+
+			# set last modified header if not already set
+			if lm and response.headers.get("Last-Modified", None) is None:
+				if not isinstance(lm, basestring):
+					from werkzeug.http import http_date
+					lm = http_date(lm)
+				response.headers["Last-Modified"] = lm
+
+			response = add_no_max_age_response_headers(response)
+			return response
+		return decorated_function
+	return decorator
+
+
 def check_etag(etag):
 	return flask.request.method in ("GET", "HEAD") and \
 	       flask.request.if_none_match is not None and \
@@ -839,6 +898,10 @@ def check_etag(etag):
 
 
 def check_lastmodified(lastmodified):
+	if isinstance(lastmodified, float):
+		from datetime import datetime
+		lastmodified = datetime.fromtimestamp(lastmodified).replace(microsecond=0)
+
 	return flask.request.method in ("GET", "HEAD") and \
 	       flask.request.if_modified_since is not None and \
 	       lastmodified >= flask.request.if_modified_since
@@ -848,6 +911,11 @@ def add_non_caching_response_headers(response):
 	response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0"
 	response.headers["Pragma"] = "no-cache"
 	response.headers["Expires"] = "-1"
+	return response
+
+
+def add_no_max_age_response_headers(response):
+	response.headers["Cache-Control"] = "max-age=0"
 	return response
 
 

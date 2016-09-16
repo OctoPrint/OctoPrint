@@ -27,6 +27,12 @@ import collections
 
 import re
 
+try:
+	from os import scandir, walk
+except ImportError:
+	from scandir import scandir, walk
+
+
 # currently configured timelapse
 current = None
 
@@ -67,18 +73,25 @@ def _extract_prefix(filename):
 	return filename[:pos]
 
 
+def last_modified_finished():
+	return os.stat(settings().getBaseFolder("timelapse")).st_mtime
+
+
+def last_modified_unrendered():
+	return os.stat(settings().getBaseFolder("timelapse_tmp")).st_mtime
+
+
 def get_finished_timelapses():
 	files = []
 	basedir = settings().getBaseFolder("timelapse")
-	for osFile in os.listdir(basedir):
-		if not fnmatch.fnmatch(osFile, "*.mp[g4]"):
+	for entry in scandir(basedir):
+		if not fnmatch.fnmatch(entry.name, "*.mp[g4]"):
 			continue
-		statResult = os.stat(os.path.join(basedir, osFile))
 		files.append({
-			"name": osFile,
-			"size": util.get_formatted_size(statResult.st_size),
-			"bytes": statResult.st_size,
-			"date": util.get_formatted_datetime(datetime.datetime.fromtimestamp(statResult.st_ctime))
+			"name": entry.name,
+			"size": util.get_formatted_size(entry.stat().st_size),
+			"bytes": entry.stat().st_size,
+			"date": util.get_formatted_datetime(datetime.datetime.fromtimestamp(entry.stat().st_ctime))
 		})
 	return files
 
@@ -92,19 +105,18 @@ def get_unrendered_timelapses():
 	basedir = settings().getBaseFolder("timelapse_tmp")
 	jobs = collections.defaultdict(lambda: dict(count=0, size=None, bytes=0, date=None, timestamp=None))
 
-	for osFile in os.listdir(basedir):
-		if not fnmatch.fnmatch(osFile, "*.jpg"):
+	for entry in scandir(basedir):
+		if not fnmatch.fnmatch(entry.name, "*.jpg"):
 			continue
 
-		prefix = _extract_prefix(osFile)
+		prefix = _extract_prefix(entry.name)
 		if prefix is None:
 			continue
 
-		statResult = os.stat(os.path.join(basedir, osFile))
 		jobs[prefix]["count"] += 1
-		jobs[prefix]["bytes"] += statResult.st_size
-		if jobs[prefix]["timestamp"] is None or statResult.st_ctime < jobs[prefix]["timestamp"]:
-			jobs[prefix]["timestamp"] = statResult.st_ctime
+		jobs[prefix]["bytes"] += entry.stat().st_size
+		if jobs[prefix]["timestamp"] is None or entry.stat().st_ctime < jobs[prefix]["timestamp"]:
+			jobs[prefix]["timestamp"] = entry.stat().st_ctime
 
 	with _job_lock:
 		global current_render_job
@@ -130,13 +142,13 @@ def delete_unrendered_timelapse(name):
 
 	basedir = settings().getBaseFolder("timelapse_tmp")
 	with _cleanup_lock:
-		for filename in os.listdir(basedir):
+		for entry in scandir(basedir):
 			try:
-				if fnmatch.fnmatch(filename, "{}*.jpg".format(name)):
-					os.remove(os.path.join(basedir, filename))
+				if fnmatch.fnmatch(entry.name, "{}*.jpg".format(name)):
+					os.remove(entry.path)
 			except:
 				if logging.getLogger(__name__).isEnabledFor(logging.DEBUG):
-					logging.getLogger(__name__).exception("Error while processing file {} during cleanup".format(filename))
+					logging.getLogger(__name__).exception("Error while processing file {} during cleanup".format(entry.name))
 
 
 def render_unrendered_timelapse(name, gcode=None, postfix=None, fps=25):
@@ -167,26 +179,24 @@ def delete_old_unrendered_timelapses():
 	prefixes_to_clean = []
 
 	with _cleanup_lock:
-		for filename in os.listdir(basedir):
+		for entry in scandir(basedir):
 			try:
-				path = os.path.join(basedir, filename)
-
-				prefix = _extract_prefix(filename)
+				prefix = _extract_prefix(entry.name)
 				if prefix is None:
 					# might be an old tmp_00000.jpg kinda frame. we can't
 					# render those easily anymore, so delete that stuff
-					if _old_capture_format_re.match(filename):
-						os.remove(path)
+					if _old_capture_format_re.match(entry.name):
+						os.remove(entry.path)
 					continue
 
 				if prefix in prefixes_to_clean:
 					continue
 
-				if os.path.getmtime(path) < cutoff:
+				if os.path.getmtime(entry.path) < cutoff:
 					prefixes_to_clean.append(prefix)
 			except:
 				if logging.getLogger(__name__).isEnabledFor(logging.DEBUG):
-					logging.getLogger(__name__).exception("Error while processing file {} during cleanup".format(filename))
+					logging.getLogger(__name__).exception("Error while processing file {} during cleanup".format(entry.name))
 
 		for prefix in prefixes_to_clean:
 			delete_unrendered_timelapse(prefix)

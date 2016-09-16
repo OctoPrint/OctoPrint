@@ -12,25 +12,46 @@
     var updateUrl = url + "update";
 
     exports.checkEntries = function(entries, force, opts) {
+        if (arguments.length == 1 && _.isObject(arguments[0])) {
+            var params = arguments[0];
+            entries = params.entries;
+            force = params.force;
+            opts = params.opts;
+        }
+
         entries = entries || [];
         if (typeof entries == "string") {
             entries = [entries];
         }
 
-        var data = {
-            force: !!force
-        };
+        var data = {};
+        if (!!force) {
+            data.force = true;
+        }
         if (entries && entries.length) {
-            data["check"] = entries.join(",")
+            data.check = entries.join(",");
         }
         return OctoPrint.getWithQuery(checkUrl, data, opts);
     };
 
     exports.check = function(force, opts) {
-        return exports.checkEntries([], force, opts);
+        if (arguments.length == 1 && _.isObject(arguments[0])) {
+            var params = arguments[0];
+            force = params.force;
+            opts = params.opts;
+        }
+
+        return exports.checkEntries({entries: [], force: force, opts: opts});
     };
 
     exports.update = function(entries, force, opts) {
+        if (arguments.length == 1 && _.isObject(arguments[0])) {
+            var params = arguments[0];
+            entries = params.entries;
+            force = params.force;
+            opts = params.opts;
+        }
+
         entries = entries || [];
         if (typeof entries == "string") {
             entries = [entries];
@@ -44,6 +65,12 @@
     };
 
     exports.updateAll = function(force, opts) {
+        if (arguments.length == 1 && _.isObject(arguments[0])) {
+            var params = arguments[0];
+            force = params.force;
+            opts = params.opts;
+        }
+
         var data = {
             force: !!force
         };

@@ -53,10 +53,8 @@ $(function() {
                 .done(self.requestData);
         };
 
-        self.onUserLoggedIn = function(user) {
-            if (user.admin) {
-                self.requestData();
-            }
+        self.onSettingsShown = function() {
+            self.requestData();
         };
     }
 

@@ -6,6 +6,7 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import os
+import threading
 
 from flask import request, jsonify, url_for, make_response
 from werkzeug.utils import secure_filename
@@ -15,7 +16,7 @@ import octoprint.util as util
 from octoprint.settings import settings, valid_boolean_trues
 
 from octoprint.server import admin_permission, printer
-from octoprint.server.util.flask import redirect_to_tornado, restricted_access, get_json_command_from_request
+from octoprint.server.util.flask import redirect_to_tornado, restricted_access, get_json_command_from_request, with_revalidation_checking
 from octoprint.server.api import api
 
 from octoprint.server import NO_CONTENT
@@ -23,8 +24,36 @@ from octoprint.server import NO_CONTENT
 
 #~~ timelapse handling
 
+_timelapse_cache_finished = []
+_timelapse_cache_finished_lastmodified = None
+_timelapse_cache_unrendered = []
+_timelapse_cache_unrendered_lastmodified = None
+_timelapse_cache_mutex = threading.RLock()
+
+def _lastmodified(unrendered):
+	lm_finished = octoprint.timelapse.last_modified_finished()
+	if unrendered:
+		lm_unrendered = octoprint.timelapse.last_modified_unrendered()
+
+		if lm_finished is None or lm_unrendered is None:
+			return None
+		return max(lm_finished, lm_unrendered)
+	return lm_finished
+
+def _etag(unrendered, lm=None):
+	if lm is None:
+		lm = _lastmodified(unrendered)
+
+	import hashlib
+	hash = hashlib.sha1()
+	hash.update(str(lm))
+
+	return hash.hexdigest()
 
 @api.route("/timelapse", methods=["GET"])
+@with_revalidation_checking(etag_factory=lambda lm=None: _etag(request.values.get("unrendered", "false") in valid_boolean_trues, lm=lm),
+                            lastmodified_factory=lambda: _lastmodified(request.values.get("unrendered", "false") in valid_boolean_trues),
+                            unless=lambda: request.values.get("force", "false") in valid_boolean_trues)
 def getTimelapseData():
 	timelapse = octoprint.timelapse.current
 
@@ -41,15 +70,41 @@ def getTimelapseData():
 	else:
 		config = dict(type="off")
 
-	files = octoprint.timelapse.get_finished_timelapses()
+	force = request.values.get("force", "false") in valid_boolean_trues
+	unrendered = request.values.get("unrendered", "false") in valid_boolean_trues
+
+	global _timelapse_cache_finished_lastmodified, _timelapse_cache_finished, _timelapse_cache_unrendered_lastmodified, _timelapse_cache_unrendered
+	with _timelapse_cache_mutex:
+		current_lastmodified_finished = octoprint.timelapse.last_modified_finished()
+		current_lastmodified_unrendered = octoprint.timelapse.last_modified_unrendered()
+
+		if not force and _timelapse_cache_finished_lastmodified == current_lastmodified_finished:
+			files = _timelapse_cache_finished
+		else:
+			files = octoprint.timelapse.get_finished_timelapses()
+			_timelapse_cache_finished = files
+			_timelapse_cache_finished_lastmodified = current_lastmodified_finished
+
+		unrendered_files = []
+		if unrendered:
+			if not force and _timelapse_cache_unrendered_lastmodified == current_lastmodified_unrendered:
+				unrendered_files = _timelapse_cache_unrendered
+			else:
+				unrendered_files = octoprint.timelapse.get_unrendered_timelapses()
+				_timelapse_cache_unrendered = unrendered_files
+				_timelapse_cache_unrendered_lastmodified = current_lastmodified_unrendered
+
+	finished_list = []
 	for f in files:
-		f["url"] = url_for("index") + "downloads/timelapse/" + f["name"]
+		output = dict(f)
+		output["url"] = url_for("index") + "downloads/timelapse/" + f["name"]
+		finished_list.append(output)
 
 	result = dict(config=config,
-	              files=files)
+	              files=finished_list)
 
-	if "unrendered" in request.values and request.values["unrendered"] in valid_boolean_trues:
-		result.update(unrendered=octoprint.timelapse.get_unrendered_timelapses())
+	if unrendered:
+		result.update(unrendered=unrendered_files)
 
 	return jsonify(result)
 

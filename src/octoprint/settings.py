@@ -31,6 +31,8 @@ import logging
 import re
 import uuid
 import copy
+import time
+
 from builtins import bytes
 
 try:
@@ -531,6 +533,7 @@ class Settings(object):
 
 		self._config = None
 		self._dirty = False
+		self._dirty_time = 0
 		self._mtime = None
 
 		self._get_preprocessors = dict(
@@ -770,6 +773,10 @@ class Settings(object):
 		"""
 		stat = os.stat(self._configfile)
 		return stat.st_mtime
+
+	@property
+	def last_modified_or_made_dirty(self):
+		return max(self.last_modified, self._dirty_time)
 
 	#~~ load and save
 
@@ -1274,6 +1281,7 @@ class Settings(object):
 		try:
 			chain.del_by_path(path)
 			self._dirty = True
+			self._dirty_time = time.time()
 		except KeyError:
 			if error_on_path:
 				raise NoSuchSettingsPath()
@@ -1325,6 +1333,7 @@ class Settings(object):
 			try:
 				chain.del_by_path(path)
 				self._dirty = True
+				self._dirty_time = time.time()
 			except KeyError:
 				if error_on_path:
 					raise NoSuchSettingsPath()
@@ -1335,6 +1344,7 @@ class Settings(object):
 			else:
 				chain.set_by_path(path, value)
 			self._dirty = True
+			self._dirty_time = time.time()
 
 	def setInt(self, path, value, **kwargs):
 		if value is None:
@@ -1381,11 +1391,13 @@ class Settings(object):
 			if not self._config["folder"]:
 				del self._config["folder"]
 			self._dirty = True
+			self._dirty_time = time.time()
 		elif (path != currentPath and path != defaultPath) or force:
 			if not "folder" in self._config.keys():
 				self._config["folder"] = {}
 			self._config["folder"][type] = path
 			self._dirty = True
+			self._dirty_time = time.time()
 
 	def saveScript(self, script_type, name, script):
 		script_folder = self.getBaseFolder("scripts")
