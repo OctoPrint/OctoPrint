@@ -807,7 +807,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 						# if we are using the update_script, we need to set our update_branch and force
 						# to install the exact version we requested
 
-						if check["prerelease"]:
+						if check.get("prerelease", None):
 							# we are tracking prereleases => we want to be on the correct prerelease channel/branch
 							channel = check.get("prerelease_channel", None)
 							if channel:
