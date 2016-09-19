@@ -213,15 +213,30 @@ $(function() {
                 identifier = self.identifierPlaceholder();
             }
 
+            var defaultProfile = cleanProfile();
+            var valid = function(value, f, def) {
+                var v = f(value);
+                if (isNaN(v)) {
+                    return def;
+                }
+                return v;
+            };
+            var validFloat = function(value, def) {
+                return valid(value, parseFloat, def);
+            };
+            var validInt = function(value, def) {
+                return valid(value, parseInt, def);
+            };
+
             var profile = {
                 id: identifier,
                 name: self.name(),
                 color: self.color(),
                 model: self.model(),
                 volume: {
-                    width: parseFloat(self.volumeWidth()),
-                    depth: parseFloat(self.volumeDepth()),
-                    height: parseFloat(self.volumeHeight()),
+                    width: validFloat(self.volumeWidth(), defaultProfile.volume.width),
+                    depth: validFloat(self.volumeDepth(), defaultProfile.volume.depth),
+                    height: validFloat(self.volumeHeight(), defaultProfile.volume.height),
                     formFactor: self.volumeFormFactor(),
                     origin: self.volumeOrigin()
                 },
@@ -231,37 +246,36 @@ $(function() {
                     offsets: [
                         [0.0, 0.0]
                     ],
-                    nozzleDiameter: parseFloat(self.nozzleDiameter())
+                    nozzleDiameter: validFloat(self.nozzleDiameter(), defaultProfile.extruder.nozzleDiameter)
                 },
                 axes: {
                     x: {
-                        speed: parseInt(self.axisXSpeed()),
+                        speed: validInt(self.axisXSpeed(), defaultProfile.axes.x.speed),
                         inverted: self.axisXInverted()
                     },
                     y: {
-                        speed: parseInt(self.axisYSpeed()),
+                        speed: validInt(self.axisYSpeed(), defaultProfile.axes.y.speed),
                         inverted: self.axisYInverted()
                     },
                     z: {
-                        speed: parseInt(self.axisZSpeed()),
+                        speed: validInt(self.axisZSpeed(), defaultProfile.axes.z.speed),
                         inverted: self.axisZInverted()
                     },
                     e: {
-                        speed: parseInt(self.axisESpeed()),
+                        speed: validInt(self.axisESpeed(), defaultProfile.axes.e.speed),
                         inverted: self.axisEInverted()
                     }
                 }
             };
 
+            var offsetX, offsetY;
             if (self.extruders() > 1) {
                 for (var i = 0; i < self.extruders() - 1; i++) {
                     var offset = [0.0, 0.0];
                     if (i < self.extruderOffsets().length) {
-                        try {
-                            offset = [parseFloat(self.extruderOffsets()[i]["x"]()), parseFloat(self.extruderOffsets()[i]["y"]())];
-                        } catch (exc) {
-                            log.error("Invalid offset in profile", identifier, "for extruder", i+1, ":", self.extruderOffsets()[i]["x"], ",", self.extruderOffsets()[i]["y"]);
-                        }
+                        offsetX = validFloat(self.extruderOffsets()[i]["x"](), 0.0);
+                        offsetY = validFloat(self.extruderOffsets()[i]["y"](), 0.0);
+                        offset = [offsetX, offsetY];
                     }
                     profile.extruder.offsets.push(offset);
                 }
