@@ -17,6 +17,7 @@ Contents
    :maxdepth: 2
 
    features/index.rst
+   bundledplugins/index.rst
    configuration/index.rst
    api/index.rst
    events/index.rst

@@ -206,7 +206,7 @@ Available plugin hooks
 octoprint.accesscontrol.appkey
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. py:function:: hook(*args, **kwargs)
+.. py:function:: acl_appkey_hook(*args, **kwargs)
 
    By handling this hook plugins may register additional :ref:`App session key providers <sec-api-apps-sessionkey>`
    within the system.
@@ -354,7 +354,7 @@ octoprint.cli.commands
 octoprint.comm.protocol.action
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. py:function:: hook(comm_instance, line, action, *args, **kwargs)
+.. py:function:: protocol_action_hook(comm_instance, line, action, *args, **kwargs)
 
    React to a :ref:`action command <sec-features-action_commands>` received from the printer.
 
@@ -389,7 +389,7 @@ This describes actually four hooks:
   * ``octoprint.comm.protocol.gcode.sending``
   * ``octoprint.comm.protocol.gcode.sent``
 
-.. py:function:: hook(comm_instance, phase, cmd, cmd_type, gcode, *args, **kwargs)
+.. py:function:: protocol_gcodephase_hook(comm_instance, phase, cmd, cmd_type, gcode, *args, **kwargs)
 
    Pre- and postprocess commands as they progress through the various phases of being sent to the printer. The phases
    are the following:
@@ -502,7 +502,7 @@ octoprint.comm.protocol.gcode.received
 octoprint.comm.protocol.scripts
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. py:function:: hook(comm_instance, script_type, script_name, *args, **kwargs)
+.. py:function:: protocol_scripts_hook(comm_instance, script_type, script_name, *args, **kwargs)
 
    Return a prefix to prepend and a postfix to append to the script ``script_name`` of type ``type``. Handlers should
    make sure to only proceed with returning additional scripts if the ``script_type`` and ``script_name`` match
@@ -536,7 +536,7 @@ octoprint.comm.protocol.scripts
 octoprint.comm.transport.serial.factory
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. py:function:: hook(comm_instance, port, baudrate, read_timeout, *args, **kwargs)
+.. py:function:: serial_factory_hook(comm_instance, port, baudrate, read_timeout, *args, **kwargs)
 
    Return a serial object to use as serial connection to the printer. If a handler cannot create a serial object
    for the specified ``port`` (and ``baudrate``), it should just return ``None``.
@@ -612,7 +612,7 @@ octoprint.comm.transport.serial.factory
 octoprint.filemanager.extension_tree
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. py:function:: hook(*args, **kwargs)
+.. py:function:: file_extension_hook(*args, **kwargs)
 
    Return additional entries for the tree of accepted file extensions for uploading/handling by the file manager.
 
@@ -648,7 +648,7 @@ octoprint.filemanager.extension_tree
 octoprint.filemanager.preprocessor
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. py:function:: hook(path, file_object, links=None, printer_profile=None, allow_overwrite=False, *args, **kwargs)
+.. py:function:: file_preprocessor_hook(path, file_object, links=None, printer_profile=None, allow_overwrite=False, *args, **kwargs)
 
    Replace the ``file_object`` used for saving added files to storage by calling :func:`~octoprint.filemanager.util.AbstractFileWrapper.save`.
 
@@ -714,7 +714,7 @@ octoprint.printer.factory
 octoprint.server.http.bodysize
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. py:function:: hook(current_max_body_sizes, *args, **kwargs)
+.. py:function:: server_bodysize_hook(current_max_body_sizes, *args, **kwargs)
 
    Allows extending the list of custom maximum body sizes on the web server per path and HTTP method with custom entries
    from plugins.
@@ -752,7 +752,7 @@ octoprint.server.http.bodysize
 octoprint.server.http.routes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. py:function:: hook(server_routes, *args, **kwargs)
+.. py:function:: server_route_hook(server_routes, *args, **kwargs)
 
    Allows extending the list of routes registered on the web server.
 
@@ -807,7 +807,7 @@ octoprint.server.http.routes
 octoprint.ui.web.templatetypes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. py:function:: hook(template_sorting, template_rules, *args, **kwargs)
+.. py:function:: templatetype_hook(template_sorting, template_rules, *args, **kwargs)
 
    Allows extending the set of supported template types in the web interface. This is interesting for plugins which want
    to offer other plugins to hook into their own offered UIs. Handlers must return a list of additional template
