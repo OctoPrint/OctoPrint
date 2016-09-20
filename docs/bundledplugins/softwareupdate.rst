@@ -56,7 +56,7 @@ There you can adjust the following settings:
   * **OctoPrint Release Channel**: The release channel of OctoPrint to track for updates. If you only want stable versions,
     select "Stable" here which is also the default. "Maintenance RCs" will also allow you to update to maintenance release
     candidates, "Devel RCs" will also allow you to update to development release candidates. If in doubt, leave it at
-    "Stable". :ref:`Read more about Release Channels here <https://github.com/foosel/OctoPrint/wiki/Using-Release-Channels>`.
+    "Stable". `Read more about Release Channels here <https://github.com/foosel/OctoPrint/wiki/Using-Release-Channels>`_.
   * **Version cache TTL**: The "time to live" of the cache OctoPrint will use to temporarily persist the version information
     for the various components registered with the plugin, so that they don't have to be queried from the internet every time
     you load the page. Defaults to 24h, you usually shouldn't need to change that value.
