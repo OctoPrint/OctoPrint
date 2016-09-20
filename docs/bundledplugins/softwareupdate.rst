@@ -1,4 +1,4 @@
-.. sec-bundledplugins-softwareupdate:
+.. _sec-bundledplugins-softwareupdate:
 
 Software Update Plugin
 ======================
@@ -7,7 +7,7 @@ The Software Update Plugin allows receiving notifications about new releases
 of OctoPrint or installed plugins which registered with it and -- if properly
 configured -- also applying the found updates.
 
-.. sec-bundledplugins-softwareupdate-firststeps:
+.. _sec-bundledplugins-softwareupdate-firststeps:
 
 First Steps
 -----------
@@ -15,72 +15,57 @@ First Steps
 Out of the box the Software Update Plugin will be able to notify you of any
 updates that might be available for your OctoPrint installation or any plugins
 that registered themselves with it. In order to also be able to update
-your OctoPrint installation, you'll need to :ref:`configure <sec-bundledplugins-softwareupdate-octoprintsetup>`
+your OctoPrint installation, you'll need to configure
 at least OctoPrint's checkout folder, and you also should
 configure the restart commands for OctoPrint and the whole server.
 
-.. sec-bundledplugins-softwareupdate-octoprintsetup:
+For configuring the plugin you'll need to go into OctoPrint's Settings Dialog, navigate to the
+Software Upda.. _section therein and once you are there click on the little wrench icon in the
+upper right corner.
 
-Making OctoPrint updateable on existing installations
-+++++++++++++++++++++++++++++++++++++++++++++++++++++
+.. _fig-bundledplugins-softwareupdate-plugin-configuration:
+.. figure:: ../images/bundledplugins-softwareupdate-plugin-configuration.png
+   :align: center
+   :alt: Software Update plugin configuration dialog
 
-.. note::
+   The Software Update plugin configuration dialog
 
-   OctoPi releases 0.12.0 and later ship with this already setup for you!
+There you can adjust the following settings:
 
-.. note::
+  * **OctoPrint checkout folder**: This should be the path to OctoPrint's git checkout folder (``/home/pi/OctoPrint``
+    for OctoPi or `manual installs following the Raspberry Pi setup guide <https://github.com/foosel/OctoPrint/wiki/Setup-on-a-Raspberry-Pi-running-Raspbian>`_).
+    This must be set to allow updating from within OctoPrint
 
-   **OctoPi 0.11.0 users**: Please also take a look at
-   `the note at the very end of this FAQ entry <https://github.com/foosel/OctoPrint/wiki/FAQ#how-can-i-update-the-octoprint-installation-on-my-octopi-image>`_.
-   Due to a little issue in that OctoPi release 0.11.0 you might have to fix
-   the URL your OctoPrint checkout is using for updating. This can easily be
-   done by SSHing into your OctoPi instance and doing this::
+    .. note::
 
-       cd ~/OctoPrint
-       git remote set-url origin https://github.com/foosel/OctoPrint.git
+       OctoPi releases 0.12.0 and later ship with this already setup for you.
 
-If you updated OctoPrint to 1.2.0 or later from a previous existing install,
-you'll probably want to set up its software update configuration to allow it
-to update itself from now on. For this you'll need to edit ``config.yaml`` and
-make it look like this (``# ...`` indicates where your ``config.yaml`` might
-contain additional lines that are not of interest here):
+    .. note::
 
-.. code-block:: yaml
+       **OctoPi 0.11.0 users**: Please also take a look at
+       `the note at the very end of this FAQ entry <https://github.com/foosel/OctoPrint/wiki/FAQ#how-can-i-update-the-octoprint-installation-on-my-octopi-image>`_.
+       Due to a little issue in that OctoPi release 0.11.0 you might have to fix
+       the URL your OctoPrint checkout is using for updating. This can easily be
+       done by SSHing into your OctoPi instance and doing this::
 
-   # ...
-   plugins:
-     # ...
-     softwareupdate:
-       # ...
-       checks:
-         # ...
-         octoprint:
-           update_folder: /home/pi/OctoPrint
-         # ...
-       octoprint_restart_command: sudo service octoprint restart
-       environment_restart_command: sudo shutdown -r now
-   # ...
+           cd ~/OctoPrint
+           git remote set-url origin https://github.com/foosel/OctoPrint.git
 
-.. note::
+  * **OctoPrint version tracking**: Whether you want to track OctoPrint *releases* or every *commit*. Usually you want to
+    select "Release" here which is also the default, unless you are a developer.
+  * **OctoPrint Release Channel**: The release channel of OctoPrint to track for updates. If you only want stable versions,
+    select "Stable" here which is also the default. "Maintenance RCs" will also allow you to update to maintenance release
+    candidates, "Devel RCs" will also allow you to update to development release candidates. If in doubt, leave it at
+    "Stable". :ref:`Read more about Release Channels here <https://github.com/foosel/OctoPrint/wiki/Using-Release-Channels>`.
+  * **Version cache TTL**: The "time to live" of the cache OctoPrint will use to temporarily persist the version information
+    for the various components registered with the plugin, so that they don't have to be queried from the internet every time
+    you load the page. Defaults to 24h, you usually shouldn't need to change that value.
 
-   You can copy and paste this YAML snippet into the `Yamlpatcher <http://plugins.octoprint.org/plugins/yamlpatcher/>`_
-   to apply it to your ``config.yaml`` without having to edit it manually. Your
-   preview should look something like the screenshot below.
+More settings are available by :ref:`editing the correspondi.. _section in config.yaml <sec-bundledplugins-softwareupdate-configuration>`.
 
-   .. image:: ../images/bundledplugins-softwareupdate-yaml_octoprintsetup.png
-      :align: center
-      :alt: Yamlpatcher preview
+That restart commands for OctoPrint and the whole server can be configured under Settings > Server.
 
-If you are not running OctoPi or didn't setup OctoPrint following the
-`Raspberry Pi setup guide <https://github.com/foosel/OctoPrint/wiki/Setup-on-a-Raspberry-Pi-running-Raspbian>`_
-you'll need to substitute ``/home/pi/OctoPrint`` with the folder you originally
-cloned OctoPrint into during initial setup.
-
-Save the file, exit the editor, restart OctoPrint. Whenever new releases
-become available, you should now be able to update right from the update
-notification.
-
-.. sec-bundledplugins-softwareupdate-configuration:
+.. _sec-bundledplugins-softwareupdate-configuration:
 
 Configuring the Plugin
 ----------------------
@@ -91,12 +76,6 @@ Configuring the Plugin
       softwareupdate:
         # the time-to-live of the version cache, in minutes
         cache_ttl: 60
-
-        # command to restart OctoPrint (no automatic restart if unset)
-        octoprint_restart_command: sudo service octoprint restart
-
-        # command to reboot OctoPrint's host (no automatic reboot if unset)
-        environment_restart_command: sudo shutdown -r now
 
         # configured version check and update methods
         checks:
@@ -114,7 +93,11 @@ Configuring the Plugin
 
           # further checks may be define here
 
-.. sec-bundledplugins-softwareupdate-configuration-versionchecks:
+        # pip command, if another one than the automatically detected one should be
+        # used - should normally NOT be necessary and hence set
+        pip_command: /path/to/pip
+
+.. _sec-bundledplugins-softwareupdate-configuration-versionchecks:
 
 Version checks
 ++++++++++++++
@@ -126,6 +109,10 @@ Version checks
     * ``repo``: (mandatory) Github repository to check
     * ``prerelease``: ``True`` or ``False``, default ``False``, set to
       ``True`` to also include releases on Github marked as prerelease.
+    * ``release_branch``: Branch name to check against ``target_comittish``
+      field in Github release data - release will only be included if the
+      values match. Defaults to being unset, in which case no match will
+      be performed.
     * ``release_compare``: Method to use to compare between current version
       information and release versions on Github. One of ``python`` (version
       comparison using ``pkg_resources.parse_version``, newer version detected
@@ -165,7 +152,7 @@ Version checks
       information and whether the current version is up-to-date or not, see
       below for details.
 
-.. sec-bundledplugins-softwareupdate-configuration-updatemethods:
+.. _sec-bundledplugins-softwareupdate-configuration-updatemethods:
 
 Update methods
 ++++++++++++++
@@ -175,7 +162,8 @@ Update methods
     recent version specifier as retrieved from the update check.
   * ``update_script``: A script to execute in order to perform the update. May
     contain placeholders ``{target}`` (for the most recent version specified
-    as retrieved from the update check), ``{folder}`` for the working directory
+    as retrieved from the update check), ``{branch}`` for the branch to switch
+    to to access the release, ``{folder}`` for the working directory
     of the script and ``{python}`` for the python executable OctoPrint is
     running under. The working directory must be specified either by an
     ``update_folder`` setting or if the ``git_commit`` check is used its
@@ -184,7 +172,7 @@ Update methods
     :ref:`hook <sec-bundledplugins-softwareupdate-hooks>`. A python callable
     which performs the update, see below for details.
 
-.. sec-bundledplugins-softwareupdate-configuration-patterns:
+.. _sec-bundledplugins-softwareupdate-configuration-patterns:
 
 Common configuration patterns
 +++++++++++++++++++++++++++++
@@ -235,12 +223,12 @@ The same, but tracking all commits pushed to branch ``devel`` (thus allowing
            branch: devel
            pip: 'https://github.com/someUser/OctoPrint-SomePlugin/archive/{target}.zip'
 
-.. sec-bundledplugins-softwareupdate-hooks:
+.. _sec-bundledplugins-softwareupdate-hooks:
 
 Hooks
 -----
 
-.. sec-bundledplugins-softwareupdate-hooks-check_config:
+.. _sec-bundledplugins-softwareupdate-hooks-check_config:
 
 octoprint.plugin.softwareupdate.check_config
 ++++++++++++++++++++++++++++++++++++++++++++
@@ -297,12 +285,12 @@ octoprint.plugin.softwareupdate.check_config
    :return: A dictionary of check configurations as described above
    :rtype: dict
 
-.. sec-bundledplugins-softwareupdate-helpers:
+.. _sec-bundledplugins-softwareupdate-helpers:
 
 Helpers
 -------
 
-.. sec-bundledplugins-softwareupdate-helpers-version_checks:
+.. _sec-bundledplugins-softwareupdate-helpers-version_checks:
 
 version_checks
 ++++++++++++++
@@ -310,7 +298,7 @@ version_checks
 ``version_checks`` module of the Software Update plugin, allows reusing the
 bundled version check variants from plugins (e.g. wrapped in a ``python_checker``).
 
-.. sec-bundledplugins-softwareupdate-helpers-updaters:
+.. _sec-bundledplugins-softwareupdate-helpers-updaters:
 
 updaters
 ++++++++
@@ -318,21 +306,21 @@ updaters
 ``updaters`` module of the Software Update plugin, allows reusing the bundled
 updater variants from plugins (e.g. wrapped in a ``python_updater``).
 
-.. sec-bundledplugins-softwareupdate-helpers-exceptions:
+.. _sec-bundledplugins-softwareupdate-helpers-exceptions:
 
 exceptions
 ++++++++++
 
 ``exceptions`` module of the Software Update plugin.
 
-.. sec-bundledplugins-softwareupdate-helpers-util:
+.. _sec-bundledplugins-softwareupdate-helpers-util:
 
 util
 ++++
 
 ``util`` module of the Software Update plugin.
 
-.. sec-bundledplugins-softwareupdate-source:
+.. _sec-bundledplugins-softwareupdate-source:
 
 Source Code
 -----------

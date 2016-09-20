@@ -5,16 +5,16 @@ Cura
 
 The Cura Plugin allows slicing of STL files uploaded to OctoPrint directly via
 the `CuraEngine <http://github.com/Ultimaker/CuraEngine>`_ **up to and
-including version 15.04** and supersedes the slicing support integrated into
-OctoPrint so far.
+including version 15.04.x** and supersedes the slicing support integrated into
+OctoPrint so far. It comes bundled with OctoPrint starting with version 1.2.0.
 
 .. note::
 
-   The current development version of CuraEngine has changed its calling
-   parameters in such a way that the current implementation of the Cura plugin
-   is not compatible to it. Until the plugin can be updated to be compatible
-   to these changes, please use only CuraEngine versions up to and including
-   15.04 (or the ``legacy`` branch in the CuraEngine repository).
+   Versions of CuraEngine later than 15.04.x have changed their calling
+   parameters in such a way that the current implementation of OctoPrint's Cura plugin
+   is not compatible to it. For this reason, please use only CuraEngine versions up to
+   and including 15.04 for now, as available in the ``legacy`` branch of the CuraEngine
+   repository on Github.
 
 The plugin offers a settings module that allows configuring the path to the
 CuraEngine executable to use, as well as importing and managing slicing
@@ -35,7 +35,7 @@ Before you can slice from within OctoPrint, you'll need to
 
 .. note::
 
-   OctoPi 0.12.0 ships with steps 1 and 2 already done, you only need to
+   OctoPi 0.12.0 and later ships with steps 1 and 2 already done, you only need to
    supply one or more slicing profiles to get going :)
 
 .. _sec-bundledplugins-cura-installing:
@@ -43,11 +43,9 @@ Before you can slice from within OctoPrint, you'll need to
 Installing CuraEngine
 ---------------------
 
-You'll need a current build of `CuraEngine <http://github.com/Ultimaker/CuraEngine>`_
-in order to be able to use the Cura OctoPrint plugin. If you are running OctoPrint
-on a desktop PC (Window, Mac, i386 Linux), you can take this from a full
-install of `Cura <http://github.com/daid/Cura>`_ (you'll find it in the
-installation directory). Otherwise you'll need to compile it yourself.
+You'll need a build of ``legacy`` branch of `CuraEngine <http://github.com/Ultimaker/CuraEngine>`_
+in order to be able to use the Cura OctoPrint plugin. You can find the ``legacy`` branch
+`here <https://github.com/ultimaker/curaengine/tree/legacy>`_.
 
 If you previously used the `old variant of the Cura integration <https://github.com/foosel/OctoPrint/wiki/Cura-Integration>`_,
 you probably still have a fully functional binary lying around in the
@@ -58,6 +56,11 @@ path to that in the plugin settings.
 
 Compiling for Raspbian
 ++++++++++++++++++++++
+
+.. todo::
+
+   Provide updated binary, verify if makefile patch can finally be dumped on Raspbian
+   Jessie.
 
 .. note::
 
@@ -104,9 +107,10 @@ Using Cura Profiles
 -------------------
 
 The Cura Plugin supports importing your existing profiles for Cura **up to and
-including Cura 15.04**. Newer Cura releases (e.g. 15.06) do not allow to
-export the slicing profile anymore and also use a different internal format
-that will *not* work with the current version of the Cura Plugin.
+including Cura 15.04.x**. Newer Cura releases (e.g. 15.06 or 2.x) use a different
+internal format that will *not* work with the current version of the Cura Plugin.
+
+You can find downloads of Cura 15.04.x for Windows, Mac and Linux `on Ultimaker's download page <https://ultimaker.com/en/products/cura-software/list>`_.
 
 In order to export a slicing profile from the Cura desktop UI, open it,
 set up your profile, then click on "File" and there on "Save Profile". You can
