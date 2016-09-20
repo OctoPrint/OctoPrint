@@ -898,9 +898,12 @@ def check_etag(etag):
 
 
 def check_lastmodified(lastmodified):
-	if isinstance(lastmodified, float):
-		from datetime import datetime
+	from datetime import datetime
+	if isinstance(lastmodified, (float, int)):
 		lastmodified = datetime.fromtimestamp(lastmodified).replace(microsecond=0)
+
+	if not isinstance(lastmodified, datetime):
+		raise ValueError("lastmodified must be a datetime or float or int instance but, got {} instead".format(lastmodified.__class__))
 
 	return flask.request.method in ("GET", "HEAD") and \
 	       flask.request.if_modified_since is not None and \
