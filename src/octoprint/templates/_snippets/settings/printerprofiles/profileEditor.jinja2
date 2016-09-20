@@ -1,150 +1,40 @@
-<form class="form-horizontal">
-    <div class="control-group" data-bind="css: {error: nameInvalid()}">
-        <label class="control-label">{{ _('Name') }}</label>
-        <div class="controls">
-            <input type="text" data-bind="value: name, valueUpdate: 'afterkeydown'">
-            <span data-bind="visible: nameInvalid()"><br><span class="help-inline">{{ _('Name must be set') }}</span></span>
-        </div>
+<div id="settings_printerProfiles_editDialog" class="modal hide fade">
+    <div class="modal-header">
+        <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
+        <h3 class="modal-title"></h3>
     </div>
-    <div class="control-group" data-bind="css: {error: identifierInvalid()}">
-        <label class="control-label">{{ _('Identifier') }}</label>
-        <div class="controls">
-            <input type="text" data-bind="value: identifier, valueUpdate: 'afterkeydown', enable: isNew, css: {disabled: !isNew()}, attr: {placeholder: identifierPlaceholder}">
-            <span data-bind="visible: identifierInvalid()"><br><span class="help-inline" data-bind="text: identifierInvalidText()"></span></span>
-        </div>
-    </div>
-    <div class="control-group">
-        <label class="control-label">{{ _('Model') }}</label>
-        <div class="controls">
-            <input type="text" data-bind="value: model">
-        </div>
-    </div>
-    <div class="control-group">
-        <label class="control-label">{{ _('Color') }}</label>
-        <div class="controls">
-            <select data-bind="value: color, options: availableColors, optionsText: 'name', optionsValue: 'key'">
-            </select>
-        </div>
-    </div>
-    <div class="control-group">
-        <label class="control-label">{{ _('Form Factor') }}</label>
-        <div class="controls">
-            <label class="radio"><input type="radio" name="printerProfileFormFactorGroup" value="rectangular" data-bind="checked: volumeFormFactor"> {{ _('Rectangular') }}</label>
-        </div>
-        <div class="controls">
-            <label class="radio"><input type="radio" name="printerProfileFormFactorGroup" value="circular" data-bind="checked: volumeFormFactor"> {{ _('Circular') }}</label>
-        </div>
-    </div>
-    <div class="control-group">
-        <div class="control-group">
-            <label class="control-label">{{ _('Origin') }}</label>
-            <div class="controls">
-                <select data-bind="value: volumeOrigin, options: availableOrigins, optionsText: 'name', optionsValue: 'key'">
-                </select>
+    <div class="modal-body">
+        <div class="full-sized-box">
+            <ul class="nav nav-pills">
+                <li class="active"><a href="#settings_printerProfiles_editDialog_general" data-toggle="tab">{{ _('General') }}</a></li>
+                <li><a href="#settings_printerProfiles_editDialog_buildvolume" data-toggle="tab">{{ _('Print bed & build volume') }}</a></li>
+                <li><a href="#settings_printerProfiles_editDialog_axes" data-toggle="tab">{{ _('Axes') }}</a></li>
+                <li><a href="#settings_printerProfiles_editDialog_extruder" data-toggle="tab">{{ _('Hotend & extruder') }}</a></li>
+            </ul>
+
+            <!-- ko with: printerProfiles.editor -->
+            <div class="tab-content scrollable">
+                <div id="settings_printerProfiles_editDialog_general" class="tab-pane active">
+                    {% include '_snippets/settings/printerprofiles/profileEditorGeneral.jinja2' %}
+                </div>
+
+                <div id="settings_printerProfiles_editDialog_buildvolume" class="tab-pane">
+                    {% include '_snippets/settings/printerprofiles/profileEditorBuildvolume.jinja2' %}
+                </div>
+
+                <div id="settings_printerProfiles_editDialog_axes" class="tab-pane">
+                    {% include '_snippets/settings/printerprofiles/profileEditorAxes.jinja2' %}
+                </div>
+
+                <div id="settings_printerProfiles_editDialog_extruder" class="tab-pane">
+                    {% include '_snippets/settings/printerprofiles/profileEditorExtruder.jinja2' %}
+                </div>
             </div>
+            <!-- /ko -->
         </div>
     </div>
-    <div class="control-group">
-        <label class="control-label">{{ _('Volume') }}</label>
-        <div class="controls form-inline">
-            <label>{{ _('X') }}</label>
-            <div class="input-append">
-                <input type="number" step="0.01" class="input-mini text-right" data-bind="value: volumeWidth" placeholder="200">
-                <span class="add-on">mm</span>
-            </div>
-        </div>
-        <div class="controls form-inline">
-            <label>{{ _('Y') }}</label>
-            <div class="input-append">
-                <input type="number" step="0.01" class="input-mini text-right" data-bind="value: volumeDepth" placeholder="200">
-                <span class="add-on">mm</span>
-            </div>
-        </div>
-        <div class="controls form-inline">
-            <label>{{ _('Z') }}</label>
-            <div class="input-append">
-                <input type="number" step="0.01" class="input-mini text-right" data-bind="value: volumeHeight" placeholder="200">
-                <span class="add-on">mm</span>
-            </div>
-        </div>
+    <div class="modal-footer">
+        <button class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Abort') }}</button>
+        <button class="btn btn-primary btn-confirm" data-bind="enabled: printerProfiles.enableEditorSubmitButton, css: {disabled: !printerProfiles.enableEditorSubmitButton()}"><i class="icon-spinner icon-spin" data-bind="visible: printerProfiles.requestInProgress()"></i> {{ _('Confirm') }}</button>
     </div>
-    <div class="control-group">
-        <label class="control-label">{{ _('Heated Bed') }}</label>
-        <div class="controls">
-            <input type="checkbox" data-bind="checked: heatedBed">
-        </div>
-    </div>
-    <div class="control-group">
-        <label class="control-label">{{ _('Axis') }}</label>
-        <div class="controls form-inline">
-            <label>{{ _('X') }}</label>
-            <div class="input-append">
-                <input type="number" class="input-mini text-right" data-bind="value: axisXSpeed" placeholder="6000">
-                <span class="add-on">mm/min</span>
-            </div>
-            <label class="checkbox">
-                <input type="checkbox" data-bind="checked: axisXInverted"> {{ _('Invert control') }}
-            </label>
-        </div>
-        <div class="controls form-inline">
-            <label>{{ _('Y') }}</label>
-            <div class="input-append">
-                <input type="number" class="input-mini text-right" data-bind="value: axisYSpeed" placeholder="6000">
-                <span class="add-on">mm/min</span>
-            </div>
-            <label class="checkbox">
-                <input type="checkbox" data-bind="checked: axisYInverted"> {{ _('Invert control') }}
-            </label>
-        </div>
-        <div class="controls form-inline">
-            <label>{{ _('Z') }}</label>
-            <div class="input-append">
-                <input type="number" class="input-mini text-right" data-bind="value: axisZSpeed" placeholder="200">
-                <span class="add-on">mm/min</span>
-            </div>
-            <label class="checkbox">
-                <input type="checkbox" data-bind="checked: axisZInverted"> {{ _('Invert control') }}
-            </label>
-        </div>
-        <div class="controls form-inline">
-            <label>{{ _('E') }}</label>
-            <div class="input-append">
-                <input type="number" class="input-mini text-right" data-bind="value: axisESpeed" placeholder="300">
-                <span class="add-on">mm/min</span>
-            </div>
-        </div>
-    </div>
-    <div class="control-group">
-        <label class="control-label">{{ _('Nozzle Diameter') }}</label>
-        <div class="controls">
-            <div class="input-append">
-                <input type="number" step="0.01" class="input-mini text-right" data-bind="value: nozzleDiameter" placeholder="0.4">
-                <span class="add-on">mm</span>
-            </div>
-        </div>
-    </div>
-    <div class="control-group">
-        <label class="control-label">{{ _('Number of Extruders') }}</label>
-        <div class="controls">
-            <input type="number" class="input-mini text-right" min="1" max="10" data-bind="value: extruders">
-        </div>
-    </div>
-    <div class="control-group" data-bind="visible: extruders() > 1">
-        <label class="control-label">{{ _('Nozzle Offsets (relative to first nozzle T0)') }}</label>
-        <!-- ko foreach: koExtruderOffsets -->
-        <div class="controls form-inline">
-            <label>T<span data-bind="text: idx"></span>:</label>
-            <label>X</label>
-            <div class="input-append">
-                <input type="number" step="0.01" class="input-mini text-right" data-bind="value: x" placeholder="0">
-                <span class="add-on">mm</span>
-            </div>
-            <label>Y</label>
-            <div class="input-append">
-                <input type="number" step="0.01" class="input-mini text-right" data-bind="value: y" placeholder="0">
-                <span class="add-on">mm</span>
-            </div>
-        </div>
-        <!-- /ko -->
-    </div>
-</form>
+</div>

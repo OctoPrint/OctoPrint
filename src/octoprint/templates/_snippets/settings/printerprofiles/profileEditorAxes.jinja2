@@ -1,0 +1,56 @@
+<form class="form-horizontal">
+    <div class="control-group">
+        <div class="controls">
+            {{ _('Please define the maximum speed/feedrate of the individual axes and whether their control should be inverted or not.') }}
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label">{{ _('X') }}</label>
+        <div class="controls form-inline">
+            <div class="input-append">
+                <input type="number" class="input-mini text-right" data-bind="value: axisXSpeed" placeholder="6000">
+                <span class="add-on">mm/min</span>
+            </div>
+            <label class="checkbox">
+                <input type="checkbox" data-bind="checked: axisXInverted"> {{ _('Invert control') }}
+            </label>
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label">{{ _('Y') }}</label>
+        <div class="controls form-inline">
+            <div class="input-append">
+                <input type="number" class="input-mini text-right" data-bind="value: axisYSpeed" placeholder="6000">
+                <span class="add-on">mm/min</span>
+            </div>
+            <label class="checkbox">
+                <input type="checkbox" data-bind="checked: axisYInverted"> {{ _('Invert control') }}
+            </label>
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label">{{ _('Z') }}</label>
+        <div class="controls form-inline">
+            <div class="input-append">
+                <input type="number" class="input-mini text-right" data-bind="value: axisZSpeed" placeholder="200">
+                <span class="add-on">mm/min</span>
+            </div>
+            <label class="checkbox">
+                <input type="checkbox" data-bind="checked: axisZInverted"> {{ _('Invert control') }}
+            </label>
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label">{{ _('E') }}</label>
+        <div class="controls form-inline">
+            <div class="input-append">
+                <input type="number" class="input-mini text-right" data-bind="value: axisESpeed" placeholder="300">
+                <span class="add-on">mm/min</span>
+            </div>
+        </div>
+    </div>
+
+    <p>
+        <small>{{ _('This information is used for manual control via the "Control" tab. It does NOT influence already sliced files that you upload to OctoPrint!') }}</small>
+    </p>
+</form>

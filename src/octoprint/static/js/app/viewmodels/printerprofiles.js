@@ -438,7 +438,14 @@ $(function() {
                     self.confirmEditProfile(add);
                 }
             });
-            editDialog.modal("show");
+
+            $('ul.nav-pills a[data-toggle="tab"]:first', editDialog).tab("show");
+            editDialog.modal({
+                minHeight: function() { return Math.max($.fn.modal.defaults.maxHeight() - 80, 250); }
+            }).css({
+                width: 'auto',
+                'margin-left': function() { return -($(this).width() /2); }
+            });
         };
 
         self.confirmEditProfile = function(add) {
