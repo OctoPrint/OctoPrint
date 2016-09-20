@@ -231,7 +231,7 @@ octoprint.accesscontrol.appkey
 octoprint.cli.commands
 ~~~~~~~~~~~~~~~~~~~~~~
 
-.. py:function:: hook(cli_group, pass_octoprint_ctx, *args, **kwargs)
+.. py:function:: cli_commands_hook(cli_group, pass_octoprint_ctx, *args, **kwargs)
 
    By providing a handler for this hook plugins may register commands on OctoPrint's command line interface (CLI).
 
@@ -476,7 +476,7 @@ This describes actually four hooks:
 octoprint.comm.protocol.gcode.received
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. py:function:: hook(comm_instance, line, *args, **kwargs)
+.. py:function:: gcode_received_hook(comm_instance, line, *args, **kwargs)
 
    Get the returned lines sent by the printer. Handlers should return the received line or in any case, the modified
    version of it. If the the handler returns None, processing will be aborted and the communication layer will get an
@@ -682,7 +682,7 @@ octoprint.filemanager.preprocessor
 octoprint.printer.factory
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. py:function:: hook(components, *args, **kwargs)
+.. py:function:: printer_factory_hook(components, *args, **kwargs)
 
    Return a :class:`~octoprint.printer.PrinterInstance` instance to use as global printer object. This will
    be called only once during initial server startup.
