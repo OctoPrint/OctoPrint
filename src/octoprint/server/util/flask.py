@@ -892,12 +892,18 @@ def with_revalidation_checking(etag_factory=None,
 
 
 def check_etag(etag):
+	if etag is None:
+		return False
+
 	return flask.request.method in ("GET", "HEAD") and \
 	       flask.request.if_none_match is not None and \
 	       etag in flask.request.if_none_match
 
 
 def check_lastmodified(lastmodified):
+	if lastmodified is None:
+		return False
+
 	from datetime import datetime
 	if isinstance(lastmodified, (float, int)):
 		lastmodified = datetime.fromtimestamp(lastmodified).replace(microsecond=0)
