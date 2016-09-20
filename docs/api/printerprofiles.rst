@@ -164,7 +164,7 @@ Profile
    * - ``axes.{axis}.speed``
      - 0..1
      - ``int``
-     - Maximum speed of the axis in mm/s.
+     - Maximum speed of the axis in mm/min.
    * - ``axes.{axis}.inverted``
      - 0..1
      - ``boolean``
