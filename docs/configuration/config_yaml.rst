@@ -165,16 +165,16 @@ appearance or to modify the order and presence of the various UI components:
          # order of generic templates
          generic: []
 
-     # Disabled components per container. If a component is included here it will not
-     # be included in OctoPrint's UI at all. Note that this might mean that critical
-     # functionality will not be available if no replacement is registered.
-     disabled:
-       navbar: [],
-       sidebar: [],
-       tab: [],
-       settings: [],
-       usersettings: [],
-       generic: []
+       # Disabled components per container. If a component is included here it will not
+       # be included in OctoPrint's UI at all. Note that this might mean that critical
+       # functionality will not be available if no replacement is registered.
+       disabled:
+         navbar: []
+         sidebar: []
+         tab: []
+         settings: []
+         usersettings: []
+         generic: []
 
      # Default language of OctoPrint. If left unset OctoPrint will try to match up available
      # languages with the user's browser settings.
