@@ -281,6 +281,10 @@ $(function() {
                 }
             }
 
+            if (profile.volume.formFactor == "circular") {
+                profile.volume.depth = profile.volume.width;
+            }
+
             return profile;
         };
 

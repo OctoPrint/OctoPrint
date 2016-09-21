@@ -453,6 +453,10 @@ class PrinterProfileManager(object):
 		if profile["volume"]["formFactor"] == BedTypes.CIRCULAR and not profile["volume"]["origin"] == BedOrigin.CENTER:
 			profile["volume"]["origin"] = BedOrigin.CENTER
 
+		# force width and depth of volume to be identical for circular beds, with width being the reference
+		if profile["volume"]["formFactor"] == BedTypes.CIRCULAR:
+			profile["volume"]["depth"] = profile["volume"]["width"]
+
 		# validate offsets
 		offsets = []
 		for offset in profile["extruder"]["offsets"]:

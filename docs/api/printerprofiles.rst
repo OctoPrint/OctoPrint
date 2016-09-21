@@ -143,11 +143,12 @@ Profile
    * - ``volume.width``
      - 0..1
      - ``float``
-     - The width of the print volume
+     - The width of the print volume. For circular beds, the diameter of the bed.
    * - ``volume.depth``
      - 0..1
      - ``float``
-     - The depth of the print volume
+     - The depth of the print volume. For circular beds, this is the diameter of the bed and will be forced to be the same
+       as ``volume.width`` upon saving.
    * - ``volume.height``
      - 0..1
      - ``float``
