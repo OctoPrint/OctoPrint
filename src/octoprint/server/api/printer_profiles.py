@@ -76,12 +76,18 @@ def printerProfilesAdd():
 		del new_profile["default"]
 
 	profile = dict_merge(base_profile, new_profile)
+
+	if not "id" in profile:
+		return make_response("Profile does not contain mandatory 'id' field", 400)
+	if not "name" in profile:
+		return make_response("Profile does not contain mandatory 'name' field", 400)
+
 	try:
 		saved_profile = printerProfileManager.save(profile, allow_overwrite=False, make_default=make_default)
 	except InvalidProfileError:
 		return make_response("Profile is invalid", 400)
 	except CouldNotOverwriteError:
-		return make_response("Profile already exists and overwriting was not allowed", 400)
+		return make_response("Profile {} already exists and overwriting was not allowed".format(profile["id"]), 400)
 	except Exception as e:
 		return make_response("Could not save profile: %s" % str(e), 500)
 	else:
