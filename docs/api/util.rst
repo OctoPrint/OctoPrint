@@ -224,6 +224,17 @@ Test paths or URLs
         }
       }
 
+   :json command:      The command to execute, currently either ``path`` or ``url``
+   :json path:         ``path`` command only: the path to test
+   :json check_type:   ``path`` command only: the type of path to test for, either ``file`` or ``dir``
+   :json check_access: ``path`` command only: a list of access permissions to check for
+   :json url:          ``url`` command only: the URL to test
+   :json status:       ``url`` command only: one or more expected status codes
+   :json method:       ``url`` command only: the HTTP method to use for the check
+   :json timeout:      ``url`` command only: the timeout for the HTTP request
+   :json response:     ``url`` command only: whether to include response data and if so in what form
+   :statuscode 200:    No error occurred
+
 .. _sec-api-util-datamodel:
 
 Data model

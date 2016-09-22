@@ -37,6 +37,8 @@ Finish wizards
    supplying the information whether the wizard plugin's identifier was within the list of ``handled``
    wizards or not.
 
+   :json handled: A list of handled wizards
+
 .. _sec-api-wizard-datamodel:
 
 Data model

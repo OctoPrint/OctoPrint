@@ -34,3 +34,8 @@
    :param object settings: The settings to save
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
+
+.. seealso::
+
+   :ref:`Settings API <sec-api-settings>`
+       The documentation of the underlying settings API.

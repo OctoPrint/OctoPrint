@@ -3,6 +3,11 @@
 :mod:`OctoPrint.languages`
 --------------------------
 
+.. note::
+
+   All methods here require that the used API token or a the existing browser session
+   has admin rights.
+
 .. js:function:: OctoPrint.languages.list(opts)
 
    Retrieves a list of available language packs.
@@ -26,3 +31,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
+.. seealso::
+
+   :ref:`Languages API <sec-api-languages>`
+       The documentation of the underlying languages API.

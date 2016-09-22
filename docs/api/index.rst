@@ -11,7 +11,7 @@ REST API
    version.rst
    apps.rst
    connection.rst
-   fileops.rst
+   files.rst
    job.rst
    languages.rst
    logs.rst

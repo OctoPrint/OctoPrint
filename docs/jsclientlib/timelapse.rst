@@ -22,3 +22,8 @@
 .. js:function:: getConfig(opts)
 
 .. js:function:: saveConfig(config, opts)
+
+.. seealso::
+
+   :ref:`Timelapse API <sec-api-timelapse>`
+       The documentation of the underlying timelapse API.

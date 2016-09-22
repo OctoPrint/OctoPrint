@@ -26,3 +26,8 @@
 .. js:function:: OctoPrint.users.getSettings(name, opts)
 
 .. js:function:: OctoPrint.users.saveSettings(name, settings, opts)
+
+.. seealso::
+
+   :ref:`User API <sec-api-users>`
+       The documentation of the underlying user API.

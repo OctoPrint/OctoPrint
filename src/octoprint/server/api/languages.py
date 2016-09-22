@@ -101,7 +101,7 @@ def uploadLanguagePack():
 
 	exts = filter(lambda x: upload_name.lower().endswith(x), (".zip", ".tar.gz", ".tgz", ".tar"))
 	if not len(exts):
-		return make_response("File doesn't have a valid extension for a plugin archive", 400)
+		return make_response("File doesn't have a valid extension for a language pack archive", 400)
 
 	target_path = settings().getBaseFolder("translations")
 
