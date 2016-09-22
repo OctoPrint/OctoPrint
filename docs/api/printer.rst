@@ -232,6 +232,8 @@ Issue a print head command
 
    Upon success, a status code of :http:statuscode:`204` and an empty body is returned.
 
+   Requires user rights.
+
    **Example Jog Request**
 
    Jog the print head by 10mm in X, -5mm in Y and 0.02mm in Z.
@@ -346,6 +348,8 @@ Issue a tool command
    ``extrude`` -- not printing. Otherwise a :http:statuscode:`409` is returned.
 
    Upon success, a status code of :http:statuscode:`204` and an empty body is returned.
+
+   Requires user rights.
 
    **Example Target Temperature Request**
 
@@ -590,6 +594,8 @@ Issue a bed command
    If no heated bed is configured for the currently selected printer profile, the resource will return
    an :http:statuscode:`409`.
 
+   Requires user rights.
+
    **Example Target Temperature Request**
 
    Set the target temperature for the printer's heated bed to 75°C.
@@ -739,6 +745,8 @@ Issue an SD command
 
    Upon success, a status code of :http:statuscode:`204` and an empty body is returned.
 
+   Requires user rights.
+
    **Example Init Request**
 
    Initialize the SD card.
@@ -851,6 +859,8 @@ Send an arbitrary command to the printer
 
    If successful returns a :http:statuscode:`204` and an empty body.
 
+   Requires user rights.
+
    **Example for sending a single command**
 
    .. sourcecode:: http
@@ -894,8 +904,8 @@ Send an arbitrary command to the printer
 
 .. _sec-api-printer-datamodel:
 
-Datamodel
-=========
+Data model
+==========
 
 .. _sec-api-printer-datamodel-fullstate:
 

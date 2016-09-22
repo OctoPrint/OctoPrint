@@ -202,7 +202,7 @@
 
    .. code-block:: javascript
 
-      OctoPrint.printer.setToolTemperatureOffsets(-5);
+      OctoPrint.printer.setBedTemperatureOffset(-5);
 
    See the ``offset`` command in :ref:`Issue a bed command <sec-api-printer-bedcommand>` for more details.
 

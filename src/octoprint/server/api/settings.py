@@ -48,6 +48,9 @@ def getSettings():
 
 	connectionOptions = printer.__class__.get_connection_options()
 
+	# NOTE: Remember to adjust the docs of the data model on the Settings API if anything
+	# is changed, added or removed here
+
 	data = {
 		"api": {
 			"enabled": s.getBoolean(["api", "enabled"]),
@@ -214,6 +217,9 @@ def _saveSettings(data):
 	logger = logging.getLogger(__name__)
 
 	s = settings()
+
+	# NOTE: Remember to adjust the docs of the data model on the Settings API if anything
+	# is changed, added or removed here
 
 	if "api" in data.keys():
 		if "enabled" in data["api"].keys(): s.setBoolean(["api", "enabled"], data["api"]["enabled"])

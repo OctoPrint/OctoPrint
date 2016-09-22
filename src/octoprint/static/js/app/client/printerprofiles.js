@@ -16,12 +16,13 @@
             return OctoPrint.get(url, opts);
         },
 
-        add: function (profile, additional, opts) {
+        add: function (profile, basedOn, opts) {
             profile = profile || {};
-            additional = additional || {};
 
-            var data = $.extend({}, additional);
-            data.profile = profile;
+            var data = {profile: profile};
+            if (basedOn) {
+                data.basedOn = basedOn;
+            }
 
             return OctoPrint.postJson(url, data, opts);
         },
@@ -30,12 +31,10 @@
             return OctoPrint.get(profileUrl(id), opts);
         },
 
-        update: function (id, profile, additional, opts) {
+        update: function (id, profile, opts) {
             profile = profile || {};
-            additional = additional || {};
 
-            var data = $.extend({}, additional);
-            data.profile = profile;
+            var data = {profile: profile};
 
             return OctoPrint.patchJson(profileUrl(id), data, opts);
         },

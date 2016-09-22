@@ -244,7 +244,7 @@ $(function() {
             var errorText = gettext("Could not retrieve snapshot URL, please double check the URL");
             var errorTitle = gettext("Snapshot test failed");
 
-            OctoPrint.util.testUrl(self.webcam_snapshotUrl(), {method: "GET", response: true})
+            OctoPrint.util.testUrl(self.webcam_snapshotUrl(), {method: "GET", response: "bytes"})
                 .done(function(response) {
                     $("i.icon-spinner", target).remove();
 
@@ -260,8 +260,8 @@ $(function() {
                     var mimeType = "image/jpeg";
 
                     var headers = response.response.headers;
-                    if (headers && headers["mime-type"]) {
-                        mimeType = headers["mime-type"];
+                    if (headers && headers["content-type"]) {
+                        mimeType = headers["content-type"].split(";")[0];
                     }
 
                     var text = gettext("If you see your webcam snapshot picture below, the entered snapshot URL is ok.");

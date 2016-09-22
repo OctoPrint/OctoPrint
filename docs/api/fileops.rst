@@ -155,6 +155,8 @@ Upload file or create folder
    Returns a :http:statuscode:`201` response with a ``Location`` header set to the management URL of the uploaded
    file and an :ref:`Upload Response <sec-api-fileops-datamodel-uploadresponse>` as the body upon successful completion.
 
+   Requires user rights.
+
    **Example for uploading a file**
 
    .. sourcecode:: http
@@ -443,6 +445,8 @@ Issue a file command
      Upon success, a status code of :http:statuscode:`201` and a :ref:`sec-api-datamodel-files-fileabridged` in the response
      body will be returned.
 
+   Requires user rights.
+
    **Example Select Request**
 
    .. sourcecode:: http
@@ -592,6 +596,8 @@ Delete file
 
    Returns a :http:statuscode:`204` after successful deletion.
 
+   Requires user rights.
+
    **Example Request**
 
    .. sourcecode:: http
@@ -609,8 +615,8 @@ Delete file
 
 .. _sec-api-fileops-datamodel:
 
-Datamodel
-=========
+Data model
+==========
 
 .. _sec-api-fileops-datamodel-retrieveresponse:
 

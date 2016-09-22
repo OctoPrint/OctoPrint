@@ -67,8 +67,8 @@ Example for a ``throttle`` client-server-message:
 
 .. _sec-api-push-datamodel:
 
-Datamodel
-=========
+Data model
+==========
 
 .. _sec-api-push-datamodel-connected:
 

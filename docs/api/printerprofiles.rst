@@ -139,6 +139,8 @@ Add a new printer profile
    Returns a :http:statuscode:`200` with the saved profile as property ``profile``
    in the JSON body upon success.
 
+   Requires admin rights.
+
    **Example 1**
 
    Creating a new profile ``some_profile`` based on the current default profile.
@@ -306,6 +308,8 @@ Update an existing printer profile
    Returns a :http:statuscode:`200` with the saved profile as property ``profile``
    in the JSON body upon success.
 
+   Requires admin rights.
+
    **Example**
 
    .. sourcecode:: http
@@ -389,6 +393,8 @@ Remove an existing printer profile
 
    Returns a :http:statuscode:`204` an empty body upon success.
 
+   Requires admin rights.
+
    **Example**
 
    .. sourcecode:: http
@@ -404,8 +410,8 @@ Remove an existing printer profile
 
 .. _sec-api-printerprofiles-datamodel:
 
-Datamodel
-=========
+Data model
+==========
 
 .. _sec-api-printerprofiles-datamodel-profilelist:
 

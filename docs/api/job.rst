@@ -54,6 +54,8 @@ Issue a job command
 
    Upon success, a status code of :http:statuscode:`204` and an empty body is returned.
 
+   Requires user rights.
+
    **Example Start Request**
 
    .. sourcecode:: http
@@ -214,8 +216,8 @@ Retrieve information about the current job
 
 .. _sec-api-job-datamodel:
 
-Datamodel
-=========
+Data model
+==========
 
 .. _sec-api-job-datamodel-response:
 

@@ -29,7 +29,7 @@ def performSystemAction():
 		data = request.json
 
 	if not "action" in data:
-		return make_response("action for perform is not defined", 400)
+		return make_response("action to perform is not defined", 400)
 
 	return executeSystemCommand("custom", data["action"])
 
@@ -51,7 +51,7 @@ def retrieveSystemCommandsForSource(source):
 	elif source == "custom":
 		specs = _get_custom_command_specs()
 	else:
-		return make_response("Unknown system command source: {}".format(source), 400)
+		return make_response("Unknown system command source: {}".format(source), 404)
 
 	return jsonify(_to_client_specs(specs))
 

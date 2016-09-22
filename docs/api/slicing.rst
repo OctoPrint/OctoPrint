@@ -172,6 +172,8 @@ Add Slicing Profile
    Returns a :http:statuscode:`201` and an :ref:`abridged Profile <sec-api-slicing-datamodel-profile>` in the body
    upon successful completion.
 
+   Requires admin rights.
+
    **Example**
 
    .. sourcecode:: http
@@ -218,6 +220,8 @@ Delete Slicing Profile
    Delete the slicing profile identified by ``key`` for the slicer ``slicer``. If the profile doesn't exist, the
    request will succeed anyway.
 
+   Requires admin rights.
+
    :param slicer:   The identifying key of the slicer for which to delete the profile
    :param key:      The identifying key of the profile to delete
    :statuscode 204: No error
@@ -225,8 +229,8 @@ Delete Slicing Profile
 
 .. _sec-api-slicing-datamodel:
 
-Datamodel
-=========
+Data model
+==========
 
 .. _sec-api-slicing-datamodel-slicerlist:
 

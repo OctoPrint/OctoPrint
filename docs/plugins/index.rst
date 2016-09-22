@@ -12,7 +12,6 @@ Developing Plugins
    mixins.rst
    hooks.rst
    helpers.rst
-   injectedproperties.rst
    viewmodels.rst
    gettingstarted.rst
    distributing.rst
