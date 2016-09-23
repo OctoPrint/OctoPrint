@@ -1,20 +1,30 @@
-Please read the "guidelines for contributing" that are linked ^-- just
-up there. Also read the FAQ: https://github.com/foosel/OctoPrint/wiki/FAQ.
+READ THE FOLLOWING FIRST:
+
+If not already done, please read the "guidelines for contributing"
+that are linked ^-- just up there in the big yellow box. Also read
+the FAQ: https://github.com/foosel/OctoPrint/wiki/FAQ.
 
 This is a bug and feature tracker, please only use it to report bugs
 or request features within OctoPrint (not OctoPi, not any OctoPrint
-plugins and not unofficial OctoPrint versions). Mark requests with
-a [Request] prefix in the title please. Fully fill out the bug reporting
-template for bug reports. Do not delete any lines from the template but
-those enclosed in [ and ] - and those please do delete, they are only
-provided for your information and removing them makes your ticket more
-readable :)
+plugins and not unofficial OctoPrint versions).
 
 Do not seek support here ("I need help with ..."), that belongs on
 the mailing list or the G+ community (both linked in the "guidelines
 for contributing" linked above, read it!), NOT here.
 
+Mark requests with a "[Request]" prefix in the title please. Fully fill
+out the bug reporting template for bug reports (if you don't know where
+to find some information - it's all described in the contribution
+guidelines linked up there in the big yellow box). Do not delete any
+lines from the template but those enclosed in [ and ] - and those please
+DO delete, they are only provided for your information and removing them
+makes your ticket more readable :)
+
 Thank you!
+
+(Before submitting your ticket, please delete this text up to and
+including the line too - it's only here for you, we already know it
+by heart ;))
 
 ----
 
@@ -53,8 +63,8 @@ to also include a link to a file with which to reproduce the problem.]
 reporting communication issues. Never truncate.
 
 serial.log is usually not written due to performance reasons and must be
-enabled explicitly. Provide at the very least the contents of your
-terminal tab at the time of the bug occurence, even if you do not have
+enabled explicitly. Provide at the very least the FULL contents of your
+terminal tab at the time of the bug occurrence, even if you do not have
 a serial.log.]
 
 #### Link to contents of Javascript console in the browser

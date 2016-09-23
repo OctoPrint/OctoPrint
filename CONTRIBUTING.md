@@ -63,10 +63,11 @@ available for the maintainers to directly start tackling that problem.
 ## How to file a bug report
 
 If you encounter an issue with OctoPrint, you are welcome to
-[submit a bug report](https://goo.gl/GzkGv9).
+[submit a bug report](https://github.com/foosel/OctoPrint/issues/new).
 
 Before you do that for the first time though please take a moment to read the
-following section *completely*. Thank you! :)
+following section *completely* and also follow the instructions in the
+"new issue" form. Thank you! :)
 
 ### What should I do before submitting a bug report?
 
@@ -85,7 +86,7 @@ following section *completely*. Thank you! :)
    might have installed**. Report any issues with those in their corresponding
    bug tracker (probably linked to from the plugin's homepage).
 
-   Finally, **this is also not the right issue tracker if you are running an
+   Finally, **this is also not the right issue tracker if you are running a
    forked version of OctoPrint**. Seek help for such unofficial versions from
    the people maintaining them instead.
 
@@ -123,7 +124,10 @@ following section *completely*. Thank you! :)
 
 ### What should I include in a bug report?
 
-Always use the following template (please remove what's within `[...]`, that's
+First of all make sure your use **a descriptive title**. "It doesn't work"
+and similar unspecific complaints are NOT descriptive titles.
+
+**Always use the following template** (please remove what's within `[...]`, that's
 only provided here as some additional information for you), **even if only adding a
 "me too" to an existing ticket**:
 
@@ -162,8 +166,8 @@ only provided here as some additional information for you), **even if only addin
     reporting communication issues. Never truncate.
 
     serial.log is usually not written due to performance reasons and must be
-    enabled explicitly. Provide at the very least the contents of your
-    terminal tab at the time of the bug occurence, even if you do not have
+    enabled explicitly. Provide at the very least the FULL contents of your
+    terminal tab at the time of the bug occurrence, even if you do not have
     a serial.log.]
 
     #### Link to contents of Javascript console in the browser
@@ -177,7 +181,8 @@ only provided here as some additional information for you), **even if only addin
 
     I have read the FAQ.
 
-Copy-paste this template **completely**. Do not skip any lines!
+Copy-paste this template **completely**. Do not skip any lines or the bot
+*will* complain!
 
 ### Where can I find which version and branch I'm on?
 
@@ -201,15 +206,16 @@ more information is needed.
 
 One is contained in the **"Terminal" tab** within OctoPrint's UI and is a log
 of the last 300 lines of communication with the printer. Please copy-paste
-this somewhere (disable auto scroll to make copying the contents easier) -
+this *completely* somewhere (disable auto scroll to make copying the contents easier) -
 e.g. http://pastebin.com or http://gist.github.com - and include a link in
 your bug report.
 
 There is also **OctoPrint's application log file** or in short `octoprint.log`,
 which is by default located at `~/.octoprint/logs/octoprint.log` on Linux,
 `%APPDATA%\OctoPrint\logs\octoprint.log` on Windows and
-`~/Library/Application Support/OctoPrint/logs/octoprint.log` on MacOS. Please
-copy-paste this to pastebin or gist as well and include a link in your bug
+`~/Library/Application Support/OctoPrint/logs/octoprint.log` on MacOS. You can
+also access it directly through OctoPrint via Settings > Logs. Please
+copy-paste this *completely* to pastebin or gist as well and include a link in your bug
 report.
 
 It might happen that you are asked to provide a more **thorough log of the
@@ -383,6 +389,8 @@ the local version identifier to allow for an exact determination of the active c
   * 2016-03-14: Some more requirements for PRs, and a PR template.
   * 2016-06-08: New `prerelease` and `rc` branches explained.
   * 2016-09-09: New `rc/*` branches explained.
+  * 2016-09-23: Some more work on "How to file a bug report" based on recent
+    experiences
 
 ## Footnotes
   * [1] - If you are wondering why, the problem is that anything that you add
