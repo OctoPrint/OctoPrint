@@ -332,7 +332,7 @@ class PrinterProfileManager(object):
 		from octoprint.util import atomic_write
 		import yaml
 		try:
-			with atomic_write(path, "wb") as f:
+			with atomic_write(path, "wb", max_permissions=0o666) as f:
 				yaml.safe_dump(profile, f, default_flow_style=False, indent="  ", allow_unicode=True)
 		except Exception as e:
 			self._logger.exception("Error while trying to save profile %s" % profile["id"])
