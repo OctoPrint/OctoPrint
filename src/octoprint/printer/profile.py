@@ -379,7 +379,7 @@ class PrinterProfileManager(object):
 
 	def _ensure_valid_profile(self, profile):
 		# ensure all keys are present
-		if not dict_contains_keys(self.default, profile):
+		if not dict_contains_keys(profile,self.default):
 			self._logger.warn("Profile invalid, missing keys. Expected: {expected!r}. Actual: {actual!r}".format(expected=self.default.keys(), actual=profile.keys()))
 			return False
 
