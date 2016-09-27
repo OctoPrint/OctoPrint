@@ -68,9 +68,10 @@ class AnalysisQueue(object):
 
 	def enqueue(self, entry, high_priority=False):
 		if not entry.type in self._queues:
-			return
+			return False
 
 		self._queues[entry.type].enqueue(entry, high_priority=high_priority)
+		return True
 
 	def pause(self):
 		for queue in self._queues.values():

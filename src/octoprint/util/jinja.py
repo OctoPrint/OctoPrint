@@ -54,6 +54,32 @@ class FilteredFileSystemLoader(FileSystemLoader):
 		return all(filter_results)
 
 
+class SelectedFileSystemLoader(FileSystemLoader):
+	def __init__(self, searchpath, files, prefix=None, **kwargs):
+		FileSystemLoader.__init__(self, searchpath, **kwargs)
+		self.files = files
+
+		if prefix is not None and not prefix.endswith("/"):
+			prefix += "/"
+		self.prefix = prefix
+
+	def get_source(self, environment, template):
+		if not template.startswith(self.prefix):
+			raise TemplateNotFound(template)
+
+		template = template[len(self.prefix):]
+		if not template in self.files:
+			raise TemplateNotFound(template)
+
+		return FileSystemLoader.get_source(self, environment, template)
+
+	def list_templates(self):
+		return [self._prefixed(f) for f in self.files if any(map(lambda folder: os.path.exists(os.path.join(folder, f)), self.searchpath))]
+
+	def _prefixed(self, name):
+		return self.prefix + name if self.prefix else name
+
+
 def get_all_template_paths(loader):
 	def walk_folder(folder):
 		files = []
@@ -70,6 +96,12 @@ def get_all_template_paths(loader):
 			for folder in loader.searchpath:
 				result += walk_folder(folder)
 			return filter(loader.path_filter, result)
+
+		elif isinstance(loader, SelectedFileSystemLoader):
+			result = []
+			for folder in loader.searchpath:
+				result += filter(lambda x: os.path.exists(f), [os.path.join(folder, f) for f in loader.files])
+			return result
 
 		elif isinstance(loader, FileSystemLoader):
 			result = []

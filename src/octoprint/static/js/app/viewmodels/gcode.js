@@ -435,7 +435,7 @@ $(function() {
             } else {
                 var output = [];
                 output.push(gettext("Model size") + ": " + model.width.toFixed(2) + "mm &times; " + model.depth.toFixed(2) + "mm &times; " + model.height.toFixed(2) + "mm");
-                output.push(gettext("Estimated total print time") + ": " + formatFuzzyEstimation(model.printTime));
+                output.push(gettext("Estimated total print time") + ": " + formatFuzzyPrintTime(model.printTime));
                 output.push(gettext("Estimated layer height") + ": " + model.layerHeight.toFixed(2) + gettext("mm"));
                 output.push(gettext("Layer count") + ": " + model.layersPrinted.toFixed(0) + " " + gettext("printed") + ", " + model.layersTotal.toFixed(0) + " " + gettext("visited"));
 
@@ -462,17 +462,17 @@ $(function() {
                 var output = [];
                 output.push(gettext("Layer number") + ": " + (layer.number + 1));
                 output.push(gettext("Layer height") + " (mm): " + layer.height);
-                output.push(gettext("GCODE commands in layer") + ": " + layer.commands);
+                output.push(gettext("GCODE commands") + ": " + layer.commands);
                 if (layer.filament != undefined) {
                     if (layer.filament.length == 1) {
-                        output.push(gettext("Filament used by layer") + ": " + layer.filament[0].toFixed(2) + "mm");
+                        output.push(gettext("Filament") + ": " + layer.filament[0].toFixed(2) + "mm");
                     } else {
                         for (var i = 0; i < layer.filament.length; i++) {
-                            output.push(gettext("Filament used by layer") + " (" + gettext("Tool") + " " + i + "): " + layer.filament[i].toFixed(2) + "mm");
+                            output.push(gettext("Filament") + " (" + gettext("Tool") + " " + i + "): " + layer.filament[i].toFixed(2) + "mm");
                         }
                     }
                 }
-                output.push(gettext("Print time for layer") + ": " + formatFuzzyEstimation(layer.printTime));
+                output.push(gettext("Estimated print time") + ": " + formatDuration(layer.printTime));
 
                 self.ui_layerInfo(output.join("<br>"));
 

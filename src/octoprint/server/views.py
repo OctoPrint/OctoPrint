@@ -9,7 +9,7 @@ import os
 import datetime
 
 from collections import defaultdict
-from flask import request, g, url_for, make_response, render_template, send_from_directory, redirect
+from flask import request, g, url_for, make_response, render_template, send_from_directory, redirect, abort
 
 import octoprint.plugin
 
@@ -20,6 +20,7 @@ from octoprint.settings import settings
 from octoprint.filemanager import get_all_extensions
 
 import re
+import base64
 
 from . import util
 
@@ -29,14 +30,65 @@ _logger = logging.getLogger(__name__)
 _valid_id_re = re.compile("[a-z_]+")
 _valid_div_re = re.compile("[a-zA-Z_-]+")
 
+def _preemptive_unless(base_url=None):
+	if base_url is None:
+		base_url = request.url_root
+
+	cache_disabled = not settings().getBoolean(["devel", "cache", "preemptive"]) \
+	                 or base_url in settings().get(["server", "preemptiveCache", "exceptions"]) \
+	                 or not (base_url.startswith("http://") or base_url.startswith("https://"))
+
+	recording_disabled = request.headers.get("X-Preemptive-Record", "yes") == "no"
+
+	return cache_disabled or recording_disabled
+
+def _preemptive_data(path=None, base_url=None):
+	if path is None:
+		path = request.path
+	if base_url is None:
+		base_url = request.url_root
+
+	return dict(path=path,
+	            base_url=base_url,
+	            query_string="l10n={}".format(g.locale.language) if g.locale else "en")
+
+def _cache_key(url=None, locale=None):
+	if url is None:
+		url = request.base_url
+	if locale is None:
+		locale = g.locale.language if g.locale else "en"
+
+	return "view:{}:{}".format(url, locale)
+
+@app.route("/cached.gif")
+def in_cache():
+	url = request.base_url.replace("/cached.gif", "/")
+	path = request.path.replace("/cached.gif", "/")
+
+	key = _cache_key(url)
+	data = _preemptive_data(path=path)
+
+	response = make_response(bytes(base64.b64decode("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7")))
+	response.headers["Content-Type"] = "image/gif"
+
+	if _preemptive_unless(base_url=url) or not preemptiveCache.has_record(data, root=path):
+		_logger.info("Preemptive cache not active for path {} and data {!r}, signaling as cached".format(path, data))
+		return response
+	elif util.flask.is_in_cache(key):
+		_logger.info("Found path {} in cache (key: {}), signaling as cached".format(path, key))
+		return response
+	else:
+		_logger.debug("Path {} not yet cached (key: {}), signaling as missing".format(path, key))
+		return abort(404)
+
 @app.route("/")
 @util.flask.preemptively_cached(cache=preemptiveCache,
-                                data=lambda: dict(path=request.path, base_url=request.url_root, query_string="l10n={}".format(g.locale.language) if g.locale else "en"),
-                                unless=lambda: request.url_root in settings().get(["server", "preemptiveCache", "exceptions"]) or not (request.url_root.startswith("http://") or request.url_root.startswith("https://")))
+                                data=_preemptive_data,
+                                unless=_preemptive_unless)
 @util.flask.conditional(lambda: _check_etag_and_lastmodified_for_index(), NOT_MODIFIED)
 @util.flask.cached(timeout=-1,
                    refreshif=lambda cached: _validate_cache_for_index(cached),
-                   key=lambda: "view:{}:{}".format(request.base_url, g.locale.language if g.locale else "en"),
+                   key=_cache_key,
                    unless_response=lambda response: util.flask.cache_check_response_headers(response))
 @util.flask.etagged(lambda _: _compute_etag_for_index())
 @util.flask.lastmodified(lambda _: _compute_date_for_index())

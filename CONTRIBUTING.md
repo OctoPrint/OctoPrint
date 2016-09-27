@@ -63,10 +63,11 @@ available for the maintainers to directly start tackling that problem.
 ## How to file a bug report
 
 If you encounter an issue with OctoPrint, you are welcome to
-[submit a bug report](https://goo.gl/GzkGv9).
+[submit a bug report](https://github.com/foosel/OctoPrint/issues/new).
 
 Before you do that for the first time though please take a moment to read the
-following section *completely*. Thank you! :)
+following section *completely* and also follow the instructions in the
+"new issue" form. Thank you! :)
 
 ### What should I do before submitting a bug report?
 
@@ -85,7 +86,7 @@ following section *completely*. Thank you! :)
    might have installed**. Report any issues with those in their corresponding
    bug tracker (probably linked to from the plugin's homepage).
 
-   Finally, **this is also not the right issue tracker if you are running an
+   Finally, **this is also not the right issue tracker if you are running a
    forked version of OctoPrint**. Seek help for such unofficial versions from
    the people maintaining them instead.
 
@@ -123,17 +124,21 @@ following section *completely*. Thank you! :)
 
 ### What should I include in a bug report?
 
-Always use the following template (you can remove what's within `[...]`, that's
+First of all make sure your use **a descriptive title**. "It doesn't work"
+and similar unspecific complaints are NOT descriptive titles.
+
+**Always use the following template** (please remove what's within `[...]`, that's
 only provided here as some additional information for you), **even if only adding a
 "me too" to an existing ticket**:
 
     #### What were you doing?
 
-    [Please be as specific as possible here. The maintainers will need to reproduce
-    your issue in order to fix it and that is not possible if they don't know
-    what you did to get it to happen in the first place. If you encountered
-    a problem with specific files of any sorts, make sure to also include a link to a file
-    with which to reproduce the problem.]
+    [Please be as specific as possible here. The maintainers will need to
+    reproduce your issue in order to fix it and that is not possible if they
+    don't know what you did to get it to happen in the first place.
+
+    If you encountered a problem with specific files of any sorts, make sure
+    to also include a link to a file with which to reproduce the problem.]
 
     #### What did you expect to happen?
 
@@ -141,7 +146,7 @@ only provided here as some additional information for you), **even if only addin
 
     #### Branch & Commit or Version of OctoPrint
 
-    [Can be found in the lower left corner of the web interface.]
+    [Can be found in the lower left corner of the web interface. ALWAYS INCLUDE.]
 
     #### Printer model & used firmware incl. version
 
@@ -153,12 +158,17 @@ only provided here as some additional information for you), **even if only addin
 
     #### Link to octoprint.log
 
-    [On gist.github.com or pastebin.com. Always include and never truncate.]
+    [On gist.github.com or pastebin.com. ALWAYS INCLUDE and never truncate.]
 
     #### Link to contents of terminal tab or serial.log
 
     [On gist.github.com or pastebin.com. If applicable, always include if unsure or
-    reporting communication issues. Never truncate.]
+    reporting communication issues. Never truncate.
+
+    serial.log is usually not written due to performance reasons and must be
+    enabled explicitly. Provide at the very least the FULL contents of your
+    terminal tab at the time of the bug occurrence, even if you do not have
+    a serial.log.]
 
     #### Link to contents of Javascript console in the browser
 
@@ -171,7 +181,8 @@ only provided here as some additional information for you), **even if only addin
 
     I have read the FAQ.
 
-Copy-paste this template **completely**. Do not skip any lines!
+Copy-paste this template **completely**. Do not skip any lines or the bot
+*will* complain!
 
 ### Where can I find which version and branch I'm on?
 
@@ -195,15 +206,16 @@ more information is needed.
 
 One is contained in the **"Terminal" tab** within OctoPrint's UI and is a log
 of the last 300 lines of communication with the printer. Please copy-paste
-this somewhere (disable auto scroll to make copying the contents easier) -
+this *completely* somewhere (disable auto scroll to make copying the contents easier) -
 e.g. http://pastebin.com or http://gist.github.com - and include a link in
 your bug report.
 
 There is also **OctoPrint's application log file** or in short `octoprint.log`,
 which is by default located at `~/.octoprint/logs/octoprint.log` on Linux,
 `%APPDATA%\OctoPrint\logs\octoprint.log` on Windows and
-`~/Library/Application Support/OctoPrint/logs/octoprint.log` on MacOS. Please
-copy-paste this to pastebin or gist as well and include a link in your bug
+`~/Library/Application Support/OctoPrint/logs/octoprint.log` on MacOS. You can
+also access it directly through OctoPrint via Settings > Logs. Please
+copy-paste this *completely* to pastebin or gist as well and include a link in your bug
 report.
 
 It might happen that you are asked to provide a more **thorough log of the
@@ -299,14 +311,9 @@ There are three main branches in OctoPrint:
 
   * `master`: The master branch always contains the current stable release. It
     is *only* updated on new releases. Will have a version number following
-    the scheme `x.y.z` (e.g. `1.2.9`) or - if it's absolutely necessary to
-    add a commit after release to this branch - `x.y.z.post<commits since x.y.z>`
+    the scheme `<x>.<y>.<z>` (e.g. `1.2.9`) or - if it's absolutely necessary to
+    add a commit after release to this branch - `<x>.<y>.<z>.post<commits since x.y.z>`
     (e.g. `1.2.9.post1`).
-  * `prerelease`: This branch is only used during the short period where a
-    future release has "graduated" from the `maintenance` branch and is already
-    tagged, but still marked on Github as a pre-release. This is mostly used for
-    update testing just before new releases. Version number follows the scheme
-    `x.y.z` (e.g. `1.2.9`), just like the `master` branch.
   * `maintenance`: Improvements and fixes of the current release that make up
     the next release go here. More or less continously updated. You can consider
     this a preview of the next release version. It should be very stable at all
@@ -314,7 +321,7 @@ There are three main branches in OctoPrint:
     next stable release, so if you want to help out development, running the
     `maintenance` branch and reporting back anything you find is a very good way
     to do that. Will usually have a version number following the scheme
-    `x.y.z+1.dev.<commits since increase of z>` for an OctoPrint version of `x.y.z`
+    `<x>.<y>.<z+1>.dev<commits since increase of z>` for an OctoPrint version of `<x>.<y>.<z>`
     (e.g. `1.2.10.dev12`).
   * `devel`: Ongoing development of new features that will go into the next bigger
     release (MINOR version number increases) will happen on this branch. Usually
@@ -322,8 +329,16 @@ There are three main branches in OctoPrint:
     temporarily. Can be considered the "bleeding edge". All PRs should target
     *this* branch. Important improvements and fixes from PRs here are backported to
     `maintenance` as needed. Will usually have a version number following the
-    scheme `x.y+1.0.dev<commits since increase of y>` for an OctoPrint version
-    of `x.y.z` (e.g. `1.3.0.dev123`).
+    scheme `<x>.<y+1>.0.dev<commits since increase of y>` for a current OctoPrint version
+    of `<x>.<y>.<z>` (e.g. `1.3.0.dev123`).
+  * `rc/maintenance`: This branch is reserved for future releases that have graduated from
+    the `maintenance` branch and are now being pushed on the "Maintenance"
+    pre release channel for further testing. Version number follows the scheme
+    `<x>.<y>.<z>rc<n>` (e.g. `1.2.9rc1`).
+  * `rc/devel`: This branch is reserved for future releases that have graduated from
+    the `devel` branch and are now being pushed on the "Devel" pre release channel
+    for further testing. Version number follows the scheme `<x>.<y+1>.0rc<n>` (e.g. `1.3.0rc1`)
+    for a current stable OctoPrint version of `<x>.<y>.<z>`.
 
 Additionally, from time to time you might see other branches pop up in the repository.
 Those usually have one of the following prefixes:
@@ -334,9 +349,6 @@ Those usually have one of the following prefixes:
     `maintenance` and `devel` branches.
   * `dev/...` or `feature/...`: New functionality under development that is to be merged
     into the `devel` branch.
-  * `rc`: A branch similar in nature to the `prerelease` branch, only that it will be
-    used to provide current release candidates of the next stable version to be derived
-    from the `devel` branch.
 
 There is also the `gh-pages` branch, which holds OctoPrint's web page, and a couple of
 older development branches that are slowly being migrated or deleted.
@@ -376,6 +388,9 @@ the local version identifier to allow for an exact determination of the active c
     tickets as well, explained issue with "me too" red herrings.
   * 2016-03-14: Some more requirements for PRs, and a PR template.
   * 2016-06-08: New `prerelease` and `rc` branches explained.
+  * 2016-09-09: New `rc/*` branches explained.
+  * 2016-09-23: Some more work on "How to file a bug report" based on recent
+    experiences
 
 ## Footnotes
   * [1] - If you are wondering why, the problem is that anything that you add

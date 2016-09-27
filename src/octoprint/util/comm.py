@@ -1672,6 +1672,10 @@ class MachineCom(object):
 		with self._sendNextLock:
 			while self._active:
 				# we loop until we've actually enqueued a line for sending
+				if self._state != self.STATE_PRINTING:
+					# we are no longer printing, return false
+					return False
+
 				line = self._getNext()
 				if line is None:
 					# end of file, return false
