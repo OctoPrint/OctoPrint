@@ -102,7 +102,7 @@
 
    Instructs the server to decrease the message rate by 500ms.
 
-.. sec-jsclient-socket-throttling:
+.. _sec-jsclient-socket-throttling:
 
 Communication Throttling
 ========================
