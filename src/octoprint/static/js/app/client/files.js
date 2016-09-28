@@ -56,6 +56,49 @@
         _.each(response.files, recursiveCheck);
     };
 
+    var pathForEntry = function(entry) {
+        if (!entry || !entry.hasOwnProperty("parent") || entry.parent == undefined) {
+            return "";
+        }
+
+        var recursivePath = function(element, path) {
+          if (element.hasOwnProperty("parent") && element.parent != undefined) {
+              return recursivePath(element.parent, element.name + "/" + path);
+          }
+
+          return path;
+        };
+
+        return recursivePath(entry.parent, entry.name);
+    };
+
+    var entryForPath = function(path, root) {
+        if (_.isArray(root)) {
+            root = {children: root};
+        }
+
+        var recursiveSearch = function(path, entry) {
+            if (path.length == 0) {
+                return entry;
+            }
+
+            if (!entry.hasOwnProperty("children")) {
+                return undefined;
+            }
+
+            var name = path.shift();
+            for (var i = 0; i < entry.children.length; i++) {
+                if (name == entry.children[i].name) {
+                    return recursiveSearch(path, entry.children[i]);
+                }
+            }
+
+            return undefined;
+        };
+
+        return recursiveSearch(path.split("/"), root);
+    };
+
     OctoPrint.files = {
         get: getEntry,
 
@@ -129,6 +172,21 @@
 
         download: function (location, path, opts) {
             return OctoPrint.download(downloadForEntry(location, path), opts);
+        },
+
+        pathForEntry: pathForEntry,
+        entryForPath: entryForPath,
+
+        pathForElement: function(element) {
+            // TODO Remove in 1.4.x
+            log.warn("OctoPrint.files.pathForElement has been renamed to OctoPrint.files.pathForEntry, please use that instead");
+            return pathForEntry(element);
+        },
+
+        elementByPath: function(location, startElement) {
+            // TODO Remove in 1.4.x
+            log.warn("OctoPrint.files.elementByPath has been renamed to OctoPrint.files.entryForPath, please use that instead");
+            return entryForPath(location, startElement);
         }
     }
 });

@@ -221,3 +221,53 @@
    :param string path: The path of the file to download
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
+
+.. js:function:: OctoPrint.files.pathForEntry(entry)
+
+   Utility function to retrieve the path within its location for a given ``entry``.
+
+   Use this if you already have a full list of entries and need the path to one.
+
+   **Example**
+
+   .. code-block:: javascript
+
+      OctoPrint.files.listForLocation("local", True)
+          .done(function(entries) {
+              var entry = OctoPrint.files.entryForPath("some/funny/entry", entries.files);
+              var path = OctoPrint.files.pathForEntry(entry);
+              console.log(path); // will log some/funny/entry
+          });
+
+   :param object entry: The entry object for which to retrieve the path
+   :returns string: The path of the entry within its location
+
+.. js:function:: OctoPrint.files.entryForPath(path, root)
+
+   Utility function to retrieve an entry by its ``path`` based on an entry tree provided by its
+   ``root``.
+
+   Use this if you already have a full list of entries and are looking for a specified entry
+   within.
+
+   **Example**
+
+   .. code-block:: javascript
+
+      var somePathsToFind = ["some/funny/entry",
+                             "another/entry",
+                             "this/does/not/exist"];
+
+      OctoPrint.files.listForLocation("local", True)
+          .done(function(entries) {
+              // will log two entries and one undefined
+              _.each(somePathsToFind, function(path) {
+                  console.log(OctoPrint.files.entryForPath(path, entries.files));
+              });
+          });
+
+   :param string path: The path of the entry to retrieve
+   :param object root: The root of the tree in which to resolve the entry by its path, either a list of entries or an entry
+       element with ``children``
+   :returns object or undefined: The retrieved entry, or ``undefined`` if the ``path`` could
+       not be resolved
