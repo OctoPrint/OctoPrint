@@ -11,17 +11,17 @@
 
 .. js:function:: OctoPrint.timelapse.list(opts)
 
-.. js:function:: OctoPrint.download(filename, opts)
+.. js:function:: OctoPrint.timelapse.download(filename, opts)
 
-.. js:function:: OctoPrint.delete(filename, opts)
+.. js:function:: OctoPrint.timelapse.delete(filename, opts)
 
-.. js:function:: OctoPrint.deleteUnrendered(name, opts)
+.. js:function:: OctoPrint.timelapse.deleteUnrendered(name, opts)
 
-.. js:function:: OctoPrint.renderUnrendered(name, opts)
+.. js:function:: OctoPrint.timelapse.renderUnrendered(name, opts)
 
-.. js:function:: getConfig(opts)
+.. js:function:: OctoPrint.timelapse.getConfig(opts)
 
-.. js:function:: saveConfig(config, opts)
+.. js:function:: OctoPrint.timelapse.saveConfig(config, opts)
 
 .. seealso::
 

@@ -19,6 +19,7 @@ Test paths or URLs
    The following commands are supported at the moment:
 
    .. _sec-api-util-test-path:
+
    path
      Tests whether or provided path exists and optionally if it also is either a file
      or a directory and whether OctoPrint's user has read, write and/or execute permissions
@@ -35,6 +36,7 @@ Test paths or URLs
      test result!
 
    .. _sec-api-util-test-url:
+
    url
      Tests whether a provided url responds. Request method and expected status codes can
      optionally be specified as well. Supported parameters are:
