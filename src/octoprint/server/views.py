@@ -146,6 +146,9 @@ def in_cache():
 	elif util.flask.is_in_cache(key):
 		_logger.info("Found path {} in cache (key: {}), signaling as cached".format(path, key))
 		return response
+	elif util.flask.is_cache_bypassed(key):
+		_logger.info("Path {} was bypassed from cache (key: {}), signaling as cached".format(path, key))
+		return response
 	else:
 		_logger.debug("Path {} not yet cached (key: {}), signaling as missing".format(path, key))
 		return abort(404)
