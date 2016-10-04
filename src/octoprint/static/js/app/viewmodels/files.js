@@ -595,7 +595,7 @@ $(function() {
             if (data["gcodeAnalysis"]) {
                 if (data["gcodeAnalysis"]["dimensions"]) {
                     var dimensions = data["gcodeAnalysis"]["dimensions"];
-                    output += gettext("Model Size") + ": " + _.sprintf("%(width).2fmm &times; %(depth).2fmm &times; %(height).2fmm", dimensions);
+                    output += gettext("Model size") + ": " + _.sprintf("%(width).2fmm &times; %(depth).2fmm &times; %(height).2fmm", dimensions);
                     output += "<br>";
                 }
                 if (data["gcodeAnalysis"]["filament"] && typeof(data["gcodeAnalysis"]["filament"]) == "object") {
@@ -615,7 +615,7 @@ $(function() {
             if (data["prints"] && data["prints"]["last"]) {
                 output += gettext("Last printed") + ": " + formatTimeAgo(data["prints"]["last"]["date"]) + "<br>";
                 if (data["prints"]["last"]["printTime"]) {
-                    output += gettext("Last Print Time") + ": " + formatDuration(data["prints"]["last"]["printTime"]);
+                    output += gettext("Last print time") + ": " + formatDuration(data["prints"]["last"]["printTime"]);
                 }
             }
             return output;
