@@ -125,7 +125,7 @@ $(function() {
         );
 
         self.requestData = function() {
-            OctoPrint.timelapse.get({ data: { unrendered: true} })
+            OctoPrint.timelapse.get(true)
                 .done(self.fromResponse);
         };
 
