@@ -614,7 +614,7 @@ $(function() {
             }
             if (data["prints"] && data["prints"]["last"]) {
                 output += gettext("Last printed") + ": " + formatTimeAgo(data["prints"]["last"]["date"]) + "<br>";
-                if (data["prints"]["last"]["lastPrintTime"]) {
+                if (data["prints"]["last"]["printTime"]) {
                     output += gettext("Last Print Time") + ": " + formatDuration(data["prints"]["last"]["printTime"]);
                 }
             }
