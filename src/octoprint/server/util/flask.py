@@ -414,13 +414,6 @@ class OctoPrintFlaskResponse(flask.Response):
 		# add request specific cookie suffix to name
 		flask.Response.set_cookie(self, key + flask.request.cookie_suffix, *args, **kwargs)
 
-	def delete_cookie(self, key, *args, **kwargs):
-		# restrict cookie path to script root
-		kwargs["path"] = flask.request.script_root + kwargs.get("path", "/")
-
-		# add request specific cookie suffix to name
-		flask.Response.delete_cookie(self, key + flask.request.cookie_suffix, *args, **kwargs)
-
 #~~ passive login helper
 
 def passive_login():

@@ -1367,11 +1367,48 @@ class SettingsPlugin(OctoPrintPlugin):
 		   and iterate yourself over all your settings, using the proper retriever methods on the settings manager
 		   to retrieve the data in the correct format.
 
+		   The default implementation will also replace any paths that have been restricted by your plugin through
+		   :func:`~octoprint.plugin.SettingsPlugin.get_settings_restricted_paths` with ``None`` values where necessary.
+		   Make sure to do your own restriction if you decide to fully overload this method.
+
 		:return: the current settings of the plugin, as a dictionary
 		"""
+		from flask.ext.login import current_user
+
 		data = self._settings.get_all_data()
 		if self.config_version_key in data:
 			del data[self.config_version_key]
+
+		restricted_paths = self.get_settings_restricted_paths()
+
+		def restrict_path_unless(data, path, condition):
+			if not path:
+				return
+
+			if condition():
+				return
+
+			node = data
+
+			if len(path) > 1:
+				for entry in path[:-1]:
+					if not entry in node:
+						return
+					node = node[entry]
+
+			key = path[-1]
+			if key in node:
+				node[key] = None
+
+		conditions = dict(user=lambda: current_user is not None and not current_user.is_anonymous(),
+		                  admin=lambda: current_user is not None and not current_user.is_anonymous() and current_user.is_admin(),
+		                  never=lambda: False)
+
+		for level, condition in conditions.items():
+			paths_for_level = restricted_paths.get(level, [])
+			for path in paths_for_level:
+				restrict_path_unless(data, path, condition)
+
 		return data
 
 	def on_settings_save(self, data):
@@ -1431,6 +1468,60 @@ class SettingsPlugin(OctoPrintPlugin):
 
 		Override this in your plugin's implementation and return a dictionary defining your settings data structure
 		with included default values.
+		"""
+		return dict()
+
+	def get_settings_restricted_paths(self):
+		"""
+		Retrieves the list of paths in the plugin's settings which be restricted on the REST API.
+
+		Override this in your plugin's implementation to restrict whether a path should only be returned to logged in
+		users & admins, only to admins, or never on the REST API.
+
+		Return a ``dict`` with the keys ``admin``, ``user``, ``never`` mapping to a list of paths (as tuples or lists of
+		the path elements) for which to restrict access via the REST API accordingly. Paths returned for the ``admin``
+		key will only be available on the REST API when access with admin rights, ``user`` will only be available when accessed
+		as a logged in user. ``never`` will never be returned on the API.
+
+		Example:
+
+		.. code-block:: python
+
+		   def get_settings_defaults(self):
+		       return dict(some=dict(admin_only=dict(path="path", foo="foo"),
+		                             user_only=dict(path="path", bar="bar")),
+		                   another=dict(admin_only=dict(path="path"),
+		                                field="field"),
+		                   path=dict(to=dict(never=dict(return="return"))))
+
+		   def get_settings_restricted_path(self):
+		       return dict(admin=[["some", "admin_only", "path], ["another", "admin_only", "path"],
+		                   user=[["some", "user_only", "path"],],
+		                   never=[["path", "to", "never", "return"],])
+
+		   # this will make the plugin return settings on the REST API like this for an anonymous user
+		   #
+		   #     dict(some=dict(admin_only=dict(path=None, foo="foo"),
+		   #                    user_only=dict(path=None, bar="bar")),
+		   #          another=dict(admin_only=dict(path=None),
+		   #                       field="field"),
+		   #          path=dict(to=dict(never=dict(return=None))))
+		   #
+		   # like this for a logged in user
+		   #
+		   #     dict(some=dict(admin_only=dict(path=None, foo="foo"),
+		   #                    user_only=dict(path="path", bar="bar")),
+		   #          another=dict(admin_only=dict(path=None),
+		   #                       field="field"),
+		   #          path=dict(to=dict(never=dict(return=None))))
+		   #
+		   # and like this for an admin user
+		   #
+		   #     dict(some=dict(admin_only=dict(path="path", foo="foo"),
+		   #                    user_only=dict(path="path", bar="bar")),
+		   #          another=dict(admin_only=dict(path="path"),
+		   #                       field="field"),
+		   #          path=dict(to=dict(never=dict(return=None))))
 		"""
 		return dict()
 
