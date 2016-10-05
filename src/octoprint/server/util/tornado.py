@@ -361,7 +361,7 @@ class UploadStorageFallbackHandler(tornado.web.RequestHandler):
 						file=handle)
 
 		else:
-			return dict(name=tornado.escape.utf8(name), content_type=content_type, data=b"")
+			return dict(name=tornado.escape.utf8(name), content_type=tornado.escape.utf8(content_type), data=b"")
 
 	def _on_part_data(self, part, data):
 		"""
@@ -598,7 +598,7 @@ class WsgiInputContainer(object):
 
 		# determine the request_body to supply as wsgi.input
 		if body is not None:
-			if isinstance(body, (bytes, str)):
+			if isinstance(body, (bytes, str, unicode)):
 				request_body = io.BytesIO(tornado.escape.utf8(body))
 			else:
 				request_body = body
