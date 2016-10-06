@@ -414,6 +414,14 @@ class OctoPrintFlaskResponse(flask.Response):
 		# add request specific cookie suffix to name
 		flask.Response.set_cookie(self, key + flask.request.cookie_suffix, *args, **kwargs)
 
+	def delete_cookie(self, key, path='/', domain=None):
+		flask.Response.delete_cookie(self, key, path=path, domain=domain)
+
+		# we also still might have a cookie left over from before we started prefixing, delete that manually
+		# without any pre processing (no path prefix, no key suffix)
+		flask.Response.set_cookie(self, key, expires=0, max_age=0, path=path, domain=domain)
+
+
 #~~ passive login helper
 
 def passive_login():
