@@ -228,7 +228,7 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
             return;
 
         var filters = self.currentFilters();
-        filters.pop(filter);
+        filters = _.without(filters, filter);
         self.currentFilters(filters);
         self._saveCurrentFiltersToLocalStorage();
 
