@@ -1,5 +1,24 @@
 # OctoPrint Changelog
 
+## 1.2.17rc1 (2016-10-06)
+
+### Improvements
+
+  * Files like `config.yaml` etc will now persist their permissions, with a lower and upper permission bounds for sanitization (e.g. removing executable flags on configuration files but keeping group read/write permissions if found).
+  * Log full stack trace on socket connection errors when debug logging for `octoprint.server.util.sockjs` is enabled
+  * ``SettingsPlugin``s may now mark configuration paths as restricted so that they are not returned on the REST API
+  * Updated LESS.js version
+
+### Bug fixes
+
+  * [#1531](https://github.com/foosel/OctoPrint/issues/1531) - Fixed encoding bug in HTTP request processing triggered by content type headers on form data fields
+  * Fixed forced `config.yaml` save on startup caused by mistakenly assuming that printer parameters were always migrated.
+  * Fixed issue causing ``remember_me`` cookie not to be deleted properly on logout
+  * Fixed broken filter toggling on ``ItemListHelper`` class used for various lists throughout the web interface
+  * Fixed an issue with the preliminary page never reporting that the server is now up if the page generated during preliminary caching had no cache headers set (e.g. because it contained the first run setup wizard)
+
+([Commits](https://github.com/foosel/OctoPrint/compare/1.2.16...1.2.17rc1))
+
 ## 1.2.16 (2016-09-23)
 
 ### Improvements
