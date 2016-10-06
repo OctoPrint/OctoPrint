@@ -524,16 +524,16 @@ $(function() {
         };
 
         self.onMouseOver = function(data, event) {
-            if (!self.settings.feature_keyboardControl() || self.layerSlider != undefined) return;
+            if (!self.settings.feature_keyboardControl()) return;
             $("#canvas_container").focus();
 
         };
         self.onMouseOut = function(data, event) {
-            if (!self.settings.feature_keyboardControl() || self.layerSlider != undefined) return;
+            if (!self.settings.feature_keyboardControl()) return;
             $("#canvas_container").blur();
         };
         self.onKeyDown = function(data, event) {
-            if (!self.settings.feature_keyboardControl() || self.layerSlider != undefined) return;
+            if (!self.settings.feature_keyboardControl() || self.layerSlider === undefined) return;
 
             var value = self.currentLayer;
             switch(event.which){
