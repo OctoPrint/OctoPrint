@@ -637,12 +637,12 @@ def gcodeFileCommand(filename, target):
 		if not _verifyFileExists(target, filename) and not _verifyFolderExists(target, filename):
 			return make_response("File or folder not found on {}: {}".format(target, filename), 404)
 
-		destination = data["destination"]
-		if not _verifyFolderExists(target, destination):
-			return make_response("Destination folder not found on {}: {}".format(target, destination), 404)
-
 		path, name = fileManager.split_path(target, filename)
-		destination = fileManager.join_path(target, destination, name)
+		destination = data["destination"]
+		if _verifyFolderExists(target, destination):
+			# destination is an existing folder, we'll assume we are supposed to move filename to this
+			# folder under the same name
+			destination = fileManager.join_path(target, destination, name)
 
 		if _verifyFileExists(target, destination) or _verifyFolderExists(target, destination):
 			return make_response("File or folder does already exist on {}: {}".format(target, destination), 409)
