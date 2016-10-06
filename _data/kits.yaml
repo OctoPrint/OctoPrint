@@ -1,0 +1,24 @@
+#- title: product title
+#  url: link to vendor site
+#  image: image to display
+#  description: description of kit
+#  resellers: (optional) list of resellers from which kit is available
+#  - title: reseller title
+#    country: country of reseller
+#    url: url to reseller, ideally product page
+- title: OctoPrint Kit by pi3g
+  url: http://www.pollin.de/shop/dt/MjY0OTgxOTk-/Bauelemente_Bauteile/Entwicklerboards/Raspberry_Pi/pi3g_OctoPrint_Kit.html
+  image: pi3g-octoprint-kit.jpg
+  description: Raspberry Pi 3 incl. WiFi, power supply, pre-flashed SD card & case with logo, printed manual
+  resellers:
+  - title: pollin.de
+    country: de
+    url: http://www.pollin.de/shop/dt/MjY0OTgxOTk-/Bauelemente_Bauteile/Entwicklerboards/Raspberry_Pi/pi3g_OctoPrint_Kit.html
+- title: OctoPrint Cam Kit by pi3g
+  url: http://www.pollin.de/shop/dt/MTY0OTgxOTk-/Bauelemente_Bauteile/Entwicklerboards/Raspberry_Pi/pi3g_OctoPrint_Kit_inkl_HD_Webcam_LOGITECH_C270.html
+  image: pi3g-octoprint-cam-kit.jpg
+  description: Raspberry Pi 3 incl. WiFi, Logitech C270 webcam, power supply, pre-flashed SD card, card reader & case with logo, printed manual
+  resellers:
+  - title: pollin.de
+    country: de
+    url: http://www.pollin.de/shop/dt/MTY0OTgxOTk-/Bauelemente_Bauteile/Entwicklerboards/Raspberry_Pi/pi3g_OctoPrint_Kit_inkl_HD_Webcam_LOGITECH_C270.html

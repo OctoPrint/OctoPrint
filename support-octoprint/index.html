@@ -17,30 +17,73 @@ description: Working on OctoPrint takes a lot of time and effort. If you've come
     the case any longer. So now I'm asking for your help to <strong>allow me to stay involved with OctoPrint as much as I am now!</strong>
 </p>
 <p>
-    You can <strong>support OctoPrint's development</strong> by <a href="{{ site.patreon }}" target="_blank" rel="noopener noreferrer" data-event-category="support" data-event-action="patreon">becoming a patron on Patreon</a>
+    You can <strong>support OctoPrint's development directly</strong> by
+    <a href="{{ site.patreon }}" target="_blank" rel="noopener noreferrer" data-event-category="support" data-event-action="patreon">becoming a patron on Patreon</a>
     or <a href="{{ site.paypal }}" target="_blank" rel="noopener noreferrer" data-event-category="support" data-event-action="paypal">making a one-time contribution on Paypal</a>.
+    You can also support my work by <strong>buying one of the <a href="#kits">All-in-one Kits listed below</a></strong> from whose proceedings I'll receive a share.
 </p>
 <p>
-    Please note that <strong>becoming a patron on <a href="{{ site.patreon }}" target="_blank" rel="noopener noreferrer" data-event-category="support" data-event-action="patreon">Patreon</a>
+    If you are able to support me directly, please note that <strong>becoming a patron on
+    <a href="{{ site.patreon }}" target="_blank" rel="noopener noreferrer" data-event-category="support" data-event-action="patreon">Patreon</a>
     allows me to plan ahead better</strong>. Patreon also works through PayPal, you can cancel at any time, and on top of
     that you get access to some nifty perks.
 </p>
 
 <div class="container support">
     <div class="row-fluid">
-        <div class="span6 support-patreon">
-            <strong><i class="fa fa-heart octo-heart"></i>&nbsp;Monthly&nbsp;<i class="fa fa-heart octo-heart"></i></strong>
+        <div class="span6 support-patreon" id="patreon">
+            <h3><i class="fa fa-heart octo-heart"></i>&nbsp;Monthly&nbsp;<i class="fa fa-heart octo-heart"></i></h3>
             <span style="display: block; height: 60px"><a href="{{ site.patreon }}" target="_blank" rel="noopener noreferrer" data-event-category="support" data-event-action="patreon"><img src="{{ BASE_PATH }}/assets/img/patreon-with-text.png"></a></span>
             Want to help regularly?<br>
             <strong>Become a patron on Patreon!</strong><br>
             <small>Also includes some cool extras!</small>
         </div>
-        <div class="span6 support-paypal">
-            <strong>One time</strong>
+        <div class="span6 support-paypal" id="paypal">
+            <h3>One time</h3>
             <span style="display: block; height: 60px"><a href="{{ site.paypal }}" target="_blank" rel="noopener noreferrer" data-event-category="support" data-event-action="paypal"><img src="{{ BASE_PATH }}/assets/img/paypal-with-text.png"></a></span>
             Want to help but can't commit to a monthly contribution?<br>
             <strong>Make a one-time contribution through PayPal!</strong><br>
             <small>No paypal.me? Send funds via PayPal to octoprint&#64;foosel&#46;net</small>
+        </div>
+    </div>
+    <div class="row-fluid">
+        <div class="span12 support-kits" id="kits">
+            <h3>All-in-one OctoPrint Kits</h3>
+            Want to help and still need some hardware?<br>
+            <strong>Buy one of these All-in-one OctoPrint Kits!</strong><br>
+            <small>I get a share from the proceedings</small>
+            <div class="container">
+                <div class="row-fluid kitrow">
+                    {% for kit in site.data.kits %}
+                        <div class="kit">
+                            {% if kit.url %}
+                            <a href="{{ kit.url }}" title="{{ kit.title }}" target="_blank" rel="noopener noreferrer" data-event-category="kit" data-event-action="{{ kit.title }}">
+                                <span class="imgcontainer">
+                                    <img src="{{ BASE_PATH }}/assets/img/kits/{{ kit.image }}" alt="{{ kit.title }}" title="{{ kit.title }}">
+                                </span><br>
+                                <strong>{{ kit.title }}</strong>
+                            </a><br>
+                            {% else %}
+                            <span>
+                                <span class="imgcontainer">
+                                    <img src="{{ BASE_PATH }}/assets/img/kits/{{ kit.image }}" alt="{{ kit.title }}" title="{{ kit.title }}">
+                                </span><br>
+                                <strong>{{ kit.title }}</strong>
+                            </span><br>
+                            {% endif %}
+                            {{ kit.description }}<br>
+                            {% if kit.resellers %}
+                            <em>Available from</em>
+                            <ul class="resellers">
+                                {% for reseller in kit.resellers %}
+                                    <li><a href="{{ reseller.url }}" target="_blank" rel="noopener noreferrer" title="{{ reseller.title }}" data-event-category="kit" data-event-action="{{ kit.title }}">{{ reseller.title }}</a> [{{ reseller.country }}]</li>
+                                {% endfor %}
+                            </ul>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
         </div>
     </div>
 </div>

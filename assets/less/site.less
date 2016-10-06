@@ -19,6 +19,11 @@
 @sponsorwidth: 120px;
 @sponsormargin: 10px;
 
+@kitheight: 240px;
+@kitwidth: 240px;
+@kitfullheight: 400px;
+@kitmargin: 10px;
+
 .responsive-full-width {
   @media (max-width: 767px) {
     margin-left: -20px;
@@ -554,10 +559,39 @@ footer {
   }
 
   .support-patreon,
-  .support-paypal {
+  .support-paypal,
+  .support-kits {
     text-align: center;
-    @media (max-width: 767px) {
-      margin-bottom: 2em;
+    margin-bottom: 2em;
+  }
+
+
+  .support-kits {
+    .kitrow {
+      .kit {
+        display: inline-block;
+        max-width: @kitwidth;
+        margin: @kitmargin;
+        vertical-align: top;
+
+        .imgcontainer {
+          display: table-cell;
+          width: @kitwidth;
+          height: @kitheight;
+          vertical-align: middle;
+
+          img {
+            max-width: @kitwidth;
+            max-height: @kitheight;
+          }
+        }
+
+        ul.resellers {
+          list-style: none;
+          padding-left: 0;
+          margin: 0;
+        }
+      }
     }
   }
 }

@@ -23,10 +23,14 @@ You can download the latest version via the following button:
 
 <div class="text-center">
     <a class="btn btn-primary btn-large btn-block" href="https://octopi.octoprint.org/latest" data-event-category="download" data-event-action="latest"><i class="icon-download-alt icon-large"></i>&nbsp;&nbsp;Download&nbsp;OctoPi&nbsp;0.13</a>
-    <small>MD5Sum: <code>d0191958de7ffe0f0a62c9313b7a3fc9</code></small>
+    <small>MD5Sum: <code>d0191958de7ffe0f0a62c9313b7a3fc9</code> &middot; Compatible with Raspberry Pi A, B, A+, B+, B2, 3 and Zero</small>
 </div>
 
-Compatible with Raspberry Pi A, B, A+, B+, B2, 3 and Zero.
+or simply buy one of the available
+
+<div class="text-center">
+    <a class="btn btn-primary btn-large btn-block" href="/support-octoprint/#kits" data-event-category="download" data-event-action="kits">All-in-one OctoPrint Kits</a>
+</div>
 
 ##  Getting Started with OctoPi
 
