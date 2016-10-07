@@ -672,8 +672,10 @@ class CustomHTTPServer(tornado.httpserver.HTTPServer):
 
 	``default_max_body_size`` is the default maximum body size to apply if no specific one from ``max_body_sizes`` matches.
 	"""
+        def __init__(self, *args, **kwargs):
+                pass
 
-	def __init__(self, request_callback, no_keep_alive=False, io_loop=None,
+	def initialize(self, request_callback, no_keep_alive=False, io_loop=None,
 				 xheaders=False, ssl_options=None, protocol=None,
 				 decompress_request=False,
 				 chunk_size=None, max_header_size=None,
