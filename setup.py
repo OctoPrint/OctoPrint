@@ -14,15 +14,15 @@ import octoprint_setuptools
 
 # Requirements for our application
 INSTALL_REQUIRES = [
-	"flask>=0.9,<0.11",
+	"flask>=0.11,<0.12",
 	"werkzeug>=0.8.3,<0.9",
 	"tornado>=4.0.2,<4.1",
 	"sockjs-tornado>=1.0.2,<1.1",
 	"PyYAML>=3.10,<3.11",
-	"Flask-Login>=0.2.2,<0.3",
-	"Flask-Principal>=0.3.5,<0.4",
-	"Flask-Babel>=0.9,<0.10",
-	"Flask-Assets>=0.10,<0.11",
+	"Flask-Login>=0.3,<0.4",
+	"Flask-Principal>=0.4,<0.5",
+	"Flask-Babel>=0.11,<0.12",
+	"Flask-Assets>=0.12,<0.13",
 	"markdown>=2.6.4,<2.7",
 	"pyserial>=2.7,<2.8",
 	"netaddr>=0.7.17,<0.8",

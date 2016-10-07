@@ -1373,7 +1373,7 @@ class SettingsPlugin(OctoPrintPlugin):
 
 		:return: the current settings of the plugin, as a dictionary
 		"""
-		from flask.ext.login import current_user
+		from flask_login import current_user
 
 		data = self._settings.get_all_data()
 		if self.config_version_key in data:

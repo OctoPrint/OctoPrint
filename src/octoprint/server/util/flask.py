@@ -8,9 +8,9 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import tornado.web
 import flask
-import flask.ext.login
-import flask.ext.principal
-import flask.ext.assets
+import flask_login
+import flask_principal
+import flask_assets
 import webassets.updater
 import webassets.utils
 import functools
@@ -40,7 +40,7 @@ def enable_additional_translations(default_locale="en", additional_folders=None)
 	import os
 	from flask import _request_ctx_stack
 	from babel import support, Locale
-	import flask.ext.babel
+	import flask_babel
 
 	if additional_folders is None:
 		additional_folders = []
@@ -85,7 +85,7 @@ def enable_additional_translations(default_locale="en", additional_folders=None)
 			return None
 		translations = getattr(ctx, 'babel_translations', None)
 		if translations is None:
-			locale = flask.ext.babel.get_locale()
+			locale = flask_babel.get_locale()
 			translations = support.Translations()
 
 			if str(locale) != default_locale:
@@ -123,8 +123,8 @@ def enable_additional_translations(default_locale="en", additional_folders=None)
 			ctx.babel_translations = translations
 		return translations
 
-	flask.ext.babel.Babel.list_translations = fixed_list_translations
-	flask.ext.babel.get_translations = fixed_get_translations
+	flask_babel.Babel.list_translations = fixed_list_translations
+	flask_babel.get_translations = fixed_get_translations
 
 def fix_webassets_cache():
 	from webassets import cache
@@ -426,12 +426,12 @@ class OctoPrintFlaskResponse(flask.Response):
 
 def passive_login():
 	if octoprint.server.userManager.enabled:
-		user = octoprint.server.userManager.login_user(flask.ext.login.current_user)
+                user = octoprint.server.userManager.login_user(flask_login.current_user)
 	else:
-		user = flask.ext.login.current_user
+		user = flask_login.current_user
 
-	if user is not None and not user.is_anonymous():
-		flask.ext.principal.identity_changed.send(flask.current_app._get_current_object(), identity=flask.ext.principal.Identity(user.get_id()))
+	if user is not None and not user.is_anonymous:
+		flask_principal.identity_changed.send(flask.current_app._get_current_object(), identity=flask_principal.Identity(user.get_id()))
 		if hasattr(user, "get_session"):
 			flask.session["usersession.id"] = user.get_session()
 		flask.g.user = user
@@ -453,8 +453,8 @@ def passive_login():
 					user = octoprint.server.userManager.login_user(user)
 					flask.session["usersession.id"] = user.get_session()
 					flask.g.user = user
-					flask.ext.login.login_user(user)
-					flask.ext.principal.identity_changed.send(flask.current_app._get_current_object(), identity=flask.ext.principal.Identity(user.get_id()))
+					flask_login.login_user(user)
+					flask_principal.identity_changed.send(flask.current_app._get_current_object(), identity=flask_principal.Identity(user.get_id()))
 					return flask.jsonify(user.asDict())
 		except:
 			logger = logging.getLogger(__name__)
@@ -999,14 +999,14 @@ def _get_flask_user_from_request(request):
 	:return: the user or None if no user could be determined
 	"""
 	import octoprint.server.util
-	import flask.ext.login
+	import flask_login
 	from octoprint.settings import settings
 
 	apikey = octoprint.server.util.get_api_key(request)
 	if settings().getBoolean(["api", "enabled"]) and apikey is not None:
 		user = octoprint.server.util.get_user_for_apikey(apikey)
 	else:
-		user = flask.ext.login.current_user
+		user = flask_login.current_user
 
 	return user
 
@@ -1061,7 +1061,7 @@ def restricted_access(func):
 		apikey = octoprint.server.util.get_api_key(flask.request)
 		if apikey == octoprint.server.UI_API_KEY:
 			# UI API key => call regular login_required decorator, we are using browser sessions here
-			return flask.ext.login.login_required(func)(*args, **kwargs)
+			return flask_login.login_required(func)(*args, **kwargs)
 
 		# try to determine user for key
 		user = octoprint.server.util.get_user_for_apikey(apikey)
@@ -1069,11 +1069,11 @@ def restricted_access(func):
 			# no user or no key => go away
 			return flask.make_response("Invalid API key", 401)
 
-		if not flask.ext.login.login_user(user, remember=False):
+		if not flask_login.login_user(user, remember=False):
 			# user for API key could not be logged in => go away
 			return flask.make_response("Invalid API key", 401)
 
-		flask.ext.principal.identity_changed.send(flask.current_app._get_current_object(), identity=flask.ext.principal.Identity(user.get_id()))
+		flask_principal.identity_changed.send(flask.current_app._get_current_object(), identity=flask_principal.Identity(user.get_id()))
 		return func(*args, **kwargs)
 
 	return decorated_view
@@ -1172,7 +1172,7 @@ def get_json_command_from_request(request, valid_commands):
 
 ##~~ Flask-Assets resolver with plugin asset support
 
-class PluginAssetResolver(flask.ext.assets.FlaskResolver):
+class PluginAssetResolver(flask_assets.FlaskResolver):
 
 	def split_prefix(self, ctx, item):
 		app = ctx.environment._app
@@ -1181,14 +1181,14 @@ class PluginAssetResolver(flask.ext.assets.FlaskResolver):
 				prefix, plugin, name = item.split("/", 2)
 				blueprint = prefix + "." + plugin
 
-				directory = flask.ext.assets.get_static_folder(app.blueprints[blueprint])
+				directory = flask_assets.get_static_folder(app.blueprints[blueprint])
 				item = name
 				endpoint = blueprint + ".static"
 				return directory, item, endpoint
 			except (ValueError, KeyError):
 				pass
 
-		return flask.ext.assets.FlaskResolver.split_prefix(self, ctx, item)
+		return flask_assets.FlaskResolver.split_prefix(self, ctx, item)
 
 	def resolve_output_to_path(self, ctx, target, bundle):
 		import os

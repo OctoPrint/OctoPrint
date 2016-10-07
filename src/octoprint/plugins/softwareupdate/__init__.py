@@ -491,7 +491,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 	##~~ TemplatePlugin API
 
 	def get_template_configs(self):
-		from flask.ext.babel import gettext
+		from flask_babel import gettext
 		return [
 			dict(type="settings", name=gettext("Software Update"))
 		]
@@ -806,7 +806,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		result = dict(check)
 
 		if target == "octoprint":
-			from flask.ext.babel import gettext
+			from flask_babel import gettext
 			result["displayName"] = check.get("displayName", gettext("OctoPrint"))
 			result["displayVersion"] = check.get("displayVersion", "{octoprint_version}")
 
