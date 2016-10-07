@@ -20,7 +20,6 @@ from flask import request, jsonify, make_response
 
 from octoprint.settings import settings
 
-from octoprint.server import admin_permission
 from octoprint.server.api import api
 from octoprint.server.util.flask import restricted_access
 
@@ -28,7 +27,7 @@ from octoprint.plugin import plugin_manager
 
 from octoprint.permissions import Permissions
 
-from flask.ext.babel import Locale
+from flask_babel import Locale
 
 @api.route("/languages", methods=["GET"])
 @restricted_access

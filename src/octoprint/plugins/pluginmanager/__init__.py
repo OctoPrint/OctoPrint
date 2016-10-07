@@ -16,7 +16,7 @@ from octoprint.permissions import Permissions
 from octoprint.util.pip import LocalPipCaller, UnknownPip
 
 from flask import jsonify, make_response
-from flask.ext.babel import gettext
+from flask_babel import gettext
 
 import logging
 import sarge

@@ -14,7 +14,7 @@ import octoprint_setuptools
 
 # Requirements for our application
 INSTALL_REQUIRES = [
-	"flask>=0.9,<0.11",
+	"flask>=0.11,<0.12",
 	"Jinja2>=2.8,<2.9", # Jinja 2.9 has breaking changes WRT template scope - we can't
 	                    # guarantee backwards compatibility for plugins and such with that
 	                    # version, hence we need to pin to a lower version for now. See #1697
@@ -25,10 +25,10 @@ INSTALL_REQUIRES = [
 	                  # something for post-1.3.0-stable release
 	"sockjs-tornado>=1.0.2,<1.1",
 	"PyYAML>=3.10,<3.11",
-	"Flask-Login>=0.2.2,<0.3",
-	"Flask-Principal>=0.3.5,<0.4",
-	"Flask-Babel>=0.9,<0.10",
-	"Flask-Assets>=0.10,<0.11",
+	"Flask-Login>=0.3,<0.4",
+	"Flask-Principal>=0.4,<0.5",
+	"Flask-Babel>=0.11,<0.12",
+	"Flask-Assets>=0.12,<0.13",
 	"markdown>=2.6.4,<2.7",
 	"pyserial>=2.7,<2.8",
 	"netaddr>=0.7.17,<0.8",

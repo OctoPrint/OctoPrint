@@ -9,7 +9,7 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 import octoprint.plugin
 
 
-from flask.ext.babel import gettext
+from flask_babel import gettext
 
 
 class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
