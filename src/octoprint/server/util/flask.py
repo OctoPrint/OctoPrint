@@ -971,7 +971,7 @@ def admin_validator(request):
 	"""
 
 	user = _get_flask_user_from_request(request)
-	if user is None or not user.is_authenticated() or not user.is_admin():
+	if user is None or not user.is_authenticated or not user.is_admin:
 		raise tornado.web.HTTPError(403)
 
 
@@ -986,7 +986,7 @@ def user_validator(request):
 	"""
 
 	user = _get_flask_user_from_request(request)
-	if user is None or not user.is_authenticated():
+	if user is None or not user.is_authenticated:
 		raise tornado.web.HTTPError(403)
 
 

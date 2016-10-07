@@ -428,9 +428,9 @@ class User(UserMixin):
 	def asDict(self):
 		return {
 			"name": self._username,
-			"active": self.is_active(),
-			"admin": self.is_admin(),
-			"user": self.is_user(),
+			"active": self.is_active,
+			"admin": self.is_admin,
+			"user": self.is_user,
 			"apikey": self._apikey,
 			"settings": self._settings
 		}
@@ -444,12 +444,15 @@ class User(UserMixin):
 	def get_name(self):
 		return self._username
 
+        @property
 	def is_active(self):
 		return self._active
 
+        @property
 	def is_user(self):
 		return "user" in self._roles
 
+        @property
 	def is_admin(self):
 		return "admin" in self._roles
 
@@ -496,7 +499,7 @@ class User(UserMixin):
 		return True
 
 	def __repr__(self):
-		return "User(id=%s,name=%s,active=%r,user=%r,admin=%r)" % (self.get_id(), self.get_name(), self.is_active(), self.is_user(), self.is_admin())
+		return "User(id=%s,name=%s,active=%r,user=%r,admin=%r)" % (self.get_id(), self.get_name(), self.is_active, self.is_user, self.is_admin)
 
 class SessionUser(User):
 	def __init__(self, user):
@@ -526,7 +529,7 @@ class SessionUser(User):
 		return self._session
 
 	def __repr__(self):
-		return "SessionUser(id=%s,name=%s,active=%r,user=%r,admin=%r,session=%s,created=%s)" % (self.get_id(), self.get_name(), self.is_active(), self.is_user(), self.is_admin(), self._session, self._created)
+		return "SessionUser(id=%s,name=%s,active=%r,user=%r,admin=%r,session=%s,created=%s)" % (self.get_id(), self.get_name(), self.is_active, self.is_user, self.is_admin, self._session, self._created)
 
 ##~~ DummyUser object to use when accessControl is disabled
 

@@ -86,9 +86,9 @@ def on_identity_loaded(sender, identity):
 		return
 
 	identity.provides.add(UserNeed(user.get_id()))
-	if user.is_user():
+	if user.is_user:
 		identity.provides.add(RoleNeed("user"))
-	if user.is_admin():
+	if user.is_admin:
 		identity.provides.add(RoleNeed("admin"))
 
 def load_user(id):

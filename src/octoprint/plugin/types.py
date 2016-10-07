@@ -1400,8 +1400,8 @@ class SettingsPlugin(OctoPrintPlugin):
 			if key in node:
 				node[key] = None
 
-		conditions = dict(user=lambda: current_user is not None and not current_user.is_anonymous(),
-		                  admin=lambda: current_user is not None and not current_user.is_anonymous() and current_user.is_admin(),
+		conditions = dict(user=lambda: current_user is not None and not current_user.is_anonymous,
+		                  admin=lambda: current_user is not None and not current_user.is_anonymous and current_user.is_admin,
 		                  never=lambda: False)
 
 		for level, condition in conditions.items():
