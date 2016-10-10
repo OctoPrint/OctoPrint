@@ -574,11 +574,11 @@ class Server(object):
 					"stream": "ext://sys.stdout"
 				},
 				"file": {
-					"class": "logging.handlers.TimedRotatingFileHandler",
+					"class": "octoprint.logging.handlers.CleaningTimedRotatingFileHandler",
 					"level": "DEBUG",
 					"formatter": "simple",
 					"when": "D",
-					"backupCount": "1",
+					"backupCount": 7,
 					"filename": os.path.join(settings().getBaseFolder("logs"), "octoprint.log")
 				},
 				"serialFile": {
