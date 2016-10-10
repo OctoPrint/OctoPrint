@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+from __future__ import absolute_import
+
 import sys
 from octoprint.daemon import Daemon
 from octoprint.server import Server
