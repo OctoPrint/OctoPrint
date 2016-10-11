@@ -194,6 +194,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		if self._comm is not None:
 			self._comm.close()
 		self._printerProfileManager.select(profile)
+
+		from octoprint.logging.handlers import SerialLogHandler
+		SerialLogHandler.on_open_connection()
+
 		self._comm = comm.MachineCom(port, baudrate, callbackObject=self, printerProfileManager=self._printerProfileManager)
 
 	def disconnect(self):
