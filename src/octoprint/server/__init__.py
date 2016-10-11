@@ -525,6 +525,11 @@ class Server(object):
 			                             "on_shutdown",
 			                             sorting_context="ShutdownPlugin.on_shutdown")
 
+			# wait for shutdown even to be processed, but maximally for 15s
+			event_timeout = 15.0
+			if eventManager.join(timeout=event_timeout):
+				self._logger.warn("Event loop was still busy processing after {}s, shutting down anyhow".format(event_timeout))
+
 			if self._octoprint_daemon is not None:
 				self._logger.info("Cleaning up daemon pidfile")
 				self._octoprint_daemon.terminated()

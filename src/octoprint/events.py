@@ -124,15 +124,22 @@ class EventManager(object):
 		self._registeredListeners = collections.defaultdict(list)
 		self._logger = logging.getLogger(__name__)
 
+		self._shutdown_signaled = False
+
 		self._queue = queue.Queue()
+
 		self._worker = threading.Thread(target=self._work)
 		self._worker.daemon = True
 		self._worker.start()
 
 	def _work(self):
 		try:
-			while True:
+			while not self._shutdown_signaled:
 				event, payload = self._queue.get(True)
+				if event == Events.SHUTDOWN:
+					# we've got the shutdown event here, stop event loop processing after this has been processed
+					self._logger.info("Processing shutdown event, this will be our last event")
+					self._shutdown_signaled = True
 
 				eventListeners = self._registeredListeners[event]
 				self._logger.debug("Firing event: %s (Payload: %r)" % (event, payload))
@@ -147,6 +154,7 @@ class EventManager(object):
 				octoprint.plugin.call_plugin(octoprint.plugin.types.EventHandlerPlugin,
 				                             "on_event",
 				                             args=(event, payload))
+			self._logger.info("Event loop shut down")
 		except:
 			self._logger.exception("Ooops, the event bus worker loop crashed")
 
@@ -194,6 +202,10 @@ class EventManager(object):
 
 		self._registeredListeners[event].remove(callback)
 		self._logger.debug("Unsubscribed listener %r for event %s" % (callback, event))
+
+	def join(self, timeout=None):
+		self._worker.join(timeout)
+		return self._worker.is_alive()
 
 
 class GenericEventListener(object):
