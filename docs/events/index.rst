@@ -89,7 +89,10 @@ Server
 ------
 
 Startup
-   The server has started
+   The server has started.
+
+Shutdown
+   The server is shutting down.
 
 ClientOpened
    A client has connected to the web server.
