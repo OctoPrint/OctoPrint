@@ -23,6 +23,9 @@ $(function() {
         self.extrusionAmount = ko.observable(undefined);
         self.controls = ko.observableArray([]);
 
+        self.distances = ko.observableArray([0.1, 1, 10, 100]);
+        self.distance = ko.observable(10);
+
         self.tools = ko.observableArray([]);
 
         self.feedRate = ko.observable(100);
@@ -37,10 +40,10 @@ $(function() {
 
         self.keycontrolActive = ko.observable(false);
         self.keycontrolHelpActive = ko.observable(false);
-        self.keycontrolPossible = ko.computed(function () {
+        self.keycontrolPossible = ko.pureComputed(function () {
             return self.isOperational() && !self.isPrinting() && self.loginState.isUser() && !$.browser.mobile;
         });
-        self.showKeycontrols = ko.computed(function () {
+        self.showKeycontrols = ko.pureComputed(function () {
             return self.keycontrolActive() && self.keycontrolPossible();
         });
 
@@ -245,7 +248,7 @@ $(function() {
 
         self.sendJogCommand = function (axis, multiplier, distance) {
             if (typeof distance === "undefined")
-                distance = $('#jog_distance button.active').data('distance');
+                distance = self.distance();
             if (self.settings.printerProfiles.currentProfileData() && self.settings.printerProfiles.currentProfileData()["axes"] && self.settings.printerProfiles.currentProfileData()["axes"][axis] && self.settings.printerProfiles.currentProfileData()["axes"][axis]["inverted"]()) {
                 multiplier *= -1;
             }
@@ -519,6 +522,10 @@ $(function() {
                 }
                 button.click();
             }
+        };
+
+        self.stripDistanceDecimal = function(distance) {
+            return distance.toString().replace(".", "");
         };
 
     }

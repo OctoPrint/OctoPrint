@@ -4,7 +4,7 @@
 </a>
 <ul class="dropdown-menu" data-bind="foreach: system.systemActions">
     <!-- ko if: action == "divider" -->
-    <li class="divider" />
+    <li class="divider"></li>
     <!-- /ko -->
     <!-- ko if: action != "divider" -->
     <li><a href="#" data-bind="click: $root.system.triggerCommand, text: name"></a></li>

@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
@@ -9,7 +9,10 @@ import os
 import re
 import threading
 import math
-import Queue
+try:
+	import queue
+except ImportError:
+	import Queue as queue
 
 from serial import SerialTimeoutException
 
@@ -25,7 +28,7 @@ class VirtualPrinter(object):
 
 	def __init__(self, seriallog_handler=None, read_timeout=5.0, write_timeout=10.0):
 		import logging
-		self._logger = logging.getLogger("octoprint.plugin.virtual_printer.VirtualPrinter")
+		self._logger = logging.getLogger("octoprint.plugins.virtual_printer.VirtualPrinter")
 
 		self._seriallog = logging.getLogger("octoprint.plugin.virtual_printer.VirtualPrinter.serial")
 		self._seriallog.setLevel(logging.CRITICAL)
@@ -41,9 +44,11 @@ class VirtualPrinter(object):
 		self._read_timeout = read_timeout
 		self._write_timeout = write_timeout
 
-		self.incoming = CharCountingQueue(settings().getInt(["devel", "virtualPrinter", "rxBuffer"]), name="RxBuffer")
-		self.outgoing = Queue.Queue()
-		self.buffered = Queue.Queue(maxsize=settings().getInt(["devel", "virtualPrinter", "commandBuffer"]))
+		self._rx_buffer_size = settings().getInt(["devel", "virtualPrinter", "rxBuffer"])
+
+		self.incoming = CharCountingQueue(self._rx_buffer_size, name="RxBuffer")
+		self.outgoing = queue.Queue()
+		self.buffered = queue.Queue(maxsize=settings().getInt(["devel", "virtualPrinter", "commandBuffer"]))
 
 		for item in ['start\n', 'Marlin: Virtual Marlin!\n', '\x80\n', 'SD card ok\n']:
 			self._send(item)
@@ -72,6 +77,7 @@ class VirtualPrinter(object):
 		self._selectedSdFileSize = None
 		self._selectedSdFilePos = None
 		self._writingToSd = False
+		self._writingToSdHandle = None
 		self._newSdFilePos = None
 		self._heatupThread = None
 
@@ -84,11 +90,15 @@ class VirtualPrinter(object):
 
 		self._echoOnM117 = settings().getBoolean(["devel", "virtualPrinter", "echoOnM117"])
 
+		self._brokenM29 = settings().getBoolean(["devel", "virtualPrinter", "brokenM29"])
+
 		self.currentLine = 0
 		self.lastN = 0
 
 		self._incoming_lock = threading.RLock()
 
+		self._debug_awol = False
+		self._debug_sleep = None
 		self._sleepAfterNext = dict()
 		self._sleepAfter = dict()
 
@@ -100,34 +110,65 @@ class VirtualPrinter(object):
 
 		self._killed = False
 
-		readThread = threading.Thread(target=self._processIncoming)
+		self._triggerResendAt100 = True
+		self._triggerResendWithTimeoutAt105 = True
+		self._triggeredResendWithTimeoutAt105 = False
+
+		readThread = threading.Thread(target=self._processIncoming, name="octoprint.plugins.virtual_printer.wait_thread")
 		readThread.start()
 
-		bufferThread = threading.Thread(target=self._processBuffer)
+		bufferThread = threading.Thread(target=self._processBuffer, name="octoprint.plugins.virtual_printer.buffer_thread")
 		bufferThread.start()
 
 	def __str__(self):
 		return "VIRTUAL(read_timeout={read_timeout},write_timeout={write_timeout},options={options})"\
 			.format(read_timeout=self._read_timeout, write_timeout=self._write_timeout, options=settings().get(["devel", "virtualPrinter"]))
 
+	@property
+	def timeout(self):
+		return self._read_timeout
+
+	@timeout.setter
+	def timeout(self, value):
+		self._logger.debug("Setting read timeout to {}s".format(value))
+		self._read_timeout = value
+
+	@property
+	def write_timeout(self):
+		return self._write_timeout
+
+	@write_timeout.setter
+	def write_timeout(self, value):
+		self._logger.debug("Setting write timeout to {}s".format(value))
+		self._write_timeout = value
+
 	def _clearQueue(self, queue):
 		try:
 			while queue.get(block=False):
 				continue
-		except Queue.Empty:
+		except queue.Empty:
 			pass
 
 	def _processIncoming(self):
 		next_wait_timeout = time.time() + self._waitInterval
+		buf = ""
 		while self.incoming is not None and not self._killed:
 			self._simulateTemps()
 
 			try:
 				data = self.incoming.get(timeout=0.01)
-			except Queue.Empty:
+				self.incoming.task_done()
+			except queue.Empty:
 				if self._sendWait and time.time() > next_wait_timeout:
 					self._send("wait")
 					next_wait_timeout = time.time() + self._waitInterval
+				continue
+
+			buf += data
+			if "\n" in buf:
+				data = buf[:buf.find("\n") + 1]
+				buf = buf[buf.find("\n") + 1:]
+			else:
 				continue
 
 			next_wait_timeout = time.time() + self._waitInterval
@@ -143,7 +184,12 @@ class VirtualPrinter(object):
 
 			# strip checksum
 			if "*" in data:
+				checksum = int(data[data.rfind("*") + 1:])
 				data = data[:data.rfind("*")]
+				if not checksum == self._calculate_checksum(data):
+					self._triggerResend(expected=self.currentLine + 1)
+					continue
+
 				self.currentLine += 1
 			elif settings().getBoolean(["devel", "virtualPrinter", "forceChecksum"]):
 				self._send("Error: Missing checksum")
@@ -154,6 +200,10 @@ class VirtualPrinter(object):
 				linenumber = int(re.search("N([0-9]+)", data).group(1))
 				self.lastN = linenumber
 				self.currentLine = linenumber
+
+				self._triggerResendAt100 = True
+				self._triggerResendWithTimeoutAt105 = True
+
 				self._sendOk()
 				continue
 			elif data.startswith("N"):
@@ -162,9 +212,17 @@ class VirtualPrinter(object):
 				if linenumber != expected:
 					self._triggerResend(actual=linenumber)
 					continue
-				elif self.currentLine == 101:
+				elif linenumber == 100 and self._triggerResendAt100:
 					# simulate a resend at line 100
+					self._triggerResendAt100 = False
 					self._triggerResend(expected=100)
+					continue
+				elif linenumber == 105 and self._triggerResendWithTimeoutAt105 and not self._writingToSd:
+					# simulate a resend with timeout at line 105
+					self._triggerResendWithTimeoutAt105 = False
+					self._triggerResend(expected=105)
+					self._dont_answer = True
+					self.lastN = linenumber
 					continue
 				else:
 					self.lastN = linenumber
@@ -173,9 +231,8 @@ class VirtualPrinter(object):
 			data += "\n"
 
 			# shortcut for writing to SD
-			if self._writingToSd and not self._selectedSdFile is None and not "M29" in data:
-				with open(self._selectedSdFile, "a") as f:
-					f.write(data)
+			if self._writingToSdHandle is not None and not "M29" in data:
+				self._writingToSdHandle.write(data)
 				self._sendOk()
 				continue
 
@@ -234,6 +291,8 @@ class VirtualPrinter(object):
 			# if we are sending oks after command output, send it now
 			if len(data.strip()) > 0 and not self._okBeforeCommandOutput:
 				self._sendOk()
+
+		self._logger.info("Closing down read loop")
 
 	##~~ command implementations
 
@@ -309,7 +368,7 @@ class VirtualPrinter(object):
 			self._deleteSdFile(filename)
 
 	def _gcode_M114(self, data):
-		output = "C: X:{} Y:{} Z:{} E:{}".format(self._lastX, self._lastY, self._lastZ, self._lastE)
+		output = "X:{} Y:{} Z:{} E:{} Count: A:{} B:{} C:{}".format(self._lastX, self._lastY, self._lastZ, self._lastE, int(self._lastX*100), int(self.lastY*100), int(self.lastZ*100))
 		if not self._okBeforeCommandOutput:
 			output = "ok " + output
 		self._send(output)
@@ -370,6 +429,12 @@ class VirtualPrinter(object):
 
 	##~~ further helpers
 
+	def _calculate_checksum(self, line):
+		checksum = 0
+		for c in line:
+			checksum ^= ord(c)
+		return checksum
+
 	def _kill(self):
 		if not self._supportM112:
 			return
@@ -422,6 +487,8 @@ class VirtualPrinter(object):
 
 			dont_answer
 			| Will not acknowledge the next command.
+			go_awol
+			| Will completely stop replying
 			trigger_resend_lineno
 			| Triggers a resend error with a line number mismatch
 			trigger_resend_checksum
@@ -454,6 +521,11 @@ class VirtualPrinter(object):
 			self._triggerResend(expected=self.lastN)
 		elif data == "drop_connection":
 			self._debug_drop_connection = True
+		elif data == "maxtemp_error":
+			self._output("Error: MAXTEMP triggered!")
+		elif data == "go_awol":
+			self._output("// Going AWOL")
+			self._debug_awol = True
 		else:
 			try:
 				sleep_match = VirtualPrinter.sleep_regex.match(data)
@@ -464,7 +536,7 @@ class VirtualPrinter(object):
 				if sleep_match is not None:
 					interval = int(sleep_match.group(1))
 					self._send("// sleeping for {interval} seconds".format(interval=interval))
-					time.sleep(interval)
+					self._debug_sleep = interval
 				elif sleep_after_match is not None:
 					command = sleep_after_match.group(1)
 					interval = int(sleep_after_match.group(2))
@@ -508,7 +580,10 @@ class VirtualPrinter(object):
 		else:
 			self._selectedSdFile = file
 			self._selectedSdFileSize = os.stat(file).st_size
-			self._send("File opened: %s  Size: %d" % (filename, self._selectedSdFileSize))
+			if settings().getBoolean(["devel", "virtualPrinter", "includeFilenameInOpened"]):
+				self._send("File opened: %s  Size: %d" % (filename, self._selectedSdFileSize))
+			else:
+				self._send("File opened")
 			self._send("File selected")
 
 	def _startSdPrint(self):
@@ -649,10 +724,13 @@ class VirtualPrinter(object):
 				pass
 
 		if duration:
-			slept = 0
-			while duration - slept > self._read_timeout and not self._killed:
-				time.sleep(self._read_timeout)
-				slept += self._read_timeout
+			if duration > self._read_timeout:
+				slept = 0
+				while duration - slept > self._read_timeout and not self._killed:
+					time.sleep(self._read_timeout)
+					slept += self._read_timeout
+			else:
+				time.sleep(duration)
 
 	def _setPosition(self, line):
 		matchX = re.search("X([0-9.]+)", line)
@@ -694,59 +772,89 @@ class VirtualPrinter(object):
 			else:
 				self._send("error writing to file")
 
+		handle = None
+		try:
+			handle = open(file, "w")
+		except:
+			self._output("error writing to file")
+			if handle is not None:
+				try:
+					handle.close()
+				except:
+					pass
+		self._writingToSdHandle = handle
 		self._writingToSd = True
 		self._selectedSdFile = file
 		self._send("Writing to file: %s" % filename)
 
 	def _finishSdFile(self):
+		try:
+			self._writingToSdHandle.close()
+		except:
+			pass
+		finally:
+			self._writingToSdHandle = None
 		self._writingToSd = False
 		self._selectedSdFile = None
+		self._output("Done saving file")
 
 	def _sdPrintingWorker(self):
 		self._selectedSdFilePos = 0
-		with open(self._selectedSdFile, "r") as f:
-			for line in iter(f.readline, ""):
-				if self._killed:
-					break
+		try:
+			with open(self._selectedSdFile, "r") as f:
+				for line in iter(f.readline, ""):
+					if self._killed:
+						break
 
-				# reset position if requested by client
-				if self._newSdFilePos is not None:
-					f.seek(self._newSdFilePos)
-					self._newSdFilePos = None
+					# reset position if requested by client
+					if self._newSdFilePos is not None:
+						f.seek(self._newSdFilePos)
+						self._newSdFilePos = None
 
-				# read current file position
-				self._selectedSdFilePos = f.tell()
+					# read current file position
+					self._selectedSdFilePos = f.tell()
 
-				# if we are paused, wait for unpausing
-				self._sdPrintingSemaphore.wait()
+					# if we are paused, wait for unpausing
+					self._sdPrintingSemaphore.wait()
 
-				# set target temps
-				if 'M104' in line or 'M109' in line:
-					self._parseHotendCommand(line)
-				if 'M140' in line or 'M190' in line:
-					self._parseBedCommand(line)
+					# set target temps
+					if 'M104' in line or 'M109' in line:
+						self._parseHotendCommand(line)
+					elif 'M140' in line or 'M190' in line:
+						self._parseBedCommand(line)
+					elif line.startswith("G0") or line.startswith("G1") or line.startswith("G2") or line.startswith("G3"):
+						# simulate reprap buffered commands via a Queue with maxsize which internally simulates the moves
+						self.buffered.put(line)
 
-				time.sleep(settings().getFloat(["devel", "virtualPrinter", "throttle"]))
+		except AttributeError:
+			if self.outgoing is not None:
+				raise
 
-		self._sdPrintingSemaphore.clear()
-		self._selectedSdFilePos = 0
-		self._sdPrinter = None
-		self._send("Done printing file")
+		if not self._killed:
+			self._sdPrintingSemaphore.clear()
+			self._selectedSdFilePos = 0
+			self._sdPrinter = None
+			self._output("Done printing file")
 
 	def _waitForHeatup(self, heater):
 		delta = 1
 		delay = 1
-		if heater.startswith("tool"):
-			toolNum = int(heater[len("tool"):])
-			while not self._killed and (self.temp[toolNum] < self.targetTemp[toolNum] - delta or self.temp[toolNum] > self.targetTemp[toolNum] + delta):
-				self._simulateTemps(delta=delta)
-				self._send("T:%0.2f" % self.temp[toolNum])
-				time.sleep(delay)
-		elif heater == "bed":
-			while not self._killed and (self.bedTemp < self.bedTargetTemp - delta or self.bedTemp > self.bedTargetTemp + delta):
-				self._simulateTemps(delta=delta)
-				self._send("B:%0.2f" % self.bedTemp)
-				time.sleep(delay)
+
+		try:
+			if heater.startswith("tool"):
+				toolNum = int(heater[len("tool"):])
+				while not self._killed and (self.temp[toolNum] < self.targetTemp[toolNum] - delta or self.temp[toolNum] > self.targetTemp[toolNum] + delta):
+					self._simulateTemps(delta=delta)
+					self._output("T:%0.2f" % self.temp[toolNum])
+					time.sleep(delay)
+			elif heater == "bed":
+				while not self._killed and (self.bedTemp < self.bedTargetTemp - delta or self.bedTemp > self.bedTargetTemp + delta):
+					self._simulateTemps(delta=delta)
+					self._output("B:%0.2f" % self.bedTemp)
+					time.sleep(delay)
+		except AttributeError:
+			if self.outgoing is not None:
+				raise
 
 	def _deleteSdFile(self, filename):
 		if filename.startswith("/"):
@@ -778,7 +886,7 @@ class VirtualPrinter(object):
 		while self.buffered is not None:
 			try:
 				line = self.buffered.get(timeout=0.5)
-			except Queue.Empty:
+			except queue.Empty:
 				continue
 
 			if line is None:
@@ -787,40 +895,79 @@ class VirtualPrinter(object):
 			self._performMove(line)
 			self.buffered.task_done()
 
+		self._logger.info("Closing down buffer loop")
+
+	def _output(self, line):
+		try:
+			self.outgoing.put(line)
+		except:
+			if self.outgoing is None:
+				pass
+
 	def write(self, data):
+		if self._debug_awol:
+			return len(data)
+
 		if self._debug_drop_connection:
 			self._logger.info("Debug drop of connection requested, raising SerialTimeoutException")
 			raise SerialTimeoutException()
 
 		with self._incoming_lock:
 			if self.incoming is None or self.outgoing is None:
-				return
+				return 0
 
 			if "M112" in data and self._supportM112:
 				self._seriallog.info("<<< {}".format(data.strip()))
 				self._kill()
-				return
+				return len(data)
 
 			try:
-				self.incoming.put(data, timeout=self._write_timeout)
+				written = self.incoming.put(data, timeout=self._write_timeout)
 				self._seriallog.info("<<< {}".format(data.strip()))
-			except Queue.Full:
+				return written
+			except queue.Full:
 				self._logger.info("Incoming queue is full, raising SerialTimeoutException")
 				raise SerialTimeoutException()
 
 	def readline(self):
+		if self._debug_awol:
+			time.sleep(self._read_timeout)
+			return ""
+
 		if self._debug_drop_connection:
 			raise SerialTimeoutException()
 
+		if self._debug_sleep > 0:
+			# if we are supposed to sleep, we sleep not longer than the read timeout
+			# (and then on the next call sleep again if there's time to sleep left)
+			sleep_for = min(self._debug_sleep, self._read_timeout)
+			self._debug_sleep -= sleep_for
+			time.sleep(sleep_for)
+
+			if self._debug_sleep > 0:
+				# we slept the full read timeout, return an empty line
+				return ""
+
+			# otherwise our left over timeout is the read timeout minus what we already
+			# slept for
+			timeout = self._read_timeout - sleep_for
+
+		else:
+			# use the full read timeout as timeout
+			timeout = self._read_timeout
+
 		try:
-			line = self.outgoing.get(timeout=self._read_timeout)
-			time.sleep(settings().getFloat(["devel", "virtualPrinter", "throttle"]))
+			# fetch a line from the queue, wait no longer than timeout
+			line = self.outgoing.get(timeout=timeout)
 			self._seriallog.info(">>> {}".format(line.strip()))
+			self.outgoing.task_done()
 			return line
-		except Queue.Empty:
+		except queue.Empty:
+			# queue empty? return empty line
 			return ""
 
 	def close(self):
+		self._killed = True
 		self.incoming = None
 		self.outgoing = None
 		self.buffered = None
@@ -843,37 +990,43 @@ class VirtualPrinter(object):
 		if self.outgoing is not None:
 			self.outgoing.put(line)
 
-class CharCountingQueue(Queue.Queue):
+class CharCountingQueue(queue.Queue):
 
 	def __init__(self, maxsize, name=None):
-		Queue.Queue.__init__(self, maxsize=maxsize)
+		queue.Queue.__init__(self, maxsize=maxsize)
 		self._size = 0
 		self._name = name
 
-	def put(self, item, block=True, timeout=None):
+	def put(self, item, block=True, timeout=None, partial=False):
 		self.not_full.acquire()
+
 		try:
-			item_size = self._len(item)
+			if not self._will_it_fit(item) and partial:
+				space_left = self.maxsize - self._qsize()
+				if space_left:
+					item = item[:space_left]
 
 			if not block:
-				if self._qsize() + item_size >= self.maxsize:
-					raise Queue.Full
+				if not self._will_it_fit(item):
+					raise queue.Full
 			elif timeout is None:
-				while self._qsize() + item_size >= self.maxsize:
+				while not self._will_it_fit(item):
 					self.not_full.wait()
 			elif timeout < 0:
 				raise ValueError("'timeout' must be a positive number")
 			else:
 				endtime = time.time() + timeout
-				while self._qsize() + item_size >= self.maxsize:
+				while not self._will_it_fit(item):
 					remaining = endtime - time.time()
 					if remaining <= 0.0:
-						raise Queue.Full
+						raise queue.Full
 					self.not_full.wait(remaining)
 
 			self._put(item)
 			self.unfinished_tasks += 1
 			self.not_empty.notify()
+
+			return self._len(item)
 		finally:
 			self.not_full.release()
 
@@ -893,3 +1046,6 @@ class CharCountingQueue(Queue.Queue):
 		item = self.queue.popleft()
 		self._size -= self._len(item)
 		return item
+
+	def _will_it_fit(self, item):
+		return self.maxsize - self._qsize() >= self._len(item)

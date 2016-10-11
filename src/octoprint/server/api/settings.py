@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -11,26 +11,45 @@ from flask import request, jsonify, make_response
 from werkzeug.exceptions import BadRequest
 
 from octoprint.events import eventManager, Events
-from octoprint.settings import settings
-from octoprint.printer import get_connection_options
+from octoprint.settings import settings, valid_boolean_trues
 
-from octoprint.server import admin_permission
+from octoprint.server import admin_permission, printer
 from octoprint.server.api import api
-from octoprint.server.util.flask import restricted_access
+from octoprint.server.util.flask import restricted_access, with_revalidation_checking
 
 import octoprint.plugin
 import octoprint.util
 
 #~~ settings
 
+def _lastmodified():
+	return settings().last_modified
+
+def _etag(lm=None):
+	if lm is None:
+		lm = _lastmodified()
+
+	connection_options = printer.__class__.get_connection_options()
+
+	import hashlib
+	hash = hashlib.sha1()
+	hash.update(str(lm))
+	hash.update(repr(connection_options))
+	return hash.hexdigest()
 
 @api.route("/settings", methods=["GET"])
+@with_revalidation_checking(etag_factory=_etag,
+                            lastmodified_factory=_lastmodified,
+                            unless=lambda: request.values.get("force", "false") in valid_boolean_trues)
 def getSettings():
 	logger = logging.getLogger(__name__)
 
 	s = settings()
 
-	connectionOptions = get_connection_options()
+	connectionOptions = printer.__class__.get_connection_options()
+
+	# NOTE: Remember to adjust the docs of the data model on the Settings API if anything
+	# is changed, added or removed here
 
 	data = {
 		"api": {
@@ -42,7 +61,8 @@ def getSettings():
 			"name": s.get(["appearance", "name"]),
 			"color": s.get(["appearance", "color"]),
 			"colorTransparent": s.getBoolean(["appearance", "colorTransparent"]),
-			"defaultLanguage": s.get(["appearance", "defaultLanguage"])
+			"defaultLanguage": s.get(["appearance", "defaultLanguage"]),
+			"showFahrenheitAlso": s.getBoolean(["appearance", "showFahrenheitAlso"])
 		},
 		"printer": {
 			"defaultExtrusionLength": s.getInt(["printerParameters", "defaultExtrusionLength"])
@@ -60,18 +80,22 @@ def getSettings():
 		},
 		"feature": {
 			"gcodeViewer": s.getBoolean(["gcodeViewer", "enabled"]),
+			"sizeThreshold": s.getInt(["gcodeViewer", "sizeThreshold"]),
+			"mobileSizeThreshold": s.getInt(["gcodeViewer", "mobileSizeThreshold"]),
 			"temperatureGraph": s.getBoolean(["feature", "temperatureGraph"]),
 			"waitForStart": s.getBoolean(["feature", "waitForStartOnConnect"]),
 			"alwaysSendChecksum": s.getBoolean(["feature", "alwaysSendChecksum"]),
 			"neverSendChecksum": s.getBoolean(["feature", "neverSendChecksum"]),
 			"sdSupport": s.getBoolean(["feature", "sdSupport"]),
+			"sdRelativePath": s.getBoolean(["feature", "sdRelativePath"]),
 			"sdAlwaysAvailable": s.getBoolean(["feature", "sdAlwaysAvailable"]),
 			"swallowOkAfterResend": s.getBoolean(["feature", "swallowOkAfterResend"]),
 			"repetierTargetTemp": s.getBoolean(["feature", "repetierTargetTemp"]),
 			"externalHeatupDetection": s.getBoolean(["feature", "externalHeatupDetection"]),
 			"keyboardControl": s.getBoolean(["feature", "keyboardControl"]),
 			"pollWatched": s.getBoolean(["feature", "pollWatched"]),
-			"ignoreIdenticalResends": s.getBoolean(["feature", "ignoreIdenticalResends"])
+			"ignoreIdenticalResends": s.getBoolean(["feature", "ignoreIdenticalResends"]),
+			"modelSizeDetection": s.getBoolean(["feature", "modelSizeDetection"])
 		},
 		"serial": {
 			"port": connectionOptions["portPreference"],
@@ -90,7 +114,14 @@ def getSettings():
 			"additionalBaudrates": s.get(["serial", "additionalBaudrates"]),
 			"longRunningCommands": s.get(["serial", "longRunningCommands"]),
 			"checksumRequiringCommands": s.get(["serial", "checksumRequiringCommands"]),
-			"helloCommand": s.get(["serial", "helloCommand"])
+			"helloCommand": s.get(["serial", "helloCommand"]),
+			"ignoreErrorsFromFirmware": s.getBoolean(["serial", "ignoreErrorsFromFirmware"]),
+			"disconnectOnErrors": s.getBoolean(["serial", "disconnectOnErrors"]),
+			"triggerOkForM29": s.getBoolean(["serial", "triggerOkForM29"]),
+			"supportResendsWithoutOk": s.getBoolean(["serial", "supportResendsWithoutOk"]),
+			"maxTimeoutsIdle": s.getInt(["serial", "maxCommunicationTimeouts", "idle"]),
+			"maxTimeoutsPrinting": s.getInt(["serial", "maxCommunicationTimeouts", "printing"]),
+			"maxTimeoutsLong": s.getInt(["serial", "maxCommunicationTimeouts", "long"])
 		},
 		"folder": {
 			"uploads": s.getBaseFolder("uploads"),
@@ -187,6 +218,9 @@ def _saveSettings(data):
 
 	s = settings()
 
+	# NOTE: Remember to adjust the docs of the data model on the Settings API if anything
+	# is changed, added or removed here
+
 	if "api" in data.keys():
 		if "enabled" in data["api"].keys(): s.setBoolean(["api", "enabled"], data["api"]["enabled"])
 		if "key" in data["api"].keys(): s.set(["api", "key"], data["api"]["key"], True)
@@ -197,6 +231,7 @@ def _saveSettings(data):
 		if "color" in data["appearance"].keys(): s.set(["appearance", "color"], data["appearance"]["color"])
 		if "colorTransparent" in data["appearance"].keys(): s.setBoolean(["appearance", "colorTransparent"], data["appearance"]["colorTransparent"])
 		if "defaultLanguage" in data["appearance"]: s.set(["appearance", "defaultLanguage"], data["appearance"]["defaultLanguage"])
+		if "showFahrenheitAlso" in data["appearance"]: s.setBoolean(["appearance", "showFahrenheitAlso"], data["appearance"]["showFahrenheitAlso"])
 
 	if "printer" in data.keys():
 		if "defaultExtrusionLength" in data["printer"]: s.setInt(["printerParameters", "defaultExtrusionLength"], data["printer"]["defaultExtrusionLength"])
@@ -214,11 +249,14 @@ def _saveSettings(data):
 
 	if "feature" in data.keys():
 		if "gcodeViewer" in data["feature"].keys(): s.setBoolean(["gcodeViewer", "enabled"], data["feature"]["gcodeViewer"])
+		if "sizeThreshold" in data["feature"].keys(): s.setInt(["gcodeViewer", "sizeThreshold"], data["feature"]["sizeThreshold"])
+		if "mobileSizeThreshold" in data["feature"].keys(): s.setInt(["gcodeViewer", "mobileSizeThreshold"], data["feature"]["mobileSizeThreshold"])
 		if "temperatureGraph" in data["feature"].keys(): s.setBoolean(["feature", "temperatureGraph"], data["feature"]["temperatureGraph"])
 		if "waitForStart" in data["feature"].keys(): s.setBoolean(["feature", "waitForStartOnConnect"], data["feature"]["waitForStart"])
 		if "alwaysSendChecksum" in data["feature"].keys(): s.setBoolean(["feature", "alwaysSendChecksum"], data["feature"]["alwaysSendChecksum"])
 		if "neverSendChecksum" in data["feature"].keys(): s.setBoolean(["feature", "neverSendChecksum"], data["feature"]["neverSendChecksum"])
 		if "sdSupport" in data["feature"].keys(): s.setBoolean(["feature", "sdSupport"], data["feature"]["sdSupport"])
+		if "sdRelativePath" in data["feature"].keys(): s.setBoolean(["feature", "sdRelativePath"], data["feature"]["sdRelativePath"])
 		if "sdAlwaysAvailable" in data["feature"].keys(): s.setBoolean(["feature", "sdAlwaysAvailable"], data["feature"]["sdAlwaysAvailable"])
 		if "swallowOkAfterResend" in data["feature"].keys(): s.setBoolean(["feature", "swallowOkAfterResend"], data["feature"]["swallowOkAfterResend"])
 		if "repetierTargetTemp" in data["feature"].keys(): s.setBoolean(["feature", "repetierTargetTemp"], data["feature"]["repetierTargetTemp"])
@@ -226,6 +264,7 @@ def _saveSettings(data):
 		if "keyboardControl" in data["feature"].keys(): s.setBoolean(["feature", "keyboardControl"], data["feature"]["keyboardControl"])
 		if "pollWatched" in data["feature"]: s.setBoolean(["feature", "pollWatched"], data["feature"]["pollWatched"])
 		if "ignoreIdenticalResends" in data["feature"]: s.setBoolean(["feature", "ignoreIdenticalResends"], data["feature"]["ignoreIdenticalResends"])
+		if "modelSizeDetection" in data["feature"]: s.setBoolean(["feature", "modelSizeDetection"], data["feature"]["modelSizeDetection"])
 
 	if "serial" in data.keys():
 		if "autoconnect" in data["serial"].keys(): s.setBoolean(["serial", "autoconnect"], data["serial"]["autoconnect"])
@@ -242,6 +281,13 @@ def _saveSettings(data):
 		if "longRunningCommands" in data["serial"] and isinstance(data["serial"]["longRunningCommands"], (list, tuple)): s.set(["serial", "longRunningCommands"], data["serial"]["longRunningCommands"])
 		if "checksumRequiringCommands" in data["serial"] and isinstance(data["serial"]["checksumRequiringCommands"], (list, tuple)): s.set(["serial", "checksumRequiringCommands"], data["serial"]["checksumRequiringCommands"])
 		if "helloCommand" in data["serial"]: s.set(["serial", "helloCommand"], data["serial"]["helloCommand"])
+		if "ignoreErrorsFromFirmware" in data["serial"]: s.setBoolean(["serial", "ignoreErrorsFromFirmware"], data["serial"]["ignoreErrorsFromFirmware"])
+		if "disconnectOnErrors" in data["serial"]: s.setBoolean(["serial", "disconnectOnErrors"], data["serial"]["disconnectOnErrors"])
+		if "triggerOkForM29" in data["serial"]: s.setBoolean(["serial", "triggerOkForM29"], data["serial"]["triggerOkForM29"])
+		if "supportResendsWithoutOk" in data["serial"]: s.setBoolean(["serial", "supportResendsWithoutOk"], data["serial"]["supportResendsWithoutOk"])
+		if "maxTimeoutsIdle" in data["serial"]: s.setInt(["serial", "maxCommunicationTimeouts", "idle"], data["serial"]["maxTimeoutsIdle"])
+		if "maxTimeoutsPrinting" in data["serial"]: s.setInt(["serial", "maxCommunicationTimeouts", "printing"], data["serial"]["maxTimeoutsPrinting"])
+		if "maxTimeoutsLong" in data["serial"]: s.setInt(["serial", "maxCommunicationTimeouts", "long"], data["serial"]["maxTimeoutsLong"])
 
 		oldLog = s.getBoolean(["serial", "log"])
 		if "log" in data["serial"].keys(): s.setBoolean(["serial", "log"], data["serial"]["log"])

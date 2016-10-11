@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import (print_function, absolute_import)
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>, Lars Norpchen"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -8,7 +8,10 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import datetime
 import logging
 import subprocess
-import Queue
+try:
+	import queue
+except ImportError:
+	import Queue as queue
 import threading
 import collections
 
@@ -92,6 +95,14 @@ class Events(object):
 	SLICING_DONE = "SlicingDone"
 	SLICING_FAILED = "SlicingFailed"
 	SLICING_CANCELLED = "SlicingCancelled"
+	SLICING_PROFILE_ADDED = "SlicingProfileAdded"
+	SLICING_PROFILE_MODIFIED = "SlicingProfileModified"
+	SLICING_PROFILE_DELETED = "SlicingProfileDeleted"
+
+	# Printer Profiles
+	PRINTER_PROFILE_ADDED = "PrinterProfileAdded"
+	PRINTER_PROFILE_MODIFIED = "PrinterProfileModified"
+	PRINTER_PROFILE_DELETED = "PrinterProfileDeleted"
 
 	# Settings
 	SETTINGS_UPDATED = "SettingsUpdated"
@@ -113,7 +124,7 @@ class EventManager(object):
 		self._registeredListeners = collections.defaultdict(list)
 		self._logger = logging.getLogger(__name__)
 
-		self._queue = Queue.PriorityQueue()
+		self._queue = queue.Queue()
 		self._worker = threading.Thread(target=self._work)
 		self._worker.daemon = True
 		self._worker.start()
@@ -121,7 +132,7 @@ class EventManager(object):
 	def _work(self):
 		try:
 			while True:
-				(event, payload) = self._queue.get(True)
+				event, payload = self._queue.get(True)
 
 				eventListeners = self._registeredListeners[event]
 				self._logger.debug("Firing event: %s (Payload: %r)" % (event, payload))
@@ -135,7 +146,7 @@ class EventManager(object):
 
 				octoprint.plugin.call_plugin(octoprint.plugin.types.EventHandlerPlugin,
 				                             "on_event",
-				                             args=[event, payload])
+				                             args=(event, payload))
 		except:
 			self._logger.exception("Ooops, the event bus worker loop crashed")
 
@@ -150,7 +161,7 @@ class EventManager(object):
 		payload being a payload object specific to the event.
 		"""
 
-		self._queue.put((event, payload), 0)
+		self._queue.put((event, payload))
 
 		if event == Events.UPDATED_FILES and "type" in payload and payload["type"] == "printables":
 			# when sending UpdatedFiles with type "printables", also send another event with deprecated type "gcode"
@@ -158,8 +169,7 @@ class EventManager(object):
 			import copy
 			legacy_payload = copy.deepcopy(payload)
 			legacy_payload["type"] = "gcode"
-			self._queue.put((event, legacy_payload), 0)
-
+			self._queue.put((event, legacy_payload))
 
 	def subscribe(self, event, callback):
 		"""
@@ -250,14 +260,19 @@ class CommandTrigger(GenericEventListener):
 			return
 
 		eventsToSubscribe = []
-		for subscription in settings().get(["events", "subscriptions"]):
+		subscriptions = settings().get(["events", "subscriptions"])
+		for subscription in subscriptions:
+			if not isinstance(subscription, dict):
+				self._logger.info("Invalid subscription definition, not a dictionary: {!r}".format(subscription))
+				continue
+
 			if not "event" in subscription.keys() or not "command" in subscription.keys() \
 					or not "type" in subscription.keys() or not subscription["type"] in ["system", "gcode"]:
-				self._logger.info("Invalid command trigger, missing either event, type or command or type is invalid: %r" % subscription)
+				self._logger.info("Invalid command trigger, missing either event, type or command or type is invalid: {!r}".format(subscription))
 				continue
 
 			if "enabled" in subscription.keys() and not subscription["enabled"]:
-				self._logger.info("Disabled command trigger: %r" % subscription)
+				self._logger.info("Disabled command trigger: {!r}".format(subscription))
 				continue
 
 			event = subscription["event"]
@@ -294,7 +309,7 @@ class CommandTrigger(GenericEventListener):
 				else:
 					processedCommand = self._processCommand(command, payload)
 				self.executeCommand(processedCommand, commandType, debug=debug)
-			except KeyError, e:
+			except KeyError as e:
 				self._logger.warn("There was an error processing one or more placeholders in the following command: %s" % command)
 
 	def executeCommand(self, command, commandType, debug=False):
@@ -318,7 +333,7 @@ class CommandTrigger(GenericEventListener):
 					commandExecutioner(c)
 			else:
 				commandExecutioner(command)
-		except subprocess.CalledProcessError, e:
+		except subprocess.CalledProcessError as e:
 			self._logger.warn("Command failed with return code %i: %s" % (e.returncode, str(e)))
 		except:
 			self._logger.exception("Command failed")
@@ -338,19 +353,32 @@ class CommandTrigger(GenericEventListener):
 		The following substitutions are currently supported:
 
 		  - {__currentZ} : current Z position of the print head, or -1 if not available
-		  - {__filename} : current selected filename, or "NO FILE" if no file is selected
+		  - {__filename} : name of currently selected file, or "NO FILE" if no file is selected
+		  - {__filepath} : path in origin location of currently selected file, or "NO FILE" if no file is selected
+		  - {__fileorigin} : origin of currently selected file, or "NO FILE" if no file is selected
 		  - {__progress} : current print progress in percent, 0 if no print is in progress
 		  - {__data} : the string representation of the event's payload
+		  - {__json} : the json representation of the event's payload, "{}" if there is no payload, "" if there was an error on serialization
 		  - {__now} : ISO 8601 representation of the current date and time
 
 		Additionally, the keys of the event's payload can also be used as placeholder.
 		"""
 
+		json_string = "{}"
+		if payload:
+			import json
+			try:
+				json_string = json.dumps(payload)
+			except:
+				json_string = ""
+
 		params = {
 			"__currentZ": "-1",
 			"__filename": "NO FILE",
+			"__filepath": "NO PATH",
 			"__progress": "0",
 			"__data": str(payload),
+			"__json": json_string,
 			"__now": datetime.datetime.now().isoformat()
 		}
 
@@ -359,8 +387,11 @@ class CommandTrigger(GenericEventListener):
 		if "currentZ" in currentData.keys() and currentData["currentZ"] is not None:
 			params["__currentZ"] = str(currentData["currentZ"])
 
-		if "job" in currentData.keys() and currentData["job"] is not None:
+		if "job" in currentData and "file" in currentData["job"] and "name" in currentData["job"]["file"] \
+				and currentData["job"]["file"]["name"] is not None:
 			params["__filename"] = currentData["job"]["file"]["name"]
+			params["__filepath"] = currentData["job"]["file"]["path"]
+			params["__fileorigin"] = currentData["job"]["file"]["origin"]
 			if "progress" in currentData.keys() and currentData["progress"] is not None \
 				and "completion" in currentData["progress"].keys() and currentData["progress"]["completion"] is not None:
 				params["__progress"] = str(round(currentData["progress"]["completion"] * 100))

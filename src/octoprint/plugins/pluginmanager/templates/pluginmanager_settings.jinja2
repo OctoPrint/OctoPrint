@@ -13,19 +13,8 @@
 {% endtrans %}</div>
 {% endmacro %}
 
-{% macro pluginmanager_sudopip() %}
-<div class="alert alert-error" data-bind="visible: pipUseSudo()">{% trans %}
-    The <code>pip</code> command is configured to use <code>sudo</code>. This
-    is <strong>not</strong> recommended due to security reasons. It is <strong>strongly</strong>
-    suggested you install OctoPrint under a
-    <a href="https://github.com/foosel/OctoPrint/#installation">user-owned virtual environment</a>
-    so that the use of <code>sudo</code> is not needed for plugin management.
-{% endtrans %}</div>
-{% endmacro %}
-
 {{ pluginmanager_printing() }}
 {{ pluginmanager_nopip() }}
-{{ pluginmanager_sudopip() }}
 
 <div class="pull-right">
     <button class="btn btn-small" data-bind="click: function() { $root.showPluginSettings(); }" title="{{ _('Plugin Configuration') }}"><i class="icon-wrench"></i></button>
@@ -46,7 +35,7 @@
             <div data-bind="css: {muted: !enabled}"><span data-bind="text: name"></span> <span data-bind="visible: version">(<span data-bind="text: version"></span>)</span> <i title="{{ _('Bundled with OctoPrint') }}" class="icon-th-large" data-bind="visible: bundled"></i> <i class="icon-lock" title="{{ _('Cannot be uninstalled through OctoPrint') }}" data-bind="visible: !managable"></i> <i title="{{ _('Restart of OctoPrint needed for changes to take effect') }}" class="icon-refresh" data-bind="visible: pending_enable || pending_disable || pending_install || pending_uninstall"></i> <i title="{{ _('Pending install') }}" class="icon-plus" data-bind="visible: pending_install"></i> <i title="{{ _('Pending uninstall') }}" class="icon-minus" data-bind="visible: pending_uninstall"></i></div>
             <div><small class="muted" data-bind="text: description">&nbsp;</small></div>
             <div data-bind="css: {muted: !enabled}">
-                <small data-bind="visible: url"><i class="icon-home"></i> <a data-bind="attr: {href: url}">{{ _('Homepage') }}</a></small>
+                <small data-bind="visible: url"><i class="icon-home"></i> <a data-bind="attr: {href: url}" target="_blank" rel="noreferrer noopener">{{ _('Homepage') }}</a></small>
                 <small data-bind="visible: license"><i class="icon-legal"></i> <span data-bind="text: license"></span></small>
                 <small data-bind="visible: author"><i class="icon-user"></i> <span data-bind="text: author"></span></small>
                 <small>&nbsp;</small>
@@ -76,13 +65,13 @@
     <div>
         <small>
             <a href="#" class="muted" onclick="$(this).children('i.toggle-arrow').toggleClass('icon-caret-right icon-caret-down').parent().parent().parent().next().slideToggle('fast')">
-                <i class="toggle-arrow icon-caret-right"></i> Using pip at "<span data-bind="text: pipCommand"></span>", Version <span data-bind="text: pipVersion"></span>
+                <i class="toggle-arrow icon-caret-right"></i> Using pip of "<span data-bind="text: pipPython"></span>", Version <span data-bind="text: pipVersion"></span>
             </a>
         </small>
     </div>
     <div class="hide">
         <small>
-            Installation directory: <span data-bind="text: pipInstallDir"></span> ("--user" flag: <span data-bind="text: pipUseUserString"></span>, sudo: <span data-bind="text: pipUseSudoString"></span>)<br />
+            Installation directory: <span data-bind="text: pipInstallDir"></span> ("--user" flag: <span data-bind="text: pipUseUserString"></span>)<br />
             Virtual environment: <span data-bind="text: pipVirtualEnvString"></span><br />
             <span data-bind="visible: pipAdditionalArgs">Additional Arguments: <span data-bind="text: pipAdditionalArgs"></span></span>
         </small>
@@ -110,7 +99,6 @@
     <div class="modal-body">
         {{ pluginmanager_printing() }}
         {{ pluginmanager_nopip() }}
-        {{ pluginmanager_sudopip() }}
         <h4 style="position: relative">
             {{ _('... from the <a href="%(url)s" target="_blank">Plugin Repository</a>', url='http://plugins.octoprint.org') }}
             <div class="dropdown pull-right">
@@ -221,28 +209,7 @@
     </div>
     <div class="modal-body">
         <form class="form-horizontal">
-            <legend>{{ _('pip configuration') }}</legend>
-
-            <div class="control-group" title="{{ _('pip command to use for managing plugins. You might have to configure this if auto detection fails.') }}">
-                <label class="control-label">{{ _('Command') }}</label>
-                <div class="controls">
-                    <input type="text" class="input-block-level" data-bind="value: config_pipCommand" placeholder="{{ _('Autodetect') }}">
-                    <span class="help-inline">{{ _('<strong>Only</strong> set this if OctoPrint cannot autodetect the path to <code>pip</code> to use for managing plugins.') }}</span>
-                </div>
-            </div>
-            <div class="control-group" title="{{ _('Additional arguments for pip command. You should normally not have to change this.') }}">
-                <label class="control-label">{{ _('Additional arguments') }}</label>
-                <div class="controls">
-                    <input type="text" class="input-block-level" data-bind="value: config_pipAdditionalArgs">
-                </div>
-            </div>
-            <div class="control-group">
-                <div class="controls">
-                    <label class="checkbox">
-                        <input type="checkbox" data-bind="checked: config_pipForceUser"> {{ _('Force the user of the <code>--user</code> flag with <code>pip install</code>') }}
-                    </label>
-                </div>
-            </div>
+            <p>{% trans %}You should normally <strong>not</strong> have to change <strong>any</strong> of the following settings, they are purely provided for convenience here.{% endtrans %}</p>
 
             <legend>{{ _('Plugin repository configuration') }}</legend>
 
@@ -259,6 +226,22 @@
                         <input type="number" class="input-mini" data-bind="value: config_repositoryTtl">
                         <span class="add-on">min</span>
                     </div>
+                </div>
+            </div>
+
+            <legend>{{ _('pip configuration') }}</legend>
+
+            <div class="control-group" title="{{ _('Additional arguments for the pip command. You should normally not have to change this.') }}">
+                <label class="control-label">{{ _('Additional arguments') }}</label>
+                <div class="controls">
+                    <input type="text" class="input-block-level" data-bind="value: config_pipAdditionalArgs">
+                </div>
+            </div>
+            <div class="control-group">
+                <div class="controls">
+                    <label class="checkbox">
+                        <input type="checkbox" data-bind="checked: config_pipForceUser"> {{ _('Force the use of the <code>--user</code> flag with <code>pip install</code>') }}
+                    </label>
                 </div>
             </div>
         </form>

@@ -18,7 +18,7 @@ $(function() {
         };
 
         self.showDialog = function() {
-            if (!CONFIG_WIZARD || !(CONFIG_FIRST_RUN || self.loginState.isAdmin())) return;
+            if (!CONFIG_WIZARD || !((CONFIG_FIRST_RUN && !CONFIG_ACCESS_CONTROL_ACTIVE) || self.loginState.isAdmin())) return;
 
             self.getWizardDetails()
                 .done(function(response) {
@@ -32,6 +32,8 @@ $(function() {
                             'margin-left': function() { return -($(this).width() /2); }
                         });
                     }
+
+                    callViewModels(self.allViewModels, "onWizardShow");
                 });
         };
 
@@ -95,8 +97,19 @@ $(function() {
 
                     if (current != undefined && next != undefined) {
                         var result = true;
-                        callViewModels(allViewModels, "onWizardTabChange", function(method) {
-                            result = result && (method(current, next) !== false);
+                        callViewModels(allViewModels, "onBeforeWizardTabChange", function(method) {
+                            // we want to continue evaluating even if result becomes false
+                            result = (method(next, current) !== false) && result;
+                        });
+
+                        // also trigger the onWizardTabChange event here which we misnamed and
+                        // on which we misordered the parameters on during development but which might
+                        // already be used somewhere - log a deprecation warning to console though
+                        callViewModels(allViewModels, "onWizardTabChange", function(method, viewModel) {
+                            log.warn("View model", viewModel, "is using deprecated callback \"onWizardTabChange\", please change to \"onBeforeWizardTabChange\"");
+
+                            // we want to continue evaluating even if result becomes false
+                            result = (method(current, next) !== false) && result;
                         });
                         return result;
                     }
@@ -130,6 +143,7 @@ $(function() {
                                 if (reload) {
                                     self.reloadOverlay.show();
                                 }
+                                callViewModels(allViewModels, "onAfterWizardFinish");
                             });
                     }
                 }

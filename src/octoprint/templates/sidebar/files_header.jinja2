@@ -1,5 +1,5 @@
 <div class="settings-trigger accordion-heading-button btn-group">
-    <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+    <a class="dropdown-toggle" data-toggle="dropdown" href="#" title="{{ _('File list settings') }}">
         <span class="icon-wrench"></span>
     </a>
     <ul class="dropdown-menu">
@@ -15,22 +15,28 @@
             </ul>
         </li>
         <li class="divider"></li>
-        <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('machinecode'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'machinecode') ? 'visible' : 'hidden'}"></i> {{ _('Only show GCode files') }}</a></li>
-        <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('model'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'model') ? 'visible' : 'hidden'}"></i> {{ _('Only show STL files') }}</a></li>
+        <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('machinecode'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'machinecode') ? 'visible' : 'hidden'}"></i> {{ _('Only show machine code files') }}</a></li>
+        <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('model'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'model') ? 'visible' : 'hidden'}"></i> {{ _('Only show model files') }}</a></li>
         {% if enableSdSupport %}
             <li class="divider"></li>
             <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('local'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'local') ? 'visible' : 'hidden'}"></i> {{ _('Only show files stored locally') }}</a></li>
             <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('sd'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'sd') ? 'visible' : 'hidden'}"></i> {{ _('Only show files stored on SD') }}</a></li>
         {% endif %}
         <li class="divider"></li>
-        <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('emptyFolder'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'emptyFolder') ? 'visible' : 'hidden'}"></i> {{ _('Hide empty folders') }}</a></li>
+        <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('emptyFolder'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'emptyFolder') ? 'visible' : 'hidden'}"></i> {{ _('Hide folders without files') }}</a></li>
         <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('printed'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'printed') ? 'visible' : 'hidden'}"></i> {{ _('Hide successfully printed files') }}</a></li>
     </ul>
 </div>
 
+<div class="refresh-trigger accordion-heading-button btn-group">
+    <a href="#" data-bind="click: function() { $root.requestData({force: true}); }" title="{{ _('Refresh file list') }}">
+        <span class="icon-refresh"></span>
+    </a>
+</div>
+
 {% if enableSdSupport %}
     <div class="sd-trigger accordion-heading-button btn-group">
-        <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+        <a class="dropdown-toggle" data-toggle="dropdown" href="#" title="{{ _('SD Card operations') }}">
             <span class="icon-sd-black-14"></span>
         </a>
         <ul class="dropdown-menu">

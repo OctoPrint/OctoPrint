@@ -33,7 +33,7 @@ $(function() {
             }
         });
 
-        self.passwordMismatch = ko.computed(function() {
+        self.passwordMismatch = ko.pureComputed(function() {
             return self.access_password() != self.access_repeatedPassword();
         });
 
@@ -67,6 +67,20 @@ $(function() {
                     self.userSettingsDialog.modal("hide");
                     self.loginState.reloadUser();
                 });
+        };
+
+        self.generateApikey = function() {
+            if (!CONFIG_ACCESS_CONTROL) return;
+            self.users.generateApikey(self.currentUser().name, function(response) {
+                self.access_apikey(response.apikey);
+            });
+        };
+
+        self.deleteApikey = function() {
+            if (!CONFIG_ACCESS_CONTROL) return;
+            self.users.deleteApikey(self.currentUser().name, function() {
+                self.access_apikey(undefined);
+            });
         };
 
         self.updateSettings = function(username, settings) {

@@ -1,12 +1,14 @@
 <div class="terminal">
-    <pre id="terminal-output" class="pre-scrollable" data-bind="foreach: displayedLines"><span data-bind="text: line, css: {muted: type == 'filtered' || type == 'cut'}"></span><br></pre>
-    <small class="pull-left"><button class="btn btn-mini" data-bind="click: toggleAutoscroll, css: {active: autoscrollEnabled}">{{ _('Autoscroll') }}</button> <span data-bind="text: lineCount"></span></small>
-    <small class="pull-right"><a href="#" data-bind="click: scrollToEnd">{{ _("Scroll to end") }}</a>&nbsp;|&nbsp;<a href="#" data-bind="click: selectAll">{{ _("Select all") }}</a></small>
+    <pre id="terminal-output" class="pre-scrollable" data-bind="foreach: displayedLines, visible: fancyFunctionality()"><span data-bind="text: line, css: {muted: type == 'filtered' || type == 'cut'}"></span><br></pre>
+    <pre id="terminal-output-lowfi" style="display: none" class="pre-scrollable" data-bind="text: plainLogOutput, visible: !fancyFunctionality()"></pre>
+    <small class="pull-left" data-bind="visible: fancyFunctionality()"><button class="btn btn-mini" data-bind="click: toggleAutoscroll, css: {active: autoscrollEnabled}">{{ _('Autoscroll') }}</button> <span data-bind="text: lineCount, visible: enableFancyFunctionality"></span></small>
+    <small class="pull-right" data-bind="visible: fancyFunctionality()"><a href="#" data-bind="click: scrollToEnd">{{ _("Scroll to end") }}</a>&nbsp;|&nbsp;<a href="#" data-bind="click: selectAll">{{ _("Select all") }}</a></small>
+    <small class="pull-left muted" data-bind="visible: !fancyFunctionality()" style="display: none">{{ _('For performance reasons only a limited amount of terminal functionality is enabled right now.') }}</small>
 </div>
 
 <div class="row-fluid">
-    <div class="span6" id="termin-filterpanel">
-        <div data-bind="foreach: filters">
+    <div class="span6" id="terminal-filterpanel">
+        <div data-bind="foreach: filters, visible: fancyFunctionality()">
             <label class="checkbox">
                 <input type="checkbox" data-bind="attr: { value: regex }, checked: $parent.activeFilters"> <span data-bind="text: name"></span>
             </label>
@@ -22,9 +24,16 @@
 </div>
 
 <div>
-    <div><small><a href="javascript:void(0);" class="muted" onclick="$(this).children().toggleClass('icon-caret-right icon-caret-down').parent().parent().parent().next().slideToggle('fast')"><i class="icon-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
+    <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'icon-caret-right icon-caret-down', container: '#term .hide' }"><i class="icon-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
     <div class="hide">
-        <button class="btn btn-block" type="button" data-bind="click: fakeAck, enable: isOperational() && loginState.isUser()">{{ _("Fake Acknowledgement") }}</button>
-        <small class="muted">{{ _("If acknowledgements (\"ok\"s) sent by the firmware get lost due to issues with the serial communication to your printer, OctoPrint's communication with it can become stuck. If that happens, this can help. Please be advised that such occurences hint at general communication issues with your printer which will probably negatively influence your printing results and which you should therefore try to resolve!") }}</small>
+        <p class="row-fluid">
+            <button class="btn btn-primary btn-block" type="button" data-bind="click: fakeAck, enable: isOperational() && loginState.isUser()">{{ _("Fake Acknowledgement") }}</button>
+            <small class="muted">{{ _("If acknowledgements (\"ok\"s) sent by the firmware get lost due to issues with the serial communication to your printer, OctoPrint's communication with it can become stuck. If that happens, this can help. Please be advised that such occurences hint at general communication issues with your printer which will probably negatively influence your printing results and which you should therefore try to resolve!") }}</small>
+        </p>
+        <p class="row-fluid">
+            <button class="btn btn-danger span6" type="button" data-bind="toggle: forceFancyFunctionality">{{ _('Force fancy functionality') }}</button>
+            <button class="btn btn-danger span6" type="button" data-bind="toggle: forceTerminalLogDuringPrinting">{{ _('Force terminal output during printing') }}</button>
+            <small class="muted">{{ _("Some functionality of the terminal will be disabled if OctoPrint detects that your browser is too slow for that. You may force it back on here, but be aware that this might make your browser unresponsive.") }}</small>
+        </p>
     </div>
 </div>

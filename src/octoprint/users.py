@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -14,6 +14,7 @@ import yaml
 import uuid
 
 import logging
+from builtins import range, bytes
 
 from octoprint.settings import settings
 
@@ -107,7 +108,7 @@ class UserManager(object):
 				import string
 				from random import choice
 				chars = string.ascii_lowercase + string.ascii_uppercase + string.digits
-				salt = "".join(choice(chars) for _ in xrange(32))
+				salt = "".join(choice(chars) for _ in range(32))
 				settings().set(["accessControl", "salt"], salt)
 				settings().save()
 
@@ -234,7 +235,7 @@ class FilebasedUserManager(UserManager):
 				"settings": user._settings
 			}
 
-		with atomic_write(self._userfile, "wb") as f:
+		with atomic_write(self._userfile, "wb", permissions=0o600, max_permissions=0o666) as f:
 			yaml.safe_dump(data, f, default_flow_style=False, indent="    ", allow_unicode=True)
 			self._dirty = False
 		self._load()
@@ -346,7 +347,7 @@ class FilebasedUserManager(UserManager):
 			raise UnknownUser(username)
 
 		user = self._users[username]
-		user._apikey = ''.join('%02X' % ord(z) for z in uuid.uuid4().bytes)
+		user._apikey = ''.join('%02X' % z for z in bytes(uuid.uuid4().bytes))
 		self._dirty = True
 		self._save()
 		return user._apikey
@@ -506,7 +507,7 @@ class SessionUser(User):
 		import random
 		import time
 		chars = string.ascii_uppercase + string.ascii_lowercase + string.digits
-		self._session = "".join(random.choice(chars) for _ in xrange(10))
+		self._session = "".join(random.choice(chars) for _ in range(10))
 		self._created = time.time()
 
 	def __getattribute__(self, item):

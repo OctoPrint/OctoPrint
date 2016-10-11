@@ -26,6 +26,24 @@
         return params;
     };
 
+    var contentTypeFalse = function(opts) {
+        opts = opts || {};
+
+        var params = $.extend({}, opts);
+        params.contentType = false;
+
+        return params;
+    };
+
+    var noProcessData = function(opts) {
+        opts = opts || {};
+
+        var params = $.extend({}, opts);
+        params.processData = false;
+
+        return params;
+    };
+
     OctoPrint.options = {
         "baseurl": undefined,
         "apikey": undefined
@@ -59,6 +77,7 @@
         var urlToCall = url;
         if (!_.startsWith(url, "http://") && !_.startsWith(url, "https://")) {
             urlToCall = OctoPrint.getBaseUrl() + url;
+            opts.url = urlToCall;
         }
 
         var headers = OctoPrint.getRequestHeaders(opts.headers);
@@ -84,8 +103,21 @@
         return OctoPrint.ajax("GET", url, opts);
     };
 
+    OctoPrint.getWithQuery = function(url, data, opts) {
+        return OctoPrint.ajaxWithData("GET", url, data, opts);
+    };
+
     OctoPrint.post = function(url, data, opts) {
         return OctoPrint.ajaxWithData("POST", url, data, noCache(opts));
+    };
+
+    OctoPrint.postForm = function(url, data, opts) {
+        var form = new FormData();
+        _.each(data, function(value, key) {
+            form.append(key, value);
+        });
+
+        return OctoPrint.post(url, form, contentTypeFalse(noProcessData(opts)));
     };
 
     OctoPrint.postJson = function(url, data, opts) {

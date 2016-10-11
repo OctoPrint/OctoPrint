@@ -5,8 +5,8 @@ Generic linux daemon base class
 Originally from http://www.jejik.com/articles/2007/02/a_simple_unix_linux_daemon_in_python/#c35
 """
 
-from __future__ import (print_function, absolute_import)
-import sys, os, time, signal
+from __future__ import absolute_import, division, print_function
+import sys, os, time, signal, io
 
 class Daemon:
 	"""
@@ -31,9 +31,6 @@ class Daemon:
 		pid = str(os.getpid())
 		self.set_pid(pid)
 
-		# register listener for SIGTERM
-		signal.signal(signal.SIGTERM, self._on_sigterm)
-
 	def _double_fork(self):
 		try:
 			pid = os.fork()
@@ -47,7 +44,7 @@ class Daemon:
 		# decouple from parent environment
 		os.chdir('/')
 		os.setsid()
-		os.umask(002)
+		os.umask(0o002)
 
 		# do second fork
 		try:
@@ -71,10 +68,8 @@ class Daemon:
 		os.dup2(so.fileno(), sys.stdout.fileno())
 		os.dup2(se.fileno(), sys.stderr.fileno())
 
-	def _on_sigterm(self, _signo, _stack_frame):
-		"""Signal handler for SIGTERM, deletes the pidfile."""
+	def terminated(self):
 		self.remove_pidfile()
-		sys.exit(0)
 
 	def start(self):
 		"""Start the daemon."""

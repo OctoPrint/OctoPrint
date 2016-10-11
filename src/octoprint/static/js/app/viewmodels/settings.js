@@ -5,11 +5,15 @@ $(function() {
         self.loginState = parameters[0];
         self.users = parameters[1];
         self.printerProfiles = parameters[2];
+        self.about = parameters[3];
 
         self.allViewModels = [];
 
         self.receiving = ko.observable(false);
         self.sending = ko.observable(false);
+        self.exchanging = ko.pureComputed(function() {
+            return self.receiving() || self.sending();
+        });
         self.outstanding = [];
 
         self.settingsDialog = undefined;
@@ -19,11 +23,11 @@ $(function() {
         self.translationUploadButton = $("#settings_appearance_managelanguagesdialog_upload_start");
 
         self.translationUploadFilename = ko.observable();
-        self.invalidTranslationArchive = ko.computed(function() {
+        self.invalidTranslationArchive = ko.pureComputed(function() {
             var name = self.translationUploadFilename();
             return name !== undefined && !(_.endsWith(name.toLocaleLowerCase(), ".zip") || _.endsWith(name.toLocaleLowerCase(), ".tar.gz") || _.endsWith(name.toLocaleLowerCase(), ".tgz") || _.endsWith(name.toLocaleLowerCase(), ".tar"));
         });
-        self.enableTranslationUpload = ko.computed(function() {
+        self.enableTranslationUpload = ko.pureComputed(function() {
             var name = self.translationUploadFilename();
             return name !== undefined && name.trim() != "" && !self.invalidTranslationArchive();
         });
@@ -97,6 +101,7 @@ $(function() {
         self.appearance_color = ko.observable(undefined);
         self.appearance_colorTransparent = ko.observable();
         self.appearance_defaultLanguage = ko.observable();
+        self.appearance_showFahrenheitAlso = ko.observable(undefined);
 
         self.printer_defaultExtrusionLength = ko.observable(undefined);
 
@@ -111,10 +116,15 @@ $(function() {
         self.webcam_rotate90 = ko.observable(undefined);
 
         self.feature_gcodeViewer = ko.observable(undefined);
+        self.feature_sizeThreshold = ko.observable();
+        self.feature_mobileSizeThreshold = ko.observable();
+        self.feature_sizeThreshold_str = sizeObservable(self.feature_sizeThreshold);
+        self.feature_mobileSizeThreshold_str = sizeObservable(self.feature_mobileSizeThreshold);
         self.feature_temperatureGraph = ko.observable(undefined);
         self.feature_waitForStart = ko.observable(undefined);
         self.feature_sendChecksum = ko.observable("print");
         self.feature_sdSupport = ko.observable(undefined);
+        self.feature_sdRelativePath = ko.observable(undefined);
         self.feature_sdAlwaysAvailable = ko.observable(undefined);
         self.feature_swallowOkAfterResend = ko.observable(undefined);
         self.feature_repetierTargetTemp = ko.observable(undefined);
@@ -122,6 +132,7 @@ $(function() {
         self.feature_keyboardControl = ko.observable(undefined);
         self.feature_pollWatched = ko.observable(undefined);
         self.feature_ignoreIdenticalResends = ko.observable(undefined);
+        self.feature_modelSizeDetection = ko.observable(undefined);
 
         self.serial_port = ko.observable();
         self.serial_baudrate = ko.observable();
@@ -140,6 +151,13 @@ $(function() {
         self.serial_longRunningCommands = ko.observable(undefined);
         self.serial_checksumRequiringCommands = ko.observable(undefined);
         self.serial_helloCommand = ko.observable(undefined);
+        self.serial_ignoreErrorsFromFirmware = ko.observable(undefined);
+        self.serial_disconnectOnErrors = ko.observable(undefined);
+        self.serial_triggerOkForM29 = ko.observable(undefined);
+        self.serial_supportResendsWithoutOk = ko.observable(undefined);
+        self.serial_maxTimeoutsIdle = ko.observable(undefined);
+        self.serial_maxTimeoutsPrinting = ko.observable(undefined);
+        self.serial_maxTimeoutsLong = ko.observable(undefined);
 
         self.folder_uploads = ko.observable(undefined);
         self.folder_timelapse = ko.observable(undefined);
@@ -226,7 +244,7 @@ $(function() {
             var errorText = gettext("Could not retrieve snapshot URL, please double check the URL");
             var errorTitle = gettext("Snapshot test failed");
 
-            OctoPrint.util.testUrl(self.webcam_snapshotUrl(), {method: "GET", response: true})
+            OctoPrint.util.testUrl(self.webcam_snapshotUrl(), {method: "GET", response: "bytes"})
                 .done(function(response) {
                     $("i.icon-spinner", target).remove();
 
@@ -242,8 +260,8 @@ $(function() {
                     var mimeType = "image/jpeg";
 
                     var headers = response.response.headers;
-                    if (headers && headers["mime-type"]) {
-                        mimeType = headers["mime-type"];
+                    if (headers && headers["content-type"]) {
+                        mimeType = headers["content-type"].split(";")[0];
                     }
 
                     var text = gettext("If you see your webcam snapshot picture below, the entered snapshot URL is ok.");
@@ -363,9 +381,20 @@ $(function() {
                 self.requestData(undefined, true);
                 return false;
             });
+
+            // reset scroll position on tab change
+            $('ul.nav-list a[data-toggle="tab"]', self.settingsDialog).on("show", function() {
+                self._resetScrollPosition();
+            });
         };
 
-        self.show = function() {
+        self.show = function(tab) {
+            // select first or specified tab
+            self.selectTab(tab);
+
+            // reset scroll position
+            self._resetScrollPosition();
+
             // show settings, ensure centered position
             self.settingsDialog.modal({
                 minHeight: function() { return Math.max($.fn.modal.defaults.maxHeight() - 80, 250); }
@@ -431,6 +460,9 @@ $(function() {
             // perform the request
             self.receiving(true);
             return OctoPrint.settings.get()
+                .always(function() {
+                    self.receiving(false);
+                })
                 .done(function(response) {
                     self.fromResponse(response, local);
 
@@ -454,9 +486,6 @@ $(function() {
                         deferred.reject(args);
                     });
                     self.outstanding = [];
-                })
-                .always(function() {
-                    self.receiving(false);
                 });
         };
 
@@ -507,7 +536,7 @@ $(function() {
             return item.display + ((item.english != undefined) ? ' (' + item.english + ')' : '');
         };
 
-        self.languagePacksAvailable = ko.computed(function() {
+        self.languagePacksAvailable = ko.pureComputed(function() {
             return self.translations.allSize() > 0;
         });
 
@@ -762,11 +791,26 @@ $(function() {
                 self.requestData();
             }
         };
+
+        self._resetScrollPosition = function() {
+            $('.scrollable', self.settingsDialog).scrollTop(0);
+        };
+
+        self.selectTab = function(tab) {
+            if (tab != undefined) {
+                if (!_.startsWith(tab, "#")) {
+                    tab = "#" + tab;
+                }
+                $('ul.nav-list a[href="' + tab + '"]', self.settingsDialog).tab("show");
+            } else {
+                $('ul.nav-list a:first', self.settingsDialog).tab("show");
+            }
+        };
     }
 
     OCTOPRINT_VIEWMODELS.push([
         SettingsViewModel,
-        ["loginStateViewModel", "usersViewModel", "printerProfilesViewModel"],
+        ["loginStateViewModel", "usersViewModel", "printerProfilesViewModel", "aboutViewModel"],
         ["#settings_dialog", "#navbar_settings"]
     ]);
 });

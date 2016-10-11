@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = "GNU Affero General Public License http://www.gnu.org/licenses/agpl.html"
@@ -199,7 +199,9 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 			type="cura",
 			name="CuraEngine",
 			same_device=True,
-			progress_report=True
+			progress_report=True,
+			source_file_types=["stl"],
+			destination_extensions=["gco", "gcode", "g"]
 		)
 
 	def get_slicer_default_profile(self):
@@ -224,9 +226,6 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 		return octoprint.slicing.SlicingProfile(properties["type"], "unknown", profile_dict, display_name=display_name, description=description)
 
 	def save_slicer_profile(self, path, profile, allow_overwrite=True, overrides=None):
-		if os.path.exists(path) and not allow_overwrite:
-			raise octoprint.slicing.ProfileAlreadyExists("cura", profile.name)
-
 		new_profile = Profile.merge_profile(profile.data, overrides=overrides)
 
 		if profile.display_name is not None:
@@ -266,22 +265,12 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 
 				working_dir = os.path.dirname(executable)
 
+				engine_settings = self._convert_to_engine(profile_path, printer_profile, posX, posY)
+
 				# Start building the argument list for the CuraEngine command execution
 				args = [executable, '-v', '-p']
 
-				# Get the CuraEngine version out of the "usage" line that is gotten when calling the CuraEngine with the -h argument
-				new_engine = self._is_new_engine_version(executable)
-
-				# If the CuraEngine is the new version, add the JSON file path as argument
-				if new_engine:
-					args += ['-j', os.path.join(self._basefolder, "profiles", "fdmprinter.json")]
-
-				profile = Profile(self._load_profile(profile_path), printer_profile, posX, posY)
-
-				engine_settings = self._convert_to_engine(profile, new_engine=new_engine)
-
 				# Add the settings (sorted alphabetically) to the command
-
 				for k, v in sorted(engine_settings.items(), key=lambda s: s[0]):
 					args += ["-s", "%s=%s" % (k, str(v))]
 				args += ["-o", machinecode_path, model_path]
@@ -386,15 +375,10 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 									analysis["filament"][tool_key] = dict()
 
 								if profile.get_float("filament_diameter") != None:
-									# The new CuraEngine outputs the "Filament" value as volume independently from the Gcode flavor
-									if new_engine:
+									if profile.get("gcode_flavor") == GcodeFlavors.ULTIGCODE or profile.get("gcode_flavor") == GcodeFlavors.REPRAP_VOLUME:
 										analysis["filament"][tool_key] = _get_usage_from_volume(filament, profile.get_float("filament_diameter"))
-									# The old CuraEngine outputs the "Filament" value as volume only for ULTIGCODE and REPRAP_VOLUME
 									else:
-										if profile.get("gcode_flavor") == GcodeFlavors.ULTIGCODE or profile.get("gcode_flavor") == GcodeFlavors.REPRAP_VOLUME:
-											analysis["filament"][tool_key] = _get_usage_from_volume(filament, profile.get_float("filament_diameter"))
-										else:
-											analysis["filament"][tool_key] = _get_usage_from_length(filament, profile.get_float("filament_diameter"))
+										analysis["filament"][tool_key] = _get_usage_from_length(filament, profile.get_float("filament_diameter"))
 
 							except:
 								pass
@@ -454,31 +438,12 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 
 	def _save_profile(self, path, profile, allow_overwrite=True):
 		import yaml
-		with octoprint.util.atomic_write(path, "wb") as f:
+		with octoprint.util.atomic_write(path, "wb", max_permissions=0o666) as f:
 			yaml.safe_dump(profile, f, default_flow_style=False, indent="  ", allow_unicode=True)
 
-	def _convert_to_engine(self, profile, new_engine):
-		if new_engine:
-			return profile.convert_to_new_engine()
-		else:
-			return profile.convert_to_engine()
-
-	def _is_new_engine_version(self, executable):
-		import sarge
-
-		command = [executable, "-j", os.path.join(self._basefolder, "profiles", "fdmprinter.json")]
-		p = sarge.run(command, stdout=sarge.Capture(), stderr=sarge.Capture())
-		if p.returncode != 0:
-			self._logger.warn("Could not run {} -j, returned {}".format(executable, p.returncode))
-			self._logger.info(u"Assuming pre 15.06 version of CuraEngine.")
-			return False
-
-		for line in p.stderr.read().split('\n'):
-			if "unknown option: j" in line.strip().lower():
-				self._logger.info(u"Using pre 15.06 version of CuraEngine.")
-				return False
-		self._logger.info(u"Using post 15.06 version of CuraEngine.")
-		return True
+	def _convert_to_engine(self, profile_path, printer_profile, posX, posY):
+		profile = Profile(self._load_profile(profile_path), printer_profile, posX, posY)
+		return profile.convert_to_engine()
 
 def _sanitize_name(name):
 	if name is None:

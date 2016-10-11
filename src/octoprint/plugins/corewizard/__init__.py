@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -7,6 +7,9 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 
 
 import octoprint.plugin
+
+
+from flask.ext.babel import gettext
 
 
 class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
@@ -23,7 +26,7 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 		additional = self._get_subwizard_attrs("_get_", "_additional_wizard_template_data")
 
 		result = list()
-		for key, method in required.iteritems():
+		for key, method in required.items():
 			if not method():
 				continue
 
@@ -74,7 +77,7 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 		return dict()
 
 	def _get_acl_wizard_name(self):
-		return "Access Control"
+		return gettext("Access Control")
 
 	def _get_acl_additional_wizard_template_data(self):
 		return dict(mandatory=self._is_acl_wizard_required())
@@ -119,7 +122,33 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 		return dict()
 
 	def _get_webcam_wizard_name(self):
-		return "Webcam & Timelapse"
+		return gettext("Webcam & Timelapse")
+
+	#~~ Server commands subwizard
+
+	def _is_servercommands_wizard_required(self):
+		system_shutdown_command = self._settings.global_get(["server", "commands", "systemShutdownCommand"])
+		system_restart_command = self._settings.global_get(["server", "commands", "systemRestartCommand"])
+		server_restart_command = self._settings.global_get(["server", "commands", "serverRestartCommand"])
+
+		return not (system_shutdown_command and system_restart_command and server_restart_command)
+
+	def _get_servercommands_wizard_details(self):
+		return dict()
+
+	def _get_servercommands_wizard_name(self):
+		return gettext("Server Commands")
+
+	#~~ Printer profile subwizard
+
+	def _is_printerprofile_wizard_required(self):
+		return self._printer_profile_manager.is_default_unmodified() and self._printer_profile_manager.profile_count == 1
+
+	def _get_printerprofile_wizard_details(self):
+		return dict()
+
+	def _get_printerprofile_wizard_name(self):
+		return gettext("Default Printer Profile")
 
 	#~~ helpers
 
@@ -143,5 +172,5 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 
 
 __plugin_name__ = "Core Wizard"
-__plugin_description__ = "Provides wizard dialogs for core components"
+__plugin_description__ = "Provides wizard dialogs for core components and functionality"
 __plugin_implementation__ = CoreWizardPlugin()

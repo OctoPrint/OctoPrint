@@ -28,12 +28,12 @@
     };
 
     OctoPrint.printer = {
-        getFullState: function (data, opts) {
-            data = data || {};
+        getFullState: function (flags, opts) {
+            flags = flags || {};
 
-            var history = data.history || undefined;
-            var limit = data.limit || undefined;
-            var exclude = data.exclude || undefined;
+            var history = flags.history || undefined;
+            var limit = flags.limit || undefined;
+            var exclude = flags.exclude || undefined;
 
             var getUrl = url;
             if (history || exclude) {
@@ -53,11 +53,11 @@
             return OctoPrint.get(getUrl, opts);
         },
 
-        getToolState: function (data, opts) {
-            data = data || {};
+        getToolState: function (flags, opts) {
+            flags = flags || {};
 
-            var history = data.history || undefined;
-            var limit = data.limit || undefined;
+            var history = flags.history || undefined;
+            var limit = flags.limit || undefined;
 
             var getUrl = toolUrl;
             if (history) {
@@ -70,11 +70,11 @@
             return OctoPrint.get(getUrl, opts);
         },
 
-        getBedState: function (data, opts) {
-            data = data || {};
+        getBedState: function (flags, opts) {
+            flags = flags || {};
 
-            var history = data.history || undefined;
-            var limit = data.limit || undefined;
+            var history = flags.history || undefined;
+            var limit = flags.limit || undefined;
 
             var getUrl = bedUrl;
             if (history) {
@@ -91,13 +91,16 @@
             return OctoPrint.get(sdUrl, opts);
         },
 
-        jog: function (data, opts) {
-            data = data || {};
+        jog: function (params, opts) {
+            params = params || {};
 
-            var payload = {};
-            if (data.x) payload.x = data.x;
-            if (data.y) payload.y = data.y;
-            if (data.z) payload.z = data.z;
+            var absolute = params.absolute || false;
+
+            var payload = {absolute: absolute};
+            if (params.x) payload.x = params.x;
+            if (params.y) payload.y = params.y;
+            if (params.z) payload.z = params.z;
+            if (params.speed !== undefined) payload.speed = params.speed;
 
             return issuePrintheadCommand("jog", payload, opts);
         },
@@ -172,11 +175,11 @@
             return issueToolCommand("flowrate", payload, opts);
         },
 
-        setBedTargetTemperature: function (temperature, opts) {
-            temperature = temperature || 0;
+        setBedTargetTemperature: function (target, opts) {
+            target = target || 0;
 
             var payload = {
-                target: temperature
+                target: target
             };
 
             return issueBedCommand("target", payload, opts);

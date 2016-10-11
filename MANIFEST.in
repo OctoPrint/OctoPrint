@@ -5,8 +5,6 @@ recursive-include src/octoprint/translations *
 include src/octoprint/util/piptestballoon/setup.py
 include versioneer.py
 include src/octoprint/_version.py
-include AUTHORS.md
-include CHANGELOG.md
-include LICENSE
-include README.md
 include requirements.txt
+include *.md
+exclude CONTRIBUTING.md

@@ -12,6 +12,7 @@
     var CONFIG_USERSPERPAGE = 10;
     var CONFIG_WEBCAM_STREAM = "{{ webcamStream|e }}";
     var CONFIG_ACCESS_CONTROL = {% if enableAccessControl -%} true; {% else %} false; {%- endif %}
+    var CONFIG_ACCESS_CONTROL_ACTIVE = {% if accessControlActive -%} true; {% else %} false; {%- endif %}
     var CONFIG_SD_SUPPORT = {% if enableSdSupport -%} true; {% else %} false; {%- endif %}
     var CONFIG_FIRST_RUN = {%  if firstRun -%} true; {% else %} false; {%- endif %}
     var CONFIG_TEMPERATURE_GRAPH = {%  if enableTemperatureGraph -%} true; {% else %} false; {%- endif %}
@@ -30,6 +31,7 @@
     var BRANCH = "{{ version.branch|e }}";
     var LOCALE = "{{ g.locale|e }}";
     var AVAILABLE_LOCALES = {{ locales|tojson }};
+    var SUPPORTED_EXTENSIONS = {{ supportedExtensions|tojson }};
 
     var OCTOPRINT_VIEWMODELS = [];
     var ADDITIONAL_VIEWMODELS = [];

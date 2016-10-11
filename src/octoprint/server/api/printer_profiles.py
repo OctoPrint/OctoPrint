@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -11,15 +11,33 @@ import copy
 from flask import jsonify, make_response, request, url_for
 from werkzeug.exceptions import BadRequest
 
-from octoprint.server.api import api, NO_CONTENT
-from octoprint.server.util.flask import restricted_access
+from octoprint.server.api import api, NO_CONTENT, valid_boolean_trues
+from octoprint.server.util.flask import restricted_access, with_revalidation_checking
 from octoprint.util import dict_merge
 
 from octoprint.server import printerProfileManager
 from octoprint.printer.profile import InvalidProfileError, CouldNotOverwriteError, SaveError
 
 
+def _lastmodified():
+	return printerProfileManager.last_modified
+
+
+def _etag(lm=None):
+	if lm is None:
+		lm = _lastmodified()
+
+	import hashlib
+	hash = hashlib.sha1()
+	hash.update(str(lm))
+	hash.update(repr(printerProfileManager.get_default()))
+	return hash.hexdigest()
+
+
 @api.route("/printerprofiles", methods=["GET"])
+@with_revalidation_checking(etag_factory=_etag,
+                            lastmodified_factory=_lastmodified,
+                            unless=lambda: request.values.get("force", "false") in valid_boolean_trues)
 def printerProfilesList():
 	all_profiles = printerProfileManager.get_all()
 	return jsonify(dict(profiles=_convert_profiles(all_profiles)))
@@ -58,12 +76,18 @@ def printerProfilesAdd():
 		del new_profile["default"]
 
 	profile = dict_merge(base_profile, new_profile)
+
+	if not "id" in profile:
+		return make_response("Profile does not contain mandatory 'id' field", 400)
+	if not "name" in profile:
+		return make_response("Profile does not contain mandatory 'name' field", 400)
+
 	try:
 		saved_profile = printerProfileManager.save(profile, allow_overwrite=False, make_default=make_default)
 	except InvalidProfileError:
 		return make_response("Profile is invalid", 400)
 	except CouldNotOverwriteError:
-		return make_response("Profile already exists and overwriting was not allowed", 400)
+		return make_response("Profile {} already exists and overwriting was not allowed".format(profile["id"]), 400)
 	except Exception as e:
 		return make_response("Could not save profile: %s" % str(e), 500)
 	else:

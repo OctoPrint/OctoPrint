@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 # coding=utf-8
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import, division, print_function
 
 import sys
 import logging
@@ -52,6 +52,11 @@ if version_info.major == 2 and version_info.minor <= 7 and version_info.micro < 
 
 del version_info
 
+#~~ custom exceptions
+
+class FatalStartupError(BaseException):
+	pass
+
 #~~ init methods to bring up platform
 
 def init_platform(basedir, configfile, use_logging_file=True, logging_file=None,
@@ -79,8 +84,14 @@ def init_platform(basedir, configfile, use_logging_file=True, logging_file=None,
 def init_settings(basedir, configfile):
 	"""Inits the settings instance based on basedir and configfile to use."""
 
-	from octoprint.settings import settings
-	return settings(init=True, basedir=basedir, configfile=configfile)
+	from octoprint.settings import settings, InvalidSettings
+	try:
+		return settings(init=True, basedir=basedir, configfile=configfile)
+	except InvalidSettings as e:
+		message = "Error parsing the configuration file, it appears to be invalid YAML."
+		if e.line is not None and e.column is not None:
+			message += " The parser reported an error on line {}, column {}.".format(e.line, e.column)
+		raise FatalStartupError(message)
 
 
 def init_logging(settings, use_logging_file=True, logging_file=None, default_config=None, debug=False, verbosity=0, uncaught_logger=None, uncaught_handler=None):
@@ -201,14 +212,102 @@ def init_logging(settings, use_logging_file=True, logging_file=None, default_con
 
 def init_pluginsystem(settings):
 	"""Initializes the plugin manager based on the settings."""
+
 	from octoprint.plugin import plugin_manager
-	return plugin_manager(init=True, settings=settings)
+	pm = plugin_manager(init=True, settings=settings)
+
+	logger = logging.getLogger(__name__)
+	settings_overlays = dict()
+	disabled_from_overlays = dict()
+
+	def handle_plugin_loaded(name, plugin):
+		if hasattr(plugin.instance, "__plugin_settings_overlay__"):
+			plugin.needs_restart = True
+
+			# plugin has a settings overlay, inject it
+			overlay_definition = getattr(plugin.instance, "__plugin_settings_overlay__")
+			if isinstance(overlay_definition, (tuple, list)):
+				overlay_definition, order = overlay_definition
+			else:
+				order = None
+
+			overlay = settings.load_overlay(overlay_definition)
+
+			if "plugins" in overlay and "_disabled" in overlay["plugins"]:
+				disabled_plugins = overlay["plugins"]["_disabled"]
+				del overlay["plugins"]["_disabled"]
+				disabled_from_overlays[name] = (disabled_plugins, order)
+
+			settings_overlays[name] = overlay
+			logger.debug("Found settings overlay on plugin {}".format(name))
+
+	def handle_plugins_loaded(startup=False, initialize_implementations=True, force_reload=None):
+		if not startup:
+			return
+
+		sorted_disabled_from_overlays = sorted([(key, value[0], value[1]) for key, value in disabled_from_overlays.items()], key=lambda x: (x[2] is None, x[2], x[0]))
+
+		disabled_list = pm.plugin_disabled_list
+		already_processed = []
+		for name, addons, _ in sorted_disabled_from_overlays:
+			if not name in disabled_list and not name.endswith("disabled"):
+				for addon in addons:
+					if addon in disabled_list:
+						continue
+
+					if addon in already_processed:
+						logger.info("Plugin {} wants to disable plugin {}, but that was already processed".format(name, addon))
+
+					if not addon in already_processed and not addon in disabled_list:
+						disabled_list.append(addon)
+						logger.info("Disabling plugin {} as defined by plugin {} through settings overlay".format(addon, name))
+				already_processed.append(name)
+
+	def handle_plugin_enabled(name, plugin):
+		if name in settings_overlays:
+			settings.add_overlay(settings_overlays[name])
+			logger.info("Added settings overlay from plugin {}".format(name))
+
+	pm.on_plugin_loaded = handle_plugin_loaded
+	pm.on_plugins_loaded = handle_plugins_loaded
+	pm.on_plugin_enabled = handle_plugin_enabled
+	pm.reload_plugins(startup=True, initialize_implementations=False)
+	return pm
 
 #~~ server main method
 
 def main():
+	import sys
+
+	# os args are gained differently on win32
+	try:
+		from click.utils import get_os_args
+		args = get_os_args()
+	except ImportError:
+		# for whatever reason we are running an older Click version?
+		args = sys.argv[1:]
+
+	if len(args) >= len(sys.argv):
+		# Now some ugly preprocessing of our arguments starts. We have a somewhat difficult situation on our hands
+		# here if we are running under Windows and want to be able to handle utf-8 command line parameters (think
+		# plugin parameters such as names or something, e.g. for the "dev plugin:new" command) while at the same
+		# time also supporting sys.argv rewriting for debuggers etc (e.g. PyCharm).
+		#
+		# So what we try to do here is solve this... Generally speaking, sys.argv and whatever Windows returns
+		# for its CommandLineToArgvW win32 function should have the same length. If it doesn't however and
+		# sys.argv is shorter than the win32 specific command line arguments, obviously stuff was cut off from
+		# sys.argv which also needs to be cut off of the win32 command line arguments.
+		#
+		# So this is what we do here.
+
+		# -1 because first entry is the script that was called
+		sys_args_length = len(sys.argv) - 1
+
+		# cut off stuff from the beginning
+		args = args[-1 * sys_args_length:] if sys_args_length else []
+
 	from octoprint.cli import octo
-	octo(prog_name="octoprint", auto_envvar_prefix="OCTOPRINT")
+	octo(args=args, prog_name="octoprint", auto_envvar_prefix="OCTOPRINT")
 
 
 if __name__ == "__main__":

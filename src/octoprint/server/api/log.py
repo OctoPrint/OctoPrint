@@ -1,11 +1,16 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Marc Hannappel Salandora"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+
 import os
+try:
+	from os import scandir
+except ImportError:
+	from scandir import scandir
 
 from flask import request, jsonify, url_for, make_response
 from werkzeug.utils import secure_filename
@@ -52,15 +57,14 @@ def deleteLog(filename):
 def _getLogFiles():
 	files = []
 	basedir = settings().getBaseFolder("logs")
-	for osFile in os.listdir(basedir):
-		statResult = os.stat(os.path.join(basedir, osFile))
+	for entry in scandir(basedir):
 		files.append({
-			"name": osFile,
-			"date": int(statResult.st_mtime),
-			"size": statResult.st_size,
+			"name": entry.name,
+			"date": int(entry.stat().st_mtime),
+			"size": entry.stat().st_size,
 			"refs": {
-				"resource": url_for(".downloadLog", filename=osFile, _external=True),
-				"download": url_for("index", _external=True) + "downloads/logs/" + osFile
+				"resource": url_for(".downloadLog", filename=entry.name, _external=True),
+				"download": url_for("index", _external=True) + "downloads/logs/" + entry.name
 			}
 		})
 

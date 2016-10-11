@@ -12,7 +12,7 @@
     {% include "_snippets/settings/webcam/ffmpegPath.jinja2" %}
     {% include "_snippets/settings/webcam/watermark.jinja2" %}
     <div>
-        <div><small><a href="#" class="muted" onclick="$(this).children().toggleClass('icon-caret-right icon-caret-down').parent().parent().parent().next().slideToggle('fast')"><i class="icon-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
+        <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'icon-caret-right icon-caret-down', parent: '.form-horizontal', container: '.hide' }"><i class="icon-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
         <div class="hide">
             {% include "_snippets/settings/webcam/ffmpegBitrate.jinja2" %}
             {% include "_snippets/settings/webcam/ffmpegThreads.jinja2" %}

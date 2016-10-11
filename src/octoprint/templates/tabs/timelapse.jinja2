@@ -33,6 +33,15 @@
         </div>
     </div>
 
+    <div id="webcam_timelapse_retractionsettings" data-bind="visible: timelapseType() == 'zchange'">
+        <label for="webcam_timelapse_retractionZHop">{{ _('Retraction Z-Hop (in mm)') }}</label>
+        <div class="input-append">
+            <input type="text" class="input-mini" id="webcam_timelapse_retractionZHop" data-bind="value: timelapseRetractionZHop, valueUpdate: 'afterkeydown', enable: isOperational() && !isPrinting() && loginState.isUser()">
+            <span class="add-on">{{ _('mm') }}</span>
+        </div>
+        <span class="help-block">{{ _('Enter the retraction z-hop used in the firmware or the gcode file to trigger snapshots for the timelapse only if a real layer change happens. For this to work properly your retraction z-hop has to be different from your layerheight!') }}</span>
+    </div>
+
     <div data-bind="visible: loginState.isAdmin">
         <label class="checkbox">
             <input type="checkbox" data-bind="checked: persist"> {{ _('Save as default') }}
@@ -47,7 +56,7 @@
 <h1>{{ _('Finished Timelapses') }}</h1>
 
 <div class="pull-right">
-    <small>{{ _('Sort by') }}: <a href="#" data-bind="click: function() { listHelper.changeSorting('name'); }">{{ _('Name') }} ({{ _('ascending') }})</a> | <a href="#" data-bind="click: function() { listHelper.changeSorting('creation'); }">{{ _('Creation date') }} ({{ _('descending') }})</a> | <a href="#" data-bind="click: function() { listHelper.changeSorting('size'); }">{{ _('Size') }} ({{ _('descending') }})</a></small>
+    <small>{{ _('Sort by') }}: <a href="javascript:void(0)" data-bind="click: function() { listHelper.changeSorting('name'); }">{{ _('Name') }} ({{ _('ascending') }})</a> | <a href="javascript:void(0)" data-bind="click: function() { listHelper.changeSorting('creation'); }">{{ _('Creation date') }} ({{ _('descending') }})</a> | <a href="javascript:void(0)" data-bind="click: function() { listHelper.changeSorting('size'); }">{{ _('Size') }} ({{ _('descending') }})</a></small>
 </div>
 <table class="table table-striped table-hover table-condensed table-hover" id="timelapse_files">
     <thead>
@@ -61,18 +70,56 @@
     <tr data-bind="attr: {title: name}">
         <td class="timelapse_files_name" data-bind="text: name"></td>
         <td class="timelapse_files_size" data-bind="text: size"></td>
-        <td class="timelapse_files_action"><a href="#" class="icon-trash" data-bind="click: function() { if ($root.loginState.isUser()) { $parent.removeFile($data.name); } else { return; } }, css: {disabled: !$root.loginState.isUser()}"></a>&nbsp;|&nbsp;<a href="#" class="icon-download" data-bind="attr: {href: url}"></a></td>
+        <td class="timelapse_files_action"><a href="javascript:void(0)" class="icon-trash" data-bind="click: function() { if ($root.loginState.isUser()) { $parent.removeFile($data.name); } else { return; } }, css: {disabled: !$root.loginState.isUser()}"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" class="icon-download" data-bind="attr: {href: url}"></a></td>
     </tr>
     </tbody>
 </table>
 <div class="pagination pagination-mini pagination-centered">
     <ul>
-        <li data-bind="css: {disabled: listHelper.currentPage() === 0}"><a href="#" data-bind="click: listHelper.prevPage">«</a></li>
+        <li data-bind="css: {disabled: listHelper.currentPage() === 0}"><a href="javascript:void(0)" data-bind="click: listHelper.prevPage">«</a></li>
     </ul>
     <ul data-bind="foreach: listHelper.pages">
-        <li data-bind="css: { active: $data.number === $root.listHelper.currentPage(), disabled: $data.number === -1 }"><a href="#" data-bind="text: $data.text, click: function() { $root.listHelper.changePage($data.number); }"></a></li>
+        <li data-bind="css: { active: $data.number === $root.listHelper.currentPage(), disabled: $data.number === -1 }"><a href="javascript:void(0)" data-bind="text: $data.text, click: function() { $root.listHelper.changePage($data.number); }"></a></li>
     </ul>
     <ul>
-        <li data-bind="css: {disabled: listHelper.currentPage() === listHelper.lastPage()}"><a href="#" data-bind="click: listHelper.nextPage">»</a></li>
+        <li data-bind="css: {disabled: listHelper.currentPage() === listHelper.lastPage()}"><a href="javascript:void(0)" data-bind="click: listHelper.nextPage">»</a></li>
     </ul>
+</div>
+
+<div data-bind="visible: unrenderedListHelper.allSize">
+    <div><small><a href="javascript:void(0)" class="muted" onclick="$(this).children().toggleClass('icon-caret-right icon-caret-down').parent().parent().parent().next().slideToggle('fast')"><i class="icon-caret-right"></i> {{ _('Unrendered Timelapses') }}</a></small></div>
+    <div class="hide">
+        <table class="table table-striped table-hover table-condensed table-hover" id="timelapse_unrendered">
+            <thead>
+            <tr>
+                <th class="timelapse_unrendered_name">{{ _('Name') }}</th>
+                <th class="timelapse_unrendered_count">{{ _('Frames') }}</th>
+                <th class="timelapse_unrendered_size">{{ _('Size') }}</th>
+                <th class="timelapse_unrendered_action">{{ _('Action') }}</th>
+            </tr>
+            </thead>
+            <tbody data-bind="foreach: unrenderedListHelper.paginatedItems">
+            <tr data-bind="attr: {title: name}">
+                <td class="timelapse_unrendered_name" data-bind="text: name"></td>
+                <td class="timelapse_unrendered_count" data-bind="text: count"></td>
+                <td class="timelapse_unrendered_size" data-bind="text: size"></td>
+                <td class="timelapse_unrendered_action">
+                    <span data-bind="visible: processing"><i class="icon-refresh icon-spin"></i></span>
+                    <span data-bind="visible: !processing"><a href="javascript:void(0)" title="{{ _('Delete unrendered timelapse') }}" class="icon-trash" data-bind="click: function() { if ($root.loginState.isUser()) { $parent.removeUnrendered($data.name); } else { return; } }, css: {disabled: !$root.loginState.isUser()}"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" title="{{ _('Render timelapse') }}" class="icon-facetime-video" data-bind="click: function() { if ($root.loginState.isUser() && !$root.isBusy()) { $parent.renderUnrendered($data.name); } else { return; } }, css: {disabled: !$root.loginState.isUser() || $root.isBusy()}"></a></span>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+        <div class="pagination pagination-mini pagination-centered">
+            <ul>
+                <li data-bind="css: {disabled: unrenderedListHelper.currentPage() === 0}"><a href="javascript:void(0)" data-bind="click: unrenderedListHelper.prevPage">«</a></li>
+            </ul>
+            <ul data-bind="foreach: unrenderedListHelper.pages">
+                <li data-bind="css: { active: $data.number === $root.unrenderedListHelper.currentPage(), disabled: $data.number === -1 }"><a href="javascript:void(0)" data-bind="text: $data.text, click: function() { $root.unrenderedListHelper.changePage($data.number); }"></a></li>
+            </ul>
+            <ul>
+                <li data-bind="css: {disabled: unrenderedListHelper.currentPage() === unrenderedListHelper.lastPage()}"><a href="javascript:void(0)" data-bind="click: unrenderedListHelper.nextPage">»</a></li>
+            </ul>
+        </div>
+    </div>
 </div>

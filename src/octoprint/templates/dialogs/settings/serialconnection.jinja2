@@ -92,9 +92,23 @@
             <span class="help-inline">{{ _('Use this to define additional serial port baud rates to list for connecting with, e.g. <code>123456</code>. Comma separated.')|format(glob_url="http://docs.python.org/2/library/glob.html") }}</span>
         </div>
     </div>
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
+                <input type="checkbox" data-bind="checked: serial_disconnectOnErrors" id="settings-disconnectOnErrors"> {{ _('Not only cancel ongoing prints but also disconnect on unhandled errors from the firmware.') }}</span>
+            </label>
+        </div>
+    </div>
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
+                <input type="checkbox" data-bind="checked: serial_ignoreErrorsFromFirmware" id="settings-ignoreErrorsFromFirmware"> {{ _('Ignore any unhandled errors from the firmware. Only use this if your firmware sends stuff prefixed with "Error" that is not an actual error. Might mask printer issues, be careful!') }} <span class="label label-important">{{ _('Warning') }}</span>
+            </label>
+        </div>
+    </div>
 
     <div>
-        <div><small><a href="#" class="muted" onclick="$(this).children().toggleClass('icon-caret-right icon-caret-down').parent().parent().parent().next().slideToggle('fast')"><i class="icon-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
+        <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'icon-caret-right icon-caret-down', container: '#settings_serialConnection .hide' }"><i class="icon-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
         <div class="hide">
             <div class="control-group" title="{{ _('Command to send to the firmware on first handshake attempt.') }}">
                 <label class="control-label" for="settings-serialHelloCommand">{{ _('"Hello" command') }}</label>
@@ -111,10 +125,38 @@
                 </div>
             </div>
             <div class="control-group" title="{{ _('Commands that always require a line number and checksum to be sent with them.') }}">
-                <label class="control-label" for="settings-serialChecksumRequiringCommands">{{ _('Commands that always require a checksum') }}</label>
+                <label class="control-label" for="settings-checksumRequiringCommands">{{ _('Commands that always require a checksum') }}</label>
                 <div class="controls">
                     <input type="text" class="input-block-level" id="settings-checksumRequiringCommands" data-bind="value: serial_checksumRequiringCommands">
                     <span class="help-inline">{{ _('Use this to specify which commands <strong>always</strong> need to be sent with a checksum. Comma separated list.') }}</span>
+                </div>
+            </div>
+            <div class="controls">
+                <label class="checkbox">
+                    <input type="checkbox" data-bind="checked: serial_triggerOkForM29" id="settings-triggerOkForM29"> {{ _('Generate additional <code>ok</code> for <code>M29</code>') }} <span class="label">{{ _('Most Marlin < v1.1.0') }}</span>
+                </label>
+            </div>
+            <div class="controls">
+                <label class="checkbox">
+                    <input type="checkbox" data-bind="checked: serial_supportResendsWithoutOk" id="settings-supportResendsWithoutOk"> {{ _('Simulate an additional `ok` for resend requests') }}
+                </label>
+            </div>
+            <div class="control-group" title="{{ _('Maximum consecutive communication timeouts while idle. More than this and the printer will be considered to be gone. Set to 0 to disable.') }}">
+                <label class="control-label" for="settings-serialMaxTimeoutsIdle">{{ _('Max. consecutive timeouts while idle') }}</label>
+                <div class="controls">
+                    <input type="number" min="0" class="input-mini text-right" id="settings-serialMaxTimeoutsIdle" data-bind="value: serial_maxTimeoutsIdle">
+                </div>
+            </div>
+            <div class="control-group" title="{{ _('Maximum consecutive communication timeouts while printing. More than this and the printer will be considered to be gone. Set to 0 to disable.') }}">
+                <label class="control-label" for="settings-serialMaxTimeoutsPrinting">{{ _('Max. consecutive timeouts while printing') }}</label>
+                <div class="controls">
+                    <input type="number" min="0" class="input-mini text-right" id="settings-serialMaxTimeoutsPrinting" data-bind="value: serial_maxTimeoutsPrinting">
+                </div>
+            </div>
+            <div class="control-group" title="{{ _('Maximum consecutive communication timeouts while a long running command is active. More than this and the printer will be considered to be gone. Set to 0 to disable.') }}">
+                <label class="control-label" for="settings-serialMaxTimeoutsLong">{{ _('Max. consecutive timeouts during long running commands') }}</label>
+                <div class="controls">
+                    <input type="number" min="0" class="input-mini text-right" id="settings-serialMaxTimeoutsLong" data-bind="value: serial_maxTimeoutsLong">
                 </div>
             </div>
         </div>

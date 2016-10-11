@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -23,7 +23,7 @@ class TestCommHelpers(unittest.TestCase):
 	@unpack
 	def test_strip_comment(self, input, expected):
 		from octoprint.util import comm
-		self.assertEquals(expected, comm.strip_comment(input))
+		self.assertEqual(expected, comm.strip_comment(input))
 
 	@data(
 		("M117 Test", None, None, "M117 Test"),
@@ -34,7 +34,7 @@ class TestCommHelpers(unittest.TestCase):
 	@unpack
 	def test_process_gcode_line(self, input, offsets, current_tool, expected):
 		from octoprint.util import comm
-		self.assertEquals(expected, comm.process_gcode_line(input, offsets=offsets, current_tool=current_tool))
+		self.assertEqual(expected, comm.process_gcode_line(input, offsets=offsets, current_tool=current_tool))
 
 	@data(
 		("M104 S200", None, None, None),
@@ -58,16 +58,16 @@ class TestCommHelpers(unittest.TestCase):
 		actual = comm.apply_temperature_offsets(input, offsets, current_tool=current_tool)
 
 		if expected is None:
-			self.assertEquals(input, actual)
+			self.assertEqual(input, actual)
 		else:
 			import re
 			match = re.search("S(\d+(\.\d+)?)", actual)
 			if not match:
 				self.fail("No temperature found")
 			temperature = float(match.group(1))
-			self.assertEquals(expected, temperature)
-			self.assertEquals(input[:match.start(1)], actual[:match.start(1)])
-			self.assertEquals(input[match.end(1):], actual[match.end(1):])
+			self.assertEqual(expected, temperature)
+			self.assertEqual(input[:match.start(1)], actual[:match.start(1)])
+			self.assertEqual(input[match.end(1):], actual[match.end(1):])
 
 	def test_convert_pause_triggers(self):
 		configured_triggers = [
@@ -86,13 +86,13 @@ class TestCommHelpers(unittest.TestCase):
 		self.assertIsNotNone(trigger_matchers)
 
 		self.assertIn("enable", trigger_matchers)
-		self.assertEquals("(pause1)|(pause2)", trigger_matchers["enable"].pattern)
+		self.assertEqual("(pause1)|(pause2)", trigger_matchers["enable"].pattern)
 
 		self.assertIn("disable", trigger_matchers)
-		self.assertEquals("(resume)", trigger_matchers["disable"].pattern)
+		self.assertEqual("(resume)", trigger_matchers["disable"].pattern)
 
 		self.assertIn("toggle", trigger_matchers)
-		self.assertEquals("(toggle)", trigger_matchers["toggle"].pattern)
+		self.assertEqual("(toggle)", trigger_matchers["toggle"].pattern)
 
 		self.assertNotIn("unknown", trigger_matchers)
 
@@ -127,35 +127,35 @@ class TestCommHelpers(unittest.TestCase):
 		from octoprint.util import comm
 		controls, matcher = comm.convert_feedback_controls(configured_controls)
 
-		self.assertEquals(2, len(controls))
+		self.assertEqual(2, len(controls))
 
 		# temp_regex is used twice, so we should have two templates for it
 		self.assertIn(temp_key, controls)
 		temp = controls[temp_key]
 
 		self.assertIsNotNone(temp["matcher"])
-		self.assertEquals(temp_regex, temp["matcher"].pattern)
-		self.assertEquals(temp_regex, temp["pattern"])
+		self.assertEqual(temp_regex, temp["matcher"].pattern)
+		self.assertEqual(temp_regex, temp["pattern"])
 
-		self.assertEquals(2, len(temp["templates"]))
+		self.assertEqual(2, len(temp["templates"]))
 		self.assertIn(temp_template_key, temp["templates"])
-		self.assertEquals(temp_template, temp["templates"][temp_template_key])
+		self.assertEqual(temp_template, temp["templates"][temp_template_key])
 		self.assertIn(temp2_template_key, temp["templates"])
-		self.assertEquals(temp2_template, temp["templates"][temp2_template_key])
+		self.assertEqual(temp2_template, temp["templates"][temp2_template_key])
 
 		# x_regex is used once, so we should have only one template for it
 		self.assertIn(x_key, controls)
 		x = controls[x_key]
 
 		self.assertIsNotNone(x["matcher"])
-		self.assertEquals(x_regex, x["matcher"].pattern)
-		self.assertEquals(x_regex, x["pattern"])
+		self.assertEqual(x_regex, x["matcher"].pattern)
+		self.assertEqual(x_regex, x["pattern"])
 
-		self.assertEquals(1, len(x["templates"]))
+		self.assertEqual(1, len(x["templates"]))
 		self.assertIn(x_template_key, x["templates"])
-		self.assertEquals(x_template, x["templates"][x_template_key])
+		self.assertEqual(x_template, x["templates"][x_template_key])
 
-		self.assertEquals("(?P<group{temp_key}>{temp_regex})|(?P<group{x_key}>{x_regex})".format(**locals()), matcher.pattern)
+		self.assertEqual("(?P<group{temp_key}>{temp_regex})|(?P<group{x_key}>{x_regex})".format(**locals()), matcher.pattern)
 
 	@data(
 		("G4 P2.0", "floatP", True, "2.0"),
@@ -178,7 +178,7 @@ class TestCommHelpers(unittest.TestCase):
 
 		if should_match:
 			self.assertIsNotNone(match)
-			self.assertEquals(expected_value, match.group("value"))
+			self.assertEqual(expected_value, match.group("value"))
 		else:
 			self.assertIsNone(match)
 
@@ -196,7 +196,7 @@ class TestCommHelpers(unittest.TestCase):
 	def test_gcode_command_for_cmd(self, cmd, expected):
 		from octoprint.util.comm import gcode_command_for_cmd
 		result = gcode_command_for_cmd(cmd)
-		self.assertEquals(expected, result)
+		self.assertEqual(expected, result)
 
 	@data(
 		("T:23.0 B:60.0", 0, dict(T0=(23.0, None), B=(60.0, None)), 0),
@@ -210,7 +210,7 @@ class TestCommHelpers(unittest.TestCase):
 		from octoprint.util.comm import parse_temperature_line
 		maxtool, result = parse_temperature_line(line, current)
 		self.assertDictEqual(expected_result, result)
-		self.assertEquals(expected_max, maxtool)
+		self.assertEqual(expected_max, maxtool)
 
 	@data(
 		(dict(T=(23.0,None)), 0, dict(T0=(23.0, None))),

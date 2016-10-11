@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -8,6 +8,39 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 
 import sarge
 import logging
+import re
+
+
+# These regexes are based on the colorama package
+# Author: Jonathan Hartley
+# License: BSD-3 (https://github.com/tartley/colorama/blob/master/LICENSE.txt)
+# Website: https://github.com/tartley/colorama/
+_ANSI_CSI_PATTERN = "\001?\033\[(\??(?:\d|;)*)([a-zA-Z])\002?"  # Control Sequence Introducer
+_ANSI_OSC_PATTERN = "\001?\033\]((?:.|;)*?)(\x07)\002?"         # Operating System Command
+_ANSI_REGEX = re.compile("|".join([_ANSI_CSI_PATTERN,
+                                   _ANSI_OSC_PATTERN]))
+
+
+def clean_ansi(line):
+	"""
+	Removes ANSI control codes from ``line``.
+
+	Parameters:
+	    line (str or unicode): the line to process
+
+	Returns:
+	    (str or unicode) The line without any ANSI control codes
+
+	Example::
+
+	    >>> text = "Some text with some \x1b[31mred words\x1b[39m in it"
+	    >>> clean_ansi(text)
+	    'Some text with some red words in it'
+	    >>> text = "We \x1b[?25lhide the cursor here and then \x1b[?25hshow it again here"
+	    >>> clean_ansi(text)
+	    'We hide the cursor here and then show it again here'
+	"""
+	return _ANSI_REGEX.sub("", line)
 
 
 class CommandlineError(Exception):
@@ -51,32 +84,34 @@ class CommandlineCaller(object):
 		all_stderr = []
 		try:
 			while p.returncode is None:
-				line = p.stderr.readline(timeout=0.5)
-				if line:
-					self._log_stderr(line)
-					all_stderr.append(line)
+				lines = p.stderr.readlines(timeout=0.5)
+				if lines:
+					lines = self._preprocess_lines(*lines)
+					self._log_stderr(*lines)
+					all_stderr += list(lines)
 
-				line = p.stdout.readline(timeout=0.5)
-				if line:
-					self._log_stdout(line)
-					all_stdout.append(line)
+				lines = p.stdout.readlines(timeout=0.5)
+				if lines:
+					lines = self._preprocess_lines(*lines)
+					self._log_stdout(*lines)
+					all_stdout += list(lines)
 
 				p.commands[0].poll()
 
 		finally:
 			p.close()
 
-		stderr = p.stderr.text
-		if stderr:
-			split_lines = stderr.split("\n")
-			self._log_stderr(*split_lines)
-			all_stderr += split_lines
+		lines = p.stderr.readlines()
+		if lines:
+			lines = self._preprocess_lines(*lines)
+			self._log_stderr(*lines)
+			all_stderr += lines
 
-		stdout = p.stdout.text
-		if stdout:
-			split_lines = stdout.split("\n")
-			self._log_stdout(*split_lines)
-			all_stdout += split_lines
+		lines = p.stdout.readlines()
+		if lines:
+			lines = self._preprocess_lines(*lines)
+			self._log_stdout(*lines)
+			all_stdout += lines
 
 		return p.returncode, all_stdout, all_stderr
 
@@ -85,3 +120,6 @@ class CommandlineCaller(object):
 
 	def _log_stderr(self, *lines):
 		self.on_log_stderr(*lines)
+
+	def _preprocess_lines(self, *lines):
+		return lines

@@ -40,13 +40,15 @@ $(function() {
             var graphColors = ["red", "orange", "green", "brown", "purple"];
             var heaterOptions = {};
             var tools = self.tools();
+            var color;
 
             // tools
-            var numExtruders = self.settingsViewModel.printerProfiles.currentProfileData().extruder.count();
+            var currentProfileData = self.settingsViewModel.printerProfiles.currentProfileData();
+            var numExtruders = (currentProfileData ? currentProfileData.extruder.count() : 0);
             if (numExtruders && numExtruders > 1) {
                 // multiple extruders
                 for (var extruder = 0; extruder < numExtruders; extruder++) {
-                    var color = graphColors.shift();
+                    color = graphColors.shift();
                     if (!color) color = "black";
                     heaterOptions["tool" + extruder] = {name: "T" + extruder, color: color};
 
@@ -56,9 +58,9 @@ $(function() {
                     tools[extruder]["name"](gettext("Tool") + " " + extruder);
                     tools[extruder]["key"]("tool" + extruder);
                 }
-            } else {
+            } else if (numExtruders == 1) {
                 // only one extruder, no need to add numbers
-                var color = graphColors[0];
+                color = graphColors[0];
                 heaterOptions["tool0"] = {name: "T", color: color};
 
                 if (tools.length < 1 || !tools[0]) {
@@ -69,7 +71,7 @@ $(function() {
             }
 
             // print bed
-            if (self.settingsViewModel.printerProfiles.currentProfileData().heatedBed()) {
+            if (currentProfileData && currentProfileData.heatedBed()) {
                 self.hasBed(true);
                 heaterOptions["bed"] = {name: gettext("Bed"), color: "blue"};
             } else {
@@ -79,11 +81,12 @@ $(function() {
             // write back
             self.heaterOptions(heaterOptions);
             self.tools(tools);
+            self.updatePlot();
         };
         self.settingsViewModel.printerProfiles.currentProfileData.subscribe(function() {
             self._printerProfileUpdated();
             self.settingsViewModel.printerProfiles.currentProfileData().extruder.count.subscribe(self._printerProfileUpdated);
-            self.settingsViewModel.printerProfiles.currentProfileData().heatedBed.subscribe(self._printerProfileUpdated());
+            self.settingsViewModel.printerProfiles.currentProfileData().heatedBed.subscribe(self._printerProfileUpdated);
         });
 
         self.temperatures = [];
@@ -248,8 +251,11 @@ $(function() {
                         targets = self.temperatures[type].target;
                     }
 
-                    var actualTemp = actuals && actuals.length ? formatTemperature(actuals[actuals.length - 1][1]) : "-";
-                    var targetTemp = targets && targets.length ? formatTemperature(targets[targets.length - 1][1]) : "-";
+                    var showFahrenheit = (self.settingsViewModel.settings !== undefined )
+                                         ? self.settingsViewModel.settings.appearance.showFahrenheitAlso()
+                                         : false;
+                    var actualTemp = actuals && actuals.length ? formatTemperature(actuals[actuals.length - 1][1], showFahrenheit) : "-";
+                    var targetTemp = targets && targets.length ? formatTemperature(targets[targets.length - 1][1], showFahrenheit) : "-";
 
                     data.push({
                         label: gettext("Actual") + " " + heaterOptions[type].name + ": " + actualTemp,
@@ -284,7 +290,7 @@ $(function() {
                 }
             });
             return maxTemp;
-        }
+        };
 
         self.setTarget = function(item) {
             var value = item.newTarget();
@@ -385,7 +391,11 @@ $(function() {
                 return;
             }
             self.updatePlot();
-        }
+        };
+
+        self.onStartupComplete = function() {
+            self._printerProfileUpdated();
+        };
 
     }
 

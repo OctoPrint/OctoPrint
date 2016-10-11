@@ -11,19 +11,19 @@ $(function() {
         self.setup = ko.observable(false);
         self.decision = ko.observable();
 
-        self.passwordMismatch = ko.computed(function() {
+        self.passwordMismatch = ko.pureComputed(function() {
             return self.password() != self.confirmedPassword();
         });
 
-        self.validUsername = ko.computed(function() {
+        self.validUsername = ko.pureComputed(function() {
             return self.username() && self.username().trim() != "";
         });
 
-        self.validPassword = ko.computed(function() {
+        self.validPassword = ko.pureComputed(function() {
             return self.password() && self.password().trim() != "";
         });
 
-        self.validData = ko.computed(function() {
+        self.validData = ko.pureComputed(function() {
             return !self.passwordMismatch() && self.validUsername() && self.validPassword();
         });
 
@@ -102,6 +102,36 @@ $(function() {
         }
     }
 
+    function CoreWizardServerCommandsViewModel(parameters) {
+        var self = this;
+
+        self.settingsViewModel = parameters[0];
+    }
+
+    function CoreWizardPrinterProfileViewModel(parameters) {
+        var self = this;
+
+        self.printerProfiles = parameters[0];
+
+        self.editor = self.printerProfiles.createProfileEditor();
+        self.editorLoaded = ko.observable(false);
+
+        self.onStartup = function() {
+            OctoPrint.printerprofiles.get("_default")
+                .done(function(data) {
+                    self.editor.fromProfileData(data);
+                    self.editorLoaded(true);
+                });
+        };
+
+        self.onWizardFinish = function() {
+            OctoPrint.printerprofiles.update("_default", self.editor.toProfileData())
+                .done(function() {
+                    self.printerProfiles.requestData();
+                });
+        };
+    }
+
     OCTOPRINT_VIEWMODELS.push([
         CoreWizardAclViewModel,
         ["loginStateViewModel"],
@@ -110,5 +140,13 @@ $(function() {
         CoreWizardWebcamViewModel,
         ["settingsViewModel"],
         "#wizard_plugin_corewizard_webcam"
+    ], [
+        CoreWizardServerCommandsViewModel,
+        ["settingsViewModel"],
+        "#wizard_plugin_corewizard_servercommands"
+    ], [
+        CoreWizardPrinterProfileViewModel,
+        ["printerProfilesViewModel"],
+        "#wizard_plugin_corewizard_printerprofile"
     ]);
 });

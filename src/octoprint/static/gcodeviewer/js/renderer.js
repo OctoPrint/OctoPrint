@@ -490,7 +490,19 @@ GCODE.renderer = (function(){
                     ctx.lineWidth = renderOptions['extrusionWidth'];
                     ctx.beginPath();
                     ctx.moveTo(prevX, prevY);
-                    ctx.lineTo(x*zoomFactor,y*zoomFactor);
+                    if (cmds[i].direction !== undefined && cmds[i].direction != 0){
+                        var cmd = cmds[i];
+                        var di = cmd.i*zoomFactor;
+                        var dj = -1*cmd.j*zoomFactor; // Y-coordinate is inverted
+                        var centerX = prevX+di;
+                        var centerY = prevY+dj;
+                        var startAngle = Math.atan2(prevY-centerY, prevX - centerX);
+                        var endAngle = Math.atan2(y*zoomFactor-centerY, x*zoomFactor - centerX);
+                        var radius=Math.sqrt(di*di+dj*dj);
+                        ctx.arc(centerX,centerY,radius,startAngle,endAngle,cmd.direction<0); // Y-coordinate is inverted so direction is also inverted
+                    } else {
+                        ctx.lineTo(x*zoomFactor,y*zoomFactor);
+                    }
                     ctx.stroke();
                 } else {
                     // we were previously retracting, now we are restarting => draw dot if configured to do so

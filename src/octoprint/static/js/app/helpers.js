@@ -228,7 +228,7 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
             return;
 
         var filters = self.currentFilters();
-        filters.pop(filter);
+        filters = _.without(filters, filter);
         self.currentFilters(filters);
         self._saveCurrentFiltersToLocalStorage();
 
@@ -242,7 +242,7 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
         // determine comparator
         var comparator = undefined;
         var currentSorting = self.currentSorting();
-        if (typeof currentSorting !== undefined && typeof self.supportedSorting[currentSorting] !== undefined) {
+        if (typeof currentSorting !== 'undefined' && typeof self.supportedSorting[currentSorting] !== 'undefined') {
             comparator = self.supportedSorting[currentSorting];
         }
 
@@ -252,17 +252,17 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
         // filter if necessary
         var filters = self.currentFilters();
         _.each(filters, function(filter) {
-            if (typeof filter !== undefined && typeof supportedFilters[filter] !== undefined)
+            if (typeof filter !== 'undefined' && typeof supportedFilters[filter] !== 'undefined')
                 result = _.filter(result, supportedFilters[filter]);
         });
 
         // search if necessary
-        if (typeof self.searchFunction !== undefined && self.searchFunction) {
+        if (typeof self.searchFunction !== 'undefined' && self.searchFunction) {
             result = _.filter(result, self.searchFunction);
         }
 
         // sort if necessary
-        if (typeof comparator !== undefined)
+        if (typeof comparator !== 'undefined')
             result.sort(comparator);
 
         // set result list
@@ -363,7 +363,7 @@ function bytesFromSize(size) {
 
 function formatDuration(seconds) {
     if (!seconds) return "-";
-    if (seconds < 0) return "00:00:00";
+    if (seconds < 1) return "00:00:00";
 
     var s = seconds % 60;
     var m = (seconds % 3600) / 60;
@@ -373,8 +373,7 @@ function formatDuration(seconds) {
 }
 
 function formatFuzzyEstimation(seconds, base) {
-    if (!seconds) return "-";
-    if (seconds < 0) return "-";
+    if (!seconds || seconds < 1) return "-";
 
     var m;
     if (base != undefined) {
@@ -385,6 +384,118 @@ function formatFuzzyEstimation(seconds, base) {
 
     m.add(seconds, "s");
     return m.fromNow(true);
+}
+
+function formatFuzzyPrintTime(totalSeconds) {
+    /**
+     * Formats a print time estimate in a very fuzzy way.
+     *
+     * Accuracy decreases the higher the estimation is:
+     *
+     *   * less than 30s: "a couple of seconds"
+     *   * 30s to a minute: "less than a minute"
+     *   * 1 to 30min: rounded to full minutes, above 30s is minute + 1 ("27 minutes", "2 minutes")
+     *   * 30min to 40min: "40 minutes"
+     *   * 40min to 50min: "50 minutes"
+     *   * 50min to 1h: "1 hour"
+     *   * 1 to 12h: rounded to half hours, 15min to 45min is ".5", above that hour + 1 ("4 hours", "2.5 hours")
+     *   * 12 to 24h: rounded to full hours, above 30min is hour + 1, over 23.5h is "1 day"
+     *   * Over a day: rounded to half days, 8h to 16h is ".5", above that days + 1 ("1 day", "4 days", "2.5 days")
+     */
+
+    if (!totalSeconds || totalSeconds < 1) return "-";
+
+    var d = moment.duration(totalSeconds, "seconds");
+
+    var seconds = d.seconds();
+    var minutes = d.minutes();
+    var hours = d.hours();
+    var days = d.asDays();
+
+    var replacements = {
+        days: days,
+        hours: hours,
+        minutes: minutes,
+        seconds: seconds,
+        totalSeconds: totalSeconds
+    };
+
+    var text = "-";
+
+    if (days >= 1) {
+        // days
+        if (hours >= 16) {
+            replacements.days += 1;
+            text = gettext("%(days)d days");
+        } else if (hours >= 8 && hours < 16) {
+            text = gettext("%(days)d.5 days");
+        } else {
+            if (days == 1) {
+                text = gettext("%(days)d day");
+            } else {
+                text = gettext("%(days)d days");
+            }
+        }
+    } else if (hours >= 1) {
+        // only hours
+        if (hours < 12) {
+            if (minutes < 15) {
+                // less than .15 => .0
+                if (hours == 1) {
+                    text = gettext("%(hours)d hour");
+                } else {
+                    text = gettext("%(hours)d hours");
+                }
+            } else if (minutes >= 15 && minutes < 45) {
+                // between .25 and .75 => .5
+                text = gettext("%(hours)d.5 hours");
+            } else {
+                // over .75 => hours + 1
+                replacements.hours += 1;
+                text = gettext("%(hours)d hours");
+            }
+        } else {
+            if (hours == 23 && minutes > 30) {
+                // over 23.5 hours => 1 day
+                text = gettext("1 day");
+            } else {
+                if (minutes > 30) {
+                    // over .5 => hours + 1
+                    replacements.hours += 1;
+                }
+                text = gettext("%(hours)d hours");
+            }
+        }
+    } else if (minutes >= 1) {
+        // only minutes
+        if (minutes < 2) {
+            if (seconds < 30) {
+                text = gettext("a minute");
+            } else {
+                text = gettext("2 minutes");
+            }
+        } else if (minutes < 30) {
+            if (seconds > 30) {
+                replacements.minutes += 1;
+            }
+            text = gettext("%(minutes)d minutes");
+        } else if (minutes <= 40) {
+            text = gettext("40 minutes");
+        } else if (minutes <= 50) {
+            text = gettext("50 minutes");
+        } else {
+            text = gettext("1 hour");
+        }
+    } else {
+        // only seconds
+        if (seconds < 30) {
+            text = gettext("a couple of seconds");
+        } else {
+            text = gettext("less than a minute");
+        }
+    }
+
+    return _.sprintf(text, replacements);
 }
 
 function formatDate(unixTimestamp) {
@@ -411,9 +522,13 @@ function cleanTemperature(temp) {
     return temp;
 }
 
-function formatTemperature(temp) {
+function formatTemperature(temp, showF) {
     if (!temp || temp < 10) return gettext("off");
-    return _.sprintf("%.1f&deg;C", temp);
+    if (showF) {
+        return _.sprintf("%.1f&deg;C (%.1f&deg;F)", temp, temp * 9 / 5 + 32);
+    } else {
+        return _.sprintf("%.1f&deg;C", temp);
+    }
 }
 
 function pnotifyAdditionalInfo(inner) {
@@ -525,6 +640,7 @@ function showConfirmationDialog(msg, onacknowledge, options) {
     var proceed = options.proceed || gettext("Proceed");
     var proceedClass = options.proceedClass || "danger";
     var onproceed = options.onproceed || undefined;
+    var dialogClass = options.dialogClass || "";
 
     var modalHeader = $('<a href="javascript:void(0)" class="close" data-dismiss="modal" aria-hidden="true">&times;</a><h3>' + title + '</h3>');
     var modalBody = $('<p>' + message + '</p><p>' + question + '</p>');
@@ -537,6 +653,7 @@ function showConfirmationDialog(msg, onacknowledge, options) {
 
     var modal = $('<div></div>')
         .addClass('modal hide fade')
+        .addClass(dialogClass)
         .append($('<div></div>').addClass('modal-header').append(modalHeader))
         .append($('<div></div>').addClass('modal-body').append(modalBody))
         .append($('<div></div>').addClass('modal-footer').append(cancelButton).append(proceedButton));
@@ -725,7 +842,7 @@ function callViewModelsIf(allViewModels, method, condition, callback) {
                 }
             } else {
                 // provide the method to the callback
-                callback(viewModel[method]);
+                callback(viewModel[method], viewModel);
             }
         }
     });

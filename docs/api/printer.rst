@@ -4,12 +4,6 @@
 Printer operations
 ******************
 
-.. warning::
-
-   This part of the API is still heavily in development, especially anything that has to do with temperature control.
-   If you happen to want to develop against it, you should drop me an email to make sure I can give you a heads-up when
-   something changes.
-
 .. contents::
 
 Printer control is mostly achieved through the use of commands, issued to resources reflecting components of the
@@ -34,6 +28,29 @@ SD card
   See :ref:`sec-api-printer-sdcommand`.
 
 Besides that, OctoPrint also provides a :ref:`full state report of the printer <sec-api-printer-state>`.
+
+.. note::
+
+   You might be wondering why all command responses below only return a ``204`` with an empty body instead of
+   the output of the just sent commands. There are two reasons for this.
+
+   OctoPrint's internal webserver is single threaded and can only handle one request at a time. This is
+   not a problem generally since asynchronous programming allows to just have one request which is waiting for
+   data from a long running backend operation to sleep while handling other requests. The internal framework
+   used for providing the REST API though, Flask, is based on WSGI, which is synchrounous in nature. This means
+   that it is impossible to wait in a non blocking wait while handling a request on the REST API. So in order to
+   return the response of a command sent to the printer, the single thread of the webserver would have to be blocked
+   by the API while the response wasn't available yet. Which in turn would mean that the whole web server would
+   stop responding while waiting for the printer to reply, which, depending on the command in question (e.g. homing)
+   can take a long while. That would be a bad idea.
+
+   The second reason is that thanks to a large number of firmwares out there having a `particular bug <https://github.com/MarlinFirmware/Marlin/commit/acc0e7527914948656ccabba35f7faedc94ef885>`_
+   that makes it impossible to track the output of sent commands, identifying the correct response to a given
+   sent command is pretty much hit-and-miss. That situation gets even worse considering that it's next to impossible
+   to distinguish firmware versions which have that bug from firmware versions which don't have it.
+
+   Hence OctoPrint currently doesn't offer any synchronous way of retrieving the output of responses from the printer.
+   If you need the printer's serial communication, you'll need to subscribe to :ref:`push updates <sec-api-push>`.
 
 .. _sec-api-printer-state:
 
@@ -191,9 +208,14 @@ Issue a print head command
    jog
      Jogs the print head (relatively) by a defined amount in one or more axes. Additional parameters are:
 
-     * ``x``: Optional. Amount to jog print head on x axis, must be a valid number corresponding to the distance to travel in mm.
-     * ``y``: Optional. Amount to jog print head on y axis, must be a valid number corresponding to the distance to travel in mm.
-     * ``z``: Optional. Amount to jog print head on z axis, must be a valid number corresponding to the distance to travel in mm.
+     * ``x``: Optional. Amount/coordinate to jog print head on x axis, must be a valid number corresponding to the distance to travel in mm.
+     * ``y``: Optional. Amount/coordinate to jog print head on y axis, must be a valid number corresponding to the distance to travel in mm.
+     * ``z``: Optional. Amount/coordinate to jog print head on z axis, must be a valid number corresponding to the distance to travel in mm.
+     * ``absolute``: Optional. Boolean value specifying whether to move relative to current position (provided
+       axes values are relative amounts) or to absolute position (provided axes values are coordinates)
+     * ``speed``: Optiona. Speed at which to move. If not provided, minimum speed for all selected axes from printer
+       profile will be used. If provided but ``false``, no speed parameter will be appended to the command. Otherwise
+       interpreted as an integer signifying the speed in mm/s, to append to the command.
 
    home
      Homes the print head in all of the given axes. Additional parameters are:
@@ -209,6 +231,8 @@ Issue a print head command
    Otherwise a :http:statuscode:`409` is returned.
 
    Upon success, a status code of :http:statuscode:`204` and an empty body is returned.
+
+   Requires user rights.
 
    **Example Jog Request**
 
@@ -324,6 +348,8 @@ Issue a tool command
    ``extrude`` -- not printing. Otherwise a :http:statuscode:`409` is returned.
 
    Upon success, a status code of :http:statuscode:`204` and an empty body is returned.
+
+   Requires user rights.
 
    **Example Target Temperature Request**
 
@@ -568,6 +594,8 @@ Issue a bed command
    If no heated bed is configured for the currently selected printer profile, the resource will return
    an :http:statuscode:`409`.
 
+   Requires user rights.
+
    **Example Target Temperature Request**
 
    Set the target temperature for the printer's heated bed to 75°C.
@@ -699,7 +727,7 @@ Issue an SD command
 
    init
      Initializes the printer's SD card, making it available for use. This also includes an initial retrieval of the
-     list of files currently stored on the SD card, so after issueing that command a :ref:`retrieval of the files
+     list of files currently stored on the SD card, so after issuing that command a :ref:`retrieval of the files
      on SD card <sec-api-fileops-retrievelocation>` will return a successful result.
 
      .. note::
@@ -716,6 +744,8 @@ Issue an SD command
      if the card has not been initialized yet (see the ``init`` command and :ref:`SD state <sec-api-printer-sdstate>`).
 
    Upon success, a status code of :http:statuscode:`204` and an empty body is returned.
+
+   Requires user rights.
 
    **Example Init Request**
 
@@ -829,6 +859,8 @@ Send an arbitrary command to the printer
 
    If successful returns a :http:statuscode:`204` and an empty body.
 
+   Requires user rights.
+
    **Example for sending a single command**
 
    .. sourcecode:: http
@@ -872,8 +904,8 @@ Send an arbitrary command to the printer
 
 .. _sec-api-printer-datamodel:
 
-Datamodel
-=========
+Data model
+==========
 
 .. _sec-api-printer-datamodel-fullstate:
 

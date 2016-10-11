@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
@@ -11,10 +11,10 @@ import sys
 
 from octoprint.cli import pass_octoprint_ctx, bulk_options, standard_options
 
-def run_server(basedir, configfile, host, port, debug, allow_root, logging_config, verbosity):
+def run_server(basedir, configfile, host, port, debug, allow_root, logging_config, verbosity, octoprint_daemon = None):
 	"""Initializes the environment and starts up the server."""
 
-	from octoprint import init_platform, __display_version__
+	from octoprint import init_platform, __display_version__, FatalStartupError
 
 	def log_startup(_):
 		logging.getLogger("octoprint.server").info("Starting OctoPrint {}".format(__display_version__))
@@ -29,17 +29,27 @@ def run_server(basedir, configfile, host, port, debug, allow_root, logging_confi
 			          "install PyOpenSSL plus its dependencies. For details see "
 			          "https://urllib3.readthedocs.org/en/latest/security.html#openssl-pyopenssl")
 
-	settings, _, plugin_manager = init_platform(basedir,
-	                                            configfile,
-	                                            logging_file=logging_config,
-	                                            debug=debug,
-	                                            verbosity=verbosity,
-	                                            uncaught_logger=__name__,
-	                                            after_logging=log_startup)
-
-	from octoprint.server import Server
-	octoprint_server = Server(settings=settings, plugin_manager=plugin_manager, host=host, port=port, debug=debug, allow_root=allow_root)
-	octoprint_server.run()
+	try:
+		settings, _, plugin_manager = init_platform(basedir,
+		                                            configfile,
+		                                            logging_file=logging_config,
+		                                            debug=debug,
+		                                            verbosity=verbosity,
+		                                            uncaught_logger=__name__,
+		                                            after_logging=log_startup)
+	except FatalStartupError as e:
+		click.echo(e.message, err=True)
+		click.echo("There was a fatal error starting up OctoPrint.", err=True)
+	else:
+		from octoprint.server import Server
+		octoprint_server = Server(settings=settings,
+		                          plugin_manager=plugin_manager,
+		                          host=host,
+		                          port=port,
+		                          debug=debug,
+		                          allow_root=allow_root,
+		                          octoprint_daemon=octoprint_daemon)
+		octoprint_server.run()
 
 #~~ server options
 
@@ -114,7 +124,7 @@ def daemon_command(octoprint_ctx, pid, host, port, logging, allow_root, debug, c
 			self._verbosity = verbosity
 
 		def run(self):
-			run_server(self._basedir, self._configfile, self._host, self._port, self._debug, self._allow_root, self._logging_config, self._verbosity)
+			run_server(self._basedir, self._configfile, self._host, self._port, self._debug, self._allow_root, self._logging_config, self._verbosity, self)
 
 	octoprint_daemon = OctoPrintDaemon(pid, octoprint_ctx.basedir, octoprint_ctx.configfile,
 	                                   host, port, debug, allow_root, logging, octoprint_ctx.verbosity)

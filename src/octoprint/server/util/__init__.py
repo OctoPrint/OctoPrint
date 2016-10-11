@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -92,6 +92,20 @@ def noCachingResponseHandler(resp):
 	return flask.add_non_caching_response_headers(resp)
 
 
+def noCachingExceptGetResponseHandler(resp):
+	"""
+	``after_request`` handler for blueprints which shall set no caching headers
+	on their responses to any requests that are not sent with method ``GET``.
+
+	See :func:`noCachingResponseHandler`.
+	"""
+
+	if _flask.request.method == "GET":
+		return flask.add_no_max_age_response_headers(resp)
+	else:
+		return flask.add_non_caching_response_headers(resp)
+
+
 def optionsAllowOrigin(request):
 	"""
 	Shortcut for request handling for CORS OPTIONS requests to set CORS headers.
@@ -155,92 +169,3 @@ def get_plugin_hash():
 	plugin_hash = hashlib.sha1()
 	plugin_hash.update(",".join(ui_plugins))
 	return plugin_hash.hexdigest()
-
-
-#~~ reverse proxy compatible WSGI middleware
-
-
-class ReverseProxied(object):
-	"""
-	Wrap the application in this middleware and configure the
-	front-end server to add these headers, to let you quietly bind
-	this to a URL other than / and to an HTTP scheme that is
-	different than what is used locally.
-
-	In nginx:
-
-	.. code-block:: none
-
-	   location /myprefix {
-	       proxy_pass http://192.168.0.1:5001;
-	       proxy_set_header Host $host;
-	       proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-	       proxy_set_header X-Scheme $scheme;
-	       proxy_set_header X-Script-Name /myprefix;
-	   }
-
-	Alternatively define prefix and scheme via config.yaml:
-
-	.. code-block:: yaml
-
-	   server:
-	     baseUrl: /myprefix
-	     scheme: http
-
-	:param app: the WSGI application
-	:param header_script_name: the HTTP header in the wsgi environment from which to determine the prefix
-	:param header_scheme: the HTTP header in the wsgi environment from which to determine the scheme
-	:param header_host: the HTTP header in the wsgi environment from which to determine the host for which to generate external URLs
-	:param base_url: the prefix to use as fallback if headers are not set
-	:param scheme: the scheme to use as fallback if headers are not set
-	:param host: the host to use as fallback if headers are not set
-	"""
-
-	def __init__(self, app, header_prefix="x-script-name", header_scheme="x-scheme", header_host="x-forwarded-host", base_url="", scheme="", host=""):
-		self.app = app
-
-		# headers for prefix & scheme & host, converted to conform to WSGI format
-		to_wsgi_format = lambda header: "HTTP_" + header.upper().replace("-", "_")
-		self._header_prefix = to_wsgi_format(header_prefix)
-		self._header_scheme = to_wsgi_format(header_scheme)
-		self._header_host = to_wsgi_format(header_host)
-
-		# fallback prefix & scheme & host from config
-		self._fallback_prefix = base_url
-		self._fallback_scheme = scheme
-		self._fallback_host = host
-
-	def __call__(self, environ, start_response):
-		# determine prefix
-		prefix = environ.get(self._header_prefix, "")
-		if not prefix:
-			prefix = self._fallback_prefix
-
-		# rewrite SCRIPT_NAME and if necessary also PATH_INFO based on prefix
-		if prefix:
-			environ["SCRIPT_NAME"] = prefix
-			path_info = environ["PATH_INFO"]
-			if path_info.startswith(prefix):
-				environ["PATH_INFO"] = path_info[len(prefix):]
-
-		# determine scheme
-		scheme = environ.get(self._header_scheme, "")
-		if not scheme:
-			scheme = self._fallback_scheme
-
-		# rewrite wsgi.url_scheme based on scheme
-		if scheme:
-			environ["wsgi.url_scheme"] = scheme
-
-		# determine host
-		host = environ.get(self._header_host, "")
-		if not host:
-			host = self._fallback_host
-
-		# rewrite host header based on host
-		if host:
-			environ["HTTP_HOST"] = host
-
-		# call wrapped app with rewritten environment
-		return self.app(environ, start_response)
-

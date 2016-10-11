@@ -1,0 +1,56 @@
+table {
+  th, td {
+    &.settings_plugin_announcements_channels_name {
+      text-overflow: ellipsis;
+      text-align: left;
+    }
+
+    &.settings_plugin_announcements_channels_actions {
+      text-align: center;
+      width: 80px;
+
+      a {
+        text-decoration: none;
+        color: #000;
+
+        &.disabled {
+          color: #ccc;
+          cursor: default;
+        }
+      }
+    }
+  }
+}
+
+#plugin_announcements_dialog {
+  .unread {
+    font-weight: bold;
+  }
+
+  article {
+    padding-right: 20px;
+
+    &.read {
+      opacity: 0.5;
+    }
+
+    &.read:hover {
+      opacity: 1;
+    }
+
+    .actions {
+      background-color: #f5f5f5;
+      border-radius: 2px;
+      padding: 2px 5px;
+      margin-top: 5px;
+
+      .markread {
+        float: right;
+      }
+
+      a {
+        color: black;
+      }
+    }
+  }
+}

@@ -1,9 +1,11 @@
+from __future__ import absolute_import, division, print_function
 import os, struct, sys, time
 
 from serial import Serial
 from serial import SerialException
+from builtins import range
 
-import ispBase, intelHex
+from . import ispBase, intelHex
 
 class Stk500v2(ispBase.IspBase):
 	def __init__(self):
@@ -66,8 +68,8 @@ class Stk500v2(ispBase.IspBase):
 		else:
 			self.sendMessage([0x06, 0x00, 0x00, 0x00, 0x00])
 		
-		loadCount = (len(flashData) + pageSize - 1) / pageSize
-		for i in xrange(0, loadCount):
+		loadCount = (len(flashData) + pageSize - 1) // pageSize
+		for i in range(0, loadCount):
 			recv = self.sendMessage([0x13, pageSize >> 8, pageSize & 0xFF, 0xc1, 0x0a, 0x40, 0x4c, 0x20, 0x00, 0x00] + flashData[(i * pageSize):(i * pageSize + pageSize)])
 			if self.progressCallback != None:
 				self.progressCallback(i + 1, loadCount*2)
@@ -80,12 +82,12 @@ class Stk500v2(ispBase.IspBase):
 		else:
 			self.sendMessage([0x06, 0x00, 0x00, 0x00, 0x00])
 		
-		loadCount = (len(flashData) + 0xFF) / 0x100
-		for i in xrange(0, loadCount):
+		loadCount = (len(flashData) + 0xFF) // 0x100
+		for i in range(0, loadCount):
 			recv = self.sendMessage([0x14, 0x01, 0x00, 0x20])[2:0x102]
 			if self.progressCallback != None:
 				self.progressCallback(loadCount + i + 1, loadCount*2)
-			for j in xrange(0, 0x100):
+			for j in range(0, 0x100):
 				if i * 0x100 + j < len(flashData) and flashData[i * 0x100 + j] != recv[j]:
 					raise ispBase.IspError('Verify error at: 0x%x' % (i * 0x100 + j))
 

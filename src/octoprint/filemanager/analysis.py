@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -7,7 +7,10 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 
 import logging
-import Queue as queue
+try:
+	import queue
+except ImportError:
+	import Queue as queue
 import os
 import threading
 import collections
@@ -18,12 +21,13 @@ from octoprint.events import Events, eventManager
 import octoprint.util.gcodeInterpreter as gcodeInterpreter
 
 
-class QueueEntry(collections.namedtuple("QueueEntry", "path, type, location, absolute_path, printer_profile")):
+class QueueEntry(collections.namedtuple("QueueEntry", "name, path, type, location, absolute_path, printer_profile")):
 	"""
 	A :class:`QueueEntry` for processing through the :class:`AnalysisQueue`. Wraps the entry's properties necessary
 	for processing.
 
 	Arguments:
+	    name (str): Name of the file to analyze.
 	    path (str): Storage location specific path to the file to analyze.
 	    type (str): Type of file to analyze, necessary to map to the correct :class:`AbstractAnalysisQueue` sub class.
 	        At the moment, only ``gcode`` is supported here.
@@ -68,9 +72,10 @@ class AnalysisQueue(object):
 
 	def enqueue(self, entry, high_priority=False):
 		if not entry.type in self._queues:
-			return
+			return False
 
 		self._queues[entry.type].enqueue(entry, high_priority=high_priority)
+		return True
 
 	def pause(self):
 		for queue in self._queues.values():
@@ -83,7 +88,13 @@ class AnalysisQueue(object):
 	def _analysis_finished(self, entry, result):
 		for callback in self._callbacks:
 			callback(entry, result)
-		eventManager().fire(Events.METADATA_ANALYSIS_FINISHED, {"file": entry.path, "result": result})
+		eventManager().fire(Events.METADATA_ANALYSIS_FINISHED, {"name": entry.name,
+		                                                        "path": entry.path,
+		                                                        "origin": entry.location,
+		                                                        "result": result,
+
+		                                                        # TODO: deprecated, remove in a future release
+		                                                        "file": entry.path})
 
 class AbstractAnalysisQueue(object):
 	"""
@@ -195,7 +206,13 @@ class AbstractAnalysisQueue(object):
 
 		try:
 			self._logger.info("Starting analysis of {entry}".format(**locals()))
-			eventManager().fire(Events.METADATA_ANALYSIS_STARTED, {"file": entry.path, "type": entry.type})
+			eventManager().fire(Events.METADATA_ANALYSIS_STARTED, {"name": entry.name,
+			                                                       "path": entry.path,
+			                                                       "origin": entry.location,
+			                                                       "type": entry.type,
+
+			                                                       # TODO deprecated, remove in 1.4.0
+			                                                       "file": entry.path})
 			try:
 				result = self._do_analysis(high_priority=high_priority)
 			except TypeError:
@@ -260,6 +277,8 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
 			self._gcode.load(self._current.absolute_path, self._current.printer_profile, throttle=throttle_callback)
 
 			result = dict()
+			result["printingArea"] = self._gcode.printing_area
+			result["dimensions"] = self._gcode.dimensions
 			if self._gcode.totalMoveTimeMinute:
 				result["estimatedPrintTime"] = self._gcode.totalMoveTimeMinute * 60
 			if self._gcode.extrusionAmount:

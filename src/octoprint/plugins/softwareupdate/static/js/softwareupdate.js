@@ -11,11 +11,47 @@
     var checkUrl = url + "check";
     var updateUrl = url + "update";
 
+    exports.checkEntries = function(entries, force, opts) {
+        if (arguments.length == 1 && _.isObject(arguments[0])) {
+            var params = arguments[0];
+            entries = params.entries;
+            force = params.force;
+            opts = params.opts;
+        }
+
+        entries = entries || [];
+        if (typeof entries == "string") {
+            entries = [entries];
+        }
+
+        var data = {};
+        if (!!force) {
+            data.force = true;
+        }
+        if (entries && entries.length) {
+            data.check = entries.join(",");
+        }
+        return OctoPrint.getWithQuery(checkUrl, data, opts);
+    };
+
     exports.check = function(force, opts) {
-        return OctoPrint.get(checkUrl + ((!!force) ? "?force=true" : ""), opts);
+        if (arguments.length == 1 && _.isObject(arguments[0])) {
+            var params = arguments[0];
+            force = params.force;
+            opts = params.opts;
+        }
+
+        return exports.checkEntries({entries: [], force: force, opts: opts});
     };
 
     exports.update = function(entries, force, opts) {
+        if (arguments.length == 1 && _.isObject(arguments[0])) {
+            var params = arguments[0];
+            entries = params.entries;
+            force = params.force;
+            opts = params.opts;
+        }
+
         entries = entries || [];
         if (typeof entries == "string") {
             entries = [entries];
@@ -29,6 +65,12 @@
     };
 
     exports.updateAll = function(force, opts) {
+        if (arguments.length == 1 && _.isObject(arguments[0])) {
+            var params = arguments[0];
+            force = params.force;
+            opts = params.opts;
+        }
+
         var data = {
             force: !!force
         };
@@ -67,14 +109,14 @@ $(function() {
         self.config_cacheTtl = ko.observable();
         self.config_checkoutFolder = ko.observable();
         self.config_checkType = ko.observable();
+        self.config_updateMethod = ko.observable();
+        self.config_releaseChannel = ko.observable();
 
         self.configurationDialog = $("#settings_plugin_softwareupdate_configurationdialog");
         self.confirmationDialog = $("#softwareupdate_confirmation_dialog");
 
-        self.config_availableCheckTypes = [
-            {"key": "github_release", "name": gettext("Release")},
-            {"key": "git_commit", "name": gettext("Commit")}
-        ];
+        self.config_availableCheckTypes = ko.observableArray([]);
+        self.config_availableReleaseChannels = ko.observableArray([]);
 
         self.reloadOverlay = $("#reloadui_overlay");
 
@@ -98,7 +140,7 @@ $(function() {
             5
         );
 
-        self.availableAndPossible = ko.computed(function() {
+        self.availableAndPossible = ko.pureComputed(function() {
             return _.filter(self.versions.items(), function(info) { return info.updateAvailable && info.updatePossible; });
         });
 
@@ -146,7 +188,8 @@ $(function() {
                     softwareupdate: {
                         cache_ttl: parseInt(self.config_cacheTtl()),
                         octoprint_checkout_folder: self.config_checkoutFolder(),
-                        octoprint_type: self.config_checkType()
+                        octoprint_type: self.config_checkType(),
+                        octoprint_release_channel: self.config_releaseChannel()
                     }
                 }
             };
@@ -164,9 +207,33 @@ $(function() {
         };
 
         self._copyConfig = function() {
+            var updateMethod = self.settings.settings.plugins.softwareupdate.octoprint_method();
+
+            var availableCheckTypes = [];
+            if (updateMethod == "update_script" || updateMethod == "python") {
+                availableCheckTypes = [{"key": "github_release", "name": gettext("Release")},
+                                       {"key": "git_commit", "name": gettext("Commit")}];
+            } else {
+                availableCheckTypes = [];
+            }
+            self.config_availableCheckTypes(availableCheckTypes);
+
+            var availableReleaseChannels = [];
+            _.each(self.settings.settings.plugins.softwareupdate.octoprint_branch_mappings(), function(mapping) {
+                availableReleaseChannels.push({"key": mapping.branch(), "name": gettext(mapping.name() || mapping.branch())});
+            });
+            self.config_availableReleaseChannels(availableReleaseChannels);
+
+            self.config_updateMethod(updateMethod);
             self.config_cacheTtl(self.settings.settings.plugins.softwareupdate.cache_ttl());
             self.config_checkoutFolder(self.settings.settings.plugins.softwareupdate.octoprint_checkout_folder());
             self.config_checkType(self.settings.settings.plugins.softwareupdate.octoprint_type());
+            self.config_releaseChannel(self.settings.settings.plugins.softwareupdate.octoprint_release_channel());
+        };
+
+        self._copyConfigBack = function() {
+            self.settings.settings.plugins.softwareupdate.octoprint_checkout_folder(self.config_checkoutFolder());
+            self.settings.settings.plugins.softwareupdate.octoprint_type(self.config_checkType());
         };
 
         self.fromCheckResponse = function(data, ignoreSeen, showIfNothingNew) {
@@ -200,7 +267,7 @@ $(function() {
             var octoprint = data.information["octoprint"];
             if (octoprint && octoprint.hasOwnProperty("check")) {
                 var check = octoprint.check;
-                if (BRANCH != "master" && check["type"] == "github_release") {
+                if (check["released_version"] === false && check["type"] == "github_release") {
                     self.octoprintUnreleased(true);
                 } else {
                     self.octoprintUnreleased(false);
@@ -208,8 +275,8 @@ $(function() {
 
                 var checkoutFolder = (check["checkout_folder"] || "").trim();
                 var updateFolder = (check["update_folder"] || "").trim();
-                var checkType = check["type"] || "";
-                if ((checkType == "github_release" || checkType == "git_commit") && checkoutFolder == "" && updateFolder == "") {
+                var needsFolder = check["update_script"] || false;
+                if (needsFolder && checkoutFolder == "" && updateFolder == "") {
                     self.octoprintUnconfigured(true);
                 } else {
                     self.octoprintUnconfigured(false);
@@ -375,7 +442,7 @@ $(function() {
         };
 
         self.confirmUpdate = function() {
-            self.confirmationDialog.hide();
+            self.confirmationDialog.modal("hide");
             self.performUpdate(self.forceUpdate,
                 _.map(self.availableAndPossible(), function(info) { return info.key }));
         };
@@ -413,6 +480,23 @@ $(function() {
 
         self._scrollWorkingOutputToEnd = function() {
             self.workingOutput.scrollTop(self.workingOutput[0].scrollHeight - self.workingOutput.height());
+        };
+
+        self.onWizardTabChange = function(current, next) {
+            if (next && _.startsWith(next, "wizard_plugin_softwareupdate")) {
+                // switching to the plugin wizard tab
+                self._copyConfig();
+            } else if (current && _.startsWith(current, "wizard_plugin_softwareupdate")) {
+                // switching away from the plugin wizard tab
+                self._copyConfigBack();
+            }
+
+            return true;
+        };
+
+        self.onAfterWizardFinish = function() {
+            // we might have changed our config, so we need to refresh our check data from the server
+            self.performCheck();
         };
 
         self.onStartup = function() {
@@ -616,6 +700,6 @@ $(function() {
     ADDITIONAL_VIEWMODELS.push([
         SoftwareUpdateViewModel,
         ["loginStateViewModel", "printerStateViewModel", "settingsViewModel"],
-        ["#settings_plugin_softwareupdate", "#softwareupdate_confirmation_dialog"]
+        ["#settings_plugin_softwareupdate", "#softwareupdate_confirmation_dialog", "#wizard_plugin_softwareupdate"]
     ]);
 });

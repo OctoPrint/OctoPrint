@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -51,7 +51,7 @@ class RepeatedTimerTest(unittest.TestCase):
 		# wait for it
 		timer.join()
 
-		self.assertEquals(5, timer_task.call_count)
+		self.assertEqual(5, timer_task.call_count)
 
 	def test_finished_callback(self):
 		countdown = Countdown(5)
@@ -66,7 +66,7 @@ class RepeatedTimerTest(unittest.TestCase):
 		# wait for it
 		timer.join()
 
-		self.assertEquals(1, on_finished.call_count)
+		self.assertEqual(1, on_finished.call_count)
 
 	def test_condition_callback(self):
 		countdown = Countdown(5)
@@ -85,8 +85,8 @@ class RepeatedTimerTest(unittest.TestCase):
 		# wait for it
 		timer.join()
 
-		self.assertEquals(1, on_condition_false.call_count)
-		self.assertEquals(0, on_cancelled.call_count)
+		self.assertEqual(1, on_condition_false.call_count)
+		self.assertEqual(0, on_cancelled.call_count)
 
 	def test_cancelled_callback(self):
 		countdown = Countdown(5)
@@ -109,8 +109,8 @@ class RepeatedTimerTest(unittest.TestCase):
 		timer.cancel()
 		timer.join()
 
-		self.assertEquals(0, on_condition_false.call_count)
-		self.assertEquals(1, on_cancelled.call_count)
+		self.assertEqual(0, on_condition_false.call_count)
+		self.assertEqual(1, on_cancelled.call_count)
 
 	def test_run_first(self):
 		timer_task = mock.MagicMock()
@@ -126,7 +126,7 @@ class RepeatedTimerTest(unittest.TestCase):
 		timer.join()
 
 		# should have run once
-		self.assertEquals(1, timer_task.call_count)
+		self.assertEqual(1, timer_task.call_count)
 
 	def test_not_run_first(self):
 		timer_task = mock.MagicMock()
@@ -141,7 +141,7 @@ class RepeatedTimerTest(unittest.TestCase):
 		timer.cancel()
 		timer.join()
 
-		self.assertEquals(0, timer_task.call_count)
+		self.assertEqual(0, timer_task.call_count)
 
 	def test_adjusted_interval(self):
 		increasing_interval = IncreasingInterval(3, 1)
@@ -159,7 +159,7 @@ class RepeatedTimerTest(unittest.TestCase):
 		timer.join()
 		duration = time.time() - start_time
 
-		self.assertEquals(3, timer_task.call_count)
+		self.assertEqual(3, timer_task.call_count)
 		self.assertGreaterEqual(duration, 6)
 		self.assertLess(duration, 7)
 
@@ -177,4 +177,4 @@ class RepeatedTimerTest(unittest.TestCase):
 		timer.condition = lambda: False
 		timer.join()
 
-		self.assertEquals(1, timer_task.call_count)
+		self.assertEqual(1, timer_task.call_count)

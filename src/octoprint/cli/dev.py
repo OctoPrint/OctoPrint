@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -68,6 +68,12 @@ class OctoPrintDevelCommands(click.MultiCommand):
 		except ImportError:
 			return None
 
+		try:
+			# we depend on Cookiecutter >= 1.4
+			from cookiecutter.prompt import StrictEnvironment
+		except ImportError:
+			return None
+
 		import contextlib
 
 		@contextlib.contextmanager
@@ -100,10 +106,9 @@ class OctoPrintDevelCommands(click.MultiCommand):
 			original_prompt_for_config = cookiecutter.main.prompt_for_config
 
 			def custom_prompt_for_config(context, no_input=False):
-				import cookiecutter.prompt
+				cookiecutter_dict = dict()
 
-				cookiecutter_dict = {}
-				env = cookiecutter.prompt.Environment()
+				env = StrictEnvironment()
 
 				for key, raw in context['cookiecutter'].items():
 					if key in options:
@@ -204,11 +209,6 @@ class OctoPrintDevelCommands(click.MultiCommand):
 		return command
 
 	def plugin_uninstall(self):
-		from octoprint.util.pip import PipCaller
-		pip_command = PipCaller.autodetect_pip()
-		if pip_command is None:
-			return
-
 		@click.command("uninstall")
 		@click.argument("name")
 		def command(name):
@@ -220,7 +220,7 @@ class OctoPrintDevelCommands(click.MultiCommand):
 				click.echo("This doesn't look like an OctoPrint plugin name")
 				sys.exit(1)
 
-			call = [pip_command, "uninstall", "--yes", name]
+			call = [sys.executable, "-m", "pip", "uninstall", "--yes", name]
 			self.command_caller.call(call)
 
 		return command

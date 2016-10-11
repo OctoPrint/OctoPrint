@@ -9,7 +9,7 @@ $(function() {
         self.pathBroken = ko.observable(false);
         self.pathOk = ko.observable(false);
         self.pathText = ko.observable();
-        self.pathHelpVisible = ko.computed(function() {
+        self.pathHelpVisible = ko.pureComputed(function() {
             return self.pathBroken() || self.pathOk();
         });
 
@@ -188,8 +188,7 @@ $(function() {
         };
 
         self.requestData = function() {
-            OctoPrint.slicing.listProfilesForSlicer("cura")
-                .done(self.fromResponse);
+            self.slicingViewModel.requestData();
         };
 
         self.fromResponse = function(data) {
@@ -208,11 +207,17 @@ $(function() {
 
         self.onBeforeBinding = function () {
             self.settings = self.settingsViewModel.settings;
-            self.requestData();
+            //self.requestData();
         };
 
         self.onSettingsHidden = function() {
             self.resetPathTest();
+        };
+
+        self.onSlicingData = function(data) {
+            if (data && data.hasOwnProperty("cura") && data.cura.hasOwnProperty("profiles")) {
+                self.fromResponse(data.cura.profiles);
+            }
         };
 
         self.resetPathTest = function() {

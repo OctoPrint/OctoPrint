@@ -7,17 +7,20 @@
 # The file is processed from top to bottom, the first matching line wins. If <tag> or <reference commit> are left out,
 # the lookup table does not apply to the matched branches
 
-# master shall not use the lookup table, only tags
+# master and rc shall not use the lookup table, only tags
 master
+rc/.*
+prerelease
 
 # neither should disconnected checkouts, e.g. 'git checkout <tag>'
 HEAD
 \(detached.*
 
-# maintenance is currently the branch for preparation of maintenance release 1.2.9
-# so are any fix/... branches
-maintenance 1.2.9 dedadbc9ac0305799e94ae279d3bca131629c4c5 pep440-dev
-fix/.* 1.2.9 dedadbc9ac0305799e94ae279d3bca131629c4c5 pep440-dev
+# maintenance is currently the branch for preparation of maintenance release 1.2.17
+# so are any fix/... and improve/... branches
+maintenance 1.2.17 354042b84d488db38ac1917bb69bd164f4e7f750 pep440-dev
+fix/.* 1.2.17 354042b84d488db38ac1917bb69bd164f4e7f750 pep440-dev
+improve/.* 1.2.17 354042b84d488db38ac1917bb69bd164f4e7f750 pep440-dev
 
 # every other branch is a development branch and thus gets resolved to 1.3.0-dev for now
 .* 1.3.0 198d3450d94be1a2 pep440-dev

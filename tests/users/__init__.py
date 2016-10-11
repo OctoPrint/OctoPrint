@@ -2,7 +2,7 @@
 """
 Unit tests for octoprint.users
 """
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -56,7 +56,7 @@ class UserTestCase(unittest.TestCase):
 	@ddt.unpack
 	def test_get_setting(self, key, expected):
 		value = self.user.get_setting(key)
-		self.assertEquals(expected, value)
+		self.assertEqual(expected, value)
 
 	@ddt.data(
 		("otherkey", "othervalue", dict(otherkey="othervalue"), True),
@@ -109,4 +109,4 @@ class SessionUserTestCase(unittest.TestCase):
 	def test_repr(self):
 		user = octoprint.users.SessionUser(self.user)
 		expected = "SessionUser(id=username,name=username,active=True,user=True,admin=False,session={},created={})".format(user._session, user._created)
-		self.assertEquals(expected, repr(user))
+		self.assertEqual(expected, repr(user))
