@@ -388,17 +388,24 @@ Timelapses
 ----------
 
 CaptureStart
-   A timelapse image has started to be captured.
+   A timelapse frame has started to be captured.
 
    Payload:
 
      * ``file``: the name of the image file to be saved
 
 CaptureDone
-   A timelapse image has completed being captured.
+   A timelapse frame has completed being captured.
 
    Payload:
      * ``file``: the name of the image file that was saved
+
+CaptureFailed
+   A timelapse frame could not be captured.
+
+   Payload:
+     * ``file``: the name of the image file that should have been saved
+     * ``error``: the error that was caught
 
 MovieRendering
    The timelapse movie has started rendering.
@@ -427,6 +434,9 @@ MovieFailed
      * ``movie``: the movie file that would have been created (full path)
      * ``movie_basename``: the movie file that would have been created (only the file name without the path)
      * ``returncode``: the return code of ``ffmpeg`` that indicates the error that occurred
+     * ``reason``: additional machine processable reason string - can be ``returncode`` if ffmpeg
+       returned a non-0 return code, ``no_frames`` if no frames were captured that could be rendered
+       to a timelapse, or ``unknown`` for any other reason of failure to render.
 
 Slicing
 -------

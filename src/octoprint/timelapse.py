@@ -209,35 +209,37 @@ def _create_render_start_handler(name, gcode=None):
 
 		with _job_lock:
 			global current_render_job
-			event_payload = {"gcode": gcode if gcode is not None else "unknown",
-			                 "movie": movie,
-			                 "movie_basename": os.path.basename(movie),
-			                 "movie_prefix": name}
+			payload = dict(gcode=gcode if gcode is not None else "unknown",
+			               movie=movie,
+			               movie_basename=os.path.basename(movie),
+			               movie_prefix=name)
 			current_render_job = dict(prefix=name)
-			current_render_job.update(event_payload)
-		eventManager().fire(Events.MOVIE_RENDERING, event_payload)
+			current_render_job.update(payload)
+		eventManager().fire(Events.MOVIE_RENDERING, payload)
 	return f
 
 
 def _create_render_success_handler(name, gcode=None):
 	def f(movie):
 		delete_unrendered_timelapse(name)
-		event_payload = {"gcode": gcode if gcode is not None else "unknown",
-		                 "movie": movie,
-		                 "movie_basename": os.path.basename(movie),
-		                 "movie_prefix": name}
-		eventManager().fire(Events.MOVIE_DONE, event_payload)
+		payload = dict(gcode=gcode if gcode is not None else "unknown",
+		               movie=movie,
+		               movie_basename=os.path.basename(movie),
+		               movie_prefix=name)
+		eventManager().fire(Events.MOVIE_DONE, payload)
 	return f
 
 
 def _create_render_fail_handler(name, gcode=None):
-	def f(movie, returncode=255, stdout="Unknown error", stderr="Unknown error"):
-		event_payload = {"gcode": gcode if gcode is not None else "unknown",
-		                 "movie": movie,
-		                 "movie_basename": os.path.basename(movie),
-		                 "movie_prefix": name}
-		payload = dict(event_payload)
-		payload.update(dict(returncode=returncode, error=stderr))
+	def f(movie, returncode=255, stdout="Unknown error", stderr="Unknown error", reason="unknown"):
+		payload = dict(gcode=gcode if gcode is not None else "unknown",
+		               movie=movie,
+		               movie_basename=os.path.basename(movie),
+		               movie_prefix=name,
+		               returncode=returncode,
+		               out=stdout,
+		               error=stderr,
+		               reason=reason)
 		eventManager().fire(Events.MOVIE_FAILED, payload)
 	return f
 
@@ -321,7 +323,11 @@ class Timelapse(object):
 		self._gcode_file = None
 		self._file_prefix = None
 
+		self._capture_errors = 0
+		self._capture_success = 0
+
 		self._post_roll = post_roll
+		self._post_roll_start = None
 		self._on_post_roll_done = None
 
 		self._capture_dir = settings().getBaseFolder("timelapse_tmp")
@@ -415,6 +421,8 @@ class Timelapse(object):
 		self._logger.debug("Starting timelapse for %s" % gcodeFile)
 
 		self._image_number = 0
+		self._capture_errors = 0
+		self._capture_success = 0
 		self._in_timelapse = True
 		self._gcode_file = os.path.basename(gcodeFile)
 		self._file_prefix = "{}_{}".format(os.path.splitext(self._gcode_file)[0], time.strftime("%Y%m%d%H%M%S"))
@@ -445,23 +453,45 @@ class Timelapse(object):
 				wait_for_captures(callback)
 			return f
 
-		if self._post_roll > 0:
-			eventManager().fire(Events.POSTROLL_START,
-			                    dict(postroll_duration=self.calculate_post_roll(),
-			                         postroll_length=self.post_roll,
-			                         postroll_fps=self.fps))
-			self._post_roll_start = time.time()
-			if do_create_movie:
-				self._on_post_roll_done = create_wait_for_captures(reset_and_create)
+		# wait for everything so far in the queue to be processed, then see if we should process from there
+		def continue_rendering():
+			if self._capture_success == 0:
+				# no images - either nothing was attempted to be captured or all attempts ran into an error
+				if self._capture_errors > 0:
+					# this is the latter case
+					_create_render_fail_handler(self._file_prefix,
+					                            gcode=self._gcode_file)("n/a",
+					                                                    returncode=0,
+					                                                    stdout="",
+					                                                    stderr="",
+					                                                    reason="no_frames")
+
+				# in any case, don't continue
+				return
+
+			# check if we have post roll configured
+			if self._post_roll > 0:
+				# capture post roll, wait for THAT to finish, THEN render
+				eventManager().fire(Events.POSTROLL_START,
+				                    dict(postroll_duration=self.calculate_post_roll(),
+				                         postroll_length=self.post_roll,
+				                         postroll_fps=self.fps))
+				self._post_roll_start = time.time()
+				if do_create_movie:
+					self._on_post_roll_done = create_wait_for_captures(reset_and_create)
+				else:
+					self._on_post_roll_done = reset_image_number
+				self.process_post_roll()
 			else:
-				self._on_post_roll_done = reset_image_number
-			self.process_post_roll()
-		else:
-			self._post_roll_start = None
-			if do_create_movie:
-				wait_for_captures(reset_and_create)
-			else:
-				reset_image_number()
+				# no post roll? perfect, render
+				self._post_roll_start = None
+				if do_create_movie:
+					wait_for_captures(reset_and_create)
+				else:
+					reset_image_number()
+
+		self._logger.debug("Waiting to process capture queue")
+		wait_for_captures(continue_rendering)
 
 	def calculate_post_roll(self):
 		return None
@@ -519,20 +549,27 @@ class Timelapse(object):
 		try:
 			self._logger.debug("Going to capture {} from {}".format(filename, self._snapshot_url))
 			r = requests.get(self._snapshot_url, stream=True)
+			r.raise_for_status()
+
 			with open (filename, "wb") as f:
 				for chunk in r.iter_content(chunk_size=1024):
 					if chunk:
 						f.write(chunk)
 						f.flush()
+
 			self._logger.debug("Image {} captured from {}".format(filename, self._snapshot_url))
-		except:
+		except Exception as e:
 			self._logger.exception("Could not capture image {} from {}".format(filename, self._snapshot_url))
 			if callable(onerror):
 				onerror()
-			eventManager().fire(Events.CAPTURE_FAILED, dict(file=filename))
+			eventManager().fire(Events.CAPTURE_FAILED, dict(file=filename,
+			                                                error=str(e),
+			                                                url=self._snapshot_url))
+			self._capture_errors += 1
 			return False
 		else:
 			eventManager().fire(Events.CAPTURE_DONE, dict(file=filename))
+			self._capture_success += 1
 			return True
 
 	def clean_capture_dir(self):
@@ -654,13 +691,14 @@ class TimelapseRenderJob(object):
 
 	render_job_lock = threading.RLock()
 
-	def __init__(self, capture_dir, output_dir, prefix, postfix=None, capture_format="{prefix}-%d.jpg",
-	             output_format="{prefix}{postfix}.mpg", fps=25, threads=1, on_start=None, on_success=None,
-	             on_fail=None, on_always=None):
+	def __init__(self, capture_dir, output_dir, prefix, postfix=None, capture_glob="{prefix}-*.jpg",
+	             capture_format="{prefix}-%d.jpg", output_format="{prefix}{postfix}.mpg", fps=25, threads=1,
+	             on_start=None, on_success=None, on_fail=None, on_always=None):
 		self._capture_dir = capture_dir
 		self._output_dir = output_dir
 		self._prefix = prefix
 		self._postfix = postfix
+		self._capture_glob = capture_glob
 		self._capture_format = capture_format
 		self._output_format = output_format
 		self._fps = fps
@@ -695,8 +733,16 @@ class TimelapseRenderJob(object):
 		                     self._capture_format.format(prefix=self._prefix,
 		                                                 postfix=self._postfix if self._postfix is not None else ""))
 		output = os.path.join(self._output_dir,
-		                     self._output_format.format(prefix=self._prefix,
-		                                                postfix=self._postfix if self._postfix is not None else ""))
+		                      self._output_format.format(prefix=self._prefix,
+		                                                 postfix=self._postfix if self._postfix is not None else ""))
+
+		for i in range(4):
+			if os.path.exists(input % i):
+				break
+		else:
+			self._logger.warn("Cannot create a movie, no frames captured")
+			self._notify_callback("fail", output, returncode=0, stdout="", stderr="", reason="no_frames")
+			return
 
 		hflip = settings().getBoolean(["webcam", "flipH"])
 		vflip = settings().getBoolean(["webcam", "flipV"])
@@ -726,10 +772,10 @@ class TimelapseRenderJob(object):
 					stdout_text = p.stdout.text
 					stderr_text = p.stderr.text
 					self._logger.warn("Could not render movie, got return code %r: %s" % (returncode, stderr_text))
-					self._notify_callback("fail", output, returncode=returncode, stdout=stdout_text, stderr=stderr_text)
+					self._notify_callback("fail", output, returncode=returncode, stdout=stdout_text, stderr=stderr_text, reason="returncode")
 			except:
 				self._logger.exception("Could not render movie due to unknown error")
-				self._notify_callback("fail", output)
+				self._notify_callback("fail", output, reason="unknown")
 			finally:
 				self._notify_callback("always", output)
 

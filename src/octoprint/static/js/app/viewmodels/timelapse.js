@@ -273,6 +273,35 @@ $(function() {
             });
         };
 
+        // 3 consecutive capture fails trigger error popup
+        self._warnAboutCaptureFailThreshold = 3;
+        self._warnAboutCaptureFailCounter = 0;
+        self._warnedAboutCaptureFail = false;
+        self.onEventPrintStarted = function(payload) {
+            self._warnAboutCaptureFailCounter = 0;
+            self._warnedAboutCaptureFail = false;
+        };
+        self.onEventCaptureDone = function(payload) {
+            self._warnAboutCaptureFailCounter = 0;
+            self._warnedAboutCaptureFail = false;
+        };
+        self.onEventCaptureFailed = function(payload) {
+            self._warnAboutCaptureFailCounter++;
+            if (self._warnedAboutCaptureFail || self._warnAboutCaptureFailCounter <= self._warnAboutCaptureFailThreshold) {
+                return;
+            }
+            self._warnedAboutCaptureFail = true;
+
+            var html = "<p>" + gettext("Failed repeatedly to capture timelapse frame from webcam - is the snapshot URL configured correctly and the camera on?");
+            html += pnotifyAdditionalInfo('Snapshot URL: <pre style="overflow: auto">' + payload.url + '</pre>Error: <pre style="overflow: auto">' + payload.error + '</pre>');
+            new PNotify({
+                title: gettext("Could not capture snapshots"),
+                text: html,
+                type: "error",
+                hide: false
+            });
+        };
+
         self.onEventMovieRendering = function(payload) {
             self.displayTimelapsePopup({
                 title: gettext("Rendering timelapse"),
@@ -282,11 +311,22 @@ $(function() {
         };
 
         self.onEventMovieFailed = function(payload) {
-            var html = "<p>" + _.sprintf(gettext("Rendering of timelapse %(movie_prefix)s failed with return code %(returncode)s"), payload) + "</p>";
-            html += pnotifyAdditionalInfo('<pre style="overflow: auto">' + payload.error + '</pre>');
+            var title, html;
+
+            if (payload.reason == "no_frames") {
+                title = gettext("Cannot render timelapse");
+                html = "<p>" + _.sprintf(gettext("Rendering of timelapse %(movie_prefix)s is not possible since no frames were captured. Is the snapshot URL configured correctly?"), payload) + "</p>";
+            } else if (payload.reason = "returncode") {
+                title = gettext("Rendering timelapse failed");
+                html = "<p>" + _.sprintf(gettext("Rendering of timelapse %(movie_prefix)s failed with return code %(returncode)s"), payload) + "</p>";
+                html += pnotifyAdditionalInfo('<pre style="overflow: auto">' + payload.error + '</pre>');
+            } else {
+                title = gettext("Rendering timelapse failed");
+                html = "<p>" + _.sprintf(gettext("Rendering of timelapse %(movie_prefix)s failed due to an unknown error, please consult the log file"), payload) + "</p>";
+            }
 
             self.displayTimelapsePopup({
-                title: gettext("Rendering failed"),
+                title: title,
                 text: html,
                 type: "error",
                 hide: false
