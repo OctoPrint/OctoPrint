@@ -35,7 +35,7 @@ def perform_update(target, check, target_version):
 	update_script = check["update_script"]
 	update_branch = check.get("update_branch", "")
 	force_exact_version = check.get("force_exact_version", False)
-	folder = check.get("update_folder", check["checkout_folder"])
+	folder = check.get("update_folder", check.get("checkout_folder")) # either should be set, tested above
 	pre_update_script = check.get("pre_update_script", None)
 	post_update_script = check.get("post_update_script", None)
 
