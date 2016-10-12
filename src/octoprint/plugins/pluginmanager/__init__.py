@@ -65,7 +65,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 	##~~ StartupPlugin
 
 	def on_startup(self, host, port):
-		console_logging_handler = logging.handlers.RotatingFileHandler(self._settings.get_plugin_logfile_path(postfix="console"), maxBytes=2*1024*1024)
+		from octoprint.logging.handlers import CleaningTimedRotatingFileHandler
+		console_logging_handler = CleaningTimedRotatingFileHandler(self._settings.get_plugin_logfile_path(postfix="console"), when="D", backupCount=3)
 		console_logging_handler.setFormatter(logging.Formatter("%(asctime)s %(message)s"))
 		console_logging_handler.setLevel(logging.DEBUG)
 

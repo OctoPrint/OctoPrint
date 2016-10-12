@@ -564,6 +564,9 @@ class Server(object):
 			"formatters": {
 				"simple": {
 					"format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+				},
+				"serial": {
+					"format": "%(asctime)s - %(message)s"
 				}
 			},
 			"handlers": {
@@ -574,18 +577,18 @@ class Server(object):
 					"stream": "ext://sys.stdout"
 				},
 				"file": {
-					"class": "logging.handlers.TimedRotatingFileHandler",
+					"class": "octoprint.logging.handlers.CleaningTimedRotatingFileHandler",
 					"level": "DEBUG",
 					"formatter": "simple",
 					"when": "D",
-					"backupCount": "1",
+					"backupCount": 6,
 					"filename": os.path.join(settings().getBaseFolder("logs"), "octoprint.log")
 				},
 				"serialFile": {
-					"class": "logging.handlers.RotatingFileHandler",
+					"class": "octoprint.logging.handlers.SerialLogHandler",
 					"level": "DEBUG",
-					"formatter": "simple",
-					"maxBytes": 2 * 1024 * 1024, # let's limit the serial log to 2MB in size
+					"formatter": "serial",
+					"backupCount": 3,
 					"filename": os.path.join(settings().getBaseFolder("logs"), "serial.log")
 				}
 			},
@@ -633,7 +636,6 @@ class Server(object):
 		if settings().getBoolean(["serial", "log"]):
 			# enable debug logging to serial.log
 			logging.getLogger("SERIAL").setLevel(logging.DEBUG)
-			logging.getLogger("SERIAL").debug("Enabling serial logging")
 
 	def _setup_app(self, app):
 		from octoprint.server.util.flask import ReverseProxiedEnvironment, OctoPrintFlaskRequest, OctoPrintFlaskResponse

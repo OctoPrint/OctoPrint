@@ -46,7 +46,8 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 
 	def on_startup(self, host, port):
 		# setup our custom logger
-		cura_logging_handler = logging.handlers.RotatingFileHandler(self._settings.get_plugin_logfile_path(postfix="engine"), maxBytes=2*1024*1024)
+		from octoprint.logging.handlers import CleaningTimedRotatingFileHandler
+		cura_logging_handler = CleaningTimedRotatingFileHandler(self._settings.get_plugin_logfile_path(postfix="engine"), when="D", backupCount=3)
 		cura_logging_handler.setFormatter(logging.Formatter("%(asctime)s %(message)s"))
 		cura_logging_handler.setLevel(logging.DEBUG)
 
