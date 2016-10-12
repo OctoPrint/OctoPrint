@@ -1,6 +1,6 @@
 # OctoPrint Changelog
 
-## 1.2.17 (2016-10-12)
+## 1.2.17rc1 (2016-10-06)
 
 ### Improvements
 
@@ -17,12 +17,7 @@
   * Fixed broken filter toggling on ``ItemListHelper`` class used for various lists throughout the web interface
   * Fixed an issue with the preliminary page never reporting that the server is now up if the page generated during preliminary caching had no cache headers set (e.g. because it contained the first run setup wizard)
 
-### More information
-
-  * [Commits](https://github.com/foosel/OctoPrint/compare/1.2.16...1.2.17)
-  * Release Candidates:
-    * [1.2.17rc1](https://github.com/foosel/OctoPrint/releases/tag/1.2.17rc1)
-
+([Commits](https://github.com/foosel/OctoPrint/compare/1.2.16...1.2.17rc1))
 
 ## 1.2.16 (2016-09-23)
 
