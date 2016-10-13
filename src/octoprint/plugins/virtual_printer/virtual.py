@@ -922,7 +922,7 @@ class VirtualPrinter(object):
 				return len(data)
 
 			try:
-				written = self.incoming.put(data, timeout=self._write_timeout)
+				written = self.incoming.put(data, timeout=self._write_timeout, partial=True)
 				self._seriallog.info("<<< {}".format(data.strip()))
 				return written
 			except queue.Full:
