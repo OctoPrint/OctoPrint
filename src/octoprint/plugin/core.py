@@ -902,6 +902,7 @@ class PluginManager(object):
 				identifier=name,
 				plugin_name=plugin.name,
 				plugin_version=plugin.version,
+				plugin_info=plugin,
 				basefolder=os.path.realpath(plugin.location),
 				logger=logging.getLogger(self.logging_prefix + name),
 				))

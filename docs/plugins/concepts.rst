@@ -299,6 +299,8 @@ An overview of these properties follows.
   The plugin's name, as taken from either the ``__plugin_name__`` control property or the package info.
 ``self._plugin_version``
   The plugin's version, as taken from either the ``__plugin_version__`` control property or the package info.
+``self._plugin_info``
+  The :class:`octoprint.plugin.core.PluginInfo` object associated with the plugin.
 ``self._basefolder``
   The plugin's base folder where it's installed. Can be used to refer to files relative to the plugin's installation
   location, e.g. included scripts, templates or assets.
