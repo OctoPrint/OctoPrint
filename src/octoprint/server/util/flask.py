@@ -1234,12 +1234,8 @@ class SettingsCheckUpdater(webassets.updater.BaseUpdater):
 		cache_value = webassets.utils.hash_func(json.dumps(settings().effective_yaml))
 		ctx.cache.set(cache_key, cache_value)
 
-##~~ plugin assets collector
-
-def collect_plugin_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
-	logger = logging.getLogger(__name__ + ".collect_plugin_assets")
-
-	supported_stylesheets = ("css", "less")
+##~~ core assets collector
+def collect_core_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 	assets = dict(
 		js=[],
 		css=[],
@@ -1288,9 +1284,24 @@ def collect_plugin_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 	elif preferred_stylesheet == "css":
 		assets["css"].append('css/octoprint.css')
 
+	return assets
+
+##~~ plugin assets collector
+
+def collect_plugin_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
+	logger = logging.getLogger(__name__ + ".collect_plugin_assets")
+
+	supported_stylesheets = ("css", "less")
+	assets = dict(bundled=dict(js=[], css=[], less=[]),
+	              external=dict(js=[], css=[], less=[]))
+
 	asset_plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.AssetPlugin)
 	for implementation in asset_plugins:
 		name = implementation._identifier
+		is_bundled = implementation._plugin_info.bundled
+
+		asset_key = "bundled" if is_bundled else "external"
+
 		try:
 			all_assets = implementation.get_assets()
 			basefolder = implementation.get_asset_folder()
@@ -1308,13 +1319,13 @@ def collect_plugin_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 			for asset in all_assets["js"]:
 				if not asset_exists("js", asset):
 					continue
-				assets["js"].append('plugin/{name}/{asset}'.format(**locals()))
+				assets[asset_key]["js"].append('plugin/{name}/{asset}'.format(**locals()))
 
 		if preferred_stylesheet in all_assets:
 			for asset in all_assets[preferred_stylesheet]:
 				if not asset_exists(preferred_stylesheet, asset):
 					continue
-				assets[preferred_stylesheet].append('plugin/{name}/{asset}'.format(**locals()))
+				assets[asset_key][preferred_stylesheet].append('plugin/{name}/{asset}'.format(**locals()))
 		else:
 			for stylesheet in supported_stylesheets:
 				if not stylesheet in all_assets:
@@ -1323,7 +1334,7 @@ def collect_plugin_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 				for asset in all_assets[stylesheet]:
 					if not asset_exists(stylesheet, asset):
 						continue
-					assets[stylesheet].append('plugin/{name}/{asset}'.format(**locals()))
+					assets[asset_key][stylesheet].append('plugin/{name}/{asset}'.format(**locals()))
 				break
 
 	return assets
