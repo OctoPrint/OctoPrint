@@ -812,7 +812,7 @@ class TimelapseRenderJob(object):
 
 		command = [
 			ffmpeg, '-framerate', str(fps), '-loglevel', 'error', '-i', '"{}"'.format(input), '-vcodec', 'mpeg2video',
-			'-threads', str(threads), '-pix_fmt', 'yuv420p', '-r', str(fps), '-y', '-b', str(bitrate),
+			'-threads', str(threads), '-pix_fmt', 'yuv420p', '-r', "25", '-y', '-b', str(bitrate),
 			'-f', 'vob']
 
 		filter_string = cls._create_filter_string(hflip=hflip,
