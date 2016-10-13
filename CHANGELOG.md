@@ -1,5 +1,13 @@
 # OctoPrint Changelog
 
+## 1.2.17rc3 (2016-10-13)
+
+### Bug fixes
+
+  * Fixed a wrong order in loading JS files on the client introduced in 1.2.17rc2 to make the UI more resilient against broken plugin JS.
+
+([Commits](https://github.com/foosel/OctoPrint/compare/1.2.17rc2...1.2.17rc3))
+
 ## 1.2.17rc2 (2016-10-13)
 
 ### Improvements
