@@ -65,6 +65,66 @@ More settings are available by :ref:`editing the correspondi.. _section in confi
 
 That restart commands for OctoPrint and the whole server can be configured under Settings > Server.
 
+.. _sec-bundledplugins-softwareupdate-cli:
+
+Command line usage
+------------------
+
+The functionality of the Software Update Plugin is also available on OctoPrint's command line interface under the
+``plugins`` sub command. It's is possible to check for updates via ``octoprint plugins softwareupdate:check``
+and to apply available updates via ``octoprint plugins softwareupdate:update``. Please the corresponding
+``--help`` pages on details:
+
+.. code-block:: none
+
+   $ octoprint plugins softwareupdate:check --help
+   Usage: octoprint plugins softwareupdate:check [OPTIONS] [TARGETS]...
+
+     Check for updates.
+
+     If any TARGETs are provided, only those components will be checked.
+
+     Examples:
+     - octoprint plugins softwareupdate:check
+         This will check all components for available updates,
+         utilizing cached version information.
+     - octoprint plugins softwareupdate:check --force
+         This will check all components for available updates,
+         ignoring any cached version information even if it's
+         still valid.
+     - octoprint plugins softwareupdate:check octoprint
+         This will only check OctoPrint itself for available
+         updates.
+
+   Options:
+     --force  Ignore the cache for the update check
+     --help   Show this message and exit.
+
+.. code-block:: none
+
+   $ octoprint plugins softwareupdate:update --help
+   Usage: octoprint plugins softwareupdate:update [OPTIONS] [TARGETS]...
+
+     Apply updates.
+
+     If any TARGETs are provided, only those components will be updated.
+
+     Examples:
+     - octoprint plugins softwareupdate:update
+         This will update all components with a pending update
+         that can be updated.
+     - octoprint plugins softwareupdate:update --force
+         This will force an update of all registered components
+         that can be updated, even if they don't have an updated
+         pending.
+     - octoprint plugins softwareupdate:update octoprint
+         This will only update OctoPrint and leave any further
+         components with pending updates at their current versions.
+
+   Options:
+     --force  Update even if already up to date
+     --help   Show this message and exit.
+
 .. _sec-bundledplugins-softwareupdate-configuration:
 
 Configuring the Plugin
