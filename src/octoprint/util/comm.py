@@ -2151,6 +2151,7 @@ class MachineCom(object):
 					self._temp[toolNum] = (actual, target)
 				else:
 					self._temp[toolNum] = (None, target)
+				self._callback.on_comm_temperature_update(self._temp, self._bedTemp)
 			except ValueError:
 				pass
 
@@ -2164,6 +2165,7 @@ class MachineCom(object):
 					self._bedTemp = (actual, target)
 				else:
 					self._bedTemp = (None, target)
+				self._callback.on_comm_temperature_update(self._temp, self._bedTemp)
 			except ValueError:
 				pass
 
