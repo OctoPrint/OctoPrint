@@ -233,6 +233,7 @@ class PrinterProfileManager(object):
 
 			if make_default:
 				settings().set(["printerProfiles", "default"], identifier)
+				settings().save()
 
 		if self._current is not None and self._current["id"] == identifier:
 			self.select(identifier)
