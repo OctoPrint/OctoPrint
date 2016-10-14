@@ -276,3 +276,20 @@ SlicerPlugin
    :members:
    :show-inheritance:
 
+.. _sec-plugins-mixins-restartneeding:
+
+RestartNeedingPlugin
+~~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: octoprint.plugin.RestartNeedingPlugin
+   :members:
+   :show-inheritance:
+
+.. _sec-plugins-mixins-reloadneeding:
+
+ReloadNeedingPlugin
+~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: octoprint.plugin.ReloadNeedingPlugin
+   :members:
+   :show-inheritance:

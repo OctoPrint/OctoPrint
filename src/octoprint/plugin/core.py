@@ -1396,7 +1396,7 @@ class Plugin(object):
 
 class RestartNeedingPlugin(Plugin):
 	"""
-	Mixin for plugin types that need a restart in order to be enabled.
+	Mixin for plugin types that need a restart after enabling/disabling them.
 	"""
 
 class SortablePlugin(Plugin):

@@ -732,6 +732,10 @@ octoprint.server.http.bodysize
    The path of the route will be prefixed by OctoPrint with ``/plugin/<plugin identifier>/`` (if the path already begins
    with a ``/`` that will be stripped first).
 
+   .. important::
+
+      Implementing this hook will make your plugin require a restart of OctoPrint for enabling/disabling it fully.
+
    **Example**
 
    The following plugin example sets the maximum body size for ``POST`` requests against four custom URLs to 100, 200,
@@ -778,6 +782,10 @@ octoprint.server.http.routes
       view on that which matches one of the paths provided via its ``octoprint.server.http.routes`` hook handler, the
       view of the blueprint will thus not be reachable since processing of the request will directly be handed over
       to your defined handler class.
+
+   .. important::
+
+      Implementing this hook will make your plugin require a restart of OctoPrint for enabling/disabling it fully.
 
    **Example**
 
