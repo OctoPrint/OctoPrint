@@ -237,10 +237,12 @@ class VirtualPrinter(object):
 
 			#print "Send: %s" % (data.rstrip())
 			if 'M104' in data or 'M109' in data:
-				self._parseHotendCommand(data)
+				wait = support_r = 'M109' in data
+				self._parseHotendCommand(data, wait=wait, support_r=support_r)
 
 			if 'M140' in data or 'M190' in data:
-				self._parseBedCommand(data)
+				wait = support_r = 'M190' in data
+				self._parseBedCommand(data, wait=wait, support_r=support_r)
 
 			if 'M105' in data:
 				self._processTemperatureQuery()
@@ -523,7 +525,8 @@ class VirtualPrinter(object):
 			output = "ok " + output
 		self._output(output)
 
-	def _parseHotendCommand(self, line):
+	def _parseHotendCommand(self, line, wait=False, support_r=False):
+		only_wait_if_higher = True
 		tool = 0
 		toolMatch = re.search('T([0-9]+)', line)
 		if toolMatch:
@@ -538,21 +541,32 @@ class VirtualPrinter(object):
 		try:
 			self.targetTemp[tool] = float(re.search('S([0-9]+)', line).group(1))
 		except:
-			pass
+			if support_r:
+				try:
+					self.targetTemp[tool] = float(re.search('R([0-9]+)', line).group(1))
+					only_wait_if_higher = False
+				except:
+					pass
 
-		if "M109" in line:
-			self._waitForHeatup("tool%d" % tool)
+		if wait:
+			self._waitForHeatup("tool%d" % tool, only_wait_if_higher)
 		if settings().getBoolean(["devel", "virtualPrinter", "repetierStyleTargetTemperature"]):
 			self._output("TargetExtr%d:%d" % (tool, self.targetTemp[tool]))
 
-	def _parseBedCommand(self, line):
+	def _parseBedCommand(self, line, wait=False, support_r=False):
+		only_wait_if_higher = True
 		try:
 			self.bedTargetTemp = float(re.search('S([0-9]+)', line).group(1))
 		except:
-			pass
+			if support_r:
+				try:
+					self.bedTargetTemp = float(re.search('R([0-9]+)', line).group(1))
+					only_wait_if_higher = False
+				except:
+					pass
 
-		if "M190" in line:
-			self._waitForHeatup("bed")
+		if wait:
+			self._waitForHeatup("bed", only_wait_if_higher)
 		if settings().getBoolean(["devel", "virtualPrinter", "repetierStyleTargetTemperature"]):
 			self._output("TargetBed:%d" % self.bedTargetTemp)
 
@@ -717,19 +731,19 @@ class VirtualPrinter(object):
 			self._sdPrinter = None
 			self._output("Done printing file")
 
-	def _waitForHeatup(self, heater):
+	def _waitForHeatup(self, heater, only_wait_if_higher):
 		delta = 1
 		delay = 1
 
 		try:
 			if heater.startswith("tool"):
 				toolNum = int(heater[len("tool"):])
-				while not self._killed and (self.temp[toolNum] < self.targetTemp[toolNum] - delta or self.temp[toolNum] > self.targetTemp[toolNum] + delta):
+				while not self._killed and (self.temp[toolNum] < self.targetTemp[toolNum] - delta or (not only_wait_if_higher and self.temp[toolNum] > self.targetTemp[toolNum] + delta)):
 					self._simulateTemps(delta=delta)
 					self._output("T:%0.2f" % self.temp[toolNum])
 					time.sleep(delay)
 			elif heater == "bed":
-				while not self._killed and (self.bedTemp < self.bedTargetTemp - delta or self.bedTemp > self.bedTargetTemp + delta):
+				while not self._killed and (self.bedTemp < self.bedTargetTemp - delta or (not only_wait_if_higher and self.bedTemp > self.bedTargetTemp + delta)):
 					self._simulateTemps(delta=delta)
 					self._output("B:%0.2f" % self.bedTemp)
 					time.sleep(delay)
