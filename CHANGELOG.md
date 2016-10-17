@@ -1,5 +1,13 @@
 # OctoPrint Changelog
 
+## 1.2.17rc4 (2016-10-17)
+
+### Bug fixes
+
+  * Properly handle empty JS file list from plugins. Solves a 500 on OctoPrint instances without any third party plugins installed generated during web asset bundling introduced in 1.2.17rc2.
+
+([Commits](https://github.com/foosel/OctoPrint/compare/1.2.17rc3...1.2.17rc4))
+
 ## 1.2.17rc3 (2016-10-13)
 
 ### Bug fixes
