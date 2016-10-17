@@ -2188,6 +2188,11 @@ class MachineCom(object):
 		self._heating = True
 		self._gcode_M140_sent(cmd, cmd_type, wait=True, support_r=True)
 
+	def _gcode_M116_sent(self, cmd, cmd_type=None):
+		self._heatupWaitStartTime = time.time()
+		self._long_running_command = True
+		self._heating = True
+
 	def _gcode_M110_sending(self, cmd, cmd_type=None):
 		newLineNumber = None
 		match = regexes_parameters["intN"].search(cmd)
