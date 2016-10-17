@@ -1058,6 +1058,8 @@ class Server(object):
 		     "js/app/helpers.js",
 		     "js/app/main.js"]
 		js_plugins = dynamic_plugin_assets["external"]["js"]
+		if len(js_plugins) == 0:
+			js_plugins = ["empty"]
 		js_app = js_plugins + js_core
 
 		css_libs = [
