@@ -934,7 +934,7 @@ def check_lastmodified(lastmodified):
 		return False
 
 	from datetime import datetime
-	if isinstance(lastmodified, (float, int)):
+	if isinstance(lastmodified, (int, long, float, complex)):
 		lastmodified = datetime.fromtimestamp(lastmodified).replace(microsecond=0)
 
 	if not isinstance(lastmodified, datetime):
