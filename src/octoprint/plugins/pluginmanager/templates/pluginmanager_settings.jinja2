@@ -173,7 +173,7 @@
                 <div class="input-prepend span9">
                     <span class="btn fileinput-button">
                         <span>{{ _('Browse...') }}</span>
-                        <input id="settings_plugin_pluginmanager_repositorydialog_upload" type="file" name="file" data-url="{{ url_for("plugin.pluginmanager.upload_archive") }}">
+                        <input id="settings_plugin_pluginmanager_repositorydialog_upload" type="file" name="file" accept="{{ ",".join(plugin_pluginmanager_archive_extensions) }}" data-url="{{ url_for("plugin.pluginmanager.upload_archive") }}">
                     </span>
                     <span class="add-on add-on-limited text-left" data-bind="text: uploadFilename, attr: {title: uploadFilename}"></span>
                 </div>

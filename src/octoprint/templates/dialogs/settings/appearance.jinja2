@@ -88,7 +88,7 @@
                 <div class="input-prepend span9">
                     <span class="btn fileinput-button">
                         <span>{{ _('Browse...') }}</span>
-                        <input id="settings_appearance_managelanguagesdialog_upload" type="file" name="file" data-url="{{ url_for("api.uploadLanguagePack") }}">
+                        <input id="settings_appearance_managelanguagesdialog_upload" type="file" name="file" accept=".zip,.tar.gz,.tgz,.tar" data-url="{{ url_for("api.uploadLanguagePack") }}">
                     </span>
                     <span class="add-on add-on-limited text-left" data-bind="text: translationUploadFilename, attr: {title: translationUploadFilename}"></span>
                 </div>

@@ -32,6 +32,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
                           octoprint.plugin.StartupPlugin,
                           octoprint.plugin.BlueprintPlugin):
 
+	ARCHIVE_EXTENSIONS = (".zip", ".tar.gz", ".tgz", ".tar")
+
 	def __init__(self):
 		self._pending_enable = set()
 		self._pending_disable = set()
@@ -116,7 +118,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		plugins = sorted(self._get_plugins(), key=lambda x: x["name"].lower())
 		return dict(
 			all=plugins,
-			thirdparty=filter(lambda p: not p["bundled"], plugins)
+			thirdparty=filter(lambda p: not p["bundled"], plugins),
+			archive_extensions=self.__class__.ARCHIVE_EXTENSIONS
 		)
 
 	def get_template_types(self, template_sorting, template_rules, *args, **kwargs):
@@ -141,7 +144,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		upload_path = flask.request.values[input_upload_path]
 		upload_name = flask.request.values[input_upload_name]
 
-		exts = filter(lambda x: upload_name.lower().endswith(x), (".zip", ".tar.gz", ".tgz", ".tar"))
+		exts = filter(lambda x: upload_name.lower().endswith(x), self.__class__.ARCHIVE_EXTENSIONS)
 		if not len(exts):
 			return flask.make_response("File doesn't have a valid extension for a plugin archive", 400)
 
