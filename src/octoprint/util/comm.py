@@ -51,6 +51,7 @@ regex_float = re.compile(regex_float_pattern)
 
 regexes_parameters = dict(
 	floatP=re.compile("(^|[^A-Za-z])[Pp](?P<value>%s)" % regex_float_pattern),
+	floatR=re.compile("(^|[^A-Za-z])[Ss](?P<value>%s)" % regex_float_pattern),
 	floatS=re.compile("(^|[^A-Za-z])[Ss](?P<value>%s)" % regex_float_pattern),
 	floatZ=re.compile("(^|[^A-Za-z])[Zz](?P<value>%s)" % regex_float_pattern),
 	intN=re.compile("(^|[^A-Za-z])[Nn](?P<value>%s)" % regex_int_pattern),
@@ -2131,7 +2132,7 @@ class MachineCom(object):
 			return None, # Don't send bed commands if we don't have a heated bed
 	_gcode_M190_queuing = _gcode_M140_queuing
 
-	def _gcode_M104_sent(self, cmd, cmd_type=None, wait=False):
+	def _gcode_M104_sent(self, cmd, cmd_type=None, wait=False, support_r=False):
 		toolNum = self._currentTool
 		toolMatch = regexes_parameters["intT"].search(cmd)
 
@@ -2143,6 +2144,9 @@ class MachineCom(object):
 				self._currentTool = toolNum
 
 		match = regexes_parameters["floatS"].search(cmd)
+		if not match and support_r:
+			match = regexes_parameters["floatR"].search(cmd)
+
 		if match:
 			try:
 				target = float(match.group("value"))
@@ -2155,8 +2159,11 @@ class MachineCom(object):
 			except ValueError:
 				pass
 
-	def _gcode_M140_sent(self, cmd, cmd_type=None, wait=False):
+	def _gcode_M140_sent(self, cmd, cmd_type=None, wait=False, support_r=False):
 		match = regexes_parameters["floatS"].search(cmd)
+		if not match and support_r:
+			match = regexes_parameters["floatR"].search(cmd)
+
 		if match:
 			try:
 				target = float(match.group("value"))
@@ -2173,13 +2180,13 @@ class MachineCom(object):
 		self._heatupWaitStartTime = time.time()
 		self._long_running_command = True
 		self._heating = True
-		self._gcode_M104_sent(cmd, cmd_type, wait=True)
+		self._gcode_M104_sent(cmd, cmd_type, wait=True, support_r=True)
 
 	def _gcode_M190_sent(self, cmd, cmd_type=None):
 		self._heatupWaitStartTime = time.time()
 		self._long_running_command = True
 		self._heating = True
-		self._gcode_M140_sent(cmd, cmd_type, wait=True)
+		self._gcode_M140_sent(cmd, cmd_type, wait=True, support_r=True)
 
 	def _gcode_M110_sending(self, cmd, cmd_type=None):
 		newLineNumber = None
