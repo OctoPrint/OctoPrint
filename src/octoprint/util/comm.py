@@ -48,7 +48,7 @@ regex_float = re.compile(regex_float_pattern)
 
 regexes_parameters = dict(
 	floatP=re.compile("(^|[^A-Za-z])[Pp](?P<value>%s)" % regex_float_pattern),
-	floatR=re.compile("(^|[^A-Za-z])[Ss](?P<value>%s)" % regex_float_pattern),
+	floatR=re.compile("(^|[^A-Za-z])[Rr](?P<value>%s)" % regex_float_pattern),
 	floatS=re.compile("(^|[^A-Za-z])[Ss](?P<value>%s)" % regex_float_pattern),
 	floatZ=re.compile("(^|[^A-Za-z])[Zz](?P<value>%s)" % regex_float_pattern),
 	intN=re.compile("(^|[^A-Za-z])[Nn](?P<value>%s)" % regex_int_pattern),
