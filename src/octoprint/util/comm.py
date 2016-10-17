@@ -2654,8 +2654,8 @@ def canonicalize_temperatures(parsed, current):
 
 	  * If ``T`` is not included with the reported extruders, return
 	  * If more than just ``T`` is reported:
-	    * If both ``T`` and ``T0`` are reported set ``Tc`` to ``T``, remove
-	      ``T`` from the result.
+	    * If both ``T`` and ``T0`` are reported, remove ``T`` from
+	      the result.
 	    * Else set ``T0`` to ``T`` and delete ``T`` (Smoothie extra).
 	  * If only ``T`` is reported, set ``Tc`` to ``T`` and delete ``T``
 	  * return
@@ -2679,23 +2679,21 @@ def canonicalize_temperatures(parsed, current):
 
 	if len(reported_extruders) > 1:
 		if "T0" in reported_extruders:
-			# Both T and T0 are present, so T contains the current
-			# extruder's temperature, e.g. for current_tool == 1:
+			# Both T and T0 are present, let's check if Tc is too.
+			# If it is, we just throw away T (it's redundant). It
+			# it isn't, we first copy T to Tc, then throw T away.
 			#
-			#     T:<T1> T0:<T0> T2:<T2> ... B:<B>
-			#
-			# becomes
-			#
-			#     T0:<T1> T1:<T1> T2:<T2> ... B:<B>
-			#
-			# Same goes if Tc is already present, it will be overwritten:
-			#
-			#     T:<T1> T0:<T0> T1:<T1> T2:<T2> ... B:<B>
-			#
-			# becomes
-			#
-			#     T0:<T0> T1:<T1> T2:<T2> ... B:<B>
-			result[current_tool_key] = result["T"]
+			# The easier construct would be to always overwrite Tc
+			# with T and throw away T, but that assumes that if
+			# both are present, T has the same value as Tc. That
+			# might not necessarily be the case (weird firmware)
+			# so we err on the side of caution here and trust Tc
+			# over T.
+			if current_tool_key not in reported_extruders:
+				# T and T0 are present, but Tc is missing - copy
+				# T to Tc
+				result[current_tool_key] = result["T"]
+			# throw away T, it's redundant (now)
 			del result["T"]
 		else:
 			# So T is there, but T0 isn't. That looks like Smoothieware which
@@ -2719,7 +2717,7 @@ def canonicalize_temperatures(parsed, current):
 		#     reports the current tool and bed
 		#
 		# In both cases it is however safe to just move our T over
-		# to T<current> in the parsed data, current should always stay
+		# to Tc in the parsed data, current should always stay
 		# 0 for single extruder printers. E.g. for current_tool == 1:
 		#
 		#     T:<T1>

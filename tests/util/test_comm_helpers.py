@@ -213,15 +213,23 @@ class TestCommHelpers(unittest.TestCase):
 		self.assertEqual(expected_max, maxtool)
 
 	@data(
+		# T => T0
 		(dict(T=(23.0,None)), 0, dict(T0=(23.0, None))),
+
+		# T => T1
 		(dict(T=(23.0,None)), 1, dict(T1=(23.0, None))),
+
+		# T and Tn present => Tn wins
 		(dict(T=(23.0, None), T0=(23.0, None), T1=(42.0, None)), 0, dict(T0=(23.0, None), T1=(42.0, None))),
 		(dict(T=(42.0, None), T0=(23.0, None), T1=(42.0, None)), 1, dict(T0=(23.0, None), T1=(42.0, None))),
-		(dict(T=(21.0, None), T0=(23.0, None), T1=(42.0, None)), 0, dict(T0=(21.0, None), T1=(42.0, None))),
-		(dict(T=(41.0, None), T0=(23.0, None), T1=(42.0, None)), 1, dict(T0=(23.0, None), T1=(41.0, None))),
-		(dict(T=(23.0, None), T1=(42.0, None)), 1, dict(T0=(23.0, None), T1=(42.0, None))),
-		(dict(T0=(23.0, None), T1=(42.0, None)), 1, dict(T0=(23.0, None), T1=(42.0, None)))
+		(dict(T=(21.0, None), T0=(23.0, None), T1=(42.0, None)), 0, dict(T0=(23.0, None), T1=(42.0, None))),
+		(dict(T=(41.0, None), T0=(23.0, None), T1=(42.0, None)), 1, dict(T0=(23.0, None), T1=(42.0, None))),
 
+		# T and no T0 => Smoothieware, T = T0
+		(dict(T=(23.0, None), T1=(42.0, None)), 1, dict(T0=(23.0, None), T1=(42.0, None))),
+
+		# no T => as-is
+		(dict(T0=(23.0, None), T1=(42.0, None)), 1, dict(T0=(23.0, None), T1=(42.0, None)))
 	)
 	@unpack
 	def test_canonicalize_temperatures(self, parsed, current, expected):
