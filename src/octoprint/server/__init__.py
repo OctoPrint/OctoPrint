@@ -987,11 +987,11 @@ class Server(object):
 		)
 
 		js_libs = [
-			"js/lib/jquery/jquery-2.1.4.min.js" if minify else "js/lib/jquery/jquery-2.1.4.js",
+			"js/lib/jquery/jquery.min.js" if minify else "js/lib/jquery/jquery.js",
 			"js/lib/modernizr.custom.js",
 			"js/lib/lodash.min.js",
 			"js/lib/sprintf.min.js",
-			"js/lib/knockout-3.4.0.js",
+			"js/lib/knockout.js",
 			"js/lib/knockout.mapping-latest.js",
 			"js/lib/babel.js",
 			"js/lib/avltree.js",
@@ -1016,7 +1016,7 @@ class Server(object):
 			"js/lib/pnotify.min.js",
 			"js/lib/bootstrap-slider-knockout-binding.js",
 			"js/lib/loglevel.min.js",
-			"js/lib/sockjs-0.3.4.min.js"
+			"js/lib/sockjs.min.js" if minify else "js/lib/sockjs.js"
 		]
 		js_client = [
 			"js/app/client/base.js",
