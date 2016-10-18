@@ -191,6 +191,10 @@ configuration parameters for you:
 Now all that's left to do is to move our ``helloworld.py`` into the ``octoprint_helloworld`` folder and renaming it to
 ``__init__.py``. Make sure to delete the copy under ``~/.octoprint/plugins`` in the process, including the ``.pyc`` file!
 
+To export the environment variables, run::
+
+$ soure OctoPrint/venv/bin/activate
+
 The plugin is now ready to be installed via ``python setup.py install``. However, since we are still
 working on our plugin, it makes more sense to use ``python setup.py develop`` for now -- this way the plugin becomes
 discoverable by OctoPrint, however we don't have to reinstall it after any changes we will still do::
