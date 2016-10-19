@@ -112,8 +112,8 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 	#~~ Webcam subwizard
 
 	def _is_webcam_wizard_required(self):
-		webcam_snapshot_url = self._settings.global_get(["webcam", "snapshotUrl"])
-		webcam_stream_url = self._settings.global_get(["webcam", "streamUrl"])
+		webcam_snapshot_url = self._settings.global_get(["webcam", "snapshot"])
+		webcam_stream_url = self._settings.global_get(["webcam", "stream"])
 		ffmpeg_path = self._settings.global_get(["webcam", "ffmpeg"])
 
 		return not (webcam_snapshot_url and webcam_stream_url and ffmpeg_path)
