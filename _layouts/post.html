@@ -50,8 +50,15 @@ layout: default
             <div class="postimages">
                 <h2>Images</h2>
                 {% for image in page.images %}
-                <figure>
-                    <a href="{{ image }}" data-lightbox="{{ page.id }}"><img src="{{ image }}"></a>
+                <figure id="image-{{ forloop.index }}">
+                    {% if image.url %}
+                        <a href="{{ image.url }}" data-lightbox="{{ page.id }}" data-title="{{ image.title }}"><img alt="{{ image.alt }}" src="{{ image.url }}"></a>
+                        {% if image.title %}
+                        <figcaption>{{ image.title }}</figcaption>
+                        {% endif %}
+                    {% else %}
+                        <a href="{{ image }}" data-lightbox="{{ page.id }}"><img src="{{ image }}"></a>
+                    {% endif %}
                 </figure>
                 {% endfor %}
             </div>
