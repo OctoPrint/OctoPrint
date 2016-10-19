@@ -60,9 +60,14 @@
     <meta property="og:description" content="{{ thedescription }}" />
     <meta property="og:site_name" content="{{ site.title }}" />
     <meta property="og:url" content="{{ page.url | prepend: BASE_PATH | prepend: site.external }}" />
+    <script>
+        var shiftWindow = function() { scrollBy(0, -40) };
+        window.addEventListener("hashchange", shiftWindow);
+        function load() { if (window.location.hash) shiftWindow(); }
+    </script>
 </head>
 
-<body>
+<body onload="load()">
 
 <div id="top"></div>
 
