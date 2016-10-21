@@ -372,7 +372,7 @@ class VirtualPrinter(object):
 			self._deleteSdFile(filename)
 
 	def _gcode_M114(self, data):
-		output = "X:{} Y:{} Z:{} E:{} Count: A:{} B:{} C:{}".format(self._lastX, self._lastY, self._lastZ, self._lastE, int(self._lastX*100), int(self.lastY*100), int(self.lastZ*100))
+		output = "X:{} Y:{} Z:{} E:{} Count: A:{} B:{} C:{}".format(self._lastX, self._lastY, self._lastZ, self._lastE, int(self._lastX*100), int(self._lastY*100), int(self._lastZ*100))
 		if not self._okBeforeCommandOutput:
 			output = "ok " + output
 		self._send(output)
