@@ -166,7 +166,8 @@ default_settings = {
 			"type": "off",
 			"options": {},
 			"postRoll": 0,
-			"fps": 25
+			"fps": 25,
+			"capturePostRoll": True
 		},
 		"cleanTmpAfterDays": 7
 	},
