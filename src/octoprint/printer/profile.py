@@ -34,7 +34,7 @@ class BedTypes(object):
 
 	@classmethod
 	def values(cls):
-		return [getattr(cls, name) for name in cls.__dict__ if not (name.startswith("__") or name="values")]
+		return [getattr(cls, name) for name in cls.__dict__ if not (name.startswith("__") or name == "values")]
 
 class BedOrigin(object):
 	LOWERLEFT = "lowerleft"
@@ -42,7 +42,7 @@ class BedOrigin(object):
 
 	@classmethod
 	def values(cls):
-		return [getattr(cls, name) for name in cls.__dict__ if not (name.startswith("__") or name="values")]
+		return [getattr(cls, name) for name in cls.__dict__ if not (name.startswith("__") or name == "values")]
 
 class PrinterProfileManager(object):
 	"""
