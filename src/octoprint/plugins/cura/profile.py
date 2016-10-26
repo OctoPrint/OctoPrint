@@ -835,7 +835,7 @@ class Profile(object):
 		return 1
 
 	def get_pos_x(self):
-		if self._posX:
+		if self._posX is not None:
 			try:
 				return int(float(self._posX))
 			except ValueError:
@@ -844,7 +844,7 @@ class Profile(object):
 		return int(self.get_float("machine_width") / 2.0 ) if not self.get_boolean("machine_center_is_zero") else 0.0
 
 	def get_pos_y(self):
-		if self._posY:
+		if self._posY is not None:
 			try:
 				return int(float(self._posY))
 			except ValueError:
