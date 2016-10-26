@@ -220,6 +220,14 @@ class PositionRecord(object):
 		self.f = other.f
 		self.t = other.t
 
+	def as_dict(self):
+		return dict(x=self.x,
+					y=self.y,
+					z=self.z,
+					e=self.e,
+					t=self.t,
+					f=self.f)
+
 class MachineCom(object):
 	STATE_NONE = 0
 	STATE_OPEN_SERIAL = 1
@@ -1129,6 +1137,8 @@ class MachineCom(object):
 							self._record_pause_position = False
 							self._pause_position.copy_from(self._last_position)
 							self._pause_preparation_done()
+
+						self._callback.on_comm_position_update(self._last_position.as_dict())
 
 				# temperature processing
 				elif ' T:' in line or line.startswith('T:') or ' T0:' in line or line.startswith('T0:') or ((' B:' in line or line.startswith('B:')) and not 'A:' in line):
@@ -2339,6 +2349,9 @@ class MachineComPrintCallback(object):
 		pass
 
 	def on_comm_temperature_update(self, temp, bedTemp):
+		pass
+
+	def on_comm_position_update(self, position):
 		pass
 
 	def on_comm_state_change(self, state):
