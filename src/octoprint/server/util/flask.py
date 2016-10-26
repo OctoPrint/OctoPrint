@@ -426,7 +426,7 @@ class OctoPrintFlaskResponse(flask.Response):
 
 def passive_login():
 	if octoprint.server.userManager.enabled:
-                user = octoprint.server.userManager.login_user(flask_login.current_user)
+		user = octoprint.server.userManager.login_user(flask_login.current_user)
 	else:
 		user = flask_login.current_user
 

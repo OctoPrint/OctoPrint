@@ -444,15 +444,15 @@ class User(UserMixin):
 	def get_name(self):
 		return self._username
 
-        @property
+	@property
 	def is_active(self):
 		return self._active
 
-        @property
+	@property
 	def is_user(self):
 		return "user" in self._roles
 
-        @property
+	@property
 	def is_admin(self):
 		return "admin" in self._roles
 
