@@ -38,7 +38,7 @@
 
       * Collect **statistics** of your printer and print jobs via the [Print History](http://plugins.octoprint.org/plugins/printhistory/) or the [Printer Statistics](http://plugins.octoprint.org/plugins/stats/) plugin.
 
-      * Add **support for specific printers** like [Flashforge printers or older Makerbots](http://plugins.octoprint.org/plugins/gpx/) or the [Micro 3D printer](http://plugins.octoprint.org/plugins/m3dfio/).
+      * Add **support for specific printers** like [Flashforge printers or older Makerbots](http://plugins.octoprint.org/plugins/gpx/) or the [Micro 3D printer](http://plugins.octoprint.org/plugins/m33fio/).
 
 
     OctoPrint''s [official plugin repository](http://plugins.octoprint.org/) is integrated right within OctoPrint and installing a plugin is only
