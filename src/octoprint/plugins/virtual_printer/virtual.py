@@ -62,10 +62,10 @@ class VirtualPrinter(object):
 		self.speeds = settings().get(["devel", "virtualPrinter", "movementSpeed"])
 
 		self._relative = True
-		self._lastX = None
-		self._lastY = None
-		self._lastZ = None
-		self._lastE = None
+		self._lastX = 0.0
+		self._lastY = 0.0
+		self._lastZ = 0.0
+		self._lastE = 0.0
 
 		self._unitModifier = 1
 
