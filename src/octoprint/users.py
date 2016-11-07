@@ -464,6 +464,10 @@ class User(UserMixin):
 
 		return self._get_setting(path)
 
+	@property
+	def roles(self):
+		return list(self._roles)
+
 	def set_setting(self, key, value):
 		if not isinstance(key, (tuple, list)):
 			path = [key]
