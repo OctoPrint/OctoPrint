@@ -143,7 +143,95 @@ class ReverseProxiedEnvironmentTest(unittest.TestCase):
 			"HTTP_HOST": "example.com",
 			"SERVER_NAME": "example.com",
 			"SERVER_PORT": "80"
-		})
+		}),
+
+		# host = none, default port -> server & port used for reconstruction (ipv4)
+		({
+			"HTTP_HOST": None,
+			"SERVER_NAME": "127.0.0.1",
+			"SERVER_PORT": "80"
+		}, {
+			"HTTP_HOST": "127.0.0.1",
+			"SERVER_NAME": "127.0.0.1",
+			"SERVER_PORT": "80"
+		}),
+
+		# host = none, non standard port -> server & port used for reconstruction (ipv4)
+		({
+			 "HTTP_HOST": None,
+			 "SERVER_NAME": "127.0.0.1",
+			 "SERVER_PORT": "444"
+		 }, {
+			 "HTTP_HOST": "127.0.0.1:444",
+			 "SERVER_NAME": "127.0.0.1",
+			 "SERVER_PORT": "444"
+		 }),
+
+		# host = none, default port -> server & port used for reconstruction (ipv6)
+		({
+			"HTTP_HOST": None,
+			"SERVER_NAME": "fec1::1",
+			"SERVER_PORT": "80"
+		}, {
+			"HTTP_HOST": "fec1::1",
+			"SERVER_NAME": "fec1::1",
+			"SERVER_PORT": "80"
+		}),
+
+		# host = none, non standard port -> server & port used for reconstruction (ipv6)
+		({
+			 "HTTP_HOST": None,
+			 "SERVER_NAME": "fec1::1",
+			 "SERVER_PORT": "444"
+		 }, {
+			 "HTTP_HOST": "[fec1::1]:444",
+			 "SERVER_NAME": "fec1::1",
+			 "SERVER_PORT": "444"
+		 }),
+
+		# host set, server and port not, default port -> server & port derived from host (ipv4)
+		({
+			"HTTP_HOST": "127.0.0.1",
+			"SERVER_NAME": None,
+			"SERVER_PORT": None
+		}, {
+			"HTTP_HOST": "127.0.0.1",
+			"SERVER_NAME": "127.0.0.1",
+			"SERVER_PORT": "80"
+		}),
+
+		# host set, server and port not, non standard port -> server & port derived from host (ipv4)
+		({
+			 "HTTP_HOST": "127.0.0.1:444",
+			 "SERVER_NAME": None,
+			 "SERVER_PORT": None
+		 }, {
+			 "HTTP_HOST": "127.0.0.1:444",
+			 "SERVER_NAME": "127.0.0.1",
+			 "SERVER_PORT": "444"
+		 }),
+
+		# host set, server and port not, default port -> server & port derived from host (ipv6)
+		({
+			 "HTTP_HOST": "fec1::1",
+			 "SERVER_NAME": None,
+			 "SERVER_PORT": None
+		 }, {
+			 "HTTP_HOST": "fec1::1",
+			 "SERVER_NAME": "fec1::1",
+			 "SERVER_PORT": "80"
+		 }),
+
+		# host set, server and port not, non standard port -> server & port derived from host (ipv6)
+		({
+			 "HTTP_HOST": "[fec1::1]:444",
+			 "SERVER_NAME": None,
+			 "SERVER_PORT": None
+		 }, {
+			 "HTTP_HOST": "[fec1::1]:444",
+			 "SERVER_NAME": "fec1::1",
+			 "SERVER_PORT": "444"
+		 }),
 	)
 	@unpack
 	def test_stock(self, environ, expected):
