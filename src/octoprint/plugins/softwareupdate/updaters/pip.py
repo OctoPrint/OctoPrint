@@ -8,6 +8,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import logging
 import pkg_resources
+import octoprint.plugin
 
 from octoprint.util.pip import PipCaller, UnknownPip
 from .. import exceptions
@@ -71,6 +72,18 @@ def perform_update(target, check, target_version, log_cb=None):
 	if "dependency_links" in check and check["dependency_links"]:
 		pip_args += ["--process-dependency-links"]
 
+	additional_args = octoprint.plugin.plugin_manager().plugin_implementations["pluginmanager"]._settings.get(["pip_args"])
+
+	if additional_args is not None:
+
+		inapplicable_arguments = []
+
+		for inapplicable_argument in inapplicable_arguments:
+			additional_args = re.sub("(^|\s)" + re.escape(inapplicable_argument) + "\\b", "", additional_args)
+
+		if additional_args:
+			pip_args.append(additional_args)
+	
 	returncode, stdout, stderr = pip_caller.execute(*pip_args)
 	if returncode != 0:
 		raise exceptions.UpdateError("Error while executing pip install", (stdout, stderr))
