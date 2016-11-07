@@ -232,6 +232,15 @@ class ReverseProxiedEnvironment(object):
 		to_wsgi_format = lambda header: "HTTP_" + header.upper().replace("-", "_")
 		return map(to_wsgi_format, values)
 
+	@staticmethod
+	def valid_ip(address):
+		import netaddr
+		try:
+			netaddr.IPAddress(address)
+			return True
+		except:
+			return False
+
 	def __init__(self,
 	             header_prefix=None,
 	             header_scheme=None,
@@ -286,11 +295,43 @@ class ReverseProxiedEnvironment(object):
 			if host is None:
 				return None, None
 
+			default_port = "443" if scheme == "https" else "80"
+			host = host.strip()
+
 			if ":" in host:
-				server, port = host.split(":", 1)
+				# we might have an ipv6 address here, or a port, or both
+
+				if host[0] == "[":
+					# that looks like an ipv6 address with port, e.g. [fec1::1]:80
+					address_end = host.find("]")
+					if address_end == -1:
+						# no ], that looks like a seriously broken address
+						return None, None
+
+					# extract server ip, skip enclosing [ and ]
+					server = host[1:address_end]
+					tail = host[address_end + 1:]
+
+					# now check if there's also a port
+					if len(tail) and tail[0] == ":":
+						# port included as well
+						port = tail[1:]
+					else:
+						# no port, use default one
+						port = default_port
+
+				elif self.__class__.valid_ip(host):
+					# ipv6 address without port
+					server = host
+					port = default_port
+
+				else:
+					# ipv4 address with port
+					server, port = host.rsplit(":", 1)
+
 			else:
 				server = host
-				port = "443" if scheme == "https" else "80"
+				port = default_port
 
 			return server, port
 
@@ -348,7 +389,12 @@ class ReverseProxiedEnvironment(object):
 				# default port for scheme, can be skipped
 				environ["HTTP_HOST"] = environ["SERVER_NAME"]
 			else:
-				environ["HTTP_HOST"] = environ["SERVER_NAME"] + ":" + environ["SERVER_PORT"]
+				server_name_component = environ["SERVER_NAME"]
+				if ":" in server_name_component and self.__class__.valid_ip(server_name_component):
+					# this is an ipv6 address, we need to wrap that in [ and ] before appending the port
+					server_name_component = "[" + server_name_component + "]"
+
+				environ["HTTP_HOST"] = server_name_component + ":" + environ["SERVER_PORT"]
 
 		# call wrapped app with rewritten environment
 		return environ
