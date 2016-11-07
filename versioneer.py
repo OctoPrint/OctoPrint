@@ -1504,7 +1504,7 @@ def versions_from_file(filename):
             contents = f.read()
     except EnvironmentError:
         raise NotThisMethod("unable to read _version.py")
-    mo = re.search(r"version_json = '''\n(.*)'''  # END VERSION_JSON",
+    mo = re.search(r"version_json = '''\s+(.*)'''  # END VERSION_JSON",
                    contents, re.M | re.S)
     if not mo:
         raise NotThisMethod("no version_json in _version.py")
