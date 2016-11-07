@@ -34,6 +34,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 	ARCHIVE_EXTENSIONS = (".zip", ".tar.gz", ".tgz", ".tar")
 
+	pip_inapplicable_arguments = dict(uninstall=["--user"])
+
 	def __init__(self):
 		self._pending_enable = set()
 		self._pending_disable = set()
@@ -487,8 +489,15 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			self._log_message(u"Installation needs to process external dependencies, that might make it take a bit longer than usual depending on the pip version")
 
 		additional_args = self._settings.get(["pip_args"])
-		if additional_args:
-			args.append(additional_args)
+
+		if additional_args is not None:
+
+			inapplicable_arguments = self.__class__.pip_inapplicable_arguments.get(args[0], list())
+			for inapplicable_argument in inapplicable_arguments:
+				additional_args = re.sub("(^|\s)" + re.escape(inapplicable_argument) + "\\b", "", additional_args)
+
+			if additional_args:
+				args.append(additional_args)
 
 		return self._pip_caller.execute(*args)
 
