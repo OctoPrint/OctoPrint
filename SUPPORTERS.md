@@ -59,6 +59,7 @@ thanks to everyone who contributed!
   * Peter Grace
   * Peter Schmehl
   * PRINT3Dforum.com
+  * Robert Gusek
   * Roger Strolz
   * Roy Cortes
   * Samer Najia
@@ -73,4 +74,4 @@ thanks to everyone who contributed!
   * Thomas Hatley
   * Trent Shumay
 
-and 933 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!
+and 968 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!
