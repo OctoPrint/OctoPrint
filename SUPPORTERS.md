@@ -53,7 +53,6 @@ thanks to everyone who contributed!
   * Michael Aumock
   * Michael McDargh Sr
   * Miles Flavel
-  * NateTheApe3DPrints
   * Nikolai Langer
   * Noe Ruiz
   * Patrick McGinnis
@@ -75,4 +74,4 @@ thanks to everyone who contributed!
   * Thomas Hatley
   * Trent Shumay
 
-and 963 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!
+and 968 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!
