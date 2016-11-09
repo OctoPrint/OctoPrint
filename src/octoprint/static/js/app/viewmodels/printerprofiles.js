@@ -10,7 +10,8 @@ $(function() {
                 width: 200,
                 depth: 200,
                 height: 200,
-                origin: "lowerleft"
+                origin: "lowerleft",
+                custom_box: false
             },
             heatedBed: true,
             axes: {
@@ -53,6 +54,9 @@ $(function() {
                 self.volumeOrigin("center");
             }
         });
+        self.volumeOrigin.subscribe(function() {
+            self.toBoundingBoxPlaceholders(self.defaultBoundingBox(self.volumeWidth(), self.volumeDepth(), self.volumeHeight(), self.volumeOrigin()));
+        });
 
         self.heatedBed = ko.observable();
 
@@ -69,6 +73,20 @@ $(function() {
         self.axisYInverted = ko.observable(false);
         self.axisZInverted = ko.observable(false);
         self.axisEInverted = ko.observable(false);
+
+        self.customBoundingBox = ko.observable(false);
+        self.boundingBoxMinX = ko.observable();
+        self.boundingBoxMinY = ko.observable();
+        self.boundingBoxMinZ = ko.observable();
+        self.boundingBoxMaxX = ko.observable();
+        self.boundingBoxMaxY = ko.observable();
+        self.boundingBoxMaxZ = ko.observable();
+        self.boundingBoxMinXPlaceholder = ko.observable();
+        self.boundingBoxMinYPlaceholder = ko.observable();
+        self.boundingBoxMinZPlaceholder = ko.observable();
+        self.boundingBoxMaxXPlaceholder = ko.observable();
+        self.boundingBoxMaxYPlaceholder = ko.observable();
+        self.boundingBoxMaxZPlaceholder = ko.observable();
 
         self.koExtruderOffsets = ko.pureComputed(function() {
             var extruderOffsets = self.extruderOffsets();
@@ -181,6 +199,13 @@ $(function() {
             self.volumeFormFactor(data.volume.formFactor);
             self.volumeOrigin(data.volume.origin);
 
+            if (data.volume.custom_box) {
+                self.toBoundingBoxData(data.volume.custom_box, true);
+            } else {
+                var box = self.defaultBoundingBox(data.volume.width, data.volume.depth, data.volume.height, data.volume.origin);
+                self.toBoundingBoxData(box, false);
+            }
+
             self.heatedBed(data.heatedBed);
 
             self.nozzleDiameter(data.extruder.nozzleDiameter);
@@ -268,6 +293,8 @@ $(function() {
                 }
             };
 
+            self.fillBoundingBoxData(profile);
+
             var offsetX, offsetY;
             if (self.extruders() > 1) {
                 for (var i = 0; i < self.extruders() - 1; i++) {
@@ -286,6 +313,76 @@ $(function() {
             }
 
             return profile;
+        };
+
+        self.defaultBoundingBox = function(width, depth, height, origin) {
+            if (origin == "center") {
+                var halfWidth = width / 2.0;
+                var halfDepth = depth / 2.0;
+
+                return {
+                    x_min: -halfWidth,
+                    y_min: -halfDepth,
+                    z_min: 0.0,
+                    x_max: halfWidth,
+                    y_max: halfDepth,
+                    z_max: height
+                }
+            } else {
+                return {
+                    x_min: 0.0,
+                    y_min: 0.0,
+                    z_min: 0.0,
+                    x_max: width,
+                    y_max: depth,
+                    z_max: height
+                }
+            }
+        };
+
+        self.toBoundingBoxData = function(box, custom) {
+            self.customBoundingBox(custom);
+            if (custom) {
+                self.boundingBoxMinX(box.x_min);
+                self.boundingBoxMinY(box.y_min);
+                self.boundingBoxMinZ(box.z_min);
+                self.boundingBoxMaxX(box.x_max);
+                self.boundingBoxMaxY(box.y_max);
+                self.boundingBoxMaxZ(box.z_max);
+            } else {
+                self.boundingBoxMinX(undefined);
+                self.boundingBoxMinY(undefined);
+                self.boundingBoxMinZ(undefined);
+                self.boundingBoxMaxX(undefined);
+                self.boundingBoxMaxY(undefined);
+                self.boundingBoxMaxZ(undefined);
+            }
+            self.toBoundingBoxPlaceholders(box);
+        };
+
+        self.toBoundingBoxPlaceholders = function(box) {
+            self.boundingBoxMinXPlaceholder(box.x_min);
+            self.boundingBoxMinYPlaceholder(box.y_min);
+            self.boundingBoxMinZPlaceholder(box.z_min);
+            self.boundingBoxMaxXPlaceholder(box.x_max);
+            self.boundingBoxMaxYPlaceholder(box.y_max);
+            self.boundingBoxMaxZPlaceholder(box.z_max);
+        };
+
+        self.fillBoundingBoxData = function(profile) {
+            if (self.customBoundingBox()) {
+                var defaultBox = self.defaultBoundingBox(self.volumeWidth(), self.volumeDepth(), self.volumeHeight(), self.volumeOrigin());
+                profile.volume.custom_box = {
+                    x_min: (self.boundingBoxMinX() !== undefined) ? Math.min(self.boundingBoxMinX(), defaultBox.x_min) : defaultBox.x_min,
+                    y_min: (self.boundingBoxMinY() !== undefined) ? Math.min(self.boundingBoxMinY(), defaultBox.y_min) : defaultBox.y_min,
+                    z_min: (self.boundingBoxMinZ() !== undefined) ? Math.min(self.boundingBoxMinZ(), defaultBox.z_min) : defaultBox.z_min,
+                    x_max: (self.boundingBoxMaxX() !== undefined) ? Math.max(self.boundingBoxMaxX(), defaultBox.x_max) : defaultBox.x_max,
+                    y_max: (self.boundingBoxMaxY() !== undefined) ? Math.max(self.boundingBoxMaxY(), defaultBox.y_max) : defaultBox.y_max,
+                    z_max: (self.boundingBoxMaxZ() !== undefined) ? Math.max(self.boundingBoxMaxZ(), defaultBox.z_max) : defaultBox.z_max
+                };
+            } else {
+                profile.volume.custom_box = false;
+            }
         };
 
         self._sanitize = function(name) {

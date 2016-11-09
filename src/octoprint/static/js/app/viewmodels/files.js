@@ -647,19 +647,31 @@ $(function() {
             }
 
             // set print volume boundaries
-            var boundaries = {
-                minX : 0,
-                maxX : volumeInfo.width(),
-                minY : 0,
-                maxY : volumeInfo.depth(),
-                minZ : 0,
-                maxZ : volumeInfo.height()
-            };
-            if (volumeInfo.origin() == "center") {
-                boundaries["maxX"] = volumeInfo.width() / 2;
-                boundaries["minX"] = -1 * boundaries["maxX"];
-                boundaries["maxY"] = volumeInfo.depth() / 2;
-                boundaries["minY"] = -1 * boundaries["maxY"];
+            var boundaries;
+            if (_.isPlainObject(volumeInfo.custom_box)) {
+                boundaries = {
+                    minX : volumeInfo.custom_box.x_min(),
+                    minY : volumeInfo.custom_box.y_min(),
+                    minZ : volumeInfo.custom_box.z_min(),
+                    maxX : volumeInfo.custom_box.x_max(),
+                    maxY : volumeInfo.custom_box.y_max(),
+                    maxZ : volumeInfo.custom_box.z_max()
+                }
+            } else {
+                boundaries = {
+                    minX : 0,
+                    maxX : volumeInfo.width(),
+                    minY : 0,
+                    maxY : volumeInfo.depth(),
+                    minZ : 0,
+                    maxZ : volumeInfo.height()
+                };
+                if (volumeInfo.origin() == "center") {
+                    boundaries["maxX"] = volumeInfo.width() / 2;
+                    boundaries["minX"] = -1 * boundaries["maxX"];
+                    boundaries["maxY"] = volumeInfo.depth() / 2;
+                    boundaries["minY"] = -1 * boundaries["maxY"];
+                }
             }
 
             // model not within bounds, we need to prepare a warning
