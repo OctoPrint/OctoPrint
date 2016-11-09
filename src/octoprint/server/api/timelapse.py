@@ -30,6 +30,20 @@ _timelapse_cache_unrendered = []
 _timelapse_cache_unrendered_lastmodified = None
 _timelapse_cache_mutex = threading.RLock()
 
+def _config_for_timelapse(timelapse):
+	if timelapse is not None and isinstance(timelapse, octoprint.timelapse.ZTimelapse):
+		return dict(type="zchange",
+		            postRoll=timelapse.post_roll,
+		            fps=timelapse.fps,
+		            retractionZHop=timelapse.retraction_zhop)
+	elif timelapse is not None and isinstance(timelapse, octoprint.timelapse.TimedTimelapse):
+		return dict(type="timed",
+		            postRoll=timelapse.post_roll,
+		            fps=timelapse.fps,
+		            interval=timelapse.interval)
+	else:
+		return dict(type="off")
+
 def _lastmodified(unrendered):
 	lm_finished = octoprint.timelapse.last_modified_finished()
 	if unrendered:
@@ -44,9 +58,13 @@ def _etag(unrendered, lm=None):
 	if lm is None:
 		lm = _lastmodified(unrendered)
 
+	timelapse = octoprint.timelapse.current
+	config = _config_for_timelapse(timelapse)
+
 	import hashlib
 	hash = hashlib.sha1()
 	hash.update(str(lm))
+	hash.update(repr(config))
 
 	return hash.hexdigest()
 
@@ -56,19 +74,7 @@ def _etag(unrendered, lm=None):
                             unless=lambda: request.values.get("force", "false") in valid_boolean_trues)
 def getTimelapseData():
 	timelapse = octoprint.timelapse.current
-
-	if timelapse is not None and isinstance(timelapse, octoprint.timelapse.ZTimelapse):
-		config = dict(type="zchange",
-		              postRoll=timelapse.post_roll,
-		              fps=timelapse.fps,
-		              retractionZHop=timelapse.retraction_zhop)
-	elif timelapse is not None and isinstance(timelapse, octoprint.timelapse.TimedTimelapse):
-		config = dict(type="timed",
-		              postRoll=timelapse.post_roll,
-		              fps=timelapse.fps,
-		              interval=timelapse.interval)
-	else:
-		config = dict(type="off")
+	config = _config_for_timelapse(timelapse)
 
 	force = request.values.get("force", "false") in valid_boolean_trues
 	unrendered = request.values.get("unrendered", "false") in valid_boolean_trues
