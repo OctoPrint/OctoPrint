@@ -617,7 +617,7 @@ class ZTimelapse(Timelapse):
 		Timelapse.process_post_roll(self)
 
 	def _on_z_change(self, event, payload):
-		if self._retraction_zhop != 0:
+		if self._retraction_zhop != 0 and payload["old"] is not None and payload["new"] is not None:
 			# check if height difference equals z-hop or is negative, if so don't take a picture
 			diff = round(payload["new"] - payload["old"], 3)
 			zhop = round(self._retraction_zhop, 3)

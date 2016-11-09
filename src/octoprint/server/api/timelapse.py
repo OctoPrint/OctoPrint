@@ -204,15 +204,15 @@ def setTimelapseConfig():
 				else:
 					return make_response("Invalid value for interval: %d" % interval)
 
-		if "retractionZHop" in request.values:
+		if "retractionZHop" in data:
 			config["options"] = {
 				"retractionZHop": 0
 			}
 
 			try:
-				retractionZHop = float(request.values["retractionZHop"])
+				retractionZHop = float(data["retractionZHop"])
 			except ValueError:
-				return make_response("Invalid value for retraction Z-Hop: %r" % request.values["retractionZHop"])
+				return make_response("Invalid value for retraction Z-Hop: %r" % data["retractionZHop"])
 			else:
 				if retractionZHop > 0:
 					config["options"]["retractionZHop"] = retractionZHop
