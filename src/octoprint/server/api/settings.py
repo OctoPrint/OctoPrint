@@ -8,7 +8,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import logging
 
 from flask import request, jsonify, make_response
-from flask.ext.login import current_user
+from flask_login import current_user
 from werkzeug.exceptions import BadRequest
 
 from octoprint.events import eventManager, Events
@@ -32,7 +32,7 @@ def _etag(lm=None):
 
 	connection_options = printer.__class__.get_connection_options()
 	plugins = sorted(octoprint.plugin.plugin_manager().enabled_plugins)
-	if current_user is not None and not current_user.is_anonymous():
+	if current_user is not None and not current_user.is_anonymous:
 		roles = sorted(current_user.roles)
 	else:
 		roles = []
