@@ -25,10 +25,6 @@ import re
 import os
 import pkg_resources
 
-class PipUsageTypes(object):
-	INSTALL = "install"
-	UNINSTALL = "uninstall"
-
 class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
                           octoprint.plugin.TemplatePlugin,
                           octoprint.plugin.AssetPlugin,
@@ -37,6 +33,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
                           octoprint.plugin.BlueprintPlugin):
 
 	ARCHIVE_EXTENSIONS = (".zip", ".tar.gz", ".tgz", ".tar")
+
+	pip_inapplicable_arguments = dict(uninstall=["--user"])
 
 	def __init__(self):
 		self._pending_enable = set()
@@ -269,7 +267,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		success_string = "Successfully installed"
 		failure_string = "Could not install"
 		try:
-			returncode, stdout, stderr = self._call_pip(pip_args, PipUsageTypes.INSTALL)
+			returncode, stdout, stderr = self._call_pip(pip_args)
 		except:
 			self._logger.exception("Could not install plugin from %s" % url)
 			return make_response("Could not install plugin from URL, see the log for more details", 500)
@@ -277,7 +275,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			if force:
 				pip_args += ["--ignore-installed", "--force-reinstall", "--no-deps"]
 				try:
-					returncode, stdout, stderr = self._call_pip(pip_args, PipUsageTypes.INSTALL)
+					returncode, stdout, stderr = self._call_pip(pip_args)
 				except:
 					self._logger.exception("Could not install plugin from %s" % url)
 					return make_response("Could not install plugin from URL, see the log for more details", 500)
@@ -388,7 +386,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 			pip_args = ["uninstall", "--yes", origin]
 			try:
-				self._call_pip(pip_args, PipUsageTypes.UNINSTALL)
+				self._call_pip(pip_args)
 			except:
 				self._logger.exception(u"Could not uninstall plugin via pip")
 				return make_response("Could not uninstall plugin via pip, see the log for more details", 500)
@@ -478,7 +476,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		notification.update(result)
 		self._plugin_manager.send_plugin_message(self._identifier, notification)
 
-	def _call_pip(self, args, pip_usage_type):
+	def _call_pip(self, args):
 		if self._pip_caller is None or not self._pip_caller.available:
 			raise RuntimeError(u"No pip available, can't operate".format(**locals()))
 
@@ -489,16 +487,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 		if additional_args is not None:
 
-			inapplicable_arguments = []
-
-			if pip_usage_type == PipUsageTypes.INSTALL:
-				inapplicable_arguments += []
-
-			elif pip_usage_type == PipUsageTypes.UNINSTALL:
-				inapplicable_arguments += [
-					"--user"
-				]
-
+			inapplicable_arguments = self.__class__.pip_inapplicable_arguments.get(args[0], list())
 			for inapplicable_argument in inapplicable_arguments:
 				additional_args = re.sub("(^|\s)" + re.escape(inapplicable_argument) + "\\b", "", additional_args)
 
