@@ -197,6 +197,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 		eventManager().fire(Events.CONNECTING)
 		self._printerProfileManager.select(profile)
+
+		from octoprint.logging.handlers import SerialLogHandler
+		SerialLogHandler.on_open_connection()
+
 		self._comm = comm.MachineCom(port, baudrate, callbackObject=self, printerProfileManager=self._printerProfileManager)
 
 	def disconnect(self):
@@ -314,7 +318,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 	def set_temperature(self, heater, value):
 		if not PrinterInterface.valid_heater_regex.match(heater):
-			raise ValueError("heater must match \"tool[0-9]+\" or \"bed\": {heater}".format(type=heater))
+			raise ValueError("heater must match \"tool[0-9]+\" or \"bed\": {heater}".format(heater=heater))
 
 		if not isinstance(value, (int, long, float)) or value < 0:
 			raise ValueError("value must be a valid number >= 0: {value}".format(value=value))
@@ -950,7 +954,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		self._addLog(to_unicode(message, "utf-8", errors="replace"))
 
 	def on_comm_temperature_update(self, temp, bedTemp):
-		self._addTemperatureData(temp, bedTemp)
+		self._addTemperatureData(copy.deepcopy(temp), copy.deepcopy(bedTemp))
+
+	def on_comm_position_update(self, position):
+		eventManager().fire(Events.POSITION_UPDATE, position)
 
 	def on_comm_state_change(self, state):
 		"""

@@ -18,21 +18,19 @@ class VirtualPrinterPlugin(octoprint.plugin.SettingsPlugin):
 				["devel", "virtualPrinter", "enabled"]):
 			return None
 
-		import logging
 		import logging.handlers
+		from octoprint.logging.handlers import CleaningTimedRotatingFileHandler
 
-		seriallog_handler = logging.handlers.RotatingFileHandler(
-			self._settings.get_plugin_logfile_path(postfix="serial"),
-			maxBytes=2 * 1024 * 1024)
-		seriallog_handler.setFormatter(
-			logging.Formatter("%(asctime)s %(message)s"))
+		seriallog_handler = CleaningTimedRotatingFileHandler(self._settings.get_plugin_logfile_path(postfix="serial"),
+		                                                     when="D",
+		                                                     backupCount=3)
+		seriallog_handler.setFormatter(logging.Formatter("%(asctime)s %(message)s"))
 		seriallog_handler.setLevel(logging.DEBUG)
 
 		from . import virtual
 
-		serial_obj = virtual.VirtualPrinter(
-			seriallog_handler=seriallog_handler,
-			read_timeout=float(read_timeout))
+		serial_obj = virtual.VirtualPrinter(seriallog_handler=seriallog_handler,
+		                                    read_timeout=float(read_timeout))
 		return serial_obj
 
 

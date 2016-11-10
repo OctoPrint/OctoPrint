@@ -3,7 +3,7 @@
 from __future__ import absolute_import, division, print_function
 
 import sys
-import logging
+import logging as log
 
 #~~ version
 
@@ -20,7 +20,7 @@ del get_versions
 
 #~~ sane logging defaults
 
-logging.basicConfig()
+log.basicConfig()
 
 #~~ try to ensure a sound SSL environment
 
@@ -108,6 +108,9 @@ def init_logging(settings, use_logging_file=True, logging_file=None, default_con
 			"formatters": {
 				"simple": {
 					"format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+				},
+				"serial": {
+					"format": "%(asctime)s - %(message)s"
 				}
 			},
 			"handlers": {
@@ -118,18 +121,18 @@ def init_logging(settings, use_logging_file=True, logging_file=None, default_con
 					"stream": "ext://sys.stdout"
 				},
 				"file": {
-					"class": "logging.handlers.TimedRotatingFileHandler",
+					"class": "octoprint.logging.handlers.CleaningTimedRotatingFileHandler",
 					"level": "DEBUG",
 					"formatter": "simple",
 					"when": "D",
-					"backupCount": "1",
+					"backupCount": 6,
 					"filename": os.path.join(settings.getBaseFolder("logs"), "octoprint.log")
 				},
 				"serialFile": {
-					"class": "logging.handlers.RotatingFileHandler",
+					"class": "octoprint.logging.handlers.SerialLogHandler",
 					"level": "DEBUG",
-					"formatter": "simple",
-					"maxBytes": 2 * 1024 * 1024, # let's limit the serial log to 2MB in size
+					"formatter": "serial",
+					"backupCount": 3,
 					"filename": os.path.join(settings.getBaseFolder("logs"), "serial.log")
 				}
 			},
@@ -180,11 +183,11 @@ def init_logging(settings, use_logging_file=True, logging_file=None, default_con
 		config = default_config
 
 	# configure logging globally
-	import logging.config
-	logging.config.dictConfig(config)
+	import logging.config as logconfig
+	logconfig.dictConfig(config)
 
 	# make sure we log any warnings
-	logging.captureWarnings(True)
+	log.captureWarnings(True)
 
 	import warnings
 
@@ -197,9 +200,9 @@ def init_logging(settings, use_logging_file=True, logging_file=None, default_con
 
 	# make sure we also log any uncaught exceptions
 	if uncaught_logger is None:
-		logger = logging.getLogger(__name__)
+		logger = log.getLogger(__name__)
 	else:
-		logger = logging.getLogger(uncaught_logger)
+		logger = log.getLogger(uncaught_logger)
 
 	if uncaught_handler is None:
 		def exception_logger(exc_type, exc_value, exc_tb):
@@ -216,7 +219,7 @@ def init_pluginsystem(settings):
 	from octoprint.plugin import plugin_manager
 	pm = plugin_manager(init=True, settings=settings)
 
-	logger = logging.getLogger(__name__)
+	logger = log.getLogger(__name__)
 	settings_overlays = dict()
 	disabled_from_overlays = dict()
 

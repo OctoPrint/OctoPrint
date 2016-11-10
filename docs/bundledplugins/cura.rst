@@ -57,18 +57,30 @@ path to that in the plugin settings.
 Compiling for Raspbian
 ++++++++++++++++++++++
 
-.. todo::
-
-   Provide updated binary, verify if makefile patch can finally be dumped on Raspbian
-   Jessie.
-
 .. note::
 
-   A binary of CuraEngine 14.12 precompiled on Raspbian 2015-01-31 is available
-   `here <http://bit.ly/octopi_cura_engine_1412>`_. Don't forget to make it
+   A binary of CuraEngine 15.04.06 precompiled on Raspbian Jessie Lite 2016-03-18 is available
+   `here <http://bit.ly/octopi_cura_engine_150406>`_. Don't forget to make it
    executable after copying it to your preferred destination on your Pi
    (suggestion: ``/usr/local/bin``) with ``chmod +x cura_engine``. Use at your
    own risk.
+
+Raspbian Jessie
+~~~~~~~~~~~~~~~
+
+Building on Raspbian Jessie is as easy as::
+
+    sudo apt-get -y install gcc-4.7 g++-4.7
+    git clone -b legacy https://github.com/Ultimaker/CuraEngine.git
+    cd CuraEngine
+    make
+
+After this has completed, you'll find your shiny new build of CuraEngine in
+the `build` folder (full path for above example:
+``~/CuraEngine/build/CuraEngine``).
+
+Raspbian Wheezy
+~~~~~~~~~~~~~~~
 
 You'll need to install a new version of gcc and g++ and patch CuraEngine's
 Makefile (see `this post <http://umforum.ultimaker.com/index.php?/topic/5943-recent-build-of-curaengine-wont-compile-on-raspberry-pi/#entry58539>`_)

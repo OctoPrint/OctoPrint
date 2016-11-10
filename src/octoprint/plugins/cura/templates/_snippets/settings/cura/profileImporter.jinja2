@@ -11,7 +11,7 @@
                     <div class="input-prepend">
                 <span class="btn fileinput-button">
                     <span>{{ _('Browse...') }}</span>
-                    <input id="settings-cura-import" type="file" name="file" data-url="{{ url_for("plugin.cura.import_cura_profile") }}">
+                    <input id="settings-cura-import" type="file" name="file" data-url="{{ url_for("plugin.cura.import_cura_profile") }}" accept=".ini">
                 </span>
                         <span class="add-on" data-bind="text: fileName"></span>
                     </div>
@@ -51,10 +51,10 @@
             </div>
         </form>
         <small>{% trans %}
-            You can import your existing profile <code>.ini</code> files from Cura (version up to and
-            including 15.04) here. Please be aware that neither the <code>.json</code> profile format
-            from Cura versions starting with 15.06 is supported, nor are the custom Cura profile formats
-            that third party tools like e.g. Repetier create.
+            You can import your existing profile <code>.ini</code> files from <strong>Cura 15.04.x or older</strong>
+            here. Anything but those are <strong>not supported</strong>. That especiallymeans that <code>.json</code>
+            profiles from Cura 15.06.x and <code>.curaprofile</code> profiles from Cura 2.x will not work, and neither
+            will custom Cura profile formats that third party tools like e.g. Repetier create.
         {% endtrans %}</small>
     </div>
     <div class="modal-footer">

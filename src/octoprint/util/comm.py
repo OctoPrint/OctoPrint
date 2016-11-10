@@ -50,8 +50,13 @@ regex_float = re.compile(regex_float_pattern)
 """Regex for a float value."""
 
 regexes_parameters = dict(
+	floatE=re.compile("(^|[^A-Za-z])[Ee](?P<value>%s)" % regex_float_pattern),
+	floatF=re.compile("(^|[^A-Za-z])[Ff](?P<value>%s)" % regex_float_pattern),
 	floatP=re.compile("(^|[^A-Za-z])[Pp](?P<value>%s)" % regex_float_pattern),
+	floatR=re.compile("(^|[^A-Za-z])[Rr](?P<value>%s)" % regex_float_pattern),
 	floatS=re.compile("(^|[^A-Za-z])[Ss](?P<value>%s)" % regex_float_pattern),
+	floatX=re.compile("(^|[^A-Za-z])[Xx](?P<value>%s)" % regex_float_pattern),
+	floatY=re.compile("(^|[^A-Za-z])[Yy](?P<value>%s)" % regex_float_pattern),
 	floatZ=re.compile("(^|[^A-Za-z])[Zz](?P<value>%s)" % regex_float_pattern),
 	intN=re.compile("(^|[^A-Za-z])[Nn](?P<value>%s)" % regex_int_pattern),
 	intT=re.compile("(^|[^A-Za-z])[Tt](?P<value>%s)" % regex_int_pattern)
@@ -106,6 +111,17 @@ regex_repetierTempBed = re.compile("TargetBed:(?P<target>%s)" % regex_positive_f
 Groups will be as follows:
 
   * ``target``: new target temperature (float)
+"""
+
+regex_position = re.compile("X:(?P<x>{float})\s+Y:(?P<y>{float})\s+Z:(?P<z>{float})\s+E:(?P<e>{float})".format(float=regex_float_pattern))
+"""Regex for matching position reporting.
+
+Groups will be as follows:
+
+  * ``x``: X coordinate
+  * ``y``: Y coordinate
+  * ``z``: Z coordinate
+  * ``e``: E coordinate
 """
 
 def serialList():
@@ -187,6 +203,31 @@ gcodeToEvent = {
 	"M81": Events.POWER_OFF,
 }
 
+class PositionRecord(object):
+	def __init__(self, *args, **kwargs):
+		self.x = kwargs.get("x")
+		self.y = kwargs.get("y")
+		self.z = kwargs.get("z")
+		self.e = kwargs.get("e")
+		self.f = kwargs.get("f")
+		self.t = kwargs.get("t")
+
+	def copy_from(self, other):
+		self.x = other.x
+		self.y = other.y
+		self.z = other.z
+		self.e = other.e
+		self.f = other.f
+		self.t = other.t
+
+	def as_dict(self):
+		return dict(x=self.x,
+					y=self.y,
+					z=self.z,
+					e=self.e,
+					t=self.t,
+					f=self.f)
+
 class MachineCom(object):
 	STATE_NONE = 0
 	STATE_OPEN_SERIAL = 1
@@ -230,6 +271,7 @@ class MachineCom(object):
 		self._tempOffsets = dict()
 		self._command_queue = TypedQueue()
 		self._currentZ = None
+		self._currentF = None
 		self._heatupWaitStartTime = None
 		self._heatupWaitTimeLost = 0.0
 		self._pauseWaitStartTime = None
@@ -327,6 +369,10 @@ class MachineCom(object):
 		self._sdFileToSelect = None
 		self._ignore_select = False
 		self._manualStreaming = False
+
+		self._last_position = PositionRecord()
+		self._pause_position = PositionRecord()
+		self._record_pause_position = False
 
 		# print job
 		self._currentFile = None
@@ -600,7 +646,7 @@ class MachineCom(object):
 	def fakeOk(self):
 		self._handle_ok()
 
-	def sendCommand(self, cmd, cmd_type=None, processed=False, force=False):
+	def sendCommand(self, cmd, cmd_type=None, processed=False, force=False, on_sent=None):
 		cmd = to_unicode(cmd, errors="replace")
 		if not processed:
 			cmd = process_gcode_line(cmd)
@@ -609,20 +655,22 @@ class MachineCom(object):
 
 		if self.isPrinting() and not self.isSdFileSelected():
 			try:
-				self._command_queue.put((cmd, cmd_type), item_type=cmd_type)
+				self._command_queue.put((cmd, cmd_type, on_sent), item_type=cmd_type)
 				return True
 			except TypeAlreadyInQueue as e:
 				self._logger.debug("Type already in command queue: " + e.type)
 				return False
 		elif self.isOperational() or force:
-			return self._sendCommand(cmd, cmd_type=cmd_type)
+			return self._sendCommand(cmd, cmd_type=cmd_type, on_sent=on_sent)
 
 	def sendGcodeScript(self, scriptName, replacements=None):
 		context = dict()
 		if replacements is not None and isinstance(replacements, dict):
 			context.update(replacements)
 		context.update(dict(
-			printer_profile=self._printerProfileManager.get_current_or_default()
+			printer_profile=self._printerProfileManager.get_current_or_default(),
+			last_position=self._last_position,
+			pause_position=self._pause_position
 		))
 
 		template = settings().loadScript("gcode", scriptName, context=context)
@@ -780,6 +828,9 @@ class MachineCom(object):
 		self._recordFilePosition()
 		self._callback.on_comm_print_job_cancelled()
 
+	def _pause_preparation_done(self):
+		self._callback.on_comm_print_job_paused()
+
 	def setPause(self, pause):
 		if self.isStreaming():
 			return
@@ -814,8 +865,14 @@ class MachineCom(object):
 			if self.isSdFileSelected():
 				self.sendCommand("M25") # pause print
 
-			self._callback.on_comm_print_job_paused()
+			def _on_M400_sent():
+				# we don't call on_print_job_paused on our callback here
+				# because we do this only after our M114 has been answered
+				# by the firmware
+				self._record_pause_position = True
+				self.sendCommand("M114")
 
+			self.sendCommand("M400", on_sent=_on_M400_sent)
 
 	def getSdFiles(self):
 		return self._sdFiles
@@ -1063,12 +1120,25 @@ class MachineCom(object):
 
 				# position report processing
 				if 'X:' in line and 'Y:' in line and 'Z:' in line:
-					# currently only here to prevent any "B:"s in a position report from
-					# triggering temperature processing and being interpreted as a bed
-					# temperature - can happen with COREXY in current Marlin
-					#
-					# see also issue #1373
-					pass
+					match = regex_position.search(line)
+					if match:
+						# we don't know T or F when printing from SD since
+						# there's no way to query it from the firmware and
+						# no way to track it ourselves when not streaming
+						# the file - this all sucks sooo much
+						self._last_position.x = float(match.group("x"))
+						self._last_position.y = float(match.group("y"))
+						self._last_position.z = float(match.group("z"))
+						self._last_position.e = float(match.group("e"))
+						self._last_position.t = self._currentTool if not self.isSdFileSelected() else None
+						self._last_position.f = self._currentF if not self.isSdFileSelected() else None
+
+						if self._record_pause_position:
+							self._record_pause_position = False
+							self._pause_position.copy_from(self._last_position)
+							self._pause_preparation_done()
+
+						self._callback.on_comm_position_update(self._last_position.as_dict())
 
 				# temperature processing
 				elif ' T:' in line or line.startswith('T:') or ' T0:' in line or line.startswith('T0:') or ((' B:' in line or line.startswith('B:')) and not 'A:' in line):
@@ -1471,16 +1541,17 @@ class MachineCom(object):
 
 			try:
 				if isinstance(entry, tuple):
-					if not len(entry) == 2:
+					if not len(entry) == 3:
 						# something with that entry is broken, ignore it and fetch
 						# the next one
 						continue
-					cmd, cmd_type = entry
+					cmd, cmd_type, callback = entry
 				else:
 					cmd = entry
 					cmd_type = None
+					callback = None
 
-				if self._sendCommand(cmd, cmd_type=cmd_type):
+				if self._sendCommand(cmd, cmd_type=cmd_type, on_sent=callback):
 					# we actually did add this cmd to the send queue, so let's
 					# return, we are done here
 					return True
@@ -1808,7 +1879,7 @@ class MachineCom(object):
 
 			return result
 
-	def _sendCommand(self, cmd, cmd_type=None):
+	def _sendCommand(self, cmd, cmd_type=None, on_sent=None):
 		# Make sure we are only handling one sending job at a time
 		with self._sendingLock:
 			if self._serial is None:
@@ -1828,7 +1899,7 @@ class MachineCom(object):
 				eventManager().fire(gcodeToEvent[gcode])
 
 			# actually enqueue the command for sending
-			if self._enqueue_for_sending(cmd, command_type=cmd_type):
+			if self._enqueue_for_sending(cmd, command_type=cmd_type, on_sent=on_sent):
 				self._process_command_phase("queued", cmd, cmd_type, gcode=gcode)
 				return True
 			else:
@@ -1836,7 +1907,7 @@ class MachineCom(object):
 
 	##~~ send loop handling
 
-	def _enqueue_for_sending(self, command, linenumber=None, command_type=None):
+	def _enqueue_for_sending(self, command, linenumber=None, command_type=None, on_sent=None):
 		"""
 		Enqueues a command an optional linenumber to use for it in the send queue.
 
@@ -1847,7 +1918,7 @@ class MachineCom(object):
 		"""
 
 		try:
-			self._send_queue.put((command, linenumber, command_type), item_type=command_type)
+			self._send_queue.put((command, linenumber, command_type, on_sent), item_type=command_type)
 			return True
 		except TypeAlreadyInQueue as e:
 			self._logger.debug("Type already in send queue: " + e.type)
@@ -1871,8 +1942,8 @@ class MachineCom(object):
 					if not self._send_queue_active:
 						break
 
-					# fetch command and optional linenumber from queue
-					command, linenumber, command_type = entry
+					# fetch command, command type and optional linenumber and sent callback from queue
+					command, linenumber, command_type, on_sent = entry
 
 					# some firmwares (e.g. Smoothie) might support additional in-band communication that will not
 					# stick to the acknowledgement behaviour of GCODE, so we check here if we have a GCODE command
@@ -1920,6 +1991,9 @@ class MachineCom(object):
 							self._do_send_without_checksum(command_to_send)
 
 					# trigger "sent" phase and use up one "ok"
+					if on_sent is not None and callable(on_sent):
+						# we have a sent callback for this specific command, let's execute it now
+						on_sent()
 					self._process_command_phase("sent", command, command_type, gcode=gcode)
 
 					# we only need to use up a clear if the command we just sent was either a gcode command or if we also
@@ -2092,7 +2166,8 @@ class MachineCom(object):
 			self._currentTool = int(toolMatch.group("value"))
 
 	def _gcode_G0_sent(self, cmd, cmd_type=None):
-		if 'Z' in cmd:
+		if "Z" in cmd or "F" in cmd:
+			# track Z
 			match = regexes_parameters["floatZ"].search(cmd)
 			if match:
 				try:
@@ -2100,6 +2175,15 @@ class MachineCom(object):
 					if self._currentZ != z:
 						self._currentZ = z
 						self._callback.on_comm_z_change(z)
+				except ValueError:
+					pass
+
+			# track F
+			match = regexes_parameters["floatF"].search(cmd)
+			if match:
+				try:
+					f = float(match.group("value"))
+					self._currentF = f
 				except ValueError:
 					pass
 	_gcode_G1_sent = _gcode_G0_sent
@@ -2131,7 +2215,7 @@ class MachineCom(object):
 			return None, # Don't send bed commands if we don't have a heated bed
 	_gcode_M190_queuing = _gcode_M140_queuing
 
-	def _gcode_M104_sent(self, cmd, cmd_type=None, wait=False):
+	def _gcode_M104_sent(self, cmd, cmd_type=None, wait=False, support_r=False):
 		toolNum = self._currentTool
 		toolMatch = regexes_parameters["intT"].search(cmd)
 
@@ -2143,6 +2227,9 @@ class MachineCom(object):
 				self._currentTool = toolNum
 
 		match = regexes_parameters["floatS"].search(cmd)
+		if not match and support_r:
+			match = regexes_parameters["floatR"].search(cmd)
+
 		if match:
 			try:
 				target = float(match.group("value"))
@@ -2151,11 +2238,15 @@ class MachineCom(object):
 					self._temp[toolNum] = (actual, target)
 				else:
 					self._temp[toolNum] = (None, target)
+				self._callback.on_comm_temperature_update(self._temp, self._bedTemp)
 			except ValueError:
 				pass
 
-	def _gcode_M140_sent(self, cmd, cmd_type=None, wait=False):
+	def _gcode_M140_sent(self, cmd, cmd_type=None, wait=False, support_r=False):
 		match = regexes_parameters["floatS"].search(cmd)
+		if not match and support_r:
+			match = regexes_parameters["floatR"].search(cmd)
+
 		if match:
 			try:
 				target = float(match.group("value"))
@@ -2164,6 +2255,7 @@ class MachineCom(object):
 					self._bedTemp = (actual, target)
 				else:
 					self._bedTemp = (None, target)
+				self._callback.on_comm_temperature_update(self._temp, self._bedTemp)
 			except ValueError:
 				pass
 
@@ -2171,13 +2263,18 @@ class MachineCom(object):
 		self._heatupWaitStartTime = time.time()
 		self._long_running_command = True
 		self._heating = True
-		self._gcode_M104_sent(cmd, cmd_type, wait=True)
+		self._gcode_M104_sent(cmd, cmd_type, wait=True, support_r=True)
 
 	def _gcode_M190_sent(self, cmd, cmd_type=None):
 		self._heatupWaitStartTime = time.time()
 		self._long_running_command = True
 		self._heating = True
-		self._gcode_M140_sent(cmd, cmd_type, wait=True)
+		self._gcode_M140_sent(cmd, cmd_type, wait=True, support_r=True)
+
+	def _gcode_M116_sent(self, cmd, cmd_type=None):
+		self._heatupWaitStartTime = time.time()
+		self._long_running_command = True
+		self._heating = True
 
 	def _gcode_M110_sending(self, cmd, cmd_type=None):
 		newLineNumber = None
@@ -2252,6 +2349,9 @@ class MachineComPrintCallback(object):
 		pass
 
 	def on_comm_temperature_update(self, temp, bedTemp):
+		pass
+
+	def on_comm_position_update(self, position):
 		pass
 
 	def on_comm_state_change(self, state):
@@ -2645,8 +2745,8 @@ def canonicalize_temperatures(parsed, current):
 
 	  * If ``T`` is not included with the reported extruders, return
 	  * If more than just ``T`` is reported:
-	    * If both ``T`` and ``T0`` are reported set ``Tc`` to ``T``, remove
-	      ``T`` from the result.
+	    * If both ``T`` and ``T0`` are reported, remove ``T`` from
+	      the result.
 	    * Else set ``T0`` to ``T`` and delete ``T`` (Smoothie extra).
 	  * If only ``T`` is reported, set ``Tc`` to ``T`` and delete ``T``
 	  * return
@@ -2670,23 +2770,21 @@ def canonicalize_temperatures(parsed, current):
 
 	if len(reported_extruders) > 1:
 		if "T0" in reported_extruders:
-			# Both T and T0 are present, so T contains the current
-			# extruder's temperature, e.g. for current_tool == 1:
+			# Both T and T0 are present, let's check if Tc is too.
+			# If it is, we just throw away T (it's redundant). It
+			# it isn't, we first copy T to Tc, then throw T away.
 			#
-			#     T:<T1> T0:<T0> T2:<T2> ... B:<B>
-			#
-			# becomes
-			#
-			#     T0:<T1> T1:<T1> T2:<T2> ... B:<B>
-			#
-			# Same goes if Tc is already present, it will be overwritten:
-			#
-			#     T:<T1> T0:<T0> T1:<T1> T2:<T2> ... B:<B>
-			#
-			# becomes
-			#
-			#     T0:<T0> T1:<T1> T2:<T2> ... B:<B>
-			result[current_tool_key] = result["T"]
+			# The easier construct would be to always overwrite Tc
+			# with T and throw away T, but that assumes that if
+			# both are present, T has the same value as Tc. That
+			# might not necessarily be the case (weird firmware)
+			# so we err on the side of caution here and trust Tc
+			# over T.
+			if current_tool_key not in reported_extruders:
+				# T and T0 are present, but Tc is missing - copy
+				# T to Tc
+				result[current_tool_key] = result["T"]
+			# throw away T, it's redundant (now)
 			del result["T"]
 		else:
 			# So T is there, but T0 isn't. That looks like Smoothieware which
@@ -2710,7 +2808,7 @@ def canonicalize_temperatures(parsed, current):
 		#     reports the current tool and bed
 		#
 		# In both cases it is however safe to just move our T over
-		# to T<current> in the parsed data, current should always stay
+		# to Tc in the parsed data, current should always stay
 		# 0 for single extruder printers. E.g. for current_tool == 1:
 		#
 		#     T:<T1>

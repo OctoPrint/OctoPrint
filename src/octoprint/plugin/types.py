@@ -101,7 +101,7 @@ class OctoPrintPlugin(Plugin):
 
 class ReloadNeedingPlugin(Plugin):
 	"""
-	Mixin for plugin types that need a reload of the UI in order to become usable.
+	Mixin for plugin types that need a reload of the UI after enabling/disabling them.
 	"""
 
 class StartupPlugin(OctoPrintPlugin, SortablePlugin):

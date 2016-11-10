@@ -236,6 +236,15 @@ class ReverseProxiedEnvironment(object):
 		to_wsgi_format = lambda header: "HTTP_" + header.upper().replace("-", "_")
 		return map(to_wsgi_format, values)
 
+	@staticmethod
+	def valid_ip(address):
+		import netaddr
+		try:
+			netaddr.IPAddress(address)
+			return True
+		except:
+			return False
+
 	def __init__(self,
 	             header_prefix=None,
 	             header_scheme=None,
@@ -290,11 +299,43 @@ class ReverseProxiedEnvironment(object):
 			if host is None:
 				return None, None
 
+			default_port = "443" if scheme == "https" else "80"
+			host = host.strip()
+
 			if ":" in host:
-				server, port = host.split(":", 1)
+				# we might have an ipv6 address here, or a port, or both
+
+				if host[0] == "[":
+					# that looks like an ipv6 address with port, e.g. [fec1::1]:80
+					address_end = host.find("]")
+					if address_end == -1:
+						# no ], that looks like a seriously broken address
+						return None, None
+
+					# extract server ip, skip enclosing [ and ]
+					server = host[1:address_end]
+					tail = host[address_end + 1:]
+
+					# now check if there's also a port
+					if len(tail) and tail[0] == ":":
+						# port included as well
+						port = tail[1:]
+					else:
+						# no port, use default one
+						port = default_port
+
+				elif self.__class__.valid_ip(host):
+					# ipv6 address without port
+					server = host
+					port = default_port
+
+				else:
+					# ipv4 address with port
+					server, port = host.rsplit(":", 1)
+
 			else:
 				server = host
-				port = "443" if scheme == "https" else "80"
+				port = default_port
 
 			return server, port
 
@@ -352,7 +393,12 @@ class ReverseProxiedEnvironment(object):
 				# default port for scheme, can be skipped
 				environ["HTTP_HOST"] = environ["SERVER_NAME"]
 			else:
-				environ["HTTP_HOST"] = environ["SERVER_NAME"] + ":" + environ["SERVER_PORT"]
+				server_name_component = environ["SERVER_NAME"]
+				if ":" in server_name_component and self.__class__.valid_ip(server_name_component):
+					# this is an ipv6 address, we need to wrap that in [ and ] before appending the port
+					server_name_component = "[" + server_name_component + "]"
+
+				environ["HTTP_HOST"] = server_name_component + ":" + environ["SERVER_PORT"]
 
 		# call wrapped app with rewritten environment
 		return environ
@@ -934,7 +980,7 @@ def check_lastmodified(lastmodified):
 		return False
 
 	from datetime import datetime
-	if isinstance(lastmodified, (float, int)):
+	if isinstance(lastmodified, (int, long, float, complex)):
 		lastmodified = datetime.fromtimestamp(lastmodified).replace(microsecond=0)
 
 	if not isinstance(lastmodified, datetime):
@@ -1234,12 +1280,8 @@ class SettingsCheckUpdater(webassets.updater.BaseUpdater):
 		cache_value = webassets.utils.hash_func(json.dumps(settings().effective_yaml))
 		ctx.cache.set(cache_key, cache_value)
 
-##~~ plugin assets collector
-
-def collect_plugin_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
-	logger = logging.getLogger(__name__ + ".collect_plugin_assets")
-
-	supported_stylesheets = ("css", "less")
+##~~ core assets collector
+def collect_core_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 	assets = dict(
 		js=[],
 		css=[],
@@ -1288,9 +1330,24 @@ def collect_plugin_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 	elif preferred_stylesheet == "css":
 		assets["css"].append('css/octoprint.css')
 
+	return assets
+
+##~~ plugin assets collector
+
+def collect_plugin_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
+	logger = logging.getLogger(__name__ + ".collect_plugin_assets")
+
+	supported_stylesheets = ("css", "less")
+	assets = dict(bundled=dict(js=[], css=[], less=[]),
+	              external=dict(js=[], css=[], less=[]))
+
 	asset_plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.AssetPlugin)
 	for implementation in asset_plugins:
 		name = implementation._identifier
+		is_bundled = implementation._plugin_info.bundled
+
+		asset_key = "bundled" if is_bundled else "external"
+
 		try:
 			all_assets = implementation.get_assets()
 			basefolder = implementation.get_asset_folder()
@@ -1308,13 +1365,13 @@ def collect_plugin_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 			for asset in all_assets["js"]:
 				if not asset_exists("js", asset):
 					continue
-				assets["js"].append('plugin/{name}/{asset}'.format(**locals()))
+				assets[asset_key]["js"].append('plugin/{name}/{asset}'.format(**locals()))
 
 		if preferred_stylesheet in all_assets:
 			for asset in all_assets[preferred_stylesheet]:
 				if not asset_exists(preferred_stylesheet, asset):
 					continue
-				assets[preferred_stylesheet].append('plugin/{name}/{asset}'.format(**locals()))
+				assets[asset_key][preferred_stylesheet].append('plugin/{name}/{asset}'.format(**locals()))
 		else:
 			for stylesheet in supported_stylesheets:
 				if not stylesheet in all_assets:
@@ -1323,7 +1380,7 @@ def collect_plugin_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 				for asset in all_assets[stylesheet]:
 					if not asset_exists(stylesheet, asset):
 						continue
-					assets[stylesheet].append('plugin/{name}/{asset}'.format(**locals()))
+					assets[asset_key][stylesheet].append('plugin/{name}/{asset}'.format(**locals()))
 				break
 
 	return assets

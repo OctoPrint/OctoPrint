@@ -31,6 +31,7 @@ def _etag(lm=None):
 	hash = hashlib.sha1()
 	hash.update(str(lm))
 	hash.update(repr(printerProfileManager.get_default()))
+	hash.update(repr(printerProfileManager.get_current()))
 	return hash.hexdigest()
 
 
@@ -128,17 +129,17 @@ def printerProfilesUpdate(identifier):
 		profile = printerProfileManager.get_default()
 
 	new_profile = json_data["profile"]
-	new_profile = dict_merge(profile, new_profile)
+	merged_profile = dict_merge(profile, new_profile)
 
 	make_default = False
-	if "default" in new_profile:
+	if "default" in merged_profile:
 		make_default = True
 		del new_profile["default"]
 
-	new_profile["id"] = identifier
+		merged_profile["id"] = identifier
 
 	try:
-		saved_profile = printerProfileManager.save(new_profile, allow_overwrite=True, make_default=make_default)
+		saved_profile = printerProfileManager.save(merged_profile, allow_overwrite=True, make_default=make_default)
 	except InvalidProfileError:
 		return make_response("Profile is invalid", 400)
 	except CouldNotOverwriteError:

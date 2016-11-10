@@ -177,7 +177,6 @@ class Server(object):
 		if self._settings.getBoolean(["serial", "log"]):
 			# enable debug logging to serial.log
 			logging.getLogger("SERIAL").setLevel(logging.DEBUG)
-			logging.getLogger("SERIAL").debug("Enabling serial logging")
 
 		# start the intermediary server
 		self._start_intermediary_server()
@@ -520,9 +519,15 @@ class Server(object):
 			self._logger.info("Shutting down...")
 			observer.stop()
 			observer.join()
+			eventManager.fire(events.Events.SHUTDOWN)
 			octoprint.plugin.call_plugin(octoprint.plugin.ShutdownPlugin,
 			                             "on_shutdown",
 			                             sorting_context="ShutdownPlugin.on_shutdown")
+
+			# wait for shutdown even to be processed, but maximally for 15s
+			event_timeout = 15.0
+			if eventManager.join(timeout=event_timeout):
+				self._logger.warn("Event loop was still busy processing after {}s, shutting down anyhow".format(event_timeout))
 
 			if self._octoprint_daemon is not None:
 				self._logger.info("Cleaning up daemon pidfile")
@@ -975,17 +980,18 @@ class Server(object):
 		preferred_stylesheet = self._settings.get(["devel", "stylesheet"])
 		minify = self._settings.getBoolean(["devel", "webassets", "minify"])
 
-		dynamic_assets = util.flask.collect_plugin_assets(
+		dynamic_core_assets = util.flask.collect_core_assets(enable_gcodeviewer=enable_gcodeviewer)
+		dynamic_plugin_assets = util.flask.collect_plugin_assets(
 			enable_gcodeviewer=enable_gcodeviewer,
 			preferred_stylesheet=preferred_stylesheet
 		)
 
 		js_libs = [
-			"js/lib/jquery/jquery-2.1.4.min.js" if minify else "js/lib/jquery/jquery-2.1.4.js",
+			"js/lib/jquery/jquery.min.js" if minify else "js/lib/jquery/jquery.js",
 			"js/lib/modernizr.custom.js",
 			"js/lib/lodash.min.js",
 			"js/lib/sprintf.min.js",
-			"js/lib/knockout-3.4.0.js",
+			"js/lib/knockout.js",
 			"js/lib/knockout.mapping-latest.js",
 			"js/lib/babel.js",
 			"js/lib/avltree.js",
@@ -1010,7 +1016,7 @@ class Server(object):
 			"js/lib/pnotify.min.js",
 			"js/lib/bootstrap-slider-knockout-binding.js",
 			"js/lib/loglevel.min.js",
-			"js/lib/sockjs-0.3.4.min.js"
+			"js/lib/sockjs.min.js" if minify else "js/lib/sockjs.js"
 		]
 		js_client = [
 			"js/app/client/base.js",
@@ -1032,11 +1038,13 @@ class Server(object):
 			"js/app/client/util.js",
 			"js/app/client/wizard.js"
 		]
-		js_app = dynamic_assets["js"] + [
-			"js/app/dataupdater.js",
-			"js/app/helpers.js",
-			"js/app/main.js",
-		]
+		js_core = dynamic_core_assets["js"] + \
+		    dynamic_plugin_assets["bundled"]["js"] + \
+		    ["js/app/dataupdater.js",
+		     "js/app/helpers.js",
+		     "js/app/main.js"]
+		js_plugins = dynamic_plugin_assets["external"]["js"]
+		js_app = js_plugins + js_core
 
 		css_libs = [
 			"css/bootstrap.min.css",
@@ -1047,8 +1055,13 @@ class Server(object):
 			"css/jquery.fileupload-ui.css",
 			"css/pnotify.min.css"
 		]
-		css_app = list(dynamic_assets["css"])
-		less_app = list(dynamic_assets["less"])
+		css_core = list(dynamic_core_assets["css"]) + list(dynamic_plugin_assets["bundled"]["css"])
+		css_plugins = list(dynamic_plugin_assets["external"]["css"])
+		css_app = css_core + css_plugins
+
+		less_core = list(dynamic_core_assets["less"]) + list(dynamic_plugin_assets["bundled"]["less"])
+		less_plugins = list(dynamic_plugin_assets["external"]["less"])
+		less_app = less_core + less_plugins
 
 		from webassets.filter import register_filter, Filter
 		from webassets.filter.cssrewrite.base import PatternRewriter
@@ -1069,7 +1082,7 @@ class Server(object):
 
 				return "{import_with_options}\"{import_url}\";".format(**locals())
 
-		class JsDelimiterBundle(Filter):
+		class JsDelimiterBundler(Filter):
 			name = "js_delimiter_bundler"
 			options = {}
 			def input(self, _in, out, **kwargs):
@@ -1077,34 +1090,74 @@ class Server(object):
 				out.write("\n;\n")
 
 		register_filter(LessImportRewrite)
-		register_filter(JsDelimiterBundle)
+		register_filter(JsDelimiterBundler)
 
+		# JS
 		js_libs_bundle = Bundle(*js_libs, output="webassets/packed_libs.js", filters="js_delimiter_bundler")
 		if minify:
 			js_client_bundle = Bundle(*js_client, output="webassets/packed_client.js", filters="rjsmin, js_delimiter_bundler")
+			js_core_bundle = Bundle(*js_core, output="webassets/packed_core.js", filters="rjsmin, js_delimiter_bundler")
+			if len(js_plugins) == 0:
+				js_plugins_bundle = Bundle(*[])
+			else:
+				js_plugins_bundle = Bundle(*js_plugins, output="webassets/packed_plugins.js", filters="rjsmin, js_delimiter_bundler")
 			js_app_bundle = Bundle(*js_app, output="webassets/packed_app.js", filters="rjsmin, js_delimiter_bundler")
 		else:
 			js_client_bundle = Bundle(*js_client, output="webassets/packed_client.js", filters="js_delimiter_bundler")
+			js_core_bundle = Bundle(*js_core, output="webassets/packed_core.js", filters="js_delimiter_bundler")
+			if len(js_plugins) == 0:
+				js_plugins_bundle = Bundle(*[])
+			else:
+				js_plugins_bundle = Bundle(*js_plugins, output="webassets/packed_plugins.js", filters="js_delimiter_bundler")
 			js_app_bundle = Bundle(*js_app, output="webassets/packed_app.js", filters="js_delimiter_bundler")
 
+		# CSS
 		css_libs_bundle = Bundle(*css_libs, output="webassets/packed_libs.css")
+
+		if len(css_core) == 0:
+			css_core_bundle = Bundle(*[])
+		else:
+			css_core_bundle = Bundle(*css_app, output="webassets/packed_core.css", filters="cssrewrite")
+
+		if len(css_plugins) == 0:
+			css_plugins_bundle = Bundle(*[])
+		else:
+			css_plugins_bundle = Bundle(*css_app, output="webassets/packed_plugins.css", filters="cssrewrite")
 
 		if len(css_app) == 0:
 			css_app_bundle = Bundle(*[])
 		else:
 			css_app_bundle = Bundle(*css_app, output="webassets/packed_app.css", filters="cssrewrite")
 
-		if len(less_app) == 0:
-			all_less_bundle = Bundle(*[])
+		# LESS
+		if len(less_core) == 0:
+			less_core_bundle = Bundle(*[])
 		else:
-			all_less_bundle = Bundle(*less_app, output="webassets/packed_app.less", filters="cssrewrite, less_importrewrite")
+			less_core_bundle = Bundle(*less_app, output="webassets/packed_core.less", filters="cssrewrite, less_importrewrite")
 
+		if len(less_plugins) == 0:
+			less_plugins_bundle = Bundle(*[])
+		else:
+			less_plugins_bundle = Bundle(*less_app, output="webassets/packed_plugins.less", filters="cssrewrite, less_importrewrite")
+
+		if len(less_app) == 0:
+			less_app_bundle = Bundle(*[])
+		else:
+			less_app_bundle = Bundle(*less_app, output="webassets/packed_app.less", filters="cssrewrite, less_importrewrite")
+
+		# asset registration
 		assets.register("js_libs", js_libs_bundle)
 		assets.register("js_client", js_client_bundle)
+		assets.register("js_core", js_core_bundle)
+		assets.register("js_plugins", js_plugins_bundle)
 		assets.register("js_app", js_app_bundle)
 		assets.register("css_libs", css_libs_bundle)
+		assets.register("css_core", css_core_bundle)
+		assets.register("css_plugins", css_plugins_bundle)
 		assets.register("css_app", css_app_bundle)
-		assets.register("less_app", all_less_bundle)
+		assets.register("less_core", less_core_bundle)
+		assets.register("less_plugins", less_plugins_bundle)
+		assets.register("less_app", less_app_bundle)
 
 	def _start_intermediary_server(self):
 		import BaseHTTPServer

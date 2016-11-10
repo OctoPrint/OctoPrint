@@ -35,6 +35,10 @@ any :ref:`settings overlays <sec-plugins-controlproperties-plugin_settings_overl
 
 On disabling a plugin, its hook handlers, helpers, mixin implementations and settings overlays will be de-registered again.
 
+Some plugin types require a reload of the frontend or a restart of OctoPrint for enabling/disabling them. You
+can recognized such plugins by their implementations implementing :class:`~octoprint.plugin.ReloadNeedingPlugin` or
+:class:`~octoprint.plugin.RestartNeedingPlugin` or providing handlers for one of the hooks marked correspondingly.
+
 .. image:: ../images/plugins_lifecycle.png
    :align: center
    :alt: The lifecycle of OctoPrint plugins.

@@ -15,7 +15,24 @@ def commands(cli_group, pass_octoprint_ctx, *args, **kwargs):
 	@click.option("--force", is_flag=True, help="Ignore the cache for the update check")
 	@click.argument("targets", nargs=-1)
 	def check_command(force, targets):
-		"""Check for updates."""
+		"""
+		Check for updates.
+
+		If any TARGETs are provided, only those components will be checked.
+
+		\b
+		Examples:
+		- octoprint plugins softwareupdate:check
+		    This will check all components for available updates,
+		    utilizing cached version information.
+		- octoprint plugins softwareupdate:check --force
+		    This will check all components for available updates,
+		    ignoring any cached version information even if it's
+		    still valid.
+		- octoprint plugins softwareupdate:check octoprint
+		    This will only check OctoPrint itself for available
+		    updates.
+		"""
 		params = dict(force=force)
 		if targets:
 			params["check"] = ",".join(targets)
@@ -68,7 +85,24 @@ def commands(cli_group, pass_octoprint_ctx, *args, **kwargs):
 	@click.option("--force", is_flag=True, help="Update even if already up to date")
 	@click.argument("targets", nargs=-1)
 	def update_command(force, targets):
-		"""Apply updates."""
+		"""
+		Apply updates.
+
+		If any TARGETs are provided, only those components will be updated.
+
+		\b
+		Examples:
+		- octoprint plugins softwareupdate:update
+		    This will update all components with a pending update
+		    that can be updated.
+		- octoprint plugins softwareupdate:update --force
+		    This will force an update of all registered components
+		    that can be updated, even if they don't have an updated
+		    pending.
+		- octoprint plugins softwareupdate:update octoprint
+		    This will only update OctoPrint and leave any further
+		    components with pending updates at their current versions.
+		"""
 
 		data = dict(force=force)
 		if targets:

@@ -172,4 +172,4 @@ class Daemon:
 
 	@classmethod
 	def error(cls, line):
-		print(line, stream=sys.stderr)
+		print(line, file=sys.stderr)

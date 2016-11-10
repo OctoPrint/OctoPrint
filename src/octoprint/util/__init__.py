@@ -1,4 +1,6 @@
 # coding=utf-8
+from __future__ import absolute_import
+
 """
 This module bundles commonly used utility methods or helper classes that are used in multiple places withing
 OctoPrint's source code.

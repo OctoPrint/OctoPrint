@@ -1000,6 +1000,7 @@ class PluginManager(object):
 				identifier=name,
 				plugin_name=plugin.name,
 				plugin_version=plugin.version,
+				plugin_info=plugin,
 				basefolder=os.path.realpath(plugin.location),
 				logger=logging.getLogger(self.logging_prefix + name),
 				))
@@ -1395,7 +1396,7 @@ class Plugin(object):
 
 class RestartNeedingPlugin(Plugin):
 	"""
-	Mixin for plugin types that need a restart in order to be enabled.
+	Mixin for plugin types that need a restart after enabling/disabling them.
 	"""
 
 class SortablePlugin(Plugin):
