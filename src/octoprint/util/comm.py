@@ -113,7 +113,7 @@ Groups will be as follows:
   * ``target``: new target temperature (float)
 """
 
-regex_position = re.compile("X:(?P<x>{float})\s+Y:(?P<y>{float})\s+Z:(?P<z>{float})\s+E:(?P<e>{float})".format(float=regex_float_pattern))
+regex_position = re.compile("X:(?P<x>{float})\s*Y:(?P<y>{float})\s*Z:(?P<z>{float})\s*E:(?P<e>{float})".format(float=regex_float_pattern))
 """Regex for matching position reporting.
 
 Groups will be as follows:
