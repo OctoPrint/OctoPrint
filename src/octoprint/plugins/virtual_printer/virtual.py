@@ -705,7 +705,11 @@ class VirtualPrinter(object):
 					duration = max(duration, x * self._unitModifier / float(self.speeds["x"]) * 60.0)
 				else:
 					duration = max(duration, (x - self._lastX) * self._unitModifier / float(self.speeds["x"]) * 60.0)
-				self._lastX = x
+
+				if self._relative and self._lastX is not None:
+					self._lastX += x
+				else:
+					self._lastX = x
 			except:
 				pass
 		if matchY is not None:
@@ -715,7 +719,11 @@ class VirtualPrinter(object):
 					duration = max(duration, y * self._unitModifier / float(self.speeds["y"]) * 60.0)
 				else:
 					duration = max(duration, (y - self._lastY) * self._unitModifier / float(self.speeds["y"]) * 60.0)
-				self._lastY = y
+
+				if self._relative and self._lastY is not None:
+					self._lastY += y
+				else:
+					self._lastY = y
 			except:
 				pass
 		if matchZ is not None:
@@ -725,7 +733,11 @@ class VirtualPrinter(object):
 					duration = max(duration, z * self._unitModifier / float(self.speeds["z"]) * 60.0)
 				else:
 					duration = max(duration, (z - self._lastZ) * self._unitModifier / float(self.speeds["z"]) * 60.0)
-				self._lastZ = z
+
+				if self._relative and self._lastZ is not None:
+					self._lastZ += z
+				else:
+					self._lastZ = z
 			except:
 				pass
 		if matchE is not None:
@@ -735,7 +747,11 @@ class VirtualPrinter(object):
 					duration = max(duration, e * self._unitModifier / float(self.speeds["e"]) * 60.0)
 				else:
 					duration = max(duration, (e - self._lastE) * self._unitModifier / float(self.speeds["e"]) * 60.0)
-				self._lastE = e
+
+				if self._relative and self._lastE is not None:
+					self._lastE += e
+				else:
+					self._lastE = e
 			except:
 				pass
 
