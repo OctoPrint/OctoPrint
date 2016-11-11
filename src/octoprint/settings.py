@@ -1105,12 +1105,14 @@ class Settings(object):
 		else:
 			chain = self._map
 
+		if preprocessors is None:
+			preprocessors = self._get_preprocessors
+
 		preprocessor = None
-		if preprocessors is not None:
-			try:
-				preprocessor = self._get_by_path(path, preprocessors)
-			except NoSuchSettingsPath:
-				pass
+		try:
+			preprocessor = self._get_by_path(path, preprocessors)
+		except NoSuchSettingsPath:
+			pass
 
 		parent_path = path[:-1]
 		last = path[-1]
@@ -1310,15 +1312,17 @@ class Settings(object):
 		else:
 			chain = self._map
 
-		preprocessor = None
-		if preprocessors is not None:
-			try:
-				preprocessor = self._get_by_path(path, preprocessors)
-			except NoSuchSettingsPath:
-				pass
+		if preprocessors is None:
+			preprocessors = self._set_preprocessors
 
-			if callable(preprocessor):
-				value = preprocessor(value)
+		preprocessor = None
+		try:
+			preprocessor = self._get_by_path(path, preprocessors)
+		except NoSuchSettingsPath:
+			pass
+
+		if callable(preprocessor):
+			value = preprocessor(value)
 
 		try:
 			current = chain.get_by_path(path)
