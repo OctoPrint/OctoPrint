@@ -319,7 +319,7 @@ class VirtualPrinter(object):
 	def _gcode_M140(self, data):
 		self._parseBedCommand(data)
 
-	def _gcode_M140(self, data):
+	def _gcode_M190(self, data):
 		self._parseBedCommand(data, wait=True, support_r=True)
 
 	def _gcode_M105(self, data):
