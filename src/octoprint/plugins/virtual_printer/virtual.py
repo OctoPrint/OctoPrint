@@ -643,12 +643,14 @@ class VirtualPrinter(object):
 				else:
 					output = "T:%.2f %s @:64\n" % (self.temp[self.currentExtruder], allTempsString)
 			else:
-				output = "%s @:64\n" % allTempsString
+				output = allTempsString
 		else:
 			if includeTarget:
-				output = "T:%.2f /%.2f B:%.2f /%.2f @:64\n" % (self.temp[0], self.targetTemp[0], self.bedTemp, self.bedTargetTemp)
+				output = "T:%.2f /%.2f B:%.2f /%.2f" % (self.temp[0], self.targetTemp[0], self.bedTemp, self.bedTargetTemp)
 			else:
-				output = "T:%.2f B:%.2f @:64\n" % (self.temp[0], self.bedTemp)
+				output = "T:%.2f B:%.2f" % (self.temp[0], self.bedTemp)
+
+		output += " @:64\n"
 
 		if includeOk:
 			output = "ok " + output
