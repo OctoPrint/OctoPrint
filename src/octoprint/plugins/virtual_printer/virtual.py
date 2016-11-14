@@ -59,15 +59,17 @@ class VirtualPrinter(object):
 		self.lastTempAt = time.time()
 		self.bedTemp = 1.0
 		self.bedTargetTemp = 1.0
-		self.speeds = settings().get(["devel", "virtualPrinter", "movementSpeed"])
 
 		self._relative = True
 		self._lastX = 0.0
 		self._lastY = 0.0
 		self._lastZ = 0.0
 		self._lastE = 0.0
+		self._lastF = 200
 
 		self._unitModifier = 1
+		self._feedrate_multiplier = 100
+		self._flowrate_multiplier = 100
 
 		self._virtualSd = settings().getBaseFolder("virtualSd")
 		self._sdCardReady = True
@@ -383,6 +385,12 @@ class VirtualPrinter(object):
 		if self._echoOnM117:
 			self._send("echo:%s" % re.search("M117\s+(.*)", data).group(1))
 
+	def _gcode_M220(self, data):
+		self._feedrate_multiplier = float(re.search('S([0-9]+)', data).group(1))
+
+	def _gcode_M221(self, data):
+		self._flowrate_multiplier = float(re.search('S([0-9]+)', data).group(1))
+
 	def _gcode_M400(self, data):
 		self.buffered.join()
 
@@ -696,15 +704,25 @@ class VirtualPrinter(object):
 		matchY = re.search("Y([0-9.]+)", line)
 		matchZ = re.search("Z([0-9.]+)", line)
 		matchE = re.search("E([0-9.]+)", line)
+		matchF = re.search("F([0-9.]+)", line)
 
 		duration = 0
+		if matchF is not None:
+			try:
+				self._lastF = float(matchF.group(1))
+			except:
+				pass
+
+		speedXYZ = self._lastF * (self._feedrate_multiplier / 100.0)
+		speedE = self._lastF * (self._flowrate_multiplier / 100.0)
+
 		if matchX is not None:
 			try:
 				x = float(matchX.group(1))
 				if self._relative or self._lastX is None:
-					duration = max(duration, x * self._unitModifier / float(self.speeds["x"]) * 60.0)
+					duration = max(duration, x * self._unitModifier / speedXYZ * 60.0)
 				else:
-					duration = max(duration, (x - self._lastX) * self._unitModifier / float(self.speeds["x"]) * 60.0)
+					duration = max(duration, (x - self._lastX) * self._unitModifier / speedXYZ * 60.0)
 
 				if self._relative and self._lastX is not None:
 					self._lastX += x
@@ -716,9 +734,9 @@ class VirtualPrinter(object):
 			try:
 				y = float(matchY.group(1))
 				if self._relative or self._lastY is None:
-					duration = max(duration, y * self._unitModifier / float(self.speeds["y"]) * 60.0)
+					duration = max(duration, y * self._unitModifier / speedXYZ * 60.0)
 				else:
-					duration = max(duration, (y - self._lastY) * self._unitModifier / float(self.speeds["y"]) * 60.0)
+					duration = max(duration, (y - self._lastY) * self._unitModifier / speedXYZ * 60.0)
 
 				if self._relative and self._lastY is not None:
 					self._lastY += y
@@ -730,9 +748,9 @@ class VirtualPrinter(object):
 			try:
 				z = float(matchZ.group(1))
 				if self._relative or self._lastZ is None:
-					duration = max(duration, z * self._unitModifier / float(self.speeds["z"]) * 60.0)
+					duration = max(duration, z * self._unitModifier / speedXYZ * 60.0)
 				else:
-					duration = max(duration, (z - self._lastZ) * self._unitModifier / float(self.speeds["z"]) * 60.0)
+					duration = max(duration, (z - self._lastZ) * self._unitModifier / speedXYZ * 60.0)
 
 				if self._relative and self._lastZ is not None:
 					self._lastZ += z
@@ -744,9 +762,9 @@ class VirtualPrinter(object):
 			try:
 				e = float(matchE.group(1))
 				if self._relative or self._lastE is None:
-					duration = max(duration, e * self._unitModifier / float(self.speeds["e"]) * 60.0)
+					duration = max(duration, e * self._unitModifier / speedE * 60.0)
 				else:
-					duration = max(duration, (e - self._lastE) * self._unitModifier / float(self.speeds["e"]) * 60.0)
+					duration = max(duration, (e - self._lastE) * self._unitModifier / speedE * 60.0)
 
 				if self._relative and self._lastE is not None:
 					self._lastE += e

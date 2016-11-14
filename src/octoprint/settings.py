@@ -332,12 +332,6 @@ default_settings = {
 			"numExtruders": 1,
 			"includeCurrentToolInTemps": True,
 			"includeFilenameInOpened": True,
-			"movementSpeed": {
-				"x": 6000,
-				"y": 6000,
-				"z": 200,
-				"e": 300
-			},
 			"hasBed": True,
 			"repetierStyleTargetTemperature": False,
 			"repetierStyleResends": False,
