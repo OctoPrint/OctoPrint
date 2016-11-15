@@ -882,7 +882,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 		self._send_client_message("loglines", data=dict(loglines=[dict(line=line, stream=stream) for line in lines]))
 		for line in lines:
-			self._console_logger.debug(u"{prefix} {line}".format(**locals()))
+			self._console_logger.debug(u"{} {}".format(prefix, line))
 
 	def _send_client_message(self, message_type, data=None):
 		self._plugin_manager.send_plugin_message(self._identifier, dict(type=message_type, data=data))
