@@ -824,6 +824,7 @@ class MachineCom(object):
 
 		if self.isSdFileSelected():
 			self.sendCommand("M25")    # pause print
+			self.sendCommand("M27")    # get current byte position in file
 			self.sendCommand("M26 S0") # reset position in file to byte 0
 			if self._sd_status_timer is not None:
 				try:
