@@ -965,8 +965,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 	def on_comm_temperature_update(self, temp, bedTemp):
 		self._addTemperatureData(copy.deepcopy(temp), copy.deepcopy(bedTemp))
 
-	def on_comm_position_update(self, position):
-		eventManager().fire(Events.POSITION_UPDATE, position)
+	def on_comm_position_update(self, position, reason=None):
+		payload = dict(reason=reason)
+		payload.update(position)
+		eventManager().fire(Events.POSITION_UPDATE, payload)
 
 	def on_comm_state_change(self, state):
 		"""

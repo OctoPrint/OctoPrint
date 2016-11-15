@@ -370,9 +370,11 @@ class MachineCom(object):
 		self._ignore_select = False
 		self._manualStreaming = False
 
-		self._last_position = PositionRecord()
-		self._pause_position = PositionRecord()
+		self.last_position = PositionRecord()
+		self.pause_position = PositionRecord()
 		self._record_pause_position = False
+		self.cancel_position = PositionRecord()
+		self._record_cancel_position = False
 
 		# print job
 		self._currentFile = None
@@ -669,8 +671,8 @@ class MachineCom(object):
 			context.update(replacements)
 		context.update(dict(
 			printer_profile=self._printerProfileManager.get_current_or_default(),
-			last_position=self._last_position,
-			pause_position=self._pause_position
+			last_position=self.last_position,
+			pause_position=self.pause_position
 		))
 
 		template = settings().loadScript("gcode", scriptName, context=context)
@@ -806,6 +808,10 @@ class MachineCom(object):
 		self._currentFile = None
 		self._callback.on_comm_file_selected(None, None, False)
 
+	def _cancel_preparation_done(self):
+		self._recordFilePosition()
+		self._callback.on_comm_print_job_cancelled()
+
 	def cancelPrint(self, firmware_error=None):
 		if not self.isOperational() or self.isStreaming():
 			return
@@ -825,8 +831,14 @@ class MachineCom(object):
 				except:
 					pass
 
-		self._recordFilePosition()
-		self._callback.on_comm_print_job_cancelled()
+		def _on_M400_sent():
+			# we don't call on_print_job_cancelled on our callback here
+			# because we do this only after our M114 has been answered
+			# by the firmware
+			self._record_cancel_position = True
+			self.sendCommand("M114")
+
+		self.sendCommand("M400", on_sent=_on_M400_sent)
 
 	def _pause_preparation_done(self):
 		self._callback.on_comm_print_job_paused()
@@ -1134,19 +1146,28 @@ class MachineCom(object):
 						# there's no way to query it from the firmware and
 						# no way to track it ourselves when not streaming
 						# the file - this all sucks sooo much
-						self._last_position.x = float(match.group("x"))
-						self._last_position.y = float(match.group("y"))
-						self._last_position.z = float(match.group("z"))
-						self._last_position.e = float(match.group("e"))
-						self._last_position.t = self._currentTool if not self.isSdFileSelected() else None
-						self._last_position.f = self._currentF if not self.isSdFileSelected() else None
+						self.last_position.x = float(match.group("x"))
+						self.last_position.y = float(match.group("y"))
+						self.last_position.z = float(match.group("z"))
+						self.last_position.e = float(match.group("e"))
+						self.last_position.t = self._currentTool if not self.isSdFileSelected() else None
+						self.last_position.f = self._currentF if not self.isSdFileSelected() else None
+
+						reason = None
 
 						if self._record_pause_position:
+							reason = "pause"
 							self._record_pause_position = False
-							self._pause_position.copy_from(self._last_position)
+							self.pause_position.copy_from(self.last_position)
 							self._pause_preparation_done()
 
-						self._callback.on_comm_position_update(self._last_position.as_dict())
+						if self._record_cancel_position:
+							reason = "cancel"
+							self._record_cancel_position = False
+							self.cancel_position.copy_from(self.last_position)
+							self._cancel_preparation_done()
+
+						self._callback.on_comm_position_update(self.last_position.as_dict(), reason=reason)
 
 				# temperature processing
 				elif ' T:' in line or line.startswith('T:') or ' T0:' in line or line.startswith('T0:') or ((' B:' in line or line.startswith('B:')) and not 'A:' in line):
@@ -2359,7 +2380,7 @@ class MachineComPrintCallback(object):
 	def on_comm_temperature_update(self, temp, bedTemp):
 		pass
 
-	def on_comm_position_update(self, position):
+	def on_comm_position_update(self, position, reason=None):
 		pass
 
 	def on_comm_state_change(self, state):
