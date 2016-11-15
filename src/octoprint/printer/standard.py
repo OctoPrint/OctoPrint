@@ -1077,7 +1077,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		eventManager().fire(Events.PRINT_FAILED, payload)
 
 	def on_comm_print_job_cancelled(self):
-		payload = self._payload_for_print_job_event()
+		payload = self._payload_for_print_job_event(position=self._comm.cancel_position.as_dict() if self._comm and self._comm.cancel_position else None)
 		if payload:
 			eventManager().fire(Events.PRINT_CANCELLED, payload)
 			self.script("afterPrintCancelled",
@@ -1085,7 +1085,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			            must_be_set=False)
 
 	def on_comm_print_job_paused(self):
-		payload = self._payload_for_print_job_event()
+		payload = self._payload_for_print_job_event(position=self._comm.pause_position.as_dict() if self._comm and self._comm.pause_position else None)
 		if payload:
 			eventManager().fire(Events.PRINT_PAUSED, payload)
 			self.script("afterPrintPaused",
@@ -1131,7 +1131,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		except:
 			self._logger.exception("Error while trying to persist print recovery data")
 
-	def _payload_for_print_job_event(self, location=None, print_job_file=None):
+	def _payload_for_print_job_event(self, location=None, print_job_file=None, position=None):
 		if print_job_file is None:
 			selected_file = self._selectedFile
 			if not selected_file:
@@ -1156,13 +1156,18 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			_, name = self._fileManager.split_path(FileDestinations.LOCAL, path)
 			origin = FileDestinations.LOCAL
 
-		return dict(name=name,
-		            path=path,
-		            origin=origin,
+		result= dict(name=name,
+		             path=path,
+		             origin=origin,
 
-		            # TODO deprecated, remove in 1.4.0
-		            file=full_path,
-		            filename=name)
+		             # TODO deprecated, remove in 1.4.0
+		             file=full_path,
+		             filename=name)
+
+		if position is not None:
+			result["position"] = position
+
+		return result
 
 
 class StateMonitor(object):

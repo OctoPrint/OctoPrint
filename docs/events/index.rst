@@ -308,6 +308,17 @@ PrintCancelled
      * ``name``: the file's name
      * ``path``: the file's path within its storage location
      * ``origin``: the origin storage location of the file, either ``local`` or ``sdcard``
+     * ``position``: the print head position at the time of cancelling, if available
+     * ``position.x``: x coordinate, as reported back from the firmware through `M114`
+     * ``position.y``: y coordinate, as reported back from the firmware through `M114`
+     * ``position.z``: z coordinate, as reported back from the firmware through `M114`
+     * ``position.e``: e coordinate (of currently selected extruder), as reported back from the firmware through `M114`
+     * ``position.t``: last tool selected *through OctoPrint* (note that if you did change the printer's selected
+       tool outside of OctoPrint, e.g. through the printer controller, or if you are printing from SD, this will NOT
+       be accurate)
+     * ``position.f``: last feedrate for move commands **sent through OctoPrint** (note that if you modified the
+       feedrate outside of OctoPrint, e.g. through the printer controller, or if you are printing from SD, this will
+       NOT be accurate)
 
    .. deprecated:: 1.3.0
 
@@ -324,6 +335,17 @@ PrintPaused
      * ``name``: the file's name
      * ``path``: the file's path within its storage location
      * ``origin``: the origin storage location of the file, either ``local`` or ``sdcard``
+     * ``position``: the print head position at the time of pausing, if available
+     * ``position.x``: x coordinate, as reported back from the firmware through `M114`
+     * ``position.y``: y coordinate, as reported back from the firmware through `M114`
+     * ``position.z``: z coordinate, as reported back from the firmware through `M114`
+     * ``position.e``: e coordinate (of currently selected extruder), as reported back from the firmware through `M114`
+     * ``position.t``: last tool selected *through OctoPrint* (note that if you did change the printer's selected
+       tool outside of OctoPrint, e.g. through the printer controller, or if you are printing from SD, this will NOT
+       be accurate)
+     * ``position.f``: last feedrate for move commands **sent through OctoPrint** (note that if you modified the
+       feedrate outside of OctoPrint, e.g. through the printer controller, or if you are printing from SD, this will
+       NOT be accurate)
 
    .. deprecated:: 1.3.0
 
