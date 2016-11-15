@@ -405,6 +405,15 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		self._setProgressData(completion=0)
 		self._setCurrentZ(None)
 
+	def get_file_position(self):
+		if self._comm is None:
+			return None
+
+		if self._selectedFile is None:
+			return None
+
+		return self._comm.getFilePosition()
+
 	def start_print(self, pos=None):
 		"""
 		 Starts the currently loaded print job.

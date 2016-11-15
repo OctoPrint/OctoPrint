@@ -939,15 +939,23 @@ class MachineCom(object):
 
 	##~~ record aborted file positions
 
-	def _recordFilePosition(self):
+	def getFilePosition(self):
 		if self._currentFile is None:
-			return
+			return None
 
 		origin = self._currentFile.getFileLocation()
 		filename = self._currentFile.getFilename()
 		pos = self._currentFile.getFilepos()
 
-		self._callback.on_comm_record_fileposition(origin, filename, pos)
+		return dict(origin=origin,
+		            filename=filename,
+		            pos=pos)
+
+	def _recordFilePosition(self):
+		if self._currentFile is None:
+			return
+		data = self.getFilePosition()
+		self._callback.on_comm_record_fileposition(data["origin"], data["filename"], data["pos"])
 
 	##~~ communication monitoring and handling
 
