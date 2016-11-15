@@ -374,37 +374,53 @@ GCODE processing
 ----------------
 
 PowerOn
-   The GCode has turned on the printer power via M80
+   An ``M80`` was sent to the printer through OctoPrint (not triggered when printing from SD!)
 
 PowerOff
-   The GCODE has turned on the printer power via M81
+   An ``M81`` was sent to the printer through OctoPrint (not triggered when printing from SD!)
 
 Home
-   The head has gone home via G28
+   A ``G28`` was sent to the printer through OctoPrint (not triggered when printing from SD!)
 
 ZChange
-   The printer's Z-Height has changed (new layer)
+   The printer's Z-Height has changed (new layer) through a ``G0`` or ``G1`` that was sent to the printer through OctoPrint
+   (not triggered when printing from SD!)
 
-Paused
-   The print has been paused
+Dwell
+   A ``G4`` was sent to the printer through OctoPrint (not triggered when printing from SD!)
 
 Waiting
-   The print is paused due to a gcode wait command
+   One of the following commands was sent to the printer through OctoPrint (not triggered when printing from SD!):
+   ``M0``, ``M1``, ``M226``
 
 Cooling
-   The GCODE has enabled the platform cooler via M245
+   An ``M245`` was sent to the printer through OctoPrint (not triggered when printing from SD!)
 
 Alert
-   The GCODE has issued a user alert (beep) via M300
+   An ``M300`` was sent to the printer through OctoPrint (not triggered when printing from SD!)
 
 Conveyor
-   The GCODE has enabled the conveyor belt via M240
+   An ``M240`` was sent to the printer through OctoPrint (not triggered when printing from SD!)
 
 Eject
-   The GCODE has enabled the part ejector via M40
+   An ``M40`` was sent to the printer through OctoPrint (not triggered when printing from SD!)
 
 EStop
-   The GCODE has issued a panic stop via M112
+   An ``M112`` was sent to the printer through OctoPrint (not triggered when printing from SD!)
+
+PositionUpdate
+   The response to an ``M114`` was received by OctoPrint. The payload contains the current position information
+   parsed from the response and (in the case of the selected tool ``t`` and the current feedrate ``f``) tracked
+   by OctoPrint.
+
+   Payload:
+
+     * ``x``: x coordinate, parsed from response
+     * ``y``: y coordinate, parsed from response
+     * ``z``: z coordinate, parsed from response
+     * ``e``: e coordinate, parsed from response
+     * ``t``: last tool selected *through OctoPrint*
+     * ``f``: last feedrate for move commands ``G0``, ``G1`` or ``G28`` sent *through OctoPrint*
 
 Timelapses
 ----------
