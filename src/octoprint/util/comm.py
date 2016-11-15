@@ -2515,8 +2515,16 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 		Opens the file for reading and determines the file size.
 		"""
 		PrintingFileInformation.start(self)
-		self._read_lines = 0
 		self._handle = bom_aware_open(self._filename, encoding="utf-8", errors="replace")
+		self._pos = self._handle.tell()
+		if self._handle.encoding.endswith("-sig"):
+			# Apparently we found an utf-8 bom in the file.
+			# We need to add its length to our pos because it will
+			# be stripped transparently and we'll have no chance
+			# catching that.
+			import codecs
+			self._pos += len(codecs.BOM_UTF8)
+		self._read_lines = 0
 
 	def close(self):
 		"""
@@ -2548,11 +2556,17 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 					self._pos = self._size
 					self._report_stats()
 					return None
-				line = to_unicode(self._handle.readline())
+
+				# we need to manually keep track of our pos here since
+				# codecs' readline will make our handle's tell not
+				# return the actual number of bytes read, but also the
+				# already buffered bytes (for detecting the newlines)
+				line = self._handle.readline()
+				self._pos += len(line.encode("utf-8"))
+
 				if not line:
 					self.close()
 				processed = self._process(line, offsets, current_tool)
-			self._pos = self._handle.tell()
 			self._read_lines += 1
 			return processed
 		except Exception as e:
