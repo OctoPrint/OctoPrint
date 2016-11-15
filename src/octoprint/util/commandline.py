@@ -10,6 +10,8 @@ import sarge
 import logging
 import re
 
+from . import to_unicode
+
 
 # These regexes are based on the colorama package
 # Author: Jonathan Hartley
@@ -82,36 +84,31 @@ class CommandlineCaller(object):
 
 		all_stdout = []
 		all_stderr = []
+
+		def process_lines(lines, logger):
+			if not lines:
+				return []
+			l = self._preprocess_lines(*map(lambda x: to_unicode(x, errors="replace"), lines))
+			logger(*l)
+			return list(l)
+
+		def process_stdout(lines):
+			return process_lines(lines, self._log_stdout)
+
+		def process_stderr(lines):
+			return process_lines(lines, self._log_stderr)
+
 		try:
 			while p.returncode is None:
-				lines = p.stderr.readlines(timeout=0.5)
-				if lines:
-					lines = self._preprocess_lines(*lines)
-					self._log_stderr(*lines)
-					all_stderr += list(lines)
-
-				lines = p.stdout.readlines(timeout=0.5)
-				if lines:
-					lines = self._preprocess_lines(*lines)
-					self._log_stdout(*lines)
-					all_stdout += list(lines)
-
+				all_stderr += process_stderr(p.stderr.readlines(timeout=0.5))
+				all_stdout += process_stdout(p.stdout.readlines(timeout=0.5))
 				p.commands[0].poll()
 
 		finally:
 			p.close()
 
-		lines = p.stderr.readlines()
-		if lines:
-			lines = self._preprocess_lines(*lines)
-			self._log_stderr(*lines)
-			all_stderr += lines
-
-		lines = p.stdout.readlines()
-		if lines:
-			lines = self._preprocess_lines(*lines)
-			self._log_stdout(*lines)
-			all_stdout += lines
+		all_stderr += process_stderr(p.stderr.readlines())
+		all_stdout += process_stdout(p.stdout.readlines())
 
 		return p.returncode, all_stdout, all_stderr
 
