@@ -2218,6 +2218,16 @@ class MachineCom(object):
 					pass
 	_gcode_G1_sent = _gcode_G0_sent
 
+	def _gcode_G28_sent(self, cmd, cmd_type=None):
+		if "F" in cmd:
+			match = regexes_parameters["floatF"].search(cmd)
+			if match:
+				try:
+					f = float(match.group("value"))
+					self._currentF = f
+				except ValueError:
+					pass
+
 	def _gcode_M0_queuing(self, cmd, cmd_type=None):
 		self.setPause(True)
 		return None, # Don't send the M0 or M1 to the machine, as M0 and M1 are handled as an LCD menu pause.
