@@ -487,12 +487,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		# mark print as failure
 		if self._selectedFile is not None:
 			self._fileManager.log_print(FileDestinations.SDCARD if self._selectedFile["sd"] else FileDestinations.LOCAL, self._selectedFile["filename"], time.time(), self._comm.getPrintTime(), False, self._printerProfileManager.get_current_or_default()["id"])
-			payload = {
-				"file": self._selectedFile["filename"],
-				"origin": FileDestinations.LOCAL
-			}
-			if self._selectedFile["sd"]:
-				payload["origin"] = FileDestinations.SDCARD
+			payload = self._payload_for_print_job_event()
 			eventManager().fire(Events.PRINT_FAILED, payload)
 
 	def get_state_string(self, state=None):
