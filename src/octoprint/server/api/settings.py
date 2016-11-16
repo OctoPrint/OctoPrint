@@ -40,6 +40,7 @@ def _etag(lm=None):
 	import hashlib
 	hash = hashlib.sha1()
 	hash.update(str(lm))
+	hash.update(repr(settings().effective))
 	hash.update(repr(connection_options))
 	hash.update(repr(plugins))
 	hash.update(repr(roles))
