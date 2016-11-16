@@ -1,0 +1,10 @@
+version: '2'
+services:
+  octoprint:
+    build: .
+    image: gaetancollaud/octoprint
+    container_name: octoprint
+    ports:
+      - 5000:5000
+    devices:
+      - /dev/ttyACM0:/dev/ttyS0
