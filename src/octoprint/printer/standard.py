@@ -763,7 +763,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		"""
 
 		if progress is None or printTime is None or cleanedPrintTime is None:
-			return None
+			return None, None
 
 		dumbTotalPrintTime = printTime / progress
 		estimatedTotalPrintTime = self._estimateTotalPrintTime(progress, cleanedPrintTime)
