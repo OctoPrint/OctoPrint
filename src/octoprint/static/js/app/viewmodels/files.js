@@ -441,20 +441,6 @@ $(function() {
         };
 
         self._removeEntry = function(entry, event) {
-            var index = self.listHelper.paginatedItems().indexOf(entry) + 1;
-            if (index >= self.listHelper.paginatedItems().length) {
-                index = index - 2;
-            }
-            if (index < 0) {
-                index = 0;
-            }
-
-            var focus = undefined;
-            var fileToFocus = self.listHelper.paginatedItems()[index];
-            if (fileToFocus) {
-                focus = {location: fileToFocus.origin, path: fileToFocus.path};
-            }
-
             self.activeRemovals.push(entry.origin + ":" + entry.path);
             var finishActiveRemoval = function() {
                 self.activeRemovals(_.filter(self.activeRemovals(), function(e) {
@@ -485,10 +471,7 @@ $(function() {
             var deferred = $.Deferred();
             OctoPrint.files.delete(entry.origin, entry.path)
                 .done(function() {
-                    self.requestData({
-                        focus: focus,
-                        switchToPath: (entry.parent ? entry.parent.path : "")
-                    })
+                    self.requestData()
                         .done(function() {
                             deferred.resolve();
                         })
