@@ -829,8 +829,12 @@ class Settings(object):
 			self._migrate_config(config)
 		return config
 
-	def add_overlay(self, overlay):
-		self._map.maps.insert(1, overlay)
+	def add_overlay(self, overlay, at_end=False):
+		if at_end:
+			pos = len(self._map.maps) - 1
+			self._map.maps.insert(pos, overlay)
+		else:
+			self._map.maps.insert(1, overlay)
 
 	def _migrate_config(self, config=None):
 		if config is None:

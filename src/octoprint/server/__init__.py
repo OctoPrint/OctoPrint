@@ -245,7 +245,14 @@ class Server(object):
 			return props
 
 		def settings_plugin_inject_factory(name, implementation):
-			"""Factory for additional injections depending on plugin type"""
+			"""Factory for additional injections/initializations depending on plugin type"""
+			if not isinstance(implementation, octoprint.plugin.SettingsPlugin):
+				return
+
+			default_settings_overlay = dict(plugins=dict())
+			default_settings_overlay["plugins"][name] = implementation.get_settings_defaults()
+			self._settings.add_overlay(default_settings_overlay, at_end=True)
+
 			plugin_settings = octoprint.plugin.plugin_settings_for_settings_plugin(name, implementation)
 			if plugin_settings is None:
 				return
@@ -272,7 +279,8 @@ class Server(object):
 
 			implementation.on_settings_initialized()
 
-		pluginManager.implementation_inject_factories=[octoprint_plugin_inject_factory, settings_plugin_inject_factory]
+		pluginManager.implementation_inject_factories=[octoprint_plugin_inject_factory,
+		                                               settings_plugin_inject_factory]
 		pluginManager.initialize_implementations()
 
 		settingsPlugins = pluginManager.get_implementations(octoprint.plugin.SettingsPlugin)

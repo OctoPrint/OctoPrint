@@ -145,7 +145,7 @@ def plugin_settings(plugin_key, defaults=None, get_preprocessors=None, set_prepr
 
 	Arguments:
 	    plugin_key (string): The plugin identifier for which to create the settings instance.
-	    defaults (dict): The default settings for the plugin.
+	    defaults (dict): The default settings for the plugin, if different from get_settings_defaults.
 	    get_preprocessors (dict): The getter preprocessors for the plugin.
 	    set_preprocessors (dict): The setter preprocessors for the plugin.
 	    settings (octoprint.settings.Settings): The settings instance to use.
@@ -180,13 +180,12 @@ def plugin_settings_for_settings_plugin(plugin_key, instance, settings=None):
 		return None
 
 	try:
-		defaults = instance.get_settings_defaults()
 		get_preprocessors, set_preprocessors = instance.get_settings_preprocessors()
 	except:
-		logging.getLogger(__name__).exception("Error while retrieving defaults or preprocessors for plugin {}".format(plugin_key))
+		logging.getLogger(__name__).exception("Error while retrieving preprocessors for plugin {}".format(plugin_key))
 		return None
 
-	return plugin_settings(plugin_key, defaults=defaults, get_preprocessors=get_preprocessors, set_preprocessors=set_preprocessors, settings=settings)
+	return plugin_settings(plugin_key, get_preprocessors=get_preprocessors, set_preprocessors=set_preprocessors, settings=settings)
 
 
 def call_plugin(types, method, args=None, kwargs=None, callback=None, error_callback=None, sorting_context=None):
@@ -315,11 +314,12 @@ class PluginSettings(object):
 		self.settings = settings
 		self.plugin_key = plugin_key
 
-		if defaults is None:
-			defaults = dict()
-		self.defaults = dict(plugins=dict())
-		self.defaults["plugins"][plugin_key] = defaults
-		self.defaults["plugins"][plugin_key]["_config_version"] = None
+		if defaults is not None:
+			self.defaults = dict(plugins=dict())
+			self.defaults["plugins"][plugin_key] = defaults
+			self.defaults["plugins"][plugin_key]["_config_version"] = None
+		else:
+			self.defaults = None
 
 		if get_preprocessors is None:
 			get_preprocessors = dict()
@@ -345,14 +345,14 @@ class PluginSettings(object):
 			return result
 
 		def add_getter_kwargs(kwargs):
-			if not "defaults" in kwargs:
+			if not "defaults" in kwargs and self.defaults is not None:
 				kwargs.update(defaults=self.defaults)
 			if not "preprocessors" in kwargs:
 				kwargs.update(preprocessors=self.get_preprocessors)
 			return kwargs
 
 		def add_setter_kwargs(kwargs):
-			if not "defaults" in kwargs:
+			if not "defaults" in kwargs and self.defaults is not None:
 				kwargs.update(defaults=self.defaults)
 			if not "preprocessors" in kwargs:
 				kwargs.update(preprocessors=self.set_preprocessors)
