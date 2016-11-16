@@ -402,13 +402,10 @@ $(function() {
             if (!file) {
                 return;
             }
-            OctoPrint.files.select(file.origin, file.path)
-                .done(function() {
-                    var withinPrintDimensions = self.evaluatePrintDimensions(file, true);
-                    if (withinPrintDimensions && printAfterLoad) {
-                        OctoPrint.job.start();
-                    }
-                });
+            var withinPrintDimensions = self.evaluatePrintDimensions(file, true);
+            var print = printAfterLoad && withinPrintDimensions;
+
+            OctoPrint.files.select(file.origin, file.path, print);
         };
 
         self.removeFile = function(file, event) {
