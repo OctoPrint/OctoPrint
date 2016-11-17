@@ -645,9 +645,9 @@ class VirtualPrinter(object):
 
 			if settings().getBoolean(["devel", "virtualPrinter", "includeCurrentToolInTemps"]):
 				if includeTarget:
-					output = "T:%.2f /%.2f %s @:64\n" % (self.temp[self.currentExtruder], self.targetTemp[self.currentExtruder] + 1, allTempsString)
+					output = "T:%.2f /%.2f %s" % (self.temp[self.currentExtruder], self.targetTemp[self.currentExtruder] + 1, allTempsString)
 				else:
-					output = "T:%.2f %s @:64\n" % (self.temp[self.currentExtruder], allTempsString)
+					output = "T:%.2f %s" % (self.temp[self.currentExtruder], allTempsString)
 			else:
 				output = allTempsString
 		else:
