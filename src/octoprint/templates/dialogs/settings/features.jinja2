@@ -34,53 +34,67 @@
             </label>
         </div>
     </div>
+
     <div class="control-group">
         <div class="controls">
             <label class="checkbox">
-                <input type="checkbox" data-bind="checked: feature_sdRelativePath" id="settings-sdRelativePath"> {{ _('Select SD files by relative path') }} <span class="label">{{ _('RepRap Firmware') }}</span>
+                <input type="checkbox" data-bind="checked: feature_firmwareDetection" id="settings-firmwareDetection"> {{ _('Enable automatic firmware detection') }}
+                <span class="help-inline">{% trans %}
+                    If enabled, OctoPrint will try to figure out your printer's firmware automatically and adjust a couple of communication parameters based on that.
+                    If that doesn't work out, or you want more granular control, uncheck this and the parameters in question will become visible for you to adjust.
+                {% endtrans %}</span>
             </label>
         </div>
     </div>
-    <div class="control-group">
-        <div class="controls">
-            <label class="checkbox">
-                <input type="checkbox" data-bind="checked: feature_sdAlwaysAvailable" id="settings-featureSdAlwaysAvailable"> {{ _('Always assume SD card is present') }} <span class="label">{{ _('Repetier') }}</span>
-            </label>
+    <div data-bind="visible: !feature_firmwareDetection()">
+        <div class="control-group">
+            <div class="controls">
+                <label class="checkbox">
+                    <input type="checkbox" data-bind="checked: feature_sdRelativePath" id="settings-sdRelativePath"> {{ _('Select SD files by relative path') }} <span class="label">{{ _('RepRap Firmware') }}</span>
+                </label>
+            </div>
         </div>
-    </div>
-    <div class="control-group">
-        <div class="controls">
-            <label class="checkbox">
-                <input type="checkbox" data-bind="checked: feature_ignoreIdenticalResends" id="settings-ignoreIdenticalResends"> {{ _('Ignore consecutive resend requests for the same line') }} <span class="label">{{ _('Repetier') }}</span>
-            </label>
+        <div class="control-group">
+            <div class="controls">
+                <label class="checkbox">
+                    <input type="checkbox" data-bind="checked: feature_sdAlwaysAvailable" id="settings-featureSdAlwaysAvailable"> {{ _('Always assume SD card is present') }} <span class="label">{{ _('Repetier') }}</span>
+                </label>
+            </div>
         </div>
-    </div>
-    <div class="control-group">
-        <div class="controls">
-            <label class="checkbox">
-                <input type="checkbox" data-bind="checked: feature_repetierTargetTemp" id="settings-featureRepetierTargetTemp"> {{ _('Support <code>TargetExtr%%n</code>/<code>TargetBed</code> target temperature format') }} <span class="label">{{ _('Repetier') }}</span>
-            </label>
+        <div class="control-group">
+            <div class="controls">
+                <label class="checkbox">
+                    <input type="checkbox" data-bind="checked: feature_ignoreIdenticalResends" id="settings-ignoreIdenticalResends"> {{ _('Ignore consecutive resend requests for the same line') }} <span class="label">{{ _('Repetier') }}</span>
+                </label>
+            </div>
         </div>
-    </div>
-    <div class="control-group">
-        <div class="controls">
-            <label class="checkbox">
-                <input type="checkbox" data-bind="checked: feature_disableExternalHeatupDetection" id="settings-featureExternalHeatupDetection"> {{ _('Disable detection of external heatups') }} <span class="label">{{ _('Repetier') }}</span>
-            </label>
+        <div class="control-group">
+            <div class="controls">
+                <label class="checkbox">
+                    <input type="checkbox" data-bind="checked: feature_repetierTargetTemp" id="settings-featureRepetierTargetTemp"> {{ _('Support <code>TargetExtr%%n</code>/<code>TargetBed</code> target temperature format') }} <span class="label">{{ _('Repetier') }}</span>
+                </label>
+            </div>
         </div>
-    </div>
-    <div class="control-group">
-        <label class="control-label">{{ _('Send a checksum with the command')}}</label>
-        <div class="controls">
-            <label class="radio">
-                <input type="radio" name="sendChecksumGroup" value="print" data-bind="checked: feature_sendChecksum" id="settings-featureSendChecksumPrint"> {{ _('When printing') }}
-            </label>
-            <label class="radio">
-                <input type="radio" name="sendChecksumGroup" value="always" data-bind="checked: feature_sendChecksum" id="settings-featureSendChecksumAlways"> {{ _('Always') }}  <span class="label">{{ _('Repetier') }}</span>
-            </label>
-            <label class="radio">
-                <input type="radio" name="sendChecksumGroup" value="never" data-bind="checked: feature_sendChecksum" id="settings-featureSendChecksumNever"> {{ _('Never') }}
-            </label>
+        <div class="control-group">
+            <div class="controls">
+                <label class="checkbox">
+                    <input type="checkbox" data-bind="checked: feature_disableExternalHeatupDetection" id="settings-featureExternalHeatupDetection"> {{ _('Disable detection of external heatups') }} <span class="label">{{ _('Repetier') }}</span>
+                </label>
+            </div>
+        </div>
+        <div class="control-group">
+            <label class="control-label">{{ _('Send a checksum with the command')}}</label>
+            <div class="controls">
+                <label class="radio">
+                    <input type="radio" name="sendChecksumGroup" value="print" data-bind="checked: feature_sendChecksum" id="settings-featureSendChecksumPrint"> {{ _('When printing') }}
+                </label>
+                <label class="radio">
+                    <input type="radio" name="sendChecksumGroup" value="always" data-bind="checked: feature_sendChecksum" id="settings-featureSendChecksumAlways"> {{ _('Always') }}  <span class="label">{{ _('Repetier') }}</span>
+                </label>
+                <label class="radio">
+                    <input type="radio" name="sendChecksumGroup" value="never" data-bind="checked: feature_sendChecksum" id="settings-featureSendChecksumNever"> {{ _('Never') }}
+                </label>
+            </div>
         </div>
     </div>
 </form>

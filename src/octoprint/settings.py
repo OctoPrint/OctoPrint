@@ -197,7 +197,8 @@ default_settings = {
 		"ignoreIdenticalResends": False,
 		"identicalResendsCountdown": 7,
 		"supportFAsCommand": False,
-		"modelSizeDetection": True
+		"modelSizeDetection": True,
+		"firmwareDetection": True
 	},
 	"folder": {
 		"uploads": None,

@@ -104,7 +104,8 @@ def getSettings():
 			"keyboardControl": s.getBoolean(["feature", "keyboardControl"]),
 			"pollWatched": s.getBoolean(["feature", "pollWatched"]),
 			"ignoreIdenticalResends": s.getBoolean(["feature", "ignoreIdenticalResends"]),
-			"modelSizeDetection": s.getBoolean(["feature", "modelSizeDetection"])
+			"modelSizeDetection": s.getBoolean(["feature", "modelSizeDetection"]),
+			"firmwareDetection": s.getBoolean(["feature", "firmwareDetection"])
 		},
 		"serial": {
 			"port": connectionOptions["portPreference"],
@@ -274,6 +275,7 @@ def _saveSettings(data):
 		if "pollWatched" in data["feature"]: s.setBoolean(["feature", "pollWatched"], data["feature"]["pollWatched"])
 		if "ignoreIdenticalResends" in data["feature"]: s.setBoolean(["feature", "ignoreIdenticalResends"], data["feature"]["ignoreIdenticalResends"])
 		if "modelSizeDetection" in data["feature"]: s.setBoolean(["feature", "modelSizeDetection"], data["feature"]["modelSizeDetection"])
+		if "firmwareDetection" in data["feature"]: s.setBoolean(["feature", "firmwareDetection"], data["feature"]["firmwareDetection"])
 
 	if "serial" in data.keys():
 		if "autoconnect" in data["serial"].keys(): s.setBoolean(["serial", "autoconnect"], data["serial"]["autoconnect"])
