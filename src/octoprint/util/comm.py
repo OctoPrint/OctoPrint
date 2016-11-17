@@ -1133,7 +1133,9 @@ class MachineCom(object):
 					# ok only considered handled if it's alone on the line, might be
 					# a response to an M105 or an M114
 					self._handle_ok()
-					handled = (line == "wait" or line == "ok" or not ("T:" in line or "T0:" in line or "B:" in line or "C:" in line))
+					needs_further_handling = "T:" in line or "T0:" in line or "B:" in line or "C:" in line or \
+					                         "X:" in line or "FIRMWARE_NAME:" in line
+					handled = (line == "wait" or line == "ok" or not needs_further_handling)
 
 				# process resends
 				elif lower_line.startswith("resend") or lower_line.startswith("rs"):
