@@ -348,7 +348,8 @@ default_settings = {
 			"supportM112": True,
 			"echoOnM117": True,
 			"brokenM29": True,
-			"supportF": False
+			"supportF": False,
+			"firmwareName": "Virtual Marlin 1.0"
 		}
 	}
 }

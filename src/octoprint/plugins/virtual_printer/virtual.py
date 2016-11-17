@@ -94,6 +94,8 @@ class VirtualPrinter(object):
 
 		self._brokenM29 = settings().getBoolean(["devel", "virtualPrinter", "brokenM29"])
 
+		self._firmwareName = settings().get(["devel", "virtualPrinter", "firmwareName"])
+
 		self.currentLine = 0
 		self.lastN = 0
 
@@ -379,6 +381,10 @@ class VirtualPrinter(object):
 			output = "ok " + output
 		self._send(output)
 		return True
+
+	def _gcode_M115(self, data):
+		output = "FIRMWARE_NAME:{} PROTOCOL_VERSION:1.0".format(self._firmwareName)
+		self._send(output)
 
 	def _gcode_M117(self, data):
 		# we'll just use this to echo a message, to allow playing around with pause triggers
