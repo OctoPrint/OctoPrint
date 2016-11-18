@@ -1076,19 +1076,21 @@ class Settings(object):
 		deletes definition from custom system commands.
 		"""
 		changed = False
+
+		migration_map = dict(shutdown="systemShutdownCommand",
+		                     reboot="systemRestartCommand",
+		                     restart="serverRestartCommand")
+
 		if "system" in config and "actions" in config["system"]:
 			actions = config["system"]["actions"]
+			to_delete = []
 			for index, spec in enumerate(actions):
 				action = spec.get("action")
 				command = spec.get("command")
 				if action is None or command is None:
 					continue
 
-				migration_map = dict(shutdown="systemShutdownCommand",
-				                     reboot="systemRestartCommand",
-				                     restart="serverRestartCommand")
 				migrate_to = migration_map.get(action)
-
 				if migrate_to is not None:
 					if not "server" in config or not "commands" in config["server"] or not migrate_to in config["server"]["commands"]:
 						if not "server" in config:
@@ -1098,10 +1100,12 @@ class Settings(object):
 						config["server"]["commands"][migrate_to] = command
 						self._logger.info("Migrated {} action to server.commands.{}".format(action, migrate_to))
 
-					del actions[index]
-					self._logger.info("Deleted {} action from configured system commands, superseeded by server.commands.{}".format(action, migrate_to))
+					to_delete.append(index)
+					self._logger.info("Deleting {} action from configured system commands, superseeded by server.commands.{}".format(action, migrate_to))
 
-					changed = True
+			for index in reversed(to_delete):
+				actions.pop(index)
+				changed = True
 
 		if changed:
 			# let's make a backup of our current config, in case someone wants to roll back to an
