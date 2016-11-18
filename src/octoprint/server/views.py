@@ -27,7 +27,7 @@ from . import util
 import logging
 _logger = logging.getLogger(__name__)
 
-_templates = None
+_templates = dict()
 _plugin_names = None
 _plugin_vars = None
 
@@ -159,19 +159,21 @@ def index():
 
 	preemptive_cache_enabled = settings().getBoolean(["devel", "cache", "preemptive"])
 
+	locale = g.locale.language if g.locale else "en"
+
 	# helper to check if wizards are active
 	def wizard_active(templates):
 		return templates is not None and bool(templates["wizard"]["order"])
 
 	# we force a refresh if the client forces one or if we have wizards cached
-	force_refresh = util.flask.cache_check_headers() or "_refresh" in request.values or wizard_active(_templates)
+	force_refresh = util.flask.cache_check_headers() or "_refresh" in request.values or wizard_active(_templates.get(locale))
 
 	# if we need to refresh our template cache or it's not yet set, process it
-	if force_refresh or _templates is None or _plugin_names is None or _plugin_vars is None:
-		_templates, _plugin_names, _plugin_vars = _process_templates()
+	if force_refresh or _templates.get(locale) is None or _plugin_names is None or _plugin_vars is None:
+		_templates[locale], _plugin_names, _plugin_vars = _process_templates()
 
 	now = datetime.datetime.utcnow()
-	render_kwargs = _get_render_kwargs(_templates, _plugin_names, _plugin_vars, now)
+	render_kwargs = _get_render_kwargs(_templates[locale], _plugin_names, _plugin_vars, now)
 
 	def get_preemptively_cached_view(key, view, data=None, additional_request_data=None, additional_unless=None):
 		if (data is None and additional_request_data is None) or g.locale is None:
@@ -304,7 +306,7 @@ def index():
 		return view(now, request, render_kwargs)
 
 	def default_view():
-		wizard = wizard_active(_templates)
+		wizard = wizard_active(_templates[locale])
 		enable_accesscontrol = userManager.enabled
 		accesscontrol_active = enable_accesscontrol and userManager.hasBeenCustomized()
 		render_kwargs.update(dict(
