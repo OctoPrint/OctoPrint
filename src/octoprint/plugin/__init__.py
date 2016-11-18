@@ -42,9 +42,10 @@ def _validate_plugin(phase, plugin_info):
 			if not "octoprint.accesscontrol.appkey" in hooks:
 				hooks["octoprint.accesscontrol.appkey"] = plugin_info.implementation.get_additional_apps
 			setattr(plugin_info.instance, PluginInfo.attr_hooks, hooks)
+	return True
 
 def plugin_manager(init=False, plugin_folders=None, plugin_types=None, plugin_entry_points=None, plugin_disabled_list=None,
-                   plugin_restart_needing_hooks=None, plugin_obsolete_hooks=None, plugin_validators=None, settings=None):
+                   plugin_restart_needing_hooks=None, plugin_obsolete_hooks=None, plugin_validators=None):
 	"""
 	Factory method for initially constructing and consecutively retrieving the :class:`~octoprint.plugin.core.PluginManager`
 	singleton.
@@ -87,14 +88,6 @@ def plugin_manager(init=False, plugin_folders=None, plugin_types=None, plugin_en
 
 	else:
 		if init:
-			if settings is None:
-				settings = s()
-
-			if plugin_folders is None:
-				plugin_folders = (
-					settings.getBaseFolder("plugins"),
-					(os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "plugins")), True)
-				)
 			if plugin_types is None:
 				plugin_types = [StartupPlugin,
 				                ShutdownPlugin,
@@ -109,22 +102,17 @@ def plugin_manager(init=False, plugin_folders=None, plugin_types=None, plugin_en
 				                ProgressPlugin,
 				                WizardPlugin,
 				                UiPlugin]
-			if plugin_entry_points is None:
-				plugin_entry_points = "octoprint.plugin"
-			if plugin_disabled_list is None:
-				plugin_disabled_list = settings.get(["plugins", "_disabled"])
+
 			if plugin_restart_needing_hooks is None:
-				plugin_restart_needing_hooks = [
-					"octoprint.server.http"
-				]
+				plugin_restart_needing_hooks = ["octoprint.server.http"]
+
 			if plugin_obsolete_hooks is None:
-				plugin_obsolete_hooks = [
-					"octoprint.comm.protocol.gcode"
-				]
+				plugin_obsolete_hooks = ["octoprint.comm.protocol.gcode"]
+
 			if plugin_validators is None:
-				plugin_validators = [
-					_validate_plugin
-				]
+				plugin_validators = [_validate_plugin]
+			else:
+				plugin_validators.append(_validate_plugin)
 
 			_instance = PluginManager(plugin_folders,
 			                          plugin_types,

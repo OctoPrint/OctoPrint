@@ -118,6 +118,7 @@ default_settings = {
 		"host": "0.0.0.0",
 		"port": 5000,
 		"firstRun": True,
+		"startOnceInSafeMode": False,
 		"seenWizards": {},
 		"secretKey": None,
 		"reverseProxy": {

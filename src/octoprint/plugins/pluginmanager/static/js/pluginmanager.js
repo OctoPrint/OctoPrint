@@ -155,6 +155,8 @@ $(function() {
         self.pipAdditionalArgs = ko.observable();
         self.pipPython = ko.observable();
 
+        self.safeMode = ko.observable();
+
         self.pipUseUserString = ko.pureComputed(function() {
             return self.pipUseUser() ? "yes" : "no";
         });
@@ -186,7 +188,8 @@ $(function() {
         });
 
         self.enableToggle = function(data) {
-            return self.enableManagement() && data.key != 'pluginmanager';
+            var command = self._getToggleCommand(data);
+            return self.enableManagement() && (command == "disable" || !data.safe_mode_victim || data.safe_mode_enabled) && data.key != 'pluginmanager';
         };
 
         self.enableUninstall = function(data) {
@@ -199,7 +202,7 @@ $(function() {
         };
 
         self.enableRepoInstall = function(data) {
-            return self.enableManagement() && self.pipAvailable() && self.isCompatible(data);
+            return self.enableManagement() && self.pipAvailable() && !self.safeMode() && self.isCompatible(data);
         };
 
         self.invalidUrl = ko.pureComputed(function() {
@@ -209,7 +212,7 @@ $(function() {
 
         self.enableUrlInstall = ko.pureComputed(function() {
             var url = self.installUrl();
-            return self.enableManagement() && self.pipAvailable() && url !== undefined && url.trim() != "" && !self.invalidUrl();
+            return self.enableManagement() && self.pipAvailable() && !self.safeMode() && url !== undefined && url.trim() != "" && !self.invalidUrl();
         });
 
         self.invalidArchive = ko.pureComputed(function() {
@@ -219,7 +222,7 @@ $(function() {
 
         self.enableArchiveInstall = ko.pureComputed(function() {
             var name = self.uploadFilename();
-            return self.enableManagement() && self.pipAvailable() && name !== undefined && name.trim() != "" && !self.invalidArchive();
+            return self.enableManagement() && self.pipAvailable() && !self.safeMode() && name !== undefined && name.trim() != "" && !self.invalidArchive();
         });
 
         self.uploadElement.fileupload({
@@ -278,6 +281,8 @@ $(function() {
             self._fromPluginsResponse(data.plugins);
             self._fromRepositoryResponse(data.repository);
             self._fromPipResponse(data.pip);
+
+            self.safeMode(data.safe_mode || false);
         };
 
         self._fromPluginsResponse = function(data) {
@@ -347,6 +352,7 @@ $(function() {
                 };
 
             if (self._getToggleCommand(data) == "enable") {
+                if (data.safe_mode_victim && !data.safe_mode_enabled) return;
                 OctoPrint.plugins.pluginmanager.enable(data.key)
                     .done(onSuccess)
                     .fail(onError);
@@ -655,7 +661,8 @@ $(function() {
         };
 
         self._getToggleCommand = function(data) {
-            return ((!data.enabled || data.pending_disable) && !data.pending_enable) ? "enable" : "disable";
+            var disable = (data.enabled || data.pending_enable || (data.safe_mode_victim && data.safe_mode_enabled)) && !data.pending_disable;
+            return disable ? "disable" : "enable";
         };
 
         self.toggleButtonCss = function(data) {
@@ -666,7 +673,16 @@ $(function() {
         };
 
         self.toggleButtonTitle = function(data) {
-            return self._getToggleCommand(data) == "enable" ? gettext("Enable Plugin") : gettext("Disable Plugin");
+            var command = self._getToggleCommand(data);
+            if (command == "enable") {
+                if (data.safe_mode_victim && !data.safe_mode_enabled) {
+                    return gettext("Disabled due to active safe mode");
+                } else {
+                    return gettext("Enable Plugin");
+                }
+            } else {
+                return gettext("Disable Plugin");
+            }
         };
 
         self.onBeforeBinding = function() {

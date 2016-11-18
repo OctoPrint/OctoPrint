@@ -57,16 +57,21 @@ class FatalStartupError(BaseException):
 
 def init_platform(basedir, configfile, use_logging_file=True, logging_file=None,
                   logging_config=None, debug=False, verbosity=0, uncaught_logger=None,
-                  uncaught_handler=None, after_preinit_logging=None,
-                  after_settings=None, after_logging=None):
+                  uncaught_handler=None, safe_mode=False, after_preinit_logging=None,
+                  after_settings=None, after_logging=None, after_safe_mode=None):
+	kwargs = dict()
+
 	logger, recorder = preinit_logging(debug, verbosity, uncaught_logger, uncaught_handler)
+	kwargs["logger"] = logger
+	kwargs["recorder"] = recorder
 
 	if callable(after_preinit_logging):
-		after_preinit_logging(logger, recorder)
+		after_preinit_logging(**kwargs)
 
 	settings = init_settings(basedir, configfile)
+	kwargs["settings"] = settings
 	if callable(after_settings):
-		after_settings(settings)
+		after_settings(**kwargs)
 
 	logger = init_logging(settings,
 	                      use_logging_file=use_logging_file,
@@ -76,12 +81,20 @@ def init_platform(basedir, configfile, use_logging_file=True, logging_file=None,
 	                      verbosity=verbosity,
 	                      uncaught_logger=uncaught_logger,
 	                      uncaught_handler=uncaught_handler)
+	kwargs["logger"] = logger
 
 	if callable(after_logging):
-		after_logging(logger, recorder)
+		after_logging(**kwargs)
 
-	plugin_manager = init_pluginsystem(settings)
-	return settings, logger, plugin_manager
+	settings_safe_mode = settings.getBoolean(["server", "startOnceInSafeMode"])
+	safe_mode = safe_mode or settings_safe_mode
+	kwargs["safe_mode"] = safe_mode
+
+	if callable(after_safe_mode):
+		after_safe_mode(**kwargs)
+
+	plugin_manager = init_pluginsystem(settings, safe_mode=safe_mode)
+	return settings, logger, safe_mode, plugin_manager
 
 
 def init_settings(basedir, configfile):
@@ -254,19 +267,45 @@ def set_logging_config(config, debug, verbosity, uncaught_logger, uncaught_handl
 	if uncaught_handler is None:
 		def exception_logger(exc_type, exc_value, exc_tb):
 			logger.error("Uncaught exception", exc_info=(exc_type, exc_value, exc_tb))
+
 		uncaught_handler = exception_logger
 	sys.excepthook = uncaught_handler
 
 	return logger
 
 
-def init_pluginsystem(settings):
+def init_pluginsystem(settings, safe_mode=False):
 	"""Initializes the plugin manager based on the settings."""
 
-	from octoprint.plugin import plugin_manager
-	pm = plugin_manager(init=True, settings=settings)
+	import os
 
 	logger = log.getLogger(__name__)
+
+	plugin_folders = [(os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), "plugins")), True),
+	                  settings.getBaseFolder("plugins")]
+	plugin_entry_points = ["octoprint.plugin"]
+	plugin_disabled_list = settings.get(["plugins", "_disabled"])
+
+	plugin_validators = []
+	if safe_mode:
+		def validator(phase, plugin_info):
+			if phase == "after_load":
+				setattr(plugin_info, "safe_mode_victim", not plugin_info.bundled)
+				setattr(plugin_info, "safe_mode_enabled", False)
+			elif phase == "before_enable":
+				if not plugin_info.bundled:
+					setattr(plugin_info, "safe_mode_enabled", True)
+					return False
+			return True
+		plugin_validators.append(validator)
+
+	from octoprint.plugin import plugin_manager
+	pm = plugin_manager(init=True,
+	                    plugin_folders=plugin_folders,
+	                    plugin_entry_points=plugin_entry_points,
+	                    plugin_disabled_list=plugin_disabled_list,
+	                    plugin_validators=plugin_validators)
+
 	settings_overlays = dict()
 	disabled_from_overlays = dict()
 

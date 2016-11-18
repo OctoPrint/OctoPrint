@@ -13,6 +13,8 @@ function DataUpdater(allViewModels) {
     self._lastProcessingTimes = [];
     self._lastProcessingTimesSize = 20;
 
+    self._safeModePopup = undefined;
+
     self.increaseThrottle = function() {
         self.setThrottle(self._throttleFactor + 1);
     };
@@ -114,6 +116,19 @@ function DataUpdater(allViewModels) {
         // update config hash
         var oldConfigHash = self._configHash;
         self._configHash = data["config_hash"];
+
+        // process safe mode
+        if (self._safeModePopup) self._safeModePopup.remove();
+        if (data["safe_mode"]) {
+            // safe mode is active, let's inform the user
+            log.info("Safe mode is active. Third party plugins are disabled and cannot be enabled.");
+
+            self._safeModePopup = new PNotify({
+                title: gettext("Safe mode is active"),
+                text: gettext("The server is currently running in safe mode. Third party plugins are disabled and cannot be enabled."),
+                hide: false
+            });
+        }
 
         // if the offline overlay is still showing, now's a good time to
         // hide it, plus reload the camera feed if it's currently displayed

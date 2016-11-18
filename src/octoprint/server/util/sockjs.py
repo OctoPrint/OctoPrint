@@ -77,7 +77,9 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection, octoprint.printer.
 			display_version=octoprint.server.DISPLAY_VERSION,
 			branch=octoprint.server.BRANCH,
 			plugin_hash=plugin_hash.hexdigest(),
-			config_hash=config_hash
+			config_hash=config_hash,
+			debug=octoprint.server.debug,
+			safe_mode=octoprint.server.safe_mode
 		))
 
 		self._printer.register_callback(self)

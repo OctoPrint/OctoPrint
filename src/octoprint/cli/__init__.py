@@ -13,10 +13,11 @@ import octoprint
 class OctoPrintContext(object):
 	"""Custom context wrapping the standard options."""
 
-	def __init__(self, configfile=None, basedir=None, verbosity=0):
+	def __init__(self, configfile=None, basedir=None, verbosity=0, safe_mode=False):
 		self.configfile = configfile
 		self.basedir = basedir
 		self.verbosity = verbosity
+		self.safe_mode = safe_mode
 
 pass_octoprint_ctx = click.make_pass_decorator(OctoPrintContext, ensure=True)
 """Decorator to pass in the :class:`OctoPrintContext` instance."""
@@ -95,6 +96,8 @@ def standard_options(hidden=False):
 		        help="Specify the config file to use."),
 		factory("--verbose", "-v", "verbosity", count=True, callback=set_ctx_obj_option, is_eager=True, expose_value=False,
 		        help="Increase logging verbosity"),
+		factory("--safe", "safe_mode", is_flag=True, callback=set_ctx_obj_option, is_eager=True, expose_value=False,
+		        help="Enable safe mode; disables all third party plugins")
 	]
 
 	return bulk_options(options)
