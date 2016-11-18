@@ -575,6 +575,9 @@ class Server(object):
 		if "l10n" in request.values:
 			return Locale.negotiate([request.values["l10n"]], LANGUAGES)
 
+		if "X-Locale" in request.headers:
+			return Locale.negotiate([request.headers["X-Locale"]], LANGUAGES)
+
 		if hasattr(g, "identity") and g.identity and userManager.enabled:
 			userid = g.identity.id
 			try:
