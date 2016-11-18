@@ -1100,7 +1100,26 @@ class Settings(object):
 					self._logger.info("Deleted {} action from configured system commands, superseeded by server.commands.{}".format(action, migrate_to))
 
 					changed = True
+
+		if changed:
+			# let's make a backup of our current config, in case someone wants to roll back to an
+			# earlier version and needs to recover the former system commands for that
+			backup_path = self.backup("system_command_migration")
+			self._logger.info("Made a copy of the current config at {} to allow recovery of manual system command configuration".format(backup_path))
+
 		return changed
+
+	def backup(self, suffix, path=None):
+		import shutil
+
+		if path is None:
+			path = os.path.dirname(self._configfile)
+		basename = os.path.basename(self._configfile)
+		name, ext = os.path.splitext(basename)
+
+		backup = os.path.join(path, "{}.{}{}".format(name, suffix, ext))
+		shutil.copy(self._configfile, backup)
+		return backup
 
 	def save(self, force=False):
 		if not self._dirty and not force:
