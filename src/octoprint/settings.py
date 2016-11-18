@@ -839,9 +839,10 @@ class Settings(object):
 		else:
 			self._map.maps.insert(1, overlay)
 
-	def _migrate_config(self, config=None):
+	def _migrate_config(self, config=None, persist=False):
 		if config is None:
 			config = self._config
+			persist = True
 
 		dirty = False
 
@@ -855,7 +856,8 @@ class Settings(object):
 
 		for migrate in migrators:
 			dirty = migrate(config) or dirty
-		if dirty:
+
+		if dirty and persist:
 			self.save(force=True)
 
 	def _migrate_gcode_scripts(self, config):
