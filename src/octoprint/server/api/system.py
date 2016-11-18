@@ -129,19 +129,19 @@ def _get_core_command_specs():
 	commands = collections.OrderedDict(
 		shutdown=dict(
 			command=s().get(["server", "commands", "systemShutdownCommand"]),
-			name=gettext("Shutdown"),
+			name=gettext("Shutdown system"),
 			confirm=gettext("You are about to shutdown the system.")),
 		reboot=dict(
 			command=s().get(["server", "commands", "systemRestartCommand"]),
-			name=gettext("Reboot"),
+			name=gettext("Reboot system"),
 			confirm=gettext("You are about to reboot the system.")),
 		restart=dict(
 			command=s().get(["server", "commands", "serverRestartCommand"]),
-			name="Restart OctoPrint",
-			confirm="You are about to restart the OctoPrint server.")
+			name=gettext("Restart OctoPrint"),
+			confirm=gettext("You are about to restart the OctoPrint server."))
 	)
 
-	available_commands = dict()
+	available_commands = collections.OrderedDict()
 	for action, spec in commands.items():
 		if not spec["command"]:
 			continue
