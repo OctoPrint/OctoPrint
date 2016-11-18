@@ -849,7 +849,8 @@ class Settings(object):
 			self._migrate_event_config,
 			self._migrate_reverse_proxy_config,
 			self._migrate_printer_parameters,
-			self._migrate_gcode_scripts
+			self._migrate_gcode_scripts,
+			self._migrate_core_system_commands
 		)
 
 		for migrate in migrators:
@@ -1062,6 +1063,44 @@ class Settings(object):
 			return True
 		else:
 			return False
+
+	def _migrate_core_system_commands(self, config):
+		"""
+		Migrates system commands for restart, reboot and shutdown as defined on OctoPi or
+		according to the official setup guide to new core system commands to remove
+		duplication.
+
+		If server commands for action is not yet set, migrates command. Otherwise only
+		deletes definition from custom system commands.
+		"""
+		changed = False
+		if "system" in config and "actions" in config["system"]:
+			actions = config["system"]["actions"]
+			for index, spec in enumerate(actions):
+				action = spec.get("action")
+				command = spec.get("command")
+				if action is None or command is None:
+					continue
+
+				migration_map = dict(shutdown="systemShutdownCommand",
+				                     reboot="systemRestartCommand",
+				                     restart="serverRestartCommand")
+				migrate_to = migration_map.get(action)
+
+				if migrate_to is not None:
+					if not "server" in config or not "commands" in config["server"] or not migrate_to in config["server"]["commands"]:
+						if not "server" in config:
+							config["server"] = dict()
+						if not "commands" in config["server"]:
+							config["server"]["commands"] = dict()
+						config["server"]["commands"][migrate_to] = command
+						self._logger.info("Migrated {} action to server.commands.{}".format(action, migrate_to))
+
+					del actions[index]
+					self._logger.info("Deleted {} action from configured system commands, superseeded by server.commands.{}".format(action, migrate_to))
+
+					changed = True
+		return changed
 
 	def save(self, force=False):
 		if not self._dirty and not force:
