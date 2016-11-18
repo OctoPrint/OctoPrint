@@ -18,10 +18,6 @@ __revision__ = versions.get('full-revisionid', versions.get('full', None))
 del versions
 del get_versions
 
-#~~ sane logging defaults
-
-log.basicConfig()
-
 #~~ try to ensure a sound SSL environment
 
 urllib3_ssl = True
@@ -61,7 +57,13 @@ class FatalStartupError(BaseException):
 
 def init_platform(basedir, configfile, use_logging_file=True, logging_file=None,
                   logging_config=None, debug=False, verbosity=0, uncaught_logger=None,
-                  uncaught_handler=None, after_settings=None, after_logging=None):
+                  uncaught_handler=None, after_preinit_logging=None,
+                  after_settings=None, after_logging=None):
+	logger, recorder = preinit_logging(debug, verbosity, uncaught_logger, uncaught_handler)
+
+	if callable(after_preinit_logging):
+		after_preinit_logging(logger, recorder)
+
 	settings = init_settings(basedir, configfile)
 	if callable(after_settings):
 		after_settings(settings)
@@ -74,8 +76,9 @@ def init_platform(basedir, configfile, use_logging_file=True, logging_file=None,
 	                      verbosity=verbosity,
 	                      uncaught_logger=uncaught_logger,
 	                      uncaught_handler=uncaught_handler)
+
 	if callable(after_logging):
-		after_logging(logger)
+		after_logging(logger, recorder)
 
 	plugin_manager = init_pluginsystem(settings)
 	return settings, logger, plugin_manager
@@ -92,6 +95,45 @@ def init_settings(basedir, configfile):
 		if e.line is not None and e.column is not None:
 			message += " The parser reported an error on line {}, column {}.".format(e.line, e.column)
 		raise FatalStartupError(message)
+
+
+def preinit_logging(debug=False, verbosity=0, uncaught_logger=None, uncaught_handler=None):
+	config = {
+		"version": 1,
+		"formatters": {
+			"simple": {
+				"format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+			}
+		},
+		"handlers": {
+			"console": {
+				"class": "logging.StreamHandler",
+				"level": "DEBUG",
+				"formatter": "simple",
+				"stream": "ext://sys.stdout"
+			}
+		},
+		"loggers": {
+			"octoprint": {
+				"level": "DEBUG" if debug else "INFO"
+			},
+			"octoprint.util": {
+				"level": "INFO"
+			}
+		},
+		"root": {
+			"level": "WARN",
+			"handlers": ["console"]
+		}
+	}
+
+	logger = set_logging_config(config, debug, verbosity, uncaught_logger, uncaught_handler)
+
+	from octoprint.logging.handlers import RecordingLogHandler
+	recorder = RecordingLogHandler(level=log.DEBUG)
+	log.getLogger().addHandler(recorder)
+
+	return logger, recorder
 
 
 def init_logging(settings, use_logging_file=True, logging_file=None, default_config=None, debug=False, verbosity=0, uncaught_logger=None, uncaught_handler=None):
@@ -182,6 +224,11 @@ def init_logging(settings, use_logging_file=True, logging_file=None, default_con
 	else:
 		config = default_config
 
+	# configure logging globally
+	return set_logging_config(config, debug, verbosity, uncaught_logger, uncaught_handler)
+
+
+def set_logging_config(config, debug, verbosity, uncaught_logger, uncaught_handler):
 	# configure logging globally
 	import logging.config as logconfig
 	logconfig.dictConfig(config)

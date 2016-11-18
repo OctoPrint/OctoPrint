@@ -16,8 +16,19 @@ def run_server(basedir, configfile, host, port, debug, allow_root, logging_confi
 
 	from octoprint import init_platform, __display_version__, FatalStartupError
 
-	def log_startup(_):
-		logging.getLogger("octoprint.server").info("Starting OctoPrint {}".format(__display_version__))
+	def log_startup(_, recorder):
+		logger = logging.getLogger("octoprint.server")
+		logger.info("Starting OctoPrint {}".format(__display_version__))
+
+		if recorder and len(recorder):
+			logger.info("--- Logged during platform initialization: ---")
+
+			from octoprint.logging.handlers import CombinedLogHandler
+			handler = CombinedLogHandler(*logging.getLogger().handlers)
+			recorder.setTarget(handler)
+			recorder.flush()
+
+			logger.info("----------------------------------------------")
 
 		from octoprint import urllib3_ssl
 		if not urllib3_ssl:
