@@ -828,8 +828,9 @@ class SettingsPlugin(OctoPrintPlugin):
 		:return: the current settings of the plugin, as a dictionary
 		"""
 		from flask.ext.login import current_user
+		import copy
 
-		data = self._settings.get_all_data()
+		data = copy.deepcopy(self._settings.get_all_data(merged=True))
 		if self.config_version_key in data:
 			del data[self.config_version_key]
 
