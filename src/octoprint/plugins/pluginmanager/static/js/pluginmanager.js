@@ -249,7 +249,7 @@ $(function() {
             done: function(e, data) {
                 self._markDone();
                 self.uploadButton.unbind("click");
-                self.uploadFilename("");
+                self.uploadFilename(undefined);
             },
             fail: function(e, data) {
                 new PNotify({
@@ -260,7 +260,7 @@ $(function() {
                 });
                 self._markDone();
                 self.uploadButton.unbind("click");
-                self.uploadFilename("");
+                self.uploadFilename(undefined);
             }
         });
 
