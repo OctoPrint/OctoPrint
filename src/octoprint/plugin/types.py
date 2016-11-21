@@ -1368,14 +1368,17 @@ class SettingsPlugin(OctoPrintPlugin):
 		   to retrieve the data in the correct format.
 
 		   The default implementation will also replace any paths that have been restricted by your plugin through
-		   :func:`~octoprint.plugin.SettingsPlugin.get_settings_restricted_paths` with ``None`` values where necessary.
+		   :func:`~octoprint.plugin.SettingsPlugin.get_settings_restricted_paths` with either the provided
+		   default value (if one was provided), an empty dictionary (as fallback for restricted dictionaries), an
+		   empty list (as fallback for restricted lists) or ``None`` values where necessary.
 		   Make sure to do your own restriction if you decide to fully overload this method.
 
 		:return: the current settings of the plugin, as a dictionary
 		"""
 		from flask.ext.login import current_user
+		import copy
 
-		data = self._settings.get_all_data()
+		data = copy.deepcopy(self._settings.get_all_data(merged=True))
 		if self.config_version_key in data:
 			del data[self.config_version_key]
 
@@ -1397,8 +1400,25 @@ class SettingsPlugin(OctoPrintPlugin):
 					node = node[entry]
 
 			key = path[-1]
+			default_value_available = False
+			default_value = None
+			if isinstance(key, (list, tuple)):
+				# key, default_value tuple
+				key, default_value = key
+				default_value_available = True
+
 			if key in node:
-				node[key] = None
+				if default_value_available:
+					if callable(default_value):
+						default_value = default_value()
+					node[key] = default_value
+				else:
+					if isinstance(node[key], dict):
+						node[key] = dict()
+					elif isinstance(node[key], (list, tuple)):
+						node[key] = []
+					else:
+						node[key] = None
 
 		conditions = dict(user=lambda: current_user is not None and not current_user.is_anonymous(),
 		                  admin=lambda: current_user is not None and not current_user.is_anonymous() and current_user.is_admin(),
