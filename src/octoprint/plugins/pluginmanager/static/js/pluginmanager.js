@@ -553,7 +553,7 @@ $(function() {
                         title: titleSuccess,
                         text: textRestart,
                         buttons: {
-                            closer: false,
+                            closer: true,
                             sticker: false
                         },
                         callbacks: {
@@ -606,7 +606,7 @@ $(function() {
                             }]
                         },
                         buttons: {
-                            closer: false,
+                            closer: true,
                             sticker: false
                         },
                         callbacks: {
@@ -698,11 +698,20 @@ $(function() {
         };
 
         self.onUserLoggedOut = function() {
+            self._closeAllNotifications();
+        };
+
+        self._closeAllNotifications = function() {
             if (self.notifications) {
                 _.each(self.notifications, function(notification) {
                     notification.remove();
                 });
             }
+        };
+
+        self.onServerDisconnect = function() {
+            self._closeAllNotifications();
+            return true;
         };
 
         self.onStartup = function() {
