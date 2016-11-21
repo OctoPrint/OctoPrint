@@ -7,7 +7,7 @@
 
     <div style="margin-top: 1em">
         <form class="form-horizontal">
-            {% include "_snippets/settings/cura/enginePath.jinja2" %}
+            {% include "snippets/settings/cura/enginePath.jinja2" %}
         </form>
     </div>
 </div>
@@ -18,7 +18,7 @@
     yet. You should do this now.{% endtrans %}</p>
 
     <div>
-        {% include "_snippets/settings/cura/profiles.jinja2" %}
+        {% include "snippets/settings/cura/profiles.jinja2" %}
     </div>
 
     <button class="btn btn-block" data-bind="click: function() { $root.showImportProfileDialog() }">{{ _('Import Profile...') }}</button>
