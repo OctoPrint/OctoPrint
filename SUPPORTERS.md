@@ -33,27 +33,22 @@ thanks to everyone who contributed!
   * Gary Deen
   * Gary N McKinney
   * George Robles
-  * Gregor Lütolf
   * J. Eckert
   * Jason Galarneau
-  * Joe Korzeniewski
   * Josh Daniels
   * Joshua David Gregory
   * Kaile Riser
   * Kale Stedman
   * Kazuhiro Ogura
-  * Korneel Bullens
   * Lamin Kivelä
   * M Khorakiwala
   * Makespace Madrid
-  * Mark Lane
   * Mark Qvist
   * Mark Walker
   * Masayoshi Mitsui
   * Michael Aumock
   * Michael McDargh Sr
   * Miles Flavel
-  * Nikolai Langer
   * Noe Ruiz
   * Patrick McGinnis
   * Peter Grace
@@ -68,10 +63,11 @@ thanks to everyone who contributed!
   * Shane Ekerbicer
   * Simon Hallam
   * Stefan Krister
+  * Stephane Schittly
   * Steven Pearson
   * Sven Mueller
   * Terrance Shaw
   * Thomas Hatley
   * Trent Shumay
 
-and 968 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!
+and 989 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!

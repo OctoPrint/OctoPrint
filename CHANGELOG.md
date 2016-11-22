@@ -1,5 +1,23 @@
 # OctoPrint Changelog
 
+## 1.2.18rc1 (2016-11-22)
+
+### Improvements
+
+  * Allow arbitrary frame rates for creating timelapses. Before, the entered fps value was also directly used as frame rate for the actual video, which could cause problems with any frame rates not specified in the MPEG2 standard. Now OctoPrint will use a standard frame rate for the rendered video and render the timelapse stills into the finished movie with the configured frame rate.
+  * Limited Cura profile importer to `.ini` files and clarified the supported versions
+  * Add support for the `R` parameter for `M109` and `M190`
+
+### Bug fixes
+
+  * [#1541](https://github.com/foosel/OctoPrint/issues/1541) - Fix selecting the printer profile to use by default
+  * [#1543](https://github.com/foosel/OctoPrint/issues/1543) - Fix target temperature propagation from communication layer
+  * [#1567](https://github.com/foosel/OctoPrint/issues/1567) - Fix issue with restricted settings getting parsed to the wrong data structure in the frontend if loaded anonymously first.
+  * [#1571](https://github.com/foosel/OctoPrint/issues/1571) - Fix parsing of port number from HTTP Host header for IPv6 addresses
+  * Fix issue with settings restriction causing internal settings defaults to be changed.
+
+([Commits](https://github.com/foosel/OctoPrint/compare/1.2.17...1.2.18))
+
 ## 1.2.17 (2016-11-08)
 
 ### Improvements

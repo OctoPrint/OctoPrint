@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OctoPrint\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
-"POT-Creation-Date: 2016-09-09 11:35+0200\n"
-"PO-Revision-Date: 2016-09-09 11:48+0100\n"
+"POT-Creation-Date: 2016-11-22 12:42+0100\n"
+"PO-Revision-Date: 2016-11-22 12:43+0100\n"
 "Last-Translator: Gina Häußge <osd@foosel.net>\n"
 "Language: de\n"
 "Language-Team: German (http://www.transifex.com/projects/p/octoprint/"
@@ -193,23 +193,22 @@ msgstr "Vorhandene Datei überschreiben"
 msgid ""
 "\n"
 "            You can import your existing profile <code>.ini</code> files "
-"from Cura (version up to and\n"
-"            including 15.04) here. Please be aware that neither the <code>."
-"json</code> profile format\n"
-"            from Cura versions starting with 15.06 is supported, nor are the "
-"custom Cura profile formats\n"
-"            that third party tools like e.g. Repetier create.\n"
+"from <strong>Cura 15.04.x or older</strong>\n"
+"            here. Anything but those are <strong>not supported</strong>. "
+"That especiallymeans that <code>.json</code>\n"
+"            profiles from Cura 15.06.x and <code>.curaprofile</code> "
+"profiles from Cura 2.x will not work, and neither\n"
+"            will custom Cura profile formats that third party tools like e."
+"g. Repetier create.\n"
 "        "
 msgstr ""
-"\n"
-"    Hier kannst Du Deine existierenden Profildateien (<code>.ini</code>) aus "
-"Cura importieren (Versionen bis\n"
-"    einschließlich 15.04). Bitte beachte, dass weder die <code>.json</code> "
-"Profile aus\n"
-"    Curaversionen ab 15.06 unterstützt werden, noch andere "
-"Thirdpartyprofilformate von\n"
-"    Tools wie z.B. Repetier Host.\n"
-"    "
+"Du kannst hier deine vorhandenen <code>.ini</code> Profildateien von "
+"<strong>Cura 15.04.x oder älter</strong> importieren. Andere Profilformate "
+"als diese sind <strong>nicht unterstützt</strong>. Das beinhaltet "
+"insbesondere, dass <code>.json</code> Profile von Cura 15.06.x und <code>."
+"curaprofile</code> Profile von Cura 2.x nicht funktionieren werden, ebenso "
+"wenig wie Cura-Profildateien, die von Third-Party-Tools wie z.B. Repetier "
+"erstellt wurden."
 
 #: src/octoprint/plugins/cura/templates/cura_settings.jinja2:121
 #: src/octoprint/templates/dialogs/settings/accesscontrol.jinja2:80
@@ -227,7 +226,7 @@ msgstr "Abbrechen"
 msgid "Confirm"
 msgstr "Bestätigen"
 
-#: src/octoprint/plugins/pluginmanager/__init__.py:116
+#: src/octoprint/plugins/pluginmanager/__init__.py:117
 msgid "Plugin Manager"
 msgstr "Pluginmanager"
 
@@ -754,7 +753,7 @@ msgid "Software Update"
 msgstr "Software Update"
 
 #: src/octoprint/plugins/softwareupdate/__init__.py:752
-#: src/octoprint/server/views.py:217
+#: src/octoprint/server/views.py:220
 #: src/octoprint/static/js/app/viewmodels/appearance.js:11
 #: src/octoprint/static/js/app/viewmodels/appearance.js:13
 #: src/octoprint/static/js/app/viewmodels/appearance.js:18
@@ -1077,108 +1076,108 @@ msgstr ""
 msgid "Version cache TTL"
 msgstr "TTL des Versionscaches"
 
-#: src/octoprint/server/views.py:125
+#: src/octoprint/server/views.py:128
 msgid "Plugins"
 msgstr "Plugins"
 
-#: src/octoprint/server/views.py:183
+#: src/octoprint/server/views.py:186
 msgid "Connection"
 msgstr "Verbindung"
 
-#: src/octoprint/server/views.py:184
+#: src/octoprint/server/views.py:187
 #: src/octoprint/templates/sidebar/state.jinja2:1
 msgid "State"
 msgstr "Status"
 
-#: src/octoprint/server/views.py:185
+#: src/octoprint/server/views.py:188
 msgid "Files"
 msgstr "Dateien"
 
-#: src/octoprint/server/views.py:191
+#: src/octoprint/server/views.py:194
 msgid "Temperature"
 msgstr "Temperatur"
 
-#: src/octoprint/server/views.py:192
+#: src/octoprint/server/views.py:195
 msgid "Control"
 msgstr "Steuerung"
 
-#: src/octoprint/server/views.py:193
+#: src/octoprint/server/views.py:196
 msgid "Terminal"
 msgstr "Terminal"
 
-#: src/octoprint/server/views.py:196
+#: src/octoprint/server/views.py:199
 msgid "GCode Viewer"
 msgstr "GCode Viewer"
 
-#: src/octoprint/server/views.py:198
+#: src/octoprint/server/views.py:201
 #: src/octoprint/templates/sidebar/state.jinja2:4
 msgid "Timelapse"
 msgstr "Zeitraffer"
 
-#: src/octoprint/server/views.py:203
+#: src/octoprint/server/views.py:206
 msgid "Printer"
 msgstr "Drucker"
 
-#: src/octoprint/server/views.py:205
+#: src/octoprint/server/views.py:208
 msgid "Serial Connection"
 msgstr "Serielle Verbindung"
 
-#: src/octoprint/server/views.py:206
+#: src/octoprint/server/views.py:209
 #: src/octoprint/templates/dialogs/settings/printerprofiles.jinja2:1
 msgid "Printer Profiles"
 msgstr "Druckerprofile"
 
-#: src/octoprint/server/views.py:207
+#: src/octoprint/server/views.py:210
 msgid "Temperatures"
 msgstr "Temperaturen"
 
-#: src/octoprint/server/views.py:208
+#: src/octoprint/server/views.py:211
 msgid "Terminal Filters"
 msgstr "Terminalfilter"
 
-#: src/octoprint/server/views.py:209
+#: src/octoprint/server/views.py:212
 msgid "GCODE Scripts"
 msgstr "GCODE Scripts"
 
-#: src/octoprint/server/views.py:211 src/octoprint/server/views.py:213
+#: src/octoprint/server/views.py:214 src/octoprint/server/views.py:216
 msgid "Features"
 msgstr "Funktionen"
 
-#: src/octoprint/server/views.py:214
+#: src/octoprint/server/views.py:217
 msgid "Webcam"
 msgstr "Webcam"
 
-#: src/octoprint/server/views.py:215
+#: src/octoprint/server/views.py:218
 msgid "API"
 msgstr "API"
 
-#: src/octoprint/server/views.py:219
+#: src/octoprint/server/views.py:222
 #: src/octoprint/templates/dialogs/settings/folders.jinja2:2
 msgid "Folders"
 msgstr "Verzeichnisse"
 
-#: src/octoprint/server/views.py:220
+#: src/octoprint/server/views.py:223
 msgid "Appearance"
 msgstr "Aussehen"
 
-#: src/octoprint/server/views.py:221
+#: src/octoprint/server/views.py:224
 #: src/octoprint/templates/dialogs/settings/logs.jinja2:2
 msgid "Logs"
 msgstr "Logs"
 
-#: src/octoprint/server/views.py:222
+#: src/octoprint/server/views.py:225
 msgid "Server"
 msgstr "Server"
 
-#: src/octoprint/server/views.py:225
+#: src/octoprint/server/views.py:228
 msgid "Access Control"
 msgstr "Zugangsbeschränkung"
 
-#: src/octoprint/server/views.py:231
+#: src/octoprint/server/views.py:234
 msgid "Access"
 msgstr "Zugriff"
 
-#: src/octoprint/server/views.py:232
+#: src/octoprint/server/views.py:235
 msgid "Interface"
 msgstr "Interface"
 
@@ -3511,3 +3510,24 @@ msgstr "Ungerenderte Zeitrafferaufnahme löschen"
 #: src/octoprint/templates/tabs/timelapse.jinja2:99
 msgid "Render timelapse"
 msgstr "Zeitrafferaufnahme rendern"
+
+#~ msgid ""
+#~ "\n"
+#~ "            You can import your existing profile <code>.ini</code> files "
+#~ "from Cura (version up to and\n"
+#~ "            including 15.04) here. Please be aware that neither the "
+#~ "<code>.json</code> profile format\n"
+#~ "            from Cura versions starting with 15.06 is supported, nor are "
+#~ "the custom Cura profile formats\n"
+#~ "            that third party tools like e.g. Repetier create.\n"
+#~ "        "
+#~ msgstr ""
+#~ "\n"
+#~ "    Hier kannst Du Deine existierenden Profildateien (<code>.ini</code>) "
+#~ "aus Cura importieren (Versionen bis\n"
+#~ "    einschließlich 15.04). Bitte beachte, dass weder die <code>.json</"
+#~ "code> Profile aus\n"
+#~ "    Curaversionen ab 15.06 unterstützt werden, noch andere "
+#~ "Thirdpartyprofilformate von\n"
+#~ "    Tools wie z.B. Repetier Host.\n"
+#~ "    "
