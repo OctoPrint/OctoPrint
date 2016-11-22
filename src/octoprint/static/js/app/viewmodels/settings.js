@@ -807,6 +807,12 @@ $(function() {
                 $('ul.nav-list a:first', self.settingsDialog).tab("show");
             }
         };
+
+        self.onServerReconnect = function() {
+            // the settings might have changed if the server was just restarted,
+            // better refresh them now
+            self.requestData();
+        };
     }
 
     OCTOPRINT_VIEWMODELS.push([

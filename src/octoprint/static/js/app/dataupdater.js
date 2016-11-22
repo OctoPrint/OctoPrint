@@ -136,10 +136,6 @@ function DataUpdater(allViewModels) {
             hideOfflineOverlay();
             callViewModels(self.allViewModels, "onServerReconnect");
             callViewModels(self.allViewModels, "onDataUpdaterReconnect");
-
-            if ($('#tabs li[class="active"] a').attr("href") == "#control") {
-                $("#webcam_image").attr("src", CONFIG_WEBCAM_STREAM + "?" + new Date().getTime());
-            }
         } else {
             callViewModels(self.allViewModels, "onServerConnect");
         }

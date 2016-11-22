@@ -10,7 +10,7 @@
     var CONFIG_TIMELAPSEFILESPERPAGE = 10;
     var CONFIG_LOGFILESPERPAGE = 10;
     var CONFIG_USERSPERPAGE = 10;
-    var CONFIG_WEBCAM_STREAM = "{{ webcamStream|e }}";
+    var CONFIG_WEBCAM_STREAM = "{{ webcamStream|e }}"; // deprecated, only left for compatibility reasons
     var CONFIG_ACCESS_CONTROL = {% if enableAccessControl -%} true; {% else %} false; {%- endif %}
     var CONFIG_ACCESS_CONTROL_ACTIVE = {% if accessControlActive -%} true; {% else %} false; {%- endif %}
     var CONFIG_SD_SUPPORT = {% if enableSdSupport -%} true; {% else %} false; {%- endif %}
