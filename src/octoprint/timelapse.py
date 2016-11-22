@@ -575,6 +575,19 @@ class Timelapse(object):
 			self._capture_success += 1
 			return True
 
+	def _copying_postroll(self):
+		with self._capture_mutex:
+			filename = os.path.join(self._capture_dir,
+			                        _capture_format.format(prefix=self._file_prefix) % self._image_number)
+			self._image_number += 1
+
+		if self._perform_capture(filename):
+			for _ in range(self._post_roll * self._fps):
+				newFile = os.path.join(self._capture_dir,
+				                       _capture_format.format(prefix=self._file_prefix) % self._image_number)
+				self._image_number += 1
+				shutil.copyfile(filename, newFile)
+
 	def clean_capture_dir(self):
 		if not os.path.isdir(self._capture_dir):
 			self._logger.warn("Cannot clean capture directory, it is unset")
@@ -607,16 +620,9 @@ class ZTimelapse(Timelapse):
 		}
 
 	def process_post_roll(self):
-		with self._capture_mutex:
-			filename = os.path.join(self._capture_dir, _capture_format.format(prefix=self._file_prefix) % self._image_number)
-			self._image_number += 1
-
-		if self._perform_capture(filename):
-			for _ in range(self._post_roll * self._fps):
-				newFile = os.path.join(self._capture_dir, _capture_format.format(prefix=self._file_prefix) % self._image_number)
-				self._image_number += 1
-				shutil.copyfile(filename, newFile)
-
+		# we always copy the final image for the whole post roll
+		# for z based timelapses
+		self._copying_postroll()
 		Timelapse.process_post_roll(self)
 
 	def _on_z_change(self, event, payload):
@@ -673,6 +679,8 @@ class TimedTimelapse(Timelapse):
 	def on_print_done(self, event, payload):
 		if self._capture_post_roll:
 			self._postroll_captures = self._post_roll * self._fps
+		else:
+			self._postroll_captures = 0
 		Timelapse.on_print_done(self, event, payload)
 
 	def calculate_post_roll(self):
@@ -685,16 +693,9 @@ class TimedTimelapse(Timelapse):
 		if self._capture_post_roll:
 			return
 
-		with self._capture_mutex:
-			filename = os.path.join(self._capture_dir, _capture_format.format(prefix=self._file_prefix) % self._image_number)
-			self._image_number += 1
-
-		if self._perform_capture(filename):
-			for _ in range(self._post_roll * self._fps):
-				newFile = os.path.join(self._capture_dir, _capture_format.format(prefix=self._file_prefix) % self._image_number)
-				self._image_number += 1
-				shutil.copyfile(filename, newFile)
-
+		# we only use the final image as post roll if we
+		# are not supposed to capture it
+		self._copying_postroll()
 		self.post_roll_finished()
 
 	def post_roll_finished(self):
