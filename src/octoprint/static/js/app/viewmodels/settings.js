@@ -16,6 +16,10 @@ $(function() {
         });
         self.outstanding = [];
 
+        self.active = false;
+        self.sawUpdateEventWhileActive = false;
+        self.ignoreNextUpdateEvent = false;
+
         self.settingsDialog = undefined;
         self.settings_dialog_update_detected = undefined;
         self.translationManagerDialog = undefined;
@@ -728,6 +732,7 @@ $(function() {
 
             self.settingsDialog.trigger("beforeSave");
 
+            self.sawUpdateEventWhileSending = false;
             self.sending(data == undefined || options.sending || false);
 
             if (data == undefined) {
@@ -735,10 +740,15 @@ $(function() {
                 data = getOnlyChangedData(self.getLocalData(), self.lastReceivedSettings);
             }
 
+            self.active = true;
             return OctoPrint.settings.save(data)
                 .done(function(data, status, xhr) {
+                    self.ignoreNextUpdateEvent = !self.sawUpdateEventWhileSending;
+                    self.active = false;
+
                     self.receiving(true);
                     self.sending(false);
+
                     try {
                         self.fromResponse(data);
                         if (options.success) options.success(data, status, xhr);
@@ -748,6 +758,7 @@ $(function() {
                 })
                 .fail(function(xhr, status, error) {
                     self.sending(false);
+                    self.active = false;
                     if (options.error) options.error(xhr, status, error);
                 })
                 .always(function(xhr, status) {
@@ -756,6 +767,10 @@ $(function() {
         };
 
         self.onEventSettingsUpdated = function() {
+            if (self.active) {
+                self.sawUpdateEventWhileActive = true;
+            }
+
             var preventSettingsRefresh = _.any(self.allViewModels, function(viewModel) {
                 if (viewModel.hasOwnProperty("onSettingsPreventRefresh")) {
                     try {
@@ -776,7 +791,8 @@ $(function() {
 
             if (self.isDialogActive()) {
                 // dialog is open and not currently busy...
-                if (self.sending() || self.receiving()) {
+                if (self.sending() || self.receiving() || self.active || self.ignoreNextUpdateEvent) {
+                    self.ignoreNextUpdateEvent = false;
                     return;
                 }
 
