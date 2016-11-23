@@ -454,7 +454,7 @@ $(function() {
 
             self.working(true);
             self.workingTitle(title);
-            self.workingDialog.modal("show");
+            self.workingDialog.modal({keyboard: false, backdrop: "static", show: true});
         };
 
         self._markWorking = function(title, line, stream) {

@@ -648,7 +648,7 @@ $(function() {
             self.loglines.push({line: line, stream: "message"});
             self._scrollWorkingOutputToEnd();
 
-            self.workingDialog.modal("show");
+            self.workingDialog.modal({keyboard: false, backdrop: "static", show: true});
         };
 
         self._markDone = function() {
