@@ -678,9 +678,13 @@ class MachineCom(object):
 			context.update(replacements)
 		context.update(dict(
 			printer_profile=self._printerProfileManager.get_current_or_default(),
-			last_position=self.last_position,
-			pause_position=self.pause_position
+			last_position=self.last_position
 		))
+
+		if scriptName == "afterPrintPaused" or scriptName == "beforePrintResumed":
+			context.update(dict(pause_position=self.pause_position))
+		elif scriptName == "afterPrintCancelled":
+			context.update(dict(cancel_position=self.cancel_position))
 
 		template = settings().loadScript("gcode", scriptName, context=context)
 		if template is None:
