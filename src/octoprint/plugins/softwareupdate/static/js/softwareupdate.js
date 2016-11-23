@@ -103,6 +103,8 @@ $(function() {
         self.workingOutput = undefined;
         self.loglines = ko.observableArray([]);
 
+        self.checking = ko.observable(false);
+
         self.octoprintUnconfigured = ko.observable();
         self.octoprintUnreleased = ko.observable();
 
@@ -351,9 +353,13 @@ $(function() {
 
         self.performCheck = function(showIfNothingNew, force, ignoreSeen) {
             if (!self.loginState.isUser()) return;
+            self.checking(true);
             OctoPrint.plugins.softwareupdate.check(force)
                 .done(function(data) {
                     self.fromCheckResponse(data, ignoreSeen, showIfNothingNew);
+                })
+                .always(function() {
+                    self.checking(false);
                 });
         };
 
