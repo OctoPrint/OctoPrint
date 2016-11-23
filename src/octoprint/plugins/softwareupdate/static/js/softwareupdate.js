@@ -539,7 +539,7 @@ $(function() {
                 case "loglines": {
                     if (self.working()) {
                         _.each(messageData.loglines, function(line) {
-                            self.loglines.push(line);
+                            self.loglines.push(self._preprocessLine(line));
                         });
                         self._scrollWorkingOutputToEnd();
                     }
@@ -557,6 +557,7 @@ $(function() {
                     self.loglines.push({line: _.repeat("+", text.length), stream: "separator"});
                     self.loglines.push({line: text, stream: "message"});
                     self.loglines.push({line: _.repeat("+", text.length), stream: "separator"});
+                    self._scrollWorkingOutputToEnd();
                     self._updatePopup({
                         text: text,
                         hide: false,
@@ -584,6 +585,7 @@ $(function() {
                     };
 
                     self.loglines.push({line: text, stream: "message"});
+                    self._scrollWorkingOutputToEnd();
 
                     self.waitingForRestart = true;
                     self.restartTimeout = setTimeout(function() {
@@ -694,6 +696,13 @@ $(function() {
             }
         };
 
+        self._forcedStdoutLine = /You are using pip version .*?, however version .*? is available\.|You should consider upgrading via the '.*?' command\./;
+        self._preprocessLine = function(line) {
+            if (line.stream == "stderr" && line.line.match(self._forcedStdoutLine)) {
+                line.stream = "stdout";
+            }
+            return line;
+        }
     }
 
     // view model class, parameters for constructor, container to bind to

@@ -646,6 +646,7 @@ $(function() {
 
             self.loglines.removeAll();
             self.loglines.push({line: line, stream: "message"});
+            self._scrollWorkingOutputToEnd();
 
             self.workingDialog.modal("show");
         };
@@ -746,7 +747,7 @@ $(function() {
 
             if (messageType == "loglines" && self.working()) {
                 _.each(data.loglines, function(line) {
-                    self.loglines.push(line);
+                    self.loglines.push(self._preprocessLine(line));
                 });
                 self._scrollWorkingOutputToEnd();
             } else if (messageType == "result") {
@@ -861,6 +862,14 @@ $(function() {
                 self.requestData();
             }
         };
+
+        self._forcedStdoutLine = /You are using pip version .*?, however version .*? is available\.|You should consider upgrading via the '.*?' command\./;
+        self._preprocessLine = function(line) {
+            if (line.stream == "stderr" && line.line.match(self._forcedStdoutLine)) {
+                line.stream = "stdout";
+            }
+            return line;
+        }
     }
 
     // view model class, parameters for constructor, container to bind to
