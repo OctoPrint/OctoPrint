@@ -1,6 +1,6 @@
 # OctoPrint Changelog
 
-## 1.3.0rc1 (2016-11-24)
+## 1.3.0rc2 (2016-11-24)
 
 ### Features
 
@@ -22,7 +22,8 @@
   * Better error resilience against errors in UI components.
   * `M600` is now marked as a long running command by default.
   * Plugin Manager: Allow closing of all notifications and close them automatically on detected server disconnect. No need to keep a "Restart needed" message around if a restart is in progress.
-  * Software Update: "busy" spinner on check buttons while already checking for updates
+  * Software Update: "busy" spinner on check buttons while already checking for updates.
+  * Software Update: Prevent update notification when wizard is open.
   * Plugin Manager / Software Update: The "There's a new version of pip" message during plugin installs and software updates is no longer displayed like an error.
   * Plugin Manager / Software Update: The "busy" dialog can no longer be closed accidentally.
 
@@ -46,6 +47,7 @@
   * Fix update of webcam stream URL not being applied due to caching.
   * Fixed a rare race condition causing the new "The settings changed, reload?" popup to show up even when the settings change originated in the same client instance.
   * Fixed a bunch of missing translations.
+  * Pinned Tornado version to 4.0.2. Former version requirement was able to pull in a beta version causing issues with websockets due to a bug in `permessage-deflate` handling. The Tornado requirement needs an update, but we'll leave it at 4.0.2 for 1.3.0 since we'll need to do some migration work for compatibility with anything newer. Potentially related to [#1523](https://github.com/foosel/OctoPrint/issues/1523).
 
 ### Changes from `maintenance` not yet released as part of a stable release
 
