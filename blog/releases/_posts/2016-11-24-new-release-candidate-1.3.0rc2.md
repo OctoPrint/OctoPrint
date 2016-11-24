@@ -43,19 +43,12 @@ Short overview of the larger points from the [changelog](https://github.com/foos
     not fool proof thanks to firmware limitations regarding reliable 
     tracking of the various ``E`` values and the currently selected 
     tool ``T``.
-  * There is now an (optional) firmware auto detection in place. If enabled (which it is by 
-    default), OctoPrint will now send an ``M115`` to the printer on 
-    initial connection in order to try to figure out what kind of 
-    firmware it is. For FIRMWARE_NAME values containing "repetier" (case 
-    insensitive), all Repetier-specific flags will be set on the comm 
-    layer. For FIRMWARE_NAME values containing "reprapfirmware" (also
-    case insensitive), all RepRapFirmware-specific flags will be set on 
-    the comm layer. For now no other handling will be performed. This 
-    should hopefully reduce issues for first-time users running either
-    of those firmware that need specific flags to be set for proper
+  * There is now an (optional) firmware auto detection in place. This 
+    should hopefully reduce issues for first-time users running
+    a firmware that needs specific flags to be set for proper
     support.
   * New command line safe mode flag ``--safe`` and config setting 
-    ``startOnceInSafeMode`` that disables all third party plugins when 
+    ``server.startOnceInSafeMode`` that disables all third party plugins when 
     active during startup. The config setting will automatically be removed from 
     `config.yaml` after the server has started through successfully.
     Through the new ``octoprint config`` command it can also be easily
