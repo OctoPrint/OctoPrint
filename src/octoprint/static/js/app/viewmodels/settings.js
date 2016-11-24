@@ -360,12 +360,14 @@ $(function() {
             self.allViewModels = allViewModels;
 
             self.settingsDialog.on('show', function(event) {
+                OctoPrint.coreui.settingsOpen = true;
                 if (event.target.id == "settings_dialog") {
                     self.requestTranslationData();
                     callViewModels(allViewModels, "onSettingsShown");
                 }
             });
             self.settingsDialog.on('hidden', function(event) {
+                OctoPrint.coreui.settingsOpen = false;
                 if (event.target.id == "settings_dialog") {
                     callViewModels(allViewModels, "onSettingsHidden");
                 }

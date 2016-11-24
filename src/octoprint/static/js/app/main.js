@@ -36,7 +36,9 @@ $(function() {
         OctoPrint.coreui = (function() {
             var exports = {
                 browserTabVisibility: undefined,
-                selectedTab: undefined
+                selectedTab: undefined,
+                settingsOpen: false,
+                wizardOpen: false
             };
 
             var browserVisibilityCallbacks = [];

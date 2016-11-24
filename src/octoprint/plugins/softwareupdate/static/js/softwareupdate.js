@@ -335,7 +335,7 @@ $(function() {
                     };
                 }
 
-                if (ignoreSeen || !self._hasNotificationBeenSeen(data.information)) {
+                if ((ignoreSeen || !self._hasNotificationBeenSeen(data.information)) && !OctoPrint.coreui.wizardOpen) {
                     self._showPopup(options, eventListeners);
                 }
             } else if (data.status == "current") {

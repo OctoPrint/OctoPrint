@@ -43,6 +43,13 @@ $(function() {
 
         self.onStartup = function() {
             self.wizardDialog = $("#wizard_dialog");
+            self.wizardDialog.on('show', function(event) {
+                OctoPrint.coreui.wizardOpen = true;
+            });
+            self.wizardDialog.on('hidden', function(event) {
+                OctoPrint.coreui.wizardOpen = false;
+            });
+
             self.reloadOverlay = $("#reloadui_overlay");
         };
 
