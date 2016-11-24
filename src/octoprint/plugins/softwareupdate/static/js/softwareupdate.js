@@ -488,7 +488,7 @@ $(function() {
             self.workingOutput.scrollTop(self.workingOutput[0].scrollHeight - self.workingOutput.height());
         };
 
-        self.onWizardTabChange = function(current, next) {
+        self.onBeforeWizardTabChange = function(next, current) {
             if (next && _.startsWith(next, "wizard_plugin_softwareupdate")) {
                 // switching to the plugin wizard tab
                 self._copyConfig();
