@@ -49,6 +49,7 @@ def config_commands():
 @pass_octoprint_ctx
 @click.pass_context
 def config(ctx, obj):
+	"""Basic config manipulation."""
 	logging.basicConfig(level=logging.DEBUG if obj.verbosity > 0 else logging.WARN)
 	try:
 		obj.settings = init_settings(obj.basedir, obj.configfile)
@@ -73,7 +74,7 @@ def config(ctx, obj):
 @pass_octoprint_ctx
 @click.pass_context
 def set_command(ctx, obj, path, value, as_bool, as_float, as_int, as_json):
-	"""Sets the settings value at the specified path to the provided value."""
+	"""Sets a config path to the provided value."""
 	if as_json:
 		try:
 			value = json.loads(value)
@@ -97,6 +98,7 @@ def set_command(ctx, obj, path, value, as_bool, as_float, as_int, as_json):
 @click.argument("path", type=click.STRING)
 @pass_octoprint_ctx
 def remove_command(obj, path):
+	"""Removes a config path."""
 	_set_helper(obj.settings, path, None)
 
 
@@ -107,8 +109,8 @@ def remove_command(obj, path):
 @click.option("--json", "as_json", is_flag=True)
 @pass_octoprint_ctx
 @click.pass_context
-def append_value_command(ctx, obj, path, value, as_json):
-	"""Appends the provided value to the settings list at the specified path."""
+def append_value_command(ctx, obj, path, value, as_json=False):
+	"""Appends value to list behind config path."""
 	path = _to_settings_path(path)
 
 	if as_json:
@@ -137,8 +139,8 @@ def append_value_command(ctx, obj, path, value, as_json):
 @click.option("--json", "as_json", is_flag=True)
 @pass_octoprint_ctx
 @click.pass_context
-def insert_value_command(ctx, obj, path, index, value, as_json):
-	"""Inserts the provided value at the specified index of the settings list at the specified path"""
+def insert_value_command(ctx, obj, path, index, value, as_json=False):
+	"""Inserts value at index of list behind config key."""
 	path = _to_settings_path(path)
 
 	if as_json:
@@ -166,7 +168,8 @@ def insert_value_command(ctx, obj, path, index, value, as_json):
 @click.option("--json", "as_json", is_flag=True)
 @pass_octoprint_ctx
 @click.pass_context
-def remove_value_command(ctx, obj, path, value, as_json):
+def remove_value_command(ctx, obj, path, value, as_json=False):
+	"""Removes value from list at config path."""
 	path = _to_settings_path(path)
 
 	if as_json:
@@ -202,7 +205,7 @@ def remove_value_command(ctx, obj, path, value, as_json):
 @standard_options(hidden=True)
 @pass_octoprint_ctx
 def get_command(obj, path, as_json=False, as_yaml=False, as_raw=False):
-	"""Retrieves the value from the settings at the provided path."""
+	"""Retrieves value from config path."""
 	path = _to_settings_path(path)
 	value = obj.settings.get(path, merged=True)
 
