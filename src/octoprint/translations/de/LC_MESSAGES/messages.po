@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OctoPrint\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
-"POT-Creation-Date: 2016-11-24 10:49+0100\n"
-"PO-Revision-Date: 2016-11-24 11:00+0100\n"
+"POT-Creation-Date: 2016-11-24 12:53+0100\n"
+"PO-Revision-Date: 2016-11-24 12:54+0100\n"
 "Last-Translator: Gina Häußge <osd@foosel.net>\n"
 "Language: de\n"
 "Language-Team: German (http://www.transifex.com/projects/p/octoprint/language/de/)\n"
@@ -364,7 +364,7 @@ msgid "Profiles"
 msgstr "Profile"
 
 #: src/octoprint/plugins/cura/templates/cura_settings.jinja2:19
-#: src/octoprint/plugins/cura/templates/cura_wizard.jinja2:24
+#: src/octoprint/plugins/cura/templates/cura_wizard.jinja2:25
 msgid "Import Profile..."
 msgstr "Profil importieren..."
 
@@ -392,10 +392,11 @@ msgstr "Konfiguriere ein Slicingprofil"
 #: src/octoprint/plugins/cura/templates/cura_wizard.jinja2:17
 msgid ""
 "You haven't imported a slicing profile to use for slicing with CuraEngine\n"
-"    yet. You should do this now."
-msgstr "Du hast noch kein Slicingprofile zum Slicen mit CuraEngine importiert. Du solltest das jetzt tun."
+"    yet. If you plan on slicing from within OctoPrint then you should do this now.\n"
+"    Otherwise just skip this step."
+msgstr "Du hast noch kein Slicingprofile zum Slicen mit CuraEngine importiert. Falls Du vor hast, ausOctoPrint heraus zu slicen, dann solltest Du das jetzt tun. Andernfalls überspringe diesenSchritt einfach."
 
-#: src/octoprint/plugins/cura/templates/cura_wizard.jinja2:27
+#: src/octoprint/plugins/cura/templates/cura_wizard.jinja2:28
 msgid ""
 "\n"
 "            <strong>Don't know where to get a profile?</strong> In order to export\n"
@@ -1508,51 +1509,51 @@ msgstr "Aus"
 msgid "Are you sure?"
 msgstr "Bist Du sicher?"
 
-#: src/octoprint/static/js/app/main.js:141
+#: src/octoprint/static/js/app/main.js:143
 msgid "Offline"
 msgstr "Offline"
 
-#: src/octoprint/static/js/app/main.js:142
+#: src/octoprint/static/js/app/main.js:144
 msgid "Opening serial port"
 msgstr "Öffnet Serialport"
 
-#: src/octoprint/static/js/app/main.js:143
+#: src/octoprint/static/js/app/main.js:145
 msgid "Detecting serial port"
 msgstr "Detektiere Serialport"
 
-#: src/octoprint/static/js/app/main.js:144
+#: src/octoprint/static/js/app/main.js:146
 msgid "Detecting baudrate"
 msgstr "Detektiere Baudrate"
 
-#: src/octoprint/static/js/app/main.js:145
+#: src/octoprint/static/js/app/main.js:147
 msgid "Connecting"
 msgstr "Verbinde"
 
-#: src/octoprint/static/js/app/main.js:146
+#: src/octoprint/static/js/app/main.js:148
 msgid "Operational"
 msgstr "Bereit"
 
-#: src/octoprint/static/js/app/main.js:147
+#: src/octoprint/static/js/app/main.js:149
 msgid "Printing from SD"
 msgstr "Drucke von SD"
 
-#: src/octoprint/static/js/app/main.js:148
+#: src/octoprint/static/js/app/main.js:150
 msgid "Sending file to SD"
 msgstr "Sende Datei zu SD"
 
-#: src/octoprint/static/js/app/main.js:149
+#: src/octoprint/static/js/app/main.js:151
 msgid "Printing"
 msgstr "Drucke"
 
-#: src/octoprint/static/js/app/main.js:150
+#: src/octoprint/static/js/app/main.js:152
 msgid "Paused"
 msgstr "Pausiert"
 
-#: src/octoprint/static/js/app/main.js:151
+#: src/octoprint/static/js/app/main.js:153
 msgid "Closed"
 msgstr "Geschlossen"
 
-#: src/octoprint/static/js/app/main.js:152
+#: src/octoprint/static/js/app/main.js:154
 msgid "Transfering file to SD"
 msgstr "Sende Datei zu SD"
 
