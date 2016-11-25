@@ -73,7 +73,10 @@ You can find the full changelog and release notes as usual
 
 **If you are tracking the "Devel RC" release channel**, you
 should soon get an update notification just like you are used to from
-stable releases.
+stable releases. If you are coming from 1.3.0rc1, **you might run into
+an update error** that actually isn't one, please see the 
+["Note for Upgraders coming from 1.3.0rc1" in the release notes](https://github.com/foosel/OctoPrint/releases/tag/1.3.0rc2) 
+for more details on this.
 
 **If you are tracking the "Maintenance RC" release channel**, you will
 *not* get an update notification for this release candidate. If you want
