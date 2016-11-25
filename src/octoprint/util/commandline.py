@@ -9,6 +9,7 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 import sarge
 import logging
 import re
+import time
 
 from . import to_unicode
 
@@ -80,7 +81,21 @@ class CommandlineCaller(object):
 		kwargs.update(dict(async=True, stdout=sarge.Capture(), stderr=sarge.Capture()))
 
 		p = sarge.run(command, **kwargs)
-		p.wait_events()
+		while len(p.commands) == 0:
+			# somewhat ugly... we can't use wait_events because
+			# the events might not be all set if an exception
+			# by sarge is triggered within the async process
+			# thread
+			time.sleep(0.01)
+
+		# by now we should have a command, let's wait for its
+		# process to have been prepared
+		p.commands[0].process_ready.wait()
+
+		if not p.commands[0].process:
+			# the process might have been set to None in case of any exception
+			self._logger.error(u"Error while trying to run command {}".format(joined_command))
+			return None, [], []
 
 		all_stdout = []
 		all_stderr = []
