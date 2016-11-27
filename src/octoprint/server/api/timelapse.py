@@ -40,7 +40,8 @@ def _config_for_timelapse(timelapse):
 		return dict(type="timed",
 		            postRoll=timelapse.post_roll,
 		            fps=timelapse.fps,
-		            interval=timelapse.interval)
+		            interval=timelapse.interval,
+		            capturePostRoll=timelapse.capture_post_roll)
 	else:
 		return dict(type="off")
 
@@ -210,6 +211,15 @@ def setTimelapseConfig():
 				else:
 					return make_response("Invalid value for interval: %d" % interval)
 
+		if "capturePostRoll" in data:
+			config["options"]["capturePostRoll"] = True
+			try:
+				capturePostRoll = bool(data["capturePostRoll"])
+			except ValueError:
+				return make_response("Invalid value for capturePostRoll: %r" % data["capturePostRoll"])
+			else:
+				config["options"]["capturePostRoll"] = capturePostRoll
+
 		if "retractionZHop" in data:
 			config["options"] = {
 				"retractionZHop": 0
@@ -224,6 +234,7 @@ def setTimelapseConfig():
 					config["options"]["retractionZHop"] = retractionZHop
 				else:
 					return make_response("Invalid value for retraction Z-Hop: %d" % retractionZHop)
+
 
 		if admin_permission.can() and "save" in data and data["save"] in valid_boolean_trues:
 			octoprint.timelapse.configure_timelapse(config, True)

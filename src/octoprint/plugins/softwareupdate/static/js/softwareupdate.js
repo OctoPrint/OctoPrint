@@ -103,6 +103,8 @@ $(function() {
         self.workingOutput = undefined;
         self.loglines = ko.observableArray([]);
 
+        self.checking = ko.observable(false);
+
         self.octoprintUnconfigured = ko.observable();
         self.octoprintUnreleased = ko.observable();
 
@@ -333,7 +335,7 @@ $(function() {
                     };
                 }
 
-                if (ignoreSeen || !self._hasNotificationBeenSeen(data.information)) {
+                if ((ignoreSeen || !self._hasNotificationBeenSeen(data.information)) && !OctoPrint.coreui.wizardOpen) {
                     self._showPopup(options, eventListeners);
                 }
             } else if (data.status == "current") {
@@ -351,9 +353,13 @@ $(function() {
 
         self.performCheck = function(showIfNothingNew, force, ignoreSeen) {
             if (!self.loginState.isUser()) return;
+            self.checking(true);
             OctoPrint.plugins.softwareupdate.check(force)
                 .done(function(data) {
                     self.fromCheckResponse(data, ignoreSeen, showIfNothingNew);
+                })
+                .always(function() {
+                    self.checking(false);
                 });
         };
 
@@ -454,7 +460,7 @@ $(function() {
 
             self.working(true);
             self.workingTitle(title);
-            self.workingDialog.modal("show");
+            self.workingDialog.modal({keyboard: false, backdrop: "static", show: true});
         };
 
         self._markWorking = function(title, line, stream) {
@@ -482,7 +488,7 @@ $(function() {
             self.workingOutput.scrollTop(self.workingOutput[0].scrollHeight - self.workingOutput.height());
         };
 
-        self.onWizardTabChange = function(current, next) {
+        self.onBeforeWizardTabChange = function(next, current) {
             if (next && _.startsWith(next, "wizard_plugin_softwareupdate")) {
                 // switching to the plugin wizard tab
                 self._copyConfig();
@@ -539,7 +545,7 @@ $(function() {
                 case "loglines": {
                     if (self.working()) {
                         _.each(messageData.loglines, function(line) {
-                            self.loglines.push(line);
+                            self.loglines.push(self._preprocessLine(line));
                         });
                         self._scrollWorkingOutputToEnd();
                     }
@@ -557,6 +563,7 @@ $(function() {
                     self.loglines.push({line: _.repeat("+", text.length), stream: "separator"});
                     self.loglines.push({line: text, stream: "message"});
                     self.loglines.push({line: _.repeat("+", text.length), stream: "separator"});
+                    self._scrollWorkingOutputToEnd();
                     self._updatePopup({
                         text: text,
                         hide: false,
@@ -584,6 +591,7 @@ $(function() {
                     };
 
                     self.loglines.push({line: text, stream: "message"});
+                    self._scrollWorkingOutputToEnd();
 
                     self.waitingForRestart = true;
                     self.restartTimeout = setTimeout(function() {
@@ -694,6 +702,13 @@ $(function() {
             }
         };
 
+        self._forcedStdoutLine = /You are using pip version .*?, however version .*? is available\.|You should consider upgrading via the '.*?' command\./;
+        self._preprocessLine = function(line) {
+            if (line.stream == "stderr" && line.line.match(self._forcedStdoutLine)) {
+                line.stream = "stdout";
+            }
+            return line;
+        }
     }
 
     // view model class, parameters for constructor, container to bind to

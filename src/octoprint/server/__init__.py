@@ -33,6 +33,7 @@ app = Flask("octoprint")
 assets = None
 babel = None
 debug = False
+safe_mode = False
 
 printer = None
 printerProfileManager = None
@@ -112,12 +113,13 @@ def load_user(id):
 
 
 class Server(object):
-	def __init__(self, settings=None, plugin_manager=None, host="0.0.0.0", port=5000, debug=False, allow_root=False, octoprint_daemon=None):
+	def __init__(self, settings=None, plugin_manager=None, host="0.0.0.0", port=5000, debug=False, safe_mode=False, allow_root=False, octoprint_daemon=None):
 		self._settings = settings
 		self._plugin_manager = plugin_manager
 		self._host = host
 		self._port = port
 		self._debug = debug
+		self._safe_mode = safe_mode
 		self._allow_root = allow_root
 		self._octoprint_daemon = octoprint_daemon
 		self._server = None
@@ -155,11 +157,13 @@ class Server(object):
 		global pluginLifecycleManager
 		global preemptiveCache
 		global debug
+		global safe_mode
 
 		from tornado.ioloop import IOLoop
 		from tornado.web import Application, RequestHandler
 
 		debug = self._debug
+		safe_mode = self._safe_mode
 
 		self._logger = logging.getLogger(__name__)
 		pluginManager = self._plugin_manager
@@ -245,7 +249,14 @@ class Server(object):
 			return props
 
 		def settings_plugin_inject_factory(name, implementation):
-			"""Factory for additional injections depending on plugin type"""
+			"""Factory for additional injections/initializations depending on plugin type"""
+			if not isinstance(implementation, octoprint.plugin.SettingsPlugin):
+				return
+
+			default_settings_overlay = dict(plugins=dict())
+			default_settings_overlay["plugins"][name] = implementation.get_settings_defaults()
+			self._settings.add_overlay(default_settings_overlay, at_end=True)
+
 			plugin_settings = octoprint.plugin.plugin_settings_for_settings_plugin(name, implementation)
 			if plugin_settings is None:
 				return
@@ -272,7 +283,8 @@ class Server(object):
 
 			implementation.on_settings_initialized()
 
-		pluginManager.implementation_inject_factories=[octoprint_plugin_inject_factory, settings_plugin_inject_factory]
+		pluginManager.implementation_inject_factories=[octoprint_plugin_inject_factory,
+		                                               settings_plugin_inject_factory]
 		pluginManager.initialize_implementations()
 
 		settingsPlugins = pluginManager.get_implementations(octoprint.plugin.SettingsPlugin)
@@ -487,6 +499,11 @@ class Server(object):
 		def on_after_startup():
 			self._logger.info("Listening on http://%s:%d" % (self._host, self._port))
 
+			if safe_mode and self._settings.getBoolean(["server", "startOnceInSafeMode"]):
+				self._logger.info("Server started successfully in safe mode as requested from config, removing flag")
+				self._settings.setBoolean(["server", "startOnceInSafeMode"], False)
+				self._settings.save()
+
 			# now this is somewhat ugly, but the issue is the following: startup plugins might want to do things for
 			# which they need the server to be already alive (e.g. for being able to resolve urls, such as favicons
 			# or service xmls or the like). While they are working though the ioloop would block. Therefore we'll
@@ -566,6 +583,9 @@ class Server(object):
 
 		if "l10n" in request.values:
 			return Locale.negotiate([request.values["l10n"]], LANGUAGES)
+
+		if "X-Locale" in request.headers:
+			return Locale.negotiate([request.headers["X-Locale"]], LANGUAGES)
 
 		if hasattr(g, "identity") and g.identity and userManager.enabled:
 			userid = g.identity.id

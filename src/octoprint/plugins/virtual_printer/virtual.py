@@ -59,15 +59,17 @@ class VirtualPrinter(object):
 		self.lastTempAt = time.time()
 		self.bedTemp = 1.0
 		self.bedTargetTemp = 1.0
-		self.speeds = settings().get(["devel", "virtualPrinter", "movementSpeed"])
 
 		self._relative = True
 		self._lastX = 0.0
 		self._lastY = 0.0
 		self._lastZ = 0.0
 		self._lastE = 0.0
+		self._lastF = 200
 
 		self._unitModifier = 1
+		self._feedrate_multiplier = 100
+		self._flowrate_multiplier = 100
 
 		self._virtualSd = settings().getBaseFolder("virtualSd")
 		self._sdCardReady = True
@@ -91,6 +93,8 @@ class VirtualPrinter(object):
 		self._echoOnM117 = settings().getBoolean(["devel", "virtualPrinter", "echoOnM117"])
 
 		self._brokenM29 = settings().getBoolean(["devel", "virtualPrinter", "brokenM29"])
+
+		self._firmwareName = settings().get(["devel", "virtualPrinter", "firmwareName"])
 
 		self.currentLine = 0
 		self.lastN = 0
@@ -317,7 +321,7 @@ class VirtualPrinter(object):
 	def _gcode_M140(self, data):
 		self._parseBedCommand(data)
 
-	def _gcode_M140(self, data):
+	def _gcode_M190(self, data):
 		self._parseBedCommand(data, wait=True, support_r=True)
 
 	def _gcode_M105(self, data):
@@ -378,10 +382,20 @@ class VirtualPrinter(object):
 		self._send(output)
 		return True
 
+	def _gcode_M115(self, data):
+		output = "FIRMWARE_NAME:{} PROTOCOL_VERSION:1.0".format(self._firmwareName)
+		self._send(output)
+
 	def _gcode_M117(self, data):
 		# we'll just use this to echo a message, to allow playing around with pause triggers
 		if self._echoOnM117:
 			self._send("echo:%s" % re.search("M117\s+(.*)", data).group(1))
+
+	def _gcode_M220(self, data):
+		self._feedrate_multiplier = float(re.search('S([0-9]+)', data).group(1))
+
+	def _gcode_M221(self, data):
+		self._flowrate_multiplier = float(re.search('S([0-9]+)', data).group(1))
 
 	def _gcode_M400(self, data):
 		self.buffered.join()
@@ -631,16 +645,18 @@ class VirtualPrinter(object):
 
 			if settings().getBoolean(["devel", "virtualPrinter", "includeCurrentToolInTemps"]):
 				if includeTarget:
-					output = "T:%.2f /%.2f %s @:64\n" % (self.temp[self.currentExtruder], self.targetTemp[self.currentExtruder] + 1, allTempsString)
+					output = "T:%.2f /%.2f %s" % (self.temp[self.currentExtruder], self.targetTemp[self.currentExtruder] + 1, allTempsString)
 				else:
-					output = "T:%.2f %s @:64\n" % (self.temp[self.currentExtruder], allTempsString)
+					output = "T:%.2f %s" % (self.temp[self.currentExtruder], allTempsString)
 			else:
-				output = "%s @:64\n" % allTempsString
+				output = allTempsString
 		else:
 			if includeTarget:
-				output = "T:%.2f /%.2f B:%.2f /%.2f @:64\n" % (self.temp[0], self.targetTemp[0], self.bedTemp, self.bedTargetTemp)
+				output = "T:%.2f /%.2f B:%.2f /%.2f" % (self.temp[0], self.targetTemp[0], self.bedTemp, self.bedTargetTemp)
 			else:
-				output = "T:%.2f B:%.2f @:64\n" % (self.temp[0], self.bedTemp)
+				output = "T:%.2f B:%.2f" % (self.temp[0], self.bedTemp)
+
+		output += " @:64\n"
 
 		if includeOk:
 			output = "ok " + output
@@ -696,46 +712,72 @@ class VirtualPrinter(object):
 		matchY = re.search("Y([0-9.]+)", line)
 		matchZ = re.search("Z([0-9.]+)", line)
 		matchE = re.search("E([0-9.]+)", line)
+		matchF = re.search("F([0-9.]+)", line)
 
 		duration = 0
+		if matchF is not None:
+			try:
+				self._lastF = float(matchF.group(1))
+			except:
+				pass
+
+		speedXYZ = self._lastF * (self._feedrate_multiplier / 100.0)
+		speedE = self._lastF * (self._flowrate_multiplier / 100.0)
+
 		if matchX is not None:
 			try:
 				x = float(matchX.group(1))
 				if self._relative or self._lastX is None:
-					duration = max(duration, x * self._unitModifier / float(self.speeds["x"]) * 60.0)
+					duration = max(duration, x * self._unitModifier / speedXYZ * 60.0)
 				else:
-					duration = max(duration, (x - self._lastX) * self._unitModifier / float(self.speeds["x"]) * 60.0)
-				self._lastX = x
+					duration = max(duration, (x - self._lastX) * self._unitModifier / speedXYZ * 60.0)
+
+				if self._relative and self._lastX is not None:
+					self._lastX += x
+				else:
+					self._lastX = x
 			except:
 				pass
 		if matchY is not None:
 			try:
 				y = float(matchY.group(1))
 				if self._relative or self._lastY is None:
-					duration = max(duration, y * self._unitModifier / float(self.speeds["y"]) * 60.0)
+					duration = max(duration, y * self._unitModifier / speedXYZ * 60.0)
 				else:
-					duration = max(duration, (y - self._lastY) * self._unitModifier / float(self.speeds["y"]) * 60.0)
-				self._lastY = y
+					duration = max(duration, (y - self._lastY) * self._unitModifier / speedXYZ * 60.0)
+
+				if self._relative and self._lastY is not None:
+					self._lastY += y
+				else:
+					self._lastY = y
 			except:
 				pass
 		if matchZ is not None:
 			try:
 				z = float(matchZ.group(1))
 				if self._relative or self._lastZ is None:
-					duration = max(duration, z * self._unitModifier / float(self.speeds["z"]) * 60.0)
+					duration = max(duration, z * self._unitModifier / speedXYZ * 60.0)
 				else:
-					duration = max(duration, (z - self._lastZ) * self._unitModifier / float(self.speeds["z"]) * 60.0)
-				self._lastZ = z
+					duration = max(duration, (z - self._lastZ) * self._unitModifier / speedXYZ * 60.0)
+
+				if self._relative and self._lastZ is not None:
+					self._lastZ += z
+				else:
+					self._lastZ = z
 			except:
 				pass
 		if matchE is not None:
 			try:
 				e = float(matchE.group(1))
 				if self._relative or self._lastE is None:
-					duration = max(duration, e * self._unitModifier / float(self.speeds["e"]) * 60.0)
+					duration = max(duration, e * self._unitModifier / speedE * 60.0)
 				else:
-					duration = max(duration, (e - self._lastE) * self._unitModifier / float(self.speeds["e"]) * 60.0)
-				self._lastE = e
+					duration = max(duration, (e - self._lastE) * self._unitModifier / speedE * 60.0)
+
+				if self._relative and self._lastE is not None:
+					self._lastE += e
+				else:
+					self._lastE = e
 			except:
 				pass
 

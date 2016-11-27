@@ -24,6 +24,13 @@
         <input type="text" class="input-mini" id="webcam_timelapse_postRoll" data-bind="value: timelapsePostRoll, valueUpdate: 'afterkeydown', enable: isOperational() && !isPrinting() && loginState.isUser() && timelapseTypeSelected()">
         <span class="add-on">{{ _('sec') }}</span>
     </div>
+    <div id="webcam_timelapse_capturePostRoll" data-bind="visible: timelapseType() == 'timed'">
+        <label class="checkbox">
+            <input type="checkbox" data-bind="checked: timelapseCapturePostRoll, valueUpdate: 'afterkeydown', enable: isOperational() && !isPrinting() && loginState.isUser()"> {{ _('Capture post roll images') }}
+            <span class="help-block">{{ _('If this is unchecked, OctoPrint will simply repeat the last frame for the post roll instead of continuing to capture new frames.') }}</span>
+        </label>
+    </div>
+
 
     <div id="webcam_timelapse_timedsettings" data-bind="visible: intervalInputEnabled">
         <label for="webcam_timelapse_interval">{{ _('Interval') }}</label>

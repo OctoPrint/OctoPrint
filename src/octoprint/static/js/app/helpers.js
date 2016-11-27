@@ -832,17 +832,21 @@ function callViewModelsIf(allViewModels, method, condition, callback) {
 
     _.each(allViewModels, function(viewModel) {
         if (viewModel.hasOwnProperty(method) && condition(viewModel, method)) {
-            if (callback == undefined) {
-                if (parameters != undefined) {
-                    // call the method with the provided parameters
-                    viewModel[method].apply(viewModel, parameters);
+            try {
+                if (callback == undefined) {
+                    if (parameters != undefined) {
+                        // call the method with the provided parameters
+                        viewModel[method].apply(viewModel, parameters);
+                    } else {
+                        // call the method without parameters
+                        viewModel[method]();
+                    }
                 } else {
-                    // call the method without parameters
-                    viewModel[method]();
+                    // provide the method to the callback
+                    callback(viewModel[method], viewModel);
                 }
-            } else {
-                // provide the method to the callback
-                callback(viewModel[method], viewModel);
+            } catch (exc) {
+                log.error("Error calling", method, "on view model", viewModel.constructor.name, ":", (exc.stack || exc));
             }
         }
     });
@@ -860,4 +864,17 @@ var sizeObservable = function(observable) {
             }
         }
     })
+};
+
+var getQueryParameterByName = function(name, url) {
+    // from http://stackoverflow.com/a/901144/2028598
+    if (!url) {
+      url = window.location.href;
+    }
+    name = name.replace(/[\[\]]/g, "\\$&");
+    var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+        results = regex.exec(url);
+    if (!results) return null;
+    if (!results[2]) return '';
+    return decodeURIComponent(results[2].replace(/\+/g, " "));
 };

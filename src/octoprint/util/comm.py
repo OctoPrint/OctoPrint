@@ -28,7 +28,7 @@ from octoprint.events import eventManager, Events
 from octoprint.filemanager import valid_file_type
 from octoprint.filemanager.destinations import FileDestinations
 from octoprint.util import get_exception_string, sanitize_ascii, filter_non_ascii, CountedEvent, RepeatedTimer, \
-	to_unicode, bom_aware_open, TypedQueue, TypeAlreadyInQueue
+	to_unicode, bom_aware_open, TypedQueue, TypeAlreadyInQueue, chunks
 
 try:
 	import _winreg
@@ -113,7 +113,7 @@ Groups will be as follows:
   * ``target``: new target temperature (float)
 """
 
-regex_position = re.compile("X:(?P<x>{float})\s+Y:(?P<y>{float})\s+Z:(?P<z>{float})\s+E:(?P<e>{float})".format(float=regex_float_pattern))
+regex_position = re.compile("X:(?P<x>{float})\s*Y:(?P<y>{float})\s*Z:(?P<z>{float})\s*E:(?P<e>{float})".format(float=regex_float_pattern))
 """Regex for matching position reporting.
 
 Groups will be as follows:
@@ -123,6 +123,9 @@ Groups will be as follows:
   * ``z``: Z coordinate
   * ``e``: E coordinate
 """
+
+regex_firmware_splitter = re.compile("\s*([A-Z0-9_]+):")
+"""Regex to use for splitting M115 responses."""
 
 def serialList():
 	baselist=[]
@@ -310,6 +313,8 @@ class MachineCom(object):
 		self._neverSendChecksum = settings().getBoolean(["feature", "neverSendChecksum"])
 		self._sendChecksumWithUnknownCommands = settings().getBoolean(["feature", "sendChecksumWithUnknownCommands"])
 		self._unknownCommandsNeedAck = settings().getBoolean(["feature", "unknownCommandsNeedAck"])
+		self._sdAlwaysAvailable = settings().getBoolean(["feature", "sdAlwaysAvailable"])
+		self._sdRelativePath = settings().getBoolean(["feature", "sdRelativePath"])
 		self._currentLine = 1
 		self._line_mutex = threading.RLock()
 		self._resendDelta = None
@@ -319,7 +324,9 @@ class MachineCom(object):
 		self._currentResendCount = 0
 		self._resendSwallowRepetitions = settings().getBoolean(["feature", "ignoreIdenticalResends"])
 		self._resendSwallowRepetitionsCounter = 0
-		self._checksum_requiring_commands = settings().get(["serial", "checksumRequiringCommands"])
+
+		self._firmwareDetection = settings().getBoolean(["feature", "firmwareDetection"])
+		self._firmwareInfoReceived = not self._firmwareDetection
 
 		self._supportResendsWithoutOk = settings().getBoolean(["serial", "supportResendsWithoutOk"])
 
@@ -370,9 +377,11 @@ class MachineCom(object):
 		self._ignore_select = False
 		self._manualStreaming = False
 
-		self._last_position = PositionRecord()
-		self._pause_position = PositionRecord()
+		self.last_position = PositionRecord()
+		self.pause_position = PositionRecord()
 		self._record_pause_position = False
+		self.cancel_position = PositionRecord()
+		self._record_cancel_position = False
 
 		# print job
 		self._currentFile = None
@@ -669,9 +678,13 @@ class MachineCom(object):
 			context.update(replacements)
 		context.update(dict(
 			printer_profile=self._printerProfileManager.get_current_or_default(),
-			last_position=self._last_position,
-			pause_position=self._pause_position
+			last_position=self.last_position
 		))
+
+		if scriptName == "afterPrintPaused" or scriptName == "beforePrintResumed":
+			context.update(dict(pause_position=self.pause_position))
+		elif scriptName == "afterPrintCancelled":
+			context.update(dict(cancel_position=self.cancel_position))
 
 		template = settings().loadScript("gcode", scriptName, context=context)
 		if template is None:
@@ -793,6 +806,10 @@ class MachineCom(object):
 			if not self.isOperational():
 				# printer is not connected, can't use SD
 				return
+
+			if filename.startswith("/") and self._sdRelativePath:
+				filename = filename[1:]
+
 			self._sdFileToSelect = filename
 			self.sendCommand("M23 %s" % filename)
 		else:
@@ -806,6 +823,10 @@ class MachineCom(object):
 		self._currentFile = None
 		self._callback.on_comm_file_selected(None, None, False)
 
+	def _cancel_preparation_done(self):
+		self._recordFilePosition()
+		self._callback.on_comm_print_job_cancelled()
+
 	def cancelPrint(self, firmware_error=None):
 		if not self.isOperational() or self.isStreaming():
 			return
@@ -818,6 +839,7 @@ class MachineCom(object):
 
 		if self.isSdFileSelected():
 			self.sendCommand("M25")    # pause print
+			self.sendCommand("M27")    # get current byte position in file
 			self.sendCommand("M26 S0") # reset position in file to byte 0
 			if self._sd_status_timer is not None:
 				try:
@@ -825,8 +847,14 @@ class MachineCom(object):
 				except:
 					pass
 
-		self._recordFilePosition()
-		self._callback.on_comm_print_job_cancelled()
+		def _on_M400_sent():
+			# we don't call on_print_job_cancelled on our callback here
+			# because we do this only after our M114 has been answered
+			# by the firmware
+			self._record_cancel_position = True
+			self.sendCommand("M114")
+
+		self.sendCommand("M400", on_sent=_on_M400_sent)
 
 	def _pause_preparation_done(self):
 		self._callback.on_comm_print_job_paused()
@@ -907,7 +935,7 @@ class MachineCom(object):
 			return
 
 		self.sendCommand("M21")
-		if settings().getBoolean(["feature", "sdAlwaysAvailable"]):
+		if self._sdAlwaysAvailable:
 			self._sdAvailable = True
 			self.refreshSdFiles()
 			self._callback.on_comm_sd_state_change(self._sdAvailable)
@@ -939,15 +967,23 @@ class MachineCom(object):
 
 	##~~ record aborted file positions
 
-	def _recordFilePosition(self):
+	def getFilePosition(self):
 		if self._currentFile is None:
-			return
+			return None
 
 		origin = self._currentFile.getFileLocation()
 		filename = self._currentFile.getFilename()
 		pos = self._currentFile.getFilepos()
 
-		self._callback.on_comm_record_fileposition(origin, filename, pos)
+		return dict(origin=origin,
+		            filename=filename,
+		            pos=pos)
+
+	def _recordFilePosition(self):
+		if self._currentFile is None:
+			return
+		data = self.getFilePosition()
+		self._callback.on_comm_record_fileposition(data["origin"], data["filename"], data["pos"])
 
 	##~~ communication monitoring and handling
 
@@ -1101,7 +1137,9 @@ class MachineCom(object):
 					# ok only considered handled if it's alone on the line, might be
 					# a response to an M105 or an M114
 					self._handle_ok()
-					handled = (line == "wait" or line == "ok" or not ("T:" in line or "T0:" in line or "B:" in line or "C:" in line))
+					needs_further_handling = "T:" in line or "T0:" in line or "B:" in line or "C:" in line or \
+					                         "X:" in line or "FIRMWARE_NAME:" in line
+					handled = (line == "wait" or line == "ok" or not needs_further_handling)
 
 				# process resends
 				elif lower_line.startswith("resend") or lower_line.startswith("rs"):
@@ -1126,19 +1164,28 @@ class MachineCom(object):
 						# there's no way to query it from the firmware and
 						# no way to track it ourselves when not streaming
 						# the file - this all sucks sooo much
-						self._last_position.x = float(match.group("x"))
-						self._last_position.y = float(match.group("y"))
-						self._last_position.z = float(match.group("z"))
-						self._last_position.e = float(match.group("e"))
-						self._last_position.t = self._currentTool if not self.isSdFileSelected() else None
-						self._last_position.f = self._currentF if not self.isSdFileSelected() else None
+						self.last_position.x = float(match.group("x"))
+						self.last_position.y = float(match.group("y"))
+						self.last_position.z = float(match.group("z"))
+						self.last_position.e = float(match.group("e"))
+						self.last_position.t = self._currentTool if not self.isSdFileSelected() else None
+						self.last_position.f = self._currentF if not self.isSdFileSelected() else None
+
+						reason = None
 
 						if self._record_pause_position:
+							reason = "pause"
 							self._record_pause_position = False
-							self._pause_position.copy_from(self._last_position)
+							self.pause_position.copy_from(self.last_position)
 							self._pause_preparation_done()
 
-						self._callback.on_comm_position_update(self._last_position.as_dict())
+						if self._record_cancel_position:
+							reason = "cancel"
+							self._record_cancel_position = False
+							self.cancel_position.copy_from(self.last_position)
+							self._cancel_preparation_done()
+
+						self._callback.on_comm_position_update(self.last_position.as_dict(), reason=reason)
 
 				# temperature processing
 				elif ' T:' in line or line.startswith('T:') or ' T0:' in line or line.startswith('T0:') or ((' B:' in line or line.startswith('B:')) and not 'A:' in line):
@@ -1176,6 +1223,33 @@ class MachineCom(object):
 							self._callback.on_comm_temperature_update(self._temp, self._bedTemp)
 						except ValueError:
 							pass
+
+				##~~ firmware name & version
+				elif "FIRMWARE_NAME:" in line:
+					# looks like a response to M115
+					data = parse_firmware_line(line)
+					firmware_name = data.get("FIRMWARE_NAME")
+					self._logger.info("Printer reports firmware name \"{}\"".format(firmware_name))
+
+					if not self._firmwareInfoReceived and firmware_name:
+						if "repetier" in firmware_name.lower():
+							self._logger.info("Detected Repetier firmware, enabling relevant features for issue free communication")
+
+							self._alwaysSendChecksum = True
+							self._resendSwallowRepetitions = True
+							supportRepetierTargetTemp = True
+							disable_external_heatup_detection = True
+
+							sd_always_available = self._sdAlwaysAvailable
+							self._sdAlwaysAvailable = True
+							if not sd_always_available and not self._sdAvailable:
+								self.initSdCard()
+
+						elif "reprapfirmware" in firmware_name.lower():
+							self._logger.info("Detected RepRapFirmware, enabling relevant features for issue free communication")
+							self._sdRelativePath = True
+
+						self._firmwareInfoReceived = True
 
 				##~~ SD Card handling
 				elif 'SD init fail' in line or 'volume.init failed' in line or 'openRoot failed' in line:
@@ -1498,6 +1572,8 @@ class MachineCom(object):
 		self._changeState(self.STATE_OPERATIONAL)
 
 		self.resetLineNumbers()
+		if self._firmwareDetection:
+			self.sendCommand("M115")
 
 		if self._sdAvailable:
 			self.refreshSdFiles()
@@ -1982,7 +2058,9 @@ class MachineCom(object):
 						# now comes the part where we increase line numbers and send stuff - no turning back now
 						command_requiring_checksum = gcode is not None and gcode in self._checksum_requiring_commands
 						command_allowing_checksum = gcode is not None or self._sendChecksumWithUnknownCommands
-						checksum_enabled = self.isPrinting() or self._alwaysSendChecksum
+						checksum_enabled = not self._neverSendChecksum and (self.isPrinting() or
+						                                                    self._alwaysSendChecksum or
+						                                                    not self._firmwareInfoReceived)
 
 						command_to_send = command.encode("ascii", errors="replace")
 						if command_requiring_checksum or (command_allowing_checksum and checksum_enabled):
@@ -2188,6 +2266,16 @@ class MachineCom(object):
 					pass
 	_gcode_G1_sent = _gcode_G0_sent
 
+	def _gcode_G28_sent(self, cmd, cmd_type=None):
+		if "F" in cmd:
+			match = regexes_parameters["floatF"].search(cmd)
+			if match:
+				try:
+					f = float(match.group("value"))
+					self._currentF = f
+				except ValueError:
+					pass
+
 	def _gcode_M0_queuing(self, cmd, cmd_type=None):
 		self.setPause(True)
 		return None, # Don't send the M0 or M1 to the machine, as M0 and M1 are handled as an LCD menu pause.
@@ -2351,7 +2439,7 @@ class MachineComPrintCallback(object):
 	def on_comm_temperature_update(self, temp, bedTemp):
 		pass
 
-	def on_comm_position_update(self, position):
+	def on_comm_position_update(self, position, reason=None):
 		pass
 
 	def on_comm_state_change(self, state):
@@ -2515,8 +2603,16 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 		Opens the file for reading and determines the file size.
 		"""
 		PrintingFileInformation.start(self)
-		self._read_lines = 0
 		self._handle = bom_aware_open(self._filename, encoding="utf-8", errors="replace")
+		self._pos = self._handle.tell()
+		if self._handle.encoding.endswith("-sig"):
+			# Apparently we found an utf-8 bom in the file.
+			# We need to add its length to our pos because it will
+			# be stripped transparently and we'll have no chance
+			# catching that.
+			import codecs
+			self._pos += len(codecs.BOM_UTF8)
+		self._read_lines = 0
 
 	def close(self):
 		"""
@@ -2548,11 +2644,17 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 					self._pos = self._size
 					self._report_stats()
 					return None
-				line = to_unicode(self._handle.readline())
+
+				# we need to manually keep track of our pos here since
+				# codecs' readline will make our handle's tell not
+				# return the actual number of bytes read, but also the
+				# already buffered bytes (for detecting the newlines)
+				line = self._handle.readline()
+				self._pos += len(line.encode("utf-8"))
+
 				if not line:
 					self.close()
 				processed = self._process(line, offsets, current_tool)
-			self._pos = self._handle.tell()
 			self._read_lines += 1
 			return processed
 		except Exception as e:
@@ -2861,6 +2963,26 @@ def parse_temperature_line(line, current):
 			pass
 
 	return max(maxToolNum, current), canonicalize_temperatures(result, current)
+
+def parse_firmware_line(line):
+	"""
+	Parses the provided firmware info line.
+
+	The result will be a dictionary mapping from the contained keys to the contained
+	values.
+
+	Arguments:
+	    line (str): the line to parse
+
+	Returns:
+	    dict: a dictionary with the parsed data
+	"""
+
+	result = dict()
+	split_line = regex_firmware_splitter.split(line.strip())[1:] # first entry is empty start of trimmed string
+	for key, value in chunks(split_line, 2):
+		result[key] = value
+	return result
 
 def gcode_command_for_cmd(cmd):
 	"""

@@ -71,7 +71,7 @@ $(function() {
                 });
         };
 
-        self.onWizardTabChange = function(current, next) {
+        self.onBeforeWizardTabChange = function(next, current) {
             if (!current || !_.startsWith(current, "wizard_plugin_corewizard_acl_") || self.setup()) {
                 return true;
             }

@@ -1,7 +1,7 @@
 <h3>{{ _('Printer Profiles') }}</h3>
 
-{% include "_snippets/settings/printerprofiles/profiles.jinja2" %}
+{% include "snippets/settings/printerprofiles/profiles.jinja2" %}
 
 <button class="btn pull-right" data-bind="click: function() { $root.printerProfiles.showEditProfileDialog(); }">{{ _('Add Profile...') }}</button>
 
-{% include "_snippets/settings/printerprofiles/profileEditor.jinja2" %}
+{% include "snippets/settings/printerprofiles/profileEditor.jinja2" %}

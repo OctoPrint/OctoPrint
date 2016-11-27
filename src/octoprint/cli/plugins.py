@@ -51,7 +51,7 @@ class OctoPrintPluginCommands(click.MultiCommand):
 		from octoprint import init_settings, init_pluginsystem, FatalStartupError
 		try:
 			self.settings = init_settings(ctx.obj.basedir, ctx.obj.configfile)
-			self.plugin_manager = init_pluginsystem(self.settings)
+			self.plugin_manager = init_pluginsystem(self.settings, safe_mode=ctx.obj.safe_mode)
 		except FatalStartupError as e:
 			click.echo(e.message, err=True)
 			click.echo("There was a fatal error initializing the settings or the plugin system.", err=True)

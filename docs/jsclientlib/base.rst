@@ -14,6 +14,10 @@
    ``OctoPrint.options.baseurl``
        The base URL of the OctoPrint API
 
+   ``OctoPrint.options.locale``
+       The locale to set in ``X-Locale`` headers on API requests. Useful for API
+       endpoints that might return localized content.
+
 .. js:data:: OctoPrint.plugins
 
    Registration of client library components provided by plugins.

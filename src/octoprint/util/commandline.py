@@ -9,6 +9,9 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 import sarge
 import logging
 import re
+import time
+
+from . import to_unicode
 
 
 # These regexes are based on the colorama package
@@ -78,40 +81,49 @@ class CommandlineCaller(object):
 		kwargs.update(dict(async=True, stdout=sarge.Capture(), stderr=sarge.Capture()))
 
 		p = sarge.run(command, **kwargs)
-		p.wait_events()
+		while len(p.commands) == 0:
+			# somewhat ugly... we can't use wait_events because
+			# the events might not be all set if an exception
+			# by sarge is triggered within the async process
+			# thread
+			time.sleep(0.01)
+
+		# by now we should have a command, let's wait for its
+		# process to have been prepared
+		p.commands[0].process_ready.wait()
+
+		if not p.commands[0].process:
+			# the process might have been set to None in case of any exception
+			self._logger.error(u"Error while trying to run command {}".format(joined_command))
+			return None, [], []
 
 		all_stdout = []
 		all_stderr = []
+
+		def process_lines(lines, logger):
+			if not lines:
+				return []
+			l = self._preprocess_lines(*map(lambda x: to_unicode(x, errors="replace"), lines))
+			logger(*l)
+			return list(l)
+
+		def process_stdout(lines):
+			return process_lines(lines, self._log_stdout)
+
+		def process_stderr(lines):
+			return process_lines(lines, self._log_stderr)
+
 		try:
 			while p.returncode is None:
-				lines = p.stderr.readlines(timeout=0.5)
-				if lines:
-					lines = self._preprocess_lines(*lines)
-					self._log_stderr(*lines)
-					all_stderr += list(lines)
-
-				lines = p.stdout.readlines(timeout=0.5)
-				if lines:
-					lines = self._preprocess_lines(*lines)
-					self._log_stdout(*lines)
-					all_stdout += list(lines)
-
+				all_stderr += process_stderr(p.stderr.readlines(timeout=0.5))
+				all_stdout += process_stdout(p.stdout.readlines(timeout=0.5))
 				p.commands[0].poll()
 
 		finally:
 			p.close()
 
-		lines = p.stderr.readlines()
-		if lines:
-			lines = self._preprocess_lines(*lines)
-			self._log_stderr(*lines)
-			all_stderr += lines
-
-		lines = p.stdout.readlines()
-		if lines:
-			lines = self._preprocess_lines(*lines)
-			self._log_stdout(*lines)
-			all_stdout += lines
+		all_stderr += process_stderr(p.stderr.readlines())
+		all_stdout += process_stdout(p.stdout.readlines())
 
 		return p.returncode, all_stdout, all_stderr
 

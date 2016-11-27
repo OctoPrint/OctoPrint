@@ -303,7 +303,10 @@ def configure_timelapse(config=None, persist=False):
 		interval = 10
 		if "options" in config and "interval" in config["options"] and config["options"]["interval"] > 0:
 			interval = config["options"]["interval"]
-		current = TimedTimelapse(post_roll=postRoll, interval=interval, fps=fps)
+		capture_post_roll = True
+		if "options" in config and "capturePostRoll" in config["options"] and isinstance(config["options"]["capturePostRoll"], bool):
+			capture_post_roll = config["options"]["capturePostRoll"]
+		current = TimedTimelapse(post_roll=postRoll, interval=interval, fps=fps, capture_post_roll=capture_post_roll)
 
 	notify_callbacks(current)
 
@@ -572,6 +575,19 @@ class Timelapse(object):
 			self._capture_success += 1
 			return True
 
+	def _copying_postroll(self):
+		with self._capture_mutex:
+			filename = os.path.join(self._capture_dir,
+			                        _capture_format.format(prefix=self._file_prefix) % self._image_number)
+			self._image_number += 1
+
+		if self._perform_capture(filename):
+			for _ in range(self._post_roll * self._fps):
+				newFile = os.path.join(self._capture_dir,
+				                       _capture_format.format(prefix=self._file_prefix) % self._image_number)
+				self._image_number += 1
+				shutil.copyfile(filename, newFile)
+
 	def clean_capture_dir(self):
 		if not os.path.isdir(self._capture_dir):
 			self._logger.warn("Cannot clean capture directory, it is unset")
@@ -604,16 +620,9 @@ class ZTimelapse(Timelapse):
 		}
 
 	def process_post_roll(self):
-		with self._capture_mutex:
-			filename = os.path.join(self._capture_dir, _capture_format.format(prefix=self._file_prefix) % self._image_number)
-			self._image_number += 1
-
-		if self._perform_capture(filename):
-			for _ in range(self._post_roll * self._fps):
-				newFile = os.path.join(self._capture_dir, _capture_format.format(prefix=self._file_prefix) % self._image_number)
-				self._image_number += 1
-				shutil.copyfile(filename, newFile)
-
+		# we always copy the final image for the whole post roll
+		# for z based timelapses
+		self._copying_postroll()
 		Timelapse.process_post_roll(self)
 
 	def _on_z_change(self, event, payload):
@@ -628,11 +637,12 @@ class ZTimelapse(Timelapse):
 
 
 class TimedTimelapse(Timelapse):
-	def __init__(self, post_roll=0, interval=1, fps=25):
+	def __init__(self, post_roll=0, interval=1, fps=25, capture_post_roll=True):
 		Timelapse.__init__(self, post_roll=post_roll, fps=fps)
 		self._interval = interval
 		if self._interval < 1:
 			self._interval = 1 # force minimum interval of 1s
+		self._capture_post_roll = capture_post_roll
 		self._postroll_captures = 0
 		self._timer = None
 		self._logger.debug("TimedTimelapse initialized")
@@ -641,11 +651,16 @@ class TimedTimelapse(Timelapse):
 	def interval(self):
 		return self._interval
 
+	@property
+	def capture_post_roll(self):
+		return self._capture_post_roll
+
 	def config_data(self):
 		return {
 			"type": "timed",
 			"options": {
-				"interval": self._interval
+				"interval": self._interval,
+				"capture_post_roll": self._capture_post_roll
 			}
 		}
 
@@ -662,14 +677,26 @@ class TimedTimelapse(Timelapse):
 		self._timer.start()
 
 	def on_print_done(self, event, payload):
-		self._postroll_captures = self._post_roll * self._fps
+		if self._capture_post_roll:
+			self._postroll_captures = self._post_roll * self._fps
+		else:
+			self._postroll_captures = 0
 		Timelapse.on_print_done(self, event, payload)
 
 	def calculate_post_roll(self):
-		return self._post_roll * self._fps * self._interval
+		if self._capture_post_roll:
+			return self._post_roll * self._fps * self._interval
+		else:
+			return Timelapse.calculate_post_roll(self)
 
 	def process_post_roll(self):
-		pass
+		if self._capture_post_roll:
+			return
+
+		# we only use the final image as post roll if we
+		# are not supposed to capture it
+		self._copying_postroll()
+		self.post_roll_finished()
 
 	def post_roll_finished(self):
 		Timelapse.post_roll_finished(self)
@@ -684,7 +711,8 @@ class TimedTimelapse(Timelapse):
 			self._postroll_captures -= 1
 
 	def _on_timer_finished(self):
-		self.post_roll_finished()
+		if self._capture_post_roll:
+			self.post_roll_finished()
 
 
 class TimelapseRenderJob(object):

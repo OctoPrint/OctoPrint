@@ -149,6 +149,8 @@ class PluginInfo(object):
 		self._license = license
 
 	def validate(self, phase, additional_validators=None):
+		result = True
+
 		if phase == "before_load":
 			# if the plugin still uses __plugin_init__, log a deprecation warning and move it to __plugin_load__
 			if hasattr(self.instance, self.__class__.attr_init):
@@ -183,7 +185,9 @@ class PluginInfo(object):
 
 		if additional_validators is not None:
 			for validator in additional_validators:
-				validator(phase, self)
+				result = result and validator(phase, self)
+
+		return result
 
 	def __str__(self):
 		if self.version:
@@ -448,6 +452,12 @@ class PluginManager(object):
 
 		if logging_prefix is None:
 			logging_prefix = ""
+		if plugin_folders is None:
+			plugin_folders = []
+		if plugin_types is None:
+			plugin_types = []
+		if plugin_entry_points is None:
+			plugin_entry_points = []
 		if plugin_disabled_list is None:
 			plugin_disabled_list = []
 
@@ -740,7 +750,9 @@ class PluginManager(object):
 			plugin = self.plugins[name]
 
 		try:
-			plugin.validate("before_load", additional_validators=self.plugin_validators)
+			if not plugin.validate("before_load", additional_validators=self.plugin_validators):
+				return
+
 			plugin.load()
 			plugin.validate("after_load", additional_validators=self.plugin_validators)
 			self.on_plugin_loaded(name, plugin)
@@ -802,6 +814,9 @@ class PluginManager(object):
 			raise PluginCantEnable(name, "Dependency on obsolete hooks detected, full functionality cannot be guaranteed")
 
 		try:
+			if not plugin.validate("before_enable", additional_validators=self.plugin_validators):
+				return False
+
 			plugin.enable()
 			self._activate_plugin(name, plugin)
 		except PluginLifecycleException as e:

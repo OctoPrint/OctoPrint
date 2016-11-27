@@ -794,9 +794,9 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		try:
 			util.execute(restart_command)
 		except exceptions.ScriptError as e:
-			self._logger.exception("Error while restarting")
-			self._logger.warn("Restart stdout:\n%s" % e.stdout)
-			self._logger.warn("Restart stderr:\n%s" % e.stderr)
+			self._logger.exception("Error while restarting via command {}".format(restart_command))
+			self._logger.warn("Restart stdout:\n{}".format(e.stdout))
+			self._logger.warn("Restart stderr:\n{}".format(e.stderr))
 			raise exceptions.RestartFailed()
 
 	def _populated_check(self, target, check):
@@ -882,7 +882,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 		self._send_client_message("loglines", data=dict(loglines=[dict(line=line, stream=stream) for line in lines]))
 		for line in lines:
-			self._console_logger.debug(u"{prefix} {line}".format(**locals()))
+			self._console_logger.debug(u"{} {}".format(prefix, line))
 
 	def _send_client_message(self, message_type, data=None):
 		self._plugin_manager.send_plugin_message(self._identifier, dict(type=message_type, data=data))

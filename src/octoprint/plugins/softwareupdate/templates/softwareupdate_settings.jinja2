@@ -57,12 +57,12 @@
     </ul>
 </div>
 
-<button class="btn btn-primary btn-block" data-bind="click: function() { $root.performCheck(true, false, true); }">{{ _('Check for update now') }}</button>
+<button class="btn btn-primary btn-block" data-bind="click: function() { $root.performCheck(true, false, true); }, enable: !checking(), css: {disabled: checking()}"><i class="icon-spinner icon-spin" data-bind="visible: checking"></i> {{ _('Check for update now') }}</button>
 
 <div>
     <div><small><a href="#" class="muted" onclick="$(this).children().toggleClass('icon-caret-right icon-caret-down').parent().parent().parent().next().slideToggle('fast')"><i class="icon-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
     <div class="hide">
-        <button class="btn btn-block" data-bind="click: function() { $root.performCheck(true, true, true); }">{{ _('Force check for update (overrides cache used for update checks)') }}</button>
+        <button class="btn btn-block" data-bind="click: function() { $root.performCheck(true, true, true); }, enable: !checking(), css: {disabled: checking()}"><i class="icon-spinner icon-spin" data-bind="visible: checking"></i> {{ _('Force check for update (overrides cache used for update checks)') }}</button>
         <button class="btn btn-block btn-danger" data-bind="visible: CONFIG_DEBUG, click: function() { $root.update(true); }">{{ _('Force update now (even if no new versions are available)') }}</button>
     </div>
 </div>
@@ -74,9 +74,9 @@
     </div>
     <div class="modal-body">
         <form class="form-horizontal">
-            {% include "_snippets/plugins/softwareupdate/checkoutFolder.jinja2" %}
-            {% include "_snippets/plugins/softwareupdate/versionTracking.jinja2" %}
-            {% include "_snippets/plugins/softwareupdate/releaseChannel.jinja2" %}
+            {% include "snippets/plugins/softwareupdate/checkoutFolder.jinja2" %}
+            {% include "snippets/plugins/softwareupdate/versionTracking.jinja2" %}
+            {% include "snippets/plugins/softwareupdate/releaseChannel.jinja2" %}
             <div class="control-group">
                 <label class="control-label">{{ _('Version cache TTL') }}</label>
                 <div class="controls">
@@ -96,7 +96,6 @@
 
 <div id="settings_plugin_softwareupdate_workingdialog" class="modal hide fade">
     <div class="modal-header">
-        <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
         <h3 data-bind="text: workingTitle"></h3>
     </div>
     <div class="modal-body">

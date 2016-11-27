@@ -393,7 +393,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 		self._printAfterSelect = printAfterSelect
 		self._posAfterSelect = pos
-		self._comm.selectFile("/" + path if sd and not settings().getBoolean(["feature", "sdRelativePath"]) else path, sd)
+		self._comm.selectFile("/" + path if sd else path, sd)
 		self._setProgressData(completion=0)
 		self._setCurrentZ(None)
 
@@ -404,6 +404,15 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		self._comm.unselectFile()
 		self._setProgressData(completion=0)
 		self._setCurrentZ(None)
+
+	def get_file_position(self):
+		if self._comm is None:
+			return None
+
+		if self._selectedFile is None:
+			return None
+
+		return self._comm.getFilePosition()
 
 	def start_print(self, pos=None):
 		"""
@@ -478,12 +487,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		# mark print as failure
 		if self._selectedFile is not None:
 			self._fileManager.log_print(FileDestinations.SDCARD if self._selectedFile["sd"] else FileDestinations.LOCAL, self._selectedFile["filename"], time.time(), self._comm.getPrintTime(), False, self._printerProfileManager.get_current_or_default()["id"])
-			payload = {
-				"file": self._selectedFile["filename"],
-				"origin": FileDestinations.LOCAL
-			}
-			if self._selectedFile["sd"]:
-				payload["origin"] = FileDestinations.SDCARD
+			payload = self._payload_for_print_job_event()
 			eventManager().fire(Events.PRINT_FAILED, payload)
 
 	def get_state_string(self, state=None):
@@ -754,7 +758,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		"""
 
 		if progress is None or printTime is None or cleanedPrintTime is None:
-			return None
+			return None, None
 
 		dumbTotalPrintTime = printTime / progress
 		estimatedTotalPrintTime = self._estimateTotalPrintTime(progress, cleanedPrintTime)
@@ -956,8 +960,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 	def on_comm_temperature_update(self, temp, bedTemp):
 		self._addTemperatureData(copy.deepcopy(temp), copy.deepcopy(bedTemp))
 
-	def on_comm_position_update(self, position):
-		eventManager().fire(Events.POSITION_UPDATE, position)
+	def on_comm_position_update(self, position, reason=None):
+		payload = dict(reason=reason)
+		payload.update(position)
+		eventManager().fire(Events.POSITION_UPDATE, payload)
 
 	def on_comm_state_change(self, state):
 		"""
@@ -1066,7 +1072,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		eventManager().fire(Events.PRINT_FAILED, payload)
 
 	def on_comm_print_job_cancelled(self):
-		payload = self._payload_for_print_job_event()
+		payload = self._payload_for_print_job_event(position=self._comm.cancel_position.as_dict() if self._comm and self._comm.cancel_position else None)
 		if payload:
 			eventManager().fire(Events.PRINT_CANCELLED, payload)
 			self.script("afterPrintCancelled",
@@ -1074,7 +1080,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			            must_be_set=False)
 
 	def on_comm_print_job_paused(self):
-		payload = self._payload_for_print_job_event()
+		payload = self._payload_for_print_job_event(position=self._comm.pause_position.as_dict() if self._comm and self._comm.pause_position else None)
 		if payload:
 			eventManager().fire(Events.PRINT_PAUSED, payload)
 			self.script("afterPrintPaused",
@@ -1120,7 +1126,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		except:
 			self._logger.exception("Error while trying to persist print recovery data")
 
-	def _payload_for_print_job_event(self, location=None, print_job_file=None):
+	def _payload_for_print_job_event(self, location=None, print_job_file=None, position=None):
 		if print_job_file is None:
 			selected_file = self._selectedFile
 			if not selected_file:
@@ -1145,13 +1151,18 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			_, name = self._fileManager.split_path(FileDestinations.LOCAL, path)
 			origin = FileDestinations.LOCAL
 
-		return dict(name=name,
-		            path=path,
-		            origin=origin,
+		result= dict(name=name,
+		             path=path,
+		             origin=origin,
 
-		            # TODO deprecated, remove in 1.4.0
-		            file=full_path,
-		            filename=name)
+		             # TODO deprecated, remove in 1.4.0
+		             file=full_path,
+		             filename=name)
+
+		if position is not None:
+			result["position"] = position
+
+		return result
 
 
 class StateMonitor(object):

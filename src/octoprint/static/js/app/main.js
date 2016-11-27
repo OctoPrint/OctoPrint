@@ -13,6 +13,11 @@ $(function() {
         OctoPrint.options.baseurl = BASEURL;
         OctoPrint.options.apikey = UI_API_KEY;
 
+        var l10n = getQueryParameterByName("l10n");
+        if (l10n) {
+            OctoPrint.options.locale = l10n;
+        }
+
         OctoPrint.socket.onMessage("connected", function(data) {
             var payload = data.data;
             OctoPrint.options.apikey = payload.apikey;
@@ -31,7 +36,9 @@ $(function() {
         OctoPrint.coreui = (function() {
             var exports = {
                 browserTabVisibility: undefined,
-                selectedTab: undefined
+                selectedTab: undefined,
+                settingsOpen: false,
+                wizardOpen: false
             };
 
             var browserVisibilityCallbacks = [];

@@ -11,13 +11,26 @@ import sys
 
 from octoprint.cli import pass_octoprint_ctx, bulk_options, standard_options
 
-def run_server(basedir, configfile, host, port, debug, allow_root, logging_config, verbosity, octoprint_daemon = None):
+def run_server(basedir, configfile, host, port, debug, allow_root, logging_config, verbosity, safe_mode, octoprint_daemon=None):
 	"""Initializes the environment and starts up the server."""
 
 	from octoprint import init_platform, __display_version__, FatalStartupError
 
-	def log_startup(_):
-		logging.getLogger("octoprint.server").info("Starting OctoPrint {}".format(__display_version__))
+	def log_startup(recorder=None, safe_mode=None, **kwargs):
+		logger = logging.getLogger("octoprint.server")
+		logger.info("Starting OctoPrint {}".format(__display_version__))
+		if safe_mode:
+			logger.info("Starting in SAFE MODE. Third party plugins will be disabled!")
+
+		if recorder and len(recorder):
+			logger.info("--- Logged during platform initialization: ---")
+
+			from octoprint.logging.handlers import CombinedLogHandler
+			handler = CombinedLogHandler(*logging.getLogger().handlers)
+			recorder.setTarget(handler)
+			recorder.flush()
+
+			logger.info("----------------------------------------------")
 
 		from octoprint import urllib3_ssl
 		if not urllib3_ssl:
@@ -30,13 +43,14 @@ def run_server(basedir, configfile, host, port, debug, allow_root, logging_confi
 			          "https://urllib3.readthedocs.org/en/latest/security.html#openssl-pyopenssl")
 
 	try:
-		settings, _, plugin_manager = init_platform(basedir,
-		                                            configfile,
-		                                            logging_file=logging_config,
-		                                            debug=debug,
-		                                            verbosity=verbosity,
-		                                            uncaught_logger=__name__,
-		                                            after_logging=log_startup)
+		settings, _, safe_mode, plugin_manager = init_platform(basedir,
+		                                                       configfile,
+		                                                       logging_file=logging_config,
+		                                                       debug=debug,
+		                                                       verbosity=verbosity,
+		                                                       uncaught_logger=__name__,
+		                                                       safe_mode=safe_mode,
+		                                                       after_safe_mode=log_startup)
 	except FatalStartupError as e:
 		click.echo(e.message, err=True)
 		click.echo("There was a fatal error starting up OctoPrint.", err=True)
@@ -47,6 +61,7 @@ def run_server(basedir, configfile, host, port, debug, allow_root, logging_confi
 		                          host=host,
 		                          port=port,
 		                          debug=debug,
+		                          safe_mode=safe_mode,
 		                          allow_root=allow_root,
 		                          octoprint_daemon=octoprint_daemon)
 		octoprint_server.run()
@@ -62,7 +77,7 @@ server_options = bulk_options([
 	             help="Specify the config file to use for configuring logging."),
 	click.option("--iknowwhatimdoing", "allow_root", is_flag=True,
 	             help="Allow OctoPrint to run as user root."),
-	click.option("--debug", is_flag=True, help="Enable debug mode"),
+	click.option("--debug", is_flag=True, help="Enable debug mode.")
 ])
 """Decorator to add the options shared among the server commands: ``--host``, ``--port``,
    ``--logging``, ``--iknowwhatimdoing`` and ``--debug``."""
@@ -82,7 +97,7 @@ def server_commands(obj):
 def serve_command(obj, host, port, logging, allow_root, debug):
 	"""Starts the OctoPrint server."""
 	run_server(obj.basedir, obj.configfile, host, port, debug,
-	           allow_root, logging, obj.verbosity)
+	           allow_root, logging, obj.verbosity, obj.safe_mode)
 
 
 @server_commands.command(name="daemon")
@@ -111,7 +126,7 @@ def daemon_command(octoprint_ctx, pid, host, port, logging, allow_root, debug, c
 
 	from octoprint.daemon import Daemon
 	class OctoPrintDaemon(Daemon):
-		def __init__(self, pidfile, basedir, configfile, host, port, debug, allow_root, logging_config, verbosity):
+		def __init__(self, pidfile, basedir, configfile, host, port, debug, allow_root, logging_config, verbosity, safe_mode):
 			Daemon.__init__(self, pidfile)
 
 			self._basedir = basedir
@@ -122,12 +137,16 @@ def daemon_command(octoprint_ctx, pid, host, port, logging, allow_root, debug, c
 			self._allow_root = allow_root
 			self._logging_config = logging_config
 			self._verbosity = verbosity
+			self._safe_mode = safe_mode
 
 		def run(self):
-			run_server(self._basedir, self._configfile, self._host, self._port, self._debug, self._allow_root, self._logging_config, self._verbosity, self)
+			run_server(self._basedir, self._configfile, self._host, self._port, self._debug,
+			           self._allow_root, self._logging_config, self._verbosity, self._safe_mode,
+			           octoprint_daemon=self)
 
 	octoprint_daemon = OctoPrintDaemon(pid, octoprint_ctx.basedir, octoprint_ctx.configfile,
-	                                   host, port, debug, allow_root, logging, octoprint_ctx.verbosity)
+	                                   host, port, debug, allow_root, logging, octoprint_ctx.verbosity,
+	                                   octoprint_ctx.safe_mode)
 
 	if command == "start":
 		octoprint_daemon.start()

@@ -46,7 +46,8 @@
 
     OctoPrint.options = {
         "baseurl": undefined,
-        "apikey": undefined
+        "apikey": undefined,
+        "locale": undefined
     };
 
     OctoPrint.plugins = {};
@@ -64,6 +65,10 @@
 
         var headers = $.extend({}, additional);
         headers["X-Api-Key"] = OctoPrint.options.apikey;
+
+        if (OctoPrint.options.locale !== undefined) {
+            headers["X-Locale"] = OctoPrint.options.locale;
+        }
 
         return headers;
     };

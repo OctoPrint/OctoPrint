@@ -42,9 +42,10 @@ def _validate_plugin(phase, plugin_info):
 			if not "octoprint.accesscontrol.appkey" in hooks:
 				hooks["octoprint.accesscontrol.appkey"] = plugin_info.implementation.get_additional_apps
 			setattr(plugin_info.instance, PluginInfo.attr_hooks, hooks)
+	return True
 
 def plugin_manager(init=False, plugin_folders=None, plugin_types=None, plugin_entry_points=None, plugin_disabled_list=None,
-                   plugin_restart_needing_hooks=None, plugin_obsolete_hooks=None, plugin_validators=None, settings=None):
+                   plugin_restart_needing_hooks=None, plugin_obsolete_hooks=None, plugin_validators=None):
 	"""
 	Factory method for initially constructing and consecutively retrieving the :class:`~octoprint.plugin.core.PluginManager`
 	singleton.
@@ -87,14 +88,6 @@ def plugin_manager(init=False, plugin_folders=None, plugin_types=None, plugin_en
 
 	else:
 		if init:
-			if settings is None:
-				settings = s()
-
-			if plugin_folders is None:
-				plugin_folders = (
-					settings.getBaseFolder("plugins"),
-					(os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "plugins")), True)
-				)
 			if plugin_types is None:
 				plugin_types = [StartupPlugin,
 				                ShutdownPlugin,
@@ -109,22 +102,17 @@ def plugin_manager(init=False, plugin_folders=None, plugin_types=None, plugin_en
 				                ProgressPlugin,
 				                WizardPlugin,
 				                UiPlugin]
-			if plugin_entry_points is None:
-				plugin_entry_points = "octoprint.plugin"
-			if plugin_disabled_list is None:
-				plugin_disabled_list = settings.get(["plugins", "_disabled"])
+
 			if plugin_restart_needing_hooks is None:
-				plugin_restart_needing_hooks = [
-					"octoprint.server.http"
-				]
+				plugin_restart_needing_hooks = ["octoprint.server.http"]
+
 			if plugin_obsolete_hooks is None:
-				plugin_obsolete_hooks = [
-					"octoprint.comm.protocol.gcode"
-				]
+				plugin_obsolete_hooks = ["octoprint.comm.protocol.gcode"]
+
 			if plugin_validators is None:
-				plugin_validators = [
-					_validate_plugin
-				]
+				plugin_validators = [_validate_plugin]
+			else:
+				plugin_validators.append(_validate_plugin)
 
 			_instance = PluginManager(plugin_folders,
 			                          plugin_types,
@@ -145,7 +133,7 @@ def plugin_settings(plugin_key, defaults=None, get_preprocessors=None, set_prepr
 
 	Arguments:
 	    plugin_key (string): The plugin identifier for which to create the settings instance.
-	    defaults (dict): The default settings for the plugin.
+	    defaults (dict): The default settings for the plugin, if different from get_settings_defaults.
 	    get_preprocessors (dict): The getter preprocessors for the plugin.
 	    set_preprocessors (dict): The setter preprocessors for the plugin.
 	    settings (octoprint.settings.Settings): The settings instance to use.
@@ -180,13 +168,12 @@ def plugin_settings_for_settings_plugin(plugin_key, instance, settings=None):
 		return None
 
 	try:
-		defaults = instance.get_settings_defaults()
 		get_preprocessors, set_preprocessors = instance.get_settings_preprocessors()
 	except:
-		logging.getLogger(__name__).exception("Error while retrieving defaults or preprocessors for plugin {}".format(plugin_key))
+		logging.getLogger(__name__).exception("Error while retrieving preprocessors for plugin {}".format(plugin_key))
 		return None
 
-	return plugin_settings(plugin_key, defaults=defaults, get_preprocessors=get_preprocessors, set_preprocessors=set_preprocessors, settings=settings)
+	return plugin_settings(plugin_key, get_preprocessors=get_preprocessors, set_preprocessors=set_preprocessors, settings=settings)
 
 
 def call_plugin(types, method, args=None, kwargs=None, callback=None, error_callback=None, sorting_context=None):
@@ -315,11 +302,12 @@ class PluginSettings(object):
 		self.settings = settings
 		self.plugin_key = plugin_key
 
-		if defaults is None:
-			defaults = dict()
-		self.defaults = dict(plugins=dict())
-		self.defaults["plugins"][plugin_key] = defaults
-		self.defaults["plugins"][plugin_key]["_config_version"] = None
+		if defaults is not None:
+			self.defaults = dict(plugins=dict())
+			self.defaults["plugins"][plugin_key] = defaults
+			self.defaults["plugins"][plugin_key]["_config_version"] = None
+		else:
+			self.defaults = None
 
 		if get_preprocessors is None:
 			get_preprocessors = dict()
@@ -345,14 +333,14 @@ class PluginSettings(object):
 			return result
 
 		def add_getter_kwargs(kwargs):
-			if not "defaults" in kwargs:
+			if not "defaults" in kwargs and self.defaults is not None:
 				kwargs.update(defaults=self.defaults)
 			if not "preprocessors" in kwargs:
 				kwargs.update(preprocessors=self.get_preprocessors)
 			return kwargs
 
 		def add_setter_kwargs(kwargs):
-			if not "defaults" in kwargs:
+			if not "defaults" in kwargs and self.defaults is not None:
 				kwargs.update(defaults=self.defaults)
 			if not "preprocessors" in kwargs:
 				kwargs.update(preprocessors=self.set_preprocessors)

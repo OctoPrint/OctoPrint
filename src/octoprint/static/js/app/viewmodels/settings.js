@@ -16,6 +16,10 @@ $(function() {
         });
         self.outstanding = [];
 
+        self.active = false;
+        self.sawUpdateEventWhileActive = false;
+        self.ignoreNextUpdateEvent = false;
+
         self.settingsDialog = undefined;
         self.settings_dialog_update_detected = undefined;
         self.translationManagerDialog = undefined;
@@ -133,6 +137,7 @@ $(function() {
         self.feature_pollWatched = ko.observable(undefined);
         self.feature_ignoreIdenticalResends = ko.observable(undefined);
         self.feature_modelSizeDetection = ko.observable(undefined);
+        self.feature_firmwareDetection = ko.observable(undefined);
 
         self.serial_port = ko.observable();
         self.serial_baudrate = ko.observable();
@@ -355,12 +360,14 @@ $(function() {
             self.allViewModels = allViewModels;
 
             self.settingsDialog.on('show', function(event) {
+                OctoPrint.coreui.settingsOpen = true;
                 if (event.target.id == "settings_dialog") {
                     self.requestTranslationData();
                     callViewModels(allViewModels, "onSettingsShown");
                 }
             });
             self.settingsDialog.on('hidden', function(event) {
+                OctoPrint.coreui.settingsOpen = false;
                 if (event.target.id == "settings_dialog") {
                     callViewModels(allViewModels, "onSettingsHidden");
                 }
@@ -727,6 +734,7 @@ $(function() {
 
             self.settingsDialog.trigger("beforeSave");
 
+            self.sawUpdateEventWhileSending = false;
             self.sending(data == undefined || options.sending || false);
 
             if (data == undefined) {
@@ -734,10 +742,15 @@ $(function() {
                 data = getOnlyChangedData(self.getLocalData(), self.lastReceivedSettings);
             }
 
+            self.active = true;
             return OctoPrint.settings.save(data)
                 .done(function(data, status, xhr) {
+                    self.ignoreNextUpdateEvent = !self.sawUpdateEventWhileSending;
+                    self.active = false;
+
                     self.receiving(true);
                     self.sending(false);
+
                     try {
                         self.fromResponse(data);
                         if (options.success) options.success(data, status, xhr);
@@ -747,6 +760,7 @@ $(function() {
                 })
                 .fail(function(xhr, status, error) {
                     self.sending(false);
+                    self.active = false;
                     if (options.error) options.error(xhr, status, error);
                 })
                 .always(function(xhr, status) {
@@ -755,6 +769,10 @@ $(function() {
         };
 
         self.onEventSettingsUpdated = function() {
+            if (self.active) {
+                self.sawUpdateEventWhileActive = true;
+            }
+
             var preventSettingsRefresh = _.any(self.allViewModels, function(viewModel) {
                 if (viewModel.hasOwnProperty("onSettingsPreventRefresh")) {
                     try {
@@ -775,7 +793,8 @@ $(function() {
 
             if (self.isDialogActive()) {
                 // dialog is open and not currently busy...
-                if (self.sending() || self.receiving()) {
+                if (self.sending() || self.receiving() || self.active || self.ignoreNextUpdateEvent) {
+                    self.ignoreNextUpdateEvent = false;
                     return;
                 }
 
@@ -805,6 +824,12 @@ $(function() {
             } else {
                 $('ul.nav-list a:first', self.settingsDialog).tab("show");
             }
+        };
+
+        self.onServerReconnect = function() {
+            // the settings might have changed if the server was just restarted,
+            // better refresh them now
+            self.requestData();
         };
     }
 
