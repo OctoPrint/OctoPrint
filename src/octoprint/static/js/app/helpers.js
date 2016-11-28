@@ -524,7 +524,7 @@ function cleanTemperature(temp) {
 
 function formatTemperature(temp) {
     if (!temp || temp < 10) return gettext("off");
-    return _.sprintf("%.1f&deg;C", temp);
+    return _.sprintf("%.1f&deg;C (%.1f&deg;F)", temp, temp * 9 / 5 + 32);
 }
 
 function pnotifyAdditionalInfo(inner) {
