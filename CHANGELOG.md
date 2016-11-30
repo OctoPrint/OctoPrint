@@ -1,6 +1,6 @@
 # OctoPrint Changelog
 
-## 1.2.18rc1 (2016-11-22)
+## 1.2.18 (2016-11-30)
 
 ### Improvements
 
@@ -16,7 +16,11 @@
   * [#1571](https://github.com/foosel/OctoPrint/issues/1571) - Fix parsing of port number from HTTP Host header for IPv6 addresses
   * Fix issue with settings restriction causing internal settings defaults to be changed.
 
-([Commits](https://github.com/foosel/OctoPrint/compare/1.2.17...1.2.18))
+### More information
+
+  * [Commits](https://github.com/foosel/OctoPrint/compare/1.2.17...1.2.18)
+  * Release Candidates:
+    * [1.2.18rc1](https://github.com/foosel/OctoPrint/releases/tag/1.2.18rc1)
 
 ## 1.2.17 (2016-11-08)
 
