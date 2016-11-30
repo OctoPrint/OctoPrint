@@ -28,10 +28,11 @@ pretty much boils down to this:
     the target temperature, handling of restricted settings and IPv6 
     compatibility.
 
-Quick heads-up for you **if you are already running 1.3.0rc2**: OctoPrint
+Quick heads-up for you **if you are already running 1.3.0rc2**: <strike>OctoPrint
 might show you a notification for 1.2.18. But you won't be able to "update"
 (or rather downgrade) to it unless you first switch back to
-either the Stable or the Maintenance RC release channels[^1].
+either the Stable or the Maintenance RC release channels.</strike> No heads-up
+necessary after all, caused by my pre-release test setup, all is well :)
 
 You can find the full changelog and release notes as usual 
 [on Github](https://github.com/foosel/OctoPrint/releases/tag/1.2.18).
@@ -67,10 +68,3 @@ or the [Mailinglist](https://groups.google.com/group/octoprint).
   * [How to file a bug report](https://github.com/foosel/OctoPrint/blob/master/CONTRIBUTING.md#how-to-file-a-bug-report)
   * [How to roll back to an earlier release (OctoPi)](https://github.com/foosel/OctoPrint/wiki/FAQ#how-can-i-revert-to-an-older-version-of-the-octoprint-installation-on-my-octopi-image)
   * [How to roll back to an earlier release (manual install)](https://github.com/foosel/OctoPrint/wiki/FAQ#how-can-i-roll-back-to-an-earlier-version-after-an-update)
-
-### Footnotes
-
-  [^1]: I'll have to figure out why you even get shown that a lower 
-        numbered release is out (you shouldn't), but since it's only 
-        cosmetic in nature I will not schedule another 1.3.0 RC for 
-        fixing that - we'll get that ironed out in 1.3.1 I guess :)
