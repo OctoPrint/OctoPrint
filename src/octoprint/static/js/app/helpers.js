@@ -777,9 +777,14 @@ function getOnlyChangedData(data, oldData) {
 
         var retval = {};
         _.forOwn(root, function(value, key) {
-            var oldValue = oldRoot[key];
+            var oldValue = undefined;
+            if (oldRoot != undefined && oldRoot.hasOwnProperty(key)) {
+                oldValue = oldRoot[key];
+            }
             if (_.isPlainObject(value)) {
-                if (hasDataChanged(value, oldValue)) {
+                if (oldValue == undefined) {
+                    retval[key] = value;
+                } else if (hasDataChanged(value, oldValue)) {
                     retval[key] = f(value, oldValue);
                 }
             } else {
