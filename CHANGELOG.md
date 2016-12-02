@@ -1,5 +1,22 @@
 # OctoPrint Changelog
 
+## 1.3.0rc3 (2016-12-02)
+
+### Improvements
+
+  * Added note to JS client docs that it depends on JQuery and Lodash.
+  * Improved a (manual) doctest
+
+### Bug fixes
+
+  * [#1599](https://github.com/foosel/OctoPrint/issues/1599) - Properly handle exceptions that arise within the update script during runtime.
+  * Fix a rare race condition in the command line helper and the update script that could cause the code to hang due to waiting on an event that would never be set.
+  * Fix issue with handling new settings substructures when they are compared to existing settings data in order to find the structural diff.
+  * Fix for `/api/settings` not being properly invalidated for plugin settings that do not have a representation in `config.yaml` but are only added at runtime (and hence are not captured by `config.effective`).
+  * Fix for the temperature graph not displaying the data history on site reload.
+
+([Commits](https://github.com/foosel/OctoPrint/compare/1.3.0rc2...1.3.0rc3))
+
 ## 1.3.0rc2 (2016-11-24)
 
 ### Features
