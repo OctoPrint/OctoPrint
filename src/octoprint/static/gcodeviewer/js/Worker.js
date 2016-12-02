@@ -267,6 +267,15 @@ var doParse = function () {
 
         var log = false;
 
+        if (/^(?:M600)/i.test(line)) {
+            console.log("Replacing M600 with tool change");
+            tool++
+            if (tool > 1) {
+                tool = 0;
+            }
+            line = "T" + tool;
+        }
+
         if (/^(?:G0|G1|G2|G3)\s/i.test(line)) {
             var args = line.split(/\s/);
 
