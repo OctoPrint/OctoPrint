@@ -36,6 +36,10 @@ $(function() {
 
         self.heaterOptions = ko.observable({});
 
+        self._printerProfileInitialized = false;
+        self._currentTemperatureDataBacklog = [];
+        self._historyTemperatureDataBacklog = [];
+
         self._printerProfileUpdated = function() {
             var graphColors = ["red", "orange", "green", "brown", "purple"];
             var heaterOptions = {};
@@ -81,6 +85,10 @@ $(function() {
             // write back
             self.heaterOptions(heaterOptions);
             self.tools(tools);
+
+            if (!self._printerProfileInitialized) {
+                self._triggerBacklog();
+            }
             self.updatePlot();
         };
         self.settingsViewModel.printerProfiles.currentProfileData.subscribe(function() {
@@ -126,14 +134,34 @@ $(function() {
 
         self.fromCurrentData = function(data) {
             self._processStateData(data.state);
-            self._processTemperatureUpdateData(data.serverTime, data.temps);
+            if (!self._printerProfileInitialized) {
+                self._currentTemperatureDataBacklog.push(data);
+            } else {
+                self._processTemperatureUpdateData(data.serverTime, data.temps);
+            }
             self._processOffsetData(data.offsets);
         };
 
         self.fromHistoryData = function(data) {
             self._processStateData(data.state);
-            self._processTemperatureHistoryData(data.serverTime, data.temps);
+            if (!self._printerProfileInitialized) {
+                self._historyTemperatureDataBacklog.push(data);
+            } else {
+                self._processTemperatureHistoryData(data.serverTime, data.temps);
+            }
             self._processOffsetData(data.offsets);
+        };
+
+        self._triggerBacklog = function() {
+            _.each(self._historyTemperatureDataBacklog, function(data) {
+                self._processTemperatureHistoryData(data.serverTime, data.temps);
+            });
+            _.each(self._currentTemperatureDataBacklog, function(data) {
+                self._processTemperatureUpdateData(data.serverTime, data.temps);
+            });
+            self._historyTemperatureDataBacklog = [];
+            self._currentTemperatureDataBacklog = [];
+            self._printerProfileInitialized = true;
         };
 
         self._processStateData = function(data) {
@@ -217,14 +245,17 @@ $(function() {
                 })
             });
 
-            var filterOld = function(item) {
-                return item[0] >= clientTime - self.temperature_cutoff() * 60 * 1000;
-            };
+            var temperature_cutoff = self.temperature_cutoff();
+            if (temperature_cutoff != undefined) {
+                var filterOld = function(item) {
+                    return item[0] >= clientTime - temperature_cutoff * 60 * 1000;
+                };
 
-            _.each(_.keys(self.heaterOptions()), function(d) {
-                result[d].actual = _.filter(result[d].actual, filterOld);
-                result[d].target = _.filter(result[d].target, filterOld);
-            });
+                _.each(_.keys(self.heaterOptions()), function(d) {
+                    result[d].actual = _.filter(result[d].actual, filterOld);
+                    result[d].target = _.filter(result[d].target, filterOld);
+                });
+            }
 
             return result;
         };
