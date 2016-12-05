@@ -99,12 +99,18 @@ $(function() {
                 });
         };
 
-        self.prepareLogin = function(data, event, extra) {
-            if (event.type === "submit" || (event.type === "keyup" && event.keyCode == 13)) {
+        self.prepareLogin = function(data, event) {
+            if(event && event.preventDefault) {
                 event.preventDefault();
-                self.login();
             }
+            self.login();
         };
+
+        self.onKeyUp = function(data, event) {
+            if (event && event.keyCode == 13) {
+                $('#loginForm').submit();
+            }
+        }
 
         self.onAllBound = function(allViewModels) {
             self.allViewModels = allViewModels;
