@@ -76,6 +76,10 @@ $(function() {
                     self.loginUser("");
                     self.loginPass("");
                     self.loginRemember(false);
+
+                    if (history && history.replaceState) {
+                        history.replaceState({success: true}, document.title, window.location.pathname);
+                    }
                 })
                 .fail(function() {
                     new PNotify({title: gettext("Login failed"), text: gettext("User unknown or wrong password"), type: "error"});
@@ -95,14 +99,9 @@ $(function() {
                 });
         };
 
-        self.onLoginUserKeyup = function(data, event) {
-            if (event.keyCode == 13) {
-                self.elementPasswordInput.focus();
-            }
-        };
-
-        self.onLoginPassKeyup = function(data, event) {
-            if (event.keyCode == 13) {
+        self.prepareLogin = function(data, event, extra) {
+            if (event.type === "submit" || (event.type === "keyup" && event.keyCode == 13)) {
+                event.preventDefault();
                 self.login();
             }
         };
