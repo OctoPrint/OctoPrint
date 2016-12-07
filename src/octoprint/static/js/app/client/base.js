@@ -168,6 +168,7 @@
         }
 
         filename = filename || fileData.name;
+        var filesize = fileData.size;
 
         var form = new FormData();
         form.append("file", fileData, filename);
