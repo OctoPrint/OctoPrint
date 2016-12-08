@@ -2681,7 +2681,7 @@ msgid ""
 "Not only cancel ongoing prints but also disconnect on unhandled errors from "
 "the firmware."
 msgstr ""
-"Bei unbehalten Firmwarefehlern nicht nur den Druckauftrag abbrechen, sondern "
+"Bei unbehandelten Firmwarefehlern nicht nur den Druckauftrag abbrechen, sondern "
 "auch die Verbindung zum Drucker trennen."
 
 #: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:90
@@ -2690,9 +2690,9 @@ msgid ""
 "firmware sends stuff prefixed with \"Error\" that is not an actual error. "
 "Might mask printer issues, be careful!"
 msgstr ""
-"Alle unbehalten Firmwarefehler ignorieren. Nur nutzen wenn Deine Firmware "
+"Alle unbehandelten Firmwarefehler ignorieren. Nur nutzen wenn Deine Firmware "
 "Dinge mit \"Error\" sendet die nicht wirklich Fehler sind. Könnte "
-"Druckerprobleme maskieren, vorsicht!"
+"Druckerprobleme maskieren, Vorsicht!"
 
 #: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:98
 msgid "Command to send to the firmware on first handshake attempt."
