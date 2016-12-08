@@ -1,0 +1,34 @@
+<h3>{{ _('Configured Channels') }}</h3>
+
+<table class="table table-striped table-hover table-condensed table-hover">
+    <thead>
+    <tr>
+        <th class="settings_plugin_announcements_channels_name">{{ _('Name') }}</th>
+        <th class="settings_plugin_announcements_channels_actions">{{ _('Actions') }}</th>
+    </tr>
+    </thead>
+    <tbody data-bind="foreach: channels.paginatedItems">
+    <tr>
+        <td class="settings_plugin_announcements_channels_name">
+            <div data-bind="text: channel, css: {muted: !enabled}"></div>
+            <div><small class="muted" data-bind="text: url">&nbsp;</small></div>
+        </td>
+        <td class="settings_plugin_announcements_channels_actions">
+            <a href="javascript:void(0)" data-bind="css: $root.toggleButtonCss($data), attr: {title: $root.toggleButtonTitle($data)}, enable: $root.enableToggle($data), click: function() { $root.toggleChannel($data.key) }"></a>
+        </td>
+    </tr>
+    </tbody>
+</table>
+<div class="pagination pagination-mini pagination-centered">
+    <ul>
+        <li data-bind="css: {disabled: channels.currentPage() === 0}"><a href="javascript:void(0)" data-bind="click: channels.prevPage">«</a></li>
+    </ul>
+    <ul data-bind="foreach: channels.pages">
+        <li data-bind="css: { active: $data.number === $root.channels.currentPage(), disabled: $data.number === -1 }"><a href="javascript:void(0)" data-bind="text: $data.text, click: function() { $root.channels.changePage($data.number); }"></a></li>
+    </ul>
+    <ul>
+        <li data-bind="css: {disabled: channels.currentPage() === channels.lastPage()}"><a href="javascript:void(0)" data-bind="click: channels.nextPage">»</a></li>
+    </ul>
+</div>
+
+<button class="btn btn-block" data-bind="click: $root.refreshAnnouncements"><i class="icon-refresh"></i> {{ _('Refresh Announcements') }}</button>

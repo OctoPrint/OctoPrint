@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -8,11 +8,9 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 from flask import request, jsonify, make_response
 
 from octoprint.settings import settings
-from octoprint.printer import get_connection_options
 from octoprint.server import printer, printerProfileManager, NO_CONTENT
 from octoprint.server.api import api
 from octoprint.server.util.flask import restricted_access, get_json_command_from_request
-import octoprint.util as util
 
 
 @api.route("/connection", methods=["GET"])
@@ -42,7 +40,7 @@ def connectionCommand():
 		return response
 
 	if command == "connect":
-		connection_options = get_connection_options()
+		connection_options = printer.__class__.get_connection_options()
 
 		port = None
 		baudrate = None
@@ -75,7 +73,7 @@ def connectionCommand():
 	return NO_CONTENT
 
 def _get_options():
-	connection_options = get_connection_options()
+	connection_options = printer.__class__.get_connection_options()
 	profile_options = printerProfileManager.get_all()
 	default_profile = printerProfileManager.get_default()
 

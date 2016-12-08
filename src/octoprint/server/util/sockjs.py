@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -12,6 +12,9 @@ import time
 
 import octoprint.timelapse
 import octoprint.server
+import octoprint.events
+import octoprint.plugin
+
 from octoprint.events import Events
 from octoprint.settings import settings
 
@@ -44,6 +47,8 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection, octoprint.printer.
 		self._lastCurrent = 0
 		self._baseRateLimit = 0.5
 
+		self._emit_mutex = threading.RLock()
+
 	def _getRemoteAddress(self, info):
 		forwardedFor = info.headers.get("X-Forwarded-For")
 		if forwardedFor is not None:
@@ -72,7 +77,9 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection, octoprint.printer.
 			display_version=octoprint.server.DISPLAY_VERSION,
 			branch=octoprint.server.BRANCH,
 			plugin_hash=plugin_hash.hexdigest(),
-			config_hash=config_hash
+			config_hash=config_hash,
+			debug=octoprint.server.debug,
+			safe_mode=octoprint.server.safe_mode
 		))
 
 		self._printer.register_callback(self)
@@ -198,7 +205,11 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection, octoprint.printer.
 		self.sendEvent(event, payload)
 
 	def _emit(self, type, payload):
-		try:
-			self.send({type: payload})
-		except Exception as e:
-			self._logger.warn("Could not send message to client %s: %s" % (self._remoteAddress, str(e)))
+		with self._emit_mutex:
+			try:
+				self.send({type: payload})
+			except Exception as e:
+				if self._logger.isEnabledFor(logging.DEBUG):
+					self._logger.exception("Could not send message to client {}".format(self._remoteAddress))
+				else:
+					self._logger.warn("Could not send message to client {}: {}".format(self._remoteAddress, e))

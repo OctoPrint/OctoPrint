@@ -1,13 +1,6 @@
-{% assets "css_libs" %}
-    <link href="{{ ASSET_URL }}" rel="stylesheet" media="screen">
-{% endassets %}
-
-{% assets "css_app" %}
-    <link href="{{ ASSET_URL }}" rel="stylesheet" media="screen">
-{% endassets %}
-
-{% assets "less_app" %}
-    <link href="{{ ASSET_URL }}" rel="stylesheet/less" type="text/css" media="screen">
-{% endassets %}
-
+{% assets "css_libs" %}<link href="{{ ASSET_URL }}" rel="stylesheet" media="screen">{% endassets %}
+{% assets "css_core" %}<link href="{{ ASSET_URL }}" rel="stylesheet" media="screen">{% endassets %}
+{% assets "css_plugins" %}<link href="{{ ASSET_URL }}" rel="stylesheet" media="screen">{% endassets %}
+{% assets "less_core" %}<link href="{{ ASSET_URL }}" rel="stylesheet/less" type="text/css" media="screen">{% endassets %}
+{% assets "less_plugins" %}<link href="{{ ASSET_URL }}" rel="stylesheet/less" type="text/css" media="screen">{% endassets %}
 <script src="{{ url_for('static', filename='js/lib/less.min.js') }}" type="text/javascript"></script>

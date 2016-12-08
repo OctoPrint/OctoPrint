@@ -5,17 +5,18 @@
 <p>Version <span class="version">{{ display_version }}</span></p>
 
 <ul>
-    <li>Website: <a href="http://octoprint.org" target="_blank">octoprint.org</a></li>
-    <li>Source Code: <a href="https://github.com/foosel/OctoPrint" target="_blank">github.com/foosel/OctoPrint</a></li>
-    <li>Documentation: <a href="http://docs.octoprint.org" target="_blank">docs.octoprint.org</a></li>
+    <li>Website: <a href="http://octoprint.org" target="_blank" rel="noreferrer noopener">octoprint.org</a></li>
+    <li>Source Code: <a href="https://github.com/foosel/OctoPrint" target="_blank" rel="noreferrer noopener">github.com/foosel/OctoPrint</a></li>
+    <li>Documentation: <a href="http://docs.octoprint.org" target="_blank" rel="noreferrer noopener">docs.octoprint.org</a></li>
 </ul>
 
 <p>
-    OctoPrint is sponsored and maintained by <a href="http://www.bq.com">BQ</a>.
+    <strong>Development of OctoPrint wouldn't be possible without <a href="javascript:void(0)" data-bind="click: function() { showTab('{{ templates.about.entries.supporters[1]._div }}'); }">its supporters</a>.</strong><br>
+    If you enjoy OctoPrint, please consider <a href="http://octoprint.org/support-octoprint/" target="_blank" rel="noreferrer noopener">supporting its ongoing development</a>.
 </p>
 
 <p>
-    &copy; 2012-{{ now.strftime("%Y") }} The OctoPrint Authors
+    &copy; 2012-{{ now.strftime("%Y") }} <a href="javascript:void(0)" data-bind="click: function() { showTab('{{ templates.about.entries.authors[1]._div }}'); }">The OctoPrint Authors</a>
 </p>
 
 <p>
@@ -33,12 +34,16 @@
 </p>
 
 <p>
-    For a copy of the GNU Affero General Public License, see "OctoPrint License"
+    For a copy of the GNU Affero General Public License, see <a href="javascript:void(0)" data-bind="click: function() { showTab('{{ templates.about.entries.license[1]._div }}'); }">{{ templates.about.entries.license[0] }}</a>
     to the left.
 </p>
 
 <p>
     OctoPrint also utilizes various dependencies under terms of their
-    respective licenses, which can be found under "Third Party Licenses" to
+    respective licenses, which can be found under <a href="javascript:void(0)" data-bind="click: function() { showTab('{{ templates.about.entries.thirdparty[1]._div }}'); }">{{ templates.about.entries.thirdparty[0] }}</a> to
     the left. Copyright of those dependencies lies with their respective authors
 </p>
+
+<p><small>
+    "OctoPrint" is a registered trademark.
+</small></p>

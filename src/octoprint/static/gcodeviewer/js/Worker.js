@@ -229,6 +229,7 @@ var doParse = function () {
 
     var layer = 0;
     var x, y, z = 0;
+    var center_i, center_j, direction;
     var prevX = 0, prevY = 0, prevZ = 0;
     var f, lastF = 4000;
     var extrude = false, extrudeRelative = false, retract = 0;
@@ -251,6 +252,9 @@ var doParse = function () {
         y = undefined;
         z = undefined;
         retract = 0;
+        center_i = undefined;
+        center_j = undefined;
+        direction = undefined;
 
         var line = gcode[i].line;
         var percentage = gcode[i].percentage;
@@ -263,7 +267,7 @@ var doParse = function () {
 
         var log = false;
 
-        if (/^(?:G0|G1)\s/i.test(line)) {
+        if (/^(?:G0|G1|G2|G3)\s/i.test(line)) {
             var args = line.split(/\s/);
 
             for (var j = 0; j < args.length; j++) {
@@ -329,6 +333,18 @@ var doParse = function () {
                     case 'f':
                         numSlice = parseFloat(args[j].slice(1));
                         lastF = numSlice;
+                        break;
+                    case 'i':
+                        center_i = Number(args[j].slice(1));
+                        break;
+                    case 'j':
+                        center_j = Number(args[j].slice(1));
+                        break;
+                    case 'g':
+                        if(args[j].charAt(1).toLowerCase()=='2')
+                            direction=1;
+                        if(args[j].charAt(1).toLowerCase()=='3')
+                            direction=-1;
                         break;
                 }
             }
@@ -487,6 +503,9 @@ var doParse = function () {
                 x: x,
                 y: y,
                 z: z,
+                i: center_i,
+                j: center_j,
+                direction: direction,
                 extrude: extrude,
                 retract: retract,
                 noMove: !move,

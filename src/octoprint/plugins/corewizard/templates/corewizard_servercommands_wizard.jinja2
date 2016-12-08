@@ -1,0 +1,19 @@
+<h3>{{ _('Server Commands') }}</h3>
+
+{% trans %}<p>
+    OctoPrint supports calling external commands in order to restart itself or restarting and/or shutting
+    down the system it is running on. You may configure those here.
+</p>{% endtrans %}
+
+<h4>{{ _('OctoPrint related commands') }}</h4>
+
+<form class="form-horizontal" data-bind="with: settingsViewModel">
+    {% include "snippets/settings/server/serverCommandServerRestart.jinja2" %}
+</form>
+
+<h4>{{ _('System related commands') }}</h4>
+
+<form class="form-horizontal" data-bind="with: settingsViewModel">
+    {% include "snippets/settings/server/serverCommandSystemRestart.jinja2" %}
+    {% include "snippets/settings/server/serverCommandSystemShutdown.jinja2" %}
+</form>

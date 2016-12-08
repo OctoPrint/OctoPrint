@@ -9,22 +9,31 @@
     }
 })(function(OctoPrint, $, _) {
     var url = "api/files";
+    var downloadUrl = "downloads/files";
 
     var resourceForLocation = function(location) {
         return url + "/" + location;
     };
 
-    var resourceForFile = function(location, filename) {
+    var downloadForLocation = function(location) {
+        return downloadUrl + "/" + location;
+    };
+
+    var downloadForEntry = function(location, filename) {
+        return downloadForLocation(location) + "/" + filename;
+    };
+
+    var resourceForEntry = function(location, filename) {
         return resourceForLocation(location) + "/" + filename;
     };
 
-    var issueFileCommand = function(location, filename, command, data, opts) {
-        var url = resourceForFile(location, filename);
+    var issueEntryCommand = function(location, entryname, command, data, opts) {
+        var url = resourceForEntry(location, entryname);
         return OctoPrint.issueCommand(url, command, data, opts);
     };
 
-    var getFile = function(location, filename, opts) {
-        return OctoPrint.get(resourceForFile(location, filename), opts);
+    var getEntry = function(location, entryname, opts) {
+        return OctoPrint.get(resourceForEntry(location, entryname), opts);
     };
 
     var preProcessList = function(response) {
@@ -34,127 +43,150 @@
             if (!element.hasOwnProperty("date")) element.date = undefined;
 
             if (element.type == "folder") {
+                element.weight = 0;
                 _.each(element.children, function(e, i, l) {
                     e.parent = element;
                     recursiveCheck(e, i, l);
+                    element.weight += e.weight;
                 });
+            } else {
+                element.weight = 1;
             }
         };
         _.each(response.files, recursiveCheck);
     };
 
+    var pathForEntry = function(entry) {
+        if (!entry || !entry.hasOwnProperty("parent") || entry.parent == undefined) {
+            return "";
+        }
+
+        var recursivePath = function(element, path) {
+          if (element.hasOwnProperty("parent") && element.parent != undefined) {
+              return recursivePath(element.parent, element.name + "/" + path);
+          }
+
+          return path;
+        };
+
+        return recursivePath(entry.parent, entry.name);
+    };
+
+    var entryForPath = function(path, root) {
+        if (_.isArray(root)) {
+            root = {children: root};
+        }
+
+        var recursiveSearch = function(path, entry) {
+            if (path.length == 0) {
+                return entry;
+            }
+
+            if (!entry.hasOwnProperty("children")) {
+                return undefined;
+            }
+
+            var name = path.shift();
+            for (var i = 0; i < entry.children.length; i++) {
+                if (name == entry.children[i].name) {
+                    return recursiveSearch(path, entry.children[i]);
+                }
+            }
+
+            return undefined;
+        };
+
+        return recursiveSearch(path.split("/"), root);
+    };
+
     OctoPrint.files = {
-        get: getFile,
+        get: getEntry,
 
-        list: function (opts) {
-            return OctoPrint.get(url, opts)
+        list: function (recursively, force, opts) {
+            recursively = recursively || false;
+            force = force || false;
+
+            var query = {};
+            if (recursively) {
+                query.recursive = recursively;
+            }
+            if (force) {
+                query.force = force;
+            }
+
+            return OctoPrint.getWithQuery(url, query, opts)
                 .done(preProcessList);
         },
 
-        listForLocation: function (location, opts) {
-            return OctoPrint.get(resourceForLocation(location), opts)
+        listForLocation: function (location, recursively, opts) {
+            recursively = recursively || false;
+            return OctoPrint.getWithQuery(resourceForLocation(location), {recursive: recursively}, opts)
                 .done(preProcessList);
         },
 
-        select: function (location, filename, print, opts) {
+        select: function (location, path, print, opts) {
             print = print || false;
 
             var data = {
                 print: print
             };
 
-            return issueFileCommand(location, filename, "select", data, opts);
+            return issueEntryCommand(location, path, "select", data, opts);
         },
 
-        slice: function (location, filename, parameters, opts) {
-            return issueFileCommand(location, filename, "slice",
+        slice: function (location, path, parameters, opts) {
+            return issueEntryCommand(location, path, "slice",
                 parameters || {}, opts);
         },
 
-        delete: function (location, filename, opts) {
-            return OctoPrint.delete(resourceForFile(location, filename), opts);
+        delete: function (location, path, opts) {
+            return OctoPrint.delete(resourceForEntry(location, path), opts);
         },
 
-        copy: function(location, filename, destination, opts) {
-            return issueFileCommand(location, filename, "copy", { destination: destination }, opts);
+        copy: function(location, path, destination, opts) {
+            return issueEntryCommand(location, path, "copy", { destination: destination }, opts);
         },
 
-        move: function(location, filename, destination, opts) {
-            return issueFileCommand(location, filename, "move", { destination: destination }, opts);
+        move: function(location, path, destination, opts) {
+            return issueEntryCommand(location, path, "move", { destination: destination }, opts);
         },
 
-        createFolder: function (location, name, path) {
-            var data = "foldername=" + name;
-            if (path != undefined && path != "") {
-                data = "foldername:" + path + "/" + name;
+        createFolder: function (location, name, path, opts) {
+            var data = {foldername: name};
+            if (path !== undefined && path !== "") {
+                data.path = path;
             }
 
-            return OctoPrint.post(resourceForLocation(location), data);
-
+            return OctoPrint.postForm(resourceForLocation(location), data, opts);
         },
 
         upload: function (location, file, data) {
             data = data || {};
 
             var filename = data.filename || undefined;
+            if (data.userdata && typeof data.userdata === "object") {
+                data.userdata = JSON.stringify(userdata);
+            }
             return OctoPrint.upload(resourceForLocation(location), file, filename, data);
         },
 
-        download: function (location, filename, opts) {
-            var deferred = $.Deferred();
-            getFile(location, filename, opts)
-                .done(function (response) {
-                    OctoPrint.download(response.refs.download, opts)
-                        .done(function () {
-                            deferred.resolve.apply(null, arguments);
-                        })
-                        .fail(function () {
-                            deferred.reject.apply(null, arguments);
-                        });
-                })
-                .fail(function () {
-                    deferred.reject.apply(null, arguments);
-                });
-            return deferred.promise();
+        download: function (location, path, opts) {
+            return OctoPrint.download(downloadForEntry(location, path), opts);
         },
 
+        pathForEntry: pathForEntry,
+        entryForPath: entryForPath,
+
         pathForElement: function(element) {
-            if (!element || !element.hasOwnProperty("parent") || element.parent == undefined) {
-                return "";
-            }
-
-            var recursivePath = function(element, path) {
-              if (element.hasOwnProperty("parent") && element.parent != undefined) {
-                  return recursivePath(element.parent, element.name + "/" + path);
-              }
-
-              return path;
-            };
-
-            return recursivePath(element.parent, element.name);
+            // TODO Remove in 1.4.x
+            log.warn("OctoPrint.files.pathForElement has been renamed to OctoPrint.files.pathForEntry, please use that instead");
+            return pathForEntry(element);
         },
 
         elementByPath: function(location, startElement) {
-            var recursiveSearch = function(location, element) {
-                if (location.length == 0) {
-                    return element;
-                }
-
-                if (!element.hasOwnProperty("children")) {
-                    return undefined;
-                }
-
-                var name = location.shift();
-                for(var i = 0; i < element.children.length; i++) {
-                    if (name == element.children[i].name) {
-                        return recursiveSearch(location, element.children[i]);
-                    }
-                }
-
-                return undefined;
-            };
-
-            return recursiveSearch(location.split("/"), startElement);
+            // TODO Remove in 1.4.x
+            log.warn("OctoPrint.files.elementByPath has been renamed to OctoPrint.files.entryForPath, please use that instead");
+            return entryForPath(location, startElement);
         }
     }
 });

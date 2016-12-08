@@ -13,7 +13,7 @@
                 <div class="control-group">
                     <label class="control-label">{{ _('Slicer') }}</label>
                     <div class="controls">
-                        <select data-bind="options: configured_slicers, optionsText: 'name', optionsValue: 'key', optionsCaption: '{{ _('Select a slicer...') }}', value: slicer, valueAllowUnset: true"></select>
+                        <select data-bind="options: matchingSlicers, optionsText: 'name', optionsValue: 'key', optionsCaption: '{{ _('Select a slicer...') }}', value: slicer, valueAllowUnset: true"></select>
                     </div>
                 </div>
                 <div class="control-group">
@@ -29,11 +29,11 @@
                     </div>
                 </div>
                 <div class="control-group">
-                    <label class="control-label">{{ _('GCode Filename') }}</label>
+                    <label class="control-label">{{ _('Output Filename') }}</label>
                     <div class="controls">
                         <div class="input-append">
-                            <input type="text" data-bind="value: gcodeFilename">
-                            <span class="add-on">.gco</span>
+                            <input type="text" data-bind="value: destinationFilename">
+                            <span class="add-on" data-bind="text: '.' + destinationExtension()"></span>
                         </div>
                     </div>
                 </div>

@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -19,7 +19,7 @@ import octoprint.server
 import octoprint.plugin
 from octoprint.server import admin_permission, NO_CONTENT
 from octoprint.settings import settings as s, valid_boolean_trues
-from octoprint.server.util import noCachingResponseHandler, apiKeyRequestHandler, corsResponseHandler
+from octoprint.server.util import noCachingExceptGetResponseHandler, apiKeyRequestHandler, corsResponseHandler
 from octoprint.server.util.flask import restricted_access, get_json_command_from_request, passive_login
 
 
@@ -43,7 +43,7 @@ from . import system as api_system
 
 VERSION = "0.1"
 
-api.after_request(noCachingResponseHandler)
+api.after_request(noCachingExceptGetResponseHandler)
 
 api.before_request(apiKeyRequestHandler)
 api.after_request(corsResponseHandler)
@@ -277,14 +277,14 @@ def utilTestPath():
 		if check_type:
 			typeok = type_mapping[check_type](path)
 		else:
-			typeok = True
+			typeok = exists
 
 		# check if path allows requested access
 		access_mapping = dict(r=os.R_OK, w=os.W_OK, x=os.X_OK)
 		if check_access:
 			access = os.access(path, reduce(lambda x, y: x | y, map(lambda a: access_mapping[a], check_access)))
 		else:
-			access = True
+			access = exists
 
 		return jsonify(path=path, exists=exists, typeok=typeok, access=access, result=exists and typeok and access)
 
@@ -319,18 +319,23 @@ def utilTestPath():
 			success=StatusCodeRange(start=200,end=300),
 			redirection=StatusCodeRange(start=300,end=400),
 			client_error=StatusCodeRange(start=400,end=500),
-			server_error=StatusCodeRange(start=500),
+			server_error=StatusCodeRange(start=500,end=600),
 			normal=StatusCodeRange(end=400),
-			error=StatusCodeRange(start=400),
-			any=StatusCodeRange(start=100)
+			error=StatusCodeRange(start=400,end=600),
+			any=StatusCodeRange(start=100),
+			timeout=StatusCodeRange(start=0, end=1)
 		)
 
 		url = data["url"]
-		method = "HEAD"
+		method = data.get("method", "HEAD")
+		timeout = 3.0
 		check_status = [status_ranges["normal"]]
 
-		if "method" in data:
-			method = data["method"]
+		if "timeout" in data:
+			try:
+				timeout = float(data["timeout"])
+			except:
+				return make_response("{!r} is not a valid value for timeout (must be int or float)".format(data["timeout"]))
 
 		if "status" in data:
 			request_status = data["status"]
@@ -339,23 +344,26 @@ def utilTestPath():
 
 			check_status = []
 			for rs in request_status:
-				if rs in status_ranges:
-					check_status.append(status_ranges[rs])
+				if isinstance(rs, int):
+					check_status.append([rs])
 				else:
-					code = requests.codes[rs]
-					if code is not None:
-						check_status.append([code])
+					if rs in status_ranges:
+						check_status.append(status_ranges[rs])
+					else:
+						code = requests.codes[rs]
+						if code is not None:
+							check_status.append([code])
 
 		try:
-			response = requests.request(method=method, url=url)
-			status = reduce(lambda x, y: x and response.status_code in y, check_status)
+			response = requests.request(method=method, url=url, timeout=timeout)
+			status = response.status_code
 		except:
-			status = False
+			status = 0
 
 		result = dict(
 			url=url,
-			status=response.status_code,
-			result=status.as_dict() if isinstance(status, StatusCodeRange) else status
+			status=status,
+			result=any(map(lambda x: status in x, check_status))
 		)
 
 		if "response" in data and (data["response"] in valid_boolean_trues or data["response"] in ("json", "bytes")):

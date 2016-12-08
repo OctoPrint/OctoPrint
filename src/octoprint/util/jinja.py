@@ -1,11 +1,16 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import logging
 import os
+
+try:
+	from os import scandir, walk
+except ImportError:
+	from scandir import scandir, walk
 
 from jinja2 import nodes
 from jinja2.ext import Extension
@@ -87,60 +92,10 @@ class SelectedFilesLoader(BaseLoader):
 		return self.files.keys()
 
 
-class ExceptionHandlerExtension(Extension):
-	tags = {"try"}
-
-	def __init__(self, environment):
-		super(ExceptionHandlerExtension, self).__init__(environment)
-		self._logger = logging.getLogger(__name__)
-
-	def parse(self, parser):
-		token = parser.stream.next()
-		lineno = token.lineno
-		filename = parser.name
-		error = parser.parse_expression()
-
-		args = [error, nodes.Const(filename), nodes.Const(lineno)]
-		try:
-			body = parser.parse_statements(["name:endtry"], drop_needle=True)
-			node = nodes.CallBlock(self.call_method("_handle_body", args),
-			                       [], [], body).set_lineno(lineno)
-		except Exception as e:
-			# that was expected
-			self._logger.exception("Caught exception while parsing template")
-			node = nodes.CallBlock(self.call_method("_handle_error", [nodes.Const(self._format_error(error, e, filename, lineno))]),
-			                       [], [], []).set_lineno(lineno)
-
-		return node
-
-	def _handle_body(self, error, filename, lineno, caller):
-		try:
-			return caller()
-		except Exception as e:
-			self._logger.exception("Caught exception while compiling template {filename} at line {lineno}".format(**locals()))
-			error_string = self._format_error(error, e, filename, lineno)
-			return error_string if error_string else ""
-
-	def _handle_error(self, error, caller):
-		return error if error else ""
-
-	def _format_error(self, error, exception, filename, lineno):
-		if not error:
-			return ""
-
-		try:
-			return error.format(exception=exception, filename=filename, lineno=lineno)
-		except:
-			self._logger.exception("Error while compiling exception output for template {filename} at line {lineno}".format(**locals()))
-			return "Unknown error"
-
-trycatch = ExceptionHandlerExtension
-
-
 def get_all_template_paths(loader):
 	def walk_folder(folder):
 		files = []
-		walk_dir = os.walk(folder, followlinks=True)
+		walk_dir = walk(folder, followlinks=True)
 		for dirpath, dirnames, filenames in walk_dir:
 			for filename in filenames:
 				path = os.path.join(dirpath, filename)
@@ -196,3 +151,68 @@ def get_all_asset_paths(env):
 				# intentionally ignored
 				pass
 	return result
+
+
+class ExceptionHandlerExtension(Extension):
+	tags = {"try"}
+
+	def __init__(self, environment):
+		super(ExceptionHandlerExtension, self).__init__(environment)
+		self._logger = logging.getLogger(__name__)
+
+	def parse(self, parser):
+		token = next(parser.stream)
+		lineno = token.lineno
+		filename = parser.name
+		error = parser.parse_expression()
+
+		args = [error, nodes.Const(filename), nodes.Const(lineno)]
+		try:
+			body = parser.parse_statements(["name:endtry"], drop_needle=True)
+			node = nodes.CallBlock(self.call_method("_handle_body", args),
+			                       [], [], body).set_lineno(lineno)
+		except Exception as e:
+			# that was expected
+			self._logger.exception("Caught exception while parsing template")
+			node = nodes.CallBlock(self.call_method("_handle_error", [nodes.Const(self._format_error(error, e, filename, lineno))]),
+			                       [], [], []).set_lineno(lineno)
+
+		return node
+
+	def _handle_body(self, error, filename, lineno, caller):
+		try:
+			return caller()
+		except Exception as e:
+			self._logger.exception("Caught exception while compiling template {filename} at line {lineno}".format(**locals()))
+			error_string = self._format_error(error, e, filename, lineno)
+			return error_string if error_string else ""
+
+	def _handle_error(self, error, caller):
+		return error if error else ""
+
+	def _format_error(self, error, exception, filename, lineno):
+		if not error:
+			return ""
+
+		try:
+			return error.format(exception=exception, filename=filename, lineno=lineno)
+		except:
+			self._logger.exception("Error while compiling exception output for template {filename} at line {lineno}".format(**locals()))
+			return "Unknown error"
+
+trycatch = ExceptionHandlerExtension
+
+
+class MarkdownFilter(object):
+
+	def __init__(self, app, **markdown_options):
+		self._markdown_options = markdown_options
+		app.jinja_env.filters.setdefault("markdown", self)
+
+	def __call__(self, stream):
+		from jinja2 import Markup
+		from markdown import Markdown
+
+		# Markdown is not thread safe
+		markdown = Markdown(**self._markdown_options)
+		return Markup(markdown.convert(stream))

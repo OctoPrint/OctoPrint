@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
@@ -29,7 +29,7 @@ def performSystemAction():
 		data = request.json
 
 	if not "action" in data:
-		return make_response("action for perform is not defined", 400)
+		return make_response("action to perform is not defined", 400)
 
 	return executeSystemCommand("custom", data["action"])
 
@@ -51,7 +51,7 @@ def retrieveSystemCommandsForSource(source):
 	elif source == "custom":
 		specs = _get_custom_command_specs()
 	else:
-		return make_response("Unknown system command source: {}".format(source), 400)
+		return make_response("Unknown system command source: {}".format(source), 404)
 
 	return jsonify(_to_client_specs(specs))
 
@@ -93,7 +93,7 @@ def executeSystemCommand(source, command):
 				error = "Command failed with return code {}:\nSTDOUT: {}\nSTDERR: {}".format(returncode, stdout_text, stderr_text)
 				logger.warn(error)
 				return make_response(error, 500)
-	except Exception, e:
+	except Exception as e:
 		if not ignore:
 			error = "Command failed: {}".format(str(e))
 			logger.warn(error)
@@ -129,19 +129,19 @@ def _get_core_command_specs():
 	commands = collections.OrderedDict(
 		shutdown=dict(
 			command=s().get(["server", "commands", "systemShutdownCommand"]),
-			name=gettext("Shutdown"),
+			name=gettext("Shutdown system"),
 			confirm=gettext("You are about to shutdown the system.")),
 		reboot=dict(
 			command=s().get(["server", "commands", "systemRestartCommand"]),
-			name=gettext("Reboot"),
+			name=gettext("Reboot system"),
 			confirm=gettext("You are about to reboot the system.")),
 		restart=dict(
 			command=s().get(["server", "commands", "serverRestartCommand"]),
-			name="Restart OctoPrint",
-			confirm="You are about to restart the OctoPrint server.")
+			name=gettext("Restart OctoPrint"),
+			confirm=gettext("You are about to restart the OctoPrint server."))
 	)
 
-	available_commands = dict()
+	available_commands = collections.OrderedDict()
 	for action, spec in commands.items():
 		if not spec["command"]:
 			continue

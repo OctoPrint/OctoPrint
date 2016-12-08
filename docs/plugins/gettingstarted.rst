@@ -1,6 +1,6 @@
 .. _sec-plugins-gettingstarted:
 
-Getting Started
+Plugin Tutorial
 ===============
 
 .. contents::
@@ -108,7 +108,7 @@ used :func:`~octoprint.plugin.StartupPlugin.on_startup` instead, in which case o
 up and ready to serve requests.
 
 You'll also note that we are using ``self._logger`` for logging. Where did that one come from? OctoPrint's plugin system
-injects :ref:`a couple of useful objects <sec-plugins-concepts-injectedproperties>` into our plugin implementation classes,
+injects :ref:`a couple of useful objects <sec-plugins-mixins-injectedproperties>` into our plugin implementation classes,
 one of those being a fully instantiated `python logger <https://docs.python.org/2/library/logging.html>`_ ready to be
 used by your plugin. As you can see in the log output above, that logger uses the namespace ``octoprint.plugins.helloworld``
 for our little plugin here, or more generally ``octoprint.plugins.<plugin identifier>``.
@@ -326,7 +326,7 @@ Restart OctoPrint again::
    [...]
 
 Much better! You can override pretty much all of the metadata defined within ``setup.py`` from within your Plugin itself --
-take a look at :ref:`the available control properties <sec-plugin-concepts-controlproperties>` for all available
+take a look at :ref:`the available control properties <sec-plugins-controlproperties>` for all available
 overrides.
 
 Following the README of the `Plugin Skeleton <https://github.com/OctoPrint/OctoPrint-PluginSkeleton>`_ you could now

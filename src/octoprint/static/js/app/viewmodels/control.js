@@ -23,6 +23,9 @@ $(function() {
         self.extrusionAmount = ko.observable(undefined);
         self.controls = ko.observableArray([]);
 
+        self.distances = ko.observableArray([0.1, 1, 10, 100]);
+        self.distance = ko.observable(10);
+
         self.tools = ko.observableArray([]);
 
         self.feedRate = ko.observable(100);
@@ -88,6 +91,8 @@ $(function() {
         };
 
         self.onEventSettingsUpdated = function (payload) {
+            // the webcam url might have changed, make sure we replace it now if the tab is focused
+            self._enableWebcam();
             self.requestData();
         };
 
@@ -245,7 +250,7 @@ $(function() {
 
         self.sendJogCommand = function (axis, multiplier, distance) {
             if (typeof distance === "undefined")
-                distance = $('#jog_distance button.active').data('distance');
+                distance = self.distance();
             if (self.settings.printerProfiles.currentProfileData() && self.settings.printerProfiles.currentProfileData()["axes"] && self.settings.printerProfiles.currentProfileData()["axes"][axis] && self.settings.printerProfiles.currentProfileData()["axes"][axis]["inverted"]()) {
                 multiplier *= -1;
             }
@@ -375,9 +380,9 @@ $(function() {
             }
             var webcamImage = $("#webcam_image");
             var currentSrc = webcamImage.attr("src");
-            if (currentSrc === undefined || currentSrc.trim() == "") {
-                var newSrc = CONFIG_WEBCAM_STREAM;
-                if (CONFIG_WEBCAM_STREAM.lastIndexOf("?") > -1) {
+            var newSrc = self.settings.webcam_streamUrl();
+            if (currentSrc != newSrc) {
+                if (newSrc.lastIndexOf("?") > -1) {
                     newSrc += "&";
                 } else {
                     newSrc += "?";
@@ -519,6 +524,10 @@ $(function() {
                 }
                 button.click();
             }
+        };
+
+        self.stripDistanceDecimal = function(distance) {
+            return distance.toString().replace(".", "");
         };
 
     }

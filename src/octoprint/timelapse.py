@@ -1,5 +1,5 @@
 # coding=utf-8
-
+from __future__ import absolute_import, division, print_function
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 
@@ -11,7 +11,10 @@ import fnmatch
 import datetime
 import sys
 import shutil
-import Queue
+try:
+	import queue
+except ImportError:
+	import Queue as queue
 import requests
 
 import octoprint.util as util
@@ -23,6 +26,12 @@ import sarge
 import collections
 
 import re
+
+try:
+	from os import scandir, walk
+except ImportError:
+	from scandir import scandir, walk
+
 
 # currently configured timelapse
 current = None
@@ -44,6 +53,12 @@ _valid_timelapse_types = ["off", "timed", "zchange"]
 # callbacks for timelapse config updates
 _update_callbacks = []
 
+# lock for timelapse cleanup, must be re-entrant
+_cleanup_lock = threading.RLock()
+
+# lock for timelapse job
+_job_lock = threading.RLock()
+
 
 def _extract_prefix(filename):
 	"""
@@ -58,58 +73,82 @@ def _extract_prefix(filename):
 	return filename[:pos]
 
 
+def last_modified_finished():
+	return os.stat(settings().getBaseFolder("timelapse")).st_mtime
+
+
+def last_modified_unrendered():
+	return os.stat(settings().getBaseFolder("timelapse_tmp")).st_mtime
+
+
 def get_finished_timelapses():
 	files = []
 	basedir = settings().getBaseFolder("timelapse")
-	for osFile in os.listdir(basedir):
-		if not fnmatch.fnmatch(osFile, "*.mpg"):
+	for entry in scandir(basedir):
+		if not fnmatch.fnmatch(entry.name, "*.mp[g4]"):
 			continue
-		statResult = os.stat(os.path.join(basedir, osFile))
 		files.append({
-			"name": osFile,
-			"size": util.get_formatted_size(statResult.st_size),
-			"bytes": statResult.st_size,
-			"date": util.get_formatted_datetime(datetime.datetime.fromtimestamp(statResult.st_ctime))
+			"name": entry.name,
+			"size": util.get_formatted_size(entry.stat().st_size),
+			"bytes": entry.stat().st_size,
+			"date": util.get_formatted_datetime(datetime.datetime.fromtimestamp(entry.stat().st_ctime))
 		})
 	return files
 
 
 def get_unrendered_timelapses():
+	global _job_lock
+	global current
+
 	delete_old_unrendered_timelapses()
 
 	basedir = settings().getBaseFolder("timelapse_tmp")
 	jobs = collections.defaultdict(lambda: dict(count=0, size=None, bytes=0, date=None, timestamp=None))
-	for osFile in os.listdir(basedir):
-		if not fnmatch.fnmatch(osFile, "*.jpg"):
+
+	for entry in scandir(basedir):
+		if not fnmatch.fnmatch(entry.name, "*.jpg"):
 			continue
 
-		prefix = _extract_prefix(osFile)
+		prefix = _extract_prefix(entry.name)
 		if prefix is None:
 			continue
 
-		statResult = os.stat(os.path.join(basedir, osFile))
 		jobs[prefix]["count"] += 1
-		jobs[prefix]["bytes"] += statResult.st_size
-		if jobs[prefix]["timestamp"] is None or statResult.st_ctime < jobs[prefix]["timestamp"]:
-			jobs[prefix]["timestamp"] = statResult.st_ctime
+		jobs[prefix]["bytes"] += entry.stat().st_size
+		if jobs[prefix]["timestamp"] is None or entry.stat().st_ctime < jobs[prefix]["timestamp"]:
+			jobs[prefix]["timestamp"] = entry.stat().st_ctime
 
-	def finalize_fields(job):
-		job["size"] = util.get_formatted_size(job["bytes"])
-		job["date"] = util.get_formatted_datetime(datetime.datetime.fromtimestamp(job["timestamp"]))
-		del job["timestamp"]
-		return job
+	with _job_lock:
+		global current_render_job
 
-	return sorted([util.dict_merge(dict(name=key), finalize_fields(value)) for key, value in jobs.items()], key=lambda x: x["name"])
+		def finalize_fields(prefix, job):
+			currently_recording = current is not None and current.prefix == prefix
+			currently_rendering = current_render_job is not None and current_render_job["prefix"] == prefix
+
+			job["size"] = util.get_formatted_size(job["bytes"])
+			job["date"] = util.get_formatted_datetime(datetime.datetime.fromtimestamp(job["timestamp"]))
+			job["recording"] = currently_recording
+			job["rendering"] = currently_rendering
+			job["processing"] = currently_recording or currently_rendering
+			del job["timestamp"]
+
+			return job
+
+		return sorted([util.dict_merge(dict(name=key), finalize_fields(key, value)) for key, value in jobs.items()], key=lambda x: x["name"])
 
 
 def delete_unrendered_timelapse(name):
+	global _cleanup_lock
+
 	basedir = settings().getBaseFolder("timelapse_tmp")
-	for filename in os.listdir(basedir):
-		try:
-			if fnmatch.fnmatch(filename, "{}*.jpg".format(name)):
-				os.remove(os.path.join(basedir, filename))
-		except:
-			logging.getLogger(__name__).exception("Error while processing file {} during cleanup".format(filename))
+	with _cleanup_lock:
+		for entry in scandir(basedir):
+			try:
+				if fnmatch.fnmatch(entry.name, "{}*.jpg".format(name)):
+					os.remove(entry.path)
+			except:
+				if logging.getLogger(__name__).isEnabledFor(logging.DEBUG):
+					logging.getLogger(__name__).exception("Error while processing file {} during cleanup".format(entry.name))
 
 
 def render_unrendered_timelapse(name, gcode=None, postfix=None, fps=25):
@@ -131,63 +170,76 @@ def render_unrendered_timelapse(name, gcode=None, postfix=None, fps=25):
 
 
 def delete_old_unrendered_timelapses():
+	global _cleanup_lock
+
 	basedir = settings().getBaseFolder("timelapse_tmp")
 	clean_after_days = settings().getInt(["webcam", "cleanTmpAfterDays"])
 	cutoff = time.time() - clean_after_days * 24 * 60 * 60
 
 	prefixes_to_clean = []
-	for filename in os.listdir(basedir):
-		try:
-			path = os.path.join(basedir, filename)
 
-			prefix = _extract_prefix(filename)
-			if prefix is None:
-				# might be an old tmp_00000.jpg kinda frame. we can't
-				# render those easily anymore, so delete that stuff
-				if _old_capture_format_re.match(filename):
-					os.remove(path)
-				continue
+	with _cleanup_lock:
+		for entry in scandir(basedir):
+			try:
+				prefix = _extract_prefix(entry.name)
+				if prefix is None:
+					# might be an old tmp_00000.jpg kinda frame. we can't
+					# render those easily anymore, so delete that stuff
+					if _old_capture_format_re.match(entry.name):
+						os.remove(entry.path)
+					continue
 
-			if prefix in prefixes_to_clean:
-				continue
+				if prefix in prefixes_to_clean:
+					continue
 
-			if os.path.getmtime(path) < cutoff:
-				prefixes_to_clean.append(prefix)
-		except:
-			logging.getLogger(__name__).exception("Error while processing file {} during cleanup".format(filename))
+				if entry.stat().st_mtime < cutoff:
+					prefixes_to_clean.append(prefix)
+			except:
+				if logging.getLogger(__name__).isEnabledFor(logging.DEBUG):
+					logging.getLogger(__name__).exception("Error while processing file {} during cleanup".format(entry.name))
 
-	for prefix in prefixes_to_clean:
-		delete_unrendered_timelapse(prefix)
+		for prefix in prefixes_to_clean:
+			delete_unrendered_timelapse(prefix)
+			logging.getLogger(__name__).info("Deleted old unrendered timelapse {}".format(prefix))
 
 
 def _create_render_start_handler(name, gcode=None):
 	def f(movie):
-		global current_render_job
-		event_payload = {"gcode": gcode if gcode is not None else "unknown",
-		                 "movie": movie,
-		                 "movie_basename": os.path.basename(movie)}
-		current_render_job = event_payload
-		eventManager().fire(Events.MOVIE_RENDERING, event_payload)
+		global _job_lock
+
+		with _job_lock:
+			global current_render_job
+			payload = dict(gcode=gcode if gcode is not None else "unknown",
+			               movie=movie,
+			               movie_basename=os.path.basename(movie),
+			               movie_prefix=name)
+			current_render_job = dict(prefix=name)
+			current_render_job.update(payload)
+		eventManager().fire(Events.MOVIE_RENDERING, payload)
 	return f
 
 
 def _create_render_success_handler(name, gcode=None):
 	def f(movie):
-		event_payload = {"gcode": gcode if gcode is not None else "unknown",
-		                 "movie": movie,
-		                 "movie_basename": os.path.basename(movie)}
-		eventManager().fire(Events.MOVIE_DONE, event_payload)
 		delete_unrendered_timelapse(name)
+		payload = dict(gcode=gcode if gcode is not None else "unknown",
+		               movie=movie,
+		               movie_basename=os.path.basename(movie),
+		               movie_prefix=name)
+		eventManager().fire(Events.MOVIE_DONE, payload)
 	return f
 
 
 def _create_render_fail_handler(name, gcode=None):
-	def f(movie, returncode=255, stdout="Unknown error", stderr="Unknown error"):
-		event_payload = {"gcode": gcode if gcode is not None else "unknown",
-		                 "movie": movie,
-		                 "movie_basename": os.path.basename(movie)}
-		payload = dict(event_payload)
-		payload.update(dict(returncode=returncode, error=stderr))
+	def f(movie, returncode=255, stdout="Unknown error", stderr="Unknown error", reason="unknown"):
+		payload = dict(gcode=gcode if gcode is not None else "unknown",
+		               movie=movie,
+		               movie_basename=os.path.basename(movie),
+		               movie_prefix=name,
+		               returncode=returncode,
+		               out=stdout,
+		               error=stderr,
+		               reason=reason)
 		eventManager().fire(Events.MOVIE_FAILED, payload)
 	return f
 
@@ -195,7 +247,9 @@ def _create_render_fail_handler(name, gcode=None):
 def _create_render_always_handler(name, gcode=None):
 	def f(movie):
 		global current_render_job
-		current_render_job = None
+		global _job_lock
+		with _job_lock:
+			current_render_job = None
 	return f
 
 
@@ -241,12 +295,18 @@ def configure_timelapse(config=None, persist=False):
 	if type is None or "off" == type:
 		current = None
 	elif "zchange" == type:
-		current = ZTimelapse(post_roll=postRoll, fps=fps)
+		retractionZHop = 0
+		if "options" in config and "retractionZHop" in config["options"] and config["options"]["retractionZHop"] > 0:
+			retractionZHop = config["options"]["retractionZHop"]
+		current = ZTimelapse(post_roll=postRoll, retraction_zhop=retractionZHop, fps=fps)
 	elif "timed" == type:
 		interval = 10
 		if "options" in config and "interval" in config["options"] and config["options"]["interval"] > 0:
 			interval = config["options"]["interval"]
-		current = TimedTimelapse(post_roll=postRoll, interval=interval, fps=fps)
+		capture_post_roll = True
+		if "options" in config and "capturePostRoll" in config["options"] and isinstance(config["options"]["capturePostRoll"], bool):
+			capture_post_roll = config["options"]["capturePostRoll"]
+		current = TimedTimelapse(post_roll=postRoll, interval=interval, fps=fps, capture_post_roll=capture_post_roll)
 
 	notify_callbacks(current)
 
@@ -264,8 +324,13 @@ class Timelapse(object):
 		self._image_number = None
 		self._in_timelapse = False
 		self._gcode_file = None
+		self._file_prefix = None
+
+		self._capture_errors = 0
+		self._capture_success = 0
 
 		self._post_roll = post_roll
+		self._post_roll_start = None
 		self._on_post_roll_done = None
 
 		self._capture_dir = settings().getBaseFolder("timelapse_tmp")
@@ -275,7 +340,7 @@ class Timelapse(object):
 		self._fps = fps
 
 		self._capture_mutex = threading.Lock()
-		self._capture_queue = Queue.Queue()
+		self._capture_queue = queue.Queue()
 		self._capture_queue_active = True
 
 		self._capture_queue_thread = threading.Thread(target=self._capture_queue_worker)
@@ -289,6 +354,10 @@ class Timelapse(object):
 		eventManager().subscribe(Events.PRINT_RESUMED, self.on_print_resumed)
 		for (event, callback) in self.event_subscriptions():
 			eventManager().subscribe(event, callback)
+
+	@property
+	def prefix(self):
+		return self._file_prefix
 
 	@property
 	def post_roll(self):
@@ -355,6 +424,8 @@ class Timelapse(object):
 		self._logger.debug("Starting timelapse for %s" % gcodeFile)
 
 		self._image_number = 0
+		self._capture_errors = 0
+		self._capture_success = 0
 		self._in_timelapse = True
 		self._gcode_file = os.path.basename(gcodeFile)
 		self._file_prefix = "{}_{}".format(os.path.splitext(self._gcode_file)[0], time.strftime("%Y%m%d%H%M%S"))
@@ -385,23 +456,45 @@ class Timelapse(object):
 				wait_for_captures(callback)
 			return f
 
-		if self._post_roll > 0:
-			eventManager().fire(Events.POSTROLL_START,
-			                    dict(postroll_duration=self.calculate_post_roll(),
-			                         postroll_length=self.post_roll,
-			                         postroll_fps=self.fps))
-			self._post_roll_start = time.time()
-			if do_create_movie:
-				self._on_post_roll_done = create_wait_for_captures(reset_and_create)
+		# wait for everything so far in the queue to be processed, then see if we should process from there
+		def continue_rendering():
+			if self._capture_success == 0:
+				# no images - either nothing was attempted to be captured or all attempts ran into an error
+				if self._capture_errors > 0:
+					# this is the latter case
+					_create_render_fail_handler(self._file_prefix,
+					                            gcode=self._gcode_file)("n/a",
+					                                                    returncode=0,
+					                                                    stdout="",
+					                                                    stderr="",
+					                                                    reason="no_frames")
+
+				# in any case, don't continue
+				return
+
+			# check if we have post roll configured
+			if self._post_roll > 0:
+				# capture post roll, wait for THAT to finish, THEN render
+				eventManager().fire(Events.POSTROLL_START,
+				                    dict(postroll_duration=self.calculate_post_roll(),
+				                         postroll_length=self.post_roll,
+				                         postroll_fps=self.fps))
+				self._post_roll_start = time.time()
+				if do_create_movie:
+					self._on_post_roll_done = create_wait_for_captures(reset_and_create)
+				else:
+					self._on_post_roll_done = reset_image_number
+				self.process_post_roll()
 			else:
-				self._on_post_roll_done = reset_image_number
-			self.process_post_roll()
-		else:
-			self._post_roll_start = None
-			if do_create_movie:
-				wait_for_captures(reset_and_create)
-			else:
-				reset_image_number()
+				# no post roll? perfect, render
+				self._post_roll_start = None
+				if do_create_movie:
+					wait_for_captures(reset_and_create)
+				else:
+					reset_image_number()
+
+		self._logger.debug("Waiting to process capture queue")
+		wait_for_captures(continue_rendering)
 
 	def calculate_post_roll(self):
 		return None
@@ -459,21 +552,41 @@ class Timelapse(object):
 		try:
 			self._logger.debug("Going to capture {} from {}".format(filename, self._snapshot_url))
 			r = requests.get(self._snapshot_url, stream=True)
+			r.raise_for_status()
+
 			with open (filename, "wb") as f:
 				for chunk in r.iter_content(chunk_size=1024):
 					if chunk:
 						f.write(chunk)
 						f.flush()
+
 			self._logger.debug("Image {} captured from {}".format(filename, self._snapshot_url))
-		except:
+		except Exception as e:
 			self._logger.exception("Could not capture image {} from {}".format(filename, self._snapshot_url))
 			if callable(onerror):
 				onerror()
-			eventManager().fire(Events.CAPTURE_FAILED, dict(file=filename))
+			eventManager().fire(Events.CAPTURE_FAILED, dict(file=filename,
+			                                                error=str(e),
+			                                                url=self._snapshot_url))
+			self._capture_errors += 1
 			return False
 		else:
 			eventManager().fire(Events.CAPTURE_DONE, dict(file=filename))
+			self._capture_success += 1
 			return True
+
+	def _copying_postroll(self):
+		with self._capture_mutex:
+			filename = os.path.join(self._capture_dir,
+			                        _capture_format.format(prefix=self._file_prefix) % self._image_number)
+			self._image_number += 1
+
+		if self._perform_capture(filename):
+			for _ in range(self._post_roll * self._fps):
+				newFile = os.path.join(self._capture_dir,
+				                       _capture_format.format(prefix=self._file_prefix) % self._image_number)
+				self._image_number += 1
+				shutil.copyfile(filename, newFile)
 
 	def clean_capture_dir(self):
 		if not os.path.isdir(self._capture_dir):
@@ -484,9 +597,14 @@ class Timelapse(object):
 
 
 class ZTimelapse(Timelapse):
-	def __init__(self, post_roll=0, fps=25):
+	def __init__(self, post_roll=0, retraction_zhop=0, fps=25):
 		Timelapse.__init__(self, post_roll=post_roll, fps=fps)
+		self._retraction_zhop = retraction_zhop
 		self._logger.debug("ZTimelapse initialized")
+
+	@property
+	def retraction_zhop(self):
+		return self._retraction_zhop
 
 	def event_subscriptions(self):
 		return [
@@ -495,32 +613,36 @@ class ZTimelapse(Timelapse):
 
 	def config_data(self):
 		return {
-			"type": "zchange"
+			"type": "zchange",
+			"options": {
+				"retractionZHop": self._retraction_zhop
+			}
 		}
 
 	def process_post_roll(self):
-		with self._capture_mutex:
-			filename = os.path.join(self._capture_dir, "tmp_%05d.jpg" % self._image_number)
-			self._image_number += 1
-
-		if self._perform_capture(filename):
-			for _ in range(self._post_roll * self._fps):
-				newFile = os.path.join(self._capture_dir, "tmp_%05d.jpg" % self._image_number)
-				self._image_number += 1
-				shutil.copyfile(filename, newFile)
-
+		# we always copy the final image for the whole post roll
+		# for z based timelapses
+		self._copying_postroll()
 		Timelapse.process_post_roll(self)
 
 	def _on_z_change(self, event, payload):
+		if self._retraction_zhop != 0 and payload["old"] is not None and payload["new"] is not None:
+			# check if height difference equals z-hop or is negative, if so don't take a picture
+			diff = round(payload["new"] - payload["old"], 3)
+			zhop = round(self._retraction_zhop, 3)
+			if diff == zhop or diff <= 0:
+				return
+
 		self.capture_image()
 
 
 class TimedTimelapse(Timelapse):
-	def __init__(self, post_roll=0, interval=1, fps=25):
+	def __init__(self, post_roll=0, interval=1, fps=25, capture_post_roll=True):
 		Timelapse.__init__(self, post_roll=post_roll, fps=fps)
 		self._interval = interval
 		if self._interval < 1:
 			self._interval = 1 # force minimum interval of 1s
+		self._capture_post_roll = capture_post_roll
 		self._postroll_captures = 0
 		self._timer = None
 		self._logger.debug("TimedTimelapse initialized")
@@ -529,11 +651,16 @@ class TimedTimelapse(Timelapse):
 	def interval(self):
 		return self._interval
 
+	@property
+	def capture_post_roll(self):
+		return self._capture_post_roll
+
 	def config_data(self):
 		return {
 			"type": "timed",
 			"options": {
-				"interval": self._interval
+				"interval": self._interval,
+				"capture_post_roll": self._capture_post_roll
 			}
 		}
 
@@ -550,14 +677,26 @@ class TimedTimelapse(Timelapse):
 		self._timer.start()
 
 	def on_print_done(self, event, payload):
-		self._postroll_captures = self.post_roll * self.fps
+		if self._capture_post_roll:
+			self._postroll_captures = self._post_roll * self._fps
+		else:
+			self._postroll_captures = 0
 		Timelapse.on_print_done(self, event, payload)
 
 	def calculate_post_roll(self):
-		return self.post_roll * self.fps * self.interval
+		if self._capture_post_roll:
+			return self._post_roll * self._fps * self._interval
+		else:
+			return Timelapse.calculate_post_roll(self)
 
 	def process_post_roll(self):
-		pass
+		if self._capture_post_roll:
+			return
+
+		# we only use the final image as post roll if we
+		# are not supposed to capture it
+		self._copying_postroll()
+		self.post_roll_finished()
 
 	def post_roll_finished(self):
 		Timelapse.post_roll_finished(self)
@@ -572,20 +711,22 @@ class TimedTimelapse(Timelapse):
 			self._postroll_captures -= 1
 
 	def _on_timer_finished(self):
-		self.post_roll_finished()
+		if self._capture_post_roll:
+			self.post_roll_finished()
 
 
 class TimelapseRenderJob(object):
 
 	render_job_lock = threading.RLock()
 
-	def __init__(self, capture_dir, output_dir, prefix, postfix=None, capture_format="{prefix}-%d.jpg",
-	             output_format="{prefix}{postfix}.mpg", fps=25, threads=1, on_start=None, on_success=None,
-	             on_fail=None, on_always=None):
+	def __init__(self, capture_dir, output_dir, prefix, postfix=None, capture_glob="{prefix}-*.jpg",
+	             capture_format="{prefix}-%d.jpg", output_format="{prefix}{postfix}.mpg", fps=25, threads=1,
+	             on_start=None, on_success=None, on_fail=None, on_always=None):
 		self._capture_dir = capture_dir
 		self._output_dir = output_dir
 		self._prefix = prefix
 		self._postfix = postfix
+		self._capture_glob = capture_glob
 		self._capture_format = capture_format
 		self._output_format = output_format
 		self._fps = fps
@@ -620,8 +761,16 @@ class TimelapseRenderJob(object):
 		                     self._capture_format.format(prefix=self._prefix,
 		                                                 postfix=self._postfix if self._postfix is not None else ""))
 		output = os.path.join(self._output_dir,
-		                     self._output_format.format(prefix=self._prefix,
-		                                                postfix=self._postfix if self._postfix is not None else ""))
+		                      self._output_format.format(prefix=self._prefix,
+		                                                 postfix=self._postfix if self._postfix is not None else ""))
+
+		for i in range(4):
+			if os.path.exists(input % i):
+				break
+		else:
+			self._logger.warn("Cannot create a movie, no frames captured")
+			self._notify_callback("fail", output, returncode=0, stdout="", stderr="", reason="no_frames")
+			return
 
 		hflip = settings().getBoolean(["webcam", "flipH"])
 		vflip = settings().getBoolean(["webcam", "flipV"])
@@ -651,10 +800,10 @@ class TimelapseRenderJob(object):
 					stdout_text = p.stdout.text
 					stderr_text = p.stderr.text
 					self._logger.warn("Could not render movie, got return code %r: %s" % (returncode, stderr_text))
-					self._notify_callback("fail", output, returncode=returncode, stdout=stdout_text, stderr=stderr_text)
+					self._notify_callback("fail", output, returncode=returncode, stdout=stdout_text, stderr=stderr_text, reason="returncode")
 			except:
 				self._logger.exception("Could not render movie due to unknown error")
-				self._notify_callback("fail", output)
+				self._notify_callback("fail", output, reason="unknown")
 			finally:
 				self._notify_callback("always", output)
 
@@ -691,7 +840,7 @@ class TimelapseRenderJob(object):
 
 		command = [
 			ffmpeg, '-framerate', str(fps), '-loglevel', 'error', '-i', '"{}"'.format(input), '-vcodec', 'mpeg2video',
-			'-threads', str(threads), '-pix_fmt', 'yuv420p', '-r', str(fps), '-y', '-b', str(bitrate),
+			'-threads', str(threads), '-pix_fmt', 'yuv420p', '-r', "25", '-y', '-b', str(bitrate),
 			'-f', 'vob']
 
 		filter_string = cls._create_filter_string(hflip=hflip,

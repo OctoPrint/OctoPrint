@@ -31,6 +31,10 @@ $(function() {
                 self.aboutContent.scrollTop(0);
             });
         };
+
+        self.showTab = function(tab) {
+            $("a[href=#" + tab + "]", self.aboutTabs).tab("show");
+        };
     }
 
     OCTOPRINT_VIEWMODELS.push([

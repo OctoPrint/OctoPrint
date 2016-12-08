@@ -74,7 +74,19 @@ Encoding
 
 OctoPrint uses UTF-8 as charset.
 
-.. _sec-api-cross-origin:
+That also includes headers in ``multipart/form-data`` requests, in order to allow the full UTF-8 range of characters
+for uploaded filenames. If a ``multipart/form-data`` sub header cannot be decoded as UTF-8, OctoPrint will also attempt
+to decode it as ISO-8859-1.
+
+Additionally, OctoPrint supports replacing the ``filename`` field in the ``Content-Disposition`` header of a
+multipart field with a ``filename*`` field following `RFC 5987, Section 3.2 <https://tools.ietf.org/html/rfc5987#section-3.2>`_,
+which allows defining the charset used for encoding the filename. If both ``filename`` and ``filename*`` fields are
+present, following the recommendation of the RFC ``filename*`` will be used.
+
+For an example on how to send a request utilizing RFC 5987 for the ``filename*`` attribute, see the second example
+in :ref:`Upload file <sec-api-fileops-uploadfile>`.
+
+.. _sec-api-general-crossorigin:
 
 Cross-origin requests
 =====================

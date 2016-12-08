@@ -28,7 +28,9 @@ $(function() {
                     action.actionSource = "core";
                     actions.push(action);
                 });
-                actions.push({action: "divider"});
+                if (response.custom && response.custom.length) {
+                    actions.push({action: "divider"});
+                }
             }
             _.each(response.custom, function(data) {
                 var action = _.extend({}, data);

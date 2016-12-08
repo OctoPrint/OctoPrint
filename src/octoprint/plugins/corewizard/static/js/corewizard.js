@@ -71,7 +71,7 @@ $(function() {
                 });
         };
 
-        self.onWizardTabChange = function(current, next) {
+        self.onBeforeWizardTabChange = function(next, current) {
             if (!current || !_.startsWith(current, "wizard_plugin_corewizard_acl_") || self.setup()) {
                 return true;
             }
@@ -102,6 +102,36 @@ $(function() {
         }
     }
 
+    function CoreWizardServerCommandsViewModel(parameters) {
+        var self = this;
+
+        self.settingsViewModel = parameters[0];
+    }
+
+    function CoreWizardPrinterProfileViewModel(parameters) {
+        var self = this;
+
+        self.printerProfiles = parameters[0];
+
+        self.editor = self.printerProfiles.createProfileEditor();
+        self.editorLoaded = ko.observable(false);
+
+        self.onStartup = function() {
+            OctoPrint.printerprofiles.get("_default")
+                .done(function(data) {
+                    self.editor.fromProfileData(data);
+                    self.editorLoaded(true);
+                });
+        };
+
+        self.onWizardFinish = function() {
+            OctoPrint.printerprofiles.update("_default", self.editor.toProfileData())
+                .done(function() {
+                    self.printerProfiles.requestData();
+                });
+        };
+    }
+
     OCTOPRINT_VIEWMODELS.push([
         CoreWizardAclViewModel,
         ["loginStateViewModel"],
@@ -110,5 +140,13 @@ $(function() {
         CoreWizardWebcamViewModel,
         ["settingsViewModel"],
         "#wizard_plugin_corewizard_webcam"
+    ], [
+        CoreWizardServerCommandsViewModel,
+        ["settingsViewModel"],
+        "#wizard_plugin_corewizard_servercommands"
+    ], [
+        CoreWizardPrinterProfileViewModel,
+        ["printerProfilesViewModel"],
+        "#wizard_plugin_corewizard_printerprofile"
     ]);
 });

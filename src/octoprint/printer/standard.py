@@ -3,7 +3,7 @@
 This module holds the standard implementation of the :class:`PrinterInterface` and it helpers.
 """
 
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -17,13 +17,14 @@ import time
 
 from octoprint import util as util
 from octoprint.events import eventManager, Events
-from octoprint.filemanager import FileDestinations
+from octoprint.filemanager import FileDestinations, NoSuchStorage
 from octoprint.plugin import plugin_manager, ProgressPlugin
 from octoprint.printer import PrinterInterface, PrinterCallback, UnknownScript
 from octoprint.printer.estimation import TimeEstimationHelper
 from octoprint.settings import settings
 from octoprint.util import comm as comm
 from octoprint.util import InvariantContainer
+from octoprint.util import to_unicode
 
 from octoprint.comm.protocol import ProtocolListener, FileAwareProtocolListener, ProtocolState
 
@@ -128,6 +129,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 			job_data={
 				"file": {
 					"name": None,
+					"path": None,
 					"size": None,
 					"origin": None,
 					"date": None
@@ -291,15 +293,16 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		#if not result:
 		#	raise UnknownScript(name)
 
-	def jog(self, axis, amount):
-		if not isinstance(axis, (str, unicode)):
-			raise ValueError("axis must be a string: {axis}".format(axis=axis))
+	def jog(self, axes, relative=True, speed=None, *args, **kwargs):
+		if isinstance(axes, basestring):
+			# legacy parameter format, there should be an amount as first anonymous positional arguments too
+			axis = axes
 
-		axis = axis.lower()
-		if not axis in PrinterInterface.valid_axes:
-			raise ValueError("axis must be any of {axes}: {axis}".format(axes=", ".join(PrinterInterface.valid_axes), axis=axis))
-		if not isinstance(amount, (int, long, float)):
-			raise ValueError("amount must be a valid number: {amount}".format(amount=amount))
+			if not len(args) >= 1:
+				raise ValueError("amount not set")
+			amount = args[0]
+			if not isinstance(amount, (int, long, float)):
+				raise ValueError("amount must be a valid number: {amount}".format(amount=amount))
 
 		printer_profile = self._printer_profile_manager.get_current_or_default()
 		movement_speed = printer_profile["axes"][axis]["speed"]
@@ -340,7 +343,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 
 	def set_temperature(self, heater, value):
 		if not PrinterInterface.valid_heater_regex.match(heater):
-			raise ValueError("heater must match \"tool[0-9]+\" or \"bed\": {heater}".format(type=heater))
+			raise ValueError("heater must match \"tool[0-9]+\" or \"bed\": {heater}".format(heater=heater))
 
 		if not isinstance(value, (int, long, float)) or value < 0:
 			raise ValueError("value must be a valid number >= 0: {value}".format(value=value))
@@ -423,6 +426,15 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 	# TODO add a since to the deprecation message as soon as the version this stuff will be included in is defined
 	unselect_file = util.deprecated("unselect_file has been deprecated, use unselect_job instead", includedoc="Replaced by :func:`unselect_job`")(unselect_job)
 
+	def get_file_position(self):
+		if self._comm is None:
+			return None
+
+		if self._selectedFile is None:
+			return None
+
+		return self._comm.getFilePosition()
+
 	def start_print(self, pos=None):
 		"""
 		 Starts the currently loaded print job.
@@ -437,9 +449,9 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 
 		self._protocol.process(self._job.job, position=pos)
 
-	def toggle_pause_print(self):
+	def pause_print(self):
 		"""
-		 Pause the current printjob.
+		Pause the current printjob.
 		"""
 		if self._protocol is None:
 			return
@@ -742,6 +754,24 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 				self._last_progress_report = progress_int
 				self._report_print_progress_to_plugins(progress_int)
 
+			else:
+				# too far from the actual progress or negative,
+				# we use the dumb print time instead
+				printTimeLeft = dumbTotalPrintTime - cleanedPrintTime
+				printTimeLeftOrigin = "linear"
+
+		else:
+			printTimeLeftOrigin = "linear"
+			if progress > self._timeEstimationForceDumbFromPercent or \
+					cleanedPrintTime >= self._timeEstimationForceDumbAfterMin * 60:
+				# more than x% or y min printed and still no real estimate, ok, we'll use the dumb variant :/
+				printTimeLeft = dumbTotalPrintTime - cleanedPrintTime
+
+		if printTimeLeft is not None and printTimeLeft < 0:
+			# shouldn't actually happen, but let's make sure
+			printTimeLeft = None
+
+		return printTimeLeft, printTimeLeftOrigin
 
 	def _add_temperature_data(self, temperatures):
 		entry = dict(time=int(time.time()))
@@ -832,10 +862,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 			                 logs=list(self._log),
 			                 messages=list(self._messages)))
 			callback.on_printer_send_initial_data(data)
-		except Exception, err:
-			import sys
-			sys.stderr.write("ERROR: %s\n" % str(err))
-			pass
+		except:
+			self._logger.exception("Error while trying to send inital state update")
 
 	def _get_state_flags(self):
 		return dict(operational=self.is_operational(),
@@ -938,15 +966,60 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		self.disconnect()
 
 	def on_comm_record_fileposition(self, origin, name, pos):
-		self._fileManager.save_recovery_data(origin, name, pos)
+		try:
+			self._fileManager.save_recovery_data(origin, name, pos)
+		except NoSuchStorage:
+			pass
+		except:
+			self._logger.exception("Error while trying to persist print recovery data")
+
+	def _payload_for_print_job_event(self, location=None, print_job_file=None, position=None):
+		if print_job_file is None:
+			selected_file = self._selectedFile
+			if not selected_file:
+				return dict()
+
+			print_job_file = selected_file.get("filename", None)
+			location = FileDestinations.SDCARD if selected_file.get("sd", False) else FileDestinations.LOCAL
+
+		if not print_job_file or not location:
+			return dict()
+
+		if location == FileDestinations.SDCARD:
+			full_path = print_job_file
+			if full_path.startswith("/"):
+				full_path = full_path[1:]
+			name = path = full_path
+			origin = FileDestinations.SDCARD
+
+		else:
+			full_path = self._fileManager.path_on_disk(FileDestinations.LOCAL, print_job_file)
+			path = self._fileManager.path_in_storage(FileDestinations.LOCAL, print_job_file)
+			_, name = self._fileManager.split_path(FileDestinations.LOCAL, path)
+			origin = FileDestinations.LOCAL
+
+		result= dict(name=name,
+		             path=path,
+		             origin=origin,
+
+		             # TODO deprecated, remove in 1.4.0
+		             file=full_path,
+		             filename=name)
+
+		if position is not None:
+			result["position"] = position
+
+		return result
+
 
 class StateMonitor(object):
-	def __init__(self, interval=0.5, on_update=None, on_add_temperature=None, on_add_log=None, on_add_message=None):
+	def __init__(self, interval=0.5, on_update=None, on_add_temperature=None, on_add_log=None, on_add_message=None, on_get_progress=None):
 		self._interval = interval
 		self._update_callback = on_update
 		self._on_add_temperature = on_add_temperature
 		self._on_add_log = on_add_log
 		self._on_add_message = on_add_message
+		self._on_get_progress = on_get_progress
 
 		self._state = None
 		self._job_data = None
@@ -955,15 +1028,23 @@ class StateMonitor(object):
 		self._current_z = None
 		self._progress = None
 
+		self._progress_dirty = False
+
 		self._offsets = {}
 
 		self._change_event = threading.Event()
 		self._state_lock = threading.Lock()
+		self._progress_lock = threading.Lock()
 
 		self._last_update = time.time()
 		self._worker = threading.Thread(target=self._work)
 		self._worker.daemon = True
 		self._worker.start()
+
+	def _get_current_progress(self):
+		if callable(self._on_get_progress):
+			return self._on_get_progress()
+		return self._progress
 
 	def reset(self, state=None, job_data=None, progress=None, current_z=None):
 		self.set_state(state)
@@ -996,9 +1077,16 @@ class StateMonitor(object):
 		self._job_data = job_data
 		self._change_event.set()
 
+	def trigger_progress_update(self):
+		with self._progress_lock:
+			self._progress_dirty = True
+			self._change_event.set()
+
 	def set_progress(self, progress):
-		self._progress = progress
-		self._change_event.set()
+		with self._progress_lock:
+			self._progress_dirty = False
+			self._progress = progress
+			self._change_event.set()
 
 	def set_temp_offsets(self, offsets):
 		self._offsets = offsets
@@ -1008,19 +1096,24 @@ class StateMonitor(object):
 		while True:
 			self._change_event.wait()
 
-			with self._state_lock:
-				now = time.time()
-				delta = now - self._last_update
-				additional_wait_time = self._interval - delta
-				if additional_wait_time > 0:
-					time.sleep(additional_wait_time)
+			now = time.time()
+			delta = now - self._last_update
+			additional_wait_time = self._interval - delta
+			if additional_wait_time > 0:
+				time.sleep(additional_wait_time)
 
+			with self._state_lock:
 				data = self.get_current_data()
 				self._update_callback(data)
 				self._last_update = time.time()
 				self._change_event.clear()
 
 	def get_current_data(self):
+		with self._progress_lock:
+			if self._progress_dirty:
+				self._progress = self._get_current_progress()
+				self._progress_dirty = False
+
 		return {
 			"state": self._state,
 			"job": self._job_data,

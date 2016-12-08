@@ -1,8 +1,11 @@
 # coding=utf-8
+from __future__ import absolute_import
+
 """
 This module bundles commonly used utility methods or helper classes that are used in multiple places withing
 OctoPrint's source code.
 """
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -19,6 +22,10 @@ from functools import wraps
 import warnings
 import contextlib
 import collections
+try:
+	import queue
+except ImportError:
+	import Queue as queue
 
 logger = logging.getLogger(__name__)
 
@@ -206,7 +213,7 @@ def get_free_bytes(path):
 	return psutil.disk_usage(path).free
 
 
-def get_dos_filename(origin, existing_filenames=None, extension=None, **kwargs):
+def get_dos_filename(input, existing_filenames=None, extension=None, whitelisted_extensions=None, **kwargs):
 	"""
 	Converts the provided input filename to a 8.3 DOS compatible filename. If ``existing_filenames`` is provided, the
 	conversion result will be guaranteed not to collide with any of the filenames provided thus.
@@ -219,6 +226,8 @@ def get_dos_filename(origin, existing_filenames=None, extension=None, **kwargs):
 	        Optional.
 	    extension (string): The .3 file extension to use for the generated filename. If not provided, the extension of
 	        the provided ``filename`` will simply be truncated to 3 characters.
+	    whitelisted_extensions (list): A list of extensions on ``input`` that will be left as-is instead of
+	        exchanging for ``extension``.
 	    kwargs (dict): Additional keyword arguments to provide to :func:`find_collision_free_name`.
 
 	Returns:
@@ -228,16 +237,43 @@ def get_dos_filename(origin, existing_filenames=None, extension=None, **kwargs):
 
 	Raises:
 	    ValueError: No 8.3 compatible name could be found that doesn't collide with the provided ``existing_filenames``.
+
+	Examples:
+
+	    >>> get_dos_filename("test1234.gco")
+	    u'test1234.gco'
+	    >>> get_dos_filename("test1234.gcode")
+	    u'test1234.gco'
+	    >>> get_dos_filename("test12345.gco")
+	    u'test12~1.gco'
+	    >>> get_dos_filename("test1234.fnord", extension="gco")
+	    u'test1234.gco'
+	    >>> get_dos_filename("auto0.g", extension="gco")
+	    u'auto0.gco'
+	    >>> get_dos_filename("auto0.g", extension="gco", whitelisted_extensions=["g"])
+	    u'auto0.g'
+	    >>> get_dos_filename(None)
+	    >>> get_dos_filename("foo")
+	    u'foo'
 	"""
 
-	if origin is None:
+	if input is None:
 		return None
 
 	if existing_filenames is None:
 		existing_filenames = []
 
-	filename, ext = os.path.splitext(origin)
-	if extension is None:
+	if extension is not None:
+		extension = extension.lower()
+
+	if whitelisted_extensions is None:
+		whitelisted_extensions = []
+
+	filename, ext = os.path.splitext(input)
+
+	ext = ext.lower()
+	ext = ext[1:] if ext.startswith(".") else ext
+	if ext in whitelisted_extensions or extension is None:
 		extension = ext
 
 	return find_collision_free_name(filename, extension, existing_filenames, **kwargs)
@@ -286,9 +322,36 @@ def find_collision_free_name(filename, extension, existing_filenames, max_power=
 
 	Raises:
 	    ValueError: No collision free name could be found.
-	"""
 
-	# TODO unit test!
+	Examples:
+
+	    >>> find_collision_free_name("test1234", "gco", [])
+	    u'test1234.gco'
+	    >>> find_collision_free_name("test1234", "gcode", [])
+	    u'test1234.gco'
+	    >>> find_collision_free_name("test12345", "gco", [])
+	    u'test12~1.gco'
+	    >>> find_collision_free_name("test 123", "gco", [])
+	    u'test_123.gco'
+	    >>> find_collision_free_name("test1234", "g o", [])
+	    u'test1234.g_o'
+	    >>> find_collision_free_name("test12345", "gco", ["test12~1.gco"])
+	    u'test12~2.gco'
+	    >>> many_files = ["test12~{}.gco".format(x) for x in range(10)[1:]]
+	    >>> find_collision_free_name("test12345", "gco", many_files)
+	    u'test1~10.gco'
+	    >>> many_more_files = many_files + ["test1~{}.gco".format(x) for x in range(10, 99)]
+	    >>> find_collision_free_name("test12345", "gco", many_more_files)
+	    u'test1~99.gco'
+	    >>> many_more_files_plus_one = many_more_files + ["test1~99.gco"]
+	    >>> find_collision_free_name("test12345", "gco", many_more_files_plus_one)
+	    Traceback (most recent call last):
+	    ...
+	    ValueError: Can't create a collision free filename
+	    >>> find_collision_free_name("test12345", "gco", many_more_files_plus_one, max_power=3)
+	    u'test~100.gco'
+
+	"""
 
 	if not isinstance(filename, unicode):
 		filename = unicode(filename)
@@ -302,14 +365,21 @@ def find_collision_free_name(filename, extension, existing_filenames, max_power=
 	extension = make_valid(extension)
 	extension = extension[:3] if len(extension) > 3 else extension
 
-	if len(filename) <= 8 and not filename + "." + extension in existing_filenames:
+	full_name_format = u"{filename}.{extension}" if extension else u"{filename}"
+
+	result = full_name_format.format(filename=filename,
+	                                 extension=extension)
+	if len(filename) <= 8 and not result in existing_filenames:
 		# early exit
-		return filename + "." + extension
+		return result
 
 	counter = 1
 	power = 1
+	prefix_format = u"{segment}~{counter}"
 	while counter < (10 ** max_power):
-		result = filename[:(6 - power + 1)] + "~" + str(counter) + "." + extension
+		prefix = prefix_format.format(segment=filename[:(6 - power + 1)], counter=str(counter))
+		result = full_name_format.format(filename=prefix,
+		                                 extension=extension)
 		if result not in existing_filenames:
 			return result
 		counter += 1
@@ -373,6 +443,16 @@ def to_unicode(s_or_u, encoding="utf-8", errors="strict"):
 		return s_or_u
 
 
+def chunks(l, n):
+	"""
+	Yield successive n-sized chunks from l.
+
+	Taken from http://stackoverflow.com/a/312464/2028598
+	"""
+	for i in range(0, len(l), n):
+		yield l[i:i+n]
+
+
 def is_running_from_source():
 	root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
 	return os.path.isdir(os.path.join(root, "src")) and os.path.isfile(os.path.join(root, "setup.py"))
@@ -405,7 +485,7 @@ def dict_merge(a, b):
 	if not isinstance(b, dict):
 		return b
 	result = deepcopy(a)
-	for k, v in b.iteritems():
+	for k, v in b.items():
 		if k in result and isinstance(result[k], dict):
 			result[k] = dict_merge(result[k], v)
 		else:
@@ -441,7 +521,7 @@ def dict_sanitize(a, b):
 		return a
 
 	result = deepcopy(a)
-	for k, v in a.iteritems():
+	for k, v in a.items():
 		if not k in b:
 			del result[k]
 		elif isinstance(v, dict):
@@ -539,7 +619,7 @@ def dict_contains_keys(keys, dictionary):
 	if not isinstance(keys, dict) or not isinstance(dictionary, dict):
 		return False
 
-	for k, v in keys.iteritems():
+	for k, v in keys.items():
 		if not k in dictionary:
 			return False
 		elif isinstance(v, dict):
@@ -660,12 +740,17 @@ def address_for_client(host, port):
 
 
 @contextlib.contextmanager
-def atomic_write(filename, mode="w+b", prefix="tmp", suffix=""):
+def atomic_write(filename, mode="w+b", prefix="tmp", suffix="", permissions=0o644, max_permissions=0o777):
+	if os.path.exists(filename):
+		permissions |= os.stat(filename).st_mode
+	permissions &= max_permissions
+
 	temp_config = tempfile.NamedTemporaryFile(mode=mode, prefix=prefix, suffix=suffix, delete=False)
 	try:
 		yield temp_config
 	finally:
 		temp_config.close()
+	os.chmod(temp_config.name, permissions)
 	shutil.move(temp_config.name, filename)
 
 
@@ -878,12 +963,9 @@ class RepeatedTimer(threading.Thread):
 
 class CountedEvent(object):
 
-	def __init__(self, value=0, max=None, name=None):
-		logger_name = __name__ + ".CountedEvent" + (".{name}".format(name=name) if name is not None else "")
-		self._logger = logging.getLogger(logger_name)
-
+	def __init__(self, value=0, maximum=None, **kwargs):
 		self._counter = 0
-		self._max = max
+		self._max = kwargs.get("max", maximum)
 		self._mutex = threading.Lock()
 		self._event = threading.Event()
 
@@ -908,17 +990,14 @@ class CountedEvent(object):
 			return self._counter == 0
 
 	def _internal_set(self, value):
-		self._logger.debug("New counter value: {value}".format(value=value))
 		self._counter = value
 		if self._counter <= 0:
 			self._counter = 0
 			self._event.clear()
-			self._logger.debug("Cleared event")
 		else:
 			if self._max is not None and self._counter > self._max:
 				self._counter = self._max
 			self._event.set()
-			self._logger.debug("Set event")
 
 
 class InvariantContainer(object):
@@ -952,6 +1031,46 @@ class InvariantContainer(object):
 
 	def __iter__(self):
 		return self._data.__iter__()
+
+
+class TypedQueue(queue.Queue):
+
+	def __init__(self, maxsize=0):
+		queue.Queue.__init__(self, maxsize=maxsize)
+		self._lookup = set()
+
+	def put(self, item, item_type=None, *args, **kwargs):
+		queue.Queue.put(self, (item, item_type), *args, **kwargs)
+
+	def get(self, *args, **kwargs):
+		item, _ = queue.Queue.get(self, *args, **kwargs)
+		return item
+
+	def _put(self, item):
+		_, item_type = item
+		if item_type is not None:
+			if item_type in self._lookup:
+				raise TypeAlreadyInQueue(item_type, "Type {} is already in queue".format(item_type))
+			else:
+				self._lookup.add(item_type)
+
+		queue.Queue._put(self, item)
+
+	def _get(self):
+		item = queue.Queue._get(self)
+		_, item_type = item
+
+		if item_type is not None:
+			self._lookup.discard(item_type)
+
+		return item
+
+
+class TypeAlreadyInQueue(Exception):
+	def __init__(self, t, *args, **kwargs):
+		Exception.__init__(self, *args, **kwargs)
+		self.type = t
+
 
 
 class dictview(collections.Mapping):

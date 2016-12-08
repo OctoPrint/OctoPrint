@@ -63,10 +63,11 @@ available for the maintainers to directly start tackling that problem.
 ## How to file a bug report
 
 If you encounter an issue with OctoPrint, you are welcome to
-[submit a bug report](https://goo.gl/GzkGv9).
+[submit a bug report](https://github.com/foosel/OctoPrint/issues/new).
 
 Before you do that for the first time though please take a moment to read the
-following section *completely*. Thank you! :)
+following section *completely* and also follow the instructions in the
+"new issue" form. Thank you! :)
 
 ### What should I do before submitting a bug report?
 
@@ -85,12 +86,14 @@ following section *completely*. Thank you! :)
    might have installed**. Report any issues with those in their corresponding
    bug tracker (probably linked to from the plugin's homepage).
 
-   Finally, **this is also not the right issue tracker if you are running an
+   Finally, **this is also not the right issue tracker if you are running a
    forked version of OctoPrint**. Seek help for such unofficial versions from
    the people maintaining them instead.
 
 2. Please make sure to **test out the current version** of OctoPrint to see
-   whether the problem you are encountering still exists.
+   whether the problem you are encountering still exists, and **test without
+   any non-bundled plugins enabled** to make sure it's not a misbehaving
+   plugin causing the issue at hand.
 
    If you are feeling up to it you might also want to try the current development
    version of OctoPrint (if you aren't already). Refer to the [FAQ](https://github.com/foosel/OctoPrint/wiki/FAQ)
@@ -104,20 +107,38 @@ following section *completely*. Thank you! :)
    fixing it. Take the time to filter through possible duplicates and be really
    sure that your problem definitely is a new one. Try more than one search query
    (e.g. do not only search for "webcam" if you happen to run into an issue
-   with your webcam, also search for "timelapse" etc).
+   with your webcam, also search for "timelapse" etc). Do not only read the subject lines
+   of tickets that look like they might be related, but also read the ticket itself!
+
+   **Very important:** Please make absolutely sure that if you find a bug that looks like
+   it is the same as your's, it actually behaves the same as your's. E.g. if someone gives steps
+   to reproduce his bug that looks like your's, reproduce the bug like that if possible,
+   and only add a "me too" if you actually can reproduce the same
+   issue. Also **provide all information** as [described below](#what-should-i-include-in-a-bug-report)
+   and whatever was additionally requested over the course of the ticket
+   even if you "only" add to an existing ticket. The more information available regarding a bug, the higher
+   the chances of reproducing and solving it. But "me too" on an actually unrelated ticket
+   makes it more difficult due to on top of having to figure out the original problem
+   there's now also a [red herring](https://en.wikipedia.org/wiki/Red_herring) interfering - so please be
+   very diligent here!
 
 ### What should I include in a bug report?
 
-Always use the following template (you can remove what's within `[...]`, that's
-only provided here as some additional information for you):
+First of all make sure your use **a descriptive title**. "It doesn't work"
+and similar unspecific complaints are NOT descriptive titles.
+
+**Always use the following template** (please remove what's within `[...]`, that's
+only provided here as some additional information for you), **even if only adding a
+"me too" to an existing ticket**:
 
     #### What were you doing?
 
-    [Please be as specific as possible here. The maintainers will need to reproduce
-    your issue in order to fix it and that is not possible if they don't know
-    what you did to get it to happen in the first place. If you encountered
-    a problem with specific files of any sorts, make sure to also include a link to a file
-    with which to reproduce the problem.]
+    [Please be as specific as possible here. The maintainers will need to
+    reproduce your issue in order to fix it and that is not possible if they
+    don't know what you did to get it to happen in the first place.
+
+    If you encountered a problem with specific files of any sorts, make sure
+    to also include a link to a file with which to reproduce the problem.]
 
     #### What did you expect to happen?
 
@@ -125,7 +146,7 @@ only provided here as some additional information for you):
 
     #### Branch & Commit or Version of OctoPrint
 
-    [Can be found in the lower left corner of the web interface.]
+    [Can be found in the lower left corner of the web interface. ALWAYS INCLUDE.]
 
     #### Printer model & used firmware incl. version
 
@@ -137,12 +158,17 @@ only provided here as some additional information for you):
 
     #### Link to octoprint.log
 
-    [On gist.github.com or pastebin.com. Always include and never truncate.]
+    [On gist.github.com or pastebin.com. ALWAYS INCLUDE and never truncate.]
 
     #### Link to contents of terminal tab or serial.log
 
     [On gist.github.com or pastebin.com. If applicable, always include if unsure or
-    reporting communication issues. Never truncate.]
+    reporting communication issues. Never truncate.
+
+    serial.log is usually not written due to performance reasons and must be
+    enabled explicitly. Provide at the very least the FULL contents of your
+    terminal tab at the time of the bug occurrence, even if you do not have
+    a serial.log.]
 
     #### Link to contents of Javascript console in the browser
 
@@ -154,6 +180,9 @@ only provided here as some additional information for you):
     [If applicable. Always include if unsure or reporting UI issues.]
 
     I have read the FAQ.
+
+Copy-paste this template **completely**. Do not skip any lines or the bot
+*will* complain!
 
 ### Where can I find which version and branch I'm on?
 
@@ -177,15 +206,16 @@ more information is needed.
 
 One is contained in the **"Terminal" tab** within OctoPrint's UI and is a log
 of the last 300 lines of communication with the printer. Please copy-paste
-this somewhere (disable auto scroll to make copying the contents easier) -
+this *completely* somewhere (disable auto scroll to make copying the contents easier) -
 e.g. http://pastebin.com or http://gist.github.com - and include a link in
 your bug report.
 
 There is also **OctoPrint's application log file** or in short `octoprint.log`,
 which is by default located at `~/.octoprint/logs/octoprint.log` on Linux,
 `%APPDATA%\OctoPrint\logs\octoprint.log` on Windows and
-`~/Library/Application Support/OctoPrint/logs/octoprint.log` on MacOS. Please
-copy-paste this to pastebin or gist as well and include a link in your bug
+`~/Library/Application Support/OctoPrint/logs/octoprint.log` on MacOS. You can
+also access it directly through OctoPrint via Settings > Logs. Please
+copy-paste this *completely* to pastebin or gist as well and include a link in your bug
 report.
 
 It might happen that you are asked to provide a more **thorough log of the
@@ -214,42 +244,66 @@ See [How to open the Javascript Console in different browsers](https://webmaster
    implement your feature as a plugin, create a "Brainstorming" ticket to get
    the discussion going on how best to solve *this* in OctoPrint's plugin
    system - maybe that's the actual PR you have been waiting for to contribute :)
-2. If you plan to make **any large changes to the code or appearance, please
-   open a "Brainstorming" ticket first** so that we can determine if it's a
-   good time for your specific pull request. It might be that we're currently
-   in the process of making heavy changes to the code locations you'd target
-   as well, or your approach doesn't fit the general "project vision", and
-   that would just cause unnecessary work and frustration for everyone or
+2. If you plan to make **any large or otherwise disruptive changes to the
+   code or appearance, please open a "Brainstorming" ticket first** so
+   that we can determine if it's a good time for your specific pull
+   request. It might be that we're currently in the process of making
+   heavy changes to the code locations you'd target as well, or your
+   approach doesn't fit the general "project vision", and that would
+   just cause unnecessary work and frustration for everyone or
    possibly get the PR rejected.
 3. Create your pull request **from a custom branch** on your end (e.g.
    `dev/myNewFeature`)[1] **against the `devel` branch**. Create **one pull request
    per feature/bug fix**. If your PR contains an important bug fix, we will
    make sure to backport it to the `maintenance` branch to also include it in
    the next release.
-4. Make sure you **follow the current coding style**. This means:
-
+4. Make sure there are **only relevant changes** included in your PR. No
+   changes to unrelated files, no additional files that don't belong (e.g.
+   commits of your full virtual environment). Make sure your PR consists
+   **ideally of only one commit** (use git's rebase and squash functionality).
+5. Make sure you **follow the current coding style**. This means:
      * Tabs instead of spaces in the Python files[2]
      * Spaces instead of tabs in the Javascript sources
      * English language (code, variables, comments, ...)
      * Comments where necessary: Tell *why* the code does something like it does
        it, structure your code
      * Following the general architecture
-
-   If your PR needs to make changes to the Stylesheets, change the ``.less`` files
-   from which the CSS is compiled.
-5. **Test your changes thoroughly**. That also means testing with usage
+     * If your PR needs to make changes to the Stylesheets, change the
+       ``.less`` files from which the CSS is compiled.
+     * Make sure you do not add dead code (e.g. commented out left-overs
+       from experiments).
+6. Ensure your changes **pass the existing unit tests**. PRs that break
+   those cannot be accepted.
+7. **Test your changes thoroughly**. That also means testing with usage
    scenarios you don't normally use, e.g. if you only use access control, test
    without and vice versa. If you only test with your printer, test with the
    virtual printer and vice versa. State in your pull request how you tested
    your changes. Ideally **add unit tests** - OctoPrint severely lacks in that
    department, but we are trying to change that, so any new code already covered
    with a test suite helps a lot!
-6. In your pull request's description, **state what your pull request does**,
+8. In your pull request's description, **state what your pull request does**,
    as in, what feature does it implement, what bug does it fix. The more
    thoroughly you explain your intent behind the PR here, the higher the
-   chances it will get merged fast.
-7. Important: Don't forget to **add yourself to the [AUTHORS](./AUTHORS.md)
+   chances it will get merged fast. There is a template provided below
+   that can help you here.
+9. Don't forget to **add yourself to the [AUTHORS](./AUTHORS.md)
    file** :)
+
+Template to use for Pull Request descriptions:
+
+```
+#### What does this PR do and why is it necessary?
+
+#### How was it tested? How can it be tested by the reviewer?
+
+#### Any background context you want to provide?
+
+#### What are the relevant tickets if any?
+
+#### Screenshots (if appropriate)
+
+#### Further notes
+```
 
 ## What do the branches mean?
 
@@ -257,8 +311,8 @@ There are three main branches in OctoPrint:
 
   * `master`: The master branch always contains the current stable release. It
     is *only* updated on new releases. Will have a version number following
-    the scheme `x.y.z` (e.g. `1.2.9`) or - if it's absolutely necessary to
-    add a commit after release to this branch - `x.y.z.post<commits since x.y.z>`
+    the scheme `<x>.<y>.<z>` (e.g. `1.2.9`) or - if it's absolutely necessary to
+    add a commit after release to this branch - `<x>.<y>.<z>.post<commits since x.y.z>`
     (e.g. `1.2.9.post1`).
   * `maintenance`: Improvements and fixes of the current release that make up
     the next release go here. More or less continously updated. You can consider
@@ -267,7 +321,7 @@ There are three main branches in OctoPrint:
     next stable release, so if you want to help out development, running the
     `maintenance` branch and reporting back anything you find is a very good way
     to do that. Will usually have a version number following the scheme
-    `x.y.z+1.dev.<commits since increase of z>` for an OctoPrint version of `x.y.z`
+    `<x>.<y>.<z+1>.dev<commits since increase of z>` for an OctoPrint version of `<x>.<y>.<z>`
     (e.g. `1.2.10.dev12`).
   * `devel`: Ongoing development of new features that will go into the next bigger
     release (MINOR version number increases) will happen on this branch. Usually
@@ -275,8 +329,16 @@ There are three main branches in OctoPrint:
     temporarily. Can be considered the "bleeding edge". All PRs should target
     *this* branch. Important improvements and fixes from PRs here are backported to
     `maintenance` as needed. Will usually have a version number following the
-    scheme `x.y+1.0.dev<commits since increase of y>` for an OctoPrint version
-    of `x.y.z` (e.g. `1.3.0.dev123`).
+    scheme `<x>.<y+1>.0.dev<commits since increase of y>` for a current OctoPrint version
+    of `<x>.<y>.<z>` (e.g. `1.3.0.dev123`).
+  * `rc/maintenance`: This branch is reserved for future releases that have graduated from
+    the `maintenance` branch and are now being pushed on the "Maintenance"
+    pre release channel for further testing. Version number follows the scheme
+    `<x>.<y>.<z>rc<n>` (e.g. `1.2.9rc1`).
+  * `rc/devel`: This branch is reserved for future releases that have graduated from
+    the `devel` branch and are now being pushed on the "Devel" pre release channel
+    for further testing. Version number follows the scheme `<x>.<y+1>.0rc<n>` (e.g. `1.3.0rc1`)
+    for a current stable OctoPrint version of `<x>.<y>.<z>`.
 
 Additionally, from time to time you might see other branches pop up in the repository.
 Those usually have one of the following prefixes:
@@ -322,6 +384,13 @@ the local version identifier to allow for an exact determination of the active c
   * 2015-12-01: Heavily reworked to include examples, better structure and
     all information in one document.
   * 2016-02-10: Added information about branch structure and versioning.
+  * 2016-02-16: Added requirement to add information from template to existing
+    tickets as well, explained issue with "me too" red herrings.
+  * 2016-03-14: Some more requirements for PRs, and a PR template.
+  * 2016-06-08: New `prerelease` and `rc` branches explained.
+  * 2016-09-09: New `rc/*` branches explained.
+  * 2016-09-23: Some more work on "How to file a bug report" based on recent
+    experiences
 
 ## Footnotes
   * [1] - If you are wondering why, the problem is that anything that you add

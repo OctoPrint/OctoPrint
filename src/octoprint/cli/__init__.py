@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
@@ -13,10 +13,11 @@ import octoprint
 class OctoPrintContext(object):
 	"""Custom context wrapping the standard options."""
 
-	def __init__(self, configfile=None, basedir=None, verbosity=0):
+	def __init__(self, configfile=None, basedir=None, verbosity=0, safe_mode=False):
 		self.configfile = configfile
 		self.basedir = basedir
 		self.verbosity = verbosity
+		self.safe_mode = safe_mode
 
 pass_octoprint_ctx = click.make_pass_decorator(OctoPrintContext, ensure=True)
 """Decorator to pass in the :class:`OctoPrintContext` instance."""
@@ -95,6 +96,8 @@ def standard_options(hidden=False):
 		        help="Specify the config file to use."),
 		factory("--verbose", "-v", "verbosity", count=True, callback=set_ctx_obj_option, is_eager=True, expose_value=False,
 		        help="Increase logging verbosity"),
+		factory("--safe", "safe_mode", is_flag=True, callback=set_ctx_obj_option, is_eager=True, expose_value=False,
+		        help="Enable safe mode; disables all third party plugins")
 	]
 
 	return bulk_options(options)
@@ -120,9 +123,10 @@ from .server import server_commands
 from .plugins import plugin_commands
 from .dev import dev_commands
 from .client import client_commands
+from .config import config_commands
 
 @click.group(name="octoprint", invoke_without_command=True, cls=click.CommandCollection,
-             sources=[server_commands, plugin_commands, dev_commands, client_commands])
+             sources=[server_commands, plugin_commands, dev_commands, client_commands, config_commands])
 @standard_options()
 @legacy_options
 @click.version_option(version=octoprint.__version__)

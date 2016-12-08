@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -369,6 +369,10 @@ class PipCaller(CommandlineCaller):
 
 	def _preprocess_lines(self, *lines):
 		return map(self._preprocess, lines)
+
+	@staticmethod
+	def _convert_lines(lines):
+		return map(PipCaller._convert_line, lines)
 
 	@staticmethod
 	def _preprocess(text):

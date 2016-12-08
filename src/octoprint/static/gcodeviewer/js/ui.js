@@ -104,8 +104,11 @@ GCODE.ui = (function(){
         if(!Modernizr.webworkers)fatal.push("<li>Your browser doesn't seem to support HTML5 Web Workers, this application won't work without it.</li>");
         if(!Modernizr.svg)fatal.push("<li>Your browser doesn't seem to support HTML5 SVG, this application won't work without it.</li>");
 
+        var errorList = document.getElementById("errorList");
         if(fatal.length>0){
-            document.getElementById('errorList').innerHTML = '<ul>' + fatal.join('') + '</ul>';
+            if (errorList) {
+                errorList.innerHTML = '<ul>' + fatal.join('') + '</ul>';
+            }
             console.log("Initialization failed: unsupported browser.")
             return false;
         }
@@ -117,8 +120,10 @@ GCODE.ui = (function(){
         if(!Modernizr.draganddrop)warnings.push("<li>Your browser doesn't seem to support HTML5 Drag'n'Drop, Drop area will not work.</li>");
 
         if(warnings.length>0){
-            document.getElementById('errorList').innerHTML = '<ul>' + wanings.join('') + '</ul>';
-            console.log("Initialization succeeded with warnings.")
+            if (errorList) {
+                errorList.innerHTML = '<ul>' + warnings.join('') + '</ul>';
+            }
+            console.log("Initialization succeeded with warnings.", warnings);
         }
         return true;
     };
@@ -138,12 +143,12 @@ GCODE.ui = (function(){
         init: function(options){
             if (options) setOptions(options);
             if (!options.container) {
-                return;
+                return false;
             }
 
             var capabilitiesResult = checkCapabilities();
             if (!capabilitiesResult) {
-                return;
+                return false;
             }
 
             setProgress("", 0);
@@ -159,6 +164,8 @@ GCODE.ui = (function(){
                 toolOffsets: options.toolOffsets
             });
             GCODE.renderer.render(0, 0);
+
+            return true;
         },
 
         clear: function() {

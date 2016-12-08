@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 from octoprint.printer.estimation import TimeEstimationHelper
 
 __author__ = "Gina Häußge <osd@foosel.net>"
@@ -32,7 +32,7 @@ class EstimationTestCase(unittest.TestCase):
 		for estimate in estimates:
 			self.estimation_helper.update(estimate)
 
-		self.assertEquals(self.estimation_helper.average_total, expected)
+		self.assertEqual(self.estimation_helper.average_total, expected)
 
 	@data(
 		((1.0, 2.0), None),                    # not enough values, have 1, need 3
@@ -46,7 +46,7 @@ class EstimationTestCase(unittest.TestCase):
 		for estimate in estimates:
 			self.estimation_helper.update(estimate)
 
-		self.assertEquals(self.estimation_helper.average_distance, expected)
+		self.assertEqual(self.estimation_helper.average_distance, expected)
 
 	@data(
 		((1.0, 1.0), None),
@@ -58,7 +58,7 @@ class EstimationTestCase(unittest.TestCase):
 		for estimate in estimates:
 			self.estimation_helper.update(estimate)
 
-		self.assertEquals(self.estimation_helper.average_total_rolling, expected)
+		self.assertEqual(self.estimation_helper.average_total_rolling, expected)
 
 	@data(
 		((1.0, 1.0, 1.0, 1.0), False),         # average totals: 1.0, 1.0, 1.0, 1.0 => 3.0 / 3 = 1.0
@@ -71,5 +71,5 @@ class EstimationTestCase(unittest.TestCase):
 		for estimate in estimates:
 			self.estimation_helper.update(estimate)
 
-		self.assertEquals(self.estimation_helper.is_stable(), expected)
+		self.assertEqual(self.estimation_helper.is_stable(), expected)
 

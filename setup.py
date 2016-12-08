@@ -16,14 +16,17 @@ import octoprint_setuptools
 INSTALL_REQUIRES = [
 	"flask>=0.9,<0.11",
 	"werkzeug>=0.8.3,<0.9",
-	"tornado>=4.0.2,<4.1",
+	"tornado==4.0.2", # pinned for now, we need to migrate to a newer tornado, but due
+	                  # to some voodoo needed to get large streamed uploads and downloads
+	                  # to work that is probably not completely straightforward and therefore
+	                  # something for post-1.3.0-stable release
 	"sockjs-tornado>=1.0.2,<1.1",
 	"PyYAML>=3.10,<3.11",
 	"Flask-Login>=0.2.2,<0.3",
 	"Flask-Principal>=0.3.5,<0.4",
 	"Flask-Babel>=0.9,<0.10",
 	"Flask-Assets>=0.10,<0.11",
-	"Flask-Markdown>=0.3,<0.4",
+	"markdown>=2.6.4,<2.7",
 	"pyserial>=3.0,<3.1",
 	"netaddr>=0.7.17,<0.8",
 	"watchdog>=0.8.3,<0.9",
@@ -35,8 +38,12 @@ INSTALL_REQUIRES = [
 	"requests>=2.7,<2.8",
 	"semantic_version>=2.4.2,<2.5",
 	"psutil>=3.2.1,<3.3",
-	"Click>=5.1,<5.2",
-	"awesome-slugify>=1.6.5,<1.7"
+	"Click>=6.2,<6.3",
+	"awesome-slugify>=1.6.5,<1.7",
+	"feedparser>=5.2.1,<5.3",
+	"chainmap>=1.0.2,<1.1",
+	"future>=0.15,<0.16",
+	"scandir>=1.3,<1.4"
 ]
 
 # Additional requirements for optional install options
@@ -59,7 +66,7 @@ EXTRA_REQUIRES = dict(
 
 	# Dependencies for developing OctoPrint plugins
 	plugins=[
-		"cookiecutter"
+		"cookiecutter>=1.4,<1.5"
 	]
 )
 
@@ -114,6 +121,7 @@ def get_cmdclass():
 		"octoprint/templates/_data": [
 			"AUTHORS.md",
 			"CHANGELOG.md",
+			"SUPPORTERS.md",
 			"THIRDPARTYLICENSES.md",
 		]
 	}, cmdclass["build_py"] if "build_py" in cmdclass else _build_py)

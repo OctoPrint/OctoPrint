@@ -8,8 +8,8 @@
     var url = "api/util";
     var testUrl = url + "/test";
 
-    var test = function(command, data, opts) {
-        return OctoPrint.issueCommand(testUrl, command, data, opts);
+    var test = function(command, parameters, opts) {
+        return OctoPrint.issueCommand(testUrl, command, parameters, opts);
     };
 
     OctoPrint.util = {

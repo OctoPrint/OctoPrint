@@ -20,7 +20,7 @@ way and could be extracted into a separate Python module in the future.
 
 """
 
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -35,6 +35,11 @@ import logging
 import pkg_resources
 import pkginfo
 
+try:
+	from os import scandir
+except ImportError:
+	from scandir import scandir
+
 EntryPointOrigin = namedtuple("EntryPointOrigin", "type, entry_point, module_name, package_name, package_version")
 FolderOrigin = namedtuple("FolderOrigin", "type, folder")
 
@@ -46,7 +51,7 @@ class PluginInfo(object):
 	implementations, hooks and helpers.
 
 	It works on Python module objects and extracts the relevant data from those via accessing the
-	:ref:`control properties <sec-plugin-concepts-controlproperties>`.
+	:ref:`control properties <sec-plugins-controlproperties>`.
 
 	Arguments:
 	    key (str): Identifier of the plugin
@@ -134,6 +139,7 @@ class PluginInfo(object):
 		self.bundled = False
 		self.loaded = False
 		self.managable = True
+		self.needs_restart = False
 
 		self._name = name
 		self._version = version
@@ -143,6 +149,8 @@ class PluginInfo(object):
 		self._license = license
 
 	def validate(self, phase, additional_validators=None):
+		result = True
+
 		if phase == "before_load":
 			# if the plugin still uses __plugin_init__, log a deprecation warning and move it to __plugin_load__
 			if hasattr(self.instance, self.__class__.attr_init):
@@ -177,7 +185,9 @@ class PluginInfo(object):
 
 		if additional_validators is not None:
 			for validator in additional_validators:
-				validator(phase, self)
+				result = result and validator(phase, self)
+
+		return result
 
 	def __str__(self):
 		if self.version:
@@ -442,6 +452,12 @@ class PluginManager(object):
 
 		if logging_prefix is None:
 			logging_prefix = ""
+		if plugin_folders is None:
+			plugin_folders = []
+		if plugin_types is None:
+			plugin_types = []
+		if plugin_entry_points is None:
+			plugin_entry_points = []
 		if plugin_disabled_list is None:
 			plugin_disabled_list = []
 
@@ -472,6 +488,9 @@ class PluginManager(object):
 		self.on_plugin_disabled = lambda *args, **kwargs: None
 		self.on_plugin_implementations_initialized = lambda *args, **kwargs: None
 
+		self.on_plugins_loaded = lambda *args, **kwargs: None
+		self.on_plugins_enabled = lambda *args, **kwargs: None
+
 		self.registered_clients = []
 
 		self.marked_plugins = defaultdict(list)
@@ -479,8 +498,6 @@ class PluginManager(object):
 		self._python_install_dir = None
 		self._python_virtual_env = False
 		self._detect_python_environment()
-
-		self.reload_plugins(startup=True, initialize_implementations=False)
 
 	def _detect_python_environment(self):
 		from distutils.command.install import install as cmd_install
@@ -491,9 +508,9 @@ class PluginManager(object):
 		cmd.finalize_options()
 
 		self._python_install_dir = cmd.install_lib
-		self._python_prefix = sys.prefix
+		self._python_prefix = os.path.realpath(sys.prefix)
 		self._python_virtual_env = hasattr(sys, "real_prefix") \
-		                           or (hasattr(sys, "base_prefix") and sys.prefix != sys.base_prefix)
+		                           or (hasattr(sys, "base_prefix") and os.path.realpath(sys.prefix) != os.path.realpath(sys.base_prefix))
 
 	@property
 	def plugins(self):
@@ -533,13 +550,11 @@ class PluginManager(object):
 				self.logger.warn("Plugin folder {folder} could not be found, skipping it".format(folder=folder))
 				continue
 
-			entries = os.listdir(folder)
-			for entry in entries:
-				path = os.path.join(folder, entry)
-				if os.path.isdir(path) and os.path.isfile(os.path.join(path, "__init__.py")):
-					key = entry
-				elif os.path.isfile(path) and entry.endswith(".py"):
-					key = entry[:-3] # strip off the .py extension
+			for entry in scandir(folder):
+				if entry.is_dir() and os.path.isfile(os.path.join(entry.path, "__init__.py")):
+					key = entry.name
+				elif entry.is_file() and entry.name.endswith(".py"):
+					key = entry.name[:-3] # strip off the .py extension
 				else:
 					continue
 
@@ -614,7 +629,11 @@ class PluginManager(object):
 					# of the virtual env, so this check is necessary
 					plugin.managable = os.access(plugin.location, os.W_OK) \
 					                   and (not self._python_virtual_env
-					                        or plugin.location.startswith(self._python_prefix))
+					                        or is_sub_path_of(plugin.location, self._python_prefix)
+											or is_editable_install(self._python_install_dir,
+																   package_name,
+																   module_name,
+																   plugin.location))
 
 					plugin.enabled = False
 					result[key] = plugin
@@ -631,7 +650,7 @@ class PluginManager(object):
 			else:
 				return None
 		except:
-			self.logger.warn("Could not locate plugin {key}")
+			self.logger.warn("Could not locate plugin {key}".format(key=key))
 			return None
 
 		plugin = self._import_plugin(key, *module, name=name, version=version, summary=summary, author=author, url=url, license=license)
@@ -667,15 +686,32 @@ class PluginManager(object):
 		plugins = self.find_plugins(existing=dict((k, v) for k, v in self.plugins.items() if not k in force_reload))
 		self.disabled_plugins.update(plugins)
 
+		# 1st pass: loading the plugins
 		for name, plugin in plugins.items():
 			try:
 				self.load_plugin(name, plugin, startup=startup, initialize_implementation=initialize_implementations)
-				if not self._is_plugin_disabled(name):
+			except PluginNeedsRestart:
+				pass
+			except PluginLifecycleException as e:
+				self.logger.info(str(e))
+
+		self.on_plugins_loaded(startup=startup,
+							   initialize_implementations=initialize_implementations,
+							   force_reload=force_reload)
+
+		# 2nd pass: enabling those plugins that need enabling
+		for name, plugin in plugins.items():
+			try:
+				if plugin.loaded and not self._is_plugin_disabled(name):
 					self.enable_plugin(name, plugin=plugin, initialize_implementation=initialize_implementations, startup=startup)
 			except PluginNeedsRestart:
 				pass
 			except PluginLifecycleException as e:
 				self.logger.info(str(e))
+
+		self.on_plugins_enabled(startup=startup,
+								initialize_implementations=initialize_implementations,
+								force_reload=force_reload)
 
 		if len(self.enabled_plugins) <= 0:
 			self.logger.info("No plugins found")
@@ -714,7 +750,9 @@ class PluginManager(object):
 			plugin = self.plugins[name]
 
 		try:
-			plugin.validate("before_load", additional_validators=self.plugin_validators)
+			if not plugin.validate("before_load", additional_validators=self.plugin_validators):
+				return
+
 			plugin.load()
 			plugin.validate("after_load", additional_validators=self.plugin_validators)
 			self.on_plugin_loaded(name, plugin)
@@ -776,6 +814,9 @@ class PluginManager(object):
 			raise PluginCantEnable(name, "Dependency on obsolete hooks detected, full functionality cannot be guaranteed")
 
 		try:
+			if not plugin.validate("before_enable", additional_validators=self.plugin_validators):
+				return False
+
 			plugin.enable()
 			self._activate_plugin(name, plugin)
 		except PluginLifecycleException as e:
@@ -882,7 +923,7 @@ class PluginManager(object):
 					pass
 
 	def is_restart_needing_plugin(self, plugin):
-		return self.has_restart_needing_implementation(plugin) or self.has_restart_needing_hooks(plugin)
+		return plugin.needs_restart or self.has_restart_needing_implementation(plugin) or self.has_restart_needing_hooks(plugin)
 
 	def has_restart_needing_implementation(self, plugin):
 		if not plugin.implementation:
@@ -974,6 +1015,7 @@ class PluginManager(object):
 				identifier=name,
 				plugin_name=plugin.name,
 				plugin_version=plugin.version,
+				plugin_info=plugin,
 				basefolder=os.path.realpath(plugin.location),
 				logger=logging.getLogger(self.logging_prefix + name),
 				))
@@ -1239,6 +1281,43 @@ class PluginManager(object):
 			raise ValueError("Invalid hook definition, neither a callable nor a 2-tuple (callback, order): {!r}".format(hook))
 
 
+def is_sub_path_of(path, parent):
+	"""
+	Tests if `path` is a sub path (or identical) to `path`.
+
+	>>> is_sub_path_of("/a/b/c", "/a/b")
+	True
+	>>> is_sub_path_of("/a/b/c", "/a/b2")
+	False
+	>>> is_sub_path_of("/a/b/c", "/b/c")
+	False
+	>>> is_sub_path_of("/foo/bar/../../a/b/c", "/a/b")
+	True
+	>>> is_sub_path_of("/a/b", "/a/b")
+	True
+	"""
+	rel_path = os.path.relpath(os.path.realpath(path),
+	                           os.path.realpath(parent))
+	return not (rel_path == os.pardir or
+	            rel_path.startswith(os.pardir + os.sep))
+
+
+def is_editable_install(install_dir, package, module, location):
+	package_link = os.path.join(install_dir, "{}.egg-link".format(package))
+	if os.path.isfile(package_link):
+		expected_target = os.path.normcase(os.path.realpath(location))
+		try:
+			with open(package_link) as f:
+				contents = f.readlines()
+			for line in contents:
+				target = os.path.normcase(os.path.realpath(os.path.join(line.strip(), module)))
+				if target == expected_target:
+					return True
+		except:
+			pass
+	return False
+
+
 class InstalledEntryPoint(pkginfo.Installed):
 
 	def __init__(self, entry_point, metadata_version=None):
@@ -1332,7 +1411,7 @@ class Plugin(object):
 
 class RestartNeedingPlugin(Plugin):
 	"""
-	Mixin for plugin types that need a restart in order to be enabled.
+	Mixin for plugin types that need a restart after enabling/disabling them.
 	"""
 
 class SortablePlugin(Plugin):

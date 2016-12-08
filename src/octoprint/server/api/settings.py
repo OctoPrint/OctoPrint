@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -8,29 +8,77 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import logging
 
 from flask import request, jsonify, make_response
+from flask.ext.login import current_user
 from werkzeug.exceptions import BadRequest
 
 from octoprint.events import eventManager, Events
-from octoprint.settings import settings
-from octoprint.printer import get_connection_options
+from octoprint.settings import settings, valid_boolean_trues
 
-from octoprint.server import admin_permission
+from octoprint.server import admin_permission, printer
 from octoprint.server.api import api
-from octoprint.server.util.flask import restricted_access
+from octoprint.server.util.flask import restricted_access, with_revalidation_checking
 
 import octoprint.plugin
 import octoprint.util
 
 #~~ settings
 
+def _lastmodified():
+	return settings().last_modified
+
+def _etag(lm=None):
+	if lm is None:
+		lm = _lastmodified()
+
+	connection_options = printer.__class__.get_connection_options()
+	plugins = sorted(octoprint.plugin.plugin_manager().enabled_plugins)
+	plugin_settings = _get_plugin_settings()
+
+	from collections import OrderedDict
+	sorted_plugin_settings = OrderedDict()
+	for key in sorted(plugin_settings.keys()):
+		sorted_plugin_settings[key] = plugin_settings.get(key, dict())
+
+	if current_user is not None and not current_user.is_anonymous():
+		roles = sorted(current_user.roles)
+	else:
+		roles = []
+
+	import hashlib
+	hash = hashlib.sha1()
+
+	# last modified timestamp
+	hash.update(str(lm))
+
+	# effective config from config.yaml + overlays
+	hash.update(repr(settings().effective))
+
+	# might duplicate settings().effective, but plugins might also inject additional keys into the settings
+	# output that are not stored in config.yaml
+	hash.update(repr(sorted_plugin_settings))
+
+	# connection options are also part of the settings
+	hash.update(repr(connection_options))
+
+	# if the list of plugins changes, the settings structure changes too
+	hash.update(repr(plugins))
+
+	# and likewise if the role of the user changes
+	hash.update(repr(roles))
+
+	return hash.hexdigest()
 
 @api.route("/settings", methods=["GET"])
+@with_revalidation_checking(etag_factory=_etag,
+                            lastmodified_factory=_lastmodified,
+                            unless=lambda: request.values.get("force", "false") in valid_boolean_trues)
 def getSettings():
-	logger = logging.getLogger(__name__)
-
 	s = settings()
 
-	connectionOptions = get_connection_options()
+	connectionOptions = printer.__class__.get_connection_options()
+
+	# NOTE: Remember to adjust the docs of the data model on the Settings API if anything
+	# is changed, added or removed here
 
 	data = {
 		"api": {
@@ -42,7 +90,8 @@ def getSettings():
 			"name": s.get(["appearance", "name"]),
 			"color": s.get(["appearance", "color"]),
 			"colorTransparent": s.getBoolean(["appearance", "colorTransparent"]),
-			"defaultLanguage": s.get(["appearance", "defaultLanguage"])
+			"defaultLanguage": s.get(["appearance", "defaultLanguage"]),
+			"showFahrenheitAlso": s.getBoolean(["appearance", "showFahrenheitAlso"])
 		},
 		"printer": {
 			"defaultExtrusionLength": s.getInt(["printerParameters", "defaultExtrusionLength"])
@@ -60,18 +109,23 @@ def getSettings():
 		},
 		"feature": {
 			"gcodeViewer": s.getBoolean(["gcodeViewer", "enabled"]),
+			"sizeThreshold": s.getInt(["gcodeViewer", "sizeThreshold"]),
+			"mobileSizeThreshold": s.getInt(["gcodeViewer", "mobileSizeThreshold"]),
 			"temperatureGraph": s.getBoolean(["feature", "temperatureGraph"]),
 			"waitForStart": s.getBoolean(["feature", "waitForStartOnConnect"]),
 			"alwaysSendChecksum": s.getBoolean(["feature", "alwaysSendChecksum"]),
 			"neverSendChecksum": s.getBoolean(["feature", "neverSendChecksum"]),
 			"sdSupport": s.getBoolean(["feature", "sdSupport"]),
+			"sdRelativePath": s.getBoolean(["feature", "sdRelativePath"]),
 			"sdAlwaysAvailable": s.getBoolean(["feature", "sdAlwaysAvailable"]),
 			"swallowOkAfterResend": s.getBoolean(["feature", "swallowOkAfterResend"]),
 			"repetierTargetTemp": s.getBoolean(["feature", "repetierTargetTemp"]),
 			"externalHeatupDetection": s.getBoolean(["feature", "externalHeatupDetection"]),
 			"keyboardControl": s.getBoolean(["feature", "keyboardControl"]),
 			"pollWatched": s.getBoolean(["feature", "pollWatched"]),
-			"ignoreIdenticalResends": s.getBoolean(["feature", "ignoreIdenticalResends"])
+			"ignoreIdenticalResends": s.getBoolean(["feature", "ignoreIdenticalResends"]),
+			"modelSizeDetection": s.getBoolean(["feature", "modelSizeDetection"]),
+			"firmwareDetection": s.getBoolean(["feature", "firmwareDetection"])
 		},
 		"serial": {
 			"port": connectionOptions["portPreference"],
@@ -93,6 +147,11 @@ def getSettings():
 			"helloCommand": s.get(["serial", "helloCommand"]),
 			"ignoreErrorsFromFirmware": s.getBoolean(["serial", "ignoreErrorsFromFirmware"]),
 			"disconnectOnErrors": s.getBoolean(["serial", "disconnectOnErrors"]),
+			"triggerOkForM29": s.getBoolean(["serial", "triggerOkForM29"]),
+			"supportResendsWithoutOk": s.getBoolean(["serial", "supportResendsWithoutOk"]),
+			"maxTimeoutsIdle": s.getInt(["serial", "maxCommunicationTimeouts", "idle"]),
+			"maxTimeoutsPrinting": s.getInt(["serial", "maxCommunicationTimeouts", "printing"]),
+			"maxTimeoutsLong": s.getInt(["serial", "maxCommunicationTimeouts", "long"])
 		},
 		"folder": {
 			"uploads": s.getBaseFolder("uploads"),
@@ -141,32 +200,45 @@ def getSettings():
 		for name in gcode_scripts:
 			data["scripts"]["gcode"][name] = s.loadScript("gcode", name, source=True)
 
+	plugin_settings = _get_plugin_settings()
+	if len(plugin_settings):
+		data["plugins"] = plugin_settings
+
+	return jsonify(data)
+
+
+def _get_plugin_settings():
+	logger = logging.getLogger(__name__)
+
+	data = dict()
+
 	def process_plugin_result(name, result):
 		if result:
 			try:
 				jsonify(test=result)
 			except:
 				logger.exception("Error while jsonifying settings from plugin {}, please contact the plugin author about this".format(name))
-
-			if not "plugins" in data:
-				data["plugins"] = dict()
-			if "__enabled" in result:
-				del result["__enabled"]
-			data["plugins"][name] = result
+				raise
+			else:
+				if "__enabled" in result:
+					del result["__enabled"]
+				data[name] = result
 
 	for plugin in octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.SettingsPlugin):
 		try:
 			result = plugin.on_settings_load()
 			process_plugin_result(plugin._identifier, result)
 		except TypeError:
-			logger.warn("Could not load settings for plugin {name} ({version}) since it called super(...)".format(name=plugin._plugin_name, version=plugin._plugin_version))
+			logger.warn("Could not load settings for plugin {name} ({version}) since it called super(...)".format(name=plugin._plugin_name,
+			                                                                                                      version=plugin._plugin_version))
 			logger.warn("in a way which has issues due to OctoPrint's dynamic reloading after plugin operations.")
 			logger.warn("Please contact the plugin's author and ask to update the plugin to use a direct call like")
 			logger.warn("octoprint.plugin.SettingsPlugin.on_settings_load(self) instead.")
 		except:
-			logger.exception("Could not load settings for plugin {name} ({version})".format(version=plugin._plugin_version, name=plugin._plugin_name))
+			logger.exception("Could not load settings for plugin {name} ({version})".format(version=plugin._plugin_version,
+			                                                                                name=plugin._plugin_name))
 
-	return jsonify(data)
+	return data
 
 
 @api.route("/settings", methods=["POST"])
@@ -189,6 +261,9 @@ def _saveSettings(data):
 
 	s = settings()
 
+	# NOTE: Remember to adjust the docs of the data model on the Settings API if anything
+	# is changed, added or removed here
+
 	if "api" in data.keys():
 		if "enabled" in data["api"].keys(): s.setBoolean(["api", "enabled"], data["api"]["enabled"])
 		if "key" in data["api"].keys(): s.set(["api", "key"], data["api"]["key"], True)
@@ -199,6 +274,7 @@ def _saveSettings(data):
 		if "color" in data["appearance"].keys(): s.set(["appearance", "color"], data["appearance"]["color"])
 		if "colorTransparent" in data["appearance"].keys(): s.setBoolean(["appearance", "colorTransparent"], data["appearance"]["colorTransparent"])
 		if "defaultLanguage" in data["appearance"]: s.set(["appearance", "defaultLanguage"], data["appearance"]["defaultLanguage"])
+		if "showFahrenheitAlso" in data["appearance"]: s.setBoolean(["appearance", "showFahrenheitAlso"], data["appearance"]["showFahrenheitAlso"])
 
 	if "printer" in data.keys():
 		if "defaultExtrusionLength" in data["printer"]: s.setInt(["printerParameters", "defaultExtrusionLength"], data["printer"]["defaultExtrusionLength"])
@@ -216,11 +292,14 @@ def _saveSettings(data):
 
 	if "feature" in data.keys():
 		if "gcodeViewer" in data["feature"].keys(): s.setBoolean(["gcodeViewer", "enabled"], data["feature"]["gcodeViewer"])
+		if "sizeThreshold" in data["feature"].keys(): s.setInt(["gcodeViewer", "sizeThreshold"], data["feature"]["sizeThreshold"])
+		if "mobileSizeThreshold" in data["feature"].keys(): s.setInt(["gcodeViewer", "mobileSizeThreshold"], data["feature"]["mobileSizeThreshold"])
 		if "temperatureGraph" in data["feature"].keys(): s.setBoolean(["feature", "temperatureGraph"], data["feature"]["temperatureGraph"])
 		if "waitForStart" in data["feature"].keys(): s.setBoolean(["feature", "waitForStartOnConnect"], data["feature"]["waitForStart"])
 		if "alwaysSendChecksum" in data["feature"].keys(): s.setBoolean(["feature", "alwaysSendChecksum"], data["feature"]["alwaysSendChecksum"])
 		if "neverSendChecksum" in data["feature"].keys(): s.setBoolean(["feature", "neverSendChecksum"], data["feature"]["neverSendChecksum"])
 		if "sdSupport" in data["feature"].keys(): s.setBoolean(["feature", "sdSupport"], data["feature"]["sdSupport"])
+		if "sdRelativePath" in data["feature"].keys(): s.setBoolean(["feature", "sdRelativePath"], data["feature"]["sdRelativePath"])
 		if "sdAlwaysAvailable" in data["feature"].keys(): s.setBoolean(["feature", "sdAlwaysAvailable"], data["feature"]["sdAlwaysAvailable"])
 		if "swallowOkAfterResend" in data["feature"].keys(): s.setBoolean(["feature", "swallowOkAfterResend"], data["feature"]["swallowOkAfterResend"])
 		if "repetierTargetTemp" in data["feature"].keys(): s.setBoolean(["feature", "repetierTargetTemp"], data["feature"]["repetierTargetTemp"])
@@ -228,6 +307,8 @@ def _saveSettings(data):
 		if "keyboardControl" in data["feature"].keys(): s.setBoolean(["feature", "keyboardControl"], data["feature"]["keyboardControl"])
 		if "pollWatched" in data["feature"]: s.setBoolean(["feature", "pollWatched"], data["feature"]["pollWatched"])
 		if "ignoreIdenticalResends" in data["feature"]: s.setBoolean(["feature", "ignoreIdenticalResends"], data["feature"]["ignoreIdenticalResends"])
+		if "modelSizeDetection" in data["feature"]: s.setBoolean(["feature", "modelSizeDetection"], data["feature"]["modelSizeDetection"])
+		if "firmwareDetection" in data["feature"]: s.setBoolean(["feature", "firmwareDetection"], data["feature"]["firmwareDetection"])
 
 	if "serial" in data.keys():
 		if "autoconnect" in data["serial"].keys(): s.setBoolean(["serial", "autoconnect"], data["serial"]["autoconnect"])
@@ -246,6 +327,11 @@ def _saveSettings(data):
 		if "helloCommand" in data["serial"]: s.set(["serial", "helloCommand"], data["serial"]["helloCommand"])
 		if "ignoreErrorsFromFirmware" in data["serial"]: s.setBoolean(["serial", "ignoreErrorsFromFirmware"], data["serial"]["ignoreErrorsFromFirmware"])
 		if "disconnectOnErrors" in data["serial"]: s.setBoolean(["serial", "disconnectOnErrors"], data["serial"]["disconnectOnErrors"])
+		if "triggerOkForM29" in data["serial"]: s.setBoolean(["serial", "triggerOkForM29"], data["serial"]["triggerOkForM29"])
+		if "supportResendsWithoutOk" in data["serial"]: s.setBoolean(["serial", "supportResendsWithoutOk"], data["serial"]["supportResendsWithoutOk"])
+		if "maxTimeoutsIdle" in data["serial"]: s.setInt(["serial", "maxCommunicationTimeouts", "idle"], data["serial"]["maxTimeoutsIdle"])
+		if "maxTimeoutsPrinting" in data["serial"]: s.setInt(["serial", "maxCommunicationTimeouts", "printing"], data["serial"]["maxTimeoutsPrinting"])
+		if "maxTimeoutsLong" in data["serial"]: s.setInt(["serial", "maxCommunicationTimeouts", "long"], data["serial"]["maxTimeoutsLong"])
 
 		oldLog = s.getBoolean(["serial", "log"])
 		if "log" in data["serial"].keys(): s.setBoolean(["serial", "log"], data["serial"]["log"])
@@ -306,9 +392,10 @@ def _saveSettings(data):
 				except:
 					logger.exception("Could not save settings for plugin {name} ({version})".format(version=plugin._plugin_version, name=plugin._plugin_name))
 
-	if s.save():
-		payload = dict(
-			config_hash=s.config_hash,
-			effective_hash=s.effective_hash
-		)
-		eventManager().fire(Events.SETTINGS_UPDATED, payload=payload)
+	s.save()
+
+	payload = dict(
+		config_hash=s.config_hash,
+		effective_hash=s.effective_hash
+	)
+	eventManager().fire(Events.SETTINGS_UPDATED, payload=payload)

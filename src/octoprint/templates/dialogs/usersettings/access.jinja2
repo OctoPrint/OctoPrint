@@ -25,8 +25,8 @@
             <div class="controls">
                 <div class="input-append">
                     <input type="text" class="input-block-level uneditable-input" id="userSettings-access_apikey" data-bind="value: access_apikey, valueUpdate: 'input', attr: {placeholder: '{{ _('N/A') }}'}">
-                    <a class="btn" title="Generate new Apikey" data-bind="click: function() { users.confirmGenerateApikey(); }"><i class="icon-refresh"></i></a>
-                    <a class="btn btn-danger" title="Delete Apikey" data-bind="click: function() { users.confirmDeleteApikey(); }"><i class="icon-trash"></i></a>
+                    <a class="btn" title="Generate new Apikey" data-bind="click: generateApikey"><i class="icon-refresh"></i></a>
+                    <a class="btn btn-danger" title="Delete Apikey" data-bind="click: deleteApikey"><i class="icon-trash"></i></a>
                 </div>
 
             </div>

@@ -4,14 +4,20 @@ $(function() {
 
         self.loginState = parameters[0];
 
+        self.timelapsePopup = undefined;
+
         self.defaultFps = 25;
         self.defaultPostRoll = 0;
         self.defaultInterval = 10;
+        self.defaultRetractionZHop = 0;
+        self.defaultCapturePostroll = true;
 
         self.timelapseType = ko.observable(undefined);
         self.timelapseTimedInterval = ko.observable(self.defaultInterval);
         self.timelapsePostRoll = ko.observable(self.defaultPostRoll);
         self.timelapseFps = ko.observable(self.defaultFps);
+        self.timelapseRetractionZHop = ko.observable(self.defaultRetractionZHop);
+        self.timelapseCapturePostRoll = ko.observable(self.defaultCapturePostRoll);
 
         self.persist = ko.observable(false);
         self.isDirty = ko.observable(false);
@@ -52,6 +58,12 @@ $(function() {
             self.isDirty(true);
         });
         self.timelapseFps.subscribe(function() {
+            self.isDirty(true);
+        });
+        self.timelapseRetractionZHop.subscribe(function(newValue) {
+            self.isDirty(true);
+        });
+        self.timelapseCapturePostRoll.subscribe(function() {
             self.isDirty(true);
         });
 
@@ -118,7 +130,7 @@ $(function() {
         );
 
         self.requestData = function() {
-            OctoPrint.timelapse.get({ data: { unrendered: true} })
+            OctoPrint.timelapse.get(true)
                 .done(self.fromResponse);
         };
 
@@ -140,6 +152,14 @@ $(function() {
                 self.timelapseTimedInterval(self.defaultInterval);
             }
 
+            if (config.type == "zchange") {
+                if (config.retractionZHop != undefined && config.retractionZHop > 0) {
+                    self.timelapseRetractionZHop(config.retractionZHop);
+                }
+            } else {
+                self.timelapseRetractionZHop(self.defaultRetractionZHop);
+            }
+
             if (config.postRoll != undefined && config.postRoll >= 0) {
                 self.timelapsePostRoll(config.postRoll);
             } else {
@@ -150,6 +170,12 @@ $(function() {
                 self.timelapseFps(config.fps);
             } else {
                 self.timelapseFps(self.defaultFps);
+            }
+
+            if (config.capturePostRoll != undefined){
+                self.timelapseCapturePostRoll(config.capturePostRoll);
+            } else {
+                self.timelapseCapturePostRoll(self.defaultCapturePostRoll);
             }
 
             self.persist(false);
@@ -199,17 +225,139 @@ $(function() {
 
             if (self.timelapseType() == "timed") {
                 payload["interval"] = self.timelapseTimedInterval();
+                payload["capturePostRoll"] = self.timelapseCapturePostRoll();
+            }
+
+            if (self.timelapseType() == "zchange") {
+                payload["retractionZHop"] = self.timelapseRetractionZHop();
             }
 
             OctoPrint.timelapse.saveConfig(payload)
                 .done(self.fromResponse);
         };
 
+        self.displayTimelapsePopup = function(options) {
+            if (self.timelapsePopup !== undefined) {
+                self.timelapsePopup.remove();
+            }
+
+            _.extend(options, {
+                callbacks: {
+                    before_close: function(notice) {
+                        if (self.timelapsePopup == notice) {
+                            self.timelapsePopup = undefined;
+                        }
+                    }
+                }
+            });
+
+            self.timelapsePopup = new PNotify(options);
+        };
+
         self.onDataUpdaterReconnect = function() {
             self.requestData();
         };
 
-        self.onEventMovieDone = function() {
+        self.onEventPostRollStart = function(payload) {
+            var title = gettext("Capturing timelapse postroll");
+
+            var text;
+            if (!payload.postroll_duration) {
+                text = _.sprintf(gettext("Now capturing timelapse post roll, this will take only a moment..."), format);
+            } else {
+                var format = {
+                    time: moment().add(payload.postroll_duration, "s").format("LT")
+                };
+
+                if (payload.postroll_duration > 60) {
+                    format.duration = _.sprintf(gettext("%(minutes)d min"), {minutes: payload.postroll_duration / 60});
+                    text = _.sprintf(gettext("Now capturing timelapse post roll, this will take approximately %(duration)s (so until %(time)s)..."), format);
+                } else {
+                    format.duration = _.sprintf(gettext("%(seconds)d sec"), {seconds: payload.postroll_duration});
+                    text = _.sprintf(gettext("Now capturing timelapse post roll, this will take approximately %(duration)s..."), format);
+                }
+            }
+
+            self.displayTimelapsePopup({
+                title: title,
+                text: text,
+                hide: false
+            });
+        };
+
+        // 3 consecutive capture fails trigger error popup
+        self._warnAboutCaptureFailThreshold = 3;
+        self._warnAboutCaptureFailCounter = 0;
+        self._warnedAboutCaptureFail = false;
+        self.onEventPrintStarted = function(payload) {
+            self._warnAboutCaptureFailCounter = 0;
+            self._warnedAboutCaptureFail = false;
+        };
+        self.onEventCaptureDone = function(payload) {
+            self._warnAboutCaptureFailCounter = 0;
+            self._warnedAboutCaptureFail = false;
+        };
+        self.onEventCaptureFailed = function(payload) {
+            self._warnAboutCaptureFailCounter++;
+            if (self._warnedAboutCaptureFail || self._warnAboutCaptureFailCounter <= self._warnAboutCaptureFailThreshold) {
+                return;
+            }
+            self._warnedAboutCaptureFail = true;
+
+            var html = "<p>" + gettext("Failed repeatedly to capture timelapse frame from webcam - is the snapshot URL configured correctly and the camera on?");
+            html += pnotifyAdditionalInfo('Snapshot URL: <pre style="overflow: auto">' + payload.url + '</pre>Error: <pre style="overflow: auto">' + payload.error + '</pre>');
+            new PNotify({
+                title: gettext("Could not capture snapshots"),
+                text: html,
+                type: "error",
+                hide: false
+            });
+        };
+
+        self.onEventMovieRendering = function(payload) {
+            self.displayTimelapsePopup({
+                title: gettext("Rendering timelapse"),
+                text: _.sprintf(gettext("Now rendering timelapse %(movie_prefix)s. Due to performance reasons it is not recommended to start a print job while a movie is still rendering."), payload),
+                hide: false
+            });
+        };
+
+        self.onEventMovieFailed = function(payload) {
+            var title, html;
+
+            if (payload.reason == "no_frames") {
+                title = gettext("Cannot render timelapse");
+                html = "<p>" + _.sprintf(gettext("Rendering of timelapse %(movie_prefix)s is not possible since no frames were captured. Is the snapshot URL configured correctly?"), payload) + "</p>";
+            } else if (payload.reason = "returncode") {
+                title = gettext("Rendering timelapse failed");
+                html = "<p>" + _.sprintf(gettext("Rendering of timelapse %(movie_prefix)s failed with return code %(returncode)s"), payload) + "</p>";
+                html += pnotifyAdditionalInfo('<pre style="overflow: auto">' + payload.error + '</pre>');
+            } else {
+                title = gettext("Rendering timelapse failed");
+                html = "<p>" + _.sprintf(gettext("Rendering of timelapse %(movie_prefix)s failed due to an unknown error, please consult the log file"), payload) + "</p>";
+            }
+
+            self.displayTimelapsePopup({
+                title: title,
+                text: html,
+                type: "error",
+                hide: false
+            });
+        };
+
+        self.onEventMovieDone = function(payload) {
+            self.displayTimelapsePopup({
+                title: gettext("Timelapse ready"),
+                text: _.sprintf(gettext("New timelapse %(movie_prefix)s is done rendering."), payload),
+                type: "success",
+                callbacks: {
+                    before_close: function(notice) {
+                        if (self.timelapsePopup == notice) {
+                            self.timelapsePopup = undefined;
+                        }
+                    }
+                }
+            });
             self.requestData();
         };
 

@@ -6,12 +6,14 @@ function DataUpdater(allViewModels) {
     self._pluginHash = undefined;
     self._configHash = undefined;
 
+    self._connectedDeferred = undefined;
+
     self._throttleFactor = 1;
     self._baseProcessingLimit = 500.0;
     self._lastProcessingTimes = [];
     self._lastProcessingTimesSize = 20;
 
-    self._timelapse_popup = undefined;
+    self._safeModePopup = undefined;
 
     self.increaseThrottle = function() {
         self.setThrottle(self._throttleFactor + 1);
@@ -38,11 +40,21 @@ function DataUpdater(allViewModels) {
     };
 
     self.connect = function() {
+        if (self._connectedDeferred) {
+            self._connectedDeferred.reject();
+        }
+        self._connectedDeferred = $.Deferred();
         OctoPrint.socket.connect({debug: !!SOCKJS_DEBUG});
+        return self._connectedDeferred.promise();
     };
 
     self.reconnect = function() {
+        if (self._connectedDeferred) {
+            self._connectedDeferred.reject();
+        }
+        self._connectedDeferred = $.Deferred();
         OctoPrint.socket.reconnect();
+        return self._connectedDeferred.promise();
     };
 
     self._onReconnectAttempt = function(trial) {
@@ -105,16 +117,25 @@ function DataUpdater(allViewModels) {
         var oldConfigHash = self._configHash;
         self._configHash = data["config_hash"];
 
+        // process safe mode
+        if (self._safeModePopup) self._safeModePopup.remove();
+        if (data["safe_mode"]) {
+            // safe mode is active, let's inform the user
+            log.info("Safe mode is active. Third party plugins are disabled and cannot be enabled.");
+
+            self._safeModePopup = new PNotify({
+                title: gettext("Safe mode is active"),
+                text: gettext("The server is currently running in safe mode. Third party plugins are disabled and cannot be enabled."),
+                hide: false
+            });
+        }
+
         // if the offline overlay is still showing, now's a good time to
         // hide it, plus reload the camera feed if it's currently displayed
         if ($("#offline_overlay").is(":visible")) {
             hideOfflineOverlay();
             callViewModels(self.allViewModels, "onServerReconnect");
             callViewModels(self.allViewModels, "onDataUpdaterReconnect");
-
-            if ($('#tabs li[class="active"] a').attr("href") == "#control") {
-                $("#webcam_image").attr("src", CONFIG_WEBCAM_STREAM + "?" + new Date().getTime());
-            }
         } else {
             callViewModels(self.allViewModels, "onServerConnect");
         }
@@ -126,6 +147,14 @@ function DataUpdater(allViewModels) {
         var configChanged = oldConfigHash != undefined && oldConfigHash != self._configHash;
         if (versionChanged || pluginsChanged || configChanged) {
             showReloadOverlay();
+        }
+
+        log.info("Connected to the server");
+
+        // if we have a connected promise, resolve it now
+        if (self._connectedDeferred) {
+            self._connectedDeferred.resolve();
+            self._connectedDeferred = undefined;
         }
     };
 
@@ -156,149 +185,22 @@ function DataUpdater(allViewModels) {
         var type = event.data["type"];
         var payload = event.data["payload"];
         var html = "";
-        var format = {};
 
         log.debug("Got event " + type + " with payload: " + JSON.stringify(payload));
 
-        if (type == "SettingsUpdated") {
-            if (payload && payload.hasOwnProperty("config_hash")) {
-                self._configHash = payload.config_hash;
-            }
-        } else if (type == "MovieRendering") {
-            if (self._timelapse_popup !== undefined) {
-                self._timelapse_popup.remove();
-            }
-            self._timelapse_popup = new PNotify({
-                title: gettext("Rendering timelapse"),
-                text: _.sprintf(gettext("Now rendering timelapse %(movie_basename)s. Due to performance reasons it is not recommended to start a print job while a movie is still rendering."), payload),
-                hide: false,
-                callbacks: {
-                    before_close: function() {
-                        self._timelapse_popup = undefined;
-                    }
-                }
-            });
-        } else if (type == "MovieDone") {
-            if (self._timelapse_popup !== undefined) {
-                self._timelapse_popup.remove();
-            }
-            self._timelapse_popup = new PNotify({
-                title: gettext("Timelapse ready"),
-                text: _.sprintf(gettext("New timelapse %(movie_basename)s is done rendering."), payload),
-                type: "success",
-                callbacks: {
-                    before_close: function(notice) {
-                        if (self._timelapse_popup == notice) {
-                            self._timelapse_popup = undefined;
-                        }
-                    }
-                }
-            });
-        } else if (type == "MovieFailed") {
-            html = "<p>" + _.sprintf(gettext("Rendering of timelapse %(movie_basename)s failed with return code %(returncode)s"), payload) + "</p>";
-            html += pnotifyAdditionalInfo('<pre style="overflow: auto">' + payload.error + '</pre>');
-
-            if (self._timelapse_popup !== undefined) {
-                self._timelapse_popup.remove();
-            }
-            self._timelapse_popup = new PNotify({
-                title: gettext("Rendering failed"),
-                text: html,
-                type: "error",
-                hide: false,
-                callbacks: {
-                    before_close: function(notice) {
-                        if (self._timelapse_popup == notice) {
-                            self._timelapse_popup = undefined;
-                        }
-                    }
-                }
-            });
-        } else if (type == "PostRollStart") {
-            var title = gettext("Capturing timelapse postroll");
-
-            var text;
-            if (!payload.postroll_duration) {
-                text = _.sprintf(gettext("Now capturing timelapse post roll, this will take only a moment..."), format);
-            } else {
-                format = {
-                    time: moment().add(payload.postroll_duration, "s").format("LT")
-                };
-
-                if (payload.postroll_duration > 60) {
-                    format.duration = _.sprintf(gettext("%(minutes)d min"), {minutes: payload.postroll_duration / 60});
-                    text = _.sprintf(gettext("Now capturing timelapse post roll, this will take approximately %(duration)s (so until %(time)s)..."), format);
-                } else {
-                    format.duration = _.sprintf(gettext("%(seconds)d sec"), {seconds: payload.postroll_duration});
-                    text = _.sprintf(gettext("Now capturing timelapse post roll, this will take approximately %(duration)s..."), format);
-                }
-            }
-
-            if (self._timelapse_popup !== undefined) {
-                self._timelapse_popup.remove();
-            }
-            self._timelapse_popup = new PNotify({
-                title: title,
-                text: text,
-                hide: false,
-                callbacks: {
-                    before_close: function(notice) {
-                        if (self._timelapse_popup == notice) {
-                            self._timelapse_popup = undefined;
-                        }
-                    }
-                }
-            });
-        } else if (type == "SlicingStarted") {
-            gcodeUploadProgress.addClass("progress-striped").addClass("active");
-            gcodeUploadProgressBar.css("width", "100%");
-            if (payload.progressAvailable) {
-                gcodeUploadProgressBar.text(_.sprintf(gettext("Slicing ... (%(percentage)d%%)"), {percentage: 0}));
-            } else {
-                gcodeUploadProgressBar.text(gettext("Slicing ..."));
-            }
-        } else if (type == "SlicingDone") {
-            gcodeUploadProgress.removeClass("progress-striped").removeClass("active");
-            gcodeUploadProgressBar.css("width", "0%");
-            gcodeUploadProgressBar.text("");
-            new PNotify({title: gettext("Slicing done"), text: _.sprintf(gettext("Sliced %(stl)s to %(gcode)s, took %(time).2f seconds"), payload), type: "success"});
-        } else if (type == "SlicingCancelled") {
-            gcodeUploadProgress.removeClass("progress-striped").removeClass("active");
-            gcodeUploadProgressBar.css("width", "0%");
-            gcodeUploadProgressBar.text("");
-        } else if (type == "SlicingFailed") {
-            gcodeUploadProgress.removeClass("progress-striped").removeClass("active");
-            gcodeUploadProgressBar.css("width", "0%");
-            gcodeUploadProgressBar.text("");
-
-            html = _.sprintf(gettext("Could not slice %(stl)s to %(gcode)s: %(reason)s"), payload);
-            new PNotify({title: gettext("Slicing failed"), text: html, type: "error", hide: false});
-        } else if (type == "TransferStarted") {
-            gcodeUploadProgress.addClass("progress-striped").addClass("active");
-            gcodeUploadProgressBar.css("width", "100%");
-            gcodeUploadProgressBar.text(gettext("Streaming ..."));
-        } else if (type == "TransferDone") {
-            gcodeUploadProgress.removeClass("progress-striped").removeClass("active");
-            gcodeUploadProgressBar.css("width", "0%");
-            gcodeUploadProgressBar.text("");
-            new PNotify({
-                title: gettext("Streaming done"),
-                text: _.sprintf(gettext("Streamed %(local)s to %(remote)s on SD, took %(time).2f seconds"), payload),
-                type: "success"
-            });
-        } else if (type == "PrintCancelled") {
+        if (type == "PrintCancelled") {
             if (payload.firmwareError) {
                 new PNotify({
-                    title: gettext("Unhandled firmware error"),
-                    text: _.sprintf(gettext("The firmware reported an unhandled error. Due to that the ongoing print job was cancelled. Error: %(firmwareError)s"), payload),
+                    title: gettext("Unhandled communication error"),
+                    text: _.sprintf(gettext("There was an unhandled error while talking to the printer. Due to that the ongoing print job was cancelled. Error: %(firmwareError)s"), payload),
                     type: "error",
                     hide: false
                 });
             }
         } else if (type == "Error") {
             new PNotify({
-                    title: gettext("Unhandled firmware error"),
-                    text: _.sprintf(gettext("The firmware reported an unhandled error. Due to that OctoPrint disconnected. Error: %(error)s"), payload),
+                    title: gettext("Unhandled communication error"),
+                    text: _.sprintf(gettext("The was an unhandled error while talking to the printer. Due to that OctoPrint disconnected. Error: %(error)s"), payload),
                     type: "error",
                     hide: false
             });
@@ -354,6 +256,4 @@ function DataUpdater(allViewModels) {
         .onMessage("event", self._onEvent)
         .onMessage("timelapse", self._onTimelapse)
         .onMessage("plugin", self._onPluginMessage);
-
-    self.connect();
 }

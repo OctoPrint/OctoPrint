@@ -64,7 +64,7 @@
         var catchAllHandlers = registeredHandlers["*"];
         if (catchAllHandlers && catchAllHandlers.length) {
             _.each(catchAllHandlers, function(handler) {
-                handler({event: eventObj})
+                handler(eventObj);
             });
         }
 

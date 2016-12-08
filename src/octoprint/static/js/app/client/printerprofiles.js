@@ -12,26 +12,29 @@
     };
 
     OctoPrint.printerprofiles = {
-        get: function (opts) {
+        list: function (opts) {
             return OctoPrint.get(url, opts);
         },
 
-        add: function (profile, additional, opts) {
+        add: function (profile, basedOn, opts) {
             profile = profile || {};
-            additional = additional || {};
 
-            var data = $.extend({}, additional);
-            data.profile = profile;
+            var data = {profile: profile};
+            if (basedOn) {
+                data.basedOn = basedOn;
+            }
 
             return OctoPrint.postJson(url, data, opts);
         },
 
-        update: function (id, profile, additional, opts) {
-            profile = profile || {};
-            additional = additional || {};
+        get: function (id, opts) {
+            return OctoPrint.get(profileUrl(id), opts);
+        },
 
-            var data = $.extend({}, additional);
-            data.profile = profile;
+        update: function (id, profile, opts) {
+            profile = profile || {};
+
+            var data = {profile: profile};
 
             return OctoPrint.patchJson(profileUrl(id), data, opts);
         },

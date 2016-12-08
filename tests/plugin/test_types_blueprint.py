@@ -64,7 +64,7 @@ class BlueprintPluginTest(unittest.TestCase):
 
 		result = self.plugin.get_blueprint_kwargs()
 
-		self.assertEquals(result, expected)
+		self.assertEqual(result, expected)
 
 	def test_get_blueprint_kwargs_assetplugin(self):
 		import os
@@ -75,7 +75,7 @@ class BlueprintPluginTest(unittest.TestCase):
 
 		result = self.assetplugin.get_blueprint_kwargs()
 
-		self.assertEquals(result, expected)
+		self.assertEqual(result, expected)
 
 	def test_get_blueprint_kwargs_templateplugin(self):
 		import os
@@ -86,7 +86,7 @@ class BlueprintPluginTest(unittest.TestCase):
 
 		result = self.templateplugin.get_blueprint_kwargs()
 
-		self.assertEquals(result, expected)
+		self.assertEqual(result, expected)
 
 	def test_get_blueprint(self):
 		import os
@@ -122,7 +122,7 @@ class BlueprintPluginTest(unittest.TestCase):
 
 			result = plugin.get_blueprint()
 
-		self.assertEquals(result, blueprint)
+		self.assertEqual(result, blueprint)
 
 		MockBlueprint.assert_called_once_with("plugin.myplugin", "myplugin", **expected_kwargs)
 		blueprint.add_url_rule.assert_called_once_with("/some/path", "route_method", view_func=plugin.route_method, methods=["GET"])
@@ -136,4 +136,4 @@ class BlueprintPluginTest(unittest.TestCase):
 
 		result = self.plugin.get_blueprint()
 
-		self.assertEquals(blueprint, result)
+		self.assertEqual(blueprint, result)

@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -78,14 +78,14 @@ class CleanCommand(Command):
 	def run(self):
 		# build folder
 		if os.path.exists(self.__class__.build_folder):
-			print "Deleting build directory"
+			print("Deleting build directory")
 			shutil.rmtree(self.__class__.build_folder)
 
 		# eggs
 		for egg in self.__class__.eggs:
 			globbed_eggs = glob.glob(egg)
 			for globbed_egg in globbed_eggs:
-				print "Deleting %s directory" % globbed_egg
+				print("Deleting %s directory" % globbed_egg)
 				shutil.rmtree(globbed_egg)
 
 		# pyc files
@@ -94,11 +94,11 @@ class CleanCommand(Command):
 				return
 			if len(os.listdir(path)) == 0:
 				shutil.rmtree(path)
-				print "Deleted %s since it was empty" % path
+				print("Deleted %s since it was empty" % path)
 
 		def delete_file(path):
 			os.remove(path)
-			print "Deleted %s" % path
+			print("Deleted %s" % path)
 
 		import fnmatch
 		recursively_handle_files(

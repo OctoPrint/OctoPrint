@@ -5,6 +5,7 @@ $(function() {
         self.loginState = parameters[0];
         self.users = parameters[1];
         self.printerProfiles = parameters[2];
+        self.about = parameters[3];
 
         self.allViewModels = [];
 
@@ -14,6 +15,10 @@ $(function() {
             return self.receiving() || self.sending();
         });
         self.outstanding = [];
+
+        self.active = false;
+        self.sawUpdateEventWhileActive = false;
+        self.ignoreNextUpdateEvent = false;
 
         self.settingsDialog = undefined;
         self.settings_dialog_update_detected = undefined;
@@ -100,6 +105,7 @@ $(function() {
         self.appearance_color = ko.observable(undefined);
         self.appearance_colorTransparent = ko.observable();
         self.appearance_defaultLanguage = ko.observable();
+        self.appearance_showFahrenheitAlso = ko.observable(undefined);
 
         self.printer_defaultExtrusionLength = ko.observable(undefined);
 
@@ -114,10 +120,15 @@ $(function() {
         self.webcam_rotate90 = ko.observable(undefined);
 
         self.feature_gcodeViewer = ko.observable(undefined);
+        self.feature_sizeThreshold = ko.observable();
+        self.feature_mobileSizeThreshold = ko.observable();
+        self.feature_sizeThreshold_str = sizeObservable(self.feature_sizeThreshold);
+        self.feature_mobileSizeThreshold_str = sizeObservable(self.feature_mobileSizeThreshold);
         self.feature_temperatureGraph = ko.observable(undefined);
         self.feature_waitForStart = ko.observable(undefined);
         self.feature_sendChecksum = ko.observable("print");
         self.feature_sdSupport = ko.observable(undefined);
+        self.feature_sdRelativePath = ko.observable(undefined);
         self.feature_sdAlwaysAvailable = ko.observable(undefined);
         self.feature_swallowOkAfterResend = ko.observable(undefined);
         self.feature_repetierTargetTemp = ko.observable(undefined);
@@ -125,6 +136,8 @@ $(function() {
         self.feature_keyboardControl = ko.observable(undefined);
         self.feature_pollWatched = ko.observable(undefined);
         self.feature_ignoreIdenticalResends = ko.observable(undefined);
+        self.feature_modelSizeDetection = ko.observable(undefined);
+        self.feature_firmwareDetection = ko.observable(undefined);
 
         self.serial_port = ko.observable();
         self.serial_baudrate = ko.observable();
@@ -145,6 +158,11 @@ $(function() {
         self.serial_helloCommand = ko.observable(undefined);
         self.serial_ignoreErrorsFromFirmware = ko.observable(undefined);
         self.serial_disconnectOnErrors = ko.observable(undefined);
+        self.serial_triggerOkForM29 = ko.observable(undefined);
+        self.serial_supportResendsWithoutOk = ko.observable(undefined);
+        self.serial_maxTimeoutsIdle = ko.observable(undefined);
+        self.serial_maxTimeoutsPrinting = ko.observable(undefined);
+        self.serial_maxTimeoutsLong = ko.observable(undefined);
 
         self.folder_uploads = ko.observable(undefined);
         self.folder_timelapse = ko.observable(undefined);
@@ -231,7 +249,7 @@ $(function() {
             var errorText = gettext("Could not retrieve snapshot URL, please double check the URL");
             var errorTitle = gettext("Snapshot test failed");
 
-            OctoPrint.util.testUrl(self.webcam_snapshotUrl(), {method: "GET", response: true})
+            OctoPrint.util.testUrl(self.webcam_snapshotUrl(), {method: "GET", response: "bytes"})
                 .done(function(response) {
                     $("i.icon-spinner", target).remove();
 
@@ -247,8 +265,8 @@ $(function() {
                     var mimeType = "image/jpeg";
 
                     var headers = response.response.headers;
-                    if (headers && headers["mime-type"]) {
-                        mimeType = headers["mime-type"];
+                    if (headers && headers["content-type"]) {
+                        mimeType = headers["content-type"].split(";")[0];
                     }
 
                     var text = gettext("If you see your webcam snapshot picture below, the entered snapshot URL is ok.");
@@ -342,12 +360,14 @@ $(function() {
             self.allViewModels = allViewModels;
 
             self.settingsDialog.on('show', function(event) {
+                OctoPrint.coreui.settingsOpen = true;
                 if (event.target.id == "settings_dialog") {
                     self.requestTranslationData();
                     callViewModels(allViewModels, "onSettingsShown");
                 }
             });
             self.settingsDialog.on('hidden', function(event) {
+                OctoPrint.coreui.settingsOpen = false;
                 if (event.target.id == "settings_dialog") {
                     callViewModels(allViewModels, "onSettingsHidden");
                 }
@@ -447,6 +467,9 @@ $(function() {
             // perform the request
             self.receiving(true);
             return OctoPrint.settings.get()
+                .always(function() {
+                    self.receiving(false);
+                })
                 .done(function(response) {
                     self.fromResponse(response, local);
 
@@ -470,9 +493,6 @@ $(function() {
                         deferred.reject(args);
                     });
                     self.outstanding = [];
-                })
-                .always(function() {
-                    self.receiving(false);
                 });
         };
 
@@ -714,6 +734,7 @@ $(function() {
 
             self.settingsDialog.trigger("beforeSave");
 
+            self.sawUpdateEventWhileSending = false;
             self.sending(data == undefined || options.sending || false);
 
             if (data == undefined) {
@@ -721,10 +742,15 @@ $(function() {
                 data = getOnlyChangedData(self.getLocalData(), self.lastReceivedSettings);
             }
 
+            self.active = true;
             return OctoPrint.settings.save(data)
                 .done(function(data, status, xhr) {
+                    self.ignoreNextUpdateEvent = !self.sawUpdateEventWhileSending;
+                    self.active = false;
+
                     self.receiving(true);
                     self.sending(false);
+
                     try {
                         self.fromResponse(data);
                         if (options.success) options.success(data, status, xhr);
@@ -734,6 +760,7 @@ $(function() {
                 })
                 .fail(function(xhr, status, error) {
                     self.sending(false);
+                    self.active = false;
                     if (options.error) options.error(xhr, status, error);
                 })
                 .always(function(xhr, status) {
@@ -742,6 +769,10 @@ $(function() {
         };
 
         self.onEventSettingsUpdated = function() {
+            if (self.active) {
+                self.sawUpdateEventWhileActive = true;
+            }
+
             var preventSettingsRefresh = _.any(self.allViewModels, function(viewModel) {
                 if (viewModel.hasOwnProperty("onSettingsPreventRefresh")) {
                     try {
@@ -762,7 +793,8 @@ $(function() {
 
             if (self.isDialogActive()) {
                 // dialog is open and not currently busy...
-                if (self.sending() || self.receiving()) {
+                if (self.sending() || self.receiving() || self.active || self.ignoreNextUpdateEvent) {
+                    self.ignoreNextUpdateEvent = false;
                     return;
                 }
 
@@ -793,11 +825,17 @@ $(function() {
                 $('ul.nav-list a:first', self.settingsDialog).tab("show");
             }
         };
+
+        self.onServerReconnect = function() {
+            // the settings might have changed if the server was just restarted,
+            // better refresh them now
+            self.requestData();
+        };
     }
 
     OCTOPRINT_VIEWMODELS.push([
         SettingsViewModel,
-        ["loginStateViewModel", "usersViewModel", "printerProfilesViewModel"],
+        ["loginStateViewModel", "usersViewModel", "printerProfilesViewModel", "aboutViewModel"],
         ["#settings_dialog", "#navbar_settings"]
     ]);
 });

@@ -15,7 +15,7 @@ abstracted version of the actual printer communication.
    :members:
 """
 
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -23,32 +23,15 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import re
 
-import octoprint.util.comm as comm
-import octoprint.util
 from octoprint.settings import settings
+from octoprint.util import deprecated
 
+
+@deprecated(message="get_connection_options has been replaced by PrinterInterface.get_connection_options",
+            includedoc="Replaced by :func:`PrinterInterface.get_connection_options`",
+            since="1.3.0")
 def get_connection_options():
-	"""
-	Retrieves the available ports, baudrates, preferred port and baudrate for connecting to the printer.
-
-	Returned ``dict`` has the following structure::
-
-	    ports: <list of available serial ports>
-	    baudrates: <list of available baudrates>
-	    portPreference: <configured default serial port>
-	    baudratePreference: <configured default baudrate>
-	    autoconnect: <whether autoconnect upon server startup is enabled or not>
-
-	Returns:
-	    (dict): A dictionary holding the connection options in the structure specified above
-	"""
-	return {
-		"ports": comm.serialList(),
-		"baudrates": comm.baudrateList(),
-		"portPreference": settings().get(["serial", "port"]),
-		"baudratePreference": settings().getInt(["serial", "baudrate"]),
-		"autoconnect": settings().getBoolean(["serial", "autoconnect"])
-	}
+	return PrinterInterface.get_connection_options()
 
 
 class PrinterInterface(object):
@@ -65,6 +48,31 @@ class PrinterInterface(object):
 
 	valid_heater_regex = re.compile("^(tool\d+|bed)$")
 	"""Regex for valid heater identifiers."""
+
+	@classmethod
+	def get_connection_options(cls):
+		"""
+		Retrieves the available ports, baudrates, preferred port and baudrate for connecting to the printer.
+
+		Returned ``dict`` has the following structure::
+
+		    ports: <list of available serial ports>
+		    baudrates: <list of available baudrates>
+		    portPreference: <configured default serial port>
+		    baudratePreference: <configured default baudrate>
+		    autoconnect: <whether autoconnect upon server startup is enabled or not>
+
+		Returns:
+		    (dict): A dictionary holding the connection options in the structure specified above
+		"""
+		import octoprint.util.comm as comm
+		return {
+			"ports": comm.serialList(),
+			"baudrates": comm.baudrateList(),
+			"portPreference": settings().get(["serial", "port"]),
+			"baudratePreference": settings().getInt(["serial", "baudrate"]),
+			"autoconnect": settings().getBoolean(["serial", "autoconnect"])
+		}
 
 	def connect(self, port=None, baudrate=None, profile=None):
 		"""
@@ -134,13 +142,17 @@ class PrinterInterface(object):
 		"""
 		raise NotImplementedError()
 
-	def jog(self, axis, amount):
+	def jog(self, axes, relative=True, speed=None, *args, **kwargs):
 		"""
 		Jogs the specified printer ``axis`` by the specified ``amount`` in mm.
 
 		Arguments:
-		    axis (str): The axis to jog, will be converted to lower case, one of "x", "y", "z" or "e"
-		    amount (int, float): The amount by which to jog in mm
+		    axes (dict): Axes and distances to jog, keys are axes ("x", "y", "z"), values are distances in mm
+		    relative (bool): Whether to interpret the distance values as relative (true, default) or absolute (false)
+		        coordinates
+		    speed (int, bool or None): Speed at which to jog (F parameter). If set to ``False`` no speed will be set
+		        specifically. If set to ``None`` (or left out) the minimum of all involved axes speeds from the printer
+		        profile will be used.
 		"""
 		raise NotImplementedError()
 
@@ -201,7 +213,7 @@ class PrinterInterface(object):
 
 		Arguments:
 		    factor (int, float): The factor for the feed rate to send to the firmware. Percentage expressed as either an
-		    int between 0 and 100 or a float between 0 and 1.
+		        int between 0 and 100 or a float between 0 and 1.
 		"""
 		raise NotImplementedError()
 
@@ -211,7 +223,7 @@ class PrinterInterface(object):
 
 		Arguments:
 		    factor (int, float): The factor for the flow rate to send to the firmware. Percentage expressed as either an
-		    int between 0 and 100 or a float between 0 and 1.
+		        int between 0 and 100 or a float between 0 and 1.
 		"""
 		raise NotImplementedError()
 
@@ -263,11 +275,26 @@ class PrinterInterface(object):
 		"""
 		raise NotImplementedError()
 
+	def pause_print(self):
+		"""
+		Pauses the current print job if it is currently running, does nothing otherwise.
+		"""
+		raise NotImplementedError()
+
+	def resume_print(self):
+		"""
+		Resumes the current print job if it is currently paused, does nothing otherwise.
+		"""
+		raise NotImplementedError()
+
 	def toggle_pause_print(self):
 		"""
 		Pauses the current print job if it is currently running or resumes it if it is currently paused.
 		"""
-		raise NotImplementedError()
+		if self.is_printing():
+			self.pause_print()
+		elif self.is_paused():
+			self.resume_print()
 
 	def cancel_print(self):
 		"""
