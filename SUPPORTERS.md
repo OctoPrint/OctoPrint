@@ -14,7 +14,6 @@ thanks to everyone who contributed!
   * Bart Zudell
   * Boris Hussein
   * Brad Jackson
-  * Brad Mooneyham
   * Brent Fiegle
   * Brian E. Tyler
   * Charles Mitchell
@@ -34,6 +33,7 @@ thanks to everyone who contributed!
   * Gary N McKinney
   * George Robles
   * J. Eckert
+  * Jamie van Dyke
   * Jason Galarneau
   * Josh Daniels
   * Joshua David Gregory
@@ -41,13 +41,12 @@ thanks to everyone who contributed!
   * Kale Stedman
   * Kazuhiro Ogura
   * Lamin Kivelä
-  * M Khorakiwala
   * Makespace Madrid
+  * Marcus Ackermann
   * Mark Qvist
   * Mark Walker
   * Masayoshi Mitsui
   * Michael Aumock
-  * Michael McDargh Sr
   * Miles Flavel
   * Noe Ruiz
   * Patrick McGinnis
@@ -70,4 +69,4 @@ thanks to everyone who contributed!
   * Thomas Hatley
   * Trent Shumay
 
-and 989 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!
+and 972 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!
