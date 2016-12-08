@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: OctoPrint\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
-"POT-Creation-Date: 2016-11-24 12:53+0100\n"
-"PO-Revision-Date: 2016-11-24 12:54+0100\n"
+"POT-Creation-Date: 2016-12-02 12:37+0100\n"
+"PO-Revision-Date: 2016-12-02 12:38+0100\n"
 "Last-Translator: Gina Häußge <osd@foosel.net>\n"
 "Language: de\n"
 "Language-Team: German (http://www.transifex.com/projects/p/octoprint/language/de/)\n"
@@ -1570,12 +1570,12 @@ msgstr "Trennen"
 #: src/octoprint/static/js/app/viewmodels/files.js:589
 #: src/octoprint/static/js/app/viewmodels/gcode.js:482
 #: src/octoprint/static/js/app/viewmodels/printerstate.js:231
-#: src/octoprint/static/js/app/viewmodels/temperature.js:58
+#: src/octoprint/static/js/app/viewmodels/temperature.js:62
 msgid "Tool"
 msgstr "Werkzeug"
 
 #: src/octoprint/static/js/app/viewmodels/control.js:68
-#: src/octoprint/static/js/app/viewmodels/temperature.js:69
+#: src/octoprint/static/js/app/viewmodels/temperature.js:73
 msgid "Hotend"
 msgstr "Hotend"
 
@@ -2014,25 +2014,25 @@ msgid "Error"
 msgstr "Fehler"
 
 #: src/octoprint/static/js/app/viewmodels/temperature.js:23
-#: src/octoprint/static/js/app/viewmodels/temperature.js:76
+#: src/octoprint/static/js/app/viewmodels/temperature.js:80
 #: src/octoprint/templates/dialogs/settings/temperatures.jinja2:16
 msgid "Bed"
 msgstr "Bett"
 
-#: src/octoprint/static/js/app/viewmodels/temperature.js:115
+#: src/octoprint/static/js/app/viewmodels/temperature.js:123
 msgid "just now"
 msgstr "gerade eben"
 
-#: src/octoprint/static/js/app/viewmodels/temperature.js:117
+#: src/octoprint/static/js/app/viewmodels/temperature.js:125
 msgid "min"
 msgstr "Min"
 
-#: src/octoprint/static/js/app/viewmodels/temperature.js:261
+#: src/octoprint/static/js/app/viewmodels/temperature.js:292
 #: src/octoprint/templates/tabs/temperature.jinja2:11
 msgid "Actual"
 msgstr "Ist"
 
-#: src/octoprint/static/js/app/viewmodels/temperature.js:266
+#: src/octoprint/static/js/app/viewmodels/temperature.js:297
 #: src/octoprint/templates/tabs/temperature.jinja2:12
 msgid "Target"
 msgstr "Soll"
@@ -2100,7 +2100,7 @@ msgstr "Zeitrafferaufnahme wird gerendert"
 #: src/octoprint/static/js/app/viewmodels/timelapse.js:320
 #, python-format
 msgid "Now rendering timelapse %(movie_prefix)s. Due to performance reasons it is not recommended to start a print job while a movie is still rendering."
-msgstr "Rendere jetzt die Zeitrafferaufnahme %(movie_prefix)s. Aus Gründen der Performance ist es nicht empfehlenswert, einen Druckauftrage zu starten, so lange die Aufnahme noch gerendert wird."
+msgstr "Rendere jetzt die Zeitrafferaufnahme %(movie_prefix)s. Aus Gründen der Performance ist es nicht empfehlenswert, einen Druckauftrag zu starten, so lange die Aufnahme noch gerendert wird."
 
 #: src/octoprint/static/js/app/viewmodels/timelapse.js:329
 msgid "Cannot render timelapse"
@@ -2848,8 +2848,8 @@ msgstr "Deine OctoPrint Installation ist jetzt eingerichtet und es kann losgehen
 msgid ""
 "\n"
 "    If you enjoy OctoPrint, please consider <a href=\"%(url)s\" target=\"_blank\">supporting its ongoing\n"
-"    development</a>. You can find find this link also in the \"About\" dialog. Thank you!\n"
-msgstr "Falls dir OctoPrint gefällt, bitte ziehe es in Betracht, <a href=\"%(url)s\" target=\"_blank\">seine fortlaufende Entwicklung zu unterstützen</a>. Du kannst diesen Link auch im \"Über\" Dialog finden. Danke!"
+"    development</a>, which is fully funded by users like you! You can also find this link in the \"About\" dialog. <strong>Thank you!</strong>\n"
+msgstr "Falls Dir OctoPrint gefällt, bitte denke darüber nach, <a href=\"%(url)s\" target=\"_blank\">seine fortlaufende Entwicklung zu unterstützen</a>, welche vollständig durch User wie Dich finanziert wird! Du kannst diesen Link auch im \"Über\" Dialog finden. <strong>Vielen Dank!</strong>"
 
 #: src/octoprint/templates/dialogs/wizard/firstrun_start.jinja2:1
 msgid "Hello!"
@@ -3695,3 +3695,9 @@ msgstr "Zeitrafferaufnahme rendern"
 
 #~ msgid "Reboot"
 #~ msgstr "Neustart"
+
+#~ msgid ""
+#~ "\n"
+#~ "    If you enjoy OctoPrint, please consider <a href=\"%(url)s\" target=\"_blank\">supporting its ongoing\n"
+#~ "    development</a>. It's fully funded by users like you! You can also find this link in the \"About\" dialog. <strong>Thank you!</strong>\n"
+#~ msgstr "Falls dir OctoPrint gefällt, bitte ziehe es in Betracht <a href=\"%(url)s\" target=\"_blank\">seine fortlaufende Entwicklung zu unterstützen</a>. Diese Entwicklung wird vollständig durch User wie Dich finanziert! Du kannst diesen Link auch im \"Über\" Dialog finden. <strong>Danke!</strong>"

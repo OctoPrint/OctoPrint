@@ -5,7 +5,8 @@ JavaScript Client Library
 #########################
 
 The JS Client Library provides an interface to all of OctoPrint's API, including the SockJS based socket to send
-push messages from the server to connected clients. It is available as packed web asset file at ``/static/webassets/packed_client.js`` or as individual
+push messages from the server to connected clients. It is available as packed web
+asset file at ``/static/webassets/packed_client.js`` or as individual
 component files at ``/static/js/app/client/<component>.js`` relative to your
 OctoPrint instance's base URL (e.g. ``http://octopi.local/static/webassets/packed_client.js``).
 
@@ -27,9 +28,17 @@ correct URL prefix:
    <script type="text/javascript" src="{{ url_for("static", filename="webassets/packed_client.js") }}"></script>
 
    <!--
-     individual components
+     individual components (do not forget base!)
    -->
    <script type="text/javascript" src="{{ url_for("static", filename="js/app/client/<component>.js") }}"></script>
+
+Regardless of which way you use to include the library, you'll also need to make sure you included JQuery and lodash,
+because the library depends on those to be available (as ``$`` and ``_``). You can embed those like this:
+
+.. code-block:: html
+
+   <script src="{{ url_for("static", filename="js/lib/jquery/jquery.min.js") }}"></script>
+   <script src="{{ url_for("static", filename="js/lib/lodash.min.js") }}"></script>
 
 Note that all components depend on the ``base`` component to be present, so if you are only including a select
 number of components, make sure to at the very least include that one to be able to utilize the client.

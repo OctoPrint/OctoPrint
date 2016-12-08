@@ -168,6 +168,7 @@
         }
 
         filename = filename || fileData.name;
+        var filesize = fileData.size;
 
         var form = new FormData();
         form.append("file", fileData, filename);
@@ -221,7 +222,12 @@
 
         var headers = OctoPrint.getRequestHeaders();
 
-        request.open("POST", OctoPrint.getBaseUrl() + url);
+        var urlToCall = url;
+        if (!_.startsWith(url, "http://") && !_.startsWith(url, "https://")) {
+            urlToCall = OctoPrint.getBaseUrl() + url;
+        }
+
+        request.open("POST", urlToCall);
         _.each(headers, function(value, key) {
             request.setRequestHeader(key, value);
         });

@@ -32,6 +32,13 @@ def _etag(lm=None):
 
 	connection_options = printer.__class__.get_connection_options()
 	plugins = sorted(octoprint.plugin.plugin_manager().enabled_plugins)
+	plugin_settings = _get_plugin_settings()
+
+	from collections import OrderedDict
+	sorted_plugin_settings = OrderedDict()
+	for key in sorted(plugin_settings.keys()):
+		sorted_plugin_settings[key] = plugin_settings.get(key, dict())
+
 	if current_user is not None and not current_user.is_anonymous:
 		roles = sorted(current_user.roles)
 	else:
@@ -39,11 +46,26 @@ def _etag(lm=None):
 
 	import hashlib
 	hash = hashlib.sha1()
+
+	# last modified timestamp
 	hash.update(str(lm))
+
+	# effective config from config.yaml + overlays
 	hash.update(repr(settings().effective))
+
+	# might duplicate settings().effective, but plugins might also inject additional keys into the settings
+	# output that are not stored in config.yaml
+	hash.update(repr(sorted_plugin_settings))
+
+	# connection options are also part of the settings
 	hash.update(repr(connection_options))
+
+	# if the list of plugins changes, the settings structure changes too
 	hash.update(repr(plugins))
+
+	# and likewise if the role of the user changes
 	hash.update(repr(roles))
+
 	return hash.hexdigest()
 
 @api.route("/settings", methods=["GET"])
@@ -51,8 +73,6 @@ def _etag(lm=None):
                             lastmodified_factory=_lastmodified,
                             unless=lambda: request.values.get("force", "false") in valid_boolean_trues)
 def getSettings():
-	logger = logging.getLogger(__name__)
-
 	s = settings()
 
 	connectionOptions = printer.__class__.get_connection_options()
@@ -180,32 +200,45 @@ def getSettings():
 		for name in gcode_scripts:
 			data["scripts"]["gcode"][name] = s.loadScript("gcode", name, source=True)
 
+	plugin_settings = _get_plugin_settings()
+	if len(plugin_settings):
+		data["plugins"] = plugin_settings
+
+	return jsonify(data)
+
+
+def _get_plugin_settings():
+	logger = logging.getLogger(__name__)
+
+	data = dict()
+
 	def process_plugin_result(name, result):
 		if result:
 			try:
 				jsonify(test=result)
 			except:
 				logger.exception("Error while jsonifying settings from plugin {}, please contact the plugin author about this".format(name))
-
-			if not "plugins" in data:
-				data["plugins"] = dict()
-			if "__enabled" in result:
-				del result["__enabled"]
-			data["plugins"][name] = result
+				raise
+			else:
+				if "__enabled" in result:
+					del result["__enabled"]
+				data[name] = result
 
 	for plugin in octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.SettingsPlugin):
 		try:
 			result = plugin.on_settings_load()
 			process_plugin_result(plugin._identifier, result)
 		except TypeError:
-			logger.warn("Could not load settings for plugin {name} ({version}) since it called super(...)".format(name=plugin._plugin_name, version=plugin._plugin_version))
+			logger.warn("Could not load settings for plugin {name} ({version}) since it called super(...)".format(name=plugin._plugin_name,
+			                                                                                                      version=plugin._plugin_version))
 			logger.warn("in a way which has issues due to OctoPrint's dynamic reloading after plugin operations.")
 			logger.warn("Please contact the plugin's author and ask to update the plugin to use a direct call like")
 			logger.warn("octoprint.plugin.SettingsPlugin.on_settings_load(self) instead.")
 		except:
-			logger.exception("Could not load settings for plugin {name} ({version})".format(version=plugin._plugin_version, name=plugin._plugin_name))
+			logger.exception("Could not load settings for plugin {name} ({version})".format(version=plugin._plugin_version,
+			                                                                                name=plugin._plugin_name))
 
-	return jsonify(data)
+	return data
 
 
 @api.route("/settings", methods=["POST"])

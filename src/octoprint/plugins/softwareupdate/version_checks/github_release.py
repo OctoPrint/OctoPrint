@@ -28,6 +28,7 @@ def _filter_out_latest(releases,
 	    >>> release_1_2_16rc2 = dict(name="1.2.16rc2", tag_name="1.2.16rc2", html_url="some_url", published_at="2016-08-30T12:00:00Z", prerelease=True, draft=False, target_commitish="rc/maintenance")
 	    >>> release_1_2_17rc1 = dict(name="1.2.17rc1", tag_name="1.2.17rc1", html_url="some_url", published_at="2016-08-31T12:00:00Z", prerelease=True, draft=True, target_commitish="rc/maintenance")
 	    >>> release_1_3_0rc1 = dict(name="1.3.0rc1", tag_name="1.3.0rc1", html_url="some_url", published_at="2016-12-12T12:00:00Z", prerelease=True, draft=False, target_commitish="rc/devel")
+	    >>> release_1_2_18 = dict(name="1.2.18", tag_name="1.2.18", html_url="some_url", published_at="2016-12-13T12:00:00Z", prerelease=False, draft=False, target_commitish="master")
 	    >>> release_1_4_0rc1 = dict(name="1.4.0rc1", tag_name="1.4.0rc1", html_url="some_url", published_at="2017-12-12T12:00:00Z", prerelease=True, draft=False, target_commitish="rc/future")
 	    >>> releases = [release_1_2_15, release_1_2_16rc1, release_1_2_16rc2, release_1_2_17rc1, release_1_3_0rc1, release_1_4_0rc1]
 	    >>> _filter_out_latest(releases, include_prerelease=False, prerelease_channel=None)
@@ -44,6 +45,14 @@ def _filter_out_latest(releases,
 	    (None, None, None)
 	    >>> _filter_out_latest([release_1_2_16rc1, release_1_2_16rc2])
 	    (None, None, None)
+	    >>> comparable_factory = _get_comparable_factory("python", force_base=True)
+	    >>> sort_key = lambda release: comparable_factory(_get_sanitized_version(release["tag_name"]))
+	    >>> _filter_out_latest(releases + [release_1_2_18], include_prerelease=False, prerelease_channel=None, sort_key=sort_key)
+	    ('1.2.18', '1.2.18', 'some_url')
+	    >>> _filter_out_latest(releases + [release_1_2_18], include_prerelease=True, prerelease_channel="rc/maintenance", sort_key=sort_key)
+	    ('1.2.18', '1.2.18', 'some_url')
+	    >>> _filter_out_latest(releases + [release_1_2_18], include_prerelease=True, prerelease_channel="rc/devel", sort_key=sort_key)
+	    ('1.3.0rc1', '1.3.0rc1', 'some_url')
 	"""
 
 	nothing = None, None, None

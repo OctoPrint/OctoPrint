@@ -255,14 +255,18 @@
 
    **Example:**
 
-   Uploading a file from a file input element, updating a label with the current upload progress.
+   Uploading a file to ``some/path`` on the blueprint of plugin ``myplugin``, from a file input element,
+   updating a label with the current upload progress.
 
    .. code-block:: javascript
 
       var fileInput = $("#my-file-input");
       var progressOutput = $("#progress-output");
 
-      OctoPrint.upload("/plugins/myplugin/some/path", fileInput, "myfilename.dat", {"somekey": "somevalue"})
+      OctoPrint.upload(OctoPrint.getBlueprintUrl("myplugin") + "some/path",
+                       fileInput,
+                       "myfilename.dat",
+                       {"somekey": "somevalue"})
           .progress(function(data) {
               if (data.total) {
                   var percentage = Math.round(data.loaded * 100 / data.total);
@@ -277,7 +281,7 @@
               progressOutput.text("Uploaded!");
           });
 
-   :param string url: The URL to ``POST`` the upload to
+   :param string url: URL to which to POST the upload, relative to base url or absolute
    :param object file: The file to object, see description for details
    :param string filename: An optional file name to use for the upload
    :param object additional: An optional object of additional key/value pairs to set on the uploaded form data
