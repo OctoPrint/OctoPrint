@@ -1123,11 +1123,16 @@ class LocalFileStorage(StorageInterface):
 				# no hidden files and folders
 				continue
 
-			entry_name = entry.name
-			entry_path = entry.path
-			entry_is_file = entry.is_file()
-			entry_is_dir = entry.is_dir()
-			entry_stat = entry.stat()
+			try:
+				entry_name = entry.name
+				entry_path = entry.path
+				entry_is_file = entry.is_file()
+				entry_is_dir = entry.is_dir()
+				entry_stat = entry.stat()
+			except:
+				# error while trying to fetch file metadata, that might be thanks to file already having
+				# been moved or deleted - ignore it and continue
+				continue
 
 			try:
 				new_entry_name, new_entry_path = self._sanitize_entry(entry_name, path, entry_path)
