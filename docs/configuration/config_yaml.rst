@@ -165,16 +165,16 @@ appearance or to modify the order and presence of the various UI components:
          # order of generic templates
          generic: []
 
-     # Disabled components per container. If a component is included here it will not
-     # be included in OctoPrint's UI at all. Note that this might mean that critical
-     # functionality will not be available if no replacement is registered.
-     disabled:
-       navbar: [],
-       sidebar: [],
-       tab: [],
-       settings: [],
-       usersettings: [],
-       generic: []
+       # Disabled components per container. If a component is included here it will not
+       # be included in OctoPrint's UI at all. Note that this might mean that critical
+       # functionality will not be available if no replacement is registered.
+       disabled:
+         navbar: []
+         sidebar: []
+         tab: []
+         settings: []
+         usersettings: []
+         generic: []
 
      # Default language of OctoPrint. If left unset OctoPrint will try to match up available
      # languages with the user's browser settings.
@@ -687,6 +687,11 @@ Use the following settings to configure the serial connection to the printer:
      additionalPorts:
      - /dev/myPrinterSymlink
 
+     # Use this to define additional baud rates to offer for connecting to serial ports. Must be a
+     # valid integer. Defaults to not set
+     additionalBaudrates:
+     - 123456
+
      # Commands which are known to take a long time to be acknowledged by the firmware. E.g.
      # homing, dwelling, auto leveling etc. Defaults to the below commands.
      longRunningCommands:
@@ -753,7 +758,7 @@ Use the following settings to configure the server:
      # that AJAX requests and download URLs work.
      reverseProxy:
 
-       # The request header from which to determine the url prefix under which OctoPrint
+       # The request header from which to determine the URL prefix under which OctoPrint
        # is served by the reverse proxy
        prefixHeader: X-Script-Name
 
@@ -765,7 +770,7 @@ Use the following settings to configure the server:
        # is served by the reverse proxy
        hostHeader: X-Forwarded-Host
 
-       # Use this option to define an optional url prefix (with a leading /, so absolute to your
+       # Use this option to define an optional URL prefix (with a leading /, so absolute to your
        # server's root) under which to run OctoPrint. This should only be needed if you want to run
        # OctoPrint behind a reverse proxy under a different root endpoint than `/` and can't configure
        # said reverse proxy to send a prefix HTTP header (X-Script-Name by default, see above) with

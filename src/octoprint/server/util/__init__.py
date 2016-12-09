@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -44,7 +44,7 @@ def apiKeyRequestHandler():
 		# ui api key => continue regular request processing
 		return
 
-	if not settings().get(["api", "enabled"]):
+	if not settings().getBoolean(["api", "enabled"]):
 		# api disabled => 401
 		return _flask.make_response("API disabled", 401)
 
@@ -92,6 +92,20 @@ def noCachingResponseHandler(resp):
 	return flask.add_non_caching_response_headers(resp)
 
 
+def noCachingExceptGetResponseHandler(resp):
+	"""
+	``after_request`` handler for blueprints which shall set no caching headers
+	on their responses to any requests that are not sent with method ``GET``.
+
+	See :func:`noCachingResponseHandler`.
+	"""
+
+	if _flask.request.method == "GET":
+		return flask.add_no_max_age_response_headers(resp)
+	else:
+		return flask.add_non_caching_response_headers(resp)
+
+
 def optionsAllowOrigin(request):
 	"""
 	Shortcut for request handling for CORS OPTIONS requests to set CORS headers.
@@ -116,7 +130,7 @@ def optionsAllowOrigin(request):
 
 
 def get_user_for_apikey(apikey):
-	if settings().get(["api", "enabled"]) and apikey is not None:
+	if settings().getBoolean(["api", "enabled"]) and apikey is not None:
 		if apikey == settings().get(["api", "key"]) or octoprint.server.appSessionManager.validate(apikey):
 			# master key or an app session key was used
 			return ApiUser()

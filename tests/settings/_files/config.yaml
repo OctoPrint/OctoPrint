@@ -1,0 +1,15 @@
+api:
+  key: test
+serial:
+  timeout:
+    detection: 1.0
+    connection: "5"
+  additionalPorts:
+  - /dev/portA
+  - /dev/portB
+server:
+  port: 8080
+devel:
+  virtualPrinter:
+    enabled: true
+

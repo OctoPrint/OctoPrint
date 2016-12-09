@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -141,7 +141,7 @@ class UploadStorageFallbackHandler(tornado.web.RequestHandler):
 		self._path = path
 
 		self._suffixes = dict((key, key) for key in ("name", "path", "content_type", "size"))
-		for suffix_type, suffix in suffixes.iteritems():
+		for suffix_type, suffix in suffixes.items():
 			if suffix_type in self._suffixes and suffix is not None:
 				self._suffixes[suffix_type] = suffix
 
@@ -808,7 +808,7 @@ class CustomHTTP1Connection(tornado.http1connection.HTTP1Connection):
 		length if available, otherwise returns ``default_max_body_size``.
 
 		:param method: method of the request to match against
-		:param path: path od the request to match against
+		:param path: path of the request to match against
 		:return: determine maximum content length to apply to this request, max return 0 for unlimited allowed content
 		         length
 		"""
@@ -844,7 +844,7 @@ class LargeResponseHandler(tornado.web.StaticFileHandler):
 	Arguments:
 	   path (str): The system path from which to serve files (this will be forwarded to the ``initialize`` method of
 	       :class:``~tornado.web.StaticFileHandler``)
-	   default_filename (str): The default filename to serve if none is explicitely specified and the request references
+	   default_filename (str): The default filename to serve if none is explicitly specified and the request references
 	       a subdirectory of the served path (this will be forwarded to the ``initialize`` method of
 	       :class:``~tornado.web.StaticFileHandler`` as the ``default_filename`` keyword parameter). Defaults to ``None``.
 	   as_attachment (bool): Whether to serve requested files with ``Content-Disposition: attachment`` header (``True``)
@@ -881,12 +881,16 @@ class LargeResponseHandler(tornado.web.StaticFileHandler):
 			self._access_validation(self.request)
 		if self._path_validation is not None:
 			self._path_validation(path)
+
+		if "cookie" in self.request.arguments:
+			self.set_cookie(self.request.arguments["cookie"][0], "true", path="/")
+
 		result = tornado.web.StaticFileHandler.get(self, path, include_body=include_body)
 		return result
 
 	def set_extra_headers(self, path):
 		if self._as_attachment:
-			self.set_header("Content-Disposition", "attachment")
+			self.set_header("Content-Disposition", "attachment; filename=%s" % os.path.basename(path))
 
 		if not self._allow_client_caching:
 			self.set_header("Cache-Control", "max-age=0, must-revalidate, private")
@@ -927,7 +931,7 @@ class UrlProxyHandler(tornado.web.RequestHandler):
 
 	  * ``Date``, ``Cache-Control``, ``Expires``, ``ETag``, ``Server``, ``Content-Type`` and ``Location`` will be copied over.
 	  * If ``as_attachment`` is set to True, ``Content-Disposition`` will be set to ``attachment``. If ``basename`` is
-	    set including the attachement's ``filename`` attribute will be set to the base name followed by the extension
+	    set including the attachment's ``filename`` attribute will be set to the base name followed by the extension
 	    guessed based on the MIME type from the ``Content-Type`` header of the response. If no extension can be guessed
 	    no ``filename`` attribute will be set.
 

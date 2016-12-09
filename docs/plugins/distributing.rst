@@ -14,7 +14,7 @@ Manual file distribution
 ------------------------
 
 You can have your users copy it to OctoPrint's plugin folder (normally located at ``~/.octoprint/plugins`` under Linux,
-``%APPDATA%\OctoPrint\plugins`` on Windows and ... on Mac). In this case your plugin will be distributed directly
+``%APPDATA%\OctoPrint\plugins`` on Windows and ``~/Library/Application Support/OctoPrint`` on Mac). In this case your plugin will be distributed directly
 as a Python module (a single ``.py`` file containing all of your plugin's code directly and named
 like your plugin) or a package (a folder named like your plugin + ``__init.py__`` contained within).
 
@@ -23,7 +23,7 @@ like your plugin) or a package (a folder named like your plugin + ``__init.py__`
 Proper packages installable via pip
 -----------------------------------
 
-You can have your users install it via ``pip`` and register it for the `entry point <https://pythonhosted.org/setuptools/setuptools.html#dynamic-discovery-of-services-and-plugins>`_ ``octoprint.plugin`` via
+You can have your users install it via ``pip`` and register it for the `entry point <http://setuptools.readthedocs.io/en/latest/setuptools.html#dynamic-discovery-of-services-and-plugins>`_ ``octoprint.plugin`` via
 your plugin's ``setup.py``, this way it will be found automatically by OctoPrint upon initialization of the
 plugin subsystem [#f1]_.
 
@@ -35,10 +35,11 @@ requirements management and pretty much any thing else that Python's setuptools 
 
 .. seealso::
 
-   `OctoPrint Plugin Skeleton <https://github.com/OctoPrint/OctoPrint-PluginSkeleton>`_
-       A basic plugin skeleton providing you with all you need to get started with distributing your plugin as a proper
-       package. See the :ref:`Getting Started Guide <sec-plugins-gettingstarted>` for an
-       :ref:`example <sec-plugins-gettingstarted-growingup>` on how to use this.
+   `OctoPrint Plugin Cookiecutter Template <https://github.com/OctoPrint/cookiecutter-octoprint-plugin>`_
+       A `Cookiecutter Template <https://github.com/audreyr/cookiecutter>`_ providing
+       you with all you need to get started with writing a properly packaged OctoPrint plugin. See the
+       :ref:`Plugin Tutorial <sec-plugins-gettingstarted>` for an :ref:`example <sec-plugins-gettingstarted-growingup>`
+       on how to use this.
 
 .. rubric:: Footnotes
 
@@ -47,3 +48,15 @@ requirements management and pretty much any thing else that Python's setuptools 
          the plugin that they also used for installing & running OctoPrint. For OctoPi this means using
          ``~/oprint/bin/pip`` for installing plugins instead of just ``pip``.
 
+.. _sec-plugins-distribution-pluginrepo:
+
+Registering with the official plugin repository
+-----------------------------------------------
+
+Once it is ready for general consumption, you might want to register your plugin with the
+`official OctoPrint Plugin Repository <http://plugins.octoprint.org>`_. You can find instructions on how to do
+that in the `Plugin Repository's help pages <http://plugins.octoprint.org/help/registering/>`_.
+
+If you used the `OctoPrint Plugin Cookiecutter Template <https://github.com/OctoPrint/cookiecutter-octoprint-plugin>`_
+when creating your plugin, you can find a prepared registration entry ``.md`` file in the ``extras`` folder of your
+plugin.

@@ -7,6 +7,7 @@ $(function() {
 
         self.file = ko.observable(undefined);
         self.target = undefined;
+        self.path = undefined;
         self.data = undefined;
 
         self.defaultSlicer = undefined;
@@ -21,6 +22,8 @@ $(function() {
         self.profile = ko.observable();
         self.profiles = ko.observableArray();
         self.printerProfile = ko.observable();
+
+        self.allViewModels = undefined;
 
         self.slicersForFile = function(file) {
             if (file === undefined) {
@@ -107,16 +110,23 @@ $(function() {
         ];
         self.afterSlicing = ko.observable("none");
 
-        self.show = function(target, file, force) {
+        self.show = function(target, file, force, path) {
             if (!self.enableSlicingDialog() && !force) {
                 return;
+            }
+
+            var filename = file.substr(0, file.lastIndexOf("."));
+            if (filename.lastIndexOf("/") != 0) {
+                path = path || filename.substr(0, filename.lastIndexOf("/"));
+                filename = filename.substr(filename.lastIndexOf("/") + 1);
             }
 
             self.requestData();
             self.target = target;
             self.file(file);
-            self.title(_.sprintf(gettext("Slicing %(filename)s"), {filename: self.file()}));
-            self.destinationFilename(self.file().substr(0, self.file().lastIndexOf(".")));
+            self.path = path;
+            self.title(_.sprintf(gettext("Slicing %(filename)s"), {filename: filename}));
+            self.destinationFilename(filename);
             self.printerProfile(self.printerProfiles.currentProfile());
             self.afterSlicing("none");
 
@@ -146,18 +156,11 @@ $(function() {
                 && self.profile() != undefined;
         });
 
-        self.requestData = function(callback) {
-            $.ajax({
-                url: API_BASEURL + "slicing",
-                type: "GET",
-                dataType: "json",
-                success: function(data) {
+        self.requestData = function() {
+            return OctoPrint.slicing.listAllSlicersAndProfiles()
+                .done(function(data) {
                     self.fromResponse(data);
-                    if (callback !== undefined) {
-                        callback();
-                    }
-                }
-            });
+                });
         };
 
         self.destinationExtension = ko.pureComputed(function() {
@@ -207,6 +210,10 @@ $(function() {
             });
 
             self.defaultSlicer = selectedSlicer;
+
+            if (self.allViewModels) {
+                callViewModels(self.allViewModels, "onSlicingData", [data]);
+            }
         };
 
         self.slice = function() {
@@ -222,12 +229,15 @@ $(function() {
             }
 
             var data = {
-                command: "slice",
                 slicer: self.slicer(),
                 profile: self.profile(),
                 printerProfile: self.printerProfile(),
                 destination: destinationFilename
             };
+
+            if (self.path != undefined) {
+                data["path"] = self.path;
+            }
 
             if (self.afterSlicing() == "print") {
                 data["print"] = true;
@@ -235,19 +245,14 @@ $(function() {
                 data["select"] = true;
             }
 
-            $.ajax({
-                url: API_BASEURL + "files/" + self.target + "/" + self.file(),
-                type: "POST",
-                dataType: "json",
-                contentType: "application/json; charset=UTF-8",
-                data: JSON.stringify(data)
-            });
+            OctoPrint.files.slice(self.target, self.file(), data)
+                .done(function() {
+                    $("#slicing_configuration_dialog").modal("hide");
 
-            $("#slicing_configuration_dialog").modal("hide");
-
-            self.destinationFilename(undefined);
-            self.slicer(self.defaultSlicer);
-            self.profile(self.defaultProfile);
+                    self.destinationFilename(undefined);
+                    self.slicer(self.defaultSlicer);
+                    self.profile(self.defaultProfile);
+                });
         };
 
         self._sanitize = function(name) {
@@ -260,6 +265,10 @@ $(function() {
 
         self.onEventSettingsUpdated = function(payload) {
             self.requestData();
+        };
+
+        self.onAllBound = function(allViewModels) {
+            self.allViewModels = allViewModels;
         };
     }
 

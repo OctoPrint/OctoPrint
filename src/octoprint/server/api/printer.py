@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -91,7 +91,7 @@ def printerToolCommand():
 
 		# make sure the targets are valid and the values are numbers
 		validated_values = {}
-		for tool, value in targets.iteritems():
+		for tool, value in targets.items():
 			if re.match(validation_regex, tool) is None:
 				return make_response("Invalid target for setting temperature: %s" % tool, 400)
 			if not isinstance(value, (int, long, float)):
@@ -108,7 +108,7 @@ def printerToolCommand():
 
 		# make sure the targets are valid, the values are numbers and in the range [-50, 50]
 		validated_values = {}
-		for tool, value in offsets.iteritems():
+		for tool, value in offsets.items():
 			if re.match(validation_regex, tool) is None:
 				return make_response("Invalid target for setting temperature: %s" % tool, 400)
 			if not isinstance(value, (int, long, float)):
@@ -244,9 +244,11 @@ def printerPrintheadCommand():
 					return make_response("Not a number for axis %s: %r" % (axis, value), 400)
 				validated_values[axis] = value
 
+		absolute = "absolute" in data and data["absolute"] in valid_boolean_trues
+		speed = data.get("speed", None)
+
 		# execute the jog commands
-		for axis, value in validated_values.iteritems():
-			printer.jog(axis, value)
+		printer.jog(validated_values, relative=not absolute, speed=speed)
 
 	##~~ home command
 	elif command == "home":

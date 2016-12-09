@@ -3,11 +3,17 @@
 # The init.d script will only run if this variable non-empty.
 OCTOPRINT_USER=pi
 
+# base directory to use
+#BASEDIR=/home/pi/.octoprint
+
+# configuration file to use
+#CONFIGFILE=/home/pi/.octoprint/config.yaml
+
 # On what port to run daemon, default is 5000
 PORT=5000
 
-# Path to the OctoPrint executable, use this to override the default setting "/usr/bin/octoprint"
-#DAEMON=/path/to/octoprint/executable
+# Path to the OctoPrint executable, you need to set this to match your installation!
+#DAEMON=/home/pi/OctoPrint/venv/bin/octoprint
 
 # What arguments to pass to octoprint, usually no need to touch this
 DAEMON_ARGS="--port=$PORT"

@@ -1,11 +1,200 @@
 .. _sec-plugins-hooks:
 
+Hooks
+=====
+
+.. contents::
+   :local:
+
+.. _sec-plugins-hooks-general:
+
+General Concepts
+----------------
+
+Hooks are the smaller siblings of :ref:`mixins <sec-plugins-mixins>`, allowing to extend functionality or data processing where a custom mixin type
+would be too much overhead. Where mixins are based on classes, hooks are based on methods. Like with the mixin
+implementations, plugins inform OctoPrint about hook handlers using a control property, ``__plugin_hooks__``.
+
+This control property is a dictionary consisting of the implemented hooks' names as keys and either the hook callback
+or a 2-tuple of hook callback and order value as value.
+
+Each hook defines a contract detailing the call parameters for the hook handler method and the expected return type.
+OctoPrint will call the hook with the define parameters and process the result depending on the hook.
+
+An example for a hook within OctoPrint is ``octoprint.comm.protocol.scripts``, which allows adding additional
+lines to OctoPrint's :ref:`GCODE scripts <sec-features-gcode_scripts>`, either as ``prefix`` (before the existing lines)
+or as ``postfix`` (after the existing lines).
+
+.. code-block:: python
+   :linenos:
+
+   self._gcode_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.scripts")
+
+   # ...
+
+   for hook in self._gcodescript_hooks:
+       try:
+           retval = self._gcodescript_hooks[hook](self, "gcode", scriptName)
+       except:
+           self._logger.exception("Error while processing gcodescript hook %s" % hook)
+       else:
+           if retval is None:
+               continue
+           if not isinstance(retval, (list, tuple)) or not len(retval) == 2:
+               continue
+
+           def to_list(data):
+               if isinstance(data, str):
+                   data = map(str.strip, data.split("\n"))
+               elif isinstance(data, unicode):
+                   data = map(unicode.strip, data.split("\n"))
+
+               if isinstance(data, (list, tuple)):
+                   return list(data)
+               else:
+                   return None
+
+           prefix, suffix = map(to_list, retval)
+           if prefix:
+               scriptLines = list(prefix) + scriptLines
+           if suffix:
+               scriptLines += list(suffix)
+
+As you can see, the hook's method signature is defined to take the current ``self`` (as in, the current comm layer instance),
+the general type of script for which to look for additions ("gcode") and the script name for which to look (e.g.
+``beforePrintStarted`` for the GCODE script executed before the beginning of a print job). The hook is expected to
+return a 2-tuple of prefix and postfix if has something for either of those, otherwise ``None``. OctoPrint will then take
+care to add prefix and suffix as necessary after a small round of preprocessing.
+
+Plugins can easily add their own hooks too. For example, the `Software Update Plugin <https://github.com/OctoPrint/OctoPrint-SoftwareUpdate>`_
+declares a custom hook "octoprint.plugin.softwareupdate.check_config" which other plugins can add handlers for in order
+to register themselves with the Software Update Plugin by returning their own update check configuration.
+
+If you want your hook handler to be an instance method of a mixin implementation of your plugin (for example since you
+need access to instance variables handed to your implementation via mixin invocations), you can get this work
+by using a small trick. Instead of defining it directly via ``__plugin_hooks__`` utilize the ``__plugin_load__``
+property instead, manually instantiate your implementation instance and then add its hook handler method to the
+``__plugin_hooks__`` property and itself to the ``__plugin_implementation__`` property. See the following example.
+
+.. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/custom_action_command.py
+   :linenos:
+   :tab-width: 4
+   :caption: `custom_action_command.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/custom_action_command.py>`_
+   :name: sec-plugin-concepts-hooks-example
+
+.. _sec-plugins-hooks-ordering:
+
+Execution Order
+---------------
+
+Hooks may also define an order number to allow influencing the execution order of the registered hook handlers. Instead
+of registering only a callback as hook handler, it is also possible to register a 2-tuple consisting of a callback and
+an integer value used for ordering handlers. They way this works is that OctoPrint will first sort all registered
+hook handlers with a order number, taking their identifier as the second sorting criteria, then after that append
+all hook handlers without a order number sorted only by their identifier.
+
+An example should help clear this up. Let's assume we have the following plugin ``ordertest`` which defines a new
+hook called ``octoprint.plugin.ordertest.callback``:
+
+.. code-block:: python
+   :linenos:
+   :caption: ordertest.py
+
+   import octoprint.plugin
+
+   class OrderTestPlugin(octoprint.plugin.StartupPlugin):
+       def get_sorting_key(self, sorting_context):
+           return 10
+
+       def on_startup(self, *args, **kwargs):
+           self._logger.info("############### Order Test Plugin: StartupPlugin.on_startup called")
+           hooks = self._plugin_manager.get_hooks("octoprint.plugin.ordertest.callback")
+           for name, hook in hooks.items():
+               hook()
+
+       def on_after_startup(self):
+           self._logger.info("############### Order Test Plugin: StartupPlugin.on_after_startup called")
+
+   __plugin_name__ = "Order Test"
+   __plugin_version__ = "0.1.0"
+   __plugin_implementation__ = OrderTestPlugin()
+
+And these three plugins defining handlers for that hook:
+
+.. code-block:: python
+   :linenos:
+   :caption: oneorderedhook.py
+
+   import logging
+
+    def callback(*args, **kwargs):
+        logging.getLogger("octoprint.plugins." + __name__).info("Callback called in oneorderedhook")
+
+    __plugin_name__ = "One Ordered Hook"
+    __plugin_version__ = "0.1.0"
+    __plugin_hooks__ = {
+        "octoprint.plugin.ordertest.callback": (callback, 1)
+    }
+
+.. code-block:: python
+   :linenos:
+   :caption: anotherorderedhook.py
+
+   import logging
+
+   def callback(*args, **kwargs):
+       logging.getLogger("octoprint.plugins." + __name__).info("Callback called in anotherorderedhook")
+
+   __plugin_name__ = "Another Ordered Hook"
+   __plugin_version__ = "0.1.0"
+   __plugin_hooks__ = {
+       "octoprint.plugin.ordertest.callback": (callback, 2)
+   }
+
+.. code-block:: python
+   :linenos:
+   :caption: yetanotherhook.py
+
+   import logging
+
+   def callback(*args, **kwargs):
+       logging.getLogger("octoprint.plugins." + __name__).info("Callback called in yetanotherhook")
+
+   __plugin_name__ = "Yet Another Hook"
+   __plugin_version__ = "0.1.0"
+   __plugin_hooks__ = {
+       "octoprint.plugin.ordertest.callback": callback
+   }
+
+Both ``orderedhook.py`` and ``anotherorderedhook.py`` not only define a handler callback in the hook registration,
+but actually a 2-tuple consisting of a callback and an order number. ``yetanotherhook.py`` only defines a callback.
+
+OctoPrint will sort these hooks so that ``orderedhook`` will be called first, then ``anotherorderedhook``, then
+``yetanotherhook``. Just going by the identifiers, the expected order would be ``anotherorderedhook``, ``orderedhook``,
+``yetanotherhook``, but since ``orderedhook`` defines a lower order number (``1``) than ``anotherorderedhook`` (``2``),
+it will be sorted before ``anotherorderedhook``. If you copy those files into your ``~/.octoprint/plugins`` folder
+and start up OctoPrint, you'll see output like this:
+
+.. code-block:: none
+
+   [...]
+   2016-03-24 09:29:21,342 - octoprint.plugins.ordertest - INFO - ############### Order Test Plugin: StartupPlugin.on_startup called
+   2016-03-24 09:29:21,355 - octoprint.plugins.oneorderedhook - INFO - Callback called in oneorderedhook
+   2016-03-24 09:29:21,357 - octoprint.plugins.anotherorderedhook - INFO - Callback called in anotherorderedhook
+   2016-03-24 09:29:21,358 - octoprint.plugins.yetanotherhook - INFO - Callback called in yetanotherhook
+   [...]
+   2016-03-24 09:29:21,861 - octoprint.plugins.ordertest - INFO - ############### Order Test Plugin: StartupPlugin.on_after_startup called
+   [...]
+
+.. _sec-plugins-hooks-available:
+
 Available plugin hooks
-======================
+----------------------
 
 .. note::
 
-   All of the hooks below take at least two parameters, ``*args`` and ``**kwargs``. Please make sure those are present.
+   All of the hooks below take at least two parameters, ``*args`` and ``**kwargs``. Make sure those are
+   **always** present in your hook handler declaration.
    They will act as placeholders if additional parameters are added to the hooks in the future and will allow
    your plugin to stay compatible to OctoPrint without any necessary adjustments from you in these cases.
 
@@ -15,9 +204,9 @@ Available plugin hooks
 .. _sec-plugins-hook-accesscontrol-appkey:
 
 octoprint.accesscontrol.appkey
-------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. py:function:: hook(*args, **kwargs)
+.. py:function:: acl_appkey_hook(*args, **kwargs)
 
    By handling this hook plugins may register additional :ref:`App session key providers <sec-api-apps-sessionkey>`
    within the system.
@@ -37,12 +226,135 @@ octoprint.accesscontrol.appkey
    :return: A list of 3-tuples as described above
    :rtype: list
 
+.. _sec-plugins-hook-cli-commands:
+
+octoprint.cli.commands
+~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:function:: cli_commands_hook(cli_group, pass_octoprint_ctx, *args, **kwargs)
+
+   By providing a handler for this hook plugins may register commands on OctoPrint's command line interface (CLI).
+
+   Handlers are expected to return a list of callables annotated as `Click commands <http://click.pocoo.org/5/>`_ to register with the
+   CLI.
+
+   The custom ``MultiCommand`` instance :class:`~octoprint.cli.plugins.OctoPrintPluginCommands` is provided
+   as parameter. Via that object handlers may access the *global* :class:`~octoprint.settings.Settings`
+   and the :class:`~octoprint.plugin.core.PluginManager` instance as ``cli_group.settings`` and ``cli_group.plugin_manager``.
+
+   **Example:**
+
+   Registers two new commands, ``custom_cli_command:greet`` and ``custom_cli_command:random`` with
+   OctoPrint:
+
+   .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/custom_cli_command.py
+      :linenos:
+      :tab-width: 4
+      :caption: `custom_cli_command.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/custom_cli_command.py>`_
+
+   Calling ``octoprint plugins --help`` shows the two new commands:
+
+   .. code-block:: none
+
+      $ octoprint plugins --help
+      Usage: octoprint plugins [OPTIONS] COMMAND [ARGS]...
+
+        Additional commands provided by plugins.
+
+      Options:
+        --help  Show this message and exit.
+
+      Commands:
+        custom_cli_command:greet   Greet someone by name, the greeting can be...
+        custom_cli_command:random  Greet someone by name with a random greeting.
+        softwareupdate:check       Check for updates.
+        softwareupdate:update      Apply updates.
+
+   Each also has an individual help output:
+
+   .. code-block:: none
+
+      $ octoprint plugins custom_cli_command:greet --help
+      Usage: octoprint plugins custom_cli_command:greet [OPTIONS] [NAME]
+
+        Greet someone by name, the greeting can be customized.
+
+      Options:
+        -g, --greeting TEXT  The greeting to use
+        --help               Show this message and exit.
+
+      $ octoprint plugins custom_cli_command:random --help
+      Usage: octoprint plugins custom_cli_command:random [OPTIONS] [NAME]
+
+        Greet someone by name with a random greeting.
+
+      Options:
+        --help  Show this message and exit.
+
+   And of course they work too:
+
+   .. code-block:: none
+
+      $ octoprint plugins custom_cli_command:greet
+      Hello World!
+
+      $ octoprint plugins custom_cli_command:greet --greeting "Good morning"
+      Good morning World!
+
+      $ octoprint plugins custom_cli_command:random stranger
+      Hola stranger!
+
+   .. note::
+
+      If your hook handler is an instance method of a plugin mixin implementation, be aware that the hook will be
+      called without OctoPrint initializing your implementation instance. That means that **none** of the
+      :ref:`injected properties <sec-plugins-mixins-injectedproperties>` will be available and also the
+      :meth:`~octoprint.plugin.Plugin.initialize` method will not be called.
+
+      Your hook handler will have access to the plugin manager as ``cli_group.plugin_manager`` and to the
+      *global* settings as ``cli_group.settings``. You can have your handler turn the latter into a
+      :class:`~octoprint.plugin.PluginSettings` instance by using :func:`octoprint.plugin.plugin_settings_from_settings_plugin`
+      if your plugin's implementation implements the :class:`~octoprint.plugin.SettingsPlugin` mixin and inject
+      that and the plugin manager instance yourself:
+
+      .. code-block:: python
+
+         import octoprint.plugin
+
+         class MyPlugin(octoprint.plugin.SettingsPlugin):
+
+             def get_cli_commands(self, cli_group, pass_octoprint_ctx, *args, **kwargs):
+                 import logging
+
+                 settings = cli_group._settings
+                 plugin_settings = octoprint.plugin.plugin_settings_for_settings_plugin("myplugin", self)
+                 if plugin_settings is None:
+                     # this can happen if anything goes wrong with preparing the PluginSettings instance
+                     return dict()
+
+                 self._settings = plugin_settings
+                 self._plugin_manager = cli_group._plugin_manager
+                 self._logger = logging.getLogger(__name__)
+
+                 ### command definition starts here
+
+                 # ...
+
+
+      No other platform components will be available - the CLI runs outside of a running, fully initialized
+      OctoPrint server context, so there is absolutely no way to access a printer connection, the event bus or
+      anything else like that. The only things available are the settings and the plugin manager.
+
+   :return: A list of `Click commands or groups <http://click.pocoo.org/5/commands/>`_ to provide on
+            OctoPrint's CLI.
+   :rtype: list
+
 .. _sec-plugins-hook-comm-protocol-action:
 
 octoprint.comm.protocol.action
-------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. py:function:: hook(comm_instance, line, action, *args, **kwargs)
+.. py:function:: protocol_action_hook(comm_instance, line, action, *args, **kwargs)
 
    React to a :ref:`action command <sec-features-action_commands>` received from the printer.
 
@@ -68,7 +380,7 @@ octoprint.comm.protocol.action
 .. _sec-plugins-hook-comm-protocol-gcode-phase:
 
 octoprint.comm.protocol.gcode.<phase>
--------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This describes actually four hooks:
 
@@ -77,7 +389,7 @@ This describes actually four hooks:
   * ``octoprint.comm.protocol.gcode.sending``
   * ``octoprint.comm.protocol.gcode.sent``
 
-.. py:function:: hook(comm_instance, phase, cmd, cmd_type, gcode, *args, **kwargs)
+.. py:function:: protocol_gcodephase_hook(comm_instance, phase, cmd, cmd_type, gcode, *args, **kwargs)
 
    Pre- and postprocess commands as they progress through the various phases of being sent to the printer. The phases
    are the following:
@@ -107,12 +419,12 @@ This describes actually four hooks:
 
    ``phase`` will always match the ``<phase>`` part of the implemented hook (e.g. ``octoprint.comm.protocol.gcode.queued``
    handlers will always be called with ``phase`` set to ``queued``). This parameter is provided so that plugins may
-   utilize the same hook for mulitple phases if required.
+   utilize the same hook for multiple phases if required.
 
    Handlers are expected to return one of the following result variants:
 
      * ``None``: Don't change anything. Note that Python functions will also automatically return ``None`` if
-       an empty ``return`` statement is used or just nothing is returned explicitely from the handler. Hence, the following
+       an empty ``return`` statement is used or just nothing is returned explicitly from the handler. Hence, the following
        examples are all falling into this category:
 
        .. code-block:: python
@@ -159,12 +471,38 @@ This describes actually four hooks:
    :param str gcode: Parsed GCODE command, e.g. ``G0`` or ``M110``, may also be None if no known command could be parsed
    :return: None, 1-tuple, 2-tuple or string, see the description above for details.
 
+.. _sec-plugins-hook-comm-protocol-gcode-received:
+
+octoprint.comm.protocol.gcode.received
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:function:: gcode_received_hook(comm_instance, line, *args, **kwargs)
+
+   Get the returned lines sent by the printer. Handlers should return the received line or in any case, the modified
+   version of it. If the the handler returns None, processing will be aborted and the communication layer will get an
+   empty string as the received line. Note that Python functions will also automatically return ``None`` if an empty
+   ``return`` statement is used or just nothing is returned explicitly from the handler.
+
+   **Example:**
+
+   Looks for the response of an ``M115``, which contains information about the ``MACHINE_TYPE``, among other things.
+
+   .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/read_m115_response.py
+      :linenos:
+      :tab-width: 4
+      :caption: `read_m115_response.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/read_m115_response.py>`_
+
+   :param MachineCom comm_instance: The :class:`~octoprint.util.comm.MachineCom` instance which triggered the hook.
+   :param str line: The line received from the printer.
+   :return: The received line or in any case, a modified version of it.
+   :rtype: str
+
 .. _sec-plugins-hook-comm-protocol-scripts:
 
 octoprint.comm.protocol.scripts
--------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. py:function:: hook(comm_instance, script_type, script_name, *args, **kwargs)
+.. py:function:: protocol_scripts_hook(comm_instance, script_type, script_name, *args, **kwargs)
 
    Return a prefix to prepend and a postfix to append to the script ``script_name`` of type ``type``. Handlers should
    make sure to only proceed with returning additional scripts if the ``script_type`` and ``script_name`` match
@@ -196,9 +534,9 @@ octoprint.comm.protocol.scripts
 .. _sec-plugins-hook-comm-transport-serial-factory:
 
 octoprint.comm.transport.serial.factory
----------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. py:function:: hook(comm_instance, port, baudrate, read_timeout, *args, **kwargs)
+.. py:function:: serial_factory_hook(comm_instance, port, baudrate, read_timeout, *args, **kwargs)
 
    Return a serial object to use as serial connection to the printer. If a handler cannot create a serial object
    for the specified ``port`` (and ``baudrate``), it should just return ``None``.
@@ -272,9 +610,9 @@ octoprint.comm.transport.serial.factory
 .. _sec-plugins-hook-filemanager-extensiontree:
 
 octoprint.filemanager.extension_tree
-------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. py:function:: hook(*args, **kwargs)
+.. py:function:: file_extension_hook(*args, **kwargs)
 
    Return additional entries for the tree of accepted file extensions for uploading/handling by the file manager.
 
@@ -308,9 +646,9 @@ octoprint.filemanager.extension_tree
 .. _sec-plugins-hook-filemanager-preprocessor:
 
 octoprint.filemanager.preprocessor
-----------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. py:function:: hook(path, file_object, links=None, printer_profile=None, allow_overwrite=False, *args, **kwargs)
+.. py:function:: file_preprocessor_hook(path, file_object, links=None, printer_profile=None, allow_overwrite=False, *args, **kwargs)
 
    Replace the ``file_object`` used for saving added files to storage by calling :func:`~octoprint.filemanager.util.AbstractFileWrapper.save`.
 
@@ -339,12 +677,44 @@ octoprint.filemanager.preprocessor
    :return: The `file_object` as passed in or None, or a replaced version to use instead for further processing.
    :rtype: AbstractFileWrapper or None
 
+.. _sec-plugins-hook-printer-factory:
+
+octoprint.printer.factory
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:function:: printer_factory_hook(components, *args, **kwargs)
+
+   Return a :class:`~octoprint.printer.PrinterInstance` instance to use as global printer object. This will
+   be called only once during initial server startup.
+
+   The provided ``components`` is a dictionary containing the already initialized system components:
+
+     * ``plugin_manager``: The :class:`~octoprint.plugin.core.PluginManager`
+     * ``printer_profile_manager``: The :class:`~octoprint.printer.profile.PrinterProfileManager`
+     * ``event_bus``: The :class:`~octoprint.events.EventManager`
+     * ``analysis_queue``: The :class:`~octoprint.filemanager.analysis.AnalysisQueue`
+     * ``slicing_manager``: The :class:`~octoprint.slicing.SlicingManager`
+     * ``file_manager``: The :class:`~octoprint.filemanager.FileManager`
+     * ``app_session_manager``: The :class:`~octoprint.server.util.flask.AppSessionManager`
+     * ``plugin_lifecycle_manager``: The :class:`~octoprint.server.LifecycleManager`
+     * ``user_manager``: The :class:`~octoprint.users.UserManager`
+     * ``preemptive_cache``: The :class:`~octoprint.server.util.flask.PreemptiveCache`
+
+   If the factory returns anything but ``None``, it will be assigned to the global ``printer`` instance.
+
+   If no of the registered factories return a printer instance, the default :class:`~octoprint.printer.standard.Printer`
+   class will be instantiated.
+
+   :param dict components: System components to use for printer instance initialization
+   :return: The ``printer`` instance to use globally.
+   :rtype: PrinterInterface subclass or None
+
 .. _sec-plugins-hook-server-http-bodysize:
 
 octoprint.server.http.bodysize
-------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. py:function:: hook(current_max_body_sizes, *args, **kwargs)
+.. py:function:: server_bodysize_hook(current_max_body_sizes, *args, **kwargs)
 
    Allows extending the list of custom maximum body sizes on the web server per path and HTTP method with custom entries
    from plugins.
@@ -361,6 +731,10 @@ octoprint.server.http.bodysize
 
    The path of the route will be prefixed by OctoPrint with ``/plugin/<plugin identifier>/`` (if the path already begins
    with a ``/`` that will be stripped first).
+
+   .. important::
+
+      Implementing this hook will make your plugin require a restart of OctoPrint for enabling/disabling it fully.
 
    **Example**
 
@@ -380,9 +754,9 @@ octoprint.server.http.bodysize
 .. _sec-plugins-hook-server-http-routes:
 
 octoprint.server.http.routes
-----------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. py:function:: hook(server_routes, *args, **kwargs)
+.. py:function:: server_route_hook(server_routes, *args, **kwargs)
 
    Allows extending the list of routes registered on the web server.
 
@@ -408,6 +782,10 @@ octoprint.server.http.routes
       view on that which matches one of the paths provided via its ``octoprint.server.http.routes`` hook handler, the
       view of the blueprint will thus not be reachable since processing of the request will directly be handed over
       to your defined handler class.
+
+   .. important::
+
+      Implementing this hook will make your plugin require a restart of OctoPrint for enabling/disabling it fully.
 
    **Example**
 
@@ -435,9 +813,9 @@ octoprint.server.http.routes
 .. _sec-plugins-hook-ui-web-templatetypes:
 
 octoprint.ui.web.templatetypes
-------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. py:function:: hook(template_sorting, template_rules, *args, **kwargs)
+.. py:function:: templatetype_hook(template_sorting, template_rules, *args, **kwargs)
 
    Allows extending the set of supported template types in the web interface. This is interesting for plugins which want
    to offer other plugins to hook into their own offered UIs. Handlers must return a list of additional template
@@ -484,13 +862,13 @@ octoprint.ui.web.templatetypes
       * - **Key**
         - **Description**
       * - div
-        - Function that returns the id of the container for template content if not explicitely provided by the template
+        - Function that returns the id of the container for template content if not explicitly provided by the template
           config, input parameter is the name of the plugin providing the currently processed template config. If not
           provided this defaults to a lambda function of the form ``lambda x: "<plugin identifier>_<template type>_plugin_" + x``
           with ``plugin identifier`` being the identifier of the plugin providing the additional template type.
       * - template
         - Function that returns the default template filename for a template type to attempt to include in case no
-          template name is explicitly provided by the template config, input parameter is the name of the plugin provifing
+          template name is explicitly provided by the template config, input parameter is the name of the plugin providing
           the current processed template config. If not provided this defaults to a lambda function of the form
           ``lambda x: x + "_plugin_<plugin identifier>_<template type>.jinja2"`` with ``plugin identifier`` being the
           identifier of the plugin providing the additional template type.
@@ -541,6 +919,6 @@ octoprint.ui.web.templatetypes
 
 
    :param dict template_rules: read-only dictionary of currently configured template rules
-   :param dict template_sorting: read-only dictionary of currentl configured template sorting specifications
+   :param dict template_sorting: read-only dictionary of currently configured template sorting specifications
    :return: a list of 3-tuples (template type, rule, sorting spec)
    :rtype: list

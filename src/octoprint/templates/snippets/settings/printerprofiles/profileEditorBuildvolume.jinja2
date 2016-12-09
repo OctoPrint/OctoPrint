@@ -1,0 +1,132 @@
+<form class="form-horizontal">
+    <div class="control-group">
+        <label class="control-label">{{ _('Form Factor') }}</label>
+        <div class="controls">
+            <label class="radio"><input type="radio" name="printerProfileFormFactorGroup" value="rectangular" data-bind="checked: volumeFormFactor"> {{ _('Rectangular') }}</label>
+        </div>
+        <div class="controls">
+            <label class="radio"><input type="radio" name="printerProfileFormFactorGroup" value="circular" data-bind="checked: volumeFormFactor"> {{ _('Circular') }}</label>
+        </div>
+    </div>
+    <div class="control-group">
+        <div class="control-group">
+            <label class="control-label">{{ _('Origin') }}</label>
+            <div class="controls">
+                <select data-bind="value: volumeOrigin, options: availableOrigins, optionsText: 'name', optionsValue: 'key'">
+                </select>
+            </div>
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label">{{ _('Heated Bed') }}</label>
+        <div class="controls">
+            <input type="checkbox" data-bind="checked: heatedBed">
+        </div>
+    </div>
+
+    <div class="control-group">
+        <div class="controls">
+            {{ _('Please define the print volume.') }}
+        </div>
+    </div>
+
+    <div data-bind="visible: volumeFormFactor() != 'circular'" style="display: none">
+        <div class="control-group">
+            <label class="control-label">{{ _('Width (X)') }}</label>
+            <div class="controls">
+                <div class="input-append">
+                    <input type="number" step="0.01" class="input-mini text-right" data-bind="value: volumeWidth" placeholder="200">
+                    <span class="add-on">mm</span>
+                </div>
+            </div>
+        </div>
+        <div class="control-group">
+            <label class="control-label">{{ _('Depth (Y)') }}</label>
+            <div class="controls">
+                <div class="input-append">
+                    <input type="number" step="0.01" class="input-mini text-right" data-bind="value: volumeDepth" placeholder="200">
+                    <span class="add-on">mm</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div data-bind="visible: volumeFormFactor() == 'circular'" style="display: none">
+        <div class="control-group">
+            <label class="control-label">{{ _('Diameter (X/Y)') }}</label>
+            <div class="controls">
+                <div class="input-append">
+                    <input type="number" step="0.01" class="input-mini text-right" data-bind="value: volumeWidth" placeholder="200">
+                    <span class="add-on">mm</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label">{{ _('Height (Z)') }}</label>
+        <div class="controls">
+            <div class="input-append">
+                <input type="number" step="0.01" class="input-mini text-right" data-bind="value: volumeHeight" placeholder="200">
+                <span class="add-on">mm</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="control-group">
+        <div class="controls">{% trans %}
+            If your printer's print head may move slightly outside the print volume (e.g. for nozzle cleaning routines)
+            you can define a custom safe bounding box for its movements below.
+        {% endtrans %}</div>
+    </div>
+
+    <div class="control-group">
+        <label class="control-label">{{ _('Custom bounding box') }}</label>
+        <div class="controls">
+            <input type="checkbox" data-bind="checked: customBoundingBox">
+        </div>
+    </div>
+    <div data-bind="visible: customBoundingBox">
+        <div class="control-group">
+            <label class="control-label">{{ _('X Coordinates') }}</label>
+            <div class="controls">
+                <div class="input-prepend">
+                    <span class="add-on">Min</span>
+                    <input type="number" step="0.01" class="input-mini text-right" data-bind="value: boundingBoxMinX, attr: {placeholder: boundingBoxMinXPlaceholder, max: boundingBoxMinXPlaceholder}">
+                </div>
+                <div class="input-prepend">
+                    <span class="add-on">Max</span>
+                    <input type="number" step="0.01" class="input-mini text-right" data-bind="value: boundingBoxMaxX, attr: {placeholder: boundingBoxMaxXPlaceholder, min: boundingBoxMaxXPlaceholder}">
+                </div>
+            </div>
+        </div>
+        <div class="control-group">
+            <label class="control-label">{{ _('Y Coordinates') }}</label>
+            <div class="controls">
+                <div class="input-prepend">
+                    <span class="add-on">Min</span>
+                    <input type="number" step="0.01" class="input-mini text-right" data-bind="value: boundingBoxMinY, attr: {placeholder: boundingBoxMinYPlaceholder, max: boundingBoxMinYPlaceholder}">
+                </div>
+                <div class="input-prepend">
+                    <span class="add-on">Max</span>
+                    <input type="number" step="0.01" class="input-mini text-right" data-bind="value: boundingBoxMaxY, attr: {placeholder: boundingBoxMaxYPlaceholder, min: boundingBoxMaxYPlaceholder}">
+                </div>
+            </div>
+        </div>
+        <div class="control-group">
+            <label class="control-label">{{ _('Z Coordinates') }}</label>
+            <div class="controls">
+                <div class="input-prepend">
+                    <span class="add-on">Min</span>
+                    <input type="number" step="0.01" class="input-mini text-right" data-bind="value: boundingBoxMinZ, attr: {placeholder: boundingBoxMinZPlaceholder, max: boundingBoxMinZPlaceholder}">
+                </div>
+                <div class="input-prepend">
+                    <span class="add-on">Max</span>
+                    <input type="number" step="0.01" class="input-mini text-right" data-bind="value: boundingBoxMaxZ, attr: {placeholder: boundingBoxMaxZPlaceholder, min: boundingBoxMaxZPlaceholder}">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <p>
+        <small>{{ _('This information is used for the temperature tab, the bounding box check, the GCODE Viewer and/or when slicing from OctoPrint. It does NOT influence already sliced files that you upload to OctoPrint!') }}</small>
+    </p>
+</form>

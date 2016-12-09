@@ -202,7 +202,7 @@ Finally, ``the_end`` is just a boolean, since an unquoted ``yes`` evaluates as a
 
 Don't get confused by the list "dividing" one part of the dictionary under ``general`` from the other -- your mind is
 just playing a trick on you due to the list's dashes ``-`` being on the same levels as the dictionary keys. You could
-also just add two more spaces to your identation and write that part like this, which makes the structure a bit
+also just add two more spaces to your indentation and write that part like this, which makes the structure a bit
 clearer (whitespace again made visible to help track indentation):
 
 .. code-block-ext:: yaml
@@ -219,6 +219,6 @@ clearer (whitespace again made visible to help track indentation):
    # ...
 
 Just make sure you follow a consistent way of indenting your files -- YAML is not as strict as Python when it comes to
-differing identation variants within the same file (as long as it's still valid), but consistency will help you as
+differing indentation variants within the same file (as long as it's still valid), but consistency will help you as
 a lot as a human. Ideally you'll use a text editor which highlights white space characters for you (most editors can
 be configured this way), this will help tremendously when editing whitespace sensitive syntax such as YAML.

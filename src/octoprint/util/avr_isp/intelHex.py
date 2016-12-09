@@ -1,4 +1,6 @@
+from __future__ import absolute_import, division, print_function
 import io
+from builtins import range
 
 def readHex(filename):
 	data = []
@@ -14,7 +16,7 @@ def readHex(filename):
 		if len(line) != recLen * 2 + 11:
 			raise Exception("Error in hex file: " + line)
 		checkSum = 0
-		for i in xrange(0, recLen + 5):
+		for i in range(0, recLen + 5):
 			checkSum += int(line[i*2+1:i*2+3], 16)
 		checkSum &= 0xFF
 		if checkSum != 0:
@@ -23,7 +25,7 @@ def readHex(filename):
 		if recType == 0:#Data record
 			while len(data) < addr + recLen:
 				data.append(0)
-			for i in xrange(0, recLen):
+			for i in range(0, recLen):
 				data[addr + i] = int(line[i*2+9:i*2+11], 16)
 		elif recType == 1:	#End Of File record
 			pass

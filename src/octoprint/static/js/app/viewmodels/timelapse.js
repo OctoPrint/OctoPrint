@@ -9,11 +9,15 @@ $(function() {
         self.defaultFps = 25;
         self.defaultPostRoll = 0;
         self.defaultInterval = 10;
+        self.defaultRetractionZHop = 0;
+        self.defaultCapturePostroll = true;
 
         self.timelapseType = ko.observable(undefined);
         self.timelapseTimedInterval = ko.observable(self.defaultInterval);
         self.timelapsePostRoll = ko.observable(self.defaultPostRoll);
         self.timelapseFps = ko.observable(self.defaultFps);
+        self.timelapseRetractionZHop = ko.observable(self.defaultRetractionZHop);
+        self.timelapseCapturePostRoll = ko.observable(self.defaultCapturePostRoll);
 
         self.persist = ko.observable(false);
         self.isDirty = ko.observable(false);
@@ -40,20 +44,26 @@ $(function() {
             return self.isDirty() && self.isOperational() && !self.isPrinting() && self.loginState.isUser();
         });
 
-        self.isOperational.subscribe(function(newValue) {
+        self.isOperational.subscribe(function() {
             self.requestData();
         });
 
-        self.timelapseType.subscribe(function(newValue) {
+        self.timelapseType.subscribe(function() {
             self.isDirty(true);
         });
-        self.timelapseTimedInterval.subscribe(function(newValue) {
+        self.timelapseTimedInterval.subscribe(function() {
             self.isDirty(true);
         });
-        self.timelapsePostRoll.subscribe(function(newValue) {
+        self.timelapsePostRoll.subscribe(function() {
             self.isDirty(true);
         });
-        self.timelapseFps.subscribe(function(newValue) {
+        self.timelapseFps.subscribe(function() {
+            self.isDirty(true);
+        });
+        self.timelapseRetractionZHop.subscribe(function(newValue) {
+            self.isDirty(true);
+        });
+        self.timelapseCapturePostRoll.subscribe(function() {
             self.isDirty(true);
         });
 
@@ -120,12 +130,8 @@ $(function() {
         );
 
         self.requestData = function() {
-            $.ajax({
-                url: API_BASEURL + "timelapse?unrendered=true",
-                type: "GET",
-                dataType: "json",
-                success: self.fromResponse
-            });
+            OctoPrint.timelapse.get(true)
+                .done(self.fromResponse);
         };
 
         self.fromResponse = function(response) {
@@ -146,6 +152,14 @@ $(function() {
                 self.timelapseTimedInterval(self.defaultInterval);
             }
 
+            if (config.type == "zchange") {
+                if (config.retractionZHop != undefined && config.retractionZHop > 0) {
+                    self.timelapseRetractionZHop(config.retractionZHop);
+                }
+            } else {
+                self.timelapseRetractionZHop(self.defaultRetractionZHop);
+            }
+
             if (config.postRoll != undefined && config.postRoll >= 0) {
                 self.timelapsePostRoll(config.postRoll);
             } else {
@@ -156,6 +170,12 @@ $(function() {
                 self.timelapseFps(config.fps);
             } else {
                 self.timelapseFps(self.defaultFps);
+            }
+
+            if (config.capturePostRoll != undefined){
+                self.timelapseCapturePostRoll(config.capturePostRoll);
+            } else {
+                self.timelapseCapturePostRoll(self.defaultCapturePostRoll);
             }
 
             self.persist(false);
@@ -181,34 +201,21 @@ $(function() {
         };
 
         self.removeFile = function(filename) {
-            $.ajax({
-                url: API_BASEURL + "timelapse/" + filename,
-                type: "DELETE",
-                dataType: "json",
-                success: self.requestData
-            });
+            OctoPrint.timelapse.delete(filename)
+                .done(self.requestData);
         };
 
         self.removeUnrendered = function(name) {
-            $.ajax({
-                url: API_BASEURL + "timelapse/unrendered/" + name,
-                type: "DELETE",
-                dataType: "json",
-                success: self.requestData
-            });
+            OctoPrint.timelapse.deleteUnrendered(name)
+                .done(self.requestData);
         };
 
         self.renderUnrendered = function(name) {
-            $.ajax({
-                url: API_BASEURL + "timelapse/unrendered/" + name,
-                type: "POST",
-                dataType: "json",
-                contentType: "application/json; charset=UTF-8",
-                data: JSON.stringify({command: "render"})
-            });
+            OctoPrint.timelapse.renderUnrendered(name)
+                .done(self.requestData);
         };
 
-        self.save = function(data, event) {
+        self.save = function() {
             var payload = {
                 "type": self.timelapseType(),
                 "postRoll": self.timelapsePostRoll(),
@@ -218,15 +225,15 @@ $(function() {
 
             if (self.timelapseType() == "timed") {
                 payload["interval"] = self.timelapseTimedInterval();
+                payload["capturePostRoll"] = self.timelapseCapturePostRoll();
             }
 
-            $.ajax({
-                url: API_BASEURL + "timelapse",
-                type: "POST",
-                dataType: "json",
-                data: payload,
-                success: self.fromResponse
-            });
+            if (self.timelapseType() == "zchange") {
+                payload["retractionZHop"] = self.timelapseRetractionZHop();
+            }
+
+            OctoPrint.timelapse.saveConfig(payload)
+                .done(self.fromResponse);
         };
 
         self.displayTimelapsePopup = function(options) {
@@ -278,6 +285,35 @@ $(function() {
             });
         };
 
+        // 3 consecutive capture fails trigger error popup
+        self._warnAboutCaptureFailThreshold = 3;
+        self._warnAboutCaptureFailCounter = 0;
+        self._warnedAboutCaptureFail = false;
+        self.onEventPrintStarted = function(payload) {
+            self._warnAboutCaptureFailCounter = 0;
+            self._warnedAboutCaptureFail = false;
+        };
+        self.onEventCaptureDone = function(payload) {
+            self._warnAboutCaptureFailCounter = 0;
+            self._warnedAboutCaptureFail = false;
+        };
+        self.onEventCaptureFailed = function(payload) {
+            self._warnAboutCaptureFailCounter++;
+            if (self._warnedAboutCaptureFail || self._warnAboutCaptureFailCounter <= self._warnAboutCaptureFailThreshold) {
+                return;
+            }
+            self._warnedAboutCaptureFail = true;
+
+            var html = "<p>" + gettext("Failed repeatedly to capture timelapse frame from webcam - is the snapshot URL configured correctly and the camera on?");
+            html += pnotifyAdditionalInfo('Snapshot URL: <pre style="overflow: auto">' + payload.url + '</pre>Error: <pre style="overflow: auto">' + payload.error + '</pre>');
+            new PNotify({
+                title: gettext("Could not capture snapshots"),
+                text: html,
+                type: "error",
+                hide: false
+            });
+        };
+
         self.onEventMovieRendering = function(payload) {
             self.displayTimelapsePopup({
                 title: gettext("Rendering timelapse"),
@@ -287,11 +323,22 @@ $(function() {
         };
 
         self.onEventMovieFailed = function(payload) {
-            var html = "<p>" + _.sprintf(gettext("Rendering of timelapse %(movie_prefix)s failed with return code %(returncode)s"), payload) + "</p>";
-            html += pnotifyAdditionalInfo('<pre style="overflow: auto">' + payload.error + '</pre>');
+            var title, html;
+
+            if (payload.reason == "no_frames") {
+                title = gettext("Cannot render timelapse");
+                html = "<p>" + _.sprintf(gettext("Rendering of timelapse %(movie_prefix)s is not possible since no frames were captured. Is the snapshot URL configured correctly?"), payload) + "</p>";
+            } else if (payload.reason = "returncode") {
+                title = gettext("Rendering timelapse failed");
+                html = "<p>" + _.sprintf(gettext("Rendering of timelapse %(movie_prefix)s failed with return code %(returncode)s"), payload) + "</p>";
+                html += pnotifyAdditionalInfo('<pre style="overflow: auto">' + payload.error + '</pre>');
+            } else {
+                title = gettext("Rendering timelapse failed");
+                html = "<p>" + _.sprintf(gettext("Rendering of timelapse %(movie_prefix)s failed due to an unknown error, please consult the log file"), payload) + "</p>";
+            }
 
             self.displayTimelapsePopup({
-                title: gettext("Rendering failed"),
+                title: title,
                 text: html,
                 type: "error",
                 hide: false

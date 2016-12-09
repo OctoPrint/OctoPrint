@@ -16,17 +16,23 @@
 # Author: Sami Olmari
 
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
-DESC="Octoprint Daemon"
-NAME="Octoprint"
-DAEMON=/usr/local/bin/octoprint
-PIDFILE=/var/run/$NAME.pid
+DESC="OctoPrint Daemon"
+NAME="OctoPrint"
 PKGNAME=octoprint
+PIDFILE=/var/run/$PKGNAME.pid
 SCRIPTNAME=/etc/init.d/$PKGNAME
 
 # Read configuration variable file if it is present
 [ -r /etc/default/$PKGNAME ] && . /etc/default/$PKGNAME
 
-# Exit if the octoprint is not installed
+# Exit if the DAEMON is not set
+if [ -z "$DAEMON" ]
+then
+    log_warning_msg "Not starting $PKGNAME, DAEMON not set in /etc/default/$PKGNAME."
+    exit 0
+fi
+
+# Exit if the DAEMON is not installed
 [ -x "$DAEMON" ] || exit 0
 
 # Load the VERBOSE setting and other rcS variables
@@ -46,6 +52,17 @@ if [ -z "$OCTOPRINT_USER" ]
 then
     log_warning_msg "Not starting $PKGNAME, OCTOPRINT_USER not set in /etc/default/$PKGNAME."
     exit 0
+fi
+
+COMMAND_ARGS=
+if [ -z "$BASEDIR" ]
+then
+    COMMAND_ARGS="--basedir $BASEDIR $COMMAND_ARGS"
+fi
+
+if [ -z "$CONFIGFILE" ]
+then
+    COMMAND_ARGS="--config $CONFIGFILE $COMMAND_ARGS"
 fi
 
 #
@@ -74,7 +91,7 @@ do_start()
    if [ $RETVAL != 0 ]; then
        start-stop-daemon --start --background --quiet --pidfile $PIDFILE --make-pidfile \
        --exec $DAEMON --chuid $OCTOPRINT_USER --user $OCTOPRINT_USER --umask $UMASK --nicelevel=$NICELEVEL \
-       -- $DAEMON_ARGS
+       -- $COMMAND_ARGS serve $DAEMON_ARGS
        RETVAL="$?"
    fi
 }
@@ -116,6 +133,9 @@ case "$1" in
       2) [ "$VERBOSE" != no ] && log_end_msg 1 ;;
    esac
    ;;
+  status)
+   status_of_proc -p $PIDFILE $DAEMON $NAME && exit 0 || exit $?
+   ;;
   restart)
    log_daemon_msg "Restarting $DESC" "$NAME"
    do_stop
@@ -135,8 +155,7 @@ case "$1" in
    esac
    ;;
   *)
-   echo "Usage: $SCRIPTNAME {start|stop|restart}" >&2
+   echo "Usage: $SCRIPTNAME {start|stop|status|restart}" >&2
    exit 3
    ;;
 esac
-

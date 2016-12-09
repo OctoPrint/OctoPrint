@@ -1,0 +1,21 @@
+<div id="add_folder_dialog" class="modal hide fade">
+    <div class="modal-header">
+        <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
+        <h3>{{ _('Create Folder') }}</h3>
+    </div>
+    <div class="modal-body">
+        <p>{{ _('Please specify the name of the folder to create.') }}</p>
+        <form class="form-horizontal" action="javascript:void(0)">
+            <div class="control-group">
+                <label class="control-label">{{ _('Folder name') }}</label>
+                <div class="controls">
+                    <input type="text" data-bind="value: addFolderName, valueUpdate: 'afterkeydown'">
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="modal-footer">
+        <a href="#" class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Cancel') }}</a>
+        <a href="#" class="btn btn-primary" data-bind="click: function() { if ($root.enableAddFolder()) { $root.addFolder() } }, enabled: $root.enableAddFolder(), css: {disabled: !$root.enableAddFolder()}"><i class="icon-spinner icon-spin" data-bind="visible: addingFolder"></i> {{ _('Create') }}</a>
+    </div>
+</div>

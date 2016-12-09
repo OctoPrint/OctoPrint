@@ -523,7 +523,7 @@ def get_config():
     cfg.tag_prefix = "%(TAG_PREFIX)s"
     cfg.parentdir_prefix = "%(PARENTDIR_PREFIX)s"
     cfg.versionfile_source = "%(VERSIONFILE_SOURCE)s"
-    cfg.lookupfile = None
+    cfg.lookupfile = "%(LOOKUP_FILE)s"
     cfg.verbose = False
     return cfg
 
@@ -1504,7 +1504,7 @@ def versions_from_file(filename):
             contents = f.read()
     except EnvironmentError:
         raise NotThisMethod("unable to read _version.py")
-    mo = re.search(r"version_json = '''\n(.*)'''  # END VERSION_JSON",
+    mo = re.search(r"version_json = '''\s+(.*)'''  # END VERSION_JSON",
                    contents, re.M | re.S)
     if not mo:
         raise NotThisMethod("no version_json in _version.py")
@@ -2011,6 +2011,7 @@ def do_setup():
                         "TAG_PREFIX": cfg.tag_prefix,
                         "PARENTDIR_PREFIX": cfg.parentdir_prefix,
                         "VERSIONFILE_SOURCE": cfg.versionfile_source,
+                        "LOOKUP_FILE": cfg.lookupfile
                         })
 
     ipy = os.path.join(os.path.dirname(cfg.versionfile_source),
