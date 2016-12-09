@@ -511,7 +511,7 @@ class LocalFileStorage(StorageInterface):
 		filepath = self.sanitize_path(filepath)
 		path = self.sanitize_path(path)
 
-		return filepath.startswith(path)
+		return filepath == path or filepath.startswith(path + "/")
 
 	def file_exists(self, path):
 		path, name = self.sanitize(path)
