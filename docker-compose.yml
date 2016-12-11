@@ -8,3 +8,5 @@ services:
       - 5000:5000
     devices:
       - /dev/ttyACM0:/dev/ttyS0
+#    volumes:
+#      - /yourDataFolder/octoprint:/root/.octoprint
