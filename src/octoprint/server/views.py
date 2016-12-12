@@ -497,7 +497,7 @@ def _process_templates():
 	# tabs
 
 	templates["tab"]["entries"] = dict(
-		temperature=(gettext("Temperature"), dict(template="tabs/temperature.jinja2", _div="temp", data_bind="visible: loginState.hasPermission(permissions.STATUS)")),
+		temperature=(gettext("Temperature"), dict(template="tabs/temperature.jinja2", _div="temp")),
 		control=(gettext("Control"), dict(template="tabs/control.jinja2", _div="control", data_bind="visible: loginState.hasPermission(permissions.CONTROL)")),
 		terminal=(gettext("Terminal"), dict(template="tabs/terminal.jinja2", _div="term", data_bind="visible: loginState.hasPermission(permissions.TERMINAL)")),
 	)
