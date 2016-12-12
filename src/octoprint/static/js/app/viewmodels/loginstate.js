@@ -10,7 +10,7 @@ $(function() {
 
         self.loggedIn = ko.observable(false);
         self.username = ko.observable(undefined);
-        self.userpermissions = ko.observable(undefined);
+        self.userpermissions = ko.observableArray([]);
         self.isAdmin = ko.observable(false);
         self.isUser = ko.observable(false);
 
@@ -58,7 +58,7 @@ $(function() {
             } else {
                 self.loggedIn(false);
                 self.username(undefined);
-                self.userpermissions(undefined);
+                self.userpermissions([]);
                 self.isUser(false);
                 self.isAdmin(false);
 
@@ -134,16 +134,20 @@ $(function() {
         };
 
         self.hasPermissions = function(permissions) {
-            if (self.userpermissions() === undefined || permissions === undefined || permissions.length == 0)
-                return false;
+            return ko.pureComputed(function() {
+                if (self.userpermissions() == [] || permissions === undefined || permissions.length == 0)
+                    return false;
 
-            return self.permissions.hasPermissions(permissions, self.userpermissions());
+                return self.permissions.hasPermissions(permissions, self.userpermissions());
+            }).extend({ notify: 'always' });
         };
         self.hasPermission = function(permission) {
-            if (self.userpermissions() === undefined || permission === undefined)
-                return false;
+            return ko.pureComputed(function() {
+                if (self.userpermissions() == [] || permission === undefined)
+                    return false;
 
-            return self.permissions.hasPermission(permission, self.userpermissions());
+                return self.permissions.hasPermission(permission, self.userpermissions());
+            }).extend({ notify: 'always' });
         };
     }
 

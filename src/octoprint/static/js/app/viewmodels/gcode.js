@@ -610,6 +610,6 @@ $(function() {
     OCTOPRINT_VIEWMODELS.push([
         GcodeViewModel,
         ["loginStateViewModel", "settingsViewModel", "permissionsViewModel"],
-        ["#gcode", "gcode_link"]
+        ["#gcode", "#gcode_link"]
     ]);
 });
