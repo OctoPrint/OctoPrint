@@ -23,6 +23,7 @@ import netaddr
 import os
 
 from octoprint.settings import settings
+from octoprint.util import deprecated
 import octoprint.server
 import octoprint.users
 import octoprint.plugin
@@ -1005,36 +1006,30 @@ def add_no_max_age_response_headers(response):
 
 #~~ access validators for use with tornado
 
+def permission_validator(request, permission):
+	"""
+	Validates that the given request is made by an authorized user, identified either by API key or existing Flask
+	session.
 
+	Must be executed in an existing Flask request context!
+
+	:param request: The Flask request object
+	:param request: The required permission
+	"""
+
+	user = _get_flask_user_from_request(request)
+	if user is None or not user.is_authenticated() or not user.hasPermission(permission):
+		raise tornado.web.HTTPError(403)
+
+@deprecated("admin_validator is deprecated, please use new permission_validator", since="")
 def admin_validator(request):
-	"""
-	Validates that the given request is made by an admin user, identified either by API key or existing Flask
-	session.
+	from octoprint.permissions import Permissions
+	return permission_validator(request, Permissions.admin)
 
-	Must be executed in an existing Flask request context!
-
-	:param request: The Flask request object
-	"""
-
-	user = _get_flask_user_from_request(request)
-	if user is None or not user.is_authenticated() or not user.is_admin():
-		raise tornado.web.HTTPError(403)
-
-
+@deprecated("user_validator is deprecated, please use new permission_validator", since="")
 def user_validator(request):
-	"""
-	Validates that the given request is made by an authenticated user, identified either by API key or existing Flask
-	session.
-
-	Must be executed in an existing Flask request context!
-
-	:param request: The Flask request object
-	"""
-
-	user = _get_flask_user_from_request(request)
-	if user is None or not user.is_authenticated():
-		raise tornado.web.HTTPError(403)
-
+	from octoprint.permissions import Permissions
+	return permission_validator(request, Permissions.user)
 
 def _get_flask_user_from_request(request):
 	"""
@@ -1303,6 +1298,7 @@ def collect_core_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 		'js/app/viewmodels/files.js',
 		'js/app/viewmodels/loginstate.js',
 		'js/app/viewmodels/navigation.js',
+		'js/app/viewmodels/permissions.js',
 		'js/app/viewmodels/printerstate.js',
 		'js/app/viewmodels/printerprofiles.js',
 		'js/app/viewmodels/settings.js',

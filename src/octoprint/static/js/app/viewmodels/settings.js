@@ -6,6 +6,7 @@ $(function() {
         self.users = parameters[1];
         self.printerProfiles = parameters[2];
         self.about = parameters[3];
+        self.permissions = parameters[4];
 
         self.allViewModels = [];
 
@@ -835,7 +836,7 @@ $(function() {
 
     OCTOPRINT_VIEWMODELS.push([
         SettingsViewModel,
-        ["loginStateViewModel", "usersViewModel", "printerProfilesViewModel", "aboutViewModel"],
+        ["loginStateViewModel", "usersViewModel", "printerProfilesViewModel", "aboutViewModel", "permissionsViewModel"],
         ["#settings_dialog", "#navbar_settings"]
     ]);
 });

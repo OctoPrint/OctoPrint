@@ -11,17 +11,24 @@ from flask.ext.login import current_user
 
 import octoprint.users as users
 
-from octoprint.server import SUCCESS, admin_permission, userManager
+from octoprint.server import SUCCESS, userManager
 from octoprint.server.api import api, valid_boolean_trues
 from octoprint.server.util.flask import restricted_access
-
+from octoprint.permissions import all_permissions, Permissions
 
 #~~ user settings
 
 
+@api.route("/permissions", methods=["GET"])
+def getPermissions():
+	if not userManager.enabled:
+		return jsonify(SUCCESS)
+
+	return jsonify({"permissions": map(lambda p: p.asDict(), all_permissions)})
+
 @api.route("/users", methods=["GET"])
 @restricted_access
-@admin_permission.require(403)
+@Permissions.settings.require(403)
 def getUsers():
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
@@ -31,7 +38,7 @@ def getUsers():
 
 @api.route("/users", methods=["POST"])
 @restricted_access
-@admin_permission.require(403)
+@Permissions.settings.require(403)
 def addUser():
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
@@ -48,6 +55,8 @@ def addUser():
 		return make_response("Missing mandatory name field", 400)
 	if not "password" in data:
 		return make_response("Missing mandatory password field", 400)
+	if not "permissions" in data:
+		return make_response("Missing mandatory permission field", 400)
 	if not "active" in data:
 		return make_response("Missing mandatory active field", 400)
 
@@ -55,12 +64,10 @@ def addUser():
 	password = data["password"]
 	active = data["active"] in valid_boolean_trues
 
-	roles = ["user"]
-	if "admin" in data and data["admin"] in valid_boolean_trues:
-		roles.append("admin")
+	permissions = data["permissions"]
 
 	try:
-		userManager.addUser(name, password, active, roles)
+		userManager.addUser(name, password, active, permissions)
 	except users.UserAlreadyExists:
 		abort(409)
 	return getUsers()
@@ -72,7 +79,7 @@ def getUser(username):
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
 
-	if current_user is not None and not current_user.is_anonymous() and (current_user.get_name() == username or current_user.is_admin()):
+	if current_user is not None and not current_user.is_anonymous() and (current_user.get_name() == username or current_user.hasPermission(Permissions.admin)):
 		user = userManager.findUser(username)
 		if user is not None:
 			return jsonify(user.asDict())
@@ -84,7 +91,7 @@ def getUser(username):
 
 @api.route("/users/<username>", methods=["PUT"])
 @restricted_access
-@admin_permission.require(403)
+@Permissions.settings.require(403)
 def updateUser(username):
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
@@ -100,14 +107,14 @@ def updateUser(username):
 			return make_response("Malformed JSON body in request", 400)
 
 		# change roles
-		roles = ["user"]
-		if "admin" in data and data["admin"] in valid_boolean_trues:
-			roles.append("admin")
-		userManager.changeUserRoles(username, roles)
+		if "permissions" in data:
+			permissions = data["permissions"]
+			userManager.changeUserPermissions(username, permissions)
 
 		# change activation
 		if "active" in data:
 			userManager.changeUserActivation(username, data["active"] in valid_boolean_trues)
+
 		return getUsers()
 	else:
 		abort(404)
@@ -115,7 +122,7 @@ def updateUser(username):
 
 @api.route("/users/<username>", methods=["DELETE"])
 @restricted_access
-@admin_permission.require(http_exception=403)
+@Permissions.settings.require(403)
 def removeUser(username):
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
@@ -133,7 +140,7 @@ def changePasswordForUser(username):
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
 
-	if current_user is not None and not current_user.is_anonymous() and (current_user.get_name() == username or current_user.is_admin()):
+	if current_user is not None and not current_user.is_anonymous() and (current_user.get_name() == username or current_user.hasPermission(Permissions.admin)):
 		if not "application/json" in request.headers["Content-Type"]:
 			return make_response("Expected content-type JSON", 400)
 
@@ -161,7 +168,7 @@ def getSettingsForUser(username):
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
 
-	if current_user is None or current_user.is_anonymous() or (current_user.get_name() != username and not current_user.is_admin()):
+	if current_user is None or current_user.is_anonymous() or (current_user.get_name() != username and not current_user.hasPermission(Permissions.admin)):
 		return make_response("Forbidden", 403)
 
 	try:
@@ -175,7 +182,7 @@ def changeSettingsForUser(username):
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
 
-	if current_user is None or current_user.is_anonymous() or (current_user.get_name() != username and not current_user.is_admin()):
+	if current_user is None or current_user.is_anonymous() or (current_user.get_name() != username and not current_user.hasPermission(Permissions.admin)):
 		return make_response("Forbidden", 403)
 
 	try:
@@ -195,7 +202,7 @@ def deleteApikeyForUser(username):
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
 
-	if current_user is not None and not current_user.is_anonymous() and (current_user.get_name() == username or current_user.is_admin()):
+	if current_user is not None and not current_user.is_anonymous() and (current_user.get_name() == username or current_user.hasPermission(Permissions.admin)):
 		try:
 			userManager.deleteApikey(username)
 		except users.UnknownUser:
@@ -211,7 +218,7 @@ def generateApikeyForUser(username):
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
 
-	if current_user is not None and not current_user.is_anonymous() and (current_user.get_name() == username or current_user.is_admin()):
+	if current_user is not None and not current_user.is_anonymous() and (current_user.get_name() == username or current_user.hasPermission(Permissions.admin)):
 		try:
 			apikey = userManager.generateApiKey(username)
 		except users.UnknownUser:

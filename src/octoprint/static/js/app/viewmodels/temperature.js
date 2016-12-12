@@ -4,6 +4,7 @@ $(function() {
 
         self.loginState = parameters[0];
         self.settingsViewModel = parameters[1];
+        self.permissions = parameters[2];
 
         self._createToolEntry = function() {
             return {
@@ -432,7 +433,7 @@ $(function() {
 
     OCTOPRINT_VIEWMODELS.push([
         TemperatureViewModel,
-        ["loginStateViewModel", "settingsViewModel"],
-        "#temp"
+        ["loginStateViewModel", "settingsViewModel", "permissionsViewModel"],
+        ["#temp", "#temp_link"]
     ]);
 });

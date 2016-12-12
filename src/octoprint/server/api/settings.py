@@ -17,6 +17,7 @@ from octoprint.settings import settings, valid_boolean_trues
 from octoprint.server import admin_permission, printer
 from octoprint.server.api import api
 from octoprint.server.util.flask import restricted_access, with_revalidation_checking
+from octoprint.permissions import Permissions
 
 import octoprint.plugin
 import octoprint.util
@@ -40,7 +41,7 @@ def _etag(lm=None):
 		sorted_plugin_settings[key] = plugin_settings.get(key, dict())
 
 	if current_user is not None and not current_user.is_anonymous():
-		roles = sorted(current_user.roles)
+		roles = sorted(current_user.permissions)
 	else:
 		roles = []
 
@@ -243,7 +244,7 @@ def _get_plugin_settings():
 
 @api.route("/settings", methods=["POST"])
 @restricted_access
-@admin_permission.require(403)
+@Permissions.settings.require(403)
 def setSettings():
 	if not "application/json" in request.headers["Content-Type"]:
 		return make_response("Expected content-type JSON", 400)

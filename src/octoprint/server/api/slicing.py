@@ -15,6 +15,7 @@ from octoprint.server.api import api, NO_CONTENT
 from octoprint.settings import settings as s, valid_boolean_trues
 
 from octoprint.slicing import UnknownSlicer, SlicerNotConfigured, ProfileAlreadyExists, UnknownProfile, CouldNotDeleteProfile
+from octoprint.permissions import Permissions
 
 
 def _lastmodified(configured):

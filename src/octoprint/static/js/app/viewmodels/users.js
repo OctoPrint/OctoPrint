@@ -3,6 +3,7 @@ $(function() {
         var self = this;
 
         self.loginState = parameters[0];
+        self.permissions = parameters[1];
 
         // initialize list helper
         self.listHelper = new ItemListHelper(
@@ -22,15 +23,15 @@ $(function() {
             CONFIG_USERSPERPAGE
         );
 
-        self.emptyUser = {name: "", admin: false, active: false};
+        self.emptyUser = {name: "", active: false};
 
         self.currentUser = ko.observable(self.emptyUser);
 
         self.editorUsername = ko.observable(undefined);
+        self.editorPermissions = ko.observableArray([]);
         self.editorPassword = ko.observable(undefined);
         self.editorRepeatedPassword = ko.observable(undefined);
         self.editorApikey = ko.observable(undefined);
-        self.editorAdmin = ko.observable(undefined);
         self.editorActive = ko.observable(undefined);
 
         self.addUserDialog = undefined;
@@ -40,12 +41,12 @@ $(function() {
         self.currentUser.subscribe(function(newValue) {
             if (newValue === undefined) {
                 self.editorUsername(undefined);
-                self.editorAdmin(undefined);
+                self.editorPermissions([]);
                 self.editorActive(undefined);
                 self.editorApikey(undefined);
             } else {
                 self.editorUsername(newValue.name);
-                self.editorAdmin(newValue.admin);
+                self.editorPermissions(newValue.permissions);
                 self.editorActive(newValue.active);
                 self.editorApikey(newValue.apikey);
             }
@@ -65,7 +66,40 @@ $(function() {
         };
 
         self.fromResponse = function(response) {
+            // Switch permissions with PermissionList references, so the checked attribute will catch it
+            rereferenceList = function(list) {
+                new_permissions = [];
+                _.each(list, function(permission) {
+                    var done = false;
+                    for (var i = 0; i < self.permissions.permissionsList().length && !done; i++) {
+                        var p = self.permissions.permissionsList()[i];
+                        if (permission.name != p.name)
+                            continue;
+
+                        new_permissions.push(p);
+                        done = true;
+                    }
+                });
+                return new_permissions;
+            };
+
+            _.each(response.users, function(user) {
+                user.permissions = rereferenceList(user.permissions);
+            });
+
             self.listHelper.updateItems(response.users);
+        };
+
+        self.permissionList = function(data) {
+            if (data.permissions === undefined)
+                return "";
+
+            var list = "";
+            _.each(data.permissions, function(p) {
+                list += p.name + " ";
+            })
+
+            return list.trim();
         };
 
         self.showAddUserDialog = function() {
@@ -82,7 +116,7 @@ $(function() {
             var user = {
                 name: self.editorUsername(),
                 password: self.editorPassword(),
-                admin: self.editorAdmin(),
+                permissions: self.editorPermissions(),
                 active: self.editorActive()
             };
 
@@ -106,7 +140,7 @@ $(function() {
 
             var user = self.currentUser();
             user.active = self.editorActive();
-            user.admin = self.editorAdmin();
+            user.permissions = self.editorPermissions();
 
             self.updateUser(user)
                 .done(function() {
@@ -200,7 +234,7 @@ $(function() {
                 throw OctoPrint.InvalidArgumentError("user must be set");
             }
 
-            return OctoPrint.users.update(user.name, user.active, user.admin)
+            return OctoPrint.users.update(user.name, user.active, user.admin, user.permissions)
                 .done(self.fromResponse);
         };
 
@@ -225,7 +259,7 @@ $(function() {
 
     OCTOPRINT_VIEWMODELS.push([
         UsersViewModel,
-        ["loginStateViewModel"],
+        ["loginStateViewModel", "permissionsViewModel"],
         []
     ]);
 });

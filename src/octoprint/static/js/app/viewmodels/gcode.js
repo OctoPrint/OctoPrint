@@ -4,6 +4,7 @@ $(function() {
 
         self.loginState = parameters[0];
         self.settings = parameters[1];
+        self.permissions = parameters[2];
 
         self.ui_progress_percentage = ko.observable();
         self.ui_progress_type = ko.observable();
@@ -608,7 +609,7 @@ $(function() {
 
     OCTOPRINT_VIEWMODELS.push([
         GcodeViewModel,
-        ["loginStateViewModel", "settingsViewModel"],
-        "#gcode"
+        ["loginStateViewModel", "settingsViewModel", "permissionsViewModel"],
+        ["#gcode", "gcode_link"]
     ]);
 });

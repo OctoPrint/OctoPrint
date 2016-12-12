@@ -13,6 +13,8 @@ from octoprint.server import printer, fileManager, slicingManager, eventManager,
 from octoprint.server.util.flask import restricted_access, get_json_command_from_request, with_revalidation_checking
 from octoprint.server.api import api
 from octoprint.events import Events
+from octoprint.permissions import Permissions
+
 import octoprint.filemanager
 import octoprint.filemanager.util
 import octoprint.filemanager.storage
@@ -82,6 +84,7 @@ def _create_etag(path, recursive, lm=None):
 
 
 @api.route("/files", methods=["GET"])
+@Permissions.file_permission.require(403)
 @with_revalidation_checking(etag_factory=lambda lm=None: _create_etag(request.path,
                                                                       request.values.get("recursive", False),
                                                                       lm=lm),
@@ -104,6 +107,7 @@ def readGcodeFiles():
 
 
 @api.route("/files/<string:origin>", methods=["GET"])
+@Permissions.download.require(403)
 @with_revalidation_checking(etag_factory=lambda lm=None: _create_etag(request.path,
                                                                       request.values.get("recursive", False),
                                                                       lm=lm),
@@ -256,6 +260,7 @@ def _isBusy(target, path):
 
 @api.route("/files/<string:target>", methods=["POST"])
 @restricted_access
+@Permissions.upload.require(403)
 def uploadGcodeFile(target):
 	input_name = "file"
 	input_upload_name = input_name + "." + settings().get(["server", "uploads", "nameSuffix"])
@@ -452,6 +457,7 @@ def uploadGcodeFile(target):
 
 
 @api.route("/files/<string:target>/<path:filename>", methods=["GET"])
+@Permissions.download.require(403)
 def readGcodeFile(target, filename):
 	if not target in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
 		return make_response("Unknown target: %s" % target, 404)
@@ -486,212 +492,217 @@ def gcodeFileCommand(filename, target):
 		return response
 
 	if command == "select":
-		if not _verifyFileExists(target, filename):
-			return make_response("File not found on '%s': %s" % (target, filename), 404)
+		with Permissions.select.require(403):
+			if not _verifyFileExists(target, filename):
+				return make_response("File not found on '%s': %s" % (target, filename), 404)
 
-		# selects/loads a file
-		if not octoprint.filemanager.valid_file_type(filename, type="machinecode"):
-			return make_response("Cannot select {filename} for printing, not a machinecode file".format(**locals()), 415)
+			# selects/loads a file
+			if not octoprint.filemanager.valid_file_type(filename, type="machinecode"):
+				return make_response("Cannot select {filename} for printing, not a machinecode file".format(**locals()), 415)
 
-		printAfterLoading = False
-		if "print" in data.keys() and data["print"] in valid_boolean_trues:
-			if not printer.is_operational():
-				return make_response("Printer is not operational, cannot directly start printing", 409)
-			printAfterLoading = True
+			printAfterLoading = False
+			if "print" in data.keys() and data["print"] in valid_boolean_trues:
+				with Permissions.printing.require(403):
+					if not printer.is_operational():
+						return make_response("Printer is not operational, cannot directly start printing", 409)
+					printAfterLoading = True
 
-		sd = False
-		if target == FileDestinations.SDCARD:
-			filenameToSelect = filename
-			sd = True
-		else:
-			filenameToSelect = fileManager.path_on_disk(target, filename)
-		printer.select_file(filenameToSelect, sd, printAfterLoading)
+			sd = False
+			if target == FileDestinations.SDCARD:
+				filenameToSelect = filename
+				sd = True
+			else:
+				filenameToSelect = fileManager.path_on_disk(target, filename)
+			printer.select_file(filenameToSelect, sd, printAfterLoading)
 
 	elif command == "slice":
-		if not _verifyFileExists(target, filename):
-			return make_response("File not found on '%s': %s" % (target, filename), 404)
+		with Permissions.slice.require(403):
+			if not _verifyFileExists(target, filename):
+				return make_response("File not found on '%s': %s" % (target, filename), 404)
 
-		try:
-			if "slicer" in data:
-				slicer = data["slicer"]
-				del data["slicer"]
-				slicer_instance = slicingManager.get_slicer(slicer)
+			try:
+				if "slicer" in data:
+					slicer = data["slicer"]
+					del data["slicer"]
+					slicer_instance = slicingManager.get_slicer(slicer)
 
-			elif "cura" in slicingManager.registered_slicers:
-				slicer = "cura"
-				slicer_instance = slicingManager.get_slicer("cura")
+				elif "cura" in slicingManager.registered_slicers:
+					slicer = "cura"
+					slicer_instance = slicingManager.get_slicer("cura")
 
-			else:
-				return make_response("Cannot slice {filename}, no slicer available".format(**locals()), 415)
-		except octoprint.slicing.UnknownSlicer as e:
-			return make_response("Slicer {slicer} is not available".format(slicer=e.slicer), 400)
-
-		if not any([octoprint.filemanager.valid_file_type(filename, type=source_file_type) for source_file_type in slicer_instance.get_slicer_properties().get("source_file_types", ["model"])]):
-			return make_response("Cannot slice {filename}, not a model file".format(**locals()), 415)
-
-		if slicer_instance.get_slicer_properties().get("same_device", True) and (printer.is_printing() or printer.is_paused()):
-			# slicer runs on same device as OctoPrint, slicing while printing is hence disabled
-			return make_response("Cannot slice on {slicer} while printing due to performance reasons".format(**locals()), 409)
-
-		if "destination" in data and data["destination"]:
-			destination = data["destination"]
-			del data["destination"]
-		elif "gcode" in data and data["gcode"]:
-			destination = data["gcode"]
-			del data["gcode"]
-		else:
-			import os
-			name, _ = os.path.splitext(filename)
-			destination = name + "." + slicer_instance.get_slicer_properties().get("destination_extensions", ["gco", "gcode", "g"])[0]
-
-		full_path = destination
-		if "path" in data and data["path"]:
-			full_path = fileManager.join_path(target, data["path"], destination)
-		else:
-			path, _ = fileManager.split_path(target, filename)
-			if path:
-				full_path = fileManager.join_path(target, path, destination)
-
-		# prohibit overwriting the file that is currently being printed
-		currentOrigin, currentFilename = _getCurrentFile()
-		if currentFilename == full_path and currentOrigin == target and (printer.is_printing() or printer.is_paused()):
-			make_response("Trying to slice into file that is currently being printed: %s" % full_path, 409)
-
-		if "profile" in data.keys() and data["profile"]:
-			profile = data["profile"]
-			del data["profile"]
-		else:
-			profile = None
-
-		if "printerProfile" in data.keys() and data["printerProfile"]:
-			printerProfile = data["printerProfile"]
-			del data["printerProfile"]
-		else:
-			printerProfile = None
-
-		if "position" in data.keys() and data["position"] and isinstance(data["position"], dict) and "x" in data["position"] and "y" in data["position"]:
-			position = data["position"]
-			del data["position"]
-		else:
-			position = None
-
-		select_after_slicing = False
-		if "select" in data.keys() and data["select"] in valid_boolean_trues:
-			if not printer.is_operational():
-				return make_response("Printer is not operational, cannot directly select for printing", 409)
-			select_after_slicing = True
-
-		print_after_slicing = False
-		if "print" in data.keys() and data["print"] in valid_boolean_trues:
-			if not printer.is_operational():
-				return make_response("Printer is not operational, cannot directly start printing", 409)
-			select_after_slicing = print_after_slicing = True
-
-		override_keys = [k for k in data if k.startswith("profile.") and data[k] is not None]
-		overrides = dict()
-		for key in override_keys:
-			overrides[key[len("profile."):]] = data[key]
-
-		def slicing_done(target, path, select_after_slicing, print_after_slicing):
-			if select_after_slicing or print_after_slicing:
-				sd = False
-				if target == FileDestinations.SDCARD:
-					filenameToSelect = path
-					sd = True
 				else:
-					filenameToSelect = fileManager.path_on_disk(target, path)
-				printer.select_file(filenameToSelect, sd, print_after_slicing)
+					return make_response("Cannot slice {filename}, no slicer available".format(**locals()), 415)
+			except octoprint.slicing.UnknownSlicer as e:
+				return make_response("Slicer {slicer} is not available".format(slicer=e.slicer), 400)
 
-		try:
-			fileManager.slice(slicer, target, filename, target, full_path,
-			                  profile=profile,
-			                  printer_profile_id=printerProfile,
-			                  position=position,
-			                  overrides=overrides,
-			                  callback=slicing_done,
-			                  callback_args=(target, full_path, select_after_slicing, print_after_slicing))
-		except octoprint.slicing.UnknownProfile:
-			return make_response("Profile {profile} doesn't exist".format(**locals()), 400)
+			if not any([octoprint.filemanager.valid_file_type(filename, type=source_file_type) for source_file_type in slicer_instance.get_slicer_properties().get("source_file_types", ["model"])]):
+				return make_response("Cannot slice {filename}, not a model file".format(**locals()), 415)
 
-		files = {}
-		location = url_for(".readGcodeFile", target=target, filename=full_path, _external=True)
-		result = {
-			"name": destination,
-			"path": full_path,
-			"origin": FileDestinations.LOCAL,
-			"refs": {
-				"resource": location,
-				"download": url_for("index", _external=True) + "downloads/files/" + target + "/" + full_path
+			if slicer_instance.get_slicer_properties().get("same_device", True) and (printer.is_printing() or printer.is_paused()):
+				# slicer runs on same device as OctoPrint, slicing while printing is hence disabled
+				return make_response("Cannot slice on {slicer} while printing due to performance reasons".format(**locals()), 409)
+
+			if "destination" in data and data["destination"]:
+				destination = data["destination"]
+				del data["destination"]
+			elif "gcode" in data and data["gcode"]:
+				destination = data["gcode"]
+				del data["gcode"]
+			else:
+				import os
+				name, _ = os.path.splitext(filename)
+				destination = name + "." + slicer_instance.get_slicer_properties().get("destination_extensions", ["gco", "gcode", "g"])[0]
+
+			full_path = destination
+			if "path" in data and data["path"]:
+				full_path = fileManager.join_path(target, data["path"], destination)
+			else:
+				path, _ = fileManager.split_path(target, filename)
+				if path:
+					full_path = fileManager.join_path(target, path, destination)
+
+			# prohibit overwriting the file that is currently being printed
+			currentOrigin, currentFilename = _getCurrentFile()
+			if currentFilename == full_path and currentOrigin == target and (printer.is_printing() or printer.is_paused()):
+				make_response("Trying to slice into file that is currently being printed: %s" % full_path, 409)
+
+			if "profile" in data.keys() and data["profile"]:
+				profile = data["profile"]
+				del data["profile"]
+			else:
+				profile = None
+
+			if "printerProfile" in data.keys() and data["printerProfile"]:
+				printerProfile = data["printerProfile"]
+				del data["printerProfile"]
+			else:
+				printerProfile = None
+
+			if "position" in data.keys() and data["position"] and isinstance(data["position"], dict) and "x" in data["position"] and "y" in data["position"]:
+				position = data["position"]
+				del data["position"]
+			else:
+				position = None
+
+			select_after_slicing = False
+			if "select" in data.keys() and data["select"] in valid_boolean_trues:
+				if not printer.is_operational():
+					return make_response("Printer is not operational, cannot directly select for printing", 409)
+				select_after_slicing = True
+
+			print_after_slicing = False
+			if "print" in data.keys() and data["print"] in valid_boolean_trues:
+				if not printer.is_operational():
+					return make_response("Printer is not operational, cannot directly start printing", 409)
+				select_after_slicing = print_after_slicing = True
+
+			override_keys = [k for k in data if k.startswith("profile.") and data[k] is not None]
+			overrides = dict()
+			for key in override_keys:
+				overrides[key[len("profile."):]] = data[key]
+
+			def slicing_done(target, path, select_after_slicing, print_after_slicing):
+				if select_after_slicing or print_after_slicing:
+					sd = False
+					if target == FileDestinations.SDCARD:
+						filenameToSelect = path
+						sd = True
+					else:
+						filenameToSelect = fileManager.path_on_disk(target, path)
+					printer.select_file(filenameToSelect, sd, print_after_slicing)
+
+			try:
+				fileManager.slice(slicer, target, filename, target, full_path,
+				                  profile=profile,
+				                  printer_profile_id=printerProfile,
+				                  position=position,
+				                  overrides=overrides,
+				                  callback=slicing_done,
+				                  callback_args=(target, full_path, select_after_slicing, print_after_slicing))
+			except octoprint.slicing.UnknownProfile:
+				return make_response("Profile {profile} doesn't exist".format(**locals()), 400)
+
+			files = {}
+			location = url_for(".readGcodeFile", target=target, filename=full_path, _external=True)
+			result = {
+				"name": destination,
+				"path": full_path,
+				"origin": FileDestinations.LOCAL,
+				"refs": {
+					"resource": location,
+					"download": url_for("index", _external=True) + "downloads/files/" + target + "/" + full_path
+				}
 			}
-		}
 
-		r = make_response(jsonify(result), 202)
-		r.headers["Location"] = location
-		return r
+			r = make_response(jsonify(result), 202)
+			r.headers["Location"] = location
+			return r
 
 	elif command == "copy" or command == "move":
-		# Copy and move are only possible on local storage
-		if not target in [FileDestinations.LOCAL]:
-			return make_response("Unsupported target for {}: {}".format(command, target), 400)
+		with Permissions.upload.require(403):
+			# Copy and move are only possible on local storage
+			if not target in [FileDestinations.LOCAL]:
+				return make_response("Unsupported target for {}: {}".format(command, target), 400)
 
-		if not _verifyFileExists(target, filename) and not _verifyFolderExists(target, filename):
-			return make_response("File or folder not found on {}: {}".format(target, filename), 404)
+			if not _verifyFileExists(target, filename) and not _verifyFolderExists(target, filename):
+				return make_response("File or folder not found on {}: {}".format(target, filename), 404)
 
-		path, name = fileManager.split_path(target, filename)
-		destination = data["destination"]
-		if _verifyFolderExists(target, destination):
-			# destination is an existing folder, we'll assume we are supposed to move filename to this
-			# folder under the same name
-			destination = fileManager.join_path(target, destination, name)
+			path, name = fileManager.split_path(target, filename)
+			destination = data["destination"]
+			if _verifyFolderExists(target, destination):
+				# destination is an existing folder, we'll assume we are supposed to move filename to this
+				# folder under the same name
+				destination = fileManager.join_path(target, destination, name)
 
-		if _verifyFileExists(target, destination) or _verifyFolderExists(target, destination):
-			return make_response("File or folder does already exist on {}: {}".format(target, destination), 409)
+			if _verifyFileExists(target, destination) or _verifyFolderExists(target, destination):
+				return make_response("File or folder does already exist on {}: {}".format(target, destination), 409)
 
-		is_file = fileManager.file_exists(target, filename)
-		is_folder = fileManager.folder_exists(target, filename)
+			is_file = fileManager.file_exists(target, filename)
+			is_folder = fileManager.folder_exists(target, filename)
 
-		if not (is_file or is_folder):
-			return make_response("{} on {} is neither file or folder, can't {}".format(filename, target, command), 400)
+			if not (is_file or is_folder):
+				return make_response("{} on {} is neither file or folder, can't {}".format(filename, target, command), 400)
 
-		if command == "copy":
-			if is_file:
-				fileManager.copy_file(target, filename, destination)
-			else:
-				fileManager.copy_folder(target, filename, destination)
-		elif command == "move":
-			if _isBusy(target, filename):
-				return make_response("Trying to move a file or folder that is currently in use: {}".format(filename), 409)
+			if command == "copy":
+				if is_file:
+					fileManager.copy_file(target, filename, destination)
+				else:
+					fileManager.copy_folder(target, filename, destination)
+			elif command == "move":
+				if _isBusy(target, filename):
+					return make_response("Trying to move a file or folder that is currently in use: {}".format(filename), 409)
 
-			# deselect the file if it's currently selected
-			currentOrigin, currentFilename = _getCurrentFile()
-			if currentFilename is not None and filename == currentFilename:
-				printer.unselect_file()
+				# deselect the file if it's currently selected
+				currentOrigin, currentFilename = _getCurrentFile()
+				if currentFilename is not None and filename == currentFilename:
+					printer.unselect_file()
 
-			if is_file:
-				fileManager.move_file(target, filename, destination)
-			else:
-				fileManager.move_folder(target, filename, destination)
+				if is_file:
+					fileManager.move_file(target, filename, destination)
+				else:
+					fileManager.move_folder(target, filename, destination)
 
-		location = url_for(".readGcodeFile", target=target, filename=destination, _external=True)
-		result = {
-			"name": name,
-			"path": destination,
-			"origin": FileDestinations.LOCAL,
-			"refs": {
-				"resource": location
+			location = url_for(".readGcodeFile", target=target, filename=destination, _external=True)
+			result = {
+				"name": name,
+				"path": destination,
+				"origin": FileDestinations.LOCAL,
+				"refs": {
+					"resource": location
+				}
 			}
-		}
-		if is_file:
-			result["refs"]["download"] = url_for("index", _external=True) + "downloads/files/" + target + "/" + destination
+			if is_file:
+				result["refs"]["download"] = url_for("index", _external=True) + "downloads/files/" + target + "/" + destination
 
-		r = make_response(jsonify(result), 201)
-		r.headers["Location"] = location
-		return r
+			r = make_response(jsonify(result), 201)
+			r.headers["Location"] = location
+			return r
 
 	return NO_CONTENT
 
 
 @api.route("/files/<string:target>/<path:filename>", methods=["DELETE"])
+@Permissions.delete.require(403)
 @restricted_access
 def deleteGcodeFile(filename, target):
 	if not _verifyFileExists(target, filename) and not _verifyFolderExists(target, filename):

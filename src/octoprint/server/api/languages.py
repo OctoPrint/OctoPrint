@@ -26,11 +26,13 @@ from octoprint.server.util.flask import restricted_access
 
 from octoprint.plugin import plugin_manager
 
+from octoprint.permissions import Permissions
+
 from flask.ext.babel import Locale
 
 @api.route("/languages", methods=["GET"])
 @restricted_access
-@admin_permission.require(403)
+@Permissions.settings.require(403)
 def getInstalledLanguagePacks():
 	translation_folder = settings().getBaseFolder("translations")
 	if not os.path.exists(translation_folder):
@@ -88,7 +90,7 @@ def getInstalledLanguagePacks():
 
 @api.route("/languages", methods=["POST"])
 @restricted_access
-@admin_permission.require(403)
+@Permissions.settings.require(403)
 def uploadLanguagePack():
 	input_name = "file"
 	input_upload_path = input_name + "." + settings().get(["server", "uploads", "pathSuffix"])
@@ -116,7 +118,7 @@ def uploadLanguagePack():
 
 @api.route("/languages/<string:locale>/<string:pack>", methods=["DELETE"])
 @restricted_access
-@admin_permission.require(403)
+@Permissions.settings.require(403)
 def deleteInstalledLanguagePack(locale, pack):
 
 	if pack == "_core":

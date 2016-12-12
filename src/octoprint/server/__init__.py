@@ -18,6 +18,9 @@ from watchdog.observers.polling import PollingObserver
 from collections import defaultdict
 from builtins import bytes, range
 
+from octoprint import util
+from octoprint.permissions import Permissions, OctoPermissionEncoder
+
 import os
 import logging
 import logging.config
@@ -30,6 +33,9 @@ NO_CONTENT = ("", 204)
 NOT_MODIFIED = ("Not Modified", 304)
 
 app = Flask("octoprint")
+#Custom OctoPermission encoder
+app.json_encoder = OctoPermissionEncoder
+
 assets = None
 babel = None
 debug = False
@@ -49,8 +55,12 @@ pluginLifecycleManager = None
 preemptiveCache = None
 
 principals = Principal(app)
-admin_permission = Permission(RoleNeed("admin"))
-user_permission = Permission(RoleNeed("user"))
+
+#-------------------------------------------------------------------------------
+#Deprecated should be removed with the user_permission variable in a future version
+admin_permission = util.variable_deprecated("admin_permission has been deprecated please use new Permission.admin instead", since="now")(Permissions.admin)
+user_permission = util.variable_deprecated("user_permission has been deprecated and will be removed in a future version", since="now")(Permissions.user)
+#-------------------------------------------------------------------------------
 
 # only import the octoprint stuff down here, as it might depend on things defined above to be initialized already
 from octoprint import __version__, __branch__, __display_version__, __revision__
@@ -62,13 +72,11 @@ import octoprint.events as events
 import octoprint.plugin
 import octoprint.timelapse
 import octoprint._version
-import octoprint.util
 import octoprint.filemanager.storage
 import octoprint.filemanager.analysis
 import octoprint.slicing
 from octoprint.server.util.flask import PreemptiveCache
 
-from . import util
 
 UI_API_KEY = ''.join('%02X' % z for z in bytes(uuid.uuid4().bytes))
 
@@ -87,10 +95,8 @@ def on_identity_loaded(sender, identity):
 		return
 
 	identity.provides.add(UserNeed(user.get_id()))
-	if user.is_user():
-		identity.provides.add(RoleNeed("user"))
-	if user.is_admin():
-		identity.provides.add(RoleNeed("admin"))
+	for need in user.needs:
+		identity.provides.add(need)
 
 def load_user(id):
 	if id == "_api":
@@ -365,8 +371,16 @@ class Server(object):
 			as_attachment=True,
 			allow_client_caching=False
 		)
+
 		additional_mime_types=dict(mime_type_guesser=mime_type_guesser)
-		admin_validator = dict(access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.admin_validator))
+
+		##~~ Permission validators
+
+		timelapse_permission_validator = dict(access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.permission_validator, Permissions.timelapse))
+		download_permission_validator = dict(access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.permission_validator, Permissions.download))
+		log_permission_validator = dict(access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.permission_validator, Permissions.logs))
+		camera_permission_validator = dict(access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.permission_validator, Permissions.webcam))
+
 		no_hidden_files_validator = dict(path_validation=util.tornado.path_validation_factory(lambda path: not octoprint.util.is_hidden_path(path), status_code=404))
 
 		def joined_dict(*dicts):
@@ -382,19 +396,21 @@ class Server(object):
 			# various downloads
 			# .mpg and .mp4 timelapses:
 			(r"/downloads/timelapse/([^/]*\.mp[g4])", util.tornado.LargeResponseHandler, joined_dict(dict(path=self._settings.getBaseFolder("timelapse")),
+																								  timelapse_permission_validator,
 			                                                                                      download_handler_kwargs,
 			                                                                                      no_hidden_files_validator)),
 			(r"/downloads/files/local/(.*)", util.tornado.LargeResponseHandler, joined_dict(dict(path=self._settings.getBaseFolder("uploads")),
+																							download_permission_validator,
 			                                                                                download_handler_kwargs,
 			                                                                                no_hidden_files_validator,
 			                                                                                additional_mime_types)),
 			(r"/downloads/logs/([^/]*)", util.tornado.LargeResponseHandler, joined_dict(dict(path=self._settings.getBaseFolder("logs")),
 			                                                                            download_handler_kwargs,
-			                                                                            admin_validator)),
+			                                                                            log_permission_validator)),
 			# camera snapshot
-			(r"/downloads/camera/current", util.tornado.UrlProxyHandler, dict(url=self._settings.get(["webcam", "snapshot"]),
-			                                                                  as_attachment=True,
-			                                                                  access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.user_validator))),
+			(r"/downloads/camera/current", util.tornado.UrlProxyHandler, joined_dict(dict(url=self._settings.get(["webcam", "snapshot"]),
+			                                                                  as_attachment=True),
+			                                                                  camera_permission_validator)),
 			# generated webassets
 			(r"/static/webassets/(.*)", util.tornado.LargeResponseHandler, dict(path=os.path.join(self._settings.getBaseFolder("generated"), "webassets"))),
 
@@ -1054,6 +1070,7 @@ class Server(object):
 			"js/app/client/slicing.js",
 			"js/app/client/system.js",
 			"js/app/client/timelapse.js",
+			"js/app/client/permissions.js",
 			"js/app/client/users.js",
 			"js/app/client/util.js",
 			"js/app/client/wizard.js"

@@ -17,10 +17,11 @@ import octoprint.util as util
 import octoprint.users
 import octoprint.server
 import octoprint.plugin
-from octoprint.server import admin_permission, NO_CONTENT
+from octoprint.server import NO_CONTENT
 from octoprint.settings import settings as s, valid_boolean_trues
 from octoprint.server.util import noCachingExceptGetResponseHandler, apiKeyRequestHandler, corsResponseHandler
 from octoprint.server.util.flask import restricted_access, get_json_command_from_request, passive_login
+from octoprint.permissions import Permissions
 
 
 #~~ init api blueprint, including sub modules
@@ -87,7 +88,7 @@ def pluginCommand(name):
 	if valid_commands is None:
 		return make_response("Method not allowed", 405)
 
-	if api_plugin.is_api_adminonly() and not current_user.is_admin():
+	if api_plugin.is_api_adminonly() and not Permissions.admin.can():
 		return make_response("Forbidden", 403)
 
 	command, data, response = get_json_command_from_request(request, valid_commands)
@@ -103,7 +104,7 @@ def pluginCommand(name):
 
 @api.route("/setup/wizard", methods=["GET"])
 def wizardState():
-	if not s().getBoolean(["server", "firstRun"]) and not admin_permission.can():
+	if not s().getBoolean(["server", "firstRun"]) and not Permissions.admin.can():
 		abort(403)
 
 	seen_wizards = s().get(["server", "seenWizards"])
@@ -127,7 +128,7 @@ def wizardState():
 
 @api.route("/setup/wizard", methods=["POST"])
 def wizardFinish():
-	if not s().getBoolean(["server", "firstRun"]) and not admin_permission.can():
+	if not s().getBoolean(["server", "firstRun"]) and not Permissions.admin.can():
 		abort(403)
 
 	data = dict()
@@ -238,7 +239,7 @@ def _logout(user):
 
 @api.route("/util/test", methods=["POST"])
 @restricted_access
-@admin_permission.require(403)
+@Permissions.admin.require(403)
 def utilTestPath():
 	valid_commands = dict(
 		path=["path"],

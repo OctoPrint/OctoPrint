@@ -1028,7 +1028,7 @@ class StaticDataHandler(tornado.web.RequestHandler):
 #~~ Factory method for creating Flask access validation wrappers from the Tornado request context
 
 
-def access_validation_factory(app, login_manager, validator):
+def access_validation_factory(app, login_manager, validator, permission):
 	"""
 	Creates an access validation wrapper using the supplied validator.
 
@@ -1048,7 +1048,7 @@ def access_validation_factory(app, login_manager, validator):
 		with app.request_context(wsgi_environ):
 			app.session_interface.open_session(app, flask.request)
 			login_manager.reload_user()
-			validator(flask.request)
+			validator(flask.request, permission)
 	return f
 
 def path_validation_factory(path_filter, status_code=404):

@@ -1,6 +1,8 @@
 $(function() {
-    function LoginStateViewModel() {
+    function LoginStateViewModel(parameters) {
         var self = this;
+
+        self.permissions = parameters[0]
 
         self.loginUser = ko.observable("");
         self.loginPass = ko.observable("");
@@ -8,6 +10,7 @@ $(function() {
 
         self.loggedIn = ko.observable(false);
         self.username = ko.observable(undefined);
+        self.userpermissions = ko.observable(undefined);
         self.isAdmin = ko.observable(false);
         self.isUser = ko.observable(false);
 
@@ -45,8 +48,9 @@ $(function() {
             if (response && response.name) {
                 self.loggedIn(true);
                 self.username(response.name);
-                self.isUser(response.user);
-                self.isAdmin(response.admin);
+                self.userpermissions(response.permissions);
+                self.isUser(self.hasPermission("Admin"));
+                self.isAdmin(self.hasPermission("Admin"));
 
                 self.currentUser(response);
 
@@ -54,6 +58,7 @@ $(function() {
             } else {
                 self.loggedIn(false);
                 self.username(undefined);
+                self.userpermissions(undefined);
                 self.isUser(false);
                 self.isAdmin(false);
 
@@ -127,11 +132,24 @@ $(function() {
                 })
             }
         };
+
+        self.hasPermissions = function(permissions) {
+            if (self.userpermissions() === undefined || permissions === undefined || permissions.length == 0)
+                return false;
+
+            return self.permissions.hasPermissions(permissions, self.userpermissions());
+        };
+        self.hasPermission = function(permission) {
+            if (self.userpermissions() === undefined || permission === undefined)
+                return false;
+
+            return self.permissions.hasPermission(permission, self.userpermissions());
+        };
     }
 
     OCTOPRINT_VIEWMODELS.push([
         LoginStateViewModel,
-        [],
+        ["permissionsViewModel"],
         []
     ]);
 });

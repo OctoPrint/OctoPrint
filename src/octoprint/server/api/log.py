@@ -21,10 +21,12 @@ from octoprint.server import NO_CONTENT, admin_permission
 from octoprint.server.util.flask import redirect_to_tornado, restricted_access
 from octoprint.server.api import api
 
+from octoprint.permissions import Permissions
+
 
 @api.route("/logs", methods=["GET"])
 @restricted_access
-@admin_permission.require(403)
+@Permissions.logs.require(403)
 def getLogFiles():
 	import psutil
 	usage = psutil.disk_usage(settings().getBaseFolder("logs"))
@@ -36,14 +38,14 @@ def getLogFiles():
 
 @api.route("/logs/<path:filename>", methods=["GET"])
 @restricted_access
-@admin_permission.require(403)
+@Permissions.logs.require(403)
 def downloadLog(filename):
 	return redirect_to_tornado(request, url_for("index") + "downloads/logs/" + filename)
 
 
 @api.route("/logs/<path:filename>", methods=["DELETE"])
 @restricted_access
-@admin_permission.require(403)
+@Permissions.logs.require(403)
 def deleteLog(filename):
 	secure = os.path.join(settings().getBaseFolder("logs"), secure_filename(filename))
 	if not os.path.exists(secure):

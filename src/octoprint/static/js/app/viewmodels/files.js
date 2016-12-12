@@ -7,6 +7,7 @@ $(function() {
         self.printerState = parameters[2];
         self.slicing = parameters[3];
         self.printerProfiles=parameters[4];
+        self.permissions = parameters[5];
 
         self.isErrorOrClosed = ko.observable(undefined);
         self.isOperational = ko.observable(undefined);
@@ -151,11 +152,11 @@ $(function() {
         });
 
         self.isLoadActionPossible = ko.pureComputed(function() {
-            return self.loginState.isUser() && !self.isPrinting() && !self.isPaused() && !self.isLoading();
+            return (self.loginState.hasPermission(self.permissions.USER) || self.loginState.hasPermission(self.permissions.SELECT)) && self.isOperational() && !self.isPrinting() && !self.isPaused() && !self.isLoading();
         });
 
         self.isLoadAndPrintActionPossible = ko.pureComputed(function() {
-            return self.loginState.isUser() && self.isOperational() && self.isLoadActionPossible();
+            return (self.loginState.hasPermission(self.permissions.USER) || self.loginState.hasPermission(self.permissions.PRINT)) && self.isOperational() && self.isLoadActionPossible();
         });
 
         self.printerState.filepath.subscribe(function(newValue) {
@@ -544,16 +545,21 @@ $(function() {
             } else {
                 busy = _.contains(self.printerState.busyFiles(), data.origin + ":" + data.path);
             }
-            return self.loginState.isUser() && !busy;
+            return (self.loginState.hasPermission(self.permissions.USER) || self.loginState.hasPermission(self.permissions.DELETE)) && !busy;
         };
 
-        self.enableSelect = function(data, printAfterSelect) {
-            var isLoadActionPossible = self.loginState.isUser() && self.isOperational() && !(self.isPrinting() || self.isPaused() || self.isLoading());
+        self.enableSelect = function(data) {
+            var isLoadActionPossible = self.isLoadActionPossible();
             return isLoadActionPossible && !self.listHelper.isSelected(data);
         };
+        self.enableSelectAndPrint = function(data, printAfterSelect) {
+            var isLoadAndPrintActionPossible = self.isLoadAndPrintActionPossible();
+            return isLoadAndPrintActionPossible && !self.listHelper.isSelected(data);
+        };
+
 
         self.enableSlicing = function(data) {
-            return self.loginState.isUser() && self.slicing.enableSlicingDialog() && self.slicing.enableSlicingDialogForFile(data.name);
+            return (self.loginState.hasPermission(self.permissions.USER) || self.loginState.hasPermission(self.permissions.SLICE)) && self.slicing.enableSlicingDialog() && self.slicing.enableSlicingDialogForFile(data.name);
         };
 
         self.enableAdditionalData = function(data) {
@@ -1102,7 +1108,7 @@ $(function() {
         construct: FilesViewModel,
         name: "filesViewModel",
         additionalNames: ["gcodeFilesViewModel"],
-        dependencies: ["settingsViewModel", "loginStateViewModel", "printerStateViewModel", "slicingViewModel", "printerProfilesViewModel"],
+        dependencies: ["settingsViewModel", "loginStateViewModel", "printerStateViewModel", "slicingViewModel", "printerProfilesViewModel", "permissionsViewModel"],
         elements: ["#files_wrapper", "#add_folder_dialog"],
     });
 });

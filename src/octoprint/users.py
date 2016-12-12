@@ -5,6 +5,7 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+from flask import jsonify
 from flask.ext.login import UserMixin
 from flask.ext.principal import Identity
 from werkzeug.local import LocalProxy
@@ -17,12 +18,11 @@ import logging
 from builtins import range, bytes
 
 from octoprint.settings import settings
-
 from octoprint.util import atomic_write
+from octoprint.permissions import all_permissions, Permissions
+from octoprint.util import deprecated
 
 class UserManager(object):
-	valid_roles = ["user", "admin"]
-
 	def __init__(self):
 		self._logger = logging.getLogger(__name__)
 		self._session_users_by_session = dict()
@@ -134,20 +134,23 @@ class UserManager(object):
 				# old hash doesn't match either, wrong password
 				return False
 
-	def addUser(self, username, password, active, roles, overwrite=False):
+	def addUser(self, username, password, active, permissions, overwrite=False):
 		pass
 
 	def changeUserActivation(self, username, active):
 		pass
 
-	def changeUserRoles(self, username, roles):
+	def changeUserPermissions(self, username, permissions):
 		pass
+	changeUserRoles = deprecated("changeUserRoles is deprecated please use changeUserPermissions instead")(changeUserPermissions)
 
-	def addRolesToUser(self, username, roles):
+	def addPermissionsToUser(self, username, permissions):
 		pass
+	addRolesToUser = deprecated("addRolesToUser is deprecated please use addPermissionsToUser instead")(addPermissionsToUser)
 
-	def removeRolesFromUser(self, username, roles):
+	def removePermissionsFromUser(self, username, permissions):
 		pass
+	removeRolesFromUser = deprecated("removePermissionsFromUser is deprecated please use removePermissionsFromUser instead")(removePermissionsFromUser)
 
 	def changeUserPassword(self, username, password):
 		pass
@@ -216,7 +219,7 @@ class FilebasedUserManager(UserManager):
 					settings = dict()
 					if "settings" in attributes:
 						settings = attributes["settings"]
-					self._users[name] = User(name, attributes["password"], attributes["active"], attributes["roles"], apikey=apikey, settings=settings)
+					self._users[name] = User(name, attributes["password"], attributes["active"], attributes["permissions"], apikey=apikey, settings=settings)
 		else:
 			self._customized = False
 
@@ -230,7 +233,7 @@ class FilebasedUserManager(UserManager):
 			data[name] = {
 				"password": user._passwordHash,
 				"active": user._active,
-				"roles": user._roles,
+				"permissions": user._permissions,
 				"apikey": user._apikey,
 				"settings": user._settings
 			}
@@ -240,14 +243,24 @@ class FilebasedUserManager(UserManager):
 			self._dirty = False
 		self._load()
 
-	def addUser(self, username, password, active=False, roles=None, apikey=None, overwrite=False):
-		if not roles:
-			roles = ["user"]
+	def _getPermissionFrom(self, permission):
+		from octoprint.permissions import OctoPermission
+		return permission if isinstance(permission, OctoPermission) \
+			else Permissions.permission_by_name(permission["name"]) if isinstance(permission, dict) \
+			else Permissions.permission_by_name(permission)
+
+	def addUser(self, username, password, active=False, permissions=None, apikey=None, overwrite=False):
+		if not permissions:
+			permissions = []
+
+		opermissions = []
+		for p in permissions:
+			opermissions.append(self._getPermissionFrom(p))
 
 		if username in self._users.keys() and not overwrite:
 			raise UserAlreadyExists(username)
 
-		self._users[username] = User(username, UserManager.createPasswordHash(password), active, roles, apikey=apikey)
+		self._users[username] = User(username, UserManager.createPasswordHash(password), active, opermissions, apikey=apikey)
 		self._dirty = True
 		self._save()
 
@@ -260,39 +273,45 @@ class FilebasedUserManager(UserManager):
 			self._dirty = True
 			self._save()
 
-	def changeUserRoles(self, username, roles):
+	def changeUserPermissions(self, username, permissions):
 		if not username in self._users.keys():
 			raise UnknownUser(username)
 
+		opermissions = []
+		for p in permissions:
+			opermissions.append(self._getPermissionFrom(p))
+
 		user = self._users[username]
 
-		removedRoles = set(user._roles) - set(roles)
-		self.removeRolesFromUser(username, removedRoles)
+		removedPermissions = set(user._permissions) - set(opermissions)
+		self.removePermissionsFromUser(username, removedPermissions)
 
-		addedRoles = set(roles) - set(user._roles)
-		self.addRolesToUser(username, addedRoles)
+		addedPermissions = set(opermissions) - set(user._permissions)
+		self.addPermissionsToUser(username, addedPermissions)
 
-	def addRolesToUser(self, username, roles):
-		if not username in self._users.keys():
+	def addPermissionsToUser(self, username, permissions):
+		if username not in self._users.keys():
 			raise UnknownUser(username)
 
-		user = self._users[username]
-		for role in roles:
-			if not role in user._roles:
-				user._roles.append(role)
-				self._dirty = True
-		self._save()
+		opermissions = []
+		for p in permissions:
+			opermissions.append(self._getPermissionFrom(p))
 
-	def removeRolesFromUser(self, username, roles):
-		if not username in self._users.keys():
+		if self._users[username].add_permissions_to_user(opermissions):
+			self._dirty = True
+			self._save()
+
+	def removePermissionsFromUser(self, username, permissions):
+		if username not in self._users.keys():
 			raise UnknownUser(username)
 
-		user = self._users[username]
-		for role in roles:
-			if role in user._roles:
-				user._roles.remove(role)
-				self._dirty = True
-		self._save()
+		opermissions = []
+		for p in permissions:
+			opermissions.append(self._getPermissionFrom(p))
+
+		if self._users[username].remove_permissions_from_user(opermissions):
+			self._dirty = True
+			self._save()
 
 	def changeUserPassword(self, username, password):
 		if not username in self._users.keys():
@@ -414,11 +433,11 @@ class UnknownRole(Exception):
 ##~~ User object
 
 class User(UserMixin):
-	def __init__(self, username, passwordHash, active, roles, apikey=None, settings=None):
+	def __init__(self, username, passwordHash, active, permissions, apikey=None, settings=None):
 		self._username = username
 		self._passwordHash = passwordHash
 		self._active = active
-		self._roles = roles
+		self._permissions = permissions
 		self._apikey = apikey
 
 		if not settings:
@@ -426,11 +445,16 @@ class User(UserMixin):
 		self._settings = settings
 
 	def asDict(self):
+		permissions = self.permissions if not self.hasPermission(Permissions.admin) else [Permissions.admin]
+		permissionDict = map(lambda p: p.asDict(), permissions)
+
 		return {
 			"name": self._username,
 			"active": self.is_active(),
-			"admin": self.is_admin(),
-			"user": self.is_user(),
+			"permissions": permissionDict,
+			"admin": self.hasPermission(Permissions.admin),
+			# Deprecated
+			"user": self.hasPermission(Permissions.user),
 			"apikey": self._apikey,
 			"settings": self._settings
 		}
@@ -447,11 +471,13 @@ class User(UserMixin):
 	def is_active(self):
 		return self._active
 
+	@deprecated("is_user is deprecated please use permissions", since="now")
 	def is_user(self):
-		return "user" in self._roles
+		return self.hasPermission(Permissions.user)
 
+	@deprecated("is_admin is deprecated please use permissions", since="now")
 	def is_admin(self):
-		return "admin" in self._roles
+		return self.hasPermission(Permissions.admin)
 
 	def get_all_settings(self):
 		return self._settings
@@ -464,9 +490,46 @@ class User(UserMixin):
 
 		return self._get_setting(path)
 
+	def add_permissions_to_user(self, permissions):
+		dirty = False
+		from octoprint.permissions import OctoPermission
+		for permission in permissions:
+			if isinstance(permission, OctoPermission) and permission not in self.permissions:
+				self._permissions.append(permission)
+				dirty = True
+
+		return dirty
+
+	def remove_permissions_from_user(self, permissions):
+		dirty = False
+		from octoprint.permissions import OctoPermission
+		for permission in permissions:
+			if isinstance(permission, OctoPermission) and permission in self._permissions:
+				self._permissions.remove(permission)
+				dirty = True
+
+		return dirty
+
 	@property
-	def roles(self):
-		return list(self._roles)
+	def permissions(self):
+		if Permissions.admin in self._permissions:
+			return all_permissions
+
+		return list(self._permissions)
+
+	@property
+	def needs(self):
+		needs = set()
+		for permission in self.permissions:
+			needs = needs.union(permission.needs)
+
+		return needs
+
+	def hasPermission(self, permission):
+		if Permissions.admin in self._permissions:
+			return True
+
+		return permission.needs.issubset(self.needs)
 
 	def set_setting(self, key, value):
 		if not isinstance(key, (tuple, list)):
@@ -500,12 +563,12 @@ class User(UserMixin):
 		return True
 
 	def __repr__(self):
-		return "User(id=%s,name=%s,active=%r,user=%r,admin=%r)" % (self.get_id(), self.get_name(), self.is_active(), self.is_user(), self.is_admin())
+		return "User(id=%s,name=%s,active=%r)" % (self.get_id(), self.get_name(), self.is_active())
 
 class SessionUser(User):
 	def __init__(self, user):
 		self._user = user
-		User.__init__(self, user._username, user._passwordHash, user._active, user._roles, user._apikey, user._settings)
+		User.__init__(self, user._username, user._passwordHash, user._active, user._permissions, user._apikey, user._settings)
 
 		import string
 		import random
@@ -530,13 +593,13 @@ class SessionUser(User):
 		return self._session
 
 	def __repr__(self):
-		return "SessionUser(id=%s,name=%s,active=%r,user=%r,admin=%r,session=%s,created=%s)" % (self.get_id(), self.get_name(), self.is_active(), self.is_user(), self.is_admin(), self._session, self._created)
+		return "SessionUser(id=%s,name=%s,active=%r,admin=%r,session=%s,created=%s)" % (self.get_id(), self.get_name(), self.is_active(), self.hasPermission(Permissions.admin), self._session, self._created)
 
 ##~~ DummyUser object to use when accessControl is disabled
 
 class DummyUser(User):
 	def __init__(self):
-		User.__init__(self, "dummy", "", True, UserManager.valid_roles)
+		User.__init__(self, "dummy", "", True, Permissions.admin)
 
 	def check_password(self, passwordHash):
 		return True
@@ -550,8 +613,6 @@ def dummy_identity_loader():
 
 
 ##~~ Apiuser object to use when global api key is used to access the API
-
-
 class ApiUser(User):
 	def __init__(self):
-		User.__init__(self, "_api", "", True, UserManager.valid_roles)
+		User.__init__(self, "_api", "", True, Permissions.admin)

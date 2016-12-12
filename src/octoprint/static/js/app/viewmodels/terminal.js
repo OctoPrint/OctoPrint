@@ -4,6 +4,7 @@ $(function() {
 
         self.loginState = parameters[0];
         self.settings = parameters[1];
+        self.permissions = parameters[2];
 
         self.tabActive = false;
 
@@ -317,7 +318,7 @@ $(function() {
 
     OCTOPRINT_VIEWMODELS.push([
         TerminalViewModel,
-        ["loginStateViewModel", "settingsViewModel"],
-        "#term"
+        ["loginStateViewModel", "settingsViewModel", "permissionsViewModel"],
+        ["#term", "#term_link"]
     ]);
 });

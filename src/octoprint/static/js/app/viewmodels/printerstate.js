@@ -3,6 +3,7 @@ $(function() {
         var self = this;
 
         self.loginState = parameters[0];
+        self.permissions = parameters[1];
 
         self.stateString = ko.observable(undefined);
         self.isErrorOrClosed = ko.observable(undefined);
@@ -293,13 +294,13 @@ $(function() {
                 onproceed: function() {
                     OctoPrint.job.cancel();
                 }
-            });            
+            });
         };
     }
 
     OCTOPRINT_VIEWMODELS.push([
         PrinterStateViewModel,
-        ["loginStateViewModel"],
+        ["loginStateViewModel", "permissionsViewModel"],
         ["#state_wrapper", "#drop_overlay"]
     ]);
 });

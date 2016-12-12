@@ -28,6 +28,7 @@
             var data = {
                 name: user.name,
                 password: user.password,
+                permissions: user.hasOwnProperty("permissions") ? user.permissions : [],
                 active: user.hasOwnProperty("active") ? !!user.active : true,
                 admin: user.hasOwnProperty("admin") ? !!user.admin : false
             };
@@ -43,13 +44,14 @@
             return OctoPrint.get(url(name), opts);
         },
 
-        update: function (name, active, admin, opts) {
+        update: function (name, active, admin, permissions, opts) {
             if (!name) {
                 throw new OctoPrint.InvalidArgumentError("user name must be set");
             }
 
             var data = {
                 active: !!active,
+                permissions: permissions,
                 admin: !!admin
             };
             return OctoPrint.putJson(url(name), data, opts);

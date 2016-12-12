@@ -4,6 +4,7 @@ $(function() {
 
         self.loginState = parameters[0];
         self.settings = parameters[1];
+        self.permissions = parameters[2];
 
         self._createToolEntry = function () {
             return {
@@ -534,7 +535,7 @@ $(function() {
 
     OCTOPRINT_VIEWMODELS.push([
         ControlViewModel,
-        ["loginStateViewModel", "settingsViewModel"],
-        "#control"
+        ["loginStateViewModel", "settingsViewModel", "permissionsViewModel"],
+        ["#control", "#control_link"]
     ]);
 });

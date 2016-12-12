@@ -2,16 +2,16 @@
     <thead>
     <tr>
         <th class="settings_users_name">{{ _('Name') }}</th>
+        <th class="settings_users_permissions">{{ _('Permissions') }}</th>
         <th class="settings_users_active">{{ _('Active') }}</th>
-        <th class="settings_users_admin">{{ _('Admin') }}</th>
         <th class="settings_users_actions">{{ _('Action') }}</th>
     </tr>
     </thead>
     <tbody data-bind="foreach: users.listHelper.paginatedItems">
     <tr>
         <td class="settings_users_name"><span data-bind="text: name"></span><span class="muted" data-bind="visible: $root.api_enabled() && apikey"><br /><small>{{ _('API Key') }}: <span data-bind="text: apikey"></span></small></span></td>
+        <td class="settings_users_permissions"><span data-bind="text: $root.users.permissionList($data)"></span></td>
         <td class="settings_users_active"><i data-bind="css: { 'icon-check': active, 'icon-check-empty': !active }"></i></td>
-        <td class="settings_users_admin"><i data-bind="css: { 'icon-check': admin, 'icon-check-empty': !admin }"></i></td>
         <td class="settings_users_actions">
             <a href="#" class="icon-pencil" title="{{ _('Update User') }}" data-bind="click: function() { $root.users.showEditUserDialog($data); }"></a>&nbsp;|&nbsp;<a href="#" class="icon-key" title="{{ _('Change password') }}" data-bind="click: function() { $root.users.showChangePasswordDialog($data); }"></a>&nbsp;|&nbsp;<a href="#" class="icon-trash" title="{{ _('Delete user') }}" data-bind="click: function() { $root.users.removeUser($data); }"></a>
         </td>
@@ -33,6 +33,10 @@
 <button title="Add user" class="btn" data-bind="click: $root.users.showAddUserDialog"><i class="icon-plus"></i> {{ _('Add user') }}</button>
 
 <!-- Modals for user management -->
+
+<script type="text/html" id="permission-template">
+    <label class="checkbox"><input type="checkbox" data-bind="checkedValue: $data, checked: $root.users.editorPermissions"><span data-bind="text: name"></span></label>
+</script>
 
 <div id="settings-usersDialogAddUser" class="modal hide fade">
     <div class="modal-header">
@@ -68,11 +72,7 @@
                 </div>
             </div>
             <div class="control-group">
-                <div class="controls">
-                    <label class="checkbox">
-                        <input type="checkbox" id="settings-usersDialogAddUserAdmin" data-bind="checked: $root.users.editorAdmin"> {{ _('Admin') }}
-                    </label>
-                </div>
+                <div class="controls" data-bind="template: { name: 'permission-template', foreach: $root.permissions.permissionsList }"></div>
             </div>
         </form>
     </div>
@@ -96,13 +96,7 @@
                     </label>
                 </div>
             </div>
-            <div class="control-group">
-                <div class="controls">
-                    <label class="checkbox">
-                        <input type="checkbox" id="settings-usersDialogEditUserAdmin" data-bind="checked: $root.users.editorAdmin"> {{ _('Admin') }}
-                    </label>
-                </div>
-            </div>
+            <div class="controls" data-bind="template: { name: 'permission-template', foreach: $root.permissions.permissionsList }"></div>
         </form>
     </div>
     <div class="modal-footer">
