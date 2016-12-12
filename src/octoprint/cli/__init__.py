@@ -146,7 +146,7 @@ def octo(ctx, debug, host, port, logging, daemon, pid, allow_root):
 			           "\"octoprint daemon start|stop|restart\" from now on")
 
 			from octoprint.cli.server import daemon_command
-			ctx.invoke(daemon_command, debug=debug, pid=pid, daemon=daemon, allow_root=allow_root)
+			ctx.invoke(daemon_command, debug=debug, host=host, port=port, logging=logging, allow_root=allow_root, command=daemon, pid=pid)
 		else:
 			click.echo("Starting the server via \"octoprint\" is deprecated, "
 			           "please use \"octoprint serve\" from now on.")
