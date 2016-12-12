@@ -129,7 +129,7 @@ from .config import config_commands
              sources=[server_commands, plugin_commands, dev_commands, client_commands, config_commands])
 @standard_options()
 @legacy_options
-@click.version_option(version=octoprint.__version__)
+@click.version_option(version=octoprint.__version__, allow_from_autoenv=False)
 @click.pass_context
 def octo(ctx, debug, host, port, logging, daemon, pid, allow_root):
 
