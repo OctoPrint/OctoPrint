@@ -426,4 +426,4 @@ readily available on Thingiverse ([LCD bezel](http://www.thingiverse.com/thing:1
 inside the right side electronics bay, on a little velcro'd in caddy.
 
 I hope you found this little feature as inspiring as I did - if so it
-will not be the last one like this :) Let me now [on Twitter](https://twitter.com/OctoPrint3D)! Cheers!
+will not be the last one like this :) Let me know [on Twitter](https://twitter.com/OctoPrint3D)! Cheers!
