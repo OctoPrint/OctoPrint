@@ -120,7 +120,7 @@ blanket part:
     </div>
 </div>
 
-Another enclosure setup can be found **Jon Stern**'s workshop:
+Another enclosure setup can be found in **Jon Stern**'s workshop:
 
 > Here's my Octopi setup with a touchscreen and keyboard mount that I 
 > [designed](http://www.thingiverse.com/thing:1625360). It's mounted on 
@@ -409,5 +409,5 @@ readily available on Thingiverse ([LCD bezel](http://www.thingiverse.com/thing:1
 40mm fan guard of which I can't find the link anymore). The Pi2 lives 
 inside the right side electronics bay, on a little velcro'd in caddy.
 
-I hope you found this little feature as inspiring as I did - I think it
-will not be the last one like this :) Cheers!
+I hope you found this little feature as inspiring as I did - if so it
+will not be the last one like this :) Let me now [on Twitter](https://twitter.com/OctoPrint3D)! Cheers!
