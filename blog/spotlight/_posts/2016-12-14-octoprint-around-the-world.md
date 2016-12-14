@@ -382,6 +382,14 @@ And **Richard Hayler** had this nice picture of his printer to share:
     </div>
 </div>
 
+There's also this one by **[@SirDoubtsALot](https://twitter.com/SirDoubtsALot)**:
+
+<div class="row-fluid" style="margin-bottom: 10px">
+    <div class="span12">
+        <a href="/assets/img/blog/2016-12/2016-12-14-octoprint-around-the-world/sirdoubtsalot.jpg" data-lightbox="{{ page.id }}" data-title="By @SirDoubtsALot"><img src="/assets/img/blog/2016-12/2016-12-14-octoprint-around-the-world/sirdoubtsalot.jpg"></a>
+    </div>
+</div>
+
 **[@MCHRISP1](https://twitter.com/MCHRISSP1)** shared his setup via Twitter
 
 <blockquote class="twitter-tweet" data-partner="tweetdeck"><p lang="en" dir="ltr"><a href="https://twitter.com/foosel">@foosel</a> <a href="https://twitter.com/OctoPrint3D">@OctoPrint3D</a> Are pics like this what you&#39;re looking for? I can clean these up a bit if yes... <a href="https://t.co/I0ks4ms4uj">pic.twitter.com/I0ks4ms4uj</a></p>&mdash; Chris (@MCHRISP1) <a href="https://twitter.com/MCHRISP1/status/802932350338420740">November 27, 2016</a></blockquote>
