@@ -390,6 +390,17 @@ There's also this one by **[@SirDoubtsALot](https://twitter.com/SirDoubtsALot)**
     </div>
 </div>
 
+And this one by **Michael Johnson**:
+
+<div class="row-fluid" style="margin-bottom: 10px">
+    <div class="span6">
+        <a href="/assets/img/blog/2016-12/2016-12-14-octoprint-around-the-world/michael_johnson_1.jpg" data-lightbox="{{ page.id }}" data-title="By Michael Johnson"><img src="/assets/img/blog/2016-12/2016-12-14-octoprint-around-the-world/michael_johnson_1.jpg"></a>
+    </div>
+    <div class="span6">
+        <a href="/assets/img/blog/2016-12/2016-12-14-octoprint-around-the-world/michael_johnson_2.jpg" data-lightbox="{{ page.id }}" data-title="By Michael Johnson"><img src="/assets/img/blog/2016-12/2016-12-14-octoprint-around-the-world/michael_johnson_2.jpg"></a>
+    </div>
+</div>
+
 **[@MCHRISP1](https://twitter.com/MCHRISSP1)** shared his setup via Twitter
 
 <blockquote class="twitter-tweet" data-partner="tweetdeck"><p lang="en" dir="ltr"><a href="https://twitter.com/foosel">@foosel</a> <a href="https://twitter.com/OctoPrint3D">@OctoPrint3D</a> Are pics like this what you&#39;re looking for? I can clean these up a bit if yes... <a href="https://t.co/I0ks4ms4uj">pic.twitter.com/I0ks4ms4uj</a></p>&mdash; Chris (@MCHRISP1) <a href="https://twitter.com/MCHRISP1/status/802932350338420740">November 27, 2016</a></blockquote>
@@ -427,3 +438,5 @@ inside the right side electronics bay, on a little velcro'd in caddy.
 
 I hope you found this little feature as inspiring as I did - if so it
 will not be the last one like this :) Let me know [on Twitter](https://twitter.com/OctoPrint3D)! Cheers!
+
+*Edit 2016-12-15* Added another couple of pictures I managed to overlook 😱
