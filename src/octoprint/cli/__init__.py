@@ -47,15 +47,23 @@ def hidden_option(*param_decls, **attrs):
 		return f
 	return decorator
 
-#~~ helper for settings context options
+#~~ helper for setting context options
 
 def set_ctx_obj_option(ctx, param, value):
 	"""Helper for setting eager options on the context."""
 	if ctx.obj is None:
 		ctx.obj = OctoPrintContext()
-
-	if hasattr(ctx.obj, param.name):
+	if value != param.default:
 		setattr(ctx.obj, param.name, value)
+
+#~~ helper for retrieving context options
+
+def get_ctx_obj_option(ctx, key, default, include_parents=True):
+	if include_parents and hasattr(ctx, "parent") and ctx.parent:
+		fallback = get_ctx_obj_option(ctx.parent, key, default)
+	else:
+		fallback = default
+	return getattr(ctx.obj, key, fallback)
 
 #~~ helper for setting a lot of bulk options
 
@@ -105,13 +113,13 @@ def standard_options(hidden=False):
 #~~ helper for settings legacy options we still have to support on "octoprint"
 
 legacy_options = bulk_options([
-	hidden_option("--host", type=click.STRING),
-	hidden_option("--port", type=click.INT),
-	hidden_option("--logging", type=click.Path()),
-	hidden_option("--debug", "-d", is_flag=True),
-	hidden_option("--daemon", type=click.Choice(["start", "stop", "restart"])),
-	hidden_option("--pid", type=click.Path(), default="/tmp/octoprint.pid"),
-	hidden_option("--iknowwhatimdoing", "allow_root", is_flag=True),
+	hidden_option("--host", type=click.STRING, callback=set_ctx_obj_option),
+	hidden_option("--port", type=click.INT, callback=set_ctx_obj_option),
+	hidden_option("--logging", type=click.Path(), callback=set_ctx_obj_option),
+	hidden_option("--debug", "-d", is_flag=True, callback=set_ctx_obj_option),
+	hidden_option("--daemon", type=click.Choice(["start", "stop", "restart"]), callback=set_ctx_obj_option),
+	hidden_option("--pid", type=click.Path(), default="/tmp/octoprint.pid", callback=set_ctx_obj_option),
+	hidden_option("--iknowwhatimdoing", "allow_root", is_flag=True, callback=set_ctx_obj_option),
 ])
 """Legacy options available directly on the "octoprint" command in earlier versions.
    Kept available for reasons of backwards compatibility, but hidden from the

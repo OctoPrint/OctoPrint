@@ -9,7 +9,7 @@ import click
 import logging
 import sys
 
-from octoprint.cli import pass_octoprint_ctx, bulk_options, standard_options
+from octoprint.cli import bulk_options, standard_options, set_ctx_obj_option, get_ctx_obj_option
 
 def run_server(basedir, configfile, host, port, debug, allow_root, logging_config, verbosity, safe_mode, octoprint_daemon=None):
 	"""Initializes the environment and starts up the server."""
@@ -69,51 +69,87 @@ def run_server(basedir, configfile, host, port, debug, allow_root, logging_confi
 #~~ server options
 
 server_options = bulk_options([
-	click.option("--host", type=click.STRING,
+	click.option("--host", type=click.STRING, callback=set_ctx_obj_option,
 	             help="Specify the host on which to bind the server."),
-	click.option("--port", type=click.INT,
+	click.option("--port", type=click.INT, callback=set_ctx_obj_option,
 	             help="Specify the port on which to bind the server."),
-	click.option("--logging", type=click.Path(),
+	click.option("--logging", type=click.Path(), callback=set_ctx_obj_option,
 	             help="Specify the config file to use for configuring logging."),
-	click.option("--iknowwhatimdoing", "allow_root", is_flag=True,
+	click.option("--iknowwhatimdoing", "allow_root", is_flag=True, callback=set_ctx_obj_option,
 	             help="Allow OctoPrint to run as user root."),
-	click.option("--debug", is_flag=True, help="Enable debug mode.")
+	click.option("--debug", is_flag=True, callback=set_ctx_obj_option,
+	             help="Enable debug mode.")
 ])
 """Decorator to add the options shared among the server commands: ``--host``, ``--port``,
    ``--logging``, ``--iknowwhatimdoing`` and ``--debug``."""
 
+daemon_options = bulk_options([
+	click.option("--pid", type=click.Path(), default="/tmp/octoprint.pid", callback=set_ctx_obj_option,
+	             help="Pidfile to use for daemonizing.")
+])
+"""Decorator to add the options for the daemon subcommand: ``--pid``."""
+
 #~~ "octoprint serve" and "octoprint daemon" commands
 
 @click.group()
-@pass_octoprint_ctx
-def server_commands(obj):
+def server_commands():
 	pass
 
 
 @server_commands.command(name="serve")
 @server_options
 @standard_options(hidden=True)
-@pass_octoprint_ctx
-def serve_command(obj, host, port, logging, allow_root, debug):
+@click.pass_context
+def serve_command(ctx, **kwargs):
 	"""Starts the OctoPrint server."""
-	run_server(obj.basedir, obj.configfile, host, port, debug,
-	           allow_root, logging, obj.verbosity, obj.safe_mode)
+
+	def get_value(key):
+		return get_ctx_obj_option(ctx, key, kwargs.get(key))
+
+	host = get_value("host")
+	port = get_value("port")
+	logging = get_value("logging")
+	allow_root = get_value("allow_root")
+	debug = get_value("debug")
+
+	basedir = get_value("basedir")
+	configfile = get_value("configfile")
+	verbosity = get_value("verbosity")
+	safe_mode = get_value("safe_mode")
+
+	run_server(basedir, configfile, host, port, debug,
+	           allow_root, logging, verbosity, safe_mode)
 
 
 @server_commands.command(name="daemon")
-@click.option("--pid", type=click.Path(), default="/tmp/octoprint.pid",
-              help="Pidfile to use for daemonizing.")
 @server_options
+@daemon_options
 @standard_options(hidden=True)
 @click.argument("command", type=click.Choice(["start", "stop", "restart", "status"]),
                 metavar="start|stop|restart|status")
-@pass_octoprint_ctx
-def daemon_command(octoprint_ctx, pid, host, port, logging, allow_root, debug, command):
+@click.pass_context
+def daemon_command(ctx, command, **kwargs):
 	"""
 	Starts, stops or restarts in daemon mode.
 
 	Please note that daemon mode is only supported under Linux right now.
 	"""
+
+	def get_value(key):
+		return get_ctx_obj_option(ctx, key, kwargs.get(key))
+
+	host = get_value("host")
+	port = get_value("port")
+	logging = get_value("logging")
+	allow_root = get_value("allow_root")
+	debug = get_value("debug")
+	pid = get_value("pid")
+
+	basedir = get_value("basedir")
+	configfile = get_value("configfile")
+	verbosity = get_value("verbosity")
+	safe_mode = get_value("safe_mode")
+
 	if sys.platform == "darwin" or sys.platform == "win32":
 		click.echo("Sorry, daemon mode is only supported under Linux right now",
 		           file=sys.stderr)
@@ -144,9 +180,8 @@ def daemon_command(octoprint_ctx, pid, host, port, logging, allow_root, debug, c
 			           self._allow_root, self._logging_config, self._verbosity, self._safe_mode,
 			           octoprint_daemon=self)
 
-	octoprint_daemon = OctoPrintDaemon(pid, octoprint_ctx.basedir, octoprint_ctx.configfile,
-	                                   host, port, debug, allow_root, logging, octoprint_ctx.verbosity,
-	                                   octoprint_ctx.safe_mode)
+	octoprint_daemon = OctoPrintDaemon(pid, basedir, configfile, host, port, debug, allow_root, logging, verbosity,
+	                                   safe_mode)
 
 	if command == "start":
 		octoprint_daemon.start()

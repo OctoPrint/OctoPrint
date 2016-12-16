@@ -9,7 +9,7 @@ import click
 import logging
 
 from octoprint import init_settings, FatalStartupError
-from octoprint.cli import pass_octoprint_ctx, standard_options, bulk_options
+from octoprint.cli import pass_octoprint_ctx, standard_options, bulk_options, get_ctx_obj_option
 
 import yaml
 import json
@@ -46,13 +46,12 @@ def config_commands():
 	pass
 
 @config_commands.group(name="config")
-@pass_octoprint_ctx
 @click.pass_context
-def config(ctx, obj):
+def config(ctx):
 	"""Basic config manipulation."""
-	logging.basicConfig(level=logging.DEBUG if obj.verbosity > 0 else logging.WARN)
+	logging.basicConfig(level=logging.DEBUG if get_ctx_obj_option(ctx, "verbosity", 0) > 0 else logging.WARN)
 	try:
-		obj.settings = init_settings(obj.basedir, obj.configfile)
+		ctx.obj.settings = init_settings(get_ctx_obj_option(ctx, "basedir", None), get_ctx_obj_option(ctx, "configfile", None))
 	except FatalStartupError as e:
 		click.echo(e.message, err=True)
 		click.echo("There was a fatal error initializing the client.", err=True)
@@ -73,7 +72,7 @@ def config(ctx, obj):
               help="Parse value from json")
 @pass_octoprint_ctx
 @click.pass_context
-def set_command(ctx, obj, path, value, as_bool, as_float, as_int, as_json):
+def set_command(ctx, path, value, as_bool, as_float, as_int, as_json):
 	"""Sets a config path to the provided value."""
 	if as_json:
 		try:
@@ -90,16 +89,16 @@ def set_command(ctx, obj, path, value, as_bool, as_float, as_int, as_json):
 	elif as_int:
 		data_type = int
 
-	_set_helper(obj.settings, path, value, data_type=data_type)
+	_set_helper(ctx.obj.settings, path, value, data_type=data_type)
 
 
 @config.command(name="remove")
 @standard_options(hidden=True)
 @click.argument("path", type=click.STRING)
-@pass_octoprint_ctx
-def remove_command(obj, path):
+@click.pass_context
+def remove_command(ctx, path):
 	"""Removes a config path."""
-	_set_helper(obj.settings, path, None)
+	_set_helper(ctx.obj.settings, path, None)
 
 
 @config.command(name="append_value")
@@ -107,9 +106,8 @@ def remove_command(obj, path):
 @click.argument("path", type=click.STRING)
 @click.argument("value", type=click.STRING)
 @click.option("--json", "as_json", is_flag=True)
-@pass_octoprint_ctx
 @click.pass_context
-def append_value_command(ctx, obj, path, value, as_json=False):
+def append_value_command(ctx, path, value, as_json=False):
 	"""Appends value to list behind config path."""
 	path = _to_settings_path(path)
 
@@ -120,7 +118,7 @@ def append_value_command(ctx, obj, path, value, as_json=False):
 			click.echo(e.message, err=True)
 			ctx.exit(-1)
 
-	current = obj.settings.get(path)
+	current = ctx.obj.settings.get(path)
 	if current is None:
 		current = []
 	if not isinstance(current, list):
@@ -128,7 +126,7 @@ def append_value_command(ctx, obj, path, value, as_json=False):
 		ctx.exit(-1)
 
 	current.append(value)
-	_set_helper(obj.settings, path, current)
+	_set_helper(ctx.obj.settings, path, current)
 
 
 @config.command(name="insert_value")
@@ -137,9 +135,8 @@ def append_value_command(ctx, obj, path, value, as_json=False):
 @click.argument("index", type=click.INT)
 @click.argument("value", type=click.STRING)
 @click.option("--json", "as_json", is_flag=True)
-@pass_octoprint_ctx
 @click.pass_context
-def insert_value_command(ctx, obj, path, index, value, as_json=False):
+def insert_value_command(ctx, path, index, value, as_json=False):
 	"""Inserts value at index of list behind config key."""
 	path = _to_settings_path(path)
 
@@ -150,7 +147,7 @@ def insert_value_command(ctx, obj, path, index, value, as_json=False):
 			click.echo(e.message, err=True)
 			ctx.exit(-1)
 
-	current = obj.settings.get(path)
+	current = ctx.obj.settings.get(path)
 	if current is None:
 		current = []
 	if not isinstance(current, list):
@@ -158,7 +155,7 @@ def insert_value_command(ctx, obj, path, index, value, as_json=False):
 		ctx.exit(-1)
 
 	current.insert(index, value)
-	_set_helper(obj.settings, path, current)
+	_set_helper(ctx.obj.settings, path, current)
 
 
 @config.command(name="remove_value")
@@ -168,7 +165,7 @@ def insert_value_command(ctx, obj, path, index, value, as_json=False):
 @click.option("--json", "as_json", is_flag=True)
 @pass_octoprint_ctx
 @click.pass_context
-def remove_value_command(ctx, obj, path, value, as_json=False):
+def remove_value_command(ctx, path, value, as_json=False):
 	"""Removes value from list at config path."""
 	path = _to_settings_path(path)
 
@@ -179,7 +176,7 @@ def remove_value_command(ctx, obj, path, value, as_json=False):
 			click.echo(e.message, err=True)
 			ctx.exit(-1)
 
-	current = obj.settings.get(path)
+	current = ctx.obj.settings.get(path)
 	if current is None:
 		current = []
 	if not isinstance(current, list):
@@ -191,7 +188,7 @@ def remove_value_command(ctx, obj, path, value, as_json=False):
 		ctx.exit()
 
 	current.remove(value)
-	_set_helper(obj.settings, path, current)
+	_set_helper(ctx.obj.settings, path, current)
 
 
 @config.command(name="get")
@@ -203,11 +200,11 @@ def remove_value_command(ctx, obj, path, value, as_json=False):
 @click.option("--raw", "as_raw", is_flag=True,
               help="Output value as raw string representation")
 @standard_options(hidden=True)
-@pass_octoprint_ctx
-def get_command(obj, path, as_json=False, as_yaml=False, as_raw=False):
+@click.pass_context
+def get_command(ctx, path, as_json=False, as_yaml=False, as_raw=False):
 	"""Retrieves value from config path."""
 	path = _to_settings_path(path)
-	value = obj.settings.get(path, merged=True)
+	value = ctx.obj.settings.get(path, merged=True)
 
 	if as_json:
 		output = json.dumps(value)
