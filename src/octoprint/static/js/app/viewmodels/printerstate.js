@@ -294,11 +294,13 @@ $(function() {
             } else {
                 showConfirmationDialog({
                     message: gettext("This will cancel your print."),
+                    cancel: gettext("No"),
+                    proceed: gettext("Yes"),
                     onproceed: function() {
                         OctoPrint.job.cancel();
                     }
                 });
-            };            
+            }
         };
     }
 
