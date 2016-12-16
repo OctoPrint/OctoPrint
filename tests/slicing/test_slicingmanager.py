@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -55,7 +55,7 @@ class TestSlicingManager(unittest.TestCase):
 		self.plugin_manager.return_value.get_implementations.side_effect = get_implementations
 
 	def test_registered_slicers(self):
-		self.assertEquals(["mock"], self.slicing_manager.registered_slicers)
+		self.assertEqual(["mock"], self.slicing_manager.registered_slicers)
 
 	def test_slicing_enabled(self):
 		self.assertTrue(self.slicing_manager.slicing_enabled)
@@ -68,7 +68,7 @@ class TestSlicingManager(unittest.TestCase):
 				return None
 		self.settings.get.side_effect = get
 
-		self.assertEquals("mock", self.slicing_manager.default_slicer)
+		self.assertEqual("mock", self.slicing_manager.default_slicer)
 
 	def test_default_slicer_unknown(self):
 		def get(path):
@@ -122,7 +122,7 @@ class TestSlicingManager(unittest.TestCase):
 		# mock printer profile manager
 		printer_profile = dict(_id="mock_printer", _name="Mock Printer Profile")
 		def get_printer_profile(printer_profile_id):
-			self.assertEquals("mock_printer", printer_profile_id)
+			self.assertEqual("mock_printer", printer_profile_id)
 			return printer_profile
 		self.printer_profile_manager.get.side_effect = get_printer_profile
 
@@ -142,11 +142,10 @@ class TestSlicingManager(unittest.TestCase):
 
 		# assert that temporary profile was created properly
 		self.slicer_plugin.save_slicer_profile.assert_called_once_with("tmp.file", default_profile, overrides=overrides)
-
 		# assert that slicing thread was created properly
 		mocked_thread.assert_called_once_with(target=mock.ANY, args=(self.slicer_plugin, source_path, dest_path, profile_name, overrides, printer_profile, position, callback, callback_args, callback_kwargs))
 		self.assertTrue(mock_thread.mock.daemon)
-		mock_thread.mock.start.assert_called_once()
+		self.assertEqual(mock_thread.mock.start.call_count, 1)
 
 		# assert that slicer was called correctly
 		self.slicer_plugin.do_slice.assert_called_once_with(source_path, printer_profile, machinecode_path=dest_path, profile_path="tmp.file", position=position, on_progress=None, on_progress_args=None, on_progress_kwargs=None)

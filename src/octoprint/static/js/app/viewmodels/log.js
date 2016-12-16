@@ -36,12 +36,8 @@ $(function() {
         );
 
         self.requestData = function() {
-            $.ajax({
-                url: API_BASEURL + "logs",
-                type: "GET",
-                dataType: "json",
-                success: self.fromResponse
-            });
+            OctoPrint.logs.list()
+                .done(self.fromResponse);
         };
 
         self.fromResponse = function(response) {
@@ -53,18 +49,12 @@ $(function() {
         };
 
         self.removeFile = function(filename) {
-            $.ajax({
-                url: API_BASEURL + "logs/" + filename,
-                type: "DELETE",
-                dataType: "json",
-                success: self.requestData
-            });
+            OctoPrint.logs.delete(filename)
+                .done(self.requestData);
         };
 
-        self.onUserLoggedIn = function(user) {
-            if (user.admin) {
-                self.requestData();
-            }
+        self.onSettingsShown = function() {
+            self.requestData();
         };
     }
 

@@ -1,0 +1,29 @@
+<form class="form-horizontal">
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
+                <input type="checkbox" data-bind="checked: feature_gcodeViewer" id="settings-featureGcodeViewer"> {{ _('Enable GCode Visualizer') }}
+            </label>
+        </div>
+    </div>
+    <div class="control-group" title="{{ _('Maximum size the GCodeViewer autoloads the file for preview') }}">
+        <label class="control-label" for="settings-gcodeviewer">{{ _('GCode Visualizer file size threshold') }}</label>
+        <div class="controls">
+            <div class="input-append">
+                <input type="text" class="input-mini text-right" data-bind="value: feature_sizeThreshold_str">
+            </div>
+            <span class="help-inline">{{ _('on desktop')}}</span>
+        </div>
+        <div class="controls">
+            <div class="input-append">
+                 <input type="text" class="input-mini text-right" data-bind="value: feature_mobileSizeThreshold_str">
+            </div>
+            <span class="help-inline">{{ _('on mobile')}}</span>
+        </div>
+        <div class="controls">
+            <span class="help-inline">
+                {% trans %}Provide values including size unit. Allowed units are: b, byte, bytes, kb, mb, gb, tb (case insensitive). Example: <code>5MB</code>, <code>500KB</code>{% endtrans %}
+            </span>
+        </div>
+    </div>
+</form>

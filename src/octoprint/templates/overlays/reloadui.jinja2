@@ -4,9 +4,14 @@
         <div class="container">
             <div class="hero-unit">
                 <h1>{{ _('Please reload') }}</h1>
-                <p>{{ _('There is a new version of the server active now, a reload of the user interface is needed. This will not interrupt any print jobs you might have ongoing. Please reload the web interface now by clicking the button below.') }}</p>
+                <p>{% trans %}
+                    There is a new version of the server active now, a reload
+                    of the user interface is needed. This will not interrupt
+                    any print jobs you might have ongoing. Please reload the
+                    web interface now by clicking the button below.
+                {% endtrans %}</p>
                 <p>
-                    <a class="btn btn-primary btn-large" id="reloadui_overlay_reload">{{ _('Reload now') }}</a>
+                    <a class="btn btn-primary btn-large" title="{{ _('Reload now') }}" href="javascript:void(0)" onclick="location.reload(true); return false;">{{ _('Reload now') }}</a>
                 </p>
             </div>
         </div>

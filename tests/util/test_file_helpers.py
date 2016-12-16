@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
@@ -29,7 +29,7 @@ class BomAwareOpenTest(unittest.TestCase):
 			contents = f.readlines()
 
 		# assert
-		self.assertEquals(len(contents), 3)
+		self.assertEqual(len(contents), 3)
 		self.assertTrue(contents[0].startswith("#"))
 
 	def test_bom_aware_open_without_bom(self):
@@ -40,7 +40,7 @@ class BomAwareOpenTest(unittest.TestCase):
 			contents = f.readlines()
 
 		# assert
-		self.assertEquals(len(contents), 3)
+		self.assertEqual(len(contents), 3)
 		self.assertTrue(contents[0].startswith("#"))
 
 	def test_bom_aware_open_ascii(self):
@@ -51,7 +51,7 @@ class BomAwareOpenTest(unittest.TestCase):
 			contents = f.readlines()
 
 		# assert
-		self.assertEquals(len(contents), 3)
+		self.assertEqual(len(contents), 3)
 		self.assertTrue(contents[0].startswith(u"\ufffd" * 3 + "#"))
 		self.assertTrue(contents[2].endswith(u"\ufffd\ufffd" * 6))
 
@@ -262,6 +262,62 @@ class TestAtomicWrite(unittest.TestCase):
 		mock_file.close.assert_called_once_with()
 		mock_chmod.assert_called_once_with("tempfile.tmp", 0o644) # (0o600 | 0o755) & 0o666 = 0o755 & 0o666
 		mock_move.assert_called_once_with("tempfile.tmp", "somefile.yaml")
+
+
+class TempDirTest(unittest.TestCase):
+
+	@mock.patch("shutil.rmtree")
+	@mock.patch("tempfile.mkdtemp")
+	def test_tempdir(self, mock_mkdtemp, mock_rmtree):
+		"""Tests regular "good" case."""
+
+		# setup
+		path = "/path/to/tmpdir"
+		mock_mkdtemp.return_value = path
+
+		# test
+		with octoprint.util.tempdir() as td:
+			self.assertEqual(td, path)
+
+		# assert
+		mock_mkdtemp.assert_called_once_with()
+		mock_rmtree.assert_called_once_with(path, ignore_errors=False, onerror=None)
+
+	@mock.patch("shutil.rmtree")
+	@mock.patch("tempfile.mkdtemp")
+	def test_tempdir_parameters_mkdtemp(self, mock_mkdtemp, mock_rmtree):
+		"""Tests that parameters for mkdtemp are properly propagated."""
+
+		# setup
+		path = "/path/to/tmpdir"
+		mock_mkdtemp.return_value = path
+
+		# test
+		with octoprint.util.tempdir(prefix="prefix", suffix="suffix", dir="dir") as td:
+			self.assertEqual(td, path)
+
+		# assert
+		mock_mkdtemp.assert_called_once_with(prefix="prefix", suffix="suffix", dir="dir")
+		mock_rmtree.assert_called_once_with(path, ignore_errors=False, onerror=None)
+
+	@mock.patch("shutil.rmtree")
+	@mock.patch("tempfile.mkdtemp")
+	def test_tempdir_parameters_rmtree(self, mock_mkdtemp, mock_rmtree):
+		"""Tests that parameters for rmtree are properly propagated."""
+
+		# setup
+		path = "/path/to/tmpdir"
+		mock_mkdtemp.return_value = path
+
+		onerror = mock.MagicMock()
+
+		# test
+		with octoprint.util.tempdir(ignore_errors=True, onerror=onerror) as td:
+			self.assertEqual(td, path)
+
+		# assert
+		mock_mkdtemp.assert_called_once_with()
+		mock_rmtree.assert_called_once_with(path, ignore_errors=True, onerror=onerror)
 
 
 @ddt.ddt

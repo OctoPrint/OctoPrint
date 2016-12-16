@@ -1,5 +1,5 @@
-#!/bin/env python
-from __future__ import absolute_import
+#!/bin/env python2
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Haeussge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -7,8 +7,114 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 
 import errno
-import subprocess
 import sys
+import traceback
+import time
+
+def _log_call(*lines):
+	_log(lines, prefix=">", stream="call")
+
+
+def _log_stdout(*lines):
+	_log(lines, prefix=" ", stream="stdout")
+
+
+def _log_stderr(*lines):
+	_log(lines, prefix=" ", stream="stderr")
+
+
+def _log(lines, prefix=None, stream=None):
+	output_stream = sys.stdout
+	if stream == "stderr":
+		output_stream = sys.stderr
+
+	for line in lines:
+		to_print = _to_str(u"{} {}".format(prefix, _to_unicode(line.rstrip(), errors="replace")),
+		                   errors="replace")
+		print(to_print, file=output_stream)
+
+
+def _to_unicode(s_or_u, encoding="utf-8", errors="strict"):
+	"""Make sure ``s_or_u`` is a unicode string."""
+	if isinstance(s_or_u, str):
+		return s_or_u.decode(encoding, errors=errors)
+	else:
+		return s_or_u
+
+
+def _to_str(s_or_u, encoding="utf-8", errors="strict"):
+	"""Make sure ``s_or_u`` is a str."""
+	if isinstance(s_or_u, unicode):
+		return s_or_u.encode(encoding, errors=errors)
+	else:
+		return s_or_u
+
+
+def _execute(command, **kwargs):
+	import sarge
+
+	if isinstance(command, (list, tuple)):
+		joined_command = " ".join(command)
+	else:
+		joined_command = command
+	_log_call(joined_command)
+
+	kwargs.update(dict(async=True, stdout=sarge.Capture(), stderr=sarge.Capture()))
+
+	try:
+		p = sarge.run(command, **kwargs)
+		while len(p.commands) == 0:
+			# somewhat ugly... we can't use wait_events because
+			# the events might not be all set if an exception
+			# by sarge is triggered within the async process
+			# thread
+			time.sleep(0.01)
+
+		# by now we should have a command, let's wait for its
+		# process to have been prepared
+		p.commands[0].process_ready.wait()
+
+		if not p.commands[0].process:
+			# the process might have been set to None in case of any exception
+			print("Error while trying to run command {}".format(joined_command), file=sys.stderr)
+			return None, [], []
+	except:
+		print("Error while trying to run command {}".format(joined_command), file=sys.stderr)
+		traceback.print_exc(file=sys.stderr)
+		return None, [], []
+
+	all_stdout = []
+	all_stderr = []
+	try:
+		while p.commands[0].poll() is None:
+			lines = p.stderr.readlines(timeout=0.5)
+			if lines:
+				lines = map(lambda x: _to_unicode(x, errors="replace"), lines)
+				_log_stderr(*lines)
+				all_stderr += list(lines)
+
+			lines = p.stdout.readlines(timeout=0.5)
+			if lines:
+				lines = map(lambda x: _to_unicode(x, errors="replace"), lines)
+				_log_stdout(*lines)
+				all_stdout += list(lines)
+
+	finally:
+		p.close()
+
+	lines = p.stderr.readlines()
+	if lines:
+		lines = map(lambda x: _to_unicode(x, errors="replace"), lines)
+		_log_stderr(*lines)
+		all_stderr += lines
+
+	lines = p.stdout.readlines()
+	if lines:
+		lines = map(lambda x: _to_unicode(x, errors="replace"), lines)
+		_log_stdout(*lines)
+		all_stdout += lines
+
+	return p.returncode, all_stdout, all_stderr
 
 
 def _get_git_executables():
@@ -18,40 +124,31 @@ def _get_git_executables():
 	return GITS
 
 
-def _git(args, cwd, hide_stderr=False, verbose=False, git_executable=None):
+def _git(args, cwd, git_executable=None):
 	if git_executable is not None:
 		commands = [git_executable]
 	else:
 		commands = _get_git_executables()
 
 	for c in commands:
+		command = [c] + args
 		try:
-			p = subprocess.Popen([c] + args, cwd=cwd, stdout=subprocess.PIPE,
-			                     stderr=(subprocess.PIPE if hide_stderr
-			                             else None))
-			break
+			return _execute(command, cwd=cwd)
 		except EnvironmentError:
 			e = sys.exc_info()[1]
 			if e.errno == errno.ENOENT:
 				continue
-			if verbose:
-				print("unable to run %s" % args[0])
-				print(e)
-			return None, None
+
+			print("Error while trying to run command {}".format(" ".join(command)), file=sys.stderr)
+			traceback.print_exc(file=sys.stderr)
+			return None, [], []
+		except:
+			print("Error while trying to run command {}".format(" ".join(command)), file=sys.stderr)
+			traceback.print_exc(file=sys.stderr)
+			return None, [], []
 	else:
-		if verbose:
-			print("unable to find command, tried %s" % (commands,))
-		return None, None
-
-	stdout = p.communicate()[0].strip()
-	if sys.version >= '3':
-		stdout = stdout.decode()
-
-	if p.returncode != 0:
-		if verbose:
-			print("unable to run %s (error)" % args[0])
-
-	return p.returncode, stdout
+		print("Unable to find git command, tried {}".format(", ".join(commands)), file=sys.stderr)
+		return None, [], []
 
 
 def _python(args, cwd, python_executable, sudo=False):
@@ -59,37 +156,44 @@ def _python(args, cwd, python_executable, sudo=False):
 	if sudo:
 		command = ["sudo"] + command
 	try:
-		p = subprocess.Popen(command, cwd=cwd, stdout=subprocess.PIPE,
-		                     stderr=subprocess.PIPE)
+		return _execute(command, cwd=cwd)
 	except:
-		return None, None
+		import traceback
+		print("Error while trying to run command {}".format(" ".join(command)), file=sys.stderr)
+		traceback.print_exc(file=sys.stderr)
+		return None, [], []
 
-	stdout = p.communicate()[0].strip()
-	if sys.version >= "3":
-		stdout = stdout.decode()
 
-	return p.returncode, stdout
+def _to_error(*lines):
+	if len(lines) == 1:
+		if isinstance(lines[0], (list, tuple)):
+			lines = lines[0]
+		elif not isinstance(lines[0], (str, unicode)):
+			lines = [repr(lines[0]),]
+	return u"\n".join(map(lambda x: _to_unicode(x, errors="replace"), lines))
 
 
 def _rescue_changes(git_executable, folder):
 	print(">>> Running: git diff --shortstat")
-	returncode, stdout = _git(["diff", "--shortstat"], folder, git_executable=git_executable)
-	if returncode != 0:
-		raise RuntimeError("Could not update, \"git diff\" failed with returncode %d: %s" % (returncode, stdout))
-	if stdout and stdout.strip():
+	returncode, stdout, stderr = _git(["diff", "--shortstat"], folder, git_executable=git_executable)
+	if returncode is None or returncode != 0:
+		raise RuntimeError("Could not update, \"git diff\" failed with returncode {}".format(returncode))
+	if stdout and u"".join(stdout).strip():
 		# we got changes in the working tree, maybe from the user, so we'll now rescue those into a patch
 		import time
 		import os
 		timestamp = time.strftime("%Y%m%d%H%M")
-		patch = os.path.join(folder, "%s-preupdate.patch" % timestamp)
+		patch = os.path.join(folder, "{}-preupdate.patch".format(timestamp))
 
-		print(">>> Running: git diff and saving output to %s" % timestamp)
-		returncode, stdout = _git(["diff"], folder, git_executable=git_executable)
-		if returncode != 0:
-			raise RuntimeError("Could not update, installation directory was dirty and state could not be persisted as a patch to %s" % patch)
+		print(">>> Running: git diff and saving output to {}".format(patch))
+		returncode, stdout, stderr = _git(["diff"], folder, git_executable=git_executable)
+		if returncode is None or returncode != 0:
+			raise RuntimeError("Could not update, installation directory was dirty and state could not be persisted as a patch to {}".format(patch))
 
-		with open(patch, "wb") as f:
-			f.write(stdout)
+		import codecs
+		with codecs.open(patch, "w", encoding="utf-8", errors="replace") as f:
+			for line in stdout:
+				f.write(line)
 
 		return True
 
@@ -99,62 +203,61 @@ def _rescue_changes(git_executable, folder):
 def update_source(git_executable, folder, target, force=False, branch=None):
 	if _rescue_changes(git_executable, folder):
 		print(">>> Running: git reset --hard")
-		returncode, stdout = _git(["reset", "--hard"], folder, git_executable=git_executable)
-		if returncode != 0:
-			raise RuntimeError("Could not update, \"git reset --hard\" failed with returncode %d: %s" % (returncode, stdout))
+		returncode, stdout, stderr = _git(["reset", "--hard"], folder, git_executable=git_executable)
+		if returncode is None or returncode != 0:
+			raise RuntimeError("Could not update, \"git reset --hard\" failed with returncode {}".format(returncode))
+
+		print(">>> Running: git clean -f -d -e *-preupdate.patch")
+		returncode, stdout, stderr = _git(["clean", "-f", "-d", "-e", "*-preupdate.patch"], folder, git_executable=git_executable)
+		if returncode is None or returncode != 0:
+			raise RuntimeError("Could not update, \"git clean -f\" failed with returncode {}".format(returncode))
 
 	print(">>> Running: git fetch")
-	returncode, stdout = _git(["fetch"], folder, git_executable=git_executable)
-	if returncode != 0:
-		raise RuntimeError("Could not update, \"git fetch\" failed with returncode %d: %s" % (returncode, stdout))
-	print(stdout)
+	returncode, stdout, stderr = _git(["fetch"], folder, git_executable=git_executable)
+	if returncode is None or returncode != 0:
+		raise RuntimeError("Could not update, \"git fetch\" failed with returncode {}".format(returncode))
 
 	if branch is not None and branch.strip() != "":
 		print(">>> Running: git checkout {}".format(branch))
-		returncode, stdout = _git(["checkout", branch], folder, git_executable=git_executable)
-		if returncode != 0:
-			raise RuntimeError("Could not update, \"git checkout\" failed with returncode %d: %s" % (returncode, stdout))
+		returncode, stdout, stderr = _git(["checkout", branch], folder, git_executable=git_executable)
+		if returncode is None or returncode != 0:
+			raise RuntimeError("Could not update, \"git checkout\" failed with returncode {}".format(returncode))
 
 	print(">>> Running: git pull")
-	returncode, stdout = _git(["pull"], folder, git_executable=git_executable)
-	if returncode != 0:
-		raise RuntimeError("Could not update, \"git pull\" failed with returncode %d: %s" % (returncode, stdout))
-	print(stdout)
+	returncode, stdout, stderr = _git(["pull"], folder, git_executable=git_executable)
+	if returncode is None or returncode != 0:
+		raise RuntimeError("Could not update, \"git pull\" failed with returncode {}".format(returncode))
 
 	if force:
 		reset_command = ["reset", "--hard"]
 		reset_command += [target]
 
-		print(">>> Running: git %s" % " ".join(reset_command))
-		returncode, stdout = _git(reset_command, folder, git_executable=git_executable)
-		if returncode != 0:
-			raise RuntimeError("Error while updating, \"git %s\" failed with returncode %d: %s" % (" ".join(reset_command), returncode, stdout))
-		print(stdout)
+		print(">>> Running: git {}".format(" ".join(reset_command)))
+		returncode, stdout, stderr = _git(reset_command, folder, git_executable=git_executable)
+		if returncode is None or returncode != 0:
+			raise RuntimeError("Error while updating, \"git {}\" failed with returncode {}".format(" ".join(reset_command), returncode))
 
 
 def install_source(python_executable, folder, user=False, sudo=False):
 	print(">>> Running: python setup.py clean")
-	returncode, stdout = _python(["setup.py", "clean"], folder, python_executable)
-	if returncode != 0:
-		print("\"python setup.py clean\" failed with returncode %d: %s" % (returncode, stdout))
+	returncode, stdout, stderr = _python(["setup.py", "clean"], folder, python_executable)
+	if returncode is None or returncode != 0:
+		print("\"python setup.py clean\" failed with returncode {}".format(returncode))
 		print("Continuing anyways")
-	print(stdout)
 
 	print(">>> Running: python setup.py install")
 	args = ["setup.py", "install"]
 	if user:
 		args.append("--user")
-	returncode, stdout = _python(args, folder, python_executable, sudo=sudo)
-	if returncode != 0:
-		raise RuntimeError("Could not update, \"python setup.py install\" failed with returncode %d: %s" % (returncode, stdout))
-	print(stdout)
+	returncode, stdout, stderr = _python(args, folder, python_executable, sudo=sudo)
+	if returncode is None or returncode != 0:
+		raise RuntimeError("Could not update, \"python setup.py install\" failed with returncode {}".format(returncode))
 
 
 def parse_arguments():
 	import argparse
 
 	boolean_trues = ["true", "yes", "1"]
-	boolean_falses = ["false", "no", "0"]
 
 	parser = argparse.ArgumentParser(prog="update-octoprint.py")
 
@@ -190,6 +293,12 @@ def main():
 	python_executable = sys.executable
 	if args.python_executable:
 		python_executable = args.python_executable
+		if python_executable.startswith('"'):
+			python_executable = python_executable[1:]
+		if python_executable.endswith('"'):
+			python_executable = python_executable[:-1]
+
+	print("Python executable: {!r}".format(python_executable))
 
 	folder = args.folder
 

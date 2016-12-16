@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -7,6 +7,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 
 import re
+from builtins import range
 
 class SupportLocationTypes(object):
 	NONE = "none"
@@ -37,12 +38,12 @@ class RetractionCombingTypes(object):
 	NO_SKIN = "no skin"
 
 class GcodeFlavors(object):
-	REPRAP = "reprap"
-	REPRAP_VOLUME = "reprap_volume"
-	ULTIGCODE = "ultigcode"
-	MAKERBOT = "makerbot"
-	BFB = "bfb"
-	MACH3 = "mach3"
+	REPRAP = (0, "reprap")
+	ULTIGCODE = (1, "ultigcode")
+	MAKERBOT = (2, "makerbot")
+	BFB = (3, "bfb")
+	MACH3 = (4, "mach3")
+	REPRAP_VOLUME = (5, "reprap_volume")
 
 
 defaults = dict(
@@ -405,12 +406,16 @@ class Profile(object):
 
 		result = dict()
 		for section in config.sections():
-			if not section in ("profile", "alterations"):
+
+			if not section in ("profile", "alterations", "machine"):
 				continue
 
 			for option in config.options(section):
 				ignored = False
 				key = option
+
+				if section == "machine" and key != "gcode_flavor":
+					continue
 
 				# try to fetch the value in the correct type
 				try:
@@ -429,13 +434,16 @@ class Profile(object):
 				index = None
 
 				for opt in arrayified_options:
-					if key.startswith(opt):
+					# if there's a period, the index comes before it
+					optsplit = opt.split('.')
+					keysplit = key.split('.')
+					if key.startswith(optsplit[0]) and keysplit[1:] == optsplit[1:]:
 						if key == opt:
 							index = 0
 						else:
 							try:
 								# try to convert the target index, e.g. print_temperature2 => print_temperature[1]
-								index = int(key[len(opt):]) - 1
+								index = int(keysplit[0][len(optsplit[0]):]) - 1
 							except ValueError:
 								# ignore entries for which that fails
 								ignored = True
@@ -451,12 +459,15 @@ class Profile(object):
 				if key in value_conversions and value in value_conversions[key]:
 					value = value_conversions[key][value]
 
+				if key == "gcode_flavor":
+					value = parse_gcode_flavor(value)
+
 				if index is not None:
 					# if we have an array to fill, make sure the target array exists and has the right size
 					if not key in result:
 						result[key] = []
 					if len(result[key]) <= index:
-						for n in xrange(index - len(result[key]) + 1):
+						for n in range(index - len(result[key]) + 1):
 							result[key].append(None)
 					result[key][index] = value
 				else:
@@ -509,7 +520,7 @@ class Profile(object):
 			# So override > profile > default, if neither override nor profile value are available
 			# the default value should just be left as is
 
-			for x in xrange(len(result)):
+			for x in range(len(result)):
 				if override_value is not None and  x < len(override_value) and override_value[x] is not None:
 					# we have an override value for this location, so we use it
 					result[x] = override_value[x]
@@ -721,59 +732,65 @@ class Profile(object):
 		return pre + str(f)
 
 	def get_gcode(self, key):
-		extruder_count = self.get_int("extruder_amount")
-
 		prefix = ""
 		postfix = ""
 
 		if self.get("gcode_flavor") == GcodeFlavors.ULTIGCODE:
 			if key == "end_gcode":
-				return "M25 ;Stop reading from this point on.\n;CURA_PROFILE_STRING:%s\n" % (self.get_profile_string())
+				return "M25 ;Stop reading from this point on.\n;CURA_OCTO_PROFILE_STRING:%s\n" % (self.get_profile_string())
 			return ""
 
 		if key == "start_gcode":
 			contents = self.get_gcode_template("start_gcode")
-
-			e_steps = self.get_float("steps_per_e")
-			if e_steps > 0:
-				prefix += "M92 E{e_steps}\n" % (e_steps)
-			temp = self.get_float("print_temperature")
-
-			bed_temp = 0
-			if self.get_boolean("has_heated_bed"):
-				bed_temp = self.get_float("print_bed_temperature")
-			include_bed_temp = bed_temp > 0 and not "{print_bed_temperature}" in Profile.regex_strip_comments.sub("", contents)
-
-			if include_bed_temp:
-				prefix += "M140 S{bed_temp}\n".format(bed_temp=bed_temp)
-
-			if temp > 0 and not "{print_temperature}" in Profile.regex_strip_comments.sub("", contents):
-				if extruder_count > 0:
-					def temp_line(temp, extruder, template):
-						t = temp
-						if extruder > 0:
-							print_temp = self.get_float("print_temperature%d" % (extruder + 1))
-							if print_temp > 0:
-								t = print_temp
-						return template.format(extruder=extruder, temp=t)
-
-					prefix_preheat = ""
-					prefix_waitheat = ""
-					for n in xrange(0, extruder_count):
-						if n > 0:
-							prefix_preheat += temp_line(temp, n, "M104 T{extruder} S{temp}\n")
-						prefix_waitheat += temp_line(temp, n, "M109 T{extruder} S{temp}\n")
-					prefix += prefix_preheat + prefix_waitheat + "T0\n"
-				else:
-					prefix += "M109 S{temp}\n".format(temp=temp)
-
-			if include_bed_temp:
-				prefix += "M190 S{bed_temp}\n".format(bed_temp=bed_temp)
+			prefix += self.get_start_gcode_prefix(contents)
 
 		else:
 			contents = self.get_gcode_template(key)
 
 		return unicode(prefix + re.sub("(.)\{([^\}]*)\}", self.replaceTagMatch, contents).rstrip() + '\n' + postfix).strip().encode('utf-8') + '\n'
+
+	def get_start_gcode_prefix(self, contents):
+		extruder_count = self.get_int("extruder_amount")
+
+		prefix = ""
+
+		e_steps = self.get_float("steps_per_e")
+		if e_steps > 0:
+			prefix += "M92 E{e_steps}\n" % (e_steps)
+		temp = self.get_float("print_temperature")
+
+		bed_temp = 0
+		if self.get_boolean("has_heated_bed"):
+			bed_temp = self.get_float("print_bed_temperature")
+		include_bed_temp = bed_temp > 0 and not "{print_bed_temperature}" in Profile.regex_strip_comments.sub("", contents)
+
+		if include_bed_temp:
+			prefix += "M140 S{bed_temp}\n".format(bed_temp=bed_temp)
+
+		if temp > 0 and not "{print_temperature}" in Profile.regex_strip_comments.sub("", contents):
+			if extruder_count > 0:
+				def temp_line(temp, extruder, template):
+					t = temp
+					if extruder > 0:
+						print_temp = self.get_float("print_temperature%d" % (extruder + 1))
+						if print_temp > 0:
+							t = print_temp
+					return template.format(extruder=extruder, temp=t)
+
+				prefix_preheat = ""
+				prefix_waitheat = ""
+				for n in range(0, extruder_count):
+					if n > 0:
+						prefix_preheat += temp_line(temp, n, "M104 T{extruder} S{temp}\n")
+					prefix_waitheat += temp_line(temp, n, "M109 T{extruder} S{temp}\n")
+				prefix += prefix_preheat + prefix_waitheat + "T0\n"
+			else:
+				prefix += "M109 S{temp}\n".format(temp=temp)
+
+		if include_bed_temp:
+			prefix += "M190 S{bed_temp}\n".format(bed_temp=bed_temp)
+
+		return prefix
 
 	def calculate_edge_width_and_line_count(self):
 		wall_thickness = self.get_float("wall_thickness")
@@ -818,22 +835,22 @@ class Profile(object):
 		return 1
 
 	def get_pos_x(self):
-		if self._posX:
+		if self._posX is not None:
 			try:
-				return int(float(self._posX) * 1000)
+				return int(float(self._posX))
 			except ValueError:
 				pass
 
-		return int(self.get_float("machine_width") / 2.0 * 1000) if not self.get_boolean("machine_center_is_zero") else 0.0
+		return int(self.get_float("machine_width") / 2.0 ) if not self.get_boolean("machine_center_is_zero") else 0.0
 
 	def get_pos_y(self):
-		if self._posY:
+		if self._posY is not None:
 			try:
-				return int(float(self._posY) * 1000)
+				return int(float(self._posY))
 			except ValueError:
 				pass
 
-		return int(self.get_float("machine_depth") / 2.0 * 1000) if not self.get_boolean("machine_center_is_zero") else 0.0
+		return int(self.get_float("machine_depth") / 2.0) if not self.get_boolean("machine_center_is_zero") else 0.0
 
 	def convert_to_engine(self):
 
@@ -883,8 +900,8 @@ class Profile(object):
 			"coolHeadLift": 1 if self.get_boolean("cool_head_lift") else 0,
 
 			# model positioning
-			"posx": self.get_pos_x(),
-			"posy": self.get_pos_y(),
+			"posx": self.get_pos_x() * 1000, # in microns
+			"posy": self.get_pos_y() * 1000, # in microns
 
 			# gcodes
 			"startCode": self.get_gcode("start_gcode"),
@@ -901,7 +918,7 @@ class Profile(object):
 				settings["extruderOffset[{extruder}].{axis}".format(extruder=extruder, axis=axis.upper())] = self.get("extruder_offset_{axis}{extruder}".format(extruder=extruder, axis=axis.lower()))
 
 		fanFullHeight = self.get_microns("fan_full_height")
-		settings["fanFullOnLayerNr"] = (fanFullHeight - settings["initialLayerThickness"] - 1) / settings["layerThickness"] + 1
+		settings["fanFullOnLayerNr"] = (fanFullHeight - settings["initialLayerThickness"] - 1) // settings["layerThickness"] + 1
 		if settings["fanFullOnLayerNr"] < 0:
 			settings["fanFullOnLayerNr"] = 0
 
@@ -963,16 +980,7 @@ class Profile(object):
 			settings["layerThickness"] = 1000
 
 		# gcode flavor
-		if self.get("gcode_flavor") == GcodeFlavors.ULTIGCODE:
-			settings["gcodeFlavor"] = 1
-		elif self.get("gcode_flavor") == GcodeFlavors.MAKERBOT:
-			settings["gcodeFlavor"] = 2
-		elif self.get("gcode_flavor") == GcodeFlavors.BFB:
-			settings["gcodeFlavor"] = 3
-		elif self.get("gcode_flavor") == GcodeFlavors.MACH3:
-			settings["gcodeFlavor"] = 4
-		elif self.get("gcode_flavor") == GcodeFlavors.REPRAP_VOLUME:
-			settings["gcodeFlavor"] = 5
+		settings["gcodeFlavor"] = self.get("gcode_flavor")[0]
 
 		# extras
 		if self.get_boolean("spiralize"):
@@ -988,3 +996,21 @@ class Profile(object):
 			settings["enableOozeShield"] = 1
 
 		return settings
+
+
+def parse_gcode_flavor(value):
+
+	value = value.lower()
+
+	if "reprap" in value and ("volume" in value or "volumatric" in value):
+		return GcodeFlavors.REPRAP_VOLUME
+	elif "ultigcode" in value:
+		return GcodeFlavors.ULTIGCODE
+	elif "makerbot" in value:
+		return GcodeFlavors.MAKERBOT
+	elif "bfb" in value:
+		return GcodeFlavors.BFB
+	elif "mach3" in value:
+		return GcodeFlavors.MACH3
+	else:
+		return GcodeFlavors.REPRAP

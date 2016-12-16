@@ -9,7 +9,11 @@ import octoprint.plugin
 
 
 class TestMixedPlugin(octoprint.plugin.StartupPlugin, octoprint.plugin.SettingsPlugin):
-	pass
+	def get_sorting_key(self, context=None):
+		if context == "sorting_test":
+			return 100
+		else:
+			return None
 
 
 __plugin_name__ = "Mixed Plugin"

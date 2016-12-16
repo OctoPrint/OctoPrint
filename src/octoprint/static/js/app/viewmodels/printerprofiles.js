@@ -1,36 +1,399 @@
 $(function() {
-    function PrinterProfilesViewModel() {
+    var cleanProfile = function() {
+        return {
+            id: "",
+            name: "",
+            model: "",
+            color: "default",
+            volume: {
+                formFactor: "rectangular",
+                width: 200,
+                depth: 200,
+                height: 200,
+                origin: "lowerleft",
+                custom_box: false
+            },
+            heatedBed: true,
+            axes: {
+                x: {speed: 6000, inverted: false},
+                y: {speed: 6000, inverted: false},
+                z: {speed: 200, inverted: false},
+                e: {speed: 300, inverted: false}
+            },
+            extruder: {
+                count: 1,
+                offsets: [
+                    [0,0]
+                ],
+                nozzleDiameter: 0.4
+            }
+        }
+    };
+
+    function EditedProfileViewModel(profiles) {
         var self = this;
 
-        self._cleanProfile = function() {
-            return {
-                id: "",
-                name: "",
-                model: "",
-                color: "default",
+        self.profiles = profiles;
+
+        self.isNew = ko.observable(false);
+
+        self.name = ko.observable();
+        self.color = ko.observable();
+        self.identifier = ko.observable();
+        self.identifierPlaceholder = ko.observable();
+        self.model = ko.observable();
+
+        self.volumeWidth = ko.observable();
+        self.volumeHeight = ko.observable();
+        self.volumeDepth = ko.observable();
+        self.volumeFormFactor = ko.observable();
+        self.volumeOrigin = ko.observable();
+
+        self.volumeFormFactor.subscribe(function(value) {
+            if (value == "circular") {
+                self.volumeOrigin("center");
+            }
+        });
+        self.volumeOrigin.subscribe(function() {
+            self.toBoundingBoxPlaceholders(self.defaultBoundingBox(self.volumeWidth(), self.volumeDepth(), self.volumeHeight(), self.volumeOrigin()));
+        });
+
+        self.heatedBed = ko.observable();
+
+        self.nozzleDiameter = ko.observable();
+        self.extruders = ko.observable();
+        self.extruderOffsets = ko.observableArray();
+
+        self.axisXSpeed = ko.observable();
+        self.axisYSpeed = ko.observable();
+        self.axisZSpeed = ko.observable();
+        self.axisESpeed = ko.observable();
+
+        self.axisXInverted = ko.observable(false);
+        self.axisYInverted = ko.observable(false);
+        self.axisZInverted = ko.observable(false);
+        self.axisEInverted = ko.observable(false);
+
+        self.customBoundingBox = ko.observable(false);
+        self.boundingBoxMinX = ko.observable();
+        self.boundingBoxMinY = ko.observable();
+        self.boundingBoxMinZ = ko.observable();
+        self.boundingBoxMaxX = ko.observable();
+        self.boundingBoxMaxY = ko.observable();
+        self.boundingBoxMaxZ = ko.observable();
+        self.boundingBoxMinXPlaceholder = ko.observable();
+        self.boundingBoxMinYPlaceholder = ko.observable();
+        self.boundingBoxMinZPlaceholder = ko.observable();
+        self.boundingBoxMaxXPlaceholder = ko.observable();
+        self.boundingBoxMaxYPlaceholder = ko.observable();
+        self.boundingBoxMaxZPlaceholder = ko.observable();
+
+        self.koExtruderOffsets = ko.pureComputed(function() {
+            var extruderOffsets = self.extruderOffsets();
+            var numExtruders = self.extruders();
+            if (!numExtruders) {
+                numExtruders = 1;
+            }
+
+            if (numExtruders - 1 > extruderOffsets.length) {
+                for (var i = extruderOffsets.length; i < numExtruders; i++) {
+                    extruderOffsets[i] = {
+                        idx: i + 1,
+                        x: ko.observable(0),
+                        y: ko.observable(0)
+                    }
+                }
+                self.extruderOffsets(extruderOffsets);
+            }
+
+            return extruderOffsets.slice(0, numExtruders - 1);
+        });
+
+        self.nameInvalid = ko.pureComputed(function() {
+            return !self.name();
+        });
+
+        self.identifierInvalid = ko.pureComputed(function() {
+            var identifier = self.identifier();
+            var placeholder = self.identifierPlaceholder();
+            var data = identifier;
+            if (!identifier) {
+                data = placeholder;
+            }
+
+            var validCharacters = (data && (data == self._sanitize(data)));
+
+            var existingProfile = self.profiles.getItem(function(item) {return item.id == data});
+            return !data || !validCharacters || (self.isNew() && existingProfile != undefined);
+        });
+
+        self.identifierInvalidText = ko.pureComputed(function() {
+            if (!self.identifierInvalid()) {
+                return "";
+            }
+
+            if (!self.identifier() && !self.identifierPlaceholder()) {
+                return gettext("Identifier must be set");
+            } else if (self.identifier() != self._sanitize(self.identifier())) {
+                return gettext("Invalid characters, only a-z, A-Z, 0-9, -, ., _, ( and ) are allowed")
+            } else {
+                return gettext("A profile with such an identifier already exists");
+            }
+        });
+
+        self.name.subscribe(function() {
+            self.identifierPlaceholder(self._sanitize(self.name()).toLowerCase());
+        });
+
+        self.valid = function() {
+            return !self.nameInvalid() && !self.identifierInvalid();
+        };
+
+        self.availableColors = ko.observable([
+            {key: "default", name: gettext("default")},
+            {key: "red", name: gettext("red")},
+            {key: "orange", name: gettext("orange")},
+            {key: "yellow", name: gettext("yellow")},
+            {key: "green", name: gettext("green")},
+            {key: "blue", name: gettext("blue")},
+            {key: "black", name: gettext("black")}
+        ]);
+
+        self.availableOrigins = ko.pureComputed(function() {
+            var formFactor = self.volumeFormFactor();
+
+            var possibleOrigins = {
+                "lowerleft": gettext("Lower Left"),
+                "center": gettext("Center")
+            };
+
+            var keys = [];
+            if (formFactor == "rectangular") {
+                keys = ["lowerleft", "center"];
+            } else if (formFactor == "circular") {
+                keys = ["center"];
+            }
+
+            var result = [];
+            _.each(keys, function(key) {
+               result.push({key: key, name: possibleOrigins[key]});
+            });
+            return result;
+        });
+
+        self.fromProfileData = function(data) {
+            self.isNew(data === undefined);
+
+            if (data === undefined) {
+                data = cleanProfile();
+            }
+
+            self.identifier(data.id);
+            self.name(data.name);
+            self.color(data.color);
+            self.model(data.model);
+
+            self.volumeWidth(data.volume.width);
+            self.volumeHeight(data.volume.height);
+            self.volumeDepth(data.volume.depth);
+            self.volumeFormFactor(data.volume.formFactor);
+            self.volumeOrigin(data.volume.origin);
+
+            if (data.volume.custom_box) {
+                self.toBoundingBoxData(data.volume.custom_box, true);
+            } else {
+                var box = self.defaultBoundingBox(data.volume.width, data.volume.depth, data.volume.height, data.volume.origin);
+                self.toBoundingBoxData(box, false);
+            }
+
+            self.heatedBed(data.heatedBed);
+
+            self.nozzleDiameter(data.extruder.nozzleDiameter);
+            self.extruders(data.extruder.count);
+            var offsets = [];
+            if (data.extruder.count > 1) {
+                _.each(_.slice(data.extruder.offsets, 1), function(offset, index) {
+                    offsets.push({
+                        idx: index + 1,
+                        x: ko.observable(offset[0]),
+                        y: ko.observable(offset[1])
+                    });
+                });
+            }
+            self.extruderOffsets(offsets);
+
+            self.axisXSpeed(data.axes.x.speed);
+            self.axisXInverted(data.axes.x.inverted);
+            self.axisYSpeed(data.axes.y.speed);
+            self.axisYInverted(data.axes.y.inverted);
+            self.axisZSpeed(data.axes.z.speed);
+            self.axisZInverted(data.axes.z.inverted);
+            self.axisESpeed(data.axes.e.speed);
+            self.axisEInverted(data.axes.e.inverted);
+        };
+
+        self.toProfileData = function() {
+            var identifier = self.identifier();
+            if (!identifier) {
+                identifier = self.identifierPlaceholder();
+            }
+
+            var defaultProfile = cleanProfile();
+            var valid = function(value, f, def) {
+                var v = f(value);
+                if (isNaN(v)) {
+                    return def;
+                }
+                return v;
+            };
+            var validFloat = function(value, def) {
+                return valid(value, parseFloat, def);
+            };
+            var validInt = function(value, def) {
+                return valid(value, parseInt, def);
+            };
+
+            var profile = {
+                id: identifier,
+                name: self.name(),
+                color: self.color(),
+                model: self.model(),
                 volume: {
-                    formFactor: "rectangular",
-                    width: 200,
-                    depth: 200,
-                    height: 200,
-                    origin: "lowerleft"
+                    width: validFloat(self.volumeWidth(), defaultProfile.volume.width),
+                    depth: validFloat(self.volumeDepth(), defaultProfile.volume.depth),
+                    height: validFloat(self.volumeHeight(), defaultProfile.volume.height),
+                    formFactor: self.volumeFormFactor(),
+                    origin: self.volumeOrigin()
                 },
-                heatedBed: true,
-                axes: {
-                    x: {speed: 6000, inverted: false},
-                    y: {speed: 6000, inverted: false},
-                    z: {speed: 200, inverted: false},
-                    e: {speed: 300, inverted: false}
-                },
+                heatedBed: self.heatedBed(),
                 extruder: {
-                    count: 1,
+                    count: parseInt(self.extruders()),
                     offsets: [
-                        [0,0]
+                        [0.0, 0.0]
                     ],
-                    nozzleDiameter: 0.4
+                    nozzleDiameter: validFloat(self.nozzleDiameter(), defaultProfile.extruder.nozzleDiameter)
+                },
+                axes: {
+                    x: {
+                        speed: validInt(self.axisXSpeed(), defaultProfile.axes.x.speed),
+                        inverted: self.axisXInverted()
+                    },
+                    y: {
+                        speed: validInt(self.axisYSpeed(), defaultProfile.axes.y.speed),
+                        inverted: self.axisYInverted()
+                    },
+                    z: {
+                        speed: validInt(self.axisZSpeed(), defaultProfile.axes.z.speed),
+                        inverted: self.axisZInverted()
+                    },
+                    e: {
+                        speed: validInt(self.axisESpeed(), defaultProfile.axes.e.speed),
+                        inverted: self.axisEInverted()
+                    }
+                }
+            };
+
+            self.fillBoundingBoxData(profile);
+
+            var offsetX, offsetY;
+            if (self.extruders() > 1) {
+                for (var i = 0; i < self.extruders() - 1; i++) {
+                    var offset = [0.0, 0.0];
+                    if (i < self.extruderOffsets().length) {
+                        offsetX = validFloat(self.extruderOffsets()[i]["x"](), 0.0);
+                        offsetY = validFloat(self.extruderOffsets()[i]["y"](), 0.0);
+                        offset = [offsetX, offsetY];
+                    }
+                    profile.extruder.offsets.push(offset);
+                }
+            }
+
+            if (profile.volume.formFactor == "circular") {
+                profile.volume.depth = profile.volume.width;
+            }
+
+            return profile;
+        };
+
+        self.defaultBoundingBox = function(width, depth, height, origin) {
+            if (origin == "center") {
+                var halfWidth = width / 2.0;
+                var halfDepth = depth / 2.0;
+
+                return {
+                    x_min: -halfWidth,
+                    y_min: -halfDepth,
+                    z_min: 0.0,
+                    x_max: halfWidth,
+                    y_max: halfDepth,
+                    z_max: height
+                }
+            } else {
+                return {
+                    x_min: 0.0,
+                    y_min: 0.0,
+                    z_min: 0.0,
+                    x_max: width,
+                    y_max: depth,
+                    z_max: height
                 }
             }
         };
+
+        self.toBoundingBoxData = function(box, custom) {
+            self.customBoundingBox(custom);
+            if (custom) {
+                self.boundingBoxMinX(box.x_min);
+                self.boundingBoxMinY(box.y_min);
+                self.boundingBoxMinZ(box.z_min);
+                self.boundingBoxMaxX(box.x_max);
+                self.boundingBoxMaxY(box.y_max);
+                self.boundingBoxMaxZ(box.z_max);
+            } else {
+                self.boundingBoxMinX(undefined);
+                self.boundingBoxMinY(undefined);
+                self.boundingBoxMinZ(undefined);
+                self.boundingBoxMaxX(undefined);
+                self.boundingBoxMaxY(undefined);
+                self.boundingBoxMaxZ(undefined);
+            }
+            self.toBoundingBoxPlaceholders(box);
+        };
+
+        self.toBoundingBoxPlaceholders = function(box) {
+            self.boundingBoxMinXPlaceholder(box.x_min);
+            self.boundingBoxMinYPlaceholder(box.y_min);
+            self.boundingBoxMinZPlaceholder(box.z_min);
+            self.boundingBoxMaxXPlaceholder(box.x_max);
+            self.boundingBoxMaxYPlaceholder(box.y_max);
+            self.boundingBoxMaxZPlaceholder(box.z_max);
+        };
+
+        self.fillBoundingBoxData = function(profile) {
+            if (self.customBoundingBox()) {
+                var defaultBox = self.defaultBoundingBox(self.volumeWidth(), self.volumeDepth(), self.volumeHeight(), self.volumeOrigin());
+                profile.volume.custom_box = {
+                    x_min: (self.boundingBoxMinX() !== undefined) ? Math.min(self.boundingBoxMinX(), defaultBox.x_min) : defaultBox.x_min,
+                    y_min: (self.boundingBoxMinY() !== undefined) ? Math.min(self.boundingBoxMinY(), defaultBox.y_min) : defaultBox.y_min,
+                    z_min: (self.boundingBoxMinZ() !== undefined) ? Math.min(self.boundingBoxMinZ(), defaultBox.z_min) : defaultBox.z_min,
+                    x_max: (self.boundingBoxMaxX() !== undefined) ? Math.max(self.boundingBoxMaxX(), defaultBox.x_max) : defaultBox.x_max,
+                    y_max: (self.boundingBoxMaxY() !== undefined) ? Math.max(self.boundingBoxMaxY(), defaultBox.y_max) : defaultBox.y_max,
+                    z_max: (self.boundingBoxMaxZ() !== undefined) ? Math.max(self.boundingBoxMaxZ(), defaultBox.z_max) : defaultBox.z_max
+                };
+            } else {
+                profile.volume.custom_box = false;
+            }
+        };
+
+        self._sanitize = function(name) {
+            return name.replace(/[^a-zA-Z0-9\-_\.\(\) ]/g, "").replace(/ /g, "_");
+        };
+
+        self.fromProfileData(cleanProfile());
+    }
+
+    function PrinterProfilesViewModel() {
+        var self = this;
 
         self.requestInProgress = ko.observable(false);
 
@@ -53,135 +416,19 @@ $(function() {
         self.defaultProfile = ko.observable();
         self.currentProfile = ko.observable();
 
-        self.currentProfileData = ko.observable(ko.mapping.fromJS(self._cleanProfile()));
-
-        self.editorNew = ko.observable(false);
-
-        self.editorName = ko.observable();
-        self.editorColor = ko.observable();
-        self.editorIdentifier = ko.observable();
-        self.editorIdentifierPlaceholder = ko.observable();
-        self.editorModel = ko.observable();
-
-        self.editorVolumeWidth = ko.observable();
-        self.editorVolumeDepth = ko.observable();
-        self.editorVolumeHeight = ko.observable();
-        self.editorVolumeFormFactor = ko.observable();
-        self.editorVolumeOrigin = ko.observable();
-
-        self.editorVolumeFormFactor.subscribe(function(value) {
-            if (value == "circular") {
-                self.editorVolumeOrigin("center");
+        self.createProfileEditor = function(data) {
+            var editor = new EditedProfileViewModel(self.profiles);
+            if (data !== undefined) {
+                editor.fromProfileData(data);
             }
-        });
+            return editor;
+        };
 
-        self.editorHeatedBed = ko.observable();
-
-        self.editorNozzleDiameter = ko.observable();
-        self.editorExtruders = ko.observable();
-        self.editorExtruderOffsets = ko.observableArray();
-
-        self.editorAxisXSpeed = ko.observable();
-        self.editorAxisYSpeed = ko.observable();
-        self.editorAxisZSpeed = ko.observable();
-        self.editorAxisESpeed = ko.observable();
-
-        self.editorAxisXInverted = ko.observable(false);
-        self.editorAxisYInverted = ko.observable(false);
-        self.editorAxisZInverted = ko.observable(false);
-        self.editorAxisEInverted = ko.observable(false);
-
-        self.availableColors = ko.observable([
-            {key: "default", name: gettext("default")},
-            {key: "red", name: gettext("red")},
-            {key: "orange", name: gettext("orange")},
-            {key: "yellow", name: gettext("yellow")},
-            {key: "green", name: gettext("green")},
-            {key: "blue", name: gettext("blue")},
-            {key: "black", name: gettext("black")}
-        ]);
-
-        self.availableOrigins = ko.pureComputed(function() {
-            var formFactor = self.editorVolumeFormFactor();
-
-            var possibleOrigins = {
-                "lowerleft": gettext("Lower Left"),
-                "center": gettext("Center")
-            };
-
-            var keys = [];
-            if (formFactor == "rectangular") {
-                keys = ["lowerleft", "center"];
-            } else if (formFactor == "circular") {
-                keys = ["center"];
-            }
-
-            var result = [];
-            _.each(keys, function(key) {
-               result.push({key: key, name: possibleOrigins[key]});
-            });
-            return result;
-        });
-
-        self.koEditorExtruderOffsets = ko.pureComputed(function() {
-            var extruderOffsets = self.editorExtruderOffsets();
-            var numExtruders = self.editorExtruders();
-            if (!numExtruders) {
-                numExtruders = 1;
-            }
-
-            if (numExtruders - 1 > extruderOffsets.length) {
-                for (var i = extruderOffsets.length; i < numExtruders; i++) {
-                    extruderOffsets[i] = {
-                        idx: i + 1,
-                        x: ko.observable(0),
-                        y: ko.observable(0)
-                    }
-                }
-                self.editorExtruderOffsets(extruderOffsets);
-            }
-
-            return extruderOffsets.slice(0, numExtruders - 1);
-        });
-
-        self.editorNameInvalid = ko.pureComputed(function() {
-            return !self.editorName();
-        });
-
-        self.editorIdentifierInvalid = ko.pureComputed(function() {
-            var identifier = self.editorIdentifier();
-            var placeholder = self.editorIdentifierPlaceholder();
-            var data = identifier;
-            if (!identifier) {
-                data = placeholder;
-            }
-
-            var validCharacters = (data && (data == self._sanitize(data)));
-
-            var existingProfile = self.profiles.getItem(function(item) {return item.id == data});
-            return !data || !validCharacters || (self.editorNew() && existingProfile != undefined);
-        });
-
-        self.editorIdentifierInvalidText = ko.pureComputed(function() {
-            if (!self.editorIdentifierInvalid()) {
-                return "";
-            }
-
-            if (!self.editorIdentifier() && !self.editorIdentifierPlaceholder()) {
-                return gettext("Identifier must be set");
-            } else if (self.editorIdentifier() != self._sanitize(self.editorIdentifier())) {
-                return gettext("Invalid characters, only a-z, A-Z, 0-9, -, ., _, ( and ) are allowed")
-            } else {
-                return gettext("A profile with such an identifier already exists");
-            }
-        });
+        self.editor = self.createProfileEditor();
+        self.currentProfileData = ko.observable(ko.mapping.fromJS(cleanProfile()));
 
         self.enableEditorSubmitButton = ko.pureComputed(function() {
-            return !self.editorNameInvalid() && !self.editorIdentifierInvalid() && !self.requestInProgress();
-        });
-
-        self.editorName.subscribe(function() {
-            self.editorIdentifierPlaceholder(self._sanitize(self.editorName()).toLowerCase());
+            return self.editor.valid() && !self.requestInProgress();
         });
 
         self.makeDefault = function(data) {
@@ -194,12 +441,8 @@ $(function() {
         };
 
         self.requestData = function() {
-            $.ajax({
-                url: API_BASEURL + "printerprofiles",
-                type: "GET",
-                dataType: "json",
-                success: self.fromResponse
-            })
+            OctoPrint.printerprofiles.list()
+                .done(self.fromResponse);
         };
 
         self.fromResponse = function(data) {
@@ -226,124 +469,69 @@ $(function() {
         };
 
         self.addProfile = function(callback) {
-            var profile = self._editorData();
+            var profile = self.editor.toProfileData();
             self.requestInProgress(true);
-            $.ajax({
-                url: API_BASEURL + "printerprofiles",
-                type: "POST",
-                dataType: "json",
-                contentType: "application/json; charset=UTF-8",
-                data: JSON.stringify({profile: profile}),
-                success: function() {
-                    self.requestInProgress(false);
+            OctoPrint.printerprofiles.add(profile)
+                .done(function() {
                     if (callback !== undefined) {
                         callback();
                     }
                     self.requestData();
-                },
-                error: function() {
-                    self.requestInProgress(false);
+                })
+                .fail(function() {
                     var text = gettext("There was unexpected error while saving the printer profile, please consult the logs.");
                     new PNotify({title: gettext("Saving failed"), text: text, type: "error", hide: false});
-                }
-            });
+                })
+                .always(function() {
+                    self.requestInProgress(false);
+                });
         };
 
         self.removeProfile = function(data) {
             self.requestInProgress(true);
-            $.ajax({
-                url: data.resource,
-                type: "DELETE",
-                dataType: "json",
-                success: function() {
-                    self.requestInProgress(false);
+            OctoPrint.printerprofiles.delete(data.id, {url: data.resource})
+                .done(function() {
                     self.requestData();
-                },
-                error: function() {
-                    self.requestInProgress(false);
+                })
+                .fail(function() {
                     var text = gettext("There was unexpected error while removing the printer profile, please consult the logs.");
                     new PNotify({title: gettext("Saving failed"), text: text, type: "error", hide: false});
-                }
-            })
+                })
+                .always(function() {
+                    self.requestInProgress(false);
+                });
         };
 
         self.updateProfile = function(profile, callback) {
             if (profile == undefined) {
-                profile = self._editorData();
+                profile = self.editor.toProfileData();
             }
 
             self.requestInProgress(true);
-
-            $.ajax({
-                url: API_BASEURL + "printerprofiles/" + profile.id,
-                type: "PATCH",
-                dataType: "json",
-                contentType: "application/json; charset=UTF-8",
-                data: JSON.stringify({profile: profile}),
-                success: function() {
-                    self.requestInProgress(false);
+            OctoPrint.printerprofiles.update(profile.id, profile)
+                .done(function() {
                     if (callback !== undefined) {
                         callback();
                     }
                     self.requestData();
-                },
-                error: function() {
-                    self.requestInProgress(false);
+                })
+                .fail(function() {
                     var text = gettext("There was unexpected error while updating the printer profile, please consult the logs.");
                     new PNotify({title: gettext("Saving failed"), text: text, type: "error", hide: false});
-                }
-            });
+                })
+                .always(function() {
+                    self.requestInProgress(false);
+                });
         };
 
         self.showEditProfileDialog = function(data) {
-            var add = false;
-            if (data == undefined) {
-                data = self._cleanProfile();
-                add = true;
-            }
-
-            self.editorNew(add);
-
-            self.editorIdentifier(data.id);
-            self.editorName(data.name);
-            self.editorColor(data.color);
-            self.editorModel(data.model);
-
-            self.editorVolumeWidth(data.volume.width);
-            self.editorVolumeDepth(data.volume.depth);
-            self.editorVolumeHeight(data.volume.height);
-            self.editorVolumeFormFactor(data.volume.formFactor);
-            self.editorVolumeOrigin(data.volume.origin);
-
-            self.editorHeatedBed(data.heatedBed);
-
-            self.editorNozzleDiameter(data.extruder.nozzleDiameter);
-            self.editorExtruders(data.extruder.count);
-            var offsets = [];
-            if (data.extruder.count > 1) {
-                _.each(_.slice(data.extruder.offsets, 1), function(offset, index) {
-                    offsets.push({
-                        idx: index + 1,
-                        x: ko.observable(offset[0]),
-                        y: ko.observable(offset[1])
-                    });
-                });
-            }
-            self.editorExtruderOffsets(offsets);
-
-            self.editorAxisXSpeed(data.axes.x.speed);
-            self.editorAxisXInverted(data.axes.x.inverted);
-            self.editorAxisYSpeed(data.axes.y.speed);
-            self.editorAxisYInverted(data.axes.y.inverted);
-            self.editorAxisZSpeed(data.axes.z.speed);
-            self.editorAxisZInverted(data.axes.z.inverted);
-            self.editorAxisESpeed(data.axes.e.speed);
-            self.editorAxisEInverted(data.axes.e.inverted);
+            self.editor.fromProfileData(data);
 
             var editDialog = $("#settings_printerProfiles_editDialog");
             var confirmButton = $("button.btn-confirm", editDialog);
             var dialogTitle = $("h3.modal-title", editDialog);
 
+            var add = data === undefined;
             dialogTitle.text(add ? gettext("Add Printer Profile") : _.sprintf(gettext("Edit Printer Profile \"%(name)s\""), {name: data.name}));
             confirmButton.unbind("click");
             confirmButton.bind("click", function() {
@@ -351,7 +539,14 @@ $(function() {
                     self.confirmEditProfile(add);
                 }
             });
-            editDialog.modal("show");
+
+            $('ul.nav-pills a[data-toggle="tab"]:first', editDialog).tab("show");
+            editDialog.modal({
+                minHeight: function() { return Math.max($.fn.modal.defaults.maxHeight() - 80, 250); }
+            }).css({
+                width: 'auto',
+                'margin-left': function() { return -($(this).width() /2); }
+            });
         };
 
         self.confirmEditProfile = function(add) {
@@ -364,73 +559,6 @@ $(function() {
             } else {
                 self.updateProfile(undefined, callback);
             }
-        };
-
-        self._editorData = function() {
-            var identifier = self.editorIdentifier();
-            if (!identifier) {
-                identifier = self.editorIdentifierPlaceholder();
-            }
-
-            var profile = {
-                id: identifier,
-                name: self.editorName(),
-                color: self.editorColor(),
-                model: self.editorModel(),
-                volume: {
-                    width: parseFloat(self.editorVolumeWidth()),
-                    depth: parseFloat(self.editorVolumeDepth()),
-                    height: parseFloat(self.editorVolumeHeight()),
-                    formFactor: self.editorVolumeFormFactor(),
-                    origin: self.editorVolumeOrigin()
-                },
-                heatedBed: self.editorHeatedBed(),
-                extruder: {
-                    count: parseInt(self.editorExtruders()),
-                    offsets: [
-                        [0.0, 0.0]
-                    ],
-                    nozzleDiameter: parseFloat(self.editorNozzleDiameter())
-                },
-                axes: {
-                    x: {
-                        speed: parseInt(self.editorAxisXSpeed()),
-                        inverted: self.editorAxisXInverted()
-                    },
-                    y: {
-                        speed: parseInt(self.editorAxisYSpeed()),
-                        inverted: self.editorAxisYInverted()
-                    },
-                    z: {
-                        speed: parseInt(self.editorAxisZSpeed()),
-                        inverted: self.editorAxisZInverted()
-                    },
-                    e: {
-                        speed: parseInt(self.editorAxisESpeed()),
-                        inverted: self.editorAxisEInverted()
-                    }
-                }
-            };
-
-            if (self.editorExtruders() > 1) {
-                for (var i = 0; i < self.editorExtruders() - 1; i++) {
-                    var offset = [0.0, 0.0];
-                    if (i < self.editorExtruderOffsets().length) {
-                        try {
-                            offset = [parseFloat(self.editorExtruderOffsets()[i]["x"]()), parseFloat(self.editorExtruderOffsets()[i]["y"]())];
-                        } catch (exc) {
-                            log.error("Invalid offset in profile", identifier, "for extruder", i+1, ":", self.editorExtruderOffsets()[i]["x"], ",", self.editorExtruderOffsets()[i]["y"]);
-                        }
-                    }
-                    profile.extruder.offsets.push(offset);
-                }
-            }
-
-            return profile;
-        };
-
-        self._sanitize = function(name) {
-            return name.replace(/[^a-zA-Z0-9\-_\.\(\) ]/g, "").replace(/ /g, "_");
         };
 
         self.onSettingsShown = self.requestData;

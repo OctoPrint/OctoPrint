@@ -1,0 +1,16 @@
+<h3>{{ _('Software Update') }}</h3>
+
+{% trans %}<p>
+    OctoPrint can update itself via <code>git</code>, but it needs to know its checkout folder and the way
+    it should track available updates in order to be able to do that. You can configure that here.
+</p>{% endtrans %}
+
+<form class="form-horizontal">
+    {% include "snippets/plugins/softwareupdate/checkoutFolder.jinja2" %}
+    {% include "snippets/plugins/softwareupdate/versionTracking.jinja2" %}
+</form>
+
+{% trans %}<p>
+    If you are running a release version of OctoPrint, leave at "Release" tracking. If you are running a different
+    branch however, you should setup "Commit" tracking.
+</p>{% endtrans %}

@@ -5,9 +5,6 @@ $(function() {
         self.loginState = parameters[0];
         self.settings = parameters[1];
 
-        // TODO remove with release of 1.3.0 and switch to OctoPrint.coreui usage
-        self.tabTracking = parameters[2];
-
         self._createToolEntry = function () {
             return {
                 name: ko.observable(),
@@ -94,6 +91,8 @@ $(function() {
         };
 
         self.onEventSettingsUpdated = function (payload) {
+            // the webcam url might have changed, make sure we replace it now if the tab is focused
+            self._enableWebcam();
             self.requestData();
         };
 
@@ -114,14 +113,10 @@ $(function() {
         };
 
         self.requestData = function () {
-            $.ajax({
-                url: API_BASEURL + "printer/command/custom",
-                method: "GET",
-                dataType: "json",
-                success: function (response) {
+            OctoPrint.control.getCustomControls()
+                .done(function(response) {
                     self._fromResponse(response);
-                }
-            });
+                });
         };
 
         self._fromResponse = function (response) {
@@ -242,8 +237,11 @@ $(function() {
             }
 
             if (data.confirm) {
-                showConfirmationDialog(data.confirm, function (e) {
-                    callback(data);
+                showConfirmationDialog({
+                    message: data.confirm,
+                    onproceed: function (e) {
+                        callback(data);
+                    }
                 });
             } else {
                 callback(data);
@@ -257,26 +255,17 @@ $(function() {
                 multiplier *= -1;
             }
 
-            var data = {
-                "command": "jog"
-            };
+            var data = {};
             data[axis] = distance * multiplier;
-
-            self.sendPrintHeadCommand(data);
+            OctoPrint.printer.jog(data);
         };
 
         self.sendHomeCommand = function (axis) {
-            self.sendPrintHeadCommand({
-                "command": "home",
-                "axes": axis
-            });
+            OctoPrint.printer.home(axis);
         };
 
         self.sendFeedRateCommand = function () {
-            self.sendPrintHeadCommand({
-                "command": "feedrate",
-                "factor": self.feedRate()
-            });
+            OctoPrint.printer.setFeedrate(self.feedRate());
         };
 
         self.sendExtrudeCommand = function () {
@@ -288,90 +277,42 @@ $(function() {
         };
 
         self.sendFlowRateCommand = function () {
-            self.sendToolCommand({
-                "command": "flowrate",
-                "factor": self.flowRate()
-            });
+            OctoPrint.printer.setFlowrate(self.flowRate());
         };
 
         self._sendECommand = function (dir) {
-            var length = self.extrusionAmount();
-            if (!length) length = self.settings.printer_defaultExtrusionLength();
-
-            self.sendToolCommand({
-                command: "extrude",
-                amount: length * dir
-            });
+            var length = self.extrusionAmount() || self.settings.printer_defaultExtrusionLength();
+            OctoPrint.printer.extrude(length * dir);
         };
 
         self.sendSelectToolCommand = function (data) {
             if (!data || !data.key()) return;
 
-            self.sendToolCommand({
-                command: "select",
-                tool: data.key()
-            });
-        };
-
-        self.sendPrintHeadCommand = function (data) {
-            $.ajax({
-                url: API_BASEURL + "printer/printhead",
-                type: "POST",
-                dataType: "json",
-                contentType: "application/json; charset=UTF-8",
-                data: JSON.stringify(data)
-            });
-        };
-
-        self.sendToolCommand = function (data) {
-            $.ajax({
-                url: API_BASEURL + "printer/tool",
-                type: "POST",
-                dataType: "json",
-                contentType: "application/json; charset=UTF-8",
-                data: JSON.stringify(data)
-            });
+            OctoPrint.printer.selectTool(data.key());
         };
 
         self.sendCustomCommand = function (command) {
-            if (!command)
-                return;
+            if (!command) return;
 
-            var data = undefined;
-            if (command.hasOwnProperty("command")) {
-                // single command
-                data = {"command": command.command};
-            } else if (command.hasOwnProperty("commands")) {
-                // multi command
-                data = {"commands": command.commands};
-            } else if (command.hasOwnProperty("script")) {
-                data = {"script": command.script};
-                if (command.hasOwnProperty("context")) {
-                    data["context"] = command.context;
-                }
-            } else {
-                return;
-            }
-
+            var parameters = {};
             if (command.hasOwnProperty("input")) {
-                // parametric command(s)
-                data["parameters"] = {};
-                _.each(command.input, function(input) {
+                _.each(command.input, function (input) {
                     if (!input.hasOwnProperty("parameter") || !input.hasOwnProperty("value")) {
                         return;
                     }
 
-                    data["parameters"][input.parameter] = input.value();
+                    parameters[input.parameter] = input.value();
                 });
             }
 
-            $.ajax({
-                url: API_BASEURL + "printer/command",
-                type: "POST",
-                dataType: "json",
-                contentType: "application/json; charset=UTF-8",
-                data: JSON.stringify(data)
-            })
+            if (command.hasOwnProperty("command") || command.hasOwnProperty("commands")) {
+                var commands = command.commands || [command.command];
+                OctoPrint.control.sendGcodeWithParameters(commands, parameters);
+            } else if (command.hasOwnProperty("script")) {
+                var script = command.script;
+                var context = command.context || {};
+                OctoPrint.control.sendGcodeScriptWithParameters(script, context, parameters);
+            }
         };
 
         self.displayMode = function (customControl) {
@@ -417,7 +358,7 @@ $(function() {
             } else {
                 $("#webcam_rotator").css("height", "");
             }
-        }
+        };
 
         self.onSettingsBeforeSave = self.updateRotatorWidth;
 
@@ -430,7 +371,7 @@ $(function() {
         };
 
         self._enableWebcam = function() {
-            if (self.tabTracking.selectedTab != "#control" || !self.tabTracking.browserTabVisible) {
+            if (OctoPrint.coreui.selectedTab != "#control" || !OctoPrint.coreui.browserTabVisible) {
                 return;
             }
 
@@ -439,9 +380,9 @@ $(function() {
             }
             var webcamImage = $("#webcam_image");
             var currentSrc = webcamImage.attr("src");
-            if (currentSrc === undefined || currentSrc.trim() == "") {
-                var newSrc = CONFIG_WEBCAM_STREAM;
-                if (CONFIG_WEBCAM_STREAM.lastIndexOf("?") > -1) {
+            var newSrc = self.settings.webcam_streamUrl();
+            if (currentSrc != newSrc) {
+                if (newSrc.lastIndexOf("?") > -1) {
                     newSrc += "&";
                 } else {
                     newSrc += "?";
@@ -471,10 +412,8 @@ $(function() {
 
         self.onAllBound = function (allViewModels) {
             var additionalControls = [];
-            _.each(allViewModels, function (viewModel) {
-                if (viewModel.hasOwnProperty("getAdditionalControls")) {
-                    additionalControls = additionalControls.concat(viewModel.getAdditionalControls());
-                }
+            callViewModels(allViewModels, "getAdditionalControls", function(method) {
+                additionalControls = additionalControls.concat(method());
             });
             if (additionalControls.length > 0) {
                 self.additionalControls = additionalControls;
@@ -595,7 +534,7 @@ $(function() {
 
     OCTOPRINT_VIEWMODELS.push([
         ControlViewModel,
-        ["loginStateViewModel", "settingsViewModel", "tabTracking"],
+        ["loginStateViewModel", "settingsViewModel"],
         "#control"
     ]);
 });

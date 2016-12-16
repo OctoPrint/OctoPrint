@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -16,6 +16,7 @@ import octoprint.events
 import octoprint.plugin
 
 from octoprint.events import Events
+from octoprint.settings import settings
 
 import octoprint.printer
 
@@ -67,14 +68,19 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection, octoprint.printer.
 		plugin_hash = hashlib.md5()
 		plugin_hash.update(",".join(ui_plugins))
 
+		config_hash = settings().config_hash
+
 		# connected => update the API key, might be necessary if the client was left open while the server restarted
-		self._emit("connected", {
-			"apikey": octoprint.server.UI_API_KEY,
-			"version": octoprint.server.VERSION,
-			"display_version": octoprint.server.DISPLAY_VERSION,
-			"branch": octoprint.server.BRANCH,
-			"plugin_hash": plugin_hash.hexdigest()
-		})
+		self._emit("connected", dict(
+			apikey=octoprint.server.UI_API_KEY,
+			version=octoprint.server.VERSION,
+			display_version=octoprint.server.DISPLAY_VERSION,
+			branch=octoprint.server.BRANCH,
+			plugin_hash=plugin_hash.hexdigest(),
+			config_hash=config_hash,
+			debug=octoprint.server.debug,
+			safe_mode=octoprint.server.safe_mode
+		))
 
 		self._printer.register_callback(self)
 		self._fileManager.register_slicingprogress_callback(self)

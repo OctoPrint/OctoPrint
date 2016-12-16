@@ -109,7 +109,7 @@ class PygmentsBridgeExt(object):
 			return self._bridge.highlight_block(source, lang, opts=opts, warn=warn, force=force, **kwargs)
 
 		# We are still here => we need to basically do everything the parent implementation does (and does so in a very
-		# unextensible way...), but inject the whitespace filter into the used lexer just before the highlighting run
+		# inextensible way...), but inject the whitespace filter into the used lexer just before the highlighting run
 		# and remove it afterwards so the lexer can be safely reused.
 		#
 		# For this we define a context manager that will allow us to wrap a lexer and modify its filters on the fly to

@@ -62,7 +62,9 @@ Placeholders
 You can use the following generic placeholders in your event hooks:
 
   * ``{__currentZ}``: the current Z position of the head if known, -1 if not available
-  * ``{__filename}``: filename of the currently selected file, "NO FILE" if not available
+  * ``{__filename}`` : name of currently selected file, or ``NO FILE`` if no file is selected
+  * ``{__filepath}`` : path in origin location of currently selected file, or ``NO FILE`` if no file is selected
+  * ``{__fileorigin}`` : origin of currently selected file, or ``NO FILE`` if no file is selected
   * ``{__progress}``: the progress of the print in percent, 0 if not available
   * ``{__data}``: a string representation of the payload
   * ``{__now}``: the date and time of the event in ISO 8601
@@ -70,10 +72,12 @@ You can use the following generic placeholders in your event hooks:
 Additionally, all data from the payload can be accessed by its key. Example: If the payload happens to be defined
 something like this:
 
-  * ``file``: the file's name
-  * ``origin``: the origin of the file, either ``local`` or ``sdcard``
+  * ``name``: the file's name
+  * ``path``: the file's path in its origin storage location
+  * ``origin``: the origin storage location of the file, either ``local`` or ``sdcard``
 
-then you'll be able to access the filename via the placeholder ``{file}`` and the origin via the placeholder ``{origin}``.
+then you'll be able to access the file's name via the placeholder ``{name}``, its path via the placeholder ``{path}``
+and its origin via the placeholder ``{origin}``.
 
 
 .. _sec-events-available_events:
@@ -85,7 +89,10 @@ Server
 ------
 
 Startup
-   The server has started
+   The server has started.
+
+Shutdown
+   The server is shutting down.
 
 ClientOpened
    A client has connected to the web server.
@@ -106,6 +113,9 @@ ClientClosed
 Printer communication
 ---------------------
 
+Connecting
+   The server is attempting to connect to the printer.
+
 Connected
    The server has connected to the printer.
 
@@ -113,6 +123,11 @@ Connected
 
      * ``port``: the connected serial port
      * ``baudrate``: the baud rate
+
+Disconnecting
+   The server is going to disconnect from the printer. Note that this
+   event might not always be sent when the server and printer get disconnected
+   from each other. Do not depend on this for critical life cycle management.
 
 Disconnected
    The server has disconnected from the printer
@@ -124,6 +139,15 @@ Error
 
      * ``error``: the error string
 
+PrinterStateChanged
+   The state of the printer changed.
+
+   Payload:
+
+     * ``state_id``: Id of the new state. See
+       :func:`~octoprint.printer.PrinterInterface.get_state_id` for possible values.
+     * ``state_string``: Text representation of the new state.
+
 File handling
 -------------
 
@@ -131,8 +155,15 @@ Upload
    A file has been uploaded.
 
    Payload:
-     * ``file``: the file's name
-     * ``target``: the target to which the file was uploaded, either ``local`` or ``sdcard``
+     * ``name``: the file's name
+     * ``path``: the file's path within its storage location
+     * ``target``: the target storage location to which the file was uploaded, either ``local`` or ``sdcard``
+
+   .. deprecated:: 1.3.0
+
+        * ``file``: the file's path within its storage location
+
+      Still available for reasons of backwards compatibility. Will be removed with 1.4.0.
 
 UpdatedFiles
    A file list was modified.
@@ -149,34 +180,57 @@ UpdatedFiles
           Support for the ``gcode`` type will be removed in the next release after version 1.2.0.
 
 MetadataAnalysisStarted
-   The metadata analysis of a GCODE file has started.
+   The metadata analysis of a file has started.
 
    Payload:
 
-     * ``file``: the file's name
+     * ``name``: the file's name
+     * ``path``: the file's path within its storage location
+     * ``origin``: the file's origin storage location
 
-MetadataAnalaysisFinished
-   The metadata analysis of a GCODE file has finished.
+   .. deprecated:: 1.3.0
+
+        * ``file``: the file's path within its storage location
+
+      Still available for reasons of backwards compatibility. Will be removed with 1.4.0.
+
+MetadataAnalysisFinished
+   The metadata analysis of a file has finished.
 
    Payload:
 
-     * ``file``: the file's name
+     * ``name``: the file's name
+     * ``path``: the file's path within its storage location
+     * ``origin``: the file's origin storage location
      * ``result``: the analysis result -- this is a python object currently only available for internal use
 
+   .. deprecated:: 1.3.0
+
+        * ``file``: the file's path within its storage location
+
+      Still available for reasons of backwards compatibility. Will be removed with 1.4.0.
+
 FileSelected
-   A GCODE file has been selected for printing.
+   A file has been selected for printing.
 
    Payload:
 
-     * ``file``: the full path to the file
-     * ``filename``: the file's name
-     * ``origin``: the origin of the file, either ``local`` or ``sdcard``
+     * ``name``: the file's name
+     * ``path``: the file's path within its storage location
+     * ``origin``: the origin storage location of the file, either ``local`` or ``sdcard``
+
+   .. deprecated:: 1.3.0
+
+        * ``file``: the file's full path on disk (``local``) or within its storage (``sdcard``)
+        * ``filename``: the file's name
+
+      Still available for reasons of backwards compatibility. Will be removed with 1.4.0.
 
 FileDeselected
    No file is selected any more for printing.
 
 TransferStarted
-   A GCODE file transfer to SD has started.
+   A file transfer to the printer's SD has started.
 
    Payload:
 
@@ -186,7 +240,7 @@ TransferStarted
    **Note:** Name changed in version 1.1.0
 
 TransferDone
-   A GCODE file transfer to SD has finished.
+   A file transfer to the printer's SD has finished.
 
    Payload:
 
@@ -202,101 +256,194 @@ PrintStarted
 
    Payload:
 
-     * ``file``: the file's name
-     * ``origin``: the origin of the file, either ``local`` or ``sdcard``
+     * ``name``: the file's name
+     * ``path``: the file's path within its storage location
+     * ``origin``: the origin storage location of the file, either ``local`` or ``sdcard``
+
+   .. deprecated:: 1.3.0
+
+        * ``file``: the file's full path on disk (``local``) or within its storage (``sdcard``)
+        * ``filename``: the file's name
+
+      Still available for reasons of backwards compatibility. Will be removed with 1.4.0.
 
 PrintFailed
    A print failed.
 
    Payload:
 
-     * ``file``: the file's name
-     * ``origin``: the origin of the file, either ``local`` or ``sdcard``
+     * ``name``: the file's name
+     * ``path``: the file's path within its storage location
+     * ``origin``: the origin storage location of the file, either ``local`` or ``sdcard``
+
+   .. deprecated:: 1.3.0
+
+        * ``file``: the file's full path on disk (``local``) or within its storage (``sdcard``)
+        * ``filename``: the file's name
+
+      Still available for reasons of backwards compatibility. Will be removed with 1.4.0.
 
 PrintDone
    A print completed successfully.
 
    Payload:
 
-     * ``file``: the file's name
-     * ``origin``: the origin of the file, either ``local`` or ``sdcard``
+     * ``name``: the file's name
+     * ``path``: the file's path within its storage location
+     * ``origin``: the origin storage location of the file, either ``local`` or ``sdcard``
      * ``time``: the time needed for the print, in seconds (float)
+
+   .. deprecated:: 1.3.0
+
+        * ``file``: the file's full path on disk (``local``) or within its storage (``sdcard``)
+        * ``filename``: the file's name
+
+      Still available for reasons of backwards compatibility. Will be removed with 1.4.0.
 
 PrintCancelled
    The print has been cancelled via the cancel button.
 
    Payload:
 
-     * ``file``: the file's name
-     * ``origin``: the origin of the file, either ``local`` or ``sdcard``
+     * ``name``: the file's name
+     * ``path``: the file's path within its storage location
+     * ``origin``: the origin storage location of the file, either ``local`` or ``sdcard``
+     * ``position``: the print head position at the time of cancelling, if available
+     * ``position.x``: x coordinate, as reported back from the firmware through `M114`
+     * ``position.y``: y coordinate, as reported back from the firmware through `M114`
+     * ``position.z``: z coordinate, as reported back from the firmware through `M114`
+     * ``position.e``: e coordinate (of currently selected extruder), as reported back from the firmware through `M114`
+     * ``position.t``: last tool selected *through OctoPrint* (note that if you did change the printer's selected
+       tool outside of OctoPrint, e.g. through the printer controller, or if you are printing from SD, this will NOT
+       be accurate)
+     * ``position.f``: last feedrate for move commands **sent through OctoPrint** (note that if you modified the
+       feedrate outside of OctoPrint, e.g. through the printer controller, or if you are printing from SD, this will
+       NOT be accurate)
+
+   .. deprecated:: 1.3.0
+
+        * ``file``: the file's full path on disk (``local``) or within its storage (``sdcard``)
+        * ``filename``: the file's name
+
+      Still available for reasons of backwards compatibility. Will be removed with 1.4.0.
 
 PrintPaused
    The print has been paused.
 
    Payload:
 
-     * ``file``: the file's name
-     * ``origin``: the origin of the file, either ``local`` or ``sdcard``
+     * ``name``: the file's name
+     * ``path``: the file's path within its storage location
+     * ``origin``: the origin storage location of the file, either ``local`` or ``sdcard``
+     * ``position``: the print head position at the time of pausing, if available
+     * ``position.x``: x coordinate, as reported back from the firmware through `M114`
+     * ``position.y``: y coordinate, as reported back from the firmware through `M114`
+     * ``position.z``: z coordinate, as reported back from the firmware through `M114`
+     * ``position.e``: e coordinate (of currently selected extruder), as reported back from the firmware through `M114`
+     * ``position.t``: last tool selected *through OctoPrint* (note that if you did change the printer's selected
+       tool outside of OctoPrint, e.g. through the printer controller, or if you are printing from SD, this will NOT
+       be accurate)
+     * ``position.f``: last feedrate for move commands **sent through OctoPrint** (note that if you modified the
+       feedrate outside of OctoPrint, e.g. through the printer controller, or if you are printing from SD, this will
+       NOT be accurate)
+
+   .. deprecated:: 1.3.0
+
+        * ``file``: the file's full path on disk (``local``) or within its storage (``sdcard``)
+        * ``filename``: the file's name
+
+      Still available for reasons of backwards compatibility. Will be removed with 1.4.0.
 
 PrintResumed
    The print has been resumed.
 
    Payload:
 
-     * ``file``: the file's name
-     * ``origin``: the origin of the file, either ``local`` or ``sdcard``
+     * ``name``: the file's name
+     * ``path``: the file's path within its storage location
+     * ``origin``: the origin storage location of the file, either ``local`` or ``sdcard``
+
+   .. deprecated:: 1.3.0
+
+        * ``file``: the file's full path on disk (``local``) or within its storage (``sdcard``)
+        * ``filename``: the file's name
+
+      Still available for reasons of backwards compatibility. Will be removed with 1.4.0.
 
 GCODE processing
 ----------------
 
 PowerOn
-   The GCode has turned on the printer power via M80
+   An ``M80`` was sent to the printer through OctoPrint (not triggered when printing from SD!)
 
 PowerOff
-   The GCODE has turned on the printer power via M81
+   An ``M81`` was sent to the printer through OctoPrint (not triggered when printing from SD!)
 
 Home
-   The head has gone home via G28
+   A ``G28`` was sent to the printer through OctoPrint (not triggered when printing from SD!)
 
 ZChange
-   The printer's Z-Height has changed (new layer)
+   The printer's Z-Height has changed (new layer) through a ``G0`` or ``G1`` that was sent to the printer through OctoPrint
+   (not triggered when printing from SD!)
 
-Paused
-   The print has been paused
+Dwell
+   A ``G4`` was sent to the printer through OctoPrint (not triggered when printing from SD!)
 
 Waiting
-   The print is paused due to a gcode wait command
+   One of the following commands was sent to the printer through OctoPrint (not triggered when printing from SD!):
+   ``M0``, ``M1``, ``M226``
 
 Cooling
-   The GCODE has enabled the platform cooler via M245
+   An ``M245`` was sent to the printer through OctoPrint (not triggered when printing from SD!)
 
 Alert
-   The GCODE has issued a user alert (beep) via M300
+   An ``M300`` was sent to the printer through OctoPrint (not triggered when printing from SD!)
 
 Conveyor
-   The GCODE has enabled the conveyor belt via M240
+   An ``M240`` was sent to the printer through OctoPrint (not triggered when printing from SD!)
 
 Eject
-   The GCODE has enabled the part ejector via M40
+   An ``M40`` was sent to the printer through OctoPrint (not triggered when printing from SD!)
 
 EStop
-   The GCODE has issued a panic stop via M112
+   An ``M112`` was sent to the printer through OctoPrint (not triggered when printing from SD!)
+
+PositionUpdate
+   The response to an ``M114`` was received by OctoPrint. The payload contains the current position information
+   parsed from the response and (in the case of the selected tool ``t`` and the current feedrate ``f``) tracked
+   by OctoPrint.
+
+   Payload:
+
+     * ``x``: x coordinate, parsed from response
+     * ``y``: y coordinate, parsed from response
+     * ``z``: z coordinate, parsed from response
+     * ``e``: e coordinate, parsed from response
+     * ``t``: last tool selected *through OctoPrint*
+     * ``f``: last feedrate for move commands ``G0``, ``G1`` or ``G28`` sent *through OctoPrint*
 
 Timelapses
 ----------
 
 CaptureStart
-   A timelapse image has started to be captured.
+   A timelapse frame has started to be captured.
 
    Payload:
 
      * ``file``: the name of the image file to be saved
 
 CaptureDone
-   A timelapse image has completed being captured.
+   A timelapse frame has completed being captured.
 
    Payload:
      * ``file``: the name of the image file that was saved
+
+CaptureFailed
+   A timelapse frame could not be captured.
+
+   Payload:
+     * ``file``: the name of the image file that should have been saved
+     * ``error``: the error that was caught
 
 MovieRendering
    The timelapse movie has started rendering.
@@ -325,6 +472,9 @@ MovieFailed
      * ``movie``: the movie file that would have been created (full path)
      * ``movie_basename``: the movie file that would have been created (only the file name without the path)
      * ``returncode``: the return code of ``ffmpeg`` that indicates the error that occurred
+     * ``reason``: additional machine processable reason string - can be ``returncode`` if ffmpeg
+       returned a non-0 return code, ``no_frames`` if no frames were captured that could be rendered
+       to a timelapse, or ``unknown`` for any other reason of failure to render.
 
 Slicing
 -------
@@ -335,7 +485,9 @@ SlicingStarted
    Payload:
 
      * ``stl``: the STL's filename
+     * ``stl_location``: the STL's location
      * ``gcode``: the sliced GCODE's filename
+     * ``gcode_location``: the sliced GCODE's location
      * ``progressAvailable``: true if progress information via the ``slicingProgress`` push update will be available, false if not
 
 SlicingDone
@@ -344,7 +496,9 @@ SlicingDone
    Payload:
 
      * ``stl``: the STL's filename
+     * ``stl_location``: the STL's location
      * ``gcode``: the sliced GCODE's filename
+     * ``gcode_location``: the sliced GCODE's location
      * ``time``: the time needed for slicing, in seconds (float)
 
 SlicingCancelled
@@ -354,7 +508,9 @@ SlicingCancelled
    Payload:
 
      * ``stl``: the STL's filename
+     * ``stl_location``: the STL's location
      * ``gcode``: the sliced GCODE's filename
+     * ``gcode_location``: the sliced GCODE's location
 
 SlicingFailed
    The slicing of a file has failed.
@@ -362,7 +518,9 @@ SlicingFailed
    Payload:
 
      * ``stl``: the STL's filename
+     * ``stl_location``: the STL's location
      * ``gcode``: the sliced GCODE's filename
+     * ``gcode_location``: the sliced GCODE's location
      * ``reason``: the reason for the slicing having failed
 
 SlicingProfileAdded

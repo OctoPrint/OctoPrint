@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -8,6 +8,11 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 import os
 import tarfile
 import zipfile
+
+try:
+	from os import scandir
+except ImportError:
+	from scandir import scandir
 
 from collections import defaultdict
 
@@ -33,10 +38,8 @@ def getInstalledLanguagePacks():
 
 	core_packs = []
 	plugin_packs = defaultdict(lambda: dict(identifier=None, display=None, languages=[]))
-	for folder in os.listdir(translation_folder):
-		path = os.path.join(translation_folder, folder)
-
-		if not os.path.isdir(path):
+	for entry in scandir(translation_folder):
+		if not entry.is_dir():
 			continue
 
 		def load_meta(path, locale):
@@ -61,24 +64,23 @@ def getInstalledLanguagePacks():
 			meta["locale_english"] = l.english_name
 			return meta
 
-		if folder == "_plugins":
-			for plugin_folder in os.listdir(path):
-				plugin_path = os.path.join(path, plugin_folder)
-				if not os.path.isdir(plugin_path):
+		if entry.name == "_plugins":
+			for plugin_entry in scandir(entry.path):
+				if not plugin_entry.is_dir():
 					continue
 
-				if not plugin_folder in plugin_manager().plugins:
+				if not plugin_entry.name in plugin_manager().plugins:
 					continue
 
-				plugin_info = plugin_manager().plugins[plugin_folder]
+				plugin_info = plugin_manager().plugins[plugin_entry.name]
 
-				plugin_packs[plugin_folder]["identifier"] = plugin_folder
-				plugin_packs[plugin_folder]["display"] = plugin_info.name
+				plugin_packs[plugin_entry.name]["identifier"] = plugin_entry.name
+				plugin_packs[plugin_entry.name]["display"] = plugin_info.name
 
-				for language_folder in os.listdir(plugin_path):
-					plugin_packs[plugin_folder]["languages"].append(load_meta(os.path.join(plugin_path, language_folder), language_folder))
+				for language_entry in scandir(plugin_entry.path):
+					plugin_packs[plugin_entry.name]["languages"].append(load_meta(language_entry.path, language_entry.name))
 		else:
-			core_packs.append(load_meta(os.path.join(translation_folder, folder), folder))
+			core_packs.append(load_meta(entry.path, entry.name))
 
 	result = dict(_core=dict(identifier="_core", display="Core", languages=core_packs))
 	result.update(plugin_packs)
@@ -99,7 +101,7 @@ def uploadLanguagePack():
 
 	exts = filter(lambda x: upload_name.lower().endswith(x), (".zip", ".tar.gz", ".tgz", ".tar"))
 	if not len(exts):
-		return make_response("File doesn't have a valid extension for a plugin archive", 400)
+		return make_response("File doesn't have a valid extension for a language pack archive", 400)
 
 	target_path = settings().getBaseFolder("translations")
 

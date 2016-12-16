@@ -1,4 +1,6 @@
 $(function() {
+        OctoPrint = window.OctoPrint;
+
         //~~ Lodash setup
 
         _.mixin({"sprintf": sprintf, "vsprintf": vsprintf});
@@ -7,13 +9,36 @@ $(function() {
 
         log.setLevel(CONFIG_DEBUG ? "debug" : "info");
 
-        //~~ setup browser and internal tab tracking (in 1.3.0 that will be
-        //   much nicer with the global OctoPrint object...)
+        //~~ OctoPrint client setup
+        OctoPrint.options.baseurl = BASEURL;
+        OctoPrint.options.apikey = UI_API_KEY;
 
-        var tabTracking = (function() {
+        var l10n = getQueryParameterByName("l10n");
+        if (l10n) {
+            OctoPrint.options.locale = l10n;
+        }
+
+        OctoPrint.socket.onMessage("connected", function(data) {
+            var payload = data.data;
+            OctoPrint.options.apikey = payload.apikey;
+
+            // update the API key directly in jquery's ajax options too,
+            // to ensure the fileupload plugin and any plugins still using
+            // $.ajax directly still work fine too
+            UI_API_KEY = payload["apikey"];
+            $.ajaxSetup({
+                headers: {"X-Api-Key": UI_API_KEY}
+            });
+        });
+
+        //~~ some CoreUI specific stuff we put into OctoPrint.coreui
+
+        OctoPrint.coreui = (function() {
             var exports = {
                 browserTabVisibility: undefined,
-                selectedTab: undefined
+                selectedTab: undefined,
+                settingsOpen: false,
+                wizardOpen: false
             };
 
             var browserVisibilityCallbacks = [];
@@ -77,9 +102,15 @@ $(function() {
 
         // work around a stupid iOS6 bug where ajax requests get cached and only work once, as described at
         // http://stackoverflow.com/questions/12506897/is-safari-on-ios-6-caching-ajax-results
-        $.ajaxSetup({
-            type: 'POST',
-            headers: { "cache-control": "no-cache" }
+        $.ajaxPrefilter(function(options, originalOptions, jqXHR) {
+            if (options.type != "GET") {
+                var headers;
+                if (options.hasOwnProperty("headers")) {
+                    options.headers["Cache-Control"] = "no-cache";
+                } else {
+                    options.headers = { "Cache-Control": "no-cache" };
+                }
+            }
         });
 
         // send the current UI API key with any request
@@ -128,22 +159,30 @@ $(function() {
         PNotify.prototype.options.styling = "bootstrap2";
         PNotify.prototype.options.mouse_reset = false;
 
+        PNotify.singleButtonNotify = function(options) {
+            if (!options.confirm || !options.confirm.buttons || !options.confirm.buttons.length) {
+                return new PNotify(options);
+            }
+
+            var autoDisplay = options.auto_display != false;
+
+            var params = $.extend(true, {}, options);
+            params.auto_display = false;
+
+            var notify = new PNotify(params);
+            notify.options.confirm.buttons = [notify.options.confirm.buttons[0]];
+            notify.modules.confirm.makeDialog(notify, notify.options.confirm);
+
+            if (autoDisplay) {
+                notify.open();
+            }
+            return notify;
+        };
+
         //~~ Initialize view models
 
         // the view model map is our basic look up table for dependencies that may be injected into other view models
         var viewModelMap = {};
-
-        // We put our tabTracking into the viewModelMap as a workaround until
-        // our global OctoPrint object becomes available in 1.3.0. This way
-        // we'll still be able to access it in our view models.
-        //
-        // NOTE TO DEVELOPERS: Do NOT depend on this dependency in your custom
-        // view models. It is ONLY provided for the core application to be able
-        // to backport a fix from the 1.3.0 development branch and WILL BE
-        // REMOVED once 1.3.0 gets released without any fallback!
-        //
-        // TODO: Remove with release of 1.3.0
-        viewModelMap.tabTracking = tabTracking;
 
         // Fix Function#name on browsers that do not support it (IE):
         // see: http://stackoverflow.com/questions/6903762/function-name-not-supported-in-ie
@@ -156,34 +195,33 @@ $(function() {
         }
 
         // helper to create a view model instance with injected constructor parameters from the view model map
-        var _createViewModelInstance = function(viewModel, viewModelMap){
-            var viewModelClass = viewModel[0];
-            var viewModelParameters = viewModel[1];
+        var _createViewModelInstance = function(viewModel, viewModelMap, optionalDependencyPass) {
 
-            if (viewModelParameters != undefined) {
-                if (!_.isArray(viewModelParameters)) {
-                    viewModelParameters = [viewModelParameters];
+            // mirror the requested dependencies with an array of the viewModels
+            var viewModelParametersMap = function(parameter) {
+                // check if parameter is found within optional array and if all conditions are met return null instead of undefined
+                if (optionalDependencyPass && viewModel.optional.indexOf(parameter) !== -1 && !viewModelMap[parameter]) {
+                    log.debug("Resolving optional parameter", [parameter], "without viewmodel");
+                    return null; // null == "optional but not available"
                 }
 
-                // now we'll try to resolve all of the view model's constructor parameters via our view model map
-                var constructorParameters = _.map(viewModelParameters, function(parameter){
-                    return viewModelMap[parameter]
-                });
-            } else {
-                constructorParameters = [];
-            }
+                return viewModelMap[parameter] || undefined; // undefined == "not available"
+            };
 
-            if (_.some(constructorParameters, function(parameter) { return parameter === undefined; })) {
-                var _extractName = function(entry) { return entry[0]; };
-                var _onlyUnresolved = function(entry) { return entry[1] === undefined; };
-                var missingParameters = _.map(_.filter(_.zip(viewModelParameters, constructorParameters), _onlyUnresolved), _extractName);
-                log.debug("Postponing", viewModel[0].name, "due to missing parameters:", missingParameters);
+            // try to resolve all of the view model's constructor parameters via our view model map
+            var constructorParameters = _.map(viewModel.dependencies, viewModelParametersMap) || [];
+
+            if (constructorParameters.indexOf(undefined) !== -1) {
+                log.debug("Postponing", viewModel.name, "due to missing parameters:", _.keys(_.pick(_.object(viewModel.dependencies, constructorParameters), _.isUndefined)));
                 return;
             }
 
+            // transform array into object if a plugin wants it as an object
+            constructorParameters = (viewModel.returnObject) ? _.object(viewModel.dependencies, constructorParameters) : constructorParameters;
+
             // if we came this far then we could resolve all constructor parameters, so let's construct that view model
-            log.debug("Constructing", viewModel[0].name, "with parameters:", viewModelParameters);
-            return new viewModelClass(constructorParameters);
+            log.debug("Constructing", viewModel.name, "with parameters:", viewModel.dependencies);
+            return new viewModel.construct(constructorParameters);
         };
 
         // map any additional view model bindings we might need to make
@@ -203,8 +241,7 @@ $(function() {
         });
 
         // helper for translating the name of a view model class into an identifier for the view model map
-        var _getViewModelId = function(viewModel){
-            var name = viewModel[0].name;
+        var _getViewModelId = function(name){
             return name.substr(0, 1).toLowerCase() + name.substr(1); // FooBarViewModel => fooBarViewModel
         };
 
@@ -217,6 +254,7 @@ $(function() {
         var allViewModels = [];
         var allViewModelData = [];
         var pass = 1;
+        var optionalDependencyPass = false;
         log.info("Starting dependency resolution...");
         while (unprocessedViewModels.length > 0) {
             log.debug("Dependency resolution, pass #" + pass);
@@ -226,15 +264,42 @@ $(function() {
             // now try to instantiate every one of our as of yet unprocessed view model descriptors
             while (unprocessedViewModels.length > 0){
                 var viewModel = unprocessedViewModels.shift();
-                var viewModelId = _getViewModelId(viewModel);
 
-                // make sure that we don't have two view models going by the same name
-                if (_.has(viewModelMap, viewModelId)) {
-                    log.error("Duplicate name while instantiating " + viewModelId);
+                // wrap anything not object related into an object
+                if(!_.isPlainObject(viewModel)) {
+                    viewModel = {
+                        construct: (_.isArray(viewModel)) ? viewModel[0] : viewModel,
+                        dependencies: viewModel[1] || [],
+                        elements: viewModel[2] || [],
+                        optional: viewModel[3] || []
+                    };
+                }
+
+                // make sure we have atleast a function
+                if (!_.isFunction(viewModel.construct)) {
+                    log.error("No function to instantiate with", viewModel);
                     continue;
                 }
 
-                var viewModelInstance = _createViewModelInstance(viewModel, viewModelMap);
+                // if name is not set, get name from constructor, if it's an anonymous function generate one
+                viewModel.name = viewModel.name || _getViewModelId(viewModel.construct.name) || _.uniqueId("unnamedViewModel");
+
+                // no alternative names? empty array
+                viewModel.additionalNames = viewModel.additionalNames || [];
+
+                // make sure all value's are in an array
+                viewModel.dependencies = (_.isArray(viewModel.dependencies)) ? viewModel.dependencies : [viewModel.dependencies];
+                viewModel.elements = (_.isArray(viewModel.elements)) ? viewModel.elements : [viewModel.elements];
+                viewModel.optional = (_.isArray(viewModel.optional)) ? viewModel.optional : [viewModel.optional];
+                viewModel.additionalNames = (_.isArray(viewModel.additionalNames)) ? viewModel.additionalNames : [viewModel.additionalNames];
+
+                // make sure that we don't have two view models going by the same name
+                if (_.has(viewModelMap, viewModel.name)) {
+                    log.error("Duplicate name while instantiating " + viewModel.name);
+                    continue;
+                }
+
+                var viewModelInstance = _createViewModelInstance(viewModel, viewModelMap, optionalDependencyPass);
 
                 // our view model couldn't yet be instantiated, so postpone it for a bit
                 if (viewModelInstance === undefined) {
@@ -243,18 +308,29 @@ $(function() {
                 }
 
                 // we could resolve the depdendencies and the view model is not defined yet => add it, it's now fully processed
-                var viewModelBindTargets = viewModel[2];
-                if (!_.isArray(viewModelBindTargets)) {
-                    viewModelBindTargets = [viewModelBindTargets];
-                }
+                var viewModelBindTargets = viewModel.elements;
 
-                if (additionalBindings.hasOwnProperty(viewModelId)) {
-                    viewModelBindTargets = viewModelBindTargets.concat(additionalBindings[viewModelId]);
+                if (additionalBindings.hasOwnProperty(viewModel.name)) {
+                    viewModelBindTargets = viewModelBindTargets.concat(additionalBindings[viewModel.name]);
                 }
 
                 allViewModelData.push([viewModelInstance, viewModelBindTargets]);
                 allViewModels.push(viewModelInstance);
-                viewModelMap[viewModelId] = viewModelInstance;
+                viewModelMap[viewModel.name] = viewModelInstance;
+
+                if (viewModel.additionalNames.length) {
+                    var registeredAdditionalNames = [];
+                    _.each(viewModel.additionalNames, function(additionalName) {
+                        if (!_.has(viewModelMap, additionalName)) {
+                            viewModelMap[additionalName] = viewModelInstance;
+                            registeredAdditionalNames.push(additionalName);
+                        }
+                    });
+
+                    if (registeredAdditionalNames.length) {
+                        log.debug("Registered", viewModel.name, "under these additional names:", registeredAdditionalNames);
+                    }
+                }
             }
 
             // anything that's now in the postponed list has to be readded to the unprocessedViewModels
@@ -263,165 +339,24 @@ $(function() {
             // if we still have the same amount of items in our list of unprocessed view models it means that we
             // couldn't instantiate any more view models over a whole iteration, which in turn mean we can't resolve the
             // dependencies of remaining ones, so log that as an error and then quit the loop
-            if (unprocessedViewModels.length == startLength) {
-                log.error("Could not instantiate the following view models due to unresolvable dependencies:");
-                _.each(unprocessedViewModels, function(entry) {
-                    log.error(entry[0].name + " (missing: " + _.filter(entry[1], function(id) { return !_.has(viewModelMap, id); }).join(", ") + " )");
-                });
-                break;
+            if (unprocessedViewModels.length === startLength) {
+                // I'm gonna let you finish but we will do another pass with the optional dependencies flag enabled
+                if (!optionalDependencyPass) {
+                    log.debug("Resolving next pass with optional dependencies flag enabled");
+                    optionalDependencyPass = true;
+                } else {
+                    log.error("Could not instantiate the following view models due to unresolvable dependencies:");
+                    _.each(unprocessedViewModels, function(entry) {
+                        log.error(entry.name + " (missing: " + _.filter(entry.dependencies, function(id) { return !_.has(viewModelMap, id); }).join(", ") + " )");
+                    });
+                    break;
+                }
             }
 
             log.debug("Dependency resolution pass #" + pass + " finished, " + unprocessedViewModels.length + " view models left to process");
             pass++;
         }
         log.info("... dependency resolution done");
-
-        //~~ Custom knockout.js bindings
-
-        ko.bindingHandlers.popover = {
-            init: function(element, valueAccessor, allBindingsAccessor, viewModel, bindingContext) {
-                var val = ko.utils.unwrapObservable(valueAccessor());
-
-                var options = {
-                    title: val.title,
-                    animation: val.animation,
-                    placement: val.placement,
-                    trigger: val.trigger,
-                    delay: val.delay,
-                    content: val.content,
-                    html: val.html
-                };
-                $(element).popover(options);
-            }
-        };
-
-        ko.bindingHandlers.allowBindings = {
-            init: function (elem, valueAccessor) {
-                return { controlsDescendantBindings: !valueAccessor() };
-            }
-        };
-        ko.virtualElements.allowedBindings.allowBindings = true;
-
-        ko.bindingHandlers.slimScrolledForeach = {
-            init: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
-                return ko.bindingHandlers.foreach.init(element, valueAccessor(), allBindings, viewModel, bindingContext);
-            },
-            update: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
-                setTimeout(function() {
-                    $(element).slimScroll({scrollBy: 0});
-                }, 10);
-                return ko.bindingHandlers.foreach.update(element, valueAccessor(), allBindings, viewModel, bindingContext);
-            }
-        };
-
-        ko.bindingHandlers.qrcode = {
-            update: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
-                var val = ko.utils.unwrapObservable(valueAccessor());
-
-                var defaultOptions = {
-                    text: "",
-                    size: 200,
-                    fill: "#000",
-                    background: null,
-                    label: "",
-                    fontname: "sans",
-                    fontcolor: "#000",
-                    radius: 0,
-                    ecLevel: "L"
-                };
-
-                var options = {};
-                _.each(defaultOptions, function(value, key) {
-                    options[key] = ko.utils.unwrapObservable(val[key]) || value;
-                });
-
-                $(element).empty().qrcode(options);
-            }
-        };
-
-        ko.bindingHandlers.invisible = {
-            init: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
-                if (!valueAccessor()) return;
-                ko.bindingHandlers.style.update(element, function() {
-                    return { visibility: 'hidden' };
-                })
-            }
-        };
-
-        ko.bindingHandlers.copyWidth = {
-            init: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
-                var node = ko.bindingHandlers.copyWidth._getReferenceNode(element, valueAccessor);
-                ko.bindingHandlers.copyWidth._setWidth(node, element);
-            },
-            update: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
-                var node = ko.bindingHandlers.copyWidth._getReferenceNode(element, valueAccessor);
-                ko.bindingHandlers.copyWidth._setWidth(node, element);
-            },
-            _setWidth: function(node, element) {
-                var width = node.width();
-                if (!width) return;
-                if ($(element).width() == width) return;
-                element.style.width = width + "px";
-            },
-            _getReferenceNode: function(element, valueAccessor) {
-                var value = ko.utils.unwrapObservable(valueAccessor());
-                if (!value) return;
-
-                var parts = value.split(" ");
-                var node = $(element);
-                while (parts.length > 0) {
-                    var part = parts.shift();
-                    if (part == ":parent") {
-                        node = node.parent();
-                    } else {
-                        var selector = part;
-                        if (parts.length > 0) {
-                            selector += " " + parts.join(" ");
-                        }
-                        node = $(selector, node);
-                        break;
-                    }
-                }
-                return node;
-            }
-        };
-
-        ko.bindingHandlers.contextMenu = {
-            init: function (element, valueAccessor, allBindingsAccessor, viewModel, bindingContext) {
-                var val = ko.utils.unwrapObservable(valueAccessor());
-
-                $(element).contextMenu(val);
-            },
-            update: function (element, valueAccessor, allBindingsAccessor, viewModel, bindingContext) {
-                var val = ko.utils.unwrapObservable(valueAccessor());
-
-                $(element).contextMenu(val);
-            }
-        };
-
-        // Originally from Knockstrap
-        // https://github.com/faulknercs/Knockstrap/blob/master/src/bindings/toggleBinding.js
-        // License: MIT
-        ko.bindingHandlers.toggle = {
-            init: function (element, valueAccessor) {
-                var value = valueAccessor();
-
-                if (!ko.isObservable(value)) {
-                    throw new Error('toggle binding should be used only with observable values');
-                }
-
-                $(element).on('click', function (event) {
-                    event.preventDefault();
-
-                    var previousValue = ko.utils.unwrapObservable(value);
-                    value(!previousValue);
-                });
-            },
-
-            update: function (element, valueAccessor) {
-                ko.utils.toggleDomNodeCssClass(element, 'active', ko.utils.unwrapObservable(valueAccessor()));
-            }
-        };
 
         //~~ some additional hooks and initializations
 
@@ -511,13 +446,8 @@ $(function() {
         // Allow components to react to tab change
         var onTabChange = function(current, previous) {
             log.debug("Selected OctoPrint tab changed: previous = " + previous + ", current = " + current);
-            tabTracking.selectedTab = current;
-
-            _.each(allViewModels, function(viewModel) {
-                if (viewModel.hasOwnProperty("onTabChange")) {
-                    viewModel.onTabChange(current, previous);
-                }
-            });
+            OctoPrint.coreui.selectedTab = current;
+            callViewModels(allViewModels, "onTabChange", [current, previous]);
         };
 
         var tabs = $('#tabs a[data-toggle="tab"]');
@@ -530,12 +460,7 @@ $(function() {
         tabs.on('shown', function (e) {
             var current = e.target.hash;
             var previous = e.relatedTarget.hash;
-
-            _.each(allViewModels, function(viewModel) {
-                if (viewModel.hasOwnProperty("onAfterTabChange")) {
-                    viewModel.onAfterTabChange(current, previous);
-                }
-            });
+            callViewModels(allViewModels, "onAfterTabChange", [current, previous]);
         });
 
         onTabChange(OCTOPRINT_INITIAL_TAB);
@@ -582,6 +507,8 @@ $(function() {
                         targets = [targets];
                     }
 
+                    viewModel._bindings = [];
+
                     _.each(targets, function(target) {
                         if (target == undefined) {
                             return;
@@ -607,6 +534,12 @@ $(function() {
 
                         try {
                             ko.applyBindings(viewModel, element);
+                            viewModel._bindings.push(target);
+
+                            if (viewModel.hasOwnProperty("onBoundTo")) {
+                                viewModel.onBoundTo(target, element);
+                            }
+
                             log.debug("View model", viewModel.constructor.name, "bound to", target);
                         } catch (exc) {
                             log.error("Could not bind view model", viewModel.constructor.name, "to target", target, ":", (exc.stack || exc));
@@ -614,33 +547,23 @@ $(function() {
                     });
                 }
 
+                viewModel._unbound = viewModel._bindings != undefined && viewModel._bindings.length == 0;
+
                 if (viewModel.hasOwnProperty("onAfterBinding")) {
                     viewModel.onAfterBinding();
                 }
             });
 
-            _.each(allViewModels, function(viewModel) {
-                if (viewModel.hasOwnProperty("onAllBound")) {
-                    viewModel.onAllBound(allViewModels);
-                }
-            });
+            callViewModels(allViewModels, "onAllBound", [allViewModels]);
             log.info("... binding done");
 
             // startup complete
-            _.each(allViewModels, function(viewModel) {
-                if (viewModel.hasOwnProperty("onStartupComplete")) {
-                    viewModel.onStartupComplete();
-                }
-            });
+            callViewModels(allViewModels, "onStartupComplete");
 
             // make sure we can track the browser tab visibility
-            tabTracking.onBrowserVisibilityChange(function(status) {
+            OctoPrint.coreui.onBrowserVisibilityChange(function(status) {
                 log.debug("Browser tab is now " + (status ? "visible" : "hidden"));
-                _.each(allViewModels, function(viewModel) {
-                    if (viewModel.hasOwnProperty("onBrowserTabVisibilityChange")) {
-                        viewModel.onBrowserTabVisibilityChange(status);
-                    }
-                });
+                callViewModels(allViewModels, "onBrowserTabVisibilityChange", [status]);
             });
 
             log.info("Application startup complete");
@@ -650,23 +573,30 @@ $(function() {
             throw new Error("settingsViewModel is missing, can't run UI")
         }
 
-        var dataUpdaterConnectCallback = function() {
-            log.info("Finalizing application startup");
-
-            //~~ Starting up the app
-
-            _.each(allViewModels, function(viewModel) {
-                if (viewModel.hasOwnProperty("onStartup")) {
-                    viewModel.onStartup();
-                }
-            });
-
-            viewModelMap["settingsViewModel"].requestData(bindViewModels);
-        };
-
         log.info("Initial application setup done, connecting to server...");
         var dataUpdater = new DataUpdater(allViewModels);
-        dataUpdater.connect(dataUpdaterConnectCallback);
+        dataUpdater.connect()
+            .done(function() {
+                log.info("Finalizing application startup");
+
+                //~~ Starting up the app
+                callViewModels(allViewModels, "onStartup");
+
+                viewModelMap["settingsViewModel"].requestData()
+                    .done(function() {
+                        // There appears to be an odd race condition either in JQuery's AJAX implementation or
+                        // the browser's implementation of XHR, causing a second GET request from inside the
+                        // completion handler of the very same request to never get its completion handler called
+                        // if ETag headers are present on the response (the status code of the request does NOT
+                        // seem to matter here, only that the ETag header is present).
+                        //
+                        // Minimal example with which I was able to reproduce this behaviour can be found
+                        // at https://gist.github.com/foosel/b2ddb9ebd71b0b63a749444651bfce3f
+                        //
+                        // Decoupling all consecutive calls from this done event handler hence is an easy way
+                        // to avoid this problem. A zero timeout should do the trick nicely.
+                        window.setTimeout(bindViewModels, 0);
+                    });
+            });
     }
 );
-

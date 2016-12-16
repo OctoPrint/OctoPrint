@@ -5,6 +5,7 @@ from __future__ import absolute_import
 This module bundles commonly used utility methods or helper classes that are used in multiple places withing
 OctoPrint's source code.
 """
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -20,7 +21,10 @@ import threading
 from functools import wraps
 import warnings
 import contextlib
-import Queue as queue
+try:
+	import queue
+except ImportError:
+	import Queue as queue
 
 logger = logging.getLogger(__name__)
 
@@ -438,6 +442,16 @@ def to_unicode(s_or_u, encoding="utf-8", errors="strict"):
 		return s_or_u
 
 
+def chunks(l, n):
+	"""
+	Yield successive n-sized chunks from l.
+
+	Taken from http://stackoverflow.com/a/312464/2028598
+	"""
+	for i in range(0, len(l), n):
+		yield l[i:i+n]
+
+
 def is_running_from_source():
 	root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
 	return os.path.isdir(os.path.join(root, "src")) and os.path.isfile(os.path.join(root, "setup.py"))
@@ -470,7 +484,7 @@ def dict_merge(a, b):
 	if not isinstance(b, dict):
 		return b
 	result = deepcopy(a)
-	for k, v in b.iteritems():
+	for k, v in b.items():
 		if k in result and isinstance(result[k], dict):
 			result[k] = dict_merge(result[k], v)
 		else:
@@ -506,7 +520,7 @@ def dict_sanitize(a, b):
 		return a
 
 	result = deepcopy(a)
-	for k, v in a.iteritems():
+	for k, v in a.items():
 		if not k in b:
 			del result[k]
 		elif isinstance(v, dict):
@@ -555,7 +569,7 @@ def dict_minimal_mergediff(source, target):
 	result = dict()
 	for k in all_keys:
 		if k not in target:
-			# key not contained in target => not contained in result
+			# key not contained in b => not contained in result
 			continue
 
 		if k in source:
@@ -604,7 +618,7 @@ def dict_contains_keys(keys, dictionary):
 	if not isinstance(keys, dict) or not isinstance(dictionary, dict):
 		return False
 
-	for k, v in keys.iteritems():
+	for k, v in keys.items():
 		if not k in dictionary:
 			return False
 		elif isinstance(v, dict):
@@ -612,6 +626,36 @@ def dict_contains_keys(keys, dictionary):
 				return False
 
 	return True
+
+
+class fallback_dict(dict):
+	def __init__(self, custom, *fallbacks):
+		self.custom = custom
+		self.fallbacks = fallbacks
+
+	def __getitem__(self, item):
+		for dictionary in self._all():
+			if item in dictionary:
+				return dictionary[item]
+		raise KeyError()
+
+	def __setitem__(self, key, value):
+		self.custom[key] = value
+
+	def __delitem__(self, key):
+		for dictionary in self._all():
+			if key in dictionary:
+				del dictionary[key]
+
+	def keys(self):
+		result = set()
+		for dictionary in self._all():
+			result += dictionary.keys()
+		return result
+
+	def _all(self):
+		return [self.custom] + list(self.fallbacks)
+
 
 
 def dict_filter(dictionary, filter_function):
@@ -707,6 +751,32 @@ def atomic_write(filename, mode="w+b", prefix="tmp", suffix="", permissions=0o64
 		temp_config.close()
 	os.chmod(temp_config.name, permissions)
 	shutil.move(temp_config.name, filename)
+
+
+@contextlib.contextmanager
+def tempdir(ignore_errors=False, onerror=None, **kwargs):
+	import tempfile
+	import shutil
+
+	dirpath = tempfile.mkdtemp(**kwargs)
+	try:
+		yield dirpath
+	finally:
+		shutil.rmtree(dirpath, ignore_errors=ignore_errors, onerror=onerror)
+
+
+@contextlib.contextmanager
+def temppath(prefix=None, suffix=""):
+	import tempfile
+
+	temp = tempfile.NamedTemporaryFile(prefix=prefix if prefix is not None else tempfile.template,
+	                                   suffix=suffix,
+	                                   delete=False)
+	try:
+		temp.close()
+		yield temp.name
+	finally:
+		os.remove(temp.name)
 
 
 def bom_aware_open(filename, encoding="ascii", mode="r", **kwargs):

@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 __author__ = "Gina Häußge <osd@foosel.net> based on work by David Braam"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2013 David Braam, Gina Häußge - Released under terms of the AGPLv3 License"
@@ -115,6 +115,62 @@ class Vector3D(object):
 		return "Vector3D(x={}, y={}, z={}, length={})".format(self.x, self.y, self.z, self.length)
 
 
+class MinMax3D(object):
+	"""
+	Tracks minimum and maximum of recorded values
+
+	Examples:
+
+	>>> minmax = MinMax3D()
+	>>> minmax.record(Vector3D(2.0, 2.0, 2.0))
+	>>> minmax.min.x == 2.0 == minmax.max.x and minmax.min.y == 2.0 == minmax.max.y and minmax.min.z == 2.0 == minmax.max.z
+	True
+	>>> minmax.record(Vector3D(1.0, 2.0, 3.0))
+	>>> minmax.min.x == 1.0 and minmax.min.y == 2.0 and minmax.min.z == 2.0
+	True
+	>>> minmax.max.x == 2.0 and minmax.max.y == 2.0 and minmax.max.z == 3.0
+	True
+	>>> minmax.size == Vector3D(1.0, 0.0, 1.0)
+	True
+	>>> empty = MinMax3D()
+	>>> empty.size == Vector3D(0.0, 0.0, 0.0)
+	True
+	>>> partial = MinMax3D()
+	>>> partial.record(Vector3D(2.0, None, 2.0))
+	>>> partial.min.x == 2.0 == partial.max.x and partial.min.y == None == partial.max.y and partial.min.z == 2.0 == partial.max.z
+	True
+	>>> partial.record(Vector3D(1.0, None, 3.0))
+	>>> partial.min.x == 1.0 and partial.min.y == None and partial.min.z == 2.0
+	True
+	>>> partial.max.x == 2.0 and partial.max.y == None and partial.max.z == 3.0
+	True
+	>>> partial.size == Vector3D(1.0, 0.0, 1.0)
+	True
+	"""
+
+	def __init__(self):
+		self.min = Vector3D(None, None, None)
+		self.max = Vector3D(None, None, None)
+
+	def record(self, coordinate):
+		for c in "xyz":
+			current_min = getattr(self.min, c)
+			current_max = getattr(self.max, c)
+			value = getattr(coordinate, c)
+			setattr(self.min, c, value if current_min is None or value < current_min else current_min)
+			setattr(self.max, c, value if current_max is None or value > current_max else current_max)
+
+	@property
+	def size(self):
+		result = Vector3D()
+		for c in "xyz":
+			min = getattr(self.min, c)
+			max = getattr(self.max, c)
+			value = abs(max - min) if min is not None and max is not None else 0.0
+			setattr(result, c, value)
+		return result
+
+
 class AnalysisAborted(Exception):
 	pass
 
@@ -122,7 +178,6 @@ class AnalysisAborted(Exception):
 class gcode(object):
 	def __init__(self):
 		self._logger = logging.getLogger(__name__)
-
 		self.layerList = None
 		self.extrusionAmount = [0]
 		self.extrusionVolume = [0]
@@ -131,6 +186,23 @@ class gcode(object):
 		self.progressCallback = None
 		self._abort = False
 		self._filamentDiameter = 0
+		self._minMax = MinMax3D()
+
+	@property
+	def dimensions(self):
+		size = self._minMax.size
+		return dict(width=size.x,
+		            depth=size.y,
+		            height=size.z)
+
+	@property
+	def printing_area(self):
+		return dict(minX=self._minMax.min.x,
+		            minY=self._minMax.min.y,
+		            minZ=self._minMax.min.z,
+		            maxX=self._minMax.max.x,
+		            maxY=self._minMax.max.y,
+		            maxZ=self._minMax.max.z)
 
 	def load(self, filename, printer_profile, throttle=None):
 		if os.path.isfile(filename):
@@ -157,6 +229,9 @@ class gcode(object):
 		absoluteE = True
 		scale = 1.0
 		posAbs = True
+		fwretractTime = 0
+		fwretractDist = 0
+		fwrecoverTime = 0
 		feedrate = min(printer_profile["axes"]["x"]["speed"], printer_profile["axes"]["y"]["speed"])
 		if feedrate == 0:
 			# some somewhat sane default if axes speeds are insane...
@@ -235,6 +310,10 @@ class gcode(object):
 						if absoluteE:
 							# make sure e is relative
 							e -= currentE[currentExtruder]
+						# If move includes extrusion, calculate new min/max coordinates of model
+						if e > 0.0:
+							# extrusion -> relevant for print area & dimensions
+							self._minMax.record(pos)
 						totalExtrusion[currentExtruder] += e
 						currentE[currentExtruder] += e
 						maxExtrusion[currentExtruder] = max(maxExtrusion[currentExtruder],
@@ -258,6 +337,10 @@ class gcode(object):
 					P = getCodeFloat(line, 'P')
 					if P is not None:
 						totalMoveTimeMinute += P / 60.0 / 1000.0
+				elif G == 10:   #Firmware retract
+					totalMoveTimeMinute += fwretractTime
+				elif G == 11:   #Firmware retract recover
+					totalMoveTimeMinute += fwrecoverTime
 				elif G == 20:	#Units are inches
 					scale = 25.4
 				elif G == 21:	#Units are mm
@@ -300,6 +383,15 @@ class gcode(object):
 					absoluteE = True
 				elif M == 83:   #Relative E
 					absoluteE = False
+				elif M == 207 or M == 208: #Firmware retract settings
+					s = getCodeFloat(line, 'S')
+					f = getCodeFloat(line, 'F')
+					if s is not None and f is not None:
+						if M == 207:
+							fwretractTime = s / f
+							fwretractDist = s
+						else:
+							fwrecoverTime = (fwretractDist + s) / f
 
 			elif T is not None:
 				if T > settings().getInt(["gcodeAnalysis", "maxExtruders"]):
@@ -338,7 +430,6 @@ class gcode(object):
 
 	def _parseCuraProfileString(self, comment, prefix):
 		return {key: value for (key, value) in map(lambda x: x.split("=", 1), zlib.decompress(base64.b64decode(comment[len(prefix):])).split("\b"))}
-
 
 def getCodeInt(line, code):
 	n = line.find(code) + 1

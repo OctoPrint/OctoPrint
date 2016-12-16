@@ -2,6 +2,7 @@ recursive-include src/octoprint/static *
 recursive-include src/octoprint/templates *
 recursive-include src/octoprint/plugins *
 recursive-include src/octoprint/translations *
+include src/octoprint/util/piptestballoon/setup.py
 include versioneer.py
 include src/octoprint/_version.py
 include requirements.txt

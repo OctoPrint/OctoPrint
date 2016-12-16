@@ -1,0 +1,36 @@
+<div data-bind="visible: unconfiguredCuraEngine">
+    <h3>{{ _('Configure CuraEngine') }}</h3>
+    <p>{% trans %}
+        The path to CuraEngine has not yet been set up, in order to be able to use
+        CuraEngine for slicing it needs to be specified.
+    {% endtrans %}</p>
+
+    <div style="margin-top: 1em">
+        <form class="form-horizontal">
+            {% include "snippets/settings/cura/enginePath.jinja2" %}
+        </form>
+    </div>
+</div>
+
+<div data-bind="visible: unconfiguredSlicingProfile">
+    <h3>{{ _('Set up a slicing profile') }}</h3>
+    <p>{% trans %}You haven't imported a slicing profile to use for slicing with CuraEngine
+    yet. If you plan on slicing from within OctoPrint then you should do this now.
+    Otherwise just skip this step.{% endtrans %}</p>
+
+    <div>
+        {% include "snippets/settings/cura/profiles.jinja2" %}
+    </div>
+
+    <button class="btn btn-block" data-bind="click: function() { $root.showImportProfileDialog() }">{{ _('Import Profile...') }}</button>
+
+    <div style="clear: both; margin-top: 20px;">
+        <small>{% trans %}
+            <strong>Don't know where to get a profile?</strong> In order to export
+            a slicing profile from the Cura desktop UI up to and including version 15.04.06 (not versions
+            2.1 and later which are actually newer than 15.04), open it, set up your profile, then click
+            on "File" and there on "Save Profile". You can import the <code>.ini</code> file this creates
+            via the "Import Profile" button.
+        {% endtrans %}</small>
+    </div>
+</div>

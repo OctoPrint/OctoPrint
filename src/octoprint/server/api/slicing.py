@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -9,7 +9,7 @@ from flask import request, jsonify, make_response, url_for
 from werkzeug.exceptions import BadRequest
 
 from octoprint.server import slicingManager
-from octoprint.server.util.flask import restricted_access
+from octoprint.server.util.flask import restricted_access, with_revalidation_checking
 from octoprint.server.api import api, NO_CONTENT
 
 from octoprint.settings import settings as s, valid_boolean_trues
@@ -17,7 +17,39 @@ from octoprint.settings import settings as s, valid_boolean_trues
 from octoprint.slicing import UnknownSlicer, SlicerNotConfigured, ProfileAlreadyExists, UnknownProfile, CouldNotDeleteProfile
 
 
+def _lastmodified(configured):
+	if configured:
+		slicers = slicingManager.configured_slicers
+	else:
+		slicers = slicingManager.registered_slicers
+
+	lms = [0]
+	for slicer in slicers:
+		lms.append(slicingManager.profiles_last_modified(slicer))
+
+	return max(lms)
+
+
+def _etag(configured, lm=None):
+	if lm is None:
+		lm = _lastmodified(configured)
+
+	import hashlib
+	hash = hashlib.sha1()
+	hash.update(str(lm))
+
+	if configured:
+		hash.update(repr(sorted(slicingManager.configured_slicers)))
+	else:
+		hash.update(repr(sorted(slicingManager.registered_slicers)))
+
+	return hash.hexdigest()
+
+
 @api.route("/slicing", methods=["GET"])
+@with_revalidation_checking(etag_factory=lambda lm=None: _etag(request.values.get("configured", "false") in valid_boolean_trues, lm=lm),
+                            lastmodified_factory=lambda: _lastmodified(request.values.get("configured", "false") in valid_boolean_trues),
+                            unless=lambda: request.values.get("force", "false") in valid_boolean_trues)
 def slicingListAll():
 	from octoprint.filemanager import get_extensions
 
@@ -138,17 +170,16 @@ def slicingPatchSlicerProfile(slicer, name):
 	if "description" in json_data:
 		description = json_data["description"]
 
+	saved_profile = slicingManager.save_profile(slicer, name, profile,
+	                                            allow_overwrite=True,
+	                                            overrides=data,
+	                                            display_name=display_name,
+	                                            description=description)
+
 	from octoprint.server.api import valid_boolean_trues
 	if "default" in json_data and json_data["default"] in valid_boolean_trues:
-		default_profiles = s().get(["slicing", "defaultProfiles"])
-		if not default_profiles:
-			default_profiles = dict()
-		default_profiles[slicer] = name
-		s().set(["slicing", "defaultProfiles"], default_profiles)
-		s().save(force=True)
+		slicingManager.set_default_profile(slicer, name, require_exists=False)
 
-	saved_profile = slicingManager.save_profile(slicer, name, profile,
-	                                            allow_overwrite=True, overrides=data, display_name=display_name, description=description)
 	return jsonify(_getSlicingProfileData(slicer, name, saved_profile))
 
 @api.route("/slicing/<string:slicer>/profiles/<string:name>", methods=["DELETE"])

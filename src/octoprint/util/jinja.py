@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
@@ -7,10 +7,15 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 import logging
 import os
 
+try:
+	from os import scandir, walk
+except ImportError:
+	from scandir import scandir, walk
+
 from jinja2 import nodes
 from jinja2.ext import Extension
 from jinja2.loaders import FileSystemLoader, PrefixLoader, ChoiceLoader, \
-	TemplateNotFound, split_template_path
+	BaseLoader, TemplateNotFound, split_template_path
 
 class FilteredFileSystemLoader(FileSystemLoader):
 	"""
@@ -54,36 +59,43 @@ class FilteredFileSystemLoader(FileSystemLoader):
 		return all(filter_results)
 
 
-class SelectedFileSystemLoader(FileSystemLoader):
-	def __init__(self, searchpath, files, prefix=None, **kwargs):
-		FileSystemLoader.__init__(self, searchpath, **kwargs)
+class SelectedFilesLoader(BaseLoader):
+	def __init__(self, files, encoding="utf-8"):
 		self.files = files
-
-		if prefix is not None and not prefix.endswith("/"):
-			prefix += "/"
-		self.prefix = prefix
+		self.encoding = encoding
 
 	def get_source(self, environment, template):
-		if not template.startswith(self.prefix):
-			raise TemplateNotFound(template)
-
-		template = template[len(self.prefix):]
 		if not template in self.files:
 			raise TemplateNotFound(template)
 
-		return FileSystemLoader.get_source(self, environment, template)
+		from jinja2.loaders import open_if_exists
+
+		path = self.files[template]
+		f = open_if_exists(path)
+		if f is None:
+			raise TemplateNotFound(template)
+		try:
+			contents = f.read().decode(self.encoding)
+		finally:
+			f.close()
+
+		mtime = os.path.getmtime(path)
+
+		def uptodate():
+			try:
+				return os.path.getmtime(path) == mtime
+			except OSError:
+				return False
+		return contents, path, uptodate
 
 	def list_templates(self):
-		return [self._prefixed(f) for f in self.files if any(map(lambda folder: os.path.exists(os.path.join(folder, f)), self.searchpath))]
-
-	def _prefixed(self, name):
-		return self.prefix + name if self.prefix else name
+		return self.files.keys()
 
 
 def get_all_template_paths(loader):
 	def walk_folder(folder):
 		files = []
-		walk_dir = os.walk(folder, followlinks=True)
+		walk_dir = walk(folder, followlinks=True)
 		for dirpath, dirnames, filenames in walk_dir:
 			for filename in filenames:
 				path = os.path.join(dirpath, filename)
@@ -91,17 +103,15 @@ def get_all_template_paths(loader):
 		return files
 
 	def collect_templates_for_loader(loader):
-		if isinstance(loader, FilteredFileSystemLoader):
+		if isinstance(loader, SelectedFilesLoader):
+			import copy
+			return copy.copy(loader.files.values())
+
+		elif isinstance(loader, FilteredFileSystemLoader):
 			result = []
 			for folder in loader.searchpath:
 				result += walk_folder(folder)
 			return filter(loader.path_filter, result)
-
-		elif isinstance(loader, SelectedFileSystemLoader):
-			result = []
-			for folder in loader.searchpath:
-				result += filter(lambda x: os.path.exists(f), [os.path.join(folder, f) for f in loader.files])
-			return result
 
 		elif isinstance(loader, FileSystemLoader):
 			result = []
@@ -151,7 +161,7 @@ class ExceptionHandlerExtension(Extension):
 		self._logger = logging.getLogger(__name__)
 
 	def parse(self, parser):
-		token = parser.stream.next()
+		token = next(parser.stream)
 		lineno = token.lineno
 		filename = parser.name
 		error = parser.parse_expression()

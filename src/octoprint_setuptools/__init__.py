@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -78,14 +78,14 @@ class CleanCommand(Command):
 	def run(self):
 		# build folder
 		if os.path.exists(self.__class__.build_folder):
-			print "Deleting build directory"
+			print("Deleting build directory")
 			shutil.rmtree(self.__class__.build_folder)
 
 		# eggs
 		for egg in self.__class__.eggs:
 			globbed_eggs = glob.glob(egg)
 			for globbed_egg in globbed_eggs:
-				print "Deleting %s directory" % globbed_egg
+				print("Deleting %s directory" % globbed_egg)
 				shutil.rmtree(globbed_egg)
 
 		# pyc files
@@ -94,11 +94,11 @@ class CleanCommand(Command):
 				return
 			if len(os.listdir(path)) == 0:
 				shutil.rmtree(path)
-				print "Deleted %s since it was empty" % path
+				print("Deleted %s since it was empty" % path)
 
 		def delete_file(path):
 			os.remove(path)
-			print "Deleted %s" % path
+			print("Deleted %s" % path)
 
 		import fnmatch
 		recursively_handle_files(
@@ -338,10 +338,11 @@ class BundleTranslation(Command):
 
 
 class PackTranslation(Command):
-	description = "bundles translations"
+	description = "creates language packs for translations"
 	user_options = [
-		('locale=', 'l', 'locale for the translation to bundle'),
-		('author=', 'a', 'author of the translation')
+		('locale=', 'l', 'locale for the translation to pack'),
+		('author=', 'a', 'author of the translation'),
+		('target=', 't', 'target folder for the pack')
 	]
 	boolean_options = []
 
@@ -367,6 +368,7 @@ class PackTranslation(Command):
 	def initialize_options(self):
 		self.locale = None
 		self.author = None
+		self.target = None
 
 	def finalize_options(self):
 		if self.locale is None:
@@ -383,7 +385,10 @@ class PackTranslation(Command):
 
 		now = datetime.datetime.utcnow().replace(microsecond=0)
 
-		zip_path = os.path.join(self.__class__.source_dir, "{prefix}{locale}_{date}.zip".format(prefix=self.__class__.pack_name_prefix, locale=locale, date=now.strftime("%Y%m%d%H%M%S")))
+		if self.target is None:
+			self.target = self.__class__.source_dir
+
+		zip_path = os.path.join(self.target, "{prefix}{locale}_{date}.zip".format(prefix=self.__class__.pack_name_prefix, locale=locale, date=now.strftime("%Y%m%d%H%M%S")))
 		print("Packing translation to {zip_path}".format(**locals()))
 
 		def add_recursively(zip, path, prefix):

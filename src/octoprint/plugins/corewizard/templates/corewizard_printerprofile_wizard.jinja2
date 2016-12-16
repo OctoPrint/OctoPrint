@@ -1,0 +1,35 @@
+<h3>{{ _('Set up your printer profile') }}</h3>
+<p>{% trans %}Please make sure the settings below match your printer. If you plan on connecting more than one printer
+to OctoPrint, you can also configure additional printer profiles under Settings > Printer Profiles{% endtrans %}</p>
+
+<div class="scrollable" data-bind="visible: editorLoaded" style="display: none">
+    <ul class="nav nav-pills">
+        <li class="active"><a href="#wizard_plugin_corewizard_printerprofile_general" data-toggle="tab">{{ _('General') }}</a></li>
+        <li><a href="#wizard_plugin_corewizard_printerprofile_buildvolume" data-toggle="tab">{{ _('Print bed & build volume') }}</a></li>
+        <li><a href="#wizard_plugin_corewizard_printerprofile_axes" data-toggle="tab">{{ _('Axes') }}</a></li>
+        <li><a href="#wizard_plugin_corewizard_printerprofile_extruder" data-toggle="tab">{{ _('Hotend & extruder') }}</a></li>
+    </ul>
+
+    <div class="tab-content scrollable">
+        <!-- ko with: editor -->
+        <div id="wizard_plugin_corewizard_printerprofile_general" class="tab-pane active">
+            {% include 'snippets/settings/printerprofiles/profileEditorGeneral.jinja2' %}
+        </div>
+
+        <div id="wizard_plugin_corewizard_printerprofile_buildvolume" class="tab-pane">
+            {% include 'snippets/settings/printerprofiles/profileEditorBuildvolume.jinja2' %}
+        </div>
+
+        <div id="wizard_plugin_corewizard_printerprofile_axes" class="tab-pane">
+            {% include 'snippets/settings/printerprofiles/profileEditorAxes.jinja2' %}
+        </div>
+
+        <div id="wizard_plugin_corewizard_printerprofile_extruder" class="tab-pane">
+            {% include 'snippets/settings/printerprofiles/profileEditorExtruder.jinja2' %}
+        </div>
+        <!-- /ko -->
+    </div>
+</div>
+<div data-bind="visible: !editorLoaded()">
+    Loading...
+</div>
