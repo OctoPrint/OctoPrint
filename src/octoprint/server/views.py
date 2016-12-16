@@ -14,7 +14,7 @@ from flask.ext.login import current_user
 
 import octoprint.plugin
 
-from octoprint.server import app, userManager, pluginManager, gettext, \
+from octoprint.server import app, userManager, groupManager, pluginManager, gettext, \
 	debug, LOCALES, VERSION, DISPLAY_VERSION, UI_API_KEY, BRANCH, preemptiveCache, \
 	NOT_MODIFIED
 from octoprint.settings import settings
@@ -311,11 +311,13 @@ def index():
 		wizard = wizard_active(_templates[locale])
 		enable_accesscontrol = userManager.enabled
 		accesscontrol_active = enable_accesscontrol and userManager.hasBeenCustomized()
+		enable_groups = enable_accesscontrol and groupManager.enabled
 		render_kwargs.update(dict(
 			webcamStream=settings().get(["webcam", "stream"]),
 			enableTemperatureGraph=settings().get(["feature", "temperatureGraph"]),
 			enableAccessControl=enable_accesscontrol,
 			accessControlActive=accesscontrol_active,
+			enableGroups=enable_groups,
 			enableSdSupport=settings().get(["feature", "sdSupport"]),
 			gcodeMobileThreshold=settings().get(["gcodeViewer", "mobileSizeThreshold"]),
 			gcodeThreshold=settings().get(["gcodeViewer", "sizeThreshold"]),
@@ -486,19 +488,19 @@ def _process_templates():
 	templates["sidebar"]["entries"]= dict(
 		connection=(gettext("Connection"), dict(template="sidebar/connection.jinja2", _div="connection", icon="signal", styles_wrapper=["display: none"], data_bind="visible: loginState.hasPermission(permissions.CONNECTION)", custom_bindings=False)),
 		state=(gettext("State"), dict(template="sidebar/state.jinja2", _div="state", icon="info-sign", data_bind="visible: loginState.hasPermission(permissions.STATUS)")),
-		files=(gettext("Files"), dict(template="sidebar/files.jinja2", _div="files", icon="list", classes_content=["overflow_visible"], template_header="sidebar/files_header.jinja2", data_bind="visible: loginState.hasPermission(permissions.DOWNLOAD) || \
-		                                                                                                                                                                                                   loginState.hasPermission(permissions.UPLOAD) || \
-		                                                                                                                                                                                                   loginState.hasPermission(permissions.DELETE) || \
-		                                                                                                                                                                                                   loginState.hasPermission(permissions.SELECT) || \
-		                                                                                                                                                                                                   loginState.hasPermission(permissions.PRINT) || \
-		                                                                                                                                                                                                   loginState.hasPermission(permissions.SLICE)"))
+		files=(gettext("Files"), dict(template="sidebar/files.jinja2", _div="files", icon="list", classes_content=["overflow_visible"], template_header="sidebar/files_header.jinja2", data_bind="visible: loginState.hasPermission(permissions.DOWNLOAD)() || \
+		                                                                                                                                                                                                   loginState.hasPermission(permissions.UPLOAD)() || \
+		                                                                                                                                                                                                   loginState.hasPermission(permissions.DELETE)() || \
+		                                                                                                                                                                                                   loginState.hasPermission(permissions.SELECT)() || \
+		                                                                                                                                                                                                   loginState.hasPermission(permissions.PRINT)() || \
+		                                                                                                                                                                                                   loginState.hasPermission(permissions.SLICE)()"))
 	)
 
 	# tabs
 
 	templates["tab"]["entries"] = dict(
 		temperature=(gettext("Temperature"), dict(template="tabs/temperature.jinja2", _div="temp")),
-		control=(gettext("Control"), dict(template="tabs/control.jinja2", _div="control", data_bind="visible: loginState.hasPermission(permissions.CONTROL)")),
+		control=(gettext("Control"), dict(template="tabs/control.jinja2", _div="control", data_bind="visible: loginState.hasPermission(permissions.CONTROL)() || loginState.hasPermission(permissions.WEBCAM)()")),
 		terminal=(gettext("Terminal"), dict(template="tabs/terminal.jinja2", _div="term", data_bind="visible: loginState.hasPermission(permissions.TERMINAL)")),
 	)
 	if enable_gcodeviewer:
@@ -532,7 +534,7 @@ def _process_templates():
 		server=(gettext("Server"), dict(template="dialogs/settings/server.jinja2", _div="settings_server", custom_bindings=False)),
 	)
 	if enable_accesscontrol:
-		templates["settings"]["entries"]["accesscontrol"] = (gettext("Access Control"), dict(template="dialogs/settings/accesscontrol.jinja2", _div="settings_users", custom_bindings=False))
+		templates["settings"]["entries"]["accesscontrol"] = (gettext("Access Control"), dict(template="dialogs/settings/accesscontrol.jinja2", _div="settings_accessControl", custom_bindings=False))
 
 	# user settings dialog
 

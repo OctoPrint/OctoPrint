@@ -10,6 +10,7 @@ $(function() {
 
         self.loggedIn = ko.observable(false);
         self.username = ko.observable(undefined);
+        self.usergroups = ko.observableArray([]);
         self.userpermissions = ko.observableArray([]);
         self.isAdmin = ko.observable(false);
         self.isUser = ko.observable(false);
@@ -48,8 +49,9 @@ $(function() {
             if (response && response.name) {
                 self.loggedIn(true);
                 self.username(response.name);
+                self.usergroups(response.groups);
                 self.userpermissions(response.permissions);
-                self.isUser(self.hasPermission("Admin"));
+                self.isUser(self.hasPermission("User"));
                 self.isAdmin(self.hasPermission("Admin"));
 
                 self.currentUser(response);
@@ -58,6 +60,7 @@ $(function() {
             } else {
                 self.loggedIn(false);
                 self.username(undefined);
+                self.usergroups([]);
                 self.userpermissions([]);
                 self.isUser(false);
                 self.isAdmin(false);
@@ -135,18 +138,26 @@ $(function() {
 
         self.hasPermissions = function(permissions) {
             return ko.pureComputed(function() {
-                if (self.userpermissions() == [] || permissions === undefined || permissions.length == 0)
+                if ((self.usergroups() == [] && self.userpermissions() == []) || permissions === undefined || permissions.length == 0)
                     return false;
 
-                return self.permissions.hasPermissions(permissions, self.userpermissions());
+                var group_permission = []
+                _.each(self.usergroups(), function(group) { _.union(group_permission, group.permissions); });
+
+                var all_permissions = _.union(self.userpermissions(), group_permission);var all_permissions = _.union(self.userpermissions(), _.map(self.usergroups(), function(group) { return group.permissions; }));
+                return self.permissions.hasPermissions(permissions, all_permissions);
             }).extend({ notify: 'always' });
         };
         self.hasPermission = function(permission) {
             return ko.pureComputed(function() {
-                if (self.userpermissions() == [] || permission === undefined)
+                if ((self.usergroups() == [] && self.userpermissions() == []) || permission === undefined)
                     return false;
 
-                return self.permissions.hasPermission(permission, self.userpermissions());
+                var group_permission = []
+                _.each(self.usergroups(), function(group) { group_permission = _.union(group_permission, group.permissions); });
+
+                var all_permissions = _.union(self.userpermissions(), group_permission);
+                return self.permissions.hasPermission(permission, all_permissions);
             }).extend({ notify: 'always' });
         };
     }

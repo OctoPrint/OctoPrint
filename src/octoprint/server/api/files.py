@@ -475,6 +475,7 @@ def readGcodeFile(target, filename):
 
 @api.route("/files/<string:target>/<path:filename>", methods=["POST"])
 @restricted_access
+@Permissions.file_permission.require(403)
 def gcodeFileCommand(filename, target):
 	if not target in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
 		return make_response("Unknown target: %s" % target, 404)

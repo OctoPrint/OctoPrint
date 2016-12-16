@@ -32,6 +32,7 @@ from . import printer as api_printer
 from . import job as api_job
 from . import connection as api_connection
 from . import files as api_files
+from . import groups as api_groups
 from . import settings as api_settings
 from . import timelapse as api_timelapse
 from . import users as api_users

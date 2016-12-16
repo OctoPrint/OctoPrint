@@ -28,6 +28,7 @@
             var data = {
                 name: user.name,
                 password: user.password,
+                groups: user.hasOwnProperty("groups") ? user.groups : [],
                 permissions: user.hasOwnProperty("permissions") ? user.permissions : [],
                 active: user.hasOwnProperty("active") ? !!user.active : true,
                 admin: user.hasOwnProperty("admin") ? !!user.admin : false
@@ -44,13 +45,14 @@
             return OctoPrint.get(url(name), opts);
         },
 
-        update: function (name, active, admin, permissions, opts) {
+        update: function (name, active, admin, permissions, groups, opts) {
             if (!name) {
                 throw new OctoPrint.InvalidArgumentError("user name must be set");
             }
 
             var data = {
                 active: !!active,
+                groups: groups,
                 permissions: permissions,
                 admin: !!admin
             };

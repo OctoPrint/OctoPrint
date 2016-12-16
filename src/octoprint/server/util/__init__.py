@@ -131,7 +131,13 @@ def optionsAllowOrigin(request):
 
 def get_user_for_apikey(apikey):
 	if settings().getBoolean(["api", "enabled"]) and apikey is not None:
-		if apikey == settings().get(["api", "key"]) or octoprint.server.appSessionManager.validate(apikey):
+		if apikey == octoprint.server.UI_API_KEY:
+			import flask.ext.login
+			if octoprint.server.userManager.enabled:
+				return octoprint.server.userManager.findUser(session=flask.ext.login.current_user.get_session())
+			else:
+				return flask.ext.login.current_user
+		elif apikey == settings().get(["api", "key"]) or octoprint.server.appSessionManager.validate(apikey):
 			# master key or an app session key was used
 			return ApiUser()
 		elif octoprint.server.userManager.enabled:

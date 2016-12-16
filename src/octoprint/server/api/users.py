@@ -55,8 +55,10 @@ def addUser():
 		return make_response("Missing mandatory name field", 400)
 	if not "password" in data:
 		return make_response("Missing mandatory password field", 400)
+	if not "groups" in data:
+		return make_response("Missing mandatory groups field", 400)
 	if not "permissions" in data:
-		return make_response("Missing mandatory permission field", 400)
+		return make_response("Missing mandatory permissions field", 400)
 	if not "active" in data:
 		return make_response("Missing mandatory active field", 400)
 
@@ -64,10 +66,11 @@ def addUser():
 	password = data["password"]
 	active = data["active"] in valid_boolean_trues
 
+	groups = data["groups"]
 	permissions = data["permissions"]
 
 	try:
-		userManager.addUser(name, password, active, permissions)
+		userManager.addUser(name, password, active, permissions, groups)
 	except users.UserAlreadyExists:
 		abort(409)
 	return getUsers()
@@ -106,7 +109,12 @@ def updateUser(username):
 		except BadRequest:
 			return make_response("Malformed JSON body in request", 400)
 
-		# change roles
+		# change groups
+		if "groups" in data:
+			groups = data["groups"]
+			userManager.changeUserGroups(username, groups)
+
+		# change permissions
 		if "permissions" in data:
 			permissions = data["permissions"]
 			userManager.changeUserPermissions(username, permissions)

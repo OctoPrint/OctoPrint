@@ -4,6 +4,7 @@ $(function() {
 
         self.loginState = parameters[0];
         self.permissions = parameters[1];
+        self.groups = parameters[2];
 
         // initialize list helper
         self.listHelper = new ItemListHelper(
@@ -28,6 +29,7 @@ $(function() {
         self.currentUser = ko.observable(self.emptyUser);
 
         self.editorUsername = ko.observable(undefined);
+        self.editorGroups = ko.observableArray([]);
         self.editorPermissions = ko.observableArray([]);
         self.editorPassword = ko.observable(undefined);
         self.editorRepeatedPassword = ko.observable(undefined);
@@ -41,11 +43,13 @@ $(function() {
         self.currentUser.subscribe(function(newValue) {
             if (newValue === undefined) {
                 self.editorUsername(undefined);
+                self.editorGroups([]);
                 self.editorPermissions([]);
                 self.editorActive(undefined);
                 self.editorApikey(undefined);
             } else {
                 self.editorUsername(newValue.name);
+                self.editorGroups(newValue.groups);
                 self.editorPermissions(newValue.permissions);
                 self.editorActive(newValue.active);
                 self.editorApikey(newValue.apikey);
@@ -67,12 +71,29 @@ $(function() {
 
         self.fromResponse = function(response) {
             // Switch permissions with PermissionList references, so the checked attribute will catch it
-            rereferenceList = function(list) {
+            rereferenceGroupsList = function(list) {
+                new_groups = [];
+                _.each(list, function(group) {
+                    var done = false;
+                    var groups = self.groups.groupsList();
+                    for (var i = 0; i < groups.length && !done; i++) {
+                        var g = groups[i];
+                        if (group.name != g.name)
+                            continue;
+
+                        new_groups.push(g);
+                        done = true;
+                    }
+                });
+                return new_groups;
+            };
+            rereferencePermissionsList = function(list) {
                 new_permissions = [];
                 _.each(list, function(permission) {
                     var done = false;
-                    for (var i = 0; i < self.permissions.permissionsList().length && !done; i++) {
-                        var p = self.permissions.permissionsList()[i];
+                    var permissions = self.permissions.permissionsList();
+                    for (var i = 0; i < permissions.length && !done; i++) {
+                        var p = permissions[i];
                         if (permission.name != p.name)
                             continue;
 
@@ -84,12 +105,24 @@ $(function() {
             };
 
             _.each(response.users, function(user) {
-                user.permissions = rereferenceList(user.permissions);
+                user.groups = rereferenceGroupsList(user.groups);
+                user.permissions = rereferencePermissionsList(user.permissions);
             });
 
             self.listHelper.updateItems(response.users);
         };
 
+        self.groupList = function(data) {
+            if (data.groups === undefined)
+                return "";
+
+            var list = "";
+            _.each(data.groups, function(g) {
+                list += g.name + " ";
+            })
+
+            return list.trim();
+        };
         self.permissionList = function(data) {
             if (data.permissions === undefined)
                 return "";
@@ -116,6 +149,7 @@ $(function() {
             var user = {
                 name: self.editorUsername(),
                 password: self.editorPassword(),
+                groups: self.editorGroups(),
                 permissions: self.editorPermissions(),
                 active: self.editorActive()
             };
@@ -140,6 +174,7 @@ $(function() {
 
             var user = self.currentUser();
             user.active = self.editorActive();
+            user.groups = self.editorGroups();
             user.permissions = self.editorPermissions();
 
             self.updateUser(user)
@@ -234,7 +269,7 @@ $(function() {
                 throw OctoPrint.InvalidArgumentError("user must be set");
             }
 
-            return OctoPrint.users.update(user.name, user.active, user.admin, user.permissions)
+            return OctoPrint.users.update(user.name, user.active, user.admin, user.permissions, user.groups)
                 .done(self.fromResponse);
         };
 
@@ -251,7 +286,7 @@ $(function() {
         };
 
         self.onUserLoggedIn = function(user) {
-            if (user.admin) {
+            if (self.loginState.hasPermission(self.permissions.SETTINGS)()) {
                 self.requestData();
             }
         }
@@ -259,7 +294,7 @@ $(function() {
 
     OCTOPRINT_VIEWMODELS.push([
         UsersViewModel,
-        ["loginStateViewModel", "permissionsViewModel"],
+        ["loginStateViewModel", "permissionsViewModel", "groupsViewModel"],
         []
     ]);
 });

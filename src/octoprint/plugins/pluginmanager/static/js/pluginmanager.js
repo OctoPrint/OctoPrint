@@ -73,6 +73,7 @@ $(function() {
         self.settingsViewModel = parameters[1];
         self.printerState = parameters[2];
         self.systemViewModel = parameters[3];
+        self.permissions = parameters[4];
 
         self.config_repositoryUrl = ko.observable();
         self.config_repositoryTtl = ko.observable();
@@ -322,7 +323,7 @@ $(function() {
         };
 
         self.requestData = function(includeRepo) {
-            if (!self.loginState.isAdmin()) {
+            if (!self.loginState.hasPermission(self.permissions.SETTINGS)) {
                 return;
             }
 
@@ -331,7 +332,7 @@ $(function() {
         };
 
         self.togglePlugin = function(data) {
-            if (!self.loginState.isAdmin()) {
+            if (!self.loginState.hasPermission(self.permissions.SETTINGS)) {
                 return;
             }
 
@@ -372,7 +373,7 @@ $(function() {
         };
 
         self.installFromRepository = function(data) {
-            if (!self.loginState.isAdmin()) {
+            if (!self.loginState.hasPermission(self.permissions.SETTINGS)) {
                 return;
             }
 
@@ -384,7 +385,7 @@ $(function() {
         };
 
         self.installPlugin = function(url, name, reinstall, followDependencyLinks) {
-            if (!self.loginState.isAdmin()) {
+            if (!self.loginState.hasPermission(self.permissions.SETTINGS)) {
                 return;
             }
 
@@ -445,7 +446,7 @@ $(function() {
         };
 
         self.uninstallPlugin = function(data) {
-            if (!self.loginState.isAdmin()) {
+            if (!self.loginState.hasPermission(self.permissions.SETTINGS)) {
                 return;
             }
 
@@ -474,7 +475,7 @@ $(function() {
         };
 
         self.refreshRepository = function() {
-            if (!self.loginState.isAdmin()) {
+            if (!self.loginState.hasPermission(self.permissions.SETTINGS)) {
                 return;
             }
 
@@ -691,7 +692,7 @@ $(function() {
         };
 
         self.onUserLoggedIn = function(user) {
-            if (user.admin) {
+            if (self.permissions.hasPermission(self.permissions.SETTINGS, user.permissions)) {
                 self.requestData();
             } else {
                 self.onUserLoggedOut();
@@ -735,7 +736,7 @@ $(function() {
                 return;
             }
 
-            if (!self.loginState.isAdmin()) {
+            if (!self.loginState.hasPermission(self.permissions.SETTINGS)) {
                 return;
             }
 
@@ -875,7 +876,7 @@ $(function() {
     // view model class, parameters for constructor, container to bind to
     ADDITIONAL_VIEWMODELS.push([
         PluginManagerViewModel,
-        ["loginStateViewModel", "settingsViewModel", "printerStateViewModel", "systemViewModel"],
+        ["loginStateViewModel", "settingsViewModel", "printerStateViewModel", "systemViewModel", "permissionsViewModel"],
         "#settings_plugin_pluginmanager"
     ]);
 });

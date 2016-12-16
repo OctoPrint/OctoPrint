@@ -28,8 +28,6 @@ class OctoPermissionEncoder(JSONEncoder):
 
 
 all_permissions = []
-
-
 class OctoPermission(Permission):
 	def __init__(self, name, description, *needs):
 		self._name = name
@@ -154,6 +152,12 @@ class Permissions(object):
 	logs = OctoPermission("Logs", "Allows to download and remove logs", RoleNeed("logs"))
 
 	file_permission = Permission(*upload.needs.union(download.needs).union(delete.needs).union(select.needs).union(printing.needs).union(slice.needs))
+
+	@classmethod
+	def getPermissionFrom(cls, permission):
+		return permission if isinstance(permission, OctoPermission) \
+			else cls.permission_by_name(permission["name"]) if isinstance(permission, dict) \
+			else cls.permission_by_name(permission)
 
 	@classmethod
 	def permission_by_name(cls, name):

@@ -47,6 +47,7 @@ fileManager = None
 slicingManager = None
 analysisQueue = None
 userManager = None
+groupManager = None
 eventManager = None
 loginManager = None
 pluginManager = None
@@ -156,6 +157,7 @@ class Server(object):
 		global slicingManager
 		global analysisQueue
 		global userManager
+		global groupManager
 		global eventManager
 		global loginManager
 		global pluginManager
@@ -206,6 +208,21 @@ class Server(object):
 		preemptiveCache = PreemptiveCache(os.path.join(self._settings.getBaseFolder("data"), "preemptive_cache_config.yaml"))
 
 		# setup access control
+		groupManagerName = self._settings.get(["accessControl", "groupManager"])
+		try:
+			clazz = octoprint.util.get_class(groupManagerName)
+			groupManager = clazz()
+		except AttributeError as e:
+			self._logger.exception("Could not instantiate group manager {}, falling back to FilebasedGroupManager!".format(groupManagerName))
+			groupManager = octoprint.groups.FilebasedGroupManager()
+		finally:
+			groupManager.enabled = self._settings.getBoolean(["accessControl", "groupsEnabled"])
+
+		# If Group Manager is enabled initialzize the static Groups
+		if groupManager.enabled:
+			from octoprint.groups import Groups
+			Groups.initialize()
+
 		userManagerName = self._settings.get(["accessControl", "userManager"])
 		try:
 			clazz = octoprint.util.get_class(userManagerName)
@@ -226,6 +243,7 @@ class Server(object):
 			app_session_manager=appSessionManager,
 			plugin_lifecycle_manager=pluginLifecycleManager,
 			user_manager=userManager,
+			group_manager=groupManager,
 			preemptive_cache=preemptiveCache
 		)
 
@@ -1061,6 +1079,7 @@ class Server(object):
 			"js/app/client/connection.js",
 			"js/app/client/control.js",
 			"js/app/client/files.js",
+			"js/app/client/groups.js",
 			"js/app/client/job.js",
 			"js/app/client/languages.js",
 			"js/app/client/logs.js",

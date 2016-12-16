@@ -1045,11 +1045,9 @@ def _get_flask_user_from_request(request):
 
 	apikey = octoprint.server.util.get_api_key(request)
 	if settings().getBoolean(["api", "enabled"]) and apikey is not None:
-		user = octoprint.server.util.get_user_for_apikey(apikey)
+		return octoprint.server.util.get_user_for_apikey(apikey)
 	else:
-		user = flask.ext.login.current_user
-
-	return user
+		return flask.ext.login.current_user
 
 
 def redirect_to_tornado(request, target, code=302):
@@ -1296,6 +1294,7 @@ def collect_core_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 		'js/app/viewmodels/connection.js',
 		'js/app/viewmodels/control.js',
 		'js/app/viewmodels/files.js',
+		'js/app/viewmodels/groups.js',
 		'js/app/viewmodels/loginstate.js',
 		'js/app/viewmodels/navigation.js',
 		'js/app/viewmodels/permissions.js',

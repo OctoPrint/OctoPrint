@@ -21,6 +21,8 @@ from octoprint.settings import settings
 from octoprint.util import atomic_write
 from octoprint.permissions import all_permissions, Permissions
 from octoprint.util import deprecated
+from octoprint.groups import Groups
+
 
 class UserManager(object):
 	def __init__(self):
@@ -134,7 +136,7 @@ class UserManager(object):
 				# old hash doesn't match either, wrong password
 				return False
 
-	def addUser(self, username, password, active, permissions, overwrite=False):
+	def addUser(self, username, password, active, permissions, groups, overwrite=False):
 		pass
 
 	def changeUserActivation(self, username, active):
@@ -151,6 +153,15 @@ class UserManager(object):
 	def removePermissionsFromUser(self, username, permissions):
 		pass
 	removeRolesFromUser = deprecated("removePermissionsFromUser is deprecated please use removePermissionsFromUser instead")(removePermissionsFromUser)
+
+	def changeUserGroups(self, username, groups):
+		pass
+
+	def addGroupsToUser(self, username, groups):
+		pass
+
+	def removeGroupsFromUser(self, username, groups):
+		pass
 
 	def changeUserPassword(self, username, password):
 		pass
@@ -213,13 +224,19 @@ class FilebasedUserManager(UserManager):
 				data = yaml.safe_load(f)
 				for name in data.keys():
 					attributes = data[name]
+					permissions = []
+					if "permissions" in attributes:
+						permissions = attributes["permissions"]
+					groups = []
+					if "groups" in attributes:
+						groups = attributes["groups"]
 					apikey = None
 					if "apikey" in attributes:
 						apikey = attributes["apikey"]
 					settings = dict()
 					if "settings" in attributes:
 						settings = attributes["settings"]
-					self._users[name] = User(name, attributes["password"], attributes["active"], attributes["permissions"], apikey=apikey, settings=settings)
+					self._users[name] = User(name, attributes["password"], attributes["active"], permissions, groups, apikey=apikey, settings=settings)
 		else:
 			self._customized = False
 
@@ -233,6 +250,7 @@ class FilebasedUserManager(UserManager):
 			data[name] = {
 				"password": user._passwordHash,
 				"active": user._active,
+				"groups": user._groups,
 				"permissions": user._permissions,
 				"apikey": user._apikey,
 				"settings": user._settings
@@ -243,24 +261,25 @@ class FilebasedUserManager(UserManager):
 			self._dirty = False
 		self._load()
 
-	def _getPermissionFrom(self, permission):
-		from octoprint.permissions import OctoPermission
-		return permission if isinstance(permission, OctoPermission) \
-			else Permissions.permission_by_name(permission["name"]) if isinstance(permission, dict) \
-			else Permissions.permission_by_name(permission)
-
-	def addUser(self, username, password, active=False, permissions=None, apikey=None, overwrite=False):
+	def addUser(self, username, password, active=False, permissions=None, groups=None, apikey=None, overwrite=False):
 		if not permissions:
 			permissions = []
 
+		if not groups:
+			groups = []
+
 		opermissions = []
 		for p in permissions:
-			opermissions.append(self._getPermissionFrom(p))
+			opermissions.append(Permissions.getPermissionFrom(p))
+
+		ogroups = []
+		for g in groups:
+			ogroups.append(Groups.getGroupFrom(g))
 
 		if username in self._users.keys() and not overwrite:
 			raise UserAlreadyExists(username)
 
-		self._users[username] = User(username, UserManager.createPasswordHash(password), active, opermissions, apikey=apikey)
+		self._users[username] = User(username, UserManager.createPasswordHash(password), active, opermissions, ogroups, apikey=apikey)
 		self._dirty = True
 		self._save()
 
@@ -279,7 +298,7 @@ class FilebasedUserManager(UserManager):
 
 		opermissions = []
 		for p in permissions:
-			opermissions.append(self._getPermissionFrom(p))
+			opermissions.append(Permissions.getPermissionFrom(p))
 
 		user = self._users[username]
 
@@ -295,7 +314,7 @@ class FilebasedUserManager(UserManager):
 
 		opermissions = []
 		for p in permissions:
-			opermissions.append(self._getPermissionFrom(p))
+			opermissions.append(Permissions.getPermissionFrom(p))
 
 		if self._users[username].add_permissions_to_user(opermissions):
 			self._dirty = True
@@ -307,9 +326,50 @@ class FilebasedUserManager(UserManager):
 
 		opermissions = []
 		for p in permissions:
-			opermissions.append(self._getPermissionFrom(p))
+			opermissions.append(Permissions.getPermissionFrom(p))
 
 		if self._users[username].remove_permissions_from_user(opermissions):
+			self._dirty = True
+			self._save()
+
+	def changeUserGroups(self, username, groups):
+		if not username in self._users.keys():
+			raise UnknownUser(username)
+
+		ogroups = []
+		for g in groups:
+			ogroups.append(Groups.getGroupFrom(g))
+
+		user = self._users[username]
+
+		removedGroups = set(user._groups) - set(ogroups)
+		self.removeGroupsFromUser(username, removedGroups)
+
+		addedGroups = set(ogroups) - set(user._groups)
+		self.addGroupsToUser(username, addedGroups)
+
+	def addGroupsToUser(self, username, groups):
+		if username not in self._users.keys():
+			raise UnknownUser(username)
+
+		ogroups = []
+		for g in groups:
+			ogroups.append(Groups.getGroupFrom(g))
+
+		if self._users[username].add_groups_to_user(ogroups):
+			self._dirty = True
+			self._save()
+
+	def removeGroupsFromUser(self, username, groups):
+		if username not in self._users.keys():
+			raise UnknownUser(username)
+
+		ogroups = []
+		from octoprint.groups import Groups
+		for g in groups:
+			ogroups.append(Groups.getGroupFrom(g))
+
+		if self._users[username].remove_groups_from_user(ogroups):
 			self._dirty = True
 			self._save()
 
@@ -433,10 +493,11 @@ class UnknownRole(Exception):
 ##~~ User object
 
 class User(UserMixin):
-	def __init__(self, username, passwordHash, active, permissions, apikey=None, settings=None):
+	def __init__(self, username, passwordHash, active, permissions, groups, apikey=None, settings=None):
 		self._username = username
 		self._passwordHash = passwordHash
 		self._active = active
+		self._groups = groups
 		self._permissions = permissions
 		self._apikey = apikey
 
@@ -445,13 +506,17 @@ class User(UserMixin):
 		self._settings = settings
 
 	def asDict(self):
-		permissions = self.permissions if not self.hasPermission(Permissions.admin) else [Permissions.admin]
+		permissions = self.permissions if Permissions.admin not in self._permissions else [Permissions.admin]
 		permissionDict = map(lambda p: p.asDict(), permissions)
+
+		groups = self.groups if Groups.admins not in self._groups else [Groups.admins]
+		groupDict = map(lambda g: g.asDict(), groups)
 
 		return {
 			"name": self._username,
 			"active": self.is_active(),
 			"permissions": permissionDict,
+			"groups": groupDict,
 			"admin": self.hasPermission(Permissions.admin),
 			# Deprecated
 			"user": self.hasPermission(Permissions.user),
@@ -510,6 +575,26 @@ class User(UserMixin):
 
 		return dirty
 
+	def add_groups_to_user(self, groups):
+		dirty = False
+		from octoprint.groups import Group
+		for group in groups:
+			if isinstance(group, Group) and group not in self._groups:
+				self._groups.append(group)
+				dirty = True
+
+		return dirty
+
+	def remove_groups_from_user(self, groups):
+		dirty = False
+		from octoprint.groups import Group
+		for group in groups:
+			if isinstance(group, Group) and group in self._groups:
+				self._groups.remove(group)
+				dirty = True
+
+		return dirty
+
 	@property
 	def permissions(self):
 		if Permissions.admin in self._permissions:
@@ -518,15 +603,23 @@ class User(UserMixin):
 		return list(self._permissions)
 
 	@property
+	def groups(self):
+		return list(self._groups)
+
+	@property
 	def needs(self):
 		needs = set()
-		for permission in self.permissions:
+		permissions = self.permissions
+		for group in self.groups:
+			permissions += group.permissions
+
+		for permission in permissions:
 			needs = needs.union(permission.needs)
 
 		return needs
 
 	def hasPermission(self, permission):
-		if Permissions.admin in self._permissions:
+		if Permissions.admin in self.permissions or Groups.admins in self.groups:
 			return True
 
 		return permission.needs.issubset(self.needs)
@@ -568,7 +661,7 @@ class User(UserMixin):
 class SessionUser(User):
 	def __init__(self, user):
 		self._user = user
-		User.__init__(self, user._username, user._passwordHash, user._active, user._permissions, user._apikey, user._settings)
+		User.__init__(self, user._username, user._passwordHash, user._active, user._permissions, user._groups, user._apikey, user._settings)
 
 		import string
 		import random
@@ -599,7 +692,7 @@ class SessionUser(User):
 
 class DummyUser(User):
 	def __init__(self):
-		User.__init__(self, "dummy", "", True, Permissions.admin)
+		User.__init__(self, "dummy", "", True, Permissions.admin, Groups.ADMINS)
 
 	def check_password(self, passwordHash):
 		return True
