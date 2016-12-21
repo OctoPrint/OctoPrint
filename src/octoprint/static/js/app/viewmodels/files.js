@@ -239,6 +239,10 @@ $(function() {
                 .done(function(response) {
                     self.fromResponse(response, {focus: self._focus, switchToPath: self._switchToPath});
                 })
+                .fail(function() {
+                    self.allItems(undefined);
+                    self.listHelper.updateItems([]);
+                })
                 .always(function() {
                     self._otherRequestInProgress = undefined;
                     self._focus = undefined;
@@ -759,6 +763,10 @@ $(function() {
             if (self.uploadSdButton) {
                 self.uploadSdButton.fileupload("enable");
             }
+
+            // After login, request Data,
+            // if no permission existed to view any files and now exists the file list will be filled
+            self.requestData();
         };
 
         self.onUserLoggedOut = function() {
@@ -766,6 +774,10 @@ $(function() {
             if (self.uploadSdButton) {
                 self.uploadSdButton.fileupload("disable");
             }
+
+            // After logout, request Data,
+            // if no permission exists to view any files the files list will be cleared
+            self.requestData();
         };
 
         self.onStartup = function() {
