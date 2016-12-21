@@ -295,11 +295,8 @@ class Groups(object):
 
 	@classmethod
 	def initialize(cls):
-		global admins
-		global guests
-
-		admins = cls.getOrCreateGroup("Admins", [Permissions.admin])
-		guests = cls.getOrCreateGroup("Guests", [])
+		cls.admins = cls.getOrCreateGroup("Admins", [Permissions.admin])
+		cls.guests = cls.getOrCreateGroup("Guests", [])
 
 	@classmethod
 	def getGroupFrom(cls, group):
