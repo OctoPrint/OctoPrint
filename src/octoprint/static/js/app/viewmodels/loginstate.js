@@ -2,7 +2,8 @@ $(function() {
     function LoginStateViewModel(parameters) {
         var self = this;
 
-        self.permissions = parameters[0]
+        self.permissions = parameters[0];
+        self.groups = parameters[1];
 
         self.loginUser = ko.observable("");
         self.loginPass = ko.observable("");
@@ -60,7 +61,9 @@ $(function() {
             } else {
                 self.loggedIn(false);
                 self.username(undefined);
-                self.usergroups([]);
+                OctoPrint.groups.get("Guests").done(function(group) {
+                    self.usergroups([group]);
+                });
                 self.userpermissions([]);
                 self.isUser(false);
                 self.isAdmin(false);

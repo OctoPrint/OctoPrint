@@ -20,8 +20,8 @@ from builtins import range, bytes
 from octoprint.settings import settings
 from octoprint.util import atomic_write
 from octoprint.permissions import all_permissions, Permissions
-from octoprint.util import deprecated
 from octoprint.groups import Groups
+from octoprint.util import deprecated
 
 
 class UserManager(object):
@@ -365,7 +365,6 @@ class FilebasedUserManager(UserManager):
 			raise UnknownUser(username)
 
 		ogroups = []
-		from octoprint.groups import Groups
 		for g in groups:
 			ogroups.append(Groups.getGroupFrom(g))
 
@@ -493,7 +492,7 @@ class UnknownRole(Exception):
 ##~~ User object
 
 class User(UserMixin):
-	def __init__(self, username, passwordHash, active, permissions, groups, apikey=None, settings=None):
+	def __init__(self, username, passwordHash, active, permissions=[], groups=[], apikey=None, settings=None):
 		self._username = username
 		self._passwordHash = passwordHash
 		self._active = active
@@ -597,6 +596,9 @@ class User(UserMixin):
 
 	@property
 	def permissions(self):
+		if self._permissions is None:
+			return []
+
 		if Permissions.admin in self._permissions:
 			return all_permissions
 
@@ -611,10 +613,12 @@ class User(UserMixin):
 		needs = set()
 		permissions = self.permissions
 		for group in self.groups:
-			permissions += group.permissions
+			if group is not None:
+				permissions += group.permissions
 
 		for permission in permissions:
-			needs = needs.union(permission.needs)
+			if permission is not None:
+				needs = needs.union(permission.needs)
 
 		return needs
 
@@ -688,11 +692,19 @@ class SessionUser(User):
 	def __repr__(self):
 		return "SessionUser(id=%s,name=%s,active=%r,admin=%r,session=%s,created=%s)" % (self.get_id(), self.get_name(), self.is_active(), self.hasPermission(Permissions.admin), self._session, self._created)
 
+##~~ GuestUser object to use when not logged in
+class GuestUser(User):
+	def __init__(self):
+		User.__init__(self, "Guest", "", True, [], [Groups.guests])
+
+	def check_password(self, passwordHash):
+		return True
+
 ##~~ DummyUser object to use when accessControl is disabled
 
 class DummyUser(User):
 	def __init__(self):
-		User.__init__(self, "dummy", "", True, Permissions.admin, Groups.ADMINS)
+		User.__init__(self, "dummy", "", True, [Permissions.admin], [Groups.admins])
 
 	def check_password(self, passwordHash):
 		return True
@@ -708,4 +720,4 @@ def dummy_identity_loader():
 ##~~ Apiuser object to use when global api key is used to access the API
 class ApiUser(User):
 	def __init__(self):
-		User.__init__(self, "_api", "", True, Permissions.admin)
+		User.__init__(self, "_api", "", True, [Permissions.admin], [Groups.admins])

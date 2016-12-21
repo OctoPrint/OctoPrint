@@ -100,6 +100,9 @@ def on_identity_loaded(sender, identity):
 		identity.provides.add(need)
 
 def load_user(id):
+	if id is None:
+		return users.GuestUser()
+
 	if id == "_api":
 		return users.ApiUser()
 

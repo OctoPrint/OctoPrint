@@ -59,8 +59,6 @@ def addGroup():
 
 
 @api.route("/groups/<groupname>", methods=["GET"])
-@restricted_access
-@Permissions.settings.require(403)
 def getGroup(groupname):
 	if not groupManager.enabled:
 		return jsonify(SUCCESS)
