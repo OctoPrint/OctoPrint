@@ -481,10 +481,12 @@ $(function() {
         var changeTab = function()
         {
             var hashtag = window.location.hash;
-
             var tab = $('#tabs a[href="' + hashtag + '"]');
-            tab.tab("show");
-            onTabChange(hashtag);
+            if (tab.length)
+            {
+                tab.tab("show");
+                onTabChange(hashtag);
+            }
         }
 
         //~~ view model binding
