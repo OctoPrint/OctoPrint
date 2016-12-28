@@ -16,9 +16,14 @@ Retrieve all files
    Retrieve information regarding all files currently available and regarding the disk space still available
    locally in the system.
 
+   By default only returns the files and folders in the root directory. If the query parameter ``recursive``
+   is provided and set to ``true``, returns all files and folders.
+
    Returns a :ref:`Retrieve response <sec-api-fileops-datamodel-retrieveresponse>`.
 
-   **Example**:
+   **Example 1**:
+
+   Fetch only the files and folders from the root folder.
 
    .. sourcecode:: http
 
@@ -35,6 +40,10 @@ Retrieve all files
         "files": [
           {
             "name": "whistle_v2.gcode",
+            "path": "whistle_v2.gcode",
+            "type": "machinecode",
+            "typePath": ["machinecode", "gcode"],
+            "hash": "...",
             "size": 1468987,
             "date": 1378847754,
             "origin": "local",
@@ -60,15 +69,140 @@ Retrieve all files
           },
           {
             "name": "whistle_.gco",
+            "path": "whistle_.gco",
+            "type": "machinecode",
+            "typePath": ["machinecode", "gcode"],
             "origin": "sdcard",
             "refs": {
               "resource": "http://example.com/api/files/sdcard/whistle_.gco"
+            }
+          },
+          {
+            "name": "folderA",
+            "path": "folderA",
+            "type": "folder",
+            "typePath": ["folder"],
+            "children": [],
+            "size": 1334
+          }
+        ],
+        "free": "3.2GB"
+      }
+
+   **Example 2**
+
+   Recursively fetch all files and folders.
+
+   Fetch only the files and folders from the root folder.
+
+   .. sourcecode:: http
+
+      GET /api/files?recursive=true HTTP/1.1
+      Host: example.com
+      X-Api-Key: abcdef...
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "files": [
+          {
+            "name": "whistle_v2.gcode",
+            "path": "whistle_v2.gcode",
+            "type": "machinecode",
+            "typePath": ["machinecode", "gcode"],
+            "hash": "...",
+            "size": 1468987,
+            "date": 1378847754,
+            "origin": "local",
+            "refs": {
+              "resource": "http://example.com/api/files/local/whistle_v2.gcode",
+              "download": "http://example.com/downloads/files/local/whistle_v2.gcode"
+            },
+            "gcodeAnalysis": {
+              "estimatedPrintTime": 1188,
+              "filament": {
+                "length": 810,
+                "volume": 5.36
+              }
+            },
+            "print": {
+              "failure": 4,
+              "success": 23,
+              "last": {
+                "date": 1387144346,
+                "success": true
+              }
+            }
+          },
+          {
+            "name": "whistle_.gco",
+            "path": "whistle_.gco",
+            "type": "machinecode",
+            "typePath": ["machinecode", "gcode"],
+            "origin": "sdcard",
+            "refs": {
+              "resource": "http://example.com/api/files/sdcard/whistle_.gco"
+            }
+          },
+          {
+            "name": "folderA",
+            "path": "folderA",
+            "type": "folder",
+            "typePath": ["folder"],
+            "children": [
+              {
+                "name": "test.gcode",
+                "path": "folderA/test.gcode",
+                "type": "machinecode",
+                "typePath": ["machinecode", "gcode"],
+                "hash": "...",
+                "size": 1234,
+                "date": 1378847754,
+                "origin": "local",
+                "refs": {
+                  "resource": "http://example.com/api/files/local/folderA/test.gcode",
+                  "download": "http://example.com/downloads/files/local/folderA/test.gcode"
+                }
+              },
+              {
+                "name": "subfolder",
+                "path": "folderA/subfolder",
+                "type": "folder",
+                "typePath": ["folder"],
+                "children": [
+                  {
+                    "name": "test.gcode",
+                    "path": "folderA/subfolder/test2.gcode",
+                    "type": "machinecode",
+                    "typePath": ["machinecode", "gcode"],
+                    "hash": "...",
+                    "size": 100,
+                    "date": 1378847754,
+                    "origin": "local",
+                    "refs": {
+                      "resource": "http://example.com/api/files/local/folderA/subfolder/test2.gcode",
+                      "download": "http://example.com/downloads/files/local/folderA/subfolder/test2.gcode"
+                    }
+                  },
+                ],
+                "size": 100,
+                "refs": {
+                  "resource": "http://example.com/api/files/local/folderA/subfolder",
+                }
+            ],
+            "size": 1334,
+            "refs": {
+              "resource": "http://example.com/api/files/local/folderA",
             }
           }
         ],
         "free": "3.2GB"
       }
 
+   :param recursive: If set to ``true``, return all files and folders recursively. Otherwise only return items on same level.
    :statuscode 200: No error
 
 .. _sec-api-fileops-retrievelocation:
@@ -80,6 +214,9 @@ Retrieve files from specific location
 
    Retrieve information regarding the files currently available on the selected `location` and -- if targeting
    the ``local`` location -- regarding the disk space still available locally in the system.
+
+   By default only returns the files and folders in the root directory. If the query parameter ``recursive``
+   is provided and set to ``true``, returns all files and folders.
 
    Returns a :ref:`Retrieve response <sec-api-fileops-datamodel-retrieveresponse>`.
 
@@ -100,6 +237,10 @@ Retrieve files from specific location
         "files": [
           {
             "name": "whistle_v2.gcode",
+            "path": "whistle_v2.gcode",
+            "type": "machinecode",
+            "typePath": ["machinecode", "gcode"],
+            "hash": "...",
             "size": 1468987,
             "date": 1378847754,
             "origin": "local",
@@ -130,6 +271,7 @@ Retrieve files from specific location
    :param location: The origin location from which to retrieve the files. Currently only ``local`` and ``sdcard`` are
                     supported, with ``local`` referring to files stored in OctoPrint's ``uploads`` folder and ``sdcard``
                     referring to files stored on the printer's SD card (if available).
+   :param recursive: If set to ``true``, return all files and folders recursively. Otherwise only return items on same level.
    :statuscode 200: No error
    :statuscode 404: If `location` is neither ``local`` nor ``sdcard``
 
@@ -196,6 +338,8 @@ Upload file or create folder
           "local": {
             "name": "whistle_v2.gcode",
             "path": "whistle_v2.gcode",
+            "type": "machinecode",
+            "typePath": ["machinecode", "gcode"],
             "origin": "local",
             "refs": {
               "resource": "http://example.com/api/files/local/whistle_v2.gcode",
@@ -324,6 +468,9 @@ Retrieve a specific file's or folder's information
 
    If the file is unknown, a :http:statuscode:`404` is returned.
 
+   If the targeted path is a folder, by default only its direct children will be returned. If ``recursive`` is
+   provided and set to ``true``, all sub folders and their children will be returned too.
+
    On success, a :http:statuscode:`200` is returned, with a :ref:`file information item <sec-api-datamodel-files-file>`
    as the response body.
 
@@ -368,7 +515,7 @@ Retrieve a specific file's or folder's information
 
    :param location: The location of the file for which to retrieve the information, either ``local`` or ``sdcard``.
    :param filename: The filename of the file for which to retrieve the information
-   :param children: Whether to include children of folders (true, default) or not (false)
+   :param recursive: If set to ``true``, return all files and folders recursively. Otherwise only return items on same level.
    :statuscode 200: No error
    :statuscode 404: If ``target`` is neither ``local`` nor ``sdcard``, ``sdcard`` but SD card support is disabled or the
                     requested file was not found
