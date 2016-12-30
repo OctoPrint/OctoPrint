@@ -106,12 +106,6 @@ $(function() {
             self.login();
         };
 
-        self.onKeyUp = function(data, event) {
-            if (event && event.keyCode == 13) {
-                $('#loginForm').submit();
-            }
-        }
-
         self.onAllBound = function(allViewModels) {
             self.allViewModels = allViewModels;
         };
