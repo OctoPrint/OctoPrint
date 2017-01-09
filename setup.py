@@ -15,6 +15,9 @@ import octoprint_setuptools
 # Requirements for our application
 INSTALL_REQUIRES = [
 	"flask>=0.9,<0.11",
+	"Jinja2>=2.8,<2.9", # Jinja 2.9 has breaking changes WRT template scope - we can't
+	                    # guarantee backwards compatibility for plugins and such with that
+	                    # version, hence we need to pin to a lower version for now. See #1697
 	"werkzeug>=0.8.3,<0.9",
 	"tornado==4.0.2", # pinned for now, we need to migrate to a newer tornado, but due
 	                  # to some voodoo needed to get large streamed uploads and downloads
