@@ -478,6 +478,17 @@ $(function() {
         // reload overlay
         $("#reloadui_overlay_reload").click(function() { location.reload(); });
 
+        var changeTab = function()
+        {
+            var hashtag = window.location.hash;
+            var tab = $('#tabs a[href="' + hashtag + '"]');
+            if (tab.length)
+            {
+                tab.tab("show");
+                onTabChange(hashtag);
+            }
+        }
+
         //~~ view model binding
 
         var bindViewModels = function() {
@@ -565,6 +576,15 @@ $(function() {
                 log.debug("Browser tab is now " + (status ? "visible" : "hidden"));
                 callViewModels(allViewModels, "onBrowserTabVisibilityChange", [status]);
             });
+
+            $(window).on("hashchange", function() {
+                changeTab();
+            });
+
+            if (window.location.hash != "")
+            {
+                changeTab();
+            }
 
             log.info("Application startup complete");
         };
