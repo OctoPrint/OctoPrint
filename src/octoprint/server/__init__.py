@@ -168,8 +168,7 @@ class Server(object):
 		self._logger = logging.getLogger(__name__)
 		pluginManager = self._plugin_manager
 
-		# monkey patch a bunch of stuff
-		util.tornado.fix_ioloop_scheduling()
+		# monkey patch some stuff
 		util.flask.enable_additional_translations(additional_folders=[self._settings.getBaseFolder("translations")])
 
 		# setup app
