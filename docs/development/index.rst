@@ -167,7 +167,7 @@ IDE Setup
 PyCharm
 .......
 
-  - "File" > "Open ...", select OctoPrint checkout folder (e.g. ``~/devel/OctoPrint/venv`` or ``C:\Devel\OctoPrint``)
+  - "File" > "Open ...", select OctoPrint checkout folder (e.g. ``~/devel/OctoPrint`` or ``C:\Devel\OctoPrint``)
   - "File" > "Settings ..." > "Project: OctoPrint" > "Project Interpreter" > "Add local ...", select OctoPrint venv
     folder (e.g. ``~/devel/OctoPrint/venv`` or ``C:\Devel\OctoPrint\venv``)
   - Right click "src" in project tree, mark as source folder
