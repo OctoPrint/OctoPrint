@@ -708,11 +708,12 @@ $(function() {
                         return false;
                     }
 
-                    if (entry["type"] == "folder" && entry["children"]) {
+                    var success = entry["name"].toLocaleLowerCase().indexOf(query) > -1;
+                    if (!success && entry["type"] == "folder" && entry["children"]) {
                         return _.any(entry["children"], recursiveSearch);
-                    } else {
-                        return entry["name"].toLocaleLowerCase().indexOf(query) > -1;
                     }
+
+                    return success;
                 };
 
                 self.listHelper.changeSearchFunction(recursiveSearch);

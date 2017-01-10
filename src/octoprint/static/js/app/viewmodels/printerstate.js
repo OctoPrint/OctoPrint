@@ -3,6 +3,7 @@ $(function() {
         var self = this;
 
         self.loginState = parameters[0];
+        self.settings = parameters[1];
 
         self.stateString = ko.observable(undefined);
         self.isErrorOrClosed = ko.observable(undefined);
@@ -288,18 +289,22 @@ $(function() {
         };
 
         self.cancel = function() {
-            showConfirmationDialog({
-                message: gettext("This will cancel your print."),
-                onproceed: function() {
-                    OctoPrint.job.cancel();
-                }
-            });            
+            if (!self.settings.feature_printCancelConfirmation()) {
+                OctoPrint.job.cancel();
+            } else {
+                showConfirmationDialog({
+                    message: gettext("This will cancel your print."),
+                    onproceed: function() {
+                        OctoPrint.job.cancel();
+                    }
+                });
+            };            
         };
     }
 
     OCTOPRINT_VIEWMODELS.push([
         PrinterStateViewModel,
-        ["loginStateViewModel"],
+        ["loginStateViewModel", "settingsViewModel"],
         ["#state_wrapper", "#drop_overlay"]
     ]);
 });

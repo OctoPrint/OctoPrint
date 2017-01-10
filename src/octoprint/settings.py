@@ -200,7 +200,8 @@ default_settings = {
 		"identicalResendsCountdown": 7,
 		"supportFAsCommand": False,
 		"modelSizeDetection": True,
-		"firmwareDetection": True
+		"firmwareDetection": True,
+		"printCancelConfirmation": True
 	},
 	"folder": {
 		"uploads": None,

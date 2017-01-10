@@ -25,6 +25,10 @@ SCRIPTNAME=/etc/init.d/$PKGNAME
 # Read configuration variable file if it is present
 [ -r /etc/default/$PKGNAME ] && . /etc/default/$PKGNAME
 
+# Define LSB log_* functions.
+# Depend on lsb-base (>= 3.0-6) to ensure that this file is present.
+. /lib/lsb/init-functions
+
 # Exit if the DAEMON is not set
 if [ -z "$DAEMON" ]
 then
@@ -37,10 +41,6 @@ fi
 
 # Load the VERBOSE setting and other rcS variables
 [ -f /etc/default/rcS ] && . /etc/default/rcS
-
-# Define LSB log_* functions.
-# Depend on lsb-base (>= 3.0-6) to ensure that this file is present.
-. /lib/lsb/init-functions
 
 if [ -z "$START" -o "$START" != "yes" ]
 then
