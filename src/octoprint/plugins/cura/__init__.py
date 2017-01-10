@@ -372,10 +372,12 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 									analysis = dict()
 								if not "filament" in analysis:
 									analysis["filament"] = dict()
-								if not tool_key in analysis["filament"]:
+								if not tool_key in analysis["filament"] and filament > 0:
 									analysis["filament"][tool_key] = dict()
 
-								if profile.get_float("filament_diameter") != None:
+								profile = Profile(self._load_profile(profile_path), printer_profile, posX, posY)
+
+								if profile.get_float("filament_diameter") != None and filament > 0:
 									if profile.get("gcode_flavor") == GcodeFlavors.ULTIGCODE or profile.get("gcode_flavor") == GcodeFlavors.REPRAP_VOLUME:
 										analysis["filament"][tool_key] = _get_usage_from_volume(filament, profile.get_float("filament_diameter"))
 									else:
