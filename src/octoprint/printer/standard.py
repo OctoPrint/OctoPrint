@@ -168,7 +168,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 	#~~ progress plugin reporting
 
 	def _reportPrintProgressToPlugins(self, progress):
-		if not progress or not self._selectedFile or not "sd" in self._selectedFile or not "filename" in self._selectedFile:
+		if progress is None or not self._selectedFile or not "sd" in self._selectedFile or not "filename" in self._selectedFile:
 			return
 
 		storage = "sdcard" if self._selectedFile["sd"] else "local"
