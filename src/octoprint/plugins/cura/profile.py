@@ -831,7 +831,7 @@ class Profile(object):
 		if layer_height == 0.0:
 			return 1
 		import math
-		return int(math.ceil(solid_thickness / (layer_height - 0.0001)))
+		return int(math.ceil((solid_thickness - 0.0001) / layer_height))
 
 	def calculate_minimal_extruder_count(self):
 		extruder_count = self.get("extruder_amount")
