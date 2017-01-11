@@ -260,6 +260,7 @@ class gcode(object):
 			if ';' in line:
 				comment = line[line.find(';')+1:].strip()
 				if comment.startswith("filament_diameter"):
+					# Slic3r
 					filamentValue = comment.split("=", 1)[1].strip()
 					try:
 						self._filamentDiameter = float(filamentValue)
@@ -269,6 +270,7 @@ class gcode(object):
 						except ValueError:
 							self._filamentDiameter = 0.0
 				elif comment.startswith("CURA_PROFILE_STRING") or comment.startswith("CURA_OCTO_PROFILE_STRING"):
+					# Cura 15.04.* & OctoPrint Cura plugin
 					if comment.startswith("CURA_PROFILE_STRING"):
 						prefix = "CURA_PROFILE_STRING:"
 					else:
@@ -280,6 +282,13 @@ class gcode(object):
 							self._filamentDiameter = float(curaOptions["filament_diameter"])
 						except:
 							self._filamentDiameter = 0.0
+				elif comment.startswith("filamentDiameter,"):
+					# Simplify3D
+					filamentValue = comment.split(",", 1)[1].strip()
+					try:
+						self._filamentDiameter = float(filamentValue)
+					except ValueError:
+						self._filamentDiameter = 0.0
 				line = line[0:line.find(';')]
 
 			G = getCodeInt(line, 'G')
