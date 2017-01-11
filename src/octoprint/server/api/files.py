@@ -248,8 +248,8 @@ def _verifyFolderExists(origin, foldername):
 
 
 def _isBusy(target, path):
-	currentOrigin, currentFilename = _getCurrentFile()
-	if currentFilename is not None and currentOrigin == target and fileManager.file_in_path(FileDestinations.LOCAL, path, currentFilename) and (printer.is_printing() or printer.is_paused()):
+	currentOrigin, currentPath = _getCurrentFile()
+	if currentPath is not None and currentOrigin == target and fileManager.file_in_path(FileDestinations.LOCAL, path, currentPath) and (printer.is_printing() or printer.is_paused()):
 		return True
 
 	return any(target == x[0] and fileManager.file_in_path(FileDestinations.LOCAL, path, x[1]) for x in fileManager.get_busy_files())
@@ -705,8 +705,8 @@ def deleteGcodeFile(filename, target):
 			return make_response("Trying to delete a file that is currently in use: %s" % filename, 409)
 
 		# deselect the file if it's currently selected
-		currentOrigin, currentFilename = _getCurrentFile()
-		if currentFilename is not None and currentOrigin == target and filename == currentFilename:
+		currentOrigin, currentPath = _getCurrentFile()
+		if currentPath is not None and currentOrigin == target and filename == currentPath:
 			printer.unselect_file()
 
 		# delete it
@@ -723,8 +723,8 @@ def deleteGcodeFile(filename, target):
 			return make_response("Trying to delete a folder that contains a file that is currently in use: %s" % filename, 409)
 
 		# deselect the file if it's currently selected
-		currentOrigin, currentFilename = _getCurrentFile()
-		if currentFilename is not None and currentOrigin == target and fileManager.file_in_path(target, filename, currentFilename):
+		currentOrigin, currentPath = _getCurrentFile()
+		if currentPath is not None and currentOrigin == target and fileManager.file_in_path(target, filename, currentPath):
 			printer.unselect_file()
 
 		# delete it
@@ -734,8 +734,8 @@ def deleteGcodeFile(filename, target):
 
 def _getCurrentFile():
 	currentJob = printer.get_current_job()
-	if currentJob is not None and "file" in currentJob.keys() and "name" in currentJob["file"] and "origin" in currentJob["file"]:
-		return currentJob["file"]["origin"], currentJob["file"]["name"]
+	if currentJob is not None and "file" in currentJob.keys() and "path" in currentJob["file"] and "origin" in currentJob["file"]:
+		return currentJob["file"]["origin"], currentJob["file"]["path"]
 	else:
 		return None, None
 

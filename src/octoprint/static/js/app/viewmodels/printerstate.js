@@ -256,8 +256,8 @@ $(function() {
         self._processBusyFiles = function(data) {
             var busyFiles = [];
             _.each(data, function(entry) {
-                if (entry.hasOwnProperty("name") && entry.hasOwnProperty("origin")) {
-                    busyFiles.push(entry.origin + ":" + entry.name);
+                if (entry.hasOwnProperty("path") && entry.hasOwnProperty("origin")) {
+                    busyFiles.push(entry.origin + ":" + entry.path);
                 }
             });
             self.busyFiles(busyFiles);
