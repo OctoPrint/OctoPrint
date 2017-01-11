@@ -266,6 +266,7 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 
 				working_dir = os.path.dirname(executable)
 
+				slicing_profile = Profile(self._load_profile(profile_path), printer_profile, posX, posY)
 				engine_settings = self._convert_to_engine(profile_path, printer_profile, posX, posY)
 
 				# Start building the argument list for the CuraEngine command execution
@@ -372,16 +373,14 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 									analysis = dict()
 								if not "filament" in analysis:
 									analysis["filament"] = dict()
-								if not tool_key in analysis["filament"] and filament > 0:
+								if not tool_key in analysis["filament"]:
 									analysis["filament"][tool_key] = dict()
 
-								profile = Profile(self._load_profile(profile_path), printer_profile, posX, posY)
-
-								if profile.get_float("filament_diameter") != None and filament > 0:
-									if profile.get("gcode_flavor") == GcodeFlavors.ULTIGCODE or profile.get("gcode_flavor") == GcodeFlavors.REPRAP_VOLUME:
-										analysis["filament"][tool_key] = _get_usage_from_volume(filament, profile.get_float("filament_diameter"))
+								if slicing_profile.get_float("filament_diameter") is not None:
+									if slicing_profile.get("gcode_flavor") == GcodeFlavors.ULTIGCODE or slicing_profile.get("gcode_flavor") == GcodeFlavors.REPRAP_VOLUME:
+										analysis["filament"][tool_key] = _get_usage_from_volume(filament, slicing_profile.get_float("filament_diameter"))
 									else:
-										analysis["filament"][tool_key] = _get_usage_from_length(filament, profile.get_float("filament_diameter"))
+										analysis["filament"][tool_key] = _get_usage_from_length(filament, slicing_profile.get_float("filament_diameter"))
 
 							except:
 								pass
