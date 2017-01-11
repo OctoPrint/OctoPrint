@@ -55,3 +55,4 @@
   * [SockJS-Tornado](http://github.com/mrjoes/sockjs-tornado/): MIT
   * [Tornado](http://www.tornadoweb.org/): Apache License 2.0
   * [watchdog](http://github.com/gorakhargosh/watchdog): Apache License 2.0
+  * [appdirs](http://github.com/ActiveState/appdirs): MIT
