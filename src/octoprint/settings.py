@@ -1487,12 +1487,8 @@ class Settings(object):
 def _default_basedir(applicationName):
 	# taken from http://stackoverflow.com/questions/1084697/how-do-i-store-desktop-application-data-in-a-cross-platform-way-for-python
 	if sys.platform == "darwin":
-		from AppKit import NSSearchPathForDirectoriesInDomains
-		# http://developer.apple.com/DOCUMENTATION/Cocoa/Reference/Foundation/Miscellaneous/Foundation_Functions/Reference/reference.html#//apple_ref/c/func/NSSearchPathForDirectoriesInDomains
-		# NSApplicationSupportDirectory = 14
-		# NSUserDomainMask = 1
-		# True for expanding the tilde into a fully qualified path
-		return os.path.join(NSSearchPathForDirectoriesInDomains(14, 1, True)[0], applicationName)
+		from appdirs import *
+		return user_data_dir(applicationName, "")
 	elif sys.platform == "win32":
 		return os.path.join(os.environ["APPDATA"], applicationName)
 	else:

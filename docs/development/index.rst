@@ -145,7 +145,6 @@ You'll need a user account with administrator privileges.
        cd OctoPrint
        virtualenv venv
        source venv/bin/activate
-       pip install -U pyobjc
        pip install -e .[develop]
 
 You can then start OctoPrint via ``~/devel/OctoPrint/venv/bin/octoprint`` or just ``octoprint`` if you activated the virtual
