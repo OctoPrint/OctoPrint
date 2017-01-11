@@ -12,6 +12,7 @@ or **[creating pull requests](#pull-requests)**.
     * [Where can I find which version and branch I'm on?](#where-can-i-find-which-version-and-branch-im-on)
     * [Where can I find those log files you keep talking about?](#where-can-i-find-those-log-files-you-keep-talking-about)
     * [Where can I find my browser's error console?](#where-can-i-find-my-browsers-error-console)
+  * [Setting up a development environment](#setting-up-a-development-environment)
   * [Pull requests](#pull-requests)
   * [What do the branches mean?](#what-do-the-branches-mean)
   * [How OctoPrint is versioned](#how-octoprint-is-versioned)
@@ -234,6 +235,10 @@ find information on how to do just that in the
 ### Where can I find my browser's error console?
 
 See [How to open the Javascript Console in different browsers](https://webmasters.stackexchange.com/questions/8525/how-to-open-the-javascript-console-in-different-browsers)
+
+## Setting up a development environment
+
+See [the corresponding chapter in the documentation](http://docs.octoprint.org/en/master/development/index.html#setting-up-a-development-environment).
 
 ## Pull requests
 
