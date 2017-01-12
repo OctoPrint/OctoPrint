@@ -1,13 +1,13 @@
-<a href="#" class="dropdown-toggle" data-toggle="dropdown">
+<a href="#" class="dropdown-toggle">
     <i class="icon-user"></i> <span data-bind="text: loginState.userMenuText">{{ _('Login') }}</span>
     <b class="caret"></b>
 </a>
 <div id="login_dropdown_loggedout" style="padding: 15px" class="dropdown-menu" data-bind="css: {hide: loginState.loggedIn(), 'dropdown-menu': !loginState.loggedIn()}">
-    <form id="loginForm" data-bind="event: {'submit': loginState.prepareLogin }" autocomplete="on">
+    <form id="loginForm" data-bind="event: {'submit': loginState.prepareLogin }">
         <label for="login_user">{{ _('Username') }}</label>
-        <input type="text" id="login_user" name="username" data-bind="valueWithInit: loginState.loginUser, event: {'keyup': loginState.onKeyUp }" placeholder="{{ _('Username') }}" autocapitalize="none" autocomplete="on">
+        <input type="text" id="login_user" name="username" data-bind="valueWithInit: loginState.loginUser" placeholder="{{ _('Username') }}" autocapitalize="none">
         <label for="login_pass">{{ _('Password') }}</label>
-        <input type="password" id="login_pass" name="password" data-bind="valueWithInit: loginState.loginPass, event: {'keyup': loginState.onKeyUp }" placeholder="{{ _('Password') }}" autocomplete="on">
+        <input type="password" id="login_pass" name="password" data-bind="valueWithInit: loginState.loginPass" placeholder="{{ _('Password') }}">
         <label class="checkbox">
             <input type="checkbox" id="login_remember" data-bind="checked: loginState.loginRemember"> {{ _('Remember me') }}
         </label>
