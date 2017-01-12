@@ -172,7 +172,9 @@ class MinMax3D(object):
 
 
 class AnalysisAborted(Exception):
-	pass
+	def __init__(self, reenqueue=True, *args, **kwargs):
+		self.reenqueue = reenqueue
+		Exception.__init__(self, *args, **kwargs)
 
 
 class gcode(object):
@@ -185,6 +187,7 @@ class gcode(object):
 		self.filename = None
 		self.progressCallback = None
 		self._abort = False
+		self._reenqueue = True
 		self._filamentDiameter = 0
 		self._minMax = MinMax3D()
 
@@ -213,8 +216,9 @@ class gcode(object):
 			with codecs.open(filename, encoding="utf-8", errors="replace") as f:
 				self._load(f, printer_profile, throttle=throttle)
 
-	def abort(self):
+	def abort(self, reenqueue=True):
 		self._abort = True
+		self._reenqueue = reenqueue
 
 	def _load(self, gcodeFile, printer_profile, throttle=None):
 		filePos = 0
@@ -240,7 +244,7 @@ class gcode(object):
 
 		for line in gcodeFile:
 			if self._abort:
-				raise AnalysisAborted()
+				raise AnalysisAborted(reenqueue=self._reenqueue)
 			filePos += 1
 			readBytes += len(line)
 

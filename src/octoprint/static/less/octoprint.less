@@ -1139,3 +1139,29 @@ input[type=number] {
     width: 100%;
   }
 }
+
+// Navbar loginForm
+// Make the overlay always visible so that extensions are able to auto-submit (i.e. password-managers)
+#navbar_login:not(.open) #login_dropdown_loggedout {
+  display: block;
+  z-index: -1;
+  height: 0;
+  width: 0;
+  padding: 0 !important;
+  overflow: hidden;
+  border: 0;
+  box-shadow: none;
+  left: -9999px;
+
+  &.hide {
+    display: none;
+  }
+}
+
+#loginForm {
+  margin: 0;
+
+  button {
+    margin-top: 20px;
+  }
+}

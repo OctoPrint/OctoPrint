@@ -171,9 +171,13 @@ class FileManagerTest(unittest.TestCase):
 		self.fire_event.assert_called_once_with(octoprint.filemanager.Events.UPDATED_FILES, dict(type="printables"))
 
 	def test_remove_file(self):
+		self.local_storage.path_on_disk.return_value = "prefix/test.file"
+		self.local_storage.split_path.return_value = ("", "test.file")
+
 		self.file_manager.remove_file(octoprint.filemanager.FileDestinations.LOCAL, "test.file")
 
 		self.local_storage.remove_file.assert_called_once_with("test.file")
+		self.analysis_queue.dequeue.assert_called_once()
 		self.fire_event.assert_called_once_with(octoprint.filemanager.Events.UPDATED_FILES, dict(type="printables"))
 
 	def test_add_folder(self):
@@ -199,11 +203,13 @@ class FileManagerTest(unittest.TestCase):
 		self.file_manager.remove_folder(octoprint.filemanager.FileDestinations.LOCAL, "test_folder")
 
 		self.local_storage.remove_folder.assert_called_once_with("test_folder", recursive=True)
+		self.analysis_queue.dequeue_folder.assert_called_once_with(octoprint.filemanager.FileDestinations.LOCAL, "test_folder")
 		self.fire_event.assert_called_once_with(octoprint.filemanager.Events.UPDATED_FILES, dict(type="printables"))
 
 	def test_remove_folder_nonrecursive(self):
 		self.file_manager.remove_folder(octoprint.filemanager.FileDestinations.LOCAL, "test_folder", recursive=False)
 		self.local_storage.remove_folder.assert_called_once_with("test_folder", recursive=False)
+		self.analysis_queue.dequeue_folder.assert_called_once_with(octoprint.filemanager.FileDestinations.LOCAL, "test_folder")
 
 	@mock.patch("octoprint.util.atomic_write", create=True)
 	@mock.patch("yaml.safe_dump", create=True)
