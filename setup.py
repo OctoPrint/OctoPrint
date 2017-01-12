@@ -50,6 +50,9 @@ INSTALL_REQUIRES = [
 	"websocket-client>=0.40,<0.41"
 ]
 
+if sys.platform == "darwin":
+	INSTALL_REQUIRES.append("appdirs>=1.4.0")
+
 # Additional requirements for optional install options
 EXTRA_REQUIRES = dict(
 	# Dependencies for developing OctoPrint
