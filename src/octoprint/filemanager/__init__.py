@@ -397,13 +397,10 @@ class FileManager(object):
 			if hook_file_object is not None:
 				file_object = hook_file_object
 		file_path = self._storage(destination).add_file(path, file_object, links=links, printer_profile=printer_profile, allow_overwrite=allow_overwrite)
-		absolute_path = self._storage(destination).path_on_disk(file_path)
-		_, file_name = self._storage(destination).split_path(file_path)
 
 		if analysis is None:
-			file_type = get_file_type(absolute_path)
-			if file_type:
-				queue_entry = QueueEntry(file_name, file_path, file_type[-1], destination, absolute_path, printer_profile)
+			queue_entry = self._analysis_queue_entry(destination, file_path, printer_profile=printer_profile)
+			if queue_entry:
 				self._analysis_queue.enqueue(queue_entry, high_priority=True)
 		else:
 			self._add_analysis_result(destination, path, analysis)
@@ -412,6 +409,8 @@ class FileManager(object):
 		return file_path
 
 	def remove_file(self, destination, path):
+		queue_entry = self._analysis_queue_entry(destination, path)
+		self._analysis_queue.dequeue(queue_entry)
 		self._storage(destination).remove_file(path)
 		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
 
@@ -420,6 +419,8 @@ class FileManager(object):
 		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
 
 	def move_file(self, destination, source, dst):
+		queue_entry = self._analysis_queue_entry(destination, source)
+		self._analysis_queue.dequeue(queue_entry)
 		self._storage(destination).move_file(source, dst)
 		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
 
@@ -429,7 +430,10 @@ class FileManager(object):
 		return folder_path
 
 	def remove_folder(self, destination, path, recursive=True):
+		self._analysis_queue.dequeue_folder(destination, path)
+		self._analysis_queue.pause()
 		self._storage(destination).remove_folder(path, recursive=recursive)
+		self._analysis_queue.resume()
 		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
 
 	def copy_folder(self, destination, source, dst):
@@ -437,7 +441,10 @@ class FileManager(object):
 		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
 
 	def move_folder(self, destination, source, dst):
+		self._analysis_queue.dequeue_folder(destination, source)
+		self._analysis_queue.pause()
 		self._storage(destination).move_folder(source, dst)
+		self._analysis_queue.resume()
 		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
 
 	def get_metadata(self, destination, path):
@@ -542,3 +549,15 @@ class FileManager(object):
 	def _on_analysis_finished(self, entry, result):
 		self._add_analysis_result(entry.location, entry.path, result)
 
+	def _analysis_queue_entry(self, destination, path, printer_profile=None):
+		if printer_profile is None:
+			printer_profile = self._printer_profile_manager.get_current_or_default()
+
+		absolute_path = self._storage(destination).path_on_disk(path)
+		_, file_name = self._storage(destination).split_path(path)
+		file_type = get_file_type(absolute_path)
+
+		if file_type:
+			return QueueEntry(file_name, path, file_type[-1], destination, absolute_path, printer_profile)
+		else:
+			return None
