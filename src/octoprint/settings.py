@@ -178,7 +178,9 @@ default_settings = {
 		"sizeThreshold": 20 * 1024 * 1024, # 20MB
 	},
 	"gcodeAnalysis": {
-		"maxExtruders": 10
+		"maxExtruders": 10,
+		"throttle_normalprio": 0.01,
+		"throttle_highprio": 0.0
 	},
 	"feature": {
 		"temperatureGraph": True,

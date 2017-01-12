@@ -17,6 +17,7 @@ import collections
 import time
 
 from octoprint.events import Events, eventManager
+from octoprint.settings import settings
 
 import octoprint.util.gcodeInterpreter as gcodeInterpreter
 
@@ -306,11 +307,11 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
 
 	def _do_analysis(self, high_priority=False):
 		try:
-			def throttle():
-				time.sleep(0.01)
-
-			throttle_callback = throttle
-			if high_priority:
+			throttle = settings().getFloat(["gcodeAnalysis", "throttle_highprio"]) if high_priority else settings().getFloat(["gcodeAnalysis", "throttle_normalprio"])
+			if throttle > 0:
+				def throttle_callback():
+					time.sleep(throttle)
+			else:
 				throttle_callback = None
 
 			self._gcode = gcodeInterpreter.gcode()
