@@ -473,10 +473,10 @@ class LocalFileStorage(StorageInterface):
 		if not metadata:
 			metadata = dict()
 		for entry in scandir(path):
-			if is_hidden_path(entry.name) or not octoprint.filemanager.valid_file_type(entry.name):
+			if is_hidden_path(entry.name):
 				continue
 
-			if entry.is_file():
+			if entry.is_file() and octoprint.filemanager.valid_file_type(entry.name):
 				if not entry.name in metadata or not isinstance(metadata[entry.name], dict) or not "analysis" in metadata[entry.name]:
 					printer_profile_rels = self.get_link(entry.path, "printerprofile")
 					if printer_profile_rels:
