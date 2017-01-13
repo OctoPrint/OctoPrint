@@ -32,6 +32,7 @@
 
 ## Server
 
+  * [appdirs](http://github.com/ActiveState/appdirs): MIT
   * [Awesome-Slugify](https://pypi.python.org/pypi/awesome-slugify): GPLv3
   * [Click](http://click.pocoo.org/): BSD
   * [feedparser](https://github.com/kurtmckee/feedparser): BSD
@@ -55,4 +56,3 @@
   * [SockJS-Tornado](http://github.com/mrjoes/sockjs-tornado/): MIT
   * [Tornado](http://www.tornadoweb.org/): Apache License 2.0
   * [watchdog](http://github.com/gorakhargosh/watchdog): Apache License 2.0
-  * [appdirs](http://github.com/ActiveState/appdirs): MIT
