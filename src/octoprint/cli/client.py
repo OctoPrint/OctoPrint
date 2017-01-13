@@ -9,7 +9,7 @@ import json
 
 import octoprint_client
 
-from octoprint.cli import pass_octoprint_ctx, bulk_options, standard_options
+from octoprint.cli import get_ctx_obj_option
 from octoprint import init_settings, FatalStartupError
 
 
@@ -35,13 +35,12 @@ def client_commands():
 @click.option("--httppass", type=click.STRING)
 @click.option("--https", is_flag=True)
 @click.option("--prefix", type=click.STRING)
-@pass_octoprint_ctx
 @click.pass_context
-def client(ctx, obj, host, port, httpuser, httppass, https, prefix):
+def client(ctx, host, port, httpuser, httppass, https, prefix):
 	"""Basic API client."""
 	try:
-		obj.settings = init_settings(obj.basedir, obj.configfile)
-		octoprint_client.init_client(obj.settings, https=https, httpuser=httpuser, httppass=httppass, host=host, port=port, prefix=prefix)
+		ctx.obj.settings = init_settings(get_ctx_obj_option(ctx, "basedir", None), get_ctx_obj_option(ctx, "configfile", None))
+		octoprint_client.init_client(ctx.obj.settings, https=https, httpuser=httpuser, httppass=httppass, host=host, port=port, prefix=prefix)
 	except FatalStartupError as e:
 		click.echo(e.message, err=True)
 		click.echo("There was a fatal error initializing the client.", err=True)

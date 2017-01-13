@@ -1290,6 +1290,7 @@ def collect_core_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 		'js/app/bindings/slimscrolledforeach.js',
 		'js/app/bindings/toggle.js',
 		'js/app/bindings/togglecontent.js',
+		'js/app/bindings/valuewithinit.js',
 		'js/app/viewmodels/appearance.js',
 		'js/app/viewmodels/connection.js',
 		'js/app/viewmodels/control.js',

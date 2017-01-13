@@ -172,7 +172,9 @@ class MinMax3D(object):
 
 
 class AnalysisAborted(Exception):
-	pass
+	def __init__(self, reenqueue=True, *args, **kwargs):
+		self.reenqueue = reenqueue
+		Exception.__init__(self, *args, **kwargs)
 
 
 class gcode(object):
@@ -185,6 +187,7 @@ class gcode(object):
 		self.filename = None
 		self.progressCallback = None
 		self._abort = False
+		self._reenqueue = True
 		self._filamentDiameter = 0
 		self._minMax = MinMax3D()
 
@@ -213,8 +216,9 @@ class gcode(object):
 			with codecs.open(filename, encoding="utf-8", errors="replace") as f:
 				self._load(f, printer_profile, throttle=throttle)
 
-	def abort(self):
+	def abort(self, reenqueue=True):
 		self._abort = True
+		self._reenqueue = reenqueue
 
 	def _load(self, gcodeFile, printer_profile, throttle=None):
 		filePos = 0
@@ -240,7 +244,7 @@ class gcode(object):
 
 		for line in gcodeFile:
 			if self._abort:
-				raise AnalysisAborted()
+				raise AnalysisAborted(reenqueue=self._reenqueue)
 			filePos += 1
 			readBytes += len(line)
 
@@ -260,6 +264,7 @@ class gcode(object):
 			if ';' in line:
 				comment = line[line.find(';')+1:].strip()
 				if comment.startswith("filament_diameter"):
+					# Slic3r
 					filamentValue = comment.split("=", 1)[1].strip()
 					try:
 						self._filamentDiameter = float(filamentValue)
@@ -269,6 +274,7 @@ class gcode(object):
 						except ValueError:
 							self._filamentDiameter = 0.0
 				elif comment.startswith("CURA_PROFILE_STRING") or comment.startswith("CURA_OCTO_PROFILE_STRING"):
+					# Cura 15.04.* & OctoPrint Cura plugin
 					if comment.startswith("CURA_PROFILE_STRING"):
 						prefix = "CURA_PROFILE_STRING:"
 					else:
@@ -280,6 +286,13 @@ class gcode(object):
 							self._filamentDiameter = float(curaOptions["filament_diameter"])
 						except:
 							self._filamentDiameter = 0.0
+				elif comment.startswith("filamentDiameter,"):
+					# Simplify3D
+					filamentValue = comment.split(",", 1)[1].strip()
+					try:
+						self._filamentDiameter = float(filamentValue)
+					except ValueError:
+						self._filamentDiameter = 0.0
 				line = line[0:line.find(';')]
 
 			G = getCodeInt(line, 'G')
@@ -294,15 +307,28 @@ class gcode(object):
 					e = getCodeFloat(line, 'E')
 					f = getCodeFloat(line, 'F')
 
+					if x is not None or y is not None or z is not None:
+						# this is a move
+						move = True
+					else:
+						# print head stays on position
+						move = False
+
 					oldPos = pos
-					newPos = Vector3D(x if x is not None else pos.x,
-					                  y if y is not None else pos.y,
-					                  z if z is not None else pos.z)
+
+					# Use new coordinates if provided. If not provided, use prior coordinates in absolute
+					# and 0.0 in relative mode.
+					newPos = Vector3D(x if x is not None else (pos.x if posAbs else 0.0),
+					                  y if y is not None else (pos.y if posAbs else 0.0),
+					                  z if z is not None else (pos.z if posAbs else 0.0))
 
 					if posAbs:
+						# Absolute mode: scale coordinates and apply offsets
 						pos = newPos * scale + posOffset
 					else:
+						# Relative mode: scale and add to current position
 						pos += newPos * scale
+
 					if f is not None and f != 0:
 						feedrate = f
 
@@ -310,10 +336,12 @@ class gcode(object):
 						if absoluteE:
 							# make sure e is relative
 							e -= currentE[currentExtruder]
-						# If move includes extrusion, calculate new min/max coordinates of model
-						if e > 0.0:
-							# extrusion -> relevant for print area & dimensions
+
+						# If move with extrusion, calculate new min/max coordinates of model
+						if e > 0.0 and move:
+							# extrusion and move -> relevant for print area & dimensions
 							self._minMax.record(pos)
+
 						totalExtrusion[currentExtruder] += e
 						currentE[currentExtruder] += e
 						maxExtrusion[currentExtruder] = max(maxExtrusion[currentExtruder],
@@ -417,7 +445,6 @@ class gcode(object):
 
 			if throttle is not None:
 				throttle()
-
 		if self.progressCallback is not None:
 			self.progressCallback(100.0)
 

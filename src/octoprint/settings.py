@@ -178,7 +178,9 @@ default_settings = {
 		"sizeThreshold": 20 * 1024 * 1024, # 20MB
 	},
 	"gcodeAnalysis": {
-		"maxExtruders": 10
+		"maxExtruders": 10,
+		"throttle_normalprio": 0.01,
+		"throttle_highprio": 0.0
 	},
 	"feature": {
 		"temperatureGraph": True,
@@ -200,7 +202,8 @@ default_settings = {
 		"identicalResendsCountdown": 7,
 		"supportFAsCommand": False,
 		"modelSizeDetection": True,
-		"firmwareDetection": True
+		"firmwareDetection": True,
+		"printCancelConfirmation": True
 	},
 	"folder": {
 		"uploads": None,
@@ -295,8 +298,9 @@ default_settings = {
 		"apps": {}
 	},
 	"terminalFilters": [
-		{ "name": "Suppress M105 requests/responses", "regex": "(Send: M105)|(Recv: ok (B|T\d*):)" },
-		{ "name": "Suppress M27 requests/responses", "regex": "(Send: M27)|(Recv: SD printing byte)" }
+		{ "name": "Suppress temperature messages", "regex": "(Send: (N\d+\s+)?M105)|(Recv: ok (B|T\d*):)" },
+		{ "name": "Suppress SD status messages", "regex": "(Send: (N\d+\s+)?M27)|(Recv: SD printing byte)" },
+		{ "name": "Suppress wait responses", "regex": "Recv: wait"}
 	],
 	"plugins": {
 		"_disabled": []

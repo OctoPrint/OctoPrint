@@ -47,15 +47,23 @@ def hidden_option(*param_decls, **attrs):
 		return f
 	return decorator
 
-#~~ helper for settings context options
+#~~ helper for setting context options
 
 def set_ctx_obj_option(ctx, param, value):
 	"""Helper for setting eager options on the context."""
 	if ctx.obj is None:
 		ctx.obj = OctoPrintContext()
-
-	if hasattr(ctx.obj, param.name):
+	if value != param.default:
 		setattr(ctx.obj, param.name, value)
+
+#~~ helper for retrieving context options
+
+def get_ctx_obj_option(ctx, key, default, include_parents=True):
+	if include_parents and hasattr(ctx, "parent") and ctx.parent:
+		fallback = get_ctx_obj_option(ctx.parent, key, default)
+	else:
+		fallback = default
+	return getattr(ctx.obj, key, fallback)
 
 #~~ helper for setting a lot of bulk options
 
@@ -105,13 +113,13 @@ def standard_options(hidden=False):
 #~~ helper for settings legacy options we still have to support on "octoprint"
 
 legacy_options = bulk_options([
-	hidden_option("--host", type=click.STRING),
-	hidden_option("--port", type=click.INT),
-	hidden_option("--logging", type=click.Path()),
-	hidden_option("--debug", "-d", is_flag=True),
-	hidden_option("--daemon", type=click.Choice(["start", "stop", "restart"])),
-	hidden_option("--pid", type=click.Path(), default="/tmp/octoprint.pid"),
-	hidden_option("--iknowwhatimdoing", "allow_root", is_flag=True),
+	hidden_option("--host", type=click.STRING, callback=set_ctx_obj_option),
+	hidden_option("--port", type=click.INT, callback=set_ctx_obj_option),
+	hidden_option("--logging", type=click.Path(), callback=set_ctx_obj_option),
+	hidden_option("--debug", "-d", is_flag=True, callback=set_ctx_obj_option),
+	hidden_option("--daemon", type=click.Choice(["start", "stop", "restart"]), callback=set_ctx_obj_option),
+	hidden_option("--pid", type=click.Path(), default="/tmp/octoprint.pid", callback=set_ctx_obj_option),
+	hidden_option("--iknowwhatimdoing", "allow_root", is_flag=True, callback=set_ctx_obj_option),
 ])
 """Legacy options available directly on the "octoprint" command in earlier versions.
    Kept available for reasons of backwards compatibility, but hidden from the
@@ -129,7 +137,7 @@ from .config import config_commands
              sources=[server_commands, plugin_commands, dev_commands, client_commands, config_commands])
 @standard_options()
 @legacy_options
-@click.version_option(version=octoprint.__version__)
+@click.version_option(version=octoprint.__version__, allow_from_autoenv=False)
 @click.pass_context
 def octo(ctx, debug, host, port, logging, daemon, pid, allow_root):
 
@@ -146,7 +154,7 @@ def octo(ctx, debug, host, port, logging, daemon, pid, allow_root):
 			           "\"octoprint daemon start|stop|restart\" from now on")
 
 			from octoprint.cli.server import daemon_command
-			ctx.invoke(daemon_command, debug=debug, pid=pid, daemon=daemon, allow_root=allow_root)
+			ctx.invoke(daemon_command, debug=debug, host=host, port=port, logging=logging, allow_root=allow_root, command=daemon, pid=pid)
 		else:
 			click.echo("Starting the server via \"octoprint\" is deprecated, "
 			           "please use \"octoprint serve\" from now on.")

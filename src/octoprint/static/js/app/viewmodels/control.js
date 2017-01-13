@@ -42,7 +42,7 @@ $(function() {
         self.keycontrolActive = ko.observable(false);
         self.keycontrolHelpActive = ko.observable(false);
         self.keycontrolPossible = ko.pureComputed(function () {
-            return self.isOperational() && !self.isPrinting() && self.loginState.isUser() && !$.browser.mobile;
+            return self.settings.feature_keyboardControl() && self.isOperational() && !self.isPrinting() && self.loginState.isUser() && !$.browser.mobile;
         });
         self.showKeycontrols = ko.pureComputed(function () {
             return self.keycontrolActive() && self.keycontrolPossible();

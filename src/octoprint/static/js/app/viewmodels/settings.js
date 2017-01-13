@@ -140,6 +140,7 @@ $(function() {
         self.feature_ignoreIdenticalResends = ko.observable(undefined);
         self.feature_modelSizeDetection = ko.observable(undefined);
         self.feature_firmwareDetection = ko.observable(undefined);
+        self.feature_printCancelConfirmation = ko.observable(undefined);
 
         self.serial_port = ko.observable();
         self.serial_baudrate = ko.observable();

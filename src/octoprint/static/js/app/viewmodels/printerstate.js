@@ -3,7 +3,8 @@ $(function() {
         var self = this;
 
         self.loginState = parameters[0];
-        self.permissions = parameters[1];
+        self.settings = parameters[1];
+        self.permissions = parameters[2];
 
         self.stateString = ko.observable(undefined);
         self.isErrorOrClosed = ko.observable(undefined);
@@ -256,8 +257,8 @@ $(function() {
         self._processBusyFiles = function(data) {
             var busyFiles = [];
             _.each(data, function(entry) {
-                if (entry.hasOwnProperty("name") && entry.hasOwnProperty("origin")) {
-                    busyFiles.push(entry.origin + ":" + entry.name);
+                if (entry.hasOwnProperty("path") && entry.hasOwnProperty("origin")) {
+                    busyFiles.push(entry.origin + ":" + entry.path);
                 }
             });
             self.busyFiles(busyFiles);
@@ -289,18 +290,24 @@ $(function() {
         };
 
         self.cancel = function() {
-            showConfirmationDialog({
-                message: gettext("This will cancel your print."),
-                onproceed: function() {
-                    OctoPrint.job.cancel();
-                }
-            });
+            if (!self.settings.feature_printCancelConfirmation()) {
+                OctoPrint.job.cancel();
+            } else {
+                showConfirmationDialog({
+                    message: gettext("This will cancel your print."),
+                    cancel: gettext("No"),
+                    proceed: gettext("Yes"),
+                    onproceed: function() {
+                        OctoPrint.job.cancel();
+                    }
+                });
+            }
         };
     }
 
     OCTOPRINT_VIEWMODELS.push([
         PrinterStateViewModel,
-        ["loginStateViewModel", "permissionsViewModel"],
+        ["loginStateViewModel", "settingsViewModel", "permissionsViewModel"],
         ["#state_wrapper", "#drop_overlay"]
     ]);
 });

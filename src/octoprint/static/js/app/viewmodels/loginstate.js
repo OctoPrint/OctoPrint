@@ -87,6 +87,10 @@ $(function() {
                     self.loginUser("");
                     self.loginPass("");
                     self.loginRemember(false);
+
+                    if (history && history.replaceState) {
+                        history.replaceState({success: true}, document.title, window.location.pathname);
+                    }
                 })
                 .fail(function() {
                     new PNotify({title: gettext("Login failed"), text: gettext("User unknown or wrong password"), type: "error"});
@@ -106,16 +110,11 @@ $(function() {
                 });
         };
 
-        self.onLoginUserKeyup = function(data, event) {
-            if (event.keyCode == 13) {
-                self.elementPasswordInput.focus();
+        self.prepareLogin = function(data, event) {
+            if(event && event.preventDefault) {
+                event.preventDefault();
             }
-        };
-
-        self.onLoginPassKeyup = function(data, event) {
-            if (event.keyCode == 13) {
-                self.login();
-            }
+            self.login();
         };
 
         self.onAllBound = function(allViewModels) {
@@ -131,6 +130,28 @@ $(function() {
             self.elementUsernameInput = $("#login_user");
             self.elementPasswordInput = $("#login_pass");
             self.elementLoginButton = $("#login_button");
+
+            var toggle = $("li.dropdown#navbar_login");
+            var button = $("a", toggle);
+
+            button.on("click", function(e) {
+                $(this).parent().toggleClass("open");
+            });
+
+            $("body").on("click", function(e) {
+                var anyFormLinkOrButton = $("#login_dropdown_loggedout a, #login_dropdown_loggedin a, #login_dropdown_loggedout button, #login_dropdown_loggedin button");
+                var dropdown = $("li.dropdown#navbar_login");
+                var anyLastpassButton = $("#__lpform_login_user, #__lpform_login_pass");
+
+                var isLinkOrButton = anyFormLinkOrButton.is(e.target) || anyFormLinkOrButton.has(e.target).length !== 0;
+                var isDropdown = dropdown.is(e.target) || dropdown.has(e.target).length === 0;
+                var isLastpass = anyLastpassButton.is(e.target) || anyLastpassButton.has(e.target).length === 0;
+
+                if (isLinkOrButton || !(isDropdown || isLastpass)) {
+                    toggle.removeClass("open");
+                }
+            });
+
             if (self.elementUsernameInput && self.elementUsernameInput.length
                 && self.elementLoginButton && self.elementLoginButton.length) {
                 self.elementLoginButton.blur(function() {

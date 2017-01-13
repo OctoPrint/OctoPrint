@@ -17,6 +17,7 @@ import collections
 import time
 
 from octoprint.events import Events, eventManager
+from octoprint.settings import settings
 
 import octoprint.util.gcodeInterpreter as gcodeInterpreter
 
@@ -38,6 +39,12 @@ class QueueEntry(collections.namedtuple("QueueEntry", "name, path, type, locatio
 
 	def __str__(self):
 		return "{location}:{path}".format(location=self.location, path=self.path)
+
+
+class AnalysisAborted(Exception):
+	def __init__(self, reenqueue=True, *args, **kwargs):
+		Exception.__init__(self, *args, **kwargs)
+		self.reenqueue = reenqueue
 
 
 class AnalysisQueue(object):
@@ -77,6 +84,16 @@ class AnalysisQueue(object):
 		self._queues[entry.type].enqueue(entry, high_priority=high_priority)
 		return True
 
+	def dequeue(self, entry):
+		if not entry.type in self._queues:
+			return False
+
+		self._queues[entry.type].dequeue(entry.location, entry.path)
+
+	def dequeue_folder(self, destination, path):
+		for queue in self._queues.values():
+			queue.dequeue_folder(destination, path)
+
 	def pause(self):
 		for queue in self._queues.values():
 			queue.pause()
@@ -112,8 +129,10 @@ class AbstractAnalysisQueue(object):
 	.. automethod:: _do_abort
 	"""
 
-	LOW_PRIO = 0
-	HIGH_PRIO = 100
+	LOW_PRIO = 100
+	LOW_PRIO_ABORTED = 75
+	HIGH_PRIO = 50
+	HIGH_PRIO_ABORTED = 0
 
 	def __init__(self, finished_callback):
 		self._logger = logging.getLogger(__name__)
@@ -123,11 +142,15 @@ class AbstractAnalysisQueue(object):
 		self._active = threading.Event()
 		self._active.set()
 
+		self._done = threading.Event()
+		self._done.clear()
+
 		self._currentFile = None
 		self._currentProgress = None
 
 		self._queue = queue.PriorityQueue()
 		self._current = None
+		self._current_highprio = False
 
 		self._worker = threading.Thread(target=self._work)
 		self._worker.daemon = True
@@ -153,7 +176,24 @@ class AbstractAnalysisQueue(object):
 			self._logger.debug("Adding entry {entry} to analysis queue with low priority".format(entry=entry))
 			prio = self.__class__.LOW_PRIO
 
-		self._queue.put((prio, entry))
+		self._queue.put((prio, entry, high_priority))
+		if high_priority and self._current is not None and not self._current_highprio:
+			self._logger.debug("Aborting current analysis in favor of high priority one")
+			self._do_abort()
+
+	def dequeue(self, location, path):
+		if self._current is not None and self._current.location == location \
+				and self._current.path == path:
+			self._do_abort(reenqueue=False)
+			self._done.wait()
+			self._done.clear()
+
+	def dequeue_folder(self, location, path):
+		if self._current is not None and self._current.location == location \
+				and self._current.path.startswith(path + "/"):
+			self._do_abort(reenqueue=False)
+			self._done.wait()
+			self._done.clear()
 
 	def pause(self):
 		"""
@@ -175,24 +215,23 @@ class AbstractAnalysisQueue(object):
 		self._active.set()
 
 	def _work(self):
-		aborted = None
 		while True:
-			if aborted is not None:
-				entry = aborted
-				aborted = None
-				self._logger.debug("Got an aborted analysis job for entry {entry}, processing this instead of first item in queue".format(**locals()))
-			else:
-				(priority, entry) = self._queue.get()
-				self._logger.debug("Processing entry {entry} from queue (priority {priority})".format(**locals()))
-
+			(priority, entry, high_priority) = self._queue.get()
+			self._logger.debug("Processing entry {} from queue (priority {})".format(entry, priority))
 			self._active.wait()
 
 			try:
-				self._analyze(entry, high_priority=(priority == self.__class__.HIGH_PRIO))
+				self._analyze(entry, high_priority=high_priority)
 				self._queue.task_done()
-			except gcodeInterpreter.AnalysisAborted:
-				aborted = entry
-				self._logger.debug("Running analysis of entry {entry} aborted".format(**locals()))
+				self._done.set()
+			except AnalysisAborted as ex:
+				if ex.reenqueue:
+					self._queue.put((self.__class__.HIGH_PRIO_ABORTED if high_priority else self.__class__.LOW_PRIO_ABORTED,
+					                 entry,
+					                 high_priority))
+				self._logger.debug("Running analysis of entry {} aborted".format(entry))
+				self._queue.task_done()
+				self._done.set()
 			else:
 				time.sleep(1.0)
 
@@ -202,10 +241,12 @@ class AbstractAnalysisQueue(object):
 			return
 
 		self._current = entry
+		self._current_highprio = high_priority
 		self._current_progress = 0
 
 		try:
-			self._logger.info("Starting analysis of {entry}".format(**locals()))
+			start_time = time.time()
+			self._logger.info("Starting analysis of {}".format(entry))
 			eventManager().fire(Events.METADATA_ANALYSIS_STARTED, {"name": entry.name,
 			                                                       "path": entry.path,
 			                                                       "origin": entry.location,
@@ -217,7 +258,7 @@ class AbstractAnalysisQueue(object):
 				result = self._do_analysis(high_priority=high_priority)
 			except TypeError:
 				result = self._do_analysis()
-			self._logger.debug("Analysis of entry {entry} finished, notifying callback".format(**locals()))
+			self._logger.info("Analysis of entry {} finished, needed {:.2f}s".format(entry, time.time() - start_time))
 			self._finished_callback(self._current, result)
 		finally:
 			self._current = None
@@ -237,7 +278,7 @@ class AbstractAnalysisQueue(object):
 		"""
 		return None
 
-	def _do_abort(self):
+	def _do_abort(self, reenqueue=True):
 		"""
 		Aborts analysis of the current entry. Needs to be overridden by sub classes.
 		"""
@@ -266,11 +307,11 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
 
 	def _do_analysis(self, high_priority=False):
 		try:
-			def throttle():
-				time.sleep(0.01)
-
-			throttle_callback = throttle
-			if high_priority:
+			throttle = settings().getFloat(["gcodeAnalysis", "throttle_highprio"]) if high_priority else settings().getFloat(["gcodeAnalysis", "throttle_normalprio"])
+			if throttle > 0:
+				def throttle_callback():
+					time.sleep(throttle)
+			else:
 				throttle_callback = None
 
 			self._gcode = gcodeInterpreter.gcode()
@@ -289,9 +330,11 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
 						"volume": self._gcode.extrusionVolume[i]
 					}
 			return result
+		except gcodeInterpreter.AnalysisAborted as ex:
+			raise AnalysisAborted(reenqueue=ex.reenqueue)
 		finally:
 			self._gcode = None
 
-	def _do_abort(self):
+	def _do_abort(self, reenqueue=True):
 		if self._gcode:
-			self._gcode.abort()
+			self._gcode.abort(reenqueue=reenqueue)
