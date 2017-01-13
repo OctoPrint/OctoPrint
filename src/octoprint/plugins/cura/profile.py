@@ -674,9 +674,7 @@ class Profile(object):
 			return default
 		return int(value * 1000)
 
-	def get_gcode_template(self, key):
-		extruder_count = self.get_int("extruder_amount")
-
+	def get_gcode_template(self, key, extruder_count=1):
 		if key in self._profile:
 			gcode = self._profile[key]
 		else:
@@ -736,7 +734,7 @@ class Profile(object):
 
 		return pre + str(f)
 
-	def get_gcode(self, key):
+	def get_gcode(self, key, extruder_count=1):
 		prefix = ""
 		postfix = ""
 
@@ -746,11 +744,11 @@ class Profile(object):
 			return ""
 
 		if key == "start_gcode":
-			contents = self.get_gcode_template("start_gcode")
+			contents = self.get_gcode_template("start_gcode", extruder_count=extruder_count)
 			prefix += self.get_start_gcode_prefix(contents)
 
 		else:
-			contents = self.get_gcode_template(key)
+			contents = self.get_gcode_template(key, extruder_count=extruder_count)
 
 		return unicode(prefix + re.sub("(.)\{([^\}]*)\}", self.replaceTagMatch, contents).rstrip() + '\n' + postfix).strip().encode('utf-8') + '\n'
 
@@ -861,13 +859,14 @@ class Profile(object):
 
 		return int(self.get_float("machine_depth") / 2.0) if not self.get_boolean("machine_center_is_zero") else 0.0
 
-	def convert_to_engine(self):
+	def convert_to_engine(self, used_extruders=1):
 
 		edge_width, line_count = self.calculate_edge_width_and_line_count()
 		solid_layer_count = self.calculate_solid_layer_count()
 
 		extruder_count = self.get_int("extruder_amount")
 		minimal_extruder_count = self.calculate_minimal_extruder_count()
+		actual_extruder_count = max(minimal_extruder_count, used_extruders)
 
 		settings = {
 			"layerThickness": self.get_microns("layer_height"),
@@ -916,10 +915,10 @@ class Profile(object):
 			"posy": self.get_pos_y() * 1000, # in microns
 
 			# gcodes
-			"startCode": self.get_gcode("start_gcode"),
-			"endCode": self.get_gcode("end_gcode"),
-			"preSwitchExtruderCode": self.get_gcode("preSwitchExtruder_gcode"),
-			"postSwitchExtruderCode": self.get_gcode("postSwitchExtruder_gcode"),
+			"startCode": self.get_gcode("start_gcode", extruder_count=actual_extruder_count),
+			"endCode": self.get_gcode("end_gcode", extruder_count=actual_extruder_count),
+			"preSwitchExtruderCode": self.get_gcode("preSwitchExtruder_gcode", extruder_count=actual_extruder_count),
+			"postSwitchExtruderCode": self.get_gcode("postSwitchExtruder_gcode", extruder_count=actual_extruder_count),
 
 			# fixing
 			"fixHorrible": 0,
