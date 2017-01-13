@@ -602,8 +602,8 @@ class Profile(object):
 			diameters = self._get("filament_diameter")
 			if not match.group(1):
 				return diameters[0]
-			index = int(match.group(1))
-			if index >= len(diameters):
+			index = int(match.group(1)) - 1
+			if index >= len(diameters) or index < 0:
 				return 0.0
 			return diameters[index]
 
@@ -615,8 +615,8 @@ class Profile(object):
 			temperatures = self._get("print_temperature")
 			if not match.group(1):
 				return temperatures[0]
-			index = int(match.group(1))
-			if index >= len(temperatures):
+			index = int(match.group(1)) - 1
+			if index >= len(temperatures) or index < 0:
 				return 0.0
 			return temperatures[index]
 
