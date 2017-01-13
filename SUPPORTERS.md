@@ -11,12 +11,10 @@ thanks to everyone who contributed!
   * Andrew Moorby
   * Arnljot Arntsen
   * Aurelio Bernal
-  * Bart Zudell
   * Boris Hussein
   * Brad Jackson
   * Brent Fiegle
   * Brian E. Tyler
-  * Charles Mitchell
   * Christopher Day
   * Christian Petropolis
   * COLLE+McVOY
@@ -25,7 +23,6 @@ thanks to everyone who contributed!
   * DeltaMaker 3D Printers
   * Doug Johnson
   * E3D BigBox
-  * Erik de Bruijn
   * Ernesto Martinez
   * Exovite
   * Frank Sander
@@ -34,7 +31,6 @@ thanks to everyone who contributed!
   * George Robles
   * J. Eckert
   * Jamie van Dyke
-  * Jason Galarneau
   * Josh Daniels
   * Joshua David Gregory
   * Kaile Riser
@@ -59,7 +55,6 @@ thanks to everyone who contributed!
   * Samer Najia
   * SD3D
   * SeeMeCNC
-  * Shane Ekerbicer
   * Simon Hallam
   * Stefan Krister
   * Stephane Schittly
@@ -67,6 +62,7 @@ thanks to everyone who contributed!
   * Sven Mueller
   * Terrance Shaw
   * Thomas Hatley
+  * Timeshell.ca
   * Trent Shumay
 
-and 972 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!
+and 1016 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!
