@@ -112,7 +112,7 @@ a look at some of them:
     installing plugins that necessitate that.
 
 That is only the tip of the iceberg, best take a look at the 
-[Changelog](https://github.com/foosel/OctoPrint/releases/tag/1.3.0rc1)
+[Changelog](https://github.com/foosel/OctoPrint/releases/tag/1.3.0)
 for a more comprehensive overview.
 
 Finally, if you run into any problems with this OctoPrint or its bundled
@@ -130,6 +130,8 @@ report it back so that it can be fixed :)
 
 Also see the **Further Information** and **Links** below for more information, 
 where to find help and how to roll back. Thanks!
+
+*Update 2017-01-13*: Fixed links to the changelog 😅
 
 ### Further Information
 
@@ -155,7 +157,7 @@ or the [Mailinglist](https://groups.google.com/group/octoprint).
 
 ### Links
 
-  * [Changelog and Release Notes](https://github.com/foosel/OctoPrint/releases/tag/1.2.18)
+  * [Changelog and Release Notes](https://github.com/foosel/OctoPrint/releases/tag/1.3.0)
   * [FAQ](https://github.com/foosel/OctoPrint/wiki/FAQ)
   * [Documentation](http://docs.octoprint.org/)
   * [Contribution Guidelines (also relevant for creating bug reports!)](https://github.com/foosel/OctoPrint/blob/master/CONTRIBUTING.md)
