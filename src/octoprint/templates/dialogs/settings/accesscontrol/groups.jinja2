@@ -50,6 +50,12 @@
                 </div>
             </div>
             <div class="control-group">
+                <label class="control-label" for="settings-groupsDialogAddDefaultOn">{{ _('Default') }}</label>
+                <div class="controls">
+                    <input type="checkbox" class="input-block-level" id="settings-groupsDialogAddDefaultOn" data-bind="checked: $root.groups.editorDefaultOn">
+                </div>
+            </div>
+            <div class="control-group">
                 <div class="controls" data-bind="template: { name: 'group-permission-template', foreach: $root.permissions.permissionsList }"></div>
             </div>
         </form>
@@ -67,6 +73,12 @@
     </div>
     <div class="modal-body">
         <form class="form-horizontal">
+            <div class="control-group">
+                <label class="control-label" for="settings-groupsDialogEditDefaultOn">{{ _('Default') }}</label>
+                <div class="controls">
+                    <input type="checkbox" class="input-block-level" id="settings-groupsDialogEditDefaultOn" data-bind="checked: $root.groups.editorDefaultOn">
+                </div>
+            </div>
             <div class="controls" data-bind="template: { name: 'group-permission-template', foreach: $root.permissions.permissionsList }"></div>
         </form>
     </div>

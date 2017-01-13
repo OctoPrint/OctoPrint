@@ -31,6 +31,7 @@ $(function() {
 
         self.editorGroupname = ko.observable(undefined);
         self.editorPermissions = ko.observableArray([]);
+        self.editorDefaultOn = ko.observable(false);
 
         self.addGroupDialog = undefined;
         self.editGroupDialog = undefined;
@@ -39,9 +40,11 @@ $(function() {
             if (newValue === undefined) {
                 self.editorGroupname(undefined);
                 self.editorPermissions([]);
+                self.editorDefaultOn(false);
             } else {
                 self.editorGroupname(newValue.name);
                 self.editorPermissions(newValue.permissions);
+                self.editorDefaultOn(newValue.defaultOn);
             }
         });
 
@@ -90,6 +93,17 @@ $(function() {
             return list.trim();
         };
 
+        self.getDefaultGroups = function() {
+            groups = [];
+            _.each(self.groupsList(), function(group) {
+                if (group.defaultOn)
+                {
+                    groups.push(group);
+                }
+            });
+            return groups;
+        }
+
         self.showAddGroupDialog = function() {
             if (!CONFIG_GROUPS_ENABLED) return;
 
@@ -103,6 +117,7 @@ $(function() {
             var group = {
                 name: self.editorGroupname(),
                 permissions: self.editorPermissions(),
+                defaultOn: self.editorDefaultOn()
             };
 
             self.addGroup(group)
@@ -125,6 +140,7 @@ $(function() {
 
             var group = self.currentGroup();
             group.permissions = self.editorPermissions();
+            group.defaultOn = self.editorDefaultOn();
 
             self.updateGroup(group)
                 .done(function() {
@@ -166,7 +182,7 @@ $(function() {
                 throw OctoPrint.InvalidArgumentError("group must be set");
             }
 
-            return OctoPrint.groups.update(group.name, group.permissions)
+            return OctoPrint.groups.update(group.name, group.permissions, group.defaultOn)
                 .done(self.fromResponse);
         };
         self.onUserLoggedIn = function(user) {

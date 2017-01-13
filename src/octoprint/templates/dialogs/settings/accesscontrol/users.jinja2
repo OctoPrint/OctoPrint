@@ -77,12 +77,14 @@
                 </div>
             </div>
             <div class="control-group">
-                <div class="control-label">{{ _('Groups') }}</div>
-                <div class="controls" data-bind="template: { name: 'users-group-template', foreach: $root.groups.groupsList }"></div>
-            </div>
-            <div class="control-group">
-                <div class="control-label">{{ _('Permissions') }}</div>
-                <div class="controls" data-bind="template: { name: 'users-permission-template', foreach: $root.permissions.permissionsList }"></div>
+                <div class="groups_section">
+                    <h4 class="controls" data-bind="toggleContent: { class: 'icon-caret-right icon-caret-down', container: '.groups_section > div' }"><i class='icon-caret-right'></i>{{ _('Groups') }}</h4>
+                    <div class="controls content" style="display: none" data-bind="template: { name: 'users-group-template', foreach: $root.groups.groupsList }"></div>
+                </div>
+                <div class="permissions_section">
+                    <h4 class="controls" data-bind="toggleContent: { class: 'icon-caret-right icon-caret-down', container: '.permissions_section > div' }"><i class='icon-caret-right'></i>{{ _('Permissions') }}</h4>
+                    <div class="controls content hidden" style="display: none" data-bind="template: { name: 'users-permission-template', foreach: $root.permissions.permissionsList }"></div>
+                </div>
             </div>
         </form>
     </div>
@@ -107,12 +109,14 @@
                 </div>
             </div>
             <div class="control-group">
-                <div class="control-label">{{ _('Groups') }}</div>
-                <div class="controls" data-bind="template: { name: 'users-group-template', foreach: $root.groups.groupsList }"></div>
-            </div>
-            <div class="control-group">
-                <div class="control-label">{{ _('Permissions') }}</div>
-                <div class="controls" data-bind="template: { name: 'users-permission-template', foreach: $root.permissions.permissionsList }"></div>
+                <div class="groups_section">
+                    <h4 class="controls" data-bind="toggleContent: { class: 'icon-caret-right icon-caret-down', container: '.groups_section > div' }"><i class='icon-caret-right'></i>{{ _('Groups') }}</h4>
+                    <div class="controls content" style="display: none" data-bind="template: { name: 'users-group-template', foreach: $root.groups.groupsList }"></div>
+                </div>
+                <div class="permissions_section">
+                    <h4 class="controls" data-bind="toggleContent: { class: 'icon-caret-right icon-caret-down', container: '.permissions_section > div' }"><i class='icon-caret-right'></i>{{ _('Permissions') }}</h4>
+                    <div class="controls content hidden" style="display: none" data-bind="template: { name: 'users-permission-template', foreach: $root.permissions.permissionsList }"></div>
+                </div>
             </div>
         </form>
     </div>

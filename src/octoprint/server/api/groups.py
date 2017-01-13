@@ -50,9 +50,10 @@ def addGroup():
 
 	name = data["name"]
 	permissions = data["permissions"]
+	default = data["defaultOn"] if "defaultOn" in data else False
 
 	try:
-		groupManager.addGroup(name, permissions)
+		groupManager.addGroup(name, permissions=permissions, default=default)
 	except groups.GroupAlreadyExists:
 		abort(409)
 	return getGroups()
@@ -93,8 +94,11 @@ def updateGroup(groupname):
 				permissions = data["permissions"]
 				groupManager.changeGroupPermissions(groupname, permissions)
 
+			if"defaultOn" in data:
+				groupManager.changeGroupDefault(groupname, data["defaultOn"])
+
 			return getGroups()
-		except groups.GroupCantbeChagned:
+		except groups.GroupCantbeChanged:
 			abort(403)
 	else:
 		abort(404)

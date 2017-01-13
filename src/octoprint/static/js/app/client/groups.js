@@ -28,6 +28,7 @@
             var data = {
                 name: group.name,
                 permissions: group.hasOwnProperty("permissions") ? group.permissions : [],
+                defaultOn: group.defaultOn
             };
 
             return OctoPrint.postJson(url(), data, opts);
@@ -41,13 +42,14 @@
             return OctoPrint.get(url(name), opts);
         },
 
-        update: function (name, permissions, opts) {
+        update: function (name, permissions, defaultOn, opts) {
             if (!name) {
                 throw new OctoPrint.InvalidArgumentError("group name must be set");
             }
 
             var data = {
                 permissions: permissions,
+                defaultOn: defaultOn,
             };
             return OctoPrint.putJson(url(name), data, opts);
         },

@@ -26,7 +26,7 @@ $(function() {
 
         self.emptyUser = {name: "", active: false};
 
-        self.currentUser = ko.observable(self.emptyUser);
+        self.currentUser = ko.observable(self.emptyUser).extend({ notify: 'always' });
 
         self.editorUsername = ko.observable(undefined);
         self.editorGroups = ko.observableArray([]);
@@ -43,7 +43,7 @@ $(function() {
         self.currentUser.subscribe(function(newValue) {
             if (newValue === undefined) {
                 self.editorUsername(undefined);
-                self.editorGroups([]);
+                self.editorGroups(self.groups.getDefaultGroups());
                 self.editorPermissions([]);
                 self.editorActive(undefined);
                 self.editorApikey(undefined);
