@@ -1,0 +1,52 @@
+# Install this unit file with:
+#
+#   sudo cp octoprint.service /etc/systemd/system
+#   sudo systemctl daemon-reload
+#
+# Configure the service to start at boot, and then start it with:
+#
+#   sudo systemctl enable octoprint
+#   sudo systemctl start octoprint
+#
+# Optionally, verify that it started correctly with:
+#
+#   sudo systemctl status octoprint
+#
+# OctoPrint's log messages printed on stdout/stderr can be obtained using:
+#
+#   sudo journalctl -u octoprint
+#
+[Unit]
+Description=OctoPrint - the snappy web interface for your 3D printer
+
+[Service]
+# Default environment, for compatibility with scripts/octoprint.init
+Environment=PORT=5000
+Environment=BASEDIR=/home/pi/.octoprint
+Environment=CONFIGFILE=/home/pi/.octoprint/config.yaml
+# Optional daemon arguments, e.g. `--host 127.0.0.1`
+Environment="DAEMON_ARGS="
+
+# The above defaults can be overridden by placing the environment variable
+# expressions in the optional environment file /etc/defaults/octoprint
+# Docs: https://www.freedesktop.org/software/systemd/man/systemd.exec.html#EnvironmentFile=
+EnvironmentFile=-/etc/default/octoprint
+
+# Debian Jessie does not support `sudo systemctl edit octoprint`, so to
+# override the below settings, do:
+#   sudo mkdir /etc/systemd/system/octoprint.service.d
+#   sudo nano /etc/systemd/system/octoprint.service.d/override.conf
+# In this file, add a `[Service]` section header and put the updated
+# configuration below that header.
+
+User=pi
+Group=pi
+
+# Process priority, 0 here will result in a priority 20 process.
+# -2 ensures Octoprint has a slight priority over user processes.
+Nice=-2
+
+ExecStart=/home/pi/OctoPrint/venv/bin/octoprint serve --basedir ${BASEDIR} --config ${CONFIGFILE} --port ${PORT} $DAEMON_ARGS"
+
+[Install]
+WantedBy=multi-user.target
