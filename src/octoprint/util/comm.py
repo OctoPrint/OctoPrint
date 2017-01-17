@@ -2580,6 +2580,7 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 		PrintingFileInformation.__init__(self, filename)
 
 		self._handle = None
+		self._handle_mutex = threading.RLock()
 
 		self._offsets_callback = offsets_callback
 		self._current_tool_callback = current_tool_callback
@@ -2591,76 +2592,80 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 		self._read_lines = 0
 
 	def seek(self, offset):
-		if self._handle is None:
-			return
+		with self._handle_mutex:
+			if self._handle is None:
+				return
 
-		self._handle.seek(offset)
-		self._pos = self._handle.tell()
-		self._read_lines = 0
+			self._handle.seek(offset)
+			self._pos = self._handle.tell()
+			self._read_lines = 0
 
 	def start(self):
 		"""
 		Opens the file for reading and determines the file size.
 		"""
 		PrintingFileInformation.start(self)
-		self._handle = bom_aware_open(self._filename, encoding="utf-8", errors="replace")
-		self._pos = self._handle.tell()
-		if self._handle.encoding.endswith("-sig"):
-			# Apparently we found an utf-8 bom in the file.
-			# We need to add its length to our pos because it will
-			# be stripped transparently and we'll have no chance
-			# catching that.
-			import codecs
-			self._pos += len(codecs.BOM_UTF8)
-		self._read_lines = 0
+		with self._handle_mutex:
+			self._handle = bom_aware_open(self._filename, encoding="utf-8", errors="replace")
+			self._pos = self._handle.tell()
+			if self._handle.encoding.endswith("-sig"):
+				# Apparently we found an utf-8 bom in the file.
+				# We need to add its length to our pos because it will
+				# be stripped transparently and we'll have no chance
+				# catching that.
+				import codecs
+				self._pos += len(codecs.BOM_UTF8)
+			self._read_lines = 0
 
 	def close(self):
 		"""
 		Closes the file if it's still open.
 		"""
 		PrintingFileInformation.close(self)
-		if self._handle is not None:
-			try:
-				self._handle.close()
-			except:
-				pass
-		self._handle = None
+		with self._handle_mutex:
+			if self._handle is not None:
+				try:
+					self._handle.close()
+				except:
+					pass
+			self._handle = None
 
 	def getNext(self):
 		"""
 		Retrieves the next line for printing.
 		"""
-		if self._handle is None:
-			raise ValueError("File %s is not open for reading" % self._filename)
+		with self._handle_mutex:
+			if self._handle is None:
+				raise ValueError("File %s is not open for reading" % self._filename)
 
-		try:
-			offsets = self._offsets_callback() if self._offsets_callback is not None else None
-			current_tool = self._current_tool_callback() if self._current_tool_callback is not None else None
+			try:
+				offsets = self._offsets_callback() if self._offsets_callback is not None else None
+				current_tool = self._current_tool_callback() if self._current_tool_callback is not None else None
 
-			processed = None
-			while processed is None:
-				if self._handle is None:
-					# file got closed just now
-					self._pos = self._size
-					self._report_stats()
-					return None
+				processed = None
+				while processed is None:
+					if self._handle is None:
+						# file got closed just now
+						self._pos = self._size
+						self._report_stats()
+						return None
 
-				# we need to manually keep track of our pos here since
-				# codecs' readline will make our handle's tell not
-				# return the actual number of bytes read, but also the
-				# already buffered bytes (for detecting the newlines)
-				line = self._handle.readline()
-				self._pos += len(line.encode("utf-8"))
+					# we need to manually keep track of our pos here since
+					# codecs' readline will make our handle's tell not
+					# return the actual number of bytes read, but also the
+					# already buffered bytes (for detecting the newlines)
+					line = self._handle.readline()
+					self._pos += len(line.encode("utf-8"))
 
-				if not line:
-					self.close()
-				processed = self._process(line, offsets, current_tool)
-			self._read_lines += 1
-			return processed
-		except Exception as e:
-			self.close()
-			self._logger.exception("Exception while processing line")
-			raise e
+					if not line:
+						self.close()
+					processed = self._process(line, offsets, current_tool)
+				self._read_lines += 1
+				return processed
+			except Exception as e:
+				self.close()
+				self._logger.exception("Exception while processing line")
+				raise e
 
 	def _process(self, line, offsets, current_tool):
 		return process_gcode_line(line, offsets=offsets, current_tool=current_tool)
