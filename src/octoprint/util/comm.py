@@ -2593,6 +2593,7 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 			raise IOError("File %s does not exist" % self._filename)
 		self._size = os.stat(self._filename).st_size
 		self._pos = 0
+		self._read_lines = 0
 
 	def seek(self, offset):
 		with self._handle_mutex:
@@ -2601,6 +2602,7 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 
 			self._handle.seek(offset)
 			self._pos = self._handle.tell()
+			self._read_lines = 0
 
 	def start(self):
 		"""
@@ -2617,6 +2619,7 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 				# catching that.
 				import codecs
 				self._pos += len(codecs.BOM_UTF8)
+			self._read_lines = 0
 
 	def close(self):
 		"""
@@ -2661,6 +2664,7 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 					if not line:
 						self.close()
 					processed = self._process(line, offsets, current_tool)
+				self._read_lines += 1
 				return processed
 			except Exception as e:
 				self.close()
