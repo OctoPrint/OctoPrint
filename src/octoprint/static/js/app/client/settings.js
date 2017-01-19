@@ -2,9 +2,9 @@
     if (typeof define === "function" && define.amd) {
         define(["OctoPrint", "jquery"], factory);
     } else {
-        factory(window.OctoPrint, window.$);
+        factory(global.OctoPrint, global.$);
     }
-})(window || this, function(OctoPrint, $) {
+})(this, function(OctoPrint, $) {
     var url = "api/settings";
 
     var get = function(opts) {
@@ -39,5 +39,7 @@
             data["plugins"][plugin] = settings;
             return save(data, opts);
         }
-    }
+    };
+
+    return OctoPrint.settings;
 });

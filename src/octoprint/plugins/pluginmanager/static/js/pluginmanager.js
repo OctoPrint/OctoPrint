@@ -2,9 +2,9 @@
     if (typeof define === "function" && define.amd) {
         define(["OctoPrint"], factory);
     } else {
-        factory(window.OctoPrint);
+        factory(global.OctoPrint);
     }
-})(window || this, function(OctoPrint) {
+})(this, function(OctoPrint) {
     var exports = {};
 
     exports.get = function(refresh, opts) {
@@ -63,6 +63,8 @@
     };
 
     OctoPrint.plugins.pluginmanager = exports;
+
+    return OctoPrint.plugins.pluginmanager;
 });
 
 $(function() {

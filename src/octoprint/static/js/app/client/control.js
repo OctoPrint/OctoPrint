@@ -2,9 +2,9 @@
     if (typeof define === "function" && define.amd) {
         define(["OctoPrint"], factory);
     } else {
-        factory(window.OctoPrint);
+        factory(global.OctoPrint);
     }
-})(window || this, function(OctoPrint) {
+})(this, function(OctoPrint) {
     var customUrl = "api/printer/command/custom";
     var commandUrl = "api/printer/command";
 
@@ -49,5 +49,7 @@
         sendGcodeScript: function (script, context, opts) {
             return sendGcodeScriptWithParameters(script, context, undefined, opts);
         }
-    }
+    };
+
+    return OctoPrint.control;
 });

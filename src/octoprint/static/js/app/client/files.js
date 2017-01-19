@@ -1,13 +1,10 @@
-(function (factory) {
-    'use strict';
+(function (global, factory) {
     if (typeof define === 'function' && define.amd) {
-        // Register as an anonymous AMD module:
         define(["OctoPrint", "jquery", "lodash"], factory);
     } else {
-        // Browser globals:
-        factory(window.OctoPrint, window.jQuery, window._);
+        factory(global.OctoPrint, global.$, global._);
     }
-})(function(OctoPrint, $, _) {
+})(this, function(OctoPrint, $, _) {
     var url = "api/files";
     var downloadUrl = "downloads/files";
 
@@ -188,5 +185,7 @@
             log.warn("OctoPrint.files.elementByPath has been renamed to OctoPrint.files.entryForPath, please use that instead");
             return entryForPath(location, startElement);
         }
-    }
+    };
+
+    return OctoPrint.files;
 });

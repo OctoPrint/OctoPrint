@@ -2,9 +2,9 @@
     if (typeof define === "function" && define.amd) {
         define(["OctoPrint"], factory);
     } else {
-        factory(window.OctoPrint);
+        factory(global.OctoPrint);
     }
-})(window || this, function(OctoPrint) {
+})(this, function(OctoPrint) {
     var url = "api/printer";
     var printheadUrl = url + "/printhead";
     var toolUrl = url + "/tool";
@@ -206,5 +206,7 @@
         releaseSd: function (opts) {
             return issueSdCommand("release", {}, opts);
         }
-    }
+    };
+
+    return OctoPrint.printer;
 });

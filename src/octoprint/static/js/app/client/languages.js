@@ -2,9 +2,9 @@
     if (typeof define === "function" && define.amd) {
         define(["OctoPrint"], factory);
     } else {
-        factory(window.OctoPrint);
+        factory(global.OctoPrint);
     }
-})(window || this, function(OctoPrint) {
+})(this, function(OctoPrint) {
     var url = "api/languages";
 
     OctoPrint.languages = {
@@ -19,4 +19,6 @@
             return OctoPrint.delete(packUrl, opts);
         }
     };
+
+    return OctoPrint.languages;
 });

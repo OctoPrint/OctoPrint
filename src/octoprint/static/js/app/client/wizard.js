@@ -2,9 +2,9 @@
     if (typeof define === "function" && define.amd) {
         define(["OctoPrint"], factory);
     } else {
-        factory(window.OctoPrint);
+        factory(global.OctoPrint);
     }
-})(window || this, function(OctoPrint) {
+})(this, function(OctoPrint) {
     var url = "api/setup/wizard";
 
     OctoPrint.wizard = {
@@ -15,4 +15,6 @@
             return OctoPrint.postJson(url, {handled: handled || []}, opts);
         }
     };
+
+    return OctoPrint.wizard;
 });

@@ -2,9 +2,9 @@
     if (typeof define === "function" && define.amd) {
         define("OctoPrint", ["jquery", "lodash"], factory);
     } else {
-        global.OctoPrint = factory(window.$, window._);
+        global.OctoPrint = factory(global.$, global._);
     }
-})(window || this, function($, _) {
+})(this, function($, _) {
     var OctoPrint = {};
 
     var noCache = function(opts) {

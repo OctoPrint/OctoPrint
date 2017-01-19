@@ -2,9 +2,9 @@
     if (typeof define === "function" && define.amd) {
         define(["OctoPrint", "jquery"], factory);
     } else {
-        factory(window.OctoPrint, window.$);
+        factory(global.OctoPrint, global.$);
     }
-})(window || this, function(OctoPrint, $) {
+})(this, function(OctoPrint, $) {
     var url = "api/printerprofiles";
 
     var profileUrl = function(profile) {
@@ -42,5 +42,7 @@
         delete: function (id, opts) {
             return OctoPrint.delete(profileUrl(id), opts);
         }
-    }
+    };
+
+    return OctoPrint.printerprofiles;
 });

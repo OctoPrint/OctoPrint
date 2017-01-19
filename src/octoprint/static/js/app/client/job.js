@@ -2,9 +2,9 @@
     if (typeof define === "function" && define.amd) {
         define(["OctoPrint"], factory);
     } else {
-        factory(window.OctoPrint);
+        factory(global.OctoPrint);
     }
-})(window || this, function(OctoPrint) {
+})(this, function(OctoPrint) {
     var url = "api/job";
 
     var issueCommand = function(command, payload, opts) {
@@ -38,5 +38,7 @@
         cancel: function(opts) {
             return issueCommand("cancel", opts);
         }
-    }
+    };
+
+    return OctoPrint.job;
 });

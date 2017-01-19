@@ -2,9 +2,9 @@
     if (typeof define === "function" && define.amd) {
         define(["OctoPrint", "jquery", "lodash", "sockjs"], factory);
     } else {
-        factory(window.OctoPrint, window.$, window._, window.SockJS);
+        factory(global.OctoPrint, global.$, global._, global.SockJS);
     }
-})(window || this, function(OctoPrint, $, _, SockJS) {
+})(this, function(OctoPrint, $, _, SockJS) {
     var exports = {};
 
     exports.options = {
@@ -172,4 +172,6 @@
     exports.sendMessage = sendMessage;
 
     OctoPrint.socket = exports;
+
+    return OctoPrint.socket;
 });

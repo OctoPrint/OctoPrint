@@ -2,9 +2,9 @@
     if (typeof define === "function" && define.amd) {
         define(["OctoPrint"], factory);
     } else {
-        factory(window.OctoPrint);
+        factory(global.OctoPrint);
     }
-})(window || this, function(OctoPrint) {
+})(this, function(OctoPrint) {
     var exports = {};
 
     var url = OctoPrint.getBlueprintUrl("softwareupdate");
@@ -78,6 +78,8 @@
     };
 
     OctoPrint.plugins.softwareupdate = exports;
+
+    return OctoPrint.plugins.softwareupdate;
 });
 
 $(function() {

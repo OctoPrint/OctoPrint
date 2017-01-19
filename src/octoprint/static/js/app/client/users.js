@@ -2,9 +2,9 @@
     if (typeof define === "function" && define.amd) {
         define(["OctoPrint"], factory);
     } else {
-        factory(window.OctoPrint);
+        factory(global.OctoPrint);
     }
-})(window || this, function(OctoPrint) {
+})(this, function(OctoPrint) {
     var baseUrl = "api/users";
 
     var url = function() {
@@ -107,4 +107,6 @@
             return OctoPrint.patchJson(url(name, "settings"), settings, opts);
         }
     };
+
+    return OctoPrint.users;
 });

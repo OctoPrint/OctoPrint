@@ -2,9 +2,9 @@
     if (typeof define === "function" && define.amd) {
         define(["OctoPrint", "jquery"], factory);
     } else {
-        factory(window.OctoPrint, window.$);
+        factory(global.OctoPrint, global.$);
     }
-})(window || this, function(OctoPrint, $) {
+})(this, function(OctoPrint, $) {
     var url = "api/timelapse";
 
     var downloadUrl = "downloads/timelapse";
@@ -109,5 +109,7 @@
             config = config || {};
             return OctoPrint.postJson(url, config, opts);
         }
-    }
+    };
+
+    return OctoPrint.timelapse;
 });

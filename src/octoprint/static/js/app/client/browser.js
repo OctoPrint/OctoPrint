@@ -2,9 +2,9 @@
     if (typeof define === "function" && define.amd) {
         define(["OctoPrint"], factory);
     } else {
-        factory(window.OctoPrint);
+        factory(global.OctoPrint);
     }
-})(window || this, function(OctoPrint) {
+})(this, function(OctoPrint) {
     var loginUrl = "api/login";
     var logoutUrl = "api/logout";
 
@@ -26,4 +26,6 @@
             return OctoPrint.postJson(logoutUrl, {}, opts);
         }
     };
+
+    return OctoPrint.browser;
 });

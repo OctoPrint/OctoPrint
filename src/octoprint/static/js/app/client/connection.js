@@ -2,9 +2,9 @@
     if (typeof define === "function" && define.amd) {
         define(["OctoPrint"], factory);
     } else {
-        factory(window.OctoPrint);
+        factory(global.OctoPrint);
     }
-})(window || this, function(OctoPrint) {
+})(this, function(OctoPrint) {
     var url = "api/connection";
 
     OctoPrint.connection = {
@@ -23,5 +23,7 @@
         fakeAck: function(opts) {
             return OctoPrint.issueCommand(url, "fake_ack", {}, opts);
         }
-    }
+    };
+
+    return OctoPrint.connection;
 });
