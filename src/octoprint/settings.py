@@ -1396,13 +1396,18 @@ class Settings(object):
 
 		try:
 			current = chain.get_by_path(path)
+		except KeyError:
+			current = None
+
+		try:
 			default_value = chain.get_by_path(path, only_defaults=True)
-			in_local = chain.has_path(path, only_local=True)
-			in_defaults = chain.has_path(path, only_defaults=True)
 		except KeyError:
 			if error_on_path:
 				raise NoSuchSettingsPath()
-			return
+			default_value = None
+
+		in_local = chain.has_path(path, only_local=True)
+		in_defaults = chain.has_path(path, only_defaults=True)
 
 		if not force and in_defaults and in_local and default_value == value:
 			try:
