@@ -305,11 +305,18 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				self._refresh_configured_checks = True
 
 	def get_settings_version(self):
-		return 4
+		return 5
 
 	def on_settings_migrate(self, target, current=None):
 
-		if current is None or current < 4:
+		if current == 4:
+			# config version 4 didn't correctly remove the old settings for octoprint_restart_command
+			# and environment_restart_command
+
+			self._settings.set(["environment_restart_command"], None)
+			self._settings.set(["octoprint_restart_command"], None)
+
+		if current is None or current < 5:
 			# config version 4 and higher moves octoprint_restart_command and
 			# environment_restart_command to the core configuration
 
