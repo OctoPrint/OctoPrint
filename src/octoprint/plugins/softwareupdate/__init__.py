@@ -688,6 +688,8 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 						target_restart_type = check["restart"]
 					elif "pip" in check:
 						target_restart_type = "octoprint"
+					else:
+						target_restart_type = None
 
 					# if our update requires a restart we have to determine which type
 					if restart_type is None or (restart_type == "octoprint" and target_restart_type == "environment"):
