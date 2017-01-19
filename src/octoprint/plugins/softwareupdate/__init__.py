@@ -418,6 +418,15 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		def view():
 			try:
 				information, update_available, update_possible = self.get_current_versions(check_targets=check_targets, force=force)
+
+				# we don't want to transfer python_checker or python_updater values through json - replace with True
+				for key, data in information.items():
+					if "check" in data:
+						if "python_checker" in data["check"]:
+							data["check"]["python_checker"] = True
+						if "python_updater" in data["check"]:
+							data["check"]["python_updater"] = True
+
 				return flask.jsonify(dict(status="updatePossible" if update_available and update_possible else "updateAvailable" if update_available else "current",
 				                          information=information))
 			except exceptions.ConfigurationInvalid as e:
@@ -932,7 +941,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			elif "pip" in check:
 				method = "pip"
 			elif "python_updater" in check:
-				method = "python_updated"
+				method = "python_updater"
 
 		if method is None or (valid_methods and not method in valid_methods):
 			raise exceptions.UnknownUpdateType()
