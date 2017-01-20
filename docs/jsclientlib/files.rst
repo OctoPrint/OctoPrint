@@ -1,9 +1,9 @@
-.. sec-jsclientlib-files:
+.. _sec-jsclientlib-files:
 
-:mod:`OctoPrint.files`
-----------------------
+:mod:`OctoPrintClient.files`
+----------------------------
 
-.. js:function:: OctoPrint.files.get(location, filename, opts)
+.. js:function:: OctoPrintClient.files.get(location, filename, opts)
 
    Retrieves information about the file ``filename`` at ``location``.
 
@@ -14,7 +14,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.files.list(recursively, opts)
+.. js:function:: OctoPrintClient.files.list(recursively, opts)
 
    Retrieves a list of all files from the server.
 
@@ -56,7 +56,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.files.listForLocation(location, recursively, opts)
+.. js:function:: OctoPrintClient.files.listForLocation(location, recursively, opts)
 
    Retrieves a list of all files stored at the specified ``location`` from the server.
 
@@ -73,7 +73,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.files.select(location, path, print, opts)
+.. js:function:: OctoPrintClient.files.select(location, path, print, opts)
 
    Selects a file at ``location`` named ``filename`` for printing. If ``print`` is supplied and
    truthy, also starts printing the file immediately.
@@ -86,7 +86,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.files.slice(location, path, parameters, opts)
+.. js:function:: OctoPrintClient.files.slice(location, path, parameters, opts)
 
    Slices a file at ``location`` called ``filename``, using the supplied slice command ``parameters``.
 
@@ -98,7 +98,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.files.delete(location, path, opts)
+.. js:function:: OctoPrintClient.files.delete(location, path, opts)
 
    Deletes the file or folder at ``location`` and ``path``.
 
@@ -109,7 +109,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.files.copy(location, path, destination, opts)
+.. js:function:: OctoPrintClient.files.copy(location, path, destination, opts)
 
    Copies file or folder ``path`` on ``location`` to new parent folder ``destination`` on ``location``.
 
@@ -129,7 +129,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.files.move(location, filename, destination, opts)
+.. js:function:: OctoPrintClient.files.move(location, filename, destination, opts)
 
    Moves file or folder ``path`` on ``location`` to new parent folder ``destination`` on ``location``.
 
@@ -149,7 +149,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.files.createFolder(location, name, path, opts)
+.. js:function:: OctoPrintClient.files.createFolder(location, name, path, opts)
 
    Creates a new folder ``name`` on ``location``. If ``path`` is provided and not empty the folder
    will be created as a new child of it.
@@ -173,7 +173,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.files.upload(location, file, data)
+.. js:function:: OctoPrintClient.files.upload(location, file, data)
 
    Uploads a ``file`` to the specified ``location``.
 
@@ -200,7 +200,7 @@
    :param object or string file: The file to upload, see :js:func:`OctoPrint.upload` for more details
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.files.download(location, path, opts)
+.. js:function:: OctoPrintClient.files.download(location, path, opts)
 
    Downloads the file at ``path`` in ``location``.
 
@@ -222,7 +222,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.files.pathForEntry(entry)
+.. js:function:: OctoPrintClient.files.pathForEntry(entry)
 
    Utility function to retrieve the path within its location for a given ``entry``.
 
@@ -242,7 +242,7 @@
    :param object entry: The entry object for which to retrieve the path
    :returns string: The path of the entry within its location
 
-.. js:function:: OctoPrint.files.entryForPath(path, root)
+.. js:function:: OctoPrintClient.files.entryForPath(path, root)
 
    Utility function to retrieve an entry by its ``path`` based on an entry tree provided by its
    ``root``.

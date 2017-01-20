@@ -1,7 +1,7 @@
-.. sec-jsclientlib-users:
+.. _sec-jsclientlib-users:
 
-:mod:`OctoPrint.users`
-----------------------
+:mod:`OctoPrintClient.users`
+----------------------------
 
 .. note::
 
@@ -9,7 +9,7 @@
    has admin rights *or* corresponds to the user to be modified. Some methods
    definitely require admin rights.
 
-.. js:function:: OctoPrint.users.list(opts)
+.. js:function:: OctoPrintClient.users.list(opts)
 
    Get a list of all registered users.
 
@@ -18,7 +18,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.users.get(name, opts)
+.. js:function:: OctoPrintClient.users.get(name, opts)
 
    Get information about a specific user.
 
@@ -26,7 +26,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.users.add(user, opts)
+.. js:function:: OctoPrintClient.users.add(user, opts)
 
    Add a new user.
 
@@ -36,7 +36,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.users.update(name, active, admin, opts)
+.. js:function:: OctoPrintClient.users.update(name, active, admin, opts)
 
    Update an existing user.
 
@@ -48,7 +48,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.users.delete(name, opts)
+.. js:function:: OctoPrintClient.users.delete(name, opts)
 
    Delete an existing user.
 
@@ -58,7 +58,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.users.changePassword(name, password, opts)
+.. js:function:: OctoPrintClient.users.changePassword(name, password, opts)
 
    Change the password for a user.
 
@@ -67,7 +67,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.users.generateApiKey(name, opts)
+.. js:function:: OctoPrintClient.users.generateApiKey(name, opts)
 
    Generate a new API key for a user.
 
@@ -75,7 +75,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.users.resetApiKey(name, opts)
+.. js:function:: OctoPrintClient.users.resetApiKey(name, opts)
 
    Reset the API key for a user to being unset.
 
@@ -83,7 +83,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.users.getSettings(name, opts)
+.. js:function:: OctoPrintClient.users.getSettings(name, opts)
 
    Get the settings for a user.
 
@@ -91,7 +91,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.users.saveSettings(name, settings, opts)
+.. js:function:: OctoPrintClient.users.saveSettings(name, settings, opts)
 
    Save the settings for a user.
 

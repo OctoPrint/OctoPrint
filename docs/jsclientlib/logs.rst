@@ -1,14 +1,14 @@
-.. sec-jsclientlib-logs:
+.. _sec-jsclientlib-logs:
 
-:mod:`OctoPrint.logs`
----------------------
+:mod:`OctoPrintClient.logs`
+---------------------------
 
 .. note::
 
    All methods here require that the used API token or a the existing browser session
    has admin rights.
 
-.. js:function:: OctoPrint.logs.list(opts)
+.. js:function:: OctoPrintClient.logs.list(opts)
 
    Retrieves a list of log files.
 
@@ -17,7 +17,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.logs.delete(path, opts)
+.. js:function:: OctoPrintClient.logs.delete(path, opts)
 
    Deletes the specified log ``path``.
 
@@ -27,7 +27,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.logs.download(path, opts)
+.. js:function:: OctoPrintClient.logs.download(path, opts)
 
    Downloads the specified log ``file``.
 

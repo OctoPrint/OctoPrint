@@ -1,24 +1,29 @@
 (function (global, factory) {
     if (typeof define === "function" && define.amd) {
-        define(["OctoPrint"], factory);
+        define(["OctoPrintClient"], factory);
     } else {
-        factory(global.OctoPrint);
+        factory(global.OctoPrintClient);
     }
-})(this, function(OctoPrint) {
+})(this, function(OctoPrintClient) {
     var url = "api/languages";
 
-    OctoPrint.languages = {
-        list: function(opts) {
-            return OctoPrint.get(url, opts);
-        },
-        upload: function(file) {
-            return OctoPrint.upload(url, file);
-        },
-        delete: function(locale, pack, opts) {
-            var packUrl = url + "/" + locale + "/" + pack;
-            return OctoPrint.delete(packUrl, opts);
-        }
+    var OctoPrintLanguagesClient = function(base) {
+        this.base = base;
     };
 
-    return OctoPrint.languages;
+    OctoPrintLanguagesClient.prototype.list = function(opts) {
+        return this.base.get(url, opts);
+    };
+
+    OctoPrintLanguagesClient.prototype.upload = function(file) {
+        return this.base.upload(url, file);
+    };
+
+    OctoPrintLanguagesClient.prototype.delete = function(locale, pack, opts) {
+        var packUrl = url + "/" + locale + "/" + pack;
+        return this.base.delete(packUrl, opts);
+    };
+
+    OctoPrintClient.registerComponent("languages", OctoPrintLanguagesClient);
+    return OctoPrintLanguagesClient;
 });

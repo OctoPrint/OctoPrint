@@ -1,12 +1,16 @@
 (function (global, factory) {
     if (typeof define === 'function' && define.amd) {
-        define(["OctoPrint", "jquery", "lodash"], factory);
+        define(["OctoPrintClient", "jquery", "lodash"], factory);
     } else {
-        factory(global.OctoPrint, global.$, global._);
+        factory(global.OctoPrintClient, global.$, global._);
     }
-})(this, function(OctoPrint, $, _) {
+})(this, function(OctoPrintClient, $, _) {
     var url = "api/files";
     var downloadUrl = "downloads/files";
+
+    var OctoPrintFilesClient = function(base) {
+        this.base = base;
+    };
 
     var resourceForLocation = function(location) {
         return url + "/" + location;
@@ -22,15 +26,6 @@
 
     var resourceForEntry = function(location, filename) {
         return resourceForLocation(location) + "/" + filename;
-    };
-
-    var issueEntryCommand = function(location, entryname, command, data, opts) {
-        var url = resourceForEntry(location, entryname);
-        return OctoPrint.issueCommand(url, command, data, opts);
-    };
-
-    var getEntry = function(location, entryname, opts) {
-        return OctoPrint.get(resourceForEntry(location, entryname), opts);
     };
 
     var preProcessList = function(response) {
@@ -53,7 +48,88 @@
         _.each(response.files, recursiveCheck);
     };
 
-    var pathForEntry = function(entry) {
+    OctoPrintFilesClient.prototype.get = function(location, entryname, opts) {
+        return this.base.get(resourceForEntry(location, entryname), opts);
+    };
+
+    OctoPrintFilesClient.prototype.list = function (recursively, force, opts) {
+        recursively = recursively || false;
+        force = force || false;
+
+        var query = {};
+        if (recursively) {
+            query.recursive = recursively;
+        }
+        if (force) {
+            query.force = force;
+        }
+
+        return this.base.getWithQuery(url, query, opts)
+            .done(preProcessList);
+    };
+
+    OctoPrintFilesClient.prototype.listForLocation = function (location, recursively, opts) {
+        recursively = recursively || false;
+        return this.base.getWithQuery(resourceForLocation(location), {recursive: recursively}, opts)
+            .done(preProcessList);
+    };
+
+    OctoPrintFilesClient.prototype.issueEntryCommand = function(location, entryname, command, data, opts) {
+        var url = resourceForEntry(location, entryname);
+        return this.base.issueCommand(url, command, data, opts);
+    };
+
+    OctoPrintFilesClient.prototype.select = function (location, path, print, opts) {
+        print = print || false;
+
+        var data = {
+            print: print
+        };
+
+        return this.issueEntryCommand(location, path, "select", data, opts);
+    };
+
+    OctoPrintFilesClient.prototype.slice = function (location, path, parameters, opts) {
+        return this.issueEntryCommand(location, path, "slice",
+            parameters || {}, opts);
+    };
+
+    OctoPrintFilesClient.prototype.delete = function (location, path, opts) {
+        return this.delete(resourceForEntry(location, path), opts);
+    };
+
+    OctoPrintFilesClient.prototype.copy = function(location, path, destination, opts) {
+        return this.issueEntryCommand(location, path, "copy", { destination: destination }, opts);
+    };
+
+    OctoPrintFilesClient.prototype.move = function(location, path, destination, opts) {
+        return issueEntryCommand(location, path, "move", { destination: destination }, opts);
+    };
+
+    OctoPrintFilesClient.prototype.createFolder = function (location, name, path, opts) {
+        var data = {foldername: name};
+        if (path !== undefined && path !== "") {
+            data.path = path;
+        }
+
+        return this.base.postForm(resourceForLocation(location), data, opts);
+    };
+
+    OctoPrintFilesClient.prototype.upload = function (location, file, data) {
+        data = data || {};
+
+        var filename = data.filename || undefined;
+        if (data.userdata && typeof data.userdata === "object") {
+            data.userdata = JSON.stringify(userdata);
+        }
+        return this.base.upload(resourceForLocation(location), file, filename, data);
+    };
+
+    OctoPrintFilesClient.prototype.download = function(location, path, opts) {
+        return this.base.download(downloadForEntry(location, path), opts);
+    };
+
+    OctoPrintFilesClient.pathForEntry = function(entry) {
         if (!entry || !entry.hasOwnProperty("parent") || entry.parent == undefined) {
             return "";
         }
@@ -69,7 +145,7 @@
         return recursivePath(entry.parent, entry.name);
     };
 
-    var entryForPath = function(path, root) {
+    OctoPrintFilesClient.entryForPath = function(path, root) {
         if (_.isArray(root)) {
             root = {children: root};
         }
@@ -96,96 +172,18 @@
         return recursiveSearch(path.split("/"), root);
     };
 
-    OctoPrint.files = {
-        get: getEntry,
-
-        list: function (recursively, force, opts) {
-            recursively = recursively || false;
-            force = force || false;
-
-            var query = {};
-            if (recursively) {
-                query.recursive = recursively;
-            }
-            if (force) {
-                query.force = force;
-            }
-
-            return OctoPrint.getWithQuery(url, query, opts)
-                .done(preProcessList);
-        },
-
-        listForLocation: function (location, recursively, opts) {
-            recursively = recursively || false;
-            return OctoPrint.getWithQuery(resourceForLocation(location), {recursive: recursively}, opts)
-                .done(preProcessList);
-        },
-
-        select: function (location, path, print, opts) {
-            print = print || false;
-
-            var data = {
-                print: print
-            };
-
-            return issueEntryCommand(location, path, "select", data, opts);
-        },
-
-        slice: function (location, path, parameters, opts) {
-            return issueEntryCommand(location, path, "slice",
-                parameters || {}, opts);
-        },
-
-        delete: function (location, path, opts) {
-            return OctoPrint.delete(resourceForEntry(location, path), opts);
-        },
-
-        copy: function(location, path, destination, opts) {
-            return issueEntryCommand(location, path, "copy", { destination: destination }, opts);
-        },
-
-        move: function(location, path, destination, opts) {
-            return issueEntryCommand(location, path, "move", { destination: destination }, opts);
-        },
-
-        createFolder: function (location, name, path, opts) {
-            var data = {foldername: name};
-            if (path !== undefined && path !== "") {
-                data.path = path;
-            }
-
-            return OctoPrint.postForm(resourceForLocation(location), data, opts);
-        },
-
-        upload: function (location, file, data) {
-            data = data || {};
-
-            var filename = data.filename || undefined;
-            if (data.userdata && typeof data.userdata === "object") {
-                data.userdata = JSON.stringify(userdata);
-            }
-            return OctoPrint.upload(resourceForLocation(location), file, filename, data);
-        },
-
-        download: function (location, path, opts) {
-            return OctoPrint.download(downloadForEntry(location, path), opts);
-        },
-
-        pathForEntry: pathForEntry,
-        entryForPath: entryForPath,
-
-        pathForElement: function(element) {
-            // TODO Remove in 1.4.x
-            log.warn("OctoPrint.files.pathForElement has been renamed to OctoPrint.files.pathForEntry, please use that instead");
-            return pathForEntry(element);
-        },
-
-        elementByPath: function(location, startElement) {
-            // TODO Remove in 1.4.x
-            log.warn("OctoPrint.files.elementByPath has been renamed to OctoPrint.files.entryForPath, please use that instead");
-            return entryForPath(location, startElement);
-        }
+    OctoPrintFilesClient.pathForElement = function(element) {
+        // TODO Remove in 1.4.x
+        log.warn("pathForElement has been renamed to pathForEntry, please use that instead");
+        return OctoPrintFilesClient.pathForEntry(element);
     };
 
-    return OctoPrint.files;
+    OctoPrintFilesClient.elementByPath = function(location, startElement) {
+        // TODO Remove in 1.4.x
+        log.warn("elementByPath has been renamed to entryForPath, please use that instead");
+        return OctoPrintFilesClient.entryForPath(location, startElement);
+    };
+
+    OctoPrintClient.registerComponent("files", OctoPrintFilesClient);
+    return OctoPrintFilesClient;
 });
