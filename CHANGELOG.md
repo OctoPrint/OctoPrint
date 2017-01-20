@@ -1,5 +1,13 @@
 # OctoPrint Changelog
 
+## 1.3.1rc2 (2017-01-20)
+
+### Bug fixes
+
+  * [#1641](https://github.com/foosel/OctoPrint/issues/1641) - Fix issue with `octoprint --daemon` not working. (2nd try)
+
+([Commits](https://github.com/foosel/OctoPrint/compare/1.3.1rc1...1.3.1rc2))
+
 ## 1.3.1rc1 (2017-01-13)
 
 ### Note for upgraders
