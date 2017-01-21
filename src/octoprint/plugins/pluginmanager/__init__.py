@@ -667,6 +667,9 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			if isinstance(octoprint_version, tuple):
 				# old setuptools
 				base_version = []
+				# A leading v is common in github release tags. Remove it.
+				if len(version_tuple) > 1 and version_tuple[0].lower == "*v":
+					version_tuple = version_tuple[1:]
 				for part in octoprint_version:
 					if part.startswith("*"):
 						break
