@@ -141,7 +141,7 @@ def _get_base_from_version_tuple(version_tuple):
 
 	base_version = []
 	# A leading v is common in github release tags. Remove it.
-	if len(version_tuple) > 1 and version_tuple[0].lower == "*v":
+	if len(version_tuple) > 1 and version_tuple[0].lower() == "*v":
 		version_tuple = version_tuple[1:]
 	for part in version_tuple:
 		if part.startswith("*"):
