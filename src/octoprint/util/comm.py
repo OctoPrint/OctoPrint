@@ -2167,16 +2167,19 @@ class MachineCom(object):
 
 	def _enqueue_for_sending(self, command, linenumber=None, command_type=None, on_sent=None):
 		"""
-		Enqueues a command an optional linenumber to use for it in the send queue.
+		Enqueues a command and optional linenumber to use for it in the send queue.
 
 		Arguments:
 		    command (str): The command to send.
 		    linenumber (int): The line number with which to send the command. May be ``None`` in which case the command
 		        will be sent without a line number and checksum.
+		    command_type (str): Optional command type, if set and command type is already in the queue the
+		        command won't be enqueued
+		    on_sent (callable): Optional callable to call after command has been sent to printer.
 		"""
 
 		try:
-			self._send_queue.put((command, linenumber, command_type, on_sent), item_type=command_type)
+			self._send_queue.put((command, linenumber, command_type, on_sent, False), item_type=command_type)
 			return True
 		except TypeAlreadyInQueue as e:
 			self._logger.debug("Type already in send queue: " + e.type)
@@ -2207,7 +2210,7 @@ class MachineCom(object):
 						self._dwelling_until = False
 
 					# fetch command, command type and optional linenumber and sent callback from queue
-					command, linenumber, command_type, on_sent = entry
+					command, linenumber, command_type, on_sent, processed = entry
 
 					# some firmwares (e.g. Smoothie) might support additional in-band communication that will not
 					# stick to the acknowledgement behaviour of GCODE, so we check here if we have a GCODE command
@@ -2220,28 +2223,35 @@ class MachineCom(object):
 						self._do_send_with_checksum(command, linenumber)
 
 					else:
-						# trigger "sending" phase
-						results = self._process_command_phase("sending", command, command_type, gcode=gcode)
+						if not processed:
+							# trigger "sending" phase if we didn't so far
+							results = self._process_command_phase("sending", command, command_type, gcode=gcode)
 
-						if not results:
-							# No, we are not going to send this, that was a last-minute bail.
-							# However, since we already are in the send queue, our _monitor
-							# loop won't be triggered with the reply from this unsent command
-							# now, so we try to tickle the processing of any active
-							# command queues manually
-							self._continue_sending()
+							if not results:
+								# No, we are not going to send this, that was a last-minute bail.
+								# However, since we already are in the send queue, our _monitor
+								# loop won't be triggered with the reply from this unsent command
+								# now, so we try to tickle the processing of any active
+								# command queues manually
+								self._continue_sending()
 
-							# and now let's fetch the next item from the queue
-							continue
+								# and now let's fetch the next item from the queue
+								continue
 
-						# we explicitly throw away plugin hook results that try
-						# to perform command expansion in the sending/sent phase,
-						# so "results" really should only have more than one entry
-						# at this point if our core code contains a bug
-						assert len(results) == 1
+							if len(results) > 1:
+								# last command gets on_sent attached
+								last = results[-1]
+								self._send_queue.prepend((last[0], None, None, on_sent, True))
+								on_sent = None
 
-						# we only use the first (and only!) entry here
-						command, _, gcode = results[0]
+								# middle gets prepended reversed (so order gets restored)
+								if len(results) > 2:
+									to_prepend = reversed(results[1:-1])
+									for m in to_prepend:
+										self._send_queue.prepend((m[0], None, None, None, True))
+
+							# we only actually send the first entry here
+							command, _, gcode = results[0]
 
 						if command.strip() == "":
 							self._logger.info("Refusing to send an empty line to the printer")
@@ -2315,13 +2325,7 @@ class MachineCom(object):
 					self._logger.exception("Error while processing hook {name} for phase {phase} and command {command}:".format(**locals()))
 				else:
 					normalized = _normalize_command_handler_result(command, command_type, gcode, hook_results)
-
-					# make sure we don't allow multi entry results in anything but the queuing phase
-					if not phase in ("queuing",) and len(normalized) > 1:
-						self._logger.error("Error while processing hook {name} for phase {phase} and command {command}: Hook returned multi-entry result for phase {phase} and command {command}. That's not supported, if you need to do multi expansion of commands you need to do this in the queuing phase. Ignoring hook result and sending command as-is.".format(**locals()))
-						new_results.append((command, command_type, gcode))
-					else:
-						new_results += normalized
+					new_results += normalized
 			if not new_results:
 				# hook handler returned None or empty list for all commands, so we'll stop here and return a full out empty result
 				return []
