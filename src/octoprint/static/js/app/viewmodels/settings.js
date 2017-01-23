@@ -185,6 +185,8 @@ $(function() {
         self.scripts_gcode_beforePrintResumed = ko.observable(undefined);
         self.scripts_gcode_afterPrinterConnected = ko.observable(undefined);
         self.scripts_gcode_beforePrinterDisconnected = ko.observable(undefined);
+        self.scripts_gcode_afterToolChange = ko.observable(undefined);
+        self.scripts_gcode_beforeToolChange = ko.observable(undefined);
 
         self.temperature_profiles = ko.observableArray(undefined);
         self.temperature_cutoff = ko.observable(undefined);

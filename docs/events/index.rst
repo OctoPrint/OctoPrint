@@ -477,6 +477,15 @@ PositionUpdate
      * ``t``: last tool selected *through OctoPrint*
      * ``f``: last feedrate for move commands ``G0``, ``G1`` or ``G28`` sent *through OctoPrint*
 
+ToolChange
+   A tool change command was sent to the printer. The payload contains the former current tool index and the
+   new current tool index.
+
+   Payload:
+
+     * ``old``: old tool index
+     * ``new``: new tool index
+
 Timelapses
 ----------
 

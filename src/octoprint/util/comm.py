@@ -754,7 +754,7 @@ class MachineCom(object):
 		elif self.isOperational() or force:
 			return self._sendCommand(cmd, cmd_type=cmd_type, on_sent=on_sent)
 
-	def sendGcodeScript(self, scriptName, replacements=None):
+	def _getGcodeScript(self, scriptName, replacements=None):
 		context = dict()
 		if replacements is not None and isinstance(replacements, dict):
 			context.update(replacements)
@@ -776,13 +776,7 @@ class MachineCom(object):
 		if template is None:
 			scriptLines = []
 		else:
-			scriptLines = filter(
-				lambda x: x is not None and x.strip() != "",
-				map(
-					lambda x: process_gcode_line(x, offsets=self._tempOffsets, current_tool=self._currentTool),
-					template.split("\n")
-				)
-			)
+			scriptLines = template.split("\n")
 
 		for hook in self._gcodescript_hooks:
 			try:
@@ -812,6 +806,13 @@ class MachineCom(object):
 				if suffix:
 					scriptLines += list(suffix)
 
+		return filter(lambda x: x is not None and x.strip() != "",
+		              map(lambda x: process_gcode_line(x, offsets=self._tempOffsets, current_tool=self._currentTool),
+		                  scriptLines))
+
+
+	def sendGcodeScript(self, scriptName, replacements=None):
+		scriptLines = self._getGcodeScript(scriptName, replacements=replacements)
 		for line in scriptLines:
 			self.sendCommand(line)
 		return "\n".join(scriptLines)
@@ -2443,10 +2444,23 @@ class MachineCom(object):
 
 	##~~ command handlers
 
+	def _gcode_T_queuing(self, cmd, cmd_type=None):
+		toolMatch = regexes_parameters["intT"].search(cmd)
+		if toolMatch:
+			current_tool = self._currentTool
+			new_tool = int(toolMatch.group("value"))
+
+			before = self._getGcodeScript("beforeToolChange", replacements=dict(tool=dict(old=current_tool, new=new_tool)))
+			after = self._getGcodeScript("afterToolChange", replacements=dict(tool=dict(old=current_tool, new=new_tool)))
+
+			return before + [cmd] + after
+
 	def _gcode_T_sent(self, cmd, cmd_type=None):
 		toolMatch = regexes_parameters["intT"].search(cmd)
 		if toolMatch:
+			old = self._currentTool
 			self._currentTool = int(toolMatch.group("value"))
+			eventManager().fire(Events.TOOL_CHANGE, dict(old=old, new=self._currentTool))
 
 	def _gcode_G0_sent(self, cmd, cmd_type=None):
 		if "Z" in cmd or "F" in cmd:
