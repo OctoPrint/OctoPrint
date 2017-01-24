@@ -63,12 +63,14 @@ defaults = dict(
     solid_top=True,
     solid_bottom=True,
     fill_overlap=15,
+    perimeter_before_infill=False,
 
     # speeds
     print_speed=50.0,
     travel_speed=150.0,
     bottom_layer_speed=20.0,
     infill_speed=0.0,
+    solidarea_speed=0.0,
     outer_shell_speed=0.0,
     inner_shell_speed=0.0,
 
@@ -117,8 +119,11 @@ defaults = dict(
     raft_base_linewidth=1.0,
     raft_interface_thickness=0.27,
     raft_interface_linewidth=0.4,
+    raft_airgap_all=0.0,
     raft_airgap=0.22,
     raft_surface_layers=2,
+    raft_surface_thickness=0.27,
+    raft_surface_linewidth=0.4,
 
     # repairing
     fix_horrible_union_all_type_a=True,
@@ -597,8 +602,8 @@ class Profile(object):
 			diameters = self._get("filament_diameter")
 			if not match.group(1):
 				return diameters[0]
-			index = int(match.group(1))
-			if index >= len(diameters):
+			index = int(match.group(1)) - 1
+			if index >= len(diameters) or index < 0:
 				return 0.0
 			return diameters[index]
 
@@ -610,8 +615,8 @@ class Profile(object):
 			temperatures = self._get("print_temperature")
 			if not match.group(1):
 				return temperatures[0]
-			index = int(match.group(1))
-			if index >= len(temperatures):
+			index = int(match.group(1)) - 1
+			if index >= len(temperatures) or index < 0:
 				return 0.0
 			return temperatures[index]
 
@@ -669,9 +674,7 @@ class Profile(object):
 			return default
 		return int(value * 1000)
 
-	def get_gcode_template(self, key):
-		extruder_count = self.get_int("extruder_amount")
-
+	def get_gcode_template(self, key, extruder_count=1):
 		if key in self._profile:
 			gcode = self._profile[key]
 		else:
@@ -731,7 +734,7 @@ class Profile(object):
 
 		return pre + str(f)
 
-	def get_gcode(self, key):
+	def get_gcode(self, key, extruder_count=1):
 		prefix = ""
 		postfix = ""
 
@@ -741,11 +744,11 @@ class Profile(object):
 			return ""
 
 		if key == "start_gcode":
-			contents = self.get_gcode_template("start_gcode")
+			contents = self.get_gcode_template("start_gcode", extruder_count=extruder_count)
 			prefix += self.get_start_gcode_prefix(contents)
 
 		else:
-			contents = self.get_gcode_template(key)
+			contents = self.get_gcode_template(key, extruder_count=extruder_count)
 
 		return unicode(prefix + re.sub("(.)\{([^\}]*)\}", self.replaceTagMatch, contents).rstrip() + '\n' + postfix).strip().encode('utf-8') + '\n'
 
@@ -754,9 +757,13 @@ class Profile(object):
 
 		prefix = ""
 
+		gcode_parameter_key = "S"
+		if self.get("gcode_flavor") == GcodeFlavors.MACH3:
+			gcode_parameter_key = "P"
+
 		e_steps = self.get_float("steps_per_e")
 		if e_steps > 0:
-			prefix += "M92 E{e_steps}\n" % (e_steps)
+			prefix += "M92 E{e_steps}\n".format(e_steps=e_steps)
 		temp = self.get_float("print_temperature")
 
 		bed_temp = 0
@@ -765,30 +772,30 @@ class Profile(object):
 		include_bed_temp = bed_temp > 0 and not "{print_bed_temperature}" in Profile.regex_strip_comments.sub("", contents)
 
 		if include_bed_temp:
-			prefix += "M140 S{bed_temp}\n".format(bed_temp=bed_temp)
+			prefix += "M140 {param}{bed_temp}\n".format(param=gcode_parameter_key, bed_temp=bed_temp)
 
 		if temp > 0 and not "{print_temperature}" in Profile.regex_strip_comments.sub("", contents):
 			if extruder_count > 0:
-				def temp_line(temp, extruder, template):
+				def temp_line(temp, extruder, param, template):
 					t = temp
 					if extruder > 0:
 						print_temp = self.get_float("print_temperature%d" % (extruder + 1))
 						if print_temp > 0:
 							t = print_temp
-					return template.format(extruder=extruder, temp=t)
+					return template.format(extruder=extruder, temp=t, param=param)
 
 				prefix_preheat = ""
 				prefix_waitheat = ""
 				for n in range(0, extruder_count):
 					if n > 0:
-						prefix_preheat += temp_line(temp, n, "M104 T{extruder} S{temp}\n")
-					prefix_waitheat += temp_line(temp, n, "M109 T{extruder} S{temp}\n")
+						prefix_preheat += temp_line(temp, n, gcode_parameter_key, "M104 T{extruder} {param}{temp}\n")
+					prefix_waitheat += temp_line(temp, n, gcode_parameter_key, "M109 T{extruder} {param}{temp}\n")
 				prefix += prefix_preheat + prefix_waitheat + "T0\n"
 			else:
-				prefix += "M109 S{temp}\n".format(temp=temp)
+				prefix += "M109 {param}{temp}\n".format(param=gcode_parameter_key, temp=temp)
 
 		if include_bed_temp:
-			prefix += "M190 S{bed_temp}\n".format(bed_temp=bed_temp)
+			prefix += "M190 {param}{bed_temp}\n".format(param=gcode_parameter_key, bed_temp=bed_temp)
 
 		return prefix
 
@@ -822,7 +829,7 @@ class Profile(object):
 		if layer_height == 0.0:
 			return 1
 		import math
-		return int(math.ceil(solid_thickness / (layer_height - 0.0001)))
+		return int(math.ceil((solid_thickness - 0.0001) / layer_height))
 
 	def calculate_minimal_extruder_count(self):
 		extruder_count = self.get("extruder_amount")
@@ -852,13 +859,14 @@ class Profile(object):
 
 		return int(self.get_float("machine_depth") / 2.0) if not self.get_boolean("machine_center_is_zero") else 0.0
 
-	def convert_to_engine(self):
+	def convert_to_engine(self, used_extruders=1):
 
 		edge_width, line_count = self.calculate_edge_width_and_line_count()
 		solid_layer_count = self.calculate_solid_layer_count()
 
 		extruder_count = self.get_int("extruder_amount")
 		minimal_extruder_count = self.calculate_minimal_extruder_count()
+		actual_extruder_count = max(minimal_extruder_count, used_extruders)
 
 		settings = {
 			"layerThickness": self.get_microns("layer_height"),
@@ -871,12 +879,14 @@ class Profile(object):
 			"downSkinCount": solid_layer_count if self.get_boolean("solid_bottom") else 0,
 			"upSkinCount": solid_layer_count if self.get_boolean("solid_top") else 0,
 			"infillOverlap": self.get_int("fill_overlap"),
+			"perimeterBeforeInfill": 1 if self.get_boolean("perimeter_before_infill") else 0,
 			"initialSpeedupLayers": int(4),
 			"initialLayerSpeed": self.get_int("bottom_layer_speed"),
 			"printSpeed": self.get_int("print_speed"),
 			"infillSpeed": self.get_int("infill_speed") if self.get_int("infill_speed") > 0 else self.get_int("print_speed"),
 			"inset0Speed": self.get_int("outer_shell_speed") if self.get_int("outer_shell_speed") > 0 else self.get_int("print_speed"),
 			"insetXSpeed": self.get_int("inner_shell_speed") if self.get_int("inner_shell_speed") > 0 else self.get_int("print_speed"),
+			"skinSpeed": self.get_int("solidarea_speed") if self.get_int("solidarea_speed") > 0 > 0 else self.get_int("print_speed"),
 			"moveSpeed": self.get_int("travel_speed"),
 			"fanSpeedMin": self.get_int("fan_speed") if self.get_boolean("fan_enabled") else 0,
 			"fanSpeedMax": self.get_int("fan_speed_max") if self.get_boolean("fan_enabled") else 0,
@@ -892,22 +902,23 @@ class Profile(object):
 			"retractionAmountExtruderSwitch": self.get_microns("retraction_dual_amount"),
 			"retractionZHop": self.get_microns("retraction_hop"),
 			"minimalExtrusionBeforeRetraction": self.get_microns("retraction_minimal_extrusion"),
-			"enableCombing": 1 if self.get("retraction_combing") == RetractionCombingTypes.ALL else (2 if self.get("retraction_combing") == RetractionCombingTypes.NO_SKIN else 0),
 			"multiVolumeOverlap": self.get_microns("overlap_dual"),
 			"objectSink": max(0, self.get_microns("object_sink")),
 			"minimalLayerTime": self.get_int("cool_min_layer_time"),
 			"minimalFeedrate": self.get_int("cool_min_feedrate"),
 			"coolHeadLift": 1 if self.get_boolean("cool_head_lift") else 0,
 
+			"enableCombing": 1 if self.get("retraction_combing") == RetractionCombingTypes.ALL else (2 if self.get("retraction_combing") == RetractionCombingTypes.NO_SKIN else 0),
+
 			# model positioning
 			"posx": self.get_pos_x() * 1000, # in microns
 			"posy": self.get_pos_y() * 1000, # in microns
 
 			# gcodes
-			"startCode": self.get_gcode("start_gcode"),
-			"endCode": self.get_gcode("end_gcode"),
-			"preSwitchExtruderCode": self.get_gcode("preSwitchExtruder_gcode"),
-			"postSwitchExtruderCode": self.get_gcode("postSwitchExtruder_gcode"),
+			"startCode": self.get_gcode("start_gcode", extruder_count=actual_extruder_count),
+			"endCode": self.get_gcode("end_gcode", extruder_count=actual_extruder_count),
+			"preSwitchExtruderCode": self.get_gcode("preSwitchExtruder_gcode", extruder_count=actual_extruder_count),
+			"postSwitchExtruderCode": self.get_gcode("postSwitchExtruder_gcode", extruder_count=actual_extruder_count),
 
 			# fixing
 			"fixHorrible": 0,
@@ -952,12 +963,13 @@ class Profile(object):
 			settings["raftInterfaceThickness"] = self.get_microns("raft_interface_thickness")
 			settings["raftInterfaceLinewidth"] = self.get_microns("raft_interface_linewidth")
 			settings["raftInterfaceLineSpacing"] = self.get_microns("raft_interface_linewidth") * 2
-			settings["raftAirGapLayer0"] = self.get_microns("raft_airgap")
+			settings["raftAirGapLayer0"] = self.get_microns("raft_airgap") + self.get_microns("raft_airgap_all")
+			settings["raftAirGap"] = self.get_microns("raft_airgap_all")
 			settings["raftBaseSpeed"] = self.get_int("bottom_layer_speed")
-			settings["raftFanSpeed"] = 100
-			settings["raftSurfaceThickness"] = settings["raftInterfaceThickness"]
-			settings["raftSurfaceLinewidth"] = int(edge_width * 1000)
-			settings["raftSurfaceLineSpacing"] = int(edge_width * 1000 * 0.9)
+			settings["raftFanSpeed"] = 0
+			settings["raftSurfaceThickness"] = self.get_microns("raft_surface_thickness")
+			settings["raftSurfaceLinewidth"] = self.get_microns("raft_surface_linewidth")
+			settings["raftSurfaceLineSpacing"] = self.get_microns("raft_surface_linewidth")
 			settings["raftSurfaceLayers"] = self.get_int("raft_surface_layers")
 			settings["raftSurfaceSpeed"] = self.get_int("bottom_layer_speed")
 

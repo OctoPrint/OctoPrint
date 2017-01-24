@@ -263,7 +263,7 @@ class Server(object):
 
 			return dict(settings=plugin_settings)
 
-		def settings_plugin_config_migration_and_cleanup(name, implementation):
+		def settings_plugin_config_migration_and_cleanup(identifier, implementation):
 			"""Take care of migrating and cleaning up any old settings"""
 
 			if not isinstance(implementation, octoprint.plugin.SettingsPlugin):
@@ -276,7 +276,7 @@ class Server(object):
 				stored_version = implementation._settings.get_int([octoprint.plugin.SettingsPlugin.config_version_key])
 				if stored_version is None or stored_version < settings_version:
 					settings_migrator(settings_version, stored_version)
-					implementation._settings.set_int([octoprint.plugin.SettingsPlugin.config_version_key], settings_version)
+					implementation._settings.set_int([octoprint.plugin.SettingsPlugin.config_version_key], settings_version, force=True)
 
 			implementation.on_settings_cleanup()
 			implementation._settings.save()

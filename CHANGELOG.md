@@ -1,5 +1,65 @@
 # OctoPrint Changelog
 
+## 1.3.1rc2 (2017-01-20)
+
+### Bug fixes
+
+  * [#1641](https://github.com/foosel/OctoPrint/issues/1641) - Fix issue with `octoprint --daemon` not working. (2nd try)
+
+([Commits](https://github.com/foosel/OctoPrint/compare/1.3.1rc1...1.3.1rc2))
+
+## 1.3.1rc1 (2017-01-13)
+
+### Note for upgraders
+
+#### Change in stock terminal filter configuration
+
+1.3.1 fixes an issue with the two terminal filters for suppressing temperature and SD status messages and adds a new filter for filtering out firmware `wait` messages. These changes will only be active automatically though for stock terminal filter configurations. If you have customized your terminal filters, you'll need to apply these changes manually under "Settings > Terminal filters":
+
+  * Changed "Suppress temperature messages" filter, new regex is `(Send: (N\d+\s+)?M105)|(Recv: ok (B|T\d*):)`
+  * Changed "Suppress SD status messages" filter, new regex is `(Send: (N\d+\s+)?M27)|(Recv: SD printing byte)`
+  * New "Suppress wait responses" filter, regex is `Recv: wait`
+
+### Improvements
+
+  * [#1607](https://github.com/foosel/OctoPrint/issues/1607) - Way better support for password managers (e.g. browser built-in, 1Password, Lastpass)
+  * [#1638](https://github.com/foosel/OctoPrint/issues/1638) - Make confirmation dialog when cancelling a print optional.
+  * [#1656](https://github.com/foosel/OctoPrint/issues/1656) - Make wording of buttons on print cancel dialog less confusing.
+  * [#1705](https://github.com/foosel/OctoPrint/pull/1705) - Simplified install process on Mac by removing dependency on pyobjc.
+  * [#1706](https://github.com/foosel/OctoPrint/pull/1706) - Added a mask icon for Safari pinned tab and touchbar.
+  * Support extraction of filament diameter for volume calculation from GCODE files sliced through Simplify3D.
+  * Abort low priority jobs in the file analysis queue when a high priority job comes in - should make file analysis and hence time estimates show up faster for newly uploaded files.
+  * Added a terminal filter for firmware `wait` messages to the stock terminal filters. If you did modify your terminal filter configuration, you might want to add this manually:
+    * New "Suppress wait responses" filter: `Recv: wait`
+
+### Bug fixes
+
+  * [#1637](https://github.com/foosel/OctoPrint/issues/1637) - Fix issue preventing a folder to be deleted that has a name which is a common prefix of the file currently being printed.
+  * [#1641](https://github.com/foosel/OctoPrint/issues/1641) - Fix issue with `octoprint --daemon` not working.
+  * [#1647](https://github.com/foosel/OctoPrint/issues/1647) - Fix issue with `octoprint` command throwing an error if an environment variable `OCTOPRINT_VERSION` was set to its version number.
+  * [#1648](https://github.com/foosel/OctoPrint/issues/1648) - Added missing `websocket-client` dependency of `octoprint client` to install script.
+  * [#1653](https://github.com/foosel/OctoPrint/issues/1653) - Fix for an issue with the included init script on the BBB (see also [#1654](https://github.com/foosel/OctoPrint/issues/1654))
+  * [#1657](https://github.com/foosel/OctoPrint/issues/1657) - Fix init script regarding check for configured `CONFIGFILE` variable.
+  * [#1657](https://github.com/foosel/OctoPrint/issues/1657) - Don't care about ordering of common parameters (like `--basedir`, `--config`) on CLI.
+  * [#1660](https://github.com/foosel/OctoPrint/issues/1660) - Do not show hint regarding keyboard controls beneath webcam stream if keyboard control feature is disabled.
+  * [#1667](https://github.com/foosel/OctoPrint/issues/1667) - Fix for matching folders not getting listed in the results when performing a search in the file list.
+  * [#1675](https://github.com/foosel/OctoPrint/issues/1675) - Fix model size calculation in GCODE analysis, produced wrong values in some cases. Also adjusted calculation to match implementation in GCODE viewer, now both produce identical results.
+  * [#1685](https://github.com/foosel/OctoPrint/issues/1685) - Cura Plugin: Fix filament extraction from CuraEngine slicing output
+  * [#1692](https://github.com/foosel/OctoPrint/issues/1692) - Cura Plugin: Fix solid layer calculation (backport from [Ultimaker/CuraEngine#140](https://github.com/Ultimaker/CuraEngine/issues/140))
+  * [#1693](https://github.com/foosel/OctoPrint/issues/1693) - Cura Plugin: Support `perimeter_before_infill` profile setting. Additionally added support for `solidarea_speed`, `raft_airgap_all`, `raft_surface_thickness`, `raft_surface_linewidth` profile settings and adjusted mapping for engine settings `raftAirGapLayer0`, `raftFanSpeed`, `raftSurfaceThickness`and `raftSurfaceLinewidth` according to current mapping in Cura Legacy and adjusted Mach3 GCODE flavor to substitute `S` with `P` in temperature commands of generated start code, also like in Cura Legacy.
+  * [#1697](https://github.com/foosel/OctoPrint/issues/1697) - Pin Jinja to versions <2.9 for now due to a backwards compatibility issue with templates for versions newer than that. Also pushed as a hotfix to 1.3.0 (as 1.3.0post1).
+  * Allow a retraction z-hop of 0 in timelapse configuration.
+  * Fix files in sub folders to not be processed by the initial analysis backlog check during startup of the server.
+  * Various fixes in the file analysis queue:
+    * High priority items are now really high priority
+    * Abort analysis for items that are to be deleted/moved to get around an issue with file access under Windows systems.
+  * Fix stock terminal filters for suppressing temperature messages and SD status messages to also be able to deal with line number prefixes. If you have added additional terminal filters, you will have to apply this fix manually:
+    * Changed "Suppress temperature messages" filter: `(Send: (N\d+\s+)?M105)|(Recv: ok (B|T\d*):)`
+    * Changed "Suppress SD status messages" filter: `(Send: (N\d+\s+)?M27)|(Recv: SD printing byte)`
+  * Fix issue in german translation.
+
+([Commits](https://github.com/foosel/OctoPrint/compare/1.3.0...1.3.1rc1))
+
 ## 1.3.0 (2016-12-08)
 
 ### Features

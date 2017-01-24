@@ -4,6 +4,7 @@
         <title data-bind="text: title">OctoPrint</title>
 
         <link rel="shortcut icon" href="{{ url_for('static', filename='img/tentacle-32x32.png') }}">
+        <link rel="mask-icon" href="{{ url_for('static', filename='img/favicon.svg') }}" color="#56BE37">
         <link rel="apple-touch-icon" sizes="114x114" href="{{ url_for('static', filename='img/apple-touch-icon-114x114.png') }}">
         <link rel="apple-touch-icon" sizes="144x144" href="{{ url_for('static', filename='img/apple-touch-icon-144x144.png') }}">
 
@@ -119,6 +120,7 @@
                         <li><a href="https://github.com/foosel/OctoPrint/" target="_blank" rel="noreferrer noopener"><i class="icon-github"></i> {{ _('Sourcecode') }}</a></li>
                         <li><a href="http://docs.octoprint.org" target="_blank" rel="noreferrer noopener"><i class="icon-book"></i> {{ _('Documentation') }}</a></li>
                         <li><a href="https://github.com/foosel/OctoPrint/issues" target="_blank" rel="noreferrer noopener"><i class="icon-flag"></i> {{ _('Bugs and Requests') }}</a></li>
+                        <li><a href="https://github.com/foosel/OctoPrint/wiki/FAQ" target="_blank" rel="noreferrer noopener"><i class="icon-question-sign"></i> {{ _('FAQ') }}</a></li>
                         <li id="footer_about"><a href="javascript:void(0)" data-bind="click: show"><i class="icon-info-sign"></i> {{ _('About') }}</a></li>
                     </ul>
                 </div>

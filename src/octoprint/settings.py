@@ -178,7 +178,9 @@ default_settings = {
 		"sizeThreshold": 20 * 1024 * 1024, # 20MB
 	},
 	"gcodeAnalysis": {
-		"maxExtruders": 10
+		"maxExtruders": 10,
+		"throttle_normalprio": 0.01,
+		"throttle_highprio": 0.0
 	},
 	"feature": {
 		"temperatureGraph": True,
@@ -1394,13 +1396,18 @@ class Settings(object):
 
 		try:
 			current = chain.get_by_path(path)
+		except KeyError:
+			current = None
+
+		try:
 			default_value = chain.get_by_path(path, only_defaults=True)
-			in_local = chain.has_path(path, only_local=True)
-			in_defaults = chain.has_path(path, only_defaults=True)
 		except KeyError:
 			if error_on_path:
 				raise NoSuchSettingsPath()
-			return
+			default_value = None
+
+		in_local = chain.has_path(path, only_local=True)
+		in_defaults = chain.has_path(path, only_defaults=True)
 
 		if not force and in_defaults and in_local and default_value == value:
 			try:
@@ -1488,12 +1495,8 @@ class Settings(object):
 def _default_basedir(applicationName):
 	# taken from http://stackoverflow.com/questions/1084697/how-do-i-store-desktop-application-data-in-a-cross-platform-way-for-python
 	if sys.platform == "darwin":
-		from AppKit import NSSearchPathForDirectoriesInDomains
-		# http://developer.apple.com/DOCUMENTATION/Cocoa/Reference/Foundation/Miscellaneous/Foundation_Functions/Reference/reference.html#//apple_ref/c/func/NSSearchPathForDirectoriesInDomains
-		# NSApplicationSupportDirectory = 14
-		# NSUserDomainMask = 1
-		# True for expanding the tilde into a fully qualified path
-		return os.path.join(NSSearchPathForDirectoriesInDomains(14, 1, True)[0], applicationName)
+		import appdirs
+		return appdirs.user_data_dir(applicationName, "")
 	elif sys.platform == "win32":
 		return os.path.join(os.environ["APPDATA"], applicationName)
 	else:

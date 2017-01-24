@@ -32,6 +32,7 @@
 
 ## Server
 
+  * [appdirs](http://github.com/ActiveState/appdirs): MIT
   * [Awesome-Slugify](https://pypi.python.org/pypi/awesome-slugify): GPLv3
   * [Click](http://click.pocoo.org/): BSD
   * [feedparser](https://github.com/kurtmckee/feedparser): BSD

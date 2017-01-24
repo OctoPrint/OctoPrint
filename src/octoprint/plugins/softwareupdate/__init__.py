@@ -83,11 +83,29 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 					except:
 						self._logger.exception("Error while retrieving update information from plugin {name}".format(**locals()))
 					else:
-						for key, data in hook_checks.items():
+						for key, default_config in hook_checks.items():
 							check_providers[key] = name
+
+							yaml_config = dict()
+							effective_config = default_config
 							if key in self._configured_checks:
-								data = dict_merge(data, self._configured_checks[key])
-							self._configured_checks[key] = data
+								yaml_config = self._configured_checks[key]
+								effective_config = dict_merge(default_config, yaml_config)
+
+								# Make sure there's nothing persisted in that check that shouldn't be persisted
+								#
+								# This used to be part of the settings migration (version 2) due to a bug - it can't
+								# stay there though since it interferes with manual entries to the checks not
+								# originating from within a plugin. Hence we do that step now here.
+								if "type" not in effective_config or effective_config["type"] != "github_commit":
+									deletables = ["current", "displayVersion"]
+								else:
+									deletables = []
+								self._clean_settings_check(key, yaml_config, default_config, delete=deletables, save=False)
+
+							# finally set our internal representation to our processed result
+							self._configured_checks[key] = effective_config
+
 				self._settings.set(["check_providers"], check_providers)
 				self._settings.save()
 
@@ -287,11 +305,18 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				self._refresh_configured_checks = True
 
 	def get_settings_version(self):
-		return 4
+		return 5
 
 	def on_settings_migrate(self, target, current=None):
 
-		if current is None or current < 4:
+		if current == 4:
+			# config version 4 didn't correctly remove the old settings for octoprint_restart_command
+			# and environment_restart_command
+
+			self._settings.set(["environment_restart_command"], None)
+			self._settings.set(["octoprint_restart_command"], None)
+
+		if current is None or current < 5:
 			# config version 4 and higher moves octoprint_restart_command and
 			# environment_restart_command to the core configuration
 
@@ -315,50 +340,27 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 		if current is None or current == 2:
 			# No config version and config version 2 need the same fix, stripping
-			# accidentally persisted data off the checks
+			# accidentally persisted data off the checks.
+			#
+			# We used to do the same processing for the plugin entries too here, but that interfered
+			# with manual configuration entries. Stuff got deleted that wasn't supposed to be deleted.
+			#
+			# The problem is that we don't know if an entry we are looking at and which didn't come through
+			# a plugin hook is simply an entry from a now uninstalled/unactive plugin, or if it was something
+			# manually configured by the user. So instead of just blindly removing anything that doesn't
+			# come from a plugin here we instead clean up anything that indeed comes from a plugin
+			# during run time and leave everything else as is in the hopes that will not cause trouble.
+			#
+			# We still handle the "octoprint" entry here though.
 
 			configured_checks = self._settings.get(["checks"], incl_defaults=False)
-			if configured_checks is None:
-				configured_checks = dict()
-
-			check_keys = configured_checks.keys()
-
-			# take care of the octoprint entry
-			if "octoprint" in configured_checks:
+			if configured_checks is not None and "octoprint" in configured_checks:
 				octoprint_check = dict(configured_checks["octoprint"])
 				if "type" not in octoprint_check or octoprint_check["type"] != "github_commit":
 					deletables=["current", "displayName", "displayVersion"]
 				else:
 					deletables=[]
-				octoprint_check = self._clean_settings_check("octoprint", octoprint_check, self.get_settings_defaults()["checks"]["octoprint"], delete=deletables, save=False)
-				check_keys.remove("octoprint")
-
-			# and the hooks
-			update_check_hooks = self._plugin_manager.get_hooks("octoprint.plugin.softwareupdate.check_config")
-			for name, hook in update_check_hooks.items():
-				try:
-					hook_checks = hook()
-				except:
-					self._logger.exception("Error while retrieving update information from plugin {name}".format(**locals()))
-				else:
-					for key, data in hook_checks.items():
-						if key in configured_checks:
-							settings_check = dict(configured_checks[key])
-							merged = dict_merge(data, settings_check)
-							if "type" not in merged or merged["type"] != "github_commit":
-								deletables = ["current", "displayVersion"]
-							else:
-								deletables = []
-
-							self._clean_settings_check(key, settings_check, data, delete=deletables, save=False)
-							check_keys.remove(key)
-
-			# and anything that's left over we'll just remove now
-			for key in check_keys:
-				dummy_defaults = dict(plugins=dict())
-				dummy_defaults["plugins"][self._identifier] = dict(checks=dict())
-				dummy_defaults["plugins"][self._identifier]["checks"][key] = None
-				self._settings.set(["checks", key], None, defaults=dummy_defaults)
+				self._clean_settings_check("octoprint", octoprint_check, self.get_settings_defaults()["checks"]["octoprint"], delete=deletables, save=False)
 
 		elif current == 1:
 			# config version 1 had the error that the octoprint check got accidentally
@@ -416,6 +418,15 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		def view():
 			try:
 				information, update_available, update_possible = self.get_current_versions(check_targets=check_targets, force=force)
+
+				# we don't want to transfer python_checker or python_updater values through json - replace with True
+				for key, data in information.items():
+					if "check" in data:
+						if "python_checker" in data["check"]:
+							data["check"]["python_checker"] = True
+						if "python_updater" in data["check"]:
+							data["check"]["python_updater"] = True
+
 				return flask.jsonify(dict(status="updatePossible" if update_available and update_possible else "updateAvailable" if update_available else "current",
 				                          information=information))
 			except exceptions.ConfigurationInvalid as e:
@@ -677,6 +688,8 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 						target_restart_type = check["restart"]
 					elif "pip" in check:
 						target_restart_type = "octoprint"
+					else:
+						target_restart_type = None
 
 					# if our update requires a restart we have to determine which type
 					if restart_type is None or (restart_type == "octoprint" and target_restart_type == "environment"):
@@ -930,7 +943,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			elif "pip" in check:
 				method = "pip"
 			elif "python_updater" in check:
-				method = "python_updated"
+				method = "python_updater"
 
 		if method is None or (valid_methods and not method in valid_methods):
 			raise exceptions.UnknownUpdateType()
