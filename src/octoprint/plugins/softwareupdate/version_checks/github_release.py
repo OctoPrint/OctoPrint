@@ -153,6 +153,7 @@ def _get_comparable_version_pkg_resources(version_string, force_base=True):
 	# A leading v is common in github release tags and old setuptools doesn't remove it.
 	if version and isinstance(version, tuple) and version[0].lower() == "*v":
 		version = version[1:]
+
 	if force_base:
 		if isinstance(version, tuple):
 			# old setuptools
