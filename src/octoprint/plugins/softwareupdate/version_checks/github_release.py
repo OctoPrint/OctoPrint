@@ -138,9 +138,6 @@ def _get_base_from_version_tuple(version_tuple):
 	"""
 
 	base_version = []
-	# A leading v is common in github release tags. Remove it.
-	if version_tuple and version_tuple[0].lower() == "*v":
-		version_tuple = version_tuple[1:]
 	for part in version_tuple:
 		if part.startswith("*"):
 			break
@@ -152,7 +149,9 @@ def _get_comparable_version_pkg_resources(version_string, force_base=True):
 	import pkg_resources
 
 	version = pkg_resources.parse_version(version_string)
-
+	# A leading v is common in github release tags and old setuptools doesn't remove it.
+	if version and isinstance(version, tuple) and version[0].lower() == "*v":
+		version = version[1:]
 	if force_base:
 		if isinstance(version, tuple):
 			# old setuptools

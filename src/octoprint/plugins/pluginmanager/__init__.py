@@ -667,13 +667,13 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			octoprint_version_string = octoprint_version_string[:octoprint_version_string.find("-")]
 
 		octoprint_version = pkg_resources.parse_version(octoprint_version_string)
+		# A leading v is common in github release tags and old setuptools doesn't remove it.
+		if octoprint_version and isinstance(octoprint_version, tuple) and octoprint_version[0].lower() == "*v":
+			octoprint_version = octoprint_version[1:]
 		if base:
 			if isinstance(octoprint_version, tuple):
 				# old setuptools
 				base_version = []
-				# A leading v is common in github release tags. Remove it.
-				if octoprint_version and octoprint_version[0].lower() == "*v":
-					octoprint_version = octoprint_version[1:]
 				for part in octoprint_version:
 					if part.startswith("*"):
 						break
