@@ -92,6 +92,7 @@ class VirtualPrinter(object):
 		self._supportF = settings().getBoolean(["devel", "virtualPrinter", "supportF"])
 
 		self._sendWait = settings().getBoolean(["devel", "virtualPrinter", "sendWait"])
+		self._sendBusy = settings().getBoolean(["devel", "virtualPrinter", "sendBusy"])
 		self._waitInterval = settings().getFloat(["devel", "virtualPrinter", "waitInterval"])
 
 		self._echoOnM117 = settings().getBoolean(["devel", "virtualPrinter", "echoOnM117"])
@@ -450,6 +451,24 @@ class VirtualPrinter(object):
 	_gcode_G1 = _gcode_G0
 	_gcode_G2 = _gcode_G0
 	_gcode_G3 = _gcode_G0
+
+	def _gcode_G4(self, data):
+		matchS = re.search('S([0-9]+)', data)
+		matchP = re.search('P([0-9]+)', data)
+
+		_timeout = 0
+		if matchP:
+			_timeout = float(matchP.group(1)) / 1000.0
+		elif matchS:
+			_timeout = float(matchS.group(1))
+
+		if self._sendBusy:
+			until = time.time() + _timeout
+			while time.time() < until:
+				time.sleep(1.0)
+				self._send("busy:processing")
+		else:
+			time.sleep(_timeout)
 
 	##~~ further helpers
 
