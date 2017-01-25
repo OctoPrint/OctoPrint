@@ -76,6 +76,7 @@ date of first contribution):
   * ["I-am-me"](https://github.com/I-am-me)
   * [J-J Heinonen](https://github.com/jammi)
   * [Noah Martin](https://github.com/noahsmartin)
+  * [Eyal Soha](https://github.com/eyal0)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and
