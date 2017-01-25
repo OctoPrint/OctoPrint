@@ -153,7 +153,7 @@ def wizardFinish():
 			if name in handled:
 				seen_wizards[name] = implementation.get_wizard_version()
 		except:
-			logging.getLogger(__name__).exceptino("There was an error finishing the wizard for {}, ignoring".format(name))
+			logging.getLogger(__name__).exception("There was an error finishing the wizard for {}, ignoring".format(name))
 
 	s().set(["server", "seenWizards"], seen_wizards)
 	s().save()
