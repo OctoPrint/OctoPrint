@@ -62,11 +62,17 @@ def enable_additional_translations(default_locale="en", additional_folders=None)
 					continue
 				if filter(lambda x: x.name.endswith('.mo'), scandir(locale_dir)):
 					result.append(Locale.parse(entry.name))
-			if not result:
-				result.append(Locale.parse(self._default_locale))
 			return result
 
 		dirs = additional_folders + [os.path.join(self.app.root_path, 'translations')]
+
+		# translations from plugins
+		plugins = octoprint.plugin.plugin_manager().enabled_plugins
+		for name, plugin in plugins.items():
+			plugin_translation_dir = os.path.join(plugin.location, 'translations')
+			if not os.path.isdir(plugin_translation_dir):
+				continue
+			dirs.append(plugin_translation_dir)
 
 		result = [Locale.parse(default_locale)]
 
@@ -104,20 +110,20 @@ def enable_additional_translations(default_locale="en", additional_folders=None)
 						else:
 							if isinstance(plugin_translations, support.Translations):
 								translations = translations.merge(plugin_translations)
-								logger.debug("Using translation folder {dirname} for locale {locale} of plugin {name}".format(**locals()))
+								logger.debug("Using translation plugin folder {dirname} from plugin {name} for locale {locale}".format(**locals()))
 								break
 					else:
-						logger.debug("No translations for locale {locale} for plugin {name}".format(**locals()))
+						logger.debug("No translations for locale {locale} from plugin {name}".format(**locals()))
 
 				# core translations
 				dirs = additional_folders + [os.path.join(ctx.app.root_path, 'translations')]
 				for dirname in dirs:
 					core_translations = support.Translations.load(dirname, [locale])
 					if isinstance(core_translations, support.Translations):
-						logger.debug("Using translation folder {dirname} for locale {locale} of core translations".format(**locals()))
+						logger.debug("Using translation core folder {dirname} for locale {locale}".format(**locals()))
 						break
 				else:
-					logger.debug("No core translations for locale {locale}")
+					logger.debug("No translations for locale {} in core folders".format(locale))
 				translations = translations.merge(core_translations)
 
 			ctx.babel_translations = translations
