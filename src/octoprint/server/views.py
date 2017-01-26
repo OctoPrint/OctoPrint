@@ -931,7 +931,8 @@ def _get_translations(locale, domain):
 				message_id = message.id
 				if isinstance(message_id, (list, tuple)):
 					message_id = message_id[0]
-				messages[message_id] = message.string
+				if message.string:
+					messages[message_id] = message.string
 
 		return messages, catalog.plural_expr
 
