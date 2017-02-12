@@ -204,7 +204,8 @@ $(function() {
                     name: name,
                     configured: slicer.configured,
                     sourceExtensions: slicer.extensions.source,
-                    destinationExtensions: slicer.extensions.destination
+                    destinationExtensions: slicer.extensions.destination,
+                    sameDevice: slicer.sameDevice
                 };
                 self.slicers.push(props);
             });
