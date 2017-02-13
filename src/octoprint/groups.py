@@ -13,21 +13,6 @@ from octoprint.util import atomic_write
 
 from octoprint.permissions import all_permissions, Permissions
 
-import yaml
-from yaml.dumper import SafeDumper
-from yaml.loader import SafeLoader
-
-
-def group_yaml_representer(dumper, data):
-	return dumper.represent_scalar(u'!group', repr(data))
-
-
-def group_yaml_constructor(loader, node):
-	value = loader.construct_scalar(node)
-	name = value[value.find('name=') + 5:]
-	from octoprint.server import groupManager
-	return groupManager.findGroup(name)
-
 
 class GroupManager(object):
 	def __init__(self):
@@ -81,6 +66,7 @@ class FilebasedGroupManager(GroupManager):
 		self._load()
 
 	def _load(self):
+		import yaml
 		if os.path.exists(self._groupfile) and os.path.isfile(self._groupfile):
 			with open(self._groupfile, "r") as f:
 				data = yaml.safe_load(f)
@@ -109,6 +95,7 @@ class FilebasedGroupManager(GroupManager):
 			)
 
 		with atomic_write(self._groupfile, "wb", permissions=0o600, max_permissions=0o666) as f:
+			import yaml
 			yaml.safe_dump(data, f, default_flow_style=False, indent="    ", allow_unicode=True)
 			self._dirty = False
 		self._load()
@@ -343,5 +330,3 @@ class Groups(object):
 		return groupManager.findGroup(groupname) if groupManager.findGroup(groupname) is not None \
 			else groupManager.addGroup(groupname, permissionslist=permissionslist, default=default, specialGroup=specialGroup, overwrite=overwrite)
 
-yaml.add_representer(Group, group_yaml_representer, Dumper=SafeDumper)
-yaml.add_constructor(u'!group', group_yaml_constructor, Loader=SafeLoader)

@@ -78,6 +78,8 @@ import octoprint.filemanager.analysis
 import octoprint.slicing
 from octoprint.server.util.flask import PreemptiveCache
 
+import octoprint.util.yaml
+
 
 UI_API_KEY = ''.join('%02X' % z for z in bytes(uuid.uuid4().bytes))
 

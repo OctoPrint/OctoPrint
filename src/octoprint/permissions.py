@@ -1,23 +1,13 @@
-'''
-Created on 09.11.2016
+# coding=utf-8
+from __future__ import absolute_import, division, print_function
 
-@author: hannappel
-'''
+__author__ = "Marc Hannappel <salandora@gmail.com>"
+__license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
+__copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 from flask.ext.principal import Permission, RoleNeed
 from flask.json import JSONEncoder
 from .util import variable_deprecated
-
-
-def OctoPermission_yaml_representer(dumper, data):
-	return dumper.represent_scalar(u'!octopermission', repr(data))
-
-
-def OctoPermission_yaml_constructor(loader, node):
-	value = loader.construct_scalar(node)
-	name = value[value.find('name=') + 5:]
-	return Permissions.permission_by_name(name)
-
 
 class OctoPermissionEncoder(JSONEncoder):
 	def default(self, obj):
@@ -103,15 +93,6 @@ class OctoPermission(Permission):
 
 	def __repr__(self):
 		return '{0} name={1}'.format(self.__class__.__name__, self.get_name())
-
-
-import yaml
-from yaml.dumper import SafeDumper
-from yaml.loader import SafeLoader
-
-yaml.add_representer(OctoPermission, OctoPermission_yaml_representer, Dumper=SafeDumper)
-yaml.add_constructor(u'!octopermission', OctoPermission_yaml_constructor, Loader=SafeLoader)
-
 
 class Permissions(object):
 	# Special permission
