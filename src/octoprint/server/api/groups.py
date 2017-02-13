@@ -5,7 +5,7 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-from flask import request, jsonify, abort, make_response
+from flask import request, json, jsonify, abort, make_response
 from werkzeug.exceptions import BadRequest
 from flask.ext.login import current_user
 
@@ -66,7 +66,7 @@ def getGroup(groupname):
 
 	group = groupManager.findGroup(groupname)
 	if group is not None:
-		return jsonify(group.asDict())
+		return json.dumps(group)
 	else:
 		abort(404)
 

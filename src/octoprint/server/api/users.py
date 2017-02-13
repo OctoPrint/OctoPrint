@@ -5,7 +5,7 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-from flask import request, jsonify, abort, make_response
+from flask import request, json, jsonify, abort, make_response
 from werkzeug.exceptions import BadRequest
 from flask.ext.login import current_user
 
@@ -24,7 +24,7 @@ def getPermissions():
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
 
-	return jsonify({"permissions": map(lambda p: p.asDict(), all_permissions)})
+	return jsonify({"permissions": all_permissions})
 
 @api.route("/users", methods=["GET"])
 @restricted_access
@@ -85,7 +85,7 @@ def getUser(username):
 	if current_user is not None and not current_user.is_anonymous() and (current_user.get_name() == username or current_user.hasPermission(Permissions.admin)):
 		user = userManager.findUser(username)
 		if user is not None:
-			return jsonify(user.asDict())
+			return json.dumps(user)
 		else:
 			abort(404)
 	else:

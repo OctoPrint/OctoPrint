@@ -9,7 +9,7 @@ import logging
 import netaddr
 import sarge
 
-from flask import Blueprint, request, jsonify, abort, current_app, session, make_response, g
+from flask import Blueprint, request, json, jsonify, abort, current_app, session, make_response, g
 from flask.ext.login import login_user, logout_user, current_user
 from flask.ext.principal import Identity, identity_changed, AnonymousIdentity
 
@@ -211,7 +211,7 @@ def login():
 					g.user = user
 				login_user(user, remember=remember)
 				identity_changed.send(current_app._get_current_object(), identity=Identity(user.get_id()))
-				return jsonify(user.asDict())
+				return json.dumps(user)
 		return make_response(("User unknown or password incorrect", 401, []))
 
 	elif "passive" in data:

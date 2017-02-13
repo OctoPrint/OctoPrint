@@ -470,7 +470,7 @@ class FilebasedUserManager(UserManager):
 			return None
 
 	def getAllUsers(self):
-		return map(lambda x: x.asDict(), self._users.values())
+		return self._users.values()
 
 	def hasBeenCustomized(self):
 		return self._customized
@@ -506,16 +506,14 @@ class User(UserMixin):
 
 	def asDict(self):
 		permissions = self.permissions if Permissions.admin not in self._permissions else [Permissions.admin]
-		permissionDict = map(lambda p: p.asDict(), permissions)
 
 		groups = self.groups if Groups.admins not in self._groups else [Groups.admins]
-		groupDict = map(lambda g: g.asDict(), groups)
 
 		return {
 			"name": self._username,
 			"active": self.is_active(),
-			"permissions": permissionDict,
-			"groups": groupDict,
+			"permissions": permissions,
+			"groups": groups,
 			"admin": self.hasPermission(Permissions.admin),
 			# Deprecated
 			"user": self.hasPermission(Permissions.user),

@@ -19,7 +19,6 @@ from collections import defaultdict
 from builtins import bytes, range
 
 from octoprint import util
-from octoprint.permissions import Permissions, OctoPermissionEncoder
 
 import os
 import logging
@@ -33,8 +32,6 @@ NO_CONTENT = ("", 204)
 NOT_MODIFIED = ("Not Modified", 304)
 
 app = Flask("octoprint")
-#Custom OctoPermission encoder
-app.json_encoder = OctoPermissionEncoder
 
 assets = None
 babel = None
@@ -57,10 +54,11 @@ preemptiveCache = None
 
 principals = Principal(app)
 
+import octoprint.permissions as permissions
 #-------------------------------------------------------------------------------
 #Deprecated should be removed with the user_permission variable in a future version
-admin_permission = util.variable_deprecated("admin_permission has been deprecated please use new Permission.admin instead", since="now")(Permissions.admin)
-user_permission = util.variable_deprecated("user_permission has been deprecated and will be removed in a future version", since="now")(Permissions.user)
+admin_permission = util.variable_deprecated("admin_permission has been deprecated please use new Permission.admin instead", since="now")(permissions.Permissions.admin)
+user_permission = util.variable_deprecated("user_permission has been deprecated and will be removed in a future version", since="now")(permissions.Permissions.user)
 #-------------------------------------------------------------------------------
 
 # only import the octoprint stuff down here, as it might depend on things defined above to be initialized already
@@ -69,6 +67,7 @@ from octoprint.printer.profile import PrinterProfileManager
 from octoprint.printer.standard import Printer
 from octoprint.settings import settings
 import octoprint.users as users
+import octoprint.groups as groups
 import octoprint.events as events
 import octoprint.plugin
 import octoprint.timelapse
@@ -77,6 +76,7 @@ import octoprint.filemanager.storage
 import octoprint.filemanager.analysis
 import octoprint.slicing
 from octoprint.server.util.flask import PreemptiveCache
+from octoprint.server.util.serialization import OctoPrintJsonEncoder, OctoPrintJsonDecoder
 
 import octoprint.util.yaml
 
@@ -180,6 +180,13 @@ class Server(object):
 
 		self._logger = logging.getLogger(__name__)
 		pluginManager = self._plugin_manager
+
+		app.json_encoder = OctoPrintJsonEncoder
+		app.json_decoder = OctoPrintJsonDecoder
+
+		OctoPrintJsonEncoder.add_encoder(permissions.OctoPermission, lambda op: op.asDict())
+		OctoPrintJsonEncoder.add_encoder(groups.Group, lambda g: g.asDict())
+		OctoPrintJsonEncoder.add_multi_encoder(users.User, lambda u: u.asDict())
 
 		# monkey patch a bunch of stuff
 		util.tornado.fix_ioloop_scheduling()
@@ -399,10 +406,10 @@ class Server(object):
 
 		##~~ Permission validators
 
-		timelapse_permission_validator = dict(access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.permission_validator, Permissions.timelapse))
-		download_permission_validator = dict(access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.permission_validator, Permissions.download))
-		log_permission_validator = dict(access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.permission_validator, Permissions.logs))
-		camera_permission_validator = dict(access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.permission_validator, Permissions.webcam))
+		timelapse_permission_validator = dict(access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.permission_validator, permissions.Permissions.timelapse))
+		download_permission_validator = dict(access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.permission_validator, permissions.Permissions.download))
+		log_permission_validator = dict(access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.permission_validator, permissions.Permissions.logs))
+		camera_permission_validator = dict(access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.permission_validator, permissions.Permissions.webcam))
 
 		no_hidden_files_validator = dict(path_validation=util.tornado.path_validation_factory(lambda path: not octoprint.util.is_hidden_path(path), status_code=404))
 

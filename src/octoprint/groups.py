@@ -196,7 +196,7 @@ class FilebasedGroupManager(GroupManager):
 			return None
 
 	def getAllGroups(self):
-		return map(lambda x: x.asDict(), self._groups.values())
+		return self._groups.values()
 
 
 class GroupAlreadyExists(Exception):
@@ -228,11 +228,10 @@ class Group(object):
 
 	def asDict(self):
 		permissions = self.permissions if not self.hasPermission(Permissions.admin) else [Permissions.admin]
-		permissionDict = map(lambda p: p.asDict(), permissions)
 
 		return {
 			"name": self.get_name(),
-			"permissions": permissionDict,
+			"permissions": permissions,
 			"defaultOn": self.get_default()
 		}
 

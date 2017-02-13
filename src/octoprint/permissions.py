@@ -6,16 +6,7 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 from flask.ext.principal import Permission, RoleNeed
-from flask.json import JSONEncoder
-from .util import variable_deprecated
-
-class OctoPermissionEncoder(JSONEncoder):
-	def default(self, obj):
-		if isinstance(obj, OctoPermission):
-			return Permissions.permissions_to_list([obj])
-
-		return JSONEncoder.default(self, obj)
-
+from octoprint.util import variable_deprecated
 
 all_permissions = []
 class OctoPermission(Permission):
@@ -28,9 +19,9 @@ class OctoPermission(Permission):
 
 	def asDict(self):
 		return dict(
-				name=self.get_name(),
-				description=self.get_description(),
-				needs=Permissions.permissions_to_need_list([self])
+			name=self.get_name(),
+			description=self.get_description(),
+			needs=Permissions.permissions_to_need_list([self])
 		)
 
 	def get_name(self):
@@ -38,23 +29,6 @@ class OctoPermission(Permission):
 
 	def get_description(self):
 		return self._description
-
-	def get_js_need_list(self):
-		'''
-		Returns a list of all needs to use within the javascript context
-		e.g.:
-		[
-			{method:'role', value:'settings'},
-			{method:'role', value:'system'},
-		]
-		:return: returns a jsonified list of all needs
-		'''
-		needs = "["
-		for need in self.needs:
-			needs += "{method:'" + need.method.strip() + "', value:'" + need.value.strip() + "'},"
-
-		needs += "]"
-		return needs
 
 	def reverse(self):
 		"""
