@@ -78,7 +78,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 				update_check_hooks = self._plugin_manager.get_hooks("octoprint.plugin.softwareupdate.check_config")
 				check_providers = self._settings.get(["check_providers"], merged=True)
-				already_configured = ["octoprint"]
+				effective_configs = dict()
 
 				for name, hook in update_check_hooks.items():
 					try:
@@ -87,9 +87,9 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 						self._logger.exception("Error while retrieving update information from plugin {name}".format(**locals()))
 					else:
 						for key, default_config in hook_checks.items():
-							if key in already_configured:
+							if key in effective_configs or key == "octoprint":
 								if key == name:
-									self._logger.warn("Software update hook {} provides check for itself but that was already registered by {} - removing that third party registration now!".format(name, check_providers.get(key, "unknown hook")))
+									self._logger.warn("Software update hook {} provides check for itself but that was already registered by {} - overwriting that third party registration now!".format(name, check_providers.get(key, "unknown hook")))
 								else:
 									self._logger.warn("Software update hook {} tried to overwrite config for check {} but that was already configured elsewhere".format(name, key))
 									continue
@@ -113,9 +113,11 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 									deletables = []
 								self._clean_settings_check(key, yaml_config, default_config, delete=deletables, save=False)
 
-							# finally set our internal representation to our processed result
-							self._configured_checks[key] = effective_config
-							already_configured.append(key)
+							effective_configs[key] = effective_config
+
+				# finally set all our internal representations to our processed results
+				for key, config in effective_configs.items():
+					self._configured_checks[key] = config
 
 				self._settings.set(["check_providers"], check_providers)
 				self._settings.save()
