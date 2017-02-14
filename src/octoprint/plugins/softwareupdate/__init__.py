@@ -820,8 +820,16 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 		if target == "octoprint":
 			from flask.ext.babel import gettext
-			result["displayName"] = check.get("displayName", gettext("OctoPrint"))
-			result["displayVersion"] = check.get("displayVersion", "{octoprint_version}")
+
+			result["displayName"] = check.get("displayName")
+			if result["displayName"] is None:
+				# displayName missing or set to None
+				result["displayName"] = gettext("OctoPrint")
+
+			result["displayVersion"] = check.get("displayVersion")
+			if result["displayVersion"] is None:
+				# displayVersion missing or set to None
+				result["displayVersion"] = "{octoprint_version}"
 
 			stable_branch = "master"
 			release_branches = []
@@ -876,8 +884,16 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 							result["release_compare"] = "python_unequal"
 
 		else:
-			result["displayName"] = check.get("displayName", target)
-			result["displayVersion"] = check.get("displayVersion", check.get("current", "unknown"))
+			result["displayName"] = check.get("displayName")
+			if result["displayName"] is None:
+				# displayName missing or None
+				result["displayName"] = target
+
+			result["displayVersion"] = check.get("displayVersion", check.get("current"))
+			if result["displayVersion"] is None:
+				# displayVersion AND current missing or None
+				result["displayVersion"] = "unknown"
+
 			if check["type"] in ("github_commit",):
 				result["current"] = check.get("current", None)
 			else:

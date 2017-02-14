@@ -115,12 +115,14 @@ def _get_sanitized_version(version_string):
 	Removes "-..." prefix from version strings.
 
 	Tests:
+	    >>> _get_sanitized_version(None)
 	    >>> _get_sanitized_version("1.2.15")
 	    '1.2.15'
 	    >>> _get_sanitized_version("1.2.15-dev12")
 	    '1.2.15'
 	"""
-	if "-" in version_string:
+
+	if version_string is not None and "-" in version_string:
 		version_string = version_string[:version_string.find("-")]
 	return version_string
 
@@ -247,10 +249,12 @@ def _is_current(release_information, compare_type, custom=None, force_base=True)
 def get_latest(target, check, custom_compare=None):
 	from ..exceptions import ConfigurationInvalid
 
-	if not "user" in check or not "repo" in check:
-		raise ConfigurationInvalid("github_release update configuration for %s needs user and repo set" % target)
-
+	user = check.get("user", None)
+	repo = check.get("repo", None)
 	current = check.get("current", None)
+	if user is None or repo is None or current is None:
+		raise ConfigurationInvalid("Update configuration for {} of type github_release needs all of user, repo and current set and not None".format(target))
+
 	include_prerelease = check.get("prerelease", False)
 	prerelease_channel = check.get("prerelease_channel", None)
 	force_base = check.get("force_base", True)
