@@ -113,7 +113,10 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 									deletables = []
 								self._clean_settings_check(key, yaml_config, default_config, delete=deletables, save=False)
 
-							effective_configs[key] = effective_config
+							if effective_config:
+								effective_configs[key] = effective_config
+							else:
+								self._logger.warn("Update for {} is empty or None, ignoring it".format(key))
 
 				# finally set all our internal representations to our processed results
 				for key, config in effective_configs.items():
@@ -392,6 +395,10 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				self._settings.set(["checks", "octoprint"], None, defaults=dummy_defaults)
 
 	def _clean_settings_check(self, key, data, defaults, delete=None, save=True):
+		if not data:
+			# nothing to do
+			return data
+
 		if delete is None:
 			delete = []
 
@@ -548,6 +555,9 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 		for target, check in checks.items():
 			if not target in check_targets:
+				continue
+
+			if not check:
 				continue
 
 			try:
