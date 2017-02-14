@@ -75,8 +75,11 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			if self._refresh_configured_checks or self._configured_checks is None:
 				self._refresh_configured_checks = False
 				self._configured_checks = self._settings.get(["checks"], merged=True)
+
 				update_check_hooks = self._plugin_manager.get_hooks("octoprint.plugin.softwareupdate.check_config")
 				check_providers = self._settings.get(["check_providers"], merged=True)
+				already_configured = ["octoprint"]
+
 				for name, hook in update_check_hooks.items():
 					try:
 						hook_checks = hook()
@@ -84,6 +87,13 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 						self._logger.exception("Error while retrieving update information from plugin {name}".format(**locals()))
 					else:
 						for key, default_config in hook_checks.items():
+							if key in already_configured:
+								if key == name:
+									self._logger.warn("Software update hook {} provides check for itself but that was already registered by {} - removing that third party registration now!".format(name, check_providers.get(key, "unknown hook")))
+								else:
+									self._logger.warn("Software update hook {} tried to overwrite config for check {} but that was already configured elsewhere".format(name, key))
+									continue
+
 							check_providers[key] = name
 
 							yaml_config = dict()
@@ -105,6 +115,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 							# finally set our internal representation to our processed result
 							self._configured_checks[key] = effective_config
+							already_configured.append(key)
 
 				self._settings.set(["check_providers"], check_providers)
 				self._settings.save()
