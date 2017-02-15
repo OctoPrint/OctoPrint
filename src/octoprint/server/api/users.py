@@ -5,7 +5,7 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-from flask import request, json, jsonify, abort, make_response
+from flask import request, jsonify, abort, make_response
 from werkzeug.exceptions import BadRequest
 from flask_login import current_user
 
@@ -85,7 +85,7 @@ def getUser(username):
 	if current_user is not None and not current_user.is_anonymous() and (current_user.get_name() == username or current_user.hasPermission(Permissions.admin)):
 		user = userManager.findUser(username)
 		if user is not None:
-			return json.dumps(user)
+			return jsonify(user)
 		else:
 			abort(404)
 	else:

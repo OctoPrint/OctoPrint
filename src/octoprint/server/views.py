@@ -10,7 +10,7 @@ import datetime
 
 from collections import defaultdict
 from flask import request, g, url_for, make_response, render_template, send_from_directory, redirect, abort
-from flask.ext.login import current_user
+from flask_login import current_user
 
 import octoprint.plugin
 

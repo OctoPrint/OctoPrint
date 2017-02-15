@@ -5,7 +5,7 @@ __author__ = "Marc Hannappel <salandora@gmail.com>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-from flask.ext.principal import Permission, RoleNeed
+from flask_principal import Permission, RoleNeed
 from octoprint.util import variable_deprecated
 
 all_permissions = []

@@ -482,7 +482,7 @@ def passive_login():
 		if hasattr(user, "get_session"):
 			flask.session["usersession.id"] = user.get_session()
 		flask.g.user = user
-		return flask.json.dumps(user)
+		return flask.jsonify(user)
 	elif settings().getBoolean(["accessControl", "autologinLocal"]) \
 			and settings().get(["accessControl", "autologinAs"]) is not None \
 			and settings().get(["accessControl", "localNetworks"]) is not None:
@@ -1046,7 +1046,7 @@ def _get_flask_user_from_request(request):
 
 	apikey = octoprint.server.util.get_api_key(request)
 	if settings().getBoolean(["api", "enabled"]) and apikey is not None:
-		return octoprint.server.util.get_user_for_apikey(apikey)
+		user = octoprint.server.util.get_user_for_apikey(apikey)
 	else:
 		user = flask_login.current_user
 

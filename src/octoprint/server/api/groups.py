@@ -5,14 +5,13 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-from flask import request, json, jsonify, abort, make_response
+from flask import request, jsonify, abort, make_response
 from werkzeug.exceptions import BadRequest
-from flask.ext.login import current_user
 
 import octoprint.groups as groups
 
 from octoprint.server import SUCCESS, groupManager
-from octoprint.server.api import api, valid_boolean_trues
+from octoprint.server.api import api
 from octoprint.server.util.flask import restricted_access
 from octoprint.permissions import Permissions
 
@@ -66,7 +65,7 @@ def getGroup(groupname):
 
 	group = groupManager.findGroup(groupname)
 	if group is not None:
-		return json.dumps(group)
+		return jsonify(group)
 	else:
 		abort(404)
 
