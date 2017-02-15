@@ -66,6 +66,8 @@ import octoprint.util
 import octoprint.filemanager.storage
 import octoprint.filemanager.analysis
 import octoprint.slicing
+from octoprint.server.util import enforceApiKeyRequestHandler, loginFromApiKeyRequestHandler, corsRequestHandler, \
+	corsResponseHandler
 from octoprint.server.util.flask import PreemptiveCache
 
 from . import util
@@ -365,9 +367,14 @@ class Server(object):
 			as_attachment=True,
 			allow_client_caching=False
 		)
+
 		additional_mime_types=dict(mime_type_guesser=mime_type_guesser)
+
 		admin_validator = dict(access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.admin_validator))
-		no_hidden_files_validator = dict(path_validation=util.tornado.path_validation_factory(lambda path: not octoprint.util.is_hidden_path(path), status_code=404))
+		user_validator = dict(access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.user_validator))
+
+		no_hidden_files_validator = dict(path_validation=util.tornado.path_validation_factory(lambda path: not octoprint.util.is_hidden_path(path),
+		                                                                                      status_code=404))
 
 		def joined_dict(*dicts):
 			if not len(dicts):
@@ -392,9 +399,9 @@ class Server(object):
 			                                                                            download_handler_kwargs,
 			                                                                            admin_validator)),
 			# camera snapshot
-			(r"/downloads/camera/current", util.tornado.UrlProxyHandler, dict(url=self._settings.get(["webcam", "snapshot"]),
-			                                                                  as_attachment=True,
-			                                                                  access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.user_validator))),
+			(r"/downloads/camera/current", util.tornado.UrlProxyHandler, joined_dict(dict(url=self._settings.get(["webcam", "snapshot"]),
+			                                                                              as_attachment=True),
+			                                                                         user_validator)),
 			# generated webassets
 			(r"/static/webassets/(.*)", util.tornado.LargeResponseHandler, dict(path=os.path.join(self._settings.getBaseFolder("generated"), "webassets"))),
 
@@ -894,8 +901,13 @@ class Server(object):
 			return
 
 		if plugin.is_blueprint_protected():
-			from octoprint.server.util import apiKeyRequestHandler, corsResponseHandler
-			blueprint.before_request(apiKeyRequestHandler)
+			blueprint.before_request(corsRequestHandler)
+			blueprint.before_request(enforceApiKeyRequestHandler)
+			blueprint.before_request(loginFromApiKeyRequestHandler)
+			blueprint.after_request(corsResponseHandler)
+		else:
+			blueprint.before_request(corsRequestHandler)
+			blueprint.before_request(loginFromApiKeyRequestHandler)
 			blueprint.after_request(corsResponseHandler)
 
 		url_prefix = "/plugin/{name}".format(name=name)
