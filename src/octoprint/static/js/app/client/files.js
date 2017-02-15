@@ -95,7 +95,7 @@
     };
 
     OctoPrintFilesClient.prototype.delete = function (location, path, opts) {
-        return this.delete(resourceForEntry(location, path), opts);
+        return this.base.delete(resourceForEntry(location, path), opts);
     };
 
     OctoPrintFilesClient.prototype.copy = function(location, path, destination, opts) {
@@ -103,7 +103,7 @@
     };
 
     OctoPrintFilesClient.prototype.move = function(location, path, destination, opts) {
-        return issueEntryCommand(location, path, "move", { destination: destination }, opts);
+        return this.issueEntryCommand(location, path, "move", { destination: destination }, opts);
     };
 
     OctoPrintFilesClient.prototype.createFolder = function (location, name, path, opts) {
@@ -129,7 +129,7 @@
         return this.base.download(downloadForEntry(location, path), opts);
     };
 
-    OctoPrintFilesClient.pathForEntry = function(entry) {
+    OctoPrintFilesClient.prototype.pathForEntry = function(entry) {
         if (!entry || !entry.hasOwnProperty("parent") || entry.parent == undefined) {
             return "";
         }
@@ -145,7 +145,7 @@
         return recursivePath(entry.parent, entry.name);
     };
 
-    OctoPrintFilesClient.entryForPath = function(path, root) {
+    OctoPrintFilesClient.prototype.entryForPath = function(path, root) {
         if (_.isArray(root)) {
             root = {children: root};
         }
@@ -172,16 +172,16 @@
         return recursiveSearch(path.split("/"), root);
     };
 
-    OctoPrintFilesClient.pathForElement = function(element) {
+    OctoPrintFilesClient.prototype.pathForElement = function(element) {
         // TODO Remove in 1.4.x
         log.warn("pathForElement has been renamed to pathForEntry, please use that instead");
-        return OctoPrintFilesClient.pathForEntry(element);
+        return this.pathForEntry(element);
     };
 
-    OctoPrintFilesClient.elementByPath = function(location, startElement) {
+    OctoPrintFilesClient.prototype.elementByPath = function(location, startElement) {
         // TODO Remove in 1.4.x
         log.warn("elementByPath has been renamed to entryForPath, please use that instead");
-        return OctoPrintFilesClient.entryForPath(location, startElement);
+        return this.entryForPath(location, startElement);
     };
 
     OctoPrintClient.registerComponent("files", OctoPrintFilesClient);
