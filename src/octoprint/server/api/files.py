@@ -289,17 +289,6 @@ def uploadGcodeFile(target):
 			if not printer.is_sd_ready():
 				return make_response("Can not upload to SD card, not yet initialized", 409)
 
-		# determine current job
-		currentPath = None
-		currentFilename = None
-		currentOrigin = None
-		currentJob = printer.get_current_job()
-		if currentJob is not None and "file" in currentJob.keys():
-			currentJobFile = currentJob["file"]
-			if currentJobFile is not None and "name" in currentJobFile.keys() and "origin" in currentJobFile.keys() and currentJobFile["name"] is not None and currentJobFile["origin"] is not None:
-				currentPath, currentFilename = fileManager.sanitize(FileDestinations.LOCAL, currentJobFile["name"])
-				currentOrigin = currentJobFile["origin"]
-
 		# determine future filename of file to be uploaded, abort if it can't be uploaded
 		try:
 			# FileDestinations.LOCAL = should normally be target, but can't because SDCard handling isn't implemented yet
@@ -316,8 +305,13 @@ def uploadGcodeFile(target):
 			futurePath = fileManager.sanitize_path(FileDestinations.LOCAL, request.values["path"])
 
 		# prohibit overwriting currently selected file while it's being printed
-		if futurePath == currentPath and futureFilename == currentFilename and target == currentOrigin and (printer.is_printing() or printer.is_paused()):
-			return make_response("Trying to overwrite file that is currently being printed: %s" % currentFilename, 409)
+		futureFullPath = fileManager.join_path(FileDestinations.LOCAL, futurePath, futureFilename)
+		futureFullPathInStorage = fileManager.path_in_storage(FileDestinations.LOCAL, futureFullPath)
+
+		if not printer.can_modify_file(futureFullPathInStorage, sd):
+			return make_response("Trying to overwrite file that is currently being printed: %s" % futureFullPath, 409)
+
+		reselect = printer.is_current_file(futureFullPathInStorage, sd)
 
 		def fileProcessingFinished(filename, absFilename, destination):
 			"""
@@ -342,13 +336,11 @@ def uploadGcodeFile(target):
 			Selects the just uploaded file if either selectAfterUpload or printAfterSelect are True, or if the
 			exact file is already selected, such reloading it.
 			"""
-			if octoprint.filemanager.valid_file_type(added_file, "gcode") and (selectAfterUpload or printAfterSelect or (currentFilename == filename and currentOrigin == destination)):
+			if octoprint.filemanager.valid_file_type(added_file, "gcode") and (selectAfterUpload or printAfterSelect or reselect):
 				printer.select_file(absFilename, destination == FileDestinations.SDCARD, printAfterSelect)
 
-		futureFullPath = fileManager.join_path(FileDestinations.LOCAL, futurePath, futureFilename)
-
 		try:
-			added_file = fileManager.add_file(FileDestinations.LOCAL, futureFullPath, upload, allow_overwrite=True)
+			added_file = fileManager.add_file(FileDestinations.LOCAL, futureFullPathInStorage, upload, allow_overwrite=True)
 		except octoprint.filemanager.storage.StorageError as e:
 			if e.code == octoprint.filemanager.storage.StorageError.INVALID_FILE:
 				return make_response("Could not upload the file \"{}\", invalid type".format(upload.filename), 400)
