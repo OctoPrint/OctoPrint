@@ -405,6 +405,10 @@ class FileManager(object):
 
 			if hook_file_object is not None:
 				file_object = hook_file_object
+
+		queue_entry = self._analysis_queue_entry(destination, path)
+		self._analysis_queue.dequeue(queue_entry)
+
 		file_path = self._storage(destination).add_file(path, file_object, links=links, printer_profile=printer_profile, allow_overwrite=allow_overwrite)
 
 		if analysis is None:
