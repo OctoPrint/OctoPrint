@@ -7,6 +7,8 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import logging
 import os
+import time
+import threading
 import watchdog.events
 
 import octoprint.filemanager
@@ -69,4 +71,26 @@ class GcodeWatchdogHandler(watchdog.events.PatternMatchingEventHandler):
 			self._logger.exception("There was an error while processing the file {} in the watched folder".format(path))
 
 	def on_created(self, event):
-		self._upload(event.src_path)
+		thread = threading.Thread(target=self._repeatedly_check, args=(event.src_path,))
+		thread.daemon = True
+		thread.start()
+
+	def _repeatedly_check(self, path, interval=1, stable=5):
+		last_size = os.stat(path).st_size
+		countdown = stable
+
+		while True:
+			new_size = os.stat(path).st_size
+			if new_size == last_size:
+				self._logger.debug("File at {} is no longer growing, counting down: {}".format(path, countdown))
+				countdown -= 1
+				if countdown <= 0:
+					break
+			else:
+				self._logger.debug("File at {} is still growing, waiting...".format(path))
+				countdown = stable
+
+			time.sleep(interval)
+
+		self._logger.debug("File at {} is stable, moving it".format(path))
+		self._upload(path)
