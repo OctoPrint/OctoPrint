@@ -406,7 +406,7 @@ class FilebasedUserManager(UserManager):
 		self._save()
 
 	def getAllUserSettings(self, username):
-		if not username in self._users.key():
+		if not username in self._users.keys():
 			raise UnknownUser(username)
 
 		user = self._users[username]

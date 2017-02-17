@@ -35,6 +35,10 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 	ARCHIVE_EXTENSIONS = (".zip", ".tar.gz", ".tgz", ".tar")
 
+	OPERATING_SYSTEMS = dict(windows=["win32"],
+	                         linux=["linux2"],
+	                         macos=["darwin"])
+
 	pip_inapplicable_arguments = dict(uninstall=["--user"])
 
 	def __init__(self):
@@ -610,10 +614,10 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			)
 
 			if "compatibility" in entry:
-				if "octoprint" in entry["compatibility"] and entry["compatibility"]["octoprint"] is not None and len(entry["compatibility"]["octoprint"]):
+				if "octoprint" in entry["compatibility"] and entry["compatibility"]["octoprint"] is not None and isinstance(entry["compatibility"]["octoprint"], (list, tuple)) and len(entry["compatibility"]["octoprint"]):
 					result["is_compatible"]["octoprint"] = self._is_octoprint_compatible(octoprint_version, entry["compatibility"]["octoprint"])
 
-				if "os" in entry["compatibility"] and entry["compatibility"]["os"] is not None and len(entry["compatibility"]["os"]):
+				if "os" in entry["compatibility"] and entry["compatibility"]["os"] is not None and isinstance(entry["compatibility"]["os"], (list, tuple)) and len(entry["compatibility"]["os"]):
 					result["is_compatible"]["os"] = self._is_os_compatible(current_os, entry["compatibility"]["os"])
 
 			return result
@@ -627,12 +631,15 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		"""
 
 		for octo_compat in compatibility_entries:
-			if not any(octo_compat.startswith(c) for c in ("<", "<=", "!=", "==", ">=", ">", "~=", "===")):
-				octo_compat = ">={}".format(octo_compat)
+			try:
+				if not any(octo_compat.startswith(c) for c in ("<", "<=", "!=", "==", ">=", ">", "~=", "===")):
+					octo_compat = ">={}".format(octo_compat)
 
-			s = next(pkg_resources.parse_requirements("OctoPrint" + octo_compat))
-			if octoprint_version in s:
-				break
+				s = next(pkg_resources.parse_requirements("OctoPrint" + octo_compat))
+				if octoprint_version in s:
+					break
+			except:
+				self._logger.exception("Something is wrong with this compatibility string for OctoPrint: {}".format(octo_compat))
 		else:
 			return False
 
@@ -642,15 +649,12 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		"""
 		Tests if the ``current_os`` matches any of the provided ``compatibility_entries``.
 		"""
-		return current_os in compatibility_entries
+		return current_os in filter(lambda x: x in self.__class__.OPERATING_SYSTEMS.keys(), compatibility_entries)
 
 	def _get_os(self):
-		if sys.platform == "win32":
-			return "windows"
-		elif sys.platform == "linux2":
-			return "linux"
-		elif sys.platform == "darwin":
-			return "macos"
+		for identifier, platforms in self.__class__.OPERATING_SYSTEMS.items():
+			if sys.platform in platforms:
+				return identifier
 		else:
 			return "unknown"
 
@@ -664,6 +668,13 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			octoprint_version_string = octoprint_version_string[:octoprint_version_string.find("-")]
 
 		octoprint_version = pkg_resources.parse_version(octoprint_version_string)
+
+		# A leading v is common in github release tags and old setuptools doesn't remove it. While OctoPrint's
+		# versions should never contains such a prefix, we'll make sure to have stuff behave the same
+		# regardless of setuptools version anyhow.
+		if octoprint_version and isinstance(octoprint_version, tuple) and octoprint_version[0].lower() == "*v":
+			octoprint_version = octoprint_version[1:]
+
 		if base:
 			if isinstance(octoprint_version, tuple):
 				# old setuptools

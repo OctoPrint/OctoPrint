@@ -7,6 +7,7 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 
 import click
 import octoprint
+import sys
 
 #~~ click context
 
@@ -55,6 +56,8 @@ def set_ctx_obj_option(ctx, param, value):
 		ctx.obj = OctoPrintContext()
 	if value != param.default:
 		setattr(ctx.obj, param.name, value)
+	elif param.default is not None:
+		setattr(ctx.obj, param.name, param.default)
 
 #~~ helper for retrieving context options
 
@@ -139,7 +142,7 @@ from .config import config_commands
 @legacy_options
 @click.version_option(version=octoprint.__version__, allow_from_autoenv=False)
 @click.pass_context
-def octo(ctx, debug, host, port, logging, daemon, pid, allow_root):
+def octo(ctx, **kwargs):
 
 	if ctx.invoked_subcommand is None:
 		# We have to support calling the octoprint command without any
@@ -148,16 +151,23 @@ def octo(ctx, debug, host, port, logging, daemon, pid, allow_root):
 		# But better print a message to inform people that they should
 		# use the sub commands instead.
 
+		def get_value(key):
+			return get_ctx_obj_option(ctx, key, kwargs.get(key))
+		daemon = get_value("daemon")
+
 		if daemon:
 			click.echo("Daemon operation via \"octoprint --daemon "
 			           "start|stop|restart\" is deprecated, please use "
 			           "\"octoprint daemon start|stop|restart\" from now on")
 
-			from octoprint.cli.server import daemon_command
-			ctx.invoke(daemon_command, debug=debug, host=host, port=port, logging=logging, allow_root=allow_root, command=daemon, pid=pid)
+			if sys.platform == "linux2":
+				from octoprint.cli.server import daemon_command
+				ctx.invoke(daemon_command, command=daemon, **kwargs)
+			else:
+				click.echo("Sorry, daemon mode is only supported under Linux right now")
 		else:
 			click.echo("Starting the server via \"octoprint\" is deprecated, "
 			           "please use \"octoprint serve\" from now on.")
 
 			from octoprint.cli.server import serve_command
-			ctx.invoke(serve_command, debug=debug, host=host, port=port, logging=logging, allow_root=allow_root)
+			ctx.invoke(serve_command, **kwargs)

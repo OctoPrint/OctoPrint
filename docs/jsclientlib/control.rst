@@ -1,16 +1,16 @@
-.. sec-jsclientlib-control:
+.. _sec-jsclientlib-control:
 
-:mod:`OctoPrint.control`
-------------------------
+:mod:`OctoPrintClient.control`
+------------------------------
 
-.. js:function:: OctoPrint.control.getCustomControls(opts)
+.. js:function:: OctoPrintClient.control.getCustomControls(opts)
 
    Retrieves the defined custom controls from the server.
 
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.control.sendGcode(commands, opts)
+.. js:function:: OctoPrintClient.control.sendGcode(commands, opts)
 
    Sends the provided ``commands`` to the printer.
 
@@ -21,7 +21,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.control.sendGcodeWithParameters(commands, parameters, opts)
+.. js:function:: OctoPrintClient.control.sendGcodeWithParameters(commands, parameters, opts)
 
    Sends the provided ``commands`` to the printer, replacing contained placeholders with
    the provided ``parameters`` first.
@@ -34,7 +34,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.control.sendGcodeScript(script, context, opts)
+.. js:function:: OctoPrintClient.control.sendGcodeScript(script, context, opts)
 
    Sends the provided ``script`` to the printer, enhancing the template with the
    specified ``context``.
@@ -44,7 +44,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.control.sendGcodeScriptWithParameters(script, context, parameters, opts)
+.. js:function:: OctoPrintClient.control.sendGcodeScriptWithParameters(script, context, parameters, opts)
 
    Sends the provided ``script`` to the printer, enhancing the template with the
    specified ``context`` and ``parameters``.

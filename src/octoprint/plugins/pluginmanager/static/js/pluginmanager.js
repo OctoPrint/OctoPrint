@@ -1,68 +1,71 @@
 (function (global, factory) {
     if (typeof define === "function" && define.amd) {
-        define(["OctoPrint"], factory);
+        define(["OctoPrintClient"], factory);
     } else {
-        factory(window.OctoPrint);
+        factory(global.OctoPrintClient);
     }
-})(window || this, function(OctoPrint) {
-    var exports = {};
-
-    exports.get = function(refresh, opts) {
-        return OctoPrint.get(OctoPrint.getSimpleApiUrl("pluginmanager") + ((refresh) ? "?refresh_repository=true" : ""), opts);
+})(this, function(OctoPrintClient) {
+    var OctoPrintPluginManagerClient = function(base) {
+        this.base = base;
     };
 
-    exports.getWithRefresh = function(opts) {
-        return exports.get(true, opts);
+    OctoPrintPluginManagerClient.prototype.get = function(refresh, opts) {
+        return this.base.get(this.base.getSimpleApiUrl("pluginmanager") + ((refresh) ? "?refresh_repository=true" : ""), opts);
     };
 
-    exports.getWithoutRefresh = function(opts) {
-        return exports.get(false, opts);
+    OctoPrintPluginManagerClient.prototype.getWithRefresh = function(opts) {
+        return this.get(true, opts);
     };
 
-    exports.install = function(pluginUrl, dependencyLinks, opts) {
+    OctoPrintPluginManagerClient.prototype.getWithoutRefresh = function(opts) {
+        return this.get(false, opts);
+    };
+
+    OctoPrintPluginManagerClient.prototype.install = function(pluginUrl, dependencyLinks, opts) {
         var data = {
             url: pluginUrl,
             dependency_links: !!dependencyLinks
         };
-        return OctoPrint.simpleApiCommand("pluginmanager", "install", data, opts);
+        return this.base.simpleApiCommand("pluginmanager", "install", data, opts);
     };
 
-    exports.reinstall = function(plugin, pluginUrl, dependencyLinks, opts) {
+    OctoPrintPluginManagerClient.prototype.reinstall = function(plugin, pluginUrl, dependencyLinks, opts) {
         var data = {
             url: pluginUrl,
             dependency_links: !!dependencyLinks,
             reinstall: plugin,
             force: true
         };
-        return OctoPrint.simpleApiCommand("pluginmanager", "install", data, opts);
+        return this.base.simpleApiCommand("pluginmanager", "install", data, opts);
     };
 
-    exports.uninstall = function(plugin, opts) {
+    OctoPrintPluginManagerClient.prototype.uninstall = function(plugin, opts) {
         var data = {
             plugin: plugin
         };
-        return OctoPrint.simpleApiCommand("pluginmanager", "uninstall", data, opts);
+        return this.base.simpleApiCommand("pluginmanager", "uninstall", data, opts);
     };
 
-    exports.enable = function(plugin, opts) {
+    OctoPrintPluginManagerClient.prototype.enable = function(plugin, opts) {
         var data = {
             plugin: plugin
         };
-        return OctoPrint.simpleApiCommand("pluginmanager", "enable", data, opts);
+        return this.base.simpleApiCommand("pluginmanager", "enable", data, opts);
     };
 
-    exports.disable = function(plugin, opts) {
+    OctoPrintPluginManagerClient.prototype.disable = function(plugin, opts) {
         var data = {
             plugin: plugin
         };
-        return OctoPrint.simpleApiCommand("pluginmanager", "disable", data, opts);
+        return this.base.simpleApiCommand("pluginmanager", "disable", data, opts);
     };
 
-    exports.upload = function(file) {
-        return OctoPrint.upload(OctoPrint.getBlueprintUrl("pluginmanager") + "upload_archive", file);
+    OctoPrintPluginManagerClient.prototype.upload = function(file) {
+        return this.base.upload(this.base.getBlueprintUrl("pluginmanager") + "upload_archive", file);
     };
 
-    OctoPrint.plugins.pluginmanager = exports;
+    OctoPrintClient.registerPluginComponent("pluginmanager", OctoPrintPluginManagerClient);
+    return OctoPrintPluginManagerClient;
 });
 
 $(function() {

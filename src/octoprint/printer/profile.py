@@ -124,7 +124,10 @@ class PrinterProfileManager(object):
 	     - Extruder offsets relative to first extruder, list of (x, y) tuples, first is always (0,0)
 	   * - ``extruder.nozzleDiameter``
 	     - ``float``
-	     - Diameter of the printer nozzle
+	     - Diameter of the printer nozzle(s)
+	   * - ``extruder.sharedNozzle``
+	     - ``boolean``
+	     - Whether there's only one nozzle shared among all extruders (true) or one nozzle per extruder (false).
 	   * - ``axes``
 	     - ``dict``
 	     - Information about the printer axes
@@ -185,7 +188,8 @@ class PrinterProfileManager(object):
 			offsets = [
 				(0, 0)
 			],
-			nozzleDiameter = 0.4
+			nozzleDiameter = 0.4,
+			sharedNozzle = False
 		),
 		axes=dict(
 			x = dict(speed=6000, inverted=False),
@@ -390,6 +394,13 @@ class PrinterProfileManager(object):
 
 	def _load_default(self):
 		default_overrides = settings().get(["printerProfiles", "defaultProfile"])
+		if self._migrate_profile(default_overrides):
+			try:
+				settings().set(["printerProfiles", "defaultProfile"], default_overrides)
+				settings().save()
+			except:
+				self._logger.exception("Tried to save default profile after migrating it while loading, ran into exception")
+
 		profile = self._ensure_valid_profile(dict_merge(copy.deepcopy(self.__class__.default), default_overrides))
 		if not profile:
 			self._logger.warn("Invalid default profile after applying overrides")
@@ -422,6 +433,14 @@ class PrinterProfileManager(object):
 
 		if "volume" in profile and not "custom_box" in profile["volume"]:
 			profile["volume"]["custom_box"] = False
+			modified = True
+
+		if "extruder" in profile and not "sharedNozzle" in profile["extruder"]:
+			profile["extruder"]["sharedNozzle"] = False
+			modified = True
+
+		if "extruder" in profile and "sharedNozzle" in profile["extruder"] and profile["extruder"]["sharedNozzle"]:
+			profile["extruder"]["offsets"] = [(0.0, 0.0)]
 			modified = True
 
 		return modified
@@ -462,7 +481,7 @@ class PrinterProfileManager(object):
 				return False
 
 		# convert booleans
-		for path in (("axes", "x", "inverted"), ("axes", "y", "inverted"), ("axes", "z", "inverted")):
+		for path in (("axes", "x", "inverted"), ("axes", "y", "inverted"), ("axes", "z", "inverted"), ("extruder", "sharedNozzle")):
 			try:
 				convert_value(profile, path, bool)
 			except Exception as e:

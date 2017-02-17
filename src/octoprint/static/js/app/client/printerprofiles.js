@@ -1,46 +1,51 @@
 (function (global, factory) {
     if (typeof define === "function" && define.amd) {
-        define(["OctoPrint", "jquery"], factory);
+        define(["OctoPrintClient", "jquery"], factory);
     } else {
-        factory(window.OctoPrint, window.$);
+        factory(global.OctoPrintClient, global.$);
     }
-})(window || this, function(OctoPrint, $) {
+})(this, function(OctoPrintClient, $) {
     var url = "api/printerprofiles";
 
     var profileUrl = function(profile) {
         return url + "/" + profile;
     };
 
-    OctoPrint.printerprofiles = {
-        list: function (opts) {
-            return OctoPrint.get(url, opts);
-        },
+    var OctoPrintPrinterProfileClient = function(base) {
+        this.base = base;
+    };
 
-        add: function (profile, basedOn, opts) {
-            profile = profile || {};
+    OctoPrintPrinterProfileClient.prototype.list = function (opts) {
+        return this.base.get(url, opts);
+    };
 
-            var data = {profile: profile};
-            if (basedOn) {
-                data.basedOn = basedOn;
-            }
+    OctoPrintPrinterProfileClient.prototype.add = function (profile, basedOn, opts) {
+        profile = profile || {};
 
-            return OctoPrint.postJson(url, data, opts);
-        },
-
-        get: function (id, opts) {
-            return OctoPrint.get(profileUrl(id), opts);
-        },
-
-        update: function (id, profile, opts) {
-            profile = profile || {};
-
-            var data = {profile: profile};
-
-            return OctoPrint.patchJson(profileUrl(id), data, opts);
-        },
-
-        delete: function (id, opts) {
-            return OctoPrint.delete(profileUrl(id), opts);
+        var data = {profile: profile};
+        if (basedOn) {
+            data.basedOn = basedOn;
         }
-    }
+
+        return this.base.postJson(url, data, opts);
+    };
+
+    OctoPrintPrinterProfileClient.prototype.get = function (id, opts) {
+        return this.base.get(profileUrl(id), opts);
+    };
+
+   OctoPrintPrinterProfileClient.prototype. update = function (id, profile, opts) {
+        profile = profile || {};
+
+        var data = {profile: profile};
+
+        return this.base.patchJson(profileUrl(id), data, opts);
+    };
+
+    OctoPrintPrinterProfileClient.prototype.delete = function (id, opts) {
+        return this.base.delete(profileUrl(id), opts);
+    };
+
+    OctoPrintClient.registerComponent("printerprofiles", OctoPrintPrinterProfileClient);
+    return OctoPrintPrinterProfileClient;
 });

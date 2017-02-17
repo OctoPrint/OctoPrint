@@ -31,11 +31,14 @@ def _get_latest_commit(user, repo, branch):
 
 
 def get_latest(target, check):
-	if "user" not in check or "repo" not in check:
-		raise ConfigurationInvalid("Update configuration for %s of type github_commit needs all of user and repo" % target)
+	user = check.get("user")
+	repo = check.get("repo")
+
+	if user is None or repo is None:
+		raise ConfigurationInvalid("Update configuration for {} of type github_commit needs user and repo set and not None".format(target))
 
 	branch = "master"
-	if "branch" in check:
+	if "branch" in check and check["branch"] is not None:
 		branch = check["branch"]
 
 	current = None

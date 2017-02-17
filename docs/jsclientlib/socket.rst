@@ -1,24 +1,24 @@
-.. sec-jsclientlib-socket:
+.. _sec-jsclientlib-socket:
 
-:mod:`OctoPrint.socket`
------------------------
+:mod:`OctoPrintClient.socket`
+-----------------------------
 
-.. js:data:: OctoPrint.socket.options
+.. js:attribute:: OctoPrintClient.socket.options
 
    The socket client's options.
 
-   ``OctoPrint.socket.options.timeouts``
+   ``OctoPrintClient.socket.options.timeouts``
        A list of consecutive timeouts after which to attempt reconnecting to a
        disconnected sockets, in seconds. Defaults to ``[1, 1, 2, 3, 5, 8, 13, 20, 40, 100]``.
        The default setting here makes the client slowly back off after the first couple of very
        fast connection attempts don't succeed, and give up after 10 tries.
 
-   ``OctoPrint.socket.options.rateSlidingWindowSize``
+   ``OctoPrintClient.socket.options.rateSlidingWindowSize``
        Number of last rate measurements to take into account for timing analysis and
        communication throttling. See :ref:`Communication Throttling <sec-jsclient-socket-throttling>`
        below.
 
-.. js:function:: OctoPrint.socket.connect(opts)
+.. js:function:: OctoPrintClient.socket.connect(opts)
 
    Connects the socket client to OctoPrint's `SockJS <http://sockjs.org/>`_ socket.
 
@@ -27,15 +27,15 @@
 
    :param object opts: Additional options for the SockJS constructor.
 
-.. js:function:: OctoPrint.socket.reconnect()
+.. js:function:: OctoPrintClient.socket.reconnect()
 
    Reconnects the socket client. If the socket is currently connected it will be disconnected first.
 
-.. js:function:: OctoPrint.socket.disconnect()
+.. js:function:: OctoPrintClient.socket.disconnect()
 
    Disconnects the socket client.
 
-.. js:function:: OctoPrint.socket.onMessage(message, handler)
+.. js:function:: OctoPrintClient.socket.onMessage(message, handler)
 
    Registers the ``handler`` for messages of type ``message``.
 
@@ -60,7 +60,7 @@
    :param string message: The type of message for which to register
    :param function handler: The handler function
 
-.. js:function:: OctoPrint.socket.sendMessage(type, payload)
+.. js:function:: OctoPrintClient.socket.sendMessage(type, payload)
 
    Sends a message of type ``type`` with the provided ``payload`` to the server.
 
@@ -70,7 +70,7 @@
    :param string type: Type of message to send
    :param object payload: Payload to send
 
-.. js:function:: OctoPrint.socket.onRateTooLow(measured, minimum)
+.. js:function:: OctoPrintClient.socket.onRateTooLow(measured, minimum)
 
    Called by the socket client when the measured message round trip times have been lower than
    the current lower processing limit over the full sliding window, indicating that messages
@@ -82,7 +82,7 @@
    :param Number measured: Maximal measured message round trip time
    :param Number minimum: Lower round trip time limit for keeping the rate
 
-.. js:function:: OctoPrint.socket.onRateTooHigh(measured, maximum)
+.. js:function:: OctoPrintClient.socket.onRateTooHigh(measured, maximum)
 
    Called by the socket client when the last measured round trip time was higher than the
    current upper procesisng limit, indicating that the messages are now processed slower than
@@ -94,11 +94,11 @@
    :param Number measured: Measured message round trip time
    :param Number minimum: Upper round trip time limit for keeping the rate
 
-.. js:function:: OctoPrint.socket.increaseRate()
+.. js:function:: OctoPrintClient.socket.increaseRate()
 
    Instructs the server to increase the message rate by 500ms.
 
-.. js:function:: OctoPrint.socket.decreaseRate()
+.. js:function:: OctoPrintClient.socket.decreaseRate()
 
    Instructs the server to decrease the message rate by 500ms.
 

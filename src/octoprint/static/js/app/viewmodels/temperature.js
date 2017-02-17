@@ -50,7 +50,8 @@ $(function() {
             // tools
             var currentProfileData = self.settingsViewModel.printerProfiles.currentProfileData();
             var numExtruders = (currentProfileData ? currentProfileData.extruder.count() : 0);
-            if (numExtruders && numExtruders > 1) {
+            var sharedNozzle = (currentProfileData ? currentProfileData.extruder.sharedNozzle() : false);
+            if (numExtruders && numExtruders > 1 && !sharedNozzle) {
                 // multiple extruders
                 for (var extruder = 0; extruder < numExtruders; extruder++) {
                     color = graphColors.shift();
@@ -63,7 +64,7 @@ $(function() {
                     tools[extruder]["name"](gettext("Tool") + " " + extruder);
                     tools[extruder]["key"]("tool" + extruder);
                 }
-            } else if (numExtruders == 1) {
+            } else if (numExtruders == 1 || sharedNozzle) {
                 // only one extruder, no need to add numbers
                 color = graphColors[0];
                 heaterOptions["tool0"] = {name: "T", color: color};

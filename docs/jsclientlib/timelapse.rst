@@ -1,9 +1,9 @@
-.. sec-jsclientlib-timelapse:
+.. _sec-jsclientlib-timelapse:
 
-:mod:`OctoPrint.timelapse`
---------------------------
+:mod:`OctoPrintClient.timelapse`
+--------------------------------
 
-.. js:function:: OctoPrint.timelapse.get(unrendered, opts)
+.. js:function:: OctoPrintClient.timelapse.get(unrendered, opts)
 
    Get a list of all timelapses and the current timelapse config.
 
@@ -13,7 +13,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.timelapse.list(opts)
+.. js:function:: OctoPrintClient.timelapse.list(opts)
 
    Get the lists of rendered and unrendered timelapses. The returned promis
    will be resolved with an object containing the properties ``rendered``
@@ -23,21 +23,21 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.timelapse.listRendered(opts)
+.. js:function:: OctoPrintClient.timelapse.listRendered(opts)
 
    Get the list of rendered timelapses.
 
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.timelapse.listUnrendered(opts)
+.. js:function:: OctoPrintClient.timelapse.listUnrendered(opts)
 
    Get the list of unrendered timelapses.
 
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.timelapse.download(filename, opts)
+.. js:function:: OctoPrintClient.timelapse.download(filename, opts)
 
    Download the rendered timelapse ``filename``.
 
@@ -45,7 +45,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.timelapse.delete(filename, opts)
+.. js:function:: OctoPrintClient.timelapse.delete(filename, opts)
 
    Delete the rendered timelapse ``filename``.
 
@@ -53,7 +53,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.timelapse.deleteUnrendered(name, opts)
+.. js:function:: OctoPrintClient.timelapse.deleteUnrendered(name, opts)
 
    Delete the unrendered timelapse ``name``.
 
@@ -61,7 +61,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.timelapse.renderUnrendered(name, opts)
+.. js:function:: OctoPrintClient.timelapse.renderUnrendered(name, opts)
 
    Render the unrendered timelapse ``name``.
 
@@ -69,14 +69,14 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.timelapse.getConfig(opts)
+.. js:function:: OctoPrintClient.timelapse.getConfig(opts)
 
    Get the current timelapse configuration.
 
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.timelapse.saveConfig(config, opts)
+.. js:function:: OctoPrintClient.timelapse.saveConfig(config, opts)
 
    Save the timelapse configuration.
 

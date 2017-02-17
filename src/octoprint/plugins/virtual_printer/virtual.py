@@ -54,8 +54,12 @@ class VirtualPrinter(object):
 			self._send(item)
 
 		self.currentExtruder = 0
-		self.temp = [0.0] * settings().getInt(["devel", "virtualPrinter", "numExtruders"])
-		self.targetTemp = [0.0] * settings().getInt(["devel", "virtualPrinter", "numExtruders"])
+		self.extruderCount = settings().getInt(["devel", "virtualPrinter", "numExtruders"])
+		self.sharedNozzle = settings().getBoolean(["devel", "virtualPrinter", "sharedNozzle"])
+		self.temperatureCount = (1 if self.sharedNozzle else self.extruderCount)
+
+		self.temp = [0.0] * self.temperatureCount
+		self.targetTemp = [0.0] * self.temperatureCount
 		self.lastTempAt = time.time()
 		self.bedTemp = 1.0
 		self.bedTargetTemp = 1.0
@@ -301,8 +305,10 @@ class VirtualPrinter(object):
 	##~~ command implementations
 
 	def _gcode_T(self, code, data):
-		self.currentExtruder = int(code)
-		self._send("Active Extruder: %d" % self.currentExtruder)
+		t = int(code)
+		if 0 <= t <= self.extruderCount:
+			self.currentExtruder = t
+			self._send("Active Extruder: %d" % self.currentExtruder)
 
 	def _gcode_F(self, code, data):
 		if self._supportF:
@@ -628,7 +634,7 @@ class VirtualPrinter(object):
 		includeOk = not self._okBeforeCommandOutput
 
 		# send simulated temperature data
-		if settings().getInt(["devel", "virtualPrinter", "numExtruders"]) > 1:
+		if self.temperatureCount > 1:
 			allTemps = []
 			for i in range(len(self.temp)):
 				allTemps.append((i, self.temp[i], self.targetTemp[i]))
@@ -672,7 +678,7 @@ class VirtualPrinter(object):
 			except:
 				pass
 
-		if tool >= settings().getInt(["devel", "virtualPrinter", "numExtruders"]):
+		if tool >= self.temperatureCount:
 			return
 
 		try:

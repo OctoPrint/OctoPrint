@@ -246,11 +246,11 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 					machinecode_path = path + ".gco"
 
 				if position and isinstance(position, dict) and "x" in position and "y" in position:
-					posX = position["x"]
-					posY = position["y"]
+					pos_x = position["x"]
+					pos_y = position["y"]
 				else:
-					posX = None
-					posY = None
+					pos_x = None
+					pos_y = None
 
 				if on_progress:
 					if not on_progress_args:
@@ -266,8 +266,24 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 
 				working_dir = os.path.dirname(executable)
 
-				slicing_profile = Profile(self._load_profile(profile_path), printer_profile, posX, posY)
-				engine_settings = self._convert_to_engine(profile_path, printer_profile, posX, posY)
+				slicing_profile = Profile(self._load_profile(profile_path), printer_profile, pos_x, pos_y)
+
+				# NOTE: We can assume an extruder count of 1 here since the only way we currently
+				# support dual extrusion in this implementation is by using the second extruder for support (which
+				# the engine conversion will automatically detect and adapt accordingly).
+				#
+				# We currently do only support STL files as sliceables, which by default can only contain one mesh,
+				# so no risk of having to slice multi-objects at the moment, which would necessitate a full analysis
+				# of the objects to slice to determine amount of needed extruders to use here. If we ever decide to
+				# also support dual extrusion slicing (including composition from multiple STLs or support for OBJ or
+				# AMF files and the like), this code needs to be adapted!
+				#
+				# The extruder count is needed to decide which start/end gcode will be used from the Cura profile.
+				# Stock Cura implementation counts the number of objects in the scene for this (and also takes a look
+				# at the support usage, like the engine conversion here does). We only ever have one object.
+				engine_settings = self._convert_to_engine(profile_path, printer_profile,
+				                                          pos_x=pos_x, pos_y=pos_y,
+				                                          used_extruders=1)
 
 				# Start building the argument list for the CuraEngine command execution
 				args = [executable, '-v', '-p']
@@ -443,9 +459,9 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 		with octoprint.util.atomic_write(path, "wb", max_permissions=0o666) as f:
 			yaml.safe_dump(profile, f, default_flow_style=False, indent="  ", allow_unicode=True)
 
-	def _convert_to_engine(self, profile_path, printer_profile, posX, posY):
-		profile = Profile(self._load_profile(profile_path), printer_profile, posX, posY)
-		return profile.convert_to_engine()
+	def _convert_to_engine(self, profile_path, printer_profile, pos_x=None, pos_y=None, used_extruders=1):
+		profile = Profile(self._load_profile(profile_path), printer_profile, pos_x, pos_y)
+		return profile.convert_to_engine(used_extruders=used_extruders)
 
 def _sanitize_name(name):
 	if name is None:

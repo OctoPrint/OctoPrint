@@ -1,21 +1,21 @@
 .. sec-jsclientlib-system:
 
-:mod:`OctoPrint.system`
------------------------
+:mod:`OctoPrintClient.system`
+-----------------------------
 
 .. note::
 
    All methods here require that the used API token or a the existing browser session
    has admin rights.
 
-.. js:function:: OctoPrint.system.getCommands(opts)
+.. js:function:: OctoPrintClient.system.getCommands(opts)
 
    Retrieves a list of configured system commands for both ``core`` and ``custom`` sources.
 
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.system.getCommandsForSource(source, opts)
+.. js:function:: OctoPrintClient.system.getCommandsForSource(source, opts)
 
    Retrieves a list of system commands, limiting it to the specified ``source``, which might be
    either ``core`` or ``custom``.
@@ -23,7 +23,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.system.executeCommand(source, action, opts)
+.. js:function:: OctoPrintClient.system.executeCommand(source, action, opts)
 
    Executes command ``action`` on ``source``.
 

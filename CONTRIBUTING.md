@@ -320,7 +320,7 @@ There are three main branches in OctoPrint:
     add a commit after release to this branch - `<x>.<y>.<z>.post<commits since x.y.z>`
     (e.g. `1.2.9.post1`).
   * `maintenance`: Improvements and fixes of the current release that make up
-    the next release go here. More or less continously updated. You can consider
+    the next release go here. More or less continuously updated. You can consider
     this a preview of the next release version. It should be very stable at all
     times. Anything you spot in here helps tremendously with getting a rock solid
     next stable release, so if you want to help out development, running the
@@ -396,6 +396,7 @@ the local version identifier to allow for an exact determination of the active c
   * 2016-09-09: New `rc/*` branches explained.
   * 2016-09-23: Some more work on "How to file a bug report" based on recent
     experiences
+  * 2017-01-25: Fixed a typo
 
 ## Footnotes
   * [1] - If you are wondering why, the problem is that anything that you add

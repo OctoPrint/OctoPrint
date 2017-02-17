@@ -121,75 +121,73 @@ def serve_command(ctx, **kwargs):
 	           allow_root, logging, verbosity, safe_mode)
 
 
-@server_commands.command(name="daemon")
-@server_options
-@daemon_options
-@standard_options(hidden=True)
-@click.argument("command", type=click.Choice(["start", "stop", "restart", "status"]),
-                metavar="start|stop|restart|status")
-@click.pass_context
-def daemon_command(ctx, command, **kwargs):
-	"""
-	Starts, stops or restarts in daemon mode.
+if sys.platform == "linux2":
+	# we only support daemon mode under Linux
 
-	Please note that daemon mode is only supported under Linux right now.
-	"""
+	@server_commands.command(name="daemon")
+	@server_options
+	@daemon_options
+	@standard_options(hidden=True)
+	@click.argument("command", type=click.Choice(["start", "stop", "restart", "status"]),
+	                metavar="start|stop|restart|status")
+	@click.pass_context
+	def daemon_command(ctx, command, **kwargs):
+		"""
+		Starts, stops or restarts in daemon mode.
 
-	def get_value(key):
-		return get_ctx_obj_option(ctx, key, kwargs.get(key))
+		Please note that daemon mode is only supported under Linux right now.
+		"""
 
-	host = get_value("host")
-	port = get_value("port")
-	logging = get_value("logging")
-	allow_root = get_value("allow_root")
-	debug = get_value("debug")
-	pid = get_value("pid")
+		def get_value(key):
+			return get_ctx_obj_option(ctx, key, kwargs.get(key))
 
-	basedir = get_value("basedir")
-	configfile = get_value("configfile")
-	verbosity = get_value("verbosity")
-	safe_mode = get_value("safe_mode")
+		host = get_value("host")
+		port = get_value("port")
+		logging = get_value("logging")
+		allow_root = get_value("allow_root")
+		debug = get_value("debug")
+		pid = get_value("pid")
 
-	if sys.platform == "darwin" or sys.platform == "win32":
-		click.echo("Sorry, daemon mode is only supported under Linux right now",
-		           file=sys.stderr)
-		sys.exit(2)
+		basedir = get_value("basedir")
+		configfile = get_value("configfile")
+		verbosity = get_value("verbosity")
+		safe_mode = get_value("safe_mode")
 
-	if pid is None:
-		click.echo("No path to a pidfile set",
-		           file=sys.stderr)
-		sys.exit(1)
+		if pid is None:
+			click.echo("No path to a pidfile set",
+			           file=sys.stderr)
+			sys.exit(1)
 
-	from octoprint.daemon import Daemon
-	class OctoPrintDaemon(Daemon):
-		def __init__(self, pidfile, basedir, configfile, host, port, debug, allow_root, logging_config, verbosity, safe_mode):
-			Daemon.__init__(self, pidfile)
+		from octoprint.daemon import Daemon
+		class OctoPrintDaemon(Daemon):
+			def __init__(self, pidfile, basedir, configfile, host, port, debug, allow_root, logging_config, verbosity, safe_mode):
+				Daemon.__init__(self, pidfile)
 
-			self._basedir = basedir
-			self._configfile = configfile
-			self._host = host
-			self._port = port
-			self._debug = debug
-			self._allow_root = allow_root
-			self._logging_config = logging_config
-			self._verbosity = verbosity
-			self._safe_mode = safe_mode
+				self._basedir = basedir
+				self._configfile = configfile
+				self._host = host
+				self._port = port
+				self._debug = debug
+				self._allow_root = allow_root
+				self._logging_config = logging_config
+				self._verbosity = verbosity
+				self._safe_mode = safe_mode
 
-		def run(self):
-			run_server(self._basedir, self._configfile, self._host, self._port, self._debug,
-			           self._allow_root, self._logging_config, self._verbosity, self._safe_mode,
-			           octoprint_daemon=self)
+			def run(self):
+				run_server(self._basedir, self._configfile, self._host, self._port, self._debug,
+				           self._allow_root, self._logging_config, self._verbosity, self._safe_mode,
+				           octoprint_daemon=self)
 
-	octoprint_daemon = OctoPrintDaemon(pid, basedir, configfile, host, port, debug, allow_root, logging, verbosity,
-	                                   safe_mode)
+		octoprint_daemon = OctoPrintDaemon(pid, basedir, configfile, host, port, debug, allow_root, logging, verbosity,
+		                                   safe_mode)
 
-	if command == "start":
-		octoprint_daemon.start()
-	elif command == "stop":
-		octoprint_daemon.stop()
-	elif command == "restart":
-		octoprint_daemon.restart()
-	elif command == "status":
-		octoprint_daemon.status()
+		if command == "start":
+			octoprint_daemon.start()
+		elif command == "stop":
+			octoprint_daemon.stop()
+		elif command == "restart":
+			octoprint_daemon.restart()
+		elif command == "status":
+			octoprint_daemon.status()
 
 

@@ -77,6 +77,8 @@ import octoprint._version
 import octoprint.filemanager.storage
 import octoprint.filemanager.analysis
 import octoprint.slicing
+from octoprint.server.util import enforceApiKeyRequestHandler, loginFromApiKeyRequestHandler, corsRequestHandler, \
+	corsResponseHandler
 from octoprint.server.util.flask import PreemptiveCache
 from octoprint.server.util.serialization import OctoPrintJsonEncoder, OctoPrintJsonDecoder
 
@@ -309,7 +311,7 @@ class Server(object):
 
 			return dict(settings=plugin_settings)
 
-		def settings_plugin_config_migration_and_cleanup(name, implementation):
+		def settings_plugin_config_migration_and_cleanup(identifier, implementation):
 			"""Take care of migrating and cleaning up any old settings"""
 
 			if not isinstance(implementation, octoprint.plugin.SettingsPlugin):
@@ -322,7 +324,7 @@ class Server(object):
 				stored_version = implementation._settings.get_int([octoprint.plugin.SettingsPlugin.config_version_key])
 				if stored_version is None or stored_version < settings_version:
 					settings_migrator(settings_version, stored_version)
-					implementation._settings.set_int([octoprint.plugin.SettingsPlugin.config_version_key], settings_version)
+					implementation._settings.set_int([octoprint.plugin.SettingsPlugin.config_version_key], settings_version, force=True)
 
 			implementation.on_settings_cleanup()
 			implementation._settings.save()
@@ -421,7 +423,8 @@ class Server(object):
 		log_permission_validator = dict(access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.permission_validator, permissions.Permissions.logs))
 		camera_permission_validator = dict(access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.permission_validator, permissions.Permissions.webcam))
 
-		no_hidden_files_validator = dict(path_validation=util.tornado.path_validation_factory(lambda path: not octoprint.util.is_hidden_path(path), status_code=404))
+		no_hidden_files_validator = dict(path_validation=util.tornado.path_validation_factory(lambda path: not octoprint.util.is_hidden_path(path),
+		                                                                                      status_code=404))
 
 		def joined_dict(*dicts):
 			if not len(dicts):
@@ -450,7 +453,7 @@ class Server(object):
 			# camera snapshot
 			(r"/downloads/camera/current", util.tornado.UrlProxyHandler, joined_dict(dict(url=self._settings.get(["webcam", "snapshot"]),
 			                                                                  as_attachment=True),
-			                                                                  camera_permission_validator)),
+			                                                                         camera_permission_validator)),
 			# generated webassets
 			(r"/static/webassets/(.*)", util.tornado.LargeResponseHandler, dict(path=os.path.join(self._settings.getBaseFolder("generated"), "webassets"))),
 
@@ -950,8 +953,13 @@ class Server(object):
 			return
 
 		if plugin.is_blueprint_protected():
-			from octoprint.server.util import apiKeyRequestHandler, corsResponseHandler
-			blueprint.before_request(apiKeyRequestHandler)
+			blueprint.before_request(corsRequestHandler)
+			blueprint.before_request(enforceApiKeyRequestHandler)
+			blueprint.before_request(loginFromApiKeyRequestHandler)
+			blueprint.after_request(corsResponseHandler)
+		else:
+			blueprint.before_request(corsRequestHandler)
+			blueprint.before_request(loginFromApiKeyRequestHandler)
 			blueprint.after_request(corsResponseHandler)
 
 		url_prefix = "/plugin/{name}".format(name=name)
