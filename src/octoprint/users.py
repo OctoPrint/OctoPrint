@@ -553,9 +553,9 @@ class User(UserMixin):
 
 	def add_permissions_to_user(self, permissions):
 		dirty = False
-		from octoprint.permissions import OctoPermission
+		from octoprint.permissions import OctoPrintPermission
 		for permission in permissions:
-			if isinstance(permission, OctoPermission) and permission not in self.permissions:
+			if isinstance(permission, OctoPrintPermission) and permission not in self.permissions:
 				self._permissions.append(permission)
 				dirty = True
 
@@ -563,9 +563,9 @@ class User(UserMixin):
 
 	def remove_permissions_from_user(self, permissions):
 		dirty = False
-		from octoprint.permissions import OctoPermission
+		from octoprint.permissions import OctoPrintPermission
 		for permission in permissions:
-			if isinstance(permission, OctoPermission) and permission in self._permissions:
+			if isinstance(permission, OctoPrintPermission) and permission in self._permissions:
 				self._permissions.remove(permission)
 				dirty = True
 

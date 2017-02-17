@@ -10,7 +10,7 @@ from yaml.dumper import SafeDumper
 from yaml.loader import SafeLoader
 
 from octoprint.groups import Group
-from octoprint.permissions import OctoPermission
+from octoprint.permissions import OctoPrintPermission
 
 def OctoPermission_yaml_representer(dumper, data):
 	return dumper.represent_scalar(u'!octopermission', repr(data))
@@ -34,7 +34,7 @@ def group_yaml_constructor(loader, node):
 	return groupManager.findGroup(name)
 
 
-yaml.add_representer(OctoPermission, OctoPermission_yaml_representer, Dumper=SafeDumper)
+yaml.add_representer(OctoPrintPermission, OctoPermission_yaml_representer, Dumper=SafeDumper)
 yaml.add_constructor(u'!octopermission', OctoPermission_yaml_constructor, Loader=SafeLoader)
 yaml.add_representer(Group, group_yaml_representer, Dumper=SafeDumper)
 yaml.add_constructor(u'!group', group_yaml_constructor, Loader=SafeLoader)

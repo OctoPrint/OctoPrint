@@ -51,6 +51,8 @@ pluginManager = None
 appSessionManager = None
 pluginLifecycleManager = None
 preemptiveCache = None
+jsonEncoder = None
+jsonDecoder = None
 
 principals = Principal(app)
 
@@ -169,6 +171,8 @@ class Server(object):
 		global appSessionManager
 		global pluginLifecycleManager
 		global preemptiveCache
+		global jsonEncoder
+		global jsonDecoder
 		global debug
 		global safe_mode
 
@@ -181,12 +185,9 @@ class Server(object):
 		self._logger = logging.getLogger(__name__)
 		pluginManager = self._plugin_manager
 
-		app.json_encoder = OctoPrintJsonEncoder
-		app.json_decoder = OctoPrintJsonDecoder
-
-		OctoPrintJsonEncoder.add_encoder(permissions.OctoPermission, lambda op: op.asDict())
-		OctoPrintJsonEncoder.add_encoder(groups.Group, lambda g: g.asDict())
-		OctoPrintJsonEncoder.add_multi_encoder(users.User, lambda u: u.asDict())
+		# setup octoprint's flask json serialization/deserialization
+		app.json_encoder = OctoPrintJsonEncoder.Encoder
+		app.json_decoder = OctoPrintJsonDecoder.Decoder
 
 		# monkey patch a bunch of stuff
 		util.tornado.fix_ioloop_scheduling()
@@ -218,6 +219,13 @@ class Server(object):
 		appSessionManager = util.flask.AppSessionManager()
 		pluginLifecycleManager = LifecycleManager(pluginManager)
 		preemptiveCache = PreemptiveCache(os.path.join(self._settings.getBaseFolder("data"), "preemptive_cache_config.yaml"))
+
+		jsonEncoder = OctoPrintJsonEncoder()
+		jsonDecoder = OctoPrintJsonDecoder()
+
+		jsonEncoder.add_multi_encoder(users.User, lambda u: u.asDict())
+		jsonEncoder.add_encoder(groups.Group, lambda g: g.asDict())
+		jsonEncoder.add_encoder(permissions.OctoPrintPermission, lambda op: op.asDict())
 
 		# setup access control
 		groupManagerName = self._settings.get(["accessControl", "groupManager"])
@@ -256,7 +264,9 @@ class Server(object):
 			plugin_lifecycle_manager=pluginLifecycleManager,
 			user_manager=userManager,
 			group_manager=groupManager,
-			preemptive_cache=preemptiveCache
+			preemptive_cache=preemptiveCache,
+			json_encoder=jsonEncoder,
+			json_decoder=jsonDecoder
 		)
 
 		# create printer instance

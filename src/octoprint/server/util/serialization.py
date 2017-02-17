@@ -7,65 +7,54 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 from flask.json import JSONEncoder, JSONDecoder
 
-
-class OctoPrintJsonEncoder(JSONEncoder):
+class OctoPrintJsonEncoder:
 	json_encoder = dict()
 	json_multi_encoder = dict()
 
-	def default(self, obj):
-		data_types = type(obj).__mro__
-		if data_types[0] in self.json_encoder:
-			node = self.json_encoder[data_types[0]](obj)
-		else:
-			for data_type in data_types:
-				if data_type in self.json_multi_encoder:
-					node = self.json_multi_encoder[data_type](obj)
-					break
+	class Encoder(JSONEncoder):
+		def default(self, obj):
+			data_types = type(obj).__mro__
+			if data_types[0] in OctoPrintJsonEncoder.json_encoder:
+				node = OctoPrintJsonEncoder.json_encoder[data_types[0]](obj)
 			else:
-				node = JSONEncoder.default(self, obj)
+				for data_type in data_types:
+					if data_type in OctoPrintJsonEncoder.json_multi_encoder:
+						node = OctoPrintJsonEncoder.json_multi_encoder[data_type](obj)
+						break
+				else:
+					node = JSONEncoder.default(self, obj)
 
-		return node
+			return node
 
-	@classmethod
-	def add_encoder(cls, data_type, encoder):
-		if 'json_encoder' not in cls.__dict__:
-			cls.json_encoder = cls.json_encoder.copy()
+	def add_encoder(self, data_type, encoder):
+		OctoPrintJsonEncoder.json_encoder[data_type] = encoder
 
-		cls.json_encoder[data_type] = encoder
-
-	@classmethod
-	def add_multi_encoder(cls, data_type, encoder):
-		if 'json_multi_encoder' not in cls.__dict__:
-			cls.json_multi_encoder = cls.json_multi_encoder.copy()
-
-		cls.json_multi_encoder[data_type] = encoder
+	def add_multi_encoder(self, data_type, encoder):
+		OctoPrintJsonEncoder.json_multi_encoder[data_type] = encoder
 
 
-class OctoPrintJsonDecoder(JSONDecoder):
+class OctoPrintJsonDecoder:
 	json_decoder = dict()
 
-	def __init__(self, **kwargs):
-		JSONDecoder.__init__(self, object_hook=self.dict_to_object)
-		self._object_hook = kwargs.pop('object_hook') if 'object_hook' in kwargs else None
+	class Decoder(JSONDecoder):
+		def __init__(self, **kwargs):
+			JSONDecoder.__init__(self, object_hook=self.dict_to_object)
+			self._object_hook = kwargs.pop('object_hook', None)
 
-	def dict_to_object(self, d):
-		inst = None
-		if self._object_hook is not None:
-			inst = self._object_hook(d)
+		def dict_to_object(self, d):
+			inst = None
+			if self._object_hook is not None:
+				inst = self._object_hook(d)
 
-		if inst is None:
-			for decoder in self.json_decoder:
-				inst = self.json_decoder[decoder](self, d)
-				if inst is not None:
-					return inst
-			else:
-				inst = d
+			if inst is None:
+				for decoder in OctoPrintJsonDecoder.json_decoder:
+					inst = OctoPrintJsonDecoder.json_decoder[decoder](self, d)
+					if inst is not None:
+						return inst
+				else:
+					inst = d
 
-		return inst
+			return inst
 
-	@classmethod
-	def add_decoder(cls, name, decoder):
-		if 'json_decoder' not in cls.__dict__:
-			cls.json_decoder = cls.json_decoder.copy()
-
-		cls.json_decoder[name] = decoder
+	def add_decoder(self, name, decoder):
+		OctoPrintJsonDecoder.json_decoder[name] = decoder
