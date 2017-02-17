@@ -87,9 +87,10 @@ class GcodeWatchdogHandler(watchdog.events.PatternMatchingEventHandler):
 				if countdown <= 0:
 					break
 			else:
-				self._logger.debug("File at {} is still growing, waiting...".format(path))
+				self._logger.debug("File at {} is still growing (last: {}, new: {}), waiting...".format(path, last_size, new_size))
 				countdown = stable
 
+			last_size = new_size
 			time.sleep(interval)
 
 		self._logger.debug("File at {} is stable, moving it".format(path))
