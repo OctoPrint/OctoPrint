@@ -205,17 +205,26 @@ class FileManager(object):
 			# callback was not registered
 			pass
 
-	def _determine_analysis_backlog(self, storage_type, storage_manager):
+	def _determine_analysis_backlog(self, storage_type, storage_manager, root=None, high_priority=False):
 		counter = 0
-		for entry, path, printer_profile in storage_manager.analysis_backlog:
+
+		backlog_generator = storage_manager.analysis_backlog
+		if root is not None:
+			backlog_generator = storage_manager.analysis_backlog_for_path(path=root)
+
+		for entry, path, printer_profile in backlog_generator:
 			file_type = get_file_type(path)[-1]
 			file_name = storage_manager.split_path(path)
 
 			# we'll use the default printer profile for the backlog since we don't know better
 			queue_entry = QueueEntry(file_name, entry, file_type, storage_type, path, self._printer_profile_manager.get_default())
-			if self._analysis_queue.enqueue(queue_entry, high_priority=False):
+			if self._analysis_queue.enqueue(queue_entry, high_priority=high_priority):
 				counter += 1
-		self._logger.info("Added {counter} items from storage type \"{storage_type}\" to analysis queue".format(**locals()))
+
+		if root:
+			self._logger.info("Added {counter} items from storage type \"{storage_type}\" and root \"{root}\" to analysis queue".format(**locals()))
+		else:
+			self._logger.info("Added {counter} items from storage type \"{storage_type}\" to analysis queue".format(**locals()))
 
 	def add_storage(self, storage_type, storage_manager):
 		self._storage_managers[storage_type] = storage_manager
@@ -396,6 +405,10 @@ class FileManager(object):
 
 			if hook_file_object is not None:
 				file_object = hook_file_object
+
+		queue_entry = self._analysis_queue_entry(destination, path)
+		self._analysis_queue.dequeue(queue_entry)
+
 		file_path = self._storage(destination).add_file(path, file_object, links=links, printer_profile=printer_profile, allow_overwrite=allow_overwrite)
 
 		if analysis is None:
@@ -415,13 +428,21 @@ class FileManager(object):
 		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
 
 	def copy_file(self, destination, source, dst):
-		self._storage(destination).copy_file(source, dst)
+		path = self._storage(destination).copy_file(source, dst)
+		if not self.has_analysis(destination, path):
+			queue_entry = self._analysis_queue_entry(destination, path)
+			if queue_entry:
+				self._analysis_queue.enqueue(queue_entry)
 		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
 
 	def move_file(self, destination, source, dst):
 		queue_entry = self._analysis_queue_entry(destination, source)
 		self._analysis_queue.dequeue(queue_entry)
-		self._storage(destination).move_file(source, dst)
+		path = self._storage(destination).move_file(source, dst)
+		if not self.has_analysis(destination, path):
+			queue_entry = self._analysis_queue_entry(destination, path)
+			if queue_entry:
+				self._analysis_queue.enqueue(queue_entry)
 		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
 
 	def add_folder(self, destination, path, ignore_existing=True):
@@ -438,14 +459,19 @@ class FileManager(object):
 
 	def copy_folder(self, destination, source, dst):
 		self._storage(destination).copy_folder(source, dst)
+		self._determine_analysis_backlog(destination, self._storage(destination), root=dst)
 		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
 
 	def move_folder(self, destination, source, dst):
 		self._analysis_queue.dequeue_folder(destination, source)
 		self._analysis_queue.pause()
 		self._storage(destination).move_folder(source, dst)
+		self._determine_analysis_backlog(destination, self._storage(destination), root=dst)
 		self._analysis_queue.resume()
 		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
+
+	def has_analysis(self, destination, path):
+		return self._storage(destination).has_analysis(path)
 
 	def get_metadata(self, destination, path):
 		return self._storage(destination).get_metadata(path)

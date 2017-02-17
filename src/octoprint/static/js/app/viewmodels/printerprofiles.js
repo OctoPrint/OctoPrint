@@ -25,7 +25,8 @@ $(function() {
                 offsets: [
                     [0,0]
                 ],
-                nozzleDiameter: 0.4
+                nozzleDiameter: 0.4,
+                sharedNozzle: false
             }
         }
     };
@@ -63,6 +64,7 @@ $(function() {
         self.nozzleDiameter = ko.observable();
         self.extruders = ko.observable();
         self.extruderOffsets = ko.observableArray();
+        self.sharedNozzle = ko.observable();
 
         self.axisXSpeed = ko.observable();
         self.axisYSpeed = ko.observable();
@@ -209,6 +211,7 @@ $(function() {
             self.heatedBed(data.heatedBed);
 
             self.nozzleDiameter(data.extruder.nozzleDiameter);
+            self.sharedNozzle(data.extruder.sharedNozzle);
             self.extruders(data.extruder.count);
             var offsets = [];
             if (data.extruder.count > 1) {
@@ -271,7 +274,8 @@ $(function() {
                     offsets: [
                         [0.0, 0.0]
                     ],
-                    nozzleDiameter: validFloat(self.nozzleDiameter(), defaultProfile.extruder.nozzleDiameter)
+                    nozzleDiameter: validFloat(self.nozzleDiameter(), defaultProfile.extruder.nozzleDiameter),
+                    sharedNozzle: self.sharedNozzle()
                 },
                 axes: {
                     x: {

@@ -1,11 +1,58 @@
 (function (global, factory) {
     if (typeof define === "function" && define.amd) {
-        define("OctoPrint", ["jquery", "lodash"], factory);
+        define("OctoPrintClient", ["jquery", "lodash"], factory);
     } else {
-        global.OctoPrint = factory(window.$, window._);
+        global.OctoPrintClient = factory(global.$, global._);
+        global.OctoPrint = new global.OctoPrintClient();
     }
-})(window || this, function($, _) {
-    var OctoPrint = {};
+})(this, function($, _) {
+    var PluginRegistry = function(base) {
+        this.base = base;
+        this.components = {};
+    };
+
+    var OctoPrintClient = function(options) {
+        this.options = options || {
+            "baseurl": undefined,
+            "apikey": undefined,
+            "locale": undefined
+        };
+
+        this.components = {};
+        this.plugins = new PluginRegistry(this);
+    };
+
+    OctoPrintClient.registerComponent = function(name, component) {
+        Object.defineProperty(OctoPrintClient.prototype, name, {
+            get: function() {
+                if (this.components[name] !== undefined) {
+                    return this.components[name];
+                }
+
+                var instance = new component(this);
+                this.components[name] = instance;
+                return instance;
+           },
+            enumerable: false,
+            configurable: false
+        });
+    };
+
+    OctoPrintClient.registerPluginComponent = function(name, component) {
+        Object.defineProperty(PluginRegistry.prototype, name, {
+            get: function() {
+                if (this.components[name] !== undefined) {
+                    return this.components[name];
+                }
+
+                var instance = new component(this.base);
+                this.components[name] = instance;
+                return instance;
+            },
+            enumerable: false,
+            configurable: false
+        });
+    };
 
     var noCache = function(opts) {
         opts = opts || {};
@@ -44,36 +91,28 @@
         return params;
     };
 
-    OctoPrint.options = {
-        "baseurl": undefined,
-        "apikey": undefined,
-        "locale": undefined
-    };
-
-    OctoPrint.plugins = {};
-
-    OctoPrint.getBaseUrl = function() {
-        var url = OctoPrint.options.baseurl;
+    OctoPrintClient.prototype.getBaseUrl = function() {
+        var url = this.options.baseurl;
         if (!_.endsWith(url, "/")) {
             url = url + "/";
         }
         return url;
     };
 
-    OctoPrint.getRequestHeaders = function(additional) {
+    OctoPrintClient.prototype.getRequestHeaders = function(additional) {
         additional = additional || {};
 
         var headers = $.extend({}, additional);
-        headers["X-Api-Key"] = OctoPrint.options.apikey;
+        headers["X-Api-Key"] = this.options.apikey;
 
-        if (OctoPrint.options.locale !== undefined) {
-            headers["X-Locale"] = OctoPrint.options.locale;
+        if (this.options.locale !== undefined) {
+            headers["X-Locale"] = this.options.locale;
         }
 
         return headers;
     };
 
-    OctoPrint.ajax = function(method, url, opts) {
+    OctoPrintClient.prototype.ajax = function(method, url, opts) {
         opts = opts || {};
 
         method = opts.method || method || "GET";
@@ -81,11 +120,11 @@
 
         var urlToCall = url;
         if (!_.startsWith(url, "http://") && !_.startsWith(url, "https://")) {
-            urlToCall = OctoPrint.getBaseUrl() + url;
+            urlToCall = this.getBaseUrl() + url;
             opts.url = urlToCall;
         }
 
-        var headers = OctoPrint.getRequestHeaders(opts.headers);
+        var headers = this.getRequestHeaders(opts.headers);
 
         var params = $.extend({}, opts);
         params.type = method;
@@ -95,67 +134,67 @@
         return $.ajax(urlToCall, params);
     };
 
-    OctoPrint.ajaxWithData = function(method, url, data, opts) {
+    OctoPrintClient.prototype.ajaxWithData = function(method, url, data, opts) {
         opts = opts || {};
 
         var params = $.extend({}, opts);
         params.data = data;
 
-        return OctoPrint.ajax(method, url, params);
+        return this.ajax(method, url, params);
     };
 
-    OctoPrint.get = function(url, opts) {
-        return OctoPrint.ajax("GET", url, opts);
+    OctoPrintClient.prototype.get = function(url, opts) {
+        return this.ajax("GET", url, opts);
     };
 
-    OctoPrint.getWithQuery = function(url, data, opts) {
-        return OctoPrint.ajaxWithData("GET", url, data, opts);
+    OctoPrintClient.prototype.getWithQuery = function(url, data, opts) {
+        return this.ajaxWithData("GET", url, data, opts);
     };
 
-    OctoPrint.post = function(url, data, opts) {
-        return OctoPrint.ajaxWithData("POST", url, data, noCache(opts));
+    OctoPrintClient.prototype.post = function(url, data, opts) {
+        return this.ajaxWithData("POST", url, data, noCache(opts));
     };
 
-    OctoPrint.postForm = function(url, data, opts) {
+    OctoPrintClient.prototype.postForm = function(url, data, opts) {
         var form = new FormData();
         _.each(data, function(value, key) {
             form.append(key, value);
         });
 
-        return OctoPrint.post(url, form, contentTypeFalse(noProcessData(opts)));
+        return this.post(url, form, contentTypeFalse(noProcessData(opts)));
     };
 
-    OctoPrint.postJson = function(url, data, opts) {
-        return OctoPrint.post(url, JSON.stringify(data), contentTypeJson(opts));
+    OctoPrintClient.prototype.postJson = function(url, data, opts) {
+        return this.post(url, JSON.stringify(data), contentTypeJson(opts));
     };
 
-    OctoPrint.put = function(url, data, opts) {
-        return OctoPrint.ajaxWithData("PUT", url, data, noCache(opts));
+    OctoPrintClient.prototype.put = function(url, data, opts) {
+        return this.ajaxWithData("PUT", url, data, noCache(opts));
     };
 
-    OctoPrint.putJson = function(url, data, opts) {
-        return OctoPrint.put(url, JSON.stringify(data), contentTypeJson(opts));
+    OctoPrintClient.prototype.putJson = function(url, data, opts) {
+        return this.put(url, JSON.stringify(data), contentTypeJson(opts));
     };
 
-    OctoPrint.patch = function(url, data, opts) {
-        return OctoPrint.ajaxWithData("PATCH", url, data, noCache(opts));
+    OctoPrintClient.prototype.patch = function(url, data, opts) {
+        return this.ajaxWithData("PATCH", url, data, noCache(opts));
     };
 
-    OctoPrint.patchJson = function(url, data, opts) {
-        return OctoPrint.patch(url, JSON.stringify(data), contentTypeJson(opts));
+    OctoPrintClient.prototype.patchJson = function(url, data, opts) {
+        return this.patch(url, JSON.stringify(data), contentTypeJson(opts));
     };
 
-    OctoPrint.delete = function(url, opts) {
-        return OctoPrint.ajax("DELETE", url, opts);
+    OctoPrintClient.prototype.delete = function(url, opts) {
+        return this.ajax("DELETE", url, opts);
     };
 
-    OctoPrint.download = function(url, opts) {
+    OctoPrintClient.prototype.download = function(url, opts) {
         var params = $.extend({}, opts || {});
         params.dataType = "text";
-        return OctoPrint.get(url, params);
+        return this.get(url, params);
     };
 
-    OctoPrint.upload = function(url, file, filename, additional) {
+    OctoPrintClient.prototype.upload = function(url, file, filename, additional) {
         additional = additional || {};
 
         var fileData;
@@ -220,11 +259,11 @@
             deferred.notify({loaded: e.loaded, total: e.total});
         });
 
-        var headers = OctoPrint.getRequestHeaders();
+        var headers = this.getRequestHeaders();
 
         var urlToCall = url;
         if (!_.startsWith(url, "http://") && !_.startsWith(url, "https://")) {
-            urlToCall = OctoPrint.getBaseUrl() + url;
+            urlToCall = this.getBaseUrl() + url;
         }
 
         request.open("POST", urlToCall);
@@ -236,38 +275,38 @@
         return deferred.promise();
     };
 
-    OctoPrint.issueCommand = function(url, command, payload, opts) {
+    OctoPrintClient.prototype.issueCommand = function(url, command, payload, opts) {
         payload = payload || {};
 
         var data = $.extend({}, payload);
         data.command = command;
 
-        return OctoPrint.postJson(url, data, opts);
+        return this.postJson(url, data, opts);
     };
 
-    OctoPrint.getSimpleApiUrl = function(plugin) {
+    OctoPrintClient.prototype.getSimpleApiUrl = function(plugin) {
         return "api/plugin/" + plugin;
     };
 
-    OctoPrint.simpleApiGet = function(plugin, opts) {
-        return OctoPrint.get(OctoPrint.getSimpleApiUrl(plugin), opts);
+    OctoPrintClient.prototype.simpleApiGet = function(plugin, opts) {
+        return this.get(OctoPrintClient.prototype.getSimpleApiUrl(plugin), opts);
     };
 
-    OctoPrint.simpleApiCommand = function(plugin, command, payload, opts) {
-        return OctoPrint.issueCommand(OctoPrint.getSimpleApiUrl(plugin), command, payload, opts);
+    OctoPrintClient.prototype.simpleApiCommand = function(plugin, command, payload, opts) {
+        return this.issueCommand(OctoPrintClient.prototype.getSimpleApiUrl(plugin), command, payload, opts);
     };
 
-    OctoPrint.getBlueprintUrl = function(plugin) {
+    OctoPrintClient.prototype.getBlueprintUrl = function(plugin) {
         return "plugin/" + plugin + "/";
     };
 
-    OctoPrint.createRejectedDeferred = function() {
+    OctoPrintClient.createRejectedDeferred = function() {
         var deferred = $.Deferred();
         deferred.reject(arguments);
         return deferred;
     };
 
-    OctoPrint.createCustomException = function(name) {
+    OctoPrintClient.createCustomException = function(name) {
         var constructor;
 
         if (_.isFunction(name)) {
@@ -286,7 +325,7 @@
         return constructor;
     };
 
-    OctoPrint.InvalidArgumentError = OctoPrint.createCustomException("InvalidArgumentError");
+    OctoPrintClient.InvalidArgumentError = OctoPrintClient.createCustomException("InvalidArgumentError");
 
-    return OctoPrint;
+    return OctoPrintClient;
 });

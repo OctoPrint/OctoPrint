@@ -19,7 +19,7 @@ import octoprint.server
 import octoprint.plugin
 from octoprint.server import admin_permission, NO_CONTENT
 from octoprint.settings import settings as s, valid_boolean_trues
-from octoprint.server.util import noCachingExceptGetResponseHandler, apiKeyRequestHandler, corsResponseHandler
+from octoprint.server.util import noCachingExceptGetResponseHandler, enforceApiKeyRequestHandler, loginFromApiKeyRequestHandler, corsRequestHandler, corsResponseHandler
 from octoprint.server.util.flask import restricted_access, get_json_command_from_request, passive_login
 
 
@@ -45,7 +45,9 @@ VERSION = "0.1"
 
 api.after_request(noCachingExceptGetResponseHandler)
 
-api.before_request(apiKeyRequestHandler)
+api.before_request(corsRequestHandler)
+api.before_request(enforceApiKeyRequestHandler)
+api.before_request(loginFromApiKeyRequestHandler)
 api.after_request(corsResponseHandler)
 
 #~~ data from plugins
@@ -153,7 +155,7 @@ def wizardFinish():
 			if name in handled:
 				seen_wizards[name] = implementation.get_wizard_version()
 		except:
-			logging.getLogger(__name__).exceptino("There was an error finishing the wizard for {}, ignoring".format(name))
+			logging.getLogger(__name__).exception("There was an error finishing the wizard for {}, ignoring".format(name))
 
 	s().set(["server", "seenWizards"], seen_wizards)
 	s().save()

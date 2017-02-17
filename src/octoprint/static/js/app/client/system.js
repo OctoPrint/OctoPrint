@@ -1,24 +1,29 @@
 (function (global, factory) {
     if (typeof define === "function" && define.amd) {
-        define(["OctoPrint"], factory);
+        define(["OctoPrintClient"], factory);
     } else {
-        factory(window.OctoPrint);
+        factory(global.OctoPrintClient);
     }
-})(window || this, function(OctoPrint) {
+})(this, function(OctoPrintClient) {
     var url = "api/system";
     var commandUrl = "api/system/commands";
 
-    OctoPrint.system = {
-        getCommands: function (opts) {
-            return OctoPrint.get(commandUrl, opts);
-        },
-
-        getCommandsForSource: function (source, opts) {
-            return OctoPrint.get(commandUrl + "/" + source, opts);
-        },
-
-        executeCommand: function (source, action, opts) {
-            return OctoPrint.postJson(commandUrl + "/" + source + "/" + action, {}, opts);
-        }
+    var OctoPrintSystemClient = function(base) {
+        this.base = base;
     };
+
+    OctoPrintSystemClient.prototype.getCommands = function (opts) {
+        return this.base.get(commandUrl, opts);
+    };
+
+    OctoPrintSystemClient.prototype.getCommandsForSource = function (source, opts) {
+        return this.base.get(commandUrl + "/" + source, opts);
+    };
+
+    OctoPrintSystemClient.prototype.executeCommand = function (source, action, opts) {
+        return this.base.postJson(commandUrl + "/" + source + "/" + action, {}, opts);
+    };
+
+    OctoPrintClient.registerComponent("system", OctoPrintSystemClient);
+    return OctoPrintSystemClient;
 });

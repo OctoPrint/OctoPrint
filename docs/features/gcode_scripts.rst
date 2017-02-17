@@ -67,10 +67,13 @@ All GCODE scripts have access to the following template variables through the te
 There are a couple of additional template variables available for the following specific scripts:
 
   * ``afterPrintPaused`` and ``beforePrintResumed``
+
     * ``pause_position``: Position reported by the printer via ``M114`` immediately before the print was paused. Consists
       of ``x``, ``y``, ``z`` and ``e`` coordinates as received by the printer and tracked values for ``f`` and current tool
       ``t`` taken from commands sent through OctoPrint.
+
   * ``afterPrintCancelled``
+
     * ``cancel_position``: Position reported by the printer via ``M114`` immediately before the print was cancelled.
       Consists of ``x``, ``y``, ``z`` and ``e`` coordinates as received by the printer and tracked values for ``f`` and
       current tool ``t`` taken from commands sent through OctoPrint.

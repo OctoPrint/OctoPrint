@@ -1,18 +1,24 @@
 (function (global, factory) {
     if (typeof define === "function" && define.amd) {
-        define(["OctoPrint"], factory);
+        define(["OctoPrintClient"], factory);
     } else {
-        factory(window.OctoPrint);
+        factory(global.OctoPrintClient);
     }
-})(window || this, function(OctoPrint) {
+})(this, function(OctoPrintClient) {
     var url = "api/setup/wizard";
 
-    OctoPrint.wizard = {
-        get: function(opts) {
-            return OctoPrint.get(url, opts);
-        },
-        finish: function(handled, opts) {
-            return OctoPrint.postJson(url, {handled: handled || []}, opts);
-        }
+    var OctoPrintWizardClient = function(base) {
+        this.base = base;
     };
+
+    OctoPrintWizardClient.prototype.get = function(opts) {
+        return this.base.get(url, opts);
+    };
+
+    OctoPrintWizardClient.prototype.finish = function(handled, opts) {
+        return this.base.postJson(url, {handled: handled || []}, opts);
+    };
+
+    OctoPrintClient.registerComponent("wizard", OctoPrintWizardClient);
+    return OctoPrintWizardClient;
 });

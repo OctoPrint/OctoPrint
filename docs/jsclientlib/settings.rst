@@ -1,16 +1,16 @@
-.. sec-jsclientlib-settings:
+.. _sec-jsclientlib-settings:
 
-:mod:`OctoPrint.settings`
--------------------------
+:mod:`OctoPrintClient.settings`
+-------------------------------
 
-.. js:function:: OctoPrint.settings.get(opts)
+.. js:function:: OctoPrintClient.settings.get(opts)
 
    Retrieves the current settings.
 
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.settings.save(settings, opts)
+.. js:function:: OctoPrintClient.settings.save(settings, opts)
 
    Saves the provided ``settings``.
 
@@ -18,7 +18,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.settings.getPluginSettings(plugin, opts)
+.. js:function:: OctoPrintClient.settings.getPluginSettings(plugin, opts)
 
    Retrieves the settings of the specified ``plugin``.
 
@@ -26,7 +26,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.settings.savePluginSettings(plugin, settings, opts)
+.. js:function:: OctoPrintClient.settings.savePluginSettings(plugin, settings, opts)
 
    Saves the ``settings`` for the specified ``plugin``.
 

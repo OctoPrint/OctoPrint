@@ -17,28 +17,38 @@
     </div>
     <div data-bind="visible: extruders() > 1" style="display: none">
         <div class="control-group">
+            <label class="control-label">{{ _('Shared nozzle') }}</label>
             <div class="controls">
-                {{ _('Please specify the nozzle offsets of the extruders relative to the first nozzle T0.') }}
+                <input type="checkbox" data-bind="checked: sharedNozzle">
+                <span class="help-block">{{ _('Check this if your printer has a single nozzle and heater shared among its extruders instead of one nozzle and heater per extruder') }}</span>
             </div>
         </div>
 
-        <!-- ko foreach: koExtruderOffsets -->
-        <div class="control-group">
-            <label class="control-label">{{ _('Offset') }} T<span data-bind="text: idx"></span></label>
-            <div class="controls form-inline">
-                <label>X</label>
-                <div class="input-append">
-                    <input type="number" step="0.01" class="input-mini text-right" data-bind="value: x" placeholder="0">
-                    <span class="add-on">mm</span>
-                </div>
-                <label>Y</label>
-                <div class="input-append">
-                    <input type="number" step="0.01" class="input-mini text-right" data-bind="value: y" placeholder="0">
-                    <span class="add-on">mm</span>
+        <div data-bind="visible: !sharedNozzle()" style="display: none">
+            <div class="control-group">
+                <div class="controls">
+                    {{ _('Please specify the nozzle offsets of the extruders relative to the first nozzle T0.') }}
                 </div>
             </div>
+
+            <!-- ko foreach: koExtruderOffsets -->
+            <div class="control-group">
+                <label class="control-label">{{ _('Offset') }} T<span data-bind="text: idx"></span></label>
+                <div class="controls form-inline">
+                    <label>X</label>
+                    <div class="input-append">
+                        <input type="number" step="0.01" class="input-mini text-right" data-bind="value: x" placeholder="0">
+                        <span class="add-on">mm</span>
+                    </div>
+                    <label>Y</label>
+                    <div class="input-append">
+                        <input type="number" step="0.01" class="input-mini text-right" data-bind="value: y" placeholder="0">
+                        <span class="add-on">mm</span>
+                    </div>
+                </div>
+            </div>
+            <!-- /ko -->
         </div>
-        <!-- /ko -->
     </div>
 
     <p>

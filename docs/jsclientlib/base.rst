@@ -1,29 +1,45 @@
-.. sec-jsclientlib-base:
+.. _sec-jsclientlib-base:
 
-:mod:`OctoPrint`
-----------------
+:mod:`OctoPrintClient`
+----------------------
 
-.. js:data:: OctoPrint.options
+.. js:class:: OctoPrintClient([options])
 
-   The client library's options.
+   Instantiates a new instance of the client library. Note that by default there's always an instance registered
+   globally called ``OctoPrint``.
 
-   ``OctoPrint.options.apikey``
+   :param object options: An optional object of options to set :js:attr:`OctoPrintClient.options` to.
+
+.. js:attribute:: OctoPrintClient.options
+
+   The client library instance's options. The following keys are currently supported:
+
+   ``apikey``
        The API Key to use for requests against the OctoPrint API. Should usually be
        the anonymous UI API Key provided on the socket.
 
-   ``OctoPrint.options.baseurl``
+   ``baseurl``
        The base URL of the OctoPrint API
 
-   ``OctoPrint.options.locale``
+   ``locale``
        The locale to set in ``X-Locale`` headers on API requests. Useful for API
        endpoints that might return localized content.
 
-.. js:data:: OctoPrint.plugins
+.. js:attribute:: OctoPrintClient.plugins
 
    Registration of client library components provided by plugins.
 
-   OctoPrint plugins should always register their library exports
-   in this object, using their plugin identifier as key.
+   OctoPrint plugins should always register their client classes here using their plugin identifier as key via
+   :js:func:`OctoPrintClient.registerPluginComponent`.
+
+   .. note::
+
+      The registration mechanism has changed slightly with OctoPrint 1.3.2 due to an otherwise unsolvable issue with
+      allowing multiple clients to exist concurrently and still keeping the existing architecture intact.
+
+      The old mechanism works fine as long as you are only planning to offer your plugin client implementation on the
+      default client instance ``OctoPrint``, however if you also want to support additional clients you'll need to
+      use the implementation and registration approach as described below.
 
    **Example:**
 
@@ -31,19 +47,26 @@
 
       (function (global, factory) {
           if (typeof define === "function" && define.amd) {
-              define(["OctoPrint"], factory);
+              define(["OctoPrintClient"], factory);
           } else {
-              factory(window.OctoPrint);
+              factory(window.OctoPrintClient);
           }
-      })(window || this, function(OctoPrint) {
-          var exports = {};
+      })(window || this, function(OctoPrintClient) {
+          var MyPluginClient = function(base) {
+              this.base = base;
+          };
 
-          // fill exports
+          MyPluginClient.prototype.someFunction = function() {
+              // do something
+          };
 
-          OctoPrint.plugins.myplugin = exports
+          // further define API
+
+          OctoPrintClient.registerPluginComponent("myplugin", MyPluginClient);
+          return MyPluginClient;
       });
 
-.. js:function:: OctoPrint.getBaseUrl()
+.. js:function:: OctoPrintClient.getBaseUrl()
 
    Returns the canonical base URL to use for OctoPrint's API. Uses the current value of
    :js:data:`OctoPrint.options.baseurl <OctoPrint.options>`. If that doesn't end in a ``/``,
@@ -51,7 +74,7 @@
 
    :returns string: The base url to use to access OctoPrint's API.
 
-.. js:function:: OctoPrint.getRequestHeaders(additional)
+.. js:function:: OctoPrintClient.getRequestHeaders(additional)
 
    Generates a dictionary of HTTP headers to use for API requests against OctoPrint with all
    necessary headers and any additionally provided ones.
@@ -62,7 +85,7 @@
    :param object additional: Additional headers to add to the request.
    :returns object: HTTP headers to use for requests.
 
-.. js:function:: OctoPrint.ajax(method, url, opts)
+.. js:function:: OctoPrintClient.ajax(method, url, opts)
 
    Performs an AJAX request against the OctoPrint API, utilizing `jQuery's own ajax function <http://api.jquery.com/jquery.ajax/>`_.
 
@@ -87,7 +110,7 @@
    :param object opts: Additional options to use for the request, see above for details (optional)
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.ajaxWithData(method, url, data, opts)
+.. js:function:: OctoPrintClient.ajaxWithData(method, url, data, opts)
 
    Performs an AJAX request against the OctoPrint API, including the provided ``data`` in the body of the request.
 
@@ -99,7 +122,7 @@
    :param object opts: Additonal options to use for the request (optional)
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.get(url, opts)
+.. js:function:: OctoPrintClient.get(url, opts)
 
    Performs a ``GET`` request against ``url``.
 
@@ -116,7 +139,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.getWithQuery(url, data, opts)
+.. js:function:: OctoPrintClient.getWithQuery(url, data, opts)
 
    Performs a ``GET`` request against ``url`` using the provided ``data`` as URL query.
 
@@ -132,7 +155,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.post(url, data, opts)
+.. js:function:: OctoPrintClient.post(url, data, opts)
 
    Performs a ``POST`` request against ``url`` using the provided ``data`` as request body.
 
@@ -152,7 +175,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.postJson(url, data, opts)
+.. js:function:: OctoPrintClient.postJson(url, data, opts)
 
    Performs a ``POST`` request against ``url`` using the provided ``data`` object as request body
    after serializing it to JSON.
@@ -172,33 +195,33 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.put(url, data, opts)
+.. js:function:: OctoPrintClient.put(url, data, opts)
 
    Performs ``PUT`` request against ``url`` using the provided ``data`` as request body.
 
    See :js:func:`OctoPrint.post` for details.
 
-.. js:function:: OctoPrint.putJson(url, data, opts)
+.. js:function:: OctoPrintClient.putJson(url, data, opts)
 
    Performs ``PUT`` request against ``url`` using the provided ``data`` as request body after
    serializing it to JSON.
 
    See :js:func:`OctoPrint.postJson` for details.
 
-.. js:function:: OctoPrint.patch(url, data, opts)
+.. js:function:: OctoPrintClient.patch(url, data, opts)
 
    Performs ``PATCH`` request against ``url`` using the provided ``data`` as request body.
 
    See :js:func:`OctoPrint.post` for details.
 
-.. js:function:: OctoPrint.patchJson(url, data, opts)
+.. js:function:: OctoPrintClient.patchJson(url, data, opts)
 
    Performs ``PATCH`` request against ``url`` using the provided ``data`` as request body after
    serializing it to JSON.
 
    See :js:func:`OctoPrint.postJson` for details.
 
-.. js:function:: OctoPrint.delete(url, opts)
+.. js:function:: OctoPrintClient.delete(url, opts)
 
    Performs a ``DELETE`` request against ``url``.
 
@@ -206,7 +229,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.download(url, opts)
+.. js:function:: OctoPrintClient.download(url, opts)
 
    Downloads a file from ``url``, returning the response body as data type ``text``.
 
@@ -218,7 +241,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.upload(url, file, filename, additional)
+.. js:function:: OctoPrintClient.upload(url, file, filename, additional)
 
    Uploads a ``file`` to ``url`` using a ``multipart/form-data`` ``POST`` request.
 
@@ -286,7 +309,7 @@
    :param string filename: An optional file name to use for the upload
    :param object additional: An optional object of additional key/value pairs to set on the uploaded form data
 
-.. js:function:: OctoPrint.issueCommand(url, command, payload, opts)
+.. js:function:: OctoPrintClient.issueCommand(url, command, payload, opts)
 
    Issues a command against an OctoPrint command API endpoint.
 
@@ -318,7 +341,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.getSimpleApiUrl(plugin)
+.. js:function:: OctoPrintClient.getSimpleApiUrl(plugin)
 
    Returns the proper URL for the endpoint of a :class:`~octoprint.plugin.SimpleApiPlugin`, based on the
    plugin identifier.
@@ -333,7 +356,7 @@
    :param string plugin: The identifier of the plugin for which to return the URL
    :returns string: The URL to use as endpoint
 
-.. js:function:: OctoPrint.simpleApiGet(plugin, opts)
+.. js:function:: OctoPrintClient.simpleApiGet(plugin, opts)
 
    Performs a ``GET`` request against the endpoint of a :class:`~octoprint.plugin.SimpleApiPlugin` with
    identifier ``plugin``.
@@ -349,7 +372,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.simpleApiCommand(plugin, command, payload, opts)
+.. js:function:: OctoPrintClient.simpleApiCommand(plugin, command, payload, opts)
 
    Performs the API command ``command`` against the endpoint of a :class:`~octoprint.plugin.SimpleApiPlugin` with
    identifier ``plugin``, including the optional ``payload``.
@@ -370,7 +393,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.getBlueprintUrl(plugin)
+.. js:function:: OctoPrintClient.getBlueprintUrl(plugin)
 
    Returns the proper base URL for blueprint endpoints of a :class:`~octoprint.plugin.BlueprintPlugin` with
    identifier ``plugin``.
@@ -382,11 +405,15 @@
       // prints "plugin/myplugin/"
       console.log(OctoPrint.getBlueprintUrl("myplugin"));
 
-.. js:function:: OctoPrint.createRejectedDeferred()
+.. js:function:: OctoPrintClient.createRejectedDeferred()
+
+   Static method.
 
    Shortcut for creating a rejected `jQuery Deferred <http://api.jquery.com/category/deferred-object/>`_.
 
-.. js:function:: OctoPrint.createCustomException(name)
+.. js:function:: OctoPrintClient.createCustomException(name)
+
+   Static method.
 
    Creates a custom exception class. ``name`` may be either a function in which case it will be used
    as constructor for the new exception class, or a string, in which case a constructor with proper
@@ -397,9 +424,40 @@
 
    .. code-block:: javascript
 
-      MyCustomException = OctoPrint.createCustomException("MyCustomException");
+      MyCustomException = OctoPrintClient.createCustomException("MyCustomException");
       throw new MyCustomException("Something went horribly wrong!");
 
-.. js:class:: OctoPrint.InvalidArgumentError
+.. js:function:: OctoPrintClient.registerPluginComponent(identifier, clientClass)
+
+   Static method.
+
+   Registers the plugin client component ``clientClass`` under the name ``identifier`` on the
+   :js:attr:`OctoPrintClient.plugins` registry.
+
+   ``clientClass`` must have a constructor that follows the signature ``ClientClass(base)`` and in which it sets
+   the attribute ``base`` on the instance to:
+
+   .. code-block:: javascript
+
+      var MyPluginClient = function(base) {
+          this.base = base;
+      }
+
+   Each :js:class:`OctoPrintClient` will create its own instance of registered plugin classes and make them available
+   under :js:attr:`OctoPrintClient.plugins`. It will inject itself into those instances in order to allow plugin
+   clients to access its functionality via ``this.base``:
+
+   .. code-block:: javascript
+
+      MyPluginClient.prototype.doSomething = function(data, opts) {
+          return this.base.simpleApiCommand("myplugin", "doSomething", data, opts);
+      };
+
+   :param string identifier: The identifier of the plugin for which ``clientClass`` is the client
+   :param class clientClass: The client class to register. Constructor must follow the signature ``ClientClass(base)``
+       where ``base`` will be assigned to the instance as ``this.base`` and be the :js:class:`OctoPrintClient`
+       instance to use for API calls etc via ``this.base``.
+
+.. js:class:: OctoPrintClient.InvalidArgumentError
 
    Exception to use when functions are called with invalid arguments.

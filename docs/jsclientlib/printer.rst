@@ -1,7 +1,7 @@
-.. sec-jsclientlib-printer:
+.. _sec-jsclientlib-printer:
 
-:mod:`OctoPrint.printer`
-------------------------
+:mod:`OctoPrintClient.printer`
+------------------------------
 
 .. note::
 
@@ -15,7 +15,7 @@
 .. contents::
    :local:
 
-.. js:function:: OctoPrint.printer.getFullState(flags, opts)
+.. js:function:: OctoPrintClient.printer.getFullState(flags, opts)
 
    Retrieves the full printer state, including temperature information, sd state and general
    printer state.
@@ -34,7 +34,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.printer.getToolState(flags, opts)
+.. js:function:: OctoPrintClient.printer.getToolState(flags, opts)
 
    Retrieves the current printer extruder state/temperature information, and optionally also the temperature
    history.
@@ -52,7 +52,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.printer.setToolTargetTemperatures(targets, opts)
+.. js:function:: OctoPrintClient.printer.setToolTargetTemperatures(targets, opts)
 
    Sets the given temperatures on the printer's extruders.
 
@@ -72,7 +72,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.printer.setToolTemperatureOffsets(offsets, opts)
+.. js:function:: OctoPrintClient.printer.setToolTemperatureOffsets(offsets, opts)
 
    Sets the given temperature offsets for the printer's extruders.
 
@@ -93,7 +93,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.printer.selectTool(tool, opts)
+.. js:function:: OctoPrintClient.printer.selectTool(tool, opts)
 
    Selects the printer's current extruder.
 
@@ -119,7 +119,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.printer.extrude(amount, opts)
+.. js:function:: OctoPrintClient.printer.extrude(amount, opts)
 
    Extrudes or retracts ``amount`` mm of filament on the currently selected extruder.
 
@@ -140,7 +140,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.printer.setFlowrate(factor, opts)
+.. js:function:: OctoPrintClient.printer.setFlowrate(factor, opts)
 
    Sets the current flowrate multiplier.
 
@@ -152,7 +152,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.printer.getBedState(data, opts)
+.. js:function:: OctoPrintClient.printer.getBedState(data, opts)
 
    Retrieves the current printer bed state/temperature information, and optionally also the temperature
    history.
@@ -170,7 +170,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.printer.setBedTargetTemperature(target, opts)
+.. js:function:: OctoPrintClient.printer.setBedTargetTemperature(target, opts)
 
    Sets the given temperature on the printer's heated bed (if available).
 
@@ -190,7 +190,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.printer.setBedTemperatureOffset(offset, opts)
+.. js:function:: OctoPrintClient.printer.setBedTemperatureOffset(offset, opts)
 
    Sets the given temperature offset for the printer's heated bed (if available).
 
@@ -210,7 +210,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.printer.jog(amounts, opts)
+.. js:function:: OctoPrintClient.printer.jog(amounts, opts)
 
    Jogs the specified axes by the specified ``amounts``.
 
@@ -237,7 +237,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.printer.home(axes, opts)
+.. js:function:: OctoPrintClient.printer.home(axes, opts)
 
    Homes the specified ``axes``.
 
@@ -263,7 +263,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.printer.setFeedrate(factor, opts)
+.. js:function:: OctoPrintClient.printer.setFeedrate(factor, opts)
 
    Sets the feedrate multiplier to use.
 
@@ -275,7 +275,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.printer.getSdState(opts)
+.. js:function:: OctoPrintClient.printer.getSdState(opts)
 
    Retrieves the current ready state of the printer's SD card.
 
@@ -284,7 +284,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.printer.initSd(opts)
+.. js:function:: OctoPrintClient.printer.initSd(opts)
 
    Instructs the printer to initialize its SD card (if present).
 
@@ -293,7 +293,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.printer.refreshSd(opts)
+.. js:function:: OctoPrintClient.printer.refreshSd(opts)
 
    Instructs the printer to refresh the list of files on the SD card (if present).
 
@@ -302,7 +302,7 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
-.. js:function:: OctoPrint.printer.releaseSd(opts)
+.. js:function:: OctoPrintClient.printer.releaseSd(opts)
 
    Instructs the printer to release its SD card (if present).
 

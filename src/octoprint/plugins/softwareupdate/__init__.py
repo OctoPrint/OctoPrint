@@ -75,8 +75,11 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			if self._refresh_configured_checks or self._configured_checks is None:
 				self._refresh_configured_checks = False
 				self._configured_checks = self._settings.get(["checks"], merged=True)
+
 				update_check_hooks = self._plugin_manager.get_hooks("octoprint.plugin.softwareupdate.check_config")
 				check_providers = self._settings.get(["check_providers"], merged=True)
+				effective_configs = dict()
+
 				for name, hook in update_check_hooks.items():
 					try:
 						hook_checks = hook()
@@ -84,6 +87,13 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 						self._logger.exception("Error while retrieving update information from plugin {name}".format(**locals()))
 					else:
 						for key, default_config in hook_checks.items():
+							if key in effective_configs or key == "octoprint":
+								if key == name:
+									self._logger.warn("Software update hook {} provides check for itself but that was already registered by {} - overwriting that third party registration now!".format(name, check_providers.get(key, "unknown hook")))
+								else:
+									self._logger.warn("Software update hook {} tried to overwrite config for check {} but that was already configured elsewhere".format(name, key))
+									continue
+
 							check_providers[key] = name
 
 							yaml_config = dict()
@@ -103,8 +113,14 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 									deletables = []
 								self._clean_settings_check(key, yaml_config, default_config, delete=deletables, save=False)
 
-							# finally set our internal representation to our processed result
-							self._configured_checks[key] = effective_config
+							if effective_config:
+								effective_configs[key] = effective_config
+							else:
+								self._logger.warn("Update for {} is empty or None, ignoring it".format(key))
+
+				# finally set all our internal representations to our processed results
+				for key, config in effective_configs.items():
+					self._configured_checks[key] = config
 
 				self._settings.set(["check_providers"], check_providers)
 				self._settings.save()
@@ -379,6 +395,10 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				self._settings.set(["checks", "octoprint"], None, defaults=dummy_defaults)
 
 	def _clean_settings_check(self, key, data, defaults, delete=None, save=True):
+		if not data:
+			# nothing to do
+			return data
+
 		if delete is None:
 			delete = []
 
@@ -535,6 +555,9 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 		for target, check in checks.items():
 			if not target in check_targets:
+				continue
+
+			if not check:
 				continue
 
 			try:
@@ -820,8 +843,16 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 		if target == "octoprint":
 			from flask.ext.babel import gettext
-			result["displayName"] = check.get("displayName", gettext("OctoPrint"))
-			result["displayVersion"] = check.get("displayVersion", "{octoprint_version}")
+
+			result["displayName"] = check.get("displayName")
+			if result["displayName"] is None:
+				# displayName missing or set to None
+				result["displayName"] = gettext("OctoPrint")
+
+			result["displayVersion"] = check.get("displayVersion")
+			if result["displayVersion"] is None:
+				# displayVersion missing or set to None
+				result["displayVersion"] = "{octoprint_version}"
 
 			stable_branch = "master"
 			release_branches = []
@@ -876,8 +907,16 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 							result["release_compare"] = "python_unequal"
 
 		else:
-			result["displayName"] = check.get("displayName", target)
-			result["displayVersion"] = check.get("displayVersion", check.get("current", "unknown"))
+			result["displayName"] = check.get("displayName")
+			if result["displayName"] is None:
+				# displayName missing or None
+				result["displayName"] = target
+
+			result["displayVersion"] = check.get("displayVersion", check.get("current"))
+			if result["displayVersion"] is None:
+				# displayVersion AND current missing or None
+				result["displayVersion"] = "unknown"
+
 			if check["type"] in ("github_commit",):
 				result["current"] = check.get("current", None)
 			else:

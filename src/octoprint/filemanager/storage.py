@@ -44,6 +44,11 @@ class StorageInterface(object):
 		return
 		yield
 
+	def analysis_backlog_for_path(self, path=None):
+		# empty generator pattern, yield is intentionally unreachable
+		return
+		yield
+
 	def last_modified(self, path=None, recursive=False):
 		"""
 		Get the last modification date of the specified ``path`` or ``path``'s subtree.
@@ -174,6 +179,8 @@ class StorageInterface(object):
 
 		:param string source: path to the source folder
 		:param string destination: path to destination
+
+		:return: the path in the storage to the copy of the folder
 		"""
 		raise NotImplementedError()
 
@@ -183,6 +190,8 @@ class StorageInterface(object):
 
 		:param string source: path to the source folder
 		:param string destination: path to destination
+
+		:return: the new path in the storage to the folder
 		"""
 		raise NotImplementedError()
 
@@ -216,6 +225,8 @@ class StorageInterface(object):
 
 		:param string source: path to the source file
 		:param string destination: path to destination
+
+		:return: the path in the storage to the copy of the file
 		"""
 		raise NotImplementedError()
 
@@ -225,6 +236,16 @@ class StorageInterface(object):
 
 		:param string source: path to the source file
 		:param string destination: path to destination
+
+		:return: the new path in the storage to the file
+		"""
+		raise NotImplementedError()
+
+	def has_analysis(self, path):
+		"""
+		Returns whether the file at path has been analysed yet
+
+		:param path: virtual path to the file for which to retrieve the metadata
 		"""
 		raise NotImplementedError()
 
@@ -462,7 +483,10 @@ class LocalFileStorage(StorageInterface):
 
 	@property
 	def analysis_backlog(self):
-		for entry in self._analysis_backlog_generator():
+		return self.analysis_backlog_for_path()
+
+	def analysis_backlog_for_path(self, path=None):
+		for entry in self._analysis_backlog_generator(path):
 			yield entry
 
 	def _analysis_backlog_generator(self, path=None):
@@ -604,6 +628,8 @@ class LocalFileStorage(StorageInterface):
 		except Exception as e:
 			raise StorageError("Could not copy %s in %s to %s in %s" % (source_data["name"], source_data["path"], destination_data["name"], destination_data["path"]), cause=e)
 
+		return self.path_in_storage(destination_data["fullpath"])
+
 	def move_folder(self, source, destination):
 		source_data, destination_data = self._get_source_destination_data(source, destination)
 
@@ -613,6 +639,8 @@ class LocalFileStorage(StorageInterface):
 			raise StorageError("Could not move %s in %s to %s in %s" % (source_data["name"], source_data["path"], destination_data["name"], destination_data["path"]), cause=e)
 
 		self._delete_metadata(source_data["fullpath"])
+
+		return self.path_in_storage(destination_data["fullpath"])
 
 	def add_file(self, path, file_object, printer_profile=None, links=None, allow_overwrite=False):
 		path, name = self.sanitize(path)
@@ -687,6 +715,8 @@ class LocalFileStorage(StorageInterface):
 		self._copy_metadata_entry(source_data["path"], source_data["name"],
 		                          destination_data["path"], destination_data["name"])
 
+		return self.path_in_storage(destination_data["fullpath"])
+
 	def move_file(self, source, destination, allow_overwrite=False):
 		source_data, destination_data = self._get_source_destination_data(source, destination)
 
@@ -698,6 +728,12 @@ class LocalFileStorage(StorageInterface):
 		self._copy_metadata_entry(source_data["path"], source_data["name"],
 		                          destination_data["path"], destination_data["name"],
 		                          delete_source=True)
+
+		return self.path_in_storage(destination_data["fullpath"])
+
+	def has_analysis(self, path):
+		metadata = self.get_metadata(path)
+		return "analysis" in metadata
 
 	def get_metadata(self, path):
 		path, name = self.sanitize(path)

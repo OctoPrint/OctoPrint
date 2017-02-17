@@ -174,7 +174,7 @@ $(function() {
                 currentProfileData = self.settings.printerProfiles.currentProfileData();
             }
 
-            if (currentProfileData && currentProfileData.extruder && currentProfileData.extruder.offsets()) {
+            if (currentProfileData && currentProfileData.extruder && currentProfileData.extruder.offsets() && !currentProfileData.extruder.sharedNozzle()) {
                 var offsets = [];
                 _.each(currentProfileData.extruder.offsets(), function(offset) {
                     offsets.push({x: offset[0], y: offset[1]})

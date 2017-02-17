@@ -12,10 +12,11 @@ from ..exceptions import ConfigurationInvalid
 from ..util import execute
 
 def get_latest(target, check):
-	if not "command" in check:
-		raise ConfigurationInvalid("Update configuration for %s of type commandline needs command defined" % target)
+	command = check.get("command")
+	if command is None:
+		raise ConfigurationInvalid("Update configuration for {} of type commandline needs command set and not None".format(target))
 
-	returncode, stdout, stderr = execute(check["command"], evaluate_returncode=False)
+	returncode, stdout, stderr = execute(command, evaluate_returncode=False)
 
 	# We expect command line check commands to
 	#

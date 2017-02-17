@@ -7,6 +7,7 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 
 import os
 import datetime
+import codecs
 
 from collections import defaultdict
 from flask import request, g, url_for, make_response, render_template, send_from_directory, redirect, abort
@@ -924,14 +925,15 @@ def _get_translations(locale, domain):
 
 	def messages_from_po(path, locale, domain):
 		messages = dict()
-		with file(path) as f:
+		with codecs.open(path, encoding="utf-8") as f:
 			catalog = read_po(f, locale=locale, domain=domain)
 
 			for message in catalog:
 				message_id = message.id
 				if isinstance(message_id, (list, tuple)):
 					message_id = message_id[0]
-				messages[message_id] = message.string
+				if message.string:
+					messages[message_id] = message.string
 
 		return messages, catalog.plural_expr
 

@@ -356,7 +356,8 @@ default_settings = {
 			"echoOnM117": True,
 			"brokenM29": True,
 			"supportF": False,
-			"firmwareName": "Virtual Marlin 1.0"
+			"firmwareName": "Virtual Marlin 1.0",
+			"sharedNozzle": False
 		}
 	}
 }
