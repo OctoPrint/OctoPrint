@@ -8,10 +8,10 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import uuid
 from sockjs.tornado import SockJSRouter
 from flask import Flask, g, request, session, Blueprint, Request, Response
-from flask.ext.login import LoginManager, current_user
-from flask.ext.principal import Principal, Permission, RoleNeed, identity_loaded, UserNeed
-from flask.ext.babel import Babel, gettext, ngettext
-from flask.ext.assets import Environment, Bundle
+from flask_login import LoginManager, current_user
+from flask_principal import Principal, Permission, RoleNeed, identity_loaded, UserNeed
+from flask_babel import Babel, gettext, ngettext
+from flask_assets import Environment, Bundle
 from babel import Locale
 from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
@@ -89,9 +89,9 @@ def on_identity_loaded(sender, identity):
 		return
 
 	identity.provides.add(UserNeed(user.get_id()))
-	if user.is_user():
+	if user.is_user:
 		identity.provides.add(RoleNeed("user"))
-	if user.is_admin():
+	if user.is_admin:
 		identity.provides.add(RoleNeed("admin"))
 
 def load_user(id):
@@ -170,8 +170,7 @@ class Server(object):
 		self._logger = logging.getLogger(__name__)
 		pluginManager = self._plugin_manager
 
-		# monkey patch a bunch of stuff
-		util.tornado.fix_ioloop_scheduling()
+		# monkey patch some stuff
 		util.flask.enable_additional_translations(additional_folders=[self._settings.getBaseFolder("translations")])
 
 		# setup app

@@ -9,7 +9,7 @@ import logging
 import sarge
 
 from flask import request, make_response, jsonify, url_for
-from flask.ext.babel import gettext
+from flask_babel import gettext
 
 from octoprint.settings import settings as s
 
