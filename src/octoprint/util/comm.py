@@ -1384,6 +1384,9 @@ class MachineCom(object):
 						startSeen = True
 						self.sayHello()
 					elif line.startswith("ok") or (supportWait and line == "wait"):
+						if line == "wait":
+							# if it was a wait we probably missed an ok, so let's simulate that now
+							self._handle_ok()
 						self._onConnected()
 					elif time.time() > self._timeout:
 						self._log("There was a timeout while trying to connect to the printer")
