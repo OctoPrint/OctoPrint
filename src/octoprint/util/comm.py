@@ -1100,7 +1100,7 @@ class MachineCom(object):
 				def convert_line(line):
 					if line is None:
 						return None, None
-					stripped_line = line.strip()
+					stripped_line = line.strip().strip("\0")
 					return stripped_line, stripped_line.lower()
 
 				##~~ Error handling
@@ -1383,7 +1383,7 @@ class MachineCom(object):
 					if "start" in line and not startSeen:
 						startSeen = True
 						self.sayHello()
-					elif line.startswith("ok"):
+					elif line.startswith("ok") or (supportWait and line == "wait"):
 						self._onConnected()
 					elif time.time() > self._timeout:
 						self._log("There was a timeout while trying to connect to the printer")

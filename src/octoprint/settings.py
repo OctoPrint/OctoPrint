@@ -359,6 +359,8 @@ default_settings = {
 			"firmwareName": "Virtual Marlin 1.0",
 			"sharedNozzle": False,
 			"sendBusy": False,
+			"simulateReset": True,
+			"preparedOks": []
 		}
 	}
 }
