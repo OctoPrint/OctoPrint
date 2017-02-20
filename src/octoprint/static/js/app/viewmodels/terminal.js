@@ -201,7 +201,7 @@ $(function() {
             if (type == undefined) {
                 type = "line";
             }
-            return {line: line, type: type}
+            return {line: escapeUnprintableCharacters(line), type: type}
         };
 
         self._processStateData = function(data) {

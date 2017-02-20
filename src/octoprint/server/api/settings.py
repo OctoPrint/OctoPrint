@@ -126,7 +126,8 @@ def getSettings():
 			"ignoreIdenticalResends": s.getBoolean(["feature", "ignoreIdenticalResends"]),
 			"modelSizeDetection": s.getBoolean(["feature", "modelSizeDetection"]),
 			"firmwareDetection": s.getBoolean(["feature", "firmwareDetection"]),
-			"printCancelConfirmation": s.getBoolean(["feature", "printCancelConfirmation"])
+			"printCancelConfirmation": s.getBoolean(["feature", "printCancelConfirmation"]),
+			"blockWhileDwelling": s.getBoolean(["feature", "blockWhileDwelling"])
 		},
 		"serial": {
 			"port": connectionOptions["portPreference"],
@@ -311,6 +312,7 @@ def _saveSettings(data):
 		if "modelSizeDetection" in data["feature"]: s.setBoolean(["feature", "modelSizeDetection"], data["feature"]["modelSizeDetection"])
 		if "firmwareDetection" in data["feature"]: s.setBoolean(["feature", "firmwareDetection"], data["feature"]["firmwareDetection"])
 		if "printCancelConfirmation" in data["feature"]: s.setBoolean(["feature", "printCancelConfirmation"], data["feature"]["printCancelConfirmation"])
+		if "blockWhileDwelling" in data["feature"]: s.setBoolean(["feature", "blockWhileDwelling"], data["feature"]["blockWhileDwelling"])
 
 	if "serial" in data.keys():
 		if "autoconnect" in data["serial"].keys(): s.setBoolean(["serial", "autoconnect"], data["serial"]["autoconnect"])
