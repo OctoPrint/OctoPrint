@@ -60,3 +60,13 @@
   * [Tornado](http://www.tornadoweb.org/): Apache License 2.0
   * [watchdog](http://github.com/gorakhargosh/watchdog): Apache License 2.0
   * [websocket-client](https://github.com/liris/websocket-client): LGPLv3
+
+## Development (testing, documentation generation, etc)
+
+  * [ddt](https://github.com/txels/ddt): MIT
+  * [mock](https://github.com/testing-cabal/mock): BSD
+  * [nose](http://pythonhosted.org/nose/): LGPL
+  * [pypandoc](https://github.com/bebraw/pypandoc): MIT
+  * [Sphinx](http://sphinx-doc.org/): BSD
+  * [sphinxcontrib-httpdomain](https://bitbucket.org/birkenfeld/sphinx-contrib/src/default/httpdomain/): BSD
+  * [sphinx_rtd_theme](https://github.com/snide/sphinx_rtd_theme/): BSD
