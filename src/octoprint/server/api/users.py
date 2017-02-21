@@ -40,8 +40,11 @@ def addUser():
 		return make_response("Expected content-type JSON", 400)
 
 	try:
-		data = request.json
+		data = request.get_json()
 	except BadRequest:
+		return make_response("Malformed JSON body in request", 400)
+
+	if data is None:
 		return make_response("Malformed JSON body in request", 400)
 
 	if not "name" in data:
@@ -95,8 +98,11 @@ def updateUser(username):
 			return make_response("Expected content-type JSON", 400)
 
 		try:
-			data = request.json
+			data = request.get_json()
 		except BadRequest:
+			return make_response("Malformed JSON body in request", 400)
+
+		if data is None:
 			return make_response("Malformed JSON body in request", 400)
 
 		# change roles
@@ -138,8 +144,11 @@ def changePasswordForUser(username):
 			return make_response("Expected content-type JSON", 400)
 
 		try:
-			data = request.json
+			data = request.get_json()
 		except BadRequest:
+			return make_response("Malformed JSON body in request", 400)
+
+		if data is None:
 			return make_response("Malformed JSON body in request", 400)
 
 		if not "password" in data or not data["password"]:
@@ -179,8 +188,11 @@ def changeSettingsForUser(username):
 		return make_response("Forbidden", 403)
 
 	try:
-		data = request.json
+		data = request.get_json()
 	except BadRequest:
+		return make_response("Malformed JSON body in request", 400)
+
+	if data is None:
 		return make_response("Malformed JSON body in request", 400)
 
 	try:

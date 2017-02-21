@@ -495,7 +495,9 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		if not "application/json" in flask.request.headers["Content-Type"]:
 			return flask.make_response("Expected content-type JSON", 400)
 
-		json_data = flask.request.json
+		json_data = flask.request.get_json(silent=True)
+		if json_data is None:
+			return flask.make_response("Invalid JSON", 400)
 
 		if "check" in json_data:
 			check_targets = map(lambda x: x.strip(), json_data["check"])

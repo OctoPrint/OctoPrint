@@ -134,8 +134,11 @@ def wizardFinish():
 
 	data = dict()
 	try:
-		data = request.json
+		data = request.get_json()
 	except:
+		abort(400)
+
+	if data is None:
 		abort(400)
 
 	if not "handled" in data:
@@ -186,9 +189,9 @@ def apiVersion():
 
 @api.route("/login", methods=["POST"])
 def login():
-	data = request.values
-	if hasattr(request, "json") and request.json:
-		data = request.json
+	data = request.get_json()
+	if data is None:
+		data = request.values
 
 	if octoprint.server.userManager.enabled and "user" in data and "pass" in data:
 		username = data["user"]
