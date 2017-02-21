@@ -570,7 +570,7 @@ class User(UserMixin):
 		return True
 
 	def __repr__(self):
-		return "User(id=%s,name=%s,active=%r,user=%r,admin=%r)" % (self.get_id(), self.get_name(), self.is_active, self.is_user, self.is_admin)
+		return "User(id=%s,name=%s,active=%r,user=%r,admin=%r)" % (self.get_id(), self.get_name(), bool(self.is_active), bool(self.is_user), bool(self.is_admin))
 
 
 class AnonymousUser(AnonymousUserMixin):
@@ -616,7 +616,7 @@ class SessionUser(User):
 		return self._session
 
 	def __repr__(self):
-		return "SessionUser(id=%s,name=%s,active=%r,user=%r,admin=%r,session=%s,created=%s)" % (self.get_id(), self.get_name(), self.is_active, self.is_user, self.is_admin, self._session, self._created)
+		return "SessionUser(id=%s,name=%s,active=%r,user=%r,admin=%r,session=%s,created=%s)" % (self.get_id(), self.get_name(), bool(self.is_active), bool(self.is_user), bool(self.is_admin), self._session, self._created)
 
 ##~~ DummyUser object to use when accessControl is disabled
 
