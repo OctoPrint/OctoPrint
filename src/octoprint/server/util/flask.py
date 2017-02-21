@@ -229,6 +229,27 @@ def fix_webassets_filtertool():
 
 	FilterTool._wrap_cache = fixed_wrap_cache
 
+# TODO: Remove compatibility layer in OctoPrint 1.5.0
+def deprecate_flaskext():
+	import flask
+	import importlib
+
+	class FlaskExtDeprecator(object):
+
+		def __getattr__(self, item):
+			old_name = "flask.ext.{}".format(item)
+			new_name = "flask_{}".format(item)
+			module = importlib.import_module(new_name)
+
+			from warnings import warn
+			message = "The {old} import is deprecated in Flask versions >= 0.11, which OctoPrint now uses. " + \
+			          "Import {new} instead. This compatibility layer will be removed in OctoPrint 1.5.0."
+			warn(DeprecationWarning(message.format(old=old_name, new=new_name)), stacklevel=2)
+
+			return module
+
+	flask.ext = FlaskExtDeprecator()
+
 #~~ WSGI environment wrapper for reverse proxying
 
 class ReverseProxiedEnvironment(object):
@@ -1188,7 +1209,10 @@ def get_json_command_from_request(request, valid_commands):
 	if content_type is None or not "application/json" in content_type:
 		return None, None, make_response("Expected content-type JSON", 400)
 
-	data = request.json
+	data = request.get_json()
+	if data is None:
+		return make_response("Malformed JSON body in request", 400)
+
 	if not "command" in data.keys() or not data["command"] in valid_commands.keys():
 		return None, None, make_response("Expected valid command", 400)
 

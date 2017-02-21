@@ -609,7 +609,9 @@ class Server(object):
 		return Locale.parse(request.accept_languages.best_match(LANGUAGES))
 
 	def _setup_app(self, app):
-		from octoprint.server.util.flask import ReverseProxiedEnvironment, OctoPrintFlaskRequest, OctoPrintFlaskResponse
+		from octoprint.server.util.flask import ReverseProxiedEnvironment, OctoPrintFlaskRequest, OctoPrintFlaskResponse, deprecate_flaskext
+
+		deprecate_flaskext() # TODO: remove in OctoPrint 1.5.0
 
 		s = settings()
 
