@@ -14,7 +14,7 @@ import octoprint_setuptools
 
 # Requirements for our application
 INSTALL_REQUIRES = [
-	"flask>=0.11,<0.12",
+	"flask>=0.12,<0.13",
 	"werkzeug>=0.11.1,<0.12",
 	"tornado>=4.4.2,<4.5",
 	"Jinja2>=2.8,<2.9", # Jinja 2.9 has breaking changes WRT template scope - we can't
@@ -22,23 +22,23 @@ INSTALL_REQUIRES = [
 	                    # version, hence we need to pin to a lower version for now. See #1697
 	"sockjs-tornado>=1.0.2,<1.1",
 	"PyYAML>=3.12,<3.13",
-	"Flask-Login>=0.3,<0.4",
+	"Flask-Login>=0.4,<0.5",
 	"Flask-Principal>=0.4,<0.5",
 	"Flask-Babel>=0.11,<0.12",
 	"Flask-Assets>=0.12,<0.13",
 	"markdown>=2.6.4,<2.7",
-	"pyserial>=3.1.1,<3.2",
+	"pyserial>=3.2.1,<3.3",
 	"netaddr>=0.7.17,<0.8",
 	"watchdog>=0.8.3,<0.9",
 	"sarge>=0.1.4,<0.2",
 	"netifaces>=0.10,<0.11",
 	"pylru>=1.0.9,<1.1",
 	"rsa>=3.4,<3.5",
-	"pkginfo>=1.3.2,<1.4",
-	"requests>=2.11.1,<2.12",
+	"pkginfo>=1.4.1,<1.5",
+	"requests>=2.13.0,<2.14",
 	"semantic_version>=2.6.0,<2.7",
-	"psutil>=4.3.1,<4.4",
-	"Click>=6.6,<6.7",
+	"psutil>=5.1.3,<5.2",
+	"Click>=6.7,<6.8",
 	"awesome-slugify>=1.6.5,<1.7",
 	"feedparser>=5.2.1,<5.3",
 	"chainmap>=1.0.2,<1.1",
@@ -55,7 +55,7 @@ EXTRA_REQUIRES = dict(
 	# Dependencies for developing OctoPrint
 	develop=[
 		# Testing dependencies
-		"mock>=1.0.1,<1.1",
+		"mock>=2.0,<2.1",
 		"nose>=1.3.0,<1.4",
 		"ddt",
 
@@ -70,7 +70,7 @@ EXTRA_REQUIRES = dict(
 
 	# Dependencies for developing OctoPrint plugins
 	plugins=[
-		"cookiecutter>=1.4,<1.5"
+		"cookiecutter>=1.5,<1.6"
 	]
 )
 
