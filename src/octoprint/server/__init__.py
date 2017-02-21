@@ -336,6 +336,7 @@ class Server(object):
 		loginManager = LoginManager()
 		loginManager.session_protection = "strong"
 		loginManager.user_callback = load_user
+		loginManager.anonymous_user = users.AnonymousUser # TODO: remove in 1.5.0
 		if not userManager.enabled:
 			loginManager.anonymous_user = users.DummyUser
 			principals.identity_loaders.appendleft(users.dummy_identity_loader)
