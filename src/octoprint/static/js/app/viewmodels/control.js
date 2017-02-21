@@ -362,9 +362,21 @@ $(function() {
 
         self.onSettingsBeforeSave = self.updateRotatorWidth;
 
+        self._isSafari = function() {
+            var is_chrome = navigator.userAgent.indexOf('Chrome') > -1;
+            var is_safari = navigator.userAgent.indexOf("Safari") > -1;
+            return is_safari && !is_chrome;
+        }
+
         self._disableWebcam = function() {
             // only disable webcam stream if tab is out of focus for more than 5s, otherwise we might cause
             // more load by the constant connection creation than by the actual webcam stream
+            
+            // safari bug doesn't release the mjpeg stream, so we just disable this for safari.
+            if (self._isSafari()) {
+                return;
+            }
+            
             self.webcamDisableTimeout = setTimeout(function () {
                 $("#webcam_image").attr("src", "");
             }, 5000);
@@ -380,6 +392,12 @@ $(function() {
             }
             var webcamImage = $("#webcam_image");
             var currentSrc = webcamImage.attr("src");
+            
+            // safari bug doesn't release the mjpeg stream, so we just set it up the once
+            if (self._isSafari() && currentSrc != undefined) {
+                return;
+            }
+            
             var newSrc = self.settings.webcam_streamUrl();
             if (currentSrc != newSrc) {
                 if (newSrc.lastIndexOf("?") > -1) {
