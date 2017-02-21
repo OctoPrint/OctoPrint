@@ -617,6 +617,7 @@ class Server(object):
 		s = settings()
 
 		app.debug = self._debug
+		app.config["TEMPLATES_AUTO_RELOAD"] = True
 
 		secret_key = s.get(["server", "secretKey"])
 		if not secret_key:
