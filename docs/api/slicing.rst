@@ -268,9 +268,14 @@ Slicer
      - ``string``
      - Identifier of the slicer
    * - ``displayName``
-     - 0..1
+     - 1
      - ``string``
      - Display name of the slicer
+   * - ``sameDevice``
+     - 1
+     - ``boolean``
+     - Whether the slicer runs on the same device as OctoPrint (``true``) and hence can't be used while printing,
+       or not (``false``)
    * - ``default``
      - 1
      - ``boolean``
