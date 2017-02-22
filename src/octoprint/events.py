@@ -397,7 +397,7 @@ class CommandTrigger(GenericEventListener):
 
 		currentData = self._printer.get_current_data()
 
-		if "currentZ" in currentData.keys() and currentData["currentZ"] is not None:
+		if "currentZ" in currentData and currentData["currentZ"] is not None:
 			params["__currentZ"] = str(currentData["currentZ"])
 
 		if "job" in currentData and "file" in currentData["job"] and "name" in currentData["job"]["file"] \
@@ -405,9 +405,9 @@ class CommandTrigger(GenericEventListener):
 			params["__filename"] = currentData["job"]["file"]["name"]
 			params["__filepath"] = currentData["job"]["file"]["path"]
 			params["__fileorigin"] = currentData["job"]["file"]["origin"]
-			if "progress" in currentData.keys() and currentData["progress"] is not None \
-				and "completion" in currentData["progress"].keys() and currentData["progress"]["completion"] is not None:
-				params["__progress"] = str(round(currentData["progress"]["completion"] * 100))
+			if "progress" in currentData and currentData["progress"] is not None \
+				and "completion" in currentData["progress"] and currentData["progress"]["completion"] is not None:
+				params["__progress"] = str(round(currentData["progress"]["completion"]))
 
 		# now add the payload keys as well
 		if isinstance(payload, dict):
