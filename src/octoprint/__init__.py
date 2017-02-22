@@ -221,6 +221,7 @@ def init_logging(settings, use_logging_file=True, logging_file=None, default_con
 	if verbosity > 2:
 		default_config["root"]["level"] = "DEBUG"
 
+	config = default_config
 	if use_logging_file:
 		# further logging configuration from file...
 		if logging_file is None:
@@ -233,9 +234,8 @@ def init_logging(settings, use_logging_file=True, logging_file=None, default_con
 				config_from_file = yaml.safe_load(f)
 
 		# we merge that with the default config
-		config = dict_merge(default_config, config_from_file)
-	else:
-		config = default_config
+		if config_from_file is not None and isinstance(config_from_file, dict):
+			config = dict_merge(default_config, config_from_file)
 
 	# configure logging globally
 	return set_logging_config(config, debug, verbosity, uncaught_logger, uncaught_handler)
