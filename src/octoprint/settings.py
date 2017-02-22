@@ -243,7 +243,7 @@ default_settings = {
 		"showFahrenheitAlso": False,
 		"components": {
 			"order": {
-				"navbar": ["settings", "systemmenu", "login", "plugin_announcements"],
+				"navbar": ["settings", "systemmenu", "plugin_announcements", "login"],
 				"sidebar": ["connection", "state", "files"],
 				"tab": ["temperature", "control", "gcodeviewer", "terminal", "timelapse"],
 				"settings": [
