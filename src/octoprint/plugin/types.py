@@ -746,6 +746,21 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
 		"""
 		return None
 
+	def get_ui_additional_etag(self, default_additional):
+		"""
+		Allows to provide a list of additional fields to use for ETag generation.
+
+		By default the same list will be returned that is also used in the stock UI (and injected
+		via the parameter ``default_additional``).
+
+		Arguments:
+		    default_additional (list): The list of default fields added to the ETag of the default UI
+
+		Returns:
+		    (list): A list of additional fields for the ETag generation, or None
+		"""
+		return default_additional
+
 	def get_ui_custom_lastmodified(self):
 		"""
 		Allows to calculate the LastModified differently than using the most recent modification
@@ -805,6 +820,25 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
 		    bool: Whether to suppress a record (True) or not (False, default)
 		"""
 		return False
+
+	def get_ui_custom_template_filter(self, default_template_filter):
+		"""
+		Allows to specify a custom template filter to use for filtering the template contained in the
+		``render_kwargs`` provided to the templating sub system.
+
+		Only relevant for UiPlugins that actually utilize the stock templates of OctoPrint.
+
+		By default simply returns the provided ``default_template_filter``.
+
+		Arguments:
+		    default_template_filter (callable): The default template filter used by the default UI
+
+		Returns:
+		    (callable) A filter function accepting the ``template_type`` and ``template_key`` of a template
+		    and returning ``True`` to keep it and ``False`` to filter it out. If ``None`` is returned, no
+		    filtering will take place.
+		"""
+		return default_template_filter
 
 class WizardPlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 	"""
