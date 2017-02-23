@@ -1149,12 +1149,12 @@ class Server(object):
 		if len(css_core) == 0:
 			css_core_bundle = Bundle(*[])
 		else:
-			css_core_bundle = Bundle(*css_app, output="webassets/packed_core.css", filters="cssrewrite")
+			css_core_bundle = Bundle(*css_core, output="webassets/packed_core.css", filters="cssrewrite")
 
 		if len(css_plugins) == 0:
 			css_plugins_bundle = Bundle(*[])
 		else:
-			css_plugins_bundle = Bundle(*css_app, output="webassets/packed_plugins.css", filters="cssrewrite")
+			css_plugins_bundle = Bundle(*css_plugins, output="webassets/packed_plugins.css", filters="cssrewrite")
 
 		if len(css_app) == 0:
 			css_app_bundle = Bundle(*[])
@@ -1165,12 +1165,12 @@ class Server(object):
 		if len(less_core) == 0:
 			less_core_bundle = Bundle(*[])
 		else:
-			less_core_bundle = Bundle(*less_app, output="webassets/packed_core.less", filters="cssrewrite, less_importrewrite")
+			less_core_bundle = Bundle(*less_core, output="webassets/packed_core.less", filters="cssrewrite, less_importrewrite")
 
 		if len(less_plugins) == 0:
 			less_plugins_bundle = Bundle(*[])
 		else:
-			less_plugins_bundle = Bundle(*less_app, output="webassets/packed_plugins.less", filters="cssrewrite, less_importrewrite")
+			less_plugins_bundle = Bundle(*less_plugins, output="webassets/packed_plugins.less", filters="cssrewrite, less_importrewrite")
 
 		if len(less_app) == 0:
 			less_app_bundle = Bundle(*[])
