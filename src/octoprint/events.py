@@ -332,24 +332,31 @@ class CommandTrigger(GenericEventListener):
 			self._executeGcodeCommand(command, debug=debug)
 
 	def _executeSystemCommand(self, command, debug=False):
-		def commandExecutioner(command):
+		def commandExecutioner(cmd):
 			if debug:
-				self._logger.info("Executing system command: %s" % command)
+				self._logger.info("Executing system command: {}".format(cmd))
+			else:
+				self._logger.info("Executing a system command")
 			# we run this with shell=True since we have to trust whatever
 			# our admin configured as command and since we want to allow
 			# shell-alike handling here...
-			subprocess.Popen(command, shell=True)
+			subprocess.check_call(cmd, shell=True)
 
-		try:
-			if isinstance(command, (list, tuple, set)):
-				for c in command:
-					commandExecutioner(c)
-			else:
-				commandExecutioner(command)
-		except subprocess.CalledProcessError as e:
-			self._logger.warn("Command failed with return code %i: %s" % (e.returncode, str(e)))
-		except:
-			self._logger.exception("Command failed")
+		def process():
+			try:
+				if isinstance(command, (list, tuple, set)):
+					for c in command:
+						commandExecutioner(c)
+				else:
+					commandExecutioner(command)
+			except subprocess.CalledProcessError as e:
+				self._logger.warn("Command failed with return code %i: %s" % (e.returncode, str(e)))
+			except:
+				self._logger.exception("Command failed")
+
+		t = threading.Thread(target=process)
+		t.daemon = True
+		t.start()
 
 	def _executeGcodeCommand(self, command, debug=False):
 		commands = [command]
