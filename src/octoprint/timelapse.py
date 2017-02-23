@@ -627,10 +627,10 @@ class ZTimelapse(Timelapse):
 
 	def _on_z_change(self, event, payload):
 		if self._retraction_zhop != 0 and payload["old"] is not None and payload["new"] is not None:
-			# check if height difference equals z-hop or is negative, if so don't take a picture
-			diff = round(payload["new"] - payload["old"], 3)
+			# check if height difference equals z-hop, if so don't take a picture
+			diff = round(abs(payload["new"] - payload["old"]), 3)
 			zhop = round(self._retraction_zhop, 3)
-			if diff == zhop or diff <= 0:
+			if diff == zhop:
 				return
 
 		self.capture_image()
