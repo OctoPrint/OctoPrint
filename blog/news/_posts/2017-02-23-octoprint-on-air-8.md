@@ -5,7 +5,7 @@ title: "OctoPrint On Air #8"
 author: foosel
 card: /assets/img/blog/2017-02/2017-02-23-octoprint-on-air-8.png
 featuredimage: /assets/img/blog/2017-02/2017-02-23-octoprint-on-air-8.png
-excerpt: The recording of the eigth episode of a monthly live broadcast for Patrons,
+excerpt: The recording of the eighth episode of a monthly live broadcast for Patrons,
   which aired live on February 18th.
 date: 2017-02-23 12:00:00 +0100
 
