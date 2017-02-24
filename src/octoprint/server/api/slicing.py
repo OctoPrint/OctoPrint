@@ -43,6 +43,8 @@ def _etag(configured, lm=None):
 	else:
 		hash.update(repr(sorted(slicingManager.registered_slicers)))
 
+	hash.update("v2") # increment version if we change the API format
+
 	return hash.hexdigest()
 
 

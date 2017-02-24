@@ -158,6 +158,10 @@ $(function() {
 
         PNotify.prototype.options.styling = "bootstrap2";
         PNotify.prototype.options.mouse_reset = false;
+        PNotify.prototype.options.stack.firstpos1 = 40 + 20; // navbar + 20
+        PNotify.prototype.options.stack.firstpos2 = 20;
+        PNotify.prototype.options.stack.spacing1 = 20;
+        PNotify.prototype.options.stack.spacing2 = 20;
 
         PNotify.singleButtonNotify = function(options) {
             if (!options.confirm || !options.confirm.buttons || !options.confirm.buttons.length) {

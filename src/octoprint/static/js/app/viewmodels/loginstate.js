@@ -27,6 +27,14 @@ $(function() {
             }
         });
 
+        self.userMenuTitle = ko.pureComputed(function() {
+            if (self.loggedIn()) {
+                return _.sprintf(gettext("Logged in as %(name)s"), {name: self.username()});
+            } else {
+                return gettext("Login");
+            }
+        });
+
         self.reloadUser = function() {
             if (self.currentUser() == undefined) {
                 return;

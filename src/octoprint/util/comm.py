@@ -1196,7 +1196,7 @@ class MachineCom(object):
 
 				# temperature processing
 				elif ' T:' in line or line.startswith('T:') or ' T0:' in line or line.startswith('T0:') or ((' B:' in line or line.startswith('B:')) and not 'A:' in line):
-					if not disable_external_heatup_detection and not line.strip().startswith("ok") and not self._heating:
+					if not disable_external_heatup_detection and not line.strip().startswith("ok") and not self._heating and self._firmwareInfoReceived:
 						self._logger.debug("Externally triggered heatup detected")
 						self._heating = True
 						self._heatupWaitStartTime = time.time()

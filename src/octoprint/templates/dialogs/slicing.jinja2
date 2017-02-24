@@ -17,6 +17,13 @@
                     </div>
                 </div>
                 <div class="control-group">
+                    <label class="control-label">{{ _('Runs locally') }}</label>
+                    <div class="controls">
+                        <strong data-bind="text: slicerSameDevice() ? gettext('Yes') : gettext('No')"></strong>
+                        <span class="help-block"><small>{{ _('For performance reasons locally run slicers are disabled while printing') }}</small></span>
+                    </div>
+                </div>
+                <div class="control-group">
                     <label class="control-label">{{ _('Slicing Profile') }}</label>
                     <div class="controls">
                         <select data-bind="options: profiles, optionsText: 'name', optionsValue: 'key', optionsCaption: '{{ _('Select a slicing profile...') }}', value: profile, valueAllowUnset: true"></select>
@@ -48,6 +55,6 @@
     </div>
     <div class="modal-footer">
         <a href="#" class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Cancel') }}</a>
-        <a href="#" class="btn btn-primary" data-bind="click: function() { if ($root.enableSliceButton()) { $root.slice() } }, enabled: enableSliceButton, css: {disabled: !$root.enableSliceButton()}">{{ _('Slice') }}</a>
+        <a href="#" class="btn btn-primary" data-bind="click: function() { if ($root.enableSliceButton()) { $root.slice() } }, enabled: enableSliceButton, css: {disabled: !$root.enableSliceButton()}, attr: {title: $root.sliceButtonTooltip}">{{ _('Slice') }}</a>
     </div>
 </div>

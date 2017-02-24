@@ -17,6 +17,21 @@ class CleaningTimedRotatingFileHandler(logging.handlers.TimedRotatingFileHandler
 				os.remove(s)
 
 
+class OctoPrintLogHandler(CleaningTimedRotatingFileHandler):
+	rollover_callbacks = []
+
+	@classmethod
+	def registerRolloverCallback(cls, callback, *args, **kwargs):
+		cls.rollover_callbacks.append((callback, args, kwargs))
+
+	def doRollover(self):
+		CleaningTimedRotatingFileHandler.doRollover(self)
+
+		for rcb in self.__class__.rollover_callbacks:
+			callback, args, kwargs = rcb
+			callback(*args, **kwargs)
+
+
 class SerialLogHandler(logging.handlers.RotatingFileHandler):
 
 	_do_rollover = False
