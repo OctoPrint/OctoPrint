@@ -58,7 +58,8 @@ class FatalStartupError(BaseException):
 def init_platform(basedir, configfile, use_logging_file=True, logging_file=None,
                   logging_config=None, debug=False, verbosity=0, uncaught_logger=None,
                   uncaught_handler=None, safe_mode=False, after_preinit_logging=None,
-                  after_settings=None, after_logging=None, after_safe_mode=None):
+                  after_settings=None, after_logging=None, after_safe_mode=None,
+                  after_plugin_manager=None):
 	kwargs = dict()
 
 	logger, recorder = preinit_logging(debug, verbosity, uncaught_logger, uncaught_handler)
@@ -94,6 +95,11 @@ def init_platform(basedir, configfile, use_logging_file=True, logging_file=None,
 		after_safe_mode(**kwargs)
 
 	plugin_manager = init_pluginsystem(settings, safe_mode=safe_mode)
+	kwargs["plugin_manager"] = plugin_manager
+
+	if callable(after_plugin_manager):
+		after_plugin_manager(**kwargs)
+
 	return settings, logger, safe_mode, plugin_manager
 
 
@@ -176,7 +182,7 @@ def init_logging(settings, use_logging_file=True, logging_file=None, default_con
 					"stream": "ext://sys.stdout"
 				},
 				"file": {
-					"class": "octoprint.logging.handlers.CleaningTimedRotatingFileHandler",
+					"class": "octoprint.logging.handlers.OctoPrintLogHandler",
 					"level": "DEBUG",
 					"formatter": "simple",
 					"when": "D",
