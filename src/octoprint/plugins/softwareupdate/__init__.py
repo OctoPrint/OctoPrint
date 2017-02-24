@@ -21,7 +21,7 @@ from . import version_checks, updaters, exceptions, util, cli
 
 from octoprint.server.util.flask import restricted_access, with_revalidation_checking, check_etag
 from octoprint.server import admin_permission, VERSION, REVISION, BRANCH
-from octoprint.util import dict_merge
+from octoprint.util import dict_merge, to_unicode
 import octoprint.settings
 
 
@@ -39,6 +39,8 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		self._configured_checks_mutex = threading.Lock()
 		self._configured_checks = None
 		self._refresh_configured_checks = False
+
+		self._get_versions_mutex = threading.Lock()
 
 		self._version_cache = dict()
 		self._version_cache_ttl = 0
@@ -69,6 +71,10 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		self._console_logger.addHandler(console_logging_handler)
 		self._console_logger.setLevel(logging.DEBUG)
 		self._console_logger.propagate = False
+
+	def on_after_startup(self):
+		# refresh cache now if necessary so it's faster once the user connects to the instance
+		self.get_current_versions()
 
 	def _get_configured_checks(self):
 		with self._configured_checks_mutex:
@@ -553,57 +559,70 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		update_possible = False
 		information = dict()
 
-		for target, check in checks.items():
-			if not target in check_targets:
-				continue
+		# we don't want to do the same work twice, so let's use a lock
+		with self._get_versions_mutex:
+			for target, check in checks.items():
+				if not target in check_targets:
+					continue
 
-			if not check:
-				continue
+				if not check:
+					continue
 
-			try:
-				populated_check = self._populated_check(target, check)
-				target_information, target_update_available, target_update_possible = self._get_current_version(target, populated_check, force=force)
-				if target_information is None:
-					target_information = dict()
-			except exceptions.UnknownCheckType:
-				self._logger.warn("Unknown update check type for target {}: {}".format(target, check.get("type", "<n/a>")))
-				continue
+				try:
+					populated_check = self._populated_check(target, check)
+					target_information, target_update_available, target_update_possible = self._get_current_version(target, populated_check, force=force)
+					if target_information is None:
+						target_information = dict()
+				except exceptions.UnknownCheckType:
+					self._logger.warn("Unknown update check type for target {}: {}".format(target, check.get("type", "<n/a>")))
+					continue
 
-			target_information = dict_merge(dict(local=dict(name="unknown", value="unknown"), remote=dict(name="unknown", value="unknown", release_notes=None)), target_information)
+				target_information = dict_merge(dict(local=dict(name="unknown", value="unknown"), remote=dict(name="unknown", value="unknown", release_notes=None)), target_information)
 
-			update_available = update_available or target_update_available
-			update_possible = update_possible or (target_update_possible and target_update_available)
+				update_available = update_available or target_update_available
+				update_possible = update_possible or (target_update_possible and target_update_available)
 
-			local_name = target_information["local"]["name"]
-			local_value = target_information["local"]["value"]
+				local_name = target_information["local"]["name"]
+				local_value = target_information["local"]["value"]
 
-			release_notes = None
-			if target_information and target_information["remote"] and target_information["remote"]["value"]:
-				if "release_notes" in populated_check and populated_check["release_notes"]:
-					release_notes = populated_check["release_notes"]
-				elif "release_notes" in target_information["remote"]:
-					release_notes = target_information["remote"]["release_notes"]
+				release_notes = None
+				if target_information and target_information["remote"] and target_information["remote"]["value"]:
+					if "release_notes" in populated_check and populated_check["release_notes"]:
+						release_notes = populated_check["release_notes"]
+					elif "release_notes" in target_information["remote"]:
+						release_notes = target_information["remote"]["release_notes"]
 
-				if release_notes:
-					release_notes = release_notes.format(octoprint_version=VERSION,
-					                                     target_name=target_information["remote"]["name"],
-					                                     target_version=target_information["remote"]["value"])
+					if release_notes:
+						release_notes = release_notes.format(octoprint_version=VERSION,
+						                                     target_name=target_information["remote"]["name"],
+						                                     target_version=target_information["remote"]["value"])
 
-			information[target] = dict(updateAvailable=target_update_available,
-			                           updatePossible=target_update_possible,
-			                           information=target_information,
-			                           displayName=populated_check["displayName"],
-			                           displayVersion=populated_check["displayVersion"].format(octoprint_version=VERSION, local_name=local_name, local_value=local_value),
-			                           check=populated_check,
-			                           releaseNotes=release_notes)
+				information[target] = dict(updateAvailable=target_update_available,
+				                           updatePossible=target_update_possible,
+				                           information=target_information,
+				                           displayName=populated_check["displayName"],
+				                           displayVersion=populated_check["displayVersion"].format(octoprint_version=VERSION, local_name=local_name, local_value=local_value),
+				                           check=populated_check,
+				                           releaseNotes=release_notes)
 
-		if self._version_cache_dirty:
-			self._save_version_cache()
+			if self._version_cache_dirty:
+				self._save_version_cache()
 		return information, update_available, update_possible
 
 	def _get_check_hash(self, check):
+		def dict_to_sorted_repr(d):
+			lines = []
+			for key in sorted(d.keys()):
+				value = d[key]
+				if isinstance(value, dict):
+					lines.append("{!r}: {}".format(key, dict_to_sorted_repr(value)))
+				else:
+					lines.append("{!r}: {!r}".format(key, value))
+
+			return "{" + ", ".join(lines) + "}"
+
 		hash = hashlib.md5()
-		hash.update(repr(check))
+		hash.update(dict_to_sorted_repr(check))
 		return hash.hexdigest()
 
 	def _get_current_version(self, target, check, force=False):
@@ -844,15 +863,15 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		if target == "octoprint":
 			from flask.ext.babel import gettext
 
-			result["displayName"] = check.get("displayName")
+			result["displayName"] = to_unicode(check.get("displayName"), errors="replace")
 			if result["displayName"] is None:
 				# displayName missing or set to None
-				result["displayName"] = gettext("OctoPrint")
+				result["displayName"] = to_unicode(gettext("OctoPrint"), errors="replace")
 
-			result["displayVersion"] = check.get("displayVersion")
+			result["displayVersion"] = to_unicode(check.get("displayVersion"), errors="replace")
 			if result["displayVersion"] is None:
 				# displayVersion missing or set to None
-				result["displayVersion"] = "{octoprint_version}"
+				result["displayVersion"] = u"{octoprint_version}"
 
 			stable_branch = "master"
 			release_branches = []
@@ -907,15 +926,15 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 							result["release_compare"] = "python_unequal"
 
 		else:
-			result["displayName"] = check.get("displayName")
+			result["displayName"] = to_unicode(check.get("displayName"), errors="replace")
 			if result["displayName"] is None:
 				# displayName missing or None
-				result["displayName"] = target
+				result["displayName"] = to_unicode(target, errors="replace")
 
-			result["displayVersion"] = check.get("displayVersion", check.get("current"))
+			result["displayVersion"] = to_unicode(check.get("displayVersion", check.get("current")), errors="replace")
 			if result["displayVersion"] is None:
 				# displayVersion AND current missing or None
-				result["displayVersion"] = "unknown"
+				result["displayVersion"] = u"unknown"
 
 			if check["type"] in ("github_commit",):
 				result["current"] = check.get("current", None)
