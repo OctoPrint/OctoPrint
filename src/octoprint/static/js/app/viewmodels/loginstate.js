@@ -136,6 +136,10 @@ $(function() {
             });
 
             $("body").on("click", function(e) {
+                if (!toggle.hasClass("open")) {
+                    return;
+                }
+
                 var anyFormLinkOrButton = $("#login_dropdown_loggedout a, #login_dropdown_loggedin a, #login_dropdown_loggedout button, #login_dropdown_loggedin button");
                 var dropdown = $("li.dropdown#navbar_login");
                 var anyLastpassButton = $("#__lpform_login_user, #__lpform_login_pass");
