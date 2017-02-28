@@ -141,8 +141,8 @@ $(function() {
                 var anyLastpassButton = $("#__lpform_login_user, #__lpform_login_pass");
 
                 var isLinkOrButton = anyFormLinkOrButton.is(e.target) || anyFormLinkOrButton.has(e.target).length !== 0;
-                var isDropdown = dropdown.is(e.target) || dropdown.has(e.target).length === 0;
-                var isLastpass = anyLastpassButton.is(e.target) || anyLastpassButton.has(e.target).length === 0;
+                var isDropdown = dropdown.is(e.target) || dropdown.has(e.target).length !== 0;
+                var isLastpass = anyLastpassButton.is(e.target) || anyLastpassButton.has(e.target).length !== 0;
 
                 if (isLinkOrButton || !(isDropdown || isLastpass)) {
                     toggle.removeClass("open");
