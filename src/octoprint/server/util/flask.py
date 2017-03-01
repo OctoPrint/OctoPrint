@@ -483,7 +483,7 @@ def passive_login():
 	else:
 		user = flask_login.current_user
 
-	if user is not None and not user.is_anonymous:
+	if user is not None and not user.is_anonymous():
 		flask_principal.identity_changed.send(flask.current_app._get_current_object(), identity=flask_principal.Identity(user.get_id()))
 		if hasattr(user, "get_session"):
 			flask.session["usersession.id"] = user.get_session()

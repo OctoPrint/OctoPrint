@@ -39,7 +39,10 @@ class GroupManager(object):
 	def changeGroupDefault(self, groupname, default):
 		pass
 
-	def addGroup(self, name, permissions, specialGroup):
+	def changeGroupDescription(self, groupname, description):
+		pass
+
+	def addGroup(self, name, description, permissions, specialGroup):
 		pass
 
 	def removeGroup(self, name):
@@ -72,14 +75,17 @@ class FilebasedGroupManager(GroupManager):
 				data = yaml.safe_load(f)
 				for name in data.keys():
 					attributes = data[name]
+					description = ""
 					specialGroup = False
 					default = False
+					if "description" in attributes:
+						description = attributes["description"]
 					if "specialGroup" in attributes:
 						specialGroup = attributes["specialGroup"]
 					if "default" in attributes:
 						default = attributes["default"]
 
-					self._groups[name] = Group(name, attributes["permissions"], default=default, specialGroup=specialGroup)
+					self._groups[name] = Group(name, description=description, permissionslist=attributes["permissions"], default=default, specialGroup=specialGroup)
 
 	def _save(self, force=False):
 		if not self._dirty and not force:
@@ -89,6 +95,7 @@ class FilebasedGroupManager(GroupManager):
 		for name in self._groups.keys():
 			group = self._groups[name]
 			data[name] = dict(
+				description=group._description,
 				permissions=group._permissions,
 				default=group._default,
 				specialGroup=group._specialGroup
@@ -100,7 +107,7 @@ class FilebasedGroupManager(GroupManager):
 			self._dirty = False
 		self._load()
 
-	def addGroup(self, groupname, permissions=None, default=False, specialGroup=False, overwrite=False):
+	def addGroup(self, groupname, description="", permissions=None, default=False, specialGroup=False, overwrite=False):
 		if not permissions:
 			permissions = []
 
@@ -111,16 +118,13 @@ class FilebasedGroupManager(GroupManager):
 		if groupname in self._groups.keys() and not overwrite:
 			raise GroupAlreadyExists(groupname)
 
-		self._groups[groupname] = Group(groupname, permissionslist=opermissions, default=default, specialGroup=specialGroup)
+		self._groups[groupname] = Group(groupname, description=description, permissionslist=opermissions, default=default, specialGroup=specialGroup)
 		self._dirty = True
 		self._save()
 
 	def changeGroupPermissions(self, groupname, permissions):
 		if not groupname in self._groups.keys():
 			raise UnknownGroup(groupname)
-
-		if not self._groups[groupname].isChangable():
-			raise GroupCantbeChanged(groupname)
 
 		opermissions = []
 		for p in permissions:
@@ -129,9 +133,15 @@ class FilebasedGroupManager(GroupManager):
 		group = self._groups[groupname]
 
 		removedPermissions = set(group._permissions) - set(opermissions)
-		self.removePermissionsFromGroup(groupname, removedPermissions)
-
 		addedPermissions = set(opermissions) - set(group._permissions)
+
+		if len(removedPermissions) == 0 and len(addedPermissions) == 0:
+			return
+
+		if not self._groups[groupname].isChangable():
+			raise GroupCantbeChanged(groupname)
+
+		self.removePermissionsFromGroup(groupname, removedPermissions)
 		self.addPermissionsToGroup(groupname, addedPermissions)
 
 	def addPermissionsToGroup(self, groupname, permissions):
@@ -168,10 +178,24 @@ class FilebasedGroupManager(GroupManager):
 		if not groupname in self._groups.keys():
 			raise UnknownGroup(groupname)
 
+		if default == self._groups[groupname].get_default():
+			return
+
 		if not self._groups[groupname].isChangable():
 			raise GroupCantbeChanged(groupname)
 
 		self._groups[groupname].change_default(default)
+		self._dirty = True
+		self._save()
+
+	def changeGroupDescription(self, groupname, description):
+		if not groupname in self._groups.keys():
+			raise UnknownGroup(groupname)
+
+		if description == self._groups[groupname].get_description():
+			return
+
+		self._groups[groupname].change_description(description)
 		self._dirty = True
 		self._save()
 
@@ -220,8 +244,9 @@ class GroupCantbeChanged(Exception):
 
 
 class Group(object):
-	def __init__(self, name, permissionslist=[], default=False, specialGroup=False):
+	def __init__(self, name, description="", permissionslist=[], default=False, specialGroup=False):
 		self._name = name
+		self._description = description
 		self._permissions = permissionslist if permissionslist is not None else []
 		self._default = default
 		self._specialGroup = specialGroup
@@ -231,6 +256,7 @@ class Group(object):
 
 		return {
 			"name": self.get_name(),
+			"description": self.get_description(),
 			"permissions": permissions,
 			"defaultOn": self.get_default()
 		}
@@ -240,6 +266,9 @@ class Group(object):
 
 	def get_name(self):
 		return self._name
+
+	def get_description(self):
+		return self._description
 
 	def get_default(self):
 		return self._default
@@ -282,6 +311,9 @@ class Group(object):
 
 		self._default = default
 
+	def change_description(self, description):
+		self._description = description
+
 	@property
 	def permissions(self):
 		if Permissions.admin in self._permissions:
@@ -304,7 +336,7 @@ class Group(object):
 		return permission.needs.issubset(self.needs)
 
 	def __repr__(self):
-		return '{0} name={1}'.format(self.__class__.__name__, self.get_name())
+		return '{0} name={1}, description={2}, default={3}'.format(self.__class__.__name__, self.get_name(), self.get_description(), self.get_default())
 
 
 class Groups(object):
@@ -313,8 +345,8 @@ class Groups(object):
 
 	@classmethod
 	def initialize(cls):
-		cls.admins = cls.getOrCreateGroup("Admins", permissionslist=[Permissions.admin], default=False)
-		cls.guests = cls.getOrCreateGroup("Guests", permissionslist=[], default=False)
+		cls.admins = cls.getOrCreateGroup("Admins", "Admin group", permissionslist=[Permissions.admin], default=False)
+		cls.guests = cls.getOrCreateGroup("Guests", "Guest group", permissionslist=[], default=False)
 
 	@classmethod
 	def getGroupFrom(cls, group):
@@ -324,8 +356,8 @@ class Groups(object):
 			else groupManager.findGroup(group)
 
 	@classmethod
-	def getOrCreateGroup(cls, groupname, permissionslist, default=False, specialGroup=True, overwrite=False):
+	def getOrCreateGroup(cls, groupname, description, permissionslist, default=False, specialGroup=True, overwrite=False):
 		from octoprint.server import groupManager
 		return groupManager.findGroup(groupname) if groupManager.findGroup(groupname) is not None \
-			else groupManager.addGroup(groupname, permissionslist=permissionslist, default=default, specialGroup=specialGroup, overwrite=overwrite)
+			else groupManager.addGroup(groupname, description=description, permissionslist=permissionslist, default=default, specialGroup=specialGroup, overwrite=overwrite)
 

@@ -37,10 +37,16 @@
 <!-- Modals for user management -->
 
 <script type="text/html" id="users-permission-template">
-    <label class="checkbox"><input type="checkbox" data-bind="checkedValue: $data, checked: $root.users.editorPermissions"><span data-bind="text: name"></span></label>
+    <label class="checkbox">
+        <input type="checkbox" data-bind="checkedValue: $data, checked: $root.users.editorPermissions"><span data-bind="text: name"></span><br>
+        <span class="description" data-bind="text: description"></span>
+    </label>
 </script>
 <script type="text/html" id="users-group-template">
-    <label class="checkbox"><input type="checkbox" data-bind="checkedValue: $data, checked: $root.users.editorGroups"><span data-bind="text: name"></span></label>
+    <label class="checkbox">
+        <input type="checkbox" data-bind="checkedValue: $data, checked: $root.users.editorGroups"><span data-bind="text: name"></span><br>
+        <span class="description" data-bind="text: description"></span>
+    </label>
 </script>
 
 <div id="settings-usersDialogAddUser" class="modal hide fade">

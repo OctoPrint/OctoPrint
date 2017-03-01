@@ -48,11 +48,12 @@ def addGroup():
 		return make_response("Missing mandatory permission field", 400)
 
 	name = data["name"]
+	description = data["description"]
 	permissions = data["permissions"]
 	default = data["defaultOn"] if "defaultOn" in data else False
 
 	try:
-		groupManager.addGroup(name, permissions=permissions, default=default)
+		groupManager.addGroup(name, description=description, permissions=permissions, default=default)
 	except groups.GroupAlreadyExists:
 		abort(409)
 	return getGroups()
@@ -93,8 +94,11 @@ def updateGroup(groupname):
 				permissions = data["permissions"]
 				groupManager.changeGroupPermissions(groupname, permissions)
 
-			if"defaultOn" in data:
+			if "defaultOn" in data:
 				groupManager.changeGroupDefault(groupname, data["defaultOn"])
+
+			if "description" in data:
+				groupManager.changeGroupDescription(groupname, data["description"])
 
 			return getGroups()
 		except groups.GroupCantbeChanged:

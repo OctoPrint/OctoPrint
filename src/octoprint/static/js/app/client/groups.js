@@ -42,12 +42,15 @@
             return OctoPrint.get(url(name), opts);
         },
 
-        update: function (name, permissions, defaultOn, opts) {
+        update: function (name, description, permissions, defaultOn, opts) {
             if (!name) {
                 throw new OctoPrint.InvalidArgumentError("group name must be set");
             }
 
+            //
+
             var data = {
+                description: description,
                 permissions: permissions,
                 defaultOn: defaultOn,
             };

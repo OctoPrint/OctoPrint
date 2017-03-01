@@ -30,6 +30,7 @@ $(function() {
         self.currentGroup = ko.observable(self.emptyGroup);
 
         self.editorGroupname = ko.observable(undefined);
+        self.editorGroupdesc = ko.observable(undefined);
         self.editorPermissions = ko.observableArray([]);
         self.editorDefaultOn = ko.observable(false);
 
@@ -39,10 +40,12 @@ $(function() {
         self.currentGroup.subscribe(function(newValue) {
             if (newValue === undefined) {
                 self.editorGroupname(undefined);
+                self.editorGroupdesc(undefined);
                 self.editorPermissions([]);
                 self.editorDefaultOn(false);
             } else {
                 self.editorGroupname(newValue.name);
+                self.editorGroupdesc(newValue.description);
                 self.editorPermissions(newValue.permissions);
                 self.editorDefaultOn(newValue.defaultOn);
             }
@@ -116,6 +119,7 @@ $(function() {
 
             var group = {
                 name: self.editorGroupname(),
+                description: self.editorGroupdesc(),
                 permissions: self.editorPermissions(),
                 defaultOn: self.editorDefaultOn()
             };
@@ -139,6 +143,7 @@ $(function() {
             if (!CONFIG_GROUPS_ENABLED) return;
 
             var group = self.currentGroup();
+            group.description = self.editorGroupdesc();
             group.permissions = self.editorPermissions();
             group.defaultOn = self.editorDefaultOn();
 
@@ -182,7 +187,7 @@ $(function() {
                 throw OctoPrint.InvalidArgumentError("group must be set");
             }
 
-            return OctoPrint.groups.update(group.name, group.permissions, group.defaultOn)
+            return OctoPrint.groups.update(group.name, group.description, group.permissions, group.defaultOn)
                 .done(self.fromResponse);
         };
         self.onUserLoggedIn = function(user) {

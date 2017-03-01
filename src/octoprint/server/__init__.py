@@ -187,10 +187,6 @@ class Server(object):
 		self._logger = logging.getLogger(__name__)
 		pluginManager = self._plugin_manager
 
-		# setup octoprint's flask json serialization/deserialization
-		app.json_encoder = OctoPrintJsonEncoder.Encoder
-		app.json_decoder = OctoPrintJsonDecoder.Decoder
-
 		# monkey patch a bunch of stuff
 		util.tornado.fix_ioloop_scheduling()
 		util.flask.enable_additional_translations(additional_folders=[self._settings.getBaseFolder("translations")])
@@ -665,6 +661,10 @@ class Server(object):
 		from octoprint.server.util.flask import ReverseProxiedEnvironment, OctoPrintFlaskRequest, OctoPrintFlaskResponse
 
 		s = settings()
+
+		# setup octoprint's flask json serialization/deserialization
+		app.json_encoder = OctoPrintJsonEncoder.Encoder
+		app.json_decoder = OctoPrintJsonDecoder.Decoder
 
 		app.debug = self._debug
 
