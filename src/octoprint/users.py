@@ -377,7 +377,7 @@ class FilebasedUserManager(UserManager):
 		if user is not None:
 			return user
 
-		if userid is not None and session is None:
+		if userid is not None:
 			if userid not in self._users.keys():
 				return None
 			return self._users[userid]
