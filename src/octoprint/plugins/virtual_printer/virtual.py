@@ -109,6 +109,8 @@ class VirtualPrinter(object):
 
 		self._firmwareName = settings().get(["devel", "virtualPrinter", "firmwareName"])
 
+		self._okFormatString = settings().get(["devel", "virtualPrinter", "okFormatString"])
+
 		self.currentLine = 0
 		self.lastN = 0
 
@@ -1073,11 +1075,7 @@ class VirtualPrinter(object):
 	def _sendOk(self):
 		if self.outgoing is None:
 			return
-
-		if settings().getBoolean(["devel", "virtualPrinter", "okWithLinenumber"]):
-			self._send("{} {}".format(self._ok(), self.lastN))
-		else:
-			self._send(self._ok())
+		self._send(self._ok())
 
 	def _sendWaitAfterTimeout(self, timeout=5):
 		time.sleep(timeout)
@@ -1089,10 +1087,11 @@ class VirtualPrinter(object):
 			self.outgoing.put(line)
 
 	def _ok(self):
-		ok = "ok"
+		ok = self._okFormatString
 		if self._prepared_oks:
 			ok = self._prepared_oks.pop(0)
-		return ok
+
+		return ok.format(ok, lastN=self.lastN, buffer=self.buffered.maxsize - self.buffered.qsize())
 
 class CharCountingQueue(queue.Queue):
 
