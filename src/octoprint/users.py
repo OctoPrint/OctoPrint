@@ -310,9 +310,8 @@ class FilebasedUserManager(UserManager):
 			raise UnknownUser(username)
 
 		user = self._users[username]
-		current = user.get_setting(key)
-		if not current or current != value:
-			old_value = user.get_setting(key)
+		old_value = user.get_setting(key)
+		if not old_value or old_value != value:
 			user.set_setting(key, value)
 			self._dirty = self._dirty or old_value != value
 			self._save()
@@ -548,7 +547,7 @@ class User(UserMixin):
 	def _get_setting(self, path):
 		s = self._settings
 		for p in path:
-			if p in s:
+			if isinstance(s, dict) and p in s:
 				s = s[p]
 			else:
 				return None
@@ -561,7 +560,7 @@ class User(UserMixin):
 				s[p] = dict()
 
 			if not isinstance(s[p], dict):
-				return False
+				s[p] = dict()
 
 			s = s[p]
 
