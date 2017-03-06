@@ -207,7 +207,7 @@ $(function() {
  					.done(self.requestData);
             } else {
                 showConfirmationDialog({
-                    message: gettext("This will cancel your print."),
+                    message: gettext("Delete selected timelapse?"),
                     cancel: gettext("No"),
                     proceed: gettext("Yes"),
                     onproceed: function() {
