@@ -41,7 +41,7 @@ $(function() {
             }
 
             OctoPrint.users.get(self.currentUser().name)
-                .done(self.fromResponse);
+                .done(self.updateCurrentUserData);
         };
 
         self.requestData = function() {
@@ -52,23 +52,29 @@ $(function() {
         self.fromResponse = function(response) {
             if (response && response.name) {
                 self.loggedIn(true);
-                self.username(response.name);
-                self.isUser(response.user);
-                self.isAdmin(response.admin);
-
-                self.currentUser(response);
-
+                self.updateCurrentUserData(response);
                 callViewModels(self.allViewModels, "onUserLoggedIn", [response]);
             } else {
                 self.loggedIn(false);
-                self.username(undefined);
-                self.isUser(false);
-                self.isAdmin(false);
-
-                self.currentUser(undefined);
-
+                self.resetCurrentUserData();
                 callViewModels(self.allViewModels, "onUserLoggedOut");
             }
+        };
+
+        self.updateCurrentUserData = function(data) {
+            self.username(data.name);
+            self.isUser(data.user);
+            self.isAdmin(data.admin);
+
+            self.currentUser(data);
+        };
+
+        self.resetCurrentUserData = function() {
+            self.username(undefined);
+            self.isUser(false);
+            self.isAdmin(false);
+
+            self.currentUser(undefined);
         };
 
         self.login = function(u, p, r) {
