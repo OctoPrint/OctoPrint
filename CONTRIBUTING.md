@@ -268,7 +268,7 @@ See [the corresponding chapter in the documentation](http://docs.octoprint.org/e
    **ideally of only one commit** (use git's rebase and squash functionality).
 5. Make sure you **follow the current coding style**. This means:
      * Tabs instead of spaces in the Python files[2]
-     * Spaces instead of tabs in the Javascript sources
+     * Spaces instead of tabs in the JavaScript sources
      * English language (code, variables, comments, ...)
      * Comments where necessary: Tell *why* the code does something like it does
        it, structure your code
