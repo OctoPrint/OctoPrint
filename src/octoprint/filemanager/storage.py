@@ -982,7 +982,15 @@ class LocalFileStorage(StorageInterface):
 				continue
 
 			printer_profile = history_entry["printerProfile"]
+			if not printer_profile:
+				continue
+
 			print_time = history_entry["printTime"]
+			try:
+				print_time = float(print_time)
+			except:
+				self._logger.warn("Invalid print time value found in print history for {} in {}/.metadata.yaml: {!r}".format(name, path, print_time))
+				continue
 
 			if not printer_profile in former_print_times:
 				former_print_times[printer_profile] = []
