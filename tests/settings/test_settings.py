@@ -17,6 +17,7 @@ import tempfile
 import yaml
 import hashlib
 import ddt
+import time
 
 import octoprint.settings
 
@@ -527,6 +528,9 @@ class TestSettings(unittest.TestCase):
 			# current modification date of config.yaml
 			current_modified = os.stat(config_path).st_mtime
 
+			# sleep a bit to make sure we do have a change in the timestamp
+			time.sleep(1.0)
+
 			# set a new value
 			settings.set(["api", "key"], "newkey")
 
@@ -541,6 +545,9 @@ class TestSettings(unittest.TestCase):
 		with self.mocked_config():
 			settings = octoprint.settings.Settings()
 			last_modified = settings.last_modified
+
+			# sleep a bit to make sure we do have a change in the timestamp
+			time.sleep(1.0)
 
 			settings.save()
 			self.assertEqual(settings.last_modified, last_modified)
