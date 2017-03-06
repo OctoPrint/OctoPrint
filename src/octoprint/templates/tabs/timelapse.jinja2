@@ -64,6 +64,12 @@
 
 <div class="pull-right">
     <small>{{ _('Sort by') }}: <a href="javascript:void(0)" data-bind="click: function() { listHelper.changeSorting('name'); }">{{ _('Name') }} ({{ _('ascending') }})</a> | <a href="javascript:void(0)" data-bind="click: function() { listHelper.changeSorting('creation'); }">{{ _('Creation date') }} ({{ _('descending') }})</a> | <a href="javascript:void(0)" data-bind="click: function() { listHelper.changeSorting('size'); }">{{ _('Size') }} ({{ _('descending') }})</a></small>
+    </br>
+    <div class="pull-right" data-bind="visible: loginState.isAdmin">
+        <label class="checkbox">
+            <input type="checkbox" data-bind="checked: timelapseDeleteConfirm"> {{ _('Confirm Delete') }}
+        </label>
+    </div>
 </div>
 <table class="table table-striped table-hover table-condensed table-hover" id="timelapse_files">
     <thead>

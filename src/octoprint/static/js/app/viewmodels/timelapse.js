@@ -18,6 +18,7 @@ $(function() {
         self.timelapseFps = ko.observable(self.defaultFps);
         self.timelapseRetractionZHop = ko.observable(self.defaultRetractionZHop);
         self.timelapseCapturePostRoll = ko.observable(self.defaultCapturePostRoll);
+        self.timelapseDeleteConfirm = ko.observable(true);
 
         self.persist = ko.observable(false);
         self.isDirty = ko.observable(false);
@@ -201,15 +202,20 @@ $(function() {
         };
 
         self.removeFile = function(filename) {
-			showConfirmationDialog({
-                message: gettext("Delete selected timelapse?"),
-                cancel: gettext("No"),
-                proceed: gettext("Yes"),
-                onproceed: function() {
-                    OctoPrint.timelapse.delete(filename)
-						.done(self.requestData);
-				}
-			});
+			if (!self.timelapseDeleteConfirm()) {
+                OctoPrint.timelapse.delete(filename)
+ 					.done(self.requestData);
+            } else {
+                showConfirmationDialog({
+                    message: gettext("This will cancel your print."),
+                    cancel: gettext("No"),
+                    proceed: gettext("Yes"),
+                    onproceed: function() {
+                        OctoPrint.timelapse.delete(filename)
+ 							.done(self.requestData);
+                    }
+                });
+            }
         };
 
         self.removeUnrendered = function(name) {
