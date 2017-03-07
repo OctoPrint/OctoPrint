@@ -63,7 +63,9 @@ class UserTestCase(unittest.TestCase):
 		(["sub", "othersubkey"], "othersubvalue", dict(sub=dict(othersubkey="othersubvalue")), True),
 		("booleankey", True, dict(booleankey=True), True),
 		(["newsub", "newsubkey"], "newsubvalue", dict(newsub=dict(newsubkey="newsubvalue")), True),
-		(["sub", "subkey", "wontwork"], "wontwork", dict(), False)
+		# ["sub", "subkey"] is already existing and gets overwritten
+		(["sub", "subkey", "subsubkey"], "42", dict(sub=dict(subkey=dict(subsubkey="42"))), True),
+		(["sub"], "overwrite", dict(sub="overwrite"), True)
 	)
 	@ddt.unpack
 	def test_set_setting_string(self, key, value, update, expected_returnvalue):
