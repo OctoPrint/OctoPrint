@@ -335,7 +335,6 @@ default_settings = {
 			"enabled": False,
 			"okAfterResend": False,
 			"forceChecksum": False,
-			"okWithLinenumber": False,
 			"numExtruders": 1,
 			"includeCurrentToolInTemps": True,
 			"includeFilenameInOpened": True,
@@ -360,7 +359,8 @@ default_settings = {
 			"sharedNozzle": False,
 			"sendBusy": False,
 			"simulateReset": True,
-			"preparedOks": []
+			"preparedOks": [],
+			"okFormatString": "ok"
 		}
 	}
 }
