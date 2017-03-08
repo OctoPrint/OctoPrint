@@ -814,7 +814,7 @@ $(function() {
         };
 
         self._resetScrollPosition = function() {
-            $('.scrollable', self.settingsDialog).scrollTop(0);
+            $('#settings_dialog_content', self.settingsDialog).scrollTop(0);
         };
 
         self.selectTab = function(tab) {
