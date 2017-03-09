@@ -1392,6 +1392,18 @@ class MachineCom(object):
 						self._log("There was a timeout while trying to connect to the printer")
 						self.close(wait=False)
 
+				### Operational (idle or busy)
+				elif self._state in (self.STATE_OPERATIONAL,
+				                     self.STATE_PRINTING,
+				                     self.STATE_PAUSED,
+				                     self.STATE_TRANSFERING_FILE):
+					if line == "start": # exact match, to be on the safe side
+						message = "Printer sent 'start' while already operational. External reset? " \
+						          "Resetting line numbers to be on the safe side"
+						self._log(message)
+						self._logger.warn(message)
+						self.resetLineNumbers()
+
 			except:
 				self._logger.exception("Something crashed inside the serial connection loop, please report this in OctoPrint's bug tracker:")
 

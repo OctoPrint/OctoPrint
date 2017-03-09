@@ -25,7 +25,8 @@ class VirtualPrinter(object):
 	sleep_after_regex = re.compile("sleep_after ([GMTF]\d+) (\d+)")
 	sleep_after_next_regex = re.compile("sleep_after_next ([GMTF]\d+) (\d+)")
 	custom_action_regex = re.compile("action_custom ([a-zA-Z0-9_]+)(\s+.*)?")
-	prepare_ok_regex = re.compile("prepare_ok (.*)?")
+	prepare_ok_regex = re.compile("prepare_ok (.*)")
+	send_regex = re.compile("send (.*)")
 
 	def __init__(self, seriallog_handler=None, read_timeout=5.0, write_timeout=10.0):
 		import logging
@@ -560,6 +561,11 @@ class VirtualPrinter(object):
 			| Sleeps <seconds> s after each execution of <command>
 			sleep_after_next <str:command> <int:seconds>
 			| Sleeps <seconds> s after execution of next <command>
+
+			# Misc
+
+			send <str:message>
+			| Sends back <message>
 			"""
 			for line in usage.split("\n"):
 				self._send("echo: {}".format(line.strip()))
@@ -589,6 +595,7 @@ class VirtualPrinter(object):
 				sleep_after_next_match = VirtualPrinter.sleep_after_next_regex.match(data)
 				custom_action_match = VirtualPrinter.custom_action_regex.match(data)
 				prepare_ok_match = VirtualPrinter.prepare_ok_regex.match(data)
+				send_match = VirtualPrinter.send_regex.match(data)
 
 				if sleep_match is not None:
 					interval = int(sleep_match.group(1))
@@ -612,6 +619,8 @@ class VirtualPrinter(object):
 				elif prepare_ok_match is not None:
 					ok = prepare_ok_match.group(1)
 					self._prepared_oks.append(ok)
+				elif send_match is not None:
+					self._send(send_match.group(1))
 			except:
 				pass
 
