@@ -237,3 +237,27 @@ class TestCommHelpers(unittest.TestCase):
 		result = canonicalize_temperatures(parsed, current)
 		self.assertDictEqual(expected, result)
 
+	@data(
+		("KEY1:Value 1 FIRMWARE_NAME:Some Firmware With Spaces KEY2:Value 2",
+		 dict(KEY1="Value 1", KEY2="Value 2", FIRMWARE_NAME="Some Firmware With Spaces"))
+	)
+	@unpack
+	def test_parse_firmware_line(self, line, expected):
+		from octoprint.util.comm import parse_firmware_line
+		result = parse_firmware_line(line)
+		self.assertDictEqual(expected, result)
+
+	@data(
+		("Resend:23", 23),
+		("Resend: N23", 23),
+		("Resend: N:23", 23),
+		("rs 23", 23),
+		("rs N23", 23),
+		("rs N:23", 23),
+		("rs N23 expected checksum 109", 23) # teacup, see #300
+	)
+	@unpack
+	def test_parse_resend_line(self, line, expected):
+		from octoprint.util.comm import parse_resend_line
+		result = parse_resend_line(line)
+		self.assertEqual(expected, result)

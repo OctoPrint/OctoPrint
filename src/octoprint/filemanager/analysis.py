@@ -308,9 +308,12 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
 	def _do_analysis(self, high_priority=False):
 		try:
 			throttle = settings().getFloat(["gcodeAnalysis", "throttle_highprio"]) if high_priority else settings().getFloat(["gcodeAnalysis", "throttle_normalprio"])
+			throttle_lines = settings().getInt(["gcodeAnalysis", "throttle_lines"])
 			if throttle > 0:
-				def throttle_callback():
-					time.sleep(throttle)
+				def throttle_callback(filePos, readBytes):
+					if filePos % throttle_lines == 0:
+						# only apply throttle every 100 lines
+						time.sleep(throttle)
 			else:
 				throttle_callback = None
 
