@@ -10,6 +10,7 @@ import shutil
 import glob
 
 from setuptools import Command
+from distutils.command.clean import clean as _clean
 
 
 def package_data_dirs(source, sub_folders):
@@ -50,7 +51,7 @@ def recursively_handle_files(directory, file_matcher, folder_matcher=None, folde
 	return applied_handler
 
 
-class CleanCommand(Command):
+class CleanCommand(_clean):
 	description = "clean build artifacts"
 	user_options = []
 	boolean_options = []
@@ -76,6 +77,8 @@ class CleanCommand(Command):
 		pass
 
 	def run(self):
+		_clean.run(self)
+
 		# build folder
 		if os.path.exists(self.__class__.build_folder):
 			print("Deleting build directory")
