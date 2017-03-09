@@ -221,7 +221,7 @@ class gcode(object):
 		self._reenqueue = reenqueue
 
 	def _load(self, gcodeFile, printer_profile, throttle=None):
-		filePos = 0
+		lineNo = 0
 		readBytes = 0
 		pos = Vector3D(0.0, 0.0, 0.0)
 		posOffset = Vector3D(0.0, 0.0, 0.0)
@@ -245,18 +245,18 @@ class gcode(object):
 		for line in gcodeFile:
 			if self._abort:
 				raise AnalysisAborted(reenqueue=self._reenqueue)
-			filePos += 1
+			lineNo += 1
 			readBytes += len(line)
 
 			if isinstance(gcodeFile, (file)):
 				percentage = float(readBytes) / float(self._fileSize)
 			elif isinstance(gcodeFile, (list)):
-				percentage = float(filePos) / float(len(gcodeFile))
+				percentage = float(lineNo) / float(len(gcodeFile))
 			else:
 				percentage = None
 
 			try:
-				if self.progressCallback is not None and (filePos % 1000 == 0) and percentage is not None:
+				if self.progressCallback is not None and (lineNo % 1000 == 0) and percentage is not None:
 					self.progressCallback(percentage)
 			except:
 				pass
@@ -444,7 +444,7 @@ class gcode(object):
 							totalExtrusion.append(0.0)
 
 			if throttle is not None:
-				throttle()
+				throttle(lineNo, readBytes)
 		if self.progressCallback is not None:
 			self.progressCallback(100.0)
 
