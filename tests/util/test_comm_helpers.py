@@ -246,3 +246,18 @@ class TestCommHelpers(unittest.TestCase):
 		from octoprint.util.comm import parse_firmware_line
 		result = parse_firmware_line(line)
 		self.assertDictEqual(expected, result)
+
+	@data(
+		("Resend:23", 23),
+		("Resend: N23", 23),
+		("Resend: N:23", 23),
+		("rs 23", 23),
+		("rs N23", 23),
+		("rs N:23", 23),
+		("rs N23 expected checksum 109", 23) # teacup, see #300
+	)
+	@unpack
+	def test_parse_resend_line(self, line, expected):
+		from octoprint.util.comm import parse_resend_line
+		result = parse_resend_line(line)
+		self.assertEqual(expected, result)

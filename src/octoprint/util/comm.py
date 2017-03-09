@@ -127,6 +127,9 @@ Groups will be as follows:
 regex_firmware_splitter = re.compile("\s*([A-Z0-9_]+):")
 """Regex to use for splitting M115 responses."""
 
+regex_resend_linenumber = re.compile("(N|N:)?(?P<n>%s)" % regex_int_pattern)
+"""Regex to use for request line numbers in resend requests"""
+
 def serialList():
 	baselist=[]
 	if os.name=="nt":
@@ -1862,13 +1865,7 @@ class MachineCom(object):
 
 	def _handleResendRequest(self, line):
 		try:
-			lineToResend = None
-			try:
-				lineToResend = int(line.replace("N:", " ").replace("N", " ").replace(":", " ").split()[-1])
-			except:
-				if "rs" in line:
-					lineToResend = int(line.split()[1])
-
+			lineToResend = parse_resend_line(line)
 			if lineToResend is None:
 				return False
 
@@ -3013,6 +3010,24 @@ def parse_firmware_line(line):
 	for key, value in chunks(split_line, 2):
 		result[key] = value
 	return result
+
+def parse_resend_line(line):
+	"""
+	Parses the provided resend line and returns requested line number.
+
+	Args:
+		line (str): the line to parse
+
+	Returns:
+		int or None: the extracted line number to resend, or None if no number could be extracted
+	"""
+
+	match = regex_resend_linenumber.search(line)
+	if match is not None:
+		return int(match.group("n"))
+
+	return None
+
 
 def gcode_command_for_cmd(cmd):
 	"""
