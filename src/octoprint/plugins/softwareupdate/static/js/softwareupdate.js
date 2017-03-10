@@ -705,7 +705,10 @@ $(function() {
             }
         };
 
-        self._forcedStdoutLine = /You are using pip version .*?, however version .*? is available\.|You should consider upgrading via the '.*?' command\./;
+        self._forcedStdoutPatterns = ["You are using pip version .*?, however version .*? is available\.",
+                                      "You should consider upgrading via the '.*?' command\.",
+                                      "'.*?' does not exist -- can't clean it"];
+        self._forcedStdoutLine = new RegExp(self._forcedStdoutPatterns.join("|"));
         self._preprocessLine = function(line) {
             if (line.stream == "stderr" && line.line.match(self._forcedStdoutLine)) {
                 line.stream = "stdout";
