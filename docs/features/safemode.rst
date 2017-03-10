@@ -25,7 +25,7 @@ There exist three ways to start OctoPrint in safe mode:
 
   * since OctoPrint 1.3.2: by selecting "Restart OctoPrint in safe mode" from the "System" menu,
     if the "Restart OctoPrint" server command has been correctly configured (see :numref:`fig-features-safemode-systemmenu`).
-  * by starting OctoPrint with the command line parameter ``--safe``, e.g. ``octoprint --safe``
+  * by starting OctoPrint with the command line parameter ``--safe``, e.g. ``octoprint serve --safe``
   * by setting the option ``server.startOnceInSafeMode`` in :ref:`config.yaml <sec-configuration-config_yaml>`
     to ``true`` and restarting
 
