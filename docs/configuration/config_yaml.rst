@@ -829,9 +829,13 @@ Use the following settings to configure the server:
      # Use this option to define the port to which to bind the server, defaults to 5000
      port: 5000
 
-     # If this option is true, OctoPrint will show the First Run dialog and set it to false after that
-     # completes
+     # If this option is true, OctoPrint will show the First Run wizard and set the setting to
+     # false after that completes
      firstRun: false
+
+     # If this option is true, OctoPrint will enable safe mode on the next server start and
+     # reset the setting to false
+     startOnceInSafeMode: false
 
      # Secret key for encrypting cookies and such, randomly generated on first run
      secretKey: someSecretKey

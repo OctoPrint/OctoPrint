@@ -94,7 +94,12 @@ following section *completely* and also follow the instructions in the
 2. Please make sure to **test out the current version** of OctoPrint to see
    whether the problem you are encountering still exists, and **test without
    any non-bundled plugins enabled** to make sure it's not a misbehaving
-   plugin causing the issue at hand.
+   plugin causing the issue at hand. For that you can restart OctoPrint in
+   **safe mode**, either by selecting "Restart OctoPrint in safe mode" from
+   the "System" menu, or by starting OctoPrint from the command line with
+   `octoprint --safe`.
+
+
 
    If you are feeling up to it you might also want to try the current development
    version of OctoPrint (if you aren't already). Refer to the [FAQ](https://github.com/foosel/OctoPrint/wiki/FAQ)
