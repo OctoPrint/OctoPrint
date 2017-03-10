@@ -1,5 +1,7 @@
 #  OctoPrint
 
+[![GitHub version](https://badge.fury.io/gh/foosel%2FOctoPrint.svg)](https://badge.fury.io/gh/foosel%2FOctoPrint)
+
 OctoPrint provides a snappy web interface for controlling a 3D printer (RepRap, Ultimaker, ...). It is Free Software
 and released under the [GNU Affero General Public License V3](http://www.gnu.org/licenses/agpl.html).
 
@@ -33,7 +35,7 @@ If you think something is bad about OctoPrint or its documentation the way it is
 in any way to make it better instead of just complaining about it -- this is an Open Source Project
 after all :)
 
-For information about how to go about making contributions of any kind, please see the project's
+For information about how to go about submitting bug reports or pull requests, please see the project's
 [Contribution Guidelines](https://github.com/foosel/OctoPrint/blob/master/CONTRIBUTING.md).
 
 ## Installation
@@ -108,7 +110,12 @@ e.g.:
 
     octoprint serve --config /path/to/another/config.yaml --basedir /path/to/my/basedir
 
-See `octoprint --help` for further information.
+To start OctoPrint in safe mode - which disables all third party plugins that do not come bundled with OctoPrint - use
+the ``--safe`` flag:
+
+    octoprint serve --safe
+
+See `octoprint --help` for more information on the available command line parameters.
 
 OctoPrint also ships with a `run` script in its source directory. You can invoke it to start the server. It
 takes the same command line arguments as the `octoprint` script.
