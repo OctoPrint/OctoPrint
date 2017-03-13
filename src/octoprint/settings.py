@@ -557,8 +557,7 @@ class Settings(object):
 		self.load(migrate=True)
 
 		if self.get(["api", "key"]) is None:
-			self.set(["api", "key"], ''.join('%02X' % z for z in bytes(uuid.uuid4().bytes)))
-			self.save(force=True)
+			self.generateApiKey()
 
 		self._script_env = self._init_script_templating()
 
@@ -1496,6 +1495,17 @@ class Settings(object):
 			os.makedirs(path)
 		with atomic_write(filename, "wb", max_permissions=0o666) as f:
 			f.write(script)
+
+	def generateApiKey(self):
+		apikey = ''.join('%02X' % z for z in bytes(uuid.uuid4().bytes))
+		self.set(["api", "key"], apikey)
+		self.save(force=True)
+		return apikey
+
+	def deleteApiKey(self):
+		self.set(["api", "key"], None)
+		self.save(force=True)
+
 
 def _default_basedir(applicationName):
 	# taken from http://stackoverflow.com/questions/1084697/how-do-i-store-desktop-application-data-in-a-cross-platform-way-for-python

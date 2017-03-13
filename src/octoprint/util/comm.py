@@ -393,7 +393,7 @@ class MachineCom(object):
 		self._currentFile = None
 
 		# multithreading locks
-		self._sendNextLock = threading.Lock()
+		self._jobLock = threading.RLock()
 		self._sendingLock = threading.RLock()
 
 		# monitoring thread
@@ -749,41 +749,42 @@ class MachineCom(object):
 		self._pauseWaitTimeLost = 0.0
 
 		try:
-			self._currentFile.start()
+			with self._jobLock:
+				self._currentFile.start()
 
-			self._changeState(self.STATE_PRINTING)
+				self._changeState(self.STATE_PRINTING)
 
-			self.resetLineNumbers()
+				self.resetLineNumbers()
 
-			self._callback.on_comm_print_job_started()
+				self._callback.on_comm_print_job_started()
 
-			if self.isSdFileSelected():
-				#self.sendCommand("M26 S0") # setting the sd pos apparently sometimes doesn't work, so we re-select
-				                            # the file instead
+				if self.isSdFileSelected():
+					#self.sendCommand("M26 S0") # setting the sd pos apparently sometimes doesn't work, so we re-select
+					                            # the file instead
 
-				# make sure to ignore the "file selected" later on, otherwise we'll reset our progress data
-				self._ignore_select = True
-				self.sendCommand("M23 {filename}".format(filename=self._currentFile.getFilename()))
-				if pos is not None and isinstance(pos, int) and pos > 0:
-					self._currentFile.setFilepos(pos)
-					self.sendCommand("M26 S{}".format(pos))
+					# make sure to ignore the "file selected" later on, otherwise we'll reset our progress data
+					self._ignore_select = True
+					self.sendCommand("M23 {filename}".format(filename=self._currentFile.getFilename()))
+					if pos is not None and isinstance(pos, int) and pos > 0:
+						self._currentFile.setFilepos(pos)
+						self.sendCommand("M26 S{}".format(pos))
+					else:
+						self._currentFile.setFilepos(0)
+
+					self.sendCommand("M24")
+
+					self._sd_status_timer = RepeatedTimer(self._timeout_intervals.get("sdStatus", 1.0), self._poll_sd_status, run_first=True)
+					self._sd_status_timer.start()
 				else:
-					self._currentFile.setFilepos(0)
+					if pos is not None and isinstance(pos, int) and pos > 0:
+						self._currentFile.seek(pos)
 
-				self.sendCommand("M24")
+					line = self._getNext()
+					if line is not None:
+						self.sendCommand(line)
 
-				self._sd_status_timer = RepeatedTimer(self._timeout_intervals.get("sdStatus", 1.0), self._poll_sd_status, run_first=True)
-				self._sd_status_timer.start()
-			else:
-				if pos is not None and isinstance(pos, int) and pos > 0:
-					self._currentFile.seek(pos)
-
-				line = self._getNext()
-				if line is not None:
-					self.sendCommand(line)
-
-			# now make sure we actually do something, up until now we only filled up the queue
-			self._sendFromQueue()
+				# now make sure we actually do something, up until now we only filled up the queue
+				self._sendFromQueue()
 		except:
 			self._logger.exception("Error while trying to start printing")
 			self._errorValue = get_exception_string()
@@ -792,17 +793,18 @@ class MachineCom(object):
 
 	def startFileTransfer(self, filename, localFilename, remoteFilename):
 		if not self.isOperational() or self.isBusy():
-			logging.info("Printer is not operation or busy")
+			logging.info("Printer is not operational or busy")
 			return
 
-		self.resetLineNumbers()
+		with self._jobLock:
+			self.resetLineNumbers()
 
-		self._currentFile = StreamingGcodeFileInformation(filename, localFilename, remoteFilename)
-		self._currentFile.start()
+			self._currentFile = StreamingGcodeFileInformation(filename, localFilename, remoteFilename)
+			self._currentFile.start()
 
-		self.sendCommand("M28 %s" % remoteFilename)
-		eventManager().fire(Events.TRANSFER_STARTED, {"local": localFilename, "remote": remoteFilename})
-		self._callback.on_comm_file_transfer_started(remoteFilename, self._currentFile.getFilesize())
+			self.sendCommand("M28 %s" % remoteFilename)
+			eventManager().fire(Events.TRANSFER_STARTED, {"local": localFilename, "remote": remoteFilename})
+			self._callback.on_comm_file_transfer_started(remoteFilename, self._currentFile.getFilesize())
 
 	def selectFile(self, filename, sd):
 		if self.isBusy():
@@ -841,18 +843,6 @@ class MachineCom(object):
 			# we aren't even printing, nothing to cancel...
 			return
 
-		self._changeState(self.STATE_OPERATIONAL)
-
-		if self.isSdFileSelected():
-			self.sendCommand("M25")    # pause print
-			self.sendCommand("M27")    # get current byte position in file
-			self.sendCommand("M26 S0") # reset position in file to byte 0
-			if self._sd_status_timer is not None:
-				try:
-					self._sd_status_timer.cancel()
-				except:
-					pass
-
 		def _on_M400_sent():
 			# we don't call on_print_job_cancelled on our callback here
 			# because we do this only after our M114 has been answered
@@ -860,7 +850,20 @@ class MachineCom(object):
 			self._record_cancel_position = True
 			self.sendCommand("M114")
 
-		self.sendCommand("M400", on_sent=_on_M400_sent)
+		with self._jobLock:
+			self._changeState(self.STATE_OPERATIONAL)
+
+			if self.isSdFileSelected():
+				self.sendCommand("M25")    # pause print
+				self.sendCommand("M27")    # get current byte position in file
+				self.sendCommand("M26 S0") # reset position in file to byte 0
+				if self._sd_status_timer is not None:
+					try:
+						self._sd_status_timer.cancel()
+					except:
+						pass
+
+			self.sendCommand("M400", on_sent=_on_M400_sent)
 
 	def _pause_preparation_done(self):
 		self._callback.on_comm_print_job_paused()
@@ -872,41 +875,42 @@ class MachineCom(object):
 		if not self._currentFile:
 			return
 
-		if not pause and self.isPaused():
-			if self._pauseWaitStartTime:
-				self._pauseWaitTimeLost = self._pauseWaitTimeLost + (time.time() - self._pauseWaitStartTime)
-				self._pauseWaitStartTime = None
+		with self._jobLock:
+			if not pause and self.isPaused():
+				if self._pauseWaitStartTime:
+					self._pauseWaitTimeLost = self._pauseWaitTimeLost + (time.time() - self._pauseWaitStartTime)
+					self._pauseWaitStartTime = None
 
-			self._changeState(self.STATE_PRINTING)
-			self._callback.on_comm_print_job_resumed()
+				self._changeState(self.STATE_PRINTING)
+				self._callback.on_comm_print_job_resumed()
 
-			if self.isSdFileSelected():
-				self.sendCommand("M24")
-				self.sendCommand("M27")
-			else:
-				line = self._getNext()
-				if line is not None:
-					self.sendCommand(line)
+				if self.isSdFileSelected():
+					self.sendCommand("M24")
+					self.sendCommand("M27")
+				else:
+					line = self._getNext()
+					if line is not None:
+						self.sendCommand(line)
 
-			# now make sure we actually do something, up until now we only filled up the queue
-			self._sendFromQueue()
+				# now make sure we actually do something, up until now we only filled up the queue
+				self._sendFromQueue()
 
-		elif pause and self.isPrinting():
-			if not self._pauseWaitStartTime:
-				self._pauseWaitStartTime = time.time()
+			elif pause and self.isPrinting():
+				if not self._pauseWaitStartTime:
+					self._pauseWaitStartTime = time.time()
 
-			self._changeState(self.STATE_PAUSED)
-			if self.isSdFileSelected():
-				self.sendCommand("M25") # pause print
+				self._changeState(self.STATE_PAUSED)
+				if self.isSdFileSelected():
+					self.sendCommand("M25") # pause print
 
-			def _on_M400_sent():
-				# we don't call on_print_job_paused on our callback here
-				# because we do this only after our M114 has been answered
-				# by the firmware
-				self._record_pause_position = True
-				self.sendCommand("M114")
+				def _on_M400_sent():
+					# we don't call on_print_job_paused on our callback here
+					# because we do this only after our M114 has been answered
+					# by the firmware
+					self._record_pause_position = True
+					self.sendCommand("M114")
 
-			self.sendCommand("M400", on_sent=_on_M400_sent)
+				self.sendCommand("M400", on_sent=_on_M400_sent)
 
 	def getSdFiles(self):
 		return self._sdFiles
@@ -1844,7 +1848,7 @@ class MachineCom(object):
 		return line
 
 	def _sendNext(self):
-		with self._sendNextLock:
+		with self._jobLock:
 			while self._active:
 				# we loop until we've actually enqueued a line for sending
 				if self._state != self.STATE_PRINTING:
@@ -2608,6 +2612,7 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 		PrintingFileInformation.__init__(self, filename)
 
 		self._handle = None
+		self._handle_mutex = threading.RLock()
 
 		self._offsets_callback = offsets_callback
 		self._current_tool_callback = current_tool_callback
@@ -2619,76 +2624,80 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 		self._read_lines = 0
 
 	def seek(self, offset):
-		if self._handle is None:
-			return
+		with self._handle_mutex:
+			if self._handle is None:
+				return
 
-		self._handle.seek(offset)
-		self._pos = self._handle.tell()
-		self._read_lines = 0
+			self._handle.seek(offset)
+			self._pos = self._handle.tell()
+			self._read_lines = 0
 
 	def start(self):
 		"""
 		Opens the file for reading and determines the file size.
 		"""
 		PrintingFileInformation.start(self)
-		self._handle = bom_aware_open(self._filename, encoding="utf-8", errors="replace")
-		self._pos = self._handle.tell()
-		if self._handle.encoding.endswith("-sig"):
-			# Apparently we found an utf-8 bom in the file.
-			# We need to add its length to our pos because it will
-			# be stripped transparently and we'll have no chance
-			# catching that.
-			import codecs
-			self._pos += len(codecs.BOM_UTF8)
-		self._read_lines = 0
+		with self._handle_mutex:
+			self._handle = bom_aware_open(self._filename, encoding="utf-8", errors="replace")
+			self._pos = self._handle.tell()
+			if self._handle.encoding.endswith("-sig"):
+				# Apparently we found an utf-8 bom in the file.
+				# We need to add its length to our pos because it will
+				# be stripped transparently and we'll have no chance
+				# catching that.
+				import codecs
+				self._pos += len(codecs.BOM_UTF8)
+			self._read_lines = 0
 
 	def close(self):
 		"""
 		Closes the file if it's still open.
 		"""
 		PrintingFileInformation.close(self)
-		if self._handle is not None:
-			try:
-				self._handle.close()
-			except:
-				pass
-		self._handle = None
+		with self._handle_mutex:
+			if self._handle is not None:
+				try:
+					self._handle.close()
+				except:
+					pass
+			self._handle = None
 
 	def getNext(self):
 		"""
 		Retrieves the next line for printing.
 		"""
-		if self._handle is None:
-			raise ValueError("File %s is not open for reading" % self._filename)
+		with self._handle_mutex:
+			if self._handle is None:
+				raise ValueError("File %s is not open for reading" % self._filename)
 
-		try:
-			offsets = self._offsets_callback() if self._offsets_callback is not None else None
-			current_tool = self._current_tool_callback() if self._current_tool_callback is not None else None
+			try:
+				offsets = self._offsets_callback() if self._offsets_callback is not None else None
+				current_tool = self._current_tool_callback() if self._current_tool_callback is not None else None
 
-			processed = None
-			while processed is None:
-				if self._handle is None:
-					# file got closed just now
-					self._pos = self._size
-					self._report_stats()
-					return None
+				processed = None
+				while processed is None:
+					if self._handle is None:
+						# file got closed just now
+						self._pos = self._size
+						self._report_stats()
+						return None
 
-				# we need to manually keep track of our pos here since
-				# codecs' readline will make our handle's tell not
-				# return the actual number of bytes read, but also the
-				# already buffered bytes (for detecting the newlines)
-				line = self._handle.readline()
-				self._pos += len(line.encode("utf-8"))
+					# we need to manually keep track of our pos here since
+					# codecs' readline will make our handle's tell not
+					# return the actual number of bytes read, but also the
+					# already buffered bytes (for detecting the newlines)
+					line = self._handle.readline()
+					self._pos += len(line.encode("utf-8"))
 
-				if not line:
-					self.close()
-				processed = self._process(line, offsets, current_tool)
-			self._read_lines += 1
-			return processed
-		except Exception as e:
-			self.close()
-			self._logger.exception("Exception while processing line")
-			raise e
+					if not line:
+						self.close()
+					processed = self._process(line, offsets, current_tool)
+				self._read_lines += 1
+				return processed
+			except Exception as e:
+				self.close()
+				self._logger.exception("Exception while processing line")
+				raise e
 
 	def _process(self, line, offsets, current_tool):
 		return process_gcode_line(line, offsets=offsets, current_tool=current_tool)

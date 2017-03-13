@@ -15,10 +15,17 @@ for contributing" linked above, read it!), NOT here.
 Mark requests with a "[Request]" prefix in the title please. Fully fill
 out the bug reporting template for bug reports (if you don't know where
 to find some information - it's all described in the contribution
-guidelines linked up there in the big yellow box). Do not delete any
-lines from the template but those enclosed in [ and ] - and those please
-DO delete, they are only provided for your information and removing them
-makes your ticket more readable :)
+guidelines linked up there in the big yellow box).
+
+When reporting a bug do NOT delete any lines from the template but
+those enclosed in [ and ] - and those please DO delete, they are
+only provided for your information and removing them makes your
+ticket more readable :)
+
+Make sure any bug you want to repor tis still present with the CURRENT
+OctoPrint version and that it does not vanish when you start OctoPrint
+in safe mode - how to do that is also explained in the contribution
+guidelines linked up there in the big yellow box.
 
 Thank you!
 
@@ -30,20 +37,23 @@ by heart ;))
 
 #### What were you doing?
 
-[Please be as specific as possible here. The maintainers will need to
-reproduce your issue in order to fix it and that is not possible if they
-don't know what you did to get it to happen in the first place.
+[Please describe the steps to reproduce your issue. Be as specific as
+possible here. The maintainers will need to reproduce your issue in
+order to fix it and that is not possible if they don't know what you
+did to get it to happen in the first place.
 
 If you encountered a problem with specific files of any sorts, make sure
 to also include a link to a file with which to reproduce the problem.]
 
-#### What did you expect to happen?
-
-#### What happened instead?
+#### What did you expect to happen and what happened instead?
 
 #### Branch & Commit or Version of OctoPrint
 
 [Can be found in the lower left corner of the web interface. ALWAYS INCLUDE.]
+
+#### Operating System running OctoPrint
+
+[OctoPi, Linux, Windows, MacOS, something else? With version please.]
 
 #### Printer model & used firmware incl. version
 
@@ -51,7 +61,7 @@ to also include a link to a file with which to reproduce the problem.]
 
 #### Browser and Version of Browser, Operating System running Browser
 
-[If applicable, always include if unsure.]
+[If applicable, always include if unsure or reporting UI issues.]
 
 #### Link to octoprint.log
 
@@ -60,7 +70,8 @@ to also include a link to a file with which to reproduce the problem.]
 #### Link to contents of terminal tab or serial.log
 
 [On gist.github.com or pastebin.com. If applicable, always include if unsure or
-reporting communication issues. Never truncate.
+reporting any kind of communication issues between OctoPrint and your printer.
+Never truncate.
 
 serial.log is usually not written due to performance reasons and must be
 enabled explicitly. Provide at the very least the FULL contents of your
@@ -72,7 +83,7 @@ a serial.log.]
 [On gist.github.com or pastebin.com or alternatively a screenshot. If applicable -
 always include if unsure or reporting UI issues.]
 
-#### Screenshot(s) showing the problem:
+#### Screenshot(s) or video(s) showing the problem:
 
 [If applicable. Always include if unsure or reporting UI issues.]
 

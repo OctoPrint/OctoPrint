@@ -93,11 +93,15 @@ following section *completely* and also follow the instructions in the
 
 2. Please make sure to **test out the current version** of OctoPrint to see
    whether the problem you are encountering still exists, and **test without
-   any non-bundled plugins enabled** to make sure it's not a misbehaving
-   plugin causing the issue at hand.
+   any third-party plugins enabled** to make sure it's not a misbehaving
+   plugin causing the issue at hand. For that please restart OctoPrint in
+   **safe mode**, either by selecting "Restart OctoPrint in safe mode" from
+   the "System" menu, or by starting OctoPrint from the command line with
+   `octoprint serve --safe`. Then try to reproduce your issue. Find out
+   more about safe mode in the [docs](http://docs.octoprint.org/en/master/features/safemode.html).
 
-   If you are feeling up to it you might also want to try the current development
-   version of OctoPrint (if you aren't already). Refer to the [FAQ](https://github.com/foosel/OctoPrint/wiki/FAQ)
+   You might also want to try the current development version of OctoPrint
+   (if you aren't already). Refer to the [FAQ](https://github.com/foosel/OctoPrint/wiki/FAQ)
    for information on how to do this.
 
 3. The problem still exists? Then please **look through the
@@ -399,6 +403,8 @@ the local version identifier to allow for an exact determination of the active c
     experiences
   * 2017-01-25: Fixed a typo
   * 2017-03-09: Allow PRs against `maintenance` branch for bugs in stable.
+  * 2017-03-10: Reproduce bugs in safe mode to make sure they are really caused
+    by OctoPrint itself and not a misbehaving plugin.
 
 ## Footnotes
   * [1] - If you are wondering why, the problem is that anything that you add

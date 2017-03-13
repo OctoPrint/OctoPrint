@@ -10,14 +10,12 @@ thanks to everyone who contributed!
   * Aleph Objects, Inc.
   * Andrew Moorby
   * Arnljot Arntsen
-  * Aurelio Bernal
   * Boris Hussein
   * Brad Jackson
   * Brent Fiegle
   * Brian E. Tyler
   * Christopher Day
   * Christian Petropolis
-  * COLLE+McVOY
   * CreativeTools
   * D Brian Kimmel
   * DeltaMaker 3D Printers
@@ -29,10 +27,10 @@ thanks to everyone who contributed!
   * Gary Deen
   * Gary N McKinney
   * George Robles
-  * J. Eckert
+  * James Seigel
   * Jamie van Dyke
+  * Jeff Moe
   * Josh Daniels
-  * Joshua David Gregory
   * Kaile Riser
   * Kale Stedman
   * Kazuhiro Ogura
@@ -44,6 +42,7 @@ thanks to everyone who contributed!
   * Masayoshi Mitsui
   * Michael Aumock
   * Miles Flavel
+  * Mohammed khorakiwala
   * Noe Ruiz
   * Patrick McGinnis
   * Peter Grace
@@ -58,11 +57,10 @@ thanks to everyone who contributed!
   * Simon Hallam
   * Stefan Krister
   * Stephane Schittly
-  * Steven Pearson
   * Sven Mueller
   * Terrance Shaw
   * Thomas Hatley
   * Timeshell.ca
   * Trent Shumay
 
-and 1016 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!
+and 1041 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!

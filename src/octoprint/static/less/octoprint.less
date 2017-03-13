@@ -94,11 +94,11 @@ body {
   }
 
   .nav {
-    li.dropdown.open>.dropdown-toggle, li.dropdown.active>.dropdown-toggle, li.dropdown.open.active>.dropdown-toggle {
+    >li.dropdown.open>.dropdown-toggle, >li.dropdown.active>.dropdown-toggle, >li.dropdown.open.active>.dropdown-toggle {
       // invert for dropdown
       .navbar-background-color(fade(@bottom, @gradientalpha), fade(@top, @gradientalpha), @image);
     }
-    li>a:hover {
+    >li>a:hover {
       // darken for hover
       @darkenedTop: darken(@top, 5%);
       @darkenedBottom: darken(@bottom, 5%);

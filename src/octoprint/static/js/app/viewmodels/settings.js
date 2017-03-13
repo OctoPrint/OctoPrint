@@ -309,10 +309,6 @@ $(function() {
                 });
         };
 
-        self.onSettingsShown = function() {
-            self.requestData();
-        };
-
         self.onSettingsHidden = function() {
             self.webcam_ffmpegPathReset();
         };
@@ -417,6 +413,19 @@ $(function() {
 
         self.hide = function() {
             self.settingsDialog.modal("hide");
+        };
+
+        self.generateApiKey = function() {
+            if (!CONFIG_ACCESS_CONTROL) return;
+
+            showConfirmationDialog(gettext("This will generate a new API Key. The old API Key will cease to function immediately."),
+                function() {
+                    OctoPrint.settings.generateApiKey()
+                        .done(function(response) {
+                            self.api_key(response.apikey);
+                            self.requestData();
+                        });
+                });
         };
 
         self.showTranslationManager = function() {
@@ -833,6 +842,16 @@ $(function() {
             // better refresh them now
             self.requestData();
         };
+
+        self.onUserLoggedIn = function() {
+            // we might have other user rights now, refresh
+            self.requestData();
+        };
+
+        self.onUserLoggedOut = function() {
+            // we might have other user rights now, refresh
+            self.requestData();
+        }
     }
 
     OCTOPRINT_VIEWMODELS.push([
