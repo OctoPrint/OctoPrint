@@ -16,10 +16,14 @@
     <div class="control-group">
         <label class="control-label" for="settings-apiKey">{{ _('API Key') }}</label>
         <div class="controls">
-            <input type="text" class="input-block-level" data-bind="value: api_key, valueUpdate: 'afterkeydown'" id="settings-apikey">
+            <div class="input-append">
+                <input type="text" class="input-block-level" disabled="disabled" id="settings-apikey" data-bind="value: api_key, attr: {placeholder: '{{ _('N/A') }}'}">
+                <button class="btn" title="Generate new API Key" data-bind="click: generateApiKey, enable: api_key"><i class="icon-refresh"></i></button>
+            </div>
+            <span class="help-block">{{ _('Please note that changes to the API key are applied immediately, without having to "Save" first.') }}</span>
         </div>
     </div>
-    <div class="control-group">
+    <div class="control-group" data-bind="visible: api_key">
         <label class="control-label">{{ _('QR Code') }}</label>
         <div class="controls">
             <div data-bind="qrcode: {text: api_key, size: 180}"></div>

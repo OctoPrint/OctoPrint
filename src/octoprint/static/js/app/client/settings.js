@@ -6,6 +6,7 @@
     }
 })(this, function(OctoPrintClient, $) {
     var url = "api/settings";
+    var apiKeyUrl = url + "/apikey";
 
     var OctoPrintSettingsClient = function(base) {
         this.base = base;
@@ -38,6 +39,10 @@
         data["plugins"] = {};
         data["plugins"][plugin] = settings;
         return this.save(data, opts);
+    };
+
+    OctoPrintSettingsClient.prototype.generateApiKey = function (opts) {
+        return this.base.postJson(apiKeyUrl, opts);
     };
 
     OctoPrintClient.registerComponent("settings", OctoPrintSettingsClient);
