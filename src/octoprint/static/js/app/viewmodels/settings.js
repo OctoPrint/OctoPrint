@@ -309,10 +309,6 @@ $(function() {
                 });
         };
 
-        self.onSettingsShown = function() {
-            self.requestData();
-        };
-
         self.onSettingsHidden = function() {
             self.webcam_ffmpegPathReset();
         };
@@ -833,6 +829,16 @@ $(function() {
             // better refresh them now
             self.requestData();
         };
+
+        self.onUserLoggedIn = function() {
+            // we might have other user rights now, refresh
+            self.requestData();
+        };
+
+        self.onUserLoggedOut = function() {
+            // we might have other user rights now, refresh
+            self.requestData();
+        }
     }
 
     OCTOPRINT_VIEWMODELS.push([
