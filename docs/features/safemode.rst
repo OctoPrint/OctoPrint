@@ -53,12 +53,12 @@ When OctoPrint is running in safe mode the following changes to its normal opera
   * OctoPrint will still allow to uninstall third party plugins through the built-in Plugin Manager.
   * OctoPrint will still allow to disable (bundled) plugins that are still enabled.
   * OctoPrint will not allow to enable third party plugins.
-  * OctoPrint's web interface will display a persistent notification to remind you that it is running in
+  * OctoPrint's web interface will display a notification to remind you that it is running in
     safe mode.
 
 .. _fig-features-safemode-notification:
 .. figure:: ../images/features-safemode-notification.png
    :align: center
-   :alt: Persistent safe mode notification
+   :alt: Safe mode notification
 
-   Persistent safe mode notification
+   Safe mode notification
