@@ -294,18 +294,23 @@ def configure_timelapse(config=None, persist=False):
 
 	if type is None or "off" == type:
 		current = None
+
 	elif "zchange" == type:
 		retractionZHop = 0
 		if "options" in config and "retractionZHop" in config["options"] and config["options"]["retractionZHop"] > 0:
 			retractionZHop = config["options"]["retractionZHop"]
+
 		current = ZTimelapse(post_roll=postRoll, retraction_zhop=retractionZHop, fps=fps)
+
 	elif "timed" == type:
 		interval = 10
 		if "options" in config and "interval" in config["options"] and config["options"]["interval"] > 0:
 			interval = config["options"]["interval"]
-		capture_post_roll = True
+
+		capture_post_roll = False
 		if "options" in config and "capturePostRoll" in config["options"] and isinstance(config["options"]["capturePostRoll"], bool):
 			capture_post_roll = config["options"]["capturePostRoll"]
+
 		current = TimedTimelapse(post_roll=postRoll, interval=interval, fps=fps, capture_post_roll=capture_post_roll)
 
 	notify_callbacks(current)
