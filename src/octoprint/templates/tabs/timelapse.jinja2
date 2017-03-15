@@ -13,6 +13,14 @@
     <span class="help-block" data-bind="visible: timelapseType() == 'zchange'"><span class="label label-warning">{{ _('Warning') }}</span> {{ _('Do not use with spiralized ("Joris") vases or similar continuous Z models.') }}</span>
     <span class="help-block" data-bind="visible: timelapseType() == 'zchange'"><span class="label label-info">{{ _('Note') }}</span> {% trans %}Does not work when printing from the printer's SD Card (no way to detect the change in Z reliably). Use "Timed" mode for those prints instead.{% endtrans %}</span>
 
+    <div id="webcam_timelapse_timedsettings" data-bind="visible: intervalInputEnabled">
+        <label for="webcam_timelapse_interval">{{ _('Interval between snapshots (in seconds)') }}</label>
+        <div class="input-append">
+            <input type="text" class="input-mini" id="webcam_timelapse_interval" data-bind="value: timelapseTimedInterval, valueUpdate: 'afterkeydown', enable: isOperational() && !isPrinting() && loginState.isUser()">
+            <span class="add-on">{{ _('sec') }}</span>
+        </div>
+    </div>
+
     <label for="webcam_timelapse_fps">{{ _('Timelapse frame rate (in frames per second)') }}</label>
     <div class="input-append">
         <input type="text" class="input-mini" id="webcam_timelapse_fps" data-bind="value: timelapseFps, valueUpdate: 'afterkeydown', enable: isOperational() && !isPrinting() && loginState.isUser() && timelapseTypeSelected()">
@@ -31,15 +39,6 @@
         </label>
     </div>
 
-
-    <div id="webcam_timelapse_timedsettings" data-bind="visible: intervalInputEnabled">
-        <label for="webcam_timelapse_interval">{{ _('Interval') }}</label>
-        <div class="input-append">
-            <input type="text" class="input-mini" id="webcam_timelapse_interval" data-bind="value: timelapseTimedInterval, valueUpdate: 'afterkeydown', enable: isOperational() && !isPrinting() && loginState.isUser()">
-            <span class="add-on">{{ _('sec') }}</span>
-        </div>
-    </div>
-
     <div id="webcam_timelapse_retractionsettings" data-bind="visible: timelapseType() == 'zchange'">
         <label for="webcam_timelapse_retractionZHop">{{ _('Retraction Z-Hop (in mm)') }}</label>
         <div class="input-append">
@@ -51,12 +50,14 @@
 
     <div data-bind="visible: loginState.isAdmin">
         <label class="checkbox">
-            <input type="checkbox" data-bind="checked: persist"> {{ _('Save as default') }}
+            <input type="checkbox" data-bind="checked: persist, enable: saveButtonEnabled"> {{ _('Save as default') }}
+            <span class="help-block" data-bind="visible: isTemporary">{{ _('Note: Changes are only temporary, save as default to make them permanent.') }}</span>
         </label>
     </div>
 
     <div>
         <button class="btn" data-bind="click: save, enable: saveButtonEnabled">{{ _('Save config') }}</button>
+        <span class="help-block" data-bind="visible: saveButtonEnabled">{{ _('You have unsaved changes.') }}</span>
     </div>
 </div>
 

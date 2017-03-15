@@ -21,6 +21,7 @@ $(function() {
 
         self.persist = ko.observable(false);
         self.isDirty = ko.observable(false);
+        self.isTemporary = ko.observable(true);
 
         self.isErrorOrClosed = ko.observable(undefined);
         self.isOperational = ko.observable(undefined);
@@ -29,6 +30,10 @@ $(function() {
         self.isError = ko.observable(undefined);
         self.isReady = ko.observable(undefined);
         self.isLoading = ko.observable(undefined);
+
+        self.isTemporary = ko.pureComputed(function() {
+            return self.isDirty() && !self.persist();
+        });
 
         self.isBusy = ko.pureComputed(function() {
             return self.isPrinting() || self.isPaused();
