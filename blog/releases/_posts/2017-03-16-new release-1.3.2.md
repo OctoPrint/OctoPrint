@@ -57,8 +57,7 @@ the [Changelog](https://github.com/foosel/OctoPrint/releases/tag/1.3.2):
 > If all you plugin does with regards to JavaScript is registering a custom view model and you have no idea what I'm talking about regarding extending the client library, no action is necessary. This heads-up is really only relevant if you extended the JavaScript Client Library.
 
 The full list of changes can of course be found in the
-[Changelog](https://github.com/foosel/OctoPrint/releases/tag/1.3.2)
- - as always.
+[Changelog](https://github.com/foosel/OctoPrint/releases/tag/1.3.2) - as always.
 
 Also see the **Further Information** and **Links** below for more information,
 where to find help and how to roll back. Thanks!

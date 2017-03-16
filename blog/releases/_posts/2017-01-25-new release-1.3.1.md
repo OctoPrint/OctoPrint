@@ -60,8 +60,7 @@ the [Changelog](https://github.com/foosel/OctoPrint/releases/tag/1.3.1):
 > - New "Suppress wait responses" filter, regex is `Recv: wait`
 
 The full list of changes can of course be found in the
-[Changelog](https://github.com/foosel/OctoPrint/releases/tag/1.3.1)
- - as always.
+[Changelog](https://github.com/foosel/OctoPrint/releases/tag/1.3.1) - as always.
 
 Also see the **Further Information** and **Links** below for more information,
 where to find help and how to roll back. Thanks!
