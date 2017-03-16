@@ -50,14 +50,14 @@
 
     <div data-bind="visible: loginState.isAdmin">
         <label class="checkbox">
-            <input type="checkbox" data-bind="checked: persist, enable: saveButtonEnabled"> {{ _('Save as default') }}
-            <span class="help-block" data-bind="visible: isTemporary">{{ _('Note: Changes are only temporary, save as default to make them permanent.') }}</span>
+            <input type="checkbox" data-bind="checked: persist"> {{ _('Save as default') }}
+            <span class="help-block">{{ _('Check this to make your selected timelapse mode and options persist across restarts.') }}</span>
         </label>
     </div>
 
     <div>
-        <button class="btn" data-bind="click: save, enable: saveButtonEnabled">{{ _('Save config') }}</button>
-        <span class="help-block" data-bind="visible: saveButtonEnabled">{{ _('You have unsaved changes.') }}</span>
+        <button class="btn" data-bind="click: save, enable: saveButtonEnabled">{{ _('Save changes') }}</button>
+        <span class="help-inline" data-bind="visible: saveButtonEnabled">{{ _('You have unsaved changes.') }}</span>
     </div>
 </div>
 
