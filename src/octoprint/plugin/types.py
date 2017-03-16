@@ -743,7 +743,7 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
 		OctoPrint's version, current ``UI_API_KEY``, tracked file paths and ``LastModified`` value).
 
 		Returns:
-		    basestring: An alternatively calculated ETag value. Ignored if ``None`` is returned (default).
+		    str: An alternatively calculated ETag value. Ignored if ``None`` is returned (default).
 		"""
 		return None
 

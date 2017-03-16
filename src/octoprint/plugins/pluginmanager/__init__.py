@@ -5,6 +5,7 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+from past.builtins import basestring
 
 import octoprint.plugin
 import octoprint.plugin.core
@@ -44,7 +45,9 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 	                         macos=["darwin"],
 	                         freebsd=lambda x: x.startswith("freebsd"))
 
-	pip_inapplicable_arguments = dict(uninstall=["--user"])
+	PIP_INAPPLICABLE_ARGUMENTS = dict(uninstall=["--user"])
+
+	RECONNECT_HOOKS = ["octoprint.comm.protocol.*",]
 
 	def __init__(self):
 		self._pending_enable = set()
@@ -415,6 +418,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			              source_type=source_type,
 			              needs_restart=True,
 			              needs_refresh=True,
+			              needs_reconnect=True,
 			              was_reinstalled=False,
 			              plugin="unknown")
 			self._send_result_notification("install", result)
@@ -426,6 +430,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		                or reinstall is not None
 		needs_refresh = new_plugin.implementation \
 		                and isinstance(new_plugin.implementation, octoprint.plugin.ReloadNeedingPlugin)
+		needs_reconnect = self._plugin_manager.has_any_of_hooks(new_plugin, self._reconnect_hooks) and self._printer.is_operational()
 
 		is_reinstall = self._plugin_manager.is_plugin_marked(new_plugin.key, "uninstalled")
 		self._plugin_manager.mark_plugin(new_plugin.key,
@@ -440,6 +445,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		              source_type=source_type,
 		              needs_restart=needs_restart,
 		              needs_refresh=needs_refresh,
+		              needs_reconnect=needs_reconnect,
 		              was_reinstalled=new_plugin.key in all_plugins_before or reinstall is not None,
 		              plugin=self._to_external_plugin(new_plugin))
 		self._send_result_notification("install", result)
@@ -496,6 +502,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 		needs_restart = self._plugin_manager.is_restart_needing_plugin(plugin)
 		needs_refresh = plugin.implementation and isinstance(plugin.implementation, octoprint.plugin.ReloadNeedingPlugin)
+		needs_reconnect = self._plugin_manager.has_any_of_hooks(plugin, self._reconnect_hooks) and self._printer.is_operational()
 
 		was_pending_install = self._plugin_manager.is_plugin_marked(plugin.key, "installed")
 		self._plugin_manager.mark_plugin(plugin.key,
@@ -521,7 +528,11 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 		self._plugin_manager.reload_plugins()
 
-		result = dict(result=True, needs_restart=needs_restart, needs_refresh=needs_refresh, plugin=self._to_external_plugin(plugin))
+		result = dict(result=True,
+		              needs_restart=needs_restart,
+		              needs_refresh=needs_refresh,
+		              needs_reconnect=needs_reconnect,
+		              plugin=self._to_external_plugin(plugin))
 		self._send_result_notification("uninstall", result)
 		return jsonify(result)
 
@@ -531,11 +542,13 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 		needs_restart = self._plugin_manager.is_restart_needing_plugin(plugin)
 		needs_refresh = plugin.implementation and isinstance(plugin.implementation, octoprint.plugin.ReloadNeedingPlugin)
+		needs_reconnect = self._plugin_manager.has_any_of_hooks(plugin, self._reconnect_hooks) and self._printer.is_operational()
 
 		pending = ((command == "disable" and plugin.key in self._pending_enable) or (command == "enable" and plugin.key in self._pending_disable))
 		safe_mode_victim = getattr(plugin, "safe_mode_victim", False)
 		needs_restart_api = (needs_restart or safe_mode_victim) and not pending
 		needs_refresh_api = needs_refresh and not pending
+		needs_reconnect_api = needs_reconnect and not pending
 
 		try:
 			if command == "disable":
@@ -549,11 +562,13 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			result = dict(result=True,
 			              needs_restart=True,
 			              needs_refresh=True,
+			              needs_reconnect=True,
 			              plugin=self._to_external_plugin(plugin))
 		else:
 			result = dict(result=True,
 			              needs_restart=needs_restart_api,
 			              needs_refresh=needs_refresh_api,
+			              needs_reconnect=needs_reconnect_api,
 			              plugin=self._to_external_plugin(plugin))
 
 		self._send_result_notification(command, result)
@@ -605,7 +620,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 		if additional_args is not None:
 
-			inapplicable_arguments = self.__class__.pip_inapplicable_arguments.get(args[0], list())
+			inapplicable_arguments = self.__class__.PIP_INAPPLICABLE_ARGUMENTS.get(args[0], list())
 			for inapplicable_argument in inapplicable_arguments:
 				additional_args = re.sub("(^|\s)" + re.escape(inapplicable_argument) + "\\b", "", additional_args)
 
@@ -880,6 +895,22 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 				# new setuptools
 				octoprint_version = pkg_resources.parse_version(octoprint_version.base_version)
 		return octoprint_version
+
+	@property
+	def _reconnect_hooks(self):
+		reconnect_hooks = self.__class__.RECONNECT_HOOKS
+
+		reconnect_hook_provider_hooks = self._plugin_manager.get_hooks("octoprint.plugin.pluginmanager.reconnect_hooks")
+		for name, hook in reconnect_hook_provider_hooks.items():
+			try:
+				result = hook()
+				if isinstance(result, (list, tuple)):
+					reconnect_hooks.extend(filter(lambda x: isinstance(x, basestring), result))
+			except:
+				self._logger.exception("Error while retrieving additional hooks for which a "
+				                       "reconnect is required from plugin {name}".format(**locals()))
+
+		return reconnect_hooks
 
 	def _get_plugins(self):
 		plugins = self._plugin_manager.plugins
