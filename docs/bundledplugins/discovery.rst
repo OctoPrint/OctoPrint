@@ -43,6 +43,13 @@ Installing pybonjour
    OctoPi versions 0.12.0 and later already come with pybonjour installed and ready to go,
    you don't need to perform these steps there.
 
+.. note::
+
+   Currently there are no releases for pybonjour available on the Python Package Index PyPI. The latest pybonjour
+   release is still available in the `Google Code Archive <https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/pybonjour/pybonjour-1.1.1.tar.gz>`_.
+   Since that URL is hilariously long though, a shortened version is provided with https://goo.gl/SxQZ06 and
+   used in the installation instructions below.
+
 In order for the Zeroconf discovery to work, the
 `pybonjour package <https://pypi.python.org/pypi/pybonjour>`_ needs to be available
 to the Python installation running OctoPrint.
@@ -52,7 +59,7 @@ into some folder ``~/OctoPrint``. You executed ``python setup.py install`` withi
 virtualenv in the same folder called ``venv``. In order to install ``pybonjour``
 so it will be available to OctoPrint you'll need to do the following::
 
-    venv/bin/pip install pybonjour
+    venv/bin/pip install https://goo.gl/SxQZ06
 
 **Linux users:** You'll need to install an additional dependency for this to work, the
 libdnssd compatibility layer for libavahi. On Debian/Ubuntu that can be achieved with::
@@ -71,7 +78,7 @@ The plugin supports the following configuration keys:
     optional, if not set the port OctoPrint itself was started under will be used
   * ``pathPrefix``: Path prefix OctoPrint is running under, optional, if not
     set ``/`` will be used
-  * ``useSsl``: ``true``if OctoPrint should be called via HTTPS, ``false`` otherwise
+  * ``useSsl``: ``true`` if OctoPrint should be called via HTTPS, ``false`` otherwise
   * ``httpUsername``: HTTP Basic Auth username OctoPrint is reachable with, optional
   * ``httpPassword``: HTTP Basic Auth password OctoPrint is reachable with, optional
   * ``upnpUuid``: uPNP UUID used for SSDP service announcements, usually you will

@@ -30,6 +30,10 @@ $(function() {
         self.isReady = ko.observable(undefined);
         self.isLoading = ko.observable(undefined);
 
+        self.isTemporary = ko.pureComputed(function() {
+            return self.isDirty() && !self.persist();
+        });
+
         self.isBusy = ko.pureComputed(function() {
             return self.isPrinting() || self.isPaused();
         });
@@ -64,6 +68,9 @@ $(function() {
             self.isDirty(true);
         });
         self.timelapseCapturePostRoll.subscribe(function() {
+            self.isDirty(true);
+        });
+        self.persist.subscribe(function() {
             self.isDirty(true);
         });
 

@@ -197,43 +197,37 @@ def setTimelapseConfig():
 					return make_response("Invalid value for fps: %d" % fps, 400)
 
 		if "interval" in data:
-			config["options"] = {
-				"interval": 10
-			}
-
 			try:
 				interval = int(data["interval"])
 			except ValueError:
-				return make_response("Invalid value for interval: %r" % data["interval"])
+				return make_response("Invalid value for interval: %r" % data["interval"], 400)
 			else:
 				if interval > 0:
 					config["options"]["interval"] = interval
 				else:
-					return make_response("Invalid value for interval: %d" % interval)
+					return make_response("Invalid value for interval: %d" % interval, 400)
 
 		if "capturePostRoll" in data:
-			config["options"]["capturePostRoll"] = True
 			try:
 				capturePostRoll = bool(data["capturePostRoll"])
 			except ValueError:
-				return make_response("Invalid value for capturePostRoll: %r" % data["capturePostRoll"])
+				return make_response("Invalid value for capturePostRoll: %r" % data["capturePostRoll"], 400)
 			else:
-				config["options"]["capturePostRoll"] = capturePostRoll
+				if capturePostRoll >= 0:
+					config["options"]["capturePostRoll"] = capturePostRoll
+				else:
+					return make_response("Invalid value for capturePostRoll: %d" % capturePostRoll, 400)
 
 		if "retractionZHop" in data:
-			config["options"] = {
-				"retractionZHop": 0
-			}
-
 			try:
 				retractionZHop = float(data["retractionZHop"])
 			except ValueError:
-				return make_response("Invalid value for retraction Z-Hop: %r" % data["retractionZHop"])
+				return make_response("Invalid value for retraction Z-Hop: %r" % data["retractionZHop"], 400)
 			else:
 				if retractionZHop >= 0:
 					config["options"]["retractionZHop"] = retractionZHop
 				else:
-					return make_response("Invalid value for retraction Z-Hop: %d" % retractionZHop)
+					return make_response("Invalid value for retraction Z-Hop: %d" % retractionZHop, 400)
 
 
 		if admin_permission.can() and "save" in data and data["save"] in valid_boolean_trues:
