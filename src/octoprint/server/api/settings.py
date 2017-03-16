@@ -284,13 +284,13 @@ def _saveSettings(data):
 	# is changed, added or removed here
 
 	if "api" in data.keys():
-		if "enabled" in data["api"].keys(): s.setBoolean(["api", "enabled"], data["api"]["enabled"])
-		if "allowCrossOrigin" in data["api"].keys(): s.setBoolean(["api", "allowCrossOrigin"], data["api"]["allowCrossOrigin"])
+		if "enabled" in data["api"]: s.setBoolean(["api", "enabled"], data["api"]["enabled"])
+		if "allowCrossOrigin" in data["api"]: s.setBoolean(["api", "allowCrossOrigin"], data["api"]["allowCrossOrigin"])
 
 	if "appearance" in data.keys():
-		if "name" in data["appearance"].keys(): s.set(["appearance", "name"], data["appearance"]["name"])
-		if "color" in data["appearance"].keys(): s.set(["appearance", "color"], data["appearance"]["color"])
-		if "colorTransparent" in data["appearance"].keys(): s.setBoolean(["appearance", "colorTransparent"], data["appearance"]["colorTransparent"])
+		if "name" in data["appearance"]: s.set(["appearance", "name"], data["appearance"]["name"])
+		if "color" in data["appearance"]: s.set(["appearance", "color"], data["appearance"]["color"])
+		if "colorTransparent" in data["appearance"]: s.setBoolean(["appearance", "colorTransparent"], data["appearance"]["colorTransparent"])
 		if "defaultLanguage" in data["appearance"]: s.set(["appearance", "defaultLanguage"], data["appearance"]["defaultLanguage"])
 		if "showFahrenheitAlso" in data["appearance"]: s.setBoolean(["appearance", "showFahrenheitAlso"], data["appearance"]["showFahrenheitAlso"])
 
@@ -298,31 +298,31 @@ def _saveSettings(data):
 		if "defaultExtrusionLength" in data["printer"]: s.setInt(["printerParameters", "defaultExtrusionLength"], data["printer"]["defaultExtrusionLength"])
 
 	if "webcam" in data.keys():
-		if "streamUrl" in data["webcam"].keys(): s.set(["webcam", "stream"], data["webcam"]["streamUrl"])
-		if "snapshotUrl" in data["webcam"].keys(): s.set(["webcam", "snapshot"], data["webcam"]["snapshotUrl"])
-		if "ffmpegPath" in data["webcam"].keys(): s.set(["webcam", "ffmpeg"], data["webcam"]["ffmpegPath"])
-		if "bitrate" in data["webcam"].keys(): s.set(["webcam", "bitrate"], data["webcam"]["bitrate"])
-		if "ffmpegThreads" in data["webcam"].keys(): s.setInt(["webcam", "ffmpegThreads"], data["webcam"]["ffmpegThreads"])
-		if "watermark" in data["webcam"].keys(): s.setBoolean(["webcam", "watermark"], data["webcam"]["watermark"])
-		if "flipH" in data["webcam"].keys(): s.setBoolean(["webcam", "flipH"], data["webcam"]["flipH"])
-		if "flipV" in data["webcam"].keys(): s.setBoolean(["webcam", "flipV"], data["webcam"]["flipV"])
-		if "rotate90" in data["webcam"].keys(): s.setBoolean(["webcam", "rotate90"], data["webcam"]["rotate90"])
+		if "streamUrl" in data["webcam"]: s.set(["webcam", "stream"], data["webcam"]["streamUrl"])
+		if "snapshotUrl" in data["webcam"]: s.set(["webcam", "snapshot"], data["webcam"]["snapshotUrl"])
+		if "ffmpegPath" in data["webcam"]: s.set(["webcam", "ffmpeg"], data["webcam"]["ffmpegPath"])
+		if "bitrate" in data["webcam"]: s.set(["webcam", "bitrate"], data["webcam"]["bitrate"])
+		if "ffmpegThreads" in data["webcam"]: s.setInt(["webcam", "ffmpegThreads"], data["webcam"]["ffmpegThreads"])
+		if "watermark" in data["webcam"]: s.setBoolean(["webcam", "watermark"], data["webcam"]["watermark"])
+		if "flipH" in data["webcam"]: s.setBoolean(["webcam", "flipH"], data["webcam"]["flipH"])
+		if "flipV" in data["webcam"]: s.setBoolean(["webcam", "flipV"], data["webcam"]["flipV"])
+		if "rotate90" in data["webcam"]: s.setBoolean(["webcam", "rotate90"], data["webcam"]["rotate90"])
 
 	if "feature" in data.keys():
-		if "gcodeViewer" in data["feature"].keys(): s.setBoolean(["gcodeViewer", "enabled"], data["feature"]["gcodeViewer"])
-		if "sizeThreshold" in data["feature"].keys(): s.setInt(["gcodeViewer", "sizeThreshold"], data["feature"]["sizeThreshold"])
-		if "mobileSizeThreshold" in data["feature"].keys(): s.setInt(["gcodeViewer", "mobileSizeThreshold"], data["feature"]["mobileSizeThreshold"])
-		if "temperatureGraph" in data["feature"].keys(): s.setBoolean(["feature", "temperatureGraph"], data["feature"]["temperatureGraph"])
-		if "waitForStart" in data["feature"].keys(): s.setBoolean(["feature", "waitForStartOnConnect"], data["feature"]["waitForStart"])
-		if "alwaysSendChecksum" in data["feature"].keys(): s.setBoolean(["feature", "alwaysSendChecksum"], data["feature"]["alwaysSendChecksum"])
-		if "neverSendChecksum" in data["feature"].keys(): s.setBoolean(["feature", "neverSendChecksum"], data["feature"]["neverSendChecksum"])
-		if "sdSupport" in data["feature"].keys(): s.setBoolean(["feature", "sdSupport"], data["feature"]["sdSupport"])
-		if "sdRelativePath" in data["feature"].keys(): s.setBoolean(["feature", "sdRelativePath"], data["feature"]["sdRelativePath"])
-		if "sdAlwaysAvailable" in data["feature"].keys(): s.setBoolean(["feature", "sdAlwaysAvailable"], data["feature"]["sdAlwaysAvailable"])
-		if "swallowOkAfterResend" in data["feature"].keys(): s.setBoolean(["feature", "swallowOkAfterResend"], data["feature"]["swallowOkAfterResend"])
-		if "repetierTargetTemp" in data["feature"].keys(): s.setBoolean(["feature", "repetierTargetTemp"], data["feature"]["repetierTargetTemp"])
-		if "externalHeatupDetection" in data["feature"].keys(): s.setBoolean(["feature", "externalHeatupDetection"], data["feature"]["externalHeatupDetection"])
-		if "keyboardControl" in data["feature"].keys(): s.setBoolean(["feature", "keyboardControl"], data["feature"]["keyboardControl"])
+		if "gcodeViewer" in data["feature"]: s.setBoolean(["gcodeViewer", "enabled"], data["feature"]["gcodeViewer"])
+		if "sizeThreshold" in data["feature"]: s.setInt(["gcodeViewer", "sizeThreshold"], data["feature"]["sizeThreshold"])
+		if "mobileSizeThreshold" in data["feature"]: s.setInt(["gcodeViewer", "mobileSizeThreshold"], data["feature"]["mobileSizeThreshold"])
+		if "temperatureGraph" in data["feature"]: s.setBoolean(["feature", "temperatureGraph"], data["feature"]["temperatureGraph"])
+		if "waitForStart" in data["feature"]: s.setBoolean(["feature", "waitForStartOnConnect"], data["feature"]["waitForStart"])
+		if "alwaysSendChecksum" in data["feature"]: s.setBoolean(["feature", "alwaysSendChecksum"], data["feature"]["alwaysSendChecksum"])
+		if "neverSendChecksum" in data["feature"]: s.setBoolean(["feature", "neverSendChecksum"], data["feature"]["neverSendChecksum"])
+		if "sdSupport" in data["feature"]: s.setBoolean(["feature", "sdSupport"], data["feature"]["sdSupport"])
+		if "sdRelativePath" in data["feature"]: s.setBoolean(["feature", "sdRelativePath"], data["feature"]["sdRelativePath"])
+		if "sdAlwaysAvailable" in data["feature"]: s.setBoolean(["feature", "sdAlwaysAvailable"], data["feature"]["sdAlwaysAvailable"])
+		if "swallowOkAfterResend" in data["feature"]: s.setBoolean(["feature", "swallowOkAfterResend"], data["feature"]["swallowOkAfterResend"])
+		if "repetierTargetTemp" in data["feature"]: s.setBoolean(["feature", "repetierTargetTemp"], data["feature"]["repetierTargetTemp"])
+		if "externalHeatupDetection" in data["feature"]: s.setBoolean(["feature", "externalHeatupDetection"], data["feature"]["externalHeatupDetection"])
+		if "keyboardControl" in data["feature"]: s.setBoolean(["feature", "keyboardControl"], data["feature"]["keyboardControl"])
 		if "pollWatched" in data["feature"]: s.setBoolean(["feature", "pollWatched"], data["feature"]["pollWatched"])
 		if "ignoreIdenticalResends" in data["feature"]: s.setBoolean(["feature", "ignoreIdenticalResends"], data["feature"]["ignoreIdenticalResends"])
 		if "modelSizeDetection" in data["feature"]: s.setBoolean(["feature", "modelSizeDetection"], data["feature"]["modelSizeDetection"])
@@ -331,15 +331,15 @@ def _saveSettings(data):
 		if "blockWhileDwelling" in data["feature"]: s.setBoolean(["feature", "blockWhileDwelling"], data["feature"]["blockWhileDwelling"])
 
 	if "serial" in data.keys():
-		if "autoconnect" in data["serial"].keys(): s.setBoolean(["serial", "autoconnect"], data["serial"]["autoconnect"])
-		if "port" in data["serial"].keys(): s.set(["serial", "port"], data["serial"]["port"])
-		if "baudrate" in data["serial"].keys(): s.setInt(["serial", "baudrate"], data["serial"]["baudrate"])
-		if "timeoutConnection" in data["serial"].keys(): s.setFloat(["serial", "timeout", "connection"], data["serial"]["timeoutConnection"])
-		if "timeoutDetection" in data["serial"].keys(): s.setFloat(["serial", "timeout", "detection"], data["serial"]["timeoutDetection"])
-		if "timeoutCommunication" in data["serial"].keys(): s.setFloat(["serial", "timeout", "communication"], data["serial"]["timeoutCommunication"])
-		if "timeoutTemperature" in data["serial"].keys(): s.setFloat(["serial", "timeout", "temperature"], data["serial"]["timeoutTemperature"])
-		if "timeoutTemperatureTargetSet" in data["serial"].keys(): s.setFloat(["serial", "timeout", "temperatureTargetSet"], data["serial"]["timeoutTemperatureTargetSet"])
-		if "timeoutSdStatus" in data["serial"].keys(): s.setFloat(["serial", "timeout", "sdStatus"], data["serial"]["timeoutSdStatus"])
+		if "autoconnect" in data["serial"]: s.setBoolean(["serial", "autoconnect"], data["serial"]["autoconnect"])
+		if "port" in data["serial"]: s.set(["serial", "port"], data["serial"]["port"])
+		if "baudrate" in data["serial"]: s.setInt(["serial", "baudrate"], data["serial"]["baudrate"])
+		if "timeoutConnection" in data["serial"]: s.setFloat(["serial", "timeout", "connection"], data["serial"]["timeoutConnection"])
+		if "timeoutDetection" in data["serial"]: s.setFloat(["serial", "timeout", "detection"], data["serial"]["timeoutDetection"])
+		if "timeoutCommunication" in data["serial"]: s.setFloat(["serial", "timeout", "communication"], data["serial"]["timeoutCommunication"])
+		if "timeoutTemperature" in data["serial"]: s.setFloat(["serial", "timeout", "temperature"], data["serial"]["timeoutTemperature"])
+		if "timeoutTemperatureTargetSet" in data["serial"]: s.setFloat(["serial", "timeout", "temperatureTargetSet"], data["serial"]["timeoutTemperatureTargetSet"])
+		if "timeoutSdStatus" in data["serial"]: s.setFloat(["serial", "timeout", "sdStatus"], data["serial"]["timeoutSdStatus"])
 		if "additionalPorts" in data["serial"] and isinstance(data["serial"]["additionalPorts"], (list, tuple)): s.set(["serial", "additionalPorts"], data["serial"]["additionalPorts"])
 		if "additionalBaudrates" in data["serial"] and isinstance(data["serial"]["additionalBaudrates"], (list, tuple)): s.set(["serial", "additionalBaudrates"], data["serial"]["additionalBaudrates"])
 		if "longRunningCommands" in data["serial"] and isinstance(data["serial"]["longRunningCommands"], (list, tuple)): s.set(["serial", "longRunningCommands"], data["serial"]["longRunningCommands"])
@@ -354,7 +354,7 @@ def _saveSettings(data):
 		if "maxTimeoutsLong" in data["serial"]: s.setInt(["serial", "maxCommunicationTimeouts", "long"], data["serial"]["maxTimeoutsLong"])
 
 		oldLog = s.getBoolean(["serial", "log"])
-		if "log" in data["serial"].keys(): s.setBoolean(["serial", "log"], data["serial"]["log"])
+		if "log" in data["serial"]: s.setBoolean(["serial", "log"], data["serial"]["log"])
 		if oldLog and not s.getBoolean(["serial", "log"]):
 			# disable debug logging to serial.log
 			logging.getLogger("SERIAL").debug("Disabling serial logging")
@@ -365,22 +365,22 @@ def _saveSettings(data):
 			logging.getLogger("SERIAL").debug("Enabling serial logging")
 
 	if "folder" in data.keys():
-		if "uploads" in data["folder"].keys(): s.setBaseFolder("uploads", data["folder"]["uploads"])
-		if "timelapse" in data["folder"].keys(): s.setBaseFolder("timelapse", data["folder"]["timelapse"])
-		if "timelapseTmp" in data["folder"].keys(): s.setBaseFolder("timelapse_tmp", data["folder"]["timelapseTmp"])
-		if "logs" in data["folder"].keys(): s.setBaseFolder("logs", data["folder"]["logs"])
-		if "watched" in data["folder"].keys(): s.setBaseFolder("watched", data["folder"]["watched"])
+		if "uploads" in data["folder"]: s.setBaseFolder("uploads", data["folder"]["uploads"])
+		if "timelapse" in data["folder"]: s.setBaseFolder("timelapse", data["folder"]["timelapse"])
+		if "timelapseTmp" in data["folder"]: s.setBaseFolder("timelapse_tmp", data["folder"]["timelapseTmp"])
+		if "logs" in data["folder"]: s.setBaseFolder("logs", data["folder"]["logs"])
+		if "watched" in data["folder"]: s.setBaseFolder("watched", data["folder"]["watched"])
 
 	if "temperature" in data.keys():
-		if "profiles" in data["temperature"].keys(): s.set(["temperature", "profiles"], data["temperature"]["profiles"])
-		if "cutoff" in data["temperature"].keys(): s.setInt(["temperature", "cutoff"], data["temperature"]["cutoff"])
+		if "profiles" in data["temperature"]: s.set(["temperature", "profiles"], data["temperature"]["profiles"])
+		if "cutoff" in data["temperature"]: s.setInt(["temperature", "cutoff"], data["temperature"]["cutoff"])
 
 	if "terminalFilters" in data.keys():
 		s.set(["terminalFilters"], data["terminalFilters"])
 
 	if "system" in data.keys():
-		if "actions" in data["system"].keys(): s.set(["system", "actions"], data["system"]["actions"])
-		if "events" in data["system"].keys(): s.set(["system", "events"], data["system"]["events"])
+		if "actions" in data["system"]: s.set(["system", "actions"], data["system"]["actions"])
+		if "events" in data["system"]: s.set(["system", "events"], data["system"]["events"])
 
 	if "scripts" in data:
 		if "gcode" in data["scripts"] and isinstance(data["scripts"]["gcode"], dict):
@@ -391,9 +391,9 @@ def _saveSettings(data):
 
 	if "server" in data:
 		if "commands" in data["server"]:
-			if "systemShutdownCommand" in data["server"]["commands"].keys(): s.set(["server", "commands", "systemShutdownCommand"], data["server"]["commands"]["systemShutdownCommand"])
-			if "systemRestartCommand" in data["server"]["commands"].keys(): s.set(["server", "commands", "systemRestartCommand"], data["server"]["commands"]["systemRestartCommand"])
-			if "serverRestartCommand" in data["server"]["commands"].keys(): s.set(["server", "commands", "serverRestartCommand"], data["server"]["commands"]["serverRestartCommand"])
+			if "systemShutdownCommand" in data["server"]["commands"]: s.set(["server", "commands", "systemShutdownCommand"], data["server"]["commands"]["systemShutdownCommand"])
+			if "systemRestartCommand" in data["server"]["commands"]: s.set(["server", "commands", "systemRestartCommand"], data["server"]["commands"]["systemRestartCommand"])
+			if "serverRestartCommand" in data["server"]["commands"]: s.set(["server", "commands", "serverRestartCommand"], data["server"]["commands"]["serverRestartCommand"])
 		if "diskspace" in data["server"]:
 			if "warning" in data["server"]["diskspace"]: s.setInt(["server", "diskspace", "warning"], data["server"]["diskspace"]["warning"])
 			if "critical" in data["server"]["diskspace"]: s.setInt(["server", "diskspace", "critical"], data["server"]["diskspace"]["critical"])

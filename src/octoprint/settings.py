@@ -556,7 +556,8 @@ class Settings(object):
 			self._configfile = os.path.join(self._basedir, "config.yaml")
 		self.load(migrate=True)
 
-		if self.get(["api", "key"]) is None:
+		apikey = self.get(["api", "key"])
+		if not apikey or apikey == "n/a":
 			self.generateApiKey()
 
 		self._script_env = self._init_script_templating()

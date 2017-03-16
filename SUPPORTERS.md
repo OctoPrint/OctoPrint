@@ -28,6 +28,7 @@ thanks to everyone who contributed!
   * Gary N McKinney
   * George Robles
   * James Seigel
+  * Jamie R McGuigan
   * Jamie van Dyke
   * Jeff Moe
   * Josh Daniels
