@@ -23,7 +23,6 @@
             <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('sd'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'sd') ? 'visible' : 'hidden'}"></i> {{ _('Only show files stored on SD') }}</a></li>
         {% endif %}
         <li class="divider"></li>
-        <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('emptyFolder'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'emptyFolder') ? 'visible' : 'hidden'}"></i> {{ _('Hide folders without files') }}</a></li>
         <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('printed'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'printed') ? 'visible' : 'hidden'}"></i> {{ _('Hide successfully printed files') }}</a></li>
     </ul>
 </div>
