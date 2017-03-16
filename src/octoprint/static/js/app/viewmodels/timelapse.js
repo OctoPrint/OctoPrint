@@ -21,7 +21,6 @@ $(function() {
 
         self.persist = ko.observable(false);
         self.isDirty = ko.observable(false);
-        self.isTemporary = ko.observable(true);
 
         self.isErrorOrClosed = ko.observable(undefined);
         self.isOperational = ko.observable(undefined);
@@ -69,6 +68,9 @@ $(function() {
             self.isDirty(true);
         });
         self.timelapseCapturePostRoll.subscribe(function() {
+            self.isDirty(true);
+        });
+        self.persist.subscribe(function() {
             self.isDirty(true);
         });
 
