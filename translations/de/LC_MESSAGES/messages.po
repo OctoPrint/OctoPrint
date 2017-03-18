@@ -2852,7 +2852,7 @@ msgstr ""
 "überschrieben sind."
 
 #: src/octoprint/templates/dialogs/settings/appearance.jinja2:42
-msgid "Show temperatures in Fahrenheit as well as Celcius"
+msgid "Show temperatures in Fahrenheit as well as Celsius"
 msgstr "Temperaturen sowohl in Fahrenheit als auch Celsius anzeigen"
 
 #: src/octoprint/templates/dialogs/settings/appearance.jinja2:51
