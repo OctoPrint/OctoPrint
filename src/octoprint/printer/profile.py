@@ -369,6 +369,7 @@ class PrinterProfileManager(object):
 		return profile
 
 	def _save_to_path(self, path, profile, allow_overwrite=False):
+		self._migrate_profile(profile)
 		validated_profile = self._ensure_valid_profile(profile)
 		if not validated_profile:
 			raise InvalidProfileError()
