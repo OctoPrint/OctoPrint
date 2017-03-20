@@ -229,8 +229,7 @@ default_settings = {
 		"cutoff": 30
 	},
 	"printerProfiles": {
-		"default": None,
-		"defaultProfile": {}
+		"default": None
 	},
 	"printerParameters": {
 		"pauseTriggers": [],
