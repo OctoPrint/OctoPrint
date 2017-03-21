@@ -39,8 +39,9 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 	ARCHIVE_EXTENSIONS = (".zip", ".tar.gz", ".tgz", ".tar")
 
 	OPERATING_SYSTEMS = dict(windows=["win32"],
-	                         linux=["linux2"],
-	                         macos=["darwin"])
+	                         linux=lambda x: x.startswith("linux"),
+	                         macos=["darwin"],
+	                         freebsd=lambda x: x.startswith("freebsd"))
 
 	pip_inapplicable_arguments = dict(uninstall=["--user"])
 
@@ -809,13 +810,15 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 	def _is_os_compatible(self, current_os, compatibility_entries):
 		"""
-		Tests if the ``current_os`` matches any of the provided ``compatibility_entries``.
+		Tests if the ``current_os`` or ``sys.platform`` matches any of the provided ``compatibility_entries``.
 		"""
-		return current_os in filter(lambda x: x in self.__class__.OPERATING_SYSTEMS.keys(), compatibility_entries)
+		general_match = current_os in filter(lambda x: x in self.__class__.OPERATING_SYSTEMS.keys(), compatibility_entries)
+		exact_match = sys.platform in compatibility_entries
+		return general_match or exact_match
 
 	def _get_os(self):
 		for identifier, platforms in self.__class__.OPERATING_SYSTEMS.items():
-			if sys.platform in platforms:
+			if (callable(platforms) and platforms(sys.platform)) or (isinstance(platforms, list) and sys.platform in platforms):
 				return identifier
 		else:
 			return "unknown"
