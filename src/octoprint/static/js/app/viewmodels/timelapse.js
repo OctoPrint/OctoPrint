@@ -208,8 +208,15 @@ $(function() {
         };
 
         self.removeFile = function(filename) {
-            OctoPrint.timelapse.delete(filename)
-                .done(self.requestData);
+			showConfirmationDialog({
+                message: gettext("Delete selected timelapse?"),
+                cancel: gettext("No"),
+                proceed: gettext("Yes"),
+                onproceed: function() {
+                    OctoPrint.timelapse.delete(filename)
+						.done(self.requestData);
+				}
+			});
         };
 
         self.removeUnrendered = function(name) {
