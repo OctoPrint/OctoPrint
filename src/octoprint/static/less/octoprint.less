@@ -311,6 +311,16 @@ table {
     }
 
     // timelapse files
+    &.timelapse_files_checkbox,
+    &.timelapse_unrendered_checkbox {
+      text-align: center;
+      width: 10px;
+
+      input[type="checkbox"] {
+        margin-top: 0;
+      }
+    }
+
     &.timelapse_files_name,
     &.timelapse_unrendered_name {
       text-overflow: ellipsis;
@@ -1019,6 +1029,15 @@ textarea.block {
 
 .ui-pnotify a {
   text-decoration: underline;
+}
+
+.btn-mini .caret, .btn-small .caret {
+  margin-top: 8px;
+}
+
+.dropdown-menu-right {
+  right: 0;
+  left: auto;
 }
 
 /** Styles for Bootstrap Slider */

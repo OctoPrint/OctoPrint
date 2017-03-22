@@ -30,6 +30,9 @@ $(function() {
         self.isReady = ko.observable(undefined);
         self.isLoading = ko.observable(undefined);
 
+        self.markedForFileDeletion = ko.observableArray([]);
+        self.markedForUnrenderedDeletion = ko.observableArray([]);
+
         self.isTemporary = ko.pureComputed(function() {
             return self.isDirty() && !self.persist();
         });
@@ -145,11 +148,16 @@ $(function() {
             var config = response.config;
             if (config === undefined) return;
 
-            self.timelapseType(config.type);
+            // timelapses & unrendered
             self.listHelper.updateItems(response.files);
+            self.listHelper.resetPage();
             if (response.unrendered) {
                 self.unrenderedListHelper.updateItems(response.unrendered);
+                self.unrenderedListHelper.resetPage();
             }
+
+            // timelapse config
+            self.timelapseType(config.type);
 
             if (config.type == "timed") {
                 if (config.interval != undefined && config.interval > 0) {
@@ -207,14 +215,135 @@ $(function() {
             self.isLoading(data.flags.loading);
         };
 
+        self.markFilesOnPage = function() {
+            self.markedForFileDeletion(_.uniq(self.markedForFileDeletion().concat(_.map(self.listHelper.paginatedItems(), "name"))));
+        };
+
+        self.markAllFiles = function() {
+            self.markedForFileDeletion(_.map(self.listHelper.allItems, "name"));
+        };
+
+        self.clearMarkedFiles = function() {
+            self.markedForFileDeletion.removeAll();
+        };
+
         self.removeFile = function(filename) {
-            OctoPrint.timelapse.delete(filename)
-                .done(self.requestData);
+            var perform = function() {
+                OctoPrint.timelapse.delete(filename)
+                    .done(function() {
+                        self.markedForFileDeletion.remove(filename);
+                        self.requestData()
+                    });
+            };
+
+            showConfirmationDialog(_.sprintf(gettext("You are about to delete timelapse file \"%(name)s\"."), {name: filename}),
+                                   perform)
+        };
+
+        self.removeMarkedFiles = function() {
+            var perform = function() {
+                self._bulkRemove(self.markedForFileDeletion(), "files")
+                    .done(function() {
+                        self.markedForFileDeletion.removeAll();
+                    });
+            };
+
+            showConfirmationDialog(_.sprintf(gettext("You are about to delete %(count)d timelapse files."), {count: self.markedForFileDeletion().length}),
+                                   perform);
+        };
+
+        self.markUnrenderedOnPage = function() {
+            self.markedForUnrenderedDeletion(_.uniq(self.markedForUnrenderedDeletion().concat(_.map(self.unrenderedListHelper.paginatedItems(), "name"))));
+        };
+
+        self.markAllUnrendered = function() {
+            self.markedForUnrenderedDeletion(_.map(self.unrenderedListHelper.allItems, "name"));
+        };
+
+        self.clearMarkedUnrendered = function() {
+            self.markedForUnrenderedDeletion.removeAll();
         };
 
         self.removeUnrendered = function(name) {
-            OctoPrint.timelapse.deleteUnrendered(name)
-                .done(self.requestData);
+            var perform = function() {
+                OctoPrint.timelapse.deleteUnrendered(name)
+                    .done(function() {
+                        self.markedForUnrenderedDeletion.remove(name);
+                        self.requestData();
+                    });
+            };
+
+            showConfirmationDialog(_.sprintf(gettext("You are about to delete unrendered timelapse \"%(name)s\"."), {name: name}),
+                                   perform)
+        };
+
+        self.removeMarkedUnrendered = function() {
+            var perform = function() {
+                self._bulkRemove(self.markedForUnrenderedDeletion(), "unrendered")
+                    .done(function() {
+                        self.markedForUnrenderedDeletion.removeAll();
+                    });
+            };
+
+            showConfirmationDialog(_.sprintf(gettext("You are about to delete %(count)d unrendered timelapses."), {count: self.markedForUnrenderedDeletion().length}),
+                                   perform);
+        };
+
+        self._bulkRemove = function(files, type) {
+            var title, message, handler;
+
+            if (type == "files") {
+                title = gettext("Deleting timelapse files");
+                message = _.sprintf(gettext("Deleting %(count)d timelapse files..."), {count: files.length});
+                handler = function(filename) {
+                    return OctoPrint.timelapse.delete(filename)
+                        .done(function() {
+                            deferred.notify(_.sprintf(gettext("Deleted %(filename)s..."), {filename: filename}), true);
+                        })
+                        .fail(function() {
+                            deferred.notify(_.sprintf(gettext("Deletion of %(filename)s failed, continuing..."), {filename: filename}), false);
+                        });
+                }
+            } else if (type == "unrendered") {
+                title = gettext("Deleting unrendered timelapses");
+                message = _.sprintf(gettext("Deleting %(count)d unrendered timelapses..."), {count: files.length});
+                handler = function(filename) {
+                    return OctoPrint.timelapse.deleteUnrendered(filename)
+                        .done(function() {
+                            deferred.notify(_.sprintf(gettext("Deleted %(filename)s..."), {filename: filename}), true);
+                        })
+                        .fail(function() {
+                            deferred.notify(_.sprintf(gettext("Deletion of %(filename)s failed, continuing..."), {filename: filename}), false);
+                        });
+                }
+            } else {
+                return;
+            }
+
+            var deferred = $.Deferred();
+
+            var promise = deferred.promise();
+
+            var options = {
+                title: title,
+                message: message,
+                max: files.length,
+                output: true
+            };
+            showProgressModal(options, promise);
+
+            var requests = [];
+            _.each(files, function(filename) {
+                var request = handler(filename);
+                requests.push(request)
+            });
+            $.when.apply($, _.map(requests, wrapPromiseWithAlways))
+                .done(function() {
+                    deferred.resolve();
+                    self.requestData();
+                });
+
+            return promise;
         };
 
         self.renderUnrendered = function(name) {
