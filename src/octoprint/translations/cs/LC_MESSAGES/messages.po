@@ -1,0 +1,3912 @@
+# Translations template for OctoPrint.
+# Copyright (C) 2017 The OctoPrint Project
+# This file is distributed under the same license as the OctoPrint project.
+# 
+# Translators:
+# Jan Pichrt <jan@pichrt.info>, 2016
+# Jan Sykora <jan.sykora.8108@seznam.cz>, 2016-2017
+# Karel Šnajdárek <gudsik@gmail.com>, 2016
+# Lukáš Hučík <iam@lukashucik.cz>, 2015-2016
+# Michal Vondracek <info@michalvondracek.cz>, 2015
+# Pavel Novy <tynian@gmail.com>, 2016
+# Viktor Hollmann <viktor.hollmann@gmail.com>, 2016
+# Viktor Hollmann <viktor.hollmann@gmail.com>, 2016
+msgid ""
+msgstr ""
+"Project-Id-Version: OctoPrint\n"
+"Report-Msgid-Bugs-To: i18n@octoprint.org\n"
+"POT-Creation-Date: 2017-03-16 11:53+0100\n"
+"PO-Revision-Date: 2017-03-21 08:36+0000\n"
+"Last-Translator: Gina Häußge <gina@foosel.net>\n"
+"Language-Team: Czech (http://www.transifex.com/octoprint/octoprint/language/cs/)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.3.4\n"
+"Language: cs\n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
+
+#: src/octoprint/plugins/announcements/__init__.py:88
+#: src/octoprint/plugins/announcements/templates/announcements.jinja2:4
+#: src/octoprint/plugins/announcements/templates/announcements_navbar.jinja2:1
+msgid "Announcements"
+msgstr "Oznámení"
+
+#: src/octoprint/plugins/announcements/static/js/announcements.js:50
+msgid "Cannot be toggled"
+msgstr "Nelze přepnout"
+
+#: src/octoprint/plugins/announcements/static/js/announcements.js:50
+msgid "Disable Channel"
+msgstr "Zakázat kanál"
+
+#: src/octoprint/plugins/announcements/static/js/announcements.js:50
+msgid "Enable Channel"
+msgstr "Povolit kanál"
+
+#: src/octoprint/plugins/announcements/static/js/announcements.js:249
+msgid "Later"
+msgstr "Později"
+
+#: src/octoprint/plugins/announcements/static/js/announcements.js:255
+msgid "Mark read"
+msgstr "Označit přečtené"
+
+#: src/octoprint/plugins/announcements/static/js/announcements.js:261
+msgid "Read..."
+msgstr "Číst..."
+
+#: src/octoprint/plugins/announcements/templates/announcements.jinja2:31
+msgid "Mark as last read"
+msgstr "Označit jako poslední přečtené"
+
+#: src/octoprint/plugins/announcements/templates/announcements.jinja2:43
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:97
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:209
+#: src/octoprint/plugins/softwareupdate/templates/softwareupdate_settings.jinja2:105
+#: src/octoprint/static/js/app/helpers.js:590
+#: src/octoprint/templates/dialogs/settings/appearance.jinja2:103
+msgid "Close"
+msgstr "Zavřít"
+
+#: src/octoprint/plugins/announcements/templates/announcements_settings.jinja2:1
+msgid "Configured Channels"
+msgstr "Nastavené kanály"
+
+#: src/octoprint/plugins/announcements/templates/announcements_settings.jinja2:6
+#: src/octoprint/plugins/cura/templates/snippets/settings/cura/profileImporter.jinja2:27
+#: src/octoprint/plugins/cura/templates/snippets/settings/cura/profiles.jinja2:3
+#: src/octoprint/plugins/cura/templates/snippets/settings/cura/profiles.jinja2:9
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:36
+#: src/octoprint/templates/dialogs/settings/accesscontrol.jinja2:4
+#: src/octoprint/templates/dialogs/settings/logs.jinja2:6
+#: src/octoprint/templates/dialogs/settings/logs.jinja2:12
+#: src/octoprint/templates/dialogs/settings/terminalfilters.jinja2:3
+#: src/octoprint/templates/snippets/settings/printerprofiles/profileEditorGeneral.jinja2:3
+#: src/octoprint/templates/snippets/settings/printerprofiles/profiles.jinja2:4
+#: src/octoprint/templates/tabs/timelapse.jinja2:66
+#: src/octoprint/templates/tabs/timelapse.jinja2:71
+#: src/octoprint/templates/tabs/timelapse.jinja2:102
+msgid "Name"
+msgstr "Jméno"
+
+#: src/octoprint/plugins/announcements/templates/announcements_settings.jinja2:7
+#: src/octoprint/plugins/cura/templates/snippets/settings/cura/profiles.jinja2:10
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:37
+msgid "Actions"
+msgstr "Akce"
+
+#: src/octoprint/plugins/announcements/templates/announcements_settings.jinja2:34
+msgid "Refresh Announcements"
+msgstr "Obnovit oznámení"
+
+#: src/octoprint/plugins/corewizard/__init__.py:80
+#: src/octoprint/plugins/corewizard/templates/corewizard_acl_wizard.jinja2:1
+#: src/octoprint/server/views.py:557
+msgid "Access Control"
+msgstr "Kontrola přístupu"
+
+#: src/octoprint/plugins/corewizard/__init__.py:125
+#: src/octoprint/server/views.py:551
+msgid "Webcam & Timelapse"
+msgstr "Web kamera & Časosběr"
+
+#: src/octoprint/plugins/corewizard/__init__.py:140
+#: src/octoprint/plugins/corewizard/templates/corewizard_servercommands_wizard.jinja2:1
+msgid "Server Commands"
+msgstr "Serverové příkazy"
+
+#: src/octoprint/plugins/corewizard/__init__.py:151
+msgid "Default Printer Profile"
+msgstr "Výchozí profil tiskárny"
+
+#: src/octoprint/plugins/corewizard/static/js/corewizard.js:43
+msgid ""
+"If you disable Access Control <strong>and</strong> your OctoPrint "
+"installation is accessible from the internet, your printer <strong>will be "
+"accessible by everyone - that also includes the bad guys!</strong>"
+msgstr "Když deaktivuješ Kontrolu Přístupů <strong> a </strong>  OctoPrint je dostupný z Internetu, tvoje tiskárna bude <strong> dostupná komukoli - včetně zlých hochů!</strong>"
+
+#: src/octoprint/plugins/corewizard/static/js/corewizard.js:79
+msgid "Please set up Access Control"
+msgstr "Prosím nastav Kontrolu přístupu"
+
+#: src/octoprint/plugins/corewizard/static/js/corewizard.js:80
+msgid ""
+"You haven't yet set up access control. You need to either setup a username "
+"and password and click \"Keep Access Control Enabled\" or click \"Disable "
+"Access Control\" before continuing"
+msgstr "Nemáš nastavenu Kontrolu přístupu. Musíš nastavit uživatelské jméno a heslo a stisknout tlačítko \"Nevypínat kontrolu přístupu\" nebo stiskni tlačítko \"Vypnout kontrolu přístupu\" před dalším pokračováním"
+
+#: src/octoprint/plugins/corewizard/templates/corewizard_acl_wizard.jinja2:3
+msgid ""
+"<p>\n"
+"    <strong>Please read the following, it is very important for your printer's health!</strong>\n"
+"</p>\n"
+"<p>\n"
+"    OctoPrint by default ships with Access Control enabled, meaning you won't be able to do anything with the\n"
+"    printer unless you login first as a configured user. This is to <strong>prevent strangers - possibly with\n"
+"    malicious intent - to gain access to your printer</strong> via the internet or another untrustworthy network\n"
+"    and using it in such a way that it is damaged or worse (i.e. causes a fire).\n"
+"</p>\n"
+"<p>\n"
+"    It looks like you haven't configured access control yet. Please <strong>set up a username and password</strong> for the\n"
+"    initial administrator account who will have full access to both the printer and OctoPrint's settings, then click\n"
+"    on \"Keep Access Control Enabled\":\n"
+"</p>"
+msgstr "<p>\n<strong>Prosím přečti si následující text, je to velmi důležité pro bezpečí Tvé tiskárny</strong>\n</p>\n<p>\nOctoPrint má ve výchozím stavu Kontrolu přístupu zapnutou, což znamená, že nemůžeš nic dělat s\ntiskárnou, dokud se nepřihlásíš jako zadaný uživatel. To je to <strong>co brání cizincům - s možným zlým úmyslem - získat přístup k Tvé tiskárně</strong> pomocí internetu nebo jiné nedůvěryhodné sítě\na použít ji nebo poškodit (např. způsobit požár).\n</p>\n<p>\nVypadá to, že ještě nemáš nastavenu Kontrolu přístupu. Prosím <strong>nastav uživatelské jméno a heslo</strong> pro\nvýchozí  administrátorský účet, který bude mít plný přístup k tiskárně i k nastavení OctoPrintu a potom stiskni\ntlačítko \"Nevypínat kontrolu přístupu\":\n</p>"
+
+#: src/octoprint/plugins/corewizard/templates/corewizard_acl_wizard.jinja2:19
+#: src/octoprint/templates/dialogs/settings/accesscontrol.jinja2:45
+#: src/octoprint/templates/navbar/login.jinja2:7
+#: src/octoprint/templates/navbar/login.jinja2:8
+msgid "Username"
+msgstr "Uživatelské jméno"
+
+#: src/octoprint/plugins/corewizard/templates/corewizard_acl_wizard.jinja2:25
+#: src/octoprint/templates/dialogs/settings/accesscontrol.jinja2:51
+#: src/octoprint/templates/dialogs/usersettings/access.jinja2:3
+#: src/octoprint/templates/navbar/login.jinja2:9
+#: src/octoprint/templates/navbar/login.jinja2:10
+msgid "Password"
+msgstr "Heslo"
+
+#: src/octoprint/plugins/corewizard/templates/corewizard_acl_wizard.jinja2:31
+msgid "Confirm Password"
+msgstr "Potvrdit heslo"
+
+#: src/octoprint/plugins/corewizard/templates/corewizard_acl_wizard.jinja2:34
+#: src/octoprint/templates/dialogs/settings/accesscontrol.jinja2:60
+#: src/octoprint/templates/dialogs/settings/accesscontrol.jinja2:131
+#: src/octoprint/templates/dialogs/usersettings/access.jinja2:17
+msgid "Passwords do not match"
+msgstr "Hesla nesouhlasí"
+
+#: src/octoprint/plugins/corewizard/templates/corewizard_acl_wizard.jinja2:38
+msgid ""
+"<p>\n"
+"    <strong>Note:</strong> In case that your OctoPrint installation is only accessible from within a trustworthy network and you don't\n"
+"    need Access Control for other reasons, you may alternatively disable Access Control. You should only\n"
+"    do this if you are absolutely certain that only people you know and trust will be able to connect to it.\n"
+"</p>\n"
+"<p>\n"
+"    <strong>Do NOT underestimate the risk of an unsecured access from the internet to your printer!</strong>\n"
+"</p>"
+msgstr "<p>\n<strong>Pozn.:</strong> V případě, že Tvá instalace OctoPrintu je přístupná pouze z důvěryhodné sítě a nepotřebuješ\nKontrolu přístupu z jiného důvodu, můžeš případně vypnout Kontrolu přístupu. Můžeš to udělat pouze\nkdyž jsi si absolutně jist, že se mohou k tiskárně připojit pouze lidé které znáš a věříš jim.\n</p>\n<p>\n<strong>NEPODCEŇUJ riziko nezabezpečeného přístupu k tiskárně z internetu!</strong>\n</p>"
+
+#: src/octoprint/plugins/corewizard/templates/corewizard_acl_wizard.jinja2:48
+msgid "Disable Access Control"
+msgstr "Vypnout Kontrolu přístupu"
+
+#: src/octoprint/plugins/corewizard/templates/corewizard_acl_wizard.jinja2:49
+msgid "Keep Access Control Enabled"
+msgstr "Nevypínat Kontrolu přístupu"
+
+#: src/octoprint/plugins/corewizard/templates/corewizard_acl_wizard.jinja2:53
+msgid ""
+"\n"
+"        Access control is <strong class=\"text-success\">enabled</strong>.\n"
+"    "
+msgstr "\nKontrola přístupu je <strong class=\"text-success\">zapnuta</strong>."
+
+#: src/octoprint/plugins/corewizard/templates/corewizard_acl_wizard.jinja2:56
+msgid ""
+"\n"
+"        Access control is <strong class=\"text-danger\">disabled</strong>.\n"
+"    "
+msgstr "\nKontrola přístupu je <strong class=\"text-danger\">vypnuta</strong>."
+
+#: src/octoprint/plugins/corewizard/templates/corewizard_printerprofile_wizard.jinja2:1
+msgid "Set up your printer profile"
+msgstr "Nastav profil tiskárny"
+
+#: src/octoprint/plugins/corewizard/templates/corewizard_printerprofile_wizard.jinja2:2
+msgid ""
+"Please make sure the settings below match your printer. If you plan on connecting more than one printer\n"
+"to OctoPrint, you can also configure additional printer profiles under Settings > Printer Profiles"
+msgstr "Prosím ujisti se, že provedené nastavení souhlasí s tvojí tiskárnou. Pokud chceš připojovat více než jednu tiskárnu\nk OctoPrintu, můžeš nastavit další profil tiskárny pomocí Nastavení > Profil tiskárny"
+
+#: src/octoprint/plugins/corewizard/templates/corewizard_printerprofile_wizard.jinja2:7
+#: src/octoprint/plugins/cura/templates/cura_settings.jinja2:1
+#: src/octoprint/templates/snippets/settings/printerprofiles/profileEditor.jinja2:9
+#: src/octoprint/templates/tabs/control.jinja2:99
+msgid "General"
+msgstr "Obecné"
+
+#: src/octoprint/plugins/corewizard/templates/corewizard_printerprofile_wizard.jinja2:8
+#: src/octoprint/templates/snippets/settings/printerprofiles/profileEditor.jinja2:10
+msgid "Print bed & build volume"
+msgstr "Tisková podložka & Rozměry tiskového prostoru"
+
+#: src/octoprint/plugins/corewizard/templates/corewizard_printerprofile_wizard.jinja2:9
+#: src/octoprint/templates/snippets/settings/printerprofiles/profileEditor.jinja2:11
+msgid "Axes"
+msgstr "Osy"
+
+#: src/octoprint/plugins/corewizard/templates/corewizard_printerprofile_wizard.jinja2:10
+#: src/octoprint/templates/snippets/settings/printerprofiles/profileEditor.jinja2:12
+msgid "Hotend & extruder"
+msgstr "Tryska & extruder"
+
+#: src/octoprint/plugins/corewizard/templates/corewizard_servercommands_wizard.jinja2:3
+msgid ""
+"<p>\n"
+"    OctoPrint supports calling external commands in order to restart itself or restarting and/or shutting\n"
+"    down the system it is running on. You may configure those here.\n"
+"</p>"
+msgstr "<p>\nOctoPrint podporuje volání externích příkazů pro provedení restartu OctoPrintu nebo restartu a/nebo vypnutí\nsystému. Toto můžeš nastavit zde.\n</p>"
+
+#: src/octoprint/plugins/corewizard/templates/corewizard_servercommands_wizard.jinja2:8
+msgid "OctoPrint related commands"
+msgstr "Příkazy vztahující se k OctoPrintu"
+
+#: src/octoprint/plugins/corewizard/templates/corewizard_servercommands_wizard.jinja2:14
+msgid "System related commands"
+msgstr "Příkazy vztahující se k Systému"
+
+#: src/octoprint/plugins/corewizard/templates/corewizard_webcam_wizard.jinja2:1
+msgid "Webcam &amp; Timelapse Recordings"
+msgstr "Web kamera & Nahrávání časosběru"
+
+#: src/octoprint/plugins/corewizard/templates/corewizard_webcam_wizard.jinja2:3
+msgid ""
+"<p>\n"
+"    If you have a webcam, you may now configure it here.\n"
+"</p>"
+msgstr "<p>\nPokud máš Web kameru, můžeš ji nyní nastavit zde.\n</p>"
+
+#: src/octoprint/plugins/corewizard/templates/corewizard_webcam_wizard.jinja2:7
+#: src/octoprint/templates/dialogs/settings/webcam.jinja2:1
+msgid "Webcam"
+msgstr "Web kamera"
+
+#: src/octoprint/plugins/corewizard/templates/corewizard_webcam_wizard.jinja2:9
+msgid ""
+"<p>\n"
+"    The <strong>Stream URL</strong> is the URL OctoPrint uses to embed the\n"
+"    actual webcam stream (which should be an MJPG stream) into the web\n"
+"    interface. This needs to be reachable <strong>from your browser</strong>.\n"
+"</p><p>\n"
+"    It may be\n"
+"    <ul>\n"
+"        <li>a fully qualified URL (<code>http://host:port/path</code>),</li>\n"
+"        <li>a URL defaulting to the protocol used for accessing the web\n"
+"            interface (e.g. <code>//host:port/path</code>),</li>\n"
+"        <li>an absolute path on the same host as OctoPrint (e.g. <code>/absolute/path</code>) or</li>\n"
+"        <li>a relative path on the same host as OctoPrint (e.g. <code>relative/path</code>)</li>\n"
+"    </ul>\n"
+"</p><p>\n"
+"    The <strong>Snapshot URL</strong> is the URL OctoPrint uses to fetch single\n"
+"    images from the webcam for creating timelapse recordings. This needs to be\n"
+"    a fully qualified URL reachable <strong>from the OctoPrint server</strong>.\n"
+"</p>"
+msgstr "<p>\n <strong>URL Streamu</strong> je URL, které OctoPrint používá k vložení\naktuálního streamu z web kamery (který může být MJPG stream) do web stránek\nrozhraní. Ten musí být dosažitelný <strong>z tvého prohlížeče</strong>\n</p><p>\nMůže to být\n<ul>\n<li>plná adresa URL (<code>http://host:port/cesta</code>),</li>\n<li>nebo výchozí URL protokolu použitého pro přístup na web\nrozhraní (e.g. <code>//host:port/cesta</code>),</li>\n<li>nebo absolutní cesta na stejného hostitele jako OctoPrint (např. <code>/absolutní/cesta</code>) nebo</li>\n<li>relativní  cesta na stejného hostitele jako OctoPrint (např. <code>relativní/cesta</code>)</li>\n</ul>\n</p><p>\n<strong>URL snímků</strong> je URL které OctoPrint používá k získání jednotlivých \nobrázků z web kamery pro vytvoření časosběru. K tomu je třeba\nsprávně nastavená URL dosažitelná <strong>z OctoPrint serveru</strong>\n</p>"
+
+#: src/octoprint/plugins/corewizard/templates/corewizard_webcam_wizard.jinja2:33
+#: src/octoprint/templates/dialogs/settings/webcam.jinja2:8
+msgid "Timelapse Recordings"
+msgstr "Nahrávání časosběru"
+
+#: src/octoprint/plugins/corewizard/templates/corewizard_webcam_wizard.jinja2:35
+msgid ""
+"<p>\n"
+"    To render the snapshots into timelapse recordings, OctoPrint also needs to\n"
+"    know the correct <strong>path to FFMPEG</strong>.\n"
+"</p>"
+msgstr "<p>\nPro převedení snímků do časosběru OctoPrint také potřebuje\nznát správnou <strong>cestu k FFMPEG</strong>.\n</p>"
+
+#: src/octoprint/plugins/cura/static/js/cura.js:176
+#: src/octoprint/static/js/app/viewmodels/settings.js:298
+msgid "The path doesn't exist"
+msgstr "Cesta neexistuje"
+
+#: src/octoprint/plugins/cura/static/js/cura.js:178
+#: src/octoprint/static/js/app/viewmodels/settings.js:300
+msgid "The path is not a file"
+msgstr "Cesta není soubor"
+
+#: src/octoprint/plugins/cura/static/js/cura.js:180
+#: src/octoprint/static/js/app/viewmodels/settings.js:302
+msgid "The path is not an executable"
+msgstr "Cesta není spustitelná"
+
+#: src/octoprint/plugins/cura/static/js/cura.js:183
+#: src/octoprint/static/js/app/viewmodels/settings.js:305
+msgid "The path is valid"
+msgstr "Cesta je platná"
+
+#: src/octoprint/plugins/cura/templates/cura_settings.jinja2:3
+msgid ""
+"\n"
+"    Specify the path to the CuraEngine binary. Note that only\n"
+"    <strong>versions up to and including 15.04</strong> are supported.\n"
+"    CuraEngine version 15.06 or newer is <strong>not</strong>\n"
+"    compatible with this plugin.\n"
+msgstr "\nZadejte cestu k programu CuraEngine. POZOR!\nPodporována je <strong>pouze verze 15.04 a starší!!!</strong>\nCuraEngine verze 15.06 nebo novější <strong>nejsou kompatibilní</strong> s tímto doplňkem.\n"
+
+#: src/octoprint/plugins/cura/templates/cura_settings.jinja2:15
+msgid "Profiles"
+msgstr "Profily"
+
+#: src/octoprint/plugins/cura/templates/cura_settings.jinja2:19
+#: src/octoprint/plugins/cura/templates/cura_wizard.jinja2:25
+msgid "Import Profile..."
+msgstr "Importovat profil"
+
+#: src/octoprint/plugins/cura/templates/cura_settings.jinja2:22
+#, python-format
+msgid ""
+"For more information on configuration and usage please <a "
+"href=\"%(plugin_cura_homepage)s\" target=\"_blank\">see the Plugin's "
+"homepage</a>."
+msgstr "O nastavení a používání se více dozvíte na <a href=\"%(plugin_cura_homepage)s\" target=\"_blank\">, viz domovská stránka s doplňky</a>."
+
+#: src/octoprint/plugins/cura/templates/cura_wizard.jinja2:2
+msgid "Configure CuraEngine"
+msgstr "Nastav CuraEngine"
+
+#: src/octoprint/plugins/cura/templates/cura_wizard.jinja2:3
+msgid ""
+"\n"
+"        The path to CuraEngine has not yet been set up, in order to be able to use\n"
+"        CuraEngine for slicing it needs to be specified.\n"
+"    "
+msgstr "\nCesta ke CuraEngine ještě nebyla nastavena, aby bylo možné použít\nCuraEngine pro rozřezání je nutné ji zadat."
+
+#: src/octoprint/plugins/cura/templates/cura_wizard.jinja2:16
+msgid "Set up a slicing profile"
+msgstr "Nastav profil pro rozřezání"
+
+#: src/octoprint/plugins/cura/templates/cura_wizard.jinja2:17
+msgid ""
+"You haven't imported a slicing profile to use for slicing with CuraEngine\n"
+"    yet. If you plan on slicing from within OctoPrint then you should do this now.\n"
+"    Otherwise just skip this step."
+msgstr "Ještě nebyl importován profil pro rozřezávání pomocí CuraEngine.\nPokud chceš používat rozřezávání pomocí OctoPrintu, měl by jsi to udělat teď.\nJinak můžeš tento krok přeskočit."
+
+#: src/octoprint/plugins/cura/templates/cura_wizard.jinja2:28
+msgid ""
+"\n"
+"            <strong>Don't know where to get a profile?</strong> In order to export\n"
+"            a slicing profile from the Cura desktop UI up to and including version 15.04.06 (not versions\n"
+"            2.1 and later which are actually newer than 15.04), open it, set up your profile, then click\n"
+"            on \"File\" and there on \"Save Profile\". You can import the <code>.ini</code> file this creates\n"
+"            via the \"Import Profile\" button.\n"
+"        "
+msgstr "\n<strong>Nevíš kde vzít profil pro slicer?</strong> Je možné ho exportovat\nz desktopového programu Cura do verze 15.04.06 včetně (ne verze\n2.1 a pozdější než 15.04), otevřít ho, nastavit profil pro rezřezávání a pak kliknout\nna \"File\" a potom na \"Save Profile \". Výsledný <code>.ini</code>  soubor je možné importovat\npomocí tlačítka \"Importovat Profil\" ."
+
+#: src/octoprint/plugins/cura/templates/snippets/settings/cura/engineLog.jinja2:4
+msgid "Log the output of CuraEngine to plugin_cura_engine.log"
+msgstr "Zaznamenat log CuraEngine do plugin_cura_engine.log"
+
+#: src/octoprint/plugins/cura/templates/snippets/settings/cura/enginePath.jinja2:2
+msgid "Path to CuraEngine"
+msgstr "Cesta k CuraEngine"
+
+#: src/octoprint/plugins/cura/templates/snippets/settings/cura/enginePath.jinja2:6
+#: src/octoprint/templates/snippets/settings/webcam/ffmpegPath.jinja2:6
+#: src/octoprint/templates/snippets/settings/webcam/webcamSnapshotUrl.jinja2:6
+#: src/octoprint/templates/snippets/settings/webcam/webcamStreamUrl.jinja2:6
+msgid "Test"
+msgstr "Test"
+
+#: src/octoprint/plugins/cura/templates/snippets/settings/cura/profileImporter.jinja2:4
+msgid "Import Existing Cura Profile"
+msgstr "Importovat existující Cura profil"
+
+#: src/octoprint/plugins/cura/templates/snippets/settings/cura/profileImporter.jinja2:9
+msgid "Profile ini file"
+msgstr "ini soubor profilu"
+
+#: src/octoprint/plugins/cura/templates/snippets/settings/cura/profileImporter.jinja2:13
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:183
+#: src/octoprint/templates/dialogs/settings/appearance.jinja2:90
+msgid "Browse..."
+msgstr "Procházet"
+
+#: src/octoprint/plugins/cura/templates/snippets/settings/cura/profileImporter.jinja2:21
+#: src/octoprint/plugins/cura/templates/snippets/settings/cura/profiles.jinja2:3
+#: src/octoprint/plugins/cura/templates/snippets/settings/cura/profiles.jinja2:8
+#: src/octoprint/templates/snippets/settings/printerprofiles/profileEditorGeneral.jinja2:10
+msgid "Identifier"
+msgstr "Identifikátor"
+
+#: src/octoprint/plugins/cura/templates/snippets/settings/cura/profileImporter.jinja2:33
+msgid "Description"
+msgstr "Popis"
+
+#: src/octoprint/plugins/cura/templates/snippets/settings/cura/profileImporter.jinja2:41
+msgid "Make default profile"
+msgstr "Vytvoř výchozí profil"
+
+#: src/octoprint/plugins/cura/templates/snippets/settings/cura/profileImporter.jinja2:48
+msgid "Overwrite existing file"
+msgstr "Přepsat existující soubor"
+
+#: src/octoprint/plugins/cura/templates/snippets/settings/cura/profileImporter.jinja2:53
+msgid ""
+"\n"
+"            You can import your existing profile <code>.ini</code> files from <strong>Cura 15.04.x or older</strong>\n"
+"            here. Anything but those are <strong>not supported</strong>. That especiallymeans that <code>.json</code>\n"
+"            profiles from Cura 15.06.x and <code>.curaprofile</code> profiles from Cura 2.x will not work, and neither\n"
+"            will custom Cura profile formats that third party tools like e.g. Repetier create.\n"
+"        "
+msgstr "\nSem můžeš importovat své stávající <code>.ini</code> soubory s nastavením z programu <strong>Cura 15.04,x nebo starší</strong>\nŽádné jiné <strong>nejsou podporovány</strong>. Zvláště soubory typu <code>.json</code> \ns profily, které Cura používá od verze 15.06.x , ani soubory <code>.curaprofile</code> z programu Cura 2.x nebudou fungovat.\nStejně tak ani zákaznické profily Cura, které jsou vytvořeny nástroji třetích stran např. Repetier nejsou OctoPrintem odporovány."
+
+#: src/octoprint/plugins/cura/templates/snippets/settings/cura/profileImporter.jinja2:61
+#: src/octoprint/templates/dialogs/settings/accesscontrol.jinja2:80
+#: src/octoprint/templates/dialogs/settings/accesscontrol.jinja2:109
+#: src/octoprint/templates/dialogs/settings/accesscontrol.jinja2:151
+#: src/octoprint/templates/snippets/settings/printerprofiles/profileEditor.jinja2:37
+msgid "Abort"
+msgstr "Zrušit"
+
+#: src/octoprint/plugins/cura/templates/snippets/settings/cura/profileImporter.jinja2:62
+#: src/octoprint/templates/dialogs/settings/accesscontrol.jinja2:81
+#: src/octoprint/templates/dialogs/settings/accesscontrol.jinja2:110
+#: src/octoprint/templates/dialogs/settings/accesscontrol.jinja2:152
+#: src/octoprint/templates/snippets/settings/printerprofiles/profileEditor.jinja2:38
+msgid "Confirm"
+msgstr "Potvrdit"
+
+#: src/octoprint/plugins/cura/templates/snippets/settings/cura/profiles.jinja2:3
+#: src/octoprint/templates/dialogs/settings/logs.jinja2:6
+#: src/octoprint/templates/tabs/timelapse.jinja2:66
+msgid "Sort by"
+msgstr "Řadit podle"
+
+#: src/octoprint/plugins/cura/templates/snippets/settings/cura/profiles.jinja2:3
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:117
+#: src/octoprint/templates/dialogs/settings/logs.jinja2:6
+#: src/octoprint/templates/sidebar/files_header.jinja2:6
+#: src/octoprint/templates/tabs/timelapse.jinja2:66
+msgid "ascending"
+msgstr "vzestupně"
+
+#: src/octoprint/plugins/cura/templates/snippets/settings/cura/profiles.jinja2:18
+msgid "Make default"
+msgstr "Uložit jako výchozí"
+
+#: src/octoprint/plugins/cura/templates/snippets/settings/cura/profiles.jinja2:18
+#: src/octoprint/templates/snippets/settings/printerprofiles/profiles.jinja2:14
+msgid "Delete Profile"
+msgstr "Smazat profil"
+
+#: src/octoprint/plugins/pluginmanager/__init__.py:119
+msgid "Plugin Manager"
+msgstr "Manažer doplňků"
+
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:244
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:409
+msgid "Installing plugin..."
+msgstr "Instalace doplňku..."
+
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:244
+msgid "Installing plugin from uploaded archive..."
+msgstr "Instalování doplňku z uploadnutého archívu..."
+
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:259
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:350
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:427
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:468
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:586
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:789
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:819
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:836
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:853
+msgid "Something went wrong"
+msgstr "Něco se pokazilo"
+
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:260
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:351
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:428
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:469
+msgid "Please consult octoprint.log for details"
+msgstr "Prosím prohlédněte si octoprint.log kvůli detailům"
+
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:411
+#, python-format
+msgid "Installing plugin \"%(name)s\" from %(url)s..."
+msgstr "Instalace doplňku \"%(name)s\" z %(url)s..."
+
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:413
+#, python-format
+msgid "Installing plugin from %(url)s..."
+msgstr "Instalace doplňku z %(url)s..."
+
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:416
+msgid "Reinstalling plugin..."
+msgstr "Reinstalování doplňku..."
+
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:417
+#, python-format
+msgid "Reinstalling plugin \"%(name)s\" from %(url)s..."
+msgstr "Reinstalování doplňku \"%(name)s\" z %(url)s..."
+
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:462
+msgid "Uninstalling plugin..."
+msgstr "Odinstalování doplňku..."
+
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:462
+#, python-format
+msgid "Uninstalling plugin \"%(name)s\""
+msgstr "Odinstalování doplňku \"%(name)s\""
+
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:543
+msgid "Reinstall"
+msgstr "Reinstalace"
+
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:543
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:172
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:188
+msgid "Install"
+msgstr "Instalace"
+
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:543
+msgid "Incompatible"
+msgstr "Nekompatibilní"
+
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:572
+msgid "Restart now"
+msgstr "Restartovat nyní"
+
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:575
+msgid "This will restart your OctoPrint server."
+msgstr "Toto restartuje OctoPrint server"
+
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:580
+msgid "Restart in progress"
+msgstr "Probíhá restart"
+
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:581
+msgid "The server is now being restarted in the background"
+msgstr "Server je nyní restartován na pozadí"
+
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:587
+msgid ""
+"Trying to restart the server produced an error, please check octoprint.log "
+"for details. You'll have to restart manually."
+msgstr "Pokus o restartování serveru způsobil chybu, zkontroluj prosím octoprint.log pro další podrobnosti. Je třeba provést restart ručně."
+
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:605
+#: src/octoprint/templates/overlays/reloadui.jinja2:14
+msgid "Reload now"
+msgstr "Znovu načíst"
+
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:659
+msgid "Done!"
+msgstr "Hotovo!"
+
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:683
+msgid "Disabled due to active safe mode"
+msgstr "Vypnuto z důvodu aktivního bezpečného modu"
+
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:685
+msgid "Enable Plugin"
+msgstr "Povolit doplněk"
+
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:688
+msgid "Disable Plugin"
+msgstr "Zakázat doplněk"
+
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:773
+msgid "Plugin installed"
+msgstr "Doplněk nainstalován"
+
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:774
+msgid ""
+"A plugin was installed successfully, however it was impossible to detect "
+"which one. Please Restart OctoPrint to make sure everything will be "
+"registered properly"
+msgstr "Doplněk byl nainstalován správně, bohužel není možné zjistit který. Restartujte pro jistotu Octoprint aby vše fungovalo na 100%"
+
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:778
+#, python-format
+msgid "Plugin \"%(name)s\" reinstalled"
+msgstr "Doplněk \"%(name)s\" přeinstalován"
+
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:779
+msgid "The plugin was reinstalled successfully"
+msgstr "Doplněk byl přeinstalován úspěšně"
+
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:780
+msgid ""
+"The plugin was reinstalled successfully, however a restart of OctoPrint is "
+"needed for that to take effect."
+msgstr "Doplněk byl přeinstalován úspěšně, je ale třeba restartovat Octoprint aby byly změny aplikovány."
+
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:781
+msgid ""
+"The plugin was reinstalled successfully, however a reload of the page is "
+"needed for that to take effect."
+msgstr "Doplněk byl přeinstalován úspěšně, je ale třeba znovu načíst stránku aby byly změny viditelné."
+
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:783
+#, python-format
+msgid "Plugin \"%(name)s\" installed"
+msgstr "Doplněk \"%(name)s\" nainstalován"
+
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:784
+msgid "The plugin was installed successfully"
+msgstr "Doplněk byl v pořádku nainstalován"
+
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:785
+msgid ""
+"The plugin was installed successfully, however a restart of OctoPrint is "
+"needed for that to take effect."
+msgstr "Doplněk byl nainstalován úspěšně, je ale třeba restartovat Octoprint aby byly změny aplikovány."
+
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:786
+msgid ""
+"The plugin was installed successfully, however a reload of the page is "
+"needed for that to take effect."
+msgstr "Doplněk byl nainstalován úspěšně, je ale třeba znovu načíst stránku aby byly změny viditelné."
+
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:797
+#, python-format
+msgid "Reinstalling the plugin from URL \"%(url)s\" failed: %(reason)s"
+msgstr "Reinstalování doplňku z adresy \"%(url)s\" selhalo z důvodu: %(reason)s"
+
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:799
+#, python-format
+msgid "Installing the plugin from URL \"%(url)s\" failed: %(reason)s"
+msgstr "Instalace doplňku z adresy \"%(url)s\" selhalo z důvodu: %(reason)s"
+
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:803
+#, python-format
+msgid ""
+"Reinstalling the plugin from URL \"%(url)s\" failed, please see the log for "
+"details."
+msgstr "Reinstalace doplňku z adresy \"%(url)s\" selhalo, zkontrolujte log soubor kvůli detailům."
+
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:805
+#, python-format
+msgid ""
+"Installing the plugin from URL \"%(url)s\" failed, please see the log for "
+"details."
+msgstr "Instalace doplňku z adresy \"%(url)s\" selhalo,zkontrolujte log soubor kvůli detailům."
+
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:814
+#, python-format
+msgid "Plugin \"%(name)s\" uninstalled"
+msgstr "Doplněk \"%(name)s\" odinstalován"
+
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:815
+msgid "The plugin was uninstalled successfully"
+msgstr "Doplněk byl v pořádku odinstalován"
+
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:816
+msgid ""
+"The plugin was uninstalled successfully, however a restart of OctoPrint is "
+"needed for that to take effect."
+msgstr "Doplněk byl odinstalován správně,je potřeba restartovat Octoprint aby se uplatnily změny."
+
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:817
+msgid ""
+"The plugin was uninstalled successfully, however a reload of the page is "
+"needed for that to take effect."
+msgstr "Doplněk byl odinstalován správně,je potřeba restartovat Octoprint aby se uplatnily změny."
+
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:821
+#, python-format
+msgid "Uninstalling the plugin failed: %(reason)s"
+msgstr "Odinstalování doplňku selhalo %(reason)s"
+
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:823
+msgid "Uninstalling the plugin failed, please see the log for details."
+msgstr "Odinstalování doplňku selhalo, zkontroluj log soubor kvůli detailům."
+
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:831
+#, python-format
+msgid "Plugin \"%(name)s\" enabled"
+msgstr "Doplněk \"%(name)s\" povolen"
+
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:832
+msgid "The plugin was enabled successfully."
+msgstr "Doplněk byl úspěšně povolen."
+
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:833
+msgid ""
+"The plugin was enabled successfully, however a restart of OctoPrint is "
+"needed for that to take effect."
+msgstr "Doplněk byl úspěšně povolen, bohužel je potřeba kvůli změnám restartovat Octoprint"
+
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:834
+msgid ""
+"The plugin was enabled successfully, however a reload of the page is needed "
+"for that to take effect."
+msgstr "Doplněk byl úspěšně povolen, bohužel je potřeba kvůli změnám znovu načíst webovou stránku Octoprintu."
+
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:838
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:855
+#, python-format
+msgid "Toggling the plugin failed: %(reason)s"
+msgstr "Přepnutí doplňku selhalo: %(reason)s"
+
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:840
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:857
+msgid "Toggling the plugin failed, please see the log for details."
+msgstr "Přepnutí doplňku selhalo, prosím zkontrolujte log soubor kvůli detailům."
+
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:848
+#, python-format
+msgid "Plugin \"%(name)s\" disabled"
+msgstr "Doplněk \"%(name)s\" vypnut."
+
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:849
+msgid "The plugin was disabled successfully."
+msgstr "Doplněk byl úspěšně vypnut."
+
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:850
+msgid ""
+"The plugin was disabled successfully, however a restart of OctoPrint is "
+"needed for that to take effect."
+msgstr "Doplněk byl vypnut úspěšně, je ale třeba restartovat Octoprint aby byly změny aplikovány."
+
+#: src/octoprint/plugins/pluginmanager/static/js/pluginmanager.js:851
+msgid ""
+"The plugin was disabled successfully, however a reload of the page is needed"
+" for that to take effect."
+msgstr "Doplněk byl úspěšně vypnut, bohužel je potřeba kvůli změnám znovu načíst webovou stránku Octoprintu."
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:3
+msgid ""
+"Take note that all plugin management functionality is disabled while your "
+"printer is printing."
+msgstr "Mějte na paměti, že manažer doplňků není aktivní, když tiskárna tiskne."
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:8
+msgid ""
+"\n"
+"    The <code>pip</code> command could not be found or does not work correctly\n"
+"    for this installation of OctoPrint - please consult the log file for details\n"
+"    and if necessary configure it manually. No installation and uninstallation of plugin\n"
+"    packages is possible while <code>pip</code> is unavailable.\n"
+msgstr "\nPřikaz  <code>pip</code>  nebyl nalezen, nebo nepracuje správně\npro tuto instalaci OctoPrintu - prosím zkontroluj log soubor pro podrobnosti\na pokud je to nezbytné, proveď ruční nastavení. Není možná žádná instalace ani odinstalování doplňků\ndokud příkaz <code>pip</code> nefunguje.\n"
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:17
+msgid ""
+"\n"
+"    Safe mode is currently active. All third party plugins are disabled and cannot be\n"
+"    enabled. Installation of plugin packages is disabled.\n"
+msgstr "\nBezpečný mod je nyní aktivní. Všechny doplňky třetích stran jsou nyní vypnuty a nemohou být\naktivovány. Instalace doplňků je nyní vypnuta.\n"
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:28
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:216
+#: src/octoprint/plugins/softwareupdate/templates/softwareupdate_settings.jinja2:20
+#: src/octoprint/plugins/softwareupdate/templates/softwareupdate_settings.jinja2:73
+msgid "Plugin Configuration"
+msgstr "Nastavení doplňku"
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:31
+msgid "Installed Plugins"
+msgstr "Nainstalované doplňky"
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:43
+msgid "Bundled with OctoPrint"
+msgstr "Svázáno s OctoPrintem"
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:43
+msgid "Cannot be uninstalled through OctoPrint"
+msgstr "Nemůže být odinstalováno pomocí OctoPrintu"
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:43
+msgid "Restart of OctoPrint needed for changes to take effect"
+msgstr "Restart OctoPrintu je třeba pro provedení změn"
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:43
+msgid "Pending install"
+msgstr "Probíhající instalace"
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:43
+msgid "Pending uninstall"
+msgstr "Probíhající odinstalace"
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:43
+msgid "Disabled due to safe mode"
+msgstr "Vypnuto z důvodu bezpečného modu"
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:46
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:141
+msgid "Homepage"
+msgstr "Domácí stránka"
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:53
+msgid "Uninstall Plugin"
+msgstr "Odinstalovat doplněk"
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:70
+msgid "Get More..."
+msgstr "Získat více..."
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:104
+msgid "Install new Plugins..."
+msgstr "Nainstalovat nové doplňky..."
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:111
+#, python-format
+msgid "... from the <a href=\"%(url)s\" target=\"_blank\">Plugin Repository</a>"
+msgstr "... ze <a href=\"%(url)s\" target=\"_blank\">Seznamu doplňků</a>"
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:117
+msgid "Sort by title"
+msgstr "Seřadit podle názvu"
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:118
+msgid "Sort by publication date"
+msgstr "Seřadit podle data"
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:118
+#: src/octoprint/templates/dialogs/settings/logs.jinja2:6
+#: src/octoprint/templates/sidebar/files_header.jinja2:7
+#: src/octoprint/templates/sidebar/files_header.jinja2:8
+#: src/octoprint/templates/tabs/timelapse.jinja2:66
+msgid "descending"
+msgstr "sestupně"
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:120
+msgid "Only show uninstalled plugins"
+msgstr "Zobrazit pouze odinstalované doplňky"
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:121
+msgid "Only show compatible plugins"
+msgstr "Zobrazit pouze kompatibilní doplňky"
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:123
+msgid "Refresh list from repository"
+msgstr "Aktualizovat list seznamu"
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:129
+#: src/octoprint/templates/sidebar/files.jinja2:2
+msgid "Search..."
+msgstr "Hledat..."
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:140
+msgid "Details"
+msgstr "Detaily"
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:157
+msgid "Sadly the repository is currently not available"
+msgstr "Bohužel repozitář není nyní dostupný"
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:160
+msgid "Is your OctoPrint installation connected to the internet?"
+msgstr "Je tato Octoprint instance připojená k internetu?"
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:165
+msgid "... from URL"
+msgstr "... z adresy"
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:170
+msgid "Enter URL..."
+msgstr "Vložit adresu..."
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:174
+msgid "This does not look like a valid \"http://\" or \"https://\" URL."
+msgstr "Toto nevypadá jako správný odkaz http:// nebo https://"
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:177
+msgid "... from an uploaded archive"
+msgstr "...z uploadovaného archívu"
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:190
+msgid ""
+"This does not look like a valid plugin archive. Valid plugin archives should"
+" be either zip files or tarballs and have the extension \".zip\", "
+"\".tar.gz\", \".tgz\" or \".tar\""
+msgstr "Chybná přípona. Povolené přípony jsou zip, tar.gz, tgz nebo tar"
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:194
+#: src/octoprint/plugins/softwareupdate/templates/softwareupdate_settings.jinja2:63
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:111
+#: src/octoprint/templates/dialogs/settings/webcam.jinja2:15
+#: src/octoprint/templates/tabs/terminal.jinja2:27
+msgid "Advanced options"
+msgstr "Pokročilé volby"
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:200
+msgid ""
+"Use <code>--process-dependency-links</code> with <code>pip install</code>"
+msgstr "Použijte <code>--process-dependency-links</code> s <code>pip install</code>"
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:220
+msgid ""
+"You should normally <strong>not</strong> have to change <strong>any</strong>"
+" of the following settings, they are purely provided for convenience here."
+msgstr "Normálně <strong>není</strong> nutné provádět <strong>žádné</strong> z následujících nastavení, jsou zde uvedena pouze pro větší pohodlí."
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:222
+msgid "Plugin repository configuration"
+msgstr "Nastavení repositáře doplňků"
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:224
+msgid ""
+"URL of the Plugin Repository to use. You should normally not have to change "
+"this."
+msgstr "URL adresa repozitáře s doplňky. Za normálních okolností netřeba měnit."
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:225
+msgid "Repository URL"
+msgstr "URL repozitáře"
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:230
+msgid ""
+"How long to cache repository data, in minutes. You should normally not have "
+"to change this."
+msgstr "Jak dlouho se mají ukládat cache data, v minutách. Za normálních okolností netřeba měnit."
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:231
+msgid "Repository cache TTL"
+msgstr "TTL cache repozitáře"
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:240
+msgid "pip configuration"
+msgstr "Nastavení příkazu pip"
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:242
+msgid ""
+"Additional arguments for the pip command. You should normally not have to "
+"change this."
+msgstr "Další argumenty pro příkaz pip. Normálně není třeba toto měnit."
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:243
+msgid "Additional arguments"
+msgstr "Další argumenty"
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:251
+msgid ""
+"Force the use of the <code>--user</code> flag with <code>pip install</code>"
+msgstr "Vynucené použití <code>--user</code> příznaku pro  <code>pip install</code>"
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:258
+#: src/octoprint/plugins/softwareupdate/templates/softwareupdate.jinja2:26
+#: src/octoprint/plugins/softwareupdate/templates/softwareupdate_settings.jinja2:92
+#: src/octoprint/static/js/app/helpers.js:639
+#: src/octoprint/templates/dialogs/files.jinja2:18
+#: src/octoprint/templates/dialogs/slicing.jinja2:57
+#: src/octoprint/templates/sidebar/state.jinja2:25
+msgid "Cancel"
+msgstr "Zrušit"
+
+#: src/octoprint/plugins/pluginmanager/templates/pluginmanager_settings.jinja2:259
+#: src/octoprint/plugins/softwareupdate/templates/softwareupdate_settings.jinja2:93
+msgid "Save"
+msgstr "Uložit"
+
+#: src/octoprint/plugins/softwareupdate/__init__.py:533
+#: src/octoprint/plugins/softwareupdate/templates/softwareupdate_wizard.jinja2:1
+msgid "Software Update"
+msgstr "Aktualizace programu"
+
+#: src/octoprint/plugins/softwareupdate/__init__.py:869
+#: src/octoprint/server/views.py:555
+#: src/octoprint/static/js/app/viewmodels/appearance.js:13
+#: src/octoprint/static/js/app/viewmodels/appearance.js:18
+#: src/octoprint/static/js/app/viewmodels/appearance.js:20
+#: src/octoprint/static/js/app/viewmodels/appearance.js:25
+#: src/octoprint/static/js/app/viewmodels/appearance.js:27
+#: src/octoprint/templates/dialogs/about/about.jinja2:1
+msgid "OctoPrint"
+msgstr "Octoprint"
+
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:219
+msgid "Release"
+msgstr "Release - Vydané"
+
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:220
+msgid "Commit"
+msgstr "Commit - Navrhované"
+
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:259
+#, python-format
+msgid "%(name)s: %(version)s"
+msgstr "%(name)s: %(version)s"
+
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:262
+msgid "unknown"
+msgstr "neznámý"
+
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:292
+msgid "There are updates available for the following components:"
+msgstr "Jsou dostupné aktualizace pro tyto součásti:"
+
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:300
+#: src/octoprint/plugins/softwareupdate/templates/softwareupdate.jinja2:14
+msgid "Release Notes"
+msgstr "Poznámky k verzi"
+
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:306
+msgid ""
+"Those components marked with <i class=\"icon-ok\"></i> can be updated "
+"directly."
+msgstr "Komponenty označené <i class=\"icon-ok\"></i> můžou být aktualizovány přímo."
+
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:311
+msgid "Update Available"
+msgstr "Dostupná aktualizace"
+
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:322
+msgid "Ignore"
+msgstr "Ignorovat"
+
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:326
+msgid ""
+"You can make this message display again via \"Settings\" > \"Software "
+"Update\" > \"Check for update now\""
+msgstr "Zprávu můžete znovu zobrazit pomocí \"Nastavení\" > \"Aktualizace programu\" > \"Zkontrolovat aktualizace nyní\""
+
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:330
+msgid "Update now"
+msgstr "Aktualizovat nyní"
+
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:347
+msgid "Everything is up-to-date"
+msgstr "Všechno je aktuální"
+
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:406
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:420
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:561
+msgid "Updating..."
+msgstr "Aktualizuji..."
+
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:407
+msgid "Now updating, please wait."
+msgstr "Probíhá aktualizace prosím čekejte."
+
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:420
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:561
+msgid "Updating, please wait."
+msgstr "Aktualizuji, prosím vyčkej."
+
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:425
+msgid "Update not started!"
+msgstr "Aktualizace nezačala!"
+
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:426
+msgid ""
+"The update could not be started. Is it already active? Please consult the "
+"log for details."
+msgstr "Aktualizace nemůže být spuštěna. Není už aktivní? Zkontrolujte log soubor kvůli detailům."
+
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:442
+msgid "Can't update while printing"
+msgstr "Při tisku nelze aktualizovat."
+
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:443
+msgid ""
+"A print job is currently in progress. Updating will be prevented until it is"
+" done."
+msgstr "Probíhá tisk. Aktualizace bude provedena až tisk skončí."
+
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:564
+#, python-format
+msgid "Now updating %(name)s to %(version)s"
+msgstr "Aktualizace %(name)s na %(version)s"
+
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:583
+msgid "Update successful, restarting!"
+msgstr "Aktualizace úspěšná, restartování!"
+
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:584
+msgid "The update finished successfully and the server will now be restarted."
+msgstr "Aktualizace proběhla úspěšně a server teď bude restartován."
+
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:601
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:650
+msgid "Restart failed"
+msgstr "Restart selhal"
+
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:602
+msgid ""
+"The server apparently did not restart by itself, you'll have to do it "
+"manually. Please consult the log file on what went wrong."
+msgstr "Vypadá to že server se sám nerestartoval, budete to muset provést manuálně. Zkontrolujte log soubor kvůli detailům."
+
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:624
+msgid "The update finished successfully, please restart OctoPrint now."
+msgstr "Aktualizace proběhla úspěšně, prosím restartujte OctoPrint."
+
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:626
+msgid "The update finished successfully, please reboot the server now."
+msgstr "Aktualizace proběhla úspěšně, prosím restartujte server."
+
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:629
+msgid "Update successful, restart required!"
+msgstr "Aktualizace byla úspěšná a je vyžadován restart!"
+
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:645
+msgid ""
+"Restarting OctoPrint failed, please restart it manually. You might also want"
+" to consult the log file on what went wrong here."
+msgstr "Restartování octoprintu selhalo, proveďte jej manuálně! Také by jste měli zkontrolovat log soubor kvůli detailům selhání."
+
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:647
+msgid ""
+"Rebooting the server failed, please reboot it manually. You might also want "
+"to consult the log file on what went wrong here."
+msgstr "Restartování serveru selhalo, proveďte jej manuálně! Také by jste měli zkontrolovat log soubor kvůli detailům."
+
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:666
+msgid "Update successful!"
+msgstr "Aktualizace úspěšná!"
+
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:667
+msgid "The update finished successfully."
+msgstr "Aktualizace proběhla úspěšně."
+
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:682
+msgid "Update failed!"
+msgstr "Aktualizace se nezdařila!"
+
+#: src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js:683
+msgid ""
+"The update did not finish successfully. Please consult the log for details."
+msgstr "Aktualizace se nezdařila. Podívej se do logu."
+
+#: src/octoprint/plugins/softwareupdate/templates/softwareupdate.jinja2:4
+msgid "Are you sure you want to update now?"
+msgstr "Jsi si jistý, že chceš aktualizaci spustit právě teď?"
+
+#: src/octoprint/plugins/softwareupdate/templates/softwareupdate.jinja2:8
+msgid "This will update the following components and restart the server:"
+msgstr "Toto aktualizuje následující části a pak restartuje server:"
+
+#: src/octoprint/plugins/softwareupdate/templates/softwareupdate.jinja2:19
+msgid ""
+"Be sure to read through any linked release notes, especially those for "
+"OctoPrint since they might contain important information you need to know "
+"<strong>before</strong> upgrading."
+msgstr "Určitě si přečtěte všechny poznámky, které se vztahují k tomuto vydání OctoPrintu. Mohou obsahovat důležité informace, které potřebujete znát <strong>ještě před</strong> vlastní aktualizací."
+
+#: src/octoprint/plugins/softwareupdate/templates/softwareupdate.jinja2:22
+#: src/octoprint/static/js/app/helpers.js:638
+msgid "Are you sure you want to proceed?"
+msgstr "Jsi si jistý že chceš pokračovat?"
+
+#: src/octoprint/plugins/softwareupdate/templates/softwareupdate.jinja2:27
+#: src/octoprint/static/js/app/helpers.js:640
+msgid "Proceed"
+msgstr "Pokračovat"
+
+#: src/octoprint/plugins/softwareupdate/templates/softwareupdate_settings.jinja2:1
+msgid ""
+"\n"
+"    Please configure the <strong>checkout folder</strong> of OctoPrint, otherwise\n"
+"    this plugin won't be able to update it. Click on the <i class=\"icon-wrench\"></i> button\n"
+"    to do this. Also refer to the <a href=\"https://github.com/foosel/OctoPrint/wiki/Plugin:-Software-Update\" target=\"_blank\">Documentation</a>.\n"
+msgstr "\nNastav <strong>checkout folder</strong> OctoPrintu, jinak nebude tento doplněk možno aktualizovat. Klikni na tlačítko <i class=\"icon-wrench\"></i>. Další informace jsou v  <a href=\"https://github.com/foosel/OctoPrint/wiki/Plugin:-Software-Update\" target=\"_blank\">Dokumentaci</a>.\n"
+
+#: src/octoprint/plugins/softwareupdate/templates/softwareupdate_settings.jinja2:6
+msgid ""
+"\n"
+"    <p>\n"
+"        <strong>You are running a non-release version of OctoPrint but are tracking OctoPrint\n"
+"        releases.</strong>\n"
+"    </p><p>\n"
+"        You probably want OctoPrint to track the matching development version instead.\n"
+"        If you have a local OctoPrint checkout folder switched to another branch,\n"
+"        <strong>simply switching over to \"Commit\" tracking</strong> will already\n"
+"        take care of that. Otherwise please take a look at the\n"
+"        <a href=\"https://github.com/foosel/OctoPrint/wiki/Plugin:-Software-Update\" target=\"_blank\">Documentation</a>.\n"
+"    </p>\n"
+msgstr "\n    <p>\n        <strong>Provozuješ neoficiální verzi OctoPrintu, ale sleduješ oficiální verzi OctoPrintu.</strong>\n    </p><p>\n        Pravděpodobně chceš, aby OctoPrint místo toho následoval správnou vývojovou verzi.\n        Pokud máš místní OctoPrint kontrolní adresář přepnutý do jiné vývojové verze,\n        <strong>Jednoduché přepnutí na \"Commit - Navrhované\" sledování</strong> to zařídí. Jinak se prosím podívej na \n        <a href=\"https://github.com/foosel/OctoPrint/wiki/Plugin:-Software-Update\" target=\"_blank\">Dokumentaci</a>.\n    </p>\n"
+
+#: src/octoprint/plugins/softwareupdate/templates/softwareupdate_settings.jinja2:23
+msgid "Current versions"
+msgstr "Současné verze"
+
+#: src/octoprint/plugins/softwareupdate/templates/softwareupdate_settings.jinja2:29
+msgid "Update available"
+msgstr "Dostupná aktualizace"
+
+#: src/octoprint/plugins/softwareupdate/templates/softwareupdate_settings.jinja2:32
+msgid "Update not possible, configuration ok?"
+msgstr "Aktualizace není možná, je správně nakonfigurováno?"
+
+#: src/octoprint/plugins/softwareupdate/templates/softwareupdate_settings.jinja2:34
+msgid "Installed:"
+msgstr "Nainstalováno:"
+
+#: src/octoprint/plugins/softwareupdate/templates/softwareupdate_settings.jinja2:35
+msgid "Available:"
+msgstr "Dostupné:"
+
+#: src/octoprint/plugins/softwareupdate/templates/softwareupdate_settings.jinja2:36
+msgid "Release Notes:"
+msgstr "Poznámky k verzi:"
+
+#: src/octoprint/plugins/softwareupdate/templates/softwareupdate_settings.jinja2:60
+msgid "Check for update now"
+msgstr "Zkontrolovat aktualizace nyní"
+
+#: src/octoprint/plugins/softwareupdate/templates/softwareupdate_settings.jinja2:65
+msgid "Force check for update (overrides cache used for update checks)"
+msgstr "Vynutit kontrolu aktualizace"
+
+#: src/octoprint/plugins/softwareupdate/templates/softwareupdate_settings.jinja2:66
+msgid "Force update now (even if no new versions are available)"
+msgstr "Vynutit aktualizaci (i když není nová verze)"
+
+#: src/octoprint/plugins/softwareupdate/templates/softwareupdate_settings.jinja2:81
+msgid "Version cache TTL"
+msgstr "Délka vyrovnávací paměti pro verze"
+
+#: src/octoprint/plugins/softwareupdate/templates/softwareupdate_wizard.jinja2:3
+msgid ""
+"<p>\n"
+"    OctoPrint can update itself via <code>git</code>, but it needs to know its checkout folder and the way\n"
+"    it should track available updates in order to be able to do that. You can configure that here.\n"
+"</p>"
+msgstr "<p>\nOctoPrint se může sám aktualizovat pomocí <code>git</code>, ale potřebuje znát jeho kontrolní adresář a způsob\njak může kontrolovat jaké aktualizace jsou k dispozici. Toto můžeš nastavit zde.\n</p>"
+
+#: src/octoprint/plugins/softwareupdate/templates/softwareupdate_wizard.jinja2:13
+msgid ""
+"<p>\n"
+"    If you are running a release version of OctoPrint, leave at \"Release\" tracking. If you are running a different\n"
+"    branch however, you should setup \"Commit\" tracking.\n"
+"</p>"
+msgstr "<p>\nPokud provozuješ vydanou verzi OctoPrintu, ponech nastavené \"Release - Vydané\" sledování.\nPokud provozuješ jinou\nverzi, ponech nastavené \"Commit - Navrhované\" sledování.\n</p>"
+
+#: src/octoprint/plugins/softwareupdate/templates/snippets/plugins/softwareupdate/checkoutFolder.jinja2:2
+msgid "OctoPrint checkout folder"
+msgstr "OctoPrint kontrolní adresář"
+
+#: src/octoprint/plugins/softwareupdate/templates/snippets/plugins/softwareupdate/releaseChannel.jinja2:2
+msgid "OctoPrint Release Channel"
+msgstr "Kanál s vydáním Octoprintu"
+
+#: src/octoprint/plugins/softwareupdate/templates/snippets/plugins/softwareupdate/releaseChannel.jinja2:5
+#, python-format
+msgid ""
+"Make sure you have read <a href=\"%(url)s\" target=\"_blank\" "
+"rel=\"noreferrer noopener\">\"Using Release Channels\"</a> before switching "
+"to a release channel other than \"Stable\""
+msgstr "Ujisti se, že jsi četl  <a href=\"%(url)s\" target=\"_blank\" rel=\"noreferrer noopener\">\"Using Release Channels\"</a>  před přepnutím kanálu s vydáním jinam než do \"Stable\""
+
+#: src/octoprint/plugins/softwareupdate/templates/snippets/plugins/softwareupdate/versionTracking.jinja2:2
+msgid "OctoPrint version tracking"
+msgstr "Sledování verzí OctoPrintu"
+
+#: src/octoprint/server/views.py:465
+msgid "Plugins"
+msgstr "Doplňky - Pluginy"
+
+#: src/octoprint/server/views.py:522
+msgid "Connection"
+msgstr "Připojení"
+
+#: src/octoprint/server/views.py:523
+#: src/octoprint/templates/sidebar/state.jinja2:1
+msgid "State"
+msgstr "Stav"
+
+#: src/octoprint/server/views.py:524
+msgid "Files"
+msgstr "Soubory"
+
+#: src/octoprint/server/views.py:530
+msgid "Temperature"
+msgstr "Teplota"
+
+#: src/octoprint/server/views.py:531
+msgid "Control"
+msgstr "Ovládání"
+
+#: src/octoprint/server/views.py:532
+msgid "GCode Viewer"
+msgstr "Gcode prohlížeč"
+
+#: src/octoprint/server/views.py:533
+msgid "Terminal"
+msgstr "Terminál"
+
+#: src/octoprint/server/views.py:534
+#: src/octoprint/templates/sidebar/state.jinja2:4
+msgid "Timelapse"
+msgstr "Časosběr"
+
+#: src/octoprint/server/views.py:540
+msgid "Printer"
+msgstr "Tiskárna"
+
+#: src/octoprint/server/views.py:542
+msgid "Serial Connection"
+msgstr "Sériové připojení"
+
+#: src/octoprint/server/views.py:543
+#: src/octoprint/templates/dialogs/settings/printerprofiles.jinja2:1
+msgid "Printer Profiles"
+msgstr "Profily tiskárny"
+
+#: src/octoprint/server/views.py:544
+msgid "Temperatures"
+msgstr "Teploty"
+
+#: src/octoprint/server/views.py:545
+msgid "Terminal Filters"
+msgstr "Filtry terminálu"
+
+#: src/octoprint/server/views.py:546
+msgid "GCODE Scripts"
+msgstr "GCODE skripty"
+
+#: src/octoprint/server/views.py:548 src/octoprint/server/views.py:550
+msgid "Features"
+msgstr "Funkce"
+
+#: src/octoprint/server/views.py:552
+msgid "GCODE Visualizer"
+msgstr "GCODE prohlížeč"
+
+#: src/octoprint/server/views.py:553
+msgid "API"
+msgstr "API"
+
+#: src/octoprint/server/views.py:558
+#: src/octoprint/templates/dialogs/settings/folders.jinja2:2
+#: src/octoprint/templates/sidebar/files_header.jinja2:10
+msgid "Folders"
+msgstr "Složky"
+
+#: src/octoprint/server/views.py:559
+msgid "Appearance"
+msgstr "Vzhled"
+
+#: src/octoprint/server/views.py:560
+#: src/octoprint/templates/dialogs/settings/logs.jinja2:2
+msgid "Logs"
+msgstr "Logy"
+
+#: src/octoprint/server/views.py:561
+msgid "Server"
+msgstr "Server"
+
+#: src/octoprint/server/views.py:567
+msgid "Access"
+msgstr "Přístup"
+
+#: src/octoprint/server/views.py:568
+msgid "Interface"
+msgstr "Rozhraní"
+
+#: src/octoprint/server/views.py:584
+msgid "Start"
+msgstr "Start"
+
+#: src/octoprint/server/views.py:585
+#: src/octoprint/templates/dialogs/wizard.jinja2:57
+msgid "Finish"
+msgstr "Konec"
+
+#: src/octoprint/server/api/system.py:146
+#: src/octoprint/templates/snippets/settings/server/serverCommandSystemShutdown.jinja2:2
+msgid "Shutdown system"
+msgstr "Vypnout systém"
+
+#: src/octoprint/server/api/system.py:147
+msgid "You are about to shutdown the system."
+msgstr "Opravdu chceš vypnout systém?"
+
+#: src/octoprint/server/api/system.py:150
+msgid "Reboot system"
+msgstr "Restart systému"
+
+#: src/octoprint/server/api/system.py:151
+msgid "You are about to reboot the system."
+msgstr "Opravdu chceš restartovat systém?"
+
+#: src/octoprint/server/api/system.py:154
+#: src/octoprint/templates/snippets/settings/server/serverCommandServerRestart.jinja2:2
+msgid "Restart OctoPrint"
+msgstr "Restartovat OctoPrint"
+
+#: src/octoprint/server/api/system.py:155
+msgid "You are about to restart the OctoPrint server."
+msgstr "Opravdu chceš restartovat OctoPrint server?"
+
+#: src/octoprint/server/api/system.py:158
+msgid "Restart OctoPrint in safe mode"
+msgstr "Restartovat OctoPrint do bezpečného modu"
+
+#: src/octoprint/server/api/system.py:159
+msgid "You are about to restart the OctoPrint server in safe mode."
+msgstr "Opravdu chceš restartovat OctoPrint do bezpečného modu?"
+
+#: src/octoprint/static/js/app/dataupdater.js:79
+#: src/octoprint/static/js/app/dataupdater.js:98
+#: src/octoprint/static/js/app/helpers.js:566
+#: src/octoprint/templates/overlays/offline.jinja2:6
+msgid "Server is offline"
+msgstr "Server je vypnutý"
+
+#: src/octoprint/static/js/app/dataupdater.js:80
+msgid ""
+"The server appears to be offline, at least I'm not getting any response from"
+" it. I'll try to reconnect automatically <strong>over the next couple of "
+"minutes</strong>, however you are welcome to try a manual reconnect anytime "
+"using the button below."
+msgstr "Vypadá to, že je server vypnutý, nedostávám od něj žádnou odpověď. Budu se snažit připojit automaticky <strong> následujících pár minut</strong>, nicméně můžete zkusit manuální znovu připojení pomocí tlačítka níže."
+
+#: src/octoprint/static/js/app/dataupdater.js:99
+msgid ""
+"The server appears to be offline, at least I'm not getting any response from"
+" it. I <strong>could not reconnect automatically</strong>, but you may try a"
+" manual reconnect using the button below."
+msgstr "Vypadá to že je server vypnutý, nedostávám od něj žádnou odpověď.<strong> Nemohl jsem se připojit automaticky</strong>, nicméně můžete zkusit manuální znovu připojení pomocí tlačítka níže."
+
+#: src/octoprint/static/js/app/dataupdater.js:127
+msgid "Safe mode is active"
+msgstr "Bezpečný mod je zapnut"
+
+#: src/octoprint/static/js/app/dataupdater.js:128
+msgid ""
+"The server is currently running in safe mode. Third party plugins are "
+"disabled and cannot be enabled."
+msgstr "Server je nyní v bezpečném modu. Doplňky třetích stran jsou vypnuty a nemohou být zapnuty."
+
+#: src/octoprint/static/js/app/dataupdater.js:170
+#: src/octoprint/static/js/app/viewmodels/files.js:846
+#: src/octoprint/static/js/app/viewmodels/files.js:853
+#, python-format
+msgid "Slicing ... (%(percentage)d%%)"
+msgstr "Slicování ... (%(percentage)d%%)"
+
+#: src/octoprint/static/js/app/dataupdater.js:194
+#: src/octoprint/static/js/app/dataupdater.js:202
+msgid "Unhandled communication error"
+msgstr "Neošetřená chyba komunikace"
+
+#: src/octoprint/static/js/app/dataupdater.js:195
+#, python-format
+msgid ""
+"There was an unhandled error while talking to the printer. Due to that the "
+"ongoing print job was cancelled. Error: %(firmwareError)s"
+msgstr "Nastala chyba komunikace s tiskárnou. Proto byla aktuální tisková úloha ukončena. Kód chyby: %(firmwareError)s"
+
+#: src/octoprint/static/js/app/dataupdater.js:203
+#, python-format
+msgid ""
+"The was an unhandled error while talking to the printer. Due to that "
+"OctoPrint disconnected. Error: %(error)s"
+msgstr "Neošetřená chyba při komunikaci s tiskárnou. Proto byl OctoPrint odpojen. Chyba: %(error)s"
+
+#: src/octoprint/static/js/app/helpers.js:372
+#, python-format
+msgid "%(hour)02d:%(minute)02d:%(second)02d"
+msgstr "%(hour)02d:%(minute)02d:%(second)02d"
+
+#: src/octoprint/static/js/app/helpers.js:429
+#: src/octoprint/static/js/app/helpers.js:436
+#, python-format
+msgid "%(days)d days"
+msgstr "%(days)d dnů"
+
+#: src/octoprint/static/js/app/helpers.js:431
+#, python-format
+msgid "%(days)d.5 days"
+msgstr "%(days)d.5 dnů"
+
+#: src/octoprint/static/js/app/helpers.js:434
+#, python-format
+msgid "%(days)d day"
+msgstr "%(days)d den"
+
+#: src/octoprint/static/js/app/helpers.js:445
+#, python-format
+msgid "%(hours)d hour"
+msgstr "%(hours)d hodina"
+
+#: src/octoprint/static/js/app/helpers.js:447
+#: src/octoprint/static/js/app/helpers.js:455
+#: src/octoprint/static/js/app/helpers.js:466
+#, python-format
+msgid "%(hours)d hours"
+msgstr "%(hours)d hodin"
+
+#: src/octoprint/static/js/app/helpers.js:451
+#, python-format
+msgid "%(hours)d.5 hours"
+msgstr "%(hours)d.5 hodin"
+
+#: src/octoprint/static/js/app/helpers.js:460
+msgid "1 day"
+msgstr "1 den"
+
+#: src/octoprint/static/js/app/helpers.js:473
+msgid "a minute"
+msgstr "minuta"
+
+#: src/octoprint/static/js/app/helpers.js:475
+msgid "2 minutes"
+msgstr "2 minuty"
+
+#: src/octoprint/static/js/app/helpers.js:481
+#, python-format
+msgid "%(minutes)d minutes"
+msgstr "%(minutes)d minut"
+
+#: src/octoprint/static/js/app/helpers.js:483
+msgid "40 minutes"
+msgstr "40 minut"
+
+#: src/octoprint/static/js/app/helpers.js:485
+msgid "50 minutes"
+msgstr "50 minut"
+
+#: src/octoprint/static/js/app/helpers.js:487
+msgid "1 hour"
+msgstr "1 hodina"
+
+#: src/octoprint/static/js/app/helpers.js:492
+msgid "a couple of seconds"
+msgstr "pár vteřin"
+
+#: src/octoprint/static/js/app/helpers.js:494
+msgid "less than a minute"
+msgstr "méně jak minuta"
+
+#: src/octoprint/static/js/app/helpers.js:503
+msgid "YYYY-MM-DD HH:mm"
+msgstr "DD.MM.YYYY HH:mm"
+
+#: src/octoprint/static/js/app/helpers.js:521
+#: src/octoprint/static/js/app/helpers.js:526
+msgid "off"
+msgstr "Vypnuto"
+
+#: src/octoprint/static/js/app/helpers.js:636
+msgid "Are you sure?"
+msgstr "Jsi si jistý?"
+
+#: src/octoprint/static/js/app/main.js:143
+msgid "Offline"
+msgstr "Vypnuto"
+
+#: src/octoprint/static/js/app/main.js:144
+msgid "Opening serial port"
+msgstr "Otevírání sériového portu"
+
+#: src/octoprint/static/js/app/main.js:145
+msgid "Detecting serial port"
+msgstr "Detekování sériového portu"
+
+#: src/octoprint/static/js/app/main.js:146
+msgid "Detecting baudrate"
+msgstr "Detekování rychlosti"
+
+#: src/octoprint/static/js/app/main.js:147
+msgid "Connecting"
+msgstr "Připojování"
+
+#: src/octoprint/static/js/app/main.js:148
+msgid "Operational"
+msgstr "Připraveno"
+
+#: src/octoprint/static/js/app/main.js:149
+msgid "Printing from SD"
+msgstr "Tisk z SD"
+
+#: src/octoprint/static/js/app/main.js:150
+msgid "Sending file to SD"
+msgstr "Odesílání souboru do SD"
+
+#: src/octoprint/static/js/app/main.js:151
+msgid "Printing"
+msgstr "Tiskne"
+
+#: src/octoprint/static/js/app/main.js:152
+msgid "Paused"
+msgstr "Pauza"
+
+#: src/octoprint/static/js/app/main.js:153
+msgid "Closed"
+msgstr "Zavřeno"
+
+#: src/octoprint/static/js/app/main.js:154
+msgid "Transfering file to SD"
+msgstr "Přenos souboru do SD"
+
+#: src/octoprint/static/js/app/viewmodels/connection.js:42
+#: src/octoprint/templates/sidebar/connection.jinja2:13
+msgid "Connect"
+msgstr "Připojit"
+
+#: src/octoprint/static/js/app/viewmodels/connection.js:44
+msgid "Disconnect"
+msgstr "Odpojit"
+
+#: src/octoprint/static/js/app/viewmodels/control.js:62
+#: src/octoprint/static/js/app/viewmodels/files.js:586
+#: src/octoprint/static/js/app/viewmodels/gcode.js:489
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:232
+#: src/octoprint/static/js/app/viewmodels/temperature.js:63
+msgid "Tool"
+msgstr "Nástroj"
+
+#: src/octoprint/static/js/app/viewmodels/control.js:68
+#: src/octoprint/static/js/app/viewmodels/temperature.js:74
+msgid "Hotend"
+msgstr "Tryska"
+
+#: src/octoprint/static/js/app/viewmodels/files.js:48
+msgid "Your available free disk space is critically low."
+msgstr "Zbývá kriticky málo místa na disku."
+
+#: src/octoprint/static/js/app/viewmodels/files.js:50
+msgid "Your available free disk space is starting to run low."
+msgstr "Ubývá místa na disku."
+
+#: src/octoprint/static/js/app/viewmodels/files.js:52
+msgid "Your current disk usage."
+msgstr "Aktuální využití místa na disku."
+
+#: src/octoprint/static/js/app/viewmodels/files.js:387
+#, python-format
+msgid ""
+"You are about to delete the folder \"%(folder)s\" which still contains files"
+" and/or sub folders."
+msgstr "Opravdu chceš vymazat adresář \"%(folder)s\" který stále obsahuje soubory a/nebo podadresáře?"
+
+#: src/octoprint/static/js/app/viewmodels/files.js:575
+#: src/octoprint/static/js/app/viewmodels/gcode.js:448
+msgid "Model size"
+msgstr "Velikost modelu"
+
+#: src/octoprint/static/js/app/viewmodels/files.js:581
+#: src/octoprint/static/js/app/viewmodels/files.js:586
+#: src/octoprint/static/js/app/viewmodels/gcode.js:486
+#: src/octoprint/static/js/app/viewmodels/gcode.js:489
+msgid "Filament"
+msgstr "Struna"
+
+#: src/octoprint/static/js/app/viewmodels/files.js:590
+#: src/octoprint/static/js/app/viewmodels/gcode.js:493
+msgid "Estimated print time"
+msgstr "Odhadované trvání tisku"
+
+#: src/octoprint/static/js/app/viewmodels/files.js:593
+msgid "Last printed"
+msgstr "Naposledy vytisknuto"
+
+#: src/octoprint/static/js/app/viewmodels/files.js:595
+msgid "Last print time"
+msgstr "Naposledy tisk trval"
+
+#: src/octoprint/static/js/app/viewmodels/files.js:655
+#, python-format
+msgid ""
+"Object in %(name)s exceeds the print volume of the currently selected "
+"printer profile, be careful when printing this."
+msgstr "Objekt %(name)s přesahuje tiskový prostor aktuálně zvolené tiskárny, buď opatrný při jeho tisku."
+
+#: src/octoprint/static/js/app/viewmodels/files.js:665
+msgid "Object exceeds print volume in width.<br>"
+msgstr "Objekt je větší než šířka tiskového prostoru.<br>"
+
+#: src/octoprint/static/js/app/viewmodels/files.js:668
+msgid "Object exceeds print volume in depth.<br>"
+msgstr "Objekt je větší než hloubka tiskového prostoru.<br>"
+
+#: src/octoprint/static/js/app/viewmodels/files.js:671
+msgid "Object exceeds print volume in height.<br>"
+msgstr "Objekt je větší než výška tiskového prostoru.<br>"
+
+#: src/octoprint/static/js/app/viewmodels/files.js:677
+msgid ""
+"Object's bounding box: (%(object.minX).2f, %(object.minY).2f, "
+"%(object.minZ).2f) &times; (%(object.maxX).2f, %(object.maxY).2f, "
+"%(object.maxZ).2f)"
+msgstr "Rozměry objektu: (%(object.minX).2f, %(object.minY).2f, %(object.minZ).2f) &times; (%(object.maxX).2f, %(object.maxY).2f, %(object.maxZ).2f)"
+
+#: src/octoprint/static/js/app/viewmodels/files.js:679
+msgid ""
+"Print volume: (%(profile.minX).2f, %(profile.minY).2f, %(profile.minZ).2f) "
+"&times; (%(profile.maxX).2f, %(profile.maxY).2f, %(profile.maxZ).2f)"
+msgstr "Tiskový prostor: (%(profile.minX).2f, %(profile.minY).2f, %(profile.minZ).2f) &times; (%(profile.maxX).2f, %(profile.maxY).2f, %(profile.maxZ).2f)"
+
+#: src/octoprint/static/js/app/viewmodels/files.js:686
+msgid "Object doesn't fit print volume"
+msgstr "Objekt se nevejde do tiskového prostoru"
+
+#: src/octoprint/static/js/app/viewmodels/files.js:848
+msgid "Slicing ..."
+msgstr "Rozřezávání"
+
+#: src/octoprint/static/js/app/viewmodels/files.js:874
+msgid "Slicing done"
+msgstr "Rozřezávání dokončeno"
+
+#: src/octoprint/static/js/app/viewmodels/files.js:875
+#, python-format
+msgid "Sliced %(stl)s to %(gcode)s, took %(time).2f seconds"
+msgstr "Rozřezání %(stl)s souborů do %(gcode)s GCODE, zabralo %(time).2f sekund"
+
+#: src/octoprint/static/js/app/viewmodels/files.js:890
+#, python-format
+msgid "Could not slice %(stl)s to %(gcode)s: %(reason)s"
+msgstr "Nelze rozřezat %(stl)s do %(gcode)s: %(reason)s"
+
+#: src/octoprint/static/js/app/viewmodels/files.js:891
+msgid "Slicing failed"
+msgstr "Rozřezání se nezdařilo"
+
+#: src/octoprint/static/js/app/viewmodels/files.js:908
+msgid "Streaming ..."
+msgstr "Streamování ..."
+
+#: src/octoprint/static/js/app/viewmodels/files.js:920
+msgid "Streaming done"
+msgstr "Streamování ukončeno"
+
+#: src/octoprint/static/js/app/viewmodels/files.js:921
+#, python-format
+msgid "Streamed %(local)s to %(remote)s on SD, took %(time).2f seconds"
+msgstr "Odeslání %(local)s do %(remote)s na SD, zabralo  %(time).2f sekund"
+
+#: src/octoprint/static/js/app/viewmodels/files.js:1017
+#, python-format
+msgid ""
+"Could not upload the file. Make sure that it is a valid file with one of "
+"these extensions: %(extensions)s"
+msgstr "Soubor nemohl být nahrán. Ujistěte se že jde o soubor s jednou z těchto přípon: %(extensions)s"
+
+#: src/octoprint/static/js/app/viewmodels/files.js:1038
+msgid "Saving ..."
+msgstr "Ukládání..."
+
+#: src/octoprint/static/js/app/viewmodels/files.js:1038
+msgid "Uploading ..."
+msgstr "Nahrávání..."
+
+#: src/octoprint/static/js/app/viewmodels/gcode.js:14
+msgid "Loading..."
+msgstr "Načítání..."
+
+#: src/octoprint/static/js/app/viewmodels/gcode.js:18
+msgid "Analyzing..."
+msgstr "Analyzování..."
+
+#: src/octoprint/static/js/app/viewmodels/gcode.js:22
+msgid "Analyzed"
+msgstr "Analyzováno"
+
+#: src/octoprint/static/js/app/viewmodels/gcode.js:449
+msgid "Estimated total print time"
+msgstr "Odhadovaný celkový čas tisku"
+
+#: src/octoprint/static/js/app/viewmodels/gcode.js:450
+msgid "Estimated layer height"
+msgstr "Předpokládaná výška vrstvy"
+
+#: src/octoprint/static/js/app/viewmodels/gcode.js:450
+#: src/octoprint/templates/tabs/timelapse.jinja2:47
+msgid "mm"
+msgstr "mm"
+
+#: src/octoprint/static/js/app/viewmodels/gcode.js:451
+msgid "Layer count"
+msgstr "Počet vrstev"
+
+#: src/octoprint/static/js/app/viewmodels/gcode.js:451
+msgid "printed"
+msgstr "tisknout"
+
+#: src/octoprint/static/js/app/viewmodels/gcode.js:451
+msgid "visited"
+msgstr "navštíveno"
+
+#: src/octoprint/static/js/app/viewmodels/gcode.js:481
+msgid "Layer number"
+msgstr "Vrstva č."
+
+#: src/octoprint/static/js/app/viewmodels/gcode.js:482
+msgid "Layer height"
+msgstr "Výška vrstvy"
+
+#: src/octoprint/static/js/app/viewmodels/gcode.js:483
+msgid "GCODE commands"
+msgstr "GCODE příkazy"
+
+#: src/octoprint/static/js/app/viewmodels/loginstate.js:26
+#: src/octoprint/static/js/app/viewmodels/loginstate.js:34
+#: src/octoprint/templates/navbar/login.jinja2:2
+#: src/octoprint/templates/navbar/login.jinja2:14
+msgid "Login"
+msgstr "Přihlášení"
+
+#: src/octoprint/static/js/app/viewmodels/loginstate.js:32
+#, python-format
+msgid "Logged in as %(name)s"
+msgstr "Přihlášen jako  %(name)s"
+
+#: src/octoprint/static/js/app/viewmodels/loginstate.js:87
+msgid "Login successful"
+msgstr "Přihlášení úspěšné"
+
+#: src/octoprint/static/js/app/viewmodels/loginstate.js:87
+#, python-format
+msgid "You are now logged in as \"%(username)s\""
+msgstr "Nyní jste přihlášen jako \"%(username)s\""
+
+#: src/octoprint/static/js/app/viewmodels/loginstate.js:99
+msgid "Login failed"
+msgstr "Přihlášení selhalo"
+
+#: src/octoprint/static/js/app/viewmodels/loginstate.js:99
+msgid "User unknown or wrong password"
+msgstr "Neznámý uživatel nebo špatné heslo"
+
+#: src/octoprint/static/js/app/viewmodels/loginstate.js:106
+msgid "Logout successful"
+msgstr "Odhlášení úspěšné"
+
+#: src/octoprint/static/js/app/viewmodels/loginstate.js:106
+msgid "You are now logged out"
+msgstr "Jste nyní odhlášen"
+
+#: src/octoprint/static/js/app/viewmodels/printerprofiles.js:138
+msgid "Identifier must be set"
+msgstr "Identifikátor musí být zvolen"
+
+#: src/octoprint/static/js/app/viewmodels/printerprofiles.js:140
+msgid "Invalid characters, only a-z, A-Z, 0-9, -, ., _, ( and ) are allowed"
+msgstr "Nepovolený znak, pouze a-z, A-Z, 0-9, -, ., _, ( a ) jsou povoleny"
+
+#: src/octoprint/static/js/app/viewmodels/printerprofiles.js:142
+msgid "A profile with such an identifier already exists"
+msgstr "Profil se stejným jménem už existuje"
+
+#: src/octoprint/static/js/app/viewmodels/printerprofiles.js:155
+#: src/octoprint/static/js/app/viewmodels/settings.js:58
+#: src/octoprint/static/js/app/viewmodels/settings.js:88
+msgid "default"
+msgstr "výchozí"
+
+#: src/octoprint/static/js/app/viewmodels/printerprofiles.js:156
+#: src/octoprint/static/js/app/viewmodels/settings.js:59
+#: src/octoprint/static/js/app/viewmodels/settings.js:72
+msgid "red"
+msgstr "červená"
+
+#: src/octoprint/static/js/app/viewmodels/printerprofiles.js:157
+#: src/octoprint/static/js/app/viewmodels/settings.js:60
+#: src/octoprint/static/js/app/viewmodels/settings.js:74
+msgid "orange"
+msgstr "oranžová"
+
+#: src/octoprint/static/js/app/viewmodels/printerprofiles.js:158
+#: src/octoprint/static/js/app/viewmodels/settings.js:61
+#: src/octoprint/static/js/app/viewmodels/settings.js:76
+msgid "yellow"
+msgstr "žlutá"
+
+#: src/octoprint/static/js/app/viewmodels/printerprofiles.js:159
+#: src/octoprint/static/js/app/viewmodels/settings.js:62
+#: src/octoprint/static/js/app/viewmodels/settings.js:78
+msgid "green"
+msgstr "zelená"
+
+#: src/octoprint/static/js/app/viewmodels/printerprofiles.js:160
+#: src/octoprint/static/js/app/viewmodels/settings.js:63
+#: src/octoprint/static/js/app/viewmodels/settings.js:80
+msgid "blue"
+msgstr "modrá"
+
+#: src/octoprint/static/js/app/viewmodels/printerprofiles.js:161
+#: src/octoprint/static/js/app/viewmodels/settings.js:65
+#: src/octoprint/static/js/app/viewmodels/settings.js:84
+msgid "black"
+msgstr "černá"
+
+#: src/octoprint/static/js/app/viewmodels/printerprofiles.js:168
+msgid "Lower Left"
+msgstr "Dole vlevo"
+
+#: src/octoprint/static/js/app/viewmodels/printerprofiles.js:169
+msgid "Center"
+msgstr "Uprostřed"
+
+#: src/octoprint/static/js/app/viewmodels/printerprofiles.js:486
+msgid ""
+"There was unexpected error while saving the printer profile, please consult "
+"the logs."
+msgstr "Nastal nečekaný problém při ukládání profilu tiskárny, prosím zkontrolujte log soubory."
+
+#: src/octoprint/static/js/app/viewmodels/printerprofiles.js:487
+#: src/octoprint/static/js/app/viewmodels/printerprofiles.js:502
+#: src/octoprint/static/js/app/viewmodels/printerprofiles.js:524
+msgid "Saving failed"
+msgstr "Uložení selhalo"
+
+#: src/octoprint/static/js/app/viewmodels/printerprofiles.js:501
+msgid ""
+"There was unexpected error while removing the printer profile, please "
+"consult the logs."
+msgstr "Nastal nečekaný problém při odebírání profilu tiskárny, prosím zkontrolujte log soubory."
+
+#: src/octoprint/static/js/app/viewmodels/printerprofiles.js:523
+msgid ""
+"There was unexpected error while updating the printer profile, please "
+"consult the logs."
+msgstr "Nastal nečekaný problém při aktualizování profilu tiskárny, prosím zkontrolujte log soubory."
+
+#: src/octoprint/static/js/app/viewmodels/printerprofiles.js:539
+msgid "Add Printer Profile"
+msgstr "Přidat profil tiskárny"
+
+#: src/octoprint/static/js/app/viewmodels/printerprofiles.js:539
+#, python-format
+msgid "Edit Printer Profile \"%(name)s\""
+msgstr "Upravit profil tiskárny \"%(name)s\""
+
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:47
+msgid "Restarts the print job from the beginning"
+msgstr "Znovu spustí tisk od úplného začátku"
+
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:48
+msgid "Starts the print job"
+msgstr "Spustí tisk"
+
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:49
+msgid "Resumes the print job"
+msgstr "Obnoví tisk"
+
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:50
+msgid "Pauses the print job"
+msgstr "Pozastaví tisk"
+
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:83
+msgid "Still stabilizing..."
+msgstr "Stále se stabilizuje..."
+
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:93
+msgid ""
+"Based on a linear approximation (very low accuracy, especially at the "
+"beginning of the print)"
+msgstr "Na základě lineární aproximace (velmi nízká přesnost, zejména na začátku tisku)"
+
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:96
+msgid "Based on the estimate from analysis of file (medium accuracy)"
+msgstr "Na základě odhadu dle analýzy souboru (střední přesnost)"
+
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:99
+msgid ""
+"Based on a mix of estimate from analysis and calculation (medium accuracy)"
+msgstr "Na základě odhadu z analýzy a výpočtu (střední přesnost)"
+
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:102
+msgid ""
+"Based on the average total of past prints of this model with the same "
+"printer profile (usually good accuracy)"
+msgstr "Na základě průměrné doby posledních tisků tohoto modelu a stejného tiskového profilu (obvykle dobrá přesnost)"
+
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:105
+msgid ""
+"Based on a mix of average total from past prints and calculation (usually "
+"good accuracy)"
+msgstr "Na základě kombinace průměrné doby posledních tisků a výpočtu (obvykle dobrá přesnost)"
+
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:108
+msgid "Based on the calculated estimate (best accuracy)"
+msgstr "Na základě vypočteného odhadu (nejlepší přesnost)"
+
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:146
+msgid "Continue"
+msgstr "Pokračovat"
+
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:148
+#: src/octoprint/templates/sidebar/state.jinja2:24
+msgid "Pause"
+msgstr "Pauza"
+
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:159
+#: src/octoprint/templates/tabs/timelapse.jinja2:11
+msgid "On Z Change"
+msgstr "Při změně \"Z\" osy"
+
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:161
+#: src/octoprint/templates/tabs/timelapse.jinja2:10
+msgid "Timed"
+msgstr "Časovaně"
+
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:161
+#: src/octoprint/templates/tabs/timelapse.jinja2:25
+#: src/octoprint/templates/tabs/timelapse.jinja2:39
+msgid "sec"
+msgstr "sec"
+
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:269
+msgid "This will restart the print job from the beginning."
+msgstr "Toto znovu spustí tisk od úplného začátku."
+
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:296
+msgid "This will cancel your print."
+msgstr "Toto zruší tvůj tisk."
+
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:297
+msgid "No"
+msgstr "Ne"
+
+#: src/octoprint/static/js/app/viewmodels/printerstate.js:298
+msgid "Yes"
+msgstr "Ano"
+
+#: src/octoprint/static/js/app/viewmodels/settings.js:64
+#: src/octoprint/static/js/app/viewmodels/settings.js:82
+msgid "violet"
+msgstr "fialová"
+
+#: src/octoprint/static/js/app/viewmodels/settings.js:66
+#: src/octoprint/static/js/app/viewmodels/settings.js:86
+msgid "white"
+msgstr "bílá"
+
+#: src/octoprint/static/js/app/viewmodels/settings.js:94
+msgid "Autodetect from browser"
+msgstr "Načíst z nastavení prohlížeče"
+
+#: src/octoprint/static/js/app/viewmodels/settings.js:232
+msgid "If you see your webcam stream below, the entered stream URL is ok."
+msgstr "Pokud níže vidíš stream z Tvé web kamery, zadaná URL streamu je v pořádku."
+
+#: src/octoprint/static/js/app/viewmodels/settings.js:238
+msgid "Stream test"
+msgstr "Test streamu"
+
+#: src/octoprint/static/js/app/viewmodels/settings.js:251
+msgid "Could not retrieve snapshot URL, please double check the URL"
+msgstr "Nepodařilo se získat URL snímku, prosím znovu zkontroluj URL pro snímky"
+
+#: src/octoprint/static/js/app/viewmodels/settings.js:252
+msgid "Snapshot test failed"
+msgstr "Test snímků selhal"
+
+#: src/octoprint/static/js/app/viewmodels/settings.js:274
+msgid ""
+"If you see your webcam snapshot picture below, the entered snapshot URL is "
+"ok."
+msgstr "Pokud níže vidíš snímek z Tvé web kamery, zadaná URL pro snímky je v pořádku."
+
+#: src/octoprint/static/js/app/viewmodels/settings.js:276
+msgid "Snapshot test"
+msgstr "Test snímání obrázků"
+
+#: src/octoprint/static/js/app/viewmodels/slicing.js:123
+msgid "Do nothing"
+msgstr "Nic nedělat"
+
+#: src/octoprint/static/js/app/viewmodels/slicing.js:124
+msgid "Select for printing"
+msgstr "Zvolit pro tisk"
+
+#: src/octoprint/static/js/app/viewmodels/slicing.js:125
+msgid "Start printing"
+msgstr "Spustit tisk"
+
+#: src/octoprint/static/js/app/viewmodels/slicing.js:144
+#, python-format
+msgid "Slicing %(filename)s"
+msgstr "Rozřezávám %(filename)s"
+
+#: src/octoprint/static/js/app/viewmodels/slicing.js:181
+msgid "Cannot slice on the same device while printing"
+msgstr "Není možné slicovat na stejném zařízení dokud se tiskne"
+
+#: src/octoprint/static/js/app/viewmodels/slicing.js:183
+msgid "Cannot slice, not all parameters specified"
+msgstr "Není možné začít slicovat, protože nebyly nastaveny všechny parametry"
+
+#: src/octoprint/static/js/app/viewmodels/slicing.js:186
+msgid "Start the slicing process"
+msgstr "Spustit proces slicování"
+
+#: src/octoprint/static/js/app/viewmodels/system.js:50
+#, python-format
+msgid "The command \"%(command)s\" executed successfully"
+msgstr "Příkaz \"%(command)s\" proveden úspěšně"
+
+#: src/octoprint/static/js/app/viewmodels/system.js:55
+#, python-format
+msgid "The command \"%(command)s\" could not be executed."
+msgstr "Příkaz \"%(command)s\" nemohl být proveden."
+
+#: src/octoprint/static/js/app/viewmodels/system.js:57
+msgid "Error"
+msgstr "Chyba"
+
+#: src/octoprint/static/js/app/viewmodels/temperature.js:23
+#: src/octoprint/static/js/app/viewmodels/temperature.js:81
+#: src/octoprint/templates/dialogs/settings/temperatures.jinja2:16
+msgid "Bed"
+msgstr "Podložka"
+
+#: src/octoprint/static/js/app/viewmodels/temperature.js:124
+msgid "just now"
+msgstr "právě teď"
+
+#: src/octoprint/static/js/app/viewmodels/temperature.js:126
+msgid "min"
+msgstr "min"
+
+#: src/octoprint/static/js/app/viewmodels/temperature.js:293
+#: src/octoprint/templates/tabs/temperature.jinja2:11
+msgid "Actual"
+msgstr "Aktuální"
+
+#: src/octoprint/static/js/app/viewmodels/temperature.js:298
+#: src/octoprint/templates/tabs/temperature.jinja2:12
+msgid "Target"
+msgstr "Cíl"
+
+#: src/octoprint/static/js/app/viewmodels/terminal.js:101
+#, python-format
+msgid ""
+"showing %(displayed)d lines (%(filtered)d of %(total)d total lines filtered,"
+" buffer full)"
+msgstr "zobrazuji %(displayed)d řádků (%(filtered)d z %(total)d celkem, vyrovnávací paměť je plná)"
+
+#: src/octoprint/static/js/app/viewmodels/terminal.js:103
+#, python-format
+msgid ""
+"showing %(displayed)d lines (%(filtered)d of %(total)d total lines filtered)"
+msgstr "zobrazuji %(displayed)d řádků (%(filtered)d z %(total)d celkem)"
+
+#: src/octoprint/static/js/app/viewmodels/terminal.js:107
+#, python-format
+msgid "showing %(displayed)d lines (buffer full)"
+msgstr "zobrazuji %(displayed)d řádků (vyrovnávací paměť je plná)"
+
+#: src/octoprint/static/js/app/viewmodels/terminal.js:109
+#, python-format
+msgid "showing %(displayed)d lines"
+msgstr "zobrazuji  %(displayed)d řádků"
+
+#: src/octoprint/static/js/app/viewmodels/timelapse.js:262
+msgid "Capturing timelapse postroll"
+msgstr "Ukončování záznamu časosběru"
+
+#: src/octoprint/static/js/app/viewmodels/timelapse.js:266
+msgid "Now capturing timelapse post roll, this will take only a moment..."
+msgstr "Nyní se ukončuje záznam časosběru, už to potrvá jen chvilku"
+
+#: src/octoprint/static/js/app/viewmodels/timelapse.js:273
+#, python-format
+msgid "%(minutes)d min"
+msgstr "%(minutes)d min"
+
+#: src/octoprint/static/js/app/viewmodels/timelapse.js:274
+#, python-format
+msgid ""
+"Now capturing timelapse post roll, this will take approximately %(duration)s"
+" (so until %(time)s)..."
+msgstr "Nyní se ukončuje záznam časosběru, potrvá to zhruba %(duration)s (tedy do %(time)s)..."
+
+#: src/octoprint/static/js/app/viewmodels/timelapse.js:276
+#, python-format
+msgid "%(seconds)d sec"
+msgstr "%(seconds)d sec"
+
+#: src/octoprint/static/js/app/viewmodels/timelapse.js:277
+#, python-format
+msgid ""
+"Now capturing timelapse post roll, this will take approximately "
+"%(duration)s..."
+msgstr "Nyní se ukončuje záznam časosběru, potrvá to zhruba %(duration)s..."
+
+#: src/octoprint/static/js/app/viewmodels/timelapse.js:307
+msgid ""
+"Failed repeatedly to capture timelapse frame from webcam - is the snapshot "
+"URL configured correctly and the camera on?"
+msgstr "Opakovaně se nepovedlo získat snímky z web kamery - je URL adresa pro snímky nastavena správně a kamera zapnuta?"
+
+#: src/octoprint/static/js/app/viewmodels/timelapse.js:310
+msgid "Could not capture snapshots"
+msgstr "Není možné získat snímek"
+
+#: src/octoprint/static/js/app/viewmodels/timelapse.js:319
+msgid "Rendering timelapse"
+msgstr "Vytvářím časosběr"
+
+#: src/octoprint/static/js/app/viewmodels/timelapse.js:320
+#, python-format
+msgid ""
+"Now rendering timelapse %(movie_prefix)s. Due to performance reasons it is "
+"not recommended to start a print job while a movie is still rendering."
+msgstr "Právě se zpracovávají časosběry %(movie_prefix)s. Z důvodu omezeného výkonu se nedoporučuje pouštět novou tiskovou úlohu, dokud se nedokončí toto časosběrné video."
+
+#: src/octoprint/static/js/app/viewmodels/timelapse.js:329
+msgid "Cannot render timelapse"
+msgstr "Není možné vytvořit časosběr"
+
+#: src/octoprint/static/js/app/viewmodels/timelapse.js:330
+#, python-format
+msgid ""
+"Rendering of timelapse %(movie_prefix)s is not possible since no frames were"
+" captured. Is the snapshot URL configured correctly?"
+msgstr "Vytvoření časosběru %(movie_prefix)s nebylo možné, protože nebyly získány žádné snímky. Je URL adresa pro snímky nastavena správně?"
+
+#: src/octoprint/static/js/app/viewmodels/timelapse.js:332
+#: src/octoprint/static/js/app/viewmodels/timelapse.js:336
+msgid "Rendering timelapse failed"
+msgstr "Vytvoření časosběru selhalo"
+
+#: src/octoprint/static/js/app/viewmodels/timelapse.js:333
+#, python-format
+msgid ""
+"Rendering of timelapse %(movie_prefix)s failed with return code "
+"%(returncode)s"
+msgstr "Vytváření časosběru %(movie_prefix)s selhalo s kódem chyby %(returncode)s"
+
+#: src/octoprint/static/js/app/viewmodels/timelapse.js:337
+#, python-format
+msgid ""
+"Rendering of timelapse %(movie_prefix)s failed due to an unknown error, "
+"please consult the log file"
+msgstr "Vytváření časosběru  %(movie_prefix)s skončilo neznámou chybou, zkontroluj prosím soubor s logem pro podrobnosti"
+
+#: src/octoprint/static/js/app/viewmodels/timelapse.js:350
+msgid "Timelapse ready"
+msgstr "Časosběr je hotov"
+
+#: src/octoprint/static/js/app/viewmodels/timelapse.js:351
+#, python-format
+msgid "New timelapse %(movie_prefix)s is done rendering."
+msgstr "Nový časosběr %(movie_prefix)s byl vytvořen."
+
+#: src/octoprint/static/js/app/viewmodels/users.js:187
+msgid "Not possible"
+msgstr "Nemožné"
+
+#: src/octoprint/static/js/app/viewmodels/users.js:188
+msgid "You may not delete your own account."
+msgstr "Není možné vymazat tvůj vlastní účet."
+
+#: src/octoprint/static/js/app/viewmodels/usersettings.js:10
+msgid "Site default"
+msgstr "Základní nastavení"
+
+#: src/octoprint/templates/dialogs/files.jinja2:4
+msgid "Create Folder"
+msgstr "Vytvořit adresář"
+
+#: src/octoprint/templates/dialogs/files.jinja2:7
+msgid "Please specify the name of the folder to create."
+msgstr "Prosím zadej jméno vytvářeného adresáře."
+
+#: src/octoprint/templates/dialogs/files.jinja2:10
+msgid "Folder name"
+msgstr "Název adresáře"
+
+#: src/octoprint/templates/dialogs/files.jinja2:19
+msgid "Create"
+msgstr "Vytvořit"
+
+#: src/octoprint/templates/dialogs/slicing.jinja2:8
+msgid ""
+"Slicing is currently disabled since no slicer has been configured yet. "
+"Please configure a slicer under \"Settings\"."
+msgstr "Slicování je vypnuto, protože není nastaveno. Prosím nastavte jej v \"Nastavení\"."
+
+#: src/octoprint/templates/dialogs/slicing.jinja2:11
+msgid ""
+"Please configure which slicer and which slicing profile to use and name the "
+"GCode file to slice to below, or click \"Cancel\" if you do not wish to "
+"slice the file now."
+msgstr "Nastavte slicer a jeho profil, který se má použít pro rozřezání a jméno souboru s GCode nebo klikněte na \"Zrušit\" pokud nechcete slicování provést teď."
+
+#: src/octoprint/templates/dialogs/slicing.jinja2:14
+msgid "Slicer"
+msgstr "Slicer"
+
+#: src/octoprint/templates/dialogs/slicing.jinja2:16
+msgid "Select a slicer..."
+msgstr "Zvol slicer..."
+
+#: src/octoprint/templates/dialogs/slicing.jinja2:20
+msgid "Runs locally"
+msgstr "Spustit místně"
+
+#: src/octoprint/templates/dialogs/slicing.jinja2:23
+msgid ""
+"For performance reasons locally run slicers are disabled while printing"
+msgstr "Z výkonnostních důvodů je místně běžící slicování vypnuto dokud se tiskne"
+
+#: src/octoprint/templates/dialogs/slicing.jinja2:27
+msgid "Slicing Profile"
+msgstr "Profil sliceru"
+
+#: src/octoprint/templates/dialogs/slicing.jinja2:29
+msgid "Select a slicing profile..."
+msgstr "Zvol profil sliceru..."
+
+#: src/octoprint/templates/dialogs/slicing.jinja2:33
+#: src/octoprint/templates/sidebar/connection.jinja2:5
+msgid "Printer Profile"
+msgstr "Profil tiskárny"
+
+#: src/octoprint/templates/dialogs/slicing.jinja2:35
+msgid "Select a printer profile..."
+msgstr "Vyber profil tiskárny..."
+
+#: src/octoprint/templates/dialogs/slicing.jinja2:39
+msgid "Output Filename"
+msgstr "Výstupní název souboru"
+
+#: src/octoprint/templates/dialogs/slicing.jinja2:48
+msgid "After slicing..."
+msgstr "Po rozřezání..."
+
+#: src/octoprint/templates/dialogs/slicing.jinja2:58
+#: src/octoprint/templates/sidebar/files.jinja2:35
+msgid "Slice"
+msgstr "Rozřež"
+
+#: src/octoprint/templates/dialogs/wizard.jinja2:3
+msgid "Setup Wizard"
+msgstr "Průvodce nastavením"
+
+#: src/octoprint/templates/dialogs/wizard.jinja2:41
+msgid ""
+"\n"
+"                                            <strong>Mandatory Step!</strong> You need to fill this out now.\n"
+"                                        "
+msgstr "\n<strong>Povinný krok!</strong> Je nutné toto vyplnit nyní."
+
+#: src/octoprint/templates/dialogs/wizard.jinja2:56
+msgid "Next"
+msgstr "Další"
+
+#: src/octoprint/templates/dialogs/wizard.jinja2:60
+msgid "Previous"
+msgstr "Předcházející"
+
+#: src/octoprint/templates/dialogs/wizard.jinja2:63
+msgid ""
+"Unless otherwise noted, you may just skip any wizard page by clicking "
+"\"Next\" or \"Finish\"."
+msgstr "Pokud není uvedeno jinak, je možné přeskočit libovolnou stránku průvodce po kliknutí na \"Další\" nebo \"Konec\""
+
+#: src/octoprint/templates/dialogs/about/about.jinja2:3
+msgid "The snappy web interface for your 3D printer"
+msgstr "Elegantní webové rozhraní pro tvoji 3D tiskárnu"
+
+#: src/octoprint/templates/dialogs/settings/accesscontrol.jinja2:5
+#: src/octoprint/templates/dialogs/settings/accesscontrol.jinja2:66
+#: src/octoprint/templates/dialogs/settings/accesscontrol.jinja2:95
+msgid "Active"
+msgstr "Aktivní"
+
+#: src/octoprint/templates/dialogs/settings/accesscontrol.jinja2:6
+#: src/octoprint/templates/dialogs/settings/accesscontrol.jinja2:73
+#: src/octoprint/templates/dialogs/settings/accesscontrol.jinja2:102
+msgid "Admin"
+msgstr "Admin"
+
+#: src/octoprint/templates/dialogs/settings/accesscontrol.jinja2:7
+#: src/octoprint/templates/dialogs/settings/logs.jinja2:15
+#: src/octoprint/templates/snippets/settings/printerprofiles/profiles.jinja2:6
+#: src/octoprint/templates/tabs/timelapse.jinja2:73
+#: src/octoprint/templates/tabs/timelapse.jinja2:105
+msgid "Action"
+msgstr "Akce"
+
+#: src/octoprint/templates/dialogs/settings/accesscontrol.jinja2:12
+#: src/octoprint/templates/dialogs/settings/api.jinja2:17
+#: src/octoprint/templates/dialogs/usersettings/access.jinja2:22
+msgid "API Key"
+msgstr "API klíč"
+
+#: src/octoprint/templates/dialogs/settings/accesscontrol.jinja2:16
+msgid "Update User"
+msgstr "Aktualizovat uživatele"
+
+#: src/octoprint/templates/dialogs/settings/accesscontrol.jinja2:16
+msgid "Change password"
+msgstr "Změnit heslo"
+
+#: src/octoprint/templates/dialogs/settings/accesscontrol.jinja2:16
+msgid "Delete user"
+msgstr "Smazat uživatele"
+
+#: src/octoprint/templates/dialogs/settings/accesscontrol.jinja2:33
+#: src/octoprint/templates/dialogs/settings/accesscontrol.jinja2:40
+msgid "Add user"
+msgstr "Přidat uživatele"
+
+#: src/octoprint/templates/dialogs/settings/accesscontrol.jinja2:57
+#: src/octoprint/templates/dialogs/settings/accesscontrol.jinja2:128
+#: src/octoprint/templates/dialogs/usersettings/access.jinja2:14
+msgid "Repeat Password"
+msgstr "Opakovat heslo"
+
+#: src/octoprint/templates/dialogs/settings/accesscontrol.jinja2:88
+#, python-format
+msgid "Edit user \"%(user)s\""
+msgstr "Upravit uživatele \"%(user)s\""
+
+#: src/octoprint/templates/dialogs/settings/accesscontrol.jinja2:117
+#, python-format
+msgid "Change password for user \"%(user)s\""
+msgstr "Změnit heslo pro uživatele \"%(user)s\""
+
+#: src/octoprint/templates/dialogs/settings/accesscontrol.jinja2:122
+#: src/octoprint/templates/dialogs/usersettings/access.jinja2:8
+msgid "New Password"
+msgstr "Nové heslo"
+
+#: src/octoprint/templates/dialogs/settings/accesscontrol.jinja2:137
+#: src/octoprint/templates/dialogs/usersettings/access.jinja2:24
+msgid "Current API Key"
+msgstr "Současný API klíč"
+
+#: src/octoprint/templates/dialogs/settings/accesscontrol.jinja2:140
+#: src/octoprint/templates/dialogs/usersettings/access.jinja2:27
+msgid "N/A"
+msgstr "nedostupné"
+
+#: src/octoprint/templates/dialogs/settings/api.jinja2:5
+msgid "Enable"
+msgstr "Povolit"
+
+#: src/octoprint/templates/dialogs/settings/api.jinja2:12
+#, python-format
+msgid "Allow <a href=\"%(url)s\">Cross Origin Resource Sharing (CORS)</a>"
+msgstr "Povolit <a href=\"%(url)s\">Cross Origin Resource Sharing (CORS)</a>"
+
+#: src/octoprint/templates/dialogs/settings/api.jinja2:23
+#: src/octoprint/templates/dialogs/usersettings/access.jinja2:35
+msgid "QR Code"
+msgstr "QR kód"
+
+#: src/octoprint/templates/dialogs/settings/appearance.jinja2:2
+msgid ""
+"Name of this OctoPrint instance, will be shown in the navigation bar and "
+"broadcast on the network"
+msgstr "Jméno této instance OctoPrintu bude zobrazeno nahoře v menu a sdíleno po síti."
+
+#: src/octoprint/templates/dialogs/settings/appearance.jinja2:3
+msgid "Title"
+msgstr "Název"
+
+#: src/octoprint/templates/dialogs/settings/appearance.jinja2:8
+msgid ""
+"Personalize the color of the navigation bar - maybe to match your printer?"
+msgstr "Zvolte si barvu - možná podle barvy tiskárny?"
+
+#: src/octoprint/templates/dialogs/settings/appearance.jinja2:9
+msgid "Color"
+msgstr "Barva"
+
+#: src/octoprint/templates/dialogs/settings/appearance.jinja2:15
+msgid "For acrylic printers ;)"
+msgstr "Pro tiskárny z plexiskla :)"
+
+#: src/octoprint/templates/dialogs/settings/appearance.jinja2:18
+msgid "Transparent Color"
+msgstr "Průhledná barva"
+
+#: src/octoprint/templates/dialogs/settings/appearance.jinja2:23
+msgid "Language Packs"
+msgstr "Jazykové balíčky"
+
+#: src/octoprint/templates/dialogs/settings/appearance.jinja2:25
+msgid "Manage..."
+msgstr "Spravovat..."
+
+#: src/octoprint/templates/dialogs/settings/appearance.jinja2:29
+msgid "Default Language"
+msgstr "Výchozí jazyk"
+
+#: src/octoprint/templates/dialogs/settings/appearance.jinja2:36
+msgid ""
+"Changes to the default interface language will only become active after a "
+"reload of the page and only be active if not overridden by the users "
+"language settings."
+msgstr "Změny v nastavení jazyka pro uživatelské rozhraní se stanou aktivní po znovu načtení stránky. Aktivními se stanou pouze v případě, že uživatelské nastavení není jiné."
+
+#: src/octoprint/templates/dialogs/settings/appearance.jinja2:42
+msgid "Show temperatures in Fahrenheit as well as Celsius"
+msgstr ""
+
+#: src/octoprint/templates/dialogs/settings/appearance.jinja2:51
+msgid "Manage Language Packs..."
+msgstr "Spravuj jazykové balíčky"
+
+#: src/octoprint/templates/dialogs/settings/appearance.jinja2:54
+msgid "Available Language Packs"
+msgstr "Dostupné jazykové balíčky"
+
+#: src/octoprint/templates/dialogs/settings/appearance.jinja2:65
+msgid "Last update:"
+msgstr "Poslední aktualizace:"
+
+#: src/octoprint/templates/dialogs/settings/appearance.jinja2:68
+msgid "Delete"
+msgstr "Smazat"
+
+#: src/octoprint/templates/dialogs/settings/appearance.jinja2:79
+msgid "No additional Language Packs are installed at the moment."
+msgstr "Žádné další jazykové balíčky nejsou nainstalované."
+
+#: src/octoprint/templates/dialogs/settings/appearance.jinja2:84
+msgid "Upload additional Language Packs"
+msgstr "Nahrát další jazykové balíčky"
+
+#: src/octoprint/templates/dialogs/settings/appearance.jinja2:95
+#: src/octoprint/templates/overlays/dragndrop.jinja2:10
+#: src/octoprint/templates/sidebar/files.jinja2:60
+#: src/octoprint/templates/sidebar/files.jinja2:71
+msgid "Upload"
+msgstr "Nahrát"
+
+#: src/octoprint/templates/dialogs/settings/appearance.jinja2:97
+msgid ""
+"This does not look like a valid language pack. Valid language packs should "
+"be either zip files or tarballs and have the extension \".zip\", "
+"\".tar.gz\", \".tgz\" or \".tar\""
+msgstr "Toto není povolená přípona pro jazykový balíček. Povolen přípony jsou  \".zip\", \".tar.gz\", \".tgz\" nebo \".tar\""
+
+#: src/octoprint/templates/dialogs/settings/appearance.jinja2:100
+msgid ""
+"Please note that you will have to reload the page in order for any newly "
+"added language packs to become available."
+msgstr "Mějte na paměti, že po přidání každého jazykového balíčku je třeba obnovit stránku, aby byl balíček dostupný."
+
+#: src/octoprint/templates/dialogs/settings/features.jinja2:5
+msgid "Enable Temperature Graph"
+msgstr "Povolit teplotní graf"
+
+#: src/octoprint/templates/dialogs/settings/features.jinja2:12
+msgid "Enable model size detection and warn if model exceeds print bed"
+msgstr "Povolit hlídání velikosti modelu a varování, pokud je model větší než tisková plocha"
+
+#: src/octoprint/templates/dialogs/settings/features.jinja2:12
+msgid "Beta"
+msgstr "Beta"
+
+#: src/octoprint/templates/dialogs/settings/features.jinja2:19
+msgid "Confirm before cancelling a print"
+msgstr "Potvrzení před zrušením tisku"
+
+#: src/octoprint/templates/dialogs/settings/features.jinja2:26
+msgid "Enable SD support"
+msgstr "Povolit podporu SD"
+
+#: src/octoprint/templates/dialogs/settings/features.jinja2:33
+msgid "Enable Keyboard Control"
+msgstr "Povolit ovládání klávesnicí"
+
+#: src/octoprint/templates/dialogs/settings/features.jinja2:40
+msgid "Wait for <code>start</code> on connect"
+msgstr "Počkat na <code>start</code> po připojení"
+
+#: src/octoprint/templates/dialogs/settings/features.jinja2:47
+msgid "Enable automatic firmware detection"
+msgstr "Povol automatickou detekci firmwaru"
+
+#: src/octoprint/templates/dialogs/settings/features.jinja2:48
+msgid ""
+"\n"
+"                    If enabled, OctoPrint will try to figure out your printer's firmware automatically and adjust a couple of communication parameters based on that.\n"
+"                    If that doesn't work out, or you want more granular control, uncheck this and the parameters in question will become visible for you to adjust.\n"
+"                "
+msgstr "\nPokud je povoleno, Octoprint se pokusí rozpoznat firmware tiskárny automaticky a nastavit na základě toho některé komunikační parametry.\nPokud toto nefunguje, nebo chcete přesnější kontrolu, odškrtněte pole a parametry bude možné nastavit ručně."
+
+#: src/octoprint/templates/dialogs/settings/features.jinja2:59
+msgid "Select SD files by relative path"
+msgstr "Vyber soubory na SD kartě pomocí relativní cesty"
+
+#: src/octoprint/templates/dialogs/settings/features.jinja2:59
+msgid "RepRap Firmware"
+msgstr "RepRap Firmware"
+
+#: src/octoprint/templates/dialogs/settings/features.jinja2:66
+msgid "Always assume SD card is present"
+msgstr "Vždy předpokládat přítomnost SD karty"
+
+#: src/octoprint/templates/dialogs/settings/features.jinja2:66
+#: src/octoprint/templates/dialogs/settings/features.jinja2:73
+#: src/octoprint/templates/dialogs/settings/features.jinja2:80
+#: src/octoprint/templates/dialogs/settings/features.jinja2:87
+#: src/octoprint/templates/dialogs/settings/features.jinja2:94
+#: src/octoprint/templates/dialogs/settings/features.jinja2:105
+msgid "Repetier"
+msgstr "Repetier"
+
+#: src/octoprint/templates/dialogs/settings/features.jinja2:73
+msgid "Ignore consecutive resend requests for the same line"
+msgstr "Ignorovat souběžné příkazy pro znovu zaslání stejného řádku gcode."
+
+#: src/octoprint/templates/dialogs/settings/features.jinja2:80
+#, python-format
+msgid ""
+"Support <code>TargetExtr%%n</code>/<code>TargetBed</code> target temperature"
+" format"
+msgstr "Podporovat  <code>TargetExtr%%n</code>/<code>TargetBed</code>  formát zasílání teploty"
+
+#: src/octoprint/templates/dialogs/settings/features.jinja2:87
+msgid "Disable detection of external heatups"
+msgstr "Vypnout detekci externích rozehřívačů"
+
+#: src/octoprint/templates/dialogs/settings/features.jinja2:94
+msgid "Actively pause communication during <code>G4</code> dwell command"
+msgstr "Aktivně pozastavená komunikace během <code>G4</code> dwell příkazu"
+
+#: src/octoprint/templates/dialogs/settings/features.jinja2:99
+msgid "Send a checksum with the command"
+msgstr "Poslat kontrolní součet s příkazem"
+
+#: src/octoprint/templates/dialogs/settings/features.jinja2:102
+msgid "When printing"
+msgstr "Když tiskne"
+
+#: src/octoprint/templates/dialogs/settings/features.jinja2:105
+msgid "Always"
+msgstr "Vždy"
+
+#: src/octoprint/templates/dialogs/settings/features.jinja2:108
+msgid "Never"
+msgstr "Nikdy"
+
+#: src/octoprint/templates/dialogs/settings/folders.jinja2:5
+msgid "Upload Folder"
+msgstr "Složka pro Upload"
+
+#: src/octoprint/templates/dialogs/settings/folders.jinja2:11
+msgid "Timelapse Folder"
+msgstr "Složka pro časosběry"
+
+#: src/octoprint/templates/dialogs/settings/folders.jinja2:17
+msgid "Timelapse Temp Folder"
+msgstr "Dočasná složka pro časosběry"
+
+#: src/octoprint/templates/dialogs/settings/folders.jinja2:23
+msgid "Logs Folder"
+msgstr "Složka pro logy"
+
+#: src/octoprint/templates/dialogs/settings/folders.jinja2:29
+msgid "Watched Folder"
+msgstr "Sledovaná složka"
+
+#: src/octoprint/templates/dialogs/settings/folders.jinja2:37
+msgid ""
+"Actively poll the watched folder. Check this if files in your watched folder"
+" aren't automatically added otherwise."
+msgstr "Aktivně sledovaná složka. Toto zkontroluj, jestliže se soubory ve sledované složce automaticky nepřidávají."
+
+#: src/octoprint/templates/dialogs/settings/folders.jinja2:42
+msgid "Disk space thresholds"
+msgstr "Limity místa na disku"
+
+#: src/octoprint/templates/dialogs/settings/folders.jinja2:44
+msgid ""
+"If the free disk space falls below these thresholds, OctoPrint will warn the"
+" user."
+msgstr "Když volné místo dosáhne těchto limitů, uživatel je varován."
+
+#: src/octoprint/templates/dialogs/settings/folders.jinja2:47
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:77
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:105
+#: src/octoprint/templates/tabs/gcodeviewer.jinja2:86
+#: src/octoprint/templates/tabs/timelapse.jinja2:13
+msgid "Warning"
+msgstr "Varování"
+
+#: src/octoprint/templates/dialogs/settings/folders.jinja2:53
+msgid "Critical"
+msgstr "Kritická"
+
+#: src/octoprint/templates/dialogs/settings/folders.jinja2:59
+#: src/octoprint/templates/dialogs/settings/gcodevisualizer.jinja2:25
+msgid ""
+"Provide values including size unit. Allowed units are: b, byte, bytes, kb, "
+"mb, gb, tb (case insensitive). Example: <code>5MB</code>, <code>500KB</code>"
+msgstr "Zadejte velikost společně s jednotkami. Povolené jednotky jsou: b, byte, bytes, kb, mb, gb, tb (na velikosti písmen nezáleží). Příklad: <code>5MB</code>, <code>500KB</code>"
+
+#: src/octoprint/templates/dialogs/settings/gcodescripts.jinja2:3
+msgid "Before print job starts"
+msgstr "Před spuštěním tisku"
+
+#: src/octoprint/templates/dialogs/settings/gcodescripts.jinja2:9
+msgid "After print job completes"
+msgstr "Po skončení tisku"
+
+#: src/octoprint/templates/dialogs/settings/gcodescripts.jinja2:15
+msgid "After print job is cancelled"
+msgstr "Po zrušení tisku"
+
+#: src/octoprint/templates/dialogs/settings/gcodescripts.jinja2:21
+msgid "After print job is paused"
+msgstr "Při pozastavení tisku"
+
+#: src/octoprint/templates/dialogs/settings/gcodescripts.jinja2:27
+msgid "Before print job is resumed"
+msgstr "Než je tisk obnoven"
+
+#: src/octoprint/templates/dialogs/settings/gcodescripts.jinja2:33
+msgid "After connection to printer is established"
+msgstr "Poté co je navázáno spojení s tiskárnou"
+
+#: src/octoprint/templates/dialogs/settings/gcodescripts.jinja2:39
+msgid "Before connection to printer is closed"
+msgstr "Před odpojením od tiskárny"
+
+#: src/octoprint/templates/dialogs/settings/gcodescripts.jinja2:43
+msgid ""
+"This will only be executed when closing the connection actively. If the "
+"connection to the printer is suddenly lost nothing will be sent."
+msgstr "Toto se provede pouze při řízeném ukončování spojení. Pokud se spojení s tiskárnou přeruší náhle, není odesláno nic."
+
+#: src/octoprint/templates/dialogs/settings/gcodevisualizer.jinja2:5
+msgid "Enable GCode Visualizer"
+msgstr "Povolit Gcode náhled"
+
+#: src/octoprint/templates/dialogs/settings/gcodevisualizer.jinja2:9
+msgid "Maximum size the GCodeViewer autoloads the file for preview"
+msgstr "Maximální velikost pro automatické načtení GCode náhledu "
+
+#: src/octoprint/templates/dialogs/settings/gcodevisualizer.jinja2:10
+msgid "GCode Visualizer file size threshold"
+msgstr "Hranice velikosti pro GCode náhled"
+
+#: src/octoprint/templates/dialogs/settings/gcodevisualizer.jinja2:15
+msgid "on desktop"
+msgstr "na stolním PC"
+
+#: src/octoprint/templates/dialogs/settings/gcodevisualizer.jinja2:21
+msgid "on mobile"
+msgstr "na mobilu"
+
+#: src/octoprint/templates/dialogs/settings/logs.jinja2:6
+msgid "Modification date"
+msgstr "Datum změny"
+
+#: src/octoprint/templates/dialogs/settings/logs.jinja2:6
+#: src/octoprint/templates/dialogs/settings/logs.jinja2:13
+#: src/octoprint/templates/sidebar/files.jinja2:17
+#: src/octoprint/templates/sidebar/files.jinja2:31
+#: src/octoprint/templates/sidebar/files.jinja2:41
+#: src/octoprint/templates/tabs/timelapse.jinja2:66
+#: src/octoprint/templates/tabs/timelapse.jinja2:72
+#: src/octoprint/templates/tabs/timelapse.jinja2:104
+msgid "Size"
+msgstr "Velikost"
+
+#: src/octoprint/templates/dialogs/settings/logs.jinja2:14
+msgid "Date"
+msgstr "Datum"
+
+#: src/octoprint/templates/dialogs/settings/printerprofiles.jinja2:5
+msgid "Add Profile..."
+msgstr "Přidat profil..."
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:2
+msgid ""
+"Serial port to connect to, setting this to AUTO will make OctoPrint try to "
+"automatically find the right setting"
+msgstr "Sériový port kde je připojena tiskárna, volba AUTO umožní OctoPrintu pokusit se nalézt správný port automaticky"
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:3
+#: src/octoprint/templates/sidebar/connection.jinja2:1
+msgid "Serial Port"
+msgstr "Sériový port"
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:8
+msgid ""
+"Serial baud rate to connect with, setting this to AUTO will make OctoPrint "
+"try to automatically find the right setting"
+msgstr "Rychlost přenosu, při volbě AUTO se OctoPrint pokusí nalézt rychlost automaticky."
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:9
+#: src/octoprint/templates/sidebar/connection.jinja2:3
+msgid "Baudrate"
+msgstr "Rychlost (baud)"
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:14
+msgid ""
+"Makes OctoPrint try to connect to the printer automatically during start up"
+msgstr "OctoPrint se pokusí po startu automaticky připojit k tiskárně."
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:17
+msgid "Auto-connect to printer on server start"
+msgstr "Po startu automaticky připojit k tiskárně"
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:21
+msgid ""
+"Interval in which to poll for the temperature information from the printer"
+msgstr "Interval dotazování se informací o teplotě z tiskárny"
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:22
+msgid "Temperature interval"
+msgstr "Interval měření teploty"
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:28
+msgid "When printing or idle"
+msgstr "Když tiskne nebo čeká"
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:35
+msgid "When a target temperature is set"
+msgstr "Když je nastavena cílová teplota"
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:38
+msgid ""
+"Interval in which to poll for the SD printing status information from the "
+"printer while printing"
+msgstr "Interval dotazování se stavu tisku při tisku z SD karty"
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:39
+msgid "SD status interval"
+msgstr "Interval kontroly stavu SD"
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:47
+msgid ""
+"Time after which the communication with your printer will be considered "
+"timed out if nothing was sent by your printer (and an attempt to get it "
+"talking again will be done). Increase this if your printer takes longer than"
+" this for some moves."
+msgstr "Čas po němž se tiskárna považuje za nedostupnou, poté co nebyla přijata žádná komunikace od tiskárny (a proběhl opakovaný pokus o komunikaci). Lze zvětšit, pokud tiskárna potřebuje delší čas na některé pohyby."
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:48
+msgid "Communication timeout"
+msgstr "Vypršel časový limit komunikace"
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:56
+msgid ""
+"Time after which a connection attempt to the printer will be considered as "
+"having failed"
+msgstr "Čas po němž se pokusy o připojení prohlásí za nemožné."
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:57
+msgid "Connection timeout"
+msgstr "Vypršel časový limit připojení"
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:65
+msgid ""
+"Time after which to consider an auto detection attempt to have failed if no "
+"successful connection is detected"
+msgstr "Čas po kterém  se prohlásí pokusy o automatické připojení jako nemožné."
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:66
+msgid "Autodetection timeout"
+msgstr "Časový limit autodetekce"
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:77
+msgid "Log communication to serial.log (might negatively impact performance)"
+msgstr "Zaznamenávat komunikaci do serial.log (může negativně ovlivnit výkon)"
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:82
+msgid "Additional serial ports"
+msgstr "Další sériové porty"
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:85
+#, python-format
+msgid ""
+"Use this to define additional <a href=\"%%(glob_url)s\">glob patterns</a> "
+"matching serial ports to list for connecting against, e.g. "
+"<code>/dev/ttyAMA*</code>. One entry per line."
+msgstr "Tuto možnost využijete pro nastavení dalších sériových portů <a href=\"%%(glob_url)s\">vzory</a> pro vytvoření seznamu pro znovu připojení, např.:<code>/dev/ttyAMA*</code>. Jedna položka na každém řádku."
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:89
+msgid "Additional baud rates"
+msgstr "Další komunikační rychlosti"
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:92
+msgid ""
+"Use this to define additional serial port baud rates to list for connecting "
+"with, e.g. <code>123456</code>. Comma separated."
+msgstr "Použij toto pro nastavení dalších komunikačních rychlostí sériových portů pro seznam pro připojení, např. <code>123456</code>. Oddělované čárkou."
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:98
+msgid ""
+"Not only cancel ongoing prints but also disconnect on unhandled errors from "
+"the firmware."
+msgstr "Zrušit jak probíhající tisk, ale také odpojit při neošetřených chybách firmwaru."
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:105
+msgid ""
+"Ignore any unhandled errors from the firmware. Only use this if your "
+"firmware sends stuff prefixed with \"Error\" that is not an actual error. "
+"Might mask printer issues, be careful!"
+msgstr "Ignorovat všechny neošetřené chybové hlášky firmwaru. Použij pouze tehdy, kdy firmware používá označení \"Error\" i ve stavech, které chybami prostě nejsou. Buď opatrný! Toto nastavení může skrýt i vážné problémy při tisku!"
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:113
+msgid "Command to send to the firmware on first handshake attempt."
+msgstr "Příkaz, který se odešle firmwaru při prvním navázání komunikace."
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:114
+msgid "\"Hello\" command"
+msgstr "Příkaz \"Hello\""
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:117
+msgid ""
+"Use this to specify a different command than the default <code>M110</code> "
+"to send to the printer on initial connection to trigger a communication "
+"handshake."
+msgstr "Zde se zadává jiný příkaz než je výchozí <code>M110</code>, který se posílá tiskárně během úvodního připojení a který startuje komunikaci."
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:120
+msgid ""
+"Commands that are know to run long and hence should suppress communication "
+"timeouts from being triggered."
+msgstr "Příkazy které trvají dlouho a na které by se proto neměly vztahovat časové limity komunikace."
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:121
+msgid "Long running commands"
+msgstr "Dlouho trvající příkazy"
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:124
+msgid ""
+"Use this to specify the commands known to take a long time to complete "
+"without output from your printer and hence might cause timeout issues. Just "
+"the G or M code, comma separated."
+msgstr "Určete, které příkazy trvají dlouho a na které by se proto neměly vztahovat časové limity komunikace. Pouze G a M kódy oddělené čárkou."
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:127
+msgid ""
+"Commands that always require a line number and checksum to be sent with "
+"them."
+msgstr "Tyto příkazy vždy při poslání vyžadují číslo řádku a kontrolní součet."
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:128
+msgid "Commands that always require a checksum"
+msgstr "Tyto příkazy vždy vyžadují kontrolní součet"
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:131
+msgid ""
+"Use this to specify which commands <strong>always</strong> need to be sent "
+"with a checksum. Comma separated list."
+msgstr "Zde urči, které příkazy musí být <strong>vždy</strong> poslány s kontrolním součtem Seznam oddělený čárkami."
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:136
+msgid "Generate additional <code>ok</code> for <code>M29</code>"
+msgstr "Vytvářet další <code>ok</code> pro <code>M29</code>"
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:136
+msgid "Most Marlin < v1.1.0"
+msgstr "Obvykle pro Marlin < v1.1.0"
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:141
+msgid "Simulate an additional <code>ok</code> for resend requests"
+msgstr "Předstírat další <code>ok</code> při opakování požadavku"
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:144
+msgid ""
+"Maximum consecutive communication timeouts while idle. More than this and "
+"the printer will be considered to be gone. Set to 0 to disable."
+msgstr "Maximum po sobě jdoucích komunikačních problémů, zatímco tiskárna netiskne. Při větším počtu bude tiskárna považována za odpojenou. Nastavte na 0 pro vypnutí."
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:145
+msgid "Max. consecutive timeouts while idle"
+msgstr "Maximum po sobě jdoucích komunikačních problémů, zatímco tiskárna netiskne"
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:148
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:155
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:162
+msgid "Set to 0 to disable consecutive timeout detection and handling."
+msgstr "Nastavte na 0 pro vypnutí po sobě jdoucí detekce a manipulace časového limitu."
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:151
+msgid ""
+"Maximum consecutive communication timeouts while printing. More than this "
+"and the printer will be considered to be gone. Set to 0 to disable."
+msgstr "Maximum po sobě jdoucích komunikačních problémů, zatímco tiskárna tiskne. Při větším počtu bude tiskárna považována za odpojenou. Nastavte na 0 pro vypnutí."
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:152
+msgid "Max. consecutive timeouts while printing"
+msgstr "Maximum po sobě jdoucích komunikačních problémů, zatímco tiskárna tiskne"
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:158
+msgid ""
+"Maximum consecutive communication timeouts while a long running command is "
+"active. More than this and the printer will be considered to be gone. Set to"
+" 0 to disable."
+msgstr "Maximum po sobě jdoucích komunikačních problémů, zatímco byl poslán některý z dlouho trvajících příkazů. Při větším počtu bude tiskárna považována za odpojenou. Nastavte na 0 pro vypnutí."
+
+#: src/octoprint/templates/dialogs/settings/serialconnection.jinja2:159
+msgid "Max. consecutive timeouts during long running commands"
+msgstr "Maximum po sobě jdoucích komunikačních problémů, zatímco byl poslán některý z dlouho trvajících příkazů"
+
+#: src/octoprint/templates/dialogs/settings/server.jinja2:2
+msgid "Commands"
+msgstr "Příkazy"
+
+#: src/octoprint/templates/dialogs/settings/temperatures.jinja2:2
+msgid "Temperature Graph"
+msgstr "Teplotní graf"
+
+#: src/octoprint/templates/dialogs/settings/temperatures.jinja2:4
+msgid "Graph cutoff"
+msgstr "Délka zobrazovaného grafu teplot"
+
+#: src/octoprint/templates/dialogs/settings/temperatures.jinja2:10
+msgid "Needs a restart of OctoPrint to become active."
+msgstr "Je potřeba restartovat OctoPrint, aby se změna promítla."
+
+#: src/octoprint/templates/dialogs/settings/temperatures.jinja2:13
+msgid "Temperature Presets"
+msgstr "Předvolby teplot"
+
+#: src/octoprint/templates/dialogs/settings/temperatures.jinja2:15
+msgid "Extruder"
+msgstr "Extruder"
+
+#: src/octoprint/templates/dialogs/settings/terminalfilters.jinja2:4
+msgid "RegExp"
+msgstr "Regulární výraz"
+
+#: src/octoprint/templates/dialogs/usersettings/access.jinja2:5
+msgid ""
+"If you do not wish to change your password, just leave the following fields "
+"empty."
+msgstr "Nechceš-li měnit svoje heslo, ponechej následující pole prázdná."
+
+#: src/octoprint/templates/dialogs/usersettings/interface.jinja2:3
+msgid "Language"
+msgstr "Jazyk"
+
+#: src/octoprint/templates/dialogs/usersettings/interface.jinja2:11
+msgid ""
+"Changes to the interface language will only become active after a reload of "
+"the page."
+msgstr "Změna jazyka se stane aktivní až po obnovení stránky."
+
+#: src/octoprint/templates/dialogs/wizard/firstrun_end.jinja2:1
+msgid "All Done!"
+msgstr "Vše hotovo"
+
+#: src/octoprint/templates/dialogs/wizard/firstrun_end.jinja2:3
+msgid ""
+"\n"
+"    Your OctoPrint installation is now all set up and ready to go. Happy\n"
+"    printing!\n"
+msgstr "\nVaše instalace OctoPrintu je nyní kompletně nastavena a připravena k použití.\nŠťastný\ntisk!\n"
+
+#: src/octoprint/templates/dialogs/wizard/firstrun_end.jinja2:8
+#, python-format
+msgid ""
+"\n"
+"    If you enjoy OctoPrint, please consider <a href=\"%(url)s\" target=\"_blank\">supporting its ongoing\n"
+"    development</a>, which is fully funded by users like you! You can also find this link in the \"About\" dialog. <strong>Thank you!</strong>\n"
+msgstr "\nMáte-li rádi OctoPrint, prosím zvažte  <a href=\"%(url)s\" target=\"_blank\">  podporu jeho dalšího vývoje</a>, \nkterý je plně financován díky uživatelům jako jste Vy! Tento link můžete rovněž najít v dialogu \"O Octoprintu\". \n<strong>Děkujeme mnohokrát!</strong>\n"
+
+#: src/octoprint/templates/dialogs/wizard/firstrun_start.jinja2:1
+msgid "Hello!"
+msgstr "Ahoj!"
+
+#: src/octoprint/templates/dialogs/wizard/firstrun_start.jinja2:3
+msgid ""
+"\n"
+"    Thank you for installing OctoPrint! This wizard will lead you through the\n"
+"    final steps to get your OctoPrint instance all setup and ready to go. We'll\n"
+"    get you printing in no time!\n"
+msgstr "\nDěkujeme za nainstalování Octoprintu! Tento průvodce Vás provede\nposledními kroky nastavení instalace Octoprintu a jeho spuštění.\nBudete moci tisknout ve velmi krátkém čase.\n"
+
+#: src/octoprint/templates/navbar/login.jinja2:12
+msgid "Remember me"
+msgstr "Zapamatovat si mě"
+
+#: src/octoprint/templates/navbar/login.jinja2:18
+msgid "User Settings"
+msgstr "Uživatelská nastavení"
+
+#: src/octoprint/templates/navbar/login.jinja2:19
+msgid "Logout"
+msgstr "Odhlášení"
+
+#: src/octoprint/templates/navbar/settings.jinja2:1
+msgid "Settings"
+msgstr "Nastavení"
+
+#: src/octoprint/templates/navbar/systemmenu.jinja2:1
+msgid "System"
+msgstr "Systém"
+
+#: src/octoprint/templates/overlays/dragndrop.jinja2:5
+msgid "Upload locally"
+msgstr "Nahrát na disk"
+
+#: src/octoprint/templates/overlays/dragndrop.jinja2:7
+#: src/octoprint/templates/sidebar/files.jinja2:65
+msgid "Upload to SD"
+msgstr "Nahrát na SD"
+
+#: src/octoprint/templates/overlays/dragndrop.jinja2:7
+msgid "SD not initialized"
+msgstr "SD není inicializováno"
+
+#: src/octoprint/templates/overlays/offline.jinja2:9
+msgid "Attempt to reconnect"
+msgstr "Pokouším se připojit"
+
+#: src/octoprint/templates/overlays/reloadui.jinja2:6
+msgid "Please reload"
+msgstr "Prosím obnov stránku"
+
+#: src/octoprint/templates/overlays/reloadui.jinja2:7
+msgid ""
+"\n"
+"                    There is a new version of the server active now, a reload\n"
+"                    of the user interface is needed. This will not interrupt\n"
+"                    any print jobs you might have ongoing. Please reload the\n"
+"                    web interface now by clicking the button below.\n"
+"                "
+msgstr "\nNyní je aktivní nová verze serveru. Je zapotřebí znovu\nnačtení uživatelského rozhraní. Toto nepřeruší žádnou\nprobíhající tiskovou úlohu. Prosím načtěte nyní znovu \nwebové rozhraní stisknutím tlačítka níže."
+
+#: src/octoprint/templates/sidebar/connection.jinja2:8
+msgid "Save connection settings"
+msgstr "Uložit parametry připojení"
+
+#: src/octoprint/templates/sidebar/connection.jinja2:11
+msgid "Auto-connect on server startup"
+msgstr "Automaticky se připojit po startu serveru"
+
+#: src/octoprint/templates/sidebar/files.jinja2:6
+msgid "Back"
+msgstr "Zpět"
+
+#: src/octoprint/templates/sidebar/files.jinja2:7
+msgid "Currently in"
+msgstr "Aktuálně v"
+
+#: src/octoprint/templates/sidebar/files.jinja2:16
+#: src/octoprint/templates/sidebar/files.jinja2:30
+msgid "Uploaded"
+msgstr "Nahráno"
+
+#: src/octoprint/templates/sidebar/files.jinja2:20
+msgid "Additional data"
+msgstr "Další data"
+
+#: src/octoprint/templates/sidebar/files.jinja2:21
+#: src/octoprint/templates/sidebar/files.jinja2:33
+msgid "Download"
+msgstr "Stáhnout"
+
+#: src/octoprint/templates/sidebar/files.jinja2:22
+#: src/octoprint/templates/sidebar/files.jinja2:34
+#: src/octoprint/templates/sidebar/files.jinja2:43
+msgid "Remove"
+msgstr "Odstranit"
+
+#: src/octoprint/templates/sidebar/files.jinja2:23
+msgid "Load"
+msgstr "Nahrát"
+
+#: src/octoprint/templates/sidebar/files.jinja2:24
+msgid "Load and Print"
+msgstr "Nahrát a tisknout"
+
+#: src/octoprint/templates/sidebar/files.jinja2:48
+msgid "Free"
+msgstr "Volno"
+
+#: src/octoprint/templates/sidebar/files.jinja2:48
+msgid "Total"
+msgstr "Celkem"
+
+#: src/octoprint/templates/sidebar/files.jinja2:53
+msgid "Create folder..."
+msgstr "Vytvořit adresář..."
+
+#: src/octoprint/templates/sidebar/files.jinja2:83
+msgid "Hint: You can also drag and drop files on this page to upload them."
+msgstr "Tip: Pro nahrání sem také můžete přetáhnout soubory z průzkumníku vašeho PC."
+
+#: src/octoprint/templates/sidebar/files_header.jinja2:2
+msgid "File list settings"
+msgstr "Nastavení seznamu souborů"
+
+#: src/octoprint/templates/sidebar/files_header.jinja2:6
+msgid "Sort by name"
+msgstr "Seřadit podle jména"
+
+#: src/octoprint/templates/sidebar/files_header.jinja2:7
+msgid "Sort by upload date"
+msgstr "Seřadit podle data"
+
+#: src/octoprint/templates/sidebar/files_header.jinja2:8
+msgid "Sort by file size"
+msgstr "Seřadit podle velikosti"
+
+#: src/octoprint/templates/sidebar/files_header.jinja2:12
+msgid "Sort by Folders, Files"
+msgstr "Seřadit podle Adresářů, Souborů"
+
+#: src/octoprint/templates/sidebar/files_header.jinja2:13
+msgid "Sort by Files, Folders"
+msgstr "Seřadit podle Souborů, Adresářů"
+
+#: src/octoprint/templates/sidebar/files_header.jinja2:14
+msgid "Mixed"
+msgstr "Smíšeně"
+
+#: src/octoprint/templates/sidebar/files_header.jinja2:18
+msgid "Only show machine code files"
+msgstr "Zobrazit pouze soubory se strojovým kódem"
+
+#: src/octoprint/templates/sidebar/files_header.jinja2:19
+msgid "Only show model files"
+msgstr "Zobrazit pouze soubory s modely"
+
+#: src/octoprint/templates/sidebar/files_header.jinja2:22
+msgid "Only show files stored locally"
+msgstr "Jen soubory na disku"
+
+#: src/octoprint/templates/sidebar/files_header.jinja2:23
+msgid "Only show files stored on SD"
+msgstr "Jen soubory na SD kartě"
+
+#: src/octoprint/templates/sidebar/files_header.jinja2:26
+msgid "Hide folders without files"
+msgstr "Skrýt adresáře bez souborů"
+
+#: src/octoprint/templates/sidebar/files_header.jinja2:27
+msgid "Hide successfully printed files"
+msgstr "Skrýt úspěšně vytisknuté soubory"
+
+#: src/octoprint/templates/sidebar/files_header.jinja2:32
+msgid "Refresh file list"
+msgstr "Obnovit seznam souborů"
+
+#: src/octoprint/templates/sidebar/files_header.jinja2:39
+msgid "SD Card operations"
+msgstr "Operace s kartou SD"
+
+#: src/octoprint/templates/sidebar/files_header.jinja2:43
+msgid "Initialize SD card"
+msgstr "Inicializovat SD kartu"
+
+#: src/octoprint/templates/sidebar/files_header.jinja2:44
+msgid "Refresh SD files"
+msgstr "Obnovit obsah SD karty"
+
+#: src/octoprint/templates/sidebar/files_header.jinja2:45
+msgid "Release SD card"
+msgstr "Vyjmi SD kartu"
+
+#: src/octoprint/templates/sidebar/state.jinja2:1
+msgid "Current printer state"
+msgstr "Současný stav tiskárny"
+
+#: src/octoprint/templates/sidebar/state.jinja2:3
+msgid "Name of file currently selected for printing"
+msgstr "Název aktuálního souboru zvoleného pro tisk"
+
+#: src/octoprint/templates/sidebar/state.jinja2:3
+msgid "File"
+msgstr "Soubor"
+
+#: src/octoprint/templates/sidebar/state.jinja2:4
+msgid "Current timelapse configuration"
+msgstr "Současné nastavení časosběru"
+
+#: src/octoprint/templates/sidebar/state.jinja2:8
+msgid "Estimated total print time base on statical analysis or past prints"
+msgstr "Zbývající celkový čas tisku na základě statické analýzy nebo předcházejících tisků."
+
+#: src/octoprint/templates/sidebar/state.jinja2:8
+msgid "Approx. Total Print Time"
+msgstr "Přibližný celkový čas tisku"
+
+#: src/octoprint/templates/sidebar/state.jinja2:10
+msgid "Total print time so far"
+msgstr "Celkový čas je příliš vzdálený"
+
+#: src/octoprint/templates/sidebar/state.jinja2:10
+msgid "Print Time"
+msgstr "Doba probíhajícího tisku"
+
+#: src/octoprint/templates/sidebar/state.jinja2:11
+msgid ""
+"Estimated time until the print job is done. This is only an estimate and "
+"accuracy depends heavily on various factors!"
+msgstr "Předpokládaná doba do konce tisku. Jedná se pouze o odhad a přesnost do značné míry závisí na různých faktorech!"
+
+#: src/octoprint/templates/sidebar/state.jinja2:11
+msgid "Print Time Left"
+msgstr "Zbývající čas tisku"
+
+#: src/octoprint/templates/sidebar/state.jinja2:12
+msgid "Bytes printed vs total bytes of file"
+msgstr "Vytisknuté byty proti celkovému počtu bytů souboru"
+
+#: src/octoprint/templates/sidebar/state.jinja2:12
+msgid "Printed"
+msgstr "Vytisknuto"
+
+#: src/octoprint/templates/sidebar/state.jinja2:23
+msgid "Restart"
+msgstr "Restart"
+
+#: src/octoprint/templates/sidebar/state.jinja2:23
+msgid "Print"
+msgstr "Tisknout"
+
+#: src/octoprint/templates/sidebar/state.jinja2:24
+msgid "Resume"
+msgstr "Pokračovat"
+
+#: src/octoprint/templates/sidebar/state.jinja2:25
+msgid "Cancels the print job"
+msgstr "Zruší tisk"
+
+#: src/octoprint/templates/snippets/settings/printerprofiles/profileEditorAxes.jinja2:4
+msgid ""
+"Please define the maximum speed/feedrate of the individual axes and whether "
+"their control should be inverted or not."
+msgstr "Prosím nastavte maximální rychlost / rychlost posunu každé osy zvlášť, stejně jako zda je ovládání osy invertováno nebo ne."
+
+#: src/octoprint/templates/snippets/settings/printerprofiles/profileEditorAxes.jinja2:8
+msgid "X"
+msgstr "X"
+
+#: src/octoprint/templates/snippets/settings/printerprofiles/profileEditorAxes.jinja2:15
+#: src/octoprint/templates/snippets/settings/printerprofiles/profileEditorAxes.jinja2:27
+#: src/octoprint/templates/snippets/settings/printerprofiles/profileEditorAxes.jinja2:39
+msgid "Invert control"
+msgstr "Prohodit ovládání"
+
+#: src/octoprint/templates/snippets/settings/printerprofiles/profileEditorAxes.jinja2:20
+msgid "Y"
+msgstr "Y"
+
+#: src/octoprint/templates/snippets/settings/printerprofiles/profileEditorAxes.jinja2:32
+msgid "Z"
+msgstr "Z"
+
+#: src/octoprint/templates/snippets/settings/printerprofiles/profileEditorAxes.jinja2:44
+msgid "E"
+msgstr "E"
+
+#: src/octoprint/templates/snippets/settings/printerprofiles/profileEditorAxes.jinja2:54
+msgid ""
+"This information is used for manual control via the \"Control\" tab. It does"
+" NOT influence already sliced files that you upload to OctoPrint!"
+msgstr "Tato informace je použita pro ruční ovládání pomocí záložky \"Ovládání\". NEMÁ žádný vliv na již rozřezané soubory vytvořené v jiném PC a vložené do OctoPrintu!"
+
+#: src/octoprint/templates/snippets/settings/printerprofiles/profileEditorBuildvolume.jinja2:3
+msgid "Form Factor"
+msgstr "Typ podložky"
+
+#: src/octoprint/templates/snippets/settings/printerprofiles/profileEditorBuildvolume.jinja2:5
+msgid "Rectangular"
+msgstr "Obdélníkový"
+
+#: src/octoprint/templates/snippets/settings/printerprofiles/profileEditorBuildvolume.jinja2:8
+msgid "Circular"
+msgstr "Kruhový"
+
+#: src/octoprint/templates/snippets/settings/printerprofiles/profileEditorBuildvolume.jinja2:13
+msgid "Origin"
+msgstr "Počátek"
+
+#: src/octoprint/templates/snippets/settings/printerprofiles/profileEditorBuildvolume.jinja2:21
+msgid "Heated Bed"
+msgstr "Vyhřívaná podložka"
+
+#: src/octoprint/templates/snippets/settings/printerprofiles/profileEditorBuildvolume.jinja2:29
+msgid "Please define the print volume."
+msgstr "Prosím nastav velikost tiskového prostoru."
+
+#: src/octoprint/templates/snippets/settings/printerprofiles/profileEditorBuildvolume.jinja2:35
+msgid "Width (X)"
+msgstr "Šířka (X)"
+
+#: src/octoprint/templates/snippets/settings/printerprofiles/profileEditorBuildvolume.jinja2:44
+msgid "Depth (Y)"
+msgstr "Hloubka (Y)"
+
+#: src/octoprint/templates/snippets/settings/printerprofiles/profileEditorBuildvolume.jinja2:55
+msgid "Diameter (X/Y)"
+msgstr "Průměr (X/Y)"
+
+#: src/octoprint/templates/snippets/settings/printerprofiles/profileEditorBuildvolume.jinja2:65
+msgid "Height (Z)"
+msgstr "Výška (Z)"
+
+#: src/octoprint/templates/snippets/settings/printerprofiles/profileEditorBuildvolume.jinja2:75
+msgid ""
+"\n"
+"            If your printer's print head may move slightly outside the print volume (e.g. for nozzle cleaning routines)\n"
+"            you can define a custom safe bounding box for its movements below.\n"
+"        "
+msgstr "\nPokud se tisková hlava Vaší tiskárny může hýbat mimo tiskový prostor (např. při proceduře čištění hlavy)\nmůžete níže nastavit uživatelské omezení tiskového prostoru."
+
+#: src/octoprint/templates/snippets/settings/printerprofiles/profileEditorBuildvolume.jinja2:82
+msgid "Custom bounding box"
+msgstr "Uživatelské omezení tiskového prostoru"
+
+#: src/octoprint/templates/snippets/settings/printerprofiles/profileEditorBuildvolume.jinja2:89
+msgid "X Coordinates"
+msgstr "Souřadnice X"
+
+#: src/octoprint/templates/snippets/settings/printerprofiles/profileEditorBuildvolume.jinja2:102
+msgid "Y Coordinates"
+msgstr "Souřadnice Y"
+
+#: src/octoprint/templates/snippets/settings/printerprofiles/profileEditorBuildvolume.jinja2:115
+msgid "Z Coordinates"
+msgstr "Souřadnice Z"
+
+#: src/octoprint/templates/snippets/settings/printerprofiles/profileEditorBuildvolume.jinja2:130
+msgid ""
+"This information is used for the temperature tab, the bounding box check, "
+"the GCODE Viewer and/or when slicing from OctoPrint. It does NOT influence "
+"already sliced files that you upload to OctoPrint!"
+msgstr "Tato informace je použita pro záložku teplot, uživatelské nastavení tiskového prostoru, GCODE náhled a/nebo pro slicování z OctoPrintu! NEMÁ žádný vliv na soubory slicované jinde a nahrané do OctoPrintu!"
+
+#: src/octoprint/templates/snippets/settings/printerprofiles/profileEditorExtruder.jinja2:4
+msgid "Nozzle Diameter"
+msgstr "Průměr trysky"
+
+#: src/octoprint/templates/snippets/settings/printerprofiles/profileEditorExtruder.jinja2:13
+msgid "Number of Extruders"
+msgstr "Počet extruderů"
+
+#: src/octoprint/templates/snippets/settings/printerprofiles/profileEditorExtruder.jinja2:20
+msgid "Shared nozzle"
+msgstr "Sdílená tryska"
+
+#: src/octoprint/templates/snippets/settings/printerprofiles/profileEditorExtruder.jinja2:23
+msgid ""
+"Check this if your printer has a single nozzle and heater shared among its "
+"extruders instead of one nozzle and heater per extruder"
+msgstr "Zaškrtněte, pokud vaše tiskárna má jedinou trysku a topnou spirálu sdílenou mezi svými extrudery namísto jedné trysky a topení pro každý extrudér"
+
+#: src/octoprint/templates/snippets/settings/printerprofiles/profileEditorExtruder.jinja2:30
+msgid ""
+"Please specify the nozzle offsets of the extruders relative to the first "
+"nozzle T0."
+msgstr "Prosím zadejte odsazení trysky extruderu relativně k první trysce T0"
+
+#: src/octoprint/templates/snippets/settings/printerprofiles/profileEditorExtruder.jinja2:36
+#: src/octoprint/templates/tabs/temperature.jinja2:13
+msgid "Offset"
+msgstr "Posunutí"
+
+#: src/octoprint/templates/snippets/settings/printerprofiles/profileEditorExtruder.jinja2:55
+msgid ""
+"This information is used for the graph and controls available in the "
+"\"Temperature\" tab, the GCODE viewer and when slicing from within "
+"OctoPrint. It does NOT influence already sliced files that you upload to "
+"OctoPrint!"
+msgstr "Tato informace je použita pro graf a ovládání dostupné v záložce \"Teplota\", GCODE prohlížeč a když se slicuje z Octoprintu. NEMÁ žádný vliv na soubory slicované jinde a nahrané do OctoPrintu!"
+
+#: src/octoprint/templates/snippets/settings/printerprofiles/profileEditorGeneral.jinja2:6
+msgid "Name must be set"
+msgstr "Musí být nastaveno jméno"
+
+#: src/octoprint/templates/snippets/settings/printerprofiles/profileEditorGeneral.jinja2:17
+#: src/octoprint/templates/snippets/settings/printerprofiles/profiles.jinja2:5
+msgid "Model"
+msgstr "Model"
+
+#: src/octoprint/templates/snippets/settings/printerprofiles/profiles.jinja2:14
+msgid "Set as default profile"
+msgstr "Nastavit jako výchozí profil"
+
+#: src/octoprint/templates/snippets/settings/printerprofiles/profiles.jinja2:14
+msgid "Edit Profile"
+msgstr "Upravit profil"
+
+#: src/octoprint/templates/snippets/settings/server/serverCommandServerRestart.jinja2:1
+msgid "Command to restart the OctoPrint server"
+msgstr "Příkaz pro restart OctoPrint serveru"
+
+#: src/octoprint/templates/snippets/settings/server/serverCommandSystemRestart.jinja2:1
+msgid "Command to restart the system OctoPrint is running on"
+msgstr "Příkaz pro restart operačního systému běžícího pod OctoPrintem"
+
+#: src/octoprint/templates/snippets/settings/server/serverCommandSystemRestart.jinja2:2
+msgid "Restart system"
+msgstr "Restartovat systém"
+
+#: src/octoprint/templates/snippets/settings/server/serverCommandSystemShutdown.jinja2:1
+msgid "Command to shut down the system OctoPrint is running on"
+msgstr "Příkaz pro vypnutí operačního systému běžícího pod OctoPrintem"
+
+#: src/octoprint/templates/snippets/settings/webcam/ffmpegBitrate.jinja2:1
+msgid "Bitrate to use for encoding the timelapse video"
+msgstr "Kvalita časosběrného videa - bitrate"
+
+#: src/octoprint/templates/snippets/settings/webcam/ffmpegBitrate.jinja2:2
+msgid "Timelapse bitrate"
+msgstr "Bitrate časosběru"
+
+#: src/octoprint/templates/snippets/settings/webcam/ffmpegPath.jinja2:1
+msgid "Full path to the FFMPEG binary"
+msgstr "Plná cesta ke knihovně FFMPEG"
+
+#: src/octoprint/templates/snippets/settings/webcam/ffmpegPath.jinja2:2
+msgid "Path to FFMPEG"
+msgstr "Cesta k FFMPEGu"
+
+#: src/octoprint/templates/snippets/settings/webcam/ffmpegThreads.jinja2:1
+msgid "Number of FFMPEG encoding threads"
+msgstr "Počet enkódovacích vláken FFMPEGu"
+
+#: src/octoprint/templates/snippets/settings/webcam/ffmpegThreads.jinja2:2
+msgid "FFMPEG threads"
+msgstr "Počet vláken FFMPEGu"
+
+#: src/octoprint/templates/snippets/settings/webcam/watermark.jinja2:4
+msgid "Enable OctoPrint watermark in timelapse movies"
+msgstr "Vložit vodoznak OctoPrintu do časosběrů"
+
+#: src/octoprint/templates/snippets/settings/webcam/webcamOrientation.jinja2:4
+msgid "Flip webcam horizontally"
+msgstr "Obrátit kameru vodorovně"
+
+#: src/octoprint/templates/snippets/settings/webcam/webcamOrientation.jinja2:9
+msgid "Flip webcam vertically"
+msgstr "Obrátit kameru svisle"
+
+#: src/octoprint/templates/snippets/settings/webcam/webcamOrientation.jinja2:14
+msgid "Rotate webcam 90 degrees counter clockwise"
+msgstr "Otočit kameru o 90 stupňů doleva."
+
+#: src/octoprint/templates/snippets/settings/webcam/webcamSnapshotUrl.jinja2:1
+msgid ""
+"URL to use for retrieving webcam snapshot images for timelapse creation"
+msgstr "URL pro získávání fotografií pro vytváření časosběrných videí"
+
+#: src/octoprint/templates/snippets/settings/webcam/webcamSnapshotUrl.jinja2:2
+msgid "Snapshot URL"
+msgstr "URL pro fotky"
+
+#: src/octoprint/templates/snippets/settings/webcam/webcamSnapshotUrl.jinja2:8
+msgid "Fully qualified URL, needs to be reachable by OctoPrint's server"
+msgstr "Plně nastavená adresa URL musí být dosažitelná serverem OctoPrint"
+
+#: src/octoprint/templates/snippets/settings/webcam/webcamStreamUrl.jinja2:1
+msgid "URL to embed into the UI for live viewing of the webcam stream"
+msgstr "URL adresa živého vysílání web kamery"
+
+#: src/octoprint/templates/snippets/settings/webcam/webcamStreamUrl.jinja2:2
+msgid "Stream URL"
+msgstr "URL streamu web kamery"
+
+#: src/octoprint/templates/snippets/settings/webcam/webcamStreamUrl.jinja2:8
+msgid ""
+"Needs to be reachable from the browser displaying the OctoPrint UI, used to "
+"embed the webcam stream into the page."
+msgstr "Musí být možné stream web kamery zobrazit v prohlížeči zobrazujícím rozhraní OctoPrint, aby mohl být stream vložen do stránek OctoPrintu."
+
+#: src/octoprint/templates/tabs/control.jinja2:7
+msgid "Keyboard controls active"
+msgstr "Ovládání klávesnicí je aktivní"
+
+#: src/octoprint/templates/tabs/control.jinja2:10
+msgid "X Axis"
+msgstr "Osa X"
+
+#: src/octoprint/templates/tabs/control.jinja2:11
+msgid "Y Axis"
+msgstr "Osa Y"
+
+#: src/octoprint/templates/tabs/control.jinja2:12
+msgid "Page&uarr;"
+msgstr "Page&uarr;"
+
+#: src/octoprint/templates/tabs/control.jinja2:12
+msgid "Page&darr;"
+msgstr "Page&darr;"
+
+#: src/octoprint/templates/tabs/control.jinja2:12
+msgid "Z Axis"
+msgstr "Osa Z"
+
+#: src/octoprint/templates/tabs/control.jinja2:15
+msgid "Home X/Y"
+msgstr "Domů X/Y"
+
+#: src/octoprint/templates/tabs/control.jinja2:16
+msgid "Home Z"
+msgstr "Domů Z"
+
+#: src/octoprint/templates/tabs/control.jinja2:17
+msgid "Stepsize"
+msgstr "Velikost kroku"
+
+#: src/octoprint/templates/tabs/control.jinja2:23
+msgid ""
+"Hint: If you move your mouse over the picture, you enter keyboard control "
+"mode."
+msgstr "Tip: Když najedeš myší na obrázek, vstoupíš do módu ovládání klávesnicí"
+
+#: src/octoprint/templates/tabs/control.jinja2:69
+msgid "Feed rate:"
+msgstr "Rychlost tisku:"
+
+#: src/octoprint/templates/tabs/control.jinja2:78
+msgid "Select Tool..."
+msgstr "Zvol nástroj..."
+
+#: src/octoprint/templates/tabs/control.jinja2:89
+msgid "Extrude"
+msgstr "Extrudovat"
+
+#: src/octoprint/templates/tabs/control.jinja2:90
+msgid "Retract"
+msgstr "Vytáhnout"
+
+#: src/octoprint/templates/tabs/control.jinja2:94
+msgid "Flow rate:"
+msgstr "Rychlost extruderu:"
+
+#: src/octoprint/templates/tabs/control.jinja2:101
+msgid "Motors off"
+msgstr "Vypnout motory"
+
+#: src/octoprint/templates/tabs/control.jinja2:102
+msgid "Fan on"
+msgstr "Zapnout ofuk"
+
+#: src/octoprint/templates/tabs/control.jinja2:103
+msgid "Fan off"
+msgstr "Vypnut ofuk"
+
+#: src/octoprint/templates/tabs/gcodeviewer.jinja2:11
+msgid "Previous layer"
+msgstr "Předcházející vrstva"
+
+#: src/octoprint/templates/tabs/gcodeviewer.jinja2:14
+msgid "Next layer"
+msgstr "Další vrstva"
+
+#: src/octoprint/templates/tabs/gcodeviewer.jinja2:28
+msgid "Model info"
+msgstr "Informace o modelu"
+
+#: src/octoprint/templates/tabs/gcodeviewer.jinja2:31
+msgid "Layer info"
+msgstr "Info o vrstvě"
+
+#: src/octoprint/templates/tabs/gcodeviewer.jinja2:35
+msgid "Renderer options"
+msgstr "Možnosti renderování"
+
+#: src/octoprint/templates/tabs/gcodeviewer.jinja2:39
+msgid "Sync with job progress"
+msgstr "Synchronizovat s tiskem"
+
+#: src/octoprint/templates/tabs/gcodeviewer.jinja2:44
+msgid "Center viewport on model"
+msgstr "Vycentrovat"
+
+#: src/octoprint/templates/tabs/gcodeviewer.jinja2:47
+msgid "Zoom in on model"
+msgstr "Zvětšit model"
+
+#: src/octoprint/templates/tabs/gcodeviewer.jinja2:53
+msgid "Show moves"
+msgstr "Zobrazit pohyby"
+
+#: src/octoprint/templates/tabs/gcodeviewer.jinja2:56
+msgid "Show retracts"
+msgstr "Zobrazit retrakce"
+
+#: src/octoprint/templates/tabs/gcodeviewer.jinja2:62
+msgid "Also show previous layer"
+msgstr "Ukazovat i předchozí vrstvu"
+
+#: src/octoprint/templates/tabs/gcodeviewer.jinja2:65
+msgid "Also show next layer"
+msgstr "Ukazovat i následující vrstvu"
+
+#: src/octoprint/templates/tabs/gcodeviewer.jinja2:70
+msgid "Reload"
+msgstr "Znovu načíst"
+
+#: src/octoprint/templates/tabs/gcodeviewer.jinja2:76
+msgid ""
+"\n"
+"            Note that the time and usage values in this tab are <strong>estimated</strong> by the GCODE viewer in your\n"
+"            browser and might differ from the values <strong>estimated</strong> by the server that are displayed in the\n"
+"            \"State\" and \"Files\" panels in the sidebar due to slightly different implementations. Also note that these\n"
+"            <strong>estimated</strong> values may be inaccurate since they can also take information present in the\n"
+"            GCODE file into account.\n"
+"        "
+msgstr "\nVšimněte si, že hodnoty času a množství materiálu jsou <strong>odhadnuty</strong> GCODE prohlížečem ve tvém\ninternetovém prohlížeči a mohou být rozdílné od hodnot <strong>odhadnutých</strong> serverem a zobrazených v\npanelech \"Stav\" a \"Soubory\" na boku stránek kvůli trochu odlišné implementaci. Také si všimněte, že\n<strong>odhadnuté</strong> hodnoty mohou být nepřesné, protože mohou také použit informace z \nGCODE souboru."
+
+#: src/octoprint/templates/tabs/gcodeviewer.jinja2:87
+msgid ""
+"<p>\n"
+"        You've selected <strong data-bind=\"text: selectedFile.name\"></strong> for printing which has a size of\n"
+"        <strong data-bind=\"text: formatSize(selectedFile.size())\"></strong>. Depending on your machine this\n"
+"        might be too large for rendering and cause your browser to become unresponsive or crash.\n"
+"    </p>\n"
+"\n"
+"    <p>\n"
+"        Are you sure you want to visualize this file nevertheless?\n"
+"    </p>"
+msgstr "<p>\n        Zvolil jsi k tisku soubor <strong data-bind=\"text: selectedFile.name\"></strong>, který má velikost\n        <strong data-bind=\"text: formatSize(selectedFile.size())\"></strong>. V závislosti na rychlosti vašeho stroje může trvat zobrazení dlouho nebo může program zatuhnout.\n    </p>\n\n    <p>\n        Jsi si jistý, že soubor stejně chceš vidět?\n    </p>"
+
+#: src/octoprint/templates/tabs/gcodeviewer.jinja2:98
+#, python-format
+msgid "Yes, please visualize %(name)s regardless of its size"
+msgstr "Ano, prosím zobraz %(name)s bez ohledu na jeho velikost"
+
+#: src/octoprint/templates/tabs/temperature.jinja2:29
+#: src/octoprint/templates/tabs/temperature.jinja2:51
+msgid "Set"
+msgstr "Nastavit"
+
+#: src/octoprint/templates/tabs/temperature.jinja2:41
+#: src/octoprint/templates/tabs/timelapse.jinja2:9
+msgid "Off"
+msgstr "Vypnuto"
+
+#: src/octoprint/templates/tabs/terminal.jinja2:4
+msgid "Autoscroll"
+msgstr "Automatické posouvání"
+
+#: src/octoprint/templates/tabs/terminal.jinja2:5
+msgid "Scroll to end"
+msgstr "Až na konec"
+
+#: src/octoprint/templates/tabs/terminal.jinja2:5
+msgid "Select all"
+msgstr "Označit vše"
+
+#: src/octoprint/templates/tabs/terminal.jinja2:6
+msgid ""
+"For performance reasons only a limited amount of terminal functionality is "
+"enabled right now."
+msgstr "Z důvodu výkonu je nyní v terminálu povoleno pouze omezené množství funkcí."
+
+#: src/octoprint/templates/tabs/terminal.jinja2:20
+msgid "Send"
+msgstr "Odeslat"
+
+#: src/octoprint/templates/tabs/terminal.jinja2:22
+msgid "Hint: Use the arrow up/down keys to recall commands sent previously"
+msgstr "Tip: Použij šipky nahoru a dolů k prohledávání předchozích příkazů"
+
+#: src/octoprint/templates/tabs/terminal.jinja2:30
+msgid "Fake Acknowledgement"
+msgstr "Falešné potvrzení"
+
+#: src/octoprint/templates/tabs/terminal.jinja2:31
+msgid ""
+"If acknowledgements (\"ok\"s) sent by the firmware get lost due to issues "
+"with the serial communication to your printer, OctoPrint's communication "
+"with it can become stuck. If that happens, this can help. Please be advised "
+"that such occurences hint at general communication issues with your printer "
+"which will probably negatively influence your printing results and which you"
+" should therefore try to resolve!"
+msgstr "V případě, že se ztratí odpověď (\"ok\") od firmware kvůli chybě v sériové komunikaci, komunikace s OctoPrintem se zasekne. Když se to stane, tato volba může pomoci. Pozor však na to, že může ovlivnit výsledný tisk. Lépe tedy najít příčinu chyb v komunikaci a tu opravit."
+
+#: src/octoprint/templates/tabs/terminal.jinja2:34
+msgid "Force fancy functionality"
+msgstr "Vynutit všechny funkce "
+
+#: src/octoprint/templates/tabs/terminal.jinja2:35
+msgid "Force terminal output during printing"
+msgstr "Vynutit terminálový výstup během tisku"
+
+#: src/octoprint/templates/tabs/terminal.jinja2:36
+msgid ""
+"Some functionality of the terminal will be disabled if OctoPrint detects "
+"that your browser is too slow for that. You may force it back on here, but "
+"be aware that this might make your browser unresponsive."
+msgstr "Některé funkce v terminálu nebude možné použít, pokud Octoprint zjistí, že tvůj prohlížeč je na to příliš pomalý. Tyto funkce přitom lze vynutit, počítej však s tím, že tvůj prohlížeč může přestat reagovat."
+
+#: src/octoprint/templates/tabs/timelapse.jinja2:3
+msgid ""
+"Take note that timelapse configuration is disabled while your printer is "
+"printing."
+msgstr "Měj na paměti, že nastavení časosběru není při tisku aktivní."
+
+#: src/octoprint/templates/tabs/timelapse.jinja2:5
+msgid "Timelapse Configuration"
+msgstr "Nastavení časosběru"
+
+#: src/octoprint/templates/tabs/timelapse.jinja2:7
+msgid "Timelapse Mode"
+msgstr "Mód časosběru"
+
+#: src/octoprint/templates/tabs/timelapse.jinja2:13
+msgid ""
+"Do not use with spiralized (\"Joris\") vases or similar continuous Z models."
+msgstr "Nepoužívej se spirálovými (\"Joris\") vázami nebo podobnými spojitými modely."
+
+#: src/octoprint/templates/tabs/timelapse.jinja2:14
+msgid "Note"
+msgstr "Poznámka"
+
+#: src/octoprint/templates/tabs/timelapse.jinja2:14
+msgid ""
+"Does not work when printing from the printer's SD Card (no way to detect the"
+" change in Z reliably). Use \"Timed\" mode for those prints instead."
+msgstr "Nefunguje při tisku z SD karty (nelze spolehlivě zjistit změny v ose Z). Pro takové tisky použijte spíš mód \"Časovat\"."
+
+#: src/octoprint/templates/tabs/timelapse.jinja2:16
+msgid "Timelapse frame rate (in frames per second)"
+msgstr "Snímková rychlost pro časosběr (ve snímcích za sekundu)"
+
+#: src/octoprint/templates/tabs/timelapse.jinja2:19
+msgid "fps"
+msgstr "fps"
+
+#: src/octoprint/templates/tabs/timelapse.jinja2:22
+msgid "Timelapse post roll (in rendered seconds)"
+msgstr "Závěr časosběru (kolik sec filmu po tisku ještě nahrávat)"
+
+#: src/octoprint/templates/tabs/timelapse.jinja2:29
+msgid "Capture post roll images"
+msgstr "Vytvářet snímky i po tisku"
+
+#: src/octoprint/templates/tabs/timelapse.jinja2:30
+msgid ""
+"If this is unchecked, OctoPrint will simply repeat the last frame for the "
+"post roll instead of continuing to capture new frames."
+msgstr "Pokud toto není zaškrtnuto, OctoPrint jednoduše opakuje poslední snímek místo vytváření snímků po tisku."
+
+#: src/octoprint/templates/tabs/timelapse.jinja2:36
+msgid "Interval"
+msgstr "Interval"
+
+#: src/octoprint/templates/tabs/timelapse.jinja2:44
+msgid "Retraction Z-Hop (in mm)"
+msgstr "Zatažení při pohybu v ose Z (Z-Hop v mm)"
+
+#: src/octoprint/templates/tabs/timelapse.jinja2:49
+msgid ""
+"Enter the retraction z-hop used in the firmware or the gcode file to trigger"
+" snapshots for the timelapse only if a real layer change happens. For this "
+"to work properly your retraction z-hop has to be different from your "
+"layerheight!"
+msgstr "Vložte velikost zatažení Z-Hop použitou ve firmwaru nebo v souboru gcode k aktivaci vytváření snímků pro časosběr pouze v případě, kdy se mění vrstva. Aby toto fungovalo správně, musí být zatažení Z-Hop nastaveno odlišně od výšky vrstvy!"
+
+#: src/octoprint/templates/tabs/timelapse.jinja2:54
+msgid "Save as default"
+msgstr "Uložit jako výchozí"
+
+#: src/octoprint/templates/tabs/timelapse.jinja2:59
+msgid "Save config"
+msgstr "Uložit konfiguraci"
+
+#: src/octoprint/templates/tabs/timelapse.jinja2:63
+msgid "Finished Timelapses"
+msgstr "Ukončené časosběry"
+
+#: src/octoprint/templates/tabs/timelapse.jinja2:66
+msgid "Creation date"
+msgstr "Datum vytvoření"
+
+#: src/octoprint/templates/tabs/timelapse.jinja2:97
+msgid "Unrendered Timelapses"
+msgstr "Nevytvořené časosběry"
+
+#: src/octoprint/templates/tabs/timelapse.jinja2:103
+msgid "Frames"
+msgstr "Snímky"
+
+#: src/octoprint/templates/tabs/timelapse.jinja2:115
+msgid "Delete unrendered timelapse"
+msgstr "Vymazat nevytvořené časosběry"
+
+#: src/octoprint/templates/tabs/timelapse.jinja2:115
+msgid "Render timelapse"
+msgstr "Vytvořit časosběr"
