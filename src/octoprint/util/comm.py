@@ -1151,7 +1151,7 @@ class MachineCom(object):
 					# a response to an M105 or an M114
 					self._handle_ok()
 					needs_further_handling = "T:" in line or "T0:" in line or "B:" in line or "C:" in line or \
-					                         "X:" in line or "FIRMWARE_NAME:" in line
+					                         "X:" in line or "NAME:" in line
 					handled = (line == "wait" or line == "ok" or not needs_further_handling)
 
 				# process resends
@@ -1238,13 +1238,29 @@ class MachineCom(object):
 							pass
 
 				##~~ firmware name & version
-				elif "FIRMWARE_NAME:" in line:
+				elif "NAME:" in line:
 					# looks like a response to M115
 					data = parse_firmware_line(line)
 					firmware_name = data.get("FIRMWARE_NAME")
-					self._logger.info("Printer reports firmware name \"{}\"".format(firmware_name))
+
+					if firmware_name is None:
+						# Malyan's "Marlin compatible firmware" isn't actually Marlin compatible and doesn't even
+						# report its firmware name properly in response to M115. Wonderful - why stick to established
+						# protocol when you can do your own thing, right?
+						#
+						# Example: NAME: Malyan VER: 2.9 MODEL: M200 HW: HA02
+						#
+						# We do a bit of manual fiddling around here to circumvent that issue and get ourselves a
+						# reliable firmware name (NAME + VER) out of the Malyan M115 response.
+						name = data.get("NAME")
+						ver = data.get("VER")
+						if "malyan" in name.lower() and ver:
+							firmware_name = name.strip() + " " + ver.strip()
 
 					if not self._firmwareInfoReceived and firmware_name:
+						firmware_name = firmware_name.strip()
+						self._logger.info("Printer reports firmware name \"{}\"".format(firmware_name))
+
 						if "repetier" in firmware_name.lower():
 							self._logger.info("Detected Repetier firmware, enabling relevant features for issue free communication")
 
@@ -1262,6 +1278,16 @@ class MachineCom(object):
 						elif "reprapfirmware" in firmware_name.lower():
 							self._logger.info("Detected RepRapFirmware, enabling relevant features for issue free communication")
 							self._sdRelativePath = True
+
+						elif "malyan" in firmware_name.lower():
+							self._logger.info("Detected Malyan firmware, enabling relevant features for issue free communication")
+
+							self._alwaysSendChecksum = True
+
+							sd_always_available = self._sdAlwaysAvailable
+							self._sdAlwaysAvailable = True
+							if not sd_always_available and not self._sdAvailable:
+								self.initSdCard()
 
 						self._firmwareInfoReceived = True
 
