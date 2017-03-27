@@ -399,7 +399,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		self._printAfterSelect = printAfterSelect
 		self._posAfterSelect = pos
 		self._comm.selectFile("/" + path if sd else path, sd)
-		self._setProgressData(completion=0)
+		self._updateProgressData()
 		self._setCurrentZ(None)
 
 	def unselect_file(self):
@@ -407,7 +407,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			return
 
 		self._comm.unselectFile()
-		self._setProgressData(completion=0)
+		self._updateProgressData()
 		self._setCurrentZ(None)
 
 	def get_file_position(self):
@@ -451,7 +451,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		self._fileManager.delete_recovery_data()
 
 		self._lastProgressReport = None
-		self._setProgressData(completion=0)
+		self._updateProgressData()
 		self._setCurrentZ(None)
 		self._comm.startPrint(pos=pos)
 
@@ -486,18 +486,9 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		if self._comm is None:
 			return
 
+		# tell comm layer to cancel - will also trigger our cancelled handler
+		# for further processing
 		self._comm.cancelPrint()
-
-		# reset progress, height, print time
-		self._setCurrentZ(None)
-		self._setProgressData()
-
-		# mark print as failure
-		with self._selectedFileMutex:
-			if self._selectedFile is not None:
-				self._fileManager.log_print(FileDestinations.SDCARD if self._selectedFile["sd"] else FileDestinations.LOCAL, self._selectedFile["filename"], time.time(), self._comm.getPrintTime(), False, self._printerProfileManager.get_current_or_default()["id"])
-				payload = self._payload_for_print_job_event()
-				eventManager().fire(Events.PRINT_FAILED, payload)
 
 	def get_state_string(self, state=None):
 		if self._comm is None:
@@ -671,7 +662,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 			return result
 
-	def _setProgressData(self, completion=None, filepos=None, printTime=None, printTimeLeft=None):
+	def _updateProgressData(self, completion=None, filepos=None, printTime=None, printTimeLeft=None):
 		self._stateMonitor.set_progress(dict(completion=int(completion * 100) if completion is not None else None,
 		                                     filepos=filepos,
 		                                     printTime=int(printTime) if printTime is not None else None,
@@ -1000,7 +991,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			if self._comm is not None:
 				self._comm = None
 
-			self._setProgressData(completion=0)
+			self._updateProgressData()
 			self._setCurrentZ(None)
 			self._setJobData(None, None, None)
 			self._printerProfileManager.deselect()
@@ -1066,6 +1057,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			            must_be_set=False)
 
 	def on_comm_print_job_done(self):
+		self._updateProgressData()
+		self._stateMonitor.set_state({"text": self.get_state_string(), "flags": self._getStateFlags()})
+		self._fileManager.delete_recovery_data()
+
 		payload = self._payload_for_print_job_event()
 		if payload:
 			payload["time"] = self._comm.getPrintTime()
@@ -1074,23 +1069,37 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			            context=dict(event=payload),
 			            must_be_set=False)
 
-		with self._selectedFileMutex:
-			self._fileManager.log_print(FileDestinations.SDCARD if self._selectedFile["sd"] else FileDestinations.LOCAL, self._selectedFile["filename"], time.time(), self._comm.getPrintTime(), True, self._printerProfileManager.get_current_or_default()["id"])
-			self._setProgressData(completion=1.0, filepos=self._selectedFile["filesize"], printTime=self._comm.getPrintTime(), printTimeLeft=0)
-		self._stateMonitor.set_state({"text": self.get_state_string(), "flags": self._getStateFlags()})
-		self._fileManager.delete_recovery_data()
+			self._fileManager.log_print(payload["origin"],
+			                            payload["path"],
+			                            time.time(),
+			                            payload["time"],
+			                            True,
+			                            self._printerProfileManager.get_current_or_default()["id"])
 
 	def on_comm_print_job_failed(self):
 		payload = self._payload_for_print_job_event()
 		eventManager().fire(Events.PRINT_FAILED, payload)
 
 	def on_comm_print_job_cancelled(self):
+		self._setCurrentZ(None)
+		self._updateProgressData()
+
 		payload = self._payload_for_print_job_event(position=self._comm.cancel_position.as_dict() if self._comm and self._comm.cancel_position else None)
 		if payload:
+			payload["time"] = self._comm.getPrintTime()
+
 			eventManager().fire(Events.PRINT_CANCELLED, payload)
 			self.script("afterPrintCancelled",
 			            context=dict(event=payload),
 			            must_be_set=False)
+
+			self._fileManager.log_print(payload["origin"],
+			                            payload["path"],
+			                            time.time(),
+			                            payload["time"],
+			                            False,
+			                            self._printerProfileManager.get_current_or_default()["id"])
+			eventManager().fire(Events.PRINT_FAILED, payload)
 
 	def on_comm_print_job_paused(self):
 		payload = self._payload_for_print_job_event(position=self._comm.pause_position.as_dict() if self._comm and self._comm.pause_position else None)
@@ -1112,7 +1121,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		self._sdStreaming = True
 
 		self._setJobData(filename, filesize, True)
-		self._setProgressData(completion=0.0, filepos=0, printTime=0)
+		self._updateProgressData()
 		self._stateMonitor.set_state({"text": self.get_state_string(), "flags": self._getStateFlags()})
 
 	def on_comm_file_transfer_done(self, filename):
@@ -1125,7 +1134,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 		self._setCurrentZ(None)
 		self._setJobData(None, None, None)
-		self._setProgressData()
+		self._updateProgressData()
 		self._stateMonitor.set_state({"text": self.get_state_string(), "flags": self._getStateFlags()})
 
 	def on_comm_force_disconnect(self):
