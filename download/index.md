@@ -16,8 +16,6 @@ that already includes OctoPrint plus everything you need to run it:
   USB webcams and the Raspberry Pi camera
 * [CuraEngine 15.04](https://github.com/Ultimaker/CuraEngine) for slicing directly
   on your Raspberry Pi
-* [OctoPiPanel](https://github.com/jonaslorander/OctoPiPanel), which is an LCD
-  app that works with OctoPrint
 
 You can download the latest version via the following button:
 
