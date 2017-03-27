@@ -142,6 +142,12 @@ only provided here as some additional information for you), **even if only addin
     reproduce your issue in order to fix it and that is not possible if they
     don't know what you did to get it to happen in the first place.
 
+    Ideally provide exact steps to follow in order to reproduce your problem:
+
+    1. ...
+    2. ...
+    3. ...
+
     If you encountered a problem with specific files of any sorts, make sure
     to also include a link to a file with which to reproduce the problem.]
 
@@ -149,9 +155,19 @@ only provided here as some additional information for you), **even if only addin
 
     #### What happened instead?
 
+    #### Did the same happen when running OctoPrint in safe mode?
+
+    [Try to reproduce your problem in safe mode. You can find information
+    on how to enable safe mode in the Contribution Guidelines.]
+
     #### Branch & Commit or Version of OctoPrint
 
     [Can be found in the lower left corner of the web interface. ALWAYS INCLUDE.]
+
+    #### Operating System running OctoPrint
+
+    [OctoPi, Linux, Windows, MacOS, something else? With version please,
+    OctoPi's version can be found in /etc/octopi_version]
 
     #### Printer model & used firmware incl. version
 
@@ -163,7 +179,8 @@ only provided here as some additional information for you), **even if only addin
 
     #### Link to octoprint.log
 
-    [On gist.github.com or pastebin.com. ALWAYS INCLUDE and never truncate.]
+    [On gist.github.com or pastebin.com. ALWAYS INCLUDE and never truncate.
+    The Contribution Guidelines tell you where to find that.]
 
     #### Link to contents of terminal tab or serial.log
 
@@ -178,16 +195,19 @@ only provided here as some additional information for you), **even if only addin
     #### Link to contents of Javascript console in the browser
 
     [On gist.github.com or pastebin.com or alternatively a screenshot. If applicable -
-    always include if unsure or reporting UI issues.]
+    always include if unsure or reporting UI issues.
 
-    #### Screenshot(s) showing the problem:
+    The Contribution Guidelines tell you where to find that.]
+
+    #### Screenshot(s)/video(s) showing the problem:
 
     [If applicable. Always include if unsure or reporting UI issues.]
 
     I have read the FAQ.
 
-Copy-paste this template **completely**. Do not skip any lines or the bot
-*will* complain!
+Copy-paste this template **completely** (or use the version that gets pre-filled
+into the "new issue" form). Do not skip any lines or the bot *will* complain! Provide
+all requested information or your ticket will be closed.
 
 ### Where can I find which version and branch I'm on?
 
@@ -405,6 +425,7 @@ the local version identifier to allow for an exact determination of the active c
   * 2017-03-09: Allow PRs against `maintenance` branch for bugs in stable.
   * 2017-03-10: Reproduce bugs in safe mode to make sure they are really caused
     by OctoPrint itself and not a misbehaving plugin.
+  * 2017-03-27: Added safe mode section to ticket template.
 
 ## Footnotes
   * [1] - If you are wondering why, the problem is that anything that you add
