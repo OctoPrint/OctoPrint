@@ -13,7 +13,7 @@ date: 2017-03-28 20:00:00 +0200
 
 <center><iframe width="560" height="315" src="https://www.youtube.com/embed/JU_gZS1vJUs" frameborder="0" allowfullscreen></iframe></center>
 
-Topics in this episode which aired live on February 18th:
+Topics in this episode which aired live on March 19th:
 
   * Release of 1.3.2
   * Ideas for improving the feedback process for release candidates
