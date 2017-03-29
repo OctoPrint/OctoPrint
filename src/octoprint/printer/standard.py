@@ -19,7 +19,7 @@ from octoprint import util as util
 from octoprint.events import eventManager, Events
 from octoprint.filemanager import FileDestinations, NoSuchStorage
 from octoprint.plugin import plugin_manager, ProgressPlugin
-from octoprint.printer import PrinterInterface, PrinterCallback, UnknownScript
+from octoprint.printer import PrinterInterface, PrinterCallback, UnknownScript, InvalidFileLocation
 from octoprint.printer.estimation import TimeEstimationHelper
 from octoprint.settings import settings
 from octoprint.util import comm as comm
@@ -385,6 +385,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		if self._comm is None or (self._comm.isBusy() or self._comm.isStreaming()):
 			self._logger.info("Cannot load file: printer not connected or currently busy")
 			return
+
+		self._validateJob(path, sd)
 
 		recovery_data = self._fileManager.get_recovery_data()
 		if recovery_data:
@@ -841,6 +843,16 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		self._bedTemp = bedTemp
 
 		self._stateMonitor.add_temperature(data)
+
+	def _validateJob(self, filename, sd):
+		if sd:
+			return
+
+		path_on_disk = self._fileManager.path_on_disk(FileDestinations.LOCAL, filename)
+		if os.path.isabs(filename) and not filename == path_on_disk:
+			raise InvalidFileLocation("{} is not located within local storage, cannot select for printing".format(filename))
+		if not os.path.isfile(path_on_disk):
+			raise InvalidFileLocation("{} does not exist in local storage, cannot select for printing".format(filename))
 
 	def _setJobData(self, filename, filesize, sd):
 		with self._selectedFileMutex:
