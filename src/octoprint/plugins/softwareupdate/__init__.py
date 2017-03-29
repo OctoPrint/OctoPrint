@@ -213,6 +213,8 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			"check_providers": {},
 
 			"cache_ttl": 24 * 60,
+
+			"notify_users": True
 		}
 
 	def on_settings_load(self):
@@ -260,7 +262,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 	def on_settings_save(self, data):
 		for key in self.get_settings_defaults():
-			if key in ("checks", "cache_ttl", "octoprint_checkout_folder", "octoprint_type", "octoprint_release_channel"):
+			if key in ("checks", "cache_ttl", "notify_user", "octoprint_checkout_folder", "octoprint_type", "octoprint_release_channel"):
 				continue
 			if key in data:
 				self._settings.set([key], data[key])
@@ -268,6 +270,9 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		if "cache_ttl" in data:
 			self._settings.set_int(["cache_ttl"], data["cache_ttl"])
 		self._version_cache_ttl = self._settings.get_int(["cache_ttl"]) * 60
+
+		if "notify_users" in data:
+			self._settings.set_boolean(["notify_users"], data["notify_users"])
 
 		checks = self._get_configured_checks()
 		if "octoprint" in checks:
