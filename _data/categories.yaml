@@ -1,12 +1,18 @@
 important:
   title: Important Announcement
+  rss: Important OctoPrint Announcements
 releases:
   title: Release
+  rss: OctoPrint Release Announcements
 spotlight:
   title: Community Spotlight
+  rss: OctoPrint Community Spotlights
 octopi:
   title: OctoPi
+  rss: OctoPi Announcements
 octoprintonair:
   title: OctoPrint On Air
+  rss: OctoPrint On Air
 news:
   title: News
+  rss: OctoPrint News

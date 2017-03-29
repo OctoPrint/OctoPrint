@@ -1,0 +1,27 @@
+---
+layout: null
+---
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>OctoBlog</title>
+    <link>{{ "/blog/" | prepend: site.baseurl | prepend: site.external }}</link>
+    <atom:link href="{{ page.url | prepend: site.baseurl | prepend: site.external }}" rel="self" type="application/rss+xml"/>
+    <pubDate>{{ site.time | date_to_rfc822 }}</pubDate>
+    <lastBuildDate>{{ site.time | date_to_rfc822 }}</lastBuildDate>
+    <generator>Jekyll v{{ jekyll.version }}</generator>
+    {% assign counter = 0 %}{% for post in site.posts %}{% if counter < 10 %}{% assign filtered = 0 %}{% for category in post.categories %}{% if page.excluded contains category %}{% assign filtered = 1 %}{% endif %}{% endfor %}{% if filtered == 0 %}{% assign counter = counter | plus:1 %}
+    <item>
+      <title>{{ post.title | xml_escape }}</title>
+      <description>
+        <![CDATA[
+          {{ post.excerpt }}
+        ]]>
+      </description>
+      <pubDate>{{ post.date | date_to_rfc822 }}</pubDate>
+      <link>{% if post.link %}{{ post.link }}{% else %}{{ post.url | prepend: site.baseurl | prepend: site.external }}{% endif %}</link>
+      <guid isPermaLink="true">{% if post.link %}{{ post.link }}{% else %}{{ post.url | prepend: site.baseurl | prepend: site.external }}{% endif %}</guid>
+      {% assign thecategories = post.categories | shift %}{% for category in thecategories %}{% if site.data.categories[category] %}<category>{{ site.data.categories[category].rss | xml_escape }}</category>{% endif %}{% endfor %}
+    </item>{% endif %}{% endif %}{% endfor %}
+  </channel>
+</rss>

@@ -4,9 +4,9 @@ layout: null
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>{{ site.categories[page.category].title }}</title>
-    <description>{{ site.categories[page.category].description }}</description>
-    <link>{{ site.url }}{{ site.baseurl }}/</link>
+    <title>{{ site.data.categories[page.category].rss }}</title>
+    {% if site.data.categories[page.category].description %}<description>{{ site.data.categories[page.category].description }}</description>{% endif %}
+    <link>{{ "/blog/" | prepend: site.baseurl | prepend: site.external }}</link>
     <atom:link href="{{ page.url | prepend: site.baseurl | prepend: site.external }}" rel="self" type="application/rss+xml"/>
     <pubDate>{{ site.time | date_to_rfc822 }}</pubDate>
     <lastBuildDate>{{ site.time | date_to_rfc822 }}</lastBuildDate>
@@ -22,6 +22,7 @@ layout: null
         <pubDate>{{ post.date | date_to_rfc822 }}</pubDate>
         <link>{% if post.link %}{{ post.link }}{% else %}{{ post.url | prepend: site.baseurl | prepend: site.external }}{% endif %}</link>
         <guid isPermaLink="true">{% if post.link %}{{ post.link }}{% else %}{{ post.url | prepend: site.baseurl | prepend: site.external }}{% endif %}</guid>
+        {% assign thecategories = post.categories | shift %}{% for category in thecategories %}{% if site.data.categories[category] %}<category>{{ site.data.categories[category].rss }}</category>{% endif %}{% endfor %}
       </item>
     {% endfor %}
   </channel>
