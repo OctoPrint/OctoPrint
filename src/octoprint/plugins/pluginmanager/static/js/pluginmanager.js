@@ -360,9 +360,26 @@ $(function() {
                     .done(onSuccess)
                     .fail(onError);
             } else {
-                OctoPrint.plugins.pluginmanager.disable(data.key)
-                    .done(onSuccess)
-                    .fail(onError);
+                var perform = function() {
+                    OctoPrint.plugins.pluginmanager.disable(data.key)
+                        .done(onSuccess)
+                        .fail(onError);
+                };
+
+                if (data.disabling_discouraged) {
+                    var message = _.sprintf(gettext("You are about to disable \"%(name)s\"."), {name: data.name})
+                        + "</p><p>" + data.disabling_discouraged;
+                    showConfirmationDialog({
+                        title: gettext("This is not recommended"),
+                        message: message,
+                        question: gettext("Do you still want to disable it?"),
+                        cancel: gettext("Keep enabled"),
+                        proceed: gettext("Disable anyway"),
+                        onproceed: perform
+                    })
+                } else {
+                    perform();
+                }
             }
         };
 
