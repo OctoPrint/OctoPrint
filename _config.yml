@@ -1,6 +1,12 @@
 permalink: /blog/:year/:month/:day/:title 
 
-exclude: [".rvmrc", ".rbenv-version", "README.md", "Rakefile", "changelog.md", "node_modules"]
+exclude:
+- CNAME
+- Gemfile
+- Gemfile.lock
+- vendor
+- "*.iml"
+
 highlighter: rouge
 markdown: kramdown
 
