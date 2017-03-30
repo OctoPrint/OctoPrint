@@ -725,7 +725,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 __plugin_name__ = "Plugin Manager"
 __plugin_author__ = "Gina Häußge"
-__plugin_url__ = "https://github.com/foosel/OctoPrint/wiki/Plugin:-Plugin-Manager"
+__plugin_url__ = "http://docs.octoprint.org/en/master/bundledplugins/pluginmanager.html"
 __plugin_description__ = "Allows installing and managing OctoPrint plugins"
 __plugin_license__ = "AGPLv3"
 

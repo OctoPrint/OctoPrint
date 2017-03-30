@@ -18,6 +18,7 @@ import hashlib
 
 from . import version_checks, updaters, exceptions, util, cli
 
+from flask.ext.babel import gettext
 
 from octoprint.server.util.flask import restricted_access, with_revalidation_checking, check_etag
 from octoprint.server import admin_permission, VERSION, REVISION, BRANCH
@@ -1043,8 +1044,11 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 __plugin_name__ = "Software Update"
 __plugin_author__ = "Gina Häußge"
-__plugin_url__ = "https://github.com/foosel/OctoPrint/wiki/Plugin:-Software-Update"
+__plugin_url__ = "http://docs.octoprint.org/en/master/bundledplugins/softwareupdate.html"
 __plugin_description__ = "Allows receiving update notifications and performing updates of OctoPrint and plugins"
+__plugin_disabling_discouraged__ = gettext("Without this plugin OctoPrint will no longer be able to "
+                                           "update itself or any of your installed plugins which might put "
+                                           "your system at risk.")
 __plugin_license__ = "AGPLv3"
 def __plugin_load__():
 	global __plugin_implementation__

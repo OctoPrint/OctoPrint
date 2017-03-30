@@ -411,4 +411,9 @@ def _strip_tags(text):
 
 
 __plugin_name__ = "Announcement Plugin"
+__plugin_author__ = "Gina Häußge"
+__plugin_description__ = "Announcements all around OctoPrint"
+__plugin_disabling_discouraged__ = gettext("Without this plugin you might miss important announcements "
+                                           "regarding security or other critical issues concerning OctoPrint.")
+__plugin_license__ = "AGPLv3"
 __plugin_implementation__ = AnnouncementPlugin()
