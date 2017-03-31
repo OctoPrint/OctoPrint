@@ -16,6 +16,7 @@ from octoprint.util.pip import LocalPipCaller, UnknownPip
 
 from flask import jsonify, make_response
 from flask.ext.babel import gettext
+from collections import OrderedDict
 
 import logging
 import sarge
@@ -24,6 +25,9 @@ import requests
 import re
 import os
 import pkg_resources
+import copy
+import dateutil.parser
+import time
 
 class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
                           octoprint.plugin.TemplatePlugin,
@@ -53,12 +57,19 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		self._repository_cache_path = None
 		self._repository_cache_ttl = 0
 
+		self._notices = dict()
+		self._notices_available = False
+		self._notices_cache_path = None
+		self._notices_cache_ttl = 0
+
 		self._console_logger = None
 
 	def initialize(self):
 		self._console_logger = logging.getLogger("octoprint.plugins.pluginmanager.console")
 		self._repository_cache_path = os.path.join(self.get_plugin_data_folder(), "plugins.json")
 		self._repository_cache_ttl = self._settings.get_int(["repository_ttl"]) * 60
+		self._notices_cache_path = os.path.join(self.get_plugin_data_folder(), "notices.json")
+		self._notices_cache_ttl = self._settings.get_int(["notices_ttl"]) * 60
 
 		self._pip_caller = LocalPipCaller(force_user=self._settings.get_boolean(["pip_force_user"]))
 		self._pip_caller.on_log_call = self._log_call
@@ -84,6 +95,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		self._console_logger.propagate = False
 
 		self._repository_available = self._fetch_repository_from_disk()
+		self._notices_available = self._fetch_notices_from_disk()
 
 	##~~ SettingsPlugin
 
@@ -91,6 +103,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		return dict(
 			repository="http://plugins.octoprint.org/plugins.json",
 			repository_ttl=24*60,
+			notices="http://plugins.octoprint.org/notices.json",
+			notices_ttl=6*60,
 			pip_args=None,
 			pip_force_user=False,
 			dependency_links=False,
@@ -101,6 +115,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		octoprint.plugin.SettingsPlugin.on_settings_save(self, data)
 
 		self._repository_cache_ttl = self._settings.get_int(["repository_ttl"]) * 60
+		self._notices_cache_ttl = self._settings.get_int(["notices_ttl"]) * 60
 		self._pip_caller.force_user = self._settings.get_boolean(["pip_force_user"])
 
 	##~~ AssetPlugin
@@ -192,6 +207,10 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		if refresh_repository:
 			self._repository_available = self._refresh_repository()
 
+		refresh_notices = request.values.get("refresh_notices", "false") in valid_boolean_trues
+		if refresh_notices:
+			self._notices_available = self._refresh_notices()
+
 		def view():
 			return jsonify(plugins=self._get_plugins(),
 			               repository=dict(
@@ -217,6 +236,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			hash.update(repr(self._get_plugins()))
 			hash.update(str(self._repository_available))
 			hash.update(repr(self._repository_plugins))
+			hash.update(str(self._notices_available))
+			hash.update(repr(self._notices))
 			hash.update(repr(safe_mode))
 			return hash.hexdigest()
 
@@ -225,7 +246,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 		return with_revalidation_checking(etag_factory=lambda *args, **kwargs: etag(),
 		                                  condition=lambda *args, **kwargs: condition(),
-		                                  unless=lambda: refresh_repository)(view)()
+		                                  unless=lambda: refresh_repository or refresh_notices)(view)()
 
 	def on_api_command(self, command, data):
 		if not admin_permission.can():
@@ -368,7 +389,12 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 		self._plugin_manager.log_all_plugins()
 
-		result = dict(result=True, url=url, needs_restart=needs_restart, needs_refresh=needs_refresh, was_reinstalled=new_plugin_key in all_plugins_before or reinstall is not None, plugin=self._to_external_representation(new_plugin))
+		result = dict(result=True,
+		              url=url,
+		              needs_restart=needs_restart,
+		              needs_refresh=needs_refresh,
+		              was_reinstalled=new_plugin_key in all_plugins_before or reinstall is not None,
+		              plugin=self._to_external_plugin(new_plugin))
 		self._send_result_notification("install", result)
 		return jsonify(result)
 
@@ -448,7 +474,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 		self._plugin_manager.reload_plugins()
 
-		result = dict(result=True, needs_restart=needs_restart, needs_refresh=needs_refresh, plugin=self._to_external_representation(plugin))
+		result = dict(result=True, needs_restart=needs_restart, needs_refresh=needs_refresh, plugin=self._to_external_plugin(plugin))
 		self._send_result_notification("uninstall", result)
 		return jsonify(result)
 
@@ -473,9 +499,15 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			self._logger.exception(u"Problem toggling enabled state of {name}: {reason}".format(name=plugin.key, reason=e.reason))
 			result = dict(result=False, reason=e.reason)
 		except octoprint.plugin.core.PluginNeedsRestart:
-			result = dict(result=True, needs_restart=True, needs_refresh=True, plugin=self._to_external_representation(plugin))
+			result = dict(result=True,
+			              needs_restart=True,
+			              needs_refresh=True,
+			              plugin=self._to_external_plugin(plugin))
 		else:
-			result = dict(result=True, needs_restart=needs_restart_api, needs_refresh=needs_refresh_api, plugin=self._to_external_representation(plugin))
+			result = dict(result=True,
+			              needs_restart=needs_restart_api,
+			              needs_refresh=needs_refresh_api,
+			              plugin=self._to_external_plugin(plugin))
 
 		self._send_result_notification(command, result)
 		return jsonify(result)
@@ -572,7 +604,6 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		return self._refresh_repository(repo_data=repo_data)
 
 	def _fetch_repository_from_url(self):
-		import requests
 		repository_url = self._settings.get(["repository"])
 		try:
 			r = requests.get(repository_url)
@@ -602,7 +633,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		octoprint_version = self._get_octoprint_version(base=True)
 
 		def map_repository_entry(entry):
-			result = dict(entry)
+			result = copy.deepcopy(entry)
 
 			if not "follow_dependency_links" in result:
 				result["follow_dependency_links"] = False
@@ -622,6 +653,69 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			return result
 
 		self._repository_plugins = map(map_repository_entry, repo_data)
+		return True
+
+	def _fetch_notices_from_disk(self):
+		notice_data = None
+		if os.path.isfile(self._notices_cache_path):
+			import time
+			mtime = os.path.getmtime(self._notices_cache_path)
+			if mtime + self._notices_cache_ttl >= time.time() > mtime:
+				try:
+					import json
+					with open(self._notices_cache_path) as f:
+						notice_data = json.load(f)
+					self._logger.info("Loaded notices from disk, was still valid")
+				except:
+					self._logger.exception("Error while loading notices from {}".format(self._notices_cache_path))
+
+		return self._refresh_notices(notice_data=notice_data)
+
+	def _fetch_notices_from_url(self):
+		notices_url = self._settings.get(["notices"])
+		try:
+			r = requests.get(notices_url)
+			self._logger.info("Loaded plugin notices data from {}".format(notices_url))
+		except Exception as e:
+			self._logger.exception("Could not fetch notices from {notices_url}: {message}".format(notices_url=notices_url, message=str(e)))
+			return None
+
+		notice_data = r.json()
+
+		try:
+			import json
+			with octoprint.util.atomic_write(self._notices_cache_path, "wb") as f:
+				json.dump(notice_data, f)
+		except Exception as e:
+			self._logger.exception("Error while saving notices to {}: {}".format(self._notices_cache_path, str(e)))
+		return notice_data
+
+	def _refresh_notices(self, notice_data=None):
+		if notice_data is None:
+			notice_data = self._fetch_notices_from_url()
+			if notice_data is None:
+				return False
+
+		notices = dict()
+		for notice in notice_data:
+			if not "plugin" in notice or not "text" in notice or not "date" in notice:
+				continue
+
+			key = notice["plugin"]
+
+			try:
+				parsed_date = dateutil.parser.parse(notice["date"])
+				notice["timestamp"] = parsed_date.timetuple()
+			except Exception as e:
+				self._logger.warn("Error while parsing date {!r} for plugin notice "
+				                  "of plugin {}, ignoring notice: {}".format(notice["date"], key,  str(e)))
+				continue
+
+			if not key in notices:
+				notices[key] = []
+			notices[key].append(notice)
+
+		self._notices = notices
 		return True
 
 	def _is_octoprint_compatible(self, octoprint_version, compatibility_entries):
@@ -694,14 +788,14 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 		hidden = self._settings.get(["hidden"])
 		result = []
-		for name, plugin in plugins.items():
-			if name in hidden:
+		for key, plugin in plugins.items():
+			if key in hidden:
 				continue
-			result.append(self._to_external_representation(plugin))
+			result.append(self._to_external_plugin(plugin))
 
 		return result
 
-	def _to_external_representation(self, plugin):
+	def _to_external_plugin(self, plugin):
 		return dict(
 			key=plugin.key,
 			name=plugin.name,
@@ -720,8 +814,36 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			pending_disable=((plugin.enabled or getattr(plugin, "safe_mode_enabled", False)) and plugin.key in self._pending_disable),
 			pending_install=(self._plugin_manager.is_plugin_marked(plugin.key, "installed")),
 			pending_uninstall=(self._plugin_manager.is_plugin_marked(plugin.key, "uninstalled")),
-			origin=plugin.origin.type
+			origin=plugin.origin.type,
+			notifications = self._get_notifications(plugin)
 		)
+
+	def _get_notifications(self, plugin):
+		key = plugin.key
+		if key not in self._notices:
+			return
+
+		plugin_notifications = self._notices.get(key, [])
+
+		def filter_versions(notification):
+			return "text" in notification and "date" in notification and \
+			       ("versions" not in notification or plugin.version in notification["versions"])
+
+		def map_notification(notification):
+			return self._to_external_notification(key, notification)
+
+		return filter(lambda x: x is not None,
+		              map(map_notification,
+		                  filter(filter_versions,
+		                         plugin_notifications)))
+
+	def _to_external_notification(self, key, notification):
+		return dict(key=key,
+		            date=time.mktime(notification["timestamp"]),
+		            text=notification["text"],
+		            link=notification.get("link"),
+		            versions=notification.get("versions", []),
+		            important=notification.get("important", False))
 
 __plugin_name__ = "Plugin Manager"
 __plugin_author__ = "Gina Häußge"
