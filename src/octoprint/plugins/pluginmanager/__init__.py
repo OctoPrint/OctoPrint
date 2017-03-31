@@ -820,21 +820,26 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 	def _get_notifications(self, plugin):
 		key = plugin.key
+		if not plugin.enabled:
+			return
+
 		if key not in self._notices:
 			return
 
+		octoprint_version = self._get_octoprint_version(base=True)
 		plugin_notifications = self._notices.get(key, [])
 
-		def filter_versions(notification):
+		def filter_relevant(notification):
 			return "text" in notification and "date" in notification and \
-			       ("versions" not in notification or plugin.version in notification["versions"])
+			       ("versions" not in notification or plugin.version in notification["versions"]) and \
+			       ("octoversions" not in notification or self._is_octoprint_compatible(octoprint_version, notification["octoversions"]))
 
 		def map_notification(notification):
 			return self._to_external_notification(key, notification)
 
 		return filter(lambda x: x is not None,
 		              map(map_notification,
-		                  filter(filter_versions,
+		                  filter(filter_relevant,
 		                         plugin_notifications)))
 
 	def _to_external_notification(self, key, notification):
