@@ -653,7 +653,7 @@ $(function() {
         };
 
         self.installButtonText = function(data) {
-            return self.isCompatible(data) ? (self.installed(data) ? gettext("Reinstall") : gettext("Install")) : gettext("Incompatible");
+            return self.isCompatible(data) ? (self.installed(data) ? gettext("Reinstall") : gettext("Install")) : (data.disabled ? gettext("Disabled") : gettext("Incompatible"));
         };
 
         self._displayNotification = function(response, titleSuccess, textSuccess, textRestart, textReload, titleError, textError) {
