@@ -53,6 +53,11 @@ class Events(object):
 	METADATA_ANALYSIS_FINISHED = "MetadataAnalysisFinished"
 	METADATA_STATISTICS_UPDATED = "MetadataStatisticsUpdated"
 
+	FILE_ADDED = "FileAdded",
+	FILE_REMOVED = "FileRemoved",
+	FOLDER_ADDED = "FolderAdded",
+	FOLDER_REMOVED = "FolderRemoved",
+
 	# SD Upload
 	TRANSFER_STARTED = "TransferStarted"
 	TRANSFER_DONE = "TransferDone"
