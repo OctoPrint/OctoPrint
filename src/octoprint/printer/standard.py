@@ -561,7 +561,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		return self._comm is not None and self._comm.isError()
 
 	def is_ready(self):
-		return self.is_operational() and not self._comm.isStreaming()
+		return self.is_operational() and not self.is_printing() and not self._comm.isStreaming()
 
 	def is_sd_ready(self):
 		if not settings().getBoolean(["feature", "sdSupport"]) or self._comm is None:
