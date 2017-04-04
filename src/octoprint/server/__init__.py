@@ -193,8 +193,10 @@ class Server(object):
 		eventManager = events.eventManager()
 		analysisQueue = octoprint.filemanager.analysis.AnalysisQueue()
 		slicingManager = octoprint.slicing.SlicingManager(self._settings.getBaseFolder("slicingProfiles"), printerProfileManager)
+
 		storage_managers = dict()
 		storage_managers[octoprint.filemanager.FileDestinations.LOCAL] = octoprint.filemanager.storage.LocalFileStorage(self._settings.getBaseFolder("uploads"))
+
 		fileManager = octoprint.filemanager.FileManager(analysisQueue, slicingManager, printerProfileManager, initial_storage_managers=storage_managers)
 		appSessionManager = util.flask.AppSessionManager()
 		pluginLifecycleManager = LifecycleManager(pluginManager)
@@ -1044,11 +1046,20 @@ class Server(object):
 			"js/lib/jquery/jquery.slimscroll.min.js",
 			"js/lib/jquery/jquery.qrcode.min.js",
 			"js/lib/jquery/jquery.bootstrap.wizard.js",
+			"js/lib/pnotify/pnotify.core.min.js",
+			"js/lib/pnotify/pnotify.buttons.min.js",
+			"js/lib/pnotify/pnotify.callbacks.min.js",
+			"js/lib/pnotify/pnotify.confirm.min.js",
+			"js/lib/pnotify/pnotify.desktop.min.js",
+			"js/lib/pnotify/pnotify.history.min.js",
+			"js/lib/pnotify/pnotify.mobile.min.js",
+			"js/lib/pnotify/pnotify.nonblock.min.js",
+			"js/lib/pnotify/pnotify.reference.min.js",
+			"js/lib/pnotify/pnotify.tooltip.min.js",
 			"js/lib/moment-with-locales.min.js",
 			"js/lib/pusher.color.min.js",
 			"js/lib/detectmobilebrowser.js",
 			"js/lib/md5.min.js",
-			"js/lib/pnotify.min.js",
 			"js/lib/bootstrap-slider-knockout-binding.js",
 			"js/lib/loglevel.min.js",
 			"js/lib/sockjs.min.js" if minify else "js/lib/sockjs.js"
@@ -1088,7 +1099,9 @@ class Server(object):
 			"css/bootstrap-tabdrop.css",
 			"css/font-awesome.min.css",
 			"css/jquery.fileupload-ui.css",
-			"css/pnotify.min.css"
+			"css/pnotify.core.min.css",
+			"css/pnotify.buttons.min.css",
+			"css/pnotify.history.min.css"
 		]
 		css_core = list(dynamic_core_assets["css"]) + list(dynamic_plugin_assets["bundled"]["css"])
 		css_plugins = list(dynamic_plugin_assets["external"]["css"])

@@ -53,6 +53,11 @@ class Events(object):
 	METADATA_ANALYSIS_FINISHED = "MetadataAnalysisFinished"
 	METADATA_STATISTICS_UPDATED = "MetadataStatisticsUpdated"
 
+	FILE_ADDED = "FileAdded",
+	FILE_REMOVED = "FileRemoved",
+	FOLDER_ADDED = "FolderAdded",
+	FOLDER_REMOVED = "FolderRemoved",
+
 	# SD Upload
 	TRANSFER_STARTED = "TransferStarted"
 	TRANSFER_DONE = "TransferDone"
@@ -350,7 +355,10 @@ class CommandTrigger(GenericEventListener):
 				else:
 					commandExecutioner(command)
 			except subprocess.CalledProcessError as e:
-				self._logger.warn("Command failed with return code %i: %s" % (e.returncode, str(e)))
+				if debug:
+					self._logger.warn("Command failed with return code {}: {}".format(e.returncode, str(e)))
+				else:
+					self._logger.warn("Command failed with return code {}, enable debug logging on target 'octoprint.events' for details".format(e.returncode))
 			except:
 				self._logger.exception("Command failed")
 

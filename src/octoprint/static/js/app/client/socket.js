@@ -27,10 +27,6 @@
     };
 
     OctoPrintSocketClient.prototype.propagateMessage = function(event, data) {
-        if (!this.registeredHandlers.hasOwnProperty(event)) {
-            return;
-        }
-
         var start = new Date().getTime();
 
         var eventObj = {event: event, data: data};

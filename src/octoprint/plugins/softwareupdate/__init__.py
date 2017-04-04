@@ -18,6 +18,7 @@ import hashlib
 
 from . import version_checks, updaters, exceptions, util, cli
 
+from flask_babel import gettext
 
 from octoprint.server.util.flask import restricted_access, with_revalidation_checking, check_etag
 from octoprint.server import admin_permission, VERSION, REVISION, BRANCH
@@ -213,6 +214,8 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			"check_providers": {},
 
 			"cache_ttl": 24 * 60,
+
+			"notify_users": True
 		}
 
 	def on_settings_load(self):
@@ -260,7 +263,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 	def on_settings_save(self, data):
 		for key in self.get_settings_defaults():
-			if key in ("checks", "cache_ttl", "octoprint_checkout_folder", "octoprint_type", "octoprint_release_channel"):
+			if key in ("checks", "cache_ttl", "notify_user", "octoprint_checkout_folder", "octoprint_type", "octoprint_release_channel"):
 				continue
 			if key in data:
 				self._settings.set([key], data[key])
@@ -268,6 +271,9 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		if "cache_ttl" in data:
 			self._settings.set_int(["cache_ttl"], data["cache_ttl"])
 		self._version_cache_ttl = self._settings.get_int(["cache_ttl"]) * 60
+
+		if "notify_users" in data:
+			self._settings.set_boolean(["notify_users"], data["notify_users"])
 
 		checks = self._get_configured_checks()
 		if "octoprint" in checks:
@@ -1040,8 +1046,11 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 __plugin_name__ = "Software Update"
 __plugin_author__ = "Gina Häußge"
-__plugin_url__ = "https://github.com/foosel/OctoPrint/wiki/Plugin:-Software-Update"
+__plugin_url__ = "http://docs.octoprint.org/en/master/bundledplugins/softwareupdate.html"
 __plugin_description__ = "Allows receiving update notifications and performing updates of OctoPrint and plugins"
+__plugin_disabling_discouraged__ = gettext("Without this plugin OctoPrint will no longer be able to "
+                                           "update itself or any of your installed plugins which might put "
+                                           "your system at risk.")
 __plugin_license__ = "AGPLv3"
 def __plugin_load__():
 	global __plugin_implementation__

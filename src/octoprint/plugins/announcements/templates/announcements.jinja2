@@ -11,7 +11,7 @@
                         <!-- ko foreach: {data: channels.items, afterAdd: setupTabLink} -->
                         <!-- ko if: $data.enabled || $data.forced -->
                         <li>
-                            <a data-toggle="tab" target="_blank" data-bind="text: $data.channel + ' (' + $data.unread + '/' + $data.count + ')', attr: {href: '#plugin_announcements_dialog_channel_' + $data.key}, css: {unread: $data.unread}"></a>
+                            <a data-toggle="tab" target="_blank" data-bind="text: $data.channel, attr: {href: '#plugin_announcements_dialog_channel_' + $data.key, title: $data.description}, css: {unread: $data.unread}"></a>
                         </li>
                         <!-- /ko -->
                         <!-- /ko -->
@@ -40,6 +40,7 @@
         </div>
     </div>
     <div class="modal-footer">
-        <button class="btn btn-block" data-dismiss="modal" aria-hidden="true">{{ _('Close') }}</button>
+        <button class="btn configurelink" data-bind="click: configureAnnouncements"><i class="icon-wrench"></i></button>
+        <button class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Close') }}</button>
     </div>
 </div>

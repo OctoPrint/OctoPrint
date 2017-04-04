@@ -229,8 +229,7 @@ default_settings = {
 		"cutoff": 30
 	},
 	"printerProfiles": {
-		"default": None,
-		"defaultProfile": {}
+		"default": None
 	},
 	"printerParameters": {
 		"pauseTriggers": [],
@@ -361,7 +360,8 @@ default_settings = {
 			"sendBusy": False,
 			"simulateReset": True,
 			"preparedOks": [],
-			"okFormatString": "ok"
+			"okFormatString": "ok",
+			"m115FormatString": "FIRMWARE_NAME: {firmware_name} PROTOCOL_VERSION:1.0"
 		}
 	}
 }

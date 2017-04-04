@@ -172,5 +172,9 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 
 
 __plugin_name__ = "Core Wizard"
+__plugin_author__ = "Gina Häußge"
 __plugin_description__ = "Provides wizard dialogs for core components and functionality"
+__plugin_disabling_discouraged__ = gettext("Without this plugin OctoPrint will no longer be able to perform "
+                                           "setup steps that might be required after an update.")
+__plugin_license__ = "AGPLv3"
 __plugin_implementation__ = CoreWizardPlugin()
