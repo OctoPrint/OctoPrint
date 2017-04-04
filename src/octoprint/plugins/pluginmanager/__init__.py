@@ -261,7 +261,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			plugin_name = data["plugin"] if "plugin" in data else None
 			return self.command_install(url=url,
 			                            force="force" in data and data["force"] in valid_boolean_trues,
-			                            dependency_links="dependency_links" in data and data["dependency_links"] in valid_boolean_trues,
+			                            dependency_links="dependency_links" in data
+			                                             and data["dependency_links"] in valid_boolean_trues,
 			                            reinstall=plugin_name)
 
 		elif command == "uninstall":
@@ -282,37 +283,84 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 	def command_install(self, url=None, path=None, force=False, reinstall=None, dependency_links=False):
 		if url is not None:
-			pip_args = ["install", sarge.shell_quote(url)]
+			source = url
+			source_type = "url"
+			already_installed_check = lambda line: url in line
+
 		elif path is not None:
-			pip_args = ["install", sarge.shell_quote(path)]
+			path = os.path.abspath(path)
+			path_url = "file://" + path
+			if os.sep != "/":
+				# windows gets special handling
+				path = path.replace(os.sep, "/").lower()
+				path_url = "file:///" + path
+
+			source = path
+			source_type = "path"
+			already_installed_check = lambda line: path_url in line.lower() # lower case in case of windows
+
 		else:
 			raise ValueError("Either URL or path must be provided")
+
+		self._logger.info("Installing plugin from {}".format(source))
+		pip_args = ["install", sarge.shell_quote(source)]
 
 		if dependency_links or self._settings.get_boolean(["dependency_links"]):
 			pip_args.append("--process-dependency-links")
 
-		all_plugins_before = self._plugin_manager.find_plugins()
+		all_plugins_before = self._plugin_manager.find_plugins(existing=dict())
 
+		already_installed_string = "Requirement already satisfied (use --upgrade to upgrade)"
 		success_string = "Successfully installed"
 		failure_string = "Could not install"
+
 		try:
 			returncode, stdout, stderr = self._call_pip(pip_args)
+
+			# pip's output for a package that is already installed looks something like any of these:
+			#
+			#   Requirement already satisfied (use --upgrade to upgrade): OctoPrint-Plugin==1.0 from \
+			#     https://example.com/foobar.zip in <lib>
+			#   Requirement already satisfied (use --upgrade to upgrade): OctoPrint-Plugin in <lib>
+			#   Requirement already satisfied (use --upgrade to upgrade): OctoPrint-Plugin==1.0 from \
+			#     file:///tmp/foobar.zip in <lib>
+			#   Requirement already satisfied (use --upgrade to upgrade): OctoPrint-Plugin==1.0 from \
+			#     file:///C:/Temp/foobar.zip in <lib>
+			#
+			# If we detect any of these matching what we just tried to install, we'll need to trigger a second
+			# install with reinstall flags.
+
+			if not force and any(map(lambda x: x.strip().startswith(already_installed_string) and already_installed_check(x),
+			                         stdout)):
+				self._logger.info("Plugin to be installed from {} was already installed, forcing a reinstall".format(source))
+				self._log_message("Looks like the plugin was already installed. Forcing a reinstall.")
+				force = True
 		except:
 			self._logger.exception("Could not install plugin from %s" % url)
 			return make_response("Could not install plugin from URL, see the log for more details", 500)
 		else:
 			if force:
+				# We don't use --upgrade here because that will also happily update all our dependencies - we'd rather
+				# do that in a controlled manner
 				pip_args += ["--ignore-installed", "--force-reinstall", "--no-deps"]
 				try:
 					returncode, stdout, stderr = self._call_pip(pip_args)
 				except:
-					self._logger.exception("Could not install plugin from %s" % url)
-					return make_response("Could not install plugin from URL, see the log for more details", 500)
+					self._logger.exception("Could not install plugin from {}".format(source))
+					return make_response("Could not install plugin from source {}, see the log for more details"
+					                     .format(source), 500)
 
 		try:
-			result_line = filter(lambda x: x.startswith(success_string) or x.startswith(failure_string), stdout)[-1]
+			result_line = filter(lambda x: x.startswith(success_string) or x.startswith(failure_string),
+			                     stdout)[-1]
 		except IndexError:
-			result = dict(result=False, reason="Could not parse output from pip")
+			self._logger.error("Installing the plugin from {} failed, could not parse output from pip. "
+			                   "See plugin_pluginmanager_console.log for generated output".format(source))
+			result = dict(result=False,
+			              source=source,
+			              source_type=source_type,
+			              reason="Could not parse output from pip, see plugin_pluginmanager_console.log "
+			                     "for generated output")
 			self._send_result_notification("install", result)
 			return jsonify(result)
 
@@ -325,8 +373,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		#   Successfully installed OctoPrint-Plugin Dependency-One Dependency-Two
 		#   Cleaning up...
 		#
-		# So we'll need to fetch the "Successfully installed" line, strip the "Successfully" part, then split by whitespace
-		# and strip to get all installed packages.
+		# So we'll need to fetch the "Successfully installed" line, strip the "Successfully" part, then split
+		# by whitespace and strip to get all installed packages.
 		#
 		# We then need to iterate over all known plugins and see if either the package name or the package name plus
 		# version number matches one of our installed packages. If it does, that's our installed plugin.
@@ -338,62 +386,53 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 		result_line = result_line.strip()
 		if not result_line.startswith(success_string):
-			result = dict(result=False, reason="Pip did not report successful installation")
+			self._logger.error("Installing the plugin from {} failed, pip did not report successful installation"
+			                   .format(source))
+			result = dict(result=False,
+			              source=source,
+			              source_type=source_type,
+			              reason="Pip did not report successful installation")
 			self._send_result_notification("install", result)
 			return jsonify(result)
 
 		installed = map(lambda x: x.strip(), result_line[len(success_string):].split(" "))
 		all_plugins_after = self._plugin_manager.find_plugins(existing=dict(), ignore_uninstalled=False)
 
-		for key, plugin in all_plugins_after.items():
-			if plugin.origin is None or plugin.origin.type != "entry_point":
-				continue
-
-			package_name = plugin.origin.package_name
-			package_version = plugin.origin.package_version
-			versioned_package = "{package_name}-{package_version}".format(**locals())
-
-			if package_name in installed or versioned_package in installed:
-				# exact match, we are done here
-				new_plugin_key = key
-				new_plugin = plugin
-				break
-
-			else:
-				# it might still be a version that got stripped by python's package resources, e.g. 1.4.5a0 => 1.4.5a
-				found = False
-
-				for inst in installed:
-					if inst.startswith(versioned_package):
-						found = True
-						break
-
-				if found:
-					new_plugin_key = key
-					new_plugin = plugin
-					break
-		else:
-			self._logger.warn("The plugin was installed successfully, but couldn't be found afterwards to initialize properly during runtime. Please restart OctoPrint.")
-			result = dict(result=True, url=url, needs_restart=True, needs_refresh=True, was_reinstalled=False, plugin="unknown")
+		new_plugin = self._find_installed_plugin(installed, plugins=all_plugins_after)
+		if new_plugin is None:
+			self._logger.warn("The plugin was installed successfully, but couldn't be found afterwards to "
+			                  "initialize properly during runtime. Please restart OctoPrint.")
+			result = dict(result=True,
+			              source=source,
+			              source_type=source_type,
+			              needs_restart=True,
+			              needs_refresh=True,
+			              was_reinstalled=False,
+			              plugin="unknown")
 			self._send_result_notification("install", result)
 			return jsonify(result)
 
 		self._plugin_manager.reload_plugins()
-		needs_restart = self._plugin_manager.is_restart_needing_plugin(new_plugin) or new_plugin_key in all_plugins_before or reinstall is not None
-		needs_refresh = new_plugin.implementation and isinstance(new_plugin.implementation, octoprint.plugin.ReloadNeedingPlugin)
+		needs_restart = self._plugin_manager.is_restart_needing_plugin(new_plugin) \
+		                or new_plugin.key in all_plugins_before \
+		                or reinstall is not None
+		needs_refresh = new_plugin.implementation \
+		                and isinstance(new_plugin.implementation, octoprint.plugin.ReloadNeedingPlugin)
 
-		is_reinstall = self._plugin_manager.is_plugin_marked(new_plugin_key, "uninstalled")
-		self._plugin_manager.mark_plugin(new_plugin_key,
+		is_reinstall = self._plugin_manager.is_plugin_marked(new_plugin.key, "uninstalled")
+		self._plugin_manager.mark_plugin(new_plugin.key,
 		                                 uninstalled=False,
 		                                 installed=not is_reinstall and needs_restart)
 
 		self._plugin_manager.log_all_plugins()
 
+		self._logger.info("The plugin was installed successfully: {}, version {}".format(new_plugin.name, new_plugin.version))
 		result = dict(result=True,
-		              url=url,
+		              source=source,
+		              source_type=source_type,
 		              needs_restart=needs_restart,
 		              needs_refresh=needs_refresh,
-		              was_reinstalled=new_plugin_key in all_plugins_before or reinstall is not None,
+		              was_reinstalled=new_plugin.key in all_plugins_before or reinstall is not None,
 		              plugin=self._to_external_plugin(new_plugin))
 		self._send_result_notification("install", result)
 		return jsonify(result)
@@ -511,6 +550,36 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 		self._send_result_notification(command, result)
 		return jsonify(result)
+
+	def _find_installed_plugin(self, packages, plugins=None):
+		if plugins is None:
+			plugins = self._plugin_manager.find_plugins(existing=dict(), ignore_uninstalled=False)
+
+		for key, plugin in plugins.items():
+			if plugin.origin is None or plugin.origin.type != "entry_point":
+				continue
+
+			package_name = plugin.origin.package_name
+			package_version = plugin.origin.package_version
+			versioned_package = "{package_name}-{package_version}".format(**locals())
+
+			if package_name in packages or versioned_package in packages:
+				# exact match, we are done here
+				return plugin
+
+			else:
+				# it might still be a version that got stripped by python's package resources, e.g. 1.4.5a0 => 1.4.5a
+				found = False
+
+				for inst in packages:
+					if inst.startswith(versioned_package):
+						found = True
+						break
+
+				if found:
+					return plugin
+
+		return None
 
 	def _send_result_notification(self, action, result):
 		notification = dict(type="result", action=action)

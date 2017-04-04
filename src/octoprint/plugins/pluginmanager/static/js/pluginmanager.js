@@ -279,7 +279,13 @@ $(function() {
                 });
             },
             done: function(e, data) {
-                self._markDone();
+                var response = data.result;
+                if (response.result) {
+                    self._markDone();
+                } else {
+                    self._markDone(response.reason);
+                }
+
                 self.uploadButton.unbind("click");
                 self.uploadFilename(undefined);
             },
@@ -290,7 +296,7 @@ $(function() {
                     type: "error",
                     hide: false
                 });
-                self._markDone();
+                self._markDone("Could not install plugin, unknown error.");
                 self.uploadButton.unbind("click");
                 self.uploadFilename(undefined);
             }
@@ -498,20 +504,23 @@ $(function() {
             }
             self._markWorking(workTitle, workText);
 
-            var onSuccess = function() {
+            var onSuccess = function(response) {
+                    if (response.result) {
+                        self._markDone();
+                    } else {
+                        self._markDone(response.reason)
+                    }
                     self.requestData();
                     self.installUrl("");
                 },
                 onError = function() {
+                    self._markDone("Could not install plugin, unknown error, please consult octoprint.log for details");
                     new PNotify({
                         title: gettext("Something went wrong"),
                         text: gettext("Please consult octoprint.log for details"),
                         type: "error",
                         hide: false
                     });
-                },
-                onAlways = function() {
-                    self._markDone();
                 };
 
             if (reinstall) {
@@ -767,9 +776,14 @@ $(function() {
             self.workingDialog.modal({keyboard: false, backdrop: "static", show: true});
         };
 
-        self._markDone = function() {
+        self._markDone = function(error) {
             self.working(false);
-            self.loglines.push({line: gettext("Done!"), stream: "message"});
+            if (error) {
+                self.loglines.push({line: gettext("Error!"), stream: "error"});
+                self.loglines.push({line: error, stream: "error"})
+            } else {
+                self.loglines.push({line: gettext("Done!"), stream: "message"});
+            }
             self._scrollWorkingOutputToEnd();
         };
 
@@ -1071,22 +1085,42 @@ $(function() {
                     }
 
                     titleError = gettext("Something went wrong");
-                    var url = "unknown";
-                    if (data.hasOwnProperty("url")) {
-                        url = data.url;
+                    var source = "unknown";
+                    if (data.hasOwnProperty("source")) {
+                        source = data.source;
+                    }
+                    var sourceType = "unknown";
+                    if (data.hasOwnProperty("source_type")) {
+                        sourceType = data.source_type;
                     }
 
                     if (data.hasOwnProperty("reason")) {
                         if (data.was_reinstalled) {
-                            textError = _.sprintf(gettext("Reinstalling the plugin from URL \"%(url)s\" failed: %(reason)s"), {reason: data.reason, url: url});
+                            if (sourceType == "path") {
+                                textError = _.sprintf(gettext("Reinstalling the plugin from file failed: %(reason)s"), {reason: data.reason});
+                            } else {
+                                textError = _.sprintf(gettext("Reinstalling the plugin from \"%(source)s\" failed: %(reason)s"), {reason: data.reason, source: source});
+                            }
                         } else {
-                            textError = _.sprintf(gettext("Installing the plugin from URL \"%(url)s\" failed: %(reason)s"), {reason: data.reason, url: url});
+                            if (sourceType == "path") {
+                                textError = _.sprintf(gettext("Installing the plugin from file failed: %(reason)s"), {reason: data.reason});
+                            } else {
+                                textError = _.sprintf(gettext("Installing the plugin from \"%(source)s\" failed: %(reason)s"), {reason: data.reason, source: source});
+                            }
                         }
                     } else {
                         if (data.was_reinstalled) {
-                            textError = _.sprintf(gettext("Reinstalling the plugin from URL \"%(url)s\" failed, please see the log for details."), {url: url});
+                            if (sourceType == "path") {
+                                textError = gettext("Reinstalling the plugin from file failed, please see the log for details.");
+                            } else {
+                                textError = _.sprintf(gettext("Reinstalling the plugin from \"%(source)s\" failed, please see the log for details."), {source: source});
+                            }
                         } else {
-                            textError = _.sprintf(gettext("Installing the plugin from URL \"%(url)s\" failed, please see the log for details."), {url: url});
+                            if (sourceType == "path") {
+                                textError = gettext("Installing the plugin from file failed, please see the log for details.");
+                            } else {
+                                textError = _.sprintf(gettext("Installing the plugin from \"%(source)s\" failed, please see the log for details."), {source: source});
+                            }
                         }
                     }
 
