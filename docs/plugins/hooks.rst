@@ -922,3 +922,35 @@ octoprint.ui.web.templatetypes
    :param dict template_sorting: read-only dictionary of currently configured template sorting specifications
    :return: a list of 3-tuples (template type, rule, sorting spec)
    :rtype: list
+
+.. _sec-plugins-hook-timelapse-capture-pre:
+
+octoprint.timelapse.capture.pre
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:function:: capture_pre_hook(filename)
+
+   Perform specific actions prior to capturing a timelapse frame.
+
+   ``filename`` will be the future path of the frame to be saved.
+
+   :param str filename: The future path of the frame to be saved.
+   :return: None
+   :rtype: None
+
+.. _sec-plugins-hook-timelapse-capture-post:
+
+octoprint.timelapse.capture.post
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:function:: capture_post_hook(filename, success)
+
+   Perform specific actions after capturing a timelapse frame.
+
+   ``filename`` will be the path of the frame that should have been saved.
+   ``sucesss`` indicates whether the capture was successful or not.
+
+   :param str filename: The path of the frame that should have been saved.
+   :param boolean success: Indicates whether the capture was successful or not.
+   :return: None
+   :rtype: None
