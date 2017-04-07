@@ -571,6 +571,10 @@ class PluginManager(object):
 					key = entry.name
 				elif entry.is_file() and entry.name.endswith(".py"):
 					key = entry.name[:-3] # strip off the .py extension
+					if key.startswith("__"):
+						# might be an __init__.py in our plugins folder, or something else we don't want
+						# to handle
+						continue
 				else:
 					continue
 

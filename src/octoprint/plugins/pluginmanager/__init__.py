@@ -808,20 +808,37 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 		return True
 
-	def _is_os_compatible(self, current_os, compatibility_entries):
+	@staticmethod
+	def _is_os_compatible(current_os, compatibility_entries):
 		"""
-		Tests if the ``current_os`` or ``sys.platform`` matches any of the provided ``compatibility_entries``.
+		Tests if the ``current_os`` or ``sys.platform`` are blacklisted or whitelisted in ``compatibility_entries``
 		"""
-		general_match = current_os in filter(lambda x: x in self.__class__.OPERATING_SYSTEMS.keys(), compatibility_entries)
-		exact_match = sys.platform in compatibility_entries
-		return general_match or exact_match
+		if len(compatibility_entries) == 0:
+			# shortcut - no compatibility info means we are compatible
+			return True
 
-	def _get_os(self):
-		for identifier, platforms in self.__class__.OPERATING_SYSTEMS.items():
+		negative_entries = map(lambda x: x[1:], filter(lambda x: x.startswith("!"), compatibility_entries))
+		positive_entries = filter(lambda x: not x.startswith("!"), compatibility_entries)
+
+		negative_match = False
+		if negative_entries:
+			# check if we are blacklisted
+			negative_match = current_os in negative_entries or any(map(lambda x: sys.platform.startswith(x), negative_entries))
+
+		positive_match = True
+		if positive_entries:
+			# check if we are whitelisted
+			positive_match = current_os in positive_entries or any(map(lambda x: sys.platform.startswith(x), positive_entries))
+
+		return positive_match and not negative_match
+
+	@classmethod
+	def _get_os(cls):
+		for identifier, platforms in cls.OPERATING_SYSTEMS.items():
 			if (callable(platforms) and platforms(sys.platform)) or (isinstance(platforms, list) and sys.platform in platforms):
 				return identifier
 		else:
-			return "unknown"
+			return "unmapped"
 
 	def _get_octoprint_version_string(self):
 		return VERSION
