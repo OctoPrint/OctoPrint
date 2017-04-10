@@ -359,7 +359,7 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 
 		return dict(title=entry["title"],
 		            title_without_tags=_strip_tags(entry["title"]),
-		            summary=entry["summary"],
+		            summary=_lazy_images(entry["summary"]),
 		            summary_without_images=_strip_images(entry["summary"]),
 		            published=published,
 		            link=entry["link"],
@@ -376,6 +376,27 @@ _image_tag_re = re.compile(r'<img.*?/?>')
 def _strip_images(text):
 	return _image_tag_re.sub('', text)
 
+def _replace_images(text, callback):
+	result = text
+	for match in _image_tag_re.finditer(text):
+		tag = match.group(0)
+		replaced = callback(tag)
+		result = result.replace(tag, replaced)
+	return result
+
+_image_src_re = re.compile(r'src=\"(.*?)\"')
+def _lazy_images(text, placeholder=None):
+	if placeholder is None:
+		placeholder = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" # 1px transparent gif
+
+	def callback(img_tag):
+		match = _image_src_re.search(img_tag)
+		if match is not None:
+			src = match.group(1)
+			img_tag = img_tag.replace(match.group(0), 'src="{}" data-src="{}"'.format(placeholder, src))
+		return img_tag
+
+	return _replace_images(text, callback)
 
 def _strip_tags(text):
 	"""

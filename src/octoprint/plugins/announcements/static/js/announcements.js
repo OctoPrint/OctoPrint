@@ -143,6 +143,15 @@ $(function() {
         self.showAnnouncementDialog = function(channel) {
             if (!self.loginState.isAdmin()) return;
 
+            // lazy load images that still need lazy-loading
+            $("#plugin_announcements_dialog_content article img").each(function (index, element) {
+                var src = element.getAttribute("data-src");
+                if (src) {
+                    element.setAttribute("src", src);
+                    element.removeAttribute("data-src");
+                }
+            });
+
             self.announcementDialogContent.scrollTop(0);
 
             if (!self.announcementDialog.hasClass("in")) {
