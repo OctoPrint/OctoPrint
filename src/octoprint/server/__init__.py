@@ -1016,7 +1016,6 @@ class Server(object):
 
 		enable_gcodeviewer = self._settings.getBoolean(["gcodeViewer", "enabled"])
 		preferred_stylesheet = self._settings.get(["devel", "stylesheet"])
-		minify = self._settings.getBoolean(["devel", "webassets", "minify"])
 
 		dynamic_core_assets = util.flask.collect_core_assets(enable_gcodeviewer=enable_gcodeviewer)
 		dynamic_plugin_assets = util.flask.collect_plugin_assets(
@@ -1025,7 +1024,7 @@ class Server(object):
 		)
 
 		js_libs = [
-			"js/lib/jquery/jquery.min.js" if minify else "js/lib/jquery/jquery.js",
+			"js/lib/jquery/jquery.js",
 			"js/lib/modernizr.custom.js",
 			"js/lib/lodash.min.js",
 			"js/lib/sprintf.min.js",
@@ -1063,7 +1062,7 @@ class Server(object):
 			"js/lib/md5.min.js",
 			"js/lib/bootstrap-slider-knockout-binding.js",
 			"js/lib/loglevel.min.js",
-			"js/lib/sockjs.min.js" if minify else "js/lib/sockjs.js"
+			"js/lib/sockjs.js"
 		]
 		js_client = [
 			"js/app/client/base.js",
@@ -1091,7 +1090,6 @@ class Server(object):
 		     "js/app/helpers.js",
 		     "js/app/main.js"]
 		js_plugins = dynamic_plugin_assets["external"]["js"]
-		js_app = js_plugins + js_core
 
 		css_libs = [
 			"css/bootstrap.min.css",
@@ -1106,11 +1104,9 @@ class Server(object):
 		]
 		css_core = list(dynamic_core_assets["css"]) + list(dynamic_plugin_assets["bundled"]["css"])
 		css_plugins = list(dynamic_plugin_assets["external"]["css"])
-		css_app = css_core + css_plugins
 
 		less_core = list(dynamic_core_assets["less"]) + list(dynamic_plugin_assets["bundled"]["less"])
 		less_plugins = list(dynamic_plugin_assets["external"]["less"])
-		less_app = less_core + less_plugins
 
 		from webassets.filter import register_filter, Filter
 		from webassets.filter.cssrewrite.base import PatternRewriter
@@ -1143,22 +1139,16 @@ class Server(object):
 
 		# JS
 		js_libs_bundle = Bundle(*js_libs, output="webassets/packed_libs.js", filters="js_delimiter_bundler")
-		if minify:
-			js_client_bundle = Bundle(*js_client, output="webassets/packed_client.js", filters="rjsmin, js_delimiter_bundler")
-			js_core_bundle = Bundle(*js_core, output="webassets/packed_core.js", filters="rjsmin, js_delimiter_bundler")
-			if len(js_plugins) == 0:
-				js_plugins_bundle = Bundle(*[])
-			else:
-				js_plugins_bundle = Bundle(*js_plugins, output="webassets/packed_plugins.js", filters="rjsmin, js_delimiter_bundler")
-			js_app_bundle = Bundle(*js_app, output="webassets/packed_app.js", filters="rjsmin, js_delimiter_bundler")
+
+		js_client_bundle = Bundle(*js_client, output="webassets/packed_client.js", filters="js_delimiter_bundler")
+		js_core_bundle = Bundle(*js_core, output="webassets/packed_core.js", filters="js_delimiter_bundler")
+
+		if len(js_plugins) == 0:
+			js_plugins_bundle = Bundle(*[])
 		else:
-			js_client_bundle = Bundle(*js_client, output="webassets/packed_client.js", filters="js_delimiter_bundler")
-			js_core_bundle = Bundle(*js_core, output="webassets/packed_core.js", filters="js_delimiter_bundler")
-			if len(js_plugins) == 0:
-				js_plugins_bundle = Bundle(*[])
-			else:
-				js_plugins_bundle = Bundle(*js_plugins, output="webassets/packed_plugins.js", filters="js_delimiter_bundler")
-			js_app_bundle = Bundle(*js_app, output="webassets/packed_app.js", filters="js_delimiter_bundler")
+			js_plugins_bundle = Bundle(*js_plugins, output="webassets/packed_plugins.js", filters="js_delimiter_bundler")
+
+		js_app_bundle = Bundle(js_plugins_bundle, js_core_bundle, output="webassets/packed_app.js", filters="js_delimiter_bundler")
 
 		# CSS
 		css_libs_bundle = Bundle(*css_libs, output="webassets/packed_libs.css")
@@ -1173,10 +1163,7 @@ class Server(object):
 		else:
 			css_plugins_bundle = Bundle(*css_plugins, output="webassets/packed_plugins.css", filters="cssrewrite")
 
-		if len(css_app) == 0:
-			css_app_bundle = Bundle(*[])
-		else:
-			css_app_bundle = Bundle(*css_app, output="webassets/packed_app.css", filters="cssrewrite")
+		css_app_bundle = Bundle(css_core, css_plugins, output="webassets/packed_app.css", filters="cssrewrite")
 
 		# LESS
 		if len(less_core) == 0:
@@ -1189,10 +1176,7 @@ class Server(object):
 		else:
 			less_plugins_bundle = Bundle(*less_plugins, output="webassets/packed_plugins.less", filters="cssrewrite, less_importrewrite")
 
-		if len(less_app) == 0:
-			less_app_bundle = Bundle(*[])
-		else:
-			less_app_bundle = Bundle(*less_app, output="webassets/packed_app.less", filters="cssrewrite, less_importrewrite")
+		less_app_bundle = Bundle(less_core, less_plugins, output="webassets/packed_app.less", filters="cssrewrite, less_importrewrite")
 
 		# asset registration
 		assets.register("js_libs", js_libs_bundle)

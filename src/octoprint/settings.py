@@ -327,7 +327,6 @@ default_settings = {
 			"preemptive": True
 		},
 		"webassets": {
-			"minify": False,
 			"bundle": True,
 			"clean_on_startup": True
 		},
