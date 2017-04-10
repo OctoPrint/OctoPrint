@@ -926,7 +926,7 @@ octoprint.ui.web.templatetypes
 .. _sec-plugins-hook-timelapse-capture-pre:
 
 octoprint.timelapse.capture.pre
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. py:function:: capture_pre_hook(filename)
 
@@ -941,7 +941,7 @@ octoprint.timelapse.capture.pre
 .. _sec-plugins-hook-timelapse-capture-post:
 
 octoprint.timelapse.capture.post
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. py:function:: capture_post_hook(filename, success)
 
