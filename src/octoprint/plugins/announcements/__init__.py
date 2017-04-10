@@ -374,9 +374,24 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 
 _image_tag_re = re.compile(r'<img.*?/?>')
 def _strip_images(text):
+	"""
+	>>> _strip_images(u"<a href='test.html'>I'm a link</a> and this is an image: <img src='foo.jpg' alt='foo'>")
+	u"<a href='test.html'>I'm a link</a> and this is an image: "
+	>>> _strip_images(u"One <img src=\\"one.jpg\\"> and two <img src='two.jpg' > and three <img src=three.jpg> and four <img src=\\"four.png\\" alt=\\"four\\">")
+	u'One  and two  and three  and four '
+	>>> _strip_images(u"No images here")
+	u'No images here'
+	"""
 	return _image_tag_re.sub('', text)
 
 def _replace_images(text, callback):
+	"""
+	>>> callback = lambda img: "foobar"
+	>>> _replace_images(u"<a href='test.html'>I'm a link</a> and this is an image: <img src='foo.jpg' alt='foo'>", callback)
+	u"<a href='test.html'>I'm a link</a> and this is an image: foobar"
+	>>> _replace_images(u"One <img src=\\"one.jpg\\"> and two <img src='two.jpg' > and three <img src=three.jpg> and four <img src=\\"four.png\\" alt=\\"four\\">", callback)
+	u'One foobar and two foobar and three foobar and four foobar'
+	"""
 	result = text
 	for match in _image_tag_re.finditer(text):
 		tag = match.group(0)
@@ -384,16 +399,29 @@ def _replace_images(text, callback):
 		result = result.replace(tag, replaced)
 	return result
 
-_image_src_re = re.compile(r'src=\"(.*?)\"')
+_image_src_re = re.compile(r'src=(?P<quote>[\'"]*)(?P<src>.*?)(?P=quote)(?=\s+|>)')
 def _lazy_images(text, placeholder=None):
+	"""
+	>>> _lazy_images(u"<a href='test.html'>I'm a link</a> and this is an image: <img src='foo.jpg' alt='foo'>")
+	u'<a href=\\'test.html\\'>I\\'m a link</a> and this is an image: <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-src=\\'foo.jpg\\' alt=\\'foo\\'>'
+	>>> _lazy_images(u"<a href='test.html'>I'm a link</a> and this is an image: <img src='foo.jpg' alt='foo'>", placeholder="ph.png")
+	u'<a href=\\'test.html\\'>I\\'m a link</a> and this is an image: <img src="ph.png" data-src=\\'foo.jpg\\' alt=\\'foo\\'>'
+	>>> _lazy_images(u"One <img src=\\"one.jpg\\"> and two <img src='two.jpg' > and three <img src=three.jpg> and four <img src=\\"four.png\\" alt=\\"four\\">", placeholder="ph.png")
+	u'One <img src="ph.png" data-src="one.jpg"> and two <img src="ph.png" data-src=\\'two.jpg\\' > and three <img src="ph.png" data-src=three.jpg> and four <img src="ph.png" data-src="four.png" alt="four">'
+	>>> _lazy_images(u"No images here")
+	u'No images here'
+	"""
 	if placeholder is None:
-		placeholder = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" # 1px transparent gif
+		# 1px transparent gif
+		placeholder = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
 
 	def callback(img_tag):
 		match = _image_src_re.search(img_tag)
 		if match is not None:
-			src = match.group(1)
-			img_tag = img_tag.replace(match.group(0), 'src="{}" data-src="{}"'.format(placeholder, src))
+			src = match.group("src")
+			quote = match.group("quote")
+			quoted_src = quote + src + quote
+			img_tag = img_tag.replace(match.group(0), 'src="{}" data-src={}'.format(placeholder, quoted_src))
 		return img_tag
 
 	return _replace_images(text, callback)
