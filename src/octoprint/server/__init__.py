@@ -790,6 +790,8 @@ class Server(object):
 			return
 
 		def execute_caching():
+			logger = logging.getLogger(__name__ + ".preemptive_cache")
+
 			for route in sorted(cache_data.keys(), key=lambda x: (x.count("/"), x)):
 				entries = reversed(sorted(cache_data[route], key=lambda x: x.get("_count", 0)))
 				for kwargs in entries:
@@ -798,18 +800,18 @@ class Server(object):
 						try:
 							plugin_info = pluginManager.get_plugin_info(plugin, require_enabled=True)
 							if plugin_info is None:
-								self._logger.info("About to preemptively cache plugin {} but it is not installed or enabled, preemptive caching makes no sense".format(plugin))
+								logger.info("About to preemptively cache plugin {} but it is not installed or enabled, preemptive caching makes no sense".format(plugin))
 								continue
 
 							implementation = plugin_info.implementation
 							if implementation is None or not isinstance(implementation, octoprint.plugin.UiPlugin):
-								self._logger.info("About to preemptively cache plugin {} but it is not a UiPlugin, preemptive caching makes no sense".format(plugin))
+								logger.info("About to preemptively cache plugin {} but it is not a UiPlugin, preemptive caching makes no sense".format(plugin))
 								continue
 							if not implementation.get_ui_preemptive_caching_enabled():
-								self._logger.info("About to preemptively cache plugin {} but it has disabled preemptive caching".format(plugin))
+								logger.info("About to preemptively cache plugin {} but it has disabled preemptive caching".format(plugin))
 								continue
 						except:
-							self._logger.exception("Error while trying to check if plugin {} has preemptive caching enabled, skipping entry")
+							logger.exception("Error while trying to check if plugin {} has preemptive caching enabled, skipping entry")
 							continue
 
 					additional_request_data = kwargs.get("_additional_request_data", dict())
@@ -818,9 +820,9 @@ class Server(object):
 
 					try:
 						if plugin:
-							self._logger.info("Preemptively caching {} (ui {}) for {!r}".format(route, plugin, kwargs))
+							logger.info("Preemptively caching {} (ui {}) for {!r}".format(route, plugin, kwargs))
 						else:
-							self._logger.info("Preemptively caching {} (ui _default) for {!r}".format(route, kwargs))
+							logger.info("Preemptively caching {} (ui _default) for {!r}".format(route, kwargs))
 
 						headers = kwargs.get("headers", dict())
 						headers["X-Force-View"] = plugin if plugin else "_default"
@@ -829,8 +831,10 @@ class Server(object):
 
 						builder = EnvironBuilder(**kwargs)
 						app(builder.get_environ(), lambda *a, **kw: None)
+
+						logger.info("... done.".format(route, plugin, kwargs))
 					except:
-						self._logger.exception("Error while trying to preemptively cache {} for {!r}".format(route, kwargs))
+						logger.exception("Error while trying to preemptively cache {} for {!r}".format(route, kwargs))
 
 		# asynchronous caching
 		import threading
