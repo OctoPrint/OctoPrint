@@ -324,7 +324,8 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 		url = config["url"]
 		try:
 			start = time.time()
-			r = requests.get(url)
+			r = requests.get(url, timeout=30)
+			r.raise_for_status()
 			self._logger.info(u"Loaded channel {} from {} in {:.2}s".format(key, config["url"], time.time() - start))
 		except Exception as e:
 			self._logger.exception(

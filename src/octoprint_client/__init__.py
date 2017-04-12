@@ -231,7 +231,7 @@ class Client(object):
 				request.prepare_body(None, None, json=data)
 			else:
 				request.prepare_body(data, files=files)
-		response = s.send(request)
+		response = s.send(request, timeout=10)
 		return response
 
 	def get(self, path, params=None):

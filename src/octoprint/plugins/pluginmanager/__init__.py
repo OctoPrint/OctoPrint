@@ -85,7 +85,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 	##~~ StartupPlugin
 
-	def on_startup(self, host, port):
+	def on_after_startup(self):
 		from octoprint.logging.handlers import CleaningTimedRotatingFileHandler
 		console_logging_handler = CleaningTimedRotatingFileHandler(self._settings.get_plugin_logfile_path(postfix="console"), when="D", backupCount=3)
 		console_logging_handler.setFormatter(logging.Formatter("%(asctime)s %(message)s"))
@@ -676,7 +676,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 	def _fetch_repository_from_url(self):
 		repository_url = self._settings.get(["repository"])
 		try:
-			r = requests.get(repository_url)
+			r = requests.get(repository_url, timeout=30)
+			r.raise_for_status()
 			self._logger.info("Loaded plugin repository data from {}".format(repository_url))
 		except Exception as e:
 			self._logger.exception("Could not fetch plugins from repository at {repository_url}: {message}".format(repository_url=repository_url, message=str(e)))
@@ -744,7 +745,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 	def _fetch_notices_from_url(self):
 		notices_url = self._settings.get(["notices"])
 		try:
-			r = requests.get(notices_url)
+			r = requests.get(notices_url, timeout=30)
+			r.raise_for_status()
 			self._logger.info("Loaded plugin notices data from {}".format(notices_url))
 		except Exception as e:
 			self._logger.exception("Could not fetch notices from {notices_url}: {message}".format(notices_url=notices_url, message=str(e)))
