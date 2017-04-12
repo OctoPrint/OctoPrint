@@ -86,10 +86,10 @@ class PermissionManager(object):
 	def permissions(self):
 		return self._permissions
 
-	def addPermission(self, permission):
-		pass
+	def add_permission(self, permission):
+		return None
 
-	def removePermission(self, permission):
+	def remove_permission(self, permission):
 		pass
 
 	def getPermissionFrom(self, permission):
@@ -109,11 +109,13 @@ class FilebasedPermissionManager(PermissionManager):
 	def __init__(self):
 		PermissionManager.__init__(self)
 
-	def addPermission(self, permission):
+		Permissions.register_default_permissions(self)
+
+	def add_permission(self, permission):
 		self._permissions.append(permission)
 		return permission
 
-	def removePermission(self, permission):
+	def remove_permission(self, permission):
 		self._permissions.remove(permission)
 
 
@@ -157,10 +159,29 @@ class Permissions(object):
 
 	FILE_PERMISSION = Permission(*UPLOAD.needs.union(DOWNLOAD.needs).union(DELETE.needs).union(SELECT.needs).union(PRINTING.needs).union(SLICE.needs))
 
+	@classmethod
+	def register_default_permissions(cls, pm):
+		pm.add_permission(cls.ADMIN)
+		pm.add_permission(cls.USER)
+		pm.add_permission(cls.STATUS)
+		pm.add_permission(cls.CONNECTION)
+		pm.add_permission(cls.WEBCAM)
+		pm.add_permission(cls.SYSTEM)
+		pm.add_permission(cls.UPLOAD)
+		pm.add_permission(cls.DOWNLOAD)
+		pm.add_permission(cls.DELETE)
+		pm.add_permission(cls.SELECT)
+		pm.add_permission(cls.PRINTING)
+		pm.add_permission(cls.TERMINAL)
+		pm.add_permission(cls.CONTROL)
+		pm.add_permission(cls.SLICE)
+		pm.add_permission(cls.TIMELAPSE)
+		pm.add_permission(cls.TIMELAPSE_ADMIN)
+		pm.add_permission(cls.SETTINGS)
+		pm.add_permission(cls.LOGS)
 
 def OctoPermission_yaml_representer(dumper, data):
 	return dumper.represent_scalar(u'!octopermission', repr(data))
-
 
 def OctoPermission_yaml_constructor(loader, node):
 	value = loader.construct_scalar(node)
