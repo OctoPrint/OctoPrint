@@ -316,11 +316,11 @@ class gcode(object):
 
 					oldPos = pos
 
-					# Use new coordinates if provided. If not provided, use prior coordinates in absolute
+					# Use new coordinates if provided. If not provided, use prior coordinates (minus offset) in absolute
 					# and 0.0 in relative mode.
-					newPos = Vector3D(x if x is not None else (pos.x if posAbs else 0.0),
-					                  y if y is not None else (pos.y if posAbs else 0.0),
-					                  z if z is not None else (pos.z if posAbs else 0.0))
+					newPos = Vector3D(x if x is not None else (pos.x - posOffset.x if posAbs else 0.0),
+					                  y if y is not None else (pos.y - posOffset.y if posAbs else 0.0),
+					                  z if z is not None else (pos.z - posOffset.z if posAbs else 0.0))
 
 					if posAbs:
 						# Absolute mode: scale coordinates and apply offsets
