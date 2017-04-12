@@ -223,7 +223,10 @@ class Client(object):
 			url = self.baseurl + "/" + path
 		return requests.Request(method=method, url=url, params=params, headers={"X-Api-Key": self.apikey}).prepare()
 
-	def request(self, method, path, data=None, files=None, encoding=None, params=None):
+	def request(self, method, path, data=None, files=None, encoding=None, params=None, timeout=None):
+		if timeout is None:
+			timeout = 30
+
 		s = requests.Session()
 		request = self.prepare_request(method, path, params=params)
 		if data or files:
@@ -231,25 +234,25 @@ class Client(object):
 				request.prepare_body(None, None, json=data)
 			else:
 				request.prepare_body(data, files=files)
-		response = s.send(request, timeout=10)
+		response = s.send(request, timeout=timeout)
 		return response
 
-	def get(self, path, params=None):
-		return self.request("GET", path, params=params)
+	def get(self, path, params=None, timeout=None):
+		return self.request("GET", path, params=params, timeout=timeout)
 
-	def post(self, path, data, encoding=None, params=None):
-		return self.request("POST", path, data=data, encoding=encoding, params=params)
+	def post(self, path, data, encoding=None, params=None, timeout=None):
+		return self.request("POST", path, data=data, encoding=encoding, params=params, timeout=timeout)
 
-	def post_json(self, path, data, params=None):
-		return self.post(path, data, encoding="json", params=params)
+	def post_json(self, path, data, params=None, timeout=None):
+		return self.post(path, data, encoding="json", params=params, timeout=timeout)
 
-	def post_command(self, path, command, additional=None):
+	def post_command(self, path, command, additional=None, timeout=None):
 		data = dict(command=command)
 		if additional:
 			data.update(additional)
-		return self.post_json(path, data, params=data)
+		return self.post_json(path, data, params=data, timeout=timeout)
 
-	def upload(self, path, file_path, additional=None, file_name=None, content_type=None, params=None):
+	def upload(self, path, file_path, additional=None, file_name=None, content_type=None, params=None, timeout=None):
 		import os
 
 		if not os.path.isfile(file_path):
@@ -264,18 +267,18 @@ class Client(object):
 			else:
 				files = dict(file=(file_name, fp))
 
-			response = self.request("POST", path, data=additional, files=files, params=params)
+			response = self.request("POST", path, data=additional, files=files, params=params, timeout=timeout)
 
 		return response
 
-	def delete(self, path, params=None):
-		return self.request("DELETE", path, params=params)
+	def delete(self, path, params=None, timeout=None):
+		return self.request("DELETE", path, params=params, timeout=timeout)
 
-	def patch(self, path, data, encoding=None, params=None):
-		return self.request("PATCH", path, data=data, encoding=encoding, params=params)
+	def patch(self, path, data, encoding=None, params=None, timeout=None):
+		return self.request("PATCH", path, data=data, encoding=encoding, params=params, timeout=timeout)
 
-	def put(self, path, data, encoding=None, params=None):
-		return self.request("PUT", path, data=data, encoding=encoding, params=params)
+	def put(self, path, data, encoding=None, params=None, timeout=None):
+		return self.request("PUT", path, data=data, encoding=encoding, params=params, timeout=timeout)
 
 	def create_socket(self, **kwargs):
 		import uuid
