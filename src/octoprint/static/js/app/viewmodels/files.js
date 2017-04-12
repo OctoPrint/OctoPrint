@@ -395,14 +395,21 @@ $(function() {
             }
         };
 
-        self.loadFile = function(file, printAfterLoad) {
-            if (!file) {
+        self.loadFile = function(data, printAfterLoad) {
+            if (!data) {
                 return;
             }
-            var withinPrintDimensions = self.evaluatePrintDimensions(file, true);
-            var print = printAfterLoad && withinPrintDimensions;
 
-            OctoPrint.files.select(file.origin, file.path, print);
+            if (printAfterLoad && self.listHelper.isSelected(data) && self.enablePrint(data)) {
+                // file was already selected, just start the print job
+                OctoPrint.job.start();
+            } else {
+                // select file, start print job (if requested and within dimensions)
+                var withinPrintDimensions = self.evaluatePrintDimensions(data, true);
+                var print = printAfterLoad && withinPrintDimensions;
+
+                OctoPrint.files.select(data.origin, data.path, print);
+            }
         };
 
         self.removeFile = function(file, event) {
@@ -545,8 +552,11 @@ $(function() {
         };
 
         self.enableSelect = function(data, printAfterSelect) {
-            var isLoadActionPossible = self.loginState.isUser() && self.isOperational() && !(self.isPrinting() || self.isPaused() || self.isLoading());
-            return isLoadActionPossible && !self.listHelper.isSelected(data);
+            return self.enablePrint(data) && !self.listHelper.isSelected(data);
+        };
+
+        self.enablePrint = function(data) {
+            return self.loginState.isUser() && self.isOperational() && !(self.isPrinting() || self.isPaused() || self.isLoading());
         };
 
         self.enableSlicing = function(data) {
