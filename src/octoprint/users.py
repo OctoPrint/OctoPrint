@@ -5,7 +5,7 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-from flask_login import UserMixin
+from flask_login import UserMixin, AnonymousUserMixin
 from flask_principal import Identity
 from werkzeug.local import LocalProxy
 import hashlib
@@ -490,6 +490,65 @@ class UnknownRole(Exception):
 
 ##~~ User object
 
+class MethodReplacedByBooleanProperty(object):
+
+	def __init__(self, name, message, getter):
+		self._name = name
+		self._message = message
+		self._getter = getter
+
+	@property
+	def _attr(self):
+		return self._getter()
+
+	def __call__(self):
+		from warnings import warn
+		warn(DeprecationWarning(self._message.format(name=self._name)), stacklevel=2)
+		return self._attr
+
+	def __eq__(self, other):
+		return self._attr == other
+
+	def __ne__(self, other):
+		return self._attr != other
+
+	def __bool__(self):
+		# Python 3
+		return self._attr
+
+	def __nonzero__(self):
+		# Python 2
+		return self._attr
+
+	def __hash__(self):
+		return hash(self._attr)
+
+	def __repr__(self):
+		return "MethodReplacedByProperty({}, {}, {})".format(self._name, self._message, self._getter)
+
+	def __str__(self):
+		return str(self._attr)
+
+
+# TODO: Remove compatibility layer in OctoPrint 1.5.0
+class FlaskLoginMethodReplacedByBooleanProperty(MethodReplacedByBooleanProperty):
+
+	def __init__(self, name, getter):
+		message = "{name} is now a property in Flask-Login versions >= 0.3.0, which OctoPrint now uses. " + \
+		          "Use {name} instead of {name}(). This compatibility layer will be removed in OctoPrint 1.5.0."
+		MethodReplacedByBooleanProperty.__init__(self, name, message, getter)
+
+
+# TODO: Remove compatibility layer in OctoPrint 1.5.0
+class OctoPrintUserMethodReplacedByBooleanProperty(MethodReplacedByBooleanProperty):
+
+	def __init__(self, name, getter):
+		message = "{name} is now a property for consistency reasons with Flask-Login versions >= 0.3.0, which " + \
+		          "OctoPrint now uses. Use {name} instead of {name}(). This compatibility layer will be removed " + \
+		          "in OctoPrint 1.5.0."
+		MethodReplacedByBooleanProperty.__init__(self, name, message, getter)
+
+
 class User(UserMixin):
 	def __init__(self, username, passwordHash, active, permissions=[], groups=[], apikey=None, settings=None):
 		self._username = username
@@ -510,12 +569,12 @@ class User(UserMixin):
 
 		return {
 			"name": self._username,
-			"active": self.is_active(),
+			"active": bool(self.is_active),
 			"permissions": permissions,
 			"groups": groups,
-			"admin": self.hasPermission(Permissions.admin),
+			"admin": bool(self.is_admin),
 			# Deprecated
-			"user": self.hasPermission(Permissions.user),
+			"user": bool(self.is_user),
 			"apikey": self._apikey,
 			"settings": self._settings
 		}
@@ -529,16 +588,27 @@ class User(UserMixin):
 	def get_name(self):
 		return self._username
 
+	@property
+	def is_anonymous(self):
+		return FlaskLoginMethodReplacedByBooleanProperty("is_anonymous", lambda: False)
+
+	@property
+	def is_authenticated(self):
+		return FlaskLoginMethodReplacedByBooleanProperty("is_authenticated", lambda: True)
+
+	@property
 	def is_active(self):
-		return self._active
+		return FlaskLoginMethodReplacedByBooleanProperty("is_active", lambda: self._active)
 
 	@deprecated("is_user is deprecated please use permissions", since="now")
+	@property
 	def is_user(self):
-		return self.hasPermission(Permissions.user)
+		return OctoPrintUserMethodReplacedByBooleanProperty("is_user", lambda: self.hasPermission(Permissions.user))
 
 	@deprecated("is_admin is deprecated please use permissions", since="now")
+	@property
 	def is_admin(self):
-		return self.hasPermission(Permissions.admin)
+		return OctoPrintUserMethodReplacedByBooleanProperty("is_admin", lambda: self.hasPermission(Permissions.admin))
 
 	def get_all_settings(self):
 		return self._settings
@@ -657,7 +727,22 @@ class User(UserMixin):
 		return True
 
 	def __repr__(self):
-		return "User(id=%s,name=%s,active=%r)" % (self.get_id(), self.get_name(), self.is_active())
+		return "User(id=%s,name=%s,active=%r,user=%r,admin=%r)" % (self.get_id(), self.get_name(), bool(self.is_active), bool(self.is_user), bool(self.is_admin))
+
+
+class AnonymousUser(AnonymousUserMixin):
+
+	@property
+	def is_anonymous(self):
+		return FlaskLoginMethodReplacedByBooleanProperty("is_anonymous", lambda: True)
+
+	@property
+	def is_authenticated(self):
+		return FlaskLoginMethodReplacedByBooleanProperty("is_authenticated", lambda: False)
+
+	@property
+	def is_active(self):
+		return FlaskLoginMethodReplacedByBooleanProperty("is_active", lambda: False)
 
 class SessionUser(User):
 	def __init__(self, user):
@@ -687,15 +772,7 @@ class SessionUser(User):
 		return self._session
 
 	def __repr__(self):
-		return "SessionUser(id=%s,name=%s,active=%r,admin=%r,session=%s,created=%s)" % (self.get_id(), self.get_name(), self.is_active(), self.hasPermission(Permissions.admin), self._session, self._created)
-
-##~~ GuestUser object to use when not logged in
-class GuestUser(User):
-	def __init__(self):
-		User.__init__(self, "Guest", "", True, [], [Groups.guests])
-
-	def check_password(self, passwordHash):
-		return True
+		return "SessionUser(id=%s,name=%s,active=%r,user=%r,admin=%r,session=%s,created=%s)" % (self.get_id(), self.get_name(), bool(self.is_active), bool(self.is_user), bool(self.is_admin), self._session, self._created)
 
 ##~~ DummyUser object to use when accessControl is disabled
 

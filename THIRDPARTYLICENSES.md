@@ -34,6 +34,7 @@
 
   * [appdirs](http://github.com/ActiveState/appdirs): MIT
   * [Awesome-Slugify](https://pypi.python.org/pypi/awesome-slugify): GPLv3
+  * [chainmap](https://bitbucket.org/jeunice/chainmap): Python
   * [Click](http://click.pocoo.org/): BSD
   * [feedparser](https://github.com/kurtmckee/feedparser): BSD
   * [Flask](http://flask.pocoo.org/): BSD
@@ -42,6 +43,7 @@
   * [Flask-Login](https://github.com/maxcountryman/flask-login): MIT
   * [Flask-Markdown](http://github.com/dcolish/flask-markdown): BSD
   * [Flask-Principal](http://packages.python.org/Flask-Principal/): MIT
+  * [future](https://python-future.org/): MIT
   * [netaddr](https://github.com/drkjam/netaddr/): BSD
   * [netifaces](https://bitbucket.org/al45tair/netifaces): MIT
   * [pkginfo](http://pypi.python.org/pypi/pkginfo/): Python
@@ -52,7 +54,19 @@
   * [requests](http://python-requests.org/): Apache License 2.0
   * [rsa](http://stuvel.eu/rsa): Apache License 2.0
   * [sarge](http://sarge.readthedocs.org/): BSD
+  * [scandir](https://github.com/benhoyt/scandir): BSD
   * [semantic_version](https://github.com/rbarrois/python-semanticversion): BSD
   * [SockJS-Tornado](http://github.com/mrjoes/sockjs-tornado/): MIT
   * [Tornado](http://www.tornadoweb.org/): Apache License 2.0
   * [watchdog](http://github.com/gorakhargosh/watchdog): Apache License 2.0
+  * [websocket-client](https://github.com/liris/websocket-client): LGPLv3
+
+## Development (testing, documentation generation, etc)
+
+  * [ddt](https://github.com/txels/ddt): MIT
+  * [mock](https://github.com/testing-cabal/mock): BSD
+  * [nose](http://pythonhosted.org/nose/): LGPL
+  * [pypandoc](https://github.com/bebraw/pypandoc): MIT
+  * [Sphinx](http://sphinx-doc.org/): BSD
+  * [sphinxcontrib-httpdomain](https://bitbucket.org/birkenfeld/sphinx-contrib/src/default/httpdomain/): BSD
+  * [sphinx_rtd_theme](https://github.com/snide/sphinx_rtd_theme/): BSD

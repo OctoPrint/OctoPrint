@@ -89,6 +89,13 @@
             </div>
         </div>
         <div class="control-group">
+            <div class="controls">
+                <label class="checkbox">
+                    <input type="checkbox" data-bind="checked: feature_blockWhileDwelling" id="settings-featureBlockWhileDwelling"> {{ _('Actively pause communication during <code>G4</code> dwell command') }} <span class="label">{{ _('Repetier') }}</span>
+                </label>
+            </div>
+        </div>
+        <div class="control-group">
             <label class="control-label">{{ _('Send a checksum with the command')}}</label>
             <div class="controls">
                 <label class="radio">

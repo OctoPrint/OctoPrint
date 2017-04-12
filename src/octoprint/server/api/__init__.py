@@ -64,7 +64,7 @@ def pluginData(name):
 		return make_response("More than one api provider registered for {name}, can't proceed".format(name=name), 500)
 
 	api_plugin = api_plugins[0]
-	if api_plugin.is_api_adminonly() and not current_user.is_admin():
+	if api_plugin.is_api_adminonly() and not current_user.is_admin:
 		return make_response("Forbidden", 403)
 
 	response = api_plugin.on_api_get(request)
@@ -136,8 +136,11 @@ def wizardFinish():
 
 	data = dict()
 	try:
-		data = request.json
+		data = request.get_json()
 	except:
+		abort(400)
+
+	if data is None:
 		abort(400)
 
 	if not "handled" in data:
@@ -188,9 +191,9 @@ def apiVersion():
 
 @api.route("/login", methods=["POST"])
 def login():
-	data = request.values
-	if hasattr(request, "json") and request.json:
-		data = request.json
+	data = request.get_json()
+	if data is None:
+		data = request.values
 
 	if octoprint.server.userManager.enabled and "user" in data and "pass" in data:
 		username = data["user"]

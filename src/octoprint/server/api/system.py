@@ -24,9 +24,9 @@ from octoprint.permissions import Permissions
 def performSystemAction():
 	logging.getLogger(__name__).warn("Deprecated API call to /api/system made by {}, should be migrated to use /system/commands/custom/<action>".format(get_remote_address(request)))
 
-	data = request.values
-	if hasattr(request, "json") and request.json:
-		data = request.json
+	data = request.get_json(silent=True)
+	if data is None:
+		data = request.values
 
 	if not "action" in data:
 		return make_response("action to perform is not defined", 400)

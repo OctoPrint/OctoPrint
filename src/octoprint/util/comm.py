@@ -285,6 +285,7 @@ class MachineCom(object):
 
 		self._long_running_command = False
 		self._heating = False
+		self._dwelling_until = False
 		self._connection_closing = False
 
 		self._timeout = None
@@ -316,6 +317,7 @@ class MachineCom(object):
 		self._unknownCommandsNeedAck = settings().getBoolean(["feature", "unknownCommandsNeedAck"])
 		self._sdAlwaysAvailable = settings().getBoolean(["feature", "sdAlwaysAvailable"])
 		self._sdRelativePath = settings().getBoolean(["feature", "sdRelativePath"])
+		self._blockWhileDwelling = settings().getBoolean(["feature", "blockWhileDwelling"])
 		self._currentLine = 1
 		self._line_mutex = threading.RLock()
 		self._resendDelta = None
@@ -1059,6 +1061,7 @@ class MachineCom(object):
 			self.sayHello()
 
 		while self._monitoring_active:
+			now = time.time()
 			try:
 				line = self._readline()
 				if line is None:
@@ -1066,6 +1069,9 @@ class MachineCom(object):
 				if line.strip() is not "":
 					self._consecutive_timeouts = 0
 					self._timeout = get_new_timeout("communication", self._timeout_intervals)
+
+					if self._dwelling_until and now > self._dwelling_until:
+						self._dwelling_until = False
 
 				##~~ debugging output handling
 				if line.startswith("//"):
@@ -1095,7 +1101,7 @@ class MachineCom(object):
 				def convert_line(line):
 					if line is None:
 						return None, None
-					stripped_line = line.strip()
+					stripped_line = line.strip().strip("\0")
 					return stripped_line, stripped_line.lower()
 
 				##~~ Error handling
@@ -1148,7 +1154,7 @@ class MachineCom(object):
 					handled = True
 
 				# process timeouts
-				elif line == "" and time.time() > self._timeout:
+				elif line == "" and (not self._blockWhileDwelling or not self._dwelling_until or now > self._dwelling_until) and now > self._timeout:
 					# timeout only considered handled if the printer is printing
 					self._handle_timeout()
 					handled = self.isPrinting()
@@ -1190,7 +1196,7 @@ class MachineCom(object):
 
 				# temperature processing
 				elif ' T:' in line or line.startswith('T:') or ' T0:' in line or line.startswith('T0:') or ((' B:' in line or line.startswith('B:')) and not 'A:' in line):
-					if not disable_external_heatup_detection and not line.strip().startswith("ok") and not self._heating:
+					if not disable_external_heatup_detection and not line.strip().startswith("ok") and not self._heating and self._firmwareInfoReceived:
 						self._logger.debug("Externally triggered heatup detected")
 						self._heating = True
 						self._heatupWaitStartTime = time.time()
@@ -1238,6 +1244,7 @@ class MachineCom(object):
 
 							self._alwaysSendChecksum = True
 							self._resendSwallowRepetitions = True
+							self._blockWhileDwelling = True
 							supportRepetierTargetTemp = True
 							disable_external_heatup_detection = True
 
@@ -1377,7 +1384,10 @@ class MachineCom(object):
 					if "start" in line and not startSeen:
 						startSeen = True
 						self.sayHello()
-					elif line.startswith("ok"):
+					elif line.startswith("ok") or (supportWait and line == "wait"):
+						if line == "wait":
+							# if it was a wait we probably missed an ok, so let's simulate that now
+							self._handle_ok()
 						self._onConnected()
 					elif time.time() > self._timeout:
 						self._log("There was a timeout while trying to connect to the printer")
@@ -1551,7 +1561,7 @@ class MachineCom(object):
 		command or heating, no poll will be done.
 		"""
 
-		if self.isOperational() and not self._connection_closing and not self.isStreaming() and not self._long_running_command and not self._heating and not self._manualStreaming:
+		if self.isOperational() and not self._connection_closing and not self.isStreaming() and not self._long_running_command and not self._heating and not self._dwelling_until and not self._manualStreaming:
 			self.sendCommand("M105", cmd_type="temperature_poll")
 
 	def _poll_sd_status(self):
@@ -1562,7 +1572,7 @@ class MachineCom(object):
 		command or heating, no poll will be done.
 		"""
 
-		if self.isOperational() and not self._connection_closing and self.isSdPrinting() and not self._long_running_command and not self._heating:
+		if self.isOperational() and not self._connection_closing and self.isSdPrinting() and not self._long_running_command and not self._dwelling_until and not self._heating:
 			self.sendCommand("M27", cmd_type="sd_status_poll")
 
 	def _onConnected(self):
@@ -2019,6 +2029,12 @@ class MachineCom(object):
 					if not self._send_queue_active:
 						break
 
+					# sleep if we are dwelling
+					now = time.time()
+					if self._blockWhileDwelling and self._dwelling_until and now < self._dwelling_until:
+						time.sleep(self._dwelling_until - now)
+						self._dwelling_until = False
+
 					# fetch command, command type and optional linenumber and sent callback from queue
 					command, linenumber, command_type, on_sent = entry
 
@@ -2423,7 +2439,9 @@ class MachineCom(object):
 			_timeout = float(p_match.group("value")) / 1000.0
 		elif s_match:
 			_timeout = float(s_match.group("value"))
+
 		self._timeout = get_new_timeout("communication", self._timeout_intervals) + _timeout
+		self._dwelling_until = time.time() + _timeout
 
 	##~~ command phase handlers
 

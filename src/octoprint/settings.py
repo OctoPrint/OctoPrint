@@ -168,7 +168,6 @@ default_settings = {
 			"options": {},
 			"postRoll": 0,
 			"fps": 25,
-			"capturePostRoll": True
 		},
 		"cleanTmpAfterDays": 7
 	},
@@ -203,7 +202,8 @@ default_settings = {
 		"supportFAsCommand": False,
 		"modelSizeDetection": True,
 		"firmwareDetection": True,
-		"printCancelConfirmation": True
+		"printCancelConfirmation": True,
+		"blockWhileDwelling": False
 	},
 	"folder": {
 		"uploads": None,
@@ -243,7 +243,7 @@ default_settings = {
 		"showFahrenheitAlso": False,
 		"components": {
 			"order": {
-				"navbar": ["settings", "systemmenu", "login", "plugin_announcements"],
+				"navbar": ["settings", "systemmenu", "plugin_announcements", "login"],
 				"sidebar": ["connection", "state", "files"],
 				"tab": ["temperature", "control", "gcodeviewer", "terminal", "timelapse"],
 				"settings": [
@@ -360,7 +360,10 @@ default_settings = {
 			"brokenM29": True,
 			"supportF": False,
 			"firmwareName": "Virtual Marlin 1.0",
-			"sharedNozzle": False
+			"sharedNozzle": False,
+			"sendBusy": False,
+			"simulateReset": True,
+			"preparedOks": []
 		}
 	}
 }

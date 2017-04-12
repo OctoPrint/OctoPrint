@@ -332,24 +332,31 @@ class CommandTrigger(GenericEventListener):
 			self._executeGcodeCommand(command, debug=debug)
 
 	def _executeSystemCommand(self, command, debug=False):
-		def commandExecutioner(command):
+		def commandExecutioner(cmd):
 			if debug:
-				self._logger.info("Executing system command: %s" % command)
+				self._logger.info("Executing system command: {}".format(cmd))
+			else:
+				self._logger.info("Executing a system command")
 			# we run this with shell=True since we have to trust whatever
 			# our admin configured as command and since we want to allow
 			# shell-alike handling here...
-			subprocess.Popen(command, shell=True)
+			subprocess.check_call(cmd, shell=True)
 
-		try:
-			if isinstance(command, (list, tuple, set)):
-				for c in command:
-					commandExecutioner(c)
-			else:
-				commandExecutioner(command)
-		except subprocess.CalledProcessError as e:
-			self._logger.warn("Command failed with return code %i: %s" % (e.returncode, str(e)))
-		except:
-			self._logger.exception("Command failed")
+		def process():
+			try:
+				if isinstance(command, (list, tuple, set)):
+					for c in command:
+						commandExecutioner(c)
+				else:
+					commandExecutioner(command)
+			except subprocess.CalledProcessError as e:
+				self._logger.warn("Command failed with return code %i: %s" % (e.returncode, str(e)))
+			except:
+				self._logger.exception("Command failed")
+
+		t = threading.Thread(target=process)
+		t.daemon = True
+		t.start()
 
 	def _executeGcodeCommand(self, command, debug=False):
 		commands = [command]
@@ -397,7 +404,7 @@ class CommandTrigger(GenericEventListener):
 
 		currentData = self._printer.get_current_data()
 
-		if "currentZ" in currentData.keys() and currentData["currentZ"] is not None:
+		if "currentZ" in currentData and currentData["currentZ"] is not None:
 			params["__currentZ"] = str(currentData["currentZ"])
 
 		if "job" in currentData and "file" in currentData["job"] and "name" in currentData["job"]["file"] \
@@ -405,9 +412,9 @@ class CommandTrigger(GenericEventListener):
 			params["__filename"] = currentData["job"]["file"]["name"]
 			params["__filepath"] = currentData["job"]["file"]["path"]
 			params["__fileorigin"] = currentData["job"]["file"]["origin"]
-			if "progress" in currentData.keys() and currentData["progress"] is not None \
-				and "completion" in currentData["progress"].keys() and currentData["progress"]["completion"] is not None:
-				params["__progress"] = str(round(currentData["progress"]["completion"] * 100))
+			if "progress" in currentData and currentData["progress"] is not None \
+				and "completion" in currentData["progress"] and currentData["progress"]["completion"] is not None:
+				params["__progress"] = str(round(currentData["progress"]["completion"]))
 
 		# now add the payload keys as well
 		if isinstance(payload, dict):

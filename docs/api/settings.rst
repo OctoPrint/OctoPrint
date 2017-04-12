@@ -133,6 +133,12 @@ mapped from the same fields in ``config.yaml`` unless otherwise noted:
      -
    * - ``feature.modelSizeDetection``
      -
+   * - ``feature.firmwareDetection``
+     -
+   * - ``feature.printCancelConfirmation``
+     -
+   * - ``feature.blockWhileDwelling``
+     -
    * - ``folder.uploads``
      -
    * - ``folder.timelapse``

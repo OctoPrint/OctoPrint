@@ -883,3 +883,36 @@ var getQueryParameterByName = function(name, url) {
     if (!results[2]) return '';
     return decodeURIComponent(results[2].replace(/\+/g, " "));
 };
+
+/**
+ * Escapes unprintable ASCII characters in the provided string.
+ *
+ * E.g. turns a null byte in the string into "\x00".
+ *
+ * Only characters 0 to 31, 127 and 255 will be escaped, that
+ * should leave printable characters and unicode alone.
+ *
+ * Originally based on
+ * https://gist.github.com/mathiasbynens/1243213#gistcomment-53590
+ *
+ * @param str The string to escape
+ * @returns {string}
+ */
+var escapeUnprintableCharacters = function(str) {
+    var result = "";
+    var index = 0;
+    var charCode;
+
+    while (!isNaN(charCode = str.charCodeAt(index))) {
+        if (charCode < 32 || charCode == 127 || charCode == 255) {
+            // special hex chars
+            result += "\\x" + (charCode > 15 ? "" : "0") + charCode.toString(16)
+        } else {
+            // anything else
+            result += str[index];
+        }
+
+        index++;
+    }
+    return result;
+};

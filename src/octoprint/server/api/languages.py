@@ -24,7 +24,6 @@ from octoprint.server.api import api
 from octoprint.server.util.flask import restricted_access
 
 from octoprint.plugin import plugin_manager
-
 from octoprint.permissions import Permissions
 
 from flask_babel import Locale

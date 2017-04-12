@@ -17,20 +17,24 @@ def run_server(basedir, configfile, host, port, debug, allow_root, logging_confi
 	from octoprint import init_platform, __display_version__, FatalStartupError
 
 	def log_startup(recorder=None, safe_mode=None, **kwargs):
+		from octoprint.logging import get_divider_line
+
 		logger = logging.getLogger("octoprint.server")
+
+		logger.info(get_divider_line("*"))
 		logger.info("Starting OctoPrint {}".format(__display_version__))
 		if safe_mode:
 			logger.info("Starting in SAFE MODE. Third party plugins will be disabled!")
 
 		if recorder and len(recorder):
-			logger.info("--- Logged during platform initialization: ---")
+			logger.info(get_divider_line("-", "Logged during platform initialization:"))
 
 			from octoprint.logging.handlers import CombinedLogHandler
 			handler = CombinedLogHandler(*logging.getLogger().handlers)
 			recorder.setTarget(handler)
 			recorder.flush()
 
-			logger.info("----------------------------------------------")
+			logger.info(get_divider_line("-"))
 
 		from octoprint import urllib3_ssl
 		if not urllib3_ssl:
@@ -41,6 +45,30 @@ def run_server(basedir, configfile, host, port, debug, allow_root, logging_confi
 			          "update to a Python version >= 2.7.9 or alternatively "
 			          "install PyOpenSSL plus its dependencies. For details see "
 			          "https://urllib3.readthedocs.org/en/latest/security.html#openssl-pyopenssl")
+		logger.info(get_divider_line("*"))
+
+	def log_register_rollover(safe_mode=None, plugin_manager=None, **kwargs):
+		from octoprint.logging import get_handler, log_to_handler, get_divider_line
+		from octoprint.logging.handlers import OctoPrintLogHandler
+
+		def rollover_callback():
+			handler = get_handler("file")
+			if handler is None:
+				return
+
+			logger = logging.getLogger("octoprint.server")
+
+			def _log(message, level=logging.INFO):
+				log_to_handler(logger, handler, level, message)
+
+			_log(get_divider_line("-", "Log roll over detected"))
+			_log("OctoPrint {}".format(__display_version__))
+			if safe_mode:
+				_log("SAFE MODE is active. Third party plugins are disabled!")
+			plugin_manager.log_all_plugins(only_to_handler=handler)
+			_log(get_divider_line("-"))
+
+		OctoPrintLogHandler.registerRolloverCallback(rollover_callback)
 
 	try:
 		settings, _, safe_mode, plugin_manager = init_platform(basedir,
@@ -50,7 +78,8 @@ def run_server(basedir, configfile, host, port, debug, allow_root, logging_confi
 		                                                       verbosity=verbosity,
 		                                                       uncaught_logger=__name__,
 		                                                       safe_mode=safe_mode,
-		                                                       after_safe_mode=log_startup)
+		                                                       after_safe_mode=log_startup,
+		                                                       after_plugin_manager=log_register_rollover)
 	except FatalStartupError as e:
 		click.echo(e.message, err=True)
 		click.echo("There was a fatal error starting up OctoPrint.", err=True)

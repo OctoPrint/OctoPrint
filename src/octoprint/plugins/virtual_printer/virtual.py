@@ -25,6 +25,7 @@ class VirtualPrinter(object):
 	sleep_after_regex = re.compile("sleep_after ([GMTF]\d+) (\d+)")
 	sleep_after_next_regex = re.compile("sleep_after_next ([GMTF]\d+) (\d+)")
 	custom_action_regex = re.compile("action_custom ([a-zA-Z0-9_]+)(\s+.*)?")
+	prepare_ok_regex = re.compile("prepare_ok (.*)?")
 
 	def __init__(self, seriallog_handler=None, read_timeout=5.0, write_timeout=10.0):
 		import logging
@@ -50,8 +51,15 @@ class VirtualPrinter(object):
 		self.outgoing = queue.Queue()
 		self.buffered = queue.Queue(maxsize=settings().getInt(["devel", "virtualPrinter", "commandBuffer"]))
 
-		for item in ['start\n', 'Marlin: Virtual Marlin!\n', '\x80\n', 'SD card ok\n']:
-			self._send(item)
+		if settings().getBoolean(["devel", "virtualPrinter", "simulateReset"]):
+			for item in ['start\n', 'Marlin: Virtual Marlin!\n', '\x80\n', 'SD card ok\n']:
+				self._send(item)
+
+		self._prepared_oks = []
+		prepared = settings().get(["devel", "virtualPrinter", "preparedOks"])
+		if prepared and isinstance(prepared, list):
+			for prep in prepared:
+				self._prepared_oks.append(prep)
 
 		self.currentExtruder = 0
 		self.extruderCount = settings().getInt(["devel", "virtualPrinter", "numExtruders"])
@@ -92,6 +100,7 @@ class VirtualPrinter(object):
 		self._supportF = settings().getBoolean(["devel", "virtualPrinter", "supportF"])
 
 		self._sendWait = settings().getBoolean(["devel", "virtualPrinter", "sendWait"])
+		self._sendBusy = settings().getBoolean(["devel", "virtualPrinter", "sendBusy"])
 		self._waitInterval = settings().getFloat(["devel", "virtualPrinter", "waitInterval"])
 
 		self._echoOnM117 = settings().getBoolean(["devel", "virtualPrinter", "echoOnM117"])
@@ -384,7 +393,7 @@ class VirtualPrinter(object):
 	def _gcode_M114(self, data):
 		output = "X:{} Y:{} Z:{} E:{} Count: A:{} B:{} C:{}".format(self._lastX, self._lastY, self._lastZ, self._lastE, int(self._lastX*100), int(self._lastY*100), int(self._lastZ*100))
 		if not self._okBeforeCommandOutput:
-			output = "ok " + output
+			output = "{} {}".format(self._ok(), output)
 		self._send(output)
 		return True
 
@@ -451,6 +460,24 @@ class VirtualPrinter(object):
 	_gcode_G2 = _gcode_G0
 	_gcode_G3 = _gcode_G0
 
+	def _gcode_G4(self, data):
+		matchS = re.search('S([0-9]+)', data)
+		matchP = re.search('P([0-9]+)', data)
+
+		_timeout = 0
+		if matchP:
+			_timeout = float(matchP.group(1)) / 1000.0
+		elif matchS:
+			_timeout = float(matchS.group(1))
+
+		if self._sendBusy:
+			until = time.time() + _timeout
+			while time.time() < until:
+				time.sleep(1.0)
+				self._send("busy:processing")
+		else:
+			time.sleep(_timeout)
+
 	##~~ further helpers
 
 	def _calculate_checksum(self, line):
@@ -479,7 +506,7 @@ class VirtualPrinter(object):
 
 			def request_resend():
 				self._send("Resend:%d" % expected)
-				self._send("ok")
+				self._send(self._ok())
 
 			if settings().getBoolean(["devel", "virtualPrinter", "repetierStyleResends"]):
 				request_resend()
@@ -519,6 +546,9 @@ class VirtualPrinter(object):
 			| Triggers a resend error with a checksum mismatch
 			drop_connection
 			| Drops the serial connection
+			prepare_ok <broken ok>
+			| Will cause <broken ok> to be enqueued for use,
+			| will be used instead of actual "ok"
 
 			# Reply Timing / Sleeping
 
@@ -527,7 +557,7 @@ class VirtualPrinter(object):
 			sleep_after <str:command> <int:seconds>
 			| Sleeps <seconds> s after each execution of <command>
 			sleep_after_next <str:command> <int:seconds>
-			| Sleeps <seconds> s after execution of <command>
+			| Sleeps <seconds> s after execution of next <command>
 			"""
 			for line in usage.split("\n"):
 				self._send("echo: {}".format(line.strip()))
@@ -556,6 +586,7 @@ class VirtualPrinter(object):
 				sleep_after_match = VirtualPrinter.sleep_after_regex.match(data)
 				sleep_after_next_match = VirtualPrinter.sleep_after_next_regex.match(data)
 				custom_action_match = VirtualPrinter.custom_action_regex.match(data)
+				prepare_ok_match = VirtualPrinter.prepare_ok_regex.match(data)
 
 				if sleep_match is not None:
 					interval = int(sleep_match.group(1))
@@ -576,6 +607,9 @@ class VirtualPrinter(object):
 					params = custom_action_match.group(2)
 					params = params.strip() if params is not None else ""
 					self._send("// action:{action} {params}".format(**locals()).strip())
+				elif prepare_ok_match is not None:
+					ok = prepare_ok_match.group(1)
+					self._prepared_oks.append(ok)
 			except:
 				pass
 
@@ -665,7 +699,7 @@ class VirtualPrinter(object):
 		output += " @:64\n"
 
 		if includeOk:
-			output = "ok " + output
+			output = "{} {}".format(self._ok(), output)
 		self._send(output)
 
 	def _parseHotendCommand(self, line, wait=False, support_r=False):
@@ -1041,9 +1075,9 @@ class VirtualPrinter(object):
 			return
 
 		if settings().getBoolean(["devel", "virtualPrinter", "okWithLinenumber"]):
-			self._send("ok %d" % self.lastN)
+			self._send("{} {}".format(self._ok(), self.lastN))
 		else:
-			self._send("ok")
+			self._send(self._ok())
 
 	def _sendWaitAfterTimeout(self, timeout=5):
 		time.sleep(timeout)
@@ -1053,6 +1087,12 @@ class VirtualPrinter(object):
 	def _send(self, line):
 		if self.outgoing is not None:
 			self.outgoing.put(line)
+
+	def _ok(self):
+		ok = "ok"
+		if self._prepared_oks:
+			ok = self._prepared_oks.pop(0)
+		return ok
 
 class CharCountingQueue(queue.Queue):
 

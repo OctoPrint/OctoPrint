@@ -47,8 +47,11 @@ def addUser():
 		return make_response("Expected content-type JSON", 400)
 
 	try:
-		data = request.json
+		data = request.get_json()
 	except BadRequest:
+		return make_response("Malformed JSON body in request", 400)
+
+	if data is None:
 		return make_response("Malformed JSON body in request", 400)
 
 	if not "name" in data:
@@ -82,7 +85,7 @@ def getUser(username):
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
 
-	if current_user is not None and not current_user.is_anonymous() and (current_user.get_name() == username or current_user.hasPermission(Permissions.admin)):
+	if current_user is not None and not current_user.is_anonymous and (current_user.get_name() == username or current_user.hasPermission(Permissions.admin)):
 		user = userManager.findUser(username)
 		if user is not None:
 			return jsonify(user)
@@ -105,9 +108,10 @@ def updateUser(username):
 			return make_response("Expected content-type JSON", 400)
 
 		try:
-			data = request.json
+			data = request.get_json()
 		except BadRequest:
 			return make_response("Malformed JSON body in request", 400)
+
 
 		# change groups
 		if "groups" in data:
@@ -118,6 +122,9 @@ def updateUser(username):
 		if "permissions" in data:
 			permissions = data["permissions"]
 			userManager.changeUserPermissions(username, permissions)
+
+		if data is None:
+			return make_response("Malformed JSON body in request", 400)
 
 		# change activation
 		if "active" in data:
@@ -148,13 +155,16 @@ def changePasswordForUser(username):
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
 
-	if current_user is not None and not current_user.is_anonymous() and (current_user.get_name() == username or current_user.hasPermission(Permissions.admin)):
+	if current_user is not None and not current_user.is_anonymous and (current_user.get_name() == username or current_user.is_admin):
 		if not "application/json" in request.headers["Content-Type"]:
 			return make_response("Expected content-type JSON", 400)
 
 		try:
-			data = request.json
+			data = request.get_json()
 		except BadRequest:
+			return make_response("Malformed JSON body in request", 400)
+
+		if data is None:
 			return make_response("Malformed JSON body in request", 400)
 
 		if not "password" in data or not data["password"]:
@@ -176,7 +186,7 @@ def getSettingsForUser(username):
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
 
-	if current_user is None or current_user.is_anonymous() or (current_user.get_name() != username and not current_user.hasPermission(Permissions.admin)):
+	if current_user is None or current_user.is_anonymous or (current_user.get_name() != username and not current_user.hasPermission(Permissions.admin)):
 		return make_response("Forbidden", 403)
 
 	try:
@@ -190,12 +200,15 @@ def changeSettingsForUser(username):
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
 
-	if current_user is None or current_user.is_anonymous() or (current_user.get_name() != username and not current_user.hasPermission(Permissions.admin)):
+	if current_user is None or current_user.is_anonymous or (current_user.get_name() != username and not current_user.hasPermission(Permissions.admin)):
 		return make_response("Forbidden", 403)
 
 	try:
-		data = request.json
+		data = request.get_json()
 	except BadRequest:
+		return make_response("Malformed JSON body in request", 400)
+
+	if data is None:
 		return make_response("Malformed JSON body in request", 400)
 
 	try:
@@ -210,7 +223,7 @@ def deleteApikeyForUser(username):
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
 
-	if current_user is not None and not current_user.is_anonymous() and (current_user.get_name() == username or current_user.hasPermission(Permissions.admin)):
+	if current_user is not None and not current_user.is_anonymous and (current_user.get_name() == username or current_user.hasPermission(Permissions.admin)):
 		try:
 			userManager.deleteApikey(username)
 		except users.UnknownUser:
@@ -226,7 +239,7 @@ def generateApikeyForUser(username):
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
 
-	if current_user is not None and not current_user.is_anonymous() and (current_user.get_name() == username or current_user.hasPermission(Permissions.admin)):
+	if current_user is not None and not current_user.is_anonymous and (current_user.get_name() == username or current_user.hasPermission(Permissions.admin)):
 		try:
 			apikey = userManager.generateApiKey(username)
 		except users.UnknownUser:

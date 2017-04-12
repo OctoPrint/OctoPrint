@@ -169,9 +169,9 @@ def processUnrenderedTimelapseCommand(name):
 @restricted_access
 @Permissions.timelapse_admin.require(403)
 def setTimelapseConfig():
-	data = request.values
-	if hasattr(request, "json") and request.json:
-		data = request.json
+	data = request.get_json(silent=True)
+	if data is None:
+		data = request.values
 
 	if "type" in data:
 		config = {

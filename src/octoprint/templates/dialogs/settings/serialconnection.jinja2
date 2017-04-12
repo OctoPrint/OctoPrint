@@ -44,7 +44,7 @@
             </div>
         </div>
     </div>
-    <div class="control-group" title="{{ _('Time after which the communication with your printer will be considered timed out if nothing was sent by your printer (and an attempt to get it talking again will be done). Increase this if your printer takes longer than this for some moves. This is also the interval in which the temperature will be polled from the printer while not printing.') }}">
+    <div class="control-group" title="{{ _('Time after which the communication with your printer will be considered timed out if nothing was sent by your printer (and an attempt to get it talking again will be done). Increase this if your printer takes longer than this for some moves.') }}">
         <label class="control-label" for="settings-serialTimeoutCommunication">{{ _('Communication timeout') }}</label>
         <div class="controls">
             <div class="input-append">
@@ -138,25 +138,28 @@
             </div>
             <div class="controls">
                 <label class="checkbox">
-                    <input type="checkbox" data-bind="checked: serial_supportResendsWithoutOk" id="settings-supportResendsWithoutOk"> {{ _('Simulate an additional `ok` for resend requests') }}
+                    <input type="checkbox" data-bind="checked: serial_supportResendsWithoutOk" id="settings-supportResendsWithoutOk"> {{ _('Simulate an additional <code>ok</code> for resend requests') }}
                 </label>
             </div>
             <div class="control-group" title="{{ _('Maximum consecutive communication timeouts while idle. More than this and the printer will be considered to be gone. Set to 0 to disable.') }}">
                 <label class="control-label" for="settings-serialMaxTimeoutsIdle">{{ _('Max. consecutive timeouts while idle') }}</label>
                 <div class="controls">
                     <input type="number" min="0" class="input-mini text-right" id="settings-serialMaxTimeoutsIdle" data-bind="value: serial_maxTimeoutsIdle">
+                    <span class="help-block">{{ _('Set to 0 to disable consecutive timeout detection and handling.') }}</span>
                 </div>
             </div>
             <div class="control-group" title="{{ _('Maximum consecutive communication timeouts while printing. More than this and the printer will be considered to be gone. Set to 0 to disable.') }}">
                 <label class="control-label" for="settings-serialMaxTimeoutsPrinting">{{ _('Max. consecutive timeouts while printing') }}</label>
                 <div class="controls">
                     <input type="number" min="0" class="input-mini text-right" id="settings-serialMaxTimeoutsPrinting" data-bind="value: serial_maxTimeoutsPrinting">
+                    <span class="help-block">{{ _('Set to 0 to disable consecutive timeout detection and handling.') }}</span>
                 </div>
             </div>
             <div class="control-group" title="{{ _('Maximum consecutive communication timeouts while a long running command is active. More than this and the printer will be considered to be gone. Set to 0 to disable.') }}">
                 <label class="control-label" for="settings-serialMaxTimeoutsLong">{{ _('Max. consecutive timeouts during long running commands') }}</label>
                 <div class="controls">
                     <input type="number" min="0" class="input-mini text-right" id="settings-serialMaxTimeoutsLong" data-bind="value: serial_maxTimeoutsLong">
+                    <span class="help-block">{{ _('Set to 0 to disable consecutive timeout detection and handling.') }}</span>
                 </div>
             </div>
         </div>
