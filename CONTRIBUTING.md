@@ -380,7 +380,7 @@ Those usually have one of the following prefixes:
   * `dev/...` or `feature/...`: New functionality under development that is to be merged
     into the `devel` branch.
 
-There is also the `gh-pages` branch, which holds OctoPrint's web page, and a couple of
+There is also the `gh-pages` branch, which holds OctoPrint's web page, and a few
 older development branches that are slowly being migrated or deleted.
 
 ## How OctoPrint is versioned

@@ -49,7 +49,7 @@ development environment::
    by running ``octoprint --version`` or by taking a look into the lower left corner in OctoPrint's
    web interface.
 
-We'll start at the most basic form a plugin can take - just a couple of simple lines of Python code:
+We'll start at the most basic form a plugin can take - just a few simple lines of Python code:
 
 .. code-block:: python
    :linenos:
@@ -116,7 +116,7 @@ used :func:`~octoprint.plugin.StartupPlugin.on_startup` instead, in which case o
 up and ready to serve requests.
 
 You'll also note that we are using ``self._logger`` for logging. Where did that one come from? OctoPrint's plugin system
-injects :ref:`a couple of useful objects <sec-plugins-mixins-injectedproperties>` into our plugin implementation classes,
+injects :ref:`a some useful objects <sec-plugins-mixins-injectedproperties>` into our plugin implementation classes,
 one of those being a fully instantiated `python logger <https://docs.python.org/2/library/logging.html>`_ ready to be
 used by your plugin. As you can see in the log output above, that logger uses the namespace ``octoprint.plugins.helloworld``
 for our little plugin here, or more generally ``octoprint.plugins.<plugin identifier>``.

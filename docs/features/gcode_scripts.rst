@@ -15,7 +15,7 @@ on Windows and ``~/Library/Application Support/OctoPrint`` on MacOS).
 
 These GCODE scripts are backed by the templating engine `Jinja2 <http://jinja.pocoo.org/>`_, allowing more than just
 simple "send-as-is" scripts but making use of a full blown templating language in order to create your scripts. To
-this end, OctoPrint injects a couple of variables into the :ref:`template rendering context <sec-features-gcode_scripts-context>`
+this end, OctoPrint injects some variables into the :ref:`template rendering context <sec-features-gcode_scripts-context>`
 as described below.
 
 .. _sec-features-gcode_scripts-predefined:
@@ -64,7 +64,7 @@ All GCODE scripts have access to the following template variables through the te
   * ``script``: An object wrapping the script's type (``gcode``) and name (e.g. ``afterPrintCancelled``) as ``script.type``
     and ``script.name`` respectively.
 
-There are a couple of additional template variables available for the following specific scripts:
+There are a few additional template variables available for the following specific scripts:
 
   * ``afterPrintPaused`` and ``beforePrintResumed``
 

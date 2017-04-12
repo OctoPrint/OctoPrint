@@ -376,7 +376,7 @@ class CommandTrigger(GenericEventListener):
 
 	def _processCommand(self, command, payload):
 		"""
-		Performs string substitutions in the command string based on a couple of current parameters.
+		Performs string substitutions in the command string based on a few current parameters.
 
 		The following substitutions are currently supported:
 

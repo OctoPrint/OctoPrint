@@ -531,7 +531,7 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
 	provided request by calling :meth:`~octoprint.plugin.UiPlugin.will_handle_ui` with the Flask
 	`Request <http://flask.pocoo.org/docs/0.10/api/#flask.Request>`_ object as
 	parameter. If you plugin returns `True` here, OctoPrint will next call
-	:meth:`~octoprint.plugin.UiPlugin.on_ui_render` with a couple of parameters like
+	:meth:`~octoprint.plugin.UiPlugin.on_ui_render` with a few parameters like
 	- again - the Flask Request object and the render keyword arguments as
 	used by the default OctoPrint web interface. For more information see below.
 
@@ -582,7 +582,7 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
 	it only gets re-rendered if the request demands that (by having no-cache headers set) or if
 	the cache gets invalidated otherwise.
 
-	In order to be able to do that, the ``UiPlugin`` offers overriding a couple of cache specific
+	In order to be able to do that, the ``UiPlugin`` offers overriding some cache specific
 	methods used for figuring out the source files whose modification time to use for cache invalidation
 	as well as override possibilities for ETag and LastModified calculation. Additionally there are
 	methods to allow persisting call parameters to allow for preemptively caching your UI during
@@ -1038,7 +1038,7 @@ class SimpleApiPlugin(OctoPrintPlugin):
 	mixin offers.
 
 	Use this mixin if all you need to do is return some kind of dynamic data to your plugin from the backend
-	and/or want to react to simple commands which boil down to a type of command and a couple of flat parameters
+	and/or want to react to simple commands which boil down to a type of command and a few flat parameters
 	supplied with it.
 
 	The simple API constructed by OctoPrint for you will be made available under ``/api/plugin/<plugin identifier>/``.
