@@ -242,10 +242,12 @@ $(function() {
         };
 
         self.scrollToEnd = function() {
-            var container = self.fancyFunctionality() ? $("#terminal-output") : $("#terminal-output-lowfi");
-            if (container.length) {
-                container.scrollTop(container[0].scrollHeight);
-            }
+            ko.bindingHandlers.fastForEach.FastForEach.animateFrame.call(window, function scrollToEnd() {
+                var container = self.fancyFunctionality() ? $("#terminal-output") : $("#terminal-output-lowfi");
+                if (container.length) {
+                    container.scrollTop(container.prop("scrollHeight"));
+                }
+            });
         };
 
         self.sendCommand = function() {
