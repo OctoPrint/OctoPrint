@@ -12,8 +12,8 @@ import octoprint.plugin.core
 from octoprint.settings import valid_boolean_trues
 from octoprint.server.util.flask import restricted_access, with_revalidation_checking, check_etag
 from octoprint.server import VERSION
-from octoprint.permissions import Permissions
-from octoprint.util.pip import LocalPipCaller, UnknownPip
+from octoprint.access.permissions import Permissions
+from octoprint.util.pip import LocalPipCaller
 
 from flask import jsonify, make_response
 from flask_babel import gettext
@@ -21,7 +21,6 @@ from flask_babel import gettext
 import logging
 import sarge
 import sys
-import requests
 import re
 import os
 import pkg_resources
@@ -138,7 +137,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 	@octoprint.plugin.BlueprintPlugin.route("/upload_archive", methods=["POST"])
 	@restricted_access
-	@Permissions.settings.require(403)
+	@Permissions.SETTINGS.require(403)
 	def upload_archive(self):
 		import flask
 
@@ -184,7 +183,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		}
 
 	def on_api_get(self, request):
-		if not Permissions.settings.can():
+		if not Permissions.SETTINGS.can():
 			return make_response("Insufficient rights", 403)
 
 		from octoprint.server import safe_mode
@@ -229,7 +228,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		                                  unless=lambda: refresh_repository)(view)()
 
 	def on_api_command(self, command, data):
-		if not Permissions.settings.can():
+		if not Permissions.SETTINGS.can():
 			return make_response("Insufficient rights", 403)
 
 		if self._printer.is_printing() or self._printer.is_paused():

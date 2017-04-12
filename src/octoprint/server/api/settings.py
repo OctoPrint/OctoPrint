@@ -17,7 +17,7 @@ from octoprint.settings import settings, valid_boolean_trues
 from octoprint.server import admin_permission, printer
 from octoprint.server.api import api
 from octoprint.server.util.flask import restricted_access, with_revalidation_checking
-from octoprint.permissions import Permissions
+from octoprint.access.permissions import Permissions
 
 import octoprint.plugin
 import octoprint.util
@@ -246,7 +246,7 @@ def _get_plugin_settings():
 
 @api.route("/settings", methods=["POST"])
 @restricted_access
-@Permissions.settings.require(403)
+@Permissions.SETTINGS.require(403)
 def setSettings():
 	if not "application/json" in request.headers["Content-Type"]:
 		return make_response("Expected content-type JSON", 400)

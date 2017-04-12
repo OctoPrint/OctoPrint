@@ -1,5 +1,6 @@
 # coding=utf-8
 from __future__ import absolute_import, division, print_function
+
 from flask import make_response
 
 __author__ = "Gina Häußge <osd@foosel.net>"
@@ -14,7 +15,6 @@ import flask_assets
 import webassets.updater
 import webassets.utils
 import functools
-import contextlib
 import time
 import uuid
 import threading
@@ -1052,13 +1052,13 @@ def permission_validator(request, permission):
 
 @deprecated("admin_validator is deprecated, please use new permission_validator", since="")
 def admin_validator(request):
-	from octoprint.permissions import Permissions
-	return permission_validator(request, Permissions.admin)
+	from octoprint.access.permissions import Permissions
+	return permission_validator(request, Permissions.ADMIN)
 
 @deprecated("user_validator is deprecated, please use new permission_validator", since="")
 def user_validator(request):
-	from octoprint.permissions import Permissions
-	return permission_validator(request, Permissions.user)
+	from octoprint.access.permissions import Permissions
+	return permission_validator(request, Permissions.USER)
 
 def _get_flask_user_from_request(request):
 	"""

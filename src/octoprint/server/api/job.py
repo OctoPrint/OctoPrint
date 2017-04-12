@@ -10,7 +10,7 @@ from flask import request, make_response, jsonify
 from octoprint.server import printer, NO_CONTENT
 from octoprint.server.util.flask import restricted_access, get_json_command_from_request
 from octoprint.server.api import api
-from octoprint.permissions import Permissions
+from octoprint.access.permissions import Permissions
 
 @api.route("/job", methods=["POST"])
 @restricted_access
@@ -31,7 +31,7 @@ def controlJob():
 
 	activePrintjob = printer.is_printing() or printer.is_paused()
 
-	with Permissions.printing.require(403):
+	with Permissions.PRINTING.require(403):
 		if command == "start":
 				if activePrintjob:
 					return make_response("Printer already has an active print job, did you mean 'restart'?", 409)
@@ -63,7 +63,7 @@ def controlJob():
 
 
 @api.route("/job", methods=["GET"])
-@Permissions.status.require(403)
+@Permissions.STATUS.require(403)
 def jobState():
 	currentData = printer.get_current_data()
 	return jsonify({

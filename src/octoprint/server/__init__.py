@@ -7,10 +7,10 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import uuid
 from sockjs.tornado import SockJSRouter
-from flask import Flask, g, request, session, Blueprint, Request, Response
-from flask_login import LoginManager, current_user
-from flask_principal import Principal, Permission, RoleNeed, identity_loaded, UserNeed
-from flask_babel import Babel, gettext, ngettext
+from flask import Flask, g, request, session, Blueprint
+from flask_login import LoginManager
+from flask_principal import Principal, identity_loaded, UserNeed
+from flask_babel import Babel, gettext
 from flask_assets import Environment, Bundle
 from babel import Locale
 from watchdog.observers import Observer
@@ -44,6 +44,7 @@ fileManager = None
 slicingManager = None
 analysisQueue = None
 userManager = None
+permissionManager = None
 groupManager = None
 eventManager = None
 loginManager = None
@@ -56,11 +57,13 @@ jsonDecoder = None
 
 principals = Principal(app)
 
-import octoprint.permissions as permissions
+import octoprint.access.permissions as permissions
 #-------------------------------------------------------------------------------
 #Deprecated should be removed with the user_permission variable in a future version
-admin_permission = util.variable_deprecated("admin_permission has been deprecated please use new Permission.admin instead", since="now")(permissions.Permissions.admin)
-user_permission = util.variable_deprecated("user_permission has been deprecated and will be removed in a future version", since="now")(permissions.Permissions.user)
+admin_permission = util.variable_deprecated("admin_permission has been deprecated please use new Permission.admin instead", since="now")(
+	permissions.Permissions.ADMIN)
+user_permission = util.variable_deprecated("user_permission has been deprecated and will be removed in a future version", since="now")(
+	permissions.Permissions.USER)
 #-------------------------------------------------------------------------------
 
 # only import the octoprint stuff down here, as it might depend on things defined above to be initialized already
@@ -69,7 +72,7 @@ from octoprint.printer.profile import PrinterProfileManager
 from octoprint.printer.standard import Printer
 from octoprint.settings import settings
 import octoprint.users as users
-import octoprint.groups as groups
+import octoprint.access.groups as groups
 import octoprint.events as events
 import octoprint.plugin
 import octoprint.timelapse
@@ -81,9 +84,6 @@ from octoprint.server.util import enforceApiKeyRequestHandler, loginFromApiKeyRe
 	corsResponseHandler
 from octoprint.server.util.flask import PreemptiveCache
 from octoprint.server.util.serialization import OctoPrintJsonEncoder, OctoPrintJsonDecoder
-
-import octoprint.util.yaml
-
 
 UI_API_KEY = ''.join('%02X' % z for z in bytes(uuid.uuid4().bytes))
 
@@ -166,6 +166,7 @@ class Server(object):
 		global slicingManager
 		global analysisQueue
 		global userManager
+		global permissionManager
 		global groupManager
 		global eventManager
 		global loginManager
@@ -179,7 +180,7 @@ class Server(object):
 		global safe_mode
 
 		from tornado.ioloop import IOLoop
-		from tornado.web import Application, RequestHandler
+		from tornado.web import Application
 
 		debug = self._debug
 		safe_mode = self._safe_mode
@@ -225,19 +226,29 @@ class Server(object):
 		jsonEncoder.add_encoder(permissions.OctoPrintPermission, lambda op: op.asDict())
 
 		# setup access control
+		permissionManagerName = self._settings.get(["accessControl", "permissionManager"])
+		try:
+			clazz = octoprint.util.get_class(permissionManagerName)
+			permissionManager = clazz()
+		except AttributeError as e:
+			self._logger.exception("Could not instantiate permission manager {}, falling back to FilebasedPermissionManager!".format(permissionManagerName))
+			permissionManager = octoprint.access.permissions.FilebasedPermissionManager()
+		finally:
+			permissionManager.enabled = self._settings.getBoolean(["accessControl", "permissionsEnabled"])
+
 		groupManagerName = self._settings.get(["accessControl", "groupManager"])
 		try:
 			clazz = octoprint.util.get_class(groupManagerName)
 			groupManager = clazz()
 		except AttributeError as e:
 			self._logger.exception("Could not instantiate group manager {}, falling back to FilebasedGroupManager!".format(groupManagerName))
-			groupManager = octoprint.groups.FilebasedGroupManager()
+			groupManager = octoprint.access.groups.FilebasedGroupManager()
 		finally:
 			groupManager.enabled = self._settings.getBoolean(["accessControl", "groupsEnabled"])
 
 		# If Group Manager is enabled initialzize the static Groups
 		if groupManager.enabled:
-			from octoprint.groups import Groups
+			from octoprint.access.groups import Groups
 			Groups.initialize()
 
 		userManagerName = self._settings.get(["accessControl", "userManager"])
@@ -414,10 +425,10 @@ class Server(object):
 
 		##~~ Permission validators
 
-		timelapse_permission_validator = dict(access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.permission_validator, permissions.Permissions.timelapse))
-		download_permission_validator = dict(access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.permission_validator, permissions.Permissions.download))
-		log_permission_validator = dict(access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.permission_validator, permissions.Permissions.logs))
-		camera_permission_validator = dict(access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.permission_validator, permissions.Permissions.webcam))
+		timelapse_permission_validator = dict(access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.permission_validator, permissions.Permissions.TIMELAPSE))
+		download_permission_validator = dict(access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.permission_validator, permissions.Permissions.DOWNLOAD))
+		log_permission_validator = dict(access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.permission_validator, permissions.Permissions.LOGS))
+		camera_permission_validator = dict(access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.permission_validator, permissions.Permissions.WEBCAM))
 
 		no_hidden_files_validator = dict(path_validation=util.tornado.path_validation_factory(lambda path: not octoprint.util.is_hidden_path(path),
 		                                                                                      status_code=404))
@@ -995,7 +1006,6 @@ class Server(object):
 		if self._settings.getBoolean(["devel", "webassets", "clean_on_startup"]):
 			import shutil
 			import errno
-			import sys
 
 			for entry in ("webassets", ".webassets-cache"):
 				path = os.path.join(base_folder, entry)

@@ -11,7 +11,6 @@ import codecs
 
 from collections import defaultdict
 from flask import request, g, url_for, make_response, render_template, send_from_directory, redirect, abort
-from flask_login import current_user
 
 import octoprint.plugin
 
@@ -20,7 +19,6 @@ from octoprint.server import app, userManager, groupManager, pluginManager, gett
 	NOT_MODIFIED
 from octoprint.settings import settings
 from octoprint.filemanager import get_all_extensions
-from octoprint.permissions import Permissions
 
 import re
 import base64

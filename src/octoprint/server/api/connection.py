@@ -11,10 +11,10 @@ from octoprint.settings import settings
 from octoprint.server import printer, printerProfileManager, NO_CONTENT
 from octoprint.server.api import api
 from octoprint.server.util.flask import restricted_access, get_json_command_from_request
-from octoprint.permissions import Permissions
+from octoprint.access.permissions import Permissions
 
 @api.route("/connection", methods=["GET"])
-@Permissions.status.require(403)
+@Permissions.STATUS.require(403)
 def connectionState():
 	state, port, baudrate, printer_profile = printer.get_current_connection()
 	current = {
@@ -29,7 +29,7 @@ def connectionState():
 
 @api.route("/connection", methods=["POST"])
 @restricted_access
-@Permissions.connection.require(403)
+@Permissions.CONNECTION.require(403)
 def connectionCommand():
 	valid_commands = {
 		"connect": [],

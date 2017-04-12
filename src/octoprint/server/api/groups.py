@@ -8,18 +8,18 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 from flask import request, jsonify, abort, make_response
 from werkzeug.exceptions import BadRequest
 
-import octoprint.groups as groups
+import octoprint.access.groups as groups
 
 from octoprint.server import SUCCESS, groupManager
 from octoprint.server.api import api
 from octoprint.server.util.flask import restricted_access
-from octoprint.permissions import Permissions
+from octoprint.access.permissions import Permissions
 
 #~~ user settings
 
 @api.route("/groups", methods=["GET"])
 @restricted_access
-@Permissions.settings.require(403)
+@Permissions.SETTINGS.require(403)
 def getGroups():
 	if not groupManager.enabled:
 		return jsonify(SUCCESS)
@@ -29,7 +29,7 @@ def getGroups():
 
 @api.route("/groups", methods=["POST"])
 @restricted_access
-@Permissions.settings.require(403)
+@Permissions.SETTINGS.require(403)
 def addGroup():
 	if not groupManager.enabled:
 		return jsonify(SUCCESS)
@@ -73,7 +73,7 @@ def getGroup(groupname):
 
 @api.route("/groups/<groupname>", methods=["PUT"])
 @restricted_access
-@Permissions.settings.require(403)
+@Permissions.SETTINGS.require(403)
 def updateGroup(groupname):
 	if not groupManager.enabled:
 		return jsonify(SUCCESS)
@@ -109,7 +109,7 @@ def updateGroup(groupname):
 
 @api.route("/groups/<groupname>", methods=["DELETE"])
 @restricted_access
-@Permissions.settings.require(403)
+@Permissions.SETTINGS.require(403)
 def removeGroup(groupname):
 	if not groupManager.enabled:
 		return jsonify(SUCCESS)

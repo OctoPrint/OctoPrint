@@ -94,7 +94,7 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 		if "ac" in data and data["ac"] in valid_boolean_trues and \
 						"user" in data.keys() and "pass1" in data.keys() and \
 						"pass2" in data.keys() and data["pass1"] == data["pass2"]:
-			from octoprint.permissions import admin
+			from octoprint.access.permissions import admin
 			# configure access control
 			self._settings.global_set_boolean(["accessControl", "enabled"], True)
 			self._user_manager.enable()

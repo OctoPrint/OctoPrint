@@ -11,10 +11,10 @@ from flask_login import current_user
 
 import octoprint.users as users
 
-from octoprint.server import SUCCESS, userManager
+from octoprint.server import SUCCESS, permissionManager, userManager
 from octoprint.server.api import api, valid_boolean_trues
 from octoprint.server.util.flask import restricted_access
-from octoprint.permissions import all_permissions, Permissions
+from octoprint.access.permissions import Permissions
 
 #~~ user settings
 
@@ -24,11 +24,11 @@ def getPermissions():
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
 
-	return jsonify({"permissions": all_permissions})
+	return jsonify({"permissions": permissionManager.permissions})
 
 @api.route("/users", methods=["GET"])
 @restricted_access
-@Permissions.settings.require(403)
+@Permissions.SETTINGS.require(403)
 def getUsers():
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
@@ -38,7 +38,7 @@ def getUsers():
 
 @api.route("/users", methods=["POST"])
 @restricted_access
-@Permissions.settings.require(403)
+@Permissions.SETTINGS.require(403)
 def addUser():
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
@@ -85,7 +85,7 @@ def getUser(username):
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
 
-	if current_user is not None and not current_user.is_anonymous and (current_user.get_name() == username or current_user.hasPermission(Permissions.admin)):
+	if current_user is not None and not current_user.is_anonymous and (current_user.get_name() == username or current_user.hasPermission(Permissions.ADMIN)):
 		user = userManager.findUser(username)
 		if user is not None:
 			return jsonify(user)
@@ -97,7 +97,7 @@ def getUser(username):
 
 @api.route("/users/<username>", methods=["PUT"])
 @restricted_access
-@Permissions.settings.require(403)
+@Permissions.SETTINGS.require(403)
 def updateUser(username):
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
@@ -137,7 +137,7 @@ def updateUser(username):
 
 @api.route("/users/<username>", methods=["DELETE"])
 @restricted_access
-@Permissions.settings.require(403)
+@Permissions.SETTINGS.require(403)
 def removeUser(username):
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
@@ -186,7 +186,7 @@ def getSettingsForUser(username):
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
 
-	if current_user is None or current_user.is_anonymous or (current_user.get_name() != username and not current_user.hasPermission(Permissions.admin)):
+	if current_user is None or current_user.is_anonymous or (current_user.get_name() != username and not current_user.hasPermission(Permissions.ADMIN)):
 		return make_response("Forbidden", 403)
 
 	try:
@@ -200,7 +200,7 @@ def changeSettingsForUser(username):
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
 
-	if current_user is None or current_user.is_anonymous or (current_user.get_name() != username and not current_user.hasPermission(Permissions.admin)):
+	if current_user is None or current_user.is_anonymous or (current_user.get_name() != username and not current_user.hasPermission(Permissions.ADMIN)):
 		return make_response("Forbidden", 403)
 
 	try:
@@ -223,7 +223,7 @@ def deleteApikeyForUser(username):
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
 
-	if current_user is not None and not current_user.is_anonymous and (current_user.get_name() == username or current_user.hasPermission(Permissions.admin)):
+	if current_user is not None and not current_user.is_anonymous and (current_user.get_name() == username or current_user.hasPermission(Permissions.ADMIN)):
 		try:
 			userManager.deleteApikey(username)
 		except users.UnknownUser:
@@ -239,7 +239,7 @@ def generateApikeyForUser(username):
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
 
-	if current_user is not None and not current_user.is_anonymous and (current_user.get_name() == username or current_user.hasPermission(Permissions.admin)):
+	if current_user is not None and not current_user.is_anonymous and (current_user.get_name() == username or current_user.hasPermission(Permissions.ADMIN)):
 		try:
 			apikey = userManager.generateApiKey(username)
 		except users.UnknownUser:

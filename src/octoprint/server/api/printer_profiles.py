@@ -16,8 +16,8 @@ from octoprint.server.util.flask import restricted_access, with_revalidation_che
 from octoprint.util import dict_merge
 
 from octoprint.server import printerProfileManager
-from octoprint.printer.profile import InvalidProfileError, CouldNotOverwriteError, SaveError
-from octoprint.permissions import Permissions
+from octoprint.printer.profile import InvalidProfileError, CouldNotOverwriteError
+from octoprint.access.permissions import Permissions
 
 
 def _lastmodified():
@@ -40,14 +40,14 @@ def _etag(lm=None):
 @with_revalidation_checking(etag_factory=_etag,
                             lastmodified_factory=_lastmodified,
                             unless=lambda: request.values.get("force", "false") in valid_boolean_trues)
-@Permissions.settings.require(403)
+@Permissions.SETTINGS.require(403)
 def printerProfilesList():
 	all_profiles = printerProfileManager.get_all()
 	return jsonify(dict(profiles=_convert_profiles(all_profiles)))
 
 @api.route("/printerprofiles", methods=["POST"])
 @restricted_access
-@Permissions.settings.require(403)
+@Permissions.SETTINGS.require(403)
 def printerProfilesAdd():
 	if not "application/json" in request.headers["Content-Type"]:
 		return make_response("Expected content-type JSON", 400)
@@ -110,7 +110,7 @@ def printerProfilesGet(identifier):
 
 @api.route("/printerprofiles/<string:identifier>", methods=["DELETE"])
 @restricted_access
-@Permissions.settings.require(403)
+@Permissions.SETTINGS.require(403)
 def printerProfilesDelete(identifier):
 	if printerProfileManager.get_current_or_default()["id"] == identifier:
 		return make_response("Cannot delete currently selected profile: %s" % identifier, 409)
@@ -119,7 +119,7 @@ def printerProfilesDelete(identifier):
 
 @api.route("/printerprofiles/<string:identifier>", methods=["PATCH"])
 @restricted_access
-@Permissions.settings.require(403)
+@Permissions.SETTINGS.require(403)
 def printerProfilesUpdate(identifier):
 	if not "application/json" in request.headers["Content-Type"]:
 		return make_response("Expected content-type JSON", 400)

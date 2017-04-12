@@ -21,7 +21,7 @@ from . import version_checks, updaters, exceptions, util, cli
 
 from octoprint.server.util.flask import restricted_access, with_revalidation_checking, check_etag
 from octoprint.server import VERSION, REVISION, BRANCH
-from octoprint.permissions import Permissions
+from octoprint.access.permissions import Permissions
 from octoprint.util import dict_merge, to_unicode
 import octoprint.settings
 
@@ -493,7 +493,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 	@octoprint.plugin.BlueprintPlugin.route("/update", methods=["POST"])
 	@restricted_access
-	@Permissions.settings.require(403)
+	@Permissions.SETTINGS.require(403)
 	def perform_update(self):
 		if self._printer.is_printing() or self._printer.is_paused():
 			# do not update while a print job is running

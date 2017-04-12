@@ -17,10 +17,9 @@ import logging
 from builtins import range, bytes
 
 from octoprint.settings import settings
-from octoprint.util import atomic_write
-from octoprint.permissions import all_permissions, Permissions
-from octoprint.groups import Groups
-from octoprint.util import deprecated
+from octoprint.util import atomic_write, deprecated
+from octoprint.access.permissions import Permissions
+from octoprint.access.groups import Groups
 
 
 class UserManager(object):
@@ -563,7 +562,7 @@ class User(UserMixin):
 		self._settings = settings
 
 	def asDict(self):
-		permissions = self.permissions if Permissions.admin not in self._permissions else [Permissions.admin]
+		permissions = self.permissions if Permissions.ADMIN not in self._permissions else [Permissions.ADMIN]
 
 		groups = self.groups if Groups.admins not in self._groups else [Groups.admins]
 
@@ -600,15 +599,15 @@ class User(UserMixin):
 	def is_active(self):
 		return FlaskLoginMethodReplacedByBooleanProperty("is_active", lambda: self._active)
 
+	@property
 	@deprecated("is_user is deprecated please use permissions", since="now")
-	@property
 	def is_user(self):
-		return OctoPrintUserMethodReplacedByBooleanProperty("is_user", lambda: self.hasPermission(Permissions.user))
+		return OctoPrintUserMethodReplacedByBooleanProperty("is_user", lambda: self.hasPermission(Permissions.USER))
 
-	@deprecated("is_admin is deprecated please use permissions", since="now")
 	@property
+	@deprecated("is_admin is deprecated please use permissions", since="now")
 	def is_admin(self):
-		return OctoPrintUserMethodReplacedByBooleanProperty("is_admin", lambda: self.hasPermission(Permissions.admin))
+		return OctoPrintUserMethodReplacedByBooleanProperty("is_admin", lambda: self.hasPermission(Permissions.ADMIN))
 
 	def get_all_settings(self):
 		return self._settings
@@ -623,7 +622,7 @@ class User(UserMixin):
 
 	def add_permissions_to_user(self, permissions):
 		dirty = False
-		from octoprint.permissions import OctoPrintPermission
+		from octoprint.access.permissions import OctoPrintPermission
 		for permission in permissions:
 			if isinstance(permission, OctoPrintPermission) and permission not in self.permissions:
 				self._permissions.append(permission)
@@ -633,7 +632,7 @@ class User(UserMixin):
 
 	def remove_permissions_from_user(self, permissions):
 		dirty = False
-		from octoprint.permissions import OctoPrintPermission
+		from octoprint.access.permissions import OctoPrintPermission
 		for permission in permissions:
 			if isinstance(permission, OctoPrintPermission) and permission in self._permissions:
 				self._permissions.remove(permission)
@@ -643,7 +642,7 @@ class User(UserMixin):
 
 	def add_groups_to_user(self, groups):
 		dirty = False
-		from octoprint.groups import Group
+		from octoprint.access.groups import Group
 		for group in groups:
 			if isinstance(group, Group) and group not in self._groups:
 				self._groups.append(group)
@@ -653,7 +652,7 @@ class User(UserMixin):
 
 	def remove_groups_from_user(self, groups):
 		dirty = False
-		from octoprint.groups import Group
+		from octoprint.access.groups import Group
 		for group in groups:
 			if isinstance(group, Group) and group in self._groups:
 				self._groups.remove(group)
@@ -666,7 +665,7 @@ class User(UserMixin):
 		if self._permissions is None:
 			return []
 
-		if Permissions.admin in self._permissions:
+		if Permissions.ADMIN in self._permissions:
 			return all_permissions
 
 		return list(self._permissions)
@@ -690,7 +689,7 @@ class User(UserMixin):
 		return needs
 
 	def hasPermission(self, permission):
-		if Permissions.admin in self.permissions or Groups.admins in self.groups:
+		if Permissions.ADMIN in self.permissions or Groups.admins in self.groups:
 			return True
 
 		return permission.needs.issubset(self.needs)
@@ -778,7 +777,7 @@ class SessionUser(User):
 
 class DummyUser(User):
 	def __init__(self):
-		User.__init__(self, "dummy", "", True, [Permissions.admin], [Groups.admins])
+		User.__init__(self, "dummy", "", True, [Permissions.ADMIN], [Groups.admins])
 
 	def check_password(self, passwordHash):
 		return True
@@ -794,4 +793,4 @@ def dummy_identity_loader():
 ##~~ Apiuser object to use when global api key is used to access the API
 class ApiUser(User):
 	def __init__(self):
-		User.__init__(self, "_api", "", True, [Permissions.admin], [Groups.admins])
+		User.__init__(self, "_api", "", True, [Permissions.ADMIN], [Groups.admins])

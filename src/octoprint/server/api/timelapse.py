@@ -9,7 +9,6 @@ import os
 import threading
 
 from flask import request, jsonify, url_for, make_response
-from werkzeug.utils import secure_filename
 
 import octoprint.timelapse
 import octoprint.util as util
@@ -20,7 +19,7 @@ from octoprint.server.util.flask import redirect_to_tornado, restricted_access, 
 from octoprint.server.api import api
 
 from octoprint.server import NO_CONTENT
-from octoprint.permissions import Permissions
+from octoprint.access.permissions import Permissions
 
 
 #~~ timelapse handling
@@ -74,7 +73,7 @@ def _etag(unrendered, lm=None):
 @with_revalidation_checking(etag_factory=lambda lm=None: _etag(request.values.get("unrendered", "false") in valid_boolean_trues, lm=lm),
                             lastmodified_factory=lambda: _lastmodified(request.values.get("unrendered", "false") in valid_boolean_trues),
                             unless=lambda: request.values.get("force", "false") in valid_boolean_trues)
-@Permissions.timelapse.require(403)
+@Permissions.TIMELAPSE.require(403)
 def getTimelapseData():
 	timelapse = octoprint.timelapse.current
 	config = _config_for_timelapse(timelapse)
@@ -119,14 +118,14 @@ def getTimelapseData():
 
 
 @api.route("/timelapse/<filename>", methods=["GET"])
-@Permissions.timelapse.require(403)
+@Permissions.TIMELAPSE.require(403)
 def downloadTimelapse(filename):
 	return redirect_to_tornado(request, url_for("index") + "downloads/timelapse/" + filename)
 
 
 @api.route("/timelapse/<filename>", methods=["DELETE"])
 @restricted_access
-@Permissions.timelapse_admin.require(403)
+@Permissions.TIMELAPSE_ADMIN.require(403)
 def deleteTimelapse(filename):
 	if util.is_allowed_file(filename, ["mpg", "mpeg", "mp4"]):
 		timelapse_folder = settings().getBaseFolder("timelapse")
@@ -138,7 +137,7 @@ def deleteTimelapse(filename):
 
 @api.route("/timelapse/unrendered/<name>", methods=["DELETE"])
 @restricted_access
-@Permissions.timelapse_admin.require(403)
+@Permissions.TIMELAPSE_ADMIN.require(403)
 def deleteUnrenderedTimelapse(name):
 	octoprint.timelapse.delete_unrendered_timelapse(name)
 	return NO_CONTENT
@@ -146,7 +145,7 @@ def deleteUnrenderedTimelapse(name):
 
 @api.route("/timelapse/unrendered/<name>", methods=["POST"])
 @restricted_access
-@Permissions.timelapse_admin.require(403)
+@Permissions.TIMELAPSE_ADMIN.require(403)
 def processUnrenderedTimelapseCommand(name):
 	# valid file commands, dict mapping command name to mandatory parameters
 	valid_commands = {
@@ -167,7 +166,7 @@ def processUnrenderedTimelapseCommand(name):
 
 @api.route("/timelapse", methods=["POST"])
 @restricted_access
-@Permissions.timelapse_admin.require(403)
+@Permissions.TIMELAPSE_ADMIN.require(403)
 def setTimelapseConfig():
 	data = request.get_json(silent=True)
 	if data is None:

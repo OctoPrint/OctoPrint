@@ -13,7 +13,7 @@ from octoprint.server import printer, fileManager, slicingManager, eventManager,
 from octoprint.server.util.flask import restricted_access, get_json_command_from_request, with_revalidation_checking
 from octoprint.server.api import api
 from octoprint.events import Events
-from octoprint.permissions import Permissions
+from octoprint.access.permissions import Permissions
 
 import octoprint.filemanager
 import octoprint.filemanager.util
@@ -84,7 +84,7 @@ def _create_etag(path, recursive, lm=None):
 
 
 @api.route("/files", methods=["GET"])
-@Permissions.file_permission.require(403)
+@Permissions.FILE_PERMISSION.require(403)
 @with_revalidation_checking(etag_factory=lambda lm=None: _create_etag(request.path,
                                                                       request.values.get("recursive", False),
                                                                       lm=lm),
@@ -107,7 +107,7 @@ def readGcodeFiles():
 
 
 @api.route("/files/<string:origin>", methods=["GET"])
-@Permissions.download.require(403)
+@Permissions.DOWNLOAD.require(403)
 @with_revalidation_checking(etag_factory=lambda lm=None: _create_etag(request.path,
                                                                       request.values.get("recursive", False),
                                                                       lm=lm),
@@ -260,7 +260,7 @@ def _isBusy(target, path):
 
 @api.route("/files/<string:target>", methods=["POST"])
 @restricted_access
-@Permissions.upload.require(403)
+@Permissions.UPLOAD.require(403)
 def uploadGcodeFile(target):
 	input_name = "file"
 	input_upload_name = input_name + "." + settings().get(["server", "uploads", "nameSuffix"])
@@ -449,7 +449,7 @@ def uploadGcodeFile(target):
 
 
 @api.route("/files/<string:target>/<path:filename>", methods=["GET"])
-@Permissions.download.require(403)
+@Permissions.DOWNLOAD.require(403)
 def readGcodeFile(target, filename):
 	if not target in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
 		return make_response("Unknown target: %s" % target, 404)
@@ -467,7 +467,7 @@ def readGcodeFile(target, filename):
 
 @api.route("/files/<string:target>/<path:filename>", methods=["POST"])
 @restricted_access
-@Permissions.file_permission.require(403)
+@Permissions.FILE_PERMISSION.require(403)
 def gcodeFileCommand(filename, target):
 	if not target in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
 		return make_response("Unknown target: %s" % target, 404)
@@ -485,7 +485,7 @@ def gcodeFileCommand(filename, target):
 		return response
 
 	if command == "select":
-		with Permissions.select.require(403):
+		with Permissions.SELECT.require(403):
 			if not _verifyFileExists(target, filename):
 				return make_response("File not found on '%s': %s" % (target, filename), 404)
 
@@ -495,7 +495,7 @@ def gcodeFileCommand(filename, target):
 
 			printAfterLoading = False
 			if "print" in data.keys() and data["print"] in valid_boolean_trues:
-				with Permissions.printing.require(403):
+				with Permissions.PRINTING.require(403):
 					if not printer.is_operational():
 						return make_response("Printer is not operational, cannot directly start printing", 409)
 					printAfterLoading = True
@@ -509,7 +509,7 @@ def gcodeFileCommand(filename, target):
 			printer.select_file(filenameToSelect, sd, printAfterLoading)
 
 	elif command == "slice":
-		with Permissions.slice.require(403):
+		with Permissions.SLICE.require(403):
 			if not _verifyFileExists(target, filename):
 				return make_response("File not found on '%s': %s" % (target, filename), 404)
 
@@ -632,7 +632,7 @@ def gcodeFileCommand(filename, target):
 			return r
 
 	elif command == "copy" or command == "move":
-		with Permissions.upload.require(403):
+		with Permissions.UPLOAD.require(403):
 			# Copy and move are only possible on local storage
 			if not target in [FileDestinations.LOCAL]:
 				return make_response("Unsupported target for {}: {}".format(command, target), 400)
@@ -695,7 +695,7 @@ def gcodeFileCommand(filename, target):
 
 
 @api.route("/files/<string:target>/<path:filename>", methods=["DELETE"])
-@Permissions.delete.require(403)
+@Permissions.DELETE.require(403)
 @restricted_access
 def deleteGcodeFile(filename, target):
 	if not _verifyFileExists(target, filename) and not _verifyFolderExists(target, filename):

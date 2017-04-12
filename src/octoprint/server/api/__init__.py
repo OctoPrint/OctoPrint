@@ -6,14 +6,11 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import logging
-import netaddr
-import sarge
 
 from flask import Blueprint, request, jsonify, abort, current_app, session, make_response, g
 from flask_login import login_user, logout_user, current_user
 from flask_principal import Identity, identity_changed, AnonymousIdentity
 
-import octoprint.util as util
 import octoprint.users
 import octoprint.server
 import octoprint.plugin
@@ -21,7 +18,7 @@ from octoprint.server import NO_CONTENT
 from octoprint.settings import settings as s, valid_boolean_trues
 from octoprint.server.util import noCachingExceptGetResponseHandler, enforceApiKeyRequestHandler, loginFromApiKeyRequestHandler, corsRequestHandler, corsResponseHandler
 from octoprint.server.util.flask import restricted_access, get_json_command_from_request, passive_login
-from octoprint.permissions import Permissions
+from octoprint.access.permissions import Permissions
 
 
 #~~ init api blueprint, including sub modules
@@ -91,7 +88,7 @@ def pluginCommand(name):
 	if valid_commands is None:
 		return make_response("Method not allowed", 405)
 
-	if api_plugin.is_api_adminonly() and not Permissions.admin.can():
+	if api_plugin.is_api_adminonly() and not Permissions.ADMIN.can():
 		return make_response("Forbidden", 403)
 
 	command, data, response = get_json_command_from_request(request, valid_commands)
@@ -107,7 +104,7 @@ def pluginCommand(name):
 
 @api.route("/setup/wizard", methods=["GET"])
 def wizardState():
-	if not s().getBoolean(["server", "firstRun"]) and not Permissions.admin.can():
+	if not s().getBoolean(["server", "firstRun"]) and not Permissions.ADMIN.can():
 		abort(403)
 
 	seen_wizards = s().get(["server", "seenWizards"])
@@ -131,7 +128,7 @@ def wizardState():
 
 @api.route("/setup/wizard", methods=["POST"])
 def wizardFinish():
-	if not s().getBoolean(["server", "firstRun"]) and not Permissions.admin.can():
+	if not s().getBoolean(["server", "firstRun"]) and not Permissions.ADMIN.can():
 		abort(403)
 
 	data = dict()
@@ -245,7 +242,7 @@ def _logout(user):
 
 @api.route("/util/test", methods=["POST"])
 @restricted_access
-@Permissions.admin.require(403)
+@Permissions.ADMIN.require(403)
 def utilTestPath():
 	valid_commands = dict(
 		path=["path"],
