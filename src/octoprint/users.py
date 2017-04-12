@@ -19,7 +19,6 @@ from builtins import range, bytes
 from octoprint.settings import settings
 from octoprint.util import atomic_write, deprecated
 from octoprint.access.permissions import Permissions
-from octoprint.access.groups import Groups
 
 
 class UserManager(object):
@@ -271,13 +270,14 @@ class FilebasedUserManager(UserManager):
 		if not groups:
 			groups = []
 
+		from octoprint.server import permissionManager, groupManager
 		opermissions = []
 		for p in permissions:
-			opermissions.append(Permissions.getPermissionFrom(p))
+			opermissions.append(permissionManager.get_permission_from(p))
 
 		ogroups = []
 		for g in groups:
-			ogroups.append(Groups.getGroupFrom(g))
+			ogroups.append(groupManager.get_group_from(g))
 
 		if username in self._users.keys() and not overwrite:
 			raise UserAlreadyExists(username)
@@ -299,9 +299,10 @@ class FilebasedUserManager(UserManager):
 		if not username in self._users.keys():
 			raise UnknownUser(username)
 
+		from octoprint.server import permissionManager
 		opermissions = []
 		for p in permissions:
-			opermissions.append(Permissions.getPermissionFrom(p))
+			opermissions.append(permissionManager.get_permission_from(p))
 
 		user = self._users[username]
 
@@ -315,9 +316,10 @@ class FilebasedUserManager(UserManager):
 		if username not in self._users.keys():
 			raise UnknownUser(username)
 
+		from octoprint.server import permissionManager
 		opermissions = []
 		for p in permissions:
-			opermissions.append(Permissions.getPermissionFrom(p))
+			opermissions.append(permissionManager.get_permission_from(p))
 
 		if self._users[username].add_permissions_to_user(opermissions):
 			self._dirty = True
@@ -327,9 +329,10 @@ class FilebasedUserManager(UserManager):
 		if username not in self._users.keys():
 			raise UnknownUser(username)
 
+		from octoprint.server import permissionManager
 		opermissions = []
 		for p in permissions:
-			opermissions.append(Permissions.getPermissionFrom(p))
+			opermissions.append(permissionManager.get_permission_from(p))
 
 		if self._users[username].remove_permissions_from_user(opermissions):
 			self._dirty = True
@@ -339,9 +342,10 @@ class FilebasedUserManager(UserManager):
 		if not username in self._users.keys():
 			raise UnknownUser(username)
 
+		from octoprint.server import groupManager
 		ogroups = []
 		for g in groups:
-			ogroups.append(Groups.getGroupFrom(g))
+			ogroups.append(groupManager.get_group_from(g))
 
 		user = self._users[username]
 
@@ -355,9 +359,10 @@ class FilebasedUserManager(UserManager):
 		if username not in self._users.keys():
 			raise UnknownUser(username)
 
+		from octoprint.server import groupManager
 		ogroups = []
 		for g in groups:
-			ogroups.append(Groups.getGroupFrom(g))
+			ogroups.append(groupManager.get_group_from(g))
 
 		if self._users[username].add_groups_to_user(ogroups):
 			self._dirty = True
@@ -367,9 +372,10 @@ class FilebasedUserManager(UserManager):
 		if username not in self._users.keys():
 			raise UnknownUser(username)
 
+		from octoprint.server import groupManager
 		ogroups = []
 		for g in groups:
-			ogroups.append(Groups.getGroupFrom(g))
+			ogroups.append(groupManager.get_group_from(g))
 
 		if self._users[username].remove_groups_from_user(ogroups):
 			self._dirty = True
@@ -568,7 +574,8 @@ class User(UserMixin):
 	def asDict(self):
 		permissions = self.permissions if Permissions.ADMIN not in self._permissions else [Permissions.ADMIN]
 
-		groups = self.groups if Groups.admins not in self._groups else [Groups.admins]
+		from octoprint.server import groupManager
+		groups = self.groups if groupManager.admins_group not in self._groups else [groupManager.admins_group]
 
 		return {
 			"name": self._username,
@@ -669,8 +676,9 @@ class User(UserMixin):
 		if self._permissions is None:
 			return []
 
+		from octoprint.server import permissionManager
 		if Permissions.ADMIN in self._permissions:
-			return all_permissions
+			return permissionManager.permissions()
 
 		return list(self._permissions)
 
@@ -693,7 +701,8 @@ class User(UserMixin):
 		return needs
 
 	def hasPermission(self, permission):
-		if Permissions.ADMIN in self.permissions or Groups.admins in self.groups:
+		from octoprint.server import groupManager
+		if Permissions.ADMIN in self.permissions or groupManager.admins_group in self.groups:
 			return True
 
 		return permission.needs.issubset(self.needs)

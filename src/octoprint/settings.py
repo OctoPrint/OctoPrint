@@ -273,10 +273,11 @@ default_settings = {
 	"accessControl": {
 		"enabled": True,
 		"groupsEnabled": True,
+		"permissionsEnabled": True,
 		"salt": None,
 		"userManager": "octoprint.users.FilebasedUserManager",
 		"groupManager": "octoprint.access.groups.FilebasedGroupManager",
-		"permissionManager": "octoprint.access.permissions.FilebasedPermissionManager",
+		"permissionManager": "octoprint.access.permissions.PermissionManager",
 		"userfile": None,
 		"groupfile": None,
 		"autologinLocal": False,

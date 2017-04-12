@@ -233,10 +233,14 @@ class Server(object):
 			clazz = octoprint.util.get_class(permissionManagerName)
 			permissionManager = clazz()
 		except AttributeError as e:
-			self._logger.exception("Could not instantiate permission manager {}, falling back to FilebasedPermissionManager!".format(permissionManagerName))
-			permissionManager = octoprint.access.permissions.FilebasedPermissionManager()
+			self._logger.exception("Could not instantiate permission manager {}, falling back to PermissionManager!".format(permissionManagerName))
+			permissionManager = octoprint.access.permissions.PermissionManager()
 		finally:
 			permissionManager.enabled = self._settings.getBoolean(["accessControl", "permissionsEnabled"])
+
+		if permissionManager.enabled:
+			from octoprint.access.permissions import Permissions
+			Permissions.initialize()
 
 		groupManagerName = self._settings.get(["accessControl", "groupManager"])
 		try:
@@ -247,11 +251,6 @@ class Server(object):
 			groupManager = octoprint.access.groups.FilebasedGroupManager()
 		finally:
 			groupManager.enabled = self._settings.getBoolean(["accessControl", "groupsEnabled"])
-
-		# If Group Manager is enabled initialzize the static Groups
-		if groupManager.enabled:
-			from octoprint.access.groups import Groups
-			Groups.initialize()
 
 		userManagerName = self._settings.get(["accessControl", "userManager"])
 		try:

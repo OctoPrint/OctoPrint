@@ -24,7 +24,7 @@ def getGroups():
 	if not groupManager.enabled:
 		return jsonify(SUCCESS)
 
-	return jsonify({"groups": groupManager.getAllGroups()})
+	return jsonify({"groups": groupManager.groups})
 
 
 @api.route("/groups", methods=["POST"])

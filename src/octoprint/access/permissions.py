@@ -84,32 +84,7 @@ class PermissionManager(object):
 
 	@property
 	def permissions(self):
-		return self._permissions
-
-	def add_permission(self, permission):
-		return None
-
-	def remove_permission(self, permission):
-		pass
-
-	def getPermissionFrom(self, permission):
-		return permission if isinstance(permission, OctoPrintPermission) \
-			else self.permission_by_name(permission["name"]) if isinstance(permission, dict) \
-			else self.permission_by_name(permission)
-
-	def permission_by_name(self, name):
-		for p in self._permissions:
-			if p.get_name() == name:
-				return p
-
-		return None
-
-
-class FilebasedPermissionManager(PermissionManager):
-	def __init__(self):
-		PermissionManager.__init__(self)
-
-		Permissions.register_default_permissions(self)
+		return list(self._permissions)
 
 	def add_permission(self, permission):
 		self._permissions.append(permission)
@@ -118,6 +93,18 @@ class FilebasedPermissionManager(PermissionManager):
 	def remove_permission(self, permission):
 		self._permissions.remove(permission)
 
+	def find_permission(self, name):
+		for p in self._permissions:
+			if p.get_name() == name:
+				return p
+
+		return None
+
+	def get_permission_from(self, permission):
+		return permission if isinstance(permission, OctoPrintPermission) \
+			else self.find_permission(permission["name"]) if isinstance(permission, dict) \
+			else self.find_permission(permission)
+
 
 class Permissions(object):
 	# Special permission
@@ -125,8 +112,7 @@ class Permissions(object):
 
 	################################################################################
 	# Deprecated should be removed with the user_permission variable in a future version
-	USER = variable_deprecated("user_permission has been deprecated and will be removed in the future", since="now")(
-			OctoPrintPermission("User", "User is allowed to do basic stuff", RoleNeed("user")))
+	USER = OctoPrintPermission("User", "User is allowed to do basic stuff", RoleNeed("user"))
 	################################################################################
 
 	STATUS = OctoPrintPermission("Status",
@@ -160,34 +146,41 @@ class Permissions(object):
 	FILE_PERMISSION = Permission(*UPLOAD.needs.union(DOWNLOAD.needs).union(DELETE.needs).union(SELECT.needs).union(PRINTING.needs).union(SLICE.needs))
 
 	@classmethod
-	def register_default_permissions(cls, pm):
+	def initialize(cls):
+		from octoprint.server import permissionManager as pm
+
 		pm.add_permission(cls.ADMIN)
 		pm.add_permission(cls.USER)
 		pm.add_permission(cls.STATUS)
 		pm.add_permission(cls.CONNECTION)
 		pm.add_permission(cls.WEBCAM)
 		pm.add_permission(cls.SYSTEM)
+
 		pm.add_permission(cls.UPLOAD)
 		pm.add_permission(cls.DOWNLOAD)
 		pm.add_permission(cls.DELETE)
 		pm.add_permission(cls.SELECT)
 		pm.add_permission(cls.PRINTING)
+
 		pm.add_permission(cls.TERMINAL)
 		pm.add_permission(cls.CONTROL)
 		pm.add_permission(cls.SLICE)
 		pm.add_permission(cls.TIMELAPSE)
 		pm.add_permission(cls.TIMELAPSE_ADMIN)
+
 		pm.add_permission(cls.SETTINGS)
 		pm.add_permission(cls.LOGS)
 
+
 def OctoPermission_yaml_representer(dumper, data):
 	return dumper.represent_scalar(u'!octopermission', repr(data))
+
 
 def OctoPermission_yaml_constructor(loader, node):
 	value = loader.construct_scalar(node)
 	name = value[value.find('name=') + 5:]
 	from octoprint.server import permissionManager
-	return permissionManager.permission_by_name(name)
+	return permissionManager.find_permission(name)
 
 yaml.add_representer(OctoPrintPermission, OctoPermission_yaml_representer, Dumper=SafeDumper)
 yaml.add_constructor(u'!octoprintpermission', OctoPermission_yaml_constructor, Loader=SafeLoader)
