@@ -1,8 +1,10 @@
 READ THE FOLLOWING FIRST:
 
 If not already done, please read the "guidelines for contributing"
-that are linked ^-- just up there in the big yellow box. Also read
-the FAQ: https://github.com/foosel/OctoPrint/wiki/FAQ.
+aka the Contribution Guidelines that are linked ^-- just up there
+in the big yellow box.
+
+Also read the FAQ: https://github.com/foosel/OctoPrint/wiki/FAQ.
 
 This is a bug and feature tracker, please only use it to report bugs
 or request features within OctoPrint (not OctoPi, not any OctoPrint
@@ -14,11 +16,18 @@ for contributing" linked above, read it!), NOT here.
 
 Mark requests with a "[Request]" prefix in the title please. Fully fill
 out the bug reporting template for bug reports (if you don't know where
-to find some information - it's all described in the contribution
-guidelines linked up there in the big yellow box). Do not delete any
-lines from the template but those enclosed in [ and ] - and those please
-DO delete, they are only provided for your information and removing them
-makes your ticket more readable :)
+to find some information - it's all described in the Contribution
+Guidelines linked up there in the big yellow box).
+
+When reporting a bug do NOT delete ANY lines from the template but
+those enclosed in [ and ] - and those please DO delete, they are
+only provided for your information and removing them makes your
+ticket more readable :)
+
+Make sure any bug you want to report is still present with the CURRENT
+OctoPrint version and that it does not vanish when you start OctoPrint
+in safe mode - how to do that is also explained in the Contribution
+Guidelines linked up there in the big yellow box.
 
 Thank you!
 
@@ -34,6 +43,12 @@ by heart ;))
 reproduce your issue in order to fix it and that is not possible if they
 don't know what you did to get it to happen in the first place.
 
+Ideally provide exact steps to follow in order to reproduce your problem:
+
+1. ...
+2. ...
+3. ...
+
 If you encountered a problem with specific files of any sorts, make sure
 to also include a link to a file with which to reproduce the problem.]
 
@@ -41,9 +56,19 @@ to also include a link to a file with which to reproduce the problem.]
 
 #### What happened instead?
 
+#### Did the same happen when running OctoPrint in safe mode?
+
+[Try to reproduce your problem in safe mode. You can find information
+on how to enable safe mode in the Contribution Guidelines.]
+
 #### Branch & Commit or Version of OctoPrint
 
 [Can be found in the lower left corner of the web interface. ALWAYS INCLUDE.]
+
+#### Operating System running OctoPrint
+
+[OctoPi, Linux, Windows, MacOS, something else? With version please.
+OctoPi's version can be found in /etc/octopi_version]
 
 #### Printer model & used firmware incl. version
 
@@ -55,7 +80,8 @@ to also include a link to a file with which to reproduce the problem.]
 
 #### Link to octoprint.log
 
-[On gist.github.com or pastebin.com. ALWAYS INCLUDE and never truncate.]
+[On gist.github.com or pastebin.com. ALWAYS INCLUDE and never truncate.
+The Contribution Guidelines tell you where to find that.]
 
 #### Link to contents of terminal tab or serial.log
 
@@ -70,9 +96,11 @@ a serial.log.]
 #### Link to contents of Javascript console in the browser
 
 [On gist.github.com or pastebin.com or alternatively a screenshot. If applicable -
-always include if unsure or reporting UI issues.]
+always include if unsure or reporting UI issues.
 
-#### Screenshot(s) showing the problem:
+The Contribution Guidelines tell you where to find that.]
+
+#### Screenshot(s)/video(s) showing the problem:
 
 [If applicable. Always include if unsure or reporting UI issues.]
 

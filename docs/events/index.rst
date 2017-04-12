@@ -152,7 +152,7 @@ File handling
 -------------
 
 Upload
-   A file has been uploaded.
+   A file has been uploaded through the web interface.
 
    Payload:
      * ``name``: the file's name
@@ -165,19 +165,74 @@ Upload
 
       Still available for reasons of backwards compatibility. Will be removed with 1.4.0.
 
+FileAdded
+   A file has been added to a storage.
+
+   Payload:
+     * ``storage``: the storage's identifier
+     * ``path``: the file's path within its storage location
+     * ``name``: the file's name
+     * ``type``: the file's type, a list of the path within the type hierarchy, e.g. ``["machinecode", "gcode"]`` or
+       ``["model", "stl"]``
+
+   .. note::
+
+      A copied file triggers this for its new path. A moved file first triggers ``FileRemoved`` for its original
+      path and then ``FileAdded`` for the new one.
+
+FileRemoved
+   A file has been removed from a storage.
+
+   Payload:
+     * ``storage``: the storage's identifier
+     * ``path``: the file's path within its storage location
+     * ``name``: the file's name
+     * ``type``: the file's type, a list of the path within the type hierarchy, e.g. ``["machinecode", "gcode"]`` or
+       ``["model", "stl"]``
+
+   .. note::
+
+      A moved file first triggers ``FileRemoved`` for its original path and then ``FileAdded`` for the new one.
+
+FolderAdded
+   A folder has been added to a storage.
+
+   Payload:
+     * ``storage``: the storage's identifier
+     * ``path``: the folders's path within its storage location
+     * ``name``: the folders's name
+
+   .. note::
+
+      A copied folder triggers this for its new path. A moved folder first triggers ``FolderRemoved`` for its original
+      path and then ``FolderAdded`` for the new one.
+
+FolderRemoved
+   A folder has been removed from a storage.
+
+   Payload:
+     * ``storage``: the storage's identifier
+     * ``path``: the folders's path within its storage location
+     * ``name``: the folders's name
+
+   .. note::
+
+      A moved folder first triggers ``FolderRemoved`` for its original path and then ``FolderAdded`` for the new one.
+
 UpdatedFiles
    A file list was modified.
 
    Payload:
 
-     * ``type``: the type of file list that was modified. Currently only ``printables`` and ``gcode`` (DEPRECATED) are supported here.
+     * ``type``: the type of file list that was modified. Only ``printables`` is supported here. See the deprecation
+       note below.
 
-       .. note::
+       .. deprecated:: 1.2.0
 
-          The type ``gcode`` has been renamed to ``printables`` with the introduction of a new file management layer that
-          supports STL files as first class citizens as well. For reasons of backwards compatibility the ``UpdatedFiles``
-          event for printable files will be fired twice, once with ``type`` set to ``gcode``, once set to ``printables``.
-          Support for the ``gcode`` type will be removed in the next release after version 1.2.0.
+          The ``gcode`` modification type has been superceeded by ``printables``. It is currently still available for
+          reasons of backwards compatibility and will also be sent on modification of ``printables``. It will however
+          be removed with 1.4.0.
+
 
 MetadataAnalysisStarted
    The metadata analysis of a file has started.

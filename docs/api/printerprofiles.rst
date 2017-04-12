@@ -34,90 +34,92 @@ Retrieve all printer profiles
       HTTP/1.1 200 OK
       Content-Type: application/json
 
-      [
-        {
-          "id": "_default",
-          "name": "Default",
-          "color": "default",
-          "model": "Generic RepRap Printer",
-          "default": true,
-          "current": true,
-          "resource": "http://example.com/api/printerprofiles/_default",
-          "volume": {
-            "formFactor": "rectangular",
-            "origin": "lowerleft",
-            "width": 200,
-            "depth": 200,
-            "height": 200
-          },
-          "heatedBed": true,
-          "axes": {
-            "x": {
-              "speed": 6000,
-              "inverted": false
+      {
+        "profiles": [
+          {
+            "id": "_default",
+            "name": "Default",
+            "color": "default",
+            "model": "Generic RepRap Printer",
+            "default": true,
+            "current": true,
+            "resource": "http://example.com/api/printerprofiles/_default",
+            "volume": {
+              "formFactor": "rectangular",
+              "origin": "lowerleft",
+              "width": 200,
+              "depth": 200,
+              "height": 200
             },
-            "y": {
-              "speed": 6000,
-              "inverted": false
+            "heatedBed": true,
+            "axes": {
+              "x": {
+                "speed": 6000,
+                "inverted": false
+              },
+              "y": {
+                "speed": 6000,
+                "inverted": false
+              },
+              "z": {
+                "speed": 200,
+                "inverted": false
+              },
+              "e": {
+                "speed": 300,
+                "inverted": false
+              }
             },
-            "z": {
-              "speed": 200,
-              "inverted": false
-            },
-            "e": {
-              "speed": 300,
-              "inverted": false
+            "extruder": {
+              "count": 1,
+              "offsets": [
+                {"x": 0.0, "y": 0.0}
+              ]
             }
           },
-          "extruder": {
-            "count": 1,
-            "offsets": [
-              {"x": 0.0, "y": 0.0}
-            ]
-          }
-        },
-        {
-          "id": "my_profile",
-          "name": "My Profile",
-          "color": "default",
-          "model": "My Custom Printer",
-          "default": false,
-          "current": false,
-          "resource": "http://example.com/api/printerprofiles/my_profile",
-          "volume": {
-            "formFactor": "rectangular",
-            "origin": "lowerleft",
-            "width": 200,
-            "depth": 200,
-            "height": 200
-          },
-          "heatedBed": true,
-          "axes": {
-            "x": {
-              "speed": 6000,
-              "inverted": false
+          {
+            "id": "my_profile",
+            "name": "My Profile",
+            "color": "default",
+            "model": "My Custom Printer",
+            "default": false,
+            "current": false,
+            "resource": "http://example.com/api/printerprofiles/my_profile",
+            "volume": {
+              "formFactor": "rectangular",
+              "origin": "lowerleft",
+              "width": 200,
+              "depth": 200,
+              "height": 200
             },
-            "y": {
-              "speed": 6000,
-              "inverted": false
+            "heatedBed": true,
+            "axes": {
+              "x": {
+                "speed": 6000,
+                "inverted": false
+              },
+              "y": {
+                "speed": 6000,
+                "inverted": false
+              },
+              "z": {
+                "speed": 200,
+                "inverted": false
+              },
+              "e": {
+                "speed": 300,
+                "inverted": false
+              }
             },
-            "z": {
-              "speed": 200,
-              "inverted": false
-            },
-            "e": {
-              "speed": 300,
-              "inverted": false
+            "extruder": {
+              "count": 1,
+              "offsets": [
+                {"x": 0.0, "y": 0.0}
+              ]
             }
           },
-          "extruder": {
-            "count": 1,
-            "offsets": [
-              {"x": 0.0, "y": 0.0}
-            ]
-          }
-        },
-      ]
+        ]
+      }
 
 
 .. _sec-api-printerprofiles-add:
@@ -537,6 +539,41 @@ Profile
      - 0..1
      - ``float``
      - The height of the print volume
+   * - ``volume.custom_box``
+     - 0..1
+     - ``boolean`` or ``object``
+     - If the printer has a custom bounding box where the print head can be safely moved to, exceeding the defined print
+       volume, that bounding box will be defined here. Otherwise (safe area == print volume) this value will be ``false``.
+   * - ``volume.custom_box.min_x``
+     - 0..1
+     - ``float``
+     - Minimum X coordinate defining the safe custom bounding box. Smaller value than the minimum X coordinate of the
+       print volume.
+   * - ``volume.custom_box.max_x``
+     - 0..1
+     - ``float``
+     - Maximum X coordinate defining the safe custom bounding box. Larger value than the maximum X coordinate of the
+       print volume.
+   * - ``volume.custom_box.min_y``
+     - 0..1
+     - ``float``
+     - Minimum Y coordinate defining the safe custom bounding box. Smaller value than the minimum Y coordinate of the
+       print volume.
+   * - ``volume.custom_box.max_y``
+     - 0..1
+     - ``float``
+     - Maximum Y coordinate defining the safe custom bounding box. Larger value than the maximum Y coordinate of the
+       print volume.
+   * - ``volume.custom_box.min_z``
+     - 0..1
+     - ``float``
+     - Minimum Z coordinate defining the safe custom bounding box. Smaller value than the minimum Z coordinate of the
+       print volume.
+   * - ``volume.custom_box.max_z``
+     - 0..1
+     - ``float``
+     - Maximum Z coordinate defining the safe custom bounding box. Larger value than the maximum Z coordinate of the
+       print volume.
    * - ``heatedBed``
      - 0..1
      - ``boolean``

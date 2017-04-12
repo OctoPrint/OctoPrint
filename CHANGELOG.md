@@ -1,8 +1,93 @@
 # OctoPrint Changelog
 
+## 1.3.2 (2017-03-16)
+
+### Note for plugin authors
+
+**If you maintain a plugin that extends OctoPrint's [JavaScript Client Library](http://docs.octoprint.org/en/master/jsclientlib/index.html)** like demonstrated in e.g. the bundled Software Update Plugin you'll need to update the way you register your plugin to depend on `OctoPrintClient` and registering your extension as shown [here](https://github.com/foosel/OctoPrint/blob/6e793c2/src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js#L1-L84) instead of directly writing to `OctoPrint.plugins` (like it was still done [here](https://github.com/foosel/OctoPrint/blob/23744cd/src/octoprint/plugins/softwareupdate/static/js/softwareupdate.js#L1-L81)). That way your extensions will be available on all instances of `OctoPrintClient`, not just the global instance `OctoPrint` that gets created on startup of the core web interface.
+
+If all you plugin does with regards to JavaScript is registering a custom view model and you have no idea what I'm talking about regarding extending the client library, no action is necessary. This heads-up is really only relevant if you extended the JavaScript Client Library.
+
+### Improvements
+
+- [#732](https://github.com/foosel/OctoPrint/pull/732) - Have OctoPrint's `python setup.py clean` build on stock
+`python setup.py clean` for better compatibility with packaging systems
+- [#1506](https://github.com/foosel/OctoPrint/issues/1506) - Better handle really long "dwell"/`G4` commands on Repetier firmware (as for example apparently recommended to use with Wanhao D6 and similar printers for nozzle cooling) by actively stalling communication from OctoPrint's side as well. That way we no longer run into a communication timeout produced by a 5min dwell immediately happily acknowledged by the printer with an `ok`.
+- [#1542](https://github.com/foosel/OctoPrint/issues/1542) - Support for multi-extruder setups with a shared single nozzle and heater (e.g. E3D Cyclops, Diamond hotend, etc).
+- [#1676](https://github.com/foosel/OctoPrint/issues/1676) - Trigger line number reset when connected to printer and seeing `start` message. This should fix issues with printer communication when printer resets but reset goes otherwise undetected.
+- [#1681](https://github.com/foosel/OctoPrint/issues/1681) - Support for connecting to multiple OctoPrint instances via the [JavaScript Client Library](http://docs.octoprint.org/en/master/jsclientlib/index.html).
+- [#1712](https://github.com/foosel/OctoPrint/issues/1712) - Display current folder name in file list if in sub folder.
+- [#1723](https://github.com/foosel/OctoPrint/issues/1723) - Ignore leading `v` or `V` on plugin version numbers for version checks in plugin manager and software updater (see also [#1724](https://github.com/foosel/OctoPrint/pull/1724))
+- [#1770](https://github.com/foosel/OctoPrint/issues/1770) - Better resilience against null bytes received from the printer for whatever reason.
+- [#1770](https://github.com/foosel/OctoPrint/issues/1770) - Detect printer as connected even when only receiving a `wait` instead of `ok`. Should solve issues with initial connect where printer sends garbage over the line that eats/covers the `ok` if printer also sends regular `wait` messages when idle.
+- [#1780](https://github.com/foosel/OctoPrint/issues/1780) - Work around for Safari re-opening one copy of the webcam stream after the other and eating up bandwidth unnecessarily (see also [#1786](https://github.com/foosel/OctoPrint/issues/1786))
+- [#1790](https://github.com/foosel/OctoPrint/issues/1790) - Removed unused "color" property from printer profile editor.
+- [#1805](https://github.com/foosel/OctoPrint/issues/1805) - Better error resilience against invalid print history data from plugins that replace the printer communication.
+- Better error resilience in Plugin Manager against wonky version data in repository file.
+- Added a "Restart in safe mode" system menu entry that will always be available if the restart command is configured
+- CLI: Only offer `daemon` sub command on Linux (since that it's the only OS it works on)
+- Less throttling of analysis of GCODE files from the analysis backlog. Should still leave Pi and friends air to breathe but allow a slightly faster processing of the backlog.
+- Added an explanation of safe mode to the docs.
+- Log OctoPrint version & plugin list when detecting log rollover.
+- Allow `UiPlugin`s to define additional fields for ETag generation.
+- Allow `UiPlugin`s utilizing OctoPrint's stock templates to filter out what they don't need.
+- Locales contained in `translations` of plugins will now be registered with the system. That way it's possible to provide translations for the full application through plugins.
+- Abort file analysis if file is about to be overwritten
+- Software Update Plugin: Refresh cache on startup, prevent concurrent refresh
+- More solid parsing of request line number for resend requests. Should improve compatibility with Teacup firmwares. Based on issue reported via PR [#300](https://github.com/foosel/OctoPrint/pull/300)
+
+### Bug fixes
+
+- [#733](https://github.com/foosel/OctoPrint/issues/733) - Fixed multiple event handler commands running concurrently. Now they run one after the other, as expected.
+- [#1317](https://github.com/foosel/OctoPrint/issues/1317) - Fixed a color distortion issue when rendering timelapses from higher resolution source snapshots that also need to be rotated by adjusting `ffmpeg` parameters to avoid an unexpected behaviour when a pixel format and a filter chain are required for processing.
+- [#1560](https://github.com/foosel/OctoPrint/issues/1560) - Make sure we don't try to use an empty `logging.yaml`
+- [#1631](https://github.com/foosel/OctoPrint/issues/1631) - Disable "Slice" button in slice dialog if a print is ongoing and a slicer is selected that runs on the same device as OctoPrint. The server would already deny such requests (simply due to performance reasons), but the UI didn't properly reflect that yet.
+- [#1671](https://github.com/foosel/OctoPrint/issues/1671) - Removed "Hide empty folders" option from file list. Didn't really add value and caused usability issues.
+- [#1771](https://github.com/foosel/OctoPrint/issues/1771) - Fixed `_config_version` in plugin settings not being properly updated.
+- [#1732](https://github.com/foosel/OctoPrint/issues/1732) - Fixed a bug in the documentation for the printer profile API
+- [#1760](https://github.com/foosel/OctoPrint/issues/1760) - Fixed missing reselect of selected file when updating via the watched folder, causing wrong progress percentages to be reported.
+- [#1765](https://github.com/foosel/OctoPrint/issues/1765) - Fixed watched folder not waiting with file move until file stopped growing, causing wrong progress percentages to be reported.
+- [#1777](https://github.com/foosel/OctoPrint/issues/1777) - Fixed z-change based timelapses with Slic3r generated z-hops not properly triggering snapshots.
+- [#1792](https://github.com/foosel/OctoPrint/issues/1792) - Don't tell Safari we are "web-app-capable" because that means it will throw away all cookies and the user will have to constantly log in again when using a desktop shortcut for the OctoPrint instance.
+- [#1812](https://github.com/foosel/OctoPrint/issues/1812) - Don't scroll up navigation in settings when switching between settings screens, very annoying on smaller resolutions (see also [#1814](https://github.com/foosel/OctoPrint/pull/1814))
+- Fix settings helper not allowing to delete values for keys that are present in the local config but not in the defaults.
+- Fix wrong replacement value for `__progress` in registered command line or GCODE [event handlers](http://docs.octoprint.org/en/master/events/index.html).
+- Various fixes in the Software Update Plugin:
+  - Don't remove manual software update configurations on settings migration.
+  - Properly delete old restart/reboot commands that are now defined globally since config version 4. An issue with the settings helper prevented us from properly deleting them during migration to version 4.
+  - Fixed `python_checker` version check method and `python_updater` update method.
+  - Fixed update configs without a restart of any kind causing an issue due to an undefined variable.
+  - Fixed broken doctests.
+- Upgrade LESS.min.js from 2.7.1 to 2.7.2 to fix the broken contrast function
+- Always create a new user session for requests with an API key
+- Fixed an error when reading all user settings via the API
+- Fixed a bunch of caching issues for the page, was not properly updated on change of snapshot URL presence, system menu entry presence, gcode viewer enabled/disabled, changes in access control availability.
+- Fixed wrong bundling of core and plugin assets
+- Software Update Plugin: Fixed wrong ETag calculation
+- Disable external heatup detection until firmware is detected
+- Fixed login dropdown not closing on click outside of it
+- Fixed new user settings getting lost until restart
+- Don't call `onUserLoggedIn`/`onUserLoggedOut` on user reload
+
+### More information
+
+- [Commits](https://github.com/foosel/OctoPrint/compare/1.3.1...1.3.2)
+- Release Candidates:
+  - [1.3.2rc1](https://github.com/foosel/OctoPrint/releases/tag/1.3.2rc1)
+
 ## 1.3.1 (2017-01-25)
 
 ### Note for upgraders
+
+#### If you installed OctoPrint manually and used the included init script, you need to update that
+
+The init script so far shipped with OctoPrint contained a [bug](https://github.com/foosel/OctoPrint/issues/1657) that causes issues with OctoPrint 1.3.0 and higher. Please update your init script to the fixed version OctoPrint now ships under `scripts`:
+
+```
+sudo cp /path/to/OctoPrint/scripts/octoprint.init /etc/init.d/octoprint
+```
+
+If you are running OctoPi, this does **not** apply to you and you do not need to do anything here!
 
 #### Change in stock terminal filter configuration
 
@@ -23,6 +108,7 @@
   - New "Suppress wait responses" filter: `Recv: wait`
 
 ### Bug fixes
+
 - [#1344](https://github.com/foosel/OctoPrint/issues/1344) - Fix ProgressBarPlugins to not correctly be triggered for 0% (second try, this time hopefully for good).
 - [#1637](https://github.com/foosel/OctoPrint/issues/1637) - Fix issue preventing a folder to be deleted that has a name which is a common prefix of the file currently being printed.
 - [#1641](https://github.com/foosel/OctoPrint/issues/1641) - Fix issue with `octoprint --daemon` not working.

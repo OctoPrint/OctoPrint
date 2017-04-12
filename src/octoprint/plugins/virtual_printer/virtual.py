@@ -25,7 +25,8 @@ class VirtualPrinter(object):
 	sleep_after_regex = re.compile("sleep_after ([GMTF]\d+) (\d+)")
 	sleep_after_next_regex = re.compile("sleep_after_next ([GMTF]\d+) (\d+)")
 	custom_action_regex = re.compile("action_custom ([a-zA-Z0-9_]+)(\s+.*)?")
-	prepare_ok_regex = re.compile("prepare_ok (.*)?")
+	prepare_ok_regex = re.compile("prepare_ok (.*)")
+	send_regex = re.compile("send (.*)")
 
 	def __init__(self, seriallog_handler=None, read_timeout=5.0, write_timeout=10.0):
 		import logging
@@ -107,7 +108,10 @@ class VirtualPrinter(object):
 
 		self._brokenM29 = settings().getBoolean(["devel", "virtualPrinter", "brokenM29"])
 
+		self._m115FormatString = settings().get(["devel", "virtualPrinter", "m115FormatString"])
 		self._firmwareName = settings().get(["devel", "virtualPrinter", "firmwareName"])
+
+		self._okFormatString = settings().get(["devel", "virtualPrinter", "okFormatString"])
 
 		self.currentLine = 0
 		self.lastN = 0
@@ -398,7 +402,7 @@ class VirtualPrinter(object):
 		return True
 
 	def _gcode_M115(self, data):
-		output = "FIRMWARE_NAME:{} PROTOCOL_VERSION:1.0".format(self._firmwareName)
+		output = self._m115FormatString.format(firmware_name=self._firmwareName)
 		self._send(output)
 
 	def _gcode_M117(self, data):
@@ -558,6 +562,11 @@ class VirtualPrinter(object):
 			| Sleeps <seconds> s after each execution of <command>
 			sleep_after_next <str:command> <int:seconds>
 			| Sleeps <seconds> s after execution of next <command>
+
+			# Misc
+
+			send <str:message>
+			| Sends back <message>
 			"""
 			for line in usage.split("\n"):
 				self._send("echo: {}".format(line.strip()))
@@ -587,6 +596,7 @@ class VirtualPrinter(object):
 				sleep_after_next_match = VirtualPrinter.sleep_after_next_regex.match(data)
 				custom_action_match = VirtualPrinter.custom_action_regex.match(data)
 				prepare_ok_match = VirtualPrinter.prepare_ok_regex.match(data)
+				send_match = VirtualPrinter.send_regex.match(data)
 
 				if sleep_match is not None:
 					interval = int(sleep_match.group(1))
@@ -610,6 +620,8 @@ class VirtualPrinter(object):
 				elif prepare_ok_match is not None:
 					ok = prepare_ok_match.group(1)
 					self._prepared_oks.append(ok)
+				elif send_match is not None:
+					self._send(send_match.group(1))
 			except:
 				pass
 
@@ -1073,11 +1085,7 @@ class VirtualPrinter(object):
 	def _sendOk(self):
 		if self.outgoing is None:
 			return
-
-		if settings().getBoolean(["devel", "virtualPrinter", "okWithLinenumber"]):
-			self._send("{} {}".format(self._ok(), self.lastN))
-		else:
-			self._send(self._ok())
+		self._send(self._ok())
 
 	def _sendWaitAfterTimeout(self, timeout=5):
 		time.sleep(timeout)
@@ -1089,10 +1097,11 @@ class VirtualPrinter(object):
 			self.outgoing.put(line)
 
 	def _ok(self):
-		ok = "ok"
+		ok = self._okFormatString
 		if self._prepared_oks:
 			ok = self._prepared_oks.pop(0)
-		return ok
+
+		return ok.format(ok, lastN=self.lastN, buffer=self.buffered.maxsize - self.buffered.qsize())
 
 class CharCountingQueue(queue.Queue):
 

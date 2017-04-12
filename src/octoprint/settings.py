@@ -179,7 +179,8 @@ default_settings = {
 	"gcodeAnalysis": {
 		"maxExtruders": 10,
 		"throttle_normalprio": 0.01,
-		"throttle_highprio": 0.0
+		"throttle_highprio": 0.0,
+		"throttle_lines": 100
 	},
 	"feature": {
 		"temperatureGraph": True,
@@ -228,8 +229,7 @@ default_settings = {
 		"cutoff": 30
 	},
 	"printerProfiles": {
-		"default": None,
-		"defaultProfile": {}
+		"default": None
 	},
 	"printerParameters": {
 		"pauseTriggers": [],
@@ -339,7 +339,6 @@ default_settings = {
 			"enabled": False,
 			"okAfterResend": False,
 			"forceChecksum": False,
-			"okWithLinenumber": False,
 			"numExtruders": 1,
 			"includeCurrentToolInTemps": True,
 			"includeFilenameInOpened": True,
@@ -364,7 +363,9 @@ default_settings = {
 			"sharedNozzle": False,
 			"sendBusy": False,
 			"simulateReset": True,
-			"preparedOks": []
+			"preparedOks": [],
+			"okFormatString": "ok",
+			"m115FormatString": "FIRMWARE_NAME: {firmware_name} PROTOCOL_VERSION:1.0"
 		}
 	}
 }
@@ -559,9 +560,9 @@ class Settings(object):
 			self._configfile = os.path.join(self._basedir, "config.yaml")
 		self.load(migrate=True)
 
-		if self.get(["api", "key"]) is None:
-			self.set(["api", "key"], ''.join('%02X' % z for z in bytes(uuid.uuid4().bytes)))
-			self.save(force=True)
+		apikey = self.get(["api", "key"])
+		if not apikey or apikey == "n/a":
+			self.generateApiKey()
 
 		self._script_env = self._init_script_templating()
 
@@ -1499,6 +1500,17 @@ class Settings(object):
 			os.makedirs(path)
 		with atomic_write(filename, "wb", max_permissions=0o666) as f:
 			f.write(script)
+
+	def generateApiKey(self):
+		apikey = ''.join('%02X' % z for z in bytes(uuid.uuid4().bytes))
+		self.set(["api", "key"], apikey)
+		self.save(force=True)
+		return apikey
+
+	def deleteApiKey(self):
+		self.set(["api", "key"], None)
+		self.save(force=True)
+
 
 def _default_basedir(applicationName):
 	# taken from http://stackoverflow.com/questions/1084697/how-do-i-store-desktop-application-data-in-a-cross-platform-way-for-python

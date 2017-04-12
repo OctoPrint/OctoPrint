@@ -301,7 +301,7 @@ def index():
 
 		decorated_view = view
 		decorated_view = util.flask.lastmodified(lambda _: compute_lastmodified())(decorated_view)
-		decorated_view = util.flask.etagged(lambda _: compute_etag(additional=cache_key()))(decorated_view)
+		decorated_view = util.flask.etagged(lambda _: compute_etag(additional=[cache_key()] + additional_etag))(decorated_view)
 		decorated_view = util.flask.cached(timeout=-1,
 		                                   refreshif=validate_cache,
 		                                   key=cache_key,

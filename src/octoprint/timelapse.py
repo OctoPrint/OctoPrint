@@ -17,6 +17,7 @@ except ImportError:
 	import Queue as queue
 import requests
 
+import octoprint.plugin
 import octoprint.util as util
 
 from octoprint.settings import settings
@@ -294,18 +295,23 @@ def configure_timelapse(config=None, persist=False):
 
 	if type is None or "off" == type:
 		current = None
+
 	elif "zchange" == type:
 		retractionZHop = 0
 		if "options" in config and "retractionZHop" in config["options"] and config["options"]["retractionZHop"] > 0:
 			retractionZHop = config["options"]["retractionZHop"]
+
 		current = ZTimelapse(post_roll=postRoll, retraction_zhop=retractionZHop, fps=fps)
+
 	elif "timed" == type:
 		interval = 10
 		if "options" in config and "interval" in config["options"] and config["options"]["interval"] > 0:
 			interval = config["options"]["interval"]
-		capture_post_roll = True
+
+		capture_post_roll = False
 		if "options" in config and "capturePostRoll" in config["options"] and isinstance(config["options"]["capturePostRoll"], bool):
 			capture_post_roll = config["options"]["capturePostRoll"]
+
 		current = TimedTimelapse(post_roll=postRoll, interval=interval, fps=fps, capture_post_roll=capture_post_roll)
 
 	notify_callbacks(current)
@@ -338,6 +344,11 @@ class Timelapse(object):
 		self._snapshot_url = settings().get(["webcam", "snapshot"])
 
 		self._fps = fps
+
+
+		self._pluginManager = octoprint.plugin.plugin_manager()
+		self._pre_capture_hooks = self._pluginManager.get_hooks("octoprint.timelapse.capture.pre")
+		self._post_capture_hooks = self._pluginManager.get_hooks("octoprint.timelapse.capture.post")
 
 		self._capture_mutex = threading.Lock()
 		self._capture_queue = queue.Queue()
@@ -548,6 +559,13 @@ class Timelapse(object):
 				entry["callback"](*args, **kwargs)
 
 	def _perform_capture(self, filename, onerror=None):
+		# pre-capture hook
+		for name, hook in self._pre_capture_hooks.items():
+			try:
+				hook(filename)
+			except:
+				self._logger.exception("Error while processing hook {name}.".format(**locals()))
+
 		eventManager().fire(Events.CAPTURE_START, dict(file=filename))
 		try:
 			self._logger.debug("Going to capture {} from {}".format(filename, self._snapshot_url))
@@ -563,17 +581,31 @@ class Timelapse(object):
 			self._logger.debug("Image {} captured from {}".format(filename, self._snapshot_url))
 		except Exception as e:
 			self._logger.exception("Could not capture image {} from {}".format(filename, self._snapshot_url))
+			self._capture_errors += 1
+			success = False
+		else:
+			self._capture_success += 1
+			success = True
+
+		# post-capture hook
+		for name, hook in self._post_capture_hooks.items():
+			try:
+				hook(filename, success)
+			except:
+				self._logger.exception("Error while processing hook {name}.".format(**locals()))
+
+		# handle events and onerror call
+		if success:
+			eventManager().fire(Events.CAPTURE_DONE, dict(file=filename))
+			return True
+		else:
 			if callable(onerror):
 				onerror()
 			eventManager().fire(Events.CAPTURE_FAILED, dict(file=filename,
 			                                                error=str(e),
 			                                                url=self._snapshot_url))
-			self._capture_errors += 1
 			return False
-		else:
-			eventManager().fire(Events.CAPTURE_DONE, dict(file=filename))
-			self._capture_success += 1
-			return True
+
 
 	def _copying_postroll(self):
 		with self._capture_mutex:

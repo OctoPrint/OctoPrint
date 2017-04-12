@@ -157,37 +157,53 @@ class FileManagerTest(unittest.TestCase):
 	def test_add_file(self):
 		wrapper = object()
 
-		self.local_storage.add_file.return_value = ("", "test.file")
-		self.local_storage.path_on_disk.return_value = "prefix/test.file"
-		self.local_storage.split_path.return_value = ("", "test.file")
+		self.local_storage.add_file.return_value = ("", "test.gcode")
+		self.local_storage.path_on_disk.return_value = "prefix/test.gcode"
+		self.local_storage.split_path.return_value = ("", "test.gcode")
 
 		test_profile = dict(id="_default", name="My Default Profile")
 		self.printer_profile_manager.get_current_or_default.return_value = test_profile
 
-		file_path = self.file_manager.add_file(octoprint.filemanager.FileDestinations.LOCAL, "test.file", wrapper)
+		file_path = self.file_manager.add_file(octoprint.filemanager.FileDestinations.LOCAL, "test.gcode", wrapper)
 
-		self.assertEqual(("", "test.file"), file_path)
-		self.local_storage.add_file.assert_called_once_with("test.file", wrapper, printer_profile=test_profile, allow_overwrite=False, links=None)
-		self.fire_event.assert_called_once_with(octoprint.filemanager.Events.UPDATED_FILES, dict(type="printables"))
+		self.assertEqual(("", "test.gcode"), file_path)
+		self.local_storage.add_file.assert_called_once_with("test.gcode", wrapper, printer_profile=test_profile, allow_overwrite=False, links=None)
+
+		expected_events = [mock.call(octoprint.filemanager.Events.FILE_ADDED, dict(storage=octoprint.filemanager.FileDestinations.LOCAL,
+		                                                                           name="test.gcode",
+		                                                                           path="test.gcode",
+		                                                                           type=["machinecode", "gcode"])),
+		                   mock.call(octoprint.filemanager.Events.UPDATED_FILES, dict(type="printables"))]
+		self.fire_event.call_args_list = expected_events
 
 	def test_remove_file(self):
-		self.local_storage.path_on_disk.return_value = "prefix/test.file"
-		self.local_storage.split_path.return_value = ("", "test.file")
+		self.local_storage.path_on_disk.return_value = "prefix/test.gcode"
+		self.local_storage.split_path.return_value = ("", "test.gcode")
 
-		self.file_manager.remove_file(octoprint.filemanager.FileDestinations.LOCAL, "test.file")
+		self.file_manager.remove_file(octoprint.filemanager.FileDestinations.LOCAL, "test.gcode")
 
-		self.local_storage.remove_file.assert_called_once_with("test.file")
+		self.local_storage.remove_file.assert_called_once_with("test.gcode")
 		self.analysis_queue.dequeue.assert_called_once()
-		self.fire_event.assert_called_once_with(octoprint.filemanager.Events.UPDATED_FILES, dict(type="printables"))
+		expected_events = [mock.call(octoprint.filemanager.Events.FILE_REMOVED, dict(storage=octoprint.filemanager.FileDestinations.LOCAL,
+		                                                                             name="test.gcode",
+		                                                                             path="test.gcode",
+		                                                                             type=["machinecode", "gcode"])),
+		                   mock.call(octoprint.filemanager.Events.UPDATED_FILES, dict(type="printables"))]
+		self.fire_event.call_args_list = expected_events
 
 	def test_add_folder(self):
 		self.local_storage.add_folder.return_value = ("", "test_folder")
+		self.local_storage.split_path.return_value = ("", "test_folder")
 
 		folder_path = self.file_manager.add_folder(octoprint.filemanager.FileDestinations.LOCAL, "test_folder")
 
 		self.assertEqual(("", "test_folder"), folder_path)
 		self.local_storage.add_folder.assert_called_once_with("test_folder", ignore_existing=True)
-		self.fire_event.assert_called_once_with(octoprint.filemanager.Events.UPDATED_FILES, dict(type="printables"))
+		expected_events = [mock.call(octoprint.filemanager.Events.FOLDER_ADDED, dict(storage=octoprint.filemanager.FileDestinations.LOCAL,
+		                                                                             name="test_folder",
+		                                                                             path="test_folder")),
+		                   mock.call(octoprint.filemanager.Events.UPDATED_FILES, dict(type="printables"))]
+		self.fire_event.call_args_list = expected_events
 
 	def test_add_folder_not_ignoring_existing(self):
 		self.local_storage.add_folder.side_effect = RuntimeError("already there")
@@ -200,14 +216,23 @@ class FileManagerTest(unittest.TestCase):
 		self.local_storage.add_folder.assert_called_once_with("test_folder", ignore_existing=False)
 
 	def test_remove_folder(self):
+		self.local_storage.split_path.return_value = ("", "test_folder")
+
 		self.file_manager.remove_folder(octoprint.filemanager.FileDestinations.LOCAL, "test_folder")
 
 		self.local_storage.remove_folder.assert_called_once_with("test_folder", recursive=True)
 		self.analysis_queue.dequeue_folder.assert_called_once_with(octoprint.filemanager.FileDestinations.LOCAL, "test_folder")
-		self.fire_event.assert_called_once_with(octoprint.filemanager.Events.UPDATED_FILES, dict(type="printables"))
+		expected_events = [mock.call(octoprint.filemanager.Events.FOLDER_REMOVED, dict(storage=octoprint.filemanager.FileDestinations.LOCAL,
+		                                                                               name="test_folder",
+		                                                                               path="test_folder")),
+		                   mock.call(octoprint.filemanager.Events.UPDATED_FILES, dict(type="printables"))]
+		self.fire_event.call_args_list = expected_events
 
 	def test_remove_folder_nonrecursive(self):
+		self.local_storage.split_path.return_value = ("", "test_folder")
+
 		self.file_manager.remove_folder(octoprint.filemanager.FileDestinations.LOCAL, "test_folder", recursive=False)
+
 		self.local_storage.remove_folder.assert_called_once_with("test_folder", recursive=False)
 		self.analysis_queue.dequeue_folder.assert_called_once_with(octoprint.filemanager.FileDestinations.LOCAL, "test_folder")
 
@@ -378,7 +403,7 @@ class FileManagerTest(unittest.TestCase):
 			return "prefix/" + path
 		self.local_storage.path_on_disk.side_effect = path_on_disk
 
-		# mock split_path method on local storage
+		# mock split_path method on local storage - no folder support
 		def split_path(path):
 			return "", path
 		self.local_storage.split_path.side_effect = split_path
@@ -386,7 +411,7 @@ class FileManagerTest(unittest.TestCase):
 		# mock add_file method on local storage
 		def add_file(path, file_obj, printer_profile=None, links=None, allow_overwrite=False):
 			file_obj.save("prefix/" + path)
-			return "", path
+			return path
 		self.local_storage.add_file.side_effect = add_file
 
 		# mock slice method on slicing manager
@@ -413,7 +438,11 @@ class FileManagerTest(unittest.TestCase):
 
 		# assert that events where fired
 		expected_events = [mock.call(octoprint.filemanager.Events.SLICING_STARTED, {"stl": "source.file", "gcode": "dest.file", "progressAvailable": False}),
-		                   mock.call(octoprint.filemanager.Events.SLICING_DONE, {"stl": "source.file", "gcode": "dest.file", "time": 15.694000005722046})]
+		                   mock.call(octoprint.filemanager.Events.SLICING_DONE, {"stl": "source.file", "gcode": "dest.file", "time": 15.694000005722046}),
+		                   mock.call(octoprint.filemanager.Events.FILE_ADDED, {"storage": octoprint.filemanager.FileDestinations.LOCAL,
+		                                                                       "name": "dest.file",
+		                                                                       "path": "dest.file",
+		                                                                       "type": None})]
 		self.fire_event.call_args_list = expected_events
 
 		# assert that model links were added

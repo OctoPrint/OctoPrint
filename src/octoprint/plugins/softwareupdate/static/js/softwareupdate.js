@@ -113,6 +113,7 @@ $(function() {
         self.octoprintUnreleased = ko.observable();
 
         self.config_cacheTtl = ko.observable();
+        self.config_notifyUsers = ko.observable();
         self.config_checkoutFolder = ko.observable();
         self.config_checkType = ko.observable();
         self.config_updateMethod = ko.observable();
@@ -154,9 +155,20 @@ $(function() {
             self.performCheck();
         };
 
-        self._showPopup = function(options, eventListeners) {
+        self.onUserLoggedOut = function() {
             self._closePopup();
-            self.popup = new PNotify(options);
+        };
+
+        self._showPopup = function(options, eventListeners, singleButtonNotify) {
+            singleButtonNotify = singleButtonNotify || false;
+
+            self._closePopup();
+
+            if (singleButtonNotify) {
+                self.popup = PNotify.singleButtonNotify(options);
+            } else {
+                self.popup = new PNotify(options);
+            }
 
             if (eventListeners) {
                 var popupObj = self.popup.get();
@@ -193,6 +205,7 @@ $(function() {
                 plugins: {
                     softwareupdate: {
                         cache_ttl: parseInt(self.config_cacheTtl()),
+                        notify_users: self.config_notifyUsers(),
                         octoprint_checkout_folder: self.config_checkoutFolder(),
                         octoprint_type: self.config_checkType(),
                         octoprint_release_channel: self.config_releaseChannel()
@@ -232,6 +245,7 @@ $(function() {
 
             self.config_updateMethod(updateMethod);
             self.config_cacheTtl(self.settings.settings.plugins.softwareupdate.cache_ttl());
+            self.config_notifyUsers(self.settings.settings.plugins.softwareupdate.notify_users());
             self.config_checkoutFolder(self.settings.settings.plugins.softwareupdate.octoprint_checkout_folder());
             self.config_checkType(self.settings.settings.plugins.softwareupdate.octoprint_type());
             self.config_releaseChannel(self.settings.settings.plugins.softwareupdate.octoprint_release_channel());
@@ -289,6 +303,8 @@ $(function() {
                 }
             }
 
+            if (!self.loginState.isAdmin() && !self.settings.settings.plugins.softwareupdate.notify_users()) return;
+
             if (data.status == "updateAvailable" || data.status == "updatePossible") {
                 var text = "<div class='softwareupdate_notification'>" + gettext("There are updates available for the following components:");
 
@@ -304,7 +320,11 @@ $(function() {
                 });
                 text += "</ul>";
 
-                text += "<small>" + gettext("Those components marked with <i class=\"icon-ok\"></i> can be updated directly.") + "</small>";
+                text += "<p><small>" + gettext("Those components marked with <i class=\"icon-ok\"></i> can be updated directly.") + "</small></p>";
+
+                if (!self.loginState.isAdmin()) {
+                    text += "<p><small>" + gettext("To have updates applied, get in touch with an administrator of this OctoPrint instance.") + "</small></p>";
+                }
 
                 text += "</div>";
 
@@ -315,8 +335,9 @@ $(function() {
                 };
                 var eventListeners = {};
 
+                var singleButtonNotify = false;
                 if (data.status == "updatePossible" && self.loginState.isAdmin()) {
-                    // if user is admin, add action buttons
+                    // if update is possible and user is admin, add action buttons for ignore and update
                     options["confirm"] = {
                         confirm: true,
                         buttons: [{
@@ -337,10 +358,27 @@ $(function() {
                         closer: false,
                         sticker: false
                     };
+                } else {
+                    // if update is not possible or user is not admin, only add ignore button
+                    options["confirm"] = {
+                        confirm: true,
+                        buttons: [{
+                            text: gettext("Ignore"),
+                            click: function(notice) {
+                                notice.remove();
+                                self._markNotificationAsSeen(data.information);
+                            }
+                        }]
+                    };
+                    options["buttons"] = {
+                        closer: false,
+                        sticker: false
+                    };
+                    singleButtonNotify = true;
                 }
 
                 if ((ignoreSeen || !self._hasNotificationBeenSeen(data.information)) && !OctoPrint.coreui.wizardOpen) {
-                    self._showPopup(options, eventListeners);
+                    self._showPopup(options, eventListeners, singleButtonNotify);
                 }
             } else if (data.status == "current") {
                 if (showIfNothingNew) {
@@ -356,7 +394,9 @@ $(function() {
         };
 
         self.performCheck = function(showIfNothingNew, force, ignoreSeen) {
-            if (!self.loginState.hasPermission(self.permissions.SETTINGS)) return;
+
+            if (!self.loginState.hasPermission(self.permissions.SETTINGS) && !self.settings.settings.plugins.softwareupdate.notify_users()) return;
+
             self.checking(true);
             OctoPrint.plugins.softwareupdate.check(force)
                 .done(function(data) {
@@ -370,7 +410,18 @@ $(function() {
         self._markNotificationAsSeen = function(data) {
             if (!Modernizr.localstorage)
                 return false;
-            localStorage["plugin.softwareupdate.seen_information"] = JSON.stringify(self._informationToRemoteVersions(data));
+            if (!self.loginState.isUser())
+                return false;
+
+            var currentString = localStorage["plugin.softwareupdate.seen_information"];
+            var current;
+            if (currentString === undefined) {
+                current = {};
+            } else {
+                current = JSON.parse(currentString);
+            }
+            current[self.loginState.username()] = self._informationToRemoteVersions(data);
+            localStorage["plugin.softwareupdate.seen_information"] = JSON.stringify(current);
         };
 
         self._hasNotificationBeenSeen = function(data) {
@@ -381,11 +432,19 @@ $(function() {
                 return false;
 
             var knownData = JSON.parse(localStorage["plugin.softwareupdate.seen_information"]);
+
+            if (!self.loginState.isUser())
+                return true;
+
+            var userData = knownData[self.loginState.username()];
+            if (userData === undefined)
+                return false;
+
             var freshData = self._informationToRemoteVersions(data);
 
             var hasBeenSeen = true;
             _.each(freshData, function(value, key) {
-                if (!_.has(knownData, key) || knownData[key] != freshData[key]) {
+                if (!_.has(userData, key) || userData[key] != freshData[key]) {
                     hasBeenSeen = false;
                 }
             });
@@ -401,6 +460,8 @@ $(function() {
         };
 
         self.performUpdate = function(force, items) {
+            if (!self.loginState.isAdmin()) return;
+
             self.updateInProgress = true;
 
             var options = {
@@ -706,7 +767,10 @@ $(function() {
             }
         };
 
-        self._forcedStdoutLine = /You are using pip version .*?, however version .*? is available\.|You should consider upgrading via the '.*?' command\./;
+        self._forcedStdoutPatterns = ["You are using pip version .*?, however version .*? is available\.",
+                                      "You should consider upgrading via the '.*?' command\.",
+                                      "'.*?' does not exist -- can't clean it"];
+        self._forcedStdoutLine = new RegExp(self._forcedStdoutPatterns.join("|"));
         self._preprocessLine = function(line) {
             if (line.stream == "stderr" && line.line.match(self._forcedStdoutLine)) {
                 line.stream = "stdout";

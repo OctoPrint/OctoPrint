@@ -29,7 +29,6 @@ class StorageInterface(object):
 	Interface of storage adapters for OctoPrint.
 	"""
 
-
 	@property
 	def analysis_backlog(self):
 		"""
@@ -155,7 +154,9 @@ class StorageInterface(object):
 
 	def add_folder(self, path, ignore_existing=True):
 		"""
-		Adds a folder as ``path``. The ``path`` will be sanitized.
+		Adds a folder as ``path``
+
+		The ``path`` will be sanitized.
 
 		:param string path:          the path of the new folder
 		:param bool ignore_existing: if set to True, no error will be raised if the folder to be added already exists
@@ -165,7 +166,7 @@ class StorageInterface(object):
 
 	def remove_folder(self, path, recursive=True):
 		"""
-		Removes the folder at ``path``.
+		Removes the folder at ``path``
 
 		:param string path:    the path of the folder to remove
 		:param bool recursive: if set to True, contained folders and files will also be removed, otherwise and error will
@@ -212,7 +213,9 @@ class StorageInterface(object):
 
 	def remove_file(self, path):
 		"""
-		Removes the file at ``path``. Will also take care of deleting the corresponding entries
+		Removes the file at ``path``
+
+		Will also take care of deleting the corresponding entries
 		in the metadata and deleting all links pointing to the file.
 
 		:param string path: path of the file to remove
@@ -486,6 +489,9 @@ class LocalFileStorage(StorageInterface):
 		return self.analysis_backlog_for_path()
 
 	def analysis_backlog_for_path(self, path=None):
+		if path:
+			path = self.sanitize_path(path)
+
 		for entry in self._analysis_backlog_generator(path):
 			yield entry
 
@@ -982,7 +988,15 @@ class LocalFileStorage(StorageInterface):
 				continue
 
 			printer_profile = history_entry["printerProfile"]
+			if not printer_profile:
+				continue
+
 			print_time = history_entry["printTime"]
+			try:
+				print_time = float(print_time)
+			except:
+				self._logger.warn("Invalid print time value found in print history for {} in {}/.metadata.yaml: {!r}".format(name, path, print_time))
+				continue
 
 			if not printer_profile in former_print_times:
 				former_print_times[printer_profile] = []

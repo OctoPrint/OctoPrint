@@ -46,7 +46,7 @@ $(function() {
             }
 
             OctoPrint.users.get(self.currentUser().name)
-                .done(self.fromResponse);
+                .done(self.updateCurrentUserData);
         };
 
         self.requestData = function() {
@@ -57,29 +57,35 @@ $(function() {
         self.fromResponse = function(response) {
             if (response && response.name) {
                 self.loggedIn(true);
-                self.username(response.name);
-                self.usergroups(response.groups);
-                self.userpermissions(response.permissions);
-                self.isUser(self.hasPermission("User"));
-                self.isAdmin(self.hasPermission("Admin"));
-
-                self.currentUser(response);
-
+                self.updateCurrentUserData(response);
                 callViewModels(self.allViewModels, "onUserLoggedIn", [response]);
             } else {
                 self.loggedIn(false);
-                self.username(undefined);
-                OctoPrint.groups.get("Guests").done(function(group) {
-                    self.usergroups([group]);
-                });
-                self.userpermissions([]);
-                self.isUser(false);
-                self.isAdmin(false);
-
-                self.currentUser(undefined);
-
+                self.resetCurrentUserData();
                 callViewModels(self.allViewModels, "onUserLoggedOut");
             }
+        };
+
+        self.updateCurrentUserData = function(data) {
+            self.username(data.name);
+            self.usergroups(data.groups);
+            self.userpermissions(data.permissions);
+            self.isUser(self.hasPermission("User"));
+            self.isAdmin(self.hasPermission("Admin"));
+
+            self.currentUser(data);
+        };
+
+        self.resetCurrentUserData = function() {
+            self.username(undefined);
+            OctoPrint.groups.get("Guests").done(function(group) {
+                self.usergroups([group]);
+            });
+            self.userpermissions([]);
+            self.isUser(false);
+            self.isAdmin(false);
+
+            self.currentUser(undefined);
         };
 
         self.login = function(u, p, r) {
@@ -147,13 +153,17 @@ $(function() {
             });
 
             $("body").on("click", function(e) {
+                if (!toggle.hasClass("open")) {
+                    return;
+                }
+
                 var anyFormLinkOrButton = $("#login_dropdown_loggedout a, #login_dropdown_loggedin a, #login_dropdown_loggedout button, #login_dropdown_loggedin button");
                 var dropdown = $("li.dropdown#navbar_login");
                 var anyLastpassButton = $("#__lpform_login_user, #__lpform_login_pass");
 
                 var isLinkOrButton = anyFormLinkOrButton.is(e.target) || anyFormLinkOrButton.has(e.target).length !== 0;
-                var isDropdown = dropdown.is(e.target) || dropdown.has(e.target).length === 0;
-                var isLastpass = anyLastpassButton.is(e.target) || anyLastpassButton.has(e.target).length === 0;
+                var isDropdown = dropdown.is(e.target) || dropdown.has(e.target).length !== 0;
+                var isLastpass = anyLastpassButton.is(e.target) || anyLastpassButton.has(e.target).length !== 0;
 
                 if (isLinkOrButton || !(isDropdown || isLastpass)) {
                     toggle.removeClass("open");
