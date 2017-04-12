@@ -993,13 +993,8 @@ $(function() {
         };
 
         self.onUserLoggedIn = function(user) {
-<<<<<<< HEAD
             if (self.permissions.hasPermission(self.permissions.SETTINGS, user.permissions)) {
-                self.requestData();
-=======
-            if (user.admin) {
                 self.requestData({eval_notices: true});
->>>>>>> d1d94624236153c7a2cc7072d0527c6516f0daf7
             } else {
                 self.onUserLoggedOut();
             }
