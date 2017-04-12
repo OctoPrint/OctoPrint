@@ -41,6 +41,14 @@ development environment::
 
       [...]
 
+.. important::
+
+   This tutorial assumes you are running OctoPrint 1.3.0 and up. Please make sure your version of
+   OctoPrint is up to date before proceeding. If you did a fresh checkout, that should already
+   be the case but if not you might have to update first. You can check your version of OctoPrint
+   by running ``octoprint --version`` or by taking a look into the lower left corner in OctoPrint's
+   web interface.
+
 We'll start at the most basic form a plugin can take - just a couple of simple lines of Python code:
 
 .. code-block:: python
