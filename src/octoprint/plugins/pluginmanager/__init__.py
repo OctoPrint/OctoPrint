@@ -22,6 +22,7 @@ from collections import OrderedDict
 import logging
 import sarge
 import sys
+import requests
 import re
 import os
 import pkg_resources
