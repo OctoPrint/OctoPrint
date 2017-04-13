@@ -1042,18 +1042,23 @@ $(function() {
             self._setProgressBar(progress, uploaded ? gettext("Saving ...") : gettext("Uploading ..."), uploaded);
         };
 
+        self._dragNDropTarget = null;
         self._endDragNDrop = function (e) {
-            var dropOverlay = $("#drop_overlay");
-            var dropZone = $("#drop");
-            var dropZoneLocal = $("#drop_locally");
-            var dropZoneSd = $("#drop_sd");
-            var dropZoneBackground = $("#drop_background");
-            var dropZoneLocalBackground = $("#drop_locally_background");
-            var dropZoneSdBackground = $("#drop_sd_background");
-            dropOverlay.removeClass("in");
-            if (dropZoneLocal) dropZoneLocalBackground.removeClass("hover");
-            if (dropZoneSd) dropZoneSdBackground.removeClass("hover");
-            if (dropZone) dropZoneBackground.removeClass("hover");
+            if (e.target == self._dragNDropTarget) {
+                var dropOverlay = $("#drop_overlay");
+                var dropZone = $("#drop");
+                var dropZoneLocal = $("#drop_locally");
+                var dropZoneSd = $("#drop_sd");
+                var dropZoneBackground = $("#drop_background");
+                var dropZoneLocalBackground = $("#drop_locally_background");
+                var dropZoneSdBackground = $("#drop_sd_background");
+                dropOverlay.removeClass("in");
+                if (dropZoneLocal) dropZoneLocalBackground.removeClass("hover");
+                if (dropZoneSd) dropZoneSdBackground.removeClass("hover");
+                if (dropZone) dropZoneBackground.removeClass("hover");
+            }
+            $(e.target).unbind("dragleave", self._endDragNDrop);
+            self._dragNDropTarget = null;
         }
 
         self._handleDragNDrop = function (e) {
@@ -1098,6 +1103,11 @@ $(function() {
                 if (dropZoneSdBackground) dropZoneSdBackground.removeClass("hover");
                 if (dropZoneBackground) dropZoneBackground.removeClass("hover");
             }
+            if (self._dragNDropTarget) {
+                $(self._dragNDropTarget).unbind("dragleave", self._endDragNDrop);
+            }
+            self._dragNDropTarget = e.target;
+            $(self._dragNDropTarget).bind("dragleave", self._endDragNDrop);
         }
     }
 
