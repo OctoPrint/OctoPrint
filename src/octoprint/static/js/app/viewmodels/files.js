@@ -963,13 +963,11 @@ $(function() {
         self._enableDragNDrop = function(enable) {
             if (enable) {
                 $(document).bind("dragenter", self._handleDragNDrop);
-                $(document).bind("dragover", self._handleDragNDrop);
-                //$(document).bind("dragleave", self._endDragNDrop);
+                $(document).bind("dragleave", self._endDragNDrop);
                 log.debug("Enabled drag-n-drop");
             } else {
                 $(document).unbind("dragenter", self._handleDragNDrop);
-                $(document).unbind("dragover", self._handleDragNDrop);
-                //$(document).unbind("dragleave", self._endDragNDrop);
+                $(document).unbind("dragleave", self._endDragNDrop);
                 log.debug("Disabled drag-n-drop");
             }
         };
@@ -1056,9 +1054,8 @@ $(function() {
                 if (dropZoneLocal) dropZoneLocalBackground.removeClass("hover");
                 if (dropZoneSd) dropZoneSdBackground.removeClass("hover");
                 if (dropZone) dropZoneBackground.removeClass("hover");
+                self._dragNDropTarget = null;
             }
-            $(e.target).unbind("dragleave", self._endDragNDrop);
-            self._dragNDropTarget = null;
         }
 
         self._handleDragNDrop = function (e) {
@@ -1103,11 +1100,7 @@ $(function() {
                 if (dropZoneSdBackground) dropZoneSdBackground.removeClass("hover");
                 if (dropZoneBackground) dropZoneBackground.removeClass("hover");
             }
-            if (self._dragNDropTarget) {
-                $(self._dragNDropTarget).unbind("dragleave", self._endDragNDrop);
-            }
             self._dragNDropTarget = e.target;
-            $(self._dragNDropTarget).bind("dragleave", self._endDragNDrop);
         }
     }
 
