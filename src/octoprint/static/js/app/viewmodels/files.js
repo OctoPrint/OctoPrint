@@ -820,6 +820,7 @@ $(function() {
                 self.listHelper.removeFilter('sd');
             }
             self.sdTarget = $("#drop_sd");
+            $("#drop_overlay").on('drop', self._forceEndDragNDrop);
 
             function evaluateDropzones() {
                 var enableLocal = self.loginState.isUser();
@@ -972,10 +973,12 @@ $(function() {
 
         self._enableDragNDrop = function(enable) {
             if (enable) {
-                $(document).bind("dragover", self._handleDragNDrop);
+                $(document).bind("dragenter", self._handleDragNDrop);
+                $(document).bind("dragleave", self._endDragNDrop);
                 log.debug("Enabled drag-n-drop");
             } else {
-                $(document).unbind("dragover", self._handleDragNDrop);
+                $(document).unbind("dragenter", self._handleDragNDrop);
+                $(document).unbind("dragleave", self._endDragNDrop);
                 log.debug("Disabled drag-n-drop");
             }
         };
@@ -1048,6 +1051,27 @@ $(function() {
             self._setProgressBar(progress, uploaded ? gettext("Saving ...") : gettext("Uploading ..."), uploaded);
         };
 
+        self._dragNDropTarget = null;
+        self._forceEndDragNDrop = function () {
+            var dropOverlay = $("#drop_overlay");
+            var dropZone = $("#drop");
+            var dropZoneLocal = $("#drop_locally");
+            var dropZoneSd = $("#drop_sd");
+            var dropZoneBackground = $("#drop_background");
+            var dropZoneLocalBackground = $("#drop_locally_background");
+            var dropZoneSdBackground = $("#drop_sd_background");
+            dropOverlay.removeClass("in");
+            if (dropZoneLocal) dropZoneLocalBackground.removeClass("hover");
+            if (dropZoneSd) dropZoneSdBackground.removeClass("hover");
+            if (dropZone) dropZoneBackground.removeClass("hover");
+            self._dragNDropTarget = null;
+        }
+        self._endDragNDrop = function (e) {
+            if (e.target == self._dragNDropTarget) {
+                self._forceEndDragNDrop();
+            }
+        }
+
         self._handleDragNDrop = function (e) {
             var dropOverlay = $("#drop_overlay");
             var dropZone = $("#drop");
@@ -1056,13 +1080,7 @@ $(function() {
             var dropZoneBackground = $("#drop_background");
             var dropZoneLocalBackground = $("#drop_locally_background");
             var dropZoneSdBackground = $("#drop_sd_background");
-            var timeout = window.dropZoneTimeout;
-
-            if (!timeout) {
-                dropOverlay.addClass('in');
-            } else {
-                clearTimeout(timeout);
-            }
+            dropOverlay.addClass('in');
 
             var foundLocal = false;
             var foundSd = false;
@@ -1095,14 +1113,7 @@ $(function() {
                 if (dropZoneSdBackground) dropZoneSdBackground.removeClass("hover");
                 if (dropZoneBackground) dropZoneBackground.removeClass("hover");
             }
-
-            window.dropZoneTimeout = setTimeout(function () {
-                window.dropZoneTimeout = null;
-                dropOverlay.removeClass("in");
-                if (dropZoneLocal) dropZoneLocalBackground.removeClass("hover");
-                if (dropZoneSd) dropZoneSdBackground.removeClass("hover");
-                if (dropZone) dropZoneBackground.removeClass("hover");
-            }, 100);
+            self._dragNDropTarget = e.target;
         }
     }
 
