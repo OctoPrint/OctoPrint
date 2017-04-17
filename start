@@ -1,0 +1,3 @@
+#!/bin/bash
+
+screen -dmS octo /home/pi/OctoPrint/run
