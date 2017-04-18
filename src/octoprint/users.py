@@ -295,7 +295,7 @@ class FilebasedUserManager(UserManager):
 			self._dirty = True
 			self._save()
 
-	def changeUserPermissions(self, username, permissions):
+	def change_user_permissions(self, username, permissions):
 		if not username in self._users.keys():
 			raise UnknownUser(username)
 
@@ -306,13 +306,13 @@ class FilebasedUserManager(UserManager):
 
 		user = self._users[username]
 
-		removedPermissions = set(user._permissions) - set(opermissions)
-		self.removePermissionsFromUser(username, removedPermissions)
+		removed_permissions = set(user._permissions) - set(opermissions)
+		self.remove_permissions_from_user(username, removed_permissions)
 
-		addedPermissions = set(opermissions) - set(user._permissions)
-		self.addPermissionsToUser(username, addedPermissions)
+		added_permissions = set(opermissions) - set(user._permissions)
+		self.add_permissions_to_user(username, added_permissions)
 
-	def addPermissionsToUser(self, username, permissions):
+	def add_permissions_to_user(self, username, permissions):
 		if username not in self._users.keys():
 			raise UnknownUser(username)
 
@@ -325,7 +325,7 @@ class FilebasedUserManager(UserManager):
 			self._dirty = True
 			self._save()
 
-	def removePermissionsFromUser(self, username, permissions):
+	def remove_permissions_from_user(self, username, permissions):
 		if username not in self._users.keys():
 			raise UnknownUser(username)
 
@@ -338,7 +338,7 @@ class FilebasedUserManager(UserManager):
 			self._dirty = True
 			self._save()
 
-	def changeUserGroups(self, username, groups):
+	def change_user_groups(self, username, groups):
 		if not username in self._users.keys():
 			raise UnknownUser(username)
 
@@ -349,13 +349,13 @@ class FilebasedUserManager(UserManager):
 
 		user = self._users[username]
 
-		removedGroups = set(user._groups) - set(ogroups)
-		self.removeGroupsFromUser(username, removedGroups)
+		removed_groups = set(user._groups) - set(ogroups)
+		self.remove_groups_from_user(username, removed_groups)
 
-		addedGroups = set(ogroups) - set(user._groups)
-		self.addGroupsToUser(username, addedGroups)
+		added_groups = set(ogroups) - set(user._groups)
+		self.add_groups_to_user(username, added_groups)
 
-	def addGroupsToUser(self, username, groups):
+	def add_groups_to_user(self, username, groups):
 		if username not in self._users.keys():
 			raise UnknownUser(username)
 
@@ -368,7 +368,7 @@ class FilebasedUserManager(UserManager):
 			self._dirty = True
 			self._save()
 
-	def removeGroupsFromUser(self, username, groups):
+	def remove_groups_from_user(self, username, groups):
 		if username not in self._users.keys():
 			raise UnknownUser(username)
 
@@ -613,12 +613,12 @@ class User(UserMixin):
 	@property
 	@deprecated("is_user is deprecated please use permissions", since="now")
 	def is_user(self):
-		return OctoPrintUserMethodReplacedByBooleanProperty("is_user", lambda: self.hasPermission(Permissions.USER))
+		return OctoPrintUserMethodReplacedByBooleanProperty("is_user", lambda: self.has_permission(Permissions.USER))
 
 	@property
 	@deprecated("is_admin is deprecated please use permissions", since="now")
 	def is_admin(self):
-		return OctoPrintUserMethodReplacedByBooleanProperty("is_admin", lambda: self.hasPermission(Permissions.ADMIN))
+		return OctoPrintUserMethodReplacedByBooleanProperty("is_admin", lambda: self.has_permission(Permissions.ADMIN))
 
 	def get_all_settings(self):
 		return self._settings
@@ -700,7 +700,7 @@ class User(UserMixin):
 
 		return needs
 
-	def hasPermission(self, permission):
+	def has_permission(self, permission):
 		from octoprint.server import groupManager
 		if Permissions.ADMIN in self.permissions or groupManager.admins_group in self.groups:
 			return True
@@ -742,7 +742,10 @@ class User(UserMixin):
 		return "User(id=%s,name=%s,active=%r,user=%r,admin=%r)" % (self.get_id(), self.get_name(), bool(self.is_active), bool(self.is_user), bool(self.is_admin))
 
 
-class AnonymousUser(AnonymousUserMixin):
+class AnonymousUser(User, AnonymousUserMixin):
+	def __init__(self):
+		from octoprint.server import groupManager
+		User.__init__(self, "Guest", "", True, [], [groupManager.guests_group])
 
 	@property
 	def is_anonymous(self):
@@ -755,6 +758,9 @@ class AnonymousUser(AnonymousUserMixin):
 	@property
 	def is_active(self):
 		return FlaskLoginMethodReplacedByBooleanProperty("is_active", lambda: False)
+
+	def check_password(self, passwordHash):
+		return True
 
 class SessionUser(User):
 	def __init__(self, user):

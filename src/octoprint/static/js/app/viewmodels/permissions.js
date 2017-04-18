@@ -44,17 +44,7 @@ $(function() {
             self.requestData();
         };
 
-        self.hasPermissions = function(listtocheck, permissionsList) {
-            if (permissionsList === undefined || listtocheck === undefined || listtocheck.length == 0)
-                return false;
-
-            has_all_permissions = self.hasPermission(listtocheck[0], permissionsList);
-            for (var i = 1; i < listtocheck.length && has_all_permissions; i++) {
-                has_all_permissions &= self.hasPermission(listtocheck[i], permissionsList);
-            }
-            return has_all_permissions;
-        };
-        self.hasPermission = function(permission, permissions) {
+        self._hasPermission = function(permission, permissions) {
             if (permissions === undefined || permission === undefined)
                 return false;
 
@@ -67,6 +57,28 @@ $(function() {
             }
 
             return false;
+        };
+        self._hasPermissions = function(permissions, permissionsList) {
+            if (permissionsList === undefined || !(permissions instanceof Array) || permissions === undefined || permissions.length == 0)
+                return false;
+
+            has_all_permissions = self.hasPermission(permissions[0], permissionsList);
+            for (var i = 1; i < permissions.length && has_all_permissions; i++) {
+                has_all_permissions &= self._hasPermission(permissions[i], permissionsList);
+            }
+            return has_all_permissions;
+        };
+
+        // permissions: necessary permission/s
+        // permissionsList: user permissions
+        self.hasPermissions = function(permissions, permissionsList) {
+            if (permissions === undefined || permissionsList === undefined)
+                return false;
+
+            if (permissions instanceof Array)
+                return self._hasPermissions(permissions, permissionsList);
+
+            return self._hasPermission(permissions, permissionsList);
         };
     }
 

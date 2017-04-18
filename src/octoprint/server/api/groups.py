@@ -53,7 +53,7 @@ def addGroup():
 	default = data["defaultOn"] if "defaultOn" in data else False
 
 	try:
-		groupManager.addGroup(name, description=description, permissions=permissions, default=default)
+		groupManager.add_group(name, description=description, permissions=permissions, default=default)
 	except groups.GroupAlreadyExists:
 		abort(409)
 	return getGroups()
@@ -64,7 +64,7 @@ def getGroup(groupname):
 	if not groupManager.enabled:
 		return jsonify(SUCCESS)
 
-	group = groupManager.findGroup(groupname)
+	group = groupManager.find_group(groupname)
 	if group is not None:
 		return jsonify(group)
 	else:
@@ -78,7 +78,7 @@ def updateGroup(groupname):
 	if not groupManager.enabled:
 		return jsonify(SUCCESS)
 
-	group = groupManager.findGroup(groupname)
+	group = groupManager.find_group(groupname)
 	if group is not None:
 		if not "application/json" in request.headers["Content-Type"]:
 			return make_response("Expected content-type JSON", 400)
@@ -92,13 +92,13 @@ def updateGroup(groupname):
 			# change permissions
 			if "permissions" in data:
 				permissions = data["permissions"]
-				groupManager.changeGroupPermissions(groupname, permissions)
+				groupManager.change_group_permissions(groupname, permissions)
 
 			if "defaultOn" in data:
-				groupManager.changeGroupDefault(groupname, data["defaultOn"])
+				groupManager.change_group_default(groupname, data["defaultOn"])
 
 			if "description" in data:
-				groupManager.changeGroupDescription(groupname, data["description"])
+				groupManager.change_group_description(groupname, data["description"])
 
 			return getGroups()
 		except groups.GroupCantbeChanged:
@@ -115,7 +115,7 @@ def removeGroup(groupname):
 		return jsonify(SUCCESS)
 
 	try:
-		groupManager.removeGroup(groupname)
+		groupManager.remove_group(groupname)
 		return getGroups()
 	except groups.UnknownGroup:
 		abort(404)

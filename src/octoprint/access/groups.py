@@ -65,7 +65,7 @@ class GroupManager(object):
 	def change_group_description(self, groupname, description):
 		pass
 
-	def add_group(self, name, description, permissions, specialGroup, save=True):
+	def add_group(self, name, description, permissions, default, specialGroup, save=True):
 		pass
 
 	def remove_group(self, name):
@@ -79,11 +79,10 @@ class GroupManager(object):
 		else:
 			return None
 
-	def get_group_from(cls, group):
-		from octoprint.server import groupManager
+	def get_group_from(self, group):
 		return group if isinstance(group, Group) \
-			else groupManager.find_group(group["name"]) if isinstance(group, dict) \
-			else groupManager.find_group(group)
+			else self.find_group(group["name"]) if isinstance(group, dict) \
+			else self.find_group(group)
 
 
 class FilebasedGroupManager(GroupManager):
@@ -154,7 +153,7 @@ class FilebasedGroupManager(GroupManager):
 			self._dirty = True
 			self._save()
 
-	def change_group_germissions(self, groupname, permissions):
+	def change_group_permissions(self, groupname, permissions):
 		if not groupname in self._groups.keys():
 			raise UnknownGroup(groupname)
 

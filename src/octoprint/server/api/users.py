@@ -85,7 +85,7 @@ def getUser(username):
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
 
-	if current_user is not None and not current_user.is_anonymous and (current_user.get_name() == username or current_user.hasPermission(Permissions.ADMIN)):
+	if current_user is not None and not current_user.is_anonymous and (current_user.get_name() == username or current_user.has_permission(Permissions.ADMIN)):
 		user = userManager.findUser(username)
 		if user is not None:
 			return jsonify(user)
@@ -116,12 +116,12 @@ def updateUser(username):
 		# change groups
 		if "groups" in data:
 			groups = data["groups"]
-			userManager.changeUserGroups(username, groups)
+			userManager.change_user_groups(username, groups)
 
 		# change permissions
 		if "permissions" in data:
 			permissions = data["permissions"]
-			userManager.changeUserPermissions(username, permissions)
+			userManager.change_user_permissions(username, permissions)
 
 		if data is None:
 			return make_response("Malformed JSON body in request", 400)
@@ -186,7 +186,7 @@ def getSettingsForUser(username):
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
 
-	if current_user is None or current_user.is_anonymous or (current_user.get_name() != username and not current_user.hasPermission(Permissions.ADMIN)):
+	if current_user is None or current_user.is_anonymous or (current_user.get_name() != username and not current_user.has_permission(Permissions.ADMIN)):
 		return make_response("Forbidden", 403)
 
 	try:
@@ -200,7 +200,7 @@ def changeSettingsForUser(username):
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
 
-	if current_user is None or current_user.is_anonymous or (current_user.get_name() != username and not current_user.hasPermission(Permissions.ADMIN)):
+	if current_user is None or current_user.is_anonymous or (current_user.get_name() != username and not current_user.has_permission(Permissions.ADMIN)):
 		return make_response("Forbidden", 403)
 
 	try:
@@ -223,7 +223,7 @@ def deleteApikeyForUser(username):
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
 
-	if current_user is not None and not current_user.is_anonymous and (current_user.get_name() == username or current_user.hasPermission(Permissions.ADMIN)):
+	if current_user is not None and not current_user.is_anonymous and (current_user.get_name() == username or current_user.has_permission(Permissions.ADMIN)):
 		try:
 			userManager.deleteApikey(username)
 		except users.UnknownUser:
@@ -239,7 +239,7 @@ def generateApikeyForUser(username):
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
 
-	if current_user is not None and not current_user.is_anonymous and (current_user.get_name() == username or current_user.hasPermission(Permissions.ADMIN)):
+	if current_user is not None and not current_user.is_anonymous and (current_user.get_name() == username or current_user.has_permission(Permissions.ADMIN)):
 		try:
 			apikey = userManager.generateApiKey(username)
 		except users.UnknownUser:

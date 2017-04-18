@@ -178,28 +178,17 @@ $(function() {
             }
         };
 
-        self.hasPermissions = function(permissions) {
-            return ko.pureComputed(function() {
-                if ((self.usergroups() == [] && self.userpermissions() == []) || permissions === undefined || permissions.length == 0)
-                    return false;
-
-                var group_permission = []
-                _.each(self.usergroups(), function(group) { _.union(group_permission, group.permissions); });
-
-                var all_permissions = _.union(self.userpermissions(), group_permission);var all_permissions = _.union(self.userpermissions(), _.map(self.usergroups(), function(group) { return group.permissions; }));
-                return self.permissions.hasPermissions(permissions, all_permissions);
-            }).extend({ notify: 'always' });
+        self.hasPermissions = function(permission) {
+            return self.hasPermission(permission);
         };
+
         self.hasPermission = function(permission) {
             return ko.pureComputed(function() {
-                if ((self.usergroups() == [] && self.userpermissions() == []) || permission === undefined)
+                if ((!(self.usergroups() instanceof Array) && !(self.userpermissions() instanceof Array)) || permission === undefined)
                     return false;
 
-                var group_permission = []
-                _.each(self.usergroups(), function(group) { group_permission = _.union(group_permission, group.permissions); });
-
-                var all_permissions = _.union(self.userpermissions(), group_permission);
-                return self.permissions.hasPermission(permission, all_permissions);
+                var all_permissions = _.union(self.userpermissions(), _.map(self.usergroups(), function(group) { return group.permissions; }));
+                return self.permissions.hasPermissions(permission, all_permissions);
             }).extend({ notify: 'always' });
         };
     }

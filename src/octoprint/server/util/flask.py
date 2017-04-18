@@ -1047,7 +1047,7 @@ def permission_validator(request, permission):
 	"""
 
 	user = _get_flask_user_from_request(request)
-	if user is None or not user.is_authenticated or not user.hasPermission(permission):
+	if user is None or not user.is_authenticated or not user.has_permission(permission):
 		raise tornado.web.HTTPError(403)
 
 @deprecated("admin_validator is deprecated, please use new permission_validator", since="")
