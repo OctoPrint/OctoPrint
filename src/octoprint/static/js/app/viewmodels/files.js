@@ -810,6 +810,7 @@ $(function() {
                 self.listHelper.removeFilter('sd');
             }
             self.sdTarget = $("#drop_sd");
+            $("#drop_overlay").on('drop', self._forceEndDragNDrop);
 
             function evaluateDropzones() {
                 var enableLocal = self.loginState.isUser();
@@ -1070,7 +1071,6 @@ $(function() {
             var dropZoneLocalBackground = $("#drop_locally_background");
             var dropZoneSdBackground = $("#drop_sd_background");
             dropOverlay.addClass('in');
-            dropOverlay.on('drop', self._forceEndDragNDrop);
 
             var foundLocal = false;
             var foundSd = false;
