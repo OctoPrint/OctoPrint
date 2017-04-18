@@ -436,6 +436,10 @@ class MachineCom(object):
 		self._log('Changing monitoring state from \'%s\' to \'%s\'' % (oldState, self.getStateString()))
 		self._callback.on_comm_state_change(newState)
 
+	def _dual_log(self, message, level=logging.ERROR):
+		self._logger.log(level, message)
+		self._log(message)
+
 	def _log(self, message):
 		self._terminal_log.append(message)
 		self._callback.on_comm_log(message)
@@ -1820,10 +1824,13 @@ class MachineCom(object):
 
 		try:
 			ret = self._serial.readline()
-		except:
+		except Exception as ex:
 			if not self._connection_closing:
 				self._logger.exception("Unexpected error while reading from serial port")
 				self._log("Unexpected error while reading serial port, please consult octoprint.log for details: %s" % (get_exception_string()))
+				if isinstance(ex, serial.SerialException):
+					self._dual_log("Please see https://bit.ly/octoserial for possible reasons of this.",
+					               level=logging.ERROR)
 				self._errorValue = get_exception_string()
 				self.close(is_error=True)
 			return None
@@ -2264,17 +2271,23 @@ class MachineCom(object):
 						written += len(cmd)
 					else:
 						written += result
-				except:
+				except Exception as ex:
 					if not self._connection_closing:
 						self._logger.exception("Unexpected error while writing to serial port")
 						self._log("Unexpected error while writing to serial port: %s" % (get_exception_string()))
+						if isinstance(ex, serial.SerialException):
+							self._dual_log("Please see https://bit.ly/octoserial for possible reasons of this.",
+							               level=logging.ERROR)
 						self._errorValue = get_exception_string()
 						self.close(is_error=True)
 					break
-			except:
+			except Exception as ex:
 				if not self._connection_closing:
 					self._logger.exception("Unexpected error while writing to serial port")
 					self._log("Unexpected error while writing to serial port: %s" % (get_exception_string()))
+					if isinstance(ex, serial.SerialException):
+						self._dual_log("Please see https://bit.ly/octoserial for possible reasons of this.",
+						               level=logging.ERROR)
 					self._errorValue = get_exception_string()
 					self.close(is_error=True)
 				break
@@ -2285,8 +2298,7 @@ class MachineCom(object):
 				if passes > self._max_write_passes:
 					# nothing written in max consecutive passes, we give up
 					message = "Could not write anything to the serial port in {} tries, something appears to be wrong with the printer communication".format(self._max_write_passes)
-					self._logger.error(message)
-					self._log(message)
+					self._dual_log(message, level=logging.ERROR)
 					self._errorValue = "Could not write to serial port"
 					self.close(is_error=True)
 					break
