@@ -1041,20 +1041,23 @@ $(function() {
         };
 
         self._dragNDropTarget = null;
+        self._forceEndDragNDrop = function () {
+            var dropOverlay = $("#drop_overlay");
+            var dropZone = $("#drop");
+            var dropZoneLocal = $("#drop_locally");
+            var dropZoneSd = $("#drop_sd");
+            var dropZoneBackground = $("#drop_background");
+            var dropZoneLocalBackground = $("#drop_locally_background");
+            var dropZoneSdBackground = $("#drop_sd_background");
+            dropOverlay.removeClass("in");
+            if (dropZoneLocal) dropZoneLocalBackground.removeClass("hover");
+            if (dropZoneSd) dropZoneSdBackground.removeClass("hover");
+            if (dropZone) dropZoneBackground.removeClass("hover");
+            self._dragNDropTarget = null;
+        }
         self._endDragNDrop = function (e) {
             if (e.target == self._dragNDropTarget) {
-                var dropOverlay = $("#drop_overlay");
-                var dropZone = $("#drop");
-                var dropZoneLocal = $("#drop_locally");
-                var dropZoneSd = $("#drop_sd");
-                var dropZoneBackground = $("#drop_background");
-                var dropZoneLocalBackground = $("#drop_locally_background");
-                var dropZoneSdBackground = $("#drop_sd_background");
-                dropOverlay.removeClass("in");
-                if (dropZoneLocal) dropZoneLocalBackground.removeClass("hover");
-                if (dropZoneSd) dropZoneSdBackground.removeClass("hover");
-                if (dropZone) dropZoneBackground.removeClass("hover");
-                self._dragNDropTarget = null;
+                self._forceEndDragNDrop();
             }
         }
 
@@ -1067,7 +1070,7 @@ $(function() {
             var dropZoneLocalBackground = $("#drop_locally_background");
             var dropZoneSdBackground = $("#drop_sd_background");
             dropOverlay.addClass('in');
-
+            dropOverlay.on('drop', self._forceEndDragNDrop);
 
             var foundLocal = false;
             var foundSd = false;
