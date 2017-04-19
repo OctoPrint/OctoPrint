@@ -59,6 +59,14 @@ $(function() {
         self.localTarget = undefined;
         self.sdTarget = undefined;
 
+        self.dropOverlay = undefined;
+        self.dropZone = undefined;
+        self.dropZoneLocal = undefined;
+        self.dropZoneSd = undefined;
+        self.dropZoneBackground = undefined;
+        self.dropZoneLocalBackground = undefined;
+        self.dropZoneSdBackground = undefined;
+
         self.ignoreUpdatedFilesEvent = false;
 
         self.addingFolder = ko.observable(false);
@@ -820,7 +828,16 @@ $(function() {
                 self.listHelper.removeFilter('sd');
             }
             self.sdTarget = $("#drop_sd");
-            $("#drop_overlay").on('drop', self._forceEndDragNDrop);
+
+            self.dropOverlay = $("#drop_overlay");
+            self.dropZone = $("#drop");
+            self.dropZoneLocal = $("#drop_locally");
+            self.dropZoneSd = $("#drop_sd");
+            self.dropZoneBackground = $("#drop_background");
+            self.dropZoneLocalBackground = $("#drop_locally_background");
+            self.dropZoneSdBackground = $("#drop_sd_background");
+
+            self.dropOverlay.on('drop', self._forceEndDragNDrop);
 
             function evaluateDropzones() {
                 var enableLocal = self.loginState.isUser();
@@ -1053,47 +1070,33 @@ $(function() {
 
         self._dragNDropTarget = null;
         self._forceEndDragNDrop = function () {
-            var dropOverlay = $("#drop_overlay");
-            var dropZone = $("#drop");
-            var dropZoneLocal = $("#drop_locally");
-            var dropZoneSd = $("#drop_sd");
-            var dropZoneBackground = $("#drop_background");
-            var dropZoneLocalBackground = $("#drop_locally_background");
-            var dropZoneSdBackground = $("#drop_sd_background");
-            dropOverlay.removeClass("in");
-            if (dropZoneLocal) dropZoneLocalBackground.removeClass("hover");
-            if (dropZoneSd) dropZoneSdBackground.removeClass("hover");
-            if (dropZone) dropZoneBackground.removeClass("hover");
+            self.dropOverlay.removeClass("in");
+            if (self.dropZoneLocal) self.dropZoneLocalBackground.removeClass("hover");
+            if (self.dropZoneSd) self.dropZoneSdBackground.removeClass("hover");
+            if (self.dropZone) self.dropZoneBackground.removeClass("hover");
             self._dragNDropTarget = null;
-        }
+        };
+
         self._endDragNDrop = function (e) {
-            if (e.target == self._dragNDropTarget) {
-                self._forceEndDragNDrop();
-            }
-        }
+            if (e.target != self._dragNDropTarget) return;
+            self._forceEndDragNDrop();
+        };
 
         self._handleDragNDrop = function (e) {
-            var dropOverlay = $("#drop_overlay");
-            var dropZone = $("#drop");
-            var dropZoneLocal = $("#drop_locally");
-            var dropZoneSd = $("#drop_sd");
-            var dropZoneBackground = $("#drop_background");
-            var dropZoneLocalBackground = $("#drop_locally_background");
-            var dropZoneSdBackground = $("#drop_sd_background");
-            dropOverlay.addClass('in');
+            self.dropOverlay.addClass('in');
 
             var foundLocal = false;
             var foundSd = false;
             var found = false;
             var node = e.target;
             do {
-                if (dropZoneLocal && node === dropZoneLocal[0]) {
+                if (self.dropZoneLocal && node === self.dropZoneLocal[0]) {
                     foundLocal = true;
                     break;
-                } else if (dropZoneSd && node === dropZoneSd[0]) {
+                } else if (self.dropZoneSd && node === self.dropZoneSd[0]) {
                     foundSd = true;
                     break;
-                } else if (dropZone && node === dropZone[0]) {
+                } else if (self.dropZone && node === self.dropZone[0]) {
                     found = true;
                     break;
                 }
@@ -1101,17 +1104,17 @@ $(function() {
             } while (node != null);
 
             if (foundLocal) {
-                dropZoneLocalBackground.addClass("hover");
-                dropZoneSdBackground.removeClass("hover");
+                self.dropZoneLocalBackground.addClass("hover");
+                self.dropZoneSdBackground.removeClass("hover");
             } else if (foundSd && self.printerState.isSdReady()) {
-                dropZoneSdBackground.addClass("hover");
-                dropZoneLocalBackground.removeClass("hover");
+                self.dropZoneSdBackground.addClass("hover");
+                self.dropZoneLocalBackground.removeClass("hover");
             } else if (found) {
-                dropZoneBackground.addClass("hover");
+                self.dropZoneBackground.addClass("hover");
             } else {
-                if (dropZoneLocalBackground) dropZoneLocalBackground.removeClass("hover");
-                if (dropZoneSdBackground) dropZoneSdBackground.removeClass("hover");
-                if (dropZoneBackground) dropZoneBackground.removeClass("hover");
+                if (self.dropZoneLocalBackground) self.dropZoneLocalBackground.removeClass("hover");
+                if (self.dropZoneSdBackground) self.dropZoneSdBackground.removeClass("hover");
+                if (self.dropZoneBackground) self.dropZoneBackground.removeClass("hover");
             }
             self._dragNDropTarget = e.target;
         }
