@@ -215,7 +215,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 
 	#~~ PrinterInterface implementation
 
-	def connect(self, port=None, baudrate=None, profile=None):
+	def connect(self, **kwargs):
 		"""
 		 Connects to the printer. If port and/or baudrate is provided, uses these settings, otherwise autodetection
 		 will be attempted.
@@ -225,11 +225,36 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 			self.disconnect()
 
 		eventManager().fire(Events.CONNECTING)
+
+		profile = kwargs.get("profile")
+		if not profile:
+			profile = self._printer_profile_manager.get_default()["id"]
 		self._printer_profile_manager.select(profile)
 
-		from octoprint.comm.transport.serialtransport import SerialTransport
-		transport = SerialTransport(serial_factory=_serial_factory)
+		selected_transport = kwargs.get("transport")
+		if not selected_transport:
+			port = kwargs.get("port")
+			baudrate = kwargs.get("baudrate")
 
+			if not port:
+				port = "AUTO"
+			if not baudrate:
+				baudrate = 0
+
+			selected_transport = "serial"
+			transport_kwargs = dict(serial_factory=_serial_factory)
+			transport_connect_kwargs = dict(port=port, baudrate=baudrate)
+		else:
+			transport_kwargs = kwargs.get("transport_kwargs", dict())
+			transport_connect_kwargs = kwargs.get("transport_connect_kwargs", dict())
+
+		from octoprint.comm.transport import lookup_transport
+		transport_class = lookup_transport(selected_transport)
+		if not transport_class:
+			raise ValueError("Invalid transport: {}".format(selected_transport))
+		transport = transport_class(**transport_kwargs)
+
+		# TODO make this depend on the printer profile
 		from octoprint.comm.protocol.reprap import ReprapGcodeProtocol
 		from octoprint.comm.protocol.reprap.flavors.marlin import BqMarlinFlavor
 		protocol = ReprapGcodeProtocol(BqMarlinFlavor)
@@ -238,7 +263,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		self._transport = transport
 		self._protocol = protocol
 
-		self._protocol.connect(self._transport, transport_kwargs=dict(port=port, baudrate=baudrate))
+		self._protocol.connect(self._transport, transport_kwargs=transport_connect_kwargs)
 
 	def disconnect(self):
 		"""
@@ -253,6 +278,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 			self._protocol = None
 			self._transport = None
 
+		self.unselect_job()
 		eventManager().fire(Events.DISCONNECTED)
 
 	def get_transport(self):
@@ -281,7 +307,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 
 		self._protocol.send_commands(*commands)
 
-	def script(self, name, context=None):
+	def script(self, name, context=None, must_be_set=True):
 		if self._protocol is None:
 			return
 
@@ -291,7 +317,9 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		# TODO
 		#result = self._comm.sendGcodeScript(name, replacements=context)
 		#if not result:
-		#	raise UnknownScript(name)
+		#	if must_be_set:
+		#		raise UnknownScript(name)
+		#	return
 
 	def jog(self, axes, relative=True, speed=None, *args, **kwargs):
 		if isinstance(axes, basestring):
@@ -406,12 +434,18 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		self._update_job(job)
 		self._reset_progress_data()
 
+		event_payload = job.event_payload()
+		if event_payload:
+			eventManager().fire(Events.FILE_SELECTED, event_payload)
+
 		if start_printing and self.is_ready():
 			self.start_print(pos=pos)
 
 	def unselect_job(self):
-		self._update_job(job=None)
+		self._remove_job()
 		self._reset_progress_data()
+
+		eventManager().fire(Events.FILE_DESELECTED)
 
 	# TODO add a since to the deprecation message as soon as the version this stuff will be included in is defined
 	@util.deprecated("select_file has been deprecated, use select_job instead", includedoc="Replaced by :func:`select_job`")
@@ -419,7 +453,12 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		if sd:
 			job = SDFilePrintjob("/" + path)
 		else:
-			job = LocalGcodeFilePrintjob(os.path.join(settings().getBaseFolder("uploads"), path), name=path)
+			full_path = os.path.join(settings().getBaseFolder("uploads"), path)
+			job = LocalGcodeFilePrintjob(full_path,
+			                             name=path,
+			                             event_data=dict(name=os.path.basename(full_path),
+			                                             path=path,
+			                                             origin="local"))
 
 		self.select_job(job, start_printing=printAfterSelect, pos=pos)
 
@@ -446,7 +485,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		"""
 		if self._protocol is None:
 			return
-		if self._protocol.state == ProtocolState.PAUSED:
+		if self._protocol.state != ProtocolState.PRINTING:
 			return
 		self._protocol.pause_processing()
 
@@ -762,21 +801,24 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		self._temperature_history.append(entry)
 		self._state_monitor.add_temperature(entry)
 
+	def _remove_job(self):
+		job_data = dict(file=dict(name=None,
+		                          origin=None,
+		                          size=None,
+		                          date=None),
+		                estimatedPrintTime=None,
+		                averagePrintTime=None,
+		                lastPrintTime=None,
+		                filament=None)
+		self._state_monitor.set_job_data(job_data)
+		self._job = None
+
 	def _update_job(self, job=None):
 		if job is None and self._job is not None:
 			job = self._job.job
 
 		if job is None:
-			job_data = dict(file=dict(name=None,
-			                          origin=None,
-			                          size=None,
-			                          date=None),
-			                estimatedPrintTime=None,
-			                averagePrintTime=None,
-			                lastPrintTime=None,
-			                filament=None)
-			self._state_monitor.set_job_data(job_data)
-			self._job = None
+			self._remove_job()
 			return
 
 		rolling_window = None
@@ -868,9 +910,15 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 	#~~ octoprint.comm.protocol.ProtocolListener implementation
 
 	def on_protocol_log(self, protocol, message):
+		if protocol != self._protocol:
+			return
+
 		self._add_log(message)
 
 	def on_protocol_state(self, protocol, old_state, new_state):
+		if protocol != self._protocol:
+			return
+
 		self._logger.info("Protocol state changed from {} to {}".format(old_state, new_state))
 
 		# forward relevant state changes to file manager
@@ -899,15 +947,24 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		self._set_state(new_state)
 
 	def on_protocol_temperature(self, protocol, temperatures):
+		if protocol != self._protocol:
+			return
+
 		self._add_temperature_data(temperatures)
 
 	#~~ octoprint.comm.protocol.FileAwareProtocolListener implementation
 
 	def on_protocol_file_storage_available(self, protocol, available):
+		if protocol != self._protocol:
+			return
+
 		self._sd_ready = available
 		self._state_monitor.set_state({"text": self.get_state_string(), "flags": self._get_state_flags()})
 
 	def on_protocol_file_list(self, protocol, files):
+		if protocol != self._protocol:
+			return
+
 		self._sd_files = files
 		eventManager().fire(Events.UPDATED_FILES, {"type": "gcode"})
 		self._sd_filelist_available.set()
@@ -915,9 +972,26 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 	#~~ octoprint.job.PrintjobListener
 
 	def on_job_progress(self, job):
+		if job != self._job.job:
+			return
+
 		self._update_progress_data()
 
+	def on_job_started(self, job):
+		if job != self._job.job:
+			return
+
+		payload = job.event_payload()
+		if payload:
+			eventManager().fire(Events.PRINT_STARTED, payload)
+			self.script("beforePrintStarted",
+			            context=dict(event=payload),
+			            must_be_set=False)
+
 	def on_job_done(self, job):
+		if job != self._job.job:
+			return
+
 		if isinstance(self._job.job, LocalGcodeStreamjob):
 			if self._streamingFinishedCallback is not None:
 				# in case of SD files, both filename and absolutePath are the same, so we set the (remote) filename for
@@ -927,16 +1001,49 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 			self._setCurrentZ(None)
 			self._update_job()
 			self._update_progress_data()
-			self._state_monitor.set_state({"text": self.get_state_string(), "flags": self._get_state_flags()})
 		else:
+			self._set_completion_progress_data()
+			payload = job.event_payload()
+			if payload:
+				payload["time"] = job.elapsed
+				eventManager().fire(Events.PRINT_DONE, payload)
+				self._file_manager.log_print(payload["origin"],
+				                             payload["path"],
+				                             time.time(),
+				                             payload["time"],
+				                             True,
+				                             self._printer_profile_manager.get_current_or_default()["id"])
+
+		self._state_monitor.set_state({"text": self.get_state_string(), "flags": self._get_state_flags()})
+
+	def on_job_failed(self, job):
+		if job != self._job.job:
+			return
+
+		payload = job.event_payload()
+		eventManager().fire(Events.PRINT_FAILED, payload)
+
+	def on_job_cancelled(self, job):
+		if job != self._job.job:
+			return
+
+		self._update_progress_data()
+
+		payload = job.event_payload()
+		if payload:
+			payload["time"] = job.elapsed
+			eventManager().fire(Events.PRINT_CANCELLED, payload)
+			self.script("afterPrintCancelled",
+			            context=dict(event=payload),
+			            must_be_set=False)
+
 			self._file_manager.log_print(self._get_origin_for_job(),
 			                             self._job.job.name,
 			                             time.time(),
-			                             self._job.job.elapsed,
-			                             True,
+			                             payload["time"],
+			                             False,
 			                             self._printer_profile_manager.get_current_or_default()["id"])
-			self._set_completion_progress_data()
-		self._state_monitor.set_state({"text": self.get_state_string(), "flags": self._get_state_flags()})
+			eventManager().fire(Events.PRINT_FAILED, payload)
 
 	#~~ comm.MachineComPrintCallback implementation
 
@@ -949,47 +1056,13 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		self.disconnect()
 
 	def on_comm_record_fileposition(self, origin, name, pos):
+		# TODO
 		try:
 			self._fileManager.save_recovery_data(origin, name, pos)
 		except NoSuchStorage:
 			pass
 		except:
 			self._logger.exception("Error while trying to persist print recovery data")
-
-	def _payload_for_print_job_event(self, location=None, print_job_file=None, position=None):
-		if print_job_file is None:
-			with self._selectedFileMutex:
-				selected_file = self._selectedFile
-				if not selected_file:
-					return dict()
-
-				print_job_file = selected_file.get("filename", None)
-				location = FileDestinations.SDCARD if selected_file.get("sd", False) else FileDestinations.LOCAL
-
-		if not print_job_file or not location:
-			return dict()
-
-		if location == FileDestinations.SDCARD:
-			full_path = print_job_file
-			if full_path.startswith("/"):
-				full_path = full_path[1:]
-			name = path = full_path
-			origin = FileDestinations.SDCARD
-
-		else:
-			full_path = self._fileManager.path_on_disk(FileDestinations.LOCAL, print_job_file)
-			path = self._fileManager.path_in_storage(FileDestinations.LOCAL, print_job_file)
-			_, name = self._fileManager.split_path(FileDestinations.LOCAL, path)
-			origin = FileDestinations.LOCAL
-
-		result= dict(name=name,
-		             path=path,
-		             origin=origin)
-
-		if position is not None:
-			result["position"] = position
-
-		return result
 
 
 class StateMonitor(object):

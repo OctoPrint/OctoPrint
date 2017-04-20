@@ -40,6 +40,8 @@ def _create_lastmodified(path, recursive):
 		for storage in fileManager.registered_storages:
 			try:
 				lms.append(fileManager.last_modified(storage, recursive=recursive))
+			except NotImplementedError:
+				pass
 			except:
 				logging.getLogger(__name__).exception("There was an error retrieving the last modified data from storage {}".format(storage))
 				lms.append(None)

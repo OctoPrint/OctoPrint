@@ -11,6 +11,44 @@ import logging
 import time
 
 from octoprint.util.listener import ListenerAware
+from octoprint.plugin import plugin_manager
+
+_registry = dict()
+
+def register_transports():
+	from .serialtransport import SerialTransport, VirtualSerialTransport
+	from .sockettransport import TcpTransport
+
+	logger = logging.getLogger(__name__)
+
+	# stock transports
+	register_transport(SerialTransport)
+	register_transport(VirtualSerialTransport)
+	register_transport(TcpTransport)
+
+	# more transports provided by plugins
+	hooks = plugin_manager().get_hooks("octoprint.comm.transport.register")
+	for name, hook in hooks.items():
+		try:
+			transports = hook()
+			for transport in transports:
+				try:
+					register_transport(transport)
+				except:
+					logger.exception("Error while registering transport class {} for plugin {}".format(transport, name))
+		except:
+			logger.exception("Error executing octoprint.comm.transport.register hook for plugin {}".format(name))
+
+
+def register_transport(transport_class):
+	if not hasattr(transport_class, "key"):
+		raise ValueError("Transport class {} is missing key".format(transport_class))
+	_registry[transport_class.key] = transport_class
+
+
+def lookup_transport(key):
+	return _registry.get(key)
+
 
 class Transport(ListenerAware):
 

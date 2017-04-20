@@ -4,6 +4,7 @@ from __future__ import absolute_import, unicode_literals
 import logging
 import os
 import time
+import copy
 
 from octoprint.comm.protocol import ProtocolListener, FileAwareProtocolListener, ProtocolState
 
@@ -14,13 +15,14 @@ from abc import ABCMeta, abstractmethod, abstractproperty
 class Printjob(ProtocolListener, ListenerAware):
 	__metaclass__ = ABCMeta
 
-	def __init__(self, name=None):
+	def __init__(self, name=None, event_data=None):
 		super(Printjob, self).__init__()
 		self._logger = logging.getLogger(__name__)
 		self._start = None
 		self._protocol = None
 		self._printer_profile = None
 		self._name = name
+		self._event_data = event_data
 
 		self._lost_time = 0
 
@@ -94,6 +96,9 @@ class Printjob(ProtocolListener, ListenerAware):
 	def get_content_generator(self):
 		return None
 
+	def event_payload(self):
+		return copy.deepcopy(self._event_data)
+
 	def process_job_started(self):
 		self.notify_listeners("on_job_started", self)
 
@@ -121,8 +126,8 @@ class Printjob(ProtocolListener, ListenerAware):
 
 class LocalFilePrintjob(Printjob):
 
-	def __init__(self, path, encoding="utf-8", name=None):
-		Printjob.__init__(self, name=name)
+	def __init__(self, path, encoding="utf-8", name=None, event_data=None):
+		Printjob.__init__(self, name=name, event_data=event_data)
 
 		self._path = path
 		self._encoding = encoding
@@ -243,7 +248,11 @@ class SDFilePrintjob(Printjob, FileAwareProtocolListener):
 		if name.startswith("/"):
 			name = name[1:]
 
-		Printjob.__init__(self, name=name)
+		Printjob.__init__(self,
+		                  name=name,
+		                  event_data=dict(name=name,
+		                                  path=path,
+		                                  origin="sdcard"))
 		self._filename = path
 		self._status_interval = status_interval
 

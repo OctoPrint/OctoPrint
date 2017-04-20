@@ -226,6 +226,10 @@ class Server(object):
 			preemptive_cache=preemptiveCache
 		)
 
+		# register available transports
+		from octoprint.comm.transport import register_transports
+		register_transports()
+
 		# create printer instance
 		printer_factories = pluginManager.get_hooks("octoprint.printer.factory")
 		for name, factory in printer_factories.items():

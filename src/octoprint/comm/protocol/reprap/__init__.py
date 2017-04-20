@@ -18,7 +18,11 @@ from octoprint.job import LocalGcodeFilePrintjob, SDFilePrintjob, \
 
 from octoprint.util import to_unicode, protectedkeydict, CountedEvent
 
-import Queue as queue
+try:
+	import queue
+except ImportError:
+	import Queue as queue
+
 import collections
 import threading
 import time

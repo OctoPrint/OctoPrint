@@ -750,7 +750,11 @@ class LocalFileStorage(StorageInterface):
 
 	def get_print_job(self, path):
 		from octoprint.job import LocalGcodeFilePrintjob
-		return LocalGcodeFilePrintjob(self.path_on_disk(path), name=path)
+		return LocalGcodeFilePrintjob(self.path_on_disk(path),
+		                              name=path,
+		                              event_data=dict(path=path,
+		                                              name=self.split_path(path)[1],
+		                                              origin="local"))
 
 	def get_metadata(self, path):
 		path, name = self.sanitize(path)
