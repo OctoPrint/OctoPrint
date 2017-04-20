@@ -247,7 +247,7 @@ class PrinterInterface(object):
 		raise NotImplementedError()
 
 	# TODO add a since to the deprecation message as soon as the version this stuff will be included in is defined
-	@octoprint.util.deprecated("select_file has been deprecated, use select_job instead", includedoc="Replaced by :func:`select_job`")
+	@deprecated("select_file has been deprecated, use select_job instead", includedoc="Replaced by :func:`select_job`")
 	def select_file(self, path, sd, printAfterSelect=False, pos=None):
 		"""
 		Selects the specified ``path`` for printing, specifying if the file is to be found on the ``sd`` or not.
@@ -267,7 +267,7 @@ class PrinterInterface(object):
 		raise NotImplementedError()
 
 	# TODO add a since to the deprecation message as soon as the version this stuff will be included in is defined
-	@octoprint.util.deprecated("unselect_file has been deprecated, use unselect_job instead", includedoc="Replaced by :func:`unselect_job`")
+	@deprecated("unselect_file has been deprecated, use unselect_job instead", includedoc="Replaced by :func:`unselect_job`")
 	def unselect_file(self):
 		"""
 		Unselects and currently selected file.

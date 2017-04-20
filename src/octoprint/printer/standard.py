@@ -426,16 +426,6 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 	# TODO add a since to the deprecation message as soon as the version this stuff will be included in is defined
 	unselect_file = util.deprecated("unselect_file has been deprecated, use unselect_job instead", includedoc="Replaced by :func:`unselect_job`")(unselect_job)
 
-	def get_file_position(self):
-		if self._comm is None:
-			return None
-
-		with self._selectedFileMutex:
-			if self._selectedFile is None:
-				return None
-
-		return self._comm.getFilePosition()
-
 	def start_print(self, pos=None):
 		"""
 		 Starts the currently loaded print job.
@@ -452,19 +442,27 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 
 	def pause_print(self):
 		"""
-		Pause the current printjob.
+		Pause the current job.
 		"""
 		if self._protocol is None:
 			return
-
 		if self._protocol.state == ProtocolState.PAUSED:
-			self._protocol.resume_processing()
-		else:
-			self._protocol.pause_processing()
+			return
+		self._protocol.pause_processing()
+
+	def resume_print(self):
+		"""
+		Resume the current job.
+		"""
+		if self._protocol is None:
+			return
+		if self._protocol.state != ProtocolState.PAUSED:
+			return
+		self._protocol.resume_processing()
 
 	def cancel_print(self, error=False):
 		"""
-		 Cancel the current printjob.
+		 Cancel the current job.
 		"""
 		if self._protocol is None or not self._protocol.state in (ProtocolState.PRINTING, ProtocolState.PAUSED):
 			return
@@ -755,28 +753,12 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 				self._last_progress_report = progress_int
 				self._report_print_progress_to_plugins(progress_int)
 
-			else:
-				# too far from the actual progress or negative,
-				# we use the dumb print time instead
-				printTimeLeft = dumbTotalPrintTime - cleanedPrintTime
-				printTimeLeftOrigin = "linear"
-
-		else:
-			printTimeLeftOrigin = "linear"
-			if progress > self._timeEstimationForceDumbFromPercent or \
-					cleanedPrintTime >= self._timeEstimationForceDumbAfterMin * 60:
-				# more than x% or y min printed and still no real estimate, ok, we'll use the dumb variant :/
-				printTimeLeft = dumbTotalPrintTime - cleanedPrintTime
-
-		if printTimeLeft is not None and printTimeLeft < 0:
-			# shouldn't actually happen, but let's make sure
-			printTimeLeft = None
-
-		return printTimeLeft, printTimeLeftOrigin
-
 	def _add_temperature_data(self, temperatures):
 		entry = dict(time=int(time.time()))
-		entry.update(temperatures)
+		for tool in temperatures.keys():
+			entry[tool] = dict(actual=temperatures[tool][0],
+			                   target=temperatures[tool][1])
+
 		self._temperature_history.append(entry)
 		self._state_monitor.add_temperature(entry)
 
@@ -1002,11 +984,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 
 		result= dict(name=name,
 		             path=path,
-		             origin=origin,
-
-		             # TODO deprecated, remove in 1.4.0
-		             file=full_path,
-		             filename=name)
+		             origin=origin)
 
 		if position is not None:
 			result["position"] = position
