@@ -71,6 +71,9 @@ class PluginInfo(object):
 	attr_description = '__plugin_description__'
 	""" Module attribute from which to retrieve the plugin's description. """
 
+	attr_disabling_discouraged = '__plugin_disabling_discouraged__'
+	""" Module attribute from which to retrieve the reason why disabling the plugin is discouraged. Only effective if ``self.bundled`` is True. """
+
 	attr_version = '__plugin_version__'
 	""" Module attribute from which to retrieve the plugin's version. """
 
@@ -293,6 +296,19 @@ class PluginInfo(object):
 		    str or None: Description of the plugin.
 		"""
 		return self._get_instance_attribute(self.__class__.attr_description, default=self._description)
+
+	@property
+	def disabling_discouraged(self):
+		"""
+		Reason why disabling of this plugin is discouraged. Only evaluated for bundled plugins! Will be taken from
+		the disabling_discouraged attribute of the plugin module as defined in :attr:`attr_disabling_discouraged` if
+		available. False if unset or plugin not bundled.
+
+		Returns:
+		    str or None: Reason why disabling this plugin is discouraged (only for bundled plugins)
+		"""
+		return self._get_instance_attribute(self.__class__.attr_disabling_discouraged, default=False) if self.bundled \
+			else False
 
 	@property
 	def version(self):
@@ -1062,21 +1078,30 @@ class PluginManager(object):
 		return True
 
 
-	def log_all_plugins(self, show_bundled=True, bundled_str=(" (bundled)", ""), show_location=True, location_str=" = {location}", show_enabled=True, enabled_str=(" ", "!")):
+	def log_all_plugins(self, show_bundled=True, bundled_str=(" (bundled)", ""), show_location=True,
+	                    location_str=" = {location}", show_enabled=True, enabled_str=(" ", "!"),
+	                    only_to_handler=None):
 		all_plugins = self.enabled_plugins.values() + self.disabled_plugins.values()
 
+		def _log(message, level=logging.INFO):
+			if only_to_handler is not None:
+				import octoprint.logging
+				octoprint.logging.log_to_handler(self.logger, only_to_handler, level, message, [])
+			else:
+				self.logger.log(level, message)
+
 		if len(all_plugins) <= 0:
-			self.logger.info("No plugins available")
+			_log("No plugins available")
 		else:
-			self.logger.info("{count} plugin(s) registered with the system:\n{plugins}".format(count=len(all_plugins), plugins="\n".join(
-				map(lambda x: "| " + x.long_str(show_bundled=show_bundled,
-				                                bundled_strs=bundled_str,
-				                                show_location=show_location,
-				                                location_str=location_str,
-				                                show_enabled=show_enabled,
-				                                enabled_strs=enabled_str),
-				    sorted(self.plugins.values(), key=lambda x: str(x).lower()))
-			)))
+			formatted_plugins = "\n".join(map(lambda x: "| " + x.long_str(show_bundled=show_bundled,
+				                                                          bundled_strs=bundled_str,
+				                                                          show_location=show_location,
+				                                                          location_str=location_str,
+				                                                          show_enabled=show_enabled,
+				                                                          enabled_strs=enabled_str),
+				                              sorted(self.plugins.values(), key=lambda x: str(x).lower())))
+			_log("{count} plugin(s) registered with the system:\n{plugins}".format(count=len(all_plugins),
+			                                                                       plugins=formatted_plugins))
 
 	def get_plugin(self, identifier, require_enabled=True):
 		"""

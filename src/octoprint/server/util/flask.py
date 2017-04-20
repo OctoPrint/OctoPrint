@@ -8,9 +8,9 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import tornado.web
 import flask
-import flask.ext.login
-import flask.ext.principal
-import flask.ext.assets
+import flask_login
+import flask_principal
+import flask_assets
 import webassets.updater
 import webassets.utils
 import functools
@@ -40,7 +40,7 @@ def enable_additional_translations(default_locale="en", additional_folders=None)
 	import os
 	from flask import _request_ctx_stack
 	from babel import support, Locale
-	import flask.ext.babel
+	import flask_babel
 
 	if additional_folders is None:
 		additional_folders = []
@@ -62,11 +62,17 @@ def enable_additional_translations(default_locale="en", additional_folders=None)
 					continue
 				if filter(lambda x: x.name.endswith('.mo'), scandir(locale_dir)):
 					result.append(Locale.parse(entry.name))
-			if not result:
-				result.append(Locale.parse(self._default_locale))
 			return result
 
 		dirs = additional_folders + [os.path.join(self.app.root_path, 'translations')]
+
+		# translations from plugins
+		plugins = octoprint.plugin.plugin_manager().enabled_plugins
+		for name, plugin in plugins.items():
+			plugin_translation_dir = os.path.join(plugin.location, 'translations')
+			if not os.path.isdir(plugin_translation_dir):
+				continue
+			dirs.append(plugin_translation_dir)
 
 		result = [Locale.parse(default_locale)]
 
@@ -85,7 +91,7 @@ def enable_additional_translations(default_locale="en", additional_folders=None)
 			return None
 		translations = getattr(ctx, 'babel_translations', None)
 		if translations is None:
-			locale = flask.ext.babel.get_locale()
+			locale = flask_babel.get_locale()
 			translations = support.Translations()
 
 			if str(locale) != default_locale:
@@ -104,27 +110,27 @@ def enable_additional_translations(default_locale="en", additional_folders=None)
 						else:
 							if isinstance(plugin_translations, support.Translations):
 								translations = translations.merge(plugin_translations)
-								logger.debug("Using translation folder {dirname} for locale {locale} of plugin {name}".format(**locals()))
+								logger.debug("Using translation plugin folder {dirname} from plugin {name} for locale {locale}".format(**locals()))
 								break
 					else:
-						logger.debug("No translations for locale {locale} for plugin {name}".format(**locals()))
+						logger.debug("No translations for locale {locale} from plugin {name}".format(**locals()))
 
 				# core translations
 				dirs = additional_folders + [os.path.join(ctx.app.root_path, 'translations')]
 				for dirname in dirs:
 					core_translations = support.Translations.load(dirname, [locale])
 					if isinstance(core_translations, support.Translations):
-						logger.debug("Using translation folder {dirname} for locale {locale} of core translations".format(**locals()))
+						logger.debug("Using translation core folder {dirname} for locale {locale}".format(**locals()))
 						break
 				else:
-					logger.debug("No core translations for locale {locale}")
+					logger.debug("No translations for locale {} in core folders".format(locale))
 				translations = translations.merge(core_translations)
 
 			ctx.babel_translations = translations
 		return translations
 
-	flask.ext.babel.Babel.list_translations = fixed_list_translations
-	flask.ext.babel.get_translations = fixed_get_translations
+	flask_babel.Babel.list_translations = fixed_list_translations
+	flask_babel.get_translations = fixed_get_translations
 
 def fix_webassets_cache():
 	from webassets import cache
@@ -222,6 +228,27 @@ def fix_webassets_filtertool():
 			return MemoryHunk(u"")
 
 	FilterTool._wrap_cache = fixed_wrap_cache
+
+# TODO: Remove compatibility layer in OctoPrint 1.5.0
+def deprecate_flaskext():
+	import flask
+	import importlib
+
+	class FlaskExtDeprecator(object):
+
+		def __getattr__(self, item):
+			old_name = "flask.ext.{}".format(item)
+			new_name = "flask_{}".format(item)
+			module = importlib.import_module(new_name)
+
+			from warnings import warn
+			message = "The {old} import is deprecated in Flask versions >= 0.11, which OctoPrint now uses. " + \
+			          "Import {new} instead. This compatibility layer will be removed in OctoPrint 1.5.0."
+			warn(DeprecationWarning(message.format(old=old_name, new=new_name)), stacklevel=2)
+
+			return module
+
+	flask.ext = FlaskExtDeprecator()
 
 #~~ WSGI environment wrapper for reverse proxying
 
@@ -472,12 +499,12 @@ class OctoPrintFlaskResponse(flask.Response):
 
 def passive_login():
 	if octoprint.server.userManager.enabled:
-		user = octoprint.server.userManager.login_user(flask.ext.login.current_user)
+		user = octoprint.server.userManager.login_user(flask_login.current_user)
 	else:
-		user = flask.ext.login.current_user
+		user = flask_login.current_user
 
-	if user is not None and not user.is_anonymous():
-		flask.ext.principal.identity_changed.send(flask.current_app._get_current_object(), identity=flask.ext.principal.Identity(user.get_id()))
+	if user is not None and not user.is_anonymous:
+		flask_principal.identity_changed.send(flask.current_app._get_current_object(), identity=flask_principal.Identity(user.get_id()))
 		if hasattr(user, "get_session"):
 			flask.session["usersession.id"] = user.get_session()
 		flask.g.user = user
@@ -499,8 +526,8 @@ def passive_login():
 					user = octoprint.server.userManager.login_user(user)
 					flask.session["usersession.id"] = user.get_session()
 					flask.g.user = user
-					flask.ext.login.login_user(user)
-					flask.ext.principal.identity_changed.send(flask.current_app._get_current_object(), identity=flask.ext.principal.Identity(user.get_id()))
+					flask_login.login_user(user)
+					flask_principal.identity_changed.send(flask.current_app._get_current_object(), identity=flask_principal.Identity(user.get_id()))
 					return flask.jsonify(user.asDict())
 		except:
 			logger = logging.getLogger(__name__)
@@ -1017,7 +1044,7 @@ def admin_validator(request):
 	"""
 
 	user = _get_flask_user_from_request(request)
-	if user is None or not user.is_authenticated() or not user.is_admin():
+	if user is None or not user.is_authenticated or not user.is_admin:
 		raise tornado.web.HTTPError(403)
 
 
@@ -1032,7 +1059,7 @@ def user_validator(request):
 	"""
 
 	user = _get_flask_user_from_request(request)
-	if user is None or not user.is_authenticated():
+	if user is None or not user.is_authenticated:
 		raise tornado.web.HTTPError(403)
 
 
@@ -1045,14 +1072,14 @@ def _get_flask_user_from_request(request):
 	:return: the user or None if no user could be determined
 	"""
 	import octoprint.server.util
-	import flask.ext.login
+	import flask_login
 	from octoprint.settings import settings
 
 	apikey = octoprint.server.util.get_api_key(request)
 	if settings().getBoolean(["api", "enabled"]) and apikey is not None:
 		user = octoprint.server.util.get_user_for_apikey(apikey)
 	else:
-		user = flask.ext.login.current_user
+		user = flask_login.current_user
 
 	return user
 
@@ -1083,20 +1110,13 @@ def restricted_access(func):
 	"""
 	If you decorate a view with this, it will ensure that first setup has been
 	done for OctoPrint's Access Control plus that any conditions of the
-	login_required decorator are met. It also allows to login using the masterkey or any
-	of the user's apikeys if API access is enabled globally and for the decorated view.
+	login_required decorator are met (possibly through a session already created
+	by octoprint.server.util.apiKeyRequestHandler earlier in the request processing).
 
 	If OctoPrint's Access Control has not been setup yet (indicated by the "firstRun"
 	flag from the settings being set to True and the userManager not indicating
 	that it's user database has been customized from default), the decorator
 	will cause a HTTP 403 status code to be returned by the decorated resource.
-
-	If the API key matches the UI API key, the result of calling login_required for the
-	view will be returned (browser session mode).
-
-	Otherwise the API key will be attempted to be resolved to a user. If that is
-	successful the user will be logged in and the view will be called directly.
-	Otherwise a HTTP 401 status code will be returned.
 	"""
 	@functools.wraps(func)
 	def decorated_view(*args, **kwargs):
@@ -1104,23 +1124,7 @@ def restricted_access(func):
 		if settings().getBoolean(["server", "firstRun"]) and settings().getBoolean(["accessControl", "enabled"]) and (octoprint.server.userManager is None or not octoprint.server.userManager.hasBeenCustomized()):
 			return flask.make_response("OctoPrint isn't setup yet", 403)
 
-		apikey = octoprint.server.util.get_api_key(flask.request)
-		if apikey == octoprint.server.UI_API_KEY:
-			# UI API key => call regular login_required decorator, we are using browser sessions here
-			return flask.ext.login.login_required(func)(*args, **kwargs)
-
-		# try to determine user for key
-		user = octoprint.server.util.get_user_for_apikey(apikey)
-		if user is None:
-			# no user or no key => go away
-			return flask.make_response("Invalid API key", 401)
-
-		if not flask.ext.login.login_user(user, remember=False):
-			# user for API key could not be logged in => go away
-			return flask.make_response("Invalid API key", 401)
-
-		flask.ext.principal.identity_changed.send(flask.current_app._get_current_object(), identity=flask.ext.principal.Identity(user.get_id()))
-		return func(*args, **kwargs)
+		return flask_login.login_required(func)(*args, **kwargs)
 
 	return decorated_view
 
@@ -1205,7 +1209,10 @@ def get_json_command_from_request(request, valid_commands):
 	if content_type is None or not "application/json" in content_type:
 		return None, None, make_response("Expected content-type JSON", 400)
 
-	data = request.json
+	data = request.get_json()
+	if data is None:
+		return make_response("Malformed JSON body in request", 400)
+
 	if not "command" in data.keys() or not data["command"] in valid_commands.keys():
 		return None, None, make_response("Expected valid command", 400)
 
@@ -1218,7 +1225,7 @@ def get_json_command_from_request(request, valid_commands):
 
 ##~~ Flask-Assets resolver with plugin asset support
 
-class PluginAssetResolver(flask.ext.assets.FlaskResolver):
+class PluginAssetResolver(flask_assets.FlaskResolver):
 
 	def split_prefix(self, ctx, item):
 		app = ctx.environment._app
@@ -1227,14 +1234,14 @@ class PluginAssetResolver(flask.ext.assets.FlaskResolver):
 				prefix, plugin, name = item.split("/", 2)
 				blueprint = prefix + "." + plugin
 
-				directory = flask.ext.assets.get_static_folder(app.blueprints[blueprint])
+				directory = flask_assets.get_static_folder(app.blueprints[blueprint])
 				item = name
 				endpoint = blueprint + ".static"
 				return directory, item, endpoint
 			except (ValueError, KeyError):
 				pass
 
-		return flask.ext.assets.FlaskResolver.split_prefix(self, ctx, item)
+		return flask_assets.FlaskResolver.split_prefix(self, ctx, item)
 
 	def resolve_output_to_path(self, ctx, target, bundle):
 		import os
@@ -1297,6 +1304,7 @@ def collect_core_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 		'js/app/bindings/slimscrolledforeach.js',
 		'js/app/bindings/toggle.js',
 		'js/app/bindings/togglecontent.js',
+		'js/app/bindings/valuewithinit.js',
 		'js/app/viewmodels/appearance.js',
 		'js/app/viewmodels/connection.js',
 		'js/app/viewmodels/control.js',

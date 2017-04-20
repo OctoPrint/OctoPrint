@@ -94,9 +94,15 @@ body {
   }
 
   .nav {
-    li.dropdown.open>.dropdown-toggle, li.dropdown.active>.dropdown-toggle, li.dropdown.open.active>.dropdown-toggle {
+    >li.dropdown.open>.dropdown-toggle, >li.dropdown.active>.dropdown-toggle, >li.dropdown.open.active>.dropdown-toggle {
       // invert for dropdown
       .navbar-background-color(fade(@bottom, @gradientalpha), fade(@top, @gradientalpha), @image);
+    }
+    >li>a:hover {
+      // darken for hover
+      @darkenedTop: darken(@top, 5%);
+      @darkenedBottom: darken(@bottom, 5%);
+      .navbar-background-color(fade(@darkenedTop, @gradientalpha), fade(@darkenedBottom, @gradientalpha), @image);
     }
   }
 }
@@ -174,12 +180,35 @@ body {
     }
   }
 
-  .brand span {
-    background-size: 20px 20px;
-    background-position: left center;
-    padding-left: 24px;
-    background-repeat: no-repeat;
+  .brand {
+    padding: 10px 20px 6px;
+
+    span {
+      padding-left: 26px;
+
+      // background properties left standalone intentionally, otherwise we overwrite the image
+      background-size: 20px 20px;
+      background-repeat: no-repeat;
+
+      display: inline-block;
+      max-width: 250px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      vertical-align: top;
+      line-height: 20px;
+      height: 24px;
+    }
   }
+}
+
+#navbar_login a.dropdown-toggle span {
+  display: inline-block;
+  max-width: 100px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: top;
 }
 
 .octoprint-container {
@@ -282,6 +311,16 @@ table {
     }
 
     // timelapse files
+    &.timelapse_files_checkbox,
+    &.timelapse_unrendered_checkbox {
+      text-align: center;
+      width: 10px;
+
+      input[type="checkbox"] {
+        margin-top: 0;
+      }
+    }
+
     &.timelapse_files_name,
     &.timelapse_unrendered_name {
       text-overflow: ellipsis;
@@ -371,9 +410,7 @@ table {
 #temperature-graph {
   height: 350px;
   width: 100%;
-  background-image: url("../img/graph-background.png");
-  background-position: center;
-  background-repeat: no-repeat;
+  background: url("../img/graph-background.png") no-repeat center;
 }
 
 .tab-content, .tab-pane {
@@ -551,6 +588,16 @@ ul.dropdown-menu li a {
 
       &.highlight {
         animation: highlightframes 2s;
+      }
+    }
+
+    .back {
+      .back-path {
+        white-space: nowrap;
+        span {
+          word-wrap: break-word;
+          white-space: pre-line;
+        }
       }
     }
   }
@@ -984,6 +1031,15 @@ textarea.block {
   text-decoration: underline;
 }
 
+.btn-mini .caret, .btn-small .caret {
+  margin-top: 8px;
+}
+
+.dropdown-menu-right {
+  right: 0;
+  left: auto;
+}
+
 /** Styles for Bootstrap Slider */
 
 .slider {
@@ -1137,5 +1193,31 @@ input[type=number] {
 
   .progress-text-back {
     width: 100%;
+  }
+}
+
+// Navbar loginForm
+// Make the overlay always visible so that extensions are able to auto-submit (i.e. password-managers)
+#navbar_login:not(.open) #login_dropdown_loggedout {
+  display: block;
+  z-index: -1;
+  height: 0;
+  width: 0;
+  padding: 0 !important;
+  overflow: hidden;
+  border: 0;
+  box-shadow: none;
+  left: -9999px;
+
+  &.hide {
+    display: none;
+  }
+}
+
+#loginForm {
+  margin: 0;
+
+  button {
+    margin-top: 20px;
   }
 }

@@ -17,6 +17,7 @@ except ImportError:
 	import Queue as queue
 import requests
 
+import octoprint.plugin
 import octoprint.util as util
 
 from octoprint.settings import settings
@@ -294,18 +295,23 @@ def configure_timelapse(config=None, persist=False):
 
 	if type is None or "off" == type:
 		current = None
+
 	elif "zchange" == type:
 		retractionZHop = 0
 		if "options" in config and "retractionZHop" in config["options"] and config["options"]["retractionZHop"] > 0:
 			retractionZHop = config["options"]["retractionZHop"]
+
 		current = ZTimelapse(post_roll=postRoll, retraction_zhop=retractionZHop, fps=fps)
+
 	elif "timed" == type:
 		interval = 10
 		if "options" in config and "interval" in config["options"] and config["options"]["interval"] > 0:
 			interval = config["options"]["interval"]
-		capture_post_roll = True
+
+		capture_post_roll = False
 		if "options" in config and "capturePostRoll" in config["options"] and isinstance(config["options"]["capturePostRoll"], bool):
 			capture_post_roll = config["options"]["capturePostRoll"]
+
 		current = TimedTimelapse(post_roll=postRoll, interval=interval, fps=fps, capture_post_roll=capture_post_roll)
 
 	notify_callbacks(current)
@@ -338,6 +344,11 @@ class Timelapse(object):
 		self._snapshot_url = settings().get(["webcam", "snapshot"])
 
 		self._fps = fps
+
+
+		self._pluginManager = octoprint.plugin.plugin_manager()
+		self._pre_capture_hooks = self._pluginManager.get_hooks("octoprint.timelapse.capture.pre")
+		self._post_capture_hooks = self._pluginManager.get_hooks("octoprint.timelapse.capture.post")
 
 		self._capture_mutex = threading.Lock()
 		self._capture_queue = queue.Queue()
@@ -548,6 +559,13 @@ class Timelapse(object):
 				entry["callback"](*args, **kwargs)
 
 	def _perform_capture(self, filename, onerror=None):
+		# pre-capture hook
+		for name, hook in self._pre_capture_hooks.items():
+			try:
+				hook(filename)
+			except:
+				self._logger.exception("Error while processing hook {name}.".format(**locals()))
+
 		eventManager().fire(Events.CAPTURE_START, dict(file=filename))
 		try:
 			self._logger.debug("Going to capture {} from {}".format(filename, self._snapshot_url))
@@ -563,17 +581,31 @@ class Timelapse(object):
 			self._logger.debug("Image {} captured from {}".format(filename, self._snapshot_url))
 		except Exception as e:
 			self._logger.exception("Could not capture image {} from {}".format(filename, self._snapshot_url))
+			self._capture_errors += 1
+			success = False
+		else:
+			self._capture_success += 1
+			success = True
+
+		# post-capture hook
+		for name, hook in self._post_capture_hooks.items():
+			try:
+				hook(filename, success)
+			except:
+				self._logger.exception("Error while processing hook {name}.".format(**locals()))
+
+		# handle events and onerror call
+		if success:
+			eventManager().fire(Events.CAPTURE_DONE, dict(file=filename))
+			return True
+		else:
 			if callable(onerror):
 				onerror()
 			eventManager().fire(Events.CAPTURE_FAILED, dict(file=filename,
 			                                                error=str(e),
 			                                                url=self._snapshot_url))
-			self._capture_errors += 1
 			return False
-		else:
-			eventManager().fire(Events.CAPTURE_DONE, dict(file=filename))
-			self._capture_success += 1
-			return True
+
 
 	def _copying_postroll(self):
 		with self._capture_mutex:
@@ -627,10 +659,10 @@ class ZTimelapse(Timelapse):
 
 	def _on_z_change(self, event, payload):
 		if self._retraction_zhop != 0 and payload["old"] is not None and payload["new"] is not None:
-			# check if height difference equals z-hop or is negative, if so don't take a picture
-			diff = round(payload["new"] - payload["old"], 3)
+			# check if height difference equals z-hop, if so don't take a picture
+			diff = round(abs(payload["new"] - payload["old"]), 3)
 			zhop = round(self._retraction_zhop, 3)
-			if diff == zhop or diff <= 0:
+			if diff == zhop:
 				return
 
 		self.capture_image()
@@ -809,16 +841,9 @@ class TimelapseRenderJob(object):
 
 	@classmethod
 	def _create_ffmpeg_command_string(cls, ffmpeg, fps, bitrate, threads, input, output, hflip=False, vflip=False,
-	                                  rotate=False, watermark=None):
+	                                  rotate=False, watermark=None, pixfmt="yuv420p"):
 		"""
 		Create ffmpeg command string based on input parameters.
-
-		Examples:
-
-		    >>> TimelapseRenderJob._create_ffmpeg_command_string("/path/to/ffmpeg", 25, "10000k", 1, "/path/to/input/files_%d.jpg", "/path/to/output.mpg")
-		    '/path/to/ffmpeg -framerate 25 -loglevel error -i "/path/to/input/files_%d.jpg" -vcodec mpeg2video -threads 1 -pix_fmt yuv420p -r 25 -y -b 10000k -f vob "/path/to/output.mpg"'
-		    >>> TimelapseRenderJob._create_ffmpeg_command_string("/path/to/ffmpeg", 25, "10000k", 1, "/path/to/input/files_%d.jpg", "/path/to/output.mpg", hflip=True)
-		    '/path/to/ffmpeg -framerate 25 -loglevel error -i "/path/to/input/files_%d.jpg" -vcodec mpeg2video -threads 1 -pix_fmt yuv420p -r 25 -y -b 10000k -f vob -vf \\'[in] hflip [out]\\' "/path/to/output.mpg"'
 
 		Arguments:
 		    ffmpeg (str): Path to ffmpeg
@@ -831,16 +856,19 @@ class TimelapseRenderJob(object):
 		    vflip (bool): Perform vertical flip on input material.
 		    rotate (bool): Perform 90° CCW rotation on input material.
 		    watermark (str): Path to watermark to apply to lower left corner.
+		    pixfmt (str): Pixel format to use for output. Default of yuv420p should usually fit the bill.
 
 		Returns:
 		    (str): Prepared command string to render `input` to `output` using ffmpeg.
 		"""
 
+		### See unit tests in test/timelapse/test_timelapse_renderjob.py
+
 		logger = logging.getLogger(__name__)
 
 		command = [
 			ffmpeg, '-framerate', str(fps), '-loglevel', 'error', '-i', '"{}"'.format(input), '-vcodec', 'mpeg2video',
-			'-threads', str(threads), '-pix_fmt', 'yuv420p', '-r', "25", '-y', '-b', str(bitrate),
+			'-threads', str(threads), '-r', "25", '-y', '-b', str(bitrate),
 			'-f', 'vob']
 
 		filter_string = cls._create_filter_string(hflip=hflip,
@@ -859,38 +887,25 @@ class TimelapseRenderJob(object):
 		return " ".join(command)
 
 	@classmethod
-	def _create_filter_string(cls, hflip=False, vflip=False, rotate=False, watermark=None):
+	def _create_filter_string(cls, hflip=False, vflip=False, rotate=False, watermark=None, pixfmt="yuv420p"):
 		"""
 		Creates an ffmpeg filter string based on input parameters.
-
-		Examples:
-
-		    >>> TimelapseRenderJob._create_filter_string()
-		    >>> TimelapseRenderJob._create_filter_string(hflip=True)
-		    '[in] hflip [out]'
-		    >>> TimelapseRenderJob._create_filter_string(vflip=True)
-		    '[in] vflip [out]'
-		    >>> TimelapseRenderJob._create_filter_string(rotate=True)
-		    '[in] transpose=2 [out]'
-		    >>> TimelapseRenderJob._create_filter_string(vflip=True, rotate=True)
-		    '[in] vflip,transpose=2 [out]'
-		    >>> TimelapseRenderJob._create_filter_string(vflip=True, hflip=True, rotate=True)
-		    '[in] hflip,vflip,transpose=2 [out]'
-		    >>> TimelapseRenderJob._create_filter_string(watermark="/path/to/watermark.png")
-		    'movie=/path/to/watermark.png [wm]; [in][wm] overlay=10:main_h-overlay_h-10 [out]'
-		    >>> TimelapseRenderJob._create_filter_string(hflip=True, watermark="/path/to/watermark.png")
-		    '[in] hflip [postprocessed]; movie=/path/to/watermark.png [wm]; [postprocessed][wm] overlay=10:main_h-overlay_h-10 [out]'
 
 		Arguments:
 		    hflip (bool): Perform horizontal flip on input material.
 		    vflip (bool): Perform vertical flip on input material.
 		    rotate (bool): Perform 90° CCW rotation on input material.
 		    watermark (str): Path to watermark to apply to lower left corner.
+		    pixfmt (str): Pixel format to use, defaults to "yuv420p" which should usually fit the bill
 
 		Returns:
 		    (str or None): filter string or None if no filters are required
 		"""
-		filters = []
+
+		### See unit tests in test/timelapse/test_timelapse_renderjob.py
+
+		# apply pixel format
+		filters = ["format={}".format(pixfmt)]
 
 		# flip video if configured
 		if hflip:

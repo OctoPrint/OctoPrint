@@ -746,6 +746,21 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
 		"""
 		return None
 
+	def get_ui_additional_etag(self, default_additional):
+		"""
+		Allows to provide a list of additional fields to use for ETag generation.
+
+		By default the same list will be returned that is also used in the stock UI (and injected
+		via the parameter ``default_additional``).
+
+		Arguments:
+		    default_additional (list): The list of default fields added to the ETag of the default UI
+
+		Returns:
+		    (list): A list of additional fields for the ETag generation, or None
+		"""
+		return default_additional
+
 	def get_ui_custom_lastmodified(self):
 		"""
 		Allows to calculate the LastModified differently than using the most recent modification
@@ -805,6 +820,25 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
 		    bool: Whether to suppress a record (True) or not (False, default)
 		"""
 		return False
+
+	def get_ui_custom_template_filter(self, default_template_filter):
+		"""
+		Allows to specify a custom template filter to use for filtering the template contained in the
+		``render_kwargs`` provided to the templating sub system.
+
+		Only relevant for UiPlugins that actually utilize the stock templates of OctoPrint.
+
+		By default simply returns the provided ``default_template_filter``.
+
+		Arguments:
+		    default_template_filter (callable): The default template filter used by the default UI
+
+		Returns:
+		    (callable) A filter function accepting the ``template_type`` and ``template_key`` of a template
+		    and returning ``True`` to keep it and ``False`` to filter it out. If ``None`` is returned, no
+		    filtering will take place.
+		"""
+		return default_template_filter
 
 class WizardPlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 	"""
@@ -1375,7 +1409,7 @@ class SettingsPlugin(OctoPrintPlugin):
 
 		:return: the current settings of the plugin, as a dictionary
 		"""
-		from flask.ext.login import current_user
+		from flask_login import current_user
 		import copy
 
 		data = copy.deepcopy(self._settings.get_all_data(merged=True))
@@ -1420,8 +1454,8 @@ class SettingsPlugin(OctoPrintPlugin):
 					else:
 						node[key] = None
 
-		conditions = dict(user=lambda: current_user is not None and not current_user.is_anonymous(),
-		                  admin=lambda: current_user is not None and not current_user.is_anonymous() and current_user.is_admin(),
+		conditions = dict(user=lambda: current_user is not None and not current_user.is_anonymous,
+		                  admin=lambda: current_user is not None and not current_user.is_anonymous and current_user.is_admin,
 		                  never=lambda: False)
 
 		for level, condition in conditions.items():
@@ -1515,7 +1549,7 @@ class SettingsPlugin(OctoPrintPlugin):
 		                   path=dict(to=dict(never=dict(return="return"))))
 
 		   def get_settings_restricted_path(self):
-		       return dict(admin=[["some", "admin_only", "path], ["another", "admin_only", "path"],
+		       return dict(admin=[["some", "admin_only", "path"], ["another", "admin_only", "path"],
 		                   user=[["some", "user_only", "path"],],
 		                   never=[["path", "to", "never", "return"],])
 

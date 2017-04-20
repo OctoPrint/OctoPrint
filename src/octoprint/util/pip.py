@@ -371,10 +371,6 @@ class PipCaller(CommandlineCaller):
 		return map(self._preprocess, lines)
 
 	@staticmethod
-	def _convert_lines(lines):
-		return map(PipCaller._convert_line, lines)
-
-	@staticmethod
 	def _preprocess(text):
 		"""
 		Strips ANSI and VT100 cursor control characters from line and makes sure it's a unicode.

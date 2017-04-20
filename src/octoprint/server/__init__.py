@@ -8,10 +8,10 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import uuid
 from sockjs.tornado import SockJSRouter
 from flask import Flask, g, request, session, Blueprint, Request, Response
-from flask.ext.login import LoginManager, current_user
-from flask.ext.principal import Principal, Permission, RoleNeed, identity_loaded, UserNeed
-from flask.ext.babel import Babel, gettext, ngettext
-from flask.ext.assets import Environment, Bundle
+from flask_login import LoginManager, current_user
+from flask_principal import Principal, Permission, RoleNeed, identity_loaded, UserNeed
+from flask_babel import Babel, gettext, ngettext
+from flask_assets import Environment, Bundle
 from babel import Locale
 from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
@@ -66,6 +66,8 @@ import octoprint.util
 import octoprint.filemanager.storage
 import octoprint.filemanager.analysis
 import octoprint.slicing
+from octoprint.server.util import enforceApiKeyRequestHandler, loginFromApiKeyRequestHandler, corsRequestHandler, \
+	corsResponseHandler
 from octoprint.server.util.flask import PreemptiveCache
 
 from . import util
@@ -87,9 +89,9 @@ def on_identity_loaded(sender, identity):
 		return
 
 	identity.provides.add(UserNeed(user.get_id()))
-	if user.is_user():
+	if user.is_user:
 		identity.provides.add(RoleNeed("user"))
-	if user.is_admin():
+	if user.is_admin:
 		identity.provides.add(RoleNeed("admin"))
 
 def load_user(id):
@@ -168,8 +170,7 @@ class Server(object):
 		self._logger = logging.getLogger(__name__)
 		pluginManager = self._plugin_manager
 
-		# monkey patch a bunch of stuff
-		util.tornado.fix_ioloop_scheduling()
+		# monkey patch some stuff
 		util.flask.enable_additional_translations(additional_folders=[self._settings.getBaseFolder("translations")])
 
 		# setup app
@@ -192,6 +193,7 @@ class Server(object):
 		eventManager = events.eventManager()
 		analysisQueue = octoprint.filemanager.analysis.AnalysisQueue()
 		slicingManager = octoprint.slicing.SlicingManager(self._settings.getBaseFolder("slicingProfiles"), printerProfileManager)
+
 		storage_managers = dict()
 		storage_managers[octoprint.filemanager.FileDestinations.LOCAL] = octoprint.filemanager.storage.LocalFileStorage(self._settings.getBaseFolder("uploads"))
 		storage_managers[octoprint.filemanager.FileDestinations.SDCARD] = octoprint.filemanager.storage.PrinterSDStorage()
@@ -264,7 +266,7 @@ class Server(object):
 
 			return dict(settings=plugin_settings)
 
-		def settings_plugin_config_migration_and_cleanup(name, implementation):
+		def settings_plugin_config_migration_and_cleanup(identifier, implementation):
 			"""Take care of migrating and cleaning up any old settings"""
 
 			if not isinstance(implementation, octoprint.plugin.SettingsPlugin):
@@ -277,7 +279,7 @@ class Server(object):
 				stored_version = implementation._settings.get_int([octoprint.plugin.SettingsPlugin.config_version_key])
 				if stored_version is None or stored_version < settings_version:
 					settings_migrator(settings_version, stored_version)
-					implementation._settings.set_int([octoprint.plugin.SettingsPlugin.config_version_key], settings_version)
+					implementation._settings.set_int([octoprint.plugin.SettingsPlugin.config_version_key], settings_version, force=True)
 
 			implementation.on_settings_cleanup()
 			implementation._settings.save()
@@ -336,6 +338,7 @@ class Server(object):
 		loginManager = LoginManager()
 		loginManager.session_protection = "strong"
 		loginManager.user_callback = load_user
+		loginManager.anonymous_user = users.AnonymousUser # TODO: remove in 1.5.0
 		if not userManager.enabled:
 			loginManager.anonymous_user = users.DummyUser
 			principals.identity_loaders.appendleft(users.dummy_identity_loader)
@@ -366,9 +369,14 @@ class Server(object):
 			as_attachment=True,
 			allow_client_caching=False
 		)
+
 		additional_mime_types=dict(mime_type_guesser=mime_type_guesser)
+
 		admin_validator = dict(access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.admin_validator))
-		no_hidden_files_validator = dict(path_validation=util.tornado.path_validation_factory(lambda path: not octoprint.util.is_hidden_path(path), status_code=404))
+		user_validator = dict(access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.user_validator))
+
+		no_hidden_files_validator = dict(path_validation=util.tornado.path_validation_factory(lambda path: not octoprint.util.is_hidden_path(path),
+		                                                                                      status_code=404))
 
 		def joined_dict(*dicts):
 			if not len(dicts):
@@ -393,9 +401,9 @@ class Server(object):
 			                                                                            download_handler_kwargs,
 			                                                                            admin_validator)),
 			# camera snapshot
-			(r"/downloads/camera/current", util.tornado.UrlProxyHandler, dict(url=self._settings.get(["webcam", "snapshot"]),
-			                                                                  as_attachment=True,
-			                                                                  access_validation=util.tornado.access_validation_factory(app, loginManager, util.flask.user_validator))),
+			(r"/downloads/camera/current", util.tornado.UrlProxyHandler, joined_dict(dict(url=self._settings.get(["webcam", "snapshot"]),
+			                                                                              as_attachment=True),
+			                                                                         user_validator)),
 			# generated webassets
 			(r"/static/webassets/(.*)", util.tornado.LargeResponseHandler, dict(path=os.path.join(self._settings.getBaseFolder("generated"), "webassets"))),
 
@@ -604,11 +612,14 @@ class Server(object):
 		return Locale.parse(request.accept_languages.best_match(LANGUAGES))
 
 	def _setup_app(self, app):
-		from octoprint.server.util.flask import ReverseProxiedEnvironment, OctoPrintFlaskRequest, OctoPrintFlaskResponse
+		from octoprint.server.util.flask import ReverseProxiedEnvironment, OctoPrintFlaskRequest, OctoPrintFlaskResponse, deprecate_flaskext
+
+		deprecate_flaskext() # TODO: remove in OctoPrint 1.5.0
 
 		s = settings()
 
 		app.debug = self._debug
+		app.config["TEMPLATES_AUTO_RELOAD"] = True
 
 		secret_key = s.get(["server", "secretKey"])
 		if not secret_key:
@@ -895,8 +906,13 @@ class Server(object):
 			return
 
 		if plugin.is_blueprint_protected():
-			from octoprint.server.util import apiKeyRequestHandler, corsResponseHandler
-			blueprint.before_request(apiKeyRequestHandler)
+			blueprint.before_request(corsRequestHandler)
+			blueprint.before_request(enforceApiKeyRequestHandler)
+			blueprint.before_request(loginFromApiKeyRequestHandler)
+			blueprint.after_request(corsResponseHandler)
+		else:
+			blueprint.before_request(corsRequestHandler)
+			blueprint.before_request(loginFromApiKeyRequestHandler)
 			blueprint.after_request(corsResponseHandler)
 
 		url_prefix = "/plugin/{name}".format(name=name)
@@ -1030,11 +1046,20 @@ class Server(object):
 			"js/lib/jquery/jquery.slimscroll.min.js",
 			"js/lib/jquery/jquery.qrcode.min.js",
 			"js/lib/jquery/jquery.bootstrap.wizard.js",
+			"js/lib/pnotify/pnotify.core.min.js",
+			"js/lib/pnotify/pnotify.buttons.min.js",
+			"js/lib/pnotify/pnotify.callbacks.min.js",
+			"js/lib/pnotify/pnotify.confirm.min.js",
+			"js/lib/pnotify/pnotify.desktop.min.js",
+			"js/lib/pnotify/pnotify.history.min.js",
+			"js/lib/pnotify/pnotify.mobile.min.js",
+			"js/lib/pnotify/pnotify.nonblock.min.js",
+			"js/lib/pnotify/pnotify.reference.min.js",
+			"js/lib/pnotify/pnotify.tooltip.min.js",
 			"js/lib/moment-with-locales.min.js",
 			"js/lib/pusher.color.min.js",
 			"js/lib/detectmobilebrowser.js",
 			"js/lib/md5.min.js",
-			"js/lib/pnotify.min.js",
 			"js/lib/bootstrap-slider-knockout-binding.js",
 			"js/lib/loglevel.min.js",
 			"js/lib/sockjs.min.js" if minify else "js/lib/sockjs.js"
@@ -1074,7 +1099,9 @@ class Server(object):
 			"css/bootstrap-tabdrop.css",
 			"css/font-awesome.min.css",
 			"css/jquery.fileupload-ui.css",
-			"css/pnotify.min.css"
+			"css/pnotify.core.min.css",
+			"css/pnotify.buttons.min.css",
+			"css/pnotify.history.min.css"
 		]
 		css_core = list(dynamic_core_assets["css"]) + list(dynamic_plugin_assets["bundled"]["css"])
 		css_plugins = list(dynamic_plugin_assets["external"]["css"])
@@ -1138,12 +1165,12 @@ class Server(object):
 		if len(css_core) == 0:
 			css_core_bundle = Bundle(*[])
 		else:
-			css_core_bundle = Bundle(*css_app, output="webassets/packed_core.css", filters="cssrewrite")
+			css_core_bundle = Bundle(*css_core, output="webassets/packed_core.css", filters="cssrewrite")
 
 		if len(css_plugins) == 0:
 			css_plugins_bundle = Bundle(*[])
 		else:
-			css_plugins_bundle = Bundle(*css_app, output="webassets/packed_plugins.css", filters="cssrewrite")
+			css_plugins_bundle = Bundle(*css_plugins, output="webassets/packed_plugins.css", filters="cssrewrite")
 
 		if len(css_app) == 0:
 			css_app_bundle = Bundle(*[])
@@ -1154,12 +1181,12 @@ class Server(object):
 		if len(less_core) == 0:
 			less_core_bundle = Bundle(*[])
 		else:
-			less_core_bundle = Bundle(*less_app, output="webassets/packed_core.less", filters="cssrewrite, less_importrewrite")
+			less_core_bundle = Bundle(*less_core, output="webassets/packed_core.less", filters="cssrewrite, less_importrewrite")
 
 		if len(less_plugins) == 0:
 			less_plugins_bundle = Bundle(*[])
 		else:
-			less_plugins_bundle = Bundle(*less_app, output="webassets/packed_plugins.less", filters="cssrewrite, less_importrewrite")
+			less_plugins_bundle = Bundle(*less_plugins, output="webassets/packed_plugins.less", filters="cssrewrite, less_importrewrite")
 
 		if len(less_app) == 0:
 			less_app_bundle = Bundle(*[])

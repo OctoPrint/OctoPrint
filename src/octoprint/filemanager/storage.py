@@ -29,7 +29,6 @@ class StorageInterface(object):
 	Interface of storage adapters for OctoPrint.
 	"""
 
-
 	@property
 	def analysis_backlog(self):
 		"""
@@ -40,6 +39,11 @@ class StorageInterface(object):
 
 		:return: an iterator yielding all un-analysed files in the storage
 		"""
+		# empty generator pattern, yield is intentionally unreachable
+		return
+		yield
+
+	def analysis_backlog_for_path(self, path=None):
 		# empty generator pattern, yield is intentionally unreachable
 		return
 		yield
@@ -150,7 +154,9 @@ class StorageInterface(object):
 
 	def add_folder(self, path, ignore_existing=True):
 		"""
-		Adds a folder as ``path``. The ``path`` will be sanitized.
+		Adds a folder as ``path``
+
+		The ``path`` will be sanitized.
 
 		:param string path:          the path of the new folder
 		:param bool ignore_existing: if set to True, no error will be raised if the folder to be added already exists
@@ -160,7 +166,7 @@ class StorageInterface(object):
 
 	def remove_folder(self, path, recursive=True):
 		"""
-		Removes the folder at ``path``.
+		Removes the folder at ``path``
 
 		:param string path:    the path of the folder to remove
 		:param bool recursive: if set to True, contained folders and files will also be removed, otherwise and error will
@@ -174,6 +180,8 @@ class StorageInterface(object):
 
 		:param string source: path to the source folder
 		:param string destination: path to destination
+
+		:return: the path in the storage to the copy of the folder
 		"""
 		raise NotImplementedError()
 
@@ -183,6 +191,8 @@ class StorageInterface(object):
 
 		:param string source: path to the source folder
 		:param string destination: path to destination
+
+		:return: the new path in the storage to the folder
 		"""
 		raise NotImplementedError()
 
@@ -203,7 +213,9 @@ class StorageInterface(object):
 
 	def remove_file(self, path):
 		"""
-		Removes the file at ``path``. Will also take care of deleting the corresponding entries
+		Removes the file at ``path``
+
+		Will also take care of deleting the corresponding entries
 		in the metadata and deleting all links pointing to the file.
 
 		:param string path: path of the file to remove
@@ -216,6 +228,8 @@ class StorageInterface(object):
 
 		:param string source: path to the source file
 		:param string destination: path to destination
+
+		:return: the path in the storage to the copy of the file
 		"""
 		raise NotImplementedError()
 
@@ -225,6 +239,16 @@ class StorageInterface(object):
 
 		:param string source: path to the source file
 		:param string destination: path to destination
+
+		:return: the new path in the storage to the file
+		"""
+		raise NotImplementedError()
+
+	def has_analysis(self, path):
+		"""
+		Returns whether the file at path has been analysed yet
+
+		:param path: virtual path to the file for which to retrieve the metadata
 		"""
 		raise NotImplementedError()
 
@@ -469,7 +493,13 @@ class LocalFileStorage(StorageInterface):
 
 	@property
 	def analysis_backlog(self):
-		for entry in self._analysis_backlog_generator():
+		return self.analysis_backlog_for_path()
+
+	def analysis_backlog_for_path(self, path=None):
+		if path:
+			path = self.sanitize_path(path)
+
+		for entry in self._analysis_backlog_generator(path):
 			yield entry
 
 	def _analysis_backlog_generator(self, path=None):
@@ -480,10 +510,10 @@ class LocalFileStorage(StorageInterface):
 		if not metadata:
 			metadata = dict()
 		for entry in scandir(path):
-			if is_hidden_path(entry.name) or not octoprint.filemanager.valid_file_type(entry.name):
+			if is_hidden_path(entry.name):
 				continue
 
-			if entry.is_file():
+			if entry.is_file() and octoprint.filemanager.valid_file_type(entry.name):
 				if not entry.name in metadata or not isinstance(metadata[entry.name], dict) or not "analysis" in metadata[entry.name]:
 					printer_profile_rels = self.get_link(entry.path, "printerprofile")
 					if printer_profile_rels:
@@ -518,7 +548,7 @@ class LocalFileStorage(StorageInterface):
 		filepath = self.sanitize_path(filepath)
 		path = self.sanitize_path(path)
 
-		return filepath.startswith(path)
+		return filepath == path or filepath.startswith(path + os.sep)
 
 	def file_exists(self, path):
 		path, name = self.sanitize(path)
@@ -611,6 +641,8 @@ class LocalFileStorage(StorageInterface):
 		except Exception as e:
 			raise StorageError("Could not copy %s in %s to %s in %s" % (source_data["name"], source_data["path"], destination_data["name"], destination_data["path"]), cause=e)
 
+		return self.path_in_storage(destination_data["fullpath"])
+
 	def move_folder(self, source, destination):
 		source_data, destination_data = self._get_source_destination_data(source, destination)
 
@@ -620,6 +652,8 @@ class LocalFileStorage(StorageInterface):
 			raise StorageError("Could not move %s in %s to %s in %s" % (source_data["name"], source_data["path"], destination_data["name"], destination_data["path"]), cause=e)
 
 		self._delete_metadata(source_data["fullpath"])
+
+		return self.path_in_storage(destination_data["fullpath"])
 
 	def add_file(self, path, file_object, printer_profile=None, links=None, allow_overwrite=False):
 		path, name = self.sanitize(path)
@@ -694,6 +728,8 @@ class LocalFileStorage(StorageInterface):
 		self._copy_metadata_entry(source_data["path"], source_data["name"],
 		                          destination_data["path"], destination_data["name"])
 
+		return self.path_in_storage(destination_data["fullpath"])
+
 	def move_file(self, source, destination, allow_overwrite=False):
 		source_data, destination_data = self._get_source_destination_data(source, destination)
 
@@ -705,6 +741,12 @@ class LocalFileStorage(StorageInterface):
 		self._copy_metadata_entry(source_data["path"], source_data["name"],
 		                          destination_data["path"], destination_data["name"],
 		                          delete_source=True)
+
+		return self.path_in_storage(destination_data["fullpath"])
+
+	def has_analysis(self, path):
+		metadata = self.get_metadata(path)
+		return "analysis" in metadata
 
 	def get_print_job(self, path):
 		from octoprint.job import LocalGcodeFilePrintjob
@@ -957,7 +999,15 @@ class LocalFileStorage(StorageInterface):
 				continue
 
 			printer_profile = history_entry["printerProfile"]
+			if not printer_profile:
+				continue
+
 			print_time = history_entry["printTime"]
+			try:
+				print_time = float(print_time)
+			except:
+				self._logger.warn("Invalid print time value found in print history for {} in {}/.metadata.yaml: {!r}".format(name, path, print_time))
+				continue
 
 			if not printer_profile in former_print_times:
 				former_print_times[printer_profile] = []
@@ -1134,11 +1184,16 @@ class LocalFileStorage(StorageInterface):
 				# no hidden files and folders
 				continue
 
-			entry_name = entry.name
-			entry_path = entry.path
-			entry_is_file = entry.is_file()
-			entry_is_dir = entry.is_dir()
-			entry_stat = entry.stat()
+			try:
+				entry_name = entry.name
+				entry_path = entry.path
+				entry_is_file = entry.is_file()
+				entry_is_dir = entry.is_dir()
+				entry_stat = entry.stat()
+			except:
+				# error while trying to fetch file metadata, that might be thanks to file already having
+				# been moved or deleted - ignore it and continue
+				continue
 
 			try:
 				new_entry_name, new_entry_path = self._sanitize_entry(entry_name, path, entry_path)

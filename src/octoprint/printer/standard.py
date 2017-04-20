@@ -19,7 +19,7 @@ from octoprint import util as util
 from octoprint.events import eventManager, Events
 from octoprint.filemanager import FileDestinations, NoSuchStorage
 from octoprint.plugin import plugin_manager, ProgressPlugin
-from octoprint.printer import PrinterInterface, PrinterCallback, UnknownScript
+from octoprint.printer import PrinterInterface, PrinterCallback, UnknownScript, InvalidFileLocation
 from octoprint.printer.estimation import TimeEstimationHelper
 from octoprint.settings import settings
 from octoprint.util import comm as comm
@@ -430,8 +430,9 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		if self._comm is None:
 			return None
 
-		if self._selectedFile is None:
-			return None
+		with self._selectedFileMutex:
+			if self._selectedFile is None:
+				return None
 
 		return self._comm.getFilePosition()
 
@@ -975,12 +976,13 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 
 	def _payload_for_print_job_event(self, location=None, print_job_file=None, position=None):
 		if print_job_file is None:
-			selected_file = self._selectedFile
-			if not selected_file:
-				return dict()
+			with self._selectedFileMutex:
+				selected_file = self._selectedFile
+				if not selected_file:
+					return dict()
 
-			print_job_file = selected_file.get("filename", None)
-			location = FileDestinations.SDCARD if selected_file.get("sd", False) else FileDestinations.LOCAL
+				print_job_file = selected_file.get("filename", None)
+				location = FileDestinations.SDCARD if selected_file.get("sd", False) else FileDestinations.LOCAL
 
 		if not print_job_file or not location:
 			return dict()

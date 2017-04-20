@@ -471,6 +471,12 @@ def dict_merge(a, b):
 	    >>> expected = dict(foo="other foo", bar="bar", fnord=dict(a=1, b=2, l=["some", "list"]))
 	    >>> dict_merge(a, b) == expected
 	    True
+	    >>> dict_merge(a, None) == a
+	    True
+	    >>> dict_merge(None, b) == b
+	    True
+	    >>> dict_merge(None, None) == dict()
+	    True
 
 	Arguments:
 	    a (dict): The dictionary to merge ``b`` into
@@ -481,6 +487,11 @@ def dict_merge(a, b):
 	"""
 
 	from copy import deepcopy
+
+	if a is None:
+		a = dict()
+	if b is None:
+		b = dict()
 
 	if not isinstance(b, dict):
 		return b

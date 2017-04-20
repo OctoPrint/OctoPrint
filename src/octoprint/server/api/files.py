@@ -63,7 +63,7 @@ def _create_lastmodified(path, recursive):
 		return None
 
 
-def _create_etag(path, recursive, lm=None):
+def _create_etag(path, filter, recursive, lm=None):
 	if lm is None:
 		lm = _create_lastmodified(path, recursive)
 
@@ -72,6 +72,7 @@ def _create_etag(path, recursive, lm=None):
 
 	hash = hashlib.sha1()
 	hash.update(str(lm))
+	hash.update(str(filter))
 	hash.update(str(recursive))
 
 	if path.endswith("/files") or path.endswith("/files/sdcard"):
@@ -83,20 +84,18 @@ def _create_etag(path, recursive, lm=None):
 
 @api.route("/files", methods=["GET"])
 @with_revalidation_checking(etag_factory=lambda lm=None: _create_etag(request.path,
+                                                                      request.values.get("filter", False),
                                                                       request.values.get("recursive", False),
                                                                       lm=lm),
                             lastmodified_factory=lambda: _create_lastmodified(request.path,
                                                                               request.values.get("recursive", False)),
                             unless=lambda: request.values.get("force", False) or request.values.get("_refresh", False))
 def readGcodeFiles():
-	filter = request.values.get("filter", "false") in valid_boolean_trues
+	filter = request.values.get("filter", False)
 	recursive = request.values.get("recursive", "false") in valid_boolean_trues
 	force = request.values.get("force", "false") in valid_boolean_trues
 
-	if force:
-		_clear_file_cache()
-
-	files = _getFileList(FileDestinations.LOCAL, filter=filter, recursive=recursive)
+	files = _getFileList(FileDestinations.LOCAL, filter=filter, recursive=recursive, allow_from_cache=not force)
 	files.extend(_getFileList(FileDestinations.SDCARD))
 
 	usage = psutil.disk_usage(settings().getBaseFolder("uploads"))
@@ -105,6 +104,7 @@ def readGcodeFiles():
 
 @api.route("/files/<string:origin>", methods=["GET"])
 @with_revalidation_checking(etag_factory=lambda lm=None: _create_etag(request.path,
+                                                                      request.values.get("filter", False),
                                                                       request.values.get("recursive", False),
                                                                       lm=lm),
                             lastmodified_factory=lambda: _create_lastmodified(request.path,
@@ -114,17 +114,11 @@ def readGcodeFilesForOrigin(origin):
 	if origin not in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
 		return make_response("Unknown origin: %s" % origin, 404)
 
+	filter = request.values.get("filter", False)
 	recursive = request.values.get("recursive", "false") in valid_boolean_trues
 	force = request.values.get("force", "false") in valid_boolean_trues
 
-	if force:
-		with _file_cache_mutex:
-			try:
-				del _file_cache[origin]
-			except KeyError:
-				pass
-
-	files = _getFileList(origin, recursive=recursive)
+	files = _getFileList(origin, filter=filter, recursive=recursive, allow_from_cache=not force)
 
 	if origin == FileDestinations.LOCAL:
 		usage = psutil.disk_usage(settings().getBaseFolder("uploads"))
@@ -144,7 +138,7 @@ def _getFileDetails(origin, path, recursive=True):
 		return None
 
 
-def _getFileList(origin, path=None, filter=None, recursive=False):
+def _getFileList(origin, path=None, filter=None, recursive=False, allow_from_cache=True):
 	if origin == FileDestinations.SDCARD:
 		sdFileList = printer.get_sd_files()
 
@@ -169,11 +163,12 @@ def _getFileList(origin, path=None, filter=None, recursive=False):
 			filter_func = lambda entry, entry_data: octoprint.filemanager.valid_file_type(entry, type=filter)
 
 		with _file_cache_mutex:
-			files, lastmodified = _file_cache.get("{}:{}:{}:{}".format(origin, path, recursive, filter), ([], None))
-			if lastmodified is None or lastmodified < fileManager.last_modified(origin, path=path, recursive=recursive):
+			cache_key = "{}:{}:{}:{}".format(origin, path, recursive, filter)
+			files, lastmodified = _file_cache.get(cache_key, ([], None))
+			if not allow_from_cache or lastmodified is None or lastmodified < fileManager.last_modified(origin, path=path, recursive=recursive):
 				files = fileManager.list_files(origin, path=path, filter=filter_func, recursive=recursive)[origin].values()
 				lastmodified = fileManager.last_modified(origin, path=path, recursive=recursive)
-				_file_cache["{}:{}:{}:{}".format(origin, path, recursive, filter)] = (files, lastmodified)
+				_file_cache[cache_key] = (files, lastmodified)
 
 		def analyse_recursively(files, path=None):
 			if path is None:
@@ -248,8 +243,8 @@ def _verifyFolderExists(origin, foldername):
 
 
 def _isBusy(target, path):
-	currentOrigin, currentFilename = _getCurrentFile()
-	if currentFilename is not None and currentOrigin == target and fileManager.file_in_path(FileDestinations.LOCAL, path, currentFilename) and (printer.is_printing() or printer.is_paused()):
+	currentOrigin, currentPath = _getCurrentFile()
+	if currentPath is not None and currentOrigin == target and fileManager.file_in_path(FileDestinations.LOCAL, path, currentPath) and (printer.is_printing() or printer.is_paused()):
 		return True
 
 	return any(target == x[0] and fileManager.file_in_path(FileDestinations.LOCAL, path, x[1]) for x in fileManager.get_busy_files())
@@ -289,17 +284,6 @@ def uploadGcodeFile(target):
 			if not printer.is_sd_ready():
 				return make_response("Can not upload to SD card, not yet initialized", 409)
 
-		# determine current job
-		currentPath = None
-		currentFilename = None
-		currentOrigin = None
-		currentJob = printer.get_current_job()
-		if currentJob is not None and "file" in currentJob.keys():
-			currentJobFile = currentJob["file"]
-			if currentJobFile is not None and "name" in currentJobFile.keys() and "origin" in currentJobFile.keys() and currentJobFile["name"] is not None and currentJobFile["origin"] is not None:
-				currentPath, currentFilename = fileManager.sanitize(FileDestinations.LOCAL, currentJobFile["name"])
-				currentOrigin = currentJobFile["origin"]
-
 		# determine future filename of file to be uploaded, abort if it can't be uploaded
 		try:
 			# FileDestinations.LOCAL = should normally be target, but can't because SDCard handling isn't implemented yet
@@ -316,8 +300,13 @@ def uploadGcodeFile(target):
 			futurePath = fileManager.sanitize_path(FileDestinations.LOCAL, request.values["path"])
 
 		# prohibit overwriting currently selected file while it's being printed
-		if futurePath == currentPath and futureFilename == currentFilename and target == currentOrigin and (printer.is_printing() or printer.is_paused()):
-			return make_response("Trying to overwrite file that is currently being printed: %s" % currentFilename, 409)
+		futureFullPath = fileManager.join_path(FileDestinations.LOCAL, futurePath, futureFilename)
+		futureFullPathInStorage = fileManager.path_in_storage(FileDestinations.LOCAL, futureFullPath)
+
+		if not printer.can_modify_file(futureFullPathInStorage, sd):
+			return make_response("Trying to overwrite file that is currently being printed: %s" % futureFullPath, 409)
+
+		reselect = printer.is_current_file(futureFullPathInStorage, sd)
 
 		def fileProcessingFinished(filename, absFilename, destination):
 			"""
@@ -342,13 +331,11 @@ def uploadGcodeFile(target):
 			Selects the just uploaded file if either selectAfterUpload or printAfterSelect are True, or if the
 			exact file is already selected, such reloading it.
 			"""
-			if octoprint.filemanager.valid_file_type(added_file, "gcode") and (selectAfterUpload or printAfterSelect or (currentFilename == filename and currentOrigin == destination)):
+			if octoprint.filemanager.valid_file_type(added_file, "gcode") and (selectAfterUpload or printAfterSelect or reselect):
 				printer.select_file(absFilename, destination == FileDestinations.SDCARD, printAfterSelect)
 
-		futureFullPath = fileManager.join_path(FileDestinations.LOCAL, futurePath, futureFilename)
-
 		try:
-			added_file = fileManager.add_file(FileDestinations.LOCAL, futureFullPath, upload, allow_overwrite=True)
+			added_file = fileManager.add_file(FileDestinations.LOCAL, futureFullPathInStorage, upload, allow_overwrite=True)
 		except octoprint.filemanager.storage.StorageError as e:
 			if e.code == octoprint.filemanager.storage.StorageError.INVALID_FILE:
 				return make_response("Could not upload the file \"{}\", invalid type".format(upload.filename), 400)
@@ -700,8 +687,8 @@ def deleteGcodeFile(filename, target):
 			return make_response("Trying to delete a file that is currently in use: %s" % filename, 409)
 
 		# deselect the file if it's currently selected
-		currentOrigin, currentFilename = _getCurrentFile()
-		if currentFilename is not None and currentOrigin == target and filename == currentFilename:
+		currentOrigin, currentPath = _getCurrentFile()
+		if currentPath is not None and currentOrigin == target and filename == currentPath:
 			printer.unselect_file()
 
 		# delete it
@@ -718,8 +705,8 @@ def deleteGcodeFile(filename, target):
 			return make_response("Trying to delete a folder that contains a file that is currently in use: %s" % filename, 409)
 
 		# deselect the file if it's currently selected
-		currentOrigin, currentFilename = _getCurrentFile()
-		if currentFilename is not None and currentOrigin == target and fileManager.file_in_path(target, filename, currentFilename):
+		currentOrigin, currentPath = _getCurrentFile()
+		if currentPath is not None and currentOrigin == target and fileManager.file_in_path(target, filename, currentPath):
 			printer.unselect_file()
 
 		# delete it
@@ -729,8 +716,8 @@ def deleteGcodeFile(filename, target):
 
 def _getCurrentFile():
 	currentJob = printer.get_current_job()
-	if currentJob is not None and "file" in currentJob.keys() and "name" in currentJob["file"] and "origin" in currentJob["file"]:
-		return currentJob["file"]["origin"], currentJob["file"]["name"]
+	if currentJob is not None and "file" in currentJob.keys() and "path" in currentJob["file"] and "origin" in currentJob["file"]:
+		return currentJob["file"]["origin"], currentJob["file"]["path"]
 	else:
 		return None, None
 

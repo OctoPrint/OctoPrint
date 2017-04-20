@@ -25,7 +25,8 @@ $(function() {
                 offsets: [
                     [0,0]
                 ],
-                nozzleDiameter: 0.4
+                nozzleDiameter: 0.4,
+                sharedNozzle: false
             }
         }
     };
@@ -63,6 +64,7 @@ $(function() {
         self.nozzleDiameter = ko.observable();
         self.extruders = ko.observable();
         self.extruderOffsets = ko.observableArray();
+        self.sharedNozzle = ko.observable();
 
         self.axisXSpeed = ko.observable();
         self.axisYSpeed = ko.observable();
@@ -209,6 +211,7 @@ $(function() {
             self.heatedBed(data.heatedBed);
 
             self.nozzleDiameter(data.extruder.nozzleDiameter);
+            self.sharedNozzle(data.extruder.sharedNozzle);
             self.extruders(data.extruder.count);
             var offsets = [];
             if (data.extruder.count > 1) {
@@ -271,7 +274,8 @@ $(function() {
                     offsets: [
                         [0.0, 0.0]
                     ],
-                    nozzleDiameter: validFloat(self.nozzleDiameter(), defaultProfile.extruder.nozzleDiameter)
+                    nozzleDiameter: validFloat(self.nozzleDiameter(), defaultProfile.extruder.nozzleDiameter),
+                    sharedNozzle: self.sharedNozzle()
                 },
                 axes: {
                     x: {
@@ -440,6 +444,14 @@ $(function() {
             self.updateProfile(profile);
         };
 
+        self.canMakeDefault = function(data) {
+            return !data.isdefault();
+        };
+
+        self.canRemove = function(data) {
+            return !data.iscurrent() && !data.isdefault();
+        };
+
         self.requestData = function() {
             OctoPrint.printerprofiles.list()
                 .done(self.fromResponse);
@@ -478,9 +490,9 @@ $(function() {
                     }
                     self.requestData();
                 })
-                .fail(function() {
+                .fail(function(xhr) {
                     var text = gettext("There was unexpected error while saving the printer profile, please consult the logs.");
-                    new PNotify({title: gettext("Saving failed"), text: text, type: "error", hide: false});
+                    new PNotify({title: gettext("Could not add profile"), text: text, type: "error", hide: false});
                 })
                 .always(function() {
                     self.requestInProgress(false);
@@ -488,18 +500,28 @@ $(function() {
         };
 
         self.removeProfile = function(data) {
-            self.requestInProgress(true);
-            OctoPrint.printerprofiles.delete(data.id, {url: data.resource})
-                .done(function() {
-                    self.requestData();
-                })
-                .fail(function() {
-                    var text = gettext("There was unexpected error while removing the printer profile, please consult the logs.");
-                    new PNotify({title: gettext("Saving failed"), text: text, type: "error", hide: false});
-                })
-                .always(function() {
-                    self.requestInProgress(false);
-                });
+            var perform = function() {
+                self.requestInProgress(true);
+                OctoPrint.printerprofiles.delete(data.id, {url: data.resource})
+                    .done(function() {
+                        self.requestData();
+                    })
+                    .fail(function(xhr) {
+                        var text;
+                        if (xhr.status == 409) {
+                            text = gettext("Cannot delete the default profile or the currently active profile.");
+                        } else {
+                            text = gettext("There was unexpected error while removing the printer profile, please consult the logs.");
+                        }
+                        new PNotify({title: gettext("Could not delete profile"), text: text, type: "error", hide: false});
+                    })
+                    .always(function() {
+                        self.requestInProgress(false);
+                    });
+            };
+
+            showConfirmationDialog(_.sprintf(gettext("You are about to delete the printer profile \"%(name)s\"."), {name: data.name}),
+                                   perform);
         };
 
         self.updateProfile = function(profile, callback) {
@@ -517,7 +539,7 @@ $(function() {
                 })
                 .fail(function() {
                     var text = gettext("There was unexpected error while updating the printer profile, please consult the logs.");
-                    new PNotify({title: gettext("Saving failed"), text: text, type: "error", hide: false});
+                    new PNotify({title: gettext("Could not update profile"), text: text, type: "error", hide: false});
                 })
                 .always(function() {
                     self.requestInProgress(false);

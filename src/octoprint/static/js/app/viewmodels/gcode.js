@@ -39,6 +39,8 @@ $(function() {
             size: ko.observable(undefined)
         };
 
+        self.needsLoad = false;
+
         self.renderer_centerModel = ko.observable(false);
         self.renderer_centerViewport = ko.observable(false);
         self.renderer_zoomOnModel = ko.observable(false);
@@ -174,7 +176,7 @@ $(function() {
                 currentProfileData = self.settings.printerProfiles.currentProfileData();
             }
 
-            if (currentProfileData && currentProfileData.extruder && currentProfileData.extruder.offsets()) {
+            if (currentProfileData && currentProfileData.extruder && currentProfileData.extruder.offsets() && !currentProfileData.extruder.sharedNozzle()) {
                 var offsets = [];
                 _.each(currentProfileData.extruder.offsets(), function(offset) {
                     offsets.push({x: offset[0], y: offset[1]})
@@ -300,6 +302,7 @@ $(function() {
 
         self.loadFile = function(path, date){
             self.enableReload(false);
+            self.needsLoad = false;
             if (self.status == "idle" && self.errorCount < 3) {
                 self.status = "request";
                 OctoPrint.files.download("local", path)
@@ -401,7 +404,11 @@ $(function() {
                         self.loadedFileDate = undefined;
                     } else {
                         self.waitForApproval(false);
-                        self.loadFile(data.job.file.path, data.job.file.date);
+                        if (self.tabActive) {
+                            self.loadFile(data.job.file.path, data.job.file.date);
+                        } else {
+                            self.needsLoad = true;
+                        }
                     }
                 }
             }
@@ -573,6 +580,9 @@ $(function() {
 
         self.onTabChange = function(current, previous) {
             self.tabActive = current == "#gcode";
+            if (self.tabActive && self.needsLoad) {
+                self.loadFile(self.selectedFile.path(), self.selectedFile.date());
+            }
         };
 
         self.shiftLayer = function(value){

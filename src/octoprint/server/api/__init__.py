@@ -10,8 +10,8 @@ import netaddr
 import sarge
 
 from flask import Blueprint, request, jsonify, abort, current_app, session, make_response, g
-from flask.ext.login import login_user, logout_user, current_user
-from flask.ext.principal import Identity, identity_changed, AnonymousIdentity
+from flask_login import login_user, logout_user, current_user
+from flask_principal import Identity, identity_changed, AnonymousIdentity
 
 import octoprint.util as util
 import octoprint.users
@@ -19,7 +19,7 @@ import octoprint.server
 import octoprint.plugin
 from octoprint.server import admin_permission, NO_CONTENT
 from octoprint.settings import settings as s, valid_boolean_trues
-from octoprint.server.util import noCachingExceptGetResponseHandler, apiKeyRequestHandler, corsResponseHandler
+from octoprint.server.util import noCachingExceptGetResponseHandler, enforceApiKeyRequestHandler, loginFromApiKeyRequestHandler, corsRequestHandler, corsResponseHandler
 from octoprint.server.util.flask import restricted_access, get_json_command_from_request, passive_login
 
 
@@ -45,7 +45,9 @@ VERSION = "0.1"
 
 api.after_request(noCachingExceptGetResponseHandler)
 
-api.before_request(apiKeyRequestHandler)
+api.before_request(corsRequestHandler)
+api.before_request(enforceApiKeyRequestHandler)
+api.before_request(loginFromApiKeyRequestHandler)
 api.after_request(corsResponseHandler)
 
 #~~ data from plugins
@@ -60,7 +62,7 @@ def pluginData(name):
 		return make_response("More than one api provider registered for {name}, can't proceed".format(name=name), 500)
 
 	api_plugin = api_plugins[0]
-	if api_plugin.is_api_adminonly() and not current_user.is_admin():
+	if api_plugin.is_api_adminonly() and not current_user.is_admin:
 		return make_response("Forbidden", 403)
 
 	response = api_plugin.on_api_get(request)
@@ -87,7 +89,7 @@ def pluginCommand(name):
 	if valid_commands is None:
 		return make_response("Method not allowed", 405)
 
-	if api_plugin.is_api_adminonly() and not current_user.is_admin():
+	if api_plugin.is_api_adminonly() and not current_user.is_admin:
 		return make_response("Forbidden", 403)
 
 	command, data, response = get_json_command_from_request(request, valid_commands)
@@ -132,8 +134,11 @@ def wizardFinish():
 
 	data = dict()
 	try:
-		data = request.json
+		data = request.get_json()
 	except:
+		abort(400)
+
+	if data is None:
 		abort(400)
 
 	if not "handled" in data:
@@ -153,7 +158,7 @@ def wizardFinish():
 			if name in handled:
 				seen_wizards[name] = implementation.get_wizard_version()
 		except:
-			logging.getLogger(__name__).exceptino("There was an error finishing the wizard for {}, ignoring".format(name))
+			logging.getLogger(__name__).exception("There was an error finishing the wizard for {}, ignoring".format(name))
 
 	s().set(["server", "seenWizards"], seen_wizards)
 	s().save()
@@ -184,9 +189,9 @@ def apiVersion():
 
 @api.route("/login", methods=["POST"])
 def login():
-	data = request.values
-	if hasattr(request, "json") and request.json:
-		data = request.json
+	data = request.get_json()
+	if data is None:
+		data = request.values
 
 	if octoprint.server.userManager.enabled and "user" in data and "pass" in data:
 		username = data["user"]

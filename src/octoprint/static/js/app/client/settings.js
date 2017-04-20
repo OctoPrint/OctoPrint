@@ -1,43 +1,50 @@
 (function (global, factory) {
     if (typeof define === "function" && define.amd) {
-        define(["OctoPrint", "jquery"], factory);
+        define(["OctoPrintClient", "jquery"], factory);
     } else {
-        factory(window.OctoPrint, window.$);
+        factory(global.OctoPrintClient, global.$);
     }
-})(window || this, function(OctoPrint, $) {
+})(this, function(OctoPrintClient, $) {
     var url = "api/settings";
+    var apiKeyUrl = url + "/apikey";
 
-    var get = function(opts) {
-        return OctoPrint.get(url, opts);
+    var OctoPrintSettingsClient = function(base) {
+        this.base = base;
     };
 
-    var save = function(settings, opts) {
+    OctoPrintSettingsClient.prototype.get = function(opts) {
+        return this.base.get(url, opts);
+    };
+
+    OctoPrintSettingsClient.prototype.save = function(settings, opts) {
         settings = settings || {};
-        return OctoPrint.postJson(url, settings, opts);
+        return this.base.postJson(url, settings, opts);
     };
 
-    OctoPrint.settings = {
-        get: get,
-        save: save,
+    OctoPrintSettingsClient.prototype.getPluginSettings = function (plugin, opts) {
+        return this.get(opts)
+            .then(function (settings, statusText, request) {
+                if (!settings.plugins || !settings.plugins[plugin]) {
+                    return $.Deferred()
+                        .reject(request, "dataerror", "No settings for plugin " + plugin)
+                        .promise();
+                } else {
+                    return settings.plugins[plugin];
+                }
+            });
+    };
 
-        getPluginSettings: function (plugin, opts) {
-            return get(opts)
-                .then(function (settings, statusText, request) {
-                    if (!settings.plugins || !settings.plugins[plugin]) {
-                        return $.Deferred()
-                            .reject(request, "dataerror", "No settings for plugin " + plugin)
-                            .promise();
-                    } else {
-                        return settings.plugins[plugin];
-                    }
-                });
-        },
+    OctoPrintSettingsClient.prototype.savePluginSettings = function (plugin, settings, opts) {
+        var data = {};
+        data["plugins"] = {};
+        data["plugins"][plugin] = settings;
+        return this.save(data, opts);
+    };
 
-        savePluginSettings: function (plugin, settings, opts) {
-            var data = {};
-            data["plugins"] = {};
-            data["plugins"][plugin] = settings;
-            return save(data, opts);
-        }
-    }
+    OctoPrintSettingsClient.prototype.generateApiKey = function (opts) {
+        return this.base.postJson(apiKeyUrl, opts);
+    };
+
+    OctoPrintClient.registerComponent("settings", OctoPrintSettingsClient);
+    return OctoPrintSettingsClient;
 });

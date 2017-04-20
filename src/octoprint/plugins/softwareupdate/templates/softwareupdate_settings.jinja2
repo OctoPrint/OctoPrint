@@ -86,6 +86,14 @@
                     </div>
                 </div>
             </div>
+            <div class="control-group">
+                <div class="controls">
+                    <label class="checkbox">
+                        <input type="checkbox" data-bind="checked: config_notifyUsers"> {{ _('Show update notifications to users') }}
+                        <span class="help-block">{{ _('If you uncheck this, only logged in admins will see update notifications. Update notifications shown to users do not include the "Update now" button.') }}</span>
+                    </label>
+                </div>
+            </div>
         </form>
     </div>
     <div class="modal-footer">

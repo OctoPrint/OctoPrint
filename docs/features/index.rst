@@ -16,3 +16,4 @@ Features
    gcode_scripts.rst
    action_commands.rst
    plugins.rst
+   safemode.rst

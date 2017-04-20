@@ -124,7 +124,10 @@ class PrinterProfileManager(object):
 	     - Extruder offsets relative to first extruder, list of (x, y) tuples, first is always (0,0)
 	   * - ``extruder.nozzleDiameter``
 	     - ``float``
-	     - Diameter of the printer nozzle
+	     - Diameter of the printer nozzle(s)
+	   * - ``extruder.sharedNozzle``
+	     - ``boolean``
+	     - Whether there's only one nozzle shared among all extruders (true) or one nozzle per extruder (false).
 	   * - ``axes``
 	     - ``dict``
 	     - Information about the printer axes
@@ -185,7 +188,8 @@ class PrinterProfileManager(object):
 			offsets = [
 				(0, 0)
 			],
-			nozzleDiameter = 0.4
+			nozzleDiameter = 0.4,
+			sharedNozzle = False
 		),
 		axes=dict(
 			x = dict(speed=6000, inverted=False),
@@ -199,6 +203,37 @@ class PrinterProfileManager(object):
 		self._current = None
 		self._folder = settings().getBaseFolder("printerProfiles")
 		self._logger = logging.getLogger(__name__)
+
+		self._migrate_old_default_profile()
+		self._verify_default_available()
+
+	def _migrate_old_default_profile(self):
+		default_overrides = settings().get(["printerProfiles", "defaultProfile"])
+		if not default_overrides:
+			return
+
+		if self.exists("_default"):
+			return
+
+		default_overrides["id"] = "_default"
+		self.save(default_overrides)
+
+		settings().set(["printerProfiles", "defaultProfile"], None)
+		settings().save()
+
+	def _verify_default_available(self):
+		default_id = settings().get(["printerProfile", "default"])
+		if default_id is None:
+			default_id = "_default"
+
+		if not self.exists(default_id):
+			if not self.exists("_default"):
+				self._logger.error("Selected default profile {} and _default do not exist, creating _default again and setting it as default".format(default_id))
+				self.save(self.__class__.default, allow_overwrite=True, make_default=True)
+			else:
+				self._logger.error("Selected default profile {} does not exists, resetting to _default".format(default_id))
+				settings().set(["printerProfiles", "default"], "_default")
+				settings().save()
 
 	def select(self, identifier):
 		if identifier is None or not self.exists(identifier):
@@ -216,9 +251,7 @@ class PrinterProfileManager(object):
 
 	def get(self, identifier):
 		try:
-			if identifier == "_default":
-				return self._load_default()
-			elif self.exists(identifier):
+			if self.exists(identifier):
 				return self._load_from_path(self._get_profile_path(identifier))
 			else:
 				return None
@@ -226,9 +259,9 @@ class PrinterProfileManager(object):
 			return None
 
 	def remove(self, identifier):
-		if identifier == "_default":
-			return False
 		if self._current is not None and self._current["id"] == identifier:
+			return False
+		elif settings().get(["printerProfiles", "default"]) == identifier:
 			return False
 		return self._remove_from_path(self._get_profile_path(identifier))
 
@@ -242,21 +275,16 @@ class PrinterProfileManager(object):
 
 		identifier = self._sanitize(identifier)
 		profile["id"] = identifier
+
+		self._migrate_profile(profile)
 		profile = dict_sanitize(profile, self.__class__.default)
+		profile = dict_merge(self.__class__.default, profile)
 
-		if identifier == self.__class__.default["id"]:
-			default_profile = dict_merge(self._load_default(), profile)
-			if not self._ensure_valid_profile(default_profile):
-				raise InvalidProfileError()
+		self._save_to_path(self._get_profile_path(identifier), profile, allow_overwrite=allow_overwrite)
 
-			settings().set(["printerProfiles", "defaultProfile"], default_profile, defaults=dict(printerProfiles=dict(defaultProfile=self.__class__.default)))
+		if make_default:
+			settings().set(["printerProfiles", "default"], identifier)
 			settings().save()
-		else:
-			self._save_to_path(self._get_profile_path(identifier), profile, allow_overwrite=allow_overwrite)
-
-			if make_default:
-				settings().set(["printerProfiles", "default"], identifier)
-				settings().save()
 
 		if self._current is not None and self._current["id"] == identifier:
 			self.select(identifier)
@@ -264,8 +292,7 @@ class PrinterProfileManager(object):
 
 	def is_default_unmodified(self):
 		default = settings().get(["printerProfiles", "default"])
-		default_overrides = settings().get(["printerProfiles", "defaultProfile"])
-		return (default is None or default == self.__class__.default["id"]) and not default_overrides
+		return default is None or default == "_default" or not self.exists("_default")
 
 	@property
 	def profile_count(self):
@@ -284,7 +311,7 @@ class PrinterProfileManager(object):
 			if profile is not None:
 				return profile
 
-		return self._load_default()
+		return copy.deepcopy(self.__class__.default)
 
 	def set_default(self, identifier):
 		all_identifiers = self._load_all_identifiers().keys()
@@ -306,8 +333,6 @@ class PrinterProfileManager(object):
 	def exists(self, identifier):
 		if identifier is None:
 			return False
-		elif identifier == "_default":
-			return True
 		else:
 			path = self._get_profile_path(identifier)
 			return os.path.exists(path) and os.path.isfile(path)
@@ -317,23 +342,20 @@ class PrinterProfileManager(object):
 		results = dict()
 		for identifier, path in all_identifiers.items():
 			try:
-				if identifier == "_default":
-					profile = self._load_default()
-				else:
-					profile = self._load_from_path(path)
+				profile = self._load_from_path(path)
 			except InvalidProfileError:
 				continue
 
 			if profile is None:
 				continue
 
-			results[identifier] = dict_merge(self._load_default(), profile)
+			results[identifier] = dict_merge(self.__class__.default, profile)
 		return results
 
 	def _load_all_identifiers(self):
-		results = dict(_default=None)
+		results = dict()
 		for entry in scandir(self._folder):
-			if is_hidden_path(entry.name) or not entry.name.endswith(".profile") or entry.name == "_default.profile":
+			if is_hidden_path(entry.name) or not entry.name.endswith(".profile"):
 				continue
 
 			if not entry.is_file():
@@ -388,14 +410,6 @@ class PrinterProfileManager(object):
 		except:
 			return False
 
-	def _load_default(self):
-		default_overrides = settings().get(["printerProfiles", "defaultProfile"])
-		profile = self._ensure_valid_profile(dict_merge(copy.deepcopy(self.__class__.default), default_overrides))
-		if not profile:
-			self._logger.warn("Invalid default profile after applying overrides")
-			return copy.deepcopy(self.__class__.default)
-		return profile
-
 	def _get_profile_path(self, identifier):
 		return os.path.join(self._folder, "%s.profile" % identifier)
 
@@ -422,6 +436,14 @@ class PrinterProfileManager(object):
 
 		if "volume" in profile and not "custom_box" in profile["volume"]:
 			profile["volume"]["custom_box"] = False
+			modified = True
+
+		if "extruder" in profile and not "sharedNozzle" in profile["extruder"]:
+			profile["extruder"]["sharedNozzle"] = False
+			modified = True
+
+		if "extruder" in profile and "sharedNozzle" in profile["extruder"] and profile["extruder"]["sharedNozzle"]:
+			profile["extruder"]["offsets"] = [(0.0, 0.0)]
 			modified = True
 
 		return modified
@@ -462,7 +484,7 @@ class PrinterProfileManager(object):
 				return False
 
 		# convert booleans
-		for path in (("axes", "x", "inverted"), ("axes", "y", "inverted"), ("axes", "z", "inverted")):
+		for path in (("axes", "x", "inverted"), ("axes", "y", "inverted"), ("axes", "z", "inverted"), ("extruder", "sharedNozzle")):
 			try:
 				convert_value(profile, path, bool)
 			except Exception as e:

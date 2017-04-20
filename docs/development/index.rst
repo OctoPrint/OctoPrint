@@ -145,7 +145,6 @@ You'll need a user account with administrator privileges.
        cd OctoPrint
        virtualenv venv
        source venv/bin/activate
-       pip install -U pyobjc
        pip install -e .[develop]
 
 You can then start OctoPrint via ``~/devel/OctoPrint/venv/bin/octoprint`` or just ``octoprint`` if you activated the virtual
@@ -167,7 +166,7 @@ IDE Setup
 PyCharm
 .......
 
-  - "File" > "Open ...", select OctoPrint checkout folder (e.g. ``~/devel/OctoPrint/venv`` or ``C:\Devel\OctoPrint``)
+  - "File" > "Open ...", select OctoPrint checkout folder (e.g. ``~/devel/OctoPrint`` or ``C:\Devel\OctoPrint``)
   - "File" > "Settings ..." > "Project: OctoPrint" > "Project Interpreter" > "Add local ...", select OctoPrint venv
     folder (e.g. ``~/devel/OctoPrint/venv`` or ``C:\Devel\OctoPrint\venv``)
   - Right click "src" in project tree, mark as source folder

@@ -168,7 +168,6 @@ default_settings = {
 			"options": {},
 			"postRoll": 0,
 			"fps": 25,
-			"capturePostRoll": True
 		},
 		"cleanTmpAfterDays": 7
 	},
@@ -178,7 +177,10 @@ default_settings = {
 		"sizeThreshold": 20 * 1024 * 1024, # 20MB
 	},
 	"gcodeAnalysis": {
-		"maxExtruders": 10
+		"maxExtruders": 10,
+		"throttle_normalprio": 0.01,
+		"throttle_highprio": 0.0,
+		"throttle_lines": 100
 	},
 	"feature": {
 		"temperatureGraph": True,
@@ -200,7 +202,9 @@ default_settings = {
 		"identicalResendsCountdown": 7,
 		"supportFAsCommand": False,
 		"modelSizeDetection": True,
-		"firmwareDetection": True
+		"firmwareDetection": True,
+		"printCancelConfirmation": True,
+		"blockWhileDwelling": False
 	},
 	"folder": {
 		"uploads": None,
@@ -225,8 +229,7 @@ default_settings = {
 		"cutoff": 30
 	},
 	"printerProfiles": {
-		"default": None,
-		"defaultProfile": {}
+		"default": None
 	},
 	"printerParameters": {
 		"pauseTriggers": [],
@@ -240,7 +243,7 @@ default_settings = {
 		"showFahrenheitAlso": False,
 		"components": {
 			"order": {
-				"navbar": ["settings", "systemmenu", "login", "plugin_announcements"],
+				"navbar": ["settings", "systemmenu", "plugin_announcements", "login"],
 				"sidebar": ["connection", "state", "files"],
 				"tab": ["temperature", "control", "gcodeviewer", "terminal", "timelapse"],
 				"settings": [
@@ -292,8 +295,9 @@ default_settings = {
 		"apps": {}
 	},
 	"terminalFilters": [
-		{ "name": "Suppress M105 requests/responses", "regex": "(Send: M105)|(Recv: ok (B|T\d*):)" },
-		{ "name": "Suppress M27 requests/responses", "regex": "(Send: M27)|(Recv: SD printing byte)" }
+		{ "name": "Suppress temperature messages", "regex": "(Send: (N\d+\s+)?M105)|(Recv: ok (B|T\d*):)" },
+		{ "name": "Suppress SD status messages", "regex": "(Send: (N\d+\s+)?M27)|(Recv: SD printing byte)" },
+		{ "name": "Suppress wait responses", "regex": "Recv: wait"}
 	],
 	"plugins": {
 		"_disabled": []
@@ -331,7 +335,6 @@ default_settings = {
 			"enabled": False,
 			"okAfterResend": False,
 			"forceChecksum": False,
-			"okWithLinenumber": False,
 			"numExtruders": 1,
 			"includeCurrentToolInTemps": True,
 			"includeFilenameInOpened": True,
@@ -352,7 +355,13 @@ default_settings = {
 			"echoOnM117": True,
 			"brokenM29": True,
 			"supportF": False,
-			"firmwareName": "Virtual Marlin 1.0"
+			"firmwareName": "Virtual Marlin 1.0",
+			"sharedNozzle": False,
+			"sendBusy": False,
+			"simulateReset": True,
+			"preparedOks": [],
+			"okFormatString": "ok",
+			"m115FormatString": "FIRMWARE_NAME: {firmware_name} PROTOCOL_VERSION:1.0"
 		}
 	}
 }
@@ -547,9 +556,9 @@ class Settings(object):
 			self._configfile = os.path.join(self._basedir, "config.yaml")
 		self.load(migrate=True)
 
-		if self.get(["api", "key"]) is None:
-			self.set(["api", "key"], ''.join('%02X' % z for z in bytes(uuid.uuid4().bytes)))
-			self.save(force=True)
+		apikey = self.get(["api", "key"])
+		if not apikey or apikey == "n/a":
+			self.generateApiKey()
 
 		self._script_env = self._init_script_templating()
 
@@ -1392,13 +1401,18 @@ class Settings(object):
 
 		try:
 			current = chain.get_by_path(path)
+		except KeyError:
+			current = None
+
+		try:
 			default_value = chain.get_by_path(path, only_defaults=True)
-			in_local = chain.has_path(path, only_local=True)
-			in_defaults = chain.has_path(path, only_defaults=True)
 		except KeyError:
 			if error_on_path:
 				raise NoSuchSettingsPath()
-			return
+			default_value = None
+
+		in_local = chain.has_path(path, only_local=True)
+		in_defaults = chain.has_path(path, only_defaults=True)
 
 		if not force and in_defaults and in_local and default_value == value:
 			try:
@@ -1483,15 +1497,22 @@ class Settings(object):
 		with atomic_write(filename, "wb", max_permissions=0o666) as f:
 			f.write(script)
 
+	def generateApiKey(self):
+		apikey = ''.join('%02X' % z for z in bytes(uuid.uuid4().bytes))
+		self.set(["api", "key"], apikey)
+		self.save(force=True)
+		return apikey
+
+	def deleteApiKey(self):
+		self.set(["api", "key"], None)
+		self.save(force=True)
+
+
 def _default_basedir(applicationName):
 	# taken from http://stackoverflow.com/questions/1084697/how-do-i-store-desktop-application-data-in-a-cross-platform-way-for-python
 	if sys.platform == "darwin":
-		from AppKit import NSSearchPathForDirectoriesInDomains
-		# http://developer.apple.com/DOCUMENTATION/Cocoa/Reference/Foundation/Miscellaneous/Foundation_Functions/Reference/reference.html#//apple_ref/c/func/NSSearchPathForDirectoriesInDomains
-		# NSApplicationSupportDirectory = 14
-		# NSUserDomainMask = 1
-		# True for expanding the tilde into a fully qualified path
-		return os.path.join(NSSearchPathForDirectoriesInDomains(14, 1, True)[0], applicationName)
+		import appdirs
+		return appdirs.user_data_dir(applicationName, "")
 	elif sys.platform == "win32":
 		return os.path.join(os.environ["APPDATA"], applicationName)
 	else:

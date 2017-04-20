@@ -519,6 +519,23 @@ Use the following settings to enable or disable OctoPrint features:
      # If ignoredIdenticalResends is true, how many consecutive identical resends to ignore
      identicalResendsCount: 7
 
+     # Whether to support F on its own as a valid GCODE command (true) or not (false)
+     supportFAsCommand: false
+
+     # Whether to enable model size detection and warning (true) or not (false)
+     modelSizeDetection: true
+
+     # Whether to attempt to auto detect the firmware of the printer and adjust settings
+     # accordingly (true) or not and rely on manual configuration (false)
+     firmwareDetection: true
+
+     # Whether to show a confirmation on print cancelling (true) or not (false)
+     printCancelConfirmation: true
+
+     # Whether to block all sending to the printer while a G4 (dwell) command is active (true, repetier)
+     # or not (false)
+     blockWhileDwelling: false
+
 .. _sec-configuration-config_yaml-folder:
 
 Folder
@@ -564,6 +581,45 @@ Use the following settings to set custom paths for folders used by OctoPrint:
 
      # Absolute path where to store (GCODE) scripts
      scripts: /path/to/scripts/folder
+
+.. _sec-configuration-config_yaml-gcodeanalysis:
+
+GCODE Analysis
+--------------
+
+Settings pertaining to the server side GCODE analysis implementation.
+
+.. code-block:: yaml
+
+   # Maximum number of extruders to support/to sanity check for
+   maxExtruders: 10
+
+   # Pause between each processed GCODE line in normal priority mode, seconds
+   throttle_normalprio: 0.01
+
+   # Pause between each processed GCODE line in high priority mode (e.g. on fresh
+   # uploads), seconds
+   throttle_highprio: 0.0
+
+.. _sec-configuration-config_yaml-gcodeviewer:
+
+GCODE Viewer
+------------
+
+Settings pertaining to the built in GCODE Viewer.
+
+.. code-block:: yaml
+
+   # Whether to enable the GCODE viewer in the UI
+   enabled: true
+
+   # Maximum size a GCODE file may have on mobile devices to automatically be loaded
+   # into the viewer, defaults to 2MB
+   mobileSizeThreshold: 2097152
+
+   # Maximum size a GCODE file may have to automatically be loaded into the viewer,
+   # defaults to 20MB
+   sizeThreshold: 20971520
 
 .. _sec-configuration-config_yaml-plugins:
 
@@ -679,8 +735,34 @@ Use the following settings to configure the serial connection to the printer:
        connection: 2
 
        # Timeout during serial communication, in seconds.
-       # Defaults to 5 sec
-       communication: 5
+       # Defaults to 30 sec
+       communication: 30
+
+       # Timeout after which to query temperature when no target is set
+       temperature: 5
+
+       # Timeout after which to query temperature when a target is set
+       temperatureTargetSet: 2
+
+       # Timeout after which to query the SD status while SD printing
+       sdStatus: 1
+
+     # Maximum number of consecutive communication timeouts after which the printer will be considered
+     # dead and OctoPrint disconnects with an error.
+     maxCommunicationTimeouts:
+
+       # max. timeouts when the printer is idle
+       idle: 2
+
+       # max. timeouts when the printer is printing
+       printing: 5
+
+       # max. timeouts when a long running command is active
+       long: 5
+
+     # Maximum number of write attempts to serial during which nothing can be written before the communication
+     # with the printer is considered dead and OctoPrint will disconnect with an error
+     maxWritePasses:
 
      # Use this to define additional patterns to consider for serial port listing. Must be a valid
      # "glob" pattern (see http://docs.python.org/2/library/glob.html). Defaults to not set.
@@ -702,6 +784,7 @@ Use the following settings to configure the serial connection to the printer:
      - G32
      - M400
      - M226
+     - M600
 
      # Commands which need to always be send with a checksum. Defaults to only M110
      checksumRequiringCommands:
@@ -746,9 +829,13 @@ Use the following settings to configure the server:
      # Use this option to define the port to which to bind the server, defaults to 5000
      port: 5000
 
-     # If this option is true, OctoPrint will show the First Run dialog and set it to false after that
-     # completes
+     # If this option is true, OctoPrint will show the First Run wizard and set the setting to
+     # false after that completes
      firstRun: false
+
+     # If this option is true, OctoPrint will enable safe mode on the next server start and
+     # reset the setting to false
+     startOnceInSafeMode: false
 
      # Secret key for encrypting cookies and such, randomly generated on first run
      secretKey: someSecretKey
@@ -944,10 +1031,12 @@ Use `Javascript regular expressions <https://developer.mozilla.org/en/docs/Web/J
 
    # A list of filters to display in the terminal tab. Defaults to the filters shown below
    terminalFilters:
-   - name: Suppress M105 requests/responses
-     regex: '(Send: M105)|(Recv: ok T:)'
-   - name: Suppress M27 requests/responses
-     regex: '(Send: M27)|(Recv: SD printing byte)'
+   - name: Suppress temperature messages
+     regex: '(Send: (N\d+\s+)?M105)|(Recv: ok T:)'
+   - name: Suppress SD status messages
+     regex: '(Send: (N\d+\s+)?M27)|(Recv: SD printing byte)'
+   - name: Suppress wait responses
+     regex: 'Recv: wait'
 
 .. _sec-configuration-config_yaml-webcam:
 
@@ -981,22 +1070,42 @@ Use the following settings to configure webcam support:
      # Whether to include a "created with OctoPrint" watermark in the generated timelapse movies
      watermark: true
 
+     # Whether to flip the webcam horizontally
+     flipH: false
+
+     # Whether to flip the webcam vertically
+     flipV: false
+
+     # Whether to rotate the webcam 90° counter clockwise
+     rotate90: false
+
      # The default timelapse settings.
      timelapse:
 
        # The timelapse type. Can be either "off", "zchange" or "timed". Defaults to "off"
        type: timed
 
+       # The framerate at which to render the movie
+       fps: 25
+
+       # The number of seconds in the rendered video to add after a finished print. The exact way how the
+       # additional images will be recorded depends on timelapse type. Timed timelapses continue to
+       # record just like at the beginning, so the recording will continue another
+       # fps * postRoll * interval seconds. Zchange timelapses will take one final picture and add it fps * postRoll
+       postRoll: 0
+
        # Additional options depending on the timelapse type. All timelapses take a postRoll and an fps setting.
        options:
-         # The number of seconds in the rendered video to add after a finished print. The exact way how the
-         # additional images will be recorded depends on timelapse type. Timed timelapses continue to
-         # record just like at the beginning, so the recording will continue another
-         # fps * postRoll * interval seconds. Zchange timelapses will take one final picture and add it fps * postRoll
-         postRoll: 0
-
-         # The framerate at which to render the movie
-         fps: 25
 
          # Timed timelapses only: The interval which to leave between images in seconds
          interval: 2
+
+         # Timed timelapses only: Whether to capture the snapshots for the post roll (true) or just copy
+         # the last captured snapshot from the print over and over again (false)
+         capturePostRoll: true
+
+         # ZChange timelapses only: Z-hop height during retractions to ignore for capturing snapshots
+         retractionZHop: 0.0
+
+     # After how many days unrendered timelapses will be deleted
+     cleanTmpAfterDays: 7

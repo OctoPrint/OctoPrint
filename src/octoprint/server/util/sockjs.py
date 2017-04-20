@@ -154,12 +154,12 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection, octoprint.printer.
 			messages = self._messageBacklog
 			self._messageBacklog = []
 
-		busy_files = [dict(origin=v[0], name=v[1]) for v in self._fileManager.get_busy_files()]
+		busy_files = [dict(origin=v[0], path=v[1]) for v in self._fileManager.get_busy_files()]
 		if "job" in data and data["job"] is not None \
-				and "file" in data["job"] and "name" in data["job"]["file"] and "origin" in data["job"]["file"] \
-				and data["job"]["file"]["name"] is not None and data["job"]["file"]["origin"] is not None \
+				and "file" in data["job"] and "path" in data["job"]["file"] and "origin" in data["job"]["file"] \
+				and data["job"]["file"]["path"] is not None and data["job"]["file"]["origin"] is not None \
 				and (self._printer.is_printing() or self._printer.is_paused()):
-			busy_files.append(dict(origin=data["job"]["file"]["origin"], name=data["job"]["file"]["name"]))
+			busy_files.append(dict(origin=data["job"]["file"]["origin"], path=data["job"]["file"]["path"]))
 
 		data.update({
 			"serverTime": time.time(),

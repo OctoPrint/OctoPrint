@@ -4,6 +4,7 @@ $(function() {
 
         self.loginState = parameters[0];
         self.printerProfiles = parameters[1];
+        self.printerState = parameters[2];
 
         self.file = ko.observable(undefined);
         self.target = undefined;
@@ -22,6 +23,8 @@ $(function() {
         self.profile = ko.observable();
         self.profiles = ko.observableArray();
         self.printerProfile = ko.observable();
+
+        self.slicerSameDevice = ko.observable();
 
         self.allViewModels = undefined;
 
@@ -71,6 +74,19 @@ $(function() {
         self.resetProfiles = function() {
             self.profiles.removeAll();
             self.profile(undefined);
+        };
+
+        self.metadataForSlicer = function(key) {
+            if (key == undefined || !self.data.hasOwnProperty(key)) {
+                return;
+            }
+
+            var slicer = self.data[key];
+            self.slicerSameDevice(slicer.sameDevice);
+        };
+
+        self.resetMetadata = function() {
+            self.slicerSameDevice(true);
         };
 
         self.configuredSlicers = ko.pureComputed(function() {
@@ -136,8 +152,10 @@ $(function() {
         self.slicer.subscribe(function(newValue) {
             if (newValue === undefined) {
                 self.resetProfiles();
+                self.resetMetadata();
             } else {
                 self.profilesForSlicer(newValue);
+                self.metadataForSlicer(newValue);
             }
         });
 
@@ -153,7 +171,20 @@ $(function() {
             return self.destinationFilename() != undefined
                 && self.destinationFilename().trim() != ""
                 && self.slicer() != undefined
-                && self.profile() != undefined;
+                && self.profile() != undefined
+                && (!(self.printerState.isPrinting() || self.printerState.isPaused()) || !self.slicerSameDevice());
+        });
+
+        self.sliceButtonTooltip = ko.pureComputed(function() {
+            if (!self.enableSliceButton()) {
+                if ((self.printerState.isPrinting() || self.printerState.isPaused()) && self.slicerSameDevice()) {
+                    return gettext("Cannot slice on the same device while printing");
+                } else {
+                    return gettext("Cannot slice, not all parameters specified");
+                }
+            } else {
+                return gettext("Start the slicing process");
+            }
         });
 
         self.requestData = function() {
@@ -204,7 +235,8 @@ $(function() {
                     name: name,
                     configured: slicer.configured,
                     sourceExtensions: slicer.extensions.source,
-                    destinationExtensions: slicer.extensions.destination
+                    destinationExtensions: slicer.extensions.destination,
+                    sameDevice: slicer.sameDevice
                 };
                 self.slicers.push(props);
             });
@@ -217,6 +249,10 @@ $(function() {
         };
 
         self.slice = function() {
+            if (!self.enableSliceButton()) {
+                return;
+            }
+
             var destinationFilename = self._sanitize(self.destinationFilename());
 
             var destinationExtensions = self.data[self.slicer()] && self.data[self.slicer()].extensions && self.data[self.slicer()].extensions.destination
@@ -274,7 +310,7 @@ $(function() {
 
     OCTOPRINT_VIEWMODELS.push([
         SlicingViewModel,
-        ["loginStateViewModel", "printerProfilesViewModel"],
+        ["loginStateViewModel", "printerProfilesViewModel", "printerStateViewModel"],
         "#slicing_configuration_dialog"
     ]);
 });

@@ -286,9 +286,9 @@ Files
      - Type
      - Description
    * - ``hash``
-     - 1
+     - 0..1
      - String
-     - MD5 hash of the file
+     - MD5 hash of the file. Only available for ``local`` files.
    * - ``size``
      - 0..1
      - Number

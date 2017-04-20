@@ -9,7 +9,7 @@ import logging
 import sarge
 
 from flask import request, make_response, jsonify, url_for
-from flask.ext.babel import gettext
+from flask_babel import gettext
 
 from octoprint.settings import settings as s
 
@@ -24,9 +24,9 @@ from octoprint.server.util.flask import restricted_access, get_remote_address
 def performSystemAction():
 	logging.getLogger(__name__).warn("Deprecated API call to /api/system made by {}, should be migrated to use /system/commands/custom/<action>".format(get_remote_address(request)))
 
-	data = request.values
-	if hasattr(request, "json") and request.json:
-		data = request.json
+	data = request.get_json(silent=True)
+	if data is None:
+		data = request.values
 
 	if not "action" in data:
 		return make_response("action to perform is not defined", 400)
@@ -72,9 +72,19 @@ def executeSystemCommand(source, command):
 	if not "command" in command_spec:
 		return make_response("Command {}:{} does not define a command to execute, can't proceed".format(source, command), 500)
 
-	async = command_spec["async"] if "async" in command_spec else False
-	ignore = command_spec["ignore"] if "ignore" in command_spec else False
+	do_async = command_spec.get("async", False)
+	do_ignore = command_spec.get("ignore", False)
 	logger.info("Performing command for {}:{}: {}".format(source, command, command_spec["command"]))
+
+	try:
+		if "before" in command_spec and callable(command_spec["before"]):
+			command_spec["before"]()
+	except Exception as e:
+		if not do_ignore:
+			error = "Command \"before\" failed: {}".format(str(e))
+			logger.warn(error)
+			return make_response(error, 500)
+
 	try:
 		# we run this with shell=True since we have to trust whatever
 		# our admin configured as command and since we want to allow
@@ -83,9 +93,9 @@ def executeSystemCommand(source, command):
 		              stdout=sarge.Capture(),
 		              stderr=sarge.Capture(),
 		              shell=True,
-		              async=async)
-		if not async:
-			if not ignore and p.returncode != 0:
+		              async=do_async)
+		if not do_async:
+			if not do_ignore and p.returncode != 0:
 				returncode = p.returncode
 				stdout_text = p.stdout.text
 				stderr_text = p.stderr.text
@@ -94,7 +104,7 @@ def executeSystemCommand(source, command):
 				logger.warn(error)
 				return make_response(error, 500)
 	except Exception as e:
-		if not ignore:
+		if not do_ignore:
 			error = "Command failed: {}".format(str(e))
 			logger.warn(error)
 			return make_response(error, 500)
@@ -126,6 +136,10 @@ def _get_command_spec(source, action):
 
 
 def _get_core_command_specs():
+	def enable_safe_mode():
+		s().set(["server", "startOnceInSafeMode"], True)
+		s().save()
+
 	commands = collections.OrderedDict(
 		shutdown=dict(
 			command=s().get(["server", "commands", "systemShutdownCommand"]),
@@ -138,7 +152,12 @@ def _get_core_command_specs():
 		restart=dict(
 			command=s().get(["server", "commands", "serverRestartCommand"]),
 			name=gettext("Restart OctoPrint"),
-			confirm=gettext("You are about to restart the OctoPrint server."))
+			confirm=gettext("You are about to restart the OctoPrint server.")),
+		restart_safe=dict(
+			command=s().get(["server", "commands", "serverRestartCommand"]),
+			name=gettext("Restart OctoPrint in safe mode"),
+			confirm=gettext("You are about to restart the OctoPrint server in safe mode."),
+			before=enable_safe_mode)
 	)
 
 	available_commands = collections.OrderedDict()

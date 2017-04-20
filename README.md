@@ -1,6 +1,8 @@
 #  OctoPrint
 
-OctoPrint provides a snappy web interface for controlling a 3D printer (RepRap, Ultimaker, ...). It is Free Software
+[![GitHub version](https://badge.fury.io/gh/foosel%2FOctoPrint.svg)](https://badge.fury.io/gh/foosel%2FOctoPrint)
+
+OctoPrint provides a snappy web interface for controlling consumer 3D printers. It is Free Software
 and released under the [GNU Affero General Public License V3](http://www.gnu.org/licenses/agpl.html).
 
 Its website can be found at [octoprint.org](http://octoprint.org).
@@ -33,7 +35,7 @@ If you think something is bad about OctoPrint or its documentation the way it is
 in any way to make it better instead of just complaining about it -- this is an Open Source Project
 after all :)
 
-For information about how to go about contributions of any kind, please see the project's
+For information about how to go about submitting bug reports or pull requests, please see the project's
 [Contribution Guidelines](https://github.com/foosel/OctoPrint/blob/master/CONTRIBUTING.md).
 
 ## Installation
@@ -41,7 +43,7 @@ For information about how to go about contributions of any kind, please see the 
 Installation instructions for installing from source for different operating
 systems can be found [on the wiki](https://github.com/foosel/OctoPrint/wiki#assorted-guides).
 
-If you want to run OctoPrint on a Raspberry Pi you might want to take a look at [OctoPi](https://github.com/guysoft/OctoPi)
+If you want to run OctoPrint on a Raspberry Pi, you might want to take a look at [OctoPi](https://github.com/guysoft/OctoPi)
 which is a custom SD card image that includes OctoPrint plus dependencies.
 
 The generic steps that should basically be done regardless of operating system
@@ -59,7 +61,7 @@ for details.
 
 After installation, please make sure you follow the first-run wizard and set up
 access control as necessary. If you want to not only be notified about new
-releases but also be able to automatically upgrade to them from within
+releases, but also be able to automatically upgrade to them from within
 OctoPrint, take a look [at the documentation of the Software Update Plugin](https://github.com/foosel/OctoPrint/wiki/Plugin:-Software-Update#making-octoprint-updateable-on-existing-installations)
 and at its settings.
 
@@ -70,7 +72,7 @@ OctoPrint via `setup.py`:
 
     python setup.py install
 
-You should also do this every time after pulling from the repository, since the dependencies might have changed.
+You should do this every time after pulling from the repository, since the dependencies may have changed.
 
 OctoPrint currently only supports Python 2.7.
 
@@ -81,41 +83,46 @@ Running the `setup.py` script via
     python setup.py install
 
 installs the `octoprint` script in your Python installation's scripts folder
-(which depending on whether you installed OctoPrint globally or into a virtual env will be on your `PATH` or not). The
-following usage examples assume that said `octoprint` script is on your `PATH`.
+(which, depending on whether you installed OctoPrint globally or into a virtual env, will be in your `PATH` or not). The
+following usage examples assume that the `octoprint` script is on your `PATH`.
 
 You can start the server via
 
-    octoprint
+    octoprint serve
 
 By default it binds to all interfaces on port 5000 (so pointing your browser to `http://127.0.0.1:5000`
 will do the trick). If you want to change that, use the additional command line parameters `host` and `port`,
 which accept the host ip to bind to and the numeric port number respectively. If for example you want the server
 to only listen on the local interface on port 8080, the command line would be
 
-    octoprint --host=127.0.0.1 --port=8080
+    octoprint serve --host=127.0.0.1 --port=8080
 
-Alternatively, the host and port on which to bind can be defined via the configuration.
+Alternatively, the host and port on which to bind can be defined via the config file.
 
 If you want to run OctoPrint as a daemon (only supported on Linux), use
 
-    octoprint --daemon {start|stop|restart} [--pid PIDFILE]
+    octoprint daemon {start|stop|restart} [--pid PIDFILE]
 
 If you do not supply a custom pidfile location via `--pid PIDFILE`, it will be created at `/tmp/octoprint.pid`.
 
-You can also specify the configfile or the base directory (for basing off the `uploads`, `timelapse` and `logs` folders),
+You can also specify the config file or the base directory (for basing off the `uploads`, `timelapse` and `logs` folders),
 e.g.:
 
-    octoprint --config /path/to/another/config.yaml --basedir /path/to/my/basedir
+    octoprint serve --config /path/to/another/config.yaml --basedir /path/to/my/basedir
 
-See `octoprint --help` for further information.
+To start OctoPrint in safe mode - which disables all third party plugins that do not come bundled with OctoPrint - use
+the ``--safe`` flag:
 
-OctoPrint also ships with a `run` script in its source directory. You can also invoke that to start up the server, it
+    octoprint serve --safe
+
+See `octoprint --help` for more information on the available command line parameters.
+
+OctoPrint also ships with a `run` script in its source directory. You can invoke it to start the server. It
 takes the same command line arguments as the `octoprint` script.
 
 ## Configuration
 
-If not specified via the commandline, the configfile `config.yaml` for OctoPrint is expected in the settings folder,
+If not specified via the command line, the config file `config.yaml` for OctoPrint is expected in the settings folder,
 which is located at `~/.octoprint` on Linux, at `%APPDATA%/OctoPrint` on Windows and
 at `~/Library/Application Support/OctoPrint` on MacOS.
 

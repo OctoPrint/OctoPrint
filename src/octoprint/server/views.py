@@ -7,6 +7,7 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 
 import os
 import datetime
+import codecs
 
 from collections import defaultdict
 from flask import request, g, url_for, make_response, render_template, send_from_directory, redirect, abort
@@ -173,7 +174,27 @@ def index():
 		_templates[locale], _plugin_names, _plugin_vars = _process_templates()
 
 	now = datetime.datetime.utcnow()
-	render_kwargs = _get_render_kwargs(_templates[locale], _plugin_names, _plugin_vars, now)
+
+	enable_accesscontrol = userManager.enabled
+	enable_gcodeviewer = settings().getBoolean(["gcodeViewer", "enabled"])
+	enable_timelapse = bool(settings().get(["webcam", "snapshot"]) and settings().get(["webcam", "ffmpeg"]))
+
+	def default_template_filter(template_type, template_key):
+		if template_type == "navbar":
+			return template_key != "login" or enable_accesscontrol
+		elif template_type == "tab":
+			return (template_key != "gcodeviewer" or enable_gcodeviewer) and \
+			       (template_key != "timelapse" or enable_timelapse)
+		elif template_type == "settings":
+			return template_key != "accesscontrol" or enable_accesscontrol
+		elif template_type == "usersettings":
+			return enable_accesscontrol
+		else:
+			return True
+
+	default_additional_etag = [enable_accesscontrol,
+	                           enable_gcodeviewer,
+	                           enable_timelapse]
 
 	def get_preemptively_cached_view(key, view, data=None, additional_request_data=None, additional_unless=None):
 		if (data is None and additional_request_data is None) or g.locale is None:
@@ -189,7 +210,10 @@ def index():
 		                                      data=d,
 		                                      unless=unless)(view)
 
-	def get_cached_view(key, view, additional_key_data=None, additional_files=None, custom_files=None, custom_etag=None, custom_lastmodified=None):
+	def get_cached_view(key, view, additional_key_data=None, additional_files=None, additional_etag=None, custom_files=None, custom_etag=None, custom_lastmodified=None):
+		if additional_etag is None:
+			additional_etag = []
+
 		def cache_key():
 			return _cache_key(key, additional_key_data=additional_key_data)
 
@@ -199,11 +223,11 @@ def index():
 			lastmodified_ok = util.flask.check_lastmodified(lastmodified)
 			etag_ok = util.flask.check_etag(compute_etag(files=files,
 			                                             lastmodified=lastmodified,
-			                                             additional=cache_key()))
+			                                             additional=[cache_key()] + additional_etag))
 			return lastmodified_ok and etag_ok
 
 		def validate_cache(cached):
-			etag_different = compute_etag(additional=cache_key()) != cached.get_etag()[0]
+			etag_different = compute_etag(additional=[cache_key()] + additional_etag) != cached.get_etag()[0]
 			return force_refresh or etag_different
 
 		def collect_files():
@@ -272,12 +296,12 @@ def index():
 			if lastmodified:
 				hash.update(lastmodified)
 			for add in additional:
-				hash.update(add)
+				hash.update(str(add))
 			return hash.hexdigest()
 
 		decorated_view = view
 		decorated_view = util.flask.lastmodified(lambda _: compute_lastmodified())(decorated_view)
-		decorated_view = util.flask.etagged(lambda _: compute_etag(additional=cache_key()))(decorated_view)
+		decorated_view = util.flask.etagged(lambda _: compute_etag(additional=[cache_key()] + additional_etag))(decorated_view)
 		decorated_view = util.flask.cached(timeout=-1,
 		                                   refreshif=validate_cache,
 		                                   key=cache_key,
@@ -292,7 +316,8 @@ def index():
 		                         additional_files=p.get_ui_additional_tracked_files,
 		                         custom_files=p.get_ui_custom_tracked_files,
 		                         custom_etag=p.get_ui_custom_etag,
-		                         custom_lastmodified=p.get_ui_custom_lastmodified)
+		                         custom_lastmodified=p.get_ui_custom_lastmodified,
+		                         additional_etag=p.get_ui_additional_etag(default_additional_etag))
 
 		if preemptive_cache_enabled and p.get_ui_preemptive_caching_enabled():
 			view = get_preemptively_cached_view(p._identifier,
@@ -303,12 +328,30 @@ def index():
 		else:
 			view = cached
 
+		template_filter = p.get_ui_custom_template_filter(default_template_filter)
+		if template_filter is not None and callable(template_filter):
+			filtered_templates = _filter_templates(_templates[locale], template_filter)
+		else:
+			filtered_templates = _templates[locale]
+
+		render_kwargs = _get_render_kwargs(filtered_templates,
+		                                   _plugin_names,
+		                                   _plugin_vars,
+		                                   now)
+
 		return view(now, request, render_kwargs)
 
 	def default_view():
-		wizard = wizard_active(_templates[locale])
-		enable_accesscontrol = userManager.enabled
+		filtered_templates = _filter_templates(_templates[locale], default_template_filter)
+
+		wizard = wizard_active(filtered_templates)
 		accesscontrol_active = enable_accesscontrol and userManager.hasBeenCustomized()
+
+		render_kwargs = _get_render_kwargs(filtered_templates,
+		                                   _plugin_names,
+		                                   _plugin_vars,
+		                                   now)
+
 		render_kwargs.update(dict(
 			webcamStream=settings().get(["webcam", "stream"]),
 			enableTemperatureGraph=settings().get(["feature", "temperatureGraph"]),
@@ -330,7 +373,8 @@ def index():
 			return r
 
 		cached = get_cached_view("_default",
-		                         make_default_ui)
+		                         make_default_ui,
+		                         additional_etag=default_additional_etag)
 		preemptively_cached = get_preemptively_cached_view("_default",
 		                                                   cached,
 		                                                   dict(),
@@ -395,12 +439,7 @@ def _get_render_kwargs(templates, plugin_names, plugin_vars, now):
 
 
 def _process_templates():
-	enable_accesscontrol = userManager.enabled
 	first_run = settings().getBoolean(["server", "firstRun"])
-	enable_gcodeviewer = settings().getBoolean(["gcodeViewer", "enabled"])
-	enable_timelapse = (settings().get(["webcam", "snapshot"]) and settings().get(["webcam", "ffmpeg"]))
-	enable_systemmenu = settings().get(["system"]) is not None and settings().get(["system", "actions"]) is not None
-	preferred_stylesheet = settings().get(["devel", "stylesheet"])
 
 	##~~ prepare templates
 
@@ -472,12 +511,10 @@ def _process_templates():
 	# navbar
 
 	templates["navbar"]["entries"] = dict(
-		settings=dict(template="navbar/settings.jinja2", _div="navbar_settings", styles=["display: none"], data_bind="visible: loginState.isAdmin")
+		settings=dict(template="navbar/settings.jinja2", _div="navbar_settings", styles=["display: none"], data_bind="visible: loginState.isAdmin"),
+		systemmenu=dict(template="navbar/systemmenu.jinja2", _div="navbar_systemmenu", styles=["display: none"], classes=["dropdown"], data_bind="visible: loginState.isAdmin", custom_bindings=False),
+		login=dict(template="navbar/login.jinja2", _div="navbar_login", classes=["dropdown"], custom_bindings=False),
 	)
-	if enable_accesscontrol:
-		templates["navbar"]["entries"]["login"] = dict(template="navbar/login.jinja2", _div="navbar_login", classes=["dropdown"], custom_bindings=False)
-	if enable_systemmenu:
-		templates["navbar"]["entries"]["systemmenu"] = dict(template="navbar/systemmenu.jinja2", _div="navbar_systemmenu", styles=["display: none"], classes=["dropdown"], data_bind="visible: loginState.isAdmin", custom_bindings=False)
 
 	# sidebar
 
@@ -492,12 +529,10 @@ def _process_templates():
 	templates["tab"]["entries"] = dict(
 		temperature=(gettext("Temperature"), dict(template="tabs/temperature.jinja2", _div="temp")),
 		control=(gettext("Control"), dict(template="tabs/control.jinja2", _div="control")),
+		gcodeviewer=(gettext("GCode Viewer"), dict(template="tabs/gcodeviewer.jinja2", _div="gcode")),
 		terminal=(gettext("Terminal"), dict(template="tabs/terminal.jinja2", _div="term")),
+		timelapse=(gettext("Timelapse"), dict(template="tabs/timelapse.jinja2", _div="timelapse"))
 	)
-	if enable_gcodeviewer:
-		templates["tab"]["entries"]["gcodeviewer"] = (gettext("GCode Viewer"), dict(template="tabs/gcodeviewer.jinja2", _div="gcode"))
-	if enable_timelapse:
-		templates["tab"]["entries"]["timelapse"] = (gettext("Timelapse"), dict(template="tabs/timelapse.jinja2", _div="timelapse"))
 
 	# settings dialog
 
@@ -519,21 +554,19 @@ def _process_templates():
 
 		section_octoprint=(gettext("OctoPrint"), None),
 
+		accesscontrol=(gettext("Access Control"), dict(template="dialogs/settings/accesscontrol.jinja2", _div="settings_users", custom_bindings=False)),
 		folders=(gettext("Folders"), dict(template="dialogs/settings/folders.jinja2", _div="settings_folders", custom_bindings=False)),
 		appearance=(gettext("Appearance"), dict(template="dialogs/settings/appearance.jinja2", _div="settings_appearance", custom_bindings=False)),
 		logs=(gettext("Logs"), dict(template="dialogs/settings/logs.jinja2", _div="settings_logs")),
 		server=(gettext("Server"), dict(template="dialogs/settings/server.jinja2", _div="settings_server", custom_bindings=False)),
 	)
-	if enable_accesscontrol:
-		templates["settings"]["entries"]["accesscontrol"] = (gettext("Access Control"), dict(template="dialogs/settings/accesscontrol.jinja2", _div="settings_users", custom_bindings=False))
 
 	# user settings dialog
 
-	if enable_accesscontrol:
-		templates["usersettings"]["entries"] = dict(
-			access=(gettext("Access"), dict(template="dialogs/usersettings/access.jinja2", _div="usersettings_access", custom_bindings=False)),
-			interface=(gettext("Interface"), dict(template="dialogs/usersettings/interface.jinja2", _div="usersettings_interface", custom_bindings=False)),
-		)
+	templates["usersettings"]["entries"] = dict(
+		access=(gettext("Access"), dict(template="dialogs/usersettings/access.jinja2", _div="usersettings_access", custom_bindings=False)),
+		interface=(gettext("Interface"), dict(template="dialogs/usersettings/interface.jinja2", _div="usersettings_interface", custom_bindings=False)),
+	)
 
 	# wizard
 
@@ -783,6 +816,19 @@ def _process_template_config(name, implementation, rule, config=None, counter=1)
 	return data
 
 
+def _filter_templates(templates, template_filter):
+	filtered_templates = dict()
+	for template_type, template_collection in templates.items():
+		filtered_entries = dict()
+		for template_key, template_entry in template_collection["entries"].items():
+			if template_filter(template_type, template_key):
+				filtered_entries[template_key] = template_entry
+		filtered_templates[template_type] = dict(order=filter(lambda x: x in filtered_entries,
+		                                                      template_collection["order"]),
+		                                         entries=filtered_entries)
+	return filtered_templates
+
+
 @app.route("/robots.txt")
 @util.flask.cached(timeout=-1)
 def robotsTxt():
@@ -924,14 +970,15 @@ def _get_translations(locale, domain):
 
 	def messages_from_po(path, locale, domain):
 		messages = dict()
-		with file(path) as f:
+		with codecs.open(path, encoding="utf-8") as f:
 			catalog = read_po(f, locale=locale, domain=domain)
 
 			for message in catalog:
 				message_id = message.id
 				if isinstance(message_id, (list, tuple)):
 					message_id = message_id[0]
-				messages[message_id] = message.string
+				if message.string:
+					messages[message_id] = message.string
 
 		return messages, catalog.plural_expr
 

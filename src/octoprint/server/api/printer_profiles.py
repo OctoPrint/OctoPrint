@@ -50,8 +50,11 @@ def printerProfilesAdd():
 		return make_response("Expected content-type JSON", 400)
 
 	try:
-		json_data = request.json
+		json_data = request.get_json()
 	except BadRequest:
+		return make_response("Malformed JSON body in request", 400)
+
+	if json_data is None:
 		return make_response("Malformed JSON body in request", 400)
 
 	if not "profile" in json_data:
@@ -105,8 +108,14 @@ def printerProfilesGet(identifier):
 @api.route("/printerprofiles/<string:identifier>", methods=["DELETE"])
 @restricted_access
 def printerProfilesDelete(identifier):
-	if printerProfileManager.get_current_or_default()["id"] == identifier:
-		return make_response("Cannot delete currently selected profile: %s" % identifier, 409)
+	current_profile = printerProfileManager.get_current()
+	if current_profile and current_profile["id"] == identifier:
+		return make_response("Cannot delete currently selected profile: {}".format(identifier), 409)
+
+	default_profile = printerProfileManager.get_default()
+	if default_profile and default_profile["id"] == identifier:
+		return make_response("Cannot delete default profile: {}".format(identifier), 409)
+
 	printerProfileManager.remove(identifier)
 	return NO_CONTENT
 
@@ -117,8 +126,11 @@ def printerProfilesUpdate(identifier):
 		return make_response("Expected content-type JSON", 400)
 
 	try:
-		json_data = request.json
+		json_data = request.get_json()
 	except BadRequest:
+		return make_response("Malformed JSON body in request", 400)
+
+	if json_data is None:
 		return make_response("Malformed JSON body in request", 400)
 
 	if not "profile" in json_data:

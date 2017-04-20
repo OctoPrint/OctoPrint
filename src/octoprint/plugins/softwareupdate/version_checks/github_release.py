@@ -8,8 +8,6 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import requests
 import logging
 
-from ..exceptions import ConfigurationInvalid
-
 RELEASE_URL = "https://api.github.com/repos/{user}/{repo}/releases"
 
 logger = logging.getLogger("octoprint.plugins.softwareupdate.version_checks.github_release")
@@ -117,12 +115,14 @@ def _get_sanitized_version(version_string):
 	Removes "-..." prefix from version strings.
 
 	Tests:
+	    >>> _get_sanitized_version(None)
 	    >>> _get_sanitized_version("1.2.15")
 	    '1.2.15'
 	    >>> _get_sanitized_version("1.2.15-dev12")
 	    '1.2.15'
 	"""
-	if "-" in version_string:
+
+	if version_string is not None and "-" in version_string:
 		version_string = version_string[:version_string.find("-")]
 	return version_string
 
@@ -151,6 +151,10 @@ def _get_comparable_version_pkg_resources(version_string, force_base=True):
 	import pkg_resources
 
 	version = pkg_resources.parse_version(version_string)
+
+	# A leading v is common in github release tags and old setuptools doesn't remove it.
+	if version and isinstance(version, tuple) and version[0].lower() == "*v":
+		version = version[1:]
 
 	if force_base:
 		if isinstance(version, tuple):
@@ -207,18 +211,20 @@ def _is_current(release_information, compare_type, custom=None, force_base=True)
 
 	Tests:
 
-	    >>> _is_current(dict(remote=dict(value=None))
+	    >>> _is_current(dict(remote=dict(value=None)), "python")
 	    True
-	    >>> _is_current(dict(local=dict(value="1.2.15"), remote=dict(value="1.2.16")))
+	    >>> _is_current(dict(local=dict(value="1.2.15"), remote=dict(value="1.2.16")), "python")
 	    False
-	    >>> _is_current(dict(local=dict(value="1.2.16dev1"), remote=dict(value="1.2.16dev2")))
+	    >>> _is_current(dict(local=dict(value="1.2.16dev1"), remote=dict(value="1.2.16dev2")), "python")
 	    True
-	    >>> _is_current(dict(local=dict(value="1.2.16dev1"), remote=dict(value="1.2.16dev2")), force_base=False)
+	    >>> _is_current(dict(local=dict(value="1.2.16dev1"), remote=dict(value="1.2.16dev2")), "python", force_base=False)
 	    False
-	    >>> _is_current(dict(local=dict(value="1.2.16dev3"), remote=dict(value="1.2.16dev2")), force_base=False)
+	    >>> _is_current(dict(local=dict(value="1.2.16dev3"), remote=dict(value="1.2.16dev2")), "python", force_base=False)
 	    True
-	    >>> _is_current(dict(local=dict(value="1.2.16dev3"), remote=dict(value="1.2.16dev2")), force_base=False, compare_type="python_unequal")
+	    >>> _is_current(dict(local=dict(value="1.2.16dev3"), remote=dict(value="1.2.16dev2")), "python_unequal", force_base=False)
 	    False
+	    >>> _is_current(dict(local=dict(value="1.3.0.post1+g1014712"), remote=dict(value="1.3.0")), "python")
+	    True
 
 	"""
 
@@ -241,10 +247,14 @@ def _is_current(release_information, compare_type, custom=None, force_base=True)
 
 
 def get_latest(target, check, custom_compare=None):
-	if not "user" in check or not "repo" in check:
-		raise ConfigurationInvalid("github_release update configuration for %s needs user and repo set" % target)
+	from ..exceptions import ConfigurationInvalid
 
+	user = check.get("user", None)
+	repo = check.get("repo", None)
 	current = check.get("current", None)
+	if user is None or repo is None or current is None:
+		raise ConfigurationInvalid("Update configuration for {} of type github_release needs all of user, repo and current set and not None".format(target))
+
 	include_prerelease = check.get("prerelease", False)
 	prerelease_channel = check.get("prerelease_channel", None)
 	force_base = check.get("force_base", True)

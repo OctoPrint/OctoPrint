@@ -8,7 +8,7 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 import click
 import logging
 
-from octoprint.cli import pass_octoprint_ctx, OctoPrintContext
+from octoprint.cli import pass_octoprint_ctx, OctoPrintContext, get_ctx_obj_option
 
 #~~ "octoprint plugin:command" commands
 
@@ -50,8 +50,8 @@ class OctoPrintPluginCommands(click.MultiCommand):
 		# context (basedir and configfile)
 		from octoprint import init_settings, init_pluginsystem, FatalStartupError
 		try:
-			self.settings = init_settings(ctx.obj.basedir, ctx.obj.configfile)
-			self.plugin_manager = init_pluginsystem(self.settings, safe_mode=ctx.obj.safe_mode)
+			self.settings = init_settings(get_ctx_obj_option(ctx, "basedir", None), get_ctx_obj_option(ctx, "configfile", None))
+			self.plugin_manager = init_pluginsystem(self.settings, safe_mode=get_ctx_obj_option(ctx, "safe_mode", False))
 		except FatalStartupError as e:
 			click.echo(e.message, err=True)
 			click.echo("There was a fatal error initializing the settings or the plugin system.", err=True)
