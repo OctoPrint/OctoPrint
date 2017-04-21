@@ -17,6 +17,7 @@ regex_float = re.compile(regex_float_pattern)
 
 regexes_parameters = dict(
 	floatP=re.compile("(^|[^A-Za-z])[Pp](?P<value>%s)" % regex_float_pattern),
+	floatR=re.compile("(^|[^A-Za-z])[Rr](?P<value>%s)" % regex_float_pattern),
 	floatS=re.compile("(^|[^A-Za-z])[Ss](?P<value>%s)" % regex_float_pattern),
 	floatZ=re.compile("(^|[^A-Za-z])[Zz](?P<value>%s)" % regex_float_pattern),
 	intN=re.compile("(^|[^A-Za-z])[Nn](?P<value>%s)" % regex_int_pattern),
@@ -147,30 +148,36 @@ class GcodeCommand(object):
 			attributeStr = " ".join(attr)
 			return "%s%s%s" % (self.command.upper(), " " + attributeStr if attributeStr else "", " " + self.param if self.param else "")
 
+
 class TypedQueue(queue.Queue):
 
 	def __init__(self, maxsize=0):
 		queue.Queue.__init__(self, maxsize=maxsize)
-		self._lookup = []
+		self._lookup = set()
+
+	def put(self, item, item_type=None, *args, **kwargs):
+		queue.Queue.put(self, (item, item_type), *args, **kwargs)
+
+	def get(self, *args, **kwargs):
+		item, _ = queue.Queue.get(self, *args, **kwargs)
+		return item
 
 	def _put(self, item):
-		if isinstance(item, tuple) and len(item) == 3:
-			cmd, line, cmd_type = item
-			if cmd_type is not None:
-				if cmd_type in self._lookup:
-					raise TypeAlreadyInQueue(cmd_type, "Type {cmd_type} is already in queue".format(**locals()))
-				else:
-					self._lookup.append(cmd_type)
+		_, item_type = item
+		if item_type is not None:
+			if item_type in self._lookup:
+				raise TypeAlreadyInQueue(item_type, "Type {} is already in queue".format(item_type))
+			else:
+				self._lookup.add(item_type)
 
 		queue.Queue._put(self, item)
 
 	def _get(self):
 		item = queue.Queue._get(self)
+		_, item_type = item
 
-		if isinstance(item, tuple) and len(item) == 3:
-			cmd, line, cmd_type = item
-			if cmd_type is not None and cmd_type in self._lookup:
-				self._lookup.remove(cmd_type)
+		if item_type is not None:
+			self._lookup.discard(item_type)
 
 		return item
 

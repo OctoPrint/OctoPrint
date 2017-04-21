@@ -12,8 +12,10 @@ import logging
 import time
 
 
-from octoprint.comm.protocol.gcode.util import GcodeCommand, regex_positive_float_pattern
+from octoprint.comm.protocol.gcode.util import GcodeCommand, regex_float_pattern, regex_positive_float_pattern, regex_int_pattern
 
+# TODO needed? move?
+from octoprint.util import chunks
 
 class ReprapGcodeFlavor(object):
 
@@ -31,6 +33,9 @@ class ReprapGcodeFlavor(object):
 	long_running_commands = ["G4", "G28", "G29", "G30", "G32", "M190", "M109", "M400", "M226"]
 	asynchronous_commands = ["G0", "G1", "G2", "G3"]
 
+	regex_resend_linenumber = re.compile("(N|N:)?(?P<n>%s)" % regex_int_pattern)
+	"""Regex to use for request line numbers in resend requests"""
+
 	regex_temp = re.compile("(?P<tool>B|T(?P<toolnum>\d*)):\s*(?P<actual>%s)(\s*\/?\s*(?P<target>%s))?" % (regex_positive_float_pattern, regex_positive_float_pattern))
 	"""Regex matching temperature entries in line.
 
@@ -41,6 +46,18 @@ class ReprapGcodeFlavor(object):
 	  * ``actual``: actual temperature (float)
 	  * ``target``: target temperature, if provided (float)
 	"""
+
+	regex_position = re.compile("(?P<axis>X|Y|Z|E):(?P<pos>{float})\s*".format(float=regex_float_pattern))
+	"""Regex for matching position entries in line.
+
+	Groups will be as follows:
+
+	  * ``axis``: axis designator, either ``X``, ``Y``, ``Z`` or ``E`` (str)
+	  * ``pos``: axis position (float)
+	"""
+
+	regex_firmware_splitter = re.compile("\s*([A-Z0-9_]+):")
+	"""Regex to use for splitting M115 responses."""
 
 	regex_sd_file_opened = re.compile("file opened:\s*(?P<name>.*?)(\s+size:\s*(?P<size>[0-9]+)|$)")
 
@@ -61,7 +78,9 @@ class ReprapGcodeFlavor(object):
 
 	@classmethod
 	def comm_ok(cls, line, lower_line, state):
-		return lower_line.startswith("ok"), cls.message_temperature(line, lower_line, state)
+		return lower_line.startswith("ok"), cls.message_temperature(line, lower_line, state) \
+		                                    or cls.message_position(line, lower_line, state) \
+		                                    or cls.message_firmware_info(line, lower_line, state)
 
 	@classmethod
 	def comm_start(cls, line, lower_line, state):
@@ -97,7 +116,15 @@ class ReprapGcodeFlavor(object):
 
 	@classmethod
 	def message_temperature(cls, line, lower_line, state):
-		return " T:" in line or line.startswith("T:") or " T0:" in line or line.startswith("T0:")
+		return "T:" in line or "T0:" in line or "B:" in line
+
+	@classmethod
+	def message_position(cls, line, lower_line, state):
+		return "C:" in line or "X:" in line
+
+	@classmethod
+	def message_firmware_info(cls, line, lower_line, state):
+		return "NAME:" in line
 
 	@classmethod
 	def message_sd_init_ok(cls, line, lower_line, state):
@@ -168,11 +195,9 @@ class ReprapGcodeFlavor(object):
 	@classmethod
 	def parse_comm_resend(cls, line, lower_line, state):
 		line_to_resend = None
-		try:
-			line_to_resend = int(line.replace("N:", " ").replace("N", " ").replace(":", " ").split()[-1])
-		except:
-			if "rs" in line:
-				line_to_resend = int(line.split()[1])
+		match = cls.regex_resend_linenumber.search(line)
+		if match is not None:
+			line_to_resend = int(match.group("n"))
 		return dict(linenumber=line_to_resend)
 
 	@classmethod
@@ -216,95 +241,33 @@ class ReprapGcodeFlavor(object):
 		            heatup_detected=heatup_detected)
 
 	@classmethod
-	def _canonicalize_temperatures(cls, parsed, current):
-		"""
-		Canonicalizes the temperatures provided in parsed.
+	def parse_message_position(cls, line, lower_line, state):
+		position = dict(x=None, y=None, z=None, e=None)
+		for match in re.finditer(cls.regex_position, line):
+			position[match.group("axis").lower()] = float(match.group("pos"))
+		return position
 
-		Will make sure that returned result only contains extruder keys
-		like Tn, so always qualified with a tool number.
+	@classmethod
+	def parse_message_firmware_info(cls, line, lower_line, state):
+		data = cls._parse_firmware_line(line)
+		firmware_name = data.get("FIRMWARE_NAME")
 
-		The algorithm for cleaning up the parsed keys is the following:
-
-		  * If ``T`` is not included with the reported extruders, return
-		  * If more than just ``T`` is reported:
-		    * If both ``T`` and ``T0`` are reported set ``Tc`` to ``T``, remove
-		      ``T`` from the result.
-		    * Else set ``T0`` to ``T`` and delete ``T`` (Smoothie extra).
-		  * If only ``T`` is reported, set ``Tc`` to ``T`` and delete ``T``
-		  * return
-
-		Arguments:
-		    parsed (dict): the parsed temperatures (mapping tool => (actual, target))
-		      to canonicalize
-		    current (int): the current active extruder
-		Returns:
-		    dict: the canonicalized version of ``parsed``
-		"""
-
-		reported_extruders = filter(lambda x: x.startswith("T"), parsed.keys())
-		if not "T" in reported_extruders:
-			# Our reported_extruders are either empty or consist purely
-			# of Tn keys, no need for any action
-			return parsed
-
-		current_tool_key = "T%d" % current
-		result = dict(parsed)
-
-		if len(reported_extruders) > 1:
-			if "T0" in reported_extruders:
-				# Both T and T0 are present, so T contains the current
-				# extruder's temperature, e.g. for current_tool == 1:
-				#
-				#     T:<T1> T0:<T0> T2:<T2> ... B:<B>
-				#
-				# becomes
-				#
-				#     T0:<T1> T1:<T1> T2:<T2> ... B:<B>
-				#
-				# Same goes if Tc is already present, it will be overwritten:
-				#
-				#     T:<T1> T0:<T0> T1:<T1> T2:<T2> ... B:<B>
-				#
-				# becomes
-				#
-				#     T0:<T0> T1:<T1> T2:<T2> ... B:<B>
-				result[current_tool_key] = result["T"]
-				del result["T"]
-			else:
-				# So T is there, but T0 isn't. That looks like Smoothieware which
-				# always reports the first extruder T0 as T:
-				#
-				#     T:<T0> T1:<T1> T2:<T2> ... B:<B>
-				#
-				# becomes
-				#
-				#     T0:<T0> T1:<T1> T2:<T2> ... B:<B>
-				result["T0"] = result["T"]
-				del result["T"]
-
-		else:
-			# We only have T. That can mean two things:
+		if firmware_name is None:
+			# Malyan's "Marlin compatible firmware" isn't actually Marlin compatible and doesn't even
+			# report its firmware name properly in response to M115. Wonderful - why stick to established
+			# protocol when you can do your own thing, right?
 			#
-			#   * we only have one extruder at all, or
-			#   * we are currently parsing a response to M109/M190, which on
-			#     some firmwares doesn't report the full M105 output while
-			#     waiting for the target temperature to be reached but only
-			#     reports the current tool and bed
+			# Example: NAME: Malyan VER: 2.9 MODEL: M200 HW: HA02
 			#
-			# In both cases it is however safe to just move our T over
-			# to T<current> in the parsed data, current should always stay
-			# 0 for single extruder printers. E.g. for current_tool == 1:
-			#
-			#     T:<T1>
-			#
-			# becomes
-			#
-			#     T1:<T1>
+			# We do a bit of manual fiddling around here to circumvent that issue and get ourselves a
+			# reliable firmware name (NAME + VER) out of the Malyan M115 response.
+			name = data.get("NAME")
+			ver = data.get("VER")
+			if "malyan" in name.lower() and ver:
+				firmware_name = name.strip() + " " + ver.strip()
 
-			result[current_tool_key] = result["T"]
-			del result["T"]
-
-		return result
+		return dict(firmware_name=firmware_name,
+		            data=data)
 
 	@classmethod
 	def parse_message_sd_file_opened(cls, line, lower_line, state):
@@ -457,3 +420,114 @@ class ReprapGcodeFlavor(object):
 	@classmethod
 	def command_sd_delete(cls, name):
 		return GcodeCommand("M30", param=name)
+
+	##~~ Helpers
+
+	@classmethod
+	def _canonicalize_temperatures(cls, parsed, current):
+		"""
+		Canonicalizes the temperatures provided in parsed.
+
+		Will make sure that returned result only contains extruder keys
+		like Tn, so always qualified with a tool number.
+
+		The algorithm for cleaning up the parsed keys is the following:
+
+		  * If ``T`` is not included with the reported extruders, return
+		  * If more than just ``T`` is reported:
+		    * If both ``T`` and ``T0`` are reported set ``Tc`` to ``T``, remove
+		      ``T`` from the result.
+		    * Else set ``T0`` to ``T`` and delete ``T`` (Smoothie extra).
+		  * If only ``T`` is reported, set ``Tc`` to ``T`` and delete ``T``
+		  * return
+
+		Arguments:
+		    parsed (dict): the parsed temperatures (mapping tool => (actual, target))
+		      to canonicalize
+		    current (int): the current active extruder
+		Returns:
+		    dict: the canonicalized version of ``parsed``
+		"""
+
+		reported_extruders = filter(lambda x: x.startswith("T"), parsed.keys())
+		if not "T" in reported_extruders:
+			# Our reported_extruders are either empty or consist purely
+			# of Tn keys, no need for any action
+			return parsed
+
+		current_tool_key = "T%d" % current
+		result = dict(parsed)
+
+		if len(reported_extruders) > 1:
+			if "T0" in reported_extruders:
+				# Both T and T0 are present, so T contains the current
+				# extruder's temperature, e.g. for current_tool == 1:
+				#
+				#     T:<T1> T0:<T0> T2:<T2> ... B:<B>
+				#
+				# becomes
+				#
+				#     T0:<T1> T1:<T1> T2:<T2> ... B:<B>
+				#
+				# Same goes if Tc is already present, it will be overwritten:
+				#
+				#     T:<T1> T0:<T0> T1:<T1> T2:<T2> ... B:<B>
+				#
+				# becomes
+				#
+				#     T0:<T0> T1:<T1> T2:<T2> ... B:<B>
+				result[current_tool_key] = result["T"]
+				del result["T"]
+			else:
+				# So T is there, but T0 isn't. That looks like Smoothieware which
+				# always reports the first extruder T0 as T:
+				#
+				#     T:<T0> T1:<T1> T2:<T2> ... B:<B>
+				#
+				# becomes
+				#
+				#     T0:<T0> T1:<T1> T2:<T2> ... B:<B>
+				result["T0"] = result["T"]
+				del result["T"]
+
+		else:
+			# We only have T. That can mean two things:
+			#
+			#   * we only have one extruder at all, or
+			#   * we are currently parsing a response to M109/M190, which on
+			#     some firmwares doesn't report the full M105 output while
+			#     waiting for the target temperature to be reached but only
+			#     reports the current tool and bed
+			#
+			# In both cases it is however safe to just move our T over
+			# to T<current> in the parsed data, current should always stay
+			# 0 for single extruder printers. E.g. for current_tool == 1:
+			#
+			#     T:<T1>
+			#
+			# becomes
+			#
+			#     T1:<T1>
+
+			result[current_tool_key] = result["T"]
+			del result["T"]
+
+		return result
+
+	@classmethod
+	def _parse_firmware_line(cls, line):
+		"""
+		Parses the provided firmware info line.
+		The result will be a dictionary mapping from the contained keys to the contained
+		values.
+		Arguments:
+		    line (str): the line to parse
+		Returns:
+		    dict: a dictionary with the parsed data
+		"""
+
+		result = dict()
+		split_line = cls.regex_firmware_splitter.split(line.strip())[1:]  # first entry is empty start of trimmed string
+		for key, value in chunks(split_line, 2):
+			result[key] = value
+		return result

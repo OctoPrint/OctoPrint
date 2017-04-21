@@ -5,7 +5,7 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-from octoprint.comm.protocol import Protocol, FileStreamingProtocolMixin, \
+from octoprint.comm.protocol import Protocol, ThreeDPrinterProtocolMixin, FileStreamingProtocolMixin, \
 	MotorControlProtocolMixin, FanControlProtocolMixin, ProtocolState
 from octoprint.comm.transport import Transport, LineAwareTransportWrapper, \
 	PushingTransportWrapper, PushingTransportWrapperListener
@@ -28,7 +28,7 @@ import threading
 import time
 
 
-class ReprapGcodeProtocol(Protocol, MotorControlProtocolMixin,
+class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProtocolMixin,
                           FanControlProtocolMixin, FileStreamingProtocolMixin,
                           PushingTransportWrapperListener):
 
@@ -67,10 +67,12 @@ class ReprapGcodeProtocol(Protocol, MotorControlProtocolMixin,
 			# temperature and heating related
 			temperatures=dict(),
 			heating_start=None,
+			heating_lost=0,
 			heating=False,
 
 			# current stuff
 			current_tool=0,
+			former_tool=0,
 			current_z=None,
 
 			# sd status
@@ -79,6 +81,7 @@ class ReprapGcodeProtocol(Protocol, MotorControlProtocolMixin,
 			sd_files_temp=None,
 
 			# resend status
+			resend_active=False,
 			resend_delta=None,
 			resend_linenumber=None,
 			resend_count=None,
@@ -93,6 +96,7 @@ class ReprapGcodeProtocol(Protocol, MotorControlProtocolMixin,
 
 			# timeout
 			timeout = None,
+			timeout_consecutive=0,
 		)
 		self._protected_state = protectedkeydict(self._internal_state)
 
@@ -120,6 +124,10 @@ class ReprapGcodeProtocol(Protocol, MotorControlProtocolMixin,
 		self._send_queue_active = False
 		self._sending_thread = None
 
+	@property
+	def _active(self):
+		return self._transport is not None and self._transport.active and self._send_queue_active
+
 	def connect(self, transport, transport_args=None, transport_kwargs=None):
 		if not isinstance(transport, Transport):
 			raise ValueError("transport must be a Transport subclass but is a {} instead".format(type(transport)))
@@ -138,7 +146,7 @@ class ReprapGcodeProtocol(Protocol, MotorControlProtocolMixin,
 		                                         transport_kwargs=transport_kwargs)
 
 
-	def disconnect(self):
+	def disconnect(self, error=False):
 		# TODO either clear send queue, or wait until everything has been sent...
 		self._send_queue_active = False
 		self._sending_thread = None
@@ -231,14 +239,15 @@ class ReprapGcodeProtocol(Protocol, MotorControlProtocolMixin,
 	def can_send(self):
 		return not self._internal_state["long_running_command"] and not self._internal_state["heating"]
 
-	def send_commands(self, command_type=None, *commands):
+	def send_commands(self, *commands, **kwargs):
+		command_type = kwargs.get("command_type")
 		if self.state == ProtocolState.PRINTING and not self._job.runs_parallel:
 			if len(commands) > 1:
 				command_type = None
 			for command in commands:
 				self._command_queue.put((command, command_type))
 		elif self._is_operational():
-			self._send_commands(commands, command_type=command_type)
+			self._send_commands(*commands, command_type=command_type)
 
 	##~~ State handling
 
@@ -301,16 +310,28 @@ class ReprapGcodeProtocol(Protocol, MotorControlProtocolMixin,
 			# TODO handle EOF
 			pass
 
-		line = to_unicode(data, encoding="ascii", errors="replace").strip()
-		lower_line = line.lower()
+		def convert_line(line):
+			if line is None:
+				return None, None
+			stripped_line = line.strip().strip("\0")
+			return stripped_line, stripped_line.lower()
+
+		orig_line = to_unicode(data, encoding="ascii", errors="replace").strip()
+		line, lower_line = convert_line(orig_line)
+
+		if len(line):
+			# TODO handle dwelling
+			pass
 
 		any_processed = False
 
-		for message in self._registered_messages:
+		for message in self._registered_messages: # flavor.comm_* + flavor.message_*
 			handler_method = getattr(self, "_on_{}".format(message), None)
 			if not handler_method:
+				# no handler, nothing to do
 				continue
 
+			# match line against flavor specific matcher
 			matches = getattr(self.flavor, message)(line, lower_line, self._protected_state)
 			continue_further = False
 			if isinstance(matches, tuple) and len(matches) == 2:
@@ -325,6 +346,7 @@ class ReprapGcodeProtocol(Protocol, MotorControlProtocolMixin,
 
 				parse_method = getattr(self.flavor, "parse_{}".format(message), None)
 				if parse_method:
+					# flavor specific parser? run it
 					parse_result = parse_method(line, lower_line, self._protected_state)
 					if parse_result is None:
 						if continue_further:
@@ -332,9 +354,24 @@ class ReprapGcodeProtocol(Protocol, MotorControlProtocolMixin,
 						else:
 							break
 
+					# add parser result to kwargs
 					message_args.update(parse_result)
 
-				if not handler_method(**message_args):
+				# before handler: flavor.before_comm_* or flavor.before_message_*
+				before_handler = getattr(self.flavor, "before_{}".format(message), None)
+				if before_handler:
+					before_handler(**message_args)
+
+				# run handler
+				result = handler_method(**message_args)
+
+				# after handler: flavor.after_comm_* or flavor.after_message_*
+				after_handler = getattr(self.flavor, "after_{}".format(message), None)
+				if after_handler:
+					after_handler(result, **message_args)
+
+				if not result:
+					# nothing returned? handled -> only continue further if instructed
 					if continue_further:
 						continue
 					else:
@@ -351,15 +388,63 @@ class ReprapGcodeProtocol(Protocol, MotorControlProtocolMixin,
 				self._clear_to_send.set()
 
 	def _on_comm_timeout(self):
-		if self.state == ProtocolState.CONNECTING:
-			self.disconnect()
+		if self.state not in (ProtocolState.PRINTING,
+		                      ProtocolState.PAUSED,
+		                      ProtocolState.CONNECTED):
+			return
+
+		general_message = "Configure long running commands or increase communication timeout if that happens regularly on specific commands or long moves."
+
+		# figure out which consecutive timeout maximum we have to use
+		if self._internal_state["long_running_command"]:
+			consecutive_max = 5 # TODO take from config
+		elif self.state in (ProtocolState.PRINTING,):
+			consecutive_max = 10 # TODO take from config
 		else:
-			if not self._internal_state["long_running_command"]:
-				self.notify_listeners("on_protocol_log_message", self, "Communication timeout, forcing a line")
-				self._send_command(self.flavor.command_get_temp())
+			consecutive_max = 15 # TODO take from config
+
+		# now increment the timeout counter
+		self._internal_state["timeout_consecutive"] += 1
+		self._logger.debug("Now at {} consecutive timeouts".format(self._internal_state["timeout_consecutive"]))
+
+		if 0 < consecutive_max < self._internal_state["timeout_consecutive"]:
+			# too many consecutive timeouts, we give up
+			# TODO implement
+			pass
+
+		elif self._internal_state["resend_active"]:
+			message = "Communication timeout during an active resend, resending same line again to trigger response from printer."
+			self._logger.info(message)
+			self.notify_listeners("on_protocol_log", self, message + " " + general_message)
+			if self._send_same_from_resend():
 				self._clear_to_send.set()
-			else:
-				self._logger.debug("Ran into a communication timeout, but a command known to be a long runner is currently active")
+
+		elif self._internal_state["heating"]:
+			# blocking heatup active, consider that finished
+			message = "Timeout while in an active heatup, considering heatup to be over"
+			self._logger.info(message)
+			self._finish_heatup()
+
+		elif self._internal_state["long_running_command"]:
+			# long running command active, ignore timeout
+			self._logger.debug("Ran into a communication timeout, but a command known to be a long runner is currently active")
+
+		elif self.state in (ProtocolState.PRINTING, ProtocolState.PAUSED):
+			# printing, try to tickle the printer
+			message = "Communication timeout while printing, trying to trigger response from printer."
+			self._logger.info(message)
+			self.notify_listeners("on_protocol_log_message", self, message + " " + general_message)
+			if self._send_command("M105", command_type="temperature"):
+				self._clear_to_send.set()
+
+		elif self._clear_to_send.blocked():
+			# timeout while idle and no oks left, let's try to tickle the printer
+			message = "Communication timeout while idle, trying to trigger response from printer."
+			self._logger.info(message)
+			self.notify_listeners("on_protocol_log_message", self, message + " " + general_message)
+			self._clear_to_send.set()
+
+		return self.state != ProtocolState.PRINTING
 
 	def _on_comm_ok(self):
 		if self._internal_state["ignore_ok"] > 0:
@@ -375,17 +460,25 @@ class ReprapGcodeProtocol(Protocol, MotorControlProtocolMixin,
 
 		self._clear_to_send.set()
 
-		if self._internal_state["heating"]:
-			self._internal_state["heating"] = False
-		if self._internal_state["long_running_command"]:
-			self._internal_state["long_running_command"] = False
+		# reset long running commands, persisted current tools and heatup counters on ok
+
+		self._internal_state["long_running_command"] = False
+
+		if self._internal_state["former_tool"]:
+			self._internal_state["current_tool"] = self._internal_state["former_tool"]
+			self._internal_state["former_tool"] = None
+
+		self._finish_heatup()
 
 		if not self.state in (ProtocolState.PRINTING, ProtocolState.CONNECTED, ProtocolState.PAUSED):
 			return
 
+		# process ongoing resend requests and queues if we are operational
+
 		if self._internal_state["resend_delta"] is not None:
 			self._send_next_from_resend()
 		else:
+			self._internal_state["resend_active"] = False
 			self._continue_sending()
 
 	def _on_comm_ignore_ok(self):
@@ -398,7 +491,19 @@ class ReprapGcodeProtocol(Protocol, MotorControlProtocolMixin,
 
 	def _on_comm_resend(self, linenumber):
 		if linenumber is None:
-			return
+			return False
+
+		if self._internal_state["resend_delta"] is None and linenumber == self._current_linenumber:
+			# We don't expect to have an active resend request and the printer is requesting a resend of
+			# a line we haven't yet sent.
+			#
+			# This means the printer got a line from us with N = self._current_linenumber - 1 but had already
+			# acknowledged that. This can happen if the last line was resent due to a timeout during an active
+			# (prior) resend request.
+			#
+			# We will ignore this resend request and just continue normally.
+			self._logger.debug("Ignoring resend request for line {} == current line, we haven't sent that yet so the printer got N-1 twice from us, probably due to a timeout".format(linenumber))
+			return False
 
 		last_communication_error = self._last_communication_error
 		self._last_communication_error = None
@@ -411,11 +516,24 @@ class ReprapGcodeProtocol(Protocol, MotorControlProtocolMixin,
 				and self._internal_state["resend_delta"] is not None and self._internal_state["resend_count"] < self._internal_state["resend_delta"]:
 			self._logger.debug("Ignoring resend request for line {}, that still originates from lines we sent before we got the first resend request".format(linenumber))
 			self._internal_state["resend_count"] += 1
-			return
+			return True
 
+		self._internal_state["resend_active"] = True
 		self._internal_state["resend_delta"] = resend_delta
 		self._internal_state["resend_linenumber"] = linenumber
 		self._internal_state["resend_count"] = 0
+
+		if resend_delta > len(self._last_lines) or len(self._last_lines) == 0 or resend_delta < 0:
+			self._logger.error("Printer requested to resend a line further back than we have")
+			if self._is_busy():
+				# TODO set error state & log
+				self.cancel_processing(error=True)
+			else:
+				self._internal_state["resend_delta"] = None
+
+		# TODO log resend (with rate limiting)
+
+		return True
 
 	def _on_comm_start(self):
 		if self.state == ProtocolState.CONNECTING:
@@ -493,85 +611,129 @@ class ReprapGcodeProtocol(Protocol, MotorControlProtocolMixin,
 	def _on_message_sd_printing_byte(self, current, total):
 		self.notify_listeners("on_protocol_sd_status", self, current, total)
 
+	def _finish_heatup(self):
+		if self._internal_state["heating_start"]:
+			self._internal_state["heating_lost"] = self._internal_state["heating_lost"] + (time.time() - self._internal_state["heating_start"])
+			self._internal_state["heating_start"] = None
+			self._internal_state["heating"] = False
+
 	##~~ Sending
 
 	def _continue_sending(self):
-		if self._internal_state["resend_delta"] is not None:
-			self._send_next_from_resend()
-		else:
-			if self.state == ProtocolState.PRINTING and self._job is not None:
-				if not self._send_from_queue():
-					self._send_next_from_job()
-			elif self.state == ProtocolState.CONNECTED or self.state == ProtocolState.PAUSED:
-				self._send_from_queue()
+		while self._active:
+			if self.state in (ProtocolState.CONNECTED, ProtocolState.PAUSED):
+				return self._send_from_queue()
 
-	def _send_next_from_resend(self):
+			elif self.state in (ProtocolState.PRINTING,):
+				# we are printing, we really want to send either something from the command
+				# queue or the next line from our file, so we only return here if we actually DO
+				# send something
+				if self._send_from_queue():
+					# we found something in the queue to send
+					return True
+
+				elif self._send_next_from_job():
+					# we sent the next line from the file
+					return True
+
+				self._logger.debug("No command sent on ok while printing, doing another iteration")
+
+	def _send_same_from_resend(self):
+		return self._send_next_from_resend(again=True)
+
+	def _send_next_from_resend(self, again=False):
 		self._last_communication_error = None
 
 		# Make sure we are only handling one sending job at a time
 		with self._send_queue_mutex:
-			def reset_resend_data():
-				self._internal_state["resend_delta"] = None
-				self._internal_state["resend_linenumber"] = None
-				self._internal_state["resend_count"] = 0
+			if again:
+				# If we are about to send the last line from the active resend request
+				# again, we first need to increment resend delta. It might already
+				# be set to None if the last resend line was already sent, so
+				# if that's the case we set it to 0. It will then be incremented,
+				# the last line will be sent again, and then the delta will be
+				# decremented and set to None again, completing the cycle.
+				if self._internal_state["resend_delta"] is None:
+					self._internal_state["resend_delta"] = 0
+				self._internal_state["resend_delta"] += 1
 
 			resend_delta = self._internal_state["resend_delta"]
-			if resend_delta > len(self._last_lines) or len(self._last_lines) == 0 or resend_delta < 0:
-				self._logger.error("Printer requested to resend a line further back than we have")
-				reset_resend_data()
-				if self._is_busy():
-					self.cancel_processing(error=True)
-				return
 
 			command = self._last_lines[-resend_delta]
 			linenumber = self._current_linenumber - resend_delta
 
-			self._enqueue_for_sending(command, linenumber=linenumber)
+			result = self._enqueue_for_sending(command, linenumber=linenumber)
 
 			self._internal_state["resend_delta"] -= 1
 			if self._internal_state["resend_delta"] <= 0:
-				reset_resend_data()
+				self._internal_state["resend_active"] = False
+				self._internal_state["resend_delta"] = None
+				self._internal_state["resend_linenumber"] = None
+				self._internal_state["resend_count"] = 0
+
+			return result
 
 	def _send_next_from_job(self):
 		with self._send_queue_mutex:
-			line = self._job.get_next()
-			if line is not None:
-				self._send_command(line)
-
-	def _send_from_queue(self):
-		with self._send_queue_mutex:
-			# We loop here to make sure that if we do NOT send the first command
-			# from the queue, we'll send the second (if there is one). We do not
-			# want to get stuck here by throwing away commands.
-			while True:
-				if self._command_queue.empty() or self._internal_state["only_from_job"]:
-					# no command queue or irrelevant command queue => return
+			while self._active:
+				# we loop until we've actually enqueued a line for sending
+				if self.state != ProtocolState.PRINTING:
+					# we are no longer printing, return False
 					return False
 
-				entry = self._command_queue.get()
+				line = self._job.get_next()
+				if line is None:
+					# end of job, return False
+					return False
+
+				if self._send_command(line):
+					return True
+
+				self._logger.debug("Command \"{}\" from job not enqueued, doing another iteration".format(line))
+
+	def _send_from_queue(self):
+		# We loop here to make sure that if we do NOT send the first command
+		# from the queue, we'll send the second (if there is one). We do not
+		# want to get stuck here by throwing away commands.
+		while True:
+			if self._internal_state["only_from_job"]:
+				# irrelevant command queue => return
+				return False
+
+			try:
+				entry = self._command_queue.get(block=False)
+			except queue.Empty:
+				# nothing in command queue
+				return False
+
+			try:
 				if isinstance(entry, tuple):
-					if not len(entry) == 2:
+					if not len(entry) == 3:
 						# something with that entry is broken, ignore it and fetch
 						# the next one
 						continue
-					cmd, cmd_type = entry
+					cmd, cmd_type, callback = entry
 				else:
 					cmd = entry
 					cmd_type = None
+					callback = None
 
-				if self._send_command(cmd, command_type=cmd_type):
+				if self._send_command(cmd, command_type=cmd_type, on_sent=callback):
 					# we actually did add this cmd to the send queue, so let's
 					# return, we are done here
 					return True
+			finally:
+				self._command_queue.task_done()
 
 	def _send_commands(self, *commands, **kwargs):
+		# TODO return True or False depending on whether something/all? was sent
 		command_type = kwargs.get("command_type", None)
 		for command in commands:
 			if len(commands) > 1:
 				command_type = None
 			self._send_command(command, command_type=command_type)
 
-	def _send_command(self, command, command_type=None):
+	def _send_command(self, command, command_type=None, on_sent=None):
 		if isinstance(command, GcodeCommand):
 			gcode = command
 			command = str(gcode)
@@ -591,30 +753,32 @@ class ReprapGcodeProtocol(Protocol, MotorControlProtocolMixin,
 				#	# if this is a gcode bound to an event, trigger that now
 				#	self._eventbus.fire(gcode_to_event[gcode.command])
 
-			self._enqueue_for_sending(command, command_type=command_type)
+			if self._enqueue_for_sending(command, command_type=command_type, on_sent=on_sent):
+				if self._internal_state["trigger_events"]:
+					self._process_command_phase("queued", command, command_type, gcode=gcode)
+				return True
+			else:
+				return False
 
-			if self._internal_state["trigger_events"]:
-				self._process_command_phase("queued", command, command_type, gcode=gcode)
-
-			return True
-
-	def _enqueue_for_sending(self, command, command_type=None, linenumber=None):
+	def _enqueue_for_sending(self, command, linenumber=None, command_type=None, on_sent=None):
 		"""
 		Enqueues a command and optional command_type and linenumber in the send queue.
 
 		Arguments:
 		    command (unicode): The command to send
+		    linenumber (int): An optional line number to use for sending the
+		        command.
 		    command_type (unicode): An optional command type. There can only be
 		        one command of a specified command type in the queue at any
 		        given time.
-		    linenumber (int): An optional line number to use for sending the
-		        command.
 		"""
 
 		try:
-			self._send_queue.put((command, linenumber, command_type))
+			self._send_queue.put((command, linenumber, command_type, on_sent), item_type=command_type)
+			return True
 		except TypeAlreadyInQueue as e:
 			self._logger.debug("Type already in queue: {}".format(e.type))
+			return False
 
 	def _send_loop(self):
 		"""
@@ -635,7 +799,7 @@ class ReprapGcodeProtocol(Protocol, MotorControlProtocolMixin,
 						break
 
 					# fetch command and optional linenumber from queue
-					command, linenumber, command_type = entry
+					command, linenumber, command_type, on_sent = entry
 
 					# some firmwares (e.g. Smoothie) might support additional in-band communication that will not
 					# stick to the acknowledgement behaviour of GCODE, so we check here if we have a GCODE command
@@ -683,6 +847,9 @@ class ReprapGcodeProtocol(Protocol, MotorControlProtocolMixin,
 							self._do_send_without_checksum(command_to_send)
 
 					# trigger "sent" phase and use up one "ok"
+					if on_sent is not None and callable(on_sent):
+						# we have a sent callback for this specific command, let's execute it now
+						on_sent()
 					self._process_command_phase("sent", command, command_type, gcode=gcode)
 
 					# we only need to use up a clear if the command we just sent was either a gcode command or if we also
@@ -785,7 +952,9 @@ class ReprapGcodeProtocol(Protocol, MotorControlProtocolMixin,
 
 	def _do_send_with_checksum(self, cmd, lineNumber):
 		command_to_send = b"N%d %s" % (lineNumber, cmd)
-		checksum = reduce(lambda x,y:x^y, map(ord, command_to_send))
+		checksum = 0
+		for c in command_to_send:
+			checksum ^= ord(c)
 		command_to_send = b"%s*%d" % (command_to_send, checksum)
 		self._do_send_without_checksum(command_to_send)
 
@@ -834,15 +1003,23 @@ class ReprapGcodeProtocol(Protocol, MotorControlProtocolMixin,
 		pass
 	_gcode_M190_queuing = _gcode_M140_queuing
 
-	def _gcode_M104_sent(self, cmd, cmd_type=None):
+	def _gcode_M104_sent(self, cmd, cmd_type=None, wait=False, support_r=False):
 		tool_num = self._internal_state["current_tool"]
 		tool_match = regexes_parameters["intT"].search(cmd)
+
 		if tool_match:
 			tool_num = int(tool_match.group("value"))
 
-		tool = "tool{}".format(tool_num)
+			if wait:
+				self._internal_state["former_tool"] = self._internal_state["current_tool"]
+				self._internal_state["current_tool"] = tool_num
+
 		match = regexes_parameters["floatS"].search(cmd)
+		if not match and support_r:
+			match = regexes_parameters["floatR"].search(cmd)
+
 		if match:
+			tool = "tool{}".format(tool_num)
 			try:
 				target = float(match.group("value"))
 				self._set_temperature(tool, None, target)
@@ -850,8 +1027,11 @@ class ReprapGcodeProtocol(Protocol, MotorControlProtocolMixin,
 			except ValueError:
 				pass
 
-	def _gcode_M140_sent(self, cmd, cmd_type=None):
+	def _gcode_M140_sent(self, cmd, cmd_type=None, wait=False, support_r=False):
 		match = regexes_parameters["floatS"].search(cmd)
+		if not match and support_r:
+			match = regexes_parameters["floatR"].search(cmd)
+
 		if match:
 			try:
 				target = float(match.group("value"))
@@ -862,13 +1042,20 @@ class ReprapGcodeProtocol(Protocol, MotorControlProtocolMixin,
 
 	def _gcode_M109_sent(self, cmd, cmd_type=None):
 		self._internal_state["heatup_start"] = time.time()
+		self._internal_state["long_running_command"] = True
 		self._internal_state["heating"] = True
-		self._gcode_M104_sent(cmd, cmd_type)
+		self._gcode_M104_sent(cmd, cmd_type, wait=True, support_r=True)
 
 	def _gcode_M190_sent(self, cmd, cmd_type=None):
 		self._internal_state["heatup_start"] = time.time()
+		self._internal_state["long_running_command"] = True
 		self._internal_state["heating"] = True
-		self._gcode_M140_sent(cmd, cmd_type)
+		self._gcode_M140_sent(cmd, cmd_type, wait=True, support_r=True)
+
+	def _gcode_M116_sent(self, cmd, cmd_type=None):
+		self._internal_state["heatup_start"] = time.time()
+		self._internal_state["long_running_command"] = True
+		self._internal_state["heating"] = True
 
 	def _gcode_M110_sending(self, cmd, cmd_type=None):
 		new_line_number = None

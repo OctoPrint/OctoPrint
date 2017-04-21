@@ -27,7 +27,7 @@ def register_transports():
 	register_transport(TcpTransport)
 
 	# more transports provided by plugins
-	hooks = plugin_manager().get_hooks("octoprint.comm.transport.register")
+	hooks = plugin_manager().get_hooks(b"octoprint.comm.transport.register")
 	for name, hook in hooks.items():
 		try:
 			transports = hook()
@@ -83,12 +83,20 @@ class Transport(ListenerAware):
 		param_dict = get_param_dict(params, options)
 		self.create_connection(**param_dict)
 		self.state = TransportState.CONNECTED
+		self.notify_listeners("on_transport_connected", self)
 
-	def disconnect(self):
+	def disconnect(self, error=None):
 		if self.state == TransportState.DISCONNECTED:
 			raise TransportNotConnectedError("Already disconnected")
 		self.drop_connection()
-		self.state = TransportState.DISCONNECTED
+
+		if error:
+			self.state = TransportState.DISCONNECTED_WITH_ERROR
+			self.notify_listeners("on_transport_log_message", self, error)
+		else:
+			self.state = TransportState.DISCONNECTED
+
+		self.notify_listeners("on_transport_disconnected", self, error=error)
 
 	def create_connection(self, *args, **kwargs):
 		pass
@@ -118,6 +126,7 @@ class Transport(ListenerAware):
 class TransportState(object):
 	CONNECTED = "connected"
 	DISCONNECTED = "disconnected"
+	DISCONNECTED_WITH_ERROR = "disconnected_with_error"
 
 
 class TransportNotConnectedError(Exception):
@@ -128,12 +137,41 @@ class TransportAlreadyConnectedError(Exception):
 	pass
 
 
-class SeparatorAwareTransportWrapper(ListenerAware):
+class TransportWrapper(ListenerAware):
+
+	unforwarded_handlers = []
+
+	def __init__(self, transport):
+		ListenerAware.__init__(self)
+		self.transport = transport
+		self.transport.register_listener(self)
+
+		def forward_handler(name):
+			def f(*args, **kwargs):
+				# replace references to self.transport with self
+				args = [self if arg == self.transport else arg for arg in args]
+				kwargs = dict((key, self if value == self.transport else value) for key, value in kwargs.items())
+
+				# forward
+				self.notify_listeners(name, *args, **kwargs)
+			return f
+
+		for handler in filter(lambda x: x.startswith("on_transport_"), dir(TransportListener)):
+			if handler not in self.__class__.unforwarded_handlers:
+				setattr(self, handler, forward_handler(handler))
+
+	def __getattr__(self, item):
+		return getattr(self.transport, item)
+
+
+class SeparatorAwareTransportWrapper(TransportWrapper):
+
+	unforwarded_handlers = ["on_transport_log_received_data"]
+	"""We have read overwritten and hence send our own received_data notification."""
 
 	def __init__(self, transport, separator, internal_timeout=0.1):
-		super(SeparatorAwareTransportWrapper, self).__init__()
+		TransportWrapper.__init__(self, transport)
 
-		self.transport = transport
 		self.separator = separator
 		self.internal_timeout = internal_timeout
 
@@ -168,13 +206,6 @@ class SeparatorAwareTransportWrapper(ListenerAware):
 		self.notify_listeners("on_transport_log_received_data", self, data)
 		return data
 
-	def write(self, data):
-		self.transport.write(data)
-		self.notify_listeners("on_transport_log_sent_data", self, data)
-
-	def __getattr__(self, item):
-		return getattr(self.transport, item)
-
 	def __str__(self):
 		return "SeparatorAwareTransportWrapper({}, separator={})".format(self.transport, self.separator)
 
@@ -186,15 +217,19 @@ class LineAwareTransportWrapper(SeparatorAwareTransportWrapper):
 	def __str__(self):
 		return "LineAwareTransportWrapper({})".format(self.transport)
 
-class PushingTransportWrapper(object):
+class PushingTransportWrapper(TransportWrapper):
 
 	def __init__(self, transport, name="pushingTransportReceiveLoop", timeout=None):
-		self.transport = transport
+		super(PushingTransportWrapper, self).__init__(transport)
 		self.name = name
 		self.timeout = timeout
 
 		self._receiver_active = False
 		self._receiver_thread = None
+
+	@property
+	def active(self):
+		return self._receiver_active
 
 	def connect(self, **kwargs):
 		self.transport.connect(**kwargs)
@@ -222,13 +257,16 @@ class PushingTransportWrapper(object):
 				if self._receiver_active:
 					raise
 
-	def __getattr__(self, item):
-		return getattr(self.transport, item)
-
 	def __str__(self):
 		return "PushingTransportWrapper({})".format(self.transport)
 
 class TransportListener(object):
+
+	def on_transport_connected(self, transport):
+		pass
+
+	def on_transport_disconnected(self, transport, error=None):
+		pass
 
 	def on_transport_log_sent_data(self, transport, data):
 		pass

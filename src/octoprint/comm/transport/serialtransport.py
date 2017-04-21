@@ -16,9 +16,11 @@ class SerialTransport(Transport):
 	key = "serial"
 	message_integrity = False
 
-	suggested_baudrates = [0, 250000, 230400, 115200, 57600, 38400, 19200, 9600]
+	suggested_baudrates = [250000, 230400, 115200, 57600, 38400, 19200, 9600]
 	unix_port_patterns = ["/dev/ttyUSB*", "/dev/ttyACM*", "/dev/tty.usb*",
 	                      "/dev/cu.*", "/dev/cuaU*", "/dev/rfcomm*"]
+
+	max_write_passes = 5
 
 	@classmethod
 	def for_additional_ports_and_baudrates(cls, additional_ports, additional_baudrates):
@@ -66,12 +68,12 @@ class SerialTransport(Transport):
 				from serial.tools import list_ports_common
 				ports = [list_ports_common.ListPortInfo(d) for d in devices]
 
-		return [ConstantNameType("AUTO", "Autodetect")] \
-		       + [ConstantNameType(port.device, port.description) for port in ports]
+		return [ConstantNameType(port.device, port.description) for port in ports]
 
 	@classmethod
 	def get_available_baudrates(cls):
-		return cls.suggested_baudrates
+		return [ConstantNameType(0, "Auto detect")] + \
+		       [ConstantNameType(baudrate, baudrate) for baudrate in cls.suggested_baudrates]
 
 	def __init__(self, *args, **kwargs):
 		super(SerialTransport, self).__init__()
@@ -81,29 +83,69 @@ class SerialTransport(Transport):
 		self._logger = logging.getLogger(__name__)
 		self._serial = None
 
+		self._closing = False
+
 	def create_connection(self, port="AUTO", baudrate=0):
 		factory = self.serial_factory
 		if self.serial_factory is None:
 			factory = serial.Serial
 
+		self._closing = False
 		self._serial = factory(port=port, baudrate=baudrate)
 
 	def drop_connection(self):
 		if self._serial is not None:
+			self._closing = True
 			self._serial.close()
 			self._serial = None
-
-	def close(self):
-		self._serial.close()
 
 	def do_read(self, size=None, timeout=None):
 		return self._serial.read(size=size)
 
 	def do_write(self, data):
-		self._serial.write(data)
+		written = 0
+		passes = 0
 
-	def close_connection(self):
-		self._serial.close()
+		def try_to_write(d):
+			result = self._serial.write(d)
+			if result is None or not isinstance(result, int):
+				# probably some plugin not returning the written bytes, assuming all of them
+				return len(data)
+			else:
+				return result
+
+		while written < len(data):
+			to_send = data[written:]
+			old_written = written
+
+			try:
+				written += try_to_write(to_send)
+			except serial.SerialTimeoutException:
+				self._logger.warn("Serial timeout while writing to serial port, trying again.")
+				try:
+					# second try
+					written += try_to_write(to_send)
+				except:
+					if not self._closing:
+						message = "Unexpected error while writing to serial port"
+						self._logger.exception(message)
+						self.disconnect(error=message)
+					break
+			except:
+				if not self._closing:
+					message = "Unexpected error while writing to serial port"
+					self._logger.exception(message)
+					self.disconnect(error=message)
+				break
+
+			if old_written == written:
+				passes += 1
+				if passes > self.__class__.max_write_passes:
+					message = "Could not write anything to the serial port in {} tries, something appears to be " \
+					          "wrong with the printer communication".format(self.__class__.max_write_passes)
+					self._logger.error(message)
+					self.disconnect(error=message)
+					break
 
 	def __str__(self):
 		return "SerialTransport"
@@ -131,3 +173,9 @@ class VirtualSerialTransport(SerialTransport):
 
 	def __str__(self):
 		return "VirtualSerialTransport({})".format(self.virtual_serial_factory)
+
+if __name__ == "__main__":
+	# list ports
+	ports = SerialTransport.get_available_serial_ports()
+	for port in ports:
+		print(port.title + ": " + port.name)

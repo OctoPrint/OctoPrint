@@ -65,7 +65,7 @@ class Protocol(ListenerAware, TransportListener):
 			self._transport.connect(*transport_args, **transport_kwargs)
 		self.state = ProtocolState.CONNECTING
 
-	def disconnect(self):
+	def disconnect(self, error=False):
 		if self.state in (ProtocolState.DISCONNECTED, ProtocolState.DISCONNECTED_WITH_ERROR, ProtocolState.DISCONNECTING):
 			raise ProtocolNotConnectedError("Already disconnecting or disconnected")
 
@@ -77,7 +77,11 @@ class Protocol(ListenerAware, TransportListener):
 		self._transport.unregister_listener(self)
 		if self._transport.state == TransportState.CONNECTED:
 			self._transport.disconnect()
-		self.state = ProtocolState.DISCONNECTED
+
+		if error:
+			self.state = ProtocolState.DISCONNECTED_WITH_ERROR
+		else:
+			self.state = ProtocolState.DISCONNECTED
 
 	def process(self, job, position=0):
 		if not job.can_process(self):
@@ -100,27 +104,6 @@ class Protocol(ListenerAware, TransportListener):
 		if self._job is not None and self.state in (ProtocolState.PRINTING, ProtocolState.PAUSED):
 			self._job.cancel(error=error)
 		self.state = ProtocolState.CONNECTED
-
-	def move(self, x=None, y=None, z=None, e=None, feedrate=None, relative=False):
-		pass
-
-	def home(self, x=False, y=False, z=False):
-		pass
-
-	def change_tool(self, tool):
-		pass
-
-	def set_feedrate_multiplier(self, multiplier):
-		pass
-
-	def set_extrusion_multiplier(self, multiplier):
-		pass
-
-	def set_extruder_temperature(self, temperature, tool=None, wait=False):
-		pass
-
-	def set_bed_temperature(self, temperature, wait=False):
-		pass
 
 	def can_send(self):
 		return True
@@ -146,6 +129,9 @@ class Protocol(ListenerAware, TransportListener):
 	def _job_processed(self, job):
 		self._job.unregister_listener(self)
 		self.state = ProtocolState.CONNECTED
+
+	def on_transport_disconnected(self, transport, error=None):
+		self.disconnect(error=error is not None)
 
 	def on_transport_log_received_data(self, transport, data):
 		message = "<<< {}".format(to_unicode(data, errors="replace").strip())
@@ -181,6 +167,34 @@ class ProtocolAlreadyConnectedError(Exception):
 
 class ProtocolNotConnectedError(Exception):
 	pass
+
+class ThreeAxisProtocolMixin(object):
+	def move(self, x=None, y=None, z=None, feedrate=None, relative=False):
+		pass
+
+	def home(self, x=False, y=False, z=False):
+		pass
+
+	def change_tool(self, tool):
+		pass
+
+
+class ThreeDPrinterProtocolMixin(ThreeAxisProtocolMixin):
+	def move(self, x=None, y=None, z=None, e=None, feedrate=None, relative=False):
+		pass
+
+	def set_feedrate_multiplier(self, multiplier):
+		pass
+
+	def set_extrusion_multiplier(self, multiplier):
+		pass
+
+	def set_extruder_temperature(self, temperature, tool=None, wait=False):
+		pass
+
+	def set_bed_temperature(self, temperature, wait=False):
+		pass
+
 
 class FanControlProtocolMixin(object):
 

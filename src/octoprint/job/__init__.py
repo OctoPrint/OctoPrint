@@ -111,7 +111,7 @@ class Printjob(ProtocolListener, ListenerAware):
 		self.reset_job()
 
 	def process_job_failed(self):
-		self.notify_listeners("on_job_failed")
+		self.notify_listeners("on_job_failed", self)
 		self.reset_job()
 
 	def process_job_progress(self):
@@ -223,6 +223,8 @@ class LocalGcodeFilePrintjob(LocalFilePrintjob):
 
 		# strip comments
 		processed = strip_comment(processed)
+		if not len(processed):
+			return None
 
 		# TODO apply offsets
 
