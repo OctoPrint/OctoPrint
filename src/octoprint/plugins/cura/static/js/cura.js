@@ -30,6 +30,12 @@ $(function() {
 
         self.uploadElement = $("#settings-cura-import");
         self.uploadButton = $("#settings-cura-import-start");
+        self.uploadData = null;
+        self.uploadButton.on("click", function() {
+            if (self.uploadData) {
+                self.uploadData.submit();
+            }
+        });
 
         self.profiles = new ItemListHelper(
             "plugin_cura_profiles",
@@ -66,6 +72,18 @@ $(function() {
             return name.replace(/[^a-zA-Z0-9\-_\.\(\) ]/g, "").replace(/ /g, "_");
         };
 
+        self.clearUpload = function() {
+            self.fileName(undefined);
+            self.placeholderName(undefined);
+            self.placeholderDisplayName(undefined);
+            self.placeholderDescription(undefined);
+            self.profileName(undefined);
+            self.profileDisplayName(undefined);
+            self.profileDescription(undefined);
+            self.profileAllowOverwrite(true);
+            self.uploadData = null;
+        };
+
         self.uploadElement.fileupload({
             dataType: "json",
             maxNumberOfFiles: 1,
@@ -83,39 +101,28 @@ $(function() {
                 self.placeholderDisplayName(name);
                 self.placeholderDescription("Imported from " + self.fileName() + " on " + formatDate(new Date().getTime() / 1000));
 
-                self.uploadButton.unbind("click");
-                self.uploadButton.on("click", function() {
-                    var form = {
-                        allowOverwrite: self.profileAllowOverwrite()
-                    };
+                var form = {
+                    allowOverwrite: self.profileAllowOverwrite()
+                };
 
-                    if (self.profileName() !== undefined) {
-                        form["name"] = self.profileName();
-                    }
-                    if (self.profileDisplayName() !== undefined) {
-                        form["displayName"] = self.profileDisplayName();
-                    }
-                    if (self.profileDescription() !== undefined) {
-                        form["description"] = self.profileDescription();
-                    }
-                    if (self.profileMakeDefault()) {
-                        form["default"] = true;
-                    }
+                if (self.profileName() !== undefined) {
+                    form["name"] = self.profileName();
+                }
+                if (self.profileDisplayName() !== undefined) {
+                    form["displayName"] = self.profileDisplayName();
+                }
+                if (self.profileDescription() !== undefined) {
+                    form["description"] = self.profileDescription();
+                }
+                if (self.profileMakeDefault()) {
+                    form["default"] = true;
+                }
 
-                    data.formData = form;
-                    data.submit();
-                });
+                data.formData = form;
+                self.uploadData = data;
             },
             done: function(e, data) {
-                self.fileName(undefined);
-                self.placeholderName(undefined);
-                self.placeholderDisplayName(undefined);
-                self.placeholderDescription(undefined);
-                self.profileName(undefined);
-                self.profileDisplayName(undefined);
-                self.profileDescription(undefined);
-                self.profileAllowOverwrite(true);
-                self.profileMakeDefault(false);
+                self.clearUpload();
 
                 $("#settings_plugin_cura_import").modal("hide");
                 self.requestData();
@@ -161,6 +168,7 @@ $(function() {
         };
 
         self.showImportProfileDialog = function(makeDefault) {
+            self.clearUpload();
             if (makeDefault == undefined) {
                 makeDefault = _.filter(self.profiles.items(), function(profile) { profile.isdefault() }).length == 0;
             }
