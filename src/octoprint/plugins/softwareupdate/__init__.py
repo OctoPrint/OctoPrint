@@ -35,6 +35,9 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
                            octoprint.plugin.TemplatePlugin,
                            octoprint.plugin.StartupPlugin,
                            octoprint.plugin.WizardPlugin):
+
+	COMMIT_TRACKING_TYPES = ("github_commit", "bitbucket_commit")
+
 	def __init__(self):
 		self._update_in_progress = False
 		self._configured_checks_mutex = threading.Lock()
@@ -114,7 +117,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 								# This used to be part of the settings migration (version 2) due to a bug - it can't
 								# stay there though since it interferes with manual entries to the checks not
 								# originating from within a plugin. Hence we do that step now here.
-								if "type" not in effective_config or effective_config["type"] not in ["github_commit", "bitbucket_commit"]:
+								if "type" not in effective_config or effective_config["type"] not in self.COMMIT_TRACKING_TYPES:
 									deletables = ["current", "displayVersion"]
 								else:
 									deletables = []
@@ -384,7 +387,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			configured_checks = self._settings.get(["checks"], incl_defaults=False)
 			if configured_checks is not None and "octoprint" in configured_checks:
 				octoprint_check = dict(configured_checks["octoprint"])
-				if "type" not in octoprint_check or octoprint_check["type"] not in ["github_commit", "bitbucket_commit"]:
+				if "type" not in octoprint_check or octoprint_check["type"] not in self.COMMIT_TRACKING_TYPES:
 					deletables=["current", "displayName", "displayVersion"]
 				else:
 					deletables=[]
@@ -831,7 +834,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			self._settings.load()
 
 			# persist the new version if necessary for check type
-			if check["type"] in ["github_commit", "bitbucket_commit"]:
+			if check["type"] in self.COMMIT_TRACKING_TYPES:
 				dummy_default = dict(plugins=dict())
 				dummy_default["plugins"][self._identifier] = dict(checks=dict())
 				dummy_default["plugins"][self._identifier]["checks"][target] = dict(current=None)
@@ -888,7 +891,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				release_branches += [x["branch"] for x in check["prerelease_branches"]]
 			result["released_version"] = not release_branches or BRANCH in release_branches
 
-			if check["type"] in ["github_commit", "bitbucket_commit"]:
+			if check["type"] in self.COMMIT_TRACKING_TYPES:
 				result["current"] = REVISION if REVISION else "unknown"
 			else:
 				result["current"] = VERSION
@@ -942,7 +945,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				# displayVersion AND current missing or None
 				result["displayVersion"] = u"unknown"
 
-			if check["type"] in ["github_commit", "bitbucket_commit"]:
+			if check["type"] in self.COMMIT_TRACKING_TYPES:
 				result["current"] = check.get("current", None)
 			else:
 				result["current"] = check.get("current", check.get("displayVersion", None))
@@ -974,20 +977,11 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			raise exceptions.ConfigurationInvalid("no check type defined")
 
 		check_type = check["type"]
-		if check_type == "github_release":
-			return version_checks.github_release
-		elif check_type == "github_commit":
-			return version_checks.github_commit
-		elif check_type == "bitbucket_commit":
-			return version_checks.bitbucket_commit
-		elif check_type == "git_commit":
-			return version_checks.git_commit
-		elif check_type == "commandline":
-			return version_checks.commandline
-		elif check_type == "python_checker":
-			return version_checks.python_checker
-		else:
+		method = getattr(version_checks, check_type)
+		if method is None:
 			raise exceptions.UnknownCheckType()
+		else:
+			return method
 
 	def _get_update_method(self, target, check, valid_methods=None):
 		"""

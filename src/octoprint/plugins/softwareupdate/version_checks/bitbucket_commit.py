@@ -1,9 +1,8 @@
 # coding=utf-8
 from __future__ import absolute_import, division, print_function
 
-__author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
-__copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
+__copyright__ = "Copyright (C) 2017 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import requests
 import logging
@@ -15,7 +14,6 @@ BRANCH_HEAD_URL = "https://api.bitbucket.org/2.0/repositories/{user}/{repo}/comm
 logger = logging.getLogger("octoprint.plugins.softwareupdate.version_checks.bitbucket_commit")
 
 def _get_latest_commit(user, repo, branch):
-	result = None
 	r = requests.get(BRANCH_HEAD_URL.format(user=user, repo=repo, branch=branch))
 
 	if not r.status_code == requests.codes.ok:
