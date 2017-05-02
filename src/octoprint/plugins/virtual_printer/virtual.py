@@ -1069,7 +1069,7 @@ class VirtualPrinter(object):
 			line = self.outgoing.get(timeout=timeout)
 			self._seriallog.info(">>> {}".format(line.strip()))
 			return to_str(line) + b"\n"
-		except Queue.Empty:
+		except queue.Empty:
 			return ""
 
 	def readline(self):

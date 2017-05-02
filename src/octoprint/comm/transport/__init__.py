@@ -140,11 +140,14 @@ class TransportAlreadyConnectedError(Exception):
 class TransportWrapper(ListenerAware):
 
 	unforwarded_handlers = []
+	"""Allows to explicitly disable certain transport listener handlers on sub classes."""
 
 	def __init__(self, transport):
 		ListenerAware.__init__(self)
 		self.transport = transport
 		self.transport.register_listener(self)
+
+		# make sure we forward any transport listener calls to our own registered listeners
 
 		def forward_handler(name):
 			def f(*args, **kwargs):

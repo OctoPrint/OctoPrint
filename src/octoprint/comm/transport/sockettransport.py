@@ -51,6 +51,12 @@ class TcpTransport(Transport):
 	def __str__(self):
 		return "TcpTransport"
 
+class SerialOverTcpTransport(TcpTransport):
+
+	name = "Serial over TCP Transport"
+	key = "serialovertcpsocket"
+	message_integrity = False
+
 if __name__ == "__main__":
 	transport = LineAwareTransportWrapper(TcpTransport())
 	transport.connect(host="google.de", port=80)

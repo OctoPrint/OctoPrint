@@ -41,7 +41,7 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 		return [x for x in dir(flavor) if x.startswith(prefix)]
 
 	def __init__(self, flavor, connection_timeout=30.0, communication_timeout=5.0,
-	             temperature_interval_idle=2.0, temperature_interval_printing=5.0):
+	             temperature_interval_idle=5.0, temperature_interval_printing=5.0):
 		super(ReprapGcodeProtocol, self).__init__()
 
 		self.flavor = flavor
@@ -836,12 +836,20 @@ class ReprapGcodeProtocol(Protocol, ThreeDPrinterProtocolMixin, MotorControlProt
 							continue
 
 						# now comes the part where we increase line numbers and send stuff - no turning back now
-						command_requiring_checksum = gcode is not None and gcode.command in self.flavor.checksum_requiring_commands
-						command_allowing_checksum = gcode is not None or self.flavor.unknown_with_checksum
-						checksum_enabled = self.flavor.always_send_checksum or (self.state == ProtocolState.PRINTING and not self.flavor.never_send_checksum)
+						if not self._transport.message_integrity:
+							# transport does not have message integrity, let's see if we'll send a checksum
+							command_requiring_checksum = gcode is not None and gcode.command in self.flavor.checksum_requiring_commands
+							command_allowing_checksum = gcode is not None or self.flavor.unknown_with_checksum
+							checksum_enabled = self.flavor.always_send_checksum or (self.state == ProtocolState.PRINTING and not self.flavor.never_send_checksum)
+
+							send_with_checksum = command_requiring_checksum or (command_allowing_checksum and checksum_enabled)
+
+						else:
+							# transport has message integrity, no checksum
+							send_with_checksum = False
 
 						command_to_send = command.encode("ascii", errors="replace")
-						if command_requiring_checksum or (command_allowing_checksum and checksum_enabled):
+						if send_with_checksum:
 							self._do_increment_and_send_with_checksum(command_to_send)
 						else:
 							self._do_send_without_checksum(command_to_send)

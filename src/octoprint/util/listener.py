@@ -33,7 +33,5 @@ class ListenerAware(object):
 			try:
 				method(*args, **kwargs)
 			except:
-				logger.exception("Exception while calling {} on protocol listener {}".format(
-					"{}(...)".format(name),
-					listener
-				))
+				logger.exception("Exception while calling {}(...) on protocol listener {}".format(name,
+				                                                                                  listener))
