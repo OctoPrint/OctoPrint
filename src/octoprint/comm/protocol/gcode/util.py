@@ -200,5 +200,5 @@ def strip_comment(line):
 			break
 		result += c
 		escaped = (c == "\\") and not escaped
-	return "".join(result)
+	return "".join(result).strip()
 
