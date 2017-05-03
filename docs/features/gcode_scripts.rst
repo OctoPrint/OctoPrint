@@ -13,10 +13,18 @@ Unless :ref:`configured otherwise <sec-configuration-config_yaml-folder>`, OctoP
 the ``scripts/gcode`` folder in OctoPrint configuration directory (per default ``~/.octoprint`` on Linux, ``%APPDATA%\OctoPrint``
 on Windows and ``~/Library/Application Support/OctoPrint`` on MacOS).
 
-These GCODE scripts are backed by the templating engine `Jinja2 <http://jinja.pocoo.org/>`_, allowing more than just
+These GCODE scripts are backed by the templating engine Jinja2, allowing more than just
 simple "send-as-is" scripts but making use of a full blown templating language in order to create your scripts. To
 this end, OctoPrint injects some variables into the :ref:`template rendering context <sec-features-gcode_scripts-context>`
 as described below.
+
+You can find the docs on the Jinja templating engine as used in OctoPrint at `jinja.octoprint.org <http://jinja.octoprint.org/templates.html>`_.
+
+.. note::
+
+   Due to backwards compatibility issues with Jinja versions 2.9+, OctoPrint currently only supports Jinja 2.8. For this
+   reason use the template documentation at `jinja.octoprint.org <http://jinja.octoprint.org/templates.html>`_ instead of the
+   documentation of current stable Jinja versions.
 
 .. _sec-features-gcode_scripts-predefined:
 
@@ -150,6 +158,7 @@ to 0 if a heated bed is configured.
 
 .. seealso::
 
-   `Jinja Template Designer Documentation <http://jinja.pocoo.org/docs/dev/templates/>`_
+   `Jinja Template Designer Documentation <http://jinja.octoprint.org/templates.html>`_
       Jinja's Template Designer Documentation describes the syntax and semantics of the template language used
-      also by OctoPrint's GCODE scripts.
+      also by OctoPrint's GCODE scripts. Linked here are the docs for Jinja 2.8.1, which OctoPrint still
+      relies on for backwards compatibility reasons.
