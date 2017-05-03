@@ -4,7 +4,7 @@ $(function() {
 
         self.loginState = parameters[0];
         self.settingsViewModel = parameters[1];
-        self.permissions = parameters[2];
+        self.access = parameters[2];
 
         self._createToolEntry = function() {
             return {
@@ -100,7 +100,7 @@ $(function() {
         });
 
         // TODO: find some nicer way to update plot AFTER graph becomes visible
-        self.loginState.hasPermission(self.permissions.STATUS).subscribe(function(value) {
+        self.loginState.hasPermission(self.access.permissions.STATUS).subscribe(function(value) {
             var graph = $("#temp, #temp_link");
             if (graph.length) {
                 if (value) {
@@ -448,7 +448,7 @@ $(function() {
 
     OCTOPRINT_VIEWMODELS.push([
         TemperatureViewModel,
-        ["loginStateViewModel", "settingsViewModel", "permissionsViewModel"],
+        ["loginStateViewModel", "settingsViewModel", "accessViewModel"],
         ["#temp", "#temp_link"]
     ]);
 });

@@ -4,7 +4,7 @@ $(function() {
 
         self.loginState = parameters[0];
         self.settings = parameters[1];
-        self.permissions = parameters[2];
+        self.access = parameters[2];
 
         self.stateString = ko.observable(undefined);
         self.isErrorOrClosed = ko.observable(undefined);
@@ -17,13 +17,19 @@ $(function() {
         self.isSdReady = ko.observable(undefined);
 
         self.enablePrint = ko.pureComputed(function() {
-            return self.isOperational() && self.isReady() && !self.isPrinting() && self.loginState.isUser() && self.filename() != undefined;
+            return self.isOperational() &&
+                    self.isReady() &&
+                    !self.isPrinting() &&
+                    self.loginState.hasPermission(self.access.permissions.PRINT)() &&
+                    self.filename() != undefined;
         });
         self.enablePause = ko.pureComputed(function() {
-            return self.isOperational() && (self.isPrinting() || self.isPaused()) && self.loginState.isUser();
+            return self.isOperational() &&
+                    (self.isPrinting() || self.isPaused()) &&
+                    self.loginState.hasPermission(self.access.permissions.PRINT)();
         });
         self.enableCancel = ko.pureComputed(function() {
-            return self.isOperational() && (self.isPrinting() || self.isPaused()) && self.loginState.isUser();
+            return self.isOperational() && (self.isPrinting() || self.isPaused()) && self.loginState.loggedIn();
         });
 
         self.filename = ko.observable(undefined);
@@ -307,7 +313,7 @@ $(function() {
 
     OCTOPRINT_VIEWMODELS.push([
         PrinterStateViewModel,
-        ["loginStateViewModel", "settingsViewModel", "permissionsViewModel"],
+        ["loginStateViewModel", "settingsViewModel", "accessViewModel"],
         ["#state_wrapper", "#drop_overlay"]
     ]);
 });

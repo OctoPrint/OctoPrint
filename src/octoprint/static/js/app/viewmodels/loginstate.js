@@ -2,9 +2,6 @@ $(function() {
     function LoginStateViewModel(parameters) {
         var self = this;
 
-        self.permissions = parameters[0];
-        self.groups = parameters[1];
-
         self.loginUser = ko.observable("");
         self.loginPass = ko.observable("");
         self.loginRemember = ko.observable(false);
@@ -45,7 +42,7 @@ $(function() {
                 return;
             }
 
-            OctoPrint.users.get(self.currentUser().name)
+            OctoPrint.access.users.get(self.currentUser().name)
                 .done(self.updateCurrentUserData);
         };
 
@@ -78,7 +75,7 @@ $(function() {
 
         self.resetCurrentUserData = function() {
             self.username(undefined);
-            OctoPrint.groups.get("Guests").done(function(group) {
+            OctoPrint.access.groups.get("Guests").done(function(group) {
                 self.usergroups([group]);
             });
             self.userpermissions([]);
@@ -178,24 +175,53 @@ $(function() {
             }
         };
 
-        self.hasPermissions = function(permission) {
-            return self.hasPermission(permission);
-        };
 
-        self.hasPermission = function(permission) {
-            return ko.pureComputed(function() {
-                if ((!(self.usergroups() instanceof Array) && !(self.userpermissions() instanceof Array)) || permission === undefined)
+        // argument[0]: necessary permission/s
+        // argument[1]: user permissions (optional)
+        self.hasPermissions = function(permissions) {
+            if (arguments.length == 1) {
+                return self.hasPermission(permissions);
+            } else {
+                permissionsList = arguments[1];
+                if (permissions === undefined || permissionsList === undefined)
                     return false;
 
-                var all_permissions = _.union(self.userpermissions(), _.map(self.usergroups(), function(group) { return group.permissions; }));
-                return self.permissions.hasPermissions(permission, all_permissions);
-            }).extend({ notify: 'always' });
+                if (permissions instanceof Array)
+                    return _.every(permissions, function(p) {
+                        return self.hasPermission(p, permissionsList);
+                    });
+
+                return self.hasPermission(permissions, permissionsList);
+            }
+        };
+
+        // argument[0]: necessary permission
+        // argument[1]: user permissions (optional)
+        self.hasPermission = function(permission) {
+            if (arguments.length == 1) {
+                return ko.pureComputed(function() {
+                    if ((!(self.usergroups() instanceof Array) && !(self.userpermissions() instanceof Array)) || permission === undefined)
+                        return false;
+
+                    var group_permissions = _.union.apply(null, _.map(self.usergroups(), function(group) { return group.permissions; }));
+                    var permissions = self.userpermissions();
+
+                    var all_permissions = _.union(permissions, group_permissions);
+                    return self.hasPermissions(permission, all_permissions);
+                }).extend({ notify: 'always' });
+            } else {
+                permissions = arguments[1];
+                return _.find(permissions,  function(p) {
+                    return (p != undefined && (p.name === "Admin" ||
+                            (_.has(p.needs, permission.method) && _.contains(p.needs[permission.method], permission.value))));
+                }) != undefined;
+            }
         };
     }
 
     OCTOPRINT_VIEWMODELS.push([
         LoginStateViewModel,
-        ["permissionsViewModel"],
+        [],
         []
     ]);
 });

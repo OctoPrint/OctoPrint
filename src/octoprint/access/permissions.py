@@ -6,13 +6,6 @@ __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agp
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 from flask_principal import Permission, RoleNeed
-from octoprint.util import variable_deprecated
-
-import yaml
-from yaml.dumper import SafeDumper
-from yaml.loader import SafeLoader
-
-all_permissions = []
 
 class OctoPrintPermission(Permission):
 	@classmethod
@@ -67,12 +60,19 @@ class OctoPrintPermission(Permission):
 		return p
 
 	def __repr__(self):
-		return '{0}(name={1}, description={2}, needs={3})'.format(self.__class__.__name__, self.get_name(), self.get_description(), self.needs)
+		return '{0}(name="{1}", description="{2}", needs={3})'.format(self.__class__.__name__, self.get_name(), self.get_description(), self.needs)
 
 class PermissionManager(object):
 	def __init__(self):
 		self._permissions = []
 		self._enabled = True
+
+		import yaml
+		from yaml.dumper import SafeDumper
+		from yaml.loader import SafeLoader
+
+		yaml.add_representer(OctoPrintPermission, self.yaml_representer, Dumper=SafeDumper)
+		yaml.add_constructor(u'!octoprintpermission', self.yaml_constructor, Loader=SafeLoader)
 
 	@property
 	def enabled(self):
@@ -86,12 +86,22 @@ class PermissionManager(object):
 	def permissions(self):
 		return list(self._permissions)
 
+	def yaml_representer(self, dumper, data):
+		return dumper.represent_scalar(u'!octoprintpermission', data.get_name())
+
+	def yaml_constructor(self, loader, node):
+		name = loader.construct_scalar(node)
+		return self.find_permission(name)
+
 	def add_permission(self, permission):
 		self._permissions.append(permission)
 		return permission
 
 	def remove_permission(self, permission):
 		self._permissions.remove(permission)
+		from octoprint.server import groupManager, userManager
+		groupManager.remove_permissions_from_groups([permission])
+		userManager.remove_permissions_from_users([permission])
 
 	def find_permission(self, name):
 		for p in self._permissions:
@@ -109,11 +119,6 @@ class PermissionManager(object):
 class Permissions(object):
 	# Special permission
 	ADMIN = OctoPrintPermission("Admin", "Admin is allowed to do everything", RoleNeed("admin"))
-
-	################################################################################
-	# Deprecated should be removed with the user_permission variable in a future version
-	USER = OctoPrintPermission("User", "User is allowed to do basic stuff", RoleNeed("user"))
-	################################################################################
 
 	STATUS = OctoPrintPermission("Status",
 	                        "Allows to gather Statusinformations like, Connection, Printstate, Temperaturegraph",
@@ -143,6 +148,13 @@ class Permissions(object):
 	SETTINGS = OctoPrintPermission("Settings", "Allows to open and change Settings", RoleNeed("settings"))
 	LOGS = OctoPrintPermission("Logs", "Allows to download and remove logs", RoleNeed("logs"))
 
+	################################################################################
+	# Deprecated only for migration
+	USER_ARRAY = [STATUS, CONNECTION, WEBCAM, UPLOAD, DOWNLOAD, DELETE, SELECT, PRINTING, TERMINAL, CONTROL, SLICE, TIMELAPSE, TIMELAPSE_ADMIN]
+	#from operator import or_
+	#USER = variable_deprecated("This variable is only for migration and is deprecated already, don't use it!", since="now")(OctoPrintPermission("User", "Migrated User permission class, deprecated", *reduce(or_, map(lambda p: p.needs, USER_ARRAY))))
+	################################################################################
+
 	FILE_PERMISSION = Permission(*UPLOAD.needs.union(DOWNLOAD.needs).union(DELETE.needs).union(SELECT.needs).union(PRINTING.needs).union(SLICE.needs))
 
 	@classmethod
@@ -150,7 +162,6 @@ class Permissions(object):
 		from octoprint.server import permissionManager as pm
 
 		pm.add_permission(cls.ADMIN)
-		pm.add_permission(cls.USER)
 		pm.add_permission(cls.STATUS)
 		pm.add_permission(cls.CONNECTION)
 		pm.add_permission(cls.WEBCAM)
@@ -170,17 +181,3 @@ class Permissions(object):
 
 		pm.add_permission(cls.SETTINGS)
 		pm.add_permission(cls.LOGS)
-
-
-def OctoPermission_yaml_representer(dumper, data):
-	return dumper.represent_scalar(u'!octopermission', repr(data))
-
-
-def OctoPermission_yaml_constructor(loader, node):
-	value = loader.construct_scalar(node)
-	name = value[value.find('name=') + 5:]
-	from octoprint.server import permissionManager
-	return permissionManager.find_permission(name)
-
-yaml.add_representer(OctoPrintPermission, OctoPermission_yaml_representer, Dumper=SafeDumper)
-yaml.add_constructor(u'!octoprintpermission', OctoPermission_yaml_constructor, Loader=SafeLoader)

@@ -327,5 +327,12 @@
 
     OctoPrintClient.InvalidArgumentError = OctoPrintClient.createCustomException("InvalidArgumentError");
 
+    OctoPrintClient.deprecated = function (deprecatedFct, newFct, fn) {
+        return function() {
+            console.warn(deprecatedFct + " is deprecated, please use the new " + newFct + " function instead");
+            return fn.apply(this, arguments);
+        };
+    };
+
     return OctoPrintClient;
 });

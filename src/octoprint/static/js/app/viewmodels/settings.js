@@ -3,11 +3,9 @@ $(function() {
         var self = this;
 
         self.loginState = parameters[0];
-        self.users = parameters[1];
-        self.groups = parameters[2];
-        self.printerProfiles = parameters[3];
-        self.about = parameters[4];
-        self.permissions = parameters[5];
+        self.access = parameters[1];
+        self.printerProfiles = parameters[2];
+        self.about = parameters[3];
 
         self.allViewModels = [];
 
@@ -858,7 +856,7 @@ $(function() {
 
     OCTOPRINT_VIEWMODELS.push([
         SettingsViewModel,
-        ["loginStateViewModel", "usersViewModel", "groupsViewModel", "printerProfilesViewModel", "aboutViewModel", "permissionsViewModel"],
+        ["loginStateViewModel", "accessViewModel", "printerProfilesViewModel", "aboutViewModel"],
         ["#settings_dialog", "#navbar_settings"]
     ]);
 });

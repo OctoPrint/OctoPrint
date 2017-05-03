@@ -8,13 +8,10 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import logging
 import os
 
-import yaml
-from yaml.dumper import SafeDumper
-from yaml.loader import SafeLoader
-
 from octoprint.settings import settings
 from octoprint.util import atomic_write
 from octoprint.access.permissions import Permissions
+
 
 class GroupManager(object):
 	def __init__(self):
@@ -22,6 +19,13 @@ class GroupManager(object):
 		self._groups = dict()
 		self._default_groups()
 		self._enabled = True
+
+		import yaml
+		from yaml.dumper import SafeDumper
+		from yaml.loader import SafeLoader
+
+		yaml.add_representer(Group, self.yaml_representer, Dumper=SafeDumper)
+		yaml.add_constructor(u'!group', self.yaml_constructor, Loader=SafeLoader)
 
 	@property
 	def enabled(self):
@@ -56,7 +60,14 @@ class GroupManager(object):
 		self.add_group("Admins", "Admin group", permissions=[Permissions.ADMIN], default=False, specialGroup=True, save=False)
 		self.add_group("Guests", "Guest group", permissions=[], default=False, specialGroup=True, save=False)
 
-	def change_group_germissions(self, groupname, permissions):
+	def yaml_representer(self, dumper, data):
+		return dumper.represent_scalar(u'!group', data.get_name())
+
+	def yaml_constructor(self, loader, node):
+		name = loader.construct_scalar(node)
+		return self.find_group(name)
+
+	def change_group_permissions(self, groupname, permissions):
 		pass
 
 	def change_group_default(self, groupname, default):
@@ -69,6 +80,9 @@ class GroupManager(object):
 		pass
 
 	def remove_group(self, name):
+		pass
+
+	def remove_permissions_from_groups(self, permission):
 		pass
 
 	def find_group(self, name=None):
@@ -98,9 +112,9 @@ class FilebasedGroupManager(GroupManager):
 		self._load()
 
 	def _load(self):
-		import yaml
 		if os.path.exists(self._groupfile) and os.path.isfile(self._groupfile):
 			with open(self._groupfile, "r") as f:
+				import yaml
 				data = yaml.safe_load(f)
 				for name in data.keys():
 					attributes = data[name]
@@ -237,12 +251,24 @@ class FilebasedGroupManager(GroupManager):
 		if not groupname in self._groups.keys():
 			raise UnknownGroup(groupname)
 
-		if not self._groups[groupname].isRemoveable():
+		group = self._groups[groupname]
+		if not group.isRemoveable():
 			raise GroupUnremovable(groupname)
+
+		from octoprint.server import userManager
+		if userManager.enabled:
+			userManager.remove_groups_from_users([group])
 
 		del self._groups[groupname]
 		self._dirty = True
 		self._save()
+
+	def remove_permissions_from_groups(self, permissions):
+		for group in self._groups.keys():
+			self._dirty |= group.remove_permissions_from_group(permissions)
+
+		if self._dirty:
+			self._save()
 
 
 class GroupAlreadyExists(Exception):
@@ -276,12 +302,12 @@ class Group(object):
 	def asDict(self):
 		permissions = self.permissions if not self.hasPermission(Permissions.ADMIN) else [Permissions.ADMIN]
 
-		return {
-			"name": self.get_name(),
-			"description": self.get_description(),
-			"permissions": permissions,
-			"defaultOn": self.get_default()
-		}
+		return dict(
+			name=self.get_name(),
+			description=self.get_description(),
+			permissions=permissions,
+			defaultOn=self.get_default()
+		)
 
 	def get_id(self):
 		return self.get_name()
@@ -301,6 +327,9 @@ class Group(object):
 
 	def isRemoveable(self):
 		return not self._specialGroup
+
+	def isDeleted(self):
+		return self._deleted
 
 	def add_permissions_to_group(self, permissions):
 		if not self.isChangable():
@@ -348,8 +377,8 @@ class Group(object):
 	@property
 	def needs(self):
 		needs = set()
-		for permission in self.permissions:
-			needs = needs.union(permission.needs)
+		for p in self.permissions:
+			needs = needs.union(p.needs)
 
 		return needs
 
@@ -360,17 +389,5 @@ class Group(object):
 		return permission.needs.issubset(self.needs)
 
 	def __repr__(self):
-		return '{0}(name={1}, description={2}, default={3})'.format(self.__class__.__name__, self.get_name(), self.get_description(), self.get_default())
+		return '{0}(name="{1}", description="{2}", default={3})'.format(self.__class__.__name__, self.get_name(), self.get_description(), self.get_default())
 
-
-def group_yaml_representer(dumper, data):
-	return dumper.represent_scalar(u'!group', repr(data))
-
-def group_yaml_constructor(loader, node):
-	value = loader.construct_scalar(node)
-	name = value[value.find('name=') + 5:]
-	from octoprint.server import groupManager
-	return groupManager.find_group(name)
-
-yaml.add_representer(Group, group_yaml_representer, Dumper=SafeDumper)
-yaml.add_constructor(u'!group', group_yaml_constructor, Loader=SafeLoader)

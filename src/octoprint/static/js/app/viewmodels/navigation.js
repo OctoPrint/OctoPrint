@@ -7,7 +7,7 @@ $(function() {
         self.settings = parameters[2];
         self.usersettings = parameters[3];
         self.system = parameters[4];
-        self.permissions = parameters[5];
+        self.access = parameters[5];
 
         self.appearanceClasses = ko.pureComputed(function() {
             var classes = self.appearance.color();
@@ -21,7 +21,7 @@ $(function() {
 
     OCTOPRINT_VIEWMODELS.push([
         NavigationViewModel,
-        ["loginStateViewModel", "appearanceViewModel", "settingsViewModel", "userSettingsViewModel", "systemViewModel", "permissionsViewModel"],
+        ["loginStateViewModel", "appearanceViewModel", "settingsViewModel", "userSettingsViewModel", "systemViewModel", "accessViewModel"],
         "#navbar"
     ]);
 });

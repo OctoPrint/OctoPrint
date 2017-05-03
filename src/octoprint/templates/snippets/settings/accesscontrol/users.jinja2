@@ -8,43 +8,43 @@
         <th class="settings_users_actions">{{ _('Action') }}</th>
     </tr>
     </thead>
-    <tbody data-bind="foreach: users.listHelper.paginatedItems">
+    <tbody data-bind="foreach: access.users.listHelper.paginatedItems">
     <tr>
         <td class="settings_users_name"><span data-bind="text: name"></span><span class="muted" data-bind="visible: $root.api_enabled() && apikey"><br /><small>{{ _('API Key') }}: <span data-bind="text: apikey"></span></small></span></td>
-        <td class="settings_users_groups"><span data-bind="text: $root.users.groupList($data)"></span></td>
-        <td class="settings_users_permissions"><span data-bind="text: $root.users.permissionList($data)"></span></td>
+        <td class="settings_users_groups"><span data-bind="text: $root.access.groupList($data)"></span></td>
+        <td class="settings_users_permissions"><span data-bind="text: $root.access.permissionList($data)"></span></td>
         <td class="settings_users_active"><i data-bind="css: { 'icon-check': active, 'icon-check-empty': !active }"></i></td>
         <td class="settings_users_actions">
-            <a href="#" class="icon-pencil" title="{{ _('Update User') }}" data-bind="click: function() { $root.users.showEditUserDialog($data); }"></a>&nbsp;|&nbsp;<a href="#" class="icon-key" title="{{ _('Change password') }}" data-bind="click: function() { $root.users.showChangePasswordDialog($data); }"></a>&nbsp;|&nbsp;<a href="#" class="icon-trash" title="{{ _('Delete user') }}" data-bind="click: function() { $root.users.removeUser($data); }"></a>
+            <a href="#" class="icon-pencil" title="{{ _('Update User') }}" data-bind="click: function() { $root.access.users.showEditUserDialog($data); }"></a>&nbsp;|&nbsp;<a href="#" class="icon-key" title="{{ _('Change password') }}" data-bind="click: function() { $root.access.users.showChangePasswordDialog($data); }"></a>&nbsp;|&nbsp;<a href="#" class="icon-trash" title="{{ _('Delete user') }}" data-bind="click: function() { $root.access.users.removeUser($data); }"></a>
         </td>
     </tr>
     </tbody>
 </table>
 <div class="pagination pagination-mini pagination-centered">
     <ul>
-        <li data-bind="css: {disabled: users.listHelper.currentPage() === 0}"><a href="#" data-bind="click: users.listHelper.prevPage">«</a></li>
+        <li data-bind="css: {disabled: access.users.listHelper.currentPage() === 0}"><a href="#" data-bind="click: access.users.listHelper.prevPage">«</a></li>
     </ul>
-    <ul data-bind="foreach: users.listHelper.pages">
-        <li data-bind="css: { active: $data.number === $root.users.listHelper.currentPage(), disabled: $data.number === -1 }"><a href="#" data-bind="text: $data.text, click: function() { $root.users.listHelper.changePage($data.number); }"></a></li>
+    <ul data-bind="foreach: access.users.listHelper.pages">
+        <li data-bind="css: { active: $data.number === $root.access.users.listHelper.currentPage(), disabled: $data.number === -1 }"><a href="#" data-bind="text: $data.text, click: function() { $root.access.users.listHelper.changePage($data.number); }"></a></li>
     </ul>
     <ul>
-        <li data-bind="css: {disabled: users.listHelper.currentPage() === users.listHelper.lastPage()}"><a href="#" data-bind="click: users.listHelper.nextPage">»</a></li>
+        <li data-bind="css: {disabled: access.users.listHelper.currentPage() === access.users.listHelper.lastPage()}"><a href="#" data-bind="click: access.users.listHelper.nextPage">»</a></li>
     </ul>
 </div>
 
-<button title="Add user" class="btn" data-bind="click: $root.users.showAddUserDialog"><i class="icon-plus"></i> {{ _('Add user') }}</button>
+<button title="Add user" class="btn" data-bind="click: $root.access.users.showAddUserDialog"><i class="icon-plus"></i> {{ _('Add user') }}</button>
 
 <!-- Modals for user management -->
 
 <script type="text/html" id="users-permission-template">
     <label class="checkbox">
-        <input type="checkbox" data-bind="checkedValue: $data, checked: $root.users.editorPermissions"><span data-bind="text: name"></span><br>
+        <input type="checkbox" data-bind="checkedValue: $data, checked: $root.access.users.editorPermissions"><span data-bind="text: name"></span><br>
         <span class="description" data-bind="text: description"></span>
     </label>
 </script>
 <script type="text/html" id="users-group-template">
     <label class="checkbox">
-        <input type="checkbox" data-bind="checkedValue: $data, checked: $root.users.editorGroups"><span data-bind="text: name"></span><br>
+        <input type="checkbox" data-bind="checkedValue: $data, checked: $root.access.users.editorGroups"><span data-bind="text: name"></span><br>
         <span class="description" data-bind="text: description"></span>
     </label>
 </script>
@@ -59,97 +59,97 @@
             <div class="control-group">
                 <label class="control-label" for="settings-usersDialogAddUserName">{{ _('Username') }}</label>
                 <div class="controls">
-                    <input type="text" class="input-block-level" id="settings-usersDialogAddUserName" data-bind="value: $root.users.editorUsername" required>
+                    <input type="text" class="input-block-level" id="settings-usersDialogAddUserName" data-bind="value: $root.access.users.editorUsername" required>
                 </div>
             </div>
             <div class="control-group">
                 <label class="control-label" for="settings-usersDialogAddUserPassword1">{{ _('Password') }}</label>
                 <div class="controls">
-                    <input type="password" class="input-block-level" id="settings-usersDialogAddUserPassword1" data-bind="value: $root.users.editorPassword" required>
+                    <input type="password" class="input-block-level" id="settings-usersDialogAddUserPassword1" data-bind="value: $root.access.users.editorPassword" required>
                 </div>
             </div>
-            <div class="control-group" data-bind="css: {error: $root.users.editorPasswordMismatch()}">
+            <div class="control-group" data-bind="css: {error: $root.access.users.editorPasswordMismatch()}">
                 <label class="control-label" for="settings-usersDialogAddUserPassword2">{{ _('Repeat Password') }}</label>
                 <div class="controls">
-                    <input type="password" class="input-block-level" id="settings-usersDialogAddUserPassword2" data-bind="value: $root.users.editorRepeatedPassword, valueUpdate: 'afterkeydown'" required>
-                    <span class="help-inline" data-bind="visible: $root.users.editorPasswordMismatch()">{{ _('Passwords do not match') }}</span>
+                    <input type="password" class="input-block-level" id="settings-usersDialogAddUserPassword2" data-bind="value: $root.access.users.editorRepeatedPassword, valueUpdate: 'afterkeydown'" required>
+                    <span class="help-inline" data-bind="visible: $root.access.users.editorPasswordMismatch()">{{ _('Passwords do not match') }}</span>
                 </div>
             </div>
             <div class="control-group">
                 <div class="controls">
                     <label class="checkbox">
-                        <input type="checkbox" id="settings-usersDialogAddUserActive" data-bind="checked: $root.users.editorActive"> {{ _('Active') }}
+                        <input type="checkbox" id="settings-usersDialogAddUserActive" data-bind="checked: $root.access.users.editorActive"> {{ _('Active') }}
                     </label>
                 </div>
             </div>
             <div class="control-group">
                 <div class="groups_section">
                     <h4 class="controls" data-bind="toggleContent: { class: 'icon-caret-right icon-caret-down', container: '.groups_section > div' }"><i class='icon-caret-right'></i>{{ _('Groups') }}</h4>
-                    <div class="controls content" style="display: none" data-bind="template: { name: 'users-group-template', foreach: $root.groups.groupsList }"></div>
+                    <div class="controls content hidden" data-bind="template: { name: 'users-group-template', foreach: $root.access.groups.groupsList }"></div>
                 </div>
                 <div class="permissions_section">
                     <h4 class="controls" data-bind="toggleContent: { class: 'icon-caret-right icon-caret-down', container: '.permissions_section > div' }"><i class='icon-caret-right'></i>{{ _('Permissions') }}</h4>
-                    <div class="controls content hidden" style="display: none" data-bind="template: { name: 'users-permission-template', foreach: $root.permissions.permissionsList }"></div>
+                    <div class="controls content hidden" data-bind="template: { name: 'users-permission-template', foreach: $root.access.permissions.permissionsList }"></div>
                 </div>
             </div>
         </form>
     </div>
     <div class="modal-footer">
         <button class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Abort') }}</button>
-        <button class="btn btn-primary" data-bind="click: function() { $root.users.confirmAddUser(); }, enable: !$root.users.editorPasswordMismatch()">{{ _('Confirm') }}</button>
+        <button class="btn btn-primary" data-bind="click: function() { $root.access.users.confirmAddUser(); }, enable: !$root.access.users.editorPasswordMismatch()">{{ _('Confirm') }}</button>
     </div>
 </div>
 
 <div id="settings-usersDialogEditUser" class="modal hide fade">
     <div class="modal-header">
         <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
-        <h3>{{ _('Edit user "%(user)s"', user = '<span data-bind="text: $root.users.editorUsername"></span>') }}</h3>
+        <h3>{{ _('Edit user "%(user)s"', user = '<span data-bind="text: $root.access.users.editorUsername"></span>') }}</h3>
     </div>
     <div class="modal-body">
         <form class="form-horizontal">
             <div class="control-group">
                 <div class="controls">
                     <label class="checkbox">
-                        <input type="checkbox" id="settings-usersDialogEditUserActive" data-bind="checked: $root.users.editorActive"> {{ _('Active') }}
+                        <input type="checkbox" id="settings-usersDialogEditUserActive" data-bind="checked: $root.access.users.editorActive"> {{ _('Active') }}
                     </label>
                 </div>
             </div>
             <div class="control-group">
                 <div class="groups_section">
                     <h4 class="controls" data-bind="toggleContent: { class: 'icon-caret-right icon-caret-down', container: '.groups_section > div' }"><i class='icon-caret-right'></i>{{ _('Groups') }}</h4>
-                    <div class="controls content" style="display: none" data-bind="template: { name: 'users-group-template', foreach: $root.groups.groupsList }"></div>
+                    <div class="controls content hidden" data-bind="template: { name: 'users-group-template', foreach: $root.access.groups.groupsList }"></div>
                 </div>
                 <div class="permissions_section">
                     <h4 class="controls" data-bind="toggleContent: { class: 'icon-caret-right icon-caret-down', container: '.permissions_section > div' }"><i class='icon-caret-right'></i>{{ _('Permissions') }}</h4>
-                    <div class="controls content hidden" style="display: none" data-bind="template: { name: 'users-permission-template', foreach: $root.permissions.permissionsList }"></div>
+                    <div class="controls content hidden" data-bind="template: { name: 'users-permission-template', foreach: $root.access.permissions.permissionsList }"></div>
                 </div>
             </div>
         </form>
     </div>
     <div class="modal-footer">
         <button class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Abort') }}</button>
-        <button class="btn btn-primary" data-bind="click: function() { $root.users.confirmEditUser(); }">{{ _('Confirm') }}</button>
+        <button class="btn btn-primary" data-bind="click: function() { $root.access.users.confirmEditUser(); }">{{ _('Confirm') }}</button>
     </div>
 </div>
 
 <div id="settings-usersDialogChangePassword" class="modal hide fade">
     <div class="modal-header">
         <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
-        <h3>{{ _('Change password for user "%(user)s"', user='<span data-bind="text: $root.users.editorUsername"></span>') }}</h3>
+        <h3>{{ _('Change password for user "%(user)s"', user='<span data-bind="text: $root.access.users.editorUsername"></span>') }}</h3>
     </div>
     <div class="modal-body">
         <form class="form-horizontal">
             <div class="control-group">
                 <label class="control-label" for="settings-usersDialogChangePasswordPassword1">{{ _('New Password') }}</label>
                 <div class="controls">
-                    <input type="password" class="input-block-level" id="settings-usersDialogChangePasswordPassword1" data-bind="value: $root.users.editorPassword" required>
+                    <input type="password" class="input-block-level" id="settings-usersDialogChangePasswordPassword1" data-bind="value: $root.access.users.editorPassword" required>
                 </div>
             </div>
-            <div class="control-group" data-bind="css: {error: $root.users.editorPasswordMismatch()}">
+            <div class="control-group" data-bind="css: {error: $root.access.users.editorPasswordMismatch()}">
                 <label class="control-label" for="settings-usersDialogChangePasswordPassword2">{{ _('Repeat Password') }}</label>
                 <div class="controls">
-                    <input type="password" class="input-block-level" id="settings-usersDialogChangePasswordPassword2" data-bind="value: $root.users.editorRepeatedPassword, valueUpdate: 'afterkeydown'" required>
-                    <span class="help-inline" data-bind="visible: $root.users.editorPasswordMismatch()">{{ _('Passwords do not match') }}</span>
+                    <input type="password" class="input-block-level" id="settings-usersDialogChangePasswordPassword2" data-bind="value: $root.access.users.editorRepeatedPassword, valueUpdate: 'afterkeydown'" required>
+                    <span class="help-inline" data-bind="visible: $root.access.users.editorPasswordMismatch()">{{ _('Passwords do not match') }}</span>
                 </div>
             </div>
             <fieldset data-bind="visible: api_enabled">
@@ -158,9 +158,9 @@
                     <label class="control-label">{{ _('Current API Key') }}</label>
                     <div class="controls">
                         <div class="input-append">
-                            <input type="text" class="input-block-level uneditable-input" data-bind="value: $root.users.editorApikey, valueUpdate: 'input', attr: {placeholder: '{{ _('N/A') }}'}">
-                            <a class="btn" title="Generate new Apikey" data-bind="click: function() { $root.users.confirmGenerateApikey(); }"><i class="icon-refresh"></i></a>
-                            <a class="btn btn-danger" title="Delete Apikey" data-bind="click: function() { $root.users.confirmDeleteApikey(); }"><i class="icon-trash"></i></a>
+                            <input type="text" class="input-block-level uneditable-input" data-bind="value: $root.access.users.editorApikey, valueUpdate: 'input', attr: {placeholder: '{{ _('N/A') }}'}">
+                            <a class="btn" title="Generate new Apikey" data-bind="click: function() { $root.access.users.confirmGenerateApikey(); }"><i class="icon-refresh"></i></a>
+                            <a class="btn btn-danger" title="Delete Apikey" data-bind="click: function() { $root.access.users.confirmDeleteApikey(); }"><i class="icon-trash"></i></a>
                         </div>
 
                     </div>
@@ -170,6 +170,6 @@
     </div>
     <div class="modal-footer">
         <button class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Abort') }}</button>
-        <button class="btn btn-primary" data-bind="click: function() { $root.users.confirmChangePassword(); }, enable: !$root.users.editorPasswordMismatch()">{{ _('Confirm') }}</button>
+        <button class="btn btn-primary" data-bind="click: function() { $root.access.users.confirmChangePassword(); }, enable: !$root.access.users.editorPasswordMismatch()">{{ _('Confirm') }}</button>
     </div>
 </div>

@@ -7,36 +7,36 @@
         <th class="settings_groups_actions">{{ _('Action') }}</th>
     </tr>
     </thead>
-    <tbody data-bind="foreach: groups.listHelper.paginatedItems">
+    <tbody data-bind="foreach: access.groups.listHelper.paginatedItems">
     <tr>
         <td class="settings_groups_name"><span class="icon-star" data-bind="visible: defaultOn"></span><span data-bind="text: name"></span></td>
         <td class="settings_groups_description"><span data-bind="text: description"></span></td>
-        <td class="settings_groups_permissions"><span data-bind="text: $root.groups.permissionList($data)"></span></td>
+        <td class="settings_groups_permissions"><span data-bind="text: $root.access.permissionList($data)"></span></td>
         <td class="settings_groups_actions">
-            <a href="#" class="icon-pencil" title="{{ _('Update group') }}" data-bind="click: function() { $root.groups.showEditGroupDialog($data); }"></a>&nbsp;|&nbsp;<a href="#" class="icon-trash" title="{{ _('Delete group') }}" data-bind="click: function() { $root.groups.removeGroup($data); }"></a>
+            <a href="#" class="icon-pencil" title="{{ _('Update group') }}" data-bind="click: function() { $root.access.groups.showEditGroupDialog($data); }"></a>&nbsp;|&nbsp;<a href="#" class="icon-trash" title="{{ _('Delete group') }}" data-bind="click: function() { $root.access.groups.removeGroup($data); }"></a>
         </td>
     </tr>
     </tbody>
 </table>
 <div class="pagination pagination-mini pagination-centered">
     <ul>
-        <li data-bind="css: {disabled: groups.listHelper.currentPage() === 0}"><a href="#" data-bind="click: groups.listHelper.prevPage">«</a></li>
+        <li data-bind="css: {disabled: access.groups.listHelper.currentPage() === 0}"><a href="#" data-bind="click: access.groups.listHelper.prevPage">«</a></li>
     </ul>
-    <ul data-bind="foreach: groups.listHelper.pages">
-        <li data-bind="css: { active: $data.number === $root.groups.listHelper.currentPage(), disabled: $data.number === -1 }"><a href="#" data-bind="text: $data.text, click: function() { $root.groups.listHelper.changePage($data.number); }"></a></li>
+    <ul data-bind="foreach: access.groups.listHelper.pages">
+        <li data-bind="css: { active: $data.number === $root.access.groups.listHelper.currentPage(), disabled: $data.number === -1 }"><a href="#" data-bind="text: $data.text, click: function() { $root.access.groups.listHelper.changePage($data.number); }"></a></li>
     </ul>
     <ul>
-        <li data-bind="css: {disabled: groups.listHelper.currentPage() === groups.listHelper.lastPage()}"><a href="#" data-bind="click: groups.listHelper.nextPage">»</a></li>
+        <li data-bind="css: {disabled: access.groups.listHelper.currentPage() === access.groups.listHelper.lastPage()}"><a href="#" data-bind="click: access.groups.listHelper.nextPage">»</a></li>
     </ul>
 </div>
 
-<button title="Add group" class="btn" data-bind="click: $root.groups.showAddGroupDialog"><i class="icon-plus"></i> {{ _('Add group') }}</button>
+<button title="Add group" class="btn" data-bind="click: $root.access.groups.showAddGroupDialog"><i class="icon-plus"></i> {{ _('Add group') }}</button>
 
 <!-- Modals for group management -->
 
 <script type="text/html" id="group-permission-template">
     <label class="checkbox">
-        <input type="checkbox" data-bind="checkedValue: $data, checked: $root.groups.editorPermissions"><span data-bind="text: name, attr: { title: description }"></span><br>
+        <input type="checkbox" data-bind="checkedValue: $data, checked: $root.access.groups.editorPermissions"><span data-bind="text: name, attr: { title: description }"></span><br>
         <span class="description" data-bind="text: description"></span>
     </label>
 </script>
@@ -51,56 +51,56 @@
             <div class="control-group">
                 <label class="control-label" for="settings-groupsDialogAddGroupName">{{ _('Groupname') }}</label>
                 <div class="controls">
-                    <input type="text" class="input-block-level" id="settings-groupsDialogAddGroupName" data-bind="value: $root.groups.editorGroupname" required>
+                    <input type="text" class="input-block-level" id="settings-groupsDialogAddGroupName" data-bind="value: $root.access.groups.editorGroupname" required>
                 </div>
             </div>
             <div class="control-group">
                 <label class="control-label" for="settings-groupsDialogAddGroupDescription">{{ _('Groupdescription') }}</label>
                 <div class="controls">
-                    <input type="text" class="input-block-level" id="settings-groupsDialogAddGroupDescription" data-bind="value: $root.groups.editorGroupdesc" required>
+                    <input type="text" class="input-block-level" id="settings-groupsDialogAddGroupDescription" data-bind="value: $root.access.groups.editorGroupdesc" required>
                 </div>
             </div>
             <div class="control-group">
                 <label class="control-label" for="settings-groupsDialogAddDefaultOn">{{ _('Default') }}</label>
                 <div class="controls">
-                    <input type="checkbox" class="input-block-level" id="settings-groupsDialogAddDefaultOn" data-bind="checked: $root.groups.editorDefaultOn">
+                    <input type="checkbox" class="input-block-level" id="settings-groupsDialogAddDefaultOn" data-bind="checked: $root.access.groups.editorDefaultOn">
                 </div>
             </div>
             <div class="control-group">
-                <div class="controls" data-bind="template: { name: 'group-permission-template', foreach: $root.permissions.permissionsList }"></div>
+                <div class="controls" data-bind="template: { name: 'group-permission-template', foreach: $root.access.permissions.permissionsList }"></div>
             </div>
         </form>
     </div>
     <div class="modal-footer">
         <button class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Abort') }}</button>
-        <button class="btn btn-primary" data-bind="click: function() { $root.groups.confirmAddGroup(); }">{{ _('Confirm') }}</button>
+        <button class="btn btn-primary" data-bind="click: function() { $root.access.groups.confirmAddGroup(); }">{{ _('Confirm') }}</button>
     </div>
 </div>
 
 <div id="settings-groupsDialogEditGroup" class="modal hide fade">
     <div class="modal-header">
         <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
-        <h3>{{ _('Edit group "%(group)s"', group = '<span data-bind="text: $root.groups.editorGroupname"></span>') }}</h3>
+        <h3>{{ _('Edit group "%(group)s"', group = '<span data-bind="text: $root.access.groups.editorGroupname"></span>') }}</h3>
     </div>
     <div class="modal-body">
         <form class="form-horizontal">
             <div class="control-group">
                 <label class="control-label" for="settings-groupsDialogEditGroupDescription">{{ _('Groupdescription') }}</label>
                 <div class="controls">
-                    <input type="text" class="input-block-level" id="settings-groupsDialogEditGroupDescription" data-bind="value: $root.groups.editorGroupdesc" required>
+                    <input type="text" class="input-block-level" id="settings-groupsDialogEditGroupDescription" data-bind="value: $root.access.groups.editorGroupdesc" required>
                 </div>
             </div>
             <div class="control-group">
                 <label class="control-label" for="settings-groupsDialogEditDefaultOn">{{ _('Default') }}</label>
                 <div class="controls">
-                    <input type="checkbox" class="input-block-level" id="settings-groupsDialogEditDefaultOn" data-bind="checked: $root.groups.editorDefaultOn">
+                    <input type="checkbox" class="input-block-level" id="settings-groupsDialogEditDefaultOn" data-bind="checked: $root.access.groups.editorDefaultOn">
                 </div>
             </div>
-            <div class="controls" data-bind="template: { name: 'group-permission-template', foreach: $root.permissions.permissionsList }"></div>
+            <div class="controls" data-bind="template: { name: 'group-permission-template', foreach: $root.access.permissions.permissionsList }"></div>
         </form>
     </div>
     <div class="modal-footer">
         <button class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Abort') }}</button>
-        <button class="btn btn-primary" data-bind="click: function() { $root.groups.confirmEditGroup(); }">{{ _('Confirm') }}</button>
+        <button class="btn btn-primary" data-bind="click: function() { $root.access.groups.confirmEditGroup(); }">{{ _('Confirm') }}</button>
     </div>
 </div>

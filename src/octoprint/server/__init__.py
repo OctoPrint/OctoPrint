@@ -62,8 +62,8 @@ import octoprint.access.permissions as permissions
 #Deprecated should be removed with the user_permission variable in a future version
 admin_permission = util.variable_deprecated("admin_permission has been deprecated please use new Permission.admin instead", since="now")(
 	permissions.Permissions.ADMIN)
-user_permission = util.variable_deprecated("user_permission has been deprecated and will be removed in a future version", since="now")(
-	permissions.Permissions.USER)
+#user_permission = util.variable_deprecated("user_permission has been deprecated and will be removed in a future version", since="now")(
+#	permissions.Permissions.USER)
 #-------------------------------------------------------------------------------
 
 # only import the octoprint stuff down here, as it might depend on things defined above to be initialized already
@@ -1132,7 +1132,6 @@ class Server(object):
 			"js/app/client/connection.js",
 			"js/app/client/control.js",
 			"js/app/client/files.js",
-			"js/app/client/groups.js",
 			"js/app/client/job.js",
 			"js/app/client/languages.js",
 			"js/app/client/logs.js",
@@ -1142,10 +1141,13 @@ class Server(object):
 			"js/app/client/slicing.js",
 			"js/app/client/system.js",
 			"js/app/client/timelapse.js",
-			"js/app/client/permissions.js",
 			"js/app/client/users.js",
 			"js/app/client/util.js",
-			"js/app/client/wizard.js"
+			"js/app/client/wizard.js",
+			"js/app/client/access.js",
+			"js/app/client/access/users.js",
+			"js/app/client/access/groups.js",
+			"js/app/client/access/permissions.js",
 		]
 		js_core = dynamic_core_assets["js"] + \
 		    dynamic_plugin_assets["bundled"]["js"] + \

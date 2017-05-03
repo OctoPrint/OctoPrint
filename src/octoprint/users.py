@@ -141,25 +141,28 @@ class UserManager(object):
 	def changeUserActivation(self, username, active):
 		pass
 
-	def changeUserPermissions(self, username, permissions):
+	def change_user_permissions(self, username, permissions):
 		pass
-	changeUserRoles = deprecated("changeUserRoles is deprecated please use changeUserPermissions instead")(changeUserPermissions)
+	changeUserRoles = deprecated("changeUserRoles is deprecated please use change_user_permissions instead")(change_user_permissions)
 
-	def addPermissionsToUser(self, username, permissions):
+	def add_permissions_to_user(self, username, permissions):
 		pass
-	addRolesToUser = deprecated("addRolesToUser is deprecated please use addPermissionsToUser instead")(addPermissionsToUser)
+	addRolesToUser = deprecated("addRolesToUser is deprecated please use add_permissions_to_user instead")(add_permissions_to_user)
 
-	def removePermissionsFromUser(self, username, permissions):
+	def remove_permissions_from_user(self, username, permissions):
 		pass
-	removeRolesFromUser = deprecated("removePermissionsFromUser is deprecated please use removePermissionsFromUser instead")(removePermissionsFromUser)
+	removeRolesFromUser = deprecated("removePermissionsFromUser is deprecated please use remove_permissions_from_user instead")(remove_permissions_from_user)
 
-	def changeUserGroups(self, username, groups):
-		pass
-
-	def addGroupsToUser(self, username, groups):
+	def change_user_groups(self, username, groups):
 		pass
 
-	def removeGroupsFromUser(self, username, groups):
+	def add_groups_to_user(self, username, groups):
+		pass
+
+	def remove_groups_from_user(self, username, groups):
+		pass
+
+	def remove_group_from_all_users(self, group):
 		pass
 
 	def changeUserPassword(self, username, password):
@@ -225,9 +228,25 @@ class FilebasedUserManager(UserManager):
 					permissions = []
 					if "permissions" in attributes:
 						permissions = attributes["permissions"]
+
 					groups = []
 					if "groups" in attributes:
 						groups = attributes["groups"]
+
+					# Migrate from roles to permissions
+					if "roles" in attributes:
+						from octoprint.server import groupManager
+
+						# Make sure the GroupManager is activated, if it is migrate the roles to groups,
+						# otherwise migrate them to permissions
+						if groupManager.enabled:
+							groups.extend(self.__migrate_roles_to_groups(attributes["roles"]))
+						else:
+							permissions.extend(self.__migrate_roles_to_permissions(attributes["roles"]))
+
+						# Make sure the new System will be saved and the old gets removed
+						self._dirty = True
+
 					apikey = None
 					if "apikey" in attributes:
 						apikey = attributes["apikey"]
@@ -235,10 +254,17 @@ class FilebasedUserManager(UserManager):
 					if "settings" in attributes:
 						settings = attributes["settings"]
 
+					# make sure we do not have any groups that don't exist anymore
+					groups = [g for g in groups if g is not None]
+
 					self._users[name] = User(name, attributes["password"], attributes["active"], permissions, groups, apikey=apikey, settings=settings)
 					for sessionid in self._sessionids_by_userid.get(name, set()):
 						if sessionid in self._session_users_by_session:
 							self._session_users_by_session[sessionid].update_user(self._users[name])
+
+			if self._dirty:
+				self._save()
+
 		else:
 			self._customized = False
 
@@ -252,7 +278,7 @@ class FilebasedUserManager(UserManager):
 			data[name] = {
 				"password": user._passwordHash,
 				"active": user._active,
-				"groups": user._groups,
+				"groups": user.groups,
 				"permissions": user._permissions,
 				"apikey": user._apikey,
 				"settings": user._settings
@@ -262,6 +288,28 @@ class FilebasedUserManager(UserManager):
 			yaml.safe_dump(data, f, default_flow_style=False, indent="    ", allow_unicode=True)
 			self._dirty = False
 		self._load()
+
+	def __migrate_roles_to_groups(self, roles):
+		from octoprint.server import groupManager
+		if groupManager.find_group("Users") is None:
+			groupManager.add_group("Users", "User group", permissions=Permissions.USER_ARRAY, default=False)
+
+		migrate_to_groups = {
+			"admin": groupManager.admins_group,
+			"user": groupManager.find_group("Users"),
+		}
+
+		return map(lambda role: migrate_to_groups[role], roles)
+
+	def __migrate_roles_to_permissions(self, roles):
+		migrate_to_permissions = {
+			"admin": [Permissions.ADMIN],
+			"user": Permissions.USER_ARRAY,
+		}
+
+		from operator import or_
+		list = reduce(or_, map(lambda role: migrate_to_permissions[role], roles))
+		return list
 
 	def addUser(self, username, password, active=False, permissions=None, groups=None, apikey=None, overwrite=False):
 		if not permissions:
@@ -338,6 +386,13 @@ class FilebasedUserManager(UserManager):
 			self._dirty = True
 			self._save()
 
+	def remove_permissions_from_users(self, permissions):
+		for user in self._users.keys():
+			self._dirty |= user.remove_permissions_from_user(permissions)
+
+		if self._dirty:
+			self._save()
+
 	def change_user_groups(self, username, groups):
 		if not username in self._users.keys():
 			raise UnknownUser(username)
@@ -379,6 +434,13 @@ class FilebasedUserManager(UserManager):
 
 		if self._users[username].remove_groups_from_user(ogroups):
 			self._dirty = True
+			self._save()
+
+	def remove_groups_from_users(self, groups):
+		for username in self._users.keys():
+			self._dirty |= self._users[username].remove_groups_from_user(groups)
+
+		if self._dirty:
 			self._save()
 
 	def changeUserPassword(self, username, password):
@@ -574,14 +636,15 @@ class User(UserMixin):
 	def asDict(self):
 		permissions = self.permissions if Permissions.ADMIN not in self._permissions else [Permissions.ADMIN]
 
-		from octoprint.server import groupManager
-		groups = self.groups if groupManager.admins_group not in self._groups else [groupManager.admins_group]
+		#from octoprint.server import groupManager
+		#groups = self.groups if groupManager.admins_group not in self._groups else [groupManager.admins_group]
 
 		return {
 			"name": self._username,
 			"active": bool(self.is_active),
 			"permissions": permissions,
-			"groups": groups,
+			"groups": self.groups,
+			# Deprecated
 			"admin": bool(self.is_admin),
 			# Deprecated
 			"user": bool(self.is_user),
@@ -611,12 +674,12 @@ class User(UserMixin):
 		return FlaskLoginMethodReplacedByBooleanProperty("is_active", lambda: self._active)
 
 	@property
-	@deprecated("is_user is deprecated please use permissions", since="now")
+	@deprecated("is_user is deprecated please use has_permissions", since="now")
 	def is_user(self):
-		return OctoPrintUserMethodReplacedByBooleanProperty("is_user", lambda: self.has_permission(Permissions.USER))
+		return not self.is_admin()
 
 	@property
-	@deprecated("is_admin is deprecated please use permissions", since="now")
+	@deprecated("is_admin is deprecated please use has_permissions", since="now")
 	def is_admin(self):
 		return OctoPrintUserMethodReplacedByBooleanProperty("is_admin", lambda: self.has_permission(Permissions.ADMIN))
 
@@ -684,7 +747,9 @@ class User(UserMixin):
 
 	@property
 	def groups(self):
-		return list(self._groups)
+		# Make sure we don't give groups back which don't exist anymore
+		groups = [g for g in self._groups if g is not None]
+		return groups
 
 	@property
 	def needs(self):

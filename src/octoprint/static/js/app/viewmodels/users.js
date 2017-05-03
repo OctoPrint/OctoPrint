@@ -2,299 +2,103 @@ $(function() {
     function UsersViewModel(parameters) {
         var self = this;
 
-        self.loginState = parameters[0];
-        self.permissions = parameters[1];
-        self.groups = parameters[2];
+        self.deprecatedUsers = function (deprecatedFct, newFct, fn) {
+            return OctoPrintClient.deprecated("UsersViewModel." + deprecatedFct, "AccessViewModel." + newFct, fn);
+        };
+
+        self.access = parameters[0];
 
         // initialize list helper
-        self.listHelper = new ItemListHelper(
-            "users",
-            {
-                "name": function(a, b) {
-                    // sorts ascending
-                    if (a["name"].toLocaleLowerCase() < b["name"].toLocaleLowerCase()) return -1;
-                    if (a["name"].toLocaleLowerCase() > b["name"].toLocaleLowerCase()) return 1;
-                    return 0;
-                }
-            },
-            {},
-            "name",
-            [],
-            [],
-            CONFIG_USERSPERPAGE
-        );
+        self.listHelper = self.access.listHelper;
 
-        self.emptyUser = {name: "", active: false};
+        self.emptyUser = self.access.emptyUser;
 
-        self.currentUser = ko.observable(self.emptyUser).extend({ notify: 'always' });
+        self.currentUser = self.access.currentUser;
 
-        self.editorUsername = ko.observable(undefined);
-        self.editorGroups = ko.observableArray([]);
-        self.editorPermissions = ko.observableArray([]);
-        self.editorPassword = ko.observable(undefined);
-        self.editorRepeatedPassword = ko.observable(undefined);
-        self.editorApikey = ko.observable(undefined);
-        self.editorActive = ko.observable(undefined);
+        self.editorUsername = self.access.editorUsername;
+        self.editorGroups = self.access.editorGroups;
+        self.editorPermissions = self.access.editorPermissions;
+        self.editorPassword = self.access.editorPassword;
+        self.editorRepeatedPassword = self.access.editorRepeatedPassword;
+        self.editorApikey = self.access.editorApikey;
+        self.editorActive = self.access.editorActive;
 
-        self.addUserDialog = undefined;
-        self.editUserDialog = undefined;
-        self.changePasswordDialog = undefined;
+        self.editorPasswordMismatch = self.access.editorPasswordMismatch;
 
-        self.currentUser.subscribe(function(newValue) {
-            if (newValue === undefined) {
-                self.editorUsername(undefined);
-                self.editorGroups(self.groups.getDefaultGroups());
-                self.editorPermissions([]);
-                self.editorActive(undefined);
-                self.editorApikey(undefined);
-            } else {
-                self.editorUsername(newValue.name);
-                self.editorGroups(newValue.groups);
-                self.editorPermissions(newValue.permissions);
-                self.editorActive(newValue.active);
-                self.editorApikey(newValue.apikey);
-            }
-            self.editorPassword(undefined);
-            self.editorRepeatedPassword(undefined);
+        self.requestData = self.deprecatedUsers("requestData", "requestUserData", function() {
+            self.access.requestData();
         });
 
-        self.editorPasswordMismatch = ko.pureComputed(function() {
-            return self.editorPassword() != self.editorRepeatedPassword();
+        self.fromResponse = self.deprecatedUsers("fromResponse", "fromResponseUserData", function(response) {
+            self.access.fromResponse(response);
         });
 
-        self.requestData = function() {
-            if (!CONFIG_ACCESS_CONTROL) return;
+        self.showAddUserDialog = self.deprecatedUsers("showAddUserDialog", "showAddUserDialog", function() {
+            self.access.showAddUserDialog();
+        });
 
-            OctoPrint.users.list()
-                .done(self.fromResponse);
-        };
+        self.confirmAddUser = self.deprecatedUsers("confirmAddUser", "confirmAddUser", function() {
+            self.access.confirmAddUser();
+        });
 
-        self.fromResponse = function(response) {
-            // Switch permissions with PermissionList references, so the checked attribute will catch it
-            rereferenceGroupsList = function(list) {
-                new_groups = [];
-                _.each(list, function(group) {
-                    var done = false;
-                    var groups = self.groups.groupsList();
-                    for (var i = 0; i < groups.length && !done; i++) {
-                        var g = groups[i];
-                        if (group.name != g.name)
-                            continue;
+        self.showEditUserDialog = self.deprecatedUsers("showEditUserDialog", "showEditUserDialog", function(user) {
+            self.access.showEditUserDialog(ser);
+        });
 
-                        new_groups.push(g);
-                        done = true;
-                    }
-                });
-                return new_groups;
-            };
-            rereferencePermissionsList = function(list) {
-                new_permissions = [];
-                _.each(list, function(permission) {
-                    var done = false;
-                    var permissions = self.permissions.permissionsList();
-                    for (var i = 0; i < permissions.length && !done; i++) {
-                        var p = permissions[i];
-                        if (permission.name != p.name)
-                            continue;
+        self.confirmEditUser = self.deprecatedUsers("confirmEditUser", "confirmEditUser", function() {
+            self.access.confirmEditUser();
+        });
 
-                        new_permissions.push(p);
-                        done = true;
-                    }
-                });
-                return new_permissions;
-            };
+        self.showChangePasswordDialog = self.deprecatedUsers("showChangePasswordDialog", "showChangePasswordDialog", function(user) {
+            self.access.showChangePasswordDialog(user);
+        });
 
-            _.each(response.users, function(user) {
-                user.groups = rereferenceGroupsList(user.groups);
-                user.permissions = rereferencePermissionsList(user.permissions);
-            });
+        self.confirmChangePassword = self.deprecatedUsers("confirmChangePassword", "confirmChangePassword", function() {
+            self.access.confirmChangePassword();
+        });
 
-            self.listHelper.updateItems(response.users);
-        };
+        self.confirmGenerateApikey = self.deprecatedUsers("confirmGenerateApikey", "confirmGenerateApikey", function() {
+            self.access.confirmGenerateApikey();
+        });
 
-        self.groupList = function(data) {
-            if (data.groups === undefined)
-                return "";
+        self.confirmDeleteApikey = self.deprecatedUsers("confirmDeleteApikey", "confirmDeleteApikey", function() {
+            self.access.confirmDeleteApikey();
+        });
 
-            var list = "";
-            _.each(data.groups, function(g) {
-                list += g.name + " ";
-            })
-
-            return list.trim();
-        };
-        self.permissionList = function(data) {
-            if (data.permissions === undefined)
-                return "";
-
-            var list = "";
-            _.each(data.permissions, function(p) {
-                list += p.name + " ";
-            })
-
-            return list.trim();
-        };
-
-        self.showAddUserDialog = function() {
-            if (!CONFIG_ACCESS_CONTROL) return;
-
-            self.currentUser(undefined);
-            self.editorActive(true);
-            self.addUserDialog.modal("show");
-        };
-
-        self.confirmAddUser = function() {
-            if (!CONFIG_ACCESS_CONTROL) return;
-
-            var user = {
-                name: self.editorUsername(),
-                password: self.editorPassword(),
-                groups: self.editorGroups(),
-                permissions: self.editorPermissions(),
-                active: self.editorActive()
-            };
-
-            self.addUser(user)
-                .done(function() {
-                    // close dialog
-                    self.currentUser(undefined);
-                    self.addUserDialog.modal("hide");
-                });
-        };
-
-        self.showEditUserDialog = function(user) {
-            if (!CONFIG_ACCESS_CONTROL) return;
-
-            self.currentUser(user);
-            self.editUserDialog.modal("show");
-        };
-
-        self.confirmEditUser = function() {
-            if (!CONFIG_ACCESS_CONTROL) return;
-
-            var user = self.currentUser();
-            user.active = self.editorActive();
-            user.groups = self.editorGroups();
-            user.permissions = self.editorPermissions();
-
-            self.updateUser(user)
-                .done(function() {
-                    // close dialog
-                    self.currentUser(undefined);
-                    self.editUserDialog.modal("hide");
-                });
-        };
-
-        self.showChangePasswordDialog = function(user) {
-            if (!CONFIG_ACCESS_CONTROL) return;
-
-            self.currentUser(user);
-            self.changePasswordDialog.modal("show");
-        };
-
-        self.confirmChangePassword = function() {
-            if (!CONFIG_ACCESS_CONTROL) return;
-
-            self.updatePassword(self.currentUser().name, self.editorPassword())
-                .done(function() {
-                    // close dialog
-                    self.currentUser(undefined);
-                    self.changePasswordDialog.modal("hide");
-                });
-        };
-
-        self.confirmGenerateApikey = function() {
-            if (!CONFIG_ACCESS_CONTROL) return;
-
-            self.generateApikey(self.currentUser().name)
-                .done(function(response) {
-                    self._updateApikey(response.apikey);
-                });
-        };
-
-        self.confirmDeleteApikey = function() {
-            if (!CONFIG_ACCESS_CONTROL) return;
-
-            self.deleteApikey(self.currentUser().name)
-                .done(function() {
-                    self._updateApikey(undefined);
-                });
-        };
-
-        self._updateApikey = function(apikey) {
-            self.editorApikey(apikey);
-            self.requestData();
-        };
-
-        //~~ Framework
-
-        self.onStartup = function() {
-            self.addUserDialog = $("#settings-usersDialogAddUser");
-            self.editUserDialog = $("#settings-usersDialogEditUser");
-            self.changePasswordDialog = $("#settings-usersDialogChangePassword");
-        };
+        self._updateApikey = self.deprecatedUsers("_updateApikey", "_updateApikey", function(apikey) {
+            self.access._updateApikey(apikey);
+        });
 
         //~~ API calls
 
-        self.addUser = function(user) {
-            if (!user) {
-                throw OctoPrint.InvalidArgumentError("user must be set");
-            }
+        self.addUser = self.deprecatedUsers("addUser", "addUser", function(user) {
+            self.access.addUser(user);
+        });
 
-            return OctoPrint.users.add(user)
-                .done(self.fromResponse);
-        };
+        self.removeUser = self.deprecatedUsers("removeUser", "removeUser", function(user) {
+            self.access.removeUser(user);
+        });
 
-        self.removeUser = function(user) {
-            if (!user) {
-                throw OctoPrint.InvalidArgumentError("user must be set");
-            }
+        self.updateUser = self.deprecatedUsers("updateUser", "updateUser", function(user) {
+            self.access.updateUser(user);
+        });
 
-            if (user.name == self.loginState.username()) {
-                // we do not allow to delete ourselves
-                new PNotify({
-                    title: gettext("Not possible"),
-                    text: gettext("You may not delete your own account."),
-                    type: "error"
-                });
-                return $.Deferred().reject("You may not delete your own account").promise();
-            }
+        self.updatePassword = self.deprecatedUsers("updatePassword", "updatePassword", function(username, password) {
+            self.access.updatePassword(username, password);
+        });
 
-            return OctoPrint.users.delete(user.name)
-                .done(self.fromResponse);
-        };
+        self.generateApikey = self.deprecatedUsers("generateApikey", "generateApikey", function(username) {
+            self.access.generateApikey(username);
+        });
 
-        self.updateUser = function(user) {
-            if (!user) {
-                throw OctoPrint.InvalidArgumentError("user must be set");
-            }
-
-            return OctoPrint.users.update(user.name, user.active, user.admin, user.permissions, user.groups)
-                .done(self.fromResponse);
-        };
-
-        self.updatePassword = function(username, password) {
-            return OctoPrint.users.changePassword(username, password);
-        };
-
-        self.generateApikey = function(username) {
-            return OctoPrint.users.generateApiKey(username);
-        };
-
-        self.deleteApikey = function(username) {
-            return OctoPrint.users.resetApiKey(username);
-        };
-
-        self.onUserLoggedIn = function(user) {
-            if (self.loginState.hasPermission(self.permissions.SETTINGS)()) {
-                self.requestData();
-            }
-        }
+        self.deleteApikey = self.deprecatedUsers("deleteApikey", "deleteApikey", function(username) {
+            self.access.deleteApikey(username);
+        });
     }
 
     OCTOPRINT_VIEWMODELS.push([
         UsersViewModel,
-        ["loginStateViewModel", "permissionsViewModel", "groupsViewModel"],
+        ["accessViewModel"],
         []
     ]);
 });

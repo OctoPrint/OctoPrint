@@ -1057,8 +1057,7 @@ def admin_validator(request):
 
 @deprecated("user_validator is deprecated, please use new permission_validator", since="")
 def user_validator(request):
-	from octoprint.access.permissions import Permissions
-	return permission_validator(request, Permissions.USER)
+	return True
 
 def _get_flask_user_from_request(request):
 	"""
@@ -1302,14 +1301,13 @@ def collect_core_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 		'js/app/bindings/toggle.js',
 		'js/app/bindings/togglecontent.js',
 		'js/app/bindings/valuewithinit.js',
+		'js/app/viewmodels/access.js',
 		'js/app/viewmodels/appearance.js',
 		'js/app/viewmodels/connection.js',
 		'js/app/viewmodels/control.js',
 		'js/app/viewmodels/files.js',
-		'js/app/viewmodels/groups.js',
 		'js/app/viewmodels/loginstate.js',
 		'js/app/viewmodels/navigation.js',
-		'js/app/viewmodels/permissions.js',
 		'js/app/viewmodels/printerstate.js',
 		'js/app/viewmodels/printerprofiles.js',
 		'js/app/viewmodels/settings.js',
