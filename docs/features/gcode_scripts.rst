@@ -78,13 +78,15 @@ There are a few additional template variables available for the following specif
 
     * ``pause_position``: Position reported by the printer via ``M114`` immediately before the print was paused. Consists
       of ``x``, ``y``, ``z`` and ``e`` coordinates as received by the printer and tracked values for ``f`` and current tool
-      ``t`` taken from commands sent through OctoPrint.
+      ``t`` taken from commands sent through OctoPrint. All of these coordinates might be ``None`` if no position could be
+      retrieved from the printer or the values could not be tracked (in case of ``f`` and ``t``)!
 
   * ``afterPrintCancelled``
 
     * ``cancel_position``: Position reported by the printer via ``M114`` immediately before the print was cancelled.
       Consists of ``x``, ``y``, ``z`` and ``e`` coordinates as received by the printer and tracked values for ``f`` and
-      current tool ``t`` taken from commands sent through OctoPrint.
+      current tool ``t`` taken from commands sent through OctoPrint. All of these coordinates might be ``None`` if no
+      position could be retrieved from the printer or the values could not be tracked (in case of ``f`` and ``t``)!
 
 .. warning::
 

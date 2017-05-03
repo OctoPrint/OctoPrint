@@ -228,11 +228,11 @@ class PositionRecord(object):
 
 	def as_dict(self):
 		return dict(x=self.x,
-					y=self.y,
-					z=self.z,
-					e=self.e,
-					t=self.t,
-					f=self.f)
+		            y=self.y,
+		            z=self.z,
+		            e=self.e,
+		            t=self.t,
+		            f=self.f)
 
 class MachineCom(object):
 	STATE_NONE = 0
@@ -1181,6 +1181,7 @@ class MachineCom(object):
 						# there's no way to query it from the firmware and
 						# no way to track it ourselves when not streaming
 						# the file - this all sucks sooo much
+						self.last_position.valid = True
 						self.last_position.x = float(match.group("x"))
 						self.last_position.y = float(match.group("y"))
 						self.last_position.z = float(match.group("z"))
