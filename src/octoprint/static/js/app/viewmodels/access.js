@@ -468,8 +468,9 @@ $(function() {
         /////////////////////////////////////////////////////////////////
         //                                                             //
         // Rereference functions are taking e.g. the groups data       //
-        // delivered with the user data and replacing with             //
-        // the groups data delivered by the groups submenu.            //
+        // delivered with the user data and replacing them with        //
+        // a reference to the groups data delivered by the             //
+        // groups submenu.                                             //
         //                                                             //
         // This is necessary for the editor to automatically check the //
         // groups the user belongs to.                                 //
