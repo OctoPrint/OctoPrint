@@ -3,96 +3,96 @@ $(function() {
         var self = this;
 
         self.deprecatedUsers = function (deprecatedFct, newFct, fn) {
-            return OctoPrintClient.deprecated("UsersViewModel." + deprecatedFct, "AccessViewModel." + newFct, fn);
+            return OctoPrintClient.deprecated("UsersViewModel." + deprecatedFct, "AccessViewModel.users." + newFct, fn);
         };
 
         self.access = parameters[0];
 
         // initialize list helper
-        self.listHelper = self.access.listHelper;
+        self.listHelper = self.access.users.listHelper;
 
-        self.emptyUser = self.access.emptyUser;
+        self.emptyUser = self.access.users.emptyUser;
 
-        self.currentUser = self.access.currentUser;
+        self.currentUser = self.access.users.currentUser;
 
-        self.editorUsername = self.access.editorUsername;
-        self.editorGroups = self.access.editorGroups;
-        self.editorPermissions = self.access.editorPermissions;
-        self.editorPassword = self.access.editorPassword;
-        self.editorRepeatedPassword = self.access.editorRepeatedPassword;
-        self.editorApikey = self.access.editorApikey;
-        self.editorActive = self.access.editorActive;
+        self.editorUsername = self.access.users.editorUsername;
+        self.editorGroups = self.access.users.editorGroups;
+        self.editorPermissions = self.access.users.editorPermissions;
+        self.editorPassword = self.access.users.editorPassword;
+        self.editorRepeatedPassword = self.access.users.editorRepeatedPassword;
+        self.editorApikey = self.access.users.editorApikey;
+        self.editorActive = self.access.users.editorActive;
 
-        self.editorPasswordMismatch = self.access.editorPasswordMismatch;
+        self.editorPasswordMismatch = self.access.users.editorPasswordMismatch;
 
-        self.requestData = self.deprecatedUsers("requestData", "requestUserData", function() {
-            self.access.requestData();
+        self.requestData = self.deprecatedUsers("requestData", "requestData", function() {
+            self.access.users.requestData();
         });
 
-        self.fromResponse = self.deprecatedUsers("fromResponse", "fromResponseUserData", function(response) {
-            self.access.fromResponse(response);
+        self.fromResponse = self.deprecatedUsers("fromResponse", "fromResponse", function(response) {
+            self.access.users.fromResponse(response);
         });
 
         self.showAddUserDialog = self.deprecatedUsers("showAddUserDialog", "showAddUserDialog", function() {
-            self.access.showAddUserDialog();
+            self.access.users.showAddUserDialog();
         });
 
         self.confirmAddUser = self.deprecatedUsers("confirmAddUser", "confirmAddUser", function() {
-            self.access.confirmAddUser();
+            self.access.users.confirmAddUser();
         });
 
         self.showEditUserDialog = self.deprecatedUsers("showEditUserDialog", "showEditUserDialog", function(user) {
-            self.access.showEditUserDialog(ser);
+            self.access.users.showEditUserDialog(ser);
         });
 
         self.confirmEditUser = self.deprecatedUsers("confirmEditUser", "confirmEditUser", function() {
-            self.access.confirmEditUser();
+            self.access.users.confirmEditUser();
         });
 
         self.showChangePasswordDialog = self.deprecatedUsers("showChangePasswordDialog", "showChangePasswordDialog", function(user) {
-            self.access.showChangePasswordDialog(user);
+            self.access.users.showChangePasswordDialog(user);
         });
 
         self.confirmChangePassword = self.deprecatedUsers("confirmChangePassword", "confirmChangePassword", function() {
-            self.access.confirmChangePassword();
+            self.access.users.confirmChangePassword();
         });
 
         self.confirmGenerateApikey = self.deprecatedUsers("confirmGenerateApikey", "confirmGenerateApikey", function() {
-            self.access.confirmGenerateApikey();
+            self.access.users.confirmGenerateApikey();
         });
 
         self.confirmDeleteApikey = self.deprecatedUsers("confirmDeleteApikey", "confirmDeleteApikey", function() {
-            self.access.confirmDeleteApikey();
+            self.access.users.confirmDeleteApikey();
         });
 
         self._updateApikey = self.deprecatedUsers("_updateApikey", "_updateApikey", function(apikey) {
-            self.access._updateApikey(apikey);
+            self.access.users._updateApikey(apikey);
         });
 
         //~~ API calls
 
         self.addUser = self.deprecatedUsers("addUser", "addUser", function(user) {
-            self.access.addUser(user);
+            self.access.users.addUser(user);
         });
 
         self.removeUser = self.deprecatedUsers("removeUser", "removeUser", function(user) {
-            self.access.removeUser(user);
+            self.access.users.removeUser(user);
         });
 
         self.updateUser = self.deprecatedUsers("updateUser", "updateUser", function(user) {
-            self.access.updateUser(user);
+            self.access.users.updateUser(user);
         });
 
         self.updatePassword = self.deprecatedUsers("updatePassword", "updatePassword", function(username, password) {
-            self.access.updatePassword(username, password);
+            self.access.users.updatePassword(username, password);
         });
 
         self.generateApikey = self.deprecatedUsers("generateApikey", "generateApikey", function(username) {
-            self.access.generateApikey(username);
+            self.access.users.generateApikey(username);
         });
 
         self.deleteApikey = self.deprecatedUsers("deleteApikey", "deleteApikey", function(username) {
-            self.access.deleteApikey(username);
+            self.access.users.deleteApikey(username);
         });
     }
 

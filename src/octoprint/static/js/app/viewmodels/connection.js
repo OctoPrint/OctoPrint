@@ -5,7 +5,7 @@ $(function() {
         self.loginState = parameters[0];
         self.settings = parameters[1];
         self.printerProfiles = parameters[2];
-        self.permissions = parameters[3];
+        self.access = parameters[3];
 
         self.printerProfiles.profiles.items.subscribe(function() {
             var allProfiles = self.printerProfiles.profiles.items();
@@ -148,7 +148,7 @@ $(function() {
 
     OCTOPRINT_VIEWMODELS.push([
         ConnectionViewModel,
-        ["loginStateViewModel", "settingsViewModel", "printerProfilesViewModel", "permissionsViewModel"],
+        ["loginStateViewModel", "settingsViewModel", "printerProfilesViewModel", "accessViewModel"],
         "#connection_wrapper"
     ]);
 });

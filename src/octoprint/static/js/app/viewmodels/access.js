@@ -445,6 +445,17 @@ $(function() {
         })();
 
         //~~ Shared Functions across the submenus
+
+        /////////////////////////////////////////////////////////////////
+        //                                                             //
+        // Rereference functions are taking e.g. the groups data       //
+        // delivered with the user data and replacing with             //
+        // the groups data delivered by the groups submenu.            //
+        //                                                             //
+        // This is necessary for the editor to automatically check the //
+        // groups the user belongs to.                                 //
+        //                                                             //
+        /////////////////////////////////////////////////////////////////
         access.rereferenceGroupsList = function(list) {
             return _.filter(access.groups.groupsList(), function(group) {
                 return _.findWhere(list, { name: group.name }) != undefined;
@@ -457,12 +468,15 @@ $(function() {
             });
         };
 
+        // Maps the group names into a comma seperated list
         access.groupList = function(data) {
             if (data.groups === undefined)
                 return "";
 
             return _.map(data.groups, function(p) { return p.name; }).join(", ");
         };
+
+        // Maps the permission names into a comma seperated list
         access.permissionList = function(data) {
             if (data.permissions === undefined)
                 return "";

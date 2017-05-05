@@ -674,12 +674,12 @@ class User(UserMixin):
 		return FlaskLoginMethodReplacedByBooleanProperty("is_active", lambda: self._active)
 
 	@property
-	@deprecated("is_user is deprecated please use has_permissions", since="now")
+	@deprecated("is_user is deprecated, please use has_permissions", since="now")
 	def is_user(self):
 		return not self.is_admin()
 
 	@property
-	@deprecated("is_admin is deprecated please use has_permissions", since="now")
+	@deprecated("is_admin is deprecated, please use has_permissions", since="now")
 	def is_admin(self):
 		return OctoPrintUserMethodReplacedByBooleanProperty("is_admin", lambda: self.has_permission(Permissions.ADMIN))
 
