@@ -9,17 +9,16 @@ from flask_principal import Permission, RoleNeed
 
 class OctoPrintPermission(Permission):
 	@classmethod
-	def convert_to_need_list(cls, permissions):
-		needs = dict()
-		for permission in permissions:
-			for need in permission.needs:
-				if need.method not in needs:
-					needs[need.method] = []
+	def convert_needs_to_dict(cls, needs):
+		ret_needs = dict()
+		for need in needs:
+			if need.method not in ret_needs:
+				ret_needs[need.method] = []
 
-				if need.value not in needs[need.method]:
-					needs[need.method].append(need.value)
+			if need.value not in ret_needs[need.method]:
+				ret_needs[need.method].append(need.value)
 
-		return needs
+		return ret_needs
 
 	def __init__(self, name, description, *needs):
 		self._name = name
@@ -31,7 +30,7 @@ class OctoPrintPermission(Permission):
 		return dict(
 			name=self.get_name(),
 			description=self.get_description(),
-			needs=self.convert_to_need_list([self])
+			needs=self.convert_needs_to_dict(self.needs)
 		)
 
 	def get_name(self):
@@ -132,15 +131,15 @@ class Permissions(object):
 	                          "Allows users to download gcode files, the gCodeViewer is affected by this too.",
 	                               RoleNeed("download"))
 	DELETE = OctoPrintPermission("Delete", "Allows users to delete files in their folder", RoleNeed("delete_file"))
-	SELECT = OctoPrintPermission("Selecting", "Allows to select a file", RoleNeed("select"))
-	PRINTING = OctoPrintPermission("Printing", "Allows to start a print job, inherits the select permission",
+	SELECT = OctoPrintPermission("Select", "Allows to select a file", RoleNeed("select"))
+	PRINT = OctoPrintPermission("Print", "Allows to start a print job, inherits the select permission",
 	                               RoleNeed("print"))
 	TERMINAL = OctoPrintPermission("Terminal", "Allows to watch the Terminaltab, without the ability to send any commands",
 	                               RoleNeed("terminal"))
 	CONTROL = OctoPrintPermission("Control",
 	                         "Allows to manually control the printer by using the controltab or sending gcodes through the terminal, this implies the terminal permission",
 	                              RoleNeed("control"))
-	SLICE = OctoPrintPermission("Slicen", "Allows to slice stl files into gcode files", RoleNeed("slice"))
+	SLICE = OctoPrintPermission("Slice", "Allows to slice stl files into gcode files", RoleNeed("slice"))
 	TIMELAPSE = OctoPrintPermission("Timelapse", "Allows to download timelapse videos", RoleNeed("timelapse"))
 	TIMELAPSE_ADMIN = OctoPrintPermission("Timelapse Admin",
 	                                 "Allows to change the timelapse settings, remove timelapses, implies timelapse",
@@ -150,12 +149,12 @@ class Permissions(object):
 
 	################################################################################
 	# Deprecated only for migration
-	USER_ARRAY = [STATUS, CONNECTION, WEBCAM, UPLOAD, DOWNLOAD, DELETE, SELECT, PRINTING, TERMINAL, CONTROL, SLICE, TIMELAPSE, TIMELAPSE_ADMIN]
+	USER_ARRAY = [STATUS, CONNECTION, WEBCAM, UPLOAD, DOWNLOAD, DELETE, SELECT, PRINT, TERMINAL, CONTROL, SLICE, TIMELAPSE, TIMELAPSE_ADMIN]
 	#from operator import or_
 	#USER = variable_deprecated("This variable is only for migration and is deprecated already, don't use it!", since="now")(OctoPrintPermission("User", "Migrated User permission class, deprecated", *reduce(or_, map(lambda p: p.needs, USER_ARRAY))))
 	################################################################################
 
-	FILE_PERMISSION = Permission(*UPLOAD.needs.union(DOWNLOAD.needs).union(DELETE.needs).union(SELECT.needs).union(PRINTING.needs).union(SLICE.needs))
+	FILE_PERMISSION = Permission(*UPLOAD.needs.union(DOWNLOAD.needs).union(DELETE.needs).union(SELECT.needs).union(PRINT.needs).union(SLICE.needs))
 
 	@classmethod
 	def initialize(cls):
@@ -171,7 +170,7 @@ class Permissions(object):
 		pm.add_permission(cls.DOWNLOAD)
 		pm.add_permission(cls.DELETE)
 		pm.add_permission(cls.SELECT)
-		pm.add_permission(cls.PRINTING)
+		pm.add_permission(cls.PRINT)
 
 		pm.add_permission(cls.TERMINAL)
 		pm.add_permission(cls.CONTROL)

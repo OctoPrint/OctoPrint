@@ -634,16 +634,13 @@ class User(UserMixin):
 		self._settings = settings
 
 	def asDict(self):
-		permissions = self.permissions if Permissions.ADMIN not in self._permissions else [Permissions.ADMIN]
-
-		#from octoprint.server import groupManager
-		#groups = self.groups if groupManager.admins_group not in self._groups else [groupManager.admins_group]
-
+		from octoprint.access.permissions import OctoPrintPermission
 		return {
 			"name": self._username,
 			"active": bool(self.is_active),
-			"permissions": permissions,
-			"groups": self.groups,
+			"permissions": self._permissions,
+			"groups": self._groups,
+			"needs": OctoPrintPermission.convert_needs_to_dict(self.needs),
 			# Deprecated
 			"admin": bool(self.is_admin),
 			# Deprecated
@@ -739,14 +736,18 @@ class User(UserMixin):
 		if self._permissions is None:
 			return []
 
-		from octoprint.server import permissionManager
 		if Permissions.ADMIN in self._permissions:
-			return permissionManager.permissions()
+			from octoprint.server import permissionManager
+			return permissionManager.permissions
 
-		return list(self._permissions)
+		permissions = [p for p in self._permissions if p is not None]
+		return permissions
 
 	@property
 	def groups(self):
+		if self._groups is None:
+			return []
+
 		# Make sure we don't give groups back which don't exist anymore
 		groups = [g for g in self._groups if g is not None]
 		return groups
@@ -767,7 +768,7 @@ class User(UserMixin):
 
 	def has_permission(self, permission):
 		from octoprint.server import groupManager
-		if Permissions.ADMIN in self.permissions or groupManager.admins_group in self.groups:
+		if Permissions.ADMIN in self._permissions or groupManager.admins_group in self._groups:
 			return True
 
 		return permission.needs.issubset(self.needs)

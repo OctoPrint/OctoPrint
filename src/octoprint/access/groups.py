@@ -300,12 +300,12 @@ class Group(object):
 		self._specialGroup = specialGroup
 
 	def asDict(self):
-		permissions = self.permissions if not self.hasPermission(Permissions.ADMIN) else [Permissions.ADMIN]
-
+		from octoprint.access.permissions import OctoPrintPermission
 		return dict(
 			name=self.get_name(),
 			description=self.get_description(),
-			permissions=permissions,
+			permissions=self._permissions,
+			needs=OctoPrintPermission.convert_needs_to_dict(self.needs),
 			defaultOn=self.get_default()
 		)
 
@@ -372,7 +372,8 @@ class Group(object):
 			from octoprint.server import permissionManager
 			return permissionManager.permissions
 
-		return list(self._permissions)
+		permissions = [p for p in self._permissions if p is not None]
+		return list(permissions)
 
 	@property
 	def needs(self):

@@ -8,8 +8,7 @@ $(function() {
 
         self.loggedIn = ko.observable(false);
         self.username = ko.observable(undefined);
-        self.usergroups = ko.observableArray([]);
-        self.userpermissions = ko.observableArray([]);
+        self.userneeds = ko.observableArray(undefined);
         self.isAdmin = ko.observable(false);
         self.isUser = ko.observable(false);
 
@@ -65,8 +64,7 @@ $(function() {
 
         self.updateCurrentUserData = function(data) {
             self.username(data.name);
-            self.usergroups(data.groups);
-            self.userpermissions(data.permissions);
+            self.userneeds(data.needs);
             self.isUser(self.hasPermission("User"));
             self.isAdmin(self.hasPermission("Admin"));
 
@@ -75,10 +73,10 @@ $(function() {
 
         self.resetCurrentUserData = function() {
             self.username(undefined);
+            self.userneeds(undefined);
             OctoPrint.access.groups.get("Guests").done(function(group) {
-                self.usergroups([group]);
+                self.userneeds(group.needs);
             });
-            self.userpermissions([]);
             self.isUser(false);
             self.isAdmin(false);
 
@@ -176,46 +174,40 @@ $(function() {
         };
 
 
-        // argument[0]: necessary permission/s
-        // argument[1]: user permissions (optional)
-        self.hasPermissions = function(permissions) {
-            if (arguments.length == 1) {
-                return self.hasPermission(permissions);
-            } else {
-                permissionsList = arguments[1];
-                if (permissions === undefined || permissionsList === undefined)
+        /////////////////////////////////////////////////////////////////////////////////////////////////
+        //                                                                                             //
+        // hasPermission: checks if the currently logged in user has a specific permission             //
+        //                This check is performed by testing if the necessary needs set is available   //
+        //                                                                                             //
+        /////////////////////////////////////////////////////////////////////////////////////////////////
+        //                                                                                             //
+        // Possible function calls and what they return:                                               //
+        //                                                                                             //
+        // loginState.hasPermission(access.permissions.SETTINGS)                                       //
+        // - Returns a pureComputed which returns true if the currently logged in user                 //
+        //   has settings right.                                                                       //
+        //                                                                                             //
+        /////////////////////////////////////////////////////////////////////////////////////////////////
+        self.hasPermission = function(permission) {
+            return ko.pureComputed(function() {
+                if (self.userneeds() === undefined || permission === undefined)
                     return false;
 
-                if (permissions instanceof Array)
-                    return _.every(permissions, function(p) {
-                        return self.hasPermission(p, permissionsList);
-                    });
+                var needs = self.userneeds();
+                if (needs.length == 0)
+                    return false;
 
-                return self.hasPermission(permissions, permissionsList);
-            }
-        };
+                var check = function(need) {
+                    return _.has(needs, need.method) && _.contains(needs[need.method], need.value);
+                }
 
-        // argument[0]: necessary permission
-        // argument[1]: user permissions (optional)
-        self.hasPermission = function(permission) {
-            if (arguments.length == 1) {
-                return ko.pureComputed(function() {
-                    if ((!(self.usergroups() instanceof Array) && !(self.userpermissions() instanceof Array)) || permission === undefined)
-                        return false;
-
-                    var group_permissions = _.union.apply(null, _.map(self.usergroups(), function(group) { return group.permissions; }));
-                    var permissions = self.userpermissions();
-
-                    var all_permissions = _.union(permissions, group_permissions);
-                    return self.hasPermissions(permission, all_permissions);
-                }).extend({ notify: 'always' });
-            } else {
-                permissions = arguments[1];
-                return _.find(permissions,  function(p) {
-                    return (p != undefined && (p.name === "Admin" ||
-                            (_.has(p.needs, permission.method) && _.contains(p.needs[permission.method], permission.value))));
-                }) != undefined;
-            }
+                // permission can be a list of needs
+                if (permission instanceof Array) {
+                    return _.every(permission, check);
+                } else {
+                    return check(permission);
+                }
+            }).extend({ notify: 'always' });
         };
     }
 

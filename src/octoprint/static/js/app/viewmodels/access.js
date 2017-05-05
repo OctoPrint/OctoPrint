@@ -398,30 +398,55 @@ $(function() {
         access.permissions = (function() {
             var self = {};
 
-            self.permissionsList = ko.observableArray([]);
+            self.permissionsList = ko.observableArray(undefined);
 
             self.need = function(method, value) { return {method: method, value: value}; };
             self.roleNeed = function(value) { return self.need("role", value); };
 
-            self.ADMIN = self.roleNeed("admin");
-            self.USER = self.roleNeed("user");
+            self.registerPermission = function(name, permission) {
+                Object.defineProperty(self, name, {
+                    value: permission,
+                    enumerable: true,
+                    configurable: true
+                });
+            };
 
-            self.STATUS = self.roleNeed("status");
-            self.CONNECTION = self.roleNeed("connection");
-            self.WEBCAM = self.roleNeed("webcam");
-            self.SYSTEM = self.roleNeed("system");
-            self.UPLOAD = self.roleNeed("upload");
-            self.DOWNLOAD = self.roleNeed("download");
-            self.DELETE = self.roleNeed("delete");
-            self.SELECT = self.roleNeed("select");
-            self.PRINT = self.roleNeed("print");
-            self.TERMINAL = self.roleNeed("terminal");
-            self.CONTROL = self.roleNeed("control");
-            self.SLICE = self.roleNeed("slice");
-            self.TIMELAPSE = self.roleNeed("timelapse");
-            self.TIMELAPSE_ADMIN = self.roleNeed("timelapse_admin");
-            self.SETTINGS = self.roleNeed("settings");
-            self.LOGS = self.roleNeed("logs");
+            // used to delete all the permissions before registering new ones
+            self.permissionsList.subscribe(function(oldValue) {
+                if (oldValue === undefined || oldValue.length == 0)
+                    return;
+
+                oldValue.forEach(function (p) {
+                    delete self[p.name.toUpperCase()];
+                });
+            }, null, "beforeChange");
+
+            // used to register new permission
+            self.permissionsList.subscribe(function(newValue) {
+                if (newValue === undefined)
+                    return;
+
+                newValue.forEach(function(p) {
+                    var needs = [];
+                    for (key in p.needs) {
+                        p.needs[key].forEach(function(value) {
+                            needs.push(self.need(key, value));
+                        });
+                    }
+
+                    // if the permission has no need sets do not register it.
+                    if (needs.length > 0) {
+                        // if the permission has only 1 need set then just assign this one set
+                        // the loginState.hasPermission function should profit of this,
+                        // because it does not need to loop through a list with 1 object.
+                        if (needs.length == 1) {
+                            self.registerPermission(p.name.toUpperCase(), needs[0]);
+                        } else {
+                            self.registerPermission(p.name.toUpperCase(), needs);
+                        }
+                    }
+                });
+            });
 
             self.requestData = function() {
                 if (!CONFIG_ACCESS_CONTROL) return;
@@ -431,13 +456,7 @@ $(function() {
                 });
             };
 
-            self.onAllBound = function(allViewModels) {
-                self.allViewModels = allViewModels;
-                self.requestData();
-            };
-
-            self.onServerConnect = self.onServerReconnect = function() {
-                if (self.allViewModels == undefined) return;
+            self.onStartup = self.onServerConnect = self.onServerReconnect = function() {
                 self.requestData();
             };
 
@@ -485,11 +504,8 @@ $(function() {
         };
 
         //~~ API Calls
-        access.onAllBound = function(allViewModels) {
-            access.permissions.onAllBound(allViewModels);
-        };
-
         access.onStartup = function() {
+            access.permissions.onStartup();
             access.groups.onStartup();
             access.users.onStartup();
         };

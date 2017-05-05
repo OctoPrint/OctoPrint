@@ -18,6 +18,9 @@ $(function() {
             }
         };
 
+        // TODO: find some nicer way to update plot AFTER graph becomes visible
+        self.loginStateSubscription = undefined;
+
         self.tools = ko.observableArray([]);
         self.hasBed = ko.observable(true);
         self.bedTemp = self._createToolEntry();
@@ -100,17 +103,24 @@ $(function() {
         });
 
         // TODO: find some nicer way to update plot AFTER graph becomes visible
-        self.loginState.hasPermission(self.access.permissions.STATUS).subscribe(function(value) {
-            var graph = $("#temp, #temp_link");
-            if (graph.length) {
-                if (value) {
-                    graph.removeAttr("style");
-                }
-                else {
-                    graph.hide();
-                }
+        self.access.permissions.permissionsList.subscribe(function(values) {
+            if (self.loginStateSubscription !== undefined) {
+                self.loginStateSubscription.dispose();
+                self.loginStateSubscription = undefined;
             }
-            self.updatePlot();
+
+            self.loginStateSubscription = self.loginState.hasPermission(self.access.permissions.STATUS).subscribe(function(value) {
+                var graph = $("#temp, #temp_link");
+                if (graph.length) {
+                    if (value) {
+                        graph.removeAttr("style");
+                    }
+                    else {
+                        graph.hide();
+                    }
+                }
+                self.updatePlot();
+            });
         });
 
         self.temperatures = [];

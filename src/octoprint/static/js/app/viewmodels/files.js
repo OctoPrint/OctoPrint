@@ -149,11 +149,11 @@ $(function() {
         });
 
         self.isLoadActionPossible = ko.pureComputed(function() {
-            return (self.loginState.hasPermission(self.access.permissions.USER)() || self.loginState.hasPermission(self.access.permissions.SELECT)()) && self.isOperational() && !self.isPrinting() && !self.isPaused() && !self.isLoading();
+            return self.loginState.hasPermission(self.access.permissions.SELECT)() && self.isOperational() && !self.isPrinting() && !self.isPaused() && !self.isLoading();
         });
 
         self.isLoadAndPrintActionPossible = ko.pureComputed(function() {
-            return (self.loginState.hasPermission(self.access.permissions.USER)() || self.loginState.hasPermission(self.access.permissions.PRINT)()) && self.isOperational() && self.isLoadActionPossible();
+            return self.loginState.hasPermission(self.access.permissions.PRINT)() && self.isOperational() && self.isLoadActionPossible();
         });
 
         self.printerState.filepath.subscribe(function(newValue) {
@@ -546,7 +546,7 @@ $(function() {
             } else {
                 busy = _.contains(self.printerState.busyFiles(), data.origin + ":" + data.path);
             }
-            return (self.loginState.hasPermission(self.access.permissions.USER) || self.loginState.hasPermission(self.access.permissions.DELETE)) && !busy;
+            return self.loginState.hasPermission(self.access.permissions.DELETE) && !busy;
         };
 
         self.enableSelect = function(data) {
@@ -560,7 +560,7 @@ $(function() {
 
 
         self.enableSlicing = function(data) {
-            return (self.loginState.hasPermission(self.access.permissions.USER) || self.loginState.hasPermission(self.access.permissions.SLICE)) && self.slicing.enableSlicingDialog() && self.slicing.enableSlicingDialogForFile(data.name);
+            return self.loginState.hasPermission(self.access.permissions.SLICE) && self.slicing.enableSlicingDialog() && self.slicing.enableSlicingDialogForFile(data.name);
         };
 
         self.enableAdditionalData = function(data) {
