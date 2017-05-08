@@ -155,6 +155,7 @@ default_settings = {
 	},
 	"webcam": {
 		"stream": None,
+		"streamRatio": "16:9",
 		"snapshot": None,
 		"ffmpeg": None,
 		"ffmpegThreads": 1,

@@ -49,6 +49,14 @@ $(function() {
             return self.keycontrolActive() && self.keycontrolPossible();
         });
 
+        self.webcamRatioClass = ko.pureComputed(function() {
+            if (self.settings.webcam_streamRatio() == "4:3") {
+                return "ratio43";
+            } else {
+                return "ratio169";
+            }
+        });
+
         self.settings.printerProfiles.currentProfileData.subscribe(function () {
             self._updateExtruderCount();
             self.settings.printerProfiles.currentProfileData().extruder.count.subscribe(self._updateExtruderCount);

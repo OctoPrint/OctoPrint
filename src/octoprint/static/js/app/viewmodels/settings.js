@@ -91,6 +91,8 @@ $(function() {
             }
         };
 
+        self.webcam_available_ratios = ["16:9", "4:3"];
+
         var auto_locale = {language: "_default", display: gettext("Autodetect from browser"), english: undefined};
         self.locales = ko.observableArray([auto_locale].concat(_.sortBy(_.values(AVAILABLE_LOCALES), function(n) {
             return n.display;
@@ -110,6 +112,7 @@ $(function() {
         self.printer_defaultExtrusionLength = ko.observable(undefined);
 
         self.webcam_streamUrl = ko.observable(undefined);
+        self.webcam_streamRatio = ko.observable(undefined);
         self.webcam_snapshotUrl = ko.observable(undefined);
         self.webcam_ffmpegPath = ko.observable(undefined);
         self.webcam_bitrate = ko.observable(undefined);
