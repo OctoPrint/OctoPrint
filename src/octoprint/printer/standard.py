@@ -334,12 +334,12 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			shared_nozzle = printer_profile["extruder"]["sharedNozzle"]
 			if extruder_count > 1 and not shared_nozzle:
 				toolNum = int(heater[len("tool"):])
-				self.commands("M104 T%d S%f" % (toolNum, value))
+				self.commands("M104 T{} S{}".format(toolNum, value))
 			else:
-				self.commands("M104 S%f" % value)
+				self.commands("M104 S{}".format(value))
 
 		elif heater == "bed":
-			self.commands("M140 S%f" % value)
+			self.commands("M140 S{}".format(value))
 
 	def set_temperature_offset(self, offsets=None):
 		if offsets is None:
@@ -370,7 +370,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			factor = int(factor * 100.0)
 
 		if factor < min or factor > max:
-			raise ValueError("factor must be a value between %f and %f" % (min, max))
+			raise ValueError("factor must be a value between {} and {}".format(min, max))
 
 		return factor
 
