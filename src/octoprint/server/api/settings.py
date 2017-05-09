@@ -256,6 +256,10 @@ def setSettings():
 	except BadRequest:
 		return make_response("Malformed JSON body in request", 400)
 
+	if not isinstance(data, dict):
+		return make_response("Malformed request, need settings dictionary, "
+		                     "got a {} instead: {!r}".format(type(data).__name__, data), 400)
+
 	_saveSettings(data)
 	return getSettings()
 
