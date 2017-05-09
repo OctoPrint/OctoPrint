@@ -331,7 +331,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		if heater.startswith("tool"):
 			printer_profile = self._printerProfileManager.get_current_or_default()
 			extruder_count = printer_profile["extruder"]["count"]
-			if extruder_count > 1:
+			shared_nozzle = printer_profile["extruder"]["sharedNozzle"]
+			if extruder_count > 1 and not shared_nozzle:
 				toolNum = int(heater[len("tool"):])
 				self.commands("M104 T%d S%f" % (toolNum, value))
 			else:
