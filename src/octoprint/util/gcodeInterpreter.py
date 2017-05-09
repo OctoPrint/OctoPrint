@@ -224,7 +224,7 @@ class gcode(object):
 		lineNo = 0
 		readBytes = 0
 		pos = Vector3D(0.0, 0.0, 0.0)
-		posOffset = Vector3D(0.0, 0.0, 0.0)
+		toolOffset = Vector3D(0.0, 0.0, 0.0)
 		currentE = [0.0]
 		totalExtrusion = [0.0]
 		maxExtrusion = [0.0]
@@ -316,15 +316,15 @@ class gcode(object):
 
 					oldPos = pos
 
-					# Use new coordinates if provided. If not provided, use prior coordinates (minus offset) in absolute
-					# and 0.0 in relative mode.
-					newPos = Vector3D(x if x is not None else (pos.x - posOffset.x if posAbs else 0.0),
-					                  y if y is not None else (pos.y - posOffset.y if posAbs else 0.0),
-					                  z if z is not None else (pos.z - posOffset.z if posAbs else 0.0))
+					# Use new coordinates if provided. If not provided, use prior coordinates (minus tool offset)
+					# in absolute and 0.0 in relative mode.
+					newPos = Vector3D(x if x is not None else (pos.x - toolOffset.x if posAbs else 0.0),
+					                  y if y is not None else (pos.y - toolOffset.y if posAbs else 0.0),
+					                  z if z is not None else (pos.z - toolOffset.z if posAbs else 0.0))
 
 					if posAbs:
-						# Absolute mode: scale coordinates and apply offsets
-						pos = newPos * scale + posOffset
+						# Absolute mode: scale coordinates and apply tool offsets
+						pos = newPos * scale + toolOffset
 					else:
 						# Relative mode: scale and add to current position
 						pos += newPos * scale
@@ -397,14 +397,23 @@ class gcode(object):
 					y = getCodeFloat(line, 'Y')
 					z = getCodeFloat(line, 'Z')
 					e = getCodeFloat(line, 'E')
-					if e is not None:
-						currentE[currentExtruder] = e
-					if x is not None:
-						posOffset.x = pos.x - x
-					if y is not None:
-						posOffset.y = pos.y - y
-					if z is not None:
-						posOffset.z = pos.z - z
+
+					if e is None and x is None and y is None and z is None:
+						# no parameters, set all axis to 0
+						currentE[currentExtruder] = 0.0
+						pos.x = 0.0
+						pos.y = 0.0
+						pos.z = 0.0
+					else:
+						# some parameters set, only set provided axes
+						if e is not None:
+							currentE[currentExtruder] = e
+						if x is not None:
+							pos.x = x
+						if y is not None:
+							pos.y = y
+						if z is not None:
+							pos.z = z
 
 			elif M is not None:
 				if M == 82:   #Absolute E
@@ -425,13 +434,13 @@ class gcode(object):
 				if T > settings().getInt(["gcodeAnalysis", "maxExtruders"]):
 					self._logger.warn("GCODE tried to select tool %d, that looks wrong, ignoring for GCODE analysis" % T)
 				else:
-					posOffset.x -= offsets[currentExtruder][0] if currentExtruder < len(offsets) else 0
-					posOffset.y -= offsets[currentExtruder][1] if currentExtruder < len(offsets) else 0
+					toolOffset.x -= offsets[currentExtruder][0] if currentExtruder < len(offsets) else 0
+					toolOffset.y -= offsets[currentExtruder][1] if currentExtruder < len(offsets) else 0
 
 					currentExtruder = T
 
-					posOffset.x += offsets[currentExtruder][0] if currentExtruder < len(offsets) else 0
-					posOffset.y += offsets[currentExtruder][1] if currentExtruder < len(offsets) else 0
+					toolOffset.x += offsets[currentExtruder][0] if currentExtruder < len(offsets) else 0
+					toolOffset.y += offsets[currentExtruder][1] if currentExtruder < len(offsets) else 0
 
 					if len(currentE) <= currentExtruder:
 						for i in range(len(currentE), currentExtruder + 1):
