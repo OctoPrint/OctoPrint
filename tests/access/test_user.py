@@ -15,22 +15,16 @@ import contextlib
 import unittest
 import ddt
 
-import octoprint.users
 import octoprint.server
 from octoprint import settings
 from octoprint.util import dict_merge
-from octoprint.access import permissions
-from octoprint.access.permissions import PermissionManager
+from octoprint.access import permissions, users
+from octoprint.access.permissions import PermissionManager, OctoPrintPermission
 from octoprint.access.groups import FilebasedGroupManager
 
 default_settings = dict(key="value", sub=dict(subkey="subvalue"))
-
-admin_needs = dict(
-		role=[
-			"admin", "connection", "control", "delete_file","download", "logs", "print", "select", "settings",
-		    "slice", "status", "system", "terminal", "timelapse", "timelapse_admin", "upload", "webcam"
-		]
-)
+admin_permissions = map(lambda a: getattr(permissions.Permissions, a), filter(lambda a: isinstance(getattr(permissions.Permissions, a), OctoPrintPermission), dir(permissions.Permissions)))
+admin_needs_dict = OctoPrintPermission.convert_needs_to_dict(set().union(*map(lambda p: p.needs, admin_permissions)))
 
 @ddt.ddt
 class UserTestCase(unittest.TestCase):
@@ -42,33 +36,37 @@ class UserTestCase(unittest.TestCase):
 			octoprint.server.permissionManager = PermissionManager()
 			permissions.Permissions.initialize()
 			octoprint.server.groupManager = FilebasedGroupManager()
-		except:
+		except Exception as e:
 			pass
-
-		self.user = octoprint.users.User("user", "passwordHash", True, permissions=[permissions.Permissions.STATUS], apikey="apikey_user", settings=default_settings)
-		self.user_multi_permission = octoprint.users.User("userMultiPermission", "passwordHash", True, permissions=[permissions.Permissions.STATUS, permissions.Permissions.DOWNLOAD, permissions.Permissions.CONNECTION], apikey="apikey_user", settings=default_settings)
-		self.user_permission_group = octoprint.users.User("userPermissionGroup", "passwordHash", True, permissions=[permissions.Permissions.DOWNLOAD], groups=[octoprint.server.groupManager.guests_group], apikey="apikey_user", settings=default_settings)
-		self.admin_permission = octoprint.users.User("adminPermission", "passwordHash", True, permissions=[permissions.Permissions.ADMIN], apikey="apikey_admin", settings=default_settings)
-		self.admin_group = octoprint.users.User("adminGroup", "passwordHash", True, permissions=[], groups=[octoprint.server.groupManager.admins_group], apikey="apikey_admin", settings=default_settings)
-		self.inactive = octoprint.users.User("inactive", "passwordHash", False, apikey="apikey_inactive", settings=default_settings)
 
 		self.maxDiff = None
 
+		self.user = users.User("user", "passwordHash", True, permissions=[permissions.Permissions.STATUS], apikey="apikey_user", settings=default_settings)
+		self.user_multi_permission = users.User("userMultiPermission", "passwordHash", True, permissions=[permissions.Permissions.STATUS, permissions.Permissions.DOWNLOAD, permissions.Permissions.CONNECTION], apikey="apikey_user", settings=default_settings)
+		self.user_permission_group = users.User("userPermissionGroup", "passwordHash", True, permissions=[permissions.Permissions.DOWNLOAD], groups=[octoprint.server.groupManager.guests_group], apikey="apikey_user", settings=default_settings)
+		self.admin_permission = users.User("adminPermission", "passwordHash", True, permissions=[permissions.Permissions.ADMIN], apikey="apikey_admin", settings=default_settings)
+		self.admin_group = users.User("adminGroup", "passwordHash", True, permissions=[], groups=[octoprint.server.groupManager.admins_group], apikey="apikey_admin", settings=default_settings)
+		self.inactive = users.User("inactive", "passwordHash", False, apikey="apikey_inactive", settings=default_settings)
+
+	# It's possible to use the convert method here, because this method get's tested in the permission tests,
+	# this makes the testing a bit easier especially if for some reason one day the permission needs get adjusted
 	@ddt.unpack
 	@ddt.data(("user", dict(name="user",
 			              active=True,
 			              permissions=[permissions.Permissions.STATUS],
 			              groups=[],
-			              needs=dict(role=["status"]),
+			              needs=OctoPrintPermission.convert_needs_to_dict(permissions.Permissions.STATUS.needs),
 			              admin=False,
 			              user=True,
 			              apikey="apikey_user",
 			              settings=default_settings)),
 	          ("user_multi_permission", dict(name="userMultiPermission",
 	                        active=True,
-	                        permissions=[permissions.Permissions.STATUS, permissions.Permissions.DOWNLOAD, permissions.Permissions.CONNECTION],
+	                        permissions=[permissions.Permissions.CONNECTION, permissions.Permissions.DOWNLOAD, permissions.Permissions.STATUS],
 	                        groups=[],
-	                        needs=dict(role=["connection", "download", "status"]),
+	                        needs=OctoPrintPermission.convert_needs_to_dict(permissions.Permissions.STATUS.needs
+	                                                                        .union(permissions.Permissions.DOWNLOAD.needs)
+	                                                                        .union(permissions.Permissions.CONNECTION.needs)),
 	                        admin=False,
 	                        user=True,
 	                        apikey="apikey_user",
@@ -77,24 +75,30 @@ class UserTestCase(unittest.TestCase):
 			                          active=True,
 			                          permissions=[permissions.Permissions.ADMIN],
 			                          groups=[],
-			                          needs=admin_needs,
+			                          needs=admin_needs_dict,
 			                          admin=True,
 			                          user=True,
 			                          apikey="apikey_admin",
 			                          settings=default_settings)),
-		    ("inactive", dict(name="inactive",
+			("inactive", dict(name="inactive",
 		                      active=False,
-		                      permissions=[permissions.Permissions.STATUS],
+		                      permissions=[],
 		                      groups=[],
-		                      needs=dict(role=["status"]),
+		                      needs=dict(),
 		                      admin=False,
 		                      user=True,
 		                      apikey="apikey_inactive",
 		                      settings=default_settings))
-	          )
+			)
 	def test_user_permission_as_dict(self, uservar, expected):
 		user = getattr(self, uservar)
-		self.assertDictEqual(expected, user.asDict())
+
+		# we need to sort the needs, permissions and groups
+		# these values could be in any order so we need to sort them to have a defined order for the assertEqual
+		asDict = self.sort_attributes(user.asDict())
+		expected = self.sort_attributes(expected)
+
+		self.assertDictEqual(expected, asDict)
 
 	def test_group_permission_as_dict(self):
 		data_groups = [
@@ -111,7 +115,7 @@ class UserTestCase(unittest.TestCase):
 			                     active=True,
 			                     permissions=[],
 			                     groups=[octoprint.server.groupManager.admins_group],
-			                     needs=admin_needs,
+			                     needs=admin_needs_dict,
 			                     admin=True,
 			                     user=True,
 			                     apikey="apikey_admin",
@@ -120,8 +124,42 @@ class UserTestCase(unittest.TestCase):
 
 		for uservar, expected in data_groups:
 			user = getattr(self, uservar)
-			asDict = user.asDict()
+
+			# we need to sort the needs
+			asDict = self.sort_attributes(user.asDict())
+			expected = self.sort_attributes(expected)
+
 			self.assertDictEqual(expected, asDict)
+
+	@ddt.data(
+			("user", dict(add=[permissions.Permissions.DOWNLOAD],
+						  _permissions=[permissions.Permissions.DOWNLOAD, permissions.Permissions.STATUS],
+			              permissions=[permissions.Permissions.DOWNLOAD, permissions.Permissions.STATUS]),
+			         dict(remove=[permissions.Permissions.STATUS],
+			              _permissions=[permissions.Permissions.DOWNLOAD],
+			              permissions=[permissions.Permissions.DOWNLOAD])),
+			("admin_permission", dict(add=[permissions.Permissions.DOWNLOAD],
+			                          _permissions=[permissions.Permissions.ADMIN],
+			                          permissions=admin_permissions
+			                     ),
+			                     dict(remove=[permissions.Permissions.ADMIN],
+			                          _permissions=[],
+			                          permissions=[])),
+	)
+	@ddt.unpack
+	def test_change_permission(self, uservar, add_expected, remove_expected):
+		user = getattr(self, uservar)
+
+		user.add_permissions_to_user(add_expected['add'])
+		self.assertEqual(sorted(user._permissions, key=lambda p: p.get_name()), sorted(add_expected['_permissions'], key=lambda p: p.get_name()))
+		self.assertEqual(sorted(user.permissions, key=lambda p: p.get_name()), sorted(add_expected['permissions'], key=lambda p: p.get_name()))
+
+		user.remove_permissions_from_user(remove_expected['remove'])
+		self.assertEqual(sorted(user._permissions, key=lambda p: p.get_name()), sorted(remove_expected['_permissions'], key=lambda p: p.get_name()))
+		self.assertEqual(sorted(user.permissions, key=lambda p: p.get_name()), sorted(remove_expected['permissions'], key=lambda p: p.get_name()))
+
+	def test_change_group(self):
+		pass
 
 	@ddt.data(
 		("key", "value"),
@@ -171,6 +209,15 @@ class UserTestCase(unittest.TestCase):
 
 	##~~ helpers
 
+	def sort_attributes(self, obj):
+		obj['permissions'] = sorted(obj['permissions'])
+		obj['groups'] = sorted(obj['groups'])
+
+		for k in obj['needs']:
+			obj['needs'][k] = sorted(obj['needs'][k])
+
+		return obj
+
 	@contextlib.contextmanager
 	def mocked_basedir(self):
 		orig_default_basedir = octoprint.settings._default_basedir
@@ -187,4 +234,5 @@ class UserTestCase(unittest.TestCase):
 					shutil.rmtree(directory)
 				except:
 					self.fail("Could not remove temporary basedir")
+
 

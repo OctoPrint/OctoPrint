@@ -11,28 +11,28 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 import unittest
 
 from octoprint.access import permissions
-import octoprint.users
+import octoprint.access.users
 
 class SessionUserTestCase(unittest.TestCase):
 
 	def setUp(self):
-		self.user = octoprint.users.User("username", "passwordHash", True, permissions=[permissions.Permissions.SETTINGS], apikey="apikey", settings=dict(key="value"))
+		self.user = octoprint.access.users.User("username", "passwordHash", True, permissions=[permissions.Permissions.SETTINGS], apikey="apikey", settings=dict(key="value"))
 
 	def test_two_sessions(self):
-		session1 = octoprint.users.SessionUser(self.user)
-		session2 = octoprint.users.SessionUser(self.user)
+		session1 = octoprint.access.users.SessionUser(self.user)
+		session2 = octoprint.access.users.SessionUser(self.user)
 
 		self.assertNotEqual(session1.get_session(), session2.get_session())
 		self.assertEqual(session1._user, session2._user)
 		self.assertEqual(session1._username, session2._username)
 
 	def test_settings_change_propagates(self):
-		user = octoprint.users.SessionUser(self.user)
+		user = octoprint.access.users.SessionUser(self.user)
 		self.user.set_setting("otherkey", "othervalue")
 
 		self.assertDictEqual(dict(key="value", otherkey="othervalue"), user.get_all_settings())
 
 	def test_repr(self):
-		user = octoprint.users.SessionUser(self.user)
+		user = octoprint.access.users.SessionUser(self.user)
 		expected = "SessionUser(id=username,name=username,active=True,user=True,admin=False,session={},created={})".format(user._session, user._created)
 		self.assertEqual(expected, repr(user))
