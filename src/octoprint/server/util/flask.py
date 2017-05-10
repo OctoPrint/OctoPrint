@@ -1278,7 +1278,6 @@ def collect_core_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 		'js/app/bindings/popover.js',
 		'js/app/bindings/qrcode.js',
 		'js/app/bindings/slimscrolledforeach.js',
-		'js/app/bindings/fastforeach.js',
 		'js/app/bindings/toggle.js',
 		'js/app/bindings/togglecontent.js',
 		'js/app/bindings/valuewithinit.js',

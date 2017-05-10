@@ -284,12 +284,10 @@ $(function() {
         };
 
         self.scrollToEnd = function() {
-            ko.bindingHandlers.fastForEach.FastForEach.animateFrame.call(window, function scrollToEnd() {
-                var container = self.fancyFunctionality() ? $("#terminal-output") : $("#terminal-output-lowfi");
-                if (container.length) {
-                    container.scrollTop(container.prop("scrollHeight"));
-                }
-            });
+            var container = self.fancyFunctionality() ? $("#terminal-output") : $("#terminal-output-lowfi");
+            if (container.length) {
+                container.scrollTop(container[0].scrollHeight);
+            }
         };
 
         self.sendCommand = function() {
