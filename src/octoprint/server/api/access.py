@@ -9,24 +9,114 @@ from flask import request, jsonify, abort, make_response
 from werkzeug.exceptions import BadRequest
 from flask_login import current_user
 
-import octoprint.users as users
+import octoprint.access.groups as groups
+import octoprint.access.users as users
 
-from octoprint.server import SUCCESS, permissionManager, userManager
+from octoprint.server import SUCCESS, permissionManager, groupManager, userManager
 from octoprint.server.api import api, valid_boolean_trues
 from octoprint.server.util.flask import restricted_access
 from octoprint.access.permissions import Permissions
 
-#~~ user settings
+#~~ permission api
 
-
-@api.route("/permissions", methods=["GET"])
+@api.route("/access/permissions", methods=["GET"])
 def getPermissions():
-	if not userManager.enabled:
-		return jsonify(SUCCESS)
-
 	return jsonify({"permissions": permissionManager.permissions})
 
-@api.route("/users", methods=["GET"])
+#~~ group api
+
+@api.route("/access/groups", methods=["GET"])
+@restricted_access
+@Permissions.SETTINGS.require(403)
+def getGroups():
+	return jsonify({"groups": groupManager.groups})
+
+@api.route("/access/groups", methods=["POST"])
+@restricted_access
+@Permissions.SETTINGS.require(403)
+def addGroup():
+	if not "application/json" in request.headers["Content-Type"]:
+		return make_response("Expected content-type JSON", 400)
+
+	try:
+		data = request.json
+	except BadRequest:
+		return make_response("Malformed JSON body in request", 400)
+
+	if not "name" in data:
+		return make_response("Missing mandatory name field", 400)
+	if not "permissions" in data:
+		return make_response("Missing mandatory permission field", 400)
+
+	name = data["name"]
+	description = data["description"]
+	permissions = data["permissions"]
+	default = data["defaultOn"] if "defaultOn" in data else False
+
+	try:
+		groupManager.add_group(name, description=description, permissions=permissions, default=default)
+	except groups.GroupAlreadyExists:
+		abort(409)
+	return getGroups()
+
+
+@api.route("/access/groups/<groupname>", methods=["GET"])
+def getGroup(groupname):
+	group = groupManager.find_group(groupname)
+	if group is not None:
+		return jsonify(group)
+	else:
+		abort(404)
+
+
+@api.route("/access/groups/<groupname>", methods=["PUT"])
+@restricted_access
+@Permissions.SETTINGS.require(403)
+def updateGroup(groupname):
+	group = groupManager.find_group(groupname)
+	if group is not None:
+		if not "application/json" in request.headers["Content-Type"]:
+			return make_response("Expected content-type JSON", 400)
+
+		try:
+			data = request.json
+		except BadRequest:
+			return make_response("Malformed JSON body in request", 400)
+
+		try:
+			# change permissions
+			if "permissions" in data:
+				permissions = data["permissions"]
+				groupManager.change_group_permissions(groupname, permissions)
+
+			if "defaultOn" in data:
+				groupManager.change_group_default(groupname, data["defaultOn"])
+
+			if "description" in data:
+				groupManager.change_group_description(groupname, data["description"])
+
+			return getGroups()
+		except groups.GroupCantbeChanged:
+			abort(403)
+	else:
+		abort(404)
+
+
+@api.route("/access/groups/<groupname>", methods=["DELETE"])
+@restricted_access
+@Permissions.SETTINGS.require(403)
+def removeGroup(groupname):
+	try:
+		groupManager.remove_group(groupname)
+		return getGroups()
+	except groups.UnknownGroup:
+		abort(404)
+	except groups.GroupUnremovable:
+		abort(403)
+
+#~~ user api
+
+@api.route("/access/users", methods=["GET"])
 @restricted_access
 @Permissions.SETTINGS.require(403)
 def getUsers():
@@ -36,7 +126,7 @@ def getUsers():
 	return jsonify({"users": userManager.getAllUsers()})
 
 
-@api.route("/users", methods=["POST"])
+@api.route("/access/users", methods=["POST"])
 @restricted_access
 @Permissions.SETTINGS.require(403)
 def addUser():
@@ -79,7 +169,7 @@ def addUser():
 	return getUsers()
 
 
-@api.route("/users/<username>", methods=["GET"])
+@api.route("/access/users/<username>", methods=["GET"])
 @restricted_access
 def getUser(username):
 	if not userManager.enabled:
@@ -95,7 +185,7 @@ def getUser(username):
 		abort(403)
 
 
-@api.route("/users/<username>", methods=["PUT"])
+@api.route("/access/users/<username>", methods=["PUT"])
 @restricted_access
 @Permissions.SETTINGS.require(403)
 def updateUser(username):
@@ -135,7 +225,7 @@ def updateUser(username):
 		abort(404)
 
 
-@api.route("/users/<username>", methods=["DELETE"])
+@api.route("/access/users/<username>", methods=["DELETE"])
 @restricted_access
 @Permissions.SETTINGS.require(403)
 def removeUser(username):
@@ -149,7 +239,7 @@ def removeUser(username):
 		abort(404)
 
 
-@api.route("/users/<username>/password", methods=["PUT"])
+@api.route("/access/users/<username>/password", methods=["PUT"])
 @restricted_access
 def changePasswordForUser(username):
 	if not userManager.enabled:
@@ -180,7 +270,7 @@ def changePasswordForUser(username):
 		return make_response(("Forbidden", 403, []))
 
 
-@api.route("/users/<username>/settings", methods=["GET"])
+@api.route("/access/users/<username>/settings", methods=["GET"])
 @restricted_access
 def getSettingsForUser(username):
 	if not userManager.enabled:
@@ -194,7 +284,7 @@ def getSettingsForUser(username):
 	except users.UnknownUser:
 		return make_response("Unknown user: %s" % username, 404)
 
-@api.route("/users/<username>/settings", methods=["PATCH"])
+@api.route("/access/users/<username>/settings", methods=["PATCH"])
 @restricted_access
 def changeSettingsForUser(username):
 	if not userManager.enabled:
@@ -217,7 +307,7 @@ def changeSettingsForUser(username):
 	except users.UnknownUser:
 		return make_response("Unknown user: %s" % username, 404)
 
-@api.route("/users/<username>/apikey", methods=["DELETE"])
+@api.route("/access/users/<username>/apikey", methods=["DELETE"])
 @restricted_access
 def deleteApikeyForUser(username):
 	if not userManager.enabled:
@@ -233,7 +323,7 @@ def deleteApikeyForUser(username):
 		return make_response(("Forbidden", 403, []))
 
 
-@api.route("/users/<username>/apikey", methods=["POST"])
+@api.route("/access/users/<username>/apikey", methods=["POST"])
 @restricted_access
 def generateApikeyForUser(username):
 	if not userManager.enabled:

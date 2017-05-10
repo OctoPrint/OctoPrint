@@ -10,12 +10,13 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 
 import unittest
 
+from octoprint.access import permissions
 import octoprint.users
 
 class SessionUserTestCase(unittest.TestCase):
 
 	def setUp(self):
-		self.user = octoprint.users.User("username", "passwordHash", True, ("user",), apikey="apikey", settings=dict(key="value"))
+		self.user = octoprint.users.User("username", "passwordHash", True, permissions=[permissions.Permissions.SETTINGS], apikey="apikey", settings=dict(key="value"))
 
 	def test_two_sessions(self):
 		session1 = octoprint.users.SessionUser(self.user)

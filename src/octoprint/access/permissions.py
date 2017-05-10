@@ -64,7 +64,6 @@ class OctoPrintPermission(Permission):
 class PermissionManager(object):
 	def __init__(self):
 		self._permissions = []
-		self._enabled = True
 
 		import yaml
 		from yaml.dumper import SafeDumper
@@ -72,14 +71,6 @@ class PermissionManager(object):
 
 		yaml.add_representer(OctoPrintPermission, self.yaml_representer, Dumper=SafeDumper)
 		yaml.add_constructor(u'!octoprintpermission', self.yaml_constructor, Loader=SafeLoader)
-
-	@property
-	def enabled(self):
-		return self._enabled
-
-	@enabled.setter
-	def enabled(self, value):
-		self._enabled = value
 
 	@property
 	def permissions(self):
@@ -98,6 +89,7 @@ class PermissionManager(object):
 
 	def remove_permission(self, permission):
 		self._permissions.remove(permission)
+
 		from octoprint.server import groupManager, userManager
 		groupManager.remove_permissions_from_groups([permission])
 		userManager.remove_permissions_from_users([permission])

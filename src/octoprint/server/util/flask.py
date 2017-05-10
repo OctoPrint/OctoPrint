@@ -25,7 +25,7 @@ import os
 from octoprint.settings import settings
 from octoprint.util import deprecated
 import octoprint.server
-import octoprint.users
+import octoprint.access.users
 import octoprint.plugin
 
 from werkzeug.contrib.cache import BaseCache

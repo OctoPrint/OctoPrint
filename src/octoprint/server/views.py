@@ -346,7 +346,6 @@ def index():
 
 		wizard = wizard_active(filtered_templates)
 		accesscontrol_active = enable_accesscontrol and userManager.hasBeenCustomized()
-		enable_groups = enable_accesscontrol and groupManager.enabled
 
 		render_kwargs = _get_render_kwargs(filtered_templates,
 		                                   _plugin_names,
@@ -357,7 +356,6 @@ def index():
 			enableTemperatureGraph=settings().get(["feature", "temperatureGraph"]),
 			enableAccessControl=enable_accesscontrol,
 			accessControlActive=accesscontrol_active,
-			enableGroups=enable_groups,
 			enableSdSupport=settings().get(["feature", "sdSupport"]),
 			gcodeMobileThreshold=settings().get(["gcodeViewer", "mobileSizeThreshold"]),
 			gcodeThreshold=settings().get(["gcodeViewer", "sizeThreshold"]),

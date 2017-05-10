@@ -106,7 +106,7 @@ def readGcodeFiles():
 
 
 @api.route("/files/<string:origin>", methods=["GET"])
-@Permissions.DOWNLOAD.require(403)
+@Permissions.FILE_PERMISSION.require(403)
 @with_revalidation_checking(etag_factory=lambda lm=None: _create_etag(request.path,
                                                                       request.values.get("filter", False),
                                                                       request.values.get("recursive", False),

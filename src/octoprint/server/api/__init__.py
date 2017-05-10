@@ -11,7 +11,7 @@ from flask import Blueprint, request, jsonify, abort, current_app, session, make
 from flask_login import login_user, logout_user, current_user
 from flask_principal import Identity, identity_changed, AnonymousIdentity
 
-import octoprint.users
+import octoprint.access.users
 import octoprint.server
 import octoprint.plugin
 from octoprint.server import NO_CONTENT
@@ -29,10 +29,9 @@ from . import printer as api_printer
 from . import job as api_job
 from . import connection as api_connection
 from . import files as api_files
-from . import groups as api_groups
 from . import settings as api_settings
 from . import timelapse as api_timelapse
-from . import users as api_users
+from . import access as api_access
 from . import log as api_logs
 from . import slicing as api_slicing
 from . import printer_profiles as api_printer_profiles

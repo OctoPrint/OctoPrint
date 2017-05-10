@@ -10,7 +10,7 @@ from sockjs.tornado import SockJSRouter
 from flask import Flask, g, request, session, Blueprint
 from flask_login import LoginManager
 from flask_principal import Principal, identity_loaded, UserNeed
-from flask_babel import Babel, gettext
+from flask_babel import Babel, gettext, ngettext
 from flask_assets import Environment, Bundle
 from babel import Locale
 from watchdog.observers import Observer
@@ -71,7 +71,7 @@ from octoprint import __version__, __branch__, __display_version__, __revision__
 from octoprint.printer.profile import PrinterProfileManager
 from octoprint.printer.standard import Printer
 from octoprint.settings import settings
-import octoprint.users as users
+import octoprint.access.users as users
 import octoprint.access.groups as groups
 import octoprint.events as events
 import octoprint.plugin
@@ -235,12 +235,9 @@ class Server(object):
 		except AttributeError as e:
 			self._logger.exception("Could not instantiate permission manager {}, falling back to PermissionManager!".format(permissionManagerName))
 			permissionManager = octoprint.access.permissions.PermissionManager()
-		finally:
-			permissionManager.enabled = self._settings.getBoolean(["accessControl", "permissionsEnabled"])
 
-		if permissionManager.enabled:
-			from octoprint.access.permissions import Permissions
-			Permissions.initialize()
+		from octoprint.access.permissions import Permissions
+		Permissions.initialize()
 
 		groupManagerName = self._settings.get(["accessControl", "groupManager"])
 		try:
@@ -249,8 +246,6 @@ class Server(object):
 		except AttributeError as e:
 			self._logger.exception("Could not instantiate group manager {}, falling back to FilebasedGroupManager!".format(groupManagerName))
 			groupManager = octoprint.access.groups.FilebasedGroupManager()
-		finally:
-			groupManager.enabled = self._settings.getBoolean(["accessControl", "groupsEnabled"])
 
 		userManagerName = self._settings.get(["accessControl", "userManager"])
 		try:
@@ -258,7 +253,7 @@ class Server(object):
 			userManager = clazz()
 		except AttributeError as e:
 			self._logger.exception("Could not instantiate user manager {}, falling back to FilebasedUserManager!".format(userManagerName))
-			userManager = octoprint.users.FilebasedUserManager()
+			userManager = octoprint.access.users.FilebasedUserManager()
 		finally:
 			userManager.enabled = self._settings.getBoolean(["accessControl", "enabled"])
 
@@ -660,7 +655,7 @@ class Server(object):
 				user_language = userManager.getUserSetting(userid, ("interface", "language"))
 				if user_language is not None and not user_language == "_default":
 					return Locale.negotiate([user_language], LANGUAGES)
-			except octoprint.users.UnknownUser:
+			except octoprint.access.users.UnknownUser:
 				pass
 
 		default_language = self._settings.get(["appearance", "defaultLanguage"])
@@ -1144,10 +1139,7 @@ class Server(object):
 			"js/app/client/users.js",
 			"js/app/client/util.js",
 			"js/app/client/wizard.js",
-			"js/app/client/access.js",
-			"js/app/client/access/users.js",
-			"js/app/client/access/groups.js",
-			"js/app/client/access/permissions.js",
+			"js/app/client/access.js"
 		]
 		js_core = dynamic_core_assets["js"] + \
 		    dynamic_plugin_assets["bundled"]["js"] + \

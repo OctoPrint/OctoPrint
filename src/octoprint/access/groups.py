@@ -18,7 +18,6 @@ class GroupManager(object):
 		self._logger = logging.getLogger(__name__)
 		self._groups = dict()
 		self._default_groups()
-		self._enabled = True
 
 		import yaml
 		from yaml.dumper import SafeDumper
@@ -26,14 +25,6 @@ class GroupManager(object):
 
 		yaml.add_representer(Group, self.yaml_representer, Dumper=SafeDumper)
 		yaml.add_constructor(u'!group', self.yaml_constructor, Loader=SafeLoader)
-
-	@property
-	def enabled(self):
-		return self._enabled
-
-	@enabled.setter
-	def enabled(self, value):
-		self._enabled = value
 
 	@property
 	def groups(self):
@@ -46,12 +37,6 @@ class GroupManager(object):
 	@property
 	def guests_group(self):
 		return self.find_group("Guests")
-
-	def enable(self):
-		self._enabled = True
-
-	def disable(self):
-		self._enabled = False
 
 	def _default_groups(self):
 		from octoprint.access.permissions import Permissions

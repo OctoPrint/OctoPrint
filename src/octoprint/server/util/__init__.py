@@ -8,7 +8,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 from octoprint.settings import settings
 import octoprint.timelapse
 import octoprint.server
-from octoprint.users import ApiUser
+from octoprint.access.users import ApiUser
 
 from octoprint.util import deprecated
 
