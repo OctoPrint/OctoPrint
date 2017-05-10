@@ -548,9 +548,7 @@ $(function() {
         };
 
         self._scrollWorkingOutputToEnd = function() {
-            ko.bindingHandlers.fastForEach.FastForEach.animateFrame.call(window, function() {
-                self.workingOutput.scrollTop(self.workingOutput[0].scrollHeight - self.workingOutput.height());
-            });
+            self.workingOutput.scrollTop(self.workingOutput[0].scrollHeight - self.workingOutput.height());
         };
 
         self.onBeforeWizardTabChange = function(next, current) {
