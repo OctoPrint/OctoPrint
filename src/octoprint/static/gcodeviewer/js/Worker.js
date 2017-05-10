@@ -9,6 +9,7 @@ var firstReport;
 var toolOffsets = [
     {x: 0, y: 0}
 ];
+var g90InfluencesExtruder = false;
 var z_heights = {};
 var model = [];
 var max = {x: undefined, y: undefined, z: undefined};
@@ -232,8 +233,8 @@ var doParse = function () {
     var center_i, center_j, direction;
     var prevX = 0, prevY = 0, prevZ = 0;
     var f, lastF = 4000;
-    var extrude = false, extrudeRelative = false, retract = 0;
-    var positionRelative = false;
+    var extrude = false, relativeE = false, retract = 0;
+    var relativeMode = false;
     var zLift = false;
     var zLiftZ = undefined;
     var zLiftMoves = [];
@@ -273,7 +274,7 @@ var doParse = function () {
             for (var j = 0; j < args.length; j++) {
                 switch (argChar = args[j].charAt(0).toLowerCase()) {
                     case 'x':
-                        if (positionRelative) {
+                        if (relativeMode) {
                             x = prevX + Number(args[j].slice(1)) + offset.x;
                         } else {
                             x = Number(args[j].slice(1)) + offset.x;
@@ -282,7 +283,7 @@ var doParse = function () {
                         break;
 
                     case 'y':
-                        if (positionRelative) {
+                        if (relativeMode) {
                             y = prevY + Number(args[j].slice(1)) + offset.y;
                         } else {
                             y = Number(args[j].slice(1)) + offset.y;
@@ -291,7 +292,7 @@ var doParse = function () {
                         break;
 
                     case 'z':
-                        if (positionRelative) {
+                        if (relativeMode) {
                             z = prevZ + Number(args[j].slice(1));
                         } else {
                             z = Number(args[j].slice(1));
@@ -306,13 +307,13 @@ var doParse = function () {
                         assumeNonDC = true;
                         numSlice = Number(args[j].slice(1));
 
-                        if (!extrudeRelative) {
+                        if (relativeMode || relativeE) {
+                            prev_extrude[tool]["abs"] = numSlice;
+                            prev_extrude[tool][argChar] += numSlice;
+                        } else {
                             // absolute extrusion positioning
                             prev_extrude[tool]["abs"] = numSlice - prev_extrude[tool][argChar];
                             prev_extrude[tool][argChar] = numSlice;
-                        } else {
-                            prev_extrude[tool]["abs"] = numSlice;
-                            prev_extrude[tool][argChar] += numSlice;
                         }
 
                         extrude = prev_extrude[tool]["abs"] > 0;
@@ -359,15 +360,19 @@ var doParse = function () {
                 move = true;
             }
         } else if (/^(?:M82)/i.test(line)) {
-            extrudeRelative = false;
+            relativeE = false;
         } else if (/^(?:G91)/i.test(line)) {
-            positionRelative = true;
-            extrudeRelative = true;
+            relativeMode = true;
+            if (g90InfluencesExtruder) {
+                relativeE = true;
+            }
         } else if (/^(?:G90)/i.test(line)) {
-            positionRelative = false;
-            extrudeRelative = false;
+            relativeMode = false;
+            if (g90InfluencesExtruder) {
+                relativeE = false;
+            }
         } else if (/^(?:M83)/i.test(line)) {
-            extrudeRelative = true;
+            relativeE = true;
         } else if (/^(?:M101)/i.test(line)) {
             dcExtrude = true;
         } else if (/^(?:M103)/i.test(line)) {
@@ -407,10 +412,10 @@ var doParse = function () {
                         case 'b':
                         case 'c':
                             numSlice = Number(args[j].slice(1));
-                            if (!extrudeRelative)
-                                prev_extrude[tool][argChar] = 0;
-                            else {
+                            if (relativeMode || relativeE) {
                                 prev_extrude[tool][argChar] = numSlice;
+                            } else {
+                                prev_extrude[tool][argChar] = 0;
                             }
                             break;
                     }
@@ -568,7 +573,8 @@ var parseGCode = function (message) {
     gcode = message.gcode;
     firstReport = message.options.firstReport;
     toolOffsets = message.options.toolOffsets;
-    if (!toolOffsets || toolOffsets.length == 0) toolOffsets = [{x: 0, y: 0}]
+    if (!toolOffsets || toolOffsets.length == 0) toolOffsets = [{x: 0, y: 0}];
+    g90InfluencesExtruder = message.options.g90InfluencesExtruder;
 
     doParse();
     gcode = [];

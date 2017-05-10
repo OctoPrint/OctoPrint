@@ -205,7 +205,8 @@ default_settings = {
 		"modelSizeDetection": True,
 		"firmwareDetection": True,
 		"printCancelConfirmation": True,
-		"blockWhileDwelling": False
+		"blockWhileDwelling": False,
+		"g90InfluencesExtruder": False
 	},
 	"folder": {
 		"uploads": None,

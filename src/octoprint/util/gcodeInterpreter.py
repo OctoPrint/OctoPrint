@@ -230,9 +230,9 @@ class gcode(object):
 		maxExtrusion = [0.0]
 		currentExtruder = 0
 		totalMoveTimeMinute = 0.0
-		absoluteE = True
+		relativeE = False
+		relativeMode = False
 		scale = 1.0
-		posAbs = True
 		fwretractTime = 0
 		fwretractDist = 0
 		fwrecoverTime = 0
@@ -241,6 +241,8 @@ class gcode(object):
 			# some somewhat sane default if axes speeds are insane...
 			feedrate = 2000
 		offsets = printer_profile["extruder"]["offsets"]
+
+		g90InfluencesExtruder = settings().getBoolean(["feature", "g90InfluencesExtruder"])
 
 		for line in gcodeFile:
 			if self._abort:
@@ -318,23 +320,25 @@ class gcode(object):
 
 					# Use new coordinates if provided. If not provided, use prior coordinates (minus tool offset)
 					# in absolute and 0.0 in relative mode.
-					newPos = Vector3D(x if x is not None else (pos.x - toolOffset.x if posAbs else 0.0),
-					                  y if y is not None else (pos.y - toolOffset.y if posAbs else 0.0),
-					                  z if z is not None else (pos.z - toolOffset.z if posAbs else 0.0))
+					newPos = Vector3D(x if x is not None else (0.0 if relativeMode else pos.x - toolOffset.x),
+					                  y if y is not None else (0.0 if relativeMode else pos.y - toolOffset.y),
+					                  z if z is not None else (0.0 if relativeMode else pos.z - toolOffset.z))
 
-					if posAbs:
-						# Absolute mode: scale coordinates and apply tool offsets
-						pos = newPos * scale + toolOffset
-					else:
+					if relativeMode:
 						# Relative mode: scale and add to current position
 						pos += newPos * scale
+					else:
+						# Absolute mode: scale coordinates and apply tool offsets
+						pos = newPos * scale + toolOffset
 
 					if f is not None and f != 0:
 						feedrate = f
 
 					if e is not None:
-						if absoluteE:
-							# make sure e is relative
+						if relativeMode or relativeE:
+							# e is already relative, nothing to do
+							pass
+						else:
 							e -= currentE[currentExtruder]
 
 						# If move with extrusion, calculate new min/max coordinates of model
@@ -389,9 +393,13 @@ class gcode(object):
 						if z is not None:
 							pos.z = center.z
 				elif G == 90:	#Absolute position
-					posAbs = True
+					relativeMode = False
+					if g90InfluencesExtruder:
+						relativeE = False
 				elif G == 91:	#Relative position
-					posAbs = False
+					relativeMode = True
+					if g90InfluencesExtruder:
+						relativeE = True
 				elif G == 92:
 					x = getCodeFloat(line, 'X')
 					y = getCodeFloat(line, 'Y')
@@ -417,9 +425,9 @@ class gcode(object):
 
 			elif M is not None:
 				if M == 82:   #Absolute E
-					absoluteE = True
+					relativeE = False
 				elif M == 83:   #Relative E
-					absoluteE = False
+					relativeE = True
 				elif M == 207 or M == 208: #Firmware retract settings
 					s = getCodeFloat(line, 'S')
 					f = getCodeFloat(line, 'F')

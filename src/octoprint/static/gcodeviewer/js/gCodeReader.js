@@ -24,7 +24,8 @@ GCODE.gCodeReader = (function(){
         analyzeModel: false,
         toolOffsets: [
             {x: 0, y: 0}
-        ]
+        ],
+        g90InfluencesExtruder: false
     };
 
     var percentageTree = undefined;
@@ -138,7 +139,8 @@ GCODE.gCodeReader = (function(){
                         gcode: gcode,
                         options: {
                             firstReport: 5,
-                            toolOffsets: gCodeOptions["toolOffsets"]
+                            toolOffsets: gCodeOptions["toolOffsets"],
+                            g90InfluencesExtruder: gCodeOptions["g90InfluencesExtruder"]
                         }
                     }
                 }

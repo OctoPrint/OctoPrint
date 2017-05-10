@@ -143,6 +143,7 @@ $(function() {
         self.feature_firmwareDetection = ko.observable(undefined);
         self.feature_printCancelConfirmation = ko.observable(undefined);
         self.feature_blockWhileDwelling = ko.observable(undefined);
+        self.feature_g90InfluencesExtruder = ko.observable(undefined);
 
         self.serial_port = ko.observable();
         self.serial_baudrate = ko.observable();
