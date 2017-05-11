@@ -50,6 +50,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		self._version_cache_ttl = 0
 		self._version_cache_path = None
 		self._version_cache_dirty = False
+		self._version_cache_timestamp = None
 
 		self._console_logger = None
 
@@ -156,6 +157,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		try:
 			with open(self._version_cache_path) as f:
 				data = yaml.safe_load(f)
+			timestamp = os.stat(self._version_cache_path).st_mtime
 		except:
 			self._logger.exception("Error while loading version cache from disk")
 		else:
@@ -178,6 +180,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 				self._version_cache = data
 				self._version_cache_dirty = False
+				self._version_cache_timestamp = timestamp
 				self._logger.info("Loaded version cache from disk")
 			except:
 				self._logger.exception("Error parsing in version cache data")
@@ -194,6 +197,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			yaml.safe_dump(self._version_cache, stream=file_obj, default_flow_style=False, indent="  ", allow_unicode=True)
 
 		self._version_cache_dirty = False
+		self._version_cache_timestamp = time.time()
 		self._logger.info("Saved version cache to disk")
 
 	#~~ SettingsPlugin API
@@ -463,7 +467,8 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 							data["check"]["python_updater"] = True
 
 				return flask.jsonify(dict(status="updatePossible" if update_available and update_possible else "updateAvailable" if update_available else "current",
-				                          information=information))
+				                          information=information,
+				                          timestamp=self._version_cache_timestamp))
 			except exceptions.ConfigurationInvalid as e:
 				return flask.make_response("Update not properly configured, can't proceed: %s" % e.message, 500)
 
@@ -489,6 +494,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 					hash.update(str(data["possible"]))
 
 			hash.update(",".join(targets))
+			hash.update(str(self._version_cache_timestamp))
 			return hash.hexdigest()
 
 		def condition():

@@ -62,8 +62,9 @@
 <div>
     <div><small><a href="#" class="muted" onclick="$(this).children().toggleClass('icon-caret-right icon-caret-down').parent().parent().parent().next().slideToggle('fast')"><i class="icon-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
     <div class="hide">
+        <small class="muted" style="display: block">Last cache refresh: <span data-bind="text: cacheTimestampText"></span></small>
         <button class="btn btn-block" data-bind="click: function() { $root.performCheck(true, true, true); }, enable: !checking(), css: {disabled: checking()}"><i class="icon-spinner icon-spin" data-bind="visible: checking"></i> {{ _('Force check for update (overrides cache used for update checks)') }}</button>
-        <button class="btn btn-block btn-danger" data-bind="visible: CONFIG_DEBUG, click: function() { $root.update(true); }">{{ _('Force update now (even if no new versions are available)') }}</button>
+        <button class="btn btn-block btn-danger" data-bind="visible: CONFIG_DEBUG, click: function() { $root.update(true); }, enable: !checking(), css: {disabled: checking()}"><i class="icon-spinner icon-spin" data-bind="visible: checking"></i> {{ _('Force update now (even if no new versions are available)') }}</button>
     </div>
 </div>
 

@@ -111,6 +111,11 @@ $(function() {
         self.octoprintUnconfigured = ko.observable();
         self.octoprintUnreleased = ko.observable();
 
+        self.cacheTimestamp = ko.observable();
+        self.cacheTimestampText = ko.pureComputed(function() {
+            return formatDate(self.cacheTimestamp());
+        });
+
         self.config_cacheTtl = ko.observable();
         self.config_notifyUsers = ko.observable();
         self.config_checkoutFolder = ko.observable();
@@ -256,6 +261,8 @@ $(function() {
         };
 
         self.fromCheckResponse = function(data, ignoreSeen, showIfNothingNew) {
+            self.cacheTimestamp(data.timestamp);
+
             var versions = [];
             _.each(data.information, function(value, key) {
                 value["key"] = key;
