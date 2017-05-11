@@ -41,7 +41,13 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 	# StartupPlugin
 
 	def on_after_startup(self):
-		self._fetch_all_channels()
+		# decouple channel fetching from server startup
+		def fetch_data():
+			self._fetch_all_channels()
+
+		thread = threading.Thread(target=fetch_data)
+		thread.daemon = True
+		thread.start()
 
 	# SettingsPlugin
 

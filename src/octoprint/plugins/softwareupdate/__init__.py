@@ -78,8 +78,14 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		self._console_logger.propagate = False
 
 	def on_after_startup(self):
-		# refresh cache now if necessary so it's faster once the user connects to the instance
-		self.get_current_versions()
+		# refresh cache now if necessary so it's faster once the user connects to the instance - but decouple it from
+		# the server startup
+		def fetch_data():
+			self.get_current_versions()
+
+		thread = threading.Thread(target=fetch_data)
+		thread.daemon = True
+		thread.start()
 
 	def _get_configured_checks(self):
 		with self._configured_checks_mutex:

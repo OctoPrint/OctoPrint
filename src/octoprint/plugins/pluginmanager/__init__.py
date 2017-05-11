@@ -28,6 +28,7 @@ import pkg_resources
 import copy
 import dateutil.parser
 import time
+import threading
 
 class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
                           octoprint.plugin.TemplatePlugin,
@@ -95,8 +96,14 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		self._console_logger.setLevel(logging.DEBUG)
 		self._console_logger.propagate = False
 
-		self._repository_available = self._fetch_repository_from_disk()
-		self._notices_available = self._fetch_notices_from_disk()
+		# decouple repository fetching from server startup
+		def fetch_data():
+			self._repository_available = self._fetch_repository_from_disk()
+			self._notices_available = self._fetch_notices_from_disk()
+
+		thread = threading.Thread(target=fetch_data)
+		thread.daemon = True
+		thread.start()
 
 	##~~ SettingsPlugin
 
