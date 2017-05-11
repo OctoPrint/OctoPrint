@@ -150,8 +150,8 @@ def serve_command(ctx, **kwargs):
 	           allow_root, logging, verbosity, safe_mode)
 
 
-if sys.platform.startswith("linux") or sys.platform.startswith("freebsd"):
-	# we only support daemon mode under Linux and FreeBSD for now
+if sys.platform != "win32" and sys.platform != "darwin":
+	# we do not support daemon mode under windows or macosx
 
 	@server_commands.command(name="daemon")
 	@server_options

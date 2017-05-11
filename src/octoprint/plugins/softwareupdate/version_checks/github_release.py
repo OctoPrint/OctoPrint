@@ -85,7 +85,7 @@ def _get_latest_release(user, repo, compare_type,
                         prerelease_channel=None,
                         force_base=True):
 	nothing = None, None, None
-	r = requests.get(RELEASE_URL.format(user=user, repo=repo))
+	r = requests.get(RELEASE_URL.format(user=user, repo=repo), timeout=30)
 
 	from . import log_github_ratelimit
 	log_github_ratelimit(logger, r)

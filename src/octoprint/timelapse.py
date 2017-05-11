@@ -569,7 +569,7 @@ class Timelapse(object):
 		eventManager().fire(Events.CAPTURE_START, dict(file=filename))
 		try:
 			self._logger.debug("Going to capture {} from {}".format(filename, self._snapshot_url))
-			r = requests.get(self._snapshot_url, stream=True)
+			r = requests.get(self._snapshot_url, stream=True, timeout=5)
 			r.raise_for_status()
 
 			with open (filename, "wb") as f:

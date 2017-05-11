@@ -20,7 +20,7 @@ development environment::
   $ virtualenv venv
   [...]
   $ source venv/bin/activate
-  (venv) $ pip install -e[develop]
+  (venv) $ pip install -e .[develop]
   [...]
   (venv) $ octoprint --help
   Usage: octoprint [OPTIONS] COMMAND [ARGS]...
@@ -41,7 +41,15 @@ development environment::
 
       [...]
 
-We'll start at the most basic form a plugin can take - just a couple of simple lines of Python code:
+.. important::
+
+   This tutorial assumes you are running OctoPrint 1.3.0 and up. Please make sure your version of
+   OctoPrint is up to date before proceeding. If you did a fresh checkout, that should already
+   be the case but if not you might have to update first. You can check your version of OctoPrint
+   by running ``octoprint --version`` or by taking a look into the lower left corner in OctoPrint's
+   web interface.
+
+We'll start at the most basic form a plugin can take - just a few simple lines of Python code:
 
 .. code-block:: python
    :linenos:
@@ -108,7 +116,7 @@ used :func:`~octoprint.plugin.StartupPlugin.on_startup` instead, in which case o
 up and ready to serve requests.
 
 You'll also note that we are using ``self._logger`` for logging. Where did that one come from? OctoPrint's plugin system
-injects :ref:`a couple of useful objects <sec-plugins-mixins-injectedproperties>` into our plugin implementation classes,
+injects :ref:`a some useful objects <sec-plugins-mixins-injectedproperties>` into our plugin implementation classes,
 one of those being a fully instantiated `python logger <https://docs.python.org/2/library/logging.html>`_ ready to be
 used by your plugin. As you can see in the log output above, that logger uses the namespace ``octoprint.plugins.helloworld``
 for our little plugin here, or more generally ``octoprint.plugins.<plugin identifier>``.
@@ -482,7 +490,7 @@ Also adjust your plugin's ``templates/helloworld_navbar.jinja2`` like this:
 
 OctoPrint injects the template variables that your plugin defines prefixed with ``plugin_<plugin identifier>_`` into
 the template renderer, so your ``url`` got turned into ``plugin_helloworld_url`` which you can now use as a simple
-`Jinja2 Variable <http://jinja.pocoo.org/docs/dev/templates/#variables>`_ in your plugin's template.
+`Jinja2 Variable <http://jinja.octoprint.org/templates.html#variables>`_ in your plugin's template.
 
 Restart OctoPrint and shift-reload the page in your browser (to make sure you really get a fresh copy). The link should
 still work and point to the URL we defined as default.
@@ -1070,8 +1078,14 @@ For some insight on how to create plugins that react to various events within Oc
 add support for a slicer, OctoPrint's own bundled `CuraEngine plugin <https://github.com/foosel/OctoPrint/wiki/Plugin:-Cura>`_
 might give some hints. For extending OctoPrint's interface, the `NavbarTemp plugin <https://github.com/imrahil/OctoPrint-NavbarTemp>`_
 might show what's possible with a few lines of code already. Finally, just take a look at the
-`list of available plugins <https://github.com/foosel/OctoPrint/wiki#plugins>`_ on the OctoPrint wiki if you are
-looking for examples.
+`official Plugin Repository <http://plugins.octoprint.org>`_ if you are looking for examples.
+
+.. seealso::
+
+   `Jinja Template Designer Documentation <http://jinja.octoprint.org/templates.html>`_
+      Jinja's Template Designer Documentation describes the syntax and semantics of the template language used
+      by OctoPrint's frontend. Linked here are the docs for Jinja 2.8.1, which OctoPrint still
+      relies on for backwards compatibility reasons [#f3]_.
 
 .. rubric:: Footnotes
 
@@ -1084,3 +1098,7 @@ looking for examples.
 .. [#f2] Refer to the `LESS documentation <http://lesscss.org/#using-less>`_ on how to do that. If you are developing
          your plugin under Windows you might also want to give `WinLESS <http://winless.org/>`_ a look which will run
          in the background and keep your CSS files up to date with your various project's LESS files automatically.
+.. [#f3] Please always consult the Jinja documentation at `jinja.octoprint.org <http://jinja.octoprint.org>`_ instead of
+         the current stable documentation available at Jinja's project page. The reason for that is that for backwards
+         compatibility reasons OctoPrint currently sadly has to rely on an older version of Jinja. The documentation
+         available at `jinja.octoprint.org <http://jinja.octoprint.org>`_ matches that older version.

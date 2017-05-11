@@ -1,44 +1,37 @@
 # coding=utf-8
 from __future__ import absolute_import, division, print_function
 
-__author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
-__copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
+__copyright__ = "Copyright (C) 2017 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import requests
 import logging
 
 from ..exceptions import ConfigurationInvalid
 
-BRANCH_HEAD_URL = "https://api.github.com/repos/{user}/{repo}/git/refs/heads/{branch}"
+BRANCH_HEAD_URL = "https://api.bitbucket.org/2.0/repositories/{user}/{repo}/commit/{branch}"
 
-logger = logging.getLogger("octoprint.plugins.softwareupdate.version_checks.github_commit")
+logger = logging.getLogger("octoprint.plugins.softwareupdate.version_checks.bitbucket_commit")
 
 def _get_latest_commit(user, repo, branch):
-	r = requests.get(BRANCH_HEAD_URL.format(user=user, repo=repo, branch=branch), timeout=30)
-
-	from . import log_github_ratelimit
-	log_github_ratelimit(logger, r)
+	r = requests.get(BRANCH_HEAD_URL.format(user=user, repo=repo, branch=branch))
 
 	if not r.status_code == requests.codes.ok:
 		return None
 
 	reference = r.json()
-	if not "object" in reference or not "sha" in reference["object"]:
+	if not "hash" in reference:
 		return None
 
-	return reference["object"]["sha"]
+	return reference["hash"]
 
 
 def get_latest(target, check):
-	user = check.get("user")
-	repo = check.get("repo")
-
-	if user is None or repo is None:
-		raise ConfigurationInvalid("Update configuration for {} of type github_commit needs user and repo set and not None".format(target))
+	if "user" not in check or "repo" not in check:
+		raise ConfigurationInvalid("Update configuration for %s of type bitbucket_commit needs all of user and repo" % target)
 
 	branch = "master"
-	if "branch" in check and check["branch"] is not None:
+	if "branch" in check:
 		branch = check["branch"]
 
 	current = None

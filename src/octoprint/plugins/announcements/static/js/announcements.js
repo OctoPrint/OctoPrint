@@ -143,6 +143,9 @@ $(function() {
         self.showAnnouncementDialog = function(channel) {
             if (!self.loginState.isAdmin()) return;
 
+            // lazy load images that still need lazy-loading
+            $("#plugin_announcements_dialog_content article img").lazyload();
+
             self.announcementDialogContent.scrollTop(0);
 
             if (!self.announcementDialog.hasClass("in")) {

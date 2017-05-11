@@ -20,31 +20,31 @@
             <div class="control-group">
                 <label class="control-label">{{ _('Identifier') }}</label>
                 <div class="controls">
-                    <input type="text" class="input-block-level" data-bind="value: profileName, attr: {placeholder: placeholderName}">
+                    <input type="text" class="input-block-level" data-bind="value: profileName, attr: {placeholder: placeholderName}, enable: fieldsEnabled, css: {disabled: !fieldsEnabled()}">
                 </div>
             </div>
             <div class="control-group">
                 <label class="control-label">{{ _('Name') }}</label>
                 <div class="controls">
-                    <input type="text" class="input-block-level" data-bind="value: profileDisplayName, attr: {placeholder: placeholderDisplayName}">
+                    <input type="text" class="input-block-level" data-bind="value: profileDisplayName, valueUpdate: 'afterkeydown', attr: {placeholder: placeholderDisplayName}, enable: fieldsEnabled, css: {disabled: !fieldsEnabled()}">
                 </div>
             </div>
             <div class="control-group">
                 <label class="control-label">{{ _('Description') }}</label>
                 <div class="controls">
-                    <input type="text" class="input-block-level" data-bind="value: profileDescription, attr: {placeholder: placeholderDescription}">
+                    <input type="text" class="input-block-level" data-bind="value: profileDescription, attr: {placeholder: placeholderDescription}, enable: fieldsEnabled, css: {disabled: !fieldsEnabled()}">
                 </div>
             </div>
             <div class="control-group">
                 <div class="controls">
-                    <label class="checkbox">
+                    <label class="checkbox" data-bind="enable: fieldsEnabled, css: {disabled: !fieldsEnabled()}">
                         <input type="checkbox" data-bind="checked: profileMakeDefault"> {{ _('Make default profile') }}
                     </label>
                 </div>
             </div>
             <div class="control-group">
                 <div class="controls">
-                    <label class="checkbox">
+                    <label class="checkbox" data-bind="enable: fieldsEnabled, css: {disabled: !fieldsEnabled()}">
                         <input type="checkbox" data-bind="checked: profileAllowOverwrite"> {{ _('Overwrite existing file') }}
                     </label>
                 </div>
@@ -59,6 +59,6 @@
     </div>
     <div class="modal-footer">
         <button class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Abort') }}</button>
-        <button class="btn btn-primary" id="settings-cura-import-start">{{ _('Confirm') }}</button>
+        <button class="btn btn-primary" data-bind="click: performUpload, enable: uploadEnabled, css: {disabled: !uploadEnabled()}" id="settings-cura-import-start"><i class="icon-spinner icon-spin" data-bind="visible: uploadBusy"></i> {{ _('Confirm') }}</button>
     </div>
 </div>

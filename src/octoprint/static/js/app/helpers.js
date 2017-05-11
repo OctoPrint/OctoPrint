@@ -398,7 +398,7 @@ function formatFuzzyPrintTime(totalSeconds) {
      *
      * Accuracy decreases the higher the estimation is:
      *
-     *   * less than 30s: "a couple of seconds"
+     *   * less than 30s: "a few seconds"
      *   * 30s to a minute: "less than a minute"
      *   * 1 to 30min: rounded to full minutes, above 30s is minute + 1 ("27 minutes", "2 minutes")
      *   * 30min to 40min: "40 minutes"
@@ -495,7 +495,7 @@ function formatFuzzyPrintTime(totalSeconds) {
     } else {
         // only seconds
         if (seconds < 30) {
-            text = gettext("a couple of seconds");
+            text = gettext("a few seconds");
         } else {
             text = gettext("less than a minute");
         }

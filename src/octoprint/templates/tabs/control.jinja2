@@ -1,7 +1,20 @@
 {% if webcamStream %}
     <div id="webcam_container" tabindex="0" data-bind="event: { keydown: onKeyDown, mouseover: onMouseOver, mouseout: onMouseOut, focus: onFocus }">
-        <div id="webcam_rotator" data-bind="css: { rotate90: settings.webcam_rotate90() }">
-            <img id="webcam_image" data-bind="css: { flipH: settings.webcam_flipH(), flipV: settings.webcam_flipV() }">
+        <div class="nowebcam" data-bind="visible: !webcamLoaded()">
+            <div class="text webcam_loading" data-bind="visible: !webcamLoaded() && !webcamError()">
+                <p><strong>{{ _('Webcam stream loading...') }}</strong></p>
+            </div>
+            <div class="text webcam_error" data-bind="visible: !webcamLoaded() && webcamError()">
+                <p><strong>{{ _('Webcam stream not loaded') }}</strong></p>
+                <p><small>{{ _('It might not be correctly configured. You can change the URL of the stream under "Settings" > "Webcam & Timelapse" > "Stream URL". If you don\'t have a webcam just set the URL to an empty value.') }}</small></p>
+            </div>
+        </div>
+        <div id="webcam_rotator" data-bind="css: { webcam_rotated: settings.webcam_rotate90(), webcam_unrotated: !settings.webcam_rotate90() }">
+            <div class="webcam_fixed_ratio" data-bind="css: webcamRatioClass">
+                <div class="webcam_fixed_ratio_inner">
+                    <img id="webcam_image" data-bind="css: { flipH: settings.webcam_flipH(), flipV: settings.webcam_flipV() }, event: { load: onWebcamLoaded, error: onWebcamErrored }, visible: !webcamError()">
+                </div>
+            </div>
         </div>
         <div class="keycontrol_overlay" data-bind="visible: showKeycontrols">
             <div class="keycontrol_overlay_heading">{{ _("Keyboard controls active") }} <a href="#" data-bind="click: toggleKeycontrolHelp"><i data-bind="css: { 'icon-chevron-down': !keycontrolHelpActive(), 'icon-chevron-up': keycontrolHelpActive() }"></i></a></div>

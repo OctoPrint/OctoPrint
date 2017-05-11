@@ -91,6 +91,8 @@ $(function() {
             }
         };
 
+        self.webcam_available_ratios = ["16:9", "4:3"];
+
         var auto_locale = {language: "_default", display: gettext("Autodetect from browser"), english: undefined};
         self.locales = ko.observableArray([auto_locale].concat(_.sortBy(_.values(AVAILABLE_LOCALES), function(n) {
             return n.display;
@@ -110,6 +112,7 @@ $(function() {
         self.printer_defaultExtrusionLength = ko.observable(undefined);
 
         self.webcam_streamUrl = ko.observable(undefined);
+        self.webcam_streamRatio = ko.observable(undefined);
         self.webcam_snapshotUrl = ko.observable(undefined);
         self.webcam_ffmpegPath = ko.observable(undefined);
         self.webcam_bitrate = ko.observable(undefined);
@@ -140,6 +143,7 @@ $(function() {
         self.feature_firmwareDetection = ko.observable(undefined);
         self.feature_printCancelConfirmation = ko.observable(undefined);
         self.feature_blockWhileDwelling = ko.observable(undefined);
+        self.feature_g90InfluencesExtruder = ko.observable(undefined);
 
         self.serial_port = ko.observable();
         self.serial_baudrate = ko.observable();
@@ -224,8 +228,13 @@ $(function() {
             self.terminalFilters.remove(filter);
         };
 
+        self.testWebcamStreamUrlBusy = ko.observable(false);
         self.testWebcamStreamUrl = function() {
             if (!self.webcam_streamUrl()) {
+                return;
+            }
+
+            if (self.testWebcamStreamUrlBusy()) {
                 return;
             }
 
@@ -234,27 +243,33 @@ $(function() {
             var message = $("<p></p>")
                 .append(text)
                 .append(image);
+
+            self.testWebcamStreamUrlBusy(true);
             showMessageDialog({
                 title: gettext("Stream test"),
-                message: message
+                message: message,
+                onclose: function() {
+                    self.testWebcamStreamUrlBusy(false);
+                }
             });
         };
 
+        self.testWebcamSnapshotUrlBusy = ko.observable(false);
         self.testWebcamSnapshotUrl = function(viewModel, event) {
             if (!self.webcam_snapshotUrl()) {
                 return;
             }
 
-            var target = $(event.target);
-            target.prepend('<i class="icon-spinner icon-spin"></i> ');
+            if (self.testWebcamSnapshotUrlBusy()) {
+                return;
+            }
 
             var errorText = gettext("Could not retrieve snapshot URL, please double check the URL");
             var errorTitle = gettext("Snapshot test failed");
 
+            self.testWebcamSnapshotUrlBusy(true);
             OctoPrint.util.testUrl(self.webcam_snapshotUrl(), {method: "GET", response: "bytes"})
                 .done(function(response) {
-                    $("i.icon-spinner", target).remove();
-
                     if (!response.result) {
                         showMessageDialog({
                             title: errorTitle,
@@ -274,23 +289,34 @@ $(function() {
                     var text = gettext("If you see your webcam snapshot picture below, the entered snapshot URL is ok.");
                     showMessageDialog({
                         title: gettext("Snapshot test"),
-                        message: $('<p>' + text + '</p><p><img src="data:' + mimeType + ';base64,' + content + '" /></p>')
+                        message: $('<p>' + text + '</p><p><img src="data:' + mimeType + ';base64,' + content + '" /></p>'),
+                        onclose: function() {
+                            self.testWebcamSnapshotUrlBusy(false);
+                        }
                     });
                 })
                 .fail(function() {
-                    $("i.icon-spinner", target).remove();
                     showMessageDialog({
                         title: errorTitle,
-                        message: errorText
+                        message: errorText,
+                        onclose: function() {
+                            self.testWebcamSnapshotUrlBusy(false);
+                        }
                     });
                 });
         };
 
+        self.testWebcamFfmpegPathBusy = ko.observable(false);
         self.testWebcamFfmpegPath = function() {
             if (!self.webcam_ffmpegPath()) {
                 return;
             }
 
+            if (self.testWebcamFfmpegPathBusy()) {
+                return;
+            }
+
+            self.testWebcamFfmpegPathBusy(true);
             OctoPrint.util.testExecutable(self.webcam_ffmpegPath())
                 .done(function(response) {
                     if (!response.result) {
@@ -306,6 +332,9 @@ $(function() {
                     }
                     self.webcam_ffmpegPathOk(response.result);
                     self.webcam_ffmpegPathBroken(!response.result);
+                })
+                .always(function() {
+                    self.testWebcamFfmpegPathBusy(false);
                 });
         };
 

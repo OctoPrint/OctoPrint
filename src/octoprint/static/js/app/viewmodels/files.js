@@ -59,6 +59,14 @@ $(function() {
         self.localTarget = undefined;
         self.sdTarget = undefined;
 
+        self.dropOverlay = undefined;
+        self.dropZone = undefined;
+        self.dropZoneLocal = undefined;
+        self.dropZoneSd = undefined;
+        self.dropZoneBackground = undefined;
+        self.dropZoneLocalBackground = undefined;
+        self.dropZoneSdBackground = undefined;
+
         self.ignoreUpdatedFilesEvent = false;
 
         self.addingFolder = ko.observable(false);
@@ -395,14 +403,21 @@ $(function() {
             }
         };
 
-        self.loadFile = function(file, printAfterLoad) {
-            if (!file) {
+        self.loadFile = function(data, printAfterLoad) {
+            if (!data) {
                 return;
             }
-            var withinPrintDimensions = self.evaluatePrintDimensions(file, true);
-            var print = printAfterLoad && withinPrintDimensions;
 
-            OctoPrint.files.select(file.origin, file.path, print);
+            if (printAfterLoad && self.listHelper.isSelected(data) && self.enablePrint(data)) {
+                // file was already selected, just start the print job
+                OctoPrint.job.start();
+            } else {
+                // select file, start print job (if requested and within dimensions)
+                var withinPrintDimensions = self.evaluatePrintDimensions(data, true);
+                var print = printAfterLoad && withinPrintDimensions;
+
+                OctoPrint.files.select(data.origin, data.path, print);
+            }
         };
 
         self.removeFile = function(file, event) {
@@ -545,8 +560,11 @@ $(function() {
         };
 
         self.enableSelect = function(data, printAfterSelect) {
-            var isLoadActionPossible = self.loginState.isUser() && self.isOperational() && !(self.isPrinting() || self.isPaused() || self.isLoading());
-            return isLoadActionPossible && !self.listHelper.isSelected(data);
+            return self.enablePrint(data) && !self.listHelper.isSelected(data);
+        };
+
+        self.enablePrint = function(data) {
+            return self.loginState.isUser() && self.isOperational() && !(self.isPrinting() || self.isPaused() || self.isLoading());
         };
 
         self.enableSlicing = function(data) {
@@ -811,6 +829,16 @@ $(function() {
             }
             self.sdTarget = $("#drop_sd");
 
+            self.dropOverlay = $("#drop_overlay");
+            self.dropZone = $("#drop");
+            self.dropZoneLocal = $("#drop_locally");
+            self.dropZoneSd = $("#drop_sd");
+            self.dropZoneBackground = $("#drop_background");
+            self.dropZoneLocalBackground = $("#drop_locally_background");
+            self.dropZoneSdBackground = $("#drop_sd_background");
+
+            self.dropOverlay.on('drop', self._forceEndDragNDrop);
+
             function evaluateDropzones() {
                 var enableLocal = self.loginState.isUser();
                 var enableSd = enableLocal && CONFIG_SD_SUPPORT && self.printerState.isSdReady();
@@ -962,10 +990,12 @@ $(function() {
 
         self._enableDragNDrop = function(enable) {
             if (enable) {
-                $(document).bind("dragover", self._handleDragNDrop);
+                $(document).bind("dragenter", self._handleDragNDrop);
+                $(document).bind("dragleave", self._endDragNDrop);
                 log.debug("Enabled drag-n-drop");
             } else {
-                $(document).unbind("dragover", self._handleDragNDrop);
+                $(document).unbind("dragenter", self._handleDragNDrop);
+                $(document).unbind("dragleave", self._endDragNDrop);
                 log.debug("Disabled drag-n-drop");
             }
         };
@@ -1038,34 +1068,35 @@ $(function() {
             self._setProgressBar(progress, uploaded ? gettext("Saving ...") : gettext("Uploading ..."), uploaded);
         };
 
-        self._handleDragNDrop = function (e) {
-            var dropOverlay = $("#drop_overlay");
-            var dropZone = $("#drop");
-            var dropZoneLocal = $("#drop_locally");
-            var dropZoneSd = $("#drop_sd");
-            var dropZoneBackground = $("#drop_background");
-            var dropZoneLocalBackground = $("#drop_locally_background");
-            var dropZoneSdBackground = $("#drop_sd_background");
-            var timeout = window.dropZoneTimeout;
+        self._dragNDropTarget = null;
+        self._forceEndDragNDrop = function () {
+            self.dropOverlay.removeClass("in");
+            if (self.dropZoneLocal) self.dropZoneLocalBackground.removeClass("hover");
+            if (self.dropZoneSd) self.dropZoneSdBackground.removeClass("hover");
+            if (self.dropZone) self.dropZoneBackground.removeClass("hover");
+            self._dragNDropTarget = null;
+        };
 
-            if (!timeout) {
-                dropOverlay.addClass('in');
-            } else {
-                clearTimeout(timeout);
-            }
+        self._endDragNDrop = function (e) {
+            if (e.target != self._dragNDropTarget) return;
+            self._forceEndDragNDrop();
+        };
+
+        self._handleDragNDrop = function (e) {
+            self.dropOverlay.addClass('in');
 
             var foundLocal = false;
             var foundSd = false;
             var found = false;
             var node = e.target;
             do {
-                if (dropZoneLocal && node === dropZoneLocal[0]) {
+                if (self.dropZoneLocal && node === self.dropZoneLocal[0]) {
                     foundLocal = true;
                     break;
-                } else if (dropZoneSd && node === dropZoneSd[0]) {
+                } else if (self.dropZoneSd && node === self.dropZoneSd[0]) {
                     foundSd = true;
                     break;
-                } else if (dropZone && node === dropZone[0]) {
+                } else if (self.dropZone && node === self.dropZone[0]) {
                     found = true;
                     break;
                 }
@@ -1073,26 +1104,19 @@ $(function() {
             } while (node != null);
 
             if (foundLocal) {
-                dropZoneLocalBackground.addClass("hover");
-                dropZoneSdBackground.removeClass("hover");
+                self.dropZoneLocalBackground.addClass("hover");
+                self.dropZoneSdBackground.removeClass("hover");
             } else if (foundSd && self.printerState.isSdReady()) {
-                dropZoneSdBackground.addClass("hover");
-                dropZoneLocalBackground.removeClass("hover");
+                self.dropZoneSdBackground.addClass("hover");
+                self.dropZoneLocalBackground.removeClass("hover");
             } else if (found) {
-                dropZoneBackground.addClass("hover");
+                self.dropZoneBackground.addClass("hover");
             } else {
-                if (dropZoneLocalBackground) dropZoneLocalBackground.removeClass("hover");
-                if (dropZoneSdBackground) dropZoneSdBackground.removeClass("hover");
-                if (dropZoneBackground) dropZoneBackground.removeClass("hover");
+                if (self.dropZoneLocalBackground) self.dropZoneLocalBackground.removeClass("hover");
+                if (self.dropZoneSdBackground) self.dropZoneSdBackground.removeClass("hover");
+                if (self.dropZoneBackground) self.dropZoneBackground.removeClass("hover");
             }
-
-            window.dropZoneTimeout = setTimeout(function () {
-                window.dropZoneTimeout = null;
-                dropOverlay.removeClass("in");
-                if (dropZoneLocal) dropZoneLocalBackground.removeClass("hover");
-                if (dropZoneSd) dropZoneSdBackground.removeClass("hover");
-                if (dropZone) dropZoneBackground.removeClass("hover");
-            }, 100);
+            self._dragNDropTarget = e.target;
         }
     }
 

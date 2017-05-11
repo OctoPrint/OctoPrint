@@ -138,6 +138,14 @@ $(function() {
             }
         });
 
+        self.settings.feature_g90InfluencesExtruder.subscribe(function() {
+            GCODE.ui.updateOptions({
+                reader: {
+                    g90InfluencesExtruder: self.settings.feature_g90InfluencesExtruder()
+                }
+            });
+        });
+
         self._retrieveBedDimensions = function(currentProfileData) {
             if (currentProfileData == undefined) {
                 currentProfileData = self.settings.printerProfiles.currentProfileData();
