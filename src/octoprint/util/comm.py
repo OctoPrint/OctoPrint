@@ -10,12 +10,14 @@ import glob
 import time
 import re
 import threading
+import copy
 try:
 	import queue
 except ImportError:
 	import Queue as queue
 import logging
 import serial
+
 import octoprint.plugin
 
 from collections import deque
@@ -234,6 +236,62 @@ class PositionRecord(object):
 		            t=self.t,
 		            f=self.f)
 
+class TemperatureRecord(object):
+	def __init__(self):
+		self._tools = dict()
+		self._bed = (None, None)
+
+	def copy_from(self, other):
+		self._tools = other.tools
+		self._bed = other.bed
+
+	def set_tool(self, tool, actual=None, target=None):
+		current = self._tools.get(tool, (None, None))
+		self._tools[tool] = self._to_new_tuple(current, actual, target)
+
+	def set_bed(self, actual=None, target=None):
+		current = self._bed
+		self._bed = self._to_new_tuple(current, actual, target)
+
+	@property
+	def tools(self):
+		return dict(self._tools)
+
+	@property
+	def bed(self):
+		return self._bed
+
+	def as_script_dict(self):
+		result = dict()
+
+		tools = self.tools
+		for tool, data in tools.items():
+			result[tool] = dict(actual=data[0],
+			                    target=data[1])
+
+		bed = self.bed
+		result["b"] = dict(actual=bed[0],
+		                   target=bed[1])
+
+		return result
+
+	@classmethod
+	def _to_new_tuple(cls, current, actual, target):
+		if current is None or not isinstance(current, tuple) or len(current) != 2:
+			current = (None, None)
+
+		if actual is None and target is None:
+			return current
+
+		old_actual, old_target = current
+
+		if actual is None:
+			return old_actual, target
+		elif target is None:
+			return actual, old_target
+		else:
+			return actual, target
+
 class MachineCom(object):
 	STATE_NONE = 0
 	STATE_OPEN_SERIAL = 1
@@ -271,8 +329,6 @@ class MachineCom(object):
 		self._serial = None
 		self._baudrateDetectList = baudrateList()
 		self._baudrateDetectRetry = 0
-		self._temp = {}
-		self._bedTemp = None
 		self._temperatureTargetSetThreshold = 25
 		self._tempOffsets = dict()
 		self._command_queue = TypedQueue()
@@ -382,11 +438,16 @@ class MachineCom(object):
 		self._ignore_select = False
 		self._manualStreaming = False
 
+		self.last_temperature = TemperatureRecord()
+		self.pause_temperature = TemperatureRecord()
+		self.cancel_temperature = TemperatureRecord()
+
 		self.last_position = PositionRecord()
 		self.pause_position = PositionRecord()
-		self._record_pause_position = False
 		self.cancel_position = PositionRecord()
-		self._record_cancel_position = False
+
+		self._record_pause_data = False
+		self._record_cancel_data = False
 
 		# print job
 		self._currentFile = None
@@ -565,10 +626,10 @@ class MachineCom(object):
 		return cleanedPrintTime
 
 	def getTemp(self):
-		return self._temp
+		return self.last_temperature.tools
 
 	def getBedTemp(self):
-		return self._bedTemp
+		return self.last_temperature.bed
 
 	def getOffsets(self):
 		return dict(self._tempOffsets)
@@ -685,15 +746,19 @@ class MachineCom(object):
 		context = dict()
 		if replacements is not None and isinstance(replacements, dict):
 			context.update(replacements)
+
 		context.update(dict(
 			printer_profile=self._printerProfileManager.get_current_or_default(),
-			last_position=self.last_position
+			last_position=self.last_position,
+			last_temperatures=self.last_temperature.as_script_dict()
 		))
 
 		if scriptName == "afterPrintPaused" or scriptName == "beforePrintResumed":
-			context.update(dict(pause_position=self.pause_position))
+			context.update(dict(pause_position=self.pause_position,
+			                    pause_temperature=self.pause_temperature.as_script_dict()))
 		elif scriptName == "afterPrintCancelled":
-			context.update(dict(cancel_position=self.cancel_position))
+			context.update(dict(cancel_position=self.cancel_position,
+			                    cancel_temperature=self.cancel_temperature.as_script_dict()))
 
 		template = settings().loadScript("gcode", scriptName, context=context)
 		if template is None:
@@ -850,7 +915,7 @@ class MachineCom(object):
 			# we don't call on_print_job_cancelled on our callback here
 			# because we do this only after our M114 has been answered
 			# by the firmware
-			self._record_cancel_position = True
+			self._record_cancel_data = True
 			self.sendCommand("M114")
 
 		with self._jobLock:
@@ -910,7 +975,7 @@ class MachineCom(object):
 					# we don't call on_print_job_paused on our callback here
 					# because we do this only after our M114 has been answered
 					# by the firmware
-					self._record_pause_position = True
+					self._record_pause_data = True
 					self.sendCommand("M114")
 
 				self.sendCommand("M400", on_sent=_on_M400_sent)
@@ -1011,24 +1076,12 @@ class MachineCom(object):
 					continue
 
 				actual, target = parsedTemps[tool]
-				if target is not None:
-					self._temp[n] = (actual, target)
-				elif n in self._temp and self._temp[n] is not None and isinstance(self._temp[n], tuple):
-					(oldActual, oldTarget) = self._temp[n]
-					self._temp[n] = (actual, oldTarget)
-				else:
-					self._temp[n] = (actual, None)
+				self.last_temperature.set_tool(n, actual=actual, target=target)
 
 		# bed temperature
 		if "B" in parsedTemps.keys():
 			actual, target = parsedTemps["B"]
-			if target is not None:
-				self._bedTemp = (actual, target)
-			elif self._bedTemp is not None and isinstance(self._bedTemp, tuple):
-				(oldActual, oldTarget) = self._bedTemp
-				self._bedTemp = (actual, oldTarget)
-			else:
-				self._bedTemp = (actual, None)
+			self.last_temperature.set_bed(actual=actual, target=target)
 
 	##~~ Serial monitor processing received messages
 
@@ -1191,16 +1244,18 @@ class MachineCom(object):
 
 						reason = None
 
-						if self._record_pause_position:
+						if self._record_pause_data:
 							reason = "pause"
-							self._record_pause_position = False
+							self._record_pause_data = False
 							self.pause_position.copy_from(self.last_position)
+							self.pause_temperature.copy_from(self.last_temperature)
 							self._pause_preparation_done()
 
-						if self._record_cancel_position:
+						if self._record_cancel_data:
 							reason = "cancel"
-							self._record_cancel_position = False
+							self._record_cancel_data = False
 							self.cancel_position.copy_from(self.last_position)
+							self.cancel_temperature.copy_from(self.last_temperature)
 							self._cancel_preparation_done()
 
 						self._callback.on_comm_position_update(self.last_position.as_dict(), reason=reason)
@@ -1212,7 +1267,7 @@ class MachineCom(object):
 						self._heating = True
 						self._heatupWaitStartTime = time.time()
 					self._processTemperatures(line)
-					self._callback.on_comm_temperature_update(self._temp, self._bedTemp)
+					self._callback.on_comm_temperature_update(self.last_temperature.tools, self.last_temperature.bed)
 
 				elif supportRepetierTargetTemp and ('TargetExtr' in line or 'TargetBed' in line):
 					matchExtr = regex_repetierTempExtr.match(line)
@@ -1222,23 +1277,15 @@ class MachineCom(object):
 						toolNum = int(matchExtr.group(1))
 						try:
 							target = float(matchExtr.group(2))
-							if toolNum in self._temp.keys() and self._temp[toolNum] is not None and isinstance(self._temp[toolNum], tuple):
-								(actual, oldTarget) = self._temp[toolNum]
-								self._temp[toolNum] = (actual, target)
-							else:
-								self._temp[toolNum] = (None, target)
-							self._callback.on_comm_temperature_update(self._temp, self._bedTemp)
+							self.last_temperature.set_tool(toolNum, target=target)
+							self._callback.on_comm_temperature_update(self.last_temperature.tools, self.last_temperature.bed)
 						except ValueError:
 							pass
 					elif matchBed is not None:
 						try:
 							target = float(matchBed.group(1))
-							if self._bedTemp is not None and isinstance(self._bedTemp, tuple):
-								(actual, oldTarget) = self._bedTemp
-								self._bedTemp = (actual, target)
-							else:
-								self._bedTemp = (None, target)
-							self._callback.on_comm_temperature_update(self._temp, self._bedTemp)
+							self.last_temperature.set_bed(target=target)
+							self._callback.on_comm_temperature_update(self.last_temperature.tools, self.last_temperature.bed)
 						except ValueError:
 							pass
 
@@ -1651,11 +1698,13 @@ class MachineCom(object):
 		if self.isBusy():
 			return self._timeout_intervals.get("temperature", busy_default)
 
-		for temp in [self._temp[k][1] for k in self._temp.keys()]:
+		tools = self.last_temperature.tools
+		for temp in [tools[k][1] for k in tools.keys()]:
 			if temp > self._temperatureTargetSetThreshold:
 				return self._timeout_intervals.get("temperatureTargetSet", target_default)
 
-		if self._bedTemp and len(self._bedTemp) > 0 and self._bedTemp[1] > self._temperatureTargetSetThreshold:
+		bed = self.last_temperature.bed
+		if bed and len(bed) > 0 and bed[1] > self._temperatureTargetSetThreshold:
 			return self._timeout_intervals.get("temperatureTargetSet", target_default)
 
 		return self._timeout_intervals.get("temperature", busy_default)
@@ -2389,12 +2438,8 @@ class MachineCom(object):
 		if match:
 			try:
 				target = float(match.group("value"))
-				if toolNum in self._temp.keys() and self._temp[toolNum] is not None and isinstance(self._temp[toolNum], tuple):
-					(actual, oldTarget) = self._temp[toolNum]
-					self._temp[toolNum] = (actual, target)
-				else:
-					self._temp[toolNum] = (None, target)
-				self._callback.on_comm_temperature_update(self._temp, self._bedTemp)
+				self.last_temperature.set_tool(toolNum, target=target)
+				self._callback.on_comm_temperature_update(self.last_temperature.tools, self.last_temperature.bed)
 			except ValueError:
 				pass
 
@@ -2406,12 +2451,8 @@ class MachineCom(object):
 		if match:
 			try:
 				target = float(match.group("value"))
-				if self._bedTemp is not None and isinstance(self._bedTemp, tuple):
-					(actual, oldTarget) = self._bedTemp
-					self._bedTemp = (actual, target)
-				else:
-					self._bedTemp = (None, target)
-				self._callback.on_comm_temperature_update(self._temp, self._bedTemp)
+				self.last_temperature.set_bed(target=target)
+				self._callback.on_comm_temperature_update(self.last_temperature.tools, self.last_temperature.bed)
 			except ValueError:
 				pass
 
