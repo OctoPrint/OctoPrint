@@ -282,8 +282,6 @@ $(function() {
             });
 
             self.requestData = function() {
-                if (!CONFIG_GROUPS_ENABLED) return;
-
                 OctoPrint.access.groups.list()
                     .done(self.fromResponse);
             };
@@ -302,15 +300,11 @@ $(function() {
             }
 
             self.showAddGroupDialog = function() {
-                if (!CONFIG_GROUPS_ENABLED) return;
-
                 self.currentGroup(undefined);
                 self.addGroupDialog.modal("show");
             };
 
             self.confirmAddGroup = function() {
-                if (!CONFIG_GROUPS_ENABLED) return;
-
                 var group = {
                     name: self.editorGroupname(),
                     description: self.editorGroupdesc(),
@@ -327,15 +321,11 @@ $(function() {
             };
 
             self.showEditGroupDialog = function(group) {
-                if (!CONFIG_GROUPS_ENABLED) return;
-
                 self.currentGroup(group);
                 self.editGroupDialog.modal("show");
             };
 
             self.confirmEditGroup = function() {
-                if (!CONFIG_GROUPS_ENABLED) return;
-
                 var group = self.currentGroup();
                 group.description = self.editorGroupdesc();
                 group.permissions = self.editorPermissions();
@@ -449,8 +439,6 @@ $(function() {
             });
 
             self.requestData = function() {
-                if (!CONFIG_ACCESS_CONTROL) return;
-
                 OctoPrint.access.permissions.list().done(function(response) {
                     self.permissionsList(response.permissions);
                 });

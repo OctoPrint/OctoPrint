@@ -90,7 +90,7 @@ $(function() {
         self.loginState = parameters[0];
         self.printerState = parameters[1];
         self.settings = parameters[2];
-        self.permissions = parameters[3];
+        self.access = parameters[3];
         self.popup = undefined;
 
         self.forceUpdate = false;
@@ -395,7 +395,7 @@ $(function() {
 
         self.performCheck = function(showIfNothingNew, force, ignoreSeen) {
 
-            if (!self.loginState.hasPermission(self.permissions.SETTINGS) && !self.settings.settings.plugins.softwareupdate.notify_users()) return;
+            if (!self.loginState.hasPermission(self.access.permissions.SETTINGS) && !self.settings.settings.plugins.softwareupdate.notify_users()) return;
 
             self.checking(true);
             OctoPrint.plugins.softwareupdate.check(force)
@@ -497,7 +497,7 @@ $(function() {
 
         self.update = function(force) {
             if (self.updateInProgress) return;
-            if (!self.loginState.hasPermission(self.permissions.SETTINGS)) return;
+            if (!self.loginState.hasPermission(self.access.permissions.SETTINGS)) return;
 
             if (self.printerState.isPrinting()) {
                 self._showPopup({
@@ -519,7 +519,7 @@ $(function() {
         };
 
         self._showWorkingDialog = function(title) {
-            if (!self.loginState.hasPermission(self.permissions.SETTINGS)) {
+            if (!self.loginState.hasPermission(self.access.permissions.SETTINGS)) {
                 return;
             }
 
@@ -782,7 +782,7 @@ $(function() {
     // view model class, parameters for constructor, container to bind to
     ADDITIONAL_VIEWMODELS.push([
         SoftwareUpdateViewModel,
-        ["loginStateViewModel", "printerStateViewModel", "settingsViewModel", "permissionsViewModel"],
+        ["loginStateViewModel", "printerStateViewModel", "settingsViewModel", "accessViewModel"],
         ["#settings_plugin_softwareupdate", "#softwareupdate_confirmation_dialog", "#wizard_plugin_softwareupdate"]
     ]);
 });

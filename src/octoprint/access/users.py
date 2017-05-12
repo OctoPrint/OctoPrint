@@ -237,12 +237,7 @@ class FilebasedUserManager(UserManager):
 					if "roles" in attributes:
 						from octoprint.server import groupManager
 
-						# Make sure the GroupManager is activated, if it is migrate the roles to groups,
-						# otherwise migrate them to permissions
-						if groupManager.enabled:
-							groups.extend(self.__migrate_roles_to_groups(attributes["roles"]))
-						else:
-							permissions.extend(self.__migrate_roles_to_permissions(attributes["roles"]))
+						groups.extend(self.__migrate_roles_to_groups(attributes["roles"]))
 
 						# Make sure the new System will be saved and the old gets removed
 						self._dirty = True
@@ -300,16 +295,6 @@ class FilebasedUserManager(UserManager):
 		}
 
 		return map(lambda role: migrate_to_groups[role], roles)
-
-	def __migrate_roles_to_permissions(self, roles):
-		migrate_to_permissions = {
-			"admin": [Permissions.ADMIN],
-			"user": Permissions.USER_ARRAY,
-		}
-
-		from operator import or_
-		list = reduce(or_, map(lambda role: migrate_to_permissions[role], roles))
-		return list
 
 	def addUser(self, username, password, active=False, permissions=None, groups=None, apikey=None, overwrite=False):
 		if not permissions:
