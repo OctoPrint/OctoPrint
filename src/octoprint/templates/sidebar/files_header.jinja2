@@ -1,47 +1,47 @@
 <div class="settings-trigger accordion-heading-button btn-group">
     <a class="dropdown-toggle" data-toggle="dropdown" href="#" title="{{ _('File list settings') }}">
-        <span class="icon-wrench"></span>
+        <span class="fa fa-wrench"></span>
     </a>
     <ul class="dropdown-menu">
-        <li><a href="#" data-bind="click: function() { $root.listHelper.changeSorting('name'); }"><i class="icon-ok" data-bind="style: {visibility: listHelper.currentSorting() == 'name' ? 'visible' : 'hidden'}"></i> {{ _('Sort by name') }} ({{ _('ascending') }})</a></li>
-        <li><a href="#" data-bind="click: function() { $root.listHelper.changeSorting('upload'); }"><i class="icon-ok" data-bind="style: {visibility: listHelper.currentSorting() == 'upload' ? 'visible' : 'hidden'}"></i> {{ _('Sort by upload date') }} ({{ _('descending') }})</a></li>
-        <li><a href="#" data-bind="click: function() { $root.listHelper.changeSorting('size'); }"><i class="icon-ok" data-bind="style: {visibility: listHelper.currentSorting() == 'size' ? 'visible' : 'hidden'}"></i> {{ _('Sort by file size') }} ({{ _('descending') }})</a></li>
+        <li><a href="#" data-bind="click: function() { $root.listHelper.changeSorting('name'); }"><i class="fa fa-check-circle" data-bind="style: {visibility: listHelper.currentSorting() == 'name' ? 'visible' : 'hidden'}"></i> {{ _('Sort by name') }} ({{ _('ascending') }})</a></li>
+        <li><a href="#" data-bind="click: function() { $root.listHelper.changeSorting('upload'); }"><i class="fa fa-check-circle" data-bind="style: {visibility: listHelper.currentSorting() == 'upload' ? 'visible' : 'hidden'}"></i> {{ _('Sort by upload date') }} ({{ _('descending') }})</a></li>
+        <li><a href="#" data-bind="click: function() { $root.listHelper.changeSorting('size'); }"><i class="fa fa-check-circle" data-bind="style: {visibility: listHelper.currentSorting() == 'size' ? 'visible' : 'hidden'}"></i> {{ _('Sort by file size') }} ({{ _('descending') }})</a></li>
         <li class="dropdown-submenu">
-            <a href="#"><i class="icon-ok" style="visibility: hidden"></i> {{ _('Folders') }}</a>
+            <a href="#"><i class="fa fa-check-circle" style="visibility: hidden"></i> {{ _('Folders') }}</a>
             <ul class="dropdown-menu">
-                <li><a href="#" data-bind="click: function() { $root.listStyle('folders_files'); }"><i class="icon-ok" data-bind="style: {visibility: listStyle() == 'folders_files' ? 'visible' : 'hidden'}"></i> {{ _('Sort by Folders, Files') }}</a></li>
-                <li><a href="#" data-bind="click: function() { $root.listStyle('files_folders'); }"><i class="icon-ok" data-bind="style: {visibility: listStyle() == 'files_folders' ? 'visible' : 'hidden'}"></i> {{ _('Sort by Files, Folders') }}</a></li>
-                <li><a href="#" data-bind="click: function() { $root.listStyle('mixed'); }"><i class="icon-ok" data-bind="style: {visibility: listStyle() == 'mixed' ? 'visible' : 'hidden'}"></i> {{ _('Mixed') }}</a></li>
+                <li><a href="#" data-bind="click: function() { $root.listStyle('folders_files'); }"><i class="fa fa-check-circle" data-bind="style: {visibility: listStyle() == 'folders_files' ? 'visible' : 'hidden'}"></i> {{ _('Sort by Folders, Files') }}</a></li>
+                <li><a href="#" data-bind="click: function() { $root.listStyle('files_folders'); }"><i class="fa fa-check-circle" data-bind="style: {visibility: listStyle() == 'files_folders' ? 'visible' : 'hidden'}"></i> {{ _('Sort by Files, Folders') }}</a></li>
+                <li><a href="#" data-bind="click: function() { $root.listStyle('mixed'); }"><i class="fa fa-check-circle" data-bind="style: {visibility: listStyle() == 'mixed' ? 'visible' : 'hidden'}"></i> {{ _('Mixed') }}</a></li>
             </ul>
         </li>
         <li class="divider"></li>
-        <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('machinecode'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'machinecode') ? 'visible' : 'hidden'}"></i> {{ _('Only show machine code files') }}</a></li>
-        <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('model'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'model') ? 'visible' : 'hidden'}"></i> {{ _('Only show model files') }}</a></li>
+        <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('machinecode'); }"><i class="fa fa-check-circle" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'machinecode') ? 'visible' : 'hidden'}"></i> {{ _('Only show machine code files') }}</a></li>
+        <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('model'); }"><i class="fa fa-check-circle" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'model') ? 'visible' : 'hidden'}"></i> {{ _('Only show model files') }}</a></li>
         {% if enableSdSupport %}
             <li class="divider"></li>
-            <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('local'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'local') ? 'visible' : 'hidden'}"></i> {{ _('Only show files stored locally') }}</a></li>
-            <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('sd'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'sd') ? 'visible' : 'hidden'}"></i> {{ _('Only show files stored on SD') }}</a></li>
+            <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('local'); }"><i class="fa fa-check-circle" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'local') ? 'visible' : 'hidden'}"></i> {{ _('Only show files stored locally') }}</a></li>
+            <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('sd'); }"><i class="fa fa-check-circle" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'sd') ? 'visible' : 'hidden'}"></i> {{ _('Only show files stored on SD') }}</a></li>
         {% endif %}
         <li class="divider"></li>
-        <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('printed'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'printed') ? 'visible' : 'hidden'}"></i> {{ _('Hide successfully printed files') }}</a></li>
+        <li><a href="#" data-bind="click: function() { $root.listHelper.toggleFilter('printed'); }"><i class="fa fa-check-circle" data-bind="style: {visibility: _.contains(listHelper.currentFilters(), 'printed') ? 'visible' : 'hidden'}"></i> {{ _('Hide successfully printed files') }}</a></li>
     </ul>
 </div>
 
 <div class="refresh-trigger accordion-heading-button btn-group">
     <a href="#" data-bind="click: function() { $root.requestData({force: true}); }" title="{{ _('Refresh file list') }}">
-        <span class="icon-refresh"></span>
+        <i class="fa fa-refresh"></i>
     </a>
 </div>
 
 {% if enableSdSupport %}
     <div class="sd-trigger accordion-heading-button btn-group">
-        <a class="dropdown-toggle" data-toggle="dropdown" href="#" title="{{ _('SD Card operations') }}">
+        <a class="dropdown-toggle dropdown-sd" data-toggle="dropdown" href="#" title="{{ _('SD Card operations') }}">
             <span class="icon-sd-black-14"></span>
         </a>
         <ul class="dropdown-menu">
-            <li data-bind="visible: !isSdReady()"><a href="#" data-bind="click: function() { $root.initSdCard(); }"><i class="icon-flag"></i> {{ _('Initialize SD card') }}</a></li>
-            <li data-bind="visible: isSdReady()"><a href="#" data-bind="click: function() { $root.refreshSdFiles(); }"><i class="icon-refresh"></i> {{ _('Refresh SD files') }}</a></li>
-            <li data-bind="visible: isSdReady()"><a href="#" data-bind="click: function() { $root.releaseSdCard(); }"><i class="icon-eject"></i> {{ _('Release SD card') }}</a></li>
+            <li data-bind="visible: !isSdReady()"><a href="#" data-bind="click: function() { $root.initSdCard(); }"><i class="fa fa-flag"></i> {{ _('Initialize SD card') }}</a></li>
+            <li data-bind="visible: isSdReady()"><a href="#" data-bind="click: function() { $root.refreshSdFiles(); }"><i class="fa fa-refresh"></i> {{ _('Refresh SD files') }}</a></li>
+            <li data-bind="visible: isSdReady()"><a href="#" data-bind="click: function() { $root.releaseSdCard(); }"><i class="fa fa-eject"></i> {{ _('Release SD card') }}</a></li>
         </ul>
     </div>
 {% endif %}

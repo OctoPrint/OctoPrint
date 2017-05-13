@@ -25,7 +25,7 @@
 {{ pluginmanager_safemode() }}
 
 <div class="pull-right">
-    <button class="btn btn-small" data-bind="click: function() { $root.showPluginSettings(); }" title="{{ _('Plugin Configuration') }}"><i class="icon-wrench"></i></button>
+    <button class="btn btn-small" data-bind="click: function() { $root.showPluginSettings(); }" title="{{ _('Plugin Configuration') }}"><i class="fa fa-wrench"></i></button>
 </div>
 
 <h3>{{ _('Installed Plugins') }}</h3>
@@ -40,18 +40,18 @@
     <tbody data-bind="foreach: plugins.paginatedItems">
     <tr>
         <td class="settings_plugin_plugin_manager_plugins_name">
-            <div data-bind="css: {muted: !enabled}"><span data-bind="text: name"></span> <span data-bind="visible: version">(<span data-bind="text: version"></span>)</span> <i title="{{ _('Bundled with OctoPrint') }}" class="icon-th-large" data-bind="visible: bundled"></i> <i class="icon-lock" title="{{ _('Cannot be uninstalled through OctoPrint') }}" data-bind="visible: !managable"></i> <i title="{{ _('Restart of OctoPrint needed for changes to take effect') }}" class="icon-refresh" data-bind="visible: pending_enable || pending_disable || pending_install || pending_uninstall"></i> <i title="{{ _('Pending install') }}" class="icon-plus" data-bind="visible: pending_install"></i> <i title="{{ _('Pending uninstall') }}" class="icon-minus" data-bind="visible: pending_uninstall"></i> <i title="{{ _('Disabled due to safe mode') }}" class="icon-medkit" data-bind="visible: safe_mode_victim"></i> <i class="icon-exclamation-sign" title="{{ _('There are notices available regarding this plugin') }}" data-bind="visible: notifications && notifications.length"></i></div>
+            <div data-bind="css: {muted: !enabled}"><span data-bind="text: name"></span> <span data-bind="visible: version">(<span data-bind="text: version"></span>)</span> <i title="{{ _('Bundled with OctoPrint') }}" class="fa fa-th-large" data-bind="visible: bundled"></i> <i class="fa fa-lock" title="{{ _('Cannot be uninstalled through OctoPrint') }}" data-bind="visible: !managable"></i> <i title="{{ _('Restart of OctoPrint needed for changes to take effect') }}" class="fa fa-refresh" data-bind="visible: pending_enable || pending_disable || pending_install || pending_uninstall"></i> <i title="{{ _('Pending install') }}" class="fa fa-plus" data-bind="visible: pending_install"></i> <i title="{{ _('Pending uninstall') }}" class="fa fa-minus" data-bind="visible: pending_uninstall"></i> <i title="{{ _('Disabled due to safe mode') }}" class="fa fa-medkit" data-bind="visible: safe_mode_victim"></i> <i class="fa fa-exclamation-triangle" title="{{ _('There are notices available regarding this plugin') }}" data-bind="visible: notifications && notifications.length"></i></div>
             <div data-bind="visible: notifications && notifications.length"><a href="javascript:void(0)" class="text-error" style="text-decoration: underline" data-bind="click: function() { $root.showPluginNotifications($data) }, text: $root.showPluginNotificationsLinkText($data)"></a></div>
             <div><small class="muted" data-bind="text: description">&nbsp;</small></div>
             <div data-bind="css: {muted: !enabled}">
-                <small data-bind="visible: url"><i class="icon-home"></i> <a data-bind="attr: {href: url}" target="_blank" rel="noreferrer noopener">{{ _('Homepage') }}</a></small>
-                <small data-bind="visible: license"><i class="icon-legal"></i> <span data-bind="text: license"></span></small>
-                <small data-bind="visible: author"><i class="icon-user"></i> <span data-bind="text: author"></span></small>
+                <small data-bind="visible: url"><i class="fa fa-home"></i> <a data-bind="attr: {href: url}" target="_blank" rel="noreferrer noopener">{{ _('Homepage') }}</a></small>
+                <small data-bind="visible: license"><i class="fa fa-gavel"></i> <span data-bind="text: license"></span></small>
+                <small data-bind="visible: author"><i class="fa fa-user"></i> <span data-bind="text: author"></span></small>
                 <small>&nbsp;</small>
             </div>
         </td>
         <td class="settings_plugin_plugin_manager_plugins_actions">
-            <a href="#" data-bind="css: $root.toggleButtonCss($data), attr: {title: $root.toggleButtonTitle($data)}, enable: $root.enableToggle($data), click: function() { $root.togglePlugin($data) }"></a>&nbsp;|&nbsp;<a href="#" class="icon-trash" title="{{ _('Uninstall Plugin') }}" data-bind="css: {disabled: !$root.enableUninstall($data)}, enable: $root.enableUninstall($data), click: function() { $root.uninstallPlugin($data) }"></a>
+            <a href="#" data-bind="css: $root.toggleButtonCss($data), attr: {title: $root.toggleButtonTitle($data)}, enable: $root.enableToggle($data), click: function() { $root.togglePlugin($data) }"></a>&nbsp;|&nbsp;<a href="#" class="fa fa-trash" title="{{ _('Uninstall Plugin') }}" data-bind="css: {disabled: !$root.enableUninstall($data)}, enable: $root.enableUninstall($data), click: function() { $root.uninstallPlugin($data) }"></a>
         </td>
     </tr>
     </tbody>
@@ -73,8 +73,8 @@
 <div class="muted" data-bind="visible: pipAvailable()">
     <div>
         <small>
-            <a href="javascript:void(0)" class="muted" onclick="$(this).children('i.toggle-arrow').toggleClass('icon-caret-right icon-caret-down').parent().parent().parent().next().slideToggle('fast')">
-                <i class="toggle-arrow icon-caret-right"></i> Using pip of "<span data-bind="text: pipPython"></span>", Version <span data-bind="text: pipVersion"></span>
+            <a href="javascript:void(0)" class="muted fa" onclick="$(this).children('i.toggle-arrow').toggleClass('fa-caret-right fa-caret-down').parent().parent().parent().next().slideToggle('fast')">
+                <i class="fa toggle-arrow fa-caret-right"></i> Using pip of "<span data-bind="text: pipPython"></span>", Version <span data-bind="text: pipVersion"></span>
             </a>
         </small>
     </div>
@@ -90,8 +90,8 @@
 <div class="muted">
     <div>
         <small>
-            <a href="javascript:void(0)" class="muted" onclick="$(this).children('i.toggle-arrow').toggleClass('icon-caret-right icon-caret-down').parent().parent().parent().next().slideToggle('fast')">
-                <i class="toggle-arrow icon-caret-right"></i> <span data-bind="text: noticeCountText"></span>
+            <a href="javascript:void(0)" class="muted fa" onclick="$(this).children('i.toggle-arrow').toggleClass('fa-caret-right fa-caret-down').parent().parent().parent().next().slideToggle('fast')">
+                <i class="toggle-arrow fa fa-caret-right"></i> <span data-bind="text: noticeCountText"></span>
             </a>
         </small>
     </div>
@@ -128,16 +128,16 @@
             {{ _('... from the <a href="%(url)s" target="_blank">Plugin Repository</a>', url='http://plugins.octoprint.org') }}
             <div class="dropdown pull-right">
                 <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-                    <span class="icon-wrench"></span>
+                    <span class="fa fa-wrench"></span>
                 </a>
                 <ul class="dropdown-menu pull-right">
-                    <li><a href="#" data-bind="click: function() { repositoryplugins.changeSorting('title'); }"><i class="icon-ok" data-bind="style: {visibility: repositoryplugins.currentSorting() == 'title' ? 'visible' : 'hidden'}"></i> {{ _('Sort by title') }} ({{ _('ascending') }})</a></li>
-                    <li><a href="#" data-bind="click: function() { repositoryplugins.changeSorting('published'); }"><i class="icon-ok" data-bind="style: {visibility: repositoryplugins.currentSorting() == 'published' ? 'visible' : 'hidden'}"></i> {{ _('Sort by publication date') }} ({{ _('descending') }})</a></li>
+                    <li><a href="#" data-bind="click: function() { repositoryplugins.changeSorting('title'); }"><i class="fa fa-check-circle" data-bind="style: {visibility: repositoryplugins.currentSorting() == 'title' ? 'visible' : 'hidden'}"></i> {{ _('Sort by title') }} ({{ _('ascending') }})</a></li>
+                    <li><a href="#" data-bind="click: function() { repositoryplugins.changeSorting('published'); }"><i class="fa fa-check-circle" data-bind="style: {visibility: repositoryplugins.currentSorting() == 'published' ? 'visible' : 'hidden'}"></i> {{ _('Sort by publication date') }} ({{ _('descending') }})</a></li>
                     <li class="divider"></li>
-                    <li><a href="#" data-bind="click: function() { repositoryplugins.toggleFilter('filter_installed'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(repositoryplugins.currentFilters(), 'filter_installed') ? 'visible' : 'hidden'}"></i> {{ _('Only show uninstalled plugins') }}</a></li>
-                    <li><a href="#" data-bind="click: function() { repositoryplugins.toggleFilter('filter_incompatible'); }"><i class="icon-ok" data-bind="style: {visibility: _.contains(repositoryplugins.currentFilters(), 'filter_incompatible') ? 'visible' : 'hidden'}"></i> {{ _('Only show compatible plugins') }}</a></li>
+                    <li><a href="#" data-bind="click: function() { repositoryplugins.toggleFilter('filter_installed'); }"><i class="fa fa-check-circle" data-bind="style: {visibility: _.contains(repositoryplugins.currentFilters(), 'filter_installed') ? 'visible' : 'hidden'}"></i> {{ _('Only show uninstalled plugins') }}</a></li>
+                    <li><a href="#" data-bind="click: function() { repositoryplugins.toggleFilter('filter_incompatible'); }"><i class="fa fa-check-circle" data-bind="style: {visibility: _.contains(repositoryplugins.currentFilters(), 'filter_incompatible') ? 'visible' : 'hidden'}"></i> {{ _('Only show compatible plugins') }}</a></li>
                     <li class="divider"></li>
-                    <li><a href="#" data-bind="click: function() { refreshRepository(); }"><i class="icon-refresh"></i> {{ _('Refresh list from repository') }}</a></li>
+                    <li><a href="#" data-bind="click: function() { refreshRepository(); }"><i class="fa fa-refresh"></i> {{ _('Refresh list from repository') }}</a></li>
                 </ul>
             </div>
         </h4>
@@ -154,15 +154,15 @@
                             <div><span data-bind="text: title"></span></div>
                             <div><small class="muted" data-bind="text: description">&nbsp;</small></div>
                             <div>
-                                <small data-bind="visible: page"><i class="icon-info"></i> <a data-bind="attr: {href: page}" target="_blank">{{ _('Details') }}</a></small>
-                                <small data-bind="visible: homepage"><i class="icon-home"></i> <a data-bind="attr: {href: homepage}" target="_blank">{{ _('Homepage') }}</a></small>
-                                <small data-bind="visible: license"><i class="icon-legal"></i> <span data-bind="text: license"></span></small>
-                                <small data-bind="visible: author"><i class="icon-user"></i> <span data-bind="text: author"></span></small>
+                                <small data-bind="visible: page"><i class="fa fa-info"></i> <a data-bind="attr: {href: page}" target="_blank">{{ _('Details') }}</a></small>
+                                <small data-bind="visible: homepage"><i class="fa fa-home"></i> <a data-bind="attr: {href: homepage}" target="_blank">{{ _('Homepage') }}</a></small>
+                                <small data-bind="visible: license"><i class="fa fa-gavel"></i> <span data-bind="text: license"></span></small>
+                                <small data-bind="visible: author"><i class="fa fa-user"></i> <span data-bind="text: author"></span></small>
                                 <small>&nbsp;</small>
                             </div>
                         </div>
                         <div class="span3">
-                            <button class="btn btn-primary btn-block" data-bind="enable: $root.enableRepoInstall($data), css: {disabled: !$root.enableRepoInstall($data)}, click: function() { if ($root.enableRepoInstall($data)) { $root.installFromRepository($data); } else { return false; } }"><i class="icon-add"></i> <span data-bind="text: $root.installButtonText($data)"></span></button>
+                            <button class="btn btn-primary btn-block" data-bind="enable: $root.enableRepoInstall($data), css: {disabled: !$root.enableRepoInstall($data)}, click: function() { if ($root.enableRepoInstall($data)) { $root.installFromRepository($data); } else { return false; } }"><i class="fa fa-add"></i> <span data-bind="text: $root.installButtonText($data)"></span></button>
                             <div data-bind="visible: $data.disabled !== undefined" style="text-align: center"><small><a data-bind="attr: {href: page}" target="_blank">{{ _('"Why?"') }}</a></small></div>
                         </div>
                     </div>
@@ -209,7 +209,7 @@
         </form>
 
         <div>
-            <div><small><a href="#" class="muted" onclick="$(this).children().toggleClass('icon-caret-right icon-caret-down').parent().parent().parent().next().slideToggle('fast')"><i class="icon-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
+            <div><small><a href="#" class="muted fa" onclick="$(this).children().toggleClass('fa-caret-right fa-caret-down').parent().parent().parent().next().slideToggle('fast')"><i class="fa fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
             <div class="hide">
                 <form class="form-horizontal">
                     <div class="control-group">

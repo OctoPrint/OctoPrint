@@ -203,7 +203,7 @@ $(function() {
 
         self.savePluginSettings = function(viewModel, event) {
             var target = $(event.target);
-            target.prepend('<i class="icon-spinner icon-spin"></i> ');
+            target.prepend('<i class="fa fa-spinner fa-spin"></i> ');
 
             var data = {
                 plugins: {
@@ -223,7 +223,7 @@ $(function() {
                     self.performCheck();
                 },
                 complete: function() {
-                    $("i.icon-spinner", target).remove();
+                    $("i.fa-spinner", target).remove();
                 },
                 sending: true
             });
@@ -318,7 +318,7 @@ $(function() {
                 _.each(self.versions.items(), function(update_info) {
                     if (update_info.updateAvailable) {
                         text += "<li>"
-                            + "<i class='icon-li " + (update_info.updatePossible ? "icon-ok" : "icon-remove")+ "'></i>"
+                            + "<i class='fa fa-li " + (update_info.updatePossible ? "fa-check-circle" : "fa-remove")+ "'></i>"
                             + "<span class='name' title='" + update_info.fullNameRemote + "'>" + update_info.fullNameRemote + "</span>"
                             + (update_info.releaseNotes ? "<a href=\"" +  update_info.releaseNotes + "\" target=\"_blank\">" + gettext("Release Notes") + "</a>" : "")
                             + "</li>";
@@ -326,7 +326,7 @@ $(function() {
                 });
                 text += "</ul>";
 
-                text += "<p><small>" + gettext("Those components marked with <i class=\"icon-ok\"></i> can be updated directly.") + "</small></p>";
+                text += "<p><small>" + gettext("Those components marked with <i class=\"fa fa-check-circle\"></i> can be updated directly.") + "</small></p>";
 
                 if (!self.loginState.isAdmin()) {
                     text += "<p><small>" + gettext("To have updates applied, get in touch with an administrator of this OctoPrint instance.") + "</small></p>";
@@ -472,7 +472,7 @@ $(function() {
             var options = {
                 title: gettext("Updating..."),
                 text: gettext("Now updating, please wait."),
-                icon: "icon-cog icon-spin",
+                icon: "fa fa-cog fa-spin",
                 hide: false,
                 buttons: {
                     closer: false,
