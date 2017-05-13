@@ -76,6 +76,10 @@ way once it's ready :)
 You can find the full changelog and release notes as usual
 [on Github](https://github.com/foosel/OctoPrint/releases/tag/1.3.3rc1).
 
+Please **provide feedback** on this RC. For general feedback you can use
+[this ticket on the tracker](https://github.com/foosel/OctoPrint/issues/1914).
+If everything works fine for you, that is also valuable feedback :)
+
 Depending on how the feedback for this release candidate turns out, I'll
 either look into releasing 1.3.3 or fix any observed regressions and push
 out a second release candidate within the next couple of days.
