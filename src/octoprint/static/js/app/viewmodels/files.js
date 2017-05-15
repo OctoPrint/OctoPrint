@@ -841,13 +841,14 @@ $(function() {
 
             function evaluateDropzones() {
                 var enableLocal = self.loginState.isUser();
-                var enableSd = enableLocal && CONFIG_SD_SUPPORT && self.printerState.isSdReady();
+                var enableSd = enableLocal && CONFIG_SD_SUPPORT && self.printerState.isSdReady() && !self.isPrinting();
 
                 self._setDropzone("local", enableLocal);
                 self._setDropzone("sdcard", enableSd);
             }
             self.loginState.isUser.subscribe(evaluateDropzones);
             self.printerState.isSdReady.subscribe(evaluateDropzones);
+            self.isPrinting.subscribe(evaluateDropzones);
             evaluateDropzones();
 
             self.requestData();
@@ -1106,7 +1107,7 @@ $(function() {
             if (foundLocal) {
                 self.dropZoneLocalBackground.addClass("hover");
                 self.dropZoneSdBackground.removeClass("hover");
-            } else if (foundSd && self.printerState.isSdReady()) {
+            } else if (foundSd && self.printerState.isSdReady() && !self.isPrinting()) {
                 self.dropZoneSdBackground.addClass("hover");
                 self.dropZoneLocalBackground.removeClass("hover");
             } else if (found) {
