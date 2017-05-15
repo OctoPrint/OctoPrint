@@ -1070,13 +1070,17 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			            must_be_set=False)
 
 	def on_comm_print_job_done(self):
-		self._updateProgressData()
-		self._stateMonitor.set_state({"text": self.get_state_string(), "flags": self._getStateFlags()})
 		self._fileManager.delete_recovery_data()
 
 		payload = self._payload_for_print_job_event()
 		if payload:
 			payload["time"] = self._comm.getPrintTime()
+			self._updateProgressData(completion=1.0,
+			                         filepos=payload["size"],
+			                         printTime=payload["time"],
+			                         printTimeLeft=0)
+			self._stateMonitor.set_state({"text": self.get_state_string(), "flags": self._getStateFlags()})
+
 			eventManager().fire(Events.PRINT_DONE, payload)
 			self.script("afterPrintDone",
 			            context=dict(event=payload),
@@ -1088,6 +1092,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			                            payload["time"],
 			                            True,
 			                            self._printerProfileManager.get_current_or_default()["id"])
+		else:
+			self._updateProgressData()
+			self._stateMonitor.set_state({"text": self.get_state_string(), "flags": self._getStateFlags()})
+
 
 	def on_comm_print_job_failed(self):
 		payload = self._payload_for_print_job_event()
@@ -1134,7 +1142,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		self._sdStreaming = True
 
 		self._setJobData(filename, filesize, True)
-		self._updateProgressData()
+		self._updateProgressData(completion=0.0, filepos=0, printTime=0)
 		self._stateMonitor.set_state({"text": self.get_state_string(), "flags": self._getStateFlags()})
 
 	def on_comm_file_transfer_done(self, filename):
@@ -1162,6 +1170,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			self._logger.exception("Error while trying to persist print recovery data")
 
 	def _payload_for_print_job_event(self, location=None, print_job_file=None, position=None):
+		print_job_size = None
 		if print_job_file is None:
 			with self._selectedFileMutex:
 				selected_file = self._selectedFile
@@ -1169,9 +1178,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 					return dict()
 
 				print_job_file = selected_file.get("filename", None)
+				print_job_size = selected_file.get("filesize", None)
 				location = FileDestinations.SDCARD if selected_file.get("sd", False) else FileDestinations.LOCAL
 
-		if not print_job_file or not location:
+		if not print_job_file or not print_job_size or not location:
 			return dict()
 
 		if location == FileDestinations.SDCARD:
@@ -1190,6 +1200,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		result= dict(name=name,
 		             path=path,
 		             origin=origin,
+		             size=print_job_size,
 
 		             # TODO deprecated, remove in 1.4.0
 		             file=full_path,
