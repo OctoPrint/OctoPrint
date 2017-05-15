@@ -50,7 +50,7 @@
 
     <div data-bind="visible: loginState.isAdmin">
         <label class="checkbox">
-            <input type="checkbox" data-bind="checked: persist"> {{ _('Save as default') }}
+            <input type="checkbox" data-bind="checked: persist, enable: isOperational() && !isPrinting() && loginState.isUser()"> {{ _('Save as default') }}
             <span class="help-block">{{ _('Check this to make your selected timelapse mode and options persist across restarts.') }}</span>
         </label>
     </div>
