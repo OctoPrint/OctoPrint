@@ -17,9 +17,9 @@ import time
 
 from octoprint import util as util
 from octoprint.events import eventManager, Events
-from octoprint.filemanager import FileDestinations, NoSuchStorage
+from octoprint.filemanager import FileDestinations, NoSuchStorage, valid_file_type
 from octoprint.plugin import plugin_manager, ProgressPlugin
-from octoprint.printer import PrinterInterface, PrinterCallback, UnknownScript, InvalidFileLocation
+from octoprint.printer import PrinterInterface, PrinterCallback, UnknownScript, InvalidFileLocation, InvalidFileType
 from octoprint.printer.estimation import TimeEstimationHelper
 from octoprint.settings import settings
 from octoprint.util import comm as comm
@@ -846,6 +846,9 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		self._stateMonitor.add_temperature(data)
 
 	def _validateJob(self, filename, sd):
+		if not valid_file_type(filename, type="machinecode"):
+			raise InvalidFileType("{} is not a machinecode file, cannot print".format(filename))
+
 		if sd:
 			return
 
