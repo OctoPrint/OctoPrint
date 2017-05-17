@@ -34,6 +34,7 @@ import copy
 import time
 
 from builtins import bytes
+from past.builtins import basestring
 
 try:
 	from collections import ChainMap

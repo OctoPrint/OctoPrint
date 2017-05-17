@@ -9,6 +9,8 @@ import os
 import datetime
 import codecs
 
+from past.builtins import basestring
+
 from collections import defaultdict
 from flask import request, g, url_for, make_response, render_template, send_from_directory, redirect, abort
 

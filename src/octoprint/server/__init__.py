@@ -16,7 +16,9 @@ from babel import Locale
 from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
 from collections import defaultdict
+
 from builtins import bytes, range
+from past.builtins import basestring
 
 import os
 import logging

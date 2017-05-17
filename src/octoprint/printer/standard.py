@@ -15,6 +15,8 @@ import os
 import threading
 import time
 
+from past.builtins import basestring
+
 from octoprint import util as util
 from octoprint.events import eventManager, Events
 from octoprint.filemanager import FileDestinations, NoSuchStorage, valid_file_type

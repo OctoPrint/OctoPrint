@@ -20,6 +20,8 @@ from octoprint.util import atomic_write
 from contextlib import contextmanager
 from copy import deepcopy
 
+from past.builtins import basestring
+
 import octoprint.filemanager
 
 from octoprint.util import is_hidden_path

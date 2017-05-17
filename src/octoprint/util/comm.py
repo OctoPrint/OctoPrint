@@ -10,10 +10,13 @@ import glob
 import time
 import re
 import threading
+
 try:
 	import queue
 except ImportError:
 	import Queue as queue
+from past.builtins import basestring
+
 import logging
 import serial
 import octoprint.plugin
