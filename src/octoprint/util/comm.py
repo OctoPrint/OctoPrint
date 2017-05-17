@@ -2030,11 +2030,11 @@ class MachineCom(object):
 			else:
 				results = [(cmd, cmd_type, gcode)]
 
-			sent_something = False
-			for (cmd, cmd_type, gcode) in results:
+			# process helper
+			def process(cmd, cmd_type, gcode, on_sent=None):
 				if cmd is None:
 					# no command, next entry
-					continue
+					return False
 
 				if gcode and gcode in gcodeToEvent:
 					# if this is a gcode bound to an event, trigger that now
@@ -2045,9 +2045,30 @@ class MachineCom(object):
 					if not self.isStreaming():
 						# trigger the "queued" phase only if we are not streaming to sd right now
 						self._process_command_phase("queued", cmd, cmd_type, gcode=gcode)
-					sent_something = True
+					return True
+				else:
+					return False
 
-			return sent_something
+			# split off the final command, because that needs special treatment
+			if len(results) > 1:
+				last_command = results[-1]
+				results = results[:-1]
+			else:
+				last_command = results[0]
+				results = []
+
+			# track if we enqueued anything at all
+			enqueued_something = False
+
+			# process all but the last ...
+			for (cmd, cmd_type, gcode) in results:
+				enqueued_something = process(cmd, cmd_type, gcode) or enqueued_something
+
+			# ... and then process the last one with the on_sent callback attached
+			cmd, cmd_type, gcode = last_command
+			enqueued_something = process(cmd, cmd_type, gcode, on_sent=on_sent) or enqueued_something
+
+			return enqueued_something
 
 	##~~ send loop handling
 
@@ -2184,15 +2205,11 @@ class MachineCom(object):
 		self._log("Closing down send loop")
 
 	def _process_command_phase(self, phase, command, command_type=None, gcode=None):
-		if (self.isStreaming() and self.isPrinting()) or phase not in ("queuing", "queued", "sending", "sent"):
-			return command, command_type, gcode
-
 		if gcode is None:
 			gcode = gcode_command_for_cmd(command)
-
 		results = [(command, command_type, gcode)]
 
-		if phase not in ("queuing", "queued", "sending", "sent"):
+		if (self.isStreaming() and self.isPrinting()) or phase not in ("queuing", "queued", "sending", "sent"):
 			return results
 
 		# send it through the phase specific handlers provided by plugins
@@ -2206,7 +2223,7 @@ class MachineCom(object):
 				else:
 					normalized = _normalize_command_handler_result(command, command_type, gcode, hook_results)
 
-					# make sure we don't allow multi entry results in sending and sent phase
+					# make sure we don't allow multi entry results in anything but the queuing phase
 					if not phase in ("queuing",) and len(normalized) > 1:
 						self._logger.error("Error while processing hook {name} for phase {phase} and command {command}: Hook returned multi-entry result for phase {phase} and command {command}. That's not supported, if you need to do multi expansion of commands you need to do this in the queuing phase. Ignoring hook result and sending command as-is.".format(**locals()))
 						new_results.append((command, command_type, gcode))
