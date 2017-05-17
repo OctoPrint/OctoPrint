@@ -48,7 +48,7 @@ $(function() {
             return ("timed" == self.timelapseType());
         });
         self.saveButtonEnabled = ko.pureComputed(function() {
-            return self.isDirty() && self.isOperational() && !self.isPrinting() && self.loginState.isUser();
+            return self.isDirty() && !self.isPrinting() && self.loginState.isUser();
         });
 
         self.isOperational.subscribe(function() {

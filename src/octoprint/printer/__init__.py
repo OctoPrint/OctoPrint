@@ -299,6 +299,7 @@ class PrinterInterface(object):
 		        after the file is selected.
 
 		Raises:
+		    InvalidFileType: if the file is not a machinecode file and hence cannot be printed
 		    InvalidFileLocation: if an absolute path was provided and not contained within local storage or
 		        doesn't exist
 		"""
@@ -592,4 +593,7 @@ class UnknownScript(Exception):
 		self.name = name
 
 class InvalidFileLocation(Exception):
+	pass
+
+class InvalidFileType(Exception):
 	pass

@@ -123,8 +123,9 @@ $(function() {
         self.config_updateMethod = ko.observable();
         self.config_releaseChannel = ko.observable();
 
-        self.configurationDialog = $("#settings_plugin_softwareupdate_configurationdialog");
-        self.confirmationDialog = $("#softwareupdate_confirmation_dialog");
+        self.configurationDialog = undefined;
+        self.confirmationDialog = undefined;
+        self._updateClicked = false;
 
         self.config_availableCheckTypes = ko.observableArray([]);
         self.config_availableReleaseChannels = ko.observableArray([]);
@@ -357,7 +358,11 @@ $(function() {
                         }, {
                             text: gettext("Update now"),
                             addClass: "btn-primary",
-                            click: self.update
+                            click: function() {
+                                if (self._updateClicked) return;
+                                self._updateClicked = true;
+                                self.update();
+                            }
                         }]
                     };
                     options["buttons"] = {
@@ -501,8 +506,14 @@ $(function() {
         };
 
         self.update = function(force) {
-            if (self.updateInProgress) return;
-            if (!self.loginState.isAdmin()) return;
+            if (self.updateInProgress) {
+                self._updateClicked = false;
+                return;
+            }
+            if (!self.loginState.isAdmin()) {
+                self._updateClicked = false;
+                return;
+            }
 
             if (self.printerState.isPrinting()) {
                 self._showPopup({
@@ -510,6 +521,7 @@ $(function() {
                     text: gettext("A print job is currently in progress. Updating will be prevented until it is done."),
                     type: "error"
                 });
+                self._updateClicked = false;
             } else {
                 self.forceUpdate = (force == true);
                 self.confirmationDialog.modal("show");
@@ -518,9 +530,13 @@ $(function() {
         };
 
         self.confirmUpdate = function() {
-            self.confirmationDialog.modal("hide");
             self.performUpdate(self.forceUpdate,
                 _.map(self.availableAndPossible(), function(info) { return info.key }));
+            self.confirmationDialog.modal("hide");
+        };
+
+        self.confirmationHidden = function() {
+            self._updateClicked = false;
         };
 
         self._showWorkingDialog = function(title) {
@@ -578,6 +594,10 @@ $(function() {
         self.onStartup = function() {
             self.workingDialog = $("#settings_plugin_softwareupdate_workingdialog");
             self.workingOutput = $("#settings_plugin_softwareupdate_workingdialog_output");
+            self.configurationDialog = $("#settings_plugin_softwareupdate_configurationdialog");
+            self.confirmationDialog = $("#softwareupdate_confirmation_dialog");
+
+            self.confirmationDialog.on("hidden", self.confirmationHidden);
         };
 
         self.onServerDisconnect = function() {

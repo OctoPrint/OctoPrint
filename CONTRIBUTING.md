@@ -365,10 +365,16 @@ There are three main branches in OctoPrint:
     the `maintenance` branch and are now being pushed on the "Maintenance"
     pre release channel for further testing. Version number follows the scheme
     `<x>.<y>.<z>rc<n>` (e.g. `1.2.9rc1`).
+  * `staging/maintenance`: Any preparation for potential follow-up RCs takes place here.
+    Version number follows the scheme `<x>.<y>.<z>rc<n+1>.dev<commits since increase of n>` (e.g.
+    `1.2.9rc1.dev3`) for a current Maintenance RC of `<x>.<y>.<z>rc<n>`.
   * `rc/devel`: This branch is reserved for future releases that have graduated from
     the `devel` branch and are now being pushed on the "Devel" pre release channel
     for further testing. Version number follows the scheme `<x>.<y+1>.0rc<n>` (e.g. `1.3.0rc1`)
     for a current stable OctoPrint version of `<x>.<y>.<z>`.
+  * `staging/devel`: Any preparation for potential follow-up Devel RCs takes place
+    here. Version number follows the scheme `<x>.<y>.0rc<n+1>.dev<commits since increase of n>` (e.g.
+    `1.3.0rc1.dev12`) for a current Devel RC of `<x>.<y>.0rc<n>`.
 
 Additionally, from time to time you might see other branches pop up in the repository.
 Those usually have one of the following prefixes:

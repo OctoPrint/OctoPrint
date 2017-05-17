@@ -646,6 +646,7 @@ function showConfirmationDialog(msg, onacknowledge, options) {
     var proceed = options.proceed || gettext("Proceed");
     var proceedClass = options.proceedClass || "danger";
     var onproceed = options.onproceed || undefined;
+    var onclose = options.onclose || undefined;
     var dialogClass = options.dialogClass || "";
 
     var modalHeader = $('<a href="javascript:void(0)" class="close" data-dismiss="modal" aria-hidden="true">&times;</a><h3>' + title + '</h3>');
@@ -663,14 +664,19 @@ function showConfirmationDialog(msg, onacknowledge, options) {
         .append($('<div></div>').addClass('modal-header').append(modalHeader))
         .append($('<div></div>').addClass('modal-body').append(modalBody))
         .append($('<div></div>').addClass('modal-footer').append(cancelButton).append(proceedButton));
+    modal.on('hidden', function(event) {
+        if (onclose && _.isFunction(onclose)) {
+            onclose(event);
+        }
+    });
     modal.modal("show");
 
     proceedButton.click(function(e) {
         e.preventDefault();
-        modal.modal("hide");
         if (onproceed && _.isFunction(onproceed)) {
             onproceed(e);
         }
+        modal.modal("hide");
     });
 
     return modal;
