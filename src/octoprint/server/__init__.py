@@ -550,7 +550,7 @@ class Server(object):
 			                             "on_shutdown",
 			                             sorting_context="ShutdownPlugin.on_shutdown")
 
-			# wait for shutdown even to be processed, but maximally for 15s
+			# wait for shutdown event to be processed, but maximally for 15s
 			event_timeout = 15.0
 			if eventManager.join(timeout=event_timeout):
 				self._logger.warn("Event loop was still busy processing after {}s, shutting down anyhow".format(event_timeout))
@@ -565,13 +565,16 @@ class Server(object):
 		def sigterm_handler(*args, **kwargs):
 			# will stop tornado on SIGTERM, making the program exit cleanly
 			def shutdown_tornado():
+				self._logger.debug("Shutting down tornado's IOLoop...")
 				ioloop.stop()
+			self._logger.debug("SIGTERM received...")
 			ioloop.add_callback_from_signal(shutdown_tornado)
 		signal.signal(signal.SIGTERM, sigterm_handler)
 
 		try:
 			# this is the main loop - as long as tornado is running, OctoPrint is running
 			ioloop.start()
+			self._logger.debug("Tornado's IOLoop stopped")
 		except (KeyboardInterrupt, SystemExit):
 			pass
 		except:
