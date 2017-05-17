@@ -1,11 +1,21 @@
 # OctoPrint Changelog
 
+## 1.3.3rc2 (2017-05-17)
+
+### Bug fixes
+
+  * [#1917](https://github.com/foosel/OctoPrint/issues/1917) (regression) - Fix job data resetting on print job completion.
+  * [#1918](https://github.com/foosel/OctoPrint/issues/1918) (regression) - Fix "save as default" checkbox not being disabled when other controls are disabled.
+  * [#1919](https://github.com/foosel/OctoPrint/issues/1919) (regression) - Fix call to no longer existing function in Plugin Manager UI.
+
+([Commits](https://github.com/foosel/OctoPrint/compare/1.3.3rc1...1.3.3rc2))
+
 ## 1.3.3rc1 (2017-05-11)
 
 ### Improvements
 
-  * [#478](https://github.com/foosel/OctoPrint/issues/478) - Made webcam stream contained fixed height (with selectable aspect ratio) to prevent jumps of the controls beneath it on load.
-  * [#748](https://github.com/foosel/OctoPrint/issues/748) - Added delete confirmation and bulk delete for timelapses. See also the discussion in brainstorming ticket [#1807].(https://github.com/foosel/OctoPrint/issues/1807).
+  * [#478](https://github.com/foosel/OctoPrint/issues/478) - Made webcam stream container fixed height (with selectable aspect ratio) to prevent jumps of the controls beneath it on load.
+  * [#748](https://github.com/foosel/OctoPrint/issues/748) - Added delete confirmation and bulk delete for timelapses. See also the discussion in brainstorming ticket [#1807](https://github.com/foosel/OctoPrint/issues/1807).
   * [#1092](https://github.com/foosel/OctoPrint/issues/1092) - Added new event to the file manager: `FileAdded`, `FileRemoved`, `FolderAdded`, `FolderRemoved`. Contrary to the `Upload` event, `FileAdded` will always fire when a file was added to storage through the file manager, not only when added through the web interface. Extended documentation accordingly.
   * [#1521](https://github.com/foosel/OctoPrint/issues/1521) - Software update plugin: Display timestamp of last version cache refresh in "Advanced options" area.
   * [#1734](https://github.com/foosel/OctoPrint/issues/1734) - Treat default/initial printer profile like all other printer profiles, persisting it to disk instead of `config.yaml` and allowing deletion. OctoPrint will migrate the existing default profile to the new location on first start.

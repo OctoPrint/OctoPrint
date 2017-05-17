@@ -526,13 +526,11 @@ $(function() {
             if (reinstall) {
                 OctoPrint.plugins.pluginmanager.reinstall(reinstall, url, followDependencyLinks)
                     .done(onSuccess)
-                    .fail(onError)
-                    .always(onAlways);
+                    .fail(onError);
             } else {
                 OctoPrint.plugins.pluginmanager.install(url, followDependencyLinks)
                     .done(onSuccess)
-                    .fail(onError)
-                    .always(onAlways);
+                    .fail(onError);
             }
         };
 
