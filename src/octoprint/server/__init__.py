@@ -1097,6 +1097,7 @@ class Server(object):
 			"css/bootstrap-modal.css",
 			"css/bootstrap-slider.css",
 			"css/bootstrap-tabdrop.css",
+			"css/font-awesome3.min.css",
 			"css/font-awesome.min.css",
 			"css/jquery.fileupload-ui.css",
 			"css/pnotify.core.min.css",
