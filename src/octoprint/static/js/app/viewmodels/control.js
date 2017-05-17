@@ -442,6 +442,7 @@ $(function() {
                 self.additionalControls = additionalControls;
                 self.rerenderControls();
             }
+            self._enableWebcam();
         };
 
         self.onFocus = function (data, event) {
