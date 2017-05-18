@@ -27,8 +27,8 @@
  * -------------------------- */
 @font-face {
   font-family: 'FontAwesome3';
-  src: url('../assets/vendor/font-awesome-3.2.1/font/fontawesome-webfont.eot?v=3.2.1');
-  src: url('../assets/vendor/font-awesome-3.2.1/font/fontawesome-webfont.eot?#iefix&v=3.2.1') format('embedded-opentype'), url('../assets/vendor/font-awesome-3.2.1/font/fontawesome-webfont.woff?v=3.2.1') format('woff'), url('../assets/vendor/font-awesome-3.2.1/font/fontawesome-webfont.ttf?v=3.2.1') format('truetype'), url('../assets/vendor/font-awesome-3.2.1/font/fontawesome-webfont.svg#fontawesomeregular?v=3.2.1') format('svg');
+  src: url('../fonts/fontawesome-webfont.eot?v=3.2.1');
+  src: url('../fonts/fontawesome-webfont.eot?#iefix&v=3.2.1') format('embedded-opentype'), url('../fonts/fontawesome-webfont.woff?v=3.2.1') format('woff'), url('../fonts/fontawesome-webfont.ttf?v=3.2.1') format('truetype'), url('../fonts/fontawesome-webfont.svg#fontawesomeregular?v=3.2.1') format('svg');
   font-weight: normal;
   font-style: normal;
 }
@@ -49,7 +49,7 @@
   display: inline-block;
   speak: none;
 }
-/* makes the font 33% larger relative to the icon container */
+/* makes the fonts 33% larger relative to the icon container */
 .icon-large:before {
   vertical-align: -10%;
   font-size: 1.33333333em;
@@ -59,7 +59,7 @@ a [class^="icon-"],
 a [class*=" icon-"] {
   display: inline;
 }
-/* increased font size for icon-large */
+/* increased fonts size for icon-large */
 [class^="icon-"].icon-fixed-width,
 [class*=" icon-"].icon-fixed-width {
   display: inline-block;

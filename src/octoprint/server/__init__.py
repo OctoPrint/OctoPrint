@@ -1100,8 +1100,8 @@ class Server(object):
 			"css/bootstrap-modal.css",
 			"css/bootstrap-slider.css",
 			"css/bootstrap-tabdrop.css",
-			"css/font-awesome3.min.css",
-			"css/font-awesome.min.css",
+			"assets/vendor/font-awesome-3.2.1/css/font-awesome.min.css",
+			"assets/vendor/font-awesome-4.7.0/css/font-awesome.min.css",
 			"css/jquery.fileupload-ui.css",
 			"css/pnotify.core.min.css",
 			"css/pnotify.buttons.min.css",
@@ -1156,7 +1156,7 @@ class Server(object):
 		js_app_bundle = Bundle(js_plugins_bundle, js_core_bundle, output="webassets/packed_app.js", filters="js_delimiter_bundler")
 
 		# CSS
-		css_libs_bundle = Bundle(*css_libs, output="webassets/packed_libs.css")
+		css_libs_bundle = Bundle(*css_libs, output="webassets/packed_libs.css", filters="cssrewrite")
 
 		if len(css_core) == 0:
 			css_core_bundle = Bundle(*[])
