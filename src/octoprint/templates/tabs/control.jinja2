@@ -17,7 +17,7 @@
             </div>
         </div>
         <div class="keycontrol_overlay" data-bind="visible: showKeycontrols">
-            <div class="keycontrol_overlay_heading">{{ _("Keyboard controls active") }} <a href="#" data-bind="click: toggleKeycontrolHelp"><i data-bind="css: { 'icon-chevron-down': !keycontrolHelpActive(), 'icon-chevron-up': keycontrolHelpActive() }"></i></a></div>
+            <div class="keycontrol_overlay_heading">{{ _("Keyboard controls active") }} <a href="#" data-bind="click: toggleKeycontrolHelp"><i class="fa" data-bind="css: { 'fa-chevron-down': !keycontrolHelpActive(), 'fa-chevron-up': keycontrolHelpActive() }"></i></a></div>
             <div data-bind="visible: keycontrolHelpActive">
                 <div class="keycontrol_overlay_column">
                     <kbd>&rarr;</kbd> / <kbd>&larr;</kbd>: {{ _("X Axis") }} +/-<br>
@@ -42,28 +42,28 @@
     <div id="control-jog-xy" class="jog-panel">
         <h1>X/Y</h1>
         <div>
-            <button id="control-yinc" class="btn box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('y',1) }"><i class="icon-arrow-up"></i></button>
+            <button id="control-yinc" class="btn box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('y',1) }"><i class="fa fa-arrow-up"></i></button>
         </div>
         <div>
-            <button id="control-xdec" class="btn box pull-left" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('x',-1) }"><i class="icon-arrow-left"></i></button>
-            <button id="control-xyhome" class="btn box pull-left" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendHomeCommand(['x', 'y']) }"><i class="icon-home"></i></button>
-            <button id="control-xinc" class="btn box pull-left" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('x',1) }"><i class="icon-arrow-right"></i></button>
+            <button id="control-xdec" class="btn box pull-left" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('x',-1) }"><i class="fa fa-arrow-left"></i></button>
+            <button id="control-xyhome" class="btn box pull-left" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendHomeCommand(['x', 'y']) }"><i class="fa fa-home"></i></button>
+            <button id="control-xinc" class="btn box pull-left" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('x',1) }"><i class="fa fa-arrow-right"></i></button>
         </div>
         <div>
-            <button id="control-ydec" class="btn box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('y',-1) }"><i class="icon-arrow-down"></i></button>
+            <button id="control-ydec" class="btn box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('y',-1) }"><i class="fa fa-arrow-down"></i></button>
         </div>
     </div>
     <!-- Z jogging control panel -->
     <div id="control-jog-z" class="jog-panel">
         <h1>Z</h1>
         <div>
-            <button id="control-zinc" class="btn box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('z',1) }"><i class="icon-arrow-up"></i></button>
+            <button id="control-zinc" class="btn box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('z',1) }"><i class="fa fa-arrow-up"></i></button>
         </div>
         <div>
-            <button id="control-zhome" class="btn box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendHomeCommand(['z']) }"><i class="icon-home"></i></button>
+            <button id="control-zhome" class="btn box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendHomeCommand(['z']) }"><i class="fa fa-home"></i></button>
         </div>
         <div>
-            <button id="control-zdec" class="btn box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('z',-1) }"><i class="icon-arrow-down"></i></button>
+            <button id="control-zdec" class="btn box" data-bind="enable: isOperational() && !isPrinting() && loginState.isUser(), click: function() { $root.sendJogCommand('z',-1) }"><i class="fa fa-arrow-down"></i></button>
         </div>
     </div>
 
@@ -128,7 +128,7 @@
 </script>
 <script type="text/html" id="customControls_containerTemplate_collapsable">
     <div class="custom_section">
-        <h1 data-bind="toggleContent: { class: 'icon-caret-right icon-caret-down', parent: '.custom_section', container: '> div' }"><i data-bind="css: {'icon-caret-down': !collapsed, 'icon-caret-right': collapsed}"></i> <span data-bind="text: name"></span></h1>
+        <h1 class="fa" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', parent: '.custom_section', container: '> div' }"><i class="fa" data-bind="css: {'fa-caret-down': !collapsed, 'fa-caret-right': collapsed}"></i> <span data-bind="text: name"></span></h1>
         <!-- ko template: { name: 'customControls_containerTemplate', data: $data } --><!-- /ko -->
     </div>
 </script>
