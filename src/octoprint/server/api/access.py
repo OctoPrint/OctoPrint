@@ -1,10 +1,6 @@
 # coding=utf-8
 from __future__ import absolute_import, division, print_function
 
-__author__ = "Gina Häußge <osd@foosel.net>"
-__license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
-__copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
-
 from flask import request, jsonify, abort, make_response
 from werkzeug.exceptions import BadRequest
 from flask_login import current_user
@@ -17,10 +13,15 @@ from octoprint.server.api import api, valid_boolean_trues
 from octoprint.server.util.flask import restricted_access
 from octoprint.access.permissions import Permissions
 
+__author__ = "Marc Hannappel <salandora@gmail.com>"
+__license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
+__copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
+
+
 #~~ permission api
 
 @api.route("/access/permissions", methods=["GET"])
-def getPermissions():
+def get_permissions():
 	return jsonify({"permissions": permissionManager.permissions})
 
 #~~ group api
@@ -28,13 +29,14 @@ def getPermissions():
 @api.route("/access/groups", methods=["GET"])
 @restricted_access
 @Permissions.SETTINGS.require(403)
-def getGroups():
+def get_groups():
 	return jsonify({"groups": groupManager.groups})
+
 
 @api.route("/access/groups", methods=["POST"])
 @restricted_access
 @Permissions.SETTINGS.require(403)
-def addGroup():
+def add_group():
 	if not "application/json" in request.headers["Content-Type"]:
 		return make_response("Expected content-type JSON", 400)
 
@@ -57,11 +59,11 @@ def addGroup():
 		groupManager.add_group(name, description=description, permissions=permissions, default=default)
 	except groups.GroupAlreadyExists:
 		abort(409)
-	return getGroups()
+	return get_groups()
 
 
 @api.route("/access/groups/<groupname>", methods=["GET"])
-def getGroup(groupname):
+def get_group(groupname):
 	group = groupManager.find_group(groupname)
 	if group is not None:
 		return jsonify(group)
@@ -72,10 +74,10 @@ def getGroup(groupname):
 @api.route("/access/groups/<groupname>", methods=["PUT"])
 @restricted_access
 @Permissions.SETTINGS.require(403)
-def updateGroup(groupname):
+def update_group(groupname):
 	group = groupManager.find_group(groupname)
 	if group is not None:
-		if not "application/json" in request.headers["Content-Type"]:
+		if "application/json" not in request.headers["Content-Type"]:
 			return make_response("Expected content-type JSON", 400)
 
 		try:
@@ -95,7 +97,7 @@ def updateGroup(groupname):
 			if "description" in data:
 				groupManager.change_group_description(groupname, data["description"])
 
-			return getGroups()
+			return get_groups()
 		except groups.GroupCantbeChanged:
 			abort(403)
 	else:
@@ -105,10 +107,10 @@ def updateGroup(groupname):
 @api.route("/access/groups/<groupname>", methods=["DELETE"])
 @restricted_access
 @Permissions.SETTINGS.require(403)
-def removeGroup(groupname):
+def remove_group(groupname):
 	try:
 		groupManager.remove_group(groupname)
-		return getGroups()
+		return get_groups()
 	except groups.UnknownGroup:
 		abort(404)
 	except groups.GroupUnremovable:
@@ -119,7 +121,7 @@ def removeGroup(groupname):
 @api.route("/access/users", methods=["GET"])
 @restricted_access
 @Permissions.SETTINGS.require(403)
-def getUsers():
+def get_users():
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
 
@@ -129,7 +131,7 @@ def getUsers():
 @api.route("/access/users", methods=["POST"])
 @restricted_access
 @Permissions.SETTINGS.require(403)
-def addUser():
+def add_user():
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
 
@@ -166,12 +168,12 @@ def addUser():
 		userManager.addUser(name, password, active, permissions, groups)
 	except users.UserAlreadyExists:
 		abort(409)
-	return getUsers()
+	return get_users()
 
 
 @api.route("/access/users/<username>", methods=["GET"])
 @restricted_access
-def getUser(username):
+def get_user(username):
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
 
@@ -188,7 +190,7 @@ def getUser(username):
 @api.route("/access/users/<username>", methods=["PUT"])
 @restricted_access
 @Permissions.SETTINGS.require(403)
-def updateUser(username):
+def update_user(username):
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
 
@@ -220,7 +222,7 @@ def updateUser(username):
 		if "active" in data:
 			userManager.changeUserActivation(username, data["active"] in valid_boolean_trues)
 
-		return getUsers()
+		return get_users()
 	else:
 		abort(404)
 
@@ -228,20 +230,20 @@ def updateUser(username):
 @api.route("/access/users/<username>", methods=["DELETE"])
 @restricted_access
 @Permissions.SETTINGS.require(403)
-def removeUser(username):
+def remove_user(username):
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
 
 	try:
 		userManager.removeUser(username)
-		return getUsers()
+		return get_users()
 	except users.UnknownUser:
 		abort(404)
 
 
 @api.route("/access/users/<username>/password", methods=["PUT"])
 @restricted_access
-def changePasswordForUser(username):
+def change_password_for_user(username):
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
 
@@ -272,7 +274,7 @@ def changePasswordForUser(username):
 
 @api.route("/access/users/<username>/settings", methods=["GET"])
 @restricted_access
-def getSettingsForUser(username):
+def get_settings_for_user(username):
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
 
@@ -286,7 +288,7 @@ def getSettingsForUser(username):
 
 @api.route("/access/users/<username>/settings", methods=["PATCH"])
 @restricted_access
-def changeSettingsForUser(username):
+def change_settings_for_user(username):
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
 
@@ -309,7 +311,7 @@ def changeSettingsForUser(username):
 
 @api.route("/access/users/<username>/apikey", methods=["DELETE"])
 @restricted_access
-def deleteApikeyForUser(username):
+def delete_apikey_for_user(username):
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
 
@@ -325,7 +327,7 @@ def deleteApikeyForUser(username):
 
 @api.route("/access/users/<username>/apikey", methods=["POST"])
 @restricted_access
-def generateApikeyForUser(username):
+def generate_apikey_for_user(username):
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
 
