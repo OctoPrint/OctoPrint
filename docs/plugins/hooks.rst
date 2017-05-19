@@ -396,7 +396,8 @@ This describes actually four hooks:
 
      * ``queuing``: This phase is triggered just before the command is added to the send queue of the communication layer. This
        corresponds to the moment a command is being read from a file that is currently being printed. Handlers
-       may suppress or change commands or their command type here.
+       may suppress or change commands or their command type here. This is the only phase that supports multi command
+       expansion by having the handler return a list, see below for details.
      * ``queued``: This phase is triggered just after the command was added to the send queue of the communication layer.
        No manipulation is possible here anymore (returned values will be ignored).
      * ``sending``: This phase is triggered just before the command is actually being sent to the printer. Right afterwards
@@ -450,6 +451,21 @@ This describes actually four hooks:
        should use this option.
      * A 2-tuple consisting of a rewritten version of the ``cmd`` and the ``cmd_type``, e.g. ``return "M105", "temperature_poll"``.
        Handlers which wish to rewrite both the command and the command type should use this option.
+     * **``queuing`` phase only**: A list of any of the above to allow for expanding one command into
+       many. The following example shows how any queued command could be turned into a sequence of a temperature query,
+       line number reset, display of the ``gcode`` on the printer's display and finally the actual command (this example
+       does not make a lot of sense to be quiet honest):
+
+       .. code-block:: python
+
+          def multi_expansion(*args, **kwargs):
+              return [("M105", "temperature_poll"),
+                      ("M110",),
+                      "M117 GCODE: {}".format(gcode),
+                      (command, command_type)]
+
+     Note: Only one command of a given ``cmd_type`` (other than None) may be queued at a time. Trying to rewrite the ``cmd_type``
+     to one already in the queue will give an error.
 
    **Example**
 

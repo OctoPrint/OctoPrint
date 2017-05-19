@@ -10,10 +10,13 @@ import glob
 import time
 import re
 import threading
+
 try:
 	import queue
 except ImportError:
 	import Queue as queue
+from past.builtins import basestring
+
 import logging
 import serial
 import octoprint.plugin
@@ -2021,23 +2024,55 @@ class MachineCom(object):
 
 			gcode = None
 
-			# trigger the "queuing" phase only if we are not streaming to sd right now
-			cmd, cmd_type, gcode = self._process_command_phase("queuing", cmd, cmd_type, gcode=gcode)
+			if not self.isStreaming():
+				# trigger the "queuing" phase only if we are not streaming to sd right now
+				results = self._process_command_phase("queuing", cmd, cmd_type, gcode=gcode)
 
-			if cmd is None:
-				# command is no more, return
-				return False
-
-			if not self.isStreaming() and gcode and gcode in gcodeToEvent:
-				# if this is a gcode bound to an event, trigger that now
-				eventManager().fire(gcodeToEvent[gcode])
-
-			# actually enqueue the command for sending
-			if self._enqueue_for_sending(cmd, command_type=cmd_type, on_sent=on_sent):
-				self._process_command_phase("queued", cmd, cmd_type, gcode=gcode)
-				return True
+				if not results:
+					# commnd is no more, return
+					return False
 			else:
-				return False
+				results = [(cmd, cmd_type, gcode)]
+
+			# process helper
+			def process(cmd, cmd_type, gcode, on_sent=None):
+				if cmd is None:
+					# no command, next entry
+					return False
+
+				if gcode and gcode in gcodeToEvent:
+					# if this is a gcode bound to an event, trigger that now
+					eventManager().fire(gcodeToEvent[gcode])
+
+				# actually enqueue the command for sending
+				if self._enqueue_for_sending(cmd, command_type=cmd_type, on_sent=on_sent):
+					if not self.isStreaming():
+						# trigger the "queued" phase only if we are not streaming to sd right now
+						self._process_command_phase("queued", cmd, cmd_type, gcode=gcode)
+					return True
+				else:
+					return False
+
+			# split off the final command, because that needs special treatment
+			if len(results) > 1:
+				last_command = results[-1]
+				results = results[:-1]
+			else:
+				last_command = results[0]
+				results = []
+
+			# track if we enqueued anything at all
+			enqueued_something = False
+
+			# process all but the last ...
+			for (cmd, cmd_type, gcode) in results:
+				enqueued_something = process(cmd, cmd_type, gcode) or enqueued_something
+
+			# ... and then process the last one with the on_sent callback attached
+			cmd, cmd_type, gcode = last_command
+			enqueued_something = process(cmd, cmd_type, gcode, on_sent=on_sent) or enqueued_something
+
+			return enqueued_something
 
 	##~~ send loop handling
 
@@ -2097,9 +2132,9 @@ class MachineCom(object):
 
 					else:
 						# trigger "sending" phase
-						command, _, gcode = self._process_command_phase("sending", command, command_type, gcode=gcode)
+						results = self._process_command_phase("sending", command, command_type, gcode=gcode)
 
-						if command is None:
+						if not results:
 							# No, we are not going to send this, that was a last-minute bail.
 							# However, since we already are in the send queue, our _monitor
 							# loop won't be triggered with the reply from this unsent command
@@ -2109,6 +2144,15 @@ class MachineCom(object):
 
 							# and now let's fetch the next item from the queue
 							continue
+
+						# we explicitly throw away plugin hook results that try
+						# to perform command expansion in the sending/sent phase,
+						# so "results" really should only have more than one entry
+						# at this point if our core code contains a bug
+						assert len(results) == 1
+
+						# we only use the first (and only!) entry here
+						command, _, gcode = results[0]
 
 						if command.strip() == "":
 							self._logger.info("Refusing to send an empty line to the printer")
@@ -2165,67 +2209,61 @@ class MachineCom(object):
 		self._log("Closing down send loop")
 
 	def _process_command_phase(self, phase, command, command_type=None, gcode=None):
-		if (self.isStreaming() and self.isPrinting()) or phase not in ("queuing", "queued", "sending", "sent"):
-			return command, command_type, gcode
-
 		if gcode is None:
 			gcode = gcode_command_for_cmd(command)
+		results = [(command, command_type, gcode)]
+
+		if (self.isStreaming() and self.isPrinting()) or phase not in ("queuing", "queued", "sending", "sent"):
+			return results
 
 		# send it through the phase specific handlers provided by plugins
 		for name, hook in self._gcode_hooks[phase].items():
-			try:
-				hook_result = hook(self, phase, command, command_type, gcode)
-			except:
-				self._logger.exception("Error while processing hook {name} for phase {phase} and command {command}:".format(**locals()))
-			else:
-				command, command_type, gcode = self._handle_command_handler_result(command, command_type, gcode, hook_result)
-				if command is None:
-					# hook handler return None as command, so we'll stop here and return a full out None result
-					return None, None, None
+			new_results = []
+			for command, command_type, gcode in results:
+				try:
+					hook_results = hook(self, phase, command, command_type, gcode)
+				except:
+					self._logger.exception("Error while processing hook {name} for phase {phase} and command {command}:".format(**locals()))
+				else:
+					normalized = _normalize_command_handler_result(command, command_type, gcode, hook_results)
+
+					# make sure we don't allow multi entry results in anything but the queuing phase
+					if not phase in ("queuing",) and len(normalized) > 1:
+						self._logger.error("Error while processing hook {name} for phase {phase} and command {command}: Hook returned multi-entry result for phase {phase} and command {command}. That's not supported, if you need to do multi expansion of commands you need to do this in the queuing phase. Ignoring hook result and sending command as-is.".format(**locals()))
+						new_results.append((command, command_type, gcode))
+					else:
+						new_results += normalized
+			if not new_results:
+				# hook handler returned None or empty list for all commands, so we'll stop here and return a full out empty result
+				return []
+			results = new_results
 
 		# if it's a gcode command send it through the specific handler if it exists
-		if gcode is not None:
-			gcodeHandler = "_gcode_" + gcode + "_" + phase
-			if hasattr(self, gcodeHandler):
-				handler_result = getattr(self, gcodeHandler)(command, cmd_type=command_type)
-				command, command_type, gcode = self._handle_command_handler_result(command, command_type, gcode, handler_result)
+		new_results = []
+		for command, command_type, gcode in results:
+			if gcode is not None:
+				gcode_handler = "_gcode_" + gcode + "_" + phase
+				if hasattr(self, gcode_handler):
+					handler_results = getattr(self, gcode_handler)(command, cmd_type=command_type)
+					new_results += _normalize_command_handler_result(command, command_type, gcode, handler_results)
+				else:
+					new_results.append((command, command_type, gcode))
+		if not new_results:
+			# gcode handler returned None or empty list for all commands, so we'll stop here and return a full out empty result
+			return []
+		results = new_results
 
 		# send it through the phase specific command handler if it exists
-		commandPhaseHandler = "_command_phase_" + phase
-		if hasattr(self, commandPhaseHandler):
-			handler_result = getattr(self, commandPhaseHandler)(command, cmd_type=command_type, gcode=gcode)
-			command, command_type, gcode = self._handle_command_handler_result(command, command_type, gcode, handler_result)
+		command_phase_handler = "_command_phase_" + phase
+		if hasattr(self, command_phase_handler):
+			new_results = []
+			for command, command_type, gcode in results:
+				handler_results = getattr(self, command_phase_handler)(command, cmd_type=command_type, gcode=gcode)
+				new_results += _normalize_command_handler_result(command, command_type, gcode, handler_results)
+			results = new_results
 
 		# finally return whatever we resulted on
-		return command, command_type, gcode
-
-	def _handle_command_handler_result(self, command, command_type, gcode, handler_result):
-		original_tuple = (command, command_type, gcode)
-
-		if handler_result is None:
-			# handler didn't return anything, we'll just continue
-			return original_tuple
-
-		if isinstance(handler_result, basestring):
-			# handler did return just a string, we'll turn that into a 1-tuple now
-			handler_result = (handler_result,)
-		elif not isinstance(handler_result, (tuple, list)):
-			# handler didn't return an expected result format, we'll just ignore it and continue
-			return original_tuple
-
-		hook_result_length = len(handler_result)
-		if hook_result_length == 1:
-			# handler returned just the command
-			command, = handler_result
-		elif hook_result_length == 2:
-			# handler returned command and command_type
-			command, command_type = handler_result
-		else:
-			# handler returned a tuple of an unexpected length
-			return original_tuple
-
-		gcode = gcode_command_for_cmd(command)
-		return command, command_type, gcode
+		return results
 
 	##~~ actual sending via serial
 
@@ -3105,6 +3143,120 @@ def gcode_command_for_cmd(cmd):
 	else:
 		# this should never happen
 		return None
+
+
+def _normalize_command_handler_result(command, command_type, gcode, handler_results):
+	"""
+	Normalizes a command handler result.
+
+	Handler results can be either ``None``, a single result entry or a list of result
+	entries.
+
+	``None`` results are ignored, the provided ``command``, ``command_type``
+	and ``gcode`` are returned in that case (as single-entry list with one
+	3-tuple as entry).
+
+	Single result entries are either:
+
+	  * a single string defining a replacement ``command``
+	  * a 1-tuple defining a replacement ``command``
+	  * a 2-tuple defining a replacement ``command`` and ``command_type``
+
+	A ``command`` that is ``None`` will lead to the entry being ignored for
+	the normalized result.
+
+	The method returns a list of normalized result entries. Normalized result
+	entries always are a 3-tuple consisting of ``command``, ``command_type``
+	and ``gcode``, the latter two being allowed to be ``None``. The list may
+	be empty in which case the command is to be suppressed.
+
+	Examples:
+	    >>> _normalize_command_handler_result("M105", None, "M105", None)
+	    [('M105', None, 'M105')]
+	    >>> _normalize_command_handler_result("M105", None, "M105", "M110")
+	    [('M110', None, 'M110')]
+	    >>> _normalize_command_handler_result("M105", None, "M105", ["M110"])
+	    [('M110', None, 'M110')]
+	    >>> _normalize_command_handler_result("M105", None, "M105", ["M110", "M117 Foobar"])
+	    [('M110', None, 'M110'), ('M117 Foobar', None, 'M117')]
+	    >>> _normalize_command_handler_result("M105", None, "M105", [("M110",), "M117 Foobar"])
+	    [('M110', None, 'M110'), ('M117 Foobar', None, 'M117')]
+	    >>> _normalize_command_handler_result("M105", None, "M105", [("M110", "lineno_reset"), "M117 Foobar"])
+	    [('M110', 'lineno_reset', 'M110'), ('M117 Foobar', None, 'M117')]
+	    >>> _normalize_command_handler_result("M105", None, "M105", [])
+	    []
+	    >>> _normalize_command_handler_result("M105", None, "M105", ["M110", None])
+	    [('M110', None, 'M110')]
+	    >>> _normalize_command_handler_result("M105", None, "M105", [("M110",), (None, "ignored")])
+	    [('M110', None, 'M110')]
+	    >>> _normalize_command_handler_result("M105", None, "M105", [("M110",), ("M117 Foobar", "display_message"), ("tuple", "of unexpected", "length"), ("M110", "lineno_reset")])
+	    [('M110', None, 'M110'), ('M117 Foobar', 'display_message', 'M117'), ('M110', 'lineno_reset', 'M110')]
+
+	Arguments:
+	    command (str or None): The command for which the handler result was
+	        generated
+	    command_type (str or None): The command type for which the handler
+	        result was generated
+	    gcode (str or None): The GCODE for which the handler result was
+	        generated
+	    handler_results: The handler result(s) to normalized. Can be either
+	        a single result entry or a list of result entries.
+
+	Returns:
+	    (list) - A list of normalized handler result entries, which are
+	        3-tuples consisting of ``command``, ``command_type`` and
+	        ``gcode``, the latter two of which may be ``None``.
+	"""
+
+	original = (command, command_type, gcode)
+
+	if handler_results is None:
+		# handler didn't return anything, we'll just continue
+		return [original]
+
+	if not isinstance(handler_results, list):
+		handler_results = [handler_results,]
+
+	result = []
+	for handler_result in handler_results:
+		# we iterate over all handler result entries and process each one
+		# individually here
+
+		if handler_result is None:
+			# entry is None, we'll ignore that entry and continue
+			continue
+
+		if isinstance(handler_result, basestring):
+			# entry is just a string, replace command with it
+			command = handler_result
+			gcode = gcode_command_for_cmd(command)
+			result.append((command, command_type, gcode))
+
+		elif isinstance(handler_result, tuple):
+			# entry is a tuple, extract command and command_type
+			hook_result_length = len(handler_result)
+			if hook_result_length == 1:
+				# handler returned just the command
+				command, = handler_result
+			elif hook_result_length == 2:
+				# handler returned command and command_type
+				command, command_type = handler_result
+			else:
+				# handler returned a tuple of an unexpected length, ignore
+				# and continue
+				continue
+
+			if command is None:
+				# command is None, ignore it and continue
+				continue
+
+			gcode = gcode_command_for_cmd(command)
+			result.append((command, command_type, gcode))
+
+		# reset to original
+		command, command_type, gcode = original
+
+	return result
 
 
 # --- Test code for speed testing the comm layer via command line follows

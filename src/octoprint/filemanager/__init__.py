@@ -20,6 +20,8 @@ from .util import AbstractFileWrapper, StreamWrapper, DiskFileWrapper
 
 from collections import namedtuple
 
+from past.builtins import basestring
+
 ContentTypeMapping = namedtuple("ContentTypeMapping", "extensions, content_type")
 ContentTypeDetector = namedtuple("ContentTypeDetector", "extensions, detector")
 

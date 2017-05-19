@@ -13,7 +13,7 @@
     {% include "snippets/settings/webcam/ffmpegPath.jinja2" %}
     {% include "snippets/settings/webcam/watermark.jinja2" %}
     <div>
-        <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'icon-caret-right icon-caret-down', parent: '.form-horizontal', container: '.hide' }"><i class="icon-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
+        <div><small><a href="#" class="muted fa" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', parent: '.form-horizontal', container: '.hide' }"><i class="icon-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
         <div class="hide">
             {% include "snippets/settings/webcam/ffmpegBitrate.jinja2" %}
             {% include "snippets/settings/webcam/ffmpegThreads.jinja2" %}

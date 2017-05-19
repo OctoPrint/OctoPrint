@@ -1,6 +1,6 @@
 <div class="alert" data-bind="visible: octoprintUnconfigured()">{% trans %}
     Please configure the <strong>checkout folder</strong> of OctoPrint, otherwise
-    this plugin won't be able to update it. Click on the <i class="icon-wrench"></i> button
+    this plugin won't be able to update it. Click on the <i class="fa fa-wrench"></i> button
     to do this. Also refer to the <a href="https://github.com/foosel/OctoPrint/wiki/Plugin:-Software-Update" target="_blank">Documentation</a>.
 {% endtrans %}</div>
 <div class="alert" data-bind="visible: !octoprintUnconfigured() && octoprintUnreleased()">{% trans %}
@@ -17,7 +17,7 @@
 {% endtrans %}</div>
 
 <div class="pull-right">
-    <button class="btn btn-small" data-bind="click: function() { $root.showPluginSettings(); }" title="{{ _('Plugin Configuration') }}"><i class="icon-wrench"></i></button>
+    <button class="btn btn-small" data-bind="click: function() { $root.showPluginSettings(); }" title="{{ _('Plugin Configuration') }}"><i class="fa fa-wrench"></i></button>
 </div>
 
 <h3>{{ _('Current versions') }}</h3>
@@ -26,10 +26,10 @@
     <tbody data-bind="foreach: versions.paginatedItems">
     <tr data-bind="attr: {title: displayName}">
         <td class="settings_plugin_softwareupdate_column_update">
-            <span data-bind="invisible: !updateAvailable"><i class="icon-bell" title="{{ _('Update available') }}"></i></span>
+            <span data-bind="invisible: !updateAvailable"><i class="fa fa-bell-o" title="{{ _('Update available') }}"></i></span>
         </td>
         <td class="settings_plugin_softwareupdate_column_information">
-            <strong data-bind="text: displayName"></strong>: <span data-bind="text: displayVersion"></span> <span data-bind="invisible: updatePossible"><i class="icon-exclamation-sign" title="{{ _('Update not possible, configuration ok?') }}"></i></span><br>
+            <strong data-bind="text: displayName"></strong>: <span data-bind="text: displayVersion"></span> <span data-bind="invisible: updatePossible"><i class="fa fa-exclamation-triangle" title="{{ _('Update not possible, configuration ok?') }}"></i></span><br>
             <small class="muted">
                 {{ _('Installed:') }} <span data-bind="text: information.local.name"></span><br>
                 {{ _('Available:') }} <span data-bind="text: information.remote.name"></span><br>
@@ -57,14 +57,14 @@
     </ul>
 </div>
 
-<button class="btn btn-primary btn-block" data-bind="click: function() { $root.performCheck(true, false, true); }, enable: !checking(), css: {disabled: checking()}"><i class="icon-spinner icon-spin" data-bind="visible: checking"></i> {{ _('Check for update now') }}</button>
+<button class="btn btn-primary btn-block" data-bind="click: function() { $root.performCheck(true, false, true); }, enable: !checking(), css: {disabled: checking()}"><i class="fa fa-spinner fa-spin" data-bind="visible: checking"></i> {{ _('Check for update now') }}</button>
 
 <div>
-    <div><small><a href="#" class="muted" onclick="$(this).children().toggleClass('icon-caret-right icon-caret-down').parent().parent().parent().next().slideToggle('fast')"><i class="icon-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
+    <div><small><a href="#" class="muted fa" onclick="$(this).children().toggleClass('fa-caret-right fa-caret-down').parent().parent().parent().next().slideToggle('fast')"><i class="fa fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
     <div class="hide">
         <small class="muted" style="display: block">{{ _('Last cache refresh:') }} <span data-bind="text: cacheTimestampText"></span></small>
-        <button class="btn btn-block" data-bind="click: function() { $root.performCheck(true, true, true); }, enable: !checking(), css: {disabled: checking()}"><i class="icon-spinner icon-spin" data-bind="visible: checking"></i> {{ _('Force check for update (overrides cache used for update checks)') }}</button>
-        <button class="btn btn-block btn-danger" data-bind="visible: CONFIG_DEBUG, click: function() { $root.update(true); }, enable: !checking(), css: {disabled: checking()}"><i class="icon-spinner icon-spin" data-bind="visible: checking"></i> {{ _('Force update now (even if no new versions are available)') }}</button>
+        <button class="btn btn-block" data-bind="click: function() { $root.performCheck(true, true, true); }, enable: !checking(), css: {disabled: checking()}"><i class="fa fa-spinner fa-spin" data-bind="visible: checking"></i> {{ _('Force check for update (overrides cache used for update checks)') }}</button>
+        <button class="btn btn-block btn-danger" data-bind="visible: CONFIG_DEBUG, click: function() { $root.update(true); }, enable: !checking(), css: {disabled: checking()}"><i class="fa fa-spinner fa-spin" data-bind="visible: checking"></i> {{ _('Force update now (even if no new versions are available)') }}</button>
     </div>
 </div>
 

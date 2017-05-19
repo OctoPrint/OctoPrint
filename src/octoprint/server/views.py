@@ -9,6 +9,8 @@ import os
 import datetime
 import codecs
 
+from past.builtins import basestring
+
 from collections import defaultdict
 from flask import request, g, url_for, make_response, render_template, send_from_directory, redirect, abort
 
@@ -520,7 +522,7 @@ def _process_templates():
 
 	templates["sidebar"]["entries"]= dict(
 		connection=(gettext("Connection"), dict(template="sidebar/connection.jinja2", _div="connection", icon="signal", styles_wrapper=["display: none"], data_bind="visible: loginState.isUser")),
-		state=(gettext("State"), dict(template="sidebar/state.jinja2", _div="state", icon="info-sign")),
+		state=(gettext("State"), dict(template="sidebar/state.jinja2", _div="state", icon="info-circle")),
 		files=(gettext("Files"), dict(template="sidebar/files.jinja2", _div="files", icon="list", classes_content=["overflow_visible"], template_header="sidebar/files_header.jinja2"))
 	)
 

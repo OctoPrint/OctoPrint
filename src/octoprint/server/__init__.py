@@ -16,7 +16,9 @@ from babel import Locale
 from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
 from collections import defaultdict
+
 from builtins import bytes, range
+from past.builtins import basestring
 
 import os
 import logging
@@ -1103,7 +1105,8 @@ class Server(object):
 			"css/bootstrap-modal.css",
 			"css/bootstrap-slider.css",
 			"css/bootstrap-tabdrop.css",
-			"css/font-awesome.min.css",
+			"vendor/font-awesome-3.2.1/css/font-awesome.min.css",
+			"vendor/font-awesome-4.7.0/css/font-awesome.min.css",
 			"css/jquery.fileupload-ui.css",
 			"css/pnotify.core.min.css",
 			"css/pnotify.buttons.min.css",
@@ -1115,75 +1118,61 @@ class Server(object):
 		less_core = list(dynamic_core_assets["less"]) + list(dynamic_plugin_assets["bundled"]["less"])
 		less_plugins = list(dynamic_plugin_assets["external"]["less"])
 
-		from webassets.filter import register_filter, Filter
-		from webassets.filter.cssrewrite.base import PatternRewriter
-		import re
-		class LessImportRewrite(PatternRewriter):
-			name = "less_importrewrite"
-
-			patterns = {
-				"import_rewrite": re.compile("(@import(\s+\(.*\))?\s+)\"(.*)\";")
-			}
-
-			def import_rewrite(self, m):
-				import_with_options = m.group(1)
-				import_url = m.group(3)
-
-				if not import_url.startswith("http:") and not import_url.startswith("https:") and not import_url.startswith("/"):
-					import_url = "../less/" + import_url
-
-				return "{import_with_options}\"{import_url}\";".format(**locals())
-
-		class JsDelimiterBundler(Filter):
-			name = "js_delimiter_bundler"
-			options = {}
-			def input(self, _in, out, **kwargs):
-				out.write(_in.read())
-				out.write("\n;\n")
+		# a couple of custom filters
+		from octoprint.server.util.webassets import LessImportRewrite, JsDelimiterBundler, SourceMapRewrite, SourceMapRemove
+		from webassets.filter import register_filter
 
 		register_filter(LessImportRewrite)
+		register_filter(SourceMapRewrite)
+		register_filter(SourceMapRemove)
 		register_filter(JsDelimiterBundler)
 
 		# JS
-		js_libs_bundle = Bundle(*js_libs, output="webassets/packed_libs.js", filters="js_delimiter_bundler")
+		js_filters = ["sourcemap_remove", "js_delimiter_bundler"]
 
-		js_client_bundle = Bundle(*js_client, output="webassets/packed_client.js", filters="js_delimiter_bundler")
-		js_core_bundle = Bundle(*js_core, output="webassets/packed_core.js", filters="js_delimiter_bundler")
+		js_libs_bundle = Bundle(*js_libs, output="webassets/packed_libs.js", filters=",".join(js_filters))
+
+		js_client_bundle = Bundle(*js_client, output="webassets/packed_client.js", filters=",".join(js_filters))
+		js_core_bundle = Bundle(*js_core, output="webassets/packed_core.js", filters=",".join(js_filters))
 
 		if len(js_plugins) == 0:
 			js_plugins_bundle = Bundle(*[])
 		else:
-			js_plugins_bundle = Bundle(*js_plugins, output="webassets/packed_plugins.js", filters="js_delimiter_bundler")
+			js_plugins_bundle = Bundle(*js_plugins, output="webassets/packed_plugins.js", filters=",".join(js_filters))
 
-		js_app_bundle = Bundle(js_plugins_bundle, js_core_bundle, output="webassets/packed_app.js", filters="js_delimiter_bundler")
+		js_app_bundle = Bundle(js_plugins_bundle, js_core_bundle, output="webassets/packed_app.js", filters=",".join(js_filters))
 
 		# CSS
-		css_libs_bundle = Bundle(*css_libs, output="webassets/packed_libs.css")
+		css_filters = ["cssrewrite"]
+
+		css_libs_bundle = Bundle(*css_libs, output="webassets/packed_libs.css", filters=",".join(css_filters))
 
 		if len(css_core) == 0:
 			css_core_bundle = Bundle(*[])
 		else:
-			css_core_bundle = Bundle(*css_core, output="webassets/packed_core.css", filters="cssrewrite")
+			css_core_bundle = Bundle(*css_core, output="webassets/packed_core.css", filters=",".join(css_filters))
 
 		if len(css_plugins) == 0:
 			css_plugins_bundle = Bundle(*[])
 		else:
-			css_plugins_bundle = Bundle(*css_plugins, output="webassets/packed_plugins.css", filters="cssrewrite")
+			css_plugins_bundle = Bundle(*css_plugins, output="webassets/packed_plugins.css", filters=",".join(css_filters))
 
-		css_app_bundle = Bundle(css_core, css_plugins, output="webassets/packed_app.css", filters="cssrewrite")
+		css_app_bundle = Bundle(css_core, css_plugins, output="webassets/packed_app.css", filters=",".join(css_filters))
 
 		# LESS
+		less_filters = ["cssrewrite", "less_importrewrite"]
+
 		if len(less_core) == 0:
 			less_core_bundle = Bundle(*[])
 		else:
-			less_core_bundle = Bundle(*less_core, output="webassets/packed_core.less", filters="cssrewrite, less_importrewrite")
+			less_core_bundle = Bundle(*less_core, output="webassets/packed_core.less", filters=",".join(less_filters))
 
 		if len(less_plugins) == 0:
 			less_plugins_bundle = Bundle(*[])
 		else:
-			less_plugins_bundle = Bundle(*less_plugins, output="webassets/packed_plugins.less", filters="cssrewrite, less_importrewrite")
+			less_plugins_bundle = Bundle(*less_plugins, output="webassets/packed_plugins.less", filters=",".join(less_filters))
 
-		less_app_bundle = Bundle(less_core, less_plugins, output="webassets/packed_app.less", filters="cssrewrite, less_importrewrite")
+		less_app_bundle = Bundle(less_core, less_plugins, output="webassets/packed_app.less", filters=",".join(less_filters))
 
 		# asset registration
 		assets.register("js_libs", js_libs_bundle)
