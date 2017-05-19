@@ -611,9 +611,7 @@ class User(UserMixin):
 		self._passwordHash = passwordHash
 		self._active = active
 		self._groups = groups
-		self._groups.sort(key=lambda g: g.get_name())
 		self._permissions = permissions
-		self._permissions.sort(key=lambda p: p.get_name())
 		self._apikey = apikey
 
 		if settings is None:
@@ -629,9 +627,9 @@ class User(UserMixin):
 			"groups": self._groups,
 			"needs": OctoPrintPermission.convert_needs_to_dict(self.needs),
 			# Deprecated
-			"admin": bool(self.is_admin),
+			"admin": self.has_permission(Permissions.ADMIN),
 			# Deprecated
-			"user": bool(self.is_user),
+			"user": True,
 			"apikey": self._apikey,
 			"settings": self._settings
 		}
@@ -779,7 +777,7 @@ class User(UserMixin):
 	def _set_setting(self, path, value):
 		s = self._settings
 		for p in path[:-1]:
-			if not p in s:
+			if p not in s:
 				s[p] = dict()
 
 			if not isinstance(s[p], dict):
