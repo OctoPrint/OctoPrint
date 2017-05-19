@@ -815,6 +815,7 @@ class AnonymousUser(User, AnonymousUserMixin):
 	def check_password(self, passwordHash):
 		return True
 
+
 class SessionUser(User):
 	def __init__(self, user):
 		self._user = user
@@ -845,20 +846,24 @@ class SessionUser(User):
 		self._user = user
 
 	def __repr__(self):
-		return "SessionUser(id=%s,name=%s,active=%r,user=%r,admin=%r,session=%s,created=%s)" % (self.get_id(), self.get_name(), bool(self.is_active), bool(self.is_user), bool(self.is_admin), self._session, self._created)
+		return "SessionUser(id=%s,name=%s,active=%r,user=True,admin=%r,session=%s,created=%s)" % (self.get_id(), self.get_name(), bool(self.is_active), self.has_permission(Permissions.ADMIN), self._session, self._created)
+
 
 ##~~ DummyUser object to use when accessControl is disabled
 
 class DummyUser(User):
 	def __init__(self):
-		User.__init__(self, "dummy", "", True, [Permissions.ADMIN], [Groups.admins])
+		from octoprint.server import groupManager
+		User.__init__(self, "dummy", "", True, [], [groupManager.admins_group])
 
 	def check_password(self, passwordHash):
 		return True
 
+
 class DummyIdentity(Identity):
 	def __init__(self):
 		Identity.__init__(self, "dummy")
+
 
 def dummy_identity_loader():
 	return DummyIdentity()
@@ -867,4 +872,5 @@ def dummy_identity_loader():
 ##~~ Apiuser object to use when global api key is used to access the API
 class ApiUser(User):
 	def __init__(self):
-		User.__init__(self, "_api", "", True, [Permissions.ADMIN], [Groups.admins])
+		from octoprint.server import groupManager
+		User.__init__(self, "_api", "", True, [], [groupManager.admins_group])

@@ -60,7 +60,7 @@ principals = Principal(app)
 import octoprint.access.permissions as permissions
 #-------------------------------------------------------------------------------
 #Deprecated should be removed with the user_permission variable in a future version
-admin_permission = util.variable_deprecated("admin_permission has been deprecated please use new Permission.admin instead", since="now")(
+admin_permission = util.variable_deprecated("admin_permission has been deprecated please use new Permissions.ADMIN instead", since="now")(
 	permissions.Permissions.ADMIN)
 #user_permission = util.variable_deprecated("user_permission has been deprecated and will be removed in a future version", since="now")(
 #	permissions.Permissions.USER)

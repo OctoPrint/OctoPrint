@@ -277,7 +277,7 @@ class GroupCantbeChanged(Exception):
 
 
 class Group(object):
-	def __init__(self, name, description="", permissionslist=[], default=False, specialGroup=False):
+	def __init__(self, name, description="", permissionslist=None, default=False, specialGroup=False):
 		self._name = name
 		self._description = description
 		self._permissions = permissionslist if permissionslist is not None else []
@@ -312,9 +312,6 @@ class Group(object):
 
 	def isRemoveable(self):
 		return not self._specialGroup
-
-	def isDeleted(self):
-		return self._deleted
 
 	def add_permissions_to_group(self, permissions):
 		if not self.isChangable():

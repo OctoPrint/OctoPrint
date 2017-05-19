@@ -265,7 +265,7 @@ def setSettings():
 
 @api.route("/settings/apikey", methods=["POST"])
 @restricted_access
-@admin_permission.require(403)
+@Permissions.SETTINGS.require(403)
 def generateApiKey():
 	apikey = settings().generateApiKey()
 	return jsonify(apikey=apikey)
@@ -273,7 +273,7 @@ def generateApiKey():
 
 @api.route("/settings/apikey", methods=["DELETE"])
 @restricted_access
-@admin_permission.require(403)
+@Permissions.SETTINGS.require(403)
 def deleteApiKey():
 	settings().deleteApiKey()
 	return NO_CONTENT
