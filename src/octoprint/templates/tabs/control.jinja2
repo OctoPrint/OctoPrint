@@ -8,6 +8,7 @@
                 <p><strong>{{ _('Webcam stream not loaded') }}</strong></p>
                 <p data-bind="visible: !loginState.isAdmin()"><small>{{ _('It might not be configured correctly. To have this fixed, get in touch with an administrator of this OctoPrint instance.') }}</small></p>
                 <p data-bind="visible: loginState.isAdmin"><small>{{ _('It might not be configured correctly. You can change the URL of the stream under "Settings" > "Webcam & Timelapse" > "Stream URL". If you don\'t have a webcam just set the URL to an empty value.') }}</small></p>
+                <p data-bind="visible: loginState.isUser"><small>{{ _('Currently configured stream URL') }}: <a target="_blank" rel="noreferrer" data-bind="attr: {href: settings.webcam_streamUrl}, text: settings.webcam_streamUrl"></a></small></p>
             </div>
         </div>
         <div id="webcam_rotator" data-bind="css: { webcam_rotated: settings.webcam_rotate90(), webcam_unrotated: !settings.webcam_rotate90() }">
