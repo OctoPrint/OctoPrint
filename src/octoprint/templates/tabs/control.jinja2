@@ -6,7 +6,8 @@
             </div>
             <div class="text webcam_error" data-bind="visible: !webcamLoaded() && webcamError()">
                 <p><strong>{{ _('Webcam stream not loaded') }}</strong></p>
-                <p><small>{{ _('It might not be correctly configured. You can change the URL of the stream under "Settings" > "Webcam & Timelapse" > "Stream URL". If you don\'t have a webcam just set the URL to an empty value.') }}</small></p>
+                <p data-bind="visible: !loginState.isAdmin()"><small>{{ _('It might not be configured correctly. To have this fixed, get in touch with an administrator of this OctoPrint instance.') }}</small></p>
+                <p data-bind="visible: loginState.isAdmin"><small>{{ _('It might not be configured correctly. You can change the URL of the stream under "Settings" > "Webcam & Timelapse" > "Stream URL". If you don\'t have a webcam just set the URL to an empty value.') }}</small></p>
             </div>
         </div>
         <div id="webcam_rotator" data-bind="css: { webcam_rotated: settings.webcam_rotate90(), webcam_unrotated: !settings.webcam_rotate90() }">
