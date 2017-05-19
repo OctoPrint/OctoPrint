@@ -71,7 +71,7 @@ class OctoPrintPermission(Permission):
 
 class PermissionManager(object):
 	def __init__(self):
-		self._permissions = []
+		self._permissions = dict()
 
 		import yaml
 		from yaml.dumper import SafeDumper
@@ -82,7 +82,7 @@ class PermissionManager(object):
 
 	@property
 	def permissions(self):
-		return list(self._permissions)
+		return list(self._permissions.values())
 
 	def yaml_representer(self, dumper, data):
 		return dumper.represent_scalar(u'!octoprintpermission', data.get_name())
@@ -92,20 +92,22 @@ class PermissionManager(object):
 		return self.find_permission(name)
 
 	def add_permission(self, permission):
-		self._permissions.append(permission)
+		if permission.get_name() in self._permissions:
+			raise PermissionAlreadyExists(permission.get_name())
+
+		self._permissions[permission.get_name()] = permission
 		return permission
 
 	def remove_permission(self, permission):
-		self._permissions.remove(permission)
+		del self._permissions[permission.get_name()]
 
 		from octoprint.server import groupManager, userManager
 		groupManager.remove_permissions_from_groups([permission])
 		userManager.remove_permissions_from_users([permission])
 
 	def find_permission(self, name):
-		for p in self._permissions:
-			if p.get_name() == name:
-				return p
+		if name in self._permissions:
+			return self._permissions[name]
 
 		return None
 
@@ -180,3 +182,8 @@ class Permissions(object):
 
 		pm.add_permission(cls.SETTINGS)
 		pm.add_permission(cls.LOGS)
+
+
+class PermissionAlreadyExists(Exception):
+	def __init__(self, permission):
+		Exception.__init__(self, "Permission %s already exists" % permission)
