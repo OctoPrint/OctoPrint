@@ -1,11 +1,13 @@
 # coding=utf-8
 from __future__ import absolute_import, division, print_function
 
+from flask_babel import gettext
+from flask_principal import Permission, RoleNeed
+
 __author__ = "Marc Hannappel <salandora@gmail.com>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-from flask_principal import Permission, RoleNeed
 
 class OctoPrintPermission(Permission):
 	@classmethod
@@ -59,7 +61,13 @@ class OctoPrintPermission(Permission):
 		return p
 
 	def __repr__(self):
-		return '{0}(name="{1}", description="{2}", needs={3})'.format(self.__class__.__name__, self.get_name(), self.get_description(), self.needs)
+		needs = []
+		for need in sorted(self.needs):
+			if need.method == 'role':
+				needs.append("RoleNeed('{0}')".format(need.value))
+
+		return '{0}("{1}", "{2}", {3})'.format(self.__class__.__name__, self.get_name(), self.get_description(), ', '.join(needs))
+
 
 class PermissionManager(object):
 	def __init__(self):
@@ -109,35 +117,35 @@ class PermissionManager(object):
 
 class Permissions(object):
 	# Special permission
-	ADMIN = OctoPrintPermission("Admin", "Admin is allowed to do everything", RoleNeed("admin"))
+	ADMIN = OctoPrintPermission("Admin", gettext("Admin is allowed to do everything"), RoleNeed("admin"))
 
 	STATUS = OctoPrintPermission("Status",
-	                        "Allows to gather Statusinformations like, Connection, Printstate, Temperaturegraph",
+	                        gettext("Allows to gather Statusinformations like, Connection, Printstate, Temperaturegraph"),
 	                             RoleNeed("status"))
-	CONNECTION = OctoPrintPermission("Connection", "Allows to connect and disconnect to a printer", RoleNeed("connection"))
-	WEBCAM = OctoPrintPermission("Webcam", "Allows to watch the webcam stream", RoleNeed("webcam"))
-	SYSTEM = OctoPrintPermission("System", "Allows to run system commands, e.g. shutdown, reboot, restart octoprint",
+	CONNECTION = OctoPrintPermission("Connection", gettext("Allows to connect and disconnect to a printer"), RoleNeed("connection"))
+	WEBCAM = OctoPrintPermission("Webcam", gettext("Allows to watch the webcam stream"), RoleNeed("webcam"))
+	SYSTEM = OctoPrintPermission("System", gettext("Allows to run system commands, e.g. shutdown, reboot, restart octoprint"),
 	                             RoleNeed("system"))
-	UPLOAD = OctoPrintPermission("Upload", "Allows users to upload new gcode files", RoleNeed("upload"))
+	UPLOAD = OctoPrintPermission("Upload", gettext("Allows users to upload new gcode files"), RoleNeed("upload"))
 	DOWNLOAD = OctoPrintPermission("Download",
-	                          "Allows users to download gcode files, the gCodeViewer is affected by this too.",
+	                          gettext("Allows users to download gcode files, the gCodeViewer is affected by this too."),
 	                               RoleNeed("download"))
-	DELETE = OctoPrintPermission("Delete", "Allows users to delete files in their folder", RoleNeed("delete_file"))
-	SELECT = OctoPrintPermission("Select", "Allows to select a file", RoleNeed("select"))
-	PRINT = OctoPrintPermission("Print", "Allows to start a print job, inherits the select permission",
+	DELETE = OctoPrintPermission("Delete", gettext("Allows users to delete files in their folder"), RoleNeed("delete_file"))
+	SELECT = OctoPrintPermission("Select", gettext("Allows to select a file"), RoleNeed("select"))
+	PRINT = OctoPrintPermission("Print", gettext("Allows to start a print job, inherits the select permission"),
 	                               RoleNeed("print"))
-	TERMINAL = OctoPrintPermission("Terminal", "Allows to watch the Terminaltab, without the ability to send any commands",
+	TERMINAL = OctoPrintPermission("Terminal", gettext("Allows to watch the Terminaltab, without the ability to send any commands"),
 	                               RoleNeed("terminal"))
 	CONTROL = OctoPrintPermission("Control",
-	                         "Allows to manually control the printer by using the controltab or sending gcodes through the terminal, this implies the terminal permission",
+	                         gettext("Allows to manually control the printer by using the controltab or sending gcodes through the terminal, this implies the terminal permission"),
 	                              RoleNeed("control"))
-	SLICE = OctoPrintPermission("Slice", "Allows to slice stl files into gcode files", RoleNeed("slice"))
-	TIMELAPSE = OctoPrintPermission("Timelapse", "Allows to download timelapse videos", RoleNeed("timelapse"))
+	SLICE = OctoPrintPermission("Slice", gettext("Allows to slice stl files into gcode files"), RoleNeed("slice"))
+	TIMELAPSE = OctoPrintPermission("Timelapse", gettext("Allows to download timelapse videos"), RoleNeed("timelapse"))
 	TIMELAPSE_ADMIN = OctoPrintPermission("Timelapse Admin",
-	                                 "Allows to change the timelapse settings, remove timelapses, implies timelapse",
+	                                 gettext("Allows to change the timelapse settings, remove timelapses, implies timelapse"),
 	                                      RoleNeed("timelapse_admin"))
-	SETTINGS = OctoPrintPermission("Settings", "Allows to open and change Settings", RoleNeed("settings"))
-	LOGS = OctoPrintPermission("Logs", "Allows to download and remove logs", RoleNeed("logs"))
+	SETTINGS = OctoPrintPermission("Settings", gettext("Allows to open and change Settings"), RoleNeed("settings"))
+	LOGS = OctoPrintPermission("Logs", gettext("Allows to download and remove logs"), RoleNeed("logs"))
 
 	################################################################################
 	# Deprecated only for migration

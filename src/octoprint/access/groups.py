@@ -372,5 +372,5 @@ class Group(object):
 		return permission.needs.issubset(self.needs)
 
 	def __repr__(self):
-		return '{0}(name="{1}", description="{2}", default={3})'.format(self.__class__.__name__, self.get_name(), self.get_description(), self.get_default())
+		return '{0}("{1}", "{2}", {3}, {4}, {5})'.format(self.__class__.__name__, self.get_name(), self.get_description(), self._permissions, bool(self.get_default()), bool(self._specialGroup))
 
