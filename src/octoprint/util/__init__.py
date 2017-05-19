@@ -52,26 +52,29 @@ def warning_decorator_factory(warning_type):
 
 
 def warning_factory(warning_type):
-	def specific_warning(message, stacklevel=1, since=None):
+	def specific_warning(message, stacklevel=1, since=None, includedoc=None, extenddoc=False):
 		def decorator(o):
 			def wrapper(f):
 				def new(*args, **kwargs):
 					warnings.warn(message, warning_type, stacklevel=stacklevel + 1)
 					return f(*args, **kwargs)
 				return new
-			
-			warnings.warn(message, warning_type, stacklevel=stacklevel + 1)
-			
-			wrappable_types = (FunctionType, )
-			unwrappable_names = ("__str__", "__unicode__", "__repr__", "__getattribute__", "__setattr__")
-	
-			for method_name in dir(o):
-				if not type(getattr(o, method_name)) in wrappable_types: continue
-				if method_name in unwrappable_names: continue
-	
-				setattr(o, method_name, wrapper(getattr(o, method_name)))
 
-			return o
+			output = o.__class__.__new__(o.__class__, o)
+
+			unwrappable_names = ("__weakref__", "__class__", "__dict__", "__doc__", "__str__", "__unicode__", "__repr__", "__getattribute__", "__setattr__")
+			for method_name in dir(o):
+				if method_name in unwrappable_names: continue
+
+				setattr(output, method_name, wrapper(getattr(o, method_name)))
+
+			if includedoc is not None and since is not None:
+				docstring = "\n.. deprecated:: {since}\n   {message}\n\n".format(since=since, message=includedoc)
+				if extenddoc and hasattr(wrapper, "__doc__") and wrapper.__doc__ is not None:
+					docstring = wrapper.__doc__ + "\n" + docstring
+					wrapper.__doc__ = docstring
+
+			return output
 		return decorator
 	return specific_warning
 
