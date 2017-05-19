@@ -1,6 +1,6 @@
 # coding=utf-8
 """
-Unit tests for octoprint.users.SessionUser
+Unit tests for octoprint.access.users.SessionUser
 """
 from __future__ import absolute_import, division, print_function
 

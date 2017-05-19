@@ -1,6 +1,6 @@
 # coding=utf-8
 """
-Unit tests for octoprint.users.User
+Unit tests for octoprint.access.users.User
 """
 from __future__ import absolute_import, division, print_function
 
@@ -42,7 +42,7 @@ class UserTestCase(unittest.TestCase):
 		self.maxDiff = None
 
 		self.user = users.User("user", "passwordHash", True, permissions=[permissions.Permissions.STATUS], apikey="apikey_user", settings=default_settings)
-		self.user_multi_permission = users.User("userMultiPermission", "passwordHash", True, permissions=[permissions.Permissions.STATUS, permissions.Permissions.DOWNLOAD, permissions.Permissions.CONNECTION], apikey="apikey_user", settings=default_settings)
+		self.user_multi_permission = users.User("userMultiPermission", "passwordHash", True, permissions=sorted([permissions.Permissions.STATUS, permissions.Permissions.DOWNLOAD, permissions.Permissions.CONNECTION]), apikey="apikey_user", settings=default_settings)
 		self.user_permission_group = users.User("userPermissionGroup", "passwordHash", True, permissions=[permissions.Permissions.DOWNLOAD], groups=[octoprint.server.groupManager.guests_group], apikey="apikey_user", settings=default_settings)
 		self.admin_permission = users.User("adminPermission", "passwordHash", True, permissions=[permissions.Permissions.ADMIN], apikey="apikey_admin", settings=default_settings)
 		self.admin_group = users.User("adminGroup", "passwordHash", True, permissions=[], groups=[octoprint.server.groupManager.admins_group], apikey="apikey_admin", settings=default_settings)
@@ -197,7 +197,7 @@ class UserTestCase(unittest.TestCase):
 		test_data = [
 			("user", "User(id=user,name=user,active=True,user=True,admin=False,permissions=%s,groups=[])" % ([permissions.Permissions.STATUS])),
 			# we can add the groups here by reference because their repr will be tested in the test_groups.py so it is unnecessary to do this here again
-			("user_multi_permission", "User(id=userMultiPermission,name=userMultiPermission,active=True,user=True,admin=False,permissions=%s,groups=[])" % ([permissions.Permissions.CONNECTION, permissions.Permissions.DOWNLOAD, permissions.Permissions.STATUS])),
+			("user_multi_permission", "User(id=userMultiPermission,name=userMultiPermission,active=True,user=True,admin=False,permissions=%s,groups=[])" % sorted([permissions.Permissions.CONNECTION, permissions.Permissions.DOWNLOAD, permissions.Permissions.STATUS])),
 			("user_permission_group", "User(id=userPermissionGroup,name=userPermissionGroup,active=True,user=True,admin=False,permissions=%s,groups=%s)" % ([permissions.Permissions.DOWNLOAD], [octoprint.server.groupManager.guests_group])),
 			("admin_permission", "User(id=adminPermission,name=adminPermission,active=True,user=True,admin=True,permissions=%s,groups=[])" % ([permissions.Permissions.ADMIN])),
 			("admin_group", "User(id=adminGroup,name=adminGroup,active=True,user=True,admin=True,permissions=[],groups=%s)" % ([octoprint.server.groupManager.admins_group])),
