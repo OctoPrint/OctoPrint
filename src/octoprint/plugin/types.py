@@ -1377,6 +1377,14 @@ class SettingsPlugin(OctoPrintPlugin):
 	Of course, you are always free to completely override both :func:`on_settings_load` and :func:`on_settings_save` if the
 	default implementations do not fit your requirements.
 
+
+	.. warning::
+
+	   Make sure to protect sensitive information stored by your plugin that only logged in administrators (or users)
+	   should have access to via :meth:`~octoprint.plugin.SettingsPlugin.get_settings_restricted_paths`. OctoPrint will
+	   return its settings on the REST API even to anonymous clients, but will filter out fields it know are restricted,
+	   therefore you **must** make sure that you specify sensitive information accordingly to limit access as required!
+
 	.. attribute:: _settings
 
 	   The :class:`~octoprint.plugin.PluginSettings` instance to use for accessing the plugin's settings. Injected by
