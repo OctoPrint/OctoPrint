@@ -1556,7 +1556,7 @@ class SettingsPlugin(OctoPrintPlugin):
 		                                field="field"),
 		                   path=dict(to=dict(never=dict(return="return"))))
 
-		   def get_settings_restricted_path(self):
+		   def get_settings_restricted_paths(self):
 		       return dict(admin=[["some", "admin_only", "path"], ["another", "admin_only", "path"],
 		                   user=[["some", "user_only", "path"],],
 		                   never=[["path", "to", "never", "return"],])
