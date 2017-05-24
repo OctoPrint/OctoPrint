@@ -166,21 +166,24 @@ def serialList():
 	return baselist
 
 def baudrateList():
-	ret = [250000, 230400, 115200, 57600, 38400, 19200, 9600]
+	# sorted by likelihood
+	candidates = [115200, 250000, 230400, 57600, 38400, 19200, 9600]
+
+	# additional baudrates prepended, sorted descending
 	additionalBaudrates = settings().get(["serial", "additionalBaudrates"])
-	for additional in additionalBaudrates:
+	for additional in sorted(additionalBaudrates, reverse=True):
 		try:
-			ret.append(int(additional))
+			candidates.insert(0, int(additional))
 		except:
 			_logger.warn("{} is not a valid additional baudrate, ignoring it".format(additional))
 
-	ret.sort(reverse=True)
-
+	# last used baudrate = first to try, move to start
 	prev = settings().getInt(["serial", "baudrate"])
-	if prev in ret:
-		ret.remove(prev)
-		ret.insert(0, prev)
-	return ret
+	if prev in candidates:
+		candidates.remove(prev)
+		candidates.insert(0, prev)
+
+	return candidates
 
 gcodeToEvent = {
 	# pause for user input
@@ -1698,30 +1701,37 @@ class MachineCom(object):
 			finally:
 				self._command_queue.task_done()
 
-	def _detectPort(self, close):
-		programmer = stk500v2.Stk500v2()
-		self._log("Serial port list: %s" % (str(serialList())))
-		for p in serialList():
-			serial_obj = None
+	def _detect_port(self):
+		potentials = serialList()
+		self._log("Serial port list: %s" % (str(potentials)))
 
-			try:
-				self._log("Connecting to: %s" % (p))
-				programmer.connect(p)
-				serial_obj = programmer.leaveISP()
-			except ispBase.IspError as e:
-				error_message = "Error while connecting to %s: %s" % (p, str(e))
-				self._log(error_message)
-				self._logger.exception(error_message)
-			except:
-				error_message = "Unexpected error while connecting to serial port: %s %s" % (p, get_exception_string())
-				self._log(error_message)
-				self._logger.exception(error_message)
-			if serial_obj is not None:
-				if (close):
-					serial_obj.close()
-				return serial_obj
+		if len(potentials) == 1:
+			# short cut: only one port, let's try that
+			return potentials[0]
 
-			programmer.close()
+		elif len(potentials) > 1:
+			programmer = stk500v2.Stk500v2()
+
+			for p in serialList():
+				serial_obj = None
+
+				try:
+					self._log("Trying {}".format(p))
+					programmer.connect(p)
+					serial_obj = programmer.leaveISP()
+				except ispBase.IspError as e:
+					self._log("Could not enter programming mode on {}, might not be a printer or just not allow programming mode".format(p))
+					self._logger.info("Could not enter programming mode on {}: {}".format(p, e))
+				except:
+					self._log("Could not connect to {}: {}".format(p, get_exception_string()))
+					self._logger.exception("Could not connect to {}".format(p))
+
+				found = serial_obj is not None
+				programmer.close()
+
+				if found:
+					return p
+
 		return None
 
 	def _openSerial(self):
@@ -1729,15 +1739,13 @@ class MachineCom(object):
 			if port is None or port == 'AUTO':
 				# no known port, try auto detection
 				self._changeState(self.STATE_DETECT_SERIAL)
-				serial_obj = self._detectPort(True)
-				if serial_obj is None:
+				port = self._detect_port()
+				if port is None:
 					self._errorValue = 'Failed to autodetect serial port, please set it manually.'
 					self._changeState(self.STATE_ERROR)
 					eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
 					self._log("Failed to autodetect serial port, please set it manually.")
 					return None
-
-				port = serial_obj.port
 
 			# connect to regular serial port
 			self._log("Connecting to: %s" % port)
@@ -2029,7 +2037,7 @@ class MachineCom(object):
 				results = self._process_command_phase("queuing", cmd, cmd_type, gcode=gcode)
 
 				if not results:
-					# commnd is no more, return
+					# command is no more, return
 					return False
 			else:
 				results = [(cmd, cmd_type, gcode)]
@@ -2240,18 +2248,23 @@ class MachineCom(object):
 
 		# if it's a gcode command send it through the specific handler if it exists
 		new_results = []
+		modified = False
 		for command, command_type, gcode in results:
 			if gcode is not None:
 				gcode_handler = "_gcode_" + gcode + "_" + phase
 				if hasattr(self, gcode_handler):
 					handler_results = getattr(self, gcode_handler)(command, cmd_type=command_type)
 					new_results += _normalize_command_handler_result(command, command_type, gcode, handler_results)
+					modified = True
 				else:
 					new_results.append((command, command_type, gcode))
-		if not new_results:
-			# gcode handler returned None or empty list for all commands, so we'll stop here and return a full out empty result
-			return []
-		results = new_results
+					modified = True
+		if modified:
+			if not new_results:
+				# gcode handler returned None or empty list for all commands, so we'll stop here and return a full out empty result
+				return []
+			else:
+				results = new_results
 
 		# send it through the phase specific command handler if it exists
 		command_phase_handler = "_command_phase_" + phase
