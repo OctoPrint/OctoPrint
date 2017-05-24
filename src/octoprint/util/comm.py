@@ -2239,18 +2239,23 @@ class MachineCom(object):
 
 		# if it's a gcode command send it through the specific handler if it exists
 		new_results = []
+		modified = False
 		for command, command_type, gcode in results:
 			if gcode is not None:
 				gcode_handler = "_gcode_" + gcode + "_" + phase
 				if hasattr(self, gcode_handler):
 					handler_results = getattr(self, gcode_handler)(command, cmd_type=command_type)
 					new_results += _normalize_command_handler_result(command, command_type, gcode, handler_results)
+					modified = True
 				else:
 					new_results.append((command, command_type, gcode))
-		if not new_results:
-			# gcode handler returned None or empty list for all commands, so we'll stop here and return a full out empty result
-			return []
-		results = new_results
+					modified = True
+		if modified:
+			if not new_results:
+				# gcode handler returned None or empty list for all commands, so we'll stop here and return a full out empty result
+				return []
+			else:
+				results = new_results
 
 		# send it through the phase specific command handler if it exists
 		command_phase_handler = "_command_phase_" + phase
