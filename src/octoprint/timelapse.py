@@ -307,7 +307,7 @@ def configure_timelapse(config=None, persist=False):
 		if "options" in config and "interval" in config["options"] and config["options"]["interval"] > 0:
 			interval = config["options"]["interval"]
 
-		capture_post_roll = False
+		capture_post_roll = True
 		if "options" in config and "capturePostRoll" in config["options"] and isinstance(config["options"]["capturePostRoll"], bool):
 			capture_post_roll = config["options"]["capturePostRoll"]
 
