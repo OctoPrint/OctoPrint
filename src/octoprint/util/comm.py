@@ -1697,30 +1697,37 @@ class MachineCom(object):
 			finally:
 				self._command_queue.task_done()
 
-	def _detectPort(self, close):
-		programmer = stk500v2.Stk500v2()
-		self._log("Serial port list: %s" % (str(serialList())))
-		for p in serialList():
-			serial_obj = None
+	def _detect_port(self):
+		potentials = serialList()
+		self._log("Serial port list: %s" % (str(potentials)))
 
-			try:
-				self._log("Connecting to: %s" % (p))
-				programmer.connect(p)
-				serial_obj = programmer.leaveISP()
-			except ispBase.IspError as e:
-				error_message = "Error while connecting to %s: %s" % (p, str(e))
-				self._log(error_message)
-				self._logger.exception(error_message)
-			except:
-				error_message = "Unexpected error while connecting to serial port: %s %s" % (p, get_exception_string())
-				self._log(error_message)
-				self._logger.exception(error_message)
-			if serial_obj is not None:
-				if (close):
-					serial_obj.close()
-				return serial_obj
+		if len(potentials) == 1:
+			# short cut: only one port, let's try that
+			return potentials[0]
 
-			programmer.close()
+		elif len(potentials) > 1:
+			programmer = stk500v2.Stk500v2()
+
+			for p in serialList():
+				serial_obj = None
+
+				try:
+					self._log("Trying {}".format(p))
+					programmer.connect(p)
+					serial_obj = programmer.leaveISP()
+				except ispBase.IspError as e:
+					self._log("Could not enter programming mode on {}, might not be a printer or just not allow programming mode".format(p))
+					self._logger.info("Could not enter programming mode on {}: {}".format(p, e))
+				except:
+					self._log("Could not connect to {}: {}".format(p, get_exception_string()))
+					self._logger.exception("Could not connect to {}".format(p))
+
+				found = serial_obj is not None
+				programmer.close()
+
+				if found:
+					return p
+
 		return None
 
 	def _openSerial(self):
@@ -1728,15 +1735,13 @@ class MachineCom(object):
 			if port is None or port == 'AUTO':
 				# no known port, try auto detection
 				self._changeState(self.STATE_DETECT_SERIAL)
-				serial_obj = self._detectPort(True)
-				if serial_obj is None:
+				port = self._detect_port()
+				if port is None:
 					self._errorValue = 'Failed to autodetect serial port, please set it manually.'
 					self._changeState(self.STATE_ERROR)
 					eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
 					self._log("Failed to autodetect serial port, please set it manually.")
 					return None
-
-				port = serial_obj.port
 
 			# connect to regular serial port
 			self._log("Connecting to: %s" % port)
