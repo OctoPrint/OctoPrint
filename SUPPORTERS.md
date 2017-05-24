@@ -64,4 +64,4 @@ thanks to everyone who contributed!
   * Timeshell.ca
   * Trent Shumay
 
-and 1084 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!
+and 1086 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!

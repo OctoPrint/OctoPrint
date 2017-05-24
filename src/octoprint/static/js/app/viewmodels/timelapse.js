@@ -10,7 +10,7 @@ $(function() {
         self.defaultPostRoll = 0;
         self.defaultInterval = 10;
         self.defaultRetractionZHop = 0;
-        self.defaultCapturePostroll = true;
+        self.defaultCapturePostRoll = true;
 
         self.timelapseType = ko.observable(undefined);
         self.timelapseTimedInterval = ko.observable(self.defaultInterval);
@@ -159,18 +159,20 @@ $(function() {
             // timelapse config
             self.timelapseType(config.type);
 
-            if (config.type == "timed") {
-                if (config.interval != undefined && config.interval > 0) {
-                    self.timelapseTimedInterval(config.interval);
-                }
+            if (config.type == "timed" && config.interval != undefined && config.interval > 0) {
+                self.timelapseTimedInterval(config.interval);
             } else {
                 self.timelapseTimedInterval(self.defaultInterval);
             }
 
-            if (config.type == "zchange") {
-                if (config.retractionZHop != undefined && config.retractionZHop > 0) {
-                    self.timelapseRetractionZHop(config.retractionZHop);
-                }
+            if (config.type == "timed" && config.capturePostRoll != undefined){
+                self.timelapseCapturePostRoll(config.capturePostRoll);
+            } else {
+                self.timelapseCapturePostRoll(self.defaultCapturePostRoll);
+            }
+
+            if (config.type == "zchange" && config.retractionZHop != undefined && config.retractionZHop > 0) {
+                self.timelapseRetractionZHop(config.retractionZHop);
             } else {
                 self.timelapseRetractionZHop(self.defaultRetractionZHop);
             }
@@ -185,12 +187,6 @@ $(function() {
                 self.timelapseFps(config.fps);
             } else {
                 self.timelapseFps(self.defaultFps);
-            }
-
-            if (config.capturePostRoll != undefined){
-                self.timelapseCapturePostRoll(config.capturePostRoll);
-            } else {
-                self.timelapseCapturePostRoll(self.defaultCapturePostRoll);
             }
 
             self.persist(false);
