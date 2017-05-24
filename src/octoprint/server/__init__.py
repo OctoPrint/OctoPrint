@@ -164,7 +164,7 @@ class Server(object):
 		global safe_mode
 
 		from tornado.ioloop import IOLoop
-		from tornado.web import Application, RequestHandler
+		from tornado.web import Application
 
 		debug = self._debug
 		safe_mode = self._safe_mode
@@ -437,9 +437,22 @@ class Server(object):
 						self._logger.debug("Adding additional route {route} handled by handler {handler} and with additional arguments {kwargs!r}".format(**locals()))
 						server_routes.append((route, handler, kwargs))
 
-		server_routes.append((r".*", util.tornado.UploadStorageFallbackHandler, dict(fallback=util.tornado.WsgiInputContainer(app.wsgi_app), file_prefix="octoprint-file-upload-", file_suffix=".tmp", suffixes=upload_suffixes)))
+		headers =         {"X-Robots-Tag": "noindex, nofollow, noimageindex"}
+		removed_headers = ["Server"]
 
-		self._tornado_app = Application(server_routes)
+		server_routes.append((r".*", util.tornado.UploadStorageFallbackHandler, dict(fallback=util.tornado.WsgiInputContainer(app.wsgi_app,
+		                                                                                                                      headers=headers,
+		                                                                                                                      removed_headers=removed_headers),
+		                                                                             file_prefix="octoprint-file-upload-",
+		                                                                             file_suffix=".tmp",
+		                                                                             suffixes=upload_suffixes)))
+
+		transforms = [util.tornado.GlobalHeaderTransform.for_headers("OctoPrintGlobalHeaderTransform",
+		                                                             headers=headers,
+		                                                             removed_headers=removed_headers)]
+
+		self._tornado_app = Application(handlers=server_routes,
+		                                transforms=transforms)
 		max_body_sizes = [
 			("POST", r"/api/files/([^/]*)", self._settings.getInt(["server", "uploads", "maxSize"])),
 			("POST", r"/api/languages", 5 * 1024 * 1024)
