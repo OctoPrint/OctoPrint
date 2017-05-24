@@ -703,10 +703,6 @@ class TimedTimelapse(Timelapse):
 		self._copying_postroll()
 		self.post_roll_finished()
 
-	def post_roll_finished(self):
-		Timelapse.post_roll_finished(self)
-		self._timer = None
-
 	def _timer_active(self):
 		return self._in_timelapse or self._postroll_captures > 0
 
@@ -718,6 +714,9 @@ class TimedTimelapse(Timelapse):
 	def _on_timer_finished(self):
 		if self._capture_post_roll:
 			self.post_roll_finished()
+
+		# timer is done, delete it
+		self._timer = None
 
 
 class TimelapseRenderJob(object):
