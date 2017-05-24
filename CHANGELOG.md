@@ -1,5 +1,18 @@
 # OctoPrint Changelog
 
+## 1.3.3rc3 (2017-05-24)
+
+### Improvements
+
+  * Some clarifications and typo fixes in the documentation
+
+### Bug fixes
+
+  * [#1821](https://github.com/foosel/OctoPrint/issues/1821) - Properly reset "Capture post roll images" setting in timelapse configuration when switching from "off" to "timed" timelapse mode.
+  * [#1934](https://github.com/foosel/OctoPrint/issues/1934) (regression) - Fix consecutive timed timelapse captures without configured post roll.
+
+([Commits](https://github.com/foosel/OctoPrint/compare/1.3.3rc2...1.3.3rc3))
+
 ## 1.3.3rc2 (2017-05-17)
 
 ### Bug fixes
