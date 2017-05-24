@@ -307,7 +307,7 @@ def configure_timelapse(config=None, persist=False):
 		if "options" in config and "interval" in config["options"] and config["options"]["interval"] > 0:
 			interval = config["options"]["interval"]
 
-		capture_post_roll = False
+		capture_post_roll = True
 		if "options" in config and "capturePostRoll" in config["options"] and isinstance(config["options"]["capturePostRoll"], bool):
 			capture_post_roll = config["options"]["capturePostRoll"]
 
@@ -703,10 +703,6 @@ class TimedTimelapse(Timelapse):
 		self._copying_postroll()
 		self.post_roll_finished()
 
-	def post_roll_finished(self):
-		Timelapse.post_roll_finished(self)
-		self._timer = None
-
 	def _timer_active(self):
 		return self._in_timelapse or self._postroll_captures > 0
 
@@ -718,6 +714,9 @@ class TimedTimelapse(Timelapse):
 	def _on_timer_finished(self):
 		if self._capture_post_roll:
 			self.post_roll_finished()
+
+		# timer is done, delete it
+		self._timer = None
 
 
 class TimelapseRenderJob(object):
