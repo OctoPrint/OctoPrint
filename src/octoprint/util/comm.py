@@ -165,21 +165,24 @@ def serialList():
 	return baselist
 
 def baudrateList():
-	ret = [250000, 230400, 115200, 57600, 38400, 19200, 9600]
+	# sorted by likelihood
+	candidates = [115200, 250000, 230400, 57600, 38400, 19200, 9600]
+
+	# additional baudrates prepended, sorted descending
 	additionalBaudrates = settings().get(["serial", "additionalBaudrates"])
-	for additional in additionalBaudrates:
+	for additional in sorted(additionalBaudrates, reverse=True):
 		try:
-			ret.append(int(additional))
+			candidates.insert(0, int(additional))
 		except:
 			_logger.warn("{} is not a valid additional baudrate, ignoring it".format(additional))
 
-	ret.sort(reverse=True)
-
+	# last used baudrate = first to try, move to start
 	prev = settings().getInt(["serial", "baudrate"])
-	if prev in ret:
-		ret.remove(prev)
-		ret.insert(0, prev)
-	return ret
+	if prev in candidates:
+		candidates.remove(prev)
+		candidates.insert(0, prev)
+
+	return candidates
 
 gcodeToEvent = {
 	# pause for user input
@@ -2033,7 +2036,7 @@ class MachineCom(object):
 				results = self._process_command_phase("queuing", cmd, cmd_type, gcode=gcode)
 
 				if not results:
-					# commnd is no more, return
+					# command is no more, return
 					return False
 			else:
 				results = [(cmd, cmd_type, gcode)]
