@@ -21,10 +21,13 @@ import threading
 from functools import wraps
 import warnings
 import contextlib
+
 try:
 	import queue
 except ImportError:
 	import Queue as queue
+
+from past.builtins import basestring
 
 logger = logging.getLogger(__name__)
 

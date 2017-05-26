@@ -526,13 +526,11 @@ $(function() {
             if (reinstall) {
                 OctoPrint.plugins.pluginmanager.reinstall(reinstall, url, followDependencyLinks)
                     .done(onSuccess)
-                    .fail(onError)
-                    .always(onAlways);
+                    .fail(onError);
             } else {
                 OctoPrint.plugins.pluginmanager.install(url, followDependencyLinks)
                     .done(onSuccess)
-                    .fail(onError)
-                    .always(onAlways);
+                    .fail(onError);
             }
         };
 
@@ -687,17 +685,21 @@ $(function() {
                         hide: false
                     };
 
+                    var restartClicked = false;
                     if (self.restartCommandSpec) {
                         options.confirm = {
                             confirm: true,
                             buttons: [{
                                 text: gettext("Restart now"),
-                                click: function () {
+                                click: function (notice) {
+                                    if (restartClicked) return;
+                                    restartClicked = true;
                                     showConfirmationDialog({
                                         message: gettext("This will restart your OctoPrint server."),
                                         onproceed: function() {
                                             OctoPrint.system.executeCommand("core", "restart")
                                                 .done(function() {
+                                                    notice.remove();
                                                     new PNotify({
                                                         title: gettext("Restart in progress"),
                                                         text: gettext("The server is now being restarted in the background")
@@ -709,6 +711,9 @@ $(function() {
                                                         text: gettext("Trying to restart the server produced an error, please check octoprint.log for details. You'll have to restart manually.")
                                                     })
                                                 });
+                                        },
+                                        onclose: function() {
+                                            restartClicked = false;
                                         }
                                     });
                                 }
@@ -718,6 +723,7 @@ $(function() {
 
                     notification = PNotify.singleButtonNotify(options);
                 } else if (response.needs_refresh) {
+                    var refreshClicked = false;
                     notification = PNotify.singleButtonNotify({
                         title: titleSuccess,
                         text: textReload,
@@ -726,6 +732,8 @@ $(function() {
                             buttons: [{
                                 text: gettext("Reload now"),
                                 click: function () {
+                                    if (refreshClicked) return;
+                                    refreshClicked = true;
                                     location.reload(true);
                                 }
                             }]
@@ -797,7 +805,7 @@ $(function() {
         };
 
         self.toggleButtonCss = function(data) {
-            var icon = self._getToggleCommand(data) == "enable" ? "icon-circle-blank" : "icon-circle";
+            var icon = self._getToggleCommand(data) == "enable" ? "fa fa-circle-blank" : "fa fa-circle";
             var disabled = (self.enableToggle(data)) ? "" : " disabled";
 
             return icon + disabled;

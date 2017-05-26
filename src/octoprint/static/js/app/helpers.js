@@ -398,7 +398,7 @@ function formatFuzzyPrintTime(totalSeconds) {
      *
      * Accuracy decreases the higher the estimation is:
      *
-     *   * less than 30s: "a couple of seconds"
+     *   * less than 30s: "a few seconds"
      *   * 30s to a minute: "less than a minute"
      *   * 1 to 30min: rounded to full minutes, above 30s is minute + 1 ("27 minutes", "2 minutes")
      *   * 30min to 40min: "40 minutes"
@@ -495,7 +495,7 @@ function formatFuzzyPrintTime(totalSeconds) {
     } else {
         // only seconds
         if (seconds < 30) {
-            text = gettext("a couple of seconds");
+            text = gettext("a few seconds");
         } else {
             text = gettext("less than a minute");
         }
@@ -646,6 +646,7 @@ function showConfirmationDialog(msg, onacknowledge, options) {
     var proceed = options.proceed || gettext("Proceed");
     var proceedClass = options.proceedClass || "danger";
     var onproceed = options.onproceed || undefined;
+    var onclose = options.onclose || undefined;
     var dialogClass = options.dialogClass || "";
 
     var modalHeader = $('<a href="javascript:void(0)" class="close" data-dismiss="modal" aria-hidden="true">&times;</a><h3>' + title + '</h3>');
@@ -663,14 +664,19 @@ function showConfirmationDialog(msg, onacknowledge, options) {
         .append($('<div></div>').addClass('modal-header').append(modalHeader))
         .append($('<div></div>').addClass('modal-body').append(modalBody))
         .append($('<div></div>').addClass('modal-footer').append(cancelButton).append(proceedButton));
+    modal.on('hidden', function(event) {
+        if (onclose && _.isFunction(onclose)) {
+            onclose(event);
+        }
+    });
     modal.modal("show");
 
     proceedButton.click(function(e) {
         e.preventDefault();
-        modal.modal("hide");
         if (onproceed && _.isFunction(onproceed)) {
             onproceed(e);
         }
+        modal.modal("hide");
     });
 
     return modal;
@@ -1048,8 +1054,9 @@ var getQueryParameterByName = function(name, url) {
  *
  * E.g. turns a null byte in the string into "\x00".
  *
- * Only characters 0 to 31, 127 and 255 will be escaped, that
- * should leave printable characters and unicode alone.
+ * Characters 0 to 31 excluding 9, 10 and 13 will be escaped, as will
+ * 127 and 255. That should leave printable characters and unicode
+ * alone.
  *
  * Originally based on
  * https://gist.github.com/mathiasbynens/1243213#gistcomment-53590
@@ -1063,7 +1070,7 @@ var escapeUnprintableCharacters = function(str) {
     var charCode;
 
     while (!isNaN(charCode = str.charCodeAt(index))) {
-        if (charCode < 32 || charCode == 127 || charCode == 255) {
+        if ((charCode < 32 && charCode != 9 && charCode != 10 && charCode != 13) || charCode == 127 || charCode == 255) {
             // special hex chars
             result += "\\x" + (charCode > 15 ? "" : "0") + charCode.toString(16)
         } else {

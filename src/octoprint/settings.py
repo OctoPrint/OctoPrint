@@ -34,6 +34,7 @@ import copy
 import time
 
 from builtins import bytes
+from past.builtins import basestring
 
 try:
 	from collections import ChainMap
@@ -155,6 +156,7 @@ default_settings = {
 	},
 	"webcam": {
 		"stream": None,
+		"streamRatio": "16:9",
 		"snapshot": None,
 		"ffmpeg": None,
 		"ffmpegThreads": 1,
@@ -204,7 +206,8 @@ default_settings = {
 		"modelSizeDetection": True,
 		"firmwareDetection": True,
 		"printCancelConfirmation": True,
-		"blockWhileDwelling": False
+		"blockWhileDwelling": False,
+		"g90InfluencesExtruder": False
 	},
 	"folder": {
 		"uploads": None,
@@ -327,7 +330,6 @@ default_settings = {
 			"preemptive": True
 		},
 		"webassets": {
-			"minify": False,
 			"bundle": True,
 			"clean_on_startup": True
 		},

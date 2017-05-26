@@ -28,6 +28,7 @@ import pkg_resources
 import copy
 import dateutil.parser
 import time
+import threading
 
 class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
                           octoprint.plugin.TemplatePlugin,
@@ -39,8 +40,9 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 	ARCHIVE_EXTENSIONS = (".zip", ".tar.gz", ".tgz", ".tar")
 
 	OPERATING_SYSTEMS = dict(windows=["win32"],
-	                         linux=["linux2"],
-	                         macos=["darwin"])
+	                         linux=lambda x: x.startswith("linux"),
+	                         macos=["darwin"],
+	                         freebsd=lambda x: x.startswith("freebsd"))
 
 	pip_inapplicable_arguments = dict(uninstall=["--user"])
 
@@ -84,7 +86,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 	##~~ StartupPlugin
 
-	def on_startup(self, host, port):
+	def on_after_startup(self):
 		from octoprint.logging.handlers import CleaningTimedRotatingFileHandler
 		console_logging_handler = CleaningTimedRotatingFileHandler(self._settings.get_plugin_logfile_path(postfix="console"), when="D", backupCount=3)
 		console_logging_handler.setFormatter(logging.Formatter("%(asctime)s %(message)s"))
@@ -94,8 +96,14 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		self._console_logger.setLevel(logging.DEBUG)
 		self._console_logger.propagate = False
 
-		self._repository_available = self._fetch_repository_from_disk()
-		self._notices_available = self._fetch_notices_from_disk()
+		# decouple repository fetching from server startup
+		def fetch_data():
+			self._repository_available = self._fetch_repository_from_disk()
+			self._notices_available = self._fetch_notices_from_disk()
+
+		thread = threading.Thread(target=fetch_data)
+		thread.daemon = True
+		thread.start()
 
 	##~~ SettingsPlugin
 
@@ -675,7 +683,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 	def _fetch_repository_from_url(self):
 		repository_url = self._settings.get(["repository"])
 		try:
-			r = requests.get(repository_url)
+			r = requests.get(repository_url, timeout=30)
+			r.raise_for_status()
 			self._logger.info("Loaded plugin repository data from {}".format(repository_url))
 		except Exception as e:
 			self._logger.exception("Could not fetch plugins from repository at {repository_url}: {message}".format(repository_url=repository_url, message=str(e)))
@@ -743,7 +752,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 	def _fetch_notices_from_url(self):
 		notices_url = self._settings.get(["notices"])
 		try:
-			r = requests.get(notices_url)
+			r = requests.get(notices_url, timeout=30)
+			r.raise_for_status()
 			self._logger.info("Loaded plugin notices data from {}".format(notices_url))
 		except Exception as e:
 			self._logger.exception("Could not fetch notices from {notices_url}: {message}".format(notices_url=notices_url, message=str(e)))
@@ -807,18 +817,37 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 		return True
 
-	def _is_os_compatible(self, current_os, compatibility_entries):
+	@staticmethod
+	def _is_os_compatible(current_os, compatibility_entries):
 		"""
-		Tests if the ``current_os`` matches any of the provided ``compatibility_entries``.
+		Tests if the ``current_os`` or ``sys.platform`` are blacklisted or whitelisted in ``compatibility_entries``
 		"""
-		return current_os in filter(lambda x: x in self.__class__.OPERATING_SYSTEMS.keys(), compatibility_entries)
+		if len(compatibility_entries) == 0:
+			# shortcut - no compatibility info means we are compatible
+			return True
 
-	def _get_os(self):
-		for identifier, platforms in self.__class__.OPERATING_SYSTEMS.items():
-			if sys.platform in platforms:
+		negative_entries = map(lambda x: x[1:], filter(lambda x: x.startswith("!"), compatibility_entries))
+		positive_entries = filter(lambda x: not x.startswith("!"), compatibility_entries)
+
+		negative_match = False
+		if negative_entries:
+			# check if we are blacklisted
+			negative_match = current_os in negative_entries or any(map(lambda x: sys.platform.startswith(x), negative_entries))
+
+		positive_match = True
+		if positive_entries:
+			# check if we are whitelisted
+			positive_match = current_os in positive_entries or any(map(lambda x: sys.platform.startswith(x), positive_entries))
+
+		return positive_match and not negative_match
+
+	@classmethod
+	def _get_os(cls):
+		for identifier, platforms in cls.OPERATING_SYSTEMS.items():
+			if (callable(platforms) and platforms(sys.platform)) or (isinstance(platforms, list) and sys.platform in platforms):
 				return identifier
 		else:
-			return "unknown"
+			return "unmapped"
 
 	def _get_octoprint_version_string(self):
 		return VERSION

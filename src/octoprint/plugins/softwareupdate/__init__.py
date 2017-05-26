@@ -35,6 +35,9 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
                            octoprint.plugin.TemplatePlugin,
                            octoprint.plugin.StartupPlugin,
                            octoprint.plugin.WizardPlugin):
+
+	COMMIT_TRACKING_TYPES = ("github_commit", "bitbucket_commit")
+
 	def __init__(self):
 		self._update_in_progress = False
 		self._configured_checks_mutex = threading.Lock()
@@ -47,6 +50,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		self._version_cache_ttl = 0
 		self._version_cache_path = None
 		self._version_cache_dirty = False
+		self._version_cache_timestamp = None
 
 		self._console_logger = None
 
@@ -74,8 +78,14 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		self._console_logger.propagate = False
 
 	def on_after_startup(self):
-		# refresh cache now if necessary so it's faster once the user connects to the instance
-		self.get_current_versions()
+		# refresh cache now if necessary so it's faster once the user connects to the instance - but decouple it from
+		# the server startup
+		def fetch_data():
+			self.get_current_versions()
+
+		thread = threading.Thread(target=fetch_data)
+		thread.daemon = True
+		thread.start()
 
 	def _get_configured_checks(self):
 		with self._configured_checks_mutex:
@@ -114,7 +124,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 								# This used to be part of the settings migration (version 2) due to a bug - it can't
 								# stay there though since it interferes with manual entries to the checks not
 								# originating from within a plugin. Hence we do that step now here.
-								if "type" not in effective_config or effective_config["type"] != "github_commit":
+								if "type" not in effective_config or effective_config["type"] not in self.COMMIT_TRACKING_TYPES:
 									deletables = ["current", "displayVersion"]
 								else:
 									deletables = []
@@ -153,6 +163,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		try:
 			with open(self._version_cache_path) as f:
 				data = yaml.safe_load(f)
+			timestamp = os.stat(self._version_cache_path).st_mtime
 		except:
 			self._logger.exception("Error while loading version cache from disk")
 		else:
@@ -175,6 +186,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 				self._version_cache = data
 				self._version_cache_dirty = False
+				self._version_cache_timestamp = timestamp
 				self._logger.info("Loaded version cache from disk")
 			except:
 				self._logger.exception("Error parsing in version cache data")
@@ -191,6 +203,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			yaml.safe_dump(self._version_cache, stream=file_obj, default_flow_style=False, indent="  ", allow_unicode=True)
 
 		self._version_cache_dirty = False
+		self._version_cache_timestamp = time.time()
 		self._logger.info("Saved version cache to disk")
 
 	#~~ SettingsPlugin API
@@ -384,7 +397,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			configured_checks = self._settings.get(["checks"], incl_defaults=False)
 			if configured_checks is not None and "octoprint" in configured_checks:
 				octoprint_check = dict(configured_checks["octoprint"])
-				if "type" not in octoprint_check or octoprint_check["type"] != "github_commit":
+				if "type" not in octoprint_check or octoprint_check["type"] not in self.COMMIT_TRACKING_TYPES:
 					deletables=["current", "displayName", "displayVersion"]
 				else:
 					deletables=[]
@@ -460,7 +473,8 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 							data["check"]["python_updater"] = True
 
 				return flask.jsonify(dict(status="updatePossible" if update_available and update_possible else "updateAvailable" if update_available else "current",
-				                          information=information))
+				                          information=information,
+				                          timestamp=self._version_cache_timestamp))
 			except exceptions.ConfigurationInvalid as e:
 				return flask.make_response("Update not properly configured, can't proceed: %s" % e.message, 500)
 
@@ -486,6 +500,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 					hash.update(str(data["possible"]))
 
 			hash.update(",".join(targets))
+			hash.update(str(self._version_cache_timestamp))
 			return hash.hexdigest()
 
 		def condition():
@@ -833,7 +848,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			self._settings.load()
 
 			# persist the new version if necessary for check type
-			if check["type"] == "github_commit":
+			if check["type"] in self.COMMIT_TRACKING_TYPES:
 				dummy_default = dict(plugins=dict())
 				dummy_default["plugins"][self._identifier] = dict(checks=dict())
 				dummy_default["plugins"][self._identifier]["checks"][target] = dict(current=None)
@@ -855,7 +870,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 		self._logger.info("Restarting...")
 		try:
-			util.execute(restart_command)
+			util.execute(restart_command, evaluate_returncode=False, async=True)
 		except exceptions.ScriptError as e:
 			self._logger.exception("Error while restarting via command {}".format(restart_command))
 			self._logger.warn("Restart stdout:\n{}".format(e.stdout))
@@ -890,7 +905,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				release_branches += [x["branch"] for x in check["prerelease_branches"]]
 			result["released_version"] = not release_branches or BRANCH in release_branches
 
-			if check["type"] == "github_commit":
+			if check["type"] in self.COMMIT_TRACKING_TYPES:
 				result["current"] = REVISION if REVISION else "unknown"
 			else:
 				result["current"] = VERSION
@@ -944,7 +959,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				# displayVersion AND current missing or None
 				result["displayVersion"] = u"unknown"
 
-			if check["type"] in ("github_commit",):
+			if check["type"] in self.COMMIT_TRACKING_TYPES:
 				result["current"] = check.get("current", None)
 			else:
 				result["current"] = check.get("current", check.get("displayVersion", None))
@@ -976,18 +991,11 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			raise exceptions.ConfigurationInvalid("no check type defined")
 
 		check_type = check["type"]
-		if check_type == "github_release":
-			return version_checks.github_release
-		elif check_type == "github_commit":
-			return version_checks.github_commit
-		elif check_type == "git_commit":
-			return version_checks.git_commit
-		elif check_type == "commandline":
-			return version_checks.commandline
-		elif check_type == "python_checker":
-			return version_checks.python_checker
-		else:
+		method = getattr(version_checks, check_type)
+		if method is None:
 			raise exceptions.UnknownCheckType()
+		else:
+			return method
 
 	def _get_update_method(self, target, check, valid_methods=None):
 		"""

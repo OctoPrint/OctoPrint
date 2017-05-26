@@ -13,10 +13,18 @@ Unless :ref:`configured otherwise <sec-configuration-config_yaml-folder>`, OctoP
 the ``scripts/gcode`` folder in OctoPrint configuration directory (per default ``~/.octoprint`` on Linux, ``%APPDATA%\OctoPrint``
 on Windows and ``~/Library/Application Support/OctoPrint`` on MacOS).
 
-These GCODE scripts are backed by the templating engine `Jinja2 <http://jinja.pocoo.org/>`_, allowing more than just
+These GCODE scripts are backed by the templating engine Jinja2, allowing more than just
 simple "send-as-is" scripts but making use of a full blown templating language in order to create your scripts. To
-this end, OctoPrint injects a couple of variables into the :ref:`template rendering context <sec-features-gcode_scripts-context>`
+this end, OctoPrint injects some variables into the :ref:`template rendering context <sec-features-gcode_scripts-context>`
 as described below.
+
+You can find the docs on the Jinja templating engine as used in OctoPrint at `jinja.octoprint.org <http://jinja.octoprint.org/templates.html>`_.
+
+.. note::
+
+   Due to backwards compatibility issues with Jinja versions 2.9+, OctoPrint currently only supports Jinja 2.8. For this
+   reason use the template documentation at `jinja.octoprint.org <http://jinja.octoprint.org/templates.html>`_ instead of the
+   documentation of current stable Jinja versions.
 
 .. _sec-features-gcode_scripts-predefined:
 
@@ -64,19 +72,21 @@ All GCODE scripts have access to the following template variables through the te
   * ``script``: An object wrapping the script's type (``gcode``) and name (e.g. ``afterPrintCancelled``) as ``script.type``
     and ``script.name`` respectively.
 
-There are a couple of additional template variables available for the following specific scripts:
+There are a few additional template variables available for the following specific scripts:
 
   * ``afterPrintPaused`` and ``beforePrintResumed``
 
     * ``pause_position``: Position reported by the printer via ``M114`` immediately before the print was paused. Consists
       of ``x``, ``y``, ``z`` and ``e`` coordinates as received by the printer and tracked values for ``f`` and current tool
-      ``t`` taken from commands sent through OctoPrint.
+      ``t`` taken from commands sent through OctoPrint. All of these coordinates might be ``None`` if no position could be
+      retrieved from the printer or the values could not be tracked (in case of ``f`` and ``t``)!
 
   * ``afterPrintCancelled``
 
     * ``cancel_position``: Position reported by the printer via ``M114`` immediately before the print was cancelled.
       Consists of ``x``, ``y``, ``z`` and ``e`` coordinates as received by the printer and tracked values for ``f`` and
-      current tool ``t`` taken from commands sent through OctoPrint.
+      current tool ``t`` taken from commands sent through OctoPrint. All of these coordinates might be ``None`` if no
+      position could be retrieved from the printer or the values could not be tracked (in case of ``f`` and ``t``)!
 
 .. warning::
 
@@ -150,6 +160,7 @@ to 0 if a heated bed is configured.
 
 .. seealso::
 
-   `Jinja Template Designer Documentation <http://jinja.pocoo.org/docs/dev/templates/>`_
+   `Jinja Template Designer Documentation <http://jinja.octoprint.org/templates.html>`_
       Jinja's Template Designer Documentation describes the syntax and semantics of the template language used
-      also by OctoPrint's GCODE scripts.
+      also by OctoPrint's GCODE scripts. Linked here are the docs for Jinja 2.8.1, which OctoPrint still
+      relies on for backwards compatibility reasons.

@@ -453,7 +453,7 @@ $(function() {
         };
 
         self.requestData = function() {
-            OctoPrint.printerprofiles.list()
+            return OctoPrint.printerprofiles.list()
                 .done(self.fromResponse);
         };
 
@@ -504,7 +504,10 @@ $(function() {
                 self.requestInProgress(true);
                 OctoPrint.printerprofiles.delete(data.id, {url: data.resource})
                     .done(function() {
-                        self.requestData();
+                        self.requestData()
+                            .always(function() {
+                                self.requestInProgress(false);
+                            });
                     })
                     .fail(function(xhr) {
                         var text;
@@ -514,8 +517,6 @@ $(function() {
                             text = gettext("There was unexpected error while removing the printer profile, please consult the logs.");
                         }
                         new PNotify({title: gettext("Could not delete profile"), text: text, type: "error", hide: false});
-                    })
-                    .always(function() {
                         self.requestInProgress(false);
                     });
             };
@@ -535,13 +536,14 @@ $(function() {
                     if (callback !== undefined) {
                         callback();
                     }
-                    self.requestData();
+                    self.requestData()
+                        .always(function() {
+                            self.requestInProgress(false);
+                        });
                 })
                 .fail(function() {
                     var text = gettext("There was unexpected error while updating the printer profile, please consult the logs.");
                     new PNotify({title: gettext("Could not update profile"), text: text, type: "error", hide: false});
-                })
-                .always(function() {
                     self.requestInProgress(false);
                 });
         };

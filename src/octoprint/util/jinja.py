@@ -17,6 +17,8 @@ from jinja2.ext import Extension
 from jinja2.loaders import FileSystemLoader, PrefixLoader, ChoiceLoader, \
 	BaseLoader, TemplateNotFound, split_template_path
 
+from webassets import Bundle
+
 class FilteredFileSystemLoader(FileSystemLoader):
 	"""
 	Jinja2 ``FileSystemLoader`` subclass that allows filtering templates.
@@ -138,18 +140,27 @@ def get_all_template_paths(loader):
 
 def get_all_asset_paths(env):
 	result = []
-	for bundle in env:
+
+	def get_paths(bundle):
+		r = []
 		for content in bundle.resolve_contents():
 			try:
 				if not content:
 					continue
-				path = content[1]
-				if not os.path.isfile(path):
-					continue
-				result.append(path)
+				if isinstance(content[1], Bundle):
+					r += get_paths(content[1])
+				else:
+					path = content[1]
+					if not os.path.isfile(path):
+						continue
+					r.append(path)
 			except IndexError:
 				# intentionally ignored
 				pass
+		return r
+
+	for bundle in env:
+		result += get_paths(bundle)
 	return result
 
 

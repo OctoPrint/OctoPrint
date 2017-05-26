@@ -10,13 +10,14 @@ This is a bug and feature tracker, please only use it to report bugs
 or request features within OctoPrint (not OctoPi, not any OctoPrint
 plugins and not unofficial OctoPrint versions).
 
-Do not seek support here ("I need help with ..."), that belongs on
-the mailing list or the G+ community (both linked in the "guidelines
-for contributing" linked above, read it!), NOT here.
+Do not seek support here ("I need help with ...", "I have a
+question ..."), that belongs on the mailing list or the G+ community
+(both linked in the "guidelines for contributing" linked above, read
+them!), NOT here.
 
-Mark requests with a "[Request]" prefix in the title please. Fully fill
-out the bug reporting template for bug reports (if you don't know where
-to find some information - it's all described in the Contribution
+Mark requests with a "[Request]" prefix in the title please. For bug
+reports fully fill out the bug reporting template (if you don't know
+where to find some information - it's all described in the Contribution
 Guidelines linked up there in the big yellow box).
 
 When reporting a bug do NOT delete ANY lines from the template but
@@ -91,7 +92,7 @@ reporting communication issues. Never truncate.
 serial.log is usually not written due to performance reasons and must be
 enabled explicitly. Provide at the very least the FULL contents of your
 terminal tab at the time of the bug occurrence, even if you do not have
-a serial.log.]
+a serial.log (which the Contribution Guidelines tell you where to find).]
 
 #### Link to contents of Javascript console in the browser
 
