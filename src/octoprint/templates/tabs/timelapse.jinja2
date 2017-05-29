@@ -67,9 +67,9 @@
     <div class="btn-group">
         <button class="btn btn-small dropdown-toggle" data-toggle="dropdown"><i class="fa fa-wrench"></i> <span class="caret"></span></button>
         <ul class="dropdown-menu dropdown-menu-right">
-            <li><a href="javascript:void(0)" data-bind="click: function() { listHelper.changeSorting('name'); }"><i class="fa fa-check-circle" data-bind="style: {visibility: listHelper.currentSorting() == 'name' ? 'visible' : 'hidden'}"></i> {{ _('Sort by name') }} ({{ _('ascending') }})</a></li>
-            <li><a href="javascript:void(0)" data-bind="click: function() { listHelper.changeSorting('creation'); }"><i class="fa fa-check-circle" data-bind="style: {visibility: listHelper.currentSorting() == 'creation' ? 'visible' : 'hidden'}"></i> {{ _('Sort by creation date') }} ({{ _('descending') }})</a></li>
-            <li><a href="javascript:void(0)" data-bind="click: function() { listHelper.changeSorting('size'); }"><i class="fa fa-check-circle" data-bind="style: {visibility: listHelper.currentSorting() == 'size' ? 'visible' : 'hidden'}"></i> {{ _('Sort by file size') }} ({{ _('descending') }})</a></li>
+            <li><a href="javascript:void(0)" data-bind="click: function() { listHelper.changeSorting('name'); }"><i class="fa fa-check" data-bind="style: {visibility: listHelper.currentSorting() == 'name' ? 'visible' : 'hidden'}"></i> {{ _('Sort by name') }} ({{ _('ascending') }})</a></li>
+            <li><a href="javascript:void(0)" data-bind="click: function() { listHelper.changeSorting('creation'); }"><i class="fa fa-check" data-bind="style: {visibility: listHelper.currentSorting() == 'creation' ? 'visible' : 'hidden'}"></i> {{ _('Sort by creation date') }} ({{ _('descending') }})</a></li>
+            <li><a href="javascript:void(0)" data-bind="click: function() { listHelper.changeSorting('size'); }"><i class="fa fa-check" data-bind="style: {visibility: listHelper.currentSorting() == 'size' ? 'visible' : 'hidden'}"></i> {{ _('Sort by file size') }} ({{ _('descending') }})</a></li>
         </ul>
     </div>
 </div>
@@ -99,7 +99,7 @@
         <td class="timelapse_files_checkbox"><input type="checkbox" data-bind="value: name, checked: $root.markedForFileDeletion"></td>
         <td class="timelapse_files_name" data-bind="text: name"></td>
         <td class="timelapse_files_size" data-bind="text: size"></td>
-        <td class="timelapse_files_action"><a href="javascript:void(0)" class="fa fa-trash" data-bind="click: function() { if ($root.loginState.isUser()) { $parent.removeFile($data.name); } else { return; } }, css: {disabled: !$root.loginState.isUser()}"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" class="fa fa-download" data-bind="attr: {href: url}"></a></td>
+        <td class="timelapse_files_action"><a href="javascript:void(0)" class="fa fa-trash-o" data-bind="click: function() { if ($root.loginState.isUser()) { $parent.removeFile($data.name); } else { return; } }, css: {disabled: !$root.loginState.isUser()}"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" class="fa fa-download" data-bind="attr: {href: url}"></a></td>
     </tr>
     </tbody>
 </table>
@@ -148,7 +148,7 @@
                 <td class="timelapse_unrendered_size" data-bind="text: size"></td>
                 <td class="timelapse_unrendered_action">
                     <span data-bind="visible: processing"><i class="fa fa-refresh fa-spin"></i></span>
-                    <span data-bind="visible: !processing"><a href="javascript:void(0)" title="{{ _('Delete unrendered timelapse') }}" class="fa fa-trash" data-bind="click: function() { if ($root.loginState.isUser()) { $parent.removeUnrendered($data.name); } else { return; } }, css: {disabled: !$root.loginState.isUser()}"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" title="{{ _('Render timelapse') }}" class="fa fa-video-camera" data-bind="click: function() { if ($root.loginState.isUser() && !$root.isBusy()) { $parent.renderUnrendered($data.name); } else { return; } }, css: {disabled: !$root.loginState.isUser() || $root.isBusy()}"></a></span>
+                    <span data-bind="visible: !processing"><a href="javascript:void(0)" title="{{ _('Delete unrendered timelapse') }}" class="fa fa-trash-o" data-bind="click: function() { if ($root.loginState.isUser()) { $parent.removeUnrendered($data.name); } else { return; } }, css: {disabled: !$root.loginState.isUser()}"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" title="{{ _('Render timelapse') }}" class="fa fa-video-camera" data-bind="click: function() { if ($root.loginState.isUser() && !$root.isBusy()) { $parent.renderUnrendered($data.name); } else { return; } }, css: {disabled: !$root.loginState.isUser() || $root.isBusy()}"></a></span>
                 </td>
             </tr>
             </tbody>

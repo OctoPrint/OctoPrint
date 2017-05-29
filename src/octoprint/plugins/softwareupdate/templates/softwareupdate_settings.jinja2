@@ -60,7 +60,7 @@
 <button class="btn btn-primary btn-block" data-bind="click: function() { $root.performCheck(true, false, true); }, enable: !checking(), css: {disabled: checking()}"><i class="fa fa-spinner fa-spin" data-bind="visible: checking"></i> {{ _('Check for update now') }}</button>
 
 <div>
-    <div><small><a href="#" class="muted fa" onclick="$(this).children().toggleClass('fa-caret-right fa-caret-down').parent().parent().parent().next().slideToggle('fast')"><i class="fa fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
+    <div><small><a href="#" class="muted" onclick="$(this).children().toggleClass('fa-caret-right fa-caret-down').parent().parent().parent().next().slideToggle('fast')"><i class="fa fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
     <div class="hide">
         <small class="muted" style="display: block">{{ _('Last cache refresh:') }} <span data-bind="text: cacheTimestampText"></span></small>
         <button class="btn btn-block" data-bind="click: function() { $root.performCheck(true, true, true); }, enable: !checking(), css: {disabled: checking()}"><i class="fa fa-spinner fa-spin" data-bind="visible: checking"></i> {{ _('Force check for update (overrides cache used for update checks)') }}</button>
