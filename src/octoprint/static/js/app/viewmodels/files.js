@@ -466,13 +466,13 @@ $(function() {
             if (event) {
                 var element = $(event.currentTarget);
                 if (element.length) {
-                    var icon = $("i.icon-trash", element);
+                    var icon = $("i.fa-trash-o", element);
                     if (icon.length) {
                         activateSpinner = function() {
-                            icon.removeClass("icon-trash").addClass("icon-spinner icon-spin");
+                            icon.removeClass("fa-trash-o").addClass("fa-spinner fa-spin");
                         };
                         finishSpinner = function() {
-                            icon.removeClass("icon-spinner icon-spin").addClass("icon-trash");
+                            icon.removeClass("fa-spinner fa-spin").addClass("fa-trash-o");
                         };
                     }
                 }

@@ -805,7 +805,7 @@ $(function() {
         };
 
         self.toggleButtonCss = function(data) {
-            var icon = self._getToggleCommand(data) == "enable" ? "fa fa-circle-blank" : "fa fa-circle";
+            var icon = self._getToggleCommand(data) == "enable" ? "fa fa-circle-o" : "fa fa-circle";
             var disabled = (self.enableToggle(data)) ? "" : " disabled";
 
             return icon + disabled;

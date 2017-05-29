@@ -51,7 +51,7 @@
             </div>
         </td>
         <td class="settings_plugin_plugin_manager_plugins_actions">
-            <a href="#" data-bind="css: $root.toggleButtonCss($data), attr: {title: $root.toggleButtonTitle($data)}, enable: $root.enableToggle($data), click: function() { $root.togglePlugin($data) }"></a>&nbsp;|&nbsp;<a href="#" class="fa fa-trash" title="{{ _('Uninstall Plugin') }}" data-bind="css: {disabled: !$root.enableUninstall($data)}, enable: $root.enableUninstall($data), click: function() { $root.uninstallPlugin($data) }"></a>
+            <a href="#" data-bind="css: $root.toggleButtonCss($data), attr: {title: $root.toggleButtonTitle($data)}, enable: $root.enableToggle($data), click: function() { $root.togglePlugin($data) }"></a>&nbsp;|&nbsp;<a href="#" class="fa fa-trash-o" title="{{ _('Uninstall Plugin') }}" data-bind="css: {disabled: !$root.enableUninstall($data)}, enable: $root.enableUninstall($data), click: function() { $root.uninstallPlugin($data) }"></a>
         </td>
     </tr>
     </tbody>
@@ -73,7 +73,7 @@
 <div class="muted" data-bind="visible: pipAvailable()">
     <div>
         <small>
-            <a href="javascript:void(0)" class="muted fa" onclick="$(this).children('i.toggle-arrow').toggleClass('fa-caret-right fa-caret-down').parent().parent().parent().next().slideToggle('fast')">
+            <a href="javascript:void(0)" class="muted" onclick="$(this).children('i.toggle-arrow').toggleClass('fa-caret-right fa-caret-down').parent().parent().parent().next().slideToggle('fast')">
                 <i class="fa toggle-arrow fa-caret-right"></i> Using pip of "<span data-bind="text: pipPython"></span>", Version <span data-bind="text: pipVersion"></span>
             </a>
         </small>
@@ -90,7 +90,7 @@
 <div class="muted">
     <div>
         <small>
-            <a href="javascript:void(0)" class="muted fa" onclick="$(this).children('i.toggle-arrow').toggleClass('fa-caret-right fa-caret-down').parent().parent().parent().next().slideToggle('fast')">
+            <a href="javascript:void(0)" class="muted" onclick="$(this).children('i.toggle-arrow').toggleClass('fa-caret-right fa-caret-down').parent().parent().parent().next().slideToggle('fast')">
                 <i class="toggle-arrow fa fa-caret-right"></i> <span data-bind="text: noticeCountText"></span>
             </a>
         </small>
@@ -131,11 +131,11 @@
                     <span class="fa fa-wrench"></span>
                 </a>
                 <ul class="dropdown-menu pull-right">
-                    <li><a href="#" data-bind="click: function() { repositoryplugins.changeSorting('title'); }"><i class="fa fa-check-circle" data-bind="style: {visibility: repositoryplugins.currentSorting() == 'title' ? 'visible' : 'hidden'}"></i> {{ _('Sort by title') }} ({{ _('ascending') }})</a></li>
-                    <li><a href="#" data-bind="click: function() { repositoryplugins.changeSorting('published'); }"><i class="fa fa-check-circle" data-bind="style: {visibility: repositoryplugins.currentSorting() == 'published' ? 'visible' : 'hidden'}"></i> {{ _('Sort by publication date') }} ({{ _('descending') }})</a></li>
+                    <li><a href="#" data-bind="click: function() { repositoryplugins.changeSorting('title'); }"><i class="fa fa-check" data-bind="style: {visibility: repositoryplugins.currentSorting() == 'title' ? 'visible' : 'hidden'}"></i> {{ _('Sort by title') }} ({{ _('ascending') }})</a></li>
+                    <li><a href="#" data-bind="click: function() { repositoryplugins.changeSorting('published'); }"><i class="fa fa-check" data-bind="style: {visibility: repositoryplugins.currentSorting() == 'published' ? 'visible' : 'hidden'}"></i> {{ _('Sort by publication date') }} ({{ _('descending') }})</a></li>
                     <li class="divider"></li>
-                    <li><a href="#" data-bind="click: function() { repositoryplugins.toggleFilter('filter_installed'); }"><i class="fa fa-check-circle" data-bind="style: {visibility: _.contains(repositoryplugins.currentFilters(), 'filter_installed') ? 'visible' : 'hidden'}"></i> {{ _('Only show uninstalled plugins') }}</a></li>
-                    <li><a href="#" data-bind="click: function() { repositoryplugins.toggleFilter('filter_incompatible'); }"><i class="fa fa-check-circle" data-bind="style: {visibility: _.contains(repositoryplugins.currentFilters(), 'filter_incompatible') ? 'visible' : 'hidden'}"></i> {{ _('Only show compatible plugins') }}</a></li>
+                    <li><a href="#" data-bind="click: function() { repositoryplugins.toggleFilter('filter_installed'); }"><i class="fa fa-check" data-bind="style: {visibility: _.contains(repositoryplugins.currentFilters(), 'filter_installed') ? 'visible' : 'hidden'}"></i> {{ _('Only show uninstalled plugins') }}</a></li>
+                    <li><a href="#" data-bind="click: function() { repositoryplugins.toggleFilter('filter_incompatible'); }"><i class="fa fa-check" data-bind="style: {visibility: _.contains(repositoryplugins.currentFilters(), 'filter_incompatible') ? 'visible' : 'hidden'}"></i> {{ _('Only show compatible plugins') }}</a></li>
                     <li class="divider"></li>
                     <li><a href="#" data-bind="click: function() { refreshRepository(); }"><i class="fa fa-refresh"></i> {{ _('Refresh list from repository') }}</a></li>
                 </ul>
@@ -209,7 +209,7 @@
         </form>
 
         <div>
-            <div><small><a href="#" class="muted fa" onclick="$(this).children().toggleClass('fa-caret-right fa-caret-down').parent().parent().parent().next().slideToggle('fast')"><i class="fa fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
+            <div><small><a href="#" class="muted" onclick="$(this).children().toggleClass('fa-caret-right fa-caret-down').parent().parent().parent().next().slideToggle('fast')"><i class="fa fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
             <div class="hide">
                 <form class="form-horizontal">
                     <div class="control-group">

@@ -40,7 +40,7 @@ $(function() {
         };
 
         self.toggleButtonCss = function(data) {
-            var icon = data.enabled ? "fa fa-circle" : "fa fa-circle-blank";
+            var icon = data.enabled ? "fa fa-circle" : "fa fa-circle-o";
             var disabled = (self.enableToggle(data)) ? "" : " disabled";
 
             return icon + disabled;
