@@ -368,10 +368,12 @@ $(function() {
                 return;
             }
 
+            var timeout = self.settings.webcam_streamTimeout() || 5;
             self.webcamDisableTimeout = setTimeout(function () {
+                log.debug("Unloading webcam stream");
                 $("#webcam_image").attr("src", "");
                 self.webcamLoaded(false);
-            }, 5000);
+            }, timeout * 1000);
         };
 
         self._enableWebcam = function() {
