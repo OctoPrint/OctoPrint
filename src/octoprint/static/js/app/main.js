@@ -7,7 +7,36 @@ $(function() {
 
         //~~ Logging setup
 
-        log.setLevel(CONFIG_DEBUG ? "debug" : "info");
+        var logFormats = {
+            trace: "color: grey",
+            debug: "color: blue",
+            warn: "color: red",
+            error: "color: red; font-weight: bold"
+        };
+
+        var origLogFactory = log.methodFactory;
+        log.methodFactory = function(methodName, logLevel, loggerName) {
+            var rawMethod = origLogFactory(methodName, logLevel, loggerName);
+            var format = logFormats[methodName];
+            var level = _.padRight(methodName.toUpperCase(), 5, " ");
+
+            return function() {
+                var newArgs;
+                if (format) {
+                    newArgs = ["%c[" + level + "]", format];
+                } else {
+                    newArgs = ["[" + level + "]"];
+                }
+
+                for (var i = 0; i < arguments.length; i++) {
+                    newArgs.push(arguments[i]);
+                }
+
+                return rawMethod.apply(null, newArgs);
+            }
+        };
+
+        log.setLevel(CONFIG_DEBUG ? log.levels.DEBUG : log.levels.INFO);
 
         //~~ OctoPrint client setup
         OctoPrint.options.baseurl = BASEURL;
