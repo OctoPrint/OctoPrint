@@ -51,7 +51,15 @@ Some highlights from the release notes:
     simple typos over issues with the gcode analysis to race conditions
     that have been driving me crazy for months now. Good riddance :)
 
-There is a heads-up for those of you who run a Malyan M200 or
+Since Github experienced a major service outage earlier today, a small
+heads-up that will hopefully resolve itself over the course of today
+(May 31st, 2017) - to quote the [Changelog](https://github.com/foosel/OctoPrint/releases/tag/1.3.3):
+
+> **Current Github hiccups might impede updating for a bit (May 31st, 2017)**
+>
+> This might resolve itself within the next couple of hours: Github currently still appears to suffer from some hiccups (they had an outage earlier today, May 31st 2017). That might cause your update to take longer than usual or maybe even not run properly at all - the update mechanism is based on Github's releases API & repositories being available. So: if you happen to run into any issues during updating, please just wait a couple more hours. I sadly have no influence there at all and can just hope that those issues will be resolved soon.
+
+There is also a note for those of you who run a Malyan M200 or
 Monoprice Select Mini printer, to quote the
 [Changelog](https://github.com/foosel/OctoPrint/releases/tag/1.3.3):
 
