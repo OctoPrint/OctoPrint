@@ -2,7 +2,7 @@
 layout: post
 title: 'New release: 1.3.3'
 author: foosel
-date: 2017-05-31 16:30:00 +0200
+date: 2017-05-31 16:45:00 +0200
 card: /assets/img/blog/2017-05/2017-05-31-1.3.3-card.png
 featuredimage: /assets/img/blog/2017-05/2017-05-31-1.3.3-card.png
 images:
