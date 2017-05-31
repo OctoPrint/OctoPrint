@@ -10,6 +10,7 @@ thanks to everyone who contributed!
   * Aleph Objects, Inc.
   * Andrew Moorby
   * Arnljot Arntsen
+  * BEEVERYCREATIVE
   * Boris Hussein
   * Brad Jackson
   * Brian E. Tyler
@@ -64,4 +65,4 @@ thanks to everyone who contributed!
   * Timeshell.ca
   * Trent Shumay
 
-and 1086 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!
+and 1098 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!
