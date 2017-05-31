@@ -7,7 +7,36 @@ $(function() {
 
         //~~ Logging setup
 
-        log.setLevel(CONFIG_DEBUG ? "debug" : "info");
+        var logFormats = {
+            trace: "color: grey",
+            debug: "color: blue",
+            warn: "color: red",
+            error: "color: red; font-weight: bold"
+        };
+
+        var origLogFactory = log.methodFactory;
+        log.methodFactory = function(methodName, logLevel, loggerName) {
+            var rawMethod = origLogFactory(methodName, logLevel, loggerName);
+            var format = logFormats[methodName];
+            var level = _.padRight(methodName.toUpperCase(), 5, " ");
+
+            return function() {
+                var newArgs;
+                if (format && (OctoPrint.coreui.browser.chrome || OctoPrint.coreui.browser.firefox)) {
+                    newArgs = ["%c[" + level + "]", format];
+                } else {
+                    newArgs = ["[" + level + "]"];
+                }
+
+                for (var i = 0; i < arguments.length; i++) {
+                    newArgs.push(arguments[i]);
+                }
+
+                return rawMethod.apply(null, newArgs);
+            }
+        };
+
+        log.setLevel(CONFIG_DEBUG ? log.levels.DEBUG : log.levels.INFO);
 
         //~~ OctoPrint client setup
         OctoPrint.options.baseurl = BASEURL;
@@ -38,7 +67,18 @@ $(function() {
                 browserTabVisibility: undefined,
                 selectedTab: undefined,
                 settingsOpen: false,
-                wizardOpen: false
+                wizardOpen: false,
+                browser: {
+                    chrome: false,
+                    firefox: false,
+                    safari: false,
+                    ie: false,
+                    edge: false,
+                    opera: false,
+
+                    mobile: false,
+                    desktop: false
+                }
             };
 
             var browserVisibilityCallbacks = [];
@@ -88,6 +128,22 @@ $(function() {
                 updateBrowserVisibility();
             }
 
+            // determine browser - loosely based on is.js
+
+            var navigator = window.navigator;
+            var userAgent = (navigator && navigator.userAgent || "").toLowerCase();
+            var vendor = (navigator && navigator.vendor || "").toLowerCase();
+
+            exports.browser.opera = userAgent.match(/opera|opr/) != null;
+            exports.browser.chrome = !exports.browser.opera && /google inc/.test(vendor) && userAgent.match(/chrome|crios/) != null;
+            exports.browser.firefox = userAgent.match(/firefox|fxios/) != null;
+            exports.browser.ie = userAgent.match(/msie|trident/) != null;
+            exports.browser.edge = userAgent.match(/edge/) != null;
+            exports.browser.safari = !exports.browser.chrome && !exports.browser.edge && !exports.browser.opera && userAgent.match(/safari/) != null;
+
+            exports.browser.mobile = $.browser.mobile;
+            exports.browser.desktop = !exports.browser.mobile;
+
             // exports
 
             exports.isVisible = function() { return !isHidden() };
@@ -97,6 +153,8 @@ $(function() {
 
             return exports;
         })();
+
+        log.debug("Browser enviroment:", OctoPrint.coreui.browser);
 
         //~~ AJAX setup
 
