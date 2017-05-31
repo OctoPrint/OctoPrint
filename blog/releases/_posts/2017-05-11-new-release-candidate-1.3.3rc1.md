@@ -44,7 +44,7 @@ Some highlights from the release notes:
     approached me because there was something up with their plugin that
     required some manual action from their users - e.g. a misconfigured
     automatic update or things like a popular plugin looking for a new
-    maintainer. So far the [@OctoPrint3D twitter feed]()
+    maintainer. So far the [@OctoPrint3D twitter feed](https://twitter.com/OctoPrint3D)
     was the only option to reach some of you that were affected by this.
     Not any more - the plugin manager now also fetches plugin specific
     notices from the plugin repository and will display them to you if
