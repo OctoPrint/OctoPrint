@@ -366,7 +366,7 @@ class PrinterInterface(object):
 		  * CLOSED
 		  * ERROR
 		  * CLOSED_WITH_ERROR
-		  * TRANFERING_FILE
+		  * TRANSFERING_FILE
 		  * OFFLINE
 		  * UNKNOWN
 		  * NONE
