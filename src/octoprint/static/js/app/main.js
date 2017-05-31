@@ -22,7 +22,7 @@ $(function() {
 
             return function() {
                 var newArgs;
-                if (format) {
+                if (format && (OctoPrint.coreui.browser.chrome || OctoPrint.coreui.browser.firefox)) {
                     newArgs = ["%c[" + level + "]", format];
                 } else {
                     newArgs = ["[" + level + "]"];
@@ -67,7 +67,18 @@ $(function() {
                 browserTabVisibility: undefined,
                 selectedTab: undefined,
                 settingsOpen: false,
-                wizardOpen: false
+                wizardOpen: false,
+                browser: {
+                    chrome: false,
+                    firefox: false,
+                    safari: false,
+                    ie: false,
+                    edge: false,
+                    opera: false,
+
+                    mobile: false,
+                    desktop: false
+                }
             };
 
             var browserVisibilityCallbacks = [];
@@ -117,6 +128,22 @@ $(function() {
                 updateBrowserVisibility();
             }
 
+            // determine browser - loosely based on is.js
+
+            var navigator = window.navigator;
+            var userAgent = (navigator && navigator.userAgent || "").toLowerCase();
+            var vendor = (navigator && navigator.vendor || "").toLowerCase();
+
+            exports.browser.opera = userAgent.match(/opera|opr/) != null;
+            exports.browser.chrome = !exports.browser.opera && /google inc/.test(vendor) && userAgent.match(/chrome|crios/) != null;
+            exports.browser.firefox = userAgent.match(/firefox|fxios/) != null;
+            exports.browser.ie = userAgent.match(/msie|trident/) != null;
+            exports.browser.edge = userAgent.match(/edge/) != null;
+            exports.browser.safari = !exports.browser.chrome && !exports.browser.edge && !exports.browser.opera && userAgent.match(/safari/) != null;
+
+            exports.browser.mobile = $.browser.mobile;
+            exports.browser.desktop = !exports.browser.mobile;
+
             // exports
 
             exports.isVisible = function() { return !isHidden() };
@@ -126,6 +153,8 @@ $(function() {
 
             return exports;
         })();
+
+        log.debug("Browser enviroment:", OctoPrint.coreui.browser);
 
         //~~ AJAX setup
 
