@@ -12,14 +12,23 @@ images:
   title: Confirmation for deleted timelapses - and to still allow you fast deletions of multiple timelapses a new bulk delete feature.
 - url: /assets/img/blog/2017-05/2017-05-11-plugin-notices.png
   title: The new plugin notice mechanism to give you a heads-up regarding any important issues with your installed plugins.
+excerpt: After three release candidates I'm happy to finally present you OctoPrint
+  1.3.3. This a true maintenance release again, consisting of various improvements and
+  fixes.
+
+---
+
+---
+
+**Rollout temporarily halted** while I'm following up on some
+[reports I got](https://github.com/foosel/OctoPrint/issues/1942)
+about a (rare?) issue with this release.
 
 ---
 
 After three release candidates I'm happy to finally present you OctoPrint
 1.3.3. This a true maintenance release again, consisting of various improvements and
 fixes.
-
-<!-- more -->
 
 Some highlights from the release notes:
 
