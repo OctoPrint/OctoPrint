@@ -1,5 +1,26 @@
 # OctoPrint Changelog
 
+## 1.3.4 (2017-06-01)
+
+### Note for owners of Malyan M200/Monoprice Select Mini
+
+OctoPrint's firmware autodetection is now able to detect this printer. Currently when this printer is detected, the following firmware specific features will be enabled automatically:
+
+  * Always assume SD card is present (`feature.sdAlwaysAvailable`)
+  * Send a checksum with the command: Always (`feature.alwaysSendChecksum`)
+
+Since the firmware is a very special kind of beast and its sources are so far unavailable, only tests with a real printer will show if those are sufficient settings for communication with this printer to fully function correctly. Thus, if you run into any issues with enabled firmware autodetection on this printer model, please add a comment in [#1762](https://github.com/foosel/OctoPrint/issues/1762) and explain what kind of communication problem you are seeing. Also make sure to include a [`serial.log`](https://github.com/foosel/OctoPrint/blob/master/CONTRIBUTING.md#where-can-i-find-those-log-files-you-keep-talking-about)!
+
+### Bug fixes
+
+  * [#1942](https://github.com/foosel/OctoPrint/issues/1942) - Fixed crash on startup in case of an invalid default printer profile combined with "auto-connect on startup" being selected and the printer available to connect to.
+
+### More information
+
+  * [Commits](https://github.com/foosel/OctoPrint/compare/1.3.1...1.3.2)
+  * Release Candidates:
+    * None since this constitutes a hotfix release to fix an apparently very rare bug introduced with 1.3.3 that seems to be affecting a small number of users.
+
 ## 1.3.3 (2017-05-31)
 
 ### Note for owners of Malyan M200/Monoprice Select Mini
