@@ -162,9 +162,9 @@ def processUnrenderedTimelapseCommand(name):
 @api.route("/timelapse", methods=["POST"])
 @restricted_access
 def setTimelapseConfig():
-	data = request.values
-	if hasattr(request, "json") and request.json:
-		data = request.json
+	data = request.get_json(silent=True)
+	if data is None:
+		data = request.values
 
 	if "type" in data:
 		config = {

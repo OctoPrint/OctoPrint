@@ -13,6 +13,8 @@ from octoprint.users import ApiUser
 from octoprint.util import deprecated
 
 import flask as _flask
+import flask_login
+import flask_principal
 
 from . import flask
 from . import sockjs
@@ -58,9 +60,9 @@ def loginFromApiKeyRequestHandler():
 
 	if apikey and apikey != octoprint.server.UI_API_KEY and not octoprint.server.appSessionManager.validate(apikey):
 		user = get_user_for_apikey(apikey)
-		if user is not None and _flask.ext.login.login_user(user, remember=False):
-			_flask.ext.principal.identity_changed.send(_flask.current_app._get_current_object(),
-			                                           identity=_flask.ext.principal.Identity(user.get_id()))
+		if user is not None and not user.is_anonymous and flask_login.login_user(user, remember=False):
+			flask_principal.identity_changed.send(_flask.current_app._get_current_object(),
+			                                      identity=flask_principal.Identity(user.get_id()))
 		else:
 			return _flask.make_response("Invalid API key", 401)
 

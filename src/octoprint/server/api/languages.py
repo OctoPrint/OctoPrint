@@ -26,7 +26,7 @@ from octoprint.server.util.flask import restricted_access
 
 from octoprint.plugin import plugin_manager
 
-from flask.ext.babel import Locale
+from flask_babel import Locale
 
 @api.route("/languages", methods=["GET"])
 @restricted_access

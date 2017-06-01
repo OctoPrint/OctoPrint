@@ -12,7 +12,7 @@ The SSDP/UPNP implementations has been largely inspired by https://gist.github.c
 import logging
 import os
 import flask
-from flask.ext.babel import gettext
+from flask_babel import gettext
 from builtins import range
 
 import octoprint.plugin

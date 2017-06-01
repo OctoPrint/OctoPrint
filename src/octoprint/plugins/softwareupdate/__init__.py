@@ -18,7 +18,7 @@ import hashlib
 
 from . import version_checks, updaters, exceptions, util, cli
 
-from flask.ext.babel import gettext
+from flask_babel import gettext
 
 from octoprint.server.util.flask import restricted_access, with_revalidation_checking, check_etag
 from octoprint.server import admin_permission, VERSION, REVISION, BRANCH
@@ -522,7 +522,9 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		if not "application/json" in flask.request.headers["Content-Type"]:
 			return flask.make_response("Expected content-type JSON", 400)
 
-		json_data = flask.request.json
+		json_data = flask.request.get_json(silent=True)
+		if json_data is None:
+			return flask.make_response("Invalid JSON", 400)
 
 		if "check" in json_data:
 			check_targets = map(lambda x: x.strip(), json_data["check"])
@@ -549,7 +551,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 	##~~ TemplatePlugin API
 
 	def get_template_configs(self):
-		from flask.ext.babel import gettext
+		from flask_babel import gettext
 		return [
 			dict(type="settings", name=gettext("Software Update"))
 		]
@@ -882,7 +884,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		result = dict(check)
 
 		if target == "octoprint":
-			from flask.ext.babel import gettext
+			from flask_babel import gettext
 
 			result["displayName"] = to_unicode(check.get("displayName"), errors="replace")
 			if result["displayName"] is None:

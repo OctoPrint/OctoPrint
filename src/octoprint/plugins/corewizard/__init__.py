@@ -9,7 +9,7 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 import octoprint.plugin
 
 
-from flask.ext.babel import gettext
+from flask_babel import gettext
 
 
 class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
@@ -87,9 +87,9 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 		from flask import request
 		from octoprint.server.api import valid_boolean_trues, NO_CONTENT
 
-		data = request.values
-		if hasattr(request, "json") and request.json:
-			data = request.json
+		data = request.get_json()
+		if data is None:
+			data = request.values
 
 		if "ac" in data and data["ac"] in valid_boolean_trues and \
 						"user" in data.keys() and "pass1" in data.keys() and \

@@ -9,7 +9,7 @@ import logging
 import sarge
 
 from flask import request, make_response, jsonify, url_for
-from flask.ext.babel import gettext
+from flask_babel import gettext
 
 from octoprint.settings import settings as s
 
@@ -24,9 +24,9 @@ from octoprint.server.util.flask import restricted_access, get_remote_address
 def performSystemAction():
 	logging.getLogger(__name__).warn("Deprecated API call to /api/system made by {}, should be migrated to use /system/commands/custom/<action>".format(get_remote_address(request)))
 
-	data = request.values
-	if hasattr(request, "json") and request.json:
-		data = request.json
+	data = request.get_json(silent=True)
+	if data is None:
+		data = request.values
 
 	if not "action" in data:
 		return make_response("action to perform is not defined", 400)

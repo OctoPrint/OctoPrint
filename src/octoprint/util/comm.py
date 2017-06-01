@@ -147,6 +147,7 @@ def serialList():
 			   + glob.glob("/dev/tty.usb*") \
 			   + glob.glob("/dev/cu.*") \
 			   + glob.glob("/dev/cuaU*") \
+			   + glob.glob("/dev/ttyS*") \
 			   + glob.glob("/dev/rfcomm*")
 
 	additionalPorts = settings().get(["serial", "additionalPorts"])
@@ -1604,7 +1605,7 @@ class MachineCom(object):
 
 	def _poll_temperature(self):
 		"""
-		Polls the temperature after the temperature timeout, re-enqueues itself.
+		Polls the temperature.
 
 		If the printer is not operational, closing the connection, not printing from sd, busy with a long running
 		command or heating, no poll will be done.
@@ -1615,7 +1616,7 @@ class MachineCom(object):
 
 	def _poll_sd_status(self):
 		"""
-		Polls the sd printing status after the sd status timeout, re-enqueues itself.
+		Polls the sd printing status.
 
 		If the printer is not operational, closing the connection, not printing from sd, busy with a long running
 		command or heating, no poll will be done.

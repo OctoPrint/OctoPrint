@@ -326,8 +326,11 @@ def printerCommand():
 		return make_response("Expected content type JSON", 400)
 
 	try:
-		data = request.json
+		data = request.get_json()
 	except BadRequest:
+		return make_response("Malformed JSON body in request", 400)
+
+	if data is None:
 		return make_response("Malformed JSON body in request", 400)
 
 	if "command" in data and "commands" in data:
