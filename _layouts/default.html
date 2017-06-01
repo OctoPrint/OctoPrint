@@ -60,6 +60,12 @@
     <meta property="og:description" content="{{ thedescription }}" />
     <meta property="og:site_name" content="{{ site.title }}" />
     <meta property="og:url" content="{{ page.url | prepend: BASE_PATH | prepend: site.external }}" />
+
+    <meta itemscope itemtype="http://schema.org/WebPage" />
+    <meta itemprop="headline" content="{{ thetitle }}" />
+    <meta itemprop="description" content="{{ thedescription }}" />
+    <meta itemprop="image" content="{{ theimage }}" />
+
     <script>
         var shiftWindow = function() { scrollBy(0, -40) };
         window.addEventListener("hashchange", shiftWindow);
