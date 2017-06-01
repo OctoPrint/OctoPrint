@@ -43,7 +43,7 @@ for this particular issue, as visible in the
 If you haven't yet,
 **please also make sure to read the [release announcement for 1.3.3](/blog/2017/05/31/new-release-1.3.3/)**
 as that contains more information about the things that changed
-since 1.3.2. Same goes for the [Changelog for 1.3.2](https://github.com/foosel/OctoPrint/releases/tag/1.3.3).
+since 1.3.2. Same goes for the [Changelog for 1.3.3](https://github.com/foosel/OctoPrint/releases/tag/1.3.3).
 
 Also see the **Further Information** and **Links** below for more information,
 where to find help and how to roll back. Thanks!
