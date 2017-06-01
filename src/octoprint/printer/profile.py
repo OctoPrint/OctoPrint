@@ -215,11 +215,17 @@ class PrinterProfileManager(object):
 		if self.exists("_default"):
 			return
 
+		if not isinstance(default_overrides, dict):
+			self._logger.warn("Existing default profile from settings is not a valid profile, refusing to migrate: {!r}".format(default_overrides))
+			return
+
 		default_overrides["id"] = "_default"
 		self.save(default_overrides)
 
 		settings().set(["printerProfiles", "defaultProfile"], None)
 		settings().save()
+
+		self._logger.info("Migrated default printer profile from settings to _default.profile: {!r}".format(default_overrides))
 
 	def _verify_default_available(self):
 		default_id = settings().get(["printerProfile", "default"])
@@ -228,12 +234,23 @@ class PrinterProfileManager(object):
 
 		if not self.exists(default_id):
 			if not self.exists("_default"):
-				self._logger.error("Selected default profile {} and _default do not exist, creating _default again and setting it as default".format(default_id))
+				if default_id == "_default":
+					self._logger.error("Profile _default does not exist, creating _default again and setting it as default")
+				else:
+					self._logger.error("Selected default profile {} and _default do not exist, creating _default again and setting it as default".format(default_id))
 				self.save(self.__class__.default, allow_overwrite=True, make_default=True)
 			else:
 				self._logger.error("Selected default profile {} does not exists, resetting to _default".format(default_id))
 				settings().set(["printerProfiles", "default"], "_default")
 				settings().save()
+			default_id = "_default"
+
+		profile = self.get(default_id)
+		if profile is None:
+			self._logger.error("Selected default profile {} is invalid, resetting to default values".format(default_id))
+			profile = copy.deepcopy(self.__class__.default)
+			profile["id"] = default_id
+			self.save(self.__class__.default, allow_overwrite=True, make_default=True)
 
 	def select(self, identifier):
 		if identifier is None or not self.exists(identifier):
@@ -241,7 +258,12 @@ class PrinterProfileManager(object):
 			return False
 		else:
 			self._current = self.get(identifier)
-			return True
+			if self._current is None:
+				self._logger.error("Profile {} is invalid, cannot select, falling back to default".format(identifier))
+				self._current = self.get_default()
+				return False
+			else:
+				return True
 
 	def deselect(self):
 		self._current = None
@@ -310,6 +332,8 @@ class PrinterProfileManager(object):
 			profile = self.get(default)
 			if profile is not None:
 				return profile
+			else:
+				self._logger.warn("Default profile {} is invalid, falling back to built-in defaults".format(default))
 
 		return copy.deepcopy(self.__class__.default)
 
@@ -344,6 +368,7 @@ class PrinterProfileManager(object):
 			try:
 				profile = self._load_from_path(path)
 			except InvalidProfileError:
+				self._logger.warn("Profile {} is invalid, skipping".format(identifier))
 				continue
 
 			if profile is None:
@@ -372,6 +397,9 @@ class PrinterProfileManager(object):
 		import yaml
 		with open(path) as f:
 			profile = yaml.safe_load(f)
+
+		if profile is None or not isinstance(profile, dict):
+			raise InvalidProfileError("Profile is None or not a dictionary")
 
 		if self._migrate_profile(profile):
 			try:
