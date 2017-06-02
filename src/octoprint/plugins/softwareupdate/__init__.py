@@ -919,8 +919,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 					result["force_base"] = False
 
 					if check.get("update_script", None):
-						# if we are using the update_script, we need to set our update_branch and force
-						# to install the exact version we requested
+						# if we are using the update_script, we need to set our update_branch
 
 						if check.get("prerelease", None):
 							# we are tracking prereleases => we want to be on the correct prerelease channel/branch
@@ -930,14 +929,13 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 								# in case it's not already set
 								result["update_branch"] = check.get("update_branch", channel)
 
-							# we also force our target version in the update
-							result["force_exact_version"] = True
-
 						else:
 							# we are not tracking prereleases, but aren't on the stable branch either => switch back
 							# to stable branch on update
 							result["update_branch"] = check.get("update_branch", stable_branch)
 
+						# we also force an exact version
+						result["force_exact_version"] = True
 
 						if BRANCH != result.get("prerelease_channel"):
 							# we force python unequality check here because that will also allow us to

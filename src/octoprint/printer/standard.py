@@ -1174,8 +1174,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		except:
 			self._logger.exception("Error while trying to persist print recovery data")
 
-	def _payload_for_print_job_event(self, location=None, print_job_file=None, position=None):
-		print_job_size = None
+	def _payload_for_print_job_event(self, location=None, print_job_file=None, print_job_size=None, position=None):
 		if print_job_file is None:
 			with self._selectedFileMutex:
 				selected_file = self._selectedFile
@@ -1186,7 +1185,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 				print_job_size = selected_file.get("filesize", None)
 				location = FileDestinations.SDCARD if selected_file.get("sd", False) else FileDestinations.LOCAL
 
-		if not print_job_file or not print_job_size or not location:
+		if not print_job_file or not location:
 			return dict()
 
 		if location == FileDestinations.SDCARD:

@@ -1295,6 +1295,7 @@ class MachineCom(object):
 							self._logger.info("Detected Malyan firmware, enabling relevant features for issue free communication")
 
 							self._alwaysSendChecksum = True
+							self._blockWhileDwelling = True
 
 							sd_always_available = self._sdAlwaysAvailable
 							self._sdAlwaysAvailable = True
