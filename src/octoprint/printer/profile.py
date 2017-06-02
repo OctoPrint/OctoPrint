@@ -342,7 +342,7 @@ class PrinterProfileManager(object):
 		if identifier is not None and not identifier in all_identifiers:
 			return
 
-		settings().set(["printerProfile", "default"], identifier)
+		settings().set(["printerProfiles", "default"], identifier)
 		settings().save()
 
 	def get_current_or_default(self):
