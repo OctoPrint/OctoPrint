@@ -249,8 +249,11 @@ class FilebasedGroupManager(GroupManager):
 		self._save()
 
 	def remove_permissions_from_groups(self, permissions):
-		for group in self._groups.keys():
-			self._dirty |= group.remove_permissions_from_group(permissions)
+		for group in self._groups.values():
+			try:
+				self._dirty |= group.remove_permissions_from_group(permissions)
+			except GroupCantbeChanged:
+				pass
 
 		if self._dirty:
 			self._save()
