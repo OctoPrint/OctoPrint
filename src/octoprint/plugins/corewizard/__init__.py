@@ -49,9 +49,12 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 	#~~ AssetPlugin API
 
 	def get_assets(self):
-		return dict(
-			js=["js/corewizard.js"]
-		)
+		if self.is_wizard_required():
+			return dict(
+				js=["js/corewizard.js"]
+			)
+		else:
+			return dict()
 
 	#~~ WizardPlugin API
 
@@ -74,7 +77,7 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 		return self._user_manager.enabled and not self._user_manager.hasBeenCustomized()
 
 	def _get_acl_wizard_details(self):
-		return dict()
+		return dict(required=self._is_acl_wizard_required())
 
 	def _get_acl_wizard_name(self):
 		return gettext("Access Control")
@@ -119,7 +122,7 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 		return not (webcam_snapshot_url and webcam_stream_url and ffmpeg_path)
 
 	def _get_webcam_wizard_details(self):
-		return dict()
+		return dict(required=self._is_webcam_wizard_required())
 
 	def _get_webcam_wizard_name(self):
 		return gettext("Webcam & Timelapse")
@@ -134,7 +137,7 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 		return not (system_shutdown_command and system_restart_command and server_restart_command)
 
 	def _get_servercommands_wizard_details(self):
-		return dict()
+		return dict(required=self._is_servercommands_wizard_required())
 
 	def _get_servercommands_wizard_name(self):
 		return gettext("Server Commands")
@@ -145,7 +148,7 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 		return self._printer_profile_manager.is_default_unmodified() and self._printer_profile_manager.profile_count == 1
 
 	def _get_printerprofile_wizard_details(self):
-		return dict()
+		return dict(required=self._is_printerprofile_wizard_required())
 
 	def _get_printerprofile_wizard_name(self):
 		return gettext("Default Printer Profile")
