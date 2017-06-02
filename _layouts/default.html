@@ -42,21 +42,33 @@
     <!-- Le social media meta data -->
     {% capture thetitle %}{% if page.title %}{{ page.title }}{% else %}{{ site.title }}{% endif %}{% endcapture %}
     {% capture thedescription %}{% if page.excerpt %}{{ page.excerpt | strip_html }}{% else %}{% if page.description %}{{ page.description }}{% else %}{{ site.description }}{% endif %}{% endif %}{% endcapture %}
-    {% capture theimage %}{{ site.external }}{{ BASE_PATH }}{% if page.card %}{{ page.card }}{% else %}/assets/img/octoprint-avatar-240x240.png{% endif %}{% endcapture %}
+
+    {% if page.poster %}
+        {% capture theimage %}{{ site.external }}{{ BASE_PATH }}{{ page.poster }}{% endcapture %}
+    {% else %}
+        {% if page.card %}
+            {% capture theimage %}{{ site.external }}{{ BASE_PATH }}{{ page.card }}{% endcapture %}
+        {% else %}
+            {% capture theimage %}{{ site.external }}{{ BASE_PATH }}/assets/img/octoprint-600x600.png{% endcapture %}
+        {% endif %}
+    {% endif %}
+
+    {% if page.card %}
+        {% capture thecard %}{{ site.external }}{{ BASE_PATH }}{{ page.card }}{% endcapture %}
+    {% else %}
+        {% capture thecard %}{{ site.external }}{{ BASE_PATH }}/assets/img/octoprint-avatar-240x240.png{% endcapture %}
+    {% endif %}
 
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:site" content="@{{ site.twitter }}" />
     <meta name="twitter:title" content="{{ thetitle }}" />
     <meta name="twitter:description" content="{{ thedescription }}" />
-    <meta name="twitter:image" content="{{ theimage }}" />
-    <meta name="twitter:image:alt" content="The OctoPrint logo" />
+    <meta name="twitter:image" content="{{ thecard }}" />
 
     <meta property="og:title" content="{{ thetitle }}" />
     <meta property="og:type" content="website" />
     <meta property="og:image" content="{{ theimage }}" />
     <meta property="og:image:type" content="image/png" />
-    <meta property="og:image:width" content="240" />
-    <meta property="og:image:height" content="240" />
     <meta property="og:description" content="{{ thedescription }}" />
     <meta property="og:site_name" content="{{ site.title }}" />
     <meta property="og:url" content="{{ page.url | prepend: BASE_PATH | prepend: site.external }}" />
