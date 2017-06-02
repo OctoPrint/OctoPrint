@@ -214,7 +214,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			"checks": {
 				"octoprint": {
 					"type": "github_release",
-					"user": "foosel",
+					"user": "Robo3D",
 					"repo": "OctoPrint",
 					"update_script": "{{python}} \"{update_script}\" --branch={{branch}} --force={{force}} \"{{folder}}\" {{target}}".format(update_script=update_script),
 					"restart": "octoprint",
