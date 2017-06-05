@@ -26,7 +26,7 @@ GCODE.renderer = (function(){
         colorGrid: "#bbbbbb",
         bgColorGrid: "#ffffff",
         bgColorOffGrid: "#eeeeee",
-        colorLine: ["#000000", "#3333cc", "#cc3333", "#33cc33", "#cc33cc"],
+        colorLine: [["#000", "#001", "#002", "#003", "#004", "#005", "#006", "#007", "#008", "#009", "#00a", "#00b", "#00c", "#00d", "#00e", "#00f", "#00f", "#30d", "#60a", "#908", "#b05", "#d03", "#f01", "#f00"], ["#3333cc"], ["#cc3333"], ["#33cc33"], ["#cc33cc"]],
         colorMove: "#00ff00",
         colorRetract: "#ff0000",
         colorRestart: "#0000ff",
@@ -425,6 +425,7 @@ GCODE.renderer = (function(){
         //~~ render this layer's commands
 
         for (i = fromProgress; i <= toProgress; i++) {
+
             ctx.lineWidth = 1;
 
             if (typeof(cmds[i]) === 'undefined') continue;
@@ -452,6 +453,10 @@ GCODE.renderer = (function(){
             // current tool
             var tool = cmds[i].tool;
             if (tool === undefined) tool = 0;
+
+            // color array length inspection
+            var colorArrayLength = renderOptions["colorLine"][tool].length;
+
 
             // line color based on tool
             var lineColor = renderOptions["colorLine"][tool];
@@ -486,7 +491,9 @@ GCODE.renderer = (function(){
             } else if(cmds[i].extrude) {
                 if (cmds[i].retract == 0) {
                     // no retraction => real extrusion move, use tool color to draw line
-                    ctx.strokeStyle = pusher.color(renderOptions["colorLine"][tool]).shade(shade).alpha(alpha).html();
+                    // changing color to visualize progress
+                    ctx.strokeStyle = pusher.color(renderOptions["colorLine"][tool][(toProgress - i < colorArrayLength - 1)?colorArrayLength - 1 - toProgress + i:0]).shade(shade).alpha(alpha).html();
+                    //    ctx.strokeStyle = pusher.color(renderOptions["colorLine"][tool]).shade(shade).alpha(alpha).html();
                     ctx.lineWidth = renderOptions['extrusionWidth'];
                     ctx.beginPath();
                     ctx.moveTo(prevX, prevY);
