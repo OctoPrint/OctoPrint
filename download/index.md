@@ -44,7 +44,7 @@ Please follow these steps after downloading
    or the IP address assigned by your router), default username is "pi",
    default password is "raspberry". **Change the password** using the ``passwd``
    command. You do not need to expand the filesystem, current versions of OctoPi do this automatically.
-5. Access OctoPrint through ``http://octopi.local`` or ``http://<your pi's ip address>``. https is available to,
+5. Access OctoPrint through ``http://octopi.local`` or ``http://<your pi's ip address>``. https is available too,
    with a self-signed certificate.
 
 Please also refer to [OctoPi's README](https://github.com/guysoft/OctoPi), especially the ["How to use it" section](https://github.com/guysoft/OctoPi#how-to-use-it).
