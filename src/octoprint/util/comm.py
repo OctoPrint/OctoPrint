@@ -62,6 +62,7 @@ regexes_parameters = dict(
 	floatY=re.compile("(^|[^A-Za-z])[Yy](?P<value>%s)" % regex_float_pattern),
 	floatZ=re.compile("(^|[^A-Za-z])[Zz](?P<value>%s)" % regex_float_pattern),
 	intN=re.compile("(^|[^A-Za-z])[Nn](?P<value>%s)" % regex_int_pattern),
+	intS=re.compile("(^|[^A-Za-z])[Ss](?P<value>%s)" % regex_int_pattern),
 	intT=re.compile("(^|[^A-Za-z])[Tt](?P<value>%s)" % regex_int_pattern)
 )
 """Regexes for parsing various GCODE command parameters."""
@@ -254,6 +255,8 @@ class MachineCom(object):
 	STATE_CLOSED_WITH_ERROR = 10
 	STATE_TRANSFERING_FILE = 11
 
+	CAPABILITY_AUTOREPORT_TEMP = "AUTOREPORT_TEMP"
+
 	def __init__(self, port = None, baudrate=None, callbackObject=None, printerProfileManager=None):
 		self._logger = logging.getLogger(__name__)
 		self._serialLogger = logging.getLogger("SERIAL")
@@ -336,8 +339,12 @@ class MachineCom(object):
 		self._resendSwallowRepetitions = settings().getBoolean(["feature", "ignoreIdenticalResends"])
 		self._resendSwallowRepetitionsCounter = 0
 
-		self._firmwareDetection = settings().getBoolean(["feature", "firmwareDetection"])
-		self._firmwareInfoReceived = not self._firmwareDetection
+		self._firmware_detection = settings().getBoolean(["feature", "firmwareDetection"])
+		self._firmware_info_received = not self._firmware_detection
+		self._firmware_info = dict()
+		self._firmware_capabilities = dict()
+
+		self._temperature_autoreporting = False
 
 		self._supportResendsWithoutOk = settings().getBoolean(["serial", "supportResendsWithoutOk"])
 
@@ -1212,11 +1219,16 @@ class MachineCom(object):
 						self._callback.on_comm_position_update(self.last_position.as_dict(), reason=reason)
 
 				# temperature processing
-				elif ' T:' in line or line.startswith('T:') or ' T0:' in line or line.startswith('T0:') or ((' B:' in line or line.startswith('B:')) and not 'A:' in line):
-					if not disable_external_heatup_detection and not line.strip().startswith("ok") and not self._heating and self._firmwareInfoReceived:
+				elif ' T:' in line or line.startswith('T:') or ' T0:' in line or line.startswith('T0:') \
+						or ((' B:' in line or line.startswith('B:')) and not 'A:' in line):
+
+					if not disable_external_heatup_detection and not self._temperature_autoreporting \
+							and not line.strip().startswith("ok") and not self._heating \
+							and self._firmware_info_received:
 						self._logger.debug("Externally triggered heatup detected")
 						self._heating = True
 						self._heatupWaitStartTime = time.time()
+
 					self._processTemperatures(line)
 					self._callback.on_comm_temperature_update(self._temp, self._bedTemp)
 
@@ -1268,7 +1280,7 @@ class MachineCom(object):
 						if "malyan" in name.lower() and ver:
 							firmware_name = name.strip() + " " + ver.strip()
 
-					if not self._firmwareInfoReceived and firmware_name:
+					if not self._firmware_info_received and firmware_name:
 						firmware_name = firmware_name.strip()
 						self._logger.info("Printer reports firmware name \"{}\"".format(firmware_name))
 
@@ -1301,7 +1313,20 @@ class MachineCom(object):
 							if not sd_always_available and not self._sdAvailable:
 								self.initSdCard()
 
-						self._firmwareInfoReceived = True
+						self._firmware_info_received = True
+						self._firmware_info = data
+						self._firmware_name = firmware_name
+
+				##~~ Firmware capability report triggered by M115
+				elif lower_line.startswith("cap:"):
+					parsed = parse_capability_line(lower_line)
+					if parsed is not None:
+						capability, enabled = parsed
+						self._firmware_capabilities[capability] = enabled
+
+						if capability == self.CAPABILITY_AUTOREPORT_TEMP and enabled:
+							self._logger.info("Firmware states that it supports temperature autoreporting")
+							self._set_autoreport_temperature()
 
 				##~~ SD Card handling
 				elif 'SD init fail' in line or 'volume.init failed' in line or 'openRoot failed' in line:
@@ -1613,11 +1638,11 @@ class MachineCom(object):
 		"""
 		Polls the temperature after the temperature timeout, re-enqueues itself.
 
-		If the printer is not operational, closing the connection, not printing from sd, busy with a long running
-		command or heating, no poll will be done.
+		If the printer is not operational, capable of auto-reporting temperatures, closing the connection, not printing
+		from sd, busy with a long running command or heating, no poll will be done.
 		"""
 
-		if self.isOperational() and not self._connection_closing and not self.isStreaming() and not self._long_running_command and not self._heating and not self._dwelling_until and not self._manualStreaming:
+		if self.isOperational() and not self._temperature_autoreporting and not self._connection_closing and not self.isStreaming() and not self._long_running_command and not self._heating and not self._dwelling_until and not self._manualStreaming:
 			self.sendCommand("M105", cmd_type="temperature_poll")
 
 	def _poll_sd_status(self):
@@ -1631,6 +1656,14 @@ class MachineCom(object):
 		if self.isOperational() and not self._connection_closing and self.isSdPrinting() and not self._long_running_command and not self._dwelling_until and not self._heating:
 			self.sendCommand("M27", cmd_type="sd_status_poll")
 
+	def _set_autoreport_temperature(self, interval=None):
+		if interval is None:
+			try:
+				interval = int(self._timeout_intervals.get("temperatureAutoreport", 2))
+			except:
+				interval = 2
+		self.sendCommand("M155 S{}".format(interval))
+
 	def _onConnected(self):
 		self._serial.timeout = settings().getFloat(["serial", "timeout", "communication"])
 		self._temperature_timer = RepeatedTimer(self._getTemperatureTimerInterval, self._poll_temperature, run_first=True)
@@ -1639,7 +1672,7 @@ class MachineCom(object):
 		self._changeState(self.STATE_OPERATIONAL)
 
 		self.resetLineNumbers()
-		if self._firmwareDetection:
+		if self._firmware_detection:
 			self.sendCommand("M115")
 
 		if self._sdAvailable:
@@ -2176,7 +2209,7 @@ class MachineCom(object):
 						command_allowing_checksum = gcode is not None or self._sendChecksumWithUnknownCommands
 						checksum_enabled = not self._neverSendChecksum and (self.isPrinting() or
 						                                                    self._alwaysSendChecksum or
-						                                                    not self._firmwareInfoReceived)
+						                                                    not self._firmware_info_received)
 
 						command_to_send = command.encode("ascii", errors="replace")
 						if command_requiring_checksum or (command_allowing_checksum and checksum_enabled):
@@ -2483,6 +2516,16 @@ class MachineCom(object):
 		self._heatupWaitStartTime = time.time()
 		self._long_running_command = True
 		self._heating = True
+
+	def _gcode_M155_sending(self, cmd, cmd_type=None):
+		match = regexes_parameters["intS"].search(cmd)
+		if match:
+			try:
+				interval = int(match.group("value"))
+				self._temperature_autoreporting = self._firmware_capabilities.get(self.CAPABILITY_AUTOREPORT_TEMP, False) \
+				                                  and (interval > 0)
+			except:
+				pass
 
 	def _gcode_M110_sending(self, cmd, cmd_type=None):
 		newLineNumber = 0
@@ -3110,6 +3153,43 @@ def parse_firmware_line(line):
 	for key, value in chunks(split_line, 2):
 		result[key] = value
 	return result
+
+def parse_capability_line(line):
+	"""
+	Parses the provided firmware capability line.
+
+	Lines are expected to be of the format
+
+	    Cap:<capability name in caps>:<0 or 1>
+
+	e.g.
+
+	    Cap:AUTOREPORT_TEMP:1
+	    Cap:TOGGLE_LIGHTS:0
+
+	Args:
+		line (str): the line to parse
+
+	Returns:
+		tuple: a 2-tuple of the parsed capability name and whether it's on (true) or off (false), or None if the line
+		    could not be parsed
+	"""
+
+	line = line.lower()
+	if line.startswith("cap:"):
+		line = line[len("cap:"):]
+
+	parts = line.split(":")
+	if len(parts) != 2:
+		# wrong format, can't parse this
+		return None
+
+	capability, flag = parts
+	if not flag in ("0", "1"):
+		# wrong format, can't parse this
+		return None
+
+	return capability.upper(), flag == "1"
 
 def parse_resend_line(line):
 	"""

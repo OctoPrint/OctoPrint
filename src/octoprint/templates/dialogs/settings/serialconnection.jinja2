@@ -19,7 +19,7 @@
         </div>
     </div>
     <div class="control-group" title="{{ _('Interval in which to poll for the temperature information from the printer') }}">
-        <label class="control-label" for="settings-serialTimeoutTemperature">{{ _('Temperature interval') }}</label>
+        <label class="control-label" for="settings-serialTimeoutTemperature">{{ _('Temperature interval (polling)') }}</label>
         <div class="controls">
             <div class="input-append">
                 <input type="number" step="any" min="1" class="input-mini text-right" data-bind="value: serial_timeoutTemperature" id="settings-serialTimeoutTemperature">
@@ -33,6 +33,16 @@
                 <span class="add-on">s</span>
             </div>
             <span class="help-inline">{{ _('When a target temperature is set')}}</span>
+        </div>
+    </div>
+    <div class="control-group" title="{{ _('Temperature report interval to request from autoreport capable firmwares. A value of 0 disables autoreporting by the firmware and forces polling.') }}">
+        <label class="control-label">{{ _('Temperature interval (autoreport)') }}</label>
+        <div class="controls">
+            <div class="input-append">
+                <input type="number" step="any" min="0" class="input-mini text-right" data-bind="value: serial_timeoutTemperatureAutoreport" id="settings-serialTimeoutTemperatureAutoreport">
+                <span class="add-on">s</span>
+            </div>
+            <span class="help-inline">{{ _('Autoreport interval to request from firmware')}}</span>
         </div>
     </div>
     <div class="control-group" title="{{ _('Interval in which to poll for the SD printing status information from the printer while printing') }}">
