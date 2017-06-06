@@ -1314,11 +1314,14 @@ class Settings(object):
 		if folder is None:
 			folder = self._get_default_folder(type)
 
-		if not os.path.isdir(folder):
+		if not os.path.exists(folder):
 			if create:
 				os.makedirs(folder)
 			else:
-				raise IOError("No such folder: {folder}".format(folder=folder))
+				raise IOError("No such folder: {}".format(folder))
+		elif os.path.isfile(folder):
+			# hardening against misconfiguration, see #1953
+			raise IOError("Expected a folder at {} but found a file instead".format(folder))
 
 		return folder
 
