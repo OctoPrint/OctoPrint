@@ -90,7 +90,7 @@ $(function() {
             if (!self._printerProfileInitialized) {
                 self._triggerBacklog();
             }
-            self.updatePlot();
+            self.updatePlot(false);
         };
         self.settingsViewModel.printerProfiles.currentProfileData.subscribe(function() {
             self._printerProfileUpdated();
@@ -168,12 +168,12 @@ $(function() {
             if (!CONFIG_TEMPERATURE_GRAPH) return;
 
             self.temperatures = self._processTemperatureData(serverTime, data, self.temperatures);
-            self.updatePlot();
+            self.updatePlot(false);
         };
 
         self._processTemperatureHistoryData = function(serverTime, data) {
             self.temperatures = self._processTemperatureData(serverTime, data);
-            self.updatePlot();
+            self.updatePlot(false);
         };
 
         self._processOffsetData = function(data) {
@@ -232,7 +232,9 @@ $(function() {
             return result;
         };
 
-        self.updatePlot = function() {
+        self.updatePlot = function(force) {
+            force = force == undefined ? true : force;
+
             var graph = $("#temperature-graph");
             if (graph.length) {
                 var data = [];
@@ -241,9 +243,7 @@ $(function() {
 
                 var maxTemps = [310/1.1];
 
-                var showFahrenheit = (self.settingsViewModel.settings !== undefined )
-                                     ? self.settingsViewModel.settings.appearance.showFahrenheitAlso()
-                                     : false;
+                var showFahrenheit = self._shallShowFahrenheit();
 
                 _.each(_.keys(heaterOptions), function(type) {
                     if (type == "bed" && !self.hasBed()) {
@@ -275,15 +275,7 @@ $(function() {
                     maxTemps.push(self.getMaxTemp(actuals, targets));
                 });
 
-                var replaceLegendLabel = function(index, series, value, emph) {
-                    var temp = formatTemperature(value, showFahrenheit);
-                    if (emph) {
-                        temp = "<em>" + temp + "</em>";
-                    }
-                    series.label = series.label.replace(/:.*/, ": " + temp);
-                };
-
-                if (self.plot == undefined) {
+                if (!self.plot || force) {
                     // we don't have a plot yet, we need to set stuff up
                     var options = {
                         yaxis: {
@@ -316,32 +308,21 @@ $(function() {
                             position: "sw",
                             noColumns: 2,
                             backgroundOpacity: 0
-                        },
-                        crosshair: {
-                            mode: "x"
-                        },
-                        grid: {
-                            hoverable: true,
-                            autoHighlight: false
                         }
                     };
 
-                    self.plot = $.plot(graph, data, options);
+                    if (!OctoPrint.coreui.browser.mobile) {
+                        options["crosshair"] = { mode: "x" };
+                        options["grid"] = { hoverable: true, autoHighlight: false };
+                    }
 
-                    graph.bind("plothover",  function (event, pos, item) {
-                        self.plotHoverPos = pos;
-                        if (!self.plotLegendTimeout) {
-                            self.plotLegendTimeout = window.setTimeout(function() {
-                                self.updateLegend(replaceLegendLabel)
-                            }, 50);
-                        }
-                    });
+                    self.plot = $.plot(graph, data, options);
 
                 } else {
                     // graph already active, let's just update the data
                     self.plot.setData(data);
                     self.plot.getAxes().yaxis.max = Math.max(Math.max.apply(null, maxTemps) * 1.1, 310);
-                    self.updateLegend(replaceLegendLabel);
+                    self.updateLegend(self._replaceLegendLabel);
                     self.plot.draw();
                 }
             }
@@ -350,8 +331,15 @@ $(function() {
         self.updateLegend = function(replaceLegendLabel) {
             self.plotLegendTimeout = undefined;
 
+            var resetLegend = function() {
+                _.each(dataset, function(series, index) {
+                    var value = series.data && series.data.length ? series.data[series.data.length - 1][1] : undefined;
+                    replaceLegendLabel(index, series, value);
+                });
+            };
+
             var pos = self.plotHoverPos;
-            if (pos) {
+            if (pos && !OctoPrint.coreui.browser.mobile) {
                 // we got a hover position, let's see what we need to do with that
 
                 var i;
@@ -361,10 +349,7 @@ $(function() {
                 if (pos.x < axes.xaxis.min || pos.x > axes.xaxis.max ||
                     pos.y < axes.yaxis.min || pos.y > axes.yaxis.max) {
                     // position outside of the graph, show latest temperature in legend
-                    _.each(dataset, function(series, index) {
-                        var value = series.data && series.data.length ? series.data[series.data.length - 1][1] : undefined;
-                        replaceLegendLabel(index, series, value);
-                    });
+                    resetLegend();
                 } else {
                     // position inside the graph, determine temperature at point and display that in the legend
                     _.each(dataset, function(series, index) {
@@ -389,6 +374,8 @@ $(function() {
                         replaceLegendLabel(index, series, y, true);
                     });
                 }
+            } else {
+                resetLegend();
             }
 
             // update the grid
@@ -495,6 +482,22 @@ $(function() {
             return OctoPrint.printer.setBedTemperatureOffset(parseInt(offset));
         };
 
+        self._replaceLegendLabel = function(index, series, value, emph) {
+            var showFahrenheit = self._shallShowFahrenheit();
+
+            var temp = formatTemperature(value, showFahrenheit);
+            if (emph) {
+                temp = "<em>" + temp + "</em>";
+            }
+            series.label = series.label.replace(/:.*/, ": " + temp);
+        };
+
+        self._shallShowFahrenheit = function() {
+            return (self.settingsViewModel.settings !== undefined )
+                   ? self.settingsViewModel.settings.appearance.showFahrenheitAlso()
+                   : false;
+        };
+
         self.handleEnter = function(event, type, item) {
             if (event.keyCode == 13) {
                 if (type == "target") {
@@ -509,7 +512,21 @@ $(function() {
             if (current != "#temp") {
                 return;
             }
-            self.updatePlot();
+            self.updatePlot(false);
+        };
+
+        self.onStartup = function() {
+            var graph = $("#temperature-graph");
+            if (graph.length && !OctoPrint.coreui.browser.mobile) {
+                graph.bind("plothover",  function (event, pos, item) {
+                    self.plotHoverPos = pos;
+                    if (!self.plotLegendTimeout) {
+                        self.plotLegendTimeout = window.setTimeout(function() {
+                            self.updateLegend(self._replaceLegendLabel)
+                        }, 50);
+                    }
+                });
+            }
         };
 
         self.onStartupComplete = function() {
