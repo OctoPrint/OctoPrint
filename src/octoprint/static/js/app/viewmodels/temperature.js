@@ -99,46 +99,7 @@ $(function() {
         });
 
         self.temperatures = [];
-        self.plotOptions = {
-            yaxis: {
-                min: 0,
-                max: 310,
-                ticks: 10
-            },
-            xaxis: {
-                mode: "time",
-                minTickSize: [2, "minute"],
-                tickFormatter: function(val, axis) {
-                    if (val == undefined || val == 0)
-                        return ""; // we don't want to display the minutes since the epoch if not connected yet ;)
 
-                    // current time in milliseconds in UTC
-                    var timestampUtc = Date.now();
-
-                    // calculate difference in milliseconds
-                    var diff = timestampUtc - val;
-
-                    // convert to minutes
-                    var diffInMins = Math.round(diff / (60 * 1000));
-                    if (diffInMins == 0)
-                        return gettext("just now");
-                    else
-                        return "- " + diffInMins + " " + gettext("min");
-                }
-            },
-            legend: {
-                position: "sw",
-                noColumns: 2,
-                backgroundOpacity: 0
-            },
-            crosshair: {
-                mode: "x"
-            },
-            grid: {
-                hoverable: true,
-                autoHighlight: false
-            }
-        };
         self.plot = undefined;
         self.plotHoverPos = undefined;
         self.plotLegendTimeout = undefined;
@@ -389,42 +350,48 @@ $(function() {
         self.updateLegend = function(replaceLegendLabel) {
             self.plotLegendTimeout = undefined;
 
-            var i;
             var pos = self.plotHoverPos;
-            var axes = self.plot.getAxes();
-            var dataset = self.plot.getData();
+            if (pos) {
+                // we got a hover position, let's see what we need to do with that
 
-            if (pos.x < axes.xaxis.min || pos.x > axes.xaxis.max ||
-                pos.y < axes.yaxis.min || pos.y > axes.yaxis.max) {
+                var i;
+                var axes = self.plot.getAxes();
+                var dataset = self.plot.getData();
 
-                _.each(dataset, function(series, index) {
-                    var value = series.data && series.data.length ? series.data[series.data.length - 1][1] : undefined;
-                    replaceLegendLabel(index, series, value);
-                });
-            } else {
-                _.each(dataset, function(series, index) {
-                    for (i = 0; i < series.data.length; i++) {
-                        if (series.data[i][0] > pos.x) {
-                            break;
+                if (pos.x < axes.xaxis.min || pos.x > axes.xaxis.max ||
+                    pos.y < axes.yaxis.min || pos.y > axes.yaxis.max) {
+                    // position outside of the graph, show latest temperature in legend
+                    _.each(dataset, function(series, index) {
+                        var value = series.data && series.data.length ? series.data[series.data.length - 1][1] : undefined;
+                        replaceLegendLabel(index, series, value);
+                    });
+                } else {
+                    // position inside the graph, determine temperature at point and display that in the legend
+                    _.each(dataset, function(series, index) {
+                        for (i = 0; i < series.data.length; i++) {
+                            if (series.data[i][0] > pos.x) {
+                                break;
+                            }
                         }
-                    }
 
-                    var y;
-                    var p1 = series.data[i - 1];
-                    var p2 = series.data[i];
+                        var y;
+                        var p1 = series.data[i - 1];
+                        var p2 = series.data[i];
 
-                    if (p1 == undefined) {
-                        y = p2[1];
-                    } else if (p2 == undefined) {
-                        y = p1[1];
-                    } else {
-                        y = p1[1] + (p2[1] - p1[1]) * (pos.x - p1[0]) / (p2[0] - p1[0]);
-                    }
+                        if (p1 == undefined) {
+                            y = p2[1];
+                        } else if (p2 == undefined) {
+                            y = p1[1];
+                        } else {
+                            y = p1[1] + (p2[1] - p1[1]) * (pos.x - p1[0]) / (p2[0] - p1[0]);
+                        }
 
-                    replaceLegendLabel(index, series, y, true);
-                });
+                        replaceLegendLabel(index, series, y, true);
+                    });
+                }
             }
 
+            // update the grid
             self.plot.setupGrid();
         };
 
