@@ -1036,6 +1036,7 @@ class Server(object):
 			"js/lib/jquery/jquery.ui.widget.js",
 			"js/lib/jquery/jquery.ui.mouse.js",
 			"js/lib/jquery/jquery.flot.js",
+			"js/lib/jquery/jquery.flot.time.js",
 			"js/lib/jquery/jquery.iframe-transport.js",
 			"js/lib/jquery/jquery.fileupload.js",
 			"js/lib/jquery/jquery.slimscroll.min.js",
