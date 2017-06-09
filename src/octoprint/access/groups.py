@@ -71,12 +71,7 @@ class GroupManager(object):
 		pass
 
 	def find_group(self, name=None):
-		if name is not None:
-			if name not in self._groups.keys():
-				return None
-			return self._groups[name]
-		else:
-			return None
+		return self._groups.get(name, None)
 
 	def get_group_from(self, group):
 		return group if isinstance(group, Group) \
@@ -170,7 +165,7 @@ class FilebasedGroupManager(GroupManager):
 			return
 
 		if not self._groups[groupname].isChangable():
-			raise GroupCantbeChanged(groupname)
+			raise GroupCantBeChanged(groupname)
 
 		self.remove_permissions_from_group(groupname, removedPermissions)
 		self.add_permissions_to_group(groupname, addedPermissions)
@@ -180,7 +175,7 @@ class FilebasedGroupManager(GroupManager):
 			raise UnknownGroup(groupname)
 
 		if not self._groups[groupname].isChangable():
-			raise GroupCantbeChanged(groupname)
+			raise GroupCantBeChanged(groupname)
 
 		from octoprint.server import permissionManager
 		opermissions = []
@@ -196,7 +191,7 @@ class FilebasedGroupManager(GroupManager):
 			raise UnknownGroup(groupname)
 
 		if not self._groups[groupname].isChangable():
-			raise GroupCantbeChanged(groupname)
+			raise GroupCantBeChanged(groupname)
 
 		from octoprint.server import permissionManager
 		opermissions = []
@@ -215,7 +210,7 @@ class FilebasedGroupManager(GroupManager):
 			return
 
 		if not self._groups[groupname].isChangable():
-			raise GroupCantbeChanged(groupname)
+			raise GroupCantBeChanged(groupname)
 
 		self._groups[groupname].change_default(default)
 		self._dirty = True
@@ -233,7 +228,7 @@ class FilebasedGroupManager(GroupManager):
 		self._save()
 
 	def remove_group(self, groupname):
-		if not groupname in self._groups.keys():
+		if groupname not in self._groups.keys():
 			raise UnknownGroup(groupname)
 
 		group = self._groups[groupname]
@@ -252,7 +247,7 @@ class FilebasedGroupManager(GroupManager):
 		for group in self._groups.values():
 			try:
 				self._dirty |= group.remove_permissions_from_group(permissions)
-			except GroupCantbeChanged:
+			except GroupCantBeChanged:
 				pass
 
 		if self._dirty:
@@ -274,7 +269,7 @@ class GroupUnremovable(Exception):
 		Exception.__init__(self, "Group can't be removed: %s" % groupname)
 
 
-class GroupCantbeChanged(Exception):
+class GroupCantBeChanged(Exception):
 	def __init__(self, groupname):
 		Exception.__init__(self, "Group can't be changed: %s" % groupname)
 
@@ -318,7 +313,7 @@ class Group(object):
 
 	def add_permissions_to_group(self, permissions):
 		if not self.isChangable():
-			raise GroupCantbeChanged(self.get_name())
+			raise GroupCantBeChanged(self.get_name())
 
 		dirty = False
 		from octoprint.access.permissions import OctoPrintPermission
@@ -331,7 +326,7 @@ class Group(object):
 
 	def remove_permissions_from_group(self, permissions):
 		if not self.isChangable():
-			raise GroupCantbeChanged(self.get_name())
+			raise GroupCantBeChanged(self.get_name())
 
 		dirty = False
 		from octoprint.access.permissions import OctoPrintPermission
@@ -344,7 +339,7 @@ class Group(object):
 
 	def change_default(self, default):
 		if not self.isChangable():
-			raise GroupCantbeChanged(self.get_name())
+			raise GroupCantBeChanged(self.get_name())
 
 		self._default = default
 

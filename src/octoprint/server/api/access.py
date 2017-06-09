@@ -97,7 +97,7 @@ def update_group(groupname):
 				groupManager.change_group_description(groupname, data["description"])
 
 			return get_groups()
-		except groups.GroupCantbeChanged:
+		except groups.GroupCantBeChanged:
 			abort(403)
 	else:
 		abort(404)

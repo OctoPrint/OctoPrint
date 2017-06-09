@@ -65,7 +65,8 @@ $(function() {
         self.updateCurrentUserData = function(data) {
             self.username(data.name);
             self.userneeds(data.needs);
-            self.isUser(self.hasPermission("User"));
+            // TODO: deprecated, remove in future version
+            self.isUser(data.user);
             self.isAdmin(self.hasPermission("Admin"));
 
             self.currentUser(data);

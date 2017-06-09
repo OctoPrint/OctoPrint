@@ -252,7 +252,7 @@ class FilebasedUserManager(UserManager):
 					# make sure we do not have any groups that don't exist anymore
 					groups = [g for g in groups if g is not None]
 
-					self._users[name] = User(name, attributes["password"], attributes["active"], permissions, groups, apikey=apikey, settings=settings)
+					self._users[name] = User(username=name, passwordHash=attributes["password"], active=attributes["active"], permissions=permissions, groups=groups, apikey=apikey, settings=settings)
 					for sessionid in self._sessionids_by_userid.get(name, set()):
 						if sessionid in self._session_users_by_session:
 							self._session_users_by_session[sessionid].update_user(self._users[name])
@@ -530,19 +530,23 @@ class FilebasedUserManager(UserManager):
 	def hasBeenCustomized(self):
 		return self._customized
 
+
 ##~~ Exceptions
 
 class UserAlreadyExists(Exception):
 	def __init__(self, username):
 		Exception.__init__(self, "User %s already exists" % username)
 
+
 class UnknownUser(Exception):
 	def __init__(self, username):
 		Exception.__init__(self, "Unknown user: %s" % username)
 
+
 class UnknownRole(Exception):
 	def _init_(self, role):
 		Exception.__init__(self, "Unknown role: %s" % role)
+
 
 ##~~ User object
 

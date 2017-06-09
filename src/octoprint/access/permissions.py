@@ -106,10 +106,7 @@ class PermissionManager(object):
 		userManager.remove_permissions_from_users([permission])
 
 	def find_permission(self, name):
-		if name in self._permissions:
-			return self._permissions[name]
-
-		return None
+		return self._permissions.get(name, None)
 
 	def get_permission_from(self, permission):
 		return permission if isinstance(permission, OctoPrintPermission) \
