@@ -343,7 +343,8 @@ class gcode(object):
 
 						# If move with extrusion, calculate new min/max coordinates of model
 						if e > 0.0 and move:
-							# extrusion and move -> relevant for print area & dimensions
+							# extrusion and move -> oldPos & pos relevant for print area & dimensions
+							self._minMax.record(oldPos)
 							self._minMax.record(pos)
 
 						totalExtrusion[currentExtruder] += e
