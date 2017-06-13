@@ -248,6 +248,22 @@ class TestCommHelpers(unittest.TestCase):
 		self.assertDictEqual(expected, result)
 
 	@data(
+		("Cap:EEPROM:1", ("EEPROM", True)),
+		("Cap:EEPROM:0", ("EEPROM", False)),
+		("AUTOREPORT_TEMP:1", ("AUTOREPORT_TEMP", True)),
+		("AUTOREPORT_TEMP:0", ("AUTOREPORT_TEMP", False)),
+		("TOO:MANY:FIELDS", None),
+		("Cap:", None),
+		("TOOLITTLEFIELDS", None),
+		("WRONG:FLAG", None),
+	)
+	@unpack
+	def test_parse_capability_line(self, line, expected):
+		from octoprint.util.comm import parse_capability_line
+		result = parse_capability_line(line)
+		self.assertEqual(expected, result)
+
+	@data(
 		("Resend:23", 23),
 		("Resend: N23", 23),
 		("Resend: N:23", 23),

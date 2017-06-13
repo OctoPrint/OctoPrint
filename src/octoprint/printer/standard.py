@@ -1227,14 +1227,11 @@ class StateMonitor(object):
 
 		self._state = None
 		self._job_data = None
-		self._gcode_data = None
-		self._sd_upload_data = None
 		self._current_z = None
+		self._offsets = {}
 		self._progress = None
 
 		self._progress_dirty = False
-
-		self._offsets = {}
 
 		self._change_event = threading.Event()
 		self._state_lock = threading.Lock()

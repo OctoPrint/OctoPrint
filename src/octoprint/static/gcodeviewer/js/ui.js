@@ -161,7 +161,8 @@ GCODE.ui = (function(){
                 bed: options.bed
             });
             GCODE.gCodeReader.setOption({
-                toolOffsets: options.toolOffsets
+                toolOffsets: options.toolOffsets,
+                bed: options.bed
             });
             GCODE.renderer.render(0, 0);
 
