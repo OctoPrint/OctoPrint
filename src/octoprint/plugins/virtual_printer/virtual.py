@@ -18,6 +18,7 @@ from serial import SerialTimeoutException
 
 from octoprint.settings import settings
 from octoprint.plugin import plugin_manager
+from octoprint.util import RepeatedTimer
 
 class VirtualPrinter(object):
 	command_regex = re.compile("^([GMTF])(\d+)")
@@ -112,6 +113,10 @@ class VirtualPrinter(object):
 		self._firmwareName = settings().get(["devel", "virtualPrinter", "firmwareName"])
 
 		self._okFormatString = settings().get(["devel", "virtualPrinter", "okFormatString"])
+
+		self._capabilities = settings().get(["devel", "virtualPrinter", "capabilities"])
+
+		self._temperature_reporter = None
 
 		self.currentLine = 0
 		self.lastN = 0
@@ -405,10 +410,25 @@ class VirtualPrinter(object):
 		output = self._m115FormatString.format(firmware_name=self._firmwareName)
 		self._send(output)
 
+		if settings().getBoolean(["devel", "virtualPrinter", "m115ReportCapabilities"]):
+			for cap, enabled in self._capabilities.items():
+				self._send("Cap:{}:{}".format(cap.upper(), "1" if enabled else "0"))
+
 	def _gcode_M117(self, data):
 		# we'll just use this to echo a message, to allow playing around with pause triggers
 		if self._echoOnM117:
 			self._send("echo:%s" % re.search("M117\s+(.*)", data).group(1))
+
+	def _gcode_M155(self, data):
+		interval = int(re.search("S([0-9]+)", data).group(1))
+		if self._temperature_reporter is not None:
+			self._temperature_reporter.cancel()
+
+		if interval > 0:
+			self._temperature_reporter = RepeatedTimer(interval, lambda: self._send(self._generateTemperatureOutput()))
+			self._temperature_reporter.start()
+		else:
+			self._temperature_reporter = None
 
 	def _gcode_M220(self, data):
 		self._feedrate_multiplier = float(re.search('S([0-9]+)', data).group(1))
@@ -675,9 +695,8 @@ class VirtualPrinter(object):
 		else:
 			self._send("Not SD printing")
 
-	def _processTemperatureQuery(self):
+	def _generateTemperatureOutput(self):
 		includeTarget = not settings().getBoolean(["devel", "virtualPrinter", "repetierStyleTargetTemperature"])
-		includeOk = not self._okBeforeCommandOutput
 
 		# send simulated temperature data
 		if self.temperatureCount > 1:
@@ -709,6 +728,11 @@ class VirtualPrinter(object):
 				output = "T:%.2f B:%.2f" % (self.temp[0], self.bedTemp)
 
 		output += " @:64\n"
+		return output
+
+	def _processTemperatureQuery(self):
+		includeOk = not self._okBeforeCommandOutput
+		output = self._generateTemperatureOutput()
 
 		if includeOk:
 			output = "{} {}".format(self._ok(), output)

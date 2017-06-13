@@ -8,6 +8,8 @@
         <link rel="apple-touch-icon" sizes="114x114" href="{{ url_for('static', filename='img/apple-touch-icon-114x114.png') }}">
         <link rel="apple-touch-icon" sizes="144x144" href="{{ url_for('static', filename='img/apple-touch-icon-144x144.png') }}">
 
+        <meta name="robots" content="noindex, nofollow, noimageindex">
+
         {% include 'stylesheets.jinja2' %}
         {% include 'initscript.jinja2' %}
     </head>
@@ -52,7 +54,7 @@
                                     >
                                 <div class="accordion-heading">
                                     <a class="accordion-toggle" data-toggle="collapse" data-target="#{{ data._div }}">
-                                        {% if "icon" in data %}<i class="icon-{{ data.icon }}"></i> {% endif %}{{ entry|e }}
+                                        {% if "icon" in data %}<i class="fa icon-black fa-{{ data.icon }}"></i> {% endif %}{{ entry|e }}
                                     </a>
                                     {% if "template_header" in data %}
                                         {% try "There was an error with the template {filename} at line number {lineno}: {exception}" %}{% include data.template_header ignore missing %}{% endtry %}
@@ -112,12 +114,12 @@
                         <li><small>{{ _('OctoPrint') }} <span class="version">{{ display_version|e }}</span></small></li>
                     </ul>
                     <ul class="pull-right">
-                        <li><a href="http://octoprint.org" target="_blank" rel="noreferrer noopener"><i class="icon-home"></i> {{ _('Homepage') }}</a></li>
-                        <li><a href="https://github.com/foosel/OctoPrint/" target="_blank" rel="noreferrer noopener"><i class="icon-github"></i> {{ _('Sourcecode') }}</a></li>
-                        <li><a href="http://docs.octoprint.org" target="_blank" rel="noreferrer noopener"><i class="icon-book"></i> {{ _('Documentation') }}</a></li>
-                        <li><a href="https://github.com/foosel/OctoPrint/issues" target="_blank" rel="noreferrer noopener"><i class="icon-flag"></i> {{ _('Bugs and Requests') }}</a></li>
-                        <li><a href="https://github.com/foosel/OctoPrint/wiki/FAQ" target="_blank" rel="noreferrer noopener"><i class="icon-question-sign"></i> {{ _('FAQ') }}</a></li>
-                        <li id="footer_about"><a href="javascript:void(0)" data-bind="click: show"><i class="icon-info-sign"></i> {{ _('About') }}</a></li>
+                        <li><a href="http://octoprint.org" target="_blank" rel="noreferrer noopener"><i class="fa fa-home"></i> {{ _('Homepage') }}</a></li>
+                        <li><a href="https://github.com/foosel/OctoPrint/" target="_blank" rel="noreferrer noopener"><i class="fa fa-github"></i> {{ _('Sourcecode') }}</a></li>
+                        <li><a href="http://docs.octoprint.org" target="_blank" rel="noreferrer noopener"><i class="fa fa-book"></i> {{ _('Documentation') }}</a></li>
+                        <li><a href="https://github.com/foosel/OctoPrint/issues" target="_blank" rel="noreferrer noopener"><i class="fa fa-flag"></i> {{ _('Bugs and Requests') }}</a></li>
+                        <li><a href="https://github.com/foosel/OctoPrint/wiki/FAQ" target="_blank" rel="noreferrer noopener"><i class="fa fa-question-circle"></i> {{ _('FAQ') }}</a></li>
+                        <li id="footer_about"><a href="javascript:void(0)" data-bind="click: show"><i class="fa fa-info-circle"></i> {{ _('About') }}</a></li>
                     </ul>
                 </div>
             </div>

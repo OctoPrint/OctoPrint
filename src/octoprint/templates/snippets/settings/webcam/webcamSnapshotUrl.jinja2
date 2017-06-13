@@ -3,7 +3,7 @@
     <div class="controls">
         <div class="input-append">
             <input type="text" class="input-block-level" data-bind="value: webcam_snapshotUrl, valueUpdate: 'afterkeydown'" id="settings-webcamSnapshotUrl">
-            <button class="btn" type="button" data-bind="click: testWebcamSnapshotUrl, enable: webcam_snapshotUrl(), css: {disabled: !webcam_snapshotUrl()}">{{ _('Test') }}</button>
+            <button class="btn" type="button" data-bind="click: testWebcamSnapshotUrl, enable: webcam_snapshotUrl() && !testWebcamSnapshotUrlBusy(), css: {disabled: !webcam_snapshotUrl() || testWebcamSnapshotUrlBusy()}"><i class="fa fa-spinner fa-spin" data-bind="visible: testWebcamSnapshotUrlBusy"></i> {{ _('Test') }}</button>
         </div>
         <span class="help-inline">{% trans %}Fully qualified URL, needs to be reachable by OctoPrint's server{% endtrans %}</span>
     </div>

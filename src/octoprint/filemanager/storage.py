@@ -20,6 +20,8 @@ from octoprint.util import atomic_write
 from contextlib import contextmanager
 from copy import deepcopy
 
+from past.builtins import basestring
+
 import octoprint.filemanager
 
 from octoprint.util import is_hidden_path
@@ -676,16 +678,9 @@ class LocalFileStorage(StorageInterface):
 		# save the file's hash to the metadata of the folder
 		file_hash = self._create_hash(file_path)
 		metadata = self._get_metadata_entry(path, name, default=dict())
-		metadata_dirty = False
 		if not "hash" in metadata or metadata["hash"] != file_hash:
-			metadata["hash"] = file_hash
-			metadata_dirty = True
-		if "analysis" in metadata:
-			del metadata["analysis"]
-			metadata_dirty = True
-
-		if metadata_dirty:
-			self._update_metadata_entry(path, name, metadata)
+			# hash changed -> throw away old metadata
+			self._update_metadata_entry(path, name, dict(hash=file_hash))
 
 		# process any links that were also provided for adding to the file
 		if not links:

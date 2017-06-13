@@ -198,12 +198,14 @@ function DataUpdater(allViewModels) {
                 });
             }
         } else if (type == "Error") {
-            new PNotify({
-                    title: gettext("Unhandled communication error"),
-                    text: _.sprintf(gettext("The was an unhandled error while talking to the printer. Due to that OctoPrint disconnected. Error: %(error)s"), payload),
-                    type: "error",
-                    hide: false
-            });
+            if (payload.error && payload.error.indexOf("autodetect") == -1) { // ignore "failed to autodetect"
+                new PNotify({
+                        title: gettext("Unhandled communication error"),
+                        text: _.sprintf(gettext("The was an unhandled error while talking to the printer. Due to that OctoPrint disconnected. Error: %(error)s"), payload),
+                        type: "error",
+                        hide: false
+                });
+            }
         }
 
         var legacyEventHandlers = {

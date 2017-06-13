@@ -11,6 +11,8 @@ $(function() {
         self.setup = ko.observable(false);
         self.decision = ko.observable();
 
+        self.required = false;
+
         self.passwordMismatch = ko.pureComputed(function() {
             return self.password() != self.confirmedPassword();
         });
@@ -72,6 +74,8 @@ $(function() {
         };
 
         self.onBeforeWizardTabChange = function(next, current) {
+            if (!self.required) return true;
+
             if (!current || !_.startsWith(current, "wizard_plugin_corewizard_acl_") || self.setup()) {
                 return true;
             }
@@ -82,7 +86,13 @@ $(function() {
             return false;
         };
 
+        self.onWizardDetails = function(response) {
+            self.required = response && response.corewizard && response.corewizard.details && response.corewizard.details.acl && response.corewizard.details.acl.required;
+        };
+
         self.onWizardFinish = function() {
+            if (!self.required) return;
+
             if (!self.decision()) {
                 return "reload";
             }
@@ -94,7 +104,14 @@ $(function() {
 
         self.settingsViewModel = parameters[0];
 
+        self.required = false;
+
+        self.onWizardDetails = function(response) {
+            self.required = response && response.corewizard && response.corewizard.details && response.corewizard.details.webcam && response.corewizard.details.webcam.required;
+        };
+
         self.onWizardFinish = function() {
+            if (!self.required) return;
             if (self.settingsViewModel.webcam_streamUrl()
                 || (self.settingsViewModel.webcam_snapshotUrl() && self.settingsViewModel.webcam_ffmpegPath())) {
                 return "reload";
@@ -113,18 +130,29 @@ $(function() {
 
         self.printerProfiles = parameters[0];
 
+        self.required = false;
+
         self.editor = self.printerProfiles.createProfileEditor();
         self.editorLoaded = ko.observable(false);
 
-        self.onStartup = function() {
+        self.onWizardDetails = function(response) {
+            self.required = response && response.corewizard && response.corewizard.details && response.corewizard.details.printerprofile && response.corewizard.details.printerprofile.required;
+            if (!self.required) return;
+
             OctoPrint.printerprofiles.get("_default")
                 .done(function(data) {
                     self.editor.fromProfileData(data);
+                    self.editorLoaded(true);
+                })
+                .fail(function() {
+                    self.editor.fromProfileData();
                     self.editorLoaded(true);
                 });
         };
 
         self.onWizardFinish = function() {
+            if (!self.required) return;
+
             OctoPrint.printerprofiles.update("_default", self.editor.toProfileData())
                 .done(function() {
                     self.printerProfiles.requestData();

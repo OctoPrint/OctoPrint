@@ -29,6 +29,8 @@ import octoprint.plugin
 
 from werkzeug.contrib.cache import BaseCache
 
+from past.builtins import basestring
+
 try:
 	from os import scandir, walk
 except ImportError:

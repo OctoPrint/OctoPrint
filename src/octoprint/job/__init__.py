@@ -151,6 +151,11 @@ class LocalFilePrintjob(Printjob):
 	def path(self):
 		return self._path
 
+	def event_payload(self):
+		event_data = Printjob.event_payload(self)
+		event_data["size"] = self.size
+		return event_data
+
 	def process(self, protocol, position=0):
 		Printjob.process(self, protocol, position=position)
 
@@ -279,6 +284,11 @@ class SDFilePrintjob(Printjob, FileAwareProtocolListener):
 	@property
 	def status_interval(self):
 		return self._status_interval
+
+	def event_payload(self):
+		event_data = Printjob.event_payload(self)
+		event_data["size"] = self.size
+		return event_data
 
 	def can_process(self, protocol):
 		from octoprint.comm.protocol import FileAwareProtocolMixin

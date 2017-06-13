@@ -27,6 +27,8 @@ try:
 except ImportError:
 	import Queue as queue
 
+from past.builtins import basestring
+
 logger = logging.getLogger(__name__)
 
 def warning_decorator_factory(warning_type):

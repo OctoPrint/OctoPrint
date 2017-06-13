@@ -8,6 +8,8 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 
 import click
 
+from past.builtins import basestring
+
 class OctoPrintDevelCommands(click.MultiCommand):
 	"""
 	Custom `click.MultiCommand <http://click.pocoo.org/5/api/#click.MultiCommand>`_
@@ -204,7 +206,7 @@ class OctoPrintDevelCommands(click.MultiCommand):
 				click.echo("This doesn't look like an OctoPrint plugin folder")
 				sys.exit(1)
 
-			self.command_caller.call([sys.executable, "setup.py", "develop"], cwd=path)
+			self.command_caller.call([sys.executable, "-m", "pip", "install", "-e", "."], cwd=path)
 
 		return command
 

@@ -9,11 +9,15 @@ var firstReport;
 var toolOffsets = [
     {x: 0, y: 0}
 ];
+var g90InfluencesExtruder = false;
 var z_heights = {};
 var model = [];
 var max = {x: undefined, y: undefined, z: undefined};
 var min = {x: undefined, y: undefined, z: undefined};
+var boundingBox = {minX: undefined, maxX: undefined, minY: undefined, maxY: undefined, minZ: undefined, maxZ: undefined};
 var modelSize = {x: undefined, y: undefined, z: undefined};
+var bed = {x: undefined, y: undefined, r: undefined, circular: false, centeredOrigin: false};
+var ignoreOutsideBed = false;
 var filamentByLayer = {};
 var totalFilament = [0];
 var printTime = 0;
@@ -75,6 +79,7 @@ var sendAnalyzeDone = function () {
             max: max,
             min: min,
             modelSize: modelSize,
+            boundingBox: boundingBox,
             totalFilament: totalFilament,
             filamentByLayer: filamentByLayer,
             printTime: printTime,
@@ -105,12 +110,44 @@ var purgeLayers = function () {
     }
 };
 
+var bedBounds = function() {
+    if (!bed) {
+        return {xMin: 0, xMax: 0, yMin: 0, yMax: 0};
+    }
+
+    var result;
+    if (bed.circular) {
+        result = {xMin: -bed.r, xMax: bed.r, yMin: -bed.r, yMax: bed.r};
+    } else if (bed.centeredOrigin) {
+        result = {xMin: -bed.x/2.0, xMax: bed.x/2.0, yMin: -bed.y/2.0, yMax: bed.y/2.0};
+    } else {
+        result = {xMin: 0, xMax: bed.x, yMin: 0, yMax: bed.y};
+    }
+    return result;
+};
+
+var withinBedBounds = function(x, y, bedBounds) {
+    if (!ignoreOutsideBed) return true;
+
+    var result = true;
+
+    if (x !== undefined && !isNaN(x)) {
+        result = result && (x >= bedBounds.xMin && x <= bedBounds.xMax);
+    }
+    if (y !== undefined && !isNaN(y)) {
+        result = result && (y >= bedBounds.yMin && y <= bedBounds.yMax);
+    }
+
+    return result;
+};
 
 var analyzeModel = function () {
     var tmp1 = 0, tmp2 = 0;
     var speedIndex = 0;
     var type;
     var printTimeAdd = 0;
+
+    var bounds = bedBounds();
 
     for (var i = 0; i < model.length; i++) {
         var cmds = model[i];
@@ -119,41 +156,56 @@ var analyzeModel = function () {
         for (var j = 0; j < cmds.length; j++) {
             var tool = cmds[j].tool;
 
-            var x_ok = false;
-            var y_ok = false;
+            var retract = cmds[j].retract && cmds[j].retract > 0;
+            var extrude = cmds[j].extrude && cmds[j].extrude > 0 && !retract;
+            var move = cmds[j].x !== undefined || cmds[j].y !== undefined || cmds[j].z !== undefined;
 
-            if (typeof(cmds[j].x) !== 'undefined'
-                    && typeof(cmds[j].prevX) !== 'undefined'
-                    && typeof(cmds[j].extrude) !== 'undefined'
-                    && cmds[j].extrude
-                    && !isNaN(cmds[j].x)) {
-                var x = cmds[j].x;
+            var prevInBounds = withinBedBounds(cmds[j].prevX, cmds[j].prevY, bounds);
+            var inBounds = withinBedBounds(cmds[j].x === undefined ? cmds[j].prevX : cmds[j].x,
+                                           cmds[j].y === undefined ? cmds[j].prevY : cmds[j].y,
+                                           bounds);
+
+            var recordX = function(x, inBounds) {
+                if (x === undefined || isNaN(x)) return;
+
                 max.x = max.x !== undefined ? Math.max(max.x, x) : x;
                 min.x = min.x !== undefined ? Math.min(min.x, x) : x;
 
-                x_ok = true;
-            }
+                if (inBounds) {
+                    boundingBox.minX = boundingBox.minX !== undefined ? Math.min(boundingBox.minX, x): x;
+                    boundingBox.maxX = boundingBox.maxX !== undefined ? Math.max(boundingBox.maxX, x): x;
+                }
+            };
 
-            if (typeof(cmds[j].y) !== 'undefined'
-                    && typeof(cmds[j].prevY) !== 'undefined'
-                    && typeof(cmds[j].extrude) !== 'undefined'
-                    && cmds[j].extrude
-                    && !isNaN(cmds[j].y)) {
-                var y = cmds[j].y;
+            var recordY = function(y, inBounds) {
+                if (y === undefined || isNaN(y)) return;
 
                 max.y = max.y !== undefined ? Math.max(max.y, y) : y;
                 min.y = min.y !== undefined ? Math.min(min.y, y) : y;
 
-                y_ok = true;
-            }
+                if (inBounds) {
+                    boundingBox.minY = boundingBox.minY !== undefined ? Math.min(boundingBox.minY, y): y;
+                    boundingBox.maxY = boundingBox.maxY !== undefined ? Math.max(boundingBox.maxY, y): y;
+                }
+            };
 
-            if (typeof(cmds[j].prevZ) !== 'undefined'
-                    && typeof(cmds[j].extrude) !== 'undefined'
-                    && cmds[j].extrude
-                    && !isNaN(cmds[j].prevZ)) {
-                var z = cmds[j].prevZ;
+            var recordZ = function(z) {
+                if (z === undefined || isNaN(z)) return;
+
                 max.z = max.z !== undefined ? Math.max(max.z, z) : z;
                 min.z = min.z !== undefined ? Math.min(min.z, z) : z;
+
+                boundingBox.minZ = min.z;
+                boundingBox.maxZ = max.z;
+            };
+
+            if (move && extrude) {
+                recordX(cmds[j].prevX, prevInBounds);
+                recordX(cmds[j].x, inBounds);
+                recordY(cmds[j].prevY, prevInBounds);
+                recordY(cmds[j].y, inBounds);
+                recordZ(cmds[j].prevZ);
+                recordZ(cmds[j].z);
             }
 
             if (!totalFilament[tool]) totalFilament[tool] = 0;
@@ -164,20 +216,25 @@ var analyzeModel = function () {
                 filamentByLayer[cmds[j].prevZ][tool] += cmds[j].extrusion;
             }
 
-            var diffX = cmds[j].x - cmds[j].prevX;
-            var diffY = cmds[j].y - cmds[j].prevY;
-            if (x_ok && y_ok) {
-                printTimeAdd = Math.sqrt(diffX * diffX + diffY * diffY) / (cmds[j].speed / 60);
-            } else if (cmds[j].retract === 0 && cmds[j].extrusion !== 0) {
-                tmp1 = Math.sqrt(diffX * diffX + diffY * diffY) / (cmds[j].speed / 60);
-                tmp2 = Math.abs(cmds[j].extrusion / (cmds[j].speed / 60));
-                printTimeAdd = Math.max(tmp1, tmp2);
-            } else if (cmds[j].retract !== 0) {
-                printTimeAdd = Math.abs(cmds[j].extrusion / (cmds[j].speed / 60));
+            if (cmds[j].x !== undefined && !isNaN(cmds[j].x)
+                    && cmds[j].y !== undefined && !isNaN(cmds[j].y)) {
+                var diffX = cmds[j].x - cmds[j].prevX;
+                var diffY = cmds[j].y - cmds[j].prevY;
+                if (move) {
+                    printTimeAdd = Math.sqrt(diffX * diffX + diffY * diffY) / (cmds[j].speed / 60);
+                } else if (extrude) {
+                    tmp1 = Math.sqrt(diffX * diffX + diffY * diffY) / (cmds[j].speed / 60);
+                    tmp2 = Math.abs(cmds[j].extrusion / (cmds[j].speed / 60));
+                    printTimeAdd = Math.max(tmp1, tmp2);
+                } else if (retract) {
+                    printTimeAdd = Math.abs(cmds[j].extrusion / (cmds[j].speed / 60));
+                }
+            } else {
+                printTimeAdd = 0;
             }
 
             printTime += printTimeAdd;
-            if (typeof(printTimeByLayer[cmds[j].prevZ]) === 'undefined') {
+            if (printTimeByLayer[cmds[j].prevZ] === undefined) {
                 printTimeByLayer[cmds[j].prevZ] = 0;
             }
             printTimeByLayer[cmds[j].prevZ] += printTimeAdd;
@@ -232,8 +289,8 @@ var doParse = function () {
     var center_i, center_j, direction;
     var prevX = 0, prevY = 0, prevZ = 0;
     var f, lastF = 4000;
-    var extrude = false, extrudeRelative = false, retract = 0;
-    var positionRelative = false;
+    var extrude = false, relativeE = false, retract = 0;
+    var relativeMode = false;
     var zLift = false;
     var zLiftZ = undefined;
     var zLiftMoves = [];
@@ -273,7 +330,7 @@ var doParse = function () {
             for (var j = 0; j < args.length; j++) {
                 switch (argChar = args[j].charAt(0).toLowerCase()) {
                     case 'x':
-                        if (positionRelative) {
+                        if (relativeMode) {
                             x = prevX + Number(args[j].slice(1)) + offset.x;
                         } else {
                             x = Number(args[j].slice(1)) + offset.x;
@@ -282,7 +339,7 @@ var doParse = function () {
                         break;
 
                     case 'y':
-                        if (positionRelative) {
+                        if (relativeMode) {
                             y = prevY + Number(args[j].slice(1)) + offset.y;
                         } else {
                             y = Number(args[j].slice(1)) + offset.y;
@@ -291,7 +348,7 @@ var doParse = function () {
                         break;
 
                     case 'z':
-                        if (positionRelative) {
+                        if (relativeMode) {
                             z = prevZ + Number(args[j].slice(1));
                         } else {
                             z = Number(args[j].slice(1));
@@ -306,13 +363,13 @@ var doParse = function () {
                         assumeNonDC = true;
                         numSlice = Number(args[j].slice(1));
 
-                        if (!extrudeRelative) {
+                        if (relativeMode || relativeE) {
+                            prev_extrude[tool]["abs"] = numSlice;
+                            prev_extrude[tool][argChar] += numSlice;
+                        } else {
                             // absolute extrusion positioning
                             prev_extrude[tool]["abs"] = numSlice - prev_extrude[tool][argChar];
                             prev_extrude[tool][argChar] = numSlice;
-                        } else {
-                            prev_extrude[tool]["abs"] = numSlice;
-                            prev_extrude[tool][argChar] += numSlice;
                         }
 
                         extrude = prev_extrude[tool]["abs"] > 0;
@@ -359,15 +416,19 @@ var doParse = function () {
                 move = true;
             }
         } else if (/^(?:M82)/i.test(line)) {
-            extrudeRelative = false;
+            relativeE = false;
         } else if (/^(?:G91)/i.test(line)) {
-            positionRelative = true;
-            extrudeRelative = true;
+            relativeMode = true;
+            if (g90InfluencesExtruder) {
+                relativeE = true;
+            }
         } else if (/^(?:G90)/i.test(line)) {
-            positionRelative = false;
-            extrudeRelative = false;
+            relativeMode = false;
+            if (g90InfluencesExtruder) {
+                relativeE = false;
+            }
         } else if (/^(?:M83)/i.test(line)) {
-            extrudeRelative = true;
+            relativeE = true;
         } else if (/^(?:M101)/i.test(line)) {
             dcExtrude = true;
         } else if (/^(?:M103)/i.test(line)) {
@@ -407,10 +468,10 @@ var doParse = function () {
                         case 'b':
                         case 'c':
                             numSlice = Number(args[j].slice(1));
-                            if (!extrudeRelative)
-                                prev_extrude[tool][argChar] = 0;
-                            else {
+                            if (relativeMode || relativeE) {
                                 prev_extrude[tool][argChar] = numSlice;
+                            } else {
+                                prev_extrude[tool][argChar] = 0;
                             }
                             break;
                     }
@@ -568,7 +629,10 @@ var parseGCode = function (message) {
     gcode = message.gcode;
     firstReport = message.options.firstReport;
     toolOffsets = message.options.toolOffsets;
-    if (!toolOffsets || toolOffsets.length == 0) toolOffsets = [{x: 0, y: 0}]
+    if (!toolOffsets || toolOffsets.length == 0) toolOffsets = [{x: 0, y: 0}];
+    bed = message.options.bed;
+    ignoreOutsideBed = message.options.ignoreOutsideBed;
+    g90InfluencesExtruder = message.options.g90InfluencesExtruder;
 
     doParse();
     gcode = [];
@@ -589,6 +653,7 @@ var runAnalyze = function (message) {
     max = {x: undefined, y: undefined, z: undefined};
     min = {x: undefined, y: undefined, z: undefined};
     modelSize = {x: undefined, y: undefined, z: undefined};
+    boundingBox = {minX: undefined, maxX: undefined, minY: undefined, maxY: undefined, minZ: undefined, maxZ: undefined};
     filamentByLayer = {};
     totalFilament = 0;
     printTime = 0;

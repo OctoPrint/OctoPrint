@@ -263,6 +263,7 @@ class PrinterInterface(object):
 		Raises:
 		    InvalidFileLocation: if an absolute path was provided and not contained within local storage or
 		        doesn't exist
+		    InvalidFileType: if the file is not a machinecode file and hence cannot be printed
 		"""
 		raise NotImplementedError()
 
@@ -388,7 +389,7 @@ class PrinterInterface(object):
 		  * CLOSED
 		  * ERROR
 		  * CLOSED_WITH_ERROR
-		  * TRANFERING_FILE
+		  * TRANSFERING_FILE
 		  * OFFLINE
 		  * UNKNOWN
 		  * NONE
@@ -614,4 +615,7 @@ class UnknownScript(Exception):
 		self.name = name
 
 class InvalidFileLocation(Exception):
+	pass
+
+class InvalidFileType(Exception):
 	pass

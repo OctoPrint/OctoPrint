@@ -15,11 +15,13 @@ import os
 import threading
 import time
 
+from past.builtins import basestring
+
 from octoprint import util as util
 from octoprint.events import eventManager, Events
-from octoprint.filemanager import FileDestinations, NoSuchStorage
+from octoprint.filemanager import FileDestinations, NoSuchStorage, valid_file_type
 from octoprint.plugin import plugin_manager, ProgressPlugin
-from octoprint.printer import PrinterInterface, PrinterCallback, UnknownScript, InvalidFileLocation
+from octoprint.printer import PrinterInterface, PrinterCallback, UnknownScript, InvalidFileLocation, InvalidFileType
 from octoprint.printer.estimation import TimeEstimationHelper
 from octoprint.settings import settings
 from octoprint.util import comm as comm
@@ -379,7 +381,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		if heater.startswith("tool"):
 			printer_profile = self._printer_profile_manager.get_current_or_default()
 			extruder_count = printer_profile["extruder"]["count"]
-			if extruder_count > 1:
+			shared_nozzle = printer_profile["extruder"]["sharedNozzle"]
+			if extruder_count > 1 and not shared_nozzle:
 				toolNum = int(heater[len("tool"):])
 				self._protocol.set_extruder_temperature(value, tool=toolNum, wait=False)
 			else:
@@ -418,7 +421,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 			factor = int(factor * 100.0)
 
 		if factor < min or factor > max:
-			raise ValueError("factor must be a value between %f and %f" % (min, max))
+			raise ValueError("factor must be a value between {} and {}".format(min, max))
 
 		return factor
 
@@ -981,6 +984,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		if job != self._job.job:
 			return
 
+		# TODO include position in payload if available
 		payload = job.event_payload()
 		if payload:
 			eventManager().fire(Events.PRINT_STARTED, payload)
@@ -1003,6 +1007,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 			self._update_progress_data()
 		else:
 			self._set_completion_progress_data()
+
+			# TODO include position in payload if available
 			payload = job.event_payload()
 			if payload:
 				payload["time"] = job.elapsed
@@ -1020,6 +1026,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		if job != self._job.job:
 			return
 
+		# TODO include position in payload if available
 		payload = job.event_payload()
 		eventManager().fire(Events.PRINT_FAILED, payload)
 
@@ -1029,6 +1036,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 
 		self._update_progress_data()
 
+		# TODO include position in payload if available
 		payload = job.event_payload()
 		if payload:
 			payload["time"] = job.elapsed
@@ -1064,7 +1072,6 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback, ProtocolListener, 
 		except:
 			self._logger.exception("Error while trying to persist print recovery data")
 
-
 class StateMonitor(object):
 	def __init__(self, interval=0.5, on_update=None, on_add_temperature=None, on_add_log=None, on_add_message=None, on_get_progress=None):
 		self._interval = interval
@@ -1076,14 +1083,11 @@ class StateMonitor(object):
 
 		self._state = None
 		self._job_data = None
-		self._gcode_data = None
-		self._sd_upload_data = None
 		self._current_z = None
+		self._offsets = {}
 		self._progress = None
 
 		self._progress_dirty = False
-
-		self._offsets = {}
 
 		self._change_event = threading.Event()
 		self._state_lock = threading.Lock()

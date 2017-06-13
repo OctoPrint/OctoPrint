@@ -31,7 +31,7 @@ Printer State
    * - ``flags``
      - 1
      - Printer state flags
-     - A couple of boolean printer state flags
+     - A few boolean printer state flags
    * - ``flags.operational``
      - 1
      - Boolean

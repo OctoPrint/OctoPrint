@@ -11,6 +11,13 @@
                 background-color: #ffffff;
             }
 
+            a,
+            a:hover,
+            a:active,
+            a:visited {
+                color: #333333;
+            }
+
             #startup-overlay {
                 position: fixed;
                 top: 0;
@@ -51,6 +58,10 @@
 
             .wrapper .outer .inner .content {
                 text-align: center;
+            }
+
+            .normal {
+                color: #333333;
             }
 
             .green {
@@ -166,9 +177,22 @@
                 var cachedTimeout;
 
                 var message = window.document.getElementById("message");
+                var reloadnow = window.document.getElementById("reloadnow");
+                var reloadnowlink = window.document.getElementById("reloadnowlink");
+
+                var reload = function() {
+                    var reloadUrl = baseUrl + currentQuery + currentFragment;
+                    if (reloadUrl == window.location.href) {
+                        window.location.reload(false);
+                    } else {
+                        window.location.href = reloadUrl;
+                    }
+                };
 
                 var indexCached = false;
                 var indexCachedCallback = function(result) {
+                    if (indexCached) return;
+
                     if (result == "load") {
                         if (indexCached) {
                             return;
@@ -178,13 +202,9 @@
                         indexCached = true;
                         message.className = "pulsate1 green";
                         message.innerText = "OctoPrint server ready, reloading page...";
+                        reloadnow.style.display = "none";
 
-                        var reloadUrl = baseUrl + currentQuery + currentFragment;
-                        if (reloadUrl == window.location.href) {
-                            window.location.reload(false);
-                        } else {
-                            window.location.href = reloadUrl;
-                        }
+                        reload();
                     } else {
                         // cached.gif still not available, let's look at it again in a second
                         cachedTimeout = setTimeout(function() {
@@ -198,6 +218,19 @@
                     if (result == "load") {
                         // our online.gif loaded, so the server is up, let's wait for it to become ready
                         serverIsOnline = true;
+
+                        message.innerText = "OctoPrint server started, waiting for it to get ready...";
+                        reloadnowlink.onclick = function() {
+                            indexCached = true; // not really, but we fake it
+
+                            message.className = "pulsate1";
+                            message.innerText = "Reloading page...";
+                            reloadnow.style.display = "none";
+
+                            reload();
+                        };
+                        reloadnow.style.display = "block";
+
                         ping(indexCachedUrl, timeout, indexCachedCallback);
                     } else {
                         // online.gif still not available, let's look at it again later
@@ -255,6 +288,7 @@
                     <div class="inner">
                         <div class="content">
                             <h1 id="message" class="pulsate3">OctoPrint is still starting up, please wait...</h1>
+                            <small id="reloadnow" style="display: none"><a id="reloadnowlink" class="normal" href="javascript:void(0)">Don't wait, reload now!</a></small>
                         </div>
                     </div>
                 </div>
