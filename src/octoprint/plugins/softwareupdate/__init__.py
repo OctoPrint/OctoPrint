@@ -218,9 +218,13 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 					"repo": "OctoPrint",
 					"update_script": "{{python}} \"{update_script}\" --branch={{branch}} --force={{force}} \"{{folder}}\" {{target}}".format(update_script=update_script),
 					"restart": "octoprint",
-					"stable_branch": dict(branch="master", name="Stable"),
-					"prerelease_branches": [dict(branch="rc/maintenance", name="Maintenance RCs"),
-					                        dict(branch="rc/devel", name="Devel RCs")]
+					"stable_branch": dict(branch="master", commitish=["master"], name="Stable"),
+					"prerelease_branches": [dict(branch="rc/maintenance",
+					                             commitish=["rc/maintenance"],             # maintenance RCs
+					                             name="Maintenance RCs"),
+					                        dict(branch="rc/devel",
+					                             commitish=["rc/maintenance", "rc/devel"], # devel & maintenance RCs
+					                             name="Devel RCs")]
 				},
 			},
 			"pip_command": None,
