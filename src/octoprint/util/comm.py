@@ -1284,7 +1284,7 @@ class MachineCom(object):
 						firmware_name = firmware_name.strip()
 						self._logger.info("Printer reports firmware name \"{}\"".format(firmware_name))
 
-						if "repetier" in firmware_name.lower():
+						if "repetier" in firmware_name.lower() or "anet_a8" in firmware_name.lower():
 							self._logger.info("Detected Repetier firmware, enabling relevant features for issue free communication")
 
 							self._alwaysSendChecksum = True
