@@ -6,7 +6,7 @@ $(function() {
         self.settingsViewModel = parameters[1];
 
         self._createToolEntry = function() {
-            return {
+            var entry = {
                 name: ko.observable(),
                 key: ko.observable(),
                 actual: ko.observable(0),
@@ -14,11 +14,55 @@ $(function() {
                 offset: ko.observable(0),
                 newTarget: ko.observable(),
                 newOffset: ko.observable()
-            }
+            };
+
+            entry.newTargetValid = ko.pureComputed(function() {
+                var value = entry.newTarget();
+
+                try {
+                    value = parseInt(value);
+                } catch (exc) {
+                    return false;
+                }
+
+                return (value >= 0 && value <= 999);
+            });
+
+            entry.newOffsetValid = ko.pureComputed(function() {
+                var value = entry.newOffset();
+
+                try {
+                    value = parseInt(value);
+                } catch (exc) {
+                    return false;
+                }
+
+                return (-50 <= value <= 50);
+            });
+
+            return entry;
         };
 
+        self.changingOffset = {
+            offset: ko.observable(0),
+            newOffset: ko.observable(0),
+            name: ko.observable(""),
+            item: undefined,
+
+            title: ko.pureComputed(function() {
+                return _.sprintf(gettext("Changing Offset of %(name)s"), {name: self.changingOffset.name()});
+            }),
+            description: ko.pureComputed(function() {
+                return _.sprintf(gettext("Use the form below to specify a new offset to apply to all temperature commands sent from printed files for \"%(name)s\""),
+                    {name: self.changingOffset.name()});
+            })
+        };
+        self.changeOffsetDialog = undefined;
+
         self.tools = ko.observableArray([]);
+
         self.hasBed = ko.observable(true);
+
         self.bedTemp = self._createToolEntry();
         self.bedTemp["name"](gettext("Bed"));
         self.bedTemp["key"]("bed");
@@ -324,66 +368,147 @@ $(function() {
             return maxTemp;
         };
 
+        self.incrementTarget = function(item) {
+            var value = item.newTarget();
+            if (value === undefined || (typeof(value) == "string" && value.trim() == "")) value = item.target();
+            try {
+                value = parseInt(value);
+                if (value > 999) return;
+                item.newTarget(value + 1);
+            } catch (ex) {
+                // do nothing
+            }
+        };
+
+        self.decrementTarget = function(item) {
+            var value = item.newTarget();
+            if (value === undefined || (typeof(value) == "string" && value.trim() == "")) value = item.target();
+            try {
+                value = parseInt(value);
+                if (value <= 0) return;
+                item.newTarget(value - 1);
+            } catch (ex) {
+                // do nothing
+            }
+        };
+
         self.setTarget = function(item) {
             var value = item.newTarget();
-            if (!value) return;
-
-            var onSuccess = function() {
-                item.newTarget("");
-            };
-
-            if (item.key() == "bed") {
-                self._setBedTemperature(value)
-                    .done(onSuccess);
-            } else {
-                self._setToolTemperature(item.key(), value)
-                    .done(onSuccess);
-            }
+            if (value === undefined || (typeof(value) == "string" && value.trim() == "")) return OctoPrintClient.createRejectedDeferred();
+            return self.setTargetToValue(item, value);
         };
 
         self.setTargetFromProfile = function(item, profile) {
-            if (!profile) return;
+            if (!profile) return OctoPrintClient.createRejectedDeferred();
+            return self.setTargetToValue(item, (item.key() == "bed" ? profile.bed : profile.extruder));
+        };
+
+        self.setTargetToZero = function(item) {
+            return self.setTargetToValue(item, 0);
+        };
+
+        self.setTargetToValue = function(item, value) {
+            try {
+                value = parseInt(value);
+            } catch (ex) {
+                return OctoPrintClient.createRejectedDeferred();
+            }
+
+            if (value < 0 || value > 999) return OctoPrintClient.createRejectedDeferred();
 
             var onSuccess = function() {
+                item.target(value);
                 item.newTarget("");
             };
 
             if (item.key() == "bed") {
-                self._setBedTemperature(profile.bed)
+                return self._setBedTemperature(value)
                     .done(onSuccess);
             } else {
-                self._setToolTemperature(item.key(), profile.extruder)
+                return self._setToolTemperature(item.key(), value)
                     .done(onSuccess);
             }
         };
 
-        self.setTargetToZero = function(item) {
-            var onSuccess = function() {
-                item.newTarget("");
-            };
+        self.changeOffset = function(item) {
+            // copy values
+            self.changingOffset.item = item;
+            self.changingOffset.name(item.name());
+            self.changingOffset.offset(item.offset());
+            self.changingOffset.newOffset(item.offset());
 
-            if (item.key() == "bed") {
-                self._setBedTemperature(0)
-                    .done(onSuccess);
-            } else {
-                self._setToolTemperature(item.key(), 0)
-                    .done(onSuccess);
+            self.changeOffsetDialog.modal("show");
+        };
+
+        self.incrementChangeOffset = function() {
+            var value = self.changingOffset.newOffset();
+            if (value === undefined || (typeof(value) == "string" && value.trim() == "")) value = self.changingOffset.offset();
+            try {
+                value = parseInt(value);
+                if (value >= 50) return;
+                self.changingOffset.newOffset(value + 1);
+            } catch (ex) {
+                // do nothing
             }
+        };
+
+        self.decrementChangeOffset = function() {
+            var value = self.changingOffset.newOffset();
+            if (value === undefined || (typeof(value) == "string" && value.trim() == "")) value = self.changingOffset.offset();
+            try {
+                value = parseInt(value);
+                if (value <= -50) return;
+                self.changingOffset.newOffset(value - 1);
+            } catch (ex) {
+                // do nothing
+            }
+        };
+
+        self.confirmChangeOffset = function() {
+            var item = self.changingOffset.item;
+            item.newOffset(self.changingOffset.newOffset());
+
+            self.setOffset(item)
+                .done(function() {
+                    self.changeOffsetDialog.modal("hide");
+
+                    // reset
+                    self.changingOffset.offset(0);
+                    self.changingOffset.newOffset(0);
+                    self.changingOffset.name("");
+                    self.changingOffset.item = undefined;
+                })
         };
 
         self.setOffset = function(item) {
             var value = item.newOffset();
-            if (!value) return;
+            if (value === undefined || (typeof(value) == "string" && value.trim() == "")) return OctoPrintClient.createRejectedDeferred();
+            return self.setOffsetToValue(item, value);
+        };
+
+        self.setOffsetToZero = function(item) {
+            return self.setOffsetToValue(item, 0);
+        };
+
+        self.setOffsetToValue = function(item, value) {
+            try {
+                value = parseInt(value);
+            } catch (ex) {
+                return OctoPrintClient.createRejectedDeferred();
+            }
+
+            if (value < -50 || value > 50) return OctoPrintClient.createRejectedDeferred();
 
             var onSuccess = function() {
+                item.offset(value);
                 item.newOffset("");
             };
 
             if (item.key() == "bed") {
-                self._setBedOffset(value)
+                return self._setBedOffset(value)
                     .done(onSuccess);
             } else {
-                self._setToolOffset(item.key(), value)
+                return self._setToolOffset(item.key(), value)
                     .done(onSuccess);
             }
         };
@@ -411,10 +536,25 @@ $(function() {
         self.handleEnter = function(event, type, item) {
             if (event.keyCode == 13) {
                 if (type == "target") {
-                    self.setTarget(item);
+                    self.setTarget(item)
+                        .done(function() {
+                            event.target.blur();
+                        });
                 } else if (type == "offset") {
-                    self.setOffset(item);
+                    self.confirmChangeOffset();
                 }
+            }
+        };
+
+        self.handleFocus = function(event, type, item) {
+            if (type == "target") {
+                var value = item.newTarget();
+                if (value === undefined || (typeof(value) == "string" && value.trim() == "")) {
+                    item.newTarget(item.target());
+                }
+                event.target.select();
+            } else if (type == "offset") {
+                event.target.select();
             }
         };
 
@@ -423,6 +563,10 @@ $(function() {
                 return;
             }
             self.updatePlot();
+        };
+
+        self.onStartup = function() {
+            self.changeOffsetDialog = $("#change_offset_dialog");
         };
 
         self.onStartupComplete = function() {
@@ -434,6 +578,6 @@ $(function() {
     OCTOPRINT_VIEWMODELS.push([
         TemperatureViewModel,
         ["loginStateViewModel", "settingsViewModel"],
-        "#temp"
+        ["#temp", "#change_offset_dialog"]
     ]);
 });

@@ -401,6 +401,40 @@ table {
       .actioncol;
     }
 
+    // Temperature panel
+    &.temperature_tool,
+    &.temperature_actual,
+    &.temperature_target,
+    &.temperature_offset {
+      vertical-align: middle;
+      text-align: center;
+
+      form {
+        margin: 0;
+      }
+
+      .dropdown-menu {
+        text-align: left;
+      }
+    }
+
+    &.temperature_tool {
+      width: 18%;
+      text-align: left;
+    }
+
+    &.temperature_actual {
+      width: 12%;
+    }
+
+    &.temperature_target {
+      width: 40%;
+      overflow: visible;
+    }
+
+    &.temperature_offset {
+      width: 30%;
+    }
   }
 }
 
@@ -415,10 +449,6 @@ table {
 
 .tab-content, .tab-pane {
   overflow: visible;
-}
-
-.tempInput {
-  width: 50px;
 }
 
 #temp_newTemp, #temp_newBedTemp, #speed_innerWall, #speed_outerWall, #speed_fill, #speed_support,
@@ -1236,6 +1266,27 @@ _::-webkit-full-page-media, _:future, :root .full-sized-box {
       width: inherit;
     }
   }
+
+  .btn-group:first-child {
+    .btn:first-child {
+      -webkit-border-radius: 4px 0 0 4px;
+      -moz-border-radius: 4px 0 0 4px;
+      border-radius: 4px 0 0 4px;
+    }
+  }
+
+  .btn-group {
+    .btn:first-child {
+      -webkit-border-radius: 0;
+      -moz-border-radius: 0;
+      border-radius: 0;
+    }
+  }
+}
+
+.btn-input-dec,
+.btn-input-enc {
+  //font-size: 80%;
 }
 
 .control-group.error .input-prepend .fileinput-button,
@@ -1245,6 +1296,15 @@ _::-webkit-full-page-media, _:future, :root .full-sized-box {
 
 input[type=number] {
   text-align: right;
+}
+
+input[type="number"].input-nospin::-webkit-outer-spin-button,
+input[type="number"].input-nospin::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+input[type="number"].input-nospin {
+    -moz-appearance: textfield;
 }
 
 // Progress bars with text
