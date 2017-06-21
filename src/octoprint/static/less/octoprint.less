@@ -400,8 +400,24 @@ table {
       width: 80px;
       .actioncol;
     }
+  }
+}
 
-    // Temperature panel
+
+/** Temperature tab */
+
+#temperature-graph {
+  height: 350px;
+  width: 100%;
+  background: url("../img/graph-background.png") no-repeat center;
+}
+
+#temperature-table {
+  table-layout: fixed;
+  width: 100%;
+  margin-top: 20px;
+
+  th, td {
     &.temperature_tool,
     &.temperature_actual,
     &.temperature_target,
@@ -438,14 +454,7 @@ table {
   }
 }
 
-
-/** Temperature tab */
-
-#temperature-graph {
-  height: 350px;
-  width: 100%;
-  background: url("../img/graph-background.png") no-repeat center;
-}
+/** Various */
 
 .tab-content, .tab-pane {
   overflow: visible;
@@ -1292,6 +1301,12 @@ _::-webkit-full-page-media, _:future, :root .full-sized-box {
 .control-group.error .input-prepend .fileinput-button,
 .control-group.error .input-append .fileinput-button {
   border-color: #b94a48;
+}
+
+.control-text {
+  // like control-label, but without cursor, float, width or text-align
+  padding-top: 5px;
+  cursor: default;
 }
 
 input[type=number] {

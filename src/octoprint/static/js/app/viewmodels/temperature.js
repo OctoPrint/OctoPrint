@@ -40,6 +40,14 @@ $(function() {
                 return (-50 <= value <= 50);
             });
 
+            entry.offset.subscribe(function(newValue) {
+                if (self.changingOffset.item !== undefined && self.changingOffset.item.key() == entry.key()) {
+                    // if our we currently have the offset dialog open for this entry and the offset changed
+                    // meanwhile, update the displayed value in the dialog
+                    self.changingOffset.offset(newValue);
+                }
+            });
+
             return entry;
         };
 
@@ -462,6 +470,10 @@ $(function() {
             } catch (ex) {
                 // do nothing
             }
+        };
+
+        self.deleteChangeOffset = function() {
+            self.changingOffset.newOffset(0);
         };
 
         self.confirmChangeOffset = function() {
