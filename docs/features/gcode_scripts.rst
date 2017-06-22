@@ -72,7 +72,7 @@ All GCODE scripts have access to the following template variables through the te
     Consists of ``x``, ``y``, ``z`` and ``e`` coordinates as received by the printer and tracked values for ``f`` and
     current tool ``t`` taken from commands sent through OctoPrint. All of these coordinates might be ``None`` if no
     position could be retrieved from the printer or the values could not be tracked (in case of ``f`` and ``t``)!
-  * ``last_temperatures``: Last actual and target temperature reported for all available tools and if available the
+  * ``last_temperature``: Last actual and target temperature reported for all available tools and if available the
     heated bed. This is a dictionary of key-value pairs. The keys are the indices of the available tools (``0``, ``1``,
     ...) and ``b`` for the heated bed. The values are a dictionary consisting of ``actual`` and ``target`` keys mapped
     to the corresponding temperature in degrees celsius. Note that not all tools your printer has must necessarily be

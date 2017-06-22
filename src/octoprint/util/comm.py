@@ -762,7 +762,7 @@ class MachineCom(object):
 		context.update(dict(
 			printer_profile=self._printerProfileManager.get_current_or_default(),
 			last_position=self.last_position,
-			last_temperatures=self.last_temperature.as_script_dict()
+			last_temperature=self.last_temperature.as_script_dict()
 		))
 
 		if scriptName == "afterPrintPaused" or scriptName == "beforePrintResumed":
