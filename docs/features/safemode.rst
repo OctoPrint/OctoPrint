@@ -29,7 +29,7 @@ There exist three ways to start OctoPrint in safe mode:
   * by setting the option ``server.startOnceInSafeMode`` in :ref:`config.yaml <sec-configuration-config_yaml>`
     to ``true`` and restarting
 
-The last two options will have OctoPrint enable safe mode only for the next server start - once you
+The first two options will have OctoPrint enable safe mode only for the next server start - once you
 restart OctoPrint again, safe mode will be disabled again.
 
 .. _fig-features-safemode-systemmenu:
