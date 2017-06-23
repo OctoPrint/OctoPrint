@@ -359,7 +359,8 @@ class Server(object):
 		ioloop = IOLoop()
 		ioloop.install()
 
-		self._router = SockJSRouter(self._create_socket_connection, "/sockjs")
+		self._router = SockJSRouter(self._create_socket_connection, "/sockjs",
+		                            session_kls=util.sockjs.ThreadSafeSession)
 
 		upload_suffixes = dict(name=self._settings.get(["server", "uploads", "nameSuffix"]), path=self._settings.get(["server", "uploads", "pathSuffix"]))
 
