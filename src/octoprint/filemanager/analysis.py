@@ -19,8 +19,6 @@ import time
 from octoprint.events import Events, eventManager
 from octoprint.settings import settings
 
-import octoprint.util.gcodeInterpreter as gcodeInterpreter
-
 
 class QueueEntry(collections.namedtuple("QueueEntry", "name, path, type, location, absolute_path, printer_profile")):
 	"""
