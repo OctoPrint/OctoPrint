@@ -826,9 +826,9 @@ function showProgressModal(options, promise) {
 
             if (output && pre) {
                 if (success) {
-                    pre.append($("<span class='" + outputClassSuccess + "'>" + long + "</span><br>"));
+                    pre.append($("<span class='" + outputClassSuccess + "'>" + long + "</span>"));
                 } else {
-                    pre.append($("<span class='" + outputClassFailure + "'>" + long + "</span><br>"));
+                    pre.append($("<span class='" + outputClassFailure + "'>" + long + "</span>"));
                 }
                 pre.scrollTop(pre[0].scrollHeight - pre.height());
             }
