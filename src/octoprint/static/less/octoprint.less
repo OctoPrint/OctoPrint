@@ -840,10 +840,6 @@ ul.dropdown-menu li a {
   #terminal-sendpanel {
     text-align: right;
   }
-
-  #terminal-output span {
-    display: block;
-  }
 }
 
 #settings_dialog {
@@ -1226,6 +1222,12 @@ _::-webkit-full-page-media, _:future, :root .full-sized-box {
   height: 100%;
   overflow: auto;
   -webkit-overflow-scrolling: touch;
+}
+
+.pre-output {
+  span {
+    display: block; // so we don't need to add individual <br> tags to each line
+  }
 }
 
 .input-append, .input-prepend {

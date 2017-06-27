@@ -775,7 +775,7 @@ function showProgressModal(options, promise) {
 
     var pre;
     if (output) {
-        pre = $("<pre class='terminal pre-scrollable' style='height: 70px; font-size: 0.8em'></pre>");
+        pre = $("<pre class='pre-scrollable pre-output' style='height: 70px; font-size: 0.8em'></pre>");
         modalBody.append(pre);
     }
 
