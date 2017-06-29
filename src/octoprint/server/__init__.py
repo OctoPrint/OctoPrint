@@ -210,7 +210,7 @@ class Server(object):
 		try:
 			clazz = octoprint.util.get_class(userManagerName)
 			userManager = clazz()
-		except AttributeError as e:
+		except:
 			self._logger.exception("Could not instantiate user manager {}, falling back to FilebasedUserManager!".format(userManagerName))
 			userManager = octoprint.users.FilebasedUserManager()
 		finally:

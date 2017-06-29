@@ -174,8 +174,6 @@ def get_class(name):
 	"""
 	Retrieves the class object for a given fully qualified class name.
 
-	Taken from http://stackoverflow.com/a/452981/2028598.
-
 	Arguments:
 	    name (string): The fully qualified class name, including all modules separated by ``.``
 
@@ -183,15 +181,17 @@ def get_class(name):
 	    type: The class if it could be found.
 
 	Raises:
-	    AttributeError: The class could not be found.
+	    ImportError
 	"""
 
-	parts = name.split(".")
-	module = ".".join(parts[:-1])
-	m = __import__(module)
-	for comp in parts[1:]:
-		m = getattr(m, comp)
-	return m
+	import importlib
+
+	mod_name, cls_name = name.rsplit(".", 1)
+	m = importlib.import_module(mod_name)
+	try:
+		return getattr(m, cls_name)
+	except AttributeError:
+		raise ImportError("No module named " + name)
 
 
 def get_exception_string():
