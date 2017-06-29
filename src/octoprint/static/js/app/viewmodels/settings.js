@@ -7,6 +7,11 @@ $(function() {
         self.printerProfiles = parameters[2];
         self.about = parameters[3];
 
+        // use this promise to do certain things once the SettingsViewModel has processed
+        // its first request
+        var firstRequest = $.Deferred();
+        self.firstRequest = firstRequest.promise();
+
         self.allViewModels = [];
 
         self.receiving = ko.observable(false);
@@ -763,6 +768,8 @@ $(function() {
             };
 
             mapToObservables(serverChangedData, specialMappings, clientChangedData);
+
+            firstRequest.resolve();
         };
 
         self.saveData = function (data, successCallback, setAsSending) {

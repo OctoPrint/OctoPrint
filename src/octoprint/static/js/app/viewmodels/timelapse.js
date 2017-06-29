@@ -51,10 +51,6 @@ $(function() {
             return self.isDirty() && !self.isPrinting() && self.loginState.isUser();
         });
 
-        self.isOperational.subscribe(function() {
-            self.requestData();
-        });
-
         self.timelapseType.subscribe(function() {
             self.isDirty(true);
         });

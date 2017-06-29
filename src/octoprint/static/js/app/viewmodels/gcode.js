@@ -257,7 +257,7 @@ $(function() {
             self._configureLayerSlider(layerSliderElement);
             self._configureLayerCommandSlider(commandSliderElement);
 
-            self.settings.requestData()
+            self.settings.firstRequest
                 .done(function() {
                     var initResult = GCODE.ui.init({
                         container: "#gcode_canvas",
