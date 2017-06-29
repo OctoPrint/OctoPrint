@@ -81,6 +81,8 @@ $(function() {
         };
 
         self.openOrCloseOnStateChange = function() {
+            if (self._bound !== true) return;
+
             var connectionTab = $("#connection");
             if (self.isOperational() && connectionTab.hasClass("in")) {
                 connectionTab.collapse("hide");
@@ -100,7 +102,7 @@ $(function() {
             self.isReady(data.flags.ready);
             self.isLoading(data.flags.loading);
 
-            if (self.loginState.isUser() && self.previousIsOperational != self.isOperational()) {
+            if (self.loginState.isUser() && self.previousIsOperational !== self.isOperational()) {
                 // only open or close if the panel is visible (for admins) and
                 // the state just changed to avoid thwarting manual open/close
                 self.openOrCloseOnStateChange();
@@ -132,16 +134,10 @@ $(function() {
 
         self.onStartup = function() {
             self.requestData();
+        };
 
-            // when isAdmin becomes true the first time, set the panel open or
-            // closed based on the connection state
-            var subscription = self.loginState.isAdmin.subscribe(function(newValue) {
-                if (newValue) {
-                    // wait until after the isAdmin state has run through all subscriptions
-                    setTimeout(self.openOrCloseOnStateChange, 0);
-                    subscription.dispose();
-                }
-            });
+        self.onAfterBinding = function() {
+            self.openOrCloseOnStateChange();
         };
     }
 

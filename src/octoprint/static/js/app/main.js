@@ -629,7 +629,8 @@ $(function() {
                     });
                 }
 
-                viewModel._unbound = viewModel._bindings != undefined && viewModel._bindings.length == 0;
+                viewModel._unbound = viewModel._bindings !== undefined && viewModel._bindings.length === 0;
+                viewModel._bound = viewModel._bindings.length > 0;
 
                 if (viewModel.hasOwnProperty("onAfterBinding")) {
                     viewModel.onAfterBinding();
