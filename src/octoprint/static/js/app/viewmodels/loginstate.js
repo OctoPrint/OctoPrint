@@ -66,7 +66,7 @@ $(function() {
             };
 
             if (self.startupDeferred !== undefined) {
-                // Make sure we only fire our "onUserLogged(In|Out)" message when the application
+                // Make sure we only fire our "onUserLogged(In|Out)" message after the application
                 // has started up.
                 self.startupDeferred.done(process);
             } else {
@@ -135,12 +135,11 @@ $(function() {
 
         self.onAllBound = function(allViewModels) {
             self.allViewModels = allViewModels;
+            self.startupDeferred.resolve();
+            self.startupDeferred = undefined;
         };
 
         self.onStartup = function() {
-            self.startupDeferred.resolve();
-            self.startupDeferred = undefined;
-
             self.elementUsernameInput = $("#login_user");
             self.elementPasswordInput = $("#login_pass");
             self.elementLoginButton = $("#login_button");
