@@ -884,12 +884,14 @@ $(function() {
         };
 
         self.onUserLoggedIn = function() {
-            // we might have other user rights now, refresh
+            // we might have other user rights now, refresh (but only if startup has fully completed)
+            if (!self._startupComplete) return;
             self.requestData();
         };
 
         self.onUserLoggedOut = function() {
-            // we might have other user rights now, refresh
+            // we might have other user rights now, refresh (but only if startup has fully completed)
+            if (!self._startupComplete) return;
             self.requestData();
         }
     }

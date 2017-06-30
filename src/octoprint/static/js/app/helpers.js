@@ -983,6 +983,22 @@ function getOnlyChangedData(data, oldData) {
     return f(data, oldData);
 }
 
+function setOnViewModels(allViewModels, key, value) {
+    setOnViewModelsIf(allViewModels, key, value, undefined);
+}
+
+function setOnViewModelsIf(allViewModels, key, value, condition) {
+    if (condition === undefined || !_.isFunction(condition)) {
+        condition = function() { return true; };
+    }
+
+    _.each(allViewModels, function(viewModel) {
+        if (condition(viewModel)) {
+            viewModel[key] = value;
+        }
+    })
+}
+
 function callViewModels(allViewModels, method, callback) {
     callViewModelsIf(allViewModels, method, undefined, callback);
 }

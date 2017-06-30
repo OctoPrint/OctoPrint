@@ -613,6 +613,7 @@ $(function() {
 
             // startup complete
             callViewModels(allViewModels, "onStartupComplete");
+            setOnViewModels(allViewModels, "_startupComplete", true);
 
             // make sure we can track the browser tab visibility
             OctoPrint.coreui.onBrowserVisibilityChange(function(status) {
