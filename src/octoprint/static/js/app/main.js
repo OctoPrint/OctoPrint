@@ -648,30 +648,59 @@ $(function() {
 
         log.info("Initial application setup done, connecting to server...");
 
+        /**
+         * The following looks a bit complicated, so let me explain...
+         *
+         * Once we connect to the server (and that also includes consecutive reconnects), the
+         * first thing we need to do is perform a passive login to a) establish a proper request
+         * session with the server and b) figure out the login status of our client. That passive
+         * login will be responded to with our session cookie and we must make absolutely sure that
+         * this cannot be overridden by any concurrent requests. E.g. if we would send the passive
+         * login request and also something like a settings fetch, the settings would not have the
+         * cookie yet, hence the server would generate a new session for that request, and if the
+         * response for the settings now arrives later than the passive login we'll get our
+         * session cookie from that login directly overwritten again. That will not only lead to
+         * us losing our login session with the server but also the client _thinking_ it is logged
+         * in when in fact it isn't. See also #1881.
+         *
+         * So what we do here is ensure that we send the passive login request _and nothing else_
+         * until that has been responded to and hence our session been properly established. Only
+         * then we may trigger stuff like the various view model callbacks that might cause
+         * additional requests.
+         *
+         * onServerConnect below takes care of the passive login. Only once that's completed it tells
+         * our DataUpdater that it's ok to trigger any callbacks in view models. On the initial
+         * server connect (during first initialization) we also trigger the settings fetch and
+         * binding proceedure once that's done, but only then.
+         *
+         * Or, as a fancy diagram: https://gist.githubusercontent.com/foosel/0cdc3a03cf5311804271f12e87293c0c/raw/abc84fdc3b13030d70961539d9c132ae39c32085/octoprint_web_startup.txt
+         */
+
         var onServerConnect = function() {
             // Always perform a passive login on server (re)connect. No need for
-            // onServerConnect/onServerReconnect with this in place.
-            viewModelMap["loginStateViewModel"].requestData()
+            // onServerConnect/onServerReconnect on the LoginStateViewModel with this in place.
+            return viewModelMap["loginStateViewModel"].requestData()
                 .done(function() {
                     // Only mark our data updater as initialized once we've done our initial
                     // passive login request.
                     //
-                    // This is to ensure that we have no concurrent requests overriding each other's
-                    // session during app intialization, and has the additional benefit of reducing the
-                    // number of required requests since we don't have re-request data that might have
-                    // changed if we turn out to be logged in.
+                    // This is to ensure that we have no concurrent requests triggered by socket events
+                    // overriding each other's session during app intialization
                     dataUpdater.initialized();
                 });
         };
 
-        var dataUpdater = new DataUpdater(allViewModels, onServerConnect);
+        var dataUpdater = new DataUpdater(allViewModels);
         dataUpdater.connect()
             .done(function() {
-                // onServerConnect will have been called just before this.
-                //
-                // Decoupled settings fetch, for the reasons see above's lengthy description
-                // on a weird JQuery AJAX issue with ETag headers and promise handling.
-                window.setTimeout(fetchSettings, 0);
+                // make sure we trigger onServerConnect should we dis- and reconnect to the server
+                dataUpdater.connectCallback = onServerConnect;
+
+                // perform passive login first
+                onServerConnect().done(function() {
+                    // then trigger a settings fetch
+                    window.setTimeout(fetchSettings, 0);
+                });
             });
     }
 );
