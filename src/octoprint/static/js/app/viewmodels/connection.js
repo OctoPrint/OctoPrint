@@ -81,8 +81,6 @@ $(function() {
         };
 
         self.openOrCloseOnStateChange = function() {
-            if (self._bound !== true) return;
-
             var connectionTab = $("#connection");
             if (self.isOperational() && connectionTab.hasClass("in")) {
                 connectionTab.collapse("hide");
@@ -136,7 +134,11 @@ $(function() {
             self.requestData();
         };
 
-        self.onAfterBinding = function() {
+        self.onUserLoggedIn = function() {
+            self.openOrCloseOnStateChange();
+        };
+
+        self.onUserLoggedOut = function() {
             self.openOrCloseOnStateChange();
         };
     }
