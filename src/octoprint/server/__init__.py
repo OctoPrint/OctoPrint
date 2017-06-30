@@ -344,7 +344,7 @@ class Server(object):
 		if not userManager.enabled:
 			loginManager.anonymous_user = users.DummyUser
 			principals.identity_loaders.appendleft(users.dummy_identity_loader)
-		loginManager.init_app(app)
+		loginManager.init_app(app, add_context_processor=False)
 
 		# register API blueprint
 		self._setup_blueprints()
