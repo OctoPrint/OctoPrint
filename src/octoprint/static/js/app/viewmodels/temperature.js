@@ -363,9 +363,11 @@ $(function() {
                         var p1 = series.data[i - 1];
                         var p2 = series.data[i];
 
-                        if (p1 == undefined) {
+                        if (p1 === undefined && p2 === undefined) {
+                            y = undefined;
+                        } else if (p1 === undefined) {
                             y = p2[1];
-                        } else if (p2 == undefined) {
+                        } else if (p2 === undefined) {
                             y = p1[1];
                         } else {
                             y = p1[1] + (p2[1] - p1[1]) * (pos.x - p1[0]) / (p2[0] - p1[0]);
