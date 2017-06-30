@@ -52,16 +52,21 @@ $(function() {
 
         self.fromResponse = function(response) {
             var process = function() {
+                var currentLoggedIn = self.loggedIn();
                 if (response && response.name) {
                     self.loggedIn(true);
                     self.updateCurrentUserData(response);
-                    callViewModels(self.allViewModels, "onUserLoggedIn", [response]);
-                    log.info("User " + response.name + " logged in")
+                    if (!currentLoggedIn) {
+                        callViewModels(self.allViewModels, "onUserLoggedIn", [response]);
+                        log.info("User " + response.name + " logged in")
+                    }
                 } else {
                     self.loggedIn(false);
                     self.resetCurrentUserData();
-                    callViewModels(self.allViewModels, "onUserLoggedOut");
-                    log.info("User logged out");
+                    if (currentLoggedIn) {
+                        callViewModels(self.allViewModels, "onUserLoggedOut");
+                        log.info("User logged out");
+                    }
                 }
             };
 
