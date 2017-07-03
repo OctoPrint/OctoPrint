@@ -207,7 +207,7 @@ def login():
 			if octoprint.server.userManager.checkPassword(username, password):
 				if octoprint.server.userManager.enabled:
 					user = octoprint.server.userManager.login_user(user)
-					session["usersession.id"] = user.get_session()
+					session["usersession.id"] = user.session
 					g.user = user
 				login_user(user, remember=remember)
 				identity_changed.send(current_app._get_current_object(), identity=Identity(user.get_id()))

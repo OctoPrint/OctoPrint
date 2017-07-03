@@ -1,5 +1,5 @@
 <div class="terminal">
-    <pre id="terminal-output" class="pre-scrollable" data-bind="foreach: displayedLines, visible: fancyFunctionality()"><span data-bind="text: line, css: {muted: type == 'filtered' || type == 'cut'}"></span></pre>
+    <pre id="terminal-output" class="pre-scrollable pre-output" data-bind="foreach: displayedLines, visible: fancyFunctionality()"><span data-bind="text: line, css: {muted: type == 'filtered' || type == 'cut'}"></span></pre>
     <pre id="terminal-output-lowfi" style="display: none" class="pre-scrollable" data-bind="text: plainLogOutput, visible: !fancyFunctionality()"></pre>
     <small class="pull-left" data-bind="visible: fancyFunctionality()"><button class="btn btn-mini" data-bind="click: toggleAutoscroll, css: {active: autoscrollEnabled}">{{ _('Autoscroll') }}</button> <span data-bind="text: lineCount, visible: enableFancyFunctionality"></span></small>
     <small class="pull-right" data-bind="visible: fancyFunctionality()"><a href="#" data-bind="click: scrollToEnd">{{ _("Scroll to end") }}</a>&nbsp;|&nbsp;<a href="#" data-bind="click: selectAll">{{ _("Select all") }}</a></small>

@@ -524,12 +524,14 @@ function formatFilament(filament) {
 }
 
 function cleanTemperature(temp) {
-    if (!temp || temp < 10) return gettext("off");
+    if (temp === undefined || !_.isNumber(temp)) return "-";
+    if (temp < 10) return gettext("off");
     return temp;
 }
 
 function formatTemperature(temp, showF) {
-    if (!temp || temp < 10) return gettext("off");
+    if (temp === undefined || !_.isNumber(temp)) return "-";
+    if (temp < 10) return gettext("off");
     if (showF) {
         return _.sprintf("%.1f&deg;C (%.1f&deg;F)", temp, temp * 9 / 5 + 32);
     } else {
@@ -688,9 +690,14 @@ function showConfirmationDialog(msg, onacknowledge, options) {
  * Will listen to the supplied promise, update the progress on .progress events and
  * enabling the close button and (optionally) closing the dialog on promise resolve.
  *
- * The calling code should call "notify" on the deferred backing the promise and supply
- * two parameters: the text to display on the progress bar and the optional output field and
- * a boolean value indicating whether the operation behind that update was successful or not.
+ * The calling code should call "notify" on the deferred backing the promise and supply:
+ *
+ *   * the text to display on the progress bar and the optional output field and
+ *     a boolean value indicating whether the operation behind that update was successful or not
+ *   * a short text to display on the progress bar, a long text to display on the optional output
+ *     field and a boolean value indicating whether the operation behind that update was
+ *     successful or not
+ *
  * Non-successful progress updates will remove the barClassSuccess class from the progress bar and
  * apply the barClassFailure class and also apply the outputClassFailure to the produced line
  * in the output.
@@ -770,7 +777,7 @@ function showProgressModal(options, promise) {
 
     var pre;
     if (output) {
-        pre = $("<pre class='terminal pre-scrollable' style='height: 70px; font-size: 0.8em'></pre>");
+        pre = $("<pre class='pre-scrollable pre-output' style='height: 70px; font-size: 0.8em'></pre>");
         modalBody.append(pre);
     }
 
@@ -784,7 +791,19 @@ function showProgressModal(options, promise) {
 
     var counter = 0;
     promise
-        .progress(function(text, success) {
+        .progress(function() {
+            var short, long, success;
+            if (arguments.length === 2) {
+                short = long = arguments[0];
+                success = arguments[1];
+            } else if (arguments.length === 3) {
+                short = arguments[0];
+                long = arguments[1];
+                success = arguments[2];
+            } else {
+                throw Error("Invalid parameters for showProgressModal, expected either (text, success) or (short, long, success)");
+            }
+
             var value;
 
             if (max === undefined || max <= 0) {
@@ -796,8 +815,8 @@ function showProgressModal(options, promise) {
 
             // update progress bar
             progressBar.width(String(value) + "%");
-            progressTextFront.text(text);
-            progressTextBack.text(text);
+            progressTextFront.text(short);
+            progressTextBack.text(short);
             progressTextFront.width(progress.width());
 
             // if not successful, apply failure class
@@ -809,9 +828,9 @@ function showProgressModal(options, promise) {
 
             if (output && pre) {
                 if (success) {
-                    pre.append($("<span class='" + outputClassSuccess + "'>" + text + "</span><br>"));
+                    pre.append($("<span class='" + outputClassSuccess + "'>" + long + "</span>"));
                 } else {
-                    pre.append($("<span class='" + outputClassFailure + "'>" + text + "</span><br>"));
+                    pre.append($("<span class='" + outputClassFailure + "'>" + long + "</span>"));
                 }
                 pre.scrollTop(pre[0].scrollHeight - pre.height());
             }
@@ -962,6 +981,22 @@ function getOnlyChangedData(data, oldData) {
     };
 
     return f(data, oldData);
+}
+
+function setOnViewModels(allViewModels, key, value) {
+    setOnViewModelsIf(allViewModels, key, value, undefined);
+}
+
+function setOnViewModelsIf(allViewModels, key, value, condition) {
+    if (condition === undefined || !_.isFunction(condition)) {
+        condition = function() { return true; };
+    }
+
+    _.each(allViewModels, function(viewModel) {
+        if (condition(viewModel)) {
+            viewModel[key] = value;
+        }
+    })
 }
 
 function callViewModels(allViewModels, method, callback) {

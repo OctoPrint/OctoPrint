@@ -184,6 +184,8 @@ def getSettings():
 				"afterPrintDone": None,
 				"beforePrintPaused": None,
 				"afterPrintResumed": None,
+				"beforeToolChange": None,
+				"afterToolChange": None,
 				"snippets": dict()
 			}
 		},

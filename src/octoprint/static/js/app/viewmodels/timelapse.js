@@ -51,10 +51,6 @@ $(function() {
             return self.isDirty() && !self.isPrinting() && self.loginState.isUser();
         });
 
-        self.isOperational.subscribe(function() {
-            self.requestData();
-        });
-
         self.timelapseType.subscribe(function() {
             self.isDirty(true);
         });
@@ -229,6 +225,16 @@ $(function() {
                     .done(function() {
                         self.markedForFileDeletion.remove(filename);
                         self.requestData()
+                    })
+                    .fail(function(jqXHR) {
+                        var html = "<p>" + _.sprintf(gettext("Failed to remove timelapse %(name)s.</p><p>Please consult octoprint.log for details.</p>"), {name: filename});
+                        html += pnotifyAdditionalInfo('<pre style="overflow: auto">' + jqXHR.responseText + '</pre>');
+                        new PNotify({
+                            title: gettext("Could not remove timelapse"),
+                            text: html,
+                            type: "error",
+                            hide: false
+                        });
                     });
             };
 
@@ -288,7 +294,7 @@ $(function() {
         self._bulkRemove = function(files, type) {
             var title, message, handler;
 
-            if (type == "files") {
+            if (type === "files") {
                 title = gettext("Deleting timelapse files");
                 message = _.sprintf(gettext("Deleting %(count)d timelapse files..."), {count: files.length});
                 handler = function(filename) {
@@ -296,11 +302,13 @@ $(function() {
                         .done(function() {
                             deferred.notify(_.sprintf(gettext("Deleted %(filename)s..."), {filename: filename}), true);
                         })
-                        .fail(function() {
-                            deferred.notify(_.sprintf(gettext("Deletion of %(filename)s failed, continuing..."), {filename: filename}), false);
+                        .fail(function(jqXHR) {
+                            var short = _.sprintf(gettext("Deletion of %(filename)s failed, continuing..."), {filename: filename});
+                            var long = _.sprintf(gettext("Deletion of %(filename)s failed: %(error)s"), {filename: filename, error: jqXHR.responseText});
+                            deferred.notify(short, long, false);
                         });
                 }
-            } else if (type == "unrendered") {
+            } else if (type === "unrendered") {
                 title = gettext("Deleting unrendered timelapses");
                 message = _.sprintf(gettext("Deleting %(count)d unrendered timelapses..."), {count: files.length});
                 handler = function(filename) {
