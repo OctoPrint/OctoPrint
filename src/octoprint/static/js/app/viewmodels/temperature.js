@@ -476,8 +476,9 @@ $(function() {
             }
         };
 
-        self.setTarget = function(item) {
+        self.setTarget = function(item, form) {
             var value = item.newTarget();
+            $(form).find("input").blur();
             if (value === undefined || (typeof(value) == "string" && value.trim() == "")) return OctoPrintClient.createRejectedDeferred();
             return self.setTargetToValue(item, value);
         };
