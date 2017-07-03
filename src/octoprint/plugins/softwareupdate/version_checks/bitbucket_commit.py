@@ -6,6 +6,7 @@ __copyright__ = "Copyright (C) 2017 The OctoPrint Project - Released under terms
 
 import requests
 import logging
+import base64
 
 from ..exceptions import ConfigurationInvalid
 
@@ -13,8 +14,14 @@ BRANCH_HEAD_URL = "https://api.bitbucket.org/2.0/repositories/{user}/{repo}/comm
 
 logger = logging.getLogger("octoprint.plugins.softwareupdate.version_checks.bitbucket_commit")
 
-def _get_latest_commit(user, repo, branch):
-	r = requests.get(BRANCH_HEAD_URL.format(user=user, repo=repo, branch=branch))
+
+def _get_latest_commit(user, repo, branch, api_user=None, api_password=None):
+	url = BRANCH_HEAD_URL.format(user=user, repo=repo, branch=branch)
+	headers = {}
+	if api_user is not None and api_password is not None:
+		headers['authorization'] = 'Basic {}'.format(
+			base64.b64encode(b"{user}:{pw}".format(user=api_user, pw=api_password)))
+	r = requests.get(url, headers=headers)
 
 	if not r.status_code == requests.codes.ok:
 		return None
@@ -34,11 +41,14 @@ def get_latest(target, check):
 	if "branch" in check:
 		branch = check["branch"]
 
+	api_user = check["api_user"] if 'api_user' in check else None
+	api_password = check["api_password"] if 'api_password' in check else None
+
 	current = None
 	if "current" in check:
 		current = check["current"]
 
-	remote_commit = _get_latest_commit(check["user"], check["repo"], branch)
+	remote_commit = _get_latest_commit(check["user"], check["repo"], branch, api_user, api_password)
 
 	information = dict(
 		local=dict(name="Commit {commit}".format(commit=current if current is not None else "unknown"), value=current),
