@@ -231,7 +231,9 @@ default_settings = {
 			{"name": "ABS", "extruder" : 210, "bed" : 100 },
 			{"name": "PLA", "extruder" : 180, "bed" : 60 }
 		],
-		"cutoff": 30
+		"cutoff": 30,
+		"sendAutomatically": False,
+		"sendAutomaticallyAfter": 1,
 	},
 	"printerProfiles": {
 		"default": None
@@ -1275,23 +1277,43 @@ class Settings(object):
 			return None
 
 	def getInt(self, path, **kwargs):
+		minimum = kwargs.pop("min", None)
+		maximum = kwargs.pop("max", None)
+
 		value = self.get(path, **kwargs)
 		if value is None:
 			return None
 
 		try:
-			return int(value)
+			intValue = int(value)
+
+			if minimum is not None and intValue < minimum:
+				return minimum
+			elif maximum is not None and intValue > maximum:
+				return maximum
+			else:
+				return intValue
 		except ValueError:
 			self._logger.warn("Could not convert %r to a valid integer when getting option %r" % (value, path))
 			return None
 
 	def getFloat(self, path, **kwargs):
+		minimum = kwargs.pop("min", None)
+		maximum = kwargs.pop("max", None)
+
 		value = self.get(path, **kwargs)
 		if value is None:
 			return None
 
 		try:
-			return float(value)
+			floatValue = float(value)
+
+			if minimum is not None and floatValue < minimum:
+				return minimum
+			elif maximum is not None and floatValue > maximum:
+				return maximum
+			else:
+				return floatValue
 		except ValueError:
 			self._logger.warn("Could not convert %r to a valid integer when getting option %r" % (value, path))
 			return None
@@ -1447,8 +1469,16 @@ class Settings(object):
 			self.set(path, None, **kwargs)
 			return
 
+		minimum = kwargs.pop("min", None)
+		maximum = kwargs.pop("max", None)
+
 		try:
 			intValue = int(value)
+
+			if minimum is not None and intValue < minimum:
+				intValue = minimum
+			if maximum is not None and intValue > maximum:
+				intValue = maximum
 		except ValueError:
 			self._logger.warn("Could not convert %r to a valid integer when setting option %r" % (value, path))
 			return
@@ -1460,8 +1490,16 @@ class Settings(object):
 			self.set(path, None, **kwargs)
 			return
 
+		minimum = kwargs.pop("min", None)
+		maximum = kwargs.pop("max", None)
+
 		try:
 			floatValue = float(value)
+
+			if minimum is not None and floatValue < minimum:
+				floatValue = minimum
+			if maximum is not None and floatValue > maximum:
+				floatValue = maximum
 		except ValueError:
 			self._logger.warn("Could not convert %r to a valid integer when setting option %r" % (value, path))
 			return

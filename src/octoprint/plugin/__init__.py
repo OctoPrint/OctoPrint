@@ -264,13 +264,17 @@ class PluginSettings(object):
 	   :returns: The retrieved settings value.
 	   :rtype: object
 
-	.. method:: get_int(path)
+	.. method:: get_int(path, min=None, max=None)
 
-	   Like :func:`get` but tries to convert the retrieved value to ``int``.
+	   Like :func:`get` but tries to convert the retrieved value to ``int``. If ``min`` is provided and the retrieved
+	   value is less than it, it will be returned instead of the value. Likewise for ``max`` - it will be returned if
+	   the value is greater than it.
 
-	.. method:: get_float(path)
+	.. method:: get_float(path, min=None, max=None)
 
-	   Like :func:`get` but tries to convert the retrieved value to ``float``.
+	   Like :func:`get` but tries to convert the retrieved value to ``float``. If ``min`` is provided and the retrieved
+	   value is less than it, it will be returned instead of the value. Likewise for ``max`` - it will be returned if
+	   the value is greater than it.
 
 	.. method:: get_boolean(path)
 
@@ -286,13 +290,19 @@ class PluginSettings(object):
 	   :param boolean force: If set to True, the modified configuration will even be written back to disk if
 	       the value didn't change.
 
-	.. method:: set_int(path, value, force=False)
+	.. method:: set_int(path, value, force=False, min=None, max=None)
 
 	   Like :func:`set` but ensures the value is an ``int`` through attempted conversion before setting it.
+	   If ``min`` and/or ``max`` are provided, it will also be ensured that the value is greater than or equal
+	   to ``min`` and less than or equal to ``max``. If that is not the case, the limit value (``min`` if less than
+	   that, ``max`` if greater than that) will be set instead.
 
-	.. method:: set_float(path, value, force=False)
+	.. method:: set_float(path, value, force=False, min=None, max=None)
 
 	   Like :func:`set` but ensures the value is an ``float`` through attempted conversion before setting it.
+	   If ``min`` and/or ``max`` are provided, it will also be ensured that the value is greater than or equal
+	   to ``min`` and less than or equal to ``max``. If that is not the case, the limit value (``min`` if less than
+	   that, ``max`` if greater than that) will be set instead.
 
 	.. method:: set_boolean(path, value, force=False)
 

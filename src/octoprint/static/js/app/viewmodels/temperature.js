@@ -454,11 +454,14 @@ $(function() {
 
         self.incrementTarget = function(item) {
             var value = item.newTarget();
-            if (value === undefined || (typeof(value) == "string" && value.trim() == "")) value = item.target();
+            if (value === undefined || (typeof(value) == "string" && value.trim() == "")) {
+                value = item.target();
+            }
             try {
                 value = parseInt(value);
                 if (value > 999) return;
                 item.newTarget(value + 1);
+                self.autosendTarget(item);
             } catch (ex) {
                 // do nothing
             }
@@ -466,33 +469,69 @@ $(function() {
 
         self.decrementTarget = function(item) {
             var value = item.newTarget();
-            if (value === undefined || (typeof(value) == "string" && value.trim() == "")) value = item.target();
+            if (value === undefined || (typeof(value) == "string" && value.trim() == "")) {
+                value = item.target();
+            }
             try {
                 value = parseInt(value);
                 if (value <= 0) return;
                 item.newTarget(value - 1);
+                self.autosendTarget(item);
             } catch (ex) {
                 // do nothing
             }
         };
 
+        var _sendTimeout = {};
+
+        self.autosendTarget = function(item) {
+            if (!self.settingsViewModel.temperature_sendAutomatically()) return;
+            var delay = self.settingsViewModel.temperature_sendAutomaticallyAfter() * 1000;
+
+            var name = item.name();
+            if (_sendTimeout[name]) {
+                window.clearTimeout(_sendTimeout[name]);
+            }
+            _sendTimeout[name] = window.setTimeout(function() {
+                self.setTarget(item);
+                delete _sendTimeout[name];
+            }, delay);
+        };
+
+        self.clearAutosendTarget = function(item) {
+            var name = item.name();
+            if (_sendTimeout[name]) {
+                window.clearTimeout(_sendTimeout[name]);
+                delete _sendTimeout[name];
+            }
+        };
+
         self.setTarget = function(item, form) {
             var value = item.newTarget();
-            $(form).find("input").blur();
+            if (form !== undefined) {
+                $(form).find("input").blur();
+            }
             if (value === undefined || (typeof(value) == "string" && value.trim() == "")) return OctoPrintClient.createRejectedDeferred();
+
+            self.clearAutosendTarget(item);
             return self.setTargetToValue(item, value);
         };
 
         self.setTargetFromProfile = function(item, profile) {
             if (!profile) return OctoPrintClient.createRejectedDeferred();
+
+            self.clearAutosendTarget(item);
             return self.setTargetToValue(item, (item.key() == "bed" ? profile.bed : profile.extruder));
         };
 
         self.setTargetToZero = function(item) {
+            self.clearAutosendTarget(item);
             return self.setTargetToValue(item, 0);
         };
 
         self.setTargetToValue = function(item, value) {
+            self.clearAutosendTarget(item);
+
             try {
                 value = parseInt(value);
             } catch (ex) {
