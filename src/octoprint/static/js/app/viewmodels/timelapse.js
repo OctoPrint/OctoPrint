@@ -11,7 +11,7 @@ $(function() {
         self.defaultPostRoll = 0;
         self.defaultInterval = 10;
         self.defaultRetractionZHop = 0;
-        self.defaultCapturePostroll = true;
+        self.defaultCapturePostRoll = true;
 
         self.timelapseType = ko.observable(undefined);
         self.timelapseTimedInterval = ko.observable(self.defaultInterval);
@@ -50,10 +50,6 @@ $(function() {
         });
         self.saveButtonEnabled = ko.pureComputed(function() {
             return self.loginState.hasPermission(self.access.permissions.TIMELAPSE_ADMIN)() && self.isDirty() && self.isOperational() && !self.isPrinting();
-        });
-
-        self.isOperational.subscribe(function() {
-            self.requestData();
         });
 
         self.timelapseType.subscribe(function() {
@@ -163,18 +159,20 @@ $(function() {
             // timelapse config
             self.timelapseType(config.type);
 
-            if (config.type == "timed") {
-                if (config.interval != undefined && config.interval > 0) {
-                    self.timelapseTimedInterval(config.interval);
-                }
+            if (config.type == "timed" && config.interval != undefined && config.interval > 0) {
+                self.timelapseTimedInterval(config.interval);
             } else {
                 self.timelapseTimedInterval(self.defaultInterval);
             }
 
-            if (config.type == "zchange") {
-                if (config.retractionZHop != undefined && config.retractionZHop > 0) {
-                    self.timelapseRetractionZHop(config.retractionZHop);
-                }
+            if (config.type == "timed" && config.capturePostRoll != undefined){
+                self.timelapseCapturePostRoll(config.capturePostRoll);
+            } else {
+                self.timelapseCapturePostRoll(self.defaultCapturePostRoll);
+            }
+
+            if (config.type == "zchange" && config.retractionZHop != undefined && config.retractionZHop > 0) {
+                self.timelapseRetractionZHop(config.retractionZHop);
             } else {
                 self.timelapseRetractionZHop(self.defaultRetractionZHop);
             }
@@ -189,12 +187,6 @@ $(function() {
                 self.timelapseFps(config.fps);
             } else {
                 self.timelapseFps(self.defaultFps);
-            }
-
-            if (config.capturePostRoll != undefined){
-                self.timelapseCapturePostRoll(config.capturePostRoll);
-            } else {
-                self.timelapseCapturePostRoll(self.defaultCapturePostRoll);
             }
 
             self.persist(false);
@@ -240,6 +232,16 @@ $(function() {
                     .done(function() {
                         self.markedForFileDeletion.remove(filename);
                         self.requestData()
+                    })
+                    .fail(function(jqXHR) {
+                        var html = "<p>" + _.sprintf(gettext("Failed to remove timelapse %(name)s.</p><p>Please consult octoprint.log for details.</p>"), {name: filename});
+                        html += pnotifyAdditionalInfo('<pre style="overflow: auto">' + jqXHR.responseText + '</pre>');
+                        new PNotify({
+                            title: gettext("Could not remove timelapse"),
+                            text: html,
+                            type: "error",
+                            hide: false
+                        });
                     });
             };
 
@@ -308,7 +310,7 @@ $(function() {
         self._bulkRemove = function(files, type) {
             var title, message, handler;
 
-            if (type == "files") {
+            if (type === "files") {
                 title = gettext("Deleting timelapse files");
                 message = _.sprintf(gettext("Deleting %(count)d timelapse files..."), {count: files.length});
                 handler = function(filename) {
@@ -316,11 +318,13 @@ $(function() {
                         .done(function() {
                             deferred.notify(_.sprintf(gettext("Deleted %(filename)s..."), {filename: filename}), true);
                         })
-                        .fail(function() {
-                            deferred.notify(_.sprintf(gettext("Deletion of %(filename)s failed, continuing..."), {filename: filename}), false);
+                        .fail(function(jqXHR) {
+                            var short = _.sprintf(gettext("Deletion of %(filename)s failed, continuing..."), {filename: filename});
+                            var long = _.sprintf(gettext("Deletion of %(filename)s failed: %(error)s"), {filename: filename, error: jqXHR.responseText});
+                            deferred.notify(short, long, false);
                         });
                 }
-            } else if (type == "unrendered") {
+            } else if (type === "unrendered") {
                 title = gettext("Deleting unrendered timelapses");
                 message = _.sprintf(gettext("Deleting %(count)d unrendered timelapses..."), {count: files.length});
                 handler = function(filename) {

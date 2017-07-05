@@ -47,6 +47,8 @@ $(function() {
         self.renderer_zoomOnModel = ko.observable(false);
         self.renderer_showMoves = ko.observable(true);
         self.renderer_showRetracts = ko.observable(true);
+        self.renderer_showBoundingBox = ko.observable(false);
+        self.renderer_showFullSize = ko.observable(false);
         self.renderer_extrusionWidthEnabled = ko.observable(false);
         self.renderer_extrusionWidth = ko.observable(2);
         self.renderer_showNext = ko.observable(false);
@@ -66,6 +68,8 @@ $(function() {
                 centerViewport: self.renderer_centerViewport(),
                 showMoves: self.renderer_showMoves(),
                 showRetracts: self.renderer_showRetracts(),
+                showBoundingBox: self.renderer_showBoundingBox(),
+                showFullSize: self.renderer_showFullSize(),
                 extrusionWidth: self.renderer_extrusionWidthEnabled() ? self.renderer_extrusionWidth() : 1,
                 showNextLayer: self.renderer_showNext(),
                 showPreviousLayer: self.renderer_showPrevious(),
@@ -78,7 +82,8 @@ $(function() {
 
             var reader = {
                 sortLayers: self.reader_sortLayers(),
-                purgeEmptyLayers: self.reader_hideEmptyLayers()
+                purgeEmptyLayers: self.reader_hideEmptyLayers(),
+                ignoreOutsideBed: true
             };
             if (additionalReaderOptions) {
                 _.extend(reader, additionalReaderOptions);
@@ -96,6 +101,8 @@ $(function() {
         self.renderer_zoomOnModel.subscribe(self.synchronizeOptions);
         self.renderer_showMoves.subscribe(self.synchronizeOptions);
         self.renderer_showRetracts.subscribe(self.synchronizeOptions);
+        self.renderer_showBoundingBox.subscribe(self.synchronizeOptions);
+        self.renderer_showFullSize.subscribe(self.synchronizeOptions);
         self.renderer_extrusionWidthEnabled.subscribe(self.synchronizeOptions);
         self.renderer_extrusionWidth.subscribe(self.synchronizeOptions);
         self.renderer_showNext.subscribe(self.synchronizeOptions);
@@ -121,9 +128,12 @@ $(function() {
             }
 
             var bedDimensions = self._retrieveBedDimensions(currentProfileData);
-            if (toolOffsets) {
+            if (bedDimensions) {
                 GCODE.ui.updateOptions({
                     renderer: {
+                        bed: bedDimensions
+                    },
+                    reader: {
                         bed: bedDimensions
                     }
                 });
@@ -137,6 +147,14 @@ $(function() {
                     }
                 });
             }
+        });
+
+        self.settings.feature_g90InfluencesExtruder.subscribe(function() {
+            GCODE.ui.updateOptions({
+                reader: {
+                    g90InfluencesExtruder: self.settings.feature_g90InfluencesExtruder()
+                }
+            });
         });
 
         self._retrieveBedDimensions = function(currentProfileData) {
@@ -240,7 +258,7 @@ $(function() {
             self._configureLayerSlider(layerSliderElement);
             self._configureLayerCommandSlider(commandSliderElement);
 
-            self.settings.requestData()
+            self.settings.firstRequest
                 .done(function() {
                     var initResult = GCODE.ui.init({
                         container: "#gcode_canvas",
@@ -329,6 +347,7 @@ $(function() {
                     result: response
                 }
             };
+            GCODE.renderer.clear();
             GCODE.gCodeReader.loadFile(par);
 
             if (self.layerSlider != undefined) {
@@ -399,7 +418,7 @@ $(function() {
                     self.selectedFile.date(data.job.file.date);
                     self.selectedFile.size(data.job.file.size);
 
-                    if (data.job.file.size > CONFIG_GCODE_SIZE_THRESHOLD || ($.browser.mobile && data.job.file.size > CONFIG_GCODE_MOBILE_SIZE_THRESHOLD)) {
+                    if (data.job.file.size > CONFIG_GCODE_SIZE_THRESHOLD || (OctoPrint.coreui.browser.mobile && data.job.file.size > CONFIG_GCODE_MOBILE_SIZE_THRESHOLD)) {
                         self.waitForApproval(true);
                         self.loadedFilepath = undefined;
                         self.loadedFileDate = undefined;

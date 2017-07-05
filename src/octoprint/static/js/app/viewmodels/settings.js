@@ -7,6 +7,11 @@ $(function() {
         self.printerProfiles = parameters[2];
         self.about = parameters[3];
 
+        // use this promise to do certain things once the SettingsViewModel has processed
+        // its first request
+        var firstRequest = $.Deferred();
+        self.firstRequest = firstRequest.promise();
+
         self.allViewModels = [];
 
         self.receiving = ko.observable(false);
@@ -91,6 +96,8 @@ $(function() {
             }
         };
 
+        self.webcam_available_ratios = ["16:9", "4:3"];
+
         var auto_locale = {language: "_default", display: gettext("Autodetect from browser"), english: undefined};
         self.locales = ko.observableArray([auto_locale].concat(_.sortBy(_.values(AVAILABLE_LOCALES), function(n) {
             return n.display;
@@ -110,6 +117,8 @@ $(function() {
         self.printer_defaultExtrusionLength = ko.observable(undefined);
 
         self.webcam_streamUrl = ko.observable(undefined);
+        self.webcam_streamRatio = ko.observable(undefined);
+        self.webcam_streamTimeout = ko.observable(undefined);
         self.webcam_snapshotUrl = ko.observable(undefined);
         self.webcam_ffmpegPath = ko.observable(undefined);
         self.webcam_bitrate = ko.observable(undefined);
@@ -140,6 +149,7 @@ $(function() {
         self.feature_firmwareDetection = ko.observable(undefined);
         self.feature_printCancelConfirmation = ko.observable(undefined);
         self.feature_blockWhileDwelling = ko.observable(undefined);
+        self.feature_g90InfluencesExtruder = ko.observable(undefined);
 
         self.serial_port = ko.observable();
         self.serial_baudrate = ko.observable();
@@ -151,6 +161,7 @@ $(function() {
         self.serial_timeoutCommunication = ko.observable(undefined);
         self.serial_timeoutTemperature = ko.observable(undefined);
         self.serial_timeoutTemperatureTargetSet = ko.observable(undefined);
+        self.serial_timeoutTemperatureAutoreport = ko.observable(undefined);
         self.serial_timeoutSdStatus = ko.observable(undefined);
         self.serial_log = ko.observable(undefined);
         self.serial_additionalPorts = ko.observable(undefined);
@@ -179,9 +190,13 @@ $(function() {
         self.scripts_gcode_beforePrintResumed = ko.observable(undefined);
         self.scripts_gcode_afterPrinterConnected = ko.observable(undefined);
         self.scripts_gcode_beforePrinterDisconnected = ko.observable(undefined);
+        self.scripts_gcode_afterToolChange = ko.observable(undefined);
+        self.scripts_gcode_beforeToolChange = ko.observable(undefined);
 
         self.temperature_profiles = ko.observableArray(undefined);
         self.temperature_cutoff = ko.observable(undefined);
+        self.temperature_sendAutomatically = ko.observable(undefined);
+        self.temperature_sendAutomaticallyAfter = ko.observable(undefined);
 
         self.system_actions = ko.observableArray([]);
 
@@ -224,8 +239,13 @@ $(function() {
             self.terminalFilters.remove(filter);
         };
 
+        self.testWebcamStreamUrlBusy = ko.observable(false);
         self.testWebcamStreamUrl = function() {
             if (!self.webcam_streamUrl()) {
+                return;
+            }
+
+            if (self.testWebcamStreamUrlBusy()) {
                 return;
             }
 
@@ -234,27 +254,33 @@ $(function() {
             var message = $("<p></p>")
                 .append(text)
                 .append(image);
+
+            self.testWebcamStreamUrlBusy(true);
             showMessageDialog({
                 title: gettext("Stream test"),
-                message: message
+                message: message,
+                onclose: function() {
+                    self.testWebcamStreamUrlBusy(false);
+                }
             });
         };
 
+        self.testWebcamSnapshotUrlBusy = ko.observable(false);
         self.testWebcamSnapshotUrl = function(viewModel, event) {
             if (!self.webcam_snapshotUrl()) {
                 return;
             }
 
-            var target = $(event.target);
-            target.prepend('<i class="icon-spinner icon-spin"></i> ');
+            if (self.testWebcamSnapshotUrlBusy()) {
+                return;
+            }
 
             var errorText = gettext("Could not retrieve snapshot URL, please double check the URL");
             var errorTitle = gettext("Snapshot test failed");
 
+            self.testWebcamSnapshotUrlBusy(true);
             OctoPrint.util.testUrl(self.webcam_snapshotUrl(), {method: "GET", response: "bytes"})
                 .done(function(response) {
-                    $("i.icon-spinner", target).remove();
-
                     if (!response.result) {
                         showMessageDialog({
                             title: errorTitle,
@@ -274,23 +300,34 @@ $(function() {
                     var text = gettext("If you see your webcam snapshot picture below, the entered snapshot URL is ok.");
                     showMessageDialog({
                         title: gettext("Snapshot test"),
-                        message: $('<p>' + text + '</p><p><img src="data:' + mimeType + ';base64,' + content + '" /></p>')
+                        message: $('<p>' + text + '</p><p><img src="data:' + mimeType + ';base64,' + content + '" /></p>'),
+                        onclose: function() {
+                            self.testWebcamSnapshotUrlBusy(false);
+                        }
                     });
                 })
                 .fail(function() {
-                    $("i.icon-spinner", target).remove();
                     showMessageDialog({
                         title: errorTitle,
-                        message: errorText
+                        message: errorText,
+                        onclose: function() {
+                            self.testWebcamSnapshotUrlBusy(false);
+                        }
                     });
                 });
         };
 
+        self.testWebcamFfmpegPathBusy = ko.observable(false);
         self.testWebcamFfmpegPath = function() {
             if (!self.webcam_ffmpegPath()) {
                 return;
             }
 
+            if (self.testWebcamFfmpegPathBusy()) {
+                return;
+            }
+
+            self.testWebcamFfmpegPathBusy(true);
             OctoPrint.util.testExecutable(self.webcam_ffmpegPath())
                 .done(function(response) {
                     if (!response.result) {
@@ -306,6 +343,9 @@ $(function() {
                     }
                     self.webcam_ffmpegPathOk(response.result);
                     self.webcam_ffmpegPathBroken(!response.result);
+                })
+                .always(function() {
+                    self.testWebcamFfmpegPathBusy(false);
                 });
         };
 
@@ -730,6 +770,8 @@ $(function() {
             };
 
             mapToObservables(serverChangedData, specialMappings, clientChangedData);
+
+            firstRequest.resolve();
         };
 
         self.saveData = function (data, successCallback, setAsSending) {
@@ -844,12 +886,14 @@ $(function() {
         };
 
         self.onUserLoggedIn = function() {
-            // we might have other user rights now, refresh
+            // we might have other user rights now, refresh (but only if startup has fully completed)
+            if (!self._startupComplete) return;
             self.requestData();
         };
 
         self.onUserLoggedOut = function() {
-            // we might have other user rights now, refresh
+            // we might have other user rights now, refresh (but only if startup has fully completed)
+            if (!self._startupComplete) return;
             self.requestData();
         }
     }

@@ -407,7 +407,6 @@ table {
       width: 80px;
       .actioncol;
     }
-
   }
 }
 
@@ -420,12 +419,52 @@ table {
   background: url("../img/graph-background.png") no-repeat center;
 }
 
-.tab-content, .tab-pane {
-  overflow: visible;
+#temperature-table {
+  table-layout: fixed;
+  width: 100%;
+  margin-top: 20px;
+
+  th, td {
+    &.temperature_tool,
+    &.temperature_actual,
+    &.temperature_target,
+    &.temperature_offset {
+      vertical-align: middle;
+      text-align: center;
+
+      form {
+        margin: 0;
+      }
+
+      .dropdown-menu {
+        text-align: left;
+      }
+    }
+
+    &.temperature_tool {
+      width: 18%;
+      text-align: left;
+    }
+
+    &.temperature_actual {
+      width: 12%;
+    }
+
+    &.temperature_target {
+      width: 40%;
+      overflow: visible;
+    }
+
+    &.temperature_offset {
+      width: 30%;
+    }
+  }
 }
 
-.tempInput {
-  width: 50px;
+/** Various */
+
+.tab-content, .tab-pane {
+  overflow: visible;
 }
 
 #temp_newTemp, #temp_newBedTemp, #speed_innerWall, #speed_outerWall, #speed_fill, #speed_support,
@@ -498,7 +537,7 @@ ul.dropdown-menu li a {
   position: relative;
   outline: none;
 
-  //min-height: 440px;
+  background-color: black;
 
   .keycontrol_overlay {
     position: absolute;
@@ -532,6 +571,89 @@ ul.dropdown-menu li a {
       padding: 10px;
       float: left;
     }
+  }
+
+  .nowebcam {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+
+    .text {
+      color: white;
+      text-align: center;
+      position: relative;
+      margin: auto;
+      width: 80%;
+      top: 50%;
+      transform: translateY(-50%);
+      display: block;
+
+      &.webcam_loading {
+        animation: pulsate 3s ease-out;
+        animation-iteration-count: infinite;
+      }
+    }
+  }
+
+  .webcam_rotated {
+    position: relative;
+    width: 100%;
+    padding-bottom: 100%;
+    pointer-events: none;
+
+    .webcam_fixed_ratio {
+      position: absolute;
+      transform: rotate(-90deg);
+      top: 0;
+      bottom: 0;
+      pointer-events: none;
+
+      .webcam_fixed_ratio_inner {
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+      }
+    }
+  }
+
+  .webcam_unrotated {
+    .webcam_fixed_ratio {
+      width: 100%;
+      pointer-events: none;
+
+      padding-bottom: 100%;
+      &.ratio43 {
+        padding-bottom: 75%;
+      }
+
+      &.ratio169 {
+        padding-bottom: 56.25%;
+      }
+
+      &.ratio1610 {
+        padding-bottom: 62.5%;
+      }
+
+      position: relative;
+
+      .webcam_fixed_ratio_inner {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        pointer-events: none;
+      }
+    }
+  }
+
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
   }
 }
 
@@ -874,6 +996,18 @@ textarea.block {
   width: 100%;
 }
 
+@keyframes pulsate {
+    0% {
+        opacity: 0.5;
+    }
+    50% {
+        opacity: 1.0;
+    }
+    100% {
+        opacity: 0.5;
+    }
+}
+
 #drop_overlay {
   position: fixed;
   top: 0;
@@ -1000,6 +1134,10 @@ textarea.block {
   width: 11px;
   height: 17px;
   display: inline-block !important;
+}
+
+a.dropdown-sd {
+  padding-top: 4px !important;
 }
 
 .center {
@@ -1132,6 +1270,12 @@ _::-webkit-full-page-media, _:future, :root .full-sized-box {
   -webkit-overflow-scrolling: touch;
 }
 
+.pre-output {
+  span {
+    display: block; // so we don't need to add individual <br> tags to each line
+  }
+}
+
 .input-append, .input-prepend {
   .add-on {
     &.add-on-limited {
@@ -1140,6 +1284,27 @@ _::-webkit-full-page-media, _:future, :root .full-sized-box {
       width: inherit;
     }
   }
+
+  .btn-group:first-child {
+    .btn:first-child {
+      -webkit-border-radius: 4px 0 0 4px;
+      -moz-border-radius: 4px 0 0 4px;
+      border-radius: 4px 0 0 4px;
+    }
+  }
+
+  .btn-group {
+    .btn:first-child {
+      -webkit-border-radius: 0;
+      -moz-border-radius: 0;
+      border-radius: 0;
+    }
+  }
+}
+
+.btn-input-dec,
+.btn-input-enc {
+  //font-size: 80%;
 }
 
 .control-group.error .input-prepend .fileinput-button,
@@ -1147,8 +1312,23 @@ _::-webkit-full-page-media, _:future, :root .full-sized-box {
   border-color: #b94a48;
 }
 
+.control-text {
+  // like control-label, but without cursor, float, width or text-align
+  padding-top: 5px;
+  cursor: default;
+}
+
 input[type=number] {
   text-align: right;
+}
+
+input[type="number"].input-nospin::-webkit-outer-spin-button,
+input[type="number"].input-nospin::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+input[type="number"].input-nospin {
+    -moz-appearance: textfield;
 }
 
 // Progress bars with text

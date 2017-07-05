@@ -30,6 +30,8 @@ import octoprint.plugin
 
 from werkzeug.contrib.cache import BaseCache
 
+from past.builtins import basestring
+
 try:
 	from os import scandir, walk
 except ImportError:
@@ -507,8 +509,8 @@ def passive_login():
 
 	if user is not None and not user.is_anonymous:
 		flask_principal.identity_changed.send(flask.current_app._get_current_object(), identity=flask_principal.Identity(user.get_id()))
-		if hasattr(user, "get_session"):
-			flask.session["usersession.id"] = user.get_session()
+		if hasattr(user, "session"):
+			flask.session["usersession.id"] = user.session
 		flask.g.user = user
 		return flask.jsonify(user)
 	elif settings().getBoolean(["accessControl", "autologinLocal"]) \
@@ -526,7 +528,7 @@ def passive_login():
 				user = octoprint.server.userManager.findUser(autologinAs)
 				if user is not None:
 					user = octoprint.server.userManager.login_user(user)
-					flask.session["usersession.id"] = user.get_session()
+					flask.session["usersession.id"] = user.session
 					flask.g.user = user
 
 					flask_login.login_user(user)

@@ -13,10 +13,18 @@ Unless :ref:`configured otherwise <sec-configuration-config_yaml-folder>`, OctoP
 the ``scripts/gcode`` folder in OctoPrint configuration directory (per default ``~/.octoprint`` on Linux, ``%APPDATA%\OctoPrint``
 on Windows and ``~/Library/Application Support/OctoPrint`` on MacOS).
 
-These GCODE scripts are backed by the templating engine `Jinja2 <http://jinja.pocoo.org/>`_, allowing more than just
+These GCODE scripts are backed by the templating engine Jinja2, allowing more than just
 simple "send-as-is" scripts but making use of a full blown templating language in order to create your scripts. To
-this end, OctoPrint injects a couple of variables into the :ref:`template rendering context <sec-features-gcode_scripts-context>`
+this end, OctoPrint injects some variables into the :ref:`template rendering context <sec-features-gcode_scripts-context>`
 as described below.
+
+You can find the docs on the Jinja templating engine as used in OctoPrint at `jinja.octoprint.org <http://jinja.octoprint.org/templates.html>`_.
+
+.. note::
+
+   Due to backwards compatibility issues with Jinja versions 2.9+, OctoPrint currently only supports Jinja 2.8. For this
+   reason use the template documentation at `jinja.octoprint.org <http://jinja.octoprint.org/templates.html>`_ instead of the
+   documentation of current stable Jinja versions.
 
 .. _sec-features-gcode_scripts-predefined:
 
@@ -60,23 +68,35 @@ All GCODE scripts have access to the following template variables through the te
 
   * ``printer_profile``: The currently selected Printer Profile, including
     information such as the extruder count, the build volume size, the filament diameter etc.
-  * ``last_position``: Last position reported by the printer via `M114` (might be unset if no `M114` was sent so far!)
+  * ``last_position``: Last position reported by the printer via `M114` (might be unset if no `M114` was sent so far!).
+    Consists of ``x``, ``y``, ``z`` and ``e`` coordinates as received by the printer and tracked values for ``f`` and
+    current tool ``t`` taken from commands sent through OctoPrint. All of these coordinates might be ``None`` if no
+    position could be retrieved from the printer or the values could not be tracked (in case of ``f`` and ``t``)!
+  * ``last_temperature``: Last actual and target temperature reported for all available tools and if available the
+    heated bed. This is a dictionary of key-value pairs. The keys are the indices of the available tools (``0``, ``1``,
+    ...) and ``b`` for the heated bed. The values are a dictionary consisting of ``actual`` and ``target`` keys mapped
+    to the corresponding temperature in degrees celsius. Note that not all tools your printer has must necessarily be
+    present here, neither must the heated bed - it depends on whether OctoPrint has values for a tool or the bed. Also
+    note that ``actual`` and ``target`` might be ``None``.
   * ``script``: An object wrapping the script's type (``gcode``) and name (e.g. ``afterPrintCancelled``) as ``script.type``
     and ``script.name`` respectively.
 
-There are a couple of additional template variables available for the following specific scripts:
+There are a few additional template variables available for the following specific scripts:
 
   * ``afterPrintPaused`` and ``beforePrintResumed``
 
-    * ``pause_position``: Position reported by the printer via ``M114`` immediately before the print was paused. Consists
-      of ``x``, ``y``, ``z`` and ``e`` coordinates as received by the printer and tracked values for ``f`` and current tool
-      ``t`` taken from commands sent through OctoPrint.
+    * ``pause_position``: Position reported by the printer via ``M114`` immediately before the print was paused. See
+      ``last_position`` above for the structure to expect here.
+    * ``pause_temperature``: Last known temperature values when the print was paused. See ``last_temperature`` above
+      for the structure to expect here.
 
   * ``afterPrintCancelled``
 
     * ``cancel_position``: Position reported by the printer via ``M114`` immediately before the print was cancelled.
-      Consists of ``x``, ``y``, ``z`` and ``e`` coordinates as received by the printer and tracked values for ``f`` and
-      current tool ``t`` taken from commands sent through OctoPrint.
+      See ``last_position`` above for the structure to expect here.
+    * ``cancel_temperature``: Last known temperature values when the print was cancelled. See ``last_temperature`` above
+      for the structure to expect here.
+
 
 .. warning::
 
@@ -150,6 +170,7 @@ to 0 if a heated bed is configured.
 
 .. seealso::
 
-   `Jinja Template Designer Documentation <http://jinja.pocoo.org/docs/dev/templates/>`_
+   `Jinja Template Designer Documentation <http://jinja.octoprint.org/templates.html>`_
       Jinja's Template Designer Documentation describes the syntax and semantics of the template language used
-      also by OctoPrint's GCODE scripts.
+      also by OctoPrint's GCODE scripts. Linked here are the docs for Jinja 2.8.1, which OctoPrint still
+      relies on for backwards compatibility reasons.

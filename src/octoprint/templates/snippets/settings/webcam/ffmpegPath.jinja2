@@ -3,7 +3,7 @@
     <div class="controls">
         <div class="input-append">
             <input type="text" class="input-block-level" data-bind="value: webcam_ffmpegPath, valueUpdate: 'afterkeydown'" id="settings-webcamFfmpegPath">
-            <button class="btn" type="button" data-bind="click: testWebcamFfmpegPath, enable: webcam_ffmpegPath(), css: {disabled: !webcam_ffmpegPath()}">{{ _('Test') }}</button>
+            <button class="btn" type="button" data-bind="click: testWebcamFfmpegPath, enable: webcam_ffmpegPath() && !testWebcamFfmpegPathBusy(), css: {disabled: !webcam_ffmpegPath() || testWebcamFfmpegPathBusy()}"><i class="fa fa-spinner fa-spin" data-bind="visible: testWebcamFfmpegPathBusy"></i> {{ _('Test') }}</button>
         </div>
         <span class="help-block" data-bind="visible: webcam_ffmpegPathBroken() || webcam_ffmpegPathOk(), text: webcam_ffmpegPathText"></span>
     </div>

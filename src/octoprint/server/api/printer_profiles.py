@@ -11,6 +11,8 @@ import copy
 from flask import jsonify, make_response, request, url_for
 from werkzeug.exceptions import BadRequest
 
+from past.builtins import basestring
+
 from octoprint.server.api import api, NO_CONTENT, valid_boolean_trues
 from octoprint.server.util.flask import restricted_access, with_revalidation_checking
 from octoprint.util import dict_merge
@@ -18,7 +20,6 @@ from octoprint.util import dict_merge
 from octoprint.server import printerProfileManager
 from octoprint.printer.profile import InvalidProfileError, CouldNotOverwriteError
 from octoprint.access.permissions import Permissions
-
 
 def _lastmodified():
 	return printerProfileManager.last_modified

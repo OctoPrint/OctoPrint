@@ -14,7 +14,6 @@ AccessUser = User
 import warnings
 warnings.warn("octoprint.users is deprecated, use octoprint.access.users instead", DeprecationWarning, stacklevel=2)
 
-
 class User(AccessUser):
 	@deprecated("octoprint.users.User is deprecated, please use octoprint.access.users.User instead")
 	def __init__(self, username, passwordHash, active, roles, apikey=None, settings=None):

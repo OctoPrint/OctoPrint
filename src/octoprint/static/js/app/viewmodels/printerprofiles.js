@@ -453,7 +453,7 @@ $(function() {
         };
 
         self.requestData = function() {
-            OctoPrint.printerprofiles.list()
+            return OctoPrint.printerprofiles.list()
                 .done(self.fromResponse);
         };
 
@@ -476,8 +476,16 @@ $(function() {
             });
             self.profiles.updateItems(items);
             self.defaultProfile(defaultProfile);
-            self.currentProfile(currentProfile);
-            self.currentProfileData(currentProfileData);
+
+            if (currentProfile && currentProfileData) {
+                self.currentProfile(currentProfile);
+                self.currentProfileData(currentProfileData);
+            } else {
+                // shouldn't normally happen, but just to not have anything else crash...
+                log.warn("Current printer profile could not be detected, using default values");
+                self.currentProfile("");
+                self.currentProfileData(ko.mapping.fromJS(cleanProfile(), self.currentProfileData));
+            }
         };
 
         self.addProfile = function(callback) {
@@ -504,7 +512,10 @@ $(function() {
                 self.requestInProgress(true);
                 OctoPrint.printerprofiles.delete(data.id, {url: data.resource})
                     .done(function() {
-                        self.requestData();
+                        self.requestData()
+                            .always(function() {
+                                self.requestInProgress(false);
+                            });
                     })
                     .fail(function(xhr) {
                         var text;
@@ -514,8 +525,6 @@ $(function() {
                             text = gettext("There was unexpected error while removing the printer profile, please consult the logs.");
                         }
                         new PNotify({title: gettext("Could not delete profile"), text: text, type: "error", hide: false});
-                    })
-                    .always(function() {
                         self.requestInProgress(false);
                     });
             };
@@ -535,13 +544,14 @@ $(function() {
                     if (callback !== undefined) {
                         callback();
                     }
-                    self.requestData();
+                    self.requestData()
+                        .always(function() {
+                            self.requestInProgress(false);
+                        });
                 })
                 .fail(function() {
                     var text = gettext("There was unexpected error while updating the printer profile, please consult the logs.");
                     new PNotify({title: gettext("Could not update profile"), text: text, type: "error", hide: false});
-                })
-                .always(function() {
                     self.requestInProgress(false);
                 });
         };

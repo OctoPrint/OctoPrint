@@ -84,6 +84,7 @@ class Events(object):
 	EJECT = "Eject"
 	E_STOP = "EStop"
 	POSITION_UPDATE = "PositionUpdate"
+	TOOL_CHANGE = "ToolChange"
 	REGISTERED_MESSAGE_RECEIVED = "RegisteredMessageReceived"
 
 	# Timelapse
@@ -376,7 +377,7 @@ class CommandTrigger(GenericEventListener):
 
 	def _processCommand(self, command, payload):
 		"""
-		Performs string substitutions in the command string based on a couple of current parameters.
+		Performs string substitutions in the command string based on a few current parameters.
 
 		The following substitutions are currently supported:
 

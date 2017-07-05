@@ -67,7 +67,7 @@ and at its settings.
 
 ## Dependencies
 
-OctoPrint depends on a couple of python modules to do its job. Those are automatically installed when installing
+OctoPrint depends on a few python modules to do its job. Those are automatically installed when installing
 OctoPrint via `setup.py`:
 
     python setup.py install

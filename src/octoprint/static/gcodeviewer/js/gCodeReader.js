@@ -12,6 +12,9 @@ GCODE.gCodeReader = (function(){
     var max = {x: undefined, y: undefined, z: undefined};
     var min = {x: undefined, y: undefined, z: undefined};
     var modelSize = {x: undefined, y: undefined, z: undefined};
+    var boundingBox = {minX: undefined, maxX: undefined,
+                       minY: undefined, maxY: undefined,
+                       minZ: undefined, maxZ: undefined};
     var filamentByLayer = {};
     var printTimeByLayer;
     var totalFilament=0;
@@ -24,7 +27,16 @@ GCODE.gCodeReader = (function(){
         analyzeModel: false,
         toolOffsets: [
             {x: 0, y: 0}
-        ]
+        ],
+        bed: {
+            x: undefined,
+            y: undefined,
+            r: undefined,
+            circular: undefined,
+            centeredOrigin: undefined
+        },
+        ignoreOutsideBed: false,
+        g90InfluencesExtruder: false
     };
 
     var percentageTree = undefined;
@@ -122,6 +134,12 @@ GCODE.gCodeReader = (function(){
         clear: function() {
             model = [];
             z_heights = [];
+            max = {x: undefined, y: undefined, z: undefined};
+            min = {x: undefined, y: undefined, z: undefined};
+            modelSize = {x: undefined, y: undefined, z: undefined};
+            boundingBox = {minX: undefined, maxX: undefined,
+                           minY: undefined, maxY: undefined,
+                           minZ: undefined, maxZ: undefined};
         },
 
         loadFile: function(reader){
@@ -138,7 +156,10 @@ GCODE.gCodeReader = (function(){
                         gcode: gcode,
                         options: {
                             firstReport: 5,
-                            toolOffsets: gCodeOptions["toolOffsets"]
+                            toolOffsets: gCodeOptions["toolOffsets"],
+                            bed: gCodeOptions["bed"],
+                            ignoreOutsideBed: gCodeOptions["ignoreOutsideBed"],
+                            g90InfluencesExtruder: gCodeOptions["g90InfluencesExtruder"]
                         }
                     }
                 }
@@ -180,6 +201,7 @@ GCODE.gCodeReader = (function(){
             min = msg.min;
             max = msg.max;
             modelSize = msg.modelSize;
+            boundingBox = msg.boundingBox;
             totalFilament = msg.totalFilament;
             filamentByLayer = msg.filamentByLayer;
             speeds = msg.speeds;
@@ -201,6 +223,7 @@ GCODE.gCodeReader = (function(){
                 min: min,
                 max: max,
                 modelSize: modelSize,
+                boundingBox: boundingBox,
                 totalFilament: totalFilament,
                 speeds: speeds,
                 speedsByLayer: speedsByLayer,

@@ -9,6 +9,8 @@ import os
 import datetime
 import codecs
 
+from past.builtins import basestring
+
 from collections import defaultdict
 from flask import request, g, url_for, make_response, render_template, send_from_directory, redirect, abort
 
@@ -518,14 +520,10 @@ def _process_templates():
 	# sidebar
 
 	templates["sidebar"]["entries"]= dict(
-		connection=(gettext("Connection"), dict(template="sidebar/connection.jinja2", _div="connection", icon="signal", styles_wrapper=["display: none"], data_bind="visible: loginState.hasPermission(access.permissions.CONNECTION)")),
-		state=(gettext("State"), dict(template="sidebar/state.jinja2", _div="state", icon="info-sign", data_bind="visible: loginState.hasPermission(access.permissions.STATUS)")),
-		files=(gettext("Files"), dict(template="sidebar/files.jinja2", _div="files", icon="list", classes_content=["overflow_visible"], template_header="sidebar/files_header.jinja2", data_bind="visible: loginState.hasPermission(access.permissions.DOWNLOAD)() || \
-		                                                                                                                                                                                                   loginState.hasPermission(access.permissions.UPLOAD)() || \
-		                                                                                                                                                                                                   loginState.hasPermission(access.permissions.DELETE)() || \
-		                                                                                                                                                                                                   loginState.hasPermission(access.permissions.SELECT)() || \
-		                                                                                                                                                                                                   loginState.hasPermission(access.permissions.PRINT)() || \
-		                                                                                                                                                                                                   loginState.hasPermission(access.permissions.SLICE)()"))
+		connection=(gettext("Connection"), dict(template="sidebar/connection.jinja2", _div="connection", icon="signal", styles_wrapper=["display: none"], permission_test="access.permissions.CONNECTION")),
+		state=(gettext("State"), dict(template="sidebar/state.jinja2", _div="state", icon="info-circle", permission_test="access.permissions.STATUS")),
+		files=(gettext("Files"), dict(template="sidebar/files.jinja2", _div="files", icon="list", classes_content=["overflow_visible"], template_header="sidebar/files_header.jinja2",
+		                              permission_test="access.permissions.DOWNLOAD, access.permissions.UPLOAD, access.permissions.DELETE, access.permissions.SELECT, access.permissions.PRINT, access.permissions.SLICE]"))
 	)
 
 	# tabs

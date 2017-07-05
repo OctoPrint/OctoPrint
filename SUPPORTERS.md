@@ -1,4 +1,4 @@
-# Supporters
+# Supporters 
 
 Development of this version of OctoPrint wouldn't have been possible without
 [financial support by the community](http://octoprint.org/support-octoprint/) -
@@ -10,11 +10,11 @@ thanks to everyone who contributed!
   * Aleph Objects, Inc.
   * Andrew Moorby
   * Arnljot Arntsen
+  * BEEVERYCREATIVE
   * Boris Hussein
   * Brad Jackson
-  * Brent Fiegle
   * Brian E. Tyler
-  * Christopher Day
+  * Chris Day
   * Christian Petropolis
   * CreativeTools
   * D Brian Kimmel
@@ -23,13 +23,15 @@ thanks to everyone who contributed!
   * E3D BigBox
   * Ernesto Martinez
   * Exovite
+  * F. Kunsmann
   * Frank Sander
   * Gary Deen
   * Gary N McKinney
   * George Robles
+  * günter weber
+  * Ivan Krasin
   * James Seigel
   * Jamie R McGuigan
-  * Jamie van Dyke
   * Jeff Moe
   * Josh Daniels
   * Kaile Riser
@@ -59,9 +61,8 @@ thanks to everyone who contributed!
   * Stefan Krister
   * Stephane Schittly
   * Sven Mueller
-  * Terrance Shaw
   * Thomas Hatley
   * Timeshell.ca
   * Trent Shumay
 
-and 1041 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!
+and 1098 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!

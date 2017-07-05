@@ -38,6 +38,8 @@ $(function() {
         self.additionalControls = [];
 
         self.webcamDisableTimeout = undefined;
+        self.webcamLoaded = ko.observable(false);
+        self.webcamError = ko.observable(false);
 
         self.keycontrolActive = ko.observable(false);
         self.keycontrolHelpActive = ko.observable(false);
@@ -46,6 +48,14 @@ $(function() {
         });
         self.showKeycontrols = ko.pureComputed(function () {
             return self.keycontrolActive() && self.keycontrolPossible();
+        });
+
+        self.webcamRatioClass = ko.pureComputed(function() {
+            if (self.settings.webcam_streamRatio() == "4:3") {
+                return "ratio43";
+            } else {
+                return "ratio169";
+            }
         });
 
         self.settings.printerProfiles.currentProfileData.subscribe(function () {
@@ -344,43 +354,21 @@ $(function() {
             self.requestData();
         };
 
-        self.updateRotatorWidth = function() {
-            var webcamImage = $("#webcam_image");
-            if (self.settings.webcam_rotate90()) {
-                if (webcamImage.width() > 0) {
-                    $("#webcam_rotator").css("height", webcamImage.width());
-                } else {
-                    webcamImage.off("load.rotator");
-                    webcamImage.on("load.rotator", function() {
-                        $("#webcam_rotator").css("height", webcamImage.width());
-                        webcamImage.off("load.rotator");
-                    });
-                }
-            } else {
-                $("#webcam_rotator").css("height", "");
-            }
-        };
-
-        self.onSettingsBeforeSave = self.updateRotatorWidth;
-
-        self._isSafari = function() {
-            var is_chrome = navigator.userAgent.indexOf('Chrome') > -1;
-            var is_safari = navigator.userAgent.indexOf("Safari") > -1;
-            return is_safari && !is_chrome;
-        }
-
         self._disableWebcam = function() {
             // only disable webcam stream if tab is out of focus for more than 5s, otherwise we might cause
             // more load by the constant connection creation than by the actual webcam stream
 
             // safari bug doesn't release the mjpeg stream, so we just disable this for safari.
-            if (self._isSafari()) {
+            if (OctoPrint.coreui.browser.safari) {
                 return;
             }
 
+            var timeout = self.settings.webcam_streamTimeout() || 5;
             self.webcamDisableTimeout = setTimeout(function () {
+                log.debug("Unloading webcam stream");
                 $("#webcam_image").attr("src", "");
-            }, 5000);
+                self.webcamLoaded(false);
+            }, timeout * 1000);
         };
 
         self._enableWebcam = function() {
@@ -395,7 +383,7 @@ $(function() {
             var currentSrc = webcamImage.attr("src");
 
             // safari bug doesn't release the mjpeg stream, so we just set it up the once
-            if (self._isSafari() && currentSrc != undefined) {
+            if (OctoPrint.coreui.browser.safari && currentSrc != undefined) {
                 return;
             }
 
@@ -408,9 +396,22 @@ $(function() {
                 }
                 newSrc += new Date().getTime();
 
-                self.updateRotatorWidth();
+                self.webcamLoaded(false);
+                self.webcamError(false);
                 webcamImage.attr("src", newSrc);
             }
+        };
+
+        self.onWebcamLoaded = function() {
+            log.debug("Webcam stream loaded");
+            self.webcamLoaded(true);
+            self.webcamError(false);
+        };
+
+        self.onWebcamErrored = function() {
+            log.debug("Webcam stream failed to load/disabled");
+            self.webcamLoaded(false);
+            self.webcamError(true);
         };
 
         self.onTabChange = function (current, previous) {
@@ -438,6 +439,7 @@ $(function() {
                 self.additionalControls = additionalControls;
                 self.rerenderControls();
             }
+            self._enableWebcam();
         };
 
         self.onFocus = function (data, event) {

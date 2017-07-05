@@ -99,6 +99,8 @@ def getSettings():
 		},
 		"webcam": {
 			"streamUrl": s.get(["webcam", "stream"]),
+			"streamRatio": s.get(["webcam", "streamRatio"]),
+			"streamTimeout": s.getInt(["webcam", "streamTimeout"]),
 			"snapshotUrl": s.get(["webcam", "snapshot"]),
 			"ffmpegPath": s.get(["webcam", "ffmpeg"]),
 			"bitrate": s.get(["webcam", "bitrate"]),
@@ -128,7 +130,8 @@ def getSettings():
 			"modelSizeDetection": s.getBoolean(["feature", "modelSizeDetection"]),
 			"firmwareDetection": s.getBoolean(["feature", "firmwareDetection"]),
 			"printCancelConfirmation": s.getBoolean(["feature", "printCancelConfirmation"]),
-			"blockWhileDwelling": s.getBoolean(["feature", "blockWhileDwelling"])
+			"blockWhileDwelling": s.getBoolean(["feature", "blockWhileDwelling"]),
+			"g90InfluencesExtruder": s.getBoolean(["feature", "g90InfluencesExtruder"])
 		},
 		"serial": {
 			"port": connectionOptions["portPreference"],
@@ -141,6 +144,7 @@ def getSettings():
 			"timeoutCommunication": s.getFloat(["serial", "timeout", "communication"]),
 			"timeoutTemperature": s.getFloat(["serial", "timeout", "temperature"]),
 			"timeoutTemperatureTargetSet": s.getFloat(["serial", "timeout", "temperatureTargetSet"]),
+			"timeoutTemperatureAutoreport": s.getFloat(["serial", "timeout", "temperatureAutoreport"]),
 			"timeoutSdStatus": s.getFloat(["serial", "timeout", "sdStatus"]),
 			"log": s.getBoolean(["serial", "log"]),
 			"additionalPorts": s.get(["serial", "additionalPorts"]),
@@ -165,7 +169,9 @@ def getSettings():
 		},
 		"temperature": {
 			"profiles": s.get(["temperature", "profiles"]),
-			"cutoff": s.getInt(["temperature", "cutoff"])
+			"cutoff": s.getInt(["temperature", "cutoff"]),
+			"sendAutomatically": s.getBoolean(["temperature", "sendAutomatically"]),
+			"sendAutomaticallyAfter": s.getInt(["temperature", "sendAutomaticallyAfter"], min=0, max=30),
 		},
 		"system": {
 			"actions": s.get(["system", "actions"]),
@@ -181,6 +187,8 @@ def getSettings():
 				"afterPrintDone": None,
 				"beforePrintPaused": None,
 				"afterPrintResumed": None,
+				"beforeToolChange": None,
+				"afterToolChange": None,
 				"snippets": dict()
 			}
 		},
@@ -259,6 +267,10 @@ def setSettings():
 	if data is None:
 		return make_response("Malformed JSON body in request", 400)
 
+	if not isinstance(data, dict):
+		return make_response("Malformed request, need settings dictionary, "
+		                     "got a {} instead: {!r}".format(type(data).__name__, data), 400)
+
 	_saveSettings(data)
 	return getSettings()
 
@@ -303,6 +315,8 @@ def _saveSettings(data):
 
 	if "webcam" in data.keys():
 		if "streamUrl" in data["webcam"]: s.set(["webcam", "stream"], data["webcam"]["streamUrl"])
+		if "streamRatio" in data["webcam"] and data["webcam"]["streamRatio"] in ("16:9", "4:3"): s.set(["webcam", "streamRatio"], data["webcam"]["streamRatio"])
+		if "streamTimeout" in data["webcam"]: s.setInt(["webcam", "streamTimeout"], data["webcam"]["streamTimeout"])
 		if "snapshotUrl" in data["webcam"]: s.set(["webcam", "snapshot"], data["webcam"]["snapshotUrl"])
 		if "ffmpegPath" in data["webcam"]: s.set(["webcam", "ffmpeg"], data["webcam"]["ffmpegPath"])
 		if "bitrate" in data["webcam"]: s.set(["webcam", "bitrate"], data["webcam"]["bitrate"])
@@ -333,6 +347,7 @@ def _saveSettings(data):
 		if "firmwareDetection" in data["feature"]: s.setBoolean(["feature", "firmwareDetection"], data["feature"]["firmwareDetection"])
 		if "printCancelConfirmation" in data["feature"]: s.setBoolean(["feature", "printCancelConfirmation"], data["feature"]["printCancelConfirmation"])
 		if "blockWhileDwelling" in data["feature"]: s.setBoolean(["feature", "blockWhileDwelling"], data["feature"]["blockWhileDwelling"])
+		if "g90InfluencesExtruder" in data["feature"]: s.setBoolean(["feature", "g90InfluencesExtruder"], data["feature"]["g90InfluencesExtruder"])
 
 	if "serial" in data.keys():
 		if "autoconnect" in data["serial"]: s.setBoolean(["serial", "autoconnect"], data["serial"]["autoconnect"])
@@ -343,6 +358,7 @@ def _saveSettings(data):
 		if "timeoutCommunication" in data["serial"]: s.setFloat(["serial", "timeout", "communication"], data["serial"]["timeoutCommunication"])
 		if "timeoutTemperature" in data["serial"]: s.setFloat(["serial", "timeout", "temperature"], data["serial"]["timeoutTemperature"])
 		if "timeoutTemperatureTargetSet" in data["serial"]: s.setFloat(["serial", "timeout", "temperatureTargetSet"], data["serial"]["timeoutTemperatureTargetSet"])
+		if "timeoutTemperatureAutoreport" in data["serial"]: s.setFloat(["serial", "timeout", "temperatureAutoreport"], data["serial"]["timeoutTemperatureAutoreport"])
 		if "timeoutSdStatus" in data["serial"]: s.setFloat(["serial", "timeout", "sdStatus"], data["serial"]["timeoutSdStatus"])
 		if "additionalPorts" in data["serial"] and isinstance(data["serial"]["additionalPorts"], (list, tuple)): s.set(["serial", "additionalPorts"], data["serial"]["additionalPorts"])
 		if "additionalBaudrates" in data["serial"] and isinstance(data["serial"]["additionalBaudrates"], (list, tuple)): s.set(["serial", "additionalBaudrates"], data["serial"]["additionalBaudrates"])
@@ -378,6 +394,8 @@ def _saveSettings(data):
 	if "temperature" in data.keys():
 		if "profiles" in data["temperature"]: s.set(["temperature", "profiles"], data["temperature"]["profiles"])
 		if "cutoff" in data["temperature"]: s.setInt(["temperature", "cutoff"], data["temperature"]["cutoff"])
+		if "sendAutomatically" in data["temperature"]: s.setBoolean(["temperature", "sendAutomatically"], data["temperature"]["sendAutomatically"])
+		if "sendAutomaticallyAfter" in data["temperature"]: s.setInt(["temperature", "sendAutomaticallyAfter"], data["temperature"]["sendAutomaticallyAfter"], min=0, max=30)
 
 	if "terminalFilters" in data.keys():
 		s.set(["terminalFilters"], data["terminalFilters"])

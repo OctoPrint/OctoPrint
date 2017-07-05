@@ -299,6 +299,130 @@ on your view model, taking a list of all bound view models:
        });
    })
 
+.. _sec-plugins-viewmodels-livecycle:
+
+Lifecycle diagrams
+------------------
+
+.. _sec-plugins-viewmodels-startup:
+
+Web interface startup
+~~~~~~~~~~~~~~~~~~~~~
+
+.. mermaid::
+
+   sequenceDiagram
+      participant Main
+      participant onServerConnect
+      participant fetchSettings
+      participant bindViewModels
+      participant DataUpdater
+      participant LoginStateViewModel
+
+      Note right of DataUpdater: connectCallback = undefined
+
+      activate Main
+
+      Main->>+DataUpdater: connect
+      Note right of DataUpdater: initialized = false
+      DataUpdater-->>Main: ok
+      deactivate Main
+      DataUpdater->>DataUpdater: asynchronous connect to server...
+      activate DataUpdater
+      Note right of DataUpdater: store any callbacks instead of triggering (e.g. onServerConnect, fromHistoryData, fromCurrentData, ...)
+      DataUpdater-X+Main: done
+      deactivate DataUpdater
+      deactivate DataUpdater
+
+      Main->>+DataUpdater: connectCallback = onServerConnect
+      Note right of DataUpdater: connectCallback = onServerConnect
+      DataUpdater-->>-Main: ok
+      Main->>+onServerConnect: call
+      onServerConnect->>+LoginStateViewModel: passiveLogin
+      LoginStateViewModel-->>onServerConnect: ok
+      onServerConnect-->>Main: ok
+      deactivate onServerConnect
+      deactivate Main
+
+      LoginStateViewModel->>+LoginStateViewModel: asynchronous passive login
+      Note over Main,LoginStateViewModel: Session available!
+      LoginStateViewModel-X+onServerConnect: done
+      deactivate LoginStateViewModel
+      deactivate LoginStateViewModel
+
+      onServerConnect->>+DataUpdater: initialized
+      Note right of DataUpdater: initialized = true
+      DataUpdater->DataUpdater: trigger stored callbacks
+      DataUpdater-->>-onServerConnect: ok
+      onServerConnect-X+Main: done
+      deactivate onServerConnect
+
+      Main->>+fetchSettings: call
+      Note right of fetchSettings: trigger onStartup
+
+      fetchSettings-->>Main: ok
+      deactivate Main
+
+      fetchSettings->>+fetchSettings: asynchronous settings fetch
+      fetchSettings->>+bindViewModels: call
+
+      loop for each view model
+          bindViewModels->bindViewModels: trigger onBeforeBinding
+          bindViewModels->bindViewModels: trigger onBoundTo
+          bindViewModels->bindViewModels: trigger onAfterBinding
+      end
+
+      bindViewModels->bindViewModels: trigger onAllBound
+      opt User is logged in
+         bindViewModels->>+LoginStateViewModel: onAllBound
+         LoginStateViewModel->LoginStateViewModel: trigger onUserLoggedIn
+         LoginStateViewModel-->>-bindViewModels: ok
+      end
+      bindViewModels->bindViewModels: trigger onStartupComplete
+      bindViewModels-->>-fetchSettings: ok
+
+      deactivate fetchSettings
+      deactivate fetchSettings
+
+
+.. _sec-plugins-viewmodels-reconnect:
+
+Web interface reconnect
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. mermaid::
+
+   sequenceDiagram
+      participant onServerConnect
+      participant DataUpdater
+      participant LoginStateViewModel
+
+      activate DataUpdater
+      DataUpdater->>DataUpdater: call connectCallback
+      DataUpdater->>+onServerConnect: call
+      onServerConnect-->>DataUpdater: ok
+      deactivate DataUpdater
+
+      onServerConnect->>+LoginStateViewModel: passiveLogin
+      LoginStateViewModel-->>onServerConnect: ok
+      deactivate onServerConnect
+      LoginStateViewModel->>+LoginStateViewModel: asynchronous passive login
+      Note over onServerConnect,LoginStateViewModel: Session available!
+      opt User is logged in
+         LoginStateViewModel->LoginStateViewModel: trigger onUserLoggedIn
+      end
+
+      activate onServerConnect
+      LoginStateViewModel-XonServerConnect: done
+      deactivate LoginStateViewModel
+      deactivate LoginStateViewModel
+
+      onServerConnect->>+DataUpdater: initialized
+      DataUpdater->DataUpdater: trigger stored callbacks
+      DataUpdater-->>onServerConnect: ok
+      deactivate DataUpdater
+      deactivate onServerConnect
+
 .. seealso::
 
    `OctoPrint's core viewmodels <https://github.com/foosel/OctoPrint/tree/devel/src/octoprint/static/js/app/viewmodels>`_
