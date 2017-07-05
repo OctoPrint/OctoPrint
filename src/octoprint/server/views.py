@@ -531,11 +531,11 @@ def _process_templates():
 	# tabs
 
 	templates["tab"]["entries"] = dict(
-		temperature=(gettext("Temperature"), dict(template="tabs/temperature.jinja2", _div="temp")),
-		control=(gettext("Control"), dict(template="tabs/control.jinja2", _div="control", data_bind="visible: loginState.hasPermission(access.permissions.CONTROL)() || loginState.hasPermission(access.permissions.WEBCAM)()")),
-		gcodeviewer=(gettext("GCode Viewer"), dict(template="tabs/gcodeviewer.jinja2", _div="gcode", data_bind="visible: loginState.hasPermission(access.permissions.DOWNLOAD)")),
-		terminal=(gettext("Terminal"), dict(template="tabs/terminal.jinja2", _div="term", data_bind="visible: loginState.hasPermission(access.permissions.TERMINAL)")),
-		timelapse=(gettext("Timelapse"), dict(template="tabs/timelapse.jinja2", _div="timelapse", data_bind="visible: loginState.hasPermission(access.permissions.TIMELAPSE)"))
+		temperature=(gettext("Temperature"), dict(template="tabs/temperature.jinja2", _div="temp", permission_test="access.permissions.STATUS")),
+		control=(gettext("Control"), dict(template="tabs/control.jinja2", _div="control", permission_test="[access.permissions.CONTROL, access.permissions.WEBCAM]")),
+		gcodeviewer=(gettext("GCode Viewer"), dict(template="tabs/gcodeviewer.jinja2", _div="gcode", permission_test="access.permissions.DOWNLOAD")),
+		terminal=(gettext("Terminal"), dict(template="tabs/terminal.jinja2", _div="term", permission_test="access.permissions.TERMINAL")),
+		timelapse=(gettext("Timelapse"), dict(template="tabs/timelapse.jinja2", _div="timelapse", permission_test="access.permissions.TIMELAPSE"))
 	)
 
 	# settings dialog
