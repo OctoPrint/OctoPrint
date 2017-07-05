@@ -47,7 +47,7 @@ regex_float_pattern = "[-+]?[0-9]*\.?[0-9]+"
 regex_positive_float_pattern = "[+]?[0-9]*\.?[0-9]+"
 regex_int_pattern = "\d+"
 
-regex_command = re.compile("^\s*((?P<commandGM>[GM]\d+)|(?P<commandT>T)\d+|(?P<commandF>F)\d+)")
+regex_command = re.compile("^\s*((?P<codeGM>[GM]\d+)(\\.(?P<subcode>\d+))?|(?P<codeT>T)\d+|(?P<codeF>F)\d+)")
 """Regex for a GCODE command."""
 
 regex_float = re.compile(regex_float_pattern)
@@ -2112,20 +2112,20 @@ class MachineCom(object):
 			if self._serial is None:
 				return False
 
-			gcode = None
+			gcode, subcode = gcode_and_subcode_for_cmd(cmd)
 
 			if not self.isStreaming():
 				# trigger the "queuing" phase only if we are not streaming to sd right now
-				results = self._process_command_phase("queuing", cmd, cmd_type, gcode=gcode)
+				results = self._process_command_phase("queuing", cmd, command_type=cmd_type, gcode=gcode, subcode=subcode)
 
 				if not results:
 					# command is no more, return
 					return False
 			else:
-				results = [(cmd, cmd_type, gcode)]
+				results = [(cmd, cmd_type, gcode, subcode)]
 
 			# process helper
-			def process(cmd, cmd_type, gcode, on_sent=None):
+			def process(cmd, cmd_type, gcode, subcode, on_sent=None):
 				if cmd is None:
 					# no command, next entry
 					return False
@@ -2138,7 +2138,7 @@ class MachineCom(object):
 				if self._enqueue_for_sending(cmd, command_type=cmd_type, on_sent=on_sent):
 					if not self.isStreaming():
 						# trigger the "queued" phase only if we are not streaming to sd right now
-						self._process_command_phase("queued", cmd, cmd_type, gcode=gcode)
+						self._process_command_phase("queued", cmd, cmd_type, gcode=gcode, subcode=subcode)
 					return True
 				else:
 					return False
@@ -2155,12 +2155,12 @@ class MachineCom(object):
 			enqueued_something = False
 
 			# process all but the last ...
-			for (cmd, cmd_type, gcode) in results:
-				enqueued_something = process(cmd, cmd_type, gcode) or enqueued_something
+			for (cmd, cmd_type, gcode, subcode) in results:
+				enqueued_something = process(cmd, cmd_type, gcode, subcode) or enqueued_something
 
 			# ... and then process the last one with the on_sent callback attached
-			cmd, cmd_type, gcode = last_command
-			enqueued_something = process(cmd, cmd_type, gcode, on_sent=on_sent) or enqueued_something
+			cmd, cmd_type, gcode, subcode = last_command
+			enqueued_something = process(cmd, cmd_type, gcode, subcode, on_sent=on_sent) or enqueued_something
 
 			return enqueued_something
 
@@ -2216,7 +2216,7 @@ class MachineCom(object):
 					# some firmwares (e.g. Smoothie) might support additional in-band communication that will not
 					# stick to the acknowledgement behaviour of GCODE, so we check here if we have a GCODE command
 					# at hand here and only clear our clear_to_send flag later if that's the case
-					gcode = gcode_command_for_cmd(command)
+					gcode, subcode = gcode_and_subcode_for_cmd(command)
 
 					if linenumber is not None:
 						# line number predetermined - this only happens for resends, so we'll use the number and
@@ -2226,7 +2226,7 @@ class MachineCom(object):
 					else:
 						if not processed:
 							# trigger "sending" phase if we didn't so far
-							results = self._process_command_phase("sending", command, command_type, gcode=gcode)
+							results = self._process_command_phase("sending", command, command_type, gcode=gcode, subcode=subcode)
 
 							if not results:
 								# No, we are not going to send this, that was a last-minute bail.
@@ -2252,7 +2252,7 @@ class MachineCom(object):
 										self._send_queue.prepend((m[0], None, None, None, True))
 
 							# we only actually send the first entry here
-							command, _, gcode = results[0]
+							command, _, gcode, subcode = results[0]
 
 						if command.strip() == "":
 							self._logger.info("Refusing to send an empty line to the printer")
@@ -2280,7 +2280,7 @@ class MachineCom(object):
 					if on_sent is not None and callable(on_sent):
 						# we have a sent callback for this specific command, let's execute it now
 						on_sent()
-					self._process_command_phase("sent", command, command_type, gcode=gcode)
+					self._process_command_phase("sent", command, command_type, gcode=gcode, subcode=subcode)
 
 					# we only need to use up a clear if the command we just sent was either a gcode command or if we also
 					# require ack's for unknown commands
@@ -2308,10 +2308,10 @@ class MachineCom(object):
 				self._logger.exception("Caught an exception in the send loop")
 		self._log("Closing down send loop")
 
-	def _process_command_phase(self, phase, command, command_type=None, gcode=None):
+	def _process_command_phase(self, phase, command, command_type=None, gcode=None, subcode=None):
 		if gcode is None:
-			gcode = gcode_command_for_cmd(command)
-		results = [(command, command_type, gcode)]
+			gcode, subcode = gcode_and_subcode_for_cmd(command)
+		results = [(command, command_type, gcode, subcode)]
 
 		if (self.isStreaming() and self.isPrinting()) or phase not in ("queuing", "queued", "sending", "sent"):
 			return results
@@ -2319,13 +2319,13 @@ class MachineCom(object):
 		# send it through the phase specific handlers provided by plugins
 		for name, hook in self._gcode_hooks[phase].items():
 			new_results = []
-			for command, command_type, gcode in results:
+			for command, command_type, gcode, subcode in results:
 				try:
-					hook_results = hook(self, phase, command, command_type, gcode)
+					hook_results = hook(self, phase, command, command_type, gcode, subcode=subcode)
 				except:
 					self._logger.exception("Error while processing hook {name} for phase {phase} and command {command}:".format(**locals()))
 				else:
-					normalized = _normalize_command_handler_result(command, command_type, gcode, hook_results)
+					normalized = _normalize_command_handler_result(command, command_type, gcode, subcode, hook_results)
 					new_results += normalized
 			if not new_results:
 				# hook handler returned None or empty list for all commands, so we'll stop here and return a full out empty result
@@ -2335,15 +2335,15 @@ class MachineCom(object):
 		# if it's a gcode command send it through the specific handler if it exists
 		new_results = []
 		modified = False
-		for command, command_type, gcode in results:
+		for command, command_type, gcode, subcode in results:
 			if gcode is not None:
 				gcode_handler = "_gcode_" + gcode + "_" + phase
 				if hasattr(self, gcode_handler):
-					handler_results = getattr(self, gcode_handler)(command, cmd_type=command_type)
-					new_results += _normalize_command_handler_result(command, command_type, gcode, handler_results)
+					handler_results = getattr(self, gcode_handler)(command, cmd_type=command_type, subcode=subcode)
+					new_results += _normalize_command_handler_result(command, command_type, gcode, subcode, handler_results)
 					modified = True
 				else:
-					new_results.append((command, command_type, gcode))
+					new_results.append((command, command_type, gcode, subcode))
 					modified = True
 		if modified:
 			if not new_results:
@@ -2356,9 +2356,9 @@ class MachineCom(object):
 		command_phase_handler = "_command_phase_" + phase
 		if hasattr(self, command_phase_handler):
 			new_results = []
-			for command, command_type, gcode in results:
-				handler_results = getattr(self, command_phase_handler)(command, cmd_type=command_type, gcode=gcode)
-				new_results += _normalize_command_handler_result(command, command_type, gcode, handler_results)
+			for command, command_type, gcode, subcode in results:
+				handler_results = getattr(self, command_phase_handler)(command, cmd_type=command_type, gcode=gcode, subcode=subcode)
+				new_results += _normalize_command_handler_result(command, command_type, gcode, subcode, handler_results)
 			results = new_results
 
 		# finally return whatever we resulted on
@@ -2444,7 +2444,7 @@ class MachineCom(object):
 
 	##~~ command handlers
 
-	def _gcode_T_queuing(self, cmd, cmd_type=None):
+	def _gcode_T_queuing(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
 		toolMatch = regexes_parameters["intT"].search(cmd)
 		if toolMatch:
 			current_tool = self._currentTool
@@ -2455,14 +2455,14 @@ class MachineCom(object):
 
 			return before + [cmd] + after
 
-	def _gcode_T_sent(self, cmd, cmd_type=None):
+	def _gcode_T_sent(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
 		toolMatch = regexes_parameters["intT"].search(cmd)
 		if toolMatch:
 			old = self._currentTool
 			self._currentTool = int(toolMatch.group("value"))
 			eventManager().fire(Events.TOOL_CHANGE, dict(old=old, new=self._currentTool))
 
-	def _gcode_G0_sent(self, cmd, cmd_type=None):
+	def _gcode_G0_sent(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
 		if "Z" in cmd or "F" in cmd:
 			# track Z
 			match = regexes_parameters["floatZ"].search(cmd)
@@ -2485,7 +2485,7 @@ class MachineCom(object):
 					pass
 	_gcode_G1_sent = _gcode_G0_sent
 
-	def _gcode_G28_sent(self, cmd, cmd_type=None):
+	def _gcode_G28_sent(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
 		if "F" in cmd:
 			match = regexes_parameters["floatF"].search(cmd)
 			if match:
@@ -2495,34 +2495,34 @@ class MachineCom(object):
 				except ValueError:
 					pass
 
-	def _gcode_M0_queuing(self, cmd, cmd_type=None):
+	def _gcode_M0_queuing(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
 		self.setPause(True)
 		return None, # Don't send the M0 or M1 to the machine, as M0 and M1 are handled as an LCD menu pause.
 	_gcode_M1_queuing = _gcode_M0_queuing
 
-	def _gcode_M25_queuing(self, cmd, cmd_type=None):
+	def _gcode_M25_queuing(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
 		# M25 while not printing from SD will be handled as pause. This way it can be used as another marker
 		# for GCODE induced pausing. Send it to the printer anyway though.
 		if self.isPrinting() and not self.isSdPrinting():
 			self.setPause(True)
 
-	def _gcode_M28_sent(self, cmd, cmd_type=None):
+	def _gcode_M28_sent(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
 		if not self.isStreaming():
 			self._log("Detected manual streaming. Disabling temperature polling. Finish writing with M29. Do NOT attempt to print while manually streaming!")
 			self._manualStreaming = True
 
-	def _gcode_M29_sent(self, cmd, cmd_type=None):
+	def _gcode_M29_sent(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
 		if self._manualStreaming:
 			self._log("Manual streaming done. Re-enabling temperature polling. All is well.")
 			self._manualStreaming = False
 
-	def _gcode_M140_queuing(self, cmd, cmd_type=None):
+	def _gcode_M140_queuing(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
 		if not self._printerProfileManager.get_current_or_default()["heatedBed"]:
 			self._log("Warn: Not sending \"{}\", printer profile has no heated bed".format(cmd))
 			return None, # Don't send bed commands if we don't have a heated bed
 	_gcode_M190_queuing = _gcode_M140_queuing
 
-	def _gcode_M104_sent(self, cmd, cmd_type=None, wait=False, support_r=False):
+	def _gcode_M104_sent(self, cmd, cmd_type=None, gcode=None, subcode=None, wait=False, support_r=False, *args, **kwargs):
 		toolNum = self._currentTool
 		toolMatch = regexes_parameters["intT"].search(cmd)
 
@@ -2545,7 +2545,7 @@ class MachineCom(object):
 			except ValueError:
 				pass
 
-	def _gcode_M140_sent(self, cmd, cmd_type=None, wait=False, support_r=False):
+	def _gcode_M140_sent(self, cmd, cmd_type=None, gcode=None, subcode=None, wait=False, support_r=False, *args, **kwargs):
 		match = regexes_parameters["floatS"].search(cmd)
 		if not match and support_r:
 			match = regexes_parameters["floatR"].search(cmd)
@@ -2558,24 +2558,24 @@ class MachineCom(object):
 			except ValueError:
 				pass
 
-	def _gcode_M109_sent(self, cmd, cmd_type=None):
+	def _gcode_M109_sent(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
 		self._heatupWaitStartTime = time.time()
 		self._long_running_command = True
 		self._heating = True
 		self._gcode_M104_sent(cmd, cmd_type, wait=True, support_r=True)
 
-	def _gcode_M190_sent(self, cmd, cmd_type=None):
+	def _gcode_M190_sent(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
 		self._heatupWaitStartTime = time.time()
 		self._long_running_command = True
 		self._heating = True
 		self._gcode_M140_sent(cmd, cmd_type, wait=True, support_r=True)
 
-	def _gcode_M116_sent(self, cmd, cmd_type=None):
+	def _gcode_M116_sent(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
 		self._heatupWaitStartTime = time.time()
 		self._long_running_command = True
 		self._heating = True
 
-	def _gcode_M155_sending(self, cmd, cmd_type=None):
+	def _gcode_M155_sending(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
 		match = regexes_parameters["intS"].search(cmd)
 		if match:
 			try:
@@ -2585,7 +2585,7 @@ class MachineCom(object):
 			except:
 				pass
 
-	def _gcode_M110_sending(self, cmd, cmd_type=None):
+	def _gcode_M110_sending(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
 		newLineNumber = 0
 		match = regexes_parameters["intN"].search(cmd)
 		if match:
@@ -2604,7 +2604,7 @@ class MachineCom(object):
 			self._lastLines.clear()
 		self._resendDelta = None
 
-	def _gcode_M112_queuing(self, cmd, cmd_type=None):
+	def _gcode_M112_queuing(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
 		# emergency stop, jump the queue with the M112
 		self._do_send_without_checksum("M112")
 		self._do_increment_and_send_with_checksum("M112")
@@ -2633,7 +2633,7 @@ class MachineCom(object):
 		# I hope it got it the first time because as far as I can tell, there is no way to know
 		return None,
 
-	def _gcode_G4_sent(self, cmd, cmd_type=None):
+	def _gcode_G4_sent(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
 		# we are intending to dwell for a period of time, increase the timeout to match
 		p_match = regexes_parameters["floatP"].search(cmd)
 		s_match = regexes_parameters["floatS"].search(cmd)
@@ -2649,7 +2649,7 @@ class MachineCom(object):
 
 	##~~ command phase handlers
 
-	def _command_phase_sending(self, cmd, cmd_type=None, gcode=None):
+	def _command_phase_sending(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
 		if gcode is not None and gcode in self._long_running_commands:
 			self._long_running_command = True
 
@@ -3277,35 +3277,43 @@ def gcode_command_for_cmd(cmd):
 	Returns:
 	    str or None: The GCODE command identifier if it could be parsed, or None if not.
 	"""
+
+	gcode, _ = gcode_and_subcode_for_cmd(cmd)
+	return gcode
+
+
+def gcode_and_subcode_for_cmd(cmd):
 	if not cmd:
-		return None
+		return None, None
 
-	gcode = regex_command.search(cmd)
-	if not gcode:
-		return None
+	match = regex_command.search(cmd)
+	if not match:
+		return None, None
 
-	values = gcode.groupdict()
-	if "commandGM" in values and values["commandGM"]:
-		return values["commandGM"]
-	elif "commandT" in values and values["commandT"]:
-		return values["commandT"]
-	elif settings().getBoolean(["feature", "supportFAsCommand"]) and "commandF" in values and values["commandF"]:
-		return values["commandF"]
+	values = match.groupdict()
+	if "codeGM" in values and values["codeGM"]:
+		gcode = values["codeGM"]
+	elif "codeT" in values and values["codeT"]:
+		gcode = values["codeT"]
+	elif settings().getBoolean(["feature", "supportFAsCommand"]) and "codeF" in values and values["codeF"]:
+		gcode = values["codeF"]
 	else:
 		# this should never happen
-		return None
+		return None, None
+
+	return gcode, values.get("subcode", None)
 
 
-def _normalize_command_handler_result(command, command_type, gcode, handler_results):
+def _normalize_command_handler_result(command, command_type, gcode, subcode, handler_results):
 	"""
 	Normalizes a command handler result.
 
 	Handler results can be either ``None``, a single result entry or a list of result
 	entries.
 
-	``None`` results are ignored, the provided ``command``, ``command_type``
-	and ``gcode`` are returned in that case (as single-entry list with one
-	3-tuple as entry).
+	``None`` results are ignored, the provided ``command``, ``command_type``,
+	``gcode`` and ``subcode`` are returned in that case (as single-entry list with
+	one 4-tuple as entry).
 
 	Single result entries are either:
 
@@ -3317,31 +3325,31 @@ def _normalize_command_handler_result(command, command_type, gcode, handler_resu
 	the normalized result.
 
 	The method returns a list of normalized result entries. Normalized result
-	entries always are a 3-tuple consisting of ``command``, ``command_type``
-	and ``gcode``, the latter two being allowed to be ``None``. The list may
+	entries always are a 4-tuple consisting of ``command``, ``command_type``,
+	``gcode`` and ``subcode``, the latter three being allowed to be ``None``. The list may
 	be empty in which case the command is to be suppressed.
 
 	Examples:
-	    >>> _normalize_command_handler_result("M105", None, "M105", None)
-	    [('M105', None, 'M105')]
-	    >>> _normalize_command_handler_result("M105", None, "M105", "M110")
-	    [('M110', None, 'M110')]
-	    >>> _normalize_command_handler_result("M105", None, "M105", ["M110"])
-	    [('M110', None, 'M110')]
-	    >>> _normalize_command_handler_result("M105", None, "M105", ["M110", "M117 Foobar"])
-	    [('M110', None, 'M110'), ('M117 Foobar', None, 'M117')]
-	    >>> _normalize_command_handler_result("M105", None, "M105", [("M110",), "M117 Foobar"])
-	    [('M110', None, 'M110'), ('M117 Foobar', None, 'M117')]
-	    >>> _normalize_command_handler_result("M105", None, "M105", [("M110", "lineno_reset"), "M117 Foobar"])
-	    [('M110', 'lineno_reset', 'M110'), ('M117 Foobar', None, 'M117')]
-	    >>> _normalize_command_handler_result("M105", None, "M105", [])
+	    >>> _normalize_command_handler_result("M105", None, "M105", None, None)
+	    [('M105', None, 'M105', None)]
+	    >>> _normalize_command_handler_result("M105", None, "M105", None, "M110")
+	    [('M110', None, 'M110', None)]
+	    >>> _normalize_command_handler_result("M105", None, "M105", None, ["M110"])
+	    [('M110', None, 'M110', None)]
+	    >>> _normalize_command_handler_result("M105", None, "M105", None, ["M110", "M117 Foobar"])
+	    [('M110', None, 'M110', None), ('M117 Foobar', None, 'M117', None)]
+	    >>> _normalize_command_handler_result("M105", None, "M105", None, [("M110",), "M117 Foobar"])
+	    [('M110', None, 'M110', None), ('M117 Foobar', None, 'M117', None)]
+	    >>> _normalize_command_handler_result("M105", None, "M105", None, [("M110", "lineno_reset"), "M117 Foobar"])
+	    [('M110', 'lineno_reset', 'M110', None), ('M117 Foobar', None, 'M117', None)]
+	    >>> _normalize_command_handler_result("M105", None, "M105", None, [])
 	    []
-	    >>> _normalize_command_handler_result("M105", None, "M105", ["M110", None])
-	    [('M110', None, 'M110')]
-	    >>> _normalize_command_handler_result("M105", None, "M105", [("M110",), (None, "ignored")])
-	    [('M110', None, 'M110')]
-	    >>> _normalize_command_handler_result("M105", None, "M105", [("M110",), ("M117 Foobar", "display_message"), ("tuple", "of unexpected", "length"), ("M110", "lineno_reset")])
-	    [('M110', None, 'M110'), ('M117 Foobar', 'display_message', 'M117'), ('M110', 'lineno_reset', 'M110')]
+	    >>> _normalize_command_handler_result("M105", None, "M105", None, ["M110", None])
+	    [('M110', None, 'M110', None)]
+	    >>> _normalize_command_handler_result("M105", None, "M105", None, [("M110",), (None, "ignored")])
+	    [('M110', None, 'M110', None)]
+	    >>> _normalize_command_handler_result("M105", None, "M105", None, [("M110",), ("M117 Foobar", "display_message"), ("tuple", "of unexpected", "length"), ("M110", "lineno_reset")])
+	    [('M110', None, 'M110', None), ('M117 Foobar', 'display_message', 'M117', None), ('M110', 'lineno_reset', 'M110', None)]
 
 	Arguments:
 	    command (str or None): The command for which the handler result was
@@ -3350,16 +3358,18 @@ def _normalize_command_handler_result(command, command_type, gcode, handler_resu
 	        result was generated
 	    gcode (str or None): The GCODE for which the handler result was
 	        generated
+	    subcode (str or None): The GCODE subcode for which the handler result
+	        was generated
 	    handler_results: The handler result(s) to normalized. Can be either
 	        a single result entry or a list of result entries.
 
 	Returns:
 	    (list) - A list of normalized handler result entries, which are
-	        3-tuples consisting of ``command``, ``command_type`` and
-	        ``gcode``, the latter two of which may be ``None``.
+	        4-tuples consisting of ``command``, ``command_type``, ``gcode``
+	        and ``subcode``, the latter three of which may be ``None``.
 	"""
 
-	original = (command, command_type, gcode)
+	original = (command, command_type, gcode, subcode)
 
 	if handler_results is None:
 		# handler didn't return anything, we'll just continue
@@ -3380,8 +3390,8 @@ def _normalize_command_handler_result(command, command_type, gcode, handler_resu
 		if isinstance(handler_result, basestring):
 			# entry is just a string, replace command with it
 			command = handler_result
-			gcode = gcode_command_for_cmd(command)
-			result.append((command, command_type, gcode))
+			gcode, subcode = gcode_and_subcode_for_cmd(command)
+			result.append((command, command_type, gcode, subcode))
 
 		elif isinstance(handler_result, tuple):
 			# entry is a tuple, extract command and command_type
@@ -3401,11 +3411,11 @@ def _normalize_command_handler_result(command, command_type, gcode, handler_resu
 				# command is None, ignore it and continue
 				continue
 
-			gcode = gcode_command_for_cmd(command)
-			result.append((command, command_type, gcode))
+			gcode, subcode = gcode_and_subcode_for_cmd(command)
+			result.append((command, command_type, gcode, subcode))
 
 		# reset to original
-		command, command_type, gcode = original
+		command, command_type, gcode, subcode = original
 
 	return result
 

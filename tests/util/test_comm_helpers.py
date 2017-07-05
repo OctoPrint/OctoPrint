@@ -199,6 +199,24 @@ class TestCommHelpers(unittest.TestCase):
 		self.assertEqual(expected, result)
 
 	@data(
+		("G0 X0", "G0", None),
+		("M105", "M105", None),
+		("T2", "T", None),
+		("M80.1", "M80", "1"),
+		("G28.2", "G28", "2"),
+		("T0.3", "T", None),
+		("M80.nosubcode", "M80", None),
+		(None, None, None),
+		("No match", None, None)
+	)
+	@unpack
+	def test_gcode_and_subcode_for_cmd(self, cmd, expected_gcode, expected_subcode):
+		from octoprint.util.comm import gcode_and_subcode_for_cmd
+		actual_gcode, actual_subcode = gcode_and_subcode_for_cmd(cmd)
+		self.assertEqual(expected_gcode, actual_gcode)
+		self.assertEqual(expected_subcode, actual_subcode)
+
+	@data(
 		("T:23.0 B:60.0", 0, dict(T0=(23.0, None), B=(60.0, None)), 0),
 		("T:23.0 B:60.0", 1, dict(T1=(23.0, None), B=(60.0, None)), 1),
 		("T:23.0/220.0 B:60.0/70.0", 0, dict(T0=(23.0, 220.0), B=(60.0, 70.0)), 0),

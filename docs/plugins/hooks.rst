@@ -389,7 +389,7 @@ This describes actually four hooks:
   * ``octoprint.comm.protocol.gcode.sending``
   * ``octoprint.comm.protocol.gcode.sent``
 
-.. py:function:: protocol_gcodephase_hook(comm_instance, phase, cmd, cmd_type, gcode, *args, **kwargs)
+.. py:function:: protocol_gcodephase_hook(comm_instance, phase, cmd, cmd_type, gcode, subcode=None, *args, **kwargs)
 
    Pre- and postprocess commands as they progress through the various phases of being sent to the printer. The phases
    are the following:
@@ -488,6 +488,8 @@ This describes actually four hooks:
    :param str cmd_type: Type of command, e.g. ``temperature_poll`` for temperature polling or ``sd_status_poll`` for SD
        printing status polling.
    :param str gcode: Parsed GCODE command, e.g. ``G0`` or ``M110``, may also be None if no known command could be parsed
+   :param str subcode: Parsed subcode of the GCODE command, e.g. ``1`` for ``M80.1``. Will be None if no subcode was provided
+       or no command could be parsed.
    :return: None, 1-tuple, 2-tuple or string, see the description above for details.
 
 .. _sec-plugins-hook-comm-protocol-gcode-received:
