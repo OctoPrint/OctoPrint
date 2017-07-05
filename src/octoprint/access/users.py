@@ -239,7 +239,7 @@ class FilebasedUserManager(UserManager):
 
 						groups.extend(self.__migrate_roles_to_groups(attributes["roles"]))
 
-						# Make sure the new System will be saved and the old gets removed
+						# Make sure the new system will be saved and the old gets removed
 						self._dirty = True
 
 					apikey = None
@@ -249,10 +249,8 @@ class FilebasedUserManager(UserManager):
 					if "settings" in attributes:
 						settings = attributes["settings"]
 
-					# make sure we do not have any groups that don't exist anymore
-					groups = [g for g in groups if g is not None]
-
-					self._users[name] = User(username=name, passwordHash=attributes["password"], active=attributes["active"], permissions=permissions, groups=groups, apikey=apikey, settings=settings)
+					self._users[name] = User(username=name, passwordHash=attributes["password"], active=attributes["active"],
+											permissions=permissions, groups=groups, apikey=apikey, settings=settings)
 					for sessionid in self._sessionids_by_userid.get(name, set()):
 						if sessionid in self._session_users_by_session:
 							self._session_users_by_session[sessionid].update_user(self._users[name])
@@ -273,7 +271,7 @@ class FilebasedUserManager(UserManager):
 			data[name] = {
 				"password": user._passwordHash,
 				"active": user._active,
-				"groups": user.groups,
+				"groups": user._groups,
 				"permissions": user._permissions,
 				"apikey": user._apikey,
 				"settings": user._settings
@@ -284,14 +282,15 @@ class FilebasedUserManager(UserManager):
 			self._dirty = False
 		self._load()
 
-	def __migrate_roles_to_groups(self, roles):
+	@staticmethod
+	def __migrate_roles_to_groups(roles):
 		from octoprint.server import groupManager
 		if groupManager.find_group("Users") is None:
 			groupManager.add_group("Users", "User group", permissions=Permissions.USER_ARRAY, default=False)
 
 		migrate_to_groups = {
 			"admin": groupManager.admins_group,
-			"user": groupManager.find_group("Users"),
+			"user": "Users",
 		}
 
 		return map(lambda role: migrate_to_groups[role], roles)
@@ -303,58 +302,47 @@ class FilebasedUserManager(UserManager):
 		if not groups:
 			groups = []
 
-		from octoprint.server import permissionManager, groupManager
-		opermissions = []
-		for p in permissions:
-			opermissions.append(permissionManager.get_permission_from(p))
-
-		ogroups = []
-		for g in groups:
-			ogroups.append(groupManager.get_group_from(g))
-
 		if username in self._users.keys() and not overwrite:
 			raise UserAlreadyExists(username)
 
-		self._users[username] = User(username, UserManager.createPasswordHash(password), active, opermissions, ogroups, apikey=apikey)
+		self._users[username] = User(username, UserManager.createPasswordHash(password), active, permissions, groups, apikey=apikey)
 		self._dirty = True
 		self._save()
 
 	def changeUserActivation(self, username, active):
-		if not username in self._users.keys():
+		if username not in self._users.keys():
 			raise UnknownUser(username)
 
-		if self._users[username]._active != active:
+		if self._users[username].is_active != active:
 			self._users[username]._active = active
 			self._dirty = True
 			self._save()
 
 	def change_user_permissions(self, username, permissions):
-		if not username in self._users.keys():
+		if username not in self._users.keys():
 			raise UnknownUser(username)
-
-		from octoprint.server import permissionManager
-		opermissions = []
-		for p in permissions:
-			opermissions.append(permissionManager.get_permission_from(p))
 
 		user = self._users[username]
 
-		removed_permissions = set(user._permissions) - set(opermissions)
-		self.remove_permissions_from_user(username, removed_permissions)
+		removed_permissions = list(set(user._permissions) - set(permissions))
+		added_permissions = list(set(permissions) - set(user._permissions))
 
-		added_permissions = set(opermissions) - set(user._permissions)
-		self.add_permissions_to_user(username, added_permissions)
+		if len(removed_permissions) > 0:
+			user.remove_permissions_from_user(username, removed_permissions)
+			self._dirty = True
+
+		if len(added_permissions) > 0:
+			user.add_permissions_to_user(username, added_permissions)
+			self._dirty = True
+
+		if self._dirty:
+			self._save()
 
 	def add_permissions_to_user(self, username, permissions):
 		if username not in self._users.keys():
 			raise UnknownUser(username)
 
-		from octoprint.server import permissionManager
-		opermissions = []
-		for p in permissions:
-			opermissions.append(permissionManager.get_permission_from(p))
-
-		if self._users[username].add_permissions_to_user(opermissions):
+		if self._users[username].add_permissions_to_user(permissions):
 			self._dirty = True
 			self._save()
 
@@ -362,12 +350,7 @@ class FilebasedUserManager(UserManager):
 		if username not in self._users.keys():
 			raise UnknownUser(username)
 
-		from octoprint.server import permissionManager
-		opermissions = []
-		for p in permissions:
-			opermissions.append(permissionManager.get_permission_from(p))
-
-		if self._users[username].remove_permissions_from_user(opermissions):
+		if self._users[username].remove_permissions_from_user(permissions):
 			self._dirty = True
 			self._save()
 
@@ -379,32 +362,30 @@ class FilebasedUserManager(UserManager):
 			self._save()
 
 	def change_user_groups(self, username, groups):
-		if not username in self._users.keys():
+		if username not in self._users.keys():
 			raise UnknownUser(username)
-
-		from octoprint.server import groupManager
-		ogroups = []
-		for g in groups:
-			ogroups.append(groupManager.get_group_from(g))
 
 		user = self._users[username]
 
-		removed_groups = set(user._groups) - set(ogroups)
-		self.remove_groups_from_user(username, removed_groups)
+		removed_groups = list(set(user._groups) - set(groups))
+		added_groups = list(set(groups) - set(user._groups))
 
-		added_groups = set(ogroups) - set(user._groups)
-		self.add_groups_to_user(username, added_groups)
+		if len(removed_groups) > 0:
+			user.remove_groups_from_user(username, removed_groups)
+			self._dirty = True
+
+		if len(added_groups) > 0:
+			user.add_groups_to_user(username, added_groups)
+			self._dirty = True
+
+		if self._dirty:
+			self._save()
 
 	def add_groups_to_user(self, username, groups):
 		if username not in self._users.keys():
 			raise UnknownUser(username)
 
-		from octoprint.server import groupManager
-		ogroups = []
-		for g in groups:
-			ogroups.append(groupManager.get_group_from(g))
-
-		if self._users[username].add_groups_to_user(ogroups):
+		if self._users[username].add_groups_to_user(groups):
 			self._dirty = True
 			self._save()
 
@@ -412,12 +393,7 @@ class FilebasedUserManager(UserManager):
 		if username not in self._users.keys():
 			raise UnknownUser(username)
 
-		from octoprint.server import groupManager
-		ogroups = []
-		for g in groups:
-			ogroups.append(groupManager.get_group_from(g))
-
-		if self._users[username].remove_groups_from_user(ogroups):
+		if self._users[username].remove_groups_from_user(groups):
 			self._dirty = True
 			self._save()
 
@@ -614,12 +590,24 @@ class User(UserMixin):
 		self._username = username
 		self._passwordHash = passwordHash
 		self._active = active
-		self._groups = groups
-		self._permissions = permissions
 		self._apikey = apikey
+
+		from octoprint.server import permissionManager, groupManager
+		self._permissions = []
+		for p in permissions:
+			permission = permissionManager.get_permission_from(p)
+			if permission is not None:
+				self._permissions.append(permission.get_name())
+
+		self._groups = []
+		for g in groups:
+			group = groupManager.get_group_from(g)
+			if group is not None:
+				self._groups.append(group.get_name())
 
 		if settings is None:
 			settings = dict()
+
 		self._settings = settings
 
 	def asDict(self):
@@ -681,40 +669,76 @@ class User(UserMixin):
 		return self._get_setting(path)
 
 	def add_permissions_to_user(self, permissions):
+		# Make sure the permissions variable is of type list
+		if not isinstance(permissions, list):
+			permissions = [permissions]
+
 		dirty = False
-		from octoprint.access.permissions import OctoPrintPermission
+		from octoprint.server import permissionManager
 		for permission in permissions:
-			if isinstance(permission, OctoPrintPermission) and permission not in self.permissions:
-				self._permissions.append(permission)
+			# We check if the permission is registered in the permission manager,
+			# if not we are not going to add it to the groups permission list
+			tmp_permission = permissionManager.get_permission_from(permission)
+			if tmp_permission is not None and tmp_permission not in self.permissions:
+				self._permissions.append(tmp_permission.get_name())
 				dirty = True
 
 		return dirty
 
 	def remove_permissions_from_user(self, permissions):
+		# Make sure the permissions variable is of type list
+		if not isinstance(permissions, list):
+			permissions = [permissions]
+
 		dirty = False
 		from octoprint.access.permissions import OctoPrintPermission
 		for permission in permissions:
-			if isinstance(permission, OctoPrintPermission) and permission in self._permissions:
+			# If someone gives a OctoPrintPermission object, we convert it into the identifier name,
+			# because all permissions are stored as identifiers inside the group
+			if isinstance(permission, OctoPrintPermission):
+				permission = permission.get_name()
+
+			# We don't check if the permission exists, because it could have been removed
+			# from the permission manager already
+			if permission in self._permissions:
 				self._permissions.remove(permission)
 				dirty = True
 
 		return dirty
 
 	def add_groups_to_user(self, groups):
+		# Make sure the groups variable is of type list
+		if not isinstance(groups, list):
+			groups = [groups]
+
 		dirty = False
-		from octoprint.access.groups import Group
+		from octoprint.server import groupManager
 		for group in groups:
-			if isinstance(group, Group) and group not in self._groups:
-				self._groups.append(group)
+			# We check if the group is registered in the group manager,
+			# if not we are not going to add it to the users groups list
+			tmp_group = groupManager.get_group_from(group)
+			if tmp_group is not None and tmp_group not in self.groups:
+				self._groups.append(tmp_group.get_name())
 				dirty = True
 
 		return dirty
 
 	def remove_groups_from_user(self, groups):
+		# Make sure the groups variable is of type list
+		if not isinstance(groups, list):
+			groups = [groups]
+
 		dirty = False
 		from octoprint.access.groups import Group
 		for group in groups:
-			if isinstance(group, Group) and group in self._groups:
+			# If someone gives a OctoPrintPermission object, we convert it into the identifier name,
+			# because all permissions are stored as identifiers inside the group
+			if isinstance(group, Group):
+				group = group.get_name()
+
+			# We don't check if the group exists, because it could have been removed
+			# from the group manager already
+			if group in self._groups:
 				self._groups.remove(group)
 				dirty = True
 
@@ -725,21 +749,21 @@ class User(UserMixin):
 		if self._permissions is None:
 			return []
 
-		if Permissions.ADMIN in self._permissions:
-			from octoprint.server import permissionManager
+		from octoprint.server import permissionManager
+		if Permissions.ADMIN.get_name() in self._permissions:
 			return permissionManager.permissions
 
-		permissions = [p for p in self._permissions if p is not None]
-		return permissions
+		return filter(lambda p: p is not None,
+					map(lambda x: permissionManager.find_permission(x), self._permissions))
 
 	@property
 	def groups(self):
 		if self._groups is None:
 			return []
 
-		# Make sure we don't give groups back which don't exist anymore
-		groups = [g for g in self._groups if g is not None]
-		return groups
+		from octoprint.server import groupManager
+		return filter(lambda p: p is not None,
+					map(lambda x: groupManager.find_group(x), self._groups))
 
 	@property
 	def needs(self):
@@ -757,7 +781,7 @@ class User(UserMixin):
 
 	def has_permission(self, permission):
 		from octoprint.server import groupManager
-		if Permissions.ADMIN in self._permissions or (groupManager is not None and groupManager.admins_group in self._groups):
+		if Permissions.ADMIN.get_name() in self._permissions or (groupManager is not None and groupManager.admins_group.get_name() in self._groups):
 			return True
 
 		return permission.needs.issubset(self.needs)

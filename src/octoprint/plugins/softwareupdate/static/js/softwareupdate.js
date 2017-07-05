@@ -410,8 +410,6 @@ $(function() {
         self._markNotificationAsSeen = function(data) {
             if (!Modernizr.localstorage)
                 return false;
-            if (!self.loginState.isUser())
-                return false;
 
             var currentString = localStorage["plugin.softwareupdate.seen_information"];
             var current;
@@ -432,9 +430,6 @@ $(function() {
                 return false;
 
             var knownData = JSON.parse(localStorage["plugin.softwareupdate.seen_information"]);
-
-            if (!self.loginState.isUser())
-                return true;
 
             var userData = knownData[self.loginState.username()];
             if (userData === undefined)

@@ -32,21 +32,25 @@
     </ul>
 </div>
 
-<button title="Add user" class="btn" data-bind="click: $root.access.users.showAddUserDialog"><i class="icon-plus"></i> {{ _('Add user') }}</button>
+<button title="{{ _('Add user') }}" class="btn" data-bind="click: $root.access.users.showAddUserDialog"><i class="icon-plus"></i> {{ _('Add user') }}</button>
 
 <!-- Modals for user management -->
 
 <script type="text/html" id="users-permission-template">
-    <label class="checkbox">
-        <input type="checkbox" data-bind="checkedValue: $data, checked: $root.access.users.editorPermissions"><span data-bind="text: name"></span><br>
-        <span class="description" data-bind="text: description"></span>
-    </label>
+    <!-- ko foreach: _.filter($root.access.permissions.permissionsList(), $root.access.users.filterPermission) -->
+        <label class="checkbox">
+            <input type="checkbox" data-bind="checkedValue: $data, checked: $root.access.users.editorPermissions"><span data-bind="text: name"></span><br>
+            <span class="description" data-bind="text: description"></span>
+        </label>
+    <!-- /ko -->
 </script>
 <script type="text/html" id="users-group-template">
-    <label class="checkbox">
-        <input type="checkbox" data-bind="checkedValue: $data, checked: $root.access.users.editorGroups"><span data-bind="text: name"></span><br>
-        <span class="description" data-bind="text: description"></span>
-    </label>
+    <!-- ko foreach: _.filter($root.access.groups.groupsList(), $root.access.users.filterGroup) -->
+        <label class="checkbox">
+            <input type="checkbox" data-bind="checkedValue: $data, checked: $root.access.users.editorGroups"><span data-bind="text: name"></span><br>
+            <span class="description" data-bind="text: description"></span>
+        </label>
+    <!-- /ko -->
 </script>
 
 <div id="settings-usersDialogAddUser" class="modal hide fade">
@@ -85,11 +89,11 @@
             <div class="control-group">
                 <div class="groups_section">
                     <h4 class="controls" data-bind="toggleContent: { class: 'icon-caret-right icon-caret-down', container: '.groups_section > div' }"><i class='icon-caret-right'></i>{{ _('Groups') }}</h4>
-                    <div class="controls content hidden" data-bind="template: { name: 'users-group-template', foreach: $root.access.groups.groupsList }"></div>
+                    <div class="controls content hidden" data-bind="template: 'users-group-template'"></div>
                 </div>
                 <div class="permissions_section">
                     <h4 class="controls" data-bind="toggleContent: { class: 'icon-caret-right icon-caret-down', container: '.permissions_section > div' }"><i class='icon-caret-right'></i>{{ _('Permissions') }}</h4>
-                    <div class="controls content hidden" data-bind="template: { name: 'users-permission-template', foreach: $root.access.permissions.permissionsList }"></div>
+                    <div class="controls content hidden" data-bind="template: 'users-permission-template'"></div>
                 </div>
             </div>
         </form>
@@ -117,11 +121,11 @@
             <div class="control-group">
                 <div class="groups_section">
                     <h4 class="controls" data-bind="toggleContent: { class: 'icon-caret-right icon-caret-down', container: '.groups_section > div' }"><i class='icon-caret-right'></i>{{ _('Groups') }}</h4>
-                    <div class="controls content hidden" data-bind="template: { name: 'users-group-template', foreach: $root.access.groups.groupsList }"></div>
+                    <div class="controls content hidden" data-bind="template: 'users-group-template'"></div>
                 </div>
                 <div class="permissions_section">
                     <h4 class="controls" data-bind="toggleContent: { class: 'icon-caret-right icon-caret-down', container: '.permissions_section > div' }"><i class='icon-caret-right'></i>{{ _('Permissions') }}</h4>
-                    <div class="controls content hidden" data-bind="template: { name: 'users-permission-template', foreach: $root.access.permissions.permissionsList }"></div>
+                    <div class="controls content hidden" data-bind="template: 'users-permission-template'"></div>
                 </div>
             </div>
         </form>

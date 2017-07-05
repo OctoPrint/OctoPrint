@@ -53,10 +53,11 @@ def setUpModule():
 		octoprint.settings.settings(init=True)
 
 		octoprint.server.permissionManager = PermissionManager()
+		TestPermissions.initialize()
+
 		octoprint.server.groupManager = FilebasedGroupManager()
 		octoprint.server.userManager = FilebasedUserManager()
 
-		TestPermissions.initialize()
 	except Exception:
 		pass
 
@@ -93,11 +94,11 @@ class GroupTestCase(unittest.TestCase):
 
 	@ddt.data(
 			("group",
-			 "Group(\"Group\", \"description\", {0}, False, False)".format([TestPermissions.TEST1])),
+			 "Group(name=\"Group\", description=\"description\", permissionslist=['Test 1'], default=False, specialGroup=False)"),
 			("admins_group",
-			 "Group(\"AdminsGroup\", \"description\", {0}, False, True)".format([TestPermissions.ADMIN])),
+			 "Group(name=\"AdminsGroup\", description=\"description\", permissionslist=['Admin'], default=False, specialGroup=True)"),
 			("multi_permission_group",
-			 "Group(\"MultiPermissionGroup\", \"description\", {0}, False, False)".format([TestPermissions.TEST1, TestPermissions.TEST2])),
+			 "Group(name=\"MultiPermissionGroup\", description=\"description\", permissionslist=['Test 1', 'Test 2'], default=False, specialGroup=False)"),
 	)
 	@ddt.unpack
 	def test_repr(self, uservar, expected):
@@ -105,6 +106,21 @@ class GroupTestCase(unittest.TestCase):
 
 @ddt.ddt
 class PermissionManagerTestCase(unittest.TestCase):
+	def setUp(self):
+		import os
+		self.plugin_folder = os.path.join(os.path.dirname(os.path.realpath(__file__)), "_plugins")
+
+		plugin_folders = [self.plugin_folder]
+		plugin_types = []
+		plugin_entry_points = None
+		octoprint.server.pluginManager = octoprint.plugin.core.PluginManager(plugin_folders,
+		                                                          plugin_types,
+		                                                          plugin_entry_points,
+		                                                          plugin_disabled_list=[],
+		                                                          logging_prefix="logging_prefix.")
+		octoprint.server.pluginManager.reload_plugins(startup=True, initialize_implementations=False)
+		octoprint.server.pluginManager.initialize_implementations()
+
 	def test_add_remove_permission(self):
 		FANCY_NEW_PERMISSION = OctoPrintPermission("Fancy new Permission", "My fancy new permission", RoleNeed("fancy"))
 
@@ -113,6 +129,35 @@ class PermissionManagerTestCase(unittest.TestCase):
 
 		octoprint.server.permissionManager.remove_permission(FANCY_NEW_PERMISSION)
 		self.assertTrue(FANCY_NEW_PERMISSION not in octoprint.server.permissionManager.permissions)
+
+	def test_add_permission_by_plugin(self):
+		server = octoprint.server.Server()
+		server._setup_plugin_permissions([])
+
+		data_groups = [
+			dict(
+					name="Plugin_permissions_plugin_fancy permission",
+					description="My Fancy new Permission",
+					needs=OctoPrintPermission.convert_needs_to_dict({RoleNeed("plugin_permissions_plugin_fancy")})
+				),
+			dict(
+					name="Plugin_permissions_plugin_fancy permission with two roles",
+					description="My Fancy new Permission with two roles",
+					needs=OctoPrintPermission.convert_needs_to_dict(
+							{RoleNeed("plugin_permissions_plugin_fancy1"), RoleNeed("plugin_permissions_plugin_fancy2")})
+				)
+		]
+
+		for expected in data_groups:
+			permission = octoprint.server.permissionManager.find_permission(expected["name"])
+
+			self.assertDictEqual(permission.asDict(), expected)
+
+	def test_remove_permission(self):
+		octoprint.server.permissionManager.remove_permission("Plugin_permissions_plugin_fancy permission")
+
+		from octoprint.access.permissions import Permissions
+		octoprint.server.permissionManager.remove_permission(Permissions.PLUGIN_PERMISSIONS_PLUGIN_FANCY_PERMISSION_WITH_TWO_ROLES)
 
 class GroupManagerTestCase(unittest.TestCase):
 	def test_add_remove_group(self):
@@ -147,7 +192,7 @@ class UserTestCase(unittest.TestCase):
 	@ddt.unpack
 	@ddt.data(("user", dict(name="user",
 	                        active=True,
-	                        permissions=[TestPermissions.TEST1],
+	                        permissions=["Test 1"],
 	                        groups=[],
 	                        needs=OctoPrintPermission.convert_needs_to_dict(TestPermissions.TEST1.needs),
 	                        admin=False,
@@ -156,8 +201,8 @@ class UserTestCase(unittest.TestCase):
 	                        settings=default_settings)),
 	          ("user_multi_permission", dict(name="userMultiPermission",
 	                                         active=True,
-	                                         permissions=[TestPermissions.TEST1,
-	                                                      TestPermissions.TEST2],
+	                                         permissions=["Test 1",
+	                                                      "Test 2"],
 	                                         groups=[],
 	                                         needs=OctoPrintPermission.convert_needs_to_dict(
 			                                         TestPermissions.TEST1.needs
@@ -168,7 +213,7 @@ class UserTestCase(unittest.TestCase):
 	                                         settings=default_settings)),
 	          ("admin_permission", dict(name="adminPermission",
 	                                    active=True,
-	                                    permissions=[TestPermissions.ADMIN],
+	                                    permissions=["Admin"],
 	                                    groups=[],
 	                                    needs=admin_needs_dict,
 	                                    admin=True,
@@ -199,8 +244,8 @@ class UserTestCase(unittest.TestCase):
 		data_groups = [
 			("user_permission_group", dict(name="userPermissionGroup",
 			                               active=True,
-			                               permissions=[TestPermissions.TEST1],
-			                               groups=[octoprint.server.groupManager.guests_group],
+			                               permissions=["Test 1"],
+			                               groups=["Guests"],
 			                               needs=dict(role=["p1"]),
 			                               admin=False,
 			                               user=True,
@@ -209,7 +254,7 @@ class UserTestCase(unittest.TestCase):
 			("admin_group", dict(name="adminGroup",
 			                     active=True,
 			                     permissions=[],
-			                     groups=[octoprint.server.groupManager.admins_group],
+			                     groups=["Admins"],
 			                     needs=admin_needs_dict,
 			                     admin=True,
 			                     user=True,
@@ -228,32 +273,32 @@ class UserTestCase(unittest.TestCase):
 
 	@ddt.data(
 			("user", dict(add=[TestPermissions.TEST2],
-			              _permissions=[TestPermissions.TEST1, TestPermissions.TEST2],
+			              _permissions=["Test 1", "Test 2"],
 			              permissions=[TestPermissions.TEST1, TestPermissions.TEST2]),
-			 dict(remove=[TestPermissions.TEST2],
-			      _permissions=[TestPermissions.TEST1],
-			      permissions=[TestPermissions.TEST1])),
-			("admin_permission", dict(add=[TestPermissions.TEST1],
-			                          _permissions=[TestPermissions.ADMIN],
+					 dict(remove=[TestPermissions.TEST2],
+					      _permissions=["Test 1"],
+					      permissions=[TestPermissions.TEST1])),
+			("admin_permission", dict(add=["Test1"],
+			                          _permissions=["Admin"],
 			                          permissions=admin_permissions
 			                          ),
-			 dict(remove=[TestPermissions.ADMIN],
-			      _permissions=[],
-			      permissions=[])),
+			                        dict(remove=["Admin"],
+			                            _permissions=[],
+			                            permissions=[])),
 	)
 	@ddt.unpack
 	def test_change_permission(self, uservar, add_expected, remove_expected):
 		user = getattr(self, uservar)
 
 		user.add_permissions_to_user(add_expected['add'])
-		self.assertEqual(sorted(user._permissions, key=lambda p: p.get_name()),
-		                 sorted(add_expected['_permissions'], key=lambda p: p.get_name()))
+		self.assertEqual(sorted(user._permissions),
+		                 sorted(add_expected['_permissions']))
 		self.assertEqual(sorted(user.permissions, key=lambda p: p.get_name()),
 		                 sorted(add_expected['permissions'], key=lambda p: p.get_name()))
 
 		user.remove_permissions_from_user(remove_expected['remove'])
-		self.assertEqual(sorted(user._permissions, key=lambda p: p.get_name()),
-		                 sorted(remove_expected['_permissions'], key=lambda p: p.get_name()))
+		self.assertEqual(sorted(user._permissions),
+		                 sorted(remove_expected['_permissions']))
 		self.assertEqual(sorted(user.permissions, key=lambda p: p.get_name()),
 		                 sorted(remove_expected['permissions'], key=lambda p: p.get_name()))
 
@@ -294,52 +339,48 @@ class UserTestCase(unittest.TestCase):
 
 	def test_repr(self):
 		test_data = [
-			("user", "User(id=user,name=user,active=True,user=True,admin=False,permissions=%s,groups=[])" % (
-			[TestPermissions.TEST1])),
+			("user", "User(id=user,name=user,active=True,user=True,admin=False,permissions=['Test 1'],groups=[])"),
 			# we can add the groups here by reference because their repr will be tested in the test_groups.py so it is unnecessary to do this here again
 			("user_multi_permission",
-			 "User(id=userMultiPermission,name=userMultiPermission,active=True,user=True,admin=False,permissions=%s,groups=[])" % sorted(
-					 [TestPermissions.TEST1, TestPermissions.TEST2])),
+			 "User(id=userMultiPermission,name=userMultiPermission,active=True,user=True,admin=False,permissions=['Test 1', 'Test 2'],groups=[])"),
 			("user_permission_group",
-			 "User(id=userPermissionGroup,name=userPermissionGroup,active=True,user=True,admin=False,permissions=%s,groups=%s)" % (
-			 [TestPermissions.TEST1], [octoprint.server.groupManager.guests_group])),
+			 "User(id=userPermissionGroup,name=userPermissionGroup,active=True,user=True,admin=False,permissions=['Test 1'],groups=['Guests'])"),
 			("admin_permission",
-			 "User(id=adminPermission,name=adminPermission,active=True,user=True,admin=True,permissions=%s,groups=[])" % (
-			 [TestPermissions.ADMIN])),
+			 "User(id=adminPermission,name=adminPermission,active=True,user=True,admin=True,permissions=['Admin'],groups=[])"),
 			("admin_group",
-			 "User(id=adminGroup,name=adminGroup,active=True,user=True,admin=True,permissions=[],groups=%s)" % (
-			 [octoprint.server.groupManager.admins_group])),
+			 "User(id=adminGroup,name=adminGroup,active=True,user=True,admin=True,permissions=[],groups=['Admins'])"),
 			("inactive",
 			 "User(id=inactive,name=inactive,active=False,user=True,admin=False,permissions=[],groups=[])")
 		]
 
 		for uservar, output in test_data:
 			self.assertEqual(output, repr(getattr(self, uservar)))
-		class SessionUserTestCase(unittest.TestCase):
-			def setUp(self):
-				self.user = octoprint.access.users.User("username", "passwordHash", True,
-				                                        permissions=[TestPermissions.TEST1], apikey="apikey",
-				                                        settings=dict(key="value"))
 
-			def test_two_sessions(self):
-				session1 = SessionUser(self.user)
-				session2 = SessionUser(self.user)
+class SessionUserTestCase(unittest.TestCase):
+	def setUp(self):
+		self.user = octoprint.access.users.User("username", "passwordHash", True,
+		                                        permissions=[TestPermissions.TEST1], apikey="apikey",
+		                                        settings=dict(key="value"))
 
-				self.assertNotEqual(session1.get_session(), session2.get_session())
-				self.assertEqual(session1._user, session2._user)
-				self.assertEqual(session1._username, session2._username)
+	def test_two_sessions(self):
+		session1 = SessionUser(self.user)
+		session2 = SessionUser(self.user)
 
-			def test_settings_change_propagates(self):
-				user = SessionUser(self.user)
-				self.user.set_setting("otherkey", "othervalue")
+		self.assertNotEqual(session1.get_session(), session2.get_session())
+		self.assertEqual(session1._user, session2._user)
+		self.assertEqual(session1._username, session2._username)
 
-				self.assertDictEqual(dict(key="value", otherkey="othervalue"), user.get_all_settings())
+	def test_settings_change_propagates(self):
+		user = SessionUser(self.user)
+		self.user.set_setting("otherkey", "othervalue")
 
-			def test_repr(self):
-				user = SessionUser(self.user)
-				expected = "SessionUser(id=username,name=username,active=True,user=True,admin=False,session={},created={})".format(
-					user._session, user._created)
-				self.assertEqual(expected, repr(user))
+		self.assertDictEqual(dict(key="value", otherkey="othervalue"), user.get_all_settings())
+
+	def test_repr(self):
+		user = SessionUser(self.user)
+		expected = "SessionUser(id=username,name=username,active=True,user=True,admin=False,session={},created={})".format(
+			user._session, user._created)
+		self.assertEqual(expected, repr(user))
 
 
 #~~ Helpers

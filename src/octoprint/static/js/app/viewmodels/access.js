@@ -79,6 +79,31 @@ $(function() {
                 self.listHelper.updateItems(response.users);
             };
 
+
+            self.filterPermission = function(p) {
+                if (_.any(self.editorGroups(), function(p) { return access.loginState.checkNeeds(p, access.groups.ADMINS); })) {
+                    return false;
+                }
+
+                if (access.loginState.checkNeeds(p, access.permissions.ADMIN)) {
+                    return true;
+                }
+
+                return !_.any(self.editorPermissions(), function(p) { return access.loginState.checkNeeds(p, access.permissions.ADMIN); });
+            };
+
+            self.filterGroup = function(p) {
+                if (_.any(self.editorPermissions(), function(p) { return access.loginState.checkNeeds(p, access.permissions.ADMIN); })) {
+                    return false;
+                }
+
+                if (access.loginState.checkNeeds(p, access.groups.ADMINS)) {
+                    return true;
+                }
+
+                return !_.any(self.editorGroups(), function(p) { return access.loginState.checkNeeds(p, access.groups.ADMINS); });
+            };
+
             self.showAddUserDialog = function() {
                 if (!CONFIG_ACCESS_CONTROL) return;
 
@@ -267,6 +292,46 @@ $(function() {
             self.addGroupDialog = undefined;
             self.editGroupDialog = undefined;
 
+            // used to delete all the groups before registering new ones
+            self.groupsList.subscribe(function(oldValue) {
+                if (oldValue === undefined || oldValue.length == 0)
+                    return;
+
+                oldValue.forEach(function (p) {
+                    delete self[p.name.toUpperCase()];
+                });
+            }, null, "beforeChange");
+
+            // used to register new groups
+            self.groupsList.subscribe(function(newValue) {
+                if (newValue === undefined)
+                    return;
+
+                newValue.forEach(function(g) {
+                    var needs = [];
+                    g.permissions.forEach(function(p) {
+                        for (key in p.needs) {
+                            p.needs[key].forEach(function(value) {
+                                needs.push(access.permissions.need(key, value));
+                            });
+                        }
+                    });
+
+                    // if the permission has no need sets do not register it.
+                    if (needs.length > 0) {
+                        self.registerGroup(g.name.toUpperCase(), needs);
+                    }
+                });
+            });
+
+            self.registerGroup = function(name, group) {
+                Object.defineProperty(self, name, {
+                    value: group,
+                    enumerable: true,
+                    configurable: true
+                });
+            };
+
             self.currentGroup.subscribe(function(newValue) {
                 if (newValue === undefined) {
                     self.editorGroupname(undefined);
@@ -339,6 +404,14 @@ $(function() {
                     });
             };
 
+            self.filterPermission = function(p) {
+                if (access.loginState.checkNeeds(p, access.permissions.ADMIN)) {
+                    return true;
+                }
+
+                return !_.any(self.editorPermissions(), function(p) { return access.loginState.checkNeeds(p, access.permissions.ADMIN); })
+            };
+
             //~~ Framework
 
             self.onStartup = function() {
@@ -393,8 +466,10 @@ $(function() {
             self.need = function(method, value) { return {method: method, value: value}; };
             self.roleNeed = function(value) { return self.need("role", value); };
 
+            self.sanitizeName = function(name) { return name.replace(" ", "_"); }
+
             self.registerPermission = function(name, permission) {
-                Object.defineProperty(self, name, {
+                Object.defineProperty(self, self.sanitizeName(name).toUpperCase(), {
                     value: permission,
                     enumerable: true,
                     configurable: true
@@ -407,7 +482,7 @@ $(function() {
                     return;
 
                 oldValue.forEach(function (p) {
-                    delete self[p.name.toUpperCase()];
+                    delete self[self.sanitizeName(p.name).toUpperCase()];
                 });
             }, null, "beforeChange");
 
@@ -426,14 +501,7 @@ $(function() {
 
                     // if the permission has no need sets do not register it.
                     if (needs.length > 0) {
-                        // if the permission has only 1 need set then just assign this one set
-                        // the loginState.hasPermission function should profit of this,
-                        // because it does not need to loop through a list with 1 object.
-                        if (needs.length == 1) {
-                            self.registerPermission(p.name.toUpperCase(), needs[0]);
-                        } else {
-                            self.registerPermission(p.name.toUpperCase(), needs);
-                        }
+                        self.registerPermission(p.name, needs);
                     }
                 });
             });
@@ -466,13 +534,13 @@ $(function() {
         /////////////////////////////////////////////////////////////////
         access.rereferenceGroupsList = function(list) {
             return _.filter(access.groups.groupsList(), function(group) {
-                return _.findWhere(list, { name: group.name }) != undefined;
+                return _.findWhere(list, group.name ) != undefined;
             });
         };
 
         access.rereferencePermissionsList = function(list) {
             return _.filter(access.permissions.permissionsList(), function(permission) {
-                return _.findWhere(list, { name: permission.name }) != undefined;
+                return _.findWhere(list, permission.name) != undefined;
             });
         };
 

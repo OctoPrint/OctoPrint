@@ -1,4 +1,4 @@
-<div style="display: none;">
+<div data-bind="visible: $root.loginState.hasPermission($root.access.permissions.TIMELAPSE_ADMIN)">
     <div class="alert" data-bind="visible: isPrinting()">
         {{ _('Take note that timelapse configuration is disabled while your printer is printing.') }}
     </div>

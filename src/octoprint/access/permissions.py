@@ -3,6 +3,7 @@ from __future__ import absolute_import, division, print_function
 
 from flask_babel import gettext
 from flask_principal import Permission, RoleNeed
+import logging
 
 __author__ = "Marc Hannappel <salandora@gmail.com>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -72,6 +73,7 @@ class OctoPrintPermission(Permission):
 class PermissionManager(object):
 	def __init__(self):
 		self._permissions = dict()
+		self.logger = logging.getLogger(__name__)
 
 		import yaml
 		from yaml.dumper import SafeDumper
@@ -82,7 +84,8 @@ class PermissionManager(object):
 
 	@property
 	def permissions(self):
-		return list(self._permissions.values())
+		"""Returns a list of all registered permissions"""
+		return self._permissions.values()
 
 	def yaml_representer(self, dumper, data):
 		return dumper.represent_scalar(u'!octoprintpermission', data.get_name())
@@ -92,6 +95,7 @@ class PermissionManager(object):
 		return self.find_permission(name)
 
 	def add_permission(self, permission):
+		"""Registers a OctoPrintPermission object inside the permission manager class"""
 		if permission.get_name() in self._permissions:
 			raise PermissionAlreadyExists(permission.get_name())
 
@@ -99,22 +103,58 @@ class PermissionManager(object):
 		return permission
 
 	def remove_permission(self, permission):
-		del self._permissions[permission.get_name()]
+		"""Removes a OctoPrintPermission object from the permission manager class"""
+		if permission is None:
+			self.logger.exception("Attribute permission is None")
+			return
+
+		permission_name = permission.get_name() if isinstance(permission, OctoPrintPermission) else permission
+		if permission_name not in self._permissions.keys():
+			raise UnknownPermission(permission_name)
 
 		from octoprint.server import groupManager, userManager
-		groupManager.remove_permissions_from_groups([permission])
-		userManager.remove_permissions_from_users([permission])
+		groupManager.remove_permissions_from_groups([permission_name])
+		userManager.remove_permissions_from_users([permission_name])
+
+		try:
+			del self._permissions[permission_name]
+		except KeyError as e:
+			self.logger.exception("Tried to remove a permission (%s) that is already gone" % permission_name)
+			pass
 
 	def find_permission(self, name):
+		"""Searches a registered OctoPrintPermission by name, returns either the permission object or None"""
 		return self._permissions.get(name, None)
 
 	def get_permission_from(self, permission):
-		return permission if isinstance(permission, OctoPrintPermission) \
+		"""This function accepts either a OctoPrintPermission object, a return value of asDict, or a name
+		to search for a registered OctoPrintPermission in the permission manager class"""
+		return self.find_permission(permission.get_name()) if isinstance(permission, OctoPrintPermission) \
 			else self.find_permission(permission["name"]) if isinstance(permission, dict) \
 			else self.find_permission(permission)
 
 
-class Permissions(object):
+class Permissions:
+	class PluginPermission(type):
+		plugin_permissions = dict()
+
+		@classmethod
+		def __setattr__(cls, key, value):
+			if cls.plugin_permissions.get(key, None) is not None:
+				raise PermissionAlreadyExists(key)
+
+			cls.plugin_permissions[key] = value
+
+		def __getattr__(cls, key):
+			permission = cls.plugin_permissions.get(key, None)
+
+			if permission is None:
+				raise AttributeError(key)
+
+			return permission
+
+	__metaclass__ = PluginPermission
+
 	# Special permission
 	ADMIN = OctoPrintPermission("Admin", gettext("Admin is allowed to do everything"), RoleNeed("admin"))
 
@@ -180,7 +220,15 @@ class Permissions(object):
 		pm.add_permission(cls.SETTINGS)
 		pm.add_permission(cls.LOGS)
 
+	@classmethod
+	def __setattr__(cls, key, value):
+		cls.__metaclass__.__setattr__(key, value)
 
 class PermissionAlreadyExists(Exception):
 	def __init__(self, permission):
 		Exception.__init__(self, "Permission %s already exists" % permission)
+
+
+class UnknownPermission(Exception):
+	def __init__(self, permissionname):
+		Exception.__init__(self, "Unknown permission: %s" % permissionname)

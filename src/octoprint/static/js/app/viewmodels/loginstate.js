@@ -198,18 +198,17 @@ $(function() {
                 if (needs.length == 0)
                     return false;
 
-                var check = function(need) {
-                    return _.has(needs, need.method) && _.contains(needs[need.method], need.value);
-                }
+                if (!(permission instanceof Array))
+                    permission = [permission];
 
-                // permission can be a list of needs
-                if (permission instanceof Array) {
-                    return _.every(permission, check);
-                } else {
-                    return check(permission);
-                }
+                return self.checkNeeds({ needs: needs }, permission);
             }).extend({ notify: 'always' });
         };
+
+        // Shared checkNeeds function, also used inside the filter function of the access subs
+        self.checkNeeds = function(obj, needs) {
+            return _.every(needs, function(need) { return _.has(obj.needs, need.method) && _.contains(obj.needs[need.method], need.value) });
+        }
     }
 
     OCTOPRINT_VIEWMODELS.push([

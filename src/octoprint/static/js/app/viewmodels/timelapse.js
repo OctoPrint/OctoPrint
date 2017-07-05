@@ -141,9 +141,9 @@ $(function() {
         );
 
         self.requestData = function() {
-            if (!self.loginState.hasPermission(self.access.permissions.TIMELAPSE_ADMIN)())
+            if (!self.loginState.hasPermission(self.access.permissions.TIMELAPSE)())
                 return;
-                
+
             OctoPrint.timelapse.get(true)
                 .done(self.fromResponse);
         };
@@ -527,6 +527,6 @@ $(function() {
     OCTOPRINT_VIEWMODELS.push([
         TimelapseViewModel,
         ["loginStateViewModel", "accessViewModel"],
-        "#timelapse"
+        ["#timelapse", "#timelapse_link"]
     ]);
 });

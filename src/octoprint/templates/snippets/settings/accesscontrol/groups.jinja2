@@ -1,8 +1,8 @@
 <table class="table table-condensed table-hover" id="system_groups">
     <thead>
     <tr>
-        <th class="settings_groups_name">{{ _('Name') }}</th>
-        <th class="settings_groups_description">{{ _('Description') }}</th>
+        <th class="settings_groups_name">{{ _('Group name') }}</th>
+        <th class="settings_groups_description">{{ _('Group description') }}</th>
         <th class="settings_groups_permissions">{{ _('Permissions') }}</th>
         <th class="settings_groups_actions">{{ _('Action') }}</th>
     </tr>
@@ -30,15 +30,17 @@
     </ul>
 </div>
 
-<button title="Add group" class="btn" data-bind="click: $root.access.groups.showAddGroupDialog"><i class="icon-plus"></i> {{ _('Add group') }}</button>
+<button title="{{ _('Add group') }}" class="btn" data-bind="click: $root.access.groups.showAddGroupDialog"><i class="icon-plus"></i> {{ _('Add group') }}</button>
 
 <!-- Modals for group management -->
 
 <script type="text/html" id="group-permission-template">
-    <label class="checkbox">
-        <input type="checkbox" data-bind="checkedValue: $data, checked: $root.access.groups.editorPermissions"><span data-bind="text: name, attr: { title: description }"></span><br>
-        <span class="description" data-bind="text: description"></span>
-    </label>
+    <div class="controls" data-bind="foreach: _.filter($root.access.permissions.permissionsList(), $root.access.groups.filterPermission)">
+        <label class="checkbox">
+            <input type="checkbox" data-bind="checkedValue: $data, checked: $root.access.groups.editorPermissions"><span data-bind="text: name, attr: { title: description }"></span><br>
+            <span class="description" data-bind="text: gettext(description)"></span>
+        </label>
+    </div>
 </script>
 
 <div id="settings-groupsDialogAddGroup" class="modal hide fade">
@@ -49,13 +51,13 @@
     <div class="modal-body">
         <form class="form-horizontal">
             <div class="control-group">
-                <label class="control-label" for="settings-groupsDialogAddGroupName">{{ _('Groupname') }}</label>
+                <label class="control-label" for="settings-groupsDialogAddGroupName">{{ _('Group name') }}</label>
                 <div class="controls">
                     <input type="text" class="input-block-level" id="settings-groupsDialogAddGroupName" data-bind="value: $root.access.groups.editorGroupname" required>
                 </div>
             </div>
             <div class="control-group">
-                <label class="control-label" for="settings-groupsDialogAddGroupDescription">{{ _('Groupdescription') }}</label>
+                <label class="control-label" for="settings-groupsDialogAddGroupDescription">{{ _('Group description') }}</label>
                 <div class="controls">
                     <input type="text" class="input-block-level" id="settings-groupsDialogAddGroupDescription" data-bind="value: $root.access.groups.editorGroupdesc" required>
                 </div>
@@ -66,9 +68,7 @@
                     <input type="checkbox" class="input-block-level" id="settings-groupsDialogAddDefaultOn" data-bind="checked: $root.access.groups.editorDefaultOn">
                 </div>
             </div>
-            <div class="control-group">
-                <div class="controls" data-bind="template: { name: 'group-permission-template', foreach: $root.access.permissions.permissionsList }"></div>
-            </div>
+            <div class="control-group" data-bind="template: 'group-permission-template'"></div>
         </form>
     </div>
     <div class="modal-footer">
@@ -85,7 +85,7 @@
     <div class="modal-body">
         <form class="form-horizontal">
             <div class="control-group">
-                <label class="control-label" for="settings-groupsDialogEditGroupDescription">{{ _('Groupdescription') }}</label>
+                <label class="control-label" for="settings-groupsDialogEditGroupDescription">{{ _('Group description') }}</label>
                 <div class="controls">
                     <input type="text" class="input-block-level" id="settings-groupsDialogEditGroupDescription" data-bind="value: $root.access.groups.editorGroupdesc" required>
                 </div>
@@ -96,7 +96,7 @@
                     <input type="checkbox" class="input-block-level" id="settings-groupsDialogEditDefaultOn" data-bind="checked: $root.access.groups.editorDefaultOn">
                 </div>
             </div>
-            <div class="controls" data-bind="template: { name: 'group-permission-template', foreach: $root.access.permissions.permissionsList }"></div>
+            <div class="control-group" data-bind="template: 'group-permission-template'"></div>
         </form>
     </div>
     <div class="modal-footer">

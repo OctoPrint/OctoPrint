@@ -226,6 +226,20 @@ class Server(object):
 		jsonEncoder.add_encoder(groups.Group, lambda g: g.asDict())
 		jsonEncoder.add_encoder(permissions.OctoPrintPermission, lambda op: op.asDict())
 
+		components = dict(
+			plugin_manager=pluginManager,
+			printer_profile_manager=printerProfileManager,
+			event_bus=eventManager,
+			analysis_queue=analysisQueue,
+			slicing_manager=slicingManager,
+			file_manager=fileManager,
+			app_session_manager=appSessionManager,
+			plugin_lifecycle_manager=pluginLifecycleManager,
+			preemptive_cache=preemptiveCache,
+			json_encoder=jsonEncoder,
+			json_decoder=jsonDecoder
+		)
+
 		# setup access control
 		permissionManagerName = self._settings.get(["accessControl", "permissionManager"])
 		try:
@@ -234,9 +248,12 @@ class Server(object):
 		except AttributeError as e:
 			self._logger.exception("Could not instantiate permission manager {}, falling back to PermissionManager!".format(permissionManagerName))
 			permissionManager = octoprint.access.permissions.PermissionManager()
+		components.update(dict(permission_manager=permissionManager))
 
-		from octoprint.access.permissions import Permissions
-		Permissions.initialize()
+		permissions.Permissions.initialize()
+
+		# get additional permissions from plugins
+		self._setup_plugin_permissions(components)
 
 		groupManagerName = self._settings.get(["accessControl", "groupManager"])
 		try:
@@ -245,6 +262,7 @@ class Server(object):
 		except AttributeError as e:
 			self._logger.exception("Could not instantiate group manager {}, falling back to FilebasedGroupManager!".format(groupManagerName))
 			groupManager = octoprint.access.groups.FilebasedGroupManager()
+		components.update(dict(group_manager=groupManager))
 
 		userManagerName = self._settings.get(["accessControl", "userManager"])
 		try:
@@ -255,22 +273,7 @@ class Server(object):
 			userManager = octoprint.access.users.FilebasedUserManager()
 		finally:
 			userManager.enabled = self._settings.getBoolean(["accessControl", "enabled"])
-
-		components = dict(
-			plugin_manager=pluginManager,
-			printer_profile_manager=printerProfileManager,
-			event_bus=eventManager,
-			analysis_queue=analysisQueue,
-			slicing_manager=slicingManager,
-			file_manager=fileManager,
-			app_session_manager=appSessionManager,
-			plugin_lifecycle_manager=pluginLifecycleManager,
-			user_manager=userManager,
-			group_manager=groupManager,
-			preemptive_cache=preemptiveCache,
-			json_encoder=jsonEncoder,
-			json_decoder=jsonDecoder
-		)
+		components.update(dict(user_manager=userManager))
 
 		# create printer instance
 		printer_factories = pluginManager.get_hooks("octoprint.printer.factory")
@@ -1347,6 +1350,33 @@ class Server(object):
 		self._intermediary_server.shutdown()
 		self._intermediary_server.server_close()
 		self._logger.debug("Intermediary server shut down")
+
+	def _setup_plugin_permissions(self, components):
+		global pluginManager
+		global permissionManager
+
+		from octoprint.access.permissions import OctoPrintPermission, RoleNeed
+		permissions_initializers = pluginManager.get_hooks("octoprint.access.permissions")
+		for name, permissions_initializer in permissions_initializers.items():
+			try:
+				permission_list = permissions_initializer(components)
+				for p in permission_list:
+					if not isinstance(p, dict):
+						continue
+
+					if "name" not in p or "description" not in p or "roles" not in p:
+						continue
+
+					permission = permissionManager.add_permission(OctoPrintPermission("Plugin_{}_{}".format(name, p["name"]),
+					                                 gettext(p["description"]),
+					                                 *[RoleNeed("plugin_{}_{}".format(name, need)) for need in p["roles"]]))
+
+					if permission is not None:
+						key = permission.get_name().replace(" ", "_").upper()
+						octoprint.access.permissions.Permissions.__setattr__(key, permission)
+
+			except:
+				self._logger.exception("Error while creating permission instance/s from {}".format(name))
 
 class LifecycleManager(object):
 	def __init__(self, plugin_manager):

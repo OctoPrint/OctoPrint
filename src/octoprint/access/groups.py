@@ -96,11 +96,15 @@ class FilebasedGroupManager(GroupManager):
 			with open(self._groupfile, "r") as f:
 				import yaml
 				data = yaml.safe_load(f)
+				from octoprint.server import permissionManager
 				for name in data.keys():
 					attributes = data[name]
+					permissions = [],
 					description = ""
 					specialGroup = False
 					default = False
+					if "permissions" in attributes:
+						permissions = attributes["permissions"]
 					if "description" in attributes:
 						description = attributes["description"]
 					if "specialGroup" in attributes:
@@ -108,7 +112,7 @@ class FilebasedGroupManager(GroupManager):
 					if "default" in attributes:
 						default = attributes["default"]
 
-					self._groups[name] = Group(name, description=description, permissionslist=attributes["permissions"], default=default, specialGroup=specialGroup)
+					self._groups[name] = Group(name, description=description, permissionslist=permissions, default=default, specialGroup=specialGroup)
 
 	def _save(self, force=False):
 		if self._groupfile is None or not self._dirty and not force:
@@ -134,82 +138,76 @@ class FilebasedGroupManager(GroupManager):
 		if not permissions:
 			permissions = []
 
-		from octoprint.server import permissionManager
-		opermissions = []
-		for p in permissions:
-			opermissions.append(permissionManager.get_permission_from(p))
-
 		if groupname in self._groups.keys() and not overwrite:
 			raise GroupAlreadyExists(groupname)
 
-		self._groups[groupname] = Group(groupname, description=description, permissionslist=opermissions, default=default, specialGroup=specialGroup)
+		self._groups[groupname] = Group(groupname, description=description, permissionslist=permissions, default=default, specialGroup=specialGroup)
 		if save:
 			self._dirty = True
 			self._save()
 
 	def change_group_permissions(self, groupname, permissions):
-		if not groupname in self._groups.keys():
+		"""Changes the permissions of a group"""
+		if groupname not in self._groups.keys():
 			raise UnknownGroup(groupname)
 
-		from octoprint.server import permissionManager
-		opermissions = []
-		for p in permissions:
-			opermissions.append(permissionManager.get_permission_from(p))
-
 		group = self._groups[groupname]
-
-		removedPermissions = set(group._permissions) - set(opermissions)
-		addedPermissions = set(opermissions) - set(group._permissions)
-
-		if len(removedPermissions) == 0 and len(addedPermissions) == 0:
-			return
-
-		if not self._groups[groupname].isChangable():
+		if not group.is_changable():
 			raise GroupCantBeChanged(groupname)
 
-		self.remove_permissions_from_group(groupname, removedPermissions)
-		self.add_permissions_to_group(groupname, addedPermissions)
+		from octoprint.server import permissionManager
+		tmp_permissions = []
+		for p in permissions:
+			permission = permissionManager.get_permission_from(p)
+			if permission is not None:
+				tmp_permissions.append(permission.get_name())
+
+		removedPermissions = list(set(group._permissions) - set(tmp_permissions))
+		addedPermissions = list(set(tmp_permissions) - set(group._permissions))
+
+		if len(removedPermissions) > 0:
+			group.remove_permissions_from_group(removedPermissions)
+			self._dirty = True
+		if len(addedPermissions) > 0:
+			group.add_permissions_to_group(addedPermissions)
+			self._dirty = True
+
+		if self._dirty:
+			self._save()
 
 	def add_permissions_to_group(self, groupname, permissions):
+		"""Adds a list of permissions to a group"""
 		if groupname not in self._groups.keys():
 			raise UnknownGroup(groupname)
 
 		if not self._groups[groupname].isChangable():
 			raise GroupCantBeChanged(groupname)
 
-		from octoprint.server import permissionManager
-		opermissions = []
-		for p in permissions:
-			opermissions.append(permissionManager.get_permission_from(p))
-
-		if self._groups[groupname].add_permissions_to_group(opermissions):
+		if self._groups[groupname].add_permissions_to_group(permissions):
 			self._dirty = True
 			self._save()
 
 	def remove_permissions_from_group(self, groupname, permissions):
+		"""Removes a list of permissions from a group"""
 		if groupname not in self._groups.keys():
 			raise UnknownGroup(groupname)
 
-		if not self._groups[groupname].isChangable():
+		if not self._groups[groupname].is_changable():
 			raise GroupCantBeChanged(groupname)
 
-		from octoprint.server import permissionManager
-		opermissions = []
-		for p in permissions:
-			opermissions.append(permissionManager.get_permission_from(p))
-
-		if self._groups[groupname].remove_permissions_from_group(opermissions):
+		if self._groups[groupname].remove_permissions_from_group(permissions):
 			self._dirty = True
 			self._save()
 
 	def change_group_default(self, groupname, default):
-		if not groupname in self._groups.keys():
+		"""Changes the default flag of a Group"""
+		if groupname not in self._groups.keys():
 			raise UnknownGroup(groupname)
 
 		if default == self._groups[groupname].get_default():
 			return
 
-		if not self._groups[groupname].isChangable():
+		if not self._groups[groupname].is_changable():
 			raise GroupCantBeChanged(groupname)
 
 		self._groups[groupname].change_default(default)
@@ -217,7 +215,8 @@ class FilebasedGroupManager(GroupManager):
 		self._save()
 
 	def change_group_description(self, groupname, description):
-		if not groupname in self._groups.keys():
+		"""Changes the description of a group"""
+		if groupname not in self._groups.keys():
 			raise UnknownGroup(groupname)
 
 		if description == self._groups[groupname].get_description():
@@ -228,22 +227,25 @@ class FilebasedGroupManager(GroupManager):
 		self._save()
 
 	def remove_group(self, groupname):
+		"""Removes a Group by name"""
 		if groupname not in self._groups.keys():
 			raise UnknownGroup(groupname)
 
 		group = self._groups[groupname]
-		if not group.isRemoveable():
+		if not group.is_removeable():
 			raise GroupUnremovable(groupname)
 
+		# Make sure the group gets deleted from all user objects
 		from octoprint.server import userManager
 		if userManager.enabled:
-			userManager.remove_groups_from_users([group])
+			userManager.remove_groups_from_users([group.get_name()])
 
 		del self._groups[groupname]
 		self._dirty = True
 		self._save()
 
 	def remove_permissions_from_groups(self, permissions):
+		"""Removes a OctoPrintPermission from every group"""
 		for group in self._groups.values():
 			try:
 				self._dirty |= group.remove_permissions_from_group(permissions)
@@ -278,9 +280,15 @@ class Group(object):
 	def __init__(self, name, description="", permissionslist=None, default=False, specialGroup=False):
 		self._name = name
 		self._description = description
-		self._permissions = permissionslist if permissionslist is not None else []
 		self._default = default
 		self._specialGroup = specialGroup
+
+		from octoprint.server import permissionManager
+		self._permissions = []
+		for p in permissionslist:
+			permission = permissionManager.get_permission_from(p)
+			if permission is not None:
+				self._permissions.append(permission.get_name())
 
 	def asDict(self):
 		from octoprint.access.permissions import OctoPrintPermission
@@ -292,9 +300,6 @@ class Group(object):
 			defaultOn=self.get_default()
 		)
 
-	def get_id(self):
-		return self.get_name()
-
 	def get_name(self):
 		return self._name
 
@@ -304,56 +309,78 @@ class Group(object):
 	def get_default(self):
 		return self._default
 
-	def isChangable(self):
+	def is_changable(self):
 		from octoprint.server import groupManager
 		return self is not groupManager.admins_group
 
-	def isRemoveable(self):
+	def is_removeable(self):
 		return not self._specialGroup
 
 	def add_permissions_to_group(self, permissions):
-		if not self.isChangable():
+		"""Adds a list of permissions to a group"""
+		if not self.is_changable():
 			raise GroupCantBeChanged(self.get_name())
 
+		# Make sure the permissions variable is of type list
+		if not isinstance(permissions, list):
+			permissions = [permissions]
+
 		dirty = False
-		from octoprint.access.permissions import OctoPrintPermission
+		from octoprint.server import permissionManager
 		for permission in permissions:
-			if isinstance(permission, OctoPrintPermission) and permission not in self.permissions:
-				self._permissions.append(permission)
+			# We check if the permission is registered in the permission manager,
+			# if not we are not going to add it to the groups permission list
+			tmp_permission = permissionManager.get_permission_from(permission)
+			if tmp_permission is not None and tmp_permission not in self.permissions:
+				self._permissions.append(tmp_permission.get_name())
 				dirty = True
 
 		return dirty
 
 	def remove_permissions_from_group(self, permissions):
-		if not self.isChangable():
+		"""Removes a list of permissions from a group"""
+		if not self.is_changable():
 			raise GroupCantBeChanged(self.get_name())
+
+		# Make sure the permissions variable is of type list
+		if not isinstance(permissions, list):
+			permissions = [permissions]
 
 		dirty = False
 		from octoprint.access.permissions import OctoPrintPermission
 		for permission in permissions:
-			if isinstance(permission, OctoPrintPermission) and permission in self._permissions:
+			# If someone gives a OctoPrintPermission object, we convert it into the identifier name,
+			# because all permissions are stored as identifiers inside the group
+			if isinstance(permissions, OctoPrintPermission):
+				permission = permission.get_name()
+
+			# We don't check if the permission exists, because it could have been removed
+			# from the permission manager already
+			if permission in self._permissions:
 				self._permissions.remove(permission)
 				dirty = True
 
 		return dirty
 
 	def change_default(self, default):
-		if not self.isChangable():
+		"""Changes the default flag of a Group"""
+		if not self.is_changable():
 			raise GroupCantBeChanged(self.get_name())
 
 		self._default = default
 
 	def change_description(self, description):
+		"""Changes the description of a group"""
 		self._description = description
 
 	@property
 	def permissions(self):
-		if Permissions.ADMIN in self._permissions:
-			from octoprint.server import permissionManager
-			return permissionManager.permissions
+		from octoprint.server import permissionManager
+		if Permissions.ADMIN.get_name() in self._permissions:
+			return list(permissionManager.permissions)
 
-		permissions = [p for p in self._permissions if p is not None]
-		return list(permissions)
+		return filter(lambda p: p is not None,
+					map(lambda x: permissionManager.find_permission(x), self._permissions))
 
 	@property
 	def needs(self):
@@ -363,12 +390,12 @@ class Group(object):
 
 		return needs
 
-	def hasPermission(self, permission):
-		if Permissions.ADMIN in self._permissions:
+	def has_permission(self, permission):
+		if Permissions.ADMIN.get_name() in self._permissions:
 			return True
 
 		return permission.needs.issubset(self.needs)
 
 	def __repr__(self):
-		return '{0}("{1}", "{2}", {3}, {4}, {5})'.format(self.__class__.__name__, self.get_name(), self.get_description(), self._permissions, bool(self.get_default()), bool(self._specialGroup))
+		return '{0}(name="{1}", description="{2}", permissionslist={3}, default={4}, specialGroup={5})'.format(self.__class__.__name__, self.get_name(), self.get_description(), self._permissions, bool(self.get_default()), bool(self._specialGroup))
 
