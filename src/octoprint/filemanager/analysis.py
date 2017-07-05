@@ -329,7 +329,7 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
 			           "--max-t={}".format(max_extruders), "--throttle={}".format(throttle),
 			           "--throttle-lines={}".format(throttle_lines)]
 			for offset in offsets[1:]:
-				command += ["--offset", offset[0], offset[1]]
+				command += ["--offset", str(offset[0]), str(offset[1])]
 			if g90_extruder:
 				command += ["--g90-extruder"]
 			command.append(self._current.absolute_path)
