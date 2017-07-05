@@ -222,7 +222,6 @@ class gcode(object):
 		lineNo = 0
 		readBytes = 0
 		pos = Vector3D(0.0, 0.0, 0.0)
-		toolOffset = Vector3D(0.0, 0.0, 0.0)
 		currentE = [0.0]
 		totalExtrusion = [0.0]
 		maxExtrusion = [0.0]
@@ -320,16 +319,16 @@ class gcode(object):
 
 					# Use new coordinates if provided. If not provided, use prior coordinates (minus tool offset)
 					# in absolute and 0.0 in relative mode.
-					newPos = Vector3D(x if x is not None else (0.0 if relativeMode else pos.x - toolOffset.x),
-					                  y if y is not None else (0.0 if relativeMode else pos.y - toolOffset.y),
-					                  z if z is not None else (0.0 if relativeMode else pos.z - toolOffset.z))
+					newPos = Vector3D(x if x is not None else (0.0 if relativeMode else pos.x),
+					                  y if y is not None else (0.0 if relativeMode else pos.y),
+					                  z if z is not None else (0.0 if relativeMode else pos.z))
 
 					if relativeMode:
 						# Relative mode: scale and add to current position
 						pos += newPos * scale
 					else:
 						# Absolute mode: scale coordinates and apply tool offsets
-						pos = newPos * scale + toolOffset
+						pos = newPos * scale
 
 					if f is not None and f != 0:
 						feedrate = f
@@ -442,14 +441,16 @@ class gcode(object):
 			elif T is not None:
 				if T > max_extruders:
 					self._logger.warn("GCODE tried to select tool %d, that looks wrong, ignoring for GCODE analysis" % T)
+				elif T == currentExtruder:
+					pass
 				else:
-					toolOffset.x -= offsets[currentExtruder][0] if currentExtruder < len(offsets) else 0
-					toolOffset.y -= offsets[currentExtruder][1] if currentExtruder < len(offsets) else 0
+					pos.x -= offsets[currentExtruder][0] if currentExtruder < len(offsets) else 0
+					pos.y -= offsets[currentExtruder][1] if currentExtruder < len(offsets) else 0
 
 					currentExtruder = T
 
-					toolOffset.x += offsets[currentExtruder][0] if currentExtruder < len(offsets) else 0
-					toolOffset.y += offsets[currentExtruder][1] if currentExtruder < len(offsets) else 0
+					pos.x += offsets[currentExtruder][0] if currentExtruder < len(offsets) else 0
+					pos.y += offsets[currentExtruder][1] if currentExtruder < len(offsets) else 0
 
 					if len(currentE) <= currentExtruder:
 						for i in range(len(currentE), currentExtruder + 1):
