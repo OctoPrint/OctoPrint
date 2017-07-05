@@ -253,6 +253,26 @@ class FileManager(object):
 	def default_slicer(self):
 		return self._slicing_manager.default_slicer
 
+	def analyse(self, destination, path, printer_profile_id=None):
+		if not self.file_exists(destination, path):
+			return
+
+		if printer_profile_id is None:
+			printer_profile = self._printer_profile_manager.get_current_or_default()
+		else:
+			printer_profile = self._printer_profile_manager.get(printer_profile_id)
+			if printer_profile is None:
+				printer_profile = self._printer_profile_manager.get_current_or_default()
+
+		queue_entry = self._analysis_queue_entry(destination, path)
+		self._analysis_queue.dequeue(queue_entry)
+
+		queue_entry = self._analysis_queue_entry(destination, path, printer_profile=printer_profile)
+		if queue_entry:
+			return self._analysis_queue.enqueue(queue_entry, high_priority=True)
+
+		return False
+
 	def slice(self, slicer_name, source_location, source_path, dest_location, dest_path,
 	          position=None, profile=None, printer_profile_id=None, overrides=None, callback=None, callback_args=None):
 		absolute_source_path = self.path_on_disk(source_location, source_path)
