@@ -3,6 +3,7 @@ $(function() {
         var self = this;
 
         self.loginState = parameters[0];
+        self.access = parameters[1];
 
         self.timelapsePopup = undefined;
 
@@ -48,7 +49,7 @@ $(function() {
             return ("timed" == self.timelapseType());
         });
         self.saveButtonEnabled = ko.pureComputed(function() {
-            return self.isDirty() && self.isOperational() && !self.isPrinting() && self.loginState.isUser();
+            return self.loginState.hasPermission(self.access.permissions.TIMELAPSE_ADMIN)() && self.isDirty() && self.isOperational() && !self.isPrinting();
         });
 
         self.isOperational.subscribe(function() {
@@ -140,6 +141,9 @@ $(function() {
         );
 
         self.requestData = function() {
+            if (!self.loginState.hasPermission(self.access.permissions.TIMELAPSE_ADMIN)())
+                return;
+                
             OctoPrint.timelapse.get(true)
                 .done(self.fromResponse);
         };
@@ -228,6 +232,9 @@ $(function() {
         };
 
         self.removeFile = function(filename) {
+            if (!self.loginState.hasPermission(self.access.permissions.TIMELAPSE_ADMIN)())
+                return;
+
             var perform = function() {
                 OctoPrint.timelapse.delete(filename)
                     .done(function() {
@@ -241,6 +248,9 @@ $(function() {
         };
 
         self.removeMarkedFiles = function() {
+            if (!self.loginState.hasPermission(self.access.permissions.TIMELAPSE_ADMIN)())
+                return;
+
             var perform = function() {
                 self._bulkRemove(self.markedForFileDeletion(), "files")
                     .done(function() {
@@ -265,6 +275,9 @@ $(function() {
         };
 
         self.removeUnrendered = function(name) {
+            if (!self.loginState.hasPermission(self.access.permissions.TIMELAPSE_ADMIN)())
+                return;
+
             var perform = function() {
                 OctoPrint.timelapse.deleteUnrendered(name)
                     .done(function() {
@@ -278,6 +291,9 @@ $(function() {
         };
 
         self.removeMarkedUnrendered = function() {
+            if (!self.loginState.hasPermission(self.access.permissions.TIMELAPSE_ADMIN)())
+                return;
+
             var perform = function() {
                 self._bulkRemove(self.markedForUnrenderedDeletion(), "unrendered")
                     .done(function() {
@@ -347,11 +363,17 @@ $(function() {
         };
 
         self.renderUnrendered = function(name) {
+            if (!self.loginState.hasPermission(self.access.permissions.TIMELAPSE_ADMIN)())
+                return;
+
             OctoPrint.timelapse.renderUnrendered(name)
                 .done(self.requestData);
         };
 
         self.save = function() {
+            if (!self.loginState.hasPermission(self.access.permissions.TIMELAPSE_ADMIN)())
+                return;
+
             var payload = {
                 "type": self.timelapseType(),
                 "postRoll": self.timelapsePostRoll(),
@@ -504,7 +526,7 @@ $(function() {
 
     OCTOPRINT_VIEWMODELS.push([
         TimelapseViewModel,
-        ["loginStateViewModel"],
+        ["loginStateViewModel", "accessViewModel"],
         "#timelapse"
     ]);
 });

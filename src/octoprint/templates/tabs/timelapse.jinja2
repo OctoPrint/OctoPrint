@@ -1,11 +1,11 @@
-<div style="display: none;" data-bind="visible: loginState.isUser">
+<div style="display: none;">
     <div class="alert" data-bind="visible: isPrinting()">
         {{ _('Take note that timelapse configuration is disabled while your printer is printing.') }}
     </div>
     <h1>{{ _('Timelapse Configuration') }}</h1>
 
     <label for="webcam_timelapse_mode">{{ _('Timelapse Mode') }}</label>
-    <select id="webcam_timelapse_mode" data-bind="value: timelapseType, enable: isOperational() && !isPrinting() && loginState.isUser()">
+    <select id="webcam_timelapse_mode" data-bind="value: timelapseType, enable: isOperational() && !isPrinting()">
         <option value="off">{{ _('Off') }}</option>
         <option value="timed">{{ _('Timed') }}</option>
         <option value="zchange">{{ _('On Z Change') }}</option>
@@ -16,25 +16,25 @@
     <div id="webcam_timelapse_timedsettings" data-bind="visible: intervalInputEnabled">
         <label for="webcam_timelapse_interval">{{ _('Interval between snapshots (in seconds)') }}</label>
         <div class="input-append">
-            <input type="text" class="input-mini" id="webcam_timelapse_interval" data-bind="value: timelapseTimedInterval, valueUpdate: 'afterkeydown', enable: isOperational() && !isPrinting() && loginState.isUser()">
+            <input type="text" class="input-mini" id="webcam_timelapse_interval" data-bind="value: timelapseTimedInterval, valueUpdate: 'afterkeydown', enable: isOperational() && !isPrinting()">
             <span class="add-on">{{ _('sec') }}</span>
         </div>
     </div>
 
     <label for="webcam_timelapse_fps">{{ _('Timelapse frame rate (in frames per second)') }}</label>
     <div class="input-append">
-        <input type="text" class="input-mini" id="webcam_timelapse_fps" data-bind="value: timelapseFps, valueUpdate: 'afterkeydown', enable: isOperational() && !isPrinting() && loginState.isUser() && timelapseTypeSelected()">
+        <input type="text" class="input-mini" id="webcam_timelapse_fps" data-bind="value: timelapseFps, valueUpdate: 'afterkeydown', enable: isOperational() && !isPrinting() && timelapseTypeSelected()">
         <span class="add-on">{{ _('fps') }}</span>
     </div>
 
     <label for="webcam_timelapse_postRoll">{{ _('Timelapse post roll (in rendered seconds)') }}</label>
     <div class="input-append">
-        <input type="text" class="input-mini" id="webcam_timelapse_postRoll" data-bind="value: timelapsePostRoll, valueUpdate: 'afterkeydown', enable: isOperational() && !isPrinting() && loginState.isUser() && timelapseTypeSelected()">
+        <input type="text" class="input-mini" id="webcam_timelapse_postRoll" data-bind="value: timelapsePostRoll, valueUpdate: 'afterkeydown', enable: isOperational() && !isPrinting() && timelapseTypeSelected()">
         <span class="add-on">{{ _('sec') }}</span>
     </div>
     <div id="webcam_timelapse_capturePostRoll" data-bind="visible: timelapseType() == 'timed'">
         <label class="checkbox">
-            <input type="checkbox" data-bind="checked: timelapseCapturePostRoll, valueUpdate: 'afterkeydown', enable: isOperational() && !isPrinting() && loginState.isUser()"> {{ _('Capture post roll images') }}
+            <input type="checkbox" data-bind="checked: timelapseCapturePostRoll, valueUpdate: 'afterkeydown', enable: isOperational() && !isPrinting()"> {{ _('Capture post roll images') }}
             <span class="help-block">{{ _('If this is unchecked, OctoPrint will simply repeat the last frame for the post roll instead of continuing to capture new frames.') }}</span>
         </label>
     </div>
@@ -42,7 +42,7 @@
     <div id="webcam_timelapse_retractionsettings" data-bind="visible: timelapseType() == 'zchange'">
         <label for="webcam_timelapse_retractionZHop">{{ _('Retraction Z-Hop (in mm)') }}</label>
         <div class="input-append">
-            <input type="text" class="input-mini" id="webcam_timelapse_retractionZHop" data-bind="value: timelapseRetractionZHop, valueUpdate: 'afterkeydown', enable: isOperational() && !isPrinting() && loginState.isUser()">
+            <input type="text" class="input-mini" id="webcam_timelapse_retractionZHop" data-bind="value: timelapseRetractionZHop, valueUpdate: 'afterkeydown', enable: isOperational() && !isPrinting()">
             <span class="add-on">{{ _('mm') }}</span>
         </div>
         <span class="help-block">{{ _('Enter the retraction z-hop used in the firmware or the gcode file to trigger snapshots for the timelapse only if a real layer change happens. For this to work properly your retraction z-hop has to be different from your layerheight!') }}</span>
@@ -99,7 +99,7 @@
         <td class="timelapse_files_checkbox"><input type="checkbox" data-bind="value: name, checked: $root.markedForFileDeletion"></td>
         <td class="timelapse_files_name" data-bind="text: name"></td>
         <td class="timelapse_files_size" data-bind="text: size"></td>
-        <td class="timelapse_files_action"><a href="javascript:void(0)" class="icon-trash" data-bind="click: function() { if ($root.loginState.isUser()) { $parent.removeFile($data.name); } else { return; } }, css: {disabled: !$root.loginState.isUser()}"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" class="icon-download" data-bind="attr: {href: url}"></a></td>
+        <td class="timelapse_files_action"><a href="javascript:void(0)" class="icon-trash" data-bind="click: function() { $parent.removeFile($data.name); }"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" class="icon-download" data-bind="attr: {href: url}"></a></td>
     </tr>
     </tbody>
 </table>
@@ -148,7 +148,7 @@
                 <td class="timelapse_unrendered_size" data-bind="text: size"></td>
                 <td class="timelapse_unrendered_action">
                     <span data-bind="visible: processing"><i class="icon-refresh icon-spin"></i></span>
-                    <span data-bind="visible: !processing"><a href="javascript:void(0)" title="{{ _('Delete unrendered timelapse') }}" class="icon-trash" data-bind="click: function() { if ($root.loginState.isUser()) { $parent.removeUnrendered($data.name); } else { return; } }, css: {disabled: !$root.loginState.isUser()}"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" title="{{ _('Render timelapse') }}" class="icon-facetime-video" data-bind="click: function() { if ($root.loginState.isUser() && !$root.isBusy()) { $parent.renderUnrendered($data.name); } else { return; } }, css: {disabled: !$root.loginState.isUser() || $root.isBusy()}"></a></span>
+                    <span data-bind="visible: !processing"><a href="javascript:void(0)" title="{{ _('Delete unrendered timelapse') }}" class="icon-trash" data-bind="click: function() { $parent.removeUnrendered($data.name); }"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" title="{{ _('Render timelapse') }}" class="icon-facetime-video" data-bind="click: function() { if (!$root.isBusy()) { $parent.renderUnrendered($data.name); } else { return; } }, css: {disabled: $root.isBusy()}"></a></span>
                 </td>
             </tr>
             </tbody>

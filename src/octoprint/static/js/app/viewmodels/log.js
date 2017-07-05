@@ -3,6 +3,7 @@ $(function() {
         var self = this;
 
         self.loginState = parameters[0];
+        self.access = parameters[1];
 
         // initialize list helper
         self.listHelper = new ItemListHelper(
@@ -36,6 +37,9 @@ $(function() {
         );
 
         self.requestData = function() {
+            if (!self.loginState.hasPermission(self.access.permissions.LOGS)())
+                return;
+
             OctoPrint.logs.list()
                 .done(self.fromResponse);
         };
@@ -49,6 +53,9 @@ $(function() {
         };
 
         self.removeFile = function(filename) {
+            if (!self.loginState.hasPermission(self.access.permissions.LOGS)())
+                return;
+
             OctoPrint.logs.delete(filename)
                 .done(self.requestData);
         };
@@ -60,7 +67,7 @@ $(function() {
 
     OCTOPRINT_VIEWMODELS.push([
         LogViewModel,
-        ["loginStateViewModel"],
+        ["loginStateViewModel", "accessViewModel"],
         "#logs"
     ]);
 });

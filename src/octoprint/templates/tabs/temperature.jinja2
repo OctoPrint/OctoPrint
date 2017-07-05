@@ -5,7 +5,7 @@
 {% endif %}
 <div class="row-fluid">
 
-    <table class="table table-bordered table-hover" style="table-layout: fixed; width: 100%; margin-top: 20px">
+    <table class="table table-bordered table-hover" style="table-layout: fixed; width: 100%; margin-top: 20px" data-bind="visible: loginState.hasPermission(access.permissions.CONTROL)">
         <tr>
             <th style="width: 18%"></th>
             <th style="width: 12%; text-align: right">{{ _('Actual') }}</th>
@@ -23,11 +23,11 @@
         <td style="text-align: right; vertical-align: middle" data-bind="html: formatTemperature(actual())"></td>
         <td style="vertical-align: middle; overflow: visible">
             <div class="input-append">
-                <input type="number" class="input-mini text-right tempInput" data-bind="attr: {placeholder: cleanTemperature(target()) }, value: newTarget, enable: $root.isOperational() && $root.loginState.isUser(), event: { keyup: function(d, e) {$root.handleEnter(e, 'target', $data);} }">
+                <input type="number" class="input-mini text-right tempInput" data-bind="attr: {placeholder: cleanTemperature(target()) }, value: newTarget, enable: $root.isOperational, event: { keyup: function(d, e) {$root.handleEnter(e, 'target', $data);} }">
                 <span class="add-on">&deg;C</span>
                 <div class="btn-group">
-                    <button type="submit" data-bind="click: $parent.setTarget, enable: $root.isOperational() && $root.loginState.isUser()" class="btn">{{ _('Set') }}</button>
-                    <button class="btn dropdown-toggle" data-toggle="dropdown" data-bind="enable: $root.isOperational() && $root.loginState.isUser()">
+                    <button type="submit" data-bind="click: $parent.setTarget, enable: $root.isOperational" class="btn">{{ _('Set') }}</button>
+                    <button class="btn dropdown-toggle" data-toggle="dropdown" data-bind="enable: $root.isOperational">
                         <span class="caret"></span>
                     </button>
                     <ul class="dropdown-menu">
@@ -46,9 +46,9 @@
         </td>
         <td style="vertical-align: middle">
             <div class="input-append">
-                <input type="number" min="-50" max="50" class="input-mini text-right tempInput" data-bind="attr: {placeholder: offset}, value: newOffset, enable: $root.isOperational() && $root.loginState.isUser(), event: { keyup: function(d, e) {$root.handleEnter(e, 'offset', $data);} }">
+                <input type="number" min="-50" max="50" class="input-mini text-right tempInput" data-bind="attr: {placeholder: offset}, value: newOffset, enable: $root.isOperational, event: { keyup: function(d, e) {$root.handleEnter(e, 'offset', $data);} }">
                 <span class="add-on">&deg;C</span>
-                <button type="submit" data-bind="click: $root.setOffset, enable: $root.isOperational() && $root.loginState.isUser()" class="btn">{{ _('Set') }}</button>
+                <button type="submit" data-bind="click: $root.setOffset, enable: $root.isOperational" class="btn">{{ _('Set') }}</button>
             </div>
         </td>
     </script>

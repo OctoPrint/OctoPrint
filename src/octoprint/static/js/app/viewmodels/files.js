@@ -68,7 +68,7 @@ $(function() {
         self.addFolderDialog = undefined;
         self.addFolderName = ko.observable(undefined);
         self.enableAddFolder = ko.pureComputed(function() {
-            return self.loginState.isUser() && self.addFolderName() && self.addFolderName().trim() != "" && !self.addingFolder();
+            return self.loginState.hasPermission(self.access.permissions.UPLOAD)() && self.addFolderName() && self.addFolderName().trim() != "" && !self.addingFolder();
         });
 
         self.allItems = ko.observable(undefined);
@@ -546,7 +546,7 @@ $(function() {
             } else {
                 busy = _.contains(self.printerState.busyFiles(), data.origin + ":" + data.path);
             }
-            return self.loginState.hasPermission(self.access.permissions.DELETE) && !busy;
+            return self.loginState.hasPermission(self.access.permissions.DELETE)() && !busy;
         };
 
         self.enableSelect = function(data) {
@@ -560,7 +560,7 @@ $(function() {
 
 
         self.enableSlicing = function(data) {
-            return self.loginState.hasPermission(self.access.permissions.SLICE) && self.slicing.enableSlicingDialog() && self.slicing.enableSlicingDialogForFile(data.name);
+            return self.loginState.hasPermission(self.access.permissions.SLICE)() && self.slicing.enableSlicingDialog() && self.slicing.enableSlicingDialogForFile(data.name);
         };
 
         self.enableAdditionalData = function(data) {
@@ -830,13 +830,13 @@ $(function() {
             self.sdTarget = $("#drop_sd");
 
             function evaluateDropzones() {
-                var enableLocal = self.loginState.isUser();
+                var enableLocal = self.loginState.hasPermission(self.access.permissions.UPLOAD)();
                 var enableSd = enableLocal && CONFIG_SD_SUPPORT && self.printerState.isSdReady();
 
                 self._setDropzone("local", enableLocal);
                 self._setDropzone("sdcard", enableSd);
             }
-            self.loginState.isUser.subscribe(evaluateDropzones);
+            self.loginState.currentUser.subscribe(evaluateDropzones);
             self.printerState.isSdReady.subscribe(evaluateDropzones);
             evaluateDropzones();
 

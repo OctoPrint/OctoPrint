@@ -518,7 +518,7 @@ def _process_templates():
 	# sidebar
 
 	templates["sidebar"]["entries"]= dict(
-		connection=(gettext("Connection"), dict(template="sidebar/connection.jinja2", _div="connection", icon="signal", styles_wrapper=["display: none"], data_bind="visible: loginState.hasPermission(access.permissions.CONNECTION)", custom_bindings=False)),
+		connection=(gettext("Connection"), dict(template="sidebar/connection.jinja2", _div="connection", icon="signal", styles_wrapper=["display: none"], data_bind="visible: loginState.hasPermission(access.permissions.CONNECTION)")),
 		state=(gettext("State"), dict(template="sidebar/state.jinja2", _div="state", icon="info-sign", data_bind="visible: loginState.hasPermission(access.permissions.STATUS)")),
 		files=(gettext("Files"), dict(template="sidebar/files.jinja2", _div="files", icon="list", classes_content=["overflow_visible"], template_header="sidebar/files_header.jinja2", data_bind="visible: loginState.hasPermission(access.permissions.DOWNLOAD)() || \
 		                                                                                                                                                                                                   loginState.hasPermission(access.permissions.UPLOAD)() || \

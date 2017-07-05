@@ -14,10 +14,10 @@
             </label>
         </div>
     </div>
-    <div class="span6" id="terminal-sendpanel" style="display: none;" data-bind="visible: loginState.isUser">
+    <div class="span6" id="terminal-sendpanel">
         <div class="input-append">
-            <input type="text" id="terminal-command" data-bind="value: command, event: { keyup: function(d,e) { return handleKeyUp(e); }, keydown: function(d,e) { return handleKeyDown(e); } }, enable: isOperational() && loginState.isUser()">
-            <button class="btn" type="button" id="terminal-send" data-bind="click: sendCommand, enable: isOperational() && loginState.isUser()">{{ _('Send') }}</button>
+            <input type="text" id="terminal-command" data-bind="value: command, event: { keyup: function(d,e) { return handleKeyUp(e); }, keydown: function(d,e) { return handleKeyDown(e); } }, enable: isOperational">
+            <button class="btn" type="button" id="terminal-send" data-bind="click: sendCommand, enable: isOperational()">{{ _('Send') }}</button>
         </div>
         <small class="muted">{{ _('Hint: Use the arrow up/down keys to recall commands sent previously') }}</small>
     </div>
@@ -27,7 +27,7 @@
     <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'icon-caret-right icon-caret-down', container: '#term .hide' }"><i class="icon-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
     <div class="hide">
         <p class="row-fluid">
-            <button class="btn btn-primary btn-block" type="button" data-bind="click: fakeAck, enable: isOperational() && loginState.isUser()">{{ _("Fake Acknowledgement") }}</button>
+            <button class="btn btn-primary btn-block" type="button" data-bind="click: fakeAck, enable: isOperational()">{{ _("Fake Acknowledgement") }}</button>
             <small class="muted">{{ _("If acknowledgements (\"ok\"s) sent by the firmware get lost due to issues with the serial communication to your printer, OctoPrint's communication with it can become stuck. If that happens, this can help. Please be advised that such occurences hint at general communication issues with your printer which will probably negatively influence your printing results and which you should therefore try to resolve!") }}</small>
         </p>
         <p class="row-fluid">

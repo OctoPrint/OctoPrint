@@ -101,7 +101,7 @@ $(function() {
             self.isReady(data.flags.ready);
             self.isLoading(data.flags.loading);
 
-            if (self.loginState.isUser() && self.previousIsOperational != self.isOperational()) {
+            if (self.loginState.hasPermission(self.access.permissions.CONNECTION)() && self.previousIsOperational != self.isOperational()) {
                 // only open or close if the panel is visible (for admins) and
                 // the state just changed to avoid thwarting manual open/close
                 self.openOrCloseOnStateChange();
