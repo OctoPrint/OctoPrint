@@ -400,7 +400,6 @@ table {
       width: 80px;
       .actioncol;
     }
-
   }
 }
 
@@ -413,12 +412,52 @@ table {
   background: url("../img/graph-background.png") no-repeat center;
 }
 
-.tab-content, .tab-pane {
-  overflow: visible;
+#temperature-table {
+  table-layout: fixed;
+  width: 100%;
+  margin-top: 20px;
+
+  th, td {
+    &.temperature_tool,
+    &.temperature_actual,
+    &.temperature_target,
+    &.temperature_offset {
+      vertical-align: middle;
+      text-align: center;
+
+      form {
+        margin: 0;
+      }
+
+      .dropdown-menu {
+        text-align: left;
+      }
+    }
+
+    &.temperature_tool {
+      width: 18%;
+      text-align: left;
+    }
+
+    &.temperature_actual {
+      width: 12%;
+    }
+
+    &.temperature_target {
+      width: 40%;
+      overflow: visible;
+    }
+
+    &.temperature_offset {
+      width: 30%;
+    }
+  }
 }
 
-.tempInput {
-  width: 50px;
+/** Various */
+
+.tab-content, .tab-pane {
+  overflow: visible;
 }
 
 #temp_newTemp, #temp_newBedTemp, #speed_innerWall, #speed_outerWall, #speed_fill, #speed_support,
@@ -840,10 +879,6 @@ ul.dropdown-menu li a {
   #terminal-sendpanel {
     text-align: right;
   }
-
-  #terminal-output span {
-    display: block;
-  }
 }
 
 #settings_dialog {
@@ -1228,6 +1263,12 @@ _::-webkit-full-page-media, _:future, :root .full-sized-box {
   -webkit-overflow-scrolling: touch;
 }
 
+.pre-output {
+  span {
+    display: block; // so we don't need to add individual <br> tags to each line
+  }
+}
+
 .input-append, .input-prepend {
   .add-on {
     &.add-on-limited {
@@ -1236,6 +1277,27 @@ _::-webkit-full-page-media, _:future, :root .full-sized-box {
       width: inherit;
     }
   }
+
+  .btn-group:first-child {
+    .btn:first-child {
+      -webkit-border-radius: 4px 0 0 4px;
+      -moz-border-radius: 4px 0 0 4px;
+      border-radius: 4px 0 0 4px;
+    }
+  }
+
+  .btn-group {
+    .btn:first-child {
+      -webkit-border-radius: 0;
+      -moz-border-radius: 0;
+      border-radius: 0;
+    }
+  }
+}
+
+.btn-input-dec,
+.btn-input-enc {
+  //font-size: 80%;
 }
 
 .control-group.error .input-prepend .fileinput-button,
@@ -1243,8 +1305,23 @@ _::-webkit-full-page-media, _:future, :root .full-sized-box {
   border-color: #b94a48;
 }
 
+.control-text {
+  // like control-label, but without cursor, float, width or text-align
+  padding-top: 5px;
+  cursor: default;
+}
+
 input[type=number] {
   text-align: right;
+}
+
+input[type="number"].input-nospin::-webkit-outer-spin-button,
+input[type="number"].input-nospin::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+input[type="number"].input-nospin {
+    -moz-appearance: textfield;
 }
 
 // Progress bars with text

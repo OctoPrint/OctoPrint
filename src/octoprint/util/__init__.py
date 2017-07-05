@@ -174,8 +174,6 @@ def get_class(name):
 	"""
 	Retrieves the class object for a given fully qualified class name.
 
-	Taken from http://stackoverflow.com/a/452981/2028598.
-
 	Arguments:
 	    name (string): The fully qualified class name, including all modules separated by ``.``
 
@@ -183,15 +181,17 @@ def get_class(name):
 	    type: The class if it could be found.
 
 	Raises:
-	    AttributeError: The class could not be found.
+	    ImportError
 	"""
 
-	parts = name.split(".")
-	module = ".".join(parts[:-1])
-	m = __import__(module)
-	for comp in parts[1:]:
-		m = getattr(m, comp)
-	return m
+	import importlib
+
+	mod_name, cls_name = name.rsplit(".", 1)
+	m = importlib.import_module(mod_name)
+	try:
+		return getattr(m, cls_name)
+	except AttributeError:
+		raise ImportError("No module named " + name)
 
 
 def get_exception_string():
@@ -1046,18 +1046,57 @@ class InvariantContainer(object):
 		return self._data.__iter__()
 
 
-class TypedQueue(queue.Queue):
+class PrependQueue(queue.Queue):
 
 	def __init__(self, maxsize=0):
 		queue.Queue.__init__(self, maxsize=maxsize)
+
+	def prepend(self, item, block=True, timeout=True):
+		from time import time as _time
+
+		self.not_full.acquire()
+		try:
+			if self.maxsize > 0:
+				if not block:
+					if self._qsize() == self.maxsize:
+						raise queue.Full
+				elif timeout is None:
+					while self._qsize() >= self.maxsize:
+						self.not_full.wait()
+				elif timeout < 0:
+					raise ValueError("'timeout' must be a non-negative number")
+				else:
+					endtime = _time() + timeout
+					while self._qsize() == self.maxsize:
+						remaining = endtime - _time()
+						if remaining <= 0.0:
+							raise queue.Full
+						self.not_full.wait(remaining)
+			self._prepend(item)
+			self.unfinished_tasks += 1
+			self.not_empty.notify()
+		finally:
+			self.not_full.release()
+
+	def _prepend(self, item):
+		self.queue.appendleft(item)
+
+
+class TypedQueue(PrependQueue):
+
+	def __init__(self, maxsize=0):
+		PrependQueue.__init__(self, maxsize=maxsize)
 		self._lookup = set()
 
 	def put(self, item, item_type=None, *args, **kwargs):
-		queue.Queue.put(self, (item, item_type), *args, **kwargs)
+		PrependQueue.put(self, (item, item_type), *args, **kwargs)
 
 	def get(self, *args, **kwargs):
-		item, _ = queue.Queue.get(self, *args, **kwargs)
+		item, _ = PrependQueue.get(self, *args, **kwargs)
 		return item
+
+	def prepend(self, item, item_type=None, *args, **kwargs):
+		PrependQueue.prepend(self, (item, item_type), *args, **kwargs)
 
 	def _put(self, item):
 		_, item_type = item
@@ -1070,7 +1109,7 @@ class TypedQueue(queue.Queue):
 		queue.Queue._put(self, item)
 
 	def _get(self):
-		item = queue.Queue._get(self)
+		item = PrependQueue._get(self)
 		_, item_type = item
 
 		if item_type is not None:
@@ -1078,6 +1117,15 @@ class TypedQueue(queue.Queue):
 
 		return item
 
+	def _prepend(self, item):
+		_, item_type = item
+		if item_type is not None:
+			if item_type in self._lookup:
+				raise TypeAlreadyInQueue(item_type, "Type {} is already in queue".format(item_type))
+			else:
+				self._lookup.add(item_type)
+
+		PrependQueue._prepend(self, item)
 
 class TypeAlreadyInQueue(Exception):
 	def __init__(self, t, *args, **kwargs):

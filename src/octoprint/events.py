@@ -84,6 +84,7 @@ class Events(object):
 	EJECT = "Eject"
 	E_STOP = "EStop"
 	POSITION_UPDATE = "PositionUpdate"
+	TOOL_CHANGE = "ToolChange"
 	REGISTERED_MESSAGE_RECEIVED = "RegisteredMessageReceived"
 
 	# Timelapse

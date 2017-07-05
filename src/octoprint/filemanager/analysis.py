@@ -19,8 +19,6 @@ import time
 from octoprint.events import Events, eventManager
 from octoprint.settings import settings
 
-import octoprint.util.gcodeInterpreter as gcodeInterpreter
-
 
 class QueueEntry(collections.namedtuple("QueueEntry", "name, path, type, location, absolute_path, printer_profile")):
 	"""
@@ -305,39 +303,95 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
 	     * The extruded volume in cm³
 	"""
 
-	def _do_analysis(self, high_priority=False):
-		try:
-			throttle = settings().getFloat(["gcodeAnalysis", "throttle_highprio"]) if high_priority else settings().getFloat(["gcodeAnalysis", "throttle_normalprio"])
-			throttle_lines = settings().getInt(["gcodeAnalysis", "throttle_lines"])
-			if throttle > 0:
-				def throttle_callback(filePos, readBytes):
-					if filePos % throttle_lines == 0:
-						# only apply throttle every 100 lines
-						time.sleep(throttle)
-			else:
-				throttle_callback = None
+	def __init__(self, finished_callback):
+		AbstractAnalysisQueue.__init__(self, finished_callback)
 
-			self._gcode = gcodeInterpreter.gcode()
-			self._gcode.load(self._current.absolute_path, self._current.printer_profile, throttle=throttle_callback)
+		self._aborted = False
+		self._reenqueue = False
+
+	def _do_analysis(self, high_priority=False):
+		import sarge
+		import sys
+		import yaml
+
+		try:
+			throttle = settings().getFloat(["gcodeAnalysis", "throttle_highprio"]) if high_priority \
+				else settings().getFloat(["gcodeAnalysis", "throttle_normalprio"])
+			throttle_lines = settings().getInt(["gcodeAnalysis", "throttle_lines"])
+			max_extruders = settings().getInt(["gcodeAnalysis", "maxExtruders"])
+			g90_extruder = settings().getBoolean(["feature", "g90InfluencesExtruder"])
+			speedx = self._current.printer_profile["axes"]["x"]["speed"]
+			speedy = self._current.printer_profile["axes"]["y"]["speed"]
+			offsets = self._current.printer_profile["extruder"]["offsets"]
+
+			interpreter = os.path.realpath(os.path.join(os.path.dirname(__file__), "..", "util", "gcodeInterpreter.py"))
+			command = [sys.executable, interpreter, "--speed-x={}".format(speedx), "--speed-y={}".format(speedy),
+			           "--max-t={}".format(max_extruders), "--throttle={}".format(throttle),
+			           "--throttle-lines={}".format(throttle_lines)]
+			for offset in offsets[1:]:
+				command += ["--offset", str(offset[0]), str(offset[1])]
+			if g90_extruder:
+				command += ["--g90-extruder"]
+			command.append(self._current.absolute_path)
+
+			self._logger.info("Invoking analysis command: {}".format(" ".join(command)))
+
+			self._aborted = False
+			p = sarge.run(command, async=True, stdout=sarge.Capture())
+
+			while len(p.commands) == 0:
+				# somewhat ugly... we can't use wait_events because
+				# the events might not be all set if an exception
+				# by sarge is triggered within the async process
+				# thread
+				time.sleep(0.01)
+
+			# by now we should have a command, let's wait for its
+			# process to have been prepared
+			p.commands[0].process_ready.wait()
+
+			if not p.commands[0].process:
+				# the process might have been set to None in case of any exception
+				raise RuntimeError(u"Error while trying to run command {}".format(" ".join(command)))
+
+			try:
+				# let's wait for stuff to finish
+				while p.returncode is None:
+					if self._aborted:
+						# oh, we shall abort, let's do so!
+						p.commands[0].terminate()
+						raise AnalysisAborted(reenqueue=self._reenqueue)
+
+					# else continue
+					p.commands[0].poll()
+			finally:
+				p.close()
+
+			output = p.stdout.text
+			self._logger.debug("Got output: {!r}".format(output))
+
+			if not "RESULTS:" in output:
+				raise RuntimeError("No analysis result found")
+
+			_, output = output.split("RESULTS:")
+			analysis = yaml.safe_load(output)
 
 			result = dict()
-			result["printingArea"] = self._gcode.printing_area
-			result["dimensions"] = self._gcode.dimensions
-			if self._gcode.totalMoveTimeMinute:
-				result["estimatedPrintTime"] = self._gcode.totalMoveTimeMinute * 60
-			if self._gcode.extrusionAmount:
+			result["printingArea"] = analysis["printing_area"]
+			result["dimensions"] = analysis["dimensions"]
+			if analysis["total_time"]:
+				result["estimatedPrintTime"] = analysis["total_time"] * 60
+			if analysis["extrusion_length"]:
 				result["filament"] = dict()
-				for i in range(len(self._gcode.extrusionAmount)):
+				for i in range(len(analysis["extrusion_length"])):
 					result["filament"]["tool%d" % i] = {
-						"length": self._gcode.extrusionAmount[i],
-						"volume": self._gcode.extrusionVolume[i]
+						"length": analysis["extrusion_length"][i],
+						"volume": analysis["extrusion_volume"][i]
 					}
 			return result
-		except gcodeInterpreter.AnalysisAborted as ex:
-			raise AnalysisAborted(reenqueue=ex.reenqueue)
 		finally:
 			self._gcode = None
 
 	def _do_abort(self, reenqueue=True):
-		if self._gcode:
-			self._gcode.abort(reenqueue=reenqueue)
+		self._aborted = True
+		self._reenqueue = reenqueue

@@ -209,7 +209,7 @@ class Server(object):
 		try:
 			clazz = octoprint.util.get_class(userManagerName)
 			userManager = clazz()
-		except AttributeError as e:
+		except:
 			self._logger.exception("Could not instantiate user manager {}, falling back to FilebasedUserManager!".format(userManagerName))
 			userManager = octoprint.users.FilebasedUserManager()
 		finally:
@@ -344,7 +344,7 @@ class Server(object):
 		if not userManager.enabled:
 			loginManager.anonymous_user = users.DummyUser
 			principals.identity_loaders.appendleft(users.dummy_identity_loader)
-		loginManager.init_app(app)
+		loginManager.init_app(app, add_context_processor=False)
 
 		# register API blueprint
 		self._setup_blueprints()
@@ -359,7 +359,8 @@ class Server(object):
 		ioloop = IOLoop()
 		ioloop.install()
 
-		self._router = SockJSRouter(self._create_socket_connection, "/sockjs")
+		self._router = SockJSRouter(self._create_socket_connection, "/sockjs",
+		                            session_kls=util.sockjs.ThreadSafeSession)
 
 		upload_suffixes = dict(name=self._settings.get(["server", "uploads", "nameSuffix"]), path=self._settings.get(["server", "uploads", "pathSuffix"]))
 
@@ -1066,6 +1067,9 @@ class Server(object):
 			"js/lib/jquery/jquery.ui.widget.js",
 			"js/lib/jquery/jquery.ui.mouse.js",
 			"js/lib/jquery/jquery.flot.js",
+			"js/lib/jquery/jquery.flot.time.js",
+			"js/lib/jquery/jquery.flot.crosshair.js",
+			"js/lib/jquery/jquery.flot.resize.js",
 			"js/lib/jquery/jquery.iframe-transport.js",
 			"js/lib/jquery/jquery.fileupload.js",
 			"js/lib/jquery/jquery.slimscroll.min.js",

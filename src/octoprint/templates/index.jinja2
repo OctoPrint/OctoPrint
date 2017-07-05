@@ -92,7 +92,7 @@
                             {% endfor %}
                         </ul>
 
-                        <div class="tab-content">
+                        <div id="tabs_content" class="tab-content">
                             {% for key in templates.tab.order %}
                                 {% set entry, data = templates.tab.entries[key] %}
                                 {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
@@ -131,6 +131,7 @@
             {% include 'dialogs/wizard.jinja2' %}
             {% include 'dialogs/about.jinja2' %}
             {% include 'dialogs/files.jinja2' %}
+            {% include 'dialogs/temperature.jinja2' %}
             <!-- End of dialogs -->
 
             <!-- Overlays -->

@@ -168,7 +168,9 @@ def getSettings():
 		},
 		"temperature": {
 			"profiles": s.get(["temperature", "profiles"]),
-			"cutoff": s.getInt(["temperature", "cutoff"])
+			"cutoff": s.getInt(["temperature", "cutoff"]),
+			"sendAutomatically": s.getBoolean(["temperature", "sendAutomatically"]),
+			"sendAutomaticallyAfter": s.getInt(["temperature", "sendAutomaticallyAfter"], min=0, max=30),
 		},
 		"system": {
 			"actions": s.get(["system", "actions"]),
@@ -184,6 +186,8 @@ def getSettings():
 				"afterPrintDone": None,
 				"beforePrintPaused": None,
 				"afterPrintResumed": None,
+				"beforeToolChange": None,
+				"afterToolChange": None,
 				"snippets": dict()
 			}
 		},
@@ -389,6 +393,8 @@ def _saveSettings(data):
 	if "temperature" in data.keys():
 		if "profiles" in data["temperature"]: s.set(["temperature", "profiles"], data["temperature"]["profiles"])
 		if "cutoff" in data["temperature"]: s.setInt(["temperature", "cutoff"], data["temperature"]["cutoff"])
+		if "sendAutomatically" in data["temperature"]: s.setBoolean(["temperature", "sendAutomatically"], data["temperature"]["sendAutomatically"])
+		if "sendAutomaticallyAfter" in data["temperature"]: s.setInt(["temperature", "sendAutomaticallyAfter"], data["temperature"]["sendAutomaticallyAfter"], min=0, max=30)
 
 	if "terminalFilters" in data.keys():
 		s.set(["terminalFilters"], data["terminalFilters"])

@@ -7,6 +7,11 @@ $(function() {
         self.printerProfiles = parameters[2];
         self.about = parameters[3];
 
+        // use this promise to do certain things once the SettingsViewModel has processed
+        // its first request
+        var firstRequest = $.Deferred();
+        self.firstRequest = firstRequest.promise();
+
         self.allViewModels = [];
 
         self.receiving = ko.observable(false);
@@ -185,9 +190,13 @@ $(function() {
         self.scripts_gcode_beforePrintResumed = ko.observable(undefined);
         self.scripts_gcode_afterPrinterConnected = ko.observable(undefined);
         self.scripts_gcode_beforePrinterDisconnected = ko.observable(undefined);
+        self.scripts_gcode_afterToolChange = ko.observable(undefined);
+        self.scripts_gcode_beforeToolChange = ko.observable(undefined);
 
         self.temperature_profiles = ko.observableArray(undefined);
         self.temperature_cutoff = ko.observable(undefined);
+        self.temperature_sendAutomatically = ko.observable(undefined);
+        self.temperature_sendAutomaticallyAfter = ko.observable(undefined);
 
         self.system_actions = ko.observableArray([]);
 
@@ -761,6 +770,8 @@ $(function() {
             };
 
             mapToObservables(serverChangedData, specialMappings, clientChangedData);
+
+            firstRequest.resolve();
         };
 
         self.saveData = function (data, successCallback, setAsSending) {
@@ -875,12 +886,14 @@ $(function() {
         };
 
         self.onUserLoggedIn = function() {
-            // we might have other user rights now, refresh
+            // we might have other user rights now, refresh (but only if startup has fully completed)
+            if (!self._startupComplete) return;
             self.requestData();
         };
 
         self.onUserLoggedOut = function() {
-            // we might have other user rights now, refresh
+            // we might have other user rights now, refresh (but only if startup has fully completed)
+            if (!self._startupComplete) return;
             self.requestData();
         }
     }

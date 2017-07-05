@@ -8,6 +8,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import logging
 import threading
 import sockjs.tornado
+import sockjs.tornado.session
 import time
 
 import octoprint.timelapse
@@ -19,6 +20,34 @@ from octoprint.events import Events
 from octoprint.settings import settings
 
 import octoprint.printer
+
+
+class ThreadSafeSession(sockjs.tornado.session.Session):
+	def __init__(self, conn, server, session_id, expiry=None):
+		sockjs.tornado.session.Session.__init__(self, conn, server, session_id, expiry=expiry)
+
+	def set_handler(self, handler, start_heartbeat=True):
+		if getattr(handler, "__orig_send_pack", None) is None:
+			orig_send_pack = handler.send_pack
+			mutex = threading.RLock()
+
+			def send_pack(*args, **kwargs):
+				with mutex:
+					return orig_send_pack(*args, **kwargs)
+
+			handler.send_pack = send_pack
+			setattr(handler, "__orig_send_pack", orig_send_pack)
+
+		return sockjs.tornado.session.Session.set_handler(self, handler, start_heartbeat=start_heartbeat)
+
+	def remove_handler(self, handler):
+		result = sockjs.tornado.session.Session.remove_handler(self, handler)
+
+		if getattr(handler, "__orig_send_pack", None) is not None:
+			handler.send_pack = getattr(handler, "__orig_send_pack")
+			delattr(handler, "__orig_send_pack")
+
+		return result
 
 
 class PrinterStateConnection(sockjs.tornado.SockJSConnection, octoprint.printer.PrinterCallback):
@@ -46,8 +75,6 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection, octoprint.printer.
 		self._throttleFactor = 1
 		self._lastCurrent = 0
 		self._baseRateLimit = 0.5
-
-		self._emit_mutex = threading.RLock()
 
 	def _getRemoteAddress(self, info):
 		forwardedFor = info.headers.get("X-Forwarded-For")
@@ -205,11 +232,10 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection, octoprint.printer.
 		self.sendEvent(event, payload)
 
 	def _emit(self, type, payload):
-		with self._emit_mutex:
-			try:
-				self.send({type: payload})
-			except Exception as e:
-				if self._logger.isEnabledFor(logging.DEBUG):
-					self._logger.exception("Could not send message to client {}".format(self._remoteAddress))
-				else:
-					self._logger.warn("Could not send message to client {}: {}".format(self._remoteAddress, e))
+		try:
+			self.send({type: payload})
+		except Exception as e:
+			if self._logger.isEnabledFor(logging.DEBUG):
+				self._logger.exception("Could not send message to client {}".format(self._remoteAddress))
+			else:
+				self._logger.warn("Could not send message to client {}: {}".format(self._remoteAddress, e))

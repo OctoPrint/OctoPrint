@@ -199,7 +199,7 @@ class PrinterInterface(object):
 
 	def set_temperature_offset(self, offsets=None):
 		"""
-		Sets the temperature ``offsets`` to apply to target temperatures red from a GCODE file while printing.
+		Sets the temperature ``offsets`` to apply to target temperatures read from a GCODE file while printing.
 
 		Arguments:
 		    offsets (dict): A dictionary specifying the offsets to apply. Keys must match the format for the ``heater``

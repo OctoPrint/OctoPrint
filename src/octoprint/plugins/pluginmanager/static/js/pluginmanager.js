@@ -663,7 +663,7 @@ $(function() {
             return self.isCompatible(data) ? (self.installed(data) ? gettext("Reinstall") : gettext("Install")) : (data.disabled ? gettext("Disabled") : gettext("Incompatible"));
         };
 
-        self._displayNotification = function(response, titleSuccess, textSuccess, textRestart, textReload, titleError, textError) {
+        self._displayNotification = function(response, titleSuccess, textSuccess, textRestart, textReload, textReconnect, titleError, textError) {
             var notification;
 
             var beforeClose = function(notification) {
@@ -742,6 +742,15 @@ $(function() {
                             closer: true,
                             sticker: false
                         },
+                        callbacks: {
+                            before_close: beforeClose
+                        },
+                        hide: false
+                    })
+                } else if (response.needs_reconnect) {
+                    notification = new PNotify({
+                        title: titleSuccess,
+                        text: textReconnect,
                         callbacks: {
                             before_close: beforeClose
                         },
@@ -1060,7 +1069,7 @@ $(function() {
                 });
                 self._scrollWorkingOutputToEnd();
             } else if (messageType == "result") {
-                var titleSuccess, textSuccess, textRestart, textReload, titleError, textError;
+                var titleSuccess, textSuccess, textRestart, textReload, textReconnect, titleError, textError;
                 var action = data.action;
 
                 var name = "Unknown";
@@ -1080,16 +1089,19 @@ $(function() {
                         textSuccess = gettext("A plugin was installed successfully, however it was impossible to detect which one. Please Restart OctoPrint to make sure everything will be registered properly");
                         textRestart = textSuccess;
                         textReload = textSuccess;
+                        textReconnect = textSuccess;
                     } else if (data.was_reinstalled) {
                         titleSuccess = _.sprintf(gettext("Plugin \"%(name)s\" reinstalled"), {name: name});
                         textSuccess = gettext("The plugin was reinstalled successfully");
                         textRestart = gettext("The plugin was reinstalled successfully, however a restart of OctoPrint is needed for that to take effect.");
                         textReload = gettext("The plugin was reinstalled successfully, however a reload of the page is needed for that to take effect.");
+                        textReconnect = gettext("The plugin was reinstalled successfully, however a reconnect to the printer is needed for that to take effect.");
                     } else {
                         titleSuccess = _.sprintf(gettext("Plugin \"%(name)s\" installed"), {name: name});
                         textSuccess = gettext("The plugin was installed successfully");
                         textRestart = gettext("The plugin was installed successfully, however a restart of OctoPrint is needed for that to take effect.");
                         textReload = gettext("The plugin was installed successfully, however a reload of the page is needed for that to take effect.");
+                        textReconnect = gettext("The plugin was installed successfully, however a reconnect to the printer is needed for that to take effect.");
                     }
 
                     titleError = gettext("Something went wrong");
@@ -1141,6 +1153,7 @@ $(function() {
                     textSuccess = gettext("The plugin was uninstalled successfully");
                     textRestart = gettext("The plugin was uninstalled successfully, however a restart of OctoPrint is needed for that to take effect.");
                     textReload = gettext("The plugin was uninstalled successfully, however a reload of the page is needed for that to take effect.");
+                    textReconnect = gettext("The plugin was uninstalled successfully, however a reconnect to the printer is needed for that to take effect.");
 
                     titleError = gettext("Something went wrong");
                     if (data.hasOwnProperty("reason")) {
@@ -1158,6 +1171,7 @@ $(function() {
                     textSuccess = gettext("The plugin was enabled successfully.");
                     textRestart = gettext("The plugin was enabled successfully, however a restart of OctoPrint is needed for that to take effect.");
                     textReload = gettext("The plugin was enabled successfully, however a reload of the page is needed for that to take effect.");
+                    textReconnect = gettext("The plugin was enabled successfully, however a reconnect to the printer is needed for that to take effect.");
 
                     titleError = gettext("Something went wrong");
                     if (data.hasOwnProperty("reason")) {
@@ -1175,6 +1189,7 @@ $(function() {
                     textSuccess = gettext("The plugin was disabled successfully.");
                     textRestart = gettext("The plugin was disabled successfully, however a restart of OctoPrint is needed for that to take effect.");
                     textReload = gettext("The plugin was disabled successfully, however a reload of the page is needed for that to take effect.");
+                    textReconnect = gettext("The plugin was disabled successfully, however a reconnect to the printer is needed for that to take effect.");
 
                     titleError = gettext("Something went wrong");
                     if (data.hasOwnProperty("reason")) {
@@ -1187,7 +1202,7 @@ $(function() {
                     return;
                 }
 
-                self._displayNotification(data, titleSuccess, textSuccess, textRestart, textReload, titleError, textError);
+                self._displayNotification(data, titleSuccess, textSuccess, textRestart, textReload, textReconnect, titleError, textError);
                 self.requestData();
             }
         };

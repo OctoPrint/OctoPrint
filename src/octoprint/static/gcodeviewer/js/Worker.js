@@ -301,10 +301,16 @@ var doParse = function () {
     var tool = 0;
     var prev_extrude = [{a: 0, b: 0, c: 0, e: 0, abs: 0}];
     var prev_retract = [0];
-    var offset = toolOffsets[0];
+
+    // we keep track of our active toolOffset here so that our visualization lines up - if we didn't
+    // offset the coordinates from the GCODE file with the tool offset, stuff would look wonky since our
+    // visualizer doesn't actually have a physical offset ;)
+    var activeToolOffset = toolOffsets[0];
+
+    var i, j, args;
 
     model = [];
-    for (var i = 0; i < gcode.length; i++) {
+    for (i = 0; i < gcode.length; i++) {
         x = undefined;
         y = undefined;
         z = undefined;
@@ -325,24 +331,24 @@ var doParse = function () {
         var log = false;
 
         if (/^(?:G0|G1|G2|G3)\s/i.test(line)) {
-            var args = line.split(/\s/);
+            args = line.split(/\s/);
 
-            for (var j = 0; j < args.length; j++) {
+            for (j = 0; j < args.length; j++) {
                 switch (argChar = args[j].charAt(0).toLowerCase()) {
                     case 'x':
                         if (relativeMode) {
-                            x = prevX + Number(args[j].slice(1)) + offset.x;
+                            x = prevX + Number(args[j].slice(1)) + activeToolOffset.x;
                         } else {
-                            x = Number(args[j].slice(1)) + offset.x;
+                            x = Number(args[j].slice(1)) + activeToolOffset.x;
                         }
 
                         break;
 
                     case 'y':
                         if (relativeMode) {
-                            y = prevY + Number(args[j].slice(1)) + offset.y;
+                            y = prevY + Number(args[j].slice(1)) + activeToolOffset.y;
                         } else {
-                            y = Number(args[j].slice(1)) + offset.y;
+                            y = Number(args[j].slice(1)) + activeToolOffset.y;
                         }
 
                         break;
@@ -376,7 +382,7 @@ var doParse = function () {
                         if (prev_extrude[tool]["abs"] < 0) {
                             prev_retract[tool] = -1;
                             retract = -1;
-                        } else if (prev_extrude[tool]["abs"] == 0) {
+                        } else if (prev_extrude[tool]["abs"] === 0) {
                             retract = 0;
                         } else if (prev_extrude[tool]["abs"] > 0 && prev_retract[tool] < 0) {
                             prev_retract[tool] = 0;
@@ -398,9 +404,9 @@ var doParse = function () {
                         center_j = Number(args[j].slice(1));
                         break;
                     case 'g':
-                        if(args[j].charAt(1).toLowerCase()=='2')
+                        if(args[j].charAt(1).toLowerCase() === '2')
                             direction=1;
-                        if(args[j].charAt(1).toLowerCase()=='3')
+                        if(args[j].charAt(1).toLowerCase() === '3')
                             direction=-1;
                         break;
                 }
@@ -411,7 +417,7 @@ var doParse = function () {
                 prev_extrude[tool]["abs"] = Math.sqrt((prevX - x) * (prevX - x) + (prevY - y) * (prevY - y));
             }
 
-            if (typeof(x) !== 'undefined' || typeof(y) !== 'undefined' || typeof(z) !== 'undefined' || retract != 0) {
+            if (typeof(x) !== 'undefined' || typeof(y) !== 'undefined' || typeof(z) !== 'undefined' || retract !== 0) {
                 addToModel = true;
                 move = true;
             }
@@ -434,12 +440,12 @@ var doParse = function () {
         } else if (/^(?:M103)/i.test(line)) {
             dcExtrude = false;
         } else if (/^(?:G92)/i.test(line)) {
-            var args = line.split(/\s/);
+            args = line.split(/\s/);
 
-            for (var j = 0; j < args.length; j++) {
+            for (j = 0; j < args.length; j++) {
                 if (!args[j]) continue;
 
-                if (args.length == 1) {
+                if (args.length === 1) {
                     // G92 without coordinates => reset all axes to 0
                     x = 0;
                     y = 0;
@@ -451,11 +457,11 @@ var doParse = function () {
                 } else {
                     switch (argChar = args[j].charAt(0).toLowerCase()) {
                         case 'x':
-                            x = Number(args[j].slice(1)) + offset.x;
+                            x = Number(args[j].slice(1)) + activeToolOffset.x;
                             break;
 
                         case 'y':
-                            y = Number(args[j].slice(1)) + offset.y;
+                            y = Number(args[j].slice(1)) + activeToolOffset.y;
                             break;
 
                         case 'z':
@@ -484,9 +490,9 @@ var doParse = function () {
             }
 
         } else if (/^(?:G28)/i.test(line)) {
-            var args = line.split(/\s/);
+            args = line.split(/\s/);
 
-            if (args.length == 1) {
+            if (args.length === 1) {
                 // G28 with no arguments => home all axis
                 x = 0;
                 y = 0;
@@ -510,11 +516,11 @@ var doParse = function () {
             }
 
             // if it's the first layer and G28 was without z
-            if (layer == 0 && typeof(z) === 'undefined') {
+            if (layer === 0 && typeof(z) === 'undefined') {
                 z = 0;
             }
 
-            if (typeof(x) !== 'undefined' || typeof(y) !== 'undefined' || typeof(z) !== 'undefined' || retract != 0) {
+            if (typeof(x) !== 'undefined' || typeof(y) !== 'undefined' || typeof(z) !== 'undefined' || retract !== 0) {
                 addToModel = true;
                 move = true;
             }
@@ -523,13 +529,13 @@ var doParse = function () {
             if (!prev_extrude[tool]) prev_extrude[tool] = {a: 0, b: 0, c: 0, e: 0, abs: 0};
             if (!prev_retract[tool]) prev_retract[tool] = 0;
 
-            offset = toolOffsets[tool];
-            if (!offset) offset = {x: 0, y: 0};
+            activeToolOffset = toolOffsets[tool];
+            if (!activeToolOffset) activeToolOffset = {x: 0, y: 0};
         }
 
         // If move is on a new height and it's not extruding and
         // it's not currently already in a Z-lift, assume it's possibly a Z-lift
-        if (typeof(z) !== 'undefined' && z != prevZ && !extrude && !zLift) {
+        if (typeof(z) !== 'undefined' && z !== prevZ && !extrude && !zLift) {
             zLift = true;
             zLiftZ = prevZ;
         }
@@ -538,7 +544,7 @@ var doParse = function () {
             zLift = false;
         }
 
-        if (typeof(z) !== 'undefined' && z != prevZ) {
+        if (typeof(z) !== 'undefined' && z !== prevZ) {
             if (z_heights[z]) {
                 layer = z_heights[z];
             } else {
@@ -549,7 +555,7 @@ var doParse = function () {
             sendLayer = layer;
             sendLayerZ = z;
             prevZ = z;
-        } else if (typeof(z) == 'undefined' && typeof(prevZ) != 'undefined') {
+        } else if (typeof(z) === 'undefined' && typeof(prevZ) !== 'undefined') {
             if (z_heights.hasOwnProperty(prevZ)) {
                 layer = z_heights[prevZ];
             } else {
@@ -609,7 +615,7 @@ var doParse = function () {
         }
 
         if (typeof(sendLayer) !== "undefined") {
-            if (i - lastSend > gcode.length * 0.02 && sendMultiLayer.length != 0) {
+            if (i - lastSend > gcode.length * 0.02 && sendMultiLayer.length !== 0) {
                 lastSend = i;
                 sendMultiLayerToParent(sendMultiLayer, sendMultiLayerZ, i / gcode.length * 100);
                 sendMultiLayer = [];
@@ -629,7 +635,7 @@ var parseGCode = function (message) {
     gcode = message.gcode;
     firstReport = message.options.firstReport;
     toolOffsets = message.options.toolOffsets;
-    if (!toolOffsets || toolOffsets.length == 0) toolOffsets = [{x: 0, y: 0}];
+    if (!toolOffsets || toolOffsets.length === 0) toolOffsets = [{x: 0, y: 0}];
     bed = message.options.bed;
     ignoreOutsideBed = message.options.ignoreOutsideBed;
     g90InfluencesExtruder = message.options.g90InfluencesExtruder;
@@ -666,6 +672,7 @@ var runAnalyze = function (message) {
 
 var setOption = function (options) {
     for (var opt in options) {
+        if (!options.hasOwnProperty(opt)) continue;
         gCodeOptions[opt] = options[opt];
     }
 };
