@@ -8,8 +8,6 @@ import requests
 import logging
 import base64
 
-from ..exceptions import ConfigurationInvalid
-
 BRANCH_HEAD_URL = "https://api.bitbucket.org/2.0/repositories/{user}/{repo}/commit/{branch}"
 
 logger = logging.getLogger("octoprint.plugins.softwareupdate.version_checks.bitbucket_commit")
@@ -19,8 +17,8 @@ def _get_latest_commit(user, repo, branch, api_user=None, api_password=None):
 	url = BRANCH_HEAD_URL.format(user=user, repo=repo, branch=branch)
 	headers = {}
 	if api_user is not None and api_password is not None:
-		headers['authorization'] = 'Basic {}'.format(
-			base64.b64encode(b"{user}:{pw}".format(user=api_user, pw=api_password)))
+		auth_value = base64.b64encode(b"{user}:{pw}".format(user=api_user, pw=api_password))
+		headers["authorization"] = "Basic {}".format(auth_value)
 	r = requests.get(url, headers=headers)
 
 	if not r.status_code == requests.codes.ok:
@@ -34,19 +32,19 @@ def _get_latest_commit(user, repo, branch, api_user=None, api_password=None):
 
 
 def get_latest(target, check):
+	from ..exceptions import ConfigurationInvalid
+
 	if "user" not in check or "repo" not in check:
 		raise ConfigurationInvalid("Update configuration for %s of type bitbucket_commit needs all of user and repo" % target)
 
 	branch = "master"
-	if "branch" in check:
+	if "branch" in check and check["branch"] is not None:
 		branch = check["branch"]
 
-	api_user = check["api_user"] if 'api_user' in check else None
-	api_password = check["api_password"] if 'api_password' in check else None
+	api_user = check.get("api_user")
+	api_password = check.get("api_password")
 
-	current = None
-	if "current" in check:
-		current = check["current"]
+	current = check.get("current")
 
 	remote_commit = _get_latest_commit(check["user"], check["repo"], branch, api_user, api_password)
 
