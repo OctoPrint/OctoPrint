@@ -2240,16 +2240,17 @@ class MachineCom(object):
 								continue
 
 							if len(results) > 1:
-								# last command gets on_sent attached
-								last = results[-1]
-								self._send_queue.prepend((last[0], None, None, on_sent, True))
-								on_sent = None
+								with self._sendingLock:
+									# last command gets on_sent attached
+									last = results[-1]
+									self._send_queue.prepend((last[0], None, None, on_sent, True))
+									on_sent = None
 
-								# middle gets prepended reversed (so order gets restored)
-								if len(results) > 2:
-									to_prepend = reversed(results[1:-1])
-									for m in to_prepend:
-										self._send_queue.prepend((m[0], None, None, None, True))
+									# middle gets prepended reversed (so order gets restored)
+									if len(results) > 2:
+										to_prepend = reversed(results[1:-1])
+										for m in to_prepend:
+											self._send_queue.prepend((m[0], None, None, None, True))
 
 							# we only actually send the first entry here
 							command, _, gcode, subcode = results[0]
