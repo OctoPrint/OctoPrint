@@ -503,19 +503,10 @@ $(function() {
         };
 
         self.update = function(force) {
-<<<<<<< HEAD
-            if (self.updateInProgress) return;
-            if (!self.loginState.hasPermission(self.access.permissions.SETTINGS)) return;
-=======
-            if (self.updateInProgress) {
+            if (self.updateInProgress || !self.loginState.hasPermission(self.access.permissions.SETTINGS)) {
                 self._updateClicked = false;
                 return;
             }
-            if (!self.loginState.isAdmin()) {
-                self._updateClicked = false;
-                return;
-            }
->>>>>>> 2e6d65378f21ffa3f2ea00880188f632bac5e102
 
             if (self.printerState.isPrinting()) {
                 self._showPopup({

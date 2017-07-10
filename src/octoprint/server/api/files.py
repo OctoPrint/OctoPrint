@@ -490,7 +490,7 @@ def gcodeFileCommand(filename, target):
 
 			printAfterLoading = False
 			if "print" in data.keys() and data["print"] in valid_boolean_trues:
-				with Permissions.PRINTING.require(403):
+				with Permissions.PRINT.require(403):
 					if not printer.is_operational():
 						return make_response("Printer is not operational, cannot directly start printing", 409)
 					printAfterLoading = True

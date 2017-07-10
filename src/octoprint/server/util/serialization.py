@@ -13,13 +13,14 @@ class OctoPrintJsonEncoder:
 
 	class Encoder(JSONEncoder):
 		def default(self, obj):
-			data_types = type(obj).__mro__
-			if data_types[0] in OctoPrintJsonEncoder.json_encoder:
-				node = OctoPrintJsonEncoder.json_encoder[data_types[0]](obj)
+			for data_type, func in OctoPrintJsonEncoder.json_encoder.items():
+				if isinstance(obj, data_type):
+					node = func(obj)
+					break
 			else:
-				for data_type in data_types:
-					if data_type in OctoPrintJsonEncoder.json_multi_encoder:
-						node = OctoPrintJsonEncoder.json_multi_encoder[data_type](obj)
+				for data_type, func in OctoPrintJsonEncoder.json_multi_encoder.items():
+					if isinstance(obj, data_type):
+						node = func(obj)
 						break
 				else:
 					node = JSONEncoder.default(self, obj)
