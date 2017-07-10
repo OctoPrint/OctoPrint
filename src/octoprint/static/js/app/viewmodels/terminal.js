@@ -272,6 +272,16 @@ $(function() {
             }
         };
 
+        self.gotoTerminalCommand = function() {
+            // skip if user highlights text.
+            var sel = getSelection().toString();
+            if (sel) {
+                return;
+            }
+
+            $("#terminal-command").focus();
+        };
+
         self.toggleAutoscroll = function() {
             self.autoscrollEnabled(!self.autoscrollEnabled());
         };
