@@ -1046,7 +1046,7 @@ class InvariantContainer(object):
 		return self._data.__iter__()
 
 
-class PrependQueue(queue.Queue):
+class PrependableQueue(queue.Queue):
 
 	def __init__(self, maxsize=0):
 		queue.Queue.__init__(self, maxsize=maxsize)
@@ -1082,21 +1082,21 @@ class PrependQueue(queue.Queue):
 		self.queue.appendleft(item)
 
 
-class TypedQueue(PrependQueue):
+class TypedQueue(PrependableQueue):
 
 	def __init__(self, maxsize=0):
-		PrependQueue.__init__(self, maxsize=maxsize)
+		PrependableQueue.__init__(self, maxsize=maxsize)
 		self._lookup = set()
 
 	def put(self, item, item_type=None, *args, **kwargs):
-		PrependQueue.put(self, (item, item_type), *args, **kwargs)
+		PrependableQueue.put(self, (item, item_type), *args, **kwargs)
 
 	def get(self, *args, **kwargs):
-		item, _ = PrependQueue.get(self, *args, **kwargs)
+		item, _ = PrependableQueue.get(self, *args, **kwargs)
 		return item
 
 	def prepend(self, item, item_type=None, *args, **kwargs):
-		PrependQueue.prepend(self, (item, item_type), *args, **kwargs)
+		PrependableQueue.prepend(self, (item, item_type), *args, **kwargs)
 
 	def _put(self, item):
 		_, item_type = item
@@ -1106,10 +1106,10 @@ class TypedQueue(PrependQueue):
 			else:
 				self._lookup.add(item_type)
 
-		queue.Queue._put(self, item)
+		PrependableQueue._put(self, item)
 
 	def _get(self):
-		item = PrependQueue._get(self)
+		item = PrependableQueue._get(self)
 		_, item_type = item
 
 		if item_type is not None:
@@ -1125,7 +1125,7 @@ class TypedQueue(PrependQueue):
 			else:
 				self._lookup.add(item_type)
 
-		PrependQueue._prepend(self, item)
+		PrependableQueue._prepend(self, item)
 
 class TypeAlreadyInQueue(Exception):
 	def __init__(self, t, *args, **kwargs):
