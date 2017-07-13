@@ -763,7 +763,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		    (2-tuple) estimated print time left or None if not proper estimate could be made at all, origin of estimation
 		"""
 
-		if progress is None or printTime is None or cleanedPrintTime is None:
+		if progress is None or progress == 0 or printTime is None or cleanedPrintTime is None:
 			return None, None
 
 		dumbTotalPrintTime = printTime / progress
