@@ -8,8 +8,6 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import requests
 import logging
 
-from ..exceptions import ConfigurationInvalid
-
 BRANCH_HEAD_URL = "https://api.github.com/repos/{user}/{repo}/git/refs/heads/{branch}"
 
 logger = logging.getLogger("octoprint.plugins.softwareupdate.version_checks.github_commit")
@@ -31,6 +29,8 @@ def _get_latest_commit(user, repo, branch):
 
 
 def get_latest(target, check):
+	from ..exceptions import ConfigurationInvalid
+
 	user = check.get("user")
 	repo = check.get("repo")
 
@@ -41,9 +41,7 @@ def get_latest(target, check):
 	if "branch" in check and check["branch"] is not None:
 		branch = check["branch"]
 
-	current = None
-	if "current" in check:
-		current = check["current"]
+	current = check.get("current")
 
 	remote_commit = _get_latest_commit(check["user"], check["repo"], branch)
 

@@ -6,15 +6,20 @@ __copyright__ = "Copyright (C) 2017 The OctoPrint Project - Released under terms
 
 import requests
 import logging
-
-from ..exceptions import ConfigurationInvalid
+import base64
 
 BRANCH_HEAD_URL = "https://api.bitbucket.org/2.0/repositories/{user}/{repo}/commit/{branch}"
 
 logger = logging.getLogger("octoprint.plugins.softwareupdate.version_checks.bitbucket_commit")
 
-def _get_latest_commit(user, repo, branch):
-	r = requests.get(BRANCH_HEAD_URL.format(user=user, repo=repo, branch=branch))
+
+def _get_latest_commit(user, repo, branch, api_user=None, api_password=None):
+	url = BRANCH_HEAD_URL.format(user=user, repo=repo, branch=branch)
+	headers = {}
+	if api_user is not None and api_password is not None:
+		auth_value = base64.b64encode(b"{user}:{pw}".format(user=api_user, pw=api_password))
+		headers["authorization"] = "Basic {}".format(auth_value)
+	r = requests.get(url, headers=headers)
 
 	if not r.status_code == requests.codes.ok:
 		return None
@@ -27,18 +32,21 @@ def _get_latest_commit(user, repo, branch):
 
 
 def get_latest(target, check):
+	from ..exceptions import ConfigurationInvalid
+
 	if "user" not in check or "repo" not in check:
 		raise ConfigurationInvalid("Update configuration for %s of type bitbucket_commit needs all of user and repo" % target)
 
 	branch = "master"
-	if "branch" in check:
+	if "branch" in check and check["branch"] is not None:
 		branch = check["branch"]
 
-	current = None
-	if "current" in check:
-		current = check["current"]
+	api_user = check.get("api_user")
+	api_password = check.get("api_password")
 
-	remote_commit = _get_latest_commit(check["user"], check["repo"], branch)
+	current = check.get("current")
+
+	remote_commit = _get_latest_commit(check["user"], check["repo"], branch, api_user, api_password)
 
 	information = dict(
 		local=dict(name="Commit {commit}".format(commit=current if current is not None else "unknown"), value=current),

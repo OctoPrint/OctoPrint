@@ -581,7 +581,7 @@ $(function() {
 
             var additionalInfo = $(".additionalInfo", entryElement);
             additionalInfo.slideToggle("fast", function() {
-                $(".toggleAdditionalData i", entryElement).toggleClass("icon-chevron-down icon-chevron-up");
+                $(".toggleAdditionalData i", entryElement).toggleClass("fa-chevron-down fa-chevron-up");
             });
         };
 

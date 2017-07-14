@@ -464,6 +464,7 @@ def gcodeFileCommand(filename, target):
 	valid_commands = {
 		"select": [],
 		"slice": [],
+		"analyse": [],
 		"copy": ["destination"],
 		"move": ["destination"]
 	}
@@ -615,6 +616,17 @@ def gcodeFileCommand(filename, target):
 		r = make_response(jsonify(result), 202)
 		r.headers["Location"] = location
 		return r
+
+	elif command == "analyse":
+		if not _verifyFileExists(target, filename):
+			return make_response("File not found on '%s': %s" % (target, filename), 404)
+
+		printer_profile = None
+		if "printerProfile" in data and data["printerProfile"]:
+			printer_profile = data["printerProfile"]
+
+		if not fileManager.analyse(target, filename, printer_profile_id=printer_profile):
+			return make_response("No analysis possible for {} on {}".format(filename, target), 400)
 
 	elif command == "copy" or command == "move":
 		# Copy and move are only possible on local storage

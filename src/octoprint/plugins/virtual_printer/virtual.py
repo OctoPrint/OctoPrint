@@ -65,6 +65,9 @@ class VirtualPrinter(object):
 
 		self.currentExtruder = 0
 		self.extruderCount = settings().getInt(["devel", "virtualPrinter", "numExtruders"])
+		self.pinnedExtruders = settings().get(["devel", "virtualPrinter", "pinnedExtruders"])
+		if self.pinnedExtruders is None:
+			self.pinnedExtruders = dict()
 		self.sharedNozzle = settings().getBoolean(["devel", "virtualPrinter", "sharedNozzle"])
 		self.temperatureCount = (1 if self.sharedNozzle else self.extruderCount)
 
@@ -1001,6 +1004,10 @@ class VirtualPrinter(object):
 		timeDiff = self.lastTempAt - time.time()
 		self.lastTempAt = time.time()
 		for i in range(len(self.temp)):
+			if i in self.pinnedExtruders:
+				self.temp[i] = self.pinnedExtruders[i]
+				continue
+
 			if abs(self.temp[i] - self.targetTemp[i]) > delta:
 				oldVal = self.temp[i]
 				self.temp[i] += math.copysign(timeDiff * 10, self.targetTemp[i] - self.temp[i])

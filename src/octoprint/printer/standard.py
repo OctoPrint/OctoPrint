@@ -763,7 +763,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		    (2-tuple) estimated print time left or None if not proper estimate could be made at all, origin of estimation
 		"""
 
-		if progress is None or printTime is None or cleanedPrintTime is None:
+		if progress is None or progress == 0 or printTime is None or cleanedPrintTime is None:
 			return None, None
 
 		dumbTotalPrintTime = printTime / progress
@@ -1000,7 +1000,17 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			with self._selectedFileMutex:
 				if self._selectedFile is not None:
 					if state == comm.MachineCom.STATE_CLOSED or state == comm.MachineCom.STATE_ERROR or state == comm.MachineCom.STATE_CLOSED_WITH_ERROR:
-						self._fileManager.log_print(FileDestinations.SDCARD if self._selectedFile["sd"] else FileDestinations.LOCAL, self._selectedFile["filename"], time.time(), self._comm.getPrintTime(), False, self._printerProfileManager.get_current_or_default()["id"])
+						def log_print():
+							self._fileManager.log_print(FileDestinations.SDCARD if self._selectedFile["sd"] else FileDestinations.LOCAL,
+							                            self._selectedFile["filename"],
+							                            time.time(),
+							                            self._comm.getPrintTime(),
+							                            False,
+							                            self._printerProfileManager.get_current_or_default()["id"])
+
+						thread = threading.Thread(target=log_print)
+						thread.daemon = True
+						thread.start()
 			self._analysisQueue.resume() # printing done, put those cpu cycles to good use
 		elif state == comm.MachineCom.STATE_PRINTING:
 			self._analysisQueue.pause() # do not analyse files while printing
@@ -1091,12 +1101,18 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			            context=dict(event=payload),
 			            must_be_set=False)
 
-			self._fileManager.log_print(payload["origin"],
-			                            payload["path"],
-			                            time.time(),
-			                            payload["time"],
-			                            True,
-			                            self._printerProfileManager.get_current_or_default()["id"])
+			def log_print():
+				self._fileManager.log_print(payload["origin"],
+				                            payload["path"],
+				                            time.time(),
+				                            payload["time"],
+				                            True,
+				                            self._printerProfileManager.get_current_or_default()["id"])
+
+			thread = threading.Thread(target=log_print)
+			thread.daemon = True
+			thread.start()
+
 		else:
 			self._updateProgressData()
 			self._stateMonitor.set_state({"text": self.get_state_string(), "flags": self._getStateFlags()})
@@ -1119,13 +1135,18 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			            context=dict(event=payload),
 			            must_be_set=False)
 
-			self._fileManager.log_print(payload["origin"],
-			                            payload["path"],
-			                            time.time(),
-			                            payload["time"],
-			                            False,
-			                            self._printerProfileManager.get_current_or_default()["id"])
-			eventManager().fire(Events.PRINT_FAILED, payload)
+			def finalize():
+				self._fileManager.log_print(payload["origin"],
+				                            payload["path"],
+				                            time.time(),
+				                            payload["time"],
+				                            False,
+				                            self._printerProfileManager.get_current_or_default()["id"])
+				eventManager().fire(Events.PRINT_FAILED, payload)
+
+			thread = threading.Thread(target=finalize)
+			thread.daemon = True
+			thread.start()
 
 	def on_comm_print_job_paused(self):
 		payload = self._payload_for_print_job_event(position=self._comm.pause_position.as_dict() if self._comm and self._comm.pause_position else None)
