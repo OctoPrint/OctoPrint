@@ -89,7 +89,7 @@ Groups will be as follows:
   * ``size``: size of the file in bytes (int)
 """
 
-regex_temp = re.compile("(?P<tool>B|T(?P<toolnum>\d*)):\s*(?P<actual>%s)(\s*\/?\s*(?P<target>%s))?" % (regex_positive_float_pattern, regex_positive_float_pattern))
+regex_temp = re.compile("(?P<tool>B|T(?P<toolnum>\d*)):\s*(?P<actual>%s)(\s*\/?\s*(?P<target>%s))?" % (regex_float_pattern, regex_float_pattern))
 """Regex matching temperature entries in line.
 
 Groups will be as follows:
@@ -100,7 +100,7 @@ Groups will be as follows:
   * ``target``: target temperature, if provided (float)
 """
 
-regex_repetierTempExtr = re.compile("TargetExtr(?P<toolnum>\d+):(?P<target>%s)" % regex_positive_float_pattern)
+regex_repetierTempExtr = re.compile("TargetExtr(?P<toolnum>\d+):(?P<target>%s)" % regex_float_pattern)
 """Regex for matching target temp reporting from Repetier.
 
 Groups will be as follows:
@@ -110,7 +110,7 @@ Groups will be as follows:
   * ``target``: new target temperature (float)
 """
 
-regex_repetierTempBed = re.compile("TargetBed:(?P<target>%s)" % regex_positive_float_pattern)
+regex_repetierTempBed = re.compile("TargetBed:(?P<target>%s)" % regex_float_pattern)
 """Regex for matching target temp reporting from Repetier for beds.
 
 Groups will be as follows:
