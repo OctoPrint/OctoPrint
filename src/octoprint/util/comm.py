@@ -2255,18 +2255,13 @@ class MachineCom(object):
 								# and now let's fetch the next item from the queue
 								continue
 
-							if len(results) > 1:
-								with self._sendingLock:
-									# prepend reversed (so order gets restored)
-									to_prepend = reversed(results[1:-1])
-									for m in to_prepend:
-										try:
-											self._send_queue.prepend((m[0], None, m[1], on_sent, True), item_type=m[1])
-											on_sent = None
-										except TypeAlreadyInQueue:
-											pass
+							# we explicitly throw away plugin hook results that try
+							# to perform command expansion in the sending/sent phase,
+							# so "results" really should only have more than one entry
+							# at this point if our core code contains a bug
+							assert len(results) == 1
 
-							# we only actually send the first entry here
+							# we only use the first (and only!) entry here
 							command, _, gcode, subcode = results[0]
 
 						if command.strip() == "":
@@ -2341,7 +2336,13 @@ class MachineCom(object):
 					self._logger.exception("Error while processing hook {name} for phase {phase} and command {command}:".format(**locals()))
 				else:
 					normalized = _normalize_command_handler_result(command, command_type, gcode, subcode, hook_results)
-					new_results += normalized
+
+					# make sure we don't allow multi entry results in anything but the queuing phase
+					if not phase in ("queuing",) and len(normalized) > 1:
+						self._logger.error("Error while processing hook {name} for phase {phase} and command {command}: Hook returned multi-entry result for phase {phase} and command {command}. That's not supported, if you need to do multi expansion of commands you need to do this in the queuing phase. Ignoring hook result and sending command as-is.".format(**locals()))
+						new_results.append((command, command_type, gcode, subcode))
+					else:
+						new_results += normalized
 			if not new_results:
 				# hook handler returned None or empty list for all commands, so we'll stop here and return a full out empty result
 				return []

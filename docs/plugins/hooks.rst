@@ -426,7 +426,7 @@ This describes actually four hooks:
 
      * ``None``: Don't change anything. Note that Python functions will also automatically return ``None`` if
        an empty ``return`` statement is used or just nothing is returned explicitly from the handler. Hence, the following
-       examples are all falling into this category:
+       examples are all falling into this category and equivalent:
 
        .. code-block:: python
 
@@ -451,21 +451,24 @@ This describes actually four hooks:
        should use this option.
      * A 2-tuple consisting of a rewritten version of the ``cmd`` and the ``cmd_type``, e.g. ``return "M105", "temperature_poll"``.
        Handlers which wish to rewrite both the command and the command type should use this option.
-     * A list of any of the above to allow for expanding one command into
+     * **"queuing" phase only**: A list of any of the above to allow for expanding one command into
        many. The following example shows how any queued command could be turned into a sequence of a temperature query,
        line number reset, display of the ``gcode`` on the printer's display and finally the actual command (this example
        does not make a lot of sense to be quite honest):
 
        .. code-block:: python
 
-       def rewrite_foo(self, comm_instance, phase, cmd, cmd_type, gcode, *args, **kwargs):
-           if gcode or not cmd.startswith("@foo"):
-               return
+          def rewrite_foo(self, comm_instance, phase, cmd, cmd_type, gcode, *args, **kwargs):
+              if gcode or not cmd.startswith("@foo"):
+                  return
 
-           return [("M105", "temperature_poll"),
-                   ("M110",),
-                   "M117 echo foo: {}".format(cmd)]
+              return [("M105", "temperature_poll"),    # 2-tuple, command & command type
+                      ("M110",),                       # 1-tuple, just the command
+                      "M117 echo foo: {}".format(cmd)] # string, just the command
 
+          __plugin_hooks__ = {
+              "octoprint.comm.protocol.gcode.queuing": rewrite_foo
+          }
 
      Note: Only one command of a given ``cmd_type`` (other than None) may be queued at a time. Trying to rewrite the ``cmd_type``
      to one already in the queue will give an error.
