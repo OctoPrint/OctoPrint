@@ -199,11 +199,31 @@ class TestCommHelpers(unittest.TestCase):
 		self.assertEqual(expected, result)
 
 	@data(
+		("G0 X0", "G0", None),
+		("M105", "M105", None),
+		("T2", "T", None),
+		("M80.1", "M80", "1"),
+		("G28.2", "G28", "2"),
+		("T0.3", "T", None),
+		("M80.nosubcode", "M80", None),
+		(None, None, None),
+		("No match", None, None)
+	)
+	@unpack
+	def test_gcode_and_subcode_for_cmd(self, cmd, expected_gcode, expected_subcode):
+		from octoprint.util.comm import gcode_and_subcode_for_cmd
+		actual_gcode, actual_subcode = gcode_and_subcode_for_cmd(cmd)
+		self.assertEqual(expected_gcode, actual_gcode)
+		self.assertEqual(expected_subcode, actual_subcode)
+
+	@data(
 		("T:23.0 B:60.0", 0, dict(T0=(23.0, None), B=(60.0, None)), 0),
 		("T:23.0 B:60.0", 1, dict(T1=(23.0, None), B=(60.0, None)), 1),
 		("T:23.0/220.0 B:60.0/70.0", 0, dict(T0=(23.0, 220.0), B=(60.0, 70.0)), 0),
 		("ok T:23.0/220.0 T0:23.0/220.0 T1:50.2/210.0 T2:39.4/220.0 B:60.0", 0, dict(T0=(23.0, 220.0), T1=(50.2, 210.0), T2=(39.4, 220.0), B=(60.0, None)), 2),
-		("ok T:50.2/210.0 T0:23.0/220.0 T1:50.2/210.0 T2:39.4/220.0 B:60.0", 1, dict(T0=(23.0, 220.0), T1=(50.2, 210.0), T2=(39.4, 220.0), B=(60.0, None)), 2)
+		("ok T:50.2/210.0 T0:23.0/220.0 T1:50.2/210.0 T2:39.4/220.0 B:60.0", 1, dict(T0=(23.0, 220.0), T1=(50.2, 210.0), T2=(39.4, 220.0), B=(60.0, None)), 2),
+		("ok T:-55.7/0 T0:-55.7/0 T1:150.0/210.0", 0, dict(T0=(-55.7, 0), T1=(150.0, 210.0)), 1),
+		("ok T:150.0/210.0 T0:-55.7/0 T1:150.0/210.0", 1, dict(T0=(-55.7, 0), T1=(150.0, 210.0)), 1)
 	)
 	@unpack
 	def test_process_temperature_line(self, line, current, expected_result, expected_max):

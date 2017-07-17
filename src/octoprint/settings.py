@@ -345,6 +345,7 @@ default_settings = {
 			"okAfterResend": False,
 			"forceChecksum": False,
 			"numExtruders": 1,
+			"pinnedExtruders": None,
 			"includeCurrentToolInTemps": True,
 			"includeFilenameInOpened": True,
 			"hasBed": True,
