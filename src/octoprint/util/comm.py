@@ -461,6 +461,9 @@ class MachineCom(object):
 		self._record_pause_data = False
 		self._record_cancel_data = False
 
+		self._log_position_on_pause = settings().getBoolean(["serial", "logPositionOnPause"])
+		self._log_position_on_cancel = settings().getBoolean(["serial", "logPositionOnCancel"])
+
 		# print job
 		self._currentFile = None
 
@@ -944,7 +947,10 @@ class MachineCom(object):
 					except:
 						pass
 
-			self.sendCommand("M400", on_sent=_on_M400_sent)
+			if self._log_position_on_cancel:
+				self.sendCommand("M400", on_sent=_on_M400_sent)
+			else:
+				self._cancel_preparation_done()
 
 	def _pause_preparation_done(self):
 		self._callback.on_comm_print_job_paused()
@@ -991,7 +997,10 @@ class MachineCom(object):
 					self._record_pause_data = True
 					self.sendCommand("M114")
 
-				self.sendCommand("M400", on_sent=_on_M400_sent)
+				if self._log_position_on_pause:
+					self.sendCommand("M400", on_sent=_on_M400_sent)
+				else:
+					self._pause_preparation_done()
 
 	def getSdFiles(self):
 		return self._sdFiles

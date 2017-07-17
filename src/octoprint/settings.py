@@ -112,6 +112,8 @@ default_settings = {
 		"ignoreErrorsFromFirmware": False,
 		"logResends": True,
 		"supportResendsWithoutOk": False,
+		"logPositionOnPause": True,
+		"logPositionOnCancel": True,
 
 		# command specific flags
 		"triggerOkForM29": True

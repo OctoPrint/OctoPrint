@@ -173,6 +173,8 @@ $(function() {
         self.serial_disconnectOnErrors = ko.observable(undefined);
         self.serial_triggerOkForM29 = ko.observable(undefined);
         self.serial_supportResendsWithoutOk = ko.observable(undefined);
+        self.serial_logPositionOnPause = ko.observable(undefined);
+        self.serial_logPositionOnCancel = ko.observable(undefined);
         self.serial_maxTimeoutsIdle = ko.observable(undefined);
         self.serial_maxTimeoutsPrinting = ko.observable(undefined);
         self.serial_maxTimeoutsLong = ko.observable(undefined);
