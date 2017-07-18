@@ -1,10 +1,10 @@
 <div class="terminal">
     <pre id="terminal-output" class="pre-scrollable pre-output" data-bind="foreach: displayedLines, visible: fancyFunctionality(), click: function(){ gotoTerminalCommand(); }"><span data-bind="text: line, css: {muted: type == 'filtered' || type == 'cut'}"></span></pre>
     <pre id="terminal-output-lowfi" style="display: none" class="pre-scrollable" data-bind="text: plainLogOutput, visible: !fancyFunctionality()"></pre>
-    <div class="row" id="terminal-sendpanel" style="display: none;" data-bind="visible: loginState.isUser">
-        <div class="input-append">
-            <input type="text" id="terminal-command" style="width:516px" data-bind="value: command, event: { keyup: function(d,e) { return handleKeyUp(e); }, keydown: function(d,e) { return handleKeyDown(e); } }, enable: isOperational() && loginState.isUser()" autocomplete="off">
-            <button class="btn" type="button" id="terminal-send" data-bind="click: sendCommand, enable: isOperational() && loginState.isUser()">{{ _('Send') }}</button>
+    <div id="terminal-sendpanel" style="display: none;" data-bind="visible: loginState.isUser">
+        <div class="input-block-level input-append">
+            <input type="text" id="terminal-command" data-bind="value: command, event: { keyup: function(d,e) { return handleKeyUp(e); }, keydown: function(d,e) { return handleKeyDown(e); } }, enable: isOperational() && loginState.isUser()" autocomplete="off">
+            <a class="btn add-on" id="terminal-send" data-bind="click: sendCommand, enable: isOperational() && loginState.isUser()">{{ _('Send') }}</a>
         </div>
     </div>
     <small class="pull-left" data-bind="visible: fancyFunctionality()"><button class="btn btn-mini" data-bind="click: toggleAutoscroll, css: {active: autoscrollEnabled}">{{ _('Autoscroll') }}</button> <span data-bind="text: lineCount, visible: enableFancyFunctionality"></span></small>

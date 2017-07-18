@@ -875,10 +875,6 @@ ul.dropdown-menu li a {
 
     margin-bottom: 30px;
   }
-
-  #terminal-sendpanel {
-    text-align: right;
-  }
 }
 
 #settings_dialog {
@@ -1293,6 +1289,40 @@ _::-webkit-full-page-media, _:future, :root .full-sized-box {
       border-radius: 0;
     }
   }
+}
+
+// block level inputs with add-ons
+//
+// LESS based on CSS from https://stackoverflow.com/a/17466199/2028598
+//
+// Note: do not use <button> for attached buttons, use <a class="btn add-on">...</a>
+// instead
+
+.input-append,
+.input-prepend {
+  &.input-block-level {
+    display: table;
+
+    .add-on {
+      display: table-cell;
+      width: 1%; /* remove this if you want default bootstrap button width */
+    }
+
+    > input {
+      box-sizing: border-box; /* use bootstrap mixin or include vendor variants */
+      display: table; /* table-cell is not working well in Chrome for small widths */
+      min-height: inherit;
+      width: 100%;
+    }
+  }
+}
+
+.input-append.input-block-level > input {
+  border-right: 0;
+}
+
+.input-prepend.input-block-level > input {
+  border-left: 0;
 }
 
 .btn-input-dec,
