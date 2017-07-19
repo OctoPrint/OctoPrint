@@ -1023,7 +1023,6 @@ $(function() {
         };
 
         self.onEventConnectivityChanged = function(payload) {
-            if (!payload || !payload.new) return;
             self.requestData({eval_notices: true});
         };
 
