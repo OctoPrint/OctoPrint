@@ -735,22 +735,47 @@ def interface_addresses(family=None):
 				if not ifaddress["addr"].startswith("169.254."):
 					yield ifaddress["addr"]
 
-def address_for_client(host, port):
+def address_for_client(host, port, timeout=3.05):
 	"""
 	Determines the address of the network interface on this host needed to connect to the indicated client host and port.
 	"""
 
-	import socket
-
 	for address in interface_addresses():
 		try:
-			sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-			sock.bind((address, 0))
-			sock.connect((host, port))
-			return address
+			if server_reachable(host, port, timeout=timeout, proto="udp", source=address):
+				return address
 		except:
 			continue
 
+def server_reachable(host, port, timeout=3.05, proto="tcp", source=None):
+	"""
+	Checks if a server is reachable
+
+	Args:
+		host (str): host to check against
+		port (int): port to check against
+		timeout (float): timeout for check
+		proto (str): ``tcp`` or ``udp``
+		source (str): optional, socket used for check will be bound against this address if provided
+
+	Returns:
+		boolean: True if a connection to the server could be opened, False otherwise
+	"""
+
+	import socket
+
+	if proto not in ("tcp", "udp"):
+		raise ValueError("proto must be either 'tcp' or 'udp'")
+
+	try:
+		sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM if proto == "udp" else socket.SOCK_STREAM)
+		sock.settimeout(timeout)
+		if source is not None:
+			sock.bind((source, 0))
+		sock.connect((host, port))
+		return True
+	except:
+		return False
 
 @contextlib.contextmanager
 def atomic_write(filename, mode="w+b", prefix="tmp", suffix="", permissions=0o644, max_permissions=0o777):
@@ -1131,4 +1156,103 @@ class TypeAlreadyInQueue(Exception):
 	def __init__(self, t, *args, **kwargs):
 		Exception.__init__(self, *args, **kwargs)
 		self.type = t
+
+
+class ConnectivityChecker(object):
+	"""
+	Regularly checks for online connectivity.
+
+	Tries to open a connection to the provided ``host`` and ``port`` every ``interval``
+	seconds and sets the ``online`` status accordingly.
+	"""
+
+	def __init__(self, interval, host, port, on_change=None):
+		self._interval = interval
+		self._host = host
+		self._port = port
+		self._on_change = on_change
+
+		self._logger = logging.getLogger(__name__ + ".connectivity_checker")
+
+		self._last_check = None
+		self._online = False
+
+		self._check_worker = None
+		self._check_mutex = threading.RLock()
+
+		self._run()
+
+	@property
+	def online(self):
+		"""Current online status, True if online, False if offline."""
+		with self._check_mutex:
+			return self._online
+
+	@property
+	def last_check(self):
+		"""Timestamp of last check."""
+		with self._check_mutex:
+			return self._last_check
+
+	@property
+	def host(self):
+		"""DNS host to query."""
+		with self._check_mutex:
+			return self._host
+
+	@host.setter
+	def host(self, value):
+		with self._check_mutex:
+			self._host = value
+
+	@property
+	def port(self):
+		"""DNS port to query."""
+		with self._check_mutex:
+			return self._port
+
+	@port.setter
+	def port(self, value):
+		with self._check_mutex:
+			self._port = value
+
+	@property
+	def interval(self):
+		"""Interval between consecutive automatic checks."""
+		return self._interval
+
+	@interval.setter
+	def interval(self, value):
+		self._interval = value
+
+	def check_immediately(self):
+		"""Check immediately and return result."""
+		with self._check_mutex:
+			self._perform_check()
+			return self.online
+
+	def _run(self):
+		from octoprint.util import RepeatedTimer
+
+		if self._check_worker is not None:
+			raise RuntimeError("Connectivity manager check thread already active")
+
+		self._check_worker = RepeatedTimer(self._interval, self._perform_check, run_first=True)
+		self._check_worker.start()
+
+	def _perform_check(self):
+		import time
+
+		with self._check_mutex:
+			self._logger.debug("Checking against {}:{} if we are online...".format(self._host, self._port))
+
+			old_value = self._online
+			self._online = server_reachable(self._host, port=self._port)
+			self._last_check = time.time()
+
+			if old_value != self._online:
+				self._logger.info("Connectivity changed from {} to {}".format("online" if old_value else "offline",
+				                                                              "online" if self._online else "offline"))
+				if callable(self._on_change):
+					self._on_change(old_value, self._online)
 

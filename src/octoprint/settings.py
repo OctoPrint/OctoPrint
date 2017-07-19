@@ -148,6 +148,11 @@ default_settings = {
 			"systemRestartCommand": None,
 			"serverRestartCommand": None
 		},
+		"onlineCheck": {
+			"interval": 15 * 60, # 15 min
+			"host": "8.8.8.8",
+			"port": 53
+		},
 		"diskspace": {
 			"warning": 500 * 1024 * 1024, # 500 MB
 			"critical": 200 * 1024 * 1024, # 200 MB

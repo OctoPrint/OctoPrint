@@ -202,6 +202,11 @@ def getSettings():
 			"diskspace": {
 				"warning": s.getInt(["server", "diskspace", "warning"]),
 				"critical": s.getInt(["server", "diskspace", "critical"])
+			},
+			"onlineCheck": {
+				"interval": int(s.getInt(["server", "onlineCheck", "interval"]) / 60),
+				"host": s.get(["server", "onlineCheck", "host"]),
+				"port": s.getInt(["server", "onlineCheck", "port"])
 			}
 		}
 	}
@@ -419,6 +424,15 @@ def _saveSettings(data):
 		if "diskspace" in data["server"]:
 			if "warning" in data["server"]["diskspace"]: s.setInt(["server", "diskspace", "warning"], data["server"]["diskspace"]["warning"])
 			if "critical" in data["server"]["diskspace"]: s.setInt(["server", "diskspace", "critical"], data["server"]["diskspace"]["critical"])
+		if "onlineCheck" in data["server"]:
+			if "interval" in data["server"]["onlineCheck"]:
+				try:
+					interval = int(data["server"]["onlineCheck"]["interval"])
+					s.setInt(["server", "onlineCheck", "interval"], interval*60)
+				except ValueError:
+					pass
+			if "host" in data["server"]["onlineCheck"]: s.set(["server", "onlineCheck", "host"], data["server"]["onlineCheck"]["host"])
+			if "port" in data["server"]["onlineCheck"]: s.setInt(["server", "onlineCheck", "port"], data["server"]["onlineCheck"]["port"])
 
 	if "plugins" in data:
 		for plugin in octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.SettingsPlugin):

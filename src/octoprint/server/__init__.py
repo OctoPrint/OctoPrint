@@ -49,6 +49,7 @@ pluginManager = None
 appSessionManager = None
 pluginLifecycleManager = None
 preemptiveCache = None
+connectivityChecker = None
 
 principals = Principal(app)
 admin_permission = Permission(RoleNeed("admin"))
@@ -183,6 +184,7 @@ class Server(object):
 		global appSessionManager
 		global pluginLifecycleManager
 		global preemptiveCache
+		global connectivityChecker
 		global debug
 		global safe_mode
 
@@ -228,6 +230,35 @@ class Server(object):
 		pluginLifecycleManager = LifecycleManager(pluginManager)
 		preemptiveCache = PreemptiveCache(os.path.join(self._settings.getBaseFolder("data"), "preemptive_cache_config.yaml"))
 
+		# start regular check if we are connected to the internet
+		connectivityInterval = self._settings.getInt(["server", "onlineCheck", "interval"])
+		connectivityHost = self._settings.get(["server", "onlineCheck", "host"])
+		connectivityPort = self._settings.getInt(["server", "onlineCheck", "port"])
+
+		def on_connectivity_change(old_value, new_value):
+			eventManager.fire(events.Events.CONNECTIVITY_CHANGED, payload=dict(old=old_value, new=new_value))
+
+		connectivityChecker = octoprint.util.ConnectivityChecker(connectivityInterval,
+		                                                         connectivityHost,
+		                                                         port=connectivityPort,
+		                                                         on_change=on_connectivity_change)
+
+		def on_settings_update(*args, **kwargs):
+			# make sure our connectivity checker runs with the latest settings
+			connectivityInterval = self._settings.getInt(["server", "onlineCheck", "interval"])
+			connectivityHost = self._settings.get(["server", "onlineCheck", "host"])
+			connectivityPort = self._settings.getInt(["server", "onlineCheck", "port"])
+
+			if connectivityChecker.interval != connectivityInterval \
+					or connectivityChecker.host != connectivityHost \
+					or connectivityChecker.port != connectivityPort:
+				connectivityChecker.interval = connectivityInterval
+				connectivityChecker.host = connectivityHost
+				connectivityChecker.port = connectivityPort
+				connectivityChecker.check_immediately()
+
+		eventManager.subscribe(events.Events.SETTINGS_UPDATED, on_settings_update)
+
 		# setup access control
 		userManagerName = self._settings.get(["accessControl", "userManager"])
 		try:
@@ -249,7 +280,8 @@ class Server(object):
 			app_session_manager=appSessionManager,
 			plugin_lifecycle_manager=pluginLifecycleManager,
 			user_manager=userManager,
-			preemptive_cache=preemptiveCache
+			preemptive_cache=preemptiveCache,
+			connectivity_checker=connectivityChecker
 		)
 
 		# create printer instance

@@ -110,6 +110,14 @@ ClientClosed
 
      * ``remoteAddress``: the remote address (IP) of the client that disconnected
 
+ConnectivityChanged
+   The server's internet connectivity changed
+
+   Payload:
+
+     * ``old``: Old connectivity value (true for online, false for offline)
+     * ``new``: New connectivity value (true for online, false for offline)
+
 Printer communication
 ---------------------
 
