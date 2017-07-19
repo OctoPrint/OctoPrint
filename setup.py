@@ -49,7 +49,8 @@ INSTALL_REQUIRES = [
 	"scandir>=1.3,<1.4",
 	"websocket-client>=0.40,<0.41",
 	"python-dateutil>=2.6,<2.7",
-	"wrapt>=1.10.10,<1.11"
+	"wrapt>=1.10.10,<1.11",
+	"futures>=3.1.1,<3.2"
 ]
 
 if sys.platform == "darwin":
