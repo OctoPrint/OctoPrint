@@ -36,7 +36,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
                           octoprint.plugin.AssetPlugin,
                           octoprint.plugin.SettingsPlugin,
                           octoprint.plugin.StartupPlugin,
-                          octoprint.plugin.BlueprintPlugin):
+                          octoprint.plugin.BlueprintPlugin,
+                          octoprint.plugin.EventHandlerPlugin):
 
 	ARCHIVE_EXTENSIONS = (".zip", ".tar.gz", ".tgz", ".tar")
 
@@ -100,13 +101,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		self._console_logger.propagate = False
 
 		# decouple repository fetching from server startup
-		def fetch_data():
-			self._repository_available = self._fetch_repository_from_disk()
-			self._notices_available = self._fetch_notices_from_disk()
-
-		thread = threading.Thread(target=fetch_data)
-		thread.daemon = True
-		thread.start()
+		self._fetch_all_data(async=True)
 
 	##~~ SettingsPlugin
 
@@ -197,6 +192,14 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			except Exception as e:
 				self._logger.warn("Could not remove temporary file {path} again: {message}".format(path=archive.name, message=str(e)))
 
+	##~~ EventHandlerPlugin
+
+	def on_event(self, event, payload):
+		from octoprint.events import Events
+		if event != Events.CONNECTIVITY_CHANGED or not payload or not payload.get("new", False):
+			return
+		self._fetch_all_data(async=True)
+
 	##~~ SimpleApiPlugin
 
 	def get_api_commands(self):
@@ -239,7 +242,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			                   additional_args=self._settings.get(["pip_args"]),
 			                   python=sys.executable
 		                    ),
-			               safe_mode=safe_mode)
+			               safe_mode=safe_mode,
+			               online=self._connectivity_checker.online)
 
 		def etag():
 			import hashlib
@@ -250,6 +254,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			hash.update(str(self._notices_available))
 			hash.update(repr(self._notices))
 			hash.update(repr(safe_mode))
+			hash.update(repr(self._connectivity_checker.online))
 			return hash.hexdigest()
 
 		def condition():
@@ -679,6 +684,18 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			elif (plugin.enabled or getattr(plugin, "safe_mode_enabled", False)) and plugin.key not in self._pending_disable:
 				self._pending_disable.add(plugin.key)
 
+	def _fetch_all_data(self, async=False):
+		def run():
+			self._repository_available = self._fetch_repository_from_disk()
+			self._notices_available = self._fetch_notices_from_disk()
+
+		if async:
+			thread = threading.Thread(target=run)
+			thread.daemon = True
+			thread.start()
+		else:
+			run()
+
 	def _fetch_repository_from_disk(self):
 		repo_data = None
 		if os.path.isfile(self._repository_cache_path):
@@ -696,6 +713,10 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		return self._refresh_repository(repo_data=repo_data)
 
 	def _fetch_repository_from_url(self):
+		if not self._connectivity_checker.online:
+			self._logger.info("Looks like we are offline, can't fetch repository from network")
+			return None
+
 		repository_url = self._settings.get(["repository"])
 		try:
 			r = requests.get(repository_url, timeout=30)
@@ -758,13 +779,17 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 					import json
 					with open(self._notices_cache_path) as f:
 						notice_data = json.load(f)
-					self._logger.info("Loaded notices from disk, was still valid")
+					self._logger.info("Loaded notice data from disk, was still valid")
 				except:
 					self._logger.exception("Error while loading notices from {}".format(self._notices_cache_path))
 
 		return self._refresh_notices(notice_data=notice_data)
 
 	def _fetch_notices_from_url(self):
+		if not self._connectivity_checker.online:
+			self._logger.info("Looks like we are offline, can't fetch notices from network")
+			return None
+
 		notices_url = self._settings.get(["notices"])
 		try:
 			r = requests.get(notices_url, timeout=30)

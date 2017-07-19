@@ -20,6 +20,13 @@
 {% endtrans %}</div>
 {% endmacro %}
 
+{% macro pluginmanager_offline() %}
+<div class="alert" data-bind="visible: !online()">{% trans %}
+    It looks like OctoPrint has currently no connection to the internet. Due to that it's not possible
+    to install new plugins from the plugin repository or archive URLs.
+{% endtrans %}</div>
+{% endmacro %}
+
 {{ pluginmanager_printing() }}
 {{ pluginmanager_nopip() }}
 {{ pluginmanager_safemode() }}
@@ -124,6 +131,7 @@
         {{ pluginmanager_printing() }}
         {{ pluginmanager_nopip() }}
         {{ pluginmanager_safemode() }}
+        {{ pluginmanager_offline() }}
         <h4 style="position: relative">
             {{ _('... from the <a href="%(url)s" target="_blank">Plugin Repository</a>', url='http://plugins.octoprint.org') }}
             <div class="dropdown pull-right">

@@ -37,7 +37,8 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
                            octoprint.plugin.AssetPlugin,
                            octoprint.plugin.TemplatePlugin,
                            octoprint.plugin.StartupPlugin,
-                           octoprint.plugin.WizardPlugin):
+                           octoprint.plugin.WizardPlugin,
+                           octoprint.plugin.EventHandlerPlugin):
 
 	COMMIT_TRACKING_TYPES = ("github_commit", "bitbucket_commit")
 
@@ -47,8 +48,9 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		self._configured_checks = None
 		self._refresh_configured_checks = False
 
-		self._get_versions_mutex = threading.Lock()
-		self._get_versions_last = None
+		self._get_versions_mutex = threading.RLock()
+		self._get_versions_data = None
+		self._get_versions_data_ready = threading.Event()
 
 		self._version_cache = dict()
 		self._version_cache_ttl = 0
@@ -563,6 +565,17 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		checkout_folder = self._get_octoprint_checkout_folder(checks=checks)
 		return check and "update_script" in check and not checkout_folder
 
+	##~~ EventHandlerPlugin API
+
+	def on_event(self, event, payload):
+		from octoprint.events import Events
+		if event != Events.CONNECTIVITY_CHANGED or not payload or not payload.get("new", False):
+			return
+
+		thread = threading.Thread(target=self.get_current_versions)
+		thread.daemon = True
+		thread.start()
+
 	#~~ Updater
 
 	def get_current_versions(self, check_targets=None, force=False):
@@ -583,6 +596,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 		# we don't want to do the same work twice, so let's use a lock
 		if self._get_versions_mutex.acquire(False):
+			self._get_versions_data_ready.clear()
 			try:
 				futures_to_result = dict()
 				online = self._connectivity_checker.check_immediately()
@@ -657,13 +671,14 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				if self._version_cache_dirty:
 					self._save_version_cache()
 
-				self._get_versions_last = information, update_available, update_possible
+				self._get_versions_data = information, update_available, update_possible
+				self._get_versions_data_ready.set()
 			finally:
 				self._get_versions_mutex.release()
 
 		else: # something's already in progress, let's wait for it to complete and use its result
-			self._get_versions_mutex.wait()
-			information, update_available, update_possible = self._get_versions_last
+			self._get_versions_data_ready.wait()
+			information, update_available, update_possible = self._get_versions_data
 
 		return information, update_available, update_possible
 
@@ -708,14 +723,13 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			information, is_current = version_checker.get_latest(target, check, online=online)
 			if information is not None and not is_current:
 				update_available = True
+		except exceptions.CannotCheckOffline:
+			update_possible = False
+			information["needs_online"] = True
 		except exceptions.UnknownCheckType:
 			self._logger.warn("Unknown check type %s for %s" % (check["type"], target))
 			update_possible = False
 			error = "unknown_check"
-		except exceptions.CannotCheckOffline:
-			self._logger.warn("Cannot check %s while we are offline" % (target,))
-			update_possible = False
-			information["needs_online"] = True
 		except exceptions.NetworkError:
 			self._logger.warn("Could not check %s for updates due to a network error" % target)
 			update_possible = False
