@@ -146,7 +146,7 @@ GCODE.gCodeReader = (function(){
             this.clear();
 
             var totalSize = reader.target.result.length;
-            lines = reader.target.result.split(/\n/);
+            lines = reader.target.result.split(/[\r\n]+/g);
             reader.target.result = null;
             prepareGCode(totalSize);
 
