@@ -284,10 +284,32 @@ class Server(object):
 			file_manager=fileManager,
 			app_session_manager=appSessionManager,
 			plugin_lifecycle_manager=pluginLifecycleManager,
-			user_manager=userManager,
 			preemptive_cache=preemptiveCache,
 			connectivity_checker=connectivityChecker
 		)
+
+		# create user manager instance
+		user_manager_factories = pluginManager.get_hooks("octoprint.users.factory")
+		for name, factory in user_manager_factories.items():
+			try:
+				userManager = factory(components, self._settings)
+				if userManager is not None:
+					self._logger.debug("Created user manager instance from factory {}".format(name))
+					break
+			except:
+				self._logger.exception("Error while creating user manager instance from factory {}".format(name))
+		else:
+			name = self._settings.get(["accessControl", "userManager"])
+			try:
+				clazz = octoprint.util.get_class(name)
+				userManager = clazz()
+			except:
+				self._logger.exception(
+					"Could not instantiate user manager {}, falling back to FilebasedUserManager!".format(name))
+				userManager = octoprint.users.FilebasedUserManager()
+			finally:
+				userManager.enabled = self._settings.getBoolean(["accessControl", "enabled"])
+		components.update(dict(user_manager=userManager))
 
 		# create printer instance
 		printer_factories = pluginManager.get_hooks("octoprint.printer.factory")

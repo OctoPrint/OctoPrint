@@ -946,3 +946,38 @@ octoprint.ui.web.templatetypes
    :param dict template_sorting: read-only dictionary of currently configured template sorting specifications
    :return: a list of 3-tuples (template type, rule, sorting spec)
    :rtype: list
+
+.. _sec-plugins-hook-users-factory:
+
+octoprint.users.factory
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:function:: user_manager_factory_hook(components, settings, *args, **kwargs)
+
+   Return a :class:`~octoprint.users.UserManager` instance to use as global user manager object. This will
+   be called only once during initial server startup.
+
+   The provided ``components`` is a dictionary containing the already initialized system components:
+
+     * ``plugin_manager``: The :class:`~octoprint.plugin.core.PluginManager`
+     * ``printer_profile_manager``: The :class:`~octoprint.printer.profile.PrinterProfileManager`
+     * ``event_bus``: The :class:`~octoprint.events.EventManager`
+     * ``analysis_queue``: The :class:`~octoprint.filemanager.analysis.AnalysisQueue`
+     * ``slicing_manager``: The :class:`~octoprint.slicing.SlicingManager`
+     * ``file_manager``: The :class:`~octoprint.filemanager.FileManager`
+     * ``app_session_manager``: The :class:`~octoprint.server.util.flask.AppSessionManager`
+     * ``plugin_lifecycle_manager``: The :class:`~octoprint.server.LifecycleManager`
+     * ``preemptive_cache``: The :class:`~octoprint.server.util.flask.PreemptiveCache`
+
+   If the factory returns anything but ``None``, it will be assigned to the global ``userManager`` instance.
+
+   If no of the registered factories return a user manager instance, the class referenced by the ``config.yaml``
+   entry ``accessControl.userManager`` will be initialized if possible, otherwise a stock
+   :class:`~octoprint.users.FilebasedUserManager` will be instantiated, linked to the default user storage
+   file ``~/.octoprint/users.yaml``.
+
+   :param dict components: System components to use for user manager instance initialization
+   :param SettingsManager settings: The global settings manager instance to fetch configuration values from if necessary
+   :return: The ``userManager`` instance to use globally.
+   :rtype: UserManager subclass or None
+
