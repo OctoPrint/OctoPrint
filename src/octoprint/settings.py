@@ -149,6 +149,7 @@ default_settings = {
 			"serverRestartCommand": None
 		},
 		"onlineCheck": {
+			"enabled": None,
 			"interval": 15 * 60, # 15 min
 			"host": "8.8.8.8",
 			"port": 53

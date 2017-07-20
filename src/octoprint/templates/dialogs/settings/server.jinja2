@@ -7,29 +7,12 @@
 
     <h3>{{ _('Connectivity check') }}</h3>
 
-    <p>{{ _('You normally should not have to change any of the following settings.') }}</p>
+    <p>{% trans %}
+        If the connectivity check is enabled, OctoPrint will regularly check if it's connected to the internet.
+        This is <strong>useful to prevent resource intensive operations</strong> (such as checking for updates) if it's already
+        clear that they won't succeed anyhow.
+    {% endtrans %}</p>
 
-    <div class="control-group" title="{{ _('Interval in which to check for internet connectivity') }}">
-        <label class="control-label" for="settings-serverOnlineCheckInterval">{{ _('Check interval') }}</label>
-        <div class="controls">
-            <span class="input-append">
-                <input type="number" min="1" step="1" class="input-mini" data-bind="value: server_onlineCheck_interval" id="settings-serverOnlineCheckInterval">
-                <span class="add-on">min</span>
-            </span>
-        </div>
-    </div>
+    {% include "snippets/settings/server/serverOnlineCheck.jinja2" %}
 
-    <div class="control-group" title="{{ _('DNS against which to check for internet connectivity') }}">
-        <label class="control-label" for="settings-serverOnlineCheckHost">{{ _('DNS host') }}</label>
-        <div class="controls">
-            <input type="text" class="input-small text-right" data-bind="value: server_onlineCheck_host" id="settings-serverOnlineCheckHost">
-        </div>
-    </div>
-
-    <div class="control-group" title="{{ _('Port against which to check for internet connectivity. Default is 53.') }}">
-        <label class="control-label" for="settings-serverOnlineCheckHost">{{ _('DNS port') }}</label>
-        <div class="controls">
-            <input type="number" min="1" max="65535" step="1" class="input-mini" data-bind="value: server_onlineCheck_port" id="settings-serverOnlineCheckPort">
-        </div>
-    </div>
 </form>

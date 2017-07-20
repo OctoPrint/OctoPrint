@@ -231,6 +231,7 @@ class Server(object):
 		preemptiveCache = PreemptiveCache(os.path.join(self._settings.getBaseFolder("data"), "preemptive_cache_config.yaml"))
 
 		# start regular check if we are connected to the internet
+		connectivityEnabled = self._settings.getBoolean(["server", "onlineCheck", "enabled"])
 		connectivityInterval = self._settings.getInt(["server", "onlineCheck", "interval"])
 		connectivityHost = self._settings.get(["server", "onlineCheck", "host"])
 		connectivityPort = self._settings.getInt(["server", "onlineCheck", "port"])
@@ -241,17 +242,21 @@ class Server(object):
 		connectivityChecker = octoprint.util.ConnectivityChecker(connectivityInterval,
 		                                                         connectivityHost,
 		                                                         port=connectivityPort,
+		                                                         enabled=connectivityEnabled,
 		                                                         on_change=on_connectivity_change)
 
 		def on_settings_update(*args, **kwargs):
 			# make sure our connectivity checker runs with the latest settings
+			connectivityEnabled = self._settings.getBoolean(["server", "onlineCheck", "enabled"])
 			connectivityInterval = self._settings.getInt(["server", "onlineCheck", "interval"])
 			connectivityHost = self._settings.get(["server", "onlineCheck", "host"])
 			connectivityPort = self._settings.getInt(["server", "onlineCheck", "port"])
 
-			if connectivityChecker.interval != connectivityInterval \
+			if connectivityChecker.enabled != connectivityEnabled \
+					or connectivityChecker.interval != connectivityInterval \
 					or connectivityChecker.host != connectivityHost \
 					or connectivityChecker.port != connectivityPort:
+				connectivityChecker.enabled = connectivityEnabled
 				connectivityChecker.interval = connectivityInterval
 				connectivityChecker.host = connectivityHost
 				connectivityChecker.port = connectivityPort

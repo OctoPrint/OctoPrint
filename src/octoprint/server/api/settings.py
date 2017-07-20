@@ -204,6 +204,7 @@ def getSettings():
 				"critical": s.getInt(["server", "diskspace", "critical"])
 			},
 			"onlineCheck": {
+				"enabled": s.getBoolean(["server", "onlineCheck", "enabled"]),
 				"interval": int(s.getInt(["server", "onlineCheck", "interval"]) / 60),
 				"host": s.get(["server", "onlineCheck", "host"]),
 				"port": s.getInt(["server", "onlineCheck", "port"])
@@ -425,6 +426,7 @@ def _saveSettings(data):
 			if "warning" in data["server"]["diskspace"]: s.setInt(["server", "diskspace", "warning"], data["server"]["diskspace"]["warning"])
 			if "critical" in data["server"]["diskspace"]: s.setInt(["server", "diskspace", "critical"], data["server"]["diskspace"]["critical"])
 		if "onlineCheck" in data["server"]:
+			if "enabled" in data["server"]["onlineCheck"]: s.setBoolean(["server", "onlineCheck", "enabled"], data["server"]["onlineCheck"]["enabled"])
 			if "interval" in data["server"]["onlineCheck"]:
 				try:
 					interval = int(data["server"]["onlineCheck"]["interval"])

@@ -1166,16 +1166,18 @@ class ConnectivityChecker(object):
 	seconds and sets the ``online`` status accordingly.
 	"""
 
-	def __init__(self, interval, host, port, on_change=None):
+	def __init__(self, interval, host, port, enabled=True, on_change=None):
 		self._interval = interval
 		self._host = host
 		self._port = port
+		self._enabled = enabled
 		self._on_change = on_change
 
 		self._logger = logging.getLogger(__name__ + ".connectivity_checker")
 
-		self._last_check = None
-		self._online = False
+		# we initialize the online flag to True if we are not enabled (we don't know any better
+		# but these days it's probably a sane default)
+		self._online = not self._enabled
 
 		self._check_worker = None
 		self._check_mutex = threading.RLock()
@@ -1187,12 +1189,6 @@ class ConnectivityChecker(object):
 		"""Current online status, True if online, False if offline."""
 		with self._check_mutex:
 			return self._online
-
-	@property
-	def last_check(self):
-		"""Timestamp of last check."""
-		with self._check_mutex:
-			return self._last_check
 
 	@property
 	def host(self):
@@ -1225,6 +1221,30 @@ class ConnectivityChecker(object):
 	def interval(self, value):
 		self._interval = value
 
+	@property
+	def enabled(self):
+		"""Whether the check is enabled or not."""
+		return self._enabled
+
+	@enabled.setter
+	def enabled(self, value):
+		with self._check_mutex:
+			old_enabled = self._enabled
+			self._enabled = value
+
+			if not self._enabled:
+				if self._check_worker is not None:
+					self._check_worker.cancel()
+
+				old_value = self._online
+				self._online = True
+
+				if old_value != self._online:
+					self._trigger_change(old_value, self._online)
+
+			elif self._enabled and not old_enabled:
+				self._run()
+
 	def check_immediately(self):
 		"""Check immediately and return result."""
 		with self._check_mutex:
@@ -1234,25 +1254,31 @@ class ConnectivityChecker(object):
 	def _run(self):
 		from octoprint.util import RepeatedTimer
 
-		if self._check_worker is not None:
-			raise RuntimeError("Connectivity manager check thread already active")
+		if not self._enabled:
+			return
 
-		self._check_worker = RepeatedTimer(self._interval, self._perform_check, run_first=True)
+		if self._check_worker is not None:
+			self._check_worker.cancel()
+
+		self._check_worker = RepeatedTimer(self._interval, self._perform_check,
+		                                   run_first=True)
 		self._check_worker.start()
 
 	def _perform_check(self):
-		import time
+		if not self._enabled:
+			return
 
 		with self._check_mutex:
 			self._logger.debug("Checking against {}:{} if we are online...".format(self._host, self._port))
 
 			old_value = self._online
 			self._online = server_reachable(self._host, port=self._port)
-			self._last_check = time.time()
 
 			if old_value != self._online:
-				self._logger.info("Connectivity changed from {} to {}".format("online" if old_value else "offline",
-				                                                              "online" if self._online else "offline"))
-				if callable(self._on_change):
-					self._on_change(old_value, self._online)
+				self._trigger_change(old_value, self._online)
 
+	def _trigger_change(self, old_value, new_value):
+		self._logger.info("Connectivity changed from {} to {}".format("online" if old_value else "offline",
+		                                                              "online" if new_value else "offline"))
+		if callable(self._on_change):
+			self._on_change(old_value, new_value)

@@ -911,6 +911,8 @@ Use the following settings to configure the server:
 
      # Configuration of the regular online connectivity check
      onlineCheck:
+       # whether the online check is enabled, defaults to false due to valid privacy concerns
+       enabled: false
 
        # interval in which to check for online connectivity (in seconds)
        interval: 300
