@@ -325,6 +325,11 @@ var doParse = function () {
         extrude = false;
         line = line.split(/[\(;]/)[0];
 
+        if (!line || line.trim() === "") {
+            // empty line, skip entirely
+            continue;
+        }
+
         var addToModel = false;
         var move = false;
 
