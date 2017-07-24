@@ -545,7 +545,7 @@ var doParse = function () {
         }
 
         if (typeof(z) !== 'undefined' && z !== prevZ) {
-            if (z_heights[z]) {
+            if (z_heights[z] !== undefined) {
                 layer = z_heights[z];
             } else {
                 layer = model.length;
