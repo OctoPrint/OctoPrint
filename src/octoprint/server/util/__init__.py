@@ -146,7 +146,7 @@ def get_user_for_apikey(apikey):
 		if apikey == octoprint.server.UI_API_KEY:
 			import flask_login
 			if octoprint.server.userManager.enabled:
-				return octoprint.server.userManager.findUser(session=flask_login.current_user.get_session())
+				return octoprint.server.userManager.findUser(session=flask_login.current_user.session)
 			else:
 				return flask_login.current_user
 		elif apikey == settings().get(["api", "key"]) or octoprint.server.appSessionManager.validate(apikey):

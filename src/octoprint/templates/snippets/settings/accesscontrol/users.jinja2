@@ -9,7 +9,7 @@
         <th class="settings_users_actions">{{ _('Action') }}</th>
     </tr>
     </thead>
-    <tbody data-bind="foreach: access.users.listHelper.paginatedItems">
+    <tbody data-bind="foreach: $root.access.users.listHelper.paginatedItems">
     <tr>
         <td class="settings_users_name"><span data-bind="text: name"></span><span class="muted" data-bind="visible: $root.api_enabled() && apikey"><br /><small>{{ _('API Key') }}: <span data-bind="text: apikey"></span></small></span></td>
         <td class="settings_users_groups"><span data-bind="text: $root.access.groupList($data)"></span></td>
@@ -23,13 +23,13 @@
 </table>
 <div class="pagination pagination-mini pagination-centered">
     <ul>
-        <li data-bind="css: {disabled: access.users.listHelper.currentPage() === 0}"><a href="#" data-bind="click: access.users.listHelper.prevPage">«</a></li>
+        <li data-bind="css: {disabled: $root.access.users.listHelper.currentPage() === 0}"><a href="#" data-bind="click: access.users.listHelper.prevPage">«</a></li>
     </ul>
     <ul data-bind="foreach: access.users.listHelper.pages">
         <li data-bind="css: { active: $data.number === $root.access.users.listHelper.currentPage(), disabled: $data.number === -1 }"><a href="#" data-bind="text: $data.text, click: function() { $root.access.users.listHelper.changePage($data.number); }"></a></li>
     </ul>
     <ul>
-        <li data-bind="css: {disabled: access.users.listHelper.currentPage() === access.users.listHelper.lastPage()}"><a href="#" data-bind="click: access.users.listHelper.nextPage">»</a></li>
+        <li data-bind="css: {disabled: $root.access.users.listHelper.currentPage() === access.users.listHelper.lastPage()}"><a href="#" data-bind="click: access.users.listHelper.nextPage">»</a></li>
     </ul>
 </div>
 

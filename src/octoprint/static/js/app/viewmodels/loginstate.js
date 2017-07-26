@@ -8,7 +8,7 @@ $(function() {
 
         self.loggedIn = ko.observable(false);
         self.username = ko.observable(undefined);
-        self.userneeds = ko.observableArray(undefined);
+        self.userneeds = ko.observable(undefined);
         self.isAdmin = ko.observable(false);
         self.isUser = ko.observable(false);
 
@@ -85,7 +85,7 @@ $(function() {
             self.userneeds(data.needs);
             // TODO: deprecated, remove in future version
             self.isUser(data.user);
-            self.isAdmin(self.hasPermission("Admin"));
+            self.isAdmin(data.admin);
 
             self.currentUser(data);
         };
@@ -201,7 +201,7 @@ $(function() {
         //                                                                                             //
         // loginState.hasPermission(access.permissions.SETTINGS)                                       //
         // - Returns a pureComputed which returns true if the currently logged in user                 //
-        //   has settings right.                                                                       //
+        //   has SETTINGS right.                                                                       //
         //                                                                                             //
         /////////////////////////////////////////////////////////////////////////////////////////////////
         self.hasPermission = function(permission) {
@@ -210,20 +210,18 @@ $(function() {
                     return false;
 
                 var needs = self.userneeds();
-                if (needs.length == 0)
+                if ($.isEmptyObject(needs)) {
                     return false;
-
-                if (!(permission instanceof Array))
-                    permission = [permission];
+                }
 
                 return self.checkNeeds({ needs: needs }, permission);
             }).extend({ notify: 'always' });
         };
 
         // Shared checkNeeds function, also used inside the filter function of the access subs
-        self.checkNeeds = function(obj, needs) {
-            return _.every(needs, function(need) { return _.has(obj.needs, need.method) && _.contains(obj.needs[need.method], need.value) });
-        }
+        self.checkNeeds = function(needs, permissions) {
+            return _.every(permissions, function(permission) { return _.has(needs.needs, permission.method) && _.contains(needs.needs[permission.method], permission.value); });
+        };
     }
 
     OCTOPRINT_VIEWMODELS.push([

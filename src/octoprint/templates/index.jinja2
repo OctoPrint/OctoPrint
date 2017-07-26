@@ -46,7 +46,6 @@
                     <div id="sidebar" class="accordion {% if templates.tab.order %}span4{% else %}span12{% endif %}">
                         {% for key in templates.sidebar.order %}
                             {% set entry, data = templates.sidebar.entries[key] %}
-                            {% if "permission_test" in data %}<!--ko if: loginState.hasPermission({{ data.permission_test }})-->{% endif %}
                             {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
                             <div id="{{ data._div }}_wrapper"
                                  class="accordion-group {% if "classes_wrapper" in data %}{{ data.classes_wrapper|join(' ') }}{% elif "classes" in data %}{{ data.classes|join(' ') }}{% endif %}"
@@ -71,7 +70,6 @@
                                 </div>
                             </div>
                             {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- /ko -->{% endif %}
-                            {% if "permission_test" in data %}<!-- /ko -->{% endif %}
                         {% endfor %}
                     </div>
                     {% endif %}
@@ -82,7 +80,6 @@
                         <ul class="nav nav-tabs" id="tabs">
                             {% for key in templates.tab.order %}
                                 {% set entry, data = templates.tab.entries[key] %}
-                                {% if "permission_test" in data %}<!--ko if: loginState.hasPermission({{ data.permission_test }}) -->{% endif %}
                                 {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
                                 <li id="{{ data._div }}_link"
                                     class="{% if loop.first %}active{% endif %} {% if "classes_link" in data %}{{ data.classes_link|join(' ') }}{% elif "classes" in data %}{{ data.classes|join(' ') }}{% endif %}"
@@ -92,14 +89,12 @@
                                         <a href="#{{ data._div }}" data-toggle="tab">{{ entry|e }}</a>
                                 </li>
                                 {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- /ko -->{% endif %}
-                                {% if "permission_test" in data %}<!-- /ko -->{% endif %}
                             {% endfor %}
                         </ul>
 
                         <div id="tabs_content" class="tab-content">
                             {% for key in templates.tab.order %}
                                 {% set entry, data = templates.tab.entries[key] %}
-                                {% if "permission_test" in data %}<!--ko if: loginState.hasPermission({{ data.permission_test }}) -->{% endif %}
                                 {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- ko allowBindings: false -->{% endif %}
                                 <div id="{{ data._div }}"
                                      class="tab-pane{% if loop.first %} active{% endif %}{% if "additional_classes" in data %} {{ data.additional_classes|join(' ') }}{% endif %}"
@@ -109,7 +104,6 @@
                                             {% try "There was an error with the template {filename} at line number {lineno}: {exception}" %}{% include data.template ignore missing %}{% endtry %}
                                 </div>
                                 {% if "custom_bindings" not in data or data["custom_bindings"] %}<!-- /ko -->{% endif %}
-                                {% if "permission_test" in data %}<!-- /ko -->{% endif %}
                             {% endfor %}
                         </div>
                     </div>

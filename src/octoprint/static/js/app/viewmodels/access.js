@@ -409,7 +409,7 @@ $(function() {
                     return true;
                 }
 
-                return !_.any(self.editorPermissions(), function(p) { return access.loginState.checkNeeds(p, access.permissions.ADMIN); })
+                return !_.any(self.editorPermissions(), function(p) { return access.loginState.checkNeeds(p, access.permissions.ADMIN); });
             };
 
             //~~ Framework
@@ -466,7 +466,7 @@ $(function() {
             self.need = function(method, value) { return {method: method, value: value}; };
             self.roleNeed = function(value) { return self.need("role", value); };
 
-            self.sanitizeName = function(name) { return name.replace(" ", "_"); }
+            self.sanitizeName = function(name) { return name.replace(new RegExp(" ", 'g'), "_"); }
 
             self.registerPermission = function(name, permission) {
                 Object.defineProperty(self, self.sanitizeName(name).toUpperCase(), {
