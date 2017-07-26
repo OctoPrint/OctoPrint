@@ -1,13 +1,16 @@
 # coding=utf-8
 from __future__ import absolute_import, division, print_function
 
-from flask_babel import gettext
-from flask_principal import Permission, RoleNeed
-import logging
-
 __author__ = "Marc Hannappel <salandora@gmail.com>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2017 The OctoPrint Project - Released under terms of the AGPLv3 License"
+
+
+from flask import g, abort
+from flask_babel import gettext
+from flask_principal import Permission, PermissionDenied, RoleNeed
+from functools import wraps
+import logging
 
 
 class OctoPrintPermission(Permission):
@@ -68,6 +71,59 @@ class OctoPrintPermission(Permission):
 				needs.append("RoleNeed('{0}')".format(need.value))
 
 		return '{0}("{1}", "{2}", {3})'.format(self.__class__.__name__, self.get_name(), self.get_description(), ', '.join(needs))
+
+class PluginIdentityContext(object):
+	"""Identity context for not initialized Permissions
+
+	Needed to support @Permissions.PLUGIN_X_Y.require()
+
+	Will search the permission when needed
+	"""
+	def __init__(self, key, http_exception=None):
+		self.key = key
+		self.http_exception = http_exception
+		"""The permission of this principal
+		"""
+
+	@property
+	def identity(self):
+		"""The identity of this principal
+		"""
+		return g.identity
+
+	def __call__(self, f):
+		@wraps(f)
+		def _decorated(*args, **kw):
+			with self:
+				rv = f(*args, **kw)
+			return rv
+
+		return _decorated
+
+	def __enter__(self):
+		permission = Permissions.__getattr__(self.key)
+		if isinstance(permission, PluginPermissionDecorator):
+			raise UnknownPermission(self.key)
+
+		# check the permission here
+		if not permission.can():
+			if self.http_exception:
+				abort(self.http_exception, permission)
+			raise PermissionDenied(permission)
+
+	def __exit__(self, *args):
+		return False
+
+class PluginPermissionDecorator(Permission):
+	"""Decorator Class for not initialized Permissions
+
+	Needed to support @Permissions.PLUGIN_X_Y.require()
+	"""
+	def __init__(self, key):
+		self.key = key
+
+	def require(self, http_exception=None):
+		return PluginIdentityContext(self.key, http_exception)
 
 
 class PermissionManager(object):
@@ -135,25 +191,30 @@ class PermissionManager(object):
 
 
 class Permissions:
-	class PluginPermission(type):
+	class PluginPermissionMetaclass(type):
+
 		plugin_permissions = dict()
 
 		@classmethod
 		def __setattr__(cls, key, value):
-			if cls.plugin_permissions.get(key, None) is not None:
-				raise PermissionAlreadyExists(key)
+			if key.startswith("PLUGIN"):
+				if cls.plugin_permissions.get(key, None) is not None:
+					raise PermissionAlreadyExists(key)
 
-			cls.plugin_permissions[key] = value
+				cls.plugin_permissions[key] = value
 
 		def __getattr__(cls, key):
-			permission = cls.plugin_permissions.get(key, None)
+			if key.startswith("PLUGIN"):
+				permission = cls.plugin_permissions.get(key, None)
 
-			if permission is None:
-				raise AttributeError(key)
+				if permission is None:
+					return PluginPermissionDecorator(key)
 
-			return permission
+				return permission
 
-	__metaclass__ = PluginPermission
+			return None
+
+	__metaclass__ = PluginPermissionMetaclass
 
 	# Special permission
 	ADMIN = OctoPrintPermission("Admin", gettext("Admin is allowed to do everything"), RoleNeed("admin"))
@@ -222,7 +283,8 @@ class Permissions:
 
 	@classmethod
 	def __setattr__(cls, key, value):
-		cls.__metaclass__.__setattr__(key, value)
+		if key.startswith("PLUGIN"):
+			cls.__metaclass__.__setattr__(key, value)
 
 class PermissionAlreadyExists(Exception):
 	def __init__(self, permission):

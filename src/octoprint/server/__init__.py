@@ -1368,7 +1368,7 @@ class Server(object):
 					if "name" not in p or "description" not in p or "roles" not in p:
 						continue
 
-					permission = permissionManager.add_permission(OctoPrintPermission("Plugin_{}_{}".format(name, p["name"]),
+					permission = permissionManager.add_permission(OctoPrintPermission("Plugin {} {}".format(name, p["name"]),
 					                                 gettext(p["description"]),
 					                                 *[RoleNeed("plugin_{}_{}".format(name, need)) for need in p["roles"]]))
 
