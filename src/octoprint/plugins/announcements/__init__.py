@@ -24,6 +24,14 @@ from octoprint.access.permissions import Permissions
 from octoprint.server.util.flask import restricted_access, with_revalidation_checking, check_etag
 from flask_babel import gettext
 
+
+# Access permissions hook
+
+def additional_permissions(components):
+	return [
+		dict(name="Announcement", description=gettext("Allows to see announcements"), roles=["announcment"]),
+	]
+
 class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
                          octoprint.plugin.SettingsPlugin,
                          octoprint.plugin.BlueprintPlugin,
@@ -123,14 +131,14 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 	def get_template_configs(self):
 		return [
 			dict(type="settings", name=gettext("Announcements"), template="announcements_settings.jinja2", custom_bindings=True),
-			dict(type="navbar", template="announcements_navbar.jinja2", styles=["display: none"], data_bind="visible: loginState.isAdmin")
+			dict(type="navbar", template="announcements_navbar.jinja2", styles=["display: none"], data_bind="visible: loginState.hasPermission(access.permissions.PLUGIN_ANNOUNCEMENTS_ANNOUNCEMENT)")
 		]
 
 	# Blueprint Plugin
 
 	@octoprint.plugin.BlueprintPlugin.route("/channels", methods=["GET"])
 	@restricted_access
-	@Permissions.STATUS.require(403)
+	@Permissions.PLUGIN_ANNOUNCEMENTS_ANNOUNCEMENT.require(403)
 	def get_channel_data(self):
 		from octoprint.settings import valid_boolean_trues
 
@@ -189,7 +197,7 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 
 	@octoprint.plugin.BlueprintPlugin.route("/channels/<channel>", methods=["POST"])
 	@restricted_access
-	@Permissions.STATUS.require(403)
+	@Permissions.PLUGIN_ANNOUNCEMENTS_ANNOUNCEMENT.require(403)
 	def channel_command(self, channel):
 		from octoprint.server.util.flask import get_json_command_from_request
 		from octoprint.server import NO_CONTENT
@@ -473,3 +481,7 @@ __plugin_disabling_discouraged__ = gettext("Without this plugin you might miss i
                                            "regarding security or other critical issues concerning OctoPrint.")
 __plugin_license__ = "AGPLv3"
 __plugin_implementation__ = AnnouncementPlugin()
+
+__plugin_hooks__ = {
+	'octoprint.access.permissions': additional_permissions
+}

@@ -4,6 +4,7 @@ $(function() {
 
         self.loginState = parameters[0];
         self.settings = parameters[1];
+        self.access = parameters[2];
 
         self.channels = new ItemListHelper(
             "plugin.announcements.channels",
@@ -55,7 +56,7 @@ $(function() {
         };
 
         self.markRead = function(channel, until) {
-            if (!self.loginState.isAdmin()) return;
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_ANNOUNCEMENTS_ANNOUNCEMENT)) return;
 
             var url = PLUGIN_BASEURL + "announcements/channels/" + channel;
 
@@ -77,7 +78,7 @@ $(function() {
         };
 
         self.toggleChannel = function(channel) {
-            if (!self.loginState.isAdmin()) return;
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_ANNOUNCEMENTS_ANNOUNCEMENT)) return;
 
             var url = PLUGIN_BASEURL + "announcements/channels/" + channel;
 
@@ -102,7 +103,7 @@ $(function() {
         };
 
         self.retrieveData = function(force) {
-            if (!self.loginState.isAdmin()) return;
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_ANNOUNCEMENTS_ANNOUNCEMENT)) return;
 
             var url = PLUGIN_BASEURL + "announcements/channels";
             if (force) {
@@ -120,7 +121,7 @@ $(function() {
         };
 
         self.fromResponse = function(data) {
-            if (!self.loginState.isAdmin()) return;
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_ANNOUNCEMENTS_ANNOUNCEMENT)) return;
 
             var currentTab = $("li.active a", self.announcementDialogTabs).attr("href");
 
@@ -141,7 +142,7 @@ $(function() {
         };
 
         self.showAnnouncementDialog = function(channel) {
-            if (!self.loginState.isAdmin()) return;
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_ANNOUNCEMENTS_ANNOUNCEMENT)) return;
 
             // lazy load images that still need lazy-loading
             $("#plugin_announcements_dialog_content article img").lazyload();
@@ -178,7 +179,7 @@ $(function() {
         };
 
         self.displayAnnouncements = function(channels) {
-            if (!self.loginState.isAdmin()) return;
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_ANNOUNCEMENTS_ANNOUNCEMENT)) return;
 
             var displayLimit = self.settings.settings.plugins.announcements.display_limit();
             var maxLength = self.settings.settings.plugins.announcements.summary_limit();
@@ -323,7 +324,7 @@ $(function() {
     // view model class, parameters for constructor, container to bind to
     ADDITIONAL_VIEWMODELS.push([
         AnnouncementsViewModel,
-        ["loginStateViewModel", "settingsViewModel"],
+        ["loginStateViewModel", "settingsViewModel", "accessViewModel"],
         ["#plugin_announcements_dialog", "#settings_plugin_announcements", "#navbar_plugin_announcements"]
     ]);
 });
