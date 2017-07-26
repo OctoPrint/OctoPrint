@@ -135,3 +135,16 @@ def get_divider_line(c, message=None, length=78, indent=3):
 		return c * indent + " " + message + " " + c * (length - indent - 2 - len(message))
 	else:
 		return c * indent + " " + message
+
+
+def prefix_multilines(text, prefix=": "):
+	lines = text.splitlines()
+	if not lines:
+		return ""
+
+	if len(lines) == 1:
+		return lines[0]
+
+	return lines[0] + "\n" + "\n".join(map(lambda line: prefix + line,
+	                                       lines[1:]))
+

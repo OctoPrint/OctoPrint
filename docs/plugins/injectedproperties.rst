@@ -45,6 +45,8 @@ An overview of these properties follows.
   OctoPrint's application session manager, an instance of :class:`octoprint.server.util.flask.AppSessionManager`.
 ``self._user_manager``
   OctoPrint's user manager, an instance of :class:`octoprint.users.UserManager`.
+``self._connectivity_checker``
+  OctoPrint's connectivity checker, an instance of :class:`octoprint.util.ConnectivityChecker`.
 
 .. seealso::
 

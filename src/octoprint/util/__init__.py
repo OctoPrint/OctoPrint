@@ -21,10 +21,13 @@ import threading
 from functools import wraps
 import warnings
 import contextlib
+
 try:
 	import queue
 except ImportError:
 	import Queue as queue
+
+from past.builtins import basestring
 
 logger = logging.getLogger(__name__)
 
@@ -171,8 +174,6 @@ def get_class(name):
 	"""
 	Retrieves the class object for a given fully qualified class name.
 
-	Taken from http://stackoverflow.com/a/452981/2028598.
-
 	Arguments:
 	    name (string): The fully qualified class name, including all modules separated by ``.``
 
@@ -180,15 +181,17 @@ def get_class(name):
 	    type: The class if it could be found.
 
 	Raises:
-	    AttributeError: The class could not be found.
+	    ImportError
 	"""
 
-	parts = name.split(".")
-	module = ".".join(parts[:-1])
-	m = __import__(module)
-	for comp in parts[1:]:
-		m = getattr(m, comp)
-	return m
+	import importlib
+
+	mod_name, cls_name = name.rsplit(".", 1)
+	m = importlib.import_module(mod_name)
+	try:
+		return getattr(m, cls_name)
+	except AttributeError:
+		raise ImportError("No module named " + name)
 
 
 def get_exception_string():
@@ -732,22 +735,47 @@ def interface_addresses(family=None):
 				if not ifaddress["addr"].startswith("169.254."):
 					yield ifaddress["addr"]
 
-def address_for_client(host, port):
+def address_for_client(host, port, timeout=3.05):
 	"""
 	Determines the address of the network interface on this host needed to connect to the indicated client host and port.
 	"""
 
-	import socket
-
 	for address in interface_addresses():
 		try:
-			sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-			sock.bind((address, 0))
-			sock.connect((host, port))
-			return address
+			if server_reachable(host, port, timeout=timeout, proto="udp", source=address):
+				return address
 		except:
 			continue
 
+def server_reachable(host, port, timeout=3.05, proto="tcp", source=None):
+	"""
+	Checks if a server is reachable
+
+	Args:
+		host (str): host to check against
+		port (int): port to check against
+		timeout (float): timeout for check
+		proto (str): ``tcp`` or ``udp``
+		source (str): optional, socket used for check will be bound against this address if provided
+
+	Returns:
+		boolean: True if a connection to the server could be opened, False otherwise
+	"""
+
+	import socket
+
+	if proto not in ("tcp", "udp"):
+		raise ValueError("proto must be either 'tcp' or 'udp'")
+
+	try:
+		sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM if proto == "udp" else socket.SOCK_STREAM)
+		sock.settimeout(timeout)
+		if source is not None:
+			sock.bind((source, 0))
+		sock.connect((host, port))
+		return True
+	except:
+		return False
 
 @contextlib.contextmanager
 def atomic_write(filename, mode="w+b", prefix="tmp", suffix="", permissions=0o644, max_permissions=0o777):
@@ -1043,18 +1071,57 @@ class InvariantContainer(object):
 		return self._data.__iter__()
 
 
-class TypedQueue(queue.Queue):
+class PrependableQueue(queue.Queue):
 
 	def __init__(self, maxsize=0):
 		queue.Queue.__init__(self, maxsize=maxsize)
+
+	def prepend(self, item, block=True, timeout=True):
+		from time import time as _time
+
+		self.not_full.acquire()
+		try:
+			if self.maxsize > 0:
+				if not block:
+					if self._qsize() == self.maxsize:
+						raise queue.Full
+				elif timeout is None:
+					while self._qsize() >= self.maxsize:
+						self.not_full.wait()
+				elif timeout < 0:
+					raise ValueError("'timeout' must be a non-negative number")
+				else:
+					endtime = _time() + timeout
+					while self._qsize() == self.maxsize:
+						remaining = endtime - _time()
+						if remaining <= 0.0:
+							raise queue.Full
+						self.not_full.wait(remaining)
+			self._prepend(item)
+			self.unfinished_tasks += 1
+			self.not_empty.notify()
+		finally:
+			self.not_full.release()
+
+	def _prepend(self, item):
+		self.queue.appendleft(item)
+
+
+class TypedQueue(PrependableQueue):
+
+	def __init__(self, maxsize=0):
+		PrependableQueue.__init__(self, maxsize=maxsize)
 		self._lookup = set()
 
 	def put(self, item, item_type=None, *args, **kwargs):
-		queue.Queue.put(self, (item, item_type), *args, **kwargs)
+		PrependableQueue.put(self, (item, item_type), *args, **kwargs)
 
 	def get(self, *args, **kwargs):
-		item, _ = queue.Queue.get(self, *args, **kwargs)
+		item, _ = PrependableQueue.get(self, *args, **kwargs)
 		return item
+
+	def prepend(self, item, item_type=None, *args, **kwargs):
+		PrependableQueue.prepend(self, (item, item_type), *args, **kwargs)
 
 	def _put(self, item):
 		_, item_type = item
@@ -1064,10 +1131,10 @@ class TypedQueue(queue.Queue):
 			else:
 				self._lookup.add(item_type)
 
-		queue.Queue._put(self, item)
+		PrependableQueue._put(self, item)
 
 	def _get(self):
-		item = queue.Queue._get(self)
+		item = PrependableQueue._get(self)
 		_, item_type = item
 
 		if item_type is not None:
@@ -1075,9 +1142,143 @@ class TypedQueue(queue.Queue):
 
 		return item
 
+	def _prepend(self, item):
+		_, item_type = item
+		if item_type is not None:
+			if item_type in self._lookup:
+				raise TypeAlreadyInQueue(item_type, "Type {} is already in queue".format(item_type))
+			else:
+				self._lookup.add(item_type)
+
+		PrependableQueue._prepend(self, item)
 
 class TypeAlreadyInQueue(Exception):
 	def __init__(self, t, *args, **kwargs):
 		Exception.__init__(self, *args, **kwargs)
 		self.type = t
 
+
+class ConnectivityChecker(object):
+	"""
+	Regularly checks for online connectivity.
+
+	Tries to open a connection to the provided ``host`` and ``port`` every ``interval``
+	seconds and sets the ``online`` status accordingly.
+	"""
+
+	def __init__(self, interval, host, port, enabled=True, on_change=None):
+		self._interval = interval
+		self._host = host
+		self._port = port
+		self._enabled = enabled
+		self._on_change = on_change
+
+		self._logger = logging.getLogger(__name__ + ".connectivity_checker")
+
+		# we initialize the online flag to True if we are not enabled (we don't know any better
+		# but these days it's probably a sane default)
+		self._online = not self._enabled
+
+		self._check_worker = None
+		self._check_mutex = threading.RLock()
+
+		self._run()
+
+	@property
+	def online(self):
+		"""Current online status, True if online, False if offline."""
+		with self._check_mutex:
+			return self._online
+
+	@property
+	def host(self):
+		"""DNS host to query."""
+		with self._check_mutex:
+			return self._host
+
+	@host.setter
+	def host(self, value):
+		with self._check_mutex:
+			self._host = value
+
+	@property
+	def port(self):
+		"""DNS port to query."""
+		with self._check_mutex:
+			return self._port
+
+	@port.setter
+	def port(self, value):
+		with self._check_mutex:
+			self._port = value
+
+	@property
+	def interval(self):
+		"""Interval between consecutive automatic checks."""
+		return self._interval
+
+	@interval.setter
+	def interval(self, value):
+		self._interval = value
+
+	@property
+	def enabled(self):
+		"""Whether the check is enabled or not."""
+		return self._enabled
+
+	@enabled.setter
+	def enabled(self, value):
+		with self._check_mutex:
+			old_enabled = self._enabled
+			self._enabled = value
+
+			if not self._enabled:
+				if self._check_worker is not None:
+					self._check_worker.cancel()
+
+				old_value = self._online
+				self._online = True
+
+				if old_value != self._online:
+					self._trigger_change(old_value, self._online)
+
+			elif self._enabled and not old_enabled:
+				self._run()
+
+	def check_immediately(self):
+		"""Check immediately and return result."""
+		with self._check_mutex:
+			self._perform_check()
+			return self.online
+
+	def _run(self):
+		from octoprint.util import RepeatedTimer
+
+		if not self._enabled:
+			return
+
+		if self._check_worker is not None:
+			self._check_worker.cancel()
+
+		self._check_worker = RepeatedTimer(self._interval, self._perform_check,
+		                                   run_first=True)
+		self._check_worker.start()
+
+	def _perform_check(self):
+		if not self._enabled:
+			return
+
+		with self._check_mutex:
+			self._logger.debug("Checking against {}:{} if we are online...".format(self._host, self._port))
+
+			old_value = self._online
+			self._online = server_reachable(self._host, port=self._port)
+
+			if old_value != self._online:
+				self._trigger_change(old_value, self._online)
+
+	def _trigger_change(self, old_value, new_value):
+		self._logger.info("Connectivity changed from {} to {}".format("online" if old_value else "offline",
+		                                                              "online" if new_value else "offline"))
+		if callable(self._on_change):
+			self._on_change(old_value, new_value)

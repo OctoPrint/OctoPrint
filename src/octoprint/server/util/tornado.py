@@ -531,8 +531,19 @@ class WsgiInputContainer(object):
 	methods have been adjusted to allow for an optionally supplied ``body`` argument which is then used for ``wsgi.input``.
 	"""
 
-	def __init__(self, wsgi_application):
+	def __init__(self, wsgi_application, headers=None, forced_headers=None, removed_headers=None):
 		self.wsgi_application = wsgi_application
+
+		if headers is None:
+			headers = dict()
+		if forced_headers is None:
+			forced_headers = dict()
+		if removed_headers is None:
+			removed_headers = []
+
+		self.headers = headers
+		self.forced_headers = forced_headers
+		self.removed_headers = removed_headers
 
 	def __call__(self, request, body=None):
 		"""
@@ -569,8 +580,14 @@ class WsgiInputContainer(object):
 				headers.append(("Content-Length", str(len(body))))
 			if "content-type" not in header_set:
 				headers.append(("Content-Type", "text/html; charset=UTF-8"))
-		if "server" not in header_set:
-			headers.append(("Server", "TornadoServer/%s" % tornado.version))
+
+		header_set = set(k.lower() for (k, v) in headers)
+		for header, value in self.headers.items():
+			if header.lower() not in header_set:
+				headers.append((header, value))
+		for header, value in self.forced_headers.items():
+			headers.append((header, value))
+		headers = [(header, value) for header, value in headers if not header.lower() in self.removed_headers]
 
 		parts = [tornado.escape.utf8("HTTP/1.1 " + data["status"] + "\r\n")]
 		for key, value in headers:
@@ -1023,6 +1040,39 @@ class StaticDataHandler(tornado.web.RequestHandler):
 		self.write(self.data)
 		self.flush()
 		self.finish()
+
+
+class GlobalHeaderTransform(tornado.web.OutputTransform):
+
+	HEADERS = dict()
+	FORCED_HEADERS = dict()
+	REMOVED_HEADERS = []
+
+	@classmethod
+	def for_headers(cls, name, headers=None, forced_headers=None, removed_headers=None):
+		if headers is None:
+			headers = dict()
+		if forced_headers is None:
+			forced_headers = dict()
+		if removed_headers is None:
+			removed_headers = []
+
+		return type(name, (GlobalHeaderTransform,), dict(HEADERS=headers,
+		                                                 FORCED_HEADERS=forced_headers,
+		                                                 REMOVED_HEADERS=removed_headers))
+
+	def __init__(self, request):
+		tornado.web.OutputTransform.__init__(self, request)
+
+	def transform_first_chunk(self, status_code, headers, chunk, finishing):
+		for header, value in self.HEADERS.items():
+			if not header in headers:
+				headers[header] = value
+		for header, value in self.FORCED_HEADERS.items():
+			headers[header] = value
+		for header in self.REMOVED_HEADERS:
+			del headers[header]
+		return status_code, headers, chunk
 
 
 #~~ Factory method for creating Flask access validation wrappers from the Tornado request context

@@ -15,6 +15,9 @@ import time
 import logging
 import logging.handlers
 import hashlib
+import traceback
+
+from concurrent import futures
 
 from . import version_checks, updaters, exceptions, util, cli
 
@@ -34,7 +37,8 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
                            octoprint.plugin.AssetPlugin,
                            octoprint.plugin.TemplatePlugin,
                            octoprint.plugin.StartupPlugin,
-                           octoprint.plugin.WizardPlugin):
+                           octoprint.plugin.WizardPlugin,
+                           octoprint.plugin.EventHandlerPlugin):
 
 	COMMIT_TRACKING_TYPES = ("github_commit", "bitbucket_commit")
 
@@ -44,7 +48,9 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		self._configured_checks = None
 		self._refresh_configured_checks = False
 
-		self._get_versions_mutex = threading.Lock()
+		self._get_versions_mutex = threading.RLock()
+		self._get_versions_data = None
+		self._get_versions_data_ready = threading.Event()
 
 		self._version_cache = dict()
 		self._version_cache_ttl = 0
@@ -218,9 +224,13 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 					"repo": "OctoPrint",
 					"update_script": "{{python}} \"{update_script}\" --branch={{branch}} --force={{force}} \"{{folder}}\" {{target}}".format(update_script=update_script),
 					"restart": "octoprint",
-					"stable_branch": dict(branch="master", name="Stable"),
-					"prerelease_branches": [dict(branch="rc/maintenance", name="Maintenance RCs"),
-					                        dict(branch="rc/devel", name="Devel RCs")]
+					"stable_branch": dict(branch="master", commitish=["master"], name="Stable"),
+					"prerelease_branches": [dict(branch="rc/maintenance",
+					                             commitish=["rc/maintenance"],             # maintenance RCs
+					                             name="Maintenance RCs"),
+					                        dict(branch="rc/devel",
+					                             commitish=["rc/maintenance", "rc/devel"], # devel & maintenance RCs
+					                             name="Devel RCs")]
 				},
 			},
 			"pip_command": None,
@@ -463,15 +473,6 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		def view():
 			try:
 				information, update_available, update_possible = self.get_current_versions(check_targets=check_targets, force=force)
-
-				# we don't want to transfer python_checker or python_updater values through json - replace with True
-				for key, data in information.items():
-					if "check" in data:
-						if "python_checker" in data["check"]:
-							data["check"]["python_checker"] = True
-						if "python_updater" in data["check"]:
-							data["check"]["python_updater"] = True
-
 				return flask.jsonify(dict(status="updatePossible" if update_available and update_possible else "updateAvailable" if update_available else "current",
 				                          information=information,
 				                          timestamp=self._version_cache_timestamp))
@@ -498,9 +499,11 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 					hash.update(repr(data["information"]))
 					hash.update(str(data["available"]))
 					hash.update(str(data["possible"]))
+					hash.update(str(data.get("online", None)))
 
 			hash.update(",".join(targets))
 			hash.update(str(self._version_cache_timestamp))
+			hash.update(str(self._connectivity_checker.online))
 			return hash.hexdigest()
 
 		def condition():
@@ -562,6 +565,17 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		checkout_folder = self._get_octoprint_checkout_folder(checks=checks)
 		return check and "update_script" in check and not checkout_folder
 
+	##~~ EventHandlerPlugin API
+
+	def on_event(self, event, payload):
+		from octoprint.events import Events
+		if event != Events.CONNECTIVITY_CHANGED or not payload or not payload.get("new", False):
+			return
+
+		thread = threading.Thread(target=self.get_current_versions)
+		thread.daemon = True
+		thread.start()
+
 	#~~ Updater
 
 	def get_current_versions(self, check_targets=None, force=False):
@@ -581,53 +595,91 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		information = dict()
 
 		# we don't want to do the same work twice, so let's use a lock
-		with self._get_versions_mutex:
-			for target, check in checks.items():
-				if not target in check_targets:
-					continue
+		if self._get_versions_mutex.acquire(False):
+			self._get_versions_data_ready.clear()
+			try:
+				futures_to_result = dict()
+				online = self._connectivity_checker.check_immediately()
+				self._logger.debug("Looks like we are {}".format("online" if online else "offline"))
 
-				if not check:
-					continue
+				with futures.ThreadPoolExecutor(max_workers=5) as executor:
+					for target, check in checks.items():
+						if not target in check_targets:
+							continue
 
-				try:
-					populated_check = self._populated_check(target, check)
-					target_information, target_update_available, target_update_possible = self._get_current_version(target, populated_check, force=force)
-					if target_information is None:
-						target_information = dict()
-				except exceptions.UnknownCheckType:
-					self._logger.warn("Unknown update check type for target {}: {}".format(target, check.get("type", "<n/a>")))
-					continue
+						if not check:
+							continue
 
-				target_information = dict_merge(dict(local=dict(name="unknown", value="unknown"), remote=dict(name="unknown", value="unknown", release_notes=None)), target_information)
+						try:
+							populated_check = self._populated_check(target, check)
+							future = executor.submit(self._get_current_version, target, populated_check, force=force)
+							futures_to_result[future] = (target, populated_check)
+						except exceptions.UnknownCheckType:
+							self._logger.warn("Unknown update check type for target {}: {}".format(target,
+							                                                                       check.get("type",
+							                                                                                 "<n/a>")))
+							continue
+						except:
+							self._logger.exception("Could not check {} for updates".format(target))
+							continue
 
-				update_available = update_available or target_update_available
-				update_possible = update_possible or (target_update_possible and target_update_available)
+					for future in futures.as_completed(futures_to_result):
 
-				local_name = target_information["local"]["name"]
-				local_value = target_information["local"]["value"]
+						target, populated_check = futures_to_result[future]
+						if future.exception() is not None:
+							self._logger.error("Could not check {} for updates, error: {!r}".format(target,
+							                                                                        future.exception()))
+							continue
 
-				release_notes = None
-				if target_information and target_information["remote"] and target_information["remote"]["value"]:
-					if "release_notes" in populated_check and populated_check["release_notes"]:
-						release_notes = populated_check["release_notes"]
-					elif "release_notes" in target_information["remote"]:
-						release_notes = target_information["remote"]["release_notes"]
+						target_information, target_update_available, target_update_possible, target_online, target_error = future.result()
 
-					if release_notes:
-						release_notes = release_notes.format(octoprint_version=VERSION,
-						                                     target_name=target_information["remote"]["name"],
-						                                     target_version=target_information["remote"]["value"])
+						target_information = dict_merge(dict(local=dict(name="?", value="?"),
+						                                     remote=dict(name="?", value="?",
+						                                                 release_notes=None),
+						                                     needs_online=True), target_information)
 
-				information[target] = dict(updateAvailable=target_update_available,
-				                           updatePossible=target_update_possible,
-				                           information=target_information,
-				                           displayName=populated_check["displayName"],
-				                           displayVersion=populated_check["displayVersion"].format(octoprint_version=VERSION, local_name=local_name, local_value=local_value),
-				                           check=populated_check,
-				                           releaseNotes=release_notes)
+						update_available = update_available or target_update_available
+						update_possible = update_possible or (target_update_possible and target_update_available)
 
-			if self._version_cache_dirty:
-				self._save_version_cache()
+						local_name = target_information["local"]["name"]
+						local_value = target_information["local"]["value"]
+
+						release_notes = None
+						if target_information and target_information["remote"] and target_information["remote"][
+							"value"]:
+							if "release_notes" in populated_check and populated_check["release_notes"]:
+								release_notes = populated_check["release_notes"]
+							elif "release_notes" in target_information["remote"]:
+								release_notes = target_information["remote"]["release_notes"]
+
+							if release_notes:
+								release_notes = release_notes.format(octoprint_version=VERSION,
+								                                     target_name=target_information["remote"]["name"],
+								                                     target_version=target_information["remote"]["value"])
+
+						information[target] = dict(updateAvailable=target_update_available,
+						                           updatePossible=target_update_possible,
+						                           information=target_information,
+						                           displayName=populated_check["displayName"],
+						                           displayVersion=populated_check["displayVersion"].format(octoprint_version=VERSION,
+						                                                                                   local_name=local_name,
+						                                                                                   local_value=local_value),
+						                           releaseNotes=release_notes,
+						                           online=target_online,
+						                           error=target_error)
+
+				if self._version_cache_dirty:
+					self._save_version_cache()
+
+				self._get_versions_data = information, update_available, update_possible
+				self._get_versions_data_ready.set()
+			finally:
+				self._get_versions_mutex.release()
+
+		else: # something's already in progress, let's wait for it to complete and use its result
+			self._get_versions_data_ready.wait()
+			information, update_available, update_possible = self._get_versions_data
+
 		return information, update_available, update_possible
 
 	def _get_check_hash(self, check):
@@ -646,36 +698,50 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		hash.update(dict_to_sorted_repr(check))
 		return hash.hexdigest()
 
-	def _get_current_version(self, target, check, force=False):
+	def _get_current_version(self, target, check, force=False, online=None):
 		"""
 		Determines the current version information for one target based on its check configuration.
 		"""
 
 		current_hash = self._get_check_hash(check)
+		if online is None:
+			online = self._connectivity_checker.online
 		if target in self._version_cache and not force:
 			data = self._version_cache[target]
-			if data["hash"] == current_hash and data["timestamp"] + self._version_cache_ttl >= time.time() > data["timestamp"]:
+			if data["hash"] == current_hash \
+					and data["timestamp"] + self._version_cache_ttl >= time.time() > data["timestamp"] \
+					and data.get("online", None) == online:
 				# we also check that timestamp < now to not get confused too much by clock changes
-				return data["information"], data["available"], data["possible"]
+				return data["information"], data["available"], data["possible"], data["online"], data.get("error", None)
 
 		information = dict()
 		update_available = False
+		error = None
 
 		try:
 			version_checker = self._get_version_checker(target, check)
-			information, is_current = version_checker.get_latest(target, check)
+			information, is_current = version_checker.get_latest(target, check, online=online)
 			if information is not None and not is_current:
 				update_available = True
+		except exceptions.CannotCheckOffline:
+			update_possible = False
+			information["needs_online"] = True
 		except exceptions.UnknownCheckType:
 			self._logger.warn("Unknown check type %s for %s" % (check["type"], target))
 			update_possible = False
+			error = "unknown_check"
+		except exceptions.NetworkError:
+			self._logger.warn("Could not check %s for updates due to a network error" % target)
+			update_possible = False
+			error = "network"
 		except:
 			self._logger.exception("Could not check %s for updates" % target)
 			update_possible = False
+			error = "unknown"
 		else:
 			try:
 				updater = self._get_updater(target, check)
-				update_possible = updater.can_perform_update(target, check)
+				update_possible = updater.can_perform_update(target, check, online=online)
 			except:
 				update_possible = False
 
@@ -683,9 +749,11 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		                                   hash=current_hash,
 		                                   information=information,
 		                                   available=update_available,
-		                                   possible=update_possible)
+		                                   possible=update_possible,
+		                                   online=online,
+		                                   error=error)
 		self._version_cache_dirty = True
-		return information, update_available, update_possible
+		return information, update_available, update_possible, online, error
 
 	def perform_updates(self, check_targets=None, force=False):
 		"""
@@ -797,7 +865,9 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				self._send_client_message("success", dict(results=target_results))
 
 	def _perform_update(self, target, check, force):
-		information, update_available, update_possible = self._get_current_version(target, check)
+		online = self._connectivity_checker.online
+
+		information, update_available, update_possible, _, _ = self._get_current_version(target, check, online=online)
 
 		if not update_available and not force:
 			return False, None
@@ -820,7 +890,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			if updater is None:
 				raise exceptions.UnknownUpdateType()
 
-			update_result = updater.perform_update(target, populated_check, target_version, log_cb=self._log)
+			update_result = updater.perform_update(target, populated_check, target_version, log_cb=self._log, online=online)
 			target_result = ("success", update_result)
 			self._logger.info("Update of %s to %s successful!" % (target, target_version))
 
@@ -828,6 +898,10 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			self._logger.warn("Update of %s can not be performed, unknown update type" % target)
 			self._send_client_message("update_failed", dict(target=target, version=target_version, name=populated_check["displayName"], reason="Unknown update type"))
 			return False, None
+
+		except exceptions.CannotUpdateOffline:
+			self._logger.warn("Update of %s can not be performed, it's not marked as 'offline' capable but we are apparently offline right now" % target)
+			self._send_client_message("update_failed", dict(target=target, version=target_version, name=populated_check["displayName"], reason="No internet connection"))
 
 		except Exception as e:
 			self._logger.exception("Update of %s can not be performed" % target)
@@ -868,7 +942,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 		self._logger.info("Restarting...")
 		try:
-			util.execute(restart_command)
+			util.execute(restart_command, evaluate_returncode=False, async=True)
 		except exceptions.ScriptError as e:
 			self._logger.exception("Error while restarting via command {}".format(restart_command))
 			self._logger.warn("Restart stdout:\n{}".format(e.stdout))
@@ -917,8 +991,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 					result["force_base"] = False
 
 					if check.get("update_script", None):
-						# if we are using the update_script, we need to set our update_branch and force
-						# to install the exact version we requested
+						# if we are using the update_script, we need to set our update_branch
 
 						if check.get("prerelease", None):
 							# we are tracking prereleases => we want to be on the correct prerelease channel/branch
@@ -928,14 +1001,13 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 								# in case it's not already set
 								result["update_branch"] = check.get("update_branch", channel)
 
-							# we also force our target version in the update
-							result["force_exact_version"] = True
-
 						else:
 							# we are not tracking prereleases, but aren't on the stable branch either => switch back
 							# to stable branch on update
 							result["update_branch"] = check.get("update_branch", stable_branch)
 
+						# we also force an exact version
+						result["force_exact_version"] = True
 
 						if BRANCH != result.get("prerelease_channel"):
 							# we force python unequality check here because that will also allow us to

@@ -174,6 +174,7 @@ $(function() {
         self.pipPython = ko.observable();
 
         self.safeMode = ko.observable();
+        self.online = ko.observable();
 
         self.pipUseUserString = ko.pureComputed(function() {
             return self.pipUseUser() ? "yes" : "no";
@@ -234,7 +235,7 @@ $(function() {
         };
 
         self.enableRepoInstall = function(data) {
-            return self.enableManagement() && self.pipAvailable() && !self.safeMode() && self.isCompatible(data);
+            return self.enableManagement() && self.pipAvailable() && !self.safeMode() && self.online() && self.isCompatible(data);
         };
 
         self.invalidUrl = ko.pureComputed(function() {
@@ -244,7 +245,7 @@ $(function() {
 
         self.enableUrlInstall = ko.pureComputed(function() {
             var url = self.installUrl();
-            return self.enableManagement() && self.pipAvailable() && !self.safeMode() && url !== undefined && url.trim() != "" && !self.invalidUrl();
+            return self.enableManagement() && self.pipAvailable() && !self.safeMode() && self.online() && url !== undefined && url.trim() != "" && !self.invalidUrl();
         });
 
         self.invalidArchive = ko.pureComputed(function() {
@@ -321,6 +322,7 @@ $(function() {
             self._fromPipResponse(data.pip, options);
 
             self.safeMode(data.safe_mode || false);
+            self.online(data.online !== undefined ? data.online : true);
         };
 
         self._fromPluginsResponse = function(data, options) {
@@ -663,7 +665,7 @@ $(function() {
             return self.isCompatible(data) ? (self.installed(data) ? gettext("Reinstall") : gettext("Install")) : (data.disabled ? gettext("Disabled") : gettext("Incompatible"));
         };
 
-        self._displayNotification = function(response, titleSuccess, textSuccess, textRestart, textReload, titleError, textError) {
+        self._displayNotification = function(response, titleSuccess, textSuccess, textRestart, textReload, textReconnect, titleError, textError) {
             var notification;
 
             var beforeClose = function(notification) {
@@ -685,17 +687,21 @@ $(function() {
                         hide: false
                     };
 
+                    var restartClicked = false;
                     if (self.restartCommandSpec) {
                         options.confirm = {
                             confirm: true,
                             buttons: [{
                                 text: gettext("Restart now"),
-                                click: function () {
+                                click: function (notice) {
+                                    if (restartClicked) return;
+                                    restartClicked = true;
                                     showConfirmationDialog({
                                         message: gettext("This will restart your OctoPrint server."),
                                         onproceed: function() {
                                             OctoPrint.system.executeCommand("core", "restart")
                                                 .done(function() {
+                                                    notice.remove();
                                                     new PNotify({
                                                         title: gettext("Restart in progress"),
                                                         text: gettext("The server is now being restarted in the background")
@@ -707,6 +713,9 @@ $(function() {
                                                         text: gettext("Trying to restart the server produced an error, please check octoprint.log for details. You'll have to restart manually.")
                                                     })
                                                 });
+                                        },
+                                        onclose: function() {
+                                            restartClicked = false;
                                         }
                                     });
                                 }
@@ -716,6 +725,7 @@ $(function() {
 
                     notification = PNotify.singleButtonNotify(options);
                 } else if (response.needs_refresh) {
+                    var refreshClicked = false;
                     notification = PNotify.singleButtonNotify({
                         title: titleSuccess,
                         text: textReload,
@@ -724,6 +734,8 @@ $(function() {
                             buttons: [{
                                 text: gettext("Reload now"),
                                 click: function () {
+                                    if (refreshClicked) return;
+                                    refreshClicked = true;
                                     location.reload(true);
                                 }
                             }]
@@ -732,6 +744,15 @@ $(function() {
                             closer: true,
                             sticker: false
                         },
+                        callbacks: {
+                            before_close: beforeClose
+                        },
+                        hide: false
+                    })
+                } else if (response.needs_reconnect) {
+                    notification = new PNotify({
+                        title: titleSuccess,
+                        text: textReconnect,
                         callbacks: {
                             before_close: beforeClose
                         },
@@ -795,7 +816,7 @@ $(function() {
         };
 
         self.toggleButtonCss = function(data) {
-            var icon = self._getToggleCommand(data) == "enable" ? "icon-circle-blank" : "icon-circle";
+            var icon = self._getToggleCommand(data) == "enable" ? "fa fa-toggle-off" : "fa fa-toggle-on";
             var disabled = (self.enableToggle(data)) ? "" : " disabled";
 
             return icon + disabled;
@@ -1001,6 +1022,10 @@ $(function() {
             self._closeAllNotifications();
         };
 
+        self.onEventConnectivityChanged = function(payload) {
+            self.requestData({eval_notices: true});
+        };
+
         self._closeAllNotifications = function() {
             if (self.notifications) {
                 _.each(self.notifications, function(notification) {
@@ -1050,7 +1075,7 @@ $(function() {
                 });
                 self._scrollWorkingOutputToEnd();
             } else if (messageType == "result") {
-                var titleSuccess, textSuccess, textRestart, textReload, titleError, textError;
+                var titleSuccess, textSuccess, textRestart, textReload, textReconnect, titleError, textError;
                 var action = data.action;
 
                 var name = "Unknown";
@@ -1070,16 +1095,19 @@ $(function() {
                         textSuccess = gettext("A plugin was installed successfully, however it was impossible to detect which one. Please Restart OctoPrint to make sure everything will be registered properly");
                         textRestart = textSuccess;
                         textReload = textSuccess;
+                        textReconnect = textSuccess;
                     } else if (data.was_reinstalled) {
                         titleSuccess = _.sprintf(gettext("Plugin \"%(name)s\" reinstalled"), {name: name});
                         textSuccess = gettext("The plugin was reinstalled successfully");
                         textRestart = gettext("The plugin was reinstalled successfully, however a restart of OctoPrint is needed for that to take effect.");
                         textReload = gettext("The plugin was reinstalled successfully, however a reload of the page is needed for that to take effect.");
+                        textReconnect = gettext("The plugin was reinstalled successfully, however a reconnect to the printer is needed for that to take effect.");
                     } else {
                         titleSuccess = _.sprintf(gettext("Plugin \"%(name)s\" installed"), {name: name});
                         textSuccess = gettext("The plugin was installed successfully");
                         textRestart = gettext("The plugin was installed successfully, however a restart of OctoPrint is needed for that to take effect.");
                         textReload = gettext("The plugin was installed successfully, however a reload of the page is needed for that to take effect.");
+                        textReconnect = gettext("The plugin was installed successfully, however a reconnect to the printer is needed for that to take effect.");
                     }
 
                     titleError = gettext("Something went wrong");
@@ -1131,6 +1159,7 @@ $(function() {
                     textSuccess = gettext("The plugin was uninstalled successfully");
                     textRestart = gettext("The plugin was uninstalled successfully, however a restart of OctoPrint is needed for that to take effect.");
                     textReload = gettext("The plugin was uninstalled successfully, however a reload of the page is needed for that to take effect.");
+                    textReconnect = gettext("The plugin was uninstalled successfully, however a reconnect to the printer is needed for that to take effect.");
 
                     titleError = gettext("Something went wrong");
                     if (data.hasOwnProperty("reason")) {
@@ -1148,6 +1177,7 @@ $(function() {
                     textSuccess = gettext("The plugin was enabled successfully.");
                     textRestart = gettext("The plugin was enabled successfully, however a restart of OctoPrint is needed for that to take effect.");
                     textReload = gettext("The plugin was enabled successfully, however a reload of the page is needed for that to take effect.");
+                    textReconnect = gettext("The plugin was enabled successfully, however a reconnect to the printer is needed for that to take effect.");
 
                     titleError = gettext("Something went wrong");
                     if (data.hasOwnProperty("reason")) {
@@ -1165,6 +1195,7 @@ $(function() {
                     textSuccess = gettext("The plugin was disabled successfully.");
                     textRestart = gettext("The plugin was disabled successfully, however a restart of OctoPrint is needed for that to take effect.");
                     textReload = gettext("The plugin was disabled successfully, however a reload of the page is needed for that to take effect.");
+                    textReconnect = gettext("The plugin was disabled successfully, however a reconnect to the printer is needed for that to take effect.");
 
                     titleError = gettext("Something went wrong");
                     if (data.hasOwnProperty("reason")) {
@@ -1177,7 +1208,7 @@ $(function() {
                     return;
                 }
 
-                self._displayNotification(data, titleSuccess, textSuccess, textRestart, textReload, titleError, textError);
+                self._displayNotification(data, titleSuccess, textSuccess, textRestart, textReload, textReconnect, titleError, textError);
                 self.requestData();
             }
         };

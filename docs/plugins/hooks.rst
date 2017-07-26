@@ -389,14 +389,15 @@ This describes actually four hooks:
   * ``octoprint.comm.protocol.gcode.sending``
   * ``octoprint.comm.protocol.gcode.sent``
 
-.. py:function:: protocol_gcodephase_hook(comm_instance, phase, cmd, cmd_type, gcode, *args, **kwargs)
+.. py:function:: protocol_gcodephase_hook(comm_instance, phase, cmd, cmd_type, gcode, subcode=None, *args, **kwargs)
 
    Pre- and postprocess commands as they progress through the various phases of being sent to the printer. The phases
    are the following:
 
      * ``queuing``: This phase is triggered just before the command is added to the send queue of the communication layer. This
        corresponds to the moment a command is being read from a file that is currently being printed. Handlers
-       may suppress or change commands or their command type here.
+       may suppress or change commands or their command type here. This is the only phase that supports multi command
+       expansion by having the handler return a list, see below for details.
      * ``queued``: This phase is triggered just after the command was added to the send queue of the communication layer.
        No manipulation is possible here anymore (returned values will be ignored).
      * ``sending``: This phase is triggered just before the command is actually being sent to the printer. Right afterwards
@@ -425,7 +426,7 @@ This describes actually four hooks:
 
      * ``None``: Don't change anything. Note that Python functions will also automatically return ``None`` if
        an empty ``return`` statement is used or just nothing is returned explicitly from the handler. Hence, the following
-       examples are all falling into this category:
+       examples are all falling into this category and equivalent:
 
        .. code-block:: python
 
@@ -450,6 +451,27 @@ This describes actually four hooks:
        should use this option.
      * A 2-tuple consisting of a rewritten version of the ``cmd`` and the ``cmd_type``, e.g. ``return "M105", "temperature_poll"``.
        Handlers which wish to rewrite both the command and the command type should use this option.
+     * **"queuing" phase only**: A list of any of the above to allow for expanding one command into
+       many. The following example shows how any queued command could be turned into a sequence of a temperature query,
+       line number reset, display of the ``gcode`` on the printer's display and finally the actual command (this example
+       does not make a lot of sense to be quite honest):
+
+       .. code-block:: python
+
+          def rewrite_foo(self, comm_instance, phase, cmd, cmd_type, gcode, *args, **kwargs):
+              if gcode or not cmd.startswith("@foo"):
+                  return
+
+              return [("M105", "temperature_poll"),    # 2-tuple, command & command type
+                      ("M110",),                       # 1-tuple, just the command
+                      "M117 echo foo: {}".format(cmd)] # string, just the command
+
+          __plugin_hooks__ = {
+              "octoprint.comm.protocol.gcode.queuing": rewrite_foo
+          }
+
+     Note: Only one command of a given ``cmd_type`` (other than None) may be queued at a time. Trying to rewrite the ``cmd_type``
+     to one already in the queue will give an error.
 
    **Example**
 
@@ -469,6 +491,8 @@ This describes actually four hooks:
    :param str cmd_type: Type of command, e.g. ``temperature_poll`` for temperature polling or ``sd_status_poll`` for SD
        printing status polling.
    :param str gcode: Parsed GCODE command, e.g. ``G0`` or ``M110``, may also be None if no known command could be parsed
+   :param str subcode: Parsed subcode of the GCODE command, e.g. ``1`` for ``M80.1``. Will be None if no subcode was provided
+       or no command could be parsed.
    :return: None, 1-tuple, 2-tuple or string, see the description above for details.
 
 .. _sec-plugins-hook-comm-protocol-gcode-received:
@@ -922,3 +946,38 @@ octoprint.ui.web.templatetypes
    :param dict template_sorting: read-only dictionary of currently configured template sorting specifications
    :return: a list of 3-tuples (template type, rule, sorting spec)
    :rtype: list
+
+.. _sec-plugins-hook-users-factory:
+
+octoprint.users.factory
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:function:: user_manager_factory_hook(components, settings, *args, **kwargs)
+
+   Return a :class:`~octoprint.users.UserManager` instance to use as global user manager object. This will
+   be called only once during initial server startup.
+
+   The provided ``components`` is a dictionary containing the already initialized system components:
+
+     * ``plugin_manager``: The :class:`~octoprint.plugin.core.PluginManager`
+     * ``printer_profile_manager``: The :class:`~octoprint.printer.profile.PrinterProfileManager`
+     * ``event_bus``: The :class:`~octoprint.events.EventManager`
+     * ``analysis_queue``: The :class:`~octoprint.filemanager.analysis.AnalysisQueue`
+     * ``slicing_manager``: The :class:`~octoprint.slicing.SlicingManager`
+     * ``file_manager``: The :class:`~octoprint.filemanager.FileManager`
+     * ``app_session_manager``: The :class:`~octoprint.server.util.flask.AppSessionManager`
+     * ``plugin_lifecycle_manager``: The :class:`~octoprint.server.LifecycleManager`
+     * ``preemptive_cache``: The :class:`~octoprint.server.util.flask.PreemptiveCache`
+
+   If the factory returns anything but ``None``, it will be assigned to the global ``userManager`` instance.
+
+   If no of the registered factories return a user manager instance, the class referenced by the ``config.yaml``
+   entry ``accessControl.userManager`` will be initialized if possible, otherwise a stock
+   :class:`~octoprint.users.FilebasedUserManager` will be instantiated, linked to the default user storage
+   file ``~/.octoprint/users.yaml``.
+
+   :param dict components: System components to use for user manager instance initialization
+   :param SettingsManager settings: The global settings manager instance to fetch configuration values from if necessary
+   :return: The ``userManager`` instance to use globally.
+   :rtype: UserManager subclass or None
+

@@ -7,7 +7,9 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 
 import re
+
 from builtins import range
+from past.builtins import basestring
 
 class SupportLocationTypes(object):
 	NONE = "none"

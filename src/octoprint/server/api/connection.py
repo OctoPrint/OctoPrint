@@ -78,8 +78,8 @@ def _get_options():
 	default_profile = printerProfileManager.get_default()
 
 	options = dict(
-		ports=connection_options["ports"],
-		baudrates=connection_options["baudrates"],
+		ports=sorted(connection_options["ports"]),
+		baudrates=sorted(connection_options["baudrates"], reverse=True),
 		printerProfiles=[dict(id=printer_profile["id"], name=printer_profile["name"] if "name" in printer_profile else printer_profile["id"]) for printer_profile in profile_options.values() if "id" in printer_profile],
 		portPreference=connection_options["portPreference"],
 		baudratePreference=connection_options["baudratePreference"],

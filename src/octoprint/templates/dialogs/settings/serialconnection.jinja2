@@ -19,7 +19,7 @@
         </div>
     </div>
     <div class="control-group" title="{{ _('Interval in which to poll for the temperature information from the printer') }}">
-        <label class="control-label" for="settings-serialTimeoutTemperature">{{ _('Temperature interval') }}</label>
+        <label class="control-label" for="settings-serialTimeoutTemperature">{{ _('Temperature interval (polling)') }}</label>
         <div class="controls">
             <div class="input-append">
                 <input type="number" step="any" min="1" class="input-mini text-right" data-bind="value: serial_timeoutTemperature" id="settings-serialTimeoutTemperature">
@@ -33,6 +33,16 @@
                 <span class="add-on">s</span>
             </div>
             <span class="help-inline">{{ _('When a target temperature is set')}}</span>
+        </div>
+    </div>
+    <div class="control-group" title="{{ _('Temperature report interval to request from autoreport capable firmwares. A value of 0 disables autoreporting by the firmware and forces polling.') }}">
+        <label class="control-label">{{ _('Temperature interval (autoreport)') }}</label>
+        <div class="controls">
+            <div class="input-append">
+                <input type="number" step="any" min="0" class="input-mini text-right" data-bind="value: serial_timeoutTemperatureAutoreport" id="settings-serialTimeoutTemperatureAutoreport">
+                <span class="add-on">s</span>
+            </div>
+            <span class="help-inline">{{ _('Autoreport interval to request from firmware')}}</span>
         </div>
     </div>
     <div class="control-group" title="{{ _('Interval in which to poll for the SD printing status information from the printer while printing') }}">
@@ -108,7 +118,7 @@
     </div>
 
     <div>
-        <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'icon-caret-right icon-caret-down', container: '#settings_serialConnection .hide' }"><i class="icon-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
+        <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', container: '#settings_serialConnection .hide' }"><i class="fa fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
         <div class="hide">
             <div class="control-group" title="{{ _('Command to send to the firmware on first handshake attempt.') }}">
                 <label class="control-label" for="settings-serialHelloCommand">{{ _('"Hello" command') }}</label>
@@ -139,6 +149,18 @@
             <div class="controls">
                 <label class="checkbox">
                     <input type="checkbox" data-bind="checked: serial_supportResendsWithoutOk" id="settings-supportResendsWithoutOk"> {{ _('Simulate an additional <code>ok</code> for resend requests') }}
+                </label>
+            </div>
+            <div class="controls">
+                <label class="checkbox">
+                    <input type="checkbox" data-bind="checked: serial_logPositionOnPause" id="settings-logPositionOnPause"> {{ _('Log position on pause') }} <span class="label label-important">{{ _('Warning') }}</span>
+                    <span class="help-block">{{ _('If you disabled this, the <code>pause_position</code> placeholders in your pause/resume GCODE scripts will stay unpopulated! However, pausing speed might improve slightly.') }}</span>
+                </label>
+            </div>
+            <div class="controls">
+                <label class="checkbox">
+                    <input type="checkbox" data-bind="checked: serial_logPositionOnCancel" id="settings-logPositionOnCancel"> {{ _('Log position on cancel') }} <span class="label label-important">{{ _('Warning') }}</span>
+                    <span class="help-block">{{ _('If you disabled this, the <code>cancel_position</code> placeholders in your cancel GCODE script and the corresponding data in the print recovery data will stay unpopulated! However, cancelling speed might improve slightly.') }}</span>
                 </label>
             </div>
             <div class="control-group" title="{{ _('Maximum consecutive communication timeouts while idle. More than this and the printer will be considered to be gone. Set to 0 to disable.') }}">
