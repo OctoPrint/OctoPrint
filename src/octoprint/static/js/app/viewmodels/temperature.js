@@ -721,9 +721,7 @@ $(function() {
                     }
                 });
             }
-        };
 
-        self.onStartup = function() {
             self.changeOffsetDialog = $("#change_offset_dialog");
         };
 
