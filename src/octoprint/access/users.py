@@ -822,7 +822,10 @@ class User(UserMixin):
 		return "User(id=%s,name=%s,active=%r,user=True,admin=%r,permissions=%s,groups=%s)" % (self.get_id(), self.get_name(), bool(self.is_active), self.has_permission(Permissions.ADMIN), self._permissions, self._groups)
 
 
-class AnonymousUser(AnonymousUserMixin):
+class AnonymousUser(AnonymousUserMixin, User):
+	def __init__(self):
+		from octoprint.server import groupManager
+		User.__init__(self, "guest", "", True, [], [groupManager.guests_group])
 
 	@property
 	def is_anonymous(self):
@@ -838,6 +841,7 @@ class AnonymousUser(AnonymousUserMixin):
 
 	def check_password(self, passwordHash):
 		return True
+
 
 class SessionUser(wrapt.ObjectProxy):
 	def __init__(self, user):
