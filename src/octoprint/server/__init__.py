@@ -7,9 +7,9 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import uuid
 from sockjs.tornado import SockJSRouter
-from flask import Flask, g, request, session, Blueprint, Request, Response
-from flask_login import LoginManager, current_user
-from flask_principal import Principal, Permission, RoleNeed, identity_loaded, UserNeed
+from flask import Flask, g, request, session, Blueprint, Request, Response, current_app
+from flask_login import LoginManager, current_user, session_protected, user_logged_out
+from flask_principal import Principal, Permission, RoleNeed, identity_loaded, identity_changed, UserNeed, AnonymousIdentity
 from flask_babel import Babel, gettext, ngettext
 from flask_assets import Environment, Bundle
 from babel import Locale
@@ -49,6 +49,7 @@ pluginManager = None
 appSessionManager = None
 pluginLifecycleManager = None
 preemptiveCache = None
+connectivityChecker = None
 
 principals = Principal(app)
 admin_permission = Permission(RoleNeed("admin"))
@@ -95,6 +96,29 @@ def on_identity_loaded(sender, identity):
 		identity.provides.add(RoleNeed("user"))
 	if user.is_admin:
 		identity.provides.add(RoleNeed("admin"))
+
+
+def _clear_identity(sender):
+	# Remove session keys set by Flask-Principal
+	for key in ('identity.id', 'identity.name', 'identity.auth_type'):
+		if key in session:
+			del session[key]
+
+	# switch to anonymous identity
+	identity_changed.send(sender, identity=AnonymousIdentity())
+
+
+@session_protected.connect_via(app)
+def on_session_protected(sender):
+	# session was protected, that means the user is no more and we need to clear our identity
+	_clear_identity(sender)
+
+
+@user_logged_out.connect_via(app)
+def on_user_logged_out(sender, user=None):
+	# user was logged out, clear identity
+	_clear_identity(sender)
+
 
 def load_user(id):
 	if id == "_api":
@@ -160,6 +184,7 @@ class Server(object):
 		global appSessionManager
 		global pluginLifecycleManager
 		global preemptiveCache
+		global connectivityChecker
 		global debug
 		global safe_mode
 
@@ -204,6 +229,40 @@ class Server(object):
 		pluginLifecycleManager = LifecycleManager(pluginManager)
 		preemptiveCache = PreemptiveCache(os.path.join(self._settings.getBaseFolder("data"), "preemptive_cache_config.yaml"))
 
+		# start regular check if we are connected to the internet
+		connectivityEnabled = self._settings.getBoolean(["server", "onlineCheck", "enabled"])
+		connectivityInterval = self._settings.getInt(["server", "onlineCheck", "interval"])
+		connectivityHost = self._settings.get(["server", "onlineCheck", "host"])
+		connectivityPort = self._settings.getInt(["server", "onlineCheck", "port"])
+
+		def on_connectivity_change(old_value, new_value):
+			eventManager.fire(events.Events.CONNECTIVITY_CHANGED, payload=dict(old=old_value, new=new_value))
+
+		connectivityChecker = octoprint.util.ConnectivityChecker(connectivityInterval,
+		                                                         connectivityHost,
+		                                                         port=connectivityPort,
+		                                                         enabled=connectivityEnabled,
+		                                                         on_change=on_connectivity_change)
+
+		def on_settings_update(*args, **kwargs):
+			# make sure our connectivity checker runs with the latest settings
+			connectivityEnabled = self._settings.getBoolean(["server", "onlineCheck", "enabled"])
+			connectivityInterval = self._settings.getInt(["server", "onlineCheck", "interval"])
+			connectivityHost = self._settings.get(["server", "onlineCheck", "host"])
+			connectivityPort = self._settings.getInt(["server", "onlineCheck", "port"])
+
+			if connectivityChecker.enabled != connectivityEnabled \
+					or connectivityChecker.interval != connectivityInterval \
+					or connectivityChecker.host != connectivityHost \
+					or connectivityChecker.port != connectivityPort:
+				connectivityChecker.enabled = connectivityEnabled
+				connectivityChecker.interval = connectivityInterval
+				connectivityChecker.host = connectivityHost
+				connectivityChecker.port = connectivityPort
+				connectivityChecker.check_immediately()
+
+		eventManager.subscribe(events.Events.SETTINGS_UPDATED, on_settings_update)
+
 		# setup access control
 		userManagerName = self._settings.get(["accessControl", "userManager"])
 		try:
@@ -224,9 +283,32 @@ class Server(object):
 			file_manager=fileManager,
 			app_session_manager=appSessionManager,
 			plugin_lifecycle_manager=pluginLifecycleManager,
-			user_manager=userManager,
-			preemptive_cache=preemptiveCache
+			preemptive_cache=preemptiveCache,
+			connectivity_checker=connectivityChecker
 		)
+
+		# create user manager instance
+		user_manager_factories = pluginManager.get_hooks("octoprint.users.factory")
+		for name, factory in user_manager_factories.items():
+			try:
+				userManager = factory(components, self._settings)
+				if userManager is not None:
+					self._logger.debug("Created user manager instance from factory {}".format(name))
+					break
+			except:
+				self._logger.exception("Error while creating user manager instance from factory {}".format(name))
+		else:
+			name = self._settings.get(["accessControl", "userManager"])
+			try:
+				clazz = octoprint.util.get_class(name)
+				userManager = clazz()
+			except:
+				self._logger.exception(
+					"Could not instantiate user manager {}, falling back to FilebasedUserManager!".format(name))
+				userManager = octoprint.users.FilebasedUserManager()
+			finally:
+				userManager.enabled = self._settings.getBoolean(["accessControl", "enabled"])
+		components.update(dict(user_manager=userManager))
 
 		# create printer instance
 		printer_factories = pluginManager.get_hooks("octoprint.printer.factory")

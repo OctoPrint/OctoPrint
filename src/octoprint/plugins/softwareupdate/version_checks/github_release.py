@@ -96,8 +96,14 @@ def _get_latest_release(user, repo, compare_type,
                         include_prerelease=False,
                         commitish=None,
                         force_base=True):
+	from ..exceptions import NetworkError
+
 	nothing = None, None, None
-	r = requests.get(RELEASE_URL.format(user=user, repo=repo), timeout=30)
+
+	try:
+		r = requests.get(RELEASE_URL.format(user=user, repo=repo), timeout=(3.05, 30))
+	except requests.ConnectionError as exc:
+		raise NetworkError(cause=exc)
 
 	from . import log_github_ratelimit
 	log_github_ratelimit(logger, r)
@@ -258,7 +264,7 @@ def _is_current(release_information, compare_type, custom=None, force_base=True)
 		return True
 
 
-def get_latest(target, check, custom_compare=None):
+def get_latest(target, check, custom_compare=None, online=True):
 	from ..exceptions import ConfigurationInvalid
 
 	user = check.get("user", None)
@@ -266,6 +272,14 @@ def get_latest(target, check, custom_compare=None):
 	current = check.get("current", None)
 	if user is None or repo is None or current is None:
 		raise ConfigurationInvalid("Update configuration for {} of type github_release needs all of user, repo and current set and not None".format(target))
+
+	information =dict(
+		local=dict(name=current, value=current),
+		remote=dict(name="?", value="?", release_notes=None),
+		needs_online=not check.get("offline", False)
+	)
+	if not online and information["needs_online"]:
+		return information, True
 
 	include_prerelease = check.get("prerelease", False)
 	prerelease_channel = check.get("prerelease_channel", None)
@@ -290,10 +304,13 @@ def get_latest(target, check, custom_compare=None):
 	                                                             commitish=commitish,
 	                                                             force_base=force_base)
 
-	information =dict(
-		local=dict(name=current, value=current),
-		remote=dict(name=remote_name, value=remote_tag, release_notes=release_notes)
-	)
+	if remote_name is None:
+		if remote_tag is not None:
+			remote_name = remote_tag
+		else:
+			remote_name = "-"
+
+	information["remote"] = dict(name=remote_name, value=remote_tag, release_notes=release_notes)
 
 	logger.debug("Target: %s, local: %s, remote: %s" % (target, current, remote_tag))
 

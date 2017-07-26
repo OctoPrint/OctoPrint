@@ -44,15 +44,12 @@ GCODE.gCodeReader = (function(){
     var prepareGCode = function(totalSize){
         if(!lines)return;
         gcode = [];
-        var i, tmp, byteCount;
+        var i, byteCount;
 
         byteCount = 0;
         for(i=0;i<lines.length;i++){
-            byteCount += lines[i].length + 1; // line length + \n
-            tmp = lines[i].indexOf(";");
-            if(tmp > 1 || tmp === -1) {
-                gcode.push({line: lines[i], percentage: byteCount * 100 / totalSize});
-            }
+            byteCount += lines[i].length + 1; // line length + line ending
+            gcode.push({line: lines[i], percentage: byteCount * 100 / totalSize});
         }
         lines = [];
     };
@@ -146,7 +143,7 @@ GCODE.gCodeReader = (function(){
             this.clear();
 
             var totalSize = reader.target.result.length;
-            lines = reader.target.result.split(/\n/);
+            lines = reader.target.result.split(/[\r\n]/g);
             reader.target.result = null;
             prepareGCode(totalSize);
 

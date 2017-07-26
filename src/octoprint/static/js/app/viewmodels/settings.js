@@ -173,6 +173,8 @@ $(function() {
         self.serial_disconnectOnErrors = ko.observable(undefined);
         self.serial_triggerOkForM29 = ko.observable(undefined);
         self.serial_supportResendsWithoutOk = ko.observable(undefined);
+        self.serial_logPositionOnPause = ko.observable(undefined);
+        self.serial_logPositionOnCancel = ko.observable(undefined);
         self.serial_maxTimeoutsIdle = ko.observable(undefined);
         self.serial_maxTimeoutsPrinting = ko.observable(undefined);
         self.serial_maxTimeoutsLong = ko.observable(undefined);
@@ -210,6 +212,11 @@ $(function() {
         self.server_diskspace_critical = ko.observable();
         self.server_diskspace_warning_str = sizeObservable(self.server_diskspace_warning);
         self.server_diskspace_critical_str = sizeObservable(self.server_diskspace_critical);
+
+        self.server_onlineCheck_enabled = ko.observable();
+        self.server_onlineCheck_interval = ko.observable();
+        self.server_onlineCheck_host = ko.observable();
+        self.server_onlineCheck_port = ko.observable();
 
         self.settings = undefined;
         self.lastReceivedSettings = undefined;

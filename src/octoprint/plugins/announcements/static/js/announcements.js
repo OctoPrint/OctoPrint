@@ -40,7 +40,7 @@ $(function() {
         };
 
         self.toggleButtonCss = function(data) {
-            var icon = data.enabled ? "fa fa-circle" : "fa fa-circle-o";
+            var icon = data.enabled ? "fa fa-toggle-on" : "fa fa-toggle-off";
             var disabled = (self.enableToggle(data)) ? "" : " disabled";
 
             return icon + disabled;
@@ -317,7 +317,13 @@ $(function() {
             self.announcementDialog = $("#plugin_announcements_dialog");
             self.announcementDialogContent = $("#plugin_announcements_dialog_content");
             self.announcementDialogTabs = $("#plugin_announcements_dialog_tabs");
+        };
+
+        self.onEventConnectivityChanged = function(payload) {
+            if (!payload || !payload.new) return;
+            self.retrieveData();
         }
+
     }
 
     // view model class, parameters for constructor, container to bind to

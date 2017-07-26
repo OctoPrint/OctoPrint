@@ -417,6 +417,42 @@ $(function() {
                 });
         };
 
+        self.iconTitleForEntry = function(data) {
+            if (data.updatePossible) {
+                return "";
+            } else if (!data.online && data.information && data.information.needs_online) {
+                return gettext("No internet connection");
+            } else if (data.error) {
+                return self.errorTextForEntry(data);
+            } else {
+                return gettext("Update not possible");
+            }
+        };
+
+        self.errorTextForEntry = function(data) {
+            if (!data.error) {
+                return "";
+            }
+
+            switch (data.error) {
+                case "unknown_check": {
+                    return gettext("Unknown update check, configuration ok?");
+                }
+                case "needs_online": {
+                    return gettext("Cannot check for update, need online connection");
+                }
+                case "network": {
+                    return gettext("Network error while checking for update");
+                }
+                case "unknown": {
+                    return gettext("Unknown error while checking for update, please check the logs");
+                }
+                default: {
+                    return "";
+                }
+            }
+        };
+
         self._markNotificationAsSeen = function(data) {
             if (!Modernizr.localstorage)
                 return false;
@@ -605,6 +641,11 @@ $(function() {
                 clearTimeout(self.restartTimeout);
             }
             return true;
+        };
+
+        self.onEventConnectivityChanged = function(payload) {
+            if (!payload || !payload.new) return;
+            self.performCheck();
         };
 
         self.onDataUpdaterReconnect = function() {

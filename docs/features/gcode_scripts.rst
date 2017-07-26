@@ -87,6 +87,9 @@ There are a few additional template variables available for the following specif
 
     * ``pause_position``: Position reported by the printer via ``M114`` immediately before the print was paused. See
       ``last_position`` above for the structure to expect here.
+
+      **Please note:** This will not be available if you disable
+      "Log position on pause" under Settings > Serial > Advanced options!
     * ``pause_temperature``: Last known temperature values when the print was paused. See ``last_temperature`` above
       for the structure to expect here.
 
@@ -94,6 +97,9 @@ There are a few additional template variables available for the following specif
 
     * ``cancel_position``: Position reported by the printer via ``M114`` immediately before the print was cancelled.
       See ``last_position`` above for the structure to expect here.
+
+      **Please note:** This will not be available if you disable
+      "Log position on cancel" under Settings > Serial > Advanced options!
     * ``cancel_temperature``: Last known temperature values when the print was cancelled. See ``last_temperature`` above
       for the structure to expect here.
 

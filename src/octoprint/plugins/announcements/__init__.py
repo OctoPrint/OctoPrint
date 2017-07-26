@@ -28,7 +28,8 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
                          octoprint.plugin.SettingsPlugin,
                          octoprint.plugin.BlueprintPlugin,
                          octoprint.plugin.StartupPlugin,
-                         octoprint.plugin.TemplatePlugin):
+                         octoprint.plugin.TemplatePlugin,
+                         octoprint.plugin.EventHandlerPlugin):
 
 	def __init__(self):
 		self._cached_channel_configs = None
@@ -210,6 +211,14 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 
 		return NO_CONTENT
 
+	##~~ EventHandlerPlugin
+
+	def on_event(self, event, payload):
+		from octoprint.events import Events
+		if event != Events.CONNECTIVITY_CHANGED or not payload or not payload.get("new", False):
+			return
+		self._fetch_all_channels_async()
+
 	# Internal Tools
 
 	def _mark_read_until(self, channel, until):
@@ -266,6 +275,11 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 		safe_key = self._slugify(key)
 		return self._get_channel_configs(force=force).get(safe_key)
 
+	def _fetch_all_channels_async(self, force=False):
+		thread = threading.Thread(target=self._fetch_all_channels, kwargs=dict(force=force))
+		thread.daemon = True
+		thread.start()
+
 	def _fetch_all_channels(self, force=False):
 		"""Fetch all channel feeds from cache or network."""
 
@@ -298,7 +312,10 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 
 		if data is None:
 			# cache not allowed or empty, fetch from network
-			data = self._get_channel_data_from_network(key, config)
+			if self._connectivity_checker.online:
+				data = self._get_channel_data_from_network(key, config)
+			else:
+				self._logger.info("Looks like we are offline, can't fetch announcements for channel {} from network".format(key))
 
 		return data
 

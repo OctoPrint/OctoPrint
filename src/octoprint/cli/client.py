@@ -9,7 +9,7 @@ import json
 
 import octoprint_client
 
-from octoprint.cli import get_ctx_obj_option
+from octoprint.cli import get_ctx_obj_option, bulk_options
 from octoprint import init_settings, FatalStartupError
 
 
@@ -23,43 +23,66 @@ class JsonStringParamType(click.ParamType):
 			self.fail("%s is not a valid json string" % value, param, ctx)
 
 
+def create_client(settings=None, apikey=None, host=None, port=None, httpuser=None, httppass=None, https=False, prefix=None):
+	assert(host is not None or settings is not None)
+	assert(port is not None or settings is not None)
+	assert(apikey is not None or settings is not None)
+
+	if not host:
+		host = settings.get(["server", "host"])
+		host = host if host != "0.0.0.0" else "127.0.0.1"
+	if not port:
+		port = settings.getInt(["server", "port"])
+
+	if not apikey:
+		apikey = settings.get(["api", "key"])
+
+	baseurl = octoprint_client.build_base_url(https=https,
+	                                          httpuser=httpuser,
+	                                          httppass=httppass,
+	                                          host=host,
+	                                          port=port,
+	                                          prefix=prefix)
+
+	return octoprint_client.Client(baseurl, apikey)
+
+
+client_options = bulk_options([
+	click.option("--apikey", "-a", type=click.STRING),
+	click.option("--host", "-h", type=click.STRING),
+	click.option("--port", "-p", type=click.INT),
+	click.option("--httpuser", type=click.STRING),
+	click.option("--httppass", type=click.STRING),
+	click.option("--https", is_flag=True),
+	click.option("--prefix", type=click.STRING)
+])
+"""Common options to configure an API client."""
+
+
 @click.group()
 def client_commands():
 	pass
 
 
 @client_commands.group("client", context_settings=dict(ignore_unknown_options=True))
-@click.option("--apikey", "-a", type=click.STRING)
-@click.option("--host", "-h", type=click.STRING)
-@click.option("--port", "-p", type=click.INT)
-@click.option("--httpuser", type=click.STRING)
-@click.option("--httppass", type=click.STRING)
-@click.option("--https", is_flag=True)
-@click.option("--prefix", type=click.STRING)
+@client_options
 @click.pass_context
 def client(ctx, apikey, host, port, httpuser, httppass, https, prefix):
 	"""Basic API client."""
 	try:
+		settings = None
 		if not host or not port or not apikey:
 			settings = init_settings(get_ctx_obj_option(ctx, "basedir", None), get_ctx_obj_option(ctx, "configfile", None))
 
-		if not host:
-			host = settings.get(["server", "host"])
-			host = host if host != "0.0.0.0" else "127.0.0.1"
-		if not port:
-			port = settings.getInt(["server", "port"])
+		ctx.obj.client = create_client(settings=settings,
+		                               apikey=apikey,
+		                               host=host,
+		                               port=port,
+		                               httpuser=httpuser,
+		                               httppass=httppass,
+		                               https=https,
+		                               prefix=prefix)
 
-		if not apikey:
-			apikey = settings.get(["api", "key"])
-
-		baseurl = octoprint_client.build_base_url(https=https,
-		                                          httpuser=httpuser,
-		                                          httppass=httppass,
-		                                          host=host,
-		                                          port=port,
-		                                          prefix=prefix)
-
-		ctx.obj.client = octoprint_client.Client(baseurl, apikey)
 	except FatalStartupError as e:
 		click.echo(e.message, err=True)
 		click.echo("There was a fatal error initializing the client.", err=True)

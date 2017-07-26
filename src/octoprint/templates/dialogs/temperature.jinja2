@@ -5,7 +5,7 @@
     </div>
     <div class="modal-body">
         <p data-bind="text: changingOffset.description"></p>
-        <form class="form-horizontal">
+        <form class="form-horizontal" data-bind="submit: confirmChangeOffset">
             <div class="control-group">
                 <label class="control-label">{{ _('Current Offset') }}</label>
                 <div class="controls">
@@ -29,6 +29,6 @@
     </div>
     <div class="modal-footer">
         <a href="javascript:void(0)" class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Cancel') }}</a>
-        <a href="javascript:void(0)" class="btn btn-primary" data-bind="click: confirmChangeOffset">{{ _('Submit') }}</a>
+        <a href="javascript:void(0)" class="btn btn-primary" data-bind="click: confirmChangeOffset">{{ _('Save') }}</a>
     </div>
 </div>

@@ -177,7 +177,7 @@ def plugin_settings_for_settings_plugin(plugin_key, instance, settings=None):
 	return plugin_settings(plugin_key, get_preprocessors=get_preprocessors, set_preprocessors=set_preprocessors, settings=settings)
 
 
-def call_plugin(types, method, args=None, kwargs=None, callback=None, error_callback=None, sorting_context=None):
+def call_plugin(types, method, args=None, kwargs=None, callback=None, error_callback=None, sorting_context=None, initialized=True):
 	"""
 	Helper method to invoke the indicated ``method`` on all registered plugin implementations implementing the
 	indicated ``types``. Allows providing method arguments and registering callbacks to call in case of success
@@ -213,6 +213,8 @@ def call_plugin(types, method, args=None, kwargs=None, callback=None, error_call
 	    error_callback (function): A callback to invoke after the call of an implementation resulted in an exception.
 	        Will be called with the three arguments ``name``, ``plugin`` and ``exc``. ``name`` will be the plugin
 	        identifier, ``plugin`` the plugin implementation instance itself and ``exc`` the caught exception.
+	    initialized (boolean): Whether the plugin needs to be initialized (True) or not (False). Initialization status
+	        is determined be presence of injected ``_identifier`` property.
 
 	"""
 
@@ -225,6 +227,9 @@ def call_plugin(types, method, args=None, kwargs=None, callback=None, error_call
 
 	plugins = plugin_manager().get_implementations(*types, sorting_context=sorting_context)
 	for plugin in plugins:
+		if initialized and not hasattr(plugin, "_identifier"):
+			continue
+
 		if hasattr(plugin, method):
 			try:
 				result = getattr(plugin, method)(*args, **kwargs)

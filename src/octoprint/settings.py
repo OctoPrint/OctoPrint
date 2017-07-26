@@ -112,6 +112,8 @@ default_settings = {
 		"ignoreErrorsFromFirmware": False,
 		"logResends": True,
 		"supportResendsWithoutOk": False,
+		"logPositionOnPause": True,
+		"logPositionOnCancel": True,
 
 		# command specific flags
 		"triggerOkForM29": True
@@ -145,6 +147,12 @@ default_settings = {
 			"systemShutdownCommand": None,
 			"systemRestartCommand": None,
 			"serverRestartCommand": None
+		},
+		"onlineCheck": {
+			"enabled": None,
+			"interval": 15 * 60, # 15 min
+			"host": "8.8.8.8",
+			"port": 53
 		},
 		"diskspace": {
 			"warning": 500 * 1024 * 1024, # 500 MB

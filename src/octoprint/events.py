@@ -27,9 +27,10 @@ def all_events():
 
 
 class Events(object):
-	# application startup
+	# server
 	STARTUP = "Startup"
 	SHUTDOWN = "Shutdown"
+	CONNECTIVITY_CHANGED = "ConnectivityChanged"
 
 	# connect/disconnect to printer
 	CONNECTING = "Connecting"
