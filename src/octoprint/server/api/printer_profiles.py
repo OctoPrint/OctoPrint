@@ -24,7 +24,6 @@ from octoprint.access.permissions import Permissions
 def _lastmodified():
 	return printerProfileManager.last_modified
 
-
 def _etag(lm=None):
 	if lm is None:
 		lm = _lastmodified()
@@ -41,7 +40,7 @@ def _etag(lm=None):
 @with_revalidation_checking(etag_factory=_etag,
                             lastmodified_factory=_lastmodified,
                             unless=lambda: request.values.get("force", "false") in valid_boolean_trues)
-@Permissions.SETTINGS.require(403)
+@Permissions.PRINTERPROFILES_ACCESS.require(403)
 def printerProfilesList():
 	all_profiles = printerProfileManager.get_all()
 	return jsonify(dict(profiles=_convert_profiles(all_profiles)))
@@ -102,6 +101,7 @@ def printerProfilesAdd():
 		return jsonify(dict(profile=_convert_profile(saved_profile)))
 
 @api.route("/printerprofiles/<string:identifier>", methods=["GET"])
+@Permissions.CONNECTION.require(403)
 def printerProfilesGet(identifier):
 	profile = printerProfileManager.get(identifier)
 	if profile is None:

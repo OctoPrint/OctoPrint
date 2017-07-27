@@ -85,7 +85,7 @@ def _create_etag(path, filter, recursive, lm=None):
 
 
 @api.route("/files", methods=["GET"])
-@Permissions.FILE_PERMISSION.require(403)
+@Permissions.FILES_ACCESS.require(403)
 @with_revalidation_checking(etag_factory=lambda lm=None: _create_etag(request.path,
                                                                       request.values.get("filter", False),
                                                                       request.values.get("recursive", False),
@@ -106,7 +106,7 @@ def readGcodeFiles():
 
 
 @api.route("/files/<string:origin>", methods=["GET"])
-@Permissions.FILE_PERMISSION.require(403)
+@Permissions.FILES_ACCESS.require(403)
 @with_revalidation_checking(etag_factory=lambda lm=None: _create_etag(request.path,
                                                                       request.values.get("filter", False),
                                                                       request.values.get("recursive", False),
@@ -279,8 +279,8 @@ def uploadGcodeFile(target):
 			return make_response("SD card support is disabled", 404)
 
 		sd = target == FileDestinations.SDCARD
-		selectAfterUpload = "select" in request.values.keys() and request.values["select"] in valid_boolean_trues
-		printAfterSelect = "print" in request.values.keys() and request.values["print"] in valid_boolean_trues
+		selectAfterUpload = "select" in request.values.keys() and request.values["select"] in valid_boolean_trues and Permissions.SELECT.can()
+		printAfterSelect = "print" in request.values.keys() and request.values["print"] in valid_boolean_trues and Permissions.PRINT.can()
 
 		if sd:
 			# validate that all preconditions for SD upload are met before attempting it
@@ -462,7 +462,7 @@ def readGcodeFile(target, filename):
 
 @api.route("/files/<string:target>/<path:filename>", methods=["POST"])
 @restricted_access
-@Permissions.FILE_PERMISSION.require(403)
+@Permissions.FILES_ACCESS.require(403)
 def gcodeFileCommand(filename, target):
 	if not target in [FileDestinations.LOCAL, FileDestinations.SDCARD]:
 		return make_response("Unknown target: %s" % target, 404)

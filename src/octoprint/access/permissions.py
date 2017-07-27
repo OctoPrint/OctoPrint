@@ -202,6 +202,15 @@ class PermissionManager(object):
 			else self.find_permission(permission["name"]) if isinstance(permission, dict) \
 			else self.find_permission(permission)
 
+def unionPermissions(name, *args):
+	if len(args) == 0:
+		return None
+
+	permission = OctoPrintPermission(name, "", *args[0].needs)
+	for p in args[1:]:
+		permission = permission.union(p)
+
+	return permission
 
 class Permissions:
 	class PluginPermissionMetaclass(type):
@@ -267,7 +276,12 @@ class Permissions:
 	#USER = variable_deprecated("This variable is only for migration and is deprecated already, don't use it!", since="now")(OctoPrintPermission("User", "Migrated User permission class, deprecated", *reduce(or_, map(lambda p: p.needs, USER_ARRAY))))
 	################################################################################
 
-	FILE_PERMISSION = Permission(*UPLOAD.needs.union(DOWNLOAD.needs).union(DELETE.needs).union(SELECT.needs).union(PRINT.needs).union(SLICE.needs))
+
+	CONTROL_ACCESS = unionPermissions("Control Access", CONTROL, WEBCAM)
+	CONNECTION_ACCESS = unionPermissions("Connection Access", CONNECTION, STATUS)
+	FILES_ACCESS = unionPermissions("Files Access", UPLOAD, DOWNLOAD, DELETE, SELECT, PRINT, SLICE)
+	PRINTERPROFILES_ACCESS = unionPermissions("Printerprofiles Access", CONNECTION, SETTINGS)
+	TIMELAPSE_ACCESS = unionPermissions("Timelapse Access", TIMELAPSE, TIMELAPSE_ADMIN)
 
 	@classmethod
 	def initialize(cls):
