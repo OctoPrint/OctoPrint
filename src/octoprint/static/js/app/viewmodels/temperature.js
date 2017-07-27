@@ -95,7 +95,7 @@ $(function() {
         self._printerProfileUpdated = function() {
             var graphColors = ["red", "orange", "green", "brown", "purple"];
             var heaterOptions = {};
-            var tools = self.tools();
+            var tools = [];
             var color;
 
             // tools
@@ -147,6 +147,7 @@ $(function() {
         self.settingsViewModel.printerProfiles.currentProfileData.subscribe(function() {
             self._printerProfileUpdated();
             self.settingsViewModel.printerProfiles.currentProfileData().extruder.count.subscribe(self._printerProfileUpdated);
+            self.settingsViewModel.printerProfiles.currentProfileData().extruder.sharedNozzle.subscribe(self._printerProfileUpdated);
             self.settingsViewModel.printerProfiles.currentProfileData().heatedBed.subscribe(self._printerProfileUpdated);
         });
 
