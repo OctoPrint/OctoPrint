@@ -220,7 +220,7 @@ $(function() {
 
         // Shared checkNeeds function, also used inside the filter function of the access subs
         self.checkNeeds = function(needs, permissions) {
-            return _.every(permissions, function(permission) { return _.has(needs.needs, permission.method) && _.contains(needs.needs[permission.method], permission.value); });
+            return _.any(permissions, function(permission) { return _.has(needs.needs, permission.method) && _.contains(needs.needs[permission.method], permission.value); });
         };
     }
 

@@ -329,11 +329,11 @@ class FilebasedUserManager(UserManager):
 		added_permissions = list(set(permissions) - set(user._permissions))
 
 		if len(removed_permissions) > 0:
-			user.remove_permissions_from_user(username, removed_permissions)
+			user.remove_permissions_from_user(removed_permissions)
 			self._dirty = True
 
 		if len(added_permissions) > 0:
-			user.add_permissions_to_user(username, added_permissions)
+			user.add_permissions_to_user(added_permissions)
 			self._dirty = True
 
 		if self._dirty:
@@ -372,11 +372,11 @@ class FilebasedUserManager(UserManager):
 		added_groups = list(set(groups) - set(user._groups))
 
 		if len(removed_groups) > 0:
-			user.remove_groups_from_user(username, removed_groups)
+			user.remove_groups_from_user(removed_groups)
 			self._dirty = True
 
 		if len(added_groups) > 0:
-			user.add_groups_to_user(username, added_groups)
+			user.add_groups_to_user(added_groups)
 			self._dirty = True
 
 		if self._dirty:

@@ -31,7 +31,7 @@ def controlJob():
 
 	activePrintjob = printer.is_printing() or printer.is_paused()
 
-	with Permissions.PRINTING.require(403):
+	with Permissions.PRINT.require(403):
 		if command == "start":
 				if activePrintjob:
 					return make_response("Printer already has an active print job, did you mean 'restart'?", 409)

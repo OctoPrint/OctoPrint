@@ -71,37 +71,7 @@ $(function() {
             };
 
             self.fromResponse = function(response) {
-                _.each(response.users, function(user) {
-                    user.groups = access.rereferenceGroupsList(user.groups);
-                    user.permissions = access.rereferencePermissionsList(user.permissions);
-                });
-
                 self.listHelper.updateItems(response.users);
-            };
-
-
-            self.filterPermission = function(p) {
-                if (_.any(self.editorGroups(), function(p) { return access.loginState.checkNeeds(p, access.groups.ADMINS); })) {
-                    return false;
-                }
-
-                if (access.loginState.checkNeeds(p, access.permissions.ADMIN)) {
-                    return true;
-                }
-
-                return !_.any(self.editorPermissions(), function(p) { return access.loginState.checkNeeds(p, access.permissions.ADMIN); });
-            };
-
-            self.filterGroup = function(p) {
-                if (_.any(self.editorPermissions(), function(p) { return access.loginState.checkNeeds(p, access.permissions.ADMIN); })) {
-                    return false;
-                }
-
-                if (access.loginState.checkNeeds(p, access.groups.ADMINS)) {
-                    return true;
-                }
-
-                return !_.any(self.editorGroups(), function(p) { return access.loginState.checkNeeds(p, access.groups.ADMINS); });
             };
 
             self.showAddUserDialog = function() {
@@ -352,10 +322,6 @@ $(function() {
             };
 
             self.fromResponse = function(response) {
-                _.each(response.groups, function(group) {
-                    group.permissions = access.rereferencePermissionsList(group.permissions);
-                });
-
                 self.groupsList(response.groups);
                 self.listHelper.updateItems(response.groups);
             };
@@ -402,14 +368,6 @@ $(function() {
                         self.currentGroup(undefined);
                         self.editGroupDialog.modal("hide");
                     });
-            };
-
-            self.filterPermission = function(p) {
-                if (access.loginState.checkNeeds(p, access.permissions.ADMIN)) {
-                    return true;
-                }
-
-                return !_.any(self.editorPermissions(), function(p) { return access.loginState.checkNeeds(p, access.permissions.ADMIN); });
             };
 
             //~~ Framework
@@ -519,37 +477,12 @@ $(function() {
             return self;
         })();
 
-        //~~ Shared Functions across the submenus
-
-        /////////////////////////////////////////////////////////////////
-        //                                                             //
-        // Rereference functions are taking e.g. the groups data       //
-        // delivered with the user data and replacing them with        //
-        // a reference to the groups data delivered by the             //
-        // groups submenu.                                             //
-        //                                                             //
-        // This is necessary for the editor to automatically check the //
-        // groups the user belongs to.                                 //
-        //                                                             //
-        /////////////////////////////////////////////////////////////////
-        access.rereferenceGroupsList = function(list) {
-            return _.filter(access.groups.groupsList(), function(group) {
-                return _.findWhere(list, group.name ) != undefined;
-            });
-        };
-
-        access.rereferencePermissionsList = function(list) {
-            return _.filter(access.permissions.permissionsList(), function(permission) {
-                return _.findWhere(list, permission.name) != undefined;
-            });
-        };
-
         // Maps the group names into a comma seperated list
         access.groupList = function(data) {
             if (data.groups === undefined)
                 return "";
 
-            return _.map(data.groups, function(p) { return p.name; }).join(", ");
+            return data.groups.join(", ");
         };
 
         // Maps the permission names into a comma seperated list
@@ -557,7 +490,7 @@ $(function() {
             if (data.permissions === undefined)
                 return "";
 
-            return _.map(data.permissions, function(p) { return p.name; }).join(", ");
+            return data.permissions.join(", ");
         };
 
         //~~ API Calls
