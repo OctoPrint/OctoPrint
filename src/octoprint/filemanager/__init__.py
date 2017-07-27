@@ -180,9 +180,12 @@ class FileManager(object):
 		import octoprint.settings
 		self._recovery_file = os.path.join(octoprint.settings.settings().getBaseFolder("data"), "print_recovery_data.yaml")
 
-	def initialize(self):
+	def initialize(self, process_backlog=False):
 		self.reload_plugins()
+		if process_backlog:
+			self.process_backlog()
 
+	def process_backlog(self):
 		def worker():
 			self._logger.info("Adding backlog items from all storage types to analysis queue...".format(**locals()))
 			for storage_type, storage_manager in self._storage_managers.items():
