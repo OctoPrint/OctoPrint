@@ -25,6 +25,13 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 		names = self._get_subwizard_attrs("_get_", "_wizard_name")
 		additional = self._get_subwizard_attrs("_get_", "_additional_wizard_template_data")
 
+		firstrunonly = self._get_subwizard_attrs("_is_", "_wizard_firstrunonly")
+		firstrun = self._settings.global_get(["server", "firstRun"])
+
+		if not firstrun:
+			required = dict((key, value) for key, value in required.items()
+			                if not firstrunonly.get(key, lambda: False)())
+
 		result = list()
 		for key, method in required.items():
 			if not method():
@@ -63,10 +70,12 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 		firstrunonly = self._get_subwizard_attrs("_is_", "_wizard_firstrunonly")
 		firstrun = self._settings.global_get(["server", "firstRun"])
 
-		any_not_firstrunonly = any(map(lambda m: not m(), firstrunonly.values()))
+		if not firstrun:
+			required = dict((key, value) for key, value in required.items()
+			                if not firstrunonly.get(key, lambda: False)())
 		any_required = any(map(lambda m: m(), required.values()))
 
-		return  (firstrun or any_not_firstrunonly) and any_required
+		return any_required
 
 	def get_wizard_details(self):
 		result = dict()

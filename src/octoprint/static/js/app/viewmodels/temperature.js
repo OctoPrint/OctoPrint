@@ -95,7 +95,7 @@ $(function() {
         self._printerProfileUpdated = function() {
             var graphColors = ["red", "orange", "green", "brown", "purple"];
             var heaterOptions = {};
-            var tools = self.tools();
+            var tools = [];
             var color;
 
             // tools
@@ -123,7 +123,7 @@ $(function() {
                 if (tools.length < 1 || !tools[0]) {
                     tools[0] = self._createToolEntry();
                 }
-                tools[0]["name"](gettext("Hotend"));
+                tools[0]["name"](gettext("Tool"));
                 tools[0]["key"]("tool0");
             }
 
@@ -147,6 +147,7 @@ $(function() {
         self.settingsViewModel.printerProfiles.currentProfileData.subscribe(function() {
             self._printerProfileUpdated();
             self.settingsViewModel.printerProfiles.currentProfileData().extruder.count.subscribe(self._printerProfileUpdated);
+            self.settingsViewModel.printerProfiles.currentProfileData().extruder.sharedNozzle.subscribe(self._printerProfileUpdated);
             self.settingsViewModel.printerProfiles.currentProfileData().heatedBed.subscribe(self._printerProfileUpdated);
         });
 
@@ -721,9 +722,7 @@ $(function() {
                     }
                 });
             }
-        };
 
-        self.onStartup = function() {
             self.changeOffsetDialog = $("#change_offset_dialog");
         };
 

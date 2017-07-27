@@ -27,6 +27,11 @@ import atexit
 import signal
 import base64
 
+try:
+	import fcntl
+except ImportError:
+	fcntl = None
+
 SUCCESS = {}
 NO_CONTENT = ("", 204)
 NOT_MODIFIED = ("Not Modified", 304)
@@ -212,6 +217,17 @@ class Server(object):
 
 		# start the intermediary server
 		self._start_intermediary_server()
+
+		### IMPORTANT!
+		###
+		### Do not start any subprocesses until the intermediary server shuts down again or they WILL inherit the
+		### open port and prevent us from firing up Tornado later. Thanks to close_fds not being available on Popen
+		### on Windows if you also want to be able to redirect stdout/stderr/stdin and fnctl also not being available
+		### we don't have a good way around this issue besides being careful not to spawn processes here.
+		###
+		### Which kinda sucks tbh.
+		###
+		### See also issue #2035
 
 		# then initialize the plugin manager
 		pluginManager.reload_plugins(startup=True, initialize_implementations=False)
@@ -569,7 +585,12 @@ class Server(object):
 		self._server = util.tornado.CustomHTTPServer(self._tornado_app, max_body_sizes=max_body_sizes, default_max_body_size=self._settings.getInt(["server", "maxSize"]))
 		self._server.listen(self._port, address=self._host)
 
+		### From now on it's ok to launch subprocesses again
+
 		eventManager.fire(events.Events.STARTUP)
+
+		# analysis backlog
+		fileManager.process_backlog()
 
 		# auto connect
 		if self._settings.getBoolean(["serial", "autoconnect"]):
@@ -1359,21 +1380,37 @@ class Server(object):
 
 		rules = map(process, filter(lambda rule: len(rule) == 2 or len(rule) == 3, rules))
 
-		self._intermediary_server = BaseHTTPServer.HTTPServer((host, port), lambda *args, **kwargs: IntermediaryServerHandler(rules, *args, **kwargs))
+		self._intermediary_server = BaseHTTPServer.HTTPServer((host, port),
+		                                                      lambda *args, **kwargs: IntermediaryServerHandler(rules, *args, **kwargs),
+		                                                      bind_and_activate=False)
+
+		# if possible, make sure our socket's port descriptor isn't handed over to subprocesses
+		if fcntl is not None and hasattr(fcntl, "FD_CLOEXEC"):
+			flags = fcntl.fcntl(self._intermediary_server.socket, fcntl.F_GETFD)
+			flags |= fcntl.FD_CLOEXEC
+			fcntl.fcntl(self._intermediary_server.socket, fcntl.F_SETFD, flags)
+
+		# then bind the server and have it serve our handler until stopped
+		try:
+			self._intermediary_server.server_bind()
+			self._intermediary_server.server_activate()
+		except:
+			self._intermediary_server.server_close()
+			raise
 
 		thread = threading.Thread(target=self._intermediary_server.serve_forever)
 		thread.daemon = True
 		thread.start()
 
-		self._logger.debug("Intermediary server started")
+		self._logger.info("Intermediary server started")
 
 	def _stop_intermediary_server(self):
 		if self._intermediary_server is None:
 			return
-		self._logger.debug("Shutting down intermediary server...")
+		self._logger.info("Shutting down intermediary server...")
 		self._intermediary_server.shutdown()
 		self._intermediary_server.server_close()
-		self._logger.debug("Intermediary server shut down")
+		self._logger.info("Intermediary server shut down")
 
 class LifecycleManager(object):
 	def __init__(self, plugin_manager):

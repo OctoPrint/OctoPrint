@@ -109,8 +109,7 @@ $(function() {
         self.reader_sortLayers.subscribe(self.synchronizeOptions);
         self.reader_hideEmptyLayers.subscribe(self.synchronizeOptions);
 
-        // subscribe to relevant printer settings...
-        self.settings.printerProfiles.currentProfileData.subscribe(function() {
+        self._printerProfileUpdated = function() {
             if (!self.enabled) return;
 
             var currentProfileData = self.settings.printerProfiles.currentProfileData();
@@ -145,6 +144,27 @@ $(function() {
                         invertAxes: axesConfiguration
                     }
                 });
+            }
+        };
+
+        // subscribe to relevant printer settings...
+        self.settings.printerProfiles.currentProfileData.subscribe(function() {
+            self._printerProfileUpdated();
+            if (self.settings.printerProfiles.currentProfileData()) {
+                if (self.settings.printerProfiles.currentProfileData().extruder) {
+                    self.settings.printerProfiles.currentProfileData().extruder.count.subscribe(self._printerProfileUpdated);
+                    self.settings.printerProfiles.currentProfileData().extruder.sharedNozzle.subscribe(self._printerProfileUpdated);
+                    self.settings.printerProfiles.currentProfileData().extruder.offsets.subscribe(self._printerProfileUpdated);
+                }
+                if (self.settings.printerProfiles.currentProfileData().volume) {
+                    self.settings.printerProfiles.currentProfileData().volume.width.subscribe(self._printerProfileUpdated);
+                    self.settings.printerProfiles.currentProfileData().volume.depth.subscribe(self._printerProfileUpdated);
+                    self.settings.printerProfiles.currentProfileData().volume.formFactor.subscribe(self._printerProfileUpdated);
+                }
+                if (self.settings.printerProfiles.currentProfileData().axes) {
+                    self.settings.printerProfiles.currentProfileData().axes.x.inverted.subscribe(self._printerProfileUpdated);
+                    self.settings.printerProfiles.currentProfileData().axes.y.inverted.subscribe(self._printerProfileUpdated);
+                }
             }
         });
 
@@ -194,11 +214,13 @@ $(function() {
                 currentProfileData = self.settings.printerProfiles.currentProfileData();
             }
 
-            if (currentProfileData && currentProfileData.extruder && currentProfileData.extruder.offsets() && !currentProfileData.extruder.sharedNozzle()) {
+            if (currentProfileData && currentProfileData.extruder) {
                 var offsets = [];
-                _.each(currentProfileData.extruder.offsets(), function(offset) {
-                    offsets.push({x: offset[0], y: offset[1]})
-                });
+                if (currentProfileData.extruder.offsets() && !currentProfileData.extruder.sharedNozzle()) {
+                    _.each(currentProfileData.extruder.offsets(), function(offset) {
+                        offsets.push({x: offset[0], y: offset[1]})
+                    });
+                }
                 return offsets;
             } else {
                 return undefined;
