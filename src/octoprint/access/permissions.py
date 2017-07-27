@@ -10,6 +10,7 @@ from flask import g, abort
 from flask_babel import gettext
 from flask_principal import Permission, PermissionDenied, RoleNeed
 from functools import wraps
+from collections import OrderedDict
 import logging
 
 
@@ -72,6 +73,7 @@ class OctoPrintPermission(Permission):
 
 		return '{0}("{1}", "{2}", {3})'.format(self.__class__.__name__, self.get_name(), self.get_description(), ', '.join(needs))
 
+
 class PluginIdentityContext(object):
 	"""Identity context for not initialized Permissions
 
@@ -91,6 +93,15 @@ class PluginIdentityContext(object):
 		"""
 		return g.identity
 
+	def can(self):
+		"""Whether the identity has access to the permission
+		"""
+		permission = Permissions.__getattr__(self.key)
+		if permission is None or isinstance(permission, PluginPermissionDecorator):
+			raise UnknownPermission(self.key)
+
+		return permission.can()
+
 	def __call__(self, f):
 		@wraps(f)
 		def _decorated(*args, **kw):
@@ -102,7 +113,7 @@ class PluginIdentityContext(object):
 
 	def __enter__(self):
 		permission = Permissions.__getattr__(self.key)
-		if isinstance(permission, PluginPermissionDecorator):
+		if permission is None or isinstance(permission, PluginPermissionDecorator):
 			raise UnknownPermission(self.key)
 
 		# check the permission here
@@ -113,6 +124,7 @@ class PluginIdentityContext(object):
 
 	def __exit__(self, *args):
 		return False
+
 
 class PluginPermissionDecorator(Permission):
 	"""Decorator Class for not initialized Permissions
@@ -128,7 +140,8 @@ class PluginPermissionDecorator(Permission):
 
 class PermissionManager(object):
 	def __init__(self):
-		self._permissions = dict()
+		self._permissions = OrderedDict()
+
 		self.logger = logging.getLogger(__name__)
 
 		import yaml
@@ -192,8 +205,7 @@ class PermissionManager(object):
 
 class Permissions:
 	class PluginPermissionMetaclass(type):
-
-		plugin_permissions = dict()
+		plugin_permissions = OrderedDict()
 
 		@classmethod
 		def __setattr__(cls, key, value):
@@ -215,6 +227,7 @@ class Permissions:
 			return None
 
 	__metaclass__ = PluginPermissionMetaclass
+
 
 	# Special permission
 	ADMIN = OctoPrintPermission("Admin", gettext("Admin is allowed to do everything"), RoleNeed("admin"))

@@ -38,17 +38,17 @@
 <!-- Modals for user management -->
 
 <script type="text/html" id="users-permission-template">
-    <!-- ko foreach: _.filter($root.access.permissions.permissionsList(), $root.access.users.filterPermission) -->
+    <!-- ko foreach: $root.access.permissions.permissionsList() -->
         <label class="checkbox">
-            <input type="checkbox" data-bind="checkedValue: $data, checked: $root.access.users.editorPermissions"><span data-bind="text: name"></span><br>
+            <input type="checkbox" data-bind="checkedValue: name, checked: $root.access.users.editorPermissions"><span data-bind="text: name"></span><br>
             <span class="description" data-bind="text: description"></span>
         </label>
     <!-- /ko -->
 </script>
 <script type="text/html" id="users-group-template">
-    <!-- ko foreach: _.filter($root.access.groups.groupsList(), $root.access.users.filterGroup) -->
+    <!-- ko foreach: $root.access.groups.groupsList() -->
         <label class="checkbox">
-            <input type="checkbox" data-bind="checkedValue: $data, checked: $root.access.users.editorGroups"><span data-bind="text: name"></span><br>
+            <input type="checkbox" data-bind="checkedValue: name, checked: $root.access.users.editorGroups"><span data-bind="text: name"></span><br>
             <span class="description" data-bind="text: description"></span>
         </label>
     <!-- /ko -->

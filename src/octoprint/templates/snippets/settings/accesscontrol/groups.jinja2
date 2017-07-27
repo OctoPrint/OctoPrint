@@ -35,9 +35,9 @@
 <!-- Modals for group management -->
 
 <script type="text/html" id="group-permission-template">
-    <div class="controls" data-bind="foreach: _.filter($root.access.permissions.permissionsList(), $root.access.groups.filterPermission)">
+    <div class="controls" data-bind="foreach: $root.access.permissions.permissionsList()">
         <label class="checkbox">
-            <input type="checkbox" data-bind="checkedValue: $data, checked: $root.access.groups.editorPermissions"><span data-bind="text: name, attr: { title: description }"></span><br>
+            <input type="checkbox" data-bind="checkedValue: name, checked: $root.access.groups.editorPermissions"><span data-bind="text: name, attr: { title: description }"></span><br>
             <span class="description" data-bind="text: gettext(description)"></span>
         </label>
     </div>
