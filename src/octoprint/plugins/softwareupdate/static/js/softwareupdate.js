@@ -158,7 +158,9 @@ $(function() {
         });
 
         self.onUserLoggedIn = function() {
-            self.performCheck();
+            if (self.loginState.hasPermission(self.access.permissions.PLUGIN_SOFTWAREUPDATE_CHECK)) {
+                self.performCheck();
+            }
         };
 
         self.onUserLoggedOut = function() {
@@ -311,7 +313,7 @@ $(function() {
                 }
             }
 
-            if (!self.loginState.isAdmin() && !self.settings.settings.plugins.softwareupdate.notify_users()) return;
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_SOFTWAREUPDATE_PERFORM) && !self.settings.settings.plugins.softwareupdate.notify_users()) return;
 
             if (data.status == "updateAvailable" || data.status == "updatePossible") {
                 var text = "<div class='softwareupdate_notification'>" + gettext("There are updates available for the following components:");
@@ -330,7 +332,7 @@ $(function() {
 
                 text += "<p><small>" + gettext("Those components marked with <i class=\"fa fa-check\"></i> can be updated directly.") + "</small></p>";
 
-                if (!self.loginState.isAdmin()) {
+                if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_SOFTWAREUPDATE_PERFORM)) {
                     text += "<p><small>" + gettext("To have updates applied, get in touch with an administrator of this OctoPrint instance.") + "</small></p>";
                 }
 
@@ -344,7 +346,7 @@ $(function() {
                 var eventListeners = {};
 
                 var singleButtonNotify = false;
-                if (data.status == "updatePossible" && self.loginState.isAdmin()) {
+                if (data.status == "updatePossible" && self.loginState.hasPermission(self.access.permissions.PLUGIN_SOFTWAREUPDATE_PERFORM)) {
                     // if update is possible and user is admin, add action buttons for ignore and update
                     options["confirm"] = {
                         confirm: true,
@@ -406,8 +408,7 @@ $(function() {
         };
 
         self.performCheck = function(showIfNothingNew, force, ignoreSeen) {
-
-            if (!self.loginState.hasPermission(self.access.permissions.SETTINGS) && !self.settings.settings.plugins.softwareupdate.notify_users()) return;
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_SOFTWAREUPDATE_CHECK) && !self.settings.settings.plugins.softwareupdate.notify_users()) return;
 
             self.checking(true);
             OctoPrint.plugins.softwareupdate.check(force)
@@ -467,7 +468,7 @@ $(function() {
         };
 
         self.performUpdate = function(force, items) {
-            if (!self.loginState.isAdmin()) return;
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_SOFTWAREUPDATE_PERFORM)) return;
 
             self.updateInProgress = true;
 
@@ -503,7 +504,7 @@ $(function() {
         };
 
         self.update = function(force) {
-            if (self.updateInProgress || !self.loginState.hasPermission(self.access.permissions.SETTINGS)) {
+            if (self.updateInProgress || !self.loginState.hasPermission(self.access.permissions.PLUGIN_SOFTWAREUPDATE_PERFORM)) {
                 self._updateClicked = false;
                 return;
             }
@@ -533,7 +534,7 @@ $(function() {
         };
 
         self._showWorkingDialog = function(title) {
-            if (!self.loginState.hasPermission(self.access.permissions.SETTINGS)) {
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_SOFTWAREUPDATE_PERFORM)) {
                 return;
             }
 

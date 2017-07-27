@@ -32,6 +32,18 @@ import dateutil.parser
 import time
 import threading
 
+
+# Access permissions hook
+
+def additional_permissions(components):
+	return [
+		dict(name="Manage Plugins", description=gettext("Allows to use the plugin manager to manage plugins"),
+		     roles=["manage_plugins"]),
+		dict(name="Upload Archive", description=gettext("Allows to install plugins through an archive"),
+		     roles=["manage_plugins", "upload_archive"])
+
+	]
+
 class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
                           octoprint.plugin.TemplatePlugin,
                           octoprint.plugin.AssetPlugin,
@@ -164,7 +176,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 	@octoprint.plugin.BlueprintPlugin.route("/upload_archive", methods=["POST"])
 	@restricted_access
-	@Permissions.SETTINGS.require(403)
+	@Permissions.PLUGIN_PLUGINMANAGER_UPLOAD_ARCHIVE.require(403)
 	def upload_archive(self):
 		import flask
 
@@ -210,7 +222,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		}
 
 	def on_api_get(self, request):
-		if not Permissions.SETTINGS.can():
+		if not Permissions.PLUGIN_PLUGINMANAGER_MANAGE_PLUGINS.can():
 			return make_response("Insufficient rights", 403)
 
 		from octoprint.server import safe_mode
@@ -261,7 +273,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		                                  unless=lambda: refresh_repository or refresh_notices)(view)()
 
 	def on_api_command(self, command, data):
-		if not Permissions.SETTINGS.can():
+		if not Permissions.PLUGIN_PLUGINMANAGER_MANAGE_PLUGINS.can():
 			return make_response("Insufficient rights", 403)
 
 		if self._printer.is_printing() or self._printer.is_paused():
@@ -980,6 +992,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		            versions=notification.get("versions", []),
 		            important=notification.get("important", False))
 
+
+
 __plugin_name__ = "Plugin Manager"
 __plugin_author__ = "Gina Häußge"
 __plugin_url__ = "http://docs.octoprint.org/en/master/bundledplugins/pluginmanager.html"
@@ -993,5 +1007,6 @@ def __plugin_load__():
 	global __plugin_hooks__
 	__plugin_hooks__ = {
 		"octoprint.server.http.bodysize": __plugin_implementation__.increase_upload_bodysize,
-		"octoprint.ui.web.templatetypes": __plugin_implementation__.get_template_types
+		"octoprint.ui.web.templatetypes": __plugin_implementation__.get_template_types,
+		"octoprint.access.permissions": additional_permissions
 	}

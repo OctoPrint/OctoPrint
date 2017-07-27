@@ -27,8 +27,16 @@ from octoprint.util import dict_merge, to_unicode
 import octoprint.settings
 
 
-##~~ Plugin
+# Access permissions hook
 
+def additional_permissions(components):
+	return [
+		dict(name="Check", description=gettext("Allows to check for software updates"), roles=["check"]),
+		dict(name="Perform", description=gettext("Allows to perform a software updates"), roles=["perform"]),
+		dict(asCombined=True, name="Access", permissions=["Check", "Perform"])
+	]
+
+##~~ Plugin
 
 class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
                            octoprint.plugin.SettingsPlugin,
@@ -457,6 +465,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 	@octoprint.plugin.BlueprintPlugin.route("/check", methods=["GET"])
 	@restricted_access
+	@Permissions.PLUGIN_SOFTWAREUPDATE_CHECK.require(403)
 	def check_for_update(self):
 		if "check" in flask.request.values:
 			check_targets = map(lambda x: x.strip(), flask.request.values["check"].split(","))
@@ -518,7 +527,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 	@octoprint.plugin.BlueprintPlugin.route("/update", methods=["POST"])
 	@restricted_access
-	@Permissions.SETTINGS.require(403)
+	@Permissions.PLUGIN_SOFTWAREUPDATE_PERFORM.require(403)
 	def perform_update(self):
 		if self._printer.is_printing() or self._printer.is_paused():
 			# do not update while a print job is running
@@ -1077,7 +1086,8 @@ def __plugin_load__():
 
 	global __plugin_hooks__
 	__plugin_hooks__ = {
-		"octoprint.cli.commands": cli.commands
+		"octoprint.cli.commands": cli.commands,
+		"octoprint.access.permissions": additional_permissions
 	}
 
 
