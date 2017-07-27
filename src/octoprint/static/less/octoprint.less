@@ -435,8 +435,11 @@ table {
     }
 
     &.temperature_tool {
-      width: 18%;
+      width: 16%;
       text-align: left;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
     }
 
     &.temperature_actual {
@@ -444,7 +447,7 @@ table {
     }
 
     &.temperature_target {
-      width: 40%;
+      width: 42%;
       overflow: visible;
     }
 
