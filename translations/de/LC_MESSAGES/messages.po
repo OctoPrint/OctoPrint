@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: OctoPrint\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
 "POT-Creation-Date: 2017-07-26 12:30+0200\n"
-"PO-Revision-Date: 2017-07-26 12:40+0100\n"
+"PO-Revision-Date: 2017-07-27 12:07+0100\n"
 "Last-Translator: Gina Häußge <osd@foosel.net>\n"
 "Language: de\n"
 "Language-Team: German (http://www.transifex.com/projects/p/octoprint/language/de/)\n"
@@ -1875,7 +1875,7 @@ msgstr "Trennen"
 #: src/octoprint/static/js/app/viewmodels/printerstate.js:234
 #: src/octoprint/static/js/app/viewmodels/temperature.js:115
 msgid "Tool"
-msgstr "Werkzeug"
+msgstr "Tool"
 
 #: src/octoprint/static/js/app/viewmodels/control.js:78
 #: src/octoprint/static/js/app/viewmodels/temperature.js:126
@@ -3061,11 +3061,11 @@ msgstr "Vor dem Fortsetzen eines Druckjobs"
 
 #: src/octoprint/templates/dialogs/settings/gcodescripts.jinja2:33
 msgid "Before tool change"
-msgstr "Vor Werkzeugwechsel"
+msgstr "Vor Toolwechsel"
 
 #: src/octoprint/templates/dialogs/settings/gcodescripts.jinja2:39
 msgid "After tool change"
-msgstr "Nach Werkzeugwechsel"
+msgstr "Nach Toolwechsel"
 
 #: src/octoprint/templates/dialogs/settings/gcodescripts.jinja2:45
 msgid "After connection to printer is established"
@@ -4034,7 +4034,7 @@ msgstr "Feedrate:"
 
 #: src/octoprint/templates/tabs/control.jinja2:93
 msgid "Select Tool..."
-msgstr "Werkzeug wählen..."
+msgstr "Tool wählen..."
 
 #: src/octoprint/templates/tabs/control.jinja2:104
 msgid "Extrude"

@@ -21,6 +21,7 @@ from octoprint.server import app, userManager, pluginManager, gettext, \
 	NOT_MODIFIED
 from octoprint.settings import settings
 from octoprint.filemanager import get_all_extensions
+from octoprint.util import to_unicode
 
 import re
 import base64
@@ -466,7 +467,7 @@ def _process_templates():
 		tab=dict(add="append", key="name"),
 		settings=dict(add="custom_append", key="name", custom_add_entries=lambda missing: dict(section_plugins=(gettext("Plugins"), None)), custom_add_order=lambda missing: ["section_plugins"] + missing),
 		usersettings=dict(add="append", key="name"),
-		wizard=dict(add="append", key="name", key_extractor=lambda d, k: "0:{}".format(d[0]) if "mandatory" in d[1] and d[1]["mandatory"] else "1:{}".format(d[0])),
+		wizard=dict(add="append", key="name", key_extractor=lambda d, k: u"0:{}".format(to_unicode(d[0])) if "mandatory" in d[1] and d[1]["mandatory"] else u"1:{}".format(to_unicode(d[0]))),
 		about=dict(add="append", key="name"),
 		generic=dict(add="append", key=None)
 	)

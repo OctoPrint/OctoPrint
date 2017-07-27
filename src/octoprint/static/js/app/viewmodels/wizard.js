@@ -193,7 +193,7 @@ $(function() {
             if (!self.finishing && self.isDialogActive()
                 && hasDataChanged(self.settingsViewModel.getLocalData(), self.settingsViewModel.lastReceivedSettings)) {
                 var preventSettingsRefreshDialog = false;
-                callViewModels(allViewModels, "onWizardPreventSettingsRefreshDialog", function(method) {
+                callViewModels(self.allViewModels, "onWizardPreventSettingsRefreshDialog", function(method) {
                     // if any of our methods returns that it wants to prevent the dialog
                     // we'll need to set preventSettingsRefreshDialog to true
                     //
