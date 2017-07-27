@@ -123,7 +123,7 @@ $(function() {
                 if (tools.length < 1 || !tools[0]) {
                     tools[0] = self._createToolEntry();
                 }
-                tools[0]["name"](gettext("Hotend"));
+                tools[0]["name"](gettext("Tool"));
                 tools[0]["key"]("tool0");
             }
 
