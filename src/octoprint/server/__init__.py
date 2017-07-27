@@ -1356,15 +1356,20 @@ class Server(object):
 		global pluginManager
 		global permissionManager
 
-		from octoprint.access.permissions import OctoPrintPermission, RoleNeed
+		postponed_combined_permissions = []
+
+		from octoprint.access.permissions import OctoPrintPermission, RoleNeed, unionPermissions, UnknownPermission
 		permissions_initializers = pluginManager.get_hooks("octoprint.access.permissions")
 		for name, permissions_initializer in permissions_initializers.items():
 			try:
 				permission_list = permissions_initializer(components)
-				for p in permission_list:
-					if not isinstance(p, dict):
-						continue
 
+				regular_permission = filter(
+					lambda p: isinstance(p, dict) and ("asCombined" not in p or not p["asCombined"]), permission_list)
+				combined_permission = filter(
+					lambda p: isinstance(p, dict) and "asCombined" in p and p["asCombined"], permission_list)
+
+				for p in regular_permission:
 					if "name" not in p or "description" not in p or "roles" not in p:
 						continue
 
@@ -1376,6 +1381,56 @@ class Server(object):
 						key = permission.get_name().replace(" ", "_").upper()
 						octoprint.access.permissions.Permissions.__setattr__(key, permission)
 
+				for p in combined_permission:
+					if "name" not in p or "permissions" not in p:
+						continue
+
+					permissions = []
+					postponed = False
+					for permission_name in p["permissions"]:
+						perm = permissionManager.find_permission(permission_name)
+						# If we can't find a permission by the name, try to add the plugins prefix and look again
+						if perm is None:
+							perm = permissionManager.find_permission("Plugin {} {}".format(name, permission_name))
+
+						# If there is still no permission postpone this, maybe it is a permission out of another Plugin that hasn't been loaded yet.
+						if perm is None:
+							postponed_combined_permissions.append(p)
+							postponed = True
+
+						if perm is not None:
+							permissions.append(perm)
+
+					if not postponed:
+						permission = permissionManager.add_combined_permission(unionPermissions("Plugin {} {}".format(name, p["name"]), *permissions))
+
+						if permission is not None:
+							key = permission.get_name().replace(" ", "_").upper()
+							octoprint.access.permissions.Permissions.__setattr__(key, permission)
+
+			except:
+				self._logger.exception("Error while creating permission instance/s from {}".format(name))
+
+		for p in postponed_combined_permissions:
+			try:
+				permissions = []
+				for permission_name in p["permissions"]:
+					perm = permissionManager.find_permission(permission_name)
+					# If we can't find a permission by the name, try to add the plugins prefix and look again
+					if perm is None:
+						perm = permissionManager.find_permission("Plugin {} {}".format(name, permission_name))
+
+					# If there is still no permission postpone this, maybe it is a permission out of another Plugin that hasn't been loaded yet.
+					if perm is None:
+						postponed_combined_permissions.extend(p)
+						raise UnknownPermission(permission_name)
+
+				permission = permissionManager.add_combined_permission(
+					unionPermissions("Plugin {} {}".format(name, p["name"]), *permissions))
+
+				if permission is not None:
+					key = permission.get_name().replace(" ", "_").upper()
+					octoprint.access.permissions.Permissions.__setattr__(key, permission)
 			except:
 				self._logger.exception("Error while creating permission instance/s from {}".format(name))
 

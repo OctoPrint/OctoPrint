@@ -141,6 +141,7 @@ class PluginPermissionDecorator(Permission):
 class PermissionManager(object):
 	def __init__(self):
 		self._permissions = OrderedDict()
+		self._combined_permissions = OrderedDict()
 
 		self.logger = logging.getLogger(__name__)
 
@@ -155,6 +156,11 @@ class PermissionManager(object):
 	def permissions(self):
 		"""Returns a list of all registered permissions"""
 		return self._permissions.values()
+
+	@property
+	def combined_permissions(self):
+		"""Returns a list of all registered combined permissions"""
+		return self._combined_permissions.values()
 
 	def yaml_representer(self, dumper, data):
 		return dumper.represent_scalar(u'!octoprintpermission', data.get_name())
@@ -201,6 +207,41 @@ class PermissionManager(object):
 		return self.find_permission(permission.get_name()) if isinstance(permission, OctoPrintPermission) \
 			else self.find_permission(permission["name"]) if isinstance(permission, dict) \
 			else self.find_permission(permission)
+
+	def add_combined_permission(self, permission):
+		"""Registers a combined OctoPrintPermission object inside the permission manager class"""
+		if permission.get_name() in self._combined_permissions:
+			raise PermissionAlreadyExists(permission.get_name())
+
+		self._combined_permissions[permission.get_name()] = permission
+		return permission
+
+	def remove_combined_permission(self, permission):
+		"""Removes a combined OctoPrintPermission object from the permission manager class"""
+		if permission is None:
+			self.logger.exception("Attribute permission is None")
+			return
+
+		permission_name = permission.get_name() if isinstance(permission, OctoPrintPermission) else permission
+		if permission_name not in self._combined_permissions.keys():
+			raise UnknownPermission(permission_name)
+
+		try:
+			del self._combined_permissions[permission_name]
+		except KeyError as e:
+			self.logger.exception("Tried to remove a combined permission (%s) that is already gone" % permission_name)
+			pass
+
+	def find_combined_permission(self, name):
+		"""Searches a registered OctoPrintPermission by name, returns either the permission object or None"""
+		return self._combined_permissions.get(name, None)
+
+	def get_combined_permission_from(self, permission):
+		"""This function accepts either a OctoPrintPermission object, a return value of asDict, or a name
+		to search for a registered OctoPrintPermission in the permission manager class"""
+		return self.find_combined_permission(permission.get_name()) if isinstance(permission, OctoPrintPermission) \
+			else self.find_combined_permission(permission["name"]) if isinstance(permission, dict) \
+			else self.find_combined_permission(permission)
 
 def unionPermissions(name, *args):
 	if len(args) == 0:
@@ -308,10 +349,17 @@ class Permissions:
 		pm.add_permission(cls.SETTINGS)
 		pm.add_permission(cls.LOGS)
 
+		pm.add_combined_permission(cls.CONTROL_ACCESS)
+		pm.add_combined_permission(cls.CONNECTION_ACCESS)
+		pm.add_combined_permission(cls.FILES_ACCESS)
+		pm.add_combined_permission(cls.PRINTERPROFILES_ACCESS)
+		pm.add_combined_permission(cls.TIMELAPSE_ACCESS)
+
 	@classmethod
 	def __setattr__(cls, key, value):
 		if key.startswith("PLUGIN"):
 			cls.__metaclass__.__setattr__(key, value)
+
 
 class PermissionAlreadyExists(Exception):
 	def __init__(self, permission):

@@ -420,6 +420,7 @@ $(function() {
             var self = {};
 
             self.permissionsList = ko.observableArray(undefined);
+            self.combinedPermissionsList = ko.observableArray(undefined);
 
             self.need = function(method, value) { return {method: method, value: value}; };
             self.roleNeed = function(value) { return self.need("role", value); };
@@ -464,9 +465,40 @@ $(function() {
                 });
             });
 
+                        // used to delete all the permissions before registering new ones
+            self.combinedPermissionsList.subscribe(function(oldValue) {
+                if (oldValue === undefined || oldValue.length == 0)
+                    return;
+
+                oldValue.forEach(function (p) {
+                    delete self[self.sanitizeName(p.name).toUpperCase()];
+                });
+            }, null, "beforeChange");
+
+            // used to register new permission
+            self.combinedPermissionsList.subscribe(function(newValue) {
+                if (newValue === undefined)
+                    return;
+
+                newValue.forEach(function(p) {
+                    var needs = [];
+                    for (key in p.needs) {
+                        p.needs[key].forEach(function(value) {
+                            needs.push(self.need(key, value));
+                        });
+                    }
+
+                    // if the permission has no need sets do not register it.
+                    if (needs.length > 0) {
+                        self.registerPermission(p.name, needs);
+                    }
+                });
+            });
+
             self.requestData = function() {
                 OctoPrint.access.permissions.list().done(function(response) {
                     self.permissionsList(response.permissions);
+                    self.combinedPermissionsList(response.combined_permissions);
                 });
             };
 
