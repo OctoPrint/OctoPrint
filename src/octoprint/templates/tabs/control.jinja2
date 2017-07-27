@@ -1,5 +1,5 @@
 {% if webcamStream %}
-    <div id="webcam_container" tabindex="0" data-bind="event: { keydown: onKeyDown, mouseover: onMouseOver, mouseout: onMouseOut, focus: onFocus }">
+    <div id="webcam_container" tabindex="0" data-bind="visible: loginState.hasPermissionKo(access.permissions.WEBCAM), event: { keydown: onKeyDown, mouseover: onMouseOver, mouseout: onMouseOut, focus: onFocus }">
         <div class="nowebcam" data-bind="visible: !webcamLoaded()">
             <div class="text webcam_loading" data-bind="visible: !webcamLoaded() && !webcamError()">
                 <p><strong>{{ _('Webcam stream loading...') }}</strong></p>
@@ -34,12 +34,12 @@
             </div>
         </div>
     </div>
-    <div data-bind="visible: keycontrolPossible">
+    <div data-bind="visible: keycontrolPossible && loginState.hasPermissionKo(access.permissions.WEBCAM)">
         <small class="muted">{{ _("Hint: If you move your mouse over the picture, you enter keyboard control mode.") }}</small>
     </div>
 {% endif %}
 
-<div class="jog-panel" style="display: none;" data-bind="visible: loginState.hasPermission(access.permissions.CONTROL)">
+<div class="jog-panel" style="display: none;" data-bind="visible: loginState.hasPermissionKo(access.permissions.CONTROL)">
     <!-- XY jogging control panel -->
     <div id="control-jog-xy" class="jog-panel">
         <h1>X/Y</h1>
@@ -85,7 +85,7 @@
     </div>
 </div>
 <!-- Extrusion control panel -->
-<div id="control-jog-extrusion" class="jog-panel" style="display: none;" data-bind="visible: loginState.hasPermission(access.permissions.CONTROL)">
+<div id="control-jog-extrusion" class="jog-panel" style="display: none;" data-bind="visible: loginState.hasPermissionKo(access.permissions.CONTROL)">
     <h1>Tool (E)</h1>
     <div>
         <div class="btn-group control-box">
@@ -110,7 +110,7 @@
     </div>
 </div>
 <!-- General control panel -->
-<div id="control-jog-general" class="jog-panel" style="display: none;" data-bind="visible: loginState.hasPermission(access.permissions.CONTROL)">
+<div id="control-jog-general" class="jog-panel" style="display: none;" data-bind="visible: loginState.hasPermissionKo(access.permissions.CONTROL)">
     <h1>{{ _('General') }}</h1>
     <div>
         <button class="btn btn-block control-box" data-bind="enable: isOperational() && !isPrinting(), click: function() { $root.sendCustomCommand({type:'command',command:'M18'}) }">{{ _('Motors off') }}</button>
@@ -120,7 +120,7 @@
 </div>
 
 <!-- Container for custom controls -->
-<div id="control-jog-custom" style="clear: both; display: none;" data-bind="visible: loginState.hasPermission(access.permissions.CONTROL), template: { name: $root.displayMode, foreach: controls }"></div>
+<div id="control-jog-custom" style="clear: both; display: none;" data-bind="visible: loginState.hasPermissionKo(access.permissions.CONTROL), template: { name: $root.displayMode, foreach: controls }"></div>
 
 <!-- Templates for custom controls -->
 <script type="text/html" id="customControls_containerTemplate_nameless">

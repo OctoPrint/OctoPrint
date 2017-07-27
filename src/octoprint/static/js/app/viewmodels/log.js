@@ -37,7 +37,7 @@ $(function() {
         );
 
         self.requestData = function() {
-            if (!self.loginState.hasPermission(self.access.permissions.LOGS)())
+            if (!self.loginState.hasPermission(self.access.permissions.LOGS))
                 return;
 
             OctoPrint.logs.list()
@@ -53,7 +53,7 @@ $(function() {
         };
 
         self.removeFile = function(filename) {
-            if (!self.loginState.hasPermission(self.access.permissions.LOGS)())
+            if (!self.loginState.hasPermission(self.access.permissions.LOGS))
                 return;
 
             OctoPrint.logs.delete(filename)

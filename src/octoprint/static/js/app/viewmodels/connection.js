@@ -48,6 +48,10 @@ $(function() {
         self.previousIsOperational = undefined;
 
         self.requestData = function() {
+            if (!self.loginState.hasPermission(self.access.permissions.CONNECTION_ACCESS)) {
+                return;
+            }
+
             OctoPrint.connection.getSettings()
                 .done(self.fromResponse);
         };
@@ -101,7 +105,7 @@ $(function() {
             self.isReady(data.flags.ready);
             self.isLoading(data.flags.loading);
 
-            if (self.loginState.hasPermission(self.access.permissions.CONNECTION)() && self.previousIsOperational !== self.isOperational()) {
+            if (self.loginState.hasPermission(self.access.permissions.CONNECTION_ACCESS) && self.previousIsOperational !== self.isOperational()) {
                 // only open or close if the panel is visible (for admins) and
                 // the state just changed to avoid thwarting manual open/close
                 self.openOrCloseOnStateChange();
@@ -136,11 +140,15 @@ $(function() {
         };
 
         self.onUserLoggedIn = function() {
-            self.openOrCloseOnStateChange();
+            if (self.loginState.hasPermission(self.access.permissions.CONNECTION_ACCESS)) {
+                self.openOrCloseOnStateChange();
+            }
         };
 
         self.onUserLoggedOut = function() {
-            self.openOrCloseOnStateChange();
+            if (self.loginState.hasPermission(self.access.permissions.CONNECTION_ACCESS)) {
+                self.openOrCloseOnStateChange();
+            }
         };
     }
 

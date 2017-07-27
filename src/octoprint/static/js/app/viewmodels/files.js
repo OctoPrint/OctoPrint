@@ -76,7 +76,7 @@ $(function() {
         self.addFolderDialog = undefined;
         self.addFolderName = ko.observable(undefined);
         self.enableAddFolder = ko.pureComputed(function() {
-            return self.loginState.hasPermission(self.access.permissions.UPLOAD)() && self.addFolderName() && self.addFolderName().trim() != "" && !self.addingFolder();
+            return self.loginState.hasPermission(self.access.permissions.UPLOAD) && self.addFolderName() && self.addFolderName().trim() != "" && !self.addingFolder();
         });
 
         self.allItems = ko.observable(undefined);
@@ -157,11 +157,11 @@ $(function() {
         });
 
         self.isLoadActionPossible = ko.pureComputed(function() {
-            return self.loginState.hasPermission(self.access.permissions.SELECT)() && self.isOperational() && !self.isPrinting() && !self.isPaused() && !self.isLoading();
+            return self.loginState.hasPermission(self.access.permissions.SELECT) && self.isOperational() && !self.isPrinting() && !self.isPaused() && !self.isLoading();
         });
 
         self.isLoadAndPrintActionPossible = ko.pureComputed(function() {
-            return self.loginState.hasPermission(self.access.permissions.PRINT)() && self.isOperational() && self.isLoadActionPossible();
+            return self.loginState.hasPermission(self.access.permissions.PRINT) && self.isOperational() && self.isLoadActionPossible();
         });
 
         self.printerState.filepath.subscribe(function(newValue) {
@@ -209,6 +209,10 @@ $(function() {
         self._focus = undefined;
         self._switchToPath = undefined;
         self.requestData = function(params) {
+            if (!self.loginState.hasPermission(self.access.permissions.FILES_ACCESS)) {
+                return;
+            }
+
             var focus, switchToPath, force;
 
             if (_.isObject(params)) {
@@ -561,7 +565,7 @@ $(function() {
             } else {
                 busy = _.contains(self.printerState.busyFiles(), data.origin + ":" + data.path);
             }
-            return self.loginState.hasPermission(self.access.permissions.DELETE)() && !busy;
+            return self.loginState.hasPermission(self.access.permissions.DELETE) && !busy;
         };
 
         self.enableSelect = function(data) {
@@ -569,7 +573,7 @@ $(function() {
         }
 
         self.enablePrint = function(data) {
-            return self.loginState.hasPermission(self.access.permissions.PRINT)() && self.isOperational() && !(self.isPrinting() || self.isPaused() || self.isLoading());
+            return self.loginState.hasPermission(self.access.permissions.PRINT) && self.isOperational() && !(self.isPrinting() || self.isPaused() || self.isLoading());
         };
 
         self.enableSelectAndPrint = function(data, printAfterSelect) {
@@ -579,7 +583,7 @@ $(function() {
 
 
         self.enableSlicing = function(data) {
-            return self.loginState.hasPermission(self.access.permissions.SLICE)() && self.slicing.enableSlicingDialog() && self.slicing.enableSlicingDialogForFile(data.name);
+            return self.loginState.hasPermission(self.access.permissions.SLICE) && self.slicing.enableSlicingDialog() && self.slicing.enableSlicingDialogForFile(data.name);
         };
 
         self.enableAdditionalData = function(data) {
@@ -859,7 +863,7 @@ $(function() {
             self.dropOverlay.on('drop', self._forceEndDragNDrop);
 
             function evaluateDropzones() {
-                var enableLocal = self.loginState.hasPermission(self.access.permissions.UPLOAD)();
+                var enableLocal = self.loginState.hasPermission(self.access.permissions.UPLOAD);
                 var enableSd = enableLocal && CONFIG_SD_SUPPORT && self.printerState.isSdReady() && !self.isPrinting();
 
                 self._setDropzone("local", enableLocal);

@@ -161,7 +161,7 @@ $(function() {
                 self.loginStateSubscription = undefined;
             }
 
-            self.loginStateSubscription = self.loginState.hasPermission(self.access.permissions.STATUS).subscribe(function(value) {
+            self.loginStateSubscription = self.loginState.hasPermissionKo(self.access.permissions.STATUS).subscribe(function(value) {
                 var graph = $("#temp, #temp_link");
                 if (graph.length) {
                     if (value) {

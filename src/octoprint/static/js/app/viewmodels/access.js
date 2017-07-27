@@ -541,7 +541,7 @@ $(function() {
         };
 
         access.onUserLoggedIn = function(user) {
-            if (access.loginState.hasPermission(access.permissions.SETTINGS)()) {
+            if (access.loginState.hasPermission(access.permissions.SETTINGS)) {
                 access.groups.requestData();
                 access.users.requestData();
             }

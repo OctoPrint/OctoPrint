@@ -1,4 +1,4 @@
-<div data-bind="visible: $root.loginState.hasPermission($root.access.permissions.TIMELAPSE_ADMIN)">
+<div data-bind="visible: $root.loginState.hasPermissionKo($root.access.permissions.TIMELAPSE_ADMIN)">
     <div class="alert" data-bind="visible: isPrinting()">
         {{ _('Take note that timelapse configuration is disabled while your printer is printing.') }}
     </div>
@@ -48,7 +48,7 @@
         <span class="help-block">{{ _('Enter the retraction z-hop used in the firmware or the gcode file to trigger snapshots for the timelapse only if a real layer change happens. For this to work properly your retraction z-hop has to be different from your layerheight!') }}</span>
     </div>
 
-    <div data-bind="visible: loginState.hasPermission(access.permissions.TIMELAPSE_ADMIN)()">
+    <div data-bind="visible: loginState.hasPermissionKo(access.permissions.TIMELAPSE_ADMIN)()">
         <label class="checkbox">
             <input type="checkbox" data-bind="checked: persist, enable: isOperational() && !isPrinting()"> {{ _('Save as default') }}
             <span class="help-block">{{ _('Check this to make your selected timelapse mode and options persist across restarts.') }}</span>
@@ -99,7 +99,7 @@
         <td class="timelapse_files_checkbox"><input type="checkbox" data-bind="value: name, checked: $root.markedForFileDeletion"></td>
         <td class="timelapse_files_name" data-bind="text: name"></td>
         <td class="timelapse_files_size" data-bind="text: size"></td>
-        <td class="timelapse_files_action"><a href="javascript:void(0)" class="fa fa-trash-o" data-bind="click: function() { if ($root.loginState.hasPermission(access.permissions.TIMELAPSE_ADMIN)()) { $parent.removeFile($data.name); } else { return; } }, css: {disabled: !$root.loginState.hasPermission(access.permissions.TIMELAPSE_ADMIN)()}"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" class="fa fa-download" data-bind="attr: {href: url}"></a></td>
+        <td class="timelapse_files_action"><a href="javascript:void(0)" class="fa fa-trash-o" data-bind="click: function() { if ($root.loginState.hasPermission(access.permissions.TIMELAPSE_ADMIN)) { $parent.removeFile($data.name); } else { return; } }, css: {disabled: !$root.loginState.hasPermissionKo(access.permissions.TIMELAPSE_ADMIN)()}"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" class="fa fa-download" data-bind="attr: {href: url}"></a></td>
     </tr>
     </tbody>
 </table>
@@ -115,7 +115,7 @@
     </ul>
 </div>
 
-<div data-bind="visible: $root.loginState.hasPermission($root.access.permissions.TIMELAPSE_ADMIN)() && unrenderedListHelper.allSize">
+<div data-bind="visible: $root.loginState.hasPermissionKo($root.access.permissions.TIMELAPSE_ADMIN)() && unrenderedListHelper.allSize">
     <div><small><a href="javascript:void(0)" class="fa muted" onclick="$(this).children().toggleClass('fa-caret-right fa-caret-down').parent().parent().parent().next().slideToggle('fast')"><i class="fa fa-caret-right"></i> {{ _('Unrendered Timelapses') }}</a></small></div>
     <div class="hide">
         <div class="pull-left">

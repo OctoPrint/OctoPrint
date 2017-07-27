@@ -20,13 +20,13 @@ $(function() {
             return self.isOperational() &&
                     self.isReady() &&
                     !self.isPrinting() &&
-                    self.loginState.hasPermission(self.access.permissions.PRINT)() &&
+                    self.loginState.hasPermission(self.access.permissions.PRINT) &&
                     self.filename() != undefined;
         });
         self.enablePause = ko.pureComputed(function() {
             return self.isOperational() &&
                     (self.isPrinting() || self.isPaused()) &&
-                    self.loginState.hasPermission(self.access.permissions.PRINT)();
+                    self.loginState.hasPermission(self.access.permissions.PRINT);
         });
         self.enableCancel = ko.pureComputed(function() {
             return self.isOperational() && (self.isPrinting() || self.isPaused()) && self.loginState.loggedIn();

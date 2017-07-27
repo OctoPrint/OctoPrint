@@ -14,7 +14,7 @@
             </label>
         </div>
     </div>
-    <div class="span6" id="terminal-sendpanel">
+    <div class="span6" id="terminal-sendpanel" data-bind="visible: loginState.hasPermissionKo(access.permissions.CONTROL)">
         <div class="input-append">
             <input type="text" id="terminal-command" data-bind="value: command, event: { keyup: function(d,e) { return handleKeyUp(e); }, keydown: function(d,e) { return handleKeyDown(e); } }, enable: isOperational" autocomplete="off">
             <button class="btn" type="button" id="terminal-send" data-bind="click: sendCommand, enable: isOperational()">{{ _('Send') }}</button>
@@ -24,7 +24,7 @@
 </div>
 
 <div>
-    <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', container: '#term .hide' }"><i class="fa fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
+    <div><small><a href="#" class="muted" data-bind="visible: loginState.hasPermissionKo(access.permissions.CONTROL), toggleContent: { class: 'fa-caret-right fa-caret-down', container: '#term .hide' }"><i class="fa fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
     <div class="hide">
         <p class="row-fluid">
             <button class="btn btn-primary btn-block" type="button" data-bind="click: fakeAck, enable: isOperational()">{{ _("Fake Acknowledgement") }}</button>

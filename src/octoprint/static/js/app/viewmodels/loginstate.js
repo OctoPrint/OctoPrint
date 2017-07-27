@@ -205,18 +205,21 @@ $(function() {
         //                                                                                             //
         /////////////////////////////////////////////////////////////////////////////////////////////////
         self.hasPermission = function(permission) {
-            return ko.pureComputed(function() {
-                if (self.userneeds() === undefined || permission === undefined)
-                    return false;
+            if (self.userneeds() === undefined || permission === undefined)
+                return false;
 
-                var needs = self.userneeds();
-                if ($.isEmptyObject(needs)) {
-                    return false;
-                }
+            var needs = self.userneeds();
+            if ($.isEmptyObject(needs)) {
+                return false;
+            }
 
-                return self.checkNeeds({ needs: needs }, permission);
-            }).extend({ notify: 'always' });
+            return self.checkNeeds({ needs: needs }, permission);
         };
+        self.hasPermissionKo = function(permission) {
+            return ko.pureComputed(function() {
+                return self.hasPermission(permission);
+            }).extend({ notify: 'always' });
+        }
 
         // Shared checkNeeds function, also used inside the filter function of the access subs
         self.checkNeeds = function(needs, permissions) {

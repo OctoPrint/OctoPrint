@@ -44,7 +44,7 @@ $(function() {
         self.keycontrolActive = ko.observable(false);
         self.keycontrolHelpActive = ko.observable(false);
         self.keycontrolPossible = ko.pureComputed(function () {
-            return self.loginState.hasPermission(self.access.permissions.CONTROL)() && self.settings.feature_keyboardControl() && self.isOperational() && !self.isPrinting() && !$.browser.mobile;
+            return self.loginState.hasPermission(self.access.permissions.CONTROL) && self.settings.feature_keyboardControl() && self.isOperational() && !self.isPrinting() && !$.browser.mobile;
         });
         self.showKeycontrols = ko.pureComputed(function () {
             return self.keycontrolActive() && self.keycontrolPossible();
@@ -124,6 +124,10 @@ $(function() {
         };
 
         self.requestData = function () {
+            if (!self.loginState.hasPermission(self.access.permissions.CONTROL)) {
+                return;
+            }
+
             OctoPrint.control.getCustomControls()
                 .done(function(response) {
                     self._fromResponse(response);
@@ -235,7 +239,7 @@ $(function() {
             if (data.hasOwnProperty("enabled")) {
                 return data.enabled(data);
             } else {
-                return self.loginState.hasPermission(self.access.permissions.CONTROL)() && self.isOperational();
+                return self.loginState.hasPermission(self.access.permissions.CONTROL) && self.isOperational();
             }
         };
 

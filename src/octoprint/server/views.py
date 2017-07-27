@@ -512,34 +512,29 @@ def _process_templates():
 	# navbar
 
 	templates["navbar"]["entries"] = dict(
-		settings=dict(template="navbar/settings.jinja2", _div="navbar_settings", style=["display: none;"], data_bind="visible: loginState.hasPermission(access.permissions.SETTINGS)"),
-		systemmenu=dict(template="navbar/systemmenu.jinja2", _div="navbar_systemmenu", classes=["dropdown"], styles=["display: none;"], data_bind="visible: loginState.hasPermission(access.permissions.SYSTEM)", custom_bindings=False),
+		settings=dict(template="navbar/settings.jinja2", _div="navbar_settings", style=["display: none;"], data_bind="visible: loginState.hasPermissionKo(access.permissions.SETTINGS)"),
+		systemmenu=dict(template="navbar/systemmenu.jinja2", _div="navbar_systemmenu", classes=["dropdown"], styles=["display: none;"], data_bind="visible: loginState.hasPermissionKo(access.permissions.SYSTEM)", custom_bindings=False),
 		login=dict(template="navbar/login.jinja2", _div="navbar_login", classes=["dropdown"], custom_bindings=False),
 	)
 
 	# sidebar
 
 	templates["sidebar"]["entries"]= dict(
-		connection=(gettext("Connection"), dict(template="sidebar/connection.jinja2", _div="connection", icon="signal", styles_wrapper=["display: none;"], data_bind="visible: loginState.hasPermission(access.permissions.CONNECTION)")),
-		state=(gettext("State"), dict(template="sidebar/state.jinja2", _div="state", icon="info-circle", styles_wrapper=["display: none;"], data_bind="visible: loginState.hasPermission(access.permissions.STATUS)")),
+		connection=(gettext("Connection"), dict(template="sidebar/connection.jinja2", _div="connection", icon="signal", styles_wrapper=["display: none;"], data_bind="visible: loginState.hasPermissionKo(access.permissions.CONNECTION_ACCESS)")),
+		state=(gettext("State"), dict(template="sidebar/state.jinja2", _div="state", icon="info-circle", styles_wrapper=["display: none;"], data_bind="visible: loginState.hasPermissionKo(access.permissions.STATUS)")),
 		files=(gettext("Files"), dict(template="sidebar/files.jinja2", _div="files", icon="list", classes_content=["overflow_visible"], template_header="sidebar/files_header.jinja2", styles_wrapper=["display: none;"],
-		                              data_bind="visible: loginState.hasPermission(access.permissions.DOWNLOAD)() || "
-		                                        "loginState.hasPermission(access.permissions.UPLOAD)() || "
-		                                        "loginState.hasPermission(access.permissions.DELETE)() || "
-		                                        "loginState.hasPermission(access.permissions.SELECT)() || "
-		                                        "loginState.hasPermission(access.permissions.PRINT)() || "
-		                                        "loginState.hasPermission(access.permissions.SLICE)()")
+		                              data_bind="visible: loginState.hasPermissionKo(access.permissions.FILES_ACCESS)")
 		       )
 	)
 
 	# tabs
 
 	templates["tab"]["entries"] = dict(
-		temperature=(gettext("Temperature"), dict(template="tabs/temperature.jinja2", _div="temp", styles=["display: none;"], data_bind="visible: loginState.hasPermission(access.permissions.STATUS)")),
-		control=(gettext("Control"), dict(template="tabs/control.jinja2", _div="control", styles=["display: none;"], data_bind="visible: loginState.hasPermission(access.permissions.CONTROL)() || loginState.hasPermission(access.permissions.WEBCAM)()")),
-		gcodeviewer=(gettext("GCode Viewer"), dict(template="tabs/gcodeviewer.jinja2", _div="gcode", styles=["display: none;"], data_bind="visible: loginState.hasPermission(access.permissions.DOWNLOAD)")),
-		terminal=(gettext("Terminal"), dict(template="tabs/terminal.jinja2", _div="term", styles=["display: none;"], data_bind="visible: loginState.hasPermission(access.permissions.TERMINAL)")),
-		timelapse=(gettext("Timelapse"), dict(template="tabs/timelapse.jinja2", _div="timelapse", styles=["display: none;"], data_bind="visible: loginState.hasPermission(access.permissions.TIMELAPSE)"))
+		temperature=(gettext("Temperature"), dict(template="tabs/temperature.jinja2", _div="temp", styles=["display: none;"], data_bind="visible: loginState.hasPermissionKo(access.permissions.STATUS)")),
+		control=(gettext("Control"), dict(template="tabs/control.jinja2", _div="control", styles=["display: none;"], data_bind="visible: loginState.hasPermissionKo(access.permissions.CONTROL_ACCESS)")),
+		gcodeviewer=(gettext("GCode Viewer"), dict(template="tabs/gcodeviewer.jinja2", _div="gcode", styles=["display: none;"], data_bind="visible: loginState.hasPermissionKo(access.permissions.DOWNLOAD)")),
+		terminal=(gettext("Terminal"), dict(template="tabs/terminal.jinja2", _div="term", styles=["display: none;"], data_bind="visible: loginState.hasPermissionKo(access.permissions.TERMINAL)")),
+		timelapse=(gettext("Timelapse"), dict(template="tabs/timelapse.jinja2", _div="timelapse", styles=["display: none;"], data_bind="visible: loginState.hasPermissionKo(access.permissions.TIMELAPSE_ACCESS)"))
 	)
 
 	# settings dialog
