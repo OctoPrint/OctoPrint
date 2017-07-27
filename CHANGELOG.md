@@ -1,5 +1,19 @@
 # OctoPrint Changelog
 
+## 1.3.5rc2 (2017-07-27)
+
+### Bug fixes
+
+  * [#2033](https://github.com/foosel/OctoPrint/issues/2033) - Temperature tab: Fix for legend in graph not updating with current values on mouse over.
+  * [#2033](https://github.com/foosel/OctoPrint/issues/2033) - Temperature tab: Fix for new temperature inputs not fitting on one line in Firefox.
+  * [#2033](https://github.com/foosel/OctoPrint/issues/2033) - Temperature tab & GCODE viewer: Fix for available tools (and offsets) not properly updating on change of printer profile.
+  * [#2033](https://github.com/foosel/OctoPrint/issues/2033) - Wizard: Fix sorting of required wizards not properly handling non-ASCII unicode.
+  * [#2035](https://github.com/foosel/OctoPrint/issues/2035) - Fix an issue of the server not starting up if there's a file in the analysis backlog. The reason for this is that spawning a new process while the intermediary server is active causes the server port to be blocked (this is due to how subprocessing works by default), in turn leading to an error on startup since the port cannot be bound by the actual server. Since the GCODE analysis takes now place in its own subprocess and hence triggers this problem, it had to be moved until after the actual server has already started up to avoid this problem.
+  * Wizard: Fix `onWizardPreventSettingsRefreshDialog` callback invocation.
+  * Corewizard plugin: Fix `firstrunonly` wizards (e.g. for printer profile configuration) being displayed again if _any_ of the sub wizards (e.g. for the online check opt-in and configuration) is active.
+
+([Commits](https://github.com/foosel/OctoPrint/compare/1.3.5rc1...1.3.5rc2))
+
 ## 1.3.5rc1 (2017-07-26)
 
 ### Improvements
