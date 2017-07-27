@@ -23,6 +23,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 from .core import (Plugin, RestartNeedingPlugin, SortablePlugin)
 
+from past.builtins import basestring
 
 class OctoPrintPlugin(Plugin):
 	"""
@@ -742,7 +743,7 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
 		OctoPrint's version, current ``UI_API_KEY``, tracked file paths and ``LastModified`` value).
 
 		Returns:
-		    basestring: An alternatively calculated ETag value. Ignored if ``None`` is returned (default).
+		    str: An alternatively calculated ETag value. Ignored if ``None`` is returned (default).
 		"""
 		return None
 
@@ -1417,7 +1418,7 @@ class SettingsPlugin(OctoPrintPlugin):
 
 		:return: the current settings of the plugin, as a dictionary
 		"""
-		from flask.ext.login import current_user
+		from flask_login import current_user
 		import copy
 
 		data = copy.deepcopy(self._settings.get_all_data(merged=True))
@@ -1462,8 +1463,8 @@ class SettingsPlugin(OctoPrintPlugin):
 					else:
 						node[key] = None
 
-		conditions = dict(user=lambda: current_user is not None and not current_user.is_anonymous(),
-		                  admin=lambda: current_user is not None and not current_user.is_anonymous() and current_user.is_admin(),
+		conditions = dict(user=lambda: current_user is not None and not current_user.is_anonymous,
+		                  admin=lambda: current_user is not None and not current_user.is_anonymous and current_user.is_admin,
 		                  never=lambda: False)
 
 		for level, condition in conditions.items():

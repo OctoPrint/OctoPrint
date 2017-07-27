@@ -7,6 +7,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import os
 import threading
+import logging
 
 from flask import request, jsonify, url_for, make_response
 from werkzeug.utils import secure_filename
@@ -128,7 +129,12 @@ def deleteTimelapse(filename):
 		timelapse_folder = settings().getBaseFolder("timelapse")
 		full_path = os.path.realpath(os.path.join(timelapse_folder, filename))
 		if full_path.startswith(timelapse_folder) and os.path.exists(full_path):
-			os.remove(full_path)
+			try:
+				os.remove(full_path)
+			except Exception as ex:
+				logging.getLogger(__file__).exception("Error deleting timelapse file {}".format(full_path))
+				return make_response("Unexpected error: {}".format(ex), 500)
+
 	return getTimelapseData()
 
 
@@ -162,9 +168,9 @@ def processUnrenderedTimelapseCommand(name):
 @api.route("/timelapse", methods=["POST"])
 @restricted_access
 def setTimelapseConfig():
-	data = request.values
-	if hasattr(request, "json") and request.json:
-		data = request.json
+	data = request.get_json(silent=True)
+	if data is None:
+		data = request.values
 
 	if "type" in data:
 		config = {

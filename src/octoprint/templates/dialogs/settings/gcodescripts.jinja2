@@ -30,6 +30,18 @@
         </div>
     </div>
     <div class="control-group">
+        <label class="control-label">{{ _('Before tool change') }}</label>
+        <div class="controls">
+            <textarea rows="4" class="block" data-bind="value: scripts_gcode_beforeToolChange"></textarea>
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label">{{ _('After tool change') }}</label>
+        <div class="controls">
+            <textarea rows="4" class="block" data-bind="value: scripts_gcode_afterToolChange"></textarea>
+        </div>
+    </div>
+    <div class="control-group">
         <label class="control-label">{{ _('After connection to printer is established') }}</label>
         <div class="controls">
             <textarea rows="4" class="block" data-bind="value: scripts_gcode_afterPrinterConnected"></textarea>
@@ -39,7 +51,7 @@
         <label class="control-label">{{ _('Before connection to printer is closed') }}</label>
         <div class="controls">
             <textarea rows="4" class="block" data-bind="value: scripts_gcode_beforePrinterDisconnected"></textarea>
+            <small>{{ _('This will only be executed when closing the connection actively. If the connection to the printer is suddenly lost nothing will be sent.') }}</small>
         </div>
-        <small>{{ _('This will only be executed when closing the connection actively. If the connection to the printer is suddenly lost nothing will be sent.') }}</small>
     </div>
 </form>

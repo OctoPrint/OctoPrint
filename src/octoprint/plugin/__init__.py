@@ -104,7 +104,8 @@ def plugin_manager(init=False, plugin_folders=None, plugin_types=None, plugin_en
 				                UiPlugin]
 
 			if plugin_restart_needing_hooks is None:
-				plugin_restart_needing_hooks = ["octoprint.server.http"]
+				plugin_restart_needing_hooks = ["octoprint.server.http.*",
+				                                "octoprint.printer.factory"]
 
 			if plugin_obsolete_hooks is None:
 				plugin_obsolete_hooks = ["octoprint.comm.protocol.gcode"]
@@ -176,7 +177,7 @@ def plugin_settings_for_settings_plugin(plugin_key, instance, settings=None):
 	return plugin_settings(plugin_key, get_preprocessors=get_preprocessors, set_preprocessors=set_preprocessors, settings=settings)
 
 
-def call_plugin(types, method, args=None, kwargs=None, callback=None, error_callback=None, sorting_context=None):
+def call_plugin(types, method, args=None, kwargs=None, callback=None, error_callback=None, sorting_context=None, initialized=True):
 	"""
 	Helper method to invoke the indicated ``method`` on all registered plugin implementations implementing the
 	indicated ``types``. Allows providing method arguments and registering callbacks to call in case of success
@@ -212,6 +213,8 @@ def call_plugin(types, method, args=None, kwargs=None, callback=None, error_call
 	    error_callback (function): A callback to invoke after the call of an implementation resulted in an exception.
 	        Will be called with the three arguments ``name``, ``plugin`` and ``exc``. ``name`` will be the plugin
 	        identifier, ``plugin`` the plugin implementation instance itself and ``exc`` the caught exception.
+	    initialized (boolean): Whether the plugin needs to be initialized (True) or not (False). Initialization status
+	        is determined be presence of injected ``_identifier`` property.
 
 	"""
 
@@ -224,6 +227,9 @@ def call_plugin(types, method, args=None, kwargs=None, callback=None, error_call
 
 	plugins = plugin_manager().get_implementations(*types, sorting_context=sorting_context)
 	for plugin in plugins:
+		if initialized and not hasattr(plugin, "_identifier"):
+			continue
+
 		if hasattr(plugin, method):
 			try:
 				result = getattr(plugin, method)(*args, **kwargs)
@@ -263,13 +269,17 @@ class PluginSettings(object):
 	   :returns: The retrieved settings value.
 	   :rtype: object
 
-	.. method:: get_int(path)
+	.. method:: get_int(path, min=None, max=None)
 
-	   Like :func:`get` but tries to convert the retrieved value to ``int``.
+	   Like :func:`get` but tries to convert the retrieved value to ``int``. If ``min`` is provided and the retrieved
+	   value is less than it, it will be returned instead of the value. Likewise for ``max`` - it will be returned if
+	   the value is greater than it.
 
-	.. method:: get_float(path)
+	.. method:: get_float(path, min=None, max=None)
 
-	   Like :func:`get` but tries to convert the retrieved value to ``float``.
+	   Like :func:`get` but tries to convert the retrieved value to ``float``. If ``min`` is provided and the retrieved
+	   value is less than it, it will be returned instead of the value. Likewise for ``max`` - it will be returned if
+	   the value is greater than it.
 
 	.. method:: get_boolean(path)
 
@@ -285,13 +295,19 @@ class PluginSettings(object):
 	   :param boolean force: If set to True, the modified configuration will even be written back to disk if
 	       the value didn't change.
 
-	.. method:: set_int(path, value, force=False)
+	.. method:: set_int(path, value, force=False, min=None, max=None)
 
 	   Like :func:`set` but ensures the value is an ``int`` through attempted conversion before setting it.
+	   If ``min`` and/or ``max`` are provided, it will also be ensured that the value is greater than or equal
+	   to ``min`` and less than or equal to ``max``. If that is not the case, the limit value (``min`` if less than
+	   that, ``max`` if greater than that) will be set instead.
 
-	.. method:: set_float(path, value, force=False)
+	.. method:: set_float(path, value, force=False, min=None, max=None)
 
 	   Like :func:`set` but ensures the value is an ``float`` through attempted conversion before setting it.
+	   If ``min`` and/or ``max`` are provided, it will also be ensured that the value is greater than or equal
+	   to ``min`` and less than or equal to ``max``. If that is not the case, the limit value (``min`` if less than
+	   that, ``max`` if greater than that) will be set instead.
 
 	.. method:: set_boolean(path, value, force=False)
 

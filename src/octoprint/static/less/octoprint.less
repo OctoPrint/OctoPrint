@@ -400,7 +400,6 @@ table {
       width: 80px;
       .actioncol;
     }
-
   }
 }
 
@@ -413,12 +412,55 @@ table {
   background: url("../img/graph-background.png") no-repeat center;
 }
 
-.tab-content, .tab-pane {
-  overflow: visible;
+#temperature-table {
+  table-layout: fixed;
+  width: 100%;
+  margin-top: 20px;
+
+  th, td {
+    &.temperature_tool,
+    &.temperature_actual,
+    &.temperature_target,
+    &.temperature_offset {
+      vertical-align: middle;
+      text-align: center;
+
+      form {
+        margin: 0;
+      }
+
+      .dropdown-menu {
+        text-align: left;
+      }
+    }
+
+    &.temperature_tool {
+      width: 16%;
+      text-align: left;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    &.temperature_actual {
+      width: 12%;
+    }
+
+    &.temperature_target {
+      width: 42%;
+      overflow: visible;
+    }
+
+    &.temperature_offset {
+      width: 30%;
+    }
+  }
 }
 
-.tempInput {
-  width: 50px;
+/** Various */
+
+.tab-content, .tab-pane {
+  overflow: visible;
 }
 
 #temp_newTemp, #temp_newBedTemp, #speed_innerWall, #speed_outerWall, #speed_fill, #speed_support,
@@ -555,16 +597,19 @@ ul.dropdown-menu li a {
     position: relative;
     width: 100%;
     padding-bottom: 100%;
+    pointer-events: none;
 
     .webcam_fixed_ratio {
       position: absolute;
       transform: rotate(-90deg);
       top: 0;
       bottom: 0;
+      pointer-events: none;
 
       .webcam_fixed_ratio_inner {
         width: 100%;
         height: 100%;
+        pointer-events: none;
       }
     }
   }
@@ -572,8 +617,9 @@ ul.dropdown-menu li a {
   .webcam_unrotated {
     .webcam_fixed_ratio {
       width: 100%;
-      padding-bottom: 100%;
+      pointer-events: none;
 
+      padding-bottom: 100%;
       &.ratio43 {
         padding-bottom: 75%;
       }
@@ -594,6 +640,7 @@ ul.dropdown-menu li a {
         bottom: 0;
         left: 0;
         right: 0;
+        pointer-events: none;
       }
     }
   }
@@ -830,14 +877,6 @@ ul.dropdown-menu li a {
     }
 
     margin-bottom: 30px;
-  }
-
-  #terminal-sendpanel {
-    text-align: right;
-  }
-
-  #terminal-output span {
-    display: block;
   }
 }
 
@@ -1219,6 +1258,12 @@ _::-webkit-full-page-media, _:future, :root .full-sized-box {
   -webkit-overflow-scrolling: touch;
 }
 
+.pre-output {
+  span {
+    display: block; // so we don't need to add individual <br> tags to each line
+  }
+}
+
 .input-append, .input-prepend {
   .add-on {
     &.add-on-limited {
@@ -1227,6 +1272,61 @@ _::-webkit-full-page-media, _:future, :root .full-sized-box {
       width: inherit;
     }
   }
+
+  .btn-group:first-child {
+    .btn:first-child {
+      -webkit-border-radius: 4px 0 0 4px;
+      -moz-border-radius: 4px 0 0 4px;
+      border-radius: 4px 0 0 4px;
+    }
+  }
+
+  .btn-group {
+    .btn:first-child {
+      -webkit-border-radius: 0;
+      -moz-border-radius: 0;
+      border-radius: 0;
+    }
+  }
+}
+
+// block level inputs with add-ons
+//
+// LESS based on CSS from https://stackoverflow.com/a/17466199/2028598
+//
+// Note: do not use <button> for attached buttons, use <a class="btn add-on">...</a>
+// instead
+
+.input-append,
+.input-prepend {
+  &.input-block-level {
+    display: table;
+
+    .add-on {
+      display: table-cell;
+      width: 1%; /* remove this if you want default bootstrap button width */
+    }
+
+    > input {
+      box-sizing: border-box; /* use bootstrap mixin or include vendor variants */
+      display: table; /* table-cell is not working well in Chrome for small widths */
+      min-height: inherit;
+      width: 100%;
+    }
+  }
+}
+
+.input-append.input-block-level > input {
+  border-right: 0;
+}
+
+.input-prepend.input-block-level > input {
+  border-left: 0;
+}
+
+.btn-input-dec,
+.btn-input-enc {
+  //font-size: 80%;
 }
 
 .control-group.error .input-prepend .fileinput-button,
@@ -1234,8 +1334,23 @@ _::-webkit-full-page-media, _:future, :root .full-sized-box {
   border-color: #b94a48;
 }
 
+.control-text {
+  // like control-label, but without cursor, float, width or text-align
+  padding-top: 5px;
+  cursor: default;
+}
+
 input[type=number] {
   text-align: right;
+}
+
+input[type="number"].input-nospin::-webkit-outer-spin-button,
+input[type="number"].input-nospin::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+input[type="number"].input-nospin {
+    -moz-appearance: textfield;
 }
 
 // Progress bars with text

@@ -10,8 +10,8 @@ import netaddr
 import sarge
 
 from flask import Blueprint, request, jsonify, abort, current_app, session, make_response, g
-from flask.ext.login import login_user, logout_user, current_user
-from flask.ext.principal import Identity, identity_changed, AnonymousIdentity
+from flask_login import login_user, logout_user, current_user
+from flask_principal import Identity, identity_changed, AnonymousIdentity
 
 import octoprint.util as util
 import octoprint.users
@@ -62,7 +62,7 @@ def pluginData(name):
 		return make_response("More than one api provider registered for {name}, can't proceed".format(name=name), 500)
 
 	api_plugin = api_plugins[0]
-	if api_plugin.is_api_adminonly() and not current_user.is_admin():
+	if api_plugin.is_api_adminonly() and not current_user.is_admin:
 		return make_response("Forbidden", 403)
 
 	response = api_plugin.on_api_get(request)
@@ -89,7 +89,7 @@ def pluginCommand(name):
 	if valid_commands is None:
 		return make_response("Method not allowed", 405)
 
-	if api_plugin.is_api_adminonly() and not current_user.is_admin():
+	if api_plugin.is_api_adminonly() and not current_user.is_admin:
 		return make_response("Forbidden", 403)
 
 	command, data, response = get_json_command_from_request(request, valid_commands)
@@ -134,8 +134,11 @@ def wizardFinish():
 
 	data = dict()
 	try:
-		data = request.json
+		data = request.get_json()
 	except:
+		abort(400)
+
+	if data is None:
 		abort(400)
 
 	if not "handled" in data:
@@ -186,9 +189,9 @@ def apiVersion():
 
 @api.route("/login", methods=["POST"])
 def login():
-	data = request.values
-	if hasattr(request, "json") and request.json:
-		data = request.json
+	data = request.get_json()
+	if data is None:
+		data = request.values
 
 	if octoprint.server.userManager.enabled and "user" in data and "pass" in data:
 		username = data["user"]
@@ -207,7 +210,7 @@ def login():
 			if octoprint.server.userManager.checkPassword(username, password):
 				if octoprint.server.userManager.enabled:
 					user = octoprint.server.userManager.login_user(user)
-					session["usersession.id"] = user.get_session()
+					session["usersession.id"] = user.session
 					g.user = user
 				login_user(user, remember=remember)
 				identity_changed.send(current_app._get_current_object(), identity=Identity(user.get_id()))
@@ -222,21 +225,20 @@ def login():
 @api.route("/logout", methods=["POST"])
 @restricted_access
 def logout():
-	# Remove session keys set by Flask-Principal
-	for key in ('identity.id', 'identity.name', 'identity.auth_type'):
-		if key in session:
-			del session[key]
-	identity_changed.send(current_app._get_current_object(), identity=AnonymousIdentity())
-
+	# logout from user manager...
 	_logout(current_user)
+
+	# ... and from flask login (and principal)
 	logout_user()
 
 	return NO_CONTENT
+
 
 def _logout(user):
 	if "usersession.id" in session:
 		del session["usersession.id"]
 	octoprint.server.userManager.logout_user(user)
+
 
 @api.route("/util/test", methods=["POST"])
 @restricted_access

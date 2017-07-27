@@ -9,12 +9,14 @@ def commands(cli_group, pass_octoprint_ctx, *args, **kwargs):
 	import click
 	import sys
 	import requests.exceptions
-	import octoprint_client as client
+	from octoprint.cli.client import create_client, client_options
 
 	@click.command("check")
 	@click.option("--force", is_flag=True, help="Ignore the cache for the update check")
+	@click.option("--only-new", is_flag=True, help="Only show entries with updates available")
+	@client_options
 	@click.argument("targets", nargs=-1)
-	def check_command(force, targets):
+	def check_command(force, only_new, apikey, host, port, httpuser, httppass, https, prefix, targets):
 		"""
 		Check for updates.
 
@@ -37,7 +39,15 @@ def commands(cli_group, pass_octoprint_ctx, *args, **kwargs):
 		if targets:
 			params["check"] = ",".join(targets)
 
-		client.init_client(cli_group.settings)
+		client = create_client(settings=cli_group.settings,
+		                       apikey=apikey,
+		                       host=host,
+		                       port=port,
+		                       httpuser=httpuser,
+		                       httppass=httppass,
+		                       https=https,
+		                       prefix=prefix)
+
 		r = client.get("plugin/softwareupdate/check", params=params)
 		try:
 			r.raise_for_status()
@@ -58,10 +68,15 @@ def commands(cli_group, pass_octoprint_ctx, *args, **kwargs):
 					status_text = "Update available"
 				else:
 					status_text = "Update available (manual)"
-			line = "{}\n\tInstalled: {}\n\tAvailable: {}\n\t=> {}".format(info["displayName"],
-			                                                              info["information"]["local"]["name"],
-			                                                              info["information"]["remote"]["name"],
-			                                                              status_text)
+
+			elif only_new:
+				continue
+
+			line = "{} (target: {})\n\tInstalled: {}\n\tAvailable: {}\n\t=> {}".format(info["displayName"],
+			                                                                           key,
+			                                                                           info["information"]["local"]["name"],
+			                                                                           info["information"]["remote"]["name"],
+			                                                                           status_text)
 			if key == "octoprint":
 				octoprint_line = line
 			else:
@@ -83,8 +98,9 @@ def commands(cli_group, pass_octoprint_ctx, *args, **kwargs):
 
 	@click.command("update")
 	@click.option("--force", is_flag=True, help="Update even if already up to date")
+	@client_options
 	@click.argument("targets", nargs=-1)
-	def update_command(force, targets):
+	def update_command(force, apikey, host, port, httpuser, httppass, https, prefix, targets):
 		"""
 		Apply updates.
 
@@ -108,7 +124,13 @@ def commands(cli_group, pass_octoprint_ctx, *args, **kwargs):
 		if targets:
 			data["check"] = targets
 
-		client.init_client(cli_group.settings)
+		client = create_client(apikey=apikey,
+		                       host=host,
+		                       port=port,
+		                       httpuser=httpuser,
+		                       httppass=httppass,
+		                       https=https,
+		                       prefix=prefix)
 
 		flags = dict(
 			waiting_for_restart=False,

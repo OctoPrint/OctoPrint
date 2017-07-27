@@ -12,10 +12,10 @@
         </thead>
         <tbody data-bind="foreach: profiles.paginatedItems">
         <tr data-bind="attr: {title: description}">
-            <td class="settings_plugin_cura_profiles_key"><span class="icon-star" data-bind="invisible: !isdefault()"></span> <span data-bind="text: key"></span></td>
+            <td class="settings_plugin_cura_profiles_key"><span class="fa fa-star" data-bind="invisible: !isdefault()"></span> <span data-bind="text: key"></span></td>
             <td class="settings_plugin_cura_profiles_name" data-bind="text: name"></td>
             <td class="settings_plugin_cura_profiles_actions">
-                <a href="#" class="icon-star" title="{{ _('Make default') }}" data-bind="enable: !isdefault(), css: {disabled: isdefault()}, click: function() { if (!$data.isdefault()) { $root.makeProfileDefault($data); } }"></a>&nbsp;|&nbsp;<a href="#" class="icon-trash" title="{{ _('Delete Profile') }}" data-bind="enable: !isdefault(), css: {disabled: isdefault()}, click: function() { if (!$data.isdefault()) { $root.removeProfile($data); } }"></a>
+                <a href="#" class="fa fa-star" title="{{ _('Make default') }}" data-bind="enable: !isdefault(), css: {disabled: isdefault()}, click: function() { if (!$data.isdefault()) { $root.makeProfileDefault($data); } }"></a>&nbsp;|&nbsp;<a href="#" class="fa fa-trash-o" title="{{ _('Delete Profile') }}" data-bind="enable: !isdefault(), css: {disabled: isdefault()}, click: function() { if (!$data.isdefault()) { $root.removeProfile($data); } }"></a>
             </td>
         </tr>
         </tbody>

@@ -14,6 +14,7 @@ ko.bindingHandlers.toggleContent = {
             e.preventDefault();
             if(options.class) {
                 $elm.children('[class^="icon-"]').toggleClass(options.class);
+                $elm.children('[class^="fa"]').toggleClass(options.class);
             }
             if(options.container) {
                 if(options.parent) {

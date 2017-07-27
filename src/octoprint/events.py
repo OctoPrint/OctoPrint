@@ -27,9 +27,10 @@ def all_events():
 
 
 class Events(object):
-	# application startup
+	# server
 	STARTUP = "Startup"
 	SHUTDOWN = "Shutdown"
+	CONNECTIVITY_CHANGED = "ConnectivityChanged"
 
 	# connect/disconnect to printer
 	CONNECTING = "Connecting"
@@ -53,10 +54,10 @@ class Events(object):
 	METADATA_ANALYSIS_FINISHED = "MetadataAnalysisFinished"
 	METADATA_STATISTICS_UPDATED = "MetadataStatisticsUpdated"
 
-	FILE_ADDED = "FileAdded",
-	FILE_REMOVED = "FileRemoved",
-	FOLDER_ADDED = "FolderAdded",
-	FOLDER_REMOVED = "FolderRemoved",
+	FILE_ADDED = "FileAdded"
+	FILE_REMOVED = "FileRemoved"
+	FOLDER_ADDED = "FolderAdded"
+	FOLDER_REMOVED = "FolderRemoved"
 
 	# SD Upload
 	TRANSFER_STARTED = "TransferStarted"
@@ -84,6 +85,7 @@ class Events(object):
 	EJECT = "Eject"
 	E_STOP = "EStop"
 	POSITION_UPDATE = "PositionUpdate"
+	TOOL_CHANGE = "ToolChange"
 	REGISTERED_MESSAGE_RECEIVED = "RegisteredMessageReceived"
 
 	# Timelapse

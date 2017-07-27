@@ -123,8 +123,9 @@ $(function() {
         self.config_updateMethod = ko.observable();
         self.config_releaseChannel = ko.observable();
 
-        self.configurationDialog = $("#settings_plugin_softwareupdate_configurationdialog");
-        self.confirmationDialog = $("#softwareupdate_confirmation_dialog");
+        self.configurationDialog = undefined;
+        self.confirmationDialog = undefined;
+        self._updateClicked = false;
 
         self.config_availableCheckTypes = ko.observableArray([]);
         self.config_availableReleaseChannels = ko.observableArray([]);
@@ -203,7 +204,7 @@ $(function() {
 
         self.savePluginSettings = function(viewModel, event) {
             var target = $(event.target);
-            target.prepend('<i class="icon-spinner icon-spin"></i> ');
+            target.prepend('<i class="fa fa-spinner fa-spin"></i> ');
 
             var data = {
                 plugins: {
@@ -223,7 +224,7 @@ $(function() {
                     self.performCheck();
                 },
                 complete: function() {
-                    $("i.icon-spinner", target).remove();
+                    $("i.fa-spinner", target).remove();
                 },
                 sending: true
             });
@@ -314,11 +315,11 @@ $(function() {
             if (data.status == "updateAvailable" || data.status == "updatePossible") {
                 var text = "<div class='softwareupdate_notification'>" + gettext("There are updates available for the following components:");
 
-                text += "<ul class='icons-ul'>";
+                text += "<ul class='fa-ul'>";
                 _.each(self.versions.items(), function(update_info) {
                     if (update_info.updateAvailable) {
                         text += "<li>"
-                            + "<i class='icon-li " + (update_info.updatePossible ? "icon-ok" : "icon-remove")+ "'></i>"
+                            + "<i class='fa fa-li " + (update_info.updatePossible ? "fa-check" : "fa-remove")+ "'></i>"
                             + "<span class='name' title='" + update_info.fullNameRemote + "'>" + update_info.fullNameRemote + "</span>"
                             + (update_info.releaseNotes ? "<a href=\"" +  update_info.releaseNotes + "\" target=\"_blank\">" + gettext("Release Notes") + "</a>" : "")
                             + "</li>";
@@ -326,7 +327,7 @@ $(function() {
                 });
                 text += "</ul>";
 
-                text += "<p><small>" + gettext("Those components marked with <i class=\"icon-ok\"></i> can be updated directly.") + "</small></p>";
+                text += "<p><small>" + gettext("Those components marked with <i class=\"fa fa-check\"></i> can be updated directly.") + "</small></p>";
 
                 if (!self.loginState.isAdmin()) {
                     text += "<p><small>" + gettext("To have updates applied, get in touch with an administrator of this OctoPrint instance.") + "</small></p>";
@@ -357,7 +358,11 @@ $(function() {
                         }, {
                             text: gettext("Update now"),
                             addClass: "btn-primary",
-                            click: self.update
+                            click: function() {
+                                if (self._updateClicked) return;
+                                self._updateClicked = true;
+                                self.update();
+                            }
                         }]
                     };
                     options["buttons"] = {
@@ -410,6 +415,42 @@ $(function() {
                 .always(function() {
                     self.checking(false);
                 });
+        };
+
+        self.iconTitleForEntry = function(data) {
+            if (data.updatePossible) {
+                return "";
+            } else if (!data.online && data.information && data.information.needs_online) {
+                return gettext("No internet connection");
+            } else if (data.error) {
+                return self.errorTextForEntry(data);
+            } else {
+                return gettext("Update not possible");
+            }
+        };
+
+        self.errorTextForEntry = function(data) {
+            if (!data.error) {
+                return "";
+            }
+
+            switch (data.error) {
+                case "unknown_check": {
+                    return gettext("Unknown update check, configuration ok?");
+                }
+                case "needs_online": {
+                    return gettext("Cannot check for update, need online connection");
+                }
+                case "network": {
+                    return gettext("Network error while checking for update");
+                }
+                case "unknown": {
+                    return gettext("Unknown error while checking for update, please check the logs");
+                }
+                default: {
+                    return "";
+                }
+            }
         };
 
         self._markNotificationAsSeen = function(data) {
@@ -472,7 +513,7 @@ $(function() {
             var options = {
                 title: gettext("Updating..."),
                 text: gettext("Now updating, please wait."),
-                icon: "icon-cog icon-spin",
+                icon: "fa fa-cog fa-spin",
                 hide: false,
                 buttons: {
                     closer: false,
@@ -501,8 +542,14 @@ $(function() {
         };
 
         self.update = function(force) {
-            if (self.updateInProgress) return;
-            if (!self.loginState.isAdmin()) return;
+            if (self.updateInProgress) {
+                self._updateClicked = false;
+                return;
+            }
+            if (!self.loginState.isAdmin()) {
+                self._updateClicked = false;
+                return;
+            }
 
             if (self.printerState.isPrinting()) {
                 self._showPopup({
@@ -510,6 +557,7 @@ $(function() {
                     text: gettext("A print job is currently in progress. Updating will be prevented until it is done."),
                     type: "error"
                 });
+                self._updateClicked = false;
             } else {
                 self.forceUpdate = (force == true);
                 self.confirmationDialog.modal("show");
@@ -518,9 +566,13 @@ $(function() {
         };
 
         self.confirmUpdate = function() {
-            self.confirmationDialog.modal("hide");
             self.performUpdate(self.forceUpdate,
                 _.map(self.availableAndPossible(), function(info) { return info.key }));
+            self.confirmationDialog.modal("hide");
+        };
+
+        self.confirmationHidden = function() {
+            self._updateClicked = false;
         };
 
         self._showWorkingDialog = function(title) {
@@ -578,6 +630,10 @@ $(function() {
         self.onStartup = function() {
             self.workingDialog = $("#settings_plugin_softwareupdate_workingdialog");
             self.workingOutput = $("#settings_plugin_softwareupdate_workingdialog_output");
+            self.configurationDialog = $("#settings_plugin_softwareupdate_configurationdialog");
+            self.confirmationDialog = $("#softwareupdate_confirmation_dialog");
+
+            self.confirmationDialog.on("hidden", self.confirmationHidden);
         };
 
         self.onServerDisconnect = function() {
@@ -585,6 +641,11 @@ $(function() {
                 clearTimeout(self.restartTimeout);
             }
             return true;
+        };
+
+        self.onEventConnectivityChanged = function(payload) {
+            if (!payload || !payload.new) return;
+            self.performCheck();
         };
 
         self.onDataUpdaterReconnect = function() {

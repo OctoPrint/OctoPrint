@@ -1,5 +1,5 @@
 <form class="form-horizontal">
-    <h3>{{ _('Temperature Graph') }}</h3>
+    <h3>{{ _('Graph') }}</h3>
     <div class="control-group">
         <label class="control-label">{{ _('Graph cutoff') }}</label>
         <div class="controls">
@@ -10,7 +10,26 @@
             <span class="help-block">{{ _('Needs a restart of OctoPrint to become active.') }}</span>
         </div>
     </div>
-    <h3>{{ _('Temperature Presets') }}</h3>
+    <h3>{{ _('Fine adjustments') }}</h3>
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
+                <input type="checkbox" data-bind="checked: temperature_sendAutomatically"> {{ _('Send temperature fine adjustments automatically') }}
+            </label>
+            <span class="help-block">{{ _('Enable this to have temperature fine adjustments you do via the + or - button be sent to the printer automatically.') }}</span>
+        </div>
+    </div>
+    <div class="control-group" data-bind="visible: temperature_sendAutomatically">
+        <label class="control-label">{{ _('Sending delay') }}</label>
+        <div class="controls">
+            <div class="input-append">
+                <input type="number" class="input-mini" min="0" max="30" data-bind="value: temperature_sendAutomaticallyAfter">
+                <span class="add-on">sec</span>
+            </div>
+            <span class="help-block">{{ _('OctoPrint will use this delay to limit the number of sent temperature commands should you perform multiple fine adjustments in a short time.') }}</span>
+        </div>
+    </div>
+    <h3>{{ _('Presets') }}</h3>
     <div class="row-fluid">
         <div class="offset4 span3"><h4>{{ _('Extruder') }}</h4></div>
         <div class="span3"><h4>{{ _('Bed') }}</h4></div>
@@ -29,13 +48,13 @@
                 <span class="add-on">&deg;C</span>
             </div>
             <div class="span2">
-                <a title="Remove profile" class="btn btn-danger" data-bind="click: $parent.removeTemperatureProfile"><i class="icon-trash"></i></a>
+                <a title="Remove profile" class="btn btn-danger" data-bind="click: $parent.removeTemperatureProfile"><i class="fa fa-trash-o"></i></a>
             </div>
         </div>
     </div>
     <div class="row-fluid">
         <div class="offset10 span2">
-            <a title="Add Profile" class="btn btn-primary" data-bind="click: addTemperatureProfile"><i class="icon-plus"></i></a>
+            <a title="Add Profile" class="btn btn-primary" data-bind="click: addTemperatureProfile"><i class="fa fa-plus"></i></a>
         </div>
     </div>
 </form>

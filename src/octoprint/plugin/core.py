@@ -31,6 +31,7 @@ import os
 import imp
 from collections import defaultdict, namedtuple, OrderedDict
 import logging
+import fnmatch
 
 import pkg_resources
 import pkginfo
@@ -946,45 +947,107 @@ class PluginManager(object):
 		return plugin.needs_restart or self.has_restart_needing_implementation(plugin) or self.has_restart_needing_hooks(plugin)
 
 	def has_restart_needing_implementation(self, plugin):
-		if not plugin.implementation:
-			return False
-
-		return isinstance(plugin.implementation, RestartNeedingPlugin)
+		return self.has_any_of_mixins(plugin, RestartNeedingPlugin)
 
 	def has_restart_needing_hooks(self, plugin):
-		if not plugin.hooks:
-			return False
-
-		hooks = plugin.hooks.keys()
-		for hook in hooks:
-			if self.is_restart_needing_hook(hook):
-				return True
-		return False
+		return self.has_any_of_hooks(plugin, self.plugin_restart_needing_hooks)
 
 	def has_obsolete_hooks(self, plugin):
-		if not plugin.hooks:
-			return False
-
-		hooks = plugin.hooks.keys()
-		for hook in hooks:
-			if self.is_obsolete_hook(hook):
-				return True
-		return False
+		return self.has_any_of_hooks(plugin, self.plugin_obsolete_hooks)
 
 	def is_restart_needing_hook(self, hook):
-		if self.plugin_restart_needing_hooks is None:
-			return False
-
-		for h in self.plugin_restart_needing_hooks:
-			if hook.startswith(h):
-				return True
-
-		return False
+		return self.hook_matches_hooks(hook, self.plugin_restart_needing_hooks)
 
 	def is_obsolete_hook(self, hook):
-		if self.plugin_obsolete_hooks is None:
+		return self.hook_matches_hooks(hook, self.plugin_obsolete_hooks)
+
+	@staticmethod
+	def has_any_of_hooks(plugin, *hooks):
+		"""
+		Tests if the ``plugin`` contains any of the provided ``hooks``.
+
+		Uses :func:`octoprint.plugin.core.PluginManager.hook_matches_hooks`.
+
+		Args:
+			plugin: plugin to test hooks for
+			*hooks: hooks to test against
+
+		Returns:
+			(bool): True if any of the plugin's hooks match the provided hooks,
+			        False otherwise.
+		"""
+
+		if hooks and len(hooks) == 1 and isinstance(hooks[0], (list, tuple)):
+			hooks = hooks[0]
+
+		hooks = filter(lambda hook: hook is not None, hooks)
+		if not hooks:
 			return False
-		return hook in self.plugin_obsolete_hooks
+		if not plugin or not plugin.hooks:
+			return False
+
+		plugin_hooks = plugin.hooks.keys()
+
+		return any(map(lambda hook: PluginManager.hook_matches_hooks(hook, *hooks),
+		               plugin_hooks))
+
+	@staticmethod
+	def hook_matches_hooks(hook, *hooks):
+		"""
+		Tests if ``hook`` matches any of the provided ``hooks`` to test for.
+
+		``hook`` is expected to be an exact hook name.
+
+		``hooks`` is expected to be a list containing one or more hook names or
+		patterns. That can be either an exact hook name or an
+		:func:`fnmatch.fnmatch` pattern.
+
+		Args:
+			hook: the hook to test
+			hooks: the hook name patterns to test against
+
+		Returns:
+			(bool): True if the ``hook`` matches any of the ``hooks``, False otherwise.
+
+		"""
+
+		if hooks and len(hooks) == 1 and isinstance(hooks[0], (list, tuple)):
+			hooks = hooks[0]
+
+		hooks = filter(lambda hook: hook is not None, hooks)
+		if not hooks:
+			return False
+		if not hook:
+			return False
+
+		return any(map(lambda h: fnmatch.fnmatch(hook, h),
+		               hooks))
+
+	@staticmethod
+	def has_any_of_mixins(plugin, *mixins):
+		"""
+		Tests if the ``plugin`` has an implementation implementing any
+		of the provided ``mixins``.
+
+		Args:
+			plugin: plugin for which to check the implementation
+			*mixins: mixins to test against
+
+		Returns:
+			(bool): True if the plugin's implementation implements any of the
+			        provided mixins, False otherwise.
+		"""
+
+		if mixins and len(mixins) == 1 and isinstance(mixins[0], (list, tuple)):
+			mixins = mixins[0]
+
+		mixins = filter(lambda mixin: mixin is not None, mixins)
+		if not mixins:
+			return False
+		if not plugin or not plugin.implementation:
+			return False
+
+		return isinstance(plugin.implementation, tuple(mixins))
 
 	def initialize_implementations(self, additional_injects=None, additional_inject_factories=None, additional_pre_inits=None, additional_post_inits=None):
 		for name, plugin in self.enabled_plugins.items():

@@ -7,16 +7,18 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import uuid
 from sockjs.tornado import SockJSRouter
-from flask import Flask, g, request, session, Blueprint, Request, Response
-from flask.ext.login import LoginManager, current_user
-from flask.ext.principal import Principal, Permission, RoleNeed, identity_loaded, UserNeed
-from flask.ext.babel import Babel, gettext, ngettext
-from flask.ext.assets import Environment, Bundle
+from flask import Flask, g, request, session, Blueprint, Request, Response, current_app
+from flask_login import LoginManager, current_user, session_protected, user_logged_out
+from flask_principal import Principal, Permission, RoleNeed, identity_loaded, identity_changed, UserNeed, AnonymousIdentity
+from flask_babel import Babel, gettext, ngettext
+from flask_assets import Environment, Bundle
 from babel import Locale
 from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
 from collections import defaultdict
+
 from builtins import bytes, range
+from past.builtins import basestring
 
 import os
 import logging
@@ -24,6 +26,11 @@ import logging.config
 import atexit
 import signal
 import base64
+
+try:
+	import fcntl
+except ImportError:
+	fcntl = None
 
 SUCCESS = {}
 NO_CONTENT = ("", 204)
@@ -47,6 +54,7 @@ pluginManager = None
 appSessionManager = None
 pluginLifecycleManager = None
 preemptiveCache = None
+connectivityChecker = None
 
 principals = Principal(app)
 admin_permission = Permission(RoleNeed("admin"))
@@ -89,10 +97,33 @@ def on_identity_loaded(sender, identity):
 		return
 
 	identity.provides.add(UserNeed(user.get_id()))
-	if user.is_user():
+	if user.is_user:
 		identity.provides.add(RoleNeed("user"))
-	if user.is_admin():
+	if user.is_admin:
 		identity.provides.add(RoleNeed("admin"))
+
+
+def _clear_identity(sender):
+	# Remove session keys set by Flask-Principal
+	for key in ('identity.id', 'identity.name', 'identity.auth_type'):
+		if key in session:
+			del session[key]
+
+	# switch to anonymous identity
+	identity_changed.send(sender, identity=AnonymousIdentity())
+
+
+@session_protected.connect_via(app)
+def on_session_protected(sender):
+	# session was protected, that means the user is no more and we need to clear our identity
+	_clear_identity(sender)
+
+
+@user_logged_out.connect_via(app)
+def on_user_logged_out(sender, user=None):
+	# user was logged out, clear identity
+	_clear_identity(sender)
+
 
 def load_user(id):
 	if id == "_api":
@@ -158,11 +189,12 @@ class Server(object):
 		global appSessionManager
 		global pluginLifecycleManager
 		global preemptiveCache
+		global connectivityChecker
 		global debug
 		global safe_mode
 
 		from tornado.ioloop import IOLoop
-		from tornado.web import Application, RequestHandler
+		from tornado.web import Application
 
 		debug = self._debug
 		safe_mode = self._safe_mode
@@ -170,8 +202,7 @@ class Server(object):
 		self._logger = logging.getLogger(__name__)
 		pluginManager = self._plugin_manager
 
-		# monkey patch a bunch of stuff
-		util.tornado.fix_ioloop_scheduling()
+		# monkey patch some stuff
 		util.flask.enable_additional_translations(additional_folders=[self._settings.getBaseFolder("translations")])
 
 		# setup app
@@ -186,6 +217,17 @@ class Server(object):
 
 		# start the intermediary server
 		self._start_intermediary_server()
+
+		### IMPORTANT!
+		###
+		### Do not start any subprocesses until the intermediary server shuts down again or they WILL inherit the
+		### open port and prevent us from firing up Tornado later. Thanks to close_fds not being available on Popen
+		### on Windows if you also want to be able to redirect stdout/stderr/stdin and fnctl also not being available
+		### we don't have a good way around this issue besides being careful not to spawn processes here.
+		###
+		### Which kinda sucks tbh.
+		###
+		### See also issue #2035
 
 		# then initialize the plugin manager
 		pluginManager.reload_plugins(startup=True, initialize_implementations=False)
@@ -203,12 +245,46 @@ class Server(object):
 		pluginLifecycleManager = LifecycleManager(pluginManager)
 		preemptiveCache = PreemptiveCache(os.path.join(self._settings.getBaseFolder("data"), "preemptive_cache_config.yaml"))
 
+		# start regular check if we are connected to the internet
+		connectivityEnabled = self._settings.getBoolean(["server", "onlineCheck", "enabled"])
+		connectivityInterval = self._settings.getInt(["server", "onlineCheck", "interval"])
+		connectivityHost = self._settings.get(["server", "onlineCheck", "host"])
+		connectivityPort = self._settings.getInt(["server", "onlineCheck", "port"])
+
+		def on_connectivity_change(old_value, new_value):
+			eventManager.fire(events.Events.CONNECTIVITY_CHANGED, payload=dict(old=old_value, new=new_value))
+
+		connectivityChecker = octoprint.util.ConnectivityChecker(connectivityInterval,
+		                                                         connectivityHost,
+		                                                         port=connectivityPort,
+		                                                         enabled=connectivityEnabled,
+		                                                         on_change=on_connectivity_change)
+
+		def on_settings_update(*args, **kwargs):
+			# make sure our connectivity checker runs with the latest settings
+			connectivityEnabled = self._settings.getBoolean(["server", "onlineCheck", "enabled"])
+			connectivityInterval = self._settings.getInt(["server", "onlineCheck", "interval"])
+			connectivityHost = self._settings.get(["server", "onlineCheck", "host"])
+			connectivityPort = self._settings.getInt(["server", "onlineCheck", "port"])
+
+			if connectivityChecker.enabled != connectivityEnabled \
+					or connectivityChecker.interval != connectivityInterval \
+					or connectivityChecker.host != connectivityHost \
+					or connectivityChecker.port != connectivityPort:
+				connectivityChecker.enabled = connectivityEnabled
+				connectivityChecker.interval = connectivityInterval
+				connectivityChecker.host = connectivityHost
+				connectivityChecker.port = connectivityPort
+				connectivityChecker.check_immediately()
+
+		eventManager.subscribe(events.Events.SETTINGS_UPDATED, on_settings_update)
+
 		# setup access control
 		userManagerName = self._settings.get(["accessControl", "userManager"])
 		try:
 			clazz = octoprint.util.get_class(userManagerName)
 			userManager = clazz()
-		except AttributeError as e:
+		except:
 			self._logger.exception("Could not instantiate user manager {}, falling back to FilebasedUserManager!".format(userManagerName))
 			userManager = octoprint.users.FilebasedUserManager()
 		finally:
@@ -223,9 +299,32 @@ class Server(object):
 			file_manager=fileManager,
 			app_session_manager=appSessionManager,
 			plugin_lifecycle_manager=pluginLifecycleManager,
-			user_manager=userManager,
-			preemptive_cache=preemptiveCache
+			preemptive_cache=preemptiveCache,
+			connectivity_checker=connectivityChecker
 		)
+
+		# create user manager instance
+		user_manager_factories = pluginManager.get_hooks("octoprint.users.factory")
+		for name, factory in user_manager_factories.items():
+			try:
+				userManager = factory(components, self._settings)
+				if userManager is not None:
+					self._logger.debug("Created user manager instance from factory {}".format(name))
+					break
+			except:
+				self._logger.exception("Error while creating user manager instance from factory {}".format(name))
+		else:
+			name = self._settings.get(["accessControl", "userManager"])
+			try:
+				clazz = octoprint.util.get_class(name)
+				userManager = clazz()
+			except:
+				self._logger.exception(
+					"Could not instantiate user manager {}, falling back to FilebasedUserManager!".format(name))
+				userManager = octoprint.users.FilebasedUserManager()
+			finally:
+				userManager.enabled = self._settings.getBoolean(["accessControl", "enabled"])
+		components.update(dict(user_manager=userManager))
 
 		# create printer instance
 		printer_factories = pluginManager.get_hooks("octoprint.printer.factory")
@@ -339,10 +438,11 @@ class Server(object):
 		loginManager = LoginManager()
 		loginManager.session_protection = "strong"
 		loginManager.user_callback = load_user
+		loginManager.anonymous_user = users.AnonymousUser # TODO: remove in 1.5.0
 		if not userManager.enabled:
 			loginManager.anonymous_user = users.DummyUser
 			principals.identity_loaders.appendleft(users.dummy_identity_loader)
-		loginManager.init_app(app)
+		loginManager.init_app(app, add_context_processor=False)
 
 		# register API blueprint
 		self._setup_blueprints()
@@ -357,7 +457,8 @@ class Server(object):
 		ioloop = IOLoop()
 		ioloop.install()
 
-		self._router = SockJSRouter(self._create_socket_connection, "/sockjs")
+		self._router = SockJSRouter(self._create_socket_connection, "/sockjs",
+		                            session_kls=util.sockjs.ThreadSafeSession)
 
 		upload_suffixes = dict(name=self._settings.get(["server", "uploads", "nameSuffix"]), path=self._settings.get(["server", "uploads", "pathSuffix"]))
 
@@ -435,9 +536,22 @@ class Server(object):
 						self._logger.debug("Adding additional route {route} handled by handler {handler} and with additional arguments {kwargs!r}".format(**locals()))
 						server_routes.append((route, handler, kwargs))
 
-		server_routes.append((r".*", util.tornado.UploadStorageFallbackHandler, dict(fallback=util.tornado.WsgiInputContainer(app.wsgi_app), file_prefix="octoprint-file-upload-", file_suffix=".tmp", suffixes=upload_suffixes)))
+		headers =         {"X-Robots-Tag": "noindex, nofollow, noimageindex"}
+		removed_headers = ["Server"]
 
-		self._tornado_app = Application(server_routes)
+		server_routes.append((r".*", util.tornado.UploadStorageFallbackHandler, dict(fallback=util.tornado.WsgiInputContainer(app.wsgi_app,
+		                                                                                                                      headers=headers,
+		                                                                                                                      removed_headers=removed_headers),
+		                                                                             file_prefix="octoprint-file-upload-",
+		                                                                             file_suffix=".tmp",
+		                                                                             suffixes=upload_suffixes)))
+
+		transforms = [util.tornado.GlobalHeaderTransform.for_headers("OctoPrintGlobalHeaderTransform",
+		                                                             headers=headers,
+		                                                             removed_headers=removed_headers)]
+
+		self._tornado_app = Application(handlers=server_routes,
+		                                transforms=transforms)
 		max_body_sizes = [
 			("POST", r"/api/files/([^/]*)", self._settings.getInt(["server", "uploads", "maxSize"])),
 			("POST", r"/api/languages", 5 * 1024 * 1024)
@@ -471,7 +585,12 @@ class Server(object):
 		self._server = util.tornado.CustomHTTPServer(self._tornado_app, max_body_sizes=max_body_sizes, default_max_body_size=self._settings.getInt(["server", "maxSize"]))
 		self._server.listen(self._port, address=self._host)
 
+		### From now on it's ok to launch subprocesses again
+
 		eventManager.fire(events.Events.STARTUP)
+
+		# analysis backlog
+		fileManager.process_backlog()
 
 		# auto connect
 		if self._settings.getBoolean(["serial", "autoconnect"]):
@@ -553,7 +672,7 @@ class Server(object):
 			                             "on_shutdown",
 			                             sorting_context="ShutdownPlugin.on_shutdown")
 
-			# wait for shutdown even to be processed, but maximally for 15s
+			# wait for shutdown event to be processed, but maximally for 15s
 			event_timeout = 15.0
 			if eventManager.join(timeout=event_timeout):
 				self._logger.warn("Event loop was still busy processing after {}s, shutting down anyhow".format(event_timeout))
@@ -568,13 +687,16 @@ class Server(object):
 		def sigterm_handler(*args, **kwargs):
 			# will stop tornado on SIGTERM, making the program exit cleanly
 			def shutdown_tornado():
+				self._logger.debug("Shutting down tornado's IOLoop...")
 				ioloop.stop()
+			self._logger.debug("SIGTERM received...")
 			ioloop.add_callback_from_signal(shutdown_tornado)
 		signal.signal(signal.SIGTERM, sigterm_handler)
 
 		try:
 			# this is the main loop - as long as tornado is running, OctoPrint is running
 			ioloop.start()
+			self._logger.debug("Tornado's IOLoop stopped")
 		except (KeyboardInterrupt, SystemExit):
 			pass
 		except:
@@ -615,11 +737,14 @@ class Server(object):
 		return Locale.parse(request.accept_languages.best_match(LANGUAGES))
 
 	def _setup_app(self, app):
-		from octoprint.server.util.flask import ReverseProxiedEnvironment, OctoPrintFlaskRequest, OctoPrintFlaskResponse
+		from octoprint.server.util.flask import ReverseProxiedEnvironment, OctoPrintFlaskRequest, OctoPrintFlaskResponse, deprecate_flaskext
+
+		deprecate_flaskext() # TODO: remove in OctoPrint 1.5.0
 
 		s = settings()
 
 		app.debug = self._debug
+		app.config["TEMPLATES_AUTO_RELOAD"] = True
 
 		secret_key = s.get(["server", "secretKey"])
 		if not secret_key:
@@ -1045,6 +1170,9 @@ class Server(object):
 			"js/lib/jquery/jquery.ui.widget.js",
 			"js/lib/jquery/jquery.ui.mouse.js",
 			"js/lib/jquery/jquery.flot.js",
+			"js/lib/jquery/jquery.flot.time.js",
+			"js/lib/jquery/jquery.flot.crosshair.js",
+			"js/lib/jquery/jquery.flot.resize.js",
 			"js/lib/jquery/jquery.iframe-transport.js",
 			"js/lib/jquery/jquery.fileupload.js",
 			"js/lib/jquery/jquery.slimscroll.min.js",
@@ -1100,7 +1228,8 @@ class Server(object):
 			"css/bootstrap-modal.css",
 			"css/bootstrap-slider.css",
 			"css/bootstrap-tabdrop.css",
-			"css/font-awesome.min.css",
+			"vendor/font-awesome-3.2.1/css/font-awesome.min.css",
+			"vendor/font-awesome-4.7.0/css/font-awesome.min.css",
 			"css/jquery.fileupload-ui.css",
 			"css/pnotify.core.min.css",
 			"css/pnotify.buttons.min.css",
@@ -1112,75 +1241,61 @@ class Server(object):
 		less_core = list(dynamic_core_assets["less"]) + list(dynamic_plugin_assets["bundled"]["less"])
 		less_plugins = list(dynamic_plugin_assets["external"]["less"])
 
-		from webassets.filter import register_filter, Filter
-		from webassets.filter.cssrewrite.base import PatternRewriter
-		import re
-		class LessImportRewrite(PatternRewriter):
-			name = "less_importrewrite"
-
-			patterns = {
-				"import_rewrite": re.compile("(@import(\s+\(.*\))?\s+)\"(.*)\";")
-			}
-
-			def import_rewrite(self, m):
-				import_with_options = m.group(1)
-				import_url = m.group(3)
-
-				if not import_url.startswith("http:") and not import_url.startswith("https:") and not import_url.startswith("/"):
-					import_url = "../less/" + import_url
-
-				return "{import_with_options}\"{import_url}\";".format(**locals())
-
-		class JsDelimiterBundler(Filter):
-			name = "js_delimiter_bundler"
-			options = {}
-			def input(self, _in, out, **kwargs):
-				out.write(_in.read())
-				out.write("\n;\n")
+		# a couple of custom filters
+		from octoprint.server.util.webassets import LessImportRewrite, JsDelimiterBundler, SourceMapRewrite, SourceMapRemove
+		from webassets.filter import register_filter
 
 		register_filter(LessImportRewrite)
+		register_filter(SourceMapRewrite)
+		register_filter(SourceMapRemove)
 		register_filter(JsDelimiterBundler)
 
 		# JS
-		js_libs_bundle = Bundle(*js_libs, output="webassets/packed_libs.js", filters="js_delimiter_bundler")
+		js_filters = ["sourcemap_remove", "js_delimiter_bundler"]
 
-		js_client_bundle = Bundle(*js_client, output="webassets/packed_client.js", filters="js_delimiter_bundler")
-		js_core_bundle = Bundle(*js_core, output="webassets/packed_core.js", filters="js_delimiter_bundler")
+		js_libs_bundle = Bundle(*js_libs, output="webassets/packed_libs.js", filters=",".join(js_filters))
+
+		js_client_bundle = Bundle(*js_client, output="webassets/packed_client.js", filters=",".join(js_filters))
+		js_core_bundle = Bundle(*js_core, output="webassets/packed_core.js", filters=",".join(js_filters))
 
 		if len(js_plugins) == 0:
 			js_plugins_bundle = Bundle(*[])
 		else:
-			js_plugins_bundle = Bundle(*js_plugins, output="webassets/packed_plugins.js", filters="js_delimiter_bundler")
+			js_plugins_bundle = Bundle(*js_plugins, output="webassets/packed_plugins.js", filters=",".join(js_filters))
 
-		js_app_bundle = Bundle(js_plugins_bundle, js_core_bundle, output="webassets/packed_app.js", filters="js_delimiter_bundler")
+		js_app_bundle = Bundle(js_plugins_bundle, js_core_bundle, output="webassets/packed_app.js", filters=",".join(js_filters))
 
 		# CSS
-		css_libs_bundle = Bundle(*css_libs, output="webassets/packed_libs.css")
+		css_filters = ["cssrewrite"]
+
+		css_libs_bundle = Bundle(*css_libs, output="webassets/packed_libs.css", filters=",".join(css_filters))
 
 		if len(css_core) == 0:
 			css_core_bundle = Bundle(*[])
 		else:
-			css_core_bundle = Bundle(*css_core, output="webassets/packed_core.css", filters="cssrewrite")
+			css_core_bundle = Bundle(*css_core, output="webassets/packed_core.css", filters=",".join(css_filters))
 
 		if len(css_plugins) == 0:
 			css_plugins_bundle = Bundle(*[])
 		else:
-			css_plugins_bundle = Bundle(*css_plugins, output="webassets/packed_plugins.css", filters="cssrewrite")
+			css_plugins_bundle = Bundle(*css_plugins, output="webassets/packed_plugins.css", filters=",".join(css_filters))
 
-		css_app_bundle = Bundle(css_core, css_plugins, output="webassets/packed_app.css", filters="cssrewrite")
+		css_app_bundle = Bundle(css_core, css_plugins, output="webassets/packed_app.css", filters=",".join(css_filters))
 
 		# LESS
+		less_filters = ["cssrewrite", "less_importrewrite"]
+
 		if len(less_core) == 0:
 			less_core_bundle = Bundle(*[])
 		else:
-			less_core_bundle = Bundle(*less_core, output="webassets/packed_core.less", filters="cssrewrite, less_importrewrite")
+			less_core_bundle = Bundle(*less_core, output="webassets/packed_core.less", filters=",".join(less_filters))
 
 		if len(less_plugins) == 0:
 			less_plugins_bundle = Bundle(*[])
 		else:
-			less_plugins_bundle = Bundle(*less_plugins, output="webassets/packed_plugins.less", filters="cssrewrite, less_importrewrite")
+			less_plugins_bundle = Bundle(*less_plugins, output="webassets/packed_plugins.less", filters=",".join(less_filters))
 
-		less_app_bundle = Bundle(less_core, less_plugins, output="webassets/packed_app.less", filters="cssrewrite, less_importrewrite")
+		less_app_bundle = Bundle(less_core, less_plugins, output="webassets/packed_app.less", filters=",".join(less_filters))
 
 		# asset registration
 		assets.register("js_libs", js_libs_bundle)
@@ -1265,21 +1380,37 @@ class Server(object):
 
 		rules = map(process, filter(lambda rule: len(rule) == 2 or len(rule) == 3, rules))
 
-		self._intermediary_server = BaseHTTPServer.HTTPServer((host, port), lambda *args, **kwargs: IntermediaryServerHandler(rules, *args, **kwargs))
+		self._intermediary_server = BaseHTTPServer.HTTPServer((host, port),
+		                                                      lambda *args, **kwargs: IntermediaryServerHandler(rules, *args, **kwargs),
+		                                                      bind_and_activate=False)
+
+		# if possible, make sure our socket's port descriptor isn't handed over to subprocesses
+		if fcntl is not None and hasattr(fcntl, "FD_CLOEXEC"):
+			flags = fcntl.fcntl(self._intermediary_server.socket, fcntl.F_GETFD)
+			flags |= fcntl.FD_CLOEXEC
+			fcntl.fcntl(self._intermediary_server.socket, fcntl.F_SETFD, flags)
+
+		# then bind the server and have it serve our handler until stopped
+		try:
+			self._intermediary_server.server_bind()
+			self._intermediary_server.server_activate()
+		except:
+			self._intermediary_server.server_close()
+			raise
 
 		thread = threading.Thread(target=self._intermediary_server.serve_forever)
 		thread.daemon = True
 		thread.start()
 
-		self._logger.debug("Intermediary server started")
+		self._logger.info("Intermediary server started")
 
 	def _stop_intermediary_server(self):
 		if self._intermediary_server is None:
 			return
-		self._logger.debug("Shutting down intermediary server...")
+		self._logger.info("Shutting down intermediary server...")
 		self._intermediary_server.shutdown()
 		self._intermediary_server.server_close()
-		self._logger.debug("Intermediary server shut down")
+		self._logger.info("Intermediary server shut down")
 
 class LifecycleManager(object):
 	def __init__(self, plugin_manager):

@@ -12,6 +12,9 @@ GCODE.gCodeReader = (function(){
     var max = {x: undefined, y: undefined, z: undefined};
     var min = {x: undefined, y: undefined, z: undefined};
     var modelSize = {x: undefined, y: undefined, z: undefined};
+    var boundingBox = {minX: undefined, maxX: undefined,
+                       minY: undefined, maxY: undefined,
+                       minZ: undefined, maxZ: undefined};
     var filamentByLayer = {};
     var printTimeByLayer;
     var totalFilament=0;
@@ -25,6 +28,14 @@ GCODE.gCodeReader = (function(){
         toolOffsets: [
             {x: 0, y: 0}
         ],
+        bed: {
+            x: undefined,
+            y: undefined,
+            r: undefined,
+            circular: undefined,
+            centeredOrigin: undefined
+        },
+        ignoreOutsideBed: false,
         g90InfluencesExtruder: false
     };
 
@@ -33,15 +44,12 @@ GCODE.gCodeReader = (function(){
     var prepareGCode = function(totalSize){
         if(!lines)return;
         gcode = [];
-        var i, tmp, byteCount;
+        var i, byteCount;
 
         byteCount = 0;
         for(i=0;i<lines.length;i++){
-            byteCount += lines[i].length + 1; // line length + \n
-            tmp = lines[i].indexOf(";");
-            if(tmp > 1 || tmp === -1) {
-                gcode.push({line: lines[i], percentage: byteCount * 100 / totalSize});
-            }
+            byteCount += lines[i].length + 1; // line length + line ending
+            gcode.push({line: lines[i], percentage: byteCount * 100 / totalSize});
         }
         lines = [];
     };
@@ -123,13 +131,19 @@ GCODE.gCodeReader = (function(){
         clear: function() {
             model = [];
             z_heights = [];
+            max = {x: undefined, y: undefined, z: undefined};
+            min = {x: undefined, y: undefined, z: undefined};
+            modelSize = {x: undefined, y: undefined, z: undefined};
+            boundingBox = {minX: undefined, maxX: undefined,
+                           minY: undefined, maxY: undefined,
+                           minZ: undefined, maxZ: undefined};
         },
 
         loadFile: function(reader){
             this.clear();
 
             var totalSize = reader.target.result.length;
-            lines = reader.target.result.split(/\n/);
+            lines = reader.target.result.split(/[\r\n]/g);
             reader.target.result = null;
             prepareGCode(totalSize);
 
@@ -140,6 +154,8 @@ GCODE.gCodeReader = (function(){
                         options: {
                             firstReport: 5,
                             toolOffsets: gCodeOptions["toolOffsets"],
+                            bed: gCodeOptions["bed"],
+                            ignoreOutsideBed: gCodeOptions["ignoreOutsideBed"],
                             g90InfluencesExtruder: gCodeOptions["g90InfluencesExtruder"]
                         }
                     }
@@ -182,6 +198,7 @@ GCODE.gCodeReader = (function(){
             min = msg.min;
             max = msg.max;
             modelSize = msg.modelSize;
+            boundingBox = msg.boundingBox;
             totalFilament = msg.totalFilament;
             filamentByLayer = msg.filamentByLayer;
             speeds = msg.speeds;
@@ -203,6 +220,7 @@ GCODE.gCodeReader = (function(){
                 min: min,
                 max: max,
                 modelSize: modelSize,
+                boundingBox: boundingBox,
                 totalFilament: totalFilament,
                 speeds: speeds,
                 speedsByLayer: speedsByLayer,
