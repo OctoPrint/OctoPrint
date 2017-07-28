@@ -1562,11 +1562,22 @@ class MachineCom(object):
 				                     self.STATE_PAUSED,
 				                     self.STATE_TRANSFERING_FILE):
 					if line == "start": # exact match, to be on the safe side
-						message = "Printer sent 'start' while already operational. External reset? " \
-						          "Resetting line numbers to be on the safe side"
-						self._log(message)
-						self._logger.warn(message)
-						self.resetLineNumbers()
+						if self._state in (self.STATE_OPERATIONAL,):
+							message = "Printer sent 'start' while already operational. External reset? " \
+							          "Resetting line numbers to be on the safe side"
+							self._log(message)
+							self._logger.warn(message)
+							self.resetLineNumbers()
+
+						else:
+							verb = "streaming to SD" if self.isStreaming() else "printing"
+							message = "Printer sent 'start' while {}. External reset? " \
+							          "Aborting job since printer lost state.".format(verb)
+							self._log(message)
+							self._logger.warn(message)
+							self.cancelPrint()
+
+						eventManager().fire(Events.PRINTER_RESET)
 
 			except:
 				self._logger.exception("Something crashed inside the serial connection loop, please report this in OctoPrint's bug tracker:")
