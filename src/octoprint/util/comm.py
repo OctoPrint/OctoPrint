@@ -877,7 +877,7 @@ class MachineCom(object):
 
 	def startFileTransfer(self, filename, localFilename, remoteFilename):
 		if not self.isOperational() or self.isBusy():
-			logging.info("Printer is not operational or busy")
+			self._logger.info("Printer is not operational or busy")
 			return
 
 		with self._jobLock:
@@ -889,6 +889,39 @@ class MachineCom(object):
 			self.sendCommand("M28 %s" % remoteFilename)
 			eventManager().fire(Events.TRANSFER_STARTED, {"local": localFilename, "remote": remoteFilename})
 			self._callback.on_comm_file_transfer_started(remoteFilename, self._currentFile.getFilesize())
+
+	def cancelFileTransfer(self):
+		if not self.isOperational() or not self.isStreaming():
+			self._logger.info("Printer is not operational or not streaming")
+			return
+
+		self._finishFileTransfer(failed=True)
+
+	def _finishFileTransfer(self, failed=False):
+		with self._jobLock:
+			remote = self._currentFile.getRemoteFilename()
+
+			self._sendCommand("M29")
+			if failed:
+				self.deleteSdFile(remote)
+
+			payload = {
+				"local": self._currentFile.getLocalFilename(),
+				"remote": remote,
+				"time": self.getPrintTime()
+			}
+
+			self._currentFile = None
+			self._changeState(self.STATE_OPERATIONAL)
+
+			if failed:
+				self._callback.on_comm_file_transfer_failed(remote)
+				eventManager().fire(Events.TRANSFER_FAILED, payload)
+			else:
+				self._callback.on_comm_file_transfer_done(remote)
+				eventManager().fire(Events.TRANSFER_DONE, payload)
+
+			self.refreshSdFiles()
 
 	def selectFile(self, filename, sd):
 		if self.isBusy():
@@ -920,11 +953,16 @@ class MachineCom(object):
 		self._callback.on_comm_print_job_cancelled()
 
 	def cancelPrint(self, firmware_error=None):
-		if not self.isOperational() or self.isStreaming():
+		if not self.isOperational():
 			return
 
 		if not self.isBusy() or self._currentFile is None:
 			# we aren't even printing, nothing to cancel...
+			return
+
+		if self.isStreaming():
+			# we are streaming, we handle cancelling that differently...
+			self.cancelFileTransfer()
 			return
 
 		def _on_M400_sent():
@@ -1964,20 +2002,7 @@ class MachineCom(object):
 		line = self._currentFile.getNext()
 		if line is None:
 			if self.isStreaming():
-				self._sendCommand("M29")
-
-				remote = self._currentFile.getRemoteFilename()
-				payload = {
-					"local": self._currentFile.getLocalFilename(),
-					"remote": remote,
-					"time": self.getPrintTime()
-				}
-
-				self._currentFile = None
-				self._changeState(self.STATE_OPERATIONAL)
-				self._callback.on_comm_file_transfer_done(remote)
-				eventManager().fire(Events.TRANSFER_DONE, payload)
-				self.refreshSdFiles()
+				self._finishFileTransfer()
 			else:
 				self._callback.on_comm_print_job_done()
 				self._changeState(self.STATE_OPERATIONAL)
@@ -2724,6 +2749,9 @@ class MachineComPrintCallback(object):
 		pass
 
 	def on_comm_file_transfer_done(self, filename):
+		pass
+
+	def on_comm_file_transfer_failed(self, filename):
 		pass
 
 	def on_comm_force_disconnect(self):

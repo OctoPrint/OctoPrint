@@ -62,6 +62,7 @@ class Events(object):
 	# SD Upload
 	TRANSFER_STARTED = "TransferStarted"
 	TRANSFER_DONE = "TransferDone"
+	TRANSFER_FAILED = "TransferFailed"
 
 	# print job
 	PRINT_STARTED = "PrintStarted"

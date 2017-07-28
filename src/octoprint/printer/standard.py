@@ -71,6 +71,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		self._sdStreaming = False
 		self._sdFilelistAvailable = threading.Event()
 		self._streamingFinishedCallback = None
+		self._streamingFailedCallback = None
 
 		self._selectedFileMutex = threading.RLock()
 		self._selectedFile = None
@@ -579,12 +580,13 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			return []
 		return map(lambda x: (x[0][1:], x[1]), self._comm.getSdFiles())
 
-	def add_sd_file(self, filename, absolutePath, streamingFinishedCallback):
+	def add_sd_file(self, filename, absolutePath, on_success=None, on_failure=None):
 		if not self._comm or self._comm.isBusy() or not self._comm.isSdReady():
 			self._logger.error("No connection to printer or printer is busy")
 			return
 
-		self._streamingFinishedCallback = streamingFinishedCallback
+		self._streamingFinishedCallback = on_success
+		self._streamingFailedCallback = on_failure
 
 		self.refresh_sd_files(blocking=True)
 		existingSdFiles = map(lambda x: x[0], self._comm.getSdFiles())
@@ -1171,18 +1173,25 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		self._updateProgressData(completion=0.0, filepos=0, printTime=0)
 		self._stateMonitor.set_state({"text": self.get_state_string(), "flags": self._getStateFlags()})
 
-	def on_comm_file_transfer_done(self, filename):
+	def on_comm_file_transfer_done(self, filename, failed=False):
 		self._sdStreaming = False
 
-		if self._streamingFinishedCallback is not None:
-			# in case of SD files, both filename and absolutePath are the same, so we set the (remote) filename for
-			# both parameters
-			self._streamingFinishedCallback(filename, filename, FileDestinations.SDCARD)
+		# in case of SD files, both filename and absolutePath are the same, so we set the (remote) filename for
+		# both parameters
+		if failed:
+			if self._streamingFailedCallback is not None:
+				self._streamingFailedCallback(filename, filename, FileDestinations.SDCARD)
+		else:
+			if self._streamingFinishedCallback is not None:
+				self._streamingFinishedCallback(filename, filename, FileDestinations.SDCARD)
 
 		self._setCurrentZ(None)
 		self._setJobData(None, None, None)
 		self._updateProgressData()
 		self._stateMonitor.set_state({"text": self.get_state_string(), "flags": self._getStateFlags()})
+
+	def on_comm_file_transfer_failed(self, filename):
+		self.on_comm_file_transfer_done(filename, failed=True)
 
 	def on_comm_force_disconnect(self):
 		self.disconnect()
