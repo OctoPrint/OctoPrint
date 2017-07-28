@@ -259,6 +259,13 @@ class VirtualPrinter(object):
 
 			data += "\n"
 
+			if data.startswith("!!DEBUG:") or data.strip() == "!!DEBUG":
+				debug_command = ""
+				if data.startswith("!!DEBUG:"):
+					debug_command = data[len("!!DEBUG:"):].strip()
+				self._debugTrigger(debug_command)
+				continue
+
 			# shortcut for writing to SD
 			if self._writingToSdHandle is not None and not "M29" in data:
 				self._writingToSdHandle.write(data)
@@ -268,12 +275,6 @@ class VirtualPrinter(object):
 			if data.strip() == "version":
 				from octoprint._version import get_versions
 				self._send("OctoPrint VirtualPrinter v" + get_versions()["version"])
-				continue
-			elif data.startswith("!!DEBUG:") or data.strip() == "!!DEBUG":
-				debug_command = ""
-				if data.startswith("!!DEBUG:"):
-					debug_command = data[len("!!DEBUG:"):].strip()
-				self._debugTrigger(debug_command)
 				continue
 
 			# if we are sending oks before command output, send it now
