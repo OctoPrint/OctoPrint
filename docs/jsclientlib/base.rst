@@ -119,7 +119,7 @@
    :param string method: The HTTP method to use for the request (optional)
    :param string url: The URL to perform the request against (optional)
    :param object data: The data to send in the request body (optional)
-   :param object opts: Additonal options to use for the request (optional)
+   :param object opts: Additional options to use for the request (optional)
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
 .. js:function:: OctoPrintClient.get(url, opts)
