@@ -79,7 +79,7 @@ property instead, manually instantiate your implementation instance and then add
 .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/custom_action_command.py
    :linenos:
    :tab-width: 4
-   :caption: `custom_action_command.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/custom_action_command.py>`_
+   :caption: `custom_action_command.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/custom_action_command.py>`__
    :name: sec-plugin-concepts-hooks-example
 
 .. _sec-plugins-hooks-ordering:
@@ -370,7 +370,7 @@ octoprint.comm.protocol.action
    .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/custom_action_command.py
       :linenos:
       :tab-width: 4
-      :caption: `custom_action_command.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/custom_action_command.py>`_
+      :caption: `custom_action_command.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/custom_action_command.py>`__
 
    :param object comm_instance: The :class:`~octoprint.util.comm.MachineCom` instance which triggered the hook.
    :param str line: The complete line as received from the printer, format ``// action:<command>``
