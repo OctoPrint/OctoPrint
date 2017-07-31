@@ -188,6 +188,16 @@ Version checks
     * ``repo``: (mandatory) Github repository to check
     * ``branch``: Branch of the Github repository to check, defaults to
       ``master`` if not set.
+    * ``current``: Current commit hash. Will be updated automatically.
+
+  * ``bitbucket_commit``: Checks against commits pushed to Bitbucket. Additional
+    config parameters:
+
+    * ``user``: (mandatory) Bitbucket user the repository to check belongs to
+    * ``repo``: (mandatory) Bitbucket repository to check
+    * ``branch``: Branch of the Bitbucket repository to check, defaults to
+      ``master`` if not set.
+    * ``current``: Current commit hash. Will be updated automatically.
 
   * ``git_commit``: Checks a local git repository for new commits on its
     configured remote. Additional config parameters:

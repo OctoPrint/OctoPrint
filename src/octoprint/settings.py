@@ -155,6 +155,7 @@ default_settings = {
 	},
 	"webcam": {
 		"stream": None,
+		"streamRatio": "16:9",
 		"snapshot": None,
 		"ffmpeg": None,
 		"ffmpegThreads": 1,
@@ -204,7 +205,8 @@ default_settings = {
 		"modelSizeDetection": True,
 		"firmwareDetection": True,
 		"printCancelConfirmation": True,
-		"blockWhileDwelling": False
+		"blockWhileDwelling": False,
+		"g90InfluencesExtruder": False
 	},
 	"folder": {
 		"uploads": None,
@@ -229,8 +231,7 @@ default_settings = {
 		"cutoff": 30
 	},
 	"printerProfiles": {
-		"default": None,
-		"defaultProfile": {}
+		"default": None
 	},
 	"printerParameters": {
 		"pauseTriggers": [],
@@ -328,7 +329,6 @@ default_settings = {
 			"preemptive": True
 		},
 		"webassets": {
-			"minify": False,
 			"bundle": True,
 			"clean_on_startup": True
 		},
@@ -361,7 +361,8 @@ default_settings = {
 			"sendBusy": False,
 			"simulateReset": True,
 			"preparedOks": [],
-			"okFormatString": "ok"
+			"okFormatString": "ok",
+			"m115FormatString": "FIRMWARE_NAME: {firmware_name} PROTOCOL_VERSION:1.0"
 		}
 	}
 }
@@ -558,8 +559,7 @@ class Settings(object):
 
 		apikey = self.get(["api", "key"])
 		if not apikey or apikey == "n/a":
-			self.set(["api", "key"], ''.join('%02X' % z for z in bytes(uuid.uuid4().bytes)))
-			self.save(force=True)
+			self.generateApiKey()
 
 		self._script_env = self._init_script_templating()
 
@@ -1497,6 +1497,17 @@ class Settings(object):
 			os.makedirs(path)
 		with atomic_write(filename, "wb", max_permissions=0o666) as f:
 			f.write(script)
+
+	def generateApiKey(self):
+		apikey = ''.join('%02X' % z for z in bytes(uuid.uuid4().bytes))
+		self.set(["api", "key"], apikey)
+		self.save(force=True)
+		return apikey
+
+	def deleteApiKey(self):
+		self.set(["api", "key"], None)
+		self.save(force=True)
+
 
 def _default_basedir(applicationName):
 	# taken from http://stackoverflow.com/questions/1084697/how-do-i-store-desktop-application-data-in-a-cross-platform-way-for-python

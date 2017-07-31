@@ -8,8 +8,15 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 import requests
 import time
 
-apikey = None
-baseurl = None
+
+def build_base_url(https=False, httpuser=None, httppass=None, host=None, port=None, prefix=None):
+	protocol = "https" if https else "http"
+	httpauth = "{}:{}@".format(httpuser, httppass) if httpuser and httppass else ""
+	host = host if host else "127.0.0.1"
+	port = ":{}".format(port) if port else ":5000"
+	prefix = prefix if prefix else ""
+
+	return "{}://{}{}{}{}".format(protocol, httpauth, host, port, prefix)
 
 
 class SocketTimeout(BaseException):
@@ -202,183 +209,149 @@ class SocketClient(object):
 		# a reconnect, that's a failure
 		return False
 
+class Client(object):
 
-def build_base_url(https=False, httpuser=None, httppass=None, host=None, port=None, prefix=None):
-	protocol = "https" if https else "http"
-	httpauth = "{}:{}@".format(httpuser, httppass) if httpuser and httppass else ""
-	host = host if host else "127.0.0.1"
-	port = ":{}".format(port) if port else ":5000"
-	prefix = prefix if prefix else ""
+	def __init__(self, baseurl, apikey):
+		self.baseurl = baseurl
+		self.apikey = apikey
 
-	return "{}://{}{}{}{}".format(protocol, httpauth, host, port, prefix)
+	def prepare_request(self, method=None, path=None, params=None):
+		url = None
+		if self.baseurl:
+			while path.startswith("/"):
+				path = path[1:]
+			url = self.baseurl + "/" + path
+		return requests.Request(method=method, url=url, params=params, headers={"X-Api-Key": self.apikey}).prepare()
 
+	def request(self, method, path, data=None, files=None, encoding=None, params=None, timeout=None):
+		if timeout is None:
+			timeout = 30
 
-def init_client(settings, https=False, httpuser=None, httppass=None, host=None, port=None, prefix=None):
-	"""
-	Initializes the API client with the provided settings.
+		s = requests.Session()
+		request = self.prepare_request(method, path, params=params)
+		if data or files:
+			if encoding == "json":
+				request.prepare_body(None, None, json=data)
+			else:
+				request.prepare_body(data, files=files)
+		response = s.send(request, timeout=timeout)
+		return response
 
-	Basically a convenience method to set ``apikey`` and ``baseurl`` from settings
-	and/or command line arguments.
+	def get(self, path, params=None, timeout=None):
+		return self.request("GET", path, params=params, timeout=timeout)
 
-	Arguments:
-	    settings (octoprint.settings.Settings): A :class:`~octoprint.settings.Settings` instance to use
-	        for client configuration
-	    https (bool): Whether to connect via HTTPS (True) or not (False, default)
-	    httpuser (str or None): HTTP Basic Auth username to use. No Basic Auth will be
-	        used if unset.
-	    httppass (str or None): HTTP Basic Auth password to use. No Basic Auth will be
-	        used if unset.
-	    host (str or None): Host to connect to, overrides data from settings if set.
-	    port (int or None): Port to connect to, overrides data from settings if set.
-	    prefix (str or None): Path prefix, overrides data from settings if set.
-	"""
-	settings_host = settings.get(["server", "host"])
-	settings_port = settings.getInt(["server", "port"])
-	settings_apikey = settings.get(["api", "key"])
+	def post(self, path, data, encoding=None, params=None, timeout=None):
+		return self.request("POST", path, data=data, encoding=encoding, params=params, timeout=timeout)
 
-	global apikey, baseurl
-	apikey = settings_apikey
-	baseurl = build_base_url(https=https,
-	                         httpuser=httpuser,
-	                         httppass=httppass,
-	                         host=host or settings_host if settings_host != "0.0.0.0" else "127.0.0.1",
-	                         port=port or settings_port,
-	                         prefix=prefix)
+	def post_json(self, path, data, params=None, timeout=None):
+		return self.post(path, data, encoding="json", params=params, timeout=timeout)
 
-def prepare_request(method=None, path=None, params=None):
-	url = None
-	if baseurl:
-		while path.startswith("/"):
-			path = path[1:]
-		url = baseurl + "/" + path
-	return requests.Request(method=method, url=url, params=params, headers={"X-Api-Key": apikey}).prepare()
+	def post_command(self, path, command, additional=None, timeout=None):
+		data = dict(command=command)
+		if additional:
+			data.update(additional)
+		return self.post_json(path, data, params=data, timeout=timeout)
 
-def request(method, path, data=None, files=None, encoding=None, params=None):
-	s = requests.Session()
-	request = prepare_request(method, path, params=params)
-	if data or files:
-		if encoding == "json":
-			request.prepare_body(None, None, json=data)
-		else:
-			request.prepare_body(data, files=files)
-	response = s.send(request)
-	return response
+	def upload(self, path, file_path, additional=None, file_name=None, content_type=None, params=None, timeout=None):
+		import os
 
-def get(path, params=None):
-	return request("GET", path, params=params)
+		if not os.path.isfile(file_path):
+			raise ValueError("{} cannot be uploaded since it is not a file".format(file_path))
 
-def post(path, data, encoding=None, params=None):
-	return request("POST", path, data=data, encoding=encoding, params=params)
+		if file_name is None:
+			file_name = os.path.basename(file_path)
 
-def post_json(path, data, params=None):
-	return post(path, data, encoding="json", params=params)
+		with open(file_path, "rb") as fp:
+			if content_type:
+				files = dict(file=(file_name, fp, content_type))
+			else:
+				files = dict(file=(file_name, fp))
 
-def post_command(path, command, additional=None):
-	data = dict(command=command)
-	if additional:
-		data.update(additional)
-	return post_json(path, data, params=data)
+			response = self.request("POST", path, data=additional, files=files, params=params, timeout=timeout)
 
-def upload(path, file_path, additional=None, file_name=None, content_type=None, params=None):
-	import os
+		return response
 
-	if not os.path.isfile(file_path):
-		raise ValueError("{} cannot be uploaded since it is not a file".format(file_path))
+	def delete(self, path, params=None, timeout=None):
+		return self.request("DELETE", path, params=params, timeout=timeout)
 
-	if file_name is None:
-		file_name = os.path.basename(file_path)
+	def patch(self, path, data, encoding=None, params=None, timeout=None):
+		return self.request("PATCH", path, data=data, encoding=encoding, params=params, timeout=timeout)
 
-	with open(file_path, "rb") as fp:
-		if content_type:
-			files = dict(file=(file_name, fp, content_type))
-		else:
-			files = dict(file=(file_name, fp))
+	def put(self, path, data, encoding=None, params=None, timeout=None):
+		return self.request("PUT", path, data=data, encoding=encoding, params=params, timeout=timeout)
 
-		response = request("POST", path, data=additional, files=files, params=params)
+	def create_socket(self, **kwargs):
+		import uuid
+		import random
+		import json
 
-	return response
+		# creates websocket URL for SockJS according to
+		# - http://sockjs.github.io/sockjs-protocol/sockjs-protocol-0.3.3.html#section-37
+		# - http://sockjs.github.io/sockjs-protocol/sockjs-protocol-0.3.3.html#section-50
+		url = "ws://{}/sockjs/{:0>3d}/{}/websocket".format(
+			self.baseurl[self.baseurl.find("//") + 2:], # host + port + prefix, but no protocol
+			random.randrange(0, stop=999),              # server_id
+			uuid.uuid4()                                # session_id
+		)
+		use_ssl = self.baseurl.startswith("https:")
 
-def delete(path, params=None):
-	return request("DELETE", path, params=params)
+		on_open_cb = kwargs.get("on_open", None)
+		on_heartbeat_cb = kwargs.get("on_heartbeat", None)
+		on_message_cb = kwargs.get("on_message", None)
+		on_close_cb = kwargs.get("on_close", None)
+		on_error_cb = kwargs.get("on_error", None)
+		daemon = kwargs.get("daemon", True)
 
-def patch(path, data, encoding=None, params=None):
-	return request("PATCH", path, data=data, encoding=encoding, params=params)
+		def on_message(ws, message):
+			message_type = message[0]
 
-def put(path, data, encoding=None, params=None):
-	return request("PUT", path, data=data, encoding=encoding, params=params)
-
-def connect_socket(**kwargs):
-	import uuid
-	import random
-	import json
-
-	# creates websocket URL for SockJS according to
-	# - http://sockjs.github.io/sockjs-protocol/sockjs-protocol-0.3.3.html#section-37
-	# - http://sockjs.github.io/sockjs-protocol/sockjs-protocol-0.3.3.html#section-50
-	url = "ws://{}/sockjs/{:0>3d}/{}/websocket".format(
-		baseurl[baseurl.find("//") + 2:], # host + port + prefix, but no protocol
-		random.randrange(0, stop=999),    # server_id
-		uuid.uuid4()                      # session_id
-	)
-	use_ssl = baseurl.startswith("https:")
-
-	on_open_cb = kwargs.get("on_open", None)
-	on_heartbeat_cb = kwargs.get("on_heartbeat", None)
-	on_message_cb = kwargs.get("on_message", None)
-	on_close_cb = kwargs.get("on_close", None)
-	on_error_cb = kwargs.get("on_error", None)
-	daemon = kwargs.get("daemon", True)
-
-	def on_message(ws, message):
-		message_type = message[0]
-
-		if message_type == "h":
-			# "heartbeat" message
-			if callable(on_heartbeat_cb):
-				on_heartbeat_cb(ws)
+			if message_type == "h":
+				# "heartbeat" message
+				if callable(on_heartbeat_cb):
+					on_heartbeat_cb(ws)
+					return
+			elif message_type == "o":
+				# "open" message
 				return
-		elif message_type == "o":
-			# "open" message
-			return
-		elif message_type == "c":
-			# "close" message
-			return
+			elif message_type == "c":
+				# "close" message
+				return
 
-		if not callable(on_message_cb):
-			return
+			if not callable(on_message_cb):
+				return
 
-		message_body = message[1:]
-		if not message_body:
-			return
+			message_body = message[1:]
+			if not message_body:
+				return
 
-		data = json.loads(message_body)
+			data = json.loads(message_body)
 
-		if message_type == "m":
-			data = [data,]
+			if message_type == "m":
+				data = [data,]
 
-		for d in data:
-			for internal_type, internal_message in d.items():
-				on_message_cb(ws, internal_type, internal_message)
+			for d in data:
+				for internal_type, internal_message in d.items():
+					on_message_cb(ws, internal_type, internal_message)
 
-	def on_open(ws):
-		if callable(on_open_cb):
-			on_open_cb(ws)
+		def on_open(ws):
+			if callable(on_open_cb):
+				on_open_cb(ws)
 
-	def on_close(ws):
-		if callable(on_close_cb):
-			on_close_cb(ws)
+		def on_close(ws):
+			if callable(on_close_cb):
+				on_close_cb(ws)
 
-	def on_error(ws, error):
-		if callable(on_error_cb):
-			on_error_cb(ws, error)
+		def on_error(ws, error):
+			if callable(on_error_cb):
+				on_error_cb(ws, error)
 
-	socket = SocketClient(url,
-	                      use_ssl=use_ssl,
-	                      daemon=daemon,
-	                      on_open=on_open,
-	                      on_message=on_message,
-	                      on_close=on_close,
-	                      on_error=on_error)
-	socket.connect()
+		socket = SocketClient(url,
+		                      use_ssl=use_ssl,
+		                      daemon=daemon,
+		                      on_open=on_open,
+		                      on_message=on_message,
+		                      on_close=on_close,
+		                      on_error=on_error)
+		socket.connect()
 
-	return socket
+		return socket

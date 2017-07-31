@@ -10,7 +10,20 @@
     };
 
     OctoPrintPluginManagerClient.prototype.get = function(refresh, opts) {
-        return this.base.get(this.base.getSimpleApiUrl("pluginmanager") + ((refresh) ? "?refresh_repository=true" : ""), opts);
+        var refresh_repo, refresh_notices;
+        if (_.isPlainObject(refresh)) {
+            refresh_repo = refresh.repo || false;
+            refresh_notices = refresh.notices || false;
+        } else {
+            refresh_repo = refresh;
+            refresh_notices = false;
+        }
+
+        var query = [];
+        if (refresh_repo) query.push("refresh_repository=true");
+        if (refresh_notices) query.push("refresh_notices=true");
+
+        return this.base.get(this.base.getSimpleApiUrl("pluginmanager") + ((query.length) ? "?" + query.join("&") : ""), opts);
     };
 
     OctoPrintPluginManagerClient.prototype.getWithRefresh = function(opts) {
@@ -79,6 +92,8 @@ $(function() {
 
         self.config_repositoryUrl = ko.observable();
         self.config_repositoryTtl = ko.observable();
+        self.config_noticesUrl = ko.observable();
+        self.config_noticesTtl = ko.observable();
         self.config_pipAdditionalArgs = ko.observable();
         self.config_pipForceUser = ko.observable();
 
@@ -185,6 +200,20 @@ $(function() {
         });
 
         self.notifications = [];
+        self.noticeNotifications = [];
+        self.hiddenNoticeNotifications = {};
+        self.noticeCount = ko.observable(0);
+
+        self.noticeCountText = ko.pureComputed(function() {
+            var count = self.noticeCount();
+            if (count == 0) {
+                return gettext("There are no plugin notices. Great!");
+            } else if (count == 1) {
+                return gettext("There is a plugin notice for one of your installed plugins.");
+            } else {
+                return _.sprintf(gettext("There are %(count)d plugin notices for one or more of your installed plugins."), {count: count});
+            }
+        });
 
         self.enableManagement = ko.pureComputed(function() {
             return !self.printerState.isPrinting();
@@ -250,7 +279,13 @@ $(function() {
                 });
             },
             done: function(e, data) {
-                self._markDone();
+                var response = data.result;
+                if (response.result) {
+                    self._markDone();
+                } else {
+                    self._markDone(response.reason);
+                }
+
                 self.uploadButton.unbind("click");
                 self.uploadFilename(undefined);
             },
@@ -261,7 +296,7 @@ $(function() {
                     type: "error",
                     hide: false
                 });
-                self._markDone();
+                self._markDone("Could not install plugin, unknown error.");
                 self.uploadButton.unbind("click");
                 self.uploadFilename(undefined);
             }
@@ -280,19 +315,36 @@ $(function() {
             return false;
         };
 
-        self.fromResponse = function(data) {
-            self._fromPluginsResponse(data.plugins);
-            self._fromRepositoryResponse(data.repository);
-            self._fromPipResponse(data.pip);
+        self.fromResponse = function(data, options) {
+            self._fromPluginsResponse(data.plugins, options);
+            self._fromRepositoryResponse(data.repository, options);
+            self._fromPipResponse(data.pip, options);
 
             self.safeMode(data.safe_mode || false);
         };
 
-        self._fromPluginsResponse = function(data) {
+        self._fromPluginsResponse = function(data, options) {
+            var evalNotices = options.eval_notices || false;
+            var ignoreNoticeHidden = options.ignore_notice_hidden || false;
+            var ignoreNoticeIgnored = options.ignore_notice_ignored || false;
+
+            if (evalNotices) self._removeAllNoticeNotifications();
+
             var installedPlugins = [];
+            var noticeCount = 0;
             _.each(data, function(plugin) {
                 installedPlugins.push(plugin.key);
+
+                if (evalNotices && plugin.notifications && plugin.notifications.length) {
+                    _.each(plugin.notifications, function(notification) {
+                        noticeCount++;
+                        if (!ignoreNoticeIgnored && self._isNoticeNotificationIgnored(plugin.key, notification.date)) return;
+                        if (!ignoreNoticeHidden && self._isNoticeNotificationHidden(plugin.key, notification.date)) return;
+                        self._showPluginNotification(plugin, notification);
+                    });
+                }
             });
+            if (evalNotices) self.noticeCount(noticeCount);
             self.installedPlugins(installedPlugins);
             self.plugins.updateItems(data);
         };
@@ -324,13 +376,28 @@ $(function() {
             }
         };
 
-        self.requestData = function(includeRepo) {
+        self.requestData = function(options) {
             if (!self.loginState.isAdmin()) {
                 return;
             }
 
-            OctoPrint.plugins.pluginmanager.get(includeRepo)
-                .done(self.fromResponse);
+            if (!_.isPlainObject(options)) {
+                options = {
+                    refresh_repo: options,
+                    refresh_notices: false,
+                    eval_notices: false
+                };
+
+            }
+
+            options.refresh_repo = options.refresh_repo || false;
+            options.refresh_notices = options.refresh_notices || false;
+            options.eval_notices = options.eval_notices || false;
+
+            OctoPrint.plugins.pluginmanager.get({repo: options.refresh_repo, notices: options.refresh_notices})
+                .done(function(data) {
+                    self.fromResponse(data, options);
+                });
         };
 
         self.togglePlugin = function(data) {
@@ -344,7 +411,9 @@ $(function() {
 
             if (data.key == "pluginmanager") return;
 
-            var onSuccess = self.requestData,
+            var onSuccess = function() {
+                    self.requestData();
+                },
                 onError = function() {
                     new PNotify({
                         title: gettext("Something went wrong"),
@@ -360,9 +429,26 @@ $(function() {
                     .done(onSuccess)
                     .fail(onError);
             } else {
-                OctoPrint.plugins.pluginmanager.disable(data.key)
-                    .done(onSuccess)
-                    .fail(onError);
+                var perform = function() {
+                    OctoPrint.plugins.pluginmanager.disable(data.key)
+                        .done(onSuccess)
+                        .fail(onError);
+                };
+
+                if (data.disabling_discouraged) {
+                    var message = _.sprintf(gettext("You are about to disable \"%(name)s\"."), {name: data.name})
+                        + "</p><p>" + data.disabling_discouraged;
+                    showConfirmationDialog({
+                        title: gettext("This is not recommended"),
+                        message: message,
+                        question: gettext("Do you still want to disable it?"),
+                        cancel: gettext("Keep enabled"),
+                        proceed: gettext("Disable anyway"),
+                        onproceed: perform
+                    })
+                } else {
+                    perform();
+                }
             }
         };
 
@@ -418,32 +504,33 @@ $(function() {
             }
             self._markWorking(workTitle, workText);
 
-            var onSuccess = function() {
+            var onSuccess = function(response) {
+                    if (response.result) {
+                        self._markDone();
+                    } else {
+                        self._markDone(response.reason)
+                    }
                     self.requestData();
                     self.installUrl("");
                 },
                 onError = function() {
+                    self._markDone("Could not install plugin, unknown error, please consult octoprint.log for details");
                     new PNotify({
                         title: gettext("Something went wrong"),
                         text: gettext("Please consult octoprint.log for details"),
                         type: "error",
                         hide: false
                     });
-                },
-                onAlways = function() {
-                    self._markDone();
                 };
 
             if (reinstall) {
                 OctoPrint.plugins.pluginmanager.reinstall(reinstall, url, followDependencyLinks)
                     .done(onSuccess)
-                    .fail(onError)
-                    .always(onAlways);
+                    .fail(onError);
             } else {
                 OctoPrint.plugins.pluginmanager.install(url, followDependencyLinks)
                     .done(onSuccess)
-                    .fail(onError)
-                    .always(onAlways);
+                    .fail(onError);
             }
         };
 
@@ -462,7 +549,9 @@ $(function() {
             self._markWorking(gettext("Uninstalling plugin..."), _.sprintf(gettext("Uninstalling plugin \"%(name)s\""), {name: data.name}));
 
             OctoPrint.plugins.pluginmanager.uninstall(data.key)
-                .done(self.requestData)
+                .done(function() {
+                    self.requestData();
+                })
                 .fail(function() {
                     new PNotify({
                         title: gettext("Something went wrong"),
@@ -480,8 +569,23 @@ $(function() {
             if (!self.loginState.isAdmin()) {
                 return;
             }
+            self.requestData({refresh_repo: true});
+        };
 
-            self.requestData(true);
+        self.refreshNotices = function() {
+            if (!self.loginState.isAdmin()) {
+                return;
+            }
+
+            self.requestData({refresh_notices: true, eval_notices: true, ignore_notice_hidden: true, ignore_notice_ignored: true});
+        };
+
+        self.reshowNotices = function() {
+            if (!self.loginState.isAdmin()) {
+                return;
+            }
+
+            self.requestData({eval_notices: true, ignore_notice_hidden: true, ignore_notice_ignored: true});
         };
 
         self.showPluginSettings = function() {
@@ -502,6 +606,18 @@ $(function() {
                 repositoryTtl = null;
             }
 
+            var notices = self.config_noticesUrl();
+            if (notices != undefined && notices.trim() == "") {
+                notices = null;
+            }
+
+            var noticesTtl;
+            try {
+                noticesTtl = parseInt(self.config_noticesTtl());
+            } catch (ex) {
+                noticesTtl = null;
+            }
+
             var pipArgs = self.config_pipAdditionalArgs();
             if (pipArgs != undefined && pipArgs.trim() == "") {
                 pipArgs = null;
@@ -512,6 +628,8 @@ $(function() {
                     pluginmanager: {
                         repository: repository,
                         repository_ttl: repositoryTtl,
+                        notices: notices,
+                        notices_ttl: noticesTtl,
                         pip_args: pipArgs,
                         pip_force_user: self.config_pipForceUser()
                     }
@@ -520,13 +638,15 @@ $(function() {
             self.settingsViewModel.saveData(data, function() {
                 self.configurationDialog.modal("hide");
                 self._copyConfig();
-                self.refreshRepository();
+                self.requestData({refresh_repo: true, refresh_notices: true, eval_notices: true});
             });
         };
 
         self._copyConfig = function() {
             self.config_repositoryUrl(self.settingsViewModel.settings.plugins.pluginmanager.repository());
             self.config_repositoryTtl(self.settingsViewModel.settings.plugins.pluginmanager.repository_ttl());
+            self.config_noticesUrl(self.settingsViewModel.settings.plugins.pluginmanager.notices());
+            self.config_noticesTtl(self.settingsViewModel.settings.plugins.pluginmanager.notices_ttl());
             self.config_pipAdditionalArgs(self.settingsViewModel.settings.plugins.pluginmanager.pip_args());
             self.config_pipForceUser(self.settingsViewModel.settings.plugins.pluginmanager.pip_force_user());
         };
@@ -540,7 +660,7 @@ $(function() {
         };
 
         self.installButtonText = function(data) {
-            return self.isCompatible(data) ? (self.installed(data) ? gettext("Reinstall") : gettext("Install")) : gettext("Incompatible");
+            return self.isCompatible(data) ? (self.installed(data) ? gettext("Reinstall") : gettext("Install")) : (data.disabled ? gettext("Disabled") : gettext("Incompatible"));
         };
 
         self._displayNotification = function(response, titleSuccess, textSuccess, textRestart, textReload, titleError, textError) {
@@ -654,9 +774,14 @@ $(function() {
             self.workingDialog.modal({keyboard: false, backdrop: "static", show: true});
         };
 
-        self._markDone = function() {
+        self._markDone = function(error) {
             self.working(false);
-            self.loglines.push({line: gettext("Done!"), stream: "message"});
+            if (error) {
+                self.loglines.push({line: gettext("Error!"), stream: "error"});
+                self.loglines.push({line: error, stream: "error"})
+            } else {
+                self.loglines.push({line: gettext("Done!"), stream: "message"});
+            }
             self._scrollWorkingOutputToEnd();
         };
 
@@ -689,13 +814,184 @@ $(function() {
             }
         };
 
+        self.showPluginNotifications = function(plugin) {
+            if (!plugin.notifications || plugin.notifications.length == 0) return;
+
+            self._removeAllNoticeNotificationsForPlugin(plugin.key);
+            _.each(plugin.notifications, function(notification) {
+                self._showPluginNotification(plugin, notification);
+            });
+        };
+
+        self.showPluginNotificationsLinkText = function(plugins) {
+            if (!plugins.notifications || plugins.notifications.length == 0) return;
+
+            var count = plugins.notifications.length;
+            var importantCount = _.filter(plugins.notifications, function(notification) { return notification.important }).length;
+            if (count > 1) {
+                if (importantCount) {
+                    return _.sprintf(gettext("There are %(count)d notices (%(important)d marked as important) available regarding this plugin - click to show!"), {count: count, important: importantCount});
+                } else {
+                    return _.sprintf(gettext("There are %(count)d notices available regarding this plugin - click to show!"), {count: count});
+                }
+            } else {
+                if (importantCount) {
+                    return gettext("There is an important notice available regarding this plugin - click to show!");
+                } else {
+                    return gettext("There is a notice available regarding this plugin - click to show!");
+                }
+            }
+        };
+
+        self._showPluginNotification = function(plugin, notification) {
+            var name = plugin.name;
+            var version = plugin.version;
+
+            var important = notification.important;
+            var link = notification.link;
+
+            var title;
+            if (important) {
+                title = _.sprintf(gettext("Important notice regarding plugin \"%(name)s\""), {name: name});
+            } else {
+                title = _.sprintf(gettext("Notice regarding plugin \"%(name)s\""), {name: name});
+            }
+
+            var text = "";
+
+            if (notification.versions && notification.versions.length > 0) {
+                var versions = _.map(notification.versions, function(v) { return (v == version) ? "<strong>" + v + "</strong>" : v; }).join(", ");
+                text += "<small>" + _.sprintf(gettext("Affected versions: %(versions)s"), {versions: versions}) + "</small>";
+            } else {
+                text += "<small>" + gettext("Affected versions: all") + "</small>";
+            }
+
+            text += "<p>" + notification.text + "</p>";
+            if (link) {
+                text += "<p><a href='" + link + "' target='_blank'>" + gettext("Read more...") + "</a></p>";
+            }
+
+            var beforeClose = function(notification) {
+                if (!self.noticeNotifications[plugin.key]) return;
+                self.noticeNotifications[plugin.key] = _.without(self.noticeNotifications[plugin.key], notification);
+            };
+
+            var options = {
+                title: title,
+                text: text,
+                type: (important) ? "error" : "notice",
+                before_close: beforeClose,
+                hide: false,
+                confirm: {
+                    confirm: true,
+                    buttons: [{
+                        text: gettext("Later"),
+                        click: function(notice) {
+                            self._hideNoticeNotification(plugin.key, notification.date);
+                            notice.remove();
+                            notice.get().trigger("pnotify.cancel", notice);
+                        }
+                    }, {
+                        text: gettext("Mark read"),
+                        click: function(notice) {
+                            self._ignoreNoticeNotification(plugin.key, notification.date);
+                            notice.remove();
+                            notice.get().trigger("pnotify.cancel", notice);
+                        }
+                    }]
+                },
+                buttons: {
+                    sticker: false,
+                    closer: false
+                }
+            };
+
+            if (!self.noticeNotifications[plugin.key]) {
+                self.noticeNotifications[plugin.key] = [];
+            }
+            self.noticeNotifications[plugin.key].push(new PNotify(options));
+        };
+
+        self._removeAllNoticeNotifications = function() {
+            _.each(_.keys(self.noticeNotifications), function(key) {
+                self._removeAllNoticeNotificationsForPlugin(key);
+            });
+        };
+
+        self._removeAllNoticeNotificationsForPlugin = function(key) {
+            if (!self.noticeNotifications[key] || !self.noticeNotifications[key].length) return;
+            _.each(self.noticeNotifications[key], function(notification) {
+                notification.remove();
+            });
+        };
+
+        self._hideNoticeNotification = function(key, date) {
+            if (!self.hiddenNoticeNotifications[key]) {
+                self.hiddenNoticeNotifications[key] = [];
+            }
+            if (!_.contains(self.hiddenNoticeNotifications[key], date)) {
+                self.hiddenNoticeNotifications[key].push(date);
+            }
+        };
+
+        self._isNoticeNotificationHidden = function(key, date) {
+            if (!self.hiddenNoticeNotifications[key]) return false;
+            return _.any(_.map(self.hiddenNoticeNotifications[key], function(d) { return date == d; }));
+        };
+
+        var noticeLocalStorageKey = "plugin.pluginmanager.seen_notices";
+        self._ignoreNoticeNotification = function(key, date) {
+            if (!Modernizr.localstorage)
+                return false;
+            if (!self.loginState.isAdmin())
+                return false;
+
+            var currentString = localStorage[noticeLocalStorageKey];
+            var current;
+            if (currentString === undefined) {
+                current = {};
+            } else {
+                current = JSON.parse(currentString);
+            }
+            if (!current[self.loginState.username()]) {
+                current[self.loginState.username()] = {};
+            }
+            if (!current[self.loginState.username()][key]) {
+                current[self.loginState.username()][key] = [];
+            }
+
+            if (!_.contains(current[self.loginState.username()][key], date)) {
+                current[self.loginState.username()][key].push(date);
+                localStorage[noticeLocalStorageKey] = JSON.stringify(current);
+            }
+        };
+
+        self._isNoticeNotificationIgnored = function(key, date) {
+            if (!Modernizr.localstorage)
+                return false;
+
+            if (localStorage[noticeLocalStorageKey] == undefined)
+                return false;
+
+            var knownData = JSON.parse(localStorage[noticeLocalStorageKey]);
+
+            if (!self.loginState.isAdmin())
+                return true;
+
+            var userData = knownData[self.loginState.username()];
+            if (userData === undefined)
+                return false;
+
+            return userData[key] && _.contains(userData[key], date);
+        };
+
         self.onBeforeBinding = function() {
             self.settings = self.settingsViewModel.settings;
         };
 
         self.onUserLoggedIn = function(user) {
             if (user.admin) {
-                self.requestData();
+                self.requestData({eval_notices: true});
             } else {
                 self.onUserLoggedOut();
             }
@@ -787,22 +1083,42 @@ $(function() {
                     }
 
                     titleError = gettext("Something went wrong");
-                    var url = "unknown";
-                    if (data.hasOwnProperty("url")) {
-                        url = data.url;
+                    var source = "unknown";
+                    if (data.hasOwnProperty("source")) {
+                        source = data.source;
+                    }
+                    var sourceType = "unknown";
+                    if (data.hasOwnProperty("source_type")) {
+                        sourceType = data.source_type;
                     }
 
                     if (data.hasOwnProperty("reason")) {
                         if (data.was_reinstalled) {
-                            textError = _.sprintf(gettext("Reinstalling the plugin from URL \"%(url)s\" failed: %(reason)s"), {reason: data.reason, url: url});
+                            if (sourceType == "path") {
+                                textError = _.sprintf(gettext("Reinstalling the plugin from file failed: %(reason)s"), {reason: data.reason});
+                            } else {
+                                textError = _.sprintf(gettext("Reinstalling the plugin from \"%(source)s\" failed: %(reason)s"), {reason: data.reason, source: source});
+                            }
                         } else {
-                            textError = _.sprintf(gettext("Installing the plugin from URL \"%(url)s\" failed: %(reason)s"), {reason: data.reason, url: url});
+                            if (sourceType == "path") {
+                                textError = _.sprintf(gettext("Installing the plugin from file failed: %(reason)s"), {reason: data.reason});
+                            } else {
+                                textError = _.sprintf(gettext("Installing the plugin from \"%(source)s\" failed: %(reason)s"), {reason: data.reason, source: source});
+                            }
                         }
                     } else {
                         if (data.was_reinstalled) {
-                            textError = _.sprintf(gettext("Reinstalling the plugin from URL \"%(url)s\" failed, please see the log for details."), {url: url});
+                            if (sourceType == "path") {
+                                textError = gettext("Reinstalling the plugin from file failed, please see the log for details.");
+                            } else {
+                                textError = _.sprintf(gettext("Reinstalling the plugin from \"%(source)s\" failed, please see the log for details."), {source: source});
+                            }
                         } else {
-                            textError = _.sprintf(gettext("Installing the plugin from URL \"%(url)s\" failed, please see the log for details."), {url: url});
+                            if (sourceType == "path") {
+                                textError = gettext("Installing the plugin from file failed, please see the log for details.");
+                            } else {
+                                textError = _.sprintf(gettext("Installing the plugin from \"%(source)s\" failed, please see the log for details."), {source: source});
+                            }
                         }
                     }
 

@@ -194,8 +194,10 @@ class Server(object):
 		eventManager = events.eventManager()
 		analysisQueue = octoprint.filemanager.analysis.AnalysisQueue()
 		slicingManager = octoprint.slicing.SlicingManager(self._settings.getBaseFolder("slicingProfiles"), printerProfileManager)
+
 		storage_managers = dict()
 		storage_managers[octoprint.filemanager.FileDestinations.LOCAL] = octoprint.filemanager.storage.LocalFileStorage(self._settings.getBaseFolder("uploads"))
+
 		fileManager = octoprint.filemanager.FileManager(analysisQueue, slicingManager, printerProfileManager, initial_storage_managers=storage_managers)
 		appSessionManager = util.flask.AppSessionManager()
 		pluginLifecycleManager = LifecycleManager(pluginManager)
@@ -473,11 +475,14 @@ class Server(object):
 
 		# auto connect
 		if self._settings.getBoolean(["serial", "autoconnect"]):
-			(port, baudrate) = self._settings.get(["serial", "port"]), self._settings.getInt(["serial", "baudrate"])
-			printer_profile = printerProfileManager.get_default()
-			connectionOptions = printer.__class__.get_connection_options()
-			if port in connectionOptions["ports"]:
-				printer.connect(port=port, baudrate=baudrate, profile=printer_profile["id"] if "id" in printer_profile else "_default")
+			try:
+				(port, baudrate) = self._settings.get(["serial", "port"]), self._settings.getInt(["serial", "baudrate"])
+				printer_profile = printerProfileManager.get_default()
+				connectionOptions = printer.__class__.get_connection_options()
+				if port in connectionOptions["ports"]:
+						printer.connect(port=port, baudrate=baudrate, profile=printer_profile["id"] if "id" in printer_profile else "_default")
+			except:
+				self._logger.exception("Something went wrong while attempting to automatically connect to the printer")
 
 		# start up watchdogs
 		if self._settings.getBoolean(["feature", "pollWatched"]):
@@ -788,6 +793,8 @@ class Server(object):
 			return
 
 		def execute_caching():
+			logger = logging.getLogger(__name__ + ".preemptive_cache")
+
 			for route in sorted(cache_data.keys(), key=lambda x: (x.count("/"), x)):
 				entries = reversed(sorted(cache_data[route], key=lambda x: x.get("_count", 0)))
 				for kwargs in entries:
@@ -796,18 +803,18 @@ class Server(object):
 						try:
 							plugin_info = pluginManager.get_plugin_info(plugin, require_enabled=True)
 							if plugin_info is None:
-								self._logger.info("About to preemptively cache plugin {} but it is not installed or enabled, preemptive caching makes no sense".format(plugin))
+								logger.info("About to preemptively cache plugin {} but it is not installed or enabled, preemptive caching makes no sense".format(plugin))
 								continue
 
 							implementation = plugin_info.implementation
 							if implementation is None or not isinstance(implementation, octoprint.plugin.UiPlugin):
-								self._logger.info("About to preemptively cache plugin {} but it is not a UiPlugin, preemptive caching makes no sense".format(plugin))
+								logger.info("About to preemptively cache plugin {} but it is not a UiPlugin, preemptive caching makes no sense".format(plugin))
 								continue
 							if not implementation.get_ui_preemptive_caching_enabled():
-								self._logger.info("About to preemptively cache plugin {} but it has disabled preemptive caching".format(plugin))
+								logger.info("About to preemptively cache plugin {} but it has disabled preemptive caching".format(plugin))
 								continue
 						except:
-							self._logger.exception("Error while trying to check if plugin {} has preemptive caching enabled, skipping entry")
+							logger.exception("Error while trying to check if plugin {} has preemptive caching enabled, skipping entry")
 							continue
 
 					additional_request_data = kwargs.get("_additional_request_data", dict())
@@ -815,10 +822,11 @@ class Server(object):
 					kwargs.update(additional_request_data)
 
 					try:
+						start = time.time()
 						if plugin:
-							self._logger.info("Preemptively caching {} (ui {}) for {!r}".format(route, plugin, kwargs))
+							logger.info("Preemptively caching {} (ui {}) for {!r}".format(route, plugin, kwargs))
 						else:
-							self._logger.info("Preemptively caching {} (ui _default) for {!r}".format(route, kwargs))
+							logger.info("Preemptively caching {} (ui _default) for {!r}".format(route, kwargs))
 
 						headers = kwargs.get("headers", dict())
 						headers["X-Force-View"] = plugin if plugin else "_default"
@@ -827,8 +835,10 @@ class Server(object):
 
 						builder = EnvironBuilder(**kwargs)
 						app(builder.get_environ(), lambda *a, **kw: None)
+
+						logger.info("... done in {:.2f}s".format(time.time() - start))
 					except:
-						self._logger.exception("Error while trying to preemptively cache {} for {!r}".format(route, kwargs))
+						logger.exception("Error while trying to preemptively cache {} for {!r}".format(route, kwargs))
 
 		# asynchronous caching
 		import threading
@@ -1010,7 +1020,6 @@ class Server(object):
 
 		enable_gcodeviewer = self._settings.getBoolean(["gcodeViewer", "enabled"])
 		preferred_stylesheet = self._settings.get(["devel", "stylesheet"])
-		minify = self._settings.getBoolean(["devel", "webassets", "minify"])
 
 		dynamic_core_assets = util.flask.collect_core_assets(enable_gcodeviewer=enable_gcodeviewer)
 		dynamic_plugin_assets = util.flask.collect_plugin_assets(
@@ -1019,7 +1028,7 @@ class Server(object):
 		)
 
 		js_libs = [
-			"js/lib/jquery/jquery.min.js" if minify else "js/lib/jquery/jquery.js",
+			"js/lib/jquery/jquery.js",
 			"js/lib/modernizr.custom.js",
 			"js/lib/lodash.min.js",
 			"js/lib/sprintf.min.js",
@@ -1042,14 +1051,23 @@ class Server(object):
 			"js/lib/jquery/jquery.slimscroll.min.js",
 			"js/lib/jquery/jquery.qrcode.min.js",
 			"js/lib/jquery/jquery.bootstrap.wizard.js",
+			"js/lib/pnotify/pnotify.core.min.js",
+			"js/lib/pnotify/pnotify.buttons.min.js",
+			"js/lib/pnotify/pnotify.callbacks.min.js",
+			"js/lib/pnotify/pnotify.confirm.min.js",
+			"js/lib/pnotify/pnotify.desktop.min.js",
+			"js/lib/pnotify/pnotify.history.min.js",
+			"js/lib/pnotify/pnotify.mobile.min.js",
+			"js/lib/pnotify/pnotify.nonblock.min.js",
+			"js/lib/pnotify/pnotify.reference.min.js",
+			"js/lib/pnotify/pnotify.tooltip.min.js",
 			"js/lib/moment-with-locales.min.js",
 			"js/lib/pusher.color.min.js",
 			"js/lib/detectmobilebrowser.js",
 			"js/lib/md5.min.js",
-			"js/lib/pnotify.min.js",
 			"js/lib/bootstrap-slider-knockout-binding.js",
 			"js/lib/loglevel.min.js",
-			"js/lib/sockjs.min.js" if minify else "js/lib/sockjs.js"
+			"js/lib/sockjs.js"
 		]
 		js_client = [
 			"js/app/client/base.js",
@@ -1077,7 +1095,6 @@ class Server(object):
 		     "js/app/helpers.js",
 		     "js/app/main.js"]
 		js_plugins = dynamic_plugin_assets["external"]["js"]
-		js_app = js_plugins + js_core
 
 		css_libs = [
 			"css/bootstrap.min.css",
@@ -1086,15 +1103,15 @@ class Server(object):
 			"css/bootstrap-tabdrop.css",
 			"css/font-awesome.min.css",
 			"css/jquery.fileupload-ui.css",
-			"css/pnotify.min.css"
+			"css/pnotify.core.min.css",
+			"css/pnotify.buttons.min.css",
+			"css/pnotify.history.min.css"
 		]
 		css_core = list(dynamic_core_assets["css"]) + list(dynamic_plugin_assets["bundled"]["css"])
 		css_plugins = list(dynamic_plugin_assets["external"]["css"])
-		css_app = css_core + css_plugins
 
 		less_core = list(dynamic_core_assets["less"]) + list(dynamic_plugin_assets["bundled"]["less"])
 		less_plugins = list(dynamic_plugin_assets["external"]["less"])
-		less_app = less_core + less_plugins
 
 		from webassets.filter import register_filter, Filter
 		from webassets.filter.cssrewrite.base import PatternRewriter
@@ -1127,22 +1144,16 @@ class Server(object):
 
 		# JS
 		js_libs_bundle = Bundle(*js_libs, output="webassets/packed_libs.js", filters="js_delimiter_bundler")
-		if minify:
-			js_client_bundle = Bundle(*js_client, output="webassets/packed_client.js", filters="rjsmin, js_delimiter_bundler")
-			js_core_bundle = Bundle(*js_core, output="webassets/packed_core.js", filters="rjsmin, js_delimiter_bundler")
-			if len(js_plugins) == 0:
-				js_plugins_bundle = Bundle(*[])
-			else:
-				js_plugins_bundle = Bundle(*js_plugins, output="webassets/packed_plugins.js", filters="rjsmin, js_delimiter_bundler")
-			js_app_bundle = Bundle(*js_app, output="webassets/packed_app.js", filters="rjsmin, js_delimiter_bundler")
+
+		js_client_bundle = Bundle(*js_client, output="webassets/packed_client.js", filters="js_delimiter_bundler")
+		js_core_bundle = Bundle(*js_core, output="webassets/packed_core.js", filters="js_delimiter_bundler")
+
+		if len(js_plugins) == 0:
+			js_plugins_bundle = Bundle(*[])
 		else:
-			js_client_bundle = Bundle(*js_client, output="webassets/packed_client.js", filters="js_delimiter_bundler")
-			js_core_bundle = Bundle(*js_core, output="webassets/packed_core.js", filters="js_delimiter_bundler")
-			if len(js_plugins) == 0:
-				js_plugins_bundle = Bundle(*[])
-			else:
-				js_plugins_bundle = Bundle(*js_plugins, output="webassets/packed_plugins.js", filters="js_delimiter_bundler")
-			js_app_bundle = Bundle(*js_app, output="webassets/packed_app.js", filters="js_delimiter_bundler")
+			js_plugins_bundle = Bundle(*js_plugins, output="webassets/packed_plugins.js", filters="js_delimiter_bundler")
+
+		js_app_bundle = Bundle(js_plugins_bundle, js_core_bundle, output="webassets/packed_app.js", filters="js_delimiter_bundler")
 
 		# CSS
 		css_libs_bundle = Bundle(*css_libs, output="webassets/packed_libs.css")
@@ -1157,10 +1168,7 @@ class Server(object):
 		else:
 			css_plugins_bundle = Bundle(*css_plugins, output="webassets/packed_plugins.css", filters="cssrewrite")
 
-		if len(css_app) == 0:
-			css_app_bundle = Bundle(*[])
-		else:
-			css_app_bundle = Bundle(*css_app, output="webassets/packed_app.css", filters="cssrewrite")
+		css_app_bundle = Bundle(css_core, css_plugins, output="webassets/packed_app.css", filters="cssrewrite")
 
 		# LESS
 		if len(less_core) == 0:
@@ -1173,10 +1181,7 @@ class Server(object):
 		else:
 			less_plugins_bundle = Bundle(*less_plugins, output="webassets/packed_plugins.less", filters="cssrewrite, less_importrewrite")
 
-		if len(less_app) == 0:
-			less_app_bundle = Bundle(*[])
-		else:
-			less_app_bundle = Bundle(*less_app, output="webassets/packed_app.less", filters="cssrewrite, less_importrewrite")
+		less_app_bundle = Bundle(less_core, less_plugins, output="webassets/packed_app.less", filters="cssrewrite, less_importrewrite")
 
 		# asset registration
 		assets.register("js_libs", js_libs_bundle)

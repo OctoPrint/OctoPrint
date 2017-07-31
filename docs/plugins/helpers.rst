@@ -6,7 +6,7 @@ Helpers
 Helpers are methods that plugin can exposed to other plugins in order to make common functionality available on the
 system. They are registered with the OctoPrint plugin system through the use of the control property ``__plugin_helpers__``.
 
-An example for providing a couple of helper functions to the system can be found in the
+An example for providing some helper functions to the system can be found in the
 `Discovery Plugin <https://github.com/foosel/OctoPrint/wiki/Plugin:-Discovery>`_,
 which provides it's SSDP browsing and Zeroconf browsing and publishing functions as helper methods.
 

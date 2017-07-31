@@ -15,7 +15,7 @@ BRANCH_HEAD_URL = "https://api.github.com/repos/{user}/{repo}/git/refs/heads/{br
 logger = logging.getLogger("octoprint.plugins.softwareupdate.version_checks.github_commit")
 
 def _get_latest_commit(user, repo, branch):
-	r = requests.get(BRANCH_HEAD_URL.format(user=user, repo=repo, branch=branch))
+	r = requests.get(BRANCH_HEAD_URL.format(user=user, repo=repo, branch=branch), timeout=30)
 
 	from . import log_github_ratelimit
 	log_github_ratelimit(logger, r)

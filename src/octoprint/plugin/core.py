@@ -71,6 +71,9 @@ class PluginInfo(object):
 	attr_description = '__plugin_description__'
 	""" Module attribute from which to retrieve the plugin's description. """
 
+	attr_disabling_discouraged = '__plugin_disabling_discouraged__'
+	""" Module attribute from which to retrieve the reason why disabling the plugin is discouraged. Only effective if ``self.bundled`` is True. """
+
 	attr_version = '__plugin_version__'
 	""" Module attribute from which to retrieve the plugin's version. """
 
@@ -293,6 +296,19 @@ class PluginInfo(object):
 		    str or None: Description of the plugin.
 		"""
 		return self._get_instance_attribute(self.__class__.attr_description, default=self._description)
+
+	@property
+	def disabling_discouraged(self):
+		"""
+		Reason why disabling of this plugin is discouraged. Only evaluated for bundled plugins! Will be taken from
+		the disabling_discouraged attribute of the plugin module as defined in :attr:`attr_disabling_discouraged` if
+		available. False if unset or plugin not bundled.
+
+		Returns:
+		    str or None: Reason why disabling this plugin is discouraged (only for bundled plugins)
+		"""
+		return self._get_instance_attribute(self.__class__.attr_disabling_discouraged, default=False) if self.bundled \
+			else False
 
 	@property
 	def version(self):
@@ -555,6 +571,10 @@ class PluginManager(object):
 					key = entry.name
 				elif entry.is_file() and entry.name.endswith(".py"):
 					key = entry.name[:-3] # strip off the .py extension
+					if key.startswith("__"):
+						# might be an __init__.py in our plugins folder, or something else we don't want
+						# to handle
+						continue
 				else:
 					continue
 
