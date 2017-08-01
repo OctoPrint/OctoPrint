@@ -79,6 +79,7 @@ date of first contribution):
   * [Greg Hulands](https://github.com/ghulands)
   * [Andreas Werner](https://github.com/gallore)
   * [Shawn Bruce](https://github.com/kantlivelong)
+  * [Claudiu Ceia] (https://github.com/ClaudiuCeia)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and

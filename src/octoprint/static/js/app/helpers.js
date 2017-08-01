@@ -162,6 +162,12 @@ function ItemListHelper(listType, supportedSorting, supportedFilters, defaultSor
         return undefined;
     };
 
+    self.resetPage = function() {
+        if (self.currentPage() > self.lastPage()) {
+            self.currentPage(self.lastPage());
+        }
+    };
+
     //~~ searching
 
     self.changeSearchFunction = function(searchFunction) {
@@ -392,7 +398,7 @@ function formatFuzzyPrintTime(totalSeconds) {
      *
      * Accuracy decreases the higher the estimation is:
      *
-     *   * less than 30s: "a couple of seconds"
+     *   * less than 30s: "a few seconds"
      *   * 30s to a minute: "less than a minute"
      *   * 1 to 30min: rounded to full minutes, above 30s is minute + 1 ("27 minutes", "2 minutes")
      *   * 30min to 40min: "40 minutes"
@@ -489,7 +495,7 @@ function formatFuzzyPrintTime(totalSeconds) {
     } else {
         // only seconds
         if (seconds < 30) {
-            text = gettext("a couple of seconds");
+            text = gettext("a few seconds");
         } else {
             text = gettext("less than a minute");
         }
@@ -670,8 +676,161 @@ function showConfirmationDialog(msg, onacknowledge, options) {
     return modal;
 }
 
+/**
+ * Shows a progress modal depending on a supplied promise.
+ *
+ * Will listen to the supplied promise, update the progress on .progress events and
+ * enabling the close button and (optionally) closing the dialog on promise resolve.
+ *
+ * The calling code should call "notify" on the deferred backing the promise and supply
+ * two parameters: the text to display on the progress bar and the optional output field and
+ * a boolean value indicating whether the operation behind that update was successful or not.
+ * Non-successful progress updates will remove the barClassSuccess class from the progress bar and
+ * apply the barClassFailure class and also apply the outputClassFailure to the produced line
+ * in the output.
+ *
+ * To determine the progress, calling code should supply the prognosed maximum number of
+ * progress events. An internal counter will increment on each progress event and used together
+ * with the max value to calculate the percentage to display on the progress bar.
+ *
+ * If no max value is set, the progress bar will show a striped animation at 100% fill status
+ * to visualize "unknown but ongoing" status.
+ *
+ * Available options:
+ *
+ *   * title: the title of the modal, defaults to "Progress"
+ *   * message: the message of the modal, defaults to ""
+ *   * buttonText: the text on the close button, defaults to "Close"
+ *   * max: maximum number of expected progress events (when 100% will be reached), defaults
+ *     to undefined
+ *   * close: whether to close the dialog on completion, defaults to false
+ *   * output: whether to display the progress texts in an output field, defaults to false
+ *   * dialogClass: additional class to apply to the dialog div
+ *   * barClassSuccess: additional class for the progress bar while all progress events are
+ *     successful
+ *   * barClassFailure: additional class for the progress bar when a progress event was
+ *     unsuccessful
+ *   * outputClassSuccess: additional class for successful output lines
+ *   * outputClassFailure: additional class for unsuccessful output lines
+ *
+ * @param options modal options
+ * @param promise promise to monitor
+ * @returns {*|jQuery} the modal object
+ */
+function showProgressModal(options, promise) {
+    var title = options.title || gettext("Progress");
+    var message = options.message || "";
+    var buttonText = options.button || gettext("Close");
+    var max = options.max || undefined;
+    var close = options.close || false;
+    var output = options.output || false;
+
+    var dialogClass = options.dialogClass || "";
+    var barClassSuccess = options.barClassSuccess || "";
+    var barClassFailure = options.barClassFailure || "bar-danger";
+    var outputClassSuccess = options.outputClassSuccess || "";
+    var outputClassFailure = options.outputClassFailure || "text-error";
+
+    var modalHeader = $('<h3>' + title + '</h3>');
+    var paragraph = $('<p>' + message + '</p>');
+
+    var progress = $('<div class="progress progress-text-centered"></div>');
+    var progressBar = $('<div class="bar"></div>')
+        .addClass(barClassSuccess);
+    var progressTextBack = $('<span class="progress-text-back"></span>');
+    var progressTextFront = $('<span class="progress-text-front"></span>')
+        .width(progress.width());
+
+    if (max == undefined) {
+        progress.addClass("progress-striped active");
+        progressBar.width("100%");
+    }
+
+    progressBar
+        .append(progressTextFront);
+    progress
+        .append(progressTextBack)
+        .append(progressBar);
+
+    var button = $('<button class="btn">' + buttonText + '</button>')
+        .prop("disabled", true)
+        .attr("data-dismiss", "modal")
+        .attr("aria-hidden", "true");
+
+    var modalBody = $('<div></div>')
+        .addClass('modal-body')
+        .append(paragraph)
+        .append(progress);
+
+    var pre;
+    if (output) {
+        pre = $("<pre class='terminal pre-scrollable' style='height: 70px; font-size: 0.8em'></pre>");
+        modalBody.append(pre);
+    }
+
+    var modal = $('<div></div>')
+        .addClass('modal hide fade')
+        .addClass(dialogClass)
+        .append($('<div></div>').addClass('modal-header').append(modalHeader))
+        .append(modalBody)
+        .append($('<div></div>').addClass('modal-footer').append(button));
+    modal.modal({keyboard: false, backdrop: "static", show: true});
+
+    var counter = 0;
+    promise
+        .progress(function(text, success) {
+            var value;
+
+            if (max === undefined || max <= 0) {
+                value = 100;
+            } else {
+                counter++;
+                value = Math.max(Math.min(counter * 100 / max, 100), 0);
+            }
+
+            // update progress bar
+            progressBar.width(String(value) + "%");
+            progressTextFront.text(text);
+            progressTextBack.text(text);
+            progressTextFront.width(progress.width());
+
+            // if not successful, apply failure class
+            if (!success && !progressBar.hasClass(barClassFailure)) {
+                progressBar
+                    .removeClass(barClassSuccess)
+                    .addClass(barClassFailure);
+            }
+
+            if (output && pre) {
+                if (success) {
+                    pre.append($("<span class='" + outputClassSuccess + "'>" + text + "</span><br>"));
+                } else {
+                    pre.append($("<span class='" + outputClassFailure + "'>" + text + "</span><br>"));
+                }
+                pre.scrollTop(pre[0].scrollHeight - pre.height());
+            }
+        })
+        .done(function() {
+            button.prop("disabled", false);
+            if (close) {
+                modal.modal("hide");
+            }
+        })
+        .fail(function() {
+            button.prop("disabled", false);
+        });
+
+    return modal;
+}
+
 function showReloadOverlay() {
     $("#reloadui_overlay").show();
+}
+
+function wrapPromiseWithAlways(p) {
+    var deferred = $.Deferred();
+    p.always(function() { deferred.resolve.apply(deferred, arguments); });
+    return deferred.promise();
 }
 
 function commentableLinesToArray(lines) {

@@ -239,7 +239,7 @@ class PluginSettings(object):
 	"""
 	The :class:`PluginSettings` class is the interface for plugins to their own or globally defined settings.
 
-	It provides a couple of convenience methods for directly accessing plugin settings via the regular
+	It provides some convenience methods for directly accessing plugin settings via the regular
 	:class:`octoprint.settings.Settings` interfaces as well as means to access plugin specific folder locations.
 
 	All getter and setter methods will ensure that plugin settings are stored in their correct location within the

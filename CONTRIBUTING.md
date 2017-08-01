@@ -142,6 +142,12 @@ only provided here as some additional information for you), **even if only addin
     reproduce your issue in order to fix it and that is not possible if they
     don't know what you did to get it to happen in the first place.
 
+    Ideally provide exact steps to follow in order to reproduce your problem:
+
+    1. ...
+    2. ...
+    3. ...
+
     If you encountered a problem with specific files of any sorts, make sure
     to also include a link to a file with which to reproduce the problem.]
 
@@ -149,9 +155,19 @@ only provided here as some additional information for you), **even if only addin
 
     #### What happened instead?
 
+    #### Did the same happen when running OctoPrint in safe mode?
+
+    [Try to reproduce your problem in safe mode. You can find information
+    on how to enable safe mode in the Contribution Guidelines.]
+
     #### Branch & Commit or Version of OctoPrint
 
     [Can be found in the lower left corner of the web interface. ALWAYS INCLUDE.]
+
+    #### Operating System running OctoPrint
+
+    [OctoPi, Linux, Windows, MacOS, something else? With version please,
+    OctoPi's version can be found in /etc/octopi_version]
 
     #### Printer model & used firmware incl. version
 
@@ -163,7 +179,8 @@ only provided here as some additional information for you), **even if only addin
 
     #### Link to octoprint.log
 
-    [On gist.github.com or pastebin.com. ALWAYS INCLUDE and never truncate.]
+    [On gist.github.com or pastebin.com. ALWAYS INCLUDE and never truncate.
+    The Contribution Guidelines tell you where to find that.]
 
     #### Link to contents of terminal tab or serial.log
 
@@ -178,16 +195,19 @@ only provided here as some additional information for you), **even if only addin
     #### Link to contents of Javascript console in the browser
 
     [On gist.github.com or pastebin.com or alternatively a screenshot. If applicable -
-    always include if unsure or reporting UI issues.]
+    always include if unsure or reporting UI issues.
 
-    #### Screenshot(s) showing the problem:
+    The Contribution Guidelines tell you where to find that.]
+
+    #### Screenshot(s)/video(s) showing the problem:
 
     [If applicable. Always include if unsure or reporting UI issues.]
 
     I have read the FAQ.
 
-Copy-paste this template **completely**. Do not skip any lines or the bot
-*will* complain!
+Copy-paste this template **completely** (or use the version that gets pre-filled
+into the "new issue" form). Do not skip any lines or the bot *will* complain! Provide
+all requested information or your ticket will be closed.
 
 ### Where can I find which version and branch I'm on?
 
@@ -345,10 +365,16 @@ There are three main branches in OctoPrint:
     the `maintenance` branch and are now being pushed on the "Maintenance"
     pre release channel for further testing. Version number follows the scheme
     `<x>.<y>.<z>rc<n>` (e.g. `1.2.9rc1`).
+  * `staging/maintenance`: Any preparation for potential follow-up RCs takes place here.
+    Version number follows the scheme `<x>.<y>.<z>rc<n+1>.dev<commits since increase of n>` (e.g.
+    `1.2.9rc1.dev3`) for a current Maintenance RC of `<x>.<y>.<z>rc<n>`.
   * `rc/devel`: This branch is reserved for future releases that have graduated from
     the `devel` branch and are now being pushed on the "Devel" pre release channel
     for further testing. Version number follows the scheme `<x>.<y+1>.0rc<n>` (e.g. `1.3.0rc1`)
     for a current stable OctoPrint version of `<x>.<y>.<z>`.
+  * `staging/devel`: Any preparation for potential follow-up Devel RCs takes place
+    here. Version number follows the scheme `<x>.<y>.0rc<n+1>.dev<commits since increase of n>` (e.g.
+    `1.3.0rc1.dev12`) for a current Devel RC of `<x>.<y>.0rc<n>`.
 
 Additionally, from time to time you might see other branches pop up in the repository.
 Those usually have one of the following prefixes:
@@ -360,7 +386,7 @@ Those usually have one of the following prefixes:
   * `dev/...` or `feature/...`: New functionality under development that is to be merged
     into the `devel` branch.
 
-There is also the `gh-pages` branch, which holds OctoPrint's web page, and a couple of
+There is also the `gh-pages` branch, which holds OctoPrint's web page, and a few
 older development branches that are slowly being migrated or deleted.
 
 ## How OctoPrint is versioned
@@ -405,6 +431,7 @@ the local version identifier to allow for an exact determination of the active c
   * 2017-03-09: Allow PRs against `maintenance` branch for bugs in stable.
   * 2017-03-10: Reproduce bugs in safe mode to make sure they are really caused
     by OctoPrint itself and not a misbehaving plugin.
+  * 2017-03-27: Added safe mode section to ticket template.
 
 ## Footnotes
   * [1] - If you are wondering why, the problem is that anything that you add

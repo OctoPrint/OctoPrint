@@ -68,6 +68,23 @@ Save settings
         // ...
       }
 
+.. _sec-api-settings-generateapikey:
+
+Regenerate the system wide API key
+==================================
+
+.. http:post:: /api/settings/apikey
+
+   Generates a new system wide API key.
+
+   Does not expect a body. Will return the generated API key as ``apikey``
+   property in the JSON object contained in the response body.
+
+   Requires admin rights.
+
+   :status 200:     No error
+   :status 403:     No admin rights
+
 .. _sec-api-settings-datamodel:
 
 Data model
@@ -87,6 +104,9 @@ mapped from the same fields in ``config.yaml`` unless otherwise noted:
      -
    * - ``api.key``
      - Only maps to ``api.key`` in ``config.yaml`` if request is sent with admin rights, set to ``n/a`` otherwise.
+       Starting with OctoPrint 1.3.3 setting this field via :ref:`the API <sec-api-settings-save>` is not possible,
+       only :ref:`regenerting it <sec-api-settings-generateapikey>` is supported. Setting a custom value is only
+       possible through `config.yaml`.
    * - ``api.allowCrossOrigin``
      -
    * - ``appearance.name``

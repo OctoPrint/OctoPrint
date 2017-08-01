@@ -160,11 +160,11 @@ def octo(ctx, **kwargs):
 			           "start|stop|restart\" is deprecated, please use "
 			           "\"octoprint daemon start|stop|restart\" from now on")
 
-			if sys.platform == "linux2":
+			if sys.platform == "win32" or sys.platform == "darwin":
+				click.echo("Sorry, daemon mode is not supported under your operating system right now")
+			else:
 				from octoprint.cli.server import daemon_command
 				ctx.invoke(daemon_command, command=daemon, **kwargs)
-			else:
-				click.echo("Sorry, daemon mode is only supported under Linux right now")
 		else:
 			click.echo("Starting the server via \"octoprint\" is deprecated, "
 			           "please use \"octoprint serve\" from now on.")

@@ -12,6 +12,7 @@ The SSDP/UPNP implementations has been largely inspired by https://gist.github.c
 import logging
 import os
 import flask
+from flask.ext.babel import gettext
 from builtins import range
 
 import octoprint.plugin
@@ -25,8 +26,10 @@ except:
 
 __plugin_name__ = "Discovery"
 __plugin_author__ = "Gina Häußge"
-__plugin_url__ = "https://github.com/foosel/OctoPrint/wiki/Plugin:-Discovery"
+__plugin_url__ = "http://docs.octoprint.org/en/master/bundledplugins/discovery.html"
 __plugin_description__ = "Makes the OctoPrint instance discoverable via Bonjour/Avahi/Zeroconf and uPnP"
+__plugin_disabling_discouraged__ = gettext("Without this plugin your OctoPrint instance will no longer be "
+                                           "discoverable on the network via Bonjour and uPnP.")
 __plugin_license__ = "AGPLv3"
 
 def __plugin_load__():

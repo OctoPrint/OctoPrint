@@ -44,9 +44,16 @@
     <div class="control-group">
         <div class="controls">
             <label class="checkbox">
+                <input type="checkbox" data-bind="checked: feature_g90InfluencesExtruder" id="settings-g90InfluencesExtruder"> {{ _('<code>G90</code>/<code>G91</code> overrides relative extruder mode') }} <span class="label">{{ _('Smoothieware') }}</span>
+            </label>
+        </div>
+    </div>
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
                 <input type="checkbox" data-bind="checked: feature_firmwareDetection" id="settings-firmwareDetection"> {{ _('Enable automatic firmware detection') }}
                 <span class="help-inline">{% trans %}
-                    If enabled, OctoPrint will try to figure out your printer's firmware automatically and adjust a couple of communication parameters based on that.
+                    If enabled, OctoPrint will try to figure out your printer's firmware automatically and adjust some communication parameters based on that.
                     If that doesn't work out, or you want more granular control, uncheck this and the parameters in question will become visible for you to adjust.
                 {% endtrans %}</span>
             </label>

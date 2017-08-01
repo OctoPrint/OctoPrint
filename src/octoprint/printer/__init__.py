@@ -292,11 +292,15 @@ class PrinterInterface(object):
 		Optionally can also directly start the print after selecting the file.
 
 		Arguments:
-		    path (str): The path to select for printing. Either an absolute path (local file) or a
-		        filename (SD card).
-		    sd (boolean): Indicates whether the file is on the SD card or not.
+		    path (str): The path to select for printing. Either an absolute path or relative path to a  local file in
+		        the uploads folder or a filename on the printer's SD card.
+		    sd (boolean): Indicates whether the file is on the printer's SD card or not.
 		    printAfterSelect (boolean): Indicates whether a print should be started
 		        after the file is selected.
+
+		Raises:
+		    InvalidFileLocation: if an absolute path was provided and not contained within local storage or
+		        doesn't exist
 		"""
 		raise NotImplementedError()
 
@@ -362,7 +366,7 @@ class PrinterInterface(object):
 		  * CLOSED
 		  * ERROR
 		  * CLOSED_WITH_ERROR
-		  * TRANFERING_FILE
+		  * TRANSFERING_FILE
 		  * OFFLINE
 		  * UNKNOWN
 		  * NONE
@@ -586,3 +590,6 @@ class PrinterCallback(object):
 class UnknownScript(Exception):
 	def __init__(self, name, *args, **kwargs):
 		self.name = name
+
+class InvalidFileLocation(Exception):
+	pass

@@ -77,7 +77,7 @@ function DataUpdater(allViewModels) {
 
         showOfflineOverlay(
             gettext("Server is offline"),
-            gettext("The server appears to be offline, at least I'm not getting any response from it. I'll try to reconnect automatically <strong>over the next couple of minutes</strong>, however you are welcome to try a manual reconnect anytime using the button below."),
+            gettext("The server appears to be offline, at least I'm not getting any response from it. I'll try to reconnect automatically <strong>over the next couple of minutes</strong>, however you are welcome to try a manual reconnect anytime using the button below ."),
             self.reconnect
         );
     };
@@ -96,7 +96,7 @@ function DataUpdater(allViewModels) {
         }
 
         $("#offline_overlay_title").text(gettext("Server is offline"));
-        $("#offline_overlay_message").html(gettext("The server appears to be offline, at least I'm not getting any response from it. I <strong>could not reconnect automatically</strong>, but you may try a manual reconnect using the button below."));
+        $("#offline_overlay_message").html(gettext("The server appears to be offline, at least I'm not getting any response from it. I <strong>could not reconnect automatically</strong>, but you may try a manual reconnect using the button below ."));
     };
 
     self._onConnected = function(event) {

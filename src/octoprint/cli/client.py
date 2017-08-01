@@ -29,6 +29,7 @@ def client_commands():
 
 
 @client_commands.group("client", context_settings=dict(ignore_unknown_options=True))
+@click.option("--apikey", "-a", type=click.STRING)
 @click.option("--host", "-h", type=click.STRING)
 @click.option("--port", "-p", type=click.INT)
 @click.option("--httpuser", type=click.STRING)
@@ -36,11 +37,29 @@ def client_commands():
 @click.option("--https", is_flag=True)
 @click.option("--prefix", type=click.STRING)
 @click.pass_context
-def client(ctx, host, port, httpuser, httppass, https, prefix):
+def client(ctx, apikey, host, port, httpuser, httppass, https, prefix):
 	"""Basic API client."""
 	try:
-		ctx.obj.settings = init_settings(get_ctx_obj_option(ctx, "basedir", None), get_ctx_obj_option(ctx, "configfile", None))
-		octoprint_client.init_client(ctx.obj.settings, https=https, httpuser=httpuser, httppass=httppass, host=host, port=port, prefix=prefix)
+		if not host or not port or not apikey:
+			settings = init_settings(get_ctx_obj_option(ctx, "basedir", None), get_ctx_obj_option(ctx, "configfile", None))
+
+		if not host:
+			host = settings.get(["server", "host"])
+			host = host if host != "0.0.0.0" else "127.0.0.1"
+		if not port:
+			port = settings.getInt(["server", "port"])
+
+		if not apikey:
+			apikey = settings.get(["api", "key"])
+
+		baseurl = octoprint_client.build_base_url(https=https,
+		                                          httpuser=httpuser,
+		                                          httppass=httppass,
+		                                          host=host,
+		                                          port=port,
+		                                          prefix=prefix)
+
+		ctx.obj.client = octoprint_client.Client(baseurl, apikey)
 	except FatalStartupError as e:
 		click.echo(e.message, err=True)
 		click.echo("There was a fatal error initializing the client.", err=True)
@@ -60,27 +79,33 @@ def log_response(response, status_code=True, body=True, headers=False):
 
 @client.command("get")
 @click.argument("path")
-def get(path):
+@click.option("--timeout", type=float, default=None)
+@click.pass_context
+def get(ctx, path, timeout):
 	"""Performs a GET request against the specified server path."""
-	r = octoprint_client.get(path)
+	r = ctx.obj.client.get(path, timeout=timeout)
 	log_response(r)
 
 
 @client.command("post_json")
 @click.argument("path")
 @click.argument("data", type=JsonStringParamType())
-def post_json(path, data):
+@click.option("--timeout", type=float, default=None)
+@click.pass_context
+def post_json(ctx, path, data, timeout):
 	"""POSTs JSON data to the specified server path."""
-	r = octoprint_client.post_json(path, data)
+	r = ctx.obj.client.post_json(path, data, timeout=timeout)
 	log_response(r)
 
 
 @client.command("patch_json")
 @click.argument("path")
 @click.argument("data", type=JsonStringParamType())
-def patch_json(path, data):
+@click.option("--timeout", type=float, default=None, help="Request timeout in seconds")
+@click.pass_context
+def patch_json(ctx, path, data, timeout):
 	"""PATCHes JSON data to the specified server path."""
-	r = octoprint_client.patch(path, data, encoding="json")
+	r = ctx.obj.client.patch(path, data, encoding="json", timeout=timeout)
 	log_response(r)
 
 
@@ -89,8 +114,10 @@ def patch_json(path, data):
 @click.argument("file_path", type=click.Path(exists=True, dir_okay=False, resolve_path=True))
 @click.option("--json", is_flag=True)
 @click.option("--yaml", is_flag=True)
-def post_from_file(path, file_path, json_flag, yaml_flag):
-	"""POSTs JSON data to the specified server path."""
+@click.option("--timeout", type=float, default=None, help="Request timeout in seconds")
+@click.pass_context
+def post_from_file(ctx, path, file_path, json_flag, yaml_flag, timeout):
+	"""POSTs JSON data to the specified server path, taking the data from the specified file."""
 	if json_flag or yaml_flag:
 		if json_flag:
 			with open(file_path, "rb") as fp:
@@ -100,12 +127,12 @@ def post_from_file(path, file_path, json_flag, yaml_flag):
 			with open(file_path, "rb") as fp:
 				data = yaml.safe_load(fp)
 
-		r = octoprint_client.post_json(path, data)
+		r = ctx.obj.client.post_json(path, data, timeout=timeout)
 	else:
 		with open(file_path, "rb") as fp:
 			data = fp.read()
 
-		r = octoprint_client.post(path, data)
+		r = ctx.obj.client.post(path, data, timeout=timeout)
 
 	log_response(r)
 
@@ -117,13 +144,15 @@ def post_from_file(path, file_path, json_flag, yaml_flag):
 @click.option("--int", "-i", "int_params", multiple=True, nargs=2, type=click.Tuple([unicode, int]))
 @click.option("--float", "-f", "float_params", multiple=True, nargs=2, type=click.Tuple([unicode, float]))
 @click.option("--bool", "-b", "bool_params", multiple=True, nargs=2, type=click.Tuple([unicode, bool]))
-def command(path, command, str_params, int_params, float_params, bool_params):
+@click.option("--timeout", type=float, default=None, help="Request timeout in seconds")
+@click.pass_context
+def command(ctx, path, command, str_params, int_params, float_params, bool_params, timeout):
 	"""Sends a JSON command to the specified server path."""
 	data = dict()
 	params = str_params + int_params + float_params + bool_params
 	for param in params:
 		data[param[0]] = param[1]
-	r = octoprint_client.post_command(path, command, additional=data)
+	r = ctx.obj.client.post_command(path, command, additional=data, timeout=timeout)
 	log_response(r, body=False)
 
 
@@ -133,26 +162,32 @@ def command(path, command, str_params, int_params, float_params, bool_params):
 @click.option("--parameter", "-P", "params", multiple=True, nargs=2, type=click.Tuple([unicode, unicode]))
 @click.option("--file-name", type=click.STRING)
 @click.option("--content-type", type=click.STRING)
-def upload(path, file_path, params, file_name, content_type):
+@click.option("--timeout", type=float, default=None, help="Request timeout in seconds")
+@click.pass_context
+def upload(ctx, path, file_path, params, file_name, content_type, timeout):
 	"""Uploads the specified file to the specified server path."""
 	data = dict()
 	for param in params:
 		data[param[0]] = param[1]
 
-	r = octoprint_client.upload(path, file_path, additional=data, file_name=file_name, content_type=content_type)
+	r = ctx.obj.client.upload(path, file_path,
+	                          additional=data, file_name=file_name, content_type=content_type, timeout=timeout)
 	log_response(r)
 
 
 @client.command("delete")
 @click.argument("path")
-def delete(path):
+@click.option("--timeout", type=float, default=None, help="Request timeout in seconds")
+@click.pass_context
+def delete(ctx, path, timeout):
 	"""Sends a DELETE request to the specified server path."""
-	r = octoprint_client.delete(path)
+	r = ctx.obj.client.delete(path, timeout=timeout)
 	log_response(r)
 
 
 @client.command("listen")
-def listen():
+@click.pass_context
+def listen(ctx):
 	def on_connect(ws):
 		click.echo(">>> Connected!")
 
@@ -168,11 +203,11 @@ def listen():
 	def on_message(ws, message_type, message_payload):
 		click.echo("Message: {}, Payload: {}".format(message_type, json.dumps(message_payload)))
 
-	socket = octoprint_client.connect_socket(on_connect=on_connect,
-	                                         on_close=on_close,
-	                                         on_error=on_error,
-	                                         on_heartbeat=on_heartbeat,
-	                                         on_message=on_message)
+	socket = ctx.obj.client.create_socket(on_connect=on_connect,
+	                                      on_close=on_close,
+	                                      on_error=on_error,
+	                                      on_heartbeat=on_heartbeat,
+	                                      on_message=on_message)
 
 	click.echo(">>> Waiting for client to exit")
 	try:

@@ -18,7 +18,7 @@ from builtins import range, bytes
 
 from octoprint.settings import settings
 
-from octoprint.util import atomic_write
+from octoprint.util import atomic_write, to_str
 
 class UserManager(object):
 	valid_roles = ["user", "admin"]
@@ -114,7 +114,7 @@ class UserManager(object):
 				settings().set(["accessControl", "salt"], salt)
 				settings().save()
 
-		return hashlib.sha512(password + salt).hexdigest()
+		return hashlib.sha512(to_str(password, encoding="utf-8", errors="replace") + to_str(salt)).hexdigest()
 
 	def checkPassword(self, username, password):
 		user = self.findUser(username)

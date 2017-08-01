@@ -409,30 +409,47 @@ class FileManager(object):
 		queue_entry = self._analysis_queue_entry(destination, path)
 		self._analysis_queue.dequeue(queue_entry)
 
-		file_path = self._storage(destination).add_file(path, file_object, links=links, printer_profile=printer_profile, allow_overwrite=allow_overwrite)
+		path_in_storage = self._storage(destination).add_file(path, file_object, links=links, printer_profile=printer_profile, allow_overwrite=allow_overwrite)
 
 		if analysis is None:
-			queue_entry = self._analysis_queue_entry(destination, file_path, printer_profile=printer_profile)
+			queue_entry = self._analysis_queue_entry(destination, path_in_storage, printer_profile=printer_profile)
 			if queue_entry:
 				self._analysis_queue.enqueue(queue_entry, high_priority=True)
 		else:
 			self._add_analysis_result(destination, path, analysis)
 
+		_, name = self._storage(destination).split_path(path_in_storage)
+		eventManager().fire(Events.FILE_ADDED, dict(storage=destination,
+		                                            path=path_in_storage,
+		                                            name=name,
+		                                            type=get_file_type(name)))
 		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
-		return file_path
+		return path_in_storage
 
 	def remove_file(self, destination, path):
 		queue_entry = self._analysis_queue_entry(destination, path)
 		self._analysis_queue.dequeue(queue_entry)
 		self._storage(destination).remove_file(path)
+
+		_, name = self._storage(destination).split_path(path)
+		eventManager().fire(Events.FILE_REMOVED, dict(storage=destination,
+		                                              path=path,
+		                                              name=name,
+		                                              type=get_file_type(name)))
 		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
 
 	def copy_file(self, destination, source, dst):
-		path = self._storage(destination).copy_file(source, dst)
-		if not self.has_analysis(destination, path):
-			queue_entry = self._analysis_queue_entry(destination, path)
+		path_in_storage = self._storage(destination).copy_file(source, dst)
+		if not self.has_analysis(destination, path_in_storage):
+			queue_entry = self._analysis_queue_entry(destination, path_in_storage)
 			if queue_entry:
 				self._analysis_queue.enqueue(queue_entry)
+
+		_, name = self._storage(destination).split_path(path_in_storage)
+		eventManager().fire(Events.FILE_ADDED, dict(storage=destination,
+		                                            path=path_in_storage,
+		                                            name=name,
+		                                            type=get_file_type(name)))
 		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
 
 	def move_file(self, destination, source, dst):
@@ -443,23 +460,52 @@ class FileManager(object):
 			queue_entry = self._analysis_queue_entry(destination, path)
 			if queue_entry:
 				self._analysis_queue.enqueue(queue_entry)
+
+		source_path_in_storage = self._storage(destination).path_in_storage(source)
+		_, source_name = self._storage(destination).split_path(source_path_in_storage)
+		dst_path_in_storage = self._storage(destination).path_in_storage(dst)
+		_, dst_name = self._storage(destination).split_path(dst_path_in_storage)
+
+		eventManager().fire(Events.FILE_REMOVED, dict(storage=destination,
+		                                              path=source_path_in_storage,
+		                                              name=source_name,
+		                                              type=get_file_type(source_name)))
+		eventManager().fire(Events.FILE_ADDED, dict(storage=destination,
+		                                            path=dst_path_in_storage,
+		                                            name=dst_name,
+		                                            type=get_file_type(dst_name)))
 		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
 
 	def add_folder(self, destination, path, ignore_existing=True):
-		folder_path = self._storage(destination).add_folder(path, ignore_existing=ignore_existing)
+		path_in_storage = self._storage(destination).add_folder(path, ignore_existing=ignore_existing)
+
+		_, name = self._storage(destination).split_path(path_in_storage)
+		eventManager().fire(Events.FOLDER_ADDED, dict(storage=destination,
+		                                              path=path_in_storage,
+		                                              name=name))
 		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
-		return folder_path
+		return path_in_storage
 
 	def remove_folder(self, destination, path, recursive=True):
 		self._analysis_queue.dequeue_folder(destination, path)
 		self._analysis_queue.pause()
 		self._storage(destination).remove_folder(path, recursive=recursive)
 		self._analysis_queue.resume()
+
+		_, name = self._storage(destination).split_path(path)
+		eventManager().fire(Events.FOLDER_REMOVED, dict(storage=destination,
+		                                                path=path,
+		                                                name=name))
 		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
 
 	def copy_folder(self, destination, source, dst):
-		self._storage(destination).copy_folder(source, dst)
+		path_in_storage = self._storage(destination).copy_folder(source, dst)
 		self._determine_analysis_backlog(destination, self._storage(destination), root=dst)
+
+		_, name = self._storage(destination).split_path(path_in_storage)
+		eventManager().fire(Events.FOLDER_ADDED, dict(storage=destination,
+		                                              path=path_in_storage,
+		                                              name=name))
 		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
 
 	def move_folder(self, destination, source, dst):
@@ -468,6 +514,18 @@ class FileManager(object):
 		self._storage(destination).move_folder(source, dst)
 		self._determine_analysis_backlog(destination, self._storage(destination), root=dst)
 		self._analysis_queue.resume()
+
+		source_path_in_storage = self._storage(destination).path_in_storage(source)
+		_, source_name = self._storage(destination).split_path(source_path_in_storage)
+		dst_path_in_storage = self._storage(destination).path_in_storage(destination)
+		_, dst_name = self._storage(destination).split_path(dst_path_in_storage)
+
+		eventManager().fire(Events.FOLDER_REMOVED, dict(storage=destination,
+		                                                path=source_path_in_storage,
+		                                                name=source_name))
+		eventManager().fire(Events.FOLDER_ADDED, dict(storage=destination,
+		                                              path=dst_path_in_storage,
+		                                              name=dst_name))
 		eventManager().fire(Events.UPDATED_FILES, dict(type="printables"))
 
 	def has_analysis(self, destination, path):

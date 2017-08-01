@@ -311,6 +311,16 @@ table {
     }
 
     // timelapse files
+    &.timelapse_files_checkbox,
+    &.timelapse_unrendered_checkbox {
+      text-align: center;
+      width: 10px;
+
+      input[type="checkbox"] {
+        margin-top: 0;
+      }
+    }
+
     &.timelapse_files_name,
     &.timelapse_unrendered_name {
       text-overflow: ellipsis;
@@ -481,7 +491,7 @@ ul.dropdown-menu li a {
   position: relative;
   outline: none;
 
-  //min-height: 440px;
+  background-color: black;
 
   .keycontrol_overlay {
     position: absolute;
@@ -515,6 +525,84 @@ ul.dropdown-menu li a {
       padding: 10px;
       float: left;
     }
+  }
+
+  .nowebcam {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+
+    .text {
+      color: white;
+      text-align: center;
+      position: relative;
+      margin: auto;
+      width: 80%;
+      top: 50%;
+      transform: translateY(-50%);
+      display: block;
+
+      &.webcam_loading {
+        animation: pulsate 3s ease-out;
+        animation-iteration-count: infinite;
+      }
+    }
+  }
+
+  .webcam_rotated {
+    position: relative;
+    width: 100%;
+    padding-bottom: 100%;
+
+    .webcam_fixed_ratio {
+      position: absolute;
+      transform: rotate(-90deg);
+      top: 0;
+      bottom: 0;
+
+      .webcam_fixed_ratio_inner {
+        width: 100%;
+        height: 100%;
+      }
+    }
+  }
+
+  .webcam_unrotated {
+    .webcam_fixed_ratio {
+      width: 100%;
+      padding-bottom: 100%;
+
+      &.ratio43 {
+        padding-bottom: 75%;
+      }
+
+      &.ratio169 {
+        padding-bottom: 56.25%;
+      }
+
+      &.ratio1610 {
+        padding-bottom: 62.5%;
+      }
+
+      position: relative;
+
+      .webcam_fixed_ratio_inner {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+      }
+    }
+  }
+
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
   }
 }
 
@@ -747,6 +835,10 @@ ul.dropdown-menu li a {
   #terminal-sendpanel {
     text-align: right;
   }
+
+  #terminal-output span {
+    display: block;
+  }
 }
 
 #settings_dialog {
@@ -855,6 +947,18 @@ ul.dropdown-menu li a {
 textarea.block {
   .border_box;
   width: 100%;
+}
+
+@keyframes pulsate {
+    0% {
+        opacity: 0.5;
+    }
+    50% {
+        opacity: 1.0;
+    }
+    100% {
+        opacity: 0.5;
+    }
 }
 
 #drop_overlay {
@@ -1019,6 +1123,15 @@ textarea.block {
 
 .ui-pnotify a {
   text-decoration: underline;
+}
+
+.btn-mini .caret, .btn-small .caret {
+  margin-top: 8px;
+}
+
+.dropdown-menu-right {
+  right: 0;
+  left: auto;
 }
 
 /** Styles for Bootstrap Slider */

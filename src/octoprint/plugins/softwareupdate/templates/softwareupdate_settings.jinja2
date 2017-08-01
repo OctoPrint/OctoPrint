@@ -62,8 +62,9 @@
 <div>
     <div><small><a href="#" class="muted" onclick="$(this).children().toggleClass('icon-caret-right icon-caret-down').parent().parent().parent().next().slideToggle('fast')"><i class="icon-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
     <div class="hide">
+        <small class="muted" style="display: block">{{ _('Last cache refresh:') }} <span data-bind="text: cacheTimestampText"></span></small>
         <button class="btn btn-block" data-bind="click: function() { $root.performCheck(true, true, true); }, enable: !checking(), css: {disabled: checking()}"><i class="icon-spinner icon-spin" data-bind="visible: checking"></i> {{ _('Force check for update (overrides cache used for update checks)') }}</button>
-        <button class="btn btn-block btn-danger" data-bind="visible: CONFIG_DEBUG, click: function() { $root.update(true); }">{{ _('Force update now (even if no new versions are available)') }}</button>
+        <button class="btn btn-block btn-danger" data-bind="visible: CONFIG_DEBUG, click: function() { $root.update(true); }, enable: !checking(), css: {disabled: checking()}"><i class="icon-spinner icon-spin" data-bind="visible: checking"></i> {{ _('Force update now (even if no new versions are available)') }}</button>
     </div>
 </div>
 
@@ -86,6 +87,14 @@
                     </div>
                 </div>
             </div>
+            <div class="control-group">
+                <div class="controls">
+                    <label class="checkbox">
+                        <input type="checkbox" data-bind="checked: config_notifyUsers"> {{ _('Show update notifications to users') }}
+                        <span class="help-block">{{ _('If you uncheck this, only logged in admins will see update notifications. Update notifications shown to users do not include the "Update now" button.') }}</span>
+                    </label>
+                </div>
+            </div>
         </form>
     </div>
     <div class="modal-footer">
@@ -99,7 +108,7 @@
         <h3 data-bind="text: workingTitle"></h3>
     </div>
     <div class="modal-body">
-        <pre id="settings_plugin_softwareupdate_workingdialog_output" class="terminal pre-scrollable" style="height: 170px" data-bind="foreach: loglines"><span data-bind="text: line, css: {stdout: stream == 'stdout', stderr: stream == 'stderr', call: stream == 'call', message: stream == 'message'}"></span><br></pre>
+        <pre id="settings_plugin_softwareupdate_workingdialog_output" class="terminal pre-scrollable" style="height: 170px" data-bind="foreach: loglines"><span data-bind="text: line, css: {stdout: stream == 'stdout', stderr: stream == 'stderr', call: stream == 'call', message: stream == 'message'}"></span></pre>
     </div>
     <div class="modal-footer">
         <button class="btn" data-dismiss="modal" data-bind="enable: !$root.working()" aria-hidden="true">{{ _('Close') }}</button>

@@ -1,5 +1,124 @@
 # OctoPrint Changelog
 
+## 1.3.4 (2017-06-01)
+
+### Note for owners of Malyan M200/Monoprice Select Mini
+
+OctoPrint's firmware autodetection is now able to detect this printer. Currently when this printer is detected, the following firmware specific features will be enabled automatically:
+
+  * Always assume SD card is present (`feature.sdAlwaysAvailable`)
+  * Send a checksum with the command: Always (`feature.alwaysSendChecksum`)
+
+Since the firmware is a very special kind of beast and its sources are so far unavailable, only tests with a real printer will show if those are sufficient settings for communication with this printer to fully function correctly. Thus, if you run into any issues with enabled firmware autodetection on this printer model, please add a comment in [#1762](https://github.com/foosel/OctoPrint/issues/1762) and explain what kind of communication problem you are seeing. Also make sure to include a [`serial.log`](https://github.com/foosel/OctoPrint/blob/master/CONTRIBUTING.md#where-can-i-find-those-log-files-you-keep-talking-about)!
+
+### Bug fixes
+
+  * [#1942](https://github.com/foosel/OctoPrint/issues/1942) - Fixed crash on startup in case of an invalid default printer profile combined with "auto-connect on startup" being selected and the printer available to connect to.
+
+### More information
+
+  * [Commits](https://github.com/foosel/OctoPrint/compare/1.3.1...1.3.2)
+  * Release Candidates:
+    * None since this constitutes a hotfix release to fix an apparently very rare bug introduced with 1.3.3 that seems to be affecting a small number of users.
+
+## 1.3.3 (2017-05-31)
+
+### Note for owners of Malyan M200/Monoprice Select Mini
+
+OctoPrint's firmware autodetection is now able to detect this printer. Currently when this printer is detected, the following firmware specific features will be enabled automatically:
+
+  * Always assume SD card is present (`feature.sdAlwaysAvailable`)
+  * Send a checksum with the command: Always (`feature.alwaysSendChecksum`)
+
+Since the firmware is a very special kind of beast and its sources are so far unavailable, only tests with a real printer will show if those are sufficient settings for communication with this printer to fully function correctly. Thus, if you run into any issues with enabled firmware autodetection on this printer model, please add a comment in [#1762](https://github.com/foosel/OctoPrint/issues/1762) and explain what kind of communication problem you are seeing. Also make sure to include a [`serial.log`](https://github.com/foosel/OctoPrint/blob/master/CONTRIBUTING.md#where-can-i-find-those-log-files-you-keep-talking-about)!
+
+### Improvements
+
+  * [#478](https://github.com/foosel/OctoPrint/issues/478) - Made webcam stream container fixed height (with selectable aspect ratio) to prevent jumps of the controls beneath it on load.
+  * [#748](https://github.com/foosel/OctoPrint/issues/748) - Added delete confirmation and bulk delete for timelapses. See also the discussion in brainstorming ticket [#1807](https://github.com/foosel/OctoPrint/issues/1807).
+  * [#1092](https://github.com/foosel/OctoPrint/issues/1092) - Added new events to the file manager: `FileAdded`, `FileRemoved`, `FolderAdded`, `FolderRemoved`. Contrary to the `Upload` event, `FileAdded` will always fire when a file was added to storage through the file manager, not only when added through the web interface. Extended documentation accordingly.
+  * [#1521](https://github.com/foosel/OctoPrint/issues/1521) - Software update plugin: Display timestamp of last version cache refresh in "Advanced options" area.
+  * [#1734](https://github.com/foosel/OctoPrint/issues/1734) - Treat default/initial printer profile like all other printer profiles, persisting it to disk instead of `config.yaml` and allowing deletion. OctoPrint will migrate the existing default profile to the new location on first start.
+  * [#1734](https://github.com/foosel/OctoPrint/issues/1734) - Better communication of what actions are available for printer profiles.
+  * [#1739](https://github.com/foosel/OctoPrint/issues/1739) - Software update plugin: Added option to hide update notification from users without admin rights, added "ignore" button and note to get in touch with an admit to update notifications for non admin users.
+  * [#1762](https://github.com/foosel/OctoPrint/issues/1762) - Added Malyan M200/Monoprice Select Mini to firmware autodetection.
+  * [#1811](https://github.com/foosel/OctoPrint/issues/1811) - Slight rewording and rearrangement in timelapse configuration, better feedback if settings have been saved.
+  * [#1818](https://github.com/foosel/OctoPrint/issues/1818) - Support both Marlin/Repetier and Smoothieware interpretations of `G90` after an `M83` in GCODE viewer and analysis. Select "G90/G91 overrides relative extruder mode" in Settings > Features for the Smoothieware interpretation.
+  * [#1858](https://github.com/foosel/OctoPrint/issues/1858) - Announcement plugin: Images from registered feeds now are lazy loading.
+  * [#1862](https://github.com/foosel/OctoPrint/issues/1862) - Automatically re-enable fancy terminal functionality when performance recovers.
+  * [#1875](https://github.com/foosel/OctoPrint/issues/1875) - Marked the command input field in the Terminal tab as not supporting autocomplete to work around an issue in Safari. Note that this is probably only a temporary workaround due to browser vendors [working on deprecating `autocomplete="off"` support](https://bugs.chromium.org/p/chromium/issues/detail?id=468153#c164) and a different solution will need to be found in the future.
+  * Added link to [`SerialException` FAQ entry](https://github.com/foosel/OctoPrint/wiki/FAQ#octoprint-randomly-loses-connection-to-the-printer-with-a-serialexception) to terminal output when such an error is encountered, as suggested in [#1876](https://github.com/foosel/OctoPrint/issues/1876).
+  * Force refresh of settings on login/logout.
+  * Made system wide API key management mirror user API key management.
+  * Make sure to always migrate and merge saved printer profiles with default profile to ensure all parameters are set. Should avoid issues with plugins trying to save outdated/incomplete profiles.
+  * Added note on lack of language pack repository & to use the wiki for now.
+  * Earlier validation of file to select for printing.
+  * Limit verbosity of failed system event handlers.
+  * Made bundled python client `octoprint_client` support multiple client instances.
+  * Disable "Reload" button in the "Please reload" overlay once clicked, added spinner.
+  * Updated pnotify to 2.1.0.
+  * Get rid of ridiculous float precision in temperature commands.
+  * Detect invalid settings data to persist (not a dict), send 400 status in such a case.
+  * More logging for preemptive caching, to help narrow down any performance issues that might be related to this.
+  * Further decoupling of some startup tasks from initial server startup thread for better parallelization and improved startup times.
+  * Announcement plugin: Added combined OctoBlog feed, replacing news and spotlight feed, added corresponding config migration.
+  * Announcement plugin: Subscribe to all registered feeds by default to ensure better communication flow (all subscriptions but the "Important" channel can however be unsubscribed easily, added corresponding note to the notifications and also a configuration button to the announcement reader).
+  * Announcement plugin: Auto-hide announcements on logout.
+  * Announcement plugin: Order channels server-side based on new order config setting.
+  * Plugin manager: Show warning when disabling a bundled plugin that is not recommended to be disabled, including a reason why disabling it is not recommended. Applies to the bundled announcement, core wizard, discovery and software update plugins.
+  * Plugin manager: Support for plugin notices for specific plugins from the plugin repository, e.g. to inform users of specific plugins about known issues with the plugin or instruct to update when the software update mechanism of the current plugin version turns out to be misconfigured. Supports matching installed plugin versions and OctoPrint versions to target only affected users.
+  * Plugin manager: Better visualization of plugins disabled on the repository, no longer shown as "incompatible" but "disabled", with link to the plugin repository page that contains more information.
+  * Plugin manager: Detect necessity to reinstall a plugin provided through archive URL or upload and immediately do that instead of reporting an "unknown error" without further information.
+  * Plugin manager: Added `freebsd` for compatibility check.
+  * Plugin manager: More general flexibility for OS compatibility check:
+    * Support for arbitrary values to match against
+    * Allow 1:1 check again `sys.platform` values (with `startswith`).
+    * Support black listing (`!windows`) additionally to white listing. A detected OS must match all provided white list elements (if the white list is empty that is considered to be always the case) and none of the black list elements (if the black list is empty that is also considered to be always the case).
+  * Software update plugin: New check type `bitbucket_commit` (see also [#1898](https://github.com/foosel/OctoPrint/pull/1898))
+  * Docs: Now referring to dedicated Jinja 2.8 documentation as hosted at [jinja.octoprint.org](http://jinja.octoprint.org) for all template needs, to avoid confusion when consulting current Jinja documentation as available on its project page (2.9+, which OctoPrint can't upgrade to due to backwards incompatible changes).
+  * Docs: Better documentation of what kind of input the `FileManager` accepts for `select_file`.
+  * Docs: Specified OctoPrint version required for plugin tutorial.
+
+### Bug fixes
+
+  * [#202](https://github.com/foosel/OctoPrint/issues/202) - Fixed an issue with the drag-n-drop area flickering if the mouse was moved too slow while dragging (see also [#1867](https://github.com/foosel/OctoPrint/pull/1867)).
+  * [#1671](https://github.com/foosel/OctoPrint/issues/1671) - Removed obsolete entry of no longer available filter for empty folders from file list options.
+  * [#1821](https://github.com/foosel/OctoPrint/issues/1821) - Properly reset "Capture post roll images" setting in timelapse configuration when switching from "off" to "timed" timelapse mode.
+  * [#1822](https://github.com/foosel/OctoPrint/issues/1822) - Properly reset file metadata when a file is overwritten with a new version.
+  * [#1836](https://github.com/foosel/OctoPrint/issues/1836) - Fixed order of `PrintCancelled` and `PrintFailed` events on print cancel.
+  * [#1837](https://github.com/foosel/OctoPrint/issues/1837) - Fixed a race condition causing OctoPrint trying to read data from the current job on job cancel that was no longer there.
+  * [#1838](https://github.com/foosel/OctoPrint/issues/1838) - Fixed a rare race condition causing an error right at the very start of a print.
+  * [#1863](https://github.com/foosel/OctoPrint/issues/1863) - Fixed an issue in the analysis of GCODE files containing coordinate offsets for X, Y or Z via `G92`, leading to a wrong calculation of the model size thanks to accumulating offsets.
+  * [#1882](https://github.com/foosel/OctoPrint/issues/1882) - Fixed a rare race condition occurring at the start of streaming a file to the printer's SD card, leading to endless line number mismatches.
+  * [#1884](https://github.com/foosel/OctoPrint/issues/1884) - CuraEngine plugin: Fixed a potential encoding issue when logging non-ASCII parameters supplied to CuraEngine
+  * [#1891](https://github.com/foosel/OctoPrint/issues/1891) - Fixed error when handling unicode passwords.
+  * [#1893](https://github.com/foosel/OctoPrint/issues/1893) - CuraEngine plugin: Fixed handling of multiple consecutive uploads of slicing profiles (see also [#1894](https://github.com/foosel/OctoPrint/issues/1894))
+  * [#1897](https://github.com/foosel/OctoPrint/issues/1897) - Removed possibility to concurrently try to perform multiple tests of the configured snapshot URL.
+  * [#1906](https://github.com/foosel/OctoPrint/issues/1906) - Fixed interpretation of `G92` in GCODE analysis.
+  * [#1907](https://github.com/foosel/OctoPrint/issues/1907) - Don't send temperature commands with tool parameter when a shared nozzle is defined.
+  * [#1917](https://github.com/foosel/OctoPrint/issues/1917) (regression) - Fix job data resetting on print job completion.
+  * [#1918](https://github.com/foosel/OctoPrint/issues/1918) (regression) - Fix "save as default" checkbox not being disabled when other controls are disabled.
+  * [#1919](https://github.com/foosel/OctoPrint/issues/1919) (regression) - Fix call to no longer existing function in Plugin Manager UI.
+  * [#1934](https://github.com/foosel/OctoPrint/issues/1934) (regression) - Fix consecutive timed timelapse captures without configured post roll.
+  * Fixed API key QR Code being shown (for "n/a" value) when no API key was set.
+  * Fixed timelapse configuration API not returning 400 status code on some bad parameters.
+  * Fixed a typo (see also [#1826](https://github.com/foosel/OctoPrint/pull/1826)).
+  * Fixed `filter` and `force` parameters on `/api/files/<origin>`.
+  * Fixed message catchall `*` not working in the socket client library.
+  * Fixed analysis backlog calculation for sub folders.
+  * Fixed `PrinterInterface.is_ready` to behave as documented.
+  * Use black listing instead of white listing again to detect if the `daemon` sub command is supported or not. Should resolve issues users of FreeBSD and the like where having with `octoprint daemon`.
+  * Use `pip` instead of `python setup.py develop` in `octoprint dev plugin:install` command to avoid issues on Windows.
+  * Docs: Fixed a wrong command in the plugin tutorial (see also [#1860](https://github.com/foosel/OctoPrint/pull/1860)).
+
+### More information
+
+- [Commits](https://github.com/foosel/OctoPrint/compare/1.3.2...1.3.3)
+- Release Candidates:
+  - [1.3.3rc1](https://github.com/foosel/OctoPrint/releases/tag/1.3.3rc1)
+  - [1.3.3rc2](https://github.com/foosel/OctoPrint/releases/tag/1.3.3rc2)
+  - [1.3.3rc3](https://github.com/foosel/OctoPrint/releases/tag/1.3.3rc3)
+
 ## 1.3.2 (2017-03-16)
 
 ### Note for plugin authors

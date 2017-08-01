@@ -40,7 +40,8 @@
     <tbody data-bind="foreach: plugins.paginatedItems">
     <tr>
         <td class="settings_plugin_plugin_manager_plugins_name">
-            <div data-bind="css: {muted: !enabled}"><span data-bind="text: name"></span> <span data-bind="visible: version">(<span data-bind="text: version"></span>)</span> <i title="{{ _('Bundled with OctoPrint') }}" class="icon-th-large" data-bind="visible: bundled"></i> <i class="icon-lock" title="{{ _('Cannot be uninstalled through OctoPrint') }}" data-bind="visible: !managable"></i> <i title="{{ _('Restart of OctoPrint needed for changes to take effect') }}" class="icon-refresh" data-bind="visible: pending_enable || pending_disable || pending_install || pending_uninstall"></i> <i title="{{ _('Pending install') }}" class="icon-plus" data-bind="visible: pending_install"></i> <i title="{{ _('Pending uninstall') }}" class="icon-minus" data-bind="visible: pending_uninstall"></i> <i title="{{ _('Disabled due to safe mode') }}" class="icon-medkit" data-bind="visible: safe_mode_victim"></i></div>
+            <div data-bind="css: {muted: !enabled}"><span data-bind="text: name"></span> <span data-bind="visible: version">(<span data-bind="text: version"></span>)</span> <i title="{{ _('Bundled with OctoPrint') }}" class="icon-th-large" data-bind="visible: bundled"></i> <i class="icon-lock" title="{{ _('Cannot be uninstalled through OctoPrint') }}" data-bind="visible: !managable"></i> <i title="{{ _('Restart of OctoPrint needed for changes to take effect') }}" class="icon-refresh" data-bind="visible: pending_enable || pending_disable || pending_install || pending_uninstall"></i> <i title="{{ _('Pending install') }}" class="icon-plus" data-bind="visible: pending_install"></i> <i title="{{ _('Pending uninstall') }}" class="icon-minus" data-bind="visible: pending_uninstall"></i> <i title="{{ _('Disabled due to safe mode') }}" class="icon-medkit" data-bind="visible: safe_mode_victim"></i> <i class="icon-exclamation-sign" title="{{ _('There are notices available regarding this plugin') }}" data-bind="visible: notifications && notifications.length"></i></div>
+            <div data-bind="visible: notifications && notifications.length"><a href="javascript:void(0)" class="text-error" style="text-decoration: underline" data-bind="click: function() { $root.showPluginNotifications($data) }, text: $root.showPluginNotificationsLinkText($data)"></a></div>
             <div><small class="muted" data-bind="text: description">&nbsp;</small></div>
             <div data-bind="css: {muted: !enabled}">
                 <small data-bind="visible: url"><i class="icon-home"></i> <a data-bind="attr: {href: url}" target="_blank" rel="noreferrer noopener">{{ _('Homepage') }}</a></small>
@@ -72,7 +73,7 @@
 <div class="muted" data-bind="visible: pipAvailable()">
     <div>
         <small>
-            <a href="#" class="muted" onclick="$(this).children('i.toggle-arrow').toggleClass('icon-caret-right icon-caret-down').parent().parent().parent().next().slideToggle('fast')">
+            <a href="javascript:void(0)" class="muted" onclick="$(this).children('i.toggle-arrow').toggleClass('icon-caret-right icon-caret-down').parent().parent().parent().next().slideToggle('fast')">
                 <i class="toggle-arrow icon-caret-right"></i> Using pip of "<span data-bind="text: pipPython"></span>", Version <span data-bind="text: pipVersion"></span>
             </a>
         </small>
@@ -86,12 +87,28 @@
     </div>
 </div>
 
+<div class="muted">
+    <div>
+        <small>
+            <a href="javascript:void(0)" class="muted" onclick="$(this).children('i.toggle-arrow').toggleClass('icon-caret-right icon-caret-down').parent().parent().parent().next().slideToggle('fast')">
+                <i class="toggle-arrow icon-caret-right"></i> <span data-bind="text: noticeCountText"></span>
+            </a>
+        </small>
+    </div>
+    <div class="hide">
+        <small>
+            <!-- ko if: noticeCount() > 0 --><a href="javascript:void(0)" data-bind="click: function() { reshowNotices(); }">{{ _('Reshow current notices') }}</a> &middot;<!-- /ko -->
+            <a href="javascript:void(0)" data-bind="click: function() { refreshNotices(); }">{{ _('Refresh notices from repository') }}</a>
+        </small>
+    </div>
+</div>
+
 <div id="settings_plugin_pluginmanager_workingdialog" class="modal hide fade">
     <div class="modal-header">
         <h3 data-bind="text: workingTitle"></h3>
     </div>
     <div class="modal-body">
-        <pre id="settings_plugin_pluginmanager_workingdialog_output" class="terminal pre-scrollable" style="height: 170px" data-bind="foreach: loglines"><span data-bind="text: line, css: {stdout: stream == 'stdout', stderr: stream == 'stderr', call: stream == 'call', message: stream == 'message'}"></span><br></pre>
+        <pre id="settings_plugin_pluginmanager_workingdialog_output" class="terminal pre-scrollable" style="height: 170px" data-bind="foreach: loglines"><span data-bind="text: line, css: {stdout: stream == 'stdout', stderr: stream == 'stderr', call: stream == 'call', message: stream == 'message', error: stream == 'error'}"></span></pre>
     </div>
     <div class="modal-footer">
         <button class="btn" data-dismiss="modal" data-bind="enable: !$root.working()" aria-hidden="true">{{ _('Close') }}</button>
@@ -146,6 +163,7 @@
                         </div>
                         <div class="span3">
                             <button class="btn btn-primary btn-block" data-bind="enable: $root.enableRepoInstall($data), css: {disabled: !$root.enableRepoInstall($data)}, click: function() { if ($root.enableRepoInstall($data)) { $root.installFromRepository($data); } else { return false; } }"><i class="icon-add"></i> <span data-bind="text: $root.installButtonText($data)"></span></button>
+                            <div data-bind="visible: $data.disabled !== undefined" style="text-align: center"><small><a data-bind="attr: {href: page}" target="_blank">{{ _('"Why?"') }}</a></small></div>
                         </div>
                     </div>
                 </div>
@@ -232,6 +250,24 @@
                 <div class="controls">
                     <div class="input-append">
                         <input type="number" class="input-mini" data-bind="value: config_repositoryTtl">
+                        <span class="add-on">min</span>
+                    </div>
+                </div>
+            </div>
+
+            <legend>{{ _('Notices configuration') }}</legend>
+
+            <div class="control-group" title="{{ _('URL of the Notices source to use. You should normally not have to change this.') }}">
+                <label class="control-label">{{ _('Notices URL') }}</label>
+                <div class="controls">
+                    <input type="text" class="input-block-level" data-bind="value: config_noticesUrl">
+                </div>
+            </div>
+            <div class="control-group" title="{{ _('How long to cache notices, in minutes. You should normally not have to change this.') }}">
+                <label class="control-label">{{ _('Notices cache TTL') }}</label>
+                <div class="controls">
+                    <div class="input-append">
+                        <input type="number" class="input-mini" data-bind="value: config_noticesTtl">
                         <span class="add-on">min</span>
                     </div>
                 </div>

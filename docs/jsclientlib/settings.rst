@@ -35,6 +35,13 @@
    :param object opts: Additional options for the request
    :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
 
+.. js:function:: OctoPrintClient.settings.generateApiKey(opts)
+
+   Generate a new system wide API key.
+
+   :param object opts: Additional options for the request
+   :returns Promise: A `jQuery Promise <http://api.jquery.com/Types/#Promise>`_ for the request's response
+
 .. seealso::
 
    :ref:`Settings API <sec-api-settings>`

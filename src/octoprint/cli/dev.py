@@ -204,7 +204,7 @@ class OctoPrintDevelCommands(click.MultiCommand):
 				click.echo("This doesn't look like an OctoPrint plugin folder")
 				sys.exit(1)
 
-			self.command_caller.call([sys.executable, "setup.py", "develop"], cwd=path)
+			self.command_caller.call([sys.executable, "-m", "pip", "install", "-e", "."], cwd=path)
 
 		return command
 

@@ -47,7 +47,8 @@ INSTALL_REQUIRES = [
 	"chainmap>=1.0.2,<1.1",
 	"future>=0.15,<0.16",
 	"scandir>=1.3,<1.4",
-	"websocket-client>=0.40,<0.41"
+	"websocket-client>=0.40,<0.41",
+	"python-dateutil>=2.6,<2.7"
 ]
 
 if sys.platform == "darwin":

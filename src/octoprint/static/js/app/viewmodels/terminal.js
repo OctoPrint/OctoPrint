@@ -35,8 +35,10 @@ $(function() {
 
         self.enableFancyFunctionality = ko.observable(true);
         self.disableTerminalLogDuringPrinting = ko.observable(false);
-        self.acceptableTime = 500;
+
+        self.acceptableFancyTime = 500;
         self.acceptableUnfancyTime = 300;
+        self.reenableTimeout = 5000;
 
         self.forceFancyFunctionality = ko.observable(false);
         self.forceTerminalLogDuringPrinting = ko.observable(false);
@@ -122,23 +124,63 @@ $(function() {
             self.updateFilterRegex();
         });
 
+        self._reenableFancyTimer = undefined;
+        self._reenableUnfancyTimer = undefined;
+        self._disableFancy = function(difference) {
+            log.warn("Terminal: Detected slow client (needed " + difference + "ms for processing new log data), disabling fancy terminal functionality");
+            if (self._reenableFancyTimer) {
+                window.clearTimeout(self._reenableFancyTimer);
+                self._reenableFancyTimer = undefined;
+            }
+            self.enableFancyFunctionality(false);
+        };
+        self._reenableFancy = function(difference) {
+            if (self._reenableFancyTimer) return;
+            self._reenableFancyTimer = window.setTimeout(function() {
+                log.info("Terminal: Client speed recovered, enabling fancy terminal functionality");
+                self.enableFancyFunctionality(true);
+            }, self.reenableTimeout);
+        };
+        self._disableUnfancy = function(difference) {
+            log.warn("Terminal: Detected very slow client (needed " + difference + "ms for processing new log data), completely disabling terminal output during printing");
+            if (self._reenableUnfancyTimer) {
+                window.clearTimeout(self._reenableUnfancyTimer);
+                self._reenableUnfancyTimer = undefined;
+            }
+            self.disableTerminalLogDuringPrinting(true);
+        };
+        self._reenableUnfancy = function() {
+            if (self._reenableUnfancyTimer) return;
+            self._reenableUnfancyTimer = window.setTimeout(function() {
+                log.info("Terminal: Client speed recovered, enabling terminal output during printing");
+                self.disableTerminalLogDuringPrinting(false);
+            }, self.reenableTimeout);
+        };
+
         self.fromCurrentData = function(data) {
             self._processStateData(data.state);
 
             var start = new Date().getTime();
             self._processCurrentLogData(data.logs);
             var end = new Date().getTime();
-
             var difference = end - start;
+
             if (self.enableFancyFunctionality()) {
-                if (difference > self.acceptableTime) {
-                    self.enableFancyFunctionality(false);
-                    log.warn("Terminal: Detected slow client (needed " + difference + "ms for processing new log data), disabling fancy terminal functionality");
+                // fancy enabled -> check if we need to disable fancy
+                if (difference >= self.acceptableFancyTime) {
+                    self._disableFancy(difference);
+                }
+            } else if (!self.disableTerminalLogDuringPrinting()) {
+                // fancy disabled, unfancy not -> check if we need to disable unfancy or re-enable fancy
+                if (difference >= self.acceptableUnfancyTime) {
+                    self._disableUnfancy(difference);
+                } else if (difference < self.acceptableFancyTime / 2.0) {
+                    self._reenableFancy(difference);
                 }
             } else {
-                if (!self.disableTerminalLogDuringPrinting() && difference > self.acceptableUnfancyTime) {
-                    self.disableTerminalLogDuringPrinting(true);
-                    log.warn("Terminal: Detected very slow client (needed " + difference + "ms for processing new log data), completely disabling terminal output during printing");
+                // fancy & unfancy disabled -> check if we need to re-enable unfancy
+                if (difference < self.acceptableUnfancyTime / 2.0) {
+                    self._reenableUnfancy(difference);
                 }
             }
         };

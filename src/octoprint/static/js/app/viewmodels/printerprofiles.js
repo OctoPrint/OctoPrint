@@ -444,8 +444,16 @@ $(function() {
             self.updateProfile(profile);
         };
 
+        self.canMakeDefault = function(data) {
+            return !data.isdefault();
+        };
+
+        self.canRemove = function(data) {
+            return !data.iscurrent() && !data.isdefault();
+        };
+
         self.requestData = function() {
-            OctoPrint.printerprofiles.list()
+            return OctoPrint.printerprofiles.list()
                 .done(self.fromResponse);
         };
 
@@ -482,9 +490,9 @@ $(function() {
                     }
                     self.requestData();
                 })
-                .fail(function() {
+                .fail(function(xhr) {
                     var text = gettext("There was unexpected error while saving the printer profile, please consult the logs.");
-                    new PNotify({title: gettext("Saving failed"), text: text, type: "error", hide: false});
+                    new PNotify({title: gettext("Could not add profile"), text: text, type: "error", hide: false});
                 })
                 .always(function() {
                     self.requestInProgress(false);
@@ -492,18 +500,29 @@ $(function() {
         };
 
         self.removeProfile = function(data) {
-            self.requestInProgress(true);
-            OctoPrint.printerprofiles.delete(data.id, {url: data.resource})
-                .done(function() {
-                    self.requestData();
-                })
-                .fail(function() {
-                    var text = gettext("There was unexpected error while removing the printer profile, please consult the logs.");
-                    new PNotify({title: gettext("Saving failed"), text: text, type: "error", hide: false});
-                })
-                .always(function() {
-                    self.requestInProgress(false);
-                });
+            var perform = function() {
+                self.requestInProgress(true);
+                OctoPrint.printerprofiles.delete(data.id, {url: data.resource})
+                    .done(function() {
+                        self.requestData()
+                            .always(function() {
+                                self.requestInProgress(false);
+                            });
+                    })
+                    .fail(function(xhr) {
+                        var text;
+                        if (xhr.status == 409) {
+                            text = gettext("Cannot delete the default profile or the currently active profile.");
+                        } else {
+                            text = gettext("There was unexpected error while removing the printer profile, please consult the logs.");
+                        }
+                        new PNotify({title: gettext("Could not delete profile"), text: text, type: "error", hide: false});
+                        self.requestInProgress(false);
+                    });
+            };
+
+            showConfirmationDialog(_.sprintf(gettext("You are about to delete the printer profile \"%(name)s\"."), {name: data.name}),
+                                   perform);
         };
 
         self.updateProfile = function(profile, callback) {
@@ -517,13 +536,14 @@ $(function() {
                     if (callback !== undefined) {
                         callback();
                     }
-                    self.requestData();
+                    self.requestData()
+                        .always(function() {
+                            self.requestInProgress(false);
+                        });
                 })
                 .fail(function() {
                     var text = gettext("There was unexpected error while updating the printer profile, please consult the logs.");
-                    new PNotify({title: gettext("Saving failed"), text: text, type: "error", hide: false});
-                })
-                .always(function() {
+                    new PNotify({title: gettext("Could not update profile"), text: text, type: "error", hide: false});
                     self.requestInProgress(false);
                 });
         };

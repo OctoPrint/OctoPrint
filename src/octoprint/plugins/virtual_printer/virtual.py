@@ -108,6 +108,7 @@ class VirtualPrinter(object):
 
 		self._brokenM29 = settings().getBoolean(["devel", "virtualPrinter", "brokenM29"])
 
+		self._m115FormatString = settings().get(["devel", "virtualPrinter", "m115FormatString"])
 		self._firmwareName = settings().get(["devel", "virtualPrinter", "firmwareName"])
 
 		self._okFormatString = settings().get(["devel", "virtualPrinter", "okFormatString"])
@@ -401,7 +402,7 @@ class VirtualPrinter(object):
 		return True
 
 	def _gcode_M115(self, data):
-		output = "FIRMWARE_NAME:{} PROTOCOL_VERSION:1.0".format(self._firmwareName)
+		output = self._m115FormatString.format(firmware_name=self._firmwareName)
 		self._send(output)
 
 	def _gcode_M117(self, data):
