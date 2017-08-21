@@ -28,6 +28,7 @@ class VirtualPrinter(object):
 	custom_action_regex = re.compile("action_custom ([a-zA-Z0-9_]+)(\s+.*)?")
 	prepare_ok_regex = re.compile("prepare_ok (.*)")
 	send_regex = re.compile("send (.*)")
+	set_ambient_regex = re.compile("set_ambient ([-+]?[0-9]*\.?[0-9]+)")
 
 	def __init__(self, seriallog_handler=None, read_timeout=5.0, write_timeout=10.0):
 		import logging
@@ -71,11 +72,13 @@ class VirtualPrinter(object):
 		self.sharedNozzle = settings().getBoolean(["devel", "virtualPrinter", "sharedNozzle"])
 		self.temperatureCount = (1 if self.sharedNozzle else self.extruderCount)
 
-		self.temp = [0.0] * self.temperatureCount
+		self._ambient_temperature = settings().getFloat(["devel", "virtualPrinter", "ambientTemperature"])
+
+		self.temp = [self._ambient_temperature] * self.temperatureCount
 		self.targetTemp = [0.0] * self.temperatureCount
+		self.bedTemp = self._ambient_temperature
+		self.bedTargetTemp = 0.0
 		self.lastTempAt = time.time()
-		self.bedTemp = 1.0
-		self.bedTargetTemp = 1.0
 
 		self._relative = True
 		self._lastX = 0.0
@@ -621,6 +624,7 @@ class VirtualPrinter(object):
 				custom_action_match = VirtualPrinter.custom_action_regex.match(data)
 				prepare_ok_match = VirtualPrinter.prepare_ok_regex.match(data)
 				send_match = VirtualPrinter.send_regex.match(data)
+				set_ambient_match = VirtualPrinter.set_ambient_regex.match(data)
 
 				if sleep_match is not None:
 					interval = int(sleep_match.group(1))
@@ -646,6 +650,9 @@ class VirtualPrinter(object):
 					self._prepared_oks.append(ok)
 				elif send_match is not None:
 					self._send(send_match.group(1))
+				elif set_ambient_match is not None:
+					self._ambient_temperature = float(set_ambient_match.group(1))
+					self._send("// set ambient temperature to {}".format(self._ambient_temperature))
 			except:
 				pass
 
@@ -720,7 +727,7 @@ class VirtualPrinter(object):
 
 			if settings().getBoolean(["devel", "virtualPrinter", "includeCurrentToolInTemps"]):
 				if includeTarget:
-					output = "T:%.2f /%.2f %s" % (self.temp[self.currentExtruder], self.targetTemp[self.currentExtruder] + 1, allTempsString)
+					output = "T:%.2f /%.2f %s" % (self.temp[self.currentExtruder], self.targetTemp[self.currentExtruder], allTempsString)
 				else:
 					output = "T:%.2f %s" % (self.temp[self.currentExtruder], allTempsString)
 			else:
@@ -1014,15 +1021,15 @@ class VirtualPrinter(object):
 				self.temp[i] += math.copysign(timeDiff * 10, self.targetTemp[i] - self.temp[i])
 				if math.copysign(1, self.targetTemp[i] - oldVal) != math.copysign(1, self.targetTemp[i] - self.temp[i]):
 					self.temp[i] = self.targetTemp[i]
-				if self.temp[i] < 0:
-					self.temp[i] = 0
+				if self.temp[i] < self._ambient_temperature:
+					self.temp[i] = self._ambient_temperature
 		if abs(self.bedTemp - self.bedTargetTemp) > delta:
 			oldVal = self.bedTemp
 			self.bedTemp += math.copysign(timeDiff * 10, self.bedTargetTemp - self.bedTemp)
 			if math.copysign(1, self.bedTargetTemp - oldVal) != math.copysign(1, self.bedTargetTemp - self.bedTemp):
 				self.bedTemp = self.bedTargetTemp
-			if self.bedTemp < 0:
-				self.bedTemp = 0
+			if self.bedTemp < self._ambient_temperature:
+				self.bedTemp = self._ambient_temperature
 
 	def _processBuffer(self):
 		while self.buffered is not None:
