@@ -34,7 +34,6 @@ from . import files as api_files
 from . import settings as api_settings
 from . import timelapse as api_timelapse
 from . import users as api_users
-from . import log as api_logs
 from . import slicing as api_slicing
 from . import printer_profiles as api_printer_profiles
 from . import languages as api_languages
