@@ -441,6 +441,8 @@ class MachineCom(object):
 		self._gcodescript_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.scripts")
 		self._serial_factory_hooks = self._pluginManager.get_hooks("octoprint.comm.transport.serial.factory")
 
+		self._temperature_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.temperatures.received")
+
 		# SD status data
 		self._sdEnabled = settings().getBoolean(["feature", "sdSupport"])
 		self._sdAvailable = False
@@ -1128,6 +1130,14 @@ class MachineCom(object):
 	def _processTemperatures(self, line):
 		current_tool = self._currentTool if self._currentTool is not None else 0
 		maxToolNum, parsedTemps = parse_temperature_line(line, current_tool)
+
+		for name, hook in self._temperature_hooks.items():
+			try:
+				parsedTemps = hook(self, parsedTemps)
+				if parsedTemps is None or not parsedTemps:
+					return
+			except:
+				self._logger.exception("Error while processing temperatures in {}, skipping".format(name))
 
 		if "T0" in parsedTemps.keys():
 			for n in range(maxToolNum + 1):
