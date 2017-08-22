@@ -1313,15 +1313,11 @@ _::-webkit-full-page-media, _:future, :root .full-sized-box {
       min-height: inherit;
       width: 100%;
     }
+
+    :not(:last-child) {
+      border-right: 0;
+    }
   }
-}
-
-.input-append.input-block-level > input {
-  border-right: 0;
-}
-
-.input-prepend.input-block-level > input {
-  border-left: 0;
 }
 
 .btn-input-dec,
