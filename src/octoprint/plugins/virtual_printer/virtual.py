@@ -67,11 +67,12 @@ class VirtualPrinter(object):
 		self.sharedNozzle = settings().getBoolean(["devel", "virtualPrinter", "sharedNozzle"])
 		self.temperatureCount = (1 if self.sharedNozzle else self.extruderCount)
 
-		self.temp = [0.0] * self.temperatureCount
+		self.ambientTemp = 20.0
+		self.temp = [self.ambientTemp] * self.temperatureCount
 		self.targetTemp = [0.0] * self.temperatureCount
 		self.lastTempAt = time.time()
-		self.bedTemp = 1.0
-		self.bedTargetTemp = 1.0
+		self.bedTemp = self.ambientTemp
+		self.bedTargetTemp = 0.0
 
 		self._relative = True
 		self._lastX = 0.0
@@ -982,15 +983,15 @@ class VirtualPrinter(object):
 				self.temp[i] += math.copysign(timeDiff * 10, self.targetTemp[i] - self.temp[i])
 				if math.copysign(1, self.targetTemp[i] - oldVal) != math.copysign(1, self.targetTemp[i] - self.temp[i]):
 					self.temp[i] = self.targetTemp[i]
-				if self.temp[i] < 0:
-					self.temp[i] = 0
+				if self.temp[i] < self.ambientTemp:
+					self.temp[i] = self.ambientTemp
 		if abs(self.bedTemp - self.bedTargetTemp) > delta:
 			oldVal = self.bedTemp
 			self.bedTemp += math.copysign(timeDiff * 10, self.bedTargetTemp - self.bedTemp)
 			if math.copysign(1, self.bedTargetTemp - oldVal) != math.copysign(1, self.bedTargetTemp - self.bedTemp):
 				self.bedTemp = self.bedTargetTemp
-			if self.bedTemp < 0:
-				self.bedTemp = 0
+			if self.bedTemp < self.ambientTemp:
+				self.bedTemp = self.ambientTemp
 
 	def _processBuffer(self):
 		while self.buffered is not None:
