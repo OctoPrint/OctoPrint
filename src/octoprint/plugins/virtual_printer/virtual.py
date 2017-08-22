@@ -1008,28 +1008,34 @@ class VirtualPrinter(object):
 		if os.path.exists(f) and os.path.isfile(f):
 			os.remove(f)
 
-	def _simulateTemps(self, delta=1):
+	def _simulateTemps(self, delta=0.5):
 		timeDiff = self.lastTempAt - time.time()
 		self.lastTempAt = time.time()
+
+		def simulate(actual, target, ambient):
+			if target > 0 and abs(actual - target) > delta:
+				goal = target
+				factor = 10
+			elif not target and abs(actual - ambient) > delta:
+				goal = ambient
+				factor = 2
+			else:
+				return actual
+
+			old = actual
+			actual += math.copysign(timeDiff * factor, goal - actual)
+
+			if math.copysign(1, goal - old) != math.copysign(1, goal - actual):
+				actual = goal
+
+			return actual
+
 		for i in range(len(self.temp)):
 			if i in self.pinnedExtruders:
 				self.temp[i] = self.pinnedExtruders[i]
 				continue
-
-			if abs(self.temp[i] - self.targetTemp[i]) > delta:
-				oldVal = self.temp[i]
-				self.temp[i] += math.copysign(timeDiff * 10, self.targetTemp[i] - self.temp[i])
-				if math.copysign(1, self.targetTemp[i] - oldVal) != math.copysign(1, self.targetTemp[i] - self.temp[i]):
-					self.temp[i] = self.targetTemp[i]
-				if self.temp[i] < self._ambient_temperature:
-					self.temp[i] = self._ambient_temperature
-		if abs(self.bedTemp - self.bedTargetTemp) > delta:
-			oldVal = self.bedTemp
-			self.bedTemp += math.copysign(timeDiff * 10, self.bedTargetTemp - self.bedTemp)
-			if math.copysign(1, self.bedTargetTemp - oldVal) != math.copysign(1, self.bedTargetTemp - self.bedTemp):
-				self.bedTemp = self.bedTargetTemp
-			if self.bedTemp < self._ambient_temperature:
-				self.bedTemp = self._ambient_temperature
+			self.temp[i] = simulate(self.temp[i], self.targetTemp[i], self._ambient_temperature)
+		self.bedTemp = simulate(self.bedTemp, self.bedTargetTemp, self._ambient_temperature)
 
 	def _processBuffer(self):
 		while self.buffered is not None:
