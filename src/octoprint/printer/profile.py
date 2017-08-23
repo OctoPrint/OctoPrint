@@ -228,7 +228,7 @@ class PrinterProfileManager(object):
 		self._logger.info("Migrated default printer profile from settings to _default.profile: {!r}".format(default_overrides))
 
 	def _verify_default_available(self):
-		default_id = settings().get(["printerProfile", "default"])
+		default_id = settings().get(["printerProfiles", "default"])
 		if default_id is None:
 			default_id = "_default"
 
@@ -342,7 +342,7 @@ class PrinterProfileManager(object):
 		if identifier is not None and not identifier in all_identifiers:
 			return
 
-		settings().set(["printerProfile", "default"], identifier)
+		settings().set(["printerProfiles", "default"], identifier)
 		settings().save()
 
 	def get_current_or_default(self):

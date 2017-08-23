@@ -198,6 +198,13 @@ Version checks
     * ``branch``: Branch of the Bitbucket repository to check, defaults to
       ``master`` if not set.
     * ``current``: Current commit hash. Will be updated automatically.
+    * ``api_user``: (mandatory only for private repositories) Bitbucket user name (not email address).
+      Requires ``api_password`` to be set. Hint: This is used for the check only. For the actual
+      download you might register your public SSH key as access key for the according repo and
+      configure this as pip URL in ``config.yaml``: ``git+ssh://git@bitbucket.org/my_user/my_repo.git@{target_version}``
+    * ``api_password``: (mandatory only for private repositories) App password. Requires
+      ``api_user`` to be set. **Important**: Never use your actual Bitbucket login password. Generate
+      a new app password. App passwords are user specific on Bitbucket.
 
   * ``git_commit``: Checks a local git repository for new commits on its
     configured remote. Additional config parameters:

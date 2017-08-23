@@ -20,6 +20,8 @@ from .util import AbstractFileWrapper, StreamWrapper, DiskFileWrapper
 
 from collections import namedtuple
 
+from past.builtins import basestring
+
 ContentTypeMapping = namedtuple("ContentTypeMapping", "extensions, content_type")
 ContentTypeDetector = namedtuple("ContentTypeDetector", "extensions, detector")
 
@@ -178,9 +180,12 @@ class FileManager(object):
 		import octoprint.settings
 		self._recovery_file = os.path.join(octoprint.settings.settings().getBaseFolder("data"), "print_recovery_data.yaml")
 
-	def initialize(self):
+	def initialize(self, process_backlog=False):
 		self.reload_plugins()
+		if process_backlog:
+			self.process_backlog()
 
+	def process_backlog(self):
 		def worker():
 			self._logger.info("Adding backlog items from all storage types to analysis queue...".format(**locals()))
 			for storage_type, storage_manager in self._storage_managers.items():
@@ -250,6 +255,26 @@ class FileManager(object):
 	@property
 	def default_slicer(self):
 		return self._slicing_manager.default_slicer
+
+	def analyse(self, destination, path, printer_profile_id=None):
+		if not self.file_exists(destination, path):
+			return
+
+		if printer_profile_id is None:
+			printer_profile = self._printer_profile_manager.get_current_or_default()
+		else:
+			printer_profile = self._printer_profile_manager.get(printer_profile_id)
+			if printer_profile is None:
+				printer_profile = self._printer_profile_manager.get_current_or_default()
+
+		queue_entry = self._analysis_queue_entry(destination, path)
+		self._analysis_queue.dequeue(queue_entry)
+
+		queue_entry = self._analysis_queue_entry(destination, path, printer_profile=printer_profile)
+		if queue_entry:
+			return self._analysis_queue.enqueue(queue_entry, high_priority=True)
+
+		return False
 
 	def slice(self, slicer_name, source_location, source_path, dest_location, dest_path,
 	          position=None, profile=None, printer_profile_id=None, overrides=None, callback=None, callback_args=None):

@@ -40,7 +40,7 @@ $(function() {
         };
 
         self.toggleButtonCss = function(data) {
-            var icon = data.enabled ? "icon-circle" : "icon-circle-blank";
+            var icon = data.enabled ? "fa fa-toggle-on" : "fa fa-toggle-off";
             var disabled = (self.enableToggle(data)) ? "" : " disabled";
 
             return icon + disabled;
@@ -258,22 +258,22 @@ $(function() {
                         buttons: [{
                             text: gettext("Later"),
                             click: function(notice) {
-                                self.hiddenChannels.push(key);
                                 notice.remove();
+                                self.hiddenChannels.push(key);
                             }
                         }, {
                             text: gettext("Mark read"),
                             click: function(notice) {
-                                self.markRead(key, value.last);
                                 notice.remove();
+                                self.markRead(key, value.last);
                             }
                         }, {
                             text: gettext("Read..."),
                             addClass: "btn-primary",
                             click: function(notice) {
+                                notice.remove();
                                 self.showAnnouncementDialog(key);
                                 self.markRead(key, value.last);
-                                notice.remove();
                             }
                         }]
                     },
@@ -317,7 +317,13 @@ $(function() {
             self.announcementDialog = $("#plugin_announcements_dialog");
             self.announcementDialogContent = $("#plugin_announcements_dialog_content");
             self.announcementDialogTabs = $("#plugin_announcements_dialog_tabs");
+        };
+
+        self.onEventConnectivityChanged = function(payload) {
+            if (!payload || !payload.new) return;
+            self.retrieveData();
         }
+
     }
 
     // view model class, parameters for constructor, container to bind to

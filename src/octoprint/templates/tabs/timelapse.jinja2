@@ -5,7 +5,7 @@
     <h1>{{ _('Timelapse Configuration') }}</h1>
 
     <label for="webcam_timelapse_mode">{{ _('Timelapse Mode') }}</label>
-    <select id="webcam_timelapse_mode" data-bind="value: timelapseType, enable: isOperational() && !isPrinting() && loginState.isUser()">
+    <select id="webcam_timelapse_mode" data-bind="value: timelapseType, enable: !isPrinting() && loginState.isUser()">
         <option value="off">{{ _('Off') }}</option>
         <option value="timed">{{ _('Timed') }}</option>
         <option value="zchange">{{ _('On Z Change') }}</option>
@@ -16,25 +16,25 @@
     <div id="webcam_timelapse_timedsettings" data-bind="visible: intervalInputEnabled">
         <label for="webcam_timelapse_interval">{{ _('Interval between snapshots (in seconds)') }}</label>
         <div class="input-append">
-            <input type="text" class="input-mini" id="webcam_timelapse_interval" data-bind="value: timelapseTimedInterval, valueUpdate: 'afterkeydown', enable: isOperational() && !isPrinting() && loginState.isUser()">
+            <input type="text" class="input-mini" id="webcam_timelapse_interval" data-bind="value: timelapseTimedInterval, valueUpdate: 'afterkeydown', enable: !isPrinting() && loginState.isUser()">
             <span class="add-on">{{ _('sec') }}</span>
         </div>
     </div>
 
     <label for="webcam_timelapse_fps">{{ _('Timelapse frame rate (in frames per second)') }}</label>
     <div class="input-append">
-        <input type="text" class="input-mini" id="webcam_timelapse_fps" data-bind="value: timelapseFps, valueUpdate: 'afterkeydown', enable: isOperational() && !isPrinting() && loginState.isUser() && timelapseTypeSelected()">
+        <input type="text" class="input-mini" id="webcam_timelapse_fps" data-bind="value: timelapseFps, valueUpdate: 'afterkeydown', enable: !isPrinting() && loginState.isUser() && timelapseTypeSelected()">
         <span class="add-on">{{ _('fps') }}</span>
     </div>
 
     <label for="webcam_timelapse_postRoll">{{ _('Timelapse post roll (in rendered seconds)') }}</label>
     <div class="input-append">
-        <input type="text" class="input-mini" id="webcam_timelapse_postRoll" data-bind="value: timelapsePostRoll, valueUpdate: 'afterkeydown', enable: isOperational() && !isPrinting() && loginState.isUser() && timelapseTypeSelected()">
+        <input type="text" class="input-mini" id="webcam_timelapse_postRoll" data-bind="value: timelapsePostRoll, valueUpdate: 'afterkeydown', enable: !isPrinting() && loginState.isUser() && timelapseTypeSelected()">
         <span class="add-on">{{ _('sec') }}</span>
     </div>
     <div id="webcam_timelapse_capturePostRoll" data-bind="visible: timelapseType() == 'timed'">
         <label class="checkbox">
-            <input type="checkbox" data-bind="checked: timelapseCapturePostRoll, valueUpdate: 'afterkeydown', enable: isOperational() && !isPrinting() && loginState.isUser()"> {{ _('Capture post roll images') }}
+            <input type="checkbox" data-bind="checked: timelapseCapturePostRoll, valueUpdate: 'afterkeydown', enable: !isPrinting() && loginState.isUser()"> {{ _('Capture post roll images') }}
             <span class="help-block">{{ _('If this is unchecked, OctoPrint will simply repeat the last frame for the post roll instead of continuing to capture new frames.') }}</span>
         </label>
     </div>
@@ -42,7 +42,7 @@
     <div id="webcam_timelapse_retractionsettings" data-bind="visible: timelapseType() == 'zchange'">
         <label for="webcam_timelapse_retractionZHop">{{ _('Retraction Z-Hop (in mm)') }}</label>
         <div class="input-append">
-            <input type="text" class="input-mini" id="webcam_timelapse_retractionZHop" data-bind="value: timelapseRetractionZHop, valueUpdate: 'afterkeydown', enable: isOperational() && !isPrinting() && loginState.isUser()">
+            <input type="text" class="input-mini" id="webcam_timelapse_retractionZHop" data-bind="value: timelapseRetractionZHop, valueUpdate: 'afterkeydown', enable: !isPrinting() && loginState.isUser()">
             <span class="add-on">{{ _('mm') }}</span>
         </div>
         <span class="help-block">{{ _('Enter the retraction z-hop used in the firmware or the gcode file to trigger snapshots for the timelapse only if a real layer change happens. For this to work properly your retraction z-hop has to be different from your layerheight!') }}</span>
@@ -65,17 +65,17 @@
 
 <div class="pull-right">
     <div class="btn-group">
-        <button class="btn btn-small dropdown-toggle" data-toggle="dropdown"><i class="icon-wrench"></i> <span class="caret"></span></button>
+        <button class="btn btn-small dropdown-toggle" data-toggle="dropdown"><i class="fa fa-wrench"></i> <span class="caret"></span></button>
         <ul class="dropdown-menu dropdown-menu-right">
-            <li><a href="javascript:void(0)" data-bind="click: function() { listHelper.changeSorting('name'); }"><i class="icon-ok" data-bind="style: {visibility: listHelper.currentSorting() == 'name' ? 'visible' : 'hidden'}"></i> {{ _('Sort by name') }} ({{ _('ascending') }})</a></li>
-            <li><a href="javascript:void(0)" data-bind="click: function() { listHelper.changeSorting('creation'); }"><i class="icon-ok" data-bind="style: {visibility: listHelper.currentSorting() == 'creation' ? 'visible' : 'hidden'}"></i> {{ _('Sort by creation date') }} ({{ _('descending') }})</a></li>
-            <li><a href="javascript:void(0)" data-bind="click: function() { listHelper.changeSorting('size'); }"><i class="icon-ok" data-bind="style: {visibility: listHelper.currentSorting() == 'size' ? 'visible' : 'hidden'}"></i> {{ _('Sort by file size') }} ({{ _('descending') }})</a></li>
+            <li><a href="javascript:void(0)" data-bind="click: function() { listHelper.changeSorting('name'); }"><i class="fa fa-check" data-bind="style: {visibility: listHelper.currentSorting() == 'name' ? 'visible' : 'hidden'}"></i> {{ _('Sort by name') }} ({{ _('ascending') }})</a></li>
+            <li><a href="javascript:void(0)" data-bind="click: function() { listHelper.changeSorting('creation'); }"><i class="fa fa-check" data-bind="style: {visibility: listHelper.currentSorting() == 'creation' ? 'visible' : 'hidden'}"></i> {{ _('Sort by creation date') }} ({{ _('descending') }})</a></li>
+            <li><a href="javascript:void(0)" data-bind="click: function() { listHelper.changeSorting('size'); }"><i class="fa fa-check" data-bind="style: {visibility: listHelper.currentSorting() == 'size' ? 'visible' : 'hidden'}"></i> {{ _('Sort by file size') }} ({{ _('descending') }})</a></li>
         </ul>
     </div>
 </div>
 <div class="pull-left">
     <div class="btn-group">
-        <button class="btn btn-small dropdown-toggle" data-toggle="dropdown"><i class="icon-check-empty"></i> <span class="caret"></span></button>
+        <button class="btn btn-small dropdown-toggle" data-toggle="dropdown"><i class="fa fa-square-o"></i> <span class="caret"></span></button>
         <ul class="dropdown-menu">
             <li><a href="javascript:void(0)" data-bind="click: markFilesOnPage">{{ _('Select all on this page') }}</a></li>
             <li><a href="javascript:void(0)" data-bind="click: markAllFiles">{{ _('Select all') }}</a></li>
@@ -99,7 +99,7 @@
         <td class="timelapse_files_checkbox"><input type="checkbox" data-bind="value: name, checked: $root.markedForFileDeletion"></td>
         <td class="timelapse_files_name" data-bind="text: name"></td>
         <td class="timelapse_files_size" data-bind="text: size"></td>
-        <td class="timelapse_files_action"><a href="javascript:void(0)" class="icon-trash" data-bind="click: function() { if ($root.loginState.isUser()) { $parent.removeFile($data.name); } else { return; } }, css: {disabled: !$root.loginState.isUser()}"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" class="icon-download" data-bind="attr: {href: url}"></a></td>
+        <td class="timelapse_files_action"><a href="javascript:void(0)" class="fa fa-trash-o" data-bind="click: function() { if ($root.loginState.isUser()) { $parent.removeFile($data.name); } else { return; } }, css: {disabled: !$root.loginState.isUser()}"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" class="fa fa-download" data-bind="attr: {href: url}"></a></td>
     </tr>
     </tbody>
 </table>
@@ -116,11 +116,11 @@
 </div>
 
 <div data-bind="visible: unrenderedListHelper.allSize">
-    <div><small><a href="javascript:void(0)" class="muted" onclick="$(this).children().toggleClass('icon-caret-right icon-caret-down').parent().parent().parent().next().slideToggle('fast')"><i class="icon-caret-right"></i> {{ _('Unrendered Timelapses') }}</a></small></div>
+    <div><small><a href="javascript:void(0)" class="muted" onclick="$(this).children().toggleClass('fa-caret-right fa-caret-down').parent().parent().parent().next().slideToggle('fast')"><i class="fa fa-caret-right"></i> {{ _('Unrendered Timelapses') }}</a></small></div>
     <div class="hide">
         <div class="pull-left">
             <div class="btn-group">
-                <button class="btn btn-small dropdown-toggle" data-toggle="dropdown"><i class="icon-check-empty"></i> <span class="caret"></span></button>
+                <button class="btn btn-small dropdown-toggle" data-toggle="dropdown"><i class="fa fa-square-o"></i> <span class="caret"></span></button>
                 <ul class="dropdown-menu">
                     <li><a href="javascript:void(0)" data-bind="click: markUnrenderedOnPage">{{ _('Select all on this page') }}</a></li>
                     <li><a href="javascript:void(0)" data-bind="click: markAllUnrendered">{{ _('Select all') }}</a></li>
@@ -147,8 +147,8 @@
                 <td class="timelapse_unrendered_count" data-bind="text: count"></td>
                 <td class="timelapse_unrendered_size" data-bind="text: size"></td>
                 <td class="timelapse_unrendered_action">
-                    <span data-bind="visible: processing"><i class="icon-refresh icon-spin"></i></span>
-                    <span data-bind="visible: !processing"><a href="javascript:void(0)" title="{{ _('Delete unrendered timelapse') }}" class="icon-trash" data-bind="click: function() { if ($root.loginState.isUser()) { $parent.removeUnrendered($data.name); } else { return; } }, css: {disabled: !$root.loginState.isUser()}"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" title="{{ _('Render timelapse') }}" class="icon-facetime-video" data-bind="click: function() { if ($root.loginState.isUser() && !$root.isBusy()) { $parent.renderUnrendered($data.name); } else { return; } }, css: {disabled: !$root.loginState.isUser() || $root.isBusy()}"></a></span>
+                    <span data-bind="visible: processing"><i class="fa fa-refresh fa-spin"></i></span>
+                    <span data-bind="visible: !processing"><a href="javascript:void(0)" title="{{ _('Delete unrendered timelapse') }}" class="fa fa-trash-o" data-bind="click: function() { if ($root.loginState.isUser()) { $parent.removeUnrendered($data.name); } else { return; } }, css: {disabled: !$root.loginState.isUser()}"></a>&nbsp;|&nbsp;<a href="javascript:void(0)" title="{{ _('Render timelapse') }}" class="fa fa-video-camera" data-bind="click: function() { if ($root.loginState.isUser() && !$root.isBusy()) { $parent.renderUnrendered($data.name); } else { return; } }, css: {disabled: !$root.loginState.isUser() || $root.isBusy()}"></a></span>
                 </td>
             </tr>
             </tbody>

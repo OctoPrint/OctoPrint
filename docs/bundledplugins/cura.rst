@@ -45,7 +45,7 @@ Installing CuraEngine
 
 You'll need a build of ``legacy`` branch of `CuraEngine <http://github.com/Ultimaker/CuraEngine>`_
 in order to be able to use the Cura OctoPrint plugin. You can find the ``legacy`` branch
-`here <https://github.com/ultimaker/curaengine/tree/legacy>`_.
+`here <https://github.com/ultimaker/curaengine/tree/legacy>`__.
 
 If you previously used the `old variant of the Cura integration <https://github.com/foosel/OctoPrint/wiki/Cura-Integration>`_,
 you probably still have a fully functional binary lying around in the
@@ -60,7 +60,7 @@ Compiling for Raspbian
 .. note::
 
    A binary of CuraEngine 15.04.06 precompiled on Raspbian Jessie Lite 2016-03-18 is available
-   `here <http://bit.ly/octopi_cura_engine_150406>`_. Don't forget to make it
+   `here <http://bit.ly/octopi_cura_engine_150406>`__. Don't forget to make it
    executable after copying it to your preferred destination on your Pi
    (suggestion: ``/usr/local/bin``) with ``chmod +x cura_engine``. Use at your
    own risk.

@@ -225,14 +225,16 @@ $(function() {
 
             var result = [];
             if (data.filament && typeof(data.filament) == "object" && _.keys(data.filament).length > 0) {
-                for (var key in data.filament) {
-                    if (!_.startsWith(key, "tool") || !data.filament[key] || !data.filament[key].hasOwnProperty("length") || data.filament[key].length <= 0) continue;
+                var keys = _.keys(data.filament);
+                keys.sort();
+                _.each(keys, function(key) {
+                    if (!_.startsWith(key, "tool") || !data.filament[key] || !data.filament[key].hasOwnProperty("length") || data.filament[key].length <= 0) return;
 
                     result.push({
                         name: ko.observable(gettext("Tool") + " " + key.substr("tool".length)),
                         data: ko.observable(data.filament[key])
                     });
-                }
+                });
             }
             self.filament(result);
         };

@@ -89,6 +89,10 @@
         return this.issueEntryCommand(location, path, "select", data, opts);
     };
 
+    OctoPrintFilesClient.prototype.analyse = function (location, path, parameters, opts) {
+        return this.issueEntryCommand(location, path, "analyse", parameters || {}, opts);
+    };
+
     OctoPrintFilesClient.prototype.slice = function (location, path, parameters, opts) {
         return this.issueEntryCommand(location, path, "slice",
             parameters || {}, opts);

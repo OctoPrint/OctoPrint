@@ -12,6 +12,7 @@ $(function() {
         self.isUser = ko.observable(false);
 
         self.allViewModels = undefined;
+        self.startupDeferred = $.Deferred();
 
         self.currentUser = ko.observable(undefined);
 
@@ -36,28 +37,45 @@ $(function() {
         });
 
         self.reloadUser = function() {
-            if (self.currentUser() == undefined) {
+            if (self.currentUser() === undefined) {
                 return;
             }
 
-            OctoPrint.users.get(self.currentUser().name)
+            return OctoPrint.users.get(self.currentUser().name)
                 .done(self.updateCurrentUserData);
         };
 
         self.requestData = function() {
-            OctoPrint.browser.passiveLogin()
+            return OctoPrint.browser.passiveLogin()
                 .done(self.fromResponse);
         };
 
         self.fromResponse = function(response) {
-            if (response && response.name) {
-                self.loggedIn(true);
-                self.updateCurrentUserData(response);
-                callViewModels(self.allViewModels, "onUserLoggedIn", [response]);
+            var process = function() {
+                var currentLoggedIn = self.loggedIn();
+                if (response && response.name) {
+                    self.loggedIn(true);
+                    self.updateCurrentUserData(response);
+                    if (!currentLoggedIn) {
+                        callViewModels(self.allViewModels, "onUserLoggedIn", [response]);
+                        log.info("User " + response.name + " logged in")
+                    }
+                } else {
+                    self.loggedIn(false);
+                    self.resetCurrentUserData();
+                    if (currentLoggedIn) {
+                        callViewModels(self.allViewModels, "onUserLoggedOut");
+                        log.info("User logged out");
+                    }
+                }
+            };
+
+            if (self.startupDeferred !== undefined) {
+                // Make sure we only fire our "onUserLogged(In|Out)" message after the application
+                // has started up.
+                self.startupDeferred.done(process);
             } else {
-                self.loggedIn(false);
-                self.resetCurrentUserData();
-                callViewModels(self.allViewModels, "onUserLoggedOut");
+                process();
             }
         };
 
@@ -101,7 +119,7 @@ $(function() {
         };
 
         self.logout = function() {
-            OctoPrint.browser.logout()
+            return OctoPrint.browser.logout()
                 .done(function(response) {
                     new PNotify({title: gettext("Logout successful"), text: gettext("You are now logged out"), type: "success"});
                     self.fromResponse(response);
@@ -122,11 +140,8 @@ $(function() {
 
         self.onAllBound = function(allViewModels) {
             self.allViewModels = allViewModels;
-        };
-
-        self.onStartupComplete = self.onServerConnect = self.onServerReconnect = function() {
-            if (self.allViewModels == undefined) return;
-            self.requestData();
+            self.startupDeferred.resolve();
+            self.startupDeferred = undefined;
         };
 
         self.onStartup = function() {

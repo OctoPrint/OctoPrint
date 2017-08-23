@@ -21,17 +21,36 @@ class SessionUserTestCase(unittest.TestCase):
 		session1 = octoprint.users.SessionUser(self.user)
 		session2 = octoprint.users.SessionUser(self.user)
 
-		self.assertNotEqual(session1.get_session(), session2.get_session())
-		self.assertEqual(session1._user, session2._user)
-		self.assertEqual(session1._username, session2._username)
+		# session should be different, wrapped object should be identical
+		self.assertNotEqual(session1.session, session2.session)
+		self.assertEqual(session1.__wrapped__, session2.__wrapped__)
+		self.assertEqual(session1.get_name(), session2.get_name())
 
 	def test_settings_change_propagates(self):
-		user = octoprint.users.SessionUser(self.user)
-		self.user.set_setting("otherkey", "othervalue")
+		session1 = octoprint.users.SessionUser(self.user)
+		session2 = octoprint.users.SessionUser(self.user)
 
-		self.assertDictEqual(dict(key="value", otherkey="othervalue"), user.get_all_settings())
+		# change should propagate from User to SessionUser
+		self.user.set_setting("otherkey", "othervalue")
+		self.assertDictEqual(dict(key="value", otherkey="othervalue"), session1.get_all_settings())
+
+		# change should propagate from SessionUser to SessionUser
+		session2.set_setting("otherkey", "yetanothervalue")
+		self.assertDictEqual(dict(key="value", otherkey="yetanothervalue"), session1.get_all_settings())
 
 	def test_repr(self):
 		user = octoprint.users.SessionUser(self.user)
-		expected = "SessionUser(id=username,name=username,active=True,user=True,admin=False,session={},created={})".format(user._session, user._created)
+		expected = "SessionUser({!r},session={},created={})".format(self.user, user.session, user.created)
 		self.assertEqual(expected, repr(user))
+
+	def test_isinstance(self):
+		session = octoprint.users.SessionUser(self.user)
+
+		# needs to be detected as User instance
+		self.assertTrue(isinstance(session, octoprint.users.User))
+
+		# also needs to be detected as SessionUser instance
+		self.assertTrue(isinstance(session, octoprint.users.SessionUser))
+
+		# but wrapped user should NOT be detected as SessionUser instance of course
+		self.assertFalse(isinstance(self.user, octoprint.users.SessionUser))

@@ -18,6 +18,7 @@ from serial import SerialTimeoutException
 
 from octoprint.settings import settings
 from octoprint.plugin import plugin_manager
+from octoprint.util import RepeatedTimer
 
 class VirtualPrinter(object):
 	command_regex = re.compile("^([GMTF])(\d+)")
@@ -27,6 +28,7 @@ class VirtualPrinter(object):
 	custom_action_regex = re.compile("action_custom ([a-zA-Z0-9_]+)(\s+.*)?")
 	prepare_ok_regex = re.compile("prepare_ok (.*)")
 	send_regex = re.compile("send (.*)")
+	set_ambient_regex = re.compile("set_ambient ([-+]?[0-9]*\.?[0-9]+)")
 
 	def __init__(self, seriallog_handler=None, read_timeout=5.0, write_timeout=10.0):
 		import logging
@@ -64,14 +66,19 @@ class VirtualPrinter(object):
 
 		self.currentExtruder = 0
 		self.extruderCount = settings().getInt(["devel", "virtualPrinter", "numExtruders"])
+		self.pinnedExtruders = settings().get(["devel", "virtualPrinter", "pinnedExtruders"])
+		if self.pinnedExtruders is None:
+			self.pinnedExtruders = dict()
 		self.sharedNozzle = settings().getBoolean(["devel", "virtualPrinter", "sharedNozzle"])
 		self.temperatureCount = (1 if self.sharedNozzle else self.extruderCount)
 
-		self.temp = [0.0] * self.temperatureCount
+		self._ambient_temperature = settings().getFloat(["devel", "virtualPrinter", "ambientTemperature"])
+
+		self.temp = [self._ambient_temperature] * self.temperatureCount
 		self.targetTemp = [0.0] * self.temperatureCount
+		self.bedTemp = self._ambient_temperature
+		self.bedTargetTemp = 0.0
 		self.lastTempAt = time.time()
-		self.bedTemp = 1.0
-		self.bedTargetTemp = 1.0
 
 		self._relative = True
 		self._lastX = 0.0
@@ -112,6 +119,10 @@ class VirtualPrinter(object):
 		self._firmwareName = settings().get(["devel", "virtualPrinter", "firmwareName"])
 
 		self._okFormatString = settings().get(["devel", "virtualPrinter", "okFormatString"])
+
+		self._capabilities = settings().get(["devel", "virtualPrinter", "capabilities"])
+
+		self._temperature_reporter = None
 
 		self.currentLine = 0
 		self.lastN = 0
@@ -251,6 +262,13 @@ class VirtualPrinter(object):
 
 			data += "\n"
 
+			if data.startswith("!!DEBUG:") or data.strip() == "!!DEBUG":
+				debug_command = ""
+				if data.startswith("!!DEBUG:"):
+					debug_command = data[len("!!DEBUG:"):].strip()
+				self._debugTrigger(debug_command)
+				continue
+
 			# shortcut for writing to SD
 			if self._writingToSdHandle is not None and not "M29" in data:
 				self._writingToSdHandle.write(data)
@@ -260,12 +278,6 @@ class VirtualPrinter(object):
 			if data.strip() == "version":
 				from octoprint._version import get_versions
 				self._send("OctoPrint VirtualPrinter v" + get_versions()["version"])
-				continue
-			elif data.startswith("!!DEBUG:") or data.strip() == "!!DEBUG":
-				debug_command = ""
-				if data.startswith("!!DEBUG:"):
-					debug_command = data[len("!!DEBUG:"):].strip()
-				self._debugTrigger(debug_command)
 				continue
 
 			# if we are sending oks before command output, send it now
@@ -405,10 +417,25 @@ class VirtualPrinter(object):
 		output = self._m115FormatString.format(firmware_name=self._firmwareName)
 		self._send(output)
 
+		if settings().getBoolean(["devel", "virtualPrinter", "m115ReportCapabilities"]):
+			for cap, enabled in self._capabilities.items():
+				self._send("Cap:{}:{}".format(cap.upper(), "1" if enabled else "0"))
+
 	def _gcode_M117(self, data):
 		# we'll just use this to echo a message, to allow playing around with pause triggers
 		if self._echoOnM117:
 			self._send("echo:%s" % re.search("M117\s+(.*)", data).group(1))
+
+	def _gcode_M155(self, data):
+		interval = int(re.search("S([0-9]+)", data).group(1))
+		if self._temperature_reporter is not None:
+			self._temperature_reporter.cancel()
+
+		if interval > 0:
+			self._temperature_reporter = RepeatedTimer(interval, lambda: self._send(self._generateTemperatureOutput()))
+			self._temperature_reporter.start()
+		else:
+			self._temperature_reporter = None
 
 	def _gcode_M220(self, data):
 		self._feedrate_multiplier = float(re.search('S([0-9]+)', data).group(1))
@@ -597,6 +624,7 @@ class VirtualPrinter(object):
 				custom_action_match = VirtualPrinter.custom_action_regex.match(data)
 				prepare_ok_match = VirtualPrinter.prepare_ok_regex.match(data)
 				send_match = VirtualPrinter.send_regex.match(data)
+				set_ambient_match = VirtualPrinter.set_ambient_regex.match(data)
 
 				if sleep_match is not None:
 					interval = int(sleep_match.group(1))
@@ -622,6 +650,9 @@ class VirtualPrinter(object):
 					self._prepared_oks.append(ok)
 				elif send_match is not None:
 					self._send(send_match.group(1))
+				elif set_ambient_match is not None:
+					self._ambient_temperature = float(set_ambient_match.group(1))
+					self._send("// set ambient temperature to {}".format(self._ambient_temperature))
 			except:
 				pass
 
@@ -675,9 +706,8 @@ class VirtualPrinter(object):
 		else:
 			self._send("Not SD printing")
 
-	def _processTemperatureQuery(self):
+	def _generateTemperatureOutput(self):
 		includeTarget = not settings().getBoolean(["devel", "virtualPrinter", "repetierStyleTargetTemperature"])
-		includeOk = not self._okBeforeCommandOutput
 
 		# send simulated temperature data
 		if self.temperatureCount > 1:
@@ -697,7 +727,7 @@ class VirtualPrinter(object):
 
 			if settings().getBoolean(["devel", "virtualPrinter", "includeCurrentToolInTemps"]):
 				if includeTarget:
-					output = "T:%.2f /%.2f %s" % (self.temp[self.currentExtruder], self.targetTemp[self.currentExtruder] + 1, allTempsString)
+					output = "T:%.2f /%.2f %s" % (self.temp[self.currentExtruder], self.targetTemp[self.currentExtruder], allTempsString)
 				else:
 					output = "T:%.2f %s" % (self.temp[self.currentExtruder], allTempsString)
 			else:
@@ -709,6 +739,11 @@ class VirtualPrinter(object):
 				output = "T:%.2f B:%.2f" % (self.temp[0], self.bedTemp)
 
 		output += " @:64\n"
+		return output
+
+	def _processTemperatureQuery(self):
+		includeOk = not self._okBeforeCommandOutput
+		output = self._generateTemperatureOutput()
 
 		if includeOk:
 			output = "{} {}".format(self._ok(), output)
@@ -973,24 +1008,34 @@ class VirtualPrinter(object):
 		if os.path.exists(f) and os.path.isfile(f):
 			os.remove(f)
 
-	def _simulateTemps(self, delta=1):
+	def _simulateTemps(self, delta=0.5):
 		timeDiff = self.lastTempAt - time.time()
 		self.lastTempAt = time.time()
+
+		def simulate(actual, target, ambient):
+			if target > 0 and abs(actual - target) > delta:
+				goal = target
+				factor = 10
+			elif not target and abs(actual - ambient) > delta:
+				goal = ambient
+				factor = 2
+			else:
+				return actual
+
+			old = actual
+			actual += math.copysign(timeDiff * factor, goal - actual)
+
+			if math.copysign(1, goal - old) != math.copysign(1, goal - actual):
+				actual = goal
+
+			return actual
+
 		for i in range(len(self.temp)):
-			if abs(self.temp[i] - self.targetTemp[i]) > delta:
-				oldVal = self.temp[i]
-				self.temp[i] += math.copysign(timeDiff * 10, self.targetTemp[i] - self.temp[i])
-				if math.copysign(1, self.targetTemp[i] - oldVal) != math.copysign(1, self.targetTemp[i] - self.temp[i]):
-					self.temp[i] = self.targetTemp[i]
-				if self.temp[i] < 0:
-					self.temp[i] = 0
-		if abs(self.bedTemp - self.bedTargetTemp) > delta:
-			oldVal = self.bedTemp
-			self.bedTemp += math.copysign(timeDiff * 10, self.bedTargetTemp - self.bedTemp)
-			if math.copysign(1, self.bedTargetTemp - oldVal) != math.copysign(1, self.bedTargetTemp - self.bedTemp):
-				self.bedTemp = self.bedTargetTemp
-			if self.bedTemp < 0:
-				self.bedTemp = 0
+			if i in self.pinnedExtruders:
+				self.temp[i] = self.pinnedExtruders[i]
+				continue
+			self.temp[i] = simulate(self.temp[i], self.targetTemp[i], self._ambient_temperature)
+		self.bedTemp = simulate(self.bedTemp, self.bedTargetTemp, self._ambient_temperature)
 
 	def _processBuffer(self):
 		while self.buffered is not None:

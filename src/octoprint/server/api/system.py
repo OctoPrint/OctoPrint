@@ -7,6 +7,7 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 import collections
 import logging
 import sarge
+import threading
 
 from flask import request, make_response, jsonify, url_for
 from flask.ext.babel import gettext
@@ -16,6 +17,7 @@ from octoprint.settings import settings as s
 from octoprint.server import admin_permission, NO_CONTENT
 from octoprint.server.api import api
 from octoprint.server.util.flask import restricted_access, get_remote_address
+from octoprint.logging import prefix_multilines
 
 
 @api.route("/system", methods=["POST"])
@@ -74,38 +76,59 @@ def executeSystemCommand(source, command):
 
 	do_async = command_spec.get("async", False)
 	do_ignore = command_spec.get("ignore", False)
-	logger.info("Performing command for {}:{}: {}".format(source, command, command_spec["command"]))
+	debug = command_spec.get("debug", False)
+
+	if logger.isEnabledFor(logging.DEBUG) or debug:
+		logger.info("Performing command for {}:{}: {}".format(source, command, command_spec["command"]))
+	else:
+		logger.info("Performing command for {}:{}".format(source, command))
 
 	try:
 		if "before" in command_spec and callable(command_spec["before"]):
 			command_spec["before"]()
 	except Exception as e:
 		if not do_ignore:
-			error = "Command \"before\" failed: {}".format(str(e))
+			error = "Command \"before\" for {}:{} failed: {}".format(source, command, str(e))
 			logger.warn(error)
 			return make_response(error, 500)
 
 	try:
-		# we run this with shell=True since we have to trust whatever
-		# our admin configured as command and since we want to allow
-		# shell-alike handling here...
-		p = sarge.run(command_spec["command"],
-		              stdout=sarge.Capture(),
-		              stderr=sarge.Capture(),
-		              shell=True,
-		              async=do_async)
-		if not do_async:
+		def execute():
+			# we run this with shell=True since we have to trust whatever
+			# our admin configured as command and since we want to allow
+			# shell-alike handling here...
+			p = sarge.run(command_spec["command"],
+			              stdout=sarge.Capture(),
+			              stderr=sarge.Capture(),
+			              shell=True)
+
 			if not do_ignore and p.returncode != 0:
 				returncode = p.returncode
 				stdout_text = p.stdout.text
 				stderr_text = p.stderr.text
 
-				error = "Command failed with return code {}:\nSTDOUT: {}\nSTDERR: {}".format(returncode, stdout_text, stderr_text)
-				logger.warn(error)
-				return make_response(error, 500)
+				error = "Command for {}:{} failed with return code {}:\nSTDOUT: {}\nSTDERR: {}".format(source, command,
+				                                                                                       returncode,
+				                                                                                       stdout_text,
+				                                                                                       stderr_text)
+				logger.warn(prefix_multilines(error, prefix="! "))
+				if not do_async:
+					raise CommandFailed(error)
+
+		if do_async:
+			thread = threading.Thread(target=execute)
+			thread.daemon = True
+			thread.start()
+
+		else:
+			try:
+				execute()
+			except CommandFailed as exc:
+				return make_response(exc.error, 500)
+
 	except Exception as e:
 		if not do_ignore:
-			error = "Command failed: {}".format(str(e))
+			error = "Command for {}:{} failed: {}".format(source, command, str(e))
 			logger.warn(error)
 			return make_response(error, 500)
 
@@ -164,7 +187,10 @@ def _get_core_command_specs():
 	for action, spec in commands.items():
 		if not spec["command"]:
 			continue
-		spec.update(dict(action=action, source="core", async=True, ignore=True))
+		spec.update(dict(action=action,
+		                 source="core",
+		                 async=True,
+		                 debug=True))
 		available_commands[action] = spec
 	return available_commands
 
@@ -202,3 +228,7 @@ def _get_custom_command_spec(action):
 
 	return available_actions[action]
 
+
+class CommandFailed(Exception):
+	def __init__(self, error):
+		self.error = error

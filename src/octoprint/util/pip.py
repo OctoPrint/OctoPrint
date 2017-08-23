@@ -10,6 +10,7 @@ import sarge
 import sys
 import logging
 import site
+import threading
 
 import pkg_resources
 
@@ -17,6 +18,7 @@ from .commandline import CommandlineCaller, clean_ansi
 from octoprint.util import to_unicode
 
 _cache = dict(version=dict(), setup=dict())
+_cache_mutex = threading.RLock()
 
 class UnknownPip(Exception):
 	pass
@@ -173,8 +175,6 @@ class PipCaller(CommandlineCaller):
 			self._logger.error("This version of pip is known to have bugs that make it incompatible with how it needs to be used by OctoPrint. Please upgrade your pip version.")
 			return
 
-		self._logger.info("Version of pip is {}".format(version_segment))
-
 		# Now figure out if pip belongs to a virtual environment and if the
 		# default installation directory is writable.
 		#
@@ -193,10 +193,6 @@ class PipCaller(CommandlineCaller):
 		if not ok:
 			self._logger.error("Cannot use pip")
 			return
-
-		self._logger.info("pip installs to {}, --user flag needed => {}, virtual env => {}".format(pip_install_dir,
-		                                                                                           "yes" if pip_user else "no",
-		                                                                                           "yes" if pip_virtual_env else "no"))
 
 		self._command = pip_command
 		self._version = pip_version
@@ -251,121 +247,130 @@ class PipCaller(CommandlineCaller):
 		if isinstance(pip_command_str, list):
 			pip_command_str = " ".join(pip_command_str)
 
-		if not self.ignore_cache and pip_command_str in _cache["version"]:
-			self._logger.debug("Using cached pip version information for {}".format(pip_command_str))
-			return _cache["version"][pip_command_str]
+		with _cache_mutex:
+			if not self.ignore_cache and pip_command_str in _cache["version"]:
+				self._logger.debug("Using cached pip version information for {}".format(pip_command_str))
+				return _cache["version"][pip_command_str]
 
-		sarge_command = self.to_sarge_command(pip_command, "--version")
-		p = sarge.run(sarge_command, stdout=sarge.Capture(), stderr=sarge.Capture())
+			sarge_command = self.to_sarge_command(pip_command, "--version")
+			p = sarge.run(sarge_command, stdout=sarge.Capture(), stderr=sarge.Capture())
 
-		if p.returncode != 0:
-			self._logger.warn("Error while trying to run pip --version: {}".format(p.stderr.text))
-			return None, None
+			if p.returncode != 0:
+				self._logger.warn("Error while trying to run pip --version: {}".format(p.stderr.text))
+				return None, None
 
-		output = PipCaller._preprocess(p.stdout.text)
-		# output should look something like this:
-		#
-		#     pip <version> from <path> (<python version>)
-		#
-		# we'll just split on whitespace and then try to use the second entry
+			output = PipCaller._preprocess(p.stdout.text)
+			# output should look something like this:
+			#
+			#     pip <version> from <path> (<python version>)
+			#
+			# we'll just split on whitespace and then try to use the second entry
 
-		if not output.startswith("pip"):
-			self._logger.warn("pip command returned unparseable output, can't determine version: {}".format(output))
+			if not output.startswith("pip"):
+				self._logger.warn("pip command returned unparseable output, can't determine version: {}".format(output))
 
-		split_output = map(lambda x: x.strip(), output.split())
-		if len(split_output) < 2:
-			self._logger.warn("pip command returned unparseable output, can't determine version: {}".format(output))
+			split_output = map(lambda x: x.strip(), output.split())
+			if len(split_output) < 2:
+				self._logger.warn("pip command returned unparseable output, can't determine version: {}".format(output))
 
-		version_segment = split_output[1]
+			version_segment = split_output[1]
 
-		try:
-			pip_version = pkg_resources.parse_version(version_segment)
-		except:
-			self._logger.exception("Error while trying to parse version string from pip command")
-			return None, None
+			try:
+				pip_version = pkg_resources.parse_version(version_segment)
+			except:
+				self._logger.exception("Error while trying to parse version string from pip command")
+				return None, None
 
-		result = pip_version, version_segment
-		_cache["version"][pip_command_str] = result
-		return result
+			self._logger.info("Version of pip is {}".format(version_segment))
+
+			result = pip_version, version_segment
+			_cache["version"][pip_command_str] = result
+			return result
 
 	def _check_pip_setup(self, pip_command):
 		pip_command_str = pip_command
 		if isinstance(pip_command_str, list):
 			pip_command_str = " ".join(pip_command_str)
 
-		if not self.ignore_cache and pip_command_str in _cache["setup"]:
-			self._logger.debug("Using cached pip setup information for {}".format(pip_command_str))
-			return _cache["setup"][pip_command_str]
+		with _cache_mutex:
+			if not self.ignore_cache and pip_command_str in _cache["setup"]:
+				self._logger.debug("Using cached pip setup information for {}".format(pip_command_str))
+				return _cache["setup"][pip_command_str]
 
-		# This is horribly ugly and I'm sorry...
-		#
-		# While we can figure out the install directory, if that's writable and if a virtual environment
-		# is active for pip that belongs to our sys.executable python instance by just checking some
-		# variables, we can't for stuff like third party software we allow to update via the software
-		# update plugin.
-		#
-		# What we do instead for these situations is try to install (and of course uninstall) the
-		# testballoon dummy package, which collects that information for us. For pip <= 7 we could
-		# have the testballoon provide us with the info needed through stdout, if pip was called
-		# with --verbose anything printed to stdout within setup.py would be output. Pip 8 managed
-		# to break this mechanism. Any (!) output within setup.py appears to be suppressed now, and
-		# no combination of --log and multiple --verbose or -v arguments could get it to bring the
-		# output back.
-		#
-		# So here's what we do now instead. Our sarge call sets an environment variable
-		# "TESTBALLOON_OUTPUT" that points to a temporary file. If the testballoon sees that
-		# variable set, it opens the file and writes to it the output it so far printed on stdout.
-		# We then open the file and read in the data that way.
-		#
-		# Yeah, I'm not happy with that either. But as long as there's no way to otherwise figure
-		# out for a generic pip command whether OctoPrint can even install anything with that
-		# and if so how, well, that's how we'll have to do things.
+			# This is horribly ugly and I'm sorry...
+			#
+			# While we can figure out the install directory, if that's writable and if a virtual environment
+			# is active for pip that belongs to our sys.executable python instance by just checking some
+			# variables, we can't for stuff like third party software we allow to update via the software
+			# update plugin.
+			#
+			# What we do instead for these situations is try to install (and of course uninstall) the
+			# testballoon dummy package, which collects that information for us. For pip <= 7 we could
+			# have the testballoon provide us with the info needed through stdout, if pip was called
+			# with --verbose anything printed to stdout within setup.py would be output. Pip 8 managed
+			# to break this mechanism. Any (!) output within setup.py appears to be suppressed now, and
+			# no combination of --log and multiple --verbose or -v arguments could get it to bring the
+			# output back.
+			#
+			# So here's what we do now instead. Our sarge call sets an environment variable
+			# "TESTBALLOON_OUTPUT" that points to a temporary file. If the testballoon sees that
+			# variable set, it opens the file and writes to it the output it so far printed on stdout.
+			# We then open the file and read in the data that way.
+			#
+			# Yeah, I'm not happy with that either. But as long as there's no way to otherwise figure
+			# out for a generic pip command whether OctoPrint can even install anything with that
+			# and if so how, well, that's how we'll have to do things.
 
-		import os
-		testballoon = os.path.join(os.path.realpath(os.path.dirname(__file__)), "piptestballoon")
+			import os
+			testballoon = os.path.join(os.path.realpath(os.path.dirname(__file__)), "piptestballoon")
 
-		from octoprint.util import temppath
-		with temppath() as testballoon_output_file:
-			sarge_command = self.to_sarge_command(pip_command, "install", ".")
-			try:
-				# our testballoon is no real package, so this command will fail - that's ok though,
-				# we only need the output produced within the pip environment
-				sarge.run(sarge_command,
-				          stdout=sarge.Capture(),
-				          stderr=sarge.Capture(),
-				          cwd=testballoon,
-				          env=dict(TESTBALLOON_OUTPUT=testballoon_output_file))
-			except:
-				self._logger.exception("Error while trying to install testballoon to figure out pip setup")
+			from octoprint.util import temppath
+			with temppath() as testballoon_output_file:
+				sarge_command = self.to_sarge_command(pip_command, "install", ".")
+				try:
+					# our testballoon is no real package, so this command will fail - that's ok though,
+					# we only need the output produced within the pip environment
+					sarge.run(sarge_command,
+					          stdout=sarge.Capture(),
+					          stderr=sarge.Capture(),
+					          cwd=testballoon,
+					          env=dict(TESTBALLOON_OUTPUT=testballoon_output_file))
+				except:
+					self._logger.exception("Error while trying to install testballoon to figure out pip setup")
+					return False, False, False, None
+
+				data = dict()
+				with open(testballoon_output_file) as f:
+					for line in f:
+						key, value = line.split("=", 2)
+						data[key] = value
+
+			install_dir_str = data.get("PIP_INSTALL_DIR", None)
+			virtual_env_str = data.get("PIP_VIRTUAL_ENV", None)
+			writable_str = data.get("PIP_WRITABLE", None)
+
+			if install_dir_str is not None and virtual_env_str is not None and writable_str is not None:
+				install_dir = install_dir_str.strip()
+				virtual_env = virtual_env_str.strip() == "True"
+				writable = writable_str.strip() == "True"
+
+				can_use_user_flag = not virtual_env and site.ENABLE_USER_SITE
+
+				ok = writable or can_use_user_flag
+				user_flag = not writable and can_use_user_flag
+
+				self._logger.info("pip installs to {}, --user flag needed => {}, "
+				                  "virtual env => {}".format(install_dir,
+				                                             "yes" if user_flag else "no",
+				                                             "yes" if virtual_env else "no"))
+
+				# ok, enable user flag, virtual env yes/no, installation dir
+				result = ok, user_flag, virtual_env, install_dir
+				_cache["setup"][pip_command_str] = result
+				return result
+			else:
+				self._logger.debug("Could not detect desired output from testballoon install, got this instead: {!r}".format(data))
 				return False, False, False, None
-
-			data = dict()
-			with open(testballoon_output_file) as f:
-				for line in f:
-					key, value = line.split("=", 2)
-					data[key] = value
-
-		install_dir_str = data.get("PIP_INSTALL_DIR", None)
-		virtual_env_str = data.get("PIP_VIRTUAL_ENV", None)
-		writable_str = data.get("PIP_WRITABLE", None)
-
-		if install_dir_str is not None and virtual_env_str is not None and writable_str is not None:
-			install_dir = install_dir_str.strip()
-			virtual_env = virtual_env_str.strip() == "True"
-			writable = writable_str.strip() == "True"
-
-			can_use_user_flag = not virtual_env and site.ENABLE_USER_SITE
-
-			# ok, enable user flag, virtual env yes/no, installation dir
-			result = writable or can_use_user_flag, \
-			         not writable and can_use_user_flag, \
-			         virtual_env, \
-			         install_dir
-			_cache["setup"][pip_command_str] = result
-			return result
-		else:
-			self._logger.debug("Could not detect desired output from testballoon install, got this instead: {!r}".format(data))
-			return False, False, False, None
 
 	def _preprocess_lines(self, *lines):
 		return map(self._preprocess, lines)

@@ -8,6 +8,8 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 
 import click
 
+from past.builtins import basestring
+
 class OctoPrintDevelCommands(click.MultiCommand):
 	"""
 	Custom `click.MultiCommand <http://click.pocoo.org/5/api/#click.MultiCommand>`_
