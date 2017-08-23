@@ -193,7 +193,7 @@ class EventManager(object):
 			                  "were held back before startup event".format(self._held_back.qsize()))
 			while True:
 				try:
-					self._queue.put(self._held_back.get())
+					self._queue.put(self._held_back.get(block=False))
 				except queue.Empty:
 					break
 
