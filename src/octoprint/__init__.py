@@ -194,7 +194,8 @@ def init_logging(settings, use_logging_file=True, logging_file=None, default_con
 					"level": "DEBUG",
 					"formatter": "serial",
 					"backupCount": 3,
-					"filename": os.path.join(settings.getBaseFolder("logs"), "serial.log")
+					"filename": os.path.join(settings.getBaseFolder("logs"), "serial.log"),
+					"delay": True
 				}
 			},
 			"loggers": {
