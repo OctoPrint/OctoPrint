@@ -1,5 +1,15 @@
 # OctoPrint Changelog
 
+## 1.3.5rc3 (2017-08-25)
+
+### Bug fixes
+
+  * [#2059](https://github.com/foosel/OctoPrint/issues/2059) - Fix an issue causing the new temperature controls to wrap on touch enabled devices when the temperature dropdown is opened.
+  * [#2090](https://github.com/foosel/OctoPrint/issues/2090) - Fix an issue causing an aborted server startup under Windows if the timing is just right.
+  * Fix an issue causing rollover of `serial.log` to fail under Windows.
+
+([Commits](https://github.com/foosel/OctoPrint/compare/1.3.5rc2...1.3.5rc3))
+
 ## 1.3.5rc2 (2017-07-27)
 
 ### Bug fixes

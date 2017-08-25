@@ -46,6 +46,7 @@ thanks to everyone who contributed!
   * Masayoshi Mitsui
   * Michael Aumock
   * Miles Flavel
+  * mitchell hirsch
   * Mohammed khorakiwala
   * Noe Ruiz
   * Patrick McGinnis
@@ -66,4 +67,4 @@ thanks to everyone who contributed!
   * Timeshell.ca
   * Trent Shumay
 
-and 1117 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!
+and 1130 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!
