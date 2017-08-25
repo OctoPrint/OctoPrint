@@ -687,7 +687,11 @@
       if (!isActive) {
         if ('ontouchstart' in document.documentElement) {
           // if mobile we we use a backdrop because click events don't delegate
-          $('<div class="dropdown-backdrop"/>').insertBefore($(this)).on('click', clearMenus)
+
+          // PATCH by foosel based on CapnBry's suggestion - see foosel/OctoPrint#2059 for details
+          //$('<div class="dropdown-backdrop"/>').insertBefore($(this)).on('click', clearMenus)
+          $('<div class="dropdown-backdrop"/>').insertAfter($(this)).on('click', clearMenus)
+          // /PATCH
         }
         $parent.toggleClass('open')
       }

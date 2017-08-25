@@ -220,14 +220,13 @@ class Server(object):
 
 		### IMPORTANT!
 		###
-		### Do not start any subprocesses until the intermediary server shuts down again or they WILL inherit the
-		### open port and prevent us from firing up Tornado later. Thanks to close_fds not being available on Popen
-		### on Windows if you also want to be able to redirect stdout/stderr/stdin and fnctl also not being available
-		### we don't have a good way around this issue besides being careful not to spawn processes here.
+		### Best do not start any subprocesses until the intermediary server shuts down again or they MIGHT inherit the
+		### open port and prevent us from firing up Tornado later.
 		###
-		### Which kinda sucks tbh.
+		### The intermediary server's socket should have the CLOSE_EXEC flag (or its equivalent) set where possible, but
+		### we can only do that if fcntl is availabel or we are on Windows, so better safe than sorry.
 		###
-		### See also issue #2035
+		### See also issues #2035 and #2090
 
 		# then initialize the plugin manager
 		pluginManager.reload_plugins(startup=True, initialize_implementations=False)
@@ -1385,10 +1384,11 @@ class Server(object):
 		                                                      bind_and_activate=False)
 
 		# if possible, make sure our socket's port descriptor isn't handed over to subprocesses
-		if fcntl is not None and hasattr(fcntl, "FD_CLOEXEC"):
-			flags = fcntl.fcntl(self._intermediary_server.socket, fcntl.F_GETFD)
-			flags |= fcntl.FD_CLOEXEC
-			fcntl.fcntl(self._intermediary_server.socket, fcntl.F_SETFD, flags)
+		from octoprint.util.platform import set_close_exec
+		try:
+			set_close_exec(self._intermediary_server.fileno())
+		except:
+			self._logger.exception("Error while attempting to set_close_exec on intermediary server socket")
 
 		# then bind the server and have it serve our handler until stopped
 		try:
@@ -1398,7 +1398,13 @@ class Server(object):
 			self._intermediary_server.server_close()
 			raise
 
-		thread = threading.Thread(target=self._intermediary_server.serve_forever)
+		def serve():
+			try:
+				self._intermediary_server.serve_forever()
+			except:
+				self._logger.exception("Error in intermediary server")
+
+		thread = threading.Thread(target=serve)
 		thread.daemon = True
 		thread.start()
 

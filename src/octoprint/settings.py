@@ -380,7 +380,8 @@ default_settings = {
 			"m115ReportCapabilities": False,
 			"capabilities": {
 				"AUTOREPORT_TEMP": True
-			}
+			},
+			"ambientTemperature": 21.3
 		}
 	}
 }

@@ -1353,8 +1353,9 @@ class LocalFileStorage(StorageInterface):
 					except:
 						self._logger.exception("Error while reading .metadata.yaml from {path}".format(**locals()))
 					else:
-						self._metadata_cache[path] = deepcopy(metadata)
-						return metadata
+						if isinstance(metadata, dict):
+							self._metadata_cache[path] = deepcopy(metadata)
+							return metadata
 			return dict()
 
 	def _save_metadata(self, path, metadata):

@@ -238,11 +238,17 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
                 if (payload.error && payload.error.indexOf("autodetect") == -1) { // ignore "failed to autodetect"
                     new PNotify({
                             title: gettext("Unhandled communication error"),
-                            text: _.sprintf(gettext("The was an unhandled error while talking to the printer. Due to that OctoPrint disconnected. Error: %(error)s"), payload),
+                            text: _.sprintf(gettext("There was an unhandled error while talking to the printer. Due to that OctoPrint disconnected. Error: %(error)s"), payload),
                             type: "error",
                             hide: false
                     });
                 }
+            } else if (type == "PrinterReset") {
+                new PNotify({
+                    title: gettext("Printer reset detected"),
+                    text: gettext("It looks like the printer was reset while a connection was active. If this was intentional you may safely ignore this message. Otherwise you should investigate why your printer reset itself, since this will interrupt prints and also file transfers to your printer's SD."),
+                    hide: false
+                });
             }
 
             var legacyEventHandlers = {

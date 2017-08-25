@@ -79,7 +79,7 @@ property instead, manually instantiate your implementation instance and then add
 .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/custom_action_command.py
    :linenos:
    :tab-width: 4
-   :caption: `custom_action_command.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/custom_action_command.py>`_
+   :caption: `custom_action_command.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/custom_action_command.py>`__
    :name: sec-plugin-concepts-hooks-example
 
 .. _sec-plugins-hooks-ordering:
@@ -370,7 +370,7 @@ octoprint.comm.protocol.action
    .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/custom_action_command.py
       :linenos:
       :tab-width: 4
-      :caption: `custom_action_command.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/custom_action_command.py>`_
+      :caption: `custom_action_command.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/custom_action_command.py>`__
 
    :param object comm_instance: The :class:`~octoprint.util.comm.MachineCom` instance which triggered the hook.
    :param str line: The complete line as received from the printer, format ``// action:<command>``
@@ -554,6 +554,32 @@ octoprint.comm.protocol.scripts
    :param str script_name: The name of the script for which the hook was called.
    :return: A 2-tuple in the form ``(prefix, postfix)`` or None
    :rtype: tuple or None
+
+.. _sec-plugins-hook-comm-protocol-temperatures-received:
+
+octoprint.comm.protocol.temperatures.received
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:function:: protocol_temperatures_received_hook(comm_instance, parsed_temperatures, *args, **kwargs)
+
+   Get the parsed temperatures returned by the printer, allowing handlers to modify them prior to handing them off
+   to the system. Handlers are expected to either return ``parsed_temperatures`` as-is or a modified copy thereof.
+
+   ``parsed_temperatures`` is a dictionary mapping from tool/bed identifier (``B``, ``T0``, ``T1``) to a 2-tuple of
+   actual and target temperature, e.g. ``{'B': (45.2, 50.0), 'T0': (178.9, 210.0), 'T1': (21.3, 0.0)}``.
+
+   This hook can be useful in cases where a printer e.g. is prone to returning garbage data from time to time, allowing
+   additional sanity checking to be applied and invalid values to be filtered out. If a handler returns an empty
+   dictionary or ``None``, no further processing will take place.
+
+   **Example**
+
+   The following example shows how to filter out actual temperatures that are outside a sane range of 1°C to 300°C.
+
+   .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/sanitize_temperatures.py
+      :linenos:
+      :tab-width: 4
+      :caption: `sanitize_temperatures.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/sanitize_temperatures.py>`_
 
 .. _sec-plugins-hook-comm-transport-serial-factory:
 

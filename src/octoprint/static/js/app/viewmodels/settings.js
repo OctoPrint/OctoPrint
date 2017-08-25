@@ -475,6 +475,10 @@ $(function() {
                 });
         };
 
+        self.copyApiKey = function() {
+            copyToClipboard(self.api_key());
+        };
+
         self.showTranslationManager = function() {
             self.translationManagerDialog.modal();
             return false;

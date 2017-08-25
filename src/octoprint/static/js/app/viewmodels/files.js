@@ -954,6 +954,23 @@ $(function() {
             self.requestData({focus: {location: "sdcard", path: payload.remote}});
         };
 
+        self.onEventTransferFailed = function(payload) {
+            self.uploadProgress
+                .removeClass("progress-striped")
+                .removeClass("active");
+            self.uploadProgressBar
+                .css("width", "0");
+            self.uploadProgressText("");
+
+            new PNotify({
+                title: gettext("Streaming failed"),
+                text: _.sprintf(gettext("Did not finish streaming %(local)s to %(remote)s on SD"), payload),
+                type: "error"
+            });
+
+            self.requestData();
+        };
+
         self.onServerConnect = self.onServerReconnect = function(payload) {
             self._enableDragNDrop(true);
             self.requestData();
