@@ -232,12 +232,18 @@ File information
    * - ``name``
      - 1
      - String
-     - The name of the file without path. E.g. "file.gco" for a file "file.gco" located anywhere in the file system.
+     - The name of the file without path. E.g. "file.gco" for a file "file.gco" located anywhere in the file system. Currently
+       this will always fit into ASCII.
+   * - ``display``
+     - 1
+     - String
+     - The name of the file without the path, this time potentially with non-ASCII unicode characters.
+       E.g. "a turtle 🐢.gco" for a file "a_turtle_turtle.gco" located anywhere in the file system.
    * - ``path``
      - 1
      - String
      - The path to the file within the location. E.g. "folder/subfolder/file.gco" for a file "file.gco" located within
-       "folder" and "subfolder" relative to the root of the location.
+       "folder" and "subfolder" relative to the root of the location. Currently this will always fit into ASCII.
    * - ``type``
      - 1
      - String
@@ -329,11 +335,17 @@ Abridged file or folder information
      - 1
      - String
      - The name of the file or folder without path. E.g. "file.gco" for a file "file.gco" located anywhere in the file system.
+       Currently this will always fit into ASCII.
+   * - ``display``
+     - 1
+     - String
+     - The name of the file without the path, this potentially with non-ASCII unicode characters.
+       E.g. "a turtle 🐢.gco" for a file "a_turtle_turtle.gco" located anywhere in the file system.
    * - ``path``
      - 1
      - String
      - The path to the file or folder within the location. E.g. "folder/subfolder/file.gco" for a file "file.gco" located within
-       "folder" and "subfolder" relative to the root of the location.
+       "folder" and "subfolder" relative to the root of the location. Currently this will always fit into ASCII.
    * - ``origin``
      - 1
      - String, either ``local`` or ``sdcard``

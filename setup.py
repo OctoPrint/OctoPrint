@@ -50,7 +50,8 @@ INSTALL_REQUIRES = [
 	"websocket-client>=0.40,<0.41",
 	"python-dateutil>=2.6,<2.7",
 	"wrapt>=1.10.10,<1.11",
-	"futures>=3.1.1,<3.2"
+	"futures>=3.1.1,<3.2",
+	"emoji>=0.4.5,<0.5"
 ]
 
 if sys.platform == "darwin":

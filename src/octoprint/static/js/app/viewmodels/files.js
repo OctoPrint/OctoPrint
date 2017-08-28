@@ -89,8 +89,8 @@ $(function() {
             {
                 "name": function(a, b) {
                     // sorts ascending
-                    if (a["name"].toLocaleLowerCase() < b["name"].toLocaleLowerCase()) return -1;
-                    if (a["name"].toLocaleLowerCase() > b["name"].toLocaleLowerCase()) return 1;
+                    if (a["display"].toLowerCase() < b["display"].toLowerCase()) return -1;
+                    if (a["display"].toLowerCase() > b["display"].toLowerCase()) return 1;
                     return 0;
                 },
                 "upload": function(a, b) {
@@ -437,7 +437,7 @@ $(function() {
                 return;
             }
 
-            self.slicing.show(file.origin, file.path, true);
+            self.slicing.show(file.origin, file.path, true, undefined, {display: file.display});
         };
 
         self.initSdCard = function() {
