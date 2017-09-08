@@ -1110,6 +1110,23 @@ def restricted_access(func):
 	return decorated_view
 
 
+def firstrun_only_access(func):
+	"""
+	If you decorate a view with this, it will ensure that first setup has _not_ been
+	done for OctoPrint's Access Control. Otherwise it 
+	will cause a HTTP 403 status code to be returned by the decorated resource.
+	"""
+	@functools.wraps(func)
+	def decorated_view(*args, **kwargs):
+		# if OctoPrint has been set up yet, abort
+		if settings().getBoolean(["server", "firstRun"]) and (octoprint.server.userManager is None or not octoprint.server.userManager.hasBeenCustomized()):
+			return func(*args, **kwargs)
+		else:
+			return flask.make_response("OctoPrint is already setup, this resource is not longer available.", 403)
+
+	return decorated_view
+
+
 class AppSessionManager(object):
 
 	VALIDITY_UNVERIFIED = 1 * 60 # 1 minute
