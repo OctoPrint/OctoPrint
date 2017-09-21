@@ -1130,7 +1130,7 @@ class MachineCom(object):
 	def _processTemperatures(self, line):
 		current_tool = self._currentTool if self._currentTool is not None else 0
 		maxToolNum, parsedTemps = parse_temperature_line(line, current_tool)
-
+#                self._logger.info("current_tool: %d, maxToolNum: %d, parsedTemps: %s"%(current_tool,maxToolNum,parsedTemps))
 		for name, hook in self._temperature_hooks.items():
 			try:
 				parsedTemps = hook(self, parsedTemps)
@@ -1139,13 +1139,19 @@ class MachineCom(object):
 			except:
 				self._logger.exception("Error while processing temperatures in {}, skipping".format(name))
 
-		if "T0" in parsedTemps.keys():
+		printer_profile=self._printerProfileManager.get_current_or_default()
+		shared_nozzle = printer_profile["extruder"]["sharedNozzle"]
+
+		if "T%d"%current_tool in parsedTemps.keys():
 			for n in range(maxToolNum + 1):
 				tool = "T%d" % n
-				if not tool in parsedTemps.keys():
+				if not tool in parsedTemps.keys() and not shared_nozzle:
 					continue
+				elif not tool in parsedTemps.keys() and shared_nozzle:
+					actual, target = parsedTemps["T%d"%current_tool]
 
-				actual, target = parsedTemps[tool]
+				else:
+					actual, target = parsedTemps[tool]
 				self.last_temperature.set_tool(n, actual=actual, target=target)
 
 		# bed temperature
