@@ -135,9 +135,10 @@ from .plugins import plugin_commands
 from .dev import dev_commands
 from .client import client_commands
 from .config import config_commands
+from .analysis import analysis_commands
 
 @click.group(name="octoprint", invoke_without_command=True, cls=click.CommandCollection,
-             sources=[server_commands, plugin_commands, dev_commands, client_commands, config_commands])
+             sources=[server_commands, plugin_commands, dev_commands, client_commands, config_commands, analysis_commands])
 @standard_options()
 @legacy_options
 @click.version_option(version=octoprint.__version__, allow_from_autoenv=False)
