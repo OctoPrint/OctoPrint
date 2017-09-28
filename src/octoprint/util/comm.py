@@ -442,6 +442,8 @@ class MachineCom(object):
 		self._gcodescript_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.scripts")
 		self._serial_factory_hooks = self._pluginManager.get_hooks("octoprint.comm.transport.serial.factory")
 
+		self._temperature_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.temperatures.received")
+
 		# SD status data
 		self._sdEnabled = settings().getBoolean(["feature", "sdSupport"])
 		self._sdAvailable = False
@@ -461,6 +463,9 @@ class MachineCom(object):
 
 		self._record_pause_data = False
 		self._record_cancel_data = False
+
+		self._log_position_on_pause = settings().getBoolean(["serial", "logPositionOnPause"])
+		self._log_position_on_cancel = settings().getBoolean(["serial", "logPositionOnCancel"])
 
 		# print job
 		self._currentFile = None
@@ -875,7 +880,7 @@ class MachineCom(object):
 
 	def startFileTransfer(self, filename, localFilename, remoteFilename):
 		if not self.isOperational() or self.isBusy():
-			logging.info("Printer is not operational or busy")
+			self._logger.info("Printer is not operational or busy")
 			return
 
 		with self._jobLock:
@@ -887,6 +892,39 @@ class MachineCom(object):
 			self.sendCommand("M28 %s" % remoteFilename)
 			eventManager().fire(Events.TRANSFER_STARTED, {"local": localFilename, "remote": remoteFilename})
 			self._callback.on_comm_file_transfer_started(remoteFilename, self._currentFile.getFilesize())
+
+	def cancelFileTransfer(self):
+		if not self.isOperational() or not self.isStreaming():
+			self._logger.info("Printer is not operational or not streaming")
+			return
+
+		self._finishFileTransfer(failed=True)
+
+	def _finishFileTransfer(self, failed=False):
+		with self._jobLock:
+			remote = self._currentFile.getRemoteFilename()
+
+			self._sendCommand("M29")
+			if failed:
+				self.deleteSdFile(remote)
+
+			payload = {
+				"local": self._currentFile.getLocalFilename(),
+				"remote": remote,
+				"time": self.getPrintTime()
+			}
+
+			self._currentFile = None
+			self._changeState(self.STATE_OPERATIONAL)
+
+			if failed:
+				self._callback.on_comm_file_transfer_failed(remote)
+				eventManager().fire(Events.TRANSFER_FAILED, payload)
+			else:
+				self._callback.on_comm_file_transfer_done(remote)
+				eventManager().fire(Events.TRANSFER_DONE, payload)
+
+			self.refreshSdFiles()
 
 	def selectFile(self, filename, sd):
 		if self.isBusy():
@@ -918,11 +956,16 @@ class MachineCom(object):
 		self._callback.on_comm_print_job_cancelled()
 
 	def cancelPrint(self, firmware_error=None):
-		if not self.isOperational() or self.isStreaming():
+		if not self.isOperational():
 			return
 
 		if not self.isBusy() or self._currentFile is None:
 			# we aren't even printing, nothing to cancel...
+			return
+
+		if self.isStreaming():
+			# we are streaming, we handle cancelling that differently...
+			self.cancelFileTransfer()
 			return
 
 		def _on_M400_sent():
@@ -945,7 +988,10 @@ class MachineCom(object):
 					except:
 						pass
 
-			self.sendCommand("M400", on_sent=_on_M400_sent)
+			if self._log_position_on_cancel:
+				self.sendCommand("M400", on_sent=_on_M400_sent)
+			else:
+				self._cancel_preparation_done()
 
 	def _pause_preparation_done(self):
 		self._callback.on_comm_print_job_paused()
@@ -992,7 +1038,10 @@ class MachineCom(object):
 					self._record_pause_data = True
 					self.sendCommand("M114")
 
-				self.sendCommand("M400", on_sent=_on_M400_sent)
+				if self._log_position_on_pause:
+					self.sendCommand("M400", on_sent=_on_M400_sent)
+				else:
+					self._pause_preparation_done()
 
 	def getSdFiles(self):
 		return self._sdFiles
@@ -1082,6 +1131,14 @@ class MachineCom(object):
 	def _processTemperatures(self, line):
 		current_tool = self._currentTool if self._currentTool is not None else 0
 		maxToolNum, parsedTemps = parse_temperature_line(line, current_tool)
+
+		for name, hook in self._temperature_hooks.items():
+			try:
+				parsedTemps = hook(self, parsedTemps)
+				if parsedTemps is None or not parsedTemps:
+					return
+			except:
+				self._logger.exception("Error while processing temperatures in {}, skipping".format(name))
 
 		if "T0" in parsedTemps.keys():
 			for n in range(maxToolNum + 1):
@@ -1516,11 +1573,22 @@ class MachineCom(object):
 				                     self.STATE_PAUSED,
 				                     self.STATE_TRANSFERING_FILE):
 					if line == "start": # exact match, to be on the safe side
-						message = "Printer sent 'start' while already operational. External reset? " \
-						          "Resetting line numbers to be on the safe side"
-						self._log(message)
-						self._logger.warn(message)
-						self.resetLineNumbers()
+						if self._state in (self.STATE_OPERATIONAL,):
+							message = "Printer sent 'start' while already operational. External reset? " \
+							          "Resetting line numbers to be on the safe side"
+							self._log(message)
+							self._logger.warn(message)
+							self.resetLineNumbers()
+
+						else:
+							verb = "streaming to SD" if self.isStreaming() else "printing"
+							message = "Printer sent 'start' while {}. External reset? " \
+							          "Aborting job since printer lost state.".format(verb)
+							self._log(message)
+							self._logger.warn(message)
+							self.cancelPrint()
+
+						eventManager().fire(Events.PRINTER_RESET)
 
 			except:
 				self._logger.exception("Something crashed inside the serial connection loop, please report this in OctoPrint's bug tracker:")
@@ -1956,20 +2024,7 @@ class MachineCom(object):
 		line = self._currentFile.getNext()
 		if line is None:
 			if self.isStreaming():
-				self._sendCommand("M29")
-
-				remote = self._currentFile.getRemoteFilename()
-				payload = {
-					"local": self._currentFile.getLocalFilename(),
-					"remote": remote,
-					"time": self.getPrintTime()
-				}
-
-				self._currentFile = None
-				self._changeState(self.STATE_OPERATIONAL)
-				self._callback.on_comm_file_transfer_done(remote)
-				eventManager().fire(Events.TRANSFER_DONE, payload)
-				self.refreshSdFiles()
+				self._finishFileTransfer()
 			else:
 				self._callback.on_comm_print_job_done()
 				self._changeState(self.STATE_OPERATIONAL)
@@ -2247,18 +2302,13 @@ class MachineCom(object):
 								# and now let's fetch the next item from the queue
 								continue
 
-							if len(results) > 1:
-								with self._sendingLock:
-									# prepend reversed (so order gets restored)
-									to_prepend = reversed(results[1:-1])
-									for m in to_prepend:
-										try:
-											self._send_queue.prepend((m[0], None, m[1], on_sent, True), item_type=m[1])
-											on_sent = None
-										except TypeAlreadyInQueue:
-											pass
+							# we explicitly throw away plugin hook results that try
+							# to perform command expansion in the sending/sent phase,
+							# so "results" really should only have more than one entry
+							# at this point if our core code contains a bug
+							assert len(results) == 1
 
-							# we only actually send the first entry here
+							# we only use the first (and only!) entry here
 							command, _, gcode, subcode = results[0]
 
 						if command.strip() == "":
@@ -2333,7 +2383,13 @@ class MachineCom(object):
 					self._logger.exception("Error while processing hook {name} for phase {phase} and command {command}:".format(**locals()))
 				else:
 					normalized = _normalize_command_handler_result(command, command_type, gcode, subcode, hook_results)
-					new_results += normalized
+
+					# make sure we don't allow multi entry results in anything but the queuing phase
+					if not phase in ("queuing",) and len(normalized) > 1:
+						self._logger.error("Error while processing hook {name} for phase {phase} and command {command}: Hook returned multi-entry result for phase {phase} and command {command}. That's not supported, if you need to do multi expansion of commands you need to do this in the queuing phase. Ignoring hook result and sending command as-is.".format(**locals()))
+						new_results.append((command, command_type, gcode, subcode))
+					else:
+						new_results += normalized
 			if not new_results:
 				# hook handler returned None or empty list for all commands, so we'll stop here and return a full out empty result
 				return []
@@ -2715,6 +2771,9 @@ class MachineComPrintCallback(object):
 		pass
 
 	def on_comm_file_transfer_done(self, filename):
+		pass
+
+	def on_comm_file_transfer_failed(self, filename):
 		pass
 
 	def on_comm_force_disconnect(self):

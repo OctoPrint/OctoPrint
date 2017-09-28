@@ -155,6 +155,8 @@ def getSettings():
 			"ignoreErrorsFromFirmware": s.getBoolean(["serial", "ignoreErrorsFromFirmware"]),
 			"disconnectOnErrors": s.getBoolean(["serial", "disconnectOnErrors"]),
 			"triggerOkForM29": s.getBoolean(["serial", "triggerOkForM29"]),
+			"logPositionOnPause": s.getBoolean(["serial", "logPositionOnPause"]),
+			"logPositionOnCancel": s.getBoolean(["serial", "logPositionOnCancel"]),
 			"supportResendsWithoutOk": s.getBoolean(["serial", "supportResendsWithoutOk"]),
 			"maxTimeoutsIdle": s.getInt(["serial", "maxCommunicationTimeouts", "idle"]),
 			"maxTimeoutsPrinting": s.getInt(["serial", "maxCommunicationTimeouts", "printing"]),
@@ -201,6 +203,12 @@ def getSettings():
 			"diskspace": {
 				"warning": s.getInt(["server", "diskspace", "warning"]),
 				"critical": s.getInt(["server", "diskspace", "critical"])
+			},
+			"onlineCheck": {
+				"enabled": s.getBoolean(["server", "onlineCheck", "enabled"]),
+				"interval": int(s.getInt(["server", "onlineCheck", "interval"]) / 60),
+				"host": s.get(["server", "onlineCheck", "host"]),
+				"port": s.getInt(["server", "onlineCheck", "port"])
 			}
 		}
 	}
@@ -369,6 +377,8 @@ def _saveSettings(data):
 		if "disconnectOnErrors" in data["serial"]: s.setBoolean(["serial", "disconnectOnErrors"], data["serial"]["disconnectOnErrors"])
 		if "triggerOkForM29" in data["serial"]: s.setBoolean(["serial", "triggerOkForM29"], data["serial"]["triggerOkForM29"])
 		if "supportResendsWithoutOk" in data["serial"]: s.setBoolean(["serial", "supportResendsWithoutOk"], data["serial"]["supportResendsWithoutOk"])
+		if "logPositionOnPause" in data["serial"]: s.setBoolean(["serial", "logPositionOnPause"], data["serial"]["logPositionOnPause"])
+		if "logPositionOnCancel" in data["serial"]: s.setBoolean(["serial", "logPositionOnCancel"], data["serial"]["logPositionOnCancel"])
 		if "maxTimeoutsIdle" in data["serial"]: s.setInt(["serial", "maxCommunicationTimeouts", "idle"], data["serial"]["maxTimeoutsIdle"])
 		if "maxTimeoutsPrinting" in data["serial"]: s.setInt(["serial", "maxCommunicationTimeouts", "printing"], data["serial"]["maxTimeoutsPrinting"])
 		if "maxTimeoutsLong" in data["serial"]: s.setInt(["serial", "maxCommunicationTimeouts", "long"], data["serial"]["maxTimeoutsLong"])
@@ -419,6 +429,16 @@ def _saveSettings(data):
 		if "diskspace" in data["server"]:
 			if "warning" in data["server"]["diskspace"]: s.setInt(["server", "diskspace", "warning"], data["server"]["diskspace"]["warning"])
 			if "critical" in data["server"]["diskspace"]: s.setInt(["server", "diskspace", "critical"], data["server"]["diskspace"]["critical"])
+		if "onlineCheck" in data["server"]:
+			if "enabled" in data["server"]["onlineCheck"]: s.setBoolean(["server", "onlineCheck", "enabled"], data["server"]["onlineCheck"]["enabled"])
+			if "interval" in data["server"]["onlineCheck"]:
+				try:
+					interval = int(data["server"]["onlineCheck"]["interval"])
+					s.setInt(["server", "onlineCheck", "interval"], interval*60)
+				except ValueError:
+					pass
+			if "host" in data["server"]["onlineCheck"]: s.set(["server", "onlineCheck", "host"], data["server"]["onlineCheck"]["host"])
+			if "port" in data["server"]["onlineCheck"]: s.setInt(["server", "onlineCheck", "port"], data["server"]["onlineCheck"]["port"])
 
 	if "plugins" in data:
 		for plugin in octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.SettingsPlugin):

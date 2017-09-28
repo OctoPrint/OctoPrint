@@ -69,6 +69,10 @@ $(function() {
                 });
         };
 
+        self.copyApikey = function() {
+            copyToClipboard(self.access_apikey());
+        };
+
         self.generateApikey = function() {
             if (!CONFIG_ACCESS_CONTROL) return;
 

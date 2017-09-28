@@ -7,6 +7,9 @@ $(function() {
         self.printerProfiles = parameters[2];
         self.about = parameters[3];
 
+        // TODO: remove in upcoming version, this is only for backwards compatibility
+        self.users = parameters[4];
+
         // use this promise to do certain things once the SettingsViewModel has processed
         // its first request
         var firstRequest = $.Deferred();
@@ -173,6 +176,8 @@ $(function() {
         self.serial_disconnectOnErrors = ko.observable(undefined);
         self.serial_triggerOkForM29 = ko.observable(undefined);
         self.serial_supportResendsWithoutOk = ko.observable(undefined);
+        self.serial_logPositionOnPause = ko.observable(undefined);
+        self.serial_logPositionOnCancel = ko.observable(undefined);
         self.serial_maxTimeoutsIdle = ko.observable(undefined);
         self.serial_maxTimeoutsPrinting = ko.observable(undefined);
         self.serial_maxTimeoutsLong = ko.observable(undefined);
@@ -210,6 +215,11 @@ $(function() {
         self.server_diskspace_critical = ko.observable();
         self.server_diskspace_warning_str = sizeObservable(self.server_diskspace_warning);
         self.server_diskspace_critical_str = sizeObservable(self.server_diskspace_critical);
+
+        self.server_onlineCheck_enabled = ko.observable();
+        self.server_onlineCheck_interval = ko.observable();
+        self.server_onlineCheck_host = ko.observable();
+        self.server_onlineCheck_port = ko.observable();
 
         self.settings = undefined;
         self.lastReceivedSettings = undefined;
@@ -466,6 +476,10 @@ $(function() {
                             self.requestData();
                         });
                 });
+        };
+
+        self.copyApiKey = function() {
+            copyToClipboard(self.api_key());
         };
 
         self.showTranslationManager = function() {
@@ -900,7 +914,7 @@ $(function() {
 
     OCTOPRINT_VIEWMODELS.push([
         SettingsViewModel,
-        ["loginStateViewModel", "accessViewModel", "printerProfilesViewModel", "aboutViewModel"],
+        ["loginStateViewModel", "accessViewModel", "printerProfilesViewModel", "aboutViewModel", "usersViewModel"],
         ["#settings_dialog", "#navbar_settings"]
     ]);
 });

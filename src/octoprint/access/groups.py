@@ -43,6 +43,9 @@ class GroupManager(object):
 
 		# We need to make sure that we are not trying to save the default groups here
 		self.add_group("Admins", "Admin group", permissions=[Permissions.ADMIN], default=False, specialGroup=True, save=False)
+		if settings().get(["server", "firstRun"]):
+			self.add_group("Users", "User group", permissions=Permissions.USER_ARRAY)
+
 		self.add_group("Guests", "Guest group", permissions=[], default=False, specialGroup=True, save=False)
 
 	def yaml_representer(self, dumper, data):

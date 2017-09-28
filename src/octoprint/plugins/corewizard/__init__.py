@@ -25,6 +25,13 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 		names = self._get_subwizard_attrs("_get_", "_wizard_name")
 		additional = self._get_subwizard_attrs("_get_", "_additional_wizard_template_data")
 
+		firstrunonly = self._get_subwizard_attrs("_is_", "_wizard_firstrunonly")
+		firstrun = self._settings.global_get(["server", "firstRun"])
+
+		if not firstrun:
+			required = dict((key, value) for key, value in required.items()
+			                if not firstrunonly.get(key, lambda: False)())
+
 		result = list()
 		for key, method in required.items():
 			if not method():
@@ -59,8 +66,16 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 	#~~ WizardPlugin API
 
 	def is_wizard_required(self):
-		methods = self._get_subwizard_attrs("_is_", "_wizard_required")
-		return self._settings.global_get(["server", "firstRun"]) and any(map(lambda m: m(), methods.values()))
+		required = self._get_subwizard_attrs("_is_", "_wizard_required")
+		firstrunonly = self._get_subwizard_attrs("_is_", "_wizard_firstrunonly")
+		firstrun = self._settings.global_get(["server", "firstRun"])
+
+		if not firstrun:
+			required = dict((key, value) for key, value in required.items()
+			                if not firstrunonly.get(key, lambda: False)())
+		any_required = any(map(lambda m: m(), required.values()))
+
+		return any_required
 
 	def get_wizard_details(self):
 		result = dict()
@@ -71,7 +86,13 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 
 		return result
 
+	def get_wizard_version(self):
+		return 1
+
 	#~~ ACL subwizard
+
+	def _is_acl_wizard_firstrunonly(self):
+		return True
 
 	def _is_acl_wizard_required(self):
 		return self._user_manager.enabled and not self._user_manager.hasBeenCustomized()
@@ -97,11 +118,10 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 		if "ac" in data and data["ac"] in valid_boolean_trues and \
 						"user" in data.keys() and "pass1" in data.keys() and \
 						"pass2" in data.keys() and data["pass1"] == data["pass2"]:
-			from octoprint.access.permissions import admin
 			# configure access control
 			self._settings.global_set_boolean(["accessControl", "enabled"], True)
 			self._user_manager.enable()
-			self._user_manager.addUser(data["user"], data["pass1"], True, [admin], overwrite=True)
+			self._user_manager.addUser(data["user"], data["pass1"], True, groups=[self._group_manager.admins_group], overwrite=True)
 		elif "ac" in data.keys() and not data["ac"] in valid_boolean_trues:
 			# disable access control
 			self._settings.global_set_boolean(["accessControl", "enabled"], False)
@@ -114,6 +134,9 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 		return NO_CONTENT
 
 	#~~ Webcam subwizard
+
+	def _is_webcam_wizard_firstrunonly(self):
+		return True
 
 	def _is_webcam_wizard_required(self):
 		webcam_snapshot_url = self._settings.global_get(["webcam", "snapshot"])
@@ -130,6 +153,9 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 
 	#~~ Server commands subwizard
 
+	def _is_servercommands_wizard_firstrunonly(self):
+		return True
+
 	def _is_servercommands_wizard_required(self):
 		system_shutdown_command = self._settings.global_get(["server", "commands", "systemShutdownCommand"])
 		system_restart_command = self._settings.global_get(["server", "commands", "systemRestartCommand"])
@@ -143,7 +169,27 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 	def _get_servercommands_wizard_name(self):
 		return gettext("Server Commands")
 
+	#~~ Online check subwizard
+
+	def _is_onlinecheck_wizard_firstrunonly(self):
+		return False
+
+	def _is_onlinecheck_wizard_required(self):
+		return self._settings.global_get(["server", "onlineCheck", "enabled"]) is None
+
+	def _get_onlinecheck_wizard_details(self):
+		return dict(required=self._is_onlinecheck_wizard_required())
+
+	def _get_onlinecheck_wizard_name(self):
+		return gettext("Online connectivity check")
+
+	def _get_onlinecheck_additional_wizard_template_data(self):
+		return dict(mandatory=self._is_onlinecheck_wizard_required())
+
 	#~~ Printer profile subwizard
+
+	def _is_printerprofile_wizard_firstrunonly(self):
+		return True
 
 	def _is_printerprofile_wizard_required(self):
 		return self._printer_profile_manager.is_default_unmodified() and self._printer_profile_manager.profile_count == 1

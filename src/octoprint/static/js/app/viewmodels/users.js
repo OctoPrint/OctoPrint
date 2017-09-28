@@ -2,98 +2,73 @@ $(function() {
     function UsersViewModel(parameters) {
         var self = this;
 
-        self.deprecatedUsers = function (deprecatedFct, newFct, fn) {
-            return OctoPrintClient.deprecated("UsersViewModel." + deprecatedFct, "AccessViewModel.users." + newFct, fn);
-        };
-
         self.access = parameters[0];
 
-        // initialize list helper
-        self.listHelper = self.access.users.listHelper;
+        self.deprecatedUsersMethod = function(oldFct) {
+            var newFct = oldFct;
+            if (arguments.length === 2) {
+                newFct = arguments[1];
+            }
 
-        self.emptyUser = self.access.users.emptyUser;
+            OctoPrintClient.deprecatedMethod(self, "UsersViewModel", oldFct, "AccessViewModel.users", newFct, function() {
+                self.access.users[newFct](this.arguments);
+            });
+        };
 
-        self.currentUser = self.access.users.currentUser;
+        self.deprecatedUsersVariable = function(oldVar) {
+            var newVar = oldVar;
+            if (arguments.length === 2) {
+                newVar = arguments[1];
+            }
 
-        self.editorUsername = self.access.users.editorUsername;
-        self.editorGroups = self.access.users.editorGroups;
-        self.editorPermissions = self.access.users.editorPermissions;
-        self.editorPassword = self.access.users.editorPassword;
-        self.editorRepeatedPassword = self.access.users.editorRepeatedPassword;
-        self.editorApikey = self.access.users.editorApikey;
-        self.editorActive = self.access.users.editorActive;
+            OctoPrintClient.deprecatedVariable(self, "UsersViewModel", oldVar, "AccessViewModel.users", newVar,
+                function() {
+                    return self.access.users[newVar];
+                },
+                function(val) {
+                    self.access.users[newVar] = val;
+                }
+            );
+        };
 
-        self.editorPasswordMismatch = self.access.users.editorPasswordMismatch;
+        // initialize deprecated Variables
+        self.deprecatedUsersVariable("listHelper");
 
-        self.requestData = self.deprecatedUsers("requestData", "requestData", function() {
-            self.access.users.requestData();
-        });
+        self.deprecatedUsersVariable("emptyUser");
 
-        self.fromResponse = self.deprecatedUsers("fromResponse", "fromResponse", function(response) {
-            self.access.users.fromResponse(response);
-        });
+        self.deprecatedUsersVariable("currentUser");
 
-        self.showAddUserDialog = self.deprecatedUsers("showAddUserDialog", "showAddUserDialog", function() {
-            self.access.users.showAddUserDialog();
-        });
+        self.deprecatedUsersVariable("editorUsername");
+        self.deprecatedUsersVariable("editorGroups");
+        self.deprecatedUsersVariable("editorPermissions");
+        self.deprecatedUsersVariable("editorPassword");
+        self.deprecatedUsersVariable("editorRepeatedPassword");
+        self.deprecatedUsersVariable("editorApikey");
+        self.deprecatedUsersVariable("editorActive");
 
-        self.confirmAddUser = self.deprecatedUsers("confirmAddUser", "confirmAddUser", function() {
-            self.access.users.confirmAddUser();
-        });
+        self.deprecatedUsersVariable("editorPasswordMismatch");
 
-        self.showEditUserDialog = self.deprecatedUsers("showEditUserDialog", "showEditUserDialog", function(user) {
-            self.access.users.showEditUserDialog(ser);
-        });
 
-        self.confirmEditUser = self.deprecatedUsers("confirmEditUser", "confirmEditUser", function() {
-            self.access.users.confirmEditUser();
-        });
-
-        self.showChangePasswordDialog = self.deprecatedUsers("showChangePasswordDialog", "showChangePasswordDialog", function(user) {
-            self.access.users.showChangePasswordDialog(user);
-        });
-
-        self.confirmChangePassword = self.deprecatedUsers("confirmChangePassword", "confirmChangePassword", function() {
-            self.access.users.confirmChangePassword();
-        });
-
-        self.confirmGenerateApikey = self.deprecatedUsers("confirmGenerateApikey", "confirmGenerateApikey", function() {
-            self.access.users.confirmGenerateApikey();
-        });
-
-        self.confirmDeleteApikey = self.deprecatedUsers("confirmDeleteApikey", "confirmDeleteApikey", function() {
-            self.access.users.confirmDeleteApikey();
-        });
-
-        self._updateApikey = self.deprecatedUsers("_updateApikey", "_updateApikey", function(apikey) {
-            self.access.users._updateApikey(apikey);
-        });
+        self.deprecatedUsersMethod("requestData");
+        self.deprecatedUsersMethod("fromResponse");
+        self.deprecatedUsersMethod("showAddUserDialog");
+        self.deprecatedUsersMethod("confirmAddUser");
+        self.deprecatedUsersMethod("showEditUserDialog");
+        self.deprecatedUsersMethod("confirmEditUser");
+        self.deprecatedUsersMethod("showChangePasswordDialog");
+        self.deprecatedUsersMethod("confirmChangePassword");
+        self.deprecatedUsersMethod("confirmGenerateApikey");
+        self.deprecatedUsersMethod("copyApikey");
+        self.deprecatedUsersMethod("confirmDeleteApikey");
+        self.deprecatedUsersMethod("_updateApikey");
 
         //~~ API calls
-
-        self.addUser = self.deprecatedUsers("addUser", "addUser", function(user) {
-            self.access.users.addUser(user);
-        });
-
-        self.removeUser = self.deprecatedUsers("removeUser", "removeUser", function(user) {
-            self.access.users.removeUser(user);
-        });
-
-        self.updateUser = self.deprecatedUsers("updateUser", "updateUser", function(user) {
-            self.access.users.updateUser(user);
-        });
-
-        self.updatePassword = self.deprecatedUsers("updatePassword", "updatePassword", function(username, password) {
-            self.access.users.updatePassword(username, password);
-        });
-
-        self.generateApikey = self.deprecatedUsers("generateApikey", "generateApikey", function(username) {
-            self.access.users.generateApikey(username);
-        });
-
-        self.deleteApikey = self.deprecatedUsers("deleteApikey", "deleteApikey", function(username) {
-            self.access.users.deleteApikey(username);
-        });
+        self.deprecatedUsersMethod("addUser");
+        self.deprecatedUsersMethod("removeUser");
+        self.deprecatedUsersMethod("updateUser");
+        self.deprecatedUsersMethod("updatePassword");
+        self.deprecatedUsersMethod("generateApikey");
+        self.deprecatedUsersMethod("deleteApikey");
     }
 
     OCTOPRINT_VIEWMODELS.push([

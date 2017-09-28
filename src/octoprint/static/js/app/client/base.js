@@ -334,5 +334,16 @@
         };
     };
 
+    OctoPrintClient.deprecatedMethod = function(object, oldNamespace, oldFct, newNamespace, newFct, fn) {
+        object[oldFct] = OctoPrintClient.deprecated(oldNamespace + "." + oldFct, newNamespace + "." + newFct, fn);
+    };
+
+    OctoPrintClient.deprecatedVariable = function(object, oldNamespace, oldVar, newNamespace, newVar, getter, setter) {
+        Object.defineProperty(object, oldVar, {
+            get: function() { return OctoPrintClient.deprecated(oldNamespace + "." + oldVar, newNamespace + "." + newVar, getter)(); },
+            set: function(val) { OctoPrintClient.deprecated(oldNamespace + "." + oldVar, newNamespace + "." + newVar, setter)(val); }
+        });
+    };
+
     return OctoPrintClient;
 });

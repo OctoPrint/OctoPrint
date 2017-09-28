@@ -151,6 +151,15 @@ $(function() {
                     });
             };
 
+            self.copyApikey = function() {
+                copyToClipboard(self.editorApikey());
+            };
+
+            self._updateApikey = function(apikey) {
+                self.editorApikey(apikey);
+                self.requestData();
+            };
+
             self.confirmDeleteApikey = function() {
                 if (!CONFIG_ACCESS_CONTROL) return;
 
@@ -158,11 +167,6 @@ $(function() {
                     .done(function() {
                         self._updateApikey(undefined);
                     });
-            };
-
-            self._updateApikey = function(apikey) {
-                self.editorApikey(apikey);
-                self.requestData();
             };
 
             //~~ Framework

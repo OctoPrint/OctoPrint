@@ -310,19 +310,16 @@ class Permissions:
 	SETTINGS = OctoPrintPermission("Settings", gettext("Allows to open and change Settings"), RoleNeed("settings"))
 	LOGS = OctoPrintPermission("Logs", gettext("Allows to download and remove logs"), RoleNeed("logs"))
 
-	################################################################################
-	# Deprecated only for migration
-	USER_ARRAY = [STATUS, CONNECTION, WEBCAM, UPLOAD, DOWNLOAD, DELETE, SELECT, PRINT, TERMINAL, CONTROL, SLICE, TIMELAPSE, TIMELAPSE_ADMIN]
-	#from operator import or_
-	#USER = variable_deprecated("This variable is only for migration and is deprecated already, don't use it!", since="now")(OctoPrintPermission("User", "Migrated User permission class, deprecated", *reduce(or_, map(lambda p: p.needs, USER_ARRAY))))
-	################################################################################
-
-
 	CONTROL_ACCESS = unionPermissions("Control Access", CONTROL, WEBCAM)
 	CONNECTION_ACCESS = unionPermissions("Connection Access", CONNECTION, STATUS)
 	FILES_ACCESS = unionPermissions("Files Access", UPLOAD, DOWNLOAD, DELETE, SELECT, PRINT, SLICE)
 	PRINTERPROFILES_ACCESS = unionPermissions("Printerprofiles Access", CONNECTION, SETTINGS)
 	TIMELAPSE_ACCESS = unionPermissions("Timelapse Access", TIMELAPSE, TIMELAPSE_ADMIN)
+
+
+	##############################################################
+	## This will be used to define permissions for normal users ##
+	USER_ARRAY = [STATUS, CONNECTION, WEBCAM, UPLOAD, DOWNLOAD, DELETE, SELECT, PRINT, TERMINAL, CONTROL, SLICE, TIMELAPSE, TIMELAPSE_ADMIN]
 
 	@classmethod
 	def initialize(cls):

@@ -60,6 +60,8 @@ class OctoPrintPluginCommands(click.MultiCommand):
 		# fetch registered hooks
 		self.hooks = self.plugin_manager.get_hooks("octoprint.cli.commands")
 
+		logging.basicConfig(level=logging.DEBUG if ctx.obj.verbosity > 0 else logging.WARN)
+
 		self._initialized = True
 
 	def list_commands(self, ctx):
@@ -88,14 +90,14 @@ class OctoPrintPluginCommands(click.MultiCommand):
 						continue
 					result[name + self.sep + command.name] = command
 			except:
-				self._logger.exception("Error while retrieving cli commants for plugin {}".format(name))
+				self._logger.exception("Error while retrieving cli commands for plugin {}".format(name))
 
 		return result
 
 @click.group()
 @pass_octoprint_ctx
 def plugin_commands(obj):
-	logging.basicConfig(level=logging.DEBUG if obj.verbosity > 0 else logging.WARN)
+	pass
 
 @plugin_commands.group(name="plugins", cls=OctoPrintPluginCommands)
 def plugins():

@@ -175,6 +175,7 @@ $(function() {
         self.pipPython = ko.observable();
 
         self.safeMode = ko.observable();
+        self.online = ko.observable();
 
         self.pipUseUserString = ko.pureComputed(function() {
             return self.pipUseUser() ? "yes" : "no";
@@ -235,7 +236,7 @@ $(function() {
         };
 
         self.enableRepoInstall = function(data) {
-            return self.enableManagement() && self.pipAvailable() && !self.safeMode() && self.isCompatible(data);
+            return self.enableManagement() && self.pipAvailable() && !self.safeMode() && self.online() && self.isCompatible(data);
         };
 
         self.invalidUrl = ko.pureComputed(function() {
@@ -245,7 +246,7 @@ $(function() {
 
         self.enableUrlInstall = ko.pureComputed(function() {
             var url = self.installUrl();
-            return self.enableManagement() && self.pipAvailable() && !self.safeMode() && url !== undefined && url.trim() != "" && !self.invalidUrl();
+            return self.enableManagement() && self.pipAvailable() && !self.safeMode() && self.online() && url !== undefined && url.trim() != "" && !self.invalidUrl();
         });
 
         self.invalidArchive = ko.pureComputed(function() {
@@ -322,6 +323,7 @@ $(function() {
             self._fromPipResponse(data.pip, options);
 
             self.safeMode(data.safe_mode || false);
+            self.online(data.online !== undefined ? data.online : true);
         };
 
         self._fromPluginsResponse = function(data, options) {
@@ -815,7 +817,7 @@ $(function() {
         };
 
         self.toggleButtonCss = function(data) {
-            var icon = self._getToggleCommand(data) == "enable" ? "fa fa-circle-o" : "fa fa-circle";
+            var icon = self._getToggleCommand(data) == "enable" ? "fa fa-toggle-off" : "fa fa-toggle-on";
             var disabled = (self.enableToggle(data)) ? "" : " disabled";
 
             return icon + disabled;
@@ -1019,6 +1021,10 @@ $(function() {
 
         self.onUserLoggedOut = function() {
             self._closeAllNotifications();
+        };
+
+        self.onEventConnectivityChanged = function(payload) {
+            self.requestData({eval_notices: true});
         };
 
         self._closeAllNotifications = function() {

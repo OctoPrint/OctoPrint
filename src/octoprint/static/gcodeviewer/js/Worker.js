@@ -325,6 +325,11 @@ var doParse = function () {
         extrude = false;
         line = line.split(/[\(;]/)[0];
 
+        if (!line || line.trim() === "") {
+            // empty line, skip entirely
+            continue;
+        }
+
         var addToModel = false;
         var move = false;
 
@@ -545,7 +550,7 @@ var doParse = function () {
         }
 
         if (typeof(z) !== 'undefined' && z !== prevZ) {
-            if (z_heights[z]) {
+            if (z_heights[z] !== undefined) {
                 layer = z_heights[z];
             } else {
                 layer = model.length;

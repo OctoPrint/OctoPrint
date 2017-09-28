@@ -1000,10 +1000,13 @@ function setOnViewModelsIf(allViewModels, key, value, condition) {
 }
 
 function callViewModels(allViewModels, method, callback) {
+    if (!allViewModels) return;
     callViewModelsIf(allViewModels, method, undefined, callback);
 }
 
 function callViewModelsIf(allViewModels, method, condition, callback) {
+    if (!allViewModels) return;
+
     if (condition == undefined || !_.isFunction(condition)) {
         condition = function() { return true; };
     }
@@ -1116,4 +1119,12 @@ var escapeUnprintableCharacters = function(str) {
         index++;
     }
     return result;
+};
+
+var copyToClipboard = function(text) {
+    var temp = $("<input>");
+    $("body").append(temp);
+    temp.val(text).select();
+    document.execCommand("copy");
+    temp.remove();
 };

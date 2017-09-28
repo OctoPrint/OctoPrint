@@ -16,9 +16,10 @@
     <div class="control-group">
         <label class="control-label" for="settings-apiKey">{{ _('API Key') }}</label>
         <div class="controls">
-            <div class="input-append">
-                <input type="text" class="input-block-level" disabled="disabled" id="settings-apikey" data-bind="value: api_key, attr: {placeholder: '{{ _('N/A') }}'}">
-                <button class="btn" title="Generate new API Key" data-bind="click: generateApiKey, enable: api_key"><i class="fa fa-refresh"></i></button>
+            <div class="input-append input-block-level">
+                <input type="text" disabled="disabled" id="settings-apikey" data-bind="value: api_key, attr: {placeholder: '{{ _('N/A') }}'}">
+                <a class="btn add-on" title="Copy API Key to clipboard" data-bind="click: copyApiKey, enable: api_key"><i class="fa fa-copy"></i></a>
+                <a class="btn add-on" title="Generate new API Key" data-bind="click: generateApiKey, enable: api_key"><i class="fa fa-refresh"></i></a>
             </div>
             <span class="help-block">{{ _('Please note that changes to the API key are applied immediately, without having to "Save" first.') }}</span>
         </div>

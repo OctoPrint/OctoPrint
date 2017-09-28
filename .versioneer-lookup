@@ -18,12 +18,14 @@ HEAD
 
 # maintenance is currently the branch for preparation of maintenance release 1.3.5
 # so are any fix/... and improve/... branches
-maintenance 1.3.5 fe481e12b3c50a2def3b41515200e13a8c6a5c72 pep440-dev
-fix/.* 1.3.5 fe481e12b3c50a2def3b41515200e13a8c6a5c72 pep440-dev
-improve/.* 1.3.5 fe481e12b3c50a2def3b41515200e13a8c6a5c72 pep440-dev
+maintenance 1.3.6 1a6dbb3f4a5bef857cdeb13c031b9deca2cf30a2 pep440-dev
+fix/.* 1.3.6 1a6dbb3f4a5bef857cdeb13c031b9deca2cf30a2 pep440-dev
+improve/.* 1.3.6 1a6dbb3f4a5bef857cdeb13c031b9deca2cf30a2 pep440-dev
 
-# staging/maintenance is currently the branch for preparation of 1.3.5rc1
-staging/maintenance 1.3.5rc1 fe481e12b3c50a2def3b41515200e13a8c6a5c72 pep440-dev
+# staging/maintenance is currently the branch for preparation of 1.3.5rc4
+# so is regressionfix/...
+staging/maintenance 1.3.5rc4 679674df2282af0c4500367fa93864c6defa3802 pep440-dev
+regressionfix/.* 1.3.5rc4 679674df2282af0c4500367fa93864c6defa3802 pep440-dev
 
 # every other branch is a development branch and thus gets resolved to 1.4.0-dev for now
 .* 1.4.0 7f5d03d0549bcbd26f40e7e4a3297ea5204fb1cc pep440-dev

@@ -130,7 +130,7 @@
 </script>
 <script type="text/html" id="customControls_containerTemplate_collapsable">
     <div class="custom_section">
-        <h1 class="fa" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', parent: '.custom_section', container: '> div' }"><i class="fa" data-bind="css: {'fa-caret-down': !collapsed, 'fa-caret-right': collapsed}"></i> <span data-bind="text: name"></span></h1>
+        <h1 data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', parent: '.custom_section', container: '> div' }"><i class="fa" data-bind="css: {'fa-caret-down': !collapsed, 'fa-caret-right': collapsed}"></i> <span data-bind="text: name"></span></h1>
         <!-- ko template: { name: 'customControls_containerTemplate', data: $data } --><!-- /ko -->
     </div>
 </script>

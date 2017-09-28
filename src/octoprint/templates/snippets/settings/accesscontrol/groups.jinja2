@@ -7,7 +7,7 @@
         <th class="settings_groups_actions">{{ _('Action') }}</th>
     </tr>
     </thead>
-    <tbody data-bind="foreach: access.groups.listHelper.paginatedItems">
+    <tbody data-bind="foreach: $root.access.groups.listHelper.paginatedItems">
     <tr>
         <td class="settings_groups_name"><span class="icon-star" data-bind="visible: defaultOn"></span><span data-bind="text: name"></span></td>
         <td class="settings_groups_description"><span data-bind="text: description"></span></td>
@@ -20,13 +20,13 @@
 </table>
 <div class="pagination pagination-mini pagination-centered">
     <ul>
-        <li data-bind="css: {disabled: access.groups.listHelper.currentPage() === 0}"><a href="#" data-bind="click: access.groups.listHelper.prevPage">«</a></li>
+        <li data-bind="css: {disabled: $root.access.groups.listHelper.currentPage() === 0}"><a href="#" data-bind="click: access.groups.listHelper.prevPage">«</a></li>
     </ul>
-    <ul data-bind="foreach: access.groups.listHelper.pages">
+    <ul data-bind="foreach: $root.access.groups.listHelper.pages">
         <li data-bind="css: { active: $data.number === $root.access.groups.listHelper.currentPage(), disabled: $data.number === -1 }"><a href="#" data-bind="text: $data.text, click: function() { $root.access.groups.listHelper.changePage($data.number); }"></a></li>
     </ul>
     <ul>
-        <li data-bind="css: {disabled: access.groups.listHelper.currentPage() === access.groups.listHelper.lastPage()}"><a href="#" data-bind="click: access.groups.listHelper.nextPage">»</a></li>
+        <li data-bind="css: {disabled: $root.access.groups.listHelper.currentPage() === access.groups.listHelper.lastPage()}"><a href="#" data-bind="click: access.groups.listHelper.nextPage">»</a></li>
     </ul>
 </div>
 

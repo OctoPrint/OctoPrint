@@ -224,21 +224,20 @@ def login():
 @api.route("/logout", methods=["POST"])
 @restricted_access
 def logout():
-	# Remove session keys set by Flask-Principal
-	for key in ('identity.id', 'identity.name', 'identity.auth_type'):
-		if key in session:
-			del session[key]
-	identity_changed.send(current_app._get_current_object(), identity=AnonymousIdentity())
-
+	# logout from user manager...
 	_logout(current_user)
+
+	# ... and from flask login (and principal)
 	logout_user()
 
 	return NO_CONTENT
+
 
 def _logout(user):
 	if "usersession.id" in session:
 		del session["usersession.id"]
 	octoprint.server.userManager.logout_user(user)
+
 
 @api.route("/util/test", methods=["POST"])
 @restricted_access

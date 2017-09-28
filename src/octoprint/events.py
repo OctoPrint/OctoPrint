@@ -27,9 +27,10 @@ def all_events():
 
 
 class Events(object):
-	# application startup
+	# server
 	STARTUP = "Startup"
 	SHUTDOWN = "Shutdown"
+	CONNECTIVITY_CHANGED = "ConnectivityChanged"
 
 	# connect/disconnect to printer
 	CONNECTING = "Connecting"
@@ -39,6 +40,7 @@ class Events(object):
 
 	# State changes
 	PRINTER_STATE_CHANGED = "PrinterStateChanged"
+	PRINTER_RESET = "PrinterReset"
 
 	# connect/disconnect by client
 	CLIENT_OPENED = "ClientOpened"
@@ -61,6 +63,7 @@ class Events(object):
 	# SD Upload
 	TRANSFER_STARTED = "TransferStarted"
 	TRANSFER_DONE = "TransferDone"
+	TRANSFER_FAILED = "TransferFailed"
 
 	# print job
 	PRINT_STARTED = "PrintStarted"
@@ -131,9 +134,11 @@ class EventManager(object):
 		self._registeredListeners = collections.defaultdict(list)
 		self._logger = logging.getLogger(__name__)
 
+		self._startup_signaled = False
 		self._shutdown_signaled = False
 
 		self._queue = queue.Queue()
+		self._held_back = queue.Queue()
 
 		self._worker = threading.Thread(target=self._work)
 		self._worker.daemon = True
@@ -160,7 +165,8 @@ class EventManager(object):
 
 				octoprint.plugin.call_plugin(octoprint.plugin.types.EventHandlerPlugin,
 				                             "on_event",
-				                             args=(event, payload))
+				                             args=(event, payload),
+				                             initialized=True)
 			self._logger.info("Event loop shut down")
 		except:
 			self._logger.exception("Ooops, the event bus worker loop crashed")
@@ -176,7 +182,30 @@ class EventManager(object):
 		payload being a payload object specific to the event.
 		"""
 
-		self._queue.put((event, payload))
+		send_held_back = False
+		if event == Events.STARTUP:
+			self._logger.info("Processing startup event, this is our first event")
+			self._startup_signaled = True
+			send_held_back = True
+
+		self._enqueue(event, payload)
+
+		if send_held_back:
+			self._logger.info("Adding {} events to queue that "
+			                  "were held back before startup event".format(self._held_back.qsize()))
+			while True:
+				try:
+					self._queue.put(self._held_back.get(block=False))
+				except queue.Empty:
+					break
+
+	def _enqueue(self, event, payload):
+		if self._startup_signaled:
+			q = self._queue
+		else:
+			q = self._held_back
+
+		q.put((event, payload))
 
 		if event == Events.UPDATED_FILES and "type" in payload and payload["type"] == "printables":
 			# when sending UpdatedFiles with type "printables", also send another event with deprecated type "gcode"
@@ -184,7 +213,7 @@ class EventManager(object):
 			import copy
 			legacy_payload = copy.deepcopy(payload)
 			legacy_payload["type"] = "gcode"
-			self._queue.put((event, legacy_payload))
+			q.put((event, legacy_payload))
 
 	def subscribe(self, event, callback):
 		"""
