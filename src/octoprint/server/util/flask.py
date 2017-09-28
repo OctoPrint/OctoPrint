@@ -455,9 +455,12 @@ class OctoPrintFlaskRequest(flask.Request):
 
 		We need this because cookies are not port-specific and we don't want to overwrite our
 		session and other cookies from one OctoPrint instance on our machine with those of another
-		one who happens to listen on the same address albeit a different port.
+		one who happens to listen on the same address albeit a different port or script root.
 		"""
-		return "_P" + self.server_port
+		result = "_P" + self.server_port
+		if self.script_root:
+			return result + "_R" + self.script_root.replace("/", "|")
+		return result
 
 
 class OctoPrintFlaskResponse(flask.Response):
