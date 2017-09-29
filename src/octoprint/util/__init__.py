@@ -2,7 +2,7 @@
 from __future__ import absolute_import
 
 """
-This module bundles commonly used utility methods or helper classes that are used in multiple places withing
+This module bundles commonly used utility methods or helper classes that are used in multiple places within
 OctoPrint's source code.
 """
 from __future__ import absolute_import, division, print_function

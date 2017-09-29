@@ -580,7 +580,7 @@ class MachineCom(object):
 		if state == self.STATE_CLOSED_WITH_ERROR:
 			return "Offline: %s" % (self.getErrorString())
 		if state == self.STATE_TRANSFERING_FILE:
-			return "Transfering file to SD"
+			return "Transferring file to SD"
 		return "Unknown State (%d)" % (self._state)
 
 	def getErrorString(self):
@@ -1968,7 +1968,7 @@ class MachineCom(object):
 				#Also skip errors with the SD card
 				pass
 			elif 'unknown command' in lower_line:
-				#Ignore unkown command errors, it could be a typo or some missing feature
+				#Ignore unknown command errors, it could be a typo or some missing feature
 				pass
 			elif not self.isError():
 				error_text = line[6:] if lower_line.startswith("error:") else line[2:]

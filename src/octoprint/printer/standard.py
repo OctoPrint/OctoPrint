@@ -958,7 +958,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			})
 			callback.on_printer_send_initial_data(data)
 		except:
-			self._logger.exception("Error while trying to send inital state update")
+			self._logger.exception("Error while trying to send initial state update")
 
 	def _getStateFlags(self):
 		return {

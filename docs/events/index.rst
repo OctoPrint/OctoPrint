@@ -237,7 +237,7 @@ UpdatedFiles
 
        .. deprecated:: 1.2.0
 
-          The ``gcode`` modification type has been superceeded by ``printables``. It is currently still available for
+          The ``gcode`` modification type has been superseded by ``printables``. It is currently still available for
           reasons of backwards compatibility and will also be sent on modification of ``printables``. It will however
           be removed with 1.4.0.
 
