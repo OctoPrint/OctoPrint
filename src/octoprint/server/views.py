@@ -461,13 +461,26 @@ def _process_templates():
 	)
 
 	# sorting orders
+	def wizard_key_extractor(d, k):
+		if d[1].get("_key", None) == "plugin_corewizard_acl":
+			# Ultra special case - we MUST always have the ACL wizard first since otherwise any steps that follow and
+			# that require to access APIs to function will run into errors since those APIs won't work before ACL
+			# has been configured. See also #2140
+			return u"0:{}".format(to_unicode(d[0]))
+		elif d[1].get("mandatory", False):
+			# Other mandatory steps come before the optional ones
+			return u"1:{}".format(to_unicode(d[0]))
+		else:
+			# Finally everything else
+			return u"2:{}".format(to_unicode(d[0]))
+	
 	template_sorting = dict(
 		navbar=dict(add="prepend", key=None),
 		sidebar=dict(add="append", key="name"),
 		tab=dict(add="append", key="name"),
 		settings=dict(add="custom_append", key="name", custom_add_entries=lambda missing: dict(section_plugins=(gettext("Plugins"), None)), custom_add_order=lambda missing: ["section_plugins"] + missing),
 		usersettings=dict(add="append", key="name"),
-		wizard=dict(add="append", key="name", key_extractor=lambda d, k: u"0:{}".format(to_unicode(d[0])) if "mandatory" in d[1] and d[1]["mandatory"] else u"1:{}".format(to_unicode(d[0]))),
+		wizard=dict(add="append", key="name", key_extractor=wizard_key_extractor),
 		about=dict(add="append", key="name"),
 		generic=dict(add="append", key=None)
 	)
