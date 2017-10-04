@@ -6,16 +6,16 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: OctoPrint 1.3.5.dev136+g10e834f.dirty\n"
+"Project-Id-Version: OctoPrint 1.3.5rc4.dev6+g25c56a54\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
-"POT-Creation-Date: 2017-07-26 12:30+0200\n"
+"POT-Creation-Date: 2017-10-04 13:18+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.3.4\n"
+"Generated-By: Babel 2.5.1\n"
 
 #: src/octoprint/plugins/announcements/__init__.py:126
 #: src/octoprint/plugins/announcements/templates/announcements.jinja2:4
@@ -105,31 +105,31 @@ msgstr ""
 msgid "Refresh Announcements"
 msgstr ""
 
-#: src/octoprint/plugins/corewizard/__init__.py:95
+#: src/octoprint/plugins/corewizard/__init__.py:108
 #: src/octoprint/plugins/corewizard/templates/corewizard_acl_wizard.jinja2:1
-#: src/octoprint/server/views.py:559
+#: src/octoprint/server/views.py:573
 msgid "Access Control"
 msgstr ""
 
-#: src/octoprint/plugins/corewizard/__init__.py:143
-#: src/octoprint/server/views.py:553
+#: src/octoprint/plugins/corewizard/__init__.py:156
+#: src/octoprint/server/views.py:567
 msgid "Webcam & Timelapse"
 msgstr ""
 
-#: src/octoprint/plugins/corewizard/__init__.py:161
+#: src/octoprint/plugins/corewizard/__init__.py:174
 #: src/octoprint/plugins/corewizard/templates/corewizard_servercommands_wizard.jinja2:1
 msgid "Server Commands"
 msgstr ""
 
-#: src/octoprint/plugins/corewizard/__init__.py:175
+#: src/octoprint/plugins/corewizard/__init__.py:188
 msgid "Online connectivity check"
 msgstr ""
 
-#: src/octoprint/plugins/corewizard/__init__.py:192
+#: src/octoprint/plugins/corewizard/__init__.py:205
 msgid "Default Printer Profile"
 msgstr ""
 
-#: src/octoprint/plugins/corewizard/__init__.py:218
+#: src/octoprint/plugins/corewizard/__init__.py:231
 msgid ""
 "Without this plugin OctoPrint will no longer be able to perform setup "
 "steps that might be required after an update."
@@ -1325,7 +1325,7 @@ msgid "Software Update"
 msgstr ""
 
 #: src/octoprint/plugins/softwareupdate/__init__.py:964
-#: src/octoprint/server/views.py:557
+#: src/octoprint/server/views.py:571
 #: src/octoprint/static/js/app/viewmodels/appearance.js:13
 #: src/octoprint/static/js/app/viewmodels/appearance.js:18
 #: src/octoprint/static/js/app/viewmodels/appearance.js:20
@@ -1674,113 +1674,113 @@ msgstr ""
 msgid "OctoPrint version tracking"
 msgstr ""
 
-#: src/octoprint/server/views.py:467
+#: src/octoprint/server/views.py:481
 msgid "Plugins"
 msgstr ""
 
-#: src/octoprint/server/views.py:524
+#: src/octoprint/server/views.py:538
 msgid "Connection"
 msgstr ""
 
-#: src/octoprint/server/views.py:525
+#: src/octoprint/server/views.py:539
 #: src/octoprint/templates/sidebar/state.jinja2:1
 msgid "State"
 msgstr ""
 
-#: src/octoprint/server/views.py:526
+#: src/octoprint/server/views.py:540
 msgid "Files"
 msgstr ""
 
-#: src/octoprint/server/views.py:532
+#: src/octoprint/server/views.py:546
 msgid "Temperature"
 msgstr ""
 
-#: src/octoprint/server/views.py:533
+#: src/octoprint/server/views.py:547
 msgid "Control"
 msgstr ""
 
-#: src/octoprint/server/views.py:534
+#: src/octoprint/server/views.py:548
 msgid "GCode Viewer"
 msgstr ""
 
-#: src/octoprint/server/views.py:535
+#: src/octoprint/server/views.py:549
 msgid "Terminal"
 msgstr ""
 
-#: src/octoprint/server/views.py:536
+#: src/octoprint/server/views.py:550
 #: src/octoprint/templates/sidebar/state.jinja2:4
 msgid "Timelapse"
 msgstr ""
 
-#: src/octoprint/server/views.py:542
+#: src/octoprint/server/views.py:556
 msgid "Printer"
 msgstr ""
 
-#: src/octoprint/server/views.py:544
+#: src/octoprint/server/views.py:558
 msgid "Serial Connection"
 msgstr ""
 
-#: src/octoprint/server/views.py:545
+#: src/octoprint/server/views.py:559
 #: src/octoprint/templates/dialogs/settings/printerprofiles.jinja2:1
 msgid "Printer Profiles"
 msgstr ""
 
-#: src/octoprint/server/views.py:546
+#: src/octoprint/server/views.py:560
 msgid "Temperatures"
 msgstr ""
 
-#: src/octoprint/server/views.py:547
+#: src/octoprint/server/views.py:561
 msgid "Terminal Filters"
 msgstr ""
 
-#: src/octoprint/server/views.py:548
+#: src/octoprint/server/views.py:562
 msgid "GCODE Scripts"
 msgstr ""
 
-#: src/octoprint/server/views.py:550 src/octoprint/server/views.py:552
+#: src/octoprint/server/views.py:564 src/octoprint/server/views.py:566
 msgid "Features"
 msgstr ""
 
-#: src/octoprint/server/views.py:554
+#: src/octoprint/server/views.py:568
 msgid "GCODE Visualizer"
 msgstr ""
 
-#: src/octoprint/server/views.py:555
+#: src/octoprint/server/views.py:569
 msgid "API"
 msgstr ""
 
-#: src/octoprint/server/views.py:560
+#: src/octoprint/server/views.py:574
 #: src/octoprint/templates/dialogs/settings/folders.jinja2:2
 #: src/octoprint/templates/sidebar/files_header.jinja2:10
 msgid "Folders"
 msgstr ""
 
-#: src/octoprint/server/views.py:561
+#: src/octoprint/server/views.py:575
 msgid "Appearance"
 msgstr ""
 
-#: src/octoprint/server/views.py:562
+#: src/octoprint/server/views.py:576
 #: src/octoprint/templates/dialogs/settings/logs.jinja2:2
 msgid "Logs"
 msgstr ""
 
-#: src/octoprint/server/views.py:563
+#: src/octoprint/server/views.py:577
 msgid "Server"
 msgstr ""
 
-#: src/octoprint/server/views.py:569
+#: src/octoprint/server/views.py:583
 msgid "Access"
 msgstr ""
 
-#: src/octoprint/server/views.py:570
+#: src/octoprint/server/views.py:584
 msgid "Interface"
 msgstr ""
 
-#: src/octoprint/server/views.py:586
+#: src/octoprint/server/views.py:600
 msgid "Start"
 msgstr ""
 
-#: src/octoprint/server/views.py:587
+#: src/octoprint/server/views.py:601
 #: src/octoprint/templates/dialogs/wizard.jinja2:57
 msgid "Finish"
 msgstr ""
@@ -2028,14 +2028,14 @@ msgstr ""
 
 #: src/octoprint/static/js/app/viewmodels/control.js:72
 #: src/octoprint/static/js/app/viewmodels/files.js:604
-#: src/octoprint/static/js/app/viewmodels/gcode.js:508
+#: src/octoprint/static/js/app/viewmodels/gcode.js:530
 #: src/octoprint/static/js/app/viewmodels/printerstate.js:234
 #: src/octoprint/static/js/app/viewmodels/temperature.js:115
+#: src/octoprint/static/js/app/viewmodels/temperature.js:126
 msgid "Tool"
 msgstr ""
 
 #: src/octoprint/static/js/app/viewmodels/control.js:78
-#: src/octoprint/static/js/app/viewmodels/temperature.js:126
 msgid "Hotend"
 msgstr ""
 
@@ -2059,19 +2059,19 @@ msgid ""
 msgstr ""
 
 #: src/octoprint/static/js/app/viewmodels/files.js:593
-#: src/octoprint/static/js/app/viewmodels/gcode.js:467
+#: src/octoprint/static/js/app/viewmodels/gcode.js:489
 msgid "Model size"
 msgstr ""
 
 #: src/octoprint/static/js/app/viewmodels/files.js:599
 #: src/octoprint/static/js/app/viewmodels/files.js:604
-#: src/octoprint/static/js/app/viewmodels/gcode.js:505
-#: src/octoprint/static/js/app/viewmodels/gcode.js:508
+#: src/octoprint/static/js/app/viewmodels/gcode.js:527
+#: src/octoprint/static/js/app/viewmodels/gcode.js:530
 msgid "Filament"
 msgstr ""
 
 #: src/octoprint/static/js/app/viewmodels/files.js:608
-#: src/octoprint/static/js/app/viewmodels/gcode.js:512
+#: src/octoprint/static/js/app/viewmodels/gcode.js:534
 msgid "Estimated print time"
 msgstr ""
 
@@ -2182,40 +2182,40 @@ msgstr ""
 msgid "Analyzed"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/gcode.js:468
+#: src/octoprint/static/js/app/viewmodels/gcode.js:490
 msgid "Estimated total print time"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/gcode.js:469
+#: src/octoprint/static/js/app/viewmodels/gcode.js:491
 msgid "Estimated layer height"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/gcode.js:469
+#: src/octoprint/static/js/app/viewmodels/gcode.js:491
 #: src/octoprint/templates/tabs/timelapse.jinja2:46
 msgid "mm"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/gcode.js:470
+#: src/octoprint/static/js/app/viewmodels/gcode.js:492
 msgid "Layer count"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/gcode.js:470
+#: src/octoprint/static/js/app/viewmodels/gcode.js:492
 msgid "printed"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/gcode.js:470
+#: src/octoprint/static/js/app/viewmodels/gcode.js:492
 msgid "visited"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/gcode.js:500
+#: src/octoprint/static/js/app/viewmodels/gcode.js:522
 msgid "Layer number"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/gcode.js:501
+#: src/octoprint/static/js/app/viewmodels/gcode.js:523
 msgid "Layer height"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/gcode.js:502
+#: src/octoprint/static/js/app/viewmodels/gcode.js:524
 msgid "GCODE commands"
 msgstr ""
 
@@ -2570,21 +2570,21 @@ msgstr ""
 msgid "Bed"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/temperature.js:317
+#: src/octoprint/static/js/app/viewmodels/temperature.js:318
 #: src/octoprint/templates/tabs/temperature.jinja2:11
 msgid "Actual"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/temperature.js:322
+#: src/octoprint/static/js/app/viewmodels/temperature.js:323
 #: src/octoprint/templates/tabs/temperature.jinja2:12
 msgid "Target"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/temperature.js:354
+#: src/octoprint/static/js/app/viewmodels/temperature.js:355
 msgid "just now"
 msgstr ""
 
-#: src/octoprint/static/js/app/viewmodels/temperature.js:356
+#: src/octoprint/static/js/app/viewmodels/temperature.js:357
 msgid "min"
 msgstr ""
 

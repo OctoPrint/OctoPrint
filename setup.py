@@ -23,7 +23,7 @@ INSTALL_REQUIRES = [
 	                  # to some voodoo needed to get large streamed uploads and downloads
 	                  # to work that is probably not completely straightforward and therefore
 	                  # something for post-1.3.0-stable release
-	"sockjs-tornado>=1.0.2,<1.1",
+	"sockjs-tornado>=1.0.3,<1.1",
 	"PyYAML>=3.10,<3.11",
 	"Flask-Login>=0.2.2,<0.3",
 	"Flask-Principal>=0.3.5,<0.4",
