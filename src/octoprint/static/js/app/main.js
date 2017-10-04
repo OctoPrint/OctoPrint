@@ -125,7 +125,7 @@ $(function() {
             return exports;
         })();
 
-        log.debug("Browser enviroment:", OctoPrint.coreui.browser);
+        log.debug("Browser environment:", OctoPrint.coreui.browser);
 
         //~~ AJAX setup
 
@@ -180,7 +180,7 @@ $(function() {
             gettext("Printing"),
             gettext("Paused"),
             gettext("Closed"),
-            gettext("Transfering file to SD")
+            gettext("Transferring file to SD")
         ];
 
         //~~ Initialize PNotify
@@ -340,7 +340,7 @@ $(function() {
                     continue;
                 }
 
-                // we could resolve the depdendencies and the view model is not defined yet => add it, it's now fully processed
+                // we could resolve the dependencies and the view model is not defined yet => add it, it's now fully processed
                 var viewModelBindTargets = viewModel.elements;
 
                 if (additionalBindings.hasOwnProperty(viewModel.name)) {
@@ -692,7 +692,7 @@ $(function() {
          * onServerConnect below takes care of the passive login. Only once that's completed it tells
          * our DataUpdater that it's ok to trigger any callbacks in view models. On the initial
          * server connect (during first initialization) we also trigger the settings fetch and
-         * binding proceedure once that's done, but only then.
+         * binding procedure once that's done, but only then.
          *
          * Or, as a fancy diagram: https://gist.githubusercontent.com/foosel/0cdc3a03cf5311804271f12e87293c0c/raw/abc84fdc3b13030d70961539d9c132ae39c32085/octoprint_web_startup.txt
          */
@@ -706,7 +706,7 @@ $(function() {
                     // passive login request.
                     //
                     // This is to ensure that we have no concurrent requests triggered by socket events
-                    // overriding each other's session during app intialization
+                    // overriding each other's session during app initialization
                     dataUpdater.initialized();
                 });
         };

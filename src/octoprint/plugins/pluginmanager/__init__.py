@@ -40,6 +40,13 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
                           octoprint.plugin.EventHandlerPlugin):
 
 	ARCHIVE_EXTENSIONS = (".zip", ".tar.gz", ".tgz", ".tar")
+	
+	# valid pip install URL schemes according to https://pip.pypa.io/en/stable/reference/pip_install/
+	URL_SCHEMES = ("http", "https", "git",
+	               "git+http", "git+https", "git+ssh", "git+git",
+	               "hg+http", "hg+https", "hg+static-http", "hg+ssh",
+	               "svn", "svn+svn", "svn+http", "svn+https", "svn+ssh",
+	               "bzr+http", "bzr+https", "bzr+ssh", "bzr+sftp", "bzr+ftp", "bzr+lp")
 
 	OPERATING_SYSTEMS = dict(windows=["win32"],
 	                         linux=lambda x: x.startswith("linux"),
@@ -299,6 +306,9 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 	def command_install(self, url=None, path=None, force=False, reinstall=None, dependency_links=False):
 		if url is not None:
+			if not any(map(lambda scheme: url.starts_with(scheme + "://"), self.URL_SCHEMES)):
+				raise ValueError("Invalid URL to pip install from")
+			
 			source = url
 			source_type = "url"
 			already_installed_check = lambda line: url in line

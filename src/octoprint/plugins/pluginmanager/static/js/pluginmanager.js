@@ -239,23 +239,57 @@ $(function() {
         };
 
         self.invalidUrl = ko.pureComputed(function() {
+            // supported pip install URL schemes, according to https://pip.pypa.io/en/stable/reference/pip_install/
+            var allowedUrlSchemes = ["http", "https",
+                                     "git", "git+http", "git+https", "git+ssh", "git+git",
+                                     "hg+http", "hg+https", "hg+static-http", "hg+ssh",
+                                     "svn", "svn+svn", "svn+http", "svn+https", "svn+ssh",
+                                     "bzr+http", "bzr+https", "bzr+ssh", "bzr+sftp", "brz+ftp", "bzr+lp"];
+
             var url = self.installUrl();
-            return url !== undefined && url.trim() != "" && !(_.startsWith(url.toLocaleLowerCase(), "http://") || _.startsWith(url.toLocaleLowerCase(), "https://"));
+            var lowerUrl = url !== undefined ? url.toLocaleLowerCase() : undefined;
+
+            var lowerUrlStartsWithScheme = function(scheme) {
+                return _.startsWith(lowerUrl, scheme + "://");
+            };
+
+            return url !== undefined && url.trim() !== ""
+                && !(_.any(allowedUrlSchemes, lowerUrlStartsWithScheme));
         });
 
         self.enableUrlInstall = ko.pureComputed(function() {
             var url = self.installUrl();
-            return self.enableManagement() && self.pipAvailable() && !self.safeMode() && self.online() && url !== undefined && url.trim() != "" && !self.invalidUrl();
+            return self.enableManagement()
+                && self.pipAvailable()
+                && !self.safeMode()
+                && self.online()
+                && url !== undefined
+                && url.trim() !== ""
+                && !self.invalidUrl();
         });
 
         self.invalidArchive = ko.pureComputed(function() {
+            var allowedArchiveExtensions = [".zip", ".tar.gz", ".tgz", ".tar"];
+
             var name = self.uploadFilename();
-            return name !== undefined && !(_.endsWith(name.toLocaleLowerCase(), ".zip") || _.endsWith(name.toLocaleLowerCase(), ".tar.gz") || _.endsWith(name.toLocaleLowerCase(), ".tgz") || _.endsWith(name.toLocaleLowerCase(), ".tar"));
+            var lowerName = name !== undefined ? name.toLocaleLowerCase() : undefined;
+
+            var lowerNameHasExtension = function(extension) {
+                return _.endsWith(lowerName, extension);
+            };
+
+            return name !== undefined
+                && !(_.any(allowedArchiveExtensions, lowerNameHasExtension));
         });
 
         self.enableArchiveInstall = ko.pureComputed(function() {
             var name = self.uploadFilename();
-            return self.enableManagement() && self.pipAvailable() && !self.safeMode() && name !== undefined && name.trim() != "" && !self.invalidArchive();
+            return self.enableManagement()
+                && self.pipAvailable()
+                && !self.safeMode()
+                && name !== undefined
+                && name.trim() !== ""
+                && !self.invalidArchive();
         });
 
         self.uploadElement.fileupload({

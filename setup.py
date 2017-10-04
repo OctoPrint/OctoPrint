@@ -20,7 +20,7 @@ INSTALL_REQUIRES = [
 	"Jinja2>=2.8,<2.9", # Jinja 2.9 has breaking changes WRT template scope - we can't
 	                    # guarantee backwards compatibility for plugins and such with that
 	                    # version, hence we need to pin to a lower version for now. See #1697
-	"sockjs-tornado>=1.0.2,<1.1",
+	"sockjs-tornado>=1.0.3,<1.1",
 	"PyYAML>=3.12,<3.13",
 	"Flask-Login>=0.4,<0.5",
 	"Flask-Principal>=0.4,<0.5",

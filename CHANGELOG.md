@@ -1,5 +1,16 @@
 # OctoPrint Changelog
 
+## 1.3.5rc4 (2017-10-04)
+
+### Bug fixes
+
+  * [#2135](https://github.com/foosel/OctoPrint/issues/2135) - Fix an issue causing import errors inside the GCODE analysis tool in certain environments due to `sys.path` entries causing relative imports.
+  * [#2136](https://github.com/foosel/OctoPrint/issues/2136) - Fix wrong minimum version for `sockjs-tornado` dependency.
+  * [#2137](https://github.com/foosel/OctoPrint/issues/2137) - Fix issue with session cookies getting lost when running an OctoPrint instance on a subpath of another (e.g. `octopi.local/` and `octopi.local/octoprint2`).
+  * [#2140](https://github.com/foosel/OctoPrint/issues/2140) - Fix issue with locale dependent sorting of sub wizards during first time setup causing issues leading to the wizard not being able to complete.
+
+([Commits](https://github.com/foosel/OctoPrint/compare/1.3.5rc3...1.3.5rc4))
+
 ## 1.3.5rc3 (2017-08-25)
 
 ### Bug fixes

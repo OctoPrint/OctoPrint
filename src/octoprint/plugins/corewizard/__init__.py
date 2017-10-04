@@ -44,7 +44,11 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 			if not name:
 				continue
 
-			config = dict(type="wizard", name=name, template="corewizard_{}_wizard.jinja2".format(key), div="wizard_plugin_corewizard_{}".format(key))
+			config = dict(type="wizard",
+			              name=name,
+			              template="corewizard_{}_wizard.jinja2".format(key),
+			              div="wizard_plugin_corewizard_{}".format(key),
+			              suffix="_{}".format(key))
 			if key in additional:
 				additional_result = additional[key]()
 				if additional_result:

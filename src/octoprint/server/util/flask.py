@@ -476,9 +476,12 @@ class OctoPrintFlaskRequest(flask.Request):
 
 		We need this because cookies are not port-specific and we don't want to overwrite our
 		session and other cookies from one OctoPrint instance on our machine with those of another
-		one who happens to listen on the same address albeit a different port.
+		one who happens to listen on the same address albeit a different port or script root.
 		"""
-		return "_P" + self.server_port
+		result = "_P" + self.server_port
+		if self.script_root:
+			return result + "_R" + self.script_root.replace("/", "|")
+		return result
 
 
 class OctoPrintFlaskResponse(flask.Response):
@@ -1127,6 +1130,23 @@ def restricted_access(func):
 			return flask.make_response("OctoPrint isn't setup yet", 403)
 
 		return flask_login.login_required(func)(*args, **kwargs)
+
+	return decorated_view
+
+
+def firstrun_only_access(func):
+	"""
+	If you decorate a view with this, it will ensure that first setup has _not_ been
+	done for OctoPrint's Access Control. Otherwise it 
+	will cause a HTTP 403 status code to be returned by the decorated resource.
+	"""
+	@functools.wraps(func)
+	def decorated_view(*args, **kwargs):
+		# if OctoPrint has been set up yet, abort
+		if settings().getBoolean(["server", "firstRun"]) and (octoprint.server.userManager is None or not octoprint.server.userManager.hasBeenCustomized()):
+			return func(*args, **kwargs)
+		else:
+			return flask.make_response("OctoPrint is already setup, this resource is not longer available.", 403)
 
 	return decorated_view
 

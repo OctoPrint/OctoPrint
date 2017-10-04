@@ -15,7 +15,7 @@ $(function() {
         self.defaultProfile = undefined;
 
         self.destinationFilename = ko.observable();
-        self.gcodeFilename = self.destinationFilename; // TODO: for backwards compatiblity, mark deprecated ASAP
+        self.gcodeFilename = self.destinationFilename; // TODO: for backwards compatibility, mark deprecated ASAP
 
         self.title = ko.observable();
         self.slicer = ko.observable();

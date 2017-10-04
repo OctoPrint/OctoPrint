@@ -3,7 +3,7 @@
     <b class="caret"></b>
 </a>
 <div id="login_dropdown_loggedout" style="padding: 15px" class="dropdown-menu" data-bind="css: {hide: loginState.loggedIn(), 'dropdown-menu': !loginState.loggedIn()}">
-    <form id="loginForm" data-bind="event: {'submit': loginState.prepareLogin }">
+    <form id="loginForm" data-bind="event: {'submit': loginState.prepareLogin }" onsubmit="return false; // this gets overwritten on view model bind">
         <label for="login_user">{{ _('Username') }}</label>
         <input type="text" id="login_user" name="username" data-bind="valueWithInit: loginState.loginUser" placeholder="{{ _('Username') }}" autocapitalize="none" autocorrect="off">
         <label for="login_pass">{{ _('Password') }}</label>
