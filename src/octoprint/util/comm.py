@@ -581,7 +581,7 @@ class MachineCom(object):
 		if state == self.STATE_CLOSED_WITH_ERROR:
 			return "Offline: %s" % (self.getErrorString())
 		if state == self.STATE_TRANSFERING_FILE:
-			return "Transfering file to SD"
+			return "Transferring file to SD"
 		return "Unknown State (%d)" % (self._state)
 
 	def getErrorString(self):
@@ -1130,6 +1130,7 @@ class MachineCom(object):
 
 	def _processTemperatures(self, line):
 		current_tool = self._currentTool if self._currentTool is not None else 0
+		current_tool_key = "T%d" % current_tool
 		maxToolNum, parsedTemps = parse_temperature_line(line, current_tool)
 
 		for name, hook in self._temperature_hooks.items():
@@ -1140,13 +1141,17 @@ class MachineCom(object):
 			except:
 				self._logger.exception("Error while processing temperatures in {}, skipping".format(name))
 
-		if "T0" in parsedTemps.keys():
+		if current_tool_key in parsedTemps.keys():
+			shared_nozzle = self._printerProfileManager.get_current_or_default()["extruder"]["sharedNozzle"]
 			for n in range(maxToolNum + 1):
 				tool = "T%d" % n
-				if not tool in parsedTemps.keys():
-					continue
-
-				actual, target = parsedTemps[tool]
+				if not tool in parsedTemps:
+					if shared_nozzle:
+						actual, target = parsedTemps[current_tool_key]
+					else:
+						continue
+				else:
+					actual, target = parsedTemps[tool]
 				self.last_temperature.set_tool(n, actual=actual, target=target)
 
 		# bed temperature
@@ -1964,7 +1969,7 @@ class MachineCom(object):
 				#Also skip errors with the SD card
 				pass
 			elif 'unknown command' in lower_line:
-				#Ignore unkown command errors, it could be a typo or some missing feature
+				#Ignore unknown command errors, it could be a typo or some missing feature
 				pass
 			elif not self.isError():
 				error_text = line[6:] if lower_line.startswith("error:") else line[2:]

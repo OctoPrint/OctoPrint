@@ -51,7 +51,7 @@ $(function() {
                         if (commandSpec.async) {
                             text = gettext("The command \"%(command)s\" executed successfully");
                         } else {
-                            text = gettext("The command \"%(command)s\" was triggered asychronously");
+                            text = gettext("The command \"%(command)s\" was triggered asynchronously");
                         }
 
                         new PNotify({

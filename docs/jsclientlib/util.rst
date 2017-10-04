@@ -21,7 +21,7 @@
 
 .. js:function:: OctoPrintClient.util.testPath(path, additional, opts)
 
-   Test the provided ``path`` for existance. More test criteria supported by the :ref:`path test command <sec-api-util-test-path>`
+   Test the provided ``path`` for existence. More test criteria supported by the :ref:`path test command <sec-api-util-test-path>`
    can be provided via the ``additional`` object.
 
    **Example 1**

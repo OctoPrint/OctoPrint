@@ -197,7 +197,7 @@
                 </div>
                 <button class="btn btn-primary span3" data-bind="enable: enableUrlInstall, css: {disabled: !enableUrlInstall()}, click: function() { if (enableUrlInstall()) { $root.installPlugin(); } }">{{ _('Install') }}</button>
             </div>
-            <span class="help-block" data-bind="visible: invalidUrl">{{ _('This does not look like a valid "http://" or "https://" URL.') }}</span>
+            <span class="help-block" data-bind="visible: invalidUrl">{{ _('This does not look like a valid URL. Expected http, https or any of the <a href="%(url)s" target="_blank">supported VCS URLs</a>.', url='https://pip.pypa.io/en/stable/reference/pip_install/#vcs-support') }}</span>
         </form>
 
         <h4>{{ _('... from an uploaded archive') }}</h4>
