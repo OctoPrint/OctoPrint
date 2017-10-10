@@ -866,6 +866,29 @@ def is_hidden_path(path):
 	return False
 
 
+try:
+	from glob import escape
+	glob_escape = escape
+except ImportError:
+	# no glob.escape - we need to implement our own
+	_glob_escape_check = re.compile("([*?[])")
+	_glob_escape_check_bytes = re.compile(b"([*?[])")
+	
+	def glob_escape(pathname):
+		"""
+		Ported from Python 3.4
+		
+		See https://github.com/python/cpython/commit/fd32fffa5ada8b8be8a65bd51b001d989f99a3d3
+		"""
+		
+		drive, pathname = os.path.splitdrive(pathname)
+		if isinstance(pathname, bytes):
+			pathname = _glob_escape_check_bytes.sub(br"[\1]", pathname)
+		else:
+			pathname = _glob_escape_check.sub(r"[\1]", pathname)
+		return drive + pathname
+
+
 class RepeatedTimer(threading.Thread):
 	"""
 	This class represents an action that should be run repeatedly in an interval. It is similar to python's

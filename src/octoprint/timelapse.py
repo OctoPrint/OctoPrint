@@ -139,12 +139,14 @@ def get_unrendered_timelapses():
 
 def delete_unrendered_timelapse(name):
 	global _cleanup_lock
+	
+	pattern = "{}*.jpg".format(util.glob_escape(name))
 
 	basedir = settings().getBaseFolder("timelapse_tmp")
 	with _cleanup_lock:
 		for entry in scandir(basedir):
 			try:
-				if fnmatch.fnmatch(entry.name, "{}*.jpg".format(name)):
+				if fnmatch.fnmatch(entry.name, pattern):
 					os.remove(entry.path)
 			except:
 				if logging.getLogger(__name__).isEnabledFor(logging.DEBUG):
