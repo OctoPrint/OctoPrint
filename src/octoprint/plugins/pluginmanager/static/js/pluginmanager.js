@@ -731,7 +731,7 @@ $(function() {
                                     if (restartClicked) return;
                                     restartClicked = true;
                                     showConfirmationDialog({
-                                        message: gettext("This will restart your OctoPrint server."),
+                                        message: gettext("<b>This will restart your OctoPrint server.</b></p><p> This action may disrupt any ongoing print jobs (depending on your printer's controller and general setup that might also apply to prints run directly from your printer's internal storage)."),
                                         onproceed: function() {
                                             OctoPrint.system.executeCommand("core", "restart")
                                                 .done(function() {

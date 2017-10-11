@@ -358,3 +358,45 @@ class IsHiddenPathTest(unittest.TestCase):
 	def test_is_hidden_path(self, path_id, expected):
 		path = getattr(self, path_id) if path_id is not None else None
 		self.assertEqual(octoprint.util.is_hidden_path(path), expected)
+
+
+try:
+	from glob import escape
+
+except ImportError:
+	# no glob.escape - tests for our ported implementation
+
+	@ddt.ddt
+	class GlobEscapeTest(unittest.TestCase):
+		"""
+		Ported from Python 3.4
+		
+		See https://github.com/python/cpython/commit/fd32fffa5ada8b8be8a65bd51b001d989f99a3d3
+		"""
+		
+		@ddt.data(
+			("abc", "abc"),
+			("[", "[[]"),
+			("?", "[?]"),
+			("*", "[*]"),
+			("[[_/*?*/_]]", "[[][[]_/[*][?][*]/_]]"),
+			("/[[_/*?*/_]]/", "/[[][[]_/[*][?][*]/_]]/")
+		)
+		@ddt.unpack
+		def test_glob_escape(self, text, expected):
+			actual = octoprint.util.glob_escape(text)
+			self.assertEqual(actual, expected)
+	
+		@ddt.data(
+			("?:?", "?:[?]"),
+			("*:*", "*:[*]"),
+			(r"\\?\c:\?", r"\\?\c:\[?]"),
+			(r"\\*\*\*", r"\\*\*\[*]"),
+			("//?/c:/?", "//?/c:/[?]"),
+			("//*/*/*", "//*/*/[*]")
+		)
+		@ddt.unpack
+		@unittest.skipUnless(sys.platform == "win32", "Win32 specific test")
+		def test_glob_escape_windows(self, text, expected):
+			actual = octoprint.util.glob_escape(text)
+			self.assertEqual(actual, expected)

@@ -306,7 +306,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 	def command_install(self, url=None, path=None, force=False, reinstall=None, dependency_links=False):
 		if url is not None:
-			if not any(map(lambda scheme: url.starts_with(scheme + "://"), self.URL_SCHEMES)):
+			if not any(map(lambda scheme: url.startswith(scheme + "://"), self.URL_SCHEMES)):
 				raise ValueError("Invalid URL to pip install from")
 			
 			source = url
