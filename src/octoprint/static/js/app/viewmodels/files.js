@@ -66,6 +66,7 @@ $(function() {
         self.dropZoneBackground = undefined;
         self.dropZoneLocalBackground = undefined;
         self.dropZoneSdBackground = undefined;
+        self.listElement = undefined;
 
         self.ignoreUpdatedFilesEvent = false;
 
@@ -292,7 +293,7 @@ $(function() {
                 if (entryElement) {
                     // scroll to uploaded element
                     var entryOffset = entryElement.offsetTop;
-                    $(".gcode_files").slimScroll({
+                    self.listElement.slimScroll({
                         scrollTo: entryOffset + "px"
                     });
 
@@ -790,14 +791,7 @@ $(function() {
                 }
             });
 
-            $(".gcode_files").slimScroll({
-                height: "306px",
-                size: "5px",
-                distance: "0",
-                railVisible: true,
-                alwaysVisible: true,
-                scrollBy: "102px"
-            });
+            self.listElement = $(".gcode_files");
 
             self.addFolderDialog = $("#add_folder_dialog");
             self.addFolderDialog.on("shown", function() {

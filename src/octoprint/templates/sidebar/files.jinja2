@@ -7,7 +7,7 @@
         <div class="back-path"><small class="muted">{{ _('Currently in') }} <span data-bind="text: currentPath"></span></small></div>
     </div>
 
-    <!-- ko slimScrolledForeach: filesAndFolders -->
+    <!-- ko slimScrolledForeach: {data: filesAndFolders, slimscroll: {height: "306px", size: "10px", distance: 0, railVisible: true, alwaysVisible: true, scrollBy: "102px"} } -->
     <div class="entry" data-bind="attr: { id: $root.getEntryId($data) }, template: { name: $root.templateFor($data), data: $data }, css: $data.type"></div>
     <!-- /ko -->
 

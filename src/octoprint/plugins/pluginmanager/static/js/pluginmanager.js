@@ -1077,15 +1077,6 @@ $(function() {
             self.workingDialog = $("#settings_plugin_pluginmanager_workingdialog");
             self.workingOutput = $("#settings_plugin_pluginmanager_workingdialog_output");
             self.repositoryDialog = $("#settings_plugin_pluginmanager_repositorydialog");
-
-            $("#settings_plugin_pluginmanager_repositorydialog_list").slimScroll({
-                height: "306px",
-                size: "5px",
-                distance: "0",
-                railVisible: true,
-                alwaysVisible: true,
-                scrollBy: "102px"
-            });
         };
 
         self.onDataUpdaterPluginMessage = function(plugin, data) {
