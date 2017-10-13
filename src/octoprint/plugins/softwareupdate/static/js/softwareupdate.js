@@ -395,7 +395,6 @@ $(function() {
                 if (showIfNothingNew) {
                     self._showPopup({
                         title: gettext("Everything is up-to-date"),
-                        hide: false,
                         type: "success"
                     });
                 } else {
