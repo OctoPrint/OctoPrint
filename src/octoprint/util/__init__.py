@@ -846,8 +846,10 @@ def is_hidden_path(path):
 		# we define a None path as not hidden here
 		return False
 
+	path = to_unicode(path)
+
 	filename = os.path.basename(path)
-	if filename.startswith("."):
+	if filename.startswith(u"."):
 		# filenames starting with a . are hidden
 		return True
 
@@ -856,7 +858,7 @@ def is_hidden_path(path):
 		# attribute via the windows api
 		try:
 			import ctypes
-			attrs = ctypes.windll.kernel32.GetFileAttributesW(unicode(path))
+			attrs = ctypes.windll.kernel32.GetFileAttributesW(path)
 			assert attrs != -1     # INVALID_FILE_ATTRIBUTES == -1
 			return bool(attrs & 2) # FILE_ATTRIBUTE_HIDDEN == 2
 		except (AttributeError, AssertionError):

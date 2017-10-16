@@ -148,6 +148,7 @@ def _getFileList(origin, path=None, filter=None, recursive=False, allow_from_cac
 				file = {
 					"type": "machinecode",
 					"name": sdFile,
+					"display": sdFile,
 					"path": sdFile,
 					"origin": FileDestinations.SDCARD,
 					"refs": {
@@ -287,8 +288,11 @@ def uploadGcodeFile(target):
 		# determine future filename of file to be uploaded, abort if it can't be uploaded
 		try:
 			# FileDestinations.LOCAL = should normally be target, but can't because SDCard handling isn't implemented yet
-			futurePath, futureFilename = fileManager.sanitize(FileDestinations.LOCAL, upload.filename)
+			canonPath, canonFilename = fileManager.canonicalize(FileDestinations.LOCAL, upload.filename)
+			futurePath = fileManager.sanitize_path(FileDestinations.LOCAL, canonPath)
+			futureFilename = fileManager.sanitize_name(FileDestinations.LOCAL, canonFilename)
 		except:
+			canonFilename = None
 			futurePath = None
 			futureFilename = None
 
@@ -335,7 +339,9 @@ def uploadGcodeFile(target):
 				printer.select_file(absFilename, destination == FileDestinations.SDCARD, printAfterSelect)
 
 		try:
-			added_file = fileManager.add_file(FileDestinations.LOCAL, futureFullPathInStorage, upload, allow_overwrite=True)
+			added_file = fileManager.add_file(FileDestinations.LOCAL, futureFullPathInStorage, upload,
+			                                  allow_overwrite=True,
+			                                  display=canonFilename)
 		except octoprint.filemanager.storage.StorageError as e:
 			if e.code == octoprint.filemanager.storage.StorageError.INVALID_FILE:
 				return make_response("Could not upload the file \"{}\", invalid type".format(upload.filename), 400)
@@ -401,7 +407,9 @@ def uploadGcodeFile(target):
 		if not target in [FileDestinations.LOCAL]:
 			return make_response("Unknown target: %s" % target, 400)
 
-		futurePath, futureName = fileManager.sanitize(target, foldername)
+		canonPath, canonName = fileManager.canonicalize(target, foldername)
+		futurePath = fileManager.sanitize_path(target, canonPath)
+		futureName = fileManager.sanitize_name(target, canonName)
 		if not futureName or not futurePath:
 			return make_response("Can't create a folder with an empty name", 400)
 
@@ -414,7 +422,7 @@ def uploadGcodeFile(target):
 			return make_response("Can't create a folder named %s, please try another name" % futureName, 409)
 
 		try:
-			added_folder = fileManager.add_folder(target, futureFullPath)
+			added_folder = fileManager.add_folder(target, futureFullPath, display=canonName)
 		except octoprint.filemanager.storage.StorageError as e:
 			if e.code == octoprint.filemanager.storage.StorageError.INVALID_DIRECTORY:
 				return make_response("Could not create folder {}, invalid directory".format(futureName))
@@ -540,6 +548,14 @@ def gcodeFileCommand(filename, target):
 			if path:
 				full_path = fileManager.join_path(target, path, destination)
 
+		canon_path, canon_name = fileManager.canonicalize(target, full_path)
+		sanitized_name = fileManager.sanitize_name(target, canon_name)
+
+		if canon_path:
+			full_path = fileManager.join_path(target, canon_path, sanitized_name)
+		else:
+			full_path = sanitized_name
+
 		# prohibit overwriting the file that is currently being printed
 		currentOrigin, currentFilename = _getCurrentFile()
 		if currentFilename == full_path and currentOrigin == target and (printer.is_printing() or printer.is_paused()):
@@ -596,6 +612,7 @@ def gcodeFileCommand(filename, target):
 			                  printer_profile_id=printerProfile,
 			                  position=position,
 			                  overrides=overrides,
+			                  display=canon_name,
 			                  callback=slicing_done,
 			                  callback_args=(target, full_path, select_after_slicing, print_after_slicing))
 		except octoprint.slicing.UnknownProfile:
@@ -604,8 +621,9 @@ def gcodeFileCommand(filename, target):
 		files = {}
 		location = url_for(".readGcodeFile", target=target, filename=full_path, _external=True)
 		result = {
-			"name": destination,
+			"name": sanitized_name,
 			"path": full_path,
+			"display": canon_name,
 			"origin": FileDestinations.LOCAL,
 			"refs": {
 				"resource": location,
@@ -637,14 +655,15 @@ def gcodeFileCommand(filename, target):
 			return make_response("File or folder not found on {}: {}".format(target, filename), 404)
 
 		path, name = fileManager.split_path(target, filename)
-		destination = data["destination"]
-		if _verifyFolderExists(target, destination):
-			# destination is an existing folder, we'll assume we are supposed to move filename to this
-			# folder under the same name
-			destination = fileManager.join_path(target, destination, name)
 
-		if _verifyFileExists(target, destination) or _verifyFolderExists(target, destination):
-			return make_response("File or folder does already exist on {}: {}".format(target, destination), 409)
+		destination = data["destination"]
+		dst_path, dst_name = fileManager.split_path(target, destination)
+		sanitized_destination = fileManager.join_path(target, dst_path, fileManager.sanitize_name(target, dst_name))
+
+		if _verifyFolderExists(target, destination) and sanitized_destination != filename:
+			# destination is an existing folder and not ourselves (= display rename), we'll assume we are supposed
+			# to move filename to this folder under the same name
+			destination = fileManager.join_path(target, destination, name)
 
 		is_file = fileManager.file_exists(target, filename)
 		is_folder = fileManager.folder_exists(target, filename)
@@ -653,13 +672,23 @@ def gcodeFileCommand(filename, target):
 			return make_response("{} on {} is neither file or folder, can't {}".format(filename, target, command), 400)
 
 		if command == "copy":
+			# destination already there? error...
+			if _verifyFileExists(target, destination) or _verifyFolderExists(target, destination):
+				return make_response("File or folder does already exist on {}: {}".format(target, destination), 409)
+
 			if is_file:
 				fileManager.copy_file(target, filename, destination)
 			else:
 				fileManager.copy_folder(target, filename, destination)
+
 		elif command == "move":
 			if _isBusy(target, filename):
 				return make_response("Trying to move a file or folder that is currently in use: {}".format(filename), 409)
+
+			# destination already there AND not ourselves (= display rename)? error...
+			if (_verifyFileExists(target, destination) or _verifyFolderExists(target, destination)) \
+					and sanitized_destination != filename:
+				return make_response("File or folder does already exist on {}: {}".format(target, destination), 409)
 
 			# deselect the file if it's currently selected
 			currentOrigin, currentFilename = _getCurrentFile()
