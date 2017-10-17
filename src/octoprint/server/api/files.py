@@ -29,6 +29,8 @@ import threading
 _file_cache = dict()
 _file_cache_mutex = threading.RLock()
 
+_FILES_DATA_VERSION = 1
+
 def _clear_file_cache():
 	with _file_cache_mutex:
 		_file_cache.clear()
@@ -71,6 +73,7 @@ def _create_etag(path, filter, recursive, lm=None):
 		return None
 
 	hash = hashlib.sha1()
+	hash.update(str(_FILES_DATA_VERSION))
 	hash.update(str(lm))
 	hash.update(str(filter))
 	hash.update(str(recursive))
