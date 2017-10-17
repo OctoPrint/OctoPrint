@@ -29,7 +29,7 @@ import threading
 _file_cache = dict()
 _file_cache_mutex = threading.RLock()
 
-_FILES_DATA_VERSION = 1
+_DATA_FORMAT_VERSION = "v2"
 
 def _clear_file_cache():
 	with _file_cache_mutex:
@@ -73,7 +73,6 @@ def _create_etag(path, filter, recursive, lm=None):
 		return None
 
 	hash = hashlib.sha1()
-	hash.update(str(_FILES_DATA_VERSION))
 	hash.update(str(lm))
 	hash.update(str(filter))
 	hash.update(str(recursive))
@@ -81,6 +80,8 @@ def _create_etag(path, filter, recursive, lm=None):
 	if path.endswith("/files") or path.endswith("/files/sdcard"):
 		# include sd data in etag
 		hash.update(repr(sorted(printer.get_sd_files(), key=lambda x: x[0])))
+
+	hash.update(_DATA_FORMAT_VERSION) # increment version if we change the API format
 
 	return hash.hexdigest()
 
