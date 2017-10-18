@@ -497,6 +497,10 @@ $(function() {
             callViewModels(allViewModels, "onTabChange", [current, previous]);
         };
 
+        var onAfterTabChange = function(current, previous) {
+            callViewModels(allViewModels, "onAfterTabChange", [current, previous]);
+        };
+
         var tabs = $('#tabs a[data-toggle="tab"]');
         tabs.on('show', function (e) {
             var current = e.target.hash;
@@ -507,10 +511,11 @@ $(function() {
         tabs.on('shown', function (e) {
             var current = e.target.hash;
             var previous = e.relatedTarget.hash;
-            callViewModels(allViewModels, "onAfterTabChange", [current, previous]);
+            onAfterTabChange(current, previous);
         });
 
         onTabChange(OCTOPRINT_INITIAL_TAB);
+        onAfterTabChange(OCTOPRINT_INITIAL_TAB, undefined);
 
         // Fix input element click problems on dropdowns
         $(".dropdown input, .dropdown label").click(function(e) {
