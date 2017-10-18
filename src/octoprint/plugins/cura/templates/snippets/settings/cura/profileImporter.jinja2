@@ -37,15 +37,15 @@
             </div>
             <div class="control-group">
                 <div class="controls">
-                    <label class="checkbox" data-bind="enable: fieldsEnabled, css: {disabled: !fieldsEnabled()}">
-                        <input type="checkbox" data-bind="checked: profileMakeDefault"> {{ _('Make default profile') }}
+                    <label class="checkbox">
+                        <input type="checkbox" data-bind="checked: profileMakeDefault, enable: fieldsEnabled() && !profileFirst(), css: {disabled: !fieldsEnabled() || profileFirst()}"> {{ _('Make default profile') }}
                     </label>
                 </div>
             </div>
             <div class="control-group">
                 <div class="controls">
-                    <label class="checkbox" data-bind="enable: fieldsEnabled, css: {disabled: !fieldsEnabled()}">
-                        <input type="checkbox" data-bind="checked: profileAllowOverwrite"> {{ _('Overwrite existing file') }}
+                    <label class="checkbox">
+                        <input type="checkbox" data-bind="checked: profileAllowOverwrite, enable: fieldsEnabled() && !profileFirst(), css: {disabled: !fieldsEnabled() || profileFirst()}"> {{ _('Overwrite existing file') }}
                     </label>
                 </div>
             </div>
