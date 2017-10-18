@@ -1,0 +1,6 @@
+<div class="control-group" title="{{ _('Test') }}" data-bind="css: {error: server_onlineCheckBroken, success: server_onlineCheckOk}">
+    <div class="controls">
+        <button class="btn" data-bind="click: testOnlineConnectivityConfig, enable: server_onlineCheck_host() && server_onlineCheck_port() && !testOnlineConnectivityConfigBusy(), css: {disabled: !server_onlineCheck_host() || !server_onlineCheck_port() || testOnlineConnectivityConfigBusy()}"><i class="fa fa-spinner fa-spin" data-bind="visible: testOnlineConnectivityConfigBusy"></i> {{ _('Test host & port') }}</button>
+        <span class="help-block" data-bind="visible: server_onlineCheckBroken() || server_onlineCheckOk(), text: server_onlineCheckText"></span>
+    </div>
+</div>
