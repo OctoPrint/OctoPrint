@@ -70,7 +70,7 @@ EXTRA_REQUIRES = dict(
 		"sphinx>=1.6,<1.7",
 		"sphinxcontrib-httpdomain",
 		"sphinxcontrib-mermaid",
-		"sphinx_bootstrap_theme",
+		"sphinx_rtd_theme",
 
 		# PyPi upload related
 		"pypandoc"
