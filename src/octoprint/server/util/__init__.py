@@ -11,8 +11,10 @@ import octoprint.server
 from octoprint.users import ApiUser
 
 from octoprint.util import deprecated
+from octoprint.plugin import plugin_manager
 
 import flask as _flask
+import logging
 
 from . import flask
 from . import sockjs
@@ -55,14 +57,22 @@ def loginFromApiKeyRequestHandler():
 	"""
 
 	apikey = get_api_key(_flask.request)
-
-	if apikey and apikey != octoprint.server.UI_API_KEY and not octoprint.server.appSessionManager.validate(apikey):
-		user = get_user_for_apikey(apikey)
-		if user is not None and _flask.ext.login.login_user(user, remember=False):
-			_flask.ext.principal.identity_changed.send(_flask.current_app._get_current_object(),
-			                                           identity=_flask.ext.principal.Identity(user.get_id()))
-		else:
-			return _flask.make_response("Invalid API key", 401)
+	
+	if not apikey:
+		return
+	
+	if apikey == octoprint.server.UI_API_KEY:
+		return
+	
+	if octoprint.server.appSessionManager.validate(apikey):
+		return
+	
+	user = get_user_for_apikey(apikey)
+	if user is not None and _flask.ext.login.login_user(user, remember=False):
+		_flask.ext.principal.identity_changed.send(_flask.current_app._get_current_object(),
+		                                           identity=_flask.ext.principal.Identity(user.get_id()))
+	else:
+		return _flask.make_response("Invalid API key", 401)
 
 
 def corsRequestHandler():
@@ -143,9 +153,21 @@ def get_user_for_apikey(apikey):
 		if apikey == settings().get(["api", "key"]) or octoprint.server.appSessionManager.validate(apikey):
 			# master key or an app session key was used
 			return ApiUser()
-		elif octoprint.server.userManager.enabled:
-			# user key might have been used
-			return octoprint.server.userManager.findUser(apikey=apikey)
+		
+		if octoprint.server.userManager.enabled:
+			user = octoprint.server.userManager.findUser(apikey=apikey)
+			if user is not None:
+				# user key was used
+				return user
+		
+		apikey_hooks = plugin_manager().get_hooks("octoprint.accesscontrol.keyvalidator")
+		for name, hook in apikey_hooks.items():
+			try:
+				user = hook(apikey)
+				if user is not None:
+					return user
+			except:
+				logging.getLogger(__name__).exception("Error running api key validator for plugin {} and key {}".format(name, apikey))
 	return None
 
 
