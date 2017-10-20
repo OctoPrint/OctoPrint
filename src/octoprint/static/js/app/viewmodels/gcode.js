@@ -56,10 +56,16 @@ $(function() {
 
         self.reader_sortLayers = ko.observable(true);
         self.reader_hideEmptyLayers = ko.observable(true);
+        self.reader_ignoreOutsideBed = ko.observable(true);
 
         self.layerSelectionEnabled = ko.observable(false);
         self.layerUpEnabled = ko.observable(false);
         self.layerDownEnabled = ko.observable(false);
+
+        self.synchronizeOptionsAndReload = function(additionalRendererOptions, additionalReaderOptions) {
+            self.synchronizeOptions(additionalRendererOptions, additionalReaderOptions);
+            self.reload();
+        };
 
         self.synchronizeOptions = function(additionalRendererOptions, additionalReaderOptions) {
             var renderer = {
@@ -82,7 +88,7 @@ $(function() {
             var reader = {
                 sortLayers: self.reader_sortLayers(),
                 purgeEmptyLayers: self.reader_hideEmptyLayers(),
-                ignoreOutsideBed: true
+                ignoreOutsideBed: self.reader_ignoreOutsideBed(),
             };
             if (additionalReaderOptions) {
                 _.extend(reader, additionalReaderOptions);
@@ -106,8 +112,10 @@ $(function() {
         self.renderer_extrusionWidth.subscribe(self.synchronizeOptions);
         self.renderer_showNext.subscribe(self.synchronizeOptions);
         self.renderer_showPrevious.subscribe(self.synchronizeOptions);
-        self.reader_sortLayers.subscribe(self.synchronizeOptions);
-        self.reader_hideEmptyLayers.subscribe(self.synchronizeOptions);
+
+        self.reader_sortLayers.subscribe(self.synchronizeOptionsAndReload);
+        self.reader_hideEmptyLayers.subscribe(self.synchronizeOptionsAndReload);
+        self.reader_ignoreOutsideBed.subscribe(self.synchronizeOptionsAndReload);
 
         self._printerProfileUpdated = function() {
             if (!self.enabled) return;
@@ -122,7 +130,6 @@ $(function() {
                         toolOffsets: toolOffsets
                     }
                 });
-
             }
 
             var bedDimensions = self._retrieveBedDimensions(currentProfileData);
@@ -323,7 +330,7 @@ $(function() {
                 step: 1,
                 value: 0,
                 enabled: false,
-                formatter: function(value) { return "Layer #" + (value + 1); }
+                formatter: function(value) { return "Layer #" + (value + 1) + " (Z = " + GCODE.renderer.getZ(value) + ")"; }
             }).on("slide", self.changeLayer);
         };
 
@@ -535,7 +542,6 @@ $(function() {
 
                 self.ui_layerInfo(output.join("<br>"));
 
-                console.log("#### Layer number:", layer.number, ", max layer:", self.maxLayer);
                 if (self.layerCommandSlider != undefined) {
                     self.layerCommandSlider.slider("enable");
                     self.layerCommandSlider.slider("setMax", layer.commands - 1);
