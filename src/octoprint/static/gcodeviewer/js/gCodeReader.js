@@ -78,6 +78,7 @@ GCODE.gCodeReader = (function(){
         percentageTree = undefined;
 
         for (var l = 0; l < model.length; l++) {
+            if (model[l] === undefined) continue;
             for (var i = 0; i < model[l].length; i++) {
                 var percentage = model[l][i].percentage;
                 var value = {layer: l, cmd: i};
