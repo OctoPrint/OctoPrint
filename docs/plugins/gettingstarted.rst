@@ -20,7 +20,7 @@ development environment::
   $ virtualenv venv
   [...]
   $ source venv/bin/activate
-  (venv) $ pip install -e .[develop]
+  (venv) $ pip install -e .[develop,plugins]
   [...]
   (venv) $ octoprint --help
   Usage: octoprint [OPTIONS] COMMAND [ARGS]...
@@ -138,10 +138,9 @@ best way possible, meaning we want to make our plugin a fully installable python
 install directly via `OctoPrint's built-in Plugin Manager <https://github.com/foosel/OctoPrint/wiki/Plugin:-Plugin-Manager>`_
 or alternatively manually utilizing Python's standard package manager ``pip`` directly.
 
-So let's begin. We'll use the `cookiecutter <https://github.com/audreyr/cookiecutter>`_ template for OctoPrint plugins here,
-so we'll first need to install that::
+So let's begin. We'll use the `cookiecutter <https://github.com/audreyr/cookiecutter>`_ template for OctoPrint plugins here.  This should already be installed if you used the `plugins` extra while installing OctoPrint.  However, you may install it with::
 
-   (venv) $ pip install cookiecutter
+   (venv) $ pip install "cookiecutter>=1.4,<1.5"
 
 Then we can use the ``octoprint dev plugin:new`` command [#f1]_ to generate a new OctoPrint plugin skeleton for us::
 
