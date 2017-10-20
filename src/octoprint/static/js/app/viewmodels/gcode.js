@@ -100,22 +100,32 @@ $(function() {
             });
         };
 
-        // subscribe to update Gcode view on updates...
-        self.renderer_centerModel.subscribe(self.synchronizeOptions);
-        self.renderer_centerViewport.subscribe(self.synchronizeOptions);
-        self.renderer_zoomOnModel.subscribe(self.synchronizeOptions);
-        self.renderer_showMoves.subscribe(self.synchronizeOptions);
-        self.renderer_showRetracts.subscribe(self.synchronizeOptions);
-        self.renderer_showBoundingBox.subscribe(self.synchronizeOptions);
-        self.renderer_showFullSize.subscribe(self.synchronizeOptions);
-        self.renderer_extrusionWidthEnabled.subscribe(self.synchronizeOptions);
-        self.renderer_extrusionWidth.subscribe(self.synchronizeOptions);
-        self.renderer_showNext.subscribe(self.synchronizeOptions);
-        self.renderer_showPrevious.subscribe(self.synchronizeOptions);
+        self.rendererOptionUpdated = function() {
+            self.synchronizeOptions();
+            self._toLocalStorage();
+        };
 
-        self.reader_sortLayers.subscribe(self.synchronizeOptionsAndReload);
-        self.reader_hideEmptyLayers.subscribe(self.synchronizeOptionsAndReload);
-        self.reader_ignoreOutsideBed.subscribe(self.synchronizeOptionsAndReload);
+        self.readerOptionUpdated = function() {
+            self.synchronizeOptionsAndReload();
+            self._toLocalStorage();
+        };
+
+        // subscribe to update Gcode view on updates...
+        self.renderer_centerModel.subscribe(self.rendererOptionUpdated);
+        self.renderer_centerViewport.subscribe(self.rendererOptionUpdated);
+        self.renderer_zoomOnModel.subscribe(self.rendererOptionUpdated);
+        self.renderer_showMoves.subscribe(self.rendererOptionUpdated);
+        self.renderer_showRetracts.subscribe(self.rendererOptionUpdated);
+        self.renderer_showBoundingBox.subscribe(self.rendererOptionUpdated);
+        self.renderer_showFullSize.subscribe(self.rendererOptionUpdated);
+        self.renderer_extrusionWidthEnabled.subscribe(self.rendererOptionUpdated);
+        self.renderer_extrusionWidth.subscribe(self.rendererOptionUpdated);
+        self.renderer_showNext.subscribe(self.rendererOptionUpdated);
+        self.renderer_showPrevious.subscribe(self.rendererOptionUpdated);
+
+        self.reader_sortLayers.subscribe(self.readerOptionUpdated);
+        self.reader_hideEmptyLayers.subscribe(self.readerOptionUpdated);
+        self.reader_ignoreOutsideBed.subscribe(self.readerOptionUpdated);
 
         self._printerProfileUpdated = function() {
             if (!self.enabled) return;
@@ -305,6 +315,7 @@ $(function() {
 
                     self.synchronizeOptions();
                     self.enabled = true;
+                    self._fromLocalStorage();
                 });
         };
 
@@ -313,6 +324,25 @@ $(function() {
             self.loadedFilepath = undefined;
             self.loadedFileDate = undefined;
             self.clear();
+        };
+
+        self.resetOptions = function() {
+            self.renderer_centerModel(false);
+            self.renderer_centerViewport(false);
+            self.renderer_zoomOnModel(false);
+            self.renderer_showMoves(true);
+            self.renderer_showRetracts(true);
+            self.renderer_showBoundingBox(false);
+            self.renderer_showFullSize(false);
+            self.renderer_extrusionWidthEnabled(false);
+            self.renderer_extrusionWidth(2);
+            self.renderer_showNext(false);
+            self.renderer_showPrevious(false);
+            self.renderer_syncProgress(true);
+
+            self.reader_sortLayers(true);
+            self.reader_hideEmptyLayers(true);
+            self.reader_ignoreOutsideBed(true);
         };
 
         self.clear = function() {
@@ -660,6 +690,55 @@ $(function() {
         self.decrementLayer = function() {
             var value = self.layerSlider.slider('getValue') - 1;
             self.shiftLayer(value);
+        };
+
+        var optionsLocalStorageKey = "core.gcodeviewer.options";
+        self._toLocalStorage = function() {
+            if (!Modernizr.localstorage)
+                return;
+
+            var current = {};
+            current["centerViewport"] = self.renderer_centerViewport();
+            current["zoomOnModel"] = self.renderer_zoomOnModel();
+            current["showMoves"] = self.renderer_showMoves();
+            current["showRetracts"] = self.renderer_showRetracts();
+            current["showPrevious"] = self.renderer_showPrevious();
+            current["showNext"] = self.renderer_showNext();
+            current["showFullsize"] = self.renderer_showFullSize();
+            current["showBoundingBox"] = self.renderer_showBoundingBox();
+            current["hideEmptyLayers"] = self.reader_hideEmptyLayers();
+            current["sortLayers"] = self.reader_sortLayers();
+
+            localStorage[optionsLocalStorageKey] = JSON.stringify(current);
+        };
+        self._fromLocalStorage = function() {
+            self.resetOptions();
+
+            if (!Modernizr.localstorage)
+                return;
+
+            var currentString = localStorage[optionsLocalStorageKey];
+            var current;
+            if (currentString === undefined) {
+                current = {};
+            } else {
+                try {
+                    current = JSON.parse(currentString);
+                } catch (ex) {
+                    current = {};
+                }
+            }
+
+            if (current["centerViewport"] !== undefined) self.renderer_centerViewport(current["centerViewport"]) ;
+            if (current["zoomOnModel"] !== undefined) self.renderer_zoomOnModel(current["zoomOnModel"]) ;
+            if (current["showMoves"] !== undefined) self.renderer_showMoves(current["showMoves"]) ;
+            if (current["showRetracts"] !== undefined) self.renderer_showRetracts(current["showRetracts"]) ;
+            if (current["showPrevious"] !== undefined) self.renderer_showPrevious(current["showPrevious"]) ;
+            if (current["showNext"] !== undefined) self.renderer_showNext(current["showNext"]) ;
+            if (current["showFullsize"] !== undefined) self.renderer_showFullSize(current["showFullsize"]) ;
+            if (current["showBoundingBox"] !== undefined) self.renderer_showBoundingBox(current["showBoundingBox"]) ;
+            if (current["hideEmptyLayers"] !== undefined) self.reader_hideEmptyLayers(current["hideEmptyLayers"]) ;
+            if (current["sortLayers"] !== undefined) self.reader_sortLayers(current["sortLayers"]) ;
         };
     }
 
