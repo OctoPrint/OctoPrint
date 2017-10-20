@@ -38,7 +38,7 @@ INSTALL_REQUIRES = [
 	"pylru>=1.0.9,<1.1",
 	"rsa>=3.2,<3.3",
 	"pkginfo>=1.2.1,<1.3",
-	"requests>=2.7,<2.8",
+	"requests>=2.18.4,<3",
 	"semantic_version>=2.4.2,<2.5",
 	"psutil>=3.2.1,<3.3",
 	"Click>=6.2,<6.3",
@@ -78,7 +78,7 @@ EXTRA_REQUIRES = dict(
 
 	# Dependencies for developing OctoPrint plugins
 	plugins=[
-		"cookiecutter>=1.4,<1.5"
+		"cookiecutter>=1.4,<1.7"
 	]
 )
 
