@@ -54,6 +54,7 @@
 
         var data = {
             name: group.name,
+            description: group.hasOwnProperty("description") ? group.description : "",
             permissions: group.hasOwnProperty("permissions") ? group.permissions : [],
             defaultOn: group.defaultOn
         };

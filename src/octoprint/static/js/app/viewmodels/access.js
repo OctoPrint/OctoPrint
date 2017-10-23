@@ -284,7 +284,7 @@ $(function() {
                 newValue.forEach(function(g) {
                     var needs = [];
                     g.permissions.forEach(function(p) {
-                        for (key in p.needs) {
+                        for (var key in p.needs) {
                             p.needs[key].forEach(function(value) {
                                 needs.push(access.permissions.need(key, value));
                             });

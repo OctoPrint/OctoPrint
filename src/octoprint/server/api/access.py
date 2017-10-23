@@ -50,6 +50,8 @@ def add_group():
 
 	if not "name" in data:
 		return make_response("Missing mandatory name field", 400)
+	if not "description" in data:
+		return make_response("Missing mandatory description field", 400)
 	if not "permissions" in data:
 		return make_response("Missing mandatory permission field", 400)
 
