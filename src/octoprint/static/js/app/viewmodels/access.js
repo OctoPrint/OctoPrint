@@ -397,14 +397,17 @@ $(function() {
                     throw OctoPrint.InvalidArgumentError("group must be set");
                 }
 
-                return OctoPrint.access.groups.delete(group.name)
-                    .done(function(response) {
-                        self.fromResponse(response);
-                        if (self.users === undefined)
-                            return;
-
-                        access.users.requestData();
-                    });
+                showConfirmationDialog({
+                    title: gettext("Are you sure?"),
+                    message: gettext("You are about to delete a group."),
+                    proceed: gettext("Delete"),
+                    onproceed: function() {
+                        OctoPrint.access.groups.delete(group.name).done(function(response) {
+                            self.fromResponse(response);
+                            access.users.requestData();
+                        });
+                    }
+                });
             };
 
             self.updateGroup = function(group) {
