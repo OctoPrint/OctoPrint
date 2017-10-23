@@ -1004,10 +1004,12 @@ $(function() {
             if (enable) {
                 $(document).bind("dragenter", self._handleDragNDrop);
                 $(document).bind("dragleave", self._endDragNDrop);
+                $(document).bind("dragover", self._handleDragOver);
                 log.debug("Enabled drag-n-drop");
             } else {
                 $(document).unbind("dragenter", self._handleDragNDrop);
                 $(document).unbind("dragleave", self._endDragNDrop);
+                $(document).unbind("dragover", self._handleDragOver);
                 log.debug("Disabled drag-n-drop");
             }
         };
@@ -1081,6 +1083,8 @@ $(function() {
         };
 
         self._dragNDropTarget = null;
+        self._dragNDropFFTimeout = undefined;
+        self._dragNDropFFTimeoutDelay = 100;
         self._forceEndDragNDrop = function () {
             self.dropOverlay.removeClass("in");
             if (self.dropZoneLocal) self.dropZoneLocalBackground.removeClass("hover");
@@ -1092,6 +1096,33 @@ $(function() {
         self._endDragNDrop = function (e) {
             if (e.target != self._dragNDropTarget) return;
             self._forceEndDragNDrop();
+        };
+
+        self._handleDragOver = function(e) {
+            // Workaround for Firefox
+            //
+            // Due to a browser bug (https://bugzilla.mozilla.org/show_bug.cgi?id=656164),
+            // if you drag a file out of the window no drag leave event will be fired. So on Firefox we check if
+            // our last dragover event was within a timeout. If not, we assume that's because the mouse
+            // cursor left the browser window and force a drag stop.
+            //
+            // Since Firefox keeps on triggering dragover events even if the mouse is not moved while over the
+            // browser window, this should work without side effects (e.g. the overlay should stay even if the user
+            // keeps the mouse perfectly still).
+            //
+            // See #2166
+            if (!OctoPrint.coreui.browser.firefox) return;
+            if (e.target !== self._dragNDropTarget) return;
+
+            if (self._dragNDropFFTimeout !== undefined) {
+                window.clearTimeout(self._dragNDropFFTimeout);
+                self._dragNDropFFTimeout = undefined;
+            }
+
+            self._dragNDropFFTimeout = window.setTimeout(function() {
+                self._forceEndDragNDrop();
+                self._dragNDropFFTimeout = undefined;
+            }, self._dragNDropFFTimeoutDelay);
         };
 
         self._handleDragNDrop = function (e) {
@@ -1129,6 +1160,7 @@ $(function() {
                 if (self.dropZoneBackground) self.dropZoneBackground.removeClass("hover");
             }
             self._dragNDropTarget = e.target;
+            self._dragNDropLastOver = Date.now();
         }
     }
 
