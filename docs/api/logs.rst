@@ -97,8 +97,8 @@ Delete a specific logfile
 
 .. _sec-api-logs-datamodel:
 
-Datamodel
-=========
+Data model
+==========
 
 .. _sec-api-logs-datamodel-retrieveresponse:
 

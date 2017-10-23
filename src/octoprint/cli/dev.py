@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -7,6 +7,8 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 
 
 import click
+
+from past.builtins import basestring
 
 class OctoPrintDevelCommands(click.MultiCommand):
 	"""
@@ -204,7 +206,7 @@ class OctoPrintDevelCommands(click.MultiCommand):
 				click.echo("This doesn't look like an OctoPrint plugin folder")
 				sys.exit(1)
 
-			self.command_caller.call([sys.executable, "setup.py", "develop"], cwd=path)
+			self.command_caller.call([sys.executable, "-m", "pip", "install", "-e", "."], cwd=path)
 
 		return command
 

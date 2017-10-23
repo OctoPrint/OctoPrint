@@ -165,16 +165,16 @@ appearance or to modify the order and presence of the various UI components:
          # order of generic templates
          generic: []
 
-     # Disabled components per container. If a component is included here it will not
-     # be included in OctoPrint's UI at all. Note that this might mean that critical
-     # functionality will not be available if no replacement is registered.
-     disabled:
-       navbar: [],
-       sidebar: [],
-       tab: [],
-       settings: [],
-       usersettings: [],
-       generic: []
+       # Disabled components per container. If a component is included here it will not
+       # be included in OctoPrint's UI at all. Note that this might mean that critical
+       # functionality will not be available if no replacement is registered.
+       disabled:
+         navbar: []
+         sidebar: []
+         tab: []
+         settings: []
+         usersettings: []
+         generic: []
 
      # Default language of OctoPrint. If left unset OctoPrint will try to match up available
      # languages with the user's browser settings.
@@ -244,6 +244,9 @@ The following settings are only relevant to you if you want to do OctoPrint deve
        # be fully rerendered on request to / on the server.
        enabled: true
 
+       # Whether to enable the preemptive cache
+       preemptive: true
+
      # Settings for stylesheet preference. OctoPrint will prefer to use the stylesheet type
      # specified here. Usually (on a production install) that will be the compiled css (default).
      # Developers may specify less here too.
@@ -259,6 +262,9 @@ The following settings are only relevant to you if you want to do OctoPrint deve
        # If set to true, OctoPrint will minify its viewmodels (that includes those of plugins). Note: if bundle is
        # set to false, no minification will take place either.
        minify: true
+
+       # Whether to delete generated web assets on server startup (forcing a regeneration)
+       clean_on_startup: true
 
      # Settings for the virtual printer
      virtualPrinter:
@@ -290,6 +296,14 @@ The following settings are only relevant to you if you want to do OctoPrint deve
        #        < ok T0:34.3/0.0 T1:23.5/0.0 B:43.2/0.0
        includeCurrentToolInTemps: true
 
+       # Whether to include the selected filename in the M23 File opened response.
+       #
+       # True:  > M23 filename.gcode
+       #        < File opened: filename.gcode  Size: 27
+       # False: > M23 filename.gcode
+       #        > File opened
+       includeFilenameInOpened: true
+
        # The maximum movement speeds of the simulated printer's axes, in mm/s
        movementSpeed:
          x: 6000
@@ -312,6 +326,10 @@ The following settings are only relevant to you if you want to do OctoPrint deve
        #        > M105
        #        < ok T0:34.3/220.0 T1:23.5/0.0 B:43.2/0.0
        repetierStyleTargetTemperature: false
+
+       # If enabled, uses repetier style resends, sending multiple resends for the same line
+       # to make sure nothing gets lost on the line
+       repetierStyleResends: false
 
        # If enabled, reports the first extruder in M105 responses as T instead of T0
        #
@@ -340,8 +358,53 @@ The following settings are only relevant to you if you want to do OctoPrint deve
        # side will block
        rxBuffer: 64
 
-       # Size of
+       # Size of simulated command buffer
        commandBuffer: 4
+
+       # Whether to support the M112 command with simulated kill
+       supportM112: true
+
+       # Whether to send messages received via M117 back as "echo:" lines
+       echoOnM117: true
+
+       # Whether to simulate broken M29 behaviour (missing ok after response)
+       brokenM29: true
+
+.. _sec-configuration-config_yaml-estimation:
+
+Estimation
+----------
+
+The following settings provide parameters for estimators within OctoPrint. Currently only
+the estimation of the left print time during an active job utilizes this section.
+
+.. code-block:: yaml
+
+   estimation:
+     # Parameters for the print time estmation during an ongoing print job
+     printTime:
+       # Until which percentage to do a weighted mixture of statistical duration (analysis or
+       # past prints) with the result from the calculated estimate if that's already available.
+       # Utilized to compensate for the fact that the earlier in a print job, the least accuracy
+       # even a stable calculated estimate provides.
+       statsWeighingUntil: 0.5
+
+       # Range the assumed percentage (based on current estimated statistical, calculated or mixed
+       # total vs elapsed print time so far) needs to be around the actual percentage for the
+       # result to be used
+       validityRange: 0.15
+
+       # If no estimate could be calculated until this percentage and no statistical data is available,
+       # use dumb linear estimate
+       forceDumbFromPercent: 0.3
+
+       # If no estimate could be calculated until this many minutes into the print and no statistical
+       # data is available, use dumb linear estimate
+       forceDumbAfterMin: 30
+
+       # Average fluctuation between individual calculated estimates to consider in stable range. Seconds
+       # of difference.
+       stableThreshold: 60
 
 .. _sec-configuration-config_yaml-events:
 
@@ -426,6 +489,9 @@ Use the following settings to enable or disable OctoPrint features:
      # Specifies whether support for SD printing and file management should be enabled
      sdSupport: true
 
+     # Specifies whether firmware expects relative paths for selecting SD files
+     sdRelativePath: false
+
      # Whether to always assume that an SD card is present in the printer.
      # Needed by some firmwares which don't report the SD card status properly.
      sdAlwaysAvailable: false
@@ -442,6 +508,33 @@ Use the following settings to enable or disable OctoPrint features:
 
      # Whether to enable the keyboard control feature in the control tab
      keyboardControl: true
+
+     # Whether to actively poll the watched folder (true) or to rely on the OS's file system
+     # notifications instead (false)
+     pollWatched: false
+
+     # Whether to ignore identical resends from the printer (true, repetier) or not (false)
+     ignoreIdenticalResends: false
+
+     # If ignoredIdenticalResends is true, how many consecutive identical resends to ignore
+     identicalResendsCount: 7
+
+     # Whether to support F on its own as a valid GCODE command (true) or not (false)
+     supportFAsCommand: false
+
+     # Whether to enable model size detection and warning (true) or not (false)
+     modelSizeDetection: true
+
+     # Whether to attempt to auto detect the firmware of the printer and adjust settings
+     # accordingly (true) or not and rely on manual configuration (false)
+     firmwareDetection: true
+
+     # Whether to show a confirmation on print cancelling (true) or not (false)
+     printCancelConfirmation: true
+
+     # Whether to block all sending to the printer while a G4 (dwell) command is active (true, repetier)
+     # or not (false)
+     blockWhileDwelling: false
 
 .. _sec-configuration-config_yaml-folder:
 
@@ -488,6 +581,45 @@ Use the following settings to set custom paths for folders used by OctoPrint:
 
      # Absolute path where to store (GCODE) scripts
      scripts: /path/to/scripts/folder
+
+.. _sec-configuration-config_yaml-gcodeanalysis:
+
+GCODE Analysis
+--------------
+
+Settings pertaining to the server side GCODE analysis implementation.
+
+.. code-block:: yaml
+
+   # Maximum number of extruders to support/to sanity check for
+   maxExtruders: 10
+
+   # Pause between each processed GCODE line in normal priority mode, seconds
+   throttle_normalprio: 0.01
+
+   # Pause between each processed GCODE line in high priority mode (e.g. on fresh
+   # uploads), seconds
+   throttle_highprio: 0.0
+
+.. _sec-configuration-config_yaml-gcodeviewer:
+
+GCODE Viewer
+------------
+
+Settings pertaining to the built in GCODE Viewer.
+
+.. code-block:: yaml
+
+   # Whether to enable the GCODE viewer in the UI
+   enabled: true
+
+   # Maximum size a GCODE file may have on mobile devices to automatically be loaded
+   # into the viewer, defaults to 2MB
+   mobileSizeThreshold: 2097152
+
+   # Maximum size a GCODE file may have to automatically be loaded into the viewer,
+   # defaults to 20MB
+   sizeThreshold: 20971520
 
 .. _sec-configuration-config_yaml-plugins:
 
@@ -603,8 +735,34 @@ Use the following settings to configure the serial connection to the printer:
        connection: 2
 
        # Timeout during serial communication, in seconds.
-       # Defaults to 5 sec
-       communication: 5
+       # Defaults to 30 sec
+       communication: 30
+
+       # Timeout after which to query temperature when no target is set
+       temperature: 5
+
+       # Timeout after which to query temperature when a target is set
+       temperatureTargetSet: 2
+
+       # Timeout after which to query the SD status while SD printing
+       sdStatus: 1
+
+     # Maximum number of consecutive communication timeouts after which the printer will be considered
+     # dead and OctoPrint disconnects with an error.
+     maxCommunicationTimeouts:
+
+       # max. timeouts when the printer is idle
+       idle: 2
+
+       # max. timeouts when the printer is printing
+       printing: 5
+
+       # max. timeouts when a long running command is active
+       long: 5
+
+     # Maximum number of write attempts to serial during which nothing can be written before the communication
+     # with the printer is considered dead and OctoPrint will disconnect with an error
+     maxWritePasses:
 
      # Use this to define additional patterns to consider for serial port listing. Must be a valid
      # "glob" pattern (see http://docs.python.org/2/library/glob.html). Defaults to not set.
@@ -626,6 +784,7 @@ Use the following settings to configure the serial connection to the printer:
      - G32
      - M400
      - M226
+     - M600
 
      # Commands which need to always be send with a checksum. Defaults to only M110
      checksumRequiringCommands:
@@ -634,9 +793,25 @@ Use the following settings to configure the serial connection to the printer:
      # Command to send in order to initiate a handshake with the printer.
      # Defaults to "M110 N0" which simply resets the line numbers in the firmware and which
      # should be acknowledged with a simple "ok".
-     helloCommand:
-     - M110 N0
-     
+     helloCommand: M110 N0
+
+     # Whether to disconnect on errors or not
+     disconnectOnErrors: true
+
+     # Whether to completely ignore errors from the firmware or not
+     ignoreErrorsFromFirmware: false
+
+     # Whether to log resends to octoprint.log or not. Invaluable debug tool without performance
+     # impact, leave on if possible please
+     logResends: true
+
+     # Whether to support resends without follow-up ok or not
+     supportResendsWithoutOk: false
+
+     # Whether to "manually" trigger an ok for M29 (a lot of versions of this command are buggy and
+     # the responds skips on the ok)
+     triggerOkForM29: true
+
     # Commands that should never be auto-uppercased when sent to the printer. Defaults to only M117.
     autoUppercaseBlacklist:
      - M117
@@ -658,9 +833,13 @@ Use the following settings to configure the server:
      # Use this option to define the port to which to bind the server, defaults to 5000
      port: 5000
 
-     # If this option is true, OctoPrint will show the First Run dialog and set it to false after that
-     # completes
+     # If this option is true, OctoPrint will show the First Run wizard and set the setting to
+     # false after that completes
      firstRun: false
+
+     # If this option is true, OctoPrint will enable safe mode on the next server start and
+     # reset the setting to false
+     startOnceInSafeMode: false
 
      # Secret key for encrypting cookies and such, randomly generated on first run
      secretKey: someSecretKey
@@ -734,6 +913,41 @@ Use the following settings to configure the server:
        # Command to shut down the system OctoPrint is running on, defaults to being unset
        systemShutdownCommand: sudo shutdown -h now
 
+     # Configuration of the regular online connectivity check
+     onlineCheck:
+       # whether the online check is enabled, defaults to false due to valid privacy concerns
+       enabled: false
+
+       # interval in which to check for online connectivity (in seconds)
+       interval: 300
+
+       # DNS host against which to check (default: 8.8.8.8 aka Google's DNS)
+       host: 8.8.8.8
+
+       # DNS port against which to check (default: 53 - the default DNS port)
+       port: 53
+
+     # Settings of when to display what disk space warning
+     diskspace:
+
+       # Threshold (bytes) after which to consider disk space becoming sparse,
+       # defaults to 500MB
+       warning: 63488000
+
+       # Threshold (bytes) after which to consider disk space becoming critical,
+       # defaults to 200MB
+       critical: 209715200
+
+     # Configuration of the preemptive cache
+     preemptiveCache:
+
+       # which server paths to exclude from the preemptive cache
+       exceptions:
+       - /some/path
+
+       # How many days to leave unused entries in the preemptive cache config
+       until: 7
+
 
 .. note::
 
@@ -747,8 +961,8 @@ Use the following settings to configure the server:
      * ``X-Scheme``: should contain your custom URL scheme to use (if different from ``http``), e.g. ``https``
 
    If you use these headers OctoPrint will work both via the reverse proxy as well as when called directly. Take a look
-   `into OctoPrint's wiki <https://github.com/foosel/OctoPrint/wiki/Reverse-proxy-configuration-examples>`_ for a couple
-   of examples on how to configure this.
+   `into OctoPrint's wiki <https://github.com/foosel/OctoPrint/wiki/Reverse-proxy-configuration-examples>`_ for some
+   examples on how to configure this.
 
 .. _sec-configuration-config_yaml-slicing:
 
@@ -835,10 +1049,12 @@ Use `Javascript regular expressions <https://developer.mozilla.org/en/docs/Web/J
 
    # A list of filters to display in the terminal tab. Defaults to the filters shown below
    terminalFilters:
-   - name: Suppress M105 requests/responses
-     regex: '(Send: M105)|(Recv: ok T:)'
-   - name: Suppress M27 requests/responses
-     regex: '(Send: M27)|(Recv: SD printing byte)'
+   - name: Suppress temperature messages
+     regex: '(Send: (N\d+\s+)?M105)|(Recv: ok T:)'
+   - name: Suppress SD status messages
+     regex: '(Send: (N\d+\s+)?M27)|(Recv: SD printing byte)'
+   - name: Suppress wait responses
+     regex: 'Recv: wait'
 
 .. _sec-configuration-config_yaml-webcam:
 
@@ -872,22 +1088,42 @@ Use the following settings to configure webcam support:
      # Whether to include a "created with OctoPrint" watermark in the generated timelapse movies
      watermark: true
 
+     # Whether to flip the webcam horizontally
+     flipH: false
+
+     # Whether to flip the webcam vertically
+     flipV: false
+
+     # Whether to rotate the webcam 90° counter clockwise
+     rotate90: false
+
      # The default timelapse settings.
      timelapse:
 
        # The timelapse type. Can be either "off", "zchange" or "timed". Defaults to "off"
        type: timed
 
+       # The framerate at which to render the movie
+       fps: 25
+
+       # The number of seconds in the rendered video to add after a finished print. The exact way how the
+       # additional images will be recorded depends on timelapse type. Timed timelapses continue to
+       # record just like at the beginning, so the recording will continue another
+       # fps * postRoll * interval seconds. Zchange timelapses will take one final picture and add it fps * postRoll
+       postRoll: 0
+
        # Additional options depending on the timelapse type. All timelapses take a postRoll and an fps setting.
        options:
-         # The number of seconds in the rendered video to add after a finished print. The exact way how the
-         # additional images will be recorded depends on timelapse type. Timed timelapses continue to
-         # record just like at the beginning, so the recording will continue another
-         # fps * postRoll * interval seconds. Zchange timelapses will take one final picture and add it fps * postRoll
-         postRoll: 0
-
-         # The framerate at which to render the movie
-         fps: 25
 
          # Timed timelapses only: The interval which to leave between images in seconds
          interval: 2
+
+         # Timed timelapses only: Whether to capture the snapshots for the post roll (true) or just copy
+         # the last captured snapshot from the print over and over again (false)
+         capturePostRoll: true
+
+         # ZChange timelapses only: Z-hop height during retractions to ignore for capturing snapshots
+         retractionZHop: 0.0
+
+     # After how many days unrendered timelapses will be deleted
+     cleanTmpAfterDays: 7

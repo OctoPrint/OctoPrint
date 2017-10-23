@@ -69,6 +69,40 @@ $(function() {
                 });
         };
 
+        self.copyApikey = function() {
+            copyToClipboard(self.access_apikey());
+        };
+
+        self.generateApikey = function() {
+            if (!CONFIG_ACCESS_CONTROL) return;
+
+            var generate = function() {
+                self.users.generateApikey(self.currentUser().name)
+                    .done(function(response) {
+                      self.access_apikey(response.apikey);
+                    });
+            };
+
+            if (self.access_apikey()) {
+                showConfirmationDialog(gettext("This will generate a new API Key. The old API Key will cease to function immediately."),
+                    generate);
+            } else {
+                generate();
+            }
+        };
+
+        self.deleteApikey = function() {
+            if (!CONFIG_ACCESS_CONTROL) return;
+            if (!self.access_apikey()) return;
+
+            showConfirmationDialog(gettext("This will delete the API Key. It will cease to to function immediately."), function() {
+                self.users.deleteApikey(self.currentUser().name)
+                    .done(function() {
+                        self.access_apikey(undefined);
+                    });
+            })
+        };
+
         self.updateSettings = function(username, settings) {
             return OctoPrint.users.saveSettings(username, settings);
         };

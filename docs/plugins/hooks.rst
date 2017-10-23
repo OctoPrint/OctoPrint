@@ -79,7 +79,7 @@ property instead, manually instantiate your implementation instance and then add
 .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/custom_action_command.py
    :linenos:
    :tab-width: 4
-   :caption: `custom_action_command.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/custom_action_command.py>`_
+   :caption: `custom_action_command.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/custom_action_command.py>`__
    :name: sec-plugin-concepts-hooks-example
 
 .. _sec-plugins-hooks-ordering:
@@ -193,7 +193,8 @@ Available plugin hooks
 
 .. note::
 
-   All of the hooks below take at least two parameters, ``*args`` and ``**kwargs``. Please make sure those are present.
+   All of the hooks below take at least two parameters, ``*args`` and ``**kwargs``. Make sure those are
+   **always** present in your hook handler declaration.
    They will act as placeholders if additional parameters are added to the hooks in the future and will allow
    your plugin to stay compatible to OctoPrint without any necessary adjustments from you in these cases.
 
@@ -205,7 +206,7 @@ Available plugin hooks
 octoprint.accesscontrol.appkey
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. py:function:: hook(*args, **kwargs)
+.. py:function:: acl_appkey_hook(*args, **kwargs)
 
    By handling this hook plugins may register additional :ref:`App session key providers <sec-api-apps-sessionkey>`
    within the system.
@@ -230,7 +231,7 @@ octoprint.accesscontrol.appkey
 octoprint.cli.commands
 ~~~~~~~~~~~~~~~~~~~~~~
 
-.. py:function:: hook(cli_group, pass_octoprint_ctx, *args, **kwargs)
+.. py:function:: cli_commands_hook(cli_group, pass_octoprint_ctx, *args, **kwargs)
 
    By providing a handler for this hook plugins may register commands on OctoPrint's command line interface (CLI).
 
@@ -353,7 +354,7 @@ octoprint.cli.commands
 octoprint.comm.protocol.action
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. py:function:: hook(comm_instance, line, action, *args, **kwargs)
+.. py:function:: protocol_action_hook(comm_instance, line, action, *args, **kwargs)
 
    React to a :ref:`action command <sec-features-action_commands>` received from the printer.
 
@@ -369,7 +370,7 @@ octoprint.comm.protocol.action
    .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/custom_action_command.py
       :linenos:
       :tab-width: 4
-      :caption: `custom_action_command.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/custom_action_command.py>`_
+      :caption: `custom_action_command.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/custom_action_command.py>`__
 
    :param object comm_instance: The :class:`~octoprint.util.comm.MachineCom` instance which triggered the hook.
    :param str line: The complete line as received from the printer, format ``// action:<command>``
@@ -388,14 +389,15 @@ This describes actually four hooks:
   * ``octoprint.comm.protocol.gcode.sending``
   * ``octoprint.comm.protocol.gcode.sent``
 
-.. py:function:: hook(comm_instance, phase, cmd, cmd_type, gcode, *args, **kwargs)
+.. py:function:: protocol_gcodephase_hook(comm_instance, phase, cmd, cmd_type, gcode, subcode=None, *args, **kwargs)
 
    Pre- and postprocess commands as they progress through the various phases of being sent to the printer. The phases
    are the following:
 
      * ``queuing``: This phase is triggered just before the command is added to the send queue of the communication layer. This
        corresponds to the moment a command is being read from a file that is currently being printed. Handlers
-       may suppress or change commands or their command type here.
+       may suppress or change commands or their command type here. This is the only phase that supports multi command
+       expansion by having the handler return a list, see below for details.
      * ``queued``: This phase is triggered just after the command was added to the send queue of the communication layer.
        No manipulation is possible here anymore (returned values will be ignored).
      * ``sending``: This phase is triggered just before the command is actually being sent to the printer. Right afterwards
@@ -424,7 +426,7 @@ This describes actually four hooks:
 
      * ``None``: Don't change anything. Note that Python functions will also automatically return ``None`` if
        an empty ``return`` statement is used or just nothing is returned explicitly from the handler. Hence, the following
-       examples are all falling into this category:
+       examples are all falling into this category and equivalent:
 
        .. code-block:: python
 
@@ -449,6 +451,27 @@ This describes actually four hooks:
        should use this option.
      * A 2-tuple consisting of a rewritten version of the ``cmd`` and the ``cmd_type``, e.g. ``return "M105", "temperature_poll"``.
        Handlers which wish to rewrite both the command and the command type should use this option.
+     * **"queuing" phase only**: A list of any of the above to allow for expanding one command into
+       many. The following example shows how any queued command could be turned into a sequence of a temperature query,
+       line number reset, display of the ``gcode`` on the printer's display and finally the actual command (this example
+       does not make a lot of sense to be quite honest):
+
+       .. code-block:: python
+
+          def rewrite_foo(self, comm_instance, phase, cmd, cmd_type, gcode, *args, **kwargs):
+              if gcode or not cmd.startswith("@foo"):
+                  return
+
+              return [("M105", "temperature_poll"),    # 2-tuple, command & command type
+                      ("M110",),                       # 1-tuple, just the command
+                      "M117 echo foo: {}".format(cmd)] # string, just the command
+
+          __plugin_hooks__ = {
+              "octoprint.comm.protocol.gcode.queuing": rewrite_foo
+          }
+
+     Note: Only one command of a given ``cmd_type`` (other than None) may be queued at a time. Trying to rewrite the ``cmd_type``
+     to one already in the queue will give an error.
 
    **Example**
 
@@ -468,6 +491,8 @@ This describes actually four hooks:
    :param str cmd_type: Type of command, e.g. ``temperature_poll`` for temperature polling or ``sd_status_poll`` for SD
        printing status polling.
    :param str gcode: Parsed GCODE command, e.g. ``G0`` or ``M110``, may also be None if no known command could be parsed
+   :param str subcode: Parsed subcode of the GCODE command, e.g. ``1`` for ``M80.1``. Will be None if no subcode was provided
+       or no command could be parsed.
    :return: None, 1-tuple, 2-tuple or string, see the description above for details.
 
 .. _sec-plugins-hook-comm-protocol-gcode-received:
@@ -475,7 +500,7 @@ This describes actually four hooks:
 octoprint.comm.protocol.gcode.received
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. py:function:: hook(comm_instance, line, *args, **kwargs)
+.. py:function:: gcode_received_hook(comm_instance, line, *args, **kwargs)
 
    Get the returned lines sent by the printer. Handlers should return the received line or in any case, the modified
    version of it. If the the handler returns None, processing will be aborted and the communication layer will get an
@@ -501,7 +526,7 @@ octoprint.comm.protocol.gcode.received
 octoprint.comm.protocol.scripts
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. py:function:: hook(comm_instance, script_type, script_name, *args, **kwargs)
+.. py:function:: protocol_scripts_hook(comm_instance, script_type, script_name, *args, **kwargs)
 
    Return a prefix to prepend and a postfix to append to the script ``script_name`` of type ``type``. Handlers should
    make sure to only proceed with returning additional scripts if the ``script_type`` and ``script_name`` match
@@ -530,12 +555,38 @@ octoprint.comm.protocol.scripts
    :return: A 2-tuple in the form ``(prefix, postfix)`` or None
    :rtype: tuple or None
 
+.. _sec-plugins-hook-comm-protocol-temperatures-received:
+
+octoprint.comm.protocol.temperatures.received
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:function:: protocol_temperatures_received_hook(comm_instance, parsed_temperatures, *args, **kwargs)
+
+   Get the parsed temperatures returned by the printer, allowing handlers to modify them prior to handing them off
+   to the system. Handlers are expected to either return ``parsed_temperatures`` as-is or a modified copy thereof.
+
+   ``parsed_temperatures`` is a dictionary mapping from tool/bed identifier (``B``, ``T0``, ``T1``) to a 2-tuple of
+   actual and target temperature, e.g. ``{'B': (45.2, 50.0), 'T0': (178.9, 210.0), 'T1': (21.3, 0.0)}``.
+
+   This hook can be useful in cases where a printer e.g. is prone to returning garbage data from time to time, allowing
+   additional sanity checking to be applied and invalid values to be filtered out. If a handler returns an empty
+   dictionary or ``None``, no further processing will take place.
+
+   **Example**
+
+   The following example shows how to filter out actual temperatures that are outside a sane range of 1°C to 300°C.
+
+   .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/sanitize_temperatures.py
+      :linenos:
+      :tab-width: 4
+      :caption: `sanitize_temperatures.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/sanitize_temperatures.py>`_
+
 .. _sec-plugins-hook-comm-transport-serial-factory:
 
 octoprint.comm.transport.serial.factory
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. py:function:: hook(comm_instance, port, baudrate, read_timeout, *args, **kwargs)
+.. py:function:: serial_factory_hook(comm_instance, port, baudrate, read_timeout, *args, **kwargs)
 
    Return a serial object to use as serial connection to the printer. If a handler cannot create a serial object
    for the specified ``port`` (and ``baudrate``), it should just return ``None``.
@@ -611,7 +662,7 @@ octoprint.comm.transport.serial.factory
 octoprint.filemanager.extension_tree
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. py:function:: hook(*args, **kwargs)
+.. py:function:: file_extension_hook(*args, **kwargs)
 
    Return additional entries for the tree of accepted file extensions for uploading/handling by the file manager.
 
@@ -647,7 +698,7 @@ octoprint.filemanager.extension_tree
 octoprint.filemanager.preprocessor
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. py:function:: hook(path, file_object, links=None, printer_profile=None, allow_overwrite=False, *args, **kwargs)
+.. py:function:: file_preprocessor_hook(path, file_object, links=None, printer_profile=None, allow_overwrite=False, *args, **kwargs)
 
    Replace the ``file_object`` used for saving added files to storage by calling :func:`~octoprint.filemanager.util.AbstractFileWrapper.save`.
 
@@ -676,12 +727,44 @@ octoprint.filemanager.preprocessor
    :return: The `file_object` as passed in or None, or a replaced version to use instead for further processing.
    :rtype: AbstractFileWrapper or None
 
+.. _sec-plugins-hook-printer-factory:
+
+octoprint.printer.factory
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:function:: printer_factory_hook(components, *args, **kwargs)
+
+   Return a :class:`~octoprint.printer.PrinterInstance` instance to use as global printer object. This will
+   be called only once during initial server startup.
+
+   The provided ``components`` is a dictionary containing the already initialized system components:
+
+     * ``plugin_manager``: The :class:`~octoprint.plugin.core.PluginManager`
+     * ``printer_profile_manager``: The :class:`~octoprint.printer.profile.PrinterProfileManager`
+     * ``event_bus``: The :class:`~octoprint.events.EventManager`
+     * ``analysis_queue``: The :class:`~octoprint.filemanager.analysis.AnalysisQueue`
+     * ``slicing_manager``: The :class:`~octoprint.slicing.SlicingManager`
+     * ``file_manager``: The :class:`~octoprint.filemanager.FileManager`
+     * ``app_session_manager``: The :class:`~octoprint.server.util.flask.AppSessionManager`
+     * ``plugin_lifecycle_manager``: The :class:`~octoprint.server.LifecycleManager`
+     * ``user_manager``: The :class:`~octoprint.users.UserManager`
+     * ``preemptive_cache``: The :class:`~octoprint.server.util.flask.PreemptiveCache`
+
+   If the factory returns anything but ``None``, it will be assigned to the global ``printer`` instance.
+
+   If no of the registered factories return a printer instance, the default :class:`~octoprint.printer.standard.Printer`
+   class will be instantiated.
+
+   :param dict components: System components to use for printer instance initialization
+   :return: The ``printer`` instance to use globally.
+   :rtype: PrinterInterface subclass or None
+
 .. _sec-plugins-hook-server-http-bodysize:
 
 octoprint.server.http.bodysize
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. py:function:: hook(current_max_body_sizes, *args, **kwargs)
+.. py:function:: server_bodysize_hook(current_max_body_sizes, *args, **kwargs)
 
    Allows extending the list of custom maximum body sizes on the web server per path and HTTP method with custom entries
    from plugins.
@@ -698,6 +781,10 @@ octoprint.server.http.bodysize
 
    The path of the route will be prefixed by OctoPrint with ``/plugin/<plugin identifier>/`` (if the path already begins
    with a ``/`` that will be stripped first).
+
+   .. important::
+
+      Implementing this hook will make your plugin require a restart of OctoPrint for enabling/disabling it fully.
 
    **Example**
 
@@ -719,7 +806,7 @@ octoprint.server.http.bodysize
 octoprint.server.http.routes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. py:function:: hook(server_routes, *args, **kwargs)
+.. py:function:: server_route_hook(server_routes, *args, **kwargs)
 
    Allows extending the list of routes registered on the web server.
 
@@ -745,6 +832,10 @@ octoprint.server.http.routes
       view on that which matches one of the paths provided via its ``octoprint.server.http.routes`` hook handler, the
       view of the blueprint will thus not be reachable since processing of the request will directly be handed over
       to your defined handler class.
+
+   .. important::
+
+      Implementing this hook will make your plugin require a restart of OctoPrint for enabling/disabling it fully.
 
    **Example**
 
@@ -774,7 +865,7 @@ octoprint.server.http.routes
 octoprint.ui.web.templatetypes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. py:function:: hook(template_sorting, template_rules, *args, **kwargs)
+.. py:function:: templatetype_hook(template_sorting, template_rules, *args, **kwargs)
 
    Allows extending the set of supported template types in the web interface. This is interesting for plugins which want
    to offer other plugins to hook into their own offered UIs. Handlers must return a list of additional template
@@ -881,3 +972,70 @@ octoprint.ui.web.templatetypes
    :param dict template_sorting: read-only dictionary of currently configured template sorting specifications
    :return: a list of 3-tuples (template type, rule, sorting spec)
    :rtype: list
+
+.. _sec-plugins-hook-users-factory:
+
+octoprint.users.factory
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:function:: user_manager_factory_hook(components, settings, *args, **kwargs)
+
+   Return a :class:`~octoprint.users.UserManager` instance to use as global user manager object. This will
+   be called only once during initial server startup.
+
+   The provided ``components`` is a dictionary containing the already initialized system components:
+
+     * ``plugin_manager``: The :class:`~octoprint.plugin.core.PluginManager`
+     * ``printer_profile_manager``: The :class:`~octoprint.printer.profile.PrinterProfileManager`
+     * ``event_bus``: The :class:`~octoprint.events.EventManager`
+     * ``analysis_queue``: The :class:`~octoprint.filemanager.analysis.AnalysisQueue`
+     * ``slicing_manager``: The :class:`~octoprint.slicing.SlicingManager`
+     * ``file_manager``: The :class:`~octoprint.filemanager.FileManager`
+     * ``app_session_manager``: The :class:`~octoprint.server.util.flask.AppSessionManager`
+     * ``plugin_lifecycle_manager``: The :class:`~octoprint.server.LifecycleManager`
+     * ``preemptive_cache``: The :class:`~octoprint.server.util.flask.PreemptiveCache`
+
+   If the factory returns anything but ``None``, it will be assigned to the global ``userManager`` instance.
+
+   If no of the registered factories return a user manager instance, the class referenced by the ``config.yaml``
+   entry ``accessControl.userManager`` will be initialized if possible, otherwise a stock
+   :class:`~octoprint.users.FilebasedUserManager` will be instantiated, linked to the default user storage
+   file ``~/.octoprint/users.yaml``.
+
+   :param dict components: System components to use for user manager instance initialization
+   :param SettingsManager settings: The global settings manager instance to fetch configuration values from if necessary
+   :return: The ``userManager`` instance to use globally.
+   :rtype: UserManager subclass or None
+
+
+.. _sec-plugins-hook-timelapse-capture-pre:
+
+octoprint.timelapse.capture.pre
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:function:: capture_pre_hook(filename)
+
+   Perform specific actions prior to capturing a timelapse frame.
+
+   ``filename`` will be the future path of the frame to be saved.
+
+   :param str filename: The future path of the frame to be saved.
+   :return: None
+   :rtype: None
+
+.. _sec-plugins-hook-timelapse-capture-post:
+
+octoprint.timelapse.capture.post
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:function:: capture_post_hook(filename, success)
+
+   Perform specific actions after capturing a timelapse frame.
+
+   ``filename`` will be the path of the frame that should have been saved.
+   ``sucesss`` indicates whether the capture was successful or not.
+
+   :param str filename: The path of the frame that should have been saved.
+   :param boolean success: Indicates whether the capture was successful or not.
+   :return: None
+   :rtype: None

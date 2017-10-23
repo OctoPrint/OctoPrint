@@ -1,14 +1,22 @@
 (function (global, factory) {
     if (typeof define === "function" && define.amd) {
-        define(["OctoPrint"], factory);
+        define(["OctoPrintClient"], factory);
     } else {
-        factory(window.OctoPrint);
+        factory(global.OctoPrintClient);
     }
-})(window || this, function(OctoPrint) {
+})(this, function(OctoPrintClient) {
     var customUrl = "api/printer/command/custom";
     var commandUrl = "api/printer/command";
 
-    var sendGcodeWithParameters = function(commands, parameters, opts) {
+    var OctoPrintControlClient = function(base) {
+        this.base = base;
+    };
+
+    OctoPrintControlClient.prototype.getCustomControls = function (opts) {
+        return this.base.get(customUrl, opts);
+    };
+
+    OctoPrintControlClient.prototype.sendGcodeWithParameters = function(commands, parameters, opts) {
         commands = commands || [];
         parameters = parameters || {};
 
@@ -16,38 +24,32 @@
             commands = [commands];
         }
 
-        return OctoPrint.postJson(commandUrl, {
+        return this.base.postJson(commandUrl, {
             commands: commands,
             parameters: parameters
         }, opts);
     };
 
-    var sendGcodeScriptWithParameters = function(script, context, parameters, opts) {
+    OctoPrintControlClient.prototype.sendGcodeScriptWithParameters = function(script, context, parameters, opts) {
         script = script || "";
         context = context || {};
         parameters = parameters || {};
 
-        return OctoPrint.postJson(commandUrl, {
+        return this.base.postJson(commandUrl, {
             script: script,
             context: context,
             parameters: parameters
         }, opts);
     };
 
-    OctoPrint.control = {
-        sendGcodeWithParameters: sendGcodeWithParameters,
-        sendGcodeScriptWithParameters: sendGcodeScriptWithParameters,
+    OctoPrintControlClient.prototype.sendGcode = function (commands, opts) {
+        return this.sendGcodeWithParameters(commands, undefined, opts);
+    };
 
-        getCustomControls: function (opts) {
-            return OctoPrint.get(customUrl, opts);
-        },
+    OctoPrintControlClient.prototype.sendGcodeScript = function (script, context, opts) {
+        return this.sendGcodeScriptWithParameters(script, context, undefined, opts);
+    };
 
-        sendGcode: function (commands, opts) {
-            return sendGcodeWithParameters(commands, undefined, opts);
-        },
-
-        sendGcodeScript: function (script, context, opts) {
-            return sendGcodeScriptWithParameters(script, context, undefined, opts);
-        }
-    }
+    OctoPrintClient.registerComponent("control", OctoPrintControlClient);
+    return OctoPrintControlClient;
 });

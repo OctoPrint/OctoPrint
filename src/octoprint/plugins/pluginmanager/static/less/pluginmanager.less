@@ -24,7 +24,10 @@ table {
 
 #settings_plugin_pluginmanager_repositorydialog {
   .slimScrollDiv {
+    @scrollBar: 10px;
+
     margin-bottom: 20px;
+    padding-right: @scrollBar + 2px;
   }
 
   h4 {
@@ -87,6 +90,11 @@ table {
 #settings_plugin_pluginmanager_workingdialog_output {
   .message {
     font-weight: bold;
+  }
+
+  .error {
+    font-weight: bold;
+    color: #990000;
   }
 
   .stdout {

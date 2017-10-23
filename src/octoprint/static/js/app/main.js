@@ -7,11 +7,16 @@ $(function() {
 
         //~~ Logging setup
 
-        log.setLevel(CONFIG_DEBUG ? "debug" : "info");
+        log.setLevel(CONFIG_DEBUG ? log.levels.DEBUG : log.levels.INFO);
 
         //~~ OctoPrint client setup
         OctoPrint.options.baseurl = BASEURL;
         OctoPrint.options.apikey = UI_API_KEY;
+
+        var l10n = getQueryParameterByName("l10n");
+        if (l10n) {
+            OctoPrint.options.locale = l10n;
+        }
 
         OctoPrint.socket.onMessage("connected", function(data) {
             var payload = data.data;
@@ -31,7 +36,20 @@ $(function() {
         OctoPrint.coreui = (function() {
             var exports = {
                 browserTabVisibility: undefined,
-                selectedTab: undefined
+                selectedTab: undefined,
+                settingsOpen: false,
+                wizardOpen: false,
+                browser: {
+                    chrome: false,
+                    firefox: false,
+                    safari: false,
+                    ie: false,
+                    edge: false,
+                    opera: false,
+
+                    mobile: false,
+                    desktop: false
+                }
             };
 
             var browserVisibilityCallbacks = [];
@@ -74,12 +92,28 @@ $(function() {
             // register for browser visibility tracking
 
             var prop = getHiddenProp();
-            if (!prop) return undefined;
+            if (prop) {
+                var eventName = prop.replace(/[H|h]idden/, "") + "visibilitychange";
+                document.addEventListener(eventName, updateBrowserVisibility);
 
-            var eventName = prop.replace(/[H|h]idden/, "") + "visibilitychange";
-            document.addEventListener(eventName, updateBrowserVisibility);
+                updateBrowserVisibility();
+            }
 
-            updateBrowserVisibility();
+            // determine browser - loosely based on is.js
+
+            var navigator = window.navigator;
+            var userAgent = (navigator && navigator.userAgent || "").toLowerCase();
+            var vendor = (navigator && navigator.vendor || "").toLowerCase();
+
+            exports.browser.opera = userAgent.match(/opera|opr/) != null;
+            exports.browser.chrome = !exports.browser.opera && /google inc/.test(vendor) && userAgent.match(/chrome|crios/) != null;
+            exports.browser.firefox = userAgent.match(/firefox|fxios/) != null;
+            exports.browser.ie = userAgent.match(/msie|trident/) != null;
+            exports.browser.edge = userAgent.match(/edge/) != null;
+            exports.browser.safari = !exports.browser.chrome && !exports.browser.edge && !exports.browser.opera && userAgent.match(/safari/) != null;
+
+            exports.browser.mobile = $.browser.mobile;
+            exports.browser.desktop = !exports.browser.mobile;
 
             // exports
 
@@ -91,13 +125,21 @@ $(function() {
             return exports;
         })();
 
+        log.debug("Browser environment:", OctoPrint.coreui.browser);
+
         //~~ AJAX setup
 
         // work around a stupid iOS6 bug where ajax requests get cached and only work once, as described at
         // http://stackoverflow.com/questions/12506897/is-safari-on-ios-6-caching-ajax-results
-        $.ajaxSetup({
-            type: 'POST',
-            headers: { "cache-control": "no-cache" }
+        $.ajaxPrefilter(function(options, originalOptions, jqXHR) {
+            if (options.type != "GET") {
+                var headers;
+                if (options.hasOwnProperty("headers")) {
+                    options.headers["Cache-Control"] = "no-cache";
+                } else {
+                    options.headers = { "Cache-Control": "no-cache" };
+                }
+            }
         });
 
         // send the current UI API key with any request
@@ -138,13 +180,19 @@ $(function() {
             gettext("Printing"),
             gettext("Paused"),
             gettext("Closed"),
-            gettext("Transfering file to SD")
+            gettext("Transferring file to SD")
         ];
 
         //~~ Initialize PNotify
 
         PNotify.prototype.options.styling = "bootstrap2";
         PNotify.prototype.options.mouse_reset = false;
+        PNotify.prototype.options.stack.firstpos1 = 40 + 20; // navbar + 20
+        PNotify.prototype.options.stack.firstpos2 = 20;
+        PNotify.prototype.options.stack.spacing1 = 20;
+        PNotify.prototype.options.stack.spacing2 = 20;
+        PNotify.prototype.options.delay = 5000;
+        PNotify.prototype.options.animate_speed = "fast";
 
         PNotify.singleButtonNotify = function(options) {
             if (!options.confirm || !options.confirm.buttons || !options.confirm.buttons.length) {
@@ -182,34 +230,33 @@ $(function() {
         }
 
         // helper to create a view model instance with injected constructor parameters from the view model map
-        var _createViewModelInstance = function(viewModel, viewModelMap){
-            var viewModelClass = viewModel[0];
-            var viewModelParameters = viewModel[1];
+        var _createViewModelInstance = function(viewModel, viewModelMap, optionalDependencyPass) {
 
-            if (viewModelParameters != undefined) {
-                if (!_.isArray(viewModelParameters)) {
-                    viewModelParameters = [viewModelParameters];
+            // mirror the requested dependencies with an array of the viewModels
+            var viewModelParametersMap = function(parameter) {
+                // check if parameter is found within optional array and if all conditions are met return null instead of undefined
+                if (optionalDependencyPass && viewModel.optional.indexOf(parameter) !== -1 && !viewModelMap[parameter]) {
+                    log.debug("Resolving optional parameter", [parameter], "without viewmodel");
+                    return null; // null == "optional but not available"
                 }
 
-                // now we'll try to resolve all of the view model's constructor parameters via our view model map
-                var constructorParameters = _.map(viewModelParameters, function(parameter){
-                    return viewModelMap[parameter]
-                });
-            } else {
-                constructorParameters = [];
-            }
+                return viewModelMap[parameter] || undefined; // undefined == "not available"
+            };
 
-            if (_.some(constructorParameters, function(parameter) { return parameter === undefined; })) {
-                var _extractName = function(entry) { return entry[0]; };
-                var _onlyUnresolved = function(entry) { return entry[1] === undefined; };
-                var missingParameters = _.map(_.filter(_.zip(viewModelParameters, constructorParameters), _onlyUnresolved), _extractName);
-                log.debug("Postponing", viewModel[0].name, "due to missing parameters:", missingParameters);
+            // try to resolve all of the view model's constructor parameters via our view model map
+            var constructorParameters = _.map(viewModel.dependencies, viewModelParametersMap) || [];
+
+            if (constructorParameters.indexOf(undefined) !== -1) {
+                log.debug("Postponing", viewModel.name, "due to missing parameters:", _.keys(_.pick(_.object(viewModel.dependencies, constructorParameters), _.isUndefined)));
                 return;
             }
 
+            // transform array into object if a plugin wants it as an object
+            constructorParameters = (viewModel.returnObject) ? _.object(viewModel.dependencies, constructorParameters) : constructorParameters;
+
             // if we came this far then we could resolve all constructor parameters, so let's construct that view model
-            log.debug("Constructing", viewModel[0].name, "with parameters:", viewModelParameters);
-            return new viewModelClass(constructorParameters);
+            log.debug("Constructing", viewModel.name, "with parameters:", viewModel.dependencies);
+            return new viewModel.construct(constructorParameters);
         };
 
         // map any additional view model bindings we might need to make
@@ -229,8 +276,7 @@ $(function() {
         });
 
         // helper for translating the name of a view model class into an identifier for the view model map
-        var _getViewModelId = function(viewModel){
-            var name = viewModel[0].name;
+        var _getViewModelId = function(name){
             return name.substr(0, 1).toLowerCase() + name.substr(1); // FooBarViewModel => fooBarViewModel
         };
 
@@ -243,6 +289,7 @@ $(function() {
         var allViewModels = [];
         var allViewModelData = [];
         var pass = 1;
+        var optionalDependencyPass = false;
         log.info("Starting dependency resolution...");
         while (unprocessedViewModels.length > 0) {
             log.debug("Dependency resolution, pass #" + pass);
@@ -252,15 +299,42 @@ $(function() {
             // now try to instantiate every one of our as of yet unprocessed view model descriptors
             while (unprocessedViewModels.length > 0){
                 var viewModel = unprocessedViewModels.shift();
-                var viewModelId = _getViewModelId(viewModel);
 
-                // make sure that we don't have two view models going by the same name
-                if (_.has(viewModelMap, viewModelId)) {
-                    log.error("Duplicate name while instantiating " + viewModelId);
+                // wrap anything not object related into an object
+                if(!_.isPlainObject(viewModel)) {
+                    viewModel = {
+                        construct: (_.isArray(viewModel)) ? viewModel[0] : viewModel,
+                        dependencies: viewModel[1] || [],
+                        elements: viewModel[2] || [],
+                        optional: viewModel[3] || []
+                    };
+                }
+
+                // make sure we have atleast a function
+                if (!_.isFunction(viewModel.construct)) {
+                    log.error("No function to instantiate with", viewModel);
                     continue;
                 }
 
-                var viewModelInstance = _createViewModelInstance(viewModel, viewModelMap);
+                // if name is not set, get name from constructor, if it's an anonymous function generate one
+                viewModel.name = viewModel.name || _getViewModelId(viewModel.construct.name) || _.uniqueId("unnamedViewModel");
+
+                // no alternative names? empty array
+                viewModel.additionalNames = viewModel.additionalNames || [];
+
+                // make sure all value's are in an array
+                viewModel.dependencies = (_.isArray(viewModel.dependencies)) ? viewModel.dependencies : [viewModel.dependencies];
+                viewModel.elements = (_.isArray(viewModel.elements)) ? viewModel.elements : [viewModel.elements];
+                viewModel.optional = (_.isArray(viewModel.optional)) ? viewModel.optional : [viewModel.optional];
+                viewModel.additionalNames = (_.isArray(viewModel.additionalNames)) ? viewModel.additionalNames : [viewModel.additionalNames];
+
+                // make sure that we don't have two view models going by the same name
+                if (_.has(viewModelMap, viewModel.name)) {
+                    log.error("Duplicate name while instantiating " + viewModel.name);
+                    continue;
+                }
+
+                var viewModelInstance = _createViewModelInstance(viewModel, viewModelMap, optionalDependencyPass);
 
                 // our view model couldn't yet be instantiated, so postpone it for a bit
                 if (viewModelInstance === undefined) {
@@ -268,19 +342,30 @@ $(function() {
                     continue;
                 }
 
-                // we could resolve the depdendencies and the view model is not defined yet => add it, it's now fully processed
-                var viewModelBindTargets = viewModel[2];
-                if (!_.isArray(viewModelBindTargets)) {
-                    viewModelBindTargets = [viewModelBindTargets];
-                }
+                // we could resolve the dependencies and the view model is not defined yet => add it, it's now fully processed
+                var viewModelBindTargets = viewModel.elements;
 
-                if (additionalBindings.hasOwnProperty(viewModelId)) {
-                    viewModelBindTargets = viewModelBindTargets.concat(additionalBindings[viewModelId]);
+                if (additionalBindings.hasOwnProperty(viewModel.name)) {
+                    viewModelBindTargets = viewModelBindTargets.concat(additionalBindings[viewModel.name]);
                 }
 
                 allViewModelData.push([viewModelInstance, viewModelBindTargets]);
                 allViewModels.push(viewModelInstance);
-                viewModelMap[viewModelId] = viewModelInstance;
+                viewModelMap[viewModel.name] = viewModelInstance;
+
+                if (viewModel.additionalNames.length) {
+                    var registeredAdditionalNames = [];
+                    _.each(viewModel.additionalNames, function(additionalName) {
+                        if (!_.has(viewModelMap, additionalName)) {
+                            viewModelMap[additionalName] = viewModelInstance;
+                            registeredAdditionalNames.push(additionalName);
+                        }
+                    });
+
+                    if (registeredAdditionalNames.length) {
+                        log.debug("Registered", viewModel.name, "under these additional names:", registeredAdditionalNames);
+                    }
+                }
             }
 
             // anything that's now in the postponed list has to be readded to the unprocessedViewModels
@@ -289,20 +374,24 @@ $(function() {
             // if we still have the same amount of items in our list of unprocessed view models it means that we
             // couldn't instantiate any more view models over a whole iteration, which in turn mean we can't resolve the
             // dependencies of remaining ones, so log that as an error and then quit the loop
-            if (unprocessedViewModels.length == startLength) {
-                log.error("Could not instantiate the following view models due to unresolvable dependencies:");
-                _.each(unprocessedViewModels, function(entry) {
-                    log.error(entry[0].name + " (missing: " + _.filter(entry[1], function(id) { return !_.has(viewModelMap, id); }).join(", ") + " )");
-                });
-                break;
+            if (unprocessedViewModels.length === startLength) {
+                // I'm gonna let you finish but we will do another pass with the optional dependencies flag enabled
+                if (!optionalDependencyPass) {
+                    log.debug("Resolving next pass with optional dependencies flag enabled");
+                    optionalDependencyPass = true;
+                } else {
+                    log.error("Could not instantiate the following view models due to unresolvable dependencies:");
+                    _.each(unprocessedViewModels, function(entry) {
+                        log.error(entry.name + " (missing: " + _.filter(entry.dependencies, function(id) { return !_.has(viewModelMap, id); }).join(", ") + " )");
+                    });
+                    break;
+                }
             }
 
             log.debug("Dependency resolution pass #" + pass + " finished, " + unprocessedViewModels.length + " view models left to process");
             pass++;
         }
         log.info("... dependency resolution done");
-
-        var dataUpdater = new DataUpdater(allViewModels);
 
         //~~ some additional hooks and initializations
 
@@ -386,6 +475,18 @@ $(function() {
             }
         };
 
+        $.fn.lazyload = function() {
+            return this.each(function() {
+                if (this.tagName.toLowerCase() != "img") return;
+
+                var src = this.getAttribute("data-src");
+                if (src) {
+                    this.setAttribute("src", src);
+                    this.removeAttribute("data-src");
+                }
+            });
+        };
+
         // Use bootstrap tabdrop for tabs and pills
         $('.nav-pills, .nav-tabs').tabdrop();
 
@@ -424,11 +525,26 @@ $(function() {
         // reload overlay
         $("#reloadui_overlay_reload").click(function() { location.reload(); });
 
-        //~~ Starting up the app
+        var changeTab = function()
+        {
+            var hashtag = window.location.hash;
+            var tab = $('#tabs a[href="' + hashtag + '"]');
+            if (tab.length)
+            {
+                tab.tab("show");
+                onTabChange(hashtag);
+            }
+        }
 
-        callViewModels(allViewModels, "onStartup");
+        //~~ final initialization - passive login, settings fetch, view model binding
 
-        //~~ view model binding
+        if (!_.has(viewModelMap, "settingsViewModel")) {
+            throw new Error("settingsViewModel is missing, can't run UI");
+        }
+
+        if (!_.has(viewModelMap, "loginStateViewModel")) {
+            throw new Error("loginStateViewModel is missing, can't run UI");
+        }
 
         var bindViewModels = function() {
             log.info("Going to bind " + allViewModelData.length + " view models...");
@@ -497,7 +613,8 @@ $(function() {
                     });
                 }
 
-                viewModel._unbound = viewModel._bindings != undefined && viewModel._bindings.length == 0;
+                viewModel._unbound = viewModel._bindings !== undefined && viewModel._bindings.length === 0;
+                viewModel._bound = viewModel._bindings.length > 0;
 
                 if (viewModel.hasOwnProperty("onAfterBinding")) {
                     viewModel.onAfterBinding();
@@ -509,18 +626,104 @@ $(function() {
 
             // startup complete
             callViewModels(allViewModels, "onStartupComplete");
+            setOnViewModels(allViewModels, "_startupComplete", true);
 
             // make sure we can track the browser tab visibility
             OctoPrint.coreui.onBrowserVisibilityChange(function(status) {
                 log.debug("Browser tab is now " + (status ? "visible" : "hidden"));
                 callViewModels(allViewModels, "onBrowserTabVisibilityChange", [status]);
             });
+
+            $(window).on("hashchange", function() {
+                changeTab();
+            });
+
+            if (window.location.hash != "")
+            {
+                changeTab();
+            }
+
+            log.info("Application startup complete");
         };
 
-        if (!_.has(viewModelMap, "settingsViewModel")) {
-            throw new Error("settingsViewModel is missing, can't run UI")
-        }
-        viewModelMap["settingsViewModel"].requestData()
-            .done(bindViewModels);
+        var fetchSettings = function() {
+            log.info("Finalizing application startup");
+
+            //~~ Starting up the app
+            callViewModels(allViewModels, "onStartup");
+
+            viewModelMap["settingsViewModel"].requestData()
+                .done(function() {
+                    // There appears to be an odd race condition either in JQuery's AJAX implementation or
+                    // the browser's implementation of XHR, causing a second GET request from inside the
+                    // completion handler of the very same request to never get its completion handler called
+                    // if ETag headers are present on the response (the status code of the request does NOT
+                    // seem to matter here, only that the ETag header is present).
+                    //
+                    // Minimal example with which I was able to reproduce this behaviour can be found
+                    // at https://gist.github.com/foosel/b2ddb9ebd71b0b63a749444651bfce3f
+                    //
+                    // Decoupling all consecutive calls from this done event handler hence is an easy way
+                    // to avoid this problem. A zero timeout should do the trick nicely.
+                    window.setTimeout(bindViewModels, 0);
+                });
+        };
+
+        log.info("Initial application setup done, connecting to server...");
+
+        /**
+         * The following looks a bit complicated, so let me explain...
+         *
+         * Once we connect to the server (and that also includes consecutive reconnects), the
+         * first thing we need to do is perform a passive login to a) establish a proper request
+         * session with the server and b) figure out the login status of our client. That passive
+         * login will be responded to with our session cookie and we must make absolutely sure that
+         * this cannot be overridden by any concurrent requests. E.g. if we would send the passive
+         * login request and also something like a settings fetch, the settings would not have the
+         * cookie yet, hence the server would generate a new session for that request, and if the
+         * response for the settings now arrives later than the passive login we'll get our
+         * session cookie from that login directly overwritten again. That will not only lead to
+         * us losing our login session with the server but also the client _thinking_ it is logged
+         * in when in fact it isn't. See also #1881.
+         *
+         * So what we do here is ensure that we send the passive login request _and nothing else_
+         * until that has been responded to and hence our session been properly established. Only
+         * then we may trigger stuff like the various view model callbacks that might cause
+         * additional requests.
+         *
+         * onServerConnect below takes care of the passive login. Only once that's completed it tells
+         * our DataUpdater that it's ok to trigger any callbacks in view models. On the initial
+         * server connect (during first initialization) we also trigger the settings fetch and
+         * binding procedure once that's done, but only then.
+         *
+         * Or, as a fancy diagram: https://gist.githubusercontent.com/foosel/0cdc3a03cf5311804271f12e87293c0c/raw/abc84fdc3b13030d70961539d9c132ae39c32085/octoprint_web_startup.txt
+         */
+
+        var onServerConnect = function() {
+            // Always perform a passive login on server (re)connect. No need for
+            // onServerConnect/onServerReconnect on the LoginStateViewModel with this in place.
+            return viewModelMap["loginStateViewModel"].requestData()
+                .done(function() {
+                    // Only mark our data updater as initialized once we've done our initial
+                    // passive login request.
+                    //
+                    // This is to ensure that we have no concurrent requests triggered by socket events
+                    // overriding each other's session during app initialization
+                    dataUpdater.initialized();
+                });
+        };
+
+        var dataUpdater = new DataUpdater(allViewModels);
+        dataUpdater.connect()
+            .done(function() {
+                // make sure we trigger onServerConnect should we dis- and reconnect to the server
+                dataUpdater.connectCallback = onServerConnect;
+
+                // perform passive login first
+                onServerConnect().done(function() {
+                    // then trigger a settings fetch
+                    window.setTimeout(fetchSettings, 0);
+                });
+            });
     }
 );

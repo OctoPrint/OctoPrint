@@ -7,18 +7,25 @@
 # The file is processed from top to bottom, the first matching line wins. If <tag> or <reference commit> are left out,
 # the lookup table does not apply to the matched branches
 
-# master shall not use the lookup table, only tags
+# master and rc shall not use the lookup table, only tags
 master
+rc/.*
+prerelease
 
 # neither should disconnected checkouts, e.g. 'git checkout <tag>'
 HEAD
 \(detached.*
 
-# maintenance is currently the branch for preparation of maintenance release 1.2.12
+# maintenance is currently the branch for preparation of maintenance release 1.3.6
 # so are any fix/... and improve/... branches
-maintenance 1.2.12 e79703ba6eec1ecdfa21cf8f2a9efbc1eb6120e3 pep440-dev
-fix/.* 1.2.12 e79703ba6eec1ecdfa21cf8f2a9efbc1eb6120e3 pep440-dev
-improve/.* 1.2.12 e79703ba6eec1ecdfa21cf8f2a9efbc1eb6120e3 pep440-dev
+maintenance 1.3.6 1a6dbb3f4a5bef857cdeb13c031b9deca2cf30a2 pep440-dev
+fix/.* 1.3.6 1a6dbb3f4a5bef857cdeb13c031b9deca2cf30a2 pep440-dev
+improve/.* 1.3.6 1a6dbb3f4a5bef857cdeb13c031b9deca2cf30a2 pep440-dev
 
-# every other branch is a development branch and thus gets resolved to 1.3.0-dev for now
-.* 1.3.0 198d3450d94be1a2 pep440-dev
+# staging/maintenance is currently the branch for preparation of 1.3.6rc1
+# so is regressionfix/...
+staging/maintenance 1.3.6rc1 77753ca02602d3a798d6b0a22535e6fd69ff448a pep440-dev
+regressionfix/.* 1.3.6rc1 77753ca02602d3a798d6b0a22535e6fd69ff448a pep440-dev
+
+# every other branch is a development branch and thus gets resolved to 1.4.0-dev for now
+.* 1.4.0 7f5d03d0549bcbd26f40e7e4a3297ea5204fb1cc pep440-dev

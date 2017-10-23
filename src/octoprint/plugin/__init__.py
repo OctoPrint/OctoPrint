@@ -13,7 +13,7 @@ registered plugin types.
    :members:
 """
 
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -42,9 +42,10 @@ def _validate_plugin(phase, plugin_info):
 			if not "octoprint.accesscontrol.appkey" in hooks:
 				hooks["octoprint.accesscontrol.appkey"] = plugin_info.implementation.get_additional_apps
 			setattr(plugin_info.instance, PluginInfo.attr_hooks, hooks)
+	return True
 
 def plugin_manager(init=False, plugin_folders=None, plugin_types=None, plugin_entry_points=None, plugin_disabled_list=None,
-                   plugin_restart_needing_hooks=None, plugin_obsolete_hooks=None, plugin_validators=None, settings=None):
+                   plugin_restart_needing_hooks=None, plugin_obsolete_hooks=None, plugin_validators=None):
 	"""
 	Factory method for initially constructing and consecutively retrieving the :class:`~octoprint.plugin.core.PluginManager`
 	singleton.
@@ -87,14 +88,6 @@ def plugin_manager(init=False, plugin_folders=None, plugin_types=None, plugin_en
 
 	else:
 		if init:
-			if settings is None:
-				settings = s()
-
-			if plugin_folders is None:
-				plugin_folders = (
-					settings.getBaseFolder("plugins"),
-					(os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "plugins")), True)
-				)
 			if plugin_types is None:
 				plugin_types = [StartupPlugin,
 				                ShutdownPlugin,
@@ -109,22 +102,18 @@ def plugin_manager(init=False, plugin_folders=None, plugin_types=None, plugin_en
 				                ProgressPlugin,
 				                WizardPlugin,
 				                UiPlugin]
-			if plugin_entry_points is None:
-				plugin_entry_points = "octoprint.plugin"
-			if plugin_disabled_list is None:
-				plugin_disabled_list = settings.get(["plugins", "_disabled"])
+
 			if plugin_restart_needing_hooks is None:
-				plugin_restart_needing_hooks = [
-					"octoprint.server.http"
-				]
+				plugin_restart_needing_hooks = ["octoprint.server.http.*",
+				                                "octoprint.printer.factory"]
+
 			if plugin_obsolete_hooks is None:
-				plugin_obsolete_hooks = [
-					"octoprint.comm.protocol.gcode"
-				]
+				plugin_obsolete_hooks = ["octoprint.comm.protocol.gcode"]
+
 			if plugin_validators is None:
-				plugin_validators = [
-					_validate_plugin
-				]
+				plugin_validators = [_validate_plugin]
+			else:
+				plugin_validators.append(_validate_plugin)
 
 			_instance = PluginManager(plugin_folders,
 			                          plugin_types,
@@ -145,7 +134,7 @@ def plugin_settings(plugin_key, defaults=None, get_preprocessors=None, set_prepr
 
 	Arguments:
 	    plugin_key (string): The plugin identifier for which to create the settings instance.
-	    defaults (dict): The default settings for the plugin.
+	    defaults (dict): The default settings for the plugin, if different from get_settings_defaults.
 	    get_preprocessors (dict): The getter preprocessors for the plugin.
 	    set_preprocessors (dict): The setter preprocessors for the plugin.
 	    settings (octoprint.settings.Settings): The settings instance to use.
@@ -180,16 +169,15 @@ def plugin_settings_for_settings_plugin(plugin_key, instance, settings=None):
 		return None
 
 	try:
-		defaults = instance.get_settings_defaults()
 		get_preprocessors, set_preprocessors = instance.get_settings_preprocessors()
 	except:
-		logging.getLogger(__name__).exception("Error while retrieving defaults or preprocessors for plugin {}".format(plugin_key))
+		logging.getLogger(__name__).exception("Error while retrieving preprocessors for plugin {}".format(plugin_key))
 		return None
 
-	return plugin_settings(plugin_key, defaults=defaults, get_preprocessors=get_preprocessors, set_preprocessors=set_preprocessors, settings=settings)
+	return plugin_settings(plugin_key, get_preprocessors=get_preprocessors, set_preprocessors=set_preprocessors, settings=settings)
 
 
-def call_plugin(types, method, args=None, kwargs=None, callback=None, error_callback=None, sorting_context=None):
+def call_plugin(types, method, args=None, kwargs=None, callback=None, error_callback=None, sorting_context=None, initialized=True):
 	"""
 	Helper method to invoke the indicated ``method`` on all registered plugin implementations implementing the
 	indicated ``types``. Allows providing method arguments and registering callbacks to call in case of success
@@ -225,6 +213,8 @@ def call_plugin(types, method, args=None, kwargs=None, callback=None, error_call
 	    error_callback (function): A callback to invoke after the call of an implementation resulted in an exception.
 	        Will be called with the three arguments ``name``, ``plugin`` and ``exc``. ``name`` will be the plugin
 	        identifier, ``plugin`` the plugin implementation instance itself and ``exc`` the caught exception.
+	    initialized (boolean): Whether the plugin needs to be initialized (True) or not (False). Initialization status
+	        is determined be presence of injected ``_identifier`` property.
 
 	"""
 
@@ -237,6 +227,9 @@ def call_plugin(types, method, args=None, kwargs=None, callback=None, error_call
 
 	plugins = plugin_manager().get_implementations(*types, sorting_context=sorting_context)
 	for plugin in plugins:
+		if initialized and not hasattr(plugin, "_identifier"):
+			continue
+
 		if hasattr(plugin, method):
 			try:
 				result = getattr(plugin, method)(*args, **kwargs)
@@ -252,7 +245,7 @@ class PluginSettings(object):
 	"""
 	The :class:`PluginSettings` class is the interface for plugins to their own or globally defined settings.
 
-	It provides a couple of convenience methods for directly accessing plugin settings via the regular
+	It provides some convenience methods for directly accessing plugin settings via the regular
 	:class:`octoprint.settings.Settings` interfaces as well as means to access plugin specific folder locations.
 
 	All getter and setter methods will ensure that plugin settings are stored in their correct location within the
@@ -276,13 +269,17 @@ class PluginSettings(object):
 	   :returns: The retrieved settings value.
 	   :rtype: object
 
-	.. method:: get_int(path)
+	.. method:: get_int(path, min=None, max=None)
 
-	   Like :func:`get` but tries to convert the retrieved value to ``int``.
+	   Like :func:`get` but tries to convert the retrieved value to ``int``. If ``min`` is provided and the retrieved
+	   value is less than it, it will be returned instead of the value. Likewise for ``max`` - it will be returned if
+	   the value is greater than it.
 
-	.. method:: get_float(path)
+	.. method:: get_float(path, min=None, max=None)
 
-	   Like :func:`get` but tries to convert the retrieved value to ``float``.
+	   Like :func:`get` but tries to convert the retrieved value to ``float``. If ``min`` is provided and the retrieved
+	   value is less than it, it will be returned instead of the value. Likewise for ``max`` - it will be returned if
+	   the value is greater than it.
 
 	.. method:: get_boolean(path)
 
@@ -298,13 +295,19 @@ class PluginSettings(object):
 	   :param boolean force: If set to True, the modified configuration will even be written back to disk if
 	       the value didn't change.
 
-	.. method:: set_int(path, value, force=False)
+	.. method:: set_int(path, value, force=False, min=None, max=None)
 
 	   Like :func:`set` but ensures the value is an ``int`` through attempted conversion before setting it.
+	   If ``min`` and/or ``max`` are provided, it will also be ensured that the value is greater than or equal
+	   to ``min`` and less than or equal to ``max``. If that is not the case, the limit value (``min`` if less than
+	   that, ``max`` if greater than that) will be set instead.
 
-	.. method:: set_float(path, value, force=False)
+	.. method:: set_float(path, value, force=False, min=None, max=None)
 
 	   Like :func:`set` but ensures the value is an ``float`` through attempted conversion before setting it.
+	   If ``min`` and/or ``max`` are provided, it will also be ensured that the value is greater than or equal
+	   to ``min`` and less than or equal to ``max``. If that is not the case, the limit value (``min`` if less than
+	   that, ``max`` if greater than that) will be set instead.
 
 	.. method:: set_boolean(path, value, force=False)
 
@@ -315,11 +318,12 @@ class PluginSettings(object):
 		self.settings = settings
 		self.plugin_key = plugin_key
 
-		if defaults is None:
-			defaults = dict()
-		self.defaults = dict(plugins=dict())
-		self.defaults["plugins"][plugin_key] = defaults
-		self.defaults["plugins"][plugin_key]["_config_version"] = None
+		if defaults is not None:
+			self.defaults = dict(plugins=dict())
+			self.defaults["plugins"][plugin_key] = defaults
+			self.defaults["plugins"][plugin_key]["_config_version"] = None
+		else:
+			self.defaults = None
 
 		if get_preprocessors is None:
 			get_preprocessors = dict()
@@ -345,14 +349,14 @@ class PluginSettings(object):
 			return result
 
 		def add_getter_kwargs(kwargs):
-			if not "defaults" in kwargs:
+			if not "defaults" in kwargs and self.defaults is not None:
 				kwargs.update(defaults=self.defaults)
 			if not "preprocessors" in kwargs:
 				kwargs.update(preprocessors=self.get_preprocessors)
 			return kwargs
 
 		def add_setter_kwargs(kwargs):
-			if not "defaults" in kwargs:
+			if not "defaults" in kwargs and self.defaults is not None:
 				kwargs.update(defaults=self.defaults)
 			if not "preprocessors" in kwargs:
 				kwargs.update(preprocessors=self.set_preprocessors)

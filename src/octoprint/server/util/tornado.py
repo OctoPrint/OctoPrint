@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -7,11 +7,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import logging
 import os
-import datetime
-import stat
 import mimetypes
-import email
-import time
 import re
 
 import tornado
@@ -27,36 +23,6 @@ import tornado.tcpserver
 import tornado.util
 
 import octoprint.util
-
-
-#~~ Monkey patching
-
-
-def fix_ioloop_scheduling():
-	"""
-	This monkey patches tornado's :meth:``tornado.ioloop.PeriodicCallback._schedule_next`` method so it no longer
-	blocks for long times on slow machines (RPi) when the system time happens to change by a large amount (e.g. due to
-	the first ever contact to an NTP server).
-
-	Patch by @nosyjoe on Github. See this PR against tornado: https://github.com/tornadoweb/tornado/pull/1290
-	"""
-
-	import math
-
-	# patched implementation taken from PR
-	def _schedule_next(self):
-		if self._running:
-			current_time = self.io_loop.time()
-
-			if self._next_timeout <= current_time:
-				callback_time_sec = self.callback_time / 1000.0
-				self._next_timeout += (math.floor((current_time - self._next_timeout) / callback_time_sec) + 1) * callback_time_sec
-
-			self._timeout = self.io_loop.add_timeout(self._next_timeout, self._run)
-
-	# replace original implementation with patched version
-	import tornado.ioloop
-	tornado.ioloop.PeriodicCallback._schedule_next = _schedule_next
 
 
 #~~ WSGI middleware
@@ -104,18 +70,22 @@ class UploadStorageFallbackHandler(tornado.web.RequestHandler):
 	    true
 	    ------WebKitFormBoundarypYiSUx63abAmhT5C
 	    Content-Disposition: form-data; name="file.path"
+	    Content-Type: text/plain; charset=utf-8
 
 	    /tmp/tmpzupkro
 	    ------WebKitFormBoundarypYiSUx63abAmhT5C
 	    Content-Disposition: form-data; name="file.name"
+	    Content-Type: text/plain; charset=utf-8
 
 	    test.gcode
 	    ------WebKitFormBoundarypYiSUx63abAmhT5C
 	    Content-Disposition: form-data; name="file.content_type"
+	    Content-Type: text/plain; charset=utf-8
 
 	    application/octet-stream
 	    ------WebKitFormBoundarypYiSUx63abAmhT5C
 	    Content-Disposition: form-data; name="file.size"
+	    Content-Type: text/plain; charset=utf-8
 
 	    349182
 	    ------WebKitFormBoundarypYiSUx63abAmhT5C--
@@ -137,9 +107,12 @@ class UploadStorageFallbackHandler(tornado.web.RequestHandler):
 		self._path = path
 
 		self._suffixes = dict((key, key) for key in ("name", "path", "content_type", "size"))
-		for suffix_type, suffix in suffixes.iteritems():
+		for suffix_type, suffix in suffixes.items():
 			if suffix_type in self._suffixes and suffix is not None:
 				self._suffixes[suffix_type] = suffix
+
+		# multipart boundary
+		self._multipart_boundary = None
 
 		# Parts, files and values will be stored here
 		self._parts = dict()
@@ -177,7 +150,7 @@ class UploadStorageFallbackHandler(tornado.web.RequestHandler):
 			if self.is_multipart():
 				if not self._bytes_left:
 					# we don't support requests without a content-length
-					raise tornado.web.HTTPError(400, reason="No Content-Length supplied")
+					raise tornado.web.HTTPError(400, log_message="No Content-Length supplied")
 
 				# extract the multipart boundary
 				fields = self._content_type.split(";")
@@ -190,7 +163,14 @@ class UploadStorageFallbackHandler(tornado.web.RequestHandler):
 							self._multipart_boundary = tornado.escape.utf8(v)
 						break
 				else:
-					self._multipart_boundary = None
+					# RFC2046 section 5.1 (as referred to from RFC 7578) defines the boundary
+					# parameter as mandatory for multipart requests:
+					#
+					#     The only mandatory global parameter for the "multipart" media type is
+					#     the boundary parameter, which consists of 1 to 70 characters [...]
+					#
+					# So no boundary? 400 Bad Request
+					raise tornado.web.HTTPError(400, log_message="No multipart boundary supplied")
 		else:
 			self._fallback(self.request, b"")
 			self._finished = True
@@ -272,9 +252,19 @@ class UploadStorageFallbackHandler(tornado.web.RequestHandler):
 			header = header[header_check:]
 
 		# convert to dict
-		header = tornado.httputil.HTTPHeaders.parse(header.decode("utf-8"))
+		try:
+			header = tornado.httputil.HTTPHeaders.parse(header.decode("utf-8"))
+		except UnicodeDecodeError:
+			try:
+				header = tornado.httputil.HTTPHeaders.parse(header.decode("iso-8859-1"))
+			except:
+				# looks like we couldn't decode something here neither as UTF-8 nor ISO-8859-1
+				self._logger.warn("Could not decode multipart headers in request, should be either UTF-8 or ISO-8859-1")
+				self.send_error(400)
+				return
+
 		disp_header = header.get("Content-Disposition", "")
-		disposition, disp_params = tornado.httputil._parse_header(disp_header)
+		disposition, disp_params = _parse_header(disp_header, strip_quotes=False)
 
 		if disposition != "form-data":
 			self._logger.warn("Got a multipart header without form-data content disposition, ignoring that one")
@@ -283,7 +273,22 @@ class UploadStorageFallbackHandler(tornado.web.RequestHandler):
 			self._logger.warn("Got a multipart header without name, ignoring that one")
 			return
 
-		self._current_part = self._on_part_start(disp_params["name"], header.get("Content-Type", None), filename=disp_params["filename"] if "filename" in disp_params else None)
+		filename = disp_params.get("filename*", None) # RFC 5987 header present?
+		if filename is not None:
+			try:
+				filename = _extended_header_value(filename)
+			except:
+				# parse error, this is not RFC 5987 compliant after all
+				self._logger.warn("extended filename* value {!r} is not RFC 5987 compliant".format(filename))
+				self.send_error(400)
+				return
+		else:
+			# no filename* header, just strip quotes from filename header then and be done
+			filename = _strip_value_quotes(disp_params.get("filename", None))
+
+		self._current_part = self._on_part_start(_strip_value_quotes(disp_params["name"]),
+		                                         header.get("Content-Type", None),
+		                                         filename=filename)
 
 	def _on_part_start(self, name, content_type, filename=None):
 		"""
@@ -322,7 +327,7 @@ class UploadStorageFallbackHandler(tornado.web.RequestHandler):
 						file=handle)
 
 		else:
-			return dict(name=tornado.escape.utf8(name), content_type=content_type, data=b"")
+			return dict(name=tornado.escape.utf8(name), content_type=tornado.escape.utf8(content_type), data=b"")
 
 	def _on_part_data(self, part, data):
 		"""
@@ -357,7 +362,7 @@ class UploadStorageFallbackHandler(tornado.web.RequestHandler):
 		"""
 
 		self._new_body = b""
-		for name, part in self._parts.iteritems():
+		for name, part in self._parts.items():
 			if "filename" in part:
 				# add form fields for filename, path, size and content_type for all files contained in the request
 				if not "path" in part:
@@ -371,11 +376,12 @@ class UploadStorageFallbackHandler(tornado.web.RequestHandler):
 				if "content_type" in part:
 					parameters["content_type"] = part["content_type"]
 
-				fields = dict((self._suffixes[key], value) for (key, value) in parameters.iteritems())
-				for n, p in fields.iteritems():
+				fields = dict((self._suffixes[key], value) for (key, value) in parameters.items())
+				for n, p in fields.items():
 					key = name + "." + n
 					self._new_body += b"--%s\r\n" % self._multipart_boundary
 					self._new_body += b"Content-Disposition: form-data; name=\"%s\"\r\n" % key
+					self._new_body += b"Content-Type: text/plain; charset=utf-8\r\n"
 					self._new_body += b"\r\n"
 					self._new_body += b"%s\r\n" % p
 			elif "data" in part:
@@ -430,6 +436,47 @@ class UploadStorageFallbackHandler(tornado.web.RequestHandler):
 	options = _handle_method
 
 
+def _parse_header(line, strip_quotes=True):
+	parts = tornado.httputil._parseparam(';' + line)
+	key = next(parts)
+	pdict = {}
+	for p in parts:
+		i = p.find('=')
+		if i >= 0:
+			name = p[:i].strip().lower()
+			value = p[i + 1:].strip()
+			if strip_quotes:
+				value = _strip_value_quotes(value)
+			pdict[name] = value
+	return key, pdict
+
+
+def _strip_value_quotes(value):
+	if not value:
+		return value
+
+	if len(value) >= 2 and value[0] == value[-1] == '"':
+		value = value[1:-1]
+		value = value.replace('\\\\', '\\').replace('\\"', '"')
+
+	return value
+
+
+def _extended_header_value(value):
+	if not value:
+		return value
+
+	if value.lower().startswith("iso-8859-1'") or value.lower().startswith("utf-8'"):
+		# RFC 5987 section 3.2
+		from urllib import unquote
+		encoding, _, value = value.split("'", 2)
+		return unquote(octoprint.util.to_str(value, encoding="iso-8859-1")).decode(encoding)
+
+	else:
+		# no encoding provided, strip potentially present quotes and call it a day
+		return octoprint.util.to_unicode(_strip_value_quotes(value), encoding="utf-8")
+
+
 class WsgiInputContainer(object):
 	"""
 	A WSGI container for use with Tornado that allows supplying the request body to be used for ``wsgi.input`` in the
@@ -450,8 +497,19 @@ class WsgiInputContainer(object):
 	methods have been adjusted to allow for an optionally supplied ``body`` argument which is then used for ``wsgi.input``.
 	"""
 
-	def __init__(self, wsgi_application):
+	def __init__(self, wsgi_application, headers=None, forced_headers=None, removed_headers=None):
 		self.wsgi_application = wsgi_application
+
+		if headers is None:
+			headers = dict()
+		if forced_headers is None:
+			forced_headers = dict()
+		if removed_headers is None:
+			removed_headers = []
+
+		self.headers = headers
+		self.forced_headers = forced_headers
+		self.removed_headers = removed_headers
 
 	def __call__(self, request, body=None):
 		"""
@@ -479,7 +537,8 @@ class WsgiInputContainer(object):
 		if not data:
 			raise Exception("WSGI app did not call start_response")
 
-		status_code = int(data["status"].split()[0])
+		status_code, reason = data["status"].split(" ", 1)
+		status_code = int(status_code)
 		headers = data["headers"]
 		header_set = set(k.lower() for (k, v) in headers)
 		body = tornado.escape.utf8(body)
@@ -488,16 +547,21 @@ class WsgiInputContainer(object):
 				headers.append(("Content-Length", str(len(body))))
 			if "content-type" not in header_set:
 				headers.append(("Content-Type", "text/html; charset=UTF-8"))
-		if "server" not in header_set:
-			headers.append(("Server", "TornadoServer/%s" % tornado.version))
 
-		parts = [tornado.escape.utf8("HTTP/1.1 " + data["status"] + "\r\n")]
+		header_set = set(k.lower() for (k, v) in headers)
+		for header, value in self.headers.items():
+			if header.lower() not in header_set:
+				headers.append((header, value))
+		for header, value in self.forced_headers.items():
+			headers.append((header, value))
+		headers = [(header, value) for header, value in headers if not header.lower() in self.removed_headers]
+
+		start_line = tornado.httputil.ResponseStartLine("HTTP/1.1", status_code, reason)
+		header_obj = tornado.httputil.HTTPHeaders()
 		for key, value in headers:
-			parts.append(tornado.escape.utf8(key) + b": " + tornado.escape.utf8(value) + b"\r\n")
-		parts.append(b"\r\n")
-		parts.append(body)
-		request.write(b"".join(parts))
-		request.finish()
+			header_obj.add(key, value)
+		request.connection.write_headers(start_line, header_obj, chunk=body)
+		request.connection.finish()
 		self._log(status_code, request)
 
 	@staticmethod
@@ -517,7 +581,7 @@ class WsgiInputContainer(object):
 
 		# determine the request_body to supply as wsgi.input
 		if body is not None:
-			if isinstance(body, (bytes, str)):
+			if isinstance(body, (bytes, str, unicode)):
 				request_body = io.BytesIO(tornado.escape.utf8(body))
 			else:
 				request_body = body
@@ -532,22 +596,22 @@ class WsgiInputContainer(object):
 			host = request.host
 			port = 443 if request.protocol == "https" else 80
 		environ = {
-		"REQUEST_METHOD": request.method,
-		"SCRIPT_NAME": "",
-		"PATH_INFO": to_wsgi_str(tornado.escape.url_unescape(
-			request.path, encoding=None, plus=False)),
-		"QUERY_STRING": request.query,
-		"REMOTE_ADDR": request.remote_ip,
-		"SERVER_NAME": host,
-		"SERVER_PORT": str(port),
-		"SERVER_PROTOCOL": request.version,
-		"wsgi.version": (1, 0),
-		"wsgi.url_scheme": request.protocol,
-		"wsgi.input": request_body,
-		"wsgi.errors": sys.stderr,
-		"wsgi.multithread": False,
-		"wsgi.multiprocess": True,
-		"wsgi.run_once": False,
+			"REQUEST_METHOD": request.method,
+			"SCRIPT_NAME": "",
+			"PATH_INFO": to_wsgi_str(tornado.escape.url_unescape(
+				request.path, encoding=None, plus=False)),
+			"QUERY_STRING": request.query,
+			"REMOTE_ADDR": request.remote_ip,
+			"SERVER_NAME": host,
+			"SERVER_PORT": str(port),
+			"SERVER_PROTOCOL": request.version,
+			"wsgi.version": (1, 0),
+			"wsgi.url_scheme": request.protocol,
+			"wsgi.input": request_body,
+			"wsgi.errors": sys.stderr,
+			"wsgi.multithread": False,
+			"wsgi.multiprocess": True,
+			"wsgi.run_once": False,
 		}
 		if "Content-Type" in request.headers:
 			environ["CONTENT_TYPE"] = request.headers.pop("Content-Type")
@@ -568,7 +632,7 @@ class WsgiInputContainer(object):
 			log_method = access_log.error
 		request_time = 1000.0 * request.request_time()
 		summary = request.method + " " + request.uri + " (" + \
-				  request.remote_ip + ")"
+		          request.remote_ip + ")"
 		log_method("%d %s %.2fms", status_code, summary, request_time)
 
 
@@ -591,36 +655,24 @@ class CustomHTTPServer(tornado.httpserver.HTTPServer):
 
 	``default_max_body_size`` is the default maximum body size to apply if no specific one from ``max_body_sizes`` matches.
 	"""
+	def __init__(self, *args, **kwargs):
+		pass
 
-	def __init__(self, request_callback, no_keep_alive=False, io_loop=None,
-				 xheaders=False, ssl_options=None, protocol=None,
-				 decompress_request=False,
-				 chunk_size=None, max_header_size=None,
-				 idle_connection_timeout=None, body_timeout=None,
-				 max_body_sizes=None, default_max_body_size=None, max_buffer_size=None):
-		self.request_callback = request_callback
-		self.no_keep_alive = no_keep_alive
-		self.xheaders = xheaders
-		self.protocol = protocol
-		self.conn_params = CustomHTTP1ConnectionParameters(
-			decompress=decompress_request,
-			chunk_size=chunk_size,
-			max_header_size=max_header_size,
-			header_timeout=idle_connection_timeout or 3600,
-			max_body_sizes=max_body_sizes,
-			default_max_body_size=default_max_body_size,
-			body_timeout=body_timeout)
-		tornado.tcpserver.TCPServer.__init__(self, io_loop=io_loop, ssl_options=ssl_options,
-						   max_buffer_size=max_buffer_size,
-						   read_chunk_size=chunk_size)
-		self._connections = set()
+	def initialize(self, *args, **kwargs):
+		default_max_body_size = kwargs.pop("default_max_body_size", None)
+		max_body_sizes = kwargs.pop("max_body_sizes", None)
+
+		tornado.httpserver.HTTPServer.initialize(self, *args, **kwargs)
+
+		additional = dict(default_max_body_size=default_max_body_size,
+		                  max_body_sizes=max_body_sizes)
+		self.conn_params = CustomHTTP1ConnectionParameters.from_stock_params(self.conn_params, **additional)
 
 
 	def handle_stream(self, stream, address):
 		context = tornado.httpserver._HTTPRequestContext(stream, address,
-									  self.protocol)
-		conn = CustomHTTP1ServerConnection(
-			stream, self.conn_params, context)
+		                                                 self.protocol)
+		conn = CustomHTTP1ServerConnection(stream, self.conn_params, context)
 		self._connections.add(conn)
 		conn.start_serving(self)
 
@@ -637,7 +689,7 @@ class CustomHTTP1ServerConnection(tornado.http1connection.HTTP1ServerConnection)
 		try:
 			while True:
 				conn = CustomHTTP1Connection(self.stream, False,
-									   self.params, self.context)
+				                             self.params, self.context)
 				request_delegate = delegate.start_request(self, conn)
 				try:
 					ret = yield conn.read_response(request_delegate)
@@ -681,8 +733,13 @@ class CustomHTTP1Connection(tornado.http1connection.HTTP1Connection):
 		current request exceeds the individual max content length, the request processing is aborted and an
 		``HTTPInputError`` is raised.
 		"""
-		content_length = headers.get("Content-Length")
 		if "Content-Length" in headers:
+			if "Transfer-Encoding" in headers:
+				# Response cannot contain both Content-Length and
+				# Transfer-Encoding headers.
+				# http://tools.ietf.org/html/rfc7230#section-3.3.3
+				raise tornado.httputil.HTTPInputError(
+					"Response with both Transfer-Encoding and Content-Length")
 			if "," in headers["Content-Length"]:
 				# Proxies sometimes cause Content-Length headers to get
 				# duplicated.  If all the values are identical then we can
@@ -693,9 +750,14 @@ class CustomHTTP1Connection(tornado.http1connection.HTTP1Connection):
 						"Multiple unequal Content-Lengths: %r" %
 						headers["Content-Length"])
 				headers["Content-Length"] = pieces[0]
-			content_length = int(headers["Content-Length"])
 
-			content_length = int(content_length)
+			try:
+				content_length = int(headers["Content-Length"])
+			except ValueError:
+				# Handles non-integer Content-Length value.
+				raise tornado.httputil.HTTPInputError(
+					"Only integer Content-Length is allowed: %s" % headers["Content-Length"])
+
 			max_content_length = self._get_max_content_length(self._request_start_line.method, self._request_start_line.path)
 			if max_content_length is not None and 0 <= max_content_length < content_length:
 				raise tornado.httputil.HTTPInputError("Content-Length too long")
@@ -747,9 +809,20 @@ class CustomHTTP1ConnectionParameters(tornado.http1connection.HTTP1ConnectionPar
 	"""
 
 	def __init__(self, *args, **kwargs):
-		tornado.http1connection.HTTP1ConnectionParameters.__init__(self, args, kwargs)
-		self.max_body_sizes = kwargs["max_body_sizes"] if "max_body_sizes" in kwargs else list()
-		self.default_max_body_size = kwargs["default_max_body_size"] if "default_max_body_size" in kwargs else None
+		max_body_sizes = kwargs.pop("max_body_sizes", list())
+		default_max_body_size = kwargs.pop("default_max_body_size", None)
+
+		tornado.http1connection.HTTP1ConnectionParameters.__init__(self, *args, **kwargs)
+
+		self.max_body_sizes = max_body_sizes
+		self.default_max_body_size = default_max_body_size
+
+	@classmethod
+	def from_stock_params(cls, other, **additional):
+		kwargs = dict(other.__dict__)
+		for key, value in additional.items():
+			kwargs[key] = value
+		return cls(**kwargs)
 
 #~~ customized large response handler
 
@@ -785,7 +858,7 @@ class LargeResponseHandler(tornado.web.StaticFileHandler):
 	"""
 
 	def initialize(self, path, default_filename=None, as_attachment=False, allow_client_caching=True,
-	               access_validation=None, path_validation=None, etag_generator=None,
+	               access_validation=None, path_validation=None, etag_generator=None, name_generator=None,
 	               mime_type_guesser=None):
 		tornado.web.StaticFileHandler.initialize(self, os.path.abspath(path), default_filename)
 		self._as_attachment = as_attachment
@@ -793,6 +866,7 @@ class LargeResponseHandler(tornado.web.StaticFileHandler):
 		self._access_validation = access_validation
 		self._path_validation = path_validation
 		self._etag_generator = etag_generator
+		self._name_generator = name_generator
 		self._mime_type_guesser = mime_type_guesser
 
 	def get(self, path, include_body=True):
@@ -809,7 +883,15 @@ class LargeResponseHandler(tornado.web.StaticFileHandler):
 
 	def set_extra_headers(self, path):
 		if self._as_attachment:
-			self.set_header("Content-Disposition", "attachment; filename=%s" % os.path.basename(path))
+			filename = None
+			if callable(self._name_generator):
+				filename = self._name_generator(path)
+			if filename is None:
+				filename = os.path.basename(path)
+			
+			filename = tornado.escape.url_escape(filename, plus=False)
+			self.set_header("Content-Disposition", "attachment; filename=\"{}\"; filename*=UTF-8''{}".format(filename,
+			                                                                                                 filename))
 
 		if not self._allow_client_caching:
 			self.set_header("Cache-Control", "max-age=0, must-revalidate, private")
@@ -942,6 +1024,39 @@ class StaticDataHandler(tornado.web.RequestHandler):
 		self.write(self.data)
 		self.flush()
 		self.finish()
+
+
+class GlobalHeaderTransform(tornado.web.OutputTransform):
+
+	HEADERS = dict()
+	FORCED_HEADERS = dict()
+	REMOVED_HEADERS = []
+
+	@classmethod
+	def for_headers(cls, name, headers=None, forced_headers=None, removed_headers=None):
+		if headers is None:
+			headers = dict()
+		if forced_headers is None:
+			forced_headers = dict()
+		if removed_headers is None:
+			removed_headers = []
+
+		return type(name, (GlobalHeaderTransform,), dict(HEADERS=headers,
+		                                                 FORCED_HEADERS=forced_headers,
+		                                                 REMOVED_HEADERS=removed_headers))
+
+	def __init__(self, request):
+		tornado.web.OutputTransform.__init__(self, request)
+
+	def transform_first_chunk(self, status_code, headers, chunk, finishing):
+		for header, value in self.HEADERS.items():
+			if not header in headers:
+				headers[header] = value
+		for header, value in self.FORCED_HEADERS.items():
+			headers[header] = value
+		for header in self.REMOVED_HEADERS:
+			del headers[header]
+		return status_code, headers, chunk
 
 
 #~~ Factory method for creating Flask access validation wrappers from the Tornado request context

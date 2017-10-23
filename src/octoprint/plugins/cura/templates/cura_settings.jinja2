@@ -8,13 +8,13 @@
 {% endtrans %}</p>
 
 <form class="form-horizontal">
-    {% include "_snippets/settings/cura/enginePath.jinja2" %}
-    {% include "_snippets/settings/cura/engineLog.jinja2" %}
+    {% include "snippets/settings/cura/enginePath.jinja2" %}
+    {% include "snippets/settings/cura/engineLog.jinja2" %}
 </form>
 
 <h4>{{ _('Profiles') }}</h4>
 
-{% include "_snippets/settings/cura/profiles.jinja2" %}
+{% include "snippets/settings/cura/profiles.jinja2" %}
 
 <button class="btn pull-right" data-bind="click: function() { $root.showImportProfileDialog() }">{{ _('Import Profile...') }}</button>
 
@@ -22,4 +22,4 @@
     <small>{% trans %}For more information on configuration and usage please <a href="{{ plugin_cura_homepage }}" target="_blank">see the Plugin's homepage</a>.{% endtrans %}</small>
 </div>
 
-{% include "_snippets/settings/cura/profileImporter.jinja2" %}
+{% include "snippets/settings/cura/profileImporter.jinja2" %}

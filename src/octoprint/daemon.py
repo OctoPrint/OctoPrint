@@ -5,8 +5,8 @@ Generic linux daemon base class
 Originally from http://www.jejik.com/articles/2007/02/a_simple_unix_linux_daemon_in_python/#c35
 """
 
-from __future__ import (print_function, absolute_import)
-import sys, os, time, signal
+from __future__ import absolute_import, division, print_function
+import sys, os, time, signal, io
 
 class Daemon:
 	"""
@@ -44,7 +44,7 @@ class Daemon:
 		# decouple from parent environment
 		os.chdir('/')
 		os.setsid()
-		os.umask(002)
+		os.umask(0o002)
 
 		# do second fork
 		try:
@@ -172,4 +172,4 @@ class Daemon:
 
 	@classmethod
 	def error(cls, line):
-		print(line, stream=sys.stderr)
+		print(line, file=sys.stderr)

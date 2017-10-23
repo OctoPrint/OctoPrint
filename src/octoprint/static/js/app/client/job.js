@@ -1,31 +1,53 @@
 (function (global, factory) {
     if (typeof define === "function" && define.amd) {
-        define(["OctoPrint"], factory);
+        define(["OctoPrintClient"], factory);
     } else {
-        factory(window.OctoPrint);
+        factory(global.OctoPrintClient);
     }
-})(window || this, function(OctoPrint) {
+})(this, function(OctoPrintClient) {
     var url = "api/job";
 
-    var issueCommand = function(command, opts) {
-        return OctoPrint.issueCommand(url, command, {}, opts);
+    var OctoPrintJobClient = function(base) {
+        this.base = base;
     };
 
-    OctoPrint.job = {
-        get: function(opts) {
-            return OctoPrint.get(url, opts);
-        },
-        start: function(opts) {
-            return issueCommand("start", opts);
-        },
-        restart: function(opts) {
-            return issueCommand("restart", opts);
-        },
-        pause: function(opts) {
-            return issueCommand("pause", opts);
-        },
-        cancel: function(opts) {
-            return issueCommand("cancel", opts);
+    OctoPrintJobClient.prototype.issueCommand = function(command, payload, opts) {
+        if (arguments.length == 2) {
+            opts = payload;
+            payload = {};
         }
-    }
+
+        return this.base.issueCommand(url, command, payload, opts);
+    };
+
+    OctoPrintJobClient.prototype.get = function(opts) {
+        return OctoPrint.get(url, opts);
+    };
+
+    OctoPrintJobClient.prototype.start = function(opts) {
+        return this.issueCommand("start", opts);
+    };
+
+    OctoPrintJobClient.prototype.restart = function(opts) {
+        return this.issueCommand("restart", opts);
+    };
+
+    OctoPrintJobClient.prototype.pause = function(opts) {
+        return this.issueCommand("pause", {"action": "pause"}, opts);
+    };
+
+    OctoPrintJobClient.prototype.resume = function(opts) {
+        return this.issueCommand("pause", {"action": "resume"}, opts)
+    };
+
+    OctoPrintJobClient.prototype.togglePause = function(opts) {
+        return this.issueCommand("pause", {"action": "toggle"}, opts);
+    };
+
+    OctoPrintJobClient.prototype.cancel = function(opts) {
+        return this.issueCommand("cancel", opts);
+    };
+
+    OctoPrintClient.registerComponent("job", OctoPrintJobClient);
+    return OctoPrintJobClient;
 });

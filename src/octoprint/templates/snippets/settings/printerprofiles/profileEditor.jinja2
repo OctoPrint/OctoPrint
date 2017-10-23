@@ -1,0 +1,40 @@
+<div id="settings_printerProfiles_editDialog" class="modal hide fade">
+    <div class="modal-header">
+        <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
+        <h3 class="modal-title"></h3>
+    </div>
+    <div class="modal-body">
+        <div class="full-sized-box">
+            <ul class="nav nav-pills">
+                <li class="active"><a href="#settings_printerProfiles_editDialog_general" data-toggle="tab">{{ _('General') }}</a></li>
+                <li><a href="#settings_printerProfiles_editDialog_buildvolume" data-toggle="tab">{{ _('Print bed & build volume') }}</a></li>
+                <li><a href="#settings_printerProfiles_editDialog_axes" data-toggle="tab">{{ _('Axes') }}</a></li>
+                <li><a href="#settings_printerProfiles_editDialog_extruder" data-toggle="tab">{{ _('Hotend & extruder') }}</a></li>
+            </ul>
+
+            <!-- ko with: printerProfiles.editor -->
+            <div class="tab-content">
+                <div id="settings_printerProfiles_editDialog_general" class="tab-pane active">
+                    {% include 'snippets/settings/printerprofiles/profileEditorGeneral.jinja2' %}
+                </div>
+
+                <div id="settings_printerProfiles_editDialog_buildvolume" class="tab-pane">
+                    {% include 'snippets/settings/printerprofiles/profileEditorBuildvolume.jinja2' %}
+                </div>
+
+                <div id="settings_printerProfiles_editDialog_axes" class="tab-pane">
+                    {% include 'snippets/settings/printerprofiles/profileEditorAxes.jinja2' %}
+                </div>
+
+                <div id="settings_printerProfiles_editDialog_extruder" class="tab-pane">
+                    {% include 'snippets/settings/printerprofiles/profileEditorExtruder.jinja2' %}
+                </div>
+            </div>
+            <!-- /ko -->
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Abort') }}</button>
+        <button class="btn btn-primary btn-confirm" data-bind="enabled: printerProfiles.enableEditorSubmitButton, css: {disabled: !printerProfiles.enableEditorSubmitButton()}"><i class="fa fa-spinner fa-spin" data-bind="visible: printerProfiles.requestInProgress()"></i> {{ _('Confirm') }}</button>
+    </div>
+</div>

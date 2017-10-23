@@ -1,11 +1,12 @@
 $(function() {
-    function GcodeFilesViewModel(parameters) {
+    function FilesViewModel(parameters) {
         var self = this;
 
         self.settingsViewModel = parameters[0];
         self.loginState = parameters[1];
         self.printerState = parameters[2];
         self.slicing = parameters[3];
+        self.printerProfiles=parameters[4];
 
         self.isErrorOrClosed = ko.observable(undefined);
         self.isOperational = ko.observable(undefined);
@@ -58,15 +59,30 @@ $(function() {
         self.localTarget = undefined;
         self.sdTarget = undefined;
 
+        self.dropOverlay = undefined;
+        self.dropZone = undefined;
+        self.dropZoneLocal = undefined;
+        self.dropZoneSd = undefined;
+        self.dropZoneBackground = undefined;
+        self.dropZoneLocalBackground = undefined;
+        self.dropZoneSdBackground = undefined;
+        self.listElement = undefined;
+
+        self.ignoreUpdatedFilesEvent = false;
+
+        self.addingFolder = ko.observable(false);
+        self.activeRemovals = ko.observableArray([]);
+
         self.addFolderDialog = undefined;
         self.addFolderName = ko.observable(undefined);
-        self.enableAddFolder = ko.computed(function() {
-            return self.loginState.isUser() && self.addFolderName() && self.addFolderName().trim() != "";
+        self.enableAddFolder = ko.pureComputed(function() {
+            return self.loginState.isUser() && self.addFolderName() && self.addFolderName().trim() != "" && !self.addingFolder();
         });
 
         self.allItems = ko.observable(undefined);
         self.listStyle = ko.observable("folders_files");
         self.currentPath = ko.observable("");
+        self.uploadProgressText = ko.observable();
 
         // initialize list helper
         self.listHelper = new ItemListHelper(
@@ -74,8 +90,8 @@ $(function() {
             {
                 "name": function(a, b) {
                     // sorts ascending
-                    if (a["name"].toLocaleLowerCase() < b["name"].toLocaleLowerCase()) return -1;
-                    if (a["name"].toLocaleLowerCase() > b["name"].toLocaleLowerCase()) return 1;
+                    if (a["display"].toLowerCase() < b["display"].toLowerCase()) return -1;
+                    if (a["display"].toLowerCase() > b["display"].toLowerCase()) return 1;
                     return 0;
                 },
                 "upload": function(a, b) {
@@ -106,13 +122,10 @@ $(function() {
                 },
                 "model": function(data) {
                     return data["type"] && (data["type"] == "model" || data["type"] == "folder");
-                },
-                "emptyFolder": function(data) {
-                    return data["type"] && (data["type"] != "folder" || data["children"].length != 0);
                 }
             },
             "name",
-            ["emptyFolder"],
+            [],
             [["sd", "local"], ["machinecode", "model"]],
             0
         );
@@ -151,12 +164,12 @@ $(function() {
             return self.loginState.isUser() && self.isOperational() && self.isLoadActionPossible();
         });
 
-        self.printerState.filename.subscribe(function(newValue) {
+        self.printerState.filepath.subscribe(function(newValue) {
             self.highlightFilename(newValue);
         });
 
         self.highlightCurrentFilename = function() {
-            self.highlightFilename(self.printerState.filename());
+            self.highlightFilename(self.printerState.filepath());
         };
 
         self.highlightFilename = function(filename) {
@@ -165,9 +178,9 @@ $(function() {
             } else {
                 self.listHelper.selectItem(function(item) {
                     if (item.type == "folder") {
-                        return _.startsWith(filename, OctoPrint.files.pathForElement(item) + "/");
+                        return _.startsWith(filename, item.path + "/");
                     } else {
-                        return OctoPrint.files.pathForElement(item) == filename;
+                        return item.path == filename;
                     }
                 });
             }
@@ -192,41 +205,105 @@ $(function() {
             self.isSdReady(data.flags.sdReady);
         };
 
-        self._otherRequestInProgress = false;
-        self.requestData = function(filenameToFocus, locationToFocus, switchToPath) {
-            if (self._otherRequestInProgress) return;
+        self._otherRequestInProgress = undefined;
+        self._focus = undefined;
+        self._switchToPath = undefined;
+        self.requestData = function(params) {
+            var focus, switchToPath, force;
 
-            self._otherRequestInProgress = true;
-            OctoPrint.files.list({ data: { recursive: true} })
+            if (_.isObject(params)) {
+                focus = params.focus;
+                switchToPath = params.switchToPath;
+                force = params.force
+            } else if (arguments.length) {
+                // old argument list type call signature
+                log.warn("FilesViewModel.requestData called with old argument list. That is deprecated, please use parameter object instead.");
+                if (arguments.length >= 1) {
+                    if (arguments.length >= 2) {
+                        focus = {location: arguments[1], path: arguments[0]};
+                    } else {
+                        focus = {location: "local", path: arguments[0]};
+                    }
+                }
+                if (arguments.length >= 3) {
+                    switchToPath = arguments[2];
+                }
+                if (arguments.length >= 4) {
+                    force = arguments[3];
+                }
+            }
+
+            self._focus = self._focus || focus;
+            self._switchToPath = self._switchToPath || switchToPath;
+
+            if (self._otherRequestInProgress !== undefined) {
+                return self._otherRequestInProgress
+            }
+
+            return self._otherRequestInProgress = OctoPrint.files.list(true, force)
                 .done(function(response) {
-                    self.fromResponse(response, filenameToFocus, locationToFocus, switchToPath);
+                    self.fromResponse(response, {focus: self._focus, switchToPath: self._switchToPath});
                 })
                 .always(function() {
-                    self._otherRequestInProgress = false;
+                    self._otherRequestInProgress = undefined;
+                    self._focus = undefined;
+                    self._switchToPath = undefined;
                 });
         };
 
-        self.fromResponse = function(response, filenameToFocus, locationToFocus, switchToPath) {
+        self.fromResponse = function(response, params) {
+            var focus = undefined;
+            var switchToPath;
+
+            if (_.isObject(params)) {
+                focus = params.focus || undefined;
+                switchToPath = params.switchToPath || undefined;
+            } else if (arguments.length > 1) {
+                log.warn("FilesViewModel.requestData called with old argument list. That is deprecated, please use parameter object instead.");
+                if (arguments.length > 2) {
+                    focus = {location: arguments[2], path: arguments[1]};
+                } else {
+                    focus = {location: "local", path: arguments[1]};
+                }
+                if (arguments.length > 3) {
+                    switchToPath = arguments[3] || undefined;
+                }
+            }
+
             var files = response.files;
 
             self.allItems(files);
-            self.currentPath("");
 
             if (!switchToPath) {
-                self.listHelper.updateItems(files);
+                var currentPath = self.currentPath();
+                if (currentPath === undefined) {
+                    self.listHelper.updateItems(files);
+                    self.currentPath("");
+                } else {
+                    // if we have a current path, make sure we stay on it
+                    self.changeFolderByPath(currentPath);
+                }
             } else {
                 self.changeFolderByPath(switchToPath);
             }
 
-            if (filenameToFocus) {
+            if (focus) {
                 // got a file to scroll to
-                if (locationToFocus === undefined) {
-                    locationToFocus = "local";
-                }
-                var entryElement = self.getEntryElement({name: filenameToFocus, origin: locationToFocus});
+                var entryElement = self.getEntryElement({path: focus.path, origin: focus.location});
                 if (entryElement) {
+                    // scroll to uploaded element
                     var entryOffset = entryElement.offsetTop;
-                    $(".gcode_files").slimScroll({ scrollTo: entryOffset + "px" });
+                    self.listElement.slimScroll({
+                        scrollTo: entryOffset + "px"
+                    });
+
+                    // highlight uploaded element
+                    var element = $(entryElement);
+                    element.on("webkitAnimationEnd oanimationend msAnimationEnd animationend", function(e) {
+                        // remove highlight class again
+                        element.removeClass("highlight");
+                    });
+                    element.addClass("highlight");
                 }
             }
 
@@ -242,7 +319,7 @@ $(function() {
         };
 
         self.changeFolder = function(data) {
-            self.currentPath(OctoPrint.files.pathForElement(data));
+            self.currentPath(data.path);
             self.listHelper.updateItems(data.children);
             self.highlightCurrentFilename();
         };
@@ -254,7 +331,7 @@ $(function() {
         };
 
         self.changeFolderByPath = function(path) {
-            var element = OctoPrint.files.elementByPath(path, { children: self.allItems() });
+            var element = self.elementByPath(path);
             if (element) {
                 self.currentPath(path);
                 self.listHelper.updateItems(element.children);
@@ -267,6 +344,7 @@ $(function() {
 
         self.showAddFolderDialog = function() {
             if (self.addFolderDialog) {
+                self.addFolderName("");
                 self.addFolderDialog.modal("show");
             }
         };
@@ -276,47 +354,83 @@ $(function() {
 
             // "local" only for now since we only support local and sdcard,
             // and sdcard doesn't support creating folders...
-            OctoPrint.files.createFolder("local", name, self.currentPath())
-                .done(function() {
-                    self.addFolderDialog.modal("hide");
-                });
-        };
+            var location = "local";
 
-        self.loadFile = function(file, printAfterLoad) {
-            if (!file) {
-                return;
-            }
-            OctoPrint.files.select(file.origin, OctoPrint.files.pathForElement(file))
-                .done(function() {
-                    if (printAfterLoad) {
-                        OctoPrint.job.start();
-                    }
-                });
-        };
-
-        self.removeFile = function(file) {
-            if (!file) {
-                return;
-            }
-
-            var index = self.listHelper.paginatedItems().indexOf(file) + 1;
-            if (index >= self.listHelper.paginatedItems().length) {
-                index = index - 2;
-            }
-            if (index < 0) {
-                index = 0;
-            }
-
-            var filenameToFocus = undefined;
-            var fileToFocus = self.listHelper.paginatedItems()[index];
-            if (fileToFocus) {
-                filenameToFocus = fileToFocus.name;
-            }
-
-            OctoPrint.files.delete(file.origin, OctoPrint.files.pathForElement(file))
-                .done(function() {
-                    self.requestData(undefined, filenameToFocus, OctoPrint.files.pathForElement(file.parent));
+            self.ignoreUpdatedFilesEvent = true;
+            self.addingFolder(true);
+            OctoPrint.files.createFolder(location, name, self.currentPath())
+                .done(function(data) {
+                    self.requestData({
+                        focus: {
+                            path: data.folder.name,
+                            location: data.folder.origin
+                        }
+                    })
+                        .done(function() {
+                            self.addFolderDialog.modal("hide");
+                        })
+                        .always(function() {
+                            self.addingFolder(false);
+                        });
                 })
+                .fail(function() {
+                    self.addingFolder(false);
+                })
+                .always(function() {
+                    self.ignoreUpdatedFilesEvent = false;
+                });
+        };
+
+        self.removeFolder = function(folder, event) {
+            if (!folder) {
+                return;
+            }
+
+            if (folder.type != "folder") {
+                return;
+            }
+
+            if (folder.weight > 0) {
+                // confirm recursive delete
+                var options = {
+                    message: _.sprintf(gettext("You are about to delete the folder \"%(folder)s\" which still contains files and/or sub folders."), {folder: folder.name}),
+                    onproceed: function() {
+                        self._removeEntry(folder, event);
+                    }
+                };
+                showConfirmationDialog(options);
+            } else {
+                self._removeEntry(folder, event);
+            }
+        };
+
+        self.loadFile = function(data, printAfterLoad) {
+            if (!data) {
+                return;
+            }
+
+            if (printAfterLoad && self.listHelper.isSelected(data) && self.enablePrint(data)) {
+                // file was already selected, just start the print job
+                OctoPrint.job.start();
+            } else {
+                // select file, start print job (if requested and within dimensions)
+                var withinPrintDimensions = self.evaluatePrintDimensions(data, true);
+                var print = printAfterLoad && withinPrintDimensions;
+
+                OctoPrint.files.select(data.origin, data.path, print);
+            }
+        };
+
+        self.removeFile = function(file, event) {
+            if (!file) {
+                return;
+            }
+
+            if (file.type == "folder") {
+                return;
+            }
+
+            self._removeEntry(file, event);
         };
 
         self.sliceFile = function(file) {
@@ -324,7 +438,7 @@ $(function() {
                 return;
             }
 
-            self.slicing.show(file.origin, OctoPrint.files.pathForElement(file), true);
+            self.slicing.show(file.origin, file.path, true, undefined, {display: file.display});
         };
 
         self.initSdCard = function() {
@@ -337,6 +451,56 @@ $(function() {
 
         self.refreshSdFiles = function() {
             OctoPrint.printer.refreshSd();
+        };
+
+        self._removeEntry = function(entry, event) {
+            self.activeRemovals.push(entry.origin + ":" + entry.path);
+            var finishActiveRemoval = function() {
+                self.activeRemovals(_.filter(self.activeRemovals(), function(e) {
+                    return e != entry.origin + ":" + entry.path;
+                }));
+            };
+
+            var activateSpinner = function(){},
+                finishSpinner = function(){};
+
+            if (event) {
+                var element = $(event.currentTarget);
+                if (element.length) {
+                    var icon = $("i.fa-trash-o", element);
+                    if (icon.length) {
+                        activateSpinner = function() {
+                            icon.removeClass("fa-trash-o").addClass("fa-spinner fa-spin");
+                        };
+                        finishSpinner = function() {
+                            icon.removeClass("fa-spinner fa-spin").addClass("fa-trash-o");
+                        };
+                    }
+                }
+            }
+
+            activateSpinner();
+
+            var deferred = $.Deferred();
+            OctoPrint.files.delete(entry.origin, entry.path)
+                .done(function() {
+                    self.requestData()
+                        .done(function() {
+                            deferred.resolve();
+                        })
+                        .fail(function() {
+                            deferred.reject();
+                        });
+                })
+                .fail(function() {
+                    deferred.reject();
+                });
+
+            return deferred.promise()
+                .always(function() {
+                    finishActiveRemoval();
+                    finishSpinner();
+                });
         };
 
         self.downloadLink = function(data) {
@@ -367,7 +531,7 @@ $(function() {
         };
 
         self.getEntryId = function(data) {
-            return "gcode_file_" + md5(data["origin"] + ":" + data["name"]);
+            return "gcode_file_" + md5(data["origin"] + ":" + data["path"]);
         };
 
         self.getEntryElement = function(data) {
@@ -381,16 +545,31 @@ $(function() {
         };
 
         self.enableRemove = function(data) {
-            return self.loginState.isUser() && !_.contains(self.printerState.busyFiles(), data.origin + ":" + data.name);
+            if (_.contains(self.activeRemovals(), data.origin + ":" + data.path)) {
+                return false;
+            }
+
+            var busy = false;
+            if (data.type == "folder") {
+                busy = _.any(self.printerState.busyFiles(), function(name) {
+                    return _.startsWith(name, data.origin + ":" + data.path + "/");
+                });
+            } else {
+                busy = _.contains(self.printerState.busyFiles(), data.origin + ":" + data.path);
+            }
+            return self.loginState.isUser() && !busy;
         };
 
         self.enableSelect = function(data, printAfterSelect) {
-            var isLoadActionPossible = self.loginState.isUser() && self.isOperational() && !(self.isPrinting() || self.isPaused() || self.isLoading());
-            return isLoadActionPossible && !self.listHelper.isSelected(data);
+            return self.enablePrint(data) && !self.listHelper.isSelected(data);
+        };
+
+        self.enablePrint = function(data) {
+            return self.loginState.isUser() && self.isOperational() && !(self.isPrinting() || self.isPaused() || self.isLoading());
         };
 
         self.enableSlicing = function(data) {
-            return self.loginState.isUser() && self.slicing.enableSlicingDialog();
+            return self.loginState.isUser() && self.slicing.enableSlicingDialog() && self.slicing.enableSlicingDialogForFile(data.name);
         };
 
         self.enableAdditionalData = function(data) {
@@ -403,13 +582,18 @@ $(function() {
 
             var additionalInfo = $(".additionalInfo", entryElement);
             additionalInfo.slideToggle("fast", function() {
-                $(".toggleAdditionalData i", entryElement).toggleClass("icon-chevron-down icon-chevron-up");
+                $(".toggleAdditionalData i", entryElement).toggleClass("fa-chevron-down fa-chevron-up");
             });
         };
 
         self.getAdditionalData = function(data) {
             var output = "";
             if (data["gcodeAnalysis"]) {
+                if (data["gcodeAnalysis"]["dimensions"]) {
+                    var dimensions = data["gcodeAnalysis"]["dimensions"];
+                    output += gettext("Model size") + ": " + _.sprintf("%(width).2fmm &times; %(depth).2fmm &times; %(height).2fmm", dimensions);
+                    output += "<br>";
+                }
                 if (data["gcodeAnalysis"]["filament"] && typeof(data["gcodeAnalysis"]["filament"]) == "object") {
                     var filament = data["gcodeAnalysis"]["filament"];
                     if (_.keys(filament).length == 1) {
@@ -422,15 +606,112 @@ $(function() {
                         }
                     }
                 }
-                output += gettext("Estimated Print Time") + ": " + formatDuration(data["gcodeAnalysis"]["estimatedPrintTime"]) + "<br>";
+                output += gettext("Estimated print time") + ": " + formatFuzzyPrintTime(data["gcodeAnalysis"]["estimatedPrintTime"]) + "<br>";
             }
             if (data["prints"] && data["prints"]["last"]) {
-                output += gettext("Last Printed") + ": " + formatTimeAgo(data["prints"]["last"]["date"]) + "<br>";
-                if (data["prints"]["last"]["lastPrintTime"]) {
-                    output += gettext("Last Print Time") + ": " + formatDuration(data["prints"]["last"]["lastPrintTime"]);
+                output += gettext("Last printed") + ": " + formatTimeAgo(data["prints"]["last"]["date"]) + "<br>";
+                if (data["prints"]["last"]["printTime"]) {
+                    output += gettext("Last print time") + ": " + formatDuration(data["prints"]["last"]["printTime"]);
                 }
             }
             return output;
+        };
+
+        self.evaluatePrintDimensions = function(data, notify) {
+            if (!self.settingsViewModel.feature_modelSizeDetection()) {
+                return true;
+            }
+
+            var analysis = data["gcodeAnalysis"];
+            if (!analysis) {
+                return true;
+            }
+
+            var printingArea = data["gcodeAnalysis"]["printingArea"];
+            if (!printingArea) {
+                return true;
+            }
+
+            var printerProfile = self.printerProfiles.currentProfileData();
+            if (!printerProfile) {
+                return true;
+            }
+
+            var volumeInfo = printerProfile.volume;
+            if (!volumeInfo) {
+                return true;
+            }
+
+            // set print volume boundaries
+            var boundaries;
+            if (_.isPlainObject(volumeInfo.custom_box)) {
+                boundaries = {
+                    minX : volumeInfo.custom_box.x_min(),
+                    minY : volumeInfo.custom_box.y_min(),
+                    minZ : volumeInfo.custom_box.z_min(),
+                    maxX : volumeInfo.custom_box.x_max(),
+                    maxY : volumeInfo.custom_box.y_max(),
+                    maxZ : volumeInfo.custom_box.z_max()
+                }
+            } else {
+                boundaries = {
+                    minX : 0,
+                    maxX : volumeInfo.width(),
+                    minY : 0,
+                    maxY : volumeInfo.depth(),
+                    minZ : 0,
+                    maxZ : volumeInfo.height()
+                };
+                if (volumeInfo.origin() == "center") {
+                    boundaries["maxX"] = volumeInfo.width() / 2;
+                    boundaries["minX"] = -1 * boundaries["maxX"];
+                    boundaries["maxY"] = volumeInfo.depth() / 2;
+                    boundaries["minY"] = -1 * boundaries["maxY"];
+                }
+            }
+
+            // model not within bounds, we need to prepare a warning
+            var warning = "<p>" + _.sprintf(gettext("Object in %(name)s exceeds the print volume of the currently selected printer profile, be careful when printing this."), data) + "</p>";
+            var info = "";
+
+            var formatData = {
+                profile: boundaries,
+                object: printingArea
+            };
+
+            // find exceeded dimensions
+            if (printingArea["minX"] < boundaries["minX"] || printingArea["maxX"] > boundaries["maxX"]) {
+                info += gettext("Object exceeds print volume in width.<br>");
+            }
+            if (printingArea["minY"] < boundaries["minY"] || printingArea["maxY"] > boundaries["maxY"]) {
+                info += gettext("Object exceeds print volume in depth.<br>");
+            }
+            if (printingArea["minZ"] < boundaries["minZ"] || printingArea["maxZ"] > boundaries["maxZ"]) {
+                info += gettext("Object exceeds print volume in height.<br>");
+            }
+
+            //warn user
+            if (info != "") {
+                if (notify) {
+                    info += _.sprintf(gettext("Object's bounding box: (%(object.minX).2f, %(object.minY).2f, %(object.minZ).2f) &times; (%(object.maxX).2f, %(object.maxY).2f, %(object.maxZ).2f)"), formatData);
+                    info += "<br>";
+                    info += _.sprintf(gettext("Print volume: (%(profile.minX).2f, %(profile.minY).2f, %(profile.minZ).2f) &times; (%(profile.maxX).2f, %(profile.maxY).2f, %(profile.maxZ).2f)"), formatData);
+
+                    warning += pnotifyAdditionalInfo(info);
+
+                    warning += "<p><small>You can disable this check via Settings &gt; Features &gt; \"Enable model size detection [...]\"</small></p>";
+
+                    new PNotify({
+                        title: gettext("Object doesn't fit print volume"),
+                        text: warning,
+                        type: "warning",
+                        hide: false
+                    });
+                }
+                return false;
+            } else {
+                return true;
+            }
         };
 
         self.performSearch = function(e) {
@@ -443,11 +724,12 @@ $(function() {
                         return false;
                     }
 
-                    if (entry["type"] == "folder" && entry["children"]) {
+                    var success = entry["name"].toLocaleLowerCase().indexOf(query) > -1;
+                    if (!success && entry["type"] == "folder" && entry["children"]) {
                         return _.any(entry["children"], recursiveSearch);
-                    } else {
-                        return entry["name"].toLocaleLowerCase().indexOf(query) > -1;
                     }
+
+                    return success;
                 };
 
                 self.listHelper.changeSearchFunction(recursiveSearch);
@@ -456,6 +738,31 @@ $(function() {
             }
 
             return false;
+        };
+
+        self.elementByPath = function(path, root) {
+            root = root || {children: self.allItems()};
+
+            var recursiveSearch = function(location, element) {
+                if (location.length == 0) {
+                    return element;
+                }
+
+                if (!element.hasOwnProperty("children")) {
+                    return undefined;
+                }
+
+                var name = location.shift();
+                for (var i = 0; i < element.children.length; i++) {
+                    if (name == element.children[i].name) {
+                        return recursiveSearch(location, element.children[i]);
+                    }
+                }
+
+                return undefined;
+            };
+
+            return recursiveSearch(path.split("/"), root);
         };
 
         self.onUserLoggedIn = function(user) {
@@ -484,16 +791,18 @@ $(function() {
                 }
             });
 
-            $(".gcode_files").slimScroll({
-                height: "306px",
-                size: "5px",
-                distance: "0",
-                railVisible: true,
-                alwaysVisible: true,
-                scrollBy: "102px"
-            });
+            self.listElement = $(".gcode_files");
 
             self.addFolderDialog = $("#add_folder_dialog");
+            self.addFolderDialog.on("shown", function() {
+                $("input", self.addFolderDialog).focus();
+            });
+            $("form", self.addFolderDialog).on("submit", function(e) {
+                e.preventDefault();
+                if (self.enableAddFolder()) {
+                    self.addFolder();
+                }
+            });
 
             //~~ Gcode upload
 
@@ -514,50 +823,151 @@ $(function() {
             }
             self.sdTarget = $("#drop_sd");
 
+            self.dropOverlay = $("#drop_overlay");
+            self.dropZone = $("#drop");
+            self.dropZoneLocal = $("#drop_locally");
+            self.dropZoneSd = $("#drop_sd");
+            self.dropZoneBackground = $("#drop_background");
+            self.dropZoneLocalBackground = $("#drop_locally_background");
+            self.dropZoneSdBackground = $("#drop_sd_background");
+
+            self.dropOverlay.on('drop', self._forceEndDragNDrop);
+
             function evaluateDropzones() {
                 var enableLocal = self.loginState.isUser();
-                var enableSd = enableLocal && CONFIG_SD_SUPPORT && self.printerState.isSdReady();
+                var enableSd = enableLocal && CONFIG_SD_SUPPORT && self.printerState.isSdReady() && !self.isPrinting();
 
                 self._setDropzone("local", enableLocal);
                 self._setDropzone("sdcard", enableSd);
             }
             self.loginState.isUser.subscribe(evaluateDropzones);
             self.printerState.isSdReady.subscribe(evaluateDropzones);
+            self.isPrinting.subscribe(evaluateDropzones);
             evaluateDropzones();
 
             self.requestData();
         };
 
         self.onEventUpdatedFiles = function(payload) {
-            if (payload.type == "gcode") {
-                self.requestData(undefined, undefined, self.currentPath());
+            if (self.ignoreUpdatedFilesEvent) {
+                return;
+            }
+
+            if (payload.type !== "gcode") {
+                return;
+            }
+
+            self.requestData();
+        };
+
+        self.onEventSlicingStarted = function(payload) {
+            self.uploadProgress
+                .addClass("progress-striped")
+                .addClass("active");
+            self.uploadProgressBar.css("width", "100%");
+            if (payload.progressAvailable) {
+                self.uploadProgressText(_.sprintf(gettext("Slicing ... (%(percentage)d%%)"), {percentage: 0}));
+            } else {
+                self.uploadProgressText(gettext("Slicing ..."));
             }
         };
 
+        self.onSlicingProgress = function(slicer, modelPath, machinecodePath, progress) {
+            self.uploadProgressText(_.sprintf(gettext("Slicing ... (%(percentage)d%%)"), {percentage: Math.round(progress)}));
+        };
+
+        self.onEventSlicingCancelled = function(payload) {
+            self.uploadProgress
+                .removeClass("progress-striped")
+                .removeClass("active");
+            self.uploadProgressBar
+                .css("width", "0%");
+            self.uploadProgressText("");
+        };
+
         self.onEventSlicingDone = function(payload) {
-            self.requestData(undefined, undefined, self.currentPath());
+            self.uploadProgress
+                .removeClass("progress-striped")
+                .removeClass("active");
+            self.uploadProgressBar
+                .css("width", "0%");
+            self.uploadProgressText("");
+
+            new PNotify({
+                title: gettext("Slicing done"),
+                text: _.sprintf(gettext("Sliced %(stl)s to %(gcode)s, took %(time).2f seconds"), payload),
+                type: "success"
+            });
+
+            self.requestData();
+        };
+
+        self.onEventSlicingFailed = function(payload) {
+            self.uploadProgress
+                .removeClass("progress-striped")
+                .removeClass("active");
+            self.uploadProgressBar
+                .css("width", "0%");
+            self.uploadProgressText("");
+
+            var html = _.sprintf(gettext("Could not slice %(stl)s to %(gcode)s: %(reason)s"), payload);
+            new PNotify({title: gettext("Slicing failed"), text: html, type: "error", hide: false});
         };
 
         self.onEventMetadataAnalysisFinished = function(payload) {
-            self.requestData(undefined, undefined, self.currentPath());
+            self.requestData();
         };
 
         self.onEventMetadataStatisticsUpdated = function(payload) {
-            self.requestData(undefined, undefined, self.currentPath());
+            self.requestData();
+        };
+
+        self.onEventTransferStarted = function(payload) {
+            self.uploadProgress
+                .addClass("progress-striped")
+                .addClass("active");
+            self.uploadProgressBar
+                .css("width", "100%");
+            self.uploadProgressText(gettext("Streaming ..."));
         };
 
         self.onEventTransferDone = function(payload) {
-            self.requestData(payload.remote, "sdcard");
+            self.uploadProgress
+                .removeClass("progress-striped")
+                .removeClass("active");
+            self.uploadProgressBar
+                .css("width", "0");
+            self.uploadProgressText("");
+
+            new PNotify({
+                title: gettext("Streaming done"),
+                text: _.sprintf(gettext("Streamed %(local)s to %(remote)s on SD, took %(time).2f seconds"), payload),
+                type: "success"
+            });
+
+            self.requestData({focus: {location: "sdcard", path: payload.remote}});
         };
 
-        self.onServerConnect = function(payload) {
-            self._enableDragNDrop(true);
-            self.requestData(undefined, undefined, self.currentPath());
+        self.onEventTransferFailed = function(payload) {
+            self.uploadProgress
+                .removeClass("progress-striped")
+                .removeClass("active");
+            self.uploadProgressBar
+                .css("width", "0");
+            self.uploadProgressText("");
+
+            new PNotify({
+                title: gettext("Streaming failed"),
+                text: _.sprintf(gettext("Did not finish streaming %(local)s to %(remote)s on SD"), payload),
+                type: "error"
+            });
+
+            self.requestData();
         };
 
-        self.onServerReconnect = function(payload) {
+        self.onServerConnect = self.onServerReconnect = function(payload) {
             self._enableDragNDrop(true);
-            self.requestData(undefined, undefined, self.currentPath());
+            self.requestData();
         };
 
         self.onServerDisconnect = function(payload) {
@@ -579,8 +989,10 @@ $(function() {
                 drop: function(e, data) {
 
                 },
+                submit: self._handleUploadStart,
                 done: self._handleUploadDone,
                 fail: self._handleUploadFail,
+                always: self._handleUploadAlways,
                 progressall: self._handleUploadProgress
             }).bind('fileuploadsubmit', function(e, data) {
                 if (self.currentPath() != "")
@@ -590,18 +1002,20 @@ $(function() {
 
         self._enableDragNDrop = function(enable) {
             if (enable) {
-                $(document).bind("dragover", self._handleDragNDrop);
+                $(document).bind("dragenter", self._handleDragNDrop);
+                $(document).bind("dragleave", self._endDragNDrop);
                 log.debug("Enabled drag-n-drop");
             } else {
-                $(document).unbind("dragover", self._handleDragNDrop);
+                $(document).unbind("dragenter", self._handleDragNDrop);
+                $(document).unbind("dragleave", self._endDragNDrop);
                 log.debug("Disabled drag-n-drop");
             }
         };
 
         self._setProgressBar = function(percentage, text, active) {
             self.uploadProgressBar
-                .css("width", percentage + "%")
-                .text(text);
+                .css("width", percentage + "%");
+            self.uploadProgressText(text);
 
             if (active) {
                 self.uploadProgress
@@ -612,25 +1026,39 @@ $(function() {
             }
         };
 
-        self._handleUploadDone = function(e, data) {
-            var filename = undefined;
-            var location = undefined;
-            if (data.result.files.hasOwnProperty("sdcard")) {
-                filename = data.result.files.sdcard.name;
-                location = "sdcard";
-            } else if (data.result.files.hasOwnProperty("local")) {
-                filename = data.result.files.local.name;
-                location = "local";
-            }
-            self.requestData(filename, location, self.currentPath());
+        self._handleUploadStart = function(e, data) {
+            self.ignoreUpdatedFilesEvent = true;
+            return true;
+        };
 
-            if (data.result.done) {
-                self._setProgressBar(0, "", false);
+        self._handleUploadDone = function(e, data) {
+            var focus = undefined;
+            if (data.result.files.hasOwnProperty("sdcard")) {
+                focus = {location: "sdcard", path: data.result.files.sdcard.path};
+            } else if (data.result.files.hasOwnProperty("local")) {
+                focus = {location: "local", path: data.result.files.local.path};
+            }
+            self.requestData({focus: focus})
+                .done(function() {
+                    if (data.result.done) {
+                        self._setProgressBar(0, "", false);
+                    }
+                });
+
+            if (focus && _.endsWith(focus.path.toLowerCase(), ".stl")) {
+                self.slicing.show(focus.location, focus.path);
             }
         };
 
         self._handleUploadFail = function(e, data) {
-            var error = "<p>" + gettext("Could not upload the file. Make sure that it is a GCODE file and has the extension \".gcode\" or \".gco\" or that it is an STL file with the extension \".stl\".") + "</p>";
+            var extensions = _.map(SUPPORTED_EXTENSIONS, function(extension) {
+                return extension.toLowerCase();
+            }).sort();
+            extensions = extensions.join(", ");
+            var error = "<p>"
+                + _.sprintf(gettext("Could not upload the file. Make sure that it is a valid file with one of these extensions: %(extensions)s"),
+                            {extensions: extensions})
+                + "</p>";
             error += pnotifyAdditionalInfo("<pre>" + data.jqXHR.responseText + "</pre>");
             new PNotify({
                 title: "Upload failed",
@@ -641,6 +1069,10 @@ $(function() {
             self._setProgressBar(0, "", false);
         };
 
+        self._handleUploadAlways = function(e, data) {
+            self.ignoreUpdatedFilesEvent = false;
+        };
+
         self._handleUploadProgress = function(e, data) {
             var progress = parseInt(data.loaded / data.total * 100, 10);
             var uploaded = progress >= 100;
@@ -648,34 +1080,35 @@ $(function() {
             self._setProgressBar(progress, uploaded ? gettext("Saving ...") : gettext("Uploading ..."), uploaded);
         };
 
-        self._handleDragNDrop = function (e) {
-            var dropOverlay = $("#drop_overlay");
-            var dropZone = $("#drop");
-            var dropZoneLocal = $("#drop_locally");
-            var dropZoneSd = $("#drop_sd");
-            var dropZoneBackground = $("#drop_background");
-            var dropZoneLocalBackground = $("#drop_locally_background");
-            var dropZoneSdBackground = $("#drop_sd_background");
-            var timeout = window.dropZoneTimeout;
+        self._dragNDropTarget = null;
+        self._forceEndDragNDrop = function () {
+            self.dropOverlay.removeClass("in");
+            if (self.dropZoneLocal) self.dropZoneLocalBackground.removeClass("hover");
+            if (self.dropZoneSd) self.dropZoneSdBackground.removeClass("hover");
+            if (self.dropZone) self.dropZoneBackground.removeClass("hover");
+            self._dragNDropTarget = null;
+        };
 
-            if (!timeout) {
-                dropOverlay.addClass('in');
-            } else {
-                clearTimeout(timeout);
-            }
+        self._endDragNDrop = function (e) {
+            if (e.target != self._dragNDropTarget) return;
+            self._forceEndDragNDrop();
+        };
+
+        self._handleDragNDrop = function (e) {
+            self.dropOverlay.addClass('in');
 
             var foundLocal = false;
             var foundSd = false;
             var found = false;
             var node = e.target;
             do {
-                if (dropZoneLocal && node === dropZoneLocal[0]) {
+                if (self.dropZoneLocal && node === self.dropZoneLocal[0]) {
                     foundLocal = true;
                     break;
-                } else if (dropZoneSd && node === dropZoneSd[0]) {
+                } else if (self.dropZoneSd && node === self.dropZoneSd[0]) {
                     foundSd = true;
                     break;
-                } else if (dropZone && node === dropZone[0]) {
+                } else if (self.dropZone && node === self.dropZone[0]) {
                     found = true;
                     break;
                 }
@@ -683,32 +1116,27 @@ $(function() {
             } while (node != null);
 
             if (foundLocal) {
-                dropZoneLocalBackground.addClass("hover");
-                dropZoneSdBackground.removeClass("hover");
-            } else if (foundSd && self.printerState.isSdReady()) {
-                dropZoneSdBackground.addClass("hover");
-                dropZoneLocalBackground.removeClass("hover");
+                self.dropZoneLocalBackground.addClass("hover");
+                self.dropZoneSdBackground.removeClass("hover");
+            } else if (foundSd && self.printerState.isSdReady() && !self.isPrinting()) {
+                self.dropZoneSdBackground.addClass("hover");
+                self.dropZoneLocalBackground.removeClass("hover");
             } else if (found) {
-                dropZoneBackground.addClass("hover");
+                self.dropZoneBackground.addClass("hover");
             } else {
-                if (dropZoneLocalBackground) dropZoneLocalBackground.removeClass("hover");
-                if (dropZoneSdBackground) dropZoneSdBackground.removeClass("hover");
-                if (dropZoneBackground) dropZoneBackground.removeClass("hover");
+                if (self.dropZoneLocalBackground) self.dropZoneLocalBackground.removeClass("hover");
+                if (self.dropZoneSdBackground) self.dropZoneSdBackground.removeClass("hover");
+                if (self.dropZoneBackground) self.dropZoneBackground.removeClass("hover");
             }
-
-            window.dropZoneTimeout = setTimeout(function () {
-                window.dropZoneTimeout = null;
-                dropOverlay.removeClass("in");
-                if (dropZoneLocal) dropZoneLocalBackground.removeClass("hover");
-                if (dropZoneSd) dropZoneSdBackground.removeClass("hover");
-                if (dropZone) dropZoneBackground.removeClass("hover");
-            }, 100);
+            self._dragNDropTarget = e.target;
         }
     }
 
-    OCTOPRINT_VIEWMODELS.push([
-        GcodeFilesViewModel,
-        ["settingsViewModel", "loginStateViewModel", "printerStateViewModel", "slicingViewModel"],
-        ["#files_wrapper", "#add_folder_dialog"]
-    ]);
+    OCTOPRINT_VIEWMODELS.push({
+        construct: FilesViewModel,
+        name: "filesViewModel",
+        additionalNames: ["gcodeFilesViewModel"],
+        dependencies: ["settingsViewModel", "loginStateViewModel", "printerStateViewModel", "slicingViewModel", "printerProfilesViewModel"],
+        elements: ["#files_wrapper", "#add_folder_dialog"],
+    });
 });

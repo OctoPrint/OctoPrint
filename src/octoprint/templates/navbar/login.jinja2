@@ -1,16 +1,18 @@
-<a href="#" class="dropdown-toggle" data-toggle="dropdown">
-    <i class="icon-user"></i> <span data-bind="text: loginState.userMenuText">{{ _('Login') }}</span>
+<a href="javascript:void(0)" class="dropdown-toggle">
+    <i class="fa fa-user"></i> <span data-bind="text: loginState.userMenuText, attr: {title: loginState.userMenuTitle}">{{ _('Login') }}</span>
     <b class="caret"></b>
 </a>
 <div id="login_dropdown_loggedout" style="padding: 15px" class="dropdown-menu" data-bind="css: {hide: loginState.loggedIn(), 'dropdown-menu': !loginState.loggedIn()}">
-    <label for="login_user">{{ _('Username') }}</label>
-    <input type="text" id="login_user" data-bind="value: loginState.loginUser, event: {'keyup': loginState.onLoginUserKeyup}" placeholder="{{ _('Username') }}" autocapitalize="none">
-    <label for="login_pass">{{ _('Password') }}</label>
-    <input type="password" id="login_pass" data-bind="value: loginState.loginPass, event: {'keyup': loginState.onLoginPassKeyup}" placeholder="{{ _('Password') }}">
-    <label class="checkbox">
-        <input type="checkbox" id="login_remember" data-bind="checked: loginState.loginRemember"> {{ _('Remember me') }}
-    </label>
-    <button class="btn btn-block btn-primary" id="login_button" data-bind="click: function() { loginState.login(); }">{{ _('Login') }}</button>
+    <form id="loginForm" data-bind="event: {'submit': loginState.prepareLogin }" onsubmit="return false; // this gets overwritten on view model bind">
+        <label for="login_user">{{ _('Username') }}</label>
+        <input type="text" id="login_user" name="username" data-bind="valueWithInit: loginState.loginUser" placeholder="{{ _('Username') }}" autocapitalize="none" autocorrect="off">
+        <label for="login_pass">{{ _('Password') }}</label>
+        <input type="password" id="login_pass" name="password" data-bind="valueWithInit: loginState.loginPass" placeholder="{{ _('Password') }}">
+        <label class="checkbox">
+            <input type="checkbox" id="login_remember" data-bind="checked: loginState.loginRemember"> {{ _('Remember me') }}
+        </label>
+        <button type="submit" class="btn btn-block btn-primary" id="login_button">{{ _('Login') }}</button>
+    </form>
 </div>
 <ul id="login_dropdown_loggedin" class="hide" data-bind="css: {hide: !loginState.loggedIn(), 'dropdown-menu': loginState.loggedIn()}">
     <li><a href="#" id="usersettings_button" data-bind="click: function() { usersettings.show(); }">{{ _('User Settings') }}</a></li>

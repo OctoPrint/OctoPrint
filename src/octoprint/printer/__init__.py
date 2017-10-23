@@ -15,7 +15,7 @@ abstracted version of the actual printer communication.
    :members:
 """
 
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -23,31 +23,16 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import re
 
-import octoprint.util.comm as comm
 from octoprint.settings import settings
+from octoprint.util import deprecated
+from octoprint.filemanager import FileDestinations
 
+
+@deprecated(message="get_connection_options has been replaced by PrinterInterface.get_connection_options",
+            includedoc="Replaced by :func:`PrinterInterface.get_connection_options`",
+            since="1.3.0")
 def get_connection_options():
-	"""
-	Retrieves the available ports, baudrates, preferred port and baudrate for connecting to the printer.
-
-	Returned ``dict`` has the following structure::
-
-	    ports: <list of available serial ports>
-	    baudrates: <list of available baudrates>
-	    portPreference: <configured default serial port>
-	    baudratePreference: <configured default baudrate>
-	    autoconnect: <whether autoconnect upon server startup is enabled or not>
-
-	Returns:
-	    (dict): A dictionary holding the connection options in the structure specified above
-	"""
-	return {
-		"ports": comm.serialList(),
-		"baudrates": comm.baudrateList(),
-		"portPreference": settings().get(["serial", "port"]),
-		"baudratePreference": settings().getInt(["serial", "baudrate"]),
-		"autoconnect": settings().getBoolean(["serial", "autoconnect"])
-	}
+	return PrinterInterface.get_connection_options()
 
 
 class PrinterInterface(object):
@@ -64,6 +49,31 @@ class PrinterInterface(object):
 
 	valid_heater_regex = re.compile("^(tool\d+|bed)$")
 	"""Regex for valid heater identifiers."""
+
+	@classmethod
+	def get_connection_options(cls):
+		"""
+		Retrieves the available ports, baudrates, preferred port and baudrate for connecting to the printer.
+
+		Returned ``dict`` has the following structure::
+
+		    ports: <list of available serial ports>
+		    baudrates: <list of available baudrates>
+		    portPreference: <configured default serial port>
+		    baudratePreference: <configured default baudrate>
+		    autoconnect: <whether autoconnect upon server startup is enabled or not>
+
+		Returns:
+		    (dict): A dictionary holding the connection options in the structure specified above
+		"""
+		import octoprint.util.comm as comm
+		return {
+			"ports": comm.serialList(),
+			"baudrates": comm.baudrateList(),
+			"portPreference": settings().get(["serial", "port"]),
+			"baudratePreference": settings().getInt(["serial", "baudrate"]),
+			"autoconnect": settings().getBoolean(["serial", "autoconnect"])
+		}
 
 	def connect(self, port=None, baudrate=None, profile=None):
 		"""
@@ -133,13 +143,17 @@ class PrinterInterface(object):
 		"""
 		raise NotImplementedError()
 
-	def jog(self, axis, amount):
+	def jog(self, axes, relative=True, speed=None, *args, **kwargs):
 		"""
 		Jogs the specified printer ``axis`` by the specified ``amount`` in mm.
 
 		Arguments:
-		    axis (str): The axis to jog, will be converted to lower case, one of "x", "y", "z" or "e"
-		    amount (int, float): The amount by which to jog in mm
+		    axes (dict): Axes and distances to jog, keys are axes ("x", "y", "z"), values are distances in mm
+		    relative (bool): Whether to interpret the distance values as relative (true, default) or absolute (false)
+		        coordinates
+		    speed (int, bool or None): Speed at which to jog (F parameter). If set to ``False`` no speed will be set
+		        specifically. If set to ``None`` (or left out) the minimum of all involved axes speeds from the printer
+		        profile will be used.
 		"""
 		raise NotImplementedError()
 
@@ -185,7 +199,7 @@ class PrinterInterface(object):
 
 	def set_temperature_offset(self, offsets=None):
 		"""
-		Sets the temperature ``offsets`` to apply to target temperatures red from a GCODE file while printing.
+		Sets the temperature ``offsets`` to apply to target temperatures read from a GCODE file while printing.
 
 		Arguments:
 		    offsets (dict): A dictionary specifying the offsets to apply. Keys must match the format for the ``heater``
@@ -200,7 +214,7 @@ class PrinterInterface(object):
 
 		Arguments:
 		    factor (int, float): The factor for the feed rate to send to the firmware. Percentage expressed as either an
-		    int between 0 and 100 or a float between 0 and 1.
+		        int between 0 and 100 or a float between 0 and 1.
 		"""
 		raise NotImplementedError()
 
@@ -210,9 +224,67 @@ class PrinterInterface(object):
 
 		Arguments:
 		    factor (int, float): The factor for the flow rate to send to the firmware. Percentage expressed as either an
-		    int between 0 and 100 or a float between 0 and 1.
+		        int between 0 and 100 or a float between 0 and 1.
 		"""
 		raise NotImplementedError()
+
+	def can_modify_file(self, path, sd):
+		"""
+		Determines whether the ``path`` (on the printer's SD if ``sd`` is True) may be modified (updated or deleted)
+		or not.
+
+		A file that is currently being printed is not allowed to be modified. Any other file or the current file
+		when it is not being printed is fine though.
+
+		.. since:: 1.3.2
+
+		.. warning::
+
+		   This was introduced in 1.3.2 to work around an issue when updating a file that is already selected.
+		   I'm not 100% sure at this point if this is the best approach to solve this issue, so if you decide
+		   to depend on this particular method in this interface, be advised that it might vanish in future
+		   versions!
+
+		Arguments:
+		    path (str): path in storage of the file to check
+		    sd (bool): True if to check against SD storage, False otherwise
+
+		Returns:
+		    (bool) True if the file may be modified, False otherwise
+		"""
+		return not (self.is_current_file(path, sd) and (self.is_printing() or self.is_paused()))
+
+	def is_current_file(self, path, sd):
+		"""
+		Returns whether the provided ``path`` (on the printer's SD if ``sd`` is True) is the currently selected
+		file for printing.
+
+		.. since:: 1.3.2
+
+		.. warning::
+
+		   This was introduced in 1.3.2 to work around an issue when updating a file that is already selected.
+		   I'm not 100% sure at this point if this is the best approach to solve this issue, so if you decide
+		   to depend on this particular method in this interface, be advised that it might vanish in future
+		   versions!
+
+		Arguments:
+		    path (str): path in storage of the file to check
+		    sd (bool): True if to check against SD storage, False otherwise
+
+		Returns:
+		    (bool) True if the file is currently selected, False otherwise
+		"""
+		current_job = self.get_current_job()
+		if current_job is not None and "file" in current_job:
+			current_job_file = current_job["file"]
+			if "path" in current_job_file and "origin" in current_job_file:
+				current_file_path = current_job_file["path"]
+				current_file_origin = current_job_file["origin"]
+
+				return path == current_file_path and sd == (current_file_origin == FileDestinations.SDCARD)
+
+		return False
 
 	def select_file(self, path, sd, printAfterSelect=False, pos=None):
 		"""
@@ -220,11 +292,16 @@ class PrinterInterface(object):
 		Optionally can also directly start the print after selecting the file.
 
 		Arguments:
-		    path (str): The path to select for printing. Either an absolute path (local file) or a
-		        filename (SD card).
-		    sd (boolean): Indicates whether the file is on the SD card or not.
+		    path (str): The path to select for printing. Either an absolute path or relative path to a  local file in
+		        the uploads folder or a filename on the printer's SD card.
+		    sd (boolean): Indicates whether the file is on the printer's SD card or not.
 		    printAfterSelect (boolean): Indicates whether a print should be started
 		        after the file is selected.
+
+		Raises:
+		    InvalidFileType: if the file is not a machinecode file and hence cannot be printed
+		    InvalidFileLocation: if an absolute path was provided and not contained within local storage or
+		        doesn't exist
 		"""
 		raise NotImplementedError()
 
@@ -240,11 +317,26 @@ class PrinterInterface(object):
 		"""
 		raise NotImplementedError()
 
+	def pause_print(self):
+		"""
+		Pauses the current print job if it is currently running, does nothing otherwise.
+		"""
+		raise NotImplementedError()
+
+	def resume_print(self):
+		"""
+		Resumes the current print job if it is currently paused, does nothing otherwise.
+		"""
+		raise NotImplementedError()
+
 	def toggle_pause_print(self):
 		"""
 		Pauses the current print job if it is currently running or resumes it if it is currently paused.
 		"""
-		raise NotImplementedError()
+		if self.is_printing():
+			self.pause_print()
+		elif self.is_paused():
+			self.resume_print()
 
 	def cancel_print(self):
 		"""
@@ -275,7 +367,7 @@ class PrinterInterface(object):
 		  * CLOSED
 		  * ERROR
 		  * CLOSED_WITH_ERROR
-		  * TRANFERING_FILE
+		  * TRANSFERING_FILE
 		  * OFFLINE
 		  * UNKNOWN
 		  * NONE
@@ -499,3 +591,9 @@ class PrinterCallback(object):
 class UnknownScript(Exception):
 	def __init__(self, name, *args, **kwargs):
 		self.name = name
+
+class InvalidFileLocation(Exception):
+	pass
+
+class InvalidFileType(Exception):
+	pass

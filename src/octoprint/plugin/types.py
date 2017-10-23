@@ -14,7 +14,7 @@ Please note that the plugin implementation types are documented in the section
 
 """
 
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -23,6 +23,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 from .core import (Plugin, RestartNeedingPlugin, SortablePlugin)
 
+from past.builtins import basestring
 
 class OctoPrintPlugin(Plugin):
 	"""
@@ -101,7 +102,7 @@ class OctoPrintPlugin(Plugin):
 
 class ReloadNeedingPlugin(Plugin):
 	"""
-	Mixin for plugin types that need a reload of the UI in order to become usable.
+	Mixin for plugin types that need a reload of the UI after enabling/disabling them.
 	"""
 
 class StartupPlugin(OctoPrintPlugin, SortablePlugin):
@@ -258,7 +259,7 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 	   configuration supplied through :func:`get_template_configs`.
 
 	Settings
-	   Plugins may inject a dialog into the existing settings view. Note that with the current implementations, plugins
+	   Plugins may inject a dialog into the existing settings view. Note that with the current implementation, plugins
 	   will always be listed beneath the "Plugins" header in the settings link list, ordered alphabetically after
 	   their displayed name.
 
@@ -267,11 +268,11 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 
 	   The template will be already wrapped into the necessary structure, plugins just need to supply the pure content. The
 	   wrapper div and the link in the navigation will have the additional classes and styles applied as defined via the
-	   supplied configuration supplied through :func:`get_template_configs`.
+	   configuration through :func:`get_template_configs`.
 
 	Wizards
 	   Plugins may define wizard dialogs to display to the user if necessary (e.g. in case of missing information that
-	   needs to be queried from the user to make the plugin work). Note that with the current implementations, all
+	   needs to be queried from the user to make the plugin work). Note that with the current implementation, all
 	   wizard dialogs will be will always be sorted by their ``mandatory`` attribute (which defaults to ``False``) and then
 	   alphabetically by their ``name``. Hence, mandatory wizard steps will come first, sorted alphabetically, then the
 	   optional steps will follow, also alphabetically. A wizard dialog provided through a plugin will only be displayed
@@ -283,7 +284,7 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 
 	   The template will be already wrapped into the necessary structure, plugins just need to supply the pure content.
 	   The wrapper div and the link in the wizard navigation will have the additional classes and styles applied as defined
-	   via the supplied configuration supplied through :func:`get_template_configs`.
+	   via the configuration supplied through :func:`get_template_configs`.
 
 	   .. note::
 
@@ -292,6 +293,17 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 	      to actually prevent the user from skipping the dialog by implementing the ``onWizardTabChange``
 	      callback and returning ``false`` there if it is detected that the user hasn't yet filled in the
 	      wizard step.
+
+	About
+	   Plugins may define additional panels into OctoPrint's "About" dialog. Note that with the current implementation
+	   further about dialog panels will be sorted alphabetically by their name and sorted after the predefined ones.
+
+	   The included template must be called ``<plugin identifier>_about.jinja2`` (e.g. ``myplugin_about.jinja2``) unless
+	   overridden by the configuration supplied through :func:`get_template_configs`.
+
+	   The template will be already wrapped into the necessary structure, plugins just need to supply the pure content. The
+	   wrapped div and the link in the navigation will have the additional classes and styles applied as defined via
+	   the configuration supplied through :func:`get_template_configs`.
 
 	Generic
 	   Plugins may also inject arbitrary templates into the page of the web interface itself, e.g. in order to
@@ -342,6 +354,8 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 		         * ``sidebar``: sidebar heading
 		         * ``tab``: tab heading
 		         * ``settings``: settings link
+		         * ``wizard``: wizard link
+		         * ``about``: about link
 		         * ``generic``: unused
 
 		   * - template
@@ -351,6 +365,8 @@ class TemplatePlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 		         * ``sidebar``: ``<plugin identifier>_sidebar.jinja2``
 		         * ``tab``: ``<plugin identifier>_tab.jinja2``
 		         * ``settings``: ``<plugin identifier>_settings.jinja2``
+		         * ``wizard``: ``<plugin identifier>_wizard.jinja2``
+		         * ``about``: ``<plugin identifier>_about.jinja2``
 		         * ``generic``: ``<plugin identifier>.jinja2``
 
 		   * - suffix
@@ -516,7 +532,7 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
 	provided request by calling :meth:`~octoprint.plugin.UiPlugin.will_handle_ui` with the Flask
 	`Request <http://flask.pocoo.org/docs/0.10/api/#flask.Request>`_ object as
 	parameter. If you plugin returns `True` here, OctoPrint will next call
-	:meth:`~octoprint.plugin.UiPlugin.on_ui_render` with a couple of parameters like
+	:meth:`~octoprint.plugin.UiPlugin.on_ui_render` with a few parameters like
 	- again - the Flask Request object and the render keyword arguments as
 	used by the default OctoPrint web interface. For more information see below.
 
@@ -563,11 +579,11 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
 
 	**Preemptive and Runtime Caching**
 
-	OctoPrint will also cache your custom UI for your in its server side UI cache, making sure
+	OctoPrint will also cache your custom UI for you in its server side UI cache, making sure
 	it only gets re-rendered if the request demands that (by having no-cache headers set) or if
 	the cache gets invalidated otherwise.
 
-	In order to be able to do that, the ``UiPlugin`` offers overriding a couple of cache specific
+	In order to be able to do that, the ``UiPlugin`` offers overriding some cache specific
 	methods used for figuring out the source files whose modification time to use for cache invalidation
 	as well as override possibilities for ETag and LastModified calculation. Additionally there are
 	methods to allow persisting call parameters to allow for preemptively caching your UI during
@@ -727,9 +743,24 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
 		OctoPrint's version, current ``UI_API_KEY``, tracked file paths and ``LastModified`` value).
 
 		Returns:
-		    basestring: An alternatively calculate ETag value. Ignored if ``None`` is returned.
+		    str: An alternatively calculated ETag value. Ignored if ``None`` is returned (default).
 		"""
 		return None
+
+	def get_ui_additional_etag(self, default_additional):
+		"""
+		Allows to provide a list of additional fields to use for ETag generation.
+
+		By default the same list will be returned that is also used in the stock UI (and injected
+		via the parameter ``default_additional``).
+
+		Arguments:
+		    default_additional (list): The list of default fields added to the ETag of the default UI
+
+		Returns:
+		    (list): A list of additional fields for the ETag generation, or None
+		"""
+		return default_additional
 
 	def get_ui_custom_lastmodified(self):
 		"""
@@ -737,14 +768,26 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
 		date of all tracked files.
 
 		Returns:
-		    int: An alternatively calculated LastModified value. Ignored if ``None`` is returned.
+		    int: An alternatively calculated LastModified value. Ignored if ``None`` is returned (default).
 		"""
 		return None
+
+	def get_ui_preemptive_caching_enabled(self):
+		"""
+		Allows to control whether the view provided by the plugin should be preemptively
+		cached on server startup (default) or not.
+
+		Have this return False if you do not want your plugin's UI to ever be preemptively cached.
+
+		Returns:
+		    bool: Whether to enable preemptive caching (True, default) or not (False)
+		"""
+		return True
 
 	def get_ui_data_for_preemptive_caching(self):
 		"""
 		Allows defining additional data to be persisted in the preemptive cache configuration, on
-		top of the request path, base URL and used locale will be persisted.
+		top of the request path, base URL and used locale.
 
 		Returns:
 		    dict: Additional data to persist in the preemptive cache configuration.
@@ -756,7 +799,8 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
 		Allows defining additional request data to persist in the preemptive cache configuration and
 		to use for the fake request used for populating the preemptive cache.
 
-		Keys and values are used as keyword arguments for creating the `Werkzeug EnvironBuilder <http://werkzeug.pocoo.org/docs/0.11/test/#werkzeug.test.EnvironBuilder>`_
+		Keys and values are used as keyword arguments for creating the
+		`Werkzeug EnvironBuilder <http://werkzeug.pocoo.org/docs/0.11/test/#werkzeug.test.EnvironBuilder>`_
 		used for creating the fake request.
 
 		Returns:
@@ -765,8 +809,37 @@ class UiPlugin(OctoPrintPlugin, SortablePlugin):
 		"""
 		return None
 
-	def get_ui_additional_unless(self):
+	def get_ui_preemptive_caching_additional_unless(self):
+		"""
+		Allows defining additional reasons for temporarily not adding a preemptive cache record for
+		your plugin's UI.
+
+		OctoPrint will call this method when processing a UI request, to determine whether to record the
+		access or not. If you return ``True`` here, no record will be created.
+
+		Returns:
+		    bool: Whether to suppress a record (True) or not (False, default)
+		"""
 		return False
+
+	def get_ui_custom_template_filter(self, default_template_filter):
+		"""
+		Allows to specify a custom template filter to use for filtering the template contained in the
+		``render_kwargs`` provided to the templating sub system.
+
+		Only relevant for UiPlugins that actually utilize the stock templates of OctoPrint.
+
+		By default simply returns the provided ``default_template_filter``.
+
+		Arguments:
+		    default_template_filter (callable): The default template filter used by the default UI
+
+		Returns:
+		    (callable) A filter function accepting the ``template_type`` and ``template_key`` of a template
+		    and returning ``True`` to keep it and ``False`` to filter it out. If ``None`` is returned, no
+		    filtering will take place.
+		"""
+		return default_template_filter
 
 class WizardPlugin(OctoPrintPlugin, ReloadNeedingPlugin):
 	"""
@@ -966,7 +1039,7 @@ class SimpleApiPlugin(OctoPrintPlugin):
 	mixin offers.
 
 	Use this mixin if all you need to do is return some kind of dynamic data to your plugin from the backend
-	and/or want to react to simple commands which boil down to a type of command and a couple of flat parameters
+	and/or want to react to simple commands which boil down to a type of command and a few flat parameters
 	supplied with it.
 
 	The simple API constructed by OctoPrint for you will be made available under ``/api/plugin/<plugin identifier>/``.
@@ -1305,6 +1378,14 @@ class SettingsPlugin(OctoPrintPlugin):
 	Of course, you are always free to completely override both :func:`on_settings_load` and :func:`on_settings_save` if the
 	default implementations do not fit your requirements.
 
+
+	.. warning::
+
+	   Make sure to protect sensitive information stored by your plugin that only logged in administrators (or users)
+	   should have access to via :meth:`~octoprint.plugin.SettingsPlugin.get_settings_restricted_paths`. OctoPrint will
+	   return its settings on the REST API even to anonymous clients, but will filter out fields it know are restricted,
+	   therefore you **must** make sure that you specify sensitive information accordingly to limit access as required!
+
 	.. attribute:: _settings
 
 	   The :class:`~octoprint.plugin.PluginSettings` instance to use for accessing the plugin's settings. Injected by
@@ -1329,11 +1410,68 @@ class SettingsPlugin(OctoPrintPlugin):
 		   and iterate yourself over all your settings, using the proper retriever methods on the settings manager
 		   to retrieve the data in the correct format.
 
+		   The default implementation will also replace any paths that have been restricted by your plugin through
+		   :func:`~octoprint.plugin.SettingsPlugin.get_settings_restricted_paths` with either the provided
+		   default value (if one was provided), an empty dictionary (as fallback for restricted dictionaries), an
+		   empty list (as fallback for restricted lists) or ``None`` values where necessary.
+		   Make sure to do your own restriction if you decide to fully overload this method.
+
 		:return: the current settings of the plugin, as a dictionary
 		"""
-		data = self._settings.get_all_data()
+		from flask_login import current_user
+		import copy
+
+		data = copy.deepcopy(self._settings.get_all_data(merged=True))
 		if self.config_version_key in data:
 			del data[self.config_version_key]
+
+		restricted_paths = self.get_settings_restricted_paths()
+
+		def restrict_path_unless(data, path, condition):
+			if not path:
+				return
+
+			if condition():
+				return
+
+			node = data
+
+			if len(path) > 1:
+				for entry in path[:-1]:
+					if not entry in node:
+						return
+					node = node[entry]
+
+			key = path[-1]
+			default_value_available = False
+			default_value = None
+			if isinstance(key, (list, tuple)):
+				# key, default_value tuple
+				key, default_value = key
+				default_value_available = True
+
+			if key in node:
+				if default_value_available:
+					if callable(default_value):
+						default_value = default_value()
+					node[key] = default_value
+				else:
+					if isinstance(node[key], dict):
+						node[key] = dict()
+					elif isinstance(node[key], (list, tuple)):
+						node[key] = []
+					else:
+						node[key] = None
+
+		conditions = dict(user=lambda: current_user is not None and not current_user.is_anonymous,
+		                  admin=lambda: current_user is not None and not current_user.is_anonymous and current_user.is_admin,
+		                  never=lambda: False)
+
+		for level, condition in conditions.items():
+			paths_for_level = restricted_paths.get(level, [])
+			for path in paths_for_level:
+				restrict_path_unless(data, path, condition)
+
 		return data
 
 	def on_settings_save(self, data):
@@ -1393,6 +1531,60 @@ class SettingsPlugin(OctoPrintPlugin):
 
 		Override this in your plugin's implementation and return a dictionary defining your settings data structure
 		with included default values.
+		"""
+		return dict()
+
+	def get_settings_restricted_paths(self):
+		"""
+		Retrieves the list of paths in the plugin's settings which be restricted on the REST API.
+
+		Override this in your plugin's implementation to restrict whether a path should only be returned to logged in
+		users & admins, only to admins, or never on the REST API.
+
+		Return a ``dict`` with the keys ``admin``, ``user``, ``never`` mapping to a list of paths (as tuples or lists of
+		the path elements) for which to restrict access via the REST API accordingly. Paths returned for the ``admin``
+		key will only be available on the REST API when access with admin rights, ``user`` will only be available when accessed
+		as a logged in user. ``never`` will never be returned on the API.
+
+		Example:
+
+		.. code-block:: python
+
+		   def get_settings_defaults(self):
+		       return dict(some=dict(admin_only=dict(path="path", foo="foo"),
+		                             user_only=dict(path="path", bar="bar")),
+		                   another=dict(admin_only=dict(path="path"),
+		                                field="field"),
+		                   path=dict(to=dict(never=dict(return="return"))))
+
+		   def get_settings_restricted_paths(self):
+		       return dict(admin=[["some", "admin_only", "path"], ["another", "admin_only", "path"],],
+		                   user=[["some", "user_only", "path"],],
+		                   never=[["path", "to", "never", "return"],])
+
+		   # this will make the plugin return settings on the REST API like this for an anonymous user
+		   #
+		   #     dict(some=dict(admin_only=dict(path=None, foo="foo"),
+		   #                    user_only=dict(path=None, bar="bar")),
+		   #          another=dict(admin_only=dict(path=None),
+		   #                       field="field"),
+		   #          path=dict(to=dict(never=dict(return=None))))
+		   #
+		   # like this for a logged in user
+		   #
+		   #     dict(some=dict(admin_only=dict(path=None, foo="foo"),
+		   #                    user_only=dict(path="path", bar="bar")),
+		   #          another=dict(admin_only=dict(path=None),
+		   #                       field="field"),
+		   #          path=dict(to=dict(never=dict(return=None))))
+		   #
+		   # and like this for an admin user
+		   #
+		   #     dict(some=dict(admin_only=dict(path="path", foo="foo"),
+		   #                    user_only=dict(path="path", bar="bar")),
+		   #          another=dict(admin_only=dict(path="path"),
+		   #                       field="field"),
+		   #          path=dict(to=dict(never=dict(return=None))))
 		"""
 		return dict()
 
@@ -1577,6 +1769,13 @@ class SlicerPlugin(OctoPrintPlugin):
 		    against slicers running on the same device will result in an error.
 		progress_report
 		    ``True`` if the slicer can report back slicing progress to OctoPrint ``False`` otherwise.
+		source_file_types
+		    A list of file types this slicer supports as valid origin file types. These are file types as found in the
+		    paths within the extension tree. Plugins may add additional file types through the :ref:`sec-plugins-hook-filemanager-extensiontree` hook.
+		    The system will test source files contains in incoming slicing requests via :meth:`octoprint.filemanager.valid_file_type` against the
+		    targeted slicer's ``source_file_types``.
+		destination_extension
+		    The possible extensions of slicing result files.
 
 		Returns:
 		    dict: A dict describing the slicer as outlined above.
@@ -1585,7 +1784,9 @@ class SlicerPlugin(OctoPrintPlugin):
 			type=None,
 			name=None,
 			same_device=True,
-			progress_report=False
+			progress_report=False,
+			source_file_types=["model"],
+			destination_extensions=["gco", "gcode", "g"]
 		)
 
 	def get_slicer_default_profile(self):

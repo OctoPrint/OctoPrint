@@ -13,7 +13,7 @@
 #                    /etc/default/octoprint.
 ### END INIT INFO
 
-# Author: Sami Olmari
+# Author: Sami Olmari & Gina Häußge
 
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 DESC="OctoPrint Daemon"
@@ -21,9 +21,14 @@ NAME="OctoPrint"
 PKGNAME=octoprint
 PIDFILE=/var/run/$PKGNAME.pid
 SCRIPTNAME=/etc/init.d/$PKGNAME
+DEFAULTS=/etc/default/$PKGNAME
 
 # Read configuration variable file if it is present
-[ -r /etc/default/$PKGNAME ] && . /etc/default/$PKGNAME
+[ -r $DEFAULTS ] && . $DEFAULTS
+
+# Define LSB log_* functions.
+# Depend on lsb-base (>= 3.0-6) to ensure that this file is present.
+. /lib/lsb/init-functions
 
 # Exit if the DAEMON is not set
 if [ -z "$DAEMON" ]
@@ -38,10 +43,6 @@ fi
 # Load the VERBOSE setting and other rcS variables
 [ -f /etc/default/rcS ] && . /etc/default/rcS
 
-# Define LSB log_* functions.
-# Depend on lsb-base (>= 3.0-6) to ensure that this file is present.
-. /lib/lsb/init-functions
-
 if [ -z "$START" -o "$START" != "yes" ]
 then
    log_warning_msg "Not starting $PKGNAME, edit /etc/default/$PKGNAME to start it."
@@ -55,12 +56,12 @@ then
 fi
 
 COMMAND_ARGS=
-if [ -z "$BASEDIR" ]
+if [ -n "$BASEDIR" ]
 then
     COMMAND_ARGS="--basedir $BASEDIR $COMMAND_ARGS"
 fi
 
-if [ -z "$CONFIGFILE" ]
+if [ -n "$CONFIGFILE" ]
 then
     COMMAND_ARGS="--config $CONFIGFILE $COMMAND_ARGS"
 fi
@@ -91,7 +92,7 @@ do_start()
    if [ $RETVAL != 0 ]; then
        start-stop-daemon --start --background --quiet --pidfile $PIDFILE --make-pidfile \
        --exec $DAEMON --chuid $OCTOPRINT_USER --user $OCTOPRINT_USER --umask $UMASK --nicelevel=$NICELEVEL \
-       -- $COMMAND_ARGS serve $DAEMON_ARGS
+       -- serve $COMMAND_ARGS $DAEMON_ARGS
        RETVAL="$?"
    fi
 }

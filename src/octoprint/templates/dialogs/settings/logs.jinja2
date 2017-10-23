@@ -21,7 +21,7 @@
             <td class="settings_logs_size" data-bind="text: formatSize(size)"></td>
             <td class="settings_logs_date" data-bind="text: formatDate(date)"></td>
             <td class="settings_logs_action">
-                <a href="#" class="icon-trash" data-bind="click: function() { if ($root.loginState.isUser()) { $parent.removeFile($data.name); } else { return; } }, css: {disabled: !$root.loginState.isUser()}"></a>&nbsp;|&nbsp;<a href="#" class="icon-download" data-bind="attr: {href: refs.download}"></a>
+                <a href="#" class="fa fa-trash-o" data-bind="click: function() { if ($root.loginState.isUser()) { $parent.removeFile($data.name); } else { return; } }, css: {disabled: !$root.loginState.isUser()}"></a>&nbsp;|&nbsp;<a href="#" class="fa fa-download" data-bind="attr: {href: refs.download}"></a>
             </td>
         </tr>
         </tbody>

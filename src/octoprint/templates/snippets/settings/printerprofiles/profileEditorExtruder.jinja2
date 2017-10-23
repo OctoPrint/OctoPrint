@@ -1,0 +1,57 @@
+<form class="form-horizontal">
+
+    <div class="control-group">
+        <label class="control-label">{{ _('Nozzle Diameter') }}</label>
+        <div class="controls">
+            <div class="input-append">
+                <input type="number" step="0.01" class="input-mini text-right" data-bind="value: nozzleDiameter" placeholder="0.4">
+                <span class="add-on">mm</span>
+            </div>
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label">{{ _('Number of Extruders') }}</label>
+        <div class="controls">
+            <input type="number" class="input-mini text-right" min="1" max="10" data-bind="value: extruders">
+        </div>
+    </div>
+    <div data-bind="visible: extruders() > 1" style="display: none">
+        <div class="control-group">
+            <label class="control-label">{{ _('Shared nozzle') }}</label>
+            <div class="controls">
+                <input type="checkbox" data-bind="checked: sharedNozzle">
+                <span class="help-block">{{ _('Check this if your printer has a single nozzle and heater shared among its extruders instead of one nozzle and heater per extruder') }}</span>
+            </div>
+        </div>
+
+        <div data-bind="visible: !sharedNozzle()" style="display: none">
+            <div class="control-group">
+                <div class="controls">
+                    {{ _('Please specify the nozzle offsets of the extruders relative to the first nozzle T0.') }}
+                </div>
+            </div>
+
+            <!-- ko foreach: koExtruderOffsets -->
+            <div class="control-group">
+                <label class="control-label">{{ _('Offset') }} T<span data-bind="text: idx"></span></label>
+                <div class="controls form-inline">
+                    <label>X</label>
+                    <div class="input-append">
+                        <input type="number" step="0.01" class="input-mini text-right" data-bind="value: x" placeholder="0">
+                        <span class="add-on">mm</span>
+                    </div>
+                    <label>Y</label>
+                    <div class="input-append">
+                        <input type="number" step="0.01" class="input-mini text-right" data-bind="value: y" placeholder="0">
+                        <span class="add-on">mm</span>
+                    </div>
+                </div>
+            </div>
+            <!-- /ko -->
+        </div>
+    </div>
+
+    <p>
+        <small>{{ _('This information is used for the graph and controls available in the "Temperature" tab, the GCODE viewer and when slicing from within OctoPrint. It does NOT influence already sliced files that you upload to OctoPrint!') }}</small>
+    </p>
+</form>
