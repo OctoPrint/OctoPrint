@@ -36,11 +36,11 @@ $(function() {
         });
 
         self.diskusageWarning = ko.pureComputed(function() {
-            return self.freeSpace() != undefined
+            return self.freeSpace() !== undefined
                 && self.freeSpace() < self.settingsViewModel.server_diskspace_warning();
         });
         self.diskusageCritical = ko.pureComputed(function() {
-            return self.freeSpace() != undefined
+            return self.freeSpace() !== undefined
                 && self.freeSpace() < self.settingsViewModel.server_diskspace_critical();
         });
         self.diskusageString = ko.pureComputed(function() {
@@ -76,7 +76,8 @@ $(function() {
         self.addFolderDialog = undefined;
         self.addFolderName = ko.observable(undefined);
         self.enableAddFolder = ko.pureComputed(function() {
-            return self.loginState.isUser() && self.addFolderName() && self.addFolderName().trim() != "" && !self.addingFolder();
+            return self.loginState.isUser() && self.addFolderName() && self.addFolderName().trim() !== ""
+                && !self.addingFolder();
         });
 
         self.allItems = ko.observable(undefined);
@@ -109,19 +110,20 @@ $(function() {
             },
             {
                 "printed": function(data) {
-                    return !(data["prints"] && data["prints"]["success"] && data["prints"]["success"] > 0) || (data["type"] && data["type"] == "folder");
+                    return !(data["prints"] && data["prints"]["success"] && data["prints"]["success"] > 0)
+                        || (data["type"] && data["type"] === "folder");
                 },
                 "sd": function(data) {
-                    return data["origin"] && data["origin"] == "sdcard";
+                    return data["origin"] && data["origin"] === "sdcard";
                 },
                 "local": function(data) {
-                    return !(data["origin"] && data["origin"] == "sdcard");
+                    return !(data["origin"] && data["origin"] === "sdcard");
                 },
                 "machinecode": function(data) {
-                    return data["type"] && (data["type"] == "machinecode" || data["type"] == "folder");
+                    return data["type"] && (data["type"] === "machinecode" || data["type"] === "folder");
                 },
                 "model": function(data) {
-                    return data["type"] && (data["type"] == "model" || data["type"] == "folder");
+                    return data["type"] && (data["type"] === "model" || data["type"] === "folder");
                 }
             },
             "name",
@@ -131,22 +133,22 @@ $(function() {
         );
 
         self.foldersOnlyList = ko.dependentObservable(function() {
-            var filter = function(data) { return data["type"] && data["type"] == "folder"; };
+            var filter = function(data) { return data["type"] && data["type"] === "folder"; };
             return _.filter(self.listHelper.paginatedItems(), filter);
         });
 
         self.filesOnlyList = ko.dependentObservable(function() {
-            var filter = function(data) { return data["type"] && data["type"] != "folder"; };
+            var filter = function(data) { return data["type"] && data["type"] !== "folder"; };
             return _.filter(self.listHelper.paginatedItems(), filter);
         });
 
         self.filesAndFolders = ko.dependentObservable(function() {
             var style = self.listStyle();
-            if (style == "folders_files" || style == "files_folders") {
+            if (style === "folders_files" || style === "files_folders") {
                 var files = self.filesOnlyList();
                 var folders = self.foldersOnlyList();
 
-                if (style == "folders_files") {
+                if (style === "folders_files") {
                     return folders.concat(files);
                 } else {
                     return files.concat(folders);
@@ -173,14 +175,14 @@ $(function() {
         };
 
         self.highlightFilename = function(filename) {
-            if (filename == undefined) {
+            if (filename === undefined) {
                 self.listHelper.selectNone();
             } else {
                 self.listHelper.selectItem(function(item) {
-                    if (item.type == "folder") {
+                    if (item.type === "folder") {
                         return _.startsWith(filename, item.path + "/");
                     } else {
-                        return item.path == filename;
+                        return item.path === filename;
                     }
                 });
             }
@@ -307,11 +309,11 @@ $(function() {
                 }
             }
 
-            if (response.free != undefined) {
+            if (response.free !== undefined) {
                 self.freeSpace(response.free);
             }
 
-            if (response.total != undefined) {
+            if (response.total !== undefined) {
                 self.totalSpace(response.total);
             }
 
@@ -386,7 +388,7 @@ $(function() {
                 return;
             }
 
-            if (folder.type != "folder") {
+            if (folder.type !== "folder") {
                 return;
             }
 
@@ -426,7 +428,7 @@ $(function() {
                 return;
             }
 
-            if (file.type == "folder") {
+            if (file.type === "folder") {
                 return;
             }
 
@@ -457,7 +459,7 @@ $(function() {
             self.activeRemovals.push(entry.origin + ":" + entry.path);
             var finishActiveRemoval = function() {
                 self.activeRemovals(_.filter(self.activeRemovals(), function(e) {
-                    return e != entry.origin + ":" + entry.path;
+                    return e !== entry.origin + ":" + entry.path;
                 }));
             };
 
@@ -550,7 +552,7 @@ $(function() {
             }
 
             var busy = false;
-            if (data.type == "folder") {
+            if (data.type === "folder") {
                 busy = _.any(self.printerState.busyFiles(), function(name) {
                     return _.startsWith(name, data.origin + ":" + data.path + "/");
                 });
@@ -594,16 +596,16 @@ $(function() {
                     output += gettext("Model size") + ": " + _.sprintf("%(width).2fmm &times; %(depth).2fmm &times; %(height).2fmm", dimensions);
                     output += "<br>";
                 }
-                if (data["gcodeAnalysis"]["filament"] && typeof(data["gcodeAnalysis"]["filament"]) == "object") {
+                if (data["gcodeAnalysis"]["filament"] && typeof(data["gcodeAnalysis"]["filament"]) === "object") {
                     var filament = data["gcodeAnalysis"]["filament"];
-                    if (_.keys(filament).length == 1) {
+                    if (_.keys(filament).length === 1) {
                         output += gettext("Filament") + ": " + formatFilament(data["gcodeAnalysis"]["filament"]["tool" + 0]) + "<br>";
                     } else if (_.keys(filament).length > 1) {
-                        for (var toolKey in filament) {
-                            if (!_.startsWith(toolKey, "tool") || !filament[toolKey] || !filament[toolKey].hasOwnProperty("length") || filament[toolKey]["length"] <= 0) continue;
-
-                            output += gettext("Filament") + " (" + gettext("Tool") + " " + toolKey.substr("tool".length) + "): " + formatFilament(filament[toolKey]) + "<br>";
-                        }
+                        _.each(filament, function(f, k) {
+                            if (!_.startsWith(k, "tool") || !f || !f.hasOwnProperty("length") || f["length"] <= 0) return;
+                            output += gettext("Filament") + " (" + gettext("Tool") + " " + k.substr("tool".length)
+                                + "): " + formatFilament(f) + "<br>";
+                        });
                     }
                 }
                 output += gettext("Estimated print time") + ": " + formatFuzzyPrintTime(data["gcodeAnalysis"]["estimatedPrintTime"]) + "<br>";
@@ -662,7 +664,7 @@ $(function() {
                     minZ : 0,
                     maxZ : volumeInfo.height()
                 };
-                if (volumeInfo.origin() == "center") {
+                if (volumeInfo.origin() === "center") {
                     boundaries["maxX"] = volumeInfo.width() / 2;
                     boundaries["minX"] = -1 * boundaries["maxX"];
                     boundaries["maxY"] = volumeInfo.depth() / 2;
@@ -691,7 +693,7 @@ $(function() {
             }
 
             //warn user
-            if (info != "") {
+            if (info !== "") {
                 if (notify) {
                     info += _.sprintf(gettext("Object's bounding box: (%(object.minX).2f, %(object.minY).2f, %(object.minZ).2f) &times; (%(object.maxX).2f, %(object.maxY).2f, %(object.maxZ).2f)"), formatData);
                     info += "<br>";
@@ -716,7 +718,7 @@ $(function() {
 
         self.performSearch = function(e) {
             var query = self.searchQuery();
-            if (query !== undefined && query.trim() != "") {
+            if (query !== undefined && query.trim() !== "") {
                 query = query.toLocaleLowerCase();
 
                 var recursiveSearch = function(entry) {
@@ -725,7 +727,7 @@ $(function() {
                     }
 
                     var success = entry["name"].toLocaleLowerCase().indexOf(query) > -1;
-                    if (!success && entry["type"] == "folder" && entry["children"]) {
+                    if (!success && entry["type"] === "folder" && entry["children"]) {
                         return _.any(entry["children"], recursiveSearch);
                     }
 
@@ -744,7 +746,7 @@ $(function() {
             root = root || {children: self.allItems()};
 
             var recursiveSearch = function(location, element) {
-                if (location.length == 0) {
+                if (location.length === 0) {
                     return element;
                 }
 
@@ -754,7 +756,7 @@ $(function() {
 
                 var name = location.shift();
                 for (var i = 0; i < element.children.length; i++) {
-                    if (name == element.children[i].name) {
+                    if (name === element.children[i].name) {
                         return recursiveSearch(location, element.children[i]);
                     }
                 }
@@ -815,14 +817,6 @@ $(function() {
             self.uploadProgress = $("#gcode_upload_progress");
             self.uploadProgressBar = $(".bar", self.uploadProgress);
 
-            if (CONFIG_SD_SUPPORT) {
-                self.localTarget = $("#drop_locally");
-            } else {
-                self.localTarget = $("#drop");
-                self.listHelper.removeFilter('sd');
-            }
-            self.sdTarget = $("#drop_sd");
-
             self.dropOverlay = $("#drop_overlay");
             self.dropZone = $("#drop");
             self.dropZoneLocal = $("#drop_locally");
@@ -830,6 +824,14 @@ $(function() {
             self.dropZoneBackground = $("#drop_background");
             self.dropZoneLocalBackground = $("#drop_locally_background");
             self.dropZoneSdBackground = $("#drop_sd_background");
+
+            if (CONFIG_SD_SUPPORT) {
+                self.localTarget = self.dropZoneLocal;
+            } else {
+                self.localTarget = self.dropZone;
+                self.listHelper.removeFilter('sd');
+            }
+            self.sdTarget = self.dropZoneSd;
 
             self.dropOverlay.on('drop', self._forceEndDragNDrop);
 
@@ -975,8 +977,8 @@ $(function() {
         };
 
         self._setDropzone = function(dropzone, enable) {
-            var button = (dropzone == "local") ? self.uploadButton : self.uploadSdButton;
-            var drop = (dropzone == "local") ? self.localTarget : self.sdTarget;
+            var button = (dropzone === "local") ? self.uploadButton : self.uploadSdButton;
+            var drop = (dropzone === "local") ? self.localTarget : self.sdTarget;
             var url = API_BASEURL + "files/" + dropzone;
 
             if (button === undefined)
@@ -995,20 +997,20 @@ $(function() {
                 always: self._handleUploadAlways,
                 progressall: self._handleUploadProgress
             }).bind('fileuploadsubmit', function(e, data) {
-                if (self.currentPath() != "")
+                if (self.currentPath() !== "")
                     data.formData = { path: self.currentPath() };
             });
         };
 
         self._enableDragNDrop = function(enable) {
             if (enable) {
-                $(document).bind("dragenter", self._handleDragNDrop);
-                $(document).bind("dragleave", self._endDragNDrop);
+                $(document).bind("dragenter", self._handleDragEnter);
+                $(document).bind("dragleave", self._handleDragLeave);
                 $(document).bind("dragover", self._handleDragOver);
                 log.debug("Enabled drag-n-drop");
             } else {
-                $(document).unbind("dragenter", self._handleDragNDrop);
-                $(document).unbind("dragleave", self._endDragNDrop);
+                $(document).unbind("dragenter", self._handleDragEnter);
+                $(document).unbind("dragleave", self._handleDragLeave);
                 $(document).unbind("dragover", self._handleDragOver);
                 log.debug("Disabled drag-n-drop");
             }
@@ -1093,8 +1095,8 @@ $(function() {
             self._dragNDropTarget = null;
         };
 
-        self._endDragNDrop = function (e) {
-            if (e.target != self._dragNDropTarget) return;
+        self._handleDragLeave = function (e) {
+            if (e.target !== self._dragNDropTarget) return;
             self._forceEndDragNDrop();
         };
 
@@ -1125,7 +1127,7 @@ $(function() {
             }, self._dragNDropFFTimeoutDelay);
         };
 
-        self._handleDragNDrop = function (e) {
+        self._handleDragEnter = function (e) {
             self.dropOverlay.addClass('in');
 
             var foundLocal = false;
@@ -1144,7 +1146,7 @@ $(function() {
                     break;
                 }
                 node = node.parentNode;
-            } while (node != null);
+            } while (node !== null);
 
             if (foundLocal) {
                 self.dropZoneLocalBackground.addClass("hover");
