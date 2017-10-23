@@ -286,15 +286,17 @@ class FilebasedUserManager(UserManager):
 	@staticmethod
 	def __migrate_roles_to_groups(roles):
 		from octoprint.server import groupManager
-		if groupManager.find_group("Users") is None:
-			groupManager.add_group("Users", "User group", permissions=Permissions.USER_ARRAY, default=False)
 
-		migrate_to_groups = {
-			"admin": groupManager.admins_group,
-			"user": "Users",
-		}
+		# If admin is inside the roles, just return admin group
+		if "admin" in roles:
+			return [groupManager.admins_group]
+		else:
+			# Because the Original system only contained of admin and user we can simply check for a user group,
+			# create it and return it
+			if groupManager.find_group("Users") is None:
+				groupManager.add_group("Users", "User group", permissions=Permissions.USER_ARRAY, default=False)
 
-		return map(lambda role: migrate_to_groups[role], roles)
+			return [groupManager.find_group("Users")]
 
 	def addUser(self, username, password, active=False, permissions=None, groups=None, apikey=None, overwrite=False):
 		if not permissions:
