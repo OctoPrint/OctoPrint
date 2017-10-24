@@ -988,28 +988,60 @@ function setOnViewModels(allViewModels, key, value) {
 }
 
 function setOnViewModelsIf(allViewModels, key, value, condition) {
+    if (!allViewModels) return;
+    _.each(allViewModels, function(viewModel) {
+        setOnViewModelIf(viewModel, key, value, condition);
+    })
+}
+
+function setOnViewModel(viewModel, key, value) {
+    setOnViewModelIf(viewModel, key, value, undefined);
+}
+
+function setOnViewModelIf(viewModel, key, value, condition) {
     if (condition === undefined || !_.isFunction(condition)) {
         condition = function() { return true; };
     }
 
-    _.each(allViewModels, function(viewModel) {
-        if (condition(viewModel)) {
-            viewModel[key] = value;
+    try {
+        if (!condition(viewModel)) {
+            return;
         }
-    })
+
+        viewModel[key] = value;
+    } catch (exc) {
+        log.error("Error while setting", key, "to", value, "on view model", viewModel.constructor.name, ":", (exc.stack || exc));
+    }
 }
 
 function callViewModels(allViewModels, method, callback) {
-    if (!allViewModels) return;
     callViewModelsIf(allViewModels, method, undefined, callback);
 }
 
 function callViewModelsIf(allViewModels, method, condition, callback) {
     if (!allViewModels) return;
 
-    if (condition == undefined || !_.isFunction(condition)) {
+    _.each(allViewModels, function(viewModel) {
+        try {
+            callViewModelIf(viewModel, method, condition, callback);
+        } catch (exc) {
+            log.error("Error calling", method, "on view model", viewModel.constructor.name, ":", (exc.stack || exc));
+        }
+    });
+}
+
+function callViewModel(viewModel, method, callback, raiseErrors) {
+    callViewModelIf(viewModel, method, undefined, callback, raiseErrors);
+}
+
+function callViewModelIf(viewModel, method, condition, callback, raiseErrors) {
+    raiseErrors = raiseErrors === true || false;
+
+    if (condition === undefined || !_.isFunction(condition)) {
         condition = function() { return true; };
     }
+
+    if (!viewModel.hasOwnProperty(method) || !condition(viewModel, method)) return;
 
     var parameters = undefined;
     if (!_.isFunction(callback)) {
@@ -1017,14 +1049,14 @@ function callViewModelsIf(allViewModels, method, condition, callback) {
         // call the view model method instead of providing it to the callback
         // - let's figure out how
 
-        if (callback == undefined) {
+        if (callback === undefined) {
             // directly call view model method with no parameters
             parameters = undefined;
-            log.trace("Calling method", method, "on view models");
+            log.trace("Calling method", method, "on view model");
         } else if (_.isArray(callback)) {
             // directly call view model method with these parameters
             parameters = callback;
-            log.trace("Calling method", method, "on view models with specified parameters", parameters);
+            log.trace("Calling method", method, "on view model with specified parameters", parameters);
         } else {
             // ok, this doesn't make sense, callback is neither undefined nor
             // an array, we'll return without doing anything
@@ -1035,29 +1067,29 @@ function callViewModelsIf(allViewModels, method, condition, callback) {
         // the method directly
         callback = undefined;
     } else {
-        log.trace("Providing method", method, "on view models to specified callback", callback);
+        log.trace("Providing method", method, "on view model to specified callback", callback);
     }
 
-    _.each(allViewModels, function(viewModel) {
-        if (viewModel.hasOwnProperty(method) && condition(viewModel, method)) {
-            try {
-                if (callback == undefined) {
-                    if (parameters != undefined) {
-                        // call the method with the provided parameters
-                        viewModel[method].apply(viewModel, parameters);
-                    } else {
-                        // call the method without parameters
-                        viewModel[method]();
-                    }
-                } else {
-                    // provide the method to the callback
-                    callback(viewModel[method], viewModel);
-                }
-            } catch (exc) {
-                log.error("Error calling", method, "on view model", viewModel.constructor.name, ":", (exc.stack || exc));
+    try {
+        if (callback === undefined) {
+            if (parameters !== undefined) {
+                // call the method with the provided parameters
+                viewModel[method].apply(viewModel, parameters);
+            } else {
+                // call the method without parameters
+                viewModel[method]();
             }
+        } else {
+            // provide the method to the callback
+            callback(viewModel[method], viewModel);
         }
-    });
+    } catch (exc) {
+        if (raiseErrors) {
+            throw exc;
+        } else {
+            log.error("Error calling", method, "on view model", viewModel.constructor.name, ":", (exc.stack || exc));
+        }
+    }
 }
 
 var sizeObservable = function(observable) {
