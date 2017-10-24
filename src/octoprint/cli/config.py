@@ -54,7 +54,7 @@ def config(ctx):
 		ctx.obj.settings = init_settings(get_ctx_obj_option(ctx, "basedir", None), get_ctx_obj_option(ctx, "configfile", None))
 	except FatalStartupError as e:
 		click.echo(e.message, err=True)
-		click.echo("There was a fatal error initializing the client.", err=True)
+		click.echo("There was a fatal error initializing the settings manager.", err=True)
 		ctx.exit(-1)
 
 

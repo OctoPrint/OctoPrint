@@ -125,6 +125,27 @@ def server_commands():
 	pass
 
 
+@server_commands.command(name="safemode")
+@standard_options(hidden=True)
+@click.pass_context
+def enable_safemode(ctx, **kwargs):
+	"""Sets the safe mode flag for the next start."""
+	from octoprint import init_settings, FatalStartupError
+
+	logging.basicConfig(level=logging.DEBUG if get_ctx_obj_option(ctx, "verbosity", 0) > 0 else logging.WARN)
+	try:
+		settings = init_settings(get_ctx_obj_option(ctx, "basedir", None), get_ctx_obj_option(ctx, "configfile", None))
+	except FatalStartupError as e:
+		click.echo(e.message, err=True)
+		click.echo("There was a fatal error initializing the settings manager.", err=True)
+		ctx.exit(-1)
+
+	settings.setBoolean(["server", "startOnceInSafeMode"], True)
+	settings.save()
+	
+	click.echo("Safe mode flag set, OctoPrint will start in safe mode on next restart.")
+
+
 @server_commands.command(name="serve")
 @server_options
 @standard_options(hidden=True)
