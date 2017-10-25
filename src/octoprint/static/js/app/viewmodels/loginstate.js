@@ -120,8 +120,25 @@ $(function() {
                         history.replaceState({success: true}, document.title, window.location.pathname);
                     }
                 })
-                .fail(function() {
-                    new PNotify({title: gettext("Login failed"), text: gettext("User unknown or wrong password"), type: "error"});
+                .fail(function(response) {
+                    switch(response.status) {
+                        case 401: {
+                            new PNotify({
+                                title: gettext("Login failed"),
+                                text: gettext("User unknown or wrong password"),
+                                type: "error"
+                            });
+                            break;
+                        }
+                        case 403: {
+                            new PNotify({
+                                title: gettext("Login failed"),
+                                text: gettext("Your account is deactivated"),
+                                type: "error"
+                            });
+                            break;
+                        }
+                    }
                 });
         };
 
