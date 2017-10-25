@@ -24,12 +24,37 @@ $(function() {
         self.profileDescription = ko.observable();
         self.profileAllowOverwrite = ko.observable(true);
         self.profileMakeDefault = ko.observable(false);
+        self.profileFirst = ko.observable(false);
+
+        // make sure to update form data if any of the metadata changes
+        self.profileName.subscribe(function() { self.copyProfileMetadata(); });
+        self.profileDisplayName.subscribe(function() {
+            if (self.profileDisplayName()) {
+                self.placeholderName(self._sanitize(self.profileDisplayName()).toLowerCase());
+            }
+            self.copyProfileMetadata();
+        });
+        self.profileDescription.subscribe(function() { self.copyProfileMetadata(); });
+        self.profileAllowOverwrite.subscribe(function() { self.copyProfileMetadata(); });
+        self.profileMakeDefault.subscribe(function() { self.copyProfileMetadata(); });
 
         self.unconfiguredCuraEngine = ko.observable();
         self.unconfiguredSlicingProfile = ko.observable();
 
+        self.uploadDialog = $("#settings_plugin_cura_import");
         self.uploadElement = $("#settings-cura-import");
-        self.uploadButton = $("#settings-cura-import-start");
+        self.uploadData = ko.observable(undefined);
+        self.uploadBusy = ko.observable(false);
+
+        self.uploadEnabled = ko.pureComputed(function() {
+            return self.fieldsEnabled();
+        });
+        self.fieldsEnabled = ko.pureComputed(function() {
+            return self.uploadData() && !self.uploadBusy()
+                && (self.profileName() || self.placeholderName())
+                && (self.profileDisplayName() || self.placeholderDisplayName())
+                && (self.profileDescription() || self.placeholderDescription());
+        });
 
         self.profiles = new ItemListHelper(
             "plugin_cura_profiles",
@@ -66,6 +91,56 @@ $(function() {
             return name.replace(/[^a-zA-Z0-9\-_\.\(\) ]/g, "").replace(/ /g, "_");
         };
 
+        self.performUpload = function() {
+            if (self.uploadData()) {
+                self.uploadData().submit();
+            }
+        };
+
+        self.copyProfileMetadata = function(form) {
+            form = form || (self.uploadData() ? self.uploadData().formData : {});
+
+            if (self.profileName() !== undefined) {
+                form["name"] = self.profileName();
+            } else if (self.placeholderName() !== undefined) {
+                form["name"] = self.placeholderName();
+            }
+
+            if (self.profileDisplayName() !== undefined) {
+                form["displayName"] = self.profileDisplayName();
+            } else if (self.placeholderDisplayName() !== undefined) {
+                form["displayName"] = self.placeholderDisplayName();
+            }
+
+            if (self.profileDescription() !== undefined) {
+                form["description"] = self.profileDescription();
+            } else if (self.placeholderDescription() !== undefined) {
+                form["description"] = self.placeholderDescription();
+            }
+
+            if (self.profileMakeDefault()) {
+                form["default"] = true;
+            }
+
+            return form;
+        };
+
+        self.clearUpload = function() {
+            self.uploadData(undefined);
+            self.fileName(undefined);
+            self.placeholderName(undefined);
+            self.placeholderDisplayName(undefined);
+            self.placeholderDescription(undefined);
+            self.profileName(undefined);
+            self.profileDisplayName(undefined);
+            self.profileDescription(undefined);
+            self.profileAllowOverwrite(true);
+
+            var firstProfile = self.profiles.items().length === 0;
+            self.profileMakeDefault(firstProfile);
+            self.profileFirst(firstProfile);
+        };
+
         self.uploadElement.fileupload({
             dataType: "json",
             maxNumberOfFiles: 1,
@@ -73,6 +148,11 @@ $(function() {
             headers: OctoPrint.getRequestHeaders(),
             add: function(e, data) {
                 if (data.files.length == 0) {
+                    // no files? ignore
+                    return false;
+                }
+                if (self.uploadData()) {
+                    // data already defined? ignore (should never happen)
                     return false;
                 }
 
@@ -83,41 +163,22 @@ $(function() {
                 self.placeholderDisplayName(name);
                 self.placeholderDescription("Imported from " + self.fileName() + " on " + formatDate(new Date().getTime() / 1000));
 
-                self.uploadButton.unbind("click");
-                self.uploadButton.on("click", function() {
-                    var form = {
-                        allowOverwrite: self.profileAllowOverwrite()
-                    };
+                var form = {
+                    allowOverwrite: self.profileAllowOverwrite()
+                };
+                data.formData = self.copyProfileMetadata(form);
 
-                    if (self.profileName() !== undefined) {
-                        form["name"] = self.profileName();
-                    }
-                    if (self.profileDisplayName() !== undefined) {
-                        form["displayName"] = self.profileDisplayName();
-                    }
-                    if (self.profileDescription() !== undefined) {
-                        form["description"] = self.profileDescription();
-                    }
-                    if (self.profileMakeDefault()) {
-                        form["default"] = true;
-                    }
-
-                    data.formData = form;
-                    data.submit();
-                });
+                self.uploadData(data);
+            },
+            submit: function(e, data) {
+                self.copyProfileMetadata();
+                self.uploadBusy(true);
             },
             done: function(e, data) {
-                self.fileName(undefined);
-                self.placeholderName(undefined);
-                self.placeholderDisplayName(undefined);
-                self.placeholderDescription(undefined);
-                self.profileName(undefined);
-                self.profileDisplayName(undefined);
-                self.profileDescription(undefined);
-                self.profileAllowOverwrite(true);
-                self.profileMakeDefault(false);
+                self.uploadBusy(false);
+                self.clearUpload();
 
-                $("#settings_plugin_cura_import").modal("hide");
+                self.uploadDialog.modal("hide");
                 self.requestData();
                 self.slicingViewModel.requestData();
             }
@@ -160,12 +221,9 @@ $(function() {
                 });
         };
 
-        self.showImportProfileDialog = function(makeDefault) {
-            if (makeDefault == undefined) {
-                makeDefault = _.filter(self.profiles.items(), function(profile) { profile.isdefault() }).length == 0;
-            }
-            self.profileMakeDefault(makeDefault);
-            $("#settings_plugin_cura_import").modal("show");
+        self.showImportProfileDialog = function() {
+            self.clearUpload();
+            self.uploadDialog.modal("show");
         };
 
         self.testEnginePath = function() {
@@ -188,8 +246,7 @@ $(function() {
         };
 
         self.requestData = function() {
-            OctoPrint.slicing.listProfilesForSlicer("cura")
-                .done(self.fromResponse);
+            self.slicingViewModel.requestData();
         };
 
         self.fromResponse = function(data) {
@@ -208,11 +265,28 @@ $(function() {
 
         self.onBeforeBinding = function () {
             self.settings = self.settingsViewModel.settings;
+        };
+
+        self.onAllBound = function() {
+            self.uploadDialog.on("hidden", function(event) {
+                if (event.target.id == "settings_plugin_cura_import") {
+                    self.clearUpload();
+                }
+            });
+        };
+
+        self.onSettingsShown = function() {
             self.requestData();
         };
 
         self.onSettingsHidden = function() {
             self.resetPathTest();
+        };
+
+        self.onSlicingData = function(data) {
+            if (data && data.hasOwnProperty("cura") && data.cura.hasOwnProperty("profiles")) {
+                self.fromResponse(data.cura.profiles);
+            }
         };
 
         self.resetPathTest = function() {

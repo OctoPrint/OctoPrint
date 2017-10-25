@@ -1,0 +1,22 @@
+<form class="form-horizontal">
+    <div class="control-group" data-bind="css: {error: nameInvalid()}">
+        <label class="control-label">{{ _('Name') }}</label>
+        <div class="controls">
+            <input type="text" data-bind="value: name, valueUpdate: 'afterkeydown'">
+            <span data-bind="visible: nameInvalid()"><br><span class="help-inline">{{ _('Name must be set') }}</span></span>
+        </div>
+    </div>
+    <div class="control-group" data-bind="css: {error: identifierInvalid()}">
+        <label class="control-label">{{ _('Identifier') }}</label>
+        <div class="controls">
+            <input type="text" data-bind="value: identifier, valueUpdate: 'afterkeydown', enable: isNew, css: {disabled: !isNew()}, attr: {placeholder: identifierPlaceholder}">
+            <span data-bind="visible: identifierInvalid()"><br><span class="help-inline" data-bind="text: identifierInvalidText()"></span></span>
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label">{{ _('Model') }}</label>
+        <div class="controls">
+            <input type="text" data-bind="value: model">
+        </div>
+    </div>
+</form>

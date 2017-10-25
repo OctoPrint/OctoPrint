@@ -1,7 +1,13 @@
 <form class="form-horizontal">
     <h3>{{ _('Commands') }}</h3>
 
-    {% include "_snippets/settings/server/serverCommandServerRestart.jinja2" %}
-    {% include "_snippets/settings/server/serverCommandSystemRestart.jinja2" %}
-    {% include "_snippets/settings/server/serverCommandSystemShutdown.jinja2" %}
+    {% include "snippets/settings/server/serverCommandServerRestart.jinja2" %}
+    {% include "snippets/settings/server/serverCommandSystemRestart.jinja2" %}
+    {% include "snippets/settings/server/serverCommandSystemShutdown.jinja2" %}
+
+    <h3>{{ _('Connectivity check') }}</h3>
+
+    {% include "snippets/settings/server/serverOnlineCheckDescription.jinja2" %}
+    {% include "snippets/settings/server/serverOnlineCheck.jinja2" %}
+
 </form>

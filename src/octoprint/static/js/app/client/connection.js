@@ -1,27 +1,32 @@
 (function (global, factory) {
     if (typeof define === "function" && define.amd) {
-        define(["OctoPrint"], factory);
+        define(["OctoPrintClient"], factory);
     } else {
-        factory(window.OctoPrint);
+        factory(global.OctoPrintClient);
     }
-})(window || this, function(OctoPrint) {
+})(this, function(OctoPrintClient) {
     var url = "api/connection";
 
-    OctoPrint.connection = {
-        getSettings: function(opts) {
-            return OctoPrint.get(url, opts);
-        },
+    var OctoPrintConnectionClient = function(base) {
+        this.base = base;
+    };
 
-        connect: function(data, opts) {
-            return OctoPrint.issueCommand(url, "connect", data || {}, opts);
-        },
+    OctoPrintConnectionClient.prototype.getSettings = function(opts) {
+        return this.base.get(url, opts);
+    };
 
-        disconnect: function(opts) {
-            return OctoPrint.issueCommand(url, "disconnect", {}, opts);
-        },
+    OctoPrintConnectionClient.prototype.connect = function(data, opts) {
+        return this.base.issueCommand(url, "connect", data || {}, opts);
+    };
 
-        fakeAck: function(opts) {
-            return OctoPrint.issueCommand(url, "fake_ack", {}, opts);
-        }
-    }
+    OctoPrintConnectionClient.prototype.disconnect = function(opts) {
+        return this.base.issueCommand(url, "disconnect", {}, opts);
+    };
+
+    OctoPrintConnectionClient.prototype.fakeAck = function(opts) {
+        return this.base.issueCommand(url, "fake_ack", {}, opts);
+    };
+
+    OctoPrintClient.registerComponent("connection", OctoPrintConnectionClient);
+    return OctoPrintConnectionClient;
 });

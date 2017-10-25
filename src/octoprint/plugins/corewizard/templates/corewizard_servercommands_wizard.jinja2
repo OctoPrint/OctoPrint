@@ -8,12 +8,12 @@
 <h4>{{ _('OctoPrint related commands') }}</h4>
 
 <form class="form-horizontal" data-bind="with: settingsViewModel">
-    {% include "_snippets/settings/server/serverCommandServerRestart.jinja2" %}
+    {% include "snippets/settings/server/serverCommandServerRestart.jinja2" %}
 </form>
 
 <h4>{{ _('System related commands') }}</h4>
 
 <form class="form-horizontal" data-bind="with: settingsViewModel">
-    {% include "_snippets/settings/server/serverCommandSystemRestart.jinja2" %}
-    {% include "_snippets/settings/server/serverCommandSystemShutdown.jinja2" %}
+    {% include "snippets/settings/server/serverCommandSystemRestart.jinja2" %}
+    {% include "snippets/settings/server/serverCommandSystemShutdown.jinja2" %}
 </form>

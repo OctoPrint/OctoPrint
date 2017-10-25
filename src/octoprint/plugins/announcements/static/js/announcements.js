@@ -40,7 +40,7 @@ $(function() {
         };
 
         self.toggleButtonCss = function(data) {
-            var icon = data.enabled ? "icon-circle" : "icon-circle-blank";
+            var icon = data.enabled ? "fa fa-toggle-on" : "fa fa-toggle-off";
             var disabled = (self.enableToggle(data)) ? "" : " disabled";
 
             return icon + disabled;
@@ -120,12 +120,13 @@ $(function() {
         };
 
         self.fromResponse = function(data) {
+            if (!self.loginState.isAdmin()) return;
+
             var currentTab = $("li.active a", self.announcementDialogTabs).attr("href");
 
             var unread = 0;
             var channels = [];
-            _.each(data, function(value, key) {
-                value.key = key;
+            _.each(data.channels, function(value) {
                 value.last = value.data.length ? value.data[0].published : undefined;
                 value.count = value.data.length;
                 unread += value.unread;
@@ -140,6 +141,11 @@ $(function() {
         };
 
         self.showAnnouncementDialog = function(channel) {
+            if (!self.loginState.isAdmin()) return;
+
+            // lazy load images that still need lazy-loading
+            $("#plugin_announcements_dialog_content article img").lazyload();
+
             self.announcementDialogContent.scrollTop(0);
 
             if (!self.announcementDialog.hasClass("in")) {
@@ -172,6 +178,8 @@ $(function() {
         };
 
         self.displayAnnouncements = function(channels) {
+            if (!self.loginState.isAdmin()) return;
+
             var displayLimit = self.settings.settings.plugins.announcements.display_limit();
             var maxLength = self.settings.settings.plugins.announcements.summary_limit();
 
@@ -222,7 +230,7 @@ $(function() {
                 }
                 var rest = newItems.length - displayedItems.length;
 
-                var text = "<ul>";
+                var text = "<ul style='margin-top: 10px; margin-bottom: 10px'>";
                 _.each(displayedItems, function(item) {
                     var limitedSummary = stripParagraphs(item.summary_without_images.trim());
                     if (limitedSummary.length > maxLength) {
@@ -239,6 +247,8 @@ $(function() {
                     text += gettext(_.sprintf("... and %(rest)d more.", {rest: rest}));
                 }
 
+                text += "<small>" + gettext("You can edit your announcement subscriptions under Settings > Announcements.") + "</small>";
+
                 var options = {
                     title: channel,
                     text: text,
@@ -248,22 +258,22 @@ $(function() {
                         buttons: [{
                             text: gettext("Later"),
                             click: function(notice) {
-                                self.hiddenChannels.push(key);
                                 notice.remove();
+                                self.hiddenChannels.push(key);
                             }
                         }, {
                             text: gettext("Mark read"),
                             click: function(notice) {
-                                self.markRead(key, value.last);
                                 notice.remove();
+                                self.markRead(key, value.last);
                             }
                         }, {
                             text: gettext("Read..."),
                             addClass: "btn-primary",
                             click: function(notice) {
+                                notice.remove();
                                 self.showAnnouncementDialog(key);
                                 self.markRead(key, value.last);
-                                notice.remove();
                             }
                         }]
                     },
@@ -284,15 +294,36 @@ $(function() {
             });
         };
 
+        self.hideAnnouncements = function() {
+            _.each(self.channelNotifications, function(notification, key) {
+                notification.remove();
+            });
+            self.channelNotifications = {};
+        };
+
+        self.configureAnnouncements = function() {
+            self.settings.show("settings_plugin_announcements");
+        };
+
         self.onUserLoggedIn = function() {
             self.retrieveData();
+        };
+
+        self.onUserLoggedOut = function() {
+            self.hideAnnouncements();
         };
 
         self.onStartup = function() {
             self.announcementDialog = $("#plugin_announcements_dialog");
             self.announcementDialogContent = $("#plugin_announcements_dialog_content");
             self.announcementDialogTabs = $("#plugin_announcements_dialog_tabs");
+        };
+
+        self.onEventConnectivityChanged = function(payload) {
+            if (!payload || !payload.new) return;
+            self.retrieveData();
         }
+
     }
 
     // view model class, parameters for constructor, container to bind to

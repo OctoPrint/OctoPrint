@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -47,39 +47,40 @@ def _git(args, cwd, hide_stderr=False):
 	return p.returncode, stdout
 
 
-def get_latest(target, check):
-	if not "checkout_folder" in check:
-		raise ConfigurationInvalid("Update configuration for %s needs checkout_folder" % target)
-
-	checkout_folder = check["checkout_folder"]
-
-	returncode, _ = _git(["fetch"], checkout_folder)
-	if returncode != 0:
-		return None, True
+def get_latest(target, check, online=True):
+	checkout_folder = check.get("checkout_folder")
+	if checkout_folder is None:
+		raise ConfigurationInvalid("Update configuration for {} of type git_commit needs checkout_folder set and not None".format(target))
 
 	returncode, local_commit = _git(["rev-parse", "@{0}"], checkout_folder)
 	if returncode != 0:
 		return None, True
 
+	information = dict(
+		local=dict(name="Commit %s" % local_commit, value=local_commit),
+		remote=dict(name="?", value="?"),
+		needs_online=not check.get("offline", False)
+	)
+	if not online and information["needs_online"]:
+		return information, True
+
+	returncode, _ = _git(["fetch"], checkout_folder)
+	if returncode != 0:
+		return information, True
+
 	returncode, remote_commit = _git(["rev-parse", "@{u}"], checkout_folder)
 	if returncode != 0:
-		return None, True
+		return information, True
 
 	returncode, base = _git(["merge-base", "@{0}", "@{u}"], checkout_folder)
 	if returncode != 0:
-		return None, True
+		return information, True
 
 	if local_commit == remote_commit or remote_commit == base:
-		information = dict(
-			local=dict(name="Commit %s" % local_commit, value=local_commit),
-			remote=dict(name="Commit %s" % local_commit, value=local_commit)
-		)
+		information["remote"] = dict(name="Commit %s" % local_commit, value=local_commit)
 		is_current = True
 	else:
-		information = dict(
-			local=dict(name="Commit %s" % local_commit, value=local_commit),
-			remote=dict(name="Commit %s" % remote_commit, value=remote_commit)
-		)
+		information["remote"] = dict(name="Commit %s" % remote_commit, value=remote_commit)
 		is_current = local_commit == remote_commit
 
 	logger = logging.getLogger("octoprint.plugins.softwareupdate.version_checks.git_commit")

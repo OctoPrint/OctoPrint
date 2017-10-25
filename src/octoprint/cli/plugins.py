@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms of the AGPLv3 License"
@@ -8,7 +8,7 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 import click
 import logging
 
-from octoprint.cli import pass_octoprint_ctx, OctoPrintContext
+from octoprint.cli import pass_octoprint_ctx, OctoPrintContext, get_ctx_obj_option
 
 #~~ "octoprint plugin:command" commands
 
@@ -48,12 +48,19 @@ class OctoPrintPluginCommands(click.MultiCommand):
 
 		# initialize settings and plugin manager based on provided
 		# context (basedir and configfile)
-		from octoprint import init_settings, init_pluginsystem
-		self.settings = init_settings(ctx.obj.basedir, ctx.obj.configfile)
-		self.plugin_manager = init_pluginsystem(self.settings)
+		from octoprint import init_settings, init_pluginsystem, FatalStartupError
+		try:
+			self.settings = init_settings(get_ctx_obj_option(ctx, "basedir", None), get_ctx_obj_option(ctx, "configfile", None))
+			self.plugin_manager = init_pluginsystem(self.settings, safe_mode=get_ctx_obj_option(ctx, "safe_mode", False))
+		except FatalStartupError as e:
+			click.echo(e.message, err=True)
+			click.echo("There was a fatal error initializing the settings or the plugin system.", err=True)
+			ctx.exit(-1)
 
 		# fetch registered hooks
 		self.hooks = self.plugin_manager.get_hooks("octoprint.cli.commands")
+
+		logging.basicConfig(level=logging.DEBUG if ctx.obj.verbosity > 0 else logging.WARN)
 
 		self._initialized = True
 
@@ -83,14 +90,14 @@ class OctoPrintPluginCommands(click.MultiCommand):
 						continue
 					result[name + self.sep + command.name] = command
 			except:
-				self._logger.exception("Error while retrieving cli commants for plugin {}".format(name))
+				self._logger.exception("Error while retrieving cli commands for plugin {}".format(name))
 
 		return result
 
 @click.group()
 @pass_octoprint_ctx
 def plugin_commands(obj):
-	logging.basicConfig(level=logging.DEBUG if obj.verbosity > 0 else logging.WARN)
+	pass
 
 @plugin_commands.group(name="plugins", cls=OctoPrintPluginCommands)
 def plugins():

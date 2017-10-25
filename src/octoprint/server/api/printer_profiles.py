@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -11,15 +11,35 @@ import copy
 from flask import jsonify, make_response, request, url_for
 from werkzeug.exceptions import BadRequest
 
-from octoprint.server.api import api, NO_CONTENT
-from octoprint.server.util.flask import restricted_access
+from past.builtins import basestring
+
+from octoprint.server.api import api, NO_CONTENT, valid_boolean_trues
+from octoprint.server.util.flask import restricted_access, with_revalidation_checking
 from octoprint.util import dict_merge
 
 from octoprint.server import printerProfileManager
 from octoprint.printer.profile import InvalidProfileError, CouldNotOverwriteError, SaveError
 
+def _lastmodified():
+	return printerProfileManager.last_modified
+
+
+def _etag(lm=None):
+	if lm is None:
+		lm = _lastmodified()
+
+	import hashlib
+	hash = hashlib.sha1()
+	hash.update(str(lm))
+	hash.update(repr(printerProfileManager.get_default()))
+	hash.update(repr(printerProfileManager.get_current()))
+	return hash.hexdigest()
+
 
 @api.route("/printerprofiles", methods=["GET"])
+@with_revalidation_checking(etag_factory=_etag,
+                            lastmodified_factory=_lastmodified,
+                            unless=lambda: request.values.get("force", "false") in valid_boolean_trues)
 def printerProfilesList():
 	all_profiles = printerProfileManager.get_all()
 	return jsonify(dict(profiles=_convert_profiles(all_profiles)))
@@ -31,8 +51,11 @@ def printerProfilesAdd():
 		return make_response("Expected content-type JSON", 400)
 
 	try:
-		json_data = request.json
+		json_data = request.get_json()
 	except BadRequest:
+		return make_response("Malformed JSON body in request", 400)
+
+	if json_data is None:
 		return make_response("Malformed JSON body in request", 400)
 
 	if not "profile" in json_data:
@@ -58,12 +81,18 @@ def printerProfilesAdd():
 		del new_profile["default"]
 
 	profile = dict_merge(base_profile, new_profile)
+
+	if not "id" in profile:
+		return make_response("Profile does not contain mandatory 'id' field", 400)
+	if not "name" in profile:
+		return make_response("Profile does not contain mandatory 'name' field", 400)
+
 	try:
 		saved_profile = printerProfileManager.save(profile, allow_overwrite=False, make_default=make_default)
 	except InvalidProfileError:
 		return make_response("Profile is invalid", 400)
 	except CouldNotOverwriteError:
-		return make_response("Profile already exists and overwriting was not allowed", 400)
+		return make_response("Profile {} already exists and overwriting was not allowed".format(profile["id"]), 400)
 	except Exception as e:
 		return make_response("Could not save profile: %s" % str(e), 500)
 	else:
@@ -80,8 +109,14 @@ def printerProfilesGet(identifier):
 @api.route("/printerprofiles/<string:identifier>", methods=["DELETE"])
 @restricted_access
 def printerProfilesDelete(identifier):
-	if printerProfileManager.get_current_or_default()["id"] == identifier:
-		return make_response("Cannot delete currently selected profile: %s" % identifier, 409)
+	current_profile = printerProfileManager.get_current()
+	if current_profile and current_profile["id"] == identifier:
+		return make_response("Cannot delete currently selected profile: {}".format(identifier), 409)
+
+	default_profile = printerProfileManager.get_default()
+	if default_profile and default_profile["id"] == identifier:
+		return make_response("Cannot delete default profile: {}".format(identifier), 409)
+
 	printerProfileManager.remove(identifier)
 	return NO_CONTENT
 
@@ -92,8 +127,11 @@ def printerProfilesUpdate(identifier):
 		return make_response("Expected content-type JSON", 400)
 
 	try:
-		json_data = request.json
+		json_data = request.get_json()
 	except BadRequest:
+		return make_response("Malformed JSON body in request", 400)
+
+	if json_data is None:
 		return make_response("Malformed JSON body in request", 400)
 
 	if not "profile" in json_data:
@@ -104,17 +142,17 @@ def printerProfilesUpdate(identifier):
 		profile = printerProfileManager.get_default()
 
 	new_profile = json_data["profile"]
-	new_profile = dict_merge(profile, new_profile)
+	merged_profile = dict_merge(profile, new_profile)
 
 	make_default = False
-	if "default" in new_profile:
+	if "default" in merged_profile:
 		make_default = True
 		del new_profile["default"]
 
-	new_profile["id"] = identifier
+		merged_profile["id"] = identifier
 
 	try:
-		saved_profile = printerProfileManager.save(new_profile, allow_overwrite=True, make_default=make_default)
+		saved_profile = printerProfileManager.save(merged_profile, allow_overwrite=True, make_default=make_default)
 	except InvalidProfileError:
 		return make_response("Profile is invalid", 400)
 	except CouldNotOverwriteError:

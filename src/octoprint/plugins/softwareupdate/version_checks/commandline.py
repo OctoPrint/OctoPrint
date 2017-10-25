@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -8,14 +8,18 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import logging
 
-from ..exceptions import ConfigurationInvalid
+from ..exceptions import ConfigurationInvalid, CannotCheckOffline
 from ..util import execute
 
-def get_latest(target, check):
-	if not "command" in check:
-		raise ConfigurationInvalid("Update configuration for %s of type commandline needs command defined" % target)
+def get_latest(target, check, online=True):
+	command = check.get("command")
+	if command is None:
+		raise ConfigurationInvalid("Update configuration for {} of type commandline needs command set and not None".format(target))
 
-	returncode, stdout, stderr = execute(check["command"], evaluate_returncode=False)
+	if not online and not check.get("offline", False):
+		raise CannotCheckOffline("{} isn't marked as 'offline' capable, but we are apparently offline right now".format(target))
+
+	returncode, stdout, stderr = execute(command, evaluate_returncode=False)
 
 	# We expect command line check commands to
 	#

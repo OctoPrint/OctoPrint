@@ -7,35 +7,61 @@ thanks to everyone who contributed!
 ## Patreon Patrons
 
   * 3D Moniak
+  * Aleph Objects, Inc.
   * Andrew Moorby
   * Arnljot Arntsen
-  * Aurelio Bernal Ramírez
+  * BEEVERYCREATIVE
+  * Boris Hussein
+  * Brad Jackson
   * Brian E. Tyler
   * Christian Petropolis
-  * COLLE+McVOY 
-  * CreativeTools 
+  * COLLE+McVOY
+  * CreativeTools
   * D Brian Kimmel
-  * Doug Johnson
+  * DeltaMaker 3D Printers
   * E3D BigBox
-  * Erik de Bruijn
   * Ernesto Martinez
-  * Exovite 
-  * georgeroblesjr 
-  * Gregor Luetolf
-  * Joshua Gregory
+  * Exovite
+  * F. Kunsmann
+  * Farren Young II
+  * Frank Sander
+  * Gary Deen
+  * Gary N McKinney
+  * George Robles
+  * günter weber
+  * James Seigel
+  * Jamie R McGuigan
+  * Jason Lawrence
+  * Jeff Moe
+  * Josh Daniels
+  * Kaile Riser
   * Kale Stedman
-  * Kyle Gress
+  * Kazuhiro Ogura
   * Makespace Madrid
+  * Marcus Ackermann
+  * Mark Qvist
+  * Mark Walker
   * Masayoshi Mitsui
-  * Miguel Angel Salmeron
-  * MikeyDK 
-  * Mohammed Khorakiwala
+  * Michael Aumock
+  * Miles Flavel
+  * mitchell hirsch
+  * Mohammed khorakiwala
   * Noe Ruiz
+  * Patrick McGinnis
+  * Peter Grace
+  * Peter Schmehl
+  * PRINT3Dforum.com
+  * Robert Gusek
+  * Roger Strolz
   * Roy Cortes
   * Samer Najia
+  * Simon Hallam
   * Stefan Krister
-  * Steven Pearson
+  * Stephane Schittly
   * Sven Mueller
-  * Tom 
+  * Symbiotic Devices
+  * Thomas Hatley
+  * Timeshell.ca
+  * Trent Shumay
 
-and 414 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!
+and 1133 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!

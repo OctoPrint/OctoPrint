@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -18,9 +18,9 @@ console_logger = logging.getLogger("octoprint.plugins.softwareupdate.updaters.pi
 _pip_callers = dict()
 _pip_version_dependency_links = pkg_resources.parse_version("1.5")
 
-def can_perform_update(target, check):
+def can_perform_update(target, check, online=True):
 	pip_caller = _get_pip_caller(command=check["pip_command"] if "pip_command" in check else None)
-	return "pip" in check and pip_caller is not None and pip_caller.available
+	return "pip" in check and pip_caller is not None and pip_caller.available and (online or check.get("offline", False))
 
 def _get_pip_caller(command=None):
 	key = command
@@ -35,10 +35,13 @@ def _get_pip_caller(command=None):
 
 	return _pip_callers[key]
 
-def perform_update(target, check, target_version, log_cb=None):
+def perform_update(target, check, target_version, log_cb=None, online=True):
 	pip_command = None
 	if "pip_command" in check:
 		pip_command = check["pip_command"]
+
+	if not online and not check.get("offline", False):
+		raise exceptions.CannotUpdateOffline()
 
 	pip_caller = _get_pip_caller(command=pip_command)
 	if pip_caller is None:

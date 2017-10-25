@@ -1,72 +1,116 @@
 (function (global, factory) {
     if (typeof define === "function" && define.amd) {
-        define(["OctoPrint", "jquery"], factory);
+        define(["OctoPrintClient", "jquery"], factory);
     } else {
-        factory(window.OctoPrint, window.$);
+        factory(global.OctoPrintClient, global.$);
     }
-})(window || this, function(OctoPrint, $) {
+})(this, function(OctoPrintClient, $) {
     var url = "api/timelapse";
+
+    var downloadUrl = "downloads/timelapse";
 
     var timelapseUrl = function(filename) {
         return url + "/" + filename;
+    };
+
+    var timelapseDownloadUrl = function(filename) {
+        return downloadUrl + "/" + filename;
     };
 
     var unrenderedTimelapseUrl = function(name) {
         return url + "/unrendered/" + name;
     };
 
-    var getTimelapseData = function (opts) {
-        return OctoPrint.get(url, opts);
+    var OctoPrintTimelapseClient = function(base) {
+        this.base = base;
     };
 
-    OctoPrint.timelapse = {
-        get: getTimelapseData,
-
-        list: function (opts) {
-            var deferred = $.Deferred();
-
-            getTimelapseData(opts)
-                .done(function (response, status, request) {
-                    deferred.resolve(response.files, status, request);
-                })
-                .fail(function () {
-                    deferred.reject.apply(null, arguments);
-                });
-
-            return deferred.promise();
-        },
-
-        download: function (filename, opts) {
-            return OctoPrint.download(timelapseUrl(filename), opts);
-        },
-
-        delete: function (filename, opts) {
-            return OctoPrint.delete(timelapseUrl(filename), opts);
-        },
-
-        deleteUnrendered: function(name, opts) {
-            return OctoPrint.delete(unrenderedTimelapseUrl(name), opts);
-        },
-
-        renderUnrendered: function(name, opts) {
-            return OctoPrint.issueCommand(unrenderedTimelapseUrl(name), "render");
-        },
-
-        getConfig: function (opts) {
-            var deferred = $.Deferred();
-            getTimelapseData(opts)
-                .done(function (response, status, request) {
-                    deferred.resolve(response.config, status, request);
-                })
-                .fail(function () {
-                    deferred.reject.apply(null, arguments);
-                });
-            return deferred.promise();
-        },
-
-        saveConfig: function (config, opts) {
-            config = config || {};
-            return OctoPrint.postJson(url, config, opts);
+    OctoPrintTimelapseClient.prototype.get = function (unrendered, opts) {
+        if (unrendered) {
+            opts = opts || {};
+            opts.data = {unrendered: unrendered};
         }
-    }
+        return this.base.get(url, opts);
+    };
+
+    OctoPrintTimelapseClient.prototype.list = function(opts) {
+        var deferred = $.Deferred();
+
+        this.get(true, opts)
+            .done(function (response, status, request) {
+                deferred.resolve({
+                    rendered: response.files,
+                    unrendered: response.unrendered
+                }, status, request);
+            })
+            .fail(function () {
+                deferred.reject.apply(null, arguments);
+            });
+
+        return deferred.promise();
+    };
+
+    OctoPrintTimelapseClient.prototype.listRendered = function (opts) {
+        var deferred = $.Deferred();
+
+        this.get(false, opts)
+            .done(function (response, status, request) {
+                deferred.resolve(response.files, status, request);
+            })
+            .fail(function () {
+                deferred.reject.apply(null, arguments);
+            });
+
+        return deferred.promise();
+    };
+
+    OctoPrintTimelapseClient.prototype.listUnrendered = function (opts) {
+        var deferred = $.Deferred();
+
+        this.get(true, opts)
+            .done(function (response, status, request) {
+                deferred.resolve(response.unrendered, status, request);
+            })
+            .fail(function () {
+                deferred.reject.apply(null, arguments);
+            });
+
+        return deferred.promise();
+    };
+
+    OctoPrintTimelapseClient.prototype.download = function (filename, opts) {
+        return this.base.download(timelapseDownloadUrl(filename), opts);
+    };
+
+    OctoPrintTimelapseClient.prototype.delete = function (filename, opts) {
+        return this.base.delete(timelapseUrl(filename), opts);
+    };
+
+    OctoPrintTimelapseClient.prototype.deleteUnrendered = function(name, opts) {
+        return this.base.delete(unrenderedTimelapseUrl(name), opts);
+    };
+
+    OctoPrintTimelapseClient.prototype.renderUnrendered = function(name, opts) {
+        return this.base.issueCommand(unrenderedTimelapseUrl(name), "render");
+    };
+
+    OctoPrintTimelapseClient.prototype.getConfig = function (opts) {
+        var deferred = $.Deferred();
+        this.get(false, opts)
+            .done(function (response, status, request) {
+                deferred.resolve(response.config, status, request);
+            })
+            .fail(function () {
+                deferred.reject.apply(null, arguments);
+            });
+        return deferred.promise();
+    };
+
+    OctoPrintTimelapseClient.prototype.saveConfig = function (config, opts) {
+        config = config || {};
+        return OctoPrint.postJson(url, config, opts);
+    };
+
+    OctoPrintClient.registerComponent("timelapse", OctoPrintTimelapseClient);
+    return OctoPrintTimelapseClient;
 });

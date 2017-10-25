@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -8,7 +8,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import sys
 import logging
 
-from ..exceptions import ConfigurationInvalid, UpdateError
+from ..exceptions import ConfigurationInvalid, UpdateError, CannotUpdateOffline
 
 from octoprint.util.commandline import CommandlineCaller, CommandlineError
 
@@ -36,7 +36,7 @@ def _get_caller(log_cb=None):
 	return caller
 
 
-def can_perform_update(target, check):
+def can_perform_update(target, check, online=True):
 	import os
 	script_configured = bool("update_script" in check and check["update_script"])
 
@@ -47,19 +47,24 @@ def can_perform_update(target, check):
 		folder = check["checkout_folder"]
 	folder_configured = bool(folder and os.path.isdir(folder))
 
-	return script_configured and folder_configured
+	return script_configured and folder_configured and (online or check.get("offline", False))
 
 
-def perform_update(target, check, target_version, log_cb=None):
+def perform_update(target, check, target_version, log_cb=None, online=True):
 	logger = logging.getLogger("octoprint.plugins.softwareupdate.updaters.update_script")
+
+	if not online and not check("offline", False):
+		raise CannotUpdateOffline()
 
 	if not can_perform_update(target, check):
 		raise ConfigurationInvalid("checkout_folder and update_folder are missing for update target %s, one is needed" % target)
 
 	update_script = check["update_script"]
-	folder = check["update_folder"] if "update_folder" in check else check["checkout_folder"]
-	pre_update_script = check["pre_update_script"] if "pre_update_script" in check else None
-	post_update_script = check["post_update_script"] if "post_update_script" in check else None
+	update_branch = check.get("update_branch", "")
+	force_exact_version = check.get("force_exact_version", False)
+	folder = check.get("update_folder", check.get("checkout_folder")) # either should be set, tested above
+	pre_update_script = check.get("pre_update_script", None)
+	post_update_script = check.get("post_update_script", None)
 
 	caller = _get_caller(log_cb=log_cb)
 
@@ -75,7 +80,12 @@ def perform_update(target, check, target_version, log_cb=None):
 	### update
 
 	try:
-		update_command = update_script.format(python=sys.executable, folder=folder, target=target_version)
+		update_command = update_script.format(python=sys.executable,
+		                                      folder=folder,
+		                                      target=target_version,
+		                                      branch=update_branch,
+		                                      force="true" if force_exact_version else "false")
+
 		logger.debug("Target %s, running update script: %s" % (target, update_command))
 
 		caller.checked_call(update_command, cwd=folder)

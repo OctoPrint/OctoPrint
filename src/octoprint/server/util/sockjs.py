@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -8,14 +8,46 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 import logging
 import threading
 import sockjs.tornado
+import sockjs.tornado.session
 import time
 
 import octoprint.timelapse
 import octoprint.server
+import octoprint.events
+import octoprint.plugin
+
 from octoprint.events import Events
 from octoprint.settings import settings
 
 import octoprint.printer
+
+
+class ThreadSafeSession(sockjs.tornado.session.Session):
+	def __init__(self, conn, server, session_id, expiry=None):
+		sockjs.tornado.session.Session.__init__(self, conn, server, session_id, expiry=expiry)
+
+	def set_handler(self, handler, start_heartbeat=True):
+		if getattr(handler, "__orig_send_pack", None) is None:
+			orig_send_pack = handler.send_pack
+			mutex = threading.RLock()
+
+			def send_pack(*args, **kwargs):
+				with mutex:
+					return orig_send_pack(*args, **kwargs)
+
+			handler.send_pack = send_pack
+			setattr(handler, "__orig_send_pack", orig_send_pack)
+
+		return sockjs.tornado.session.Session.set_handler(self, handler, start_heartbeat=start_heartbeat)
+
+	def remove_handler(self, handler):
+		result = sockjs.tornado.session.Session.remove_handler(self, handler)
+
+		if getattr(handler, "__orig_send_pack", None) is not None:
+			handler.send_pack = getattr(handler, "__orig_send_pack")
+			delattr(handler, "__orig_send_pack")
+
+		return result
 
 
 class PrinterStateConnection(sockjs.tornado.SockJSConnection, octoprint.printer.PrinterCallback):
@@ -43,8 +75,6 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection, octoprint.printer.
 		self._throttleFactor = 1
 		self._lastCurrent = 0
 		self._baseRateLimit = 0.5
-
-		self._emit_mutex = threading.RLock()
 
 	def _getRemoteAddress(self, info):
 		forwardedFor = info.headers.get("X-Forwarded-For")
@@ -74,7 +104,9 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection, octoprint.printer.
 			display_version=octoprint.server.DISPLAY_VERSION,
 			branch=octoprint.server.BRANCH,
 			plugin_hash=plugin_hash.hexdigest(),
-			config_hash=config_hash
+			config_hash=config_hash,
+			debug=octoprint.server.debug,
+			safe_mode=octoprint.server.safe_mode
 		))
 
 		self._printer.register_callback(self)
@@ -149,12 +181,12 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection, octoprint.printer.
 			messages = self._messageBacklog
 			self._messageBacklog = []
 
-		busy_files = [dict(origin=v[0], name=v[1]) for v in self._fileManager.get_busy_files()]
+		busy_files = [dict(origin=v[0], path=v[1]) for v in self._fileManager.get_busy_files()]
 		if "job" in data and data["job"] is not None \
-				and "file" in data["job"] and "name" in data["job"]["file"] and "origin" in data["job"]["file"] \
-				and data["job"]["file"]["name"] is not None and data["job"]["file"]["origin"] is not None \
+				and "file" in data["job"] and "path" in data["job"]["file"] and "origin" in data["job"]["file"] \
+				and data["job"]["file"]["path"] is not None and data["job"]["file"]["origin"] is not None \
 				and (self._printer.is_printing() or self._printer.is_paused()):
-			busy_files.append(dict(origin=data["job"]["file"]["origin"], name=data["job"]["file"]["name"]))
+			busy_files.append(dict(origin=data["job"]["file"]["origin"], path=data["job"]["file"]["path"]))
 
 		data.update({
 			"serverTime": time.time(),
@@ -200,8 +232,10 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection, octoprint.printer.
 		self.sendEvent(event, payload)
 
 	def _emit(self, type, payload):
-		with self._emit_mutex:
-			try:
-				self.send({type: payload})
-			except Exception as e:
-				self._logger.warn("Could not send message to client %s: %s" % (self._remoteAddress, str(e)))
+		try:
+			self.send({type: payload})
+		except Exception as e:
+			if self._logger.isEnabledFor(logging.DEBUG):
+				self._logger.exception("Could not send message to client {}".format(self._remoteAddress))
+			else:
+				self._logger.warn("Could not send message to client {}: {}".format(self._remoteAddress, e))

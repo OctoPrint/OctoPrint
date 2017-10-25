@@ -17,12 +17,283 @@ Retrieve all printer profiles
 
 .. http:get:: /api/printerprofiles
 
+   Retrieves a list of all configured printer profiles.
+
+   Returns a :http:statuscode:`200` with a list of :ref:`profiles <sec-api-printerprofiles-datamodel-profile>`.
+
+   **Example**
+
+   .. sourcecode:: http
+
+      GET /api/printerprofiles HTTP/1.1
+      Host: example.com
+      X-Api-Key: abcdef...
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "profiles": [
+          {
+            "id": "_default",
+            "name": "Default",
+            "color": "default",
+            "model": "Generic RepRap Printer",
+            "default": true,
+            "current": true,
+            "resource": "http://example.com/api/printerprofiles/_default",
+            "volume": {
+              "formFactor": "rectangular",
+              "origin": "lowerleft",
+              "width": 200,
+              "depth": 200,
+              "height": 200
+            },
+            "heatedBed": true,
+            "axes": {
+              "x": {
+                "speed": 6000,
+                "inverted": false
+              },
+              "y": {
+                "speed": 6000,
+                "inverted": false
+              },
+              "z": {
+                "speed": 200,
+                "inverted": false
+              },
+              "e": {
+                "speed": 300,
+                "inverted": false
+              }
+            },
+            "extruder": {
+              "count": 1,
+              "offsets": [
+                {"x": 0.0, "y": 0.0}
+              ]
+            }
+          },
+          {
+            "id": "my_profile",
+            "name": "My Profile",
+            "color": "default",
+            "model": "My Custom Printer",
+            "default": false,
+            "current": false,
+            "resource": "http://example.com/api/printerprofiles/my_profile",
+            "volume": {
+              "formFactor": "rectangular",
+              "origin": "lowerleft",
+              "width": 200,
+              "depth": 200,
+              "height": 200
+            },
+            "heatedBed": true,
+            "axes": {
+              "x": {
+                "speed": 6000,
+                "inverted": false
+              },
+              "y": {
+                "speed": 6000,
+                "inverted": false
+              },
+              "z": {
+                "speed": 200,
+                "inverted": false
+              },
+              "e": {
+                "speed": 300,
+                "inverted": false
+              }
+            },
+            "extruder": {
+              "count": 1,
+              "offsets": [
+                {"x": 0.0, "y": 0.0}
+              ]
+            }
+          },
+        ]
+      }
+
+
 .. _sec-api-printerprofiles-add:
 
 Add a new printer profile
 =========================
 
 .. http:post:: /api/printerprofiles
+
+   Adds a new printer profile based on either the current default profile
+   or the profile identified in ``basedOn``.
+
+   The provided profile data will be merged with the profile data from the
+   base profile.
+
+   If a profile with the same ``id`` does already exist, a :http:statuscode:`400`
+   will be returned.
+
+   Returns a :http:statuscode:`200` with the saved profile as property ``profile``
+   in the JSON body upon success.
+
+   Requires admin rights.
+
+   **Example 1**
+
+   Creating a new profile ``some_profile`` based on the current default profile.
+
+   .. sourcecode:: http
+
+      POST /api/printerprofiles HTTP/1.1
+      Host: example.com
+      X-Api-Key: abcdef...
+      Content-Type: application/json
+
+      {
+        "profile": {
+          "id": "some_profile",
+          "name": "Some profile",
+          "model": "Some cool model"
+        }
+      }
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "profile": {
+          "id": "some_profile",
+          "name": "Some profile",
+          "color": "default",
+          "model": "Some cool model",
+          "default": false,
+          "current": false,
+          "resource": "http://example.com/api/printerprofiles/some_profile",
+          "volume": {
+            "formFactor": "rectangular",
+            "origin": "lowerleft",
+            "width": 200,
+            "depth": 200,
+            "height": 200
+          },
+          "heatedBed": true,
+          "axes": {
+            "x": {
+              "speed": 6000,
+              "inverted": false
+            },
+            "y": {
+              "speed": 6000,
+              "inverted": false
+            },
+            "z": {
+              "speed": 200,
+              "inverted": false
+            },
+            "e": {
+              "speed": 300,
+              "inverted": false
+            }
+          },
+          "extruder": {
+            "count": 1,
+            "offsets": [
+              {"x": 0.0, "y": 0.0}
+            ]
+          }
+        }
+      }
+
+   **Example 2**
+
+   Creating a new profile ``some_other_profile`` based on existing profile
+   ``some_profile``.
+
+   .. sourcecode:: http
+
+      POST /api/printerprofiles HTTP/1.1
+      Host: example.com
+      X-Api-Key: abcdef...
+      Content-Type: application/json
+
+      {
+        "profile": {
+          "id": "some_other_profile",
+          "name": "Some other profile",
+          "heatedBed": false,
+          "volume": {
+            "formFactor": "circular",
+            "origin": "center",
+            "width": "150",
+            "height": "300"
+          },
+          "extruder": {
+            "count": 2,
+            "offsets": [
+              {"x": 0.0, "y": 0.0},
+              {"x": 21.6, "y": 0.0}
+            ]
+          }
+        },
+        "basedOn": "some_profile"
+      }
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "profile": {
+          "id": "some_other_profile",
+          "name": "Some other profile",
+          "color": "default",
+          "model": "Some cool model",
+          "default": false,
+          "current": false,
+          "resource": "http://example.com/api/printerprofiles/some_other_profile",
+          "volume": {
+            "formFactor": "circular",
+            "origin": "center",
+            "width": 150,
+            "depth": 150,
+            "height": 300
+          },
+          "heatedBed": false,
+          "axes": {
+            "x": {
+              "speed": 6000,
+              "inverted": false
+            },
+            "y": {
+              "speed": 6000,
+              "inverted": false
+            },
+            "z": {
+              "speed": 200,
+              "inverted": false
+            },
+            "e": {
+              "speed": 300,
+              "inverted": false
+            }
+          },
+          "extruder": {
+            "count": 2,
+            "offsets": [
+              {"x": 0.0, "y": 0.0},
+              {"x": 21.6, "y": 0.0}
+            ]
+          }
+        }
+      }
 
 .. _sec-api-printerporfiles-update:
 
@@ -31,6 +302,85 @@ Update an existing printer profile
 
 .. http:patch:: /api/printerprofiles/(string:profile)
 
+   Updates an existing printer profile by its ``profile`` identifier.
+
+   The updated (potentially partial) profile is expected in the request's body as part of
+   an :ref:`Add or update request <sec-api-printerprofiles-datamodel-update>`.
+
+   Returns a :http:statuscode:`200` with the saved profile as property ``profile``
+   in the JSON body upon success.
+
+   Requires admin rights.
+
+   **Example**
+
+   .. sourcecode:: http
+
+      PATCH /api/printerprofiles/some_profile HTTP/1.1
+      Host: example.com
+      X-Api-Key: abcdef...
+      Content-Type: application/json
+
+      {
+        "profile": {
+          "name": "Some edited profile",
+          "volume": {
+            "depth": "300"
+          }
+        }
+      }
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "profile": {
+          "id": "some_profile",
+          "name": "Some edited profile",
+          "color": "default",
+          "model": "Some cool model",
+          "default": false,
+          "current": false,
+          "resource": "http://example.com/api/printerprofiles/some_profile",
+          "volume": {
+            "formFactor": "rectangular",
+            "origin": "lowerleft",
+            "width": 200,
+            "depth": 300,
+            "height": 200
+          },
+          "heatedBed": true,
+          "axes": {
+            "x": {
+              "speed": 6000,
+              "inverted": false
+            },
+            "y": {
+              "speed": 6000,
+              "inverted": false
+            },
+            "z": {
+              "speed": 200,
+              "inverted": false
+            },
+            "e": {
+              "speed": 300,
+              "inverted": false
+            }
+          },
+          "extruder": {
+            "count": 2,
+            "offsets": [
+              {"x": 0.0, "y": 0.0},
+              {"x": 21.6, "y": 0.0}
+            ]
+          }
+        }
+      }
+
+
 .. _sec-api-printerprofiles-delete:
 
 Remove an existing printer profile
@@ -38,10 +388,32 @@ Remove an existing printer profile
 
 .. http:delete:: /api/printerprofiles/(string:profile)
 
+   Deletes an existing printer profile by its ``profile`` identifier.
+
+   If the profile to be deleted is the currently selected profile, a :http:statuscode:`409` will be
+   returned.
+
+   Returns a :http:statuscode:`204` an empty body upon success.
+
+   Requires admin rights.
+
+   **Example**
+
+   .. sourcecode:: http
+
+      DELETE /api/printerprofiles/some_profile HTTP/1.1
+      Host: example.com
+      X-Api-Key: abcdef...
+
+   .. sourcecode:: http
+
+      HTTP/1.1 204 No Content
+
+
 .. _sec-api-printerprofiles-datamodel:
 
-Datamodel
-=========
+Data model
+==========
 
 .. _sec-api-printerprofiles-datamodel-profilelist:
 
@@ -81,8 +453,16 @@ Add or update request
    * - ``profiles``
      - 1
      - :ref:`Profile <sec-api-slicing-datamodel-profile>`
-     - Information about the profile being added/updated. For adding new profiles, all fields must be populated. For updating
-       and existing profile, only the values to be overwritten need to be supplied.
+     - Information about the profile being added/updated. Only the values to be overwritten need to be supplied.
+       Unset fields will be taken from the base profile, which for add requests will be the
+       current default profile unless a different base is defined in the ``basedOn`` property
+       of the request. For update requests the current version of the profile to be updated will
+       be used as base.
+   * - ``basedOn``
+     - 0..1
+     - ``string``
+     - Only for add requests, ignored on updates: The identifier of the profile to base the
+       new profile on, if different than the current default profile.
 
 .. _sec-api-printerprofiles-datamodel-profile:
 
@@ -101,12 +481,14 @@ Profile
      - 0..1
      - ``string``
      - Identifier of the profile. Will always be
-       returned in responses but can be left out of save/update requests.
+       returned in responses, is mandatory in add requests but
+       can be left out of update requests.
    * - ``name``
      - 0..1
      - ``string``
      - Display name of the profile. Will always be
-       returned in responses but can be left out of save/update requests.
+       returned in responses, is mandatory in add requests but
+       can be left out of update requests.
    * - ``color``
      - 0..1
      - ``string``
@@ -140,18 +522,58 @@ Profile
      - 0..1
      - ``string``
      - The form factor of the printer's bed, valid values are "rectangular" and "circular"
+   * - ``volume.origin``
+     - 0..1
+     - ``string``
+     - The location of the origin on the printer's bed, valid values are "lowerleft" and "center"
    * - ``volume.width``
      - 0..1
      - ``float``
-     - The width of the print volume
+     - The width of the print volume. For circular beds, the diameter of the bed.
    * - ``volume.depth``
      - 0..1
      - ``float``
-     - The depth of the print volume
+     - The depth of the print volume. For circular beds, this is the diameter of the bed and will be forced to be the same
+       as ``volume.width`` upon saving.
    * - ``volume.height``
      - 0..1
      - ``float``
      - The height of the print volume
+   * - ``volume.custom_box``
+     - 0..1
+     - ``boolean`` or ``object``
+     - If the printer has a custom bounding box where the print head can be safely moved to, exceeding the defined print
+       volume, that bounding box will be defined here. Otherwise (safe area == print volume) this value will be ``false``.
+   * - ``volume.custom_box.min_x``
+     - 0..1
+     - ``float``
+     - Minimum X coordinate defining the safe custom bounding box. Smaller value than the minimum X coordinate of the
+       print volume.
+   * - ``volume.custom_box.max_x``
+     - 0..1
+     - ``float``
+     - Maximum X coordinate defining the safe custom bounding box. Larger value than the maximum X coordinate of the
+       print volume.
+   * - ``volume.custom_box.min_y``
+     - 0..1
+     - ``float``
+     - Minimum Y coordinate defining the safe custom bounding box. Smaller value than the minimum Y coordinate of the
+       print volume.
+   * - ``volume.custom_box.max_y``
+     - 0..1
+     - ``float``
+     - Maximum Y coordinate defining the safe custom bounding box. Larger value than the maximum Y coordinate of the
+       print volume.
+   * - ``volume.custom_box.min_z``
+     - 0..1
+     - ``float``
+     - Minimum Z coordinate defining the safe custom bounding box. Smaller value than the minimum Z coordinate of the
+       print volume.
+   * - ``volume.custom_box.max_z``
+     - 0..1
+     - ``float``
+     - Maximum Z coordinate defining the safe custom bounding box. Larger value than the maximum Z coordinate of the
+       print volume.
    * - ``heatedBed``
      - 0..1
      - ``boolean``
@@ -164,7 +586,7 @@ Profile
    * - ``axes.{axis}.speed``
      - 0..1
      - ``int``
-     - Maximum speed of the axis in mm/s.
+     - Maximum speed of the axis in mm/min.
    * - ``axes.{axis}.inverted``
      - 0..1
      - ``boolean``

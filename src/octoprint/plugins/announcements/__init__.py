@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -18,15 +18,18 @@ import threading
 import feedparser
 import flask
 
+from collections import OrderedDict
+
 from octoprint.server import admin_permission
-from octoprint.server.util.flask import restricted_access
-from flask.ext.babel import gettext
+from octoprint.server.util.flask import restricted_access, with_revalidation_checking, check_etag
+from flask_babel import gettext
 
 class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
                          octoprint.plugin.SettingsPlugin,
                          octoprint.plugin.BlueprintPlugin,
                          octoprint.plugin.StartupPlugin,
-                         octoprint.plugin.TemplatePlugin):
+                         octoprint.plugin.TemplatePlugin,
+                         octoprint.plugin.EventHandlerPlugin):
 
 	def __init__(self):
 		self._cached_channel_configs = None
@@ -39,37 +42,75 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 	# StartupPlugin
 
 	def on_after_startup(self):
-		self._fetch_all_channels()
+		# decouple channel fetching from server startup
+		def fetch_data():
+			self._fetch_all_channels()
+
+		thread = threading.Thread(target=fetch_data)
+		thread.daemon = True
+		thread.start()
 
 	# SettingsPlugin
 
 	def get_settings_defaults(self):
-		return dict(channels=dict(_important=dict(name="Important OctoPrint Announcements",
-		                                          priority=1,
-		                                          type="rss",
-		                                          url="http://octoprint.org/feeds/important.xml",
-		                                          read_until=1449446400),
-		                          _releases=dict(name="OctoPrint Release Announcements",
+		settings = dict(channels=dict(_important=dict(name="Important Announcements",
+		                                              description="Important announcements about OctoPrint.",
+		                                              priority=1,
+		                                              type="rss",
+		                                              url="http://octoprint.org/feeds/important.xml"),
+		                              _releases=dict(name="Release Announcements",
+		                                             description="Announcements of new releases and release candidates of OctoPrint.",
+		                                             priority=2,
+		                                             type="rss",
+		                                             url="http://octoprint.org/feeds/releases.xml"),
+		                              _blog=dict(name="On the OctoBlog",
+		                                         description="Development news, community spotlights, OctoPrint On Air episodes and more from the official OctoBlog.",
 		                                         priority=2,
 		                                         type="rss",
-		                                         url="http://octoprint.org/feeds/releases.xml"),
-		                          _spotlight=dict(name="OctoPrint Community Spotlights",
-		                                          priority=2,
-		                                          type="rss",
-		                                          url="http://octoprint.org/feeds/spotlight.xml"),
-		                          _octopi=dict(name="OctoPi Announcements",
-		                                       priority=2,
-		                                       type="rss",
-		                                       url="http://octoprint.org/feeds/octopi.xml"),
-		                          _plugins=dict(name="New Plugins in the Repository",
-		                                        priority=2,
-		                                        type="rss",
-		                                        url="http://plugins.octoprint.org/feed.xml")),
-		            enabled_channels=[],
-		            forced_channels=["_important"],
-		            ttl=6*60,
-		            display_limit=3,
-		            summary_limit=300)
+		                                         url="http://octoprint.org/feeds/octoblog.xml"),
+		                              _plugins=dict(name="New Plugins in the Repository",
+		                                            description="Announcements of new plugins released on the official Plugin Repository.",
+		                                            priority=2,
+		                                            type="rss",
+		                                            url="http://plugins.octoprint.org/feed.xml"),
+		                              _octopi=dict(name="OctoPi News",
+		                                           description="News around OctoPi, the Raspberry Pi image including OctoPrint.",
+		                                           priority=2,
+		                                           type="rss",
+		                                           url="http://octoprint.org/feeds/octopi.xml")),
+		                enabled_channels=[],
+		                forced_channels=["_important"],
+		                channel_order=["_important", "_releases", "_blog", "_plugins", "_octopi"],
+		                ttl=6*60,
+		                display_limit=3,
+		                summary_limit=300)
+		settings["enabled_channels"] = settings["channels"].keys()
+		return settings
+
+	def get_settings_version(self):
+		return 1
+
+	def on_settings_migrate(self, target, current):
+		if current is None:
+			# first version had different default feeds and only _important enabled by default
+			channels = self._settings.get(["channels"])
+			if "_news" in channels:
+				del channels["_news"]
+			if "_spotlight" in channels:
+				del channels["_spotlight"]
+			self._settings.set(["channels"], channels)
+
+			enabled = self._settings.get(["enabled_channels"])
+			add_blog = False
+			if "_news" in enabled:
+				add_blog = True
+				enabled.remove("_news")
+			if "_spotlight" in enabled:
+				add_blog = True
+				enabled.remove("_spotlight")
+			if add_blog and not "_blog" in enabled:
+				enabled.append("_blog")
+			self._settings.set(["enabled_channels"], enabled)
 
 	# AssetPlugin
 
@@ -94,34 +135,58 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 	def get_channel_data(self):
 		from octoprint.settings import valid_boolean_trues
 
-		result = dict()
+		result = []
 
-		force = "force" in flask.request.values and flask.request.values["force"] in valid_boolean_trues
-
-		channel_data = self._fetch_all_channels(force=force)
-		channel_configs = self._get_channel_configs(force=force)
+		force = flask.request.values.get("force", "false") in valid_boolean_trues
 
 		enabled = self._settings.get(["enabled_channels"])
 		forced = self._settings.get(["forced_channels"])
 
-		for key, data in channel_configs.items():
-			read_until = channel_configs[key].get("read_until", None)
-			entries = sorted(self._to_internal_feed(channel_data.get(key, []), read_until=read_until), key=lambda e: e["published"], reverse=True)
-			unread = len(filter(lambda e: not e["read"], entries))
+		channel_configs = self._get_channel_configs(force=force)
 
-			if read_until is None and entries:
-				last = entries[0]["published"]
-				self._mark_read_until(key, last)
+		def view():
+			channel_data = self._fetch_all_channels(force=force)
 
-			result[key] = dict(channel=data["name"],
-			                   url=data["url"],
-			                   priority=data.get("priority", 2),
-			                   enabled=key in enabled or key in forced,
-			                   forced=key in forced,
-			                   data=entries,
-			                   unread=unread)
+			for key, data in channel_configs.items():
+				read_until = channel_configs[key].get("read_until", None)
+				entries = sorted(self._to_internal_feed(channel_data.get(key, []), read_until=read_until), key=lambda e: e["published"], reverse=True)
+				unread = len(filter(lambda e: not e["read"], entries))
 
-		return flask.jsonify(result)
+				if read_until is None and entries:
+					last = entries[0]["published"]
+					self._mark_read_until(key, last)
+
+				result.append(dict(key=key,
+				                   channel=data["name"],
+				                   url=data["url"],
+				                   description=data.get("description", ""),
+				                   priority=data.get("priority", 2),
+				                   enabled=key in enabled or key in forced,
+				                   forced=key in forced,
+				                   data=entries,
+				                   unread=unread))
+
+			return flask.jsonify(channels=result)
+
+		def etag():
+			import hashlib
+			hash = hashlib.sha1()
+			hash.update(repr(sorted(enabled)))
+			hash.update(repr(sorted(forced)))
+
+			for channel in sorted(channel_configs.keys()):
+				hash.update(repr(channel_configs[channel]))
+				channel_data = self._get_channel_data_from_cache(channel, channel_configs[channel])
+				hash.update(repr(channel_data))
+
+			return hash.hexdigest()
+
+		def condition(lm, etag):
+			return check_etag(etag)
+
+		return with_revalidation_checking(etag_factory=lambda *args, **kwargs: etag(),
+		                                  condition=lambda lm, etag: condition(lm, etag),
+		                                  unless=lambda: force)(view)()
 
 	@octoprint.plugin.BlueprintPlugin.route("/channels/<channel>", methods=["POST"])
 	@restricted_access
@@ -145,6 +210,14 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 			self._toggle(channel)
 
 		return NO_CONTENT
+
+	##~~ EventHandlerPlugin
+
+	def on_event(self, event, payload):
+		from octoprint.events import Events
+		if event != Events.CONNECTIVITY_CHANGED or not payload or not payload.get("new", False):
+			return
+		self._fetch_all_channels_async()
 
 	# Internal Tools
 
@@ -183,9 +256,13 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 		with self._cached_channel_configs_mutex:
 			if self._cached_channel_configs is None or force:
 				configs = self._settings.get(["channels"], merged=True)
-				result = dict()
-				for key, config in configs.items():
-					if "url" not in config or "name" not in config:
+				order = self._settings.get(["channel_order"])
+				all_keys = order + [key for key in sorted(configs.keys()) if not key in order]
+
+				result = OrderedDict()
+				for key in all_keys:
+					config = configs.get(key)
+					if config is None or "url" not in config or "name" not in config:
 						# strip invalid entries
 						continue
 					result[self._slugify(key)] = config
@@ -197,6 +274,11 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 
 		safe_key = self._slugify(key)
 		return self._get_channel_configs(force=force).get(safe_key)
+
+	def _fetch_all_channels_async(self, force=False):
+		thread = threading.Thread(target=self._fetch_all_channels, kwargs=dict(force=force))
+		thread.daemon = True
+		thread.start()
 
 	def _fetch_all_channels(self, force=False):
 		"""Fetch all channel feeds from cache or network."""
@@ -230,7 +312,10 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 
 		if data is None:
 			# cache not allowed or empty, fetch from network
-			data = self._get_channel_data_from_network(key, config)
+			if self._connectivity_checker.online:
+				data = self._get_channel_data_from_network(key, config)
+			else:
+				self._logger.info("Looks like we are offline, can't fetch announcements for channel {} from network".format(key))
 
 		return data
 
@@ -262,7 +347,8 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 		url = config["url"]
 		try:
 			start = time.time()
-			r = requests.get(url)
+			r = requests.get(url, timeout=30)
+			r.raise_for_status()
 			self._logger.info(u"Loaded channel {} from {} in {:.2}s".format(key, config["url"], time.time() - start))
 		except Exception as e:
 			self._logger.exception(
@@ -297,7 +383,7 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 
 		return dict(title=entry["title"],
 		            title_without_tags=_strip_tags(entry["title"]),
-		            summary=entry["summary"],
+		            summary=_lazy_images(entry["summary"]),
 		            summary_without_images=_strip_images(entry["summary"]),
 		            published=published,
 		            link=entry["link"],
@@ -312,8 +398,57 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 
 _image_tag_re = re.compile(r'<img.*?/?>')
 def _strip_images(text):
+	"""
+	>>> _strip_images(u"<a href='test.html'>I'm a link</a> and this is an image: <img src='foo.jpg' alt='foo'>")
+	u"<a href='test.html'>I'm a link</a> and this is an image: "
+	>>> _strip_images(u"One <img src=\\"one.jpg\\"> and two <img src='two.jpg' > and three <img src=three.jpg> and four <img src=\\"four.png\\" alt=\\"four\\">")
+	u'One  and two  and three  and four '
+	>>> _strip_images(u"No images here")
+	u'No images here'
+	"""
 	return _image_tag_re.sub('', text)
 
+def _replace_images(text, callback):
+	"""
+	>>> callback = lambda img: "foobar"
+	>>> _replace_images(u"<a href='test.html'>I'm a link</a> and this is an image: <img src='foo.jpg' alt='foo'>", callback)
+	u"<a href='test.html'>I'm a link</a> and this is an image: foobar"
+	>>> _replace_images(u"One <img src=\\"one.jpg\\"> and two <img src='two.jpg' > and three <img src=three.jpg> and four <img src=\\"four.png\\" alt=\\"four\\">", callback)
+	u'One foobar and two foobar and three foobar and four foobar'
+	"""
+	result = text
+	for match in _image_tag_re.finditer(text):
+		tag = match.group(0)
+		replaced = callback(tag)
+		result = result.replace(tag, replaced)
+	return result
+
+_image_src_re = re.compile(r'src=(?P<quote>[\'"]*)(?P<src>.*?)(?P=quote)(?=\s+|>)')
+def _lazy_images(text, placeholder=None):
+	"""
+	>>> _lazy_images(u"<a href='test.html'>I'm a link</a> and this is an image: <img src='foo.jpg' alt='foo'>")
+	u'<a href=\\'test.html\\'>I\\'m a link</a> and this is an image: <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" data-src=\\'foo.jpg\\' alt=\\'foo\\'>'
+	>>> _lazy_images(u"<a href='test.html'>I'm a link</a> and this is an image: <img src='foo.jpg' alt='foo'>", placeholder="ph.png")
+	u'<a href=\\'test.html\\'>I\\'m a link</a> and this is an image: <img src="ph.png" data-src=\\'foo.jpg\\' alt=\\'foo\\'>'
+	>>> _lazy_images(u"One <img src=\\"one.jpg\\"> and two <img src='two.jpg' > and three <img src=three.jpg> and four <img src=\\"four.png\\" alt=\\"four\\">", placeholder="ph.png")
+	u'One <img src="ph.png" data-src="one.jpg"> and two <img src="ph.png" data-src=\\'two.jpg\\' > and three <img src="ph.png" data-src=three.jpg> and four <img src="ph.png" data-src="four.png" alt="four">'
+	>>> _lazy_images(u"No images here")
+	u'No images here'
+	"""
+	if placeholder is None:
+		# 1px transparent gif
+		placeholder = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7"
+
+	def callback(img_tag):
+		match = _image_src_re.search(img_tag)
+		if match is not None:
+			src = match.group("src")
+			quote = match.group("quote")
+			quoted_src = quote + src + quote
+			img_tag = img_tag.replace(match.group(0), 'src="{}" data-src={}'.format(placeholder, quoted_src))
+		return img_tag
+
+	return _replace_images(text, callback)
 
 def _strip_tags(text):
 	"""
@@ -349,4 +484,9 @@ def _strip_tags(text):
 
 
 __plugin_name__ = "Announcement Plugin"
+__plugin_author__ = "Gina Häußge"
+__plugin_description__ = "Announcements all around OctoPrint"
+__plugin_disabling_discouraged__ = gettext("Without this plugin you might miss important announcements "
+                                           "regarding security or other critical issues concerning OctoPrint.")
+__plugin_license__ = "AGPLv3"
 __plugin_implementation__ = AnnouncementPlugin()

@@ -3,20 +3,24 @@
         <input id="gcode_slider_layers" type="text">
         <canvas id="gcode_canvas" width="568" height="568"></canvas>
         <input id="gcode_slider_commands" type="text" style="width: 554px">
-        <div id ="button_control" class="btn-group-toolbar" style="width: 100%; padding-bottom: 7px; padding-top: 5px;text-align: center;">
-            <button id = "btn_layer_up" type="button" class="btn btn-primary btn-medium" style="width:48%"  data-bind = "click: incrementLayer, enable: layerSelectionEnabled">
-                <i class="icon-white icon-arrow-up"></i>
-                <span>{{ _('Layer up') }}</span>
-            </button>
-            <button id = "btn_layer_down" type="button" class="btn btn-primary btn-medium" style="width:48%" data-bind = "click: decrementLayer, enable: layerSelectionEnabled">
-                <i class="icon-white icon-arrow-down"></i>
-                <span>{{ _('Layer Down') }}</span>
-            </button>
-        </div>
     </div>
 
-    <div class="progress" >
-        <div class="bar" style="width: 0%;" data-bind="text: ui_progress_text, style: { width: ui_progress_percentage() + '%' }"></div>
+    <div class="layer-buttons btn-group-toolbar row-fluid">
+        <button type="button" class="btn btn-primary btn-medium span6" data-bind = "click: decrementLayer, enable: layerSelectionEnabled() && layerDownEnabled()">
+            <i class="fa fa-arrow-left"></i>
+            <span>{{ _('Previous layer') }}</span>
+        </button>
+        <button type="button" class="btn btn-primary btn-medium span6" data-bind = "click: incrementLayer, enable: layerSelectionEnabled() && layerUpEnabled()">
+            <span>{{ _('Next layer') }}</span>
+            <i class="fa fa-arrow-right"></i>
+        </button>
+    </div>
+
+    <div class="progress progress-text-centered">
+        <span class="progress-text-back" data-bind="text: ui_progress_text"></span>
+        <div class="bar" style="width: 0;" data-bind="style: { width: ui_progress_percentage() + '%' }">
+            <span class="progress-text-front" data-bind="copyWidth: ':parent :parent', text: ui_progress_text"></span>
+        </div>
     </div>
 
     <div class="row-fluid">
@@ -24,7 +28,7 @@
             <h1>{{ _('Model info') }}</h1>
             <p data-bind="html: ui_modelInfo"></p>
 
-            <h1>Layer info</h1>
+            <h1>{{ _('Layer info') }}</h1>
             <p data-bind="html: ui_layerInfo"></p>
         </div>
         <div class="span5">
@@ -65,11 +69,42 @@
             <p>
                 <button class="btn btn-block" data-bind="click: reload, enable: enableReload">{{ _('Reload') }}</button>
             </p>
+
+            <div class="advanced_options">
+                <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', parent: '.advanced_options', container: '.hide' }"><i class="fa fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
+                <div class="hide">
+                    <p>
+                        <label class="checkbox">
+                            <input type="checkbox" data-bind="checked: renderer_showFullSize">{{ _('Show visited bounding box') }}
+                        </label>
+                        <label class="checkbox">
+                            <input type="checkbox" data-bind="checked: renderer_showBoundingBox">{{ _('Show printed bounding box') }}
+                        </label>
+                    </p>
+                    <p>
+                        <label class="checkbox">
+                            <input type="checkbox" data-bind="checked: reader_hideEmptyLayers">{{ _('Hide empty layers') }} <label class="label">{{ _('Causes reload') }}</label>
+                        </label>
+                        <label class="checkbox">
+                            <input type="checkbox" data-bind="checked: reader_sortLayers">{{ _('Sort layers') }} <label class="label">{{ _('Causes reload') }}</label>
+                        </label>
+                    </p>
+                    <p>
+                        <button class="btn btn-block" data-bind="click: resetOptions">{{ _('Reset options') }}</button>
+                    </p>
+                </div>
+            </div>
         </div>
     </div>
 
     <div class="muted">
-        <small>{{ _('Note that the time estimates in this tab are calculated by the GCODE viewer in your browser and might differ from the values calculated by the server that are displayed in the "State" and "Files" panels in the sidebar due to slightly different implementations.') }}</small>
+        <small>{% trans %}
+            Note that the time and usage values in this tab are <strong>estimated</strong> by the GCODE viewer in your
+            browser and might differ from the values <strong>estimated</strong> by the server that are displayed in the
+            "State" and "Files" panels in the sidebar due to slightly different implementations. Also note that these
+            <strong>estimated</strong> values may be inaccurate since they can also take information present in the
+            GCODE file into account.
+        {% endtrans %}</small>
     </div>
 </div>
 <div data-bind="visible: waitForApproval">

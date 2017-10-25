@@ -4,7 +4,8 @@
 Development
 ###########
 
-.. todo::
+.. toctree::
+   :maxdepth: 3
 
-   This is where notes regarding developing OctoPrint will be placed, such as workflow for setting up the
-   development environment, code guidelines etc.
+   environment.rst
+   virtual_printer.rst

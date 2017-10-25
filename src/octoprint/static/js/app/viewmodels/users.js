@@ -152,6 +152,10 @@ $(function() {
                 });
         };
 
+        self.copyApikey = function() {
+            copyToClipboard(self.editorApikey());
+        };
+
         self._updateApikey = function(apikey) {
             self.editorApikey(apikey);
             self.requestData();

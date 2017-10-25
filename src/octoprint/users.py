@@ -1,23 +1,26 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
-from flask.ext.login import UserMixin
-from flask.ext.principal import Identity
+from flask_login import UserMixin, AnonymousUserMixin
+from flask_principal import Identity
 from werkzeug.local import LocalProxy
 import hashlib
 import os
 import yaml
 import uuid
 
+import wrapt
+
 import logging
+from builtins import range, bytes
 
 from octoprint.settings import settings
 
-from octoprint.util import atomic_write
+from octoprint.util import atomic_write, to_str, deprecated
 
 class UserManager(object):
 	valid_roles = ["user", "admin"]
@@ -25,7 +28,7 @@ class UserManager(object):
 	def __init__(self):
 		self._logger = logging.getLogger(__name__)
 		self._session_users_by_session = dict()
-		self._session_users_by_userid = dict()
+		self._sessionids_by_userid = dict()
 		self._enabled = True
 
 	@property
@@ -57,12 +60,13 @@ class UserManager(object):
 		if not isinstance(user, SessionUser):
 			user = SessionUser(user)
 
-		self._session_users_by_session[user.get_session()] = user
+		self._session_users_by_session[user.session] = user
 
 		userid = user.get_id()
-		if not userid in self._session_users_by_userid:
-			self._session_users_by_userid[userid] = []
-		self._session_users_by_userid[userid].append(user)
+		if not userid in self._sessionids_by_userid:
+			self._sessionids_by_userid[userid] = set()
+
+		self._sessionids_by_userid[userid].add(user.session)
 
 		self._logger.debug("Logged in user: %r" % user)
 
@@ -79,15 +83,16 @@ class UserManager(object):
 			return
 
 		userid = user.get_id()
-		if userid in self._session_users_by_userid:
-			users_by_userid = self._session_users_by_userid[userid]
-			for u in users_by_userid:
-				if u.get_session() == user.get_session():
-					users_by_userid.remove(u)
-					break
+		sessionid = user.session
 
-		if user.get_session() in self._session_users_by_session:
-			del self._session_users_by_session[user.get_session()]
+		if userid in self._sessionids_by_userid:
+			try:
+				self._sessionids_by_userid[userid].remove(sessionid)
+			except KeyError:
+				pass
+
+		if sessionid in self._session_users_by_session:
+			del self._session_users_by_session[sessionid]
 
 		self._logger.debug("Logged out user: %r" % user)
 
@@ -96,7 +101,7 @@ class UserManager(object):
 		for session, user in self._session_users_by_session.items():
 			if not isinstance(user, SessionUser):
 				continue
-			if user._created + (24 * 60 * 60) < time.time():
+			if user.created + (24 * 60 * 60) < time.time():
 				self.logout_user(user)
 
 	@staticmethod
@@ -107,11 +112,11 @@ class UserManager(object):
 				import string
 				from random import choice
 				chars = string.ascii_lowercase + string.ascii_uppercase + string.digits
-				salt = "".join(choice(chars) for _ in xrange(32))
+				salt = "".join(choice(chars) for _ in range(32))
 				settings().set(["accessControl", "salt"], salt)
 				settings().save()
 
-		return hashlib.sha512(password + salt).hexdigest()
+		return hashlib.sha512(to_str(password, encoding="utf-8", errors="replace") + to_str(salt)).hexdigest()
 
 	def checkPassword(self, username, password):
 		user = self.findUser(username)
@@ -164,13 +169,12 @@ class UserManager(object):
 		pass
 
 	def removeUser(self, username):
-		if username in self._session_users_by_userid:
-			users = self._session_users_by_userid[username]
-			sessions = [user.get_session() for user in users if isinstance(user, SessionUser)]
+		if username in self._sessionids_by_userid:
+			sessions = self._sessionids_by_userid[username]
 			for session in sessions:
 				if session in self._session_users_by_session:
 					del self._session_users_by_session[session]
-			del self._session_users_by_userid[username]
+			del self._sessionids_by_userid[username]
 
 	def findUser(self, userid=None, session=None):
 		if session is not None and session in self._session_users_by_session:
@@ -216,6 +220,9 @@ class FilebasedUserManager(UserManager):
 					if "settings" in attributes:
 						settings = attributes["settings"]
 					self._users[name] = User(name, attributes["password"], attributes["active"], attributes["roles"], apikey=apikey, settings=settings)
+					for sessionid in self._sessionids_by_userid.get(name, set()):
+						if sessionid in self._session_users_by_session:
+							self._session_users_by_session[sessionid].update_user(self._users[name])
 		else:
 			self._customized = False
 
@@ -234,7 +241,7 @@ class FilebasedUserManager(UserManager):
 				"settings": user._settings
 			}
 
-		with atomic_write(self._userfile, "wb") as f:
+		with atomic_write(self._userfile, "wb", permissions=0o600, max_permissions=0o666) as f:
 			yaml.safe_dump(data, f, default_flow_style=False, indent="    ", allow_unicode=True)
 			self._dirty = False
 		self._load()
@@ -309,9 +316,8 @@ class FilebasedUserManager(UserManager):
 			raise UnknownUser(username)
 
 		user = self._users[username]
-		current = user.get_setting(key)
-		if not current or current != value:
-			old_value = user.get_setting(key)
+		old_value = user.get_setting(key)
+		if not old_value or old_value != value:
 			user.set_setting(key, value)
 			self._dirty = self._dirty or old_value != value
 			self._save()
@@ -328,7 +334,7 @@ class FilebasedUserManager(UserManager):
 		self._save()
 
 	def getAllUserSettings(self, username):
-		if not username in self._users.key():
+		if not username in self._users.keys():
 			raise UnknownUser(username)
 
 		user = self._users[username]
@@ -346,7 +352,7 @@ class FilebasedUserManager(UserManager):
 			raise UnknownUser(username)
 
 		user = self._users[username]
-		user._apikey = ''.join('%02X' % ord(z) for z in uuid.uuid4().bytes)
+		user._apikey = ''.join('%02X' % z for z in bytes(uuid.uuid4().bytes))
 		self._dirty = True
 		self._save()
 		return user._apikey
@@ -412,6 +418,65 @@ class UnknownRole(Exception):
 
 ##~~ User object
 
+class MethodReplacedByBooleanProperty(object):
+
+	def __init__(self, name, message, getter):
+		self._name = name
+		self._message = message
+		self._getter = getter
+
+	@property
+	def _attr(self):
+		return self._getter()
+
+	def __call__(self):
+		from warnings import warn
+		warn(DeprecationWarning(self._message.format(name=self._name)), stacklevel=2)
+		return self._attr
+
+	def __eq__(self, other):
+		return self._attr == other
+
+	def __ne__(self, other):
+		return self._attr != other
+
+	def __bool__(self):
+		# Python 3
+		return self._attr
+
+	def __nonzero__(self):
+		# Python 2
+		return self._attr
+
+	def __hash__(self):
+		return hash(self._attr)
+
+	def __repr__(self):
+		return "MethodReplacedByProperty({}, {}, {})".format(self._name, self._message, self._getter)
+
+	def __str__(self):
+		return str(self._attr)
+
+
+# TODO: Remove compatibility layer in OctoPrint 1.5.0
+class FlaskLoginMethodReplacedByBooleanProperty(MethodReplacedByBooleanProperty):
+
+	def __init__(self, name, getter):
+		message = "{name} is now a property in Flask-Login versions >= 0.3.0, which OctoPrint now uses. " + \
+		          "Use {name} instead of {name}(). This compatibility layer will be removed in OctoPrint 1.5.0."
+		MethodReplacedByBooleanProperty.__init__(self, name, message, getter)
+
+
+# TODO: Remove compatibility layer in OctoPrint 1.5.0
+class OctoPrintUserMethodReplacedByBooleanProperty(MethodReplacedByBooleanProperty):
+
+	def __init__(self, name, getter):
+		message = "{name} is now a property for consistency reasons with Flask-Login versions >= 0.3.0, which " + \
+		          "OctoPrint now uses. Use {name} instead of {name}(). This compatibility layer will be removed " + \
+		          "in OctoPrint 1.5.0."
+		MethodReplacedByBooleanProperty.__init__(self, name, message, getter)
+
+
 class User(UserMixin):
 	def __init__(self, username, passwordHash, active, roles, apikey=None, settings=None):
 		self._username = username
@@ -420,16 +485,16 @@ class User(UserMixin):
 		self._roles = roles
 		self._apikey = apikey
 
-		if not settings:
+		if settings is None:
 			settings = dict()
 		self._settings = settings
 
 	def asDict(self):
 		return {
 			"name": self._username,
-			"active": self.is_active(),
-			"admin": self.is_admin(),
-			"user": self.is_user(),
+			"active": bool(self.is_active),
+			"admin": bool(self.is_admin),
+			"user": bool(self.is_user),
 			"apikey": self._apikey,
 			"settings": self._settings
 		}
@@ -443,14 +508,25 @@ class User(UserMixin):
 	def get_name(self):
 		return self._username
 
+	@property
+	def is_anonymous(self):
+		return FlaskLoginMethodReplacedByBooleanProperty("is_anonymous", lambda: False)
+
+	@property
+	def is_authenticated(self):
+		return FlaskLoginMethodReplacedByBooleanProperty("is_authenticated", lambda: True)
+
+	@property
 	def is_active(self):
-		return self._active
+		return FlaskLoginMethodReplacedByBooleanProperty("is_active", lambda: self._active)
 
+	@property
 	def is_user(self):
-		return "user" in self._roles
+		return OctoPrintUserMethodReplacedByBooleanProperty("is_user", lambda: "user" in self._roles)
 
+	@property
 	def is_admin(self):
-		return "admin" in self._roles
+		return OctoPrintUserMethodReplacedByBooleanProperty("is_admin", lambda: "admin" in self._roles)
 
 	def get_all_settings(self):
 		return self._settings
@@ -463,6 +539,10 @@ class User(UserMixin):
 
 		return self._get_setting(path)
 
+	@property
+	def roles(self):
+		return list(self._roles)
+
 	def set_setting(self, key, value):
 		if not isinstance(key, (tuple, list)):
 			path = [key]
@@ -473,7 +553,7 @@ class User(UserMixin):
 	def _get_setting(self, path):
 		s = self._settings
 		for p in path:
-			if p in s:
+			if isinstance(s, dict) and p in s:
 				s = s[p]
 			else:
 				return None
@@ -486,7 +566,7 @@ class User(UserMixin):
 				s[p] = dict()
 
 			if not isinstance(s[p], dict):
-				return False
+				s[p] = dict()
 
 			s = s[p]
 
@@ -495,37 +575,52 @@ class User(UserMixin):
 		return True
 
 	def __repr__(self):
-		return "User(id=%s,name=%s,active=%r,user=%r,admin=%r)" % (self.get_id(), self.get_name(), self.is_active(), self.is_user(), self.is_admin())
+		return "User(id=%s,name=%s,active=%r,user=%r,admin=%r)" % (self.get_id(), self.get_name(), bool(self.is_active), bool(self.is_user), bool(self.is_admin))
 
-class SessionUser(User):
+
+class AnonymousUser(AnonymousUserMixin):
+
+	@property
+	def is_anonymous(self):
+		return FlaskLoginMethodReplacedByBooleanProperty("is_anonymous", lambda: True)
+
+	@property
+	def is_authenticated(self):
+		return FlaskLoginMethodReplacedByBooleanProperty("is_authenticated", lambda: False)
+
+	@property
+	def is_active(self):
+		return FlaskLoginMethodReplacedByBooleanProperty("is_active", lambda: False)
+
+
+class SessionUser(wrapt.ObjectProxy):
 	def __init__(self, user):
-		self._user = user
-		User.__init__(self, user._username, user._passwordHash, user._active, user._roles, user._apikey, user._settings)
+		wrapt.ObjectProxy.__init__(self, user)
 
 		import string
 		import random
 		import time
 		chars = string.ascii_uppercase + string.ascii_lowercase + string.digits
-		self._session = "".join(random.choice(chars) for _ in xrange(10))
-		self._created = time.time()
+		self._self_session = "".join(random.choice(chars) for _ in range(10))
+		self._self_created = time.time()
 
-	def __getattribute__(self, item):
-		if item in ("get_session", "_user", "_session", "_created"):
-			return object.__getattribute__(self, item)
-		else:
-			return getattr(object.__getattribute__(self, "_user"), item)
+	@property
+	def session(self):
+		return self._self_session
 
-	def __setattr__(self, item, value):
-		if item in ("_user", "_session", "_created"):
-			return object.__setattr__(self, item, value)
-		else:
-			return setattr(self._user, item, value)
+	@property
+	def created(self):
+		return self._self_created
 
+	@deprecated("SessionUser.get_session() has been deprecated, use SessionUser.session instead", since="1.3.5")
 	def get_session(self):
-		return self._session
+		return self.session
+
+	def update_user(self, user):
+		self.__wrapped__ = user
 
 	def __repr__(self):
-		return "SessionUser(id=%s,name=%s,active=%r,user=%r,admin=%r,session=%s,created=%s)" % (self.get_id(), self.get_name(), self.is_active(), self.is_user(), self.is_admin(), self._session, self._created)
+		return "SessionUser({!r},session={},created={})".format(self.__wrapped__, self.session, self.created)
 
 ##~~ DummyUser object to use when accessControl is disabled
 

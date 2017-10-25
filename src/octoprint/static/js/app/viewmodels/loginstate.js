@@ -12,6 +12,7 @@ $(function() {
         self.isUser = ko.observable(false);
 
         self.allViewModels = undefined;
+        self.startupDeferred = $.Deferred();
 
         self.currentUser = ko.observable(undefined);
 
@@ -27,40 +28,71 @@ $(function() {
             }
         });
 
+        self.userMenuTitle = ko.pureComputed(function() {
+            if (self.loggedIn()) {
+                return _.sprintf(gettext("Logged in as %(name)s"), {name: self.username()});
+            } else {
+                return gettext("Login");
+            }
+        });
+
         self.reloadUser = function() {
-            if (self.currentUser() == undefined) {
+            if (self.currentUser() === undefined) {
                 return;
             }
 
-            OctoPrint.users.get(self.currentUser().name)
-                .done(self.fromResponse);
+            return OctoPrint.users.get(self.currentUser().name)
+                .done(self.updateCurrentUserData);
         };
 
         self.requestData = function() {
-            OctoPrint.browser.passiveLogin()
+            return OctoPrint.browser.passiveLogin()
                 .done(self.fromResponse);
         };
 
         self.fromResponse = function(response) {
-            if (response && response.name) {
-                self.loggedIn(true);
-                self.username(response.name);
-                self.isUser(response.user);
-                self.isAdmin(response.admin);
+            var process = function() {
+                var currentLoggedIn = self.loggedIn();
+                if (response && response.name) {
+                    self.loggedIn(true);
+                    self.updateCurrentUserData(response);
+                    if (!currentLoggedIn) {
+                        callViewModels(self.allViewModels, "onUserLoggedIn", [response]);
+                        log.info("User " + response.name + " logged in")
+                    }
+                } else {
+                    self.loggedIn(false);
+                    self.resetCurrentUserData();
+                    if (currentLoggedIn) {
+                        callViewModels(self.allViewModels, "onUserLoggedOut");
+                        log.info("User logged out");
+                    }
+                }
+            };
 
-                self.currentUser(response);
-
-                callViewModels(self.allViewModels, "onUserLoggedIn", [response]);
+            if (self.startupDeferred !== undefined) {
+                // Make sure we only fire our "onUserLogged(In|Out)" message after the application
+                // has started up.
+                self.startupDeferred.done(process);
             } else {
-                self.loggedIn(false);
-                self.username(undefined);
-                self.isUser(false);
-                self.isAdmin(false);
-
-                self.currentUser(undefined);
-
-                callViewModels(self.allViewModels, "onUserLoggedOut");
+                process();
             }
+        };
+
+        self.updateCurrentUserData = function(data) {
+            self.username(data.name);
+            self.isUser(data.user);
+            self.isAdmin(data.admin);
+
+            self.currentUser(data);
+        };
+
+        self.resetCurrentUserData = function() {
+            self.username(undefined);
+            self.isUser(false);
+            self.isAdmin(false);
+
+            self.currentUser(undefined);
         };
 
         self.login = function(u, p, r) {
@@ -76,6 +108,10 @@ $(function() {
                     self.loginUser("");
                     self.loginPass("");
                     self.loginRemember(false);
+
+                    if (history && history.replaceState) {
+                        history.replaceState({success: true}, document.title, window.location.pathname);
+                    }
                 })
                 .fail(function() {
                     new PNotify({title: gettext("Login failed"), text: gettext("User unknown or wrong password"), type: "error"});
@@ -83,7 +119,7 @@ $(function() {
         };
 
         self.logout = function() {
-            OctoPrint.browser.logout()
+            return OctoPrint.browser.logout()
                 .done(function(response) {
                     new PNotify({title: gettext("Logout successful"), text: gettext("You are now logged out"), type: "success"});
                     self.fromResponse(response);
@@ -95,40 +131,55 @@ $(function() {
                 });
         };
 
-        self.onLoginUserKeyup = function(data, event) {
-            if (event.keyCode == 13) {
-                self.elementPasswordInput.focus();
+        self.prepareLogin = function(data, event) {
+            if(event && event.preventDefault) {
+                event.preventDefault();
             }
-        };
-
-        self.onLoginPassKeyup = function(data, event) {
-            if (event.keyCode == 13) {
-                self.login();
-            }
+            self.login();
         };
 
         self.onAllBound = function(allViewModels) {
             self.allViewModels = allViewModels;
-        };
-
-        self.onDataUpdaterReconnect = function() {
-            self.requestData();
+            self.startupDeferred.resolve();
+            self.startupDeferred = undefined;
         };
 
         self.onStartup = function() {
             self.elementUsernameInput = $("#login_user");
             self.elementPasswordInput = $("#login_pass");
             self.elementLoginButton = $("#login_button");
+
+            var toggle = $("li.dropdown#navbar_login");
+            var button = $("a", toggle);
+
+            button.on("click", function(e) {
+                $(this).parent().toggleClass("open");
+            });
+
+            $("body").on("click", function(e) {
+                if (!toggle.hasClass("open")) {
+                    return;
+                }
+
+                var anyFormLinkOrButton = $("#login_dropdown_loggedout a, #login_dropdown_loggedin a, #login_dropdown_loggedout button, #login_dropdown_loggedin button");
+                var dropdown = $("li.dropdown#navbar_login");
+                var anyLastpassButton = $("#__lpform_login_user, #__lpform_login_pass");
+
+                var isLinkOrButton = anyFormLinkOrButton.is(e.target) || anyFormLinkOrButton.has(e.target).length !== 0;
+                var isDropdown = dropdown.is(e.target) || dropdown.has(e.target).length !== 0;
+                var isLastpass = anyLastpassButton.is(e.target) || anyLastpassButton.has(e.target).length !== 0;
+
+                if (isLinkOrButton || !(isDropdown || isLastpass)) {
+                    toggle.removeClass("open");
+                }
+            });
+
             if (self.elementUsernameInput && self.elementUsernameInput.length
                 && self.elementLoginButton && self.elementLoginButton.length) {
                 self.elementLoginButton.blur(function() {
                     self.elementUsernameInput.focus();
                 })
             }
-        };
-
-        self.onStartupComplete = function() {
-            self.requestData();
         };
     }
 

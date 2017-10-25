@@ -5,12 +5,12 @@
 {% endif %}
 <div class="row-fluid">
 
-    <table class="table table-bordered table-hover" style="table-layout: fixed; width: 100%; margin-top: 20px">
+    <table id="temperature-table" class="table table-bordered table-hover">
         <tr>
-            <th style="width: 18%"></th>
-            <th style="width: 12%; text-align: right">{{ _('Actual') }}</th>
-            <th style="width: 35%">{{ _('Target') }}</th>
-            <th style="width: 35%">{{ _('Offset') }}</th>
+            <th class="temperature_tool"></th>
+            <th class="temperature_actual" title="{{ _('Current actual temperature as reported by your printer') }}">{{ _('Actual') }}</th>
+            <th class="temperature_target" title="{{ _('Current target temperature as reported by your printer') }}">{{ _('Target') }}</th>
+            <th class="temperature_offset" title="{{ _('Offset to apply to temperature commands sent from files') }}">{{ _('Offset') }}</th>
         </tr>
         <!-- ko foreach: tools -->
         <tr data-bind="template: { name: 'temprow-template' }"></tr>
@@ -19,37 +19,45 @@
     </table>
 
     <script type="text/html" id="temprow-template">
-        <th style="vertical-align: middle" data-bind="text: name"></th>
-        <td style="text-align: right; vertical-align: middle" data-bind="html: formatTemperature(actual())"></td>
-        <td style="vertical-align: middle; overflow: visible">
-            <div class="input-append">
-                <input type="number" class="input-mini text-right tempInput" data-bind="attr: {placeholder: cleanTemperature(target()) }, value: newTarget, enable: $root.isOperational() && $root.loginState.isUser(), event: { keyup: function(d, e) {$root.handleEnter(e, 'target', $data);} }">
-                <span class="add-on">&deg;C</span>
+        <th class="temperature_tool" data-bind="text: name, attr: {title: name}"></th>
+        <td class="temperature_actual" data-bind="html: formatTemperature(actual()), attr: {title: formatTemperature(actual())}"></td>
+        <td class="temperature_target">
+            <form class="form-inline" style="margin:0" data-bind="submit: function(element) { $root.setTarget($data, element) }">
+                <div class="input-prepend input-append">
+                    <button type="button" class="btn btn-input-dec" data-bind="click: $root.decrementTarget, enable: $root.isOperational() && $root.loginState.isUser()" title="{{ _('Fine adjust: -1°C') }}"><i class="fa fa-minus"></i></button>
+                    <input type="number" min="0" max="999" class="input-mini input-nospin" style="width: 30px" data-bind="attr: {placeholder: cleanTemperature(target())}, value: newTarget, valueUpdate: 'input', enable: $root.isOperational() && $root.loginState.isUser(), event: { focus: function(d, e) {$root.handleFocus(e, 'target', $data) } }">
+                    <span class="add-on">&deg;C</span>
+                    <button type="button" class="btn btn-input-inc" data-bind="click: $root.incrementTarget, enable: $root.isOperational() && $root.loginState.isUser()" title="{{ _('Fine adjust: +1°C') }}"><i class="fa fa-plus"></i></button>
+                </div>
                 <div class="btn-group">
-                    <button type="submit" data-bind="click: $parent.setTarget, enable: $root.isOperational() && $root.loginState.isUser()" class="btn">{{ _('Set') }}</button>
-                    <button class="btn dropdown-toggle" data-toggle="dropdown" data-bind="enable: $root.isOperational() && $root.loginState.isUser()">
+                    <button type="submit" data-bind="enable: $root.isOperational() && $root.loginState.isUser() && $data.newTargetValid()" class="btn btn-primary" title="{{ _('Set') }}"><i class="fa fa-check"></i></button>
+                    <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown" data-bind="enable: $root.isOperational() && $root.loginState.isUser()">
                         <span class="caret"></span>
                     </button>
                     <ul class="dropdown-menu">
+                        <li>
+                            <a href="javascript:void(0)" data-bind="click: $root.setTargetToZero">{{ _('Off') }}</a>
+                        </li>
+                        <li class="divider"></li>
                         <!-- ko foreach: $root.temperature_profiles -->
                         <li>
-                            <a href="#" data-bind="click: function() {$root.setTargetFromProfile($parent, $data);}, text: 'Set ' + name + ' (' + ($parent.key() == 'bed' ? bed : extruder) + '&deg;C)'"></a>
+                            <a href="javascript:void(0)" data-bind="click: function() {$root.setTargetFromProfile($parent, $data);}, text: 'Set ' + name + ' (' + ($parent.key() == 'bed' ? bed : extruder) + '&deg;C)'"></a>
                         </li>
                         <!-- /ko -->
-                        <li class="divider"></li>
-                        <li>
-                            <a href="#" data-bind="click: $root.setTargetToZero">{{ _('Off') }}</a>
-                        </li>
                     </ul>
                 </div>
-            </div>
+            </form>
         </td>
-        <td style="vertical-align: middle">
-            <div class="input-append">
-                <input type="number" min="-50" max="50" class="input-mini text-right tempInput" data-bind="attr: {placeholder: offset}, value: newOffset, enable: $root.isOperational() && $root.loginState.isUser(), event: { keyup: function(d, e) {$root.handleEnter(e, 'offset', $data);} }">
-                <span class="add-on">&deg;C</span>
-                <button type="submit" data-bind="click: $root.setOffset, enable: $root.isOperational() && $root.loginState.isUser()" class="btn">{{ _('Set') }}</button>
-            </div>
+        <td class="temperature_offset">
+            <form class="form-inline" style="margin:0">
+                <div class="input-append">
+                    <span class="input-mini uneditable-input text-right" style="width: 30px" data-bind="text: offset"></span>
+                    <span class="add-on">&deg;C</span>
+                    <button class="btn" title="{{ _('Change Offset') }}" data-bind="click: $root.changeOffset, enable: $root.isOperational() && $root.loginState.isUser()"><i class="fa fa-pencil"></i></button>
+                    <button class="btn" title="{{ _('Delete Offset') }}" data-bind="click: $root.setOffsetToZero, enable: $root.isOperational() && $root.loginState.isUser()"><i class="fa fa-trash"></i></button>
+                </div>
+            </form>
         </td>
     </script>
 </div>
+

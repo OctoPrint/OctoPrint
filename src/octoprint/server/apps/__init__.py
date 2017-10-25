@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -29,7 +29,10 @@ def verifySessionKey():
 	if not "application/json" in request.headers["Content-Type"]:
 		return None, None, make_response("Expected content-type JSON", 400)
 
-	data = request.json
+	data = request.get_json()
+	if data is None:
+		return make_response("Malformed JSON body in request", 400)
+
 	for key in ("appid", "key", "_sig"):
 		if not key in data:
 			return make_response("Missing argument: {key}".format(key=key), 400)

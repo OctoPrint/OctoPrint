@@ -1,5 +1,5 @@
-<a href="#" class="dropdown-toggle" data-toggle="dropdown" data-bind="visible: system.systemActions().length > 0">
-    <i class="icon-off"></i> {{ _('System') }}
+<a href="javascript:void(0)" title="{{ _('System') }}" class="dropdown-toggle" data-toggle="dropdown" data-bind="visible: system.systemActions().length > 0">
+    <i class="fa fa-power-off"></i>
     <b class="caret"></b>
 </a>
 <ul class="dropdown-menu" data-bind="foreach: system.systemActions">
@@ -7,6 +7,6 @@
     <li class="divider"></li>
     <!-- /ko -->
     <!-- ko if: action != "divider" -->
-    <li><a href="#" data-bind="click: $root.system.triggerCommand, text: name"></a></li>
+    <li><a href="javascript:void(0)" data-bind="click: $root.system.triggerCommand, text: name"></a></li>
     <!-- /ko -->
 </ul>

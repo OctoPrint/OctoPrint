@@ -28,7 +28,9 @@ $(function() {
                     action.actionSource = "core";
                     actions.push(action);
                 });
-                actions.push({action: "divider"});
+                if (response.custom && response.custom.length) {
+                    actions.push({action: "divider"});
+                }
             }
             _.each(response.custom, function(data) {
                 var action = _.extend({}, data);
@@ -45,7 +47,18 @@ $(function() {
             var callback = function() {
                 OctoPrint.system.executeCommand(commandSpec.actionSource, commandSpec.action)
                     .done(function() {
-                        new PNotify({title: "Success", text: _.sprintf(gettext("The command \"%(command)s\" executed successfully"), {command: commandSpec.name}), type: "success"});
+                        var text;
+                        if (commandSpec.async) {
+                            text = gettext("The command \"%(command)s\" executed successfully");
+                        } else {
+                            text = gettext("The command \"%(command)s\" was triggered asynchronously");
+                        }
+
+                        new PNotify({
+                            title: "Success",
+                            text: _.sprintf(text, {command: commandSpec.name}),
+                            type: "success"
+                        });
                         deferred.resolve(["success", arguments]);
                     })
                     .fail(function(jqXHR, textStatus, errorThrown) {

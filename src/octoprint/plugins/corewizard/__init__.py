@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -9,7 +9,7 @@ __copyright__ = "Copyright (C) 2015 The OctoPrint Project - Released under terms
 import octoprint.plugin
 
 
-from flask.ext.babel import gettext
+from flask_babel import gettext
 
 
 class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
@@ -25,6 +25,13 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 		names = self._get_subwizard_attrs("_get_", "_wizard_name")
 		additional = self._get_subwizard_attrs("_get_", "_additional_wizard_template_data")
 
+		firstrunonly = self._get_subwizard_attrs("_is_", "_wizard_firstrunonly")
+		firstrun = self._settings.global_get(["server", "firstRun"])
+
+		if not firstrun:
+			required = dict((key, value) for key, value in required.items()
+			                if not firstrunonly.get(key, lambda: False)())
+
 		result = list()
 		for key, method in required.items():
 			if not method():
@@ -37,7 +44,11 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 			if not name:
 				continue
 
-			config = dict(type="wizard", name=name, template="corewizard_{}_wizard.jinja2".format(key), div="wizard_plugin_corewizard_{}".format(key))
+			config = dict(type="wizard",
+			              name=name,
+			              template="corewizard_{}_wizard.jinja2".format(key),
+			              div="wizard_plugin_corewizard_{}".format(key),
+			              suffix="_{}".format(key))
 			if key in additional:
 				additional_result = additional[key]()
 				if additional_result:
@@ -49,15 +60,26 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 	#~~ AssetPlugin API
 
 	def get_assets(self):
-		return dict(
-			js=["js/corewizard.js"]
-		)
+		if self.is_wizard_required():
+			return dict(
+				js=["js/corewizard.js"]
+			)
+		else:
+			return dict()
 
 	#~~ WizardPlugin API
 
 	def is_wizard_required(self):
-		methods = self._get_subwizard_attrs("_is_", "_wizard_required")
-		return self._settings.global_get(["server", "firstRun"]) and any(map(lambda m: m(), methods.values()))
+		required = self._get_subwizard_attrs("_is_", "_wizard_required")
+		firstrunonly = self._get_subwizard_attrs("_is_", "_wizard_firstrunonly")
+		firstrun = self._settings.global_get(["server", "firstRun"])
+
+		if not firstrun:
+			required = dict((key, value) for key, value in required.items()
+			                if not firstrunonly.get(key, lambda: False)())
+		any_required = any(map(lambda m: m(), required.values()))
+
+		return any_required
 
 	def get_wizard_details(self):
 		result = dict()
@@ -68,13 +90,19 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 
 		return result
 
+	def get_wizard_version(self):
+		return 1
+
 	#~~ ACL subwizard
+
+	def _is_acl_wizard_firstrunonly(self):
+		return True
 
 	def _is_acl_wizard_required(self):
 		return self._user_manager.enabled and not self._user_manager.hasBeenCustomized()
 
 	def _get_acl_wizard_details(self):
-		return dict()
+		return dict(required=self._is_acl_wizard_required())
 
 	def _get_acl_wizard_name(self):
 		return gettext("Access Control")
@@ -87,9 +115,9 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 		from flask import request
 		from octoprint.server.api import valid_boolean_trues, NO_CONTENT
 
-		data = request.values
-		if hasattr(request, "json") and request.json:
-			data = request.json
+		data = request.get_json()
+		if data is None:
+			data = request.values
 
 		if "ac" in data and data["ac"] in valid_boolean_trues and \
 						"user" in data.keys() and "pass1" in data.keys() and \
@@ -111,20 +139,26 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 
 	#~~ Webcam subwizard
 
+	def _is_webcam_wizard_firstrunonly(self):
+		return True
+
 	def _is_webcam_wizard_required(self):
-		webcam_snapshot_url = self._settings.global_get(["webcam", "snapshotUrl"])
-		webcam_stream_url = self._settings.global_get(["webcam", "streamUrl"])
+		webcam_snapshot_url = self._settings.global_get(["webcam", "snapshot"])
+		webcam_stream_url = self._settings.global_get(["webcam", "stream"])
 		ffmpeg_path = self._settings.global_get(["webcam", "ffmpeg"])
 
 		return not (webcam_snapshot_url and webcam_stream_url and ffmpeg_path)
 
 	def _get_webcam_wizard_details(self):
-		return dict()
+		return dict(required=self._is_webcam_wizard_required())
 
 	def _get_webcam_wizard_name(self):
 		return gettext("Webcam & Timelapse")
 
 	#~~ Server commands subwizard
+
+	def _is_servercommands_wizard_firstrunonly(self):
+		return True
 
 	def _is_servercommands_wizard_required(self):
 		system_shutdown_command = self._settings.global_get(["server", "commands", "systemShutdownCommand"])
@@ -134,10 +168,41 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 		return not (system_shutdown_command and system_restart_command and server_restart_command)
 
 	def _get_servercommands_wizard_details(self):
-		return dict()
+		return dict(required=self._is_servercommands_wizard_required())
 
 	def _get_servercommands_wizard_name(self):
 		return gettext("Server Commands")
+
+	#~~ Online check subwizard
+
+	def _is_onlinecheck_wizard_firstrunonly(self):
+		return False
+
+	def _is_onlinecheck_wizard_required(self):
+		return self._settings.global_get(["server", "onlineCheck", "enabled"]) is None
+
+	def _get_onlinecheck_wizard_details(self):
+		return dict(required=self._is_onlinecheck_wizard_required())
+
+	def _get_onlinecheck_wizard_name(self):
+		return gettext("Online connectivity check")
+
+	def _get_onlinecheck_additional_wizard_template_data(self):
+		return dict(mandatory=self._is_onlinecheck_wizard_required())
+
+	#~~ Printer profile subwizard
+
+	def _is_printerprofile_wizard_firstrunonly(self):
+		return True
+
+	def _is_printerprofile_wizard_required(self):
+		return self._printer_profile_manager.is_default_unmodified() and self._printer_profile_manager.profile_count == 1
+
+	def _get_printerprofile_wizard_details(self):
+		return dict(required=self._is_printerprofile_wizard_required())
+
+	def _get_printerprofile_wizard_name(self):
+		return gettext("Default Printer Profile")
 
 	#~~ helpers
 
@@ -161,5 +226,9 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 
 
 __plugin_name__ = "Core Wizard"
+__plugin_author__ = "Gina Häußge"
 __plugin_description__ = "Provides wizard dialogs for core components and functionality"
+__plugin_disabling_discouraged__ = gettext("Without this plugin OctoPrint will no longer be able to perform "
+                                           "setup steps that might be required after an update.")
+__plugin_license__ = "AGPLv3"
 __plugin_implementation__ = CoreWizardPlugin()

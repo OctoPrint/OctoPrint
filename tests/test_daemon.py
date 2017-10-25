@@ -1,5 +1,5 @@
 # coding=utf-8
-from __future__ import (print_function, absolute_import)
+from __future__ import absolute_import, division, print_function
 
 import unittest
 import mock
@@ -52,7 +52,7 @@ class DaemonTest(unittest.TestCase):
 		self.assertListEqual(mock_exit.mock_calls, [mock.call(0), mock.call(0)])
 		mock_chdir.assert_called_once_with("/")
 		mock_setsid.assert_called_once_with()
-		mock_umask.assert_called_once_with(002)
+		mock_umask.assert_called_once_with(0o002)
 
 	@mock.patch("os.fork", create=True)
 	@mock.patch("sys.exit")
@@ -71,7 +71,7 @@ class DaemonTest(unittest.TestCase):
 		# assert
 		self.assertListEqual(mock_fork.mock_calls, [mock.call()])
 		self.assertListEqual(mock_exit.mock_calls, [mock.call(1)])
-		self.assertEquals(len(self.error_method.mock_calls), 1)
+		self.assertEqual(len(self.error_method.mock_calls), 1)
 
 	@mock.patch("os.fork", create=True)
 	@mock.patch("os.chdir")
@@ -91,12 +91,12 @@ class DaemonTest(unittest.TestCase):
 			pass
 
 		# assert
-		self.assertEquals(mock_fork.call_count, 2)
+		self.assertEqual(mock_fork.call_count, 2)
 		self.assertListEqual(mock_exit.mock_calls, [mock.call(0), mock.call(1)])
-		self.assertEquals(self.error_method.call_count, 1)
+		self.assertEqual(self.error_method.call_count, 1)
 		mock_chdir.assert_called_once_with("/")
 		mock_setsid.assert_called_once_with()
-		mock_umask.assert_called_once_with(002)
+		mock_umask.assert_called_once_with(0o002)
 
 	@mock.patch("sys.stdin")
 	@mock.patch("sys.stdout")
@@ -243,7 +243,7 @@ class DaemonTest(unittest.TestCase):
 
 		# assert
 		self.daemon.get_pid.assert_called_once_with()
-		self.assertEquals(self.error_method.call_count, 1)
+		self.assertEqual(self.error_method.call_count, 1)
 		mock_exit.assert_called_once_with(1)
 
 	@mock.patch("sys.exit")
@@ -394,7 +394,7 @@ class DaemonTest(unittest.TestCase):
 			result = self.daemon.get_pid()
 
 		# assert
-		self.assertEquals(result, pid)
+		self.assertEqual(result, pid)
 		m.assert_called_once_with(self.pidfile, "r")
 
 	def test_get_pid_ioerror(self):

@@ -10,7 +10,8 @@
     <tbody data-bind="foreach: channels.paginatedItems">
     <tr>
         <td class="settings_plugin_announcements_channels_name">
-            <div data-bind="text: channel, css: {muted: !enabled}"></div>
+            <div data-bind="css: {muted: !enabled}"><strong data-bind="text: channel"></strong></div>
+            <div data-bind="text: description, css: {muted: !enabled}"></div>
             <div><small class="muted" data-bind="text: url">&nbsp;</small></div>
         </td>
         <td class="settings_plugin_announcements_channels_actions">
@@ -31,4 +32,4 @@
     </ul>
 </div>
 
-<button class="btn btn-block" data-bind="click: $root.refreshAnnouncements"><i class="icon-refresh"></i> {{ _('Refresh Announcements') }}</button>
+<button class="btn btn-block" data-bind="click: $root.refreshAnnouncements"><i class="fa fa-refresh"></i> {{ _('Refresh Announcements') }}</button>
