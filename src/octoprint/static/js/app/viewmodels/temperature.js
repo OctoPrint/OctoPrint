@@ -355,10 +355,14 @@ $(function() {
 
                         // convert to minutes
                         var diffInMins = Math.round(diff / (60 * 1000));
-                        if (diffInMins === 0)
+                        if (diffInMins === 0) {
                             return gettext("just now");
-                        else
+                        } else if (diffInMins < 0) {
+                            // we can't look into the future
+                            return "";
+                        } else {
                             return "- " + diffInMins + " " + gettext("min");
+                        }
                     }
                 },
                 legend: {
@@ -382,6 +386,7 @@ $(function() {
             if (!heaterOptions) return undefined;
 
             var maxTemps = [310/1.1];
+            var now = Date.now();
 
             var showFahrenheit = self._shallShowFahrenheit();
 
@@ -404,12 +409,12 @@ $(function() {
                 data.push({
                     label: gettext("Actual") + " " + heaterOptions[type].name + ": " + actualTemp,
                     color: heaterOptions[type].color,
-                    data: actuals
+                    data: actuals.length ? actuals : [[now, undefined]]
                 });
                 data.push({
                     label: gettext("Target") + " " + heaterOptions[type].name + ": " + targetTemp,
                     color: pusher.color(heaterOptions[type].color).tint(0.5).html(),
-                    data: targets
+                    data: targets.length ? targets : [[now, undefined]]
                 });
 
                 maxTemps.push(self.getMaxTemp(actuals, targets));
@@ -475,7 +480,6 @@ $(function() {
         };
 
         self.getMaxTemp = function(actuals, targets) {
-            var pair;
             var maxTemp = 0;
             actuals.forEach(function(pair) {
                 if (pair[1] > maxTemp){

@@ -407,6 +407,8 @@ $(function() {
         };
 
         self.onWebcamLoaded = function() {
+            if (self.webcamLoaded()) return;
+
             log.debug("Webcam stream loaded");
             self.webcamLoaded(true);
             self.webcamError(false);

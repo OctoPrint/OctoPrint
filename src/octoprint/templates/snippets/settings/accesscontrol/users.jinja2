@@ -1,4 +1,4 @@
-
+<<<<<<< HEAD
 <table class="table table-condensed table-hover" id="system_users">
     <thead>
     <tr>
@@ -11,7 +11,7 @@
     </thead>
     <tbody data-bind="foreach: $root.access.users.listHelper.paginatedItems">
     <tr>
-        <td class="settings_users_name"><span data-bind="text: name"></span><span class="muted" data-bind="visible: $root.api_enabled() && apikey"><br /><small>{{ _('API Key') }}: <span data-bind="text: apikey"></span></small></span></td>
+        <td class="settings_users_name"><span data-bind="text: name"></span><span class="muted" data-bind="visible: $root.api_enabled() && apikey"><br /><small>{{ _('API Key') }}: <span data-bind="text: apikey"></span> <a href="javascript:void(0)" title="{{ _('Copy API Key to clipboard') }}" data-bind="click: function() { copyToClipboard(apikey) }"><i class="fa fa-copy"></i></a></small></span></td>
         <td class="settings_users_groups"><span data-bind="text: $root.access.groupList($data)"></span></td>
         <td class="settings_users_permissions"><span data-bind="text: $root.access.permissionList($data)"></span></td>
         <td class="settings_users_active"><i class="fa" data-bind="css: { 'fa-check-square-o': active, 'a-square-o': !active }"></i></td>
@@ -162,8 +162,8 @@
                 <div class="control-group">
                     <label class="control-label">{{ _('Current API Key') }}</label>
                     <div class="controls">
-                        <div class="input-append">
-                            <input type="text" class="input-block-level uneditable-input" data-bind="value: $root.access.users.editorApikey, valueUpdate: 'input', attr: {placeholder: '{{ _('N/A') }}'}">
+                        <div class="input-append input-block-level ">
+                            <input type="text" disabled="disabled" data-bind="value: $root.access.users.editorApikey, valueUpdate: 'input', attr: {placeholder: '{{ _('N/A') }}'}">
                             <a class="btn add-on" title="Copy API Key to clipboard" data-bind="click: $root.access.users.copyApikey, enable: $root.access.users.editorApikey"><i class="fa fa-copy"></i></a>
                             <a class="btn add-on" title="Generate new API Key" data-bind="click: function() { $root.access.users.confirmGenerateApikey(); }"><i class="fa fa-refresh"></i></a>
                             <a class="btn add-on btn-danger" title="Delete API Key" data-bind="click: function() { $root.access.users.confirmDeleteApikey(); }"><i class="fa fa-trash-o"></i></a>
