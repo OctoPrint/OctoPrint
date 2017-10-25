@@ -154,7 +154,7 @@ Execute a registered system command
 
    .. sourcecode:: http
 
-      204 No Content
+      HTTP/1.1 204 No Content
 
    :param source: The source for which to list commands, currently either ``core`` or ``custom``
    :param action: The identifier of the command, ``action`` from its definition

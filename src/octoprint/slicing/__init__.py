@@ -147,7 +147,7 @@ class SlicingManager(object):
 	def slicing_enabled(self):
 		"""
 		Returns:
-		    boolean: True if there is at least one configured slicer available, False otherwise.
+		    (boolean) True if there is at least one configured slicer available, False otherwise.
 		"""
 		return len(self.configured_slicers) > 0
 
@@ -155,7 +155,7 @@ class SlicingManager(object):
 	def registered_slicers(self):
 		"""
 		Returns:
-		    list of str: Identifiers of all available slicers.
+		    (list of str) Identifiers of all available slicers.
 		"""
 		return self._slicers.keys()
 
@@ -163,7 +163,7 @@ class SlicingManager(object):
 	def configured_slicers(self):
 		"""
 		Returns:
-		    list of str: Identifiers of all available configured slicers.
+		    (list of str) Identifiers of all available configured slicers.
 		"""
 		return map(lambda slicer: slicer.get_slicer_properties()["type"], filter(lambda slicer: slicer.is_slicer_configured(), self._slicers.values()))
 
@@ -173,7 +173,7 @@ class SlicingManager(object):
 		Retrieves the default slicer.
 
 		Returns:
-		    str: The identifier of the default slicer or ``None`` if the default slicer is not registered in the
+		    (str) The identifier of the default slicer or ``None`` if the default slicer is not registered in the
 		        system.
 		"""
 		slicer_name = settings().get(["slicing", "defaultSlicer"])

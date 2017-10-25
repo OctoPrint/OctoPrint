@@ -796,7 +796,7 @@ class Settings(object):
 	def last_modified(self):
 		"""
 		Returns:
-		    int: The last modification time of the configuration file.
+		    (int) The last modification time of the configuration file.
 		"""
 		stat = os.stat(self._configfile)
 		return stat.st_mtime
