@@ -197,33 +197,29 @@ $(function() {
         //                                                                                             //
         /////////////////////////////////////////////////////////////////////////////////////////////////
         //                                                                                             //
-        // Possible function calls and what they return:                                               //
+        // Possible function call and what it returns:                                                 //
         //                                                                                             //
         // loginState.hasPermission(access.permissions.SETTINGS)                                       //
-        // - Returns a pureComputed which returns true if the currently logged in user                 //
-        //   has SETTINGS right.                                                                       //
+        // - Returns true if the currently logged in user has SETTINGS permission                      //
         //                                                                                             //
         /////////////////////////////////////////////////////////////////////////////////////////////////
         self.hasPermission = function(permission) {
-            if (self.userneeds() === undefined || permission === undefined)
+            var userneeds = self.userneeds();
+            if (userneeds === undefined || permission === undefined)
                 return false;
 
-            var needs = self.userneeds();
-            if ($.isEmptyObject(needs)) {
+            if ($.isEmptyObject(userneeds)) {
                 return false;
             }
 
-            return self.checkNeeds({ needs: needs }, permission);
+            return _.all(permission, function(need) { return _.has(userneeds, need.method) && _.contains(userneeds[need.method], need.value); });
         };
+
+        // Knockout wrapper for the hasPermission function
         self.hasPermissionKo = function(permission) {
             return ko.pureComputed(function() {
                 return self.hasPermission(permission);
             }).extend({ notify: 'always' });
-        }
-
-        // Shared checkNeeds function, also used inside the filter function of the access subs
-        self.checkNeeds = function(needs, permissions) {
-            return _.any(permissions, function(permission) { return _.has(needs.needs, permission.method) && _.contains(needs.needs[permission.method], permission.value); });
         };
     }
 
