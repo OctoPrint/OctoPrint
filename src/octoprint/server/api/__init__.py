@@ -204,6 +204,9 @@ def login():
 
 		user = octoprint.server.userManager.findUser(username)
 		if user is not None:
+			if not user.is_active():
+				return make_response(("Your account is deactivated", 403, []))
+
 			if octoprint.server.userManager.checkPassword(username, password):
 				if octoprint.server.userManager.enabled:
 					user = octoprint.server.userManager.login_user(user)
