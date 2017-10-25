@@ -14,6 +14,7 @@ from octoprint.settings import valid_boolean_trues
 from octoprint.server.util.flask import restricted_access, with_revalidation_checking, check_etag
 from octoprint.server import admin_permission, VERSION
 from octoprint.util.pip import LocalPipCaller, UnknownPip
+from octoprint.util.version import get_octoprint_version_string, get_octoprint_version, is_octoprint_compatible
 
 from flask import jsonify, make_response
 from flask.ext.babel import gettext
@@ -30,6 +31,8 @@ import copy
 import dateutil.parser
 import time
 import threading
+
+_DATA_FORMAT_VERSION = "v2"
 
 class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
                           octoprint.plugin.TemplatePlugin,
@@ -239,7 +242,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			                   plugins=self._repository_plugins
 			               ),
 			               os=self._get_os(),
-			               octoprint=self._get_octoprint_version_string(),
+			               octoprint=get_octoprint_version_string(),
 			               pip=dict(
 			                   available=self._pip_caller.available,
 			                   version=self._pip_caller.version_string,
@@ -262,6 +265,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			hash.update(repr(self._notices))
 			hash.update(repr(safe_mode))
 			hash.update(repr(self._connectivity_checker.online))
+			hash.update(repr(_DATA_FORMAT_VERSION))
 			return hash.hexdigest()
 
 		def condition():
@@ -526,7 +530,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 		if not needs_restart:
 			try:
-				self._plugin_manager.disable_plugin(plugin.key, plugin=plugin)
+				if plugin.enabled:
+					self._plugin_manager.disable_plugin(plugin.key, plugin=plugin)
 			except octoprint.plugin.core.PluginLifecycleException as e:
 				self._logger.exception(u"Problem disabling plugin {name}".format(name=plugin.key))
 				result = dict(result=False, uninstalled=True, disabled=False, unloaded=False, reason=e.reason)
@@ -534,7 +539,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 				return jsonify(result)
 
 			try:
-				self._plugin_manager.unload_plugin(plugin.key)
+				if plugin.loaded:
+					self._plugin_manager.unload_plugin(plugin.key)
 			except octoprint.plugin.core.PluginLifecycleException as e:
 				self._logger.exception(u"Problem unloading plugin {name}".format(name=plugin.key))
 				result = dict(result=False, uninstalled=True, disabled=True, unloaded=False, reason=e.reason)
@@ -754,7 +760,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 				return False
 
 		current_os = self._get_os()
-		octoprint_version = self._get_octoprint_version(base=True)
+		octoprint_version = get_octoprint_version(base=True)
 
 		def map_repository_entry(entry):
 			result = copy.deepcopy(entry)
@@ -769,7 +775,8 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 			if "compatibility" in entry:
 				if "octoprint" in entry["compatibility"] and entry["compatibility"]["octoprint"] is not None and isinstance(entry["compatibility"]["octoprint"], (list, tuple)) and len(entry["compatibility"]["octoprint"]):
-					result["is_compatible"]["octoprint"] = self._is_octoprint_compatible(octoprint_version, entry["compatibility"]["octoprint"])
+					result["is_compatible"]["octoprint"] = is_octoprint_compatible(*entry["compatibility"]["octoprint"],
+					                                                               octoprint_version=octoprint_version)
 
 				if "os" in entry["compatibility"] and entry["compatibility"]["os"] is not None and isinstance(entry["compatibility"]["os"], (list, tuple)) and len(entry["compatibility"]["os"]):
 					result["is_compatible"]["os"] = self._is_os_compatible(current_os, entry["compatibility"]["os"])
@@ -847,26 +854,6 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		self._notices = notices
 		return True
 
-	def _is_octoprint_compatible(self, octoprint_version, compatibility_entries):
-		"""
-		Tests if the current ``octoprint_version`` is compatible to any of the provided ``compatibility_entries``.
-		"""
-
-		for octo_compat in compatibility_entries:
-			try:
-				if not any(octo_compat.startswith(c) for c in ("<", "<=", "!=", "==", ">=", ">", "~=", "===")):
-					octo_compat = ">={}".format(octo_compat)
-
-				s = next(pkg_resources.parse_requirements("OctoPrint" + octo_compat))
-				if octoprint_version in s:
-					break
-			except:
-				self._logger.exception("Something is wrong with this compatibility string for OctoPrint: {}".format(octo_compat))
-		else:
-			return False
-
-		return True
-
 	@staticmethod
 	def _is_os_compatible(current_os, compatibility_entries):
 		"""
@@ -898,38 +885,6 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 				return identifier
 		else:
 			return "unmapped"
-
-	def _get_octoprint_version_string(self):
-		return VERSION
-
-	def _get_octoprint_version(self, base=False):
-		octoprint_version_string = self._get_octoprint_version_string()
-
-		if "-" in octoprint_version_string:
-			octoprint_version_string = octoprint_version_string[:octoprint_version_string.find("-")]
-
-		octoprint_version = pkg_resources.parse_version(octoprint_version_string)
-
-		# A leading v is common in github release tags and old setuptools doesn't remove it. While OctoPrint's
-		# versions should never contains such a prefix, we'll make sure to have stuff behave the same
-		# regardless of setuptools version anyhow.
-		if octoprint_version and isinstance(octoprint_version, tuple) and octoprint_version[0].lower() == "*v":
-			octoprint_version = octoprint_version[1:]
-
-		if base:
-			if isinstance(octoprint_version, tuple):
-				# old setuptools
-				base_version = []
-				for part in octoprint_version:
-					if part.startswith("*"):
-						break
-					base_version.append(part)
-				base_version.append("*final")
-				octoprint_version = tuple(base_version)
-			else:
-				# new setuptools
-				octoprint_version = pkg_resources.parse_version(octoprint_version.base_version)
-		return octoprint_version
 
 	@property
 	def _reconnect_hooks(self):
@@ -972,6 +927,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			bundled=plugin.bundled,
 			managable=plugin.managable,
 			enabled=plugin.enabled,
+			blacklisted=plugin.blacklisted,
 			safe_mode_victim=getattr(plugin, "safe_mode_victim", False),
 			safe_mode_enabled=getattr(plugin, "safe_mode_enabled", False),
 			pending_enable=(not plugin.enabled and not getattr(plugin, "safe_mode_enabled", False) and plugin.key in self._pending_enable),
@@ -990,13 +946,14 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		if key not in self._notices:
 			return
 
-		octoprint_version = self._get_octoprint_version(base=True)
+		octoprint_version = get_octoprint_version(base=True)
 		plugin_notifications = self._notices.get(key, [])
 
 		def filter_relevant(notification):
 			return "text" in notification and "date" in notification and \
 			       ("versions" not in notification or plugin.version in notification["versions"]) and \
-			       ("octoversions" not in notification or self._is_octoprint_compatible(octoprint_version, notification["octoversions"]))
+			       ("octoversions" not in notification or is_octoprint_compatible(*notification["octoversions"],
+			                                                                      octoprint_version=octoprint_version))
 
 		def map_notification(notification):
 			return self._to_external_notification(key, notification)

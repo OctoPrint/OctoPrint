@@ -154,6 +154,11 @@ default_settings = {
 			"host": "8.8.8.8",
 			"port": 53
 		},
+		"pluginBlacklist": {
+			"enabled": None,
+			"url": "http://plugins.octoprint.org/blacklist.json",
+			"ttl": 15 * 60 # 15 min
+		},
 		"diskspace": {
 			"warning": 500 * 1024 * 1024, # 500 MB
 			"critical": 200 * 1024 * 1024, # 200 MB
