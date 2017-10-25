@@ -811,8 +811,7 @@ Use the following settings to configure the serial connection to the printer:
      # Whether to "manually" trigger an ok for M29 (a lot of versions of this command are buggy and
      # the responds skips on the ok)
      triggerOkForM29: true
-
-     # Commands that should never be auto-uppercased when sent to the printer. Defaults to only M117.
+# Commands that should never be auto-uppercased when sent to the printer. Defaults to only M117.
      autoUppercaseBlacklist:
      - M117
 
