@@ -667,7 +667,8 @@ $(function() {
                     additionalPorts : function() { return commentableLinesToArray(self.serial_additionalPorts()) },
                     additionalBaudrates: function() { return _.map(splitTextToArray(self.serial_additionalBaudrates(), ",", true, function(item) { return !isNaN(parseInt(item)); }), function(item) { return parseInt(item); }) },
                     longRunningCommands: function() { return splitTextToArray(self.serial_longRunningCommands(), ",", true) },
-                    checksumRequiringCommands: function() { return splitTextToArray(self.serial_checksumRequiringCommands(), ",", true) }
+                    checksumRequiringCommands: function() { return splitTextToArray(self.serial_checksumRequiringCommands(), ",", true) },
+                    autoUppercaseBlacklist: function() { return splitTextToArray(self.serial_autoUppercaseBlacklist(), ",", true) }
                 },
                 scripts: {
                     gcode: function() {
@@ -778,7 +779,8 @@ $(function() {
                     additionalPorts : function(value) { self.serial_additionalPorts(value.join("\n"))},
                     additionalBaudrates: function(value) { self.serial_additionalBaudrates(value.join(", "))},
                     longRunningCommands: function(value) { self.serial_longRunningCommands(value.join(", "))},
-                    checksumRequiringCommands: function(value) { self.serial_checksumRequiringCommands(value.join(", "))}
+                    checksumRequiringCommands: function(value) { self.serial_checksumRequiringCommands(value.join(", "))},
+                    autoUppercaseBlacklist: function(value) { self.serial_autoUppercaseBlacklist(value.join(", "))}
                 },
                 terminalFilters: function(value) { self.terminalFilters($.extend(true, [], value)) },
                 temperature: {
@@ -832,7 +834,7 @@ $(function() {
 
             self.sawUpdateEventWhileSending = false;
             self.sending(data == undefined || options.sending || false);
-            
+
             if (data == undefined) {
                 // we also only send data that actually changed when no data is specified
                 data = getOnlyChangedData(self.getLocalData(), self.lastReceivedSettings);
