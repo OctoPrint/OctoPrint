@@ -79,6 +79,11 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 		self._cura_logger.addHandler(cura_logging_handler)
 		self._cura_logger.setLevel(logging.DEBUG if self._settings.get_boolean(["debug_logging"]) else logging.CRITICAL)
 		self._cura_logger.propagate = False
+		
+		engine = self._settings.get(["cura_engine"])
+		if not self._is_engine_configured(cura_engine=engine):
+			self._logger.info("Path to CuraEngine has not been configured or does not exist (currently set to %r), "
+			                  "Cura will not be selectable for slicing" % engine)
 
 	##~~ BlueprintPlugin API
 
@@ -168,11 +173,18 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 	##~~ SettingsPlugin API
 
 	def on_settings_save(self, data):
+		old_engine = self._settings.get(["cura_engine"])
 		old_debug_logging = self._settings.get_boolean(["debug_logging"])
 
 		octoprint.plugin.SettingsPlugin.on_settings_save(self, data)
 
+		new_engine = self._settings.get(["cura_engine"])
 		new_debug_logging = self._settings.get_boolean(["debug_logging"])
+
+		if old_engine != new_engine and not self._is_engine_configured(new_engine):
+			self._logger.info("Path to CuraEngine has not been configured or does not exist (currently set to %r), "
+			                  "Cura will not be selectable for slicing" % new_engine)
+
 		if old_debug_logging != new_debug_logging:
 			if new_debug_logging:
 				self._cura_logger.setLevel(logging.DEBUG)
@@ -190,11 +202,7 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 
 	def is_slicer_configured(self):
 		cura_engine = normalize_path(self._settings.get(["cura_engine"]))
-		if self._is_engine_configured(cura_engine=cura_engine):
-			return True
-		else:
-			self._logger.info("Path to CuraEngine has not been configured yet or does not exist (currently set to %r), Cura will not be selectable for slicing" % cura_engine)
-			return False
+		return self._is_engine_configured(cura_engine=cura_engine)
 
 	def get_slicer_properties(self):
 		return dict(

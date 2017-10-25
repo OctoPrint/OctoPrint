@@ -37,6 +37,11 @@
     vertical-align: 10%;
 }
 
+.rst-content .highlight>pre,
+.rst-content .linenodiv>pre {
+    line-height: 1.5;
+}
+
 /* make code tags non-red again */
 code,
 .rst-content tt {
@@ -52,3 +57,4 @@ a:visited code,
 .rst-content a:visited tt {
     color: #9B59B6 !important;
 }
+

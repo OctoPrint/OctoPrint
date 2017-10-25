@@ -377,6 +377,10 @@ class SlicingManager(object):
 
 		If it's a :class:`dict`, a new :class:`SlicingProfile` instance will be created with the supplied meta data and
 		the profile data as the :attr:`~SlicingProfile.data` attribute.
+		
+		.. note::
+		
+		   If the profile is the first profile to be saved for the slicer, it will automatically be marked as default.
 
 		Arguments:
 		    slicer (str): Identifier of the slicer for which to save the ``profile``.
@@ -414,6 +418,8 @@ class SlicingManager(object):
 			if description is not None:
 				profile.description = description
 
+		first_profile = len(self.all_profiles(slicer, require_configured=False)) == 0
+
 		path = self.get_profile_path(slicer, name)
 		is_overwrite = os.path.exists(path)
 
@@ -426,6 +432,10 @@ class SlicingManager(object):
 		               profile=name)
 		event = octoprint.events.Events.SLICING_PROFILE_MODIFIED if is_overwrite else octoprint.events.Events.SLICING_PROFILE_ADDED
 		octoprint.events.eventManager().fire(event, payload)
+		
+		if first_profile:
+			# enforce the first profile we add for this slicer  is set as default
+			self.set_default_profile(slicer, name)
 
 		return profile
 

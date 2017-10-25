@@ -102,7 +102,7 @@ def standard_options(hidden=False):
 
 	options = [
 		factory("--basedir", "-b", type=click.Path(), callback=set_ctx_obj_option, is_eager=True, expose_value=False,
-		        help="Specify the basedir to use for uploads, timelapses etc."),
+		        help="Specify the basedir to use for configs, uploads, timelapses etc."),
 		factory("--config", "-c", "configfile", type=click.Path(), callback=set_ctx_obj_option, is_eager=True, expose_value=False,
 		        help="Specify the config file to use."),
 		factory("--verbose", "-v", "verbosity", count=True, callback=set_ctx_obj_option, is_eager=True, expose_value=False,

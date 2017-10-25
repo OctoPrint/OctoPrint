@@ -35,7 +35,7 @@ INSTALL_REQUIRES = [
 	"pylru>=1.0.9,<1.1",
 	"rsa>=3.4,<3.5",
 	"pkginfo>=1.4.1,<1.5",
-	"requests>=2.13.0,<2.14",
+	"requests>=2.18.4,<3",
 	"semantic_version>=2.6.0,<2.7",
 	"psutil>=5.1.3,<5.2",
 	"Click>=6.7,<6.8",
@@ -67,7 +67,7 @@ EXTRA_REQUIRES = dict(
 		"sphinx>=1.6,<1.7",
 		"sphinxcontrib-httpdomain",
 		"sphinxcontrib-mermaid",
-		"sphinx_bootstrap_theme",
+		"sphinx_rtd_theme",
 
 		# PyPi upload related
 		"pypandoc"
@@ -75,7 +75,7 @@ EXTRA_REQUIRES = dict(
 
 	# Dependencies for developing OctoPrint plugins
 	plugins=[
-		"cookiecutter>=1.5,<1.6"
+		"cookiecutter>=1.5,<1.7"
 	]
 )
 
