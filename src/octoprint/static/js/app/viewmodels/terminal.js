@@ -124,6 +124,11 @@ $(function() {
             self.updateFilterRegex();
         });
 
+        self.blacklist=[];
+        self.settings.serial_autoUppercaseBlacklist.subscribe(function(newValue) {
+            self.blacklist = splitTextToArray(newValue, ",", true);
+        });
+
         self._reenableFancyTimer = undefined;
         self._reenableUnfancyTimer = undefined;
         self._disableFancy = function(difference) {
@@ -308,7 +313,6 @@ $(function() {
 
             var re = /^([gmt][0-9]+)(\s.*)?/;
             var commandMatch = command.match(re);
-            self.blacklist =  splitTextToArray(self.settings.serial_autoUppercaseBlacklist(), ",", true);
             if (commandMatch != null) {
                 command = commandMatch[1].toUpperCase() + ((commandMatch[2] !== undefined) ? commandMatch[2] : "");
                 if (self.blacklist.indexOf(commandMatch[1].toUpperCase()) < 0){
