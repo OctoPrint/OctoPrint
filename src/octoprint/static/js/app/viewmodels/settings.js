@@ -230,6 +230,15 @@ $(function() {
             self.webcam_ffmpegPathBroken(false);
         };
 
+        self.server_onlineCheckText = ko.observable();
+        self.server_onlineCheckOk = ko.observable(false);
+        self.server_onlineCheckBroken = ko.observable(false);
+        self.server_onlineCheckReset = function() {
+            self.server_onlineCheckText("");
+            self.server_onlineCheckOk(false);
+            self.server_onlineCheckBroken(false);
+        };
+
         self.addTemperatureProfile = function() {
             self.temperature_profiles.push({name: "New", extruder:0, bed:0});
         };
@@ -356,8 +365,31 @@ $(function() {
                 });
         };
 
+        self.testOnlineConnectivityConfigBusy = ko.observable(false);
+        self.testOnlineConnectivityConfig = function() {
+            if (!self.server_onlineCheck_host()) return;
+            if (!self.server_onlineCheck_port()) return;
+            if (self.testOnlineConnectivityConfigBusy()) return;
+
+            self.testOnlineConnectivityConfigBusy(true);
+            OctoPrint.util.testServer(self.server_onlineCheck_host(), self.server_onlineCheck_port())
+                .done(function(response) {
+                    if (!response.result) {
+                        self.server_onlineCheckText(gettext("The server is not reachable"));
+                    } else {
+                        self.server_onlineCheckText(gettext("The server is reachable"));
+                    }
+                    self.server_onlineCheckOk(response.result);
+                    self.server_onlineCheckBroken(!response.result);
+                })
+                .always(function() {
+                    self.testOnlineConnectivityConfigBusy(false);
+                });
+        };
+
         self.onSettingsHidden = function() {
             self.webcam_ffmpegPathReset();
+            self.server_onlineCheckReset();
         };
 
         self.isDialogActive = function() {

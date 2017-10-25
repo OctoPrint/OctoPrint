@@ -226,6 +226,37 @@ octoprint.accesscontrol.appkey
    :return: A list of 3-tuples as described above
    :rtype: list
 
+.. _sec-plugins-hook-accesscontrol-keyvalidator:
+
+octoprint.accesscontrol.keyvalidator
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. py:function:: acl_keyvalidator_hook(apikey, *args, **kwargs)
+
+   Via this hook plugins may validate their own customized API keys to be used to access OctoPrint's API.
+
+   ``apikey`` will be the API key as read from the request headers.
+
+   Hook handlers are expected to return a :class:`~octoprint.users.User` instance here that will then be considered that
+   user making the request. By returning ``None`` or nothing at all, hook handlers signal that they do not handle the
+   provided key.
+
+   **Example:**
+
+   Allows using a user's id as their API key (for obvious reasons this is NOT recommended in production environments
+   and merely provided for educational purposes):
+
+   .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/custom_keyvalidator.py
+      :linenos:
+      :tab-width: 4
+      :caption: `custom_keyvalidator.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/custom_keyvalidator.py>`_
+
+   .. versionadded:: 1.3.6
+
+   :param str apikey: The API key to validate
+   :return: The user in whose name the request will be processed further
+   :rtype: :class:`~octoprint.users.User`
+
 .. _sec-plugins-hook-cli-commands:
 
 octoprint.cli.commands
