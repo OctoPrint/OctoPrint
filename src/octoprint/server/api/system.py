@@ -167,19 +167,19 @@ def _get_core_command_specs():
 		shutdown=dict(
 			command=s().get(["server", "commands", "systemShutdownCommand"]),
 			name=gettext("Shutdown system"),
-			confirm=gettext("You are about to shutdown the system.")),
+			confirm=gettext("<b>You are about to shutdown the system.</b></p><p> This action may disrupt any ongoing print jobs (depending on your printer's controller and general setup that might also apply to prints run directly from your printer's internal storage).")),
 		reboot=dict(
 			command=s().get(["server", "commands", "systemRestartCommand"]),
 			name=gettext("Reboot system"),
-			confirm=gettext("You are about to reboot the system.")),
+			confirm=gettext("<b>You are about to reboot the system.</b></p><p> This action may disrupt any ongoing print jobs (depending on your printer's controller and general setup that might also apply to prints run directly from your printer's internal storage).")),
 		restart=dict(
 			command=s().get(["server", "commands", "serverRestartCommand"]),
 			name=gettext("Restart OctoPrint"),
-			confirm=gettext("You are about to restart the OctoPrint server.")),
+			confirm=gettext("<b>You are about to restart the OctoPrint server.</b></p><p> This action may disrupt any ongoing print jobs (depending on your printer's controller and general setup that might also apply to prints run directly from your printer's internal storage).")),
 		restart_safe=dict(
 			command=s().get(["server", "commands", "serverRestartCommand"]),
 			name=gettext("Restart OctoPrint in safe mode"),
-			confirm=gettext("You are about to restart the OctoPrint server in safe mode."),
+			confirm=gettext("<b>You are about to restart the OctoPrint server in safe mode.</b></p><p>  This action may disrupt any ongoing print jobs (depending on your printer's controller and general setup that might also apply to prints run directly from your printer's internal storage)."),
 			before=enable_safe_mode)
 	)
 

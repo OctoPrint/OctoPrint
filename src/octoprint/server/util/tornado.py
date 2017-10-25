@@ -858,7 +858,7 @@ class LargeResponseHandler(tornado.web.StaticFileHandler):
 	"""
 
 	def initialize(self, path, default_filename=None, as_attachment=False, allow_client_caching=True,
-	               access_validation=None, path_validation=None, etag_generator=None,
+	               access_validation=None, path_validation=None, etag_generator=None, name_generator=None,
 	               mime_type_guesser=None):
 		tornado.web.StaticFileHandler.initialize(self, os.path.abspath(path), default_filename)
 		self._as_attachment = as_attachment
@@ -866,6 +866,7 @@ class LargeResponseHandler(tornado.web.StaticFileHandler):
 		self._access_validation = access_validation
 		self._path_validation = path_validation
 		self._etag_generator = etag_generator
+		self._name_generator = name_generator
 		self._mime_type_guesser = mime_type_guesser
 
 	def get(self, path, include_body=True):
@@ -882,7 +883,15 @@ class LargeResponseHandler(tornado.web.StaticFileHandler):
 
 	def set_extra_headers(self, path):
 		if self._as_attachment:
-			self.set_header("Content-Disposition", "attachment; filename=%s" % os.path.basename(path))
+			filename = None
+			if callable(self._name_generator):
+				filename = self._name_generator(path)
+			if filename is None:
+				filename = os.path.basename(path)
+			
+			filename = tornado.escape.url_escape(filename, plus=False)
+			self.set_header("Content-Disposition", "attachment; filename=\"{}\"; filename*=UTF-8''{}".format(filename,
+			                                                                                                 filename))
 
 		if not self._allow_client_caching:
 			self.set_header("Cache-Control", "max-age=0, must-revalidate, private")

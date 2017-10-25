@@ -514,6 +514,11 @@ class Server(object):
 			from octoprint.filemanager import get_mime_type
 			return get_mime_type(path)
 
+		def download_name_generator(path):
+			metadata = fileManager.get_metadata("local", path)
+			if metadata and "display" in metadata:
+				return metadata["display"]
+
 		download_handler_kwargs = dict(
 			as_attachment=True,
 			allow_client_caching=False
@@ -547,7 +552,9 @@ class Server(object):
 																								  timelapse_permission_validator,
 			                                                                                      download_handler_kwargs,
 			                                                                                      no_hidden_files_validator)),
-			(r"/downloads/files/local/(.*)", util.tornado.LargeResponseHandler, joined_dict(dict(path=self._settings.getBaseFolder("uploads")),
+			(r"/downloads/files/local/(.*)", util.tornado.LargeResponseHandler, joined_dict(dict(path=self._settings.getBaseFolder("uploads"),
+			                                                                                     as_attachment=True,
+			                                                                                     name_generator=download_name_generator),
 																							download_permission_validator,
 			                                                                                download_handler_kwargs,
 			                                                                                no_hidden_files_validator,

@@ -67,6 +67,7 @@ $(function() {
         self.dropZoneBackground = undefined;
         self.dropZoneLocalBackground = undefined;
         self.dropZoneSdBackground = undefined;
+        self.listElement = undefined;
 
         self.ignoreUpdatedFilesEvent = false;
 
@@ -90,8 +91,8 @@ $(function() {
             {
                 "name": function(a, b) {
                     // sorts ascending
-                    if (a["name"].toLocaleLowerCase() < b["name"].toLocaleLowerCase()) return -1;
-                    if (a["name"].toLocaleLowerCase() > b["name"].toLocaleLowerCase()) return 1;
+                    if (a["display"].toLowerCase() < b["display"].toLowerCase()) return -1;
+                    if (a["display"].toLowerCase() > b["display"].toLowerCase()) return 1;
                     return 0;
                 },
                 "upload": function(a, b) {
@@ -301,7 +302,7 @@ $(function() {
                 if (entryElement) {
                     // scroll to uploaded element
                     var entryOffset = entryElement.offsetTop;
-                    $(".gcode_files").slimScroll({
+                    self.listElement.slimScroll({
                         scrollTo: entryOffset + "px"
                     });
 
@@ -446,7 +447,7 @@ $(function() {
                 return;
             }
 
-            self.slicing.show(file.origin, file.path, true);
+            self.slicing.show(file.origin, file.path, true, undefined, {display: file.display});
         };
 
         self.initSdCard = function() {
@@ -813,14 +814,7 @@ $(function() {
                 }
             });
 
-            $(".gcode_files").slimScroll({
-                height: "306px",
-                size: "5px",
-                distance: "0",
-                railVisible: true,
-                alwaysVisible: true,
-                scrollBy: "102px"
-            });
+            self.listElement = $(".gcode_files");
 
             self.addFolderDialog = $("#add_folder_dialog");
             self.addFolderDialog.on("shown", function() {

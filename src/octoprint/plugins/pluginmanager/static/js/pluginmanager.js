@@ -732,7 +732,7 @@ $(function() {
                                     if (restartClicked) return;
                                     restartClicked = true;
                                     showConfirmationDialog({
-                                        message: gettext("This will restart your OctoPrint server."),
+                                        message: gettext("<b>This will restart your OctoPrint server.</b></p><p> This action may disrupt any ongoing print jobs (depending on your printer's controller and general setup that might also apply to prints run directly from your printer's internal storage)."),
                                         onproceed: function() {
                                             OctoPrint.system.executeCommand("core", "restart")
                                                 .done(function() {
@@ -1078,15 +1078,6 @@ $(function() {
             self.workingDialog = $("#settings_plugin_pluginmanager_workingdialog");
             self.workingOutput = $("#settings_plugin_pluginmanager_workingdialog_output");
             self.repositoryDialog = $("#settings_plugin_pluginmanager_repositorydialog");
-
-            $("#settings_plugin_pluginmanager_repositorydialog_list").slimScroll({
-                height: "306px",
-                size: "5px",
-                distance: "0",
-                railVisible: true,
-                alwaysVisible: true,
-                scrollBy: "102px"
-            });
         };
 
         self.onDataUpdaterPluginMessage = function(plugin, data) {

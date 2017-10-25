@@ -1868,7 +1868,7 @@ class MachineCom(object):
 		elif len(potentials) > 1:
 			programmer = stk500v2.Stk500v2()
 
-			for p in serialList():
+			for p in potentials:
 				serial_obj = None
 
 				try:

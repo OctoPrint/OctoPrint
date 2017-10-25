@@ -472,7 +472,7 @@ def _process_templates():
 		else:
 			# Finally everything else
 			return u"2:{}".format(to_unicode(d[0]))
-	
+
 	template_sorting = dict(
 		navbar=dict(add="prepend", key=None),
 		sidebar=dict(add="append", key="name"),

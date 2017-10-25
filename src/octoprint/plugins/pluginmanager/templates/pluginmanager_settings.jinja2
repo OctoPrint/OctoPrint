@@ -155,7 +155,7 @@
         </form>
 
         <div data-bind="visible: repositoryAvailable()">
-            <div id="settings_plugin_pluginmanager_repositorydialog_list" data-bind="slimScrolledForeach: repositoryplugins.paginatedItems">
+            <div id="settings_plugin_pluginmanager_repositorydialog_list" data-bind="slimScrolledForeach: {data: repositoryplugins.paginatedItems, slimscroll: {height: '306px', size: '10px', distance: 0, railVisible: true, alwaysVisible: true, scrollBy: '102px'} }">
                 <div class="entry">
                     <div class="row-fluid">
                         <div class="span9">
