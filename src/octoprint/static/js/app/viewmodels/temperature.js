@@ -68,9 +68,6 @@ $(function() {
         };
         self.changeOffsetDialog = undefined;
 
-        // TODO: find some nicer way to update plot AFTER graph becomes visible
-        self.loginStateSubscription = undefined;
-
         self.tools = ko.observableArray([]);
 
         self.hasBed = ko.observable(true);
@@ -155,25 +152,17 @@ $(function() {
             self.settingsViewModel.printerProfiles.currentProfileData().heatedBed.subscribe(self._printerProfileUpdated);
         });
 
-        // TODO: find some nicer way to update plot AFTER graph becomes visible
-        self.access.permissions.permissionsList.subscribe(function(values) {
-            if (self.loginStateSubscription !== undefined) {
-                self.loginStateSubscription.dispose();
-                self.loginStateSubscription = undefined;
-            }
-
-            self.loginStateSubscription = self.loginState.hasPermissionKo(self.access.permissions.STATUS).subscribe(function(value) {
-                var graph = $("#temp, #temp_link");
-                if (graph.length) {
-                    if (value) {
-                        graph.removeAttr("style");
-                    }
-                    else {
-                        graph.hide();
-                    }
+        self.loginState.hasPermissionKo(self.access.permissions.STATUS).subscribe(function(value) {
+            var graph = $("#temp, #temp_link");
+            if (graph.length) {
+                if (value) {
+                    graph.removeAttr("style");
                 }
-                self.updatePlot();
-            });
+                else {
+                    graph.hide();
+                }
+            }
+            self.updatePlot();
         });
 
         self.temperatures = [];
