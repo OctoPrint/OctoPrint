@@ -60,7 +60,7 @@ $(function() {
             });
 
             self.editorPasswordMismatch = ko.pureComputed(function() {
-                return self.editorPassword() != self.editorRepeatedPassword();
+                return self.editorPassword() !== self.editorRepeatedPassword();
             });
 
             self.requestData = function() {
@@ -193,7 +193,7 @@ $(function() {
                     throw OctoPrint.InvalidArgumentError("user must be set");
                 }
 
-                if (user.name == access.loginState.username()) {
+                if (user.name === access.loginState.username()) {
                     // we do not allow to delete ourselves
                     new PNotify({
                         title: gettext("Not possible"),
@@ -268,7 +268,7 @@ $(function() {
 
             // used to delete all the groups before registering new ones
             self.groupsList.subscribe(function(oldValue) {
-                if (oldValue === undefined || oldValue.length == 0)
+                if (oldValue === undefined || oldValue.length === 0)
                     return;
 
                 oldValue.forEach(function (p) {
@@ -332,7 +332,7 @@ $(function() {
 
             self.getDefaultGroups = function() {
                 return _.where(self.groupsList(), {defaultOn: true});
-            }
+            };
 
             self.showAddGroupDialog = function() {
                 self.currentGroup(undefined);
@@ -444,7 +444,7 @@ $(function() {
 
             // used to delete all the permissions before registering new ones
             self.permissionsList.subscribe(function(oldValue) {
-                if (oldValue === undefined || oldValue.length == 0)
+                if (oldValue === undefined || oldValue.length === 0)
                     return;
 
                 oldValue.forEach(function (p) {
@@ -459,7 +459,7 @@ $(function() {
 
                 newValue.forEach(function(p) {
                     var needs = [];
-                    for (key in p.needs) {
+                    for (var key in p.needs) {
                         p.needs[key].forEach(function(value) {
                             needs.push(self.need(key, value));
                         });
@@ -474,7 +474,7 @@ $(function() {
 
                         // used to delete all the permissions before registering new ones
             self.combinedPermissionsList.subscribe(function(oldValue) {
-                if (oldValue === undefined || oldValue.length == 0)
+                if (oldValue === undefined || oldValue.length === 0)
                     return;
 
                 oldValue.forEach(function (p) {
@@ -489,7 +489,7 @@ $(function() {
 
                 newValue.forEach(function(p) {
                     var needs = [];
-                    for (key in p.needs) {
+                    for (var key in p.needs) {
                         p.needs[key].forEach(function(value) {
                             needs.push(self.need(key, value));
                         });

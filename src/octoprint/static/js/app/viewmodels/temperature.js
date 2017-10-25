@@ -729,13 +729,13 @@ $(function() {
         };
 
         self.handleFocus = function(event, type, item) {
-            if (type == "target") {
+            if (type === "target") {
                 var value = item.newTarget();
                 if (value === undefined || (typeof(value) == "string" && value.trim() == "")) {
                     item.newTarget(item.target());
                 }
                 event.target.select();
-            } else if (type == "offset") {
+            } else if (type === "offset") {
                 event.target.select();
             }
         };
