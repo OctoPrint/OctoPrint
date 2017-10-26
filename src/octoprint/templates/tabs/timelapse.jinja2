@@ -16,20 +16,20 @@
     <div id="webcam_timelapse_timedsettings" data-bind="visible: intervalInputEnabled">
         <label for="webcam_timelapse_interval">{{ _('Interval between snapshots (in seconds)') }}</label>
         <div class="input-append">
-            <input type="text" class="input-mini" id="webcam_timelapse_interval" data-bind="value: timelapseTimedInterval, valueUpdate: 'afterkeydown', enable: !isPrinting() && loginState.isUser()">
+            <input type="number" class="input-mini" id="webcam_timelapse_interval" data-bind="value: timelapseTimedInterval, valueUpdate: 'afterkeydown', enable: !isPrinting() && loginState.isUser()">
             <span class="add-on">{{ _('sec') }}</span>
         </div>
     </div>
 
     <label for="webcam_timelapse_fps">{{ _('Timelapse frame rate (in frames per second)') }}</label>
     <div class="input-append">
-        <input type="text" class="input-mini" id="webcam_timelapse_fps" data-bind="value: timelapseFps, valueUpdate: 'afterkeydown', enable: !isPrinting() && loginState.isUser() && timelapseTypeSelected()">
+        <input type="number" class="input-mini" id="webcam_timelapse_fps" data-bind="value: timelapseFps, valueUpdate: 'afterkeydown', enable: !isPrinting() && loginState.isUser() && timelapseTypeSelected()">
         <span class="add-on">{{ _('fps') }}</span>
     </div>
 
     <label for="webcam_timelapse_postRoll">{{ _('Timelapse post roll (in rendered seconds)') }}</label>
     <div class="input-append">
-        <input type="text" class="input-mini" id="webcam_timelapse_postRoll" data-bind="value: timelapsePostRoll, valueUpdate: 'afterkeydown', enable: !isPrinting() && loginState.isUser() && timelapseTypeSelected()">
+        <input type="number" class="input-mini" id="webcam_timelapse_postRoll" data-bind="value: timelapsePostRoll, valueUpdate: 'afterkeydown', enable: !isPrinting() && loginState.isUser() && timelapseTypeSelected()">
         <span class="add-on">{{ _('sec') }}</span>
     </div>
     <div id="webcam_timelapse_capturePostRoll" data-bind="visible: timelapseType() == 'timed'">
@@ -42,10 +42,19 @@
     <div id="webcam_timelapse_retractionsettings" data-bind="visible: timelapseType() == 'zchange'">
         <label for="webcam_timelapse_retractionZHop">{{ _('Retraction Z-Hop (in mm)') }}</label>
         <div class="input-append">
-            <input type="text" class="input-mini" id="webcam_timelapse_retractionZHop" data-bind="value: timelapseRetractionZHop, valueUpdate: 'afterkeydown', enable: !isPrinting() && loginState.isUser()">
+            <input type="number" class="input-mini" id="webcam_timelapse_retractionZHop" data-bind="value: timelapseRetractionZHop, valueUpdate: 'afterkeydown', enable: !isPrinting() && loginState.isUser()">
             <span class="add-on">{{ _('mm') }}</span>
         </div>
         <span class="help-block">{{ _('Enter the retraction z-hop used in the firmware or the gcode file to trigger snapshots for the timelapse only if a real layer change happens. For this to work properly your retraction z-hop has to be different from your layerheight!') }}</span>
+    </div>
+
+    <div id="webcam_timelapse_mindelay" data-bind="visible: timelapseType() == 'zchange'">
+        <label for="webcam_timelapse_minDelay">{{ _('Minimum delay between snapshots (in sec)') }}</label>
+        <div class="input-append">
+            <input type="number" class="input-mini" id="webcam_timelapse_minDelay" data-bind="value: timelapseMinDelay, valueUpdate: 'afterkeydown', enable: !isPrinting() && loginState.isUser()">
+            <span class="add-on">{{ _('sec') }}</span>
+        </div>
+        <span class="help-block">{{ _('OctoPrint will not allow a snapshot to be taken based on a z-change unless the last one was more than this delay ago. This is to prevent issues if you accidentally print a vase mode type file while this timelapse mode is active.') }}</span>
     </div>
 
     <div data-bind="visible: loginState.isAdmin">

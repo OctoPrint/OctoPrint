@@ -47,6 +47,7 @@
   * [Flask-Principal](http://packages.python.org/Flask-Principal/): MIT
   * [future](https://python-future.org/): MIT
   * [futures](https://github.com/agronholm/pythonfutures): Python
+  * [monotonic](https://github.com/atdt/monotonic): Apache License 2.0
   * [netaddr](https://github.com/drkjam/netaddr/): BSD
   * [netifaces](https://bitbucket.org/al45tair/netifaces): MIT
   * [pkginfo](http://pypi.python.org/pypi/pkginfo/): Python

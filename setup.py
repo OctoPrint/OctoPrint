@@ -51,7 +51,8 @@ INSTALL_REQUIRES = [
 	"python-dateutil>=2.6,<2.7",
 	"wrapt>=1.10.10,<1.11",
 	"futures>=3.1.1,<3.2",
-	"emoji>=0.4.5,<0.5"
+	"emoji>=0.4.5,<0.5",
+	"monotonic>=1.3,<1.4"
 ]
 
 if sys.platform == "darwin":

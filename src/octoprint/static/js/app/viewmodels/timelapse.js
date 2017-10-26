@@ -10,6 +10,7 @@ $(function() {
         self.defaultPostRoll = 0;
         self.defaultInterval = 10;
         self.defaultRetractionZHop = 0;
+        self.defaultMinDelay = 5.0;
         self.defaultCapturePostRoll = true;
 
         self.timelapseType = ko.observable(undefined);
@@ -17,6 +18,7 @@ $(function() {
         self.timelapsePostRoll = ko.observable(self.defaultPostRoll);
         self.timelapseFps = ko.observable(self.defaultFps);
         self.timelapseRetractionZHop = ko.observable(self.defaultRetractionZHop);
+        self.timelapseMinDelay = ko.observable(self.defaultMinDelay);
         self.timelapseCapturePostRoll = ko.observable(self.defaultCapturePostRoll);
 
         self.persist = ko.observable(false);
@@ -42,10 +44,10 @@ $(function() {
         });
 
         self.timelapseTypeSelected = ko.pureComputed(function() {
-            return ("off" != self.timelapseType());
+            return ("off" !== self.timelapseType());
         });
         self.intervalInputEnabled = ko.pureComputed(function() {
-            return ("timed" == self.timelapseType());
+            return ("timed" === self.timelapseType());
         });
         self.saveButtonEnabled = ko.pureComputed(function() {
             return self.isDirty() && !self.isPrinting() && self.loginState.isUser();
@@ -64,6 +66,9 @@ $(function() {
             self.isDirty(true);
         });
         self.timelapseRetractionZHop.subscribe(function(newValue) {
+            self.isDirty(true);
+        });
+        self.timelapseMinDelay.subscribe(function() {
             self.isDirty(true);
         });
         self.timelapseCapturePostRoll.subscribe(function() {
@@ -155,31 +160,37 @@ $(function() {
             // timelapse config
             self.timelapseType(config.type);
 
-            if (config.type == "timed" && config.interval != undefined && config.interval > 0) {
+            if (config.type === "timed" && config.interval !== undefined && config.interval > 0) {
                 self.timelapseTimedInterval(config.interval);
             } else {
                 self.timelapseTimedInterval(self.defaultInterval);
             }
 
-            if (config.type == "timed" && config.capturePostRoll != undefined){
+            if (config.type === "timed" && config.capturePostRoll !== undefined){
                 self.timelapseCapturePostRoll(config.capturePostRoll);
             } else {
                 self.timelapseCapturePostRoll(self.defaultCapturePostRoll);
             }
 
-            if (config.type == "zchange" && config.retractionZHop != undefined && config.retractionZHop > 0) {
+            if (config.type === "zchange" && config.retractionZHop !== undefined && config.retractionZHop > 0) {
                 self.timelapseRetractionZHop(config.retractionZHop);
             } else {
                 self.timelapseRetractionZHop(self.defaultRetractionZHop);
             }
 
-            if (config.postRoll != undefined && config.postRoll >= 0) {
+            if (config.type === "zchange" && config.minDelay !== undefined && config.minDelay >= 0) {
+                self.timelapseMinDelay(config.minDelay);
+            } else {
+                self.timelapseMinDelay(self.defaultMinDelay);
+            }
+
+            if (config.postRoll !== undefined && config.postRoll >= 0) {
                 self.timelapsePostRoll(config.postRoll);
             } else {
                 self.timelapsePostRoll(self.defaultPostRoll);
             }
 
-            if (config.fps != undefined && config.fps > 0) {
+            if (config.fps !== undefined && config.fps > 0) {
                 self.timelapseFps(config.fps);
             } else {
                 self.timelapseFps(self.defaultFps);
@@ -363,13 +374,14 @@ $(function() {
                 "save": self.persist()
             };
 
-            if (self.timelapseType() == "timed") {
+            if (self.timelapseType() === "timed") {
                 payload["interval"] = self.timelapseTimedInterval();
                 payload["capturePostRoll"] = self.timelapseCapturePostRoll();
             }
 
-            if (self.timelapseType() == "zchange") {
+            if (self.timelapseType() === "zchange") {
                 payload["retractionZHop"] = self.timelapseRetractionZHop();
+                payload["minDelay"] = self.timelapseMinDelay();
             }
 
             OctoPrint.timelapse.saveConfig(payload)
@@ -384,7 +396,7 @@ $(function() {
             _.extend(options, {
                 callbacks: {
                     before_close: function(notice) {
-                        if (self.timelapsePopup == notice) {
+                        if (self.timelapsePopup === notice) {
                             self.timelapsePopup = undefined;
                         }
                     }
@@ -465,7 +477,7 @@ $(function() {
         self.onEventMovieFailed = function(payload) {
             var title, html;
 
-            if (payload.reason == "no_frames") {
+            if (payload.reason === "no_frames") {
                 title = gettext("Cannot render timelapse");
                 html = "<p>" + _.sprintf(gettext("Rendering of timelapse %(movie_prefix)s is not possible since no frames were captured. Is the snapshot URL configured correctly?"), payload) + "</p>";
             } else if (payload.reason = "returncode") {
@@ -492,7 +504,7 @@ $(function() {
                 type: "success",
                 callbacks: {
                     before_close: function(notice) {
-                        if (self.timelapsePopup == notice) {
+                        if (self.timelapsePopup === notice) {
                             self.timelapsePopup = undefined;
                         }
                     }
