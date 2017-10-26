@@ -285,8 +285,12 @@ The following settings are only relevant to you if you want to do OctoPrint deve
        # to false.
        okWithLinenumber: false
 
-       # Number of extruders to simulate on the virtual printer.
+       # Number of extruders to simulate on the virtual printer. Map from tool id (0, 1, ...) to temperature
+       # in °C
        numExtruders: 1
+
+       # Allows pinning certain hotends to a fixed temperature
+       pinnedExtruders: null
 
        # Whether to include the current tool temperature in the M105 output as separate T segment or not.
        #
@@ -303,13 +307,6 @@ The following settings are only relevant to you if you want to do OctoPrint deve
        # False: > M23 filename.gcode
        #        > File opened
        includeFilenameInOpened: true
-
-       # The maximum movement speeds of the simulated printer's axes, in mm/s
-       movementSpeed:
-         x: 6000
-         y: 6000
-         z: 200
-         e: 300
 
        # Whether the simulated printer should also simulate a heated bed or not
        hasBed: true
@@ -330,6 +327,18 @@ The following settings are only relevant to you if you want to do OctoPrint deve
        # If enabled, uses repetier style resends, sending multiple resends for the same line
        # to make sure nothing gets lost on the line
        repetierStyleResends: false
+
+       # If enabled, ok will be sent before a commands output, otherwise after or inline (M105)
+       #
+       # True:  > M20
+       #        < ok
+       #        < Begin file list
+       #        < End file list
+       # False: > M20
+       #        < Begin file list
+       #        < End file list
+       #        < ok
+       okBeforeCommandOutput: false
 
        # If enabled, reports the first extruder in M105 responses as T instead of T0
        #
@@ -358,7 +367,8 @@ The following settings are only relevant to you if you want to do OctoPrint deve
        # side will block
        rxBuffer: 64
 
-       # Size of simulated command buffer
+       # Size of simulated command buffer, number of commands. If full, buffered commands will block
+       # until a slot frees up
        commandBuffer: 4
 
        # Whether to support the M112 command with simulated kill
@@ -369,6 +379,58 @@ The following settings are only relevant to you if you want to do OctoPrint deve
 
        # Whether to simulate broken M29 behaviour (missing ok after response)
        brokenM29: true
+
+       # Whether F is supported as individual command
+       supportF: false
+
+       # Firmware name to report (useful for testing firmware detection)
+       firmwareName: Virtual Marlin 1.0
+
+       # Simulate a shared nozzle
+       sharedNozzle: false
+
+       # Send "busy" messages if busy processing something
+       sendBusy: false
+
+       # Simulate a reset on connect
+       simulateReset: true
+
+       # Lines to send on simulated reset
+       resetLines:
+       - start
+       - Marlin: Virtual Marlin!
+       - "\x80"
+       - "SD card ok"
+
+       # Initial set of prepared oks to use instead of regular ok (e.g. to simulate
+       # mis-sent oks). Can also be filled at runtime via the debug command prepare_ok
+       preparedOks: []
+
+       # Format string for ok response.
+       #
+       # Placeholders:
+       # - lastN: last acknowledged line number
+       # - buffer: empty slots in internal command buffer
+       #
+       # Example format string for "extended" ok format:
+       #   ok N{lastN} P{buffer}
+       okFormatString: ok
+
+       # Format string for M115 output.
+       #
+       # Placeholders:
+       # - firmare_name: The firmware name as defined in firmwareName
+       m115FormatString: "FIRMWARE_NAME: {firmware_name} PROTOCOL_VERSION:1.0"
+
+       # Whether to include capability report in M115 output
+       m115ReportCapabilites: false
+
+       # Capabilities to report if capability report is enabled
+       capabilities:
+         AUTOREPORT_TEMP: true
+
+       # Simulated ambient temperature in °C
+       ambientTemperature: 21.3
 
 .. _sec-configuration-config_yaml-estimation:
 
