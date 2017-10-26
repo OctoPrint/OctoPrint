@@ -210,6 +210,9 @@ $(function() {
                 if (lastData.hasOwnProperty("tool" + i)) {
                     tools[i]["actual"](lastData["tool" + i].actual);
                     tools[i]["target"](lastData["tool" + i].target);
+                } else {
+                    tools[i]["actual"](0);
+                    tools[i]["target"](0);
                 }
             }
 
