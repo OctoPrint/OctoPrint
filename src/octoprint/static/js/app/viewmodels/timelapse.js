@@ -21,6 +21,8 @@ $(function() {
         self.timelapseMinDelay = ko.observable(self.defaultMinDelay);
         self.timelapseCapturePostRoll = ko.observable(self.defaultCapturePostRoll);
 
+        self.serverConfig = ko.observable();
+
         self.persist = ko.observable(false);
         self.isDirty = ko.observable(false);
 
@@ -51,6 +53,9 @@ $(function() {
         });
         self.saveButtonEnabled = ko.pureComputed(function() {
             return self.isDirty() && !self.isPrinting() && self.loginState.isUser();
+        });
+        self.resetButtonEnabled = ko.pureComputed(function() {
+            return self.saveButtonEnabled() && self.serverConfig() !== undefined;
         });
 
         self.timelapseType.subscribe(function() {
@@ -158,6 +163,11 @@ $(function() {
             }
 
             // timelapse config
+            self.fromConfig(response.config);
+            self.serverConfig(response.config);
+        };
+
+        self.fromConfig = function(config) {
             self.timelapseType(config.type);
 
             if (config.type === "timed" && config.interval !== undefined && config.interval > 0) {
@@ -386,6 +396,11 @@ $(function() {
 
             OctoPrint.timelapse.saveConfig(payload)
                 .done(self.fromResponse);
+        };
+
+        self.reset = function() {
+            if (self.serverConfig() === undefined) return;
+            self.fromConfig(self.serverConfig());
         };
 
         self.displayTimelapsePopup = function(options) {
