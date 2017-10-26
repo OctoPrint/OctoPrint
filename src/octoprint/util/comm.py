@@ -1386,7 +1386,7 @@ class MachineCom(object):
 						# reliable firmware name (NAME + VER) out of the Malyan M115 response.
 						name = data.get("NAME")
 						ver = data.get("VER")
-						if "malyan" in name.lower() and ver:
+						if name and "malyan" in name.lower() and ver:
 							firmware_name = name.strip() + " " + ver.strip()
 
 					if not self._firmware_info_received and firmware_name:
