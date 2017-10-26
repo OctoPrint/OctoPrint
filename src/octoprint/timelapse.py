@@ -301,11 +301,11 @@ def configure_timelapse(config=None, persist=False):
 
 	elif "zchange" == type:
 		retractionZHop = 0
-		if "options" in config and "retractionZHop" in config["options"] and config["options"]["retractionZHop"] > 0:
+		if "options" in config and "retractionZHop" in config["options"] and config["options"]["retractionZHop"] >= 0:
 			retractionZHop = config["options"]["retractionZHop"]
 
 		minDelay = 5
-		if "options" in config and "minDelay" in config["options"] and config["options"]["minDelay"] >= 0:
+		if "options" in config and "minDelay" in config["options"] and config["options"]["minDelay"] > 0:
 			minDelay = config["options"]["minDelay"]
 
 		current = ZTimelapse(post_roll=postRoll, retraction_zhop=retractionZHop, min_delay=minDelay, fps=fps)

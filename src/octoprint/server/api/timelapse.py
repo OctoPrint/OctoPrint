@@ -241,7 +241,7 @@ def setTimelapseConfig():
 			except ValueError:
 				return make_response("Invalid value for minimum delay: %r" % data["minDelay"], 400)
 			else:
-				if minDelay >= 0:
+				if minDelay > 0:
 					config["options"]["minDelay"] = minDelay
 				else:
 					return make_response("Invalid value for minimum delay: %f" % minDelay, 400)
