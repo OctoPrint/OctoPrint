@@ -216,7 +216,7 @@ def init_logging(settings, use_logging_file=True, logging_file=None, default_con
 			},
 			"loggers": {
 				"SERIAL": {
-					"level": "CRITICAL",
+					"level": "INFO",
 					"handlers": ["serialFile"],
 					"propagate": False
 				},
