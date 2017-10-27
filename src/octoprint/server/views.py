@@ -526,7 +526,7 @@ def _process_templates():
 	# navbar
 
 	templates["navbar"]["entries"] = dict(
-		settings=dict(template="navbar/settings.jinja2", _div="navbar_settings", style=["display: none;"], data_bind="visible: loginState.hasPermissionKo(access.permissions.SETTINGS)"),
+		settings=dict(template="navbar/settings.jinja2", _div="navbar_settings", styles=["display: none;"], data_bind="visible: loginState.hasPermissionKo(access.permissions.SETTINGS)"),
 		systemmenu=dict(template="navbar/systemmenu.jinja2", _div="navbar_systemmenu", classes=["dropdown"], styles=["display: none;"], data_bind="visible: loginState.hasPermissionKo(access.permissions.SYSTEM)", custom_bindings=False),
 		login=dict(template="navbar/login.jinja2", _div="navbar_login", classes=["dropdown"], custom_bindings=False),
 	)

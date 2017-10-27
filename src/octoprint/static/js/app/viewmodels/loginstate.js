@@ -59,7 +59,7 @@ $(function() {
                     self.updateCurrentUserData(response);
                     if (!currentLoggedIn) {
                         callViewModels(self.allViewModels, "onUserLoggedIn", [response]);
-                        log.info("User " + response.name + " logged in")
+                        log.info("User " + response.name + " logged in");
                     }
                 } else {
                     self.loggedIn(false);
