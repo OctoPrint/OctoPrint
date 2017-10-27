@@ -296,19 +296,25 @@ $(function() {
             var plotInfo = self._getPlotInfo();
             if (plotInfo === undefined) return;
 
-            // update the data
-            self.plot.setData(plotInfo.data);
-            self.plot.getAxes().yaxis.max = Math.max(Math.max.apply(null, plotInfo.max) * 1.1, 310);
-            self.updateLegend(self._replaceLegendLabel);
-            self.plot.draw();
+            var newMax = Math.max(Math.max.apply(null, plotInfo.max) * 1.1, 310);
+            if (newMax !== self.plot.getAxes().yaxis.max) {
+                // re-init (because flot apparently has NO way to change the max value of an axes :/)
+                self._initializePlot(true, plotInfo);
+            } else {
+                // update the data
+                self.plot.setData(plotInfo.data);
+                self.plot.setupGrid();
+                self.updateLegend(self._replaceLegendLabel);
+                self.plot.draw();
+            }
         };
 
-        self._initializePlot = function(force) {
+        self._initializePlot = function(force, plotInfo) {
             var graph = $("#temperature-graph");
             if (!graph.length) return; // no graph
             if (self.plot && !force) return; // already initialized
 
-            var plotInfo = self._getPlotInfo();
+            plotInfo = plotInfo || self._getPlotInfo();
             if (plotInfo === undefined) return;
 
             // we don't have a plot yet, we need to set stuff up
