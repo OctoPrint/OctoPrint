@@ -2605,7 +2605,7 @@ class MachineCom(object):
 		if not match and support_r:
 			match = regexes_parameters["floatR"].search(cmd)
 
-		if match:
+		if match and self.last_temperature.tools.get(toolNum) is not None:
 			try:
 				target = float(match.group("value"))
 				self.last_temperature.set_tool(toolNum, target=target)
