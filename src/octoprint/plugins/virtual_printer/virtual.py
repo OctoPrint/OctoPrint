@@ -55,8 +55,8 @@ class VirtualPrinter(object):
 		self.buffered = queue.Queue(maxsize=settings().getInt(["devel", "virtualPrinter", "commandBuffer"]))
 
 		if settings().getBoolean(["devel", "virtualPrinter", "simulateReset"]):
-			for item in ['start\n', 'Marlin: Virtual Marlin!\n', '\x80\n', 'SD card ok\n']:
-				self._send(item)
+			for item in settings().get(["devel", "virtualPrinter", "resetLines"]):
+				self._send(item + "\n")
 
 		self._prepared_oks = []
 		prepared = settings().get(["devel", "virtualPrinter", "preparedOks"])

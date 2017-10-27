@@ -159,9 +159,12 @@ def load_user(id):
 
 
 class Server(object):
-	def __init__(self, settings=None, plugin_manager=None, host="0.0.0.0", port=5000, debug=False, safe_mode=False, allow_root=False, octoprint_daemon=None):
+	def __init__(self, settings=None, plugin_manager=None, connectivity_checker=None, event_manager=None,
+	             host="0.0.0.0", port=5000, debug=False, safe_mode=False, allow_root=False, octoprint_daemon=None):
 		self._settings = settings
 		self._plugin_manager = plugin_manager
+		self._connectivity_checker = connectivity_checker
+		self._event_manager = event_manager
 		self._host = host
 		self._port = port
 		self._debug = debug
@@ -249,7 +252,7 @@ class Server(object):
 		pluginManager.reload_plugins(startup=True, initialize_implementations=False)
 
 		printerProfileManager = PrinterProfileManager()
-		eventManager = events.eventManager()
+		eventManager = self._event_manager
 		analysisQueue = octoprint.filemanager.analysis.AnalysisQueue()
 		slicingManager = octoprint.slicing.SlicingManager(self._settings.getBaseFolder("slicingProfiles"), printerProfileManager)
 
@@ -277,11 +280,7 @@ class Server(object):
 		def on_connectivity_change(old_value, new_value):
 			eventManager.fire(events.Events.CONNECTIVITY_CHANGED, payload=dict(old=old_value, new=new_value))
 
-		connectivityChecker = octoprint.util.ConnectivityChecker(connectivityInterval,
-		                                                         connectivityHost,
-		                                                         port=connectivityPort,
-		                                                         enabled=connectivityEnabled,
-		                                                         on_change=on_connectivity_change)
+		connectivityChecker = self._connectivity_checker
 
 		def on_settings_update(*args, **kwargs):
 			# make sure our connectivity checker runs with the latest settings

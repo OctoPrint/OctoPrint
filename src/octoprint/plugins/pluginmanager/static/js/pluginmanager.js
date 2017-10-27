@@ -223,7 +223,9 @@ $(function() {
 
         self.enableToggle = function(data) {
             var command = self._getToggleCommand(data);
-            return self.enableManagement() && (command == "disable" || !data.safe_mode_victim || data.safe_mode_enabled) && data.key != 'pluginmanager';
+            var not_safemode_victim = !data.safe_mode_victim || data.safe_mode_enabled;
+            var not_blacklisted = !data.blacklisted;
+            return self.enableManagement() && (command == "disable" || (not_safemode_victim && not_blacklisted)) && data.key != 'pluginmanager';
         };
 
         self.enableUninstall = function(data) {
@@ -700,7 +702,7 @@ $(function() {
             return self.isCompatible(data) ? (self.installed(data) ? gettext("Reinstall") : gettext("Install")) : (data.disabled ? gettext("Disabled") : gettext("Incompatible"));
         };
 
-        self._displayNotification = function(response, titleSuccess, textSuccess, textRestart, textReload, textReconnect, titleError, textError) {
+        self._displayNotification = function(response, action, titleSuccess, textSuccess, textRestart, textReload, textReconnect, titleError, textError) {
             var notification;
 
             var beforeClose = function(notification) {
@@ -708,7 +710,17 @@ $(function() {
             };
 
             if (response.result) {
-                if (response.needs_restart) {
+                if (action == "install" && response.plugin && response.plugin.blacklisted) {
+                    notification = new PNotify({
+                        title: titleSuccess,
+                        text: textSuccess,
+                        type: "warning",
+                        callbacks: {
+                            before_close: beforeClose
+                        },
+                        hide: false
+                    })
+                } else if (response.needs_restart) {
                     var options = {
                         title: titleSuccess,
                         text: textRestart,
@@ -860,7 +872,9 @@ $(function() {
         self.toggleButtonTitle = function(data) {
             var command = self._getToggleCommand(data);
             if (command == "enable") {
-                if (data.safe_mode_victim && !data.safe_mode_enabled) {
+                if (data.blacklisted) {
+                    return gettext("Blacklisted");
+                } else if (data.safe_mode_victim && !data.safe_mode_enabled) {
                     return gettext("Disabled due to active safe mode");
                 } else {
                     return gettext("Enable Plugin");
@@ -1122,6 +1136,17 @@ $(function() {
                         textRestart = textSuccess;
                         textReload = textSuccess;
                         textReconnect = textSuccess;
+                    } else if (data.plugin && data.plugin.blacklisted) {
+                        if (data.was_reinstalled) {
+                            titleSuccess = _.sprintf(gettext("Plugin \"%(name)s\" reinstalled"), {name: name});
+                            textSuccess = gettext("The plugin was reinstalled successfully, however it is blacklisted and therefore won't be loaded.");
+                        } else {
+                            titleSuccess = _.sprintf(gettext("Plugin \"%(name)s\" installed"), {name: name});
+                            textSuccess = gettext("The plugin was installed successfully, however it is blacklisted and therefore won't be loaded.");
+                        }
+                        textRestart = textSuccess;
+                        textReload = textSuccess;
+                        textReconnect = textSuccess;
                     } else if (data.was_reinstalled) {
                         titleSuccess = _.sprintf(gettext("Plugin \"%(name)s\" reinstalled"), {name: name});
                         textSuccess = gettext("The plugin was reinstalled successfully");
@@ -1234,7 +1259,7 @@ $(function() {
                     return;
                 }
 
-                self._displayNotification(data, titleSuccess, textSuccess, textRestart, textReload, textReconnect, titleError, textError);
+                self._displayNotification(data, action, titleSuccess, textSuccess, textRestart, textReload, textReconnect, titleError, textError);
                 self.requestData();
             }
         };
