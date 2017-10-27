@@ -22,6 +22,7 @@ import octoprint.util as util
 
 from octoprint.settings import settings
 from octoprint.events import eventManager, Events
+from octoprint.util import monotonic_time
 
 import sarge
 import collections
@@ -301,10 +302,14 @@ def configure_timelapse(config=None, persist=False):
 
 	elif "zchange" == type:
 		retractionZHop = 0
-		if "options" in config and "retractionZHop" in config["options"] and config["options"]["retractionZHop"] > 0:
+		if "options" in config and "retractionZHop" in config["options"] and config["options"]["retractionZHop"] >= 0:
 			retractionZHop = config["options"]["retractionZHop"]
 
-		current = ZTimelapse(post_roll=postRoll, retraction_zhop=retractionZHop, fps=fps)
+		minDelay = 5
+		if "options" in config and "minDelay" in config["options"] and config["options"]["minDelay"] > 0:
+			minDelay = config["options"]["minDelay"]
+
+		current = ZTimelapse(post_roll=postRoll, retraction_zhop=retractionZHop, min_delay=minDelay, fps=fps)
 
 	elif "timed" == type:
 		interval = 10
@@ -632,14 +637,24 @@ class Timelapse(object):
 
 
 class ZTimelapse(Timelapse):
-	def __init__(self, post_roll=0, retraction_zhop=0, fps=25):
+	def __init__(self, retraction_zhop=0, min_delay=5.0, post_roll=0, fps=25):
 		Timelapse.__init__(self, post_roll=post_roll, fps=fps)
+		
+		if min_delay < 0:
+			min_delay = 0
+		
 		self._retraction_zhop = retraction_zhop
+		self._min_delay = min_delay
+		self._last_snapshot = None
 		self._logger.debug("ZTimelapse initialized")
 
 	@property
 	def retraction_zhop(self):
 		return self._retraction_zhop
+	
+	@property
+	def min_delay(self):
+		return self._min_delay
 
 	def event_subscriptions(self):
 		return [
@@ -661,18 +676,25 @@ class ZTimelapse(Timelapse):
 		Timelapse.process_post_roll(self)
 
 	def _on_z_change(self, event, payload):
+		# check if height difference equals z-hop, if so don't take a picture
 		if self._retraction_zhop != 0 and payload["old"] is not None and payload["new"] is not None:
-			# check if height difference equals z-hop, if so don't take a picture
 			diff = round(abs(payload["new"] - payload["old"]), 3)
 			zhop = round(self._retraction_zhop, 3)
 			if diff == zhop:
 				return
 
+		# check if last picture has been less than min_delay ago, if so don't take a picture (anti vase mode...)
+		now = monotonic_time()
+		if self._min_delay and self._last_snapshot and self._last_snapshot + self._min_delay > now:
+			self._logger.debug("Rate limited z-change, not taking a snapshot")
+			return
+
 		self.capture_image()
+		self._last_snapshot = now
 
 
 class TimedTimelapse(Timelapse):
-	def __init__(self, post_roll=0, interval=1, fps=25, capture_post_roll=True):
+	def __init__(self, interval=1, capture_post_roll=True, post_roll=0, fps=25):
 		Timelapse.__init__(self, post_roll=post_roll, fps=fps)
 		self._interval = interval
 		if self._interval < 1:

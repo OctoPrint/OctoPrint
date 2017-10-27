@@ -208,6 +208,9 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 		from octoprint.logging.handlers import SerialLogHandler
 		SerialLogHandler.on_open_connection()
+		if not logging.getLogger("SERIAL").isEnabledFor(logging.DEBUG):
+			# if serial.log is not enabled, log a line to explain that to reduce "serial.log is empty" in tickets...
+			logging.getLogger("SERIAL").info("serial.log is currently not enabled, you can enable it via Settings > Serial Connection > Log communication to serial.log")
 
 		self._comm = comm.MachineCom(port, baudrate, callbackObject=self, printerProfileManager=self._printerProfileManager)
 

@@ -218,6 +218,10 @@ $(function() {
         self.server_onlineCheck_host = ko.observable();
         self.server_onlineCheck_port = ko.observable();
 
+        self.server_pluginBlacklist_enabled = ko.observable();
+        self.server_pluginBlacklist_url = ko.observable();
+        self.server_pluginBlacklist_ttl = ko.observable();
+
         self.settings = undefined;
         self.lastReceivedSettings = undefined;
 

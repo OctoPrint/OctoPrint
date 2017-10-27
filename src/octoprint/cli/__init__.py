@@ -106,9 +106,9 @@ def standard_options(hidden=False):
 		factory("--config", "-c", "configfile", type=click.Path(), callback=set_ctx_obj_option, is_eager=True, expose_value=False,
 		        help="Specify the config file to use."),
 		factory("--verbose", "-v", "verbosity", count=True, callback=set_ctx_obj_option, is_eager=True, expose_value=False,
-		        help="Increase logging verbosity"),
+		        help="Increase logging verbosity."),
 		factory("--safe", "safe_mode", is_flag=True, callback=set_ctx_obj_option, is_eager=True, expose_value=False,
-		        help="Enable safe mode; disables all third party plugins")
+		        help="Enable safe mode; disables all third party plugins.")
 	]
 
 	return bulk_options(options)
@@ -123,6 +123,7 @@ legacy_options = bulk_options([
 	hidden_option("--daemon", type=click.Choice(["start", "stop", "restart"]), callback=set_ctx_obj_option),
 	hidden_option("--pid", type=click.Path(), default="/tmp/octoprint.pid", callback=set_ctx_obj_option),
 	hidden_option("--iknowwhatimdoing", "allow_root", is_flag=True, callback=set_ctx_obj_option),
+	hidden_option("--ignore-blacklist", "ignore_blacklist", is_flag=True, callback=set_ctx_obj_option)
 ])
 """Legacy options available directly on the "octoprint" command in earlier versions.
    Kept available for reasons of backwards compatibility, but hidden from the

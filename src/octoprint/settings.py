@@ -154,6 +154,11 @@ default_settings = {
 			"host": "8.8.8.8",
 			"port": 53
 		},
+		"pluginBlacklist": {
+			"enabled": None,
+			"url": "http://plugins.octoprint.org/blacklist.json",
+			"ttl": 15 * 60 # 15 min
+		},
 		"diskspace": {
 			"warning": 500 * 1024 * 1024, # 500 MB
 			"critical": 200 * 1024 * 1024, # 200 MB
@@ -360,12 +365,10 @@ default_settings = {
 			"smoothieTemperatureReporting": False,
 			"extendedSdFileList": False,
 			"throttle": 0.01,
-			"waitOnLongMoves": False,
-			"rxBuffer": 64,
-			"txBuffer": 40,
-			"commandBuffer": 4,
 			"sendWait": True,
 			"waitInterval": 1.0,
+			"rxBuffer": 64,
+			"commandBuffer": 4,
 			"supportM112": True,
 			"echoOnM117": True,
 			"brokenM29": True,
@@ -374,6 +377,7 @@ default_settings = {
 			"sharedNozzle": False,
 			"sendBusy": False,
 			"simulateReset": True,
+			"resetLines": ['start', 'Marlin: Virtual Marlin!', '\x80', 'SD card ok'],
 			"preparedOks": [],
 			"okFormatString": "ok",
 			"m115FormatString": "FIRMWARE_NAME: {firmware_name} PROTOCOL_VERSION:1.0",

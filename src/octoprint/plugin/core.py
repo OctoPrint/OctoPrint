@@ -36,6 +36,8 @@ import fnmatch
 import pkg_resources
 import pkginfo
 
+from past.builtins import basestring
+
 try:
 	from os import scandir
 except ImportError:
@@ -57,7 +59,7 @@ class PluginInfo(object):
 	Arguments:
 	    key (str): Identifier of the plugin
 	    location (str): Installation folder of the plugin
-	    instance (module): Plugin module instance
+	    instance (module): Plugin module instance - this may be ``None`` if the plugin has been blacklisted!
 	    name (str): Human readable name of the plugin
 	    version (str): Version of the plugin
 	    description (str): Description of the plugin
@@ -140,6 +142,7 @@ class PluginInfo(object):
 		self.instance = instance
 		self.origin = None
 		self.enabled = True
+		self.blacklisted = False
 		self.bundled = False
 		self.loaded = False
 		self.managable = True
@@ -201,7 +204,7 @@ class PluginInfo(object):
 
 	def long_str(self, show_bundled=False, bundled_strs=(" [B]", ""),
 	             show_location=False, location_str=" - {location}",
-	             show_enabled=False, enabled_strs=("* ", "  ")):
+	             show_enabled=False, enabled_strs=("* ", "  ", "X ")):
 		"""
 		Long string representation of the plugin's information. Will return a string of the format ``<enabled><str(self)><bundled><location>``.
 
@@ -209,8 +212,8 @@ class PluginInfo(object):
 		The will be filled from ``enabled_str``, ``bundled_str`` and ``location_str`` as follows:
 
 		``enabled_str``
-		    a 2-tuple, the first entry being the string to insert when the plugin is enabled, the second
-		    entry the string to insert when it is not.
+		    a 3-tuple, the first entry being the string to insert when the plugin is enabled, the second
+		    entry the string to insert when it is not, the third entry the string when it is blacklisted.
 		``bundled_str``
 		    a 2-tuple, the first entry being the string to insert when the plugin is bundled, the second
 		    entry the string to insert when it is not.
@@ -230,7 +233,7 @@ class PluginInfo(object):
 		    str: The long string representation of the plugin as described above
 		"""
 		if show_enabled:
-			ret = enabled_strs[0] if self.enabled else enabled_strs[1]
+			ret = enabled_strs[2] if self.blacklisted else (enabled_strs[0] if self.enabled else enabled_strs[1])
 		else:
 			ret = ""
 
@@ -445,7 +448,7 @@ class PluginInfo(object):
 		return self._get_instance_attribute(self.__class__.attr_disable, default=lambda: True)
 
 	def _get_instance_attribute(self, attr, default=None, defaults=None):
-		if not hasattr(self.instance, attr):
+		if self.instance is None or not hasattr(self.instance, attr):
 			if defaults is not None:
 				for value in defaults:
 					if value is not None:
@@ -463,8 +466,8 @@ class PluginManager(object):
 	"""
 
 	def __init__(self, plugin_folders, plugin_types, plugin_entry_points, logging_prefix=None,
-	             plugin_disabled_list=None, plugin_restart_needing_hooks=None, plugin_obsolete_hooks=None,
-	             plugin_validators=None):
+	             plugin_disabled_list=None, plugin_blacklist=None, plugin_restart_needing_hooks=None,
+	             plugin_obsolete_hooks=None, plugin_validators=None):
 		self.logger = logging.getLogger(__name__)
 
 		if logging_prefix is None:
@@ -477,11 +480,14 @@ class PluginManager(object):
 			plugin_entry_points = []
 		if plugin_disabled_list is None:
 			plugin_disabled_list = []
+		if plugin_blacklist is None:
+			plugin_blacklist = []
 
 		self.plugin_folders = plugin_folders
 		self.plugin_types = plugin_types
 		self.plugin_entry_points = plugin_entry_points
 		self.plugin_disabled_list = plugin_disabled_list
+		self.plugin_blacklist = plugin_blacklist
 		self.plugin_restart_needing_hooks = plugin_restart_needing_hooks
 		self.plugin_obsolete_hooks = plugin_obsolete_hooks
 		self.plugin_validators = plugin_validators
@@ -543,7 +549,7 @@ class PluginManager(object):
 		if existing is None:
 			existing = dict(self.plugins)
 
-		result = dict()
+		result = OrderedDict()
 		if self.plugin_folders:
 			result.update(self._find_plugins_from_folders(self.plugin_folders, existing, ignored_uninstalled=ignore_uninstalled))
 		if self.plugin_entry_points:
@@ -552,7 +558,7 @@ class PluginManager(object):
 		return result
 
 	def _find_plugins_from_folders(self, folders, existing, ignored_uninstalled=True):
-		result = dict()
+		result = OrderedDict()
 
 		for folder in folders:
 			flagged_readonly = False
@@ -596,7 +602,7 @@ class PluginManager(object):
 		return result
 
 	def _find_plugins_from_entry_points(self, groups, existing, ignore_uninstalled=True):
-		result = dict()
+		result = OrderedDict()
 
 		# let's make sure we have a current working set ...
 		working_set = pkg_resources.WorkingSet()
@@ -674,6 +680,12 @@ class PluginManager(object):
 			self.logger.warn("Could not locate plugin {key}".format(key=key))
 			return None
 
+		if self._is_plugin_blacklisted(key) or (version is not None and self._is_plugin_version_blacklisted(key, version)):
+			plugin = PluginInfo(key, module[1], None, name=name, version=version, description=summary, author=author, url=url, license=license)
+			plugin.blacklisted = True
+			self.logger.warn("Plugin {} is blacklisted. Not importing it, only registering a dummy entry.".format(plugin))
+			return plugin
+
 		plugin = self._import_plugin(key, *module, name=name, version=version, summary=summary, author=author, url=url, license=license)
 		if plugin is None:
 			return None
@@ -696,6 +708,19 @@ class PluginManager(object):
 	def _is_plugin_disabled(self, key):
 		return key in self.plugin_disabled_list or key.endswith('disabled')
 
+	def _is_plugin_blacklisted(self, key):
+		return key in self.plugin_blacklist
+
+	def _is_plugin_version_blacklisted(self, key, version):
+		def matches_plugin(entry):
+			if isinstance(entry, (tuple, list)) and len(entry) == 2:
+				entry_key, entry_version = entry
+				return entry_key == key and entry_version == version
+			return False
+		
+		return any(map(lambda entry: matches_plugin(entry),
+		               self.plugin_blacklist))
+	
 	def reload_plugins(self, startup=False, initialize_implementations=True, force_reload=None):
 		self.logger.info("Loading plugins from {folders} and installed plugin packages...".format(
 			folders=", ".join(map(lambda x: x[0] if isinstance(x, tuple) else str(x), self.plugin_folders))
@@ -710,7 +735,8 @@ class PluginManager(object):
 		# 1st pass: loading the plugins
 		for name, plugin in plugins.items():
 			try:
-				self.load_plugin(name, plugin, startup=startup, initialize_implementation=initialize_implementations)
+				if not plugin.blacklisted:
+					self.load_plugin(name, plugin, startup=startup, initialize_implementation=initialize_implementations)
 			except PluginNeedsRestart:
 				pass
 			except PluginLifecycleException as e:
@@ -724,6 +750,9 @@ class PluginManager(object):
 		for name, plugin in plugins.items():
 			try:
 				if plugin.loaded and not self._is_plugin_disabled(name):
+					if plugin.blacklisted:
+						self.logger.warn("Plugin {} is blacklisted. Not enabling it.".format(plugin))
+						continue
 					self.enable_plugin(name, plugin=plugin, initialize_implementation=initialize_implementations, startup=startup)
 			except PluginNeedsRestart:
 				pass
@@ -779,6 +808,11 @@ class PluginManager(object):
 			self.on_plugin_loaded(name, plugin)
 
 			plugin.loaded = True
+
+			# we might only now have a version, so check again if we are blacklisted
+			if not plugin.blacklisted and plugin.version and self._is_plugin_version_blacklisted(plugin.key,
+			                                                                                     plugin.version):
+				plugin.blacklisted = True
 
 			self.logger.debug("Loaded plugin {name}: {plugin}".format(**locals()))
 		except PluginLifecycleException as e:
@@ -1146,7 +1180,7 @@ class PluginManager(object):
 
 
 	def log_all_plugins(self, show_bundled=True, bundled_str=(" (bundled)", ""), show_location=True,
-	                    location_str=" = {location}", show_enabled=True, enabled_str=(" ", "!"),
+	                    location_str=" = {location}", show_enabled=True, enabled_str=(" ", "!", "#"),
 	                    only_to_handler=None):
 		all_plugins = self.enabled_plugins.values() + self.disabled_plugins.values()
 

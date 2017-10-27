@@ -891,6 +891,15 @@ except ImportError:
 		return drive + pathname
 
 
+try:
+	import monotonic
+	monotonic_time = monotonic.monotonic
+except RuntimeError:
+	# no source of monotonic time available, nothing left but using time.time *cringe*
+	import time
+	monotonic_time = time.time
+
+
 class RepeatedTimer(threading.Thread):
 	"""
 	This class represents an action that should be run repeatedly in an interval. It is similar to python's
