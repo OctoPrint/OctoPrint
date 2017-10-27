@@ -155,12 +155,8 @@ $(function() {
             self.settingsViewModel.printerProfiles.currentProfileData().heatedBed.subscribe(self._printerProfileUpdated);
         });
 
-        // TODO: find some nicer way to update plot AFTER graph becomes visible
-        self.access.permissions.permissionsList.subscribe(function(values) {
-            if (self.loginStateSubscription !== undefined) {
-                self.loginStateSubscription.dispose();
-                self.loginStateSubscription = undefined;
-            }
+        self.onUserLoggedIn = function () {
+            self._initializePlot(true);
 
             self.loginStateSubscription = self.loginState.hasPermissionKo(self.access.permissions.STATUS).subscribe(function(value) {
                 var graph = $("#temp, #temp_link");
@@ -174,7 +170,14 @@ $(function() {
                 }
                 self.updatePlot();
             });
-        });
+        };
+
+        self.onUserLoggedOut = function (){
+            if (self.loginStateSubscription !== undefined) {
+                self.loginStateSubscription.dispose();
+                self.loginStateSubscription = undefined;
+            }
+        };
 
         self.temperatures = [];
 
