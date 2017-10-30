@@ -218,6 +218,10 @@ $(function() {
         self.server_onlineCheck_host = ko.observable();
         self.server_onlineCheck_port = ko.observable();
 
+        self.server_pluginBlacklist_enabled = ko.observable();
+        self.server_pluginBlacklist_url = ko.observable();
+        self.server_pluginBlacklist_ttl = ko.observable();
+
         self.settings = undefined;
         self.lastReceivedSettings = undefined;
 
@@ -228,6 +232,15 @@ $(function() {
             self.webcam_ffmpegPathText("");
             self.webcam_ffmpegPathOk(false);
             self.webcam_ffmpegPathBroken(false);
+        };
+
+        self.server_onlineCheckText = ko.observable();
+        self.server_onlineCheckOk = ko.observable(false);
+        self.server_onlineCheckBroken = ko.observable(false);
+        self.server_onlineCheckReset = function() {
+            self.server_onlineCheckText("");
+            self.server_onlineCheckOk(false);
+            self.server_onlineCheckBroken(false);
         };
 
         self.addTemperatureProfile = function() {
@@ -356,8 +369,31 @@ $(function() {
                 });
         };
 
+        self.testOnlineConnectivityConfigBusy = ko.observable(false);
+        self.testOnlineConnectivityConfig = function() {
+            if (!self.server_onlineCheck_host()) return;
+            if (!self.server_onlineCheck_port()) return;
+            if (self.testOnlineConnectivityConfigBusy()) return;
+
+            self.testOnlineConnectivityConfigBusy(true);
+            OctoPrint.util.testServer(self.server_onlineCheck_host(), self.server_onlineCheck_port())
+                .done(function(response) {
+                    if (!response.result) {
+                        self.server_onlineCheckText(gettext("The server is not reachable"));
+                    } else {
+                        self.server_onlineCheckText(gettext("The server is reachable"));
+                    }
+                    self.server_onlineCheckOk(response.result);
+                    self.server_onlineCheckBroken(!response.result);
+                })
+                .always(function() {
+                    self.testOnlineConnectivityConfigBusy(false);
+                });
+        };
+
         self.onSettingsHidden = function() {
             self.webcam_ffmpegPathReset();
+            self.server_onlineCheckReset();
         };
 
         self.isDialogActive = function() {

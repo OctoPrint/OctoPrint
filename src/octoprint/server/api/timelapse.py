@@ -22,6 +22,7 @@ from octoprint.server.api import api
 
 from octoprint.server import NO_CONTENT
 
+_DATA_FORMAT_VERSION = "v2"
 
 #~~ timelapse handling
 
@@ -36,7 +37,8 @@ def _config_for_timelapse(timelapse):
 		return dict(type="zchange",
 		            postRoll=timelapse.post_roll,
 		            fps=timelapse.fps,
-		            retractionZHop=timelapse.retraction_zhop)
+		            retractionZHop=timelapse.retraction_zhop,
+		            minDelay=timelapse.min_delay)
 	elif timelapse is not None and isinstance(timelapse, octoprint.timelapse.TimedTimelapse):
 		return dict(type="timed",
 		            postRoll=timelapse.post_roll,
@@ -67,6 +69,7 @@ def _etag(unrendered, lm=None):
 	hash = hashlib.sha1()
 	hash.update(str(lm))
 	hash.update(repr(config))
+	hash.update(repr(_DATA_FORMAT_VERSION))
 
 	return hash.hexdigest()
 
@@ -219,10 +222,7 @@ def setTimelapseConfig():
 			except ValueError:
 				return make_response("Invalid value for capturePostRoll: %r" % data["capturePostRoll"], 400)
 			else:
-				if capturePostRoll >= 0:
-					config["options"]["capturePostRoll"] = capturePostRoll
-				else:
-					return make_response("Invalid value for capturePostRoll: %d" % capturePostRoll, 400)
+				config["options"]["capturePostRoll"] = capturePostRoll
 
 		if "retractionZHop" in data:
 			try:
@@ -233,8 +233,18 @@ def setTimelapseConfig():
 				if retractionZHop >= 0:
 					config["options"]["retractionZHop"] = retractionZHop
 				else:
-					return make_response("Invalid value for retraction Z-Hop: %d" % retractionZHop, 400)
+					return make_response("Invalid value for retraction Z-Hop: %f" % retractionZHop, 400)
 
+		if "minDelay" in data:
+			try:
+				minDelay = float(data["minDelay"])
+			except ValueError:
+				return make_response("Invalid value for minimum delay: %r" % data["minDelay"], 400)
+			else:
+				if minDelay > 0:
+					config["options"]["minDelay"] = minDelay
+				else:
+					return make_response("Invalid value for minimum delay: %f" % minDelay, 400)
 
 		if admin_permission.can() and "save" in data and data["save"] in valid_boolean_trues:
 			octoprint.timelapse.configure_timelapse(config, True)

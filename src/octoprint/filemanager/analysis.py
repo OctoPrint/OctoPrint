@@ -324,8 +324,8 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
 			speedy = self._current.printer_profile["axes"]["y"]["speed"]
 			offsets = self._current.printer_profile["extruder"]["offsets"]
 
-			interpreter = os.path.realpath(os.path.join(os.path.dirname(__file__), "..", "util", "gcodeInterpreter.py"))
-			command = [sys.executable, interpreter, "--speed-x={}".format(speedx), "--speed-y={}".format(speedy),
+			command = [sys.executable, "-m", "octoprint", "analysis", "gcode",
+			           "--speed-x={}".format(speedx), "--speed-y={}".format(speedy),
 			           "--max-t={}".format(max_extruders), "--throttle={}".format(throttle),
 			           "--throttle-lines={}".format(throttle_lines)]
 			for offset in offsets[1:]:

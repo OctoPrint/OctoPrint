@@ -846,8 +846,10 @@ def is_hidden_path(path):
 		# we define a None path as not hidden here
 		return False
 
+	path = to_unicode(path)
+
 	filename = os.path.basename(path)
-	if filename.startswith("."):
+	if filename.startswith(u"."):
 		# filenames starting with a . are hidden
 		return True
 
@@ -856,7 +858,7 @@ def is_hidden_path(path):
 		# attribute via the windows api
 		try:
 			import ctypes
-			attrs = ctypes.windll.kernel32.GetFileAttributesW(unicode(path))
+			attrs = ctypes.windll.kernel32.GetFileAttributesW(path)
 			assert attrs != -1     # INVALID_FILE_ATTRIBUTES == -1
 			return bool(attrs & 2) # FILE_ATTRIBUTE_HIDDEN == 2
 		except (AttributeError, AssertionError):
@@ -864,6 +866,38 @@ def is_hidden_path(path):
 
 	# if we reach that point, the path is not hidden
 	return False
+
+
+try:
+	from glob import escape
+	glob_escape = escape
+except ImportError:
+	# no glob.escape - we need to implement our own
+	_glob_escape_check = re.compile("([*?[])")
+	_glob_escape_check_bytes = re.compile(b"([*?[])")
+	
+	def glob_escape(pathname):
+		"""
+		Ported from Python 3.4
+		
+		See https://github.com/python/cpython/commit/fd32fffa5ada8b8be8a65bd51b001d989f99a3d3
+		"""
+		
+		drive, pathname = os.path.splitdrive(pathname)
+		if isinstance(pathname, bytes):
+			pathname = _glob_escape_check_bytes.sub(br"[\1]", pathname)
+		else:
+			pathname = _glob_escape_check.sub(r"[\1]", pathname)
+		return drive + pathname
+
+
+try:
+	import monotonic
+	monotonic_time = monotonic.monotonic
+except RuntimeError:
+	# no source of monotonic time available, nothing left but using time.time *cringe*
+	import time
+	monotonic_time = time.time
 
 
 class RepeatedTimer(threading.Thread):

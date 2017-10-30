@@ -47,7 +47,7 @@
     <tbody data-bind="foreach: plugins.paginatedItems">
     <tr>
         <td class="settings_plugin_plugin_manager_plugins_name">
-            <div data-bind="css: {muted: !enabled}"><span data-bind="text: name"></span> <span data-bind="visible: version">(<span data-bind="text: version"></span>)</span> <i title="{{ _('Bundled with OctoPrint') }}" class="fa fa-th-large" data-bind="visible: bundled"></i> <i class="fa fa-lock" title="{{ _('Cannot be uninstalled through OctoPrint') }}" data-bind="visible: !managable"></i> <i title="{{ _('Restart of OctoPrint needed for changes to take effect') }}" class="fa fa-refresh" data-bind="visible: pending_enable || pending_disable || pending_install || pending_uninstall"></i> <i title="{{ _('Pending install') }}" class="fa fa-plus" data-bind="visible: pending_install"></i> <i title="{{ _('Pending uninstall') }}" class="fa fa-minus" data-bind="visible: pending_uninstall"></i> <i title="{{ _('Disabled due to safe mode') }}" class="fa fa-medkit" data-bind="visible: safe_mode_victim"></i> <i class="fa fa-exclamation-triangle" title="{{ _('There are notices available regarding this plugin') }}" data-bind="visible: notifications && notifications.length"></i></div>
+            <div data-bind="css: {muted: !enabled}"><span data-bind="text: name"></span> <span data-bind="visible: version">(<span data-bind="text: version"></span>)</span> <i title="{{ _('Bundled with OctoPrint') }}" class="fa fa-th-large" data-bind="visible: bundled"></i> <i class="fa fa-lock" title="{{ _('Cannot be uninstalled through OctoPrint') }}" data-bind="visible: !managable"></i> <i title="{{ _('Restart of OctoPrint needed for changes to take effect') }}" class="fa fa-refresh" data-bind="visible: pending_enable || pending_disable || pending_install || pending_uninstall"></i> <i title="{{ _('Pending install') }}" class="fa fa-plus" data-bind="visible: pending_install"></i> <i title="{{ _('Pending uninstall') }}" class="fa fa-minus" data-bind="visible: pending_uninstall"></i> <i title="{{ _('Disabled due to safe mode') }}" class="fa fa-medkit" data-bind="visible: safe_mode_victim"></i> <i class="fa fa-exclamation-triangle" title="{{ _('There are notices available regarding this plugin') }}" data-bind="visible: notifications && notifications.length"></i> <i class="fa fa-ban" title="{{ _('This plugin is blacklisted') }}" data-bind="visible: blacklisted"></i></div>
             <div data-bind="visible: notifications && notifications.length"><a href="javascript:void(0)" class="text-error" style="text-decoration: underline" data-bind="click: function() { $root.showPluginNotifications($data) }, text: $root.showPluginNotificationsLinkText($data)"></a></div>
             <div><small class="muted" data-bind="text: description">&nbsp;</small></div>
             <div data-bind="css: {muted: !enabled}">
@@ -155,7 +155,7 @@
         </form>
 
         <div data-bind="visible: repositoryAvailable()">
-            <div id="settings_plugin_pluginmanager_repositorydialog_list" data-bind="slimScrolledForeach: repositoryplugins.paginatedItems">
+            <div id="settings_plugin_pluginmanager_repositorydialog_list" data-bind="slimScrolledForeach: {data: repositoryplugins.paginatedItems, slimscroll: {height: '306px', size: '10px', distance: 0, railVisible: true, alwaysVisible: true, scrollBy: '102px'} }">
                 <div class="entry">
                     <div class="row-fluid">
                         <div class="span9">
@@ -197,7 +197,7 @@
                 </div>
                 <button class="btn btn-primary span3" data-bind="enable: enableUrlInstall, css: {disabled: !enableUrlInstall()}, click: function() { if (enableUrlInstall()) { $root.installPlugin(); } }">{{ _('Install') }}</button>
             </div>
-            <span class="help-block" data-bind="visible: invalidUrl">{{ _('This does not look like a valid "http://" or "https://" URL.') }}</span>
+            <span class="help-block" data-bind="visible: invalidUrl">{{ _('This does not look like a valid URL. Expected http, https or any of the <a href="%(url)s" target="_blank">supported VCS URLs</a>.', url='https://pip.pypa.io/en/stable/reference/pip_install/#vcs-support') }}</span>
         </form>
 
         <h4>{{ _('... from an uploaded archive') }}</h4>

@@ -44,7 +44,11 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 			if not name:
 				continue
 
-			config = dict(type="wizard", name=name, template="corewizard_{}_wizard.jinja2".format(key), div="wizard_plugin_corewizard_{}".format(key))
+			config = dict(type="wizard",
+			              name=name,
+			              template="corewizard_{}_wizard.jinja2".format(key),
+			              div="wizard_plugin_corewizard_{}".format(key),
+			              suffix="_{}".format(key))
 			if key in additional:
 				additional_result = additional[key]()
 				if additional_result:
@@ -58,7 +62,8 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 	def get_assets(self):
 		if self.is_wizard_required():
 			return dict(
-				js=["js/corewizard.js"]
+				js=["js/corewizard.js"],
+				css=["css/corewizard.css"]
 			)
 		else:
 			return dict()
@@ -87,7 +92,7 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 		return result
 
 	def get_wizard_version(self):
-		return 1
+		return 2
 
 	#~~ ACL subwizard
 
@@ -185,6 +190,23 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 
 	def _get_onlinecheck_additional_wizard_template_data(self):
 		return dict(mandatory=self._is_onlinecheck_wizard_required())
+
+	#~~ Plugin blacklist subwizard
+	
+	def _is_pluginblacklist_wizard_firstrunonly(self):
+		return False
+	
+	def _is_pluginblacklist_wizard_required(self):
+		return self._settings.global_get(["server", "pluginBlacklist", "enabled"]) is None
+	
+	def _get_pluginblacklist_wizard_details(self):
+		return dict(required=self._is_pluginblacklist_wizard_required())
+	
+	def _get_pluginblacklist_wizard_name(self):
+		return gettext("Plugin blacklist")
+	
+	def _get_pluginblacklist_additional_wizard_template_data(self):
+		return dict(mandatory=self._is_pluginblacklist_wizard_required())
 
 	#~~ Printer profile subwizard
 

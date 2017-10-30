@@ -142,7 +142,7 @@ $(function() {
             if (!self._printerProfileInitialized) {
                 self._triggerBacklog();
             }
-            self.updatePlot(false);
+            self.updatePlot();
         };
         self.settingsViewModel.printerProfiles.currentProfileData.subscribe(function() {
             self._printerProfileUpdated();
@@ -210,6 +210,9 @@ $(function() {
                 if (lastData.hasOwnProperty("tool" + i)) {
                     tools[i]["actual"](lastData["tool" + i].actual);
                     tools[i]["target"](lastData["tool" + i].target);
+                } else {
+                    tools[i]["actual"](0);
+                    tools[i]["target"](0);
                 }
             }
 
@@ -221,12 +224,12 @@ $(function() {
             if (!CONFIG_TEMPERATURE_GRAPH) return;
 
             self.temperatures = self._processTemperatureData(serverTime, data, self.temperatures);
-            self.updatePlot(false);
+            self.updatePlot();
         };
 
         self._processTemperatureHistoryData = function(serverTime, data) {
             self.temperatures = self._processTemperatureData(serverTime, data);
-            self.updatePlot(false);
+            self.updatePlot();
         };
 
         self._processOffsetData = function(data) {
@@ -285,100 +288,123 @@ $(function() {
             return result;
         };
 
-        self.updatePlot = function(force) {
-            force = force == undefined ? true : force;
-
+        self.updatePlot = function() {
             var graph = $("#temperature-graph");
-            if (graph.length) {
-                var data = [];
-                var heaterOptions = self.heaterOptions();
-                if (!heaterOptions) return;
+            if (!graph.length) return; // no graph
+            if (!self.plot) return; // plot not yet initialized
 
-                var maxTemps = [310/1.1];
+            var plotInfo = self._getPlotInfo();
+            if (plotInfo === undefined) return;
 
-                var showFahrenheit = self._shallShowFahrenheit();
+            var newMax = Math.max(Math.max.apply(null, plotInfo.max) * 1.1, 310);
+            if (newMax !== self.plot.getAxes().yaxis.max) {
+                // re-init (because flot apparently has NO way to change the max value of an axes :/)
+                self._initializePlot(true, plotInfo);
+            } else {
+                // update the data
+                self.plot.setData(plotInfo.data);
+                self.plot.setupGrid();
+                self.updateLegend(self._replaceLegendLabel);
+                self.plot.draw();
+            }
+        };
 
-                _.each(_.keys(heaterOptions), function(type) {
-                    if (type == "bed" && !self.hasBed()) {
-                        return;
+        self._initializePlot = function(force, plotInfo) {
+            var graph = $("#temperature-graph");
+            if (!graph.length) return; // no graph
+            if (self.plot && !force) return; // already initialized
+
+            plotInfo = plotInfo || self._getPlotInfo();
+            if (plotInfo === undefined) return;
+
+            // we don't have a plot yet, we need to set stuff up
+            var options = {
+                yaxis: {
+                    min: 0,
+                    max: Math.max(Math.max.apply(null, plotInfo.max) * 1.1, 310),
+                    ticks: 10
+                },
+                xaxis: {
+                    mode: "time",
+                    minTickSize: [2, "minute"],
+                    tickFormatter: function(val, axis) {
+                        if (val === undefined || val === 0)
+                            return ""; // we don't want to display the minutes since the epoch if not connected yet ;)
+
+                        // current time in milliseconds in UTC
+                        var timestampUtc = Date.now();
+
+                        // calculate difference in milliseconds
+                        var diff = timestampUtc - val;
+
+                        // convert to minutes
+                        var diffInMins = Math.round(diff / (60 * 1000));
+                        if (diffInMins === 0) {
+                            return gettext("just now");
+                        } else if (diffInMins < 0) {
+                            // we can't look into the future
+                            return "";
+                        } else {
+                            return "- " + diffInMins + " " + gettext("min");
+                        }
                     }
+                },
+                legend: {
+                    position: "sw",
+                    noColumns: 2,
+                    backgroundOpacity: 0
+                }
+            };
 
-                    var actuals = [];
-                    var targets = [];
+            if (!OctoPrint.coreui.browser.mobile) {
+                options["crosshair"] = { mode: "x" };
+                options["grid"] = { hoverable: true, autoHighlight: false };
+            }
 
-                    if (self.temperatures[type]) {
-                        actuals = self.temperatures[type].actual;
-                        targets = self.temperatures[type].target;
-                    }
+            self.plot = $.plot(graph, plotInfo.data, options);
+        };
 
-                    var actualTemp = actuals && actuals.length ? formatTemperature(actuals[actuals.length - 1][1], showFahrenheit) : "-";
-                    var targetTemp = targets && targets.length ? formatTemperature(targets[targets.length - 1][1], showFahrenheit) : "-";
+        self._getPlotInfo = function() {
+            var data = [];
+            var heaterOptions = self.heaterOptions();
+            if (!heaterOptions) return undefined;
 
-                    data.push({
-                        label: gettext("Actual") + " " + heaterOptions[type].name + ": " + actualTemp,
-                        color: heaterOptions[type].color,
-                        data: actuals
-                    });
-                    data.push({
-                        label: gettext("Target") + " " + heaterOptions[type].name + ": " + targetTemp,
-                        color: pusher.color(heaterOptions[type].color).tint(0.5).html(),
-                        data: targets
-                    });
+            var maxTemps = [310/1.1];
+            var now = Date.now();
 
-                    maxTemps.push(self.getMaxTemp(actuals, targets));
+            var showFahrenheit = self._shallShowFahrenheit();
+
+            _.each(_.keys(heaterOptions), function(type) {
+                if (type === "bed" && !self.hasBed()) {
+                    return;
+                }
+
+                var actuals = [];
+                var targets = [];
+
+                if (self.temperatures[type]) {
+                    actuals = self.temperatures[type].actual;
+                    targets = self.temperatures[type].target;
+                }
+
+                var actualTemp = actuals && actuals.length ? formatTemperature(actuals[actuals.length - 1][1], showFahrenheit) : "-";
+                var targetTemp = targets && targets.length ? formatTemperature(targets[targets.length - 1][1], showFahrenheit) : "-";
+
+                data.push({
+                    label: gettext("Actual") + " " + heaterOptions[type].name + ": " + actualTemp,
+                    color: heaterOptions[type].color,
+                    data: actuals.length ? actuals : [[now, undefined]]
+                });
+                data.push({
+                    label: gettext("Target") + " " + heaterOptions[type].name + ": " + targetTemp,
+                    color: pusher.color(heaterOptions[type].color).tint(0.5).html(),
+                    data: targets.length ? targets : [[now, undefined]]
                 });
 
-                if (!self.plot || force) {
-                    // we don't have a plot yet, we need to set stuff up
-                    var options = {
-                        yaxis: {
-                            min: 0,
-                            max: Math.max(Math.max.apply(null, maxTemps) * 1.1, 310),
-                            ticks: 10
-                        },
-                        xaxis: {
-                            mode: "time",
-                            minTickSize: [2, "minute"],
-                            tickFormatter: function(val, axis) {
-                                if (val == undefined || val == 0)
-                                    return ""; // we don't want to display the minutes since the epoch if not connected yet ;)
+                maxTemps.push(self.getMaxTemp(actuals, targets));
+            });
 
-                                // current time in milliseconds in UTC
-                                var timestampUtc = Date.now();
-
-                                // calculate difference in milliseconds
-                                var diff = timestampUtc - val;
-
-                                // convert to minutes
-                                var diffInMins = Math.round(diff / (60 * 1000));
-                                if (diffInMins == 0)
-                                    return gettext("just now");
-                                else
-                                    return "- " + diffInMins + " " + gettext("min");
-                            }
-                        },
-                        legend: {
-                            position: "sw",
-                            noColumns: 2,
-                            backgroundOpacity: 0
-                        }
-                    };
-
-                    if (!OctoPrint.coreui.browser.mobile) {
-                        options["crosshair"] = { mode: "x" };
-                        options["grid"] = { hoverable: true, autoHighlight: false };
-                    }
-
-                    self.plot = $.plot(graph, data, options);
-
-                } else {
-                    // graph already active, let's just update the data
-                    self.plot.setData(data);
-                    self.plot.getAxes().yaxis.max = Math.max(Math.max.apply(null, maxTemps) * 1.1, 310);
-                    self.updateLegend(self._replaceLegendLabel);
-                    self.plot.draw();
-                }
-            }
+            return {max: maxTemps, data: data};
         };
 
         self.updateLegend = function(replaceLegendLabel) {
@@ -438,7 +464,6 @@ $(function() {
         };
 
         self.getMaxTemp = function(actuals, targets) {
-            var pair;
             var maxTemp = 0;
             actuals.forEach(function(pair) {
                 if (pair[1] > maxTemp){
@@ -704,10 +729,15 @@ $(function() {
         };
 
         self.onAfterTabChange = function(current, previous) {
-            if (current != "#temp") {
+            if (current !== "#temp") {
                 return;
             }
-            self.updatePlot(false);
+
+            if (!self.plot) {
+                self._initializePlot();
+            } else {
+                self.updatePlot();
+            }
         };
 
         self.onStartup = function() {

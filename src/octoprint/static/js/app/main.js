@@ -191,6 +191,8 @@ $(function() {
         PNotify.prototype.options.stack.firstpos2 = 20;
         PNotify.prototype.options.stack.spacing1 = 20;
         PNotify.prototype.options.stack.spacing2 = 20;
+        PNotify.prototype.options.delay = 5000;
+        PNotify.prototype.options.animate_speed = "fast";
 
         PNotify.singleButtonNotify = function(options) {
             if (!options.confirm || !options.confirm.buttons || !options.confirm.buttons.length) {
@@ -332,7 +334,13 @@ $(function() {
                     continue;
                 }
 
-                var viewModelInstance = _createViewModelInstance(viewModel, viewModelMap, optionalDependencyPass);
+                var viewModelInstance;
+                try {
+                    viewModelInstance = _createViewModelInstance(viewModel, viewModelMap, optionalDependencyPass);
+                } catch (exc) {
+                    log.error("Error instantiating", viewModel.name, ":", (exc.stack || exc));
+                    continue;
+                }
 
                 // our view model couldn't yet be instantiated, so postpone it for a bit
                 if (viewModelInstance === undefined) {
@@ -495,6 +503,10 @@ $(function() {
             callViewModels(allViewModels, "onTabChange", [current, previous]);
         };
 
+        var onAfterTabChange = function(current, previous) {
+            callViewModels(allViewModels, "onAfterTabChange", [current, previous]);
+        };
+
         var tabs = $('#tabs a[data-toggle="tab"]');
         tabs.on('show', function (e) {
             var current = e.target.hash;
@@ -505,10 +517,11 @@ $(function() {
         tabs.on('shown', function (e) {
             var current = e.target.hash;
             var previous = e.relatedTarget.hash;
-            callViewModels(allViewModels, "onAfterTabChange", [current, previous]);
+            onAfterTabChange(current, previous);
         });
 
         onTabChange(OCTOPRINT_INITIAL_TAB);
+        onAfterTabChange(OCTOPRINT_INITIAL_TAB, undefined);
 
         // Fix input element click problems on dropdowns
         $(".dropdown input, .dropdown label").click(function(e) {
@@ -536,75 +549,92 @@ $(function() {
         var bindViewModels = function() {
             log.info("Going to bind " + allViewModelData.length + " view models...");
             _.each(allViewModelData, function(viewModelData) {
-                if (!Array.isArray(viewModelData) || viewModelData.length != 2) {
-                    return;
-                }
+                try {
+                    if (!Array.isArray(viewModelData) || viewModelData.length !== 2) {
+                        log.error("View model data for", viewModel.constructor.name, "has wrong format, expected 2-tuple (viewModel, targets), got:", viewModelData);
+                        return;
+                    }
 
-                var viewModel = viewModelData[0];
-                var targets = viewModelData[1];
+                    var viewModel = viewModelData[0];
+                    var targets = viewModelData[1];
 
-                if (targets === undefined) {
-                    return;
-                }
+                    if (targets === undefined) {
+                        log.error("No binding targets defined for view model", viewMode.constructor.name);
+                        return;
+                    }
 
-                if (!_.isArray(targets)) {
-                    targets = [targets];
-                }
-
-                if (viewModel.hasOwnProperty("onBeforeBinding")) {
-                    viewModel.onBeforeBinding();
-                }
-
-                if (targets != undefined) {
                     if (!_.isArray(targets)) {
                         targets = [targets];
                     }
 
-                    viewModel._bindings = [];
+                    try {
+                        callViewModel(viewModel, "onBeforeBinding", undefined, true);
+                    } catch (exc) {
+                        log.error("Error calling onBeforeBinding on view model", viewModel.constructor.name, ":", (exc.stack || exc));
+                        return;
+                    }
 
-                    _.each(targets, function(target) {
-                        if (target == undefined) {
-                            return;
+                    if (targets !== undefined) {
+                        if (!_.isArray(targets)) {
+                            targets = [targets];
                         }
 
-                        var object;
-                        if (!(target instanceof jQuery)) {
-                            object = $(target);
-                        } else {
-                            object = target;
-                        }
+                        viewModel._bindings = [];
 
-                        if (object == undefined || !object.length) {
-                            log.info("Did not bind view model", viewModel.constructor.name, "to target", target, "since it does not exist");
-                            return;
-                        }
-
-                        var element = object.get(0);
-                        if (element == undefined) {
-                            log.info("Did not bind view model", viewModel.constructor.name, "to target", target, "since it does not exist");
-                            return;
-                        }
-
-                        try {
-                            ko.applyBindings(viewModel, element);
-                            viewModel._bindings.push(target);
-
-                            if (viewModel.hasOwnProperty("onBoundTo")) {
-                                viewModel.onBoundTo(target, element);
+                        _.each(targets, function (target) {
+                            if (target === undefined) {
+                                log.error("Undefined target for view model", viewModel.constructor.name);
+                                return;
                             }
 
-                            log.debug("View model", viewModel.constructor.name, "bound to", target);
-                        } catch (exc) {
-                            log.error("Could not bind view model", viewModel.constructor.name, "to target", target, ":", (exc.stack || exc));
-                        }
-                    });
-                }
+                            var object;
+                            if (!(target instanceof jQuery)) {
+                                try {
+                                    object = $(target);
+                                } catch (exc) {
+                                    log.error("Error while attempting to jquery-fy target", target, "of view model", viewModel.constructor.name, ":", (exc.stack || exc));
+                                    return;
+                                }
+                            } else {
+                                object = target;
+                            }
 
-                viewModel._unbound = viewModel._bindings !== undefined && viewModel._bindings.length === 0;
-                viewModel._bound = viewModel._bindings.length > 0;
+                            if (object === undefined || !object.length) {
+                                log.info("Did not bind view model", viewModel.constructor.name, "to target", target, "since it does not exist");
+                                return;
+                            }
 
-                if (viewModel.hasOwnProperty("onAfterBinding")) {
-                    viewModel.onAfterBinding();
+                            var element = object.get(0);
+                            if (element === undefined) {
+                                log.info("Did not bind view model", viewModel.constructor.name, "to target", target, "since it does not exist");
+                                return;
+                            }
+
+                            try {
+                                ko.applyBindings(viewModel, element);
+                                viewModel._bindings.push(target);
+
+                                callViewModel(viewModel, "onBoundTo", [target, element], true);
+
+                                log.debug("View model", viewModel.constructor.name, "bound to", target);
+                            } catch (exc) {
+                                log.error("Could not bind view model", viewModel.constructor.name, "to target", target, ":", (exc.stack || exc));
+                            }
+                        });
+                    }
+
+                    viewModel._unbound = viewModel._bindings === undefined || viewModel._bindings.length === 0;
+                    viewModel._bound = viewModel._bindings && viewModel._bindings.length > 0;
+
+                    callViewModel(viewModel, "onAfterBinding");
+                } catch (exc) {
+                    var name;
+                    try {
+                        name = viewModel.constructor.name;
+                    } catch (exc) {
+                        name = "n/a";
+                    }
+                    log.error("Error while processing view model", name, "for binding:", (exc.stack || exc));
                 }
             });
 

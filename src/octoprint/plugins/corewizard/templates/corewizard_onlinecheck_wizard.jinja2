@@ -24,6 +24,7 @@
 <form class="form-horizontal" data-bind="with: settingsViewModel, enable: !setup(), css {disabled: setup()}">
     {% include "snippets/settings/server/serverOnlineCheckHost.jinja2" %}
     {% include "snippets/settings/server/serverOnlineCheckPort.jinja2" %}
+    {% include "snippets/settings/server/serverOnlineCheckTest.jinja2" %}
 </form>
 
 <p>{% trans %}

@@ -208,6 +208,9 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 		from octoprint.logging.handlers import SerialLogHandler
 		SerialLogHandler.on_open_connection()
+		if not logging.getLogger("SERIAL").isEnabledFor(logging.DEBUG):
+			# if serial.log is not enabled, log a line to explain that to reduce "serial.log is empty" in tickets...
+			logging.getLogger("SERIAL").info("serial.log is currently not enabled, you can enable it via Settings > Serial Connection > Log communication to serial.log")
 
 		self._comm = comm.MachineCom(port, baudrate, callbackObject=self, printerProfileManager=self._printerProfileManager)
 
@@ -887,6 +890,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 					"file": {
 						"name": None,
 						"path": None,
+						"display": None,
 						"origin": None,
 						"size": None,
 						"date": None
@@ -903,6 +907,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			averagePrintTime = None
 			date = None
 			filament = None
+			display_name = name_in_storage
 			if path_on_disk:
 				# Use a string for mtime because it could be float and the
 				# javascript needs to exact match
@@ -914,6 +919,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 				except:
 					fileData = None
 				if fileData is not None:
+					if "display" in fileData:
+						display_name = fileData["display"]
 					if "analysis" in fileData:
 						if estimatedPrintTime is None and "estimatedPrintTime" in fileData["analysis"]:
 							estimatedPrintTime = fileData["analysis"]["estimatedPrintTime"]
@@ -938,6 +945,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 				"file": {
 					"name": name_in_storage,
 					"path": path_in_storage,
+					"display": display_name,
 					"origin": FileDestinations.SDCARD if sd else FileDestinations.LOCAL,
 					"size": filesize,
 					"date": date

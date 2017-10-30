@@ -7,7 +7,6 @@ thanks to everyone who contributed!
 ## Patreon Patrons
 
   * 3D Moniak
-  * Aaron Lieberman
   * Aleph Objects, Inc.
   * Andrew Moorby
   * Arnljot Arntsen
@@ -38,7 +37,6 @@ thanks to everyone who contributed!
   * Kaile Riser
   * Kale Stedman
   * Kazuhiro Ogura
-  * Lamin Kivelä
   * Makespace Madrid
   * Marcus Ackermann
   * Mark Qvist
@@ -57,7 +55,6 @@ thanks to everyone who contributed!
   * Roger Strolz
   * Roy Cortes
   * Samer Najia
-  * SeeMeCNC
   * Simon Hallam
   * Stefan Krister
   * Stephane Schittly
@@ -67,4 +64,4 @@ thanks to everyone who contributed!
   * Timeshell.ca
   * Trent Shumay
 
-and 1130 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!
+and 1133 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!
