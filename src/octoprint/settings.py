@@ -1115,7 +1115,7 @@ class Settings(object):
 		                     reboot="systemRestartCommand",
 		                     restart="serverRestartCommand")
 
-		if "system" in config and "actions" in config["system"]:
+		if "system" in config and "actions" in config["system"] and isinstance(config["system"]["actions"], (list, tuple)):
 			actions = config["system"]["actions"]
 			to_delete = []
 			for index, spec in enumerate(actions):

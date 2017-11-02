@@ -955,7 +955,7 @@ class MachineCom(object):
 		self._recordFilePosition()
 		self._callback.on_comm_print_job_cancelled()
 
-	def cancelPrint(self, firmware_error=None):
+	def cancelPrint(self, firmware_error=None, disable_log_position=False):
 		if not self.isOperational():
 			return
 
@@ -988,7 +988,7 @@ class MachineCom(object):
 					except:
 						pass
 
-			if self._log_position_on_cancel:
+			if self._log_position_on_cancel and not disable_log_position:
 				self.sendCommand("M400", on_sent=_on_M400_sent)
 			else:
 				self._cancel_preparation_done()
@@ -1583,7 +1583,7 @@ class MachineCom(object):
 							          "Resetting line numbers to be on the safe side"
 							self._log(message)
 							self._logger.warn(message)
-							self.resetLineNumbers()
+							self._onExternalReset()
 
 						else:
 							verb = "streaming to SD" if self.isStreaming() else "printing"
@@ -1591,7 +1591,8 @@ class MachineCom(object):
 							          "Aborting job since printer lost state.".format(verb)
 							self._log(message)
 							self._logger.warn(message)
-							self.cancelPrint()
+							self.cancelPrint(disable_log_position=True)
+							self._onExternalReset()
 
 						eventManager().fire(Events.PRINTER_RESET)
 
@@ -1804,6 +1805,12 @@ class MachineCom(object):
 		payload = dict(port=self._port, baudrate=self._baudrate)
 		eventManager().fire(Events.CONNECTED, payload)
 		self.sendGcodeScript("afterPrinterConnected", replacements=dict(event=payload))
+
+	def _onExternalReset(self):
+		self.resetLineNumbers()
+
+		if self._temperature_autoreporting:
+			self._set_autoreport_temperature()
 
 	def _getTemperatureTimerInterval(self):
 		busy_default = 4.0
