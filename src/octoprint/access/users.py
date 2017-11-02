@@ -895,7 +895,7 @@ class User(UserMixin):
 	# TODO: Remove deprecated methods in OctoPrint 1.5.0
 	
 	asDict = deprecated("asDict has been renamed to as_dict",
-	                    include_doc="Replaced by :func:`as_dict`",
+	                    includedoc="Replaced by :func:`as_dict`",
 	                    since="1.4.0")(as_dict)
 
 class AnonymousUser(AnonymousUserMixin, User):
