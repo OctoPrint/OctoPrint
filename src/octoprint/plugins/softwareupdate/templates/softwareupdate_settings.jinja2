@@ -76,8 +76,8 @@
     </div>
     <div class="modal-body">
         <form class="form-horizontal">
-            {% include "snippets/plugins/softwareupdate/checkoutFolder.jinja2" %}
             {% include "snippets/plugins/softwareupdate/versionTracking.jinja2" %}
+            {% include "snippets/plugins/softwareupdate/checkoutFolder.jinja2" %}
             {% include "snippets/plugins/softwareupdate/releaseChannel.jinja2" %}
             <div class="control-group">
                 <label class="control-label">{{ _('Version cache TTL') }}</label>
@@ -100,7 +100,7 @@
     </div>
     <div class="modal-footer">
         <button class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Cancel') }}</button>
-        <button class="btn btn-primary" data-bind="click: savePluginSettings" aria-hidden="true">{{ _('Save') }}</button>
+        <button class="btn btn-primary" data-bind="enable: enable_configSave, css: {disabled: !enable_configSave()}, click: savePluginSettings" aria-hidden="true">{{ _('Save') }}</button>
     </div>
 </div>
 

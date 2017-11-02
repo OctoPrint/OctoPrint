@@ -34,6 +34,9 @@ $(function() {
                     }
 
                     callViewModels(self.allViewModels, "onWizardShow");
+
+                    callViewModels(self.allViewModels, "onBeforeWizardTabChange", [OCTOPRINT_INITIAL_WIZARD, undefined]);
+                    callViewModels(self.allViewModels, "onAfterWizardTabChange", [OCTOPRINT_INITIAL_WIZARD]);
                 });
         };
 

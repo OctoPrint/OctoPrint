@@ -1,6 +1,7 @@
-<div class="control-group" data-bind="visible: config_updateMethod() == 'update_script' || config_updateMethod() == 'python_updater'">
+<div class="control-group" data-bind="visible: config_checkType() === 'git_commit', css: {error: error_checkoutFolder}">
     <label class="control-label">{{ _('OctoPrint checkout folder') }}</label>
     <div class="controls">
         <input type="text" class="input-block-level" data-bind="value: config_checkoutFolder">
+        <span class="help-block" data-bind="visible: error_checkoutFolder">{{ _('This needs to be set if you select commit based version tracking.') }}</span>
     </div>
 </div>
