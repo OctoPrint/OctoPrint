@@ -159,7 +159,8 @@ def getSettings():
 			"supportResendsWithoutOk": s.getBoolean(["serial", "supportResendsWithoutOk"]),
 			"maxTimeoutsIdle": s.getInt(["serial", "maxCommunicationTimeouts", "idle"]),
 			"maxTimeoutsPrinting": s.getInt(["serial", "maxCommunicationTimeouts", "printing"]),
-			"maxTimeoutsLong": s.getInt(["serial", "maxCommunicationTimeouts", "long"])
+			"maxTimeoutsLong": s.getInt(["serial", "maxCommunicationTimeouts", "long"]),
+			"autoUppercaseBlacklist": s.get(["serial", "autoUppercaseBlacklist"])
 		},
 		"folder": {
 			"uploads": s.getBaseFolder("uploads"),
@@ -379,6 +380,7 @@ def _saveSettings(data):
 		if "helloCommand" in data["serial"]: s.set(["serial", "helloCommand"], data["serial"]["helloCommand"])
 		if "ignoreErrorsFromFirmware" in data["serial"]: s.setBoolean(["serial", "ignoreErrorsFromFirmware"], data["serial"]["ignoreErrorsFromFirmware"])
 		if "disconnectOnErrors" in data["serial"]: s.setBoolean(["serial", "disconnectOnErrors"], data["serial"]["disconnectOnErrors"])
+		if "autoUppercaseBlacklist" in data["serial"] and isinstance(data["serial"]["autoUppercaseBlacklist"], (list, tuple)): s.set(["serial", "autoUppercaseBlacklist"], data["serial"]["autoUppercaseBlacklist"])
 		if "triggerOkForM29" in data["serial"]: s.setBoolean(["serial", "triggerOkForM29"], data["serial"]["triggerOkForM29"])
 		if "supportResendsWithoutOk" in data["serial"]: s.setBoolean(["serial", "supportResendsWithoutOk"], data["serial"]["supportResendsWithoutOk"])
 		if "logPositionOnPause" in data["serial"]: s.setBoolean(["serial", "logPositionOnPause"], data["serial"]["logPositionOnPause"])

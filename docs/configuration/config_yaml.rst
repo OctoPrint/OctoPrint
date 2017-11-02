@@ -874,6 +874,10 @@ Use the following settings to configure the serial connection to the printer:
      # the responds skips on the ok)
      triggerOkForM29: true
 
+     # Commands that should never be auto-uppercased when sent to the printer. Defaults to only M117.
+     autoUppercaseBlacklist:
+     - M117
+
 .. _sec-configuration-config_yaml-server:
 
 Server

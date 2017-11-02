@@ -83,6 +83,7 @@ date of first contribution):
   * [Claudiu Ceia] (https://github.com/ClaudiuCeia)
   * [Goswin von Brederlow](https://github.com/mrvn)
   * [Luke McKechnie](https://github.com/galamdring)
+  * [Joseph Carrick](https://github.com/carricktel)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and
