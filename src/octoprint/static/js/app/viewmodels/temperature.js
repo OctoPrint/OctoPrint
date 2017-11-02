@@ -793,6 +793,6 @@ $(function() {
     OCTOPRINT_VIEWMODELS.push([
         TemperatureViewModel,
         ["loginStateViewModel", "settingsViewModel", "accessViewModel"],
-        ["#temp", "#change_offset_dialog"]
+        ["#temp", "#temp_link", "#change_offset_dialog"]
     ]);
 });
