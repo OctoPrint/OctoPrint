@@ -316,14 +316,27 @@ class Server(object):
 			connectivity_checker=connectivityChecker
 		)
 
-		# setup access control
-		permissionManagerName = self._settings.get(["accessControl", "permissionManager"])
-		try:
-			clazz = octoprint.util.get_class(permissionManagerName)
-			permissionManager = clazz()
-		except AttributeError as e:
-			self._logger.exception("Could not instantiate permission manager {}, falling back to PermissionManager!".format(permissionManagerName))
-			permissionManager = octoprint.access.permissions.PermissionManager()
+		#~~ setup access control
+		
+		# create permission manager instance
+		permission_manager_factories = pluginManager.get_hooks("octoprint.access.permissions.factory")
+		for name, factory in permission_manager_factories.items():
+			try:
+				permissionManager = factory(components, self._settings)
+				if permissionManager is not None:
+					self._logger.debug("Created permission manager instance from factory {}".format(name))
+					break
+			except:
+				self._logger.exception("Error while creating permission manager instance from factory {}".format(name))
+		else:
+			permission_manager_name = self._settings.get(["accessControl", "permissionManager"])
+			try:
+				clazz = octoprint.util.get_class(permission_manager_name)
+				permissionManager = clazz()
+			except AttributeError as e:
+				self._logger.exception("Could not instantiate permission manager {}, "
+				                       "falling back to PermissionManager!".format(permission_manager_name))
+				permissionManager = octoprint.access.permissions.PermissionManager()
 		components.update(dict(permission_manager=permissionManager))
 
 		permissions.Permissions.initialize()
@@ -331,27 +344,30 @@ class Server(object):
 		# get additional permissions from plugins
 		self._setup_plugin_permissions(components)
 
-		groupManagerName = self._settings.get(["accessControl", "groupManager"])
-		try:
-			clazz = octoprint.util.get_class(groupManagerName)
-			groupManager = clazz()
-		except AttributeError as e:
-			self._logger.exception("Could not instantiate group manager {}, falling back to FilebasedGroupManager!".format(groupManagerName))
-			groupManager = octoprint.access.groups.FilebasedGroupManager()
+		# create group manager instance
+		group_manager_factories = pluginManager.get_hooks("octoprint.access.groups.factory")
+		for name, factory in group_manager_factories.items():
+			try:
+				groupManager = factory(components, self._settings)
+				if groupManager is not None:
+					self._logger.debug("Created group manager instance from factory {}".format(name))
+					break
+			except:
+				self._logger.exception("Error while creating group manager instance from factory {}".format(name))
+		else:
+			group_manager_name = self._settings.get(["accessControl", "groupManager"])
+			try:
+				clazz = octoprint.util.get_class(group_manager_name)
+				groupManager = clazz()
+			except AttributeError as e:
+				self._logger.exception("Could not instantiate group manager {}, "
+				                       "falling back to FilebasedGroupManager!".format(group_manager_name))
+				groupManager = octoprint.access.groups.FilebasedGroupManager()
 		components.update(dict(group_manager=groupManager))
 
-		userManagerName = self._settings.get(["accessControl", "userManager"])
-		try:
-			clazz = octoprint.util.get_class(userManagerName)
-			userManager = clazz()
-		except:
-			self._logger.exception("Could not instantiate user manager {}, falling back to FilebasedUserManager!".format(userManagerName))
-			userManager = octoprint.access.users.FilebasedUserManager()
-		finally:
-			userManager.enabled = self._settings.getBoolean(["accessControl", "enabled"])
-
 		# create user manager instance
-		user_manager_factories = pluginManager.get_hooks("octoprint.users.factory")
+		user_manager_factories = pluginManager.get_hooks("octoprint.users.factory") # legacy, set first so that new wins
+		user_manager_factories.update(pluginManager.get_hooks("octoprint.access.users.factory"))
 		for name, factory in user_manager_factories.items():
 			try:
 				userManager = factory(components, self._settings)
@@ -361,14 +377,14 @@ class Server(object):
 			except:
 				self._logger.exception("Error while creating user manager instance from factory {}".format(name))
 		else:
-			name = self._settings.get(["accessControl", "userManager"])
+			user_manager_name = self._settings.get(["accessControl", "userManager"])
 			try:
-				clazz = octoprint.util.get_class(name)
+				clazz = octoprint.util.get_class(user_manager_name)
 				userManager = clazz()
 			except:
-				self._logger.exception(
-					"Could not instantiate user manager {}, falling back to FilebasedUserManager!".format(name))
-				userManager = octoprint.users.FilebasedUserManager()
+				self._logger.exception("Could not instantiate user manager {}, "
+				                       "falling back to FilebasedUserManager!".format(user_manager_name))
+				userManager = octoprint.access.users.FilebasedUserManager()
 			finally:
 				userManager.enabled = self._settings.getBoolean(["accessControl", "enabled"])
 		components.update(dict(user_manager=userManager))
