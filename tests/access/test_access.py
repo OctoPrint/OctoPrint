@@ -358,9 +358,10 @@ class UserTestCase(unittest.TestCase):
 
 class SessionUserTestCase(unittest.TestCase):
 	def setUp(self):
-		self.user = octoprint.access.users.User("username", "passwordHash", True,
-		                                        permissions=[TestPermissions.TEST1], apikey="apikey",
-		                                        settings=dict(key="value"))
+		self.user = User("username", "passwordHash", True,
+		                 permissions=[TestPermissions.TEST1],
+		                 apikey="apikey",
+		                 settings=dict(key="value"))
 
 	def test_two_sessions(self):
 		session1 = SessionUser(self.user)
@@ -372,8 +373,8 @@ class SessionUserTestCase(unittest.TestCase):
 		self.assertEqual(session1.get_name(), session2.get_name())
 
 	def test_settings_change_propagates(self):
-		session1 = octoprint.users.SessionUser(self.user)
-		session2 = octoprint.users.SessionUser(self.user)
+		session1 = SessionUser(self.user)
+		session2 = SessionUser(self.user)
 
 		# change should propagate from User to SessionUser
 		self.user.set_setting("otherkey", "othervalue")
@@ -384,21 +385,22 @@ class SessionUserTestCase(unittest.TestCase):
 		self.assertDictEqual(dict(key="value", otherkey="yetanothervalue"), session1.get_all_settings())
 
 	def test_repr(self):
-		user = octoprint.users.SessionUser(self.user)
+		user = SessionUser(self.user)
 		expected = "SessionUser({!r},session={},created={})".format(self.user, user.session, user.created)
 		self.assertEqual(expected, repr(user))
 
 	def test_isinstance(self):
-		session = octoprint.users.SessionUser(self.user)
+		session = SessionUser(self.user)
 
 		# needs to be detected as User instance
-		self.assertTrue(isinstance(session, octoprint.users.User))
+		self.assertTrue(isinstance(session, User))
 
 		# also needs to be detected as SessionUser instance
-		self.assertTrue(isinstance(session, octoprint.users.SessionUser))
+		self.assertTrue(isinstance(session, SessionUser))
 
 		# but wrapped user should NOT be detected as SessionUser instance of course
-		self.assertFalse(isinstance(self.user, octoprint.users.SessionUser))
+		self.assertFalse(isinstance(self.user, SessionUser))
+
 #~~ Helpers
 
 def sort_attributes(obj):
