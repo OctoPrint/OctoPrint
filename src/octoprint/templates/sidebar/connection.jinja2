@@ -10,4 +10,4 @@
 <label class="checkbox">
     <input type="checkbox" id="connection_autoconnect" data-bind="checked: settings.serial_autoconnect, css: {disabled: !isErrorOrClosed()}, enable: loginState.hasPermissionKo(access.permissions.CONNECTION)() && isErrorOrClosed()"> {{ _('Auto-connect on server startup') }}
 </label>
-<button class="btn btn-block" id="printer_connect" data-bind="click: function() { if (self.loginState.hasPermission(self.access.permissions.CONNECTION)) { self.connect(); } }, text: buttonText, enable: loginState.hasPermissionKo(access.permissions.CONNECTION)">{{ _('Connect') }}</button>
+<button class="btn btn-block" id="printer_connect" data-bind="click: function() { if (loginState.hasPermission(access.permissions.CONNECTION)) { connect(); } }, text: buttonText, enable: loginState.hasPermissionKo(access.permissions.CONNECTION)">{{ _('Connect') }}</button>
