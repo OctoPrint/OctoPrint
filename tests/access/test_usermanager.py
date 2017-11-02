@@ -9,7 +9,7 @@ __copyright__ = "Copyright (C) 2017 The OctoPrint Project - Released under terms
 import unittest
 import ddt
 
-import octoprint.users
+import octoprint.access.users
 
 @ddt.ddt
 class UserManagerTest(unittest.TestCase):
@@ -21,4 +21,4 @@ class UserManagerTest(unittest.TestCase):
 		salt = "abc"
 
 		# should not throw an exception
-		octoprint.access.users.UserManager.createPasswordHash(password, salt=salt)
+		octoprint.access.users.UserManager.create_password_hash(password, salt=salt)

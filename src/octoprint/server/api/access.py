@@ -130,7 +130,7 @@ def get_users():
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
 
-	return jsonify({"users": userManager.getAllUsers()})
+	return jsonify({"users": userManager.get_all_users()})
 
 
 @api.route("/access/users", methods=["POST"])
@@ -170,7 +170,7 @@ def add_user():
 	permissions = data["permissions"]
 
 	try:
-		userManager.addUser(name, password, active, permissions, groups)
+		userManager.add_user(name, password, active, permissions, groups)
 	except users.UserAlreadyExists:
 		abort(409)
 	return get_users()
@@ -183,7 +183,7 @@ def get_user(username):
 		return jsonify(SUCCESS)
 
 	if current_user is not None and not current_user.is_anonymous and (current_user.get_name() == username or current_user.has_permission(Permissions.ADMIN)):
-		user = userManager.findUser(username)
+		user = userManager.find_user(username)
 		if user is not None:
 			return jsonify(user)
 		else:
@@ -199,7 +199,7 @@ def update_user(username):
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
 
-	user = userManager.findUser(username)
+	user = userManager.find_user(username)
 	if user is not None:
 		if not "application/json" in request.headers["Content-Type"]:
 			return make_response("Expected content-type JSON", 400)
@@ -225,7 +225,7 @@ def update_user(username):
 
 		# change activation
 		if "active" in data:
-			userManager.changeUserActivation(username, data["active"] in valid_boolean_trues)
+			userManager.change_user_activation(username, data["active"] in valid_boolean_trues)
 
 		return get_users()
 	else:
@@ -240,7 +240,7 @@ def remove_user(username):
 		return jsonify(SUCCESS)
 
 	try:
-		userManager.removeUser(username)
+		userManager.remove_user(username)
 		return get_users()
 	except users.UnknownUser:
 		abort(404)
@@ -268,7 +268,7 @@ def change_password_for_user(username):
 			return make_response("password is missing from request", 400)
 
 		try:
-			userManager.changeUserPassword(username, data["password"])
+			userManager.change_user_password(username, data["password"])
 		except users.UnknownUser:
 			return make_response(("Unknown user: %s" % username, 404, []))
 
@@ -287,7 +287,7 @@ def get_settings_for_user(username):
 		return make_response("Forbidden", 403)
 
 	try:
-		return jsonify(userManager.getAllUserSettings(username))
+		return jsonify(userManager.get_all_user_settings(username))
 	except users.UnknownUser:
 		return make_response("Unknown user: %s" % username, 404)
 
@@ -309,7 +309,7 @@ def change_settings_for_user(username):
 		return make_response("Malformed JSON body in request", 400)
 
 	try:
-		userManager.changeUserSettings(username, data)
+		userManager.change_user_settings(username, data)
 		return jsonify(SUCCESS)
 	except users.UnknownUser:
 		return make_response("Unknown user: %s" % username, 404)
@@ -322,7 +322,7 @@ def delete_apikey_for_user(username):
 
 	if current_user is not None and not current_user.is_anonymous and (current_user.get_name() == username or current_user.has_permission(Permissions.ADMIN)):
 		try:
-			userManager.deleteApikey(username)
+			userManager.delete_api_key(username)
 		except users.UnknownUser:
 			return make_response(("Unknown user: %s" % username, 404, []))
 		return jsonify(SUCCESS)
@@ -338,7 +338,7 @@ def generate_apikey_for_user(username):
 
 	if current_user is not None and not current_user.is_anonymous and (current_user.get_name() == username or current_user.has_permission(Permissions.ADMIN)):
 		try:
-			apikey = userManager.generateApiKey(username)
+			apikey = userManager.generate_api_key(username)
 		except users.UnknownUser:
 			return make_response(("Unknown user: %s" % username, 404, []))
 		return jsonify({"apikey": apikey})

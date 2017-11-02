@@ -100,7 +100,7 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 		return True
 
 	def _is_acl_wizard_required(self):
-		return self._user_manager.enabled and not self._user_manager.hasBeenCustomized()
+		return self._user_manager.enabled and not self._user_manager.has_been_customized()
 
 	def _get_acl_wizard_details(self):
 		return dict(required=self._is_acl_wizard_required())
@@ -126,7 +126,7 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 			# configure access control
 			self._settings.global_set_boolean(["accessControl", "enabled"], True)
 			self._user_manager.enable()
-			self._user_manager.addUser(data["user"], data["pass1"], True, groups=[self._group_manager.admins_group], overwrite=True)
+			self._user_manager.add_user(data["user"], data["pass1"], True, groups=[self._group_manager.admins_group], overwrite=True)
 		elif "ac" in data.keys() and not data["ac"] in valid_boolean_trues:
 			# disable access control
 			self._settings.global_set_boolean(["accessControl", "enabled"], False)

@@ -103,7 +103,7 @@ class UserManager(object):
 				self.logout_user(user)
 
 	@staticmethod
-	def createPasswordHash(password, salt=None):
+	def create_password_hash(password, salt=None):
 		if not salt:
 			salt = settings().get(["accessControl", "salt"])
 			if salt is None:
@@ -116,43 +116,40 @@ class UserManager(object):
 
 		return hashlib.sha512(to_str(password, encoding="utf-8", errors="replace") + to_str(salt)).hexdigest()
 
-	def checkPassword(self, username, password):
-		user = self.findUser(username)
+	def check_password(self, username, password):
+		user = self.find_user(username)
 		if not user:
 			return False
 
-		hash = UserManager.createPasswordHash(password)
+		hash = UserManager.create_password_hash(password)
 		if user.check_password(hash):
 			# new hash matches, correct password
 			return True
 		else:
 			# new hash doesn't match, but maybe the old one does, so check that!
-			oldHash = UserManager.createPasswordHash(password, salt="mvBUTvwzBzD3yPwvnJ4E4tXNf3CGJvvW")
+			oldHash = UserManager.create_password_hash(password, salt="mvBUTvwzBzD3yPwvnJ4E4tXNf3CGJvvW")
 			if user.check_password(oldHash):
 				# old hash matches, we migrate the stored password hash to the new one and return True since it's the correct password
-				self.changeUserPassword(username, password)
+				self.change_user_password(username, password)
 				return True
 			else:
 				# old hash doesn't match either, wrong password
 				return False
 
-	def addUser(self, username, password, active, permissions, groups, overwrite=False):
+	def add_user(self, username, password, active, permissions, groups, overwrite=False):
 		pass
 
-	def changeUserActivation(self, username, active):
+	def change_user_activation(self, username, active):
 		pass
 
 	def change_user_permissions(self, username, permissions):
 		pass
-	changeUserRoles = deprecated("changeUserRoles is deprecated please use change_user_permissions instead")(change_user_permissions)
 
 	def add_permissions_to_user(self, username, permissions):
 		pass
-	addRolesToUser = deprecated("addRolesToUser is deprecated please use add_permissions_to_user instead")(add_permissions_to_user)
 
 	def remove_permissions_from_user(self, username, permissions):
 		pass
-	removeRolesFromUser = deprecated("removePermissionsFromUser is deprecated please use remove_permissions_from_user instead")(remove_permissions_from_user)
 
 	def change_user_groups(self, username, groups):
 		pass
@@ -166,22 +163,22 @@ class UserManager(object):
 	def remove_group_from_all_users(self, group):
 		pass
 
-	def changeUserPassword(self, username, password):
+	def change_user_password(self, username, password):
 		pass
 
-	def getUserSetting(self, username, key):
+	def get_user_setting(self, username, key):
 		return None
 
-	def getAllUserSettings(self, username):
+	def get_all_user_settings(self, username):
 		return dict()
 
-	def changeUserSetting(self, username, key, value):
+	def change_user_setting(self, username, key, value):
 		pass
 
-	def changeUserSettings(self, username, new_settings):
+	def change_user_settings(self, username, new_settings):
 		pass
 
-	def removeUser(self, username):
+	def remove_user(self, username):
 		if username in self._sessionids_by_userid:
 			sessions = self._sessionids_by_userid[username]
 			for session in sessions:
@@ -189,7 +186,7 @@ class UserManager(object):
 					del self._session_users_by_session[session]
 			del self._sessionids_by_userid[username]
 
-	def findUser(self, userid=None, session=None):
+	def find_user(self, userid=None, session=None):
 		if session is not None and session in self._session_users_by_session:
 			user = self._session_users_by_session[session]
 			if userid is None or userid == user.get_id():
@@ -197,11 +194,73 @@ class UserManager(object):
 
 		return None
 
-	def getAllUsers(self):
+	def get_all_users(self):
 		return []
 
-	def hasBeenCustomized(self):
+	def has_been_customized(self):
 		return False
+	
+	#~~ Deprecated methods follow
+	
+	# TODO: Remove deprecated methods in OctoPrint 1.5.0
+
+	@staticmethod
+	def createPasswordHash(*args, **kwargs):
+		"""
+		.. deprecated: 1.4.0
+		
+		   Replaced by :func:`~UserManager.create_password_hash`
+		"""
+		# we can't use the deprecated decorator here since this method is static
+		import warnings
+		warnings.warn("createPasswordHash has been renamed to create_password_hash", DeprecationWarning, stacklevel=2)
+		return UserManager.create_password_hash(*args, **kwargs)
+
+	checkPassword        = deprecated("checkPassword has been renamed to check_password",
+	                                  includedoc="Replaced by :func:`check_password`",
+	                                  since="1.4.0")(check_password)
+	addUser              = deprecated("addUser has been renamed to add_user",
+	                                  includedoc="Replaced by :func:`add_user`",
+	                                  since="1.4.0")(add_user)
+	changeUserActivation = deprecated("changeUserActivation has been renamed to change_user_activation",
+	                                  includedoc="Replaced by :func:`change_user_activation`",
+	                                  since="1.4.0")(change_user_activation)
+	changeUserRoles      = deprecated("changeUserRoles has been renamed to change_user_permissions",
+	                                  includedoc="Replaced by :func:`change_user_permissions`",
+	                                  since="1.4.0")(change_user_permissions)
+	addRolesToUser       = deprecated("addRolesToUser has been renamed to add_permissions_to_user",
+	                                  includedoc="Replaced by :func:`add_permissions_to_user`",
+	                                  since="1.4.0")(add_permissions_to_user)
+	removeRolesFromUser  = deprecated("removeRolesFromUser has been renamed to remove_permissions_from_user",
+	                                  includedoc="Replaced by :func:`remove_permissions_from_user`",
+	                                  since="1.4.0")(remove_permissions_from_user)
+	changeUserPassword   = deprecated("changeUserPassword has been renamed to change_user_password",
+	                                  includedoc="Replaced by :func:`change_user_password`",
+	                                  since="1.4.0")(change_user_password)
+	getUserSetting       = deprecated("getUserSetting has been renamed to get_user_setting",
+	                                  includedoc="Replaced by :func:`get_user_setting`",
+	                                  since="1.4.0")(get_user_setting)
+	getAllUserSettings   = deprecated("getAllUserSettings has been renamed to get_all_user_settings",
+	                                  includedoc="Replaced by :func:`get_all_user_settings`",
+	                                  since="1.4.0")(get_all_user_settings)
+	changeUserSetting    = deprecated("changeUserSetting has been renamed to change_user_setting",
+	                                  includedoc="Replaced by :func:`change_user_setting`",
+	                                  since="1.4.0")(change_user_setting)
+	changeUserSettings   = deprecated("changeUserSettings has been renamed to change_user_settings",
+	                                  includedoc="Replaced by :func:`change_user_settings`",
+	                                  since="1.4.0")(change_user_settings)
+	removeUser           = deprecated("removeUser has been renamed to remove_user",
+	                                  includedoc="Replaced by :func:`remove_user`",
+	                                  since="1.4.0")(remove_user)
+	findUser             = deprecated("findUser has been renamed to find_user",
+	                                  includedoc="Replaced by :func:`find_user`",
+	                                  since="1.4.0")(find_user)
+	getAllUsers          = deprecated("getAllUsers has been renamed to get_all_users",
+	                                  includedoc="Replaced by :func:`get_all_users`",
+	                                  since="1.4.0")(get_all_users)
+	hasBeenCustomized    = deprecated("hasBeenCustomized has been renamed to has_been_customized",
+	                                  includedoc="Replaced by :func:`has_been_customized`",
+	                                  since="1.4.0")(has_been_customized)
 
 ##~~ FilebasedUserManager, takes available users from users.yaml file
 
@@ -298,7 +357,7 @@ class FilebasedUserManager(UserManager):
 
 			return [groupManager.find_group("Users")]
 
-	def addUser(self, username, password, active=False, permissions=None, groups=None, apikey=None, overwrite=False):
+	def add_user(self, username, password, active=False, permissions=None, groups=None, apikey=None, overwrite=False):
 		if not permissions:
 			permissions = []
 
@@ -308,11 +367,11 @@ class FilebasedUserManager(UserManager):
 		if username in self._users.keys() and not overwrite:
 			raise UserAlreadyExists(username)
 
-		self._users[username] = User(username, UserManager.createPasswordHash(password), active, permissions, groups, apikey=apikey)
+		self._users[username] = User(username, UserManager.create_password_hash(password), active, permissions, groups, apikey=apikey)
 		self._dirty = True
 		self._save()
 
-	def changeUserActivation(self, username, active):
+	def change_user_activation(self, username, active):
 		if username not in self._users.keys():
 			raise UnknownUser(username)
 
@@ -407,18 +466,18 @@ class FilebasedUserManager(UserManager):
 		if self._dirty:
 			self._save()
 
-	def changeUserPassword(self, username, password):
+	def change_user_password(self, username, password):
 		if not username in self._users.keys():
 			raise UnknownUser(username)
 
-		passwordHash = UserManager.createPasswordHash(password)
+		passwordHash = UserManager.create_password_hash(password)
 		user = self._users[username]
 		if user._passwordHash != passwordHash:
 			user._passwordHash = passwordHash
 			self._dirty = True
 			self._save()
 
-	def changeUserSetting(self, username, key, value):
+	def change_user_setting(self, username, key, value):
 		if not username in self._users.keys():
 			raise UnknownUser(username)
 
@@ -429,7 +488,7 @@ class FilebasedUserManager(UserManager):
 			self._dirty = self._dirty or old_value != value
 			self._save()
 
-	def changeUserSettings(self, username, new_settings):
+	def change_user_settings(self, username, new_settings):
 		if not username in self._users:
 			raise UnknownUser(username)
 
@@ -440,21 +499,21 @@ class FilebasedUserManager(UserManager):
 			self._dirty = self._dirty or old_value != value
 		self._save()
 
-	def getAllUserSettings(self, username):
+	def get_all_user_settings(self, username):
 		if not username in self._users.keys():
 			raise UnknownUser(username)
 
 		user = self._users[username]
 		return user.get_all_settings()
 
-	def getUserSetting(self, username, key):
+	def get_user_setting(self, username, key):
 		if not username in self._users.keys():
 			raise UnknownUser(username)
 
 		user = self._users[username]
 		return user.get_setting(key)
 
-	def generateApiKey(self, username):
+	def generate_api_key(self, username):
 		if not username in self._users.keys():
 			raise UnknownUser(username)
 
@@ -464,7 +523,7 @@ class FilebasedUserManager(UserManager):
 		self._save()
 		return user._apikey
 
-	def deleteApikey(self, username):
+	def delete_api_key(self, username):
 		if not username in self._users.keys():
 			raise UnknownUser(username)
 
@@ -473,8 +532,8 @@ class FilebasedUserManager(UserManager):
 		self._dirty = True
 		self._save()
 
-	def removeUser(self, username):
-		UserManager.removeUser(self, username)
+	def remove_user(self, username):
+		UserManager.remove_user(self, username)
 
 		if not username in self._users.keys():
 			raise UnknownUser(username)
@@ -483,8 +542,8 @@ class FilebasedUserManager(UserManager):
 		self._dirty = True
 		self._save()
 
-	def findUser(self, userid=None, apikey=None, session=None):
-		user = UserManager.findUser(self, userid=userid, session=session)
+	def find_user(self, userid=None, apikey=None, session=None):
+		user = UserManager.find_user(self, userid=userid, session=session)
 
 		if user is not None:
 			return user
@@ -503,12 +562,22 @@ class FilebasedUserManager(UserManager):
 		else:
 			return None
 
-	def getAllUsers(self):
-		return map(lambda x: x.asDict(), self._users.values())
+	def get_all_users(self):
+		return map(lambda x: x.as_dict(), self._users.values())
 
-	def hasBeenCustomized(self):
+	def has_been_customized(self):
 		return self._customized
+	
+	# ~~ Deprecated methods follow
+	
+	# TODO: Remove deprecated methods in OctoPrint 1.5.0
 
+	generateApiKey = deprecated("generateApiKey has been renamed to generate_api_key",
+	                            includedoc="Replaced by :func:`generate_api_key`",
+	                            since="1.4.0")(generate_api_key)
+	deleteApiKey   = deprecated("deleteApiKey has been renamed to delete_api_key",
+	                            includedoc="Replaced by :func:`delete_api_key`",
+	                            since="1.4.0")(delete_api_key)
 
 ##~~ Exceptions
 
@@ -526,8 +595,7 @@ class UnknownRole(Exception):
 	def _init_(self, role):
 		Exception.__init__(self, "Unknown role: %s" % role)
 
-
-##~~ User object
+##~~ Refactoring helpers
 
 class MethodReplacedByBooleanProperty(object):
 
@@ -587,6 +655,7 @@ class OctoPrintUserMethodReplacedByBooleanProperty(MethodReplacedByBooleanProper
 		          "in OctoPrint 1.5.0."
 		MethodReplacedByBooleanProperty.__init__(self, name, message, getter)
 
+##~~ User object
 
 class User(UserMixin):
 	def __init__(self, username, passwordHash, active, permissions=[], groups=[], apikey=None, settings=None):
@@ -613,7 +682,7 @@ class User(UserMixin):
 
 		self._settings = settings
 
-	def asDict(self):
+	def as_dict(self):
 		from octoprint.access.permissions import OctoPrintPermission
 		return {
 			"name": self._username,
@@ -621,10 +690,8 @@ class User(UserMixin):
 			"permissions": self._permissions,
 			"groups": self._groups,
 			"needs": OctoPrintPermission.convert_needs_to_dict(self.needs),
-			# Deprecated
-			"admin": self.has_permission(Permissions.ADMIN),
-			# Deprecated
-			"user": True,
+			"admin": self.has_permission(Permissions.ADMIN), # TODO: deprecated, remove in 1.5.0
+			"user": True,                                    # TODO: deprecated, remove in 1.5.0
 			"apikey": self._apikey,
 			"settings": self._settings
 		}
@@ -822,7 +889,14 @@ class User(UserMixin):
 
 	def __repr__(self):
 		return "User(id=%s,name=%s,active=%r,user=True,admin=%r,permissions=%s,groups=%s)" % (self.get_id(), self.get_name(), bool(self.is_active), self.has_permission(Permissions.ADMIN), self._permissions, self._groups)
-
+	
+	# ~~ Deprecated methods follow
+	
+	# TODO: Remove deprecated methods in OctoPrint 1.5.0
+	
+	asDict = deprecated("asDict has been renamed to as_dict",
+	                    include_doc="Replaced by :func:`as_dict`",
+	                    since="1.4.0")(as_dict)
 
 class AnonymousUser(AnonymousUserMixin, User):
 	def __init__(self):

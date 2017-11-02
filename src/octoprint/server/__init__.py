@@ -149,9 +149,9 @@ def load_user(id):
 
 	if userManager.enabled:
 		if sessionid:
-			return userManager.findUser(userid=id, session=sessionid)
+			return userManager.find_user(userid=id, session=sessionid)
 		else:
-			return userManager.findUser(userid=id)
+			return userManager.find_user(userid=id)
 	return users.DummyUser()
 
 
@@ -267,9 +267,9 @@ class Server(object):
 		jsonEncoder = OctoPrintJsonEncoder()
 		jsonDecoder = OctoPrintJsonDecoder()
 
-		jsonEncoder.add_multi_encoder(users.User, lambda u: u.asDict())
-		jsonEncoder.add_encoder(groups.Group, lambda g: g.asDict())
-		jsonEncoder.add_encoder(permissions.OctoPrintPermission, lambda op: op.asDict())
+		jsonEncoder.add_multi_encoder(users.User, lambda u: u.as_dict())
+		jsonEncoder.add_encoder(groups.Group, lambda g: g.as_dict())
+		jsonEncoder.add_encoder(permissions.OctoPrintPermission, lambda op: op.as_dict())
 
 		# start regular check if we are connected to the internet
 		connectivityEnabled = self._settings.getBoolean(["server", "onlineCheck", "enabled"])
@@ -784,7 +784,7 @@ class Server(object):
 		if hasattr(g, "identity") and g.identity and userManager.enabled:
 			userid = g.identity.id
 			try:
-				user_language = userManager.getUserSetting(userid, ("interface", "language"))
+				user_language = userManager.get_user_setting(userid, ("interface", "language"))
 				if user_language is not None and not user_language == "_default":
 					return Locale.negotiate([user_language], LANGUAGES)
 			except octoprint.access.users.UnknownUser:

@@ -33,7 +33,7 @@ class OctoPrintPermission(Permission):
 
 		Permission.__init__(self, *needs)
 
-	def asDict(self):
+	def as_dict(self):
 		return dict(
 			name=self.get_name(),
 			description=self.get_description(),

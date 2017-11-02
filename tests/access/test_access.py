@@ -151,7 +151,7 @@ class PermissionManagerTestCase(unittest.TestCase):
 		for expected in data_groups:
 			permission = octoprint.server.permissionManager.find_permission(expected["name"])
 
-			self.assertDictEqual(permission.asDict(), expected)
+			self.assertDictEqual(permission.as_dict(), expected)
 
 	def test_remove_permission(self):
 		octoprint.server.permissionManager.remove_permission("Plugin_permissions_plugin_fancy permission")
@@ -235,7 +235,7 @@ class UserTestCase(unittest.TestCase):
 
 		# we need to sort the needs, permissions and groups
 		# these values could be in any order so we need to sort them to have a defined order for the assertEqual
-		asDict = sort_attributes(user.asDict())
+		asDict = sort_attributes(user.as_dict())
 		expected = sort_attributes(expected)
 
 		self.assertDictEqual(expected, asDict)
@@ -266,7 +266,7 @@ class UserTestCase(unittest.TestCase):
 			user = getattr(self, uservar)
 
 			# we need to sort the needs
-			asDict = sort_attributes(user.asDict())
+			asDict = sort_attributes(user.as_dict())
 			expected = sort_attributes(expected)
 
 			self.assertDictEqual(expected, asDict)

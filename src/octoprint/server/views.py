@@ -348,7 +348,7 @@ def index():
 		filtered_templates = _filter_templates(_templates[locale], default_template_filter)
 
 		wizard = wizard_active(filtered_templates)
-		accesscontrol_active = enable_accesscontrol and userManager.hasBeenCustomized()
+		accesscontrol_active = enable_accesscontrol and userManager.has_been_customized()
 
 		render_kwargs = _get_render_kwargs(filtered_templates,
 		                                   _plugin_names,

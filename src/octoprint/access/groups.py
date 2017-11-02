@@ -293,7 +293,7 @@ class Group(object):
 			if permission is not None:
 				self._permissions.append(permission.get_name())
 
-	def asDict(self):
+	def as_dict(self):
 		from octoprint.access.permissions import OctoPrintPermission
 		return dict(
 			name=self.get_name(),

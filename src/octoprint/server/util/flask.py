@@ -528,7 +528,7 @@ def passive_login():
 		try:
 			remoteAddr = get_remote_address(flask.request)
 			if netaddr.IPAddress(remoteAddr) in localNetworks:
-				user = octoprint.server.userManager.findUser(autologinAs)
+				user = octoprint.server.userManager.find_user(autologinAs)
 				if user is not None:
 					user = octoprint.server.userManager.login_user(user)
 					flask.session["usersession.id"] = user.session
@@ -1122,7 +1122,7 @@ def restricted_access(func):
 	@functools.wraps(func)
 	def decorated_view(*args, **kwargs):
 		# if OctoPrint hasn't been set up yet, abort
-		if settings().getBoolean(["server", "firstRun"]) and settings().getBoolean(["accessControl", "enabled"]) and (octoprint.server.userManager is None or not octoprint.server.userManager.hasBeenCustomized()):
+		if settings().getBoolean(["server", "firstRun"]) and settings().getBoolean(["accessControl", "enabled"]) and (octoprint.server.userManager is None or not octoprint.server.userManager.has_been_customized()):
 			return flask.make_response("OctoPrint isn't setup yet", 403)
 
 		return flask_login.login_required(func)(*args, **kwargs)
@@ -1133,13 +1133,13 @@ def restricted_access(func):
 def firstrun_only_access(func):
 	"""
 	If you decorate a view with this, it will ensure that first setup has _not_ been
-	done for OctoPrint's Access Control. Otherwise it 
+	done for OctoPrint's Access Control. Otherwise it
 	will cause a HTTP 403 status code to be returned by the decorated resource.
 	"""
 	@functools.wraps(func)
 	def decorated_view(*args, **kwargs):
 		# if OctoPrint has been set up yet, abort
-		if settings().getBoolean(["server", "firstRun"]) and (octoprint.server.userManager is None or not octoprint.server.userManager.hasBeenCustomized()):
+		if settings().getBoolean(["server", "firstRun"]) and (octoprint.server.userManager is None or not octoprint.server.userManager.has_been_customized()):
 			return func(*args, **kwargs)
 		else:
 			return flask.make_response("OctoPrint is already setup, this resource is not longer available.", 403)
