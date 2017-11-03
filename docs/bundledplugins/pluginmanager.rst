@@ -94,23 +94,23 @@ octoprint.plugin.pluginmanager.reconnect_hooks
 
 .. py:function:: reconnect_hooks_hook(*args, **kwargs)
 
-Returns additional hooks defined by the plugin for which the plugin manager
-should display the "You should reconnect to your printer" message on plugin
-install/uninstall/enabling/disabling.
+   Returns additional hooks defined by the plugin for which the plugin manager
+   should display the "You should reconnect to your printer" message on plugin
+   install/uninstall/enabling/disabling.
 
-Handlers should return a Python list containing the affected hook names.
+   Handlers should return a Python list containing the affected hook names.
 
-**Example**
+   **Example**
 
-.. code-block:: python
+   .. code-block:: python
 
-   def reconnect_hooks_hook(*args, **kwargs):
-       return ["octoprint.plugin.exampleplugin.some_custom_hook",
-               "octoprint.plugin.exampleplugin.some_other_custom_hook"]
+      def reconnect_hooks_hook(*args, **kwargs):
+          return ["octoprint.plugin.exampleplugin.some_custom_hook",
+                  "octoprint.plugin.exampleplugin.some_other_custom_hook"]
 
-   __plugin_hooks__ = {
-       "octoprint.plugin.pluginmanager.reconnect_hooks": reconnect_hooks_hook
-   }
+      __plugin_hooks__ = {
+          "octoprint.plugin.pluginmanager.reconnect_hooks": reconnect_hooks_hook
+      }
 
 .. _sec-bundledplugins-pluginmanager-sourcecode:
 

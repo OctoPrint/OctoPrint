@@ -39,8 +39,7 @@ Retrieve installed language packs
           "_core": {
             "identifier": "_core",
             "name": "Core",
-            "languages": [
-            ]
+            "languages": []
           },
           "some_plugin": {
             "identifier": "some_plugin",
@@ -122,8 +121,7 @@ Delete a language pack
           "_core": {
             "identifier": "_core",
             "name": "Core",
-            "languages": [
-            ]
+            "languages": []
           },
           "some_plugin": {
             "identifier": "some_plugin",
