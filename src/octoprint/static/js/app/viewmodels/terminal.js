@@ -305,23 +305,37 @@ $(function() {
             }
         };
 
+        // command matching regex
+        // (Example output for inputs G0, G1, G28.1, M117 test)
+        // - 1: code including optional subcode. Example: G0, G1, G28.1, M117
+        // - 2: main code only. Example: G0, G1, G28, M117
+        // - 3: sub code, if available. Example: undefined, undefined, .1, undefined
+        // - 4: command parameters incl. leading whitespace, if any. Example: "", "", "", " test"
+        var commandRe = /^(([gmt][0-9]+)(\.[0-9+])?)(\s.*)?/i;
+
         self.sendCommand = function() {
             var command = self.command();
             if (!command) {
                 return;
             }
 
-            var re = /^([gmt][0-9]+)(\s.*)?/;
-            var commandMatch = command.match(re);
-            if (commandMatch != null) {
-                command = commandMatch[1].toUpperCase() + ((commandMatch[2] !== undefined) ? commandMatch[2] : "");
-                if (self.blacklist.indexOf(commandMatch[1].toUpperCase()) < 0){
-                    command = command.toUpperCase()
+            var commandToSend = command;
+            var commandMatch = commandToSend.match(commandRe);
+            if (commandMatch !== null) {
+                var fullCode = commandMatch[1].toUpperCase(); // full code incl. sub code
+                var mainCode = commandMatch[2].toUpperCase(); // main code only without sub code
+
+                if (self.blacklist.indexOf(mainCode) < 0 && self.blacklist.indexOf(fullCode) < 0) {
+                    // full or main code not on blacklist -> upper case the whole command
+                    commandToSend = commandToSend.toUpperCase();
+                } else {
+                    // full or main code on blacklist -> only upper case that and leave parameters as is
+                    commandToSend = fullCode + (commandMatch[4] !== undefined ? commandMatch[4] : "");
                 }
             }
 
-            if (command) {
-                OctoPrint.control.sendGcode(command)
+            if (commandToSend) {
+                OctoPrint.control.sendGcode(commandToSend)
                     .done(function() {
                         self.cmdHistory.push(command);
                         self.cmdHistory.slice(-300); // just to set a sane limit to how many manually entered commands will be saved...
