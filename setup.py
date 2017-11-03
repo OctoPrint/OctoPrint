@@ -70,7 +70,7 @@ EXTRA_REQUIRES = dict(
 		# Documentation dependencies
 		"sphinx>=1.6,<1.7",
 		"sphinxcontrib-httpdomain",
-		"sphinxcontrib-mermaid",
+		"sphinxcontrib-mermaid>=0.3",
 		"sphinx_rtd_theme",
 
 		# PyPi upload related
