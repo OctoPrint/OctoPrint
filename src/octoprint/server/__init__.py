@@ -454,7 +454,7 @@ class Server(object):
 		def mime_type_guesser(path):
 			from octoprint.filemanager import get_mime_type
 			return get_mime_type(path)
-	
+
 		def download_name_generator(path):
 			metadata = fileManager.get_metadata("local", path)
 			if metadata and "display" in metadata:
@@ -1235,16 +1235,18 @@ class Server(object):
 		less_plugins = list(dynamic_plugin_assets["external"]["less"])
 
 		# a couple of custom filters
-		from octoprint.server.util.webassets import LessImportRewrite, JsDelimiterBundler, SourceMapRewrite, SourceMapRemove
+		from octoprint.server.util.webassets import LessImportRewrite, JsDelimiterBundler, JsPluginDelimiterBundler, SourceMapRewrite, SourceMapRemove
 		from webassets.filter import register_filter
 
 		register_filter(LessImportRewrite)
 		register_filter(SourceMapRewrite)
 		register_filter(SourceMapRemove)
 		register_filter(JsDelimiterBundler)
+		register_filter(JsPluginDelimiterBundler)
 
 		# JS
 		js_filters = ["sourcemap_remove", "js_delimiter_bundler"]
+		js_plugin_filters = js_filters + ["js_plugin_delimiter_bundler"]
 
 		js_libs_bundle = Bundle(*js_libs, output="webassets/packed_libs.js", filters=",".join(js_filters))
 
@@ -1254,7 +1256,7 @@ class Server(object):
 		if len(js_plugins) == 0:
 			js_plugins_bundle = Bundle(*[])
 		else:
-			js_plugins_bundle = Bundle(*js_plugins, output="webassets/packed_plugins.js", filters=",".join(js_filters))
+			js_plugins_bundle = Bundle(*js_plugins, output="webassets/packed_plugins.js", filters=",".join(js_plugin_filters))
 
 		js_app_bundle = Bundle(js_plugins_bundle, js_core_bundle, output="webassets/packed_app.js", filters=",".join(js_filters))
 

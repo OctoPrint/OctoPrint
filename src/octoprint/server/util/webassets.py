@@ -98,3 +98,12 @@ class JsDelimiterBundler(Filter):
 	def input(self, _in, out, **kwargs):
 		out.write(_in.read())
 		out.write("\n;\n")
+
+class JsPluginDelimiterBundler(Filter):
+	name = "js_plugin_delimiter_bundler"
+	options = {}
+
+	def input(self, _in, out, **kwargs):
+		out.write("(function () {\n    try {\n        ")
+		out.write(_in.read().replace('\n', '\n        '))
+		out.write("\n    } catch (error) {\n        console.error(error);\n    }\n})();\n")
