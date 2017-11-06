@@ -1235,7 +1235,8 @@ class Server(object):
 		less_plugins = list(dynamic_plugin_assets["external"]["less"])
 
 		# a couple of custom filters
-		from octoprint.server.util.webassets import LessImportRewrite, JsDelimiterBundler, JsPluginDelimiterBundler, SourceMapRewrite, SourceMapRemove
+		from octoprint.server.util.webassets import LessImportRewrite, JsDelimiterBundler, JsPluginDelimiterBundler, \
+			SourceMapRewrite, SourceMapRemove
 		from webassets.filter import register_filter
 
 		register_filter(LessImportRewrite)
@@ -1246,7 +1247,7 @@ class Server(object):
 
 		# JS
 		js_filters = ["sourcemap_remove", "js_delimiter_bundler"]
-		js_plugin_filters = js_filters + ["js_plugin_delimiter_bundler"]
+		js_plugin_filters = ["sourcemap_remove", "js_plugin_delimiter_bundler"]
 
 		js_libs_bundle = Bundle(*js_libs, output="webassets/packed_libs.js", filters=",".join(js_filters))
 
