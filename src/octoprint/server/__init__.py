@@ -146,11 +146,13 @@ def load_user(id):
 
 
 class Server(object):
-	def __init__(self, settings=None, plugin_manager=None, connectivity_checker=None, event_manager=None,
-	             host="0.0.0.0", port=5000, debug=False, safe_mode=False, allow_root=False, octoprint_daemon=None):
+	def __init__(self, settings=None, plugin_manager=None, connectivity_checker=None, environment_detector=None,
+	             event_manager=None, host="0.0.0.0", port=5000, debug=False, safe_mode=False, allow_root=False,
+	             octoprint_daemon=None):
 		self._settings = settings
 		self._plugin_manager = plugin_manager
 		self._connectivity_checker = connectivity_checker
+		self._environment_detector = environment_detector
 		self._event_manager = event_manager
 		self._host = host
 		self._port = port
@@ -290,7 +292,8 @@ class Server(object):
 			app_session_manager=appSessionManager,
 			plugin_lifecycle_manager=pluginLifecycleManager,
 			preemptive_cache=preemptiveCache,
-			connectivity_checker=connectivityChecker
+			connectivity_checker=connectivityChecker,
+			environment_detector=self._environment_detector
 		)
 
 		# create user manager instance
@@ -390,6 +393,9 @@ class Server(object):
 		pluginManager.implementation_post_inits=[settings_plugin_config_migration_and_cleanup]
 
 		pluginManager.log_all_plugins()
+		
+		# log environment data now
+		self._environment_detector.log_detected_environment()
 
 		# initialize file manager and register it for changes in the registered plugins
 		fileManager.initialize()

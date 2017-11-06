@@ -15,6 +15,7 @@ from octoprint.server.util.flask import restricted_access, with_revalidation_che
 from octoprint.server import admin_permission, VERSION
 from octoprint.util.pip import LocalPipCaller, UnknownPip
 from octoprint.util.version import get_octoprint_version_string, get_octoprint_version, is_octoprint_compatible
+from octoprint.util.platform import get_os
 
 from flask import jsonify, make_response
 from flask.ext.babel import gettext
@@ -241,7 +242,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			                   available=self._repository_available,
 			                   plugins=self._repository_plugins
 			               ),
-			               os=self._get_os(),
+			               os=get_os(),
 			               octoprint=get_octoprint_version_string(),
 			               pip=dict(
 			                   available=self._pip_caller.available,
@@ -759,7 +760,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			if repo_data is None:
 				return False
 
-		current_os = self._get_os()
+		current_os = get_os()
 		octoprint_version = get_octoprint_version(base=True)
 
 		def map_repository_entry(entry):
@@ -877,14 +878,6 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 			positive_match = current_os in positive_entries or any(map(lambda x: sys.platform.startswith(x), positive_entries))
 
 		return positive_match and not negative_match
-
-	@classmethod
-	def _get_os(cls):
-		for identifier, platforms in cls.OPERATING_SYSTEMS.items():
-			if (callable(platforms) and platforms(sys.platform)) or (isinstance(platforms, list) and sys.platform in platforms):
-				return identifier
-		else:
-			return "unmapped"
 
 	@property
 	def _reconnect_hooks(self):

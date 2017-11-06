@@ -48,7 +48,7 @@ def run_server(basedir, configfile, host, port, debug, allow_root, logging_confi
 			          "https://urllib3.readthedocs.org/en/latest/security.html#openssl-pyopenssl")
 		logger.info(get_divider_line("*"))
 
-	def log_register_rollover(safe_mode=None, plugin_manager=None, **kwargs):
+	def log_register_rollover(safe_mode=None, plugin_manager=None, environment_detector=None, **kwargs):
 		from octoprint.logging import get_handler, log_to_handler, get_divider_line
 		from octoprint.logging.handlers import OctoPrintLogHandler
 
@@ -67,22 +67,24 @@ def run_server(basedir, configfile, host, port, debug, allow_root, logging_confi
 			if safe_mode:
 				_log("SAFE MODE is active. Third party plugins are disabled!")
 			plugin_manager.log_all_plugins(only_to_handler=handler)
+			environment_detector.log_detected_environment(only_to_handler=handler)
 			_log(get_divider_line("-"))
 
 		OctoPrintLogHandler.registerRolloverCallback(rollover_callback)
 
 	try:
-		settings, _, safe_mode, event_manager, \
-		connectivity_checker, plugin_manager = init_platform(basedir,
-		                                                     configfile,
-		                                                     logging_file=logging_config,
-		                                                     debug=debug,
-		                                                     verbosity=verbosity,
-		                                                     uncaught_logger=__name__,
-		                                                     safe_mode=safe_mode,
-                                                             ignore_blacklist=ignore_blacklist,
-		                                                     after_safe_mode=log_startup,
-		                                                     after_plugin_manager=log_register_rollover)
+		components = init_platform(basedir, configfile,
+		                           logging_file=logging_config,
+		                           debug=debug,
+		                           verbosity=verbosity,
+		                           uncaught_logger=__name__,
+		                           safe_mode=safe_mode,
+                                   ignore_blacklist=ignore_blacklist,
+		                           after_safe_mode=log_startup,
+		                           after_plugin_manager=log_register_rollover)
+		
+		settings, _, safe_mode, event_manager, connectivity_checker, plugin_manager, environment_detector = components
+
 	except FatalStartupError as e:
 		click.echo(e.message, err=True)
 		click.echo("There was a fatal error starting up OctoPrint.", err=True)
@@ -92,6 +94,7 @@ def run_server(basedir, configfile, host, port, debug, allow_root, logging_confi
 		                          plugin_manager=plugin_manager,
 		                          event_manager=event_manager,
 		                          connectivity_checker=connectivity_checker,
+		                          environment_detector=environment_detector,
 		                          host=host,
 		                          port=port,
 		                          debug=debug,
