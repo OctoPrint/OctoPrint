@@ -286,40 +286,58 @@ def configure_timelapse(config=None, persist=False):
 	if current is not None:
 		current.unload()
 
+	snapshot_url = settings().get(["webcam", "snapshot"])
+	ffmpeg_path = settings().get(["webcam", "ffmpeg"])
+	timelapse_precondition = snapshot_url is not None and snapshot_url.strip() != "" \
+	                         and ffmpeg_path is not None and ffmpeg_path.strip() != ""
+	
 	type = config["type"]
-
-	postRoll = 0
-	if "postRoll" in config and config["postRoll"] >= 0:
-		postRoll = config["postRoll"]
-
-	fps = 25
-	if "fps" in config and config["fps"] > 0:
-		fps = config["fps"]
+	if not timelapse_precondition and type is not None and type != "off":
+		logging.getLogger(__name__).warn("Essential timelapse settings unconfigured (snapshot URL or FFMPEG path) "
+		                                 "but timelapse enabled, forcing disabled timelapse and disabling it "
+		                                 "in the config as well.")
+		type = "off"
+		config["type"] = "off"
+		
+		if not persist:
+			# make sure we persist at least that timelapse is now disabled by default - we don't want the above
+			# warning to log
+			settings().set(["webcam", "timelapse", "type"], "off")
+			settings().save()
 
 	if type is None or "off" == type:
 		current = None
 
-	elif "zchange" == type:
-		retractionZHop = 0
-		if "options" in config and "retractionZHop" in config["options"] and config["options"]["retractionZHop"] >= 0:
-			retractionZHop = config["options"]["retractionZHop"]
-
-		minDelay = 5
-		if "options" in config and "minDelay" in config["options"] and config["options"]["minDelay"] > 0:
-			minDelay = config["options"]["minDelay"]
-
-		current = ZTimelapse(post_roll=postRoll, retraction_zhop=retractionZHop, min_delay=minDelay, fps=fps)
-
-	elif "timed" == type:
-		interval = 10
-		if "options" in config and "interval" in config["options"] and config["options"]["interval"] > 0:
-			interval = config["options"]["interval"]
-
-		capture_post_roll = True
-		if "options" in config and "capturePostRoll" in config["options"] and isinstance(config["options"]["capturePostRoll"], bool):
-			capture_post_roll = config["options"]["capturePostRoll"]
-
-		current = TimedTimelapse(post_roll=postRoll, interval=interval, fps=fps, capture_post_roll=capture_post_roll)
+	else:
+		postRoll = 0
+		if "postRoll" in config and config["postRoll"] >= 0:
+			postRoll = config["postRoll"]
+		
+		fps = 25
+		if "fps" in config and config["fps"] > 0:
+			fps = config["fps"]
+		
+		if "zchange" == type:
+			retractionZHop = 0
+			if "options" in config and "retractionZHop" in config["options"] and config["options"]["retractionZHop"] >= 0:
+				retractionZHop = config["options"]["retractionZHop"]
+	
+			minDelay = 5
+			if "options" in config and "minDelay" in config["options"] and config["options"]["minDelay"] > 0:
+				minDelay = config["options"]["minDelay"]
+	
+			current = ZTimelapse(post_roll=postRoll, retraction_zhop=retractionZHop, min_delay=minDelay, fps=fps)
+	
+		elif "timed" == type:
+			interval = 10
+			if "options" in config and "interval" in config["options"] and config["options"]["interval"] > 0:
+				interval = config["options"]["interval"]
+	
+			capture_post_roll = True
+			if "options" in config and "capturePostRoll" in config["options"] and isinstance(config["options"]["capturePostRoll"], bool):
+				capture_post_roll = config["options"]["capturePostRoll"]
+	
+			current = TimedTimelapse(post_roll=postRoll, interval=interval, fps=fps, capture_post_roll=capture_post_roll)
 
 	notify_callbacks(current)
 
