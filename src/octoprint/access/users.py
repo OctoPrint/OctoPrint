@@ -199,16 +199,16 @@ class UserManager(object):
 
 	def has_been_customized(self):
 		return False
-	
+
 	#~~ Deprecated methods follow
-	
+
 	# TODO: Remove deprecated methods in OctoPrint 1.5.0
 
 	@staticmethod
 	def createPasswordHash(*args, **kwargs):
 		"""
 		.. deprecated: 1.4.0
-		
+
 		   Replaced by :func:`~UserManager.create_password_hash`
 		"""
 		# we can't use the deprecated decorator here since this method is static
@@ -293,13 +293,12 @@ class FilebasedUserManager(UserManager):
 					if "groups" in attributes:
 						groups = attributes["groups"]
 
-					# Migrate from roles to permissions
-					if "roles" in attributes:
+					# migrate from roles to permissions
+					if "roles" in attributes and not "permissions" in attributes:
+						self._logger.info("Migrating user {} to new granular permission system".format(name))
+
 						from octoprint.server import groupManager
-
-						groups.extend(self.__migrate_roles_to_groups(attributes["roles"]))
-
-						# Make sure the new system will be saved and the old gets removed
+						groups.extend(self._migrate_roles_to_groups(attributes["roles"]))
 						self._dirty = True
 
 					apikey = None
@@ -309,8 +308,13 @@ class FilebasedUserManager(UserManager):
 					if "settings" in attributes:
 						settings = attributes["settings"]
 
-					self._users[name] = User(username=name, passwordHash=attributes["password"], active=attributes["active"],
-											permissions=permissions, groups=groups, apikey=apikey, settings=settings)
+					self._users[name] = User(username=name,
+					                         passwordHash=attributes["password"],
+					                         active=attributes["active"],
+					                         permissions=permissions,
+					                         groups=groups,
+					                         apikey=apikey,
+					                         settings=settings)
 					for sessionid in self._sessionids_by_userid.get(name, set()):
 						if sessionid in self._session_users_by_session:
 							self._session_users_by_session[sessionid].update_user(self._users[name])
@@ -328,13 +332,20 @@ class FilebasedUserManager(UserManager):
 		data = {}
 		for name in self._users.keys():
 			user = self._users[name]
+
+			if not user or not isinstance(user, User):
+				continue
+
 			data[name] = {
 				"password": user._passwordHash,
 				"active": user._active,
 				"groups": user._groups,
 				"permissions": user._permissions,
 				"apikey": user._apikey,
-				"settings": user._settings
+				"settings": user._settings,
+
+				# TODO: deprecated, remove in 1.5.0
+				"roles": user._roles
 			}
 
 		with atomic_write(self._userfile, "wb", permissions=0o600, max_permissions=0o666) as f:
@@ -343,7 +354,7 @@ class FilebasedUserManager(UserManager):
 		self._load()
 
 	@staticmethod
-	def __migrate_roles_to_groups(roles):
+	def _migrate_roles_to_groups(roles):
 		from octoprint.server import groupManager
 
 		# If admin is inside the roles, just return admin group
@@ -567,9 +578,9 @@ class FilebasedUserManager(UserManager):
 
 	def has_been_customized(self):
 		return self._customized
-	
+
 	# ~~ Deprecated methods follow
-	
+
 	# TODO: Remove deprecated methods in OctoPrint 1.5.0
 
 	generateApiKey = deprecated("generateApiKey has been renamed to generate_api_key",
@@ -690,10 +701,13 @@ class User(UserMixin):
 			"permissions": self._permissions,
 			"groups": self._groups,
 			"needs": OctoPrintPermission.convert_needs_to_dict(self.needs),
-			"admin": self.has_permission(Permissions.ADMIN), # TODO: deprecated, remove in 1.5.0
-			"user": True,                                    # TODO: deprecated, remove in 1.5.0
 			"apikey": self._apikey,
-			"settings": self._settings
+			"settings": self._settings,
+
+			# TODO: deprecated, remove in 1.5.0
+			"admin": self.has_permission(Permissions.ADMIN),
+			"user": not self.is_anonymous,
+			"roles": self._roles
 		}
 
 	def check_password(self, passwordHash):
@@ -716,16 +730,6 @@ class User(UserMixin):
 	@property
 	def is_active(self):
 		return FlaskLoginMethodReplacedByBooleanProperty("is_active", lambda: self._active)
-
-	@property
-	@deprecated("is_user is deprecated, please use has_permissions", since="now")
-	def is_user(self):
-		return OctoPrintUserMethodReplacedByBooleanProperty("is_user", lambda: "user" in self._roles)
-
-	@property
-	@deprecated("is_admin is deprecated, please use has_permissions", since="now")
-	def is_admin(self):
-		return OctoPrintUserMethodReplacedByBooleanProperty("is_admin", lambda: self.has_permission(Permissions.ADMIN))
 
 	def get_all_settings(self):
 		return self._settings
@@ -889,14 +893,40 @@ class User(UserMixin):
 
 	def __repr__(self):
 		return "User(id=%s,name=%s,active=%r,user=True,admin=%r,permissions=%s,groups=%s)" % (self.get_id(), self.get_name(), bool(self.is_active), self.has_permission(Permissions.ADMIN), self._permissions, self._groups)
-	
-	# ~~ Deprecated methods follow
-	
-	# TODO: Remove deprecated methods in OctoPrint 1.5.0
-	
+
+	# ~~ Deprecated methods & properties follow
+
+	# TODO: Remove deprecated methods & properties in OctoPrint 1.5.0
+
 	asDict = deprecated("asDict has been renamed to as_dict",
 	                    includedoc="Replaced by :func:`as_dict`",
 	                    since="1.4.0")(as_dict)
+
+	@property
+	@deprecated("is_user is deprecated, please use has_permissions", since="1.4.0")
+	def is_user(self):
+		return OctoPrintUserMethodReplacedByBooleanProperty("is_user", lambda: not self.is_anonymous)
+
+	@property
+	@deprecated("is_admin is deprecated, please use has_permissions", since="1.4.0")
+	def is_admin(self):
+		return OctoPrintUserMethodReplacedByBooleanProperty("is_admin", lambda: self.has_permission(Permissions.ADMIN))
+
+	@property
+	@deprecated("roles is deprecated, please use has_permission", since="1.4.0")
+	def roles(self):
+		return self._roles
+
+	@property
+	def _roles(self):
+		"""Helper for the deprecated self.roles and serializing to yaml"""
+		if self.has_permission(Permissions.ADMIN):
+			return ["user", "admin"]
+		elif not self.is_anonymous:
+			return ["user"]
+		else:
+			return []
+
 
 class AnonymousUser(AnonymousUserMixin, User):
 	def __init__(self):
