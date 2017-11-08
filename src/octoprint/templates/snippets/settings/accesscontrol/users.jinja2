@@ -37,7 +37,7 @@
 <!-- Modals for user management -->
 
 <script type="text/html" id="users-permission-template">
-    <!-- ko foreach: $root.access.permissions.permissionsList() -->
+    <!-- ko foreach: $root.access.permissions.permissionList() -->
         <label class="checkbox">
             <input type="checkbox" data-bind="checkedValue: name, checked: $root.access.users.editorPermissions"><span data-bind="text: name"></span><br>
             <span class="description" data-bind="text: description"></span>

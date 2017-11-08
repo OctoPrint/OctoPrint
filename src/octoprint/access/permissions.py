@@ -75,6 +75,12 @@ class OctoPrintPermission(Permission):
 
 
 class CombinedOctoPrintPermission(OctoPrintPermission):
+
+	def as_dict(self):
+		result = OctoPrintPermission.as_dict(self)
+		result["combined"] = True
+		return result
+
 	@classmethod
 	def from_permissions(cls, name, *permissions, **kwargs):
 		if len(permissions) == 0:

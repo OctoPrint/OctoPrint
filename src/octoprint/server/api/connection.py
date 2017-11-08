@@ -14,7 +14,7 @@ from octoprint.server.util.flask import restricted_access, get_json_command_from
 from octoprint.access.permissions import Permissions
 
 @api.route("/connection", methods=["GET"])
-@Permissions.CONNECTION_ACCESS.require(403)
+@Permissions.STATUS.require(403)
 def connectionState():
 	state, port, baudrate, printer_profile = printer.get_current_connection()
 	current = {

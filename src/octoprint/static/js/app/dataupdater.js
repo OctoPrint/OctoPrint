@@ -133,6 +133,9 @@ function DataUpdater(allViewModels, connectCallback, disconnectCallback) {
 
         var data = event.data;
 
+        // update permissions
+        PERMISSIONS = data["permissions"];
+
         // update version information
         var oldVersion = VERSION;
         VERSION = data["version"];

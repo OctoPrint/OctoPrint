@@ -553,6 +553,10 @@ $(function() {
             throw new Error("settingsViewModel is missing, can't run UI");
         }
 
+        if (!_.has(viewModelMap, "accessViewModel") || !viewModelMap["accessViewModel"].permissions) {
+            throw new Error("accessViewmodel is missing or incomplete, can't run UI");
+        }
+
         if (!_.has(viewModelMap, "loginStateViewModel")) {
             throw new Error("loginStateViewModel is missing, can't run UI");
         }
@@ -728,6 +732,9 @@ $(function() {
          */
 
         var onServerConnect = function() {
+            // Initialize our permissions
+            viewModelMap["accessViewModel"].permissions.initialize();
+
             // Always perform a passive login on server (re)connect. No need for
             // onServerConnect/onServerReconnect on the LoginStateViewModel with this in place.
             return viewModelMap["loginStateViewModel"].requestData()

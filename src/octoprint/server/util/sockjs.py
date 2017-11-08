@@ -18,6 +18,7 @@ import octoprint.plugin
 
 from octoprint.events import Events
 from octoprint.settings import settings
+from octoprint.access.permissions import Permissions
 
 import octoprint.printer
 
@@ -106,7 +107,8 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection, octoprint.printer.
 			plugin_hash=plugin_hash.hexdigest(),
 			config_hash=config_hash,
 			debug=octoprint.server.debug,
-			safe_mode=octoprint.server.safe_mode
+			safe_mode=octoprint.server.safe_mode,
+			permissions=[permission.as_dict() for permission in Permissions.all()]
 		))
 
 		self._printer.register_callback(self)

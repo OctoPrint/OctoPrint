@@ -229,7 +229,11 @@ $(function() {
                 return false;
             }
 
-            return _.any(permission, function(need) { return _.has(userneeds, need.method) && _.contains(userneeds[need.method], need.value); });
+            return _.any(permission, function(need) {
+                return _.has(userneeds, need.method) && _.all(need.value, function(value) {
+                    return _.contains(userneeds[need.method], value);
+                });
+            });
         };
 
         // Knockout wrapper for the hasPermission function
