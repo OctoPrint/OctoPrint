@@ -33,7 +33,11 @@ DEFAULT_USER_PERMISSIONS = [Permissions.STATUS,
                             Permissions.TIMELAPSE_ADMIN]
 
 GUEST_GROUP = "Guests"
-DEFAULT_GUEST_PERMISSIONS = []
+DEFAULT_GUEST_PERMISSIONS = [Permissions.STATUS,
+                             Permissions.WEBCAM,
+                             Permissions.DOWNLOAD,
+                             Permissions.TIMELAPSE,
+                             Permissions.TERMINAL]
 
 
 class GroupManager(object):
