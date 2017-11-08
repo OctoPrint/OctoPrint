@@ -14,6 +14,7 @@ from octoprint.access.permissions import Permissions
 
 @api.route("/job", methods=["POST"])
 @restricted_access
+@Permissions.PRINT.require(403)
 def controlJob():
 	if not printer.is_operational():
 		return make_response("Printer is not operational", 409)
