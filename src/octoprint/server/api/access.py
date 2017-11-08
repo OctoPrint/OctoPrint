@@ -12,7 +12,7 @@ from flask_login import current_user
 import octoprint.access.groups as groups
 import octoprint.access.users as users
 
-from octoprint.server import SUCCESS, permissionManager, groupManager, userManager
+from octoprint.server import SUCCESS, groupManager, userManager
 from octoprint.server.api import api, valid_boolean_trues
 from octoprint.server.util.flask import restricted_access
 from octoprint.access.permissions import Permissions
@@ -21,11 +21,8 @@ from octoprint.access.permissions import Permissions
 
 @api.route("/access/permissions", methods=["GET"])
 def get_permissions():
-	return jsonify(
-			{
-				"permissions": permissionManager.permissions,
-				"combined_permissions": permissionManager.combined_permissions
-			})
+	return jsonify(permissions=Permissions.regular(),
+	               combined_permissions=Permissions.combined())
 
 #~~ group api
 
@@ -33,7 +30,7 @@ def get_permissions():
 @restricted_access
 @Permissions.SETTINGS.require(403)
 def get_groups():
-	return jsonify({"groups": groupManager.groups})
+	return jsonify(groups=map(lambda g: g.as_dict(), groupManager.groups))
 
 
 @api.route("/access/groups", methods=["POST"])
@@ -94,13 +91,13 @@ def update_group(groupname):
 			# change permissions
 			if "permissions" in data:
 				permissions = data["permissions"]
-				groupManager.change_group_permissions(groupname, permissions)
+				groupManager.set_group_permissions(groupname, permissions)
 
 			if "defaultOn" in data:
-				groupManager.change_group_default(groupname, data["defaultOn"])
+				groupManager.set_group_default(groupname, data["defaultOn"])
 
 			if "description" in data:
-				groupManager.change_group_description(groupname, data["description"])
+				groupManager.set_group_description(groupname, data["description"])
 
 			return get_groups()
 		except groups.GroupCantBeChanged:
@@ -130,7 +127,7 @@ def get_users():
 	if not userManager.enabled:
 		return jsonify(SUCCESS)
 
-	return jsonify({"users": userManager.get_all_users()})
+	return jsonify(users=map(lambda u: u.as_dict(), userManager.get_all_users()))
 
 
 @api.route("/access/users", methods=["POST"])
@@ -344,3 +341,9 @@ def generate_apikey_for_user(username):
 		return jsonify({"apikey": apikey})
 	else:
 		return make_response(("Forbidden", 403, []))
+
+def _to_external_permissions(*permissions):
+	return map(lambda p: p.get_name(), permissions)
+
+def _to_external_groups(*groups):
+	return map(lambda g: g.get_name(), groups)

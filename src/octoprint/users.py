@@ -18,11 +18,13 @@ class User(AccessUser):
 	@deprecated("octoprint.users.User is deprecated, please use octoprint.access.users.User instead")
 	def __init__(self, username, passwordHash, active, roles, apikey=None, settings=None):
 		from octoprint.server import groupManager
-		groups = [groupManager.guests_group]
-		if "user" is None:
-			groups = [groupManager.find_group("Users")]
+
 		if "admin" in roles:
-			groups = [groupManager.admins_group]
+			groups = [groupManager.admin_group]
+		elif "user" in roles:
+			groups = [groupManager.user_group]
+		else:
+			groups = [groupManager.guest_group]
 
 		AccessUser(username=username, passwordHash=passwordHash, active=active, permissions=None, groups=groups,
 		           apikey=apikey, settings=settings)

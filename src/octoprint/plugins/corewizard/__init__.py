@@ -126,7 +126,7 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 			# configure access control
 			self._settings.global_set_boolean(["accessControl", "enabled"], True)
 			self._user_manager.enable()
-			self._user_manager.add_user(data["user"], data["pass1"], True, groups=[self._group_manager.admins_group], overwrite=True)
+			self._user_manager.add_user(data["user"], data["pass1"], True, groups=[self._group_manager.admin_group], overwrite=True)
 		elif "ac" in data.keys() and not data["ac"] in valid_boolean_trues:
 			# disable access control
 			self._settings.global_set_boolean(["accessControl", "enabled"], False)
@@ -192,19 +192,19 @@ class CoreWizardPlugin(octoprint.plugin.AssetPlugin,
 		return dict(mandatory=self._is_onlinecheck_wizard_required())
 
 	#~~ Plugin blacklist subwizard
-	
+
 	def _is_pluginblacklist_wizard_firstrunonly(self):
 		return False
-	
+
 	def _is_pluginblacklist_wizard_required(self):
 		return self._settings.global_get(["server", "pluginBlacklist", "enabled"]) is None
-	
+
 	def _get_pluginblacklist_wizard_details(self):
 		return dict(required=self._is_pluginblacklist_wizard_required())
-	
+
 	def _get_pluginblacklist_wizard_name(self):
 		return gettext("Plugin blacklist")
-	
+
 	def _get_pluginblacklist_additional_wizard_template_data(self):
 		return dict(mandatory=self._is_pluginblacklist_wizard_required())
 

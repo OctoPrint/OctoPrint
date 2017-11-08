@@ -137,10 +137,10 @@ def on_user_logged_out(sender, user=None):
 
 def load_user(id):
 	if id is None:
-		return users.AnonymousUser()
+		return users.AnonymousUser([groupManager.guest_group])
 
 	if id == "_api":
-		return users.ApiUser()
+		return users.ApiUser([groupManager.admin_group])
 
 	if session and "usersession.id" in session:
 		sessionid = session["usersession.id"]
@@ -152,7 +152,7 @@ def load_user(id):
 			return userManager.find_user(userid=id, session=sessionid)
 		else:
 			return userManager.find_user(userid=id)
-	return users.DummyUser()
+	return users.DummyUser([groupManager.admin_group])
 
 
 #~~ startup code
@@ -317,29 +317,6 @@ class Server(object):
 		)
 
 		#~~ setup access control
-		
-		# create permission manager instance
-		permission_manager_factories = pluginManager.get_hooks("octoprint.access.permissions.factory")
-		for name, factory in permission_manager_factories.items():
-			try:
-				permissionManager = factory(components, self._settings)
-				if permissionManager is not None:
-					self._logger.debug("Created permission manager instance from factory {}".format(name))
-					break
-			except:
-				self._logger.exception("Error while creating permission manager instance from factory {}".format(name))
-		else:
-			permission_manager_name = self._settings.get(["accessControl", "permissionManager"])
-			try:
-				clazz = octoprint.util.get_class(permission_manager_name)
-				permissionManager = clazz()
-			except AttributeError as e:
-				self._logger.exception("Could not instantiate permission manager {}, "
-				                       "falling back to PermissionManager!".format(permission_manager_name))
-				permissionManager = octoprint.access.permissions.PermissionManager()
-		components.update(dict(permission_manager=permissionManager))
-
-		permissions.Permissions.initialize()
 
 		# get additional permissions from plugins
 		self._setup_plugin_permissions(components)
@@ -380,11 +357,11 @@ class Server(object):
 			user_manager_name = self._settings.get(["accessControl", "userManager"])
 			try:
 				clazz = octoprint.util.get_class(user_manager_name)
-				userManager = clazz()
+				userManager = clazz(groupManager)
 			except:
 				self._logger.exception("Could not instantiate user manager {}, "
 				                       "falling back to FilebasedUserManager!".format(user_manager_name))
-				userManager = octoprint.access.users.FilebasedUserManager()
+				userManager = octoprint.access.users.FilebasedUserManager(groupManager)
 			finally:
 				userManager.enabled = self._settings.getBoolean(["accessControl", "enabled"])
 		components.update(dict(user_manager=userManager))
@@ -501,9 +478,15 @@ class Server(object):
 		loginManager = LoginManager()
 		loginManager.session_protection = "strong"
 		loginManager.user_callback = load_user
-		loginManager.anonymous_user = users.AnonymousUser # TODO: remove in 1.5.0
-		if not userManager.enabled:
-			loginManager.anonymous_user = users.DummyUser
+
+		if userManager.enabled:
+			def anonymous_user_factory():
+				return users.AnonymousUser([groupManager.guest_group])
+			loginManager.anonymous_user = anonymous_user_factory # TODO: remove in 1.5.0
+		else:
+			def dummy_user_factory():
+				return users.DummyUser([groupManager.admin_group])
+			loginManager.anonymous_user = dummy_user_factory
 			principals.identity_loaders.appendleft(users.dummy_identity_loader)
 		loginManager.init_app(app, add_context_processor=False)
 
@@ -1501,11 +1484,10 @@ class Server(object):
 
 	def _setup_plugin_permissions(self, components):
 		global pluginManager
-		global permissionManager
 
 		postponed_combined_permissions = []
 
-		from octoprint.access.permissions import OctoPrintPermission, RoleNeed, unionPermissions, UnknownPermission
+		from octoprint.access.permissions import OctoPrintPermission, CombinedOctoPrintPermission, UnknownPermission
 		permissions_initializers = pluginManager.get_hooks("octoprint.access.permissions")
 		for name, permissions_initializer in permissions_initializers.items():
 			try:
@@ -1520,40 +1502,37 @@ class Server(object):
 					if "name" not in p or "description" not in p or "roles" not in p:
 						continue
 
-					permission = permissionManager.add_permission(OctoPrintPermission("Plugin {} {}".format(name, p["name"]),
+					permission = OctoPrintPermission("Plugin {} {}".format(name, p["name"]),
 					                                 gettext(p["description"]),
-					                                 *[RoleNeed("plugin_{}_{}".format(name, need)) for need in p["roles"]]))
-
-					if permission is not None:
-						key = permission.get_name().replace(" ", "_").upper()
-						octoprint.access.permissions.Permissions.__setattr__(key, permission)
+					                                 *["plugin_{}_{}".format(name, need) for need in p["roles"]])
+					key = permission.get_name().replace(" ", "_").upper()
+					setattr(octoprint.access.permissions.Permissions, key, permission)
 
 				for p in combined_permission:
 					if "name" not in p or "permissions" not in p:
 						continue
 
 					permissions = []
-					postponed = False
 					for permission_name in p["permissions"]:
-						perm = permissionManager.find_permission(permission_name)
+						perm = octoprint.access.permissions.Permissions.find(permission_name)
 						# If we can't find a permission by the name, try to add the plugins prefix and look again
 						if perm is None:
-							perm = permissionManager.find_permission("Plugin {} {}".format(name, permission_name))
+							perm = octoprint.access.permissions.Permissions.find("Plugin {} {}".format(name, permission_name))
 
-						# If there is still no permission postpone this, maybe it is a permission out of another Plugin that hasn't been loaded yet.
+
 						if perm is None:
+							# if there is still no permission found, postpone this - maybe it is a permission from
+							# another plugin that hasn't been loaded yet
 							postponed_combined_permissions.append(p)
-							postponed = True
+							break
 
-						if perm is not None:
-							permissions.append(perm)
+						permissions.append(perm)
 
-					if not postponed:
-						permission = permissionManager.add_combined_permission(unionPermissions("Plugin {} {}".format(name, p["name"]), *permissions))
-
-						if permission is not None:
-							key = permission.get_name().replace(" ", "_").upper()
-							octoprint.access.permissions.Permissions.__setattr__(key, permission)
+					else:
+						# found all permissions we depend on, can continue
+						permission = CombinedOctoPrintPermission("Plugin {} {}".format(name, p["name"]), *permissions)
+						key = permission.get_name().replace(" ", "_").upper()
+						setattr(octoprint.access.permissions.Permissions, key, permission)
 
 			except:
 				self._logger.exception("Error while creating permission instance/s from {}".format(name))
@@ -1562,24 +1541,21 @@ class Server(object):
 			try:
 				permissions = []
 				for permission_name in p["permissions"]:
-					perm = permissionManager.find_permission(permission_name)
+					perm = octoprint.access.permissions.Permissions.find(permission_name)
 					# If we can't find a permission by the name, try to add the plugins prefix and look again
 					if perm is None:
-						perm = permissionManager.find_permission("Plugin {} {}".format(name, permission_name))
+						perm = octoprint.access.permissions.Permissions.find("Plugin {} {}".format(name, permission_name))
 
-					# If there is still no permission postpone this, maybe it is a permission out of another Plugin that hasn't been loaded yet.
 					if perm is None:
-						postponed_combined_permissions.extend(p)
+						# still no permission - we can't process this
 						raise UnknownPermission(permission_name)
 
-				permission = permissionManager.add_combined_permission(
-					unionPermissions("Plugin {} {}".format(name, p["name"]), *permissions))
-
-				if permission is not None:
-					key = permission.get_name().replace(" ", "_").upper()
-					octoprint.access.permissions.Permissions.__setattr__(key, permission)
+				permission = CombinedOctoPrintPermission("Plugin {} {}".format(name, p["name"]), *permissions)
+				key = permission.get_name().replace(" ", "_").upper()
+				setattr(octoprint.access.permissions.Permissions, key, permission)
 			except:
 				self._logger.exception("Error while creating permission instance/s from {}".format(name))
+
 
 class LifecycleManager(object):
 	def __init__(self, plugin_manager):
