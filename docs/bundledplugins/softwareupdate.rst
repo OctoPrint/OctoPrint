@@ -117,29 +117,29 @@ Configuring the Plugin
 
 .. code-block:: yaml
 
-    plugins:
-      softwareupdate:
-        # the time-to-live of the version cache, in minutes
-        cache_ttl: 60
+   plugins:
+     softwareupdate:
+       # the time-to-live of the version cache, in minutes
+       cache_ttl: 60
 
-        # configured version check and update methods
-        checks:
-          # "octoprint" is reserved for OctoPrint
-          octoprint:
-            # this defines an version check that will check against releases
-            # published on OctoPrint's Github repository and pip as update method
-            # against the release archives on Github - this is the default
-            type: github_release
-            user: foosel
-            repo: OctoPrint
-            method: pip
-            pip: 'https://github.com/foosel/OctoPrint/archive/{target_version}.zip'
+       # configured version check and update methods
+       checks:
+         # "octoprint" is reserved for OctoPrint
+         octoprint:
+           # this defines an version check that will check against releases
+           # published on OctoPrint's Github repository and pip as update method
+           # against the release archives on Github - this is the default
+           type: github_release
+           user: foosel
+           repo: OctoPrint
+           method: pip
+           pip: 'https://github.com/foosel/OctoPrint/archive/{target_version}.zip'
 
-          # further checks may be define here
+         # further checks may be define here
 
-        # pip command, if another one than the automatically detected one should be
-        # used - should normally NOT be necessary and hence set
-        pip_command: /path/to/pip
+       # pip command, if another one than the automatically detected one should be
+       # used - should normally NOT be necessary and hence set
+       pip_command: /path/to/pip
 
 .. _sec-bundledplugins-softwareupdate-configuration-versionchecks:
 
@@ -245,7 +245,7 @@ Update methods
    ``method`` to ``pip``, the Software Update plugin is instructed to use that as
    update method.
 
-   .. code-block::
+   .. code-block:: yaml
 
       plugins:
         softwareupdate:
