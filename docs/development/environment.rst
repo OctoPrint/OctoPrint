@@ -58,7 +58,7 @@ Then:
    virtualenv venv
    source ./venv/bin/activate
    pip install --upgrade pip
-   pip install -e .[develop]
+   pip install -e .[develop,plugins]
 
 You can then start OctoPrint via ``~/devel/OctoPrint/venv/bin/octoprint`` or just ``octoprint`` if you activated the virtual
 environment.
@@ -89,11 +89,11 @@ Open the Git Bash you just installed and in that:
    git clone https://github.com/foosel/OctoPrint.git
    cd OctoPrint
    virtualenv venv
-   source ./venv/bin/activate
+   source ./venv/Scripts/activate
    pip install --upgrade pip
-   pip install -e .[develop]
+   pip install -e .[develop,plugins]
 
-You can then start OctoPrint via ``/c/Devel/OctoPrint/venv/bin/octoprint`` or just ``octoprint`` if you activated the virtual
+You can then start OctoPrint via ``/c/Devel/OctoPrint/venv/Scripts/octoprint`` or just ``octoprint`` if you activated the virtual
 environment.
 
 .. _sec-development-environment-mac:
@@ -136,7 +136,8 @@ You'll need a user account with administrator privileges.
        cd OctoPrint
        virtualenv venv
        source venv/bin/activate
-       pip install -e .[develop]
+       pip install --upgrade pip
+       pip install -e .[develop,plugins]
 
 You can then start OctoPrint via ``~/devel/OctoPrint/venv/bin/octoprint`` or just ``octoprint`` if you activated the virtual
 environment.
@@ -165,10 +166,16 @@ PyCharm
 
     * Name: OctoPrint server
     * Script: path to ``run`` in the OctoPrint checkout folder (e.g. ``~/devel/OctoPrint/run`` or ``C:\Devel\OctoPrint\run``)
-    * Script parameters: ``--debug``
+    * Script parameters: ``serve --debug``
     * Project: ``OctoPrint``
     * Python interpreter: the ``venv`` local virtual environment
     * Working directory: the OctoPrint checkout folder (e.g. ``~/devel/OctoPrint`` or ``C:\Devel\OctoPrint``)
+    * If you want dependencies to auto-update on run if necessary: "Before Launch" > "+" > "Run external tool" > "+"
+
+      * Name: Update OctoPrint dependencies
+      * Program: ``$PyInterpreterDirectory$/pip`` (or ``$PyInterpreterDirectory$/pip.exe`` on Windows)
+      * Parameters: ``install -e .[develop,plugins]``
+      * Working directory: ``$ProjectFileDir$``
 
 .. note::
 
