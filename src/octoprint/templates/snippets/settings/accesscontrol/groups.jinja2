@@ -1,15 +1,15 @@
 <table class="table table-condensed table-hover" id="system_groups">
     <thead>
     <tr>
-        <th class="settings_groups_name">{{ _('Group name') }}</th>
-        <th class="settings_groups_description">{{ _('Group description') }}</th>
+        <th class="settings_groups_name">{{ _('Name') }}</th>
+        <th class="settings_groups_description">{{ _('Description') }}</th>
         <th class="settings_groups_permissions">{{ _('Permissions') }}</th>
         <th class="settings_groups_actions">{{ _('Action') }}</th>
     </tr>
     </thead>
     <tbody data-bind="foreach: $root.access.groups.listHelper.paginatedItems">
     <tr>
-        <td class="settings_groups_name"><span class="icon-star" data-bind="visible: defaultOn"></span><span data-bind="text: name"></span></td>
+        <td class="settings_groups_name"><span class="icon-star" data-bind="invisible: !defaultOn"></span> <span data-bind="text: name"></span></td>
         <td class="settings_groups_description"><span data-bind="text: description"></span></td>
         <td class="settings_groups_permissions"><span data-bind="text: $root.access.permissionList($data)"></span></td>
         <td class="settings_groups_actions">
