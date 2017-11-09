@@ -313,7 +313,7 @@ $(function() {
                 }
             }
 
-            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_SOFTWAREUPDATE_PERFORM) && !self.settings.settings.plugins.softwareupdate.notify_users()) return;
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_SOFTWAREUPDATE_UPDATE) && !self.settings.settings.plugins.softwareupdate.notify_users()) return;
 
             if (data.status == "updateAvailable" || data.status == "updatePossible") {
                 var text = "<div class='softwareupdate_notification'>" + gettext("There are updates available for the following components:");
@@ -332,7 +332,7 @@ $(function() {
 
                 text += "<p><small>" + gettext("Those components marked with <i class=\"fa fa-check\"></i> can be updated directly.") + "</small></p>";
 
-                if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_SOFTWAREUPDATE_PERFORM)) {
+                if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_SOFTWAREUPDATE_UPDATE)) {
                     text += "<p><small>" + gettext("To have updates applied, get in touch with an administrator of this OctoPrint instance.") + "</small></p>";
                 }
 
@@ -346,7 +346,7 @@ $(function() {
                 var eventListeners = {};
 
                 var singleButtonNotify = false;
-                if (data.status == "updatePossible" && self.loginState.hasPermission(self.access.permissions.PLUGIN_SOFTWAREUPDATE_PERFORM)) {
+                if (data.status == "updatePossible" && self.loginState.hasPermission(self.access.permissions.PLUGIN_SOFTWAREUPDATE_UPDATE)) {
                     // if update is possible and user is admin, add action buttons for ignore and update
                     options["confirm"] = {
                         confirm: true,
@@ -503,7 +503,7 @@ $(function() {
         };
 
         self.performUpdate = function(force, items) {
-            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_SOFTWAREUPDATE_PERFORM)) return;
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_SOFTWAREUPDATE_UPDATE)) return;
 
             self.updateInProgress = true;
 

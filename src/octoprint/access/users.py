@@ -405,6 +405,8 @@ class FilebasedUserManager(UserManager):
 
 		user = self._users[username]
 
+		permissions = self._to_permissions(*permissions)
+
 		removed_permissions = list(set(user._permissions) - set(permissions))
 		added_permissions = list(set(permissions) - set(user._permissions))
 
@@ -603,7 +605,7 @@ class FilebasedUserManager(UserManager):
 		return [group.get_name() for group in groups]
 
 	def _from_permissions(self, *permissions):
-		return [permission.get_name() for permission in permissions]
+		return [permission.key for permission in permissions]
 
 	# ~~ Deprecated methods follow
 
@@ -718,7 +720,7 @@ class User(UserMixin):
 		return {
 			"name": self._username,
 			"active": bool(self.is_active),
-			"permissions": map(lambda p: p.get_name(), self._permissions),
+			"permissions": map(lambda p: p.key, self._permissions),
 			"groups": map(lambda g: g.get_name(), self._groups),
 			"needs": OctoPrintPermission.convert_needs_to_dict(self.needs),
 			"apikey": self._apikey,

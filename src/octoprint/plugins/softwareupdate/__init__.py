@@ -29,16 +29,6 @@ from octoprint.access.permissions import Permissions
 from octoprint.util import dict_merge, to_unicode
 import octoprint.settings
 
-
-# Access permissions hook
-
-def additional_permissions(components):
-	return [
-		dict(name="Check", description=gettext("Allows to check for software updates"), roles=["check"]),
-		dict(name="Perform", description=gettext("Allows to perform a software updates"), roles=["perform"]),
-		dict(asCombined=True, name="Access", permissions=["Check", "Perform"])
-	]
-
 ##~~ Plugin
 
 class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
@@ -82,6 +72,25 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 		self._plugin_lifecycle_manager.add_callback("enabled", refresh_checks)
 		self._plugin_lifecycle_manager.add_callback("disabled", refresh_checks)
+
+	# Additional permissions hook
+
+	def get_additional_permissions(self):
+		return [
+			dict(key="CHECK",
+			     name="Check",
+			     description=gettext("Allows to check for software updates"),
+			     roles=["check"]),
+			dict(key="UPDATE",
+			     name="Update",
+			     description=gettext("Allows to perform a software updates"),
+			     roles=["update"]),
+			dict(key="ACCESS",
+			     combined=True,
+			     name="Access",
+			     permissions=["PLUGIN_SOFTWAREUPDATE_CHECK",
+			                  "PLUGIN_SOFTWAREUPDATE_UPDATE"])
+		]
 
 	def on_startup(self, host, port):
 		console_logging_handler = logging.handlers.RotatingFileHandler(self._settings.get_plugin_logfile_path(postfix="console"), maxBytes=2*1024*1024)
@@ -526,7 +535,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 	@octoprint.plugin.BlueprintPlugin.route("/update", methods=["POST"])
 	@restricted_access
-	@Permissions.PLUGIN_SOFTWAREUPDATE_PERFORM.require(403)
+	@Permissions.PLUGIN_SOFTWAREUPDATE_UPDATE.require(403)
 	def perform_update(self):
 		if self._printer.is_printing() or self._printer.is_paused():
 			# do not update while a print job is running
@@ -1157,7 +1166,7 @@ def __plugin_load__():
 	global __plugin_hooks__
 	__plugin_hooks__ = {
 		"octoprint.cli.commands": cli.commands,
-		"octoprint.access.permissions": additional_permissions
+		"octoprint.access.permissions": __plugin_implementation__.get_additional_permissions
 	}
 
 

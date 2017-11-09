@@ -116,7 +116,7 @@ class GroupManager(object):
 		              [Permissions.find(permission) for permission in permissions])
 
 	def _from_permissions(self, *permissions):
-		return [permission.get_name() for permission in permissions]
+		return [permission.key for permission in permissions]
 
 	def _to_group(self, group):
 		if isinstance(group, Group):
@@ -400,7 +400,7 @@ class Group(object):
 		return dict(
 			name=self.get_name(),
 			description=self.get_description(),
-			permissions=map(lambda p: p.get_name(), self._permissions),
+			permissions=map(lambda p: p.key, self._permissions),
 			needs=OctoPrintPermission.convert_needs_to_dict(self.needs),
 			defaultOn=self.get_default(),
 			removable=self._removable,

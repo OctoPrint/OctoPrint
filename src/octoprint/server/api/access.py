@@ -21,8 +21,7 @@ from octoprint.access.permissions import Permissions
 
 @api.route("/access/permissions", methods=["GET"])
 def get_permissions():
-	return jsonify(permissions=Permissions.regular(),
-	               combined_permissions=Permissions.combined())
+	return jsonify(permissions=[permission.as_dict() for permission in Permissions.all()])
 
 #~~ group api
 

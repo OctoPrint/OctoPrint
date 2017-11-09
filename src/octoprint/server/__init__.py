@@ -319,7 +319,7 @@ class Server(object):
 		#~~ setup access control
 
 		# get additional permissions from plugins
-		self._setup_plugin_permissions(components)
+		self._setup_plugin_permissions()
 
 		# create group manager instance
 		group_manager_factories = pluginManager.get_hooks("octoprint.access.groups.factory")
@@ -1482,79 +1482,110 @@ class Server(object):
 		self._intermediary_server.server_close()
 		self._logger.info("Intermediary server shut down")
 
-	def _setup_plugin_permissions(self, components):
+	def _setup_plugin_permissions(self):
 		global pluginManager
 
-		postponed_combined_permissions = []
-
 		from octoprint.access.permissions import OctoPrintPermission, CombinedOctoPrintPermission, UnknownPermission
-		permissions_initializers = pluginManager.get_hooks("octoprint.access.permissions")
-		for name, permissions_initializer in permissions_initializers.items():
+
+		def permission_key(plugin, definition):
+			return "PLUGIN_{}_{}".format(plugin.upper(), definition["key"].upper())
+
+		def permission_name(plugin, definition):
+			return "Plugin \"{}\": {}".format(plugin, definition["name"])
+
+		def permission_role(plugin, role):
+			return "plugin_{}_{}".format(plugin, role)
+
+		def process_regular_permission(plugin, definition):
+			roles = definition["roles"]
+			description = definition.get("description", "")
+
+			key = permission_key(plugin, definition)
+			setattr(octoprint.access.permissions.Permissions,
+			        key,
+			        OctoPrintPermission(permission_name(plugin, definition),
+			                            description,
+			                            *[permission_role(plugin, role) for role in roles]))
+
+			self._logger.debug("Added new permission from plugin {}: {}".format(plugin, key))
+			return True
+
+		def process_combined_permission(plugin, definition):
+			resolved = []
+			for key in definition["permissions"]:
+				permission = octoprint.access.permissions.Permissions.find(key)
+
+				if permission is None:
+					# if there is still no permission found, postpone this - maybe it is a permission from
+					# another plugin that hasn't been loaded yet
+					return False
+
+				resolved.append(permission)
+
+			key = permission_key(plugin, definition)
+			setattr(octoprint.access.permissions.Permissions,
+			        key,
+			        CombinedOctoPrintPermission.from_permissions(permission_name(plugin, definition),
+			                                                     description=definition.get("description", ""),
+			                                                     *resolved))
+
+			self._logger.debug("Added new permission from plugin {}: {}".format(plugin, key))
+			return True
+
+		postponed = []
+
+		hooks = pluginManager.get_hooks("octoprint.access.permissions")
+		for name, factory in hooks.items():
 			try:
-				permission_list = permissions_initializer(components)
+				if isinstance(factory, (tuple, list)):
+					additional_permissions = list(factory)
+				elif callable(factory):
+					additional_permissions = factory()
+				else:
+					raise ValueError("factory must be either a callable, tuple or list")
 
-				regular_permission = filter(
-					lambda p: isinstance(p, dict) and ("asCombined" not in p or not p["asCombined"]), permission_list)
-				combined_permission = filter(
-					lambda p: isinstance(p, dict) and "asCombined" in p and p["asCombined"], permission_list)
+				if not isinstance(additional_permissions, (tuple, list)):
+					raise ValueError("factory result must be either a tuple or a list of permission definition dicts")
 
-				for p in regular_permission:
-					if "name" not in p or "description" not in p or "roles" not in p:
+				for p in additional_permissions:
+					if not isinstance(p, dict):
 						continue
 
-					permission = OctoPrintPermission("Plugin {} {}".format(name, p["name"]),
-					                                 gettext(p["description"]),
-					                                 *["plugin_{}_{}".format(name, need) for need in p["roles"]])
-					key = permission.get_name().replace(" ", "_").upper()
-					setattr(octoprint.access.permissions.Permissions, key, permission)
-
-				for p in combined_permission:
-					if "name" not in p or "permissions" not in p:
+					if not "key" in p or not "name" in p:
 						continue
 
-					permissions = []
-					for permission_name in p["permissions"]:
-						perm = octoprint.access.permissions.Permissions.find(permission_name)
-						# If we can't find a permission by the name, try to add the plugins prefix and look again
-						if perm is None:
-							perm = octoprint.access.permissions.Permissions.find("Plugin {} {}".format(name, permission_name))
-
-
-						if perm is None:
-							# if there is still no permission found, postpone this - maybe it is a permission from
-							# another plugin that hasn't been loaded yet
-							postponed_combined_permissions.append(p)
-							break
-
-						permissions.append(perm)
-
-					else:
-						# found all permissions we depend on, can continue
-						permission = CombinedOctoPrintPermission.from_permissions("Plugin {} {}".format(name, p["name"]), *permissions)
-						key = permission.get_name().replace(" ", "_").upper()
-						setattr(octoprint.access.permissions.Permissions, key, permission)
-
+					if not p.get("combined", False) and "roles" in p:
+						process_regular_permission(name, p)
+					elif p.get("combined", False) and "permissions" in p:
+						if not process_combined_permission(name, p):
+							postponed.append((name, p))
 			except:
 				self._logger.exception("Error while creating permission instance/s from {}".format(name))
 
-		for p in postponed_combined_permissions:
-			try:
-				permissions = []
-				for permission_name in p["permissions"]:
-					perm = octoprint.access.permissions.Permissions.find(permission_name)
-					# If we can't find a permission by the name, try to add the plugins prefix and look again
-					if perm is None:
-						perm = octoprint.access.permissions.Permissions.find("Plugin {} {}".format(name, permission_name))
+		# final resolution passes
+		pass_number = 1
+		still_postponed = []
+		while len(postponed):
+			start_length = len(postponed)
+			self._logger.debug("Combined permission resolution pass #{}, "
+			                   "{} unresolved combined permissions...".format(pass_number, start_length))
 
-					if perm is None:
-						# still no permission - we can't process this
-						raise UnknownPermission(permission_name)
+			for plugin, definition in postponed:
+				if not process_combined_permission(plugin, definition):
+					still_postponed.append((plugin, definition))
 
-				permission = CombinedOctoPrintPermission("Plugin {} {}".format(name, p["name"]), *permissions)
-				key = permission.get_name().replace(" ", "_").upper()
-				setattr(octoprint.access.permissions.Permissions, key, permission)
-			except:
-				self._logger.exception("Error while creating permission instance/s from {}".format(name))
+			self._logger.debug("... pass #{} done, {} combined "
+			                   "permissions left to resolve".format(pass_number, len(still_postponed)))
+
+			if len(still_postponed) == start_length:
+				# no change, looks like some stuff is unresolvable - let's bail
+				for plugin, definition in still_postponed:
+					self._logger.warn("Unable to resolve combined permission from {}: {!r}".format(plugin, definition))
+				break
+
+			postponed = still_postponed
+			still_postponed = []
+			pass_number += 1
 
 
 class LifecycleManager(object):

@@ -416,7 +416,7 @@ $(function() {
         };
 
         self.requestData = function(options) {
-            if (!self.loginState.hasPermission(self.access.permissions.SETTINGS)) {
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_PLUGINMANAGER_MANAGE)) {
                 return;
             }
 
@@ -440,7 +440,7 @@ $(function() {
         };
 
         self.togglePlugin = function(data) {
-            if (!self.loginState.hasPermission(self.access.permissions.SETTINGS)) {
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_PLUGINMANAGER_MANAGE)) {
                 return;
             }
 
@@ -500,7 +500,7 @@ $(function() {
         };
 
         self.installFromRepository = function(data) {
-            if (!self.loginState.hasPermission(self.access.permissions.SETTINGS)) {
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_PLUGINMANAGER_INSTALL)) {
                 return;
             }
 
@@ -512,7 +512,7 @@ $(function() {
         };
 
         self.installPlugin = function(url, name, reinstall, followDependencyLinks) {
-            if (!self.loginState.hasPermission(self.access.permissions.SETTINGS)) {
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_PLUGINMANAGER_INSTALL)) {
                 return;
             }
 
@@ -574,7 +574,7 @@ $(function() {
         };
 
         self.uninstallPlugin = function(data) {
-            if (!self.loginState.hasPermission(self.access.permissions.SETTINGS)) {
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_PLUGINMANAGER_MANAGE)) {
                 return;
             }
 
@@ -605,7 +605,7 @@ $(function() {
         };
 
         self.refreshRepository = function() {
-            if (!self.loginState.hasPermission(self.access.permissions.SETTINGS)) {
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_PLUGINMANAGER_INSTALL)) {
                 return;
             }
             self.requestData({refresh_repo: true});
@@ -1060,7 +1060,7 @@ $(function() {
         };
 
         self.onUserLoggedIn = function(user) {
-            if (self.loginState.hasPermission(self.access.permissions.SETTINGS)) {
+            if (self.loginState.hasPermission(self.access.permissions.PLUGIN_PLUGINMANAGER_MANAGE)) {
                 self.requestData({eval_notices: true});
             } else {
                 self.onUserLoggedOut();
@@ -1099,7 +1099,7 @@ $(function() {
                 return;
             }
 
-            if (!self.loginState.hasPermission(self.access.permissions.SETTINGS)) {
+            if (!self.loginState.hasPermission(self.access.permissions.PLUGIN_PLUGINMANAGER_MANAGE)) {
                 return;
             }
 

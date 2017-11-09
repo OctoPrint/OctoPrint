@@ -25,13 +25,6 @@ from octoprint.server.util.flask import restricted_access, with_revalidation_che
 from flask_babel import gettext
 
 
-# Access permissions hook
-
-def additional_permissions(components):
-	return [
-		dict(name="Announcement", description=gettext("Allows to see announcements"), roles=["announcment"]),
-	]
-
 class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
                          octoprint.plugin.SettingsPlugin,
                          octoprint.plugin.BlueprintPlugin,
@@ -46,6 +39,21 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 		from slugify import Slugify
 		self._slugify = Slugify()
 		self._slugify.safe_chars = "-_."
+
+	# Additional permissions hook
+
+	def get_additional_permissions(self):
+		return [
+			dict(key="READ",
+			     name="Read announcements",
+			     description=gettext("Allows to read announcements"),
+			     roles=["read"]),
+			dict(key="MANAGE",
+			     name="Manage announcement subscriptions",
+			     description=gettext("Allows to manage announcement subscriptions. Includes \"Read announcements\" "
+			                         "permission"),
+			     roles=["manage", "read"])
+		]
 
 	# StartupPlugin
 
@@ -139,7 +147,7 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 
 	@octoprint.plugin.BlueprintPlugin.route("/channels", methods=["GET"])
 	@restricted_access
-	@Permissions.PLUGIN_ANNOUNCEMENTS_ANNOUNCEMENT.require(403)
+	@Permissions.PLUGIN_ANNOUNCEMENTS_READ.require(403)
 	def get_channel_data(self):
 		from octoprint.settings import valid_boolean_trues
 
@@ -198,7 +206,7 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 
 	@octoprint.plugin.BlueprintPlugin.route("/channels/<channel>", methods=["POST"])
 	@restricted_access
-	@Permissions.PLUGIN_ANNOUNCEMENTS_ANNOUNCEMENT.require(403)
+	@Permissions.PLUGIN_ANNOUNCEMENTS_READ.require(403)
 	def channel_command(self, channel):
 		from octoprint.server.util.flask import get_json_command_from_request
 		from octoprint.server import NO_CONTENT
@@ -215,6 +223,8 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 			self._mark_read_until(channel, until)
 
 		elif command == "toggle":
+			if not Permissions.PLUGIN_ANNOUNCEMENTS_MANAGE.can():
+				return flask.make_response("Insufficient rights", 403)
 			self._toggle(channel)
 
 		return NO_CONTENT
@@ -500,5 +510,5 @@ __plugin_license__ = "AGPLv3"
 __plugin_implementation__ = AnnouncementPlugin()
 
 __plugin_hooks__ = {
-	'octoprint.access.permissions': additional_permissions
+	'octoprint.access.permissions': __plugin_implementation__.get_additional_permissions
 }

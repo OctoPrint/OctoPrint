@@ -399,7 +399,7 @@ $(function() {
 
                 showConfirmationDialog({
                     title: gettext("Are you sure?"),
-                    message: gettext("You are about to delete a group."),
+                    message: _.sprintf(gettext("You are about to delete the group \"%(name)s\"."), {name: group.name}),
                     proceed: gettext("Delete"),
                     onproceed: function() {
                         OctoPrint.access.groups.delete(group.name).done(function(response) {
@@ -430,22 +430,20 @@ $(function() {
             self.roleNeed = function(value) { return self.need("role", value); };
 
             self.permissionList = ko.observableArray([]);
-
-            var sanitizeName = function(name) { return name.replace(new RegExp(" ", 'g'), "_"); };
+            self.lookup = {};
 
             var registeredPermissions = [];
-            var registerPermission = function(name, permission) {
-                var sanitized = sanitizeName(name).toUpperCase();
-                Object.defineProperty(self, sanitized, {
+            var registerPermission = function(key, permission) {
+                Object.defineProperty(self, key, {
                     value: permission,
                     enumerable: true,
                     configurable: true
                 });
-                registeredPermissions.push(sanitized);
+                registeredPermissions.push(key);
             };
             var clearAllRegisteredPermissions = function() {
-                _.each(registeredPermissions, function(name) {
-                    delete self[name];
+                _.each(registeredPermissions, function(key) {
+                    delete self[key];
                 });
                 registeredPermissions = [];
             };
@@ -454,6 +452,7 @@ $(function() {
                 clearAllRegisteredPermissions();
 
                 var permissionList = [];
+                var lookup = {};
                 _.each(PERMISSIONS, function(permission) {
                     var needs = [];
                     _.each(permission.needs, function(value, key) {
@@ -461,15 +460,17 @@ $(function() {
                     });
 
                     if (needs.length > 0) {
-                        registerPermission(permission.name, needs);
+                        registerPermission(permission.key, needs);
                     }
 
                     if (!permission.combined) {
                         permissionList.push(permission);
                     }
+                    lookup[permission.key] = permission;
                 });
 
                 self.permissionList(permissionList);
+                self.lookup = lookup;
             };
 
             return self;
@@ -488,7 +489,9 @@ $(function() {
             if (data.permissions === undefined)
                 return "";
 
-            return data.permissions.join(", ");
+            return _.map(data.permissions, function(p) {
+                return access.permissions.lookup[p] ? access.permissions.lookup[p].name : p
+            }).join(", ");
         };
 
         //~~ API Calls
