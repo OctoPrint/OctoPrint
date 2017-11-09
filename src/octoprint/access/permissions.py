@@ -76,11 +76,13 @@ class OctoPrintPermission(Permission):
 
 class CombinedOctoPrintPermission(OctoPrintPermission):
 	@classmethod
-	def from_permissions(cls, name, *permissions):
+	def from_permissions(cls, name, *permissions, **kwargs):
 		if len(permissions) == 0:
 			return None
 
-		permission = CombinedOctoPrintPermission(name, "", *permissions[0].needs)
+		description = kwargs.get("description", "")
+
+		permission = CombinedOctoPrintPermission(name, description, *permissions[0].needs)
 		for p in permissions[1:]:
 			permission = permission.union(p)
 

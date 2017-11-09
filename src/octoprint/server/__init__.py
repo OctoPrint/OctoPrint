@@ -1530,7 +1530,7 @@ class Server(object):
 
 					else:
 						# found all permissions we depend on, can continue
-						permission = CombinedOctoPrintPermission("Plugin {} {}".format(name, p["name"]), *permissions)
+						permission = CombinedOctoPrintPermission.from_permissions("Plugin {} {}".format(name, p["name"]), *permissions)
 						key = permission.get_name().replace(" ", "_").upper()
 						setattr(octoprint.access.permissions.Permissions, key, permission)
 
