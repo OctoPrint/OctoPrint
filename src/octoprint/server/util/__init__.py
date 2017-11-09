@@ -58,16 +58,16 @@ def loginFromApiKeyRequestHandler():
 	"""
 
 	apikey = get_api_key(_flask.request)
-	
+
 	if not apikey:
 		return
-	
+
 	if apikey == octoprint.server.UI_API_KEY:
 		return
-	
+
 	if octoprint.server.appSessionManager.validate(apikey):
 		return
-	
+
 	user = get_user_for_apikey(apikey)
 	if user is not None and _flask.ext.login.login_user(user, remember=False):
 		_flask.ext.principal.identity_changed.send(_flask.current_app._get_current_object(),
@@ -159,14 +159,14 @@ def get_user_for_apikey(apikey):
 				return flask_login.current_user
 		elif apikey == settings().get(["api", "key"]) or octoprint.server.appSessionManager.validate(apikey):
 			# master key or an app session key was used
-			return ApiUser()
-		
+			return ApiUser(octoprint.server.groupManager.admin_group)
+
 		if octoprint.server.userManager.enabled:
 			user = octoprint.server.userManager.find_user(apikey=apikey)
 			if user is not None:
 				# user key was used
 				return user
-		
+
 		apikey_hooks = plugin_manager().get_hooks("octoprint.accesscontrol.keyvalidator")
 		for name, hook in apikey_hooks.items():
 			try:
