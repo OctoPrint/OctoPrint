@@ -356,6 +356,8 @@ $(function() {
             };
 
             self.showEditGroupDialog = function(group) {
+                if (!group.changeable) return;
+
                 self.currentGroup(group);
                 self.editGroupDialog.modal("show");
             };
@@ -396,6 +398,8 @@ $(function() {
                 if (!group) {
                     throw OctoPrint.InvalidArgumentError("group must be set");
                 }
+
+                if (!group.removable) return;
 
                 showConfirmationDialog({
                     title: gettext("Are you sure?"),
