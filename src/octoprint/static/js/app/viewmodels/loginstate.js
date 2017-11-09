@@ -102,14 +102,21 @@ $(function() {
             self.currentUser(undefined);
         };
 
-        self.login = function(u, p, r) {
+        self.login = function(u, p, r, notifications) {
             var username = u || self.loginUser();
             var password = p || self.loginPass();
-            var remember = (r != undefined ? r : self.loginRemember());
+            var remember = (r !== undefined ? r : self.loginRemember());
+            notifications = notifications !== false;
 
             return OctoPrint.browser.login(username, password, remember)
                 .done(function(response) {
-                    new PNotify({title: gettext("Login successful"), text: _.sprintf(gettext('You are now logged in as "%(username)s"'), {username: response.name}), type: "success"});
+                    if (notifications) {
+                        new PNotify({
+                            title: gettext("Login successful"),
+                            text: _.sprintf(gettext('You are now logged in as "%(username)s"'), {username: response.name}),
+                            type: "success"
+                        });
+                    }
                     self.fromResponse(response);
 
                     self.loginUser("");
@@ -121,6 +128,10 @@ $(function() {
                     }
                 })
                 .fail(function(response) {
+                    if (!notifications) {
+                        return;
+                    }
+
                     switch(response.status) {
                         case 401: {
                             new PNotify({

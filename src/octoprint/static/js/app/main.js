@@ -545,7 +545,7 @@ $(function() {
                 tab.tab("show");
                 onTabChange(hashtag);
             }
-        }
+        };
 
         //~~ final initialization - passive login, settings fetch, view model binding
 
@@ -559,6 +559,10 @@ $(function() {
 
         if (!_.has(viewModelMap, "loginStateViewModel")) {
             throw new Error("loginStateViewModel is missing, can't run UI");
+        }
+
+        if (!_.has(viewModelMap, "uiStateViewModel")) {
+            throw new Error("uiStateViewModel is missing, can't run UI");
         }
 
         var bindViewModels = function() {
@@ -745,6 +749,7 @@ $(function() {
                     // This is to ensure that we have no concurrent requests triggered by socket events
                     // overriding each other's session during app initialization
                     dataUpdater.initialized();
+                    viewModelMap["uiStateViewModel"].loading(false);
                 });
         };
 
