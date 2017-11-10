@@ -832,27 +832,30 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 		return printTimeLeft, printTimeLeftOrigin
 
-	def _addTemperatureData(self, temp, bedTemp):
+	def _addTemperatureData(self, tools=None, bed=None):
+		if tools is None:
+			tools = dict()
+
 		currentTimeUtc = int(time.time())
 
 		data = {
 			"time": currentTimeUtc
 		}
-		for tool in temp.keys():
+		for tool in tools.keys():
 			data["tool%d" % tool] = {
-				"actual": temp[tool][0],
-				"target": temp[tool][1]
+				"actual": tools[tool][0],
+				"target": tools[tool][1]
 			}
-		if bedTemp is not None and isinstance(bedTemp, tuple):
+		if bed is not None and isinstance(bed, tuple):
 			data["bed"] = {
-				"actual": bedTemp[0],
-				"target": bedTemp[1]
+				"actual": bed[0],
+				"target": bed[1]
 			}
 
 		self._temps.append(data)
 
-		self._temp = temp
-		self._bedTemp = bedTemp
+		self._temp = tools
+		self._bedTemp = bed
 
 		self._stateMonitor.add_temperature(data)
 
@@ -992,7 +995,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		self._addLog(to_unicode(message, "utf-8", errors="replace"))
 
 	def on_comm_temperature_update(self, temp, bedTemp):
-		self._addTemperatureData(copy.deepcopy(temp), copy.deepcopy(bedTemp))
+		self._addTemperatureData(tools=copy.deepcopy(temp), bed=copy.deepcopy(bedTemp))
 
 	def on_comm_position_update(self, position, reason=None):
 		payload = dict(reason=reason)
@@ -1037,6 +1040,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			self._setCurrentZ(None)
 			self._setJobData(None, None, None)
 			self._setOffsets(None)
+			self._addTemperatureData()
 			self._printerProfileManager.deselect()
 			eventManager().fire(Events.DISCONNECTED)
 
