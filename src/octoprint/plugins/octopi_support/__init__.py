@@ -55,18 +55,32 @@ def get_octopi_version():
 		return version_line.strip()
 
 
-def get_pi_revision():
+def get_pi_cpuinfo():
+	fields = dict(revision="Revision",
+	              hardware="Hardware",
+	              serial="Serial")
+
+	result = dict()
 	with open(_CPUINFO_PATH) as f:
 		for line in f:
-			if line and line.startswith("Revision:"):
-				return line[line.index(":") + 1:].strip()
-	return "unknown"
+			if not line:
+				continue
+
+			for key, prefix in fields.items():
+				if line.startswith(prefix):
+					result[key] = line[line.index(":") + 1:].strip()
+
+	return result
 
 
-def get_pi_model(revision):
+def get_pi_model(hardware, revision):
+	if hardware not in ("BCM2835",):
+		return "unknown"
+
 	if revision.startswith("1000"):
 		# strip flag for over-volted (https://elinux.org/RPi_HardwareHistory#Which_Pi_have_I_got.3F)
 		revision = revision[4:]
+
 	return _RPI_REVISION_MAP.get(revision.lower(), "unknown")
 
 
@@ -77,22 +91,20 @@ class OctoPiSupportPlugin(octoprint.plugin.EnvironmentDetectionPlugin,
 
 	def __init__(self):
 		self._version = None
-		self._revision = None
+		self._cpuinfo = dict()
 		self._model = None
 
 	#~~ EnvironmentDetectionPlugin
 
 	def get_additional_environment(self):
 		return dict(version=self._get_version(),
-		            revision=self._get_revision(),
+		            revision=self._get_cpuinfo().get("revision", "unknown"),
 		            model=self._get_model())
 
 	#~~ SimpleApiPlugin
 
 	def on_api_get(self, request):
-		return flask.jsonify(version=self._get_version(),
-		                     revision=self._get_revision(),
-		                     model=self._get_model())
+		return flask.jsonify(version=self._get_version())
 
 	#~~ AssetPlugin
 
@@ -111,12 +123,12 @@ class OctoPiSupportPlugin(octoprint.plugin.EnvironmentDetectionPlugin,
 
 	def get_template_vars(self):
 		version = self._get_version()
-		revision = self._get_revision()
+		cpuinfo = self._get_cpuinfo()
 		model = self._get_model()
 
 		return dict(version=version,
-		            rpi=(revision is not None and revision != "unknown" and model is not None and model != "unknown"),
-		            rpi_revision=revision,
+		            rpi_revision=cpuinfo.get("revision", "unknown"),
+		            rpi_serial=cpuinfo.get("serial", "unknown"),
 		            rpi_model=model)
 
 	#~~ Helpers
@@ -127,23 +139,28 @@ class OctoPiSupportPlugin(octoprint.plugin.EnvironmentDetectionPlugin,
 				self._version = get_octopi_version()
 			except:
 				self._logger.exception("Error while reading OctoPi version from file {}".format(_OCTOPI_VERSION_PATH))
+				self._version = "unknown"
 		return self._version
 
 	def _get_model(self):
 		if self._model is None:
 			try:
-				self._model = get_pi_model(self._get_revision())
+				cpuinfo = self._get_cpuinfo()
+				self._model = get_pi_model(cpuinfo.get("hardware", "unknown"),
+				                           cpuinfo.get("revision", "unknown"))
 			except:
 				self._logger.exception("Error while detecting RPi model")
+				self._model = "unknown"
 		return self._model
 
-	def _get_revision(self):
-		if self._revision is None:
+	def _get_cpuinfo(self):
+		if self._cpuinfo is None:
 			try:
-				self._revision = get_pi_revision()
+				self._cpuinfo = get_pi_cpuinfo()
 			except:
-				self._logger.exception("Error while detecting RPi revision")
-		return self._revision
+				self._logger.exception("Error while fetching cpu info")
+				self._cpuinfo = dict()
+		return self._cpuinfo
 
 def __plugin_check__():
 	from octoprint.util.platform import get_os
