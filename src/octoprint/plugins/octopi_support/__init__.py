@@ -7,6 +7,8 @@ __copyright__ = "Copyright (C) 2017 The OctoPrint Project - Released under terms
 import flask
 import os
 
+from flask.ext.babel import gettext
+
 import octoprint.plugin
 
 _OCTOPI_VERSION_PATH = "/etc/octopi_version"
@@ -91,7 +93,7 @@ class OctoPiSupportPlugin(octoprint.plugin.EnvironmentDetectionPlugin,
 
 	def __init__(self):
 		self._version = None
-		self._cpuinfo = dict()
+		self._cpuinfo = None
 		self._model = None
 
 	#~~ EnvironmentDetectionPlugin
@@ -161,6 +163,14 @@ class OctoPiSupportPlugin(octoprint.plugin.EnvironmentDetectionPlugin,
 				self._logger.exception("Error while fetching cpu info")
 				self._cpuinfo = dict()
 		return self._cpuinfo
+
+__plugin_name__ = "OctoPi Support Plugin"
+__plugin_author__ = "Gina Häußge"
+__plugin_description__ = "Provides additional information about your OctoPi instance in the UI."
+__plugin_disabling_discouraged__ = gettext("Without this plugin OctoPrint will no longer be able to "
+                                           "provide additional information about your OctoPi instance,"
+                                           "which will make it more tricky to help you if you need support.")
+__plugin_license__ = "AGPLv3"
 
 def __plugin_check__():
 	from octoprint.util.platform import get_os
