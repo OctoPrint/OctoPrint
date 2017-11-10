@@ -237,11 +237,15 @@ $(function() {
             for (var i = 0; i < tools.length; i++) {
                 if (data.hasOwnProperty("tool" + i)) {
                     tools[i]["offset"](data["tool" + i]);
+                } else {
+                    tools[i]["offset"](0);
                 }
             }
 
             if (data.hasOwnProperty("bed")) {
                 self.bedTemp["offset"](data["bed"]);
+            } else {
+                self.bedTemp["offset"](0);
             }
         };
 

@@ -117,7 +117,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 				}
 			},
 			progress={"completion": None, "filepos": None, "printTime": None, "printTimeLeft": None},
-			current_z=None
+			current_z=None,
+			offsets=dict()
 		)
 
 		eventManager().subscribe(Events.METADATA_ANALYSIS_FINISHED, self._on_event_MetadataAnalysisFinished)
@@ -366,7 +367,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			return
 
 		self._comm.setTemperatureOffset(offsets)
-		self._stateMonitor.set_temp_offsets(offsets)
+		self._setOffsets(offsets)
 
 	def _convert_rate_value(self, factor, min=0, max=200):
 		if not isinstance(factor, (int, float, long)):
@@ -632,6 +633,9 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			self._sdFilelistAvailable.wait(10000)
 
 	#~~ state monitoring
+
+	def _setOffsets(self, offsets):
+		self._stateMonitor.set_temp_offsets(offsets)
 
 	def _setCurrentZ(self, currentZ):
 		self._currentZ = currentZ
@@ -1032,6 +1036,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			self._updateProgressData()
 			self._setCurrentZ(None)
 			self._setJobData(None, None, None)
+			self._setOffsets(None)
 			self._printerProfileManager.deselect()
 			eventManager().fire(Events.DISCONNECTED)
 
@@ -1266,7 +1271,7 @@ class StateMonitor(object):
 		self._state = None
 		self._job_data = None
 		self._current_z = None
-		self._offsets = {}
+		self._offsets = dict()
 		self._progress = None
 
 		self._progress_dirty = False
@@ -1285,11 +1290,12 @@ class StateMonitor(object):
 			return self._on_get_progress()
 		return self._progress
 
-	def reset(self, state=None, job_data=None, progress=None, current_z=None):
+	def reset(self, state=None, job_data=None, progress=None, current_z=None, offsets=None):
 		self.set_state(state)
 		self.set_job_data(job_data)
 		self.set_progress(progress)
 		self.set_current_z(current_z)
+		self.set_temp_offsets(offsets)
 
 	def add_temperature(self, temperature):
 		self._on_add_temperature(temperature)
@@ -1328,6 +1334,8 @@ class StateMonitor(object):
 			self._change_event.set()
 
 	def set_temp_offsets(self, offsets):
+		if offsets is None:
+			offsets = dict()
 		self._offsets = offsets
 		self._change_event.set()
 
