@@ -16,6 +16,7 @@ darwin-Cura-*
 win32-Cura-*
 linux-Cura-*
 *.iml
+.vscode
 Printrun
 =======
 .idea
