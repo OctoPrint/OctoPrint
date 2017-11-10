@@ -54,6 +54,18 @@ $(function() {
             return !data.forced;
         };
 
+        self.cleanedLink = function(data) {
+            // Strips any query parameters from the link and returns it
+            var link = data.link;
+            if (!link) return link;
+
+            var queryPos = link.indexOf("?");
+            if (queryPos !== -1) {
+                link = link.substr(0, queryPos);
+            }
+            return link;
+        };
+
         self.markRead = function(channel, until) {
             if (!self.loginState.isAdmin()) return;
 
