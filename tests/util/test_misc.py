@@ -6,9 +6,11 @@ __copyright__ = "Copyright (C) 2017 The OctoPrint Project - Released under terms
 
 
 import unittest
+import ddt
 
 import octoprint.util
 
+@ddt.ddt
 class MiscTestCase(unittest.TestCase):
 
 	def test_get_class(self):
@@ -29,3 +31,17 @@ class MiscTestCase(unittest.TestCase):
 		except ImportError:
 			# success
 			pass
+
+	@ddt.data(
+		("http://example.com", dict(source="source"), "http://example.com?utm_source=source"),
+		("http://example.com?q=1", dict(source="source"), "http://example.com?q=1&utm_source=source"),
+		("http://example.com", dict(source="source", medium="medium"), "http://example.com?utm_source=source&utm_medium=medium"),
+		("http://example.com", dict(source="source", medium="medium", content="content with spaces"), "http://example.com?utm_source=source&utm_medium=medium&utm_content=content+with+spaces"),
+
+		# no handling
+		("http://example.com", dict(), "http://example.com"),
+	)
+	@ddt.unpack
+	def test_utmify(self, link, kwargs, expected):
+		actual = octoprint.util.utmify(link, **kwargs)
+		self.assertEqual(actual, expected)

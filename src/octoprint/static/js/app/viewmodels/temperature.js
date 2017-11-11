@@ -41,7 +41,7 @@ $(function() {
             });
 
             entry.offset.subscribe(function(newValue) {
-                if (self.changingOffset.item !== undefined && self.changingOffset.item.key() == entry.key()) {
+                if (self.changingOffset.item !== undefined && self.changingOffset.item.key() === entry.key()) {
                     // if our we currently have the offset dialog open for this entry and the offset changed
                     // meanwhile, update the displayed value in the dialog
                     self.changingOffset.offset(newValue);
@@ -115,7 +115,7 @@ $(function() {
                     tools[extruder]["name"](gettext("Tool") + " " + extruder);
                     tools[extruder]["key"]("tool" + extruder);
                 }
-            } else if (numExtruders == 1 || sharedNozzle) {
+            } else if (numExtruders === 1 || sharedNozzle) {
                 // only one extruder, no need to add numbers
                 color = graphColors[0];
                 heaterOptions["tool0"] = {name: "T", color: color};
@@ -200,7 +200,7 @@ $(function() {
         };
 
         self._processTemperatureUpdateData = function(serverTime, data) {
-            if (data.length == 0)
+            if (data.length === 0)
                 return;
 
             var lastData = data[data.length - 1];
@@ -219,6 +219,9 @@ $(function() {
             if (lastData.hasOwnProperty("bed")) {
                 self.bedTemp["actual"](lastData.bed.actual);
                 self.bedTemp["target"](lastData.bed.target);
+            } else {
+                self.bedTemp["actual"](0);
+                self.bedTemp["target"](0);
             }
 
             if (!CONFIG_TEMPERATURE_GRAPH) return;
@@ -237,11 +240,15 @@ $(function() {
             for (var i = 0; i < tools.length; i++) {
                 if (data.hasOwnProperty("tool" + i)) {
                     tools[i]["offset"](data["tool" + i]);
+                } else {
+                    tools[i]["offset"](0);
                 }
             }
 
             if (data.hasOwnProperty("bed")) {
                 self.bedTemp["offset"](data["bed"]);
+            } else {
+                self.bedTemp["offset"](0);
             }
         };
 
@@ -274,7 +281,7 @@ $(function() {
             });
 
             var temperature_cutoff = self.temperature_cutoff();
-            if (temperature_cutoff != undefined) {
+            if (temperature_cutoff !== undefined) {
                 var filterOld = function(item) {
                     return item[0] >= clientTime - temperature_cutoff * 60 * 1000;
                 };
@@ -480,7 +487,7 @@ $(function() {
 
         self.incrementTarget = function(item) {
             var value = item.newTarget();
-            if (value === undefined || (typeof(value) == "string" && value.trim() == "")) {
+            if (value === undefined || (typeof(value) === "string" && value.trim() === "")) {
                 value = item.target();
             }
             try {
@@ -495,7 +502,7 @@ $(function() {
 
         self.decrementTarget = function(item) {
             var value = item.newTarget();
-            if (value === undefined || (typeof(value) == "string" && value.trim() == "")) {
+            if (value === undefined || (typeof(value) === "string" && value.trim() === "")) {
                 value = item.target();
             }
             try {
@@ -537,7 +544,7 @@ $(function() {
             if (form !== undefined) {
                 $(form).find("input").blur();
             }
-            if (value === undefined || (typeof(value) == "string" && value.trim() == "")) return OctoPrintClient.createRejectedDeferred();
+            if (value === undefined || (typeof(value) === "string" && value.trim() === "")) return OctoPrintClient.createRejectedDeferred();
 
             self.clearAutosendTarget(item);
             return self.setTargetToValue(item, value);
@@ -547,7 +554,7 @@ $(function() {
             if (!profile) return OctoPrintClient.createRejectedDeferred();
 
             self.clearAutosendTarget(item);
-            return self.setTargetToValue(item, (item.key() == "bed" ? profile.bed : profile.extruder));
+            return self.setTargetToValue(item, (item.key() === "bed" ? profile.bed : profile.extruder));
         };
 
         self.setTargetToZero = function(item) {
@@ -571,7 +578,7 @@ $(function() {
                 item.newTarget("");
             };
 
-            if (item.key() == "bed") {
+            if (item.key() === "bed") {
                 return self._setBedTemperature(value)
                     .done(onSuccess);
             } else {
@@ -592,7 +599,7 @@ $(function() {
 
         self.incrementChangeOffset = function() {
             var value = self.changingOffset.newOffset();
-            if (value === undefined || (typeof(value) == "string" && value.trim() == "")) value = self.changingOffset.offset();
+            if (value === undefined || (typeof(value) === "string" && value.trim() === "")) value = self.changingOffset.offset();
             try {
                 value = parseInt(value);
                 if (value >= 50) return;
@@ -604,7 +611,7 @@ $(function() {
 
         self.decrementChangeOffset = function() {
             var value = self.changingOffset.newOffset();
-            if (value === undefined || (typeof(value) == "string" && value.trim() == "")) value = self.changingOffset.offset();
+            if (value === undefined || (typeof(value) === "string" && value.trim() === "")) value = self.changingOffset.offset();
             try {
                 value = parseInt(value);
                 if (value <= -50) return;
@@ -636,7 +643,7 @@ $(function() {
 
         self.setOffset = function(item) {
             var value = item.newOffset();
-            if (value === undefined || (typeof(value) == "string" && value.trim() == "")) return OctoPrintClient.createRejectedDeferred();
+            if (value === undefined || (typeof(value) === "string" && value.trim() === "")) return OctoPrintClient.createRejectedDeferred();
             return self.setOffsetToValue(item, value);
         };
 
@@ -658,7 +665,7 @@ $(function() {
                 item.newOffset("");
             };
 
-            if (item.key() == "bed") {
+            if (item.key() === "bed") {
                 return self._setBedOffset(value)
                     .done(onSuccess);
             } else {
@@ -704,26 +711,26 @@ $(function() {
         };
 
         self.handleEnter = function(event, type, item) {
-            if (event.keyCode == 13) {
-                if (type == "target") {
+            if (event.keyCode === 13) {
+                if (type === "target") {
                     self.setTarget(item)
                         .done(function() {
                             event.target.blur();
                         });
-                } else if (type == "offset") {
+                } else if (type === "offset") {
                     self.confirmChangeOffset();
                 }
             }
         };
 
         self.handleFocus = function(event, type, item) {
-            if (type == "target") {
+            if (type === "target") {
                 var value = item.newTarget();
-                if (value === undefined || (typeof(value) == "string" && value.trim() == "")) {
+                if (value === undefined || (typeof(value) === "string" && value.trim() === "")) {
                     item.newTarget(item.target());
                 }
                 event.target.select();
-            } else if (type == "offset") {
+            } else if (type === "offset") {
                 event.target.select();
             }
         };

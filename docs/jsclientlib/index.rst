@@ -14,7 +14,7 @@ If you are using it from a web page hosted on OctoPrint as a Jinja2 template, yo
 methods to embed it instead of manually entering the URL, in order to have OctoPrint take care of setting the
 correct URL prefix:
 
-.. code-block:: html
+.. code-block:: html+jinja
 
    <!--
      full client library or all individual files, depending
@@ -35,7 +35,7 @@ correct URL prefix:
 Regardless of which way you use to include the library, you'll also need to make sure you included JQuery and lodash,
 because the library depends on those to be available (as ``$`` and ``_``). You can embed those like this:
 
-.. code-block:: html
+.. code-block:: html+jinja
 
    <script src="{{ url_for("static", filename="js/lib/jquery/jquery.min.js") }}"></script>
    <script src="{{ url_for("static", filename="js/lib/lodash.min.js") }}"></script>

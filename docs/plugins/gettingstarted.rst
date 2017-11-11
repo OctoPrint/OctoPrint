@@ -821,9 +821,9 @@ Put something like the following into ``helloworld.css``:
    :linenos:
 
    #tab_plugin_helloworld iframe {
-       width: 100%;
-       height: 600px;
-       border: 1px solid #808080;
+     width: 100%;
+     height: 600px;
+     border: 1px solid #808080;
    }
 
 Don't forget to remove the ``style`` attribute from the ``iframe`` tag in ``helloworld_tab.jinja2``:

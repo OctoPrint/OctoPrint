@@ -96,5 +96,21 @@ class JsDelimiterBundler(Filter):
 	options = {}
 
 	def input(self, _in, out, **kwargs):
+		source = kwargs.get("source", "n/a")
+
+		out.write("// source: " + source + "\n")
 		out.write(_in.read())
 		out.write("\n;\n")
+
+
+class JsPluginDelimiterBundler(Filter):
+	name = "js_plugin_delimiter_bundler"
+	options = {}
+
+	def input(self, _in, out, **kwargs):
+		source = kwargs.get("source", "n/a")
+
+		out.write("// source: " + source + "\n")
+		out.write("(function () {\n    try {\n        ")
+		out.write(_in.read().replace('\n', '\n        '))
+		out.write("\n    } catch (error) {\n        log.error(\"Error in bundled asset " + source + ":\", (error.stack || error));\n    }\n})();\n")

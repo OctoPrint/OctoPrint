@@ -39,3 +39,19 @@ else:
 	def set_close_exec(handle):
 		# no-op
 		pass
+
+
+# current os
+
+_OPERATING_SYSTEMS = dict(windows=["win32"],
+                          linux=lambda x: x.startswith("linux"),
+                          macos=["darwin"],
+                          freebsd=lambda x: x.startswith("freebsd"))
+OPERATING_SYSTEM_UNMAPPED = "unmapped"
+
+def get_os():
+	for identifier, platforms in _OPERATING_SYSTEMS.items():
+		if (callable(platforms) and platforms(sys.platform)) or (isinstance(platforms, list) and sys.platform in platforms):
+			return identifier
+	else:
+		return OPERATING_SYSTEM_UNMAPPED

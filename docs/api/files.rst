@@ -192,6 +192,7 @@ Retrieve all files
                 "refs": {
                   "resource": "http://example.com/api/files/local/folderA/subfolder",
                 }
+              }
             ],
             "size": 1334,
             "refs": {

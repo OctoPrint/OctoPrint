@@ -42,20 +42,3 @@ class PluginManagerPluginTests(unittest.TestCase):
 		with mock.patch("sys.platform", sys_platform):
 			actual = PluginManagerPlugin._is_os_compatible(current_os, entries)
 			self.assertEqual(actual, expected)
-
-	@ddt.data(
-		("win32", "windows"),
-		("linux2", "linux"),
-		("darwin", "macos"),
-		("linux", "linux"),
-		("linux3", "linux"),
-		("freebsd", "freebsd"),
-		("freebsd2342", "freebsd"),
-		("os2", "unmapped"),
-		("sunos5", "unmapped")
-	)
-	@ddt.unpack
-	def test_get_os(self, sys_platform, expected):
-		with mock.patch("sys.platform", sys_platform):
-			actual = PluginManagerPlugin._get_os()
-			self.assertEqual(actual, expected)

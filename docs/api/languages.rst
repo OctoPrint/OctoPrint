@@ -39,9 +39,7 @@ Retrieve installed language packs
           "_core": {
             "identifier": "_core",
             "name": "Core",
-            "languages": [
-              ...
-            ]
+            "languages": []
           },
           "some_plugin": {
             "identifier": "some_plugin",
@@ -61,7 +59,6 @@ Retrieve installed language packs
                 "last_update": 1470859680,
                 "author": "The italian Transifex Team"
               }
-              ...
             ]
         }
       }
@@ -124,9 +121,7 @@ Delete a language pack
           "_core": {
             "identifier": "_core",
             "name": "Core",
-            "languages": [
-              ...
-            ]
+            "languages": []
           },
           "some_plugin": {
             "identifier": "some_plugin",
@@ -138,8 +133,7 @@ Delete a language pack
                 "locale_english": "German",
                 "last_update": 1474574597,
                 "author": "Gina Häußge"
-              },
-              ...
+              }
             ]
         }
       }
