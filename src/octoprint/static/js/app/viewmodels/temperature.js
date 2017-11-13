@@ -729,9 +729,13 @@ $(function() {
                 if (value === undefined || (typeof(value) === "string" && value.trim() === "")) {
                     item.newTarget(item.target());
                 }
-                event.target.select();
+                window.setTimeout(function() {
+                    event.target.select();
+                }, 0);
             } else if (type === "offset") {
-                event.target.select();
+                window.setTimeout(function() {
+                    event.target.select();
+                }, 0);
             }
         };
 
