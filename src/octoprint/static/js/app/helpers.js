@@ -1154,7 +1154,7 @@ var escapeUnprintableCharacters = function(str) {
 };
 
 var copyToClipboard = function(text) {
-    var temp = $("<input>");
+    var temp = $("<textarea>");
     $("body").append(temp);
     temp.val(text).select();
     document.execCommand("copy");
