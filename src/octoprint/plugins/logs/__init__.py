@@ -22,7 +22,7 @@ try:
 except ImportError:
     from scandir import scandir
 
-class LoggingPlugin(octoprint.plugin.AssetPlugin,
+class LogsPlugin(octoprint.plugin.AssetPlugin,
                     octoprint.plugin.SettingsPlugin,
                     octoprint.plugin.TemplatePlugin,
                     octoprint.plugin.BlueprintPlugin,
@@ -115,17 +115,17 @@ class LoggingPlugin(octoprint.plugin.AssetPlugin,
         ]
         
     def get_assets(self):
-        return dict(js=["js/logging.js"])
+        return dict(js=["js/logs.js"])
 
-__plugin_name__ = "Logging"
+__plugin_name__ = "Logs"
 __plugin_author__ = ""
-__plugin_description__ = "Provides access to OctoPrint logging."
+__plugin_description__ = "Provides access to OctoPrint Logs."
 __plugin_license__ = ""
-#__plugin_implementation__ = LoggingPlugin()
+#__plugin_implementation__ = LogsPlugin()
 
 
 # Required for regular plugin
 def __plugin_load__():
     global __plugin_implementation__
-    __plugin_implementation__ = LoggingPlugin()
+    __plugin_implementation__ = LogsPlugin()
 

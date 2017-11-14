@@ -1,7 +1,7 @@
 $(function() {
-    function LogViewModel(parameters) {
+    function LogsViewModel(parameters) {
         var self = this;
-        var logsURL = "plugin/log/logs"
+        var logsURL = "plugin/logs/logs"
 
         self.loginState = parameters[0];
         self.available_loggers = ko.observableArray();
@@ -76,8 +76,8 @@ $(function() {
 
 
     OCTOPRINT_VIEWMODELS.push([
-        LogViewModel,
+        LogsViewModel,
         ["loginStateViewModel"],
-        "#log"
+        "#logs"
     ]);
 });
