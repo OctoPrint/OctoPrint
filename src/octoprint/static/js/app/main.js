@@ -660,10 +660,6 @@ $(function() {
             callViewModels(allViewModels, "onAllBound", [allViewModels]);
             log.info("... binding done");
 
-            // startup complete
-            callViewModels(allViewModels, "onStartupComplete");
-            setOnViewModels(allViewModels, "_startupComplete", true);
-
             // make sure we can track the browser tab visibility
             OctoPrint.coreui.onBrowserVisibilityChange(function(status) {
                 log.debug("Browser tab is now " + (status ? "visible" : "hidden"));
@@ -674,12 +670,18 @@ $(function() {
                 changeTab();
             });
 
-            if (window.location.hash != "")
+            if (window.location.hash !== "")
             {
                 changeTab();
             }
 
             log.info("Application startup complete");
+
+            viewModelMap["uiStateViewModel"].loading(false);
+
+            // startup complete
+            callViewModels(allViewModels, "onStartupComplete");
+            setOnViewModels(allViewModels, "_startupComplete", true);
         };
 
         var fetchSettings = function() {
@@ -749,7 +751,6 @@ $(function() {
                     // This is to ensure that we have no concurrent requests triggered by socket events
                     // overriding each other's session during app initialization
                     dataUpdater.initialized();
-                    viewModelMap["uiStateViewModel"].loading(false);
                 });
         };
 
