@@ -148,36 +148,13 @@ $(function() {
             }
             self.updatePlot();
         };
+
         self.settingsViewModel.printerProfiles.currentProfileData.subscribe(function() {
             self._printerProfileUpdated();
             self.settingsViewModel.printerProfiles.currentProfileData().extruder.count.subscribe(self._printerProfileUpdated);
             self.settingsViewModel.printerProfiles.currentProfileData().extruder.sharedNozzle.subscribe(self._printerProfileUpdated);
             self.settingsViewModel.printerProfiles.currentProfileData().heatedBed.subscribe(self._printerProfileUpdated);
         });
-
-        self.onUserLoggedIn = function () {
-            self._initializePlot(true);
-
-            self.loginStateSubscription = self.loginState.hasPermissionKo(self.access.permissions.STATUS).subscribe(function(value) {
-                var graph = $("#temp, #temp_link");
-                if (graph.length) {
-                    if (value) {
-                        graph.removeAttr("style");
-                    }
-                    else {
-                        graph.hide();
-                    }
-                }
-                self.updatePlot();
-            });
-        };
-
-        self.onUserLoggedOut = function (){
-            if (self.loginStateSubscription !== undefined) {
-                self.loginStateSubscription.dispose();
-                self.loginStateSubscription = undefined;
-            }
-        };
 
         self.temperatures = [];
 
@@ -756,8 +733,9 @@ $(function() {
             }
         };
 
-        self.onAfterTabChange = function(current, previous) {
-            if (current !== "#temp") {
+        self.initOrUpdate = function() {
+            if (OctoPrint.coreui.selectedTab !== "#temp" || !$("#temp").is(":visible")) {
+                // do not try to initialize the graph when it's not visible or its sizing will be off
                 return;
             }
 
@@ -766,6 +744,10 @@ $(function() {
             } else {
                 self.updatePlot();
             }
+        };
+
+        self.onAfterTabChange = function() {
+            self.initOrUpdate();
         };
 
         self.onStartup = function() {
@@ -785,7 +767,16 @@ $(function() {
         };
 
         self.onStartupComplete = function() {
+            self.initOrUpdate();
             self._printerProfileUpdated();
+        };
+
+        self.onUserLoggedIn = function() {
+            self.initOrUpdate();
+        };
+
+        self.onUserLoggedOut = function() {
+            self.initOrUpdate();
         };
 
     }
