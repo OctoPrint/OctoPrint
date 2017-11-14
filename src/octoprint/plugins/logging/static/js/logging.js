@@ -4,6 +4,8 @@ $(function() {
         var logsURL = "plugin/logging/logs"
 
         self.loginState = parameters[0];
+        self.available_loggers = ko.observableArray();
+        self.logging_config = ko.observableArray();
 
         // initialize list helper
         self.listHelper = new ItemListHelper(
@@ -57,7 +59,21 @@ $(function() {
         self.onSettingsShown = function() {
             self.requestData();
         };
+
+/*
+        self.onBeforeBinding = function () {
+            self.global_settings.settings.plugins.gcodesystemcommands.command_definitions.subscribe(function() {
+                settings = self.global_settings.settings.plugins.gcodesystemcommands;
+                self.command_definitions(settings.command_definitions.slice(0));            
+            });
+        };
+
+        self.onSettingsBeforeSave = function () {
+            self.global_settings.settings.plugins.gcodesystemcommands.command_definitions(self.command_definitions.slice(0));
+        };
+*/
     }
+
 
     OCTOPRINT_VIEWMODELS.push([
         LoggingViewModel,

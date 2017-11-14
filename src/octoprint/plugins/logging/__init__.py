@@ -25,7 +25,8 @@ except ImportError:
 class LoggingPlugin(octoprint.plugin.AssetPlugin,
                     octoprint.plugin.SettingsPlugin,
                     octoprint.plugin.TemplatePlugin,
-                    octoprint.plugin.BlueprintPlugin):
+                    octoprint.plugin.BlueprintPlugin,
+                    octoprint.plugin.SimpleApiPlugin):
 
 
     @octoprint.plugin.BlueprintPlugin.route("/logs", methods=["GET"])
@@ -76,8 +77,43 @@ class LoggingPlugin(octoprint.plugin.AssetPlugin,
 
         return files
 
-    # AssetPlugin
+    def _get_available_loggers(self):
+        return self._logger.manager.loggerDict.keys()
 
+    def _get_logging_config(self):
+        #config_from_file example data: {'loggers': {'octoprint.printer': {'level': 'DEBUG'}, 'octoprint.plugins.psucontrol': {'level': 'INFO'}, 'octoprint.printer.PrinterCallback': {'level': 'DEBUG'}, 'octoprint.printer.standard': {'level': 'DEBUG'}}}
+        logging_file = os.path.join(self._settings.getBaseFolder("base"), "logging.yaml")
+
+        config_from_file = {}
+        if os.path.exists(logging_file) and os.path.isfile(logging_file):
+            import yaml
+            with open(logging_file, "r") as f:
+                config_from_file = yaml.safe_load(f)
+
+        if config_from_file is not None and isinstance(config_from_file, dict):
+            return config_from_file
+        else:
+            return dict()
+
+    def get_api_commands(self):
+        return dict(
+            getAvailableLoggers=[],
+            getLoggingConfig=[]
+        )
+
+    def on_api_command(self, command, data):
+        if not admin_permission.can():
+            return make_response("Insufficient rights", 403)
+        if command  == 'getAvailableLoggers':
+            return jsonify(self._get_available_loggers())
+        elif command == 'getLoggingConfig':
+            return jsonify(self._get_logging_config())
+
+    def get_template_configs(self):
+        return [
+            dict(type="settings", custom_bindings=True)
+        ]
+        
     def get_assets(self):
         return dict(js=["js/logging.js"])
 

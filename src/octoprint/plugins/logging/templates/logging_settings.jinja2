@@ -44,3 +44,34 @@
         </ul>
     </div>
 </div>
+
+<div id="loggers">
+<h3>Loggers</h3>
+    <form class="form-horizontal">
+
+        <div class="row-fluid">
+            <div class="span3"><h4>Name</h4></div>
+            <div class="span3"><h4>Level</h4></div>
+        </div>
+        <div data-bind="foreach: configured_loggers">
+            <div class="row-fluid" style="margin-bottom: 5px">
+                <div class="span3 input-prepend">
+                    <span class="add-on">OCTO</span>
+                    <input type="number" class="input-mini text-right" data-bind="value: id">
+                </div>
+                <div class="span8">
+                    <input type="text" class="input-block-level" data-bind="value: command">
+                </div>
+                <div class="span1">
+                    <a title="Remove Command Definition" class="btn btn-danger" data-bind="click: $parent.removeCommandDefinition"><i class="icon-trash"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="row-fluid">
+            <div class="offset11 span1">
+                <select><option>derp</select>
+                <a title="Add Command Definition" class="btn btn-primary" data-bind="click: addCommandDefinition"><i class="icon-plus"></i></a>
+            </div>
+        </div>
+    </form>
+</div>
