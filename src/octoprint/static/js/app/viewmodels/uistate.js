@@ -7,7 +7,7 @@ $(function() {
 
         self.loading = ko.observable(true);
         self.needlogin = ko.computed(function() {
-            return !self.loginState.hasPermissionKo(self.access.permissions.STATUS)();
+            return !self.loading() && !self.loginState.hasPermissionKo(self.access.permissions.STATUS)();
         });
         self.visible = ko.pureComputed(function() {
             return !self.loading() && !self.needlogin();
