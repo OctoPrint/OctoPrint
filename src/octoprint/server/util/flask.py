@@ -509,13 +509,13 @@ def passive_login():
 	else:
 		user = flask_login.current_user
 
-
 	if user is not None and not user.is_anonymous:
+		# login known user
 		flask_principal.identity_changed.send(flask.current_app._get_current_object(), identity=flask_principal.Identity(user.get_id()))
 		if hasattr(user, "session"):
 			flask.session["usersession.id"] = user.session
 		flask.g.user = user
-		return flask.jsonify(user)
+
 	elif settings().getBoolean(["accessControl", "autologinLocal"]) \
 			and settings().get(["accessControl", "autologinAs"]) is not None \
 			and settings().get(["accessControl", "localNetworks"]) is not None:
@@ -528,20 +528,23 @@ def passive_login():
 		try:
 			remoteAddr = get_remote_address(flask.request)
 			if netaddr.IPAddress(remoteAddr) in localNetworks:
-				user = octoprint.server.userManager.find_user(autologinAs)
-				if user is not None:
-					user = octoprint.server.userManager.login_user(user)
+				autologin_user = octoprint.server.userManager.find_user(autologinAs)
+				if autologin_user is not None:
+					autologin_user = octoprint.server.userManager.login_user(autologin_user)
 					flask.session["usersession.id"] = user.session
 					flask.g.user = user
 
 					flask_login.login_user(user)
 					flask_principal.identity_changed.send(flask.current_app._get_current_object(), identity=flask_principal.Identity(user.get_id()))
-					return flask.jsonify(user)
+
+					user = autologin_user
 		except:
 			logger = logging.getLogger(__name__)
 			logger.exception("Could not autologin user %s for networks %r" % (autologinAs, localNetworks))
 
-	return "", 204
+	if user is None:
+		user = octoprint.access.users.AnonymousUser([octoprint.server.groupManager.guest_group])
+	return flask.jsonify(user)
 
 
 #~~ cache decorator for cacheable views

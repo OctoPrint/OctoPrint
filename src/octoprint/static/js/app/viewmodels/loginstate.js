@@ -63,7 +63,7 @@ $(function() {
                     }
                 } else {
                     self.loggedIn(false);
-                    self.resetCurrentUserData();
+                    self.updateCurrentUserData(response);
                     if (currentLoggedIn) {
                         callViewModels(self.allViewModels, "onUserLoggedOut");
                         log.info("User logged out");
@@ -81,25 +81,27 @@ $(function() {
         };
 
         self.updateCurrentUserData = function(data) {
-            self.username(data.name);
-            self.userneeds(data.needs);
-            // TODO: deprecated, remove in future version
-            self.isUser(data.user);
-            self.isAdmin(data.admin);
+            if (data) {
+                self.userneeds(data.needs);
+            } else {
+                self.userneeds({});
+            }
 
-            self.currentUser(data);
-        };
+            if (data.name) {
+                self.username(data.name);
+                self.currentUser(data);
 
-        self.resetCurrentUserData = function() {
-            self.username(undefined);
-            self.userneeds(undefined);
-            OctoPrint.access.groups.get("Guests").done(function(group) {
-                self.userneeds(group.needs);
-            });
-            self.isUser(false);
-            self.isAdmin(false);
+                // TODO: deprecated, remove in 1.5.0
+                self.isUser(data.user);
+                self.isAdmin(data.admin);
+            } else {
+                self.username(undefined);
+                self.currentUser(undefined);
 
-            self.currentUser(undefined);
+                // TODO: deprecated, remove in 1.5.0
+                self.isUser(false);
+                self.isAdmin(false);
+            }
         };
 
         self.login = function(u, p, r, notifications) {

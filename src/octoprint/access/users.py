@@ -900,12 +900,12 @@ class User(UserMixin):
 	                    since="1.4.0")(as_dict)
 
 	@property
-	@deprecated("is_user is deprecated, please use has_permissions", since="1.4.0")
+	@deprecated("is_user is deprecated, please use has_permission", since="1.4.0")
 	def is_user(self):
 		return OctoPrintUserMethodReplacedByBooleanProperty("is_user", lambda: not self.is_anonymous)
 
 	@property
-	@deprecated("is_admin is deprecated, please use has_permissions", since="1.4.0")
+	@deprecated("is_admin is deprecated, please use has_permission", since="1.4.0")
 	def is_admin(self):
 		return OctoPrintUserMethodReplacedByBooleanProperty("is_admin", lambda: self.has_permission(Permissions.ADMIN))
 
@@ -927,7 +927,7 @@ class User(UserMixin):
 
 class AnonymousUser(AnonymousUserMixin, User):
 	def __init__(self, groups):
-		User.__init__(self, "guest", "", True, [], groups)
+		User.__init__(self, None, "", True, [], groups)
 
 	@property
 	def is_anonymous(self):
@@ -943,6 +943,12 @@ class AnonymousUser(AnonymousUserMixin, User):
 
 	def check_password(self, passwordHash):
 		return True
+
+	def as_dict(self):
+		from octoprint.access.permissions import OctoPrintPermission
+		return {
+			"needs": OctoPrintPermission.convert_needs_to_dict(self.needs)
+		}
 
 
 class SessionUser(wrapt.ObjectProxy):
