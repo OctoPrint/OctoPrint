@@ -313,13 +313,13 @@ Web interface startup
 
    sequenceDiagram
       participant Main
-      participant onServerConnect
-      participant fetchSettings
-      participant bindViewModels
       participant DataUpdater
       participant LoginStateViewModel
+      participant SettingsViewModel
+      participant UiStateViewModel
 
-      Note right of DataUpdater: connectCallback = undefined
+      Note over DataUpdater: connectCallback = undefined
+      Note over UiStateViewModel: loaded = false
 
       activate Main
 
@@ -337,52 +337,60 @@ Web interface startup
       Main->>+DataUpdater: connectCallback = onServerConnect
       Note right of DataUpdater: connectCallback = onServerConnect
       DataUpdater-->>-Main: ok
-      Main->>+onServerConnect: call
-      onServerConnect->>+LoginStateViewModel: passiveLogin
-      LoginStateViewModel-->>onServerConnect: ok
-      onServerConnect-->>Main: ok
-      deactivate onServerConnect
+      Main->>+Main: onServerConnect
+      Main->>+LoginStateViewModel: passiveLogin
+      LoginStateViewModel-->>Main: ok
+      Main-->>Main: ok
+      deactivate Main
       deactivate Main
 
       LoginStateViewModel->>+LoginStateViewModel: asynchronous passive login
-      Note over Main,LoginStateViewModel: Session available!
-      LoginStateViewModel-X+onServerConnect: done
+      Note over Main,UiStateViewModel: Session available!
+      LoginStateViewModel-X+Main: done
       deactivate LoginStateViewModel
       deactivate LoginStateViewModel
 
-      onServerConnect->>+DataUpdater: initialized
+      Main->>+DataUpdater: initialized
       Note right of DataUpdater: initialized = true
       DataUpdater->DataUpdater: trigger stored callbacks
-      DataUpdater-->>-onServerConnect: ok
-      onServerConnect-X+Main: done
-      deactivate onServerConnect
+      DataUpdater-->>-Main: ok
 
-      Main->>+fetchSettings: call
-      Note right of fetchSettings: trigger onStartup
+      Main->>+Main: fetchSettings
+      Note right of Main: trigger onStartup
 
-      fetchSettings-->>Main: ok
+      Main->>+SettingsViewModel: requestData
+      SettingsViewModel-->>Main: ok
+      deactivate Main
       deactivate Main
 
-      fetchSettings->>+fetchSettings: asynchronous settings fetch
-      fetchSettings->>+bindViewModels: call
+      SettingsViewModel->>+SettingsViewModel: asynchronous settings fetch
+      Note over Main,UiStateViewModel: Settings available!
+      SettingsViewModel-X+Main: done
+      deactivate SettingsViewModel
+      deactivate SettingsViewModel
+
+      Main->>+Main: bindViewModels
 
       loop for each view model
-          bindViewModels->bindViewModels: trigger onBeforeBinding
-          bindViewModels->bindViewModels: trigger onBoundTo
-          bindViewModels->bindViewModels: trigger onAfterBinding
+          Main->Main: trigger onBeforeBinding
+          Main->Main: trigger onBoundTo
+          Main->Main: trigger onAfterBinding
       end
 
-      bindViewModels->bindViewModels: trigger onAllBound
+      Main->Main: trigger onAllBound
       opt User is logged in
-         bindViewModels->>+LoginStateViewModel: onAllBound
+         Main->>+LoginStateViewModel: onAllBound
          LoginStateViewModel->LoginStateViewModel: trigger onUserLoggedIn
-         LoginStateViewModel-->>-bindViewModels: ok
+         LoginStateViewModel-->>-Main: ok
       end
-      bindViewModels->bindViewModels: trigger onStartupComplete
-      bindViewModels-->>-fetchSettings: ok
 
-      deactivate fetchSettings
-      deactivate fetchSettings
+      Main->>+UiStateViewModel: loaded
+      Note right of UiStateViewModel: loaded = true
+      UiStateViewModel-->>-Main: ok
+
+      Main->Main: trigger onStartupComplete
+      deactivate Main
+      deactivate Main
 
 
 .. _sec-plugins-viewmodels-reconnect:
