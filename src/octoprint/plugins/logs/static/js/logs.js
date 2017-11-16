@@ -5,7 +5,7 @@ $(function() {
 
         self.loginState = parameters[0];
         self.available_loggers = ko.observableArray();
-        self.logging_config = ko.observableArray();
+        self.configured_loggers = ko.observableArray();
 
         // initialize list helper
         self.listHelper = new ItemListHelper(
@@ -41,6 +41,12 @@ $(function() {
         self.requestData = function() {
             OctoPrint.get(logsURL)
                 .done(self.fromResponse);
+
+            OctoPrint.simpleApiCommand("logs", "getLoggingConfig")
+                .done(self.fromGetLoggingConfigResponse);
+
+            OctoPrint.simpleApiCommand("logs", "getAvailableLoggers")
+                .done(self.fromGetAvailableLoggers);
         };
 
         self.fromResponse = function(response) {
@@ -49,6 +55,23 @@ $(function() {
                 return;
 
             self.listHelper.updateItems(files);
+        };
+
+        self.fromGetLoggingConfigResponse = function(data) {
+            $.each(data.result.loggers, function(id, options) {
+                if (options.level !== undefined) {
+                    self.configured_loggers.push({id: id, level: options.level});
+                }
+            });
+            //console.log(self.configured_loggers());
+        };
+
+        self.fromGetAvailableLoggers = function(data) {
+            console.log(data.result);
+            $.each(data.result, function(id, name) {
+                self.available_loggers.push({name: name.name});
+            });
+            console.log(self.available_loggers());
         };
 
         self.removeFile = function(filename) {
@@ -78,6 +101,6 @@ $(function() {
     OCTOPRINT_VIEWMODELS.push([
         LogsViewModel,
         ["loginStateViewModel"],
-        "#logs"
+        "#settings_plugin_logs"
     ]);
 });

@@ -78,6 +78,7 @@ class LogsPlugin(octoprint.plugin.AssetPlugin,
         return files
 
     def _get_available_loggers(self):
+        self._logger.warn("%s" % self._logger.manager.loggerDict.keys())
         return self._logger.manager.loggerDict.keys()
 
     def _get_logging_config(self):
@@ -105,9 +106,9 @@ class LogsPlugin(octoprint.plugin.AssetPlugin,
         if not admin_permission.can():
             return make_response("Insufficient rights", 403)
         if command  == 'getAvailableLoggers':
-            return jsonify(self._get_available_loggers())
+            return jsonify(result=self._get_available_loggers())
         elif command == 'getLoggingConfig':
-            return jsonify(self._get_logging_config())
+            return jsonify(result=self._get_logging_config())
 
     def get_template_configs(self):
         return [
