@@ -393,7 +393,7 @@ class Server(object):
 		pluginManager.implementation_post_inits=[settings_plugin_config_migration_and_cleanup]
 
 		pluginManager.log_all_plugins()
-		
+
 		# log environment data now
 		self._environment_detector.log_detected_environment()
 
@@ -487,6 +487,8 @@ class Server(object):
 			for d in dicts:
 				joined.update(d)
 			return joined
+
+		util.tornado.RequestlessExceptionLoggingMixin.LOG_REQUEST = debug
 
 		server_routes = self._router.urls + [
 			# various downloads
