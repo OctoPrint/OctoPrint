@@ -103,9 +103,11 @@
         additional = additional || {};
 
         var headers = $.extend({}, additional);
-        headers["X-Api-Key"] = this.options.apikey;
 
-        if (this.options.locale !== undefined) {
+        if (this.options.apikey) {
+            headers["X-Api-Key"] = this.options.apikey;
+        }
+        if (this.options.locale) {
             headers["X-Locale"] = this.options.locale;
         }
 

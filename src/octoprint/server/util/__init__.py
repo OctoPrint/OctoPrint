@@ -25,7 +25,7 @@ from . import serialization
 
 def enforceApiKeyRequestHandler():
 	"""
-	``before_request`` handler for blueprints which makes sure an API key is provided
+	``before_request`` handler for blueprints which makes sure an API key is provided if configured as such
 	"""
 
 	import octoprint.server
@@ -40,7 +40,7 @@ def enforceApiKeyRequestHandler():
 
 	apikey = get_api_key(_flask.request)
 
-	if apikey is None:
+	if apikey is None and settings().getBoolean(["api", "keyEnforced"]):
 		return _flask.make_response("No API key provided", 401)
 
 	if apikey != octoprint.server.UI_API_KEY and not settings().getBoolean(["api", "enabled"]):

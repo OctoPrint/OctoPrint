@@ -108,6 +108,7 @@ $(function() {
         self.locale_languages = _.keys(AVAILABLE_LOCALES);
 
         self.api_enabled = ko.observable(undefined);
+        self.api_keyEnforced = ko.observable(undefined);
         self.api_key = ko.observable(undefined);
         self.api_allowCrossOrigin = ko.observable(undefined);
 

@@ -9,6 +9,14 @@
     <div class="control-group">
         <div class="controls">
             <label class="checkbox">
+                <input type="checkbox" id="settings-apiEnforcedKey" data-bind="checked: api_keyEnforced"> {{ _('Enforce key') }}
+            </label>
+            <span class="help-block">{{ _('If you check this, requests to any of OctoPrint\'s APIs without an API key will be denied instead of handled like an anonymous/not logged in user. This is OctoPrint\'s old default behaviour.') }}</span>
+        </div>
+    </div>
+    <div class="control-group">
+        <div class="controls">
+            <label class="checkbox">
                 <input type="checkbox" id="settings-apiCors" data-bind="checked: api_allowCrossOrigin"> {{ _('Allow <a href="%(url)s">Cross Origin Resource Sharing (CORS)</a>', url = "https://en.wikipedia.org/wiki/Cross-origin_resource_sharing") }}
             </label>
         </div>

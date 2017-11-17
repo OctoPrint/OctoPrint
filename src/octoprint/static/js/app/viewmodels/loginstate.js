@@ -48,7 +48,11 @@ $(function() {
 
         self.requestData = function() {
             return OctoPrint.browser.passiveLogin()
-                .done(self.fromResponse);
+                .done(self.fromResponse)
+                .fail(function() {
+                    // something went very wrong, still, proceed
+                    self.fromResponse();
+                });
         };
 
         self.fromResponse = function(response) {

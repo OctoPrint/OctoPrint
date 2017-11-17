@@ -313,6 +313,7 @@ default_settings = {
 	},
 	"api": {
 		"enabled": True,
+		"keyEnforced": False,
 		"key": None,
 		"allowCrossOrigin": False,
 		"apps": {}

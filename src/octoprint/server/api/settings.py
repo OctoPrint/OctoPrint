@@ -84,6 +84,7 @@ def getSettings():
 	data = {
 		"api": {
 			"enabled": s.getBoolean(["api", "enabled"]),
+			"keyEnforced": s.getBoolean(["api", "keyEnforced"]),
 			"key": s.get(["api", "key"]) if Permissions.ADMIN.can() else None,
 			"allowCrossOrigin": s.get(["api", "allowCrossOrigin"])
 		},
@@ -314,6 +315,7 @@ def _saveSettings(data):
 
 	if "api" in data.keys():
 		if "enabled" in data["api"]: s.setBoolean(["api", "enabled"], data["api"]["enabled"])
+		if "keyEnforced" in data["api"]: s.setBoolean(["api", "keyEnforced"], data["api"]["keyEnforced"])
 		if "allowCrossOrigin" in data["api"]: s.setBoolean(["api", "allowCrossOrigin"], data["api"]["allowCrossOrigin"])
 
 	if "appearance" in data.keys():
