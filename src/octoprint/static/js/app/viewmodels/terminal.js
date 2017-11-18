@@ -305,6 +305,10 @@ $(function() {
             }
         };
 
+        self.copyAll = function() {
+            copyToClipboard(self.plainLogLines().join("\n"));
+        };
+
         // command matching regex
         // (Example output for inputs G0, G1, G28.1, M117 test)
         // - 1: code including optional subcode. Example: G0, G1, G28.1, M117

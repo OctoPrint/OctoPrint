@@ -32,6 +32,7 @@ import imp
 from collections import defaultdict, namedtuple, OrderedDict
 import logging
 import fnmatch
+import inspect
 
 import pkg_resources
 import pkginfo
@@ -465,7 +466,7 @@ class PluginManager(object):
 	It is able to discover plugins both through possible file system locations as well as customizable entry points.
 	"""
 
-	def __init__(self, plugin_folders, plugin_types, plugin_entry_points, logging_prefix=None,
+	def __init__(self, plugin_folders, plugin_bases, plugin_entry_points, logging_prefix=None,
 	             plugin_disabled_list=None, plugin_blacklist=None, plugin_restart_needing_hooks=None,
 	             plugin_obsolete_hooks=None, plugin_validators=None):
 		self.logger = logging.getLogger(__name__)
@@ -474,8 +475,8 @@ class PluginManager(object):
 			logging_prefix = ""
 		if plugin_folders is None:
 			plugin_folders = []
-		if plugin_types is None:
-			plugin_types = []
+		if plugin_bases is None:
+			plugin_bases = []
 		if plugin_entry_points is None:
 			plugin_entry_points = []
 		if plugin_disabled_list is None:
@@ -484,7 +485,7 @@ class PluginManager(object):
 			plugin_blacklist = []
 
 		self.plugin_folders = plugin_folders
-		self.plugin_types = plugin_types
+		self.plugin_bases = plugin_bases
 		self.plugin_entry_points = plugin_entry_points
 		self.plugin_disabled_list = plugin_disabled_list
 		self.plugin_blacklist = plugin_blacklist
@@ -975,9 +976,9 @@ class PluginManager(object):
 
 		# evaluate registered implementation
 		if plugin.implementation:
-			for plugin_type in self.plugin_types:
-				if isinstance(plugin.implementation, plugin_type):
-					self.plugin_implementations_by_type[plugin_type].append((name, plugin.implementation))
+			mixins = self.mixins_matching_bases(plugin.implementation.__class__, *self.plugin_bases)
+			for mixin in mixins:
+				self.plugin_implementations_by_type[mixin].append((name, plugin.implementation))
 
 			self.plugin_implementations[name] = plugin.implementation
 
@@ -1000,9 +1001,10 @@ class PluginManager(object):
 			if name in self.plugin_implementations:
 				del self.plugin_implementations[name]
 
-			for plugin_type in self.plugin_types:
+			mixins = self.mixins_matching_bases(plugin.implementation.__class__, *self.plugin_bases)
+			for mixin in mixins:
 				try:
-					self.plugin_implementations_by_type[plugin_type].remove((name, plugin.implementation))
+					self.plugin_implementations_by_type[mixin].remove((name, plugin.implementation))
 				except ValueError:
 					# that's ok, the plugin was just not registered for the type
 					pass
@@ -1086,6 +1088,17 @@ class PluginManager(object):
 
 		return any(map(lambda h: fnmatch.fnmatch(hook, h),
 		               hooks))
+
+	@staticmethod
+	def mixins_matching_bases(klass, *bases):
+		result = set()
+		for c in inspect.getmro(klass):
+			if c == klass or c in bases:
+				# ignore the exact class and our bases
+				continue
+			if issubclass(c, bases):
+				result.add(c)
+		return result
 
 	@staticmethod
 	def has_any_of_mixins(plugin, *mixins):
