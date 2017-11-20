@@ -1,6 +1,7 @@
 $(function() {
-    function LogViewModel(parameters) {
+    function LoggingViewModel(parameters) {
         var self = this;
+        var logsURL = "plugin/logging/logs"
 
         self.loginState = parameters[0];
 
@@ -36,7 +37,7 @@ $(function() {
         );
 
         self.requestData = function() {
-            OctoPrint.logs.list()
+            OctoPrint.get(logsURL)
                 .done(self.fromResponse);
         };
 
@@ -49,7 +50,7 @@ $(function() {
         };
 
         self.removeFile = function(filename) {
-            OctoPrint.logs.delete(filename)
+            OctoPrint.delete(logsURL + "/" + filename)
                 .done(self.requestData);
         };
 
@@ -59,7 +60,7 @@ $(function() {
     }
 
     OCTOPRINT_VIEWMODELS.push([
-        LogViewModel,
+        LoggingViewModel,
         ["loginStateViewModel"],
         "#logs"
     ]);
