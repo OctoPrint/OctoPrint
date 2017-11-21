@@ -5,6 +5,48 @@ import ddt
 import octoprint.plugin
 import octoprint.plugin.core
 
+##~~ Helpers for testing mixin type extraction
+
+class A(object):
+	pass
+
+
+class A_1(A):
+	pass
+
+
+class A_2(A):
+	pass
+
+
+class A_3(A):
+	pass
+
+
+class A1_1(A_1):
+	pass
+
+
+class B(object):
+	pass
+
+
+class B_1(B):
+	pass
+
+
+class C(object):
+	pass
+
+
+class C_1(C):
+	pass
+
+
+class D(object):
+	pass
+
+
 @ddt.ddt
 class PluginTestCase(unittest.TestCase):
 
@@ -18,12 +60,10 @@ class PluginTestCase(unittest.TestCase):
 		self.plugin_folder = os.path.join(os.path.dirname(os.path.realpath(__file__)), "_plugins")
 
 		plugin_folders = [self.plugin_folder]
-		plugin_types = [octoprint.plugin.SettingsPlugin,
-		                octoprint.plugin.StartupPlugin,
-		                octoprint.plugin.AssetPlugin]
+		plugin_bases = [octoprint.plugin.OctoPrintPlugin]
 		plugin_entry_points = None
 		self.plugin_manager = octoprint.plugin.core.PluginManager(plugin_folders,
-		                                                          plugin_types,
+		                                                          plugin_bases,
 		                                                          plugin_entry_points,
 		                                                          plugin_disabled_list=[],
 		                                                          logging_prefix="logging_prefix.")
@@ -274,3 +314,20 @@ class PluginTestCase(unittest.TestCase):
 
 		result = octoprint.plugin.core.PluginManager.has_any_of_mixins(plugin, octoprint.plugin.RestartNeedingPlugin)
 		self.assertFalse(result)
+
+	@ddt.data(
+		((A1_1, A_2, B_1, C_1), (A, C), (A_1, A1_1, A_2, C_1)),
+		((A1_1, A_2, B_1, C_1), (B,), (B_1,)),
+
+		# not a subclass
+		((A1_1, A_2, B_1, C_1), (D,), ()),
+
+		# subclass only of base
+		((A,), (A,), ())
+	)
+	@ddt.unpack
+	def test_mixins_matching_bases(self, bases_to_set, bases_to_check, expected):
+		Foo = type("Foo", bases_to_set, dict())
+		actual = octoprint.plugin.core.PluginManager.mixins_matching_bases(Foo, *bases_to_check)
+		self.assertSetEqual(actual, set(expected))
+

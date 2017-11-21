@@ -37,7 +37,7 @@ INSTALL_REQUIRES = [
 	"pkginfo>=1.4.1,<1.5",
 	"requests>=2.18.4,<3",
 	"semantic_version>=2.6.0,<2.7",
-	"psutil>=5.1.3,<5.2",
+	"psutil>=5.4.1,<6",
 	"Click>=6.7,<6.8",
 	"awesome-slugify>=1.6.5,<1.7",
 	"feedparser>=5.2.1,<5.3",
@@ -67,7 +67,7 @@ EXTRA_REQUIRES = dict(
 		# Documentation dependencies
 		"sphinx>=1.6,<1.7",
 		"sphinxcontrib-httpdomain",
-		"sphinxcontrib-mermaid",
+		"sphinxcontrib-mermaid>=0.3",
 		"sphinx_rtd_theme",
 
 		# PyPi upload related

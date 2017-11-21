@@ -16,7 +16,7 @@ $(function() {
         self.isSdReady = ko.observable(undefined);
 
         self.enablePrint = ko.pureComputed(function() {
-            return self.isOperational() && self.isReady() && !self.isPrinting() && self.loginState.isUser() && self.filename() != undefined;
+            return self.isOperational() && self.isReady() && !self.isPrinting() && self.loginState.isUser() && self.filename() !== undefined;
         });
         self.enablePause = ko.pureComputed(function() {
             return self.isOperational() && (self.isPrinting() || self.isPaused()) && self.loginState.isUser();
@@ -77,7 +77,7 @@ $(function() {
             return formatDuration(self.printTime());
         });
         self.printTimeLeftString = ko.pureComputed(function() {
-            if (self.printTimeLeft() == undefined) {
+            if (self.printTimeLeft() === undefined) {
                 if (!self.printTime() || !(self.isPrinting() || self.isPaused())) {
                     return "-";
                 } else {
@@ -156,9 +156,9 @@ $(function() {
                 return "-";
 
             var type = timelapse["type"];
-            if (type == "zchange") {
+            if (type === "zchange") {
                 return gettext("On Z Change");
-            } else if (type == "timed") {
+            } else if (type === "timed") {
                 return gettext("Timed") + " (" + timelapse["options"]["interval"] + " " + gettext("sec") + ")";
             } else {
                 return "-";
@@ -197,7 +197,7 @@ $(function() {
             self.isReady(data.flags.ready);
             self.isSdReady(data.flags.sdReady);
 
-            if (self.isPaused() != prevPaused) {
+            if (self.isPaused() !== prevPaused) {
                 if (self.isPaused()) {
                     self.titlePrintButton(self.TITLE_PRINT_BUTTON_PAUSED);
                     self.titlePauseButton(self.TITLE_PAUSE_BUTTON_PAUSED);
@@ -214,7 +214,7 @@ $(function() {
                 self.filepath(data.file.path);
                 self.filesize(data.file.size);
                 self.filedisplay(data.file.display);
-                self.sd(data.file.origin == "sdcard");
+                self.sd(data.file.origin === "sdcard");
             } else {
                 self.filename(undefined);
                 self.filepath(undefined);
@@ -227,7 +227,7 @@ $(function() {
             self.lastPrintTime(data.lastPrintTime);
 
             var result = [];
-            if (data.filament && typeof(data.filament) == "object" && _.keys(data.filament).length > 0) {
+            if (data.filament && typeof(data.filament) === "object" && _.keys(data.filament).length > 0) {
                 var keys = _.keys(data.filament);
                 keys.sort();
                 _.each(keys, function(key) {
@@ -309,9 +309,9 @@ $(function() {
         };
     }
 
-    OCTOPRINT_VIEWMODELS.push([
-        PrinterStateViewModel,
-        ["loginStateViewModel", "settingsViewModel"],
-        ["#state_wrapper", "#drop_overlay"]
-    ]);
+    OCTOPRINT_VIEWMODELS.push({
+        construct: PrinterStateViewModel,
+        dependencies: ["loginStateViewModel", "settingsViewModel"],
+        elements: ["#state_wrapper", "#drop_overlay"]
+    });
 });

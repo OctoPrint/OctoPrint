@@ -58,11 +58,9 @@ List All Slicers and Slicing Profiles
               "displayName": "Medium Quality",
               "default": true,
               "resource": "http://example.com/api/slicing/cura/profiles/medium_quality"
-            },
-            ...
+            }
           }
-        },
-        ...
+        }
       }
 
    :statuscode 200: No error
@@ -104,8 +102,7 @@ List Slicing Profiles of a Specific Slicer
           "displayName": "Medium Quality",
           "default": true,
           "resource": "http://example.com/api/slicing/cura/profiles/medium_quality"
-        },
-        ...
+        }
       }
 
    :param slicer:   The identifying key of the slicer for which to list the available profiles.
@@ -147,8 +144,7 @@ Retrieve Specific Profile
           "brim_line_count": 20,
           "cool_head_lift": false,
           "cool_min_feedrate": 10.0,
-          "cool_min_layer_time": 5.0,
-          ...
+          "cool_min_layer_time": 5.0
         }
       }
 

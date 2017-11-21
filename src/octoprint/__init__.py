@@ -60,7 +60,7 @@ def init_platform(basedir, configfile, use_logging_file=True, logging_file=None,
                   uncaught_handler=None, safe_mode=False, ignore_blacklist=False, after_preinit_logging=None,
                   after_settings=None, after_logging=None, after_safe_mode=None,
                   after_event_manager=None, after_connectivity_checker=None,
-                  after_plugin_manager=None):
+                  after_plugin_manager=None, after_environment_detector=None):
 	kwargs = dict()
 
 	logger, recorder = preinit_logging(debug, verbosity, uncaught_logger, uncaught_handler)
@@ -115,8 +115,14 @@ def init_platform(basedir, configfile, use_logging_file=True, logging_file=None,
 
 	if callable(after_plugin_manager):
 		after_plugin_manager(**kwargs)
+		
+	environment_detector = init_environment_detector(plugin_manager)
+	kwargs["environment_detector"] = environment_detector
+	
+	if callable(after_environment_detector):
+		after_environment_detector(**kwargs)
 
-	return settings, logger, safe_mode, event_manager, connectivity_checker, plugin_manager
+	return settings, logger, safe_mode, event_manager, connectivity_checker, plugin_manager, environment_detector
 
 
 def init_settings(basedir, configfile):
@@ -521,6 +527,10 @@ def init_connectivity_checker(settings, event_manager):
 
 	return connectivityChecker
 
+
+def init_environment_detector(plugin_manager):
+	from octoprint.environment import EnvironmentDetector
+	return EnvironmentDetector(plugin_manager)
 
 #~~ server main method
 

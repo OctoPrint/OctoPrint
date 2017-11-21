@@ -1,11 +1,10 @@
 # coding=utf-8
-from __future__ import absolute_import
+from __future__ import absolute_import, division, print_function
 
 """
 This module bundles commonly used utility methods or helper classes that are used in multiple places within
 OctoPrint's source code.
 """
-from __future__ import absolute_import, division, print_function
 
 __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
@@ -875,14 +874,14 @@ except ImportError:
 	# no glob.escape - we need to implement our own
 	_glob_escape_check = re.compile("([*?[])")
 	_glob_escape_check_bytes = re.compile(b"([*?[])")
-	
+
 	def glob_escape(pathname):
 		"""
 		Ported from Python 3.4
-		
+
 		See https://github.com/python/cpython/commit/fd32fffa5ada8b8be8a65bd51b001d989f99a3d3
 		"""
-		
+
 		drive, pathname = os.path.splitdrive(pathname)
 		if isinstance(pathname, bytes):
 			pathname = _glob_escape_check_bytes.sub(br"[\1]", pathname)
@@ -898,6 +897,40 @@ except RuntimeError:
 	# no source of monotonic time available, nothing left but using time.time *cringe*
 	import time
 	monotonic_time = time.time
+
+
+def utmify(link, source=None, medium=None, name=None, term=None, content=None):
+	if source is None:
+		return link
+
+	from collections import OrderedDict
+	try:
+		import urlparse
+		from urllib import urlencode
+	except ImportError:
+		# python 3
+		import urllib.parse as urlparse
+		from urllib.parse import urlencode
+
+	# inspired by https://stackoverflow.com/a/2506477
+	parts = list(urlparse.urlparse(link))
+
+	# parts[4] is the url query
+	query = OrderedDict(urlparse.parse_qs(parts[4]))
+
+	query["utm_source"] = source
+	if medium is not None:
+		query["utm_medium"] = medium
+	if name is not None:
+		query["utm_name"] = name
+	if term is not None:
+		query["utm_term"] = term
+	if content is not None:
+		query["utm_content"] = content
+
+	parts[4] = urlencode(query, doseq=True)
+
+	return urlparse.urlunparse(parts)
 
 
 class RepeatedTimer(threading.Thread):

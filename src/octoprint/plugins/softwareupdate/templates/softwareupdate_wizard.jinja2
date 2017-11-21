@@ -1,13 +1,14 @@
 <h3>{{ _('Software Update') }}</h3>
 
 {% trans %}<p>
-    OctoPrint can update itself via <code>git</code>, but it needs to know its checkout folder and the way
-    it should track available updates in order to be able to do that. You can configure that here.
+    By default, OctoPrint will update itself via <code>pip</code> to published releases. OctoPrint can
+    also update itself via <code>git</code> to arbitrary development branches you need to check out manually.
+    If you want to do that though it needs to know its checkout folder. You can configure that here.
 </p>{% endtrans %}
 
 <form class="form-horizontal">
-    {% include "snippets/plugins/softwareupdate/checkoutFolder.jinja2" %}
     {% include "snippets/plugins/softwareupdate/versionTracking.jinja2" %}
+    {% include "snippets/plugins/softwareupdate/checkoutFolder.jinja2" %}
 </form>
 
 {% trans %}<p>

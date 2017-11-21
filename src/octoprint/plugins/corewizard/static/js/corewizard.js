@@ -321,29 +321,29 @@ $(function() {
         };
     }
 
-    OCTOPRINT_VIEWMODELS.push([
-        CoreWizardAclViewModel,
-        ["loginStateViewModel"],
-        "#wizard_plugin_corewizard_acl"
-    ], [
-        CoreWizardWebcamViewModel,
-        ["settingsViewModel"],
-        "#wizard_plugin_corewizard_webcam"
-    ], [
-        CoreWizardServerCommandsViewModel,
-        ["settingsViewModel"],
-        "#wizard_plugin_corewizard_servercommands"
-    ], [
-        CoreWizardOnlineCheckViewModel,
-        ["settingsViewModel"],
-        "#wizard_plugin_corewizard_onlinecheck"
-    ], [
-        CoreWizardPluginBlacklistViewModel,
-        ["settingsViewModel"],
-        "#wizard_plugin_corewizard_pluginblacklist"
-    ], [
-        CoreWizardPrinterProfileViewModel,
-        ["printerProfilesViewModel"],
-        "#wizard_plugin_corewizard_printerprofile"
-    ]);
+    OCTOPRINT_VIEWMODELS.push({
+        construct: CoreWizardAclViewModel,
+        dependencies: ["loginStateViewModel"],
+        elements: ["#wizard_plugin_corewizard_acl"]
+    }, {
+        construct: CoreWizardWebcamViewModel,
+        dependencies: ["settingsViewModel"],
+        elements: ["#wizard_plugin_corewizard_webcam"]
+    }, {
+        construct: CoreWizardServerCommandsViewModel,
+        dependencies: ["settingsViewModel"],
+        elements: ["#wizard_plugin_corewizard_servercommands"]
+    }, {
+        construct: CoreWizardOnlineCheckViewModel,
+        dependencies: ["settingsViewModel"],
+        elements: ["#wizard_plugin_corewizard_onlinecheck"]
+    }, {
+        construct: CoreWizardPluginBlacklistViewModel,
+        dependencies: ["settingsViewModel"],
+        elements: ["#wizard_plugin_corewizard_pluginblacklist"]
+    }, {
+        construct: CoreWizardPrinterProfileViewModel,
+        dependencies: ["printerProfilesViewModel"],
+        elements: ["#wizard_plugin_corewizard_printerprofile"]
+    });
 });

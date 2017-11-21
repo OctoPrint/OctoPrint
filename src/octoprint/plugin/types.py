@@ -105,6 +105,16 @@ class ReloadNeedingPlugin(Plugin):
 	Mixin for plugin types that need a reload of the UI after enabling/disabling them.
 	"""
 
+
+class EnvironmentDetectionPlugin(OctoPrintPlugin, RestartNeedingPlugin):
+	
+	def get_additional_environment(self):
+		pass
+	
+	def on_environment_detected(self, environment, *args, **kwargs):
+		pass
+
+
 class StartupPlugin(OctoPrintPlugin, SortablePlugin):
 	"""
 	The ``StartupPlugin`` allows hooking into the startup of OctoPrint. It can be used to start up additional services

@@ -1171,6 +1171,6 @@ $(function() {
         name: "filesViewModel",
         additionalNames: ["gcodeFilesViewModel"],
         dependencies: ["settingsViewModel", "loginStateViewModel", "printerStateViewModel", "slicingViewModel", "printerProfilesViewModel"],
-        elements: ["#files_wrapper", "#add_folder_dialog"],
+        elements: ["#files_wrapper", "#add_folder_dialog"]
     });
 });

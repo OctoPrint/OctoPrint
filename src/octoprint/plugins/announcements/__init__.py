@@ -22,7 +22,9 @@ from collections import OrderedDict
 
 from octoprint.server import admin_permission
 from octoprint.server.util.flask import restricted_access, with_revalidation_checking, check_etag
+from octoprint.util import utmify
 from flask_babel import gettext
+from octoprint import __version__ as OCTOPRINT_VERSION
 
 class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
                          octoprint.plugin.SettingsPlugin,
@@ -173,6 +175,7 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 			hash = hashlib.sha1()
 			hash.update(repr(sorted(enabled)))
 			hash.update(repr(sorted(forced)))
+			hash.update(OCTOPRINT_VERSION)
 
 			for channel in sorted(channel_configs.keys()):
 				hash.update(repr(channel_configs[channel]))
@@ -386,7 +389,7 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 		            summary=_lazy_images(entry["summary"]),
 		            summary_without_images=_strip_images(entry["summary"]),
 		            published=published,
-		            link=entry["link"],
+		            link=utmify(entry["link"], source="octoprint", medium="announcements", content=OCTOPRINT_VERSION),
 		            read=read)
 
 	def _get_channel_cache_path(self, key):
