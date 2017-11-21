@@ -41,10 +41,10 @@ $(function() {
         };
 
         self.profilesForSlicer = function(key) {
-            if (key == undefined) {
+            if (key === undefined) {
                 key = self.slicer();
             }
-            if (key == undefined || !self.data.hasOwnProperty(key)) {
+            if (key === undefined || !self.data.hasOwnProperty(key)) {
                 return;
             }
             var slicer = self.data[key];
@@ -53,7 +53,7 @@ $(function() {
             self.profiles.removeAll();
             _.each(_.values(slicer.profiles), function(profile) {
                 var name = profile.displayName;
-                if (name == undefined) {
+                if (name === undefined) {
                     name = profile.key;
                 }
 
@@ -77,7 +77,7 @@ $(function() {
         };
 
         self.metadataForSlicer = function(key) {
-            if (key == undefined || !self.data.hasOwnProperty(key)) {
+            if (key === undefined || !self.data.hasOwnProperty(key)) {
                 return;
             }
 
@@ -100,7 +100,7 @@ $(function() {
 
             var containsSlicer = function(key) {
                 return _.any(slicers, function(slicer) {
-                    return slicer.key == key;
+                    return slicer.key === key;
                 });
             };
 
@@ -134,7 +134,7 @@ $(function() {
             }
 
             var filename = file;
-            if (filename.lastIndexOf("/") != 0) {
+            if (filename.lastIndexOf("/") !== 0) {
                 path = path || filename.substr(0, filename.lastIndexOf("/"));
                 filename = filename.substr(filename.lastIndexOf("/") + 1);
             }
@@ -173,10 +173,10 @@ $(function() {
         };
 
         self.enableSliceButton = ko.pureComputed(function() {
-            return self.destinationFilename() != undefined
-                && self.destinationFilename().trim() != ""
-                && self.slicer() != undefined
-                && self.profile() != undefined
+            return self.destinationFilename() !== undefined
+                && self.destinationFilename().trim() !== ""
+                && self.slicer() !== undefined
+                && self.profile() !== undefined
                 && (!(self.printerState.isPrinting() || self.printerState.isPaused()) || !self.slicerSameDevice());
         });
 
@@ -227,7 +227,7 @@ $(function() {
             self.slicers.removeAll();
             _.each(_.values(data), function(slicer) {
                 var name = slicer.displayName;
-                if (name == undefined) {
+                if (name === undefined) {
                     name = slicer.key;
                 }
 
@@ -276,13 +276,13 @@ $(function() {
                 destination: destinationFilename
             };
 
-            if (self.path != undefined) {
+            if (self.path !== undefined) {
                 data["path"] = self.path;
             }
 
-            if (self.afterSlicing() == "print") {
+            if (self.afterSlicing() === "print") {
                 data["print"] = true;
-            } else if (self.afterSlicing() == "select") {
+            } else if (self.afterSlicing() === "select") {
                 data["select"] = true;
             }
 

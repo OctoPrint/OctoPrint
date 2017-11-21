@@ -38,7 +38,7 @@ $(function() {
         });
         self.enableTranslationUpload = ko.pureComputed(function() {
             var name = self.translationUploadFilename();
-            return name !== undefined && name.trim() != "" && !self.invalidTranslationArchive();
+            return name !== undefined && name.trim() !== "" && !self.invalidTranslationArchive();
         });
 
         self.translations = new ItemListHelper(
@@ -414,7 +414,7 @@ $(function() {
                 autoUpload: false,
                 headers: OctoPrint.getRequestHeaders(),
                 add: function(e, data) {
-                    if (data.files.length == 0) {
+                    if (data.files.length === 0) {
                         return false;
                     }
 
@@ -443,14 +443,14 @@ $(function() {
 
             self.settingsDialog.on('show', function(event) {
                 OctoPrint.coreui.settingsOpen = true;
-                if (event.target.id == "settings_dialog") {
+                if (event.target.id === "settings_dialog") {
                     self.requestTranslationData();
                     callViewModels(allViewModels, "onSettingsShown");
                 }
             });
             self.settingsDialog.on('hidden', function(event) {
                 OctoPrint.coreui.settingsOpen = false;
-                if (event.target.id == "settings_dialog") {
+                if (event.target.id === "settings_dialog") {
                     callViewModels(allViewModels, "onSettingsHidden");
                 }
             });
@@ -524,11 +524,11 @@ $(function() {
         self.requestData = function(local) {
             // handle old parameter format
             var callback = undefined;
-            if (arguments.length == 2 || _.isFunction(local)) {
+            if (arguments.length === 2 || _.isFunction(local)) {
                 var exc = new Error();
                 log.warn("The callback parameter of SettingsViewModel.requestData is deprecated, the method now returns a promise, please use that instead. Stacktrace:", (exc.stack || exc.stacktrace || "<n/a>"));
 
-                if (arguments.length == 2) {
+                if (arguments.length === 2) {
                     callback = arguments[0];
                     local = arguments[1];
                 } else {
@@ -625,8 +625,8 @@ $(function() {
             var translations = [];
             _.each(translationsByLocale, function(item) {
                 item["packs"].sort(function(a, b) {
-                    if (a.identifier == "_core") return -1;
-                    if (b.identifier == "_core") return 1;
+                    if (a.identifier === "_core") return -1;
+                    if (b.identifier === "_core") return 1;
 
                     if (a.display < b.display) return -1;
                     if (a.display > b.display) return 1;
@@ -639,7 +639,7 @@ $(function() {
         };
 
         self.languagePackDisplay = function(item) {
-            return item.display + ((item.english != undefined) ? ' (' + item.english + ')' : '');
+            return item.display + ((item.english !== undefined) ? ' (' + item.english + ')' : '');
         };
 
         self.languagePacksAvailable = ko.pureComputed(function() {
@@ -656,7 +656,7 @@ $(function() {
          */
         self.getLocalData = function() {
             var data = {};
-            if (self.settings != undefined) {
+            if (self.settings !== undefined) {
                 data = ko.mapping.toJS(self.settings);
             }
 
@@ -664,8 +664,8 @@ $(function() {
             var specialMappings = {
                 feature: {
                     externalHeatupDetection: function() { return !self.feature_disableExternalHeatupDetection()},
-                    alwaysSendChecksum: function() { return self.feature_sendChecksum() == "always"},
-                    neverSendChecksum: function() { return self.feature_sendChecksum() == "never"}
+                    alwaysSendChecksum: function() { return self.feature_sendChecksum() === "always"},
+                    neverSendChecksum: function() { return self.feature_sendChecksum() === "never"}
                 },
                 serial: {
                     additionalPorts : function() { return commentableLinesToArray(self.serial_additionalPorts()) },
@@ -706,7 +706,7 @@ $(function() {
                 // process all key-value-pairs here
                 _.forOwn(data, function(value, key) {
                     var observable = key;
-                    if (keyPrefix != undefined) {
+                    if (keyPrefix !== undefined) {
                         observable = keyPrefix + "_" + observable;
                     }
 
@@ -716,7 +716,7 @@ $(function() {
                     } else if (_.isPlainObject(value)) {
                         // value is another object, we'll dive deeper
                         var subresult = mapFromObservables(value, (mapping && mapping[key]) ? mapping[key] : undefined, observable);
-                        if (subresult != undefined) {
+                        if (subresult !== undefined) {
                             // we only set something on our result if we got something back
                             result[key] = subresult;
                             flag = true;
@@ -800,7 +800,7 @@ $(function() {
                 // process all key-value-pairs here
                 _.forOwn(data, function(value, key) {
                     var observable = key;
-                    if (keyPrefix != undefined) {
+                    if (keyPrefix !== undefined) {
                         observable = keyPrefix + "_" + observable;
                     }
 
@@ -831,16 +831,16 @@ $(function() {
             } else {
                 options = {
                     success: successCallback,
-                    sending: (setAsSending == true)
+                    sending: (setAsSending === true)
                 }
             }
 
             self.settingsDialog.trigger("beforeSave");
 
             self.sawUpdateEventWhileSending = false;
-            self.sending(data == undefined || options.sending || false);
+            self.sending(data === undefined || options.sending || false);
 
-            if (data == undefined) {
+            if (data === undefined) {
                 // we also only send data that actually changed when no data is specified
                 data = getOnlyChangedData(self.getLocalData(), self.lastReceivedSettings);
             }
@@ -919,7 +919,7 @@ $(function() {
         };
 
         self.selectTab = function(tab) {
-            if (tab != undefined) {
+            if (tab !== undefined) {
                 if (!_.startsWith(tab, "#")) {
                     tab = "#" + tab;
                 }

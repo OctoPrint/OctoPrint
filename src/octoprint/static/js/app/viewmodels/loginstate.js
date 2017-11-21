@@ -98,7 +98,7 @@ $(function() {
         self.login = function(u, p, r) {
             var username = u || self.loginUser();
             var password = p || self.loginPass();
-            var remember = (r != undefined ? r : self.loginRemember());
+            var remember = (r !== undefined ? r : self.loginRemember());
 
             return OctoPrint.browser.login(username, password, remember)
                 .done(function(response) {
