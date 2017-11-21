@@ -84,7 +84,7 @@ class OctoPrintPermission(Permission):
 			if need.method == 'role':
 				needs.append("RoleNeed('{0}')".format(need.value))
 
-		return '{}("{}", "{}", "{}", {})'.format(self.__class__.__name__, self.key, self.get_name(), self.get_description(), ', '.join(needs))
+		return '{}("{}", "{}", {})'.format(self.__class__.__name__, self.get_name(), self.get_description(), ', '.join(needs))
 
 
 class CombinedOctoPrintPermission(OctoPrintPermission):

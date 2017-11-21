@@ -11,12 +11,12 @@ from octoprint.access.permissions import Permissions, OctoPrintPermission
 
 class PermissionsTest(unittest.TestCase):
 	# Update on changes to the available core permissions!
-	_COUNT_REGULAR = 17
+	_COUNT_REGULAR = 18
 	_COUNT_COMBINED = 5
 	_COUNT_ALL = _COUNT_REGULAR + _COUNT_COMBINED
 
 	def test_find(self):
-		permission = Permissions.find("Admin")
+		permission = Permissions.find("ADMIN")
 		self.assertIsNotNone(permission)
 		self.assertEqual(permission.get_name(), "Admin")
 

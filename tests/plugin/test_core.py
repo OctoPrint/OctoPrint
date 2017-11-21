@@ -223,8 +223,8 @@ class PluginTestCase(unittest.TestCase):
 		plugin = "some plugin"
 		data = "some data"
 		self.plugin_manager.send_plugin_message(plugin, data)
-		client1.on_plugin_message.assert_called_once_with(plugin, data)
-		client2.on_plugin_message.assert_called_once_with(plugin, data)
+		client1.on_plugin_message.assert_called_once_with(plugin, data, permissions=None)
+		client2.on_plugin_message.assert_called_once_with(plugin, data, permissions=None)
 
 	def test_validate_plugin(self):
 		self.assertTrue("deprecated_plugin" in self.plugin_manager.enabled_plugins)
