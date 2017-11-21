@@ -322,11 +322,14 @@ $(function() {
                 // no alternative names? empty array
                 viewModel.additionalNames = viewModel.additionalNames || [];
 
-                // make sure all value's are in an array
-                viewModel.dependencies = (_.isArray(viewModel.dependencies)) ? viewModel.dependencies : [viewModel.dependencies];
-                viewModel.elements = (_.isArray(viewModel.elements)) ? viewModel.elements : [viewModel.elements];
-                viewModel.optional = (_.isArray(viewModel.optional)) ? viewModel.optional : [viewModel.optional];
-                viewModel.additionalNames = (_.isArray(viewModel.additionalNames)) ? viewModel.additionalNames : [viewModel.additionalNames];
+                // make sure all value's are set and in an array
+                _.each(["dependencies", "elements", "optional", "additionalNames"], function(key) {
+                    if (viewModel[key] === undefined) {
+                        viewModel[key] = [];
+                    } else {
+                        viewModel[key] = (_.isArray(viewModel[key])) ? viewModel[key] : [viewModel[key]];
+                    }
+                });
 
                 // make sure that we don't have two view models going by the same name
                 if (_.has(viewModelMap, viewModel.name)) {

@@ -71,9 +71,8 @@ $(function() {
         self.deprecatedUsersMethod("deleteApikey");
     }
 
-    OCTOPRINT_VIEWMODELS.push([
-        UsersViewModel,
-        ["accessViewModel"],
-        []
-    ]);
+    OCTOPRINT_VIEWMODELS.push({
+        construct: UsersViewModel,
+        dependencies: ["accessViewModel"]
+    });
 });

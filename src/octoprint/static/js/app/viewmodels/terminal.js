@@ -58,7 +58,7 @@ $(function() {
 
             var regex = self.filterRegex();
             var lineVisible = function(entry) {
-                return regex == undefined || !entry.line.match(regex);
+                return regex === undefined || !entry.line.match(regex);
             };
 
             var filtered = false;
@@ -91,7 +91,7 @@ $(function() {
 
             var regex = self.filterRegex();
             var lineVisible = function(entry) {
-                return regex == undefined || !entry.line.match(regex);
+                return regex === undefined || !entry.line.match(regex);
             };
 
             var lines = self.log();
@@ -123,6 +123,11 @@ $(function() {
         self.activeFilters = ko.observableArray([]);
         self.activeFilters.subscribe(function(e) {
             self.updateFilterRegex();
+        });
+
+        self.blacklist=[];
+        self.settings.serial_autoUppercaseBlacklist.subscribe(function(newValue) {
+            self.blacklist = splitTextToArray(newValue, ",", true);
         });
 
         self._reenableFancyTimer = undefined;
@@ -200,7 +205,7 @@ $(function() {
             if (!self.terminalLogDuringPrinting() && self.isPrinting()) {
                 var last = self.plainLogLines()[self.plainLogLines().length - 1];
                 var disabled = "--- client too slow, log output disabled while printing ---";
-                if (last != disabled) {
+                if (last !== disabled) {
                     self.plainLogLines.push(disabled);
                 }
                 return;
@@ -221,7 +226,7 @@ $(function() {
             }
 
             var newLog = self.log().concat(_.map(newData, function(line) { return self._toInternalFormat(line) }));
-            if (newData.length != data.length) {
+            if (newData.length !== data.length) {
                 var cutoff = "--- too many lines to buffer, cut off ---";
                 newLog.push(self._toInternalFormat(cutoff, "cut"));
             }
@@ -241,7 +246,7 @@ $(function() {
         };
 
         self._toInternalFormat = function(line, type) {
-            if (type == undefined) {
+            if (type === undefined) {
                 type = "line";
             }
             return {line: escapeUnprintableCharacters(line), type: type}
@@ -259,7 +264,7 @@ $(function() {
 
         self.updateFilterRegex = function() {
             var filterRegexStr = self.activeFilters().join("|").trim();
-            if (filterRegexStr == "") {
+            if (filterRegexStr === "") {
                 self.filterRegex(undefined);
             } else {
                 self.filterRegex(new RegExp(filterRegexStr));
@@ -301,20 +306,41 @@ $(function() {
             }
         };
 
+        self.copyAll = function() {
+            copyToClipboard(self.plainLogLines().join("\n"));
+        };
+
+        // command matching regex
+        // (Example output for inputs G0, G1, G28.1, M117 test)
+        // - 1: code including optional subcode. Example: G0, G1, G28.1, M117
+        // - 2: main code only. Example: G0, G1, G28, M117
+        // - 3: sub code, if available. Example: undefined, undefined, .1, undefined
+        // - 4: command parameters incl. leading whitespace, if any. Example: "", "", "", " test"
+        var commandRe = /^(([gmt][0-9]+)(\.[0-9+])?)(\s.*)?/i;
+
         self.sendCommand = function() {
             var command = self.command();
             if (!command) {
                 return;
             }
 
-            var re = /^([gmt][0-9]+)(\s.*)?/;
-            var commandMatch = command.match(re);
-            if (commandMatch != null) {
-                command = commandMatch[1].toUpperCase() + ((commandMatch[2] !== undefined) ? commandMatch[2] : "");
+            var commandToSend = command;
+            var commandMatch = commandToSend.match(commandRe);
+            if (commandMatch !== null) {
+                var fullCode = commandMatch[1].toUpperCase(); // full code incl. sub code
+                var mainCode = commandMatch[2].toUpperCase(); // main code only without sub code
+
+                if (self.blacklist.indexOf(mainCode) < 0 && self.blacklist.indexOf(fullCode) < 0) {
+                    // full or main code not on blacklist -> upper case the whole command
+                    commandToSend = commandToSend.toUpperCase();
+                } else {
+                    // full or main code on blacklist -> only upper case that and leave parameters as is
+                    commandToSend = fullCode + (commandMatch[4] !== undefined ? commandMatch[4] : "");
+                }
             }
 
-            if (command) {
-                OctoPrint.control.sendGcode(command)
+            if (commandToSend) {
+                OctoPrint.control.sendGcode(commandToSend)
                     .done(function() {
                         self.cmdHistory.push(command);
                         self.cmdHistory.slice(-300); // just to set a sane limit to how many manually entered commands will be saved...
@@ -331,10 +357,10 @@ $(function() {
         self.handleKeyDown = function(event) {
             var keyCode = event.keyCode;
 
-            if (keyCode == 38 || keyCode == 40) {
-                if (keyCode == 38 && self.cmdHistory.length > 0 && self.cmdHistoryIdx > 0) {
+            if (keyCode === 38 || keyCode === 40) {
+                if (keyCode === 38 && self.cmdHistory.length > 0 && self.cmdHistoryIdx > 0) {
                     self.cmdHistoryIdx--;
-                } else if (keyCode == 40 && self.cmdHistoryIdx < self.cmdHistory.length - 1) {
+                } else if (keyCode === 40 && self.cmdHistoryIdx < self.cmdHistory.length - 1) {
                     self.cmdHistoryIdx++;
                 }
 
@@ -353,7 +379,7 @@ $(function() {
         };
 
         self.handleKeyUp = function(event) {
-            if (event.keyCode == 13) {
+            if (event.keyCode === 13) {
                 self.sendCommand();
             }
 
@@ -362,15 +388,15 @@ $(function() {
         };
 
         self.onAfterTabChange = function(current, previous) {
-            self.tabActive = current == "#term";
+            self.tabActive = current === "#term";
             self.updateOutput();
         };
 
     }
 
-    OCTOPRINT_VIEWMODELS.push([
-        TerminalViewModel,
-        ["loginStateViewModel", "settingsViewModel", "accessViewModel"],
-        ["#term", "#term_link"]
-    ]);
+    OCTOPRINT_VIEWMODELS.push({
+        construct: TerminalViewModel,
+        dependencies: ["loginStateViewModel", "settingsViewModel", "accessViewModel"],
+        elements: ["#term", "#term_link"]
+    });
 });

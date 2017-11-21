@@ -261,9 +261,7 @@ $(function() {
         };
     }
 
-    OCTOPRINT_VIEWMODELS.push([
-        LoginStateViewModel,
-        [],
-        []
-    ]);
+    OCTOPRINT_VIEWMODELS.push({
+        construct: LoginStateViewModel
+    });
 });

@@ -1,4 +1,4 @@
-<div class="control-group" data-bind="visible: config_availableCheckTypes().length > 0">
+<div class="control-group" data-bind="visible: config_availableCheckTypes().length > 1">
     <label class="control-label">{{ _('OctoPrint version tracking') }}</label>
     <div class="controls">
         <select data-bind="value: config_checkType, options: config_availableCheckTypes, optionsText: 'name', optionsValue: 'key'"></select>

@@ -1232,7 +1232,7 @@ def get_json_command_from_request(request, valid_commands):
 
 	data = request.get_json()
 	if data is None:
-		return make_response("Malformed JSON body in request", 400)
+		return None, None, make_response("Malformed JSON body or wrong content-type in request", 400)
 
 	if not "command" in data.keys() or not data["command"] in valid_commands.keys():
 		return None, None, make_response("Expected valid command", 400)

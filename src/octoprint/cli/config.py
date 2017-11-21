@@ -214,3 +214,28 @@ def get_command(ctx, path, as_json=False, as_yaml=False, as_raw=False):
 		output = pprint.pformat(value)
 
 	click.echo(output)
+
+
+@config.command(name="effective")
+@click.option("--json", "as_json", is_flag=True,
+              help="Output value formatted as JSON")
+@click.option("--yaml", "as_yaml", is_flag=True,
+              help="Output value formatted as YAML")
+@click.option("--raw", "as_raw", is_flag=True,
+              help="Output value as raw string representation")
+@standard_options(hidden=True)
+@click.pass_context
+def effective_command(ctx, as_json=False, as_yaml=False, as_raw=False):
+		"""Retrieves the full effective config."""
+		value = ctx.obj.settings.effective
+
+		if as_json:
+				output = json.dumps(value)
+		elif as_yaml:
+				output = yaml.safe_dump(value, default_flow_style=False, indent="	", allow_unicode=True)
+		elif as_raw:
+				output = value
+		else:
+				output = pprint.pformat(value)
+
+		click.echo(output)

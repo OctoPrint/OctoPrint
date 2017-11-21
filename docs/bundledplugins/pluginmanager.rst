@@ -104,13 +104,13 @@ octoprint.plugin.pluginmanager.reconnect_hooks
 
    .. code-block:: python
 
-   def reconnect_hooks_hook(*args, **kwargs):
-       return ["octoprint.plugin.exampleplugin.some_custom_hook",
-               "octoprint.plugin.exampleplugin.some_other_custom_hook"]
+      def reconnect_hooks_hook(*args, **kwargs):
+          return ["octoprint.plugin.exampleplugin.some_custom_hook",
+                  "octoprint.plugin.exampleplugin.some_other_custom_hook"]
 
-   __plugin_hooks__ = {
-       "octoprint.plugin.pluginmanager.reconnect_hooks": reconnect_hooks_hook
-   }
+      __plugin_hooks__ = {
+          "octoprint.plugin.pluginmanager.reconnect_hooks": reconnect_hooks_hook
+      }
 
 .. _sec-bundledplugins-pluginmanager-sourcecode:
 

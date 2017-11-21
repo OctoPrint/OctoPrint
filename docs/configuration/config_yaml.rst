@@ -855,7 +855,12 @@ Use the following settings to configure the serial connection to the printer:
      # Command to send in order to initiate a handshake with the printer.
      # Defaults to "M110 N0" which simply resets the line numbers in the firmware and which
      # should be acknowledged with a simple "ok".
-     helloCommand: M110 N0
+     helloCommand:
+     - M110 N0
+
+     # Commands that should never be auto-uppercased when sent to the printer. Defaults to only M117.
+     autoUppercaseBlacklist:
+     - M117
 
      # Whether to disconnect on errors or not
      disconnectOnErrors: true

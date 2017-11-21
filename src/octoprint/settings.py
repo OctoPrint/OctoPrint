@@ -111,6 +111,7 @@ default_settings = {
 		"disconnectOnErrors": True,
 		"ignoreErrorsFromFirmware": False,
 		"logResends": True,
+		"autoUppercaseBlacklist": ["M117"],
 		"supportResendsWithoutOk": False,
 		"logPositionOnPause": True,
 		"logPositionOnCancel": True,
@@ -273,7 +274,7 @@ default_settings = {
 				],
 				"usersettings": ["access", "interface"],
 				"wizard": ["access"],
-				"about": ["about", "supporters", "authors", "changelog", "license", "thirdparty", "plugin_pluginmanager"],
+				"about": ["about", "plugin_octopi_support", "supporters", "authors", "changelog", "license", "thirdparty", "plugin_pluginmanager"],
 				"generic": []
 			},
 			"disabled": {
@@ -804,7 +805,7 @@ class Settings(object):
 	def last_modified(self):
 		"""
 		Returns:
-		    int: The last modification time of the configuration file.
+		    (int) The last modification time of the configuration file.
 		"""
 		stat = os.stat(self._configfile)
 		return stat.st_mtime

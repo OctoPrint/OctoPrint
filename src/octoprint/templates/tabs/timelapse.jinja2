@@ -106,7 +106,7 @@
         <button class="btn btn-small dropdown-toggle" data-toggle="dropdown"><i class="fa fa-wrench"></i> <span class="caret"></span></button>
         <ul class="dropdown-menu dropdown-menu-right">
             <li><a href="javascript:void(0)" data-bind="click: function() { listHelper.changeSorting('name'); }"><i class="fa fa-check" data-bind="style: {visibility: listHelper.currentSorting() == 'name' ? 'visible' : 'hidden'}"></i> {{ _('Sort by name') }} ({{ _('ascending') }})</a></li>
-            <li><a href="javascript:void(0)" data-bind="click: function() { listHelper.changeSorting('creation'); }"><i class="fa fa-check" data-bind="style: {visibility: listHelper.currentSorting() == 'creation' ? 'visible' : 'hidden'}"></i> {{ _('Sort by creation date') }} ({{ _('descending') }})</a></li>
+            <li><a href="javascript:void(0)" data-bind="click: function() { listHelper.changeSorting('date'); }"><i class="fa fa-check" data-bind="style: {visibility: listHelper.currentSorting() == 'date' ? 'visible' : 'hidden'}"></i> {{ _('Sort by date') }} ({{ _('descending') }})</a></li>
             <li><a href="javascript:void(0)" data-bind="click: function() { listHelper.changeSorting('size'); }"><i class="fa fa-check" data-bind="style: {visibility: listHelper.currentSorting() == 'size' ? 'visible' : 'hidden'}"></i> {{ _('Sort by file size') }} ({{ _('descending') }})</a></li>
         </ul>
     </div>

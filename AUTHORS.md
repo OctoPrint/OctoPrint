@@ -1,6 +1,6 @@
 # Authors
 
-The following people have contributed to OctoPrint's code base (ordered by
+The following people have contributed to OctoPrint's code base (ordered roughly by
 date of first contribution):
 
   * [Gina Häußge](https://github.com/foosel)
@@ -61,10 +61,11 @@ date of first contribution):
   * [Siim Raud](https://github.com/2ndalpha)
   * ["geoporalis"](https://github.com/geoporalis)
   * [Andrew Malota](https://github.com/2bitoperations)
-  * [Alexander Leisentritt](https://github.com/Alex9779)
-  * [therealbstern](https://github.com/therealbstern)
   * [Ishwar Agarwal](https://github.com/agarwali)
   * [Kye Hoover](https://github.com/eykrevooh)
+  * [Joseph Carrick](https://github.com/carricktel)
+  * [Alexander Leisentritt](https://github.com/Alex9779)
+  * [therealbstern](https://github.com/therealbstern)
   * [Philipp Baum](https://github.com/philphilphil)
   * [Kyle Evans](https://github.com/kevans91)
   * [Javier Martínez Arrieta](https://github.com/Javierma)
@@ -80,9 +81,11 @@ date of first contribution):
   * [Greg Hulands](https://github.com/ghulands)
   * [Andreas Werner](https://github.com/gallore)
   * [Shawn Bruce](https://github.com/kantlivelong)
-  * [Claudiu Ceia] (https://github.com/ClaudiuCeia)
+  * [Claudiu Ceia](https://github.com/ClaudiuCeia)
   * [Goswin von Brederlow](https://github.com/mrvn)
   * [Luke McKechnie](https://github.com/galamdring)
+  * [Peter Backx](https://github.com/pbackx)
+  * [Josh Major](https://github.com/astateofblank)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and

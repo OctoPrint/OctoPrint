@@ -119,7 +119,7 @@ $(function() {
                     tools[extruder]["name"](gettext("Tool") + " " + extruder);
                     tools[extruder]["key"]("tool" + extruder);
                 }
-            } else if (numExtruders == 1 || sharedNozzle) {
+            } else if (numExtruders === 1 || sharedNozzle) {
                 // only one extruder, no need to add numbers
                 color = graphColors[0];
                 heaterOptions["tool0"] = {name: "T", color: color};
@@ -224,6 +224,9 @@ $(function() {
             if (lastData.hasOwnProperty("bed")) {
                 self.bedTemp["actual"](lastData.bed.actual);
                 self.bedTemp["target"](lastData.bed.target);
+            } else {
+                self.bedTemp["actual"](0);
+                self.bedTemp["target"](0);
             }
 
             if (!CONFIG_TEMPERATURE_GRAPH) return;
@@ -242,11 +245,15 @@ $(function() {
             for (var i = 0; i < tools.length; i++) {
                 if (data.hasOwnProperty("tool" + i)) {
                     tools[i]["offset"](data["tool" + i]);
+                } else {
+                    tools[i]["offset"](0);
                 }
             }
 
             if (data.hasOwnProperty("bed")) {
                 self.bedTemp["offset"](data["bed"]);
+            } else {
+                self.bedTemp["offset"](0);
             }
         };
 
@@ -727,9 +734,13 @@ $(function() {
                 if (value === undefined || (typeof(value) === "string" && value.trim() === "")) {
                     item.newTarget(item.target());
                 }
-                event.target.select();
+                window.setTimeout(function() {
+                    event.target.select();
+                }, 0);
             } else if (type === "offset") {
-                event.target.select();
+                window.setTimeout(function() {
+                    event.target.select();
+                }, 0);
             }
         };
 
@@ -781,9 +792,9 @@ $(function() {
 
     }
 
-    OCTOPRINT_VIEWMODELS.push([
-        TemperatureViewModel,
-        ["loginStateViewModel", "settingsViewModel", "accessViewModel"],
-        ["#temp", "#temp_link", "#change_offset_dialog"]
-    ]);
+    OCTOPRINT_VIEWMODELS.push({
+        construct: TemperatureViewModel,
+        dependencies: ["loginStateViewModel", "settingsViewModel", "accessViewModel"],
+        elements: ["#temp", "#temp_link", "#change_offset_dialog"]
+    });
 });

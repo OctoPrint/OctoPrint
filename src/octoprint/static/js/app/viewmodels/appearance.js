@@ -28,9 +28,9 @@ $(function() {
         });
     }
 
-    OCTOPRINT_VIEWMODELS.push([
-        AppearanceViewModel,
-        ["settingsViewModel"],
-        "head"
-    ]);
+    OCTOPRINT_VIEWMODELS.push({
+        construct: AppearanceViewModel,
+        dependencies: ["settingsViewModel"],
+        elements: ["head"]
+    });
 });

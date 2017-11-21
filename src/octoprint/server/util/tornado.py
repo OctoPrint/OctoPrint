@@ -25,11 +25,35 @@ import tornado.util
 import octoprint.util
 
 
+
+#~~ More sensible logging
+
+
+class RequestlessExceptionLoggingMixin(tornado.web.RequestHandler):
+
+	LOG_REQUEST = False
+
+	def log_exception(self, typ, value, tb, *args, **kwargs):
+		if isinstance(value, tornado.web.HTTPError):
+			if value.log_message:
+				format = "%d %s: " + value.log_message
+				args = ([value.status_code, self._request_summary()] +
+				        list(value.args))
+				tornado.web.gen_log.warning(format, *args)
+		else:
+			if self.LOG_REQUEST:
+				tornado.web.app_log.error("Uncaught exception %s\n%r", self._request_summary(),
+				                          self.request, exc_info=(typ, value, tb))
+			else:
+				tornado.web.app_log.error("Uncaught exception %s", self._request_summary(),
+				                          exc_info=(typ, value, tb))
+
+
 #~~ WSGI middleware
 
 
 @tornado.web.stream_request_body
-class UploadStorageFallbackHandler(tornado.web.RequestHandler):
+class UploadStorageFallbackHandler(RequestlessExceptionLoggingMixin):
 	"""
 	A ``RequestHandler`` similar to ``tornado.web.FallbackHandler`` which fetches any files contained in the request bodies
 	of content type ``multipart``, stores them in temporary files and supplies the ``fallback`` with the file's ``name``,
@@ -827,7 +851,7 @@ class CustomHTTP1ConnectionParameters(tornado.http1connection.HTTP1ConnectionPar
 #~~ customized large response handler
 
 
-class LargeResponseHandler(tornado.web.StaticFileHandler):
+class LargeResponseHandler(RequestlessExceptionLoggingMixin, tornado.web.StaticFileHandler):
 	"""
 	Customized `tornado.web.StaticFileHandler <http://tornado.readthedocs.org/en/branch4.0/web.html#tornado.web.StaticFileHandler>`_
 	that allows delivery of the requested resource as attachment and access and request path validation through
@@ -888,7 +912,7 @@ class LargeResponseHandler(tornado.web.StaticFileHandler):
 				filename = self._name_generator(path)
 			if filename is None:
 				filename = os.path.basename(path)
-			
+
 			filename = tornado.escape.url_escape(filename, plus=False)
 			self.set_header("Content-Disposition", "attachment; filename=\"{}\"; filename*=UTF-8''{}".format(filename,
 			                                                                                                 filename))
@@ -917,10 +941,11 @@ class LargeResponseHandler(tornado.web.StaticFileHandler):
 		import stat
 		return os.stat(abspath)[stat.ST_MTIME]
 
+
 ##~~ URL Forward Handler for forwarding requests to a preconfigured static URL
 
 
-class UrlProxyHandler(tornado.web.RequestHandler):
+class UrlProxyHandler(RequestlessExceptionLoggingMixin, tornado.web.RequestHandler):
 	"""
 	`tornado.web.RequestHandler <http://tornado.readthedocs.org/en/branch4.0/web.html#request-handlers>`_ that proxies
 	requests to a preconfigured url and returns the response. Allows delivery of the requested content as attachment
@@ -1013,7 +1038,7 @@ class UrlProxyHandler(tornado.web.RequestHandler):
 		return "%s%s" % (self._basename, extension)
 
 
-class StaticDataHandler(tornado.web.RequestHandler):
+class StaticDataHandler(RequestlessExceptionLoggingMixin, tornado.web.RequestHandler):
 	def initialize(self, data="", content_type="text/plain"):
 		self.data = data
 		self.content_type = content_type

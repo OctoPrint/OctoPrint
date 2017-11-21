@@ -236,7 +236,7 @@ class PrinterInterface(object):
 		A file that is currently being printed is not allowed to be modified. Any other file or the current file
 		when it is not being printed is fine though.
 
-		.. since:: 1.3.2
+		:since: 1.3.2
 
 		.. warning::
 
@@ -259,7 +259,7 @@ class PrinterInterface(object):
 		Returns whether the provided ``path`` (on the printer's SD if ``sd`` is True) is the currently selected
 		file for printing.
 
-		.. since:: 1.3.2
+		:since: 1.3.2
 
 		.. warning::
 

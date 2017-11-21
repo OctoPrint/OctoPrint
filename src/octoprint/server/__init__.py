@@ -159,11 +159,13 @@ def load_user(id):
 
 
 class Server(object):
-	def __init__(self, settings=None, plugin_manager=None, connectivity_checker=None, event_manager=None,
-	             host="0.0.0.0", port=5000, debug=False, safe_mode=False, allow_root=False, octoprint_daemon=None):
+	def __init__(self, settings=None, plugin_manager=None, connectivity_checker=None, environment_detector=None,
+	             event_manager=None, host="0.0.0.0", port=5000, debug=False, safe_mode=False, allow_root=False,
+	             octoprint_daemon=None):
 		self._settings = settings
 		self._plugin_manager = plugin_manager
 		self._connectivity_checker = connectivity_checker
+		self._environment_detector = environment_detector
 		self._event_manager = event_manager
 		self._host = host
 		self._port = port
@@ -313,7 +315,8 @@ class Server(object):
 			preemptive_cache=preemptiveCache,
 			json_encoder=jsonEncoder,
 			json_decoder=jsonDecoder,
-			connectivity_checker=connectivityChecker
+			connectivity_checker=connectivityChecker,
+			environment_detector=self._environment_detector
 		)
 
 		#~~ setup access control
@@ -441,6 +444,9 @@ class Server(object):
 
 		pluginManager.log_all_plugins()
 
+		# log environment data now
+		self._environment_detector.log_detected_environment()
+
 		# initialize file manager and register it for changes in the registered plugins
 		fileManager.initialize()
 		pluginLifecycleManager.add_callback(["enabled", "disabled"], lambda name, plugin: fileManager.reload_plugins())
@@ -542,6 +548,8 @@ class Server(object):
 			for d in dicts:
 				joined.update(d)
 			return joined
+
+		util.tornado.RequestlessExceptionLoggingMixin.LOG_REQUEST = debug
 
 		server_routes = self._router.urls + [
 			# various downloads
@@ -1305,16 +1313,19 @@ class Server(object):
 		less_plugins = list(dynamic_plugin_assets["external"]["less"])
 
 		# a couple of custom filters
-		from octoprint.server.util.webassets import LessImportRewrite, JsDelimiterBundler, SourceMapRewrite, SourceMapRemove
+		from octoprint.server.util.webassets import LessImportRewrite, JsDelimiterBundler, JsPluginDelimiterBundler, \
+			SourceMapRewrite, SourceMapRemove
 		from webassets.filter import register_filter
 
 		register_filter(LessImportRewrite)
 		register_filter(SourceMapRewrite)
 		register_filter(SourceMapRemove)
 		register_filter(JsDelimiterBundler)
+		register_filter(JsPluginDelimiterBundler)
 
 		# JS
 		js_filters = ["sourcemap_remove", "js_delimiter_bundler"]
+		js_plugin_filters = ["sourcemap_remove", "js_plugin_delimiter_bundler"]
 
 		js_libs_bundle = Bundle(*js_libs, output="webassets/packed_libs.js", filters=",".join(js_filters))
 
@@ -1324,7 +1335,7 @@ class Server(object):
 		if len(js_plugins) == 0:
 			js_plugins_bundle = Bundle(*[])
 		else:
-			js_plugins_bundle = Bundle(*js_plugins, output="webassets/packed_plugins.js", filters=",".join(js_filters))
+			js_plugins_bundle = Bundle(*js_plugins, output="webassets/packed_plugins.js", filters=",".join(js_plugin_filters))
 
 		js_app_bundle = Bundle(js_plugins_bundle, js_core_bundle, output="webassets/packed_app.js", filters=",".join(js_filters))
 
