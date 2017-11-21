@@ -21,6 +21,10 @@ $(function() {
         self.login = function() {
             self.login_error(false);
             self.loginState.login(self.login_username(), self.login_password(), self.login_remember(), false)
+                .done(function() {
+                    self.login_username(undefined);
+                    self.login_password(undefined);
+                })
                 .fail(function(response) {
                     switch(response.status) {
                         case 401: {
@@ -28,7 +32,7 @@ $(function() {
                             break;
                         }
                         case 403: {
-                            self.login_error(gettext("Your account is deactiviated"));
+                            self.login_error(gettext("Your account is deactivated"));
                             break;
                         }
                     }

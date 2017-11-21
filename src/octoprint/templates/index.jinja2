@@ -167,7 +167,7 @@
             <form class="form-signin">
                 <h2 class="form-signin-heading">{{ _('Please log in') }}</h2>
 
-                <div class="alert alert-error" style="display: none" data-bind="visible: login_error">{{ _('Incorrect username or password.') }}</div>
+                <div class="alert alert-error" style="display: none" data-bind="visible: login_error, text: login_error"></div>
 
                 <input type="text" data-bind="value: login_username" class="input-block-level" placeholder="{{ _('Username') }}">
                 <input type="password" data-bind="value: login_password" class="input-block-level" placeholder="{{ _('Password') }}">

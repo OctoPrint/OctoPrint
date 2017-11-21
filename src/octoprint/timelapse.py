@@ -264,8 +264,11 @@ def register_callback(callback):
 
 
 def unregister_callback(callback):
-	if callback in _update_callbacks:
+	try:
 		_update_callbacks.remove(callback)
+	except ValueError:
+		# not registered
+		pass
 
 
 def notify_callbacks(timelapse):
@@ -273,9 +276,19 @@ def notify_callbacks(timelapse):
 		config = None
 	else:
 		config = timelapse.config_data()
+
 	for callback in _update_callbacks:
-		try: callback.sendTimelapseConfig(config)
-		except: logging.getLogger(__name__).exception("Exception while pushing timelapse configuration")
+		notify_callback(callback, config)
+
+
+def notify_callback(callback, config=None, timelapse=None):
+	if config is None and timelapse is not None:
+			config = timelapse.config_data()
+
+	try:
+		callback.sendTimelapseConfig(config)
+	except:
+		logging.getLogger(__name__).exception("Exception while pushing timelapse configuration")
 
 
 def configure_timelapse(config=None, persist=False):

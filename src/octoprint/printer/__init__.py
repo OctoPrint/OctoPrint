@@ -472,6 +472,15 @@ class PrinterInterface(object):
 		"""
 		raise NotImplementedError()
 
+	def send_initial_callback(self, callback):
+		"""
+		Sends the initial printer update to :class:`PrinterCallback`.
+
+		Arguments:
+			callback (PrinterCallback): The callback object to send initial data to.
+		"""
+		raise NotImplementedError()
+
 
 class PrinterCallback(object):
 	def on_printer_add_log(self, data):

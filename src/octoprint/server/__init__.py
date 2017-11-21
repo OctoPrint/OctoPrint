@@ -772,7 +772,7 @@ class Server(object):
 
 	def _create_socket_connection(self, session):
 		global printer, fileManager, analysisQueue, userManager, eventManager
-		return util.sockjs.PrinterStateConnection(printer, fileManager, analysisQueue, userManager,
+		return util.sockjs.PrinterStateConnection(printer, fileManager, analysisQueue, userManager, groupManager,
 		                                          eventManager, pluginManager, session)
 
 	def _check_for_root(self):

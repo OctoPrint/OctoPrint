@@ -129,13 +129,18 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 	def register_callback(self, callback):
 		if not isinstance(callback, PrinterCallback):
 			self._logger.warn("Registering an object as printer callback which doesn't implement the PrinterCallback interface")
-
 		self._callbacks.append(callback)
-		self._sendInitialStateUpdate(callback)
 
 	def unregister_callback(self, callback):
-		if callback in self._callbacks:
+		try:
 			self._callbacks.remove(callback)
+		except ValueError:
+			# not registered
+			pass
+
+	def send_initial_callback(self, callback):
+		if callback in self._callbacks:
+			self._sendInitialStateUpdate(callback)
 
 	def _sendAddTemperatureCallbacks(self, data):
 		for callback in self._callbacks:

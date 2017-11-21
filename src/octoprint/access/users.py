@@ -13,6 +13,7 @@ import os
 import yaml
 import uuid
 import wrapt
+import time
 
 import logging
 from builtins import range, bytes
@@ -32,6 +33,14 @@ class UserManager(GroupChangeListener, object):
 		self._session_users_by_session = dict()
 		self._sessionids_by_userid = dict()
 		self._enabled = True
+
+		self._login_status_listeners = []
+
+	def register_login_status_listener(self, listener):
+		self._login_status_listeners.append(listener)
+
+	def unregister_login_status_listener(self, listener):
+		self._login_status_listeners.remove(listener)
 
 	@property
 	def enabled(self):
@@ -70,6 +79,10 @@ class UserManager(GroupChangeListener, object):
 
 		self._sessionids_by_userid[userid].add(user.session)
 
+		for listener in self._login_status_listeners:
+			try: listener.on_user_logged_in(user)
+			except: self._logger.exception("Error in on_user_logged_in on {!r}".format(listener))
+
 		self._logger.debug("Logged in user: %r" % user)
 
 		return user
@@ -95,6 +108,10 @@ class UserManager(GroupChangeListener, object):
 
 		if sessionid in self._session_users_by_session:
 			del self._session_users_by_session[sessionid]
+
+		for listener in self._login_status_listeners:
+			try: listener.on_user_logged_out(user)
+			except: self._logger.exception("Error in on_user_logged_out on {!r}".format(listener))
 
 		self._logger.debug("Logged out user: %r" % user)
 
@@ -198,6 +215,23 @@ class UserManager(GroupChangeListener, object):
 
 		return None
 
+	def find_sessions_for(self, matcher):
+		result = []
+		for user in self.get_all_users():
+			if matcher(user):
+				try:
+					session_ids = self._sessionids_by_userid[user.get_id()]
+					for session_id in session_ids:
+						try:
+							result.append(self._session_users_by_session[session_id])
+						except KeyError:
+							# unknown session after all
+							continue
+				except KeyError:
+					# no session for user
+					pass
+		return result
+
 	def get_all_users(self):
 		return []
 
@@ -207,6 +241,51 @@ class UserManager(GroupChangeListener, object):
 	def on_group_removed(self, group):
 		self._logger.debug("Group {} got removed, removing from all users".format(group.get_name()))
 		self.remove_groups_from_users([group])
+
+	def on_group_permissions_changed(self, group, added=None, removed=None):
+		users = self.find_sessions_for(lambda u: group in u.groups)
+		for listener in self._login_status_listeners:
+			try:
+				for user in users:
+					listener.on_user_modified(user)
+			except:
+				self._logger.exception("Error in on_user_modified on {!r}".format(listener))
+
+	def _trigger_on_user_modified(self, user):
+		if isinstance(user, basestring):
+			# user id
+			users = []
+			try:
+				session_ids = self._sessionids_by_userid[user]
+				for session_id in session_ids:
+					try:
+						users.append(self._session_users_by_session[session_id])
+					except KeyError:
+						# unknown session id
+						continue
+			except KeyError:
+				# no session for user
+				return
+		elif isinstance(user, User) and not isinstance(user, SessionUser):
+			users = self.find_sessions_for(lambda u: u.get_id() == user.get_id())
+		elif isinstance(user, User):
+			users = [user]
+		else:
+			return
+
+		for listener in self._login_status_listeners:
+			try:
+				for user in users:
+					listener.on_user_modified(user)
+			except:
+				self._logger.exception("Error in on_user_modified on {!r}".format(listener))
+
+	def _trigger_on_user_removed(self, username):
+		for listener in self._login_status_listeners:
+			try:
+				listener.on_user_removed(username)
+			except:
+				self._logger.exception("Error in on_user_removed on {!r}".format(listener))
 
 	#~~ Deprecated methods follow
 
@@ -269,6 +348,22 @@ class UserManager(GroupChangeListener, object):
 	hasBeenCustomized    = deprecated("hasBeenCustomized has been renamed to has_been_customized",
 	                                  includedoc="Replaced by :func:`has_been_customized`",
 	                                  since="1.4.0")(has_been_customized)
+
+
+class LoginStatusListener(object):
+
+	def on_user_logged_in(self, user):
+		pass
+
+	def on_user_logged_out(self, user):
+		pass
+
+	def on_user_modified(self, user):
+		pass
+
+	def on_user_removed(self, userid):
+		pass
+
 
 ##~~ FilebasedUserManager, takes available users from users.yaml file
 
@@ -399,6 +494,8 @@ class FilebasedUserManager(UserManager):
 			self._dirty = True
 			self._save()
 
+			self._trigger_on_user_modified(username)
+
 	def change_user_permissions(self, username, permissions):
 		if username not in self._users.keys():
 			raise UnknownUser(username)
@@ -420,6 +517,7 @@ class FilebasedUserManager(UserManager):
 
 		if self._dirty:
 			self._save()
+			self._trigger_on_user_modified(username)
 
 	def add_permissions_to_user(self, username, permissions):
 		if username not in self._users.keys():
@@ -428,6 +526,7 @@ class FilebasedUserManager(UserManager):
 		if self._users[username].add_permissions_to_user(self._to_permissions(*permissions)):
 			self._dirty = True
 			self._save()
+			self._trigger_on_user_modified(username)
 
 	def remove_permissions_from_user(self, username, permissions):
 		if username not in self._users.keys():
@@ -436,13 +535,20 @@ class FilebasedUserManager(UserManager):
 		if self._users[username].remove_permissions_from_user(self._to_permissions(*permissions)):
 			self._dirty = True
 			self._save()
+			self._trigger_on_user_modified(username)
 
 	def remove_permissions_from_users(self, permissions):
+		modified = []
 		for user in self._users.keys():
-			self._dirty |= user.remove_permissions_from_user(self._to_permissions(*permissions))
+			dirty = user.remove_permissions_from_user(self._to_permissions(*permissions))
+			if dirty:
+				self._dirty = True
+				modified.append(user.get_id())
 
 		if self._dirty:
 			self._save()
+			for username in modified:
+				self._trigger_on_user_modified(username)
 
 	def change_user_groups(self, username, groups):
 		if username not in self._users.keys():
@@ -465,6 +571,7 @@ class FilebasedUserManager(UserManager):
 
 		if self._dirty:
 			self._save()
+			self._trigger_on_user_modified(username)
 
 	def add_groups_to_user(self, username, groups):
 		if username not in self._users.keys():
@@ -473,6 +580,7 @@ class FilebasedUserManager(UserManager):
 		if self._users[username].add_groups_to_user(self._to_groups(*groups)):
 			self._dirty = True
 			self._save()
+			self._trigger_on_user_modified(username)
 
 	def remove_groups_from_user(self, username, groups):
 		if username not in self._users.keys():
@@ -481,6 +589,7 @@ class FilebasedUserManager(UserManager):
 		if self._users[username].remove_groups_from_user(self._to_groups(*groups)):
 			self._dirty = True
 			self._save()
+			self._trigger_on_user_modified(username)
 
 	def remove_groups_from_users(self, groups):
 		for username in self._users.keys():
@@ -488,6 +597,7 @@ class FilebasedUserManager(UserManager):
 
 		if self._dirty:
 			self._save()
+			self._trigger_on_user_modified(username)
 
 	def change_user_password(self, username, password):
 		if not username in self._users.keys():
@@ -955,12 +1065,9 @@ class SessionUser(wrapt.ObjectProxy):
 	def __init__(self, user):
 		wrapt.ObjectProxy.__init__(self, user)
 
-		import string
-		import random
-		import time
-		chars = string.ascii_uppercase + string.ascii_lowercase + string.digits
-		self._self_session = "".join(random.choice(chars) for _ in range(10))
+		self._self_session = "".join('%02X' % z for z in bytes(uuid.uuid4().bytes))
 		self._self_created = time.time()
+		self._self_touched = time.time()
 
 	@property
 	def session(self):
@@ -970,12 +1077,24 @@ class SessionUser(wrapt.ObjectProxy):
 	def created(self):
 		return self._self_created
 
+	@property
+	def touched(self):
+		return self._self_touched
+
+	def touch(self):
+		self._self_touched = time.time()
+
 	@deprecated("SessionUser.get_session() has been deprecated, use SessionUser.session instead", since="1.3.5")
 	def get_session(self):
 		return self.session
 
 	def update_user(self, user):
 		self.__wrapped__ = user
+
+	def as_dict(self):
+		result = self.__wrapped__.as_dict()
+		result.update(dict(session=self.session))
+		return result
 
 	def __repr__(self):
 		return "SessionUser({!r},session={},created={})".format(self.__wrapped__, self.session, self.created)

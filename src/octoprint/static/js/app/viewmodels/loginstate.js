@@ -65,6 +65,9 @@ $(function() {
                         callViewModels(self.allViewModels, "onUserLoggedIn", [response]);
                         log.info("User " + response.name + " logged in");
                     }
+                    if (response.session) {
+                        OctoPrint.socket.sendAuth(response.name, response.session);
+                    }
                 } else {
                     self.loggedIn(false);
                     self.updateCurrentUserData(response);
@@ -159,7 +162,10 @@ $(function() {
                 });
         };
 
+        var _logoutInProgress = false;
         self.logout = function() {
+            if (_logoutInProgress) return;
+            _logoutInProgress = true;
             return OctoPrint.browser.logout()
                 .done(function(response) {
                     new PNotify({title: gettext("Logout successful"), text: gettext("You are now logged out"), type: "success"});
@@ -169,6 +175,9 @@ $(function() {
                     if (error && error.status === 401) {
                          self.fromResponse(false);
                     }
+                })
+                .always(function() {
+                    _logoutInProgress = false;
                 });
         };
 
@@ -177,6 +186,14 @@ $(function() {
                 event.preventDefault();
             }
             self.login();
+        };
+
+        self.onDataUpdaterReauthRequired = function(reason) {
+            if (reason === "logout" || reason === "removed") {
+                self.logout();
+            } else {
+                self.requestData();
+            }
         };
 
         self.onAllBound = function(allViewModels) {
