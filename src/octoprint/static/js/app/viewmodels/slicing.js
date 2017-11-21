@@ -313,9 +313,9 @@ $(function() {
         };
     }
 
-    OCTOPRINT_VIEWMODELS.push([
-        SlicingViewModel,
-        ["loginStateViewModel", "printerProfilesViewModel", "printerStateViewModel"],
-        "#slicing_configuration_dialog"
-    ]);
+    OCTOPRINT_VIEWMODELS.push({
+        construct: SlicingViewModel,
+        dependencies: ["loginStateViewModel", "printerProfilesViewModel", "printerStateViewModel"],
+        elements: ["#slicing_configuration_dialog"]
+    });
 });

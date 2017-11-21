@@ -533,9 +533,9 @@ $(function() {
         };
     }
 
-    OCTOPRINT_VIEWMODELS.push([
-        TimelapseViewModel,
-        ["loginStateViewModel"],
-        "#timelapse"
-    ]);
+    OCTOPRINT_VIEWMODELS.push({
+        construct: TimelapseViewModel,
+        dependencies: ["loginStateViewModel"],
+        elements: ["#timelapse"]
+    });
 });

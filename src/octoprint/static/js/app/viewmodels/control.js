@@ -554,9 +554,9 @@ $(function() {
 
     }
 
-    OCTOPRINT_VIEWMODELS.push([
-        ControlViewModel,
-        ["loginStateViewModel", "settingsViewModel"],
-        "#control"
-    ]);
+    OCTOPRINT_VIEWMODELS.push({
+        construct: ControlViewModel,
+        dependencies: ["loginStateViewModel", "settingsViewModel"],
+        elements: ["#control"]
+    });
 });

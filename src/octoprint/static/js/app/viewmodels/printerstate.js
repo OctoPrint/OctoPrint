@@ -309,9 +309,9 @@ $(function() {
         };
     }
 
-    OCTOPRINT_VIEWMODELS.push([
-        PrinterStateViewModel,
-        ["loginStateViewModel", "settingsViewModel"],
-        ["#state_wrapper", "#drop_overlay"]
-    ]);
+    OCTOPRINT_VIEWMODELS.push({
+        construct: PrinterStateViewModel,
+        dependencies: ["loginStateViewModel", "settingsViewModel"],
+        elements: ["#state_wrapper", "#drop_overlay"]
+    });
 });

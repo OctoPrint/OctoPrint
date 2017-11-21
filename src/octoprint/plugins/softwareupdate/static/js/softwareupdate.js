@@ -837,10 +837,9 @@ $(function() {
         }
     }
 
-    // view model class, parameters for constructor, container to bind to
-    ADDITIONAL_VIEWMODELS.push([
-        SoftwareUpdateViewModel,
-        ["loginStateViewModel", "printerStateViewModel", "settingsViewModel"],
-        ["#settings_plugin_softwareupdate", "#softwareupdate_confirmation_dialog", "#wizard_plugin_softwareupdate"]
-    ]);
+    OCTOPRINT_VIEWMODELS.push({
+        construct: SoftwareUpdateViewModel,
+        dependencies: ["loginStateViewModel", "printerStateViewModel", "settingsViewModel"],
+        elements: ["#settings_plugin_softwareupdate", "#softwareupdate_confirmation_dialog", "#wizard_plugin_softwareupdate"]
+    });
 });

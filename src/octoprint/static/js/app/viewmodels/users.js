@@ -227,9 +227,8 @@ $(function() {
         }
     }
 
-    OCTOPRINT_VIEWMODELS.push([
-        UsersViewModel,
-        ["loginStateViewModel"],
-        []
-    ]);
+    OCTOPRINT_VIEWMODELS.push({
+        construct: UsersViewModel,
+        dependencies: ["loginStateViewModel"]
+    });
 });

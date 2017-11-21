@@ -597,9 +597,7 @@ $(function() {
         self.onStartup = self.requestData;
     }
 
-    OCTOPRINT_VIEWMODELS.push([
-        PrinterProfilesViewModel,
-        [],
-        []
-    ]);
+    OCTOPRINT_VIEWMODELS.push({
+        construct: PrinterProfilesViewModel
+    });
 });

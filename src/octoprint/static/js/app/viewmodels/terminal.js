@@ -393,9 +393,9 @@ $(function() {
 
     }
 
-    OCTOPRINT_VIEWMODELS.push([
-        TerminalViewModel,
-        ["loginStateViewModel", "settingsViewModel"],
-        "#term"
-    ]);
+    OCTOPRINT_VIEWMODELS.push({
+        construct: TerminalViewModel,
+        dependencies: ["loginStateViewModel", "settingsViewModel"],
+        elements: ["#term"]
+    });
 });

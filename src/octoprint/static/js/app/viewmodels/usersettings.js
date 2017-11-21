@@ -126,9 +126,9 @@ $(function() {
 
     }
 
-    OCTOPRINT_VIEWMODELS.push([
-        UserSettingsViewModel,
-        ["loginStateViewModel", "usersViewModel"],
-        ["#usersettings_dialog"]
-    ]);
+    OCTOPRINT_VIEWMODELS.push({
+        construct: UserSettingsViewModel,
+        dependencies: ["loginStateViewModel", "usersViewModel"],
+        elements: ["#usersettings_dialog"]
+    });
 });

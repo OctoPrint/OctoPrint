@@ -1265,17 +1265,16 @@ $(function() {
 
         self._forcedStdoutLine = /You are using pip version .*?, however version .*? is available\.|You should consider upgrading via the '.*?' command\./;
         self._preprocessLine = function(line) {
-            if (line.stream == "stderr" && line.line.match(self._forcedStdoutLine)) {
+            if (line.stream === "stderr" && line.line.match(self._forcedStdoutLine)) {
                 line.stream = "stdout";
             }
             return line;
         }
     }
 
-    // view model class, parameters for constructor, container to bind to
-    ADDITIONAL_VIEWMODELS.push([
-        PluginManagerViewModel,
-        ["loginStateViewModel", "settingsViewModel", "printerStateViewModel", "systemViewModel"],
-        "#settings_plugin_pluginmanager"
-    ]);
+    OCTOPRINT_VIEWMODELS.push({
+        construct: PluginManagerViewModel,
+        dependencies: ["loginStateViewModel", "settingsViewModel", "printerStateViewModel", "systemViewModel"],
+        elements: ["#settings_plugin_pluginmanager"]
+    });
 });

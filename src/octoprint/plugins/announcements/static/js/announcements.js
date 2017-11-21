@@ -338,10 +338,9 @@ $(function() {
 
     }
 
-    // view model class, parameters for constructor, container to bind to
-    ADDITIONAL_VIEWMODELS.push([
-        AnnouncementsViewModel,
-        ["loginStateViewModel", "settingsViewModel"],
-        ["#plugin_announcements_dialog", "#settings_plugin_announcements", "#navbar_plugin_announcements"]
-    ]);
+    OCTOPRINT_VIEWMODELS.push({
+        construct: AnnouncementsViewModel,
+        dependencies: ["loginStateViewModel", "settingsViewModel"],
+        elements: ["#plugin_announcements_dialog", "#settings_plugin_announcements", "#navbar_plugin_announcements"]
+    });
 });

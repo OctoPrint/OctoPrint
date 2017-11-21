@@ -948,9 +948,9 @@ $(function() {
         }
     }
 
-    OCTOPRINT_VIEWMODELS.push([
-        SettingsViewModel,
-        ["loginStateViewModel", "usersViewModel", "printerProfilesViewModel", "aboutViewModel"],
-        ["#settings_dialog", "#navbar_settings"]
-    ]);
+    OCTOPRINT_VIEWMODELS.push({
+        construct: SettingsViewModel,
+        dependencies: ["loginStateViewModel", "usersViewModel", "printerProfilesViewModel", "aboutViewModel"],
+        elements: ["#settings_dialog", "#navbar_settings"]
+    });
 });

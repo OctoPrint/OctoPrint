@@ -742,9 +742,9 @@ $(function() {
         };
     }
 
-    OCTOPRINT_VIEWMODELS.push([
-        GcodeViewModel,
-        ["loginStateViewModel", "settingsViewModel"],
-        "#gcode"
-    ]);
+    OCTOPRINT_VIEWMODELS.push({
+        construct: GcodeViewModel,
+        dependencies: ["loginStateViewModel", "settingsViewModel"],
+        elements: ["#gcode"]
+    });
 });

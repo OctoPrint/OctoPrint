@@ -220,9 +220,9 @@ $(function() {
         }
     }
 
-    OCTOPRINT_VIEWMODELS.push([
-        WizardViewModel,
-        ["loginStateViewModel", "settingsViewModel"],
-        "#wizard_dialog"
-    ]);
+    OCTOPRINT_VIEWMODELS.push({
+        construct: WizardViewModel,
+        dependencies: ["loginStateViewModel", "settingsViewModel"],
+        elements: ["#wizard_dialog"]
+    });
 });
