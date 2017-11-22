@@ -184,7 +184,7 @@ class UploadStorageFallbackHandler(tornado.web.RequestHandler):
 			if self.is_multipart():
 				if not self._bytes_left:
 					# we don't support requests without a content-length
-					raise tornado.web.HTTPError(400, log_message="No Content-Length supplied")
+					raise tornado.web.HTTPError(411, log_message="No Content-Length supplied")
 
 				# extract the multipart boundary
 				fields = self._content_type.split(";")
