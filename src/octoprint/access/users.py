@@ -469,6 +469,9 @@ class FilebasedUserManager(UserManager):
 		else:
 			return [groupManager.user_group]
 
+	def _refresh_groups(self, user):
+		user._groups = self._to_groups(*map(lambda g: g.get_name(), user.groups))
+
 	def add_user(self, username, password, active=False, permissions=None, groups=None, apikey=None, overwrite=False):
 		if not permissions:
 			permissions = []
@@ -561,43 +564,52 @@ class FilebasedUserManager(UserManager):
 		removed_groups = list(set(user._groups) - set(groups))
 		added_groups = list(set(groups) - set(user._groups))
 
-		if len(removed_groups) > 0:
-			user.remove_groups_from_user(removed_groups)
-			self._dirty = True
-
-		if len(added_groups) > 0:
-			user.add_groups_to_user(added_groups)
-			self._dirty = True
+		user.remove_groups_from_user(removed_groups, save=False)
+		user.add_groups_to_user(added_groups, save=False)
 
 		if self._dirty:
 			self._save()
 			self._trigger_on_user_modified(username)
 
-	def add_groups_to_user(self, username, groups):
+	def add_groups_to_user(self, username, groups, save=True, notify=True):
 		if username not in self._users.keys():
 			raise UnknownUser(username)
 
 		if self._users[username].add_groups_to_user(self._to_groups(*groups)):
 			self._dirty = True
-			self._save()
-			self._trigger_on_user_modified(username)
 
-	def remove_groups_from_user(self, username, groups):
+			if save:
+				self._save()
+
+			if notify:
+				self._trigger_on_user_modified(username)
+
+	def remove_groups_from_user(self, username, groups, save=True, notify=True):
 		if username not in self._users.keys():
 			raise UnknownUser(username)
 
 		if self._users[username].remove_groups_from_user(self._to_groups(*groups)):
 			self._dirty = True
-			self._save()
-			self._trigger_on_user_modified(username)
+
+			if save:
+				self._save()
+
+			if notify:
+				self._trigger_on_user_modified(username)
 
 	def remove_groups_from_users(self, groups):
+		modified = []
 		for username in self._users.keys():
-			self._dirty |= self._users[username].remove_groups_from_user(self._to_groups(*groups))
+			dirty = self._users[username].remove_groups_from_user(self._to_groups(*groups))
+			if dirty:
+				self._dirty = True
+				modified.append(username)
 
 		if self._dirty:
 			self._save()
-			self._trigger_on_user_modified(username)
+
+			for username in modified:
+				self._trigger_on_user_modified(username)
 
 	def change_user_password(self, username, password):
 		if not username in self._users.keys():
@@ -700,6 +712,15 @@ class FilebasedUserManager(UserManager):
 
 	def has_been_customized(self):
 		return self._customized
+
+	def on_group_permissions_changed(self, group, added=None, removed=None):
+		# refresh our group references
+		for user in self.get_all_users():
+			if group in user.groups:
+				self._refresh_groups(user)
+
+		# call parent
+		UserManager.on_group_permissions_changed(self, group, added=added, removed=removed)
 
 	#~~ Helpers
 
