@@ -424,7 +424,9 @@ class VirtualPrinter(object):
 	def _gcode_M114(self, data):
 		output = "X:{} Y:{} Z:{} E:{} Count: A:{} B:{} C:{}".format(self._lastX, self._lastY, self._lastZ, self._lastE, int(self._lastX*100), int(self._lastY*100), int(self._lastZ*100))
 		if not self._okBeforeCommandOutput:
-			output = "{} {}".format(self._ok(), output)
+			ok = self._ok()
+			if ok:
+				output = "{} {}".format(self._ok(), output)
 		self._send(output)
 		return True
 
@@ -555,7 +557,7 @@ class VirtualPrinter(object):
 
 			def request_resend():
 				self._send("Resend:%d" % expected)
-				self._send(self._ok())
+				self._sendOk()
 
 			if settings().getBoolean(["devel", "virtualPrinter", "repetierStyleResends"]):
 				request_resend()
@@ -772,7 +774,9 @@ class VirtualPrinter(object):
 		output = self._generateTemperatureOutput()
 
 		if includeOk:
-			output = "{} {}".format(self._ok(), output)
+			ok = self._ok()
+			if ok:
+				output = "{} {}".format(ok, output)
 		self._send(output)
 
 	def _parseHotendCommand(self, line, wait=False, support_r=False):
@@ -1156,7 +1160,9 @@ class VirtualPrinter(object):
 	def _sendOk(self):
 		if self.outgoing is None:
 			return
-		self._send(self._ok())
+		ok = self._ok()
+		if ok:
+			self._send(ok)
 
 	def _sendWaitAfterTimeout(self, timeout=5):
 		time.sleep(timeout)
@@ -1171,6 +1177,8 @@ class VirtualPrinter(object):
 		ok = self._okFormatString
 		if self._prepared_oks:
 			ok = self._prepared_oks.pop(0)
+			if ok is None:
+				return ok
 
 		return ok.format(ok, lastN=self.lastN, buffer=self.buffered.maxsize - self.buffered.qsize())
 
