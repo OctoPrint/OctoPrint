@@ -86,6 +86,12 @@ class OctoPrintPermission(Permission):
 
 		return '{}("{}", "{}", {})'.format(self.__class__.__name__, self.get_name(), self.get_description(), ', '.join(needs))
 
+	def __hash__(self):
+		return self.get_name()
+
+	def __eq__(self, other):
+		return isinstance(other, OctoPrintPermission) and other.get_name() == self.get_name()
+
 
 class CombinedOctoPrintPermission(OctoPrintPermission):
 
