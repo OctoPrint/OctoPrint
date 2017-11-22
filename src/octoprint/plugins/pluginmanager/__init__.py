@@ -106,12 +106,13 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		return [
 			dict(key="MANAGE",
 			     name="Manage plugins",
-			     description=gettext("Allows to manage installed plugins"),
+			     description=gettext("Allows to enable, disable and uninstall installed plugins"),
 			     roles=["manage"]),
 			dict(key="INSTALL",
 			     name="Install new plugins",
 			     description=gettext("Allows to install new plugins. Includes the \"Manage plugins\" permission"),
-			     roles=["install", "manage"])
+			     roles=["install", "manage"],
+			     dangerous=True)
 		]
 
 	##~~ StartupPlugin

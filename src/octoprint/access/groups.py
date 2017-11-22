@@ -503,7 +503,7 @@ class Group(object):
 		                                                         bool(self._changeable))
 
 	def __hash__(self):
-		return self.get_name()
+		return self.get_name().__hash__()
 
 	def __eq__(self, other):
 		return isinstance(other, Group) and other.get_name() == self.get_name()

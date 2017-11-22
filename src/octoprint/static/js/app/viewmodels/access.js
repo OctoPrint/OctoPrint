@@ -29,13 +29,38 @@ $(function() {
 
             self.currentUser = ko.observable(self.emptyUser).extend({ notify: 'always' });
 
-            self.editorUsername = ko.observable(undefined);
-            self.editorGroups = ko.observableArray([]);
-            self.editorPermissions = ko.observableArray([]);
-            self.editorPassword = ko.observable(undefined);
-            self.editorRepeatedPassword = ko.observable(undefined);
-            self.editorApikey = ko.observable(undefined);
-            self.editorActive = ko.observable(undefined);
+            self.editor = {
+                name: ko.observable(undefined),
+                groups: ko.observableArray([]),
+                permissions: ko.observableArray([]),
+                password: ko.observable(undefined),
+                repeatedPassword: ko.observable(undefined),
+                passwordMismatch: ko.pureComputed(function() {
+                    return self.editor.password() !== self.editor.repeatedPassword();
+                }),
+                apikey: ko.observable(undefined),
+                active: ko.observable(undefined),
+                togglePermission: function(permission) {
+                    var permissions = self.editor.permissions();
+                    var index = permissions.indexOf(permission);
+                    if (index < 0) {
+                        permissions.push(permission);
+                    } else {
+                        permissions.splice(index, 1);
+                    }
+                    self.editor.permissions(permissions);
+                },
+                toggleGroup: function(group) {
+                    var groups = self.editor.groups();
+                    var index = groups.indexOf(group);
+                    if (index < 0) {
+                        groups.push(group);
+                    } else {
+                        groups.splice(index, 1);
+                    }
+                    self.editor.groups(groups);
+                }
+            };
 
             self.addUserDialog = undefined;
             self.editUserDialog = undefined;
@@ -43,24 +68,20 @@ $(function() {
 
             self.currentUser.subscribe(function(newValue) {
                 if (newValue === undefined) {
-                    self.editorUsername(undefined);
-                    self.editorGroups(access.groups.getDefaultGroups());
-                    self.editorPermissions([]);
-                    self.editorActive(undefined);
-                    self.editorApikey(undefined);
+                    self.editor.name(undefined);
+                    self.editor.groups(access.groups.getDefaultGroups());
+                    self.editor.permissions([]);
+                    self.editor.active(undefined);
+                    self.editor.apikey(undefined);
                 } else {
-                    self.editorUsername(newValue.name);
-                    self.editorGroups(newValue.groups);
-                    self.editorPermissions(newValue.permissions);
-                    self.editorActive(newValue.active);
-                    self.editorApikey(newValue.apikey);
+                    self.editor.name(newValue.name);
+                    self.editor.groups(newValue.groups);
+                    self.editor.permissions(newValue.permissions);
+                    self.editor.active(newValue.active);
+                    self.editor.apikey(newValue.apikey);
                 }
-                self.editorPassword(undefined);
-                self.editorRepeatedPassword(undefined);
-            });
-
-            self.editorPasswordMismatch = ko.pureComputed(function() {
-                return self.editorPassword() !== self.editorRepeatedPassword();
+                self.editor.password(undefined);
+                self.editor.repeatedPassword(undefined);
             });
 
             self.requestData = function() {
@@ -78,19 +99,26 @@ $(function() {
                 if (!CONFIG_ACCESS_CONTROL) return;
 
                 self.currentUser(undefined);
-                self.editorActive(true);
-                self.addUserDialog.modal("show");
+                self.editor.active(true);
+
+                $('ul.nav-pills a[data-toggle="tab"]:first', self.addUserDialog).tab("show");
+                self.addUserDialog.modal({
+                    minHeight: function() { return Math.max($.fn.modal.defaults.maxHeight() - 80, 250); }
+                }).css({
+                    width: 'auto',
+                    'margin-left': function() { return -($(this).width() /2); }
+                });
             };
 
             self.confirmAddUser = function() {
                 if (!CONFIG_ACCESS_CONTROL) return;
 
                 var user = {
-                    name: self.editorUsername(),
-                    password: self.editorPassword(),
-                    groups: self.editorGroups(),
-                    permissions: self.editorPermissions(),
-                    active: self.editorActive()
+                    name: self.editor.name(),
+                    password: self.editor.password(),
+                    groups: self.editor.groups(),
+                    permissions: self.editor.permissions(),
+                    active: self.editor.active()
                 };
 
                 self.addUser(user)
@@ -105,16 +133,23 @@ $(function() {
                 if (!CONFIG_ACCESS_CONTROL) return;
 
                 self.currentUser(user);
-                self.editUserDialog.modal("show");
+
+                $('ul.nav-pills a[data-toggle="tab"]:first', self.editUserDialog).tab("show");
+                self.editUserDialog.modal({
+                    minHeight: function() { return Math.max($.fn.modal.defaults.maxHeight() - 80, 250); }
+                }).css({
+                    width: 'auto',
+                    'margin-left': function() { return -($(this).width() /2); }
+                });
             };
 
             self.confirmEditUser = function() {
                 if (!CONFIG_ACCESS_CONTROL) return;
 
                 var user = self.currentUser();
-                user.active = self.editorActive();
-                user.groups = self.editorGroups();
-                user.permissions = self.editorPermissions();
+                user.active = self.editor.active();
+                user.groups = self.editor.groups();
+                user.permissions = self.editor.permissions();
 
                 self.updateUser(user)
                     .done(function() {
@@ -134,7 +169,7 @@ $(function() {
             self.confirmChangePassword = function() {
                 if (!CONFIG_ACCESS_CONTROL) return;
 
-                self.updatePassword(self.currentUser().name, self.editorPassword())
+                self.updatePassword(self.currentUser().name, self.editor.password())
                     .done(function() {
                         // close dialog
                         self.currentUser(undefined);
@@ -258,10 +293,22 @@ $(function() {
 
             self.currentGroup = ko.observable(self.emptyGroup);
 
-            self.editorGroupname = ko.observable(undefined);
-            self.editorGroupdesc = ko.observable(undefined);
-            self.editorPermissions = ko.observableArray([]);
-            self.editorDefaultOn = ko.observable(false);
+            self.editor = {
+                name: ko.observable(undefined),
+                description: ko.observable(undefined),
+                permissions: ko.observableArray([]),
+                default: ko.observable(false),
+                togglePermission: function(permission) {
+                    var permissions = self.editor.permissions();
+                    var index = permissions.indexOf(permission);
+                    if (index < 0) {
+                        permissions.push(permission);
+                    } else {
+                        permissions.splice(index, 1);
+                    }
+                    self.editor.permissions(permissions);
+                }
+            };
 
             self.addGroupDialog = undefined;
             self.editGroupDialog = undefined;
@@ -308,15 +355,15 @@ $(function() {
 
             self.currentGroup.subscribe(function(newValue) {
                 if (newValue === undefined) {
-                    self.editorGroupname(undefined);
-                    self.editorGroupdesc(undefined);
-                    self.editorPermissions([]);
-                    self.editorDefaultOn(false);
+                    self.editor.name(undefined);
+                    self.editor.description(undefined);
+                    self.editor.permissions([]);
+                    self.editor.default(false);
                 } else {
-                    self.editorGroupname(newValue.name);
-                    self.editorGroupdesc(newValue.description);
-                    self.editorPermissions(newValue.permissions);
-                    self.editorDefaultOn(newValue.defaultOn);
+                    self.editor.name(newValue.name);
+                    self.editor.description(newValue.description);
+                    self.editor.permissions(newValue.permissions);
+                    self.editor.default(newValue.defaultOn);
                 }
             });
 
@@ -341,10 +388,10 @@ $(function() {
 
             self.confirmAddGroup = function() {
                 var group = {
-                    name: self.editorGroupname(),
-                    description: self.editorGroupdesc(),
-                    permissions: self.editorPermissions(),
-                    defaultOn: self.editorDefaultOn()
+                    name: self.editor.name(),
+                    description: self.editor.description(),
+                    permissions: self.editor.permissions(),
+                    defaultOn: self.editor.default()
                 };
 
                 self.addGroup(group)
@@ -364,9 +411,9 @@ $(function() {
 
             self.confirmEditGroup = function() {
                 var group = self.currentGroup();
-                group.description = self.editorGroupdesc();
-                group.permissions = self.editorPermissions();
-                group.defaultOn = self.editorDefaultOn();
+                group.description = self.editor.description();
+                group.permissions = self.editor.permissions();
+                group.defaultOn = self.editor.default();
 
                 self.updateGroup(group)
                     .done(function() {
@@ -473,6 +520,24 @@ $(function() {
                     lookup[permission.key] = permission;
                 });
 
+                permissionList.sort(function(a, b) {
+                    var nameA = a.name.toUpperCase();
+                    var nameB = b.name.toUpperCase();
+
+                    var pluginA = a.plugin || "";
+                    var pluginB = b.plugin || "";
+
+                    var compA = pluginA + ":" + nameA;
+                    var compB = pluginB + ":" + nameB;
+
+                    if (compA < compB) {
+                        return -1
+                    } else if (compA > compB) {
+                        return 1
+                    } else {
+                        return 0;
+                    }
+                });
                 self.permissionList(permissionList);
                 self.lookup = lookup;
             };

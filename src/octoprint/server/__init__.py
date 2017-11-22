@@ -1496,32 +1496,35 @@ class Server(object):
 	def _setup_plugin_permissions(self):
 		global pluginManager
 
-		from octoprint.access.permissions import OctoPrintPermission, CombinedOctoPrintPermission, UnknownPermission
+		from octoprint.access.permissions import PluginOctoPrintPermission, CombinedPluginOctoPrintPermission, UnknownPermission
 
 		def permission_key(plugin, definition):
 			return "PLUGIN_{}_{}".format(plugin.upper(), definition["key"].upper())
 
 		def permission_name(plugin, definition):
-			return "Plugin \"{}\": {}".format(plugin, definition["name"])
+			return "{}: {}".format(plugin, definition["name"])
 
 		def permission_role(plugin, role):
 			return "plugin_{}_{}".format(plugin, role)
 
-		def process_regular_permission(plugin, definition):
+		def process_regular_permission(plugin_info, definition):
 			roles = definition["roles"]
 			description = definition.get("description", "")
+			dangerous = definition.get("dangerous", False) == True
 
-			key = permission_key(plugin, definition)
+			key = permission_key(plugin_info.key, definition)
 			setattr(octoprint.access.permissions.Permissions,
 			        key,
-			        OctoPrintPermission(permission_name(plugin, definition),
-			                            description,
-			                            *[permission_role(plugin, role) for role in roles]))
+			        PluginOctoPrintPermission(permission_name(plugin_info.name, definition),
+			                                  description,
+			                                  plugin=plugin_info.key,
+			                                  dangerous=dangerous,
+			                                  *[permission_role(plugin_info.key, role) for role in roles]))
 
-			self._logger.debug("Added new permission from plugin {}: {}".format(plugin, key))
+			self._logger.debug("Added new permission from plugin {}: {}".format(plugin_info.key, key))
 			return True
 
-		def process_combined_permission(plugin, definition):
+		def process_combined_permission(plugin_info, definition):
 			resolved = []
 			for key in definition["permissions"]:
 				permission = octoprint.access.permissions.Permissions.find(key)
@@ -1533,14 +1536,17 @@ class Server(object):
 
 				resolved.append(permission)
 
-			key = permission_key(plugin, definition)
+			key = permission_key(plugin_info.key, definition)
+			dangerous = definition.get("dangerous", False) == True
 			setattr(octoprint.access.permissions.Permissions,
 			        key,
-			        CombinedOctoPrintPermission.from_permissions(permission_name(plugin, definition),
-			                                                     description=definition.get("description", ""),
-			                                                     *resolved))
+			        CombinedPluginOctoPrintPermission.from_permissions(permission_name(plugin_info.name, definition),
+			                                                           description=definition.get("description", ""),
+			                                                           plugin=plugin_info.key,
+			                                                           dangerous=dangerous,
+			                                                           *resolved))
 
-			self._logger.debug("Added new permission from plugin {}: {}".format(plugin, key))
+			self._logger.debug("Added new permission from plugin {}: {}".format(plugin_info.key, key))
 			return True
 
 		postponed = []
@@ -1558,6 +1564,7 @@ class Server(object):
 				if not isinstance(additional_permissions, (tuple, list)):
 					raise ValueError("factory result must be either a tuple or a list of permission definition dicts")
 
+				plugin_info = pluginManager.get_plugin_info(name)
 				for p in additional_permissions:
 					if not isinstance(p, dict):
 						continue
@@ -1566,10 +1573,10 @@ class Server(object):
 						continue
 
 					if not p.get("combined", False) and "roles" in p:
-						process_regular_permission(name, p)
+						process_regular_permission(plugin_info, p)
 					elif p.get("combined", False) and "permissions" in p:
-						if not process_combined_permission(name, p):
-							postponed.append((name, p))
+						if not process_combined_permission(plugin_info, p):
+							postponed.append((plugin_info, p))
 			except:
 				self._logger.exception("Error while creating permission instance/s from {}".format(name))
 
@@ -1581,17 +1588,17 @@ class Server(object):
 			self._logger.debug("Combined permission resolution pass #{}, "
 			                   "{} unresolved combined permissions...".format(pass_number, start_length))
 
-			for plugin, definition in postponed:
-				if not process_combined_permission(plugin, definition):
-					still_postponed.append((plugin, definition))
+			for plugin_info, definition in postponed:
+				if not process_combined_permission(plugin_info, definition):
+					still_postponed.append((plugin_info, definition))
 
 			self._logger.debug("... pass #{} done, {} combined "
 			                   "permissions left to resolve".format(pass_number, len(still_postponed)))
 
 			if len(still_postponed) == start_length:
 				# no change, looks like some stuff is unresolvable - let's bail
-				for plugin, definition in still_postponed:
-					self._logger.warn("Unable to resolve combined permission from {}: {!r}".format(plugin, definition))
+				for plugin_info, definition in still_postponed:
+					self._logger.warn("Unable to resolve combined permission from {}: {!r}".format(plugin_info.key, definition))
 				break
 
 			postponed = still_postponed

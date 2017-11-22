@@ -1,0 +1,11 @@
+<table class="table table-condensed table-hover settings_accesscontrol_groups_list">
+    <tbody data-bind="foreach: groupsList()">
+    <tr style="cursor: pointer" data-bind="click: function() { $parents[1].editor.toggleGroup($data.name) }, attr: {title: description}">
+        <td class="settings_accesscontrol_groups_list_checkbox"><input type="checkbox" data-bind="checkedValue: name, checked: $parents[1].editor.groups"></td>
+        <td class="settings_accesscontrol_groups_list_name">
+            <span class="name" data-bind="text: name"></span><br>
+            <small class="description muted" data-bind="text: description"></small>
+        </td>
+    </tr>
+    </tbody>
+</table>

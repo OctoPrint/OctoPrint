@@ -1,16 +1,16 @@
 <ul class="nav nav-pills">
-    <li if="users_link" class="active">
-        <a href="#settings_accessControl_users" data-toggle="tab">{{ _('Users') }}</a>
+    <li id="settings_accesscontrol_users_link" class="active">
+        <a href="#settings_accesscontrol_users" data-toggle="tab">{{ _('Users') }}</a>
     </li>
-    <li if="groups_link">
-        <a href="#settings_accessControl_groups" data-toggle="tab">{{ _('Groups') }}</a>
+    <li id="settings_accesscontrol_groups_link">
+        <a href="#settings_accesscontrol_groups" data-toggle="tab">{{ _('Groups') }}</a>
     </li>
 </ul>
 <div class="tab-content">
-    <div id="settings_accessControl_users" class="tab-pane active">
+    <div id="settings_accesscontrol_users" class="tab-pane active">
         {% include 'snippets/settings/accesscontrol/users.jinja2' %}
     </div>
-    <div id="settings_accessControl_groups" class="tab-pane">
+    <div id="settings_accesscontrol_groups" class="tab-pane">
         {% include 'snippets/settings/accesscontrol/groups.jinja2' %}
     </div>
 </div>

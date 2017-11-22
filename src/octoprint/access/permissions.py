@@ -29,9 +29,10 @@ class OctoPrintPermission(Permission):
 
 		return ret_needs
 
-	def __init__(self, name, description, *needs):
+	def __init__(self, name, description, *needs, **kwargs):
 		self._name = name
 		self._description = description
+		self._dangerous = kwargs.pop("dangerous", False) == True
 
 		self._key = None
 
@@ -41,6 +42,7 @@ class OctoPrintPermission(Permission):
 		return dict(
 			key=self.key,
 			name=self.get_name(),
+			dangerous=self._dangerous,
 			description=self.get_description(),
 			needs=self.convert_needs_to_dict(self.needs)
 		)
@@ -87,10 +89,22 @@ class OctoPrintPermission(Permission):
 		return '{}("{}", "{}", {})'.format(self.__class__.__name__, self.get_name(), self.get_description(), ', '.join(needs))
 
 	def __hash__(self):
-		return self.get_name()
+		return self.get_name().__hash__()
 
 	def __eq__(self, other):
 		return isinstance(other, OctoPrintPermission) and other.get_name() == self.get_name()
+
+
+class PluginOctoPrintPermission(OctoPrintPermission):
+
+	def __init__(self, *args, **kwargs):
+		self.plugin = kwargs.pop("plugin", None)
+		OctoPrintPermission.__init__(self, *args, **kwargs)
+
+	def as_dict(self):
+		result = OctoPrintPermission.as_dict(self)
+		result["plugin"] = self.plugin
+		return result
 
 
 class CombinedOctoPrintPermission(OctoPrintPermission):
@@ -105,13 +119,25 @@ class CombinedOctoPrintPermission(OctoPrintPermission):
 		if len(permissions) == 0:
 			return None
 
-		description = kwargs.get("description", "")
+		description = kwargs.pop("description", "")
 
-		permission = CombinedOctoPrintPermission(name, description, *permissions[0].needs)
+		permission = cls(name, description, *permissions[0].needs, **kwargs)
 		for p in permissions[1:]:
 			permission = permission.union(p)
 
 		return permission
+
+
+class CombinedPluginOctoPrintPermission(CombinedOctoPrintPermission):
+
+	def __init__(self, *args, **kwargs):
+		self.plugin = kwargs.pop("plugin", None)
+		CombinedOctoPrintPermission.__init__(self, *args, **kwargs)
+
+	def as_dict(self):
+		result = CombinedOctoPrintPermission.as_dict(self)
+		result["plugin"] = self.plugin
+		return result
 
 
 class PluginIdentityContext(object):
@@ -252,7 +278,8 @@ class Permissions(object):
 	# Special permission
 	ADMIN                  = OctoPrintPermission("Admin",
 	                                             gettext("Admin is allowed to do everything"),
-	                                             RoleNeed("admin"))
+	                                             RoleNeed("admin"),
+	                                             dangerous=True)
 
 	STATUS                 = OctoPrintPermission("Status",
 	                                             gettext("Allows to gather status information, e.g. job progress, "

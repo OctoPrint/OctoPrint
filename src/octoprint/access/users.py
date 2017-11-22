@@ -564,8 +564,8 @@ class FilebasedUserManager(UserManager):
 		removed_groups = list(set(user._groups) - set(groups))
 		added_groups = list(set(groups) - set(user._groups))
 
-		user.remove_groups_from_user(removed_groups, save=False)
-		user.add_groups_to_user(added_groups, save=False)
+		user.remove_groups_from_user(removed_groups)
+		user.add_groups_to_user(added_groups)
 
 		if self._dirty:
 			self._save()

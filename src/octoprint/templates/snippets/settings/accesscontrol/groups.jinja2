@@ -34,15 +34,6 @@
 
 <!-- Modals for group management -->
 
-<script type="text/html" id="group-permission-template">
-    <div class="controls" data-bind="foreach: $root.access.permissions.permissionList()">
-        <label class="checkbox">
-            <input type="checkbox" data-bind="checkedValue: key, checked: $root.access.groups.editorPermissions"><span data-bind="text: name, attr: { title: description }"></span><br>
-            <span class="description" data-bind="text: gettext(description)"></span>
-        </label>
-    </div>
-</script>
-
 <div id="settings-groupsDialogAddGroup" class="modal hide fade">
     <div class="modal-header">
         <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
@@ -53,22 +44,26 @@
             <div class="control-group">
                 <label class="control-label" for="settings-groupsDialogAddGroupName">{{ _('Group name') }}</label>
                 <div class="controls">
-                    <input type="text" class="input-block-level" id="settings-groupsDialogAddGroupName" data-bind="value: $root.access.groups.editorGroupname" required>
+                    <input type="text" class="input-block-level" id="settings-groupsDialogAddGroupName" data-bind="value: $root.access.groups.editor.name" required>
                 </div>
             </div>
             <div class="control-group">
                 <label class="control-label" for="settings-groupsDialogAddGroupDescription">{{ _('Group description') }}</label>
                 <div class="controls">
-                    <input type="text" class="input-block-level" id="settings-groupsDialogAddGroupDescription" data-bind="value: $root.access.groups.editorGroupdesc" required>
+                    <input type="text" class="input-block-level" id="settings-groupsDialogAddGroupDescription" data-bind="value: $root.access.groups.editor.description" required>
                 </div>
             </div>
             <div class="control-group">
                 <label class="control-label" for="settings-groupsDialogAddDefaultOn">{{ _('Default') }}</label>
                 <div class="controls">
-                    <input type="checkbox" class="input-block-level" id="settings-groupsDialogAddDefaultOn" data-bind="checked: $root.access.groups.editorDefaultOn">
+                    <input type="checkbox" class="input-block-level" id="settings-groupsDialogAddDefaultOn" data-bind="checked: $root.access.groups.editor.default">
                 </div>
             </div>
-            <div class="control-group" data-bind="template: 'group-permission-template'"></div>
+            <!-- ko with: $root.access.groups -->
+            <!-- ko with: $root.access.permissions -->
+            {% include 'snippets/settings/accesscontrol/permission_list.jinja2' %}
+            <!-- /ko -->
+            <!-- /ko -->
         </form>
     </div>
     <div class="modal-footer">
@@ -80,23 +75,27 @@
 <div id="settings-groupsDialogEditGroup" class="modal hide fade">
     <div class="modal-header">
         <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
-        <h3>{{ _('Edit group "%(group)s"', group = '<span data-bind="text: $root.access.groups.editorGroupname"></span>') }}</h3>
+        <h3>{{ _('Edit group "%(group)s"', group = '<span data-bind="text: $root.access.groups.editor.name"></span>') }}</h3>
     </div>
     <div class="modal-body">
         <form class="form-horizontal">
             <div class="control-group">
                 <label class="control-label" for="settings-groupsDialogEditGroupDescription">{{ _('Group description') }}</label>
                 <div class="controls">
-                    <input type="text" class="input-block-level" id="settings-groupsDialogEditGroupDescription" data-bind="value: $root.access.groups.editorGroupdesc" required>
+                    <input type="text" class="input-block-level" id="settings-groupsDialogEditGroupDescription" data-bind="value: $root.access.groups.editor.description" required>
                 </div>
             </div>
             <div class="control-group">
                 <label class="control-label" for="settings-groupsDialogEditDefaultOn">{{ _('Default') }}</label>
                 <div class="controls">
-                    <input type="checkbox" class="input-block-level" id="settings-groupsDialogEditDefaultOn" data-bind="checked: $root.access.groups.editorDefaultOn">
+                    <input type="checkbox" class="input-block-level" id="settings-groupsDialogEditDefaultOn" data-bind="checked: $root.access.groups.editor.default">
                 </div>
             </div>
-            <div class="control-group" data-bind="template: 'group-permission-template'"></div>
+            <!-- ko with: $root.access.groups -->
+            <!-- ko with: $root.access.permissions -->
+            {% include 'snippets/settings/accesscontrol/permission_list.jinja2' %}
+            <!-- /ko -->
+            <!-- /ko -->
         </form>
     </div>
     <div class="modal-footer">
