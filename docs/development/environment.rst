@@ -17,13 +17,21 @@ below.
     * `Git <https://git-scm.com>`_
 
   * Checkout the OctoPrint sources from their Git repository: ``git clone https://github.com/foosel/OctoPrint.git``
-  * Create a virtual environment in the checkout folder to use for installing and running OctoPrint and its
+  * Enter the checked out source folder: ``cd OctoPrint``
+  * Create a virtual environment in the checked out source folder to use for installing and running OctoPrint and its
     dependencies (this avoids potential versioning issues for the dependencies with system wide installed
     instances): ``virtualenv venv``
-  * Activate the virtual environment: ``source venv/bin/activate`` (might differ per your platform/OS)
+  * Activate the virtual environment: ``source venv/bin/activate`` (Linux, MacOS) or
+    ``source venv/Scripts/activate`` (Git Bash under Windows, see below)
   * Update ``pip`` in the virtual environment: ``pip install --upgrade pip``
   * Install OctoPrint in `"editable" mode <https://pip.pypa.io/en/stable/reference/pip_install/#editable-installs>`_,
-    including its regular *and* development dependencies: ``pip install -e .[develop]``
+    including its regular *and* development and plugin development dependencies: ``pip install -e .[develop,plugins]``
+
+When the virtual environment is activated you can then:
+
+  * run the OctoPrint server via ``octoprint serve``
+  * run the test suite from the checked out source folder via ``nosetests --with-doctest``
+  * build the documentation from the ``docs`` sub folder of the checked out sources via ``sphinx-build -b html . _build``
 
 .. _sec-development-environment-source-linux:
 
@@ -93,9 +101,6 @@ Open the Git Bash you just installed and in that:
    pip install --upgrade pip
    pip install -e .[develop,plugins]
 
-You can then start OctoPrint via ``/c/Devel/OctoPrint/venv/Scripts/octoprint`` or just ``octoprint`` if you activated the virtual
-environment.
-
 .. _sec-development-environment-mac:
 
 Mac OS X
@@ -139,9 +144,6 @@ You'll need a user account with administrator privileges.
        pip install --upgrade pip
        pip install -e .[develop,plugins]
 
-You can then start OctoPrint via ``~/devel/OctoPrint/venv/bin/octoprint`` or just ``octoprint`` if you activated the virtual
-environment.
-
 .. _sec-development-environment-ides:
 
 IDE Setup
@@ -176,6 +178,29 @@ PyCharm
       * Program: ``$PyInterpreterDirectory$/pip`` (or ``$PyInterpreterDirectory$/pip.exe`` on Windows)
       * Parameters: ``install -e .[develop,plugins]``
       * Working directory: ``$ProjectFileDir$``
+
+  - Add Run/Debug Configuration, select "Python tests" and therein "Nosetests":
+
+    * Name: OctoPrint nosetests
+    * Target: Path, ``.``
+    * Project: ``OctoPrint``
+    * Python interpreter: the ``venv`` local virtual environment
+    * Working directory: the OctoPrint checkout folder (e.g. ``~/devel/OctoPrint`` or ``C:\Devel\OctoPrint``)
+    * Just like with the run configuration for the server you can also have the dependencies auto-update on run of
+      the tests, see above on how to set this up.
+
+  - Add Run/Debug Configuration, select "Python docs" and therein "Sphinx task"
+
+    * Name: OctoPrint docs
+    * Command: ``html``
+    * Input: the ``docs`` folder in the OctoPrint checkout folder (e.g. ``~/devel/OctoPrint/docs`` or
+      ``C:\Devel\OctoPrint\docs``)
+    * Output: the ``docs/_build`` folder in the OctoPrint checkout folder (e.g. ``~/devel/OctoPrint/docs/_build`` or
+      ``C:\Devel\OctoPrint\docs\_build``)
+    * Project: ``OctoPrint``
+    * Python interpreter: the ``venv`` local virtual environment
+    * Just like with the run configuration for the server you can also have the dependencies auto-update when building
+      the documentation, see above on how to set this up.
 
 .. note::
 
