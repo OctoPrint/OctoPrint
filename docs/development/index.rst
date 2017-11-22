@@ -56,6 +56,12 @@ installed:
    Using a Linux distribution that doesn't use ``apt``? Please send a
    `Pull Request <https://github.com/foosel/OctoPrint/blob/master/CONTRIBUTING.md#pull-requests>`_ to get the necessary
    steps into this guide!
+  * On zypper based distributions (example below for SLES 12 SP2):
+      
+       sudo zypper ar https://download.opensuse.org/repositories/devel:/languages:/python/SLE_12_SP2/ pyhton_devel
+       sudo zypper ref
+       sudo zypper in python python-pip python-devel python-setuptools python-virtualenv git libyaml-devel 
+       sudo zypper in -t pattern Basis-Devel
 
 Then:
 
