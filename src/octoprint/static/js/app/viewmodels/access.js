@@ -40,6 +40,10 @@ $(function() {
                 }),
                 apikey: ko.observable(undefined),
                 active: ko.observable(undefined),
+                permissionSelected: function(permission) {
+                    var index = self.editor.permissions().indexOf(permission);
+                    return index >= 0;
+                },
                 togglePermission: function(permission) {
                     var permissions = self.editor.permissions();
                     var index = permissions.indexOf(permission);
@@ -50,6 +54,10 @@ $(function() {
                     }
                     self.editor.permissions(permissions);
                 },
+                groupSelected: function(group) {
+                    var index = self.editor.groups().indexOf(group);
+                    return index >= 0;
+                },
                 toggleGroup: function(group) {
                     var groups = self.editor.groups();
                     var index = groups.indexOf(group);
@@ -59,6 +67,9 @@ $(function() {
                         groups.splice(index, 1);
                     }
                     self.editor.groups(groups);
+                },
+                joinedGroupPermissions: function(group) {
+                    return access.permissionList(group);
                 }
             };
 
@@ -287,7 +298,8 @@ $(function() {
                 CONFIG_GROUPSPERPAGE
             );
 
-            self.groupsList = ko.observableArray([]);
+            self.groupsList = self.listHelper.items; // Alias for easier reference
+            self.lookup = {};
 
             self.emptyGroup = {name: ""};
 
@@ -298,6 +310,10 @@ $(function() {
                 description: ko.observable(undefined),
                 permissions: ko.observableArray([]),
                 default: ko.observable(false),
+                permissionSelected: function(permission) {
+                    var index = self.editor.permissions().indexOf(permission);
+                    return index >= 0;
+                },
                 togglePermission: function(permission) {
                     var permissions = self.editor.permissions();
                     var index = permissions.indexOf(permission);
@@ -373,12 +389,19 @@ $(function() {
             };
 
             self.fromResponse = function(response) {
-                self.groupsList(response.groups);
                 self.listHelper.updateItems(response.groups);
+
+                var lookup = {};
+                _.each(response.groups, function(group) {
+                    lookup[group.name] = group;
+                });
+                self.lookup = lookup;
             };
 
             self.getDefaultGroups = function() {
-                return _.where(self.groupsList(), {defaultOn: true});
+                return _.map(_.where(self.groupsList(), {defaultOn: true}), function(g) {
+                    return g.name;
+                });
             };
 
             self.showAddGroupDialog = function() {
@@ -520,30 +543,45 @@ $(function() {
                     lookup[permission.key] = permission;
                 });
 
-                permissionList.sort(function(a, b) {
-                    var nameA = a.name.toUpperCase();
-                    var nameB = b.name.toUpperCase();
-
-                    var pluginA = a.plugin || "";
-                    var pluginB = b.plugin || "";
-
-                    var compA = pluginA + ":" + nameA;
-                    var compB = pluginB + ":" + nameB;
-
-                    if (compA < compB) {
-                        return -1
-                    } else if (compA > compB) {
-                        return 1
-                    } else {
-                        return 0;
-                    }
-                });
+                permissionList.sort(access.permissionComparator);
                 self.permissionList(permissionList);
                 self.lookup = lookup;
             };
 
             return self;
         })();
+
+        access.groupComparator = function(a, b) {
+            var nameA = a.name ? a.name.toUpperCase() : "";
+            var nameB = b.name ? b.name.toUpperCase() : "";
+
+            if (nameA < nameB) {
+                return -1;
+            } else if (nameA > nameB) {
+                return 1;
+            } else {
+                return 0;
+            }
+        };
+
+        access.permissionComparator = function(a, b) {
+            var nameA = a.name ? a.name.toUpperCase() : "";
+            var nameB = b.name ? b.name.toUpperCase() : "";
+
+            var pluginA = a.plugin || "";
+            var pluginB = b.plugin || "";
+
+            var compA = pluginA + ":" + nameA;
+            var compB = pluginB + ":" + nameB;
+
+            if (compA < compB) {
+                return -1;
+            } else if (compA > compB) {
+                return 1;
+            } else {
+                return 0;
+            }
+        };
 
         // Maps the group names into a comma seperated list
         access.groupList = function(data) {
@@ -555,11 +593,13 @@ $(function() {
 
         // Maps the permission names into a comma seperated list
         access.permissionList = function(data) {
-            if (data.permissions === undefined)
+            if (!data || data.permissions === undefined)
                 return "";
 
-            return _.map(data.permissions, function(p) {
-                return access.permissions.lookup[p] ? access.permissions.lookup[p].name : p
+            var mappedPermissions = _.filter(_.map(data.permissions, function(p) { return access.permissions.lookup[p] }), function(p) { return p !== undefined });
+            mappedPermissions.sort(access.permissionComparator);
+            return _.map(mappedPermissions, function(p) {
+                return p.name;
             }).join(", ");
         };
 

@@ -2,17 +2,30 @@
     <thead>
     <tr>
         <th class="settings_users_name">{{ _('Name') }}</th>
-        <th class="settings_users_groups">{{ _('Groups') }}</th>
-        <th class="settings_users_permissions">{{ _('Permissions') }}</th>
+        <th class="settings_users_groups">{{ _('Details') }}</th>
         <th class="settings_users_active">{{ _('Active') }}</th>
         <th class="settings_users_actions">{{ _('Action') }}</th>
     </tr>
     </thead>
     <tbody data-bind="foreach: $root.access.users.listHelper.paginatedItems">
     <tr>
-        <td class="settings_users_name"><span data-bind="text: name"></span><span class="muted" data-bind="visible: $root.api_enabled() && apikey"><br /><small>{{ _('API Key') }}: <span data-bind="text: apikey"></span> <a href="javascript:void(0)" title="{{ _('Copy API Key to clipboard') }}" data-bind="click: function() { copyToClipboard(apikey) }"><i class="fa fa-copy"></i></a></small></span></td>
-        <td class="settings_users_groups"><span data-bind="text: $root.access.groupList($data)"></span></td>
-        <td class="settings_users_permissions"><span data-bind="text: $root.access.permissionList($data)"></span></td>
+        <td class="settings_users_name"><span data-bind="text: name"></span></td>
+        <td class="settings_users_details">
+            <table class="table settings_users_details_table">
+                <tr>
+                    <th class="settings_users_details_key">{{ _('Groups') }}</th>
+                    <td class="settings_users_details_value" data-bind="text: $root.access.groupList($data)"></td>
+                </tr>
+                <tr>
+                    <th class="settings_users_details_key">{{ _('Permissions') }}</th>
+                    <td class="settings_users_details_value" data-bind="text: $root.access.permissionList($data)"></td>
+                </tr>
+                <tr data-bind="visible: $root.api_enabled() && apikey">
+                    <th class="settings_users_details_key">{{ _('API Key') }}</th>
+                    <td class="settings_users_details_value"><span data-bind="text: apikey"></span> <a href="javascript:void(0)" title="{{ _('Copy API Key to clipboard') }}" data-bind="click: function() { copyToClipboard(apikey) }"><i class="fa fa-copy"></i></a></td>
+                </tr>
+            </table>
+        </td>
         <td class="settings_users_active"><i class="fa" data-bind="css: { 'fa-check-square-o': active, 'a-square-o': !active }"></i></td>
         <td class="settings_users_actions">
             <a href="#" class="fa fa-pencil" title="{{ _('Update User') }}" data-bind="click: function() { $root.access.users.showEditUserDialog($data); }"></a>&nbsp;|&nbsp;<a href="#" class="fa fa-key" title="{{ _('Change password') }}" data-bind="click: function() { $root.access.users.showChangePasswordDialog($data); }"></a>&nbsp;|&nbsp;<a href="#" class="fa fa-trash-o" title="{{ _('Delete user') }}" data-bind="click: function() { $root.access.users.removeUser($data); }"></a>
@@ -60,7 +73,7 @@
                     <a href="#settings_accesscontrol_users_add_groups" data-toggle="tab">{{ _('Groups') }}</a>
                 </li>
                 <li id="settings_accesscontrol_users_add_permissions_link">
-                    <a href="#settings_accesscontrol_users_add_permissions" data-toggle="tab">{{ _('Permissions') }}</a>
+                    <a href="#settings_accesscontrol_users_add_permissions" data-toggle="tab">{{ _('Additional permissions') }}</a>
                 </li>
             </ul>
             <div class="tab-content">
@@ -132,7 +145,7 @@
                     <a href="#settings_accesscontrol_users_edit_groups" data-toggle="tab">{{ _('Groups') }}</a>
                 </li>
                 <li id="settings_accesscontrol_users_edit_permissions_link">
-                    <a href="#settings_accesscontrol_users_edit_permissions" data-toggle="tab">{{ _('Permissions') }}</a>
+                    <a href="#settings_accesscontrol_users_edit_permissions" data-toggle="tab">{{ _('Additional permissions') }}</a>
                 </li>
             </ul>
             <div class="tab-content">
