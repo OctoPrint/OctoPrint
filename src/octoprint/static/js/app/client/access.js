@@ -49,14 +49,14 @@
 
     OctoPrintAccessGroupsClient.prototype.add = function (group, opts) {
         if (!group.name) {
-            throw new OctoPrintClient.InvalidArgumentError("group's name need to be set");
+            throw new OctoPrintClient.InvalidArgumentError("group name need to be set");
         }
 
         var data = {
             name: group.name,
-            description: group.hasOwnProperty("description") ? group.description : "",
-            permissions: group.hasOwnProperty("permissions") ? group.permissions : [],
-            defaultOn: group.defaultOn
+            description: group.description,
+            permissions: group.permissions,
+            default: group.default
         };
 
         return this.base.postJson(this.url(), data, opts);
@@ -70,17 +70,17 @@
         return this.base.get(this.url(name), opts);
     };
 
-    OctoPrintAccessGroupsClient.prototype.update = function (name, description, permissions, defaultOn, opts) {
-        if (!name) {
+    OctoPrintAccessGroupsClient.prototype.update = function (group, opts) {
+        if (!group.name) {
             throw new OctoPrintClient.InvalidArgumentError("group name must be set");
         }
 
         var data = {
-            description: description,
-            permissions: permissions,
-            defaultOn: defaultOn,
+            description: group.description,
+            permissions: group.permissions,
+            default: group.default
         };
-        return this.base.putJson(this.url(name), data, opts);
+        return this.base.putJson(this.url(group.name), data, opts);
     };
 
     OctoPrintAccessGroupsClient.prototype.delete = function (name, opts) {
@@ -206,8 +206,8 @@
         this.base = base;
 
         this.permissions = new OctoPrintAccessPermissionsClient(this);
-        this.groups = new OctoPrintAccessGroupsClient(this)
-        this.users = new OctoPrintAccessUsersClient(this)
+        this.groups = new OctoPrintAccessGroupsClient(this);
+        this.users = new OctoPrintAccessUsersClient(this);
     };
     OctoPrintClient.registerComponent("access", OctoPrintAccessClient);
     return OctoPrintAccessClient;

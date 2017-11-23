@@ -4,7 +4,8 @@ $(function() {
 
         access.loginState = parameters[0];
 
-        //~~ Users
+        //~~ Users ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
         access.users = (function() {
             var self = {};
             // initialize list helper
@@ -70,26 +71,38 @@ $(function() {
                 },
                 joinedGroupPermissions: function(group) {
                     return access.permissionList(group);
-                }
+                },
+                header: ko.observable(undefined),
+                new: ko.observable(true),
+                confirm: undefined,
+                valid: ko.pureComputed(function() {
+                    return self.editor.name() && self.editor.name().trim()
+                        && (!self.editor.new() || (self.editor.password() && self.editor.password().trim() && !self.editor.passwordMismatch()));
+                })
             };
 
-            self.addUserDialog = undefined;
-            self.editUserDialog = undefined;
+            self.userEditorDialog = undefined;
             self.changePasswordDialog = undefined;
 
             self.currentUser.subscribe(function(newValue) {
                 if (newValue === undefined) {
                     self.editor.name(undefined);
-                    self.editor.groups(access.groups.getDefaultGroups());
+                    self.editor.groups(access.groups.defaults.slice(0));
                     self.editor.permissions([]);
-                    self.editor.active(undefined);
+                    self.editor.active(true);
                     self.editor.apikey(undefined);
+                    self.editor.header(gettext("Add user"));
+                    self.editor.new(true);
+                    self.editor.confirm = self.confirmAddUser
                 } else {
                     self.editor.name(newValue.name);
-                    self.editor.groups(newValue.groups);
-                    self.editor.permissions(newValue.permissions);
+                    self.editor.groups(newValue.groups.slice(0));
+                    self.editor.permissions(newValue.permissions.slice(0));
                     self.editor.active(newValue.active);
                     self.editor.apikey(newValue.apikey);
+                    self.editor.header(_.sprintf(gettext("Edit user \"%(name)s\""), {name: newValue.name}));
+                    self.editor.new(false);
+                    self.editor.confirm = self.confirmEditUser
                 }
                 self.editor.password(undefined);
                 self.editor.repeatedPassword(undefined);
@@ -110,10 +123,9 @@ $(function() {
                 if (!CONFIG_ACCESS_CONTROL) return;
 
                 self.currentUser(undefined);
-                self.editor.active(true);
 
-                $('ul.nav-pills a[data-toggle="tab"]:first', self.addUserDialog).tab("show");
-                self.addUserDialog.modal({
+                $('ul.nav-pills a[data-toggle="tab"]:first', self.userEditorDialog).tab("show");
+                self.userEditorDialog.modal({
                     minHeight: function() { return Math.max($.fn.modal.defaults.maxHeight() - 80, 250); }
                 }).css({
                     width: 'auto',
@@ -136,7 +148,7 @@ $(function() {
                     .done(function() {
                         // close dialog
                         self.currentUser(undefined);
-                        self.addUserDialog.modal("hide");
+                        self.userEditorDialog.modal("hide");
                     });
             };
 
@@ -145,8 +157,8 @@ $(function() {
 
                 self.currentUser(user);
 
-                $('ul.nav-pills a[data-toggle="tab"]:first', self.editUserDialog).tab("show");
-                self.editUserDialog.modal({
+                $('ul.nav-pills a[data-toggle="tab"]:first', self.userEditorDialog).tab("show");
+                self.userEditorDialog.modal({
                     minHeight: function() { return Math.max($.fn.modal.defaults.maxHeight() - 80, 250); }
                 }).css({
                     width: 'auto',
@@ -166,7 +178,7 @@ $(function() {
                     .done(function() {
                         // close dialog
                         self.currentUser(undefined);
-                        self.editUserDialog.modal("hide");
+                        self.userEditorDialog.modal("hide");
                     });
             };
 
@@ -218,8 +230,7 @@ $(function() {
             //~~ Framework
 
             self.onStartup = function() {
-                self.addUserDialog = $("#settings-usersDialogAddUser");
-                self.editUserDialog = $("#settings-usersDialogEditUser");
+                self.userEditorDialog = $("#settings-usersEditorDialog");
                 self.changePasswordDialog = $("#settings-usersDialogChangePassword");
             };
 
@@ -249,8 +260,16 @@ $(function() {
                     return $.Deferred().reject("You may not delete your own account").promise();
                 }
 
-                return OctoPrint.access.users.delete(user.name)
-                    .done(self.fromResponse);
+                showConfirmationDialog({
+                    title: gettext("Are you sure?"),
+                    message: _.sprintf(gettext("You are about to delete the user \"%(name)s\"."), {name: user.name}),
+                    proceed: gettext("Delete"),
+                    onproceed: function() {
+                        OctoPrint.access.users.delete(user.name)
+                            .done(self.fromResponse);
+                    }
+                });
+
             };
 
             self.updateUser = function(user) {
@@ -277,7 +296,8 @@ $(function() {
             return self;
         })();
 
-        //~~ Groups
+        //~~ Groups ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
         access.groups = (function() {
             var self = {};
             // initialize list helper
@@ -300,6 +320,7 @@ $(function() {
 
             self.groupsList = self.listHelper.items; // Alias for easier reference
             self.lookup = {};
+            self.defaults = [];
 
             self.emptyGroup = {name: ""};
 
@@ -323,11 +344,16 @@ $(function() {
                         permissions.splice(index, 1);
                     }
                     self.editor.permissions(permissions);
-                }
+                },
+                header: ko.observable(undefined),
+                new: ko.observable(true),
+                confirm: undefined,
+                valid: ko.pureComputed(function() {
+                    return self.editor.name() && self.editor.name().trim();
+                })
             };
 
-            self.addGroupDialog = undefined;
-            self.editGroupDialog = undefined;
+            self.groupEditorDialog = undefined;
 
             // used to delete all the groups before registering new ones
             self.groupsList.subscribe(function(oldValue) {
@@ -371,15 +397,23 @@ $(function() {
 
             self.currentGroup.subscribe(function(newValue) {
                 if (newValue === undefined) {
+                    // group add
                     self.editor.name(undefined);
                     self.editor.description(undefined);
                     self.editor.permissions([]);
                     self.editor.default(false);
+                    self.editor.header(gettext("Add group"));
+                    self.editor.new(true);
+                    self.editor.confirm = self.confirmAddGroup
                 } else {
+                    // group update
                     self.editor.name(newValue.name);
                     self.editor.description(newValue.description);
-                    self.editor.permissions(newValue.permissions);
-                    self.editor.default(newValue.defaultOn);
+                    self.editor.permissions(newValue.permissions.slice(0));
+                    self.editor.default(newValue.default);
+                    self.editor.header(_.sprintf(gettext("Edit group \"%(name)s\""), {name: newValue.name}));
+                    self.editor.new(false);
+                    self.editor.confirm = self.confirmEditGroup
                 }
             });
 
@@ -392,21 +426,20 @@ $(function() {
                 self.listHelper.updateItems(response.groups);
 
                 var lookup = {};
+                var defaults = [];
                 _.each(response.groups, function(group) {
                     lookup[group.name] = group;
+                    if (group.default) {
+                        defaults.push(group.name);
+                    }
                 });
                 self.lookup = lookup;
-            };
-
-            self.getDefaultGroups = function() {
-                return _.map(_.where(self.groupsList(), {defaultOn: true}), function(g) {
-                    return g.name;
-                });
+                self.defaults = defaults;
             };
 
             self.showAddGroupDialog = function() {
                 self.currentGroup(undefined);
-                self.addGroupDialog.modal("show");
+                self.groupEditorDialog.modal("show");
             };
 
             self.confirmAddGroup = function() {
@@ -414,14 +447,14 @@ $(function() {
                     name: self.editor.name(),
                     description: self.editor.description(),
                     permissions: self.editor.permissions(),
-                    defaultOn: self.editor.default()
+                    default: self.editor.default()
                 };
 
                 self.addGroup(group)
                     .done(function() {
                         // close dialog
                         self.currentGroup(undefined);
-                        self.addGroupDialog.modal("hide");
+                        self.groupEditorDialog.modal("hide");
                     });
             };
 
@@ -429,28 +462,39 @@ $(function() {
                 if (!group.changeable) return;
 
                 self.currentGroup(group);
-                self.editGroupDialog.modal("show");
+                self.groupEditorDialog.modal("show");
             };
 
             self.confirmEditGroup = function() {
                 var group = self.currentGroup();
-                group.description = self.editor.description();
-                group.permissions = self.editor.permissions();
-                group.defaultOn = self.editor.default();
 
-                self.updateGroup(group)
+                var data = { name: group.name };
+
+                if (group.description !== self.editor.description()) {
+                    data.description = self.editor.description();
+                }
+
+                var editorPermissions = self.editor.permissions();
+                if (!_.isEqual(group.permissions.sort(), editorPermissions.sort())) {
+                    data.permissions = editorPermissions;
+                }
+
+                if (group.default !== self.editor.default()) {
+                    data.default = self.editor.default();
+                }
+
+                self.updateGroup(data)
                     .done(function() {
                         // close dialog
                         self.currentGroup(undefined);
-                        self.editGroupDialog.modal("hide");
+                        self.groupEditorDialog.modal("hide");
                     });
             };
 
             //~~ Framework
 
             self.onStartup = function() {
-                self.addGroupDialog = $("#settings-groupsDialogAddGroup");
-                self.editGroupDialog = $("#settings-groupsDialogEditGroup");
+                self.groupEditorDialog = $("#settings-groupsEditorDialog");
             };
 
             //~~ API calls
@@ -489,14 +533,15 @@ $(function() {
                     throw OctoPrint.InvalidArgumentError("group must be set");
                 }
 
-                return OctoPrint.access.groups.update(group.name, group.description, group.permissions, group.defaultOn)
+                return OctoPrint.access.groups.update(group)
                     .done(self.fromResponse);
             };
 
             return self;
         })();
 
-        //~~ Permissions
+        //~~ Permissions ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
         access.permissions = (function() {
             var self = {};
 
@@ -551,6 +596,8 @@ $(function() {
             return self;
         })();
 
+        //~~ helpers ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
         access.groupComparator = function(a, b) {
             var nameA = a.name ? a.name.toUpperCase() : "";
             var nameB = b.name ? b.name.toUpperCase() : "";
@@ -583,15 +630,16 @@ $(function() {
             }
         };
 
-        // Maps the group names into a comma seperated list
+        // Maps the group names into a comma separated list
         access.groupList = function(data) {
             if (data.groups === undefined)
                 return "";
 
+            data.groups.sort();
             return data.groups.join(", ");
         };
 
-        // Maps the permission names into a comma seperated list
+        // Maps the permission names into a comma separated list
         access.permissionList = function(data) {
             if (!data || data.permissions === undefined)
                 return "";

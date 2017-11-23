@@ -303,6 +303,53 @@ class UserManager(GroupChangeListener, object):
 		warnings.warn("createPasswordHash has been renamed to create_password_hash", DeprecationWarning, stacklevel=2)
 		return UserManager.create_password_hash(*args, **kwargs)
 
+	@deprecated("changeUserRoles has been replaced by change_user_permissions",
+	            includedoc="Replaced by :func:`change_user_permissions`",
+	            since="1.4.0")
+	def changeUserRoles(self, username, roles):
+		user = self.find_user(username)
+		if user is None:
+			raise UnknownUser(username)
+
+		removed_roles = set(user._roles) - set(roles)
+		self.removeRolesFromUser(username, removed_roles, user=user)
+
+		added_roles = set(roles) - set(user._roles)
+		self.addRolesToUser(username, added_roles, user=user)
+
+	@deprecated("addRolesToUser has been replaced by add_permissions_to_user",
+	            includedoc="Replaced by :func:`add_permissions_to_user`",
+	            since="1.4.0")
+	def addRolesToUser(self, username, roles, user=None):
+		if user is None:
+			user = self.find_user(username)
+
+		if user is None:
+			raise UnknownUser(username)
+
+		if "admin" in roles:
+			self.add_groups_to_user(username, self._group_manager.admin_group)
+
+		if "user" in roles:
+			self.remove_groups_from_user(username, self._group_manager.user_group)
+
+	@deprecated("removeRolesFromUser has been replaced by remove_permissions_from_user",
+	            includedoc="Replaced by :func:`remove_permissions_from_user`",
+	            since="1.4.0")
+	def removeRolesFromUser(self, username, roles, user=None):
+		if user is None:
+			user = self.find_user(username)
+
+		if user is None:
+			raise UnknownUser(username)
+
+		if "admin" in roles:
+			self.remove_groups_from_user(username, self._group_manager.admin_group)
+			self.remove_permissions_from_user(username, Permissions.ADMIN)
+
+		if "user" in roles:
+			self.remove_groups_from_user(username, self._group_manager.user_group)
+
 	checkPassword        = deprecated("checkPassword has been renamed to check_password",
 	                                  includedoc="Replaced by :func:`check_password`",
 	                                  since="1.4.0")(check_password)
@@ -312,15 +359,6 @@ class UserManager(GroupChangeListener, object):
 	changeUserActivation = deprecated("changeUserActivation has been renamed to change_user_activation",
 	                                  includedoc="Replaced by :func:`change_user_activation`",
 	                                  since="1.4.0")(change_user_activation)
-	changeUserRoles      = deprecated("changeUserRoles has been renamed to change_user_permissions",
-	                                  includedoc="Replaced by :func:`change_user_permissions`",
-	                                  since="1.4.0")(change_user_permissions)
-	addRolesToUser       = deprecated("addRolesToUser has been renamed to add_permissions_to_user",
-	                                  includedoc="Replaced by :func:`add_permissions_to_user`",
-	                                  since="1.4.0")(add_permissions_to_user)
-	removeRolesFromUser  = deprecated("removeRolesFromUser has been renamed to remove_permissions_from_user",
-	                                  includedoc="Replaced by :func:`remove_permissions_from_user`",
-	                                  since="1.4.0")(remove_permissions_from_user)
 	changeUserPassword   = deprecated("changeUserPassword has been renamed to change_user_password",
 	                                  includedoc="Replaced by :func:`change_user_password`",
 	                                  since="1.4.0")(change_user_password)
@@ -403,7 +441,6 @@ class FilebasedUserManager(UserManager):
 					if "roles" in attributes and not "permissions" in attributes:
 						self._logger.info("Migrating user {} to new granular permission system".format(name))
 
-						from octoprint.server import groupManager
 						groups.extend(self._migrate_roles_to_groups(attributes["roles"]))
 						self._dirty = True
 
@@ -459,15 +496,12 @@ class FilebasedUserManager(UserManager):
 			self._dirty = False
 		self._load()
 
-	@staticmethod
-	def _migrate_roles_to_groups(roles):
-		from octoprint.server import groupManager
-
+	def _migrate_roles_to_groups(self, roles):
 		# If admin is inside the roles, just return admin group
 		if "admin" in roles:
-			return [groupManager.admin_group]
+			return [self._group_manager.admin_group]
 		else:
-			return [groupManager.user_group]
+			return [self._group_manager.user_group]
 
 	def _refresh_groups(self, user):
 		user._groups = self._to_groups(*map(lambda g: g.get_name(), user.groups))
@@ -478,7 +512,7 @@ class FilebasedUserManager(UserManager):
 		permissions = self._to_permissions(*permissions)
 
 		if not groups:
-			groups = []
+			groups = self._group_manager.default_groups
 		groups = self._to_groups(*groups)
 
 		if username in self._users.keys() and not overwrite:
@@ -564,8 +598,10 @@ class FilebasedUserManager(UserManager):
 		removed_groups = list(set(user._groups) - set(groups))
 		added_groups = list(set(groups) - set(user._groups))
 
-		user.remove_groups_from_user(removed_groups)
-		user.add_groups_to_user(added_groups)
+		if len(removed_groups):
+			self._dirty |= user.remove_groups_from_user(removed_groups)
+		if len(added_groups):
+			self._dirty |= user.add_groups_to_user(added_groups)
 
 		if self._dirty:
 			self._save()

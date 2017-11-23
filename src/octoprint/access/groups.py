@@ -87,25 +87,13 @@ class GroupManager(object):
 	def unregister_listener(self, listener):
 		self._group_change_listeners.remove(listener)
 
-	def set_group_permissions(self, groupname, permissions, save=True, notify=True):
-		pass
-
-	def set_group_default(self, groupname, default, save=True):
-		pass
-
-	def set_group_description(self, groupname, description, save=True):
-		pass
-
 	def add_group(self, name, description, permissions, default=False, removable=True, changeable=True, save=True, notify=True):
 		pass
 
+	def update_group(self, groupname, description=None, permissions=None, default=None, save=True, notify=True):
+		pass
+
 	def remove_group(self, name, save=True, notify=True):
-		pass
-
-	def add_group_permissions(self, group, permissions, save=True, notify=True):
-		pass
-
-	def remove_group_permissions(self, group, permissions, save=True, notify=True):
 		pass
 
 	def find_group(self, name):
@@ -206,6 +194,10 @@ class FilebasedGroupManager(GroupManager):
 	def groups(self):
 		return list(self._groups.values())
 
+	@property
+	def default_groups(self):
+		return [group for group in self._groups.values() if group.is_default()]
+
 	def find_group(self, name):
 		if name is None:
 			return None
@@ -255,8 +247,7 @@ class FilebasedGroupManager(GroupManager):
 		if notify:
 			self._notify_listeners("removed", group)
 
-	def set_group_permissions(self, groupname, permissions, save=True, notify=True):
-		"""Changes the permissions of a group"""
+	def update_group(self, groupname, description=None, permissions=None, default=None, save=True, notify=True):
 		group = self._to_group(groupname)
 		if group is None:
 			raise UnknownGroup(groupname)
@@ -264,106 +255,38 @@ class FilebasedGroupManager(GroupManager):
 		if not group.is_changable():
 			raise GroupCantBeChanged(groupname)
 
-		permissions = self._to_permissions(*permissions)
-		assert(all(map(lambda p: isinstance(p, OctoPrintPermission), permissions)))
+		if description is not None and description != group.get_description():
+			group.change_description(description)
+			self._dirty = True
 
-		removed_permissions = list(set(group._permissions) - set(permissions))
-		added_permissions = list(set(permissions) - set(group._permissions))
+		notifications = []
 
-		if removed_permissions:
-			self._dirty |= group.remove_permissions_from_group(removed_permissions)
-		if added_permissions:
-			self._dirty |= group.add_permissions_to_group(added_permissions)
+		if permissions is not None:
+			permissions = self._to_permissions(*permissions)
+			assert (all(map(lambda p: isinstance(p, OctoPrintPermission), permissions)))
+
+			removed_permissions = list(set(group._permissions) - set(permissions))
+			added_permissions = list(set(permissions) - set(group._permissions))
+
+			if removed_permissions:
+				self._dirty |= group.remove_permissions_from_group(removed_permissions)
+			if added_permissions:
+				self._dirty |= group.add_permissions_to_group(added_permissions)
+
+			notifications.append((("permissions_changed", group),
+			                      dict(added=added_permissions, removed=removed_permissions)))
+
+		if default is not None:
+			group.change_default(default)
+			self._dirty = True
 
 		if self._dirty:
 			if save:
 				self._save()
 
 			if notify:
-				self._notify_listeners("permissions_changed", group,
-				                       added=added_permissions,
-				                       removed=removed_permissions)
-
-	def add_group_permissions(self, groupname, permissions, notify=True, save=True):
-		"""Adds a list of permissions to a group"""
-		group = self._to_group(groupname)
-		if group is None:
-			raise UnknownGroup(groupname)
-
-		if not group.is_changable():
-			raise GroupCantBeChanged(groupname)
-
-		permissions = self._to_permissions(*permissions)
-		assert(all(map(lambda p: isinstance(p, OctoPrintPermission), permissions)))
-
-		if group.add_permissions_to_group(permissions):
-			self._dirty = True
-
-			if save:
-				self._save()
-
-			if notify:
-				self._notify_listeners("permissions_changed", group, added=permissions)
-
-			return True
-		return False
-
-	def remove_group_permissions(self, groupname, permissions, notify=True, save=True):
-		"""Removes a list of permissions from a group"""
-		group = self._to_group(groupname)
-		if group is None:
-			raise UnknownGroup(groupname)
-
-		if not group.is_changable():
-			raise GroupCantBeChanged(groupname)
-
-		permissions = self._to_permissions(*permissions)
-		assert(all(map(lambda p: isinstance(p, OctoPrintPermission), permissions)))
-
-		if group.remove_permissions_from_group(permissions):
-			self._dirty = True
-
-			if save:
-				self._save()
-
-			if notify:
-				self._notify_listeners("permissions_changed", group, removed=permissions)
-
-			return True
-		return False
-
-	def set_group_default(self, groupname, default, save=True):
-		"""Changes the default flag of a Group"""
-		group = self._to_group(groupname)
-		if group is None:
-			raise UnknownGroup(groupname)
-
-		if default == group.get_default():
-			return
-
-		if not group.is_changable():
-			raise GroupCantBeChanged(groupname)
-
-		group.change_default(default)
-		self._dirty = True
-
-		if save:
-			self._save()
-
-	def set_group_description(self, groupname, description, save=True):
-		"""Changes the description of a group"""
-		group = self._to_group(groupname)
-		if group is None:
-			raise UnknownGroup(groupname)
-
-		if description == group.get_description():
-			return
-
-		self.group.change_description(description)
-		self._dirty = True
-
-		if save:
-			self._save()
+				for args, kwargs in notifications:
+					self._notify_listeners(*args, **kwargs)
 
 
 class GroupAlreadyExists(Exception):
@@ -399,10 +322,10 @@ class Group(object):
 		from octoprint.access.permissions import OctoPrintPermission
 		return dict(
 			name=self.get_name(),
-			description=self.get_description(),
+			description=self._description,
 			permissions=map(lambda p: p.key, self._permissions),
 			needs=OctoPrintPermission.convert_needs_to_dict(self.needs),
-			defaultOn=self.get_default(),
+			default=self._default,
 			removable=self._removable,
 			changeable=self._changeable
 		)
@@ -413,7 +336,7 @@ class Group(object):
 	def get_description(self):
 		return self._description
 
-	def get_default(self):
+	def is_default(self):
 		return self._default
 
 	def is_changable(self):
@@ -495,10 +418,10 @@ class Group(object):
 	def __repr__(self):
 		return '{}("{}", description="{}", permissions={!r}, ' \
 		       'default={}, removable={}, changeable={})'.format(self.__class__.__name__,
-		                                                         self.get_name(),
-		                                                         self.get_description(),
+		                                                         self._name,
+		                                                         self._description,
 		                                                         self._permissions,
-		                                                         bool(self.get_default()),
+		                                                         bool(self._default),
 		                                                         bool(self._removable),
 		                                                         bool(self._changeable))
 

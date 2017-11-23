@@ -45,7 +45,7 @@
     </ul>
 </div>
 
-<button title="{{ _('Add user') }}" class="btn" data-bind="click: $root.access.users.showAddUserDialog"><i class="fa fa-plus"></i> {{ _('Add user') }}</button>
+<button title="{{ _('Add user') }}" class="btn pull-right" data-bind="click: $root.access.users.showAddUserDialog"><i class="fa fa-plus"></i> {{ _('Add user...') }}</button>
 
 <!-- Modals for user management -->
 
@@ -58,10 +58,10 @@
     <!-- /ko -->
 </script>
 
-<div id="settings-usersDialogAddUser" class="modal hide fade">
+<div id="settings-usersEditorDialog" class="modal hide fade">
     <div class="modal-header">
         <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
-        <h3>{{ _('Add user') }}</h3>
+        <h3 data-bind="text: $root.access.users.editor.header"></h3>
     </div>
     <div class="modal-body">
         <div class="full-sized-box">
@@ -82,16 +82,16 @@
                         <div class="control-group">
                             <label class="control-label" for="settings-usersDialogAddUserName">{{ _('Username') }}</label>
                             <div class="controls">
-                                <input type="text" class="input-block-level" id="settings-usersDialogAddUserName" data-bind="value: $root.access.users.editor.name" required>
+                                <input type="text" class="input-block-level" id="settings-usersDialogAddUserName" data-bind="disable: !$root.access.users.editor.new(), value: $root.access.users.editor.name" required>
                             </div>
                         </div>
-                        <div class="control-group">
+                        <div class="control-group" data-bind="visible: $root.access.users.editor.new()">
                             <label class="control-label" for="settings-usersDialogAddUserPassword1">{{ _('Password') }}</label>
                             <div class="controls">
                                 <input type="password" class="input-block-level" id="settings-usersDialogAddUserPassword1" data-bind="value: $root.access.users.editor.password" required>
                             </div>
                         </div>
-                        <div class="control-group" data-bind="css: {error: $root.access.users.editor.passwordMismatch()}">
+                        <div class="control-group" data-bind="css: {error: $root.access.users.editor.passwordMismatch()}, visible: $root.access.users.editor.new()">
                             <label class="control-label" for="settings-usersDialogAddUserPassword2">{{ _('Repeat Password') }}</label>
                             <div class="controls">
                                 <input type="password" class="input-block-level" id="settings-usersDialogAddUserPassword2" data-bind="value: $root.access.users.editor.repeatedPassword, valueUpdate: 'afterkeydown'" required>
@@ -126,60 +126,7 @@
     </div>
     <div class="modal-footer">
         <button class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Abort') }}</button>
-        <button class="btn btn-primary" data-bind="click: function() { $root.access.users.confirmAddUser(); }, enable: !$root.access.users.editor.passwordMismatch()">{{ _('Confirm') }}</button>
-    </div>
-</div>
-
-<div id="settings-usersDialogEditUser" class="modal hide fade">
-    <div class="modal-header">
-        <a href="#" class="close" data-dismiss="modal" aria-hidden="true">&times;</a>
-        <h3>{{ _('Edit user "%(user)s"', user = '<span data-bind="text: $root.access.users.editor.name"></span>') }}</h3>
-    </div>
-    <div class="modal-body">
-        <div class="full-sized-box">
-            <ul class="nav nav-pills">
-                <li id="settings_accesscontrol_users_edit_general_link" class="active">
-                    <a href="#settings_accesscontrol_users_edit_general" data-toggle="tab">{{ _('General') }}</a>
-                </li>
-                <li id="settings_accesscontrol_users_edit_groups_link">
-                    <a href="#settings_accesscontrol_users_edit_groups" data-toggle="tab">{{ _('Groups') }}</a>
-                </li>
-                <li id="settings_accesscontrol_users_edit_permissions_link">
-                    <a href="#settings_accesscontrol_users_edit_permissions" data-toggle="tab">{{ _('Additional permissions') }}</a>
-                </li>
-            </ul>
-            <div class="tab-content">
-                <div id="settings_accesscontrol_users_edit_general" class="tab-pane active">
-                    <form class="form-horizontal">
-                        <div class="control-group">
-                            <div class="controls">
-                                <label class="checkbox">
-                                    <input type="checkbox" id="settings-usersDialogEditUserActive" data-bind="checked: $root.access.users.editor.active"> {{ _('Active') }}
-                                </label>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-                <div id="settings_accesscontrol_users_edit_groups" class="tab-pane">
-                    <!-- ko with: $root.access.users -->
-                    <!-- ko with: $root.access.groups -->
-                    {% include 'snippets/settings/accesscontrol/group_list.jinja2' %}
-                    <!-- /ko -->
-                    <!-- /ko -->
-                </div>
-                <div id="settings_accesscontrol_users_edit_permissions" class="tab-pane">
-                    <!-- ko with: $root.access.users -->
-                    <!-- ko with: $root.access.permissions -->
-                    {% include 'snippets/settings/accesscontrol/permission_list.jinja2' %}
-                    <!-- /ko -->
-                    <!-- /ko -->
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="modal-footer">
-        <button class="btn" data-dismiss="modal" aria-hidden="true">{{ _('Abort') }}</button>
-        <button class="btn btn-primary" data-bind="click: function() { $root.access.users.confirmEditUser(); }">{{ _('Confirm') }}</button>
+        <button class="btn btn-primary" data-bind="click: function() { $root.access.users.editor.confirm(); }, enable: $root.access.users.editor.valid">{{ _('Confirm') }}</button>
     </div>
 </div>
 

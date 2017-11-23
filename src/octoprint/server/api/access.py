@@ -40,21 +40,19 @@ def add_group():
 		return make_response("Expected content-type JSON", 400)
 
 	try:
-		data = request.json
+		data = request.get_json()
 	except BadRequest:
 		return make_response("Malformed JSON body in request", 400)
 
 	if not "name" in data:
 		return make_response("Missing mandatory name field", 400)
-	if not "description" in data:
-		return make_response("Missing mandatory description field", 400)
 	if not "permissions" in data:
-		return make_response("Missing mandatory permission field", 400)
+		return make_response("Missing mandatory permissions field", 400)
 
 	name = data["name"]
-	description = data["description"]
+	description = data.get("description", "")
 	permissions = data["permissions"]
-	default = data["defaultOn"] if "defaultOn" in data else False
+	default = data.get("default", False)
 
 	try:
 		groupManager.add_group(name, description=description, permissions=permissions, default=default)
@@ -76,32 +74,32 @@ def get_group(groupname):
 @restricted_access
 @Permissions.SETTINGS.require(403)
 def update_group(groupname):
-	group = groupManager.find_group(groupname)
-	if group is not None:
-		if "application/json" not in request.headers["Content-Type"]:
-			return make_response("Expected content-type JSON", 400)
+	if "application/json" not in request.headers["Content-Type"]:
+		return make_response("Expected content-type JSON", 400)
 
-		try:
-			data = request.json
-		except BadRequest:
-			return make_response("Malformed JSON body in request", 400)
+	try:
+		data = request.get_json()
+	except BadRequest:
+		return make_response("Malformed JSON body in request", 400)
 
-		try:
-			# change permissions
-			if "permissions" in data:
-				permissions = data["permissions"]
-				groupManager.set_group_permissions(groupname, permissions)
+	try:
+		kwargs = dict()
 
-			if "defaultOn" in data:
-				groupManager.set_group_default(groupname, data["defaultOn"])
+		if "permissions" in data:
+			kwargs["permissions"] = data["permissions"]
 
-			if "description" in data:
-				groupManager.set_group_description(groupname, data["description"])
+		if "default" in data:
+			kwargs["default"] = data["default"] in valid_boolean_trues
 
-			return get_groups()
-		except groups.GroupCantBeChanged:
-			abort(403)
-	else:
+		if "description" in data:
+			kwargs["description"] = data["description"]
+
+		groupManager.update_group(groupname, **kwargs)
+
+		return get_groups()
+	except groups.GroupCantBeChanged:
+		abort(403)
+	except groups.UnknownGroup:
 		abort(404)
 
 
@@ -151,10 +149,6 @@ def add_user():
 		return make_response("Missing mandatory name field", 400)
 	if not "password" in data:
 		return make_response("Missing mandatory password field", 400)
-	if not "groups" in data:
-		return make_response("Missing mandatory groups field", 400)
-	if not "permissions" in data:
-		return make_response("Missing mandatory permissions field", 400)
 	if not "active" in data:
 		return make_response("Missing mandatory active field", 400)
 
@@ -162,8 +156,8 @@ def add_user():
 	password = data["password"]
 	active = data["active"] in valid_boolean_trues
 
-	groups = data["groups"]
-	permissions = data["permissions"]
+	groups = data.get("groups", None)
+	permissions = data.get("permissions", None)
 
 	try:
 		userManager.add_user(name, password, active, permissions, groups)
