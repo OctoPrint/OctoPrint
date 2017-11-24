@@ -639,13 +639,12 @@ class PluginManager(object):
 		def wrapped(gen):
 			# to protect against some issues in installed packages that make iteration over entry points
 			# fall on its face - e.g. https://groups.google.com/forum/#!msg/octoprint/DyXdqhR0U7c/kKMUsMmIBgAJ
-			try:
-				yield next(gen)
-			except StopIteration:
-				raise
-			except:
-				self.logger.exception("Something went wrong while processing the entry points of a package in the "
-				                      "Python environment - broken entry_points.txt in some package?")
+			for entry in gen:
+				try:
+					yield entry
+				except:
+					self.logger.exception("Something went wrong while processing the entry points of a package in the "
+					                      "Python environment - broken entry_points.txt in some package?")
 
 		for group in groups:
 			for entry_point in wrapped(working_set.iter_entry_points(group=group, name=None)):
