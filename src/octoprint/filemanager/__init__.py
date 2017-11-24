@@ -28,12 +28,7 @@ ContentTypeDetector = namedtuple("ContentTypeDetector", "extensions, detector")
 extensions = dict(
 )
 
-_cached_tree = None
-def full_extension_tree(force=False):
-	global _cached_tree
-	if _cached_tree is not None and not force:
-		return _cached_tree
-
+def full_extension_tree():
 	result = dict(
 		# extensions for 3d model files
 		model=dict(
@@ -89,7 +84,6 @@ def full_extension_tree(force=False):
 		except:
 			logging.getLogger(__name__).exception("Exception while retrieving additional extension tree entries from hook {name}".format(name=name))
 
-	_cached_tree = result
 	return result
 
 def get_extensions(type, subtree=None):
