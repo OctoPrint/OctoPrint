@@ -878,7 +878,7 @@ class MachineCom(object):
 			self._changeState(self.STATE_ERROR)
 			eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
 
-	def startFileTransfer(self, filename, localFilename, remoteFilename):
+	def startFileTransfer(self, filename, localFilename, remoteFilename, special=False):
 		if not self.isOperational() or self.isBusy():
 			self._logger.info("Printer is not operational or busy")
 			return
@@ -886,7 +886,10 @@ class MachineCom(object):
 		with self._jobLock:
 			self.resetLineNumbers()
 
-			self._currentFile = StreamingGcodeFileInformation(filename, localFilename, remoteFilename)
+			if special:
+				self._currentFile = SpecialStreamingGcodeFileInformation(filename, localFilename, remoteFilename)
+			else:
+				self._currentFile = StreamingGcodeFileInformation(filename, localFilename, remoteFilename)
 			self._currentFile.start()
 
 			self.sendCommand("M28 %s" % remoteFilename)
@@ -2357,7 +2360,7 @@ class MachineCom(object):
 						# now comes the part where we increase line numbers and send stuff - no turning back now
 						command_requiring_checksum = gcode is not None and gcode in self._checksum_requiring_commands
 						command_allowing_checksum = gcode is not None or self._sendChecksumWithUnknownCommands
-						checksum_enabled = not self._neverSendChecksum and (self.isPrinting() or
+						checksum_enabled = not self._neverSendChecksum and ((self.isPrinting() and self._currentFile and self._currentFile.checksum) or
 						                                                    self._alwaysSendChecksum or
 						                                                    not self._firmware_info_received)
 
@@ -2473,8 +2476,8 @@ class MachineCom(object):
 	def _do_send_with_checksum(self, command, linenumber):
 		command_to_send = "N" + str(linenumber) + " " + command
 		checksum = 0
-		for c in command_to_send:
-			checksum ^= ord(c)
+		for c in bytearray(command_to_send):
+			checksum ^= c
 		command_to_send = command_to_send + "*" + str(checksum)
 		self._do_send_without_checksum(command_to_send)
 
@@ -2826,6 +2829,8 @@ class PrintingFileInformation(object):
 	value between 0 and 1.
 	"""
 
+	checksum = True
+
 	def __init__(self, filename):
 		self._logger = logging.getLogger(__name__)
 		self._filename = filename
@@ -2879,6 +2884,8 @@ class PrintingSdFileInformation(PrintingFileInformation):
 	"""
 	Encapsulates information regarding an ongoing print from SD.
 	"""
+
+	checksum = False
 
 	def __init__(self, filename, size):
 		PrintingFileInformation.__init__(self, filename)
@@ -3024,6 +3031,23 @@ class StreamingGcodeFileInformation(PrintingGcodeFileInformation):
 		             time_per_line=duration * 1000.0 / float(self._read_lines),
 		             duration=duration)
 		self._logger.info("Finished in {duration:.3f} s. Approx. transfer rate of {rate:.3f} lines/s or {time_per_line:.3f} ms per line".format(**stats))
+
+
+class SpecialStreamingGcodeFileInformation(StreamingGcodeFileInformation):
+	"""
+	For streaming files to the printer that aren't GCODE.
+
+	Difference to regular StreamingGcodeFileInformation: no checksum requirement, only rudimentary line processing
+	(stripping of whitespace from the end and ignoring of empty lines)
+	"""
+
+	checksum = False
+
+	def _process(self, line, offsets, current_tool):
+		line = line.rstrip()
+		if not len(line):
+			return None
+		return line
 
 
 class SendQueue(PrependableQueue):

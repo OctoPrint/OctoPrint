@@ -75,9 +75,18 @@ class EnvironmentDetector(object):
 		return result
 
 	def _detect_hardware(self):
-		return dict(cores=psutil.cpu_count(),
-		            freq=psutil.cpu_freq().max,
-		            ram=get_formatted_size(psutil.virtual_memory().total))
+		cores = psutil.cpu_count()
+		cpu_freq = psutil.cpu_freq()
+		ram = psutil.virtual_memory()
+
+		result = dict()
+		if cores:
+			result["cores"] = cores
+		if cpu_freq and hasattr(cpu_freq, "max"):
+			result["freq"] = cpu_freq.max
+		if ram and hasattr(ram, "total"):
+			result["ram"] = ram.total
+		return result
 
 	def _detect_from_plugins(self):
 		result = dict()
