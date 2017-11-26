@@ -1228,7 +1228,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		             path=path,
 		             origin=origin,
 		             size=print_job_size,
-					 event_user=current_user,
+		             event_user=current_user,
 
 		             # TODO deprecated, remove in 1.4.0
 		             file=full_path,
