@@ -30,7 +30,7 @@ def util():
 @click.option("--progress", "progress", is_flag=True)
 @click.option("--position", "end_position", type=int, default=None)
 @click.argument("path", type=click.Path())
-def gcode_command(path, speedx, speedy, speedz, offset, maxt, throttle, throttle_lines, g90_extruder, progress):
+def gcode_command(path, speedx, speedy, speedz, offset, maxt, throttle, throttle_lines, g90_extruder, progress, end_position):
 	"""Runs a GCODE file analysis."""
 
 	import time
@@ -67,7 +67,8 @@ def gcode_command(path, speedx, speedy, speedz, offset, maxt, throttle, throttle
 					 offsets=offsets,
 					 throttle=throttle_callback,
 					 max_extruders=maxt,
-					 g90_extruder=g90_extruder)
+					 g90_extruder=g90_extruder,
+					 end_position=end_position)
 
 	click.echo("DONE:{}s".format(time.time() - start_time))
 	click.echo("RESULTS:")
