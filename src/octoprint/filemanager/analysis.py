@@ -249,7 +249,7 @@ class AbstractAnalysisQueue(object):
 			                                                       "path": entry.path,
 			                                                       "origin": entry.location,
 			                                                       "type": entry.type,
-																   "position": entry.position,
+			                                                       "position": entry.position,
 
 			                                                       # TODO deprecated, remove in 1.4.0
 			                                                       "file": entry.path})
