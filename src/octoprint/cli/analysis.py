@@ -28,6 +28,7 @@ def util():
 @click.option("--max-t", "maxt", type=int, default=10)
 @click.option("--g90-extruder", "g90_extruder", is_flag=True)
 @click.option("--progress", "progress", is_flag=True)
+@click.option("--position", "end_position", type=int, default=None)
 @click.argument("path", type=click.Path())
 def gcode_command(path, speedx, speedy, speedz, offset, maxt, throttle, throttle_lines, g90_extruder, progress):
 	"""Runs a GCODE file analysis."""
