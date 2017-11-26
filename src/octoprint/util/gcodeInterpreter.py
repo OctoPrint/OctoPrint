@@ -206,19 +206,19 @@ class gcode(object):
 		            maxY=self._minMax.max.y,
 		            maxZ=self._minMax.max.z)
 
-	def load(self, filename, throttle=None, speedx=6000, speedy=6000, offsets=None, max_extruders=10, g90_extruder=False):
+	def load(self, filename, throttle=None, speedx=6000, speedy=6000, offsets=None, max_extruders=10, g90_extruder=False, end_position=None):
 		if os.path.isfile(filename):
 			self.filename = filename
 			self._fileSize = os.stat(filename).st_size
 
 			with codecs.open(filename, encoding="utf-8", errors="replace") as f:
-				self._load(f, throttle=throttle, speedx=speedx, speedy=speedy, offsets=offsets, max_extruders=max_extruders, g90_extruder=g90_extruder)
+				self._load(f, throttle=throttle, speedx=speedx, speedy=speedy, offsets=offsets, max_extruders=max_extruders, g90_extruder=g90_extruder, end_position=end_position)
 
 	def abort(self, reenqueue=True):
 		self._abort = True
 		self._reenqueue = reenqueue
 
-	def _load(self, gcodeFile, throttle=None, speedx=6000, speedy=6000, offsets=None, max_extruders=10, g90_extruder=False):
+	def _load(self, gcodeFile, throttle=None, speedx=6000, speedy=6000, offsets=None, max_extruders=10, g90_extruder=False, end_position=None):
 		lineNo = 0
 		readBytes = 0
 		pos = Vector3D(0.0, 0.0, 0.0)
@@ -248,6 +248,9 @@ class gcode(object):
 				raise AnalysisAborted(reenqueue=self._reenqueue)
 			lineNo += 1
 			readBytes += len(line.encode("utf-8"))
+
+			if (end_position is not None and lineNo >= end_position):
+				break
 
 			if isinstance(gcodeFile, (file, codecs.StreamReaderWriter)):
 				percentage = float(readBytes) / float(self._fileSize)
