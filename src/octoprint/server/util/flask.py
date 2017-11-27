@@ -21,6 +21,7 @@ import threading
 import logging
 import netaddr
 import os
+import collections
 
 from octoprint.settings import settings
 import octoprint.server
@@ -1347,8 +1348,12 @@ def collect_plugin_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 	logger = logging.getLogger(__name__ + ".collect_plugin_assets")
 
 	supported_stylesheets = ("css", "less")
-	assets = dict(bundled=dict(js=[], css=[], less=[]),
-	              external=dict(js=[], css=[], less=[]))
+	assets = dict(bundled=dict(js=collections.defaultdict(list),
+	                           css=collections.defaultdict(list),
+	                           less=collections.defaultdict(list)),
+	              external=dict(js=collections.defaultdict(list),
+	                            css=collections.defaultdict(list),
+	                            less=collections.defaultdict(list)))
 
 	asset_plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.AssetPlugin)
 	for implementation in asset_plugins:
@@ -1374,13 +1379,13 @@ def collect_plugin_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 			for asset in all_assets["js"]:
 				if not asset_exists("js", asset):
 					continue
-				assets[asset_key]["js"].append('plugin/{name}/{asset}'.format(**locals()))
+				assets[asset_key]["js"][name].append('plugin/{name}/{asset}'.format(**locals()))
 
 		if preferred_stylesheet in all_assets:
 			for asset in all_assets[preferred_stylesheet]:
 				if not asset_exists(preferred_stylesheet, asset):
 					continue
-				assets[asset_key][preferred_stylesheet].append('plugin/{name}/{asset}'.format(**locals()))
+				assets[asset_key][preferred_stylesheet][name].append('plugin/{name}/{asset}'.format(**locals()))
 		else:
 			for stylesheet in supported_stylesheets:
 				if not stylesheet in all_assets:
@@ -1389,7 +1394,7 @@ def collect_plugin_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 				for asset in all_assets[stylesheet]:
 					if not asset_exists(stylesheet, asset):
 						continue
-					assets[asset_key][stylesheet].append('plugin/{name}/{asset}'.format(**locals()))
+					assets[asset_key][stylesheet][name].append('plugin/{name}/{asset}'.format(**locals()))
 				break
 
 	return assets
