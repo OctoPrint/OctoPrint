@@ -44,10 +44,7 @@ $(function() {
         };
     }
 
-    // view model class, parameters for constructor, container to bind to
-    ADDITIONAL_VIEWMODELS.push([
-        OctoPiSupportViewModel,
-        [],
-        []
-    ]);
+    OCTOPRINT_VIEWMODELS.push({
+        construct: OctoPiSupportViewModel
+    });
 });

@@ -311,10 +311,9 @@ $(function() {
         };
     }
 
-    // view model class, parameters for constructor, container to bind to
-    OCTOPRINT_VIEWMODELS.push([
-        CuraViewModel,
-        ["loginStateViewModel", "settingsViewModel", "slicingViewModel"],
-        ["#settings_plugin_cura", "#wizard_plugin_cura"]
-    ]);
+    OCTOPRINT_VIEWMODELS.push({
+        construct: CuraViewModel,
+        dependencies: ["loginStateViewModel", "settingsViewModel", "slicingViewModel"],
+        elements: ["#settings_plugin_cura", "#wizard_plugin_cura"]
+    });
 });

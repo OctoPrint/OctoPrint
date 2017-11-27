@@ -14,7 +14,7 @@
     };
 
     OctoPrintSoftwareUpdateClient.prototype.checkEntries = function(entries, force, opts) {
-        if (arguments.length == 1 && _.isObject(arguments[0])) {
+        if (arguments.length === 1 && _.isObject(arguments[0])) {
             var params = arguments[0];
             entries = params.entries;
             force = params.force;
@@ -22,7 +22,7 @@
         }
 
         entries = entries || [];
-        if (typeof entries == "string") {
+        if (typeof entries === "string") {
             entries = [entries];
         }
 
@@ -37,7 +37,7 @@
     };
 
     OctoPrintSoftwareUpdateClient.prototype.check = function(force, opts) {
-        if (arguments.length == 1 && _.isObject(arguments[0])) {
+        if (arguments.length === 1 && _.isObject(arguments[0])) {
             var params = arguments[0];
             force = params.force;
             opts = params.opts;
@@ -47,7 +47,7 @@
     };
 
     OctoPrintSoftwareUpdateClient.prototype.update = function(entries, force, opts) {
-        if (arguments.length == 1 && _.isObject(arguments[0])) {
+        if (arguments.length === 1 && _.isObject(arguments[0])) {
             var params = arguments[0];
             entries = params.entries;
             force = params.force;
@@ -55,7 +55,7 @@
         }
 
         entries = entries || [];
-        if (typeof entries == "string") {
+        if (typeof entries === "string") {
             entries = [entries];
         }
 
@@ -67,7 +67,7 @@
     };
 
     OctoPrintSoftwareUpdateClient.prototype.updateAll = function(force, opts) {
-        if (arguments.length == 1 && _.isObject(arguments[0])) {
+        if (arguments.length === 1 && _.isObject(arguments[0])) {
             var params = arguments[0];
             force = params.force;
             opts = params.opts;
@@ -551,7 +551,7 @@ $(function() {
                 });
                 self._updateClicked = false;
             } else {
-                self.forceUpdate = (force == true);
+                self.forceUpdate = (force === true);
                 self.confirmationDialog.modal("show");
             }
 
@@ -837,10 +837,9 @@ $(function() {
         }
     }
 
-    // view model class, parameters for constructor, container to bind to
-    ADDITIONAL_VIEWMODELS.push([
-        SoftwareUpdateViewModel,
-        ["loginStateViewModel", "printerStateViewModel", "settingsViewModel"],
-        ["#settings_plugin_softwareupdate", "#softwareupdate_confirmation_dialog", "#wizard_plugin_softwareupdate"]
-    ]);
+    OCTOPRINT_VIEWMODELS.push({
+        construct: SoftwareUpdateViewModel,
+        dependencies: ["loginStateViewModel", "printerStateViewModel", "settingsViewModel"],
+        elements: ["#settings_plugin_softwareupdate", "#softwareupdate_confirmation_dialog", "#wizard_plugin_softwareupdate"]
+    });
 });

@@ -37,9 +37,8 @@ $(function() {
         };
     }
 
-    OCTOPRINT_VIEWMODELS.push([
-        AboutViewModel,
-        [],
-        ["#about_dialog", "#footer_about"]
-    ]);
+    OCTOPRINT_VIEWMODELS.push({
+        construct: AboutViewModel,
+        elements: ["#about_dialog", "#footer_about"]
+    });
 });

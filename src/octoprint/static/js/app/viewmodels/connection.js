@@ -143,9 +143,9 @@ $(function() {
         };
     }
 
-    OCTOPRINT_VIEWMODELS.push([
-        ConnectionViewModel,
-        ["loginStateViewModel", "settingsViewModel", "printerProfilesViewModel"],
-        "#connection_wrapper"
-    ]);
+    OCTOPRINT_VIEWMODELS.push({
+        construct: ConnectionViewModel,
+        dependencies: ["loginStateViewModel", "settingsViewModel", "printerProfilesViewModel"],
+        elements: ["#connection_wrapper"]
+    });
 });

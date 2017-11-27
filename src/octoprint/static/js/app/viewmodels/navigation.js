@@ -18,9 +18,9 @@ $(function() {
 
     }
 
-    OCTOPRINT_VIEWMODELS.push([
-        NavigationViewModel,
-        ["loginStateViewModel", "appearanceViewModel", "settingsViewModel", "userSettingsViewModel", "systemViewModel"],
-        "#navbar"
-    ]);
+    OCTOPRINT_VIEWMODELS.push({
+        construct: NavigationViewModel,
+        dependencies: ["loginStateViewModel", "appearanceViewModel", "settingsViewModel", "userSettingsViewModel", "systemViewModel"],
+        elements: ["#navbar"]
+    });
 });

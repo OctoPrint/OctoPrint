@@ -72,13 +72,13 @@ $(function() {
                     return false;
                 },
                 onTabShow: function(tab, navigation, index) {
-                    if (index < 0 || tab.length == 0) {
+                    if (index < 0 || tab.length === 0) {
                         return true;
                     }
 
                     var total = self.wizardDialog.bootstrapWizard("navigationLength");
 
-                    if (index == total) {
+                    if (index === total) {
                         self.wizardDialog.find(".button-next").hide();
                         self.wizardDialog.find(".button-finish").show().removeClass("disabled");
                     } else {
@@ -87,17 +87,17 @@ $(function() {
                     }
 
                     var active = tab[0].id;
-                    if (active != undefined) {
+                    if (active !== undefined) {
                         callViewModels(allViewModels, "onAfterWizardTabChange", [active]);
                     }
                 },
                 onTabChange: function(tab, navigation, index, nextTabIndex, nextTab) {
                     var current, next;
 
-                    if (index == undefined || index < 0 ||
-                        nextTabIndex == undefined || nextTabIndex < 0 ||
-                        index == nextTabIndex ||
-                        tab.length == 0 || nextTab.length == 0) {
+                    if (index === undefined || index < 0 ||
+                        nextTabIndex === undefined || nextTabIndex < 0 ||
+                        index === nextTabIndex ||
+                        tab.length === 0 || nextTab.length === 0) {
                         // let's ignore that nonsense
                         return;
                     }
@@ -105,7 +105,7 @@ $(function() {
                     current = tab[0].id;
                     next = nextTab[0].id;
 
-                    if (current != undefined && next != undefined) {
+                    if (current !== undefined && next !== undefined) {
                         var result = true;
                         callViewModels(allViewModels, "onBeforeWizardTabChange", function(method) {
                             // we want to continue evaluating even if result becomes false
@@ -145,7 +145,7 @@ $(function() {
                             // first, or it won't happen after the reload flag has been
                             // set once due to the || making further evaluation unnecessary
                             // then
-                            reload = (method() == "reload") || reload;
+                            reload = (method() === "reload") || reload;
                         });
                         self.finishWizard()
                             .done(function() {
@@ -220,9 +220,9 @@ $(function() {
         }
     }
 
-    OCTOPRINT_VIEWMODELS.push([
-        WizardViewModel,
-        ["loginStateViewModel", "settingsViewModel"],
-        "#wizard_dialog"
-    ]);
+    OCTOPRINT_VIEWMODELS.push({
+        construct: WizardViewModel,
+        dependencies: ["loginStateViewModel", "settingsViewModel"],
+        elements: ["#wizard_dialog"]
+    });
 });

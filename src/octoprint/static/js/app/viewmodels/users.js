@@ -54,7 +54,7 @@ $(function() {
         });
 
         self.editorPasswordMismatch = ko.pureComputed(function() {
-            return self.editorPassword() != self.editorRepeatedPassword();
+            return self.editorPassword() !== self.editorRepeatedPassword();
         });
 
         self.requestData = function() {
@@ -185,7 +185,7 @@ $(function() {
                 throw OctoPrint.InvalidArgumentError("user must be set");
             }
 
-            if (user.name == self.loginState.username()) {
+            if (user.name === self.loginState.username()) {
                 // we do not allow to delete ourselves
                 new PNotify({
                     title: gettext("Not possible"),
@@ -227,9 +227,8 @@ $(function() {
         }
     }
 
-    OCTOPRINT_VIEWMODELS.push([
-        UsersViewModel,
-        ["loginStateViewModel"],
-        []
-    ]);
+    OCTOPRINT_VIEWMODELS.push({
+        construct: UsersViewModel,
+        dependencies: ["loginStateViewModel"]
+    });
 });

@@ -40,13 +40,47 @@ def full_extension_tree():
 		)
 	)
 
+	def leaf_merger(a, b):
+		supported_leaf_types = (ContentTypeMapping, ContentTypeDetector, list)
+		if not isinstance(a, supported_leaf_types) or not isinstance(b, supported_leaf_types):
+			raise ValueError()
+
+		if isinstance(a, ContentTypeDetector) and isinstance(b, ContentTypeMapping):
+			raise ValueError()
+
+		if isinstance(a, ContentTypeMapping) and isinstance(b, ContentTypeDetector):
+			raise ValueError()
+
+		a_list = a if isinstance(a, list) else a.extensions
+		b_list = b if isinstance(b, list) else b.extensions
+		merged = a_list + b_list
+
+		content_type = None
+		if isinstance(b, ContentTypeMapping):
+			content_type = b.content_type
+		elif isinstance(a, ContentTypeMapping):
+			content_type = a.content_type
+
+		detector = None
+		if isinstance(b, ContentTypeDetector):
+			detector = b.detector
+		elif isinstance(a, ContentTypeDetector):
+			detector = a.detector
+
+		if content_type is not None:
+			return ContentTypeMapping(merged, content_type)
+		elif detector is not None:
+			return ContentTypeDetector(merged, detector)
+		else:
+			return merged
+
 	extension_tree_hooks = octoprint.plugin.plugin_manager().get_hooks("octoprint.filemanager.extension_tree")
 	for name, hook in extension_tree_hooks.items():
 		try:
 			hook_result = hook()
 			if hook_result is None or not isinstance(hook_result, dict):
 				continue
-			result = octoprint.util.dict_merge(result, hook_result)
+			result = octoprint.util.dict_merge(result, hook_result, leaf_merger=leaf_merger)
 		except:
 			logging.getLogger(__name__).exception("Exception while retrieving additional extension tree entries from hook {name}".format(name=name))
 
