@@ -1090,6 +1090,87 @@ class RepeatedTimer(threading.Thread):
 		if callable(self.on_finish):
 			self.on_finish()
 
+class ResettableTimer(threading.Thread):
+	"""
+	This class represents an action that should be run after a specified amount of time. It is similar to python's
+	own :class:`threading.Timer` class, with the addition of being able to reset the counter to zero.
+
+	ResettableTimers are started, as with threads, by calling their ``start()`` method. The timer can be stopped (in
+	between runs) by calling the :func:`cancel` method. Resetting the counter can be done with the :func:`reset` method.
+
+	For example:
+
+	.. code-block:: python
+
+	   def hello():
+	       print("Ran hello() at {}").format(time.time())
+
+	   t = ResettableTimers(60.0, hello)
+	   t.start()
+	   print("Started at {}").format(time.time())
+	   time.sleep(30)
+	   t.reset()
+	   print("Reset at {}").format(time.time())
+
+	Arguments:
+	    interval (float or callable): The interval before calling ``function``, in seconds. Can also be a callable
+	        returning the interval to use, in case the interval is not static.
+	    function (callable): The function to call.
+	    args (list or tuple): The arguments for the ``function`` call. Defaults to an empty list.
+	    kwargs (dict): The keyword arguments for the ``function`` call. Defaults to an empty dict.
+	    on_cancelled (callable): Callback to call when the timer finishes due to being cancelled.
+	    on_reset (callable): Callback to call when the timer is reset.
+	"""
+	
+	def __init__(self, interval, function, args=None, kwargs=None, on_reset=None, on_cancelled=None):
+		threading.Thread.__init__(self)
+		self._event = threading.Event()
+		self._mutex = threading.Lock()
+		self.is_reset = True
+
+		if args is None:
+			args = []
+		if kwargs is None:
+			kwargs = dict()
+
+		self.interval = interval
+		self.function = function
+		self.args = args
+		self.kwargs = kwargs
+		self.on_cancelled = on_cancelled
+		self.on_reset = on_reset
+
+
+	def run(self):
+		while self.is_reset:
+			with self._mutex:
+				self.is_reset = False
+			self._event.wait(self.interval)
+
+		if not self._event.isSet():
+			self.function(*self.args, **self.kwargs)
+		with self._mutex:
+			self._event.set()
+
+	def cancel(self):
+		with self._mutex:
+			self._event.set()
+
+		if callable(self.on_cancelled):
+			self.on_cancelled()
+
+	def reset(self, interval=None):
+		with self._mutex:
+			if interval:
+				self.interval = interval
+
+			self.is_reset = True
+			self._event.set()
+			self._event.clear()
+
+		if callable(self.on_reset):
+			self.on_reset()
+
 
 class CountedEvent(object):
 
