@@ -931,6 +931,37 @@ class User(UserMixin):
 
 		return self._get_setting(path)
 
+	def set_setting(self, key, value):
+		if not isinstance(key, (tuple, list)):
+			path = [key]
+		else:
+			path = key
+		return self._set_setting(path, value)
+
+	def _get_setting(self, path):
+		s = self._settings
+		for p in path:
+			if isinstance(s, dict) and p in s:
+				s = s[p]
+			else:
+				return None
+		return s
+
+	def _set_setting(self, path, value):
+		s = self._settings
+		for p in path[:-1]:
+			if p not in s:
+				s[p] = dict()
+
+			if not isinstance(s[p], dict):
+				s[p] = dict()
+
+			s = s[p]
+
+		key = path[-1]
+		s[key] = value
+		return True
+
 	def add_permissions_to_user(self, permissions):
 		# Make sure the permissions variable is of type list
 		if not isinstance(permissions, list):
@@ -1023,37 +1054,6 @@ class User(UserMixin):
 		if Permissions.ADMIN in self._permissions:
 			return True
 		return permission.needs.issubset(self.needs)
-
-	def set_setting(self, key, value):
-		if not isinstance(key, (tuple, list)):
-			path = [key]
-		else:
-			path = key
-		return self._set_setting(path, value)
-
-	def _get_setting(self, path):
-		s = self._settings
-		for p in path:
-			if isinstance(s, dict) and p in s:
-				s = s[p]
-			else:
-				return None
-		return s
-
-	def _set_setting(self, path, value):
-		s = self._settings
-		for p in path[:-1]:
-			if p not in s:
-				s[p] = dict()
-
-			if not isinstance(s[p], dict):
-				s[p] = dict()
-
-			s = s[p]
-
-		key = path[-1]
-		s[key] = value
-		return True
 
 	def __repr__(self):
 		return "User(id=%s,name=%s,active=%r,user=True,admin=%r,permissions=%s,groups=%s)" % (self.get_id(), self.get_name(), bool(self.is_active), self.has_permission(Permissions.ADMIN), self._permissions, self._groups)
