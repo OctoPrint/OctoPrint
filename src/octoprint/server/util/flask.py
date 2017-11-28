@@ -487,7 +487,7 @@ def passive_login():
 	else:
 		user = flask.ext.login.current_user
 
-	if user is not None and not user.is_anonymous():
+	if user is not None and not user.is_anonymous() and user.is_active():
 		flask.ext.principal.identity_changed.send(flask.current_app._get_current_object(), identity=flask.ext.principal.Identity(user.get_id()))
 		if hasattr(user, "session"):
 			flask.session["usersession.id"] = user.session
@@ -506,7 +506,7 @@ def passive_login():
 			remoteAddr = get_remote_address(flask.request)
 			if netaddr.IPAddress(remoteAddr) in localNetworks:
 				user = octoprint.server.userManager.findUser(autologinAs)
-				if user is not None:
+				if user is not None and user.is_active():
 					user = octoprint.server.userManager.login_user(user)
 					flask.session["usersession.id"] = user.session
 					flask.g.user = user
@@ -1213,7 +1213,7 @@ def get_json_command_from_request(request, valid_commands):
 	data = request.json
 	if data is None:
 		return None, None, make_response("Expected content-type JSON", 400)
-	
+
 	if not "command" in data.keys() or not data["command"] in valid_commands.keys():
 		return None, None, make_response("Expected valid command", 400)
 
