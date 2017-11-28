@@ -416,7 +416,7 @@ function formatFuzzyPrintTime(totalSeconds) {
     var seconds = d.seconds();
     var minutes = d.minutes();
     var hours = d.hours();
-    var days = d.asDays();
+    var days = d.days();
 
     var replacements = {
         days: days,
@@ -432,11 +432,16 @@ function formatFuzzyPrintTime(totalSeconds) {
         // days
         if (hours >= 16) {
             replacements.days += 1;
-            text = gettext("%(days)d days");
+
+            if (replacements.days === 1) {
+                text = gettext("%(days)d day");
+            } else {
+                text = gettext("%(days)d days");
+            }
         } else if (hours >= 8 && hours < 16) {
             text = gettext("%(days)d.5 days");
         } else {
-            if (days == 1) {
+            if (days === 1) {
                 text = gettext("%(days)d day");
             } else {
                 text = gettext("%(days)d days");
@@ -447,7 +452,7 @@ function formatFuzzyPrintTime(totalSeconds) {
         if (hours < 12) {
             if (minutes < 15) {
                 // less than .15 => .0
-                if (hours == 1) {
+                if (hours === 1) {
                     text = gettext("%(hours)d hour");
                 } else {
                     text = gettext("%(hours)d hours");
@@ -458,10 +463,15 @@ function formatFuzzyPrintTime(totalSeconds) {
             } else {
                 // over .75 => hours + 1
                 replacements.hours += 1;
-                text = gettext("%(hours)d hours");
+
+                if (replacements.hours === 1) {
+                    text = gettext("%(hours)d hour");
+                } else {
+                    text = gettext("%(hours)d hours");
+                }
             }
         } else {
-            if (hours == 23 && minutes > 30) {
+            if (hours === 23 && minutes > 30) {
                 // over 23.5 hours => 1 day
                 text = gettext("1 day");
             } else {

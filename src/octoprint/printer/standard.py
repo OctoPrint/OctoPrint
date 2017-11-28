@@ -600,12 +600,16 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		self.refresh_sd_files(blocking=True)
 		existingSdFiles = map(lambda x: x[0], self._comm.getSdFiles())
 
-		remoteName = util.get_dos_filename(filename,
-		                                   existing_filenames=existingSdFiles,
-		                                   extension="gco",
-		                                   whitelisted_extensions=["gco", "g"])
+		if valid_file_type(filename, "gcode"):
+			remoteName = util.get_dos_filename(filename,
+			                                   existing_filenames=existingSdFiles,
+			                                   extension="gco",
+			                                   whitelisted_extensions=["gco", "g"])
+		else:
+			# probably something else added through a plugin, use it's basename as-is
+			remoteName = os.path.basename(filename)
 		self._timeEstimationData = TimeEstimationHelper()
-		self._comm.startFileTransfer(absolutePath, filename, "/" + remoteName)
+		self._comm.startFileTransfer(absolutePath, filename, "/" + remoteName, special=not valid_file_type(filename, "gcode"))
 
 		return remoteName
 

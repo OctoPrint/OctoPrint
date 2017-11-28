@@ -329,7 +329,7 @@ def uploadGcodeFile(target):
 			Depending on the file's destination triggers either streaming to SD card or directly calls selectAndOrPrint.
 			"""
 
-			if destination == FileDestinations.SDCARD and octoprint.filemanager.valid_file_type(filename, "gcode"):
+			if destination == FileDestinations.SDCARD and octoprint.filemanager.valid_file_type(filename, "machinecode"):
 				return filename, printer.add_sd_file(filename, absFilename, selectAndOrPrint)
 			else:
 				selectAndOrPrint(filename, absFilename, destination)
