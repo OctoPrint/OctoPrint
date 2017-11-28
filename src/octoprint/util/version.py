@@ -74,7 +74,7 @@ def is_octoprint_compatible(*compatibility_entries, **kwargs):
 			if not any(octo_compat.startswith(c) for c in ("<", "<=", "!=", "==", ">=", ">", "~=", "===")):
 				octo_compat = ">={}".format(octo_compat)
 
-			s = next(pkg_resources.parse_requirements("OctoPrint" + octo_compat))
+			s = pkg_resources.Requirement.parse("OctoPrint" + octo_compat)
 			if octoprint_version in s:
 				break
 		except:
