@@ -210,11 +210,11 @@ $(function() {
             };
 
             self.copyApikey = function() {
-                copyToClipboard(self.editorApikey());
+                copyToClipboard(self.editor.apikey());
             };
 
             self._updateApikey = function(apikey) {
-                self.editorApikey(apikey);
+                self.editor.apikey(apikey);
                 self.requestData();
             };
 
