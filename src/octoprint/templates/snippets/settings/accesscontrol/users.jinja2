@@ -26,7 +26,7 @@
                 </tr>
             </table>
         </td>
-        <td class="settings_users_active"><i class="fa" data-bind="css: { 'fa-check-square-o': active, 'a-square-o': !active }"></i></td>
+        <td class="settings_users_active"><i class="fa" data-bind="css: { 'fa-check-square-o': active, 'fa-square-o': !active }"></i></td>
         <td class="settings_users_actions">
             <a href="#" class="fa fa-pencil" title="{{ _('Update User') }}" data-bind="click: function() { $root.access.users.showEditUserDialog($data); }"></a>&nbsp;|&nbsp;<a href="#" class="fa fa-key" title="{{ _('Change password') }}" data-bind="click: function() { $root.access.users.showChangePasswordDialog($data); }"></a>&nbsp;|&nbsp;<a href="#" class="fa fa-trash-o" title="{{ _('Delete user') }}" data-bind="click: function() { $root.access.users.removeUser($data); }"></a>
         </td>
