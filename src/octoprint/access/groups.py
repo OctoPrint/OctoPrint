@@ -16,6 +16,7 @@ from octoprint.access.permissions import Permissions, OctoPrintPermission
 
 ADMIN_GROUP = "Admins"
 DEFAULT_ADMIN_PERMISSIONS = [Permissions.ADMIN]
+"""Default admin permissions are the legacy permissions from before 1.4.0"""
 
 USER_GROUP = "Users"
 DEFAULT_USER_PERMISSIONS = [Permissions.STATUS,
@@ -31,6 +32,7 @@ DEFAULT_USER_PERMISSIONS = [Permissions.STATUS,
                             Permissions.SLICE,
                             Permissions.TIMELAPSE,
                             Permissions.TIMELAPSE_ADMIN]
+"""Default user permissions are the legacy permissions from before 1.4.0"""
 
 GUEST_GROUP = "Guests"
 DEFAULT_GUEST_PERMISSIONS = [Permissions.STATUS,
@@ -38,6 +40,7 @@ DEFAULT_GUEST_PERMISSIONS = [Permissions.STATUS,
                              Permissions.DOWNLOAD,
                              Permissions.TIMELAPSE,
                              Permissions.TERMINAL]
+"""Default guest permissions are the legacy permissions from before 1.4.0"""
 
 
 class GroupManager(object):

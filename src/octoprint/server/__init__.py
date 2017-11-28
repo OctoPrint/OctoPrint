@@ -67,13 +67,18 @@ principals = Principal(app)
 
 import octoprint.access.permissions as permissions
 
-# TODO deprecated, remove in future release
-admin_permission = util.variable_deprecated("admin_permission has been deprecated, please use new Permissions.ADMIN instead", since="now")(
-	permissions.Permissions.ADMIN)
-#user_permission = util.variable_deprecated("user_permission has been deprecated and will be removed in a future version", since="now")(
-#	permissions.Permissions.USER)
+# we set admin_permission to Permissions.ADMIN
+admin_permission = util.variable_deprecated("admin_permission has been deprecated, "
+                                            "please use individual Permissions instead",
+                                            since="1.4.0")(permissions.Permissions.SETTINGS)
 
-# only import the octoprint stuff down here, as it might depend on things defined above to be initialized already
+# we set user_permission to Permissions.STATUS, since that's the minimal permission a logged in user should
+# probably have
+user_permission = util.variable_deprecated("user_permission has been deprecated, "
+                                           "please use individual Permissions instead",
+                                           since="1.4.0")(permissions.Permissions.STATUS)
+
+# only import further octoprint stuff down here, as it might depend on things defined above to be initialized already
 from octoprint import __version__, __branch__, __display_version__, __revision__
 from octoprint.printer.profile import PrinterProfileManager
 from octoprint.printer.standard import Printer
