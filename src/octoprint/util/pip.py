@@ -24,9 +24,38 @@ class UnknownPip(Exception):
 	pass
 
 class PipCaller(CommandlineCaller):
-	process_dependency_links = pkg_resources.parse_requirements("pip>=1.5")
-	no_use_wheel = pkg_resources.parse_requirements("pip==1.5.0")
-	broken = pkg_resources.parse_requirements("pip>=6.0.1,<=6.0.3")
+	process_dependency_links = pkg_resources.Requirement.parse("pip>=1.5")
+	no_use_wheel = pkg_resources.Requirement.parse("pip==1.5.0")
+	broken = pkg_resources.Requirement.parse("pip>=6.0.1,<=6.0.3")
+
+	@classmethod
+	def clean_install_command(cls, args, pip_version, virtual_env, use_user, force_user):
+		logger = logging.getLogger(__name__)
+		args = list(args)
+
+		# strip --process-dependency-links for versions that don't support it
+		if not pip_version in cls.process_dependency_links and "--process-dependency-links" in args:
+			logger.debug(
+				"Found --process-dependency-links flag, version {} doesn't need that yet though, removing.".format(
+					pip_version))
+			args.remove("--process-dependency-links")
+
+		# add --no-use-wheel for versions that otherwise break
+		if pip_version in cls.no_use_wheel and not "--no-use-wheel" in args:
+			logger.debug("Version {} needs --no-use-wheel to properly work.".format(pip_version))
+			args.append("--no-use-wheel")
+
+		# remove --user if it's present and a virtual env is detected
+		if "--user" in args:
+			if virtual_env or not site.ENABLE_USER_SITE:
+				logger.debug("Virtual environment detected, removing --user flag.")
+				args.remove("--user")
+		# otherwise add it if necessary
+		elif not virtual_env and site.ENABLE_USER_SITE and (use_user or force_user):
+			logger.debug("pip needs --user flag for installations.")
+			args.append("--user")
+
+		return args
 
 	def __init__(self, configured=None, ignore_cache=False, force_sudo=False,
 	             force_user=False):
@@ -126,25 +155,8 @@ class PipCaller(CommandlineCaller):
 		arg_list = list(args)
 
 		if "install" in arg_list:
-			# strip --process-dependency-links for versions that don't support it
-			if not self.version in self.__class__.process_dependency_links and "--process-dependency-links" in arg_list:
-				self._logger.debug("Found --process-dependency-links flag, version {} doesn't need that yet though, removing.".format(self.version))
-				arg_list.remove("--process-dependency-links")
-
-			# add --no-use-wheel for versions that otherwise break
-			if self.version in self.__class__.no_use_wheel and not "--no-use-wheel" in arg_list:
-				self._logger.debug("Version {} needs --no-use-wheel to properly work.".format(self.version))
-				arg_list.append("--no-use-wheel")
-
-			# remove --user if it's present and a virtual env is detected
-			if "--user" in arg_list:
-				if self._virtual_env or not site.ENABLE_USER_SITE:
-					self._logger.debug("Virtual environment detected, removing --user flag.")
-					arg_list.remove("--user")
-			# otherwise add it if necessary
-			elif not self._virtual_env and site.ENABLE_USER_SITE and (self.use_user or self.force_user):
-				self._logger.debug("pip needs --user flag for installations.")
-				arg_list.append("--user")
+			arg_list = self.clean_install_command(arg_list, self.version, self._virtual_env, self.use_user,
+			                                      self.force_user)
 
 		# add args to command
 		if isinstance(self._command, list):

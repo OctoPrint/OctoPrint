@@ -129,17 +129,23 @@ def load_user(id):
 	if id == "_api":
 		return users.ApiUser()
 
+	if not userManager.enabled:
+		return users.DummyUser()
+
 	if session and "usersession.id" in session:
 		sessionid = session["usersession.id"]
 	else:
 		sessionid = None
 
-	if userManager.enabled:
-		if sessionid:
-			return userManager.findUser(userid=id, session=sessionid)
-		else:
-			return userManager.findUser(userid=id)
-	return users.DummyUser()
+	if sessionid:
+		user = userManager.findUser(userid=id, session=sessionid)
+	else:
+		user = userManager.findUser(userid=id)
+
+	if user and user.is_active:
+		return user
+
+	return None
 
 
 #~~ startup code

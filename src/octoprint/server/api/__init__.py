@@ -208,7 +208,7 @@ def login():
 		user = octoprint.server.userManager.findUser(username)
 		if user is not None:
 			if octoprint.server.userManager.checkPassword(username, password):
-				if not user.is_active():
+				if not user.is_active:
 					return make_response(("Your account is deactivated", 403, []))
 
 				if octoprint.server.userManager.enabled:
@@ -398,25 +398,25 @@ def utilTestPath():
 			port = int(data["port"])
 		except:
 			return make_response("{!r} is not a valid value for port (must be int)".format(data["port"]), 400)
-		
+
 		timeout = 3.05
 		if "timeout" in data:
 			try:
 				timeout = float(data["timeout"])
 			except:
 				return make_response("{!r} is not a valid value for timeout (must be int or float)".format(data["timeout"]), 400)
-		
+
 		protocol = data.get("protocol", "tcp")
 		if protocol not in ("tcp", "udp"):
 			return make_response("{!r} is not a valid value for protocol, must be tcp or udp".format(protocol), 400)
-		
+
 		from octoprint.util import server_reachable
 		reachable = server_reachable(host, port, timeout=timeout, proto=protocol)
-		
+
 		result = dict(host=host,
 		              port=port,
 		              protocol=protocol,
 		              result=reachable)
-		
+
 		return jsonify(**result)
 
