@@ -33,7 +33,9 @@ import uuid
 import copy
 import time
 
+# noinspection PyCompatibility
 from builtins import bytes
+# noinspection PyCompatibility
 from past.builtins import basestring
 
 try:
@@ -223,7 +225,8 @@ default_settings = {
 		"firmwareDetection": True,
 		"printCancelConfirmation": True,
 		"blockWhileDwelling": False,
-		"g90InfluencesExtruder": False
+		"g90InfluencesExtruder": False,
+		"legacyPluginAssets": False # TODO remove again in 1.3.8
 	},
 	"folder": {
 		"uploads": None,

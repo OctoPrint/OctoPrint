@@ -1261,7 +1261,12 @@ class Server(object):
 
 		# JS
 		js_filters = ["sourcemap_remove", "js_delimiter_bundler"]
-		js_plugin_filters = ["sourcemap_remove", "js_delimiter_bundler"] # TODO: replace with IIFE wrapper again, see #2200
+
+		if self._settings.getBoolean(["feature", "legacyPluginAssets"]):
+			# TODO remove again in 1.3.8
+			js_plugin_filters = ["sourcemap_remove", "js_delimiter_bundler"]
+		else:
+			js_plugin_filters = ["sourcemap_remove", "js_plugin_delimiter_bundler"]
 
 		js_libs_bundle = Bundle(*js_libs, output="webassets/packed_libs.js", filters=",".join(js_filters))
 
