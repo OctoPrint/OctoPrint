@@ -6,18 +6,20 @@
 
 <h4>{{ _('On your printer\'s safety') }}</h4>
 
+<i class="fa fa-exclamation-triangle fa-4x fa-pull-left text-error"></i>
 <p>{% trans %}
     Even with OctoPrint attached you should <strong class="text-error">never leave
-    your printer run completely unattended</strong>. The electronics in our consumer printers can and sometimes sadly do
-    catch fire, so stay or have someone else stay close enough to physically intervene in case of such catastrophic
-    failure.
+    your printer running completely unattended</strong>. The electronics in our consumer printers can and
+    sometimes sadly do catch fire, so stay or have someone else stay close enough to physically intervene
+    in case of such catastrophic failure.
 {% endtrans %}</p>
 
 <h4>{{ _('If you enjoy OctoPrint...') }}</h4>
 
+<span style="display: inline-block; float: left; font-size: 4em; margin-right: .3em"><img src="{{ url_for('static', filename='img/tentacle-56x56.png') }}"></span>
 <p>{% trans url='http://octoprint.org/support-octoprint/' %}
     Please consider to <strong><a href="{{ url }}" target="_blank">support OctoPrint's ongoing development</a></strong>,
-    which is only possible thanks to funding by users like you! You can also find this link in the "About" dialog.
+    which can only continue with funding by users like you! You can also find this link in the "About" dialog.<br>
     <strong>Thank you!</strong>
 {% endtrans %}</p>
 
