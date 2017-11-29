@@ -73,7 +73,7 @@
     <div class="distance">
         <div class="btn-group" data-toggle="buttons-radio" id="jog_distance">
             <!-- ko foreach: distances -->
-            <button type="button" class="btn distance" data-bind="enable: $root.loginState.isUser(), text: $data, click: function() { $root.distance($data) }, css: { active: $root.distance() === $data }, attr: { id: 'control-distance' + $root.stripDistanceDecimal($data) }"></button>
+            <button type="button" class="btn distance" data-bind="enable: $root.isOperational() && !$root.isPrinting() && $root.loginState.isUser(), text: $data, click: function() { $root.distance($data) }, css: { active: $root.distance() === $data }, attr: { id: 'control-distance' + $root.stripDistanceDecimal($data) }"></button>
             <!-- /ko -->
         </div>
     </div>
