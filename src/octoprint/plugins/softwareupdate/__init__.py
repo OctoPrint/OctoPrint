@@ -15,8 +15,8 @@ import time
 import logging
 import logging.handlers
 import hashlib
-import traceback
 
+# noinspection PyCompatibility
 from concurrent import futures
 
 from . import version_checks, updaters, exceptions, util, cli
@@ -41,9 +41,10 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
                            octoprint.plugin.EventHandlerPlugin):
 
 	COMMIT_TRACKING_TYPES = ("github_commit", "bitbucket_commit")
-	
+
 	DATA_FORMAT_VERSION = "v2"
 
+	# noinspection PyMissingConstructor
 	def __init__(self):
 		self._update_in_progress = False
 		self._configured_checks_mutex = threading.Lock()
@@ -343,7 +344,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 		if "octoprint_type" in data:
 			octoprint_type = data["octoprint_type"]
-			
+
 			if octoprint_type == "github_release":
 				self._settings.set(["checks", "octoprint", "type"], octoprint_type, defaults=defaults, force=True)
 				self._settings.set(["checks", "octoprint", "method"], "pip", defaults=defaults, force=True)
@@ -364,7 +365,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				self._settings.set(["checks", "octoprint", "prerelease"], False, defaults=defaults, force=True)
 				self._settings.set(["checks", "octoprint", "prerelease_channel"], None, defaults=defaults, force=True)
 			updated_octoprint_check_config = True
-		
+
 		if updated_octoprint_check_config:
 			self._refresh_configured_checks = True
 			try:
@@ -381,11 +382,11 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		if current is None or current < 6:
 			# up until & including config version 5 we didn't set the method parameter for the octoprint check
 			# configuration
-		
+
 			configured_checks = self._settings.get(["checks"], incl_defaults=False)
 			if configured_checks is not None and "octoprint" in configured_checks:
 				octoprint_check = dict(configured_checks["octoprint"])
-				
+
 				if not "method" in octoprint_check and octoprint_check.get("type") == "git_commit":
 					defaults = dict(plugins=dict(softwareupdate=dict(checks=dict(octoprint=dict(method="pip")))))
 					self._settings.set(["checks", "octoprint", "method"], "update_script", defaults=defaults)
@@ -698,7 +699,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 						                           releaseNotes=release_notes,
 						                           online=target_online,
 						                           error=target_error)
-						
+
 						if target == "octoprint" and "released_version" in populated_check:
 							information[target]["released_version"] = populated_check["released_version"]
 
@@ -1023,7 +1024,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 					# we compare versions fully, not just the base so that we see a difference
 					# between RCs + stable for the same version release
 					result["force_base"] = False
-					
+
 					if check.get("prerelease", None):
 						# we are tracking prereleases => we want to be on the correct prerelease channel/branch
 						channel = check.get("prerelease_channel", None)
@@ -1031,7 +1032,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 							# if we have a release channel, we also set our update_branch here to our release channel
 							# in case it's not already set
 							result["update_branch"] = check.get("update_branch", channel)
-					
+
 					else:
 						# we are not tracking prereleases, but aren't on the stable branch either => switch back
 						# to stable branch on update
@@ -1049,7 +1050,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 							# branch of the release channel - unequality means we might have to handle
 							# a downgrade
 							result["release_compare"] = "python_unequal"
-				
+
 					elif check.get("pip", None):
 						# we force python unequality check for pip installs, to be able to downgrade
 						result["release_compare"] = "python_unequal"

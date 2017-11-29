@@ -33,6 +33,7 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
                          octoprint.plugin.TemplatePlugin,
                          octoprint.plugin.EventHandlerPlugin):
 
+	# noinspection PyMissingConstructor
 	def __init__(self):
 		self._cached_channel_configs = None
 		self._cached_channel_configs_mutex = threading.RLock()
@@ -184,6 +185,7 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 
 			return hash.hexdigest()
 
+		# noinspection PyShadowingNames
 		def condition(lm, etag):
 			return check_etag(etag)
 
