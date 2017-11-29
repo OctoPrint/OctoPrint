@@ -13,7 +13,7 @@ except:
 	import urlparse
 
 from webassets.bundle import Bundle
-from webassets.merge import MemoryHunk
+from webassets.merge import MemoryHunk, BaseHunk
 from webassets.filter import Filter
 from webassets.filter.cssrewrite.base import PatternRewriter
 import webassets.filter.cssrewrite.urlpath as urlpath
@@ -105,17 +105,36 @@ class JsDelimiterBundler(Filter):
 		out.write("\n;\n")
 
 
-_PLUGIN_BUNDLE_WRAPPER = \
+class ChainedHunk(BaseHunk):
+	def __init__(self, *hunks):
+		self._hunks = hunks
+
+	def mtime(self):
+		pass
+
+	def data(self):
+		result = u""
+		for hunk in self._hunks:
+			if isinstance(hunk, tuple) and len(hunk) == 2:
+				hunk, f = hunk
+			else:
+				f = lambda x: x
+			result += f(hunk.data())
+		return result
+
+
+_PLUGIN_BUNDLE_WRAPPER_PREFIX = \
 u"""// JS assets for plugin {plugin}
 (function () {{
     try {{
-        {contents}
+        """
+_PLUGIN_BUNDLE_WRAPPER_SUFFIX = \
+u"""
     }} catch (error) {{
         log.error("Error in JS assets for plugin {plugin}:", (error.stack || error));
     }}
 }})();
 """
-
 class JsPluginBundle(Bundle):
 	def __init__(self, plugin, *args, **kwargs):
 		Bundle.__init__(self, *args, **kwargs)
@@ -128,6 +147,6 @@ class JsPluginBundle(Bundle):
 		                               parent_filters=parent_filters, extra_filters=extra_filters,
 		                               disable_cache=disable_cache)
 
-		# TODO find a solution that eats less memory - maybe a ChainedMemoryHunk instead?
-		return MemoryHunk(_PLUGIN_BUNDLE_WRAPPER.format(contents=hunk.data().replace("\n", "\n        "),
-		                                                plugin=self.plugin))
+		return ChainedHunk(MemoryHunk(_PLUGIN_BUNDLE_WRAPPER_PREFIX.format(plugin=self.plugin)),
+		                   (hunk, lambda x: x.replace("\n", "\n        ")),
+		                   MemoryHunk(_PLUGIN_BUNDLE_WRAPPER_SUFFIX.format(plugin=self.plugin)))
