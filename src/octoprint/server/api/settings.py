@@ -130,7 +130,8 @@ def getSettings():
 			"firmwareDetection": s.getBoolean(["feature", "firmwareDetection"]),
 			"printCancelConfirmation": s.getBoolean(["feature", "printCancelConfirmation"]),
 			"blockWhileDwelling": s.getBoolean(["feature", "blockWhileDwelling"]),
-			"g90InfluencesExtruder": s.getBoolean(["feature", "g90InfluencesExtruder"])
+			"g90InfluencesExtruder": s.getBoolean(["feature", "g90InfluencesExtruder"]),
+			"legacyPluginAssets": s.getBoolean(["feature", "legacyPluginAssets"])
 		},
 		"serial": {
 			"port": connectionOptions["portPreference"],
@@ -361,6 +362,7 @@ def _saveSettings(data):
 		if "printCancelConfirmation" in data["feature"]: s.setBoolean(["feature", "printCancelConfirmation"], data["feature"]["printCancelConfirmation"])
 		if "blockWhileDwelling" in data["feature"]: s.setBoolean(["feature", "blockWhileDwelling"], data["feature"]["blockWhileDwelling"])
 		if "g90InfluencesExtruder" in data["feature"]: s.setBoolean(["feature", "g90InfluencesExtruder"], data["feature"]["g90InfluencesExtruder"])
+		if "legacyPluginAssets" in data["feature"]: s.setBoolean(["feature", "legacyPluginAssets"], data["feature"]["legacyPluginAssets"])
 
 	if "serial" in data.keys():
 		if "autoconnect" in data["serial"]: s.setBoolean(["serial", "autoconnect"], data["serial"]["autoconnect"])

@@ -91,6 +91,7 @@ class OctoPiSupportPlugin(octoprint.plugin.EnvironmentDetectionPlugin,
                           octoprint.plugin.AssetPlugin,
                           octoprint.plugin.TemplatePlugin):
 
+	# noinspection PyMissingConstructor
 	def __init__(self):
 		self._version = None
 		self._cpuinfo = None

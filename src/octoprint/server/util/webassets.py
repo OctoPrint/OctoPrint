@@ -12,6 +12,8 @@ try:
 except:
 	import urlparse
 
+from webassets.bundle import Bundle
+from webassets.merge import MemoryHunk
 from webassets.filter import Filter
 from webassets.filter.cssrewrite.base import PatternRewriter
 import webassets.filter.cssrewrite.urlpath as urlpath
@@ -103,14 +105,29 @@ class JsDelimiterBundler(Filter):
 		out.write("\n;\n")
 
 
-class JsPluginDelimiterBundler(Filter):
-	name = "js_plugin_delimiter_bundler"
-	options = {}
+_PLUGIN_BUNDLE_WRAPPER = \
+u"""// JS assets for plugin {plugin}
+(function () {{
+    try {{
+        {contents}
+    }} catch (error) {{
+        log.error("Error in JS assets for plugin {plugin}:", (error.stack || error));
+    }}
+}})();
+"""
 
-	def input(self, _in, out, **kwargs):
-		source = kwargs.get("source", "n/a")
+class JsPluginBundle(Bundle):
+	def __init__(self, plugin, *args, **kwargs):
+		Bundle.__init__(self, *args, **kwargs)
+		self.plugin = plugin
 
-		out.write("// source: " + source + "\n")
-		out.write("(function () {\n    try {\n        ")
-		out.write(_in.read().replace('\n', '\n        '))
-		out.write("\n    } catch (error) {\n        log.error(\"Error in bundled asset " + source + ":\", (error.stack || error));\n    }\n})();\n")
+	def _merge_and_apply(self, ctx, output, force, parent_debug=None,
+	                     parent_filters=None, extra_filters=None,
+	                     disable_cache=None):
+		hunk = Bundle._merge_and_apply(self, ctx, output, force, parent_debug=parent_debug,
+		                               parent_filters=parent_filters, extra_filters=extra_filters,
+		                               disable_cache=disable_cache)
+
+		# TODO find a solution that eats less memory - maybe a ChainedMemoryHunk instead?
+		return MemoryHunk(_PLUGIN_BUNDLE_WRAPPER.format(contents=hunk.data().replace("\n", "\n        "),
+		                                                plugin=self.plugin))
