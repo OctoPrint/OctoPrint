@@ -526,6 +526,15 @@ $(function() {
         onTabChange(OCTOPRINT_INITIAL_TAB);
         onAfterTabChange(OCTOPRINT_INITIAL_TAB, undefined);
 
+        var changeTab = function() {
+            var hashtag = window.location.hash;
+
+            var tab = $('#tabs').find('a[href="' + hashtag + '"]');
+            if (tab) {
+                tab.tab("show");
+            }
+        };
+
         // Fix input element click problems on dropdowns
         $(".dropdown input, .dropdown label").click(function(e) {
             e.stopPropagation();
@@ -538,15 +547,6 @@ $(function() {
 
         // reload overlay
         $("#reloadui_overlay_reload").click(function() { location.reload(); });
-
-        var changeTab = function()
-        {
-            var hashtag = window.location.hash;
-
-            var tab = $('#tabs a[href="' + hashtag + '"]');
-            tab.tab("show");
-            onTabChange(hashtag);
-        };
 
         //~~ final initialization - passive login, settings fetch, view model binding
 
