@@ -81,8 +81,8 @@ def run_server(basedir, configfile, host, port, debug, allow_root, logging_confi
 		                           safe_mode=safe_mode,
                                    ignore_blacklist=ignore_blacklist,
 		                           after_safe_mode=log_startup,
-		                           after_plugin_manager=log_register_rollover)
-		
+		                           after_environment_detector=log_register_rollover)
+
 		settings, _, safe_mode, event_manager, connectivity_checker, plugin_manager, environment_detector = components
 
 	except FatalStartupError as e:
@@ -152,7 +152,7 @@ def enable_safemode(ctx, **kwargs):
 
 	settings.setBoolean(["server", "startOnceInSafeMode"], True)
 	settings.save()
-	
+
 	click.echo("Safe mode flag set, OctoPrint will start in safe mode on next restart.")
 
 
