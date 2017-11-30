@@ -990,6 +990,17 @@ Use the following settings to configure the server:
        # DNS port against which to check (default: 53 - the default DNS port)
        port: 53
 
+     # Configuration of the plugin blacklist
+     pluginBlacklist:
+       # whether use of the blacklist is enabled, defaults to false
+       enabled: false
+
+       # the URL from which to fetch the blacklist
+       url: http://plugins.octoprint.org/blacklist.json
+
+       # time to live of the cached blacklist, in seconds (default: 15 minutes)
+       ttl: 15 * 60
+
      # Settings of when to display what disk space warning
      diskspace:
 
