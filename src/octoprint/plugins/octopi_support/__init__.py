@@ -125,14 +125,7 @@ class OctoPiSupportPlugin(octoprint.plugin.EnvironmentDetectionPlugin,
 		]
 
 	def get_template_vars(self):
-		version = self._get_version()
-		cpuinfo = self._get_cpuinfo()
-		model = self._get_model()
-
-		return dict(version=version,
-		            rpi_revision=cpuinfo.get("revision", "unknown"),
-		            rpi_serial=cpuinfo.get("serial", "unknown"),
-		            rpi_model=model)
+		return dict(version=self._get_version())
 
 	#~~ Helpers
 
