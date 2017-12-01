@@ -12,7 +12,7 @@ versions = get_versions()
 
 __version__ = versions['version']
 __branch__ = versions.get('branch', None)
-__display_version__ = "{} ({} branch)".format(__version__, __branch__) if __branch__ else __version__
+__display_version__ = __version__
 __revision__ = versions.get('full-revisionid', versions.get('full', None))
 
 del versions
@@ -96,17 +96,17 @@ def init_platform(basedir, configfile, use_logging_file=True, logging_file=None,
 		after_safe_mode(**kwargs)
 
 	event_manager = init_event_manager(settings)
-	
+
 	kwargs["event_manager"] = event_manager
 	if callable(after_event_manager):
 		after_event_manager(**kwargs)
-	
+
 	connectivity_checker = init_connectivity_checker(settings, event_manager)
-	
+
 	kwargs["connectivity_checker"] = connectivity_checker
 	if callable(after_connectivity_checker):
 		after_connectivity_checker(**kwargs)
-	
+
 	plugin_manager = init_pluginsystem(settings,
 	                                   safe_mode=safe_mode,
 	                                   ignore_blacklist=ignore_blacklist,
@@ -115,10 +115,10 @@ def init_platform(basedir, configfile, use_logging_file=True, logging_file=None,
 
 	if callable(after_plugin_manager):
 		after_plugin_manager(**kwargs)
-		
+
 	environment_detector = init_environment_detector(plugin_manager)
 	kwargs["environment_detector"] = environment_detector
-	
+
 	if callable(after_environment_detector):
 		after_environment_detector(**kwargs)
 
@@ -314,7 +314,7 @@ def init_pluginsystem(settings, safe_mode=False, ignore_blacklist=True, connecti
 	                  settings.getBaseFolder("plugins")]
 	plugin_entry_points = ["octoprint.plugin"]
 	plugin_disabled_list = settings.get(["plugins", "_disabled"])
-	
+
 	plugin_blacklist = []
 	if not ignore_blacklist and settings.getBoolean(["server", "pluginBlacklist", "enabled"]):
 		plugin_blacklist = get_plugin_blacklist(settings, connectivity_checker=connectivity_checker)
@@ -403,34 +403,34 @@ def get_plugin_blacklist(settings, connectivity_checker=None):
 	import os
 	import time
 	import yaml
-	
+
 	from octoprint.util import bom_aware_open
 	from octoprint.util.version import is_octoprint_compatible
-	
+
 	logger = log.getLogger(__name__ + ".startup")
-	
+
 	if connectivity_checker is not None and not connectivity_checker.online:
 		logger.info("We don't appear to be online, not fetching plugin blacklist")
 		return []
-	
+
 	def format_blacklist(entries):
 		format_entry = lambda x: "{} ({})".format(x[0], x[1]) if isinstance(x, (list, tuple)) and len(x) == 2 \
 			else "{} (any)".format(x)
 		return ", ".join(map(format_entry, entries))
-	
+
 	def process_blacklist(entries):
 		result = []
-	
+
 		if not isinstance(entries, list):
 			return result
-	
+
 		for entry in entries:
 			if not "plugin" in entry:
 				continue
-			
+
 			if "octoversions" in entry and not is_octoprint_compatible(*entry["octoversions"]):
 				continue
-			
+
 			if "version" in entry:
 				logger.debug("Blacklisted plugin: {}, version: {}".format(entry["plugin"], entry["version"]))
 				result.append((entry["plugin"], entry["version"]))
@@ -441,28 +441,28 @@ def get_plugin_blacklist(settings, connectivity_checker=None):
 			else:
 				logger.debug("Blacklisted plugin: {}".format(entry["plugin"]))
 				result.append(entry["key"])
-		
+
 		return result
-	
+
 	def fetch_blacklist_from_cache(path, ttl):
 		if not os.path.isfile(path):
 			return None
-		
+
 		if os.stat(path).st_mtime + ttl < time.time():
 			return None
-		
+
 		with bom_aware_open(path, encoding="utf-8", mode="r") as f:
 			result = yaml.safe_load(f)
-		
+
 		if isinstance(result, list):
 			return result
-		
+
 	def fetch_blacklist_from_url(url, timeout=3, cache=None):
 		result = []
 		try:
 			r = requests.get(url, timeout=timeout)
 			result = process_blacklist(r.json())
-			
+
 			if cache is not None:
 				try:
 					with bom_aware_open(cache, encoding="utf-8", mode="w") as f:
@@ -472,23 +472,23 @@ def get_plugin_blacklist(settings, connectivity_checker=None):
 		except:
 			logger.info("Unable to fetch plugin blacklist from {}, proceeding without it.".format(url))
 		return result
-	
+
 	try:
 		# first attempt to fetch from cache
 		cache_path = os.path.join(settings.getBaseFolder("data"), "plugin_blacklist.yaml")
 		ttl = settings.getInt(["server", "pluginBlacklist", "ttl"])
 		blacklist = fetch_blacklist_from_cache(cache_path, ttl)
-		
+
 		if blacklist is None:
 			# no result from the cache, let's fetch it fresh
 			url = settings.get(["server", "pluginBlacklist", "url"])
 			timeout = settings.getFloat(["server", "pluginBlacklist", "timeout"])
 			blacklist = fetch_blacklist_from_url(url, timeout=timeout, cache=cache_path)
-	
+
 		if blacklist is None:
 			# still now result, so no blacklist
 			blacklist = []
-	
+
 		if blacklist:
 			logger.info("Blacklist processing done, "
 			            "adding {} blacklisted plugin versions: {}".format(len(blacklist),
@@ -509,16 +509,16 @@ def init_event_manager(settings):
 def init_connectivity_checker(settings, event_manager):
 	from octoprint.events import Events
 	from octoprint.util import ConnectivityChecker
-	
+
 	# start regular check if we are connected to the internet
 	connectivityEnabled = settings.getBoolean(["server", "onlineCheck", "enabled"])
 	connectivityInterval = settings.getInt(["server", "onlineCheck", "interval"])
 	connectivityHost = settings.get(["server", "onlineCheck", "host"])
 	connectivityPort = settings.getInt(["server", "onlineCheck", "port"])
-	
+
 	def on_connectivity_change(old_value, new_value):
 		event_manager.fire(Events.CONNECTIVITY_CHANGED, payload=dict(old=old_value, new=new_value))
-	
+
 	connectivityChecker = ConnectivityChecker(connectivityInterval,
 	                                          connectivityHost,
 	                                          port=connectivityPort,

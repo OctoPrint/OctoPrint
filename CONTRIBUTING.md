@@ -160,7 +160,7 @@ only provided here as some additional information for you), **even if only addin
     [Try to reproduce your problem in safe mode. You can find information
     on how to enable safe mode in the Contribution Guidelines.]
 
-    #### Branch & Commit or Version of OctoPrint
+    #### Version of OctoPrint
 
     [Can be found in the lower left corner of the web interface. ALWAYS INCLUDE.]
 
