@@ -66,6 +66,8 @@ class VirtualPrinter(object):
 
 		self._prepared_errors = []
 
+		self._errors = settings().get(["devel", "virtualPrinter", "errors"], merged=True)
+
 		self.currentExtruder = 0
 		self.extruderCount = settings().getInt(["devel", "virtualPrinter", "numExtruders"])
 		self.pinnedExtruders = settings().get(["devel", "virtualPrinter", "pinnedExtruders"])
@@ -146,8 +148,8 @@ class VirtualPrinter(object):
 
 		self._triggerResendAt100 = True
 		self._triggerResendWithTimeoutAt105 = True
-		self._triggeredResendWithTimeoutAt105 = False
 		self._triggerResendWithMissingLinenoAt110 = True
+		self._triggerResendWithChecksumMismatchAt115 = True
 
 		readThread = threading.Thread(target=self._processIncoming, name="octoprint.plugins.virtual_printer.wait_thread")
 		readThread.start()
@@ -227,7 +229,7 @@ class VirtualPrinter(object):
 
 				self.currentLine += 1
 			elif settings().getBoolean(["devel", "virtualPrinter", "forceChecksum"]):
-				self._send("Error: Missing checksum")
+				self._send(self._error("checksum_missing"))
 				continue
 
 			# track N = N + 1
@@ -261,7 +263,11 @@ class VirtualPrinter(object):
 					continue
 				elif linenumber == 110 and self._triggerResendWithMissingLinenoAt110 and not self._writingToSd:
 					self._triggerResendWithMissingLinenoAt110 = False
-					self._send("Error: No Line Number with checksum, Last Line: {}".format(self.lastN))
+					self._send(self._error("lineno_missing", self.lastN))
+					continue
+				elif linenumber == 115 and self._triggerResendWithChecksumMismatchAt115 and not self._writingToSd:
+					self._triggerResendWithChecksumMismatchAt115 = False
+					self._triggerResend(checksum=True)
 					continue
 				elif len(self._prepared_errors):
 					prepared = self._prepared_errors.pop(0)
@@ -355,7 +361,7 @@ class VirtualPrinter(object):
 			self._send("echo:changed F value")
 			return False
 		else:
-			self._send("Error: Unknown command F")
+			self._send(self._error("command_unknown", "F"))
 			return True
 
 	def _gcode_M104(self, data):
@@ -549,11 +555,11 @@ class VirtualPrinter(object):
 
 			if actual is None:
 				if checksum:
-					self._send("Error: Wrong checksum")
+					self._send(self._error("checksum_mismatch"))
 				else:
-					self._send("Error: Missing checksum")
+					self._send(self._error("checksum_missing"))
 			else:
-				self._send("Error: expected line %d got %d" % (expected, actual))
+				self._send(self._error("lineno_mismatch", expected, actual))
 
 			def request_resend():
 				self._send("Resend:%d" % expected)
@@ -636,11 +642,13 @@ class VirtualPrinter(object):
 		elif data == "trigger_missing_checksum":
 			self._prepared_errors.append(lambda cur, last, line: self._triggerResend(expected=last, checksum=False))
 		elif data == "trigger_missing_lineno":
-			self._prepared_errors.append(lambda cur, last, line: self._send("Error: No Line Number with checksum, Last Line: {}".format(last)))
+			self._prepared_errors.append(lambda cur, last, line: self._send(self._error("lineno_missing", last)))
 		elif data == "drop_connection":
 			self._debug_drop_connection = True
+		elif data == "mintemp_error":
+			self._send(self._error("mintemp"))
 		elif data == "maxtemp_error":
-			self._send("Error: MAXTEMP triggered!")
+			self._send(self._error("maxtemp"))
 		elif data == "go_awol":
 			self._send("// Going AWOL")
 			self._debug_awol = True
@@ -1181,6 +1189,9 @@ class VirtualPrinter(object):
 				return ok
 
 		return ok.format(ok, lastN=self.lastN, buffer=self.buffered.maxsize - self.buffered.qsize())
+
+	def _error(self, error, *args, **kwargs):
+		return "Error: {}".format(self._errors.get(error).format(*args, **kwargs))
 
 class CharCountingQueue(queue.Queue):
 
