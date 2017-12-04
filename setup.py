@@ -63,7 +63,7 @@ EXTRA_REQUIRES = dict(
 	# Dependencies for developing OctoPrint
 	develop=[
 		# Testing dependencies
-		"mock>=1.0.1,<1.1",
+		"mock>=2.0.0,<3",
 		"nose>=1.3.0,<1.4",
 		"ddt",
 

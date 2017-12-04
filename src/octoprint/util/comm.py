@@ -1965,6 +1965,7 @@ class MachineCom(object):
 	                                        "workdir",
 	                                        "error writing to file",
 	                                        "cannot open",
+	                                        "open failed",
 	                                        "cannot enter")
 	def _handle_errors(self, line):
 		if line is None:
