@@ -69,7 +69,7 @@ class TestCommErrorHandling(unittest.TestCase):
 		"Error: No Checksum with line number, Last Line: 1",
 
 		# Repetier
-		"Error: Checksum missing",
+		"Error: Missing checksum",
 	)
 	def test_checksum_missing(self, line):
 		"""Should prepare receiving resend request"""
