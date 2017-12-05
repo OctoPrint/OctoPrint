@@ -367,7 +367,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			return
 
 		self._comm.setTemperatureOffset(offsets)
-		self._setOffsets(offsets)
+		self._setOffsets(self._comm.getOffsets())
 
 	def _convert_rate_value(self, factor, min=0, max=200):
 		if not isinstance(factor, (int, float, long)):

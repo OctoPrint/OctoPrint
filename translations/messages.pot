@@ -6,9 +6,9 @@
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: OctoPrint 1.3.6.dev192+ge9d17f0f.dirty\n"
+"Project-Id-Version: OctoPrint 1.3.6rc2.dev10+g41eb9481\n"
 "Report-Msgid-Bugs-To: i18n@octoprint.org\n"
-"POT-Creation-Date: 2017-11-30 18:14+0100\n"
+"POT-Creation-Date: 2017-12-05 12:29+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -349,6 +349,17 @@ msgid ""
 msgstr ""
 
 #: src/octoprint/plugins/corewizard/templates/corewizard_pluginblacklist_wizard.jinja2:9
+#: src/octoprint/templates/snippets/settings/server/serverPluginBlacklistDescription.jinja2:7
+#, python-format
+msgid ""
+"\n"
+"    By default, OctoPrint will use the blacklist hosted at "
+"<code>plugins.octoprint.org/blacklist.json</code> which you\n"
+"    can also take a look at in a more human readable format <a "
+"href=\"%(url)s\" target=\"_blank\">here</a>.\n"
+msgstr ""
+
+#: src/octoprint/plugins/corewizard/templates/corewizard_pluginblacklist_wizard.jinja2:14
 msgid ""
 "\n"
 "    Please decide whether to allow fetch and use of this centralized "
@@ -357,15 +368,15 @@ msgid ""
 "Server right from within OctoPrint.\n"
 msgstr ""
 
-#: src/octoprint/plugins/corewizard/templates/corewizard_pluginblacklist_wizard.jinja2:15
+#: src/octoprint/plugins/corewizard/templates/corewizard_pluginblacklist_wizard.jinja2:20
 msgid "Disable Plugin Blacklist Processing"
 msgstr ""
 
-#: src/octoprint/plugins/corewizard/templates/corewizard_pluginblacklist_wizard.jinja2:16
+#: src/octoprint/plugins/corewizard/templates/corewizard_pluginblacklist_wizard.jinja2:21
 msgid "Enable Plugin Blacklist Processing"
 msgstr ""
 
-#: src/octoprint/plugins/corewizard/templates/corewizard_pluginblacklist_wizard.jinja2:20
+#: src/octoprint/plugins/corewizard/templates/corewizard_pluginblacklist_wizard.jinja2:25
 msgid ""
 "\n"
 "        Plugin blacklist processing is <strong class=\"text-"
@@ -373,7 +384,7 @@ msgid ""
 "    "
 msgstr ""
 
-#: src/octoprint/plugins/corewizard/templates/corewizard_pluginblacklist_wizard.jinja2:23
+#: src/octoprint/plugins/corewizard/templates/corewizard_pluginblacklist_wizard.jinja2:28
 msgid ""
 "\n"
 "        Plugin blacklist processing is <strong class=\"text-"

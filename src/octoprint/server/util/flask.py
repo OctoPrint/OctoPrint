@@ -28,6 +28,8 @@ import octoprint.server
 import octoprint.users
 import octoprint.plugin
 
+from octoprint.util import DefaultOrderedDict
+
 from werkzeug.contrib.cache import BaseCache
 
 from past.builtins import basestring
@@ -1348,12 +1350,12 @@ def collect_plugin_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 	logger = logging.getLogger(__name__ + ".collect_plugin_assets")
 
 	supported_stylesheets = ("css", "less")
-	assets = dict(bundled=dict(js=collections.defaultdict(list),
-	                           css=collections.defaultdict(list),
-	                           less=collections.defaultdict(list)),
-	              external=dict(js=collections.defaultdict(list),
-	                            css=collections.defaultdict(list),
-	                            less=collections.defaultdict(list)))
+	assets = dict(bundled=dict(js=DefaultOrderedDict(list),
+	                           css=DefaultOrderedDict(list),
+	                           less=DefaultOrderedDict(list)),
+	              external=dict(js=DefaultOrderedDict(list),
+	                            css=DefaultOrderedDict(list),
+	                            less=DefaultOrderedDict(list)))
 
 	asset_plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.AssetPlugin)
 	for implementation in asset_plugins:
