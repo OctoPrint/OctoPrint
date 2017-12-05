@@ -146,7 +146,7 @@ Out of the box, OctoPrint defaults to the following script setup for ``afterPrin
 
    ;disable all heaters
    {% snippet 'disable_hotends' %}
-   [% snippet 'disable_bed' %}
+   {% snippet 'disable_bed' %}
 
    ;disable fan
    M106 S0
