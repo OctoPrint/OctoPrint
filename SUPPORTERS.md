@@ -38,14 +38,12 @@ thanks to everyone who contributed!
   * Marcus Ackermann
   * Mark Qvist
   * Mark Walker
-  * Masayoshi Mitsui
   * Michael Aumock
   * Miles Flavel
   * mitchell hirsch
   * Mohammed khorakiwala
   * Noe Ruiz
   * Patrick McGinnis
-  * Peter Grace
   * Peter Schmehl
   * PRINT3Dforum.com
   * Robert Gusek
@@ -61,4 +59,4 @@ thanks to everyone who contributed!
   * Timeshell.ca
   * Trent Shumay
 
-and 1151 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!
+and 1144 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!

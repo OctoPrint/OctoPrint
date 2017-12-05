@@ -1954,18 +1954,20 @@ class MachineCom(object):
 
 		return False
 
-	_resend_request_communication_errors = ("line number",
-	                                                   "wrong checksum",
-	                                                   "missing checksum",
-	                                                   "format error",
-	                                                   "expected line")
-	_recoverable_communication_errors      = ("no line number with checksum",)
-	_sd_card_errors                                 = ("volume.init",
-	                                                   "openroot",
-	                                                   "workdir",
-	                                                   "error writing to file",
-	                                                   "cannot open",
-	                                                   "cannot enter")
+	_recoverable_communication_errors    = ("no line number with checksum",)
+	_resend_request_communication_errors = ("line number", # since this error class get's checked after recoverable
+	                                                       # communication errors, we can use this broad term here
+	                                        "checksum",    # since this error class get's checked after recoverable
+	                                                       # communication errors, we can use this broad term here
+	                                        "format error",
+	                                        "expected line")
+	_sd_card_errors                      = ("volume.init",
+	                                        "openroot",
+	                                        "workdir",
+	                                        "error writing to file",
+	                                        "cannot open",
+	                                        "open failed",
+	                                        "cannot enter")
 	def _handle_errors(self, line):
 		if line is None:
 			return

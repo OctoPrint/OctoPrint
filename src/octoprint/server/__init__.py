@@ -15,7 +15,7 @@ from flask_assets import Environment, Bundle
 from babel import Locale
 from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 
 from builtins import bytes, range
 from past.builtins import basestring
@@ -1271,7 +1271,7 @@ class Server(object):
 			# TODO remove again in 1.3.8
 			def js_bundles_for_plugins(collection, filters=None):
 				"""Produces Bundle instances"""
-				result = dict()
+				result = OrderedDict()
 				for plugin, assets in collection.items():
 					if len(assets):
 						result[plugin] = Bundle(*assets, filters=filters)
@@ -1280,7 +1280,7 @@ class Server(object):
 		else:
 			def js_bundles_for_plugins(collection, filters=None):
 				"""Produces JsPluginBundle instances that output IIFE wrapped assets"""
-				result = dict()
+				result = OrderedDict()
 				for plugin, assets in collection.items():
 					if len(assets):
 						result[plugin] = JsPluginBundle(plugin, *assets, filters=filters)

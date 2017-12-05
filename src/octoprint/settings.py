@@ -389,7 +389,16 @@ default_settings = {
 			"capabilities": {
 				"AUTOREPORT_TEMP": True
 			},
-			"ambientTemperature": 21.3
+			"ambientTemperature": 21.3,
+			"errors": {
+				"checksum_mismatch": "Checksum mismatch",
+				"checksum_missing": "Missing checksum",
+				"lineno_mismatch": "expected line {} got {}",
+				"lineno_missing": "No Line Number with checksum, Last Line: {}",
+				"maxtemp": "MAXTEMP triggered!",
+				"mintemp": "MINTEMP triggered!",
+				"command_unknown": "Unknown command {}"
+			}
 		}
 	}
 }
