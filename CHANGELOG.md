@@ -1,5 +1,24 @@
 # OctoPrint Changelog
 
+## 1.3.6rc2 (2017-12-05)
+
+### Note for upgraders and plugin authors: Change in the bundling of JS assets can lead to issues in plugins
+
+A change to solve issues with plugins bundling JS assets that cause interference with other plugins (e.g. through the declaration of `"use strict"`) and in general to add better isolation and error handling might cause errors for some plugins that go beyond your run-off-the-mill view model and also implicitly declare new globals.
+
+If you happen to run into any such issues, you can switch back to the old way of bundling JS assets via the newly introduced "Settings > Feature > Enable legacy plugin asset bundling" toggle (check it, save the settings, restart the server). This is provided to allow for a minimally invasive adjustment period until affected plugins have been updated.
+
+You can find out more about the change, how to know if a plugin is even affected and what do about it [on the OctoBlog](http://octoprint.org/blog/2017/12/01/heads-up-plugin-authors/).
+
+### Bug fixes
+
+  * [#2262](https://github.com/foosel/OctoPrint/issues/2262) - Fixed a bug causing `Error:checksum mismatch, Last Line: ...` errors from the firmware to be handled incorrectly.
+  * [#2267](https://github.com/foosel/OctoPrint/issues/2267) - Fixed a bug causing the GCODE viewer to not get properly initialized due to a JS error on load if "Also show next layer" was selected.
+  * [#2268](https://github.com/foosel/OctoPrint/issues/2268) - Fixed a bug causing a display error with the temperature offsets. If one offset was changed, all others seemed to revert back to 0.
+  * Fixed ordering of plugin assets, should be alphabetical based on the plugin identifier.
+
+([Commits](https://github.com/foosel/OctoPrint/compare/1.3.6rc1...1.3.6rc2))
+
 ## 1.3.6rc1 (2017-12-01)
 
 ### Note for upgraders and plugin authors: Change in the bundling of JS assets can lead to issues in plugins
