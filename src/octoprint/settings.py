@@ -367,6 +367,7 @@ default_settings = {
 			"repetierStyleResends": False,
 			"okBeforeCommandOutput": False,
 			"smoothieTemperatureReporting": False,
+			"reprapfwM114": False,
 			"extendedSdFileList": False,
 			"throttle": 0.01,
 			"sendWait": True,
