@@ -306,30 +306,10 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		if "notify_users" in data:
 			self._settings.set_boolean(["notify_users"], data["notify_users"])
 
-		checks = self._get_configured_checks()
-		if "octoprint" in checks:
-			check = checks["octoprint"]
-			update_type = check.get("type", None)
-			update_method = self._get_update_method("octoprint", check)
-			checkout_folder = check.get("checkout_folder", None)
-			update_folder = check.get("update_folder", None)
-			prerelease = check.get("prerelease", False)
-			prerelease_channel = check.get("prerelease_channel", None)
-		else:
-			update_type = update_method = checkout_folder = update_folder = prerelease_channel = None
-			prerelease = False
-
 		defaults = dict(
 			plugins=dict(softwareupdate=dict(
 				checks=dict(
-					octoprint=dict(
-						type=update_type,
-						method=update_method,
-						checkout_folder=checkout_folder,
-						update_folder=update_folder,
-						prerelease=prerelease,
-						prerelease_channel=prerelease_channel
-					)
+					octoprint=self.get_settings_defaults()["checks"]["octoprint"]
 				)
 			))
 		)
@@ -338,7 +318,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 		if "octoprint_checkout_folder" in data:
 			self._settings.set(["checks", "octoprint", "checkout_folder"], data["octoprint_checkout_folder"], defaults=defaults, force=True)
-			if update_folder and data["octoprint_checkout_folder"]:
+			if self._settings.get(["checks", "octoprint", "update_folder"]) and data["octoprint_checkout_folder"]:
 				self._settings.set(["checks", "octoprint", "update_folder"], None, defaults=defaults, force=True)
 			updated_octoprint_check_config = True
 
@@ -346,13 +326,13 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			octoprint_type = data["octoprint_type"]
 
 			if octoprint_type == "github_release":
-				self._settings.set(["checks", "octoprint", "type"], octoprint_type, defaults=defaults, force=True)
-				self._settings.set(["checks", "octoprint", "method"], "pip", defaults=defaults, force=True)
+				self._settings.set(["checks", "octoprint", "type"], octoprint_type, defaults=defaults)
+				self._settings.set(["checks", "octoprint", "method"], "pip", defaults=defaults)
 				updated_octoprint_check_config = True
 
 			elif octoprint_type == "git_commit":
-				self._settings.set(["checks", "octoprint", "type"], octoprint_type, defaults=defaults, force=True)
-				self._settings.set(["checks", "octoprint", "method"], "update_script", defaults=defaults, force=True)
+				self._settings.set(["checks", "octoprint", "type"], octoprint_type, defaults=defaults)
+				self._settings.set(["checks", "octoprint", "method"], "update_script", defaults=defaults)
 				updated_octoprint_check_config = True
 
 		if "octoprint_release_channel" in data:
