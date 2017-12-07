@@ -1,14 +1,18 @@
 # OctoPrint Changelog
 
+## 1.3.6rc3 (2017-12-08)
+
+### Improvements
+
+  * Fetch plugin blacklist (and also announcements, plugin notices and plugin repository) via https instead of http.
+
+### Bug fixes
+
+  * Fixed an issue causing redundant software update configuration settings to be written to `config.yaml`, in turn causing issues when downgrading to <1.3.5
+
+([Commits](https://github.com/foosel/OctoPrint/compare/1.3.6rc2...1.3.6rc3))
+
 ## 1.3.6rc2 (2017-12-05)
-
-### Note for upgraders and plugin authors: Change in the bundling of JS assets can lead to issues in plugins
-
-A change to solve issues with plugins bundling JS assets that cause interference with other plugins (e.g. through the declaration of `"use strict"`) and in general to add better isolation and error handling might cause errors for some plugins that go beyond your run-off-the-mill view model and also implicitly declare new globals.
-
-If you happen to run into any such issues, you can switch back to the old way of bundling JS assets via the newly introduced "Settings > Feature > Enable legacy plugin asset bundling" toggle (check it, save the settings, restart the server). This is provided to allow for a minimally invasive adjustment period until affected plugins have been updated.
-
-You can find out more about the change, how to know if a plugin is even affected and what do about it [on the OctoBlog](http://octoprint.org/blog/2017/12/01/heads-up-plugin-authors/).
 
 ### Bug fixes
 
@@ -20,14 +24,6 @@ You can find out more about the change, how to know if a plugin is even affected
 ([Commits](https://github.com/foosel/OctoPrint/compare/1.3.6rc1...1.3.6rc2))
 
 ## 1.3.6rc1 (2017-12-01)
-
-### Note for upgraders and plugin authors: Change in the bundling of JS assets can lead to issues in plugins
-
-A change to solve issues with plugins bundling JS assets that cause interference with other plugins (e.g. through the declaration of `"use strict"`) and in general to add better isolation and error handling might cause errors for some plugins that go beyond your run-off-the-mill view model and also implicitly declare new globals.
-
-If you happen to run into any such issues, you can switch back to the old way of bundling JS assets via the newly introduced "Settings > Feature > Enable legacy plugin asset bundling" toggle (check it, save the settings, restart the server). This is provided to allow for a minimally invasive adjustment period until affected plugins have been updated.
-
-You can find out more about the change, how to know if a plugin is even affected and what do about it [on the OctoBlog](http://octoprint.org/blog/2017/12/01/heads-up-plugin-authors/).
 
 ### Improvements
 
