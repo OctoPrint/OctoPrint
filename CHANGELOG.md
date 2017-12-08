@@ -9,6 +9,7 @@
 ### Bug fixes
 
   * Fixed an issue causing redundant software update configuration settings to be written to `config.yaml`, in turn causing issues when downgrading to <1.3.5
+  * Fixed an issue detecting whether the installed version is a release version or a development version.
 
 ([Commits](https://github.com/foosel/OctoPrint/compare/1.3.6rc2...1.3.6rc3))
 

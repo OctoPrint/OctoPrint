@@ -973,6 +973,8 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		if target == "octoprint":
 			from flask.ext.babel import gettext
 
+			from octoprint.util.version import is_released_octoprint_version, is_stable_octoprint_version
+
 			result["displayName"] = to_unicode(check.get("displayName"), errors="replace")
 			if result["displayName"] is None:
 				# displayName missing or set to None
@@ -990,16 +992,16 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 				stable_branch = check["stable_branch"]["branch"]
 			if "prerelease_branches" in check:
 				release_branches += [x["branch"] for x in check["prerelease_branches"]]
-			result["released_version"] = not release_branches or BRANCH in release_branches
+			result["released_version"] = is_released_octoprint_version()
 
 			if check["type"] in self.COMMIT_TRACKING_TYPES:
 				result["current"] = REVISION if REVISION else "unknown"
 			else:
 				result["current"] = VERSION
 
-				if check["type"] == "github_release" and (check.get("prerelease", None) or BRANCH != stable_branch):
-					# we are tracking github releases and are either also tracking prerelease OR are currently installed
-					# from something that is not the stable (master) branch => we need to change some parameters
+				if check["type"] == "github_release" and (check.get("prerelease", None) or not is_stable_octoprint_version()):
+					# we are tracking github releases and are either also tracking prerelease OR are currently running
+					# a non stable version => we need to change some parameters
 
 					# we compare versions fully, not just the base so that we see a difference
 					# between RCs + stable for the same version release
@@ -1019,17 +1021,9 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 						result["update_branch"] = check.get("update_branch", stable_branch)
 
 					if check.get("update_script", None):
-						# we force an exact version
+						# we force an exact version & python unequality check, to be able to downgrade
 						result["force_exact_version"] = True
-
-						if BRANCH != result.get("prerelease_channel"):
-							# we force python unequality check here because that will also allow us to
-							# downgrade on a prerelease channel change (rc/devel => rc/maintenance)
-							#
-							# we detect channel changes by comparing the current branch with the target
-							# branch of the release channel - unequality means we might have to handle
-							# a downgrade
-							result["release_compare"] = "python_unequal"
+						result["release_compare"] = "python_unequal"
 
 					elif check.get("pip", None):
 						# we force python unequality check for pip installs, to be able to downgrade
