@@ -159,7 +159,7 @@ default_settings = {
 		},
 		"pluginBlacklist": {
 			"enabled": None,
-			"url": "http://plugins.octoprint.org/blacklist.json",
+			"url": "https://plugins.octoprint.org/blacklist.json",
 			"ttl": 15 * 60 # 15 min
 		},
 		"diskspace": {
