@@ -118,7 +118,7 @@ Groups will be as follows:
   * ``target``: new target temperature (float)
 """
 
-regex_position = re.compile("X:(?P<x>{float})\s*Y:(?P<y>{float})\s*Z:(?P<z>{float})\s*E:(?P<e>{float})".format(float=regex_float_pattern))
+regex_position = re.compile("X:(?P<x>{float})\s*Y:(?P<y>{float})\s*Z:(?P<z>{float})\s*((E:(?P<e>{float}))|(?P<es>(E\d+:{float}\s*)+))".format(float=regex_float_pattern))
 """Regex for matching position reporting.
 
 Groups will be as follows:
@@ -126,7 +126,17 @@ Groups will be as follows:
   * ``x``: X coordinate
   * ``y``: Y coordinate
   * ``z``: Z coordinate
-  * ``e``: E coordinate
+  * ``e``: E coordinate if present, or
+  * ``es``: multiple E coordinates if present, to be parsed further with regex_e_positions
+"""
+
+regex_e_positions = re.compile("E(?P<id>\d+):(?P<value>{float})".format(float=regex_float_pattern))
+"""Regex for matching multiple E coordinates in a position report.
+
+Groups will be as follows:
+
+  * ``id``: id of the extruder or which the position is reported
+  * ``value``: reported position value 
 """
 
 regex_firmware_splitter = re.compile("\s*([A-Z0-9_]+):")
@@ -218,29 +228,39 @@ gcodeToEvent = {
 }
 
 class PositionRecord(object):
+	_standard_attrs = {"x", "y", "z", "e", "f", "t"}
+
+	@classmethod
+	def valid_e(cls, attr):
+		if not attr.startswith("e"):
+			return False
+
+		try:
+			int(attr[1:])
+		except:
+			return False
+
+		return True
+
 	def __init__(self, *args, **kwargs):
-		self.x = kwargs.get("x")
-		self.y = kwargs.get("y")
-		self.z = kwargs.get("z")
-		self.e = kwargs.get("e")
-		self.f = kwargs.get("f")
-		self.t = kwargs.get("t")
+		attrs = self._standard_attrs | set([key for key in kwargs if self.valid_e(key)])
+		for attr in attrs:
+			setattr(self, attr, kwargs.get(attr))
 
 	def copy_from(self, other):
-		self.x = other.x
-		self.y = other.y
-		self.z = other.z
-		self.e = other.e
-		self.f = other.f
-		self.t = other.t
+		# make sure all standard attrs and attrs from other are set
+		attrs = self._standard_attrs | set([key for key in dir(other) if self.valid_e(key)])
+		for attr in attrs:
+			setattr(self, attr, getattr(other, attr))
+
+		# delete attrs other doesn't have
+		attrs = set([key for key in dir(self) if self.valid_e(key)]) - attrs
+		for attr in attrs:
+			delattr(self, attr)
 
 	def as_dict(self):
-		return dict(x=self.x,
-		            y=self.y,
-		            z=self.z,
-		            e=self.e,
-		            t=self.t,
-		            f=self.f)
+		attrs = self._standard_attrs | set([key for key in dir(self) if self.valid_e(key)])
+		return dict((attr, getattr(self, attr)) for attr in attrs)
 
 class TemperatureRecord(object):
 	def __init__(self):
@@ -1306,17 +1326,26 @@ class MachineCom(object):
 
 				# position report processing
 				if 'X:' in line and 'Y:' in line and 'Z:' in line:
-					match = regex_position.search(line)
-					if match:
+					parsed = parse_position_line(line)
+					if parsed:
 						# we don't know T or F when printing from SD since
 						# there's no way to query it from the firmware and
 						# no way to track it ourselves when not streaming
 						# the file - this all sucks sooo much
 						self.last_position.valid = True
-						self.last_position.x = float(match.group("x"))
-						self.last_position.y = float(match.group("y"))
-						self.last_position.z = float(match.group("z"))
-						self.last_position.e = float(match.group("e"))
+						self.last_position.x = parsed.get("x")
+						self.last_position.y = parsed.get("y")
+						self.last_position.z = parsed.get("z")
+
+						if "e" in parsed:
+							self.last_position.e = parsed.get("e")
+						else:
+							# multiple extruder coordinates provided, find current one
+							self.last_position.e = parsed.get("e{}".format(self._currentTool)) if not self.isSdFileSelected() else None
+
+						for key in [key for key in parsed if key.startswith("e") and len(key) > 1]:
+							setattr(self.last_position, key, parsed.get(key))
+
 						self.last_position.t = self._currentTool if not self.isSdFileSelected() else None
 						self.last_position.f = self._currentF if not self.isSdFileSelected() else None
 
@@ -1953,18 +1982,20 @@ class MachineCom(object):
 
 		return False
 
-	_resend_request_communication_errors = ("line number",
-	                                                   "wrong checksum",
-	                                                   "missing checksum",
-	                                                   "format error",
-	                                                   "expected line")
-	_recoverable_communication_errors      = ("no line number with checksum",)
-	_sd_card_errors                                 = ("volume.init",
-	                                                   "openroot",
-	                                                   "workdir",
-	                                                   "error writing to file",
-	                                                   "cannot open",
-	                                                   "cannot enter")
+	_recoverable_communication_errors    = ("no line number with checksum",)
+	_resend_request_communication_errors = ("line number", # since this error class get's checked after recoverable
+	                                                       # communication errors, we can use this broad term here
+	                                        "checksum",    # since this error class get's checked after recoverable
+	                                                       # communication errors, we can use this broad term here
+	                                        "format error",
+	                                        "expected line")
+	_sd_card_errors                      = ("volume.init",
+	                                        "openroot",
+	                                        "workdir",
+	                                        "error writing to file",
+	                                        "cannot open",
+	                                        "open failed",
+	                                        "cannot enter")
 	def _handle_errors(self, line):
 		if line is None:
 			return
@@ -3468,6 +3499,41 @@ def parse_resend_line(line):
 	match = regex_resend_linenumber.search(line)
 	if match is not None:
 		return int(match.group("n"))
+
+	return None
+
+
+def parse_position_line(line):
+	"""
+	Parses the provided M114 response line and returns the parsed coordinates.
+
+	Args:
+		line (str): the line to parse
+
+	Returns:
+		dict or None: the parsed coordinates, or None if no coordinates could be parsed
+	"""
+
+	match = regex_position.search(line)
+	if match is not None:
+		result = dict(x=float(match.group("x")),
+		              y=float(match.group("y")),
+		              z=float(match.group("z")))
+		if match.group("e") is not None:
+			# report contains only one E
+			result["e"] = float(match.group("e"))
+
+		elif match.group("es") is not None:
+			# report contains individual entries for multiple extruders ("E0:... E1:... E2:...")
+			es = match.group("es")
+			for m in regex_e_positions.finditer(es):
+				result["e{}".format(m.group("id"))] = float(m.group("value"))
+
+		else:
+			# apparently no E at all, should never happen but let's still handle this
+			return None
+
+		return result
 
 	return None
 

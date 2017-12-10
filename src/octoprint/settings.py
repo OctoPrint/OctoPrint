@@ -33,7 +33,9 @@ import uuid
 import copy
 import time
 
+# noinspection PyCompatibility
 from builtins import bytes
+# noinspection PyCompatibility
 from past.builtins import basestring
 
 try:
@@ -157,7 +159,7 @@ default_settings = {
 		},
 		"pluginBlacklist": {
 			"enabled": None,
-			"url": "http://plugins.octoprint.org/blacklist.json",
+			"url": "https://plugins.octoprint.org/blacklist.json",
 			"ttl": 15 * 60 # 15 min
 		},
 		"diskspace": {
@@ -223,7 +225,8 @@ default_settings = {
 		"firmwareDetection": True,
 		"printCancelConfirmation": True,
 		"blockWhileDwelling": False,
-		"g90InfluencesExtruder": False
+		"g90InfluencesExtruder": False,
+		"legacyPluginAssets": False # TODO remove again in 1.3.8
 	},
 	"folder": {
 		"uploads": None,
@@ -364,6 +367,7 @@ default_settings = {
 			"repetierStyleResends": False,
 			"okBeforeCommandOutput": False,
 			"smoothieTemperatureReporting": False,
+			"reprapfwM114": False,
 			"extendedSdFileList": False,
 			"throttle": 0.01,
 			"sendWait": True,
@@ -386,7 +390,16 @@ default_settings = {
 			"capabilities": {
 				"AUTOREPORT_TEMP": True
 			},
-			"ambientTemperature": 21.3
+			"ambientTemperature": 21.3,
+			"errors": {
+				"checksum_mismatch": "Checksum mismatch",
+				"checksum_missing": "Missing checksum",
+				"lineno_mismatch": "expected line {} got {}",
+				"lineno_missing": "No Line Number with checksum, Last Line: {}",
+				"maxtemp": "MAXTEMP triggered!",
+				"mintemp": "MINTEMP triggered!",
+				"command_unknown": "Unknown command {}"
+			}
 		}
 	}
 }

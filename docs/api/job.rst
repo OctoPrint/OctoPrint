@@ -4,6 +4,9 @@
 Job operations
 **************
 
+Use these operations to query the currently selected file and start/cancel/restart/pause the
+actual print job.
+
 .. contents::
 
 .. _sec-api-jobs-command:

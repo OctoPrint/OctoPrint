@@ -31,6 +31,7 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
                  octoprint.plugin.StartupPlugin,
                  octoprint.plugin.WizardPlugin):
 
+	# noinspection PyMissingConstructor
 	def __init__(self):
 		self._logger = logging.getLogger("octoprint.plugins.cura")
 		self._cura_logger = logging.getLogger("octoprint.plugins.cura.engine")
@@ -79,7 +80,7 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 		self._cura_logger.addHandler(cura_logging_handler)
 		self._cura_logger.setLevel(logging.DEBUG if self._settings.get_boolean(["debug_logging"]) else logging.CRITICAL)
 		self._cura_logger.propagate = False
-		
+
 		engine = self._settings.get(["cura_engine"])
 		if not self._is_engine_configured(cura_engine=engine):
 			self._logger.info("Path to CuraEngine has not been configured or does not exist (currently set to %r), "
@@ -518,6 +519,7 @@ def _get_usage_from_length(filament_length, filament_diameter):
 	usage["volume"] = length_in_cm * math.pi * radius_in_cm * radius_in_cm
 
 	return usage
+
 
 __plugin_name__ = "CuraEngine (<= 15.04)"
 __plugin_author__ = "Gina Häußge"

@@ -15,7 +15,7 @@ from flask.ext.assets import Environment, Bundle
 from babel import Locale
 from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 
 from builtins import bytes, range
 from past.builtins import basestring
@@ -129,17 +129,23 @@ def load_user(id):
 	if id == "_api":
 		return users.ApiUser()
 
+	if not userManager.enabled:
+		return users.DummyUser()
+
 	if session and "usersession.id" in session:
 		sessionid = session["usersession.id"]
 	else:
 		sessionid = None
 
-	if userManager.enabled:
-		if sessionid:
-			return userManager.findUser(userid=id, session=sessionid)
-		else:
-			return userManager.findUser(userid=id)
-	return users.DummyUser()
+	if sessionid:
+		user = userManager.findUser(userid=id, session=sessionid)
+	else:
+		user = userManager.findUser(userid=id)
+
+	if user and user.is_active():
+		return user
+
+	return None
 
 
 #~~ startup code
@@ -1087,12 +1093,14 @@ class Server(object):
 						self._logger.debug("Deleting {path}...".format(**locals()))
 						shutil.rmtree(path)
 					except:
-						self._logger.exception("Error while trying to delete {path}, leaving it alone".format(**locals()))
+						self._logger.exception("Error while trying to delete {path}, "
+						                       "leaving it alone".format(**locals()))
 						continue
 
 				# re-create path
 				self._logger.debug("Creating {path}...".format(**locals()))
-				error_text = "Error while trying to re-create {path}, that might cause errors with the webassets cache".format(**locals())
+				error_text = "Error while trying to re-create {path}, that might cause " \
+				             "errors with the webassets cache".format(**locals())
 				try:
 					os.makedirs(path)
 				except OSError as e:
@@ -1102,13 +1110,16 @@ class Server(object):
 						import time
 						for n in range(3):
 							time.sleep(0.5)
-							self._logger.debug("Creating {path}: Retry #{retry} after {time}s".format(path=path, retry=n+1, time=(n + 1)*0.5))
+							self._logger.debug("Creating {path}: Retry #{retry} after {time}s".format(path=path,
+							                                                                          retry=n+1,
+							                                                                          time=(n + 1)*0.5))
 							try:
 								os.makedirs(path)
 								break
 							except:
 								if self._logger.isEnabledFor(logging.DEBUG):
-									self._logger.exception("Ignored error while creating directory {path}".format(**locals()))
+									self._logger.exception("Ignored error while creating "
+									                       "directory {path}".format(**locals()))
 								pass
 						else:
 							# this will only get executed if we never did
@@ -1128,9 +1139,9 @@ class Server(object):
 
 				self._logger.info("Reset webasset folder {path}...".format(**locals()))
 
-		AdjustedEnvironment = type(Environment)(Environment.__name__, (Environment,), dict(
-			resolver_class=util.flask.PluginAssetResolver
-		))
+		AdjustedEnvironment = type(Environment)(Environment.__name__,
+		                                        (Environment,),
+		                                        dict(resolver_class=util.flask.PluginAssetResolver))
 		class CustomDirectoryEnvironment(AdjustedEnvironment):
 			@property
 			def directory(self):
@@ -1139,9 +1150,9 @@ class Server(object):
 		assets = CustomDirectoryEnvironment(app)
 		assets.debug = not self._settings.getBoolean(["devel", "webassets", "bundle"])
 
-		UpdaterType = type(util.flask.SettingsCheckUpdater)(util.flask.SettingsCheckUpdater.__name__, (util.flask.SettingsCheckUpdater,), dict(
-			updater=assets.updater
-		))
+		UpdaterType = type(util.flask.SettingsCheckUpdater)(util.flask.SettingsCheckUpdater.__name__,
+		                                                    (util.flask.SettingsCheckUpdater,),
+		                                                    dict(updater=assets.updater))
 		assets.updater = UpdaterType
 
 		enable_gcodeviewer = self._settings.getBoolean(["gcodeViewer", "enabled"])
@@ -1217,12 +1228,6 @@ class Server(object):
 			"js/app/client/util.js",
 			"js/app/client/wizard.js"
 		]
-		js_core = dynamic_core_assets["js"] + \
-		    dynamic_plugin_assets["bundled"]["js"] + \
-		    ["js/app/dataupdater.js",
-		     "js/app/helpers.js",
-		     "js/app/main.js"]
-		js_plugins = dynamic_plugin_assets["external"]["js"]
 
 		css_libs = [
 			"css/bootstrap.min.css",
@@ -1236,75 +1241,143 @@ class Server(object):
 			"css/pnotify.buttons.min.css",
 			"css/pnotify.history.min.css"
 		]
-		css_core = list(dynamic_core_assets["css"]) + list(dynamic_plugin_assets["bundled"]["css"])
-		css_plugins = list(dynamic_plugin_assets["external"]["css"])
-
-		less_core = list(dynamic_core_assets["less"]) + list(dynamic_plugin_assets["bundled"]["less"])
-		less_plugins = list(dynamic_plugin_assets["external"]["less"])
 
 		# a couple of custom filters
-		from octoprint.server.util.webassets import LessImportRewrite, JsDelimiterBundler, JsPluginDelimiterBundler, \
-			SourceMapRewrite, SourceMapRemove
+		from octoprint.server.util.webassets import LessImportRewrite, JsDelimiterBundler, \
+			SourceMapRewrite, SourceMapRemove, JsPluginBundle
 		from webassets.filter import register_filter
 
 		register_filter(LessImportRewrite)
 		register_filter(SourceMapRewrite)
 		register_filter(SourceMapRemove)
 		register_filter(JsDelimiterBundler)
-		register_filter(JsPluginDelimiterBundler)
 
-		# JS
+		def all_assets_for_plugins(collection):
+			"""Gets all plugin assets for a dict of plugin->assets"""
+			result = []
+			for assets in collection.values():
+				result += assets
+			return result
+
+		# -- JS --------------------------------------------------------------------------------------------------------
+
 		js_filters = ["sourcemap_remove", "js_delimiter_bundler"]
-		js_plugin_filters = ["sourcemap_remove", "js_plugin_delimiter_bundler"]
+		js_plugin_filters = ["sourcemap_remove", "js_delimiter_bundler"]
 
-		js_libs_bundle = Bundle(*js_libs, output="webassets/packed_libs.js", filters=",".join(js_filters))
+		if self._settings.getBoolean(["feature", "legacyPluginAssets"]):
+			# TODO remove again in 1.3.8
+			def js_bundles_for_plugins(collection, filters=None):
+				"""Produces Bundle instances"""
+				result = OrderedDict()
+				for plugin, assets in collection.items():
+					if len(assets):
+						result[plugin] = Bundle(*assets, filters=filters)
+				return result
 
-		js_client_bundle = Bundle(*js_client, output="webassets/packed_client.js", filters=",".join(js_filters))
-		js_core_bundle = Bundle(*js_core, output="webassets/packed_core.js", filters=",".join(js_filters))
+		else:
+			def js_bundles_for_plugins(collection, filters=None):
+				"""Produces JsPluginBundle instances that output IIFE wrapped assets"""
+				result = OrderedDict()
+				for plugin, assets in collection.items():
+					if len(assets):
+						result[plugin] = JsPluginBundle(plugin, *assets, filters=filters)
+				return result
+
+
+		js_core = dynamic_core_assets["js"] + \
+		    all_assets_for_plugins(dynamic_plugin_assets["bundled"]["js"]) + \
+		    ["js/app/dataupdater.js",
+		     "js/app/helpers.js",
+		     "js/app/main.js"]
+		js_plugins = js_bundles_for_plugins(dynamic_plugin_assets["external"]["js"],
+		                                    filters="js_delimiter_bundler")
+
+		js_libs_bundle = Bundle(*js_libs,
+		                        output="webassets/packed_libs.js",
+		                        filters=",".join(js_filters))
+
+		js_client_bundle = Bundle(*js_client,
+		                          output="webassets/packed_client.js",
+		                          filters=",".join(js_filters))
+		js_core_bundle = Bundle(*js_core,
+		                        output="webassets/packed_core.js",
+		                        filters=",".join(js_filters))
 
 		if len(js_plugins) == 0:
 			js_plugins_bundle = Bundle(*[])
 		else:
-			js_plugins_bundle = Bundle(*js_plugins, output="webassets/packed_plugins.js", filters=",".join(js_plugin_filters))
+			js_plugins_bundle = Bundle(*js_plugins.values(),
+			                           output="webassets/packed_plugins.js",
+			                           filters=",".join(js_plugin_filters))
 
-		js_app_bundle = Bundle(js_plugins_bundle, js_core_bundle, output="webassets/packed_app.js", filters=",".join(js_filters))
+		js_app_bundle = Bundle(js_plugins_bundle, js_core_bundle,
+		                       output="webassets/packed_app.js",
+		                       filters=",".join(js_filters))
 
-		# CSS
+		# -- CSS -------------------------------------------------------------------------------------------------------
+
 		css_filters = ["cssrewrite"]
 
-		css_libs_bundle = Bundle(*css_libs, output="webassets/packed_libs.css", filters=",".join(css_filters))
+		css_core = list(dynamic_core_assets["css"]) \
+		           + all_assets_for_plugins(dynamic_plugin_assets["bundled"]["css"])
+		css_plugins = list(all_assets_for_plugins(dynamic_plugin_assets["external"]["css"]))
+
+		css_libs_bundle = Bundle(*css_libs,
+		                         output="webassets/packed_libs.css",
+		                         filters=",".join(css_filters))
 
 		if len(css_core) == 0:
 			css_core_bundle = Bundle(*[])
 		else:
-			css_core_bundle = Bundle(*css_core, output="webassets/packed_core.css", filters=",".join(css_filters))
+			css_core_bundle = Bundle(*css_core,
+			                         output="webassets/packed_core.css",
+			                         filters=",".join(css_filters))
 
 		if len(css_plugins) == 0:
 			css_plugins_bundle = Bundle(*[])
 		else:
-			css_plugins_bundle = Bundle(*css_plugins, output="webassets/packed_plugins.css", filters=",".join(css_filters))
+			css_plugins_bundle = Bundle(*css_plugins,
+			                            output="webassets/packed_plugins.css",
+			                            filters=",".join(css_filters))
 
-		css_app_bundle = Bundle(css_core, css_plugins, output="webassets/packed_app.css", filters=",".join(css_filters))
+		css_app_bundle = Bundle(css_core, css_plugins,
+		                        output="webassets/packed_app.css",
+		                        filters=",".join(css_filters))
 
-		# LESS
+		# -- LESS ------------------------------------------------------------------------------------------------------
+
 		less_filters = ["cssrewrite", "less_importrewrite"]
+
+		less_core = list(dynamic_core_assets["less"]) \
+		            + all_assets_for_plugins(dynamic_plugin_assets["bundled"]["less"])
+		less_plugins = all_assets_for_plugins(dynamic_plugin_assets["external"]["less"])
 
 		if len(less_core) == 0:
 			less_core_bundle = Bundle(*[])
 		else:
-			less_core_bundle = Bundle(*less_core, output="webassets/packed_core.less", filters=",".join(less_filters))
+			less_core_bundle = Bundle(*less_core,
+			                          output="webassets/packed_core.less",
+			                          filters=",".join(less_filters))
 
 		if len(less_plugins) == 0:
 			less_plugins_bundle = Bundle(*[])
 		else:
-			less_plugins_bundle = Bundle(*less_plugins, output="webassets/packed_plugins.less", filters=",".join(less_filters))
+			less_plugins_bundle = Bundle(*less_plugins,
+			                             output="webassets/packed_plugins.less",
+			                             filters=",".join(less_filters))
 
-		less_app_bundle = Bundle(less_core, less_plugins, output="webassets/packed_app.less", filters=",".join(less_filters))
+		less_app_bundle = Bundle(less_core, less_plugins,
+		                         output="webassets/packed_app.less",
+		                         filters=",".join(less_filters))
 
-		# asset registration
+		# -- asset registration ----------------------------------------------------------------------------------------
+
 		assets.register("js_libs", js_libs_bundle)
 		assets.register("js_client", js_client_bundle)
 		assets.register("js_core", js_core_bundle)
+		for plugin, bundle in js_plugins.items():
+			# register our collected plugin bundles so that they are bound to the environment
+			assets.register("js_plugin_{}".format(plugin), bundle)
 		assets.register("js_plugins", js_plugins_bundle)
 		assets.register("js_app", js_app_bundle)
 		assets.register("css_libs", css_libs_bundle)

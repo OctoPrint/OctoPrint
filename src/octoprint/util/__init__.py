@@ -20,6 +20,7 @@ import threading
 from functools import wraps
 import warnings
 import contextlib
+import collections
 
 try:
 	import queue
@@ -737,6 +738,51 @@ def dict_filter(dictionary, filter_function):
 	return dict((k, v) for k, v in dictionary.items() if filter_function(k, v))
 
 
+# Source: http://stackoverflow.com/a/6190500/562769
+class DefaultOrderedDict(collections.OrderedDict):
+	def __init__(self, default_factory=None, *a, **kw):
+
+		if default_factory is not None and not callable(default_factory):
+			raise TypeError('first argument must be callable')
+		collections.OrderedDict.__init__(self, *a, **kw)
+		self.default_factory = default_factory
+
+	def __getitem__(self, key):
+		try:
+			return collections.OrderedDict.__getitem__(self, key)
+		except KeyError:
+			return self.__missing__(key)
+
+	def __missing__(self, key):
+		if self.default_factory is None:
+			raise KeyError(key)
+		self[key] = value = self.default_factory()
+		return value
+
+	def __reduce__(self):
+		if self.default_factory is None:
+			args = tuple()
+		else:
+			args = self.default_factory,
+		return type(self), args, None, None, self.items()
+
+	def copy(self):
+		return self.__copy__()
+
+	def __copy__(self):
+		return type(self)(self.default_factory, self)
+
+	def __deepcopy__(self, memo):
+		import copy
+		return type(self)(self.default_factory,
+		                  copy.deepcopy(self.items()))
+
+	# noinspection PyMethodOverriding
+	def __repr__(self):
+		return 'OrderedDefaultDict(%s, %s)' % (self.default_factory,
+		                                       collections.OrderedDict.__repr__(self))
+
+
 class Object(object):
 	pass
 
@@ -1089,6 +1135,87 @@ class RepeatedTimer(threading.Thread):
 
 		if callable(self.on_finish):
 			self.on_finish()
+
+class ResettableTimer(threading.Thread):
+	"""
+	This class represents an action that should be run after a specified amount of time. It is similar to python's
+	own :class:`threading.Timer` class, with the addition of being able to reset the counter to zero.
+
+	ResettableTimers are started, as with threads, by calling their ``start()`` method. The timer can be stopped (in
+	between runs) by calling the :func:`cancel` method. Resetting the counter can be done with the :func:`reset` method.
+
+	For example:
+
+	.. code-block:: python
+
+	   def hello():
+	       print("Ran hello() at {}").format(time.time())
+
+	   t = ResettableTimers(60.0, hello)
+	   t.start()
+	   print("Started at {}").format(time.time())
+	   time.sleep(30)
+	   t.reset()
+	   print("Reset at {}").format(time.time())
+
+	Arguments:
+	    interval (float or callable): The interval before calling ``function``, in seconds. Can also be a callable
+	        returning the interval to use, in case the interval is not static.
+	    function (callable): The function to call.
+	    args (list or tuple): The arguments for the ``function`` call. Defaults to an empty list.
+	    kwargs (dict): The keyword arguments for the ``function`` call. Defaults to an empty dict.
+	    on_cancelled (callable): Callback to call when the timer finishes due to being cancelled.
+	    on_reset (callable): Callback to call when the timer is reset.
+	"""
+	
+	def __init__(self, interval, function, args=None, kwargs=None, on_reset=None, on_cancelled=None):
+		threading.Thread.__init__(self)
+		self._event = threading.Event()
+		self._mutex = threading.Lock()
+		self.is_reset = True
+
+		if args is None:
+			args = []
+		if kwargs is None:
+			kwargs = dict()
+
+		self.interval = interval
+		self.function = function
+		self.args = args
+		self.kwargs = kwargs
+		self.on_cancelled = on_cancelled
+		self.on_reset = on_reset
+
+
+	def run(self):
+		while self.is_reset:
+			with self._mutex:
+				self.is_reset = False
+			self._event.wait(self.interval)
+
+		if not self._event.isSet():
+			self.function(*self.args, **self.kwargs)
+		with self._mutex:
+			self._event.set()
+
+	def cancel(self):
+		with self._mutex:
+			self._event.set()
+
+		if callable(self.on_cancelled):
+			self.on_cancelled()
+
+	def reset(self, interval=None):
+		with self._mutex:
+			if interval:
+				self.interval = interval
+
+			self.is_reset = True
+			self._event.set()
+			self._event.clear()
+
+		if callable(self.on_reset):
+			self.on_reset()
 
 
 class CountedEvent(object):

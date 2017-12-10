@@ -69,7 +69,7 @@ GCODE.renderer = (function(){
         ctx.clearRect(p1.x,p1.y,p2.x-p1.x,p2.y-p1.y);
         drawGrid();
         drawBoundingBox();
-        if(renderOptions['showNextLayer'] && layerNumStore < model.length - 1) {
+        if (renderOptions['showNextLayer'] && model && model.length && layerNumStore < model.length - 1) {
             drawLayer(layerNumStore + 1, 0, GCODE.renderer.getLayerNumSegments(layerNumStore + 1), true);
         }
         if (renderOptions['showPreviousLayer'] && layerNumStore > 0) {

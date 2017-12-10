@@ -105,12 +105,12 @@ $(function() {
             var userAgent = (navigator && navigator.userAgent || "").toLowerCase();
             var vendor = (navigator && navigator.vendor || "").toLowerCase();
 
-            exports.browser.opera = userAgent.match(/opera|opr/) != null;
-            exports.browser.chrome = !exports.browser.opera && /google inc/.test(vendor) && userAgent.match(/chrome|crios/) != null;
-            exports.browser.firefox = userAgent.match(/firefox|fxios/) != null;
-            exports.browser.ie = userAgent.match(/msie|trident/) != null;
-            exports.browser.edge = userAgent.match(/edge/) != null;
-            exports.browser.safari = !exports.browser.chrome && !exports.browser.edge && !exports.browser.opera && userAgent.match(/safari/) != null;
+            exports.browser.opera = userAgent.match(/opera|opr/) !== null;
+            exports.browser.chrome = !exports.browser.opera && /google inc/.test(vendor) && userAgent.match(/chrome|crios/) !== null;
+            exports.browser.firefox = userAgent.match(/firefox|fxios/) !== null;
+            exports.browser.ie = userAgent.match(/msie|trident/) !== null;
+            exports.browser.edge = userAgent.match(/edge/) !== null;
+            exports.browser.safari = !exports.browser.chrome && !exports.browser.edge && !exports.browser.opera && userAgent.match(/safari/) !== null;
 
             exports.browser.mobile = $.browser.mobile;
             exports.browser.desktop = !exports.browser.mobile;
@@ -132,8 +132,7 @@ $(function() {
         // work around a stupid iOS6 bug where ajax requests get cached and only work once, as described at
         // http://stackoverflow.com/questions/12506897/is-safari-on-ios-6-caching-ajax-results
         $.ajaxPrefilter(function(options, originalOptions, jqXHR) {
-            if (options.type != "GET") {
-                var headers;
+            if (options.type !== "GET") {
                 if (options.hasOwnProperty("headers")) {
                     options.headers["Cache-Control"] = "no-cache";
                 } else {
@@ -199,7 +198,7 @@ $(function() {
                 return new PNotify(options);
             }
 
-            var autoDisplay = options.auto_display != false;
+            var autoDisplay = options.auto_display !== false;
 
             var params = $.extend(true, {}, options);
             params.auto_display = false;
@@ -453,7 +452,7 @@ $(function() {
                             "z-index": 9999
                         }).off('click')
                         .on('click', function (e) {
-                            if (e.target.tagName.toLowerCase() == "input")
+                            if (e.target.tagName.toLowerCase() === "input")
                                 return;
 
                             $(this).hide();
@@ -486,7 +485,7 @@ $(function() {
 
         $.fn.lazyload = function() {
             return this.each(function() {
-                if (this.tagName.toLowerCase() != "img") return;
+                if (this.tagName.toLowerCase() !== "img") return;
 
                 var src = this.getAttribute("data-src");
                 if (src) {
@@ -510,7 +509,7 @@ $(function() {
             callViewModels(allViewModels, "onAfterTabChange", [current, previous]);
         };
 
-        var tabs = $('#tabs a[data-toggle="tab"]');
+        var tabs = $('#tabs').find('a[data-toggle="tab"]');
         tabs.on('show', function (e) {
             var current = e.target.hash;
             var previous = e.relatedTarget.hash;
@@ -521,10 +520,25 @@ $(function() {
             var current = e.target.hash;
             var previous = e.relatedTarget.hash;
             onAfterTabChange(current, previous);
+
+            // make sure we also update the hash but stick to the current scroll position
+            var scrollmem = $('body').scrollTop() || $('html').scrollTop();
+            window.location.hash = current;
+            $('html,body').scrollTop(scrollmem);
         });
 
         onTabChange(OCTOPRINT_INITIAL_TAB);
         onAfterTabChange(OCTOPRINT_INITIAL_TAB, undefined);
+
+        var changeTab = function() {
+            var hashtag = window.location.hash;
+            if (!hashtag) return;
+
+            var tab = $('#tabs').find('a[href="' + hashtag + '"]');
+            if (tab) {
+                tab.tab("show");
+            }
+        };
 
         // Fix input element click problems on dropdowns
         $(".dropdown input, .dropdown label").click(function(e) {
@@ -653,6 +667,14 @@ $(function() {
                 log.debug("Browser tab is now " + (status ? "visible" : "hidden"));
                 callViewModels(allViewModels, "onBrowserTabVisibilityChange", [status]);
             });
+
+            $(window).on("hashchange", function() {
+                changeTab();
+            });
+
+            if (window.location.hash !== "") {
+                changeTab();
+            }
 
             log.info("Application startup complete");
         };

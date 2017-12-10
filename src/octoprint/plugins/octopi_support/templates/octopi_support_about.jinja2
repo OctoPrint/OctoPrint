@@ -1,11 +1,11 @@
 <h3>{{ _('About OctoPi') }}</h3>
 
-<h4>{{ _('The ready-to-go Raspberry Pi image with OctoPrint') }}</h4>
+<h4>The ready-to-go Raspberry Pi image with OctoPrint</h4>
 
 <p>Version <span class="plugin_octopi_support_version">{{ plugin_octopi_support_version }}</span></p>
 
 <ul>
-    <li>Website: <a href="http://octoprint.org/download/" target="_blank" rel="noreferrer noopener">octoprint.org/download</a> &amp; <a href="https://octopi.octoprint.org" target="_blank" rel="noreferrer noopener">octopi.octoprint.org</a></li>
+    <li>Website: <a href="https://octoprint.org/download/" target="_blank" rel="noreferrer noopener">octoprint.org/download</a> &amp; <a href="https://octopi.octoprint.org" target="_blank" rel="noreferrer noopener">octopi.octoprint.org</a></li>
     <li>Source Code: <a href="https://github.com/guysoft/OctoPi" target="_blank" rel="noreferrer noopener">github.com/guysoft/OctoPi</a></li>
 </ul>
 
@@ -29,14 +29,4 @@
     For a copy of the GNU General Public License, see
     <a href="https://www.gnu.org/licenses/gpl-3.0.en.html" target="_blank" rel="noreferrer noopener">www.gnu.org/licenses/gpl-3.0.en.html</a>.
 </p>
-
-{% if plugin_octopi_support_rpi_model != "unknown" %}
-<h3>{{ _('About this Raspberry Pi') }}</h3>
-
-<ul>
-    <li>Model: {{ plugin_octopi_support_rpi_model }}</li>
-    <li>Revision: {{ plugin_octopi_support_rpi_revision }}</li>
-    <li>Serial: {{ plugin_octopi_support_rpi_serial }}</li>
-</ul>
-{% endif %}
 

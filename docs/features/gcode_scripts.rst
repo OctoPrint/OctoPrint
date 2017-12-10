@@ -146,7 +146,7 @@ Out of the box, OctoPrint defaults to the following script setup for ``afterPrin
 
    ;disable all heaters
    {% snippet 'disable_hotends' %}
-   [% snippet 'disable_bed' %}
+   {% snippet 'disable_bed' %}
 
    ;disable fan
    M106 S0
@@ -173,6 +173,75 @@ As you can see, the ``disable_hotends`` and ``disable_bed`` snippets utilize the
 ``printer_profile`` context variable in order to iterate through all available
 extruders and set their temperature to 0, and to also set the bed temperature
 to 0 if a heated bed is configured.
+
+.. _sec-features-gcode_scripts-examples:
+
+Examples
+--------
+
+.. _sec-features-gcode_scripts-examples-more_nifty_pause_and_resume:
+
+More nifty pause and resume
+...........................
+
+If you do not have a multi-extruder setup, aren't printing from SD and have "Log position on pause" enabled under
+Settings > Serial > Advanced options, the following ``afterPrintPaused`` and
+``beforePrintResumed`` scripts might be interesting for you. With something like them in place, OctoPrint will move your print head
+out of the way to a safe rest position (here ``G1 X0 Y0``, you might want to adjust that) on pause and move it back
+to the persisted pause position on resume, making sure to also reset the extruder and feedrate.
+
+.. code-block:: jinja
+   :caption: ``afterPrintPaused`` script
+
+   {% if pause_position.x is not none %}
+   ; relative XYZE
+   G91
+   M83
+
+   ; retract filament, move Z slightly upwards
+   G1 Z+5 E-5 F4500
+
+   ; absolute XYZE
+   M82
+   G90
+
+   ; move to a safe rest position, adjust as necessary
+   G1 X0 Y0
+   {% endif %}
+
+.. code-block:: jinja
+   :caption: ``beforePrintResumed`` script
+
+   {% if pause_position.x is not none %}
+   ; relative extruder
+   M83
+
+   ; prime nozzle
+   G1 E-5 F4500
+   G1 E5 F4500
+   G1 E5 F4500
+
+   ; absolute E
+   M82
+
+   ; absolute XYZ
+   G90
+
+   ; reset E
+   G92 E{{ pause_position.e }}
+
+   ; move back to pause position XYZ
+   G1 X{{ pause_position.x }} Y{{ pause_position.y }} Z{{ pause_position.z }} F4500
+
+   ; reset to feed rate before pause if available
+   {% if pause_position.f is not none %}G1 F{{ pause_position.f }}{% endif %}
+   {% endif %}
+
+.. warning::
+
+   As mentioned in the warning above and the description of the example itself, this will *only* work if you are
+   not printing from SD and not using multiple extruders since OctoPrint will only then be able to track the
+   necessary position data and print parameters due to firmware limitations.
 
 .. seealso::
 

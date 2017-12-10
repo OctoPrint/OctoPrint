@@ -46,6 +46,63 @@ def get_octoprint_version(base=False):
 	return octoprint_version
 
 
+def is_released_octoprint_version(version=None):
+	"""
+	>>> import pkg_resources
+	>>> is_released_octoprint_version(version=pkg_resources.parse_version("1.3.6rc3"))
+	True
+	>>> is_released_octoprint_version(version=pkg_resources.parse_version("1.3.6rc3.dev2+g1234"))
+	False
+	>>> is_released_octoprint_version(version=pkg_resources.parse_version("1.3.6"))
+	True
+	>>> is_released_octoprint_version(version=pkg_resources.parse_version("1.3.6.post1+g1234"))
+	True
+	>>> is_released_octoprint_version(version=pkg_resources.parse_version("1.3.6.post1.dev0+g1234"))
+	False
+	>>> is_released_octoprint_version(version=pkg_resources.parse_version("1.3.7.dev123+g23545"))
+	False
+	"""
+
+	if version is None:
+		version = get_octoprint_version()
+
+	if isinstance(version, tuple):
+		# old setuptools
+		return "*@" not in version
+	else:
+		# new setuptools
+		return "dev" not in version.public
+
+
+def is_stable_octoprint_version(version=None):
+	"""
+	>>> import pkg_resources
+	>>> is_stable_octoprint_version(version=pkg_resources.parse_version("1.3.6rc3"))
+	False
+	>>> is_stable_octoprint_version(version=pkg_resources.parse_version("1.3.6rc3.dev2+g1234"))
+	False
+	>>> is_stable_octoprint_version(version=pkg_resources.parse_version("1.3.6"))
+	True
+	>>> is_stable_octoprint_version(version=pkg_resources.parse_version("1.3.6.post1+g1234"))
+	True
+	>>> is_stable_octoprint_version(version=pkg_resources.parse_version("1.3.6.post1.dev0+g1234"))
+	False
+	>>> is_stable_octoprint_version(version=pkg_resources.parse_version("1.3.7.dev123+g23545"))
+	False
+	"""
+
+	if version is None:
+		version = get_octoprint_version()
+
+	if not is_released_octoprint_version(version=version):
+		return False
+
+	if isinstance(version, tuple):
+		return "*a" not in version and "*b" not in version and "*c" not in version
+	else:
+		return not version.is_prerelease
+
+
 def is_octoprint_compatible(*compatibility_entries, **kwargs):
 	"""
 	Tests if the current ``octoprint_version`` is compatible to any of the provided ``compatibility_entries``.
@@ -74,7 +131,7 @@ def is_octoprint_compatible(*compatibility_entries, **kwargs):
 			if not any(octo_compat.startswith(c) for c in ("<", "<=", "!=", "==", ">=", ">", "~=", "===")):
 				octo_compat = ">={}".format(octo_compat)
 
-			s = next(pkg_resources.parse_requirements("OctoPrint" + octo_compat))
+			s = pkg_resources.Requirement.parse("OctoPrint" + octo_compat)
 			if octoprint_version in s:
 				break
 		except:

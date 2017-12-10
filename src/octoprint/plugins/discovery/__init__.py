@@ -10,9 +10,10 @@ The SSDP/UPNP implementations has been largely inspired by https://gist.github.c
 """
 
 import logging
-import os
 import flask
 from flask.ext.babel import gettext
+
+# noinspection PyCompatibility
 from builtins import range
 
 import octoprint.plugin
@@ -23,14 +24,6 @@ try:
 except:
 	pybonjour = False
 
-
-__plugin_name__ = "Discovery"
-__plugin_author__ = "Gina Häußge"
-__plugin_url__ = "http://docs.octoprint.org/en/master/bundledplugins/discovery.html"
-__plugin_description__ = "Makes the OctoPrint instance discoverable via Bonjour/Avahi/Zeroconf and uPnP"
-__plugin_disabling_discouraged__ = gettext("Without this plugin your OctoPrint instance will no longer be "
-                                           "discoverable on the network via Bonjour and uPnP.")
-__plugin_license__ = "AGPLv3"
 
 def __plugin_load__():
 	if not pybonjour:
@@ -62,6 +55,7 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 
 	ssdp_multicast_port = 1900
 
+	# noinspection PyMissingConstructor
 	def __init__(self):
 		self.host = None
 		self.port = None
@@ -685,3 +679,12 @@ class DiscoveryPlugin(octoprint.plugin.StartupPlugin,
 		else:
 			import socket
 			return u"OctoPrint instance on {}".format(socket.gethostname())
+
+
+__plugin_name__ = "Discovery"
+__plugin_author__ = "Gina Häußge"
+__plugin_url__ = "http://docs.octoprint.org/en/master/bundledplugins/discovery.html"
+__plugin_description__ = "Makes the OctoPrint instance discoverable via Bonjour/Avahi/Zeroconf and uPnP"
+__plugin_disabling_discouraged__ = gettext("Without this plugin your OctoPrint instance will no longer be "
+                                           "discoverable on the network via Bonjour and uPnP.")
+__plugin_license__ = "AGPLv3"

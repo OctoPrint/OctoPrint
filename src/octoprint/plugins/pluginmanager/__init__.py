@@ -12,14 +12,13 @@ import octoprint.plugin.core
 
 from octoprint.settings import valid_boolean_trues
 from octoprint.server.util.flask import restricted_access, with_revalidation_checking, check_etag
-from octoprint.server import admin_permission, VERSION
-from octoprint.util.pip import LocalPipCaller, UnknownPip
+from octoprint.server import admin_permission
+from octoprint.util.pip import LocalPipCaller
 from octoprint.util.version import get_octoprint_version_string, get_octoprint_version, is_octoprint_compatible
 from octoprint.util.platform import get_os
 
 from flask import jsonify, make_response
 from flask.ext.babel import gettext
-from collections import OrderedDict
 
 import logging
 import sarge
@@ -27,7 +26,6 @@ import sys
 import requests
 import re
 import os
-import pkg_resources
 import copy
 import dateutil.parser
 import time
@@ -44,7 +42,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
                           octoprint.plugin.EventHandlerPlugin):
 
 	ARCHIVE_EXTENSIONS = (".zip", ".tar.gz", ".tgz", ".tar")
-	
+
 	# valid pip install URL schemes according to https://pip.pypa.io/en/stable/reference/pip_install/
 	URL_SCHEMES = ("http", "https", "git",
 	               "git+http", "git+https", "git+ssh", "git+git",
@@ -61,6 +59,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 	RECONNECT_HOOKS = ["octoprint.comm.protocol.*",]
 
+	# noinspection PyMissingConstructor
 	def __init__(self):
 		self._pending_enable = set()
 		self._pending_disable = set()
@@ -118,9 +117,9 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 	def get_settings_defaults(self):
 		return dict(
-			repository="http://plugins.octoprint.org/plugins.json",
+			repository="https://plugins.octoprint.org/plugins.json",
 			repository_ttl=24*60,
-			notices="http://plugins.octoprint.org/notices.json",
+			notices="https://plugins.octoprint.org/notices.json",
 			notices_ttl=6*60,
 			pip_args=None,
 			pip_force_user=False,
@@ -313,7 +312,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 		if url is not None:
 			if not any(map(lambda scheme: url.startswith(scheme + "://"), self.URL_SCHEMES)):
 				raise ValueError("Invalid URL to pip install from")
-			
+
 			source = url
 			source_type = "url"
 			already_installed_check = lambda line: url in line
