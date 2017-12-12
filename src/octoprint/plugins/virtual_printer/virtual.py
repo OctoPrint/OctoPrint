@@ -88,7 +88,7 @@ class VirtualPrinter(object):
 		self._lastX = 0.0
 		self._lastY = 0.0
 		self._lastZ = 0.0
-		self._lastE = 0.0
+		self._lastE = [0.0] * self.extruderCount
 		self._lastF = 200
 
 		self._unitModifier = 1
@@ -428,7 +428,19 @@ class VirtualPrinter(object):
 			self._deleteSdFile(filename)
 
 	def _gcode_M114(self, data):
-		output = "X:{} Y:{} Z:{} E:{} Count: A:{} B:{} C:{}".format(self._lastX, self._lastY, self._lastZ, self._lastE, int(self._lastX*100), int(self._lastY*100), int(self._lastZ*100))
+		if settings().getBoolean(["devel", "virtualPrinter", "reprapfwM114"]):
+			output = "X:{} Y:{} Z:{} {}".format(self._lastX,
+			                                    self._lastY,
+			                                    self._lastZ,
+			                                    " ".join(["E{}:{}".format(num, self._lastE[self.currentExtruder]) for num in range(self.extruderCount)]))
+		else:
+			output = "X:{} Y:{} Z:{} E:{} Count: A:{} B:{} C:{}".format(self._lastX,
+			                                                            self._lastY,
+			                                                            self._lastZ,
+			                                                            self._lastE[self.currentExtruder],
+			                                                            int(self._lastX*100),
+			                                                            int(self._lastY*100),
+			                                                            int(self._lastZ*100))
 		if not self._okBeforeCommandOutput:
 			ok = self._ok()
 			if ok:
@@ -482,7 +494,7 @@ class VirtualPrinter(object):
 		if self._lastZ is not None:
 			self._lastZ *= 2.54
 		if self._lastE is not None:
-			self._lastE *= 2.54
+			self._lastE = [e * 2.54 if e is not None else None for e in self._lastE]
 
 	def _gcode_G21(self, data):
 		self._unitModifier = 1.0
@@ -493,7 +505,7 @@ class VirtualPrinter(object):
 		if self._lastZ is not None:
 			self._lastZ /= 2.54
 		if self._lastE is not None:
-			self._lastE /= 2.54
+			self._lastE = [e / 2.54 if e is not None else None for e in self._lastE]
 
 	def _gcode_G90(self, data):
 		self._relative = False
@@ -894,15 +906,16 @@ class VirtualPrinter(object):
 		if matchE is not None:
 			try:
 				e = float(matchE.group(1))
-				if self._relative or self._lastE is None:
+				lastE = self._lastE[self.currentExtruder]
+				if self._relative or lastE is None:
 					duration = max(duration, e * self._unitModifier / speedE * 60.0)
 				else:
-					duration = max(duration, (e - self._lastE) * self._unitModifier / speedE * 60.0)
+					duration = max(duration, (e - lastE) * self._unitModifier / speedE * 60.0)
 
-				if self._relative and self._lastE is not None:
-					self._lastE += e
+				if self._relative and lastE is not None:
+					self._lastE[self.currentExtruder] += e
 				else:
-					self._lastE = e
+					self._lastE[self.currentExtruder] = e
 			except:
 				pass
 
@@ -922,7 +935,7 @@ class VirtualPrinter(object):
 		matchE = re.search("E([0-9.]+)", line)
 
 		if matchX is None and matchY is None and matchZ is None and matchE is None:
-			self._lastX = self._lastY = self._lastZ = self._lastE = 0
+			self._lastX = self._lastY = self._lastZ = self._lastE[self.currentExtruder] = 0
 		else:
 			if matchX is not None:
 				try:
@@ -941,7 +954,7 @@ class VirtualPrinter(object):
 					pass
 			if matchE is not None:
 				try:
-					self._lastE = float(matchE.group(1))
+					self._lastE[self.currentExtruder] = float(matchE.group(1))
 				except:
 					pass
 

@@ -117,9 +117,9 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 	def get_settings_defaults(self):
 		return dict(
-			repository="http://plugins.octoprint.org/plugins.json",
+			repository="https://plugins.octoprint.org/plugins.json",
 			repository_ttl=24*60,
-			notices="http://plugins.octoprint.org/notices.json",
+			notices="https://plugins.octoprint.org/notices.json",
 			notices_ttl=6*60,
 			pip_args=None,
 			pip_force_user=False,

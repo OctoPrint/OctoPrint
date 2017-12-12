@@ -5,14 +5,14 @@
 OctoPrint provides a snappy web interface for controlling consumer 3D printers. It is Free Software
 and released under the [GNU Affero General Public License V3](http://www.gnu.org/licenses/agpl.html).
 
-Its website can be found at [octoprint.org](http://octoprint.org).
+Its website can be found at [octoprint.org](https://octoprint.org/?utm_source=github&utm_medium=readme).
 
 The documentation is located at [docs.octoprint.org](http://docs.octoprint.org).
 
-The official plugin repository can be reached at [plugins.octoprint.org](http://plugins.octoprint.org).
+The official plugin repository can be reached at [plugins.octoprint.org](https://plugins.octoprint.org/?utm_source=github&utm_medium=readme).
 
-OctoPrint's development wouldn't be possible without the [financial support by its community](http://octoprint.org/support-octoprint/).
-If you enjoy OctoPrint, please consider becoming a regular supporter!
+**OctoPrint's development wouldn't be possible without the [financial support by its community](https://octoprint.org/support-octoprint/?utm_source=github&utm_medium=readme).
+If you enjoy OctoPrint, please consider becoming a regular supporter!**
 
 ![Screenshot](http://i.imgur.com/dF3noFp.png)
 
@@ -29,7 +29,7 @@ Contributions of all kinds are welcome, not only in the form of code but also wi
 [official documentation](http://docs.octoprint.org/) or [the public wiki](https://github.com/foosel/OctoPrint/wiki), support
 of other users in the [bug tracker](https://github.com/foosel/OctoPrint/issues),
 [the Mailinglist](https://groups.google.com/group/octoprint) or
-[the G+ Community](https://plus.google.com/communities/102771308349328485741) and also [financially](http://octoprint.org/support-octoprint/).
+[the G+ Community](https://plus.google.com/communities/102771308349328485741) and also [financially](https://octoprint.org/support-octoprint/?utm_source=github&utm_medium=readme).
 
 If you think something is bad about OctoPrint or its documentation the way it is, please help
 in any way to make it better instead of just complaining about it -- this is an Open Source Project

@@ -196,8 +196,8 @@ $(function() {
                 return;
             }
 
-            var restartSpec = _.filter(lastResponse.core, function(spec) { return spec.action === "restart" });
-            self.restartCommandSpec = restartSpec !== undefined && restartSpec.length > 0 ? restartSpec[0] : undefined;
+            var restartSpec = _.filter(lastResponse.core, function(spec) { return spec.action == "restart" });
+            self.restartCommandSpec = restartSpec != undefined && restartSpec.length > 0 ? restartSpec[0] : undefined;
         });
 
         self.notifications = [];
@@ -207,9 +207,9 @@ $(function() {
 
         self.noticeCountText = ko.pureComputed(function() {
             var count = self.noticeCount();
-            if (count === 0) {
+            if (count == 0) {
                 return gettext("There are no plugin notices. Great!");
-            } else if (count === 1) {
+            } else if (count == 1) {
                 return gettext("There is a plugin notice for one of your installed plugins.");
             } else {
                 return _.sprintf(gettext("There are %(count)d plugin notices for one or more of your installed plugins."), {count: count});
@@ -224,15 +224,15 @@ $(function() {
             var command = self._getToggleCommand(data);
             var not_safemode_victim = !data.safe_mode_victim || data.safe_mode_enabled;
             var not_blacklisted = !data.blacklisted;
-            return self.enableManagement() && (command === "disable" || (not_safemode_victim && not_blacklisted)) && data.key !== 'pluginmanager';
+            return self.enableManagement() && (command == "disable" || (not_safemode_victim && not_blacklisted)) && data.key != 'pluginmanager';
         };
 
         self.enableUninstall = function(data) {
             return self.enableManagement()
-                && (data.origin !== "entry_point" || self.pipAvailable())
+                && (data.origin != "entry_point" || self.pipAvailable())
                 && data.managable
                 && !data.bundled
-                && data.key !== 'pluginmanager'
+                && data.key != 'pluginmanager'
                 && !data.pending_uninstall;
         };
 
@@ -299,7 +299,7 @@ $(function() {
             maxNumberOfFiles: 1,
             autoUpload: false,
             add: function(e, data) {
-                if (data.files.length === 0) {
+                if (data.files.length == 0) {
                     return false;
                 }
 
@@ -341,7 +341,7 @@ $(function() {
 
         self.performRepositorySearch = function() {
             var query = self.repositorySearchQuery();
-            if (query !== undefined && query.trim() !== "") {
+            if (query !== undefined && query.trim() != "") {
                 query = query.toLocaleLowerCase();
                 self.repositoryplugins.changeSearchFunction(function(entry) {
                     return entry && (entry["title"].toLocaleLowerCase().indexOf(query) > -1 || entry["description"].toLocaleLowerCase().indexOf(query) > -1);
@@ -447,7 +447,7 @@ $(function() {
                 return;
             }
 
-            if (data.key === "pluginmanager") return;
+            if (data.key == "pluginmanager") return;
 
             var onSuccess = function() {
                     self.requestData();
@@ -461,7 +461,7 @@ $(function() {
                     })
                 };
 
-            if (self._getToggleCommand(data) === "enable") {
+            if (self._getToggleCommand(data) == "enable") {
                 if (data.safe_mode_victim && !data.safe_mode_enabled) return;
                 OctoPrint.plugins.pluginmanager.enable(data.key)
                     .done(onSuccess)
@@ -582,7 +582,7 @@ $(function() {
             }
 
             if (data.bundled) return;
-            if (data.key === "pluginmanager") return;
+            if (data.key == "pluginmanager") return;
 
             self._markWorking(gettext("Uninstalling plugin..."), _.sprintf(gettext("Uninstalling plugin \"%(name)s\""), {name: data.name}));
 
@@ -633,7 +633,7 @@ $(function() {
 
         self.savePluginSettings = function() {
             var repository = self.config_repositoryUrl();
-            if (repository !== undefined && repository.trim() === "") {
+            if (repository != undefined && repository.trim() == "") {
                 repository = null;
             }
 
@@ -645,7 +645,7 @@ $(function() {
             }
 
             var notices = self.config_noticesUrl();
-            if (notices !== undefined && notices.trim() === "") {
+            if (notices != undefined && notices.trim() == "") {
                 notices = null;
             }
 
@@ -657,7 +657,7 @@ $(function() {
             }
 
             var pipArgs = self.config_pipAdditionalArgs();
-            if (pipArgs !== undefined && pipArgs.trim() === "") {
+            if (pipArgs != undefined && pipArgs.trim() == "") {
                 pipArgs = null;
             }
 
@@ -709,7 +709,7 @@ $(function() {
             };
 
             if (response.result) {
-                if (action === "install" && response.plugin && response.plugin.blacklisted) {
+                if (action == "install" && response.plugin && response.plugin.blacklisted) {
                     notification = new PNotify({
                         title: titleSuccess,
                         text: textSuccess,
@@ -862,7 +862,7 @@ $(function() {
         };
 
         self.toggleButtonCss = function(data) {
-            var icon = self._getToggleCommand(data) === "enable" ? "fa fa-toggle-off" : "fa fa-toggle-on";
+            var icon = self._getToggleCommand(data) == "enable" ? "fa fa-toggle-off" : "fa fa-toggle-on";
             var disabled = (self.enableToggle(data)) ? "" : " disabled";
 
             return icon + disabled;
@@ -870,7 +870,7 @@ $(function() {
 
         self.toggleButtonTitle = function(data) {
             var command = self._getToggleCommand(data);
-            if (command === "enable") {
+            if (command == "enable") {
                 if (data.blacklisted) {
                     return gettext("Blacklisted");
                 } else if (data.safe_mode_victim && !data.safe_mode_enabled) {
@@ -884,7 +884,7 @@ $(function() {
         };
 
         self.showPluginNotifications = function(plugin) {
-            if (!plugin.notifications || plugin.notifications.length === 0) return;
+            if (!plugin.notifications || plugin.notifications.length == 0) return;
 
             self._removeAllNoticeNotificationsForPlugin(plugin.key);
             _.each(plugin.notifications, function(notification) {
@@ -893,7 +893,7 @@ $(function() {
         };
 
         self.showPluginNotificationsLinkText = function(plugins) {
-            if (!plugins.notifications || plugins.notifications.length === 0) return;
+            if (!plugins.notifications || plugins.notifications.length == 0) return;
 
             var count = plugins.notifications.length;
             var importantCount = _.filter(plugins.notifications, function(notification) { return notification.important }).length;
@@ -929,7 +929,7 @@ $(function() {
             var text = "";
 
             if (notification.versions && notification.versions.length > 0) {
-                var versions = _.map(notification.versions, function(v) { return (v === version) ? "<strong>" + v + "</strong>" : v; }).join(", ");
+                var versions = _.map(notification.versions, function(v) { return (v == version) ? "<strong>" + v + "</strong>" : v; }).join(", ");
                 text += "<small>" + _.sprintf(gettext("Affected versions: %(versions)s"), {versions: versions}) + "</small>";
             } else {
                 text += "<small>" + gettext("Affected versions: all") + "</small>";
@@ -1005,7 +1005,7 @@ $(function() {
 
         self._isNoticeNotificationHidden = function(key, date) {
             if (!self.hiddenNoticeNotifications[key]) return false;
-            return _.any(_.map(self.hiddenNoticeNotifications[key], function(d) { return date === d; }));
+            return _.any(_.map(self.hiddenNoticeNotifications[key], function(d) { return date == d; }));
         };
 
         var noticeLocalStorageKey = "plugin.pluginmanager.seen_notices";
@@ -1039,7 +1039,7 @@ $(function() {
             if (!Modernizr.localstorage)
                 return false;
 
-            if (localStorage[noticeLocalStorageKey] === undefined)
+            if (localStorage[noticeLocalStorageKey] == undefined)
                 return false;
 
             var knownData = JSON.parse(localStorage[noticeLocalStorageKey]);
@@ -1094,7 +1094,7 @@ $(function() {
         };
 
         self.onDataUpdaterPluginMessage = function(plugin, data) {
-            if (plugin !== "pluginmanager") {
+            if (plugin != "pluginmanager") {
                 return;
             }
 
@@ -1108,21 +1108,21 @@ $(function() {
 
             var messageType = data.type;
 
-            if (messageType === "loglines" && self.working()) {
+            if (messageType == "loglines" && self.working()) {
                 _.each(data.loglines, function(line) {
                     self.loglines.push(self._preprocessLine(line));
                 });
                 self._scrollWorkingOutputToEnd();
-            } else if (messageType === "result") {
+            } else if (messageType == "result") {
                 var titleSuccess, textSuccess, textRestart, textReload, textReconnect, titleError, textError;
                 var action = data.action;
 
                 var name = "Unknown";
-                if (action === "install") {
+                if (action == "install") {
                     var unknown = false;
 
                     if (data.hasOwnProperty("plugin")) {
-                        if (data.plugin === "unknown") {
+                        if (data.plugin == "unknown") {
                             unknown = true;
                         } else {
                             name = data.plugin.name;
@@ -1172,13 +1172,13 @@ $(function() {
 
                     if (data.hasOwnProperty("reason")) {
                         if (data.was_reinstalled) {
-                            if (sourceType === "path") {
+                            if (sourceType == "path") {
                                 textError = _.sprintf(gettext("Reinstalling the plugin from file failed: %(reason)s"), {reason: data.reason});
                             } else {
                                 textError = _.sprintf(gettext("Reinstalling the plugin from \"%(source)s\" failed: %(reason)s"), {reason: data.reason, source: source});
                             }
                         } else {
-                            if (sourceType === "path") {
+                            if (sourceType == "path") {
                                 textError = _.sprintf(gettext("Installing the plugin from file failed: %(reason)s"), {reason: data.reason});
                             } else {
                                 textError = _.sprintf(gettext("Installing the plugin from \"%(source)s\" failed: %(reason)s"), {reason: data.reason, source: source});
@@ -1186,13 +1186,13 @@ $(function() {
                         }
                     } else {
                         if (data.was_reinstalled) {
-                            if (sourceType === "path") {
+                            if (sourceType == "path") {
                                 textError = gettext("Reinstalling the plugin from file failed, please see the log for details.");
                             } else {
                                 textError = _.sprintf(gettext("Reinstalling the plugin from \"%(source)s\" failed, please see the log for details."), {source: source});
                             }
                         } else {
-                            if (sourceType === "path") {
+                            if (sourceType == "path") {
                                 textError = gettext("Installing the plugin from file failed, please see the log for details.");
                             } else {
                                 textError = _.sprintf(gettext("Installing the plugin from \"%(source)s\" failed, please see the log for details."), {source: source});
@@ -1200,7 +1200,7 @@ $(function() {
                         }
                     }
 
-                } else if (action === "uninstall") {
+                } else if (action == "uninstall") {
                     if (data.hasOwnProperty("plugin")) {
                         name = data.plugin.name;
                     }
@@ -1218,7 +1218,7 @@ $(function() {
                         textError = gettext("Uninstalling the plugin failed, please see the log for details.");
                     }
 
-                } else if (action === "enable") {
+                } else if (action == "enable") {
                     if (data.hasOwnProperty("plugin")) {
                         name = data.plugin.name;
                     }
@@ -1236,7 +1236,7 @@ $(function() {
                         textError = gettext("Toggling the plugin failed, please see the log for details.");
                     }
 
-                } else if (action === "disable") {
+                } else if (action == "disable") {
                     if (data.hasOwnProperty("plugin")) {
                         name = data.plugin.name;
                     }

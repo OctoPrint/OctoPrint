@@ -1,6 +1,6 @@
 # OctoPrint Changelog
 
-## 1.3.6rc2 (2017-12-05)
+## 1.3.6 (2017-12-12)
 
 ### Note for upgraders and plugin authors: Change in the bundling of JS assets can lead to issues in plugins
 
@@ -8,26 +8,7 @@ A change to solve issues with plugins bundling JS assets that cause interference
 
 If you happen to run into any such issues, you can switch back to the old way of bundling JS assets via the newly introduced "Settings > Feature > Enable legacy plugin asset bundling" toggle (check it, save the settings, restart the server). This is provided to allow for a minimally invasive adjustment period until affected plugins have been updated.
 
-You can find out more about the change, how to know if a plugin is even affected and what do about it [on the OctoBlog](http://octoprint.org/blog/2017/12/01/heads-up-plugin-authors/).
-
-### Bug fixes
-
-  * [#2262](https://github.com/foosel/OctoPrint/issues/2262) - Fixed a bug causing `Error:checksum mismatch, Last Line: ...` errors from the firmware to be handled incorrectly.
-  * [#2267](https://github.com/foosel/OctoPrint/issues/2267) - Fixed a bug causing the GCODE viewer to not get properly initialized due to a JS error on load if "Also show next layer" was selected.
-  * [#2268](https://github.com/foosel/OctoPrint/issues/2268) - Fixed a bug causing a display error with the temperature offsets. If one offset was changed, all others seemed to revert back to 0.
-  * Fixed ordering of plugin assets, should be alphabetical based on the plugin identifier.
-
-([Commits](https://github.com/foosel/OctoPrint/compare/1.3.6rc1...1.3.6rc2))
-
-## 1.3.6rc1 (2017-12-01)
-
-### Note for upgraders and plugin authors: Change in the bundling of JS assets can lead to issues in plugins
-
-A change to solve issues with plugins bundling JS assets that cause interference with other plugins (e.g. through the declaration of `"use strict"`) and in general to add better isolation and error handling might cause errors for some plugins that go beyond your run-off-the-mill view model and also implicitly declare new globals.
-
-If you happen to run into any such issues, you can switch back to the old way of bundling JS assets via the newly introduced "Settings > Feature > Enable legacy plugin asset bundling" toggle (check it, save the settings, restart the server). This is provided to allow for a minimally invasive adjustment period until affected plugins have been updated.
-
-You can find out more about the change, how to know if a plugin is even affected and what do about it [on the OctoBlog](http://octoprint.org/blog/2017/12/01/heads-up-plugin-authors/).
+You can find out more about the change, how to know if a plugin is even affected and what do about it [on the OctoBlog](https://octoprint.org/blog/2017/12/01/heads-up-plugin-authors/).
 
 ### Improvements
 
@@ -86,6 +67,7 @@ You can find out more about the change, how to know if a plugin is even affected
   * Docs: Added information on how to run the test suite.
   * Various refactorings
   * Various documentation updates
+  * Fetch plugin blacklist (and also announcements, plugin notices and plugin repository) via https instead of http.
 
 ### Bug fixes
 
@@ -108,6 +90,9 @@ You can find out more about the change, how to know if a plugin is even affected
   * [#2226](https://github.com/foosel/OctoPrint/issues/2226) - Handle `No Line Number with checksum, Last Line: ...` errors from the firmware.
   * [#2233](https://github.com/foosel/OctoPrint/pull/2233) - Respond with `411 Length Required` when content length is missing on file uploads.
   * [#2242](https://github.com/foosel/OctoPrint/issues/2242) - Fixed an issue where print time left could show "1 days" instead of "1 day".
+  * [#2262](https://github.com/foosel/OctoPrint/issues/2262) (regression) - Fixed a bug causing `Error:checksum mismatch, Last Line: ...` errors from the firmware to be handled incorrectly.
+  * [#2267](https://github.com/foosel/OctoPrint/issues/2267) (regression) - Fixed a bug causing the GCODE viewer to not get properly initialized due to a JS error on load if "Also show next layer" was selected.
+  * [#2268](https://github.com/foosel/OctoPrint/issues/2268) (regression) - Fixed a bug causing a display error with the temperature offsets. If one offset was changed, all others seemed to revert back to 0.
   * Fixed cleanup of unrendered timelapses with certain names.
   * Fixed a caching issue with the file list API and the slicing API.
   * Fixed initial sizing of the temperature graph.
@@ -125,8 +110,18 @@ You can find out more about the change, how to know if a plugin is even affected
   * Virtual printer: Fix resend simuation.
   * Docs: Fixed CSS of line numbered listings.
   * Docs: Updated mermaid to fix a deprecation warning.
+  * Fixed ordering of plugin assets, should be alphabetical based on the plugin identifier. (regression)
+  * Fixed an issue causing redundant software update configuration settings to be written to `config.yaml`, in turn causing issues when downgrading to <1.3.5. (regression)
+  * Fixed an issue detecting whether the installed version is a release version or a development version. (regression)
 
-([Commits](https://github.com/foosel/OctoPrint/compare/1.3.5...1.3.6rc1))
+### More Information
+
+  * [Commits](https://github.com/foosel/OctoPrint/compare/1.3.5...1.3.6)
+  * Release Candidates:
+    * [1.3.5rc1](https://github.com/foosel/OctoPrint/releases/tag/1.3.6rc1)
+    * [1.3.5rc2](https://github.com/foosel/OctoPrint/releases/tag/1.3.6rc2)
+    * [1.3.5rc3](https://github.com/foosel/OctoPrint/releases/tag/1.3.6rc3)
+    * A special **Thank you!** to everyone who reported back on these release candidates this time: [andrivet](https://github.com/andrivet), [b-morgan](https://github.com/b-morgan), [bjarchi](https://github.com/bjarchi), [chippypilot](https://github.com/chippypilot), [ChrisHeerschap](https://github.com/ChrisHeerschap), [cosmith71](https://github.com/cosmith71), [Crowlord](https://github.com/Crowlord), [ctgreybeard](https://github.com/ctgreybeard), [fiveangle](https://github.com/fiveangle), [goeland86](https://github.com/goeland86), [jbjones27](https://github.com/jbjones27), [jneilliii](https://github.com/jneilliii), [JohnOCFII](https://github.com/JohnOCFII), [Kunsi](https://github.com/Kunsi), [Lordxv](https://github.com/Lordxv), [malnvenshorn](https://github.com/malnvenshorn), [mcp5500](https://github.com/mcp5500), [ntoff](https://github.com/ntoff), [ripp2003](https://github.com/ripp2003) and [schorsch3000](https://github.com/schorsch3000)
 
 ## 1.3.5 (2017-10-16)
 
