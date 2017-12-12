@@ -118,9 +118,9 @@ You can find out more about the change, how to know if a plugin is even affected
 
   * [Commits](https://github.com/foosel/OctoPrint/compare/1.3.5...1.3.6)
   * Release Candidates:
-    * [1.3.5rc1](https://github.com/foosel/OctoPrint/releases/tag/1.3.6rc1)
-    * [1.3.5rc2](https://github.com/foosel/OctoPrint/releases/tag/1.3.6rc2)
-    * [1.3.5rc3](https://github.com/foosel/OctoPrint/releases/tag/1.3.6rc3)
+    * [1.3.6rc1](https://github.com/foosel/OctoPrint/releases/tag/1.3.6rc1)
+    * [1.3.6rc2](https://github.com/foosel/OctoPrint/releases/tag/1.3.6rc2)
+    * [1.3.6rc3](https://github.com/foosel/OctoPrint/releases/tag/1.3.6rc3)
     * A special **Thank you!** to everyone who reported back on these release candidates this time: [andrivet](https://github.com/andrivet), [b-morgan](https://github.com/b-morgan), [bjarchi](https://github.com/bjarchi), [chippypilot](https://github.com/chippypilot), [ChrisHeerschap](https://github.com/ChrisHeerschap), [cosmith71](https://github.com/cosmith71), [Crowlord](https://github.com/Crowlord), [ctgreybeard](https://github.com/ctgreybeard), [fiveangle](https://github.com/fiveangle), [goeland86](https://github.com/goeland86), [jbjones27](https://github.com/jbjones27), [jneilliii](https://github.com/jneilliii), [JohnOCFII](https://github.com/JohnOCFII), [Kunsi](https://github.com/Kunsi), [Lordxv](https://github.com/Lordxv), [malnvenshorn](https://github.com/malnvenshorn), [mcp5500](https://github.com/mcp5500), [ntoff](https://github.com/ntoff), [ripp2003](https://github.com/ripp2003) and [schorsch3000](https://github.com/schorsch3000)
 
 ## 1.3.5 (2017-10-16)
