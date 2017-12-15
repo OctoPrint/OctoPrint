@@ -10,4 +10,4 @@
 <label class="checkbox">
     <input type="checkbox" id="connection_autoconnect" data-bind="checked: settings.serial_autoconnect, css: {disabled: !isErrorOrClosed()}, enable: isErrorOrClosed() && loginState.isUser()"> {{ _('Auto-connect on server startup') }}
 </label>
-<button class="btn btn-block" id="printer_connect" data-bind="click: connect, text: buttonText(), enable: loginState.isUser()">{{ _('Connect') }}</button>
+<button class="btn btn-block" id="printer_connect" data-bind="click: connect, text: buttonText(), enable: loginState.isUser() && !isPrinting() && !isPaused()">{{ _('Connect') }}</button>
