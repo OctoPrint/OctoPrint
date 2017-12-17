@@ -301,7 +301,8 @@ default_settings = {
 		"userfile": None,
 		"autologinLocal": False,
 		"localNetworks": ["127.0.0.0/8"],
-		"autologinAs": None
+		"autologinAs": None,
+		"trustBasicAuthentication": False
 	},
 	"slicing": {
 		"enabled": True,

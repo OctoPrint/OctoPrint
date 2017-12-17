@@ -147,6 +147,19 @@ def load_user(id):
 
 	return None
 
+def load_user_from_request(request):
+	header = request.headers.get('Authorization')
+	if header:
+		header = header.replace('Basic ', '', 1)
+		try:
+			header = base64.b64decode(header)
+		except TypeError:
+			return None
+		id = header.split(':')[0]
+		user = userManager.findUser(userid=id)
+		if user:
+			return user
+	return None
 
 def unauthorized_user():
 	from flask import abort
@@ -446,6 +459,11 @@ class Server(object):
 		loginManager.session_protection = "strong"
 		loginManager.user_callback = load_user
 		loginManager.unauthorized_callback = unauthorized_user
+
+		# login users authenticated by basic auth
+		if self._settings.get(["accessControl", "trustBasicAuthentication"]):
+			loginManager.request_callback = load_user_from_request
+
 		if not userManager.enabled:
 			loginManager.anonymous_user = users.DummyUser
 			principals.identity_loaders.appendleft(users.dummy_identity_loader)
