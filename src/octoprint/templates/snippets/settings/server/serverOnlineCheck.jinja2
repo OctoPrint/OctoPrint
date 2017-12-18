@@ -1,0 +1,19 @@
+{% include "snippets/settings/server/serverOnlineCheckEnabled.jinja2" %}
+
+<div data-bind="visible: server_onlineCheck_enabled">
+    <div class="control-group">
+        <div class="controls">
+            <p>{% trans %}
+                Define a check interval, a host and a port to check against. If you don't know what to set here, the
+                default values (using Google's DNS server) should work. If you have concerns about using
+                that, define the IP and port of a different online server that you trust and that has a high
+                availability.
+            {% endtrans %}</p>
+        </div>
+    </div>
+
+    {% include "snippets/settings/server/serverOnlineCheckInterval.jinja2" %}
+    {% include "snippets/settings/server/serverOnlineCheckHost.jinja2" %}
+    {% include "snippets/settings/server/serverOnlineCheckPort.jinja2" %}
+    {% include "snippets/settings/server/serverOnlineCheckTest.jinja2" %}
+</div>

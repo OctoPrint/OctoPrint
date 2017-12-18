@@ -13,12 +13,14 @@ import os
 import yaml
 import uuid
 
+import wrapt
+
 import logging
 from builtins import range, bytes
 
 from octoprint.settings import settings
 
-from octoprint.util import atomic_write, to_str
+from octoprint.util import atomic_write, to_str, deprecated
 
 class UserManager(object):
 	valid_roles = ["user", "admin"]
@@ -58,13 +60,13 @@ class UserManager(object):
 		if not isinstance(user, SessionUser):
 			user = SessionUser(user)
 
-		self._session_users_by_session[user.get_session()] = user
+		self._session_users_by_session[user.session] = user
 
 		userid = user.get_id()
 		if not userid in self._sessionids_by_userid:
 			self._sessionids_by_userid[userid] = set()
 
-		self._sessionids_by_userid[userid].add(user.get_session())
+		self._sessionids_by_userid[userid].add(user.session)
 
 		self._logger.debug("Logged in user: %r" % user)
 
@@ -81,7 +83,7 @@ class UserManager(object):
 			return
 
 		userid = user.get_id()
-		sessionid = user.get_session()
+		sessionid = user.session
 
 		if userid in self._sessionids_by_userid:
 			try:
@@ -99,7 +101,7 @@ class UserManager(object):
 		for session, user in self._session_users_by_session.items():
 			if not isinstance(user, SessionUser):
 				continue
-			if user._created + (24 * 60 * 60) < time.time():
+			if user.created + (24 * 60 * 60) < time.time():
 				self.logout_user(user)
 
 	@staticmethod
@@ -505,37 +507,34 @@ class User(UserMixin):
 	def __repr__(self):
 		return "User(id=%s,name=%s,active=%r,user=%r,admin=%r)" % (self.get_id(), self.get_name(), self.is_active(), self.is_user(), self.is_admin())
 
-class SessionUser(User):
+class SessionUser(wrapt.ObjectProxy):
 	def __init__(self, user):
-		self._user = user
+		wrapt.ObjectProxy.__init__(self, user)
 
 		import string
 		import random
 		import time
 		chars = string.ascii_uppercase + string.ascii_lowercase + string.digits
-		self._session = "".join(random.choice(chars) for _ in range(10))
-		self._created = time.time()
+		self._self_session = "".join(random.choice(chars) for _ in range(10))
+		self._self_created = time.time()
 
-	def __getattribute__(self, item):
-		if item in ("get_session", "update_user", "_user", "_session", "_created"):
-			return object.__getattribute__(self, item)
-		else:
-			return getattr(object.__getattribute__(self, "_user"), item)
+	@property
+	def session(self):
+		return self._self_session
 
-	def __setattr__(self, item, value):
-		if item in ("_user", "_session", "_created"):
-			return object.__setattr__(self, item, value)
-		else:
-			return setattr(self._user, item, value)
+	@property
+	def created(self):
+		return self._self_created
 
+	@deprecated("SessionUser.get_session() has been deprecated, use SessionUser.session instead", since="1.3.5")
 	def get_session(self):
-		return self._session
+		return self.session
 
 	def update_user(self, user):
-		self._user = user
+		self.__wrapped__ = user
 
 	def __repr__(self):
-		return "SessionUser(id=%s,name=%s,active=%r,user=%r,admin=%r,session=%s,created=%s)" % (self.get_id(), self.get_name(), self.is_active(), self.is_user(), self.is_admin(), self._session, self._created)
+		return "SessionUser({!r},session={},created={})".format(self.__wrapped__, self.session, self.created)
 
 ##~~ DummyUser object to use when accessControl is disabled
 

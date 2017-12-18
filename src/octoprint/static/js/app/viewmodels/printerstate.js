@@ -27,6 +27,7 @@ $(function() {
 
         self.filename = ko.observable(undefined);
         self.filepath = ko.observable(undefined);
+        self.filedisplay = ko.observable(undefined);
         self.progress = ko.observable(undefined);
         self.filesize = ko.observable(undefined);
         self.filepos = ko.observable(undefined);
@@ -212,11 +213,13 @@ $(function() {
                 self.filename(data.file.name);
                 self.filepath(data.file.path);
                 self.filesize(data.file.size);
+                self.filedisplay(data.file.display);
                 self.sd(data.file.origin == "sdcard");
             } else {
                 self.filename(undefined);
                 self.filepath(undefined);
                 self.filesize(undefined);
+                self.filedisplay(undefined);
                 self.sd(undefined);
             }
 
@@ -225,14 +228,16 @@ $(function() {
 
             var result = [];
             if (data.filament && typeof(data.filament) == "object" && _.keys(data.filament).length > 0) {
-                for (var key in data.filament) {
-                    if (!_.startsWith(key, "tool") || !data.filament[key] || !data.filament[key].hasOwnProperty("length") || data.filament[key].length <= 0) continue;
+                var keys = _.keys(data.filament);
+                keys.sort();
+                _.each(keys, function(key) {
+                    if (!_.startsWith(key, "tool") || !data.filament[key] || !data.filament[key].hasOwnProperty("length") || data.filament[key].length <= 0) return;
 
                     result.push({
                         name: ko.observable(gettext("Tool") + " " + key.substr("tool".length)),
                         data: ko.observable(data.filament[key])
                     });
-                }
+                });
             }
             self.filament(result);
         };
@@ -304,9 +309,9 @@ $(function() {
         };
     }
 
-    OCTOPRINT_VIEWMODELS.push([
-        PrinterStateViewModel,
-        ["loginStateViewModel", "settingsViewModel"],
-        ["#state_wrapper", "#drop_overlay"]
-    ]);
+    OCTOPRINT_VIEWMODELS.push({
+        construct: PrinterStateViewModel,
+        dependencies: ["loginStateViewModel", "settingsViewModel"],
+        elements: ["#state_wrapper", "#drop_overlay"]
+    });
 });

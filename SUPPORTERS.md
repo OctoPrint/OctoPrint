@@ -14,55 +14,48 @@ thanks to everyone who contributed!
   * Boris Hussein
   * Brad Jackson
   * Brian E. Tyler
-  * Chris Day
   * Christian Petropolis
+  * COLLE+McVOY
   * CreativeTools
   * D Brian Kimmel
   * DeltaMaker 3D Printers
-  * Doug Johnson
   * E3D BigBox
   * Ernesto Martinez
-  * Exovite
   * F. Kunsmann
   * Frank Sander
   * Gary Deen
   * Gary N McKinney
   * George Robles
   * günter weber
-  * Ivan Krasin
   * James Seigel
-  * Jamie R McGuigan
+  * Jason Lawrence
   * Jeff Moe
   * Josh Daniels
   * Kaile Riser
   * Kale Stedman
   * Kazuhiro Ogura
-  * Lamin Kivelä
   * Makespace Madrid
   * Marcus Ackermann
-  * Mark Qvist
   * Mark Walker
-  * Masayoshi Mitsui
   * Michael Aumock
   * Miles Flavel
+  * mitchell hirsch
   * Mohammed khorakiwala
   * Noe Ruiz
   * Patrick McGinnis
-  * Peter Grace
   * Peter Schmehl
   * PRINT3Dforum.com
-  * Robert Gusek
+  * Randy C. Will
   * Roger Strolz
   * Roy Cortes
   * Samer Najia
-  * SD3D
-  * SeeMeCNC
   * Simon Hallam
   * Stefan Krister
   * Stephane Schittly
   * Sven Mueller
+  * Symbiotic Devices
   * Thomas Hatley
   * Timeshell.ca
   * Trent Shumay
 
-and 1098 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!
+and 1062 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!

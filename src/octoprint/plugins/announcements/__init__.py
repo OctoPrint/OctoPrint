@@ -22,14 +22,18 @@ from collections import OrderedDict
 
 from octoprint.server import admin_permission
 from octoprint.server.util.flask import restricted_access, with_revalidation_checking, check_etag
+from octoprint.util import utmify
 from flask.ext.babel import gettext
+from octoprint import __version__ as OCTOPRINT_VERSION
 
 class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
                          octoprint.plugin.SettingsPlugin,
                          octoprint.plugin.BlueprintPlugin,
                          octoprint.plugin.StartupPlugin,
-                         octoprint.plugin.TemplatePlugin):
+                         octoprint.plugin.TemplatePlugin,
+                         octoprint.plugin.EventHandlerPlugin):
 
+	# noinspection PyMissingConstructor
 	def __init__(self):
 		self._cached_channel_configs = None
 		self._cached_channel_configs_mutex = threading.RLock()
@@ -56,27 +60,27 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 		                                              description="Important announcements about OctoPrint.",
 		                                              priority=1,
 		                                              type="rss",
-		                                              url="http://octoprint.org/feeds/important.xml"),
+		                                              url="https://octoprint.org/feeds/important.xml"),
 		                              _releases=dict(name="Release Announcements",
 		                                             description="Announcements of new releases and release candidates of OctoPrint.",
 		                                             priority=2,
 		                                             type="rss",
-		                                             url="http://octoprint.org/feeds/releases.xml"),
+		                                             url="https://octoprint.org/feeds/releases.xml"),
 		                              _blog=dict(name="On the OctoBlog",
 		                                         description="Development news, community spotlights, OctoPrint On Air episodes and more from the official OctoBlog.",
 		                                         priority=2,
 		                                         type="rss",
-		                                         url="http://octoprint.org/feeds/octoblog.xml"),
+		                                         url="https://octoprint.org/feeds/octoblog.xml"),
 		                              _plugins=dict(name="New Plugins in the Repository",
 		                                            description="Announcements of new plugins released on the official Plugin Repository.",
 		                                            priority=2,
 		                                            type="rss",
-		                                            url="http://plugins.octoprint.org/feed.xml"),
+		                                            url="https://plugins.octoprint.org/feed.xml"),
 		                              _octopi=dict(name="OctoPi News",
 		                                           description="News around OctoPi, the Raspberry Pi image including OctoPrint.",
 		                                           priority=2,
 		                                           type="rss",
-		                                           url="http://octoprint.org/feeds/octopi.xml")),
+		                                           url="https://octoprint.org/feeds/octopi.xml")),
 		                enabled_channels=[],
 		                forced_channels=["_important"],
 		                channel_order=["_important", "_releases", "_blog", "_plugins", "_octopi"],
@@ -172,6 +176,7 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 			hash = hashlib.sha1()
 			hash.update(repr(sorted(enabled)))
 			hash.update(repr(sorted(forced)))
+			hash.update(OCTOPRINT_VERSION)
 
 			for channel in sorted(channel_configs.keys()):
 				hash.update(repr(channel_configs[channel]))
@@ -180,6 +185,7 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 
 			return hash.hexdigest()
 
+		# noinspection PyShadowingNames
 		def condition(lm, etag):
 			return check_etag(etag)
 
@@ -209,6 +215,14 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 			self._toggle(channel)
 
 		return NO_CONTENT
+
+	##~~ EventHandlerPlugin
+
+	def on_event(self, event, payload):
+		from octoprint.events import Events
+		if event != Events.CONNECTIVITY_CHANGED or not payload or not payload.get("new", False):
+			return
+		self._fetch_all_channels_async()
 
 	# Internal Tools
 
@@ -266,6 +280,11 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 		safe_key = self._slugify(key)
 		return self._get_channel_configs(force=force).get(safe_key)
 
+	def _fetch_all_channels_async(self, force=False):
+		thread = threading.Thread(target=self._fetch_all_channels, kwargs=dict(force=force))
+		thread.daemon = True
+		thread.start()
+
 	def _fetch_all_channels(self, force=False):
 		"""Fetch all channel feeds from cache or network."""
 
@@ -298,7 +317,10 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 
 		if data is None:
 			# cache not allowed or empty, fetch from network
-			data = self._get_channel_data_from_network(key, config)
+			if self._connectivity_checker.online:
+				data = self._get_channel_data_from_network(key, config)
+			else:
+				self._logger.info("Looks like we are offline, can't fetch announcements for channel {} from network".format(key))
 
 		return data
 
@@ -369,7 +391,7 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 		            summary=_lazy_images(entry["summary"]),
 		            summary_without_images=_strip_images(entry["summary"]),
 		            published=published,
-		            link=entry["link"],
+		            link=utmify(entry["link"], source="octoprint", medium="announcements", content=OCTOPRINT_VERSION),
 		            read=read)
 
 	def _get_channel_cache_path(self, key):

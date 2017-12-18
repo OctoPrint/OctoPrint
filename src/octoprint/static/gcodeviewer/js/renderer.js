@@ -20,7 +20,8 @@ GCODE.renderer = (function(){
     var lastX, lastY;
     var dragStart, dragged;
     var scaleFactor = 1.1;
-    var model;
+    var model = undefined;
+    var modelInfo = undefined;
     var initialized = false;
     var renderOptions = {
         colorGrid: "#bbbbbb",
@@ -40,6 +41,8 @@ GCODE.renderer = (function(){
         differentiateColors: true,
         showNextLayer: false,
         showPreviousLayer: false,
+        showBoundingBox: false,
+        showFullSize: false,
 
         moveModel: true,
         zoomInOnModel: false,
@@ -65,7 +68,8 @@ GCODE.renderer = (function(){
         var p2 = ctx.transformedPoint(canvas.width,canvas.height);
         ctx.clearRect(p1.x,p1.y,p2.x-p1.x,p2.y-p1.y);
         drawGrid();
-        if(renderOptions['showNextLayer'] && layerNumStore < model.length - 1) {
+        drawBoundingBox();
+        if (renderOptions['showNextLayer'] && model && model.length && layerNumStore < model.length - 1) {
             drawLayer(layerNumStore + 1, 0, GCODE.renderer.getLayerNumSegments(layerNumStore + 1), true);
         }
         if (renderOptions['showPreviousLayer'] && layerNumStore > 0) {
@@ -378,6 +382,44 @@ GCODE.renderer = (function(){
         ctx.stroke();
     };
 
+    var drawBoundingBox = function() {
+        if (!modelInfo) return;
+
+        var minX, minY, width, height;
+
+        if (renderOptions["showFullSize"]) {
+            minX = modelInfo.min.x * zoomFactor;
+            minY = modelInfo.min.y * zoomFactor;
+            width = modelInfo.modelSize.x * zoomFactor;
+            height = modelInfo.modelSize.y * zoomFactor;
+
+            ctx.beginPath();
+            ctx.strokeStyle = "#0000ff";
+            ctx.setLineDash([2, 5]);
+
+            ctx.rect(minX, minY * -1, width, height * -1);
+
+            ctx.stroke();
+        }
+
+        if (renderOptions["showBoundingBox"]) {
+            minX = modelInfo.boundingBox.minX * zoomFactor;
+            minY = modelInfo.boundingBox.minY * zoomFactor;
+            width = modelInfo.boundingBox.maxX * zoomFactor - minX;
+            height = modelInfo.boundingBox.maxY * zoomFactor - minY;
+
+            ctx.beginPath();
+            ctx.strokeStyle = "#ff0000";
+            ctx.setLineDash([2, 5]);
+
+            ctx.rect(minX, minY * -1, width, height * -1);
+
+            ctx.stroke();
+        }
+
+        ctx.setLineDash([1, 0]);
+    };
+
     var drawLayer = function(layerNum, fromProgress, toProgress, isNotCurrentLayer){
         log.trace("Drawing layer " + layerNum + " from " + fromProgress + " to " + toProgress + " (current: " + !isNotCurrentLayer + ")");
 
@@ -524,27 +566,27 @@ GCODE.renderer = (function(){
         ctx.stroke();
     };
 
-    var applyOffsets = function(mdlInfo) {
+    var applyOffsets = function() {
         var canvasCenter;
 
         // determine bed and model offsets
         if (ctx) ctx.translate(-offsetModelX, -offsetModelY);
         if (renderOptions["centerViewport"] || renderOptions["zoomInOnModel"]) {
             canvasCenter = ctx.transformedPoint(canvas.width / 2, canvas.height / 2);
-            if (mdlInfo) {
-                offsetModelX = canvasCenter.x - (mdlInfo.min.x + mdlInfo.modelSize.x / 2) * zoomFactor;
-                offsetModelY = canvasCenter.y + (mdlInfo.min.y + mdlInfo.modelSize.y / 2) * zoomFactor;
+            if (modelInfo) {
+                offsetModelX = canvasCenter.x - (modelInfo.boundingBox.minX + modelInfo.boundingBox.maxX) * zoomFactor / 2;
+                offsetModelY = canvasCenter.y + (modelInfo.boundingBox.minY + modelInfo.boundingBox.maxY) * zoomFactor / 2;
             } else {
                 offsetModelX = 0;
                 offsetModelY = 0;
             }
             offsetBedX = 0;
             offsetBedY = 0;
-        } else if (mdlInfo && renderOptions["moveModel"]) {
-            offsetModelX = (renderOptions["bed"]["x"] / 2 - (mdlInfo.min.x + mdlInfo.modelSize.x / 2)) * zoomFactor;
-            offsetModelY = -1 * (renderOptions["bed"]["y"] / 2 - (mdlInfo.min.y + mdlInfo.modelSize.y / 2)) * zoomFactor;
-            offsetBedX = -1 * (renderOptions["bed"]["x"] / 2 - (mdlInfo.min.x + mdlInfo.modelSize.x / 2)) * zoomFactor;
-            offsetBedY = (renderOptions["bed"]["y"] / 2 - (mdlInfo.min.y + mdlInfo.modelSize.y / 2)) * zoomFactor;
+        } else if (modelInfo && renderOptions["moveModel"]) {
+            offsetModelX = (renderOptions["bed"]["x"] / 2 - (modelInfo.boundingBox.minX + modelInfo.boundingBox.maxX) / 2) * zoomFactor;
+            offsetModelY = -1 * (renderOptions["bed"]["y"] / 2 - (modelInfo.boundingBox.minY + modelInfo.boundingBox.maxY) / 2) * zoomFactor;
+            offsetBedX = -1 * (renderOptions["bed"]["x"] / 2 - (modelInfo.boundingBox.minX + modelInfo.boundingBox.maxX) / 2) * zoomFactor;
+            offsetBedY = (renderOptions["bed"]["y"] / 2 - (modelInfo.boundingBox.minY + modelInfo.boundingBox.maxY) / 2) * zoomFactor;
         } else if (renderOptions["bed"]["circular"] || renderOptions["bed"]["centeredOrigin"]) {
             canvasCenter = ctx.transformedPoint(canvas.width / 2, canvas.height / 2);
             offsetModelX = canvasCenter.x;
@@ -560,7 +602,7 @@ GCODE.renderer = (function(){
         if (ctx) ctx.translate(offsetModelX, offsetModelY);
     };
 
-    var applyZoom = function(mdlInfo) {
+    var applyZoom = function() {
         // get middle of canvas
         var pt = ctx.transformedPoint(canvas.width/2,canvas.height/2);
 
@@ -575,9 +617,12 @@ GCODE.renderer = (function(){
             transform = ctx.getTransform();
         }
 
-        if (mdlInfo && renderOptions["zoomInOnModel"]) {
+        if (modelInfo && renderOptions["zoomInOnModel"]) {
             // if we need to zoom in on model, scale factor is calculated by longer side of object in relation to that axis of canvas
-            var scaleF = mdlInfo.modelSize.x > mdlInfo.modelSize.y ? (canvas.width - 10) / mdlInfo.modelSize.x : (canvas.height - 10) / mdlInfo.modelSize.y;
+            var width = modelInfo.boundingBox.maxX - modelInfo.boundingBox.minX;
+            var length = modelInfo.boundingBox.maxY - modelInfo.boundingBox.minY;
+
+            var scaleF = width > length ? (canvas.width - 10) / width : (canvas.height - 10) / length;
             scaleF /= zoomFactor;
             if (transform.a && transform.d) {
                 scaleX = scaleF / transform.a * (renderOptions["invertAxes"]["x"] ? -1 : 1);
@@ -682,6 +727,7 @@ GCODE.renderer = (function(){
             var p2 = ctx.transformedPoint(canvas.width, canvas.height);
             ctx.clearRect(p1.x, p1.y, p2.x - p1.x, p2.y - p1.y);
             drawGrid();
+            drawBoundingBox();
             if (model && model.length) {
                 if (layerNum < model.length) {
                     if (renderOptions['showNextLayer'] && layerNum < model.length - 1) {
@@ -715,30 +761,31 @@ GCODE.renderer = (function(){
             scaleY = 1;
             speeds = [];
             speedsByLayer = {};
+            modelInfo = undefined;
 
             this.doRender([], 0);
         },
         doRender: function(mdl, layerNum){
             model = mdl;
+            modelInfo = undefined;
 
-            var mdlInfo = undefined;
             prevX = 0;
             prevY = 0;
             if (!initialized) this.init();
 
             var toProgress = 1;
-            if (model) {
-                mdlInfo = GCODE.gCodeReader.getModelInfo();
-                speeds = mdlInfo.speeds;
-                speedsByLayer = mdlInfo.speedsByLayer;
+            if (model && model.length) {
+                modelInfo = GCODE.gCodeReader.getModelInfo();
+                speeds = modelInfo.speeds;
+                speedsByLayer = modelInfo.speedsByLayer;
                 if (model[layerNum]) {
                     toProgress = model[layerNum].length;
                 }
             }
 
             applyInversion();
-            applyOffsets(mdlInfo);
-            applyZoom(mdlInfo);
+            applyOffsets();
+            applyZoom();
 
             this.render(layerNum, 0, toProgress);
         },

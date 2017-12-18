@@ -24,6 +24,7 @@ $(function() {
         self.profileDescription = ko.observable();
         self.profileAllowOverwrite = ko.observable(true);
         self.profileMakeDefault = ko.observable(false);
+        self.profileFirst = ko.observable(false);
 
         // make sure to update form data if any of the metadata changes
         self.profileName.subscribe(function() { self.copyProfileMetadata(); });
@@ -134,7 +135,10 @@ $(function() {
             self.profileDisplayName(undefined);
             self.profileDescription(undefined);
             self.profileAllowOverwrite(true);
-            self.profileMakeDefault(false);
+
+            var firstProfile = self.profiles.items().length === 0;
+            self.profileMakeDefault(firstProfile);
+            self.profileFirst(firstProfile);
         };
 
         self.uploadElement.fileupload({
@@ -307,10 +311,9 @@ $(function() {
         };
     }
 
-    // view model class, parameters for constructor, container to bind to
-    OCTOPRINT_VIEWMODELS.push([
-        CuraViewModel,
-        ["loginStateViewModel", "settingsViewModel", "slicingViewModel"],
-        ["#settings_plugin_cura", "#wizard_plugin_cura"]
-    ]);
+    OCTOPRINT_VIEWMODELS.push({
+        construct: CuraViewModel,
+        dependencies: ["loginStateViewModel", "settingsViewModel", "slicingViewModel"],
+        elements: ["#settings_plugin_cura", "#wizard_plugin_cura"]
+    });
 });

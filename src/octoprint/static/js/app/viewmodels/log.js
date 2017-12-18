@@ -58,9 +58,9 @@ $(function() {
         };
     }
 
-    OCTOPRINT_VIEWMODELS.push([
-        LogViewModel,
-        ["loginStateViewModel"],
-        "#logs"
-    ]);
+    OCTOPRINT_VIEWMODELS.push({
+        construct: LogViewModel,
+        dependencies: ["loginStateViewModel"],
+        elements: ["#logs"]
+    });
 });

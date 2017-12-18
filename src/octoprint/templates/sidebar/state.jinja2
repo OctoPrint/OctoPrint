@@ -1,11 +1,11 @@
 <span title="{{ _('Current printer state') }}">{{ _('State') }}</span>: <strong data-bind="text: stateString"></strong><br>
 <hr>
-<span title="{{ _('Name of file currently selected for printing') }}">{{ _('File') }}</span>: <strong data-bind="text: filename, attr: {title: filepath}"></strong>&nbsp;<strong data-bind="visible: sd">(SD)</strong><br>
+<span title="{{ _('Name of file currently selected for printing') }}">{{ _('File') }}</span>: <strong data-bind="text: filedisplay, attr: {title: filepath}"></strong>&nbsp;<strong data-bind="visible: sd">(SD)</strong><br>
 <span title="{{ _('Current timelapse configuration') }}">{{ _('Timelapse') }}</span>: <strong data-bind="text: timelapseString"></strong><br>
 <!-- ko foreach: filament -->
 <span data-bind="text: 'Filament (' + name() + '): ', title: 'Filament usage for ' + name()"></span><strong data-bind="text: formatFilament(data())"></strong><br>
 <!-- /ko -->
-<span title="{{ _('Estimated total print time base on statical analysis or past prints') }}">{{ _('Approx. Total Print Time') }}</span>: <strong data-bind="text: estimatedPrintTimeString"></strong><br>
+<span title="{{ _('Estimated total print time based on analysis of the file or past prints') }}">{{ _('Approx. Total Print Time') }}</span>: <strong data-bind="text: estimatedPrintTimeString"></strong><br>
 <hr>
 <span title="{{ _('Total print time so far') }}">{{ _('Print Time') }}</span>: <strong data-bind="text: printTimeString"></strong><br>
 <span title="{{ _('Estimated time until the print job is done. This is only an estimate and accuracy depends heavily on various factors!') }}">{{ _('Print Time Left') }}</span>: <strong data-bind="text: printTimeLeftString"></strong> <span id="state_printtimeleft_popover" style="display: none" data-bind="visible: printTimeLeftOrigin, attr: {title: printTimeLeftOriginString}, css: printTimeLeftOriginClass">&#9679;</span><br>
@@ -20,7 +20,7 @@
 </div>
 
 <div class="row-fluid print-control" style="display: none;" data-bind="visible: loginState.isUser">
-    <button class="btn btn-primary span4" data-bind="click: print, enable: enablePrint, css: {'btn-danger': isPaused()}, attr: {title: titlePrintButton}" id="job_print"><i class="icon-white" data-bind="css: {'icon-print': !isPaused(), 'icon-undo': isPaused()}"></i> <span data-bind="text: (isPaused() ? '{{ _('Restart') }}' : '{{ _('Print') }}')">{{ _('Print') }}</span></button>
-    <button class="btn span4" id="job_pause" data-bind="click: function() { isPaused() ? onlyResume() : onlyPause(); }, enable: enablePause, css: {active: isPaused()}, attr: {title: titlePauseButton}"><i data-bind="css: {'icon-pause': !isPaused(), 'icon-play': isPaused()}"></i> <span data-bind="visible: !isPaused()">{{ _('Pause') }}</span><span data-bind="visible: isPaused()">{{ _('Resume') }}</span></button>
-    <button class="btn span4" id="job_cancel" data-bind="click: cancel, enable: enableCancel" title="{{ _('Cancels the print job') }}"><i class="icon-stop"></i> {{ _('Cancel') }}</button>
+    <button class="btn btn-primary span4" data-bind="click: print, enable: enablePrint, css: {'btn-danger': isPaused()}, attr: {title: titlePrintButton}" id="job_print"><i class="fa" data-bind="css: {'fa-print': !isPaused(), 'fa-undo': isPaused()}"></i> <span data-bind="text: (isPaused() ? '{{ _('Restart') }}' : '{{ _('Print') }}')">{{ _('Print') }}</span></button>
+    <button class="btn span4" id="job_pause" data-bind="click: function() { isPaused() ? onlyResume() : onlyPause(); }, enable: enablePause, css: {active: isPaused()}, attr: {title: titlePauseButton}"><i class="fa" data-bind="css: {'fa-pause': !isPaused(), 'fa-play': isPaused()}"></i> <span data-bind="visible: !isPaused()">{{ _('Pause') }}</span><span data-bind="visible: isPaused()">{{ _('Resume') }}</span></button>
+    <button class="btn span4" id="job_cancel" data-bind="click: cancel, enable: enableCancel" title="{{ _('Cancels the print job') }}"><i class="fa fa-stop"></i> {{ _('Cancel') }}</button>
 </div>

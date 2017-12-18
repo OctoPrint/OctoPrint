@@ -27,7 +27,7 @@ class OctoPrintLogHandler(CleaningTimedRotatingFileHandler):
 	def doRollover(self):
 		CleaningTimedRotatingFileHandler.doRollover(self)
 
-		for rcb in self.__class__.rollover_callbacks:
+		for rcb in self.rollover_callbacks:
 			callback, args, kwargs = rcb
 			callback(*args, **kwargs)
 

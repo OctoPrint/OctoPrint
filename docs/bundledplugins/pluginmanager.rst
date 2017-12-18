@@ -54,6 +54,12 @@ under Settings > Plugin Manager, or by directly editing ``config.yaml``:
        # Time to live for the repository cache
        repository_ttl: 1440
 
+       # The URL of the plugin notices feed to use
+       notices: http://plugins.octoprint.org/notices.json
+
+       # Time to live for the notices feed cache
+       notices_ttl: 360
+
        # Additional arguments to use with pip. Defaults to unset,
        # you normally shouldn't need to modify this
        pip_args: --some --additional --pip --arguments
@@ -75,6 +81,36 @@ under Settings > Plugin Manager, or by directly editing ``config.yaml``:
        - some
        - hidden
        - plugins
+
+.. _sec-bundledplugins-pluginmanager-hooks:
+
+Hooks
+-----
+
+.. _sec-bundledplugins-pluginmanager-hooks-reconnect_hooks:
+
+octoprint.plugin.pluginmanager.reconnect_hooks
+++++++++++++++++++++++++++++++++++++++++++++++
+
+.. py:function:: reconnect_hooks_hook(*args, **kwargs)
+
+   Returns additional hooks defined by the plugin for which the plugin manager
+   should display the "You should reconnect to your printer" message on plugin
+   install/uninstall/enabling/disabling.
+
+   Handlers should return a Python list containing the affected hook names.
+
+   **Example**
+
+   .. code-block:: python
+
+      def reconnect_hooks_hook(*args, **kwargs):
+          return ["octoprint.plugin.exampleplugin.some_custom_hook",
+                  "octoprint.plugin.exampleplugin.some_other_custom_hook"]
+
+      __plugin_hooks__ = {
+          "octoprint.plugin.pluginmanager.reconnect_hooks": reconnect_hooks_hook
+      }
 
 .. _sec-bundledplugins-pluginmanager-sourcecode:
 

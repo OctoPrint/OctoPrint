@@ -1,12 +1,28 @@
 <h3>{{ _('All Done!') }}</h3>
 
 <p>{% trans %}
-    Your OctoPrint installation is now all set up and ready to go. Happy
-    printing!
+    Your OctoPrint installation is now all set up and ready to go.
 {% endtrans %}</p>
 
-<p>{% trans url='http://octoprint.org/support-octoprint/' %}
-    If you enjoy OctoPrint, please consider <a href="{{ url }}" target="_blank">supporting its ongoing
-    development</a>, which is fully funded by users like you! You can also find this link in the "About" dialog. <strong>Thank you!</strong>
+<h4>{{ _('On your printer\'s safety') }}</h4>
+
+<i class="fa fa-exclamation-triangle fa-4x fa-pull-left text-error"></i>
+<p>{% trans %}
+    Even with OctoPrint attached you should <strong class="text-error">never leave
+    your printer running completely unattended</strong>. The electronics in our consumer printers can and
+    sometimes sadly do catch fire, so stay or have someone else stay close enough to physically intervene
+    in case of such catastrophic failure.
 {% endtrans %}</p>
 
+<h4>{{ _('If you enjoy OctoPrint...') }}</h4>
+
+<span style="display: inline-block; float: left; font-size: 4em; margin-right: .3em"><img src="{{ url_for('static', filename='img/tentacle-56x56.png') }}"></span>
+<p>{% trans url='https://octoprint.org/support-octoprint/?utm_source=octoprint&utm_medium=first_run_wizard' %}
+    Please consider to <strong><a href="{{ url }}" target="_blank">support OctoPrint's ongoing development</a></strong>,
+    which can only continue with funding by users like you! You can also find this link in the "About" dialog.<br>
+    <strong>Thank you!</strong>
+{% endtrans %}</p>
+
+<p>{% trans %}
+    With all that being said, <strong>Happy and Safe Printing</strong>!
+{% endtrans %}</p>

@@ -2,12 +2,12 @@
     <div id="drop_overlay_background"></div>
     <div id="drop_overlay_wrapper">
         {% if enableSdSupport %}
-            <div class="dropzone" id="drop_locally"><span class="text"><i class="icon-upload-alt"></i><br>{{ _('Upload locally') }}</span></div>
+            <div class="dropzone" id="drop_locally"><span class="text"><i class="fa fa-upload"></i><br>{{ _('Upload locally') }}</span></div>
             <div class="dropzone_background" id="drop_locally_background"></div>
-            <div class="dropzone" id="drop_sd"><span class="text"><i class="icon-upload-alt"></i><br>{{ _('Upload to SD') }}<br><small data-bind="visible: !isSdReady()">({{ _('SD not initialized') }})</small></span></div>
+            <div class="dropzone" id="drop_sd"><span class="text"><i class="fa fa-upload"></i><br>{{ _('Upload to SD') }}<br><small data-bind="visible: isSdReady() && isPrinting()">({{ _('Cannot upload to printer\'s SD while printing') }})</small><small data-bind="visible: !isSdReady()">({{ _('SD not initialized') }})</small></span></div>
             <div class="dropzone_background" id="drop_sd_background"></div>
         {% else %}
-            <div class="dropzone" id="drop"><span class="text"><i class="icon-upload-alt"></i><br>{{ _('Upload') }}</span></div>
+            <div class="dropzone" id="drop"><span class="text"><i class="fa fa-upload"></i><br>{{ _('Upload') }}</span></div>
             <div class="dropzone_background" id="drop_background"></div>
         {% endif %}
     </div>

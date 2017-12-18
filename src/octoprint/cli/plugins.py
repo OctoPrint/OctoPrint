@@ -43,6 +43,7 @@ class OctoPrintPluginCommands(click.MultiCommand):
 		if self._initialized:
 			return
 
+		click.echo("Initializing settings & plugin subsystem...")
 		if ctx.obj is None:
 			ctx.obj = OctoPrintContext()
 
@@ -51,7 +52,8 @@ class OctoPrintPluginCommands(click.MultiCommand):
 		from octoprint import init_settings, init_pluginsystem, FatalStartupError
 		try:
 			self.settings = init_settings(get_ctx_obj_option(ctx, "basedir", None), get_ctx_obj_option(ctx, "configfile", None))
-			self.plugin_manager = init_pluginsystem(self.settings, safe_mode=get_ctx_obj_option(ctx, "safe_mode", False))
+			self.plugin_manager = init_pluginsystem(self.settings,
+			                                        safe_mode=get_ctx_obj_option(ctx, "safe_mode", False))
 		except FatalStartupError as e:
 			click.echo(e.message, err=True)
 			click.echo("There was a fatal error initializing the settings or the plugin system.", err=True)
@@ -59,6 +61,8 @@ class OctoPrintPluginCommands(click.MultiCommand):
 
 		# fetch registered hooks
 		self.hooks = self.plugin_manager.get_hooks("octoprint.cli.commands")
+
+		logging.basicConfig(level=logging.DEBUG if ctx.obj.verbosity > 0 else logging.WARN)
 
 		self._initialized = True
 
@@ -88,14 +92,14 @@ class OctoPrintPluginCommands(click.MultiCommand):
 						continue
 					result[name + self.sep + command.name] = command
 			except:
-				self._logger.exception("Error while retrieving cli commants for plugin {}".format(name))
+				self._logger.exception("Error while retrieving cli commands for plugin {}".format(name))
 
 		return result
 
 @click.group()
 @pass_octoprint_ctx
 def plugin_commands(obj):
-	logging.basicConfig(level=logging.DEBUG if obj.verbosity > 0 else logging.WARN)
+	pass
 
 @plugin_commands.group(name="plugins", cls=OctoPrintPluginCommands)
 def plugins():

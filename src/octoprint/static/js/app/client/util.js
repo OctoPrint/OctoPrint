@@ -45,6 +45,16 @@
         return this.test("url", data, opts);
     };
 
+    OctoPrintUtilClient.prototype.testServer = function(host, port, additional, opts) {
+        additional = additional || {};
+
+        var data = $.extend({}, additional);
+        data.host = host;
+        data.port = port;
+
+        return this.test("server", data, opts);
+    };
+
     OctoPrintClient.registerComponent("util", OctoPrintUtilClient);
     return OctoPrintUtilClient;
 });

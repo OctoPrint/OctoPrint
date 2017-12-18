@@ -9,11 +9,11 @@
     </thead>
     <tbody data-bind="foreach: users.listHelper.paginatedItems">
     <tr>
-        <td class="settings_users_name"><span data-bind="text: name"></span><span class="muted" data-bind="visible: $root.api_enabled() && apikey"><br /><small>{{ _('API Key') }}: <span data-bind="text: apikey"></span></small></span></td>
-        <td class="settings_users_active"><i data-bind="css: { 'icon-check': active, 'icon-check-empty': !active }"></i></td>
-        <td class="settings_users_admin"><i data-bind="css: { 'icon-check': admin, 'icon-check-empty': !admin }"></i></td>
+        <td class="settings_users_name"><span data-bind="text: name"></span><span class="muted" data-bind="visible: $root.api_enabled() && apikey"><br /><small>{{ _('API Key') }}: <span data-bind="text: apikey"></span> <a href="javascript:void(0)" title="{{ _('Copy API Key to clipboard') }}" data-bind="click: function() { copyToClipboard(apikey) }"><i class="fa fa-copy"></i></a></small></span></td>
+        <td class="settings_users_active"><i class="fa" data-bind="css: { 'fa-check-square-o': active, 'fa-square-o': !active }"></i></td>
+        <td class="settings_users_admin"><i class="fa" data-bind="css: { 'fa-check-square-o': admin, 'fa-square-o': !admin }"></i></td>
         <td class="settings_users_actions">
-            <a href="#" class="icon-pencil" title="{{ _('Update User') }}" data-bind="click: function() { $root.users.showEditUserDialog($data); }"></a>&nbsp;|&nbsp;<a href="#" class="icon-key" title="{{ _('Change password') }}" data-bind="click: function() { $root.users.showChangePasswordDialog($data); }"></a>&nbsp;|&nbsp;<a href="#" class="icon-trash" title="{{ _('Delete user') }}" data-bind="click: function() { $root.users.removeUser($data); }"></a>
+            <a href="#" class="fa fa-pencil" title="{{ _('Update User') }}" data-bind="click: function() { $root.users.showEditUserDialog($data); }"></a>&nbsp;|&nbsp;<a href="#" class="fa fa-key" title="{{ _('Change password') }}" data-bind="click: function() { $root.users.showChangePasswordDialog($data); }"></a>&nbsp;|&nbsp;<a href="#" class="fa fa-trash-o" title="{{ _('Delete user') }}" data-bind="click: function() { $root.users.removeUser($data); }"></a>
         </td>
     </tr>
     </tbody>
@@ -30,7 +30,7 @@
     </ul>
 </div>
 
-<button title="Add user" class="btn" data-bind="click: $root.users.showAddUserDialog"><i class="icon-plus"></i> {{ _('Add user') }}</button>
+<button title="Add user" class="btn" data-bind="click: $root.users.showAddUserDialog"><i class="fa fa-plus"></i> {{ _('Add user') }}</button>
 
 <!-- Modals for user management -->
 
@@ -136,10 +136,11 @@
                 <div class="control-group">
                     <label class="control-label">{{ _('Current API Key') }}</label>
                     <div class="controls">
-                        <div class="input-append">
-                            <input type="text" class="input-block-level uneditable-input" data-bind="value: $root.users.editorApikey, valueUpdate: 'input', attr: {placeholder: '{{ _('N/A') }}'}">
-                            <a class="btn" title="Generate new Apikey" data-bind="click: function() { $root.users.confirmGenerateApikey(); }"><i class="icon-refresh"></i></a>
-                            <a class="btn btn-danger" title="Delete Apikey" data-bind="click: function() { $root.users.confirmDeleteApikey(); }"><i class="icon-trash"></i></a>
+                        <div class="input-append input-block-level">
+                            <input type="text" readonly="readonly" data-bind="value: $root.users.editorApikey, valueUpdate: 'input', attr: {placeholder: '{{ _('N/A') }}'}">
+                            <a class="btn add-on" title="Copy API Key to clipboard" data-bind="click: $root.users.copyApikey, enable: $root.users.editorApikey"><i class="fa fa-copy"></i></a>
+                            <a class="btn add-on" title="Generate new API Key" data-bind="click: function() { $root.users.confirmGenerateApikey(); }"><i class="fa fa-refresh"></i></a>
+                            <a class="btn add-on btn-danger" title="Delete API Key" data-bind="click: function() { $root.users.confirmDeleteApikey(); }"><i class="fa fa-trash-o"></i></a>
                         </div>
 
                     </div>

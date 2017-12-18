@@ -160,7 +160,7 @@ only provided here as some additional information for you), **even if only addin
     [Try to reproduce your problem in safe mode. You can find information
     on how to enable safe mode in the Contribution Guidelines.]
 
-    #### Branch & Commit or Version of OctoPrint
+    #### Version of OctoPrint
 
     [Can be found in the lower left corner of the web interface. ALWAYS INCLUDE.]
 
@@ -263,6 +263,8 @@ See [How to open the Javascript Console in different browsers](https://webmaster
 ## Setting up a development environment
 
 See [the corresponding chapter in the documentation](http://docs.octoprint.org/en/master/development/index.html#setting-up-a-development-environment).
+This also includes information on how to run the test suite and how to build 
+the documentation.
 
 ## Pull requests
 
@@ -303,7 +305,17 @@ See [the corresponding chapter in the documentation](http://docs.octoprint.org/e
      * Make sure you do not add dead code (e.g. commented out left-overs
        from experiments).
 8. Ensure your changes **pass the existing unit tests**. PRs that break
-   those cannot be accepted.
+   those cannot be accepted. You can run the unit tests locally (after
+   [initial development environment setup with "develop" dependencies](http://docs.octoprint.org/en/master/development/index.html#setting-up-a-development-environment)) 
+   by running
+   
+   ```
+   nosetests --with-doctest
+   ```
+   
+   in the OctoPrint checkout folder. A [travis build](https://travis-ci.org/foosel/OctoPrint) 
+   is also setup so that if the tests should fail, your PR will be marked 
+   accordingly.
 9. **Test your changes thoroughly**. That also means testing with usage
    scenarios you don't normally use, e.g. if you only use access control, test
    without and vice versa. If you only test with your printer, test with the
@@ -432,6 +444,7 @@ the local version identifier to allow for an exact determination of the active c
   * 2017-03-10: Reproduce bugs in safe mode to make sure they are really caused
     by OctoPrint itself and not a misbehaving plugin.
   * 2017-03-27: Added safe mode section to ticket template.
+  * 2017-11-22: Added note on how to run the unit tests
 
 ## Footnotes
   * [1] - If you are wondering why, the problem is that anything that you add

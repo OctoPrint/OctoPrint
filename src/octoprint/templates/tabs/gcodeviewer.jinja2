@@ -7,12 +7,12 @@
 
     <div class="layer-buttons btn-group-toolbar row-fluid">
         <button type="button" class="btn btn-primary btn-medium span6" data-bind = "click: decrementLayer, enable: layerSelectionEnabled() && layerDownEnabled()">
-            <i class="icon-white icon-arrow-left"></i>
+            <i class="fa fa-arrow-left"></i>
             <span>{{ _('Previous layer') }}</span>
         </button>
         <button type="button" class="btn btn-primary btn-medium span6" data-bind = "click: incrementLayer, enable: layerSelectionEnabled() && layerUpEnabled()">
             <span>{{ _('Next layer') }}</span>
-            <i class="icon-white icon-arrow-right"></i>
+            <i class="fa fa-arrow-right"></i>
         </button>
     </div>
 
@@ -69,6 +69,31 @@
             <p>
                 <button class="btn btn-block" data-bind="click: reload, enable: enableReload">{{ _('Reload') }}</button>
             </p>
+
+            <div class="advanced_options">
+                <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', parent: '.advanced_options', container: '.hide' }"><i class="fa fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
+                <div class="hide">
+                    <p>
+                        <label class="checkbox">
+                            <input type="checkbox" data-bind="checked: renderer_showFullSize">{{ _('Show visited bounding box') }}
+                        </label>
+                        <label class="checkbox">
+                            <input type="checkbox" data-bind="checked: renderer_showBoundingBox">{{ _('Show printed bounding box') }}
+                        </label>
+                    </p>
+                    <p>
+                        <label class="checkbox">
+                            <input type="checkbox" data-bind="checked: reader_hideEmptyLayers">{{ _('Hide empty layers') }} <label class="label">{{ _('Causes reload') }}</label>
+                        </label>
+                        <label class="checkbox">
+                            <input type="checkbox" data-bind="checked: reader_sortLayers">{{ _('Sort layers') }} <label class="label">{{ _('Causes reload') }}</label>
+                        </label>
+                    </p>
+                    <p>
+                        <button class="btn btn-block" data-bind="click: resetOptions">{{ _('Reset options') }}</button>
+                    </p>
+                </div>
+            </div>
         </div>
     </div>
 

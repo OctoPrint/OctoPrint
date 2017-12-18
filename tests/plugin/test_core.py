@@ -1,10 +1,53 @@
 import unittest
 import mock
+import ddt
 
 import octoprint.plugin
 import octoprint.plugin.core
 
+##~~ Helpers for testing mixin type extraction
 
+class A(object):
+	pass
+
+
+class A_1(A):
+	pass
+
+
+class A_2(A):
+	pass
+
+
+class A_3(A):
+	pass
+
+
+class A1_1(A_1):
+	pass
+
+
+class B(object):
+	pass
+
+
+class B_1(B):
+	pass
+
+
+class C(object):
+	pass
+
+
+class C_1(C):
+	pass
+
+
+class D(object):
+	pass
+
+
+@ddt.ddt
 class PluginTestCase(unittest.TestCase):
 
 	def setUp(self):
@@ -17,12 +60,10 @@ class PluginTestCase(unittest.TestCase):
 		self.plugin_folder = os.path.join(os.path.dirname(os.path.realpath(__file__)), "_plugins")
 
 		plugin_folders = [self.plugin_folder]
-		plugin_types = [octoprint.plugin.SettingsPlugin,
-		                octoprint.plugin.StartupPlugin,
-		                octoprint.plugin.AssetPlugin]
+		plugin_bases = [octoprint.plugin.OctoPrintPlugin]
 		plugin_entry_points = None
 		self.plugin_manager = octoprint.plugin.core.PluginManager(plugin_folders,
-		                                                          plugin_types,
+		                                                          plugin_bases,
 		                                                          plugin_entry_points,
 		                                                          plugin_disabled_list=[],
 		                                                          logging_prefix="logging_prefix.")
@@ -191,3 +232,102 @@ class PluginTestCase(unittest.TestCase):
 		plugin = self.plugin_manager.enabled_plugins["deprecated_plugin"]
 		self.assertTrue(hasattr(plugin.instance, plugin.__class__.attr_implementation))
 		self.assertFalse(hasattr(plugin.instance, plugin.__class__.attr_implementations))
+
+	@ddt.data(
+		(["octoprint.some_hook"], ["octoprint.some_hook", "octoprint.another_hook"], True),
+		(["octoprint.*"], ["octoprint.some_hook", "octoprint.another_hook"], True),
+		(["octoprint.some_hook"], ["octoprint.another_hook"], False),
+		(["octoprint.some_hook"], [], False),
+		([], ["octoprint.some_hook"], False)
+	)
+	@ddt.unpack
+	def test_has_any_of_hooks(self, hooks_to_test_for, plugin_hooks, expected):
+		plugin = mock.MagicMock()
+		plugin.hooks = dict((hook, hook) for hook in plugin_hooks)
+
+		actual = octoprint.plugin.core.PluginManager.has_any_of_hooks(plugin, hooks_to_test_for)
+		self.assertEqual(actual, expected)
+
+	def test_has_any_of_hooks_varargs(self):
+		plugin = mock.MagicMock()
+		plugin.hooks = dict((hook, hook) for hook in ["octoprint.some_hook", "octoprint.another_hook"])
+
+		result = octoprint.plugin.core.PluginManager.has_any_of_hooks(plugin, "octoprint.some_hook", "octoprint.some_other_hook")
+		self.assertTrue(result)
+
+	def test_has_any_of_hooks_nohooks(self):
+		plugin = mock.MagicMock()
+
+		result = octoprint.plugin.core.PluginManager.has_any_of_hooks(plugin, "octoprint.some_hook", "octoprint.some_other_hook")
+		self.assertFalse(result)
+
+	@ddt.data(
+		("octoprint.some_hook", ["octoprint.another_hook", "octoprint.some_hook"], True),
+		("octoprint.some_hook", ["octoprint.*"], True),
+		("octoprint.some_hook", ["octoprint.some_hook*"], True),
+		("octoprint.some_hook", ["octoprint.*_hook"], True),
+		("octoprint.some_hook", ["octoprint.another_hook.*"], False),
+		("", ["octoprint.some_hook"], False),
+		(None, ["octoprint.some_hook"], False),
+		("octoprint.some_hook", [], False),
+		("octoprint.some_hook", None, False),
+		("octoprint.some_hook", [None], False)
+	)
+	@ddt.unpack
+	def test_hook_matches_hooks(self, hook, hooks, expected):
+		actual = octoprint.plugin.core.PluginManager.hook_matches_hooks(hook, hooks)
+		self.assertEqual(actual, expected)
+
+	def test_hook_matches_hooks_varargs(self):
+		result = octoprint.plugin.core.PluginManager.hook_matches_hooks("octoprint.some_hook",
+		                                                                "octoprint.another_hook", "octoprint.some_hook")
+		self.assertTrue(result)
+
+	@ddt.data(
+		([octoprint.plugin.RestartNeedingPlugin], [octoprint.plugin.Plugin, octoprint.plugin.RestartNeedingPlugin], True),
+		([octoprint.plugin.RestartNeedingPlugin], [octoprint.plugin.Plugin], False),
+		([], [octoprint.plugin.Plugin], False),
+		([octoprint.plugin.RestartNeedingPlugin], [], False)
+	)
+	@ddt.unpack
+	def test_has_any_of_mixins(self, mixins_to_test_for, plugin_mixins, expected):
+		plugin = mock.MagicMock()
+		plugin.implementation = mock.MagicMock()
+
+		for mixin in plugin_mixins:
+			plugin.implementation.mock_add_spec(mixin)
+
+		actual = octoprint.plugin.core.PluginManager.has_any_of_mixins(plugin, mixins_to_test_for)
+		self.assertEqual(actual, expected)
+
+	def test_has_any_of_mixins_varargs(self):
+		plugin = mock.MagicMock()
+		plugin.implementation = mock.MagicMock()
+		plugin.implementation.mock_add_spec(octoprint.plugin.Plugin)
+		plugin.implementation.mock_add_spec(octoprint.plugin.RestartNeedingPlugin)
+
+		result = octoprint.plugin.core.PluginManager.has_any_of_mixins(plugin, octoprint.plugin.RestartNeedingPlugin)
+		self.assertTrue(result)
+
+	def test_has_any_of_mixins_noimplementation(self):
+		plugin = mock.MagicMock()
+
+		result = octoprint.plugin.core.PluginManager.has_any_of_mixins(plugin, octoprint.plugin.RestartNeedingPlugin)
+		self.assertFalse(result)
+
+	@ddt.data(
+		((A1_1, A_2, B_1, C_1), (A, C), (A_1, A1_1, A_2, C_1)),
+		((A1_1, A_2, B_1, C_1), (B,), (B_1,)),
+
+		# not a subclass
+		((A1_1, A_2, B_1, C_1), (D,), ()),
+
+		# subclass only of base
+		((A,), (A,), ())
+	)
+	@ddt.unpack
+	def test_mixins_matching_bases(self, bases_to_set, bases_to_check, expected):
+		Foo = type("Foo", bases_to_set, dict())
+		actual = octoprint.plugin.core.PluginManager.mixins_matching_bases(Foo, *bases_to_check)
+		self.assertSetEqual(actual, set(expected))
+

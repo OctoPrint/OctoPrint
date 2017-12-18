@@ -21,6 +21,7 @@ import octoprint.util as util
 
 from octoprint.settings import settings
 from octoprint.events import eventManager, Events
+from octoprint.util import monotonic_time
 
 import sarge
 import collections
@@ -91,7 +92,7 @@ def get_finished_timelapses():
 			"name": entry.name,
 			"size": util.get_formatted_size(entry.stat().st_size),
 			"bytes": entry.stat().st_size,
-			"date": util.get_formatted_datetime(datetime.datetime.fromtimestamp(entry.stat().st_ctime))
+			"date": util.get_formatted_datetime(datetime.datetime.fromtimestamp(entry.stat().st_mtime))
 		})
 	return files
 
@@ -115,8 +116,8 @@ def get_unrendered_timelapses():
 
 		jobs[prefix]["count"] += 1
 		jobs[prefix]["bytes"] += entry.stat().st_size
-		if jobs[prefix]["timestamp"] is None or entry.stat().st_ctime < jobs[prefix]["timestamp"]:
-			jobs[prefix]["timestamp"] = entry.stat().st_ctime
+		if jobs[prefix]["timestamp"] is None or entry.stat().st_mtime < jobs[prefix]["timestamp"]:
+			jobs[prefix]["timestamp"] = entry.stat().st_mtime
 
 	with _job_lock:
 		global current_render_job
@@ -140,11 +141,13 @@ def get_unrendered_timelapses():
 def delete_unrendered_timelapse(name):
 	global _cleanup_lock
 
+	pattern = "{}*.jpg".format(util.glob_escape(name))
+
 	basedir = settings().getBaseFolder("timelapse_tmp")
 	with _cleanup_lock:
 		for entry in scandir(basedir):
 			try:
-				if fnmatch.fnmatch(entry.name, "{}*.jpg".format(name)):
+				if fnmatch.fnmatch(entry.name, pattern):
 					os.remove(entry.path)
 			except:
 				if logging.getLogger(__name__).isEnabledFor(logging.DEBUG):
@@ -192,7 +195,8 @@ def delete_old_unrendered_timelapses():
 				if prefix in prefixes_to_clean:
 					continue
 
-				if entry.stat().st_mtime < cutoff:
+				# delete if both creation and modification time are older than the cutoff
+				if max(entry.stat().st_ctime, entry.stat().st_mtime) < cutoff:
 					prefixes_to_clean.append(prefix)
 			except:
 				if logging.getLogger(__name__).isEnabledFor(logging.DEBUG):
@@ -282,36 +286,58 @@ def configure_timelapse(config=None, persist=False):
 	if current is not None:
 		current.unload()
 
+	snapshot_url = settings().get(["webcam", "snapshot"])
+	ffmpeg_path = settings().get(["webcam", "ffmpeg"])
+	timelapse_precondition = snapshot_url is not None and snapshot_url.strip() != "" \
+	                         and ffmpeg_path is not None and ffmpeg_path.strip() != ""
+
 	type = config["type"]
+	if not timelapse_precondition and type is not None and type != "off":
+		logging.getLogger(__name__).warn("Essential timelapse settings unconfigured (snapshot URL or FFMPEG path) "
+		                                 "but timelapse enabled, forcing disabled timelapse and disabling it "
+		                                 "in the config as well.")
+		type = "off"
+		config["type"] = "off"
 
-	postRoll = 0
-	if "postRoll" in config and config["postRoll"] >= 0:
-		postRoll = config["postRoll"]
-
-	fps = 25
-	if "fps" in config and config["fps"] > 0:
-		fps = config["fps"]
+		if not persist:
+			# make sure we persist at least that timelapse is now disabled by default - we don't want the above
+			# warning to log
+			settings().set(["webcam", "timelapse", "type"], "off")
+			settings().save()
 
 	if type is None or "off" == type:
 		current = None
 
-	elif "zchange" == type:
-		retractionZHop = 0
-		if "options" in config and "retractionZHop" in config["options"] and config["options"]["retractionZHop"] > 0:
-			retractionZHop = config["options"]["retractionZHop"]
+	else:
+		postRoll = 0
+		if "postRoll" in config and config["postRoll"] >= 0:
+			postRoll = config["postRoll"]
 
-		current = ZTimelapse(post_roll=postRoll, retraction_zhop=retractionZHop, fps=fps)
+		fps = 25
+		if "fps" in config and config["fps"] > 0:
+			fps = config["fps"]
 
-	elif "timed" == type:
-		interval = 10
-		if "options" in config and "interval" in config["options"] and config["options"]["interval"] > 0:
-			interval = config["options"]["interval"]
+		if "zchange" == type:
+			retractionZHop = 0
+			if "options" in config and "retractionZHop" in config["options"] and config["options"]["retractionZHop"] >= 0:
+				retractionZHop = config["options"]["retractionZHop"]
 
-		capture_post_roll = True
-		if "options" in config and "capturePostRoll" in config["options"] and isinstance(config["options"]["capturePostRoll"], bool):
-			capture_post_roll = config["options"]["capturePostRoll"]
+			minDelay = 5
+			if "options" in config and "minDelay" in config["options"] and config["options"]["minDelay"] > 0:
+				minDelay = config["options"]["minDelay"]
 
-		current = TimedTimelapse(post_roll=postRoll, interval=interval, fps=fps, capture_post_roll=capture_post_roll)
+			current = ZTimelapse(post_roll=postRoll, retraction_zhop=retractionZHop, min_delay=minDelay, fps=fps)
+
+		elif "timed" == type:
+			interval = 10
+			if "options" in config and "interval" in config["options"] and config["options"]["interval"] > 0:
+				interval = config["options"]["interval"]
+
+			capture_post_roll = True
+			if "options" in config and "capturePostRoll" in config["options"] and isinstance(config["options"]["capturePostRoll"], bool):
+				capture_post_roll = config["options"]["capturePostRoll"]
+
+			current = TimedTimelapse(post_roll=postRoll, interval=interval, fps=fps, capture_post_roll=capture_post_roll)
 
 	notify_callbacks(current)
 
@@ -602,14 +628,24 @@ class Timelapse(object):
 
 
 class ZTimelapse(Timelapse):
-	def __init__(self, post_roll=0, retraction_zhop=0, fps=25):
+	def __init__(self, retraction_zhop=0, min_delay=5.0, post_roll=0, fps=25):
 		Timelapse.__init__(self, post_roll=post_roll, fps=fps)
+
+		if min_delay < 0:
+			min_delay = 0
+
 		self._retraction_zhop = retraction_zhop
+		self._min_delay = min_delay
+		self._last_snapshot = None
 		self._logger.debug("ZTimelapse initialized")
 
 	@property
 	def retraction_zhop(self):
 		return self._retraction_zhop
+
+	@property
+	def min_delay(self):
+		return self._min_delay
 
 	def event_subscriptions(self):
 		return [
@@ -631,18 +667,25 @@ class ZTimelapse(Timelapse):
 		Timelapse.process_post_roll(self)
 
 	def _on_z_change(self, event, payload):
+		# check if height difference equals z-hop, if so don't take a picture
 		if self._retraction_zhop != 0 and payload["old"] is not None and payload["new"] is not None:
-			# check if height difference equals z-hop, if so don't take a picture
 			diff = round(abs(payload["new"] - payload["old"]), 3)
 			zhop = round(self._retraction_zhop, 3)
 			if diff == zhop:
 				return
 
+		# check if last picture has been less than min_delay ago, if so don't take a picture (anti vase mode...)
+		now = monotonic_time()
+		if self._min_delay and self._last_snapshot and self._last_snapshot + self._min_delay > now:
+			self._logger.debug("Rate limited z-change, not taking a snapshot")
+			return
+
 		self.capture_image()
+		self._last_snapshot = now
 
 
 class TimedTimelapse(Timelapse):
-	def __init__(self, post_roll=0, interval=1, fps=25, capture_post_roll=True):
+	def __init__(self, interval=1, capture_post_roll=True, post_roll=0, fps=25):
 		Timelapse.__init__(self, post_roll=post_roll, fps=fps)
 		self._interval = interval
 		if self._interval < 1:

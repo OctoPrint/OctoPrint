@@ -9,6 +9,8 @@ import os
 import datetime
 import codecs
 
+from past.builtins import basestring
+
 from collections import defaultdict
 from flask import request, g, url_for, make_response, render_template, send_from_directory, redirect, abort
 
@@ -19,6 +21,7 @@ from octoprint.server import app, userManager, pluginManager, gettext, \
 	NOT_MODIFIED
 from octoprint.settings import settings
 from octoprint.filemanager import get_all_extensions
+from octoprint.util import to_unicode
 
 import re
 import base64
@@ -458,13 +461,26 @@ def _process_templates():
 	)
 
 	# sorting orders
+	def wizard_key_extractor(d, k):
+		if d[1].get("_key", None) == "plugin_corewizard_acl":
+			# Ultra special case - we MUST always have the ACL wizard first since otherwise any steps that follow and
+			# that require to access APIs to function will run into errors since those APIs won't work before ACL
+			# has been configured. See also #2140
+			return u"0:{}".format(to_unicode(d[0]))
+		elif d[1].get("mandatory", False):
+			# Other mandatory steps come before the optional ones
+			return u"1:{}".format(to_unicode(d[0]))
+		else:
+			# Finally everything else
+			return u"2:{}".format(to_unicode(d[0]))
+	
 	template_sorting = dict(
 		navbar=dict(add="prepend", key=None),
 		sidebar=dict(add="append", key="name"),
 		tab=dict(add="append", key="name"),
 		settings=dict(add="custom_append", key="name", custom_add_entries=lambda missing: dict(section_plugins=(gettext("Plugins"), None)), custom_add_order=lambda missing: ["section_plugins"] + missing),
 		usersettings=dict(add="append", key="name"),
-		wizard=dict(add="append", key="name", key_extractor=lambda d, k: "0:{}".format(d[0]) if "mandatory" in d[1] and d[1]["mandatory"] else "1:{}".format(d[0])),
+		wizard=dict(add="append", key="name", key_extractor=wizard_key_extractor),
 		about=dict(add="append", key="name"),
 		generic=dict(add="append", key=None)
 	)
@@ -520,7 +536,7 @@ def _process_templates():
 
 	templates["sidebar"]["entries"]= dict(
 		connection=(gettext("Connection"), dict(template="sidebar/connection.jinja2", _div="connection", icon="signal", styles_wrapper=["display: none"], data_bind="visible: loginState.isUser")),
-		state=(gettext("State"), dict(template="sidebar/state.jinja2", _div="state", icon="info-sign")),
+		state=(gettext("State"), dict(template="sidebar/state.jinja2", _div="state", icon="info-circle")),
 		files=(gettext("Files"), dict(template="sidebar/files.jinja2", _div="files", icon="list", classes_content=["overflow_visible"], template_header="sidebar/files_header.jinja2"))
 	)
 

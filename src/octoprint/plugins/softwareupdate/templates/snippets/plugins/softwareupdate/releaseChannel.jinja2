@@ -1,4 +1,4 @@
-<div class="control-group" data-bind="visible: config_availableCheckTypes().length > 0 && config_checkType() == 'github_release'">
+<div class="control-group" data-bind="visible: config_availableReleaseChannels().length && config_checkType() === 'github_release'">
     <label class="control-label">{{ _('OctoPrint Release Channel') }}</label>
     <div class="controls">
         <select data-bind="value: config_releaseChannel, options: config_availableReleaseChannels, optionsText: 'name', optionsValue: 'key'"></select>
