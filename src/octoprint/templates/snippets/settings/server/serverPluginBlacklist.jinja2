@@ -1,0 +1,11 @@
+{% include "snippets/settings/server/serverPluginBlacklistEnabled.jinja2" %}
+
+<div data-bind="visible: server_pluginBlacklist_enabled">
+    <div class="advanced_options">
+        <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', parent: '.advanced_options', container: '.hide' }"><i class="fa fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
+        <div class="hide">
+            {% include "snippets/settings/server/serverPluginBlacklistUrl.jinja2" %}
+            {% include "snippets/settings/server/serverPluginBlacklistTtl.jinja2" %}
+        </div>
+    </div>
+</div>

@@ -21,13 +21,18 @@ import threading
 import logging
 import netaddr
 import os
+import collections
 
 from octoprint.settings import settings
 import octoprint.server
 import octoprint.users
 import octoprint.plugin
 
+from octoprint.util import DefaultOrderedDict
+
 from werkzeug.contrib.cache import BaseCache
+
+from past.builtins import basestring
 
 try:
 	from os import scandir, walk
@@ -453,9 +458,12 @@ class OctoPrintFlaskRequest(flask.Request):
 
 		We need this because cookies are not port-specific and we don't want to overwrite our
 		session and other cookies from one OctoPrint instance on our machine with those of another
-		one who happens to listen on the same address albeit a different port.
+		one who happens to listen on the same address albeit a different port or script root.
 		"""
-		return "_P" + self.server_port
+		result = "_P" + self.server_port
+		if self.script_root:
+			return result + "_R" + self.script_root.replace("/", "|")
+		return result
 
 
 class OctoPrintFlaskResponse(flask.Response):
@@ -482,10 +490,10 @@ def passive_login():
 	else:
 		user = flask.ext.login.current_user
 
-	if user is not None and not user.is_anonymous():
+	if user is not None and not user.is_anonymous() and user.is_active():
 		flask.ext.principal.identity_changed.send(flask.current_app._get_current_object(), identity=flask.ext.principal.Identity(user.get_id()))
-		if hasattr(user, "get_session"):
-			flask.session["usersession.id"] = user.get_session()
+		if hasattr(user, "session"):
+			flask.session["usersession.id"] = user.session
 		flask.g.user = user
 		return flask.jsonify(user.asDict())
 	elif settings().getBoolean(["accessControl", "autologinLocal"]) \
@@ -501,9 +509,9 @@ def passive_login():
 			remoteAddr = get_remote_address(flask.request)
 			if netaddr.IPAddress(remoteAddr) in localNetworks:
 				user = octoprint.server.userManager.findUser(autologinAs)
-				if user is not None:
+				if user is not None and user.is_active():
 					user = octoprint.server.userManager.login_user(user)
-					flask.session["usersession.id"] = user.get_session()
+					flask.session["usersession.id"] = user.session
 					flask.g.user = user
 					flask.ext.login.login_user(user)
 					flask.ext.principal.identity_changed.send(flask.current_app._get_current_object(), identity=flask.ext.principal.Identity(user.get_id()))
@@ -1108,6 +1116,23 @@ def restricted_access(func):
 	return decorated_view
 
 
+def firstrun_only_access(func):
+	"""
+	If you decorate a view with this, it will ensure that first setup has _not_ been
+	done for OctoPrint's Access Control. Otherwise it
+	will cause a HTTP 403 status code to be returned by the decorated resource.
+	"""
+	@functools.wraps(func)
+	def decorated_view(*args, **kwargs):
+		# if OctoPrint has been set up yet, abort
+		if settings().getBoolean(["server", "firstRun"]) and (octoprint.server.userManager is None or not octoprint.server.userManager.hasBeenCustomized()):
+			return func(*args, **kwargs)
+		else:
+			return flask.make_response("OctoPrint is already setup, this resource is not longer available.", 403)
+
+	return decorated_view
+
+
 class AppSessionManager(object):
 
 	VALIDITY_UNVERIFIED = 1 * 60 # 1 minute
@@ -1189,6 +1214,9 @@ def get_json_command_from_request(request, valid_commands):
 		return None, None, make_response("Expected content-type JSON", 400)
 
 	data = request.json
+	if data is None:
+		return None, None, make_response("Expected content-type JSON", 400)
+
 	if not "command" in data.keys() or not data["command"] in valid_commands.keys():
 		return None, None, make_response("Expected valid command", 400)
 
@@ -1322,8 +1350,12 @@ def collect_plugin_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 	logger = logging.getLogger(__name__ + ".collect_plugin_assets")
 
 	supported_stylesheets = ("css", "less")
-	assets = dict(bundled=dict(js=[], css=[], less=[]),
-	              external=dict(js=[], css=[], less=[]))
+	assets = dict(bundled=dict(js=DefaultOrderedDict(list),
+	                           css=DefaultOrderedDict(list),
+	                           less=DefaultOrderedDict(list)),
+	              external=dict(js=DefaultOrderedDict(list),
+	                            css=DefaultOrderedDict(list),
+	                            less=DefaultOrderedDict(list)))
 
 	asset_plugins = octoprint.plugin.plugin_manager().get_implementations(octoprint.plugin.AssetPlugin)
 	for implementation in asset_plugins:
@@ -1349,13 +1381,13 @@ def collect_plugin_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 			for asset in all_assets["js"]:
 				if not asset_exists("js", asset):
 					continue
-				assets[asset_key]["js"].append('plugin/{name}/{asset}'.format(**locals()))
+				assets[asset_key]["js"][name].append('plugin/{name}/{asset}'.format(**locals()))
 
 		if preferred_stylesheet in all_assets:
 			for asset in all_assets[preferred_stylesheet]:
 				if not asset_exists(preferred_stylesheet, asset):
 					continue
-				assets[asset_key][preferred_stylesheet].append('plugin/{name}/{asset}'.format(**locals()))
+				assets[asset_key][preferred_stylesheet][name].append('plugin/{name}/{asset}'.format(**locals()))
 		else:
 			for stylesheet in supported_stylesheets:
 				if not stylesheet in all_assets:
@@ -1364,7 +1396,7 @@ def collect_plugin_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 				for asset in all_assets[stylesheet]:
 					if not asset_exists(stylesheet, asset):
 						continue
-					assets[asset_key][stylesheet].append('plugin/{name}/{asset}'.format(**locals()))
+					assets[asset_key][stylesheet][name].append('plugin/{name}/{asset}'.format(**locals()))
 				break
 
 	return assets

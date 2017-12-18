@@ -1,0 +1,6 @@
+<div class="control-group" title="{{ _('Port against which to check for internet connectivity') }}" data-bind="css: {error: server_onlineCheckBroken, success: server_onlineCheckOk}">
+    <label class="control-label" for="settings-serverOnlineCheckHost">{{ _('Port') }}</label>
+    <div class="controls">
+        <input type="number" min="1" max="65535" step="1" class="input-small" data-bind="value: server_onlineCheck_port" id="settings-serverOnlineCheckPort">
+    </div>
+</div>

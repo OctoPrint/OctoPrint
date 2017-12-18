@@ -1,5 +1,221 @@
 # OctoPrint Changelog
 
+## 1.3.6 (2017-12-12)
+
+### Note for upgraders and plugin authors: Change in the bundling of JS assets can lead to issues in plugins
+
+A change to solve issues with plugins bundling JS assets that cause interference with other plugins (e.g. through the declaration of `"use strict"`) and in general to add better isolation and error handling might cause errors for some plugins that go beyond your run-off-the-mill view model and also implicitly declare new globals.
+
+If you happen to run into any such issues, you can switch back to the old way of bundling JS assets via the newly introduced "Settings > Feature > Enable legacy plugin asset bundling" toggle (check it, save the settings, restart the server). This is provided to allow for a minimally invasive adjustment period until affected plugins have been updated.
+
+You can find out more about the change, how to know if a plugin is even affected and what do about it [on the OctoBlog](https://octoprint.org/blog/2017/12/01/heads-up-plugin-authors/).
+
+### Improvements
+
+  * [#203](https://github.com/foosel/OctoPrint/issues/203) - Allow selecting the current tab via URL hashs. Also update URL hash when switching tabs, thus adding this to the browser history and allowing quicker back and forth navigation through the browser's back and forward buttons.
+  * [#1026](https://github.com/foosel/OctoPrint/issues/1026) - Automatically upper case parameters in GCODE commands sent from the Terminal tab. A black list is in place that prevent upper casing of parameters for GCODE commands where it doesn't make sense (default: `M117`). See also [#2177](https://github.com/foosel/OctoPrint/pull/2177).
+  * [#2050](https://github.com/foosel/OctoPrint/issues/2050) - New hook [`octoprint.comm.protocol.temperatures.received`](http://docs.octoprint.org/en/maintenance/plugins/hooks.html#octoprint-comm-protocol-temperatures-received) that allows plugins to further preprocess/sanitize temperature data received from the printer. 
+  * [#2055](https://github.com/foosel/OctoPrint/issues/2055) - Increased the size of the API key field in the settings.
+  * [#2056](https://github.com/foosel/OctoPrint/issues/2056) - Added a Copy button to the API key field in the settings and user settings.
+  * [#2094](https://github.com/foosel/OctoPrint/issues/2094) - Allow UTF-8 display names for uploaded files. The files will still get an ASCII only name on disk, but the UTF-8 name used during upload will also be persisted and shown in the file list. This also allows using emojis in your file and folder names now.
+  * [#2104](https://github.com/foosel/OctoPrint/issues/2104) - Allow more URL schemes for installing plugins from. Supported schemes should now mirror what `pip` itself supports: `http`, `https`, `git`, `git+http`, `git+https`, `git+ssh`, `git+git`, `hg+http`, `hg+https`, `hg+static-http`, `hg+ssh`, `svn`, `svn+svn`, `svn+http`, `svn+https`, `svn+ssh`, `bzr+http`, `bzr+https`, `bzr+ssh`, `bzr+sftp`, `bzr+ftp`, `bzr+lp`.
+  * [#2109](https://github.com/foosel/OctoPrint/pull/2109) - New decorator `@firstrun_only_access` for API endpoints that should only be available before first setup has been completed.
+  * [#2111](https://github.com/foosel/OctoPrint/issues/2111) - Made the file list's scroll bar wider.
+  * [#2131](https://github.com/foosel/OctoPrint/issues/2131) - Added warning to restart, shutdown, reboot and update confirmations that that may disrupt ongoing prints, even those run from the printer's internal storage/SD. See also [#2146](https://github.com/foosel/OctoPrint/pull/2146) and [#2152](https://github.com/foosel/OctoPrint/pull/2152).
+  * [#2138](https://github.com/foosel/OctoPrint/issues/2138) - Slightly longer timeout when attempting to read from serial during auto detection via programming mode. Might help with detection of some slower printer controllers under certain circumstances.
+  * [#2200](https://github.com/foosel/OctoPrint/issues/2200) - Wrap all JS assets of plugins into one anonymous function per plugin. That way plugins using `"use strict";` won't cause hard to debug and weird issues with other plugins bundled after them. The down side is that plugins currently relying on implicit declaration of global helper functions or variables (`function convert(value) { ... }`) to be available outside of their own plugin's JS assets will now run into errors. To compensate for that while affected plugins are adjusted to declare globals explicitly (`window.convert = function(value) { ... }`), a temporary feature flag was added as "Settings > Features > Enable legacy plugin asset bundling" that switches back to the old form of bundling until plugins you rely on are updated. This flag will be removed again in a later version (currently planned for 1.3.8). See also the note above and [#2246](https://github.com/foosel/OctoPrint/issues/2246).
+  * [#2229](https://github.com/foosel/OctoPrint/issues/2229) - Added note to printer profile dialog that the nozzle offsets for multi extruder setups are only to be configured if they are not already set in the printer's firmware.
+  * [#2232](https://github.com/foosel/OctoPrint/issues/2232) - Disable movement distance buttons when not connected to the printer or when printing, since they don't have any use then.
+  * [#2239](https://github.com/foosel/OctoPrint/pull/2239) - Improved the check summing speed, thus improving the general achievable throughput on the comm layer.
+  * Allow cancelling of file transfers
+  * Made check of how old an unrendered timelapse is more lenient buy looking at both the creation and last modification date and using the younger one.
+  * Made notifications in general auto-close faster.
+  * Make the first profile saved for a slicer the default profile for that slicer.
+  * New command `server` for testing server connections on the [JS test API](http://docs.octoprint.org/en/maintenance/api/util.html#post--api-util-test).
+  * New hook [`octoprint.accesscontrol.keyvalidator`](http://docs.octoprint.org/en/maintenance/plugins/hooks.html#octoprint-accesscontrol-keyvalidator) that allows plugins to validate their own customized API keys to be used to access OctoPrint.
+  * Updated `cookiecutter`, `requests` and `psutil` dependencies.
+  * Added safety warning to first run wizard. 
+  * More error resilience against broken view models.
+  * New sub command `octoprint safemode`. Will set the `server.startOnceInSafeMode` setting in the config so that the next (re)start of the server after issuing this command will happen in safe mode.
+  * New sub command `octoprint config effective`. Will report the effective config.
+  * New centralized plugin blacklist (opt-in). Allows to prevent plugins/certain versions of plugins known to cause crippling issues with the normal operation of OctoPrint to be disabled from loading, if the user has opted to do so in the settings/wizard.
+  * Log how to enable `serial.log` to `serial.log` if it's disabled. That will hopefully put at least a small dent in the amount of "It's empty!" responses in tickets ;)
+  * Force new Pypi index URL in `requirements.txt` as an additional work around against old tooling.
+  * Prefer plain `pip` over `git` for updating OctoPrint.
+  * Added environment detection and logging on startup. That should give us more information about the environment to produce a reported bug in.
+  * Added OctoPi support plugin that provides information about the detected OctoPi version. Will only load if OctoPi is detected.
+  * More dynamic plugin mixin detection. Now using a base class instead of having to list all types manually. Should greatly reduce overhead of adding new mixin types.
+  * Support leaf merging for file extension tree, allowing to add new file extensions to types registered by default.
+  * Allow non GCODE SD file transfers if registered as `machinecode` through e.g. a plugin's file extension hook. Caution: This doesn't make streaming arbitrary files to the printer via serial work magically. It merely allows that, it's up to the firmware to actually be able to handle that. Also, the regular GCODE streaming protocol is used, so if the streamed file contains control characters from that (e.g. `M29` to signal the end of the streaming process), stuff will break!
+  * Added a test button for the online connectivity check.
+  * Announcements plugin: Added UTM Tags.
+  * Cura plugin: Less `not configured yet` logging.
+  * GCODE viewer: Added advanced options that allow configuring display of bounding boxes, sorting by layers and hiding of empty layers.
+  * GCODE viewer: Persist all options to local storage so they will be automatically set again the next time the GCODE viewer is used in the same browser.
+  * Software update: Auto-hide "Everything is up-to-date" notification.
+  * Easier copying of terminal contents thanks to dedicated copy button.
+  * Timelapse: [#2067](https://github.com/foosel/OctoPrint/issues/2067) - Added rate limiting to z-based timelapse capturing to prevent issues when accidentally leaving this mode on with vase mode prints.
+  * Timelapse: Refactored configuration form & added reset button to switch back to currently active settings.
+  * Timelapse: Sort timelapses by modification instead of creation time (creation time can be newer if a backup restore was done).
+  * Virtual printer: Support configurable ambient temperature for testing.
+  * Virtual printer: Support configurable reset lines.
+  * Virtual printer: Added new debug trigger `trigger_missing_lineno`.
+  * Virtual printer: Allow empty/`None` prepared oks, allowing to simulate lost acknowledgements right on start.
+  * Docs: [#2142](https://github.com/foosel/OctoPrint/pull/2142) - Added documentation for the bundled virtual printer plugin.
+  * Docs: [#2234](https://github.com/foosel/OctoPrint/pull/2234) - Added info on how to install under Suse Linux.
+  * Docs: Added example PyCharm run configuration that includes automatic dependency updates on start.
+  * Docs: Added information on how to run the test suite.
+  * Various refactorings
+  * Various documentation updates
+  * Fetch plugin blacklist (and also announcements, plugin notices and plugin repository) via https instead of http.
+
+### Bug fixes
+
+  * [#2044](https://github.com/foosel/OctoPrint/pull/2044) - Fix various typos in strings and comments
+  * [#2048](https://github.com/foosel/OctoPrint/pull/2048) & [#2176](https://github.com/foosel/OctoPrint/pull/2176) - Fixed various warnings during documentation generation.
+  * [#2077](https://github.com/foosel/OctoPrint/issues/2077) - Fix an issue with shared nozzles and the temperature graph, causing temperature to not be reported properly when another tool but the first one is selected. See also [#2077](https://github.com/foosel/OctoPrint/pull/2123)
+  * [#2108](https://github.com/foosel/OctoPrint/issues/2108) - Added no-op default action to login form so that username + password aren't sent as GET parameters if for some reason the user tries to log in before the view models are properly bound and thus the AJAX POST submission method is attached.
+  * [#2111](https://github.com/foosel/OctoPrint/issues/2111) - Prevent file list's scroll bar from fading out.
+  * [#2146](https://github.com/foosel/OctoPrint/issues/2147) - Fix initialization of temperature graph if it's not on the first tab due to tab reordering.
+  * [#2166](https://github.com/foosel/OctoPrint/issues/2166) - Workaround for a Firefox bug that causes the Drag-n-Drop overlay to never go away if the file is dragged outside of the browser window.
+  * [#2167](https://github.com/foosel/OctoPrint/issues/2167) - Fixed grammar of print time estimation tooltip
+  * [#2175](https://github.com/foosel/OctoPrint/issues/2175) - Cancel printing when an external reset of the printer is detected on the serial connection.
+  * [#2181](https://github.com/foosel/OctoPrint/issues/2181) - More resilience against non-standard `M115` responses.
+  * [#2182](https://github.com/foosel/OctoPrint/pull/2182) - Don't start tracking non existing or nonfunctional tools if encountering a temperature command referencing said tool. See also [kantlivelong/OctoPrint-PSUControl#68](https://github.com/kantlivelong/OctoPrint-PSUControl/issues/68).
+  * [#2196](https://github.com/foosel/OctoPrint/issues/2196) - Marked API key fields as `readonly` instead of `disabled` to allow their contents to be copied in Firefox (which wasn't possible before).
+  * [#2203](https://github.com/foosel/OctoPrint/issues/2203) - Reset temperature offsets to 0 when disconnected from the printer.
+  * [#2206](https://github.com/foosel/OctoPrint/issues/2206) - Disable pre-configured timelapse if snapshot URL of ffmpeg path are unset.
+  * [#2214](https://github.com/foosel/OctoPrint/issues/2214) - Fixed temperature fields not selecting in MS Edge on focus.
+  * [#2217](https://github.com/foosel/OctoPrint/pull/2217) - Fix an issue in `octoprint.util` causing a crash when running under PyPy instead of CPython.
+  * [#2226](https://github.com/foosel/OctoPrint/issues/2226) - Handle `No Line Number with checksum, Last Line: ...` errors from the firmware.
+  * [#2233](https://github.com/foosel/OctoPrint/pull/2233) - Respond with `411 Length Required` when content length is missing on file uploads.
+  * [#2242](https://github.com/foosel/OctoPrint/issues/2242) - Fixed an issue where print time left could show "1 days" instead of "1 day".
+  * [#2262](https://github.com/foosel/OctoPrint/issues/2262) (regression) - Fixed a bug causing `Error:checksum mismatch, Last Line: ...` errors from the firmware to be handled incorrectly.
+  * [#2267](https://github.com/foosel/OctoPrint/issues/2267) (regression) - Fixed a bug causing the GCODE viewer to not get properly initialized due to a JS error on load if "Also show next layer" was selected.
+  * [#2268](https://github.com/foosel/OctoPrint/issues/2268) (regression) - Fixed a bug causing a display error with the temperature offsets. If one offset was changed, all others seemed to revert back to 0.
+  * Fixed cleanup of unrendered timelapses with certain names.
+  * Fixed a caching issue with the file list API and the slicing API.
+  * Fixed initial sizing of the temperature graph.
+  * More resilience against corrupt `.metadata.yaml` files.
+  * More resilience against corrupt/invalid entries for system actions.
+  * More resilience against invalid JSON command requests.
+  * More resilience against broken packages in the python environment.
+  * Don't evaluate `onWebcamLoaded` more than once when switching to the webcam tab.
+  * Fixed `octoprint config` sub command.
+  * Fixed deactivated user accounts being able to login (albeit without a persistent session). Show fitting error instead.
+  * Fixed temperature auto report after an external reset.
+  * Don't log full request headers in Tornado on an error.
+  * Fix displayed notification message for synchronous system commands. Was accidentally swapped with the one for asynchronous system commands.
+  * GCODE viewer: Fix error on empty layers.
+  * Virtual printer: Fix resend simuation.
+  * Docs: Fixed CSS of line numbered listings.
+  * Docs: Updated mermaid to fix a deprecation warning.
+  * Fixed ordering of plugin assets, should be alphabetical based on the plugin identifier. (regression)
+  * Fixed an issue causing redundant software update configuration settings to be written to `config.yaml`, in turn causing issues when downgrading to <1.3.5. (regression)
+  * Fixed an issue detecting whether the installed version is a release version or a development version. (regression)
+
+### More Information
+
+  * [Commits](https://github.com/foosel/OctoPrint/compare/1.3.5...1.3.6)
+  * Release Candidates:
+    * [1.3.6rc1](https://github.com/foosel/OctoPrint/releases/tag/1.3.6rc1)
+    * [1.3.6rc2](https://github.com/foosel/OctoPrint/releases/tag/1.3.6rc2)
+    * [1.3.6rc3](https://github.com/foosel/OctoPrint/releases/tag/1.3.6rc3)
+    * A special **Thank you!** to everyone who reported back on these release candidates this time: [andrivet](https://github.com/andrivet), [b-morgan](https://github.com/b-morgan), [bjarchi](https://github.com/bjarchi), [chippypilot](https://github.com/chippypilot), [ChrisHeerschap](https://github.com/ChrisHeerschap), [cosmith71](https://github.com/cosmith71), [Crowlord](https://github.com/Crowlord), [ctgreybeard](https://github.com/ctgreybeard), [fiveangle](https://github.com/fiveangle), [goeland86](https://github.com/goeland86), [jbjones27](https://github.com/jbjones27), [jneilliii](https://github.com/jneilliii), [JohnOCFII](https://github.com/JohnOCFII), [Kunsi](https://github.com/Kunsi), [Lordxv](https://github.com/Lordxv), [malnvenshorn](https://github.com/malnvenshorn), [mcp5500](https://github.com/mcp5500), [ntoff](https://github.com/ntoff), [ripp2003](https://github.com/ripp2003) and [schorsch3000](https://github.com/schorsch3000)
+
+## 1.3.5 (2017-10-16)
+
+### Improvements
+
+  * [#1162](https://github.com/foosel/OctoPrint/pull/1162) - Allow `octoprint.comm.protocol.gcode.queuing` hook to return a list of commands.
+  * [#1572](https://github.com/foosel/OctoPrint/issues/1572) & [#1881](https://github.com/foosel/OctoPrint/issues/1881) - Refactored web interface startup process to minimise risk of race conditions and speed improvements. Also added sequence diagram to the documentation showing the new processing order.
+  * [#1640](https://github.com/foosel/OctoPrint/issues/1640) - Mouse over temperature graph to get exact data for that time.
+  * [#1679](https://github.com/foosel/OctoPrint/issues/1679) - Support temperature autoreporting by the firmware instead of polling if the firmware reports to support it. For this to work with Marlin 1.1.0 to 1.1.3 you'll need to explicitly enable `EXTENDED_CAPABILITIES_REPORT` *and* `AUTO_REPORT_TEMPERATURES` in your firmware configuration, otherwise your firmware won't report that it actually supports this feature.
+  * [#1737](https://github.com/foosel/OctoPrint/issues/1737) - Auto-detect Anet A8 firmware and treat as Repetier Firmware (which it actually appears to be, just renamed - thanks Anet for making this even harder). 
+  * [#1842](https://github.com/foosel/OctoPrint/issues/1842) - Update bundled FontAwesome to 4.7 (see also [#1915](https://github.com/foosel/OctoPrint/pull/1915)).
+  * [#1910](https://github.com/foosel/OctoPrint/issues/1910) - Make last/pause/cancel temperature available for GCODE scripts.
+  * [#1925](https://github.com/foosel/OctoPrint/issues/1925) - Include configured webcam stream URL in "Webcam stream not loaded" message for logged in users/admins. Slightly different wording for guests vs users vs admins.
+  * [#1941](https://github.com/foosel/OctoPrint/issues/1941) - Enable "block while dwelling" flag when Malyan firmware is detected since that firmware seems to handle `G4` identically to Repetier Firmware instead of Marlin (like it claims to). See also [#1762](https://github.com/foosel/OctoPrint/issues/1762).
+  * [#1946](https://github.com/foosel/OctoPrint/issues/1946) - Add option to disable position logging on cancel/pause. See "Log position on cancel" and "Log position on pause" under Settings > Serial > Advanced options.
+  * [#1971](https://github.com/foosel/OctoPrint/issues/1971) - Refactored temperature inputs. They now sport some fancy +/- buttons to increment/decrement the current temperature (which also auto submit after a couple of seconds) and easier editing by keyboard. The temperature offset was also slightly redesigned to make room for that.
+  * [#1975](https://github.com/foosel/OctoPrint/issues/1975) - Better error reporting when deleting timelapses.
+  * [#2010](https://github.com/foosel/OctoPrint/pull/2010) - Slight refactoring in the terminal tab: Full width input field, auto focus of input field when just clicking on terminal output.
+  * [#2011](https://github.com/foosel/OctoPrint/issues/2011) - Centralized online connectivity check (with opt-in of course). None of the bundled plugins will attempt to fetch data from the net when the connectivity check indicates that would fail anyhow. This should improve server startup times and various requests when running isolated.
+  * [#2025](https://github.com/foosel/OctoPrint/issues/2025) - More verbose logging of asynchronous system commands (e.g. restart/shutdown).
+  * Allow timelapse configuration through UI even when not connected to the printer (suggested in [#1918](https://github.com/foosel/OctoPrint/issues/1918))
+  * Disable "Upload to SD" UI elements while printing (suggested in [#1914](https://github.com/foosel/OctoPrint/issues/1914))
+  * Update bundled SockJS to 1.1.2 incl. source maps
+  * Set `X-Robots` HTTP header and remove `Server` header from all responses, also set `robots` meta tag in page.
+  * Don't require to enter programmer mode for printer port autodetection when there's only one possible port candidate anyhow.
+  * More sensible sorting of baudrates (additionally configured, then 115200, then 250000, then everything else).
+  * Don't show "Unhandled communication error" on autodetection failure.
+  * Make timeout after which to unload the webcam stream after navigating away from it configurable (as suggested in [#1937](https://github.com/foosel/OctoPrint/issues/1937))
+  * Add `ToolChange` event and tool change GCODE scripts
+  * Support parsing GCODE subcodes.
+  * Add `octoprint.users.factory` hook, allowing plugins to extend/swap out the user manager OctoPrint uses.
+  * Corewizard: Disable view model and client code if it's not actually required.
+  * Corewizard: Disable injection of JS files into UI when it's not actually required.
+  * GCODE analysis: Moved into its own subprocess. That should improve performance on multi core systems.
+  * GCODE viewer: Ignore coordinates outside bed when zooming/centering on model. Those usually are nozzle priming routines.
+  * JS Client Lib: Add centralized browser detection as `OctoPrint.coreui.browser`. Available properties: `chrome`, `firefox`, `safari`, `ie`, `edge`, `opera` as well as `mobile` and `desktop`, all of which are boolean values.
+  * Plugin Manager plugin: Detect if a plugin requires a reconnect to the printer to become fully active/inactive.
+  * Software Update plugin: Force exact version when updating OctoPrint and tracking releases.
+  * Software Update plugin: "Devel RCs" release channel now also tracks maintenance RCs. That way people don't have to toggle between the two any more to get *all* RCs.
+  * Software Update plugin: `bitbucket_commit` check type now supports API credentials (see also [#1993](https://github.com/foosel/OctoPrint/pull/1993)).
+  * Wizard: Allow suppressing the "the settings got updated" dialog through subwizards, in case they need to update settings asynchronously as part of their workflow.
+  * More resilience against expected folders being files.
+  * More resilience against a wrong user manager class being configured.
+  * Some code refactoring & cleanup.
+  * Some HTML & CSS improvements.
+
+### Bug fixes
+
+  * [#1916](https://github.com/foosel/OctoPrint/issues/1916) - Fix webcam not loading if first/initial tab is "Control"
+  * [#1924](https://github.com/foosel/OctoPrint/issues/1924) - Filter out source map links from bundled JS webassets.
+  * [#1943](https://github.com/foosel/OctoPrint/issues/1943) - Fix issue causing unnecessary creation of default printer profile on startup
+  * [#1946](https://github.com/foosel/OctoPrint/issues/1946) - Decouple writing of print log from everything else. Fixes delay in cancel processing.
+  * [#1963](https://github.com/foosel/OctoPrint/issues/1963) & [#1974](https://github.com/foosel/OctoPrint/issues/1974) - Allow empty & custom size in print job events. Also fixes an issue with timelapses when printing from SD on printers that require the GPX plugin to work.
+  * [#1996](https://github.com/foosel/OctoPrint/issues/1996) - Support all line ending variantes in the GCODE viewer. Solves an issue with GCODE generated for Prusa's multi material extruder since that uses only `\r` for some reason.
+  * [#2007](https://github.com/foosel/OctoPrint/issues/2007) - Fix issue parsing temperature lines from the printer that contain negative values.
+  * [#2012](https://github.com/foosel/OctoPrint/issues/2012) - Fix command line interface of Software Update plugin.
+  * [#2017](https://github.com/foosel/OctoPrint/issues/2017) - Fix issue in GCODE viewer with files that contain a visit to the first layer twice (e.g. brim, then nose dive from higher z for actual model), causing all but the last layer segment to not be rendered.
+  * [#2033](https://github.com/foosel/OctoPrint/issues/2033) (regression) - Temperature tab: Fix for legend in graph not updating with current values on mouse over.
+  * [#2033](https://github.com/foosel/OctoPrint/issues/2033) (regression) - Temperature tab: Fix for new temperature inputs not fitting on one line in Firefox.
+  * [#2033](https://github.com/foosel/OctoPrint/issues/2033) (regression) - Temperature tab & GCODE viewer: Fix for available tools (and offsets) not properly updating on change of printer profile.
+  * [#2033](https://github.com/foosel/OctoPrint/issues/2033) (regression) - Wizard: Fix sorting of required wizards not properly handling non-ASCII unicode.
+  * [#2035](https://github.com/foosel/OctoPrint/issues/2035) (regression) - Fix an issue of the server not starting up if there's a file in the analysis backlog. The reason for this is that spawning a new process while the intermediary server is active causes the server port to be blocked (this is due to how subprocessing works by default), in turn leading to an error on startup since the port cannot be bound by the actual server. Since the GCODE analysis takes now place in its own subprocess and hence triggers this problem, it had to be moved until after the actual server has already started up to avoid this problem.
+  * [#2059](https://github.com/foosel/OctoPrint/issues/2059) (regression) - Fix an issue causing the new temperature controls to wrap on touch enabled devices when the temperature dropdown is opened.
+  * [#2090](https://github.com/foosel/OctoPrint/issues/2090) (regression) - Fix an issue causing an aborted server startup under Windows if the timing is just right.
+  * [#2135](https://github.com/foosel/OctoPrint/issues/2135) (regression) - Fix an issue causing import errors inside the GCODE analysis tool in certain environments due to `sys.path` entries causing relative imports.
+  * [#2136](https://github.com/foosel/OctoPrint/issues/2136) (regression) - Fix wrong minimum version for `sockjs-tornado` dependency.
+  * [#2137](https://github.com/foosel/OctoPrint/issues/2137) (regression) - Fix issue with session cookies getting lost when running an OctoPrint instance on a subpath of another (e.g. `octopi.local/` and `octopi.local/octoprint2`).
+  * [#2140](https://github.com/foosel/OctoPrint/issues/2140) (regression) - Fix issue with locale dependent sorting of sub wizards during first time setup causing issues leading to the wizard not being able to complete.
+  * Fix various popup buttons allowing multiple clicks (suggested in [#1914](https://github.com/foosel/OctoPrint/issues/1914))
+  * Software Update Plugin: Perform server restart asynchronously. Should reduce restart times on updates significantly.
+  * Don't hex-escape `\t`, `\r` or `\n` in terminal output
+  * Use client side default printer profile if the default profile could not be found on the server
+  * Use both "to" and "from" coordinates of a given move for min/max model coordinate calculation in GCODE analysis. Otherwise wrong values could be calculated under certain circumstances.  
+  * Fix potential race condition in resend request handling.
+  * Fix potential race condition in web socket handling.
+  * Fix handling of tool offsets in GCODE analysis - diverted too far from firmware implementations, causing wrong calculations.
+  * Fix `FileAdded`, `FileRemoved`, `FolderAdded`, `FolderRemoved` events not being fired with the correct event name.
+  * Fix potential division by zero in progress reporting if the timing was just right.
+  * Fix sorting order for multiple tools in the "State" panel.
+  * Fix file position vs. line ending handling in GCODE viewer. Could lead to slightly off file position calculation and hence possibly to the wrong move being plotted when synchronizing with print progress.
+  * Wizard: Fix `onWizardPreventSettingsRefreshDialog` callback invocation. (regression)
+  * Corewizard plugin: Fix `firstrunonly` wizards (e.g. for printer profile configuration) being displayed again if _any_ of the sub wizards (e.g. for the online check opt-in and configuration) is active. (regression)
+  * Fix an issue causing rollover of `serial.log` to fail under Windows. (regression)
+
+### More Information
+
+  * [Commits](https://github.com/foosel/OctoPrint/compare/1.3.4...1.3.5)
+  * Release Candidates:
+    * [1.3.5rc1](https://github.com/foosel/OctoPrint/releases/tag/1.3.5rc1)
+    * [1.3.5rc2](https://github.com/foosel/OctoPrint/releases/tag/1.3.5rc2)
+    * [1.3.5rc3](https://github.com/foosel/OctoPrint/releases/tag/1.3.5rc3)
+    * [1.3.5rc4](https://github.com/foosel/OctoPrint/releases/tag/1.3.5rc4)
+    * A special **Thank you!** to everyone who reported back on these release candidates this time: [alexxy](https://github.com/alexxy), [andrivet](https://github.com/andrivet), [b-morgan](https://github.com/b-morgan), [BillyBlaze](https://github.com/BillyBlaze), [CapnBry](https://github.com/CapnBry), [chippypilot](https://github.com/chippypilot), [ctgreybeard](https://github.com/ctgreybeard), [cxt666](https://github.com/cxt666), [DaSTIG](https://github.com/DaSTIG), [fhbmax](https://github.com/fhbmax), [fiveangle](https://github.com/fiveangle), [goeland86](https://github.com/goeland86), [JohnOCFII](https://github.com/JohnOCFII), [Kunsi](https://github.com/Kunsi), [mgrl](https://github.com/mgrl), [MoonshineSG](https://github.com/MoonshineSG), [nate-ubiquisoft](https://github.com/nate-ubiquisoft), [Neoolog](https://github.com/Neoolog), [ntoff](https://github.com/ntoff), [oferfrid](https://github.com/oferfrid), [roygilby](https://github.com/roygilby), [SAinc](https://github.com/SAinc), [sbts](https://github.com/sbts), [thess](https://github.com/thess), [tkurbad](https://github.com/tkurbad), [tsillini](https://github.com/tsillini) and [TylonHH](https://github.com/TylonHH).
+
 ## 1.3.4 (2017-06-01)
 
 ### Note for owners of Malyan M200/Monoprice Select Mini

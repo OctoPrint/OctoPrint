@@ -15,7 +15,7 @@ $(function() {
         self.defaultProfile = undefined;
 
         self.destinationFilename = ko.observable();
-        self.gcodeFilename = self.destinationFilename; // TODO: for backwards compatiblity, mark deprecated ASAP
+        self.gcodeFilename = self.destinationFilename; // TODO: for backwards compatibility, mark deprecated ASAP
 
         self.title = ko.observable();
         self.slicer = ko.observable();
@@ -126,23 +126,28 @@ $(function() {
         ];
         self.afterSlicing = ko.observable("none");
 
-        self.show = function(target, file, force, path) {
+        self.show = function(target, file, force, path, options) {
+            options = options || {};
+
             if (!self.enableSlicingDialog() && !force) {
                 return;
             }
 
-            var filename = file.substr(0, file.lastIndexOf("."));
+            var filename = file;
             if (filename.lastIndexOf("/") != 0) {
                 path = path || filename.substr(0, filename.lastIndexOf("/"));
                 filename = filename.substr(filename.lastIndexOf("/") + 1);
             }
 
+            var display = options.display || filename;
+            var destination = display.substr(0, display.lastIndexOf("."));
+
             self.requestData();
             self.target = target;
             self.file(file);
             self.path = path;
-            self.title(_.sprintf(gettext("Slicing %(filename)s"), {filename: filename}));
-            self.destinationFilename(filename);
+            self.title(_.sprintf(gettext("Slicing %(filename)s"), {filename: display}));
+            self.destinationFilename(destination);
             self.printerProfile(self.printerProfiles.currentProfile());
             self.afterSlicing("none");
 
@@ -253,7 +258,7 @@ $(function() {
                 return;
             }
 
-            var destinationFilename = self._sanitize(self.destinationFilename());
+            var destinationFilename = self.destinationFilename();
 
             var destinationExtensions = self.data[self.slicer()] && self.data[self.slicer()].extensions && self.data[self.slicer()].extensions.destination
                                         ? self.data[self.slicer()].extensions.destination
@@ -308,9 +313,9 @@ $(function() {
         };
     }
 
-    OCTOPRINT_VIEWMODELS.push([
-        SlicingViewModel,
-        ["loginStateViewModel", "printerProfilesViewModel", "printerStateViewModel"],
-        "#slicing_configuration_dialog"
-    ]);
+    OCTOPRINT_VIEWMODELS.push({
+        construct: SlicingViewModel,
+        dependencies: ["loginStateViewModel", "printerProfilesViewModel", "printerStateViewModel"],
+        elements: ["#slicing_configuration_dialog"]
+    });
 });

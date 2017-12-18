@@ -62,10 +62,11 @@ Save settings
 
       {
         "api": {
-          "enabled": true,
-          // ...
+          "enabled": true
         },
-        // ...
+        "appearance": {
+          "color": "black"
+        }
       }
 
 .. _sec-api-settings-generateapikey:

@@ -8,13 +8,16 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import logging
 
-from ..exceptions import ConfigurationInvalid
+from ..exceptions import ConfigurationInvalid, CannotCheckOffline
 from ..util import execute
 
-def get_latest(target, check):
+def get_latest(target, check, online=True):
 	command = check.get("command")
 	if command is None:
 		raise ConfigurationInvalid("Update configuration for {} of type commandline needs command set and not None".format(target))
+
+	if not online and not check.get("offline", False):
+		raise CannotCheckOffline("{} isn't marked as 'offline' capable, but we are apparently offline right now".format(target))
 
 	returncode, stdout, stderr = execute(command, evaluate_returncode=False)
 

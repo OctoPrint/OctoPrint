@@ -47,7 +47,18 @@ $(function() {
             var callback = function() {
                 OctoPrint.system.executeCommand(commandSpec.actionSource, commandSpec.action)
                     .done(function() {
-                        new PNotify({title: "Success", text: _.sprintf(gettext("The command \"%(command)s\" executed successfully"), {command: commandSpec.name}), type: "success"});
+                        var text;
+                        if (commandSpec.async) {
+                            text = gettext("The command \"%(command)s\" was triggered asynchronously");
+                        } else {
+                            text = gettext("The command \"%(command)s\" executed successfully");
+                        }
+
+                        new PNotify({
+                            title: "Success",
+                            text: _.sprintf(text, {command: commandSpec.name}),
+                            type: "success"
+                        });
                         deferred.resolve(["success", arguments]);
                     })
                     .fail(function(jqXHR, textStatus, errorThrown) {
@@ -99,10 +110,8 @@ $(function() {
         };
     }
 
-    // view model class, parameters for constructor, container to bind to
-    ADDITIONAL_VIEWMODELS.push([
-        SystemViewModel,
-        ["loginStateViewModel"],
-        []
-    ]);
+    OCTOPRINT_VIEWMODELS.push({
+        construct: SystemViewModel,
+        dependencies: ["loginStateViewModel"]
+    });
 });

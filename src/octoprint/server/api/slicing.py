@@ -17,6 +17,9 @@ from octoprint.settings import settings as s, valid_boolean_trues
 from octoprint.slicing import UnknownSlicer, SlicerNotConfigured, ProfileAlreadyExists, UnknownProfile, CouldNotDeleteProfile
 
 
+_DATA_FORMAT_VERSION = "v2"
+
+
 def _lastmodified(configured):
 	if configured:
 		slicers = slicingManager.configured_slicers
@@ -39,11 +42,19 @@ def _etag(configured, lm=None):
 	hash.update(str(lm))
 
 	if configured:
-		hash.update(repr(sorted(slicingManager.configured_slicers)))
+		slicers = slicingManager.configured_slicers
 	else:
-		hash.update(repr(sorted(slicingManager.registered_slicers)))
+		slicers = slicingManager.registered_slicers
 
-	hash.update("v2") # increment version if we change the API format
+	default_slicer = s().get(["slicing", "defaultSlicer"])
+
+	for slicer in sorted(slicers):
+		slicer_impl = slicingManager.get_slicer(slicer, require_configured=False)
+		hash.update(slicer)
+		hash.update(str(slicer_impl.is_slicer_configured()))
+		hash.update(str(slicer == default_slicer))
+	
+	hash.update(_DATA_FORMAT_VERSION) # increment version if we change the API format
 
 	return hash.hexdigest()
 

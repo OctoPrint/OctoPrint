@@ -199,7 +199,7 @@ class PrinterInterface(object):
 
 	def set_temperature_offset(self, offsets=None):
 		"""
-		Sets the temperature ``offsets`` to apply to target temperatures red from a GCODE file while printing.
+		Sets the temperature ``offsets`` to apply to target temperatures read from a GCODE file while printing.
 
 		Arguments:
 		    offsets (dict): A dictionary specifying the offsets to apply. Keys must match the format for the ``heater``
@@ -236,7 +236,7 @@ class PrinterInterface(object):
 		A file that is currently being printed is not allowed to be modified. Any other file or the current file
 		when it is not being printed is fine though.
 
-		.. since:: 1.3.2
+		:since: 1.3.2
 
 		.. warning::
 
@@ -259,7 +259,7 @@ class PrinterInterface(object):
 		Returns whether the provided ``path`` (on the printer's SD if ``sd`` is True) is the currently selected
 		file for printing.
 
-		.. since:: 1.3.2
+		:since: 1.3.2
 
 		.. warning::
 
@@ -299,6 +299,7 @@ class PrinterInterface(object):
 		        after the file is selected.
 
 		Raises:
+		    InvalidFileType: if the file is not a machinecode file and hence cannot be printed
 		    InvalidFileLocation: if an absolute path was provided and not contained within local storage or
 		        doesn't exist
 		"""
@@ -592,4 +593,7 @@ class UnknownScript(Exception):
 		self.name = name
 
 class InvalidFileLocation(Exception):
+	pass
+
+class InvalidFileType(Exception):
 	pass

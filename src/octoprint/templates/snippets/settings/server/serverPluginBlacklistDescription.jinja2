@@ -1,0 +1,10 @@
+<p>{% trans %}
+    <strong>To protect against known severe issues with certain versions of third party plugins</strong>, OctoPrint supports
+    the use of a centralized plugin version blacklist to automatically disable such plugins before they can interfere
+    with normal operation.
+{% endtrans %}</p>
+
+<p>{% trans url="https://plugins.octoprint.org/blacklist/" %}
+    By default, OctoPrint will use the blacklist hosted at <code>plugins.octoprint.org/blacklist.json</code> which you
+    can also take a look at in a more human readable format <a href="{{ url }}" target="_blank">here</a>.
+{% endtrans %}</p>

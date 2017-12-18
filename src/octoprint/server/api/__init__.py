@@ -205,9 +205,12 @@ def login():
 		user = octoprint.server.userManager.findUser(username)
 		if user is not None:
 			if octoprint.server.userManager.checkPassword(username, password):
+				if not user.is_active():
+					return make_response(("Your account is deactivated", 403, []))
+
 				if octoprint.server.userManager.enabled:
 					user = octoprint.server.userManager.login_user(user)
-					session["usersession.id"] = user.get_session()
+					session["usersession.id"] = user.session
 					g.user = user
 				login_user(user, remember=remember)
 				identity_changed.send(current_app._get_current_object(), identity=Identity(user.get_id()))
@@ -222,21 +225,20 @@ def login():
 @api.route("/logout", methods=["POST"])
 @restricted_access
 def logout():
-	# Remove session keys set by Flask-Principal
-	for key in ('identity.id', 'identity.name', 'identity.auth_type'):
-		if key in session:
-			del session[key]
-	identity_changed.send(current_app._get_current_object(), identity=AnonymousIdentity())
-
+	# logout from user manager...
 	_logout(current_user)
+
+	# ... and from flask login (and principal)
 	logout_user()
 
 	return NO_CONTENT
+
 
 def _logout(user):
 	if "usersession.id" in session:
 		del session["usersession.id"]
 	octoprint.server.userManager.logout_user(user)
+
 
 @api.route("/util/test", methods=["POST"])
 @restricted_access
@@ -244,7 +246,8 @@ def _logout(user):
 def utilTestPath():
 	valid_commands = dict(
 		path=["path"],
-		url=["url"]
+		url=["url"],
+		server=["host", "port"]
 	)
 
 	command, data, response = get_json_command_from_request(request, valid_commands)
@@ -337,7 +340,7 @@ def utilTestPath():
 			try:
 				timeout = float(data["timeout"])
 			except:
-				return make_response("{!r} is not a valid value for timeout (must be int or float)".format(data["timeout"]))
+				return make_response("{!r} is not a valid value for timeout (must be int or float)".format(data["timeout"]), 400)
 
 		if "status" in data:
 			request_status = data["status"]
@@ -384,5 +387,33 @@ def utilTestPath():
 				headers=dict(response.headers),
 				content=content
 			)
-
 		return jsonify(**result)
+
+	elif command == "server":
+		host = data["host"]
+		try:
+			port = int(data["port"])
+		except:
+			return make_response("{!r} is not a valid value for port (must be int)".format(data["port"]), 400)
+		
+		timeout = 3.05
+		if "timeout" in data:
+			try:
+				timeout = float(data["timeout"])
+			except:
+				return make_response("{!r} is not a valid value for timeout (must be int or float)".format(data["timeout"]), 400)
+		
+		protocol = data.get("protocol", "tcp")
+		if protocol not in ("tcp", "udp"):
+			return make_response("{!r} is not a valid value for protocol, must be tcp or udp".format(protocol), 400)
+		
+		from octoprint.util import server_reachable
+		reachable = server_reachable(host, port, timeout=timeout, proto=protocol)
+		
+		result = dict(host=host,
+		              port=port,
+		              protocol=protocol,
+		              result=reachable)
+		
+		return jsonify(**result)
+

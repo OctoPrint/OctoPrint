@@ -110,6 +110,14 @@ ClientClosed
 
      * ``remoteAddress``: the remote address (IP) of the client that disconnected
 
+ConnectivityChanged
+   The server's internet connectivity changed
+
+   Payload:
+
+     * ``old``: Old connectivity value (true for online, false for offline)
+     * ``new``: New connectivity value (true for online, false for offline)
+
 Printer communication
 ---------------------
 
@@ -229,7 +237,7 @@ UpdatedFiles
 
        .. deprecated:: 1.2.0
 
-          The ``gcode`` modification type has been superceeded by ``printables``. It is currently still available for
+          The ``gcode`` modification type has been superseded by ``printables``. It is currently still available for
           reasons of backwards compatibility and will also be sent on modification of ``printables``. It will however
           be removed with 1.4.0.
 
@@ -476,6 +484,15 @@ PositionUpdate
      * ``e``: e coordinate, parsed from response
      * ``t``: last tool selected *through OctoPrint*
      * ``f``: last feedrate for move commands ``G0``, ``G1`` or ``G28`` sent *through OctoPrint*
+
+ToolChange
+   A tool change command was sent to the printer. The payload contains the former current tool index and the
+   new current tool index.
+
+   Payload:
+
+     * ``old``: old tool index
+     * ``new``: new tool index
 
 Timelapses
 ----------

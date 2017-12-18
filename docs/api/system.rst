@@ -39,7 +39,7 @@ List all registered system commands
             "action": "shutdown",
             "name": "Shutdown",
             "command": "sudo shutdown -h now",
-            "confirm": "You are about to shutdown the system.",
+            "confirm": "<strong>You are about to shutdown the system.</strong></p><p>This action may disrupt any ongoing print jobs (depending on your printer's controller and general setup that might also apply to prints run directly from your printer's internal storage).",
             "async": true,
             "ignore": true,
             "source": "core",
@@ -49,7 +49,7 @@ List all registered system commands
             "action": "reboot",
             "name": "Reboot",
             "command": "sudo reboot",
-            "confirm": "You are about to reboot the system.",
+            "confirm": "<strong>You are about to reboot the system.</strong></p><p>This action may disrupt any ongoing print jobs (depending on your printer's controller and general setup that might also apply to prints run directly from your printer's internal storage).",
             "async": true,
             "ignore": true,
             "source": "core",
@@ -59,7 +59,7 @@ List all registered system commands
             "action": "restart",
             "name": "Restart OctoPrint",
             "command": "sudo service octoprint restart",
-            "confirm": "You are about to restart the OctoPrint server.",
+            "confirm": "<strong>You are about to restart the OctoPrint server.</strong></p><p>This action may disrupt any ongoing print jobs (depending on your printer's controller and general setup that might also apply to prints run directly from your printer's internal storage).",
             "async": true,
             "ignore": true,
             "source": "core",
@@ -100,7 +100,7 @@ List all registered system commands for a source
           "action": "shutdown",
           "name": "Shutdown",
           "command": "sudo shutdown -h now",
-          "confirm": "You are about to shutdown the system.",
+          "confirm": "<b>You are about to shutdown the system.</b></p><p> This action may disrupt any ongoing print jobs (depending on your printer's controller and general setup that might also apply to prints run directly from your printer's internal storage).",
           "async": true,
           "ignore": true,
           "source": "core",
@@ -110,7 +110,7 @@ List all registered system commands for a source
           "action": "reboot",
           "name": "Reboot",
           "command": "sudo reboot",
-          "confirm": "You are about to reboot the system.",
+          "confirm": "<b>You are about to reboot the system.</b></p><p> This action may disrupt any ongoing print jobs (depending on your printer's controller and general setup that might also apply to prints run directly from your printer's internal storage).",
           "async": true,
           "ignore": true,
           "source": "core",
@@ -120,7 +120,7 @@ List all registered system commands for a source
           "action": "restart",
           "name": "Restart OctoPrint",
           "command": "sudo service octoprint restart",
-          "confirm": "You are about to restart the OctoPrint server.",
+          "confirm": "<b>You are about to restart the OctoPrint server.</b></p><p> This action may disrupt any ongoing print jobs (depending on your printer's controller and general setup that might also apply to prints run directly from your printer's internal storage).",
           "async": true,
           "ignore": true,
           "source": "core",
@@ -154,7 +154,7 @@ Execute a registered system command
 
    .. sourcecode:: http
 
-      204 No Content
+      HTTP/1.1 204 No Content
 
    :param source: The source for which to list commands, currently either ``core`` or ``custom``
    :param action: The identifier of the command, ``action`` from its definition

@@ -476,8 +476,16 @@ $(function() {
             });
             self.profiles.updateItems(items);
             self.defaultProfile(defaultProfile);
-            self.currentProfile(currentProfile);
-            self.currentProfileData(currentProfileData);
+
+            if (currentProfile && currentProfileData) {
+                self.currentProfile(currentProfile);
+                self.currentProfileData(currentProfileData);
+            } else {
+                // shouldn't normally happen, but just to not have anything else crash...
+                log.warn("Current printer profile could not be detected, using default values");
+                self.currentProfile("");
+                self.currentProfileData(ko.mapping.fromJS(cleanProfile(), self.currentProfileData));
+            }
         };
 
         self.addProfile = function(callback) {
@@ -589,9 +597,7 @@ $(function() {
         self.onStartup = self.requestData;
     }
 
-    OCTOPRINT_VIEWMODELS.push([
-        PrinterProfilesViewModel,
-        [],
-        []
-    ]);
+    OCTOPRINT_VIEWMODELS.push({
+        construct: PrinterProfilesViewModel
+    });
 });

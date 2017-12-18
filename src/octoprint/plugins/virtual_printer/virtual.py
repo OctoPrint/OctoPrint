@@ -18,6 +18,7 @@ from serial import SerialTimeoutException
 
 from octoprint.settings import settings
 from octoprint.plugin import plugin_manager
+from octoprint.util import RepeatedTimer
 
 class VirtualPrinter(object):
 	command_regex = re.compile("^([GMTF])(\d+)")
@@ -27,6 +28,7 @@ class VirtualPrinter(object):
 	custom_action_regex = re.compile("action_custom ([a-zA-Z0-9_]+)(\s+.*)?")
 	prepare_ok_regex = re.compile("prepare_ok (.*)")
 	send_regex = re.compile("send (.*)")
+	set_ambient_regex = re.compile("set_ambient ([-+]?[0-9]*\.?[0-9]+)")
 
 	def __init__(self, seriallog_handler=None, read_timeout=5.0, write_timeout=10.0):
 		import logging
@@ -53,8 +55,8 @@ class VirtualPrinter(object):
 		self.buffered = queue.Queue(maxsize=settings().getInt(["devel", "virtualPrinter", "commandBuffer"]))
 
 		if settings().getBoolean(["devel", "virtualPrinter", "simulateReset"]):
-			for item in ['start\n', 'Marlin: Virtual Marlin!\n', '\x80\n', 'SD card ok\n']:
-				self._send(item)
+			for item in settings().get(["devel", "virtualPrinter", "resetLines"]):
+				self._send(item + "\n")
 
 		self._prepared_oks = []
 		prepared = settings().get(["devel", "virtualPrinter", "preparedOks"])
@@ -62,16 +64,25 @@ class VirtualPrinter(object):
 			for prep in prepared:
 				self._prepared_oks.append(prep)
 
+		self._prepared_errors = []
+
+		self._errors = settings().get(["devel", "virtualPrinter", "errors"], merged=True)
+
 		self.currentExtruder = 0
 		self.extruderCount = settings().getInt(["devel", "virtualPrinter", "numExtruders"])
+		self.pinnedExtruders = settings().get(["devel", "virtualPrinter", "pinnedExtruders"])
+		if self.pinnedExtruders is None:
+			self.pinnedExtruders = dict()
 		self.sharedNozzle = settings().getBoolean(["devel", "virtualPrinter", "sharedNozzle"])
 		self.temperatureCount = (1 if self.sharedNozzle else self.extruderCount)
 
-		self.temp = [0.0] * self.temperatureCount
+		self._ambient_temperature = settings().getFloat(["devel", "virtualPrinter", "ambientTemperature"])
+
+		self.temp = [self._ambient_temperature] * self.temperatureCount
 		self.targetTemp = [0.0] * self.temperatureCount
+		self.bedTemp = self._ambient_temperature
+		self.bedTargetTemp = 0.0
 		self.lastTempAt = time.time()
-		self.bedTemp = 1.0
-		self.bedTargetTemp = 1.0
 
 		self._relative = True
 		self._lastX = 0.0
@@ -113,6 +124,10 @@ class VirtualPrinter(object):
 
 		self._okFormatString = settings().get(["devel", "virtualPrinter", "okFormatString"])
 
+		self._capabilities = settings().get(["devel", "virtualPrinter", "capabilities"])
+
+		self._temperature_reporter = None
+
 		self.currentLine = 0
 		self.lastN = 0
 
@@ -133,7 +148,8 @@ class VirtualPrinter(object):
 
 		self._triggerResendAt100 = True
 		self._triggerResendWithTimeoutAt105 = True
-		self._triggeredResendWithTimeoutAt105 = False
+		self._triggerResendWithMissingLinenoAt110 = True
+		self._triggerResendWithChecksumMismatchAt115 = True
 
 		readThread = threading.Thread(target=self._processIncoming, name="octoprint.plugins.virtual_printer.wait_thread")
 		readThread.start()
@@ -213,7 +229,7 @@ class VirtualPrinter(object):
 
 				self.currentLine += 1
 			elif settings().getBoolean(["devel", "virtualPrinter", "forceChecksum"]):
-				self._send("Error: Missing checksum")
+				self._send(self._error("checksum_missing"))
 				continue
 
 			# track N = N + 1
@@ -245,11 +261,34 @@ class VirtualPrinter(object):
 					self._dont_answer = True
 					self.lastN = linenumber
 					continue
+				elif linenumber == 110 and self._triggerResendWithMissingLinenoAt110 and not self._writingToSd:
+					self._triggerResendWithMissingLinenoAt110 = False
+					self._send(self._error("lineno_missing", self.lastN))
+					continue
+				elif linenumber == 115 and self._triggerResendWithChecksumMismatchAt115 and not self._writingToSd:
+					self._triggerResendWithChecksumMismatchAt115 = False
+					self._triggerResend(checksum=True)
+					continue
+				elif len(self._prepared_errors):
+					prepared = self._prepared_errors.pop(0)
+					if callable(prepared):
+						prepared(linenumber, self.lastN, data)
+						continue
+					elif isinstance(prepared, basestring):
+						self._send(prepared)
+						continue
 				else:
 					self.lastN = linenumber
 				data = data.split(None, 1)[1].strip()
 
 			data += "\n"
+
+			if data.startswith("!!DEBUG:") or data.strip() == "!!DEBUG":
+				debug_command = ""
+				if data.startswith("!!DEBUG:"):
+					debug_command = data[len("!!DEBUG:"):].strip()
+				self._debugTrigger(debug_command)
+				continue
 
 			# shortcut for writing to SD
 			if self._writingToSdHandle is not None and not "M29" in data:
@@ -258,14 +297,8 @@ class VirtualPrinter(object):
 				continue
 
 			if data.strip() == "version":
-				from octoprint._version import get_versions
-				self._send("OctoPrint VirtualPrinter v" + get_versions()["version"])
-				continue
-			elif data.startswith("!!DEBUG:") or data.strip() == "!!DEBUG":
-				debug_command = ""
-				if data.startswith("!!DEBUG:"):
-					debug_command = data[len("!!DEBUG:"):].strip()
-				self._debugTrigger(debug_command)
+				from octoprint import __version__
+				self._send("OctoPrint VirtualPrinter v" + __version__)
 				continue
 
 			# if we are sending oks before command output, send it now
@@ -328,7 +361,7 @@ class VirtualPrinter(object):
 			self._send("echo:changed F value")
 			return False
 		else:
-			self._send("Error: Unknown command F")
+			self._send(self._error("command_unknown", "F"))
 			return True
 
 	def _gcode_M104(self, data):
@@ -397,7 +430,9 @@ class VirtualPrinter(object):
 	def _gcode_M114(self, data):
 		output = "X:{} Y:{} Z:{} E:{} Count: A:{} B:{} C:{}".format(self._lastX, self._lastY, self._lastZ, self._lastE, int(self._lastX*100), int(self._lastY*100), int(self._lastZ*100))
 		if not self._okBeforeCommandOutput:
-			output = "{} {}".format(self._ok(), output)
+			ok = self._ok()
+			if ok:
+				output = "{} {}".format(self._ok(), output)
 		self._send(output)
 		return True
 
@@ -405,10 +440,25 @@ class VirtualPrinter(object):
 		output = self._m115FormatString.format(firmware_name=self._firmwareName)
 		self._send(output)
 
+		if settings().getBoolean(["devel", "virtualPrinter", "m115ReportCapabilities"]):
+			for cap, enabled in self._capabilities.items():
+				self._send("Cap:{}:{}".format(cap.upper(), "1" if enabled else "0"))
+
 	def _gcode_M117(self, data):
 		# we'll just use this to echo a message, to allow playing around with pause triggers
 		if self._echoOnM117:
 			self._send("echo:%s" % re.search("M117\s+(.*)", data).group(1))
+
+	def _gcode_M155(self, data):
+		interval = int(re.search("S([0-9]+)", data).group(1))
+		if self._temperature_reporter is not None:
+			self._temperature_reporter.cancel()
+
+		if interval > 0:
+			self._temperature_reporter = RepeatedTimer(interval, lambda: self._send(self._generateTemperatureOutput()))
+			self._temperature_reporter.start()
+		else:
+			self._temperature_reporter = None
 
 	def _gcode_M220(self, data):
 		self._feedrate_multiplier = float(re.search('S([0-9]+)', data).group(1))
@@ -496,7 +546,7 @@ class VirtualPrinter(object):
 		self._killed = True
 		self._send("echo:EMERGENCY SHUTDOWN DETECTED. KILLED.")
 
-	def _triggerResend(self, expected=None, actual=None):
+	def _triggerResend(self, expected=None, actual=None, checksum=None):
 		with self._incoming_lock:
 			if expected is None:
 				expected = self.lastN + 1
@@ -504,13 +554,16 @@ class VirtualPrinter(object):
 				self.lastN = expected - 1
 
 			if actual is None:
-				self._send("Error: Wrong checksum")
+				if checksum:
+					self._send(self._error("checksum_mismatch"))
+				else:
+					self._send(self._error("checksum_missing"))
 			else:
-				self._send("Error: expected line %d got %d" % (expected, actual))
+				self._send(self._error("lineno_mismatch", expected, actual))
 
 			def request_resend():
 				self._send("Resend:%d" % expected)
-				self._send(self._ok())
+				self._sendOk()
 
 			if settings().getBoolean(["devel", "virtualPrinter", "repetierStyleResends"]):
 				request_resend()
@@ -548,6 +601,10 @@ class VirtualPrinter(object):
 			| Triggers a resend error with a line number mismatch
 			trigger_resend_checksum
 			| Triggers a resend error with a checksum mismatch
+			trigger_missing_checksum
+			| Triggers a resend error with a missing checksum
+			trigger_missing_lineno
+			| Triggers a "no line number with checksum" error w/o resend request
 			drop_connection
 			| Drops the serial connection
 			prepare_ok <broken ok>
@@ -579,15 +636,21 @@ class VirtualPrinter(object):
 		elif data == "dont_answer":
 			self._dont_answer = True
 		elif data == "trigger_resend_lineno":
-			self._triggerResend(expected=self.lastN, actual=self.lastN+1)
+			self._prepared_errors.append(lambda cur, last, line: self._triggerResend(expected=last, actual=last+1))
 		elif data == "trigger_resend_checksum":
-			self._triggerResend(expected=self.lastN)
+			self._prepared_errors.append(lambda cur, last, line: self._triggerResend(expected=last, checksum=True))
+		elif data == "trigger_missing_checksum":
+			self._prepared_errors.append(lambda cur, last, line: self._triggerResend(expected=last, checksum=False))
+		elif data == "trigger_missing_lineno":
+			self._prepared_errors.append(lambda cur, last, line: self._send(self._error("lineno_missing", last)))
 		elif data == "drop_connection":
 			self._debug_drop_connection = True
+		elif data == "mintemp_error":
+			self._send(self._error("mintemp"))
 		elif data == "maxtemp_error":
-			self._output("Error: MAXTEMP triggered!")
+			self._send(self._error("maxtemp"))
 		elif data == "go_awol":
-			self._output("// Going AWOL")
+			self._send("// Going AWOL")
 			self._debug_awol = True
 		else:
 			try:
@@ -597,6 +660,7 @@ class VirtualPrinter(object):
 				custom_action_match = VirtualPrinter.custom_action_regex.match(data)
 				prepare_ok_match = VirtualPrinter.prepare_ok_regex.match(data)
 				send_match = VirtualPrinter.send_regex.match(data)
+				set_ambient_match = VirtualPrinter.set_ambient_regex.match(data)
 
 				if sleep_match is not None:
 					interval = int(sleep_match.group(1))
@@ -622,6 +686,9 @@ class VirtualPrinter(object):
 					self._prepared_oks.append(ok)
 				elif send_match is not None:
 					self._send(send_match.group(1))
+				elif set_ambient_match is not None:
+					self._ambient_temperature = float(set_ambient_match.group(1))
+					self._send("// set ambient temperature to {}".format(self._ambient_temperature))
 			except:
 				pass
 
@@ -675,9 +742,8 @@ class VirtualPrinter(object):
 		else:
 			self._send("Not SD printing")
 
-	def _processTemperatureQuery(self):
+	def _generateTemperatureOutput(self):
 		includeTarget = not settings().getBoolean(["devel", "virtualPrinter", "repetierStyleTargetTemperature"])
-		includeOk = not self._okBeforeCommandOutput
 
 		# send simulated temperature data
 		if self.temperatureCount > 1:
@@ -697,7 +763,7 @@ class VirtualPrinter(object):
 
 			if settings().getBoolean(["devel", "virtualPrinter", "includeCurrentToolInTemps"]):
 				if includeTarget:
-					output = "T:%.2f /%.2f %s" % (self.temp[self.currentExtruder], self.targetTemp[self.currentExtruder] + 1, allTempsString)
+					output = "T:%.2f /%.2f %s" % (self.temp[self.currentExtruder], self.targetTemp[self.currentExtruder], allTempsString)
 				else:
 					output = "T:%.2f %s" % (self.temp[self.currentExtruder], allTempsString)
 			else:
@@ -709,9 +775,16 @@ class VirtualPrinter(object):
 				output = "T:%.2f B:%.2f" % (self.temp[0], self.bedTemp)
 
 		output += " @:64\n"
+		return output
+
+	def _processTemperatureQuery(self):
+		includeOk = not self._okBeforeCommandOutput
+		output = self._generateTemperatureOutput()
 
 		if includeOk:
-			output = "{} {}".format(self._ok(), output)
+			ok = self._ok()
+			if ok:
+				output = "{} {}".format(ok, output)
 		self._send(output)
 
 	def _parseHotendCommand(self, line, wait=False, support_r=False):
@@ -973,24 +1046,34 @@ class VirtualPrinter(object):
 		if os.path.exists(f) and os.path.isfile(f):
 			os.remove(f)
 
-	def _simulateTemps(self, delta=1):
+	def _simulateTemps(self, delta=0.5):
 		timeDiff = self.lastTempAt - time.time()
 		self.lastTempAt = time.time()
+
+		def simulate(actual, target, ambient):
+			if target > 0 and abs(actual - target) > delta:
+				goal = target
+				factor = 10
+			elif not target and abs(actual - ambient) > delta:
+				goal = ambient
+				factor = 2
+			else:
+				return actual
+
+			old = actual
+			actual += math.copysign(timeDiff * factor, goal - actual)
+
+			if math.copysign(1, goal - old) != math.copysign(1, goal - actual):
+				actual = goal
+
+			return actual
+
 		for i in range(len(self.temp)):
-			if abs(self.temp[i] - self.targetTemp[i]) > delta:
-				oldVal = self.temp[i]
-				self.temp[i] += math.copysign(timeDiff * 10, self.targetTemp[i] - self.temp[i])
-				if math.copysign(1, self.targetTemp[i] - oldVal) != math.copysign(1, self.targetTemp[i] - self.temp[i]):
-					self.temp[i] = self.targetTemp[i]
-				if self.temp[i] < 0:
-					self.temp[i] = 0
-		if abs(self.bedTemp - self.bedTargetTemp) > delta:
-			oldVal = self.bedTemp
-			self.bedTemp += math.copysign(timeDiff * 10, self.bedTargetTemp - self.bedTemp)
-			if math.copysign(1, self.bedTargetTemp - oldVal) != math.copysign(1, self.bedTargetTemp - self.bedTemp):
-				self.bedTemp = self.bedTargetTemp
-			if self.bedTemp < 0:
-				self.bedTemp = 0
+			if i in self.pinnedExtruders:
+				self.temp[i] = self.pinnedExtruders[i]
+				continue
+			self.temp[i] = simulate(self.temp[i], self.targetTemp[i], self._ambient_temperature)
+		self.bedTemp = simulate(self.bedTemp, self.bedTargetTemp, self._ambient_temperature)
 
 	def _processBuffer(self):
 		while self.buffered is not None:
@@ -1085,7 +1168,9 @@ class VirtualPrinter(object):
 	def _sendOk(self):
 		if self.outgoing is None:
 			return
-		self._send(self._ok())
+		ok = self._ok()
+		if ok:
+			self._send(ok)
 
 	def _sendWaitAfterTimeout(self, timeout=5):
 		time.sleep(timeout)
@@ -1100,8 +1185,13 @@ class VirtualPrinter(object):
 		ok = self._okFormatString
 		if self._prepared_oks:
 			ok = self._prepared_oks.pop(0)
+			if ok is None:
+				return ok
 
 		return ok.format(ok, lastN=self.lastN, buffer=self.buffered.maxsize - self.buffered.qsize())
+
+	def _error(self, error, *args, **kwargs):
+		return "Error: {}".format(self._errors.get(error).format(*args, **kwargs))
 
 class CharCountingQueue(queue.Queue):
 

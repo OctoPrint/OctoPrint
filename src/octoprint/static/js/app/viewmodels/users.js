@@ -152,6 +152,10 @@ $(function() {
                 });
         };
 
+        self.copyApikey = function() {
+            copyToClipboard(self.editorApikey());
+        };
+
         self._updateApikey = function(apikey) {
             self.editorApikey(apikey);
             self.requestData();
@@ -223,9 +227,8 @@ $(function() {
         }
     }
 
-    OCTOPRINT_VIEWMODELS.push([
-        UsersViewModel,
-        ["loginStateViewModel"],
-        []
-    ]);
+    OCTOPRINT_VIEWMODELS.push({
+        construct: UsersViewModel,
+        dependencies: ["loginStateViewModel"]
+    });
 });

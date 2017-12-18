@@ -33,7 +33,10 @@ import uuid
 import copy
 import time
 
+# noinspection PyCompatibility
 from builtins import bytes
+# noinspection PyCompatibility
+from past.builtins import basestring
 
 try:
 	from collections import ChainMap
@@ -93,6 +96,7 @@ default_settings = {
 			"communication": 30,
 			"temperature": 5,
 			"temperatureTargetSet": 2,
+			"temperatureAutoreport": 2,
 			"sdStatus": 1
 		},
 		"maxCommunicationTimeouts": {
@@ -109,7 +113,10 @@ default_settings = {
 		"disconnectOnErrors": True,
 		"ignoreErrorsFromFirmware": False,
 		"logResends": True,
+		"autoUppercaseBlacklist": ["M117"],
 		"supportResendsWithoutOk": False,
+		"logPositionOnPause": True,
+		"logPositionOnCancel": True,
 
 		# command specific flags
 		"triggerOkForM29": True
@@ -144,6 +151,17 @@ default_settings = {
 			"systemRestartCommand": None,
 			"serverRestartCommand": None
 		},
+		"onlineCheck": {
+			"enabled": None,
+			"interval": 15 * 60, # 15 min
+			"host": "8.8.8.8",
+			"port": 53
+		},
+		"pluginBlacklist": {
+			"enabled": None,
+			"url": "https://plugins.octoprint.org/blacklist.json",
+			"ttl": 15 * 60 # 15 min
+		},
 		"diskspace": {
 			"warning": 500 * 1024 * 1024, # 500 MB
 			"critical": 200 * 1024 * 1024, # 200 MB
@@ -156,6 +174,7 @@ default_settings = {
 	"webcam": {
 		"stream": None,
 		"streamRatio": "16:9",
+		"streamTimeout": 5,
 		"snapshot": None,
 		"ffmpeg": None,
 		"ffmpegThreads": 1,
@@ -206,7 +225,8 @@ default_settings = {
 		"firmwareDetection": True,
 		"printCancelConfirmation": True,
 		"blockWhileDwelling": False,
-		"g90InfluencesExtruder": False
+		"g90InfluencesExtruder": False,
+		"legacyPluginAssets": False # TODO remove again in 1.3.8
 	},
 	"folder": {
 		"uploads": None,
@@ -228,7 +248,9 @@ default_settings = {
 			{"name": "ABS", "extruder" : 210, "bed" : 100 },
 			{"name": "PLA", "extruder" : 180, "bed" : 60 }
 		],
-		"cutoff": 30
+		"cutoff": 30,
+		"sendAutomatically": False,
+		"sendAutomaticallyAfter": 1,
 	},
 	"printerProfiles": {
 		"default": None
@@ -255,7 +277,7 @@ default_settings = {
 				],
 				"usersettings": ["access", "interface"],
 				"wizard": ["access"],
-				"about": ["about", "supporters", "authors", "changelog", "license", "thirdparty", "plugin_pluginmanager"],
+				"about": ["about", "plugin_octopi_support", "supporters", "authors", "changelog", "license", "thirdparty", "plugin_pluginmanager"],
 				"generic": []
 			},
 			"disabled": {
@@ -297,7 +319,7 @@ default_settings = {
 		"apps": {}
 	},
 	"terminalFilters": [
-		{ "name": "Suppress temperature messages", "regex": "(Send: (N\d+\s+)?M105)|(Recv: ok (B|T\d*):)" },
+		{ "name": "Suppress temperature messages", "regex": "(Send: (N\d+\s+)?M105)|(Recv:\s+(ok\s+)?(B|T\d*):)" },
 		{ "name": "Suppress SD status messages", "regex": "(Send: (N\d+\s+)?M27)|(Recv: SD printing byte)" },
 		{ "name": "Suppress wait responses", "regex": "Recv: wait"}
 	],
@@ -337,6 +359,7 @@ default_settings = {
 			"okAfterResend": False,
 			"forceChecksum": False,
 			"numExtruders": 1,
+			"pinnedExtruders": None,
 			"includeCurrentToolInTemps": True,
 			"includeFilenameInOpened": True,
 			"hasBed": True,
@@ -346,12 +369,10 @@ default_settings = {
 			"smoothieTemperatureReporting": False,
 			"extendedSdFileList": False,
 			"throttle": 0.01,
-			"waitOnLongMoves": False,
-			"rxBuffer": 64,
-			"txBuffer": 40,
-			"commandBuffer": 4,
 			"sendWait": True,
 			"waitInterval": 1.0,
+			"rxBuffer": 64,
+			"commandBuffer": 4,
 			"supportM112": True,
 			"echoOnM117": True,
 			"brokenM29": True,
@@ -360,9 +381,24 @@ default_settings = {
 			"sharedNozzle": False,
 			"sendBusy": False,
 			"simulateReset": True,
+			"resetLines": ['start', 'Marlin: Virtual Marlin!', '\x80', 'SD card ok'],
 			"preparedOks": [],
 			"okFormatString": "ok",
-			"m115FormatString": "FIRMWARE_NAME: {firmware_name} PROTOCOL_VERSION:1.0"
+			"m115FormatString": "FIRMWARE_NAME: {firmware_name} PROTOCOL_VERSION:1.0",
+			"m115ReportCapabilities": False,
+			"capabilities": {
+				"AUTOREPORT_TEMP": True
+			},
+			"ambientTemperature": 21.3,
+			"errors": {
+				"checksum_mismatch": "Checksum mismatch",
+				"checksum_missing": "Missing checksum",
+				"lineno_mismatch": "expected line {} got {}",
+				"lineno_missing": "No Line Number with checksum, Last Line: {}",
+				"maxtemp": "MAXTEMP triggered!",
+				"mintemp": "MINTEMP triggered!",
+				"command_unknown": "Unknown command {}"
+			}
 		}
 	}
 }
@@ -777,7 +813,7 @@ class Settings(object):
 	def last_modified(self):
 		"""
 		Returns:
-		    int: The last modification time of the configuration file.
+		    (int) The last modification time of the configuration file.
 		"""
 		stat = os.stat(self._configfile)
 		return stat.st_mtime
@@ -1092,7 +1128,7 @@ class Settings(object):
 		                     reboot="systemRestartCommand",
 		                     restart="serverRestartCommand")
 
-		if "system" in config and "actions" in config["system"]:
+		if "system" in config and "actions" in config["system"] and isinstance(config["system"]["actions"], (list, tuple)):
 			actions = config["system"]["actions"]
 			to_delete = []
 			for index, spec in enumerate(actions):
@@ -1268,23 +1304,43 @@ class Settings(object):
 			return None
 
 	def getInt(self, path, **kwargs):
+		minimum = kwargs.pop("min", None)
+		maximum = kwargs.pop("max", None)
+
 		value = self.get(path, **kwargs)
 		if value is None:
 			return None
 
 		try:
-			return int(value)
+			intValue = int(value)
+
+			if minimum is not None and intValue < minimum:
+				return minimum
+			elif maximum is not None and intValue > maximum:
+				return maximum
+			else:
+				return intValue
 		except ValueError:
 			self._logger.warn("Could not convert %r to a valid integer when getting option %r" % (value, path))
 			return None
 
 	def getFloat(self, path, **kwargs):
+		minimum = kwargs.pop("min", None)
+		maximum = kwargs.pop("max", None)
+
 		value = self.get(path, **kwargs)
 		if value is None:
 			return None
 
 		try:
-			return float(value)
+			floatValue = float(value)
+
+			if minimum is not None and floatValue < minimum:
+				return minimum
+			elif maximum is not None and floatValue > maximum:
+				return maximum
+			else:
+				return floatValue
 		except ValueError:
 			self._logger.warn("Could not convert %r to a valid integer when getting option %r" % (value, path))
 			return None
@@ -1312,11 +1368,14 @@ class Settings(object):
 		if folder is None:
 			folder = self._get_default_folder(type)
 
-		if not os.path.isdir(folder):
+		if not os.path.exists(folder):
 			if create:
 				os.makedirs(folder)
 			else:
-				raise IOError("No such folder: {folder}".format(folder=folder))
+				raise IOError("No such folder: {}".format(folder))
+		elif os.path.isfile(folder):
+			# hardening against misconfiguration, see #1953
+			raise IOError("Expected a folder at {} but found a file instead".format(folder))
 
 		return folder
 
@@ -1437,8 +1496,16 @@ class Settings(object):
 			self.set(path, None, **kwargs)
 			return
 
+		minimum = kwargs.pop("min", None)
+		maximum = kwargs.pop("max", None)
+
 		try:
 			intValue = int(value)
+
+			if minimum is not None and intValue < minimum:
+				intValue = minimum
+			if maximum is not None and intValue > maximum:
+				intValue = maximum
 		except ValueError:
 			self._logger.warn("Could not convert %r to a valid integer when setting option %r" % (value, path))
 			return
@@ -1450,8 +1517,16 @@ class Settings(object):
 			self.set(path, None, **kwargs)
 			return
 
+		minimum = kwargs.pop("min", None)
+		maximum = kwargs.pop("max", None)
+
 		try:
 			floatValue = float(value)
+
+			if minimum is not None and floatValue < minimum:
+				floatValue = minimum
+			if maximum is not None and floatValue > maximum:
+				floatValue = maximum
 		except ValueError:
 			self._logger.warn("Could not convert %r to a valid integer when setting option %r" % (value, path))
 			return

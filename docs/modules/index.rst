@@ -14,4 +14,5 @@ Internal Modules
    server.rst
    settings.rst
    slicing.rst
+   users.rst
    util.rst

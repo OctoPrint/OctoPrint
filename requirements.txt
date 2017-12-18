@@ -7,4 +7,6 @@
 # variables INSTALL_REQUIRES and EXTRA_REQUIRES.
 ###
 
+# let's force the regular pypi URL, with https, just to be sure
+-i https://pypi.python.org/simple
 .
