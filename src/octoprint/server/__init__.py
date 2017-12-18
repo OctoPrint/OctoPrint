@@ -1183,11 +1183,8 @@ class Server(object):
 			"js/lib/jquery/jquery.ui.mouse.js",
 			"js/lib/jquery/jquery.flot.js",
 			"js/lib/jquery/jquery.flot.time.js",
-<<<<<<< HEAD
-=======
 			"js/lib/jquery/jquery.flot.crosshair.js",
 			"js/lib/jquery/jquery.flot.resize.js",
->>>>>>> foosel/master
 			"js/lib/jquery/jquery.iframe-transport.js",
 			"js/lib/jquery/jquery.fileupload.js",
 			"js/lib/jquery/jquery.slimscroll.min.js",
