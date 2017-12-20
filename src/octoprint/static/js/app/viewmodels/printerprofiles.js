@@ -51,7 +51,7 @@ $(function() {
         self.volumeOrigin = ko.observable();
 
         self.volumeFormFactor.subscribe(function(value) {
-            if (value === "circular") {
+            if (value == "circular") {
                 self.volumeOrigin("center");
             }
         });
@@ -123,10 +123,10 @@ $(function() {
                 data = placeholder;
             }
 
-            var validCharacters = (data && (data === self._sanitize(data)));
+            var validCharacters = (data && (data == self._sanitize(data)));
 
-            var existingProfile = self.profiles.getItem(function(item) {return item.id === data});
-            return !data || !validCharacters || (self.isNew() && existingProfile !== undefined);
+            var existingProfile = self.profiles.getItem(function(item) {return item.id == data});
+            return !data || !validCharacters || (self.isNew() && existingProfile != undefined);
         });
 
         self.identifierInvalidText = ko.pureComputed(function() {
@@ -136,7 +136,7 @@ $(function() {
 
             if (!self.identifier() && !self.identifierPlaceholder()) {
                 return gettext("Identifier must be set");
-            } else if (self.identifier() !== self._sanitize(self.identifier())) {
+            } else if (self.identifier() != self._sanitize(self.identifier())) {
                 return gettext("Invalid characters, only a-z, A-Z, 0-9, -, ., _, ( and ) are allowed")
             } else {
                 return gettext("A profile with such an identifier already exists");
@@ -170,9 +170,9 @@ $(function() {
             };
 
             var keys = [];
-            if (formFactor === "rectangular") {
+            if (formFactor == "rectangular") {
                 keys = ["lowerleft", "center"];
-            } else if (formFactor === "circular") {
+            } else if (formFactor == "circular") {
                 keys = ["center"];
             }
 
@@ -312,7 +312,7 @@ $(function() {
                 }
             }
 
-            if (profile.volume.formFactor === "circular") {
+            if (profile.volume.formFactor == "circular") {
                 profile.volume.depth = profile.volume.width;
             }
 
@@ -320,7 +320,7 @@ $(function() {
         };
 
         self.defaultBoundingBox = function(width, depth, height, origin) {
-            if (origin === "center") {
+            if (origin == "center") {
                 var halfWidth = width / 2.0;
                 var halfDepth = depth / 2.0;
 
@@ -519,7 +519,7 @@ $(function() {
                     })
                     .fail(function(xhr) {
                         var text;
-                        if (xhr.status === 409) {
+                        if (xhr.status == 409) {
                             text = gettext("Cannot delete the default profile or the currently active profile.");
                         } else {
                             text = gettext("There was unexpected error while removing the printer profile, please consult the logs.");
@@ -534,7 +534,7 @@ $(function() {
         };
 
         self.updateProfile = function(profile, callback) {
-            if (profile === undefined) {
+            if (profile == undefined) {
                 profile = self.editor.toProfileData();
             }
 

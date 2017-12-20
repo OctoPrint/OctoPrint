@@ -50,7 +50,7 @@ $(function() {
         });
 
         self.webcamRatioClass = ko.pureComputed(function() {
-            if (self.settings.webcam_streamRatio() === "4:3") {
+            if (self.settings.webcam_streamRatio() == "4:3") {
                 return "ratio43";
             } else {
                 return "ratio169";
@@ -156,7 +156,7 @@ $(function() {
 
             if (control.hasOwnProperty("children")) {
                 control.children = ko.observableArray(self._processControls(control.children));
-                if (!control.hasOwnProperty("layout") || !(control.layout === "vertical" || control.layout === "horizontal" || control.layout === "horizontal_grid")) {
+                if (!control.hasOwnProperty("layout") || !(control.layout == "vertical" || control.layout == "horizontal" || control.layout == "horizontal_grid")) {
                     control.layout = "vertical";
                 }
 
@@ -371,23 +371,23 @@ $(function() {
         };
 
         self._enableWebcam = function() {
-            if (OctoPrint.coreui.selectedTab !== "#control" || !OctoPrint.coreui.browserTabVisible) {
+            if (OctoPrint.coreui.selectedTab != "#control" || !OctoPrint.coreui.browserTabVisible) {
                 return;
             }
 
-            if (self.webcamDisableTimeout !== undefined) {
+            if (self.webcamDisableTimeout != undefined) {
                 clearTimeout(self.webcamDisableTimeout);
             }
             var webcamImage = $("#webcam_image");
             var currentSrc = webcamImage.attr("src");
 
             // safari bug doesn't release the mjpeg stream, so we just set it up the once
-            if (OctoPrint.coreui.browser.safari && currentSrc !== undefined) {
+            if (OctoPrint.coreui.browser.safari && currentSrc != undefined) {
                 return;
             }
 
             var newSrc = self.settings.webcam_streamUrl();
-            if (currentSrc !== newSrc) {
+            if (currentSrc != newSrc) {
                 if (newSrc.lastIndexOf("?") > -1) {
                     newSrc += "&";
                 } else {
@@ -416,9 +416,9 @@ $(function() {
         };
 
         self.onTabChange = function (current, previous) {
-            if (current === "#control") {
+            if (current == "#control") {
                 self._enableWebcam();
-            } else if (previous === "#control") {
+            } else if (previous == "#control") {
                 self._disableWebcam();
             }
         };

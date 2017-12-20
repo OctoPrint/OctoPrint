@@ -408,7 +408,13 @@ def _saveSettings(data):
 
 	if "temperature" in data.keys():
 		if "profiles" in data["temperature"]: s.set(["temperature", "profiles"], data["temperature"]["profiles"])
-		if "cutoff" in data["temperature"]: s.setInt(["temperature", "cutoff"], data["temperature"]["cutoff"])
+		if "cutoff" in data["temperature"]:
+			try:
+				cutoff = int(data["temperature"]["cutoff"])
+				if cutoff > 1:
+					s.setInt(["temperature", "cutoff"], cutoff)
+			except ValueError:
+				pass
 		if "sendAutomatically" in data["temperature"]: s.setBoolean(["temperature", "sendAutomatically"], data["temperature"]["sendAutomatically"])
 		if "sendAutomaticallyAfter" in data["temperature"]: s.setInt(["temperature", "sendAutomaticallyAfter"], data["temperature"]["sendAutomaticallyAfter"], min=0, max=30)
 

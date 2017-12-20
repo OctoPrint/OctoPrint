@@ -25,7 +25,7 @@ $(function() {
             self.access_apikey(undefined);
             self.interface_language("_default");
 
-            if (newUser !== undefined) {
+            if (newUser != undefined) {
                 self.access_apikey(newUser.apikey);
                 if (newUser.settings.hasOwnProperty("interface") && newUser.settings.interface.hasOwnProperty("language")) {
                     self.interface_language(newUser.settings.interface.language);
@@ -34,13 +34,13 @@ $(function() {
         });
 
         self.passwordMismatch = ko.pureComputed(function() {
-            return self.access_password() !== self.access_repeatedPassword();
+            return self.access_password() != self.access_repeatedPassword();
         });
 
         self.show = function(user) {
             if (!CONFIG_ACCESS_CONTROL) return;
 
-            if (user === undefined) {
+            if (user == undefined) {
                 user = self.loginState.currentUser();
             }
 
