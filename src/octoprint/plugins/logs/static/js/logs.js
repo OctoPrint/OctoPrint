@@ -69,7 +69,9 @@ $(function() {
         self.fromGetAvailableLoggers = function(data) {
             console.log(data.result);
             $.each(data.result, function(id, name) {
-                self.available_loggers.push(name);
+                if (name.toLowerCase().indexOf("octoprint") >= 0) {
+                    self.available_loggers.push(name);
+                }
             });
             self.available_loggers.sort();
             console.log(self.available_loggers());
