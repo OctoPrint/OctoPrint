@@ -58,6 +58,7 @@ $(function() {
         };
 
         self.fromGetLoggingConfigResponse = function(data) {
+            self.configured_loggers([]);
             $.each(data.result.loggers, function(id, options) {
                 if (options.level !== undefined) {
                     self.configured_loggers.push({id: id, level: options.level});
@@ -67,14 +68,29 @@ $(function() {
         };
 
         self.fromGetAvailableLoggers = function(data) {
-            console.log(data.result);
+            //console.log(data.result);
+            self.available_loggers([]);
             $.each(data.result, function(id, name) {
                 if (name.toLowerCase().indexOf("octoprint") >= 0) {
                     self.available_loggers.push(name);
                 }
             });
             self.available_loggers.sort();
-            console.log(self.available_loggers());
+            //console.log(self.available_loggers());
+        };
+
+        self.addLogger = function() {
+            name = $("#available_loggers").val();
+            level = $("#available_loggers_level").val();
+            
+            self.configured_loggers.push({id: name, level: level});
+            self.available_loggers.remove(name);
+        };
+
+        self.removeLogger = function(name) {
+            self.configured_loggers.remove(name);
+            self.available_loggers.push(name);
+            self.available_loggers.sort();
         };
 
         self.removeFile = function(filename) {
@@ -84,6 +100,13 @@ $(function() {
 
         self.onSettingsShown = function() {
             self.requestData();
+        };
+
+        self.onSettingsBeforeSave = function () {
+            //console.log(self.configured_loggers());
+            //console.log(JSON.stringify(self.configured_loggers()));
+            OctoPrint.simpleApiCommand("logs", "setLoggingConfig", {'config': self.configured_loggers()});
+                //.done(self.fromGetLoggingConfigResponse);           
         };
 
 /*

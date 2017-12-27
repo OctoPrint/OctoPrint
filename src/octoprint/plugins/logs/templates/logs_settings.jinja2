@@ -66,17 +66,17 @@
                 </select>
             </div>
             <div class="span1">
-                <a title="Remove" class="btn btn-danger"><i class="icon-trash"></i></a>
+                <a title="Remove" class="btn btn-danger" data-bind="click: $parent.removeLogger"><i class="icon-trash"></i></a>
             </div>
         </div>
     </div>
     <div>
         <div class="row-fluid" style="margin-bottom: 5px">
             <div class="span8">
-                <select class="input-block-level" data-bind="options: available_loggers"></select>
+                <select id="available_loggers" class="input-block-level" data-bind="options: available_loggers"></select>
             </div>
             <div class="span2">
-                <select class="input-small">
+                <select id="available_loggers_level" class="input-small">
                     <option value="DEBUG">DEBUG</option>
                     <option value="INFO">INFO</option>
                     <option value="WARNING">WARNING</option>
@@ -85,7 +85,7 @@
                 </select>
             </div>
             <div class="span1">
-                <a title="Add" class="btn btn-primary"><i class="icon-plus"></i></a>
+                <a title="Add" class="btn btn-primary" data-bind="click: addLogger"><i class="icon-plus"></i></a>
             </div>
         </div>
     </div>

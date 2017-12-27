@@ -14,6 +14,7 @@ from octoprint.server.util.flask import redirect_to_tornado, restricted_access
 
 from flask import request, jsonify, url_for, make_response
 from werkzeug.utils import secure_filename
+import yaml
 
 
 import os
@@ -77,11 +78,11 @@ class LogsPlugin(octoprint.plugin.AssetPlugin,
 
         return files
 
-    def _get_available_loggers(self):
-        self._logger.warn("%s" % self._logger.manager.loggerDict.keys())
+    def get_available_loggers(self):
+        #self._logger.debug("%s" % self._logger.manager.loggerDict.keys())
         return self._logger.manager.loggerDict.keys()
 
-    def _get_logging_config(self):
+    def get_logging_config(self):
         #config_from_file example data: {'loggers': {'octoprint.printer': {'level': 'DEBUG'}, 'octoprint.plugins.psucontrol': {'level': 'INFO'}, 'octoprint.printer.PrinterCallback': {'level': 'DEBUG'}, 'octoprint.printer.standard': {'level': 'DEBUG'}}}
         logging_file = os.path.join(self._settings.getBaseFolder("base"), "logging.yaml")
 
@@ -96,19 +97,52 @@ class LogsPlugin(octoprint.plugin.AssetPlugin,
         else:
             return dict()
 
+    def set_logging_config(self, config):
+        logging_file = os.path.join(self._settings.getBaseFolder("base"), "logging.yaml")
+
+        current_config = self.get_logging_config();
+        new_config = current_config
+
+        self._logger.debug("set_logging_config: current_config=%s" % current_config)
+        self._logger.debug("set_logging_config: config=%s" % config)
+
+        #clear all configured logging levels
+        for name in new_config["loggers"]:
+            del new_config["loggers"][name]["level"]
+
+        
+        self._logger.debug("set_logging_config: post clear new_config=%s" % new_config)
+
+        #update all logging levels
+        for logger in config:
+            if not new_config["loggers"].has_key(logger["id"]):
+                new_config["loggers"][logger["id"]] = dict()
+
+            new_config["loggers"][logger["id"]]["level"] = logger["level"]
+
+        self._logger.debug("set_logging_config: prior2save new_config=%s" % new_config)
+        
+        #save
+        with octoprint.util.atomic_write(logging_file, "wb", max_permissions=0o666) as f:
+            yaml.safe_dump(new_config, f, default_flow_style=False, indent="  ", allow_unicode=True)
+
+
     def get_api_commands(self):
         return dict(
             getAvailableLoggers=[],
-            getLoggingConfig=[]
+            getLoggingConfig=[],
+            setLoggingConfig=["config"]
         )
 
     def on_api_command(self, command, data):
         if not admin_permission.can():
             return make_response("Insufficient rights", 403)
         if command  == 'getAvailableLoggers':
-            return jsonify(result=self._get_available_loggers())
+            return jsonify(result=self.get_available_loggers())
         elif command == 'getLoggingConfig':
-            return jsonify(result=self._get_logging_config())
+            return jsonify(result=self.get_logging_config())
+        elif command == 'setLoggingConfig':
+            return self.set_logging_config(data["config"])
 
     def get_template_configs(self):
         return [
