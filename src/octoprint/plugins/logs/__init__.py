@@ -104,23 +104,25 @@ class LogsPlugin(octoprint.plugin.AssetPlugin,
         self._logger.debug("set_logging_config: current_config=%s" % current_config)
         self._logger.debug("set_logging_config: config=%s" % config)
 
-        #clear all configured logging levels
-        for name in new_config["loggers"]:
-            del new_config["loggers"][name]["level"]
+        # clear all configured logging levels
+        if new_config.has_key("loggers"):
+            for component in new_config["loggers"]:
+                del new_config["loggers"][component]["level"]
+        else:
+            new_config["loggers"] = dict()
 
-        
         self._logger.debug("set_logging_config: post clear new_config=%s" % new_config)
 
-        #update all logging levels
+        # update all logging levels
         for logger in config:
-            if not new_config["loggers"].has_key(logger["id"]):
-                new_config["loggers"][logger["id"]] = dict()
+            if not new_config["loggers"].has_key(logger["component"]):
+                new_config["loggers"][logger["component"]] = dict()
 
-            new_config["loggers"][logger["id"]]["level"] = logger["level"]
+            new_config["loggers"][logger["component"]]["level"] = logger["level"]
 
         self._logger.debug("set_logging_config: prior2save new_config=%s" % new_config)
         
-        #save
+        # save
         with octoprint.util.atomic_write(logging_file, "wb", max_permissions=0o666) as f:
             yaml.safe_dump(new_config, f, default_flow_style=False, indent="  ", allow_unicode=True)
 

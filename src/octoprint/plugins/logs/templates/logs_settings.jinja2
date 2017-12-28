@@ -50,11 +50,10 @@
         <div class="span8"><h5>Name</h5></div>
         <div class="span2"><h5>Level</h5></div>
     </div>
-    <div data-bind="foreach: configured_loggers">
+    <div data-bind="foreach: configuredLoggers">
         <div class="row-fluid" style="margin-bottom: 5px">
             <div class="span8">
-                <!--<input type="text" class="input-block-level" data-bind="value: id">-->
-                <span data-bind="text: id"></span>
+                <span data-bind="text: component"></span>
             </div>
             <div class="span3">
                 <select data-bind="value: level" class="input-medium">
@@ -73,10 +72,10 @@
     <div>
         <div class="row-fluid" style="margin-bottom: 5px">
             <div class="span8">
-                <select id="available_loggers" class="input-block-level" data-bind="options: available_loggers"></select>
+                <select id="availableLoggers" class="input-block-level" data-bind="options: availableLoggers"></select>
             </div>
             <div class="span3">
-                <select id="available_loggers_level" class="input-medium">
+                <select id="availableLoggers_level" class="input-medium">
                     <option value="DEBUG">DEBUG</option>
                     <option value="INFO">INFO</option>
                     <option value="WARNING">WARNING</option>

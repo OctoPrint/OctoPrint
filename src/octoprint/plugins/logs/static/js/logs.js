@@ -4,8 +4,8 @@ $(function() {
         var logsURL = "plugin/logs/logs"
 
         self.loginState = parameters[0];
-        self.available_loggers = ko.observableArray();
-        self.configured_loggers = ko.observableArray();
+        self.availableLoggers = ko.observableArray();
+        self.configuredLoggers = ko.observableArray();
 
         // initialize list helper
         self.listHelper = new ItemListHelper(
@@ -58,39 +58,44 @@ $(function() {
         };
 
         self.fromGetLoggingConfigResponse = function(data) {
-            self.configured_loggers([]);
-            $.each(data.result.loggers, function(id, options) {
+            self.configuredLoggers([]);
+
+            $.each(data.result.loggers, function(component, options) {
                 if (options.level !== undefined) {
-                    self.configured_loggers.push({id: id, level: options.level});
+                    self.configuredLoggers.push({component: component, level: options.level});
                 }
             });
-            //console.log(self.configured_loggers());
+
+            self.configuredLoggers.sort();
         };
 
         self.fromGetAvailableLoggers = function(data) {
-            //console.log(data.result);
-            self.available_loggers([]);
-            $.each(data.result, function(id, name) {
-                if (name.toLowerCase().indexOf("octoprint") >= 0) {
-                    self.available_loggers.push(name);
+            self.availableLoggers([]);
+            
+            $.each(data.result, function(key, component) {
+                if (component.toLowerCase().indexOf("octoprint") >= 0) {
+                    self.availableLoggers.push(component);
                 }
             });
-            self.available_loggers.sort();
-            //console.log(self.available_loggers());
+
+            self.availableLoggers.sort();
         };
 
         self.addLogger = function() {
-            name = $("#available_loggers").val();
-            level = $("#available_loggers_level").val();
+            component = $("#availableLoggers").val();
+            level = $("#availableLoggers_level").val();
             
-            self.configured_loggers.push({id: name, level: level});
-            self.available_loggers.remove(name);
+            self.configuredLoggers.push({component: component, level: level});
+            self.availableLoggers.remove(component);
+
+            self.configuredLoggers.sort();
         };
 
-        self.removeLogger = function(name) {
-            self.configured_loggers.remove(name);
-            self.available_loggers.push(name);
-            self.available_loggers.sort();
+        self.removeLogger = function(logger) {
+            self.configuredLoggers.remove(logger);
+            self.availableLoggers.push(logger.component);
+
+            self.availableLoggers.sort();
         };
 
         self.removeFile = function(filename) {
@@ -103,24 +108,11 @@ $(function() {
         };
 
         self.onSettingsBeforeSave = function () {
-            //console.log(self.configured_loggers());
-            //console.log(JSON.stringify(self.configured_loggers()));
-            OctoPrint.simpleApiCommand("logs", "setLoggingConfig", {'config': self.configured_loggers()});
+            //console.log(self.configuredLoggers());
+            //console.log(JSON.stringify(self.configuredLoggers()));
+            OctoPrint.simpleApiCommand("logs", "setLoggingConfig", {'config': self.configuredLoggers()});
                 //.done(self.fromGetLoggingConfigResponse);           
         };
-
-/*
-        self.onBeforeBinding = function () {
-            self.global_settings.settings.plugins.gcodesystemcommands.command_definitions.subscribe(function() {
-                settings = self.global_settings.settings.plugins.gcodesystemcommands;
-                self.command_definitions(settings.command_definitions.slice(0));            
-            });
-        };
-
-        self.onSettingsBeforeSave = function () {
-            self.global_settings.settings.plugins.gcodesystemcommands.command_definitions(self.command_definitions.slice(0));
-        };
-*/
     }
 
 
