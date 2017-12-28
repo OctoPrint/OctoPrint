@@ -71,11 +71,16 @@ $(function() {
 
         self.fromGetAvailableLoggers = function(data) {
             self.availableLoggers([]);
-            
+
             $.each(data.result, function(key, component) {
                 if (component.toLowerCase().indexOf("octoprint") >= 0) {
                     self.availableLoggers.push(component);
                 }
+            });
+
+            $.each(self.configuredLoggers(), function(key, logger) {
+                console.log(logger.component);
+                self.availableLoggers.remove(logger.component);
             });
 
             self.availableLoggers.sort();
