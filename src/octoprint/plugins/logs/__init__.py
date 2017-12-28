@@ -79,11 +79,9 @@ class LogsPlugin(octoprint.plugin.AssetPlugin,
         return files
 
     def get_available_loggers(self):
-        #self._logger.debug("%s" % self._logger.manager.loggerDict.keys())
         return self._logger.manager.loggerDict.keys()
 
     def get_logging_config(self):
-        #config_from_file example data: {'loggers': {'octoprint.printer': {'level': 'DEBUG'}, 'octoprint.plugins.psucontrol': {'level': 'INFO'}, 'octoprint.printer.PrinterCallback': {'level': 'DEBUG'}, 'octoprint.printer.standard': {'level': 'DEBUG'}}}
         logging_file = os.path.join(self._settings.getBaseFolder("base"), "logging.yaml")
 
         config_from_file = {}

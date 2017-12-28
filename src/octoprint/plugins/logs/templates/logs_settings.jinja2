@@ -47,8 +47,8 @@
 <form class="form-horizontal">
 
     <div class="row-fluid">
-        <div class="span8"><h4>Name</h4></div>
-        <div class="span2"><h4>Level</h4></div>
+        <div class="span8"><h5>Name</h5></div>
+        <div class="span2"><h5>Level</h5></div>
     </div>
     <div data-bind="foreach: configured_loggers">
         <div class="row-fluid" style="margin-bottom: 5px">
@@ -56,8 +56,8 @@
                 <!--<input type="text" class="input-block-level" data-bind="value: id">-->
                 <span data-bind="text: id"></span>
             </div>
-            <div class="span2">
-                <select data-bind="value: level" class="input-small">
+            <div class="span3">
+                <select data-bind="value: level" class="input-medium">
                     <option value="DEBUG">DEBUG</option>
                     <option value="INFO">INFO</option>
                     <option value="WARNING">WARNING</option>
@@ -75,8 +75,8 @@
             <div class="span8">
                 <select id="available_loggers" class="input-block-level" data-bind="options: available_loggers"></select>
             </div>
-            <div class="span2">
-                <select id="available_loggers_level" class="input-small">
+            <div class="span3">
+                <select id="available_loggers_level" class="input-medium">
                     <option value="DEBUG">DEBUG</option>
                     <option value="INFO">INFO</option>
                     <option value="WARNING">WARNING</option>
