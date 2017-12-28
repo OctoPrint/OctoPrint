@@ -3588,7 +3588,7 @@ msgstr "Danke, dass du OctoPrint installiert hast!\n"
 
 #: src/octoprint/templates/dialogs/wizard/firstrun_start.jinja2:6
 msgid "\n"
-"    This wizard will guide you through the final steps to get your OctoPrint instance all setup and ready to go. We'll\n"
+"    This wizard will guide you through the final steps to get your OctoPrint instance all set up and ready to go. We'll\n"
 "    get you printing in no time!\n"
 msgstr "Dieser Wizard wird dich nun durch die letzten Schritte begleiten, um deine OctoPrint Instanz fertig einzurichten.\n"
 
