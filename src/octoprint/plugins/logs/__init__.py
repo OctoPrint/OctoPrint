@@ -79,6 +79,8 @@ class LogsPlugin(octoprint.plugin.AssetPlugin,
         return files
 
     def get_available_loggers(self):
+        #self._logger.debug("%s" % dir(self._logger.manager.loggerDict["octoprint.plugins.psucontrol"]))
+        self._logger.debug("%s" % dir(self._logger.manager))
         return self._logger.manager.loggerDict.keys()
 
     def get_logging_config(self):
@@ -107,7 +109,10 @@ class LogsPlugin(octoprint.plugin.AssetPlugin,
         # clear all configured logging levels
         if new_config.has_key("loggers"):
             for component in new_config["loggers"]:
-                del new_config["loggers"][component]["level"]
+                try:
+                    del new_config["loggers"][component]["level"]
+                except:
+                    pass
         else:
             new_config["loggers"] = dict()
 
@@ -125,6 +130,22 @@ class LogsPlugin(octoprint.plugin.AssetPlugin,
         # save
         with octoprint.util.atomic_write(logging_file, "wb", max_permissions=0o666) as f:
             yaml.safe_dump(new_config, f, default_flow_style=False, indent="  ", allow_unicode=True)
+
+        #set runtime logging levels now
+        import logging
+        for logger in config:
+            if logger["level"] == "CRITICAL":
+                level = logging.CRITICAL
+            elif logger["level"] == "DEBUG":
+                level = logging.DEBUG
+            elif logger["level"] == "INFO":
+                level = logging.INFO
+            elif logger["level"] == "WARNING":
+                level = logging.WARNING
+            elif logger["level"] == "ERROR":
+                level = logging.ERROR
+
+            self._logger.manager.loggerDict[logger["component"]].setLevel(level)
 
 
     def get_api_commands(self):

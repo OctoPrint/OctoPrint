@@ -50,7 +50,7 @@
         <div class="span8"><h5>Name</h5></div>
         <div class="span2"><h5>Level</h5></div>
     </div>
-    <div data-bind="foreach: configuredLoggers">
+    <div data-bind="foreach: configuredLoggersSorted">
         <div class="row-fluid" style="margin-bottom: 5px">
             <div class="span8">
                 <span data-bind="text: component"></span>
@@ -72,7 +72,7 @@
     <div>
         <div class="row-fluid" style="margin-bottom: 5px">
             <div class="span8">
-                <select id="availableLoggers" class="input-block-level" data-bind="options: availableLoggers"></select>
+                <select id="availableLoggers" class="input-block-level" data-bind="options: availableLoggersSorted"></select>
             </div>
             <div class="span3">
                 <select id="availableLoggers_level" class="input-medium">

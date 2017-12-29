@@ -6,6 +6,18 @@ $(function() {
         self.loginState = parameters[0];
         self.availableLoggers = ko.observableArray();
         self.configuredLoggers = ko.observableArray();
+        self.configuredLoggersChanged = false;
+
+        self.availableLoggersSorted = ko.computed(function() {
+            return _.sortBy(self.availableLoggers());
+        });
+
+        self.configuredLoggersSorted = ko.computed(function() {
+            return _.sortBy(self.configuredLoggers(), function (o) {
+                o.level();
+                return o.component;
+            });
+        });
 
         // initialize list helper
         self.listHelper = new ItemListHelper(
@@ -62,11 +74,11 @@ $(function() {
 
             $.each(data.result.loggers, function(component, options) {
                 if (options.level !== undefined) {
-                    self.configuredLoggers.push({component: component, level: options.level});
+                    self.configuredLoggers.push({component: component, level: ko.observable(options.level)});
                 }
             });
 
-            self.configuredLoggers.sort();
+            self.configuredLoggersChanged = false;
         };
 
         self.fromGetAvailableLoggers = function(data) {
@@ -79,28 +91,21 @@ $(function() {
             });
 
             $.each(self.configuredLoggers(), function(key, logger) {
-                console.log(logger.component);
                 self.availableLoggers.remove(logger.component);
             });
-
-            self.availableLoggers.sort();
         };
 
         self.addLogger = function() {
             component = $("#availableLoggers").val();
             level = $("#availableLoggers_level").val();
             
-            self.configuredLoggers.push({component: component, level: level});
+            self.configuredLoggers.push({component: component, level: ko.observable(level)});
             self.availableLoggers.remove(component);
-
-            self.configuredLoggers.sort();
         };
 
         self.removeLogger = function(logger) {
             self.configuredLoggers.remove(logger);
             self.availableLoggers.push(logger.component);
-
-            self.availableLoggers.sort();
         };
 
         self.removeFile = function(filename) {
@@ -111,12 +116,20 @@ $(function() {
         self.onSettingsShown = function() {
             self.requestData();
         };
+        
+        self.configuredLoggersSorted.subscribe(function () {
+            self.configuredLoggersChanged = true;
+        }, self);
 
         self.onSettingsBeforeSave = function () {
-            //console.log(self.configuredLoggers());
-            //console.log(JSON.stringify(self.configuredLoggers()));
-            OctoPrint.simpleApiCommand("logs", "setLoggingConfig", {'config': self.configuredLoggers()});
-                //.done(self.fromGetLoggingConfigResponse);           
+            console.log(self.configuredLoggers())
+            if ( self.configuredLoggersChanged ) {
+                console.log("ConfiguredLoggers has changed. Saving!");
+                OctoPrint.simpleApiCommand("logs", "setLoggingConfig", {'config': self.configuredLoggers()});
+                    //.done(self.fromGetLoggingConfigResponse);
+            } else {
+                console.log("ConfiguredLoggers has not changed. Not saving.");
+            }
         };
     }
 
