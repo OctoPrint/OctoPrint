@@ -15,6 +15,7 @@ from octoprint.server.util.flask import redirect_to_tornado, restricted_access
 from flask import request, jsonify, url_for, make_response
 from werkzeug.utils import secure_filename
 import yaml
+import json
 
 
 import os
@@ -79,8 +80,6 @@ class LogsPlugin(octoprint.plugin.AssetPlugin,
         return files
 
     def get_available_loggers(self):
-        #self._logger.debug("%s" % dir(self._logger.manager.loggerDict["octoprint.plugins.psucontrol"]))
-        self._logger.debug("%s" % dir(self._logger.manager))
         return self._logger.manager.loggerDict.keys()
 
     def get_logging_config(self):
@@ -116,16 +115,17 @@ class LogsPlugin(octoprint.plugin.AssetPlugin,
         else:
             new_config["loggers"] = dict()
 
-        self._logger.debug("set_logging_config: post clear new_config=%s" % new_config)
+        #self._logger.debug("set_logging_config: post clear new_config=%s" % new_config)
 
         # update all logging levels
         for logger in config:
+            self._logger.debug("_DERRRR: %s" % logger)
             if not new_config["loggers"].has_key(logger["component"]):
                 new_config["loggers"][logger["component"]] = dict()
 
             new_config["loggers"][logger["component"]]["level"] = logger["level"]
 
-        self._logger.debug("set_logging_config: prior2save new_config=%s" % new_config)
+        #self._logger.debug("set_logging_config: prior2save new_config=%s" % new_config)
         
         # save
         with octoprint.util.atomic_write(logging_file, "wb", max_permissions=0o666) as f:
@@ -163,7 +163,7 @@ class LogsPlugin(octoprint.plugin.AssetPlugin,
         elif command == 'getLoggingConfig':
             return jsonify(result=self.get_logging_config())
         elif command == 'setLoggingConfig':
-            return self.set_logging_config(data["config"])
+            return self.set_logging_config(json.loads(data["config"]))
 
     def get_template_configs(self):
         return [

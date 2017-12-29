@@ -116,17 +116,15 @@ $(function() {
         self.onSettingsShown = function() {
             self.requestData();
         };
-        
+
         self.configuredLoggersSorted.subscribe(function () {
             self.configuredLoggersChanged = true;
         }, self);
 
         self.onSettingsBeforeSave = function () {
-            console.log(self.configuredLoggers())
             if ( self.configuredLoggersChanged ) {
                 console.log("ConfiguredLoggers has changed. Saving!");
-                OctoPrint.simpleApiCommand("logs", "setLoggingConfig", {'config': self.configuredLoggers()});
-                    //.done(self.fromGetLoggingConfigResponse);
+                OctoPrint.simpleApiCommand("logs", "setLoggingConfig", {'config': ko.toJSON(self.configuredLoggers)});
             } else {
                 console.log("ConfiguredLoggers has not changed. Not saving.");
             }
