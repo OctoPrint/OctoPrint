@@ -58,7 +58,7 @@ $(function() {
                 .done(self.fromGetLoggingConfigResponse);
 
             OctoPrint.simpleApiCommand("logs", "getAvailableLoggers")
-                .done(self.fromGetAvailableLoggers);
+                .done(self.fromGetAvailableLoggersResponse);
         };
 
         self.fromResponse = function(response) {
@@ -81,7 +81,7 @@ $(function() {
             self.configuredLoggersChanged = false;
         };
 
-        self.fromGetAvailableLoggers = function(data) {
+        self.fromGetAvailableLoggersResponse = function(data) {
             self.availableLoggers([]);
 
             $.each(data.result, function(key, component) {
