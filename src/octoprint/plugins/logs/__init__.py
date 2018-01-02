@@ -102,9 +102,6 @@ class LogsPlugin(octoprint.plugin.AssetPlugin,
         current_config = self.get_logging_config();
         new_config = current_config
 
-        self._logger.debug("set_logging_config: current_config=%s" % current_config)
-        self._logger.debug("set_logging_config: config=%s" % config)
-
         # clear all configured logging levels
         if new_config.has_key("loggers"):
             for component in new_config["loggers"]:
@@ -115,38 +112,23 @@ class LogsPlugin(octoprint.plugin.AssetPlugin,
         else:
             new_config["loggers"] = dict()
 
-        #self._logger.debug("set_logging_config: post clear new_config=%s" % new_config)
-
         # update all logging levels
         for logger in config:
-            self._logger.debug("_DERRRR: %s" % logger)
             if not new_config["loggers"].has_key(logger["component"]):
                 new_config["loggers"][logger["component"]] = dict()
-
+            self._logger.debug("derpdoo %s = %s" % (logger["component"], logger["level"]))
             new_config["loggers"][logger["component"]]["level"] = logger["level"]
 
-        #self._logger.debug("set_logging_config: prior2save new_config=%s" % new_config)
-        
         # save
         with octoprint.util.atomic_write(logging_file, "wb", max_permissions=0o666) as f:
             yaml.safe_dump(new_config, f, default_flow_style=False, indent="  ", allow_unicode=True)
 
-        #set runtime logging levels now
+        # set runtime logging levels now
         import logging
         for logger in config:
-            if logger["level"] == "CRITICAL":
-                level = logging.CRITICAL
-            elif logger["level"] == "DEBUG":
-                level = logging.DEBUG
-            elif logger["level"] == "INFO":
-                level = logging.INFO
-            elif logger["level"] == "WARNING":
-                level = logging.WARNING
-            elif logger["level"] == "ERROR":
-                level = logging.ERROR
-
+            level = logging.getLevelName(logger["level"])
+            self._logger.info("Setting logger component {} level to {}".format(logger["component"], logger["level"]))
             self._logger.manager.loggerDict[logger["component"]].setLevel(level)
-
 
     def get_api_commands(self):
         return dict(
@@ -163,7 +145,8 @@ class LogsPlugin(octoprint.plugin.AssetPlugin,
         elif command == 'getLoggingConfig':
             return jsonify(result=self.get_logging_config())
         elif command == 'setLoggingConfig':
-            return self.set_logging_config(json.loads(data["config"]))
+            config = json.loads(data["config"])
+            return self.set_logging_config(config)
 
     def get_template_configs(self):
         return [
