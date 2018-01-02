@@ -107,7 +107,7 @@ class LogsPlugin(octoprint.plugin.AssetPlugin,
             for component in config["loggers"]:
                 try:
                     del config["loggers"][component]["level"]
-                    self._logger.manager.loggerDict[logger["component"]].setLevel(logging.INFO)
+                    self._logger.manager.loggerDict[component].setLevel(logging.INFO)
                 except:
                     pass
         else:
