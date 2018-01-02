@@ -5,9 +5,12 @@ $(function() {
 
         self.loginState = parameters[0];
         self.availableLoggers = ko.observableArray();
+        self.availableLoggersName = ko.observable();
+        self.availableLoggersLevel = ko.observable();
         self.configuredLoggers = ko.observableArray();
         self.configuredLoggersChanged = false;
 
+        
         self.availableLoggersSorted = ko.computed(function() {
             return _.sortBy(self.availableLoggers());
         });
@@ -95,17 +98,25 @@ $(function() {
             });
         };
 
+        self.configuredLoggersHasChanged = function () {
+            self.configuredLoggersChanged = true;
+        };
+
         self.addLogger = function() {
-            component = $("#availableLoggers").val();
-            level = $("#availableLoggers_level").val();
+            component = self.availableLoggersName();
+            level = self.availableLoggersLevel();
             
             self.configuredLoggers.push({component: component, level: ko.observable(level)});
             self.availableLoggers.remove(component);
+
+            self.configuredLoggersHasChanged();
         };
 
         self.removeLogger = function(logger) {
             self.configuredLoggers.remove(logger);
             self.availableLoggers.push(logger.component);
+
+            self.configuredLoggersHasChanged();
         };
 
         self.removeFile = function(filename) {
@@ -117,9 +128,6 @@ $(function() {
             self.requestData();
         };
 
-        self.configuredLoggersSorted.subscribe(function () {
-            self.configuredLoggersChanged = true;
-        }, self);
 
         self.onSettingsBeforeSave = function () {
             if ( self.configuredLoggersChanged ) {
