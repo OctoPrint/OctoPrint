@@ -96,38 +96,38 @@ class LogsPlugin(octoprint.plugin.AssetPlugin,
         else:
             return dict()
 
-    def set_logging_config(self, config):
-        logging_file = os.path.join(self._settings.getBaseFolder("base"), "logging.yaml")
+    def set_logging_config(self, new_config):
+        import logging
 
-        current_config = self.get_logging_config();
-        new_config = current_config
+        logging_file = os.path.join(self._settings.getBaseFolder("base"), "logging.yaml")
+        config = self.get_logging_config();
 
         # clear all configured logging levels
-        if new_config.has_key("loggers"):
-            for component in new_config["loggers"]:
+        if config.has_key("loggers"):
+            for component in config["loggers"]:
                 try:
-                    del new_config["loggers"][component]["level"]
+                    del config["loggers"][component]["level"]
+                    self._logger.manager.loggerDict[logger["component"]].setLevel(logging.INFO)
                 except:
                     pass
         else:
-            new_config["loggers"] = dict()
+            config["loggers"] = dict()
 
         # update all logging levels
-        for logger in config:
-            if not new_config["loggers"].has_key(logger["component"]):
-                new_config["loggers"][logger["component"]] = dict()
-            self._logger.debug("derpdoo %s = %s" % (logger["component"], logger["level"]))
-            new_config["loggers"][logger["component"]]["level"] = logger["level"]
+        for logger in new_config:
+            if not config["loggers"].has_key(logger["component"]):
+                config["loggers"][logger["component"]] = dict()
+            config["loggers"][logger["component"]]["level"] = logger["level"]
 
         # save
         with octoprint.util.atomic_write(logging_file, "wb", max_permissions=0o666) as f:
-            yaml.safe_dump(new_config, f, default_flow_style=False, indent="  ", allow_unicode=True)
+            yaml.safe_dump(config, f, default_flow_style=False, indent="  ", allow_unicode=True)
 
         # set runtime logging levels now
-        import logging
-        for logger in config:
+        for logger in new_config:
             level = logging.getLevelName(logger["level"])
-            self._logger.info("Setting logger component {} level to {}".format(logger["component"], logger["level"]))
+
+            self._logger.info("Setting logger {} level to {}".format(logger["component"], logger["level"]))
             self._logger.manager.loggerDict[logger["component"]].setLevel(level)
 
     def get_api_commands(self):
