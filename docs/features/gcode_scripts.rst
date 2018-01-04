@@ -80,6 +80,7 @@ All GCODE scripts have access to the following template variables through the te
     note that ``actual`` and ``target`` might be ``None``.
   * ``script``: An object wrapping the script's type (``gcode``) and name (e.g. ``afterPrintCancelled``) as ``script.type``
     and ``script.name`` respectively.
+  * ``plugins``: An object containing variables provided by plugins (e.g ``plugins.myplugin.myvariable``)
 
 There are a few additional template variables available for the following specific scripts:
 

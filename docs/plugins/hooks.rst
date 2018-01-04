@@ -559,19 +559,19 @@ octoprint.comm.protocol.scripts
 
 .. py:function:: protocol_scripts_hook(comm_instance, script_type, script_name, *args, **kwargs)
 
-   Return a prefix to prepend and a postfix to append to the script ``script_name`` of type ``type``. Handlers should
+   Return a prefix to prepend, postfix to append, and optionally a dictionary of variables to provide to the script ``script_name`` of type ``type``. Handlers should
    make sure to only proceed with returning additional scripts if the ``script_type`` and ``script_name`` match
    handled scripts. If not, None should be returned directly.
 
-   If the hook handler has something to add to the specified script, it may return a 2-tuple, with the first entry
-   defining the prefix (what to *prepend* to the script in question) and the last entry defining the postfix (what to
-   *append* to the script in question). Both prefix and postfix can be None to signify that nothing should be prepended
+   If the hook handler has something to add to the specified script, it may return a 2-tuple or a 3-tuple with the first entry
+   defining the prefix (what to *prepend* to the script in question), the second entry defining the postfix (what to
+   *append* to the script in question), and finally if desired a dictionary of variables to be made available to the script. Both prefix and postfix can be None to signify that nothing should be prepended
    respectively appended.
 
-   The returned entries may be either iterables of script lines or a string including newlines of the script lines (which
+   The returned prefix and postfix entries may be either iterables of script lines or a string including newlines of the script lines (which
    will be split by the caller if necessary).
 
-   **Example:**
+   **Example 1:**
 
    Appends an ``M117 OctoPrint connected`` to the configured ``afterPrinterConnected`` GCODE script.
 
@@ -580,10 +580,19 @@ octoprint.comm.protocol.scripts
       :tab-width: 4
       :caption: `message_on_connect.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/message_on_connect.py>`_
 
+   **Example 2:**
+
+   Provides the variable ``myvariable`` to the configured ``beforePrintStarted`` GCODE script.
+
+   .. onlineinclude:: https://raw.githubusercontent.com/OctoPrint/Plugin-Examples/master/gcode_script_variables.py
+      :linenos:
+      :tab-width: 4
+      :caption: `gcode_script_variables.py <https://github.com/OctoPrint/Plugin-Examples/blob/master/gcode_script_variables.py>`_
+
    :param MachineCom comm_instance: The :class:`~octoprint.util.comm.MachineCom` instance which triggered the hook.
    :param str script_type: The type of the script for which the hook was called, currently only "gcode" is supported here.
    :param str script_name: The name of the script for which the hook was called.
-   :return: A 2-tuple in the form ``(prefix, postfix)`` or None
+   :return: A 2-tuple in the form ``(prefix, postfix)``, 3-tuple in the form ``(prefix, postfix, variables)``, or None
    :rtype: tuple or None
 
 .. _sec-plugins-hook-comm-protocol-temperatures-received:
