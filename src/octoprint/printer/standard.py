@@ -1252,10 +1252,13 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			_, name = self._fileManager.split_path(FileDestinations.LOCAL, path)
 			origin = FileDestinations.LOCAL
 
+		from flask.ext.login import current_user
+
 		result= dict(name=name,
 		             path=path,
 		             origin=origin,
 		             size=print_job_size,
+		             event_user=current_user,
 
 		             # TODO deprecated, remove in 1.4.0
 		             file=full_path,
@@ -1263,6 +1266,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 		if position is not None:
 			result["position"] = position
+
+		result["print_user"] = self._comm.getPrintUser()
 
 		return result
 

@@ -647,6 +647,9 @@ class MachineCom(object):
 			return None
 		return self._currentFile.getFilepos()
 
+	def getPrintUser(self):
+		return self._currentPrintUser
+
 	def getPrintTime(self):
 		if self._currentFile is None or self._currentFile.getStartTime() is None:
 			return None
@@ -862,6 +865,9 @@ class MachineCom(object):
 				self._changeState(self.STATE_PRINTING)
 
 				self.resetLineNumbers()
+
+				from flask.ext.login import current_user
+				self._currentPrintUser = current_user
 
 				self._callback.on_comm_print_job_started()
 
