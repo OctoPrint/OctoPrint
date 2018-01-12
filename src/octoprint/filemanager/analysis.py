@@ -76,6 +76,9 @@ class AnalysisQueue(object):
 		self._callbacks.remove(callback)
 
 	def enqueue(self, entry, high_priority=False):
+		if entry is None:
+			return False
+
 		if not entry.type in self._queues:
 			return False
 
@@ -83,6 +86,9 @@ class AnalysisQueue(object):
 		return True
 
 	def dequeue(self, entry):
+		if entry is None:
+			return False
+
 		if not entry.type in self._queues:
 			return False
 
