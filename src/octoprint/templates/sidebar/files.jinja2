@@ -61,18 +61,18 @@
             <span class="btn btn-primary fileinput-button span6" data-bind="enable: $root.loginState.isUser(), css: {disabled: !$root.loginState.isUser()}" style="margin-bottom: 10px">
                                 <i class="fa fa-upload"></i>
                                 <span>{{ _('Upload') }}</span>
-                                <input id="gcode_upload" accept="{{ ",".join(supportedExtensions) }}" type="file" name="file" class="fileinput-button" data-bind="enable: loginState.isUser()">
+                                <input id="gcode_upload" accept="{{ ",".join(supportedExtensions) }}" type="file" name="file" class="fileinput-button" data-bind="enable: loginState.isUser()" multiple>
                             </span>
             <span class="btn btn-primary fileinput-button span6" data-bind="enable: $root.loginState.isUser() && $root.isSdReady() && !$root.isPrinting(), css: {disabled: !$root.loginState.isUser() || !$root.isSdReady() || $root.isPrinting()}" style="margin-bottom: 10px">
                                 <i class="fa fa-upload"></i>
                                 <span>{{ _('Upload to SD') }}</span>
-                                <input id="gcode_upload_sd" accept="{{ ",".join(supportedExtensions) }}" type="file" name="file" class="fileinput-button" data-bind="enable: loginState.isUser() && isSdReady() && !isPrinting()">
+                                <input id="gcode_upload_sd" accept="{{ ",".join(supportedExtensions) }}" type="file" name="file" class="fileinput-button" data-bind="enable: loginState.isUser() && isSdReady() && !isPrinting()" multiple>
                             </span>
         {% else %}
             <span class="btn btn-primary fileinput-button span12" data-bind="enable: $root.loginState.isUser(), css: {disabled: !$root.loginState.isUser()}" style="margin-bottom: 10px">
                                 <i class="fa fa-upload"></i>
                                 <span>{{ _('Upload') }}</span>
-                                <input id="gcode_upload" accept="{{ ",".join(supportedExtensions) }}" type="file" name="file" class="fileinput-button" data-bind="enable: loginState.isUser()">
+                                <input id="gcode_upload" accept="{{ ",".join(supportedExtensions) }}" type="file" name="file" class="fileinput-button" data-bind="enable: loginState.isUser()" multiple>
                             </span>
         {% endif %}
     </div>
