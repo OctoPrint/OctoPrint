@@ -295,7 +295,7 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 				# The extruder count is needed to decide which start/end gcode will be used from the Cura profile.
 				# Stock Cura implementation counts the number of objects in the scene for this (and also takes a look
 				# at the support usage, like the engine conversion here does). We only ever have one object.
-				engine_settings = self._convert_to_engine(profile_path, printer_profile,
+				engine_settings, matrix = self._convert_to_engine(profile_path, printer_profile,
 				                                          pos_x=pos_x, pos_y=pos_y,
 				                                          used_extruders=1)
 
@@ -305,6 +305,8 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 				# Add the settings (sorted alphabetically) to the command
 				for k, v in sorted(engine_settings.items(), key=lambda s: s[0]):
 					args += ["-s", "%s=%s" % (k, str(v))]
+				if matrix:
+					args += ["-m", ','.join([str(item) for row in matrix for item in row])]
 				args += ["-o", machinecode_path, model_path]
 
 				self._logger.info(u"Running {!r} in {}".format(u" ".join(map(lambda x: to_unicode(x, errors="replace"),
@@ -478,7 +480,7 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 
 	def _convert_to_engine(self, profile_path, printer_profile, pos_x=None, pos_y=None, used_extruders=1):
 		profile = Profile(self._load_profile(profile_path), printer_profile, pos_x, pos_y)
-		return profile.convert_to_engine(used_extruders=used_extruders)
+		return profile.convert_to_engine(used_extruders=used_extruders), profile.get("stl_transformation_matrix")
 
 def _sanitize_name(name):
 	if name is None:

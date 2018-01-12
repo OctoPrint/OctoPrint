@@ -348,7 +348,11 @@ G90                         ;absolute positioning
 """,
     postSwitchExtruder_gcode=""";Switch between the current extruder and the next extruder, when printing with multiple extruders.
 ;This code is added after the T(n)
-"""
+""",
+
+	# stl transformation
+    # 3x3 matrix: None is equivalent to [[1,0,0],[0,1,0],[0,0,1]]
+	stl_transformation_matrix=None
 )
 
 
