@@ -4008,7 +4008,7 @@ msgstr ""
 msgid ""
 "\n"
 "    This wizard will guide you through the final steps to get your "
-"OctoPrint instance all setup and ready to go. We'll\n"
+"OctoPrint instance all set up and ready to go. We'll\n"
 "    get you printing in no time!\n"
 msgstr ""
 
