@@ -695,7 +695,7 @@ class LocalFileStorage(StorageInterface):
 			display = destination_data["display"]
 		else:
 			display = None
-		
+
 		destination_meta = self._get_metadata_entry(destination_data["path"], destination_data["name"],
 		                                            default=dict())
 		if display:
@@ -712,14 +712,14 @@ class LocalFileStorage(StorageInterface):
 			shutil.copytree(source_data["fullpath"], destination_data["fullpath"])
 		except Exception as e:
 			raise StorageError("Could not copy %s in %s to %s in %s" % (source_data["name"], source_data["path"], destination_data["name"], destination_data["path"]), cause=e)
-		
+
 		self._set_display_metadata(destination_data, source_data=source_data)
 
 		return self.path_in_storage(destination_data["fullpath"])
 
 	def move_folder(self, source, destination):
 		source_data, destination_data = self._get_source_destination_data(source, destination)
-		
+
 		# only a display rename? Update that and bail early
 		if source_data["fullpath"] == destination_data["fullpath"]:
 			self._set_display_metadata(destination_data)
@@ -839,7 +839,7 @@ class LocalFileStorage(StorageInterface):
 		                          destination_data["path"], destination_data["name"],
 		                          delete_source=True)
 		self._set_display_metadata(destination_data, source_data=source_data)
-		
+
 		return self.path_in_storage(destination_data["fullpath"])
 
 	def has_analysis(self, path):
@@ -988,7 +988,7 @@ class LocalFileStorage(StorageInterface):
 		absolute path including leading ``basefolder`` path.
 		"""
 		path = to_unicode(path)
-		
+
 		if len(path):
 			if path[0] == u"/":
 				path = path[1:]
@@ -1316,91 +1316,96 @@ class LocalFileStorage(StorageInterface):
 
 			path_in_location = entry_name if not base else base + entry_name
 
-			# file handling
-			if entry_is_file:
-				type_path = octoprint.filemanager.get_file_type(entry_name)
-				if not type_path:
-					# only supported extensions
-					continue
-				else:
-					file_type = type_path[0]
+			try:
+				# file handling
+				if entry_is_file:
+					type_path = octoprint.filemanager.get_file_type(entry_name)
+					if not type_path:
+						# only supported extensions
+						continue
+					else:
+						file_type = type_path[0]
 
-				if entry_name in metadata and isinstance(metadata[entry_name], dict):
-					entry_metadata = metadata[entry_name]
-					if not "display" in entry_metadata and entry_display != entry_name:
-						metadata[entry_name]["display"] = entry_display
-						entry_metadata["display"] = entry_display
+					if entry_name in metadata and isinstance(metadata[entry_name], dict):
+						entry_metadata = metadata[entry_name]
+						if not "display" in entry_metadata and entry_display != entry_name:
+							metadata[entry_name]["display"] = entry_display
+							entry_metadata["display"] = entry_display
+							metadata_dirty = True
+					else:
+						entry_metadata = self._add_basic_metadata(path, entry_name,
+						                                          display_name=entry_display,
+						                                          save=False,
+						                                          metadata=metadata)
 						metadata_dirty = True
-				else:
-					entry_metadata = self._add_basic_metadata(path, entry_name,
-					                                          display_name=entry_display,
-					                                          save=False,
-					                                          metadata=metadata)
-					metadata_dirty = True
 
-				# TODO extract model hash from source if possible to recreate link
+					# TODO extract model hash from source if possible to recreate link
 
-				if not entry_filter or entry_filter(entry_name, entry_metadata):
-					# only add files passing the optional filter
-					extended_entry_data = dict()
-					extended_entry_data.update(entry_metadata)
-					extended_entry_data["name"] = entry_name
-					extended_entry_data["display"] = entry_metadata.get("display", entry_name)
-					extended_entry_data["path"] = path_in_location
-					extended_entry_data["type"] = file_type
-					extended_entry_data["typePath"] = type_path
-					stat = entry_stat
-					if stat:
-						extended_entry_data["size"] = stat.st_size
-						extended_entry_data["date"] = int(stat.st_mtime)
+					if not entry_filter or entry_filter(entry_name, entry_metadata):
+						# only add files passing the optional filter
+						extended_entry_data = dict()
+						extended_entry_data.update(entry_metadata)
+						extended_entry_data["name"] = entry_name
+						extended_entry_data["display"] = entry_metadata.get("display", entry_name)
+						extended_entry_data["path"] = path_in_location
+						extended_entry_data["type"] = file_type
+						extended_entry_data["typePath"] = type_path
+						stat = entry_stat
+						if stat:
+							extended_entry_data["size"] = stat.st_size
+							extended_entry_data["date"] = int(stat.st_mtime)
 
-					result[entry_name] = extended_entry_data
+						result[entry_name] = extended_entry_data
 
-			# folder recursion
-			elif entry_is_dir:
-				if entry_name in metadata and isinstance(metadata[entry_name], dict):
-					entry_metadata = metadata[entry_name]
-					if not "display" in entry_metadata and entry_display != entry_name:
-						metadata[entry_name]["display"] = entry_display
-						entry_metadata["display"] = entry_display
+				# folder recursion
+				elif entry_is_dir:
+					if entry_name in metadata and isinstance(metadata[entry_name], dict):
+						entry_metadata = metadata[entry_name]
+						if not "display" in entry_metadata and entry_display != entry_name:
+							metadata[entry_name]["display"] = entry_display
+							entry_metadata["display"] = entry_display
+							metadata_dirty = True
+					elif entry_name != entry_display:
+						entry_metadata = self._add_basic_metadata(path, entry_name,
+						                                          display_name=entry_display,
+						                                          save=False,
+						                                          metadata=metadata)
 						metadata_dirty = True
-				elif entry_name != entry_display:
-					entry_metadata = self._add_basic_metadata(path, entry_name,
-					                                          display_name=entry_display,
-					                                          save=False,
-					                                          metadata=metadata)
-					metadata_dirty = True
-				else:
-					entry_metadata = dict()
+					else:
+						entry_metadata = dict()
 
-				entry_data = dict(
-					name=entry_name,
-					display=entry_metadata.get("display", entry_name),
-					path=path_in_location,
-					type="folder",
-					typePath=["folder"]
-				)
-				if recursive:
-					sub_result = self._list_folder(entry_path, base=path_in_location + "/", entry_filter=entry_filter,
-					                               recursive=recursive)
-					entry_data["children"] = sub_result
-
-				if not entry_filter or entry_filter(entry_name, entry_data):
-					def get_size():
-						total_size = 0
-						for element in entry_data["children"].values():
-							if "size" in element:
-								total_size += element["size"]
-
-						return total_size
-
-					# only add folders passing the optional filter
-					extended_entry_data = dict()
-					extended_entry_data.update(entry_data)
+					entry_data = dict(
+						name=entry_name,
+						display=entry_metadata.get("display", entry_name),
+						path=path_in_location,
+						type="folder",
+						typePath=["folder"]
+					)
 					if recursive:
-						extended_entry_data["size"] = get_size()
+						sub_result = self._list_folder(entry_path, base=path_in_location + "/", entry_filter=entry_filter,
+						                               recursive=recursive)
+						entry_data["children"] = sub_result
 
-					result[entry_name] = extended_entry_data
+					if not entry_filter or entry_filter(entry_name, entry_data):
+						def get_size():
+							total_size = 0
+							for element in entry_data["children"].values():
+								if "size" in element:
+									total_size += element["size"]
+
+							return total_size
+
+						# only add folders passing the optional filter
+						extended_entry_data = dict()
+						extended_entry_data.update(entry_data)
+						if recursive:
+							extended_entry_data["size"] = get_size()
+
+						result[entry_name] = extended_entry_data
+			except:
+				# So something went wrong somewhere while processing this file entry - log that and continue
+				self._logger.exception("Error while processing entry {}".format(entry_path))
+				continue
 
 		# TODO recreate links if we have metadata less entries
 
