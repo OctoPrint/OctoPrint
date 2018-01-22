@@ -83,8 +83,8 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 
 		engine = self._settings.get(["cura_engine"])
 		if not self._is_engine_configured(cura_engine=engine):
-			self._logger.info("Path to CuraEngine has not been configured or does not exist (currently set to %r), "
-			                  "Cura will not be selectable for slicing" % engine)
+			self._logger.info(u"Path to CuraEngine has not been configured or does not exist (currently set to %r), "
+			                  u"Cura will not be selectable for slicing" % engine)
 
 	##~~ BlueprintPlugin API
 
@@ -101,23 +101,23 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 			try:
 				profile_dict = Profile.from_cura_ini(flask.request.values[input_upload_path])
 			except Exception as e:
-				self._logger.exception("Error while converting the imported profile")
-				return flask.make_response("Something went wrong while converting imported profile: {message}".format(message=str(e)), 500)
+				self._logger.exception(u"Error while converting the imported profile")
+				return flask.make_response(u"Something went wrong while converting imported profile: {message}".format(message=str(e)), 500)
 
 		else:
-			self._logger.warn("No profile file included for importing, aborting")
-			return flask.make_response("No file included", 400)
+			self._logger.warn(u"No profile file included for importing, aborting")
+			return flask.make_response(u"No file included", 400)
 
 		if profile_dict is None:
-			self._logger.warn("Could not convert profile, aborting")
-			return flask.make_response("Could not convert Cura profile", 400)
+			self._logger.warn(u"Could not convert profile, aborting")
+			return flask.make_response(u"Could not convert Cura profile", 400)
 
 		name, _ = os.path.splitext(filename)
 
 		# default values for name, display name and description
 		profile_name = _sanitize_name(name)
 		profile_display_name = name
-		profile_description = "Imported from {filename} on {date}".format(filename=filename, date=octoprint.util.get_formatted_datetime(datetime.datetime.now()))
+		profile_description = u"Imported from {filename} on {date}".format(filename=filename, date=octoprint.util.get_formatted_datetime(datetime.datetime.now()))
 		profile_allow_overwrite = False
 		profile_make_default = False
 
@@ -142,15 +142,15 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 			                                   display_name=profile_display_name,
 			                                   description=profile_description)
 		except octoprint.slicing.ProfileAlreadyExists:
-			self._logger.warn("Profile {profile_name} already exists, aborting".format(**locals()))
-			return flask.make_response("A profile named {profile_name} already exists for slicer cura".format(**locals()), 409)
+			self._logger.warn(u"Profile {profile_name} already exists, aborting".format(**locals()))
+			return flask.make_response(u"A profile named {profile_name} already exists for slicer cura".format(**locals()), 409)
 
 		if profile_make_default:
 			try:
 				self._slicing_manager.set_default_profile("cura", profile_name)
 			except octoprint.slicing.UnknownProfile:
-				self._logger.warn("Profile {profile_name} could not be set as default, aborting".format(**locals()))
-				return flask.make_response("The profile {profile_name} for slicer cura could not be set as default".format(**locals()), 500)
+				self._logger.warn(u"Profile {profile_name} could not be set as default, aborting".format(**locals()))
+				return flask.make_response(u"The profile {profile_name} for slicer cura could not be set as default".format(**locals()), 500)
 
 		result = dict(
 			resource=flask.url_for("api.slicingGetSlicerProfile", slicer="cura", name=profile_name, _external=True),
@@ -183,8 +183,8 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 		new_debug_logging = self._settings.get_boolean(["debug_logging"])
 
 		if old_engine != new_engine and not self._is_engine_configured(new_engine):
-			self._logger.info("Path to CuraEngine has not been configured or does not exist (currently set to %r), "
-			                  "Cura will not be selectable for slicing" % new_engine)
+			self._logger.info(u"Path to CuraEngine has not been configured or does not exist (currently set to %r), "
+			                  u"Cura will not be selectable for slicing" % new_engine)
 
 		if old_debug_logging != new_debug_logging:
 			if new_debug_logging:
@@ -276,7 +276,7 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 
 				executable = normalize_path(self._settings.get(["cura_engine"]))
 				if not executable:
-					return False, "Path to CuraEngine is not configured "
+					return False, u"Path to CuraEngine is not configured "
 
 				working_dir = os.path.dirname(executable)
 
@@ -463,7 +463,7 @@ class CuraPlugin(octoprint.plugin.SlicerPlugin,
 			try:
 				profile_dict = yaml.safe_load(f)
 			except:
-				raise IOError("Couldn't read profile from {path}".format(path=path))
+				raise IOError(u"Couldn't read profile from {path}".format(path=path))
 
 		if "gcode_flavor" in profile_dict and not isinstance(profile_dict["gcode_flavor"], (list, tuple)):
 			profile_dict["gcode_flavor"] = parse_gcode_flavor(profile_dict["gcode_flavor"])
@@ -485,7 +485,7 @@ def _sanitize_name(name):
 		return None
 
 	if "/" in name or "\\" in name:
-		raise ValueError("name must not contain / or \\")
+		raise ValueError(u"name must not contain / or \\")
 
 	import string
 	valid_chars = "-_.() {ascii}{digits}".format(ascii=string.ascii_letters, digits=string.digits)
