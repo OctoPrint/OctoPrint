@@ -249,6 +249,7 @@ class AbstractAnalysisQueue(object):
 			                                                       "path": entry.path,
 			                                                       "origin": entry.location,
 			                                                       "type": entry.type,
+			                                                       "position": entry.position,
 
 			                                                       # TODO deprecated, remove in 1.4.0
 			                                                       "file": entry.path})
@@ -332,6 +333,8 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
 				command += ["--offset", str(offset[0]), str(offset[1])]
 			if g90_extruder:
 				command += ["--g90-extruder"]
+			if self._current.position is not None:
+				command += ["--position={}".format(self._current.position)]
 			command.append(self._current.absolute_path)
 
 			self._logger.info("Invoking analysis command: {}".format(" ".join(command)))
@@ -384,7 +387,7 @@ class GcodeAnalysisQueue(AbstractAnalysisQueue):
 			if analysis["extrusion_length"]:
 				result["filament"] = dict()
 				for i in range(len(analysis["extrusion_length"])):
-					result["filament"]["tool%d" % i] = {
+					result["filament"]["tools"][i] = {
 						"length": analysis["extrusion_length"][i],
 						"volume": analysis["extrusion_volume"][i]
 					}
