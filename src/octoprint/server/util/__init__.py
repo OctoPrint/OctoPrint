@@ -40,11 +40,11 @@ def enforceApiKeyRequestHandler():
 	apikey = get_api_key(_flask.request)
 
 	if apikey is None:
-		return _flask.make_response("No API key provided", 401)
+		return _flask.make_response("No API key provided", 403)
 
 	if apikey != octoprint.server.UI_API_KEY and not settings().getBoolean(["api", "enabled"]):
-		# api disabled => 401
-		return _flask.make_response("API disabled", 401)
+		# api disabled => 403
+		return _flask.make_response("API disabled", 403)
 
 apiKeyRequestHandler = deprecated("apiKeyRequestHandler has been renamed to enforceApiKeyRequestHandler")(enforceApiKeyRequestHandler)
 
@@ -57,22 +57,22 @@ def loginFromApiKeyRequestHandler():
 	"""
 
 	apikey = get_api_key(_flask.request)
-	
+
 	if not apikey:
 		return
-	
+
 	if apikey == octoprint.server.UI_API_KEY:
 		return
-	
+
 	if octoprint.server.appSessionManager.validate(apikey):
 		return
-	
+
 	user = get_user_for_apikey(apikey)
 	if user is not None and _flask.ext.login.login_user(user, remember=False):
 		_flask.ext.principal.identity_changed.send(_flask.current_app._get_current_object(),
 		                                           identity=_flask.ext.principal.Identity(user.get_id()))
 	else:
-		return _flask.make_response("Invalid API key", 401)
+		return _flask.make_response("Invalid API key", 403)
 
 
 def corsRequestHandler():
@@ -153,13 +153,13 @@ def get_user_for_apikey(apikey):
 		if apikey == settings().get(["api", "key"]) or octoprint.server.appSessionManager.validate(apikey):
 			# master key or an app session key was used
 			return ApiUser()
-		
+
 		if octoprint.server.userManager.enabled:
 			user = octoprint.server.userManager.findUser(apikey=apikey)
 			if user is not None:
 				# user key was used
 				return user
-		
+
 		apikey_hooks = plugin_manager().get_hooks("octoprint.accesscontrol.keyvalidator")
 		for name, hook in apikey_hooks.items():
 			try:

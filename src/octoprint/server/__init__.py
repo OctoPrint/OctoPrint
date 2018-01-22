@@ -148,6 +148,11 @@ def load_user(id):
 	return None
 
 
+def unauthorized_user():
+	from flask import abort
+	abort(403)
+
+
 #~~ startup code
 
 
@@ -440,6 +445,7 @@ class Server(object):
 		loginManager = LoginManager()
 		loginManager.session_protection = "strong"
 		loginManager.user_callback = load_user
+		loginManager.unauthorized_callback = unauthorized_user
 		if not userManager.enabled:
 			loginManager.anonymous_user = users.DummyUser
 			principals.identity_loaders.appendleft(users.dummy_identity_loader)

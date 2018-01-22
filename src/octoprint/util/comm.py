@@ -2216,7 +2216,7 @@ class MachineCom(object):
 		# Make sure we are only handling one sending job at a time
 		with self._sendingLock:
 			if again:
-				# If we are about to last line from the active resend request
+				# If we are about to send the last line from the active resend request
 				# again, we first need to increment resend delta. It might already
 				# be set to None if the last resend line was already sent, so
 				# if that's the case we set it to 0. It will then be incremented,
