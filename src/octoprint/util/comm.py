@@ -313,6 +313,7 @@ class MachineCom(object):
 	STATE_TRANSFERING_FILE = 11
 
 	CAPABILITY_AUTOREPORT_TEMP = "AUTOREPORT_TEMP"
+	CAPABILITY_SERIAL_XON_XOFF = "SERIAL_XON_XOFF"
 
 	def __init__(self, port = None, baudrate=None, callbackObject=None, printerProfileManager=None):
 		self._logger = logging.getLogger(__name__)
@@ -387,7 +388,19 @@ class MachineCom(object):
 		self._currentLine = 1
 		self._line_mutex = threading.RLock()
 		self._resendDelta = None
-		self._lastLines = deque([], 50)
+
+		self._use_xonxoff_workaround = settings().get(["serial", "useSoftwareFlowWorkaround"])
+		self._xonxoff_stopChar = chr(19)
+		self._xonxoff_resumeChar = chr(17)
+
+		maxLinesHistory = settings().getInt(["serial", "maxLinesHistory"])
+		if maxLinesHistory is None:
+			if self._use_xonxoff_workaround:
+				maxLinesHistory = 150
+			else:
+				maxLinesHistory = 50
+
+		self._lastLines = deque([], maxLinesHistory)
 		self._lastCommError = None
 		self._lastResendNumber = None
 		self._currentResendCount = 0
@@ -425,6 +438,8 @@ class MachineCom(object):
 		self._send_queue = SendQueue()
 		self._temperature_timer = None
 		self._sd_status_timer = None
+		self._pause_transmission = False
+
 
 		# hooks
 		self._pluginManager = octoprint.plugin.plugin_manager()
@@ -582,6 +597,22 @@ class MachineCom(object):
 		if state == self.STATE_TRANSFERING_FILE:
 			return "Transferring file to SD"
 		return "Unknown State (%d)" % (self._state)
+
+	def isSendingFileToSDWithSoftwareFlow(self):
+		#first determine if sending file to sd and printer supports xon_xoff
+		if 	self._state == self.STATE_PRINTING and self.isStreaming() and \
+			self._firmware_capabilities.get(self.CAPABILITY_SERIAL_XON_XOFF, False) and \
+			self._currentLine > 1:
+				# currentLine > 1 is to enable flow control only and ignore ok only after the first ok is sent
+				# if not handle_ok will not set clear_to_send and in send_loop it will wait forever
+				if self._serial != None and getattr(self._serial, "xonxoff", False):
+					#software flow control is enabled and handled in the usb-serial chip/driver
+					return True
+				else:
+					#software flow is handled in octoprint if workaround is enabled
+					if self._use_xonxoff_workaround != None and self._use_xonxoff_workaround:
+						return True
+		return False
 
 	def getErrorString(self):
 		return self._errorValue
@@ -892,6 +923,7 @@ class MachineCom(object):
 			self._currentFile.start()
 
 			self.sendCommand("M28 %s" % remoteFilename)
+			self._pause_transmission = False
 			eventManager().fire(Events.TRANSFER_STARTED, {"local": localFilename, "remote": remoteFilename})
 			self._callback.on_comm_file_transfer_started(remoteFilename, self._currentFile.getFilesize())
 
@@ -1609,7 +1641,9 @@ class MachineCom(object):
 		self._log("Connection closed, closing down monitor")
 
 	def _handle_ok(self):
-		self._clear_to_send.set()
+		can_send = not self.isSendingFileToSDWithSoftwareFlow()
+		if can_send:
+			self._clear_to_send.set()
 
 		# reset long running commands, persisted current tools and heatup counters on ok
 
@@ -1630,8 +1664,8 @@ class MachineCom(object):
 			self._resendNextCommand()
 		else:
 			self._resendActive = False
-			self._continue_sending()
-
+			if can_send:
+				self._continue_sending()
 		return
 
 	def _handle_timeout(self):
@@ -1912,13 +1946,17 @@ class MachineCom(object):
 					self._log("Failed to autodetect serial port, please set it manually.")
 					return None
 
+			software_xonxoff = settings().get(["serial", "xonxoff"])
+			if software_xonxoff is None:
+				software_xonxoff = False
+
 			# connect to regular serial port
 			self._log("Connecting to: %s" % port)
 			if baudrate == 0:
 				baudrates = baudrateList()
-				serial_obj = serial.Serial(str(port), 115200 if 115200 in baudrates else baudrates[0], timeout=read_timeout, writeTimeout=10000, parity=serial.PARITY_ODD)
+				serial_obj = serial.Serial(str(port), 115200 if 115200 in baudrates else baudrates[0], timeout=read_timeout, writeTimeout=10000, xonxoff=software_xonxoff, parity=serial.PARITY_ODD)
 			else:
-				serial_obj = serial.Serial(str(port), baudrate, timeout=read_timeout, writeTimeout=10000, parity=serial.PARITY_ODD)
+				serial_obj = serial.Serial(str(port), baudrate, timeout=read_timeout, writeTimeout=10000, xonxoff=software_xonxoff, parity=serial.PARITY_ODD)
 			serial_obj.close()
 			serial_obj.parity = serial.PARITY_NONE
 			serial_obj.open()
@@ -2017,6 +2055,17 @@ class MachineCom(object):
 		# finally return the line
 		return line
 
+	def _filterXonXoffCharacters(self, ret):
+		if self._xonxoff_stopChar in ret:
+			self._pause_transmission = True
+			ret = ret.translate(None, self._xonxoff_stopChar)
+		if self._xonxoff_resumeChar in ret:
+			self._pause_transmission = False
+			self._continue_sending()
+			self._clear_to_send.set()
+			ret = ret.translate(None, self._xonxoff_resumeChar)
+		return ret
+
 	def _readline(self):
 		if self._serial is None:
 			return None
@@ -2036,6 +2085,9 @@ class MachineCom(object):
 
 		if ret != "":
 			try:
+				if self.isSendingFileToSDWithSoftwareFlow() and self._use_xonxoff_workaround:
+					ret = self._filterXonXoffCharacters(ret)
+
 				self._log("Recv: " + sanitize_ascii(ret))
 			except ValueError as e:
 				self._log("WARN: While reading last line: %s" % e)
@@ -2392,6 +2444,9 @@ class MachineCom(object):
 						# definitely do not want that, so we tickle the queue manually here
 						self._continue_sending()
 
+					if self.isSendingFileToSDWithSoftwareFlow() and not self._pause_transmission:
+							self._continue_sending()
+							self._clear_to_send.set()
 				finally:
 					# no matter _how_ we exit this block, we signal that we
 					# are done processing the last fetched queue entry
