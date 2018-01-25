@@ -405,7 +405,7 @@ default_settings = {
 }
 """The default settings of the core application."""
 
-valid_boolean_trues = [True, "true", "yes", "y", "1"]
+valid_boolean_trues = [True, "True", "true", "yes", "y", "1"]
 """ Values that are considered to be equivalent to the boolean ``True`` value, used for type conversion in various places."""
 
 
