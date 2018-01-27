@@ -86,7 +86,7 @@ def get_finished_timelapses():
 	files = []
 	basedir = settings().getBaseFolder("timelapse")
 	for entry in scandir(basedir):
-		if not fnmatch.fnmatch(entry.name, "*.mp[g4]"):
+		if not fnmatch.fnmatch(entry.name, "*.m*"):
 			continue
 		files.append({
 			"name": entry.name,
