@@ -129,6 +129,7 @@ $(function() {
         self.webcam_ffmpegPath = ko.observable(undefined);
         self.webcam_bitrate = ko.observable(undefined);
         self.webcam_ffmpegThreads = ko.observable(undefined);
+        self.webcam_ffmpegVideoCodec = ko.observable(undefined);
         self.webcam_watermark = ko.observable(undefined);
         self.webcam_flipH = ko.observable(undefined);
         self.webcam_flipV = ko.observable(undefined);

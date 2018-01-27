@@ -208,6 +208,7 @@ default_settings = {
 		"snapshotSslValidation": True,
 		"ffmpeg": None,
 		"ffmpegThreads": 1,
+		"ffmpegVideoCodec": "mpeg2video",
 		"bitrate": "5000k",
 		"watermark": True,
 		"flipH": False,
