@@ -100,6 +100,7 @@ $(function() {
         };
 
         self.webcam_available_ratios = ["16:9", "4:3"];
+        self.webcam_available_videocodecs = ["mpeg2video", "libx264"];
 
         var auto_locale = {language: "_default", display: gettext("Autodetect from browser"), english: undefined};
         self.locales = ko.observableArray([auto_locale].concat(_.sortBy(_.values(AVAILABLE_LOCALES), function(n) {
