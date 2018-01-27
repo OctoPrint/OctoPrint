@@ -45,7 +45,7 @@ current_render_job = None
 
 # filename formats
 _capture_format = "{prefix}-%d.jpg"
-_output_format = "{prefix}.mpg"
+_output_format = "{prefix}"
 
 # ffmpeg progress regexes
 _ffmpeg_duration_regex = re.compile("Duration: (\d{2}):(\d{2}):(\d{2})\.\d{2}")
@@ -787,7 +787,7 @@ class TimelapseRenderJob(object):
 	render_job_lock = threading.RLock()
 
 	def __init__(self, capture_dir, output_dir, prefix, postfix=None, capture_glob="{prefix}-*.jpg",
-	             capture_format="{prefix}-%d.jpg", output_format="{prefix}{postfix}.mpg", fps=25, threads=1,
+	             capture_format="{prefix}-%d.jpg", output_format="{prefix}{postfix}", fps=25, threads=1,
 	             videocodec="mpeg2video", on_start=None, on_success=None, on_fail=None, on_always=None):
 		self._capture_dir = capture_dir
 		self._output_dir = output_dir
@@ -833,6 +833,11 @@ class TimelapseRenderJob(object):
 		output = os.path.join(self._output_dir,
 		                      self._output_format.format(prefix=self._prefix,
 		                                                 postfix=self._postfix if self._postfix is not None else ""))
+                if self._videocodec == 'mpeg2video':
+                        suffix = ".mpg"
+                else:
+                        suffix = ".mp4"
+                output = output + suffix
 
 		for i in range(4):
 			if os.path.exists(input % i):
@@ -935,10 +940,16 @@ class TimelapseRenderJob(object):
 
 		logger = logging.getLogger(__name__)
 
+                ### Not all players can handle non-mpeg2 in VOB format
+                if videocodec == "mpeg2video":
+                    containerformat = "vob"
+                else:
+                    containerformat = "mp4"
+
 		command = [
 			ffmpeg, '-framerate', str(fps), '-i', '"{}"'.format(input), '-vcodec', videocodec,
 			'-threads', str(threads), '-r', "25", '-y', '-b', str(bitrate),
-			'-f', 'vob']
+			'-f', containerformat]
 
 		filter_string = cls._create_filter_string(hflip=hflip,
 		                                          vflip=vflip,
