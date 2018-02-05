@@ -148,18 +148,7 @@ def load_user(id):
 	return None
 
 def load_user_from_request(request):
-	header = request.headers.get('Authorization')
-	if header:
-		header = header.replace('Basic ', '', 1)
-		try:
-			header = base64.b64decode(header)
-		except TypeError:
-			return None
-		id = header.split(':')[0]
-		user = userManager.findUser(userid=id)
-		if user:
-			return user
-	return None
+	return util.get_user_for_authorization_header(request.headers.get('Authorization'))
 
 def unauthorized_user():
 	from flask import abort
