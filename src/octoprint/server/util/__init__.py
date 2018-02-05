@@ -5,6 +5,8 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+import base64
+
 from octoprint.settings import settings
 import octoprint.timelapse
 import octoprint.server
@@ -73,6 +75,35 @@ def loginFromApiKeyRequestHandler():
 		                                           identity=_flask.ext.principal.Identity(user.get_id()))
 	else:
 		return _flask.make_response("Invalid API key", 403)
+
+
+def loginFromRequest():
+	"""
+	``before_request`` handler for creating login sessions based on the Authorization header.
+	"""
+
+	if not settings().get(["accessControl", "trustBasicAuthentication"]):
+		return
+
+	header = _flask.request.headers.get('Authorization')
+	if header:
+		header = header.replace('Basic ', '', 1)
+		try:
+			header = base64.b64decode(header)
+		except TypeError:
+			return
+		id = header.split(':')[0]
+		if octoprint.server.userManager.enabled:
+			user = octoprint.server.userManager.findUser(userid=id)
+		else:
+			# what should we really do if the user manager is disabled
+			# and basic auth activated?
+			return
+
+		if user is not None and _flask.ext.login.login_user(user, remember=False):
+			_flask.ext.principal.identity_changed.send(_flask.current_app._get_current_object(),
+		                                           identity=_flask.ext.principal.Identity(user.get_id()))
+	return
 
 
 def corsRequestHandler():
