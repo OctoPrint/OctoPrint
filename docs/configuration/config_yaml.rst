@@ -36,7 +36,7 @@ Use the following settings to enable access control:
 
      # If set to true, will automatically log on clients originating from any of the networks defined in
      # "localNetworks" as the user defined in "autologinAs". Defaults to false.
-     autologinLocal: true
+     autologinLocal: false
 
      # The name of the user to automatically log on clients originating from "localNetworks" as. Must
      # be the name of one of your configured users.
@@ -50,6 +50,17 @@ Use the following settings to enable access control:
      localNetworks:
      - 127.0.0.0/8
      - 192.168.1.0/24
+
+     # Whether to trust Basic Authentication headers. If you have setup Basic Authentication in front of
+     # OctoPrint and the user names you use there match OctoPrint accounts, by setting this to true users will
+     # be logged into OctoPrint as the user user during Basic Authentication. Your should ONLY ENABLE THIS if your
+     # OctoPrint instance is only accessible through a connection locked down through Basic Authentication!
+     trustBasicAuthentication: false
+
+     # Whether to also check the password provided through Basic Authentication if the Basic Authentication
+     # header is to be trusted. Disabling this will only match the user name in the Basic Authentication
+     # header and login the user without further checks. Use with caution.
+     checkBasicAuthenticationPassword: true
 
 .. _sec-configuration-config_yaml-api:
 
