@@ -582,7 +582,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 	def get_sd_files(self):
 		if self._comm is None or not self._comm.isSdReady():
 			return []
-		return map(lambda x: (x[0][1:], x[1]), self._comm.getSdFiles())
+		return map(lambda x: (x[0][1:], x[1], x[2]), self._comm.getSdFiles())
 
 	def add_sd_file(self, filename, absolutePath, on_success=None, on_failure=None):
 		if not self._comm or self._comm.isBusy() or not self._comm.isSdReady():

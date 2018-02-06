@@ -468,6 +468,7 @@ class MachineCom(object):
 		self._sdEnabled = settings().getBoolean(["feature", "sdSupport"])
 		self._sdAvailable = False
 		self._sdFileList = False
+		self._sdFileGetLongNameCounter = 0
 		self._sdFiles = []
 		self._sdFileToSelect = None
 		self._ignore_select = False
@@ -1091,6 +1092,16 @@ class MachineCom(object):
 
 		self.sendCommand("M20")
 
+	def getLongFilenames(self):
+		self._sdFileGetLongNameCounter = len(self._sdFiles)
+
+		for i in range(len(self._sdFiles)):
+			self.getLongFilename(i, self._sdFiles[i][0])
+
+	def getLongFilename(self, ident, shortname):
+		if self._sdEnabled and self.isOperational() and not self.isBusy():
+			self.sendCommand("M33 " + shortname)
+
 	def initSdCard(self):
 		if not self._sdEnabled:
 			return
@@ -1296,8 +1307,17 @@ class MachineCom(object):
 							if not filename.startswith("/"):
 								# file from the root of the sd -- we'll prepend a /
 								filename = "/" + filename
-							self._sdFiles.append((filename, size))
+							self._sdFiles.append([filename, size, None])
 						continue
+
+				elif self._sdFileGetLongNameCounter != 0 and line.startswith("/"):
+					i = len(self._sdFiles) - self._sdFileGetLongNameCounter
+					self._sdFiles[i][2] = line[1:]
+
+					self._sdFileGetLongNameCounter = self._sdFileGetLongNameCounter - 1
+
+					if self._sdFileGetLongNameCounter == 0:
+						self._callback.on_comm_sd_files(self._sdFiles)
 
 				handled = False
 
@@ -1489,7 +1509,10 @@ class MachineCom(object):
 					self._sdFileList = True
 				elif 'End file list' in line:
 					self._sdFileList = False
-					self._callback.on_comm_sd_files(self._sdFiles)
+					if "Marlin 1.1" in self._firmware_name:
+						self.getLongFilenames()
+					else:
+						self._callback.on_comm_sd_files(self._sdFiles)
 				elif 'SD printing byte' in line and self.isSdPrinting():
 					# answer to M27, at least on Marlin, Repetier and Sprinter: "SD printing byte %d/%d"
 					match = regex_sdPrintingByte.search(line)
