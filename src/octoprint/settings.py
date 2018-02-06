@@ -43,7 +43,7 @@ try:
 except ImportError:
 	from chainmap import ChainMap
 
-from octoprint.util import atomic_write, is_hidden_path, dict_merge
+from octoprint.util import atomic_write, is_hidden_path, dict_merge, CaseInsensitiveSet
 
 _APPNAME = "OctoPrint"
 
@@ -405,7 +405,7 @@ default_settings = {
 }
 """The default settings of the core application."""
 
-valid_boolean_trues = [True, "True", "true", "yes", "y", "1"]
+valid_boolean_trues = CaseInsensitiveSet(True, "true", "yes", "y", "1", 1)
 """ Values that are considered to be equivalent to the boolean ``True`` value, used for type conversion in various places."""
 
 
