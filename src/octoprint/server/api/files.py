@@ -148,11 +148,11 @@ def _getFileList(origin, path=None, filter=None, recursive=False, allow_from_cac
 
 		files = []
 		if sdFileList is not None:
-			for sdFile, sdSize in sdFileList:
+			for sdFile, sdSize, sdFileLongname in sdFileList:
 				file = {
 					"type": "machinecode",
-					"name": sdFile,
-					"display": sdFile,
+					"name": sdFileLongname if sdFileLongname else sdFile,
+					"display": sdFileLongname if sdFileLongname else sdFile,
 					"path": sdFile,
 					"origin": FileDestinations.SDCARD,
 					"refs": {
