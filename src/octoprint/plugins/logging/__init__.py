@@ -75,7 +75,7 @@ class LoggingPlugin(octoprint.plugin.AssetPlugin,
 	@restricted_access
 	@admin_permission.require(403)
 	def get_logging_levels_api(self):
-		return jsonify(self._get_logging_levels)
+		return jsonify(self._get_logging_levels())
 
 	@octoprint.plugin.BlueprintPlugin.route("/setup/levels", methods=["PUT"])
 	@restricted_access
