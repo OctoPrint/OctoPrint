@@ -527,7 +527,11 @@ class Server(object):
 			# online indicators - text file with "online" as content and a transparent gif
 			(r"/online.txt", util.tornado.StaticDataHandler, dict(data="online\n")),
 			(r"/online.gif", util.tornado.StaticDataHandler, dict(data=bytes(base64.b64decode("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7")),
-			                                                      content_type="image/gif"))
+			                                                      content_type="image/gif")),
+
+			# deprecated endpoints
+			(r"/api/logs", util.tornado.DeprecatedEndpointHandler, dict(url="/plugin/logging/logs")),
+			(r"/api/logs/(.*)", util.tornado.DeprecatedEndpointHandler, dict(url="/plugin/logging/logs/{0}")),
 		]
 
 		# fetch additional routes from plugins

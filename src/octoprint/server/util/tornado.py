@@ -1075,6 +1075,26 @@ class StaticDataHandler(RequestlessExceptionLoggingMixin, tornado.web.RequestHan
 		self.finish()
 
 
+class DeprecatedEndpointHandler(tornado.web.RequestHandler):
+	def initialize(self, url):
+		self._url = url
+		self._logger = logging.getLogger(__name__)
+
+	def _handle_method(self, *args, **kwargs):
+		to_url = self._url.format(*args)
+		self._logger.info("Redirecting deprecated endpoint {} to {}".format(self.request.path, to_url))
+		self.redirect(to_url, permanent=True)
+
+	# make all http methods trigger _handle_method
+	get = _handle_method
+	post = _handle_method
+	put = _handle_method
+	patch = _handle_method
+	delete = _handle_method
+	head = _handle_method
+	options = _handle_method
+
+
 class GlobalHeaderTransform(tornado.web.OutputTransform):
 
 	HEADERS = dict()

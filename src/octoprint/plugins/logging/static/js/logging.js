@@ -44,17 +44,17 @@
     };
 
     DeprecatedOctoPrintLogsClient.prototype.list = function(opts) {
-        log.warn("OctoPrintClient.logs.list has been deprecated, use OctoPrintClient.plugins.logging.listLogs instead");
+        log.warn("OctoPrintClient.logs.list has been deprecated as of OctoPrint 1.3.7, use OctoPrintClient.plugins.logging.listLogs instead");
         return this.wrapped.listLogs(opts);
     };
 
     DeprecatedOctoPrintLogsClient.prototype.delete = function(file, opts) {
-        log.warn("OctoPrintClient.logs.delete has been deprecated, use OctoPrintClient.plugins.logging.deleteLog instead");
+        log.warn("OctoPrintClient.logs.delete has been deprecated as of OctoPrint 1.3.7, use OctoPrintClient.plugins.logging.deleteLog instead");
         return this.wrapped.deleteLog(file, opts);
     };
 
     DeprecatedOctoPrintLogsClient.prototype.download = function(file, opts) {
-        log.warn("OctoPrintClient.logs.download has been deprecated, use OctoPrintClient.plugins.logging.downloadLog instead");
+        log.warn("OctoPrintClient.logs.download has been deprecated as of OctoPrint 1.3.7, use OctoPrintClient.plugins.logging.downloadLog instead");
         return this.wrapped.downloadLog(file, opts);
     };
 
