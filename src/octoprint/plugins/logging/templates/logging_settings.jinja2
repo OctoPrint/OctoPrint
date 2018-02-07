@@ -43,12 +43,12 @@
     </ul>
 </div>
 
-<h3>Logging Levels</h3>
+<h3>{{ _('Logging Levels') }}</h3>
 <form class="form-horizontal">
 
     <div class="row-fluid">
-        <div class="span8"><h5>Name</h5></div>
-        <div class="span2"><h5>Level</h5></div>
+        <div class="span8"><h5>{{ _('Name') }}</h5></div>
+        <div class="span2"><h5>{{ _('Level') }}</h5></div>
     </div>
     <div data-bind="foreach: configuredLoggersSorted">
         <div class="row-fluid" style="margin-bottom: 5px">
@@ -65,7 +65,7 @@
                 </select>
             </div>
             <div class="span1">
-                <a title="Remove" class="btn btn-danger" data-bind="click: $parent.removeLogger"><i class="icon-trash"></i></a>
+                <a title="{{ _('Remove') }}" class="btn btn-danger" data-bind="click: $parent.removeLogger"><i class="icon-trash"></i></a>
             </div>
         </div>
     </div>
@@ -84,7 +84,7 @@
                 </select>
             </div>
             <div class="span1">
-                <a title="Add" class="btn btn-primary" data-bind="click: $root.addLogger"><i class="icon-plus"></i></a>
+                <a title="{{ _('Add') }}" class="btn btn-primary" data-bind="click: $root.addLogger"><i class="icon-plus"></i></a>
             </div>
         </div>
     </div>
