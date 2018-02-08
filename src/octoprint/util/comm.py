@@ -1966,17 +1966,9 @@ class MachineCom(object):
 			self._log("Connecting to: %s" % port)
 			if baudrate == 0:
 				baudrates = baudrateList()
-				serial_obj = serial.Serial(str(port),
-				                           115200 if 115200 in baudrates else baudrates[0],
-				                           timeout=read_timeout,
-				                           write_timeout=10000,
-				                           parity=serial.PARITY_ODD)
+				serial_obj = serial.Serial(str(port), 115200 if 115200 in baudrates else baudrates[0], timeout=read_timeout, writeTimeout=10000, parity=serial.PARITY_ODD)
 			else:
-				serial_obj = serial.Serial(str(port),
-				                           baudrate,
-				                           timeout=read_timeout,
-				                           write_timeout=10000,
-				                           parity=serial.PARITY_ODD)
+				serial_obj = serial.Serial(str(port), baudrate, timeout=read_timeout, writeTimeout=10000, parity=serial.PARITY_ODD)
 			serial_obj.close()
 			serial_obj.parity = serial.PARITY_NONE
 			serial_obj.open()
