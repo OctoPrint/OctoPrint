@@ -306,7 +306,15 @@ $(function() {
         };
 
         self.copyAll = function() {
-            copyToClipboard(_.map(self.log(), "line").join("\n"));
+            var lines;
+
+            if (self.fancyFunctionality()) {
+                lines = _.map(self.log(), "line");
+            } else {
+                lines = self.plainLogLines();
+            }
+
+            copyToClipboard(lines.join("\n"));
         };
 
         // command matching regex
