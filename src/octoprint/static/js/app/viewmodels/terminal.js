@@ -277,6 +277,17 @@ $(function() {
             }
         };
 
+        self.terminalScrollEvent = _.throttle(function () {
+            if (self.autoscrollEnabled()) {
+                var container = self.fancyFunctionality() ? $("#terminal-output") : $("#terminal-output-lowfi");
+                var maxScroll = container[0].scrollHeight - container[0].offsetHeight;
+
+                if (container.scrollTop() <= maxScroll ) {
+                    self.autoscrollEnabled(false);
+                }
+            }
+        }, 250);
+
         self.gotoTerminalCommand = function() {
             // skip if user highlights text.
             var sel = getSelection().toString();
@@ -289,6 +300,10 @@ $(function() {
 
         self.toggleAutoscroll = function() {
             self.autoscrollEnabled(!self.autoscrollEnabled());
+
+            if (self.autoscrollEnabled()) {
+                self.updateOutput();
+            }
         };
 
         self.selectAll = function() {
