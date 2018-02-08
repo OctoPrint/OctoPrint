@@ -737,6 +737,18 @@ class MachineCom(object):
 			deactivate_monitoring_and_send_queue()
 
 			try:
+				if hasattr(self._serial, "cancel_read") and callable(self._serial.cancel_read):
+					self._serial.cancel_read()
+			except:
+				self._logger.exception("Error while cancelling pending reads from the serial port")
+
+			try:
+				if hasattr(self._serial, "cancel_write") and callable(self._serial.cancel_write):
+					self._serial.cancel_write()
+			except:
+				self._logger.exception("Error while cancelling pending writes to the serial port")
+
+			try:
 				self._serial.close()
 			except:
 				self._logger.exception("Error while trying to close serial port")
