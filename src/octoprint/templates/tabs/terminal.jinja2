@@ -1,5 +1,5 @@
 <div class="terminal">
-    <pre id="terminal-output" class="pre-scrollable pre-output" data-bind="foreach: displayedLines, visible: fancyFunctionality(), click: function(){ gotoTerminalCommand(); }"><span data-bind="text: line, css: {muted: type == 'filtered' || type == 'cut'}"></span></pre>
+    <pre id="terminal-output" class="pre-scrollable pre-output" data-bind="foreach: displayedLines, visible: fancyFunctionality(), click: function(){ gotoTerminalCommand(); }, event: { scroll: terminalScrollEvent }"><span data-bind="text: line, css: {muted: type == 'filtered' || type == 'cut'}"></span></pre>
     <pre id="terminal-output-lowfi" style="display: none" class="pre-scrollable" data-bind="text: plainLogOutput, visible: !fancyFunctionality()"></pre>
     <div id="terminal-sendpanel" style="display: none;" data-bind="visible: loginState.isUser">
         <div class="input-block-level input-append">
