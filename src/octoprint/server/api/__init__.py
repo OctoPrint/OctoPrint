@@ -19,7 +19,7 @@ import octoprint.server
 import octoprint.plugin
 from octoprint.server import admin_permission, NO_CONTENT
 from octoprint.settings import settings as s, valid_boolean_trues
-from octoprint.server.util import noCachingExceptGetResponseHandler, enforceApiKeyRequestHandler, loginFromApiKeyRequestHandler, corsRequestHandler, corsResponseHandler
+from octoprint.server.util import noCachingExceptGetResponseHandler, enforceApiKeyRequestHandler, loginFromApiKeyRequestHandler, loginFromAuthorizationHeaderRequestHandler, corsRequestHandler, corsResponseHandler
 from octoprint.server.util.flask import restricted_access, get_json_command_from_request, passive_login
 
 
@@ -46,6 +46,7 @@ api.after_request(noCachingExceptGetResponseHandler)
 
 api.before_request(corsRequestHandler)
 api.before_request(enforceApiKeyRequestHandler)
+api.before_request(loginFromAuthorizationHeaderRequestHandler)
 api.before_request(loginFromApiKeyRequestHandler)
 api.after_request(corsResponseHandler)
 
