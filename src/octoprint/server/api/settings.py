@@ -142,6 +142,7 @@ def getSettings():
 			"timeoutConnection": s.getFloat(["serial", "timeout", "connection"]),
 			"timeoutDetection": s.getFloat(["serial", "timeout", "detection"]),
 			"timeoutCommunication": s.getFloat(["serial", "timeout", "communication"]),
+			"timeoutCommunicationBusy": s.getFloat(["serial", "timeout", "communicationBusy"]),
 			"timeoutTemperature": s.getFloat(["serial", "timeout", "temperature"]),
 			"timeoutTemperatureTargetSet": s.getFloat(["serial", "timeout", "temperatureTargetSet"]),
 			"timeoutTemperatureAutoreport": s.getFloat(["serial", "timeout", "temperatureAutoreport"]),
@@ -368,6 +369,7 @@ def _saveSettings(data):
 		if "timeoutConnection" in data["serial"]: s.setFloat(["serial", "timeout", "connection"], data["serial"]["timeoutConnection"])
 		if "timeoutDetection" in data["serial"]: s.setFloat(["serial", "timeout", "detection"], data["serial"]["timeoutDetection"])
 		if "timeoutCommunication" in data["serial"]: s.setFloat(["serial", "timeout", "communication"], data["serial"]["timeoutCommunication"])
+		if "timeoutCommunicationBusy" in data["serial"]: s.setFloat(["serial", "timeout", "communicationBusy"], data["serial"]["timeoutCommunicationBusy"])
 		if "timeoutTemperature" in data["serial"]: s.setFloat(["serial", "timeout", "temperature"], data["serial"]["timeoutTemperature"])
 		if "timeoutTemperatureTargetSet" in data["serial"]: s.setFloat(["serial", "timeout", "temperatureTargetSet"], data["serial"]["timeoutTemperatureTargetSet"])
 		if "timeoutTemperatureAutoreport" in data["serial"]: s.setFloat(["serial", "timeout", "temperatureAutoreport"], data["serial"]["timeoutTemperatureAutoreport"])

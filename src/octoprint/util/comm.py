@@ -420,6 +420,7 @@ class MachineCom(object):
 		self._firmware_capabilities = dict()
 
 		self._temperature_autoreporting = False
+		self._busy_protocol_detected = False
 
 		self._supportResendsWithoutOk = settings().getBoolean(["serial", "supportResendsWithoutOk"])
 
@@ -1229,7 +1230,7 @@ class MachineCom(object):
 			self._changeState(self.STATE_CONNECTING)
 
 		#Start monitoring the serial port.
-		self._timeout = get_new_timeout("communication", self._timeout_intervals)
+		self._timeout = get_new_timeout("communicationBusy" if self._busy_protocol_detected else "communication", self._timeout_intervals)
 
 		startSeen = False
 		supportRepetierTargetTemp = settings().getBoolean(["feature", "repetierTargetTemp"])
@@ -1250,13 +1251,33 @@ class MachineCom(object):
 					break
 				if line.strip() is not "":
 					self._consecutive_timeouts = 0
-					self._timeout = get_new_timeout("communication", self._timeout_intervals)
+					self._timeout = get_new_timeout("communicationBusy" if self._busy_protocol_detected else "communication", self._timeout_intervals)
 
 					if self._dwelling_until and now > self._dwelling_until:
 						self._dwelling_until = False
 
+				##~~ busy protocol handling
+				if line.startswith("echo:busy:") or line.startswith("busy:"):
+					# make sure the printer sends busy in a small enough interval to match our timeout
+					if not self._busy_protocol_detected:
+						self._log("Printer seems to support the busy protocol, adjusting timeouts and setting busy "
+						          "interval accordingly")
+						self._busy_protocol_detected = True
+
+						new_communication_timeout = self._timeout_intervals.get("communicationBusy", 2)
+						self._serial.timeout = new_communication_timeout
+						busy_interval = max(int(new_communication_timeout) - 1, 1)
+
+						self._logger.info("Printer seems to support the busy protocol, telling it to set the busy "
+						                  "interval to our \"communicationBusy\" timeout - 1s = {}s".format(busy_interval))
+
+						self._set_busy_protocol_interval(interval=busy_interval)
+
+					if self._state not in (self.STATE_CONNECTING, self.STATE_DETECT_BAUDRATE):
+						continue
+
 				##~~ debugging output handling
-				if line.startswith("//"):
+				elif line.startswith("//"):
 					debugging_output = line[2:].strip()
 					if debugging_output.startswith("action:"):
 						action_command = debugging_output[len("action:"):].strip()
@@ -1277,7 +1298,8 @@ class MachineCom(object):
 								except:
 									self._logger.exception("Error while calling hook {} with action command {}".format(self._printer_action_hooks[hook], action_command))
 									continue
-					else:
+
+					if self._state not in (self.STATE_CONNECTING, self.STATE_DETECT_BAUDRATE):
 						continue
 
 				def convert_line(line):
@@ -1488,7 +1510,7 @@ class MachineCom(object):
 
 						if capability == self.CAPABILITY_AUTOREPORT_TEMP and enabled:
 							self._logger.info("Firmware states that it supports temperature autoreporting")
-							self._set_autoreport_temperature()
+							self._set_autoreport_temperature_interval()
 
 				##~~ SD Card handling
 				elif 'SD init fail' in line or 'volume.init failed' in line or 'openRoot failed' in line:
@@ -1594,7 +1616,7 @@ class MachineCom(object):
 									self._serial.timeout = connection_timeout
 								self._log("Trying baudrate: %d" % (baudrate))
 								self._baudrateDetectRetry = 5
-								self._timeout = get_new_timeout("communication", self._timeout_intervals)
+								self._timeout = get_new_timeout("communicationBusy" if self._busy_protocol_detected else "communication", self._timeout_intervals)
 								self._serial.write('\n')
 								self.sayHello()
 							except:
@@ -1830,13 +1852,21 @@ class MachineCom(object):
 		if self.isOperational() and not self._connection_closing and self.isSdPrinting() and not self._long_running_command and not self._dwelling_until and not self._heating:
 			self.sendCommand("M27", cmd_type="sd_status_poll")
 
-	def _set_autoreport_temperature(self, interval=None):
+	def _set_autoreport_temperature_interval(self, interval=None):
 		if interval is None:
 			try:
 				interval = int(self._timeout_intervals.get("temperatureAutoreport", 2))
 			except:
 				interval = 2
 		self.sendCommand("M155 S{}".format(interval))
+
+	def _set_busy_protocol_interval(self, interval=None):
+		if interval is None:
+			try:
+				interval = max(int(self._timeout_intervals.get("communicationBusy", 3)) - 1, 1)
+			except:
+				interval = 2
+		self.sendCommand("M113 S{}".format(interval))
 
 	def _onConnected(self):
 		self._serial.timeout = settings().getFloat(["serial", "timeout", "communication"])
@@ -1862,7 +1892,9 @@ class MachineCom(object):
 		self.resetLineNumbers()
 
 		if self._temperature_autoreporting:
-			self._set_autoreport_temperature()
+			self._set_autoreport_temperature_interval()
+		if self._busy_protocol_detected:
+			self._set_busy_protocol_interval()
 
 	def _getTemperatureTimerInterval(self):
 		busy_default = 4.0
@@ -2803,7 +2835,7 @@ class MachineCom(object):
 		elif s_match:
 			_timeout = float(s_match.group("value"))
 
-		self._timeout = get_new_timeout("communication", self._timeout_intervals) + _timeout
+		self._timeout = get_new_timeout("communicationBusy" if self._busy_protocol_detected else "communication", self._timeout_intervals) + _timeout
 		self._dwelling_until = time.time() + _timeout
 
 	##~~ command phase handlers

@@ -61,6 +61,14 @@
                 <input type="number" step="any" min="0" class="input-mini text-right" data-bind="value: serial_timeoutCommunication" id="settings-serialTimeoutCommunication">
                 <span class="add-on">s</span>
             </div>
+            <span class="help-inline">{{ _('<code>busy</code> protocol support not detected')}}</span>
+        </div>
+        <div class="controls">
+            <div class="input-append">
+                <input type="number" step="any" min="0" class="input-mini text-right" data-bind="value: serial_timeoutCommunicationBusy" id="settings-serialTimeoutCommunicationBusy">
+                <span class="add-on">s</span>
+            </div>
+            <span class="help-inline">{{ _('<code>busy</code> protocol support detected')}}</span>
         </div>
     </div>
     <div class="control-group" title="{{ _('Time after which a connection attempt to the printer will be considered as having failed') }}">

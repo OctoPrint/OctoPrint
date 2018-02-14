@@ -160,6 +160,7 @@ $(function() {
         self.serial_timeoutConnection = ko.observable(undefined);
         self.serial_timeoutDetection = ko.observable(undefined);
         self.serial_timeoutCommunication = ko.observable(undefined);
+        self.serial_timeoutCommunicationBusy = ko.observable(undefined);
         self.serial_timeoutTemperature = ko.observable(undefined);
         self.serial_timeoutTemperatureTargetSet = ko.observable(undefined);
         self.serial_timeoutTemperatureAutoreport = ko.observable(undefined);
