@@ -375,6 +375,7 @@ class MachineCom(object):
 		self._connection_closing = False
 
 		self._timeout = None
+		self._ok_timeout = None
 		self._timeout_intervals = dict()
 		for key, value in settings().get(["serial", "timeout"], merged=True, asdict=True).items():
 			try:
@@ -1231,6 +1232,7 @@ class MachineCom(object):
 
 		#Start monitoring the serial port.
 		self._timeout = get_new_timeout("communicationBusy" if self._busy_protocol_detected else "communication", self._timeout_intervals)
+		self._ok_timeout = get_new_timeout("communicationBusy" if self._busy_protocol_detected else "communication", self._timeout_intervals)
 
 		startSeen = False
 		supportRepetierTargetTemp = settings().getBoolean(["feature", "repetierTargetTemp"])
@@ -1258,6 +1260,9 @@ class MachineCom(object):
 
 				##~~ busy protocol handling
 				if line.startswith("echo:busy:") or line.startswith("busy:"):
+					# reset the ok timeout, the regular comm timeout has already been reset
+					self._ok_timeout = get_new_timeout("communicationBusy" if self._busy_protocol_detected else "communication", self._timeout_intervals)
+
 					# make sure the printer sends busy in a small enough interval to match our timeout
 					if not self._busy_protocol_detected:
 						self._log("Printer seems to support the busy protocol, adjusting timeouts and setting busy "
@@ -1358,10 +1363,25 @@ class MachineCom(object):
 					handled = True
 
 				# process timeouts
-				elif line == "" and (not self._blockWhileDwelling or not self._dwelling_until or now > self._dwelling_until) and now > self._timeout:
-					# timeout only considered handled if the printer is printing
+				elif ((line == "" and now > self._timeout) or (self.isPrinting() and now > self._ok_timeout)) \
+						and (not self._blockWhileDwelling or not self._dwelling_until or now > self._dwelling_until):
+					# We have two timeout variants:
+					#
+					# Variant 1: No line at all received within the communication timeout. This can always happen.
+					#
+					# Variant 2: No ok received while printing within the communication timeout. This can happen if
+					#            temperatures are auto reported, because then we'll continue to receive data from the
+					#            firmware in fairly regular intervals, even if an ok got lost somewhere and the firmware
+					#            is running dry but not sending a wait.
+					#
+					# Both variants can only happen if we are not currently blocked by a dwelling command
+
 					self._handle_timeout()
-					handled = self.isPrinting()
+					self._ok_timeout = get_new_timeout("communicationBusy" if self._busy_protocol_detected else "communication", self._timeout_intervals)
+
+					# timeout only considered handled if the printer is printing and it was a comm timeout, not an ok
+					# timeout
+					handled = self.isPrinting() and line == ""
 
 				# we don't have to process the rest if the line has already been handled fully
 				if handled and self._state not in (self.STATE_CONNECTING, self.STATE_DETECT_BAUDRATE):
@@ -1681,6 +1701,7 @@ class MachineCom(object):
 		self._log("Connection closed, closing down monitor")
 
 	def _handle_ok(self):
+		self._ok_timeout = get_new_timeout("communicationBusy" if self._busy_protocol_detected else "communication", self._timeout_intervals)
 		self._clear_to_send.set()
 
 		# reset long running commands, persisted current tools and heatup counters on ok
