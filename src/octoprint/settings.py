@@ -114,10 +114,25 @@ default_settings = {
 		"disconnectOnErrors": True,
 		"ignoreErrorsFromFirmware": False,
 		"logResends": True,
-		"autoUppercaseBlacklist": ["M117"],
 		"supportResendsWithoutOk": False,
 		"logPositionOnPause": True,
 		"logPositionOnCancel": True,
+		"waitForStartOnConnect": False,
+		"alwaysSendChecksum": False,
+		"neverSendChecksum": False,
+		"sendChecksumWithUnknownCommands": False,
+		"unknownCommandsNeedAck": False,
+		"sdRelativePath": False,
+		"sdAlwaysAvailable": False,
+		"swallowOkAfterResend": True,
+		"repetierTargetTemp": False,
+		"externalHeatupDetection": True,
+		"supportWait": True,
+		"ignoreIdenticalResends": False,
+		"identicalResendsCountdown": 7,
+		"supportFAsCommand": False,
+		"firmwareDetection": True,
+		"blockWhileDwelling": False,
 
 		"capabilities": {
 			"autoreport_temp": True,
@@ -210,27 +225,12 @@ default_settings = {
 	},
 	"feature": {
 		"temperatureGraph": True,
-		"waitForStartOnConnect": False,
-		"alwaysSendChecksum": False,
-		"neverSendChecksum": False,
-		"sendChecksumWithUnknownCommands": False,
-		"unknownCommandsNeedAck": False,
 		"sdSupport": True,
-		"sdRelativePath": False,
-		"sdAlwaysAvailable": False,
-		"swallowOkAfterResend": True,
-		"repetierTargetTemp": False,
-		"externalHeatupDetection": True,
-		"supportWait": True,
 		"keyboardControl": True,
 		"pollWatched": False,
-		"ignoreIdenticalResends": False,
-		"identicalResendsCountdown": 7,
-		"supportFAsCommand": False,
 		"modelSizeDetection": True,
-		"firmwareDetection": True,
 		"printCancelConfirmation": True,
-		"blockWhileDwelling": False,
+		"autoUppercaseBlacklist": ["M117"],
 		"g90InfluencesExtruder": False,
 		"legacyPluginAssets": False # TODO remove again in 1.3.8
 	},
@@ -908,7 +908,8 @@ class Settings(object):
 			self._migrate_reverse_proxy_config,
 			self._migrate_printer_parameters,
 			self._migrate_gcode_scripts,
-			self._migrate_core_system_commands
+			self._migrate_core_system_commands,
+			self._migrate_serial_features
 		)
 
 		for migrate in migrators:
@@ -1169,6 +1170,49 @@ class Settings(object):
 			# earlier version and needs to recover the former system commands for that
 			backup_path = self.backup("system_command_migration")
 			self._logger.info("Made a copy of the current config at {} to allow recovery of manual system command configuration".format(backup_path))
+
+		return changed
+
+	def _migrate_serial_features(self, config):
+		"""
+		Migrates feature flags identified as serial specific from the feature to the serial config tree and vice versa.
+
+		If a flag already exists in the target tree, only deletes the copy in the source tree.
+		"""
+		changed = False
+
+		FEATURE_TO_SERIAL = ("waitForStartOnConnect", "alwaysSendChecksum", "neverSendChecksum",
+		                     "sendChecksumWithUnknownCommands", "unknownCommandsNeedAck", "sdRelativePath",
+		                     "sdAlwaysAvailable", "swallowOkAfterResend", "repetierTargetTemp",
+		                     "externalHeatupDetection", "supportWait", "ignoreIdenticalResends",
+		                     "identicalResendsCountdown", "supportFAsCommand", "firmwareDetection",
+		                     "blockWhileDwelling")
+		SERIAL_TO_FEATURE = ("autoUppercaseBlacklist",)
+
+		def migrate_key(key, source, target):
+			if source in config and key in config[source]:
+				if config.get(target) is None:
+					# make sure we have a serial tree
+					config[target] = dict()
+				if key not in config[target]:
+					# only copy over if it's not there yet
+					config[target][key] = config[source][key]
+				# delete feature flag
+				del config[source][key]
+				return True
+			return False
+
+		for key in FEATURE_TO_SERIAL:
+			changed = migrate_key(key, "feature", "serial") or changed
+
+		for key in SERIAL_TO_FEATURE:
+			changed = migrate_key(key, "serial", "feature") or changed
+
+		if changed:
+			# let's make a backup of our current config, in case someone wants to roll back to an
+			# earlier version and needs a backup of their flags
+			backup_path = self.backup("serial_feature_migration")
+			self._logger.info("Made a copy of the current config at {} to allow recovery of serial feature flags".format(backup_path))
 
 		return changed
 

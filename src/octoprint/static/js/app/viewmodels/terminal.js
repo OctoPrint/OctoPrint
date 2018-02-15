@@ -125,7 +125,7 @@ $(function() {
         });
 
         self.blacklist=[];
-        self.settings.serial_autoUppercaseBlacklist.subscribe(function(newValue) {
+        self.settings.feature_autoUppercaseBlacklist.subscribe(function(newValue) {
             self.blacklist = splitTextToArray(newValue, ",", true);
         });
 
