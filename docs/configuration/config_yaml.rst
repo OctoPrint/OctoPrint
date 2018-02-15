@@ -763,6 +763,10 @@ Use the following settings to configure the serial connection to the printer:
        # Defaults to 30 sec
        communication: 30
 
+       # Timeout during serial communication when busy protocol support is detected, in seconds.
+       # Defaults to 3 sec
+       communicationBusy: 3
+
        # Timeout after which to query temperature when no target is set
        temperature: 5
 
@@ -891,6 +895,14 @@ Use the following settings to configure the serial connection to the printer:
      # Whether to "manually" trigger an ok for M29 (a lot of versions of this command are buggy and
      # the responds skips on the ok)
      triggerOkForM29: true
+
+     capabilities:
+
+       # Whether to enable temperature autoreport in the firmware if its support is detected
+       autoreport_temp: true
+
+       # Whether to shorten the communication timeout if the firmware seems to support the busy protocol
+       busy_protocol: true
 
 .. _sec-configuration-config_yaml-server:
 
