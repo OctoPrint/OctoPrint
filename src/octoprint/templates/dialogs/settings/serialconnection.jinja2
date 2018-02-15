@@ -128,6 +128,20 @@
     <div>
         <div><small><a href="#" class="muted" data-bind="toggleContent: { class: 'fa-caret-right fa-caret-down', container: '#settings_serialConnection .hide' }"><i class="fa fa-caret-right"></i> {{ _('Advanced options') }}</a></small></div>
         <div class="hide">
+            <div class="control-group">
+                <div class="controls">
+                    <label class="checkbox">
+                        <input type="checkbox" data-bind="checked: serial_capAutoreportTemp" id="settings-serialCapAutoreportTemp"> {{ _('Support temperature autoreporting by firmware, if detected') }}
+                    </label>
+                </div>
+            </div>
+            <div class="control-group">
+                <div class="controls">
+                    <label class="checkbox">
+                        <input type="checkbox" data-bind="checked: serial_capBusyProtocol" id="settings-serialCapBusyProtocol"> {{ _('Support <code>busy</code> protocol, if detected') }}
+                    </label>
+                </div>
+            </div>
             <div class="control-group" title="{{ _('Command to send to the firmware on first handshake attempt.') }}">
                 <label class="control-label" for="settings-serialHelloCommand">{{ _('"Hello" command') }}</label>
                 <div class="controls">

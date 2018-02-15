@@ -119,6 +119,11 @@ default_settings = {
 		"logPositionOnPause": True,
 		"logPositionOnCancel": True,
 
+		"capabilities": {
+			"autoreport_temp": True,
+			"busy_protocol": True
+		},
+
 		# command specific flags
 		"triggerOkForM29": True
 	},

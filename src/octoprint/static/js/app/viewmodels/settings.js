@@ -181,6 +181,8 @@ $(function() {
         self.serial_maxTimeoutsIdle = ko.observable(undefined);
         self.serial_maxTimeoutsPrinting = ko.observable(undefined);
         self.serial_maxTimeoutsLong = ko.observable(undefined);
+        self.serial_capAutoreportTemp = ko.observable(undefined);
+        self.serial_capBusyProtocol = ko.observable(undefined);
 
         self.folder_uploads = ko.observable(undefined);
         self.folder_timelapse = ko.observable(undefined);

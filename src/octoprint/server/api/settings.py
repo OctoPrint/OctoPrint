@@ -162,7 +162,9 @@ def getSettings():
 			"supportResendsWithoutOk": s.getBoolean(["serial", "supportResendsWithoutOk"]),
 			"maxTimeoutsIdle": s.getInt(["serial", "maxCommunicationTimeouts", "idle"]),
 			"maxTimeoutsPrinting": s.getInt(["serial", "maxCommunicationTimeouts", "printing"]),
-			"maxTimeoutsLong": s.getInt(["serial", "maxCommunicationTimeouts", "long"])
+			"maxTimeoutsLong": s.getInt(["serial", "maxCommunicationTimeouts", "long"]),
+			"capAutoreportTemp": s.getBoolean(["serial", "capabilities", "autoreport_temp"]),
+			"capBusyProtocol": s.getBoolean(["serial", "capabilities", "busy_protocol"])
 		},
 		"folder": {
 			"uploads": s.getBaseFolder("uploads"),
@@ -389,6 +391,8 @@ def _saveSettings(data):
 		if "maxTimeoutsIdle" in data["serial"]: s.setInt(["serial", "maxCommunicationTimeouts", "idle"], data["serial"]["maxTimeoutsIdle"])
 		if "maxTimeoutsPrinting" in data["serial"]: s.setInt(["serial", "maxCommunicationTimeouts", "printing"], data["serial"]["maxTimeoutsPrinting"])
 		if "maxTimeoutsLong" in data["serial"]: s.setInt(["serial", "maxCommunicationTimeouts", "long"], data["serial"]["maxTimeoutsLong"])
+		if "capAutoreportTemp" in data["serial"]: s.setBoolean(["serial", "capabilities", "autoreport_temp"], data["serial"]["capAutoreportTemp"])
+		if "capBusyProtocol" in data["serial"]: s.setBoolean(["serial", "capabilities", "busy_protocol"], data["serial"]["capBusyProtocol"])
 
 		oldLog = s.getBoolean(["serial", "log"])
 		if "log" in data["serial"]: s.setBoolean(["serial", "log"], data["serial"]["log"])

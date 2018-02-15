@@ -333,6 +333,11 @@ class MachineCom(object):
 	STATE_TRANSFERING_FILE = 11
 
 	CAPABILITY_AUTOREPORT_TEMP = "AUTOREPORT_TEMP"
+	CAPABILITY_BUSY_PROTOCOL = "BUSY_PROTOCOL"
+
+	CAPABILITY_SUPPORT_ENABLED = "enabled"
+	CAPABILITY_SUPPORT_DETECTED = "detected"
+	CAPABILITY_SUPPORT_DISABLED = "disabled"
 
 	def __init__(self, port = None, baudrate=None, callbackObject=None, printerProfileManager=None):
 		self._logger = logging.getLogger(__name__)
@@ -408,6 +413,12 @@ class MachineCom(object):
 		self._currentLine = 1
 		self._line_mutex = threading.RLock()
 		self._resendDelta = None
+
+		self._capability_support = {
+			self.CAPABILITY_AUTOREPORT_TEMP: settings().getBoolean(["serial", "capabilities", "autoreport_temp"]),
+			self.CAPABILITY_BUSY_PROTOCOL: settings().getBoolean(["serial", "capabilities", "busy_protocol"])
+		}
+
 		self._lastLines = deque([], 50)
 		self._lastCommError = None
 		self._lastResendNumber = None
@@ -1264,7 +1275,8 @@ class MachineCom(object):
 					self._ok_timeout = get_new_timeout("communicationBusy" if self._busy_protocol_detected else "communication", self._timeout_intervals)
 
 					# make sure the printer sends busy in a small enough interval to match our timeout
-					if not self._busy_protocol_detected:
+					if not self._busy_protocol_detected and self._capability_support.get(self.CAPABILITY_BUSY_PROTOCOL,
+					                                                                     False):
 						self._log("Printer seems to support the busy protocol, adjusting timeouts and setting busy "
 						          "interval accordingly")
 						self._busy_protocol_detected = True
@@ -1528,9 +1540,10 @@ class MachineCom(object):
 						capability, enabled = parsed
 						self._firmware_capabilities[capability] = enabled
 
-						if capability == self.CAPABILITY_AUTOREPORT_TEMP and enabled:
-							self._logger.info("Firmware states that it supports temperature autoreporting")
-							self._set_autoreport_temperature_interval()
+						if self._capability_support.get(capability, False):
+							if capability == self.CAPABILITY_AUTOREPORT_TEMP and enabled:
+								self._logger.info("Firmware states that it supports temperature autoreporting")
+								self._set_autoreport_temperature_interval()
 
 				##~~ SD Card handling
 				elif 'SD init fail' in line or 'volume.init failed' in line or 'openRoot failed' in line:
