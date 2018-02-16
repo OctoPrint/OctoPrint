@@ -454,7 +454,7 @@ This describes actually four hooks:
    the logger ``octoprint.util.comm.command_phases``  to ``DEBUG``, connect to a printer (real or virtual) and take a
    look at your ``octoprint.log`` during serial traffic:
 
-   .. code-block:: plain
+   .. code-block:: none
 
       2018-02-16 18:20:31,213 - octoprint.util.comm.command_phases - DEBUG - phase: queuing | command: T0 | gcode: T | tags: [ api:printer.command, source:api, trigger:printer.commands ]
       2018-02-16 18:20:31,216 - octoprint.util.comm.command_phases - DEBUG - phase: queued | command: M117 Before T! | gcode: M117 | tags: [ api:printer.command, phase:queuing, plugin:multi_gcode_test, source:api, source:rewrite, trigger:printer.commands ]
@@ -515,7 +515,7 @@ This describes actually four hooks:
      * A 2-tuple consisting of a rewritten version of the ``cmd`` and the ``cmd_type``, e.g. ``return "M105", "temperature_poll"``.
        Handlers which wish to rewrite both the command and the command type should use this option.
      * A 3-tuple consisting of a rewritten version of the ``cmd``, the ``cmd_type`` and any additional ``tags`` you might
-       want to attach to the lifecycle of the command, e.g. ``return "M105", "temperature_poll", "my_custom_tag"
+       want to attach to the lifecycle of the command in a set, e.g. ``return "M105", "temperature_poll", {"my_custom_tag"}``
      * **"queuing" phase only**: A list of any of the above to allow for expanding one command into
        many. The following example shows how any queued command could be turned into a sequence of a temperature query,
        line number reset, display of the ``gcode`` on the printer's display and finally the actual command (this example
@@ -558,7 +558,7 @@ This describes actually four hooks:
    :param str gcode: Parsed GCODE command, e.g. ``G0`` or ``M110``, may also be None if no known command could be parsed
    :param str subcode: Parsed subcode of the GCODE command, e.g. ``1`` for ``M80.1``. Will be None if no subcode was provided
        or no command could be parsed.
-   :param set tags: Tags attached to the
+   :param set tags: Tags attached to the command
    :return: None, 1-tuple, 2-tuple or string, see the description above for details.
 
 .. _sec-plugins-hook-comm-protocol-gcode-received:

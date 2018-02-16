@@ -8,7 +8,7 @@ The OctoPrint Logging plugin comes bundled with OctoPrint starting with version 
 It implements the log management functionality that was formerly part of the core application and adds features to
 configure logging levels for sub modules through the included settings dialog.
 
-.. _fig-bundledplugins-pluginmanager-mainscreen:
+.. _fig-bundledplugins-logging-settings:
 .. figure:: ../images/bundledplugins-logging-settings.png
    :align: center
    :alt: Logging plugin
@@ -34,7 +34,7 @@ Retrieve a list of available log files
    Retrieve information regarding all log files currently available and regarding the disk space still available
    in the system on the location the log files are being stored.
 
-   Returns a :ref:`Logfile Retrieve response <sec-api-logs-datamodel-retrieveresponse>`.
+   Returns a :ref:`Logfile Retrieve response <sec-bundledplugins-logging-api-datamodel-retrieveresponse>`.
 
    **Example**
 
