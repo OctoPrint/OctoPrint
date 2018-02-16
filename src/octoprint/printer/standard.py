@@ -126,14 +126,14 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 	#~~ handling of PrinterCallbacks
 
-	def register_callback(self, callback):
+	def register_callback(self, callback, *args, **kwargs):
 		if not isinstance(callback, PrinterCallback):
 			self._logger.warn("Registering an object as printer callback which doesn't implement the PrinterCallback interface")
 
 		self._callbacks.append(callback)
 		self._sendInitialStateUpdate(callback)
 
-	def unregister_callback(self, callback):
+	def unregister_callback(self, callback, *args, **kwargs):
 		if callback in self._callbacks:
 			self._callbacks.remove(callback)
 
@@ -196,7 +196,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 	#~~ PrinterInterface implementation
 
-	def connect(self, port=None, baudrate=None, profile=None):
+	def connect(self, port=None, baudrate=None, profile=None, *args, **kwargs):
 		"""
 		 Connects to the printer. If port and/or baudrate is provided, uses these settings, otherwise autodetection
 		 will be attempted.
@@ -215,7 +215,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 		self._comm = comm.MachineCom(port, baudrate, callbackObject=self, printerProfileManager=self._printerProfileManager)
 
-	def disconnect(self):
+	def disconnect(self, *args, **kwargs):
 		"""
 		 Closes the connection to the printer.
 		"""
@@ -225,7 +225,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		else:
 			eventManager().fire(Events.DISCONNECTED)
 
-	def get_transport(self):
+	def get_transport(self, *args, **kwargs):
 
 		if self._comm is None:
 			return None
@@ -233,13 +233,13 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		return self._comm.getTransport()
 	getTransport = util.deprecated("getTransport has been renamed to get_transport", since="1.2.0-dev-590", includedoc="Replaced by :func:`get_transport`")
 
-	def fake_ack(self):
+	def fake_ack(self, *args, **kwargs):
 		if self._comm is None:
 			return
 
 		self._comm.fakeOk()
 
-	def commands(self, commands):
+	def commands(self, commands, *args, **kwargs):
 		"""
 		Sends one or more gcode commands to the printer.
 		"""
@@ -250,16 +250,18 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			commands = [commands]
 
 		for command in commands:
-			self._comm.sendCommand(command)
+			self._comm.sendCommand(command, tags=kwargs.get("tags", set()) | {"trigger:printer.commands"})
 
-	def script(self, name, context=None, must_be_set=True):
+	def script(self, name, context=None, must_be_set=True, *args, **kwargs):
 		if self._comm is None:
 			return
 
 		if name is None or not name:
 			raise ValueError("name must be set")
 
-		result = self._comm.sendGcodeScript(name, replacements=context)
+		result = self._comm.sendGcodeScript(name,
+		                                    replacements=context,
+		                                    tags=kwargs.get("tags", set()) | {"trigger:printer.script"})
 		if not result and must_be_set:
 			raise UnknownScript(name)
 
@@ -298,9 +300,9 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		else:
 			commands = ["G90", command]
 
-		self.commands(commands)
+		self.commands(commands, tags=kwargs.get("tags", set()) | {"trigger:printer.jog"})
 
-	def home(self, axes):
+	def home(self, axes, *args, **kwargs):
 		if not isinstance(axes, (list, tuple)):
 			if isinstance(axes, (str, unicode)):
 				axes = [axes]
@@ -311,24 +313,26 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		if len(axes) != len(validated_axes):
 			raise ValueError("axes contains invalid axes: {axes}".format(axes=axes))
 
-		self.commands(["G91", "G28 %s" % " ".join(map(lambda x: "%s0" % x.upper(), validated_axes)), "G90"])
+		self.commands(["G91", "G28 %s" % " ".join(map(lambda x: "%s0" % x.upper(), validated_axes)), "G90"],
+		              tags=kwargs.get("tags", set) | {"trigger:printer.home"})
 
-	def extrude(self, amount):
+	def extrude(self, amount, *args, **kwargs):
 		if not isinstance(amount, (int, long, float)):
 			raise ValueError("amount must be a valid number: {amount}".format(amount=amount))
 
 		printer_profile = self._printerProfileManager.get_current_or_default()
 		extrusion_speed = printer_profile["axes"]["e"]["speed"]
-		self.commands(["G91", "G1 E%s F%d" % (amount, extrusion_speed), "G90"])
+		self.commands(["G91", "G1 E%s F%d" % (amount, extrusion_speed), "G90"],
+		              tags=kwargs.get("tags", set()) | {"trigger:printer.extrude"})
 
-	def change_tool(self, tool):
+	def change_tool(self, tool, *args, **kwargs):
 		if not PrinterInterface.valid_tool_regex.match(tool):
 			raise ValueError("tool must match \"tool[0-9]+\": {tool}".format(tool=tool))
 
 		tool_num = int(tool[len("tool"):])
-		self.commands("T%d" % tool_num)
+		self.commands("T%d" % tool_num, tags=kwargs.get("tags", set()) | {"trigger:printer.change_tool"})
 
-	def set_temperature(self, heater, value):
+	def set_temperature(self, heater, value, *args, **kwargs):
 		if not PrinterInterface.valid_heater_regex.match(heater):
 			raise ValueError("heater must match \"tool[0-9]+\" or \"bed\": {heater}".format(heater=heater))
 
@@ -341,14 +345,17 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			shared_nozzle = printer_profile["extruder"]["sharedNozzle"]
 			if extruder_count > 1 and not shared_nozzle:
 				toolNum = int(heater[len("tool"):])
-				self.commands("M104 T{} S{}".format(toolNum, value))
+				self.commands("M104 T{} S{}".format(toolNum, value),
+				              tags=kwargs.get("tags", set()) | {"trigger:printer.set_temperature"})
 			else:
-				self.commands("M104 S{}".format(value))
+				self.commands("M104 S{}".format(value),
+				              tags=kwargs.get("tags", set()) | {"trigger:printer.set_temperature"})
 
 		elif heater == "bed":
-			self.commands("M140 S{}".format(value))
+			self.commands("M140 S{}".format(value),
+			              tags=kwargs.get("tags", set()) | {"trigger:printer.set_temperature"})
 
-	def set_temperature_offset(self, offsets=None):
+	def set_temperature_offset(self, offsets=None, *args, **kwargs):
 		if offsets is None:
 			offsets = dict()
 
@@ -381,15 +388,17 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 		return factor
 
-	def feed_rate(self, factor):
+	def feed_rate(self, factor, *args, **kwargs):
 		factor = self._convert_rate_value(factor, min=50, max=200)
-		self.commands("M220 S%d" % factor)
+		self.commands("M220 S%d" % factor,
+		              tags=kwargs.get("tags", set()) | {"trigger:printer.feed_rate"})
 
-	def flow_rate(self, factor):
+	def flow_rate(self, factor, *args, **kwargs):
 		factor = self._convert_rate_value(factor, min=75, max=125)
-		self.commands("M221 S%d" % factor)
+		self.commands("M221 S%d" % factor,
+		              tags=kwargs.get("tags", set()) | {"trigger:printer.flow_rate"})
 
-	def select_file(self, path, sd, printAfterSelect=False, pos=None):
+	def select_file(self, path, sd, printAfterSelect=False, pos=None, *args, **kwargs):
 		if self._comm is None or (self._comm.isBusy() or self._comm.isStreaming()):
 			self._logger.info("Cannot load file: printer not connected or currently busy")
 			return
@@ -408,11 +417,12 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 		self._printAfterSelect = printAfterSelect
 		self._posAfterSelect = pos
-		self._comm.selectFile("/" + path if sd else path, sd)
+		self._comm.selectFile("/" + path if sd else path, sd,
+		                      tags=kwargs.get("tags", set()) | {"trigger:printer.select_file"})
 		self._updateProgressData()
 		self._setCurrentZ(None)
 
-	def unselect_file(self):
+	def unselect_file(self, *args, **kwargs):
 		if self._comm is not None and (self._comm.isBusy() or self._comm.isStreaming()):
 			return
 
@@ -430,7 +440,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 		return self._comm.getFilePosition()
 
-	def start_print(self, pos=None):
+	def start_print(self, pos=None, *args, **kwargs):
 		"""
 		 Starts the currently loaded print job.
 		 Only starts if the printer is connected and operational, not currently printing and a printjob is loaded
@@ -463,9 +473,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		self._lastProgressReport = None
 		self._updateProgressData()
 		self._setCurrentZ(None)
-		self._comm.startPrint(pos=pos)
+		self._comm.startPrint(pos=pos,
+		                      tags=kwargs.get("tags", set()) | {"trigger:printer.start_print"})
 
-	def pause_print(self):
+	def pause_print(self, *args, **kwargs):
 		"""
 		Pause the current printjob.
 		"""
@@ -475,9 +486,9 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		if self._comm.isPaused():
 			return
 
-		self._comm.setPause(True)
+		self._comm.setPause(True, tags=kwargs.get("tags", set()) | {"trigger:printer.pause_print"})
 
-	def resume_print(self):
+	def resume_print(self, *args, **kwargs):
 		"""
 		Resume the current printjob.
 		"""
@@ -487,9 +498,9 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		if not self._comm.isPaused():
 			return
 
-		self._comm.setPause(False)
+		self._comm.setPause(False, tags=kwargs.get("tags", set()) | {"trigger:printer.resume_print"})
 
-	def cancel_print(self):
+	def cancel_print(self, *args, **kwargs):
 		"""
 		 Cancel the current printjob.
 		"""
@@ -498,28 +509,28 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 		# tell comm layer to cancel - will also trigger our cancelled handler
 		# for further processing
-		self._comm.cancelPrint()
+		self._comm.cancelPrint(tags=kwargs.get("tags", set()) | {"trigger:printer.cancel_print"})
 
-	def get_state_string(self, state=None):
+	def get_state_string(self, state=None, *args, **kwargs):
 		if self._comm is None:
 			return "Offline"
 		else:
 			return self._comm.getStateString(state=state)
 
-	def get_state_id(self, state=None):
+	def get_state_id(self, state=None, *args, **kwargs):
 		if self._comm is None:
 			return "OFFLINE"
 		else:
 			return self._comm.getStateId(state=state)
 
-	def get_current_data(self):
+	def get_current_data(self, *args, **kwargs):
 		return self._stateMonitor.get_current_data()
 
-	def get_current_job(self):
+	def get_current_job(self, *args, **kwargs):
 		currentData = self._stateMonitor.get_current_data()
 		return currentData["job"]
 
-	def get_current_temperatures(self):
+	def get_current_temperatures(self, *args, **kwargs):
 		if self._comm is not None:
 			offsets = self._comm.getOffsets()
 		else:
@@ -542,10 +553,10 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 		return result
 
-	def get_temperature_history(self):
+	def get_temperature_history(self, *args, **kwargs):
 		return self._temps
 
-	def get_current_connection(self):
+	def get_current_connection(self, *args, **kwargs):
 		if self._comm is None:
 			return "Closed", None, None, None
 
@@ -553,25 +564,25 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		printer_profile = self._printerProfileManager.get_current_or_default()
 		return self._comm.getStateString(), port, baudrate, printer_profile
 
-	def is_closed_or_error(self):
+	def is_closed_or_error(self, *args, **kwargs):
 		return self._comm is None or self._comm.isClosedOrError()
 
-	def is_operational(self):
+	def is_operational(self, *args, **kwargs):
 		return self._comm is not None and self._comm.isOperational()
 
-	def is_printing(self):
+	def is_printing(self, *args, **kwargs):
 		return self._comm is not None and self._comm.isPrinting()
 
-	def is_paused(self):
+	def is_paused(self, *args, **kwargs):
 		return self._comm is not None and self._comm.isPaused()
 
-	def is_error(self):
+	def is_error(self, *args, **kwargs):
 		return self._comm is not None and self._comm.isError()
 
-	def is_ready(self):
+	def is_ready(self, *args, **kwargs):
 		return self.is_operational() and not self.is_printing() and not self._comm.isStreaming()
 
-	def is_sd_ready(self):
+	def is_sd_ready(self, *args, **kwargs):
 		if not settings().getBoolean(["feature", "sdSupport"]) or self._comm is None:
 			return False
 		else:
@@ -579,12 +590,12 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 
 	#~~ sd file handling
 
-	def get_sd_files(self):
+	def get_sd_files(self, *args, **kwargs):
 		if self._comm is None or not self._comm.isSdReady():
 			return []
 		return map(lambda x: (x[0][1:], x[1]), self._comm.getSdFiles())
 
-	def add_sd_file(self, filename, absolutePath, on_success=None, on_failure=None):
+	def add_sd_file(self, filename, absolutePath, on_success=None, on_failure=None, *args, **kwargs):
 		if not self._comm or self._comm.isBusy() or not self._comm.isSdReady():
 			self._logger.error("No connection to printer or printer is busy")
 			return
@@ -604,26 +615,28 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 			# probably something else added through a plugin, use it's basename as-is
 			remoteName = os.path.basename(filename)
 		self._timeEstimationData = TimeEstimationHelper()
-		self._comm.startFileTransfer(absolutePath, filename, "/" + remoteName, special=not valid_file_type(filename, "gcode"))
+		self._comm.startFileTransfer(absolutePath, filename, "/" + remoteName,
+		                             special=not valid_file_type(filename, "gcode"),
+		                             tags=kwargs.get("tags", set()) | {"trigger:printer.add_sd_file"})
 
 		return remoteName
 
-	def delete_sd_file(self, filename):
+	def delete_sd_file(self, filename, *args, **kwargs):
 		if not self._comm or not self._comm.isSdReady():
 			return
-		self._comm.deleteSdFile("/" + filename)
+		self._comm.deleteSdFile("/" + filename, tags=kwargs.get("tags", set()) | {"trigger:printer.delete_sd_file"})
 
-	def init_sd_card(self):
+	def init_sd_card(self, *args, **kwargs):
 		if not self._comm or self._comm.isSdReady():
 			return
-		self._comm.initSdCard()
+		self._comm.initSdCard(tags=kwargs.get("tags", set()) | {"trigger:printer.init_sd_card"})
 
-	def release_sd_card(self):
+	def release_sd_card(self, *args, **kwargs):
 		if not self._comm or not self._comm.isSdReady():
 			return
-		self._comm.releaseSdCard()
+		self._comm.releaseSdCard(tags=kwargs.get("tags", set()) | {"trigger:printer.release_sd_card"})
 
-	def refresh_sd_files(self, blocking=False):
+	def refresh_sd_files(self, blocking=False, *args, **kwargs):
 		"""
 		Refreshes the list of file stored on the SD card attached to printer (if available and printer communication
 		available). Optional blocking parameter allows making the method block (max 10s) until the file list has been
@@ -632,9 +645,9 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		if not self._comm or not self._comm.isSdReady():
 			return
 		self._sdFilelistAvailable.clear()
-		self._comm.refreshSdFiles()
+		self._comm.refreshSdFiles(tags=kwargs.get("tags", set()) | {"trigger:printer.refresh_sd_files"})
 		if blocking:
-			self._sdFilelistAvailable.wait(10000)
+			self._sdFilelistAvailable.wait(kwargs.get("timeout", 10000))
 
 	#~~ state monitoring
 

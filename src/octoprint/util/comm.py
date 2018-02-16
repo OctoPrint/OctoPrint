@@ -342,6 +342,7 @@ class MachineCom(object):
 	def __init__(self, port = None, baudrate=None, callbackObject=None, printerProfileManager=None):
 		self._logger = logging.getLogger(__name__)
 		self._serialLogger = logging.getLogger("SERIAL")
+		self._phaseLogger = logging.getLogger(__name__ + ".command_phases")
 
 		if port == None:
 			port = settings().get(["serial", "port"])
@@ -787,7 +788,7 @@ class MachineCom(object):
 	def fakeOk(self):
 		self._handle_ok()
 
-	def sendCommand(self, cmd, cmd_type=None, processed=False, force=False, on_sent=None):
+	def sendCommand(self, cmd, cmd_type=None, processed=False, force=False, on_sent=None, tags=None):
 		cmd = to_unicode(cmd, errors="replace")
 		if not processed:
 			cmd = process_gcode_line(cmd)
@@ -796,13 +797,13 @@ class MachineCom(object):
 
 		if self.isPrinting() and not self.isSdFileSelected():
 			try:
-				self._command_queue.put((cmd, cmd_type, on_sent), item_type=cmd_type)
+				self._command_queue.put((cmd, cmd_type, on_sent, tags), item_type=cmd_type)
 				return True
 			except TypeAlreadyInQueue as e:
 				self._logger.debug("Type already in command queue: " + e.type)
 				return False
 		elif self.isOperational() or force:
-			return self._sendCommand(cmd, cmd_type=cmd_type, on_sent=on_sent)
+			return self._sendCommand(cmd, cmd_type=cmd_type, on_sent=on_sent, tags=tags)
 
 	def _getGcodeScript(self, scriptName, replacements=None):
 		context = dict()
@@ -870,13 +871,16 @@ class MachineCom(object):
 		                  scriptLines))
 
 
-	def sendGcodeScript(self, scriptName, replacements=None):
+	def sendGcodeScript(self, scriptName, replacements=None, tags=None):
+		if tags is None:
+			tags = set()
+
 		scriptLines = self._getGcodeScript(scriptName, replacements=replacements)
 		for line in scriptLines:
-			self.sendCommand(line)
+			self.sendCommand(line, tags=tags | {"trigger:comm.send_gcode_script", "source:script", "script:{}".format(scriptName)})
 		return "\n".join(scriptLines)
 
-	def startPrint(self, pos=None):
+	def startPrint(self, pos=None, tags=None):
 		if not self.isOperational() or self.isPrinting():
 			return
 
@@ -888,13 +892,16 @@ class MachineCom(object):
 		self._pauseWaitStartTime = 0
 		self._pauseWaitTimeLost = 0.0
 
+		if tags is None:
+			tags = set()
+
 		try:
 			with self._jobLock:
 				self._currentFile.start()
 
 				self._changeState(self.STATE_PRINTING)
 
-				self.resetLineNumbers()
+				self.resetLineNumbers(tags={"trigger:comm.start_print"})
 
 				self._callback.on_comm_print_job_started()
 
@@ -904,14 +911,15 @@ class MachineCom(object):
 
 					# make sure to ignore the "file selected" later on, otherwise we'll reset our progress data
 					self._ignore_select = True
-					self.sendCommand("M23 {filename}".format(filename=self._currentFile.getFilename()))
+					self.sendCommand("M23 {filename}".format(filename=self._currentFile.getFilename()),
+					                 tags=tags | {"trigger:comm.start_print",})
 					if pos is not None and isinstance(pos, int) and pos > 0:
 						self._currentFile.setFilepos(pos)
-						self.sendCommand("M26 S{}".format(pos))
+						self.sendCommand("M26 S{}".format(pos), tags=tags | {"trigger:comm.start_print",})
 					else:
 						self._currentFile.setFilepos(0)
 
-					self.sendCommand("M24")
+					self.sendCommand("M24", tags=tags | {"trigger:comm.start_print",})
 
 					self._sd_status_timer = RepeatedTimer(self._timeout_intervals.get("sdStatus", 1.0), self._poll_sd_status, run_first=True)
 					self._sd_status_timer.start()
@@ -921,7 +929,7 @@ class MachineCom(object):
 
 					line = self._getNext()
 					if line is not None:
-						self.sendCommand(line)
+						self.sendCommand(line, tags={"trigger:comm.start_print", "source:file"})
 
 				# now make sure we actually do something, up until now we only filled up the queue
 				self._sendFromQueue()
@@ -931,13 +939,16 @@ class MachineCom(object):
 			self._changeState(self.STATE_ERROR)
 			eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
 
-	def startFileTransfer(self, filename, localFilename, remoteFilename, special=False):
+	def startFileTransfer(self, filename, localFilename, remoteFilename, special=False, tags=None):
 		if not self.isOperational() or self.isBusy():
 			self._logger.info("Printer is not operational or busy")
 			return
 
+		if tags is None:
+			tags = set()
+
 		with self._jobLock:
-			self.resetLineNumbers()
+			self.resetLineNumbers(tags={"trigger:comm.start_file_transfer"})
 
 			if special:
 				self._currentFile = SpecialStreamingGcodeFileInformation(filename, localFilename, remoteFilename)
@@ -945,22 +956,25 @@ class MachineCom(object):
 				self._currentFile = StreamingGcodeFileInformation(filename, localFilename, remoteFilename)
 			self._currentFile.start()
 
-			self.sendCommand("M28 %s" % remoteFilename)
+			self.sendCommand("M28 %s" % remoteFilename, tags=tags | {"trigger:comm.start_file_transfer",})
 			eventManager().fire(Events.TRANSFER_STARTED, {"local": localFilename, "remote": remoteFilename})
 			self._callback.on_comm_file_transfer_started(remoteFilename, self._currentFile.getFilesize())
 
-	def cancelFileTransfer(self):
+	def cancelFileTransfer(self, tags=None):
 		if not self.isOperational() or not self.isStreaming():
 			self._logger.info("Printer is not operational or not streaming")
 			return
 
-		self._finishFileTransfer(failed=True)
+		self._finishFileTransfer(failed=True, tags=tags)
 
-	def _finishFileTransfer(self, failed=False):
+	def _finishFileTransfer(self, failed=False, tags=None):
+		if tags is None:
+			tags = set()
+
 		with self._jobLock:
 			remote = self._currentFile.getRemoteFilename()
 
-			self._sendCommand("M29")
+			self._sendCommand("M29", tags=tags | {"trigger:comm.finish_file_transfer",})
 			if failed:
 				self.deleteSdFile(remote)
 
@@ -980,11 +994,14 @@ class MachineCom(object):
 				self._callback.on_comm_file_transfer_done(remote)
 				eventManager().fire(Events.TRANSFER_DONE, payload)
 
-			self.refreshSdFiles()
+			self.refreshSdFiles(tags={"trigger:comm.finish_file_transfer",})
 
-	def selectFile(self, filename, sd):
+	def selectFile(self, filename, sd, tags=None):
 		if self.isBusy():
 			return
+
+		if tags is None:
+			tags = set()
 
 		if sd:
 			if not self.isOperational():
@@ -995,7 +1012,7 @@ class MachineCom(object):
 				filename = filename[1:]
 
 			self._sdFileToSelect = filename
-			self.sendCommand("M23 %s" % filename)
+			self.sendCommand("M23 %s" % filename, tags=tags | {"trigger:comm.select_file",})
 		else:
 			self._currentFile = PrintingGcodeFileInformation(filename, offsets_callback=self.getOffsets, current_tool_callback=self.getCurrentTool)
 			self._callback.on_comm_file_selected(filename, self._currentFile.getFilesize(), False)
@@ -1011,7 +1028,7 @@ class MachineCom(object):
 		self._recordFilePosition()
 		self._callback.on_comm_print_job_cancelled()
 
-	def cancelPrint(self, firmware_error=None, disable_log_position=False):
+	def cancelPrint(self, firmware_error=None, disable_log_position=False, tags=None):
 		if not self.isOperational():
 			return
 
@@ -1024,20 +1041,23 @@ class MachineCom(object):
 			self.cancelFileTransfer()
 			return
 
+		if tags is None:
+			tags = set()
+
 		def _on_M400_sent():
 			# we don't call on_print_job_cancelled on our callback here
 			# because we do this only after our M114 has been answered
 			# by the firmware
 			self._record_cancel_data = True
-			self.sendCommand("M114")
+			self.sendCommand("M114", tags=tags | {"trigger:comm.cancel", "trigger:record_position"})
 
 		with self._jobLock:
 			self._changeState(self.STATE_OPERATIONAL)
 
 			if self.isSdFileSelected():
-				self.sendCommand("M25")    # pause print
-				self.sendCommand("M27")    # get current byte position in file
-				self.sendCommand("M26 S0") # reset position in file to byte 0
+				self.sendCommand("M25", tags=tags | {"trigger:comm.cancel",})    # pause print
+				self.sendCommand("M27", tags=tags | {"trigger:comm.cancel",})    # get current byte position in file
+				self.sendCommand("M26 S0", tags=tags | {"trigger:comm.cancel",}) # reset position in file to byte 0
 				if self._sd_status_timer is not None:
 					try:
 						self._sd_status_timer.cancel()
@@ -1045,19 +1065,22 @@ class MachineCom(object):
 						pass
 
 			if self._log_position_on_cancel and not disable_log_position:
-				self.sendCommand("M400", on_sent=_on_M400_sent)
+				self.sendCommand("M400", on_sent=_on_M400_sent, tags=tags | {"trigger:comm.cancel", "trigger:record_position"})
 			else:
 				self._cancel_preparation_done()
 
 	def _pause_preparation_done(self):
 		self._callback.on_comm_print_job_paused()
 
-	def setPause(self, pause):
+	def setPause(self, pause, tags=None):
 		if self.isStreaming():
 			return
 
 		if not self._currentFile:
 			return
+
+		if tags is None:
+			tags = set()
 
 		with self._jobLock:
 			if not pause and self.isPaused():
@@ -1069,12 +1092,17 @@ class MachineCom(object):
 				self._callback.on_comm_print_job_resumed()
 
 				if self.isSdFileSelected():
-					self.sendCommand("M24")
-					self.sendCommand("M27")
+					self.sendCommand("M24", tags=tags | {"trigger:comm.set_pause","trigger:resume"})
+					self.sendCommand("M27", tags=tags | {"trigger:comm.set_pause", "trigger:resume"})
 				else:
 					line = self._getNext()
 					if line is not None:
-						self.sendCommand(line)
+						if not tags:
+							tags_to_use = set()
+						else:
+							tags_to_use = set(tags)
+						tags_to_use.add("file")
+						self.sendCommand(line, tags=tags | {"trigger:comm.set_pause", "trigger:resume", "source:file"})
 
 				# now make sure we actually do something, up until now we only filled up the queue
 				self._sendFromQueue()
@@ -1085,26 +1113,29 @@ class MachineCom(object):
 
 				self._changeState(self.STATE_PAUSED)
 				if self.isSdFileSelected():
-					self.sendCommand("M25") # pause print
+					self.sendCommand("M25", tags=tags | {"trigger:comm.set_pause", "trigger:pause"}) # pause print
 
 				def _on_M400_sent():
 					# we don't call on_print_job_paused on our callback here
 					# because we do this only after our M114 has been answered
 					# by the firmware
 					self._record_pause_data = True
-					self.sendCommand("M114")
+					self.sendCommand("M114", tags=tags | {"trigger:comm.set_pause", "trigger:pause", "trigger:record_position"})
 
 				if self._log_position_on_pause:
-					self.sendCommand("M400", on_sent=_on_M400_sent)
+					self.sendCommand("M400", on_sent=_on_M400_sent, tags=tags | {"trigger:comm.set_pause", "trigger:pause", "trigger:record_position"})
 				else:
 					self._pause_preparation_done()
 
 	def getSdFiles(self):
 		return self._sdFiles
 
-	def deleteSdFile(self, filename):
+	def deleteSdFile(self, filename, tags=None):
 		if not self._sdEnabled:
 			return
+
+		if tags is None:
+			tags = set()
 
 		if not self.isOperational() or (self.isBusy() and
 				isinstance(self._currentFile, PrintingSdFileInformation) and
@@ -1112,32 +1143,38 @@ class MachineCom(object):
 			# do not delete a file from sd we are currently printing from
 			return
 
-		self.sendCommand("M30 %s" % filename.lower())
+		self.sendCommand("M30 %s" % filename.lower(), tags=tags | {"trigger:comm.delete_sd_file",})
 		self.refreshSdFiles()
 
-	def refreshSdFiles(self):
+	def refreshSdFiles(self, tags=None):
 		if not self._sdEnabled:
 			return
 
 		if not self.isOperational() or self.isBusy():
 			return
 
-		self.sendCommand("M20")
+		if tags is None:
+			tags = set()
 
-	def initSdCard(self):
+		self.sendCommand("M20", tags=tags | {"trigger:comm.refresh_sd_files",})
+
+	def initSdCard(self, tags=None):
 		if not self._sdEnabled:
 			return
 
 		if not self.isOperational():
 			return
 
-		self.sendCommand("M21")
+		if tags is None:
+			tags = set()
+
+		self.sendCommand("M21", tags=tags | {"trigger:comm.init_sd_card"})
 		if self._sdAlwaysAvailable:
 			self._sdAvailable = True
 			self.refreshSdFiles()
 			self._callback.on_comm_sd_state_change(self._sdAvailable)
 
-	def releaseSdCard(self):
+	def releaseSdCard(self, tags=None):
 		if not self._sdEnabled:
 			return
 
@@ -1145,22 +1182,31 @@ class MachineCom(object):
 			# do not release the sd card if we are currently printing from it
 			return
 
-		self.sendCommand("M22")
+		if tags is None:
+			tags = set()
+
+		self.sendCommand("M22", tags=tags | {"trigger:comm.release_sd_card",})
 		self._sdAvailable = False
 		self._sdFiles = []
 
 		self._callback.on_comm_sd_state_change(self._sdAvailable)
 		self._callback.on_comm_sd_files(self._sdFiles)
 
-	def sayHello(self):
-		self.sendCommand(self._hello_command, force=True)
+	def sayHello(self, tags=None):
+		if tags is None:
+			tags = set()
+
+		self.sendCommand(self._hello_command, force=True, tags=tags | {"trigger:comm.say_hello",})
 		self._clear_to_send.set()
 
-	def resetLineNumbers(self, number=0):
+	def resetLineNumbers(self, number=0, tags=None):
 		if not self.isOperational():
 			return
 
-		self.sendCommand("M110 N%d" % number)
+		if tags is None:
+			tags = set()
+
+		self.sendCommand("M110 N%d" % number, tags=tags | {"trigger:comm.reset_line_numbers",})
 
 	##~~ record aborted file positions
 
@@ -1640,7 +1686,7 @@ class MachineCom(object):
 							self._baudrateDetectRetry -= 1
 							self._serial.write('\n')
 							self._log("Baudrate test retry: %d" % (self._baudrateDetectRetry))
-							self.sayHello()
+							self.sayHello(tags="trigger:baudrate_detection")
 						elif len(self._baudrateDetectList) > 0:
 							baudrate = self._baudrateDetectList.pop(0)
 							try:
@@ -1651,7 +1697,7 @@ class MachineCom(object):
 								self._baudrateDetectRetry = 5
 								self._timeout = get_new_timeout("communicationBusy" if self._busy_protocol_detected else "communication", self._timeout_intervals)
 								self._serial.write('\n')
-								self.sayHello()
+								self.sayHello(tags="trigger:baudrate_detection")
 							except:
 								self._log("Unexpected error while setting baudrate {}: {}".format(baudrate, get_exception_string()))
 								self._logger.exception("Unexpceted error while setting baudrate {}".format(baudrate))
@@ -1792,7 +1838,7 @@ class MachineCom(object):
 			message = "Communication timeout while printing, trying to trigger response from printer."
 			self._logger.info(message)
 			self._log(message + " " + general_message)
-			if self._sendCommand("M105", cmd_type="temperature"):
+			if self._sendCommand("M105", cmd_type="temperature", tags={"trigger:comm.handle_timeout"}):
 				self._clear_to_send.set()
 
 		elif self._clear_to_send.blocked():
@@ -1873,7 +1919,7 @@ class MachineCom(object):
 		"""
 
 		if self.isOperational() and not self._temperature_autoreporting and not self._connection_closing and not self.isStreaming() and not self._long_running_command and not self._heating and not self._dwelling_until and not self._manualStreaming:
-			self.sendCommand("M105", cmd_type="temperature_poll")
+			self.sendCommand("M105", cmd_type="temperature_poll", tags={"trigger:comm.poll_temperature"})
 
 	def _poll_sd_status(self):
 		"""
@@ -1884,7 +1930,7 @@ class MachineCom(object):
 		"""
 
 		if self.isOperational() and not self._connection_closing and self.isSdPrinting() and not self._long_running_command and not self._dwelling_until and not self._heating:
-			self.sendCommand("M27", cmd_type="sd_status_poll")
+			self.sendCommand("M27", cmd_type="sd_status_poll", tags={"trigger:comm.poll_sd_status"})
 
 	def _set_autoreport_temperature_interval(self, interval=None):
 		if interval is None:
@@ -1892,7 +1938,7 @@ class MachineCom(object):
 				interval = int(self._timeout_intervals.get("temperatureAutoreport", 2))
 			except:
 				interval = 2
-		self.sendCommand("M155 S{}".format(interval))
+		self.sendCommand("M155 S{}".format(interval), tags={"trigger:comm.set_autoreport_temperature_interval"})
 
 	def _set_busy_protocol_interval(self, interval=None):
 		if interval is None:
@@ -1900,7 +1946,7 @@ class MachineCom(object):
 				interval = max(int(self._timeout_intervals.get("communicationBusy", 3)) - 1, 1)
 			except:
 				interval = 2
-		self.sendCommand("M113 S{}".format(interval))
+		self.sendCommand("M113 S{}".format(interval), tags={"trigger:comm.set_busy_protocol_interval"})
 
 	def _onConnected(self):
 		self._serial.timeout = settings().getFloat(["serial", "timeout", "communication"])
@@ -1909,21 +1955,20 @@ class MachineCom(object):
 
 		self._changeState(self.STATE_OPERATIONAL)
 
-		self.resetLineNumbers()
-		if self._firmware_detection:
-			self.sendCommand("M115")
+		self.resetLineNumbers(tags={"trigger:comm.on_connected",})
+		self.sendCommand("M115", tags={"trigger:comm.on_connected",})
 
 		if self._sdAvailable:
-			self.refreshSdFiles()
+			self.refreshSdFiles(tags={"trigger:comm.on_connected",})
 		else:
-			self.initSdCard()
+			self.initSdCard(tags={"trigger:comm.on_connected"})
 
 		payload = dict(port=self._port, baudrate=self._baudrate)
 		eventManager().fire(Events.CONNECTED, payload)
 		self.sendGcodeScript("afterPrinterConnected", replacements=dict(event=payload))
 
 	def _onExternalReset(self):
-		self.resetLineNumbers()
+		self.resetLineNumbers(tags={"trigger:comm.on_external_reset"})
 
 		if self._temperature_autoreporting:
 			self._set_autoreport_temperature_interval()
@@ -1965,17 +2010,18 @@ class MachineCom(object):
 
 			try:
 				if isinstance(entry, tuple):
-					if not len(entry) == 3:
+					if not len(entry) == 4:
 						# something with that entry is broken, ignore it and fetch
 						# the next one
 						continue
-					cmd, cmd_type, callback = entry
+					cmd, cmd_type, callback, tags = entry
 				else:
 					cmd = entry
 					cmd_type = None
 					callback = None
+					tags = None
 
-				if self._sendCommand(cmd, cmd_type=cmd_type, on_sent=callback):
+				if self._sendCommand(cmd, cmd_type=cmd_type, on_sent=callback, tags=tags):
 					# we actually did add this cmd to the send queue, so let's
 					# return, we are done here
 					return True
@@ -2202,7 +2248,7 @@ class MachineCom(object):
 					# end of file, return false
 					return False
 
-				result = self._sendCommand(line)
+				result = self._sendCommand(line, tags={"source:file"})
 				self._callback.on_comm_progress()
 				if result:
 					# line sent, return true
@@ -2327,7 +2373,7 @@ class MachineCom(object):
 
 			return result
 
-	def _sendCommand(self, cmd, cmd_type=None, on_sent=None):
+	def _sendCommand(self, cmd, cmd_type=None, on_sent=None, tags=None):
 		# Make sure we are only handling one sending job at a time
 		with self._sendingLock:
 			if self._serial is None:
@@ -2337,16 +2383,16 @@ class MachineCom(object):
 
 			if not self.isStreaming():
 				# trigger the "queuing" phase only if we are not streaming to sd right now
-				results = self._process_command_phase("queuing", cmd, command_type=cmd_type, gcode=gcode, subcode=subcode)
+				results = self._process_command_phase("queuing", cmd, command_type=cmd_type, gcode=gcode, subcode=subcode, tags=tags)
 
 				if not results:
 					# command is no more, return
 					return False
 			else:
-				results = [(cmd, cmd_type, gcode, subcode)]
+				results = [(cmd, cmd_type, gcode, subcode, tags)]
 
 			# process helper
-			def process(cmd, cmd_type, gcode, subcode, on_sent=None):
+			def process(cmd, cmd_type, gcode, subcode, on_sent=None, tags=None):
 				if cmd is None:
 					# no command, next entry
 					return False
@@ -2356,10 +2402,10 @@ class MachineCom(object):
 					eventManager().fire(gcodeToEvent[gcode])
 
 				# actually enqueue the command for sending
-				if self._enqueue_for_sending(cmd, command_type=cmd_type, on_sent=on_sent):
+				if self._enqueue_for_sending(cmd, command_type=cmd_type, on_sent=on_sent, tags=tags):
 					if not self.isStreaming():
 						# trigger the "queued" phase only if we are not streaming to sd right now
-						self._process_command_phase("queued", cmd, cmd_type, gcode=gcode, subcode=subcode)
+						self._process_command_phase("queued", cmd, cmd_type, gcode=gcode, subcode=subcode, tags=tags)
 					return True
 				else:
 					return False
@@ -2376,18 +2422,18 @@ class MachineCom(object):
 			enqueued_something = False
 
 			# process all but the last ...
-			for (cmd, cmd_type, gcode, subcode) in results:
-				enqueued_something = process(cmd, cmd_type, gcode, subcode) or enqueued_something
+			for (cmd, cmd_type, gcode, subcode, tags) in results:
+				enqueued_something = process(cmd, cmd_type, gcode, subcode, tags=tags) or enqueued_something
 
 			# ... and then process the last one with the on_sent callback attached
-			cmd, cmd_type, gcode, subcode = last_command
-			enqueued_something = process(cmd, cmd_type, gcode, subcode, on_sent=on_sent) or enqueued_something
+			cmd, cmd_type, gcode, subcode, tags = last_command
+			enqueued_something = process(cmd, cmd_type, gcode, subcode, on_sent=on_sent, tags=tags) or enqueued_something
 
 			return enqueued_something
 
 	##~~ send loop handling
 
-	def _enqueue_for_sending(self, command, linenumber=None, command_type=None, on_sent=None, resend=False):
+	def _enqueue_for_sending(self, command, linenumber=None, command_type=None, on_sent=None, resend=False, tags=None):
 		"""
 		Enqueues a command and optional linenumber to use for it in the send queue.
 
@@ -2398,6 +2444,8 @@ class MachineCom(object):
 		    command_type (str): Optional command type, if set and command type is already in the queue the
 		        command won't be enqueued
 		    on_sent (callable): Optional callable to call after command has been sent to printer.
+		    resend (bool): Whether this is a resent command
+		    tags (set of str or None): Tags to attach to this command
 		"""
 
 		try:
@@ -2405,7 +2453,7 @@ class MachineCom(object):
 			if resend:
 				target = "resend"
 
-			self._send_queue.put((command, linenumber, command_type, on_sent, False), item_type=command_type, target=target)
+			self._send_queue.put((command, linenumber, command_type, on_sent, False, tags), item_type=command_type, target=target)
 			return True
 		except TypeAlreadyInQueue as e:
 			self._logger.debug("Type already in send queue: " + e.type)
@@ -2436,7 +2484,7 @@ class MachineCom(object):
 						self._dwelling_until = False
 
 					# fetch command, command type and optional linenumber and sent callback from queue
-					command, linenumber, command_type, on_sent, processed = entry
+					command, linenumber, command_type, on_sent, processed, tags = entry
 
 					# some firmwares (e.g. Smoothie) might support additional in-band communication that will not
 					# stick to the acknowledgement behaviour of GCODE, so we check here if we have a GCODE command
@@ -2451,7 +2499,10 @@ class MachineCom(object):
 					else:
 						if not processed:
 							# trigger "sending" phase if we didn't so far
-							results = self._process_command_phase("sending", command, command_type, gcode=gcode, subcode=subcode)
+							results = self._process_command_phase("sending", command, command_type,
+							                                      gcode=gcode,
+							                                      subcode=subcode,
+							                                      tags=tags)
 
 							if not results:
 								# No, we are not going to send this, that was a last-minute bail.
@@ -2471,7 +2522,7 @@ class MachineCom(object):
 							assert len(results) == 1
 
 							# we only use the first (and only!) entry here
-							command, _, gcode, subcode = results[0]
+							command, _, gcode, subcode, tags = results[0]
 
 						if command.strip() == "":
 							self._logger.info("Refusing to send an empty line to the printer")
@@ -2499,7 +2550,7 @@ class MachineCom(object):
 					if on_sent is not None and callable(on_sent):
 						# we have a sent callback for this specific command, let's execute it now
 						on_sent()
-					self._process_command_phase("sent", command, command_type, gcode=gcode, subcode=subcode)
+					self._process_command_phase("sent", command, command_type, gcode=gcode, subcode=subcode, tags=tags)
 
 					# we only need to use up a clear if the command we just sent was either a gcode command or if we also
 					# require ack's for unknown commands
@@ -2527,10 +2578,28 @@ class MachineCom(object):
 				self._logger.exception("Caught an exception in the send loop")
 		self._log("Closing down send loop")
 
-	def _process_command_phase(self, phase, command, command_type=None, gcode=None, subcode=None):
+	def _log_command_phase(self, phase, command, *args, **kwargs):
+		if self._phaseLogger.isEnabledFor(logging.DEBUG):
+			output_parts = [u"phase: {}".format(phase),
+			                u"command: {}".format(command)]
+
+			if kwargs.get("command_type"):
+				output_parts.append(u"command_type: {}".format(kwargs["command_type"]))
+			if kwargs.get("gcode"):
+				output_parts.append(u"gcode: {}".format(kwargs["gcode"]))
+			if kwargs.get("subcode"):
+				output_parts.append(u"subcode: {}".format(kwargs["subcode"]))
+			if kwargs.get("tags"):
+				output_parts.append(u"tags: [ {} ]".format(", ".join(sorted(kwargs["tags"]))))
+
+			self._phaseLogger.debug(" | ".join(output_parts))
+
+	def _process_command_phase(self, phase, command, command_type=None, gcode=None, subcode=None, tags=None):
 		if gcode is None:
 			gcode, subcode = gcode_and_subcode_for_cmd(command)
-		results = [(command, command_type, gcode, subcode)]
+		results = [(command, command_type, gcode, subcode, tags)]
+
+		self._log_command_phase(phase, command, command_type=command_type, gcode=gcode, subcode=subcode, tags=tags)
 
 		if (self.isStreaming() and self.isPrinting()) or phase not in ("queuing", "queued", "sending", "sent"):
 			return results
@@ -2538,18 +2607,22 @@ class MachineCom(object):
 		# send it through the phase specific handlers provided by plugins
 		for name, hook in self._gcode_hooks[phase].items():
 			new_results = []
-			for command, command_type, gcode, subcode in results:
+			for command, command_type, gcode, subcode, tags in results:
 				try:
-					hook_results = hook(self, phase, command, command_type, gcode, subcode=subcode)
+					hook_results = hook(self, phase, command, command_type, gcode, subcode=subcode, tags=tags)
 				except:
 					self._logger.exception("Error while processing hook {name} for phase {phase} and command {command}:".format(**locals()))
 				else:
-					normalized = _normalize_command_handler_result(command, command_type, gcode, subcode, hook_results)
+					normalized = _normalize_command_handler_result(command, command_type, gcode, subcode, tags,
+					                                               hook_results,
+					                                               tags_to_add={"source:rewrite",
+					                                                            "phase:{}".format(phase),
+					                                                            "plugin:{}".format(name)})
 
 					# make sure we don't allow multi entry results in anything but the queuing phase
 					if not phase in ("queuing",) and len(normalized) > 1:
 						self._logger.error("Error while processing hook {name} for phase {phase} and command {command}: Hook returned multi-entry result for phase {phase} and command {command}. That's not supported, if you need to do multi expansion of commands you need to do this in the queuing phase. Ignoring hook result and sending command as-is.".format(**locals()))
-						new_results.append((command, command_type, gcode, subcode))
+						new_results.append((command, command_type, gcode, subcode, tags))
 					else:
 						new_results += normalized
 			if not new_results:
@@ -2560,15 +2633,19 @@ class MachineCom(object):
 		# if it's a gcode command send it through the specific handler if it exists
 		new_results = []
 		modified = False
-		for command, command_type, gcode, subcode in results:
+		for command, command_type, gcode, subcode, tags in results:
 			if gcode is not None:
 				gcode_handler = "_gcode_" + gcode + "_" + phase
 				if hasattr(self, gcode_handler):
-					handler_results = getattr(self, gcode_handler)(command, cmd_type=command_type, subcode=subcode)
-					new_results += _normalize_command_handler_result(command, command_type, gcode, subcode, handler_results)
+					handler_results = getattr(self, gcode_handler)(command,
+					                                               cmd_type=command_type,
+					                                               subcode=subcode,
+					                                               tags=tags)
+					new_results += _normalize_command_handler_result(command, command_type, gcode, subcode, tags,
+					                                                 handler_results)
 					modified = True
 				else:
-					new_results.append((command, command_type, gcode, subcode))
+					new_results.append((command, command_type, gcode, subcode, tags))
 					modified = True
 		if modified:
 			if not new_results:
@@ -2581,9 +2658,14 @@ class MachineCom(object):
 		command_phase_handler = "_command_phase_" + phase
 		if hasattr(self, command_phase_handler):
 			new_results = []
-			for command, command_type, gcode, subcode in results:
-				handler_results = getattr(self, command_phase_handler)(command, cmd_type=command_type, gcode=gcode, subcode=subcode)
-				new_results += _normalize_command_handler_result(command, command_type, gcode, subcode, handler_results)
+			for command, command_type, gcode, subcode, tags in results:
+				handler_results = getattr(self, command_phase_handler)(command,
+				                                                       cmd_type=command_type,
+				                                                       gcode=gcode,
+				                                                       subcode=subcode,
+				                                                       tags=tags)
+				new_results += _normalize_command_handler_result(command, command_type, gcode, subcode, tags,
+				                                                 handler_results)
 			results = new_results
 
 		# finally return whatever we resulted on
@@ -3670,7 +3752,7 @@ def gcode_and_subcode_for_cmd(cmd):
 	return gcode, values.get("subcode", None)
 
 
-def _normalize_command_handler_result(command, command_type, gcode, subcode, handler_results):
+def _normalize_command_handler_result(command, command_type, gcode, subcode, tags, handler_results, tags_to_add=None):
 	"""
 	Normalizes a command handler result.
 
@@ -3678,14 +3760,15 @@ def _normalize_command_handler_result(command, command_type, gcode, subcode, han
 	entries.
 
 	``None`` results are ignored, the provided ``command``, ``command_type``,
-	``gcode`` and ``subcode`` are returned in that case (as single-entry list with
-	one 4-tuple as entry).
+	``gcode``, ``subcode`` and ``tags`` are returned in that case (as single-entry list with
+	one 5-tuple as entry).
 
 	Single result entries are either:
 
 	  * a single string defining a replacement ``command``
 	  * a 1-tuple defining a replacement ``command``
 	  * a 2-tuple defining a replacement ``command`` and ``command_type``
+	  * a 3-tuple defining a replacement ``command`` and ``command_type`` and additional ``tags`` to set
 
 	A ``command`` that is ``None`` will lead to the entry being ignored for
 	the normalized result.
@@ -3696,26 +3779,32 @@ def _normalize_command_handler_result(command, command_type, gcode, subcode, han
 	be empty in which case the command is to be suppressed.
 
 	Examples:
-	    >>> _normalize_command_handler_result("M105", None, "M105", None, None)
-	    [('M105', None, 'M105', None)]
-	    >>> _normalize_command_handler_result("M105", None, "M105", None, "M110")
-	    [('M110', None, 'M110', None)]
-	    >>> _normalize_command_handler_result("M105", None, "M105", None, ["M110"])
-	    [('M110', None, 'M110', None)]
-	    >>> _normalize_command_handler_result("M105", None, "M105", None, ["M110", "M117 Foobar"])
-	    [('M110', None, 'M110', None), ('M117 Foobar', None, 'M117', None)]
-	    >>> _normalize_command_handler_result("M105", None, "M105", None, [("M110",), "M117 Foobar"])
-	    [('M110', None, 'M110', None), ('M117 Foobar', None, 'M117', None)]
-	    >>> _normalize_command_handler_result("M105", None, "M105", None, [("M110", "lineno_reset"), "M117 Foobar"])
-	    [('M110', 'lineno_reset', 'M110', None), ('M117 Foobar', None, 'M117', None)]
-	    >>> _normalize_command_handler_result("M105", None, "M105", None, [])
+	    >>> _normalize_command_handler_result("M105", None, "M105", None, None, None)
+	    [('M105', None, 'M105', None, None)]
+	    >>> _normalize_command_handler_result("M105", None, "M105", None, None, "M110")
+	    [('M110', None, 'M110', None, None)]
+	    >>> _normalize_command_handler_result("M105", None, "M105", None, None, ["M110"])
+	    [('M110', None, 'M110', None, None)]
+	    >>> _normalize_command_handler_result("M105", None, "M105", None, None, ["M110", "M117 Foobar"])
+	    [('M110', None, 'M110', None, None), ('M117 Foobar', None, 'M117', None, None)]
+	    >>> _normalize_command_handler_result("M105", None, "M105", None, None, [("M110",), "M117 Foobar"])
+	    [('M110', None, 'M110', None, None), ('M117 Foobar', None, 'M117', None, None)]
+	    >>> _normalize_command_handler_result("M105", None, "M105", None, None, [("M110", "lineno_reset"), "M117 Foobar"])
+	    [('M110', 'lineno_reset', 'M110', None, None), ('M117 Foobar', None, 'M117', None, None)]
+	    >>> _normalize_command_handler_result("M105", None, "M105", None, None, [])
 	    []
-	    >>> _normalize_command_handler_result("M105", None, "M105", None, ["M110", None])
-	    [('M110', None, 'M110', None)]
-	    >>> _normalize_command_handler_result("M105", None, "M105", None, [("M110",), (None, "ignored")])
-	    [('M110', None, 'M110', None)]
-	    >>> _normalize_command_handler_result("M105", None, "M105", None, [("M110",), ("M117 Foobar", "display_message"), ("tuple", "of unexpected", "length"), ("M110", "lineno_reset")])
-	    [('M110', None, 'M110', None), ('M117 Foobar', 'display_message', 'M117', None), ('M110', 'lineno_reset', 'M110', None)]
+	    >>> _normalize_command_handler_result("M105", None, "M105", None, None, ["M110", None])
+	    [('M110', None, 'M110', None, None)]
+	    >>> _normalize_command_handler_result("M105", None, "M105", None, None, [("M110",), (None, "ignored")])
+	    [('M110', None, 'M110', None, None)]
+	    >>> _normalize_command_handler_result("M105", None, "M105", None, None, [("M110",), ("M117 Foobar", "display_message"), ("tuple", "of", "unexpected", "length"), ("M110", "lineno_reset")])
+	    [('M110', None, 'M110', None, None), ('M117 Foobar', 'display_message', 'M117', None, None), ('M110', 'lineno_reset', 'M110', None, None)]
+	    >>> _normalize_command_handler_result("M105", None, "M105", None, {"tag1", "tag2"}, ["M110", "M117 Foobar"])
+	    [('M110', None, 'M110', None, set(['tag1', 'tag2'])), ('M117 Foobar', None, 'M117', None, set(['tag1', 'tag2']))]
+	    >>> _normalize_command_handler_result("M105", None, "M105", None, {"tag1", "tag2"}, ["M110", "M105", "M117 Foobar"], tags_to_add={"tag3"})
+	    [('M110', None, 'M110', None, set(['tag1', 'tag2', 'tag3'])), ('M105', None, 'M105', None, set(['tag1', 'tag2'])), ('M117 Foobar', None, 'M117', None, set(['tag1', 'tag2', 'tag3']))]
+	    >>> _normalize_command_handler_result("M105", None, "M105", None, {"tag1", "tag2"}, ["M110", ("M105", "temperature_poll"), "M117 Foobar"], tags_to_add={"tag3"})
+	    [('M110', None, 'M110', None, set(['tag1', 'tag2', 'tag3'])), ('M105', 'temperature_poll', 'M105', None, set(['tag1', 'tag2', 'tag3'])), ('M117 Foobar', None, 'M117', None, set(['tag1', 'tag2', 'tag3']))]
 
 	Arguments:
 	    command (str or None): The command for which the handler result was
@@ -3726,16 +3815,20 @@ def _normalize_command_handler_result(command, command_type, gcode, subcode, han
 	        generated
 	    subcode (str or None): The GCODE subcode for which the handler result
 	        was generated
+	    tags (set of str or None): The tags associated with the GCODE for which
+	        the handler result was generated
 	    handler_results: The handler result(s) to normalized. Can be either
 	        a single result entry or a list of result entries.
+	    tags_to_add (set of str or None): List of tags to add to expanded result
+	        entries
 
 	Returns:
 	    (list) - A list of normalized handler result entries, which are
-	        4-tuples consisting of ``command``, ``command_type``, ``gcode``
-	        and ``subcode``, the latter three of which may be ``None``.
+	        5-tuples consisting of ``command``, ``command_type``, ``gcode``
+	        ``subcode`` and ``tags``, the latter three of which may be ``None``.
 	"""
 
-	original = (command, command_type, gcode, subcode)
+	original = (command, command_type, gcode, subcode, tags)
 
 	if handler_results is None:
 		# handler didn't return anything, we'll just continue
@@ -3753,21 +3846,39 @@ def _normalize_command_handler_result(command, command_type, gcode, subcode, han
 			# entry is None, we'll ignore that entry and continue
 			continue
 
+		if tags:
+			# copy the tags
+			tags = set(tags)
+
 		if isinstance(handler_result, basestring):
 			# entry is just a string, replace command with it
 			command = handler_result
-			gcode, subcode = gcode_and_subcode_for_cmd(command)
-			result.append((command, command_type, gcode, subcode))
+
+			if command != original[0]:
+				# command changed, re-extract gcode and subcode and add tags if necessary
+				gcode, subcode = gcode_and_subcode_for_cmd(command)
+
+				if tags_to_add and isinstance(tags_to_add, set) and command != original[0]:
+					if tags is None:
+						tags = set()
+					tags |= tags_to_add
+
+			result.append((command, command_type, gcode, subcode, tags))
 
 		elif isinstance(handler_result, tuple):
 			# entry is a tuple, extract command and command_type
 			hook_result_length = len(handler_result)
+			handler_tags = None
+
 			if hook_result_length == 1:
 				# handler returned just the command
 				command, = handler_result
 			elif hook_result_length == 2:
 				# handler returned command and command_type
 				command, command_type = handler_result
+			elif hook_result_length == 3:
+				# handler returned command, command type and additional tags
+				command, command_type, handler_tags = handler_result
 			else:
 				# handler returned a tuple of an unexpected length, ignore
 				# and continue
@@ -3777,11 +3888,25 @@ def _normalize_command_handler_result(command, command_type, gcode, subcode, han
 				# command is None, ignore it and continue
 				continue
 
-			gcode, subcode = gcode_and_subcode_for_cmd(command)
-			result.append((command, command_type, gcode, subcode))
+			if command != original[0] or command_type != original[2]:
+				# command or command_type changed, re-extract gcode and subcode and add tags if necessary
+				gcode, subcode = gcode_and_subcode_for_cmd(command)
+
+				if tags_to_add and isinstance(tags_to_add, set):
+					if tags is None:
+						tags = set()
+					tags |= tags_to_add
+
+			if handler_tags and isinstance(handler_tags, set):
+				# handler provided additional tags, add them
+				if tags is None:
+					tags = set()
+				tags |= handler_tags
+
+			result.append((command, command_type, gcode, subcode, tags))
 
 		# reset to original
-		command, command_type, gcode, subcode = original
+		command, command_type, gcode, subcode, tags = original
 
 	return result
 
