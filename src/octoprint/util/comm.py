@@ -10,6 +10,7 @@ import glob
 import time
 import re
 import threading
+import contextlib
 
 try:
 	import queue
@@ -502,6 +503,8 @@ class MachineCom(object):
 
 		# print job
 		self._currentFile = None
+		self._job_on_hold = False
+		self._job_on_hold_mutex = threading.RLock()
 
 		# multithreading locks
 		self._jobLock = threading.RLock()
@@ -696,6 +699,19 @@ class MachineCom(object):
 
 	##~~ external interface
 
+	@contextlib.contextmanager
+	def job_on_hold(self, blocking=True):
+		if not self._job_on_hold_mutex.acquire(blocking=blocking):
+			raise RuntimeError("Could not acquire job_on_hold lock")
+
+		self._job_on_hold = True
+		try:
+			yield
+		finally:
+			self._job_on_hold = False
+			self._job_on_hold_mutex.release()
+			self._continue_sending()
+
 	def close(self, is_error=False, wait=True, timeout=10.0, *args, **kwargs):
 		"""
 		Closes the connection to the printer.
@@ -795,7 +811,7 @@ class MachineCom(object):
 			if not cmd:
 				return False
 
-		if self.isPrinting() and not self.isSdFileSelected():
+		if self.isPrinting() and not self.isSdFileSelected() and not self._job_on_hold:
 			try:
 				self._command_queue.put((cmd, cmd_type, on_sent, tags), item_type=cmd_type)
 				return True
@@ -1421,7 +1437,7 @@ class MachineCom(object):
 					handled = True
 
 				# process timeouts
-				elif ((line == "" and now > self._timeout) or (self.isPrinting() and now > self._ok_timeout)) \
+				elif ((line == "" and now > self._timeout) or (self.isPrinting() and not self._job_on_hold and now > self._ok_timeout)) \
 						and (not self._blockWhileDwelling or not self._dwelling_until or now > self._dwelling_until):
 					# We have two timeout variants:
 					#
@@ -1868,6 +1884,9 @@ class MachineCom(object):
 				if self._sendFromQueue():
 					# we found something in the queue to send
 					return True
+
+				elif self._job_on_hold:
+					return False
 
 				elif self._sendNext():
 					# we sent the next line from the file

@@ -107,6 +107,33 @@ class PrinterInterface(object):
 		"""
 		raise NotImplementedError()
 
+	def job_on_hold(self, blocking=True, *args, **kwargs):
+		"""
+		Contextmanager that allows executing code while printing while making sure that no commands from the file
+		being printed are continued to be sent to the printer. Note that this will only work for local files,
+		NOT SD files.
+
+		Example:
+
+		.. code-block:: python
+
+		   with printer.job_on_hold():
+		       park_printhead()
+		       take_snapshot()
+		       send_printhead_back()
+
+		It should be used sparingly and only for very specific situations (such as parking the print head somewhere,
+		taking a snapshot from the webcam, then continuing). If you abuse this, you WILL cause print quality issues!
+
+		A lock is in place that ensures that the context can only actually be held by one thread at a time. If you
+		don't want to block on acquire, be sure to set ``blocking`` to ``False`` and catch the ``RuntimeException`` thrown
+		if the lock can't be acquired.
+
+		Args:
+			blocking (bool): Whether to block while attempting to acquire the lock (default) or not
+		"""
+		raise NotImplementedError()
+
 	def fake_ack(self, *args, **kwargs):
 		"""
 		Fakes an acknowledgment for the communication layer. If the communication between OctoPrint and the printer
