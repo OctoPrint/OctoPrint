@@ -403,13 +403,13 @@ class MachineCom(object):
 
 		self._hello_command = settings().get(["serial", "helloCommand"])
 
-		self._alwaysSendChecksum = settings().getBoolean(["feature", "alwaysSendChecksum"])
-		self._neverSendChecksum = settings().getBoolean(["feature", "neverSendChecksum"])
-		self._sendChecksumWithUnknownCommands = settings().getBoolean(["feature", "sendChecksumWithUnknownCommands"])
-		self._unknownCommandsNeedAck = settings().getBoolean(["feature", "unknownCommandsNeedAck"])
-		self._sdAlwaysAvailable = settings().getBoolean(["feature", "sdAlwaysAvailable"])
-		self._sdRelativePath = settings().getBoolean(["feature", "sdRelativePath"])
-		self._blockWhileDwelling = settings().getBoolean(["feature", "blockWhileDwelling"])
+		self._alwaysSendChecksum = settings().getBoolean(["serial", "alwaysSendChecksum"])
+		self._neverSendChecksum = settings().getBoolean(["serial", "neverSendChecksum"])
+		self._sendChecksumWithUnknownCommands = settings().getBoolean(["serial", "sendChecksumWithUnknownCommands"])
+		self._unknownCommandsNeedAck = settings().getBoolean(["serial", "unknownCommandsNeedAck"])
+		self._sdAlwaysAvailable = settings().getBoolean(["serial", "sdAlwaysAvailable"])
+		self._sdRelativePath = settings().getBoolean(["serial", "sdRelativePath"])
+		self._blockWhileDwelling = settings().getBoolean(["serial", "blockWhileDwelling"])
 		self._currentLine = 1
 		self._line_mutex = threading.RLock()
 		self._resendDelta = None
@@ -423,10 +423,10 @@ class MachineCom(object):
 		self._lastCommError = None
 		self._lastResendNumber = None
 		self._currentResendCount = 0
-		self._resendSwallowRepetitions = settings().getBoolean(["feature", "ignoreIdenticalResends"])
+		self._resendSwallowRepetitions = settings().getBoolean(["serial", "ignoreIdenticalResends"])
 		self._resendSwallowRepetitionsCounter = 0
 
-		self._firmware_detection = settings().getBoolean(["feature", "firmwareDetection"])
+		self._firmware_detection = settings().getBoolean(["serial", "firmwareDetection"])
 		self._firmware_info_received = not self._firmware_detection
 		self._firmware_info = dict()
 		self._firmware_capabilities = dict()
@@ -1222,7 +1222,7 @@ class MachineCom(object):
 		feedback_errors = []
 		pause_triggers = convert_pause_triggers(settings().get(["printerParameters", "pauseTriggers"]))
 
-		disable_external_heatup_detection = not settings().getBoolean(["feature", "externalHeatupDetection"])
+		disable_external_heatup_detection = not settings().getBoolean(["serial", "externalHeatupDetection"])
 
 		self._consecutive_timeouts = 0
 
@@ -1230,7 +1230,7 @@ class MachineCom(object):
 		if not self._openSerial():
 			return
 
-		try_hello = not settings().getBoolean(["feature", "waitForStartOnConnect"])
+		try_hello = not settings().getBoolean(["serial", "waitForStartOnConnect"])
 
 		self._log("Connected to: %s, starting monitor" % self._serial)
 		if self._baudrate == 0:
@@ -1246,8 +1246,8 @@ class MachineCom(object):
 		self._ok_timeout = get_new_timeout("communicationBusy" if self._busy_protocol_detected else "communication", self._timeout_intervals)
 
 		startSeen = False
-		supportRepetierTargetTemp = settings().getBoolean(["feature", "repetierTargetTemp"])
-		supportWait = settings().getBoolean(["feature", "supportWait"])
+		supportRepetierTargetTemp = settings().getBoolean(["serial", "repetierTargetTemp"])
+		supportWait = settings().getBoolean(["serial", "supportWait"])
 
 		connection_timeout = settings().getFloat(["serial", "timeout", "connection"])
 		detection_timeout = settings().getFloat(["serial", "timeout", "detection"])
@@ -2256,7 +2256,7 @@ class MachineCom(object):
 			self._resendDelta = resendDelta
 			self._lastResendNumber = lineToResend
 			self._currentResendCount = 0
-			self._resendSwallowRepetitionsCounter = settings().getInt(["feature", "identicalResendsCountdown"])
+			self._resendSwallowRepetitionsCounter = settings().getInt(["serial", "identicalResendsCountdown"])
 
 			if self._resendDelta > len(self._lastLines) or len(self._lastLines) == 0 or self._resendDelta < 0:
 				self._errorValue = "Printer requested line %d but no sufficient history is available, can't resend" % lineToResend
@@ -3661,7 +3661,7 @@ def gcode_and_subcode_for_cmd(cmd):
 		gcode = values["codeGM"]
 	elif "codeT" in values and values["codeT"]:
 		gcode = values["codeT"]
-	elif settings().getBoolean(["feature", "supportFAsCommand"]) and "codeF" in values and values["codeF"]:
+	elif settings().getBoolean(["serial", "supportFAsCommand"]) and "codeF" in values and values["codeF"]:
 		gcode = values["codeF"]
 	else:
 		# this should never happen
