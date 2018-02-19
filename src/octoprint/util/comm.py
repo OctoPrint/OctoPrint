@@ -561,9 +561,9 @@ class MachineCom(object):
 		self._serialLogger.debug(message)
 
 	def _to_logfile_with_terminal(self, message=None, level=logging.INFO):
-		log = "Last lines in terminal:\n" + "\n".join(map(lambda x: "| " + x, list(self._terminal_log)))
+		log = u"Last lines in terminal:\n" + u"\n".join(map(lambda x: u"| {}".format(x), list(self._terminal_log)))
 		if message is not None:
-			log = message + "\n| " + log
+			log = message + u"\n| " + log
 		self._logger.log(level, log)
 
 	def _addToLastLines(self, cmd):
@@ -2188,7 +2188,7 @@ class MachineCom(object):
 			elif not self.isError():
 				# handle everything else
 				error_text = line[6:] if lower_line.startswith("error:") else line[2:]
-				self._to_logfile_with_terminal("Received an error from the printer's firmware: {}".format(error_text),
+				self._to_logfile_with_terminal(u"Received an error from the printer's firmware: {}".format(error_text),
 				                               level=logging.WARN)
 
 				if not self._ignore_errors:
@@ -2348,7 +2348,8 @@ class MachineCom(object):
 						self._log_resends_rate_start = now
 						self._log_resends_rate_count = 0
 
-					self._to_logfile_with_terminal("Got a resend request from the printer: requested line = {}, current line = {}".format(lineToResend, self._currentLine))
+					self._to_logfile_with_terminal(u"Got a resend request from the printer: requested line = {}, "
+					                               u"current line = {}".format(lineToResend, self._currentLine))
 					self._log_resends_rate_count += 1
 
 			self._send_queue.resend_active = True
