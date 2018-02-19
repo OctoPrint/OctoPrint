@@ -1361,7 +1361,10 @@ class MachineCom(object):
 					if debugging_output.startswith("action:"):
 						action_command = debugging_output[len("action:"):].strip()
 
-						if action_command == "pause":
+						if action_command == "cancel":
+							self._log("Cancelling on request of the printer...")
+							self.cancelPrint()
+						elif action_command == "pause":
 							self._log("Pausing on request of the printer...")
 							self.setPause(True)
 						elif action_command == "resume":
