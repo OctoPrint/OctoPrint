@@ -1571,6 +1571,13 @@ class Plugin(object):
 	   initialization of the implementation.
 	"""
 
+	def __init__(self):
+		self._identifier = None
+		self._plugin_name = None
+		self._plugin_version = None
+		self._basefolder = None
+		self._logger = None
+
 	def initialize(self):
 		"""
 		Called by the plugin core after performing all injections. Override this to initialize your implementation.

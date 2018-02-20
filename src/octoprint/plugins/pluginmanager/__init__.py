@@ -12,15 +12,13 @@ import octoprint.plugin.core
 
 from octoprint.settings import valid_boolean_trues
 from octoprint.server.util.flask import restricted_access, with_revalidation_checking, check_etag
-from octoprint.server import VERSION
 from octoprint.access.permissions import Permissions
-from octoprint.util.pip import LocalPipCaller, UnknownPip
+from octoprint.util.pip import LocalPipCaller
 from octoprint.util.version import get_octoprint_version_string, get_octoprint_version, is_octoprint_compatible
 from octoprint.util.platform import get_os
 
 from flask import jsonify, make_response
 from flask_babel import gettext
-from collections import OrderedDict
 
 import logging
 import sarge
@@ -28,7 +26,6 @@ import sys
 import requests
 import re
 import os
-import pkg_resources
 import copy
 import dateutil.parser
 import time
@@ -62,6 +59,7 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 	RECONNECT_HOOKS = ["octoprint.comm.protocol.*",]
 
+	# noinspection PyMissingConstructor
 	def __init__(self):
 		self._pending_enable = set()
 		self._pending_disable = set()
@@ -134,9 +132,9 @@ class PluginManagerPlugin(octoprint.plugin.SimpleApiPlugin,
 
 	def get_settings_defaults(self):
 		return dict(
-			repository="http://plugins.octoprint.org/plugins.json",
+			repository="https://plugins.octoprint.org/plugins.json",
 			repository_ttl=24*60,
-			notices="http://plugins.octoprint.org/notices.json",
+			notices="https://plugins.octoprint.org/notices.json",
 			notices_ttl=6*60,
 			pip_args=None,
 			pip_force_user=False,

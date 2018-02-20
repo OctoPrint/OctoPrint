@@ -33,7 +33,9 @@ import uuid
 import copy
 import time
 
+# noinspection PyCompatibility
 from builtins import bytes
+# noinspection PyCompatibility
 from past.builtins import basestring
 
 try:
@@ -41,7 +43,7 @@ try:
 except ImportError:
 	from chainmap import ChainMap
 
-from octoprint.util import atomic_write, is_hidden_path, dict_merge
+from octoprint.util import atomic_write, is_hidden_path, dict_merge, CaseInsensitiveSet
 
 _APPNAME = "OctoPrint"
 
@@ -92,6 +94,7 @@ default_settings = {
 			"detection": 0.5,
 			"connection": 10,
 			"communication": 30,
+			"communicationBusy": 3,
 			"temperature": 5,
 			"temperatureTargetSet": 2,
 			"temperatureAutoreport": 2,
@@ -111,10 +114,30 @@ default_settings = {
 		"disconnectOnErrors": True,
 		"ignoreErrorsFromFirmware": False,
 		"logResends": True,
-		"autoUppercaseBlacklist": ["M117"],
 		"supportResendsWithoutOk": False,
 		"logPositionOnPause": True,
 		"logPositionOnCancel": True,
+		"waitForStartOnConnect": False,
+		"alwaysSendChecksum": False,
+		"neverSendChecksum": False,
+		"sendChecksumWithUnknownCommands": False,
+		"unknownCommandsNeedAck": False,
+		"sdRelativePath": False,
+		"sdAlwaysAvailable": False,
+		"swallowOkAfterResend": True,
+		"repetierTargetTemp": False,
+		"externalHeatupDetection": True,
+		"supportWait": True,
+		"ignoreIdenticalResends": False,
+		"identicalResendsCountdown": 7,
+		"supportFAsCommand": False,
+		"firmwareDetection": True,
+		"blockWhileDwelling": False,
+
+		"capabilities": {
+			"autoreport_temp": True,
+			"busy_protocol": True
+		},
 
 		# command specific flags
 		"triggerOkForM29": True
@@ -157,7 +180,7 @@ default_settings = {
 		},
 		"pluginBlacklist": {
 			"enabled": None,
-			"url": "http://plugins.octoprint.org/blacklist.json",
+			"url": "https://plugins.octoprint.org/blacklist.json",
 			"ttl": 15 * 60 # 15 min
 		},
 		"diskspace": {
@@ -202,28 +225,14 @@ default_settings = {
 	},
 	"feature": {
 		"temperatureGraph": True,
-		"waitForStartOnConnect": False,
-		"alwaysSendChecksum": False,
-		"neverSendChecksum": False,
-		"sendChecksumWithUnknownCommands": False,
-		"unknownCommandsNeedAck": False,
 		"sdSupport": True,
-		"sdRelativePath": False,
-		"sdAlwaysAvailable": False,
-		"swallowOkAfterResend": True,
-		"repetierTargetTemp": False,
-		"externalHeatupDetection": True,
-		"supportWait": True,
 		"keyboardControl": True,
 		"pollWatched": False,
-		"ignoreIdenticalResends": False,
-		"identicalResendsCountdown": 7,
-		"supportFAsCommand": False,
 		"modelSizeDetection": True,
-		"firmwareDetection": True,
 		"printCancelConfirmation": True,
-		"blockWhileDwelling": False,
-		"g90InfluencesExtruder": False
+		"autoUppercaseBlacklist": ["M117"],
+		"g90InfluencesExtruder": False,
+		"legacyPluginAssets": False # TODO remove again in 1.3.8
 	},
 	"folder": {
 		"uploads": None,
@@ -270,7 +279,7 @@ default_settings = {
 				"settings": [
 					"section_printer", "serial", "printerprofiles", "temperatures", "terminalfilters", "gcodescripts",
 					"section_features", "features", "webcam", "accesscontrol", "gcodevisualizer", "api",
-					"section_octoprint", "server", "folders", "appearance", "logs", "plugin_pluginmanager", "plugin_softwareupdate", "plugin_announcements"
+					"section_octoprint", "server", "folders", "appearance", "plugin_logging", "plugin_pluginmanager", "plugin_softwareupdate", "plugin_announcements"
 				],
 				"usersettings": ["access", "interface"],
 				"wizard": ["access"],
@@ -301,7 +310,9 @@ default_settings = {
 		"groupfile": None,
 		"autologinLocal": False,
 		"localNetworks": ["127.0.0.0/8"],
-		"autologinAs": None
+		"autologinAs": None,
+		"trustBasicAuthentication": False,
+		"checkBasicAuthenticationPassword": True
 	},
 	"slicing": {
 		"enabled": True,
@@ -368,6 +379,7 @@ default_settings = {
 			"repetierStyleResends": False,
 			"okBeforeCommandOutput": False,
 			"smoothieTemperatureReporting": False,
+			"reprapfwM114": False,
 			"extendedSdFileList": False,
 			"throttle": 0.01,
 			"sendWait": True,
@@ -381,6 +393,7 @@ default_settings = {
 			"firmwareName": "Virtual Marlin 1.0",
 			"sharedNozzle": False,
 			"sendBusy": False,
+			"busyInterval": 2.0,
 			"simulateReset": True,
 			"resetLines": ['start', 'Marlin: Virtual Marlin!', '\x80', 'SD card ok'],
 			"preparedOks": [],
@@ -390,13 +403,22 @@ default_settings = {
 			"capabilities": {
 				"AUTOREPORT_TEMP": True
 			},
-			"ambientTemperature": 21.3
+			"ambientTemperature": 21.3,
+			"errors": {
+				"checksum_mismatch": "Checksum mismatch",
+				"checksum_missing": "Missing checksum",
+				"lineno_mismatch": "expected line {} got {}",
+				"lineno_missing": "No Line Number with checksum, Last Line: {}",
+				"maxtemp": "MAXTEMP triggered!",
+				"mintemp": "MINTEMP triggered!",
+				"command_unknown": "Unknown command {}"
+			}
 		}
 	}
 }
 """The default settings of the core application."""
 
-valid_boolean_trues = [True, "true", "yes", "y", "1"]
+valid_boolean_trues = CaseInsensitiveSet(True, "true", "yes", "y", "1", 1)
 """ Values that are considered to be equivalent to the boolean ``True`` value, used for type conversion in various places."""
 
 
@@ -890,7 +912,8 @@ class Settings(object):
 			self._migrate_reverse_proxy_config,
 			self._migrate_printer_parameters,
 			self._migrate_gcode_scripts,
-			self._migrate_core_system_commands
+			self._migrate_core_system_commands,
+			self._migrate_serial_features
 		)
 
 		for migrate in migrators:
@@ -1151,6 +1174,49 @@ class Settings(object):
 			# earlier version and needs to recover the former system commands for that
 			backup_path = self.backup("system_command_migration")
 			self._logger.info("Made a copy of the current config at {} to allow recovery of manual system command configuration".format(backup_path))
+
+		return changed
+
+	def _migrate_serial_features(self, config):
+		"""
+		Migrates feature flags identified as serial specific from the feature to the serial config tree and vice versa.
+
+		If a flag already exists in the target tree, only deletes the copy in the source tree.
+		"""
+		changed = False
+
+		FEATURE_TO_SERIAL = ("waitForStartOnConnect", "alwaysSendChecksum", "neverSendChecksum",
+		                     "sendChecksumWithUnknownCommands", "unknownCommandsNeedAck", "sdRelativePath",
+		                     "sdAlwaysAvailable", "swallowOkAfterResend", "repetierTargetTemp",
+		                     "externalHeatupDetection", "supportWait", "ignoreIdenticalResends",
+		                     "identicalResendsCountdown", "supportFAsCommand", "firmwareDetection",
+		                     "blockWhileDwelling")
+		SERIAL_TO_FEATURE = ("autoUppercaseBlacklist",)
+
+		def migrate_key(key, source, target):
+			if source in config and key in config[source]:
+				if config.get(target) is None:
+					# make sure we have a serial tree
+					config[target] = dict()
+				if key not in config[target]:
+					# only copy over if it's not there yet
+					config[target][key] = config[source][key]
+				# delete feature flag
+				del config[source][key]
+				return True
+			return False
+
+		for key in FEATURE_TO_SERIAL:
+			changed = migrate_key(key, "feature", "serial") or changed
+
+		for key in SERIAL_TO_FEATURE:
+			changed = migrate_key(key, "serial", "feature") or changed
+
+		if changed:
+			# let's make a backup of our current config, in case someone wants to roll back to an
+			# earlier version and needs a backup of their flags
+			backup_path = self.backup("serial_feature_migration")
+			self._logger.info("Made a copy of the current config at {} to allow recovery of serial feature flags".format(backup_path))
 
 		return changed
 

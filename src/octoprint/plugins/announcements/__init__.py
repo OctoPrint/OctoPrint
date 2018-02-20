@@ -34,6 +34,7 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
                          octoprint.plugin.TemplatePlugin,
                          octoprint.plugin.EventHandlerPlugin):
 
+	# noinspection PyMissingConstructor
 	def __init__(self):
 		self._cached_channel_configs = None
 		self._cached_channel_configs_mutex = threading.RLock()
@@ -75,27 +76,27 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 		                                              description="Important announcements about OctoPrint.",
 		                                              priority=1,
 		                                              type="rss",
-		                                              url="http://octoprint.org/feeds/important.xml"),
+		                                              url="https://octoprint.org/feeds/important.xml"),
 		                              _releases=dict(name="Release Announcements",
 		                                             description="Announcements of new releases and release candidates of OctoPrint.",
 		                                             priority=2,
 		                                             type="rss",
-		                                             url="http://octoprint.org/feeds/releases.xml"),
+		                                             url="https://octoprint.org/feeds/releases.xml"),
 		                              _blog=dict(name="On the OctoBlog",
 		                                         description="Development news, community spotlights, OctoPrint On Air episodes and more from the official OctoBlog.",
 		                                         priority=2,
 		                                         type="rss",
-		                                         url="http://octoprint.org/feeds/octoblog.xml"),
+		                                         url="https://octoprint.org/feeds/octoblog.xml"),
 		                              _plugins=dict(name="New Plugins in the Repository",
 		                                            description="Announcements of new plugins released on the official Plugin Repository.",
 		                                            priority=2,
 		                                            type="rss",
-		                                            url="http://plugins.octoprint.org/feed.xml"),
+		                                            url="https://plugins.octoprint.org/feed.xml"),
 		                              _octopi=dict(name="OctoPi News",
 		                                           description="News around OctoPi, the Raspberry Pi image including OctoPrint.",
 		                                           priority=2,
 		                                           type="rss",
-		                                           url="http://octoprint.org/feeds/octopi.xml")),
+		                                           url="https://octoprint.org/feeds/octopi.xml")),
 		                enabled_channels=[],
 		                forced_channels=["_important"],
 		                channel_order=["_important", "_releases", "_blog", "_plugins", "_octopi"],
@@ -200,6 +201,7 @@ class AnnouncementPlugin(octoprint.plugin.AssetPlugin,
 
 			return hash.hexdigest()
 
+		# noinspection PyShadowingNames
 		def condition(lm, etag):
 			return check_etag(etag)
 

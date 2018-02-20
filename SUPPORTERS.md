@@ -21,16 +21,13 @@ thanks to everyone who contributed!
   * DeltaMaker 3D Printers
   * E3D BigBox
   * Ernesto Martinez
-  * Exovite
   * F. Kunsmann
-  * Farren Young II
   * Frank Sander
   * Gary Deen
   * Gary N McKinney
   * George Robles
   * günter weber
   * James Seigel
-  * Jamie R McGuigan
   * Jason Lawrence
   * Jeff Moe
   * Josh Daniels
@@ -39,19 +36,16 @@ thanks to everyone who contributed!
   * Kazuhiro Ogura
   * Makespace Madrid
   * Marcus Ackermann
-  * Mark Qvist
   * Mark Walker
-  * Masayoshi Mitsui
   * Michael Aumock
   * Miles Flavel
   * mitchell hirsch
   * Mohammed khorakiwala
   * Noe Ruiz
   * Patrick McGinnis
-  * Peter Grace
   * Peter Schmehl
   * PRINT3Dforum.com
-  * Robert Gusek
+  * Randy C. Will
   * Roger Strolz
   * Roy Cortes
   * Samer Najia
@@ -64,4 +58,4 @@ thanks to everyone who contributed!
   * Timeshell.ca
   * Trent Shumay
 
-and 1133 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!
+and 1062 more wonderful people pledging on the [Patreon campaign](https://patreon.com/foosel)!

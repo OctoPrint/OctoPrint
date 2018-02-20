@@ -1,4 +1,4 @@
-.. _sec-bundledplugins_cura:
+.. _sec-bundledplugins-cura:
 
 Cura
 ====

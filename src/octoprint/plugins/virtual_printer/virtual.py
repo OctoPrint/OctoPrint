@@ -66,6 +66,8 @@ class VirtualPrinter(object):
 
 		self._prepared_errors = []
 
+		self._errors = settings().get(["devel", "virtualPrinter", "errors"], merged=True)
+
 		self.currentExtruder = 0
 		self.extruderCount = settings().getInt(["devel", "virtualPrinter", "numExtruders"])
 		self.pinnedExtruders = settings().get(["devel", "virtualPrinter", "pinnedExtruders"])
@@ -86,7 +88,7 @@ class VirtualPrinter(object):
 		self._lastX = 0.0
 		self._lastY = 0.0
 		self._lastZ = 0.0
-		self._lastE = 0.0
+		self._lastE = [0.0] * self.extruderCount
 		self._lastF = 200
 
 		self._unitModifier = 1
@@ -112,6 +114,7 @@ class VirtualPrinter(object):
 		self._sendWait = settings().getBoolean(["devel", "virtualPrinter", "sendWait"])
 		self._sendBusy = settings().getBoolean(["devel", "virtualPrinter", "sendBusy"])
 		self._waitInterval = settings().getFloat(["devel", "virtualPrinter", "waitInterval"])
+		self._busyInterval = settings().getFloat(["devel", "virtualPrinter", "busyInterval"])
 
 		self._echoOnM117 = settings().getBoolean(["devel", "virtualPrinter", "echoOnM117"])
 
@@ -146,8 +149,8 @@ class VirtualPrinter(object):
 
 		self._triggerResendAt100 = True
 		self._triggerResendWithTimeoutAt105 = True
-		self._triggeredResendWithTimeoutAt105 = False
 		self._triggerResendWithMissingLinenoAt110 = True
+		self._triggerResendWithChecksumMismatchAt115 = True
 
 		readThread = threading.Thread(target=self._processIncoming, name="octoprint.plugins.virtual_printer.wait_thread")
 		readThread.start()
@@ -227,7 +230,7 @@ class VirtualPrinter(object):
 
 				self.currentLine += 1
 			elif settings().getBoolean(["devel", "virtualPrinter", "forceChecksum"]):
-				self._send("Error: Missing checksum")
+				self._send(self._error("checksum_missing"))
 				continue
 
 			# track N = N + 1
@@ -261,7 +264,11 @@ class VirtualPrinter(object):
 					continue
 				elif linenumber == 110 and self._triggerResendWithMissingLinenoAt110 and not self._writingToSd:
 					self._triggerResendWithMissingLinenoAt110 = False
-					self._send("Error: No Line Number with checksum, Last Line: {}".format(self.lastN))
+					self._send(self._error("lineno_missing", self.lastN))
+					continue
+				elif linenumber == 115 and self._triggerResendWithChecksumMismatchAt115 and not self._writingToSd:
+					self._triggerResendWithChecksumMismatchAt115 = False
+					self._triggerResend(checksum=True)
 					continue
 				elif len(self._prepared_errors):
 					prepared = self._prepared_errors.pop(0)
@@ -355,7 +362,7 @@ class VirtualPrinter(object):
 			self._send("echo:changed F value")
 			return False
 		else:
-			self._send("Error: Unknown command F")
+			self._send(self._error("command_unknown", "F"))
 			return True
 
 	def _gcode_M104(self, data):
@@ -421,8 +428,25 @@ class VirtualPrinter(object):
 			filename = data.split(None, 1)[1].strip()
 			self._deleteSdFile(filename)
 
+	def _gcode_M113(self, data):
+		interval = int(re.search("S([0-9]+)", data).group(1))
+		if 0 <= interval <= 60:
+			self._busyInterval = interval
+
 	def _gcode_M114(self, data):
-		output = "X:{} Y:{} Z:{} E:{} Count: A:{} B:{} C:{}".format(self._lastX, self._lastY, self._lastZ, self._lastE, int(self._lastX*100), int(self._lastY*100), int(self._lastZ*100))
+		if settings().getBoolean(["devel", "virtualPrinter", "reprapfwM114"]):
+			output = "X:{} Y:{} Z:{} {}".format(self._lastX,
+			                                    self._lastY,
+			                                    self._lastZ,
+			                                    " ".join(["E{}:{}".format(num, self._lastE[self.currentExtruder]) for num in range(self.extruderCount)]))
+		else:
+			output = "X:{} Y:{} Z:{} E:{} Count: A:{} B:{} C:{}".format(self._lastX,
+			                                                            self._lastY,
+			                                                            self._lastZ,
+			                                                            self._lastE[self.currentExtruder],
+			                                                            int(self._lastX*100),
+			                                                            int(self._lastY*100),
+			                                                            int(self._lastZ*100))
 		if not self._okBeforeCommandOutput:
 			ok = self._ok()
 			if ok:
@@ -476,7 +500,7 @@ class VirtualPrinter(object):
 		if self._lastZ is not None:
 			self._lastZ *= 2.54
 		if self._lastE is not None:
-			self._lastE *= 2.54
+			self._lastE = [e * 2.54 if e is not None else None for e in self._lastE]
 
 	def _gcode_G21(self, data):
 		self._unitModifier = 1.0
@@ -487,7 +511,7 @@ class VirtualPrinter(object):
 		if self._lastZ is not None:
 			self._lastZ /= 2.54
 		if self._lastE is not None:
-			self._lastE /= 2.54
+			self._lastE = [e / 2.54 if e is not None else None for e in self._lastE]
 
 	def _gcode_G90(self, data):
 		self._relative = False
@@ -518,10 +542,10 @@ class VirtualPrinter(object):
 		elif matchS:
 			_timeout = float(matchS.group(1))
 
-		if self._sendBusy:
+		if self._sendBusy and self._busyInterval > 0:
 			until = time.time() + _timeout
 			while time.time() < until:
-				time.sleep(1.0)
+				time.sleep(self._busyInterval)
 				self._send("busy:processing")
 		else:
 			time.sleep(_timeout)
@@ -549,11 +573,11 @@ class VirtualPrinter(object):
 
 			if actual is None:
 				if checksum:
-					self._send("Error: Wrong checksum")
+					self._send(self._error("checksum_mismatch"))
 				else:
-					self._send("Error: Missing checksum")
+					self._send(self._error("checksum_missing"))
 			else:
-				self._send("Error: expected line %d got %d" % (expected, actual))
+				self._send(self._error("lineno_mismatch", expected, actual))
 
 			def request_resend():
 				self._send("Resend:%d" % expected)
@@ -636,11 +660,13 @@ class VirtualPrinter(object):
 		elif data == "trigger_missing_checksum":
 			self._prepared_errors.append(lambda cur, last, line: self._triggerResend(expected=last, checksum=False))
 		elif data == "trigger_missing_lineno":
-			self._prepared_errors.append(lambda cur, last, line: self._send("Error: No Line Number with checksum, Last Line: {}".format(last)))
+			self._prepared_errors.append(lambda cur, last, line: self._send(self._error("lineno_missing", last)))
 		elif data == "drop_connection":
 			self._debug_drop_connection = True
+		elif data == "mintemp_error":
+			self._send(self._error("mintemp"))
 		elif data == "maxtemp_error":
-			self._send("Error: MAXTEMP triggered!")
+			self._send(self._error("maxtemp"))
 		elif data == "go_awol":
 			self._send("// Going AWOL")
 			self._debug_awol = True
@@ -886,15 +912,16 @@ class VirtualPrinter(object):
 		if matchE is not None:
 			try:
 				e = float(matchE.group(1))
-				if self._relative or self._lastE is None:
+				lastE = self._lastE[self.currentExtruder]
+				if self._relative or lastE is None:
 					duration = max(duration, e * self._unitModifier / speedE * 60.0)
 				else:
-					duration = max(duration, (e - self._lastE) * self._unitModifier / speedE * 60.0)
+					duration = max(duration, (e - lastE) * self._unitModifier / speedE * 60.0)
 
-				if self._relative and self._lastE is not None:
-					self._lastE += e
+				if self._relative and lastE is not None:
+					self._lastE[self.currentExtruder] += e
 				else:
-					self._lastE = e
+					self._lastE[self.currentExtruder] = e
 			except:
 				pass
 
@@ -914,7 +941,7 @@ class VirtualPrinter(object):
 		matchE = re.search("E([0-9.]+)", line)
 
 		if matchX is None and matchY is None and matchZ is None and matchE is None:
-			self._lastX = self._lastY = self._lastZ = self._lastE = 0
+			self._lastX = self._lastY = self._lastZ = self._lastE[self.currentExtruder] = 0
 		else:
 			if matchX is not None:
 				try:
@@ -933,7 +960,7 @@ class VirtualPrinter(object):
 					pass
 			if matchE is not None:
 				try:
-					self._lastE = float(matchE.group(1))
+					self._lastE[self.currentExtruder] = float(matchE.group(1))
 				except:
 					pass
 
@@ -1014,19 +1041,26 @@ class VirtualPrinter(object):
 	def _waitForHeatup(self, heater, only_wait_if_higher):
 		delta = 1
 		delay = 1
+		last_busy = time.time()
 
 		try:
 			if heater.startswith("tool"):
 				toolNum = int(heater[len("tool"):])
-				while not self._killed and (self.temp[toolNum] < self.targetTemp[toolNum] - delta or (not only_wait_if_higher and self.temp[toolNum] > self.targetTemp[toolNum] + delta)):
-					self._simulateTemps(delta=delta)
-					self._output("T:%0.2f" % self.temp[toolNum])
-					time.sleep(delay)
+				test = lambda: self.temp[toolNum] < self.targetTemp[toolNum] - delta or (not only_wait_if_higher and self.temp[toolNum] > self.targetTemp[toolNum] + delta)
+				output = lambda: "T:%0.2f" % self.temp[toolNum]
 			elif heater == "bed":
-				while not self._killed and (self.bedTemp < self.bedTargetTemp - delta or (not only_wait_if_higher and self.bedTemp > self.bedTargetTemp + delta)):
-					self._simulateTemps(delta=delta)
-					self._output("B:%0.2f" % self.bedTemp)
-					time.sleep(delay)
+				test = lambda: self.bedTemp < self.bedTargetTemp - delta or (not only_wait_if_higher and self.bedTemp > self.bedTargetTemp + delta)
+				output = lambda: "B:%0.2f" % self.bedTemp
+			else:
+				return
+
+			while not self._killed and test():
+				self._simulateTemps(delta=delta)
+				self._output(output())
+				if self._sendBusy and time.time() - last_busy >= self._busyInterval:
+					self._output("echo:busy: processing")
+					last_busy = time.time()
+				time.sleep(delay)
 		except AttributeError:
 			if self.outgoing is not None:
 				raise
@@ -1181,6 +1215,9 @@ class VirtualPrinter(object):
 				return ok
 
 		return ok.format(ok, lastN=self.lastN, buffer=self.buffered.maxsize - self.buffered.qsize())
+
+	def _error(self, error, *args, **kwargs):
+		return "Error: {}".format(self._errors.get(error).format(*args, **kwargs))
 
 class CharCountingQueue(queue.Queue):
 

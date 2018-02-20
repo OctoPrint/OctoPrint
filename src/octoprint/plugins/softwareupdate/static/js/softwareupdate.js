@@ -14,7 +14,7 @@
     };
 
     OctoPrintSoftwareUpdateClient.prototype.checkEntries = function(entries, force, opts) {
-        if (arguments.length === 1 && _.isObject(arguments[0])) {
+        if (arguments.length == 1 && _.isObject(arguments[0])) {
             var params = arguments[0];
             entries = params.entries;
             force = params.force;
@@ -22,7 +22,7 @@
         }
 
         entries = entries || [];
-        if (typeof entries === "string") {
+        if (typeof entries == "string") {
             entries = [entries];
         }
 
@@ -37,7 +37,7 @@
     };
 
     OctoPrintSoftwareUpdateClient.prototype.check = function(force, opts) {
-        if (arguments.length === 1 && _.isObject(arguments[0])) {
+        if (arguments.length == 1 && _.isObject(arguments[0])) {
             var params = arguments[0];
             force = params.force;
             opts = params.opts;
@@ -47,7 +47,7 @@
     };
 
     OctoPrintSoftwareUpdateClient.prototype.update = function(entries, force, opts) {
-        if (arguments.length === 1 && _.isObject(arguments[0])) {
+        if (arguments.length == 1 && _.isObject(arguments[0])) {
             var params = arguments[0];
             entries = params.entries;
             force = params.force;
@@ -55,7 +55,7 @@
         }
 
         entries = entries || [];
-        if (typeof entries === "string") {
+        if (typeof entries == "string") {
             entries = [entries];
         }
 
@@ -67,7 +67,7 @@
     };
 
     OctoPrintSoftwareUpdateClient.prototype.updateAll = function(force, opts) {
-        if (arguments.length === 1 && _.isObject(arguments[0])) {
+        if (arguments.length == 1 && _.isObject(arguments[0])) {
             var params = arguments[0];
             force = params.force;
             opts = params.opts;
@@ -521,7 +521,7 @@ $(function() {
                     self.updateInProgress = false;
                     self._showPopup({
                         title: gettext("Update not started!"),
-                        text: gettext("The update could not be started. Is it already active? Please consult the log for details."),
+                        text: gettext("The update could not be started. Is it already active? Please consult octoprint.log for details."),
                         type: "error",
                         hide: false,
                         buttons: {
@@ -545,7 +545,7 @@ $(function() {
                 });
                 self._updateClicked = false;
             } else {
-                self.forceUpdate = (force === true);
+                self.forceUpdate = (force == true);
                 self.confirmationDialog.modal("show");
             }
 
@@ -713,7 +713,7 @@ $(function() {
                     self.waitingForRestart = true;
                     self.restartTimeout = setTimeout(function() {
                         title = gettext("Restart failed");
-                        text = gettext("The server apparently did not restart by itself, you'll have to do it manually. Please consult the log file on what went wrong.");
+                        text = gettext("The server apparently did not restart by itself, you'll have to do it manually. Please consult octoprint.log on what went wrong.");
 
                         self._showPopup({
                             title: title,
@@ -756,9 +756,9 @@ $(function() {
                 }
                 case "restart_failed": {
                     restartType = messageData.restart_type;
-                    text = gettext("Restarting OctoPrint failed, please restart it manually. You might also want to consult the log file on what went wrong here.");
+                    text = gettext("Restarting OctoPrint failed, please restart it manually. You might also want to consult octoprint.log on what went wrong here.");
                     if (restartType === "environment") {
-                        text = gettext("Rebooting the server failed, please reboot it manually. You might also want to consult the log file on what went wrong here.");
+                        text = gettext("Rebooting the server failed, please reboot it manually. You might also want to consult octoprint.log on what went wrong here.");
                     }
 
                     title = gettext("Restart failed");
@@ -794,7 +794,7 @@ $(function() {
                 }
                 case "error": {
                     title = gettext("Update failed!");
-                    text = gettext("The update did not finish successfully. Please consult the log for details.");
+                    text = gettext("The update did not finish successfully. Please consult octoprint.log and plugin_softwareupdate_console.log for details.");
                     self._showPopup({
                         title: title,
                         text: text,

@@ -58,7 +58,7 @@ $(function() {
 
             var regex = self.filterRegex();
             var lineVisible = function(entry) {
-                return regex === undefined || !entry.line.match(regex);
+                return regex == undefined || !entry.line.match(regex);
             };
 
             var filtered = false;
@@ -91,7 +91,7 @@ $(function() {
 
             var regex = self.filterRegex();
             var lineVisible = function(entry) {
-                return regex === undefined || !entry.line.match(regex);
+                return regex == undefined || !entry.line.match(regex);
             };
 
             var lines = self.log();
@@ -126,7 +126,7 @@ $(function() {
         });
 
         self.blacklist=[];
-        self.settings.serial_autoUppercaseBlacklist.subscribe(function(newValue) {
+        self.settings.feature_autoUppercaseBlacklist.subscribe(function(newValue) {
             self.blacklist = splitTextToArray(newValue, ",", true);
         });
 
@@ -205,7 +205,7 @@ $(function() {
             if (!self.terminalLogDuringPrinting() && self.isPrinting()) {
                 var last = self.plainLogLines()[self.plainLogLines().length - 1];
                 var disabled = "--- client too slow, log output disabled while printing ---";
-                if (last !== disabled) {
+                if (last != disabled) {
                     self.plainLogLines.push(disabled);
                 }
                 return;
@@ -226,7 +226,7 @@ $(function() {
             }
 
             var newLog = self.log().concat(_.map(newData, function(line) { return self._toInternalFormat(line) }));
-            if (newData.length !== data.length) {
+            if (newData.length != data.length) {
                 var cutoff = "--- too many lines to buffer, cut off ---";
                 newLog.push(self._toInternalFormat(cutoff, "cut"));
             }
@@ -246,7 +246,7 @@ $(function() {
         };
 
         self._toInternalFormat = function(line, type) {
-            if (type === undefined) {
+            if (type == undefined) {
                 type = "line";
             }
             return {line: escapeUnprintableCharacters(line), type: type}
@@ -264,7 +264,7 @@ $(function() {
 
         self.updateFilterRegex = function() {
             var filterRegexStr = self.activeFilters().join("|").trim();
-            if (filterRegexStr === "") {
+            if (filterRegexStr == "") {
                 self.filterRegex(undefined);
             } else {
                 self.filterRegex(new RegExp(filterRegexStr));
@@ -278,6 +278,17 @@ $(function() {
             }
         };
 
+        self.terminalScrollEvent = _.throttle(function () {
+            if (self.autoscrollEnabled()) {
+                var container = self.fancyFunctionality() ? $("#terminal-output") : $("#terminal-output-lowfi");
+                var maxScroll = container[0].scrollHeight - container[0].offsetHeight;
+
+                if (container.scrollTop() <= maxScroll ) {
+                    self.autoscrollEnabled(false);
+                }
+            }
+        }, 250);
+
         self.gotoTerminalCommand = function() {
             // skip if user highlights text.
             var sel = getSelection().toString();
@@ -290,6 +301,10 @@ $(function() {
 
         self.toggleAutoscroll = function() {
             self.autoscrollEnabled(!self.autoscrollEnabled());
+
+            if (self.autoscrollEnabled()) {
+                self.updateOutput();
+            }
         };
 
         self.selectAll = function() {
@@ -307,7 +322,15 @@ $(function() {
         };
 
         self.copyAll = function() {
-            copyToClipboard(self.plainLogLines().join("\n"));
+            var lines;
+
+            if (self.fancyFunctionality()) {
+                lines = _.map(self.log(), "line");
+            } else {
+                lines = self.plainLogLines();
+            }
+
+            copyToClipboard(lines.join("\n"));
         };
 
         // command matching regex
@@ -357,10 +380,10 @@ $(function() {
         self.handleKeyDown = function(event) {
             var keyCode = event.keyCode;
 
-            if (keyCode === 38 || keyCode === 40) {
-                if (keyCode === 38 && self.cmdHistory.length > 0 && self.cmdHistoryIdx > 0) {
+            if (keyCode == 38 || keyCode == 40) {
+                if (keyCode == 38 && self.cmdHistory.length > 0 && self.cmdHistoryIdx > 0) {
                     self.cmdHistoryIdx--;
-                } else if (keyCode === 40 && self.cmdHistoryIdx < self.cmdHistory.length - 1) {
+                } else if (keyCode == 40 && self.cmdHistoryIdx < self.cmdHistory.length - 1) {
                     self.cmdHistoryIdx++;
                 }
 
@@ -379,7 +402,7 @@ $(function() {
         };
 
         self.handleKeyUp = function(event) {
-            if (event.keyCode === 13) {
+            if (event.keyCode == 13) {
                 self.sendCommand();
             }
 
@@ -388,7 +411,7 @@ $(function() {
         };
 
         self.onAfterTabChange = function(current, previous) {
-            self.tabActive = current === "#term";
+            self.tabActive = current == "#term";
             self.updateOutput();
         };
 

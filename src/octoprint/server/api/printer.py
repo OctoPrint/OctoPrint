@@ -79,6 +79,8 @@ def printerToolCommand():
 
 	validation_regex = re.compile("tool\d+")
 
+	tags = {"source:api", "api:printer.tool"}
+
 	##~~ tool selection
 	if command == "select":
 		tool = data["tool"]
@@ -87,7 +89,7 @@ def printerToolCommand():
 		if not tool.startswith("tool"):
 			return make_response("Invalid tool for selection: %s" % tool, 400)
 
-		printer.change_tool(tool)
+		printer.change_tool(tool, tags=tags)
 
 	##~~ temperature
 	elif command == "target":
@@ -104,7 +106,7 @@ def printerToolCommand():
 
 		# perform the actual temperature commands
 		for tool in validated_values.keys():
-			printer.set_temperature(tool, validated_values[tool])
+			printer.set_temperature(tool, validated_values[tool], tags=tags)
 
 	##~~ temperature offset
 	elif command == "offset":
@@ -133,14 +135,14 @@ def printerToolCommand():
 		amount = data["amount"]
 		if not isinstance(amount, (int, long, float)):
 			return make_response("Not a number for extrusion amount: %r" % amount, 400)
-		printer.extrude(amount)
+		printer.extrude(amount, tags=tags)
 
 	elif command == "flowrate":
 		factor = data["factor"]
 		if not isinstance(factor, (int, long, float)):
 			return make_response("Not a number for flow rate: %r" % factor, 400)
 		try:
-			printer.flow_rate(factor)
+			printer.flow_rate(factor, tags=tags)
 		except ValueError as e:
 			return make_response("Invalid value for flow rate: %s" % str(e), 400)
 
@@ -177,6 +179,8 @@ def printerBedCommand():
 	if response is not None:
 		return response
 
+	tags = {"source:api", "api:printer.bed"}
+
 	##~~ temperature
 	if command == "target":
 		target = data["target"]
@@ -186,7 +190,7 @@ def printerBedCommand():
 			return make_response("Not a number: %r" % target, 400)
 
 		# perform the actual temperature command
-		printer.set_temperature("bed", target)
+		printer.set_temperature("bed", target, tags=tags)
 
 	##~~ temperature offset
 	elif command == "offset":
@@ -240,6 +244,8 @@ def printerPrintheadCommand():
 		# do not jog when a print job is running or we don't have a connection
 		return make_response("Printer is not operational or currently printing", 409)
 
+	tags = {"source:api", "api:printer.printhead"}
+
 	valid_axes = ["x", "y", "z"]
 	##~~ jog command
 	if command == "jog":
@@ -256,7 +262,7 @@ def printerPrintheadCommand():
 		speed = data.get("speed", None)
 
 		# execute the jog commands
-		printer.jog(validated_values, relative=not absolute, speed=speed)
+		printer.jog(validated_values, relative=not absolute, speed=speed, tags=tags)
 
 	##~~ home command
 	elif command == "home":
@@ -268,14 +274,14 @@ def printerPrintheadCommand():
 			validated_values.append(axis)
 
 		# execute the home command
-		printer.home(validated_values)
+		printer.home(validated_values, tags=tags)
 
 	elif command == "feedrate":
 		factor = data["factor"]
 		if not isinstance(factor, (int, long, float)):
 			return make_response("Not a number for feed rate: %r" % factor, 400)
 		try:
-			printer.feed_rate(factor)
+			printer.feed_rate(factor, tags=tags)
 		except ValueError as e:
 			return make_response("Invalid value for feed rate: %s" % str(e), 400)
 
@@ -304,12 +310,14 @@ def printerSdCommand():
 	if response is not None:
 		return response
 
+	tags = {"source:api", "api:printer.sd"}
+
 	if command == "init":
-		printer.init_sd_card()
+		printer.init_sd_card(tags=tags)
 	elif command == "refresh":
-		printer.refresh_sd_files()
+		printer.refresh_sd_files(tags=tags)
 	elif command == "release":
-		printer.release_sd_card()
+		printer.release_sd_card(tags=tags)
 
 	return NO_CONTENT
 
@@ -355,6 +363,8 @@ def printerCommand():
 	if "parameters" in data:
 		parameters = data["parameters"]
 
+	tags = {"source:api", "api:printer.command"}
+
 	if "command" in data or "commands" in data:
 		if "command" in data:
 			commands = [data["command"]]
@@ -370,7 +380,7 @@ def printerCommand():
 				commandToSend = command % parameters
 			commandsToSend.append(commandToSend)
 
-		printer.commands(commandsToSend)
+		printer.commands(commandsToSend, tags=tags)
 
 	elif "script" in data:
 		script_name = data["script"]
@@ -379,7 +389,7 @@ def printerCommand():
 			context["context"] = data["context"]
 
 		try:
-			printer.script(script_name, context=context)
+			printer.script(script_name, context=context, tags=tags)
 		except UnknownScript:
 			return make_response("Unknown script: {script_name}".format(**locals()), 404)
 

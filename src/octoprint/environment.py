@@ -1,4 +1,8 @@
+# coding=utf-8
 from __future__ import absolute_import
+
+__license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
+__copyright__ = "Copyright (C) 2017 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
 import copy
 import logging
@@ -11,7 +15,6 @@ import yaml
 import psutil
 
 from octoprint.plugin import EnvironmentDetectionPlugin
-from octoprint.util import get_formatted_size
 from octoprint.util.platform import get_os
 
 class EnvironmentDetector(object):
@@ -34,58 +37,77 @@ class EnvironmentDetector(object):
 			return copy.deepcopy(self._cache)
 
 	def run_detection(self, notify_plugins=True):
-		environment = dict()
-		environment["os"] = self._detect_os()
-		environment["python"] = self._detect_python()
-		environment["hardware"] = self._detect_hardware()
+		try:
+			environment = dict()
+			environment["os"] = self._detect_os()
+			environment["python"] = self._detect_python()
+			environment["hardware"] = self._detect_hardware()
 
-		plugin_result = self._detect_from_plugins()
-		if plugin_result:
-			environment["plugins"] = plugin_result
+			plugin_result = self._detect_from_plugins()
+			if plugin_result:
+				environment["plugins"] = plugin_result
 
-		with self._cache_lock:
-			self._cache = environment
+			with self._cache_lock:
+				self._cache = environment
 
-		if notify_plugins:
-			self.notify_plugins()
+			if notify_plugins:
+				self.notify_plugins()
 
-		return environment
+			return environment
+		except:
+			self._logger.exception("Unexpected error while detecting environment")
+			with self._cache_lock:
+				self._cache = dict()
+				return self._cache
 
 	def _detect_os(self):
 		return dict(id=get_os(),
 		            platform=sys.platform)
 
 	def _detect_python(self):
-		result = dict()
+		result = dict(version="unknown",
+		              pip="unknown")
 
 		# determine python version
-		result["version"] = platform.python_version()
+		try:
+			result["version"] = platform.python_version()
+		except:
+			self._logger.exception("Error detecting python version")
 
 		# determine if we are running from a virtual environment
-		if hasattr(sys, "real_prefix") or (hasattr(sys, "base_prefix") and os.path.realpath(sys.prefix) != os.path.realpath(sys.base_prefix)):
-			result["virtualenv"] = sys.prefix
+		try:
+			if hasattr(sys, "real_prefix") or (hasattr(sys, "base_prefix") and os.path.realpath(sys.prefix) != os.path.realpath(sys.base_prefix)):
+				result["virtualenv"] = sys.prefix
+		except:
+			self._logger.exception("Error detecting whether we are running in a virtual environment")
 
 		# try to find pip version
 		try:
 			import pip
 			result["pip"] = pip.__version__
 		except:
-			result["pip"] = "unknown"
+			self._logger.exception("Error detecting pip version")
 
 		return result
 
 	def _detect_hardware(self):
-		cores = psutil.cpu_count()
-		cpu_freq = psutil.cpu_freq()
-		ram = psutil.virtual_memory()
+		result = dict(cores="unknown",
+		              freq="unknown",
+		              ram="unknown")
 
-		result = dict()
-		if cores:
-			result["cores"] = cores
-		if cpu_freq and hasattr(cpu_freq, "max"):
-			result["freq"] = cpu_freq.max
-		if ram and hasattr(ram, "total"):
-			result["ram"] = ram.total
+		try:
+			cores = psutil.cpu_count()
+			cpu_freq = psutil.cpu_freq()
+			ram = psutil.virtual_memory()
+			if cores:
+				result["cores"] = cores
+			if cpu_freq and hasattr(cpu_freq, "max"):
+				result["freq"] = cpu_freq.max
+			if ram and hasattr(ram, "total"):
+				result["ram"] = ram.total
+		except:
+			self._logger.exception("Error while detecting hardware environment")
+
 		return result
 
 	def _detect_from_plugins(self):
@@ -110,7 +132,10 @@ class EnvironmentDetector(object):
 			else:
 				self._logger.log(level, message)
 
-		_log(self._format())
+		try:
+			_log(self._format())
+		except:
+			self._logger.exception("Error logging detected environment")
 
 	def _format(self):
 		with self._cache_lock:

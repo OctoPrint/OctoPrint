@@ -1,0 +1,34 @@
+table {
+  th, td {
+    &.settings_logs_name {
+      text-overflow: ellipsis;
+      text-align: left;
+    }
+
+    &.settings_logs_size {
+      text-align: right;
+      width: 70px;
+    }
+
+    &.settings_logs_date {
+      text-align: left;
+      width: 130px;
+    }
+
+    &.settings_logs_action {
+      width: 70px;
+      text-align: center;
+      white-space: nowrap;
+
+      a {
+        text-decoration: none;
+        color: #000;
+
+        &.disabled {
+          color: #ccc;
+          cursor: default;
+        }
+      }
+    }
+  }
+}

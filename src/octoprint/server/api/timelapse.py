@@ -131,7 +131,7 @@ def downloadTimelapse(filename):
 @restricted_access
 @Permissions.TIMELAPSE_ADMIN.require(403)
 def deleteTimelapse(filename):
-	if util.is_allowed_file(filename, ["mpg", "mpeg", "mp4"]):
+	if util.is_allowed_file(filename, ["mpg", "mpeg", "mp4", "m4v", "mkv"]):
 		timelapse_folder = settings().getBaseFolder("timelapse")
 		full_path = os.path.realpath(os.path.join(timelapse_folder, filename))
 		if full_path.startswith(timelapse_folder) and os.path.exists(full_path):

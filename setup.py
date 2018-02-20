@@ -27,7 +27,7 @@ INSTALL_REQUIRES = [
 	"Flask-Babel>=0.11,<0.12",
 	"Flask-Assets>=0.12,<0.13",
 	"markdown>=2.6.4,<2.7",
-	"pyserial>=3.2.1,<3.3",
+	"pyserial>=3.4,<3.5",
 	"netaddr>=0.7.17,<0.8",
 	"watchdog>=0.8.3,<0.9",
 	"sarge>=0.1.4,<0.2",
@@ -60,7 +60,7 @@ EXTRA_REQUIRES = dict(
 	# Dependencies for developing OctoPrint
 	develop=[
 		# Testing dependencies
-		"mock>=2.0,<2.1",
+		"mock>=2.0.0,<3",
 		"nose>=1.3.0,<1.4",
 		"ddt",
 

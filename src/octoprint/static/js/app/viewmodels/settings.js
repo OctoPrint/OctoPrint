@@ -41,7 +41,7 @@ $(function() {
         });
         self.enableTranslationUpload = ko.pureComputed(function() {
             var name = self.translationUploadFilename();
-            return name !== undefined && name.trim() !== "" && !self.invalidTranslationArchive();
+            return name !== undefined && name.trim() != "" && !self.invalidTranslationArchive();
         });
 
         self.translations = new ItemListHelper(
@@ -138,22 +138,14 @@ $(function() {
         self.feature_sizeThreshold_str = sizeObservable(self.feature_sizeThreshold);
         self.feature_mobileSizeThreshold_str = sizeObservable(self.feature_mobileSizeThreshold);
         self.feature_temperatureGraph = ko.observable(undefined);
-        self.feature_waitForStart = ko.observable(undefined);
-        self.feature_sendChecksum = ko.observable("print");
         self.feature_sdSupport = ko.observable(undefined);
-        self.feature_sdRelativePath = ko.observable(undefined);
-        self.feature_sdAlwaysAvailable = ko.observable(undefined);
-        self.feature_swallowOkAfterResend = ko.observable(undefined);
-        self.feature_repetierTargetTemp = ko.observable(undefined);
-        self.feature_disableExternalHeatupDetection = ko.observable(undefined);
         self.feature_keyboardControl = ko.observable(undefined);
         self.feature_pollWatched = ko.observable(undefined);
-        self.feature_ignoreIdenticalResends = ko.observable(undefined);
         self.feature_modelSizeDetection = ko.observable(undefined);
-        self.feature_firmwareDetection = ko.observable(undefined);
         self.feature_printCancelConfirmation = ko.observable(undefined);
-        self.feature_blockWhileDwelling = ko.observable(undefined);
         self.feature_g90InfluencesExtruder = ko.observable(undefined);
+        self.feature_autoUppercaseBlacklist = ko.observable(undefined);
+        self.feature_legacyPluginAssets = ko.observable(undefined);
 
         self.serial_port = ko.observable();
         self.serial_baudrate = ko.observable();
@@ -163,6 +155,7 @@ $(function() {
         self.serial_timeoutConnection = ko.observable(undefined);
         self.serial_timeoutDetection = ko.observable(undefined);
         self.serial_timeoutCommunication = ko.observable(undefined);
+        self.serial_timeoutCommunicationBusy = ko.observable(undefined);
         self.serial_timeoutTemperature = ko.observable(undefined);
         self.serial_timeoutTemperatureTargetSet = ko.observable(undefined);
         self.serial_timeoutTemperatureAutoreport = ko.observable(undefined);
@@ -176,13 +169,24 @@ $(function() {
         self.serial_ignoreErrorsFromFirmware = ko.observable(undefined);
         self.serial_disconnectOnErrors = ko.observable(undefined);
         self.serial_triggerOkForM29 = ko.observable(undefined);
-        self.serial_autoUppercaseBlacklist = ko.observable(undefined);
+        self.serial_waitForStart =  ko.observable(undefined);
+        self.serial_sendChecksum =  ko.observable("print");
+        self.serial_sdRelativePath =  ko.observable(undefined);
+        self.serial_sdAlwaysAvailable =  ko.observable(undefined);
+        self.serial_swallowOkAfterResend =  ko.observable(undefined);
+        self.serial_repetierTargetTemp =  ko.observable(undefined);
+        self.serial_disableExternalHeatupDetection =  ko.observable(undefined);
+        self.serial_ignoreIdenticalResends =  ko.observable(undefined);
+        self.serial_firmwareDetection =  ko.observable(undefined);
+        self.serial_blockWhileDwelling =  ko.observable(undefined);
         self.serial_supportResendsWithoutOk = ko.observable(undefined);
         self.serial_logPositionOnPause = ko.observable(undefined);
         self.serial_logPositionOnCancel = ko.observable(undefined);
         self.serial_maxTimeoutsIdle = ko.observable(undefined);
         self.serial_maxTimeoutsPrinting = ko.observable(undefined);
         self.serial_maxTimeoutsLong = ko.observable(undefined);
+        self.serial_capAutoreportTemp = ko.observable(undefined);
+        self.serial_capBusyProtocol = ko.observable(undefined);
 
         self.folder_uploads = ko.observable(undefined);
         self.folder_timelapse = ko.observable(undefined);
@@ -247,6 +251,25 @@ $(function() {
             self.server_onlineCheckOk(false);
             self.server_onlineCheckBroken(false);
         };
+
+        self.observableCopies = {
+            "feature_waitForStart": "serial_waitForStart",
+            "feature_sendChecksum": "serial_sendChecksum",
+            "feature_sdRelativePath": "serial_sdRelativePath",
+            "feature_sdAlwaysAvailable": "serial_sdAlwaysAvailable",
+            "feature_swallowOkAfterResend": "serial_swallowOkAfterResend",
+            "feature_repetierTargetTemp": "serial_repetierTargetTemp",
+            "feature_disableExternalHeatupDetection": "serial_disableExternalHeatupDetection",
+            "feature_ignoreIdenticalResends": "serial_ignoreIdenticalResends",
+            "feature_firmwareDetection": "serial_firmwareDetection",
+            "feature_blockWhileDwelling": "serial_blockWhileDwelling",
+            "serial_": "feature_"
+        };
+        _.each(self.observableCopies, function(value, key) {
+            if (self.hasOwnProperty(value)) {
+                self[key] = self[value];
+            }
+        });
 
         self.addTemperatureProfile = function() {
             self.temperature_profiles.push({name: "New", extruder:0, bed:0});
@@ -418,7 +441,7 @@ $(function() {
                 autoUpload: false,
                 headers: OctoPrint.getRequestHeaders(),
                 add: function(e, data) {
-                    if (data.files.length === 0) {
+                    if (data.files.length == 0) {
                         return false;
                     }
 
@@ -447,14 +470,14 @@ $(function() {
 
             self.settingsDialog.on('show', function(event) {
                 OctoPrint.coreui.settingsOpen = true;
-                if (event.target.id === "settings_dialog") {
+                if (event.target.id == "settings_dialog") {
                     self.requestTranslationData();
                     callViewModels(allViewModels, "onSettingsShown");
                 }
             });
             self.settingsDialog.on('hidden', function(event) {
                 OctoPrint.coreui.settingsOpen = false;
-                if (event.target.id === "settings_dialog") {
+                if (event.target.id == "settings_dialog") {
                     callViewModels(allViewModels, "onSettingsHidden");
                 }
             });
@@ -528,11 +551,11 @@ $(function() {
         self.requestData = function(local) {
             // handle old parameter format
             var callback = undefined;
-            if (arguments.length === 2 || _.isFunction(local)) {
+            if (arguments.length == 2 || _.isFunction(local)) {
                 var exc = new Error();
                 log.warn("The callback parameter of SettingsViewModel.requestData is deprecated, the method now returns a promise, please use that instead. Stacktrace:", (exc.stack || exc.stacktrace || "<n/a>"));
 
-                if (arguments.length === 2) {
+                if (arguments.length == 2) {
                     callback = arguments[0];
                     local = arguments[1];
                 } else {
@@ -629,8 +652,8 @@ $(function() {
             var translations = [];
             _.each(translationsByLocale, function(item) {
                 item["packs"].sort(function(a, b) {
-                    if (a.identifier === "_core") return -1;
-                    if (b.identifier === "_core") return 1;
+                    if (a.identifier == "_core") return -1;
+                    if (b.identifier == "_core") return 1;
 
                     if (a.display < b.display) return -1;
                     if (a.display > b.display) return 1;
@@ -643,7 +666,7 @@ $(function() {
         };
 
         self.languagePackDisplay = function(item) {
-            return item.display + ((item.english !== undefined) ? ' (' + item.english + ')' : '');
+            return item.display + ((item.english != undefined) ? ' (' + item.english + ')' : '');
         };
 
         self.languagePacksAvailable = ko.pureComputed(function() {
@@ -660,23 +683,23 @@ $(function() {
          */
         self.getLocalData = function() {
             var data = {};
-            if (self.settings !== undefined) {
+            if (self.settings != undefined) {
                 data = ko.mapping.toJS(self.settings);
             }
 
             // some special read functions for various observables
             var specialMappings = {
                 feature: {
-                    externalHeatupDetection: function() { return !self.feature_disableExternalHeatupDetection()},
-                    alwaysSendChecksum: function() { return self.feature_sendChecksum() === "always"},
-                    neverSendChecksum: function() { return self.feature_sendChecksum() === "never"}
+                    autoUppercaseBlacklist: function() { return splitTextToArray(self.feature_autoUppercaseBlacklist(), ",", true) }
                 },
                 serial: {
                     additionalPorts : function() { return commentableLinesToArray(self.serial_additionalPorts()) },
                     additionalBaudrates: function() { return _.map(splitTextToArray(self.serial_additionalBaudrates(), ",", true, function(item) { return !isNaN(parseInt(item)); }), function(item) { return parseInt(item); }) },
                     longRunningCommands: function() { return splitTextToArray(self.serial_longRunningCommands(), ",", true) },
                     checksumRequiringCommands: function() { return splitTextToArray(self.serial_checksumRequiringCommands(), ",", true) },
-                    autoUppercaseBlacklist: function() { return splitTextToArray(self.serial_autoUppercaseBlacklist(), ",", true) }
+                    externalHeatupDetection: function() { return !self.serial_disableExternalHeatupDetection()},
+                    alwaysSendChecksum: function() { return self.serial_sendChecksum() == "always"},
+                    neverSendChecksum: function() { return self.serial_sendChecksum() == "never"}
                 },
                 scripts: {
                     gcode: function() {
@@ -710,8 +733,13 @@ $(function() {
                 // process all key-value-pairs here
                 _.forOwn(data, function(value, key) {
                     var observable = key;
-                    if (keyPrefix !== undefined) {
+                    if (keyPrefix != undefined) {
                         observable = keyPrefix + "_" + observable;
+                    }
+
+                    if (self.observableCopies.hasOwnProperty(observable)) {
+                        // only a copy, skip
+                        return;
                     }
 
                     if (mapping && mapping[key] && _.isFunction(mapping[key])) {
@@ -720,7 +748,7 @@ $(function() {
                     } else if (_.isPlainObject(value)) {
                         // value is another object, we'll dive deeper
                         var subresult = mapFromObservables(value, (mapping && mapping[key]) ? mapping[key] : undefined, observable);
-                        if (subresult !== undefined) {
+                        if (subresult != undefined) {
                             // we only set something on our result if we got something back
                             result[key] = subresult;
                             flag = true;
@@ -779,16 +807,16 @@ $(function() {
                     }
                 },
                 feature: {
-                    externalHeatupDetection: function(value) { self.feature_disableExternalHeatupDetection(!value) },
-                    alwaysSendChecksum: function(value) { if (value) { self.feature_sendChecksum("always")}},
-                    neverSendChecksum: function(value) { if (value) { self.feature_sendChecksum("never")}}
+                    autoUppercaseBlacklist: function(value) { self.feature_autoUppercaseBlacklist(value.join(", "))}
                 },
                 serial: {
                     additionalPorts : function(value) { self.serial_additionalPorts(value.join("\n"))},
                     additionalBaudrates: function(value) { self.serial_additionalBaudrates(value.join(", "))},
                     longRunningCommands: function(value) { self.serial_longRunningCommands(value.join(", "))},
                     checksumRequiringCommands: function(value) { self.serial_checksumRequiringCommands(value.join(", "))},
-                    autoUppercaseBlacklist: function(value) { self.serial_autoUppercaseBlacklist(value.join(", "))}
+                    externalHeatupDetection: function(value) { self.serial_disableExternalHeatupDetection(!value) },
+                    alwaysSendChecksum: function(value) { if (value) { self.serial_sendChecksum("always")}},
+                    neverSendChecksum: function(value) { if (value) { self.serial_sendChecksum("never")}}
                 },
                 terminalFilters: function(value) { self.terminalFilters($.extend(true, [], value)) },
                 temperature: {
@@ -804,8 +832,13 @@ $(function() {
                 // process all key-value-pairs here
                 _.forOwn(data, function(value, key) {
                     var observable = key;
-                    if (keyPrefix !== undefined) {
+                    if (keyPrefix != undefined) {
                         observable = keyPrefix + "_" + observable;
+                    }
+
+                    if (self.observableCopies.hasOwnProperty(observable)) {
+                        // only a copy, skip
+                        return;
                     }
 
                     var haveLocalVersion = local && local.hasOwnProperty(key);
@@ -835,16 +868,16 @@ $(function() {
             } else {
                 options = {
                     success: successCallback,
-                    sending: (setAsSending === true)
+                    sending: (setAsSending == true)
                 }
             }
 
             self.settingsDialog.trigger("beforeSave");
 
             self.sawUpdateEventWhileSending = false;
-            self.sending(data === undefined || options.sending || false);
+            self.sending(data == undefined || options.sending || false);
 
-            if (data === undefined) {
+            if (data == undefined) {
                 // we also only send data that actually changed when no data is specified
                 data = getOnlyChangedData(self.getLocalData(), self.lastReceivedSettings);
             }
@@ -920,16 +953,21 @@ $(function() {
 
         self._resetScrollPosition = function() {
             $('#settings_dialog_content', self.settingsDialog).scrollTop(0);
+
+            // also reset any contained tabs/pills/lists to first pane
+            $('#settings_dialog_content ul.nav-pills a[data-toggle="tab"]:first', self.settingsDialog).tab("show");
+            $('#settings_dialog_content ul.nav-list a[data-toggle="tab"]:first', self.settingsDialog).tab("show");
+            $('#settings_dialog_content ul.nav-tabs a[data-toggle="tab"]:first', self.settingsDialog).tab("show");
         };
 
         self.selectTab = function(tab) {
-            if (tab !== undefined) {
+            if (tab != undefined) {
                 if (!_.startsWith(tab, "#")) {
                     tab = "#" + tab;
                 }
                 $('ul.nav-list a[href="' + tab + '"]', self.settingsDialog).tab("show");
             } else {
-                $('ul.nav-list a:first', self.settingsDialog).tab("show");
+                $('ul.nav-list a[data-toggle="tab"]:first', self.settingsDialog).tab("show");
             }
         };
 
