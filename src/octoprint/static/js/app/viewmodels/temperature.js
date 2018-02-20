@@ -329,7 +329,12 @@ $(function() {
                 yaxis: {
                     min: 0,
                     max: Math.max(Math.max.apply(null, plotInfo.max) * 1.1, 310),
-                    ticks: 10
+                    ticks: 10,
+                    tickFormatter: function(val, axis) {
+                        if (val === undefined || val === 0)
+                            return "";
+                        return val + "°C";
+                    }
                 },
                 xaxis: {
                     mode: "time",
@@ -347,7 +352,8 @@ $(function() {
                         // convert to minutes
                         var diffInMins = Math.round(diff / (60 * 1000));
                         if (diffInMins === 0) {
-                            return gettext("just now");
+                            // don't write anything for "just now"
+                            return "";
                         } else if (diffInMins < 0) {
                             // we can't look into the future
                             return "";

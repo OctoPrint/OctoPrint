@@ -147,6 +147,13 @@ def load_user(id):
 
 	return None
 
+def load_user_from_request(request):
+	return util.get_user_for_authorization_header(request.headers.get('Authorization'))
+
+def unauthorized_user():
+	from flask import abort
+	abort(403)
+
 
 #~~ startup code
 
@@ -342,8 +349,37 @@ class Server(object):
 			"""Factory for injections for all OctoPrintPlugins"""
 			if not isinstance(implementation, octoprint.plugin.OctoPrintPlugin):
 				return None
+
+			components_copy = dict(components)
+			if "printer" in components:
+				import wrapt
+				import functools
+
+				def tagwrap(f):
+					@functools.wraps(f)
+					def wrapper(*args, **kwargs):
+						tags = kwargs.get("tags", set()) | {"source:plugin",
+						                                    "plugin:{}".format(name)}
+						kwargs["tags"] = tags
+						return f(*args, **kwargs)
+					setattr(wrapper, "__tagwrapped__", True)
+					return wrapper
+
+				class TaggedFuncsPrinter(wrapt.ObjectProxy):
+					def __getattribute__(self, attr):
+						__wrapped__ = super(TaggedFuncsPrinter, self).__getattribute__("__wrapped__")
+						item = getattr(__wrapped__, attr)
+						if callable(item) \
+								and ("tags" in item.__code__.co_varnames or "kwargs" in item.__code__.co_varnames) \
+								and not getattr(item, "__tagwrapped__", False):
+							return tagwrap(item)
+						else:
+							return item
+
+				components_copy["printer"] = TaggedFuncsPrinter(components["printer"])
+
 			props = dict()
-			props.update(components)
+			props.update(components_copy)
 			props.update(dict(
 				data_folder=os.path.join(self._settings.getBaseFolder("data"), name)
 			))
@@ -440,6 +476,12 @@ class Server(object):
 		loginManager.session_protection = "strong"
 		loginManager.user_callback = load_user
 		loginManager.anonymous_user = users.AnonymousUser # TODO: remove in 1.5.0
+		loginManager.unauthorized_callback = unauthorized_user
+
+		# login users authenticated by basic auth
+		if self._settings.get(["accessControl", "trustBasicAuthentication"]):
+			loginManager.request_callback = load_user_from_request
+
 		if not userManager.enabled:
 			loginManager.anonymous_user = users.DummyUser
 			principals.identity_loaders.appendleft(users.dummy_identity_loader)
@@ -499,7 +541,7 @@ class Server(object):
 		server_routes = self._router.urls + [
 			# various downloads
 			# .mpg and .mp4 timelapses:
-			(r"/downloads/timelapse/([^/]*\.mp[g4])", util.tornado.LargeResponseHandler, joined_dict(dict(path=self._settings.getBaseFolder("timelapse")),
+			(r"/downloads/timelapse/([^/]*\.m(.*))", util.tornado.LargeResponseHandler, joined_dict(dict(path=self._settings.getBaseFolder("timelapse")),
 			                                                                                      download_handler_kwargs,
 			                                                                                      no_hidden_files_validator)),
 			(r"/downloads/files/local/(.*)", util.tornado.LargeResponseHandler, joined_dict(dict(path=self._settings.getBaseFolder("uploads"),
@@ -521,7 +563,11 @@ class Server(object):
 			# online indicators - text file with "online" as content and a transparent gif
 			(r"/online.txt", util.tornado.StaticDataHandler, dict(data="online\n")),
 			(r"/online.gif", util.tornado.StaticDataHandler, dict(data=bytes(base64.b64decode("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7")),
-			                                                      content_type="image/gif"))
+			                                                      content_type="image/gif")),
+
+			# deprecated endpoints
+			(r"/api/logs", util.tornado.DeprecatedEndpointHandler, dict(url="/plugin/logging/logs")),
+			(r"/api/logs/(.*)", util.tornado.DeprecatedEndpointHandler, dict(url="/plugin/logging/logs/{0}")),
 		]
 
 		# fetch additional routes from plugins
@@ -608,7 +654,7 @@ class Server(object):
 				(port, baudrate) = self._settings.get(["serial", "port"]), self._settings.getInt(["serial", "baudrate"])
 				printer_profile = printerProfileManager.get_default()
 				connectionOptions = printer.__class__.get_connection_options()
-				if port in connectionOptions["ports"]:
+				if port in connectionOptions["ports"] or port == "AUTO":
 						printer.connect(port=port, baudrate=baudrate, profile=printer_profile["id"] if "id" in printer_profile else "_default")
 			except:
 				self._logger.exception("Something went wrong while attempting to automatically connect to the printer")
@@ -1220,7 +1266,6 @@ class Server(object):
 			"js/app/client/files.js",
 			"js/app/client/job.js",
 			"js/app/client/languages.js",
-			"js/app/client/logs.js",
 			"js/app/client/printer.js",
 			"js/app/client/printerprofiles.js",
 			"js/app/client/settings.js",

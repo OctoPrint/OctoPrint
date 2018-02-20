@@ -325,7 +325,7 @@ def uploadGcodeFile(target):
 			"""
 
 			if destination == FileDestinations.SDCARD and octoprint.filemanager.valid_file_type(filename, "machinecode"):
-				return filename, printer.add_sd_file(filename, absFilename, selectAndOrPrint)
+				return filename, printer.add_sd_file(filename, absFilename, selectAndOrPrint, tags={"source:api", "api:files.sd"})
 			else:
 				selectAndOrPrint(filename, absFilename, destination)
 				return filename
@@ -743,7 +743,7 @@ def deleteGcodeFile(filename, target):
 
 		# delete it
 		if target == FileDestinations.SDCARD:
-			printer.delete_sd_file(filename)
+			printer.delete_sd_file(filename, tags={"source:api", "api:files.sd"})
 		else:
 			fileManager.remove_file(target, filename)
 

@@ -19,7 +19,7 @@ import octoprint.server
 import octoprint.plugin
 from octoprint.server import admin_permission, NO_CONTENT
 from octoprint.settings import settings as s, valid_boolean_trues
-from octoprint.server.util import noCachingExceptGetResponseHandler, enforceApiKeyRequestHandler, loginFromApiKeyRequestHandler, corsRequestHandler, corsResponseHandler
+from octoprint.server.util import noCachingExceptGetResponseHandler, enforceApiKeyRequestHandler, loginFromApiKeyRequestHandler, loginFromAuthorizationHeaderRequestHandler, corsRequestHandler, corsResponseHandler
 from octoprint.server.util.flask import restricted_access, get_json_command_from_request, passive_login
 
 
@@ -34,7 +34,6 @@ from . import files as api_files
 from . import settings as api_settings
 from . import timelapse as api_timelapse
 from . import users as api_users
-from . import log as api_logs
 from . import slicing as api_slicing
 from . import printer_profiles as api_printer_profiles
 from . import languages as api_languages
@@ -47,6 +46,7 @@ api.after_request(noCachingExceptGetResponseHandler)
 
 api.before_request(corsRequestHandler)
 api.before_request(enforceApiKeyRequestHandler)
+api.before_request(loginFromAuthorizationHeaderRequestHandler)
 api.before_request(loginFromApiKeyRequestHandler)
 api.after_request(corsResponseHandler)
 
@@ -241,6 +241,9 @@ def _logout(user):
 	if "usersession.id" in session:
 		del session["usersession.id"]
 	octoprint.server.userManager.logout_user(user)
+
+
+#~~ Test utils
 
 
 @api.route("/util/test", methods=["POST"])

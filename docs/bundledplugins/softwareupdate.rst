@@ -213,6 +213,17 @@ Version checks
       information and whether the current version is up-to-date or not, see
       below for details.
 
+  * ``always_current``: Always reports that no update is necessary. Useful for debugging
+    software update mechanisms during development. Additional config parameters:
+
+    * ``current_version``: Version to report for both local and remote version.
+
+  * ``never_current``: Always reports that an update is necessary. Useful for debugging
+    software update mechanisms during development. Additional config parameters:
+
+    * ``local_version``: Current local version. Defaults to ``1.0.0``.
+    * ``remote_version``: Remote version to offer update to. Defaults to ``1.0.1``.
+
 .. _sec-bundledplugins-softwareupdate-configuration-updatemethods:
 
 Update methods

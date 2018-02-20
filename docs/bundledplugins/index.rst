@@ -9,5 +9,6 @@ Bundled Plugins
 
    cura.rst
    discovery.rst
+   logging.rst
    pluginmanager.rst
    softwareupdate.rst

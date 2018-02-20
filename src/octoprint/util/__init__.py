@@ -1167,7 +1167,7 @@ class ResettableTimer(threading.Thread):
 	    on_cancelled (callable): Callback to call when the timer finishes due to being cancelled.
 	    on_reset (callable): Callback to call when the timer is reset.
 	"""
-	
+
 	def __init__(self, interval, function, args=None, kwargs=None, on_reset=None, on_cancelled=None):
 		threading.Thread.__init__(self)
 		self._event = threading.Event()
@@ -1501,3 +1501,26 @@ class ConnectivityChecker(object):
 		                                                              "online" if new_value else "offline"))
 		if callable(self._on_change):
 			self._on_change(old_value, new_value)
+
+
+class CaseInsensitiveSet(collections.Set):
+	"""
+	Basic case insensitive set
+
+	Any str or unicode values will be stored and compared in lower case. Other value types are left as-is.
+	"""
+
+	def __init__(self, *args):
+		self.data = set([x.lower() if isinstance(x, (str, unicode)) else x for x in args])
+
+	def __contains__(self, item):
+		if isinstance(item, (str, unicode)):
+			return item.lower() in self.data
+		else:
+			return item in self.data
+
+	def __iter__(self):
+		return iter(self.data)
+
+	def __len__(self):
+		return len(self.data)
