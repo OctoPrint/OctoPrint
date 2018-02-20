@@ -7,10 +7,13 @@ __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms
 import octoprint.plugin
 from octoprint.settings import settings
 
-from octoprint.server import NO_CONTENT, admin_permission
+from octoprint.server import NO_CONTENT
 from octoprint.server.util.flask import redirect_to_tornado, restricted_access
+from octoprint.access.permissions import Permissions
 
 from flask import request, jsonify, url_for, make_response
+from flask_babel import gettext
+
 from werkzeug.utils import secure_filename
 from werkzeug.exceptions import BadRequest
 import yaml
@@ -26,9 +29,20 @@ class LoggingPlugin(octoprint.plugin.AssetPlugin,
                     octoprint.plugin.SettingsPlugin,
                     octoprint.plugin.TemplatePlugin,
                     octoprint.plugin.BlueprintPlugin):
+
+	# Additional permissions hook
+
+	def get_additional_permissions(self):
+		return [
+			dict(key="MANAGE",
+			     name="Logging manangement",
+			     description=gettext("Allows to download and delete log files and list and set log levels."),
+			     roles=["manage"])
+		]
+
 	@octoprint.plugin.BlueprintPlugin.route("/", methods=["GET"])
 	@restricted_access
-	@admin_permission.require(403)
+	@Permissions.PLUGIN_LOGGING_MANAGE.require(403)
 	def get_all(self):
 		files = self._getLogFiles()
 		free, total = self._get_usage()
@@ -39,7 +53,7 @@ class LoggingPlugin(octoprint.plugin.AssetPlugin,
 
 	@octoprint.plugin.BlueprintPlugin.route("/logs", methods=["GET"])
 	@restricted_access
-	@admin_permission.require(403)
+	@Permissions.PLUGIN_LOGGING_MANAGE.require(403)
 	def get_log_files(self):
 		files = self._getLogFiles()
 		free, total = self._get_usage()
@@ -47,13 +61,13 @@ class LoggingPlugin(octoprint.plugin.AssetPlugin,
 
 	@octoprint.plugin.BlueprintPlugin.route("/logs/<path:filename>", methods=["GET"])
 	@restricted_access
-	@admin_permission.require(403)
+	@Permissions.PLUGIN_LOGGING_MANAGE.require(403)
 	def download_log(self, filename):
 		return redirect_to_tornado(request, url_for("index") + "downloads/logs/" + filename)
 
 	@octoprint.plugin.BlueprintPlugin.route("/logs/<path:filename>", methods=["DELETE"])
 	@restricted_access
-	@admin_permission.require(403)
+	@Permissions.PLUGIN_LOGGING_MANAGE.require(403)
 	def delete_log(self, filename):
 		secure = os.path.join(settings().getBaseFolder("logs"), secure_filename(filename))
 		if not os.path.exists(secure):
@@ -65,7 +79,7 @@ class LoggingPlugin(octoprint.plugin.AssetPlugin,
 
 	@octoprint.plugin.BlueprintPlugin.route("/setup", methods=["GET"])
 	@restricted_access
-	@admin_permission.require(403)
+	@Permissions.PLUGIN_LOGGING_MANAGE.require(403)
 	def get_logging_setup(self):
 		loggers = self._get_available_loggers()
 		levels = self._get_logging_levels()
@@ -73,13 +87,13 @@ class LoggingPlugin(octoprint.plugin.AssetPlugin,
 
 	@octoprint.plugin.BlueprintPlugin.route("/setup/levels", methods=["GET"])
 	@restricted_access
-	@admin_permission.require(403)
+	@Permissions.PLUGIN_LOGGING_MANAGE.require(403)
 	def get_logging_levels_api(self):
 		return jsonify(self._get_logging_levels())
 
 	@octoprint.plugin.BlueprintPlugin.route("/setup/levels", methods=["PUT"])
 	@restricted_access
-	@admin_permission.require(403)
+	@Permissions.PLUGIN_LOGGING_MANAGE.require(403)
 	def set_logging_levels_api(self):
 		if not "application/json" in request.headers["Content-Type"]:
 			return make_response("Expected content-type JSON", 400)
@@ -200,4 +214,12 @@ class LoggingPlugin(octoprint.plugin.AssetPlugin,
 __plugin_name__ = "Logging"
 __plugin_author__ = "Shawn Bruce, based on work by Gina Häußge and Marc Hannappel"
 __plugin_description__ = "Provides access to OctoPrint's logs and logging configuration."
-__plugin_implementation__ = LoggingPlugin()
+
+def __plugin_load__():
+	global __plugin_implementation__
+	__plugin_implementation__ = LoggingPlugin()
+
+	global __plugin_hooks__
+	__plugin_hooks__ = {
+		"octoprint.access.permissions": __plugin_implementation__.get_additional_permissions
+	}
