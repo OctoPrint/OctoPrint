@@ -155,7 +155,7 @@
     <form class="form-inline custom_control">
         <!-- ko template: { name: 'customControls_controlTemplate_input', data: $data, if: $data.hasOwnProperty('input') } --><!-- /ko -->
         <!-- ko template: { name: 'customControls_controlTemplate_command', data: $data, if: !$data.hasOwnProperty('customClass') && ($data.hasOwnProperty('command') || $data.hasOwnProperty('commands') || $data.hasOwnProperty('script') || $data.hasOwnProperty('javascript')) } --><!-- /ko -->
-        <!-- ko template: { name: 'customControls_controlTemplate_command_styled', data: $data, if: $data.hasOwnProperty('customClass') && ($data.hasOwnProperty('command') || $data.hasOwnProperty('commands') || $data.hasOwnProperty('script') || $data.hasOwnProperty('javascript')) } --><!-- /ko -->
+        <!-- ko template: { name: 'customControls_controlTemplate_command_customClass', data: $data, if: $data.hasOwnProperty('customClass') && ($data.hasOwnProperty('command') || $data.hasOwnProperty('commands') || $data.hasOwnProperty('script') || $data.hasOwnProperty('javascript')) } --><!-- /ko -->
         <!-- ko template: { name: 'customControls_controlTemplate_output', data: $data, if: $data.hasOwnProperty('output') } --><!-- /ko -->
     </form>
 </script>
