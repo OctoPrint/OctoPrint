@@ -154,7 +154,8 @@
 <script type="text/html" id="customControls_controlTemplate">
     <form class="form-inline custom_control">
         <!-- ko template: { name: 'customControls_controlTemplate_input', data: $data, if: $data.hasOwnProperty('input') } --><!-- /ko -->
-        <!-- ko template: { name: 'customControls_controlTemplate_command', data: $data, if: $data.hasOwnProperty('command') || $data.hasOwnProperty('commands') || $data.hasOwnProperty('script') || $data.hasOwnProperty('javascript') } --><!-- /ko -->
+        <!-- ko template: { name: 'customControls_controlTemplate_command', data: $data, if: !$data.hasOwnProperty('customClass') && ($data.hasOwnProperty('command') || $data.hasOwnProperty('commands') || $data.hasOwnProperty('script') || $data.hasOwnProperty('javascript')) } --><!-- /ko -->
+        <!-- ko template: { name: 'customControls_controlTemplate_command_styled', data: $data, if: $data.hasOwnProperty('customClass') && ($data.hasOwnProperty('command') || $data.hasOwnProperty('commands') || $data.hasOwnProperty('script') || $data.hasOwnProperty('javascript')) } --><!-- /ko -->
         <!-- ko template: { name: 'customControls_controlTemplate_output', data: $data, if: $data.hasOwnProperty('output') } --><!-- /ko -->
     </form>
 </script>
@@ -174,5 +175,8 @@
 </script>
 <script type="text/html" id="customControls_controlTemplate_command">
     <button class="btn" data-bind="text: name, enable: $root.isCustomEnabled($data), click: function() { $root.clickCustom($data) }"></button>
+</script>
+<script type="text/html" id="customControls_controlTemplate_command_customClass">
+    <button data-bind="text: name, attr: { 'class': customClass }, enable: $root.isCustomEnabled($data), click: function() { $root.clickCustom($data) }"></button>
 </script>
 <!-- End of templates for custom controls -->
