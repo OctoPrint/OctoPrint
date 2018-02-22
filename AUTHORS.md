@@ -88,6 +88,7 @@ date of first contribution):
   * [Josh Major](https://github.com/astateofblank)
   * ["alex-gh"](https://github.com/alex-gh)
   * [Bernd Zeimetz](https://github.com/bzed)
+  * [electr0sheep](https://github.com/electr0sheep)
 
 OctoPrint started off as a fork of [Cura](https://github.com/daid/Cura) by
 [Daid Braam](https://github.com/daid). Parts of its communication layer and
