@@ -222,7 +222,7 @@ $(function() {
 
         self.enableToggle = function(data) {
             var command = self._getToggleCommand(data);
-            var not_safemode_victim = !data.safe_mode_victim || data.safe_mode_enabled;
+            var not_safemode_victim = !data.safe_mode_victim;
             var not_blacklisted = !data.blacklisted;
             return self.enableManagement() && (command == "disable" || (not_safemode_victim && not_blacklisted)) && data.key != 'pluginmanager';
         };
@@ -462,7 +462,7 @@ $(function() {
                 };
 
             if (self._getToggleCommand(data) == "enable") {
-                if (data.safe_mode_victim && !data.safe_mode_enabled) return;
+                if (data.safe_mode_victim) return;
                 OctoPrint.plugins.pluginmanager.enable(data.key)
                     .done(onSuccess)
                     .fail(onError);
@@ -857,7 +857,8 @@ $(function() {
         };
 
         self._getToggleCommand = function(data) {
-            var disable = (data.enabled || data.pending_enable || (data.safe_mode_victim && data.safe_mode_enabled)) && !data.pending_disable;
+            var disable = (data.enabled || (data.safe_mode_victim && !data.forced_disabled) || data.pending_enable)
+                && !data.pending_disable;
             return disable ? "disable" : "enable";
         };
 
@@ -873,7 +874,7 @@ $(function() {
             if (command == "enable") {
                 if (data.blacklisted) {
                     return gettext("Blacklisted");
-                } else if (data.safe_mode_victim && !data.safe_mode_enabled) {
+                } else if (data.safe_mode_victim) {
                     return gettext("Disabled due to active safe mode");
                 } else {
                     return gettext("Enable Plugin");

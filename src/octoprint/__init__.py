@@ -322,12 +322,9 @@ def init_pluginsystem(settings, safe_mode=False, ignore_blacklist=True, connecti
 	plugin_validators = []
 	if safe_mode:
 		def validator(phase, plugin_info):
-			if phase == "after_load":
+			if phase in ("before_import", "before_load", "before_enable"):
 				setattr(plugin_info, "safe_mode_victim", not plugin_info.bundled)
-				setattr(plugin_info, "safe_mode_enabled", False)
-			elif phase == "before_enable":
 				if not plugin_info.bundled:
-					setattr(plugin_info, "safe_mode_enabled", True)
 					return False
 			return True
 		plugin_validators.append(validator)
@@ -440,7 +437,7 @@ def get_plugin_blacklist(settings, connectivity_checker=None):
 					result.append((entry["plugin"], version))
 			else:
 				logger.debug("Blacklisted plugin: {}".format(entry["plugin"]))
-				result.append(entry["key"])
+				result.append(entry["plugin"])
 
 		return result
 

@@ -144,6 +144,7 @@ class PluginInfo(object):
 		self.origin = None
 		self.enabled = True
 		self.blacklisted = False
+		self.forced_disabled = False
 		self.bundled = False
 		self.loaded = False
 		self.managable = True
@@ -159,7 +160,10 @@ class PluginInfo(object):
 	def validate(self, phase, additional_validators=None):
 		result = True
 
-		if phase == "before_load":
+		if phase == "before_import":
+			result = not self.forced_disabled and not self.blacklisted and result
+
+		elif phase == "before_load":
 			# if the plugin still uses __plugin_init__, log a deprecation warning and move it to __plugin_load__
 			if hasattr(self.instance, self.__class__.attr_init):
 				if not hasattr(self.instance, self.__class__.attr_load):
@@ -193,7 +197,7 @@ class PluginInfo(object):
 
 		if additional_validators is not None:
 			for validator in additional_validators:
-				result = result and validator(phase, self)
+				result = validator(phase, self) and result
 
 		return result
 
@@ -602,14 +606,13 @@ class PluginManager(object):
 							# plugin is already defined, ignore it
 							continue
 
-						plugin = self._import_plugin_from_module(key, folder=folder)
+						bundled = flagged_readonly
+
+						plugin = self._import_plugin_from_module(key, folder=folder, bundled=bundled)
 						if plugin:
 							plugin.origin = FolderOrigin("folder", folder)
 							plugin.managable = not flagged_readonly and not actual_readonly
-							plugin.bundled = flagged_readonly
-
 							plugin.enabled = False
-
 							result[key] = plugin
 					except:
 						self.logger.exception("Error processing folder entry {!r} from folder {}".format(entry, folder))
@@ -676,6 +679,7 @@ class PluginManager(object):
 					plugin = self._import_plugin_from_module(key, **kwargs)
 					if plugin:
 						plugin.origin = EntryPointOrigin("entry_point", group, module_name, package_name, version)
+						plugin.enabled = False
 
 						# plugin is manageable if its location is writable and OctoPrint
 						# is either not running from a virtual env or the plugin is
@@ -685,19 +689,19 @@ class PluginManager(object):
 						plugin.managable = os.access(plugin.location, os.W_OK) \
 						                   and (not self._python_virtual_env
 						                        or is_sub_path_of(plugin.location, self._python_prefix)
-												or is_editable_install(self._python_install_dir,
-																	   package_name,
-																	   module_name,
-																	   plugin.location))
+						                        or is_editable_install(self._python_install_dir,
+						                                               package_name,
+						                                               module_name,
+						                                               plugin.location))
 
-						plugin.enabled = False
 						result[key] = plugin
 				except:
 					self.logger.exception("Error processing entry point {!r} for group {}".format(entry_point, group))
 
 		return result
 
-	def _import_plugin_from_module(self, key, folder=None, module_name=None, name=None, version=None, summary=None, author=None, url=None, license=None):
+	def _import_plugin_from_module(self, key, folder=None, module_name=None, name=None, version=None, summary=None,
+	                               author=None, url=None, license=None, bundled=False):
 		# TODO error handling
 		try:
 			if folder:
@@ -710,29 +714,40 @@ class PluginManager(object):
 			self.logger.warn("Could not locate plugin {key}".format(key=key))
 			return None
 
+		# Create a simple dummy entry first ...
+		plugin = PluginInfo(key, module[1], None, name=name, version=version, description=summary, author=author,
+		                    url=url, license=license)
+		plugin.bundled = bundled
+
+		if self._is_plugin_disabled(key):
+			self.logger.info("Plugin {} is disabled.".format(plugin))
+			plugin.forced_disabled = True
+
 		if self._is_plugin_blacklisted(key) or (version is not None and self._is_plugin_version_blacklisted(key, version)):
-			plugin = PluginInfo(key, module[1], None, name=name, version=version, description=summary, author=author, url=url, license=license)
+			self.logger.warn("Plugin {} is blacklisted.".format(plugin))
 			plugin.blacklisted = True
-			self.logger.warn("Plugin {} is blacklisted. Not importing it, only registering a dummy entry.".format(plugin))
+
+		if not plugin.validate("before_import", additional_validators=self.plugin_validators):
 			return plugin
 
-		plugin = self._import_plugin(key, *module, name=name, version=version, summary=summary, author=author, url=url, license=license)
-		if plugin is None:
+		# ... then create and return the real one
+		return self._import_plugin(key, *module,
+		                           name=name, version=version, summary=summary, author=author, url=url,
+		                           license=license, bundled=bundled)
+
+	def _import_plugin(self, key, f, filename, description, name=None, version=None, summary=None, author=None, url=None, license=None, bundled=False):
+		try:
+			instance = imp.load_module(key, f, filename, description)
+			plugin = PluginInfo(key, filename, instance, name=name, version=version, description=summary, author=author, url=url, license=license)
+			plugin.bundled = bundled
+		except:
+			self.logger.exception("Error loading plugin {key}".format(key=key))
 			return None
 
 		if plugin.check():
 			return plugin
 		else:
 			self.logger.warn("Plugin \"{plugin}\" did not pass check".format(plugin=str(plugin)))
-			return None
-
-
-	def _import_plugin(self, key, f, filename, description, name=None, version=None, summary=None, author=None, url=None, license=None):
-		try:
-			instance = imp.load_module(key, f, filename, description)
-			return PluginInfo(key, filename, instance, name=name, version=version, description=summary, author=author, url=url, license=license)
-		except:
-			self.logger.exception("Error loading plugin {key}".format(key=key))
 			return None
 
 	def _is_plugin_disabled(self, key):
@@ -765,7 +780,7 @@ class PluginManager(object):
 		# 1st pass: loading the plugins
 		for name, plugin in plugins.items():
 			try:
-				if not plugin.blacklisted:
+				if not plugin.blacklisted and not plugin.forced_disabled:
 					self.load_plugin(name, plugin, startup=startup, initialize_implementation=initialize_implementations)
 			except PluginNeedsRestart:
 				pass
@@ -779,7 +794,7 @@ class PluginManager(object):
 		# 2nd pass: enabling those plugins that need enabling
 		for name, plugin in plugins.items():
 			try:
-				if plugin.loaded and not self._is_plugin_disabled(name):
+				if plugin.loaded and not plugin.forced_disabled:
 					if plugin.blacklisted:
 						self.logger.warn("Plugin {} is blacklisted. Not enabling it.".format(plugin))
 						continue
