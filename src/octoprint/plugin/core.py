@@ -157,6 +157,8 @@ class PluginInfo(object):
 		self._url = url
 		self._license = license
 
+		self._cached_parsed_metadata = None
+
 	def validate(self, phase, additional_validators=None):
 		result = True
 
@@ -292,7 +294,9 @@ class PluginInfo(object):
 		Returns:
 		    str: Name of the plugin, fallback is the plugin's identifier.
 		"""
-		return self._get_instance_attribute(self.__class__.attr_name, defaults=(self._name, self.key))
+		return self._get_instance_attribute(self.__class__.attr_name,
+		                                    defaults=(self._name, self.key),
+		                                    incl_metadata=True)
 
 	@property
 	def description(self):
@@ -304,7 +308,9 @@ class PluginInfo(object):
 		Returns:
 		    str or None: Description of the plugin.
 		"""
-		return self._get_instance_attribute(self.__class__.attr_description, default=self._description)
+		return self._get_instance_attribute(self.__class__.attr_description,
+		                                    default=self._description,
+		                                    incl_metadata=True)
 
 	@property
 	def disabling_discouraged(self):
@@ -328,7 +334,9 @@ class PluginInfo(object):
 		Returns:
 		    str or None: Version of the plugin.
 		"""
-		return self._version if self._version is not None else self._get_instance_attribute(self.__class__.attr_version, default=self._version)
+		return self._version if self._version is not None else self._get_instance_attribute(self.__class__.attr_version,
+		                                                                                    default=self._version,
+		                                                                                    incl_metadata=True)
 
 	@property
 	def author(self):
@@ -339,7 +347,9 @@ class PluginInfo(object):
 		Returns:
 		    str or None: Author of the plugin.
 		"""
-		return self._get_instance_attribute(self.__class__.attr_author, default=self._author)
+		return self._get_instance_attribute(self.__class__.attr_author,
+		                                    default=self._author,
+		                                    incl_metadata=True)
 
 	@property
 	def url(self):
@@ -350,7 +360,9 @@ class PluginInfo(object):
 		Returns:
 		    str or None: Website URL for the plugin.
 		"""
-		return self._get_instance_attribute(self.__class__.attr_url, default=self._url)
+		return self._get_instance_attribute(self.__class__.attr_url,
+		                                    default=self._url,
+		                                    incl_metadata=True)
 
 	@property
 	def license(self):
@@ -361,7 +373,9 @@ class PluginInfo(object):
 		Returns:
 		    str or None: License of the plugin.
 		"""
-		return self._get_instance_attribute(self.__class__.attr_license, default=self._license)
+		return self._get_instance_attribute(self.__class__.attr_license,
+		                                    default=self._license,
+		                                    incl_metadata=True)
 
 	@property
 	def hooks(self):
@@ -452,14 +466,68 @@ class PluginInfo(object):
 		"""
 		return self._get_instance_attribute(self.__class__.attr_disable, default=lambda: True)
 
-	def _get_instance_attribute(self, attr, default=None, defaults=None):
+	def _get_instance_attribute(self, attr, default=None, defaults=None, incl_metadata=False):
 		if self.instance is None or not hasattr(self.instance, attr):
-			if defaults is not None:
+			if incl_metadata and attr in self._parsed_metadata:
+				return self._parsed_metadata[attr]
+
+			elif defaults is not None:
 				for value in defaults:
+					if callable(value):
+						value = value()
 					if value is not None:
 						return value
+
 			return default
+
 		return getattr(self.instance, attr)
+
+	@property
+	def _parsed_metadata(self):
+		if self._cached_parsed_metadata is None:
+			self._cached_parsed_metadata = self._parse_metadata()
+		return self._cached_parsed_metadata
+
+	def _parse_metadata(self):
+		result = dict()
+		try:
+			import ast
+
+			path = self.location
+			if os.path.isdir(path):
+				path = os.path.join(self.location, "__init__.py")
+
+			if not os.path.isfile(path):
+				return result
+
+			with open(path, "rb") as f:
+				root = ast.parse(f.read())
+
+			assignments = filter(lambda x: isinstance(x, ast.Assign) and x.targets,
+			                     root.body)
+
+			def extract_target_ids(node):
+				return map(lambda x: x.id,
+				           filter(lambda x: isinstance(x, ast.Name), node.targets))
+
+			for key in (self.__class__.attr_name, self.__class__.attr_version, self.__class__.attr_author,
+			            self.__class__.attr_description, self.__class__.attr_url, self.__class__.attr_license):
+				for a in reversed(assignments):
+					targets = extract_target_ids(a)
+					if key in targets:
+						if isinstance(a.value, ast.Str):
+							result[key] = a.value.s
+
+						elif isinstance(a.value, ast.Call) and hasattr(a.value, "func") \
+								and a.value.func.id == "gettext" and a.value.args \
+								and isinstance(a.value.args[0], ast.Str):
+							result[key] = a.value.args[0].s
+
+						break
+		except:
+			pass
+
+		return result
 
 
 class PluginManager(object):
