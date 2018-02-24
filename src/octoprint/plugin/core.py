@@ -137,7 +137,7 @@ class PluginInfo(object):
 	attr_disable = '__plugin_disable__'
 	""" Module attribute which to call when disabling the plugin. """
 
-	def __init__(self, key, location, instance, name=None, version=None, description=None, author=None, url=None, license=None):
+	def __init__(self, key, location, instance, name=None, version=None, description=None, author=None, url=None, license=None, parsed_metadata=None):
 		self.key = key
 		self.location = location
 		self.instance = instance
@@ -157,7 +157,9 @@ class PluginInfo(object):
 		self._url = url
 		self._license = license
 
-		self._cached_parsed_metadata = None
+		self._logger = logging.getLogger(__name__)
+
+		self._cached_parsed_metadata = parsed_metadata
 
 	def validate(self, phase, additional_validators=None):
 		result = True
@@ -468,8 +470,8 @@ class PluginInfo(object):
 
 	def _get_instance_attribute(self, attr, default=None, defaults=None, incl_metadata=False):
 		if self.instance is None or not hasattr(self.instance, attr):
-			if incl_metadata and attr in self._parsed_metadata:
-				return self._parsed_metadata[attr]
+			if incl_metadata and attr in self.parsed_metadata:
+				return self.parsed_metadata[attr]
 
 			elif defaults is not None:
 				for value in defaults:
@@ -483,12 +485,14 @@ class PluginInfo(object):
 		return getattr(self.instance, attr)
 
 	@property
-	def _parsed_metadata(self):
+	def parsed_metadata(self):
 		if self._cached_parsed_metadata is None:
 			self._cached_parsed_metadata = self._parse_metadata()
 		return self._cached_parsed_metadata
 
 	def _parse_metadata(self):
+		self._logger.debug("Parsing plugin metadata for {} from AST".format(self.key))
+
 		result = dict()
 		try:
 			import ast
@@ -791,7 +795,7 @@ class PluginManager(object):
 			self.logger.info("Plugin {} is disabled.".format(plugin))
 			plugin.forced_disabled = True
 
-		if self._is_plugin_blacklisted(key) or (version is not None and self._is_plugin_version_blacklisted(key, version)):
+		if self._is_plugin_blacklisted(key) or (plugin.version is not None and self._is_plugin_version_blacklisted(key, plugin.version)):
 			self.logger.warn("Plugin {} is blacklisted.".format(plugin))
 			plugin.blacklisted = True
 
@@ -801,12 +805,19 @@ class PluginManager(object):
 		# ... then create and return the real one
 		return self._import_plugin(key, *module,
 		                           name=name, version=version, summary=summary, author=author, url=url,
-		                           license=license, bundled=bundled)
+		                           license=license, bundled=bundled, parsed_metadata=plugin.parsed_metadata)
 
-	def _import_plugin(self, key, f, filename, description, name=None, version=None, summary=None, author=None, url=None, license=None, bundled=False):
+	def _import_plugin(self, key, f, filename, description, name=None, version=None, summary=None, author=None, url=None, license=None, bundled=False, parsed_metadata=None):
 		try:
 			instance = imp.load_module(key, f, filename, description)
-			plugin = PluginInfo(key, filename, instance, name=name, version=version, description=summary, author=author, url=url, license=license)
+			plugin = PluginInfo(key, filename, instance,
+			                    name=name,
+			                    version=version,
+			                    description=summary,
+			                    author=author,
+			                    url=url,
+			                    license=license,
+			                    parsed_metadata=parsed_metadata)
 			plugin.bundled = bundled
 		except:
 			self.logger.exception("Error loading plugin {key}".format(key=key))
@@ -919,13 +930,7 @@ class PluginManager(object):
 			plugin.load()
 			plugin.validate("after_load", additional_validators=self.plugin_validators)
 			self.on_plugin_loaded(name, plugin)
-
 			plugin.loaded = True
-
-			# we might only now have a version, so check again if we are blacklisted
-			if not plugin.blacklisted and plugin.version and self._is_plugin_version_blacklisted(plugin.key,
-			                                                                                     plugin.version):
-				plugin.blacklisted = True
 
 			self.logger.debug("Loaded plugin {name}: {plugin}".format(**locals()))
 		except PluginLifecycleException as e:
