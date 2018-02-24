@@ -3978,6 +3978,7 @@ def upload_cli():
 
 			self._path = path
 			self._target = target
+			self._state = None
 
 		def on_comm_file_transfer_started(self, filename, filesize):
 			# transfer started, report
@@ -3990,6 +3991,8 @@ def upload_cli():
 			self.finished.set()
 
 		def on_comm_state_change(self, state):
+			self._state = state
+
 			if state in (MachineCom.STATE_ERROR, MachineCom.STATE_CLOSED_WITH_ERROR):
 				# report and exit on errors
 				logger.error("Error/closed with error, exiting.")
@@ -3997,14 +4000,22 @@ def upload_cli():
 				self.finished.set()
 
 			elif state in (MachineCom.STATE_OPERATIONAL,) and not self.started:
-				# start transfer once we are operational
-				self.comm.startFileTransfer(self._path, os.path.basename(self._path), self._target)
+				def run():
+					logger.info("Looks like we are operational, waiting a bit for everything to settle")
+					time.sleep(15)
+					if self._state in (MachineCom.STATE_OPERATIONAL,) and not self.started:
+						# start transfer once we are operational
+						self.comm.startFileTransfer(self._path, os.path.basename(self._path), self._target)
+
+				thread = threading.Thread(target=run)
+				thread.daemon = True
+				thread.start()
 
 	callback = MyMachineComCallback(path, target)
 
 	# mock printer profile manager
 	profile = dict(heatedBed=False,
-	               extruder=dict(count=1))
+	               extruder=dict(count=1, sharedNozzle=False))
 	printer_profile_manager = Object()
 	printer_profile_manager.get_current_or_default = lambda: profile
 
