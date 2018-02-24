@@ -5,6 +5,8 @@ __author__ = "Gina Häußge <osd@foosel.net>"
 __license__ = 'GNU Affero General Public License http://www.gnu.org/licenses/agpl.html'
 __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms of the AGPLv3 License"
 
+import base64
+
 from octoprint.settings import settings
 import octoprint.timelapse
 import octoprint.server
@@ -68,11 +70,36 @@ def loginFromApiKeyRequestHandler():
 		return
 
 	user = get_user_for_apikey(apikey)
-	if user is not None and _flask.ext.login.login_user(user, remember=False):
+	if not loginUser(user):
+		return _flask.make_response("Invalid API key", 403)
+
+
+def loginFromAuthorizationHeaderRequestHandler():
+	"""
+	``before_request`` handler for creating login sessions based on the Authorization header.
+	"""
+
+	authorization_header = get_authorization_header(_flask.request)
+	user = get_user_for_authorization_header(authorization_header)
+	loginUser(user)
+
+
+def loginUser(user, remember=False):
+	"""
+	Logs the provided ``user`` into Flask Login and Principal if not None and active
+
+	Args:
+		user: the User to login. May be None in which case the login will fail
+		remember: Whether to set the ``remember`` flag on the Flask Login operation
+
+	Returns: (bool) True if the login succeeded, False otherwise
+
+	"""
+	if user is not None and user.is_active() and _flask.ext.login.login_user(user, remember=remember):
 		_flask.ext.principal.identity_changed.send(_flask.current_app._get_current_object(),
 		                                           identity=_flask.ext.principal.Identity(user.get_id()))
-	else:
-		return _flask.make_response("Invalid API key", 403)
+		return True
+	return False
 
 
 def corsRequestHandler():
@@ -171,6 +198,36 @@ def get_user_for_apikey(apikey):
 	return None
 
 
+def get_user_for_authorization_header(header):
+	if not settings().getBoolean(["accessControl", "trustBasicAuthentication"]):
+		return None
+
+	if header is None:
+		return None
+
+	if not header.startswith("Basic "):
+		# we currently only support Basic Authentication
+		return None
+
+	header = header.replace('Basic ', '', 1)
+	try:
+		header = base64.b64decode(header)
+	except TypeError:
+		return None
+
+	name, password = header.split(':', 1)
+	if not octoprint.server.userManager.enabled:
+		return None
+
+	user = octoprint.server.userManager.findUser(userid=name)
+	if settings().getBoolean(["accessControl", "checkBasicAuthenticationPassword"]) \
+			and not octoprint.server.userManager.checkPassword(name, password):
+		# password check enabled and password don't match
+		return None
+
+	return user
+
+
 def get_api_key(request):
 	# Check Flask GET/POST arguments
 	if hasattr(request, "values") and "apikey" in request.values:
@@ -186,6 +243,11 @@ def get_api_key(request):
 		return request.headers.get("X-Api-Key")
 
 	return None
+
+
+def get_authorization_header(request):
+	# Tornado and Flask headers
+	return request.headers.get("Authorization")
 
 
 def get_plugin_hash():

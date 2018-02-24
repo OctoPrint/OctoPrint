@@ -21,16 +21,20 @@ Action commands are a feature defined for the GCODE based RepRap communication p
 
 OctoPrint out of the box supports handling of the above mentioned commands:
 
+cancel
+    When this command is received from the printer, OctoPrint will cancel a current print job like if the
+    "Cancel" button had been clicked.
+
 pause
-    When this command is received from the printer, OctoPrint will pause streaming of a current print job just like if the
+    When this command is received from the printer, OctoPrint will pause a current print job just like if the
     "Pause" button had been clicked.
 
 resume
-    When this command is received from the printer, OctoPrint will resume streaming of a current print job just like if
+    When this command is received from the printer, OctoPrint will resume a current print job just like if
     the "Resume" button had been clicked.
 
 disconnect
-    When this command is Received from the printer, OctoPrint will immediately disconnect from it.
+    When this command is received from the printer, OctoPrint will immediately disconnect from it.
 
 Support for additional commands may be added by plugins by implementing a handler for the
 :ref:`octoprint.comm.protocol.action <sec-plugins-hook-comm-protocol-action>` hook.

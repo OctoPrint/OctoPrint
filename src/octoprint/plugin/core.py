@@ -144,6 +144,7 @@ class PluginInfo(object):
 		self.origin = None
 		self.enabled = True
 		self.blacklisted = False
+		self.forced_disabled = False
 		self.bundled = False
 		self.loaded = False
 		self.managable = True
@@ -156,10 +157,15 @@ class PluginInfo(object):
 		self._url = url
 		self._license = license
 
+		self._cached_parsed_metadata = None
+
 	def validate(self, phase, additional_validators=None):
 		result = True
 
-		if phase == "before_load":
+		if phase == "before_import":
+			result = not self.forced_disabled and not self.blacklisted and result
+
+		elif phase == "before_load":
 			# if the plugin still uses __plugin_init__, log a deprecation warning and move it to __plugin_load__
 			if hasattr(self.instance, self.__class__.attr_init):
 				if not hasattr(self.instance, self.__class__.attr_load):
@@ -193,7 +199,7 @@ class PluginInfo(object):
 
 		if additional_validators is not None:
 			for validator in additional_validators:
-				result = result and validator(phase, self)
+				result = validator(phase, self) and result
 
 		return result
 
@@ -288,7 +294,9 @@ class PluginInfo(object):
 		Returns:
 		    str: Name of the plugin, fallback is the plugin's identifier.
 		"""
-		return self._get_instance_attribute(self.__class__.attr_name, defaults=(self._name, self.key))
+		return self._get_instance_attribute(self.__class__.attr_name,
+		                                    defaults=(self._name, self.key),
+		                                    incl_metadata=True)
 
 	@property
 	def description(self):
@@ -300,7 +308,9 @@ class PluginInfo(object):
 		Returns:
 		    str or None: Description of the plugin.
 		"""
-		return self._get_instance_attribute(self.__class__.attr_description, default=self._description)
+		return self._get_instance_attribute(self.__class__.attr_description,
+		                                    default=self._description,
+		                                    incl_metadata=True)
 
 	@property
 	def disabling_discouraged(self):
@@ -324,7 +334,9 @@ class PluginInfo(object):
 		Returns:
 		    str or None: Version of the plugin.
 		"""
-		return self._version if self._version is not None else self._get_instance_attribute(self.__class__.attr_version, default=self._version)
+		return self._version if self._version is not None else self._get_instance_attribute(self.__class__.attr_version,
+		                                                                                    default=self._version,
+		                                                                                    incl_metadata=True)
 
 	@property
 	def author(self):
@@ -335,7 +347,9 @@ class PluginInfo(object):
 		Returns:
 		    str or None: Author of the plugin.
 		"""
-		return self._get_instance_attribute(self.__class__.attr_author, default=self._author)
+		return self._get_instance_attribute(self.__class__.attr_author,
+		                                    default=self._author,
+		                                    incl_metadata=True)
 
 	@property
 	def url(self):
@@ -346,7 +360,9 @@ class PluginInfo(object):
 		Returns:
 		    str or None: Website URL for the plugin.
 		"""
-		return self._get_instance_attribute(self.__class__.attr_url, default=self._url)
+		return self._get_instance_attribute(self.__class__.attr_url,
+		                                    default=self._url,
+		                                    incl_metadata=True)
 
 	@property
 	def license(self):
@@ -357,7 +373,9 @@ class PluginInfo(object):
 		Returns:
 		    str or None: License of the plugin.
 		"""
-		return self._get_instance_attribute(self.__class__.attr_license, default=self._license)
+		return self._get_instance_attribute(self.__class__.attr_license,
+		                                    default=self._license,
+		                                    incl_metadata=True)
 
 	@property
 	def hooks(self):
@@ -448,14 +466,68 @@ class PluginInfo(object):
 		"""
 		return self._get_instance_attribute(self.__class__.attr_disable, default=lambda: True)
 
-	def _get_instance_attribute(self, attr, default=None, defaults=None):
+	def _get_instance_attribute(self, attr, default=None, defaults=None, incl_metadata=False):
 		if self.instance is None or not hasattr(self.instance, attr):
-			if defaults is not None:
+			if incl_metadata and attr in self._parsed_metadata:
+				return self._parsed_metadata[attr]
+
+			elif defaults is not None:
 				for value in defaults:
+					if callable(value):
+						value = value()
 					if value is not None:
 						return value
+
 			return default
+
 		return getattr(self.instance, attr)
+
+	@property
+	def _parsed_metadata(self):
+		if self._cached_parsed_metadata is None:
+			self._cached_parsed_metadata = self._parse_metadata()
+		return self._cached_parsed_metadata
+
+	def _parse_metadata(self):
+		result = dict()
+		try:
+			import ast
+
+			path = self.location
+			if os.path.isdir(path):
+				path = os.path.join(self.location, "__init__.py")
+
+			if not os.path.isfile(path):
+				return result
+
+			with open(path, "rb") as f:
+				root = ast.parse(f.read())
+
+			assignments = filter(lambda x: isinstance(x, ast.Assign) and x.targets,
+			                     root.body)
+
+			def extract_target_ids(node):
+				return map(lambda x: x.id,
+				           filter(lambda x: isinstance(x, ast.Name), node.targets))
+
+			for key in (self.__class__.attr_name, self.__class__.attr_version, self.__class__.attr_author,
+			            self.__class__.attr_description, self.__class__.attr_url, self.__class__.attr_license):
+				for a in reversed(assignments):
+					targets = extract_target_ids(a)
+					if key in targets:
+						if isinstance(a.value, ast.Str):
+							result[key] = a.value.s
+
+						elif isinstance(a.value, ast.Call) and hasattr(a.value, "func") \
+								and a.value.func.id == "gettext" and a.value.args \
+								and isinstance(a.value.args[0], ast.Str):
+							result[key] = a.value.args[0].s
+
+						break
+		except:
+			pass
+
+		return result
 
 
 class PluginManager(object):
@@ -602,14 +674,13 @@ class PluginManager(object):
 							# plugin is already defined, ignore it
 							continue
 
-						plugin = self._import_plugin_from_module(key, folder=folder)
+						bundled = flagged_readonly
+
+						plugin = self._import_plugin_from_module(key, folder=folder, bundled=bundled)
 						if plugin:
 							plugin.origin = FolderOrigin("folder", folder)
 							plugin.managable = not flagged_readonly and not actual_readonly
-							plugin.bundled = flagged_readonly
-
 							plugin.enabled = False
-
 							result[key] = plugin
 					except:
 						self.logger.exception("Error processing folder entry {!r} from folder {}".format(entry, folder))
@@ -676,6 +747,7 @@ class PluginManager(object):
 					plugin = self._import_plugin_from_module(key, **kwargs)
 					if plugin:
 						plugin.origin = EntryPointOrigin("entry_point", group, module_name, package_name, version)
+						plugin.enabled = False
 
 						# plugin is manageable if its location is writable and OctoPrint
 						# is either not running from a virtual env or the plugin is
@@ -685,19 +757,19 @@ class PluginManager(object):
 						plugin.managable = os.access(plugin.location, os.W_OK) \
 						                   and (not self._python_virtual_env
 						                        or is_sub_path_of(plugin.location, self._python_prefix)
-												or is_editable_install(self._python_install_dir,
-																	   package_name,
-																	   module_name,
-																	   plugin.location))
+						                        or is_editable_install(self._python_install_dir,
+						                                               package_name,
+						                                               module_name,
+						                                               plugin.location))
 
-						plugin.enabled = False
 						result[key] = plugin
 				except:
 					self.logger.exception("Error processing entry point {!r} for group {}".format(entry_point, group))
 
 		return result
 
-	def _import_plugin_from_module(self, key, folder=None, module_name=None, name=None, version=None, summary=None, author=None, url=None, license=None):
+	def _import_plugin_from_module(self, key, folder=None, module_name=None, name=None, version=None, summary=None,
+	                               author=None, url=None, license=None, bundled=False):
 		# TODO error handling
 		try:
 			if folder:
@@ -710,29 +782,40 @@ class PluginManager(object):
 			self.logger.warn("Could not locate plugin {key}".format(key=key))
 			return None
 
+		# Create a simple dummy entry first ...
+		plugin = PluginInfo(key, module[1], None, name=name, version=version, description=summary, author=author,
+		                    url=url, license=license)
+		plugin.bundled = bundled
+
+		if self._is_plugin_disabled(key):
+			self.logger.info("Plugin {} is disabled.".format(plugin))
+			plugin.forced_disabled = True
+
 		if self._is_plugin_blacklisted(key) or (version is not None and self._is_plugin_version_blacklisted(key, version)):
-			plugin = PluginInfo(key, module[1], None, name=name, version=version, description=summary, author=author, url=url, license=license)
+			self.logger.warn("Plugin {} is blacklisted.".format(plugin))
 			plugin.blacklisted = True
-			self.logger.warn("Plugin {} is blacklisted. Not importing it, only registering a dummy entry.".format(plugin))
+
+		if not plugin.validate("before_import", additional_validators=self.plugin_validators):
 			return plugin
 
-		plugin = self._import_plugin(key, *module, name=name, version=version, summary=summary, author=author, url=url, license=license)
-		if plugin is None:
+		# ... then create and return the real one
+		return self._import_plugin(key, *module,
+		                           name=name, version=version, summary=summary, author=author, url=url,
+		                           license=license, bundled=bundled)
+
+	def _import_plugin(self, key, f, filename, description, name=None, version=None, summary=None, author=None, url=None, license=None, bundled=False):
+		try:
+			instance = imp.load_module(key, f, filename, description)
+			plugin = PluginInfo(key, filename, instance, name=name, version=version, description=summary, author=author, url=url, license=license)
+			plugin.bundled = bundled
+		except:
+			self.logger.exception("Error loading plugin {key}".format(key=key))
 			return None
 
 		if plugin.check():
 			return plugin
 		else:
 			self.logger.warn("Plugin \"{plugin}\" did not pass check".format(plugin=str(plugin)))
-			return None
-
-
-	def _import_plugin(self, key, f, filename, description, name=None, version=None, summary=None, author=None, url=None, license=None):
-		try:
-			instance = imp.load_module(key, f, filename, description)
-			return PluginInfo(key, filename, instance, name=name, version=version, description=summary, author=author, url=url, license=license)
-		except:
-			self.logger.exception("Error loading plugin {key}".format(key=key))
 			return None
 
 	def _is_plugin_disabled(self, key):
@@ -765,7 +848,7 @@ class PluginManager(object):
 		# 1st pass: loading the plugins
 		for name, plugin in plugins.items():
 			try:
-				if not plugin.blacklisted:
+				if not plugin.blacklisted and not plugin.forced_disabled:
 					self.load_plugin(name, plugin, startup=startup, initialize_implementation=initialize_implementations)
 			except PluginNeedsRestart:
 				pass
@@ -779,7 +862,7 @@ class PluginManager(object):
 		# 2nd pass: enabling those plugins that need enabling
 		for name, plugin in plugins.items():
 			try:
-				if plugin.loaded and not self._is_plugin_disabled(name):
+				if plugin.loaded and not plugin.forced_disabled:
 					if plugin.blacklisted:
 						self.logger.warn("Plugin {} is blacklisted. Not enabling it.".format(plugin))
 						continue

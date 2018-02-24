@@ -125,7 +125,7 @@ $(function() {
         });
 
         self.blacklist=[];
-        self.settings.serial_autoUppercaseBlacklist.subscribe(function(newValue) {
+        self.settings.feature_autoUppercaseBlacklist.subscribe(function(newValue) {
             self.blacklist = splitTextToArray(newValue, ",", true);
         });
 
@@ -277,6 +277,17 @@ $(function() {
             }
         };
 
+        self.terminalScrollEvent = _.throttle(function () {
+            if (self.autoscrollEnabled()) {
+                var container = self.fancyFunctionality() ? $("#terminal-output") : $("#terminal-output-lowfi");
+                var maxScroll = container[0].scrollHeight - container[0].offsetHeight;
+
+                if (container.scrollTop() <= maxScroll ) {
+                    self.autoscrollEnabled(false);
+                }
+            }
+        }, 250);
+
         self.gotoTerminalCommand = function() {
             // skip if user highlights text.
             var sel = getSelection().toString();
@@ -289,6 +300,10 @@ $(function() {
 
         self.toggleAutoscroll = function() {
             self.autoscrollEnabled(!self.autoscrollEnabled());
+
+            if (self.autoscrollEnabled()) {
+                self.updateOutput();
+            }
         };
 
         self.selectAll = function() {
@@ -306,7 +321,15 @@ $(function() {
         };
 
         self.copyAll = function() {
-            copyToClipboard(self.plainLogLines().join("\n"));
+            var lines;
+
+            if (self.fancyFunctionality()) {
+                lines = _.map(self.log(), "line");
+            } else {
+                lines = self.plainLogLines();
+            }
+
+            copyToClipboard(lines.join("\n"));
         };
 
         // command matching regex
