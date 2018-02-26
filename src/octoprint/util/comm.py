@@ -1707,7 +1707,7 @@ class MachineCom(object):
 							self._baudrateDetectRetry -= 1
 							self._serial.write('\n')
 							self._log("Baudrate test retry: %d" % (self._baudrateDetectRetry))
-							self.sayHello(tags="trigger:baudrate_detection")
+							self.sayHello(tags={"trigger:baudrate_detection",})
 						elif len(self._baudrateDetectList) > 0:
 							baudrate = self._baudrateDetectList.pop(0)
 							try:
@@ -1718,7 +1718,7 @@ class MachineCom(object):
 								self._baudrateDetectRetry = 5
 								self._timeout = get_new_timeout("communicationBusy" if self._busy_protocol_detected else "communication", self._timeout_intervals)
 								self._serial.write('\n')
-								self.sayHello(tags="trigger:baudrate_detection")
+								self.sayHello(tags={"trigger:baudrate_detection",})
 							except:
 								self._log("Unexpected error while setting baudrate {}: {}".format(baudrate, get_exception_string()))
 								self._logger.exception("Unexpceted error while setting baudrate {}".format(baudrate))
