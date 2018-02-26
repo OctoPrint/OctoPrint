@@ -374,7 +374,9 @@ class MachineCom(object):
 		self._pauseWaitStartTime = None
 		self._pauseWaitTimeLost = 0.0
 		self._currentTool = 0
-		self._formerTool = None
+		self._toolBeforeChange = None
+		self._toolBeforeHeatup = None
+		self._knownInvalidTools = set()
 
 		self._long_running_command = False
 		self._heating = False
@@ -1466,7 +1468,7 @@ class MachineCom(object):
 				if handled and self._state not in (self.STATE_CONNECTING, self.STATE_DETECT_BAUDRATE):
 					continue
 
-				# position report processing
+				##~~ position report processing
 				if 'X:' in line and 'Y:' in line and 'Z:' in line:
 					parsed = parse_position_line(line)
 					if parsed:
@@ -1509,7 +1511,7 @@ class MachineCom(object):
 
 						self._callback.on_comm_position_update(self.last_position.as_dict(), reason=reason)
 
-				# temperature processing
+				##~~ temperature processing
 				elif ' T:' in line or line.startswith('T:') or ' T0:' in line or line.startswith('T0:') \
 						or ((' B:' in line or line.startswith('B:')) and not 'A:' in line):
 
@@ -1611,6 +1613,33 @@ class MachineCom(object):
 							if capability == self.CAPABILITY_AUTOREPORT_TEMP and enabled:
 								self._logger.info("Firmware states that it supports temperature autoreporting")
 								self._set_autoreport_temperature_interval()
+
+				##~~ invalid extruder
+				elif 'invalid extruder' in lower_line:
+					tool = None
+
+					match = regexes_parameters["intT"].search(line)
+					if match:
+						try:
+							tool = int(match.group("value"))
+						except ValueError:
+							pass # should never happen
+
+					if tool is None or tool == self._currentTool:
+						if self._toolBeforeChange is not None:
+							fallback_tool = self._toolBeforeChange
+						else:
+							fallback_tool = 0
+
+						invalid_tool = self._currentTool
+
+						# log to terminal and remember as invalid
+						self._log("T{} reported as invalid, reverting to T{}".format(invalid_tool, fallback_tool))
+						self._knownInvalidTools.add(invalid_tool)
+
+						# we actually do send a T command here instead of just settings self._currentTool just in case
+						# we had any scripts or plugins modify stuff due to the prior tool change
+						self.sendCommand("T{}".format(fallback_tool), tags={"trigger:revert_invalid_tool",})
 
 				##~~ SD Card handling
 				elif 'SD init fail' in line or 'volume.init failed' in line or 'openRoot failed' in line:
@@ -1788,9 +1817,9 @@ class MachineCom(object):
 
 		self._long_running_command = False
 
-		if self._formerTool is not None:
-			self._currentTool = self._formerTool
-			self._formerTool = None
+		if self._toolBeforeHeatup is not None:
+			self._currentTool = self._toolBeforeHeatup
+			self._toolBeforeHeatup = None
 
 		self._finish_heatup()
 
@@ -2782,6 +2811,11 @@ class MachineCom(object):
 			current_tool = self._currentTool
 			new_tool = int(toolMatch.group("value"))
 
+			if not self._validate_tool(new_tool):
+				self._log("Not queuing T{}, that tool doesn't exist according to the printer profile or "
+				          "was reported as invalid by the firmware".format(new_tool))
+				return None
+
 			before = self._getGcodeScript("beforeToolChange", replacements=dict(tool=dict(old=current_tool, new=new_tool)))
 			after = self._getGcodeScript("afterToolChange", replacements=dict(tool=dict(old=current_tool, new=new_tool)))
 
@@ -2790,9 +2824,15 @@ class MachineCom(object):
 	def _gcode_T_sent(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
 		toolMatch = regexes_parameters["intT"].search(cmd)
 		if toolMatch:
-			old = self._currentTool
-			self._currentTool = int(toolMatch.group("value"))
-			eventManager().fire(Events.TOOL_CHANGE, dict(old=old, new=self._currentTool))
+			new_tool = int(toolMatch.group("value"))
+			if not self._validate_tool(new_tool):
+				self._log("Not sending T{}, that tool doesn't exist according to the printer profile or "
+				          "was reported as invalid by the firmware".format(new_tool))
+				return None
+
+			self._toolBeforeChange = self._currentTool
+			self._currentTool = new_tool
+			eventManager().fire(Events.TOOL_CHANGE, dict(old=self._toolBeforeChange, new=self._currentTool))
 
 	def _gcode_G0_sent(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
 		if "Z" in cmd or "F" in cmd:
@@ -2862,7 +2902,7 @@ class MachineCom(object):
 			toolNum = int(toolMatch.group("value"))
 
 			if wait:
-				self._formerTool = self._currentTool
+				self._toolBeforeHeatup = self._currentTool
 				self._currentTool = toolNum
 
 		match = regexes_parameters["floatS"].search(cmd)
@@ -2978,6 +3018,9 @@ class MachineCom(object):
 
 		self._timeout = get_new_timeout("communicationBusy" if self._busy_protocol_detected else "communication", self._timeout_intervals) + _timeout
 		self._dwelling_until = time.time() + _timeout
+
+	def _validate_tool(self, tool):
+		return tool < self._printerProfileManager.get_current_or_default()["extruder"]["count"] and not tool in self._knownInvalidTools
 
 	##~~ command phase handlers
 
