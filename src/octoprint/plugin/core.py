@@ -491,18 +491,26 @@ class PluginInfo(object):
 		return self._cached_parsed_metadata
 
 	def _parse_metadata(self):
-		self._logger.debug("Parsing plugin metadata for {} from AST".format(self.key))
-
 		result = dict()
+
+		path = self.location
+		if not path:
+			return result
+
+		if os.path.isdir(path):
+			path = os.path.join(self.location, "__init__.py")
+
+		if not os.path.isfile(path):
+			return result
+
+		if not path.endswith(".py"):
+			# we only support parsing plain text source files
+			return result
+
+		self._logger.debug("Parsing plugin metadata for {} from AST of {}".format(self.key, path))
+
 		try:
 			import ast
-
-			path = self.location
-			if os.path.isdir(path):
-				path = os.path.join(self.location, "__init__.py")
-
-			if not os.path.isfile(path):
-				return result
 
 			with open(path, "rb") as f:
 				root = ast.parse(f.read())
@@ -663,15 +671,24 @@ class PluginManager(object):
 
 				for entry in scandir(folder):
 					try:
-						if entry.is_dir() and os.path.isfile(os.path.join(entry.path, "__init__.py")):
-							key = entry.name
-						elif entry.is_file() and entry.name.endswith(".py"):
-							key = entry.name[:-3] # strip off the .py extension
-							if key.startswith("__"):
-								# might be an __init__.py in our plugins folder, or something else we don't want
-								# to handle
+						if entry.is_dir():
+							init_py = os.path.join(entry.path, "__init__.py")
+							init_pyc = os.path.join(entry.path, "__init__.pyc")
+
+							if not os.path.isfile(init_py) and not os.path.isfile(init_pyc):
+								# neither does exist, we ignore this
 								continue
+
+							key = entry.name
+
+						elif entry.is_file():
+							key, ext = os.path.splitext(entry.name)
+							if ext not in (".py", ".pyc") or key.startswith("__"):
+								# neither py nor pyc, or starts with __ (like __init__), we ignore this
+								continue
+
 						else:
+							# whatever this is, we ignore it
 							continue
 
 						if key in existing or key in result or (ignored_uninstalled and key in self.marked_plugins["uninstalled"]):
