@@ -353,9 +353,11 @@ class VirtualPrinter(object):
 
 	def _gcode_T(self, code, data):
 		t = int(code)
-		if 0 <= t <= self.extruderCount:
+		if 0 <= t < self.extruderCount:
 			self.currentExtruder = t
 			self._send("Active Extruder: %d" % self.currentExtruder)
+		else:
+			self._send("echo:T{} Invalid extruder ".format(t))
 
 	def _gcode_F(self, code, data):
 		if self._supportF:
