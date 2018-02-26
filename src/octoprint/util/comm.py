@@ -1040,7 +1040,7 @@ class MachineCom(object):
 		self._currentFile = None
 		self._callback.on_comm_file_selected(None, None, False)
 
-	def _cancel_preparation_done(self, firmware_error=None):
+	def _cancel_preparation_done(self):
 		self._recordFilePosition()
 		self._callback.on_comm_print_job_cancelled()
 
