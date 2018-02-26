@@ -1163,6 +1163,13 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		payload = self._payload_for_print_job_event()
 		eventManager().fire(Events.PRINT_FAILED, payload)
 
+	def on_comm_print_job_cancelling(self, firmware_error=None):
+		payload = self._payload_for_print_job_event()
+		if payload:
+			if firmware_error:
+				payload["firmwareError"] = firmware_error
+			eventManager().fire(Events.PRINT_CANCELLING, payload)
+
 	def on_comm_print_job_cancelled(self):
 		self._setCurrentZ(None)
 		self._updateProgressData()

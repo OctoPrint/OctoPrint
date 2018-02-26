@@ -953,7 +953,7 @@ class MachineCom(object):
 			self._logger.exception("Error while trying to start printing")
 			self._errorValue = get_exception_string()
 			self._changeState(self.STATE_ERROR)
-			eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
+			eventManager().fire(Events.ERROR, {"error": self.getErrorString(), "reason": "start_print"})
 
 	def startFileTransfer(self, filename, localFilename, remoteFilename, special=False, tags=None):
 		if not self.isOperational() or self.isBusy():
@@ -1040,7 +1040,7 @@ class MachineCom(object):
 		self._currentFile = None
 		self._callback.on_comm_file_selected(None, None, False)
 
-	def _cancel_preparation_done(self):
+	def _cancel_preparation_done(self, firmware_error=None):
 		self._recordFilePosition()
 		self._callback.on_comm_print_job_cancelled()
 
@@ -1066,6 +1066,8 @@ class MachineCom(object):
 			# by the firmware
 			self._record_cancel_data = True
 			self.sendCommand("M114", tags=tags | {"trigger:comm.cancel", "trigger:record_position"})
+
+		self._callback.on_comm_print_job_cancelling(firmware_error=firmware_error)
 
 		with self._jobLock:
 			self._changeState(self.STATE_OPERATIONAL)
@@ -1724,7 +1726,7 @@ class MachineCom(object):
 							self.close(wait=False)
 							self._errorValue = "No more baudrates to test, and no suitable baudrate found."
 							self._changeState(self.STATE_ERROR)
-							eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
+							eventManager().fire(Events.ERROR, {"error": self.getErrorString(), "reason": "autodetect_baudrate"})
 					elif 'start' in line or 'ok' in line:
 						self._onConnected()
 						if 'start' in line:
@@ -1774,7 +1776,7 @@ class MachineCom(object):
 				errorMsg = "See octoprint.log for details"
 				self._log(errorMsg)
 				self._errorValue = errorMsg
-				eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
+				eventManager().fire(Events.ERROR, {"error": self.getErrorString(), "reason": "crash"})
 				self.close(is_error=True)
 		self._log("Connection closed, closing down monitor")
 
@@ -1831,7 +1833,7 @@ class MachineCom(object):
 			self._logger.info(message)
 			self._log(message + " " + general_message)
 			self._errorValue = "Too many consecutive timeouts, printer still connected and alive?"
-			eventManager().fire(Events.ERROR, {"error": self._errorValue})
+			eventManager().fire(Events.ERROR, {"error": self._errorValue, "reason": "timeout"})
 			self.close(is_error=True)
 
 		elif self._resendActive:
@@ -2092,7 +2094,7 @@ class MachineCom(object):
 				if port is None:
 					self._errorValue = 'Failed to autodetect serial port, please set it manually.'
 					self._changeState(self.STATE_ERROR)
-					eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
+					eventManager().fire(Events.ERROR, {"error": self.getErrorString(), "reason": "autodetect_port"})
 					self._log("Failed to autodetect serial port, please set it manually.")
 					return None
 
@@ -2125,7 +2127,7 @@ class MachineCom(object):
 				exception_string = get_exception_string()
 				self._errorValue = "Connection error, see Terminal tab"
 				self._changeState(self.STATE_ERROR)
-				eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
+				eventManager().fire(Events.ERROR, {"error": self.getErrorString(), "reason": "connection"})
 
 				error_message = "Unexpected error while connecting to serial port: %s %s (hook %s)" % (self._port, exception_string, name)
 				self._log(error_message)
@@ -2198,7 +2200,7 @@ class MachineCom(object):
 					if self._disconnect_on_errors:
 						self._errorValue = error_text
 						self._changeState(self.STATE_ERROR)
-						eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
+						eventManager().fire(Events.ERROR, {"error": self.getErrorString(), "reason": "firmware"})
 					elif self.isPrinting():
 						self.cancelPrint(firmware_error=error_text)
 						self._clear_to_send.set()
@@ -2333,7 +2335,7 @@ class MachineCom(object):
 				if self.isPrinting():
 					# abort the print, there's nothing we can do to rescue it now
 					self._changeState(self.STATE_ERROR)
-					eventManager().fire(Events.ERROR, {"error": self.getErrorString()})
+					eventManager().fire(Events.ERROR, {"error": self.getErrorString(), "reason": "resend"})
 				else:
 					# reset resend delta, we can't do anything about it
 					self._resendDelta = None
@@ -3011,6 +3013,9 @@ class MachineComPrintCallback(object):
 		pass
 
 	def on_comm_print_job_done(self):
+		pass
+
+	def on_comm_print_job_cancelling(self, firmware_error=None):
 		pass
 
 	def on_comm_print_job_cancelled(self):
