@@ -917,7 +917,7 @@ class MachineCom(object):
 			self.sendCommand(line, tags=tags | {"trigger:comm.send_gcode_script", "source:script", "script:{}".format(scriptName)})
 		return "\n".join(scriptLines)
 
-	def startPrint(self, pos=None, tags=None):
+	def startPrint(self, pos=None, tags=None, external_sd=False):
 		if not self.isOperational() or self.isPrinting():
 			return
 
@@ -938,25 +938,24 @@ class MachineCom(object):
 
 				self._changeState(self.STATE_PRINTING)
 
-				self.resetLineNumbers(tags={"trigger:comm.start_print"})
+				if not self.isSdFileSelected():
+					self.resetLineNumbers(tags={"trigger:comm.start_print"})
 
 				self._callback.on_comm_print_job_started()
 
 				if self.isSdFileSelected():
-					#self.sendCommand("M26 S0") # setting the sd pos apparently sometimes doesn't work, so we re-select
-					                            # the file instead
+					if not external_sd:
+						# make sure to ignore the "file selected" later on, otherwise we'll reset our progress data
+						self._ignore_select = True
+						self.sendCommand("M23 {filename}".format(filename=self._currentFile.getFilename()),
+						                 tags=tags | {"trigger:comm.start_print",})
+						if pos is not None and isinstance(pos, int) and pos > 0:
+							self._currentFile.pos = pos
+							self.sendCommand("M26 S{}".format(pos), tags=tags | {"trigger:comm.start_print",})
+						else:
+							self._currentFile.pos = 0
 
-					# make sure to ignore the "file selected" later on, otherwise we'll reset our progress data
-					self._ignore_select = True
-					self.sendCommand("M23 {filename}".format(filename=self._currentFile.getFilename()),
-					                 tags=tags | {"trigger:comm.start_print",})
-					if pos is not None and isinstance(pos, int) and pos > 0:
-						self._currentFile.pos = pos
-						self.sendCommand("M26 S{}".format(pos), tags=tags | {"trigger:comm.start_print",})
-					else:
-						self._currentFile.pos = 0
-
-					self.sendCommand("M24", tags=tags | {"trigger:comm.start_print",})
+						self.sendCommand("M24", tags=tags | {"trigger:comm.start_print",})
 
 					self._sd_status_timer = RepeatedTimer(self._timeout_intervals.get("sdStatus", 1.0), self._poll_sd_status, run_first=True)
 					self._sd_status_timer.start()
@@ -1070,7 +1069,7 @@ class MachineCom(object):
 		self.sendCommand(SendQueueMarker(finalize))
 		self._continue_sending()
 
-	def cancelPrint(self, firmware_error=None, disable_log_position=False, tags=None):
+	def cancelPrint(self, firmware_error=None, disable_log_position=False, tags=None, external_sd=False):
 		if not self.isOperational():
 			return
 
@@ -1099,9 +1098,10 @@ class MachineCom(object):
 			self._changeState(self.STATE_CANCELLING)
 
 			if self.isSdFileSelected():
-				self.sendCommand("M25", tags=tags | {"trigger:comm.cancel",})    # pause print
-				self.sendCommand("M27", tags=tags | {"trigger:comm.cancel",})    # get current byte position in file
-				self.sendCommand("M26 S0", tags=tags | {"trigger:comm.cancel",}) # reset position in file to byte 0
+				if not external_sd:
+					self.sendCommand("M25", tags=tags | {"trigger:comm.cancel",})    # pause print
+					self.sendCommand("M27", tags=tags | {"trigger:comm.cancel",})    # get current byte position in file
+					self.sendCommand("M26 S0", tags=tags | {"trigger:comm.cancel",}) # reset position in file to byte 0
 				if self._sd_status_timer is not None:
 					try:
 						self._sd_status_timer.cancel()
@@ -1685,24 +1685,29 @@ class MachineCom(object):
 				elif 'End file list' in line:
 					self._sdFileList = False
 					self._callback.on_comm_sd_files(self._sdFiles)
-				elif 'SD printing byte' in line and self.isSdPrinting():
+				elif 'SD printing byte' in line:
 					# answer to M27, at least on Marlin, Repetier and Sprinter: "SD printing byte %d/%d"
 					match = regex_sdPrintingByte.search(line)
 					if match:
 						current = int(match.group("current"))
 						total = int(match.group("total"))
 
-						if current == total == 0:
+						if self.isSdPrinting() and current == total == 0:
 							# apparently not SD printing - newer Marlin reports it like that for some reason
-							self._changeState(self.STATE_OPERATIONAL)
-						else:
+							self.cancelPrint(external_sd=True)
+
+						elif self.isSdFileSelected():
+							if not self.isSdPrinting():
+								self.startPrint(external_sd=True)
+
 							self._currentFile.pos = current
 							if self._currentFile.size == 0:
 								self._currentFile.size = total
 							self._callback.on_comm_progress()
+
 				elif 'Not SD printing' in line and self.isSdFileSelected() and self.isPrinting():
 					# something went wrong, printer is reporting that we actually are not printing right now...
-					self._changeState(self.STATE_OPERATIONAL)
+					self.cancelPrint(external_sd=True)
 				elif 'File opened' in line and not self._ignore_select:
 					# answer to M23, at least on Marlin, Repetier and Sprinter: "File opened:%s Size:%d"
 					match = regex_sdFileOpened.search(line)
@@ -1712,10 +1717,20 @@ class MachineCom(object):
 					else:
 						name = "Unknown"
 						size = 0
+
+					expected = False
 					if self._sdFileToSelect:
+						expected = True
 						name = self._sdFileToSelect
 						self._sdFileToSelect = None
+
 					self._currentFile = PrintingSdFileInformation(name, size)
+
+					if not expected:
+						# It doesn't look like we expected this, so it might be that someone just started a print
+						# job from SD via the printer's controller. Let's query the printing status and see if that's
+						# indeed the case and if so switch states accordingly
+						self.sendCommand("M27", tags={"trigger:unexpected_file_open"})
 				elif 'File selected' in line:
 					if self._ignore_select:
 						self._ignore_select = False
