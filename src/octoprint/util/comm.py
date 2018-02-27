@@ -1473,7 +1473,7 @@ class MachineCom(object):
 					handled = True
 
 				# process timeouts
-				elif ((line == "" and now > self._timeout) or (self.isPrinting() and not self._job_on_hold and now > self._ok_timeout)) \
+				elif ((line == "" and now > self._timeout) or (self.isPrinting() and not self.isSdPrinting() and not self._job_on_hold and now > self._ok_timeout)) \
 						and (not self._blockWhileDwelling or not self._dwelling_until or now > self._dwelling_until):
 					# We have two timeout variants:
 					#
@@ -1697,7 +1697,7 @@ class MachineCom(object):
 							self.cancelPrint(external_sd=True)
 
 						elif self.isSdFileSelected():
-							if not self.isSdPrinting():
+							if not self.isSdPrinting() and current != total:
 								self.startPrint(external_sd=True)
 
 							self._currentFile.pos = current
@@ -1742,7 +1742,7 @@ class MachineCom(object):
 				elif 'Done printing file' in line and self.isSdPrinting():
 					# printer is reporting file finished printing
 					self._currentFile.done = True
-					self._currentFile.setFilepos(0)
+					self._currentFile.pos = 0
 					self._callback.on_comm_print_job_done()
 					self._changeState(self.STATE_OPERATIONAL)
 					if self._sd_status_timer is not None:
