@@ -951,10 +951,10 @@ class MachineCom(object):
 					self.sendCommand("M23 {filename}".format(filename=self._currentFile.getFilename()),
 					                 tags=tags | {"trigger:comm.start_print",})
 					if pos is not None and isinstance(pos, int) and pos > 0:
-						self._currentFile.setFilepos(pos)
+						self._currentFile.pos = pos
 						self.sendCommand("M26 S{}".format(pos), tags=tags | {"trigger:comm.start_print",})
 					else:
-						self._currentFile.setFilepos(0)
+						self._currentFile.pos = 0
 
 					self.sendCommand("M24", tags=tags | {"trigger:comm.start_print",})
 
@@ -1675,11 +1675,6 @@ class MachineCom(object):
 					self._sdAvailable = False
 					self._sdFiles = []
 					self._callback.on_comm_sd_state_change(self._sdAvailable)
-				elif 'Not SD printing' in line:
-					if self.isSdFileSelected() and self.isPrinting():
-						# something went wrong, printer is reporting that we actually are not printing right now...
-						self._sdFilePos = 0
-						self._changeState(self.STATE_OPERATIONAL)
 				elif 'SD card ok' in line and not self._sdAvailable:
 					self._sdAvailable = True
 					self.refreshSdFiles()
@@ -1693,8 +1688,21 @@ class MachineCom(object):
 				elif 'SD printing byte' in line and self.isSdPrinting():
 					# answer to M27, at least on Marlin, Repetier and Sprinter: "SD printing byte %d/%d"
 					match = regex_sdPrintingByte.search(line)
-					self._currentFile.setFilepos(int(match.group("current")))
-					self._callback.on_comm_progress()
+					if match:
+						current = int(match.group("current"))
+						total = int(match.group("total"))
+
+						if current == total == 0:
+							# apparently not SD printing - newer Marlin reports it like that for some reason
+							self._changeState(self.STATE_OPERATIONAL)
+						else:
+							self._currentFile.pos = current
+							if self._currentFile.size == 0:
+								self._currentFile.size = total
+							self._callback.on_comm_progress()
+				elif 'Not SD printing' in line and self.isSdFileSelected() and self.isPrinting():
+					# something went wrong, printer is reporting that we actually are not printing right now...
+					self._changeState(self.STATE_OPERATIONAL)
 				elif 'File opened' in line and not self._ignore_select:
 					# answer to M23, at least on Marlin, Repetier and Sprinter: "File opened:%s Size:%d"
 					match = regex_sdFileOpened.search(line)
@@ -3248,12 +3256,6 @@ class PrintingSdFileInformation(PrintingFileInformation):
 		PrintingFileInformation.__init__(self, filename)
 		self._size = size
 
-	def setFilepos(self, pos):
-		"""
-		Sets the current file position.
-		"""
-		self._pos = pos
-
 	def getFileLocation(self):
 		return FileDestinations.SDCARD
 
@@ -3264,6 +3266,22 @@ class PrintingSdFileInformation(PrintingFileInformation):
 	@done.setter
 	def done(self, value):
 		self._done = value
+
+	@property
+	def size(self):
+		return self._size
+
+	@size.setter
+	def size(self, value):
+		self._size = value
+
+	@property
+	def pos(self):
+		return self._pos
+
+	@pos.setter
+	def pos(self, value):
+		self._pos = value
 
 class PrintingGcodeFileInformation(PrintingFileInformation):
 	"""
