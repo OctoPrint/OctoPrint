@@ -19,6 +19,7 @@ class TestCommErrorHandling(unittest.TestCase):
 		self._comm._lastCommError = None
 		self._comm._errorValue = None
 		self._comm._clear_to_send = mock.Mock()
+		self._comm._error_message_hooks = dict()
 
 		# settings
 		self._comm._ignore_errors = False
@@ -109,6 +110,16 @@ class TestCommErrorHandling(unittest.TestCase):
 	)
 	def test_unknown_command(self, line):
 		"""Should pass"""
+		result = self._comm._handle_errors(line)
+		self.assertEqual(line, result)
+		self.assert_nop()
+
+	@ddt.data("Error: This should get handled", "!! This should also get handled")
+	def test_unknown_handled(self, line):
+		"""Should pass"""
+		def handler(comm, message, *args, **kwargs):
+			return "handled" in message
+		self._comm._error_message_hooks["test"] = handler
 		result = self._comm._handle_errors(line)
 		self.assertEqual(line, result)
 		self.assert_nop()
