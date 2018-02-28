@@ -137,7 +137,7 @@ regex_e_positions = re.compile("E(?P<id>\d+):(?P<value>{float})".format(float=re
 Groups will be as follows:
 
   * ``id``: id of the extruder or which the position is reported
-  * ``value``: reported position value 
+  * ``value``: reported position value
 """
 
 regex_firmware_splitter = re.compile("\s*([A-Z0-9_]+):")
@@ -473,6 +473,7 @@ class MachineCom(object):
 			sent=self._pluginManager.get_hooks("octoprint.comm.protocol.gcode.sent")
 		)
 		self._received_message_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.gcode.received")
+		self._error_message_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.gcode.error")
 
 		self._printer_action_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.action")
 		self._gcodescript_hooks = self._pluginManager.get_hooks("octoprint.comm.protocol.scripts")
@@ -2200,6 +2201,9 @@ class MachineCom(object):
 			if regex_minMaxError.match(line):
 				# special delivery for firmware that goes "Error:x\n: Extruder switched off. MAXTEMP triggered !\n"
 				line = line.rstrip() + self._readline()
+				lower_line = line.lower()
+
+			stripped_error = (line[6:] if lower_line.startswith("error:") else line[2:]).strip()
 
 			if any(map(lambda x: x in lower_line, self._recoverable_communication_errors)):
 				# manually trigger an ack for comm errors the printer doesn't send a resend request for but
@@ -2209,7 +2213,7 @@ class MachineCom(object):
 
 			elif any(map(lambda x: x in lower_line, self._resend_request_communication_errors)):
 				# skip comm errors that the printer sends a resend request for anyhow
-				self._lastCommError = line[6:] if lower_line.startswith("error:") else line[2:]
+				self._lastCommError = stripped_error
 
 			elif any(map(lambda x: x in lower_line, self._sd_card_errors)):
 				# skip errors with the SD card
@@ -2221,6 +2225,15 @@ class MachineCom(object):
 
 			elif not self.isError():
 				# handle everything else
+				for name, hook in self._error_message_hooks.items():
+					try:
+						ret = hook(self, stripped_error)
+					except:
+						self._logger.exception("Error while processing hook {name}:".format(**locals()))
+					else:
+						if ret:
+							return line
+
 				error_text = line[6:] if lower_line.startswith("error:") else line[2:]
 				self._to_logfile_with_terminal(u"Received an error from the printer's firmware: {}".format(error_text),
 				                               level=logging.WARN)
