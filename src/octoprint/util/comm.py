@@ -392,6 +392,8 @@ class MachineCom(object):
 		self._use_xonxoff_workaround = settings().get(["serial", "useSoftwareFlowWorkaround"])
 		self._xonxoff_stopChar = chr(19)
 		self._xonxoff_resumeChar = chr(17)
+		self._waitingForM28Confirmation = False
+		self._startedSendingFileToSD = False
 
 		maxLinesHistory = settings().getInt(["serial", "maxLinesHistory"])
 		if maxLinesHistory is None:
@@ -600,9 +602,8 @@ class MachineCom(object):
 
 	def isSendingFileToSDWithSoftwareFlow(self):
 		#first determine if sending file to sd and printer supports xon_xoff
-		if 	self._state == self.STATE_PRINTING and self.isStreaming() and \
-			self._firmware_capabilities.get(self.CAPABILITY_SERIAL_XON_XOFF, False) and \
-			self._currentLine > 1:
+		if 	self._startedSendingFileToSD and \
+			self._firmware_capabilities.get(self.CAPABILITY_SERIAL_XON_XOFF, False):
 				# currentLine > 1 is to enable flow control only and ignore ok only after the first ok is sent
 				# if not handle_ok will not set clear_to_send and in send_loop it will wait forever
 				if self._serial != None and getattr(self._serial, "xonxoff", False):
@@ -1642,6 +1643,11 @@ class MachineCom(object):
 
 	def _handle_ok(self):
 		can_send = not self.isSendingFileToSDWithSoftwareFlow()
+		if self._waitingForM28Confirmation:
+			self.__waitingForM28Confirmation = False
+			self._startedSendingFileToSD = True
+			can_send = True
+
 		if can_send:
 			self._clear_to_send.set()
 
@@ -2663,11 +2669,13 @@ class MachineCom(object):
 			self.setPause(True)
 
 	def _gcode_M28_sent(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
+		self._waitingForM28Confirmation = True
 		if not self.isStreaming():
 			self._log("Detected manual streaming. Disabling temperature polling. Finish writing with M29. Do NOT attempt to print while manually streaming!")
 			self._manualStreaming = True
 
 	def _gcode_M29_sent(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
+		self._startedSendingFileToSD = False
 		if self._manualStreaming:
 			self._log("Manual streaming done. Re-enabling temperature polling. All is well.")
 			self._manualStreaming = False
