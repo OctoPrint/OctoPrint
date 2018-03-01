@@ -2420,7 +2420,7 @@ class MachineCom(object):
 						command_requiring_checksum = gcode is not None and gcode in self._checksum_requiring_commands
 						command_allowing_checksum = gcode is not None or self._sendChecksumWithUnknownCommands
 						checksum_enabled = not self._neverSendChecksum and ((self.isPrinting() and self._currentFile and self._currentFile.checksum) or
-						                                                    self._alwaysSendChecksum or
+						                                                    self._alwaysSendChecksum or self._use_xonxoff_workaround or
 						                                                    not self._firmware_info_received)
 
 						command_to_send = command.encode("ascii", errors="replace")
