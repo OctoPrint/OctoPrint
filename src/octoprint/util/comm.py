@@ -332,6 +332,8 @@ class MachineCom(object):
 	STATE_ERROR = 9
 	STATE_CLOSED_WITH_ERROR = 10
 	STATE_TRANSFERING_FILE = 11
+	STATE_CANCELLING = 12
+	STATE_PAUSING = 13
 
 	CAPABILITY_AUTOREPORT_TEMP = "AUTOREPORT_TEMP"
 	CAPABILITY_BUSY_PROTOCOL = "BUSY_PROTOCOL"
@@ -594,32 +596,36 @@ class MachineCom(object):
 
 		if state == self.STATE_NONE:
 			return "Offline"
-		if state == self.STATE_OPEN_SERIAL:
+		elif state == self.STATE_OPEN_SERIAL:
 			return "Opening serial port"
-		if state == self.STATE_DETECT_SERIAL:
+		elif state == self.STATE_DETECT_SERIAL:
 			return "Detecting serial port"
-		if state == self.STATE_DETECT_BAUDRATE:
+		elif state == self.STATE_DETECT_BAUDRATE:
 			return "Detecting baudrate"
-		if state == self.STATE_CONNECTING:
+		elif state == self.STATE_CONNECTING:
 			return "Connecting"
-		if state == self.STATE_OPERATIONAL:
+		elif state == self.STATE_OPERATIONAL:
 			return "Operational"
-		if state == self.STATE_PRINTING:
+		elif state == self.STATE_PRINTING:
 			if self.isSdFileSelected():
 				return "Printing from SD"
 			elif self.isStreaming():
 				return "Sending file to SD"
 			else:
 				return "Printing"
-		if state == self.STATE_PAUSED:
+		elif state == self.STATE_CANCELLING:
+			return "Cancelling"
+		elif state == self.STATE_PAUSING:
+			return "Pausing"
+		elif state == self.STATE_PAUSED:
 			return "Paused"
-		if state == self.STATE_CLOSED:
+		elif state == self.STATE_CLOSED:
 			return "Offline"
-		if state == self.STATE_ERROR:
+		elif state == self.STATE_ERROR:
 			return "Error: %s" % (self.getErrorString())
-		if state == self.STATE_CLOSED_WITH_ERROR:
+		elif state == self.STATE_CLOSED_WITH_ERROR:
 			return "Offline: %s" % (self.getErrorString())
-		if state == self.STATE_TRANSFERING_FILE:
+		elif state == self.STATE_TRANSFERING_FILE:
 			return "Transferring file to SD"
 		return "Unknown State (%d)" % (self._state)
 
@@ -627,16 +633,23 @@ class MachineCom(object):
 		return self._errorValue
 
 	def isClosedOrError(self):
-		return self._state == self.STATE_ERROR or self._state == self.STATE_CLOSED_WITH_ERROR or self._state == self.STATE_CLOSED
+		return self._state in (self.STATE_ERROR, self.STATE_CLOSED, self.STATE_CLOSED_WITH_ERROR)
 
 	def isError(self):
-		return self._state == self.STATE_ERROR or self._state == self.STATE_CLOSED_WITH_ERROR
+		return self._state in (self.STATE_ERROR, self.STATE_CLOSED_WITH_ERROR)
 
 	def isOperational(self):
-		return self._state == self.STATE_OPERATIONAL or self._state == self.STATE_PRINTING or self._state == self.STATE_PAUSED or self._state == self.STATE_TRANSFERING_FILE
+		return self._state in (self.STATE_OPERATIONAL, self.STATE_PRINTING, self.STATE_CANCELLING, self.STATE_PAUSING,
+		                       self.STATE_PAUSED, self.STATE_TRANSFERING_FILE)
 
 	def isPrinting(self):
-		return self._state == self.STATE_PRINTING
+		return self._state in (self.STATE_PRINTING, self.STATE_CANCELLING, self.STATE_PAUSING)
+
+	def isCancelling(self):
+		return self._state == self.STATE_CANCELLING
+
+	def isPausing(self):
+		return self._state == self.STATE_PAUSING
 
 	def isSdPrinting(self):
 		return self.isSdFileSelected() and self.isPrinting()
@@ -645,13 +658,13 @@ class MachineCom(object):
 		return self._currentFile is not None and isinstance(self._currentFile, PrintingSdFileInformation)
 
 	def isStreaming(self):
-		return self._currentFile is not None and isinstance(self._currentFile, StreamingGcodeFileInformation)
+		return self._currentFile is not None and isinstance(self._currentFile, StreamingGcodeFileInformation) and not self._currentFile.done
 
 	def isPaused(self):
 		return self._state == self.STATE_PAUSED
 
 	def isBusy(self):
-		return self.isPrinting() or self.isPaused()
+		return self.isPrinting() or self.isPaused() or self._state in (self.STATE_CANCELLING, self.STATE_PAUSING)
 
 	def isSdReady(self):
 		return self._sdAvailable
@@ -808,11 +821,12 @@ class MachineCom(object):
 		self._handle_ok()
 
 	def sendCommand(self, cmd, cmd_type=None, processed=False, force=False, on_sent=None, tags=None):
-		cmd = to_unicode(cmd, errors="replace")
-		if not processed:
-			cmd = process_gcode_line(cmd)
-			if not cmd:
-				return False
+		if not isinstance(cmd, QueueMarker):
+			cmd = to_unicode(cmd, errors="replace")
+			if not processed:
+				cmd = process_gcode_line(cmd)
+				if not cmd:
+					return False
 
 		if self.isPrinting() and not self.isSdFileSelected() and not self._job_on_hold:
 			try:
@@ -1003,17 +1017,19 @@ class MachineCom(object):
 				"time": self.getPrintTime()
 			}
 
-			self._currentFile = None
-			self._changeState(self.STATE_OPERATIONAL)
+			def finalize():
+				self._currentFile = None
+				self._changeState(self.STATE_OPERATIONAL)
 
-			if failed:
-				self._callback.on_comm_file_transfer_failed(remote)
-				eventManager().fire(Events.TRANSFER_FAILED, payload)
-			else:
-				self._callback.on_comm_file_transfer_done(remote)
-				eventManager().fire(Events.TRANSFER_DONE, payload)
+				if failed:
+					self._callback.on_comm_file_transfer_failed(remote)
+					eventManager().fire(Events.TRANSFER_FAILED, payload)
+				else:
+					self._callback.on_comm_file_transfer_done(remote)
+					eventManager().fire(Events.TRANSFER_DONE, payload)
 
-			self.refreshSdFiles(tags={"trigger:comm.finish_file_transfer",})
+				self.refreshSdFiles(tags={"trigger:comm.finish_file_transfer",})
+			self._sendCommand(SendQueueMarker(finalize))
 
 	def selectFile(self, filename, sd, tags=None):
 		if self.isBusy():
@@ -1047,6 +1063,11 @@ class MachineCom(object):
 		self._recordFilePosition()
 		self._callback.on_comm_print_job_cancelled()
 
+		def finalize():
+			self._changeState(self.STATE_OPERATIONAL)
+		self.sendCommand(SendQueueMarker(finalize))
+		self._continue_sending()
+
 	def cancelPrint(self, firmware_error=None, disable_log_position=False, tags=None):
 		if not self.isOperational():
 			return
@@ -1073,7 +1094,7 @@ class MachineCom(object):
 		self._callback.on_comm_print_job_cancelling(firmware_error=firmware_error)
 
 		with self._jobLock:
-			self._changeState(self.STATE_OPERATIONAL)
+			self._changeState(self.STATE_CANCELLING)
 
 			if self.isSdFileSelected():
 				self.sendCommand("M25", tags=tags | {"trigger:comm.cancel",})    # pause print
@@ -1092,6 +1113,11 @@ class MachineCom(object):
 
 	def _pause_preparation_done(self):
 		self._callback.on_comm_print_job_paused()
+
+		def finalize():
+			self._changeState(self.STATE_PAUSED)
+		self.sendCommand(SendQueueMarker(finalize))
+		self._continue_sending()
 
 	def setPause(self, pause, tags=None):
 		if self.isStreaming():
@@ -1132,7 +1158,7 @@ class MachineCom(object):
 				if not self._pauseWaitStartTime:
 					self._pauseWaitStartTime = time.time()
 
-				self._changeState(self.STATE_PAUSED)
+				self._changeState(self.STATE_PAUSING)
 				if self.isSdFileSelected():
 					self.sendCommand("M25", tags=tags | {"trigger:comm.set_pause", "trigger:pause"}) # pause print
 
@@ -1690,7 +1716,8 @@ class MachineCom(object):
 					self._changeState(self.STATE_PRINTING)
 				elif 'Done printing file' in line and self.isSdPrinting():
 					# printer is reporting file finished printing
-					self._sdFilePos = 0
+					self._currentFile.done = True
+					self._currentFile.setFilepos(0)
 					self._callback.on_comm_print_job_done()
 					self._changeState(self.STATE_OPERATIONAL)
 					if self._sd_status_timer is not None:
@@ -1824,7 +1851,7 @@ class MachineCom(object):
 
 		self._finish_heatup()
 
-		if not self._state in (self.STATE_PRINTING, self.STATE_OPERATIONAL, self.STATE_PAUSED):
+		if not self._state in (self.STATE_PRINTING, self.STATE_OPERATIONAL, self.STATE_PAUSED, self.STATE_CANCELLING, self.STATE_PAUSING):
 			return
 
 		# process queues ongoing resend requests and queues if we are operational
@@ -1908,11 +1935,7 @@ class MachineCom(object):
 	def _continue_sending(self):
 		while self._active:
 
-			if self._state == self.STATE_OPERATIONAL or self._state == self.STATE_PAUSED or self.isSdPrinting():
-				# just send stuff from the command queue and be done with it
-				return self._sendFromQueue()
-
-			elif self._state == self.STATE_PRINTING:
+			if self._state == self.STATE_PRINTING and not (self._currentFile is None or self._currentFile.done or self.isSdPrinting()):
 				# we are printing, we really want to send either something from the command
 				# queue or the next line from our file, so we only return here if we actually DO
 				# send something
@@ -1928,6 +1951,9 @@ class MachineCom(object):
 					return True
 
 				self._logger.debug("No command sent on ok while printing, doing another iteration")
+			else:
+				# just send stuff from the command queue and be done with it
+				return self._sendFromQueue()
 
 	def _process_registered_message(self, line, feedback_matcher, feedback_controls, feedback_errors):
 		feedback_match = feedback_matcher.search(line)
@@ -2294,11 +2320,13 @@ class MachineCom(object):
 
 		line = self._currentFile.getNext()
 		if line is None:
-			if self.isStreaming():
+			if isinstance(self._currentFile, StreamingGcodeFileInformation):
 				self._finishFileTransfer()
 			else:
 				self._callback.on_comm_print_job_done()
-				self._changeState(self.STATE_OPERATIONAL)
+				def finalize():
+					self._changeState(self.STATE_OPERATIONAL)
+				return SendQueueMarker(finalize)
 		return line
 
 	def _sendNext(self):
@@ -2310,7 +2338,15 @@ class MachineCom(object):
 					return False
 
 				line = self._getNext()
-				if line is None:
+				if isinstance(line, QueueMarker):
+					self.sendCommand(line)
+					self._callback.on_comm_progress()
+
+					# end of file, return false so that the next round in continue_sending will process
+					# what we just enqueued (any scripts + marker)
+					return False
+
+				elif line is None:
 					# end of file, return false
 					return False
 
@@ -2446,6 +2482,13 @@ class MachineCom(object):
 			if self._serial is None:
 				return False
 
+			if isinstance(cmd, QueueMarker):
+				if isinstance(cmd, SendQueueMarker):
+					self._enqueue_for_sending(cmd)
+					return True
+				else:
+					return False
+
 			gcode, subcode = gcode_and_subcode_for_cmd(cmd)
 
 			if not self.isStreaming():
@@ -2505,7 +2548,7 @@ class MachineCom(object):
 		Enqueues a command and optional linenumber to use for it in the send queue.
 
 		Arguments:
-		    command (str): The command to send.
+		    command (str or SendQueueMarker): The command to send.
 		    linenumber (int): The line number with which to send the command. May be ``None`` in which case the command
 		        will be sent without a line number and checksum.
 		    command_type (str): Optional command type, if set and command type is already in the queue the
@@ -2552,6 +2595,11 @@ class MachineCom(object):
 
 					# fetch command, command type and optional linenumber and sent callback from queue
 					command, linenumber, command_type, on_sent, processed, tags = entry
+
+					if isinstance(command, SendQueueMarker):
+						command.run()
+						self._continue_sending()
+						continue
 
 					# some firmwares (e.g. Smoothie) might support additional in-band communication that will not
 					# stick to the acknowledgement behaviour of GCODE, so we check here if we have a GCODE command
@@ -3128,6 +3176,7 @@ class PrintingFileInformation(object):
 		self._pos = 0
 		self._size = None
 		self._start_time = None
+		self._done = False
 
 	def getStartTime(self):
 		return self._start_time
@@ -3164,12 +3213,17 @@ class PrintingFileInformation(object):
 		Marks the print job as started and remembers the start time.
 		"""
 		self._start_time = time.time()
+		self._done = False
 
 	def close(self):
 		"""
 		Closes the print job.
 		"""
 		pass
+
+	@property
+	def done(self):
+		return self._done
 
 class PrintingSdFileInformation(PrintingFileInformation):
 	"""
@@ -3190,6 +3244,14 @@ class PrintingSdFileInformation(PrintingFileInformation):
 
 	def getFileLocation(self):
 		return FileDestinations.SDCARD
+
+	@property
+	def done(self):
+		return self._done
+
+	@done.setter
+	def done(self, value):
+		self._done = value
 
 class PrintingGcodeFileInformation(PrintingFileInformation):
 	"""
@@ -3268,6 +3330,7 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 					if self._handle is None:
 						# file got closed just now
 						self._pos = self._size
+						self._done = True
 						self._report_stats()
 						return None
 
@@ -3993,6 +4056,22 @@ def _normalize_command_handler_result(command, command_type, gcode, subcode, tag
 		command, command_type, gcode, subcode, tags = original
 
 	return result
+
+
+class QueueMarker(object):
+
+	def __init__(self, callback):
+		self.callback = callback
+
+	def run(self):
+		if callable(self.callback):
+			try:
+				self.callback()
+			except:
+				logging.getLogger(__name__).exception("Error while running callback of QueueMarker")
+
+class SendQueueMarker(QueueMarker):
+	pass
 
 
 # --- Test code for speed testing the comm layer via command line follows

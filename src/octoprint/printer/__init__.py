@@ -486,6 +486,20 @@ class PrinterInterface(object):
 		"""
 		raise NotImplementedError()
 
+	def is_cancelling(self, *args, **kwargs):
+		"""
+		Returns:
+		    (boolean) Whether the printer is currently cancelling a print.
+		"""
+		raise NotImplementedError()
+
+	def is_pausing(self, *args, **kwargs):
+		"""
+		Returns:
+			(boolean) Whether the printer is currently pausing a print.
+		"""
+		raise NotImplementedError()
+
 	def is_paused(self, *args, **kwargs):
 		"""
 		Returns:

@@ -578,6 +578,12 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 	def is_printing(self, *args, **kwargs):
 		return self._comm is not None and self._comm.isPrinting()
 
+	def is_cancelling(self, *args, **kwargs):
+		return self._comm is not None and self._comm.isCancelling()
+
+	def is_pausing(self, *args, **kwargs):
+		return self._comm is not None and self._comm.isPausing()
+
 	def is_paused(self, *args, **kwargs):
 		return self._comm is not None and self._comm.isPaused()
 
@@ -1001,6 +1007,8 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		return {
 			"operational": self.is_operational(),
 			"printing": self.is_printing(),
+			"cancelling": self.is_cancelling(),
+			"pausing": self.is_pausing(),
 			"closedOrError": self.is_closed_or_error(),
 			"error": self.is_error(),
 			"paused": self.is_paused(),
