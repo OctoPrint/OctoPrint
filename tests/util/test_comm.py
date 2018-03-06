@@ -13,6 +13,7 @@ class TestCommErrorHandling(unittest.TestCase):
 
 		# mocks
 		self._comm._handle_errors = lambda *args, **kwargs: octoprint.util.comm.MachineCom._handle_errors(self._comm, *args, **kwargs)
+		self._comm._trigger_error = lambda *args, **kwargs: octoprint.util.comm.MachineCom._trigger_error(self._comm, *args, **kwargs)
 		self._comm._recoverable_communication_errors = octoprint.util.comm.MachineCom._recoverable_communication_errors
 		self._comm._resend_request_communication_errors = octoprint.util.comm.MachineCom._resend_request_communication_errors
 		self._comm._sd_card_errors = octoprint.util.comm.MachineCom._sd_card_errors
@@ -206,11 +207,13 @@ class TestCommErrorHandling(unittest.TestCase):
 
 	def assert_disconnected(self):
 		self.assertIsNotNone(self._comm._errorValue)
-		self._comm._changeState.assert_called_once()
+		self._comm._changeState.assert_called_with(self._comm.STATE_ERROR)
+		self._comm.close.assert_called_once_with(is_error=True)
 
 	def assert_not_disconnected(self):
 		self.assertIsNone(self._comm._errorValue)
 		self._comm._changeState.assert_not_called()
+		self._comm.close.assert_not_called()
 
 	def assert_print_cancelled(self):
 		self._comm.cancelPrint.assert_called_once()
