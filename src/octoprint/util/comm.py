@@ -2258,18 +2258,18 @@ class MachineCom(object):
 						if ret:
 							return line
 
-				error_text = line[6:] if lower_line.startswith("error:") else line[2:]
-				self._to_logfile_with_terminal(u"Received an error from the printer's firmware: {}".format(error_text),
+				self._to_logfile_with_terminal(u"Received an error from the printer's firmware: {}".format(stripped_error),
 				                               level=logging.WARN)
 
 				if not self._ignore_errors:
 					if self._disconnect_on_errors:
-						self._trigger_error(error_text, "firmware")
+						self._trigger_error(stripped_error, "firmware")
 					elif self.isPrinting():
-						self.cancelPrint(firmware_error=error_text)
+						self.cancelPrint(firmware_error=stripped_error)
 						self._clear_to_send.set()
 				else:
-					self._log("WARNING! Received an error from the printer's firmware, ignoring that as configured but you might want to investigate what happened here! Error: {}".format(error_text))
+					self._log("WARNING! Received an error from the printer's firmware, ignoring that as configured "
+					          "but you might want to investigate what happened here! Error: {}".format(stripped_error))
 					self._clear_to_send.set()
 
 		# finally return the line
