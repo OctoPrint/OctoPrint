@@ -162,8 +162,7 @@ $(function() {
         self.serial_longRunningCommands = ko.observable(undefined);
         self.serial_checksumRequiringCommands = ko.observable(undefined);
         self.serial_helloCommand = ko.observable(undefined);
-        self.serial_ignoreErrorsFromFirmware = ko.observable(undefined);
-        self.serial_disconnectOnErrors = ko.observable(undefined);
+        self.serial_serialErrorBehaviour = ko.observable(undefined);
         self.serial_triggerOkForM29 = ko.observable(undefined);
         self.serial_waitForStart =  ko.observable(undefined);
         self.serial_sendChecksum =  ko.observable("print");
@@ -694,8 +693,10 @@ $(function() {
                     longRunningCommands: function() { return splitTextToArray(self.serial_longRunningCommands(), ",", true) },
                     checksumRequiringCommands: function() { return splitTextToArray(self.serial_checksumRequiringCommands(), ",", true) },
                     externalHeatupDetection: function() { return !self.serial_disableExternalHeatupDetection()},
-                    alwaysSendChecksum: function() { return self.serial_sendChecksum() == "always"},
-                    neverSendChecksum: function() { return self.serial_sendChecksum() == "never"}
+                    alwaysSendChecksum: function() { return self.serial_sendChecksum() === "always"},
+                    neverSendChecksum: function() { return self.serial_sendChecksum() === "never"},
+                    ignoreErrorsFromFirmware: function() { return self.serial_serialErrorBehaviour() === "ignore"},
+                    disconnectOnErrors: function() { return self.serial_serialErrorBehaviour() === "disconnect" }
                 },
                 scripts: {
                     gcode: function() {
@@ -812,7 +813,9 @@ $(function() {
                     checksumRequiringCommands: function(value) { self.serial_checksumRequiringCommands(value.join(", "))},
                     externalHeatupDetection: function(value) { self.serial_disableExternalHeatupDetection(!value) },
                     alwaysSendChecksum: function(value) { if (value) { self.serial_sendChecksum("always")}},
-                    neverSendChecksum: function(value) { if (value) { self.serial_sendChecksum("never")}}
+                    neverSendChecksum: function(value) { if (value) { self.serial_sendChecksum("never")}},
+                    ignoreErrorsFromFirmware: function(value) { if (value) {self.serial_serialErrorBehaviour("ignore")}},
+                    disconnectOnErrors: function(value) { if (value) {self.serial_serialErrorBehaviour("disconnect")}}
                 },
                 terminalFilters: function(value) { self.terminalFilters($.extend(true, [], value)) },
                 temperature: {

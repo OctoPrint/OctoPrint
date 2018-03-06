@@ -318,16 +318,17 @@
             <fieldset>
                 <legend>{{ _('Error handling') }}</legend>
                 <div class="control-group">
+                    <label class="control-label">{{ _('What to do on a firmware error (<code>Error:</code> or <code>!!</code>)') }}</label>
                     <div class="controls">
-                        <label class="checkbox">
-                            <input type="checkbox" data-bind="checked: serial_disconnectOnErrors" id="settings-serialDisconnectOnErrors"> {{ _('Not only cancel ongoing prints but also disconnect on unhandled errors from the firmware.') }}
+                        <label class="radio">
+                            <input type="radio" name="errorHandlingGroup" value="disconnect" data-bind="checked: serial_serialErrorBehaviour" id="settings-serialErrorBehaviourDisconnect"> {{ _('Disconnect from the printer') }}
                         </label>
-                    </div>
-                </div>
-                <div class="control-group">
-                    <div class="controls">
-                        <label class="checkbox">
-                            <input type="checkbox" data-bind="checked: serial_ignoreErrorsFromFirmware" id="settings-serialIgnoreErrorsFromFirmware"> {{ _('Ignore any unhandled errors from the firmware. Only use this if your firmware sends stuff prefixed with "Error" that is not an actual error. Might mask printer issues, be careful!') }} <span class="label label-important">{{ _('Warning') }}</span>
+                        <label class="radio">
+                            <input type="radio" name="errorHandlingGroup" value="cancel" data-bind="checked: serial_serialErrorBehaviour" id="settings-serialErrorBehaviourCancel"> {{ _('Cancel any ongoing prints but stay connected to the printer') }}
+                        </label>
+                        <label class="radio">
+                            <input type="radio" name="errorHandlingGroup" value="ignore" data-bind="checked: serial_serialErrorBehaviour" id="settings-serialErrorBehaviourIgnore"> {{ _('Ignore') }} <span class="label label-important">{{ _('Warning') }}</span>
+                            <span class="help-block">{{ _('Only choose this if your firmware sends error messages that are not actual errors. Might mask printer issues, be careful!') }}</span>
                         </label>
                     </div>
                 </div>
