@@ -119,6 +119,7 @@ class VirtualPrinter(object):
 		self._echoOnM117 = settings().getBoolean(["devel", "virtualPrinter", "echoOnM117"])
 
 		self._brokenM29 = settings().getBoolean(["devel", "virtualPrinter", "brokenM29"])
+		self._brokenResend = settings().getBoolean(["devel", "virtualPrinter", "brokenResend"])
 
 		self._m115FormatString = settings().get(["devel", "virtualPrinter", "m115FormatString"])
 		self._firmwareName = settings().get(["devel", "virtualPrinter", "firmwareName"])
@@ -583,7 +584,8 @@ class VirtualPrinter(object):
 
 			def request_resend():
 				self._send("Resend:%d" % expected)
-				self._sendOk()
+				if not self._brokenResend:
+					self._sendOk()
 
 			if settings().getBoolean(["devel", "virtualPrinter", "repetierStyleResends"]):
 				request_resend()
