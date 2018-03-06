@@ -440,7 +440,8 @@ class MachineCom(object):
 		self._temperature_autoreporting = False
 		self._busy_protocol_detected = False
 
-		self._supportResendsWithoutOk = settings().getBoolean(["serial", "supportResendsWithoutOk"])
+		self._trigger_ok_after_resend = settings().get(["serial", "supportResendsWithoutOk"])
+		self._resend_ok_timer = None
 
 		self._resendActive = False
 
@@ -1838,6 +1839,10 @@ class MachineCom(object):
 		self._log("Connection closed, closing down monitor")
 
 	def _handle_ok(self):
+		if self._resend_ok_timer:
+			self._resend_ok_timer.cancel()
+			self._resend_ok_timer = None
+
 		self._ok_timeout = get_new_timeout("communicationBusy" if self._busy_protocol_detected else "communication", self._timeout_intervals)
 		self._clear_to_send.set()
 
@@ -2436,11 +2441,18 @@ class MachineCom(object):
 					self._log_resends_rate_count += 1
 
 			self._send_queue.resend_active = True
+
 			return True
 		finally:
-			if self._supportResendsWithoutOk:
-				# simulate an ok if our flags indicate that the printer needs that for resend requests to work
+			if self._trigger_ok_after_resend == "always":
 				self._handle_ok()
+			elif self._trigger_ok_after_resend == "detect":
+				def process():
+					self._resend_ok_timer = None
+					self._handle_ok()
+					self._logger.info("Firmware didn't send an 'ok' with their resend request. That's a known bug with some firmware variants out there. Simulating an ok to continue...")
+				self._resend_ok_timer = threading.Timer(self._timeout_intervals.get("resendOk", 1.0), process)
+				self._resend_ok_timer.start()
 
 	def _resendSameCommand(self):
 		return self._resendNextCommand(again=True)

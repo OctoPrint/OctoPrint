@@ -250,17 +250,28 @@
                                 </label>
                             </div>
                         </div>
-                        <div class="controls">
-                            <label class="checkbox">
-                                <input type="checkbox" data-bind="checked: serial_triggerOkForM29" id="settings-serialTriggerOkForM29"> {{ _('Simulate <code>ok</code> for <code>M29</code>') }}
-                                <span class="help-block">{{ _('Most Marlin forks that were derived from Marlin versions < v1.1.0 do not send an acknowledging <code>ok</code> for a <code>M29</code>. Check this if you run into communication stalls following streaming of a file to your printer\'s SD.') }}</span>
-                            </label>
+                        <div class="control-group">
+                            <div class="controls">
+                                <label class="checkbox">
+                                    <input type="checkbox" data-bind="checked: serial_triggerOkForM29" id="settings-serialTriggerOkForM29"> {{ _('Simulate <code>ok</code> for <code>M29</code>') }}
+                                    <span class="help-block">{{ _('Most Marlin forks that were derived from Marlin versions < v1.1.0 do not send an acknowledging <code>ok</code> for a <code>M29</code>. Check this if you run into communication stalls following streaming of a file to your printer\'s SD.') }}</span>
+                                </label>
+                            </div>
                         </div>
-                        <div class="controls">
-                            <label class="checkbox">
-                                <input type="checkbox" data-bind="checked: serial_supportResendsWithoutOk" id="settings-serialSupportResendsWithoutOk"> {{ _('Simulate <code>ok</code> for resend requests') }}
-                                <span class="help-block">{{ _('Some Marlin forks do not send an acknowledging <code>ok</code> with their resend requests. Check this if you run into communication stalls following resend requests due to that.') }}</span>
-                            </label>
+                        <div class="control-group">
+                            <label class="control-label"> {{ _('Simulate <code>ok</code> for resend requests') }}</label>
+                            <div class="controls">
+                                <label class="radio">
+                                    <input type="radio" name="resendWithoutOkGroup" value="detect" data-bind="checked: serial_supportResendsWithoutOk" id="settings-serialSupportResendsWithoutOkDetect"> {{ _('If detected as necessary') }}
+                                </label>
+                                <label class="radio">
+                                    <input type="radio" name="resendWithoutOkGroup" value="always" data-bind="checked: serial_supportResendsWithoutOk" id="settings-serialSupportResendsWithoutOkAlways"> {{ _('Always') }}
+                                </label>
+                                <label class="radio">
+                                    <input type="radio" name="resendWithoutOkGroup" value="never" data-bind="checked: serial_supportResendsWithoutOk" id="settings-serialSupportResendsWithoutOkNever"> {{ _('Never') }}
+                                </label>
+                                <span class="help-block">{{ _('Some Marlin forks lack an acknowledging <code>ok</code> with their resend requests. Set this to "always" or "if detected as necessary" if you run into communication stalls on resend requests.') }}</span>
+                            </div>
                         </div>
                     </div>
                 </div>

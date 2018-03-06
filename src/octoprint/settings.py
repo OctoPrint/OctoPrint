@@ -98,7 +98,8 @@ default_settings = {
 			"temperature": 5,
 			"temperatureTargetSet": 2,
 			"temperatureAutoreport": 2,
-			"sdStatus": 1
+			"sdStatus": 1,
+			"resendOk": .5
 		},
 		"maxCommunicationTimeouts": {
 			"idle": 2,
@@ -114,7 +115,7 @@ default_settings = {
 		"disconnectOnErrors": True,
 		"ignoreErrorsFromFirmware": False,
 		"logResends": True,
-		"supportResendsWithoutOk": False,
+		"supportResendsWithoutOk": "detect",
 		"logPositionOnPause": True,
 		"logPositionOnCancel": True,
 		"waitForStartOnConnect": False,
@@ -910,7 +911,8 @@ class Settings(object):
 			self._migrate_printer_parameters,
 			self._migrate_gcode_scripts,
 			self._migrate_core_system_commands,
-			self._migrate_serial_features
+			self._migrate_serial_features,
+			self._migrate_resend_without_ok
 		)
 
 		for migrate in migrators:
@@ -1216,6 +1218,22 @@ class Settings(object):
 			self._logger.info("Made a copy of the current config at {} to allow recovery of serial feature flags".format(backup_path))
 
 		return changed
+
+	def _migrate_resend_without_ok(self, config):
+		"""
+		Migrates supportResendsWithoutOk flag from boolean to ("always", "detect", "never") value range.
+
+		True gets migrated to "always", False to "detect" (which is the new default).
+		"""
+		if "serial" in config and "supportResendsWithoutOk" in config["serial"] \
+				and config["serial"]["supportResendsWithoutOk"] not in ("always", "detect", "never"):
+			value = config["serial"]["supportResendsWithoutOk"]
+			if value:
+				config["serial"]["supportResendsWithoutOk"] = "always"
+			else:
+				config["serial"]["supportResendsWithoutOk"] = "detect"
+			return True
+		return False
 
 	def backup(self, suffix, path=None):
 		import shutil
