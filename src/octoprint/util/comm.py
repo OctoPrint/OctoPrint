@@ -623,12 +623,12 @@ class MachineCom(object):
 		elif state == self.STATE_CLOSED:
 			return "Offline"
 		elif state == self.STATE_ERROR:
-			return "Error: %s" % (self.getErrorString())
+			return "Error: {}".format(self.getErrorString())
 		elif state == self.STATE_CLOSED_WITH_ERROR:
-			return "Offline: %s" % (self.getErrorString())
+			return "Offline (Error: {})".format(self.getErrorString())
 		elif state == self.STATE_TRANSFERING_FILE:
 			return "Transferring file to SD"
-		return "Unknown State (%d)" % (self._state)
+		return "Unknown State ({})".format(self._state)
 
 	def getErrorString(self):
 		return self._errorValue
@@ -969,9 +969,7 @@ class MachineCom(object):
 				self._sendFromQueue()
 		except:
 			self._logger.exception("Error while trying to start printing")
-			self._errorValue = get_exception_string()
-			self._changeState(self.STATE_ERROR)
-			eventManager().fire(Events.ERROR, {"error": self.getErrorString(), "reason": "start_print"})
+			self._trigger_error(get_exception_string(), "start_print")
 
 	def startFileTransfer(self, filename, localFilename, remoteFilename, special=False, tags=None):
 		if not self.isOperational() or self.isBusy():
@@ -1781,10 +1779,8 @@ class MachineCom(object):
 								self._log("Unexpected error while setting baudrate {}: {}".format(baudrate, get_exception_string()))
 								self._logger.exception("Unexpceted error while setting baudrate {}".format(baudrate))
 						else:
-							self.close(wait=False)
-							self._errorValue = "No more baudrates to test, and no suitable baudrate found."
-							self._changeState(self.STATE_ERROR)
-							eventManager().fire(Events.ERROR, {"error": self.getErrorString(), "reason": "autodetect_baudrate"})
+							error_text = "No more baudrates to test, and no suitable baudrate found."
+							self._trigger_error(error_text, "autodetect_baudrate")
 					elif 'start' in line or 'ok' in line:
 						self._onConnected()
 						if 'start' in line:
@@ -2153,10 +2149,9 @@ class MachineCom(object):
 				self._changeState(self.STATE_DETECT_SERIAL)
 				port = self._detect_port()
 				if port is None:
-					self._errorValue = 'Failed to autodetect serial port, please set it manually.'
-					self._changeState(self.STATE_ERROR)
-					eventManager().fire(Events.ERROR, {"error": self.getErrorString(), "reason": "autodetect_port"})
-					self._log("Failed to autodetect serial port, please set it manually.")
+					error_text = "Failed to autodetect serial port, please set it manually."
+					self._trigger_error(error_text, "autodetect_port")
+					self._log(error_text)
 					return None
 
 			# connect to regular serial port
@@ -2186,9 +2181,7 @@ class MachineCom(object):
 				serial_obj = factory(self, self._port, self._baudrate, settings().getFloat(["serial", "timeout", "connection"]))
 			except:
 				exception_string = get_exception_string()
-				self._errorValue = "Connection error, see Terminal tab"
-				self._changeState(self.STATE_ERROR)
-				eventManager().fire(Events.ERROR, {"error": self.getErrorString(), "reason": "connection"})
+				self._trigger_error("Connection error, see Terminal tab", "connection")
 
 				error_message = "Unexpected error while connecting to serial port: %s %s (hook %s)" % (self._port, exception_string, name)
 				self._log(error_message)
@@ -2271,9 +2264,7 @@ class MachineCom(object):
 
 				if not self._ignore_errors:
 					if self._disconnect_on_errors:
-						self._errorValue = error_text
-						self._changeState(self.STATE_ERROR)
-						eventManager().fire(Events.ERROR, {"error": self.getErrorString(), "reason": "firmware"})
+						self._trigger_error(error_text, "firmware")
 					elif self.isPrinting():
 						self.cancelPrint(firmware_error=error_text)
 						self._clear_to_send.set()
@@ -2283,6 +2274,13 @@ class MachineCom(object):
 
 		# finally return the line
 		return line
+
+	def _trigger_error(self, text, reason, close=True):
+		self._errorValue = text
+		self._changeState(self.STATE_ERROR)
+		eventManager().fire(Events.ERROR, {"error": self.getErrorString(), "reason": reason})
+		if close:
+			self.close(is_error=True)
 
 	def _readline(self):
 		if self._serial is None:
@@ -2412,13 +2410,12 @@ class MachineCom(object):
 			self._resendSwallowRepetitionsCounter = settings().getInt(["serial", "identicalResendsCountdown"])
 
 			if self._resendDelta > len(self._lastLines) or len(self._lastLines) == 0 or self._resendDelta < 0:
-				self._errorValue = "Printer requested line %d but no sufficient history is available, can't resend" % lineToResend
-				self._log(self._errorValue)
-				self._logger.warn(self._errorValue + ". Printer requested line {}, current line is {}, line history has {} entries.".format(lineToResend, self._currentLine, len(self._lastLines)))
+				error_text = "Printer requested line %d but no sufficient history is available, can't resend" % lineToResend
+				self._log(error_text)
+				self._logger.warn(error_text + ". Printer requested line {}, current line is {}, line history has {} entries.".format(lineToResend, self._currentLine, len(self._lastLines)))
 				if self.isPrinting():
-					# abort the print, there's nothing we can do to rescue it now
-					self._changeState(self.STATE_ERROR)
-					eventManager().fire(Events.ERROR, {"error": self.getErrorString(), "reason": "resend"})
+					# abort the print & disconnect, there's nothing we can do to rescue it
+					self._trigger_error(error_text, "resend")
 				else:
 					# reset resend delta, we can't do anything about it
 					self._resendDelta = None
