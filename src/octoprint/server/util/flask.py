@@ -8,6 +8,7 @@ __copyright__ = "Copyright (C) 2014 The OctoPrint Project - Released under terms
 
 import tornado.web
 import flask
+import flask.json
 import flask.ext.login
 import flask.ext.principal
 import flask.ext.assets
@@ -29,6 +30,7 @@ import octoprint.users
 import octoprint.plugin
 
 from octoprint.util import DefaultOrderedDict
+from octoprint.util.json import JsonEncoding
 
 from werkzeug.contrib.cache import BaseCache
 
@@ -1399,3 +1401,9 @@ def collect_plugin_assets(enable_gcodeviewer=True, preferred_stylesheet="css"):
 				break
 
 	return assets
+
+##~~ JSON encoding
+
+class OctoPrintJsonEncoder(flask.json.JSONEncoder):
+	def default(self, obj):
+		return JsonEncoding.encode(obj)

@@ -9,6 +9,8 @@ import logging
 import threading
 import sockjs.tornado
 import sockjs.tornado.session
+import sockjs.tornado.proto
+import sockjs.tornado.util
 import time
 
 import octoprint.timelapse
@@ -18,8 +20,12 @@ import octoprint.plugin
 
 from octoprint.events import Events
 from octoprint.settings import settings
+from octoprint.util.json import JsonEncoding
 
 import octoprint.printer
+
+import wrapt
+import json
 
 
 class ThreadSafeSession(sockjs.tornado.session.Session):
@@ -50,8 +56,26 @@ class ThreadSafeSession(sockjs.tornado.session.Session):
 		return result
 
 
+class JsonEncodingSessionWrapper(wrapt.ObjectProxy):
+
+	def send_message(self, msg, stats=True, binary=False):
+		"""Send or queue outgoing message
+
+		`msg`
+		    Message to send
+		`stats`
+		    If set to True, will update statistics after operation completes
+		"""
+		self.send_jsonified(json.dumps(sockjs.tornado.util.bytes_to_str(msg),
+		                               separators=(',', ':'),
+		                               default=JsonEncoding.encode),
+		                    stats)
+
+
 class PrinterStateConnection(sockjs.tornado.SockJSConnection, octoprint.printer.PrinterCallback):
 	def __init__(self, printer, fileManager, analysisQueue, userManager, eventManager, pluginManager, session):
+		session = JsonEncodingSessionWrapper(session)
+
 		sockjs.tornado.SockJSConnection.__init__(self, session)
 
 		self._logger = logging.getLogger(__name__)

@@ -793,11 +793,13 @@ class Server(object):
 		return Locale.parse(request.accept_languages.best_match(LANGUAGES))
 
 	def _setup_app(self, app):
-		from octoprint.server.util.flask import ReverseProxiedEnvironment, OctoPrintFlaskRequest, OctoPrintFlaskResponse
+		from octoprint.server.util.flask import ReverseProxiedEnvironment, OctoPrintFlaskRequest, OctoPrintFlaskResponse, OctoPrintJsonEncoder
 
 		s = settings()
 
 		app.debug = self._debug
+
+		app.json_encoder = OctoPrintJsonEncoder
 
 		secret_key = s.get(["server", "secretKey"])
 		if not secret_key:
