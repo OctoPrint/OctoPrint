@@ -106,6 +106,12 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection, octoprint.printer.
 			return forwardedFor.split(",")[0]
 		return info.ip
 
+	def __str__(self):
+		if self._remoteAddress:
+			return "{!r} connected to {}".format(self, self._remoteAddress)
+		else:
+			return "Unconnected {!r}".format(self)
+
 	def on_open(self, info):
 		self._remoteAddress = self._getRemoteAddress(info)
 		self._logger.info("New connection from client: %s" % self._remoteAddress)
@@ -156,7 +162,6 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection, octoprint.printer.
 			self._emit("event", {"type": Events.MOVIE_RENDERING, "payload": octoprint.timelapse.current_render_job})
 
 	def on_close(self):
-		self._logger.info("Client connection closed: %s" % self._remoteAddress)
 		self._printer.unregister_callback(self)
 		self._fileManager.unregister_slicingprogress_callback(self)
 		octoprint.timelapse.unregister_callback(self)
@@ -165,6 +170,9 @@ class PrinterStateConnection(sockjs.tornado.SockJSConnection, octoprint.printer.
 		self._eventManager.fire(Events.CLIENT_CLOSED, {"remoteAddress": self._remoteAddress})
 		for event in octoprint.events.all_events():
 			self._eventManager.unsubscribe(event, self._onEvent)
+
+		self._logger.info("Client connection closed: %s" % self._remoteAddress)
+		self._remoteAddress = None
 
 	def on_message(self, message):
 		try:
