@@ -166,6 +166,10 @@ Controls
        clicked. This allows to override the direct sending of the command or commands to the printer with more
        sophisticated behaviour. The JavaScript snippet is ``eval``'d and processed in a context where the control
        it is part of is provided as local variable ``data`` and the ``ControlViewModel`` is available as ``self``.
+   * - ``additionalClasses``
+     - (Optional) Additional classes to apply to the button of a ``command``, ``commands``, ``script`` or ``javascript``
+       control, other than the default ``btn``. Can be used to visually style the button, e.g. set to ``btn-danger`` to
+       turn the button red.
    * - ``enabled``
      - (Optional) A JavaScript snippet returning either ``true`` or ``false`` determining whether the control
        should be enabled or not. This allow to override the default logic for this (disabled if printer is offline

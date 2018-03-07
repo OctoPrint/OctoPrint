@@ -173,11 +173,6 @@
     <label style="cursor: default" data-bind="text: output"></label>
 </script>
 <script type="text/html" id="customControls_controlTemplate_command">
-    <!-- ko if: $data.customClass -->
-        <button data-bind="text: name, attr: { 'class': customClass }, enable: $root.isCustomEnabled($data), click: function() { $root.clickCustom($data) }"></button>
-    <!-- /ko -->
-    <!-- ko ifnot: $data.customClass -->
-        <button class="btn" data-bind="text: name, enable: $root.isCustomEnabled($data), click: function() { $root.clickCustom($data) }"></button>
-    <!-- /ko -->
+    <button class="btn" data-bind="text: name, css: additionalClasses, enable: $root.isCustomEnabled($data), click: function() { $root.clickCustom($data) }"></button>
 </script>
 <!-- End of templates for custom controls -->
