@@ -99,6 +99,7 @@ default_settings = {
 			"temperatureTargetSet": 2,
 			"temperatureAutoreport": 2,
 			"sdStatus": 1,
+			"sdStatusAutoreport": 1,
 			"resendOk": .5
 		},
 		"maxCommunicationTimeouts": {
@@ -137,6 +138,7 @@ default_settings = {
 
 		"capabilities": {
 			"autoreport_temp": True,
+			"autoreport_sdstatus": True,
 			"busy_protocol": True
 		},
 
@@ -403,7 +405,8 @@ default_settings = {
 			"m115FormatString": "FIRMWARE_NAME: {firmware_name} PROTOCOL_VERSION:1.0",
 			"m115ReportCapabilities": False,
 			"capabilities": {
-				"AUTOREPORT_TEMP": True
+				"AUTOREPORT_TEMP": True,
+				"AUTOREPORT_SD_STATUS": True
 			},
 			"ambientTemperature": 21.3,
 			"errors": {

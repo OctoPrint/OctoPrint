@@ -158,6 +158,7 @@ $(function() {
         self.serial_timeoutTemperatureTargetSet = ko.observable(undefined);
         self.serial_timeoutTemperatureAutoreport = ko.observable(undefined);
         self.serial_timeoutSdStatus = ko.observable(undefined);
+        self.serial_timeoutSdStatusAutoreport = ko.observable(undefined);
         self.serial_log = ko.observable(undefined);
         self.serial_additionalPorts = ko.observable(undefined);
         self.serial_additionalBaudrates = ko.observable(undefined);
@@ -183,6 +184,7 @@ $(function() {
         self.serial_maxTimeoutsPrinting = ko.observable(undefined);
         self.serial_maxTimeoutsLong = ko.observable(undefined);
         self.serial_capAutoreportTemp = ko.observable(undefined);
+        self.serial_capAutoreportSdStatus = ko.observable(undefined);
         self.serial_capBusyProtocol = ko.observable(undefined);
 
         self.folder_uploads = ko.observable(undefined);

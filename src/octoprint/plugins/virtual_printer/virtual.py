@@ -126,9 +126,10 @@ class VirtualPrinter(object):
 
 		self._okFormatString = settings().get(["devel", "virtualPrinter", "okFormatString"])
 
-		self._capabilities = settings().get(["devel", "virtualPrinter", "capabilities"])
+		self._capabilities = settings().get(["devel", "virtualPrinter", "capabilities"], merged=True)
 
 		self._temperature_reporter = None
+		self._sdstatus_reporter = None
 
 		self.currentLine = 0
 		self.lastN = 0
@@ -414,8 +415,23 @@ class VirtualPrinter(object):
 			self._setSdPos(pos)
 
 	def _gcode_M27(self, data):
-		if self._sdCardReady:
-			self._reportSdStatus()
+		def report():
+			if self._sdCardReady:
+				self._reportSdStatus()
+
+		match = re.search("S([0-9]+)", data)
+		if match:
+			interval = int(match.group(1))
+			if self._sdstatus_reporter is not None:
+				self._sdstatus_reporter.cancel()
+
+			if interval > 0:
+				self._sdstatus_reporter = RepeatedTimer(interval, report)
+				self._sdstatus_reporter.start()
+			else:
+				self._sdstatus_reporter = None
+
+		report()
 
 	def _gcode_M28(self, data):
 		if self._sdCardReady:

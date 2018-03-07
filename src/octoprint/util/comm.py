@@ -336,6 +336,7 @@ class MachineCom(object):
 	STATE_PAUSING = 13
 
 	CAPABILITY_AUTOREPORT_TEMP = "AUTOREPORT_TEMP"
+	CAPABILITY_AUTOREPORT_SD_STATUS = "AUTOREPORT_SD_STATUS"
 	CAPABILITY_BUSY_PROTOCOL = "BUSY_PROTOCOL"
 
 	CAPABILITY_SUPPORT_ENABLED = "enabled"
@@ -422,6 +423,7 @@ class MachineCom(object):
 
 		self._capability_support = {
 			self.CAPABILITY_AUTOREPORT_TEMP: settings().getBoolean(["serial", "capabilities", "autoreport_temp"]),
+			self.CAPABILITY_AUTOREPORT_SD_STATUS: settings().getBoolean(["serial", "capabilities", "autoreport_sdstatus"]),
 			self.CAPABILITY_BUSY_PROTOCOL: settings().getBoolean(["serial", "capabilities", "busy_protocol"])
 		}
 
@@ -438,6 +440,7 @@ class MachineCom(object):
 		self._firmware_capabilities = dict()
 
 		self._temperature_autoreporting = False
+		self._sdstatus_autoreporting = False
 		self._busy_protocol_detected = False
 
 		self._trigger_ok_after_resend = settings().get(["serial", "supportResendsWithoutOk"])
@@ -1642,6 +1645,9 @@ class MachineCom(object):
 							if capability == self.CAPABILITY_AUTOREPORT_TEMP and enabled:
 								self._logger.info("Firmware states that it supports temperature autoreporting")
 								self._set_autoreport_temperature_interval()
+							elif capability == self.CAPABILITY_AUTOREPORT_SD_STATUS and enabled:
+								self._logger.info("Firmware states that it supports sd status autoreporting")
+								self._set_autoreport_sdstatus_interval()
 
 				##~~ invalid extruder
 				elif 'invalid extruder' in lower_line:
@@ -2036,7 +2042,7 @@ class MachineCom(object):
 		command or heating, no poll will be done.
 		"""
 
-		if self.isOperational() and not self._connection_closing and self.isSdPrinting() and not self._long_running_command and not self._dwelling_until and not self._heating:
+		if self.isOperational() and not self._sdstatus_autoreporting and not self._connection_closing and self.isSdPrinting() and not self._long_running_command and not self._dwelling_until and not self._heating:
 			self.sendCommand("M27", cmd_type="sd_status_poll", tags={"trigger:comm.poll_sd_status"})
 
 	def _set_autoreport_temperature_interval(self, interval=None):
@@ -2046,6 +2052,14 @@ class MachineCom(object):
 			except:
 				interval = 2
 		self.sendCommand("M155 S{}".format(interval), tags={"trigger:comm.set_autoreport_temperature_interval"})
+
+	def _set_autoreport_sdstatus_interval(self, interval=None):
+		if interval is None:
+			try:
+				interval = int(self._timeout_intervals.get("sdStatusAutoreport", 1))
+			except:
+				interval = 1
+		self.sendCommand("M27 S{}".format(interval), tags={"trigger:comm.set_autoreport_sdstatus_interval"})
 
 	def _set_busy_protocol_interval(self, interval=None):
 		if interval is None:
@@ -2079,6 +2093,8 @@ class MachineCom(object):
 
 		if self._temperature_autoreporting:
 			self._set_autoreport_temperature_interval()
+		if self._sdstatus_autoreporting:
+			self._set_autoreport_sdstatus_interval()
 		if self._busy_protocol_detected:
 			self._set_busy_protocol_interval()
 
@@ -3050,6 +3066,16 @@ class MachineCom(object):
 				interval = int(match.group("value"))
 				self._temperature_autoreporting = self._firmware_capabilities.get(self.CAPABILITY_AUTOREPORT_TEMP, False) \
 				                                  and (interval > 0)
+			except:
+				pass
+
+	def _gcode_M27_sending(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
+		match = regexes_parameters["intS"].search(cmd)
+		if match:
+			try:
+				interval = int(match.group("value"))
+				self._sdstatus_autoreporting = self._firmware_capabilities.get(self.CAPABILITY_AUTOREPORT_SD_STATUS, False) \
+				                               and (interval > 0)
 			except:
 				pass
 
