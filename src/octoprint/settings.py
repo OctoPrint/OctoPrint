@@ -150,6 +150,7 @@ default_settings = {
 		"startOnceInSafeMode": False,
 		"seenWizards": {},
 		"secretKey": None,
+		"heartbeat": 15 * 60, # 15 min
 		"reverseProxy": {
 			"prefixHeader": None,
 			"schemeHeader": None,

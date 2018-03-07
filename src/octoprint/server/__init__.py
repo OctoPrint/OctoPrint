@@ -218,6 +218,7 @@ class Server(object):
 		safe_mode = self._safe_mode
 
 		self._logger = logging.getLogger(__name__)
+		self._setup_heartbeat_logging()
 		pluginManager = self._plugin_manager
 
 		# monkey patch a bunch of stuff
@@ -791,6 +792,18 @@ class Server(object):
 			return Locale.negotiate([default_language], LANGUAGES)
 
 		return Locale.parse(request.accept_languages.best_match(LANGUAGES))
+
+	def _setup_heartbeat_logging(self):
+		logger = logging.getLogger(__name__ + ".heartbeat")
+
+		def log_heartbeat():
+			logger.info("Server heartbeat <3")
+
+		interval = settings().getFloat(["server", "heartbeat"])
+		logger.info("Starting server heartbeat, {}s interval".format(interval))
+
+		timer = octoprint.util.RepeatedTimer(interval, log_heartbeat)
+		timer.start()
 
 	def _setup_app(self, app):
 		from octoprint.server.util.flask import ReverseProxiedEnvironment, OctoPrintFlaskRequest, OctoPrintFlaskResponse, OctoPrintJsonEncoder
