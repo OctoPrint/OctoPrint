@@ -120,6 +120,8 @@ $(function() {
         self.webcam_streamRatio = ko.observable(undefined);
         self.webcam_streamTimeout = ko.observable(undefined);
         self.webcam_snapshotUrl = ko.observable(undefined);
+        self.webcam_snapshotTimeout = ko.observable(undefined);
+        self.webcam_snapshotSslValidation = ko.observable(undefined);
         self.webcam_ffmpegPath = ko.observable(undefined);
         self.webcam_bitrate = ko.observable(undefined);
         self.webcam_ffmpegThreads = ko.observable(undefined);
@@ -322,7 +324,12 @@ $(function() {
             var errorTitle = gettext("Snapshot test failed");
 
             self.testWebcamSnapshotUrlBusy(true);
-            OctoPrint.util.testUrl(self.webcam_snapshotUrl(), {method: "GET", response: "bytes"})
+            OctoPrint.util.testUrl(self.webcam_snapshotUrl(), {
+                method: "GET",
+                response: "bytes",
+                timeout: self.webcam_snapshotTimeout(),
+                validSsl: self.webcam_snapshotSslValidation()
+            })
                 .done(function(response) {
                     if (!response.result) {
                         showMessageDialog({

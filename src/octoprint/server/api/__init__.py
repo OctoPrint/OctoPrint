@@ -337,6 +337,7 @@ def utilTestPath():
 		url = data["url"]
 		method = data.get("method", "HEAD")
 		timeout = 3.0
+		valid_ssl = True
 		check_status = [status_ranges["normal"]]
 
 		if "timeout" in data:
@@ -344,6 +345,9 @@ def utilTestPath():
 				timeout = float(data["timeout"])
 			except:
 				return make_response("{!r} is not a valid value for timeout (must be int or float)".format(data["timeout"]), 400)
+
+		if "validSsl" in data:
+			valid_ssl = data["validSsl"] in valid_boolean_trues
 
 		if "status" in data:
 			request_status = data["status"]
@@ -363,7 +367,7 @@ def utilTestPath():
 							check_status.append([code])
 
 		try:
-			response = requests.request(method=method, url=url, timeout=timeout)
+			response = requests.request(method=method, url=url, timeout=timeout, verify=valid_ssl)
 			status = response.status_code
 		except:
 			status = 0

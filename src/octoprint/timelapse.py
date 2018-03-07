@@ -363,6 +363,8 @@ class Timelapse(object):
 		self._capture_dir = settings().getBaseFolder("timelapse_tmp")
 		self._movie_dir = settings().getBaseFolder("timelapse")
 		self._snapshot_url = settings().get(["webcam", "snapshot"])
+		self._snapshot_timeout = settings().getInt(["webcam", "snapshotTimeout"])
+		self._snapshot_validate_ssl = settings().getBoolean(["webcam", "snapshotSslValidation"])
 
 		self._fps = fps
 
@@ -578,7 +580,10 @@ class Timelapse(object):
 		eventManager().fire(Events.CAPTURE_START, dict(file=filename))
 		try:
 			self._logger.debug("Going to capture {} from {}".format(filename, self._snapshot_url))
-			r = requests.get(self._snapshot_url, stream=True, timeout=5)
+			r = requests.get(self._snapshot_url,
+			                 stream=True,
+			                 timeout=self._snapshot_timeout,
+			                 verify=self._snapshot_validate_ssl)
 			r.raise_for_status()
 
 			with open (filename, "wb") as f:

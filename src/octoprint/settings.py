@@ -199,6 +199,8 @@ default_settings = {
 		"streamRatio": "16:9",
 		"streamTimeout": 5,
 		"snapshot": None,
+		"snapshotTimeout": 5,
+		"snapshotSslValidation": True,
 		"ffmpeg": None,
 		"ffmpegThreads": 1,
 		"bitrate": "5000k",

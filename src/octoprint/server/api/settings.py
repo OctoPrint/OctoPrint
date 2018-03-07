@@ -101,6 +101,8 @@ def getSettings():
 			"streamRatio": s.get(["webcam", "streamRatio"]),
 			"streamTimeout": s.getInt(["webcam", "streamTimeout"]),
 			"snapshotUrl": s.get(["webcam", "snapshot"]),
+			"snapshotTimeout": s.getInt(["webcam", "snapshotTimeout"]),
+			"snapshotSslValidation": s.getBoolean(["webcam", "snapshotSslValidation"]),
 			"ffmpegPath": s.get(["webcam", "ffmpeg"]),
 			"bitrate": s.get(["webcam", "bitrate"]),
 			"ffmpegThreads": s.get(["webcam", "ffmpegThreads"]),
@@ -332,6 +334,8 @@ def _saveSettings(data):
 		if "streamRatio" in data["webcam"] and data["webcam"]["streamRatio"] in ("16:9", "4:3"): s.set(["webcam", "streamRatio"], data["webcam"]["streamRatio"])
 		if "streamTimeout" in data["webcam"]: s.setInt(["webcam", "streamTimeout"], data["webcam"]["streamTimeout"])
 		if "snapshotUrl" in data["webcam"]: s.set(["webcam", "snapshot"], data["webcam"]["snapshotUrl"])
+		if "snapshotTimeout" in data["webcam"]: s.setInt(["webcam", "snapshotTimeout"], data["webcam"]["snapshotTimeout"])
+		if "snapshotSslValidation" in data["webcam"]: s.setBoolean(["webcam", "snapshotSslValidation"], data["webcam"]["snapshotSslValidation"])
 		if "ffmpegPath" in data["webcam"]: s.set(["webcam", "ffmpeg"], data["webcam"]["ffmpegPath"])
 		if "bitrate" in data["webcam"]: s.set(["webcam", "bitrate"], data["webcam"]["bitrate"])
 		if "ffmpegThreads" in data["webcam"]: s.setInt(["webcam", "ffmpegThreads"], data["webcam"]["ffmpegThreads"])
