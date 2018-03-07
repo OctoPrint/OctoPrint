@@ -554,7 +554,10 @@ class MachineCom(object):
 
 		oldState = self.getStateString()
 		self._state = newState
-		self._log('Changing monitoring state from \'%s\' to \'%s\'' % (oldState, self.getStateString()))
+
+		text = "Changing monitoring state from \"{}\" to \"{}\"".format(oldState, self.getStateString())
+		self._log(text)
+		self._logger.info(text)
 		self._callback.on_comm_state_change(newState)
 
 	def _dual_log(self, message, level=logging.ERROR):
