@@ -6,6 +6,7 @@ __copyright__ = "Copyright (C) 2018 The OctoPrint Project - Released under terms
 
 
 import collections
+import frozendict
 
 class JsonEncoding(object):
 
@@ -21,3 +22,5 @@ class JsonEncoding(object):
 			if isinstance(obj, type):
 				return encoder(obj)
 		raise TypeError
+
+JsonEncoding.add_encoder(frozendict.frozendict, lambda obj: dict(obj))

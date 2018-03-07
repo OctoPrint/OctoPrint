@@ -363,6 +363,7 @@ default_settings = {
 			"bundle": True,
 			"clean_on_startup": True
 		},
+		"useFrozenDictForPrinterState": True,
 		"virtualPrinter": {
 			"enabled": False,
 			"okAfterResend": False,
