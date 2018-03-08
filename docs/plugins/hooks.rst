@@ -558,7 +558,7 @@ This describes actually four hooks:
    :param str gcode: Parsed GCODE command, e.g. ``G0`` or ``M110``, may also be None if no known command could be parsed
    :param str subcode: Parsed subcode of the GCODE command, e.g. ``1`` for ``M80.1``. Will be None if no subcode was provided
        or no command could be parsed.
-   :param set tags: Tags attached to the command
+   :param tags: Tags attached to the command
    :return: None, 1-tuple, 2-tuple or string, see the description above for details.
 
 .. _sec-plugins-hook-comm-protocol-gcode-received:
