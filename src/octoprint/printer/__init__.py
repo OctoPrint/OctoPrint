@@ -134,6 +134,39 @@ class PrinterInterface(object):
 		"""
 		raise NotImplementedError()
 
+	def set_job_on_hold(self, value, blocking=True, *args, **kwargs):
+		"""
+		Setter for finer control over putting jobs on hold. Set to ``True`` to ensure that no commands from the file
+		being printed are continued to be sent to the printer. Set to ``False`` to resume. Note that this will only
+		work for local files, NOT SD files.
+
+		Make absolutely sure that if you set this flag, you will always also unset it again. If you don't, the job will
+		be stuck forever.
+
+		Example:
+
+		.. code-block:: python
+
+		   if printer.set_job_on_hold(True):
+		       try:
+		           park_printhead()
+		           take_snapshot()
+		           send_printhead_back()
+		       finally:
+		           printer.set_job_on_hold(False)
+
+		Just like :func:`~octoprint.printer.PrinterInterface.job_on_hold` this should be used sparingly and only for
+		very specific situations. If you abuse this, you WILL cause print quality issues!
+
+		Args:
+			value (bool): The value to set
+			blocking (bool): Whether to block while attempting to set the value (default) or not
+
+		Returns:
+			(bool) Whether the value could be set successfully (True) or a timeout was encountered (False)
+		"""
+		raise NotImplementedError()
+
 	def fake_ack(self, *args, **kwargs):
 		"""
 		Fakes an acknowledgment for the communication layer. If the communication between OctoPrint and the printer

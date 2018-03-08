@@ -243,10 +243,15 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 		return self._comm.getTransport()
 	getTransport = util.deprecated("getTransport has been renamed to get_transport", since="1.2.0-dev-590", includedoc="Replaced by :func:`get_transport`")
 
-	def job_on_hold(self, blocking=None, *args, **kwargs):
+	def job_on_hold(self, blocking=True, *args, **kwargs):
 		if self._comm is None:
 			raise RuntimeError("No connection to the printer")
-		return self._comm.job_on_hold(blocking=blocking)
+		return self._comm.put_job_on_hold(blocking=blocking)
+
+	def set_job_on_hold(self, value, blocking=True, *args, **kwargs):
+		if self._comm is None:
+			raise RuntimeError("No connection to the printer")
+		return self._comm.set_job_on_hold(value, blocking=blocking)
 
 	def fake_ack(self, *args, **kwargs):
 		if self._comm is None:

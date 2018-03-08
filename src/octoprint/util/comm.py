@@ -512,8 +512,7 @@ class MachineCom(object):
 
 		# print job
 		self._currentFile = None
-		self._job_on_hold = False
-		self._job_on_hold_mutex = threading.RLock()
+		self._job_on_hold = CountedEvent()
 
 		# multithreading locks
 		self._jobLock = threading.RLock()
@@ -723,17 +722,38 @@ class MachineCom(object):
 	##~~ external interface
 
 	@contextlib.contextmanager
-	def job_on_hold(self, blocking=True):
-		if not self._job_on_hold_mutex.acquire(blocking=blocking):
+	def job_put_on_hold(self, blocking=True):
+		if not self._job_on_hold.acquire(blocking=blocking):
 			raise RuntimeError("Could not acquire job_on_hold lock")
 
-		self._job_on_hold = True
+		self._job_on_hold.set()
 		try:
 			yield
 		finally:
-			self._job_on_hold = False
-			self._job_on_hold_mutex.release()
-			self._continue_sending()
+			self._job_on_hold.clear()
+			if self._job_on_hold.counter == 0:
+				self._continue_sending()
+			self._job_on_hold.release()
+
+	@property
+	def job_on_hold(self):
+		return self._job_on_hold.counter > 0
+
+	def set_job_on_hold(self, value, blocking=True):
+		if not self._job_on_hold.acquire(blocking=blocking):
+			return False
+
+		try:
+			if value:
+				self._job_on_hold.set()
+			else:
+				self._job_on_hold.clear()
+				if self._job_on_hold.counter == 0:
+					self._continue_sending()
+		finally:
+			self._job_on_hold.release()
+
+		return True
 
 	def close(self, is_error=False, wait=True, timeout=10.0, *args, **kwargs):
 		"""
@@ -835,7 +855,7 @@ class MachineCom(object):
 				if not cmd:
 					return False
 
-		if self.isPrinting() and not self.isSdFileSelected() and not self._job_on_hold:
+		if self.isPrinting() and not self.isSdFileSelected() and not self.job_on_hold:
 			try:
 				self._command_queue.put((cmd, cmd_type, on_sent, tags), item_type=cmd_type)
 				return True
@@ -1481,7 +1501,7 @@ class MachineCom(object):
 					handled = True
 
 				# process timeouts
-				elif ((line == "" and now > self._timeout) or (self.isPrinting() and not self.isSdPrinting() and not self._job_on_hold and now > self._ok_timeout)) \
+				elif ((line == "" and now > self._timeout) or (self.isPrinting() and not self.isSdPrinting() and not self.job_on_hold and now > self._ok_timeout)) \
 						and (not self._blockWhileDwelling or not self._dwelling_until or now > self._dwelling_until):
 					# We have two timeout variants:
 					#
@@ -1981,7 +2001,7 @@ class MachineCom(object):
 					# we found something in the queue to send
 					return True
 
-				elif self._job_on_hold:
+				elif self.job_on_hold:
 					return False
 
 				elif self._sendNext():
@@ -2385,6 +2405,10 @@ class MachineCom(object):
 				# we loop until we've actually enqueued a line for sending
 				if self._state != self.STATE_PRINTING:
 					# we are no longer printing, return false
+					return False
+
+				elif self.job_on_hold:
+					# job is on hold, return false
 					return False
 
 				line, pos, lineno = self._getNext()
