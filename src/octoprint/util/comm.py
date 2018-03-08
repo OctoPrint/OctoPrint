@@ -966,9 +966,12 @@ class MachineCom(object):
 					if pos is not None and isinstance(pos, int) and pos > 0:
 						self._currentFile.seek(pos)
 
-					line = self._getNext()
+					line, pos, lineno = self._getNext()
 					if line is not None:
-						self.sendCommand(line, tags={"trigger:comm.start_print", "source:file"})
+						self.sendCommand(line, tags=tags | {"trigger:comm.start_print",
+						                                    "source:file",
+						                                    "filepos:{}".format(pos),
+						                                    "fileline:{}".format(lineno)})
 
 				# now make sure we actually do something, up until now we only filled up the queue
 				self._sendFromQueue()
@@ -1147,14 +1150,16 @@ class MachineCom(object):
 					self.sendCommand("M24", tags=tags | {"trigger:comm.set_pause","trigger:resume"})
 					self.sendCommand("M27", tags=tags | {"trigger:comm.set_pause", "trigger:resume"})
 				else:
-					line = self._getNext()
+					line, pos, lineno = self._getNext()
 					if line is not None:
 						if not tags:
-							tags_to_use = set()
-						else:
-							tags_to_use = set(tags)
-						tags_to_use.add("file")
-						self.sendCommand(line, tags=tags | {"trigger:comm.set_pause", "trigger:resume", "source:file"})
+							tags = set()
+						tags_to_use = tags | {"trigger:comm.set_pause",
+						                      "trigger:resume",
+						                      "source:file",
+						                      "filepos:{}".format(pos),
+						                      "fileline:{}".format(lineno)}
+						self.sendCommand(line, tags=tags_to_use)
 
 				# now make sure we actually do something, up until now we only filled up the queue
 				self._sendFromQueue()
@@ -2363,7 +2368,7 @@ class MachineCom(object):
 		if self._currentFile is None:
 			return None
 
-		line = self._currentFile.getNext()
+		line, pos, lineno = self._currentFile.getNext()
 		if line is None:
 			if isinstance(self._currentFile, StreamingGcodeFileInformation):
 				self._finishFileTransfer()
@@ -2371,8 +2376,8 @@ class MachineCom(object):
 				self._callback.on_comm_print_job_done()
 				def finalize():
 					self._changeState(self.STATE_OPERATIONAL)
-				return SendQueueMarker(finalize)
-		return line
+				return SendQueueMarker(finalize), None, None
+		return line, pos, lineno
 
 	def _sendNext(self):
 		with self._jobLock:
@@ -2382,7 +2387,7 @@ class MachineCom(object):
 					# we are no longer printing, return false
 					return False
 
-				line = self._getNext()
+				line, pos, lineno = self._getNext()
 				if isinstance(line, QueueMarker):
 					self.sendCommand(line)
 					self._callback.on_comm_progress()
@@ -2395,7 +2400,7 @@ class MachineCom(object):
 					# end of file, return false
 					return False
 
-				result = self._sendCommand(line, tags={"source:file"})
+				result = self._sendCommand(line, tags={"source:file", "filepos:{}".format(pos), "fileline:{}".format(lineno)})
 				self._callback.on_comm_progress()
 				if result:
 					# line sent, return true
@@ -3403,7 +3408,7 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 						self._pos = self._size
 						self._done = True
 						self._report_stats()
-						return None
+						return None, None, None
 
 					# we need to manually keep track of our pos here since
 					# codecs' readline will make our handle's tell not
@@ -3416,7 +3421,7 @@ class PrintingGcodeFileInformation(PrintingFileInformation):
 						self.close()
 					processed = self._process(line, offsets, current_tool)
 				self._read_lines += 1
-				return processed
+				return processed, self._pos, self._read_lines
 			except Exception as e:
 				self.close()
 				self._logger.exception("Exception while processing line")
