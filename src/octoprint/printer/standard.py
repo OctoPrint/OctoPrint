@@ -246,7 +246,7 @@ class Printer(PrinterInterface, comm.MachineComPrintCallback):
 	def job_on_hold(self, blocking=True, *args, **kwargs):
 		if self._comm is None:
 			raise RuntimeError("No connection to the printer")
-		return self._comm.put_job_on_hold(blocking=blocking)
+		return self._comm.job_put_on_hold(blocking=blocking)
 
 	def set_job_on_hold(self, value, blocking=True, *args, **kwargs):
 		if self._comm is None:
