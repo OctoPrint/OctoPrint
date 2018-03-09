@@ -42,7 +42,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 	COMMIT_TRACKING_TYPES = ("github_commit", "bitbucket_commit")
 
-	DATA_FORMAT_VERSION = "v2"
+	DATA_FORMAT_VERSION = "v3"
 
 	# noinspection PyMissingConstructor
 	def __init__(self):
@@ -484,7 +484,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 		def view():
 			try:
 				information, update_available, update_possible = self.get_current_versions(check_targets=check_targets, force=force)
-				return flask.jsonify(dict(status="updatePossible" if update_available and update_possible else "updateAvailable" if update_available else "current",
+				return flask.jsonify(dict(status="inProgress" if self._update_in_progress else "updatePossible" if update_available and update_possible else "updateAvailable" if update_available else "current",
 				                          information=information,
 				                          timestamp=self._version_cache_timestamp))
 			except exceptions.ConfigurationInvalid as e:
@@ -515,6 +515,7 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 			hash.update(",".join(targets))
 			hash.update(str(self._version_cache_timestamp))
 			hash.update(str(self._connectivity_checker.online))
+			hash.update(str(self._update_in_progress))
 			hash.update(self.DATA_FORMAT_VERSION)
 			return hash.hexdigest()
 
