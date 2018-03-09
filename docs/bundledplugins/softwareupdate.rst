@@ -243,6 +243,9 @@ Update methods
   * ``python_updater``: Can only be specified by plugins through the
     :ref:`hook <sec-bundledplugins-softwareupdate-hooks>`. A python callable
     which performs the update, see below for details.
+  * ``sleep_a_bit``: Does nothing but block for a configurable ``duration`` and log
+    a countdown in the meantime. Useful for debugging software update mechanisms
+    during development.
 
 .. note::
 

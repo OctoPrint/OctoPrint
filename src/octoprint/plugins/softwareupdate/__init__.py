@@ -1113,7 +1113,8 @@ class SoftwareUpdatePlugin(octoprint.plugin.BlueprintPlugin,
 
 		mapping = dict(update_script=updaters.update_script,
 		               pip=updaters.pip,
-		               python_updater=updaters.python_updater)
+		               python_updater=updaters.python_updater,
+		               sleep_a_bit=updaters.sleep_a_bit)
 
 		method = self._get_update_method(target, check, valid_methods=mapping.keys())
 		return mapping[method]
