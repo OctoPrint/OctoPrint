@@ -165,7 +165,7 @@ $(function() {
         self.serial_longRunningCommands = ko.observable(undefined);
         self.serial_checksumRequiringCommands = ko.observable(undefined);
         self.serial_helloCommand = ko.observable(undefined);
-        self.serial_serialErrorBehaviour = ko.observable(undefined);
+        self.serial_serialErrorBehaviour = ko.observable("cancel");
         self.serial_triggerOkForM29 = ko.observable(undefined);
         self.serial_waitForStart =  ko.observable(undefined);
         self.serial_sendChecksum =  ko.observable("print");
