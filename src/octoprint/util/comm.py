@@ -2643,6 +2643,10 @@ class MachineCom(object):
 					# if this is a gcode bound to an event, trigger that now
 					eventManager().fire(gcodeToEvent[gcode])
 
+				# process @ commands
+				if gcode is None and cmd.startswith("@"):
+					self._process_atcommand_phase("queuing", cmd, tags=tags)
+
 				# actually enqueue the command for sending
 				if self._enqueue_for_sending(cmd, command_type=cmd_type, on_sent=on_sent, tags=tags):
 					if not self.isStreaming():
@@ -2778,6 +2782,16 @@ class MachineCom(object):
 							self._continue_sending()
 
 							# and fetch the next item
+							continue
+
+						# handle @ commands
+						if gcode is None and command.startswith("@"):
+							self._process_atcommand_phase("sending", command, tags=tags)
+
+							# tickle...
+							self._continue_sending()
+
+							# ... and fetch the next item
 							continue
 
 						# now comes the part where we increase line numbers and send stuff - no turning back now
@@ -2918,6 +2932,27 @@ class MachineCom(object):
 		# finally return whatever we resulted on
 		return results
 
+	def _process_atcommand_phase(self, phase, command, tags=None):
+		if (self.isStreaming() and self.isPrinting()) or phase not in ("queuing", "sending"):
+			return
+
+		split = command.split(None, 1)
+		if len(split) == 2:
+			atcommand = split[0]
+			parameters = split[1]
+		else:
+			atcommand = split[0]
+			parameters = None
+
+		atcommand = atcommand[1:]
+
+		handler = getattr(self, "_atcommand_{}_{}".format(atcommand, phase), None)
+		if callable(handler):
+			try:
+				handler(atcommand, parameters, tags=tags)
+			except:
+				self._logger.exception("Error in handler for phase {} and command {} atcommand".format(phase, atcommand))
+
 	##~~ actual sending via serial
 
 	def _do_increment_and_send_with_checksum(self, cmd):
@@ -2997,6 +3032,8 @@ class MachineCom(object):
 					break
 
 	##~~ command handlers
+
+	## gcode
 
 	def _gcode_T_queuing(self, cmd, cmd_type=None, gcode=None, subcode=None, *args, **kwargs):
 		toolMatch = regexes_parameters["intT"].search(cmd)
@@ -3224,6 +3261,24 @@ class MachineCom(object):
 
 	def _validate_tool(self, tool):
 		return tool < self._printerProfileManager.get_current_or_default()["extruder"]["count"] and not tool in self._knownInvalidTools
+
+	## atcommands
+
+	def _atcommand_pause_queuing(self, *args, **kwargs):
+		tags = kwargs.get("tags", set())
+		if not "script:afterPrintPaused" in tags:
+			self.setPause(True, tags={"trigger:atcommand_pause"})
+
+	def _atcommand_cancel_queuing(self, *args, **kwargs):
+		tags = kwargs.get("tags", set())
+		if not "script:afterPrintCancelled" in tags:
+			self.cancelPrint(tags={"trigger:atcommand_cancel"})
+	_atcommand_abort_sending = _atcommand_cancel_queuing
+
+	def _atcommand_resume_queuing(self, *args, **kwargs):
+		tags = kwargs.get("tags", set())
+		if not "script:beforePrintResumed" in tags:
+			self.setPause(False, tags={"trigger:atcommand_resume"})
 
 	##~~ command phase handlers
 
